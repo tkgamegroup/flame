@@ -20,6 +20,7 @@ namespace flame
 		{
 		}
 
+		virtual void set_shade_wireframe(bool v) = 0;
 		virtual void set_always_update(bool a) = 0;
 
 		virtual graphics::Canvas* get_canvas() const = 0;

@@ -9,12 +9,14 @@ namespace flame
 
 	struct sRendererPrivate : sRenderer
 	{
+		bool wireframe = false;
 		graphics::Canvas* canvas = nullptr;
 		cCameraPrivate* camera = nullptr;
 
 		bool always_update = false;
 		bool dirty = true;
 
+		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
 		graphics::Canvas* get_canvas() const override { return canvas; }

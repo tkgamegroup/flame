@@ -2,44 +2,36 @@
 #define LIGHT_SET 0
 #endif
 
-struct LightIndices
+struct LightSet
 {
 	uint directional_lights_count;
+	uint directional_light_indices[7];
 	uint point_lights_count;
-	uint point_light_indices[1022];
+	uint point_light_indices[1015];
 };
 
-struct DirectionalLightInfo
+struct LightInfo
 {
-	vec3 dir;
+	vec3 pos;
 	float distance;
 	vec3 color;
 	
-	int shadow_map_index;
-	mat4 shadow_matrices[4];
+	int shadow_index;
 };
 
-struct PointLightInfo
+layout (set = LIGHT_SET, binding = 0) buffer readonly LightSets
 {
-	vec3 coord;
-	float distance;
-	vec3 color;
-	int shadow_map_index;
+	LightSet light_sets[];
 };
 
-layout (set = LIGHT_SET, binding = 0) buffer readonly LightIndicesList
+layout (set = LIGHT_SET, binding = 1) buffer readonly LightInfos
 {
-	LightIndices light_indices_list[];
+	LightInfo light_infos[];
 };
 
-layout (set = LIGHT_SET, binding = 1) buffer readonly DirectionalLightInfos
+layout (set = LIGHT_SET, binding = 2) buffer readonly ShadowMatrices
 {
-	DirectionalLightInfo directional_light_infos[];
-};
-
-layout (set = LIGHT_SET, binding = 2) buffer readonly PointLightInfos
-{
-	PointLightInfo point_light_infos[];
+	mat4 shadow_matrices[];
 };
 
 layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_shadow_maps[4];

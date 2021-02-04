@@ -14,7 +14,9 @@ layout (location = 0) out flat uint o_mat_id;
 layout (location = 1) out vec2 o_uv;
 layout (location = 2) out vec3 o_coordw;
 layout (location = 3) out vec3 o_coordv;
+#ifndef SHADOW_PASS
 layout (location = 4) out vec3 o_normal;
+#endif
 
 void main()
 {
@@ -30,11 +32,22 @@ void main()
 			deform += i_bone_weights[i] * bones[id];
 	}
 	o_coordw = vec3(deform * vec4(i_position, 1.0));
+
+	#ifndef SHADOW_PASS
 	o_normal = mat3(deform) * i_normal;
+	#endif
 #else
 	o_coordw = vec3(mesh_matrices[mod_idx].transform * vec4(i_position, 1.0));
+
+	#ifndef SHADOW_PASS
 	o_normal = mat3(mesh_matrices[mod_idx].normal_matrix) * i_normal;
+	#endif
 #endif
 	o_coordv = render_data.camera_coord - o_coordw;
+
+	#ifndef SHADOW_PASS
 	gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
+	#else
+	gl_Position = shadow_matrices[pc.i[0]] * vec4(o_coordw, 1.0);
+	#endif
 }

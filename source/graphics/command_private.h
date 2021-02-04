@@ -31,6 +31,7 @@ namespace flame
 		struct CommandBufferBridge : CommandBuffer
 		{
 			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues) override;
+			void bind_pipeline_layout(PipelineLayout* pll) override;
 			void bind_pipeline(Pipeline* p) override;
 			void bind_descriptor_set(DescriptorSet* s, uint idx) override;
 			void bind_descriptor_set(uint64 h, DescriptorSet* s) override;
@@ -54,6 +55,7 @@ namespace flame
 		{
 			CommandPoolPrivate* pool;
 
+			PipelineLayoutPrivate* pipeline_layout = nullptr;
 			PipelinePrivate* pipeline = nullptr;
 
 			VkCommandBuffer vk_command_buffer;
@@ -68,6 +70,7 @@ namespace flame
 			void end_renderpass() override;
 			void set_viewport(const Rect& rect) override;
 			void set_scissor(const Rect& rect) override;
+			void bind_pipeline_layout(PipelineLayoutPrivate* pll);
 			void bind_pipeline(PipelinePrivate* pl);
 			void bind_descriptor_set(DescriptorSetPrivate* ds, uint idx);
 			void bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds);
@@ -96,9 +99,14 @@ namespace flame
 			((CommandBufferPrivate*)this)->begin_renderpass((RenderpassPrivate*)rp, (FramebufferPrivate*)fb, cvs);
 		}
 
-		inline void CommandBufferBridge::bind_pipeline(Pipeline* pp)
+		inline void CommandBufferBridge::bind_pipeline_layout(PipelineLayout* pll)
 		{
-			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)pp);
+			((CommandBufferPrivate*)this)->bind_pipeline_layout((PipelineLayoutPrivate*)pll);
+		}
+
+		inline void CommandBufferBridge::bind_pipeline(Pipeline* pl)
+		{
+			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)pl);
 		}
 
 		inline void CommandBufferBridge::bind_descriptor_set(DescriptorSet* ds, uint idx)

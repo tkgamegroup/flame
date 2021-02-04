@@ -124,23 +124,29 @@ namespace flame
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 
+		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPrivate* pll)
+		{
+			pipeline_layout = pll;
+			pipeline = nullptr;
+		}
+
 		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* pl)
 		{
+			pipeline_layout = pl->pipeline_layout;
 			pipeline = pl;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
 		}
 
 		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* ds, uint idx)
 		{
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type), 
-				pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &ds->vk_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline ? pipeline->type : PipelineGraphics),
+				pipeline_layout->vk_pipeline_layout, idx, 1, &ds->vk_descriptor_set, 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds)
 		{
-			auto pll = pipeline->pipeline_layout;
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type),
-				pll->vk_pipeline_layout, pll->get_idx(h), 1, &ds->vk_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline ? pipeline->type : PipelineGraphics),
+				pipeline_layout->vk_pipeline_layout, pipeline_layout->get_idx(h), 1, &ds->vk_descriptor_set, 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* buf, uint id)
@@ -156,15 +162,14 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
-			vkCmdPushConstants(vk_command_buffer, pipeline->pipeline_layout->vk_pipeline_layout, 
+			vkCmdPushConstants(vk_command_buffer, pipeline_layout->vk_pipeline_layout,
 				to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
 		void CommandBufferPrivate::push_constant_h(uint64 h, uint size, const void* data)
 		{
-			auto pll = pipeline->pipeline_layout;
-			auto pct = pll->push_constant;
-			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout,
+			auto pct = pipeline_layout->push_constant;
+			vkCmdPushConstants(vk_command_buffer, pipeline_layout->vk_pipeline_layout,
 				to_backend_flags<ShaderStageFlags>(ShaderStageAll), pct->variables[pct->variables_map[h]].offset, size, data);
 		}
 

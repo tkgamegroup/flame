@@ -582,12 +582,6 @@ process:
 
 					pugi::xml_node n_variables;
 
-					IDiaEnumSymbols* s_base_classes;
-					IDiaSymbol* s_base_class;
-					s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
-					s_base_classes->Next(1, &s_base_class, &ul);
-					s_base_class->get_name(&pwname);
-
 					auto get_variables = [&](IDiaSymbol* s_udt) {
 						IDiaEnumSymbols* s_variables;
 						s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
@@ -652,7 +646,15 @@ process:
 					};
 
 					get_variables(s_udt);
-					get_variables(s_base_class);
+
+					IDiaEnumSymbols* s_base_classes;
+					IDiaSymbol* s_base_class;
+					s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
+					if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
+					{
+						s_base_class->get_name(&pwname);
+						get_variables(s_base_class);
+					}
 
 					if (dtor)
 						a2f<void(*)(void*)>((char*)library + dtor)(obj);

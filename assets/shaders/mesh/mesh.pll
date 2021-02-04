@@ -15,5 +15,6 @@
 
 layout (push_constant) uniform PushConstantT
 {
-	uint id;
+	vec4 f;
+	ivec4 i;
 }pc;

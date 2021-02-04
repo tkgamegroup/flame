@@ -22,9 +22,9 @@ namespace flame
 		{
 			MaterialForMesh,
 			MaterialForMeshArmature,
+			MaterialForMeshShadow,
+			MaterialForMeshShadowArmature,
 			MaterialForTerrain,
-			MaterialForDepth,
-			MaterialForDepthArmature,
 
 			MaterialUsageCount
 		};
@@ -44,11 +44,14 @@ namespace flame
 			std::vector<std::tuple<std::filesystem::path, std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
 			std::unique_ptr<PipelinePrivate> element_pipeline;
 			std::unique_ptr<PipelinePrivate> sky_pipeline;
+			PipelineLayoutPrivate* mesh_pipeline_layout;
+			PipelineLayoutPrivate* terrain_pipeline_layout;
 			std::unique_ptr<PipelinePrivate> mesh_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> terrain_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_pickup_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_pickup_pipeline;
+			std::unique_ptr<PipelinePrivate> terrain_pickup_pipeline;
 			std::unique_ptr<PipelinePrivate> line_pipeline;
 			std::unique_ptr<PipelinePrivate> triangle_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
@@ -372,15 +375,45 @@ namespace flame
 			std::vector<std::unique_ptr<MeshResourcePrivate>> meshes;
 		};
 
-		struct DirectionalShadow
+		struct MeshInfo
 		{
-			mat4 matrices[4];
+			MeshResourcePrivate* res;
+			mat4 transform;
+			bool cast_shadow;
+			ArmatureDeformerPrivate* deformer;
+			ShadeFlags flags;
+			void* userdata;
 		};
 
-		struct PointShadow
+		struct TerrainInfo
+		{
+			uvec2 blocks;
+			vec3 scale;
+			vec3 coord;
+			float tess_levels;
+			uint height_tex_id;
+			uint normal_tex_id;
+			uint material_id;
+			ShadeFlags flags;
+			void* userdata;
+		};
+
+		struct DirectionalLight
+		{
+			vec3 dir;
+			vec3 side;
+			vec3 up;
+			vec3 color;
+			bool cast_shadow;
+			float shadow_distance;
+		};
+
+		struct PointLight
 		{
 			vec3 coord;
-			float distance;
+			vec3 color;
+			bool cast_shadow;
+			float shadow_distance;
 		};
 
 		struct Cmd
@@ -414,19 +447,14 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			MeshResourcePrivate* mesh_resource;
-			bool cast_shadow;
-			ArmatureDeformerPrivate* deformer;
-			void* userdata;
+			std::vector<uint> entries;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};
 
 		struct CmdDrawTerrain : Cmd
 		{
-			uvec2 blocks;
-			uint material_id;
-			void* userdata;
+			std::vector<uint> entries;
 
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};
@@ -487,8 +515,6 @@ namespace flame
 		{
 			RenderPreferencesPrivate* preferences;
 
-			ShadingType shading_type = ShadingSolid;
-
 			float shadow_distance = 100.f;
 			uint csm_levels = 3;
 			float csm_factor = 0.3f;
@@ -535,15 +561,13 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_descriptorset;
 
-			ShaderBuffer light_indices_buffer;
-
-			ShaderBuffer directional_light_info_buffer;
+			ShaderBuffer light_sets_buffer;
+			ShaderBuffer light_infos_buffer;
+			ShaderBuffer shadow_matrices_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> directional_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_shadow_map_descriptorsets;
-
-			ShaderBuffer point_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> point_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_shadow_map_framebuffers;
@@ -579,13 +603,12 @@ namespace flame
 			ShaderGeometryBuffer<Line> line_buffer;
 			ShaderGeometryBuffer<Triangle> triangle_buffer;
 
+			std::vector<MeshInfo> meshes;
+			std::vector<TerrainInfo> terrains;
+			std::vector<DirectionalLight> directional_lights;
+			std::vector<PointLight> point_lights;
+
 			std::vector<std::unique_ptr<Cmd>> cmds;
-			uint  meshes_count = 0;
-			uint terrains_count = 0;
-			uint directional_lights_count;
-			uint point_lights_count;
-			std::vector<DirectionalShadow> directional_shadows;
-			std::vector<PointShadow> point_shadows;
 
 			uvec2 output_size;
 			Rect curr_scissor;
@@ -596,7 +619,6 @@ namespace flame
 
 			RenderPreferences* get_preferences() const override { return preferences; };
 
-			void set_shading(ShadingType type) override;
 			void set_shadow(float distance, uint csm_levels, float csm_factor) override;
 
 			cvec4 get_clear_color() const override { return clear_color; }
@@ -638,8 +660,8 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
 			void set_sky(ImageViewPrivate* box, ImageViewPrivate* irr, ImageViewPrivate* rad, ImageViewPrivate* lut);
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, void* userdata = nullptr) override;
-			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, void* userdata = nullptr) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, ShadeFlags flags = ShadeMaterial, void* userdata = nullptr) override;
+			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, ShadeFlags flags = ShadeMaterial, void* userdata = nullptr) override;
 			void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line* lines) override;

@@ -77,6 +77,7 @@ namespace flame
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
+			virtual void bind_pipeline_layout(PipelineLayout* pll) = 0;
 			virtual void bind_pipeline(Pipeline* pl) = 0;
 			virtual void bind_descriptor_set(DescriptorSet* ds, uint idx) = 0;
 			virtual void bind_descriptor_set(uint64 h, DescriptorSet* ds) = 0;

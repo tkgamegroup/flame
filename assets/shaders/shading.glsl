@@ -76,15 +76,15 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 	uint light_count;
 	float distancev = length(coordv);
 	
-	light_count = light_indices_list[0].directional_lights_count;
+	light_count = light_sets[0].directional_lights_count;
 	for (int i = 0; i < light_count; i++)
 	{
-		DirectionalLightInfo light = directional_light_infos[i];
+		LightInfo light = light_infos[light_sets[0].directional_light_indices[i]];
 		
-		vec3 L = light.dir;
+		vec3 L = light.pos;
 		
 		float shadow = 1.0;
-		if (light.shadow_map_index != -1 && distancev < render_data.shadow_distance)
+		if (light.shadow_index != -1 && distancev < render_data.shadow_distance)
 		{
 			float d = distancev / render_data.shadow_distance;
 			uint lvs = render_data.csm_levels;
@@ -100,28 +100,28 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 				else
 					break;
 			}
-			vec4 coordl = light.shadow_matrices[lv] * vec4(coordw, 1.0);
+			vec4 coordl = shadow_matrices[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-			float ref = texture(directional_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
+			float ref = texture(directional_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
 			shadow = clamp(exp(-esm_c * render_data.zFar * (coordl.z - ref)), 0.0, 1.0);
 		}
 		
 		color += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
 	}
 	
-	light_count = light_indices_list[0].point_lights_count;
+	light_count = light_sets[0].point_lights_count;
 	for (int i = 0; i < light_count; i++)
 	{
-		PointLightInfo light = point_light_infos[light_indices_list[0].point_light_indices[i]];
+		LightInfo light = light_infos[light_sets[0].point_light_indices[i]];
 
-		vec3 L = light.coord - coordw;
+		vec3 L = light.pos - coordw;
 		float dist = length(L);
 		L = L / dist;
 
 		float shadow = 1.0;
-		if (light.shadow_map_index != -1)
+		if (light.shadow_index != -1)
 		{
-			float ref = texture(point_shadow_maps[light.shadow_map_index], -L).r;
+			float ref = texture(point_shadow_maps[light.shadow_index], -L).r;
 			shadow = clamp(exp(-esm_c * (dist - ref * light.distance)), 0.0, 1.0);
 		}
 

@@ -10,3 +10,16 @@ vec2 panorama(vec3 v)
 {
 	return vec2(0.5 + 0.5 * atan(v.x, v.z) * PI_INV, acos(v.y) * PI_INV);
 }
+
+vec4 pack_uint_to_v4(uint id)
+{
+	vec4 ret;
+	ret[0] = (id & 0xff) / 255.0;
+	id >>= 8;
+	ret[1] = (id & 0xff) / 255.0;
+	id >>= 8;
+	ret[2] = (id & 0xff) / 255.0;
+	id >>= 8;
+	ret[3] = (id & 0xff) / 255.0;
+	return ret;
+}

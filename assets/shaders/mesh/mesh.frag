@@ -5,33 +5,41 @@ layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
 layout (location = 2) in vec3 i_coordw;
 layout (location = 3) in vec3 i_coordv;
+#ifndef SHADOW_PASS
 layout (location = 4) in vec3 i_normal;
+#endif
 
+#ifndef SHADOW_PASS
 layout (location = 0) out vec4 o_color;
+#else
+layout (location = 0) out float o_depth;
+#endif
 
 void main()
 {
-#ifdef MAT
-	MaterialInfo material = material_infos[i_mat_id];
-
-	vec3 N = normalize(i_normal);
-	vec3 V = normalize(i_coordv);
+	#ifdef MAT
+		MaterialInfo material = material_infos[i_mat_id];
+		
+		#ifndef SHADOW_PASS
+		vec3 N = normalize(i_normal);
+		vec3 V = normalize(i_coordv);
+		#endif
 	
-	MAT_FILE
-#else
+		MAT_FILE
 
-#ifdef PICKUP
-	uint id = pc.id;
-	o_color[0] = id & 0xff;
-	id >>= 8;
-	o_color[1] = id & 0xff;
-	id >>= 8;
-	o_color[2] = id & 0xff;
-	id >>= 8;
-	o_color[3] = id & 0xff;
-#else
-	o_color = vec4(0.0, 1.0, 0.0, 1.0);
-#endif
+		#ifdef SHADOW_PASS
+			if (pc.f[0] == 0.0)
+				o_depth = gl_FragCoord.z;
+			else
+				o_depth = pc.f[0] / (pc.f[1] + gl_FragCoord.z * (pc.f[0] - pc.f[1]));
+		#endif
+	#else
 
-#endif
+		#ifdef PICKUP
+			o_color = pack_uint_to_v4(pc.i[0]);
+		#else
+			o_color = vec4(0.0, 1.0, 0.0, 1.0);
+		#endif
+
+	#endif
 }

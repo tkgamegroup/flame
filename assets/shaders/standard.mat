@@ -5,20 +5,18 @@
 		discard;
 #endif
 		
-#ifndef DEPTH_PASS
+#ifndef SHADOW_PASS
+	#ifdef COLOR_MAP
+		vec3 color = texture(maps[material.map_indices[0]], i_uv).rgb;
+	#else
+		vec3 color = material.color.rgb;
+	#endif
 
-#ifdef COLOR_MAP
-	vec3 color = texture(maps[material.map_indices[0]], i_uv).rgb;
-#else
-	vec3 color = material.color.rgb;
-#endif
+		float metallic = material.metallic;
+		float roughness = material.roughness;
 
-	float metallic = material.metallic;
-	float roughness = material.roughness;
-
-	vec3 albedo = (1.0 - metallic) * color;
-	vec3 spec = mix(vec3(0.04), color, metallic);
+		vec3 albedo = (1.0 - metallic) * color;
+		vec3 spec = mix(vec3(0.04), color, metallic);
 	
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, metallic, albedo, spec, roughness), 1.0);
-	
+		o_color = vec4(shading(i_coordw, i_coordv, N, V, metallic, albedo, spec, roughness), 1.0);
 #endif

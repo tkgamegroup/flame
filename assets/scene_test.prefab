@@ -9,7 +9,6 @@
       s_physics = world.find_system("sPhysics")
       s_dispatcher = world.find_system("sDispatcher")
       s_renderer = world.find_system("sRenderer")
-      canvas = s_renderer.get_canvas()
 
       base = entity
 
@@ -22,6 +21,9 @@
                defe:plane_tree.lua" >
         scene = entity
 
+        selected = {}
+        selected.p = nil
+        
         local last_mpos = vec2(0, 0)
         local base_receiver = base.find_component("cReceiver")
         base_receiver.add_mouse_left_down_listener(function(p)
@@ -30,7 +32,8 @@
         end)
         base_receiver.add_mouse_left_up_listener(function(p)
           if p.x == last_mpos.x and p.y == last_mpos.y then
-            print("123")
+            local e = canvas.pickup(last_mpos)
+            
           end
         end)
       </cScript>
@@ -48,7 +51,7 @@
           <cScript src="camera_third.lua" />
         </entity>
       </entity>
-      <entity src="D:\terrain\terrain">
+      <entity name="terrain" src="D:\terrain\terrain">
         <cNode pos="-100,100,-100" />
       </entity>
       <entity>
@@ -131,14 +134,14 @@
         end, true)
       </cScript>
     </entity>
-    <eElement name="ui" alignx="MinMax" aligny="MinMax" >
+    <eElement name="ui" alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
       <eMenuBar>
         <eMenu text="shading" >
 		      <eMenuItem checkable="true" checked="true" text="solid" >
             <cScript>
               local menu_item = entity.find_driver("dMenuItem")
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                canvas.set_shading(0)
+                s_renderer.set_shade_wireframe(false)
                 menu_item.set_single_checked()
               end)
             </cScript>
@@ -147,27 +150,13 @@
             <cScript>
               local menu_item = entity.find_driver("dMenuItem")
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                canvas.set_shading(1)
+                s_renderer.set_shade_wireframe(true)
                 menu_item.set_single_checked()
               end)
             </cScript>
           </eMenuItem>
         </eMenu>
-        <eMenu text="physics" >
-		      <eMenuItem checkable="true" text="visualization" >
-            <cScript>
-              local menu_item = entity.find_driver("dMenuItem")
-              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                local checked = menu_item.get_checked()
-                checked = not checked
-                menu_item.set_checked(checked)
-                s_physics.set_visualization(checked)
-              end)
-            </cScript>
-          </eMenuItem>
-        </eMenu>
-        <eMenu text="scene" >
-          <eMenu text="hud" >
+        <eMenu text="show" >
             <eMenuItem checkable="true" checked="true" text="global axes" >
               <cScript>
                 local menu_item = entity.find_driver("dMenuItem")
@@ -223,7 +212,17 @@
                 end)
               </cScript>
             </eMenuItem>
-          </eMenu>
+		      <eMenuItem checkable="true" text="physics visualization" >
+            <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
+              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                local checked = menu_item.get_checked()
+                checked = not checked
+                menu_item.set_checked(checked)
+                s_physics.set_visualization(checked)
+              end)
+            </cScript>
+          </eMenuItem>
         </eMenu>
         <eMenu text="settings" >
           <eMenuItem checkable="true" text="always update" >
@@ -249,6 +248,10 @@
           </cScript>
         </eText>
       </eMenuBar>
+      <eElement name="toolbar" layout_type="Horizontal" >
+        <eToolButton text="" />
+        <eToolButton text="" />
+      </eElement>
     </eElement>
   </entity>
 </prefab>
