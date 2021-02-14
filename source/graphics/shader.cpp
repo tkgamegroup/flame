@@ -462,7 +462,7 @@ namespace flame
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" " + temp_fn.wstring());
+					auto command_line = std::wstring(L" -g " + temp_fn.wstring());
 
 					printf("compiling dsl: %s", path.string().c_str());
 
@@ -811,7 +811,7 @@ namespace flame
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" " + temp_fn.wstring());
+					auto command_line = std::wstring(L" -g " + temp_fn.wstring());
 
 					printf("compiling pll: %s", path.string().c_str());
 
@@ -1019,7 +1019,7 @@ namespace flame
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" " + temp_fn.wstring() + L" -o" + spv_path.wstring());
+					auto command_line = std::wstring(L" -g " + temp_fn.wstring() + L" -o" + spv_path.wstring());
 					auto sp = SUS::split(defines);
 					for (auto& d : sp)
 						command_line += L" -D" + s2w(d);

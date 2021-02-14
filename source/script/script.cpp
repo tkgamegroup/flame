@@ -298,7 +298,7 @@ namespace flame
 
 				if (ret)
 				{
-					auto pushed_number = 1;
+					auto pushed_number = 0;
 					auto basic = ret_type->get_basic();
 					auto vec_size = ret_type->get_vec_size();
 					auto col_size = ret_type->get_col_size();
@@ -316,12 +316,15 @@ namespace flame
 								{
 								case BooleanType:
 									lua_pushboolean(state, *(bool*)ret);
+									pushed_number = 1;
 									break;
 								case IntegerType:
 									lua_pushinteger(state, *(int*)ret);
+									pushed_number = 1;
 									break;
 								case FloatingType:
 									lua_pushnumber(state, *(float*)ret);
+									pushed_number = 1;
 									break;
 								}
 								break;
@@ -330,6 +333,7 @@ namespace flame
 								{
 								case FloatingType:
 									lua_push_vec2(state, *(vec2*)ret);
+									pushed_number = 1;
 									break;
 								}
 								break;
@@ -338,6 +342,7 @@ namespace flame
 								{
 								case FloatingType:
 									lua_push_vec3(state, *(vec3*)ret);
+									pushed_number = 1;
 									break;
 								}
 								break;
@@ -346,6 +351,7 @@ namespace flame
 								{
 								case FloatingType:
 									lua_push_vec4(state, *(vec4*)ret);
+									pushed_number = 1;
 									break;
 								}
 								break;
@@ -363,7 +369,6 @@ namespace flame
 									lua_pop(state, 1);
 									if (mat_id != -1)
 										memcpy(&matrices[mat_id], ret, sizeof(mat4));
-									pushed_number = 0;
 									break;
 								}
 								break;
@@ -391,12 +396,15 @@ namespace flame
 									{
 									case CharType:
 										lua_pushstring(state, (char*)pointer);
+										pushed_number = 1;
 										break;
 									case WideCharType:
 										lua_pushstring(state, w2s((wchar_t*)pointer).c_str());
+										pushed_number = 1;
 										break;
 									default:
 										lua_pushlightuserdata(state, pointer);
+										pushed_number = 1;
 										break;
 									}
 									break;
@@ -405,7 +413,10 @@ namespace flame
 							}
 						}
 						else
+						{
 							lua_pushnil(state);
+							pushed_number = 1;
+						}
 					}
 						break;
 					}

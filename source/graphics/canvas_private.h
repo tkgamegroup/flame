@@ -37,6 +37,8 @@ namespace flame
 
 			std::unique_ptr<RenderpassPrivate> rgba8_renderpass;
 			std::unique_ptr<RenderpassPrivate> rgba16_renderpass;
+			std::unique_ptr<RenderpassPrivate> rgba8c_renderpass;
+			std::unique_ptr<RenderpassPrivate> rgba16c_renderpass;
 			std::unique_ptr<RenderpassPrivate> r16_renderpass;
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
@@ -63,6 +65,8 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> blurv_depth_pipeline;
 			std::unique_ptr<PipelinePrivate> blit_8_pipeline;
 			std::unique_ptr<PipelinePrivate> blit_16_pipeline;
+			std::unique_ptr<PipelinePrivate> blend_8_pipeline;
+			std::unique_ptr<PipelinePrivate> blend_16_pipeline;
 			std::unique_ptr<PipelinePrivate> filter_bright_pipeline;
 			std::unique_ptr<PipelinePrivate> downsample_pipeline;
 			std::unique_ptr<PipelinePrivate> upsample_pipeline;
@@ -560,9 +564,9 @@ namespace flame
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
-			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
-			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_descriptorset;
+			std::unique_ptr<ImagePrivate> shadow_depth_back_image;
+			std::unique_ptr<FramebufferPrivate> shadow_depth_back_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> shadow_depth_back_descriptorset;
 
 			ShaderBuffer light_sets_buffer;
 			ShaderBuffer light_infos_buffer;
@@ -593,10 +597,10 @@ namespace flame
 
 			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
 
-			std::unique_ptr<ImagePrivate> back_image;
-			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets;
+			std::unique_ptr<ImagePrivate> back_image[2];
+			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers[2];
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets[2];
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets[2];
 
 			std::unique_ptr<ImagePrivate> pickup_image;
 			std::unique_ptr<FramebufferPrivate> pickup_framebuffer;

@@ -24,11 +24,7 @@ void main()
 	#ifdef PICKUP
 		o_color = pack_uint_to_v4(pc.i[0]);
 	#else
-		#ifdef WIREFRAME
-		o_color = vec4(0.0, 1.0, 0.0, 1.0);
-		#else // OUTLINE
-		o_color = vec4(1.0, 1.0, 0.0, 1.0);
-		#endif
+		o_color = pc.f;
 	#endif
 
 #endif

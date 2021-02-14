@@ -64,7 +64,7 @@ namespace flame
 		{
 			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 			if (entity->state & StateSelected)
-				flags = flags | graphics::ShadeWireframe;
+				flags = flags | graphics::ShadeOutline;
 			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
 				flags, entity);
 		}

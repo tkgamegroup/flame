@@ -155,6 +155,11 @@ namespace flame
 			RB.y = RB_y;
 		}
 
+		Rect(const vec2& LT, const vec2& RB) :
+			Rect(LT.x, LT.y, RB.x, RB.y)
+		{
+		}
+
 		void reset()
 		{
 			LT = vec2(10000.f);

@@ -229,7 +229,7 @@ namespace flame
 		{
 			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 			if (entity->state & StateSelected)
-				flags = flags | graphics::ShadeWireframe;
+				flags = flags | graphics::ShadeOutline;
 			canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
 				flags, entity);
 		}
