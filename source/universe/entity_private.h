@@ -111,7 +111,6 @@ namespace flame
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
 		void remove_component(Component* c, bool destroy = true);
-		void remove_all_components(bool destroy) override;
 
 		uint get_children_count() const override { return children.size(); }
 		Entity* get_child(uint idx) const override { return children[idx].get(); }
@@ -119,7 +118,6 @@ namespace flame
 		void reposition_child(uint pos1, uint pos2) override;
 		void on_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPrivate* e, bool destroy = true);
-		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
 
 		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;

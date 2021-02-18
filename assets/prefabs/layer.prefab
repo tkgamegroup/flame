@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement alignx="MinMax" aligny="MinMax" align_in_layout="false" fill_color="0,0,0,127" >
+    <cReceiver />
+  </eElement>
+</prefab>

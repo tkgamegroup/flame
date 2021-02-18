@@ -1,3 +1,15 @@
+function find_enum(n)
+	local enum = enums[n]
+	if (enum == nil) then
+		enum = enums["flame::"..n]
+		if (enum == nil) then
+			print("script: cannot find enum "..n)
+			return nil
+		end
+	end
+	return enum
+end
+
 function find_udt(n)
 	local udt = udts[n]
 	if (udt == nil) then

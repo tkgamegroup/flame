@@ -1,11 +1,38 @@
 #include "../entity_private.h"
 #include "../components/element_private.h"
 #include "../components/receiver_private.h"
+#include "../components/text_private.h"
 #include "../systems/dispatcher_private.h"
 #include "window_private.h"
 
 namespace flame
 {
+	const wchar_t* dWindowPrivate::get_title() const
+	{
+		return title.c_str();
+	}
+
+	void dWindowPrivate::set_title(const wchar_t* _title)
+	{
+		title = _title;
+		if (load_finished)
+			title_text->set_text(title.c_str());
+	}
+
+	void* dWindowPrivate::add_close_listener(void (*callback)(Capture& c), const Capture& capture)
+	{
+
+		if (load_finished)
+			close_button->set_visible(!close_listeners.empty());
+		return nullptr;
+	}
+
+	void dWindowPrivate::remove_close_listener(void* lis)
+	{
+		if (load_finished)
+			close_button->set_visible(!close_listeners.empty());
+	}
+
 	void dWindowPrivate::on_load_finished()
 	{
 		element = entity->get_component_t<cElementPrivate>();
@@ -49,6 +76,30 @@ namespace flame
 			//	}
 			//}, Capture().set_thiz(this));
 		}
+
+		auto etitle = entity->find_child("title");
+		fassert(etitle);
+		title_text = etitle->get_component_t<cTextPrivate>();
+		fassert(title_text);
+		if (!title.empty())
+			title_text->set_text(title.c_str());
+
+		close_button = entity->find_child("close_button");
+		fassert(close_button);
+		close_button->set_visible(!close_listeners.empty());
+
+		content = entity->find_child("content");
+		fassert(content);
+	}
+
+	bool dWindowPrivate::on_child_added(Entity* _e)
+	{
+		if (load_finished)
+		{
+			content->add_child((EntityPrivate*)_e);
+			return true;
+		}
+		return false;
 	}
 
 	dWindow* dWindow::create()

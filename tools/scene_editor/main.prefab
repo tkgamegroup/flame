@@ -1,24 +1,70 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="hsplitter" >
-    <cElement alignx="MinMax" aligny="MinMax" />
-    <entity src="vsplitter" >
-      <cElement alignx="MinMax" aligny="MinMax" />
-      <entity src="vscroller" >
-        <cElement padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" />
-        <entity attach="view" name="hierarchy" src="tree">
-          <cElement padding="4,4,4,4" alignx="MinMax" />
-        </entity>
-      </entity>
-      <entity src="vscroller" >
-        <cElement padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" />
-        <entity attach="view" name="inspector" src="tree">
-          <cElement padding="4,4,4,4" alignx="MinMax" aligny="MinMax" />
-        </entity>
-      </entity>
-    </entity>
-    <entity name="scene">
-      <cElement alignx="MinMax" aligny="MinMax" />
-    </entity>
-  </entity>
+  <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+    <cScript>
+      ui = entity
+    </cScript>
+    <eMenuBar>
+      <eMenu text="file" >
+        <eMenuItem text="open" >
+          <cScript>
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local d = find_udt("Entity").static_functions.create()
+		          d.load("prefabs/input_dialog")
+              local l = find_udt("Entity").static_functions.create()
+		          l.load("prefabs/layer")
+              
+              d.find_driver("dWindow").set_title("File Name")
+              d.find_driver("dInputDialog").add_callback(function(ok, text)
+                if ok then print(text) end
+                l.get_parent().remove_child(l)
+              end)
+              l.add_child(d)
+              ui.add_child(l)
+            end)
+          </cScript>
+        </eMenuItem>
+        <eMenuItem text="save" >
+          <cScript>
+
+          </cScript>
+        </eMenuItem>
+      </eMenu>
+    </eMenuBar>
+    <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" >
+      <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" >
+        </eScroller>
+        <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8" >
+          <cScript>
+            scene = entity
+            
+            function load_scene(filename)
+              local p = scene.get_parent()
+              p.remove_child(scene)
+              scene = find_udt("Entity").static_functions.create()
+		          scene.load(filename)
+              p.add_child(scene)
+              
+              update_hierachy()
+            end
+          </cScript>
+        </eElement>
+      </eSplitter>
+      <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" >
+          <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
+            <cScript>
+              function update_hierachy()
+
+              end
+            </cScript>
+          </eTree>
+        </eScroller>
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1">
+          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" />
+        </eScroller>
+      </eSplitter>
+    </eSplitter>
+  </eElement>
 </prefab>

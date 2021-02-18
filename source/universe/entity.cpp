@@ -352,16 +352,6 @@ namespace flame
 		components.erase(it);
 	}
 
-	void EntityPrivate::remove_all_components(bool destroy)
-	{
-		if (!destroy)
-		{
-			for (auto& c : components)
-				c.second.c.release();
-		}
-		components.clear();
-	}
-
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
 		fassert(e && e != this && !e->parent);
@@ -451,19 +441,6 @@ namespace flame
 		if (!destroy)
 			it->release();
 		children.erase(it);
-	}
-
-	void EntityPrivate::remove_all_children(bool destroy)
-	{
-		for (auto& c : children)
-			on_child_removed(c.get());
-
-		if (!destroy)
-		{
-			for (auto& c : children)
-				c.release();
-		}
-		children.clear();
 	}
 
 	EntityPrivate* EntityPrivate::find_child(const std::string& name) const

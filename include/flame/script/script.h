@@ -14,6 +14,7 @@ namespace flame
 	{
 		struct Instance
 		{
+			virtual void push_bool(bool b) = 0;
 			virtual void push_int(int i) = 0;
 			virtual void push_float(float f) = 0;
 			virtual void push_vec2(const vec2& v) = 0;

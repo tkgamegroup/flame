@@ -283,6 +283,47 @@ namespace flame
 			dispatch_mouse_single(active, true);
 		dispatch_mouse_recursively(world->root.get());
 
+		auto set_state = [&](cReceiverPrivate* er) {
+			auto e = er->entity;
+			auto s = (e->state & (~StateHovering) & (~StateFocusing) & (~StateActive));
+			if (er == hovering)
+				s |= StateHovering;
+			if (er == focusing)
+				s |= StateFocusing;
+			if (er == active)
+				s |= StateActive;
+			e->set_state((StateFlags)s);
+		};
+		if (prev_hovering)
+			set_state(prev_hovering);
+		if (hovering)
+			set_state(hovering);
+		if (prev_focusing)
+			set_state(prev_focusing);
+		if (focusing)
+			set_state(focusing);
+
+		if (prev_focusing != focusing)
+		{
+			if (focusing)
+			{
+				keyboard_target = nullptr;
+				auto e = focusing->entity;
+				while (e)
+				{
+					auto er = e->get_component_t<cReceiverPrivate>();
+					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
+					{
+						keyboard_target = er;
+						break;
+					}
+					e = e->parent;
+				}
+			}
+
+			dbclick_timer = -1.f;
+		}
+
 		for (auto er : mouse_targets)
 		{
 			if (mdisp.x != 0 || mdisp.y != 0)
@@ -375,47 +416,6 @@ namespace flame
 			//	dbclick_timer = -1.f;
 			//else if (disp == 0)
 			//	dbclick_timer = 0.5f;
-		}
-
-		auto set_state = [&](cReceiverPrivate* er) {
-			auto e = er->entity;
-			auto s = (e->state & (~StateHovering) & (~StateFocusing) & (~StateActive));
-			if (er == hovering)
-				s |= StateHovering;
-			if (er == focusing)
-				s |= StateFocusing;
-			if (er == active)
-				s |= StateActive;
-			e->set_state((StateFlags)s);
-		};
-		if (prev_hovering)
-			set_state(prev_hovering);
-		if (hovering)
-			set_state(hovering);
-		if (prev_focusing)
-			set_state(prev_focusing);
-		if (focusing)
-			set_state(focusing);
-
-		if (prev_focusing != focusing)
-		{
-			if (focusing)
-			{
-				keyboard_target = nullptr;
-				auto e = focusing->entity;
-				while (e)
-				{
-					auto er = e->get_component_t<cReceiverPrivate>();
-					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
-					{
-						keyboard_target = er;
-						break;
-					}
-					e = e->parent;
-				}
-			}
-
-			dbclick_timer = -1.f;
 		}
 
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)

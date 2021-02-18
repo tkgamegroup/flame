@@ -6,6 +6,27 @@
 
 namespace flame
 {
+	void dSplitterPrivate::set_type(SplitterType _type)
+	{
+		type = _type;
+		if (load_finished)
+		{
+			switch (type)
+			{
+			case SplitterHorizontal:
+				element->set_layout_type(LayoutHorizontal);
+				bar_element->set_alignx(AlignNone);
+				bar_element->set_aligny(AlignMinMax);
+				break;
+			case SplitterVertical:
+				element->set_layout_type(LayoutVertical);
+				bar_element->set_alignx(AlignMinMax);
+				bar_element->set_aligny(AlignNone);
+				break;
+			}
+		}
+	}
+
 	void dSplitterPrivate::on_load_finished()
 	{
 		struct cSpy : Component
@@ -34,17 +55,7 @@ namespace flame
 		bar_receiver = bar->get_component_t<cReceiverPrivate>();
 		fassert(bar_receiver);
 
-		switch (type)
-		{
-		case SplitterHorizontal:
-			element->set_layout_type(LayoutHorizontal);
-			bar_element->set_aligny(AlignMinMax);
-			break;
-		case SplitterVertical:
-			element->set_layout_type(LayoutVertical);
-			bar_element->set_alignx(AlignMinMax);
-			break;
-		}
+		set_type(type);
 
 		{
 			auto p = bar->get_parent();

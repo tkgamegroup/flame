@@ -17,22 +17,18 @@
       selected.p = nil
       function select(e)
         if selected.p then
-          selected.set_state(0)
+          selected.set_state(find_enum("StateFlags")["None"])
         end
         selected = e
         if selected.p then
-          selected.set_state(8)
+          selected.set_state(find_enum("StateFlags")["Selected"])
         end
         s_renderer.mark_dirty()
       end
-
-      status_str = ""
-      status_str_changed = false
     </cScript>
     <entity name="scene">
       <cNode />
-      <cScript src="defe:shoot_ball.lua
-               defe:plane_tree.lua" >
+      <cScript src="defe:shoot_ball.lua defe:plane_tree.lua" >
         scene = entity
 
         selected = {}
@@ -151,6 +147,9 @@
       </cScript>
     </entity>
     <eElement name="ui" alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+      <cScript>
+        ui = entity
+      </cScript>
       <eMenuBar>
         <eMenu text="shading" >
 		      <eMenuItem checkable="true" checked="true" text="solid" >
@@ -173,61 +172,30 @@
           </eMenuItem>
         </eMenu>
         <eMenu text="show" >
-            <eMenuItem checkable="true" checked="true" text="global axes" >
-              <cScript>
-                local menu_item = entity.find_driver("dMenuItem")
-                local global_axes = base.find_child("hud_global_axes")
-                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                  local checked = menu_item.get_checked()
-                  checked = not checked
-                  menu_item.set_checked(checked)
-                  global_axes.set_visible(checked)
-                end)
-              </cScript>
-            </eMenuItem>
-            <eMenuItem checkable="true" text="crosshair" >
-              <cScript>
-                local menu_item = entity.find_driver("dMenuItem")
-                local crosshair = base.find_child("hud_crosshair")
-                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                  local checked = menu_item.get_checked()
-                  checked = not checked
-                  menu_item.set_checked(checked)
-                  crosshair.set_visible(checked)
-                end)
-              </cScript>
-            </eMenuItem>
-            <eMenuItem checkable="true" text="ui state" >
-              <cScript>
-                local menu_item = entity.find_driver("dMenuItem")
-                show_ui_state = false
-                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+          <eMenuItem checkable="true" checked="true" text="global axes" >
+            <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
+              local global_axes = base.find_child("hud_global_axes")
+              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
                 local checked = menu_item.get_checked()
                 checked = not checked
                 menu_item.set_checked(checked)
-                show_ui_state = checked
-                status_str = ""
-                status_str_changed = true
-                end)
-                entity.add_event(function()
-                if show_ui_state then
-                local hovering = s_dispatcher.get_hovering()
-                local focusing = s_dispatcher.get_focusing()
-                local active = s_dispatcher.get_active()
-                local hovering_name = "null"
-                if hovering.p then hovering_name = string.sub(tostring(hovering.entity.p), 10).." ["..hovering.entity.get_name().."]" end
-                local focusing_name = "null"
-                if focusing.p then focusing_name = string.sub(tostring(focusing.entity.p), 10).." ["..focusing.entity.get_name().."]" end
-                local active_name = "null"
-                if active.p then active_name = string.sub(tostring(active.entity.p), 10).." ["..active.entity.get_name().."]" end
-
-                status_str = string.format("hovering: %s, focusing: %s, active: %s",
-                  hovering_name, focusing_name, active_name)
-                status_str_changed = true
-                end
-                end)
-              </cScript>
-            </eMenuItem>
+                global_axes.set_visible(checked)
+              end)
+            </cScript>
+          </eMenuItem>
+          <eMenuItem checkable="true" text="crosshair" >
+            <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
+              local crosshair = base.find_child("hud_crosshair")
+              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                local checked = menu_item.get_checked()
+                checked = not checked
+                menu_item.set_checked(checked)
+                crosshair.set_visible(checked)
+              end)
+            </cScript>
+          </eMenuItem>
 		      <eMenuItem checkable="true" text="physics visualization" >
             <cScript>
               local menu_item = entity.find_driver("dMenuItem")
@@ -236,6 +204,56 @@
                 checked = not checked
                 menu_item.set_checked(checked)
                 s_physics.set_visualization(checked)
+              end)
+            </cScript>
+          </eMenuItem>
+          <eMenuItem checkable="true" text="ui reflector" >
+            <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
+              ui_reflector = {}
+              ui_reflector.p = nil
+                
+              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                local checked = menu_item.get_checked()
+                checked = not checked
+                menu_item.set_checked(checked)
+                if checked then
+                  if not ui_reflector.p then
+                    ui_reflector = find_udt("Entity").static_functions.create()
+		                ui_reflector.load("ui_reflector")
+                    ui.add_child(ui_reflector)
+                  end
+                else
+                  if ui_reflector.p then
+                    ui_reflector.get_parent().remove_child(ui_reflector)
+                    ui_reflector.p = nil
+                  end
+                end
+              end)
+            </cScript>
+          </eMenuItem>
+          <eMenuItem checkable="true" text="hierarchy" >
+            <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
+              hierarchy = {}
+              hierarchy.p = nil
+
+              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                  local checked = menu_item.get_checked()
+                  checked = not checked
+                  menu_item.set_checked(checked)
+                if checked then
+                  if not hierarchy.p then
+                    hierarchy = find_udt("Entity").static_functions.create()
+		                hierarchy.load("hierarchy")
+                    ui.add_child(hierarchy)
+                  end
+                else
+                  if hierarchy.p then
+                    hierarchy.get_parent().remove_child(hierarchy)
+                    hierarchy.p = nil
+                  end
+                end
               end)
             </cScript>
           </eMenuItem>
@@ -252,17 +270,6 @@
             </cScript>
           </eMenuItem>
         </eMenu>
-        <eText name="status" alignx="Max" aligny="Min" align_in_layout="false" >
-          <cScript>
-            local text = entity.find_component("cText")
-            entity.add_event(function()
-              if status_str_changed then
-                text.set_text(status_str)
-                status_str_changed = false
-              end
-            end)
-          </cScript>
-        </eText>
       </eMenuBar>
       <eElement name="toolbar" layout_type="Horizontal" >
         <eToolButton text="" />

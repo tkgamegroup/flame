@@ -14,6 +14,12 @@ namespace flame
 		{
 		}
 
+		virtual const wchar_t* get_title() const = 0;
+		virtual void set_title(const wchar_t* title) = 0;
+
+		virtual void* add_close_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
+		virtual void remove_close_listener(void* lis) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static dWindow* create();
 	};
 }

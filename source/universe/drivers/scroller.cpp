@@ -6,9 +6,24 @@
 
 namespace flame
 {
-	void dScrollerPrivate::set_scroll_type(ScrollType type)
+	void dScrollerPrivate::set_type(ScrollType _type)
 	{
-
+		type = _type;
+		if (load_finished)
+		{
+			switch (type)
+			{
+			case ScrollHorizontal:
+				break;
+			case ScrollVertical:
+				element->set_layout_type(LayoutHorizontal);
+				track_element->set_alignx(AlignMax);
+				track_element->set_aligny(AlignMinMax);
+				break;
+			case ScrollBoth:
+				break;
+			}
+		}
 	}
 
 	void dScrollerPrivate::on_load_finished()
@@ -74,18 +89,7 @@ namespace flame
 			}
 		}, Capture().set_thiz(this), view_element);
 
-		switch (type)
-		{
-		case ScrollHorizontal:
-			break;
-		case ScrollVertical:
-			element->set_layout_type(LayoutHorizontal);
-			track_element->set_alignx(AlignMax);
-			track_element->set_aligny(AlignMinMax);
-			break;
-		case ScrollBoth:
-			break;
-		}
+		set_type(type);
 	}
 
 	bool dScrollerPrivate::on_child_added(Entity* e)

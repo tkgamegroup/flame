@@ -19,6 +19,9 @@ namespace flame
 		SplitterType type = SplitterHorizontal;
 		std::vector<cElementPrivate*> targets;
 
+		SplitterType get_type() const override { return type; }
+		void set_type(SplitterType type) override;
+
 		void on_load_finished() override;
 		bool on_child_added(Entity* e) override;
 	};

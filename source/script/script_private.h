@@ -15,6 +15,7 @@ namespace flame
 			InstancePrivate();
 			~InstancePrivate();
 
+			void push_bool(bool b) override;
 			void push_int(int i) override;
 			void push_float(float f) override;
 			void push_vec2(const vec2& v) override;

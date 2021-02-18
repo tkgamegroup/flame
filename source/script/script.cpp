@@ -395,11 +395,11 @@ namespace flame
 									switch (basic)
 									{
 									case CharType:
-										lua_pushstring(state, (char*)pointer);
+										lua_pushstring(state, pointer ? (char*)pointer : "");
 										pushed_number = 1;
 										break;
 									case WideCharType:
-										lua_pushstring(state, w2s((wchar_t*)pointer).c_str());
+										lua_pushstring(state, pointer ? w2s((wchar_t*)pointer).c_str() : "");
 										pushed_number = 1;
 										break;
 									default:
@@ -632,6 +632,11 @@ namespace flame
 				default_instance = nullptr;
 
 			remove_assert_callback(assert_callback);
+		}
+
+		void InstancePrivate::push_bool(bool b)
+		{
+			lua_pushboolean(lua_state, b);
 		}
 
 		void InstancePrivate::push_int(int i)

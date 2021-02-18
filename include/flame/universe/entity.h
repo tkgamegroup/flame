@@ -33,14 +33,12 @@ namespace flame
 
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c, bool destroy = true) = 0;
-		virtual void remove_all_components(bool destroy = true) = 0;
 
 		virtual uint get_children_count() const = 0;
 		virtual Entity* get_child(uint idx) const = 0;
 		virtual void add_child(Entity* e, int position = -1 /* -1 is end */ ) = 0;
 		virtual void reposition_child(uint pos1, uint pos2) = 0;
 		virtual void remove_child(Entity* e, bool destroy = true) = 0;
-		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
 
 		virtual Driver* get_driver(uint64 hash = 0, uint idx = 0) const = 0;

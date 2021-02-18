@@ -29,8 +29,8 @@ namespace flame
 		EntityPrivate* target = nullptr;
 		cElementPrivate* target_element = nullptr;
 
-		ScrollType get_scroll_type() const override { return type; }
-		void set_scroll_type(ScrollType type) override;
+		ScrollType get_type() const override { return type; }
+		void set_type(ScrollType type) override;
 
 		void on_load_finished() override;
 		bool on_child_added(Entity* e) override;

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<prefab>
+    <eWindow pos="50,50" size="280,100" align_in_layout="false" title="UI Reflector" >
+      <cScript>
+        local hovering_text = entity.find_child("hovering_text").find_component("cText")
+        local focusing_text = entity.find_child("focusing_text").find_component("cText")
+        local active_text = entity.find_child("active_text").find_component("cText")
+        entity.add_event(function()
+          local hovering = s_dispatcher.get_hovering()
+          local focusing = s_dispatcher.get_focusing()
+          local active = s_dispatcher.get_active()
+          if hovering.p then 
+            hovering_text.set_text(string.sub(tostring(hovering.entity.p), 10).." ["..hovering.entity.get_name().."]")
+          else
+            hovering_text.set_text("----------------")
+          end
+          if focusing.p then 
+            focusing_text.set_text(string.sub(tostring(focusing.entity.p), 10).." ["..focusing.entity.get_name().."]")
+          else
+            focusing_text.set_text("----------------")
+          end
+          if active.p then 
+            active_text.set_text(string.sub(tostring(active.entity.p), 10).." ["..active.entity.get_name().."]")
+          else
+            active_text.set_text("----------------")
+          end
+        end)
+      </cScript>
+      <eElement layout_type="Horizontal" layout_gap="2" >
+        <eText text="Hovering:       " />
+        <eText name="hovering_text" text="----------------" />
+      </eElement>
+      <eElement layout_type="Horizontal" layout_gap="2" >
+        <eText text="Focusing:       " />
+        <eText name="focusing_text" text="----------------" />
+      </eElement>
+      <eElement layout_type="Horizontal" layout_gap="2" >
+        <eText text="Active:            " />
+        <eText name="active_text" text="----------------" />
+      </eElement>
+    </eWindow >
+</prefab>
