@@ -61,6 +61,7 @@ namespace flame
 
 		WorldPrivate* world = nullptr;
 		EntityPrivate* parent = nullptr;
+		bool redirectable = true;
 
 		StateFlags state = StateNone;
 		std::vector<std::unique_ptr<StateRule>> state_rules;

@@ -158,6 +158,7 @@ namespace flame
 
 		root->remove_child(items, false);
 		items->set_visible(false);
+		items->redirectable = false;
 		entity->add_child(items);
 
 		opened = false;

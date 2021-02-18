@@ -320,7 +320,7 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		fassert(!parent);
+		fassert(!parent || c->type_hash == S<"cSpy"_h>);
 		fassert(!c->entity);
 		fassert(components.find(c->type_hash) == components.end());
 
@@ -338,7 +338,7 @@ namespace flame
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		fassert(!parent);
+		fassert(!parent || c->type_hash == S<"cSpy"_h>);
 
 		auto it = components.find(c->type_hash);
 		if (it == components.end())
@@ -356,12 +356,22 @@ namespace flame
 	{
 		fassert(e && e != this && !e->parent);
 
+		if (e->redirectable && position == -1)
+		{
+			for (auto& d : drivers)
+			{
+				if (d->on_child_added(e))
+					return;
+			}
+		}
+
 		if (position == -1)
 			position = children.size();
 
 		children.emplace(children.begin() + position, e);
 
 		e->parent = this;
+		e->redirectable = false;
 		e->depth = depth + 1;
 		e->index = position;
 		e->update_visibility();
@@ -404,6 +414,7 @@ namespace flame
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
 	{
 		e->parent = nullptr;
+		e->redirectable = true;
 
 		for (auto& c : e->components)
 			c.second.c->on_self_removed();
@@ -786,15 +797,7 @@ namespace flame
 					}
 				}
 				load_prefab(e, n_c, filename, false, los, state_rules);
-
-				auto driver_processed = false;
-				for (auto& d : e_dst->drivers)
-				{
-					if (d->on_child_added(e))
-						driver_processed = true;
-				}
-				if (!driver_processed)
-					e_dst->add_child(e);
+				e_dst->add_child(e);
 			}
 		}
 

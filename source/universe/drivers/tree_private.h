@@ -8,50 +8,47 @@ namespace flame
 	struct cTextPrivate;
 	struct cReceiverPrivate;
 
-	struct cTreePrivate : dTree
+	struct dTreePrivate : dTree
 	{
 		EntityPrivate* selected = nullptr;
-
-		cReceiverPrivate* receiver = nullptr;
-
-		void* mouse_listener = nullptr;
-
-		void on_gain_receiver();
-		void on_lost_receiver();
 
 		Entity* get_selected() const override { return selected; }
 		void set_selected(Entity* e) override;
 
 		void expand_to_selected() override;
+
+		void on_load_finished() override;
+		bool on_child_added(Entity* e) override;
 	};
 
-	struct cTreeLeafPrivate : cTreeLeaf
+	struct dTreeLeafPrivate : dTreeLeaf
 	{
-		cTreePrivate* tree = nullptr;
-		cReceiverPrivate* receiver = nullptr;
+		dTreePrivate* tree;
+		cTextPrivate* title_text;
 
-		void* mouse_listener = nullptr;
+		std::wstring title;
 
-		void on_gain_receiver();
-		void on_lost_receiver();
+		const wchar_t* get_title() const override { return title.c_str(); };
+		void set_title(const wchar_t* title) override;
+
+		void on_load_finished() override;
 	};
 
-	struct cTreeNodePrivate : cTreeNode
+	struct dTreeNodePrivate : dTreeNode
 	{
-		cTreePrivate* tree = nullptr;
-		cReceiverPrivate* receiver = nullptr;
-		cTextPrivate* arrow_text = nullptr;
-		cReceiverPrivate* arrow_receiver = nullptr;
-		cElementPrivate* items_element = nullptr;
+		dTreePrivate* tree;
+		cTextPrivate* title_text;
+		cTextPrivate* arrow_text;
+		EntityPrivate* items;
 
-		void* mouse_listener = nullptr;
-		void* arrow_mouse_listener = nullptr;
+		std::wstring title;
+
+		const wchar_t* get_title() const override { return title.c_str(); };
+		void set_title(const wchar_t* title) override;
 
 		void toggle_collapse() override;
 
-		void on_gain_receiver();
-		void on_lost_receiver();
-		void on_gain_arrow_receiver();
-		void on_lost_arrow_receiver();
+		void on_load_finished() override;
+		bool on_child_added(Entity* e) override;
 	};
 }

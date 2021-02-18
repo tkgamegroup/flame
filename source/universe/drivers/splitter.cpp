@@ -41,7 +41,8 @@ namespace flame
 
 			void on_state_changed(StateFlags s) override
 			{
-				thiz->bar_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
+				thiz->bar_receiver->dispatcher->window->set_cursor(
+					(s & StateHovering) != 0 ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 			}
 		};
 
@@ -57,13 +58,7 @@ namespace flame
 
 		set_type(type);
 
-		{
-			auto p = bar->get_parent();
-			auto idx = bar->index;
-			p->remove_child(bar, false);
-			bar->add_component(f_new<cSpy>(this));
-			p->add_child(bar, idx);
-		}
+		bar->add_component(f_new<cSpy>(this));
 
 		bar_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<dSplitterPrivate>();
@@ -120,6 +115,7 @@ namespace flame
 				auto e = (EntityPrivate*)_e;
 				auto element = e->get_component_t<cElementPrivate>();
 				fassert(element);
+				e->redirectable = false;
 				entity->add_child(e, targets.size() == 0 ? 0 : 2);
 				targets.push_back(element);
 				return true;

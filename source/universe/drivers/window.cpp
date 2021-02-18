@@ -21,7 +21,6 @@ namespace flame
 
 	void* dWindowPrivate::add_close_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
-
 		if (load_finished)
 			close_button->set_visible(!close_listeners.empty());
 		return nullptr;

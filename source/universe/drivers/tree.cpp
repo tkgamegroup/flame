@@ -7,7 +7,27 @@
 
 namespace flame
 {
-	void cTreePrivate::set_selected(Entity* e)
+	static void populate_tree(dTreePrivate* t, EntityPrivate* e)
+	{
+		auto dtn = e->get_driver_t<dTreeNodePrivate>();
+		if (dtn)
+		{
+			dtn->tree = t;
+			if (dtn->load_finished)
+			{
+				for (auto& e : dtn->items->children)
+					populate_tree(t, e.get());
+			}
+		}
+		else
+		{
+			auto dtl = e->get_driver_t<dTreeLeafPrivate>();
+			if (dtl)
+				dtl->tree = t;
+		}
+	}
+
+	void dTreePrivate::set_selected(Entity* e)
 	{
 		if (selected == e)
 			return;
@@ -16,8 +36,6 @@ namespace flame
 		if (e)
 			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
 		selected = (EntityPrivate*)e;
-		if (entity)
-			entity->data_changed(this, S<"selected"_h>);
 	}
 
 	//	static void expand(Entity* e, Entity* r)
@@ -30,101 +48,134 @@ namespace flame
 	//		expand(p->parent, r);
 	//	}
 
-	void cTreePrivate::expand_to_selected()
+	void dTreePrivate::expand_to_selected()
 	{
-		//		if (!selected)
-		//			return;
-		//		expand(selected->parent, entity);
-		//		looper().add_event([](Capture& c) {
-		//			auto thiz = c.thiz<cTreePrivate>();
-		//			auto selected = thiz->selected;
-		//			if (!selected)
-		//				return;
-		//			auto parent = thiz->entity->parent;
-		//			if (!parent || parent->children.s < 2)
-		//				return;
-		//			auto e_scrollbar = parent->children[1];
-		//			auto c_scrollbar = e_scrollbar->get_component(cScrollbar);
-		//			if (!c_scrollbar)
-		//				return;
-		//			auto e_thumb = e_scrollbar->children[0];
-		//			auto e_tree = thiz->entity;
-		//			auto c_tree_layout = e_tree->get_component(cLayout);
-		//			e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y *
-		//				(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
-		//			e_thumb->get_component(cScrollbarThumb)->update(0.f);
-		//		}, Capture().set_thiz(this), 1U);
+		//if (!selected)
+		//	return;
+		//expand(selected->parent, entity);
+		//looper().add_event([](Capture& c) {
+		//	auto thiz = c.thiz<cTreePrivate>();
+		//	auto selected = thiz->selected;
+		//	if (!selected)
+		//		return;
+		//	auto parent = thiz->entity->parent;
+		//	if (!parent || parent->children.s < 2)
+		//		return;
+		//	auto e_scrollbar = parent->children[1];
+		//	auto c_scrollbar = e_scrollbar->get_component(cScrollbar);
+		//	if (!c_scrollbar)
+		//		return;
+		//	auto e_thumb = e_scrollbar->children[0];
+		//	auto e_tree = thiz->entity;
+		//	auto c_tree_layout = e_tree->get_component(cLayout);
+		//	e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y *
+		//		(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
+		//	e_thumb->get_component(cScrollbarThumb)->update(0.f);
+		//}, Capture().set_thiz(this), 1U);
 	}
 
-	void cTreePrivate::on_gain_receiver()
+	bool dTreePrivate::on_child_added(Entity* e)
 	{
-		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			c.thiz<cTreePrivate>()->set_selected(nullptr);
+		if (load_finished)
+			populate_tree(this, (EntityPrivate*)e);
+		return false;
+	}
+
+	void dTreePrivate::on_load_finished()
+	{
+		auto receiver = entity->get_component_t<cReceiverPrivate>();
+		fassert(receiver);
+
+		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			c.thiz<dTreePrivate>()->set_selected(nullptr);
 		}, Capture().set_thiz(this));
-	}
-
-	void cTreePrivate::on_lost_receiver()
-	{
-		receiver->remove_mouse_left_down_listener(mouse_listener);
 	}
 
 	dTree* dTree::create()
 	{
-		return f_new<cTreePrivate>();
+		return f_new<dTreePrivate>();
 	}
 
-	void cTreeLeafPrivate::on_gain_receiver()
+	void dTreeLeafPrivate::set_title(const wchar_t* _title)
 	{
-		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<cTreeLeafPrivate>();
+		title = _title;
+		if (load_finished)
+			title_text->set_text(title.c_str());
+	}
+
+	void dTreeLeafPrivate::on_load_finished()
+	{
+		title_text = entity->get_component_t<cTextPrivate>();
+		fassert(title_text);
+		auto receiver = entity->get_component_t<cReceiverPrivate>();
+		fassert(receiver);
+
+		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<dTreeLeafPrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
 	}
 
-	void cTreeLeafPrivate::on_lost_receiver()
+	dTreeLeaf* dTreeLeaf::create()
 	{
-		receiver->remove_mouse_left_down_listener(mouse_listener);
+		return f_new<dTreeLeafPrivate>();
 	}
 
-	cTreeLeaf* cTreeLeaf::create()
+	void dTreeNodePrivate::set_title(const wchar_t* _title)
 	{
-		return f_new<cTreeLeafPrivate>();
+		title = _title;
+		if (load_finished)
+			title_text->set_text(title.c_str());
 	}
 
-	void cTreeNodePrivate::on_gain_receiver()
+	void dTreeNodePrivate::on_load_finished()
 	{
-		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<cTreeNodePrivate>();
+		auto etitle = entity->find_child("title");
+		fassert(etitle);
+		title_text = etitle->get_component_t<cTextPrivate>();
+		fassert(title_text);
+		auto title_receiver = etitle->get_component_t<cReceiverPrivate>();
+		fassert(title_receiver);
+
+		title_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<dTreeNodePrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
-	}
 
-	void cTreeNodePrivate::on_lost_receiver()
-	{
-		receiver->remove_mouse_left_down_listener(mouse_listener);
-	}
-
-	void cTreeNodePrivate::on_gain_arrow_receiver()
-	{
-		arrow_mouse_listener = arrow_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			c.thiz<cTreeNodePrivate>()->toggle_collapse();
+		auto earrow = entity->find_child("arrow");
+		fassert(earrow);
+		arrow_text = earrow->get_component_t<cTextPrivate>();
+		fassert(arrow_text);
+		auto arrow_receiver = earrow->get_component_t<cReceiverPrivate>();
+		fassert(arrow_receiver);
+		arrow_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			c.thiz<dTreeNodePrivate>()->toggle_collapse();
 		}, Capture().set_thiz(this));
+
+		items = entity->find_child("items");
+		fassert(items);
 	}
 
-	void cTreeNodePrivate::on_lost_arrow_receiver()
+	bool dTreeNodePrivate::on_child_added(Entity* _e)
 	{
-		arrow_receiver->remove_mouse_left_down_listener(arrow_mouse_listener);
+		if (load_finished)
+		{
+			auto e = (EntityPrivate*)_e;
+			populate_tree(tree, e);
+			items->add_child(e);
+			return true;
+		}
+		return false;
 	}
 
-	void cTreeNodePrivate::toggle_collapse()
+	void dTreeNodePrivate::toggle_collapse()
 	{
-		auto e = items_element->entity;
-		e->set_visible(!e->visible);
-		arrow_text->set_text(e->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
+		items->set_visible(!items->visible);
+		arrow_text->set_text(items->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 	}
 
-	cTreeNode* cTreeNode::create()
+	dTreeNode* dTreeNode::create()
 	{
-		return f_new<cTreeNodePrivate>();
+		return f_new<dTreeNodePrivate>();
 	}
 }

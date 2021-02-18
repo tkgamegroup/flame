@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <eWindow driver="dInputDialog" pos="200,100" >
-    <eEdit name="text" />
+    <eEdit name="text" alignx="MinMax" />
     <eElement layout_type="Horizontal" layout_gap="4" >
       <eButton name="ok" text="Ok" />
       <eButton name="cancel" text="Cancel "/>

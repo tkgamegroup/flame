@@ -16,7 +16,9 @@
               
               d.find_driver("dWindow").set_title("File Name")
               d.find_driver("dInputDialog").add_callback(function(ok, text)
-                if ok then print(text) end
+                if ok then 
+                  load_scene(text)
+                end
                 l.get_parent().remove_child(l)
               end)
               l.add_child(d)
@@ -39,12 +41,14 @@
           <cScript>
             scene = entity
             
+            prefab = {}
+            prefab.p = nil
+            
             function load_scene(filename)
-              local p = scene.get_parent()
-              p.remove_child(scene)
-              scene = find_udt("Entity").static_functions.create()
-		          scene.load(filename)
-              p.add_child(scene)
+              if prefab.p then scene.remove_child(prefab) end
+              prefab = find_udt("Entity").static_functions.create()
+		          prefab.load(filename)
+              scene.add_child(prefab)
               
               update_hierachy()
             end
@@ -55,8 +59,32 @@
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" >
           <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
             <cScript>
+              hierarchy = entity
               function update_hierachy()
-
+                if hierarchy.get_children_count() > 0 then
+                  hierarchy.remove_child(hierarchy.get_child(0))
+                end
+                if prefab.p then
+                  function create_nodes(src, dst)
+                    local count = src.get_children_count()
+                    if count > 0 then
+                      local e = find_udt("Entity").static_functions.create()
+                      e.load("prefabs/tree_node")
+                      e.find_driver("dTreeNode").set_title("["..src.get_name().."]")
+                      dst.add_child(e)
+                      for i = 0, count-1, 1 do
+                        local c = src.get_child(i)
+                        create_nodes(c, e)
+                      end
+                    else
+                      local e = find_udt("Entity").static_functions.create()
+                      e.load("prefabs/tree_leaf")
+                      e.find_driver("dTreeLeaf").set_title("["..src.get_name().."]")
+                      dst.add_child(e)
+                    end
+                  end
+                  create_nodes(prefab, hierarchy)
+                end
               end
             </cScript>
           </eTree>

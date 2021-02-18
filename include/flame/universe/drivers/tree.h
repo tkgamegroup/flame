@@ -1,16 +1,16 @@
 #pragma once
 
-#include <flame/universe/component.h>
+#include <flame/universe/driver.h>
 
 namespace flame
 {
-	struct dTree : Component
+	struct dTree : Driver
 	{
 		inline static auto type_name = "flame::dTree";
 		inline static auto type_hash = ch(type_name);
 
 		dTree() :
-			Component(type_name, type_hash)
+			Driver(type_name, type_hash)
 		{
 		}
 
@@ -22,31 +22,37 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static dTree* create();
 	};
 
-	struct cTreeLeaf : Component
+	struct dTreeLeaf : Driver
 	{
-		inline static auto type_name = "flame::cTreeLeaf";
+		inline static auto type_name = "flame::dTreeLeaf";
 		inline static auto type_hash = ch(type_name);
 
-		cTreeLeaf() :
-			Component(type_name, type_hash)
+		dTreeLeaf() :
+			Driver(type_name, type_hash)
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
+		virtual const wchar_t* get_title() const = 0;
+		virtual void set_title(const wchar_t* title) = 0;
+
+		FLAME_UNIVERSE_EXPORTS static dTreeLeaf* create();
 	};
 
-	struct cTreeNode : Component
+	struct dTreeNode : Driver
 	{
-		inline static auto type_name = "flame::cTreeNode";
+		inline static auto type_name = "flame::dTreeNode";
 		inline static auto type_hash = ch(type_name);
 
-		cTreeNode() :
-			Component(type_name, type_hash)
+		dTreeNode() :
+			Driver(type_name, type_hash)
 		{
 		}
+
+		virtual const wchar_t* get_title() const = 0;
+		virtual void set_title(const wchar_t* title) = 0;
 
 		virtual void toggle_collapse() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
+		FLAME_UNIVERSE_EXPORTS static dTreeNode* create();
 	};
 }
