@@ -61,8 +61,8 @@ namespace flame
 
 	void cCameraPrivate::draw(graphics::Canvas* canvas)
 	{
-		auto out = canvas->get_output(0);
-		auto size = out ? vec2(out->get_image()->get_size()) : vec2(1.f);
+		auto vp = canvas->get_viewport();
+		auto size = max(vec2(1.f), vp.RB - vp.LT);
 		canvas->set_camera(fovy, size.x / size.y, near, far, node->g_rot, node->g_pos);
 	}
 

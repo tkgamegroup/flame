@@ -38,6 +38,11 @@ namespace flame
 					for (auto& d : element->drawers[1])
 						d->call(canvas);
 				}
+				if (last_element != element)
+				{
+					last_element = element;
+					last_element_changed = true;
+				}
 			}
 		}
 		if (!node_culled)
@@ -46,6 +51,8 @@ namespace flame
 			if (node)
 			{
 				node->update_transform();
+				if (last_element_changed)
+					canvas->set_viewport(last_element->aabb);
 				for (auto& d : node->drawers)
 					d->call(canvas);
 			}
@@ -66,6 +73,8 @@ namespace flame
 	{
 		if (!dirty && !always_update)
 			return;
+		last_element = nullptr;
+		last_element_changed = false;
 		render(world->root.get(), false, !camera);
 		dirty = false;
 	}

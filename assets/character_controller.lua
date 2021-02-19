@@ -26,9 +26,9 @@ character.update_dir = function()
 	character.dir2 = character.node.get_local_dir(0)
 end
 
-local base_receiver = base.find_component("cReceiver")
+local scene_receiver = scene.find_component("cReceiver")
 
-base_receiver.add_key_down_listener(function(k)
+scene_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
 		character.mesh.set_animation("walk", true, 0)
@@ -50,7 +50,7 @@ base_receiver.add_key_down_listener(function(k)
 	end
 end)
 
-base_receiver.add_key_up_listener(function(k)
+scene_receiver.add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
 		character.mesh.set_animation("", false, 0)
@@ -72,7 +72,7 @@ base_receiver.add_key_up_listener(function(k)
 	end
 end)
 
-base_receiver.add_mouse_left_up_listener(function()
+scene_receiver.add_mouse_left_up_listener(function()
 	--character.mesh.set_animation("attack", false, 1)
 end)
 

@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-    <eWindow pos="500,50" size="200,300" title="Hierarchy" >
-      <cScript>
-      </cScript>
-    </eWindow >
-</prefab>

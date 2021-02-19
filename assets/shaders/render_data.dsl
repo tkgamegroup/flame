@@ -9,8 +9,6 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	float csm_factor;
 	float sky_rad_levels;
 
-	vec2 fb_size;
-	
 	float fovy;
 	float aspect;
 	float zNear;

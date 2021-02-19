@@ -5,6 +5,7 @@
 namespace flame
 {
 	struct EntityPrivate;
+	struct cElementPrivate;
 	struct cCameraPrivate;
 
 	struct sRendererPrivate : sRenderer
@@ -12,6 +13,9 @@ namespace flame
 		bool wireframe = false;
 		graphics::Canvas* canvas = nullptr;
 		cCameraPrivate* camera = nullptr;
+
+		cElementPrivate* last_element;
+		bool last_element_changed;
 
 		bool always_update = false;
 		bool dirty = true;

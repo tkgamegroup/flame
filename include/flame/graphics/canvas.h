@@ -126,6 +126,9 @@ namespace flame
 			virtual Rect get_scissor() const = 0;
 			virtual void set_scissor(const Rect& scissor) = 0;
 
+			virtual Rect get_viewport() const = 0;
+			virtual void set_viewport(const Rect& viewport) = 0;
+
 			virtual void add_blur(const Rect& range, uint radius) = 0;
 			virtual void add_bloom() = 0;
 

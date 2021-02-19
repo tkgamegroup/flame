@@ -3,7 +3,7 @@
   <entity driver="dMenuItem" >
     <cElement padding="6,2,4,2" alignx="MinMax" 
               fill_color.state_rules="190,190,190,255
-              Hovering:255,255,255,255" />
+              Hovering:200,220,240,255" />
     <cText />
     <cReceiver />
     <entity name="arrow" visible="false" >

@@ -433,6 +433,7 @@ namespace flame
 				DrawLines,
 				DrawTriangles,
 				SetScissor,
+				SetViewport,
 				Blur,
 				Bloom
 			};
@@ -485,6 +486,13 @@ namespace flame
 			Rect scissor;
 
 			CmdSetScissor(const Rect& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+		};
+
+		struct CmdSetViewport : Cmd
+		{
+			Rect viewport;
+
+			CmdSetViewport(const Rect& _viewport) : Cmd(SetViewport) { viewport = _viewport; }
 		};
 
 		struct CmdBlur : Cmd
@@ -597,10 +605,10 @@ namespace flame
 
 			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
 
-			std::unique_ptr<ImagePrivate> back_image[2];
-			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers[2];
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets[2];
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets[2];
+			std::unique_ptr<ImagePrivate> back_image;
+			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets;
 
 			std::unique_ptr<ImagePrivate> pickup_image;
 			std::unique_ptr<FramebufferPrivate> pickup_framebuffer;
@@ -619,6 +627,7 @@ namespace flame
 
 			uvec2 output_size;
 			Rect curr_scissor;
+			Rect curr_viewport;
 
 			CanvasPrivate(RenderPreferencesPrivate* preferences);
 
@@ -681,6 +690,9 @@ namespace flame
 
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;
+
+			Rect get_viewport() const override { return curr_viewport; }
+			void set_viewport(const Rect& viewport) override;
 
 			void add_blur(const Rect& range, uint radius) override;
 			void add_bloom() override;

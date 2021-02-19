@@ -696,7 +696,11 @@ namespace flame
 		{
 			auto name = std::string(a.name());
 			if (name == "name")
-				e_dst->name = a.value();
+			{
+				std::string name = a.value();
+				if (!name.empty())
+					e_dst->name = name;
+			}
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
 			else if (name == "src")

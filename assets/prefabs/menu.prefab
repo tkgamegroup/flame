@@ -3,7 +3,7 @@
   <entity driver="dMenu" >
     <cElement padding="4,2,4,2" 
               fill_color.state_rules="190,190,190,255
-              Hovering:255,255,255,255" />
+              Hovering:200,220,240,255" />
     <cText />
     <cReceiver />
     <entity name="arrow" visible="false" >
@@ -11,7 +11,7 @@
       <cText text="" />
     </entity>
     <entity name="items" visible="false" >
-      <cElement padding="1.0,1.0,1.0,1.0" layout_type="Vertical" border="1.0" border_color="0,0,0,60" />
+      <cElement padding="1.0,1.0,1.0,1.0" layout_type="Vertical" />
     </entity>
   </entity>
 </prefab>

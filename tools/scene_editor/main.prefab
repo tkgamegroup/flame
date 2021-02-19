@@ -2,6 +2,12 @@
 <prefab>
   <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
     <cScript>
+      world = root.get_world()
+      s_physics = world.find_system("sPhysics")
+      s_dispatcher = world.find_system("sDispatcher")
+      s_renderer = world.find_system("sRenderer")
+      canvas = s_renderer.get_canvas()
+      
       ui = entity
     </cScript>
     <eMenuBar>
@@ -32,27 +38,221 @@
           </cScript>
         </eMenuItem>
       </eMenu>
+      <eMenu text="shading" >
+		    <eMenuItem checkable="true" checked="true" text="solid" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              s_renderer.set_shade_wireframe(false)
+              menu_item.set_single_checked()
+            end)
+          </cScript>
+        </eMenuItem>
+		    <eMenuItem checkable="true" text="wireframe" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              s_renderer.set_shade_wireframe(true)
+              menu_item.set_single_checked()
+            end)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
+      <eMenu text="show" >
+		    <eMenuItem checkable="true" text="physics visualization" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local checked = menu_item.get_checked()
+              checked = not checked
+              menu_item.set_checked(checked)
+              s_physics.set_visualization(checked)
+            end)
+          </cScript>
+        </eMenuItem>
+        <eMenuItem checkable="true" text="ui reflector" >
+          <cScript>
+            ui_reflector = { p=nil }
+              
+            local menu_item = entity.find_driver("dMenuItem")
+                
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local checked = menu_item.get_checked()
+              checked = not checked
+              menu_item.set_checked(checked)
+              if checked then
+                if not ui_reflector.p then
+                  ui_reflector = find_udt("Entity").static_functions.create()
+		              ui_reflector.load("ui_reflector")
+                  ui.add_child(ui_reflector)
+                end
+              else
+                if ui_reflector.p then
+                  ui_reflector.get_parent().remove_child(ui_reflector)
+                  ui_reflector.p = nil
+                end
+              end
+            end)
+          </cScript>
+        </eMenuItem>
+        <eMenuItem checkable="true" text="global axes" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local checked = menu_item.get_checked()
+              checked = not checked
+              menu_item.set_checked(checked)
+              scene.find_child("hud_global_axes").set_visible(checked)
+            end)
+          </cScript>
+        </eMenuItem>
+        <eMenuItem checkable="true" text="crosshair" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local checked = menu_item.get_checked()
+              checked = not checked
+              menu_item.set_checked(checked)
+              scene.find_child("hud_crosshair").set_visible(checked)
+            end)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
+      <eMenu text="settings" >
+        <eMenuItem checkable="true" text="always update" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+            local checked = menu_item.get_checked()
+            checked = not checked
+            menu_item.set_checked(checked)
+            end)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
     </eMenuBar>
+    <eElement name="toolbar" layout_type="Horizontal" >
+      <eToolButton text="" />
+      <eToolButton text="" />
+    </eElement>
     <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" >
       <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8" >
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" >
         </eScroller>
         <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8" >
+          <cReceiver />
           <cScript>
             scene = entity
             
-            prefab = {}
-            prefab.p = nil
+            prefab = { p=nil }
+            selected = { p=nil }
             
             function load_scene(filename)
               if prefab.p then scene.remove_child(prefab) end
               prefab = find_udt("Entity").static_functions.create()
 		          prefab.load(filename)
-              scene.add_child(prefab)
+              scene.add_child(prefab, 0)
               
               update_hierachy()
             end
+      
+            function select(e)
+              if selected.p then
+                selected.set_state(find_enum("StateFlags")["None"])
+              end
+              selected = e
+              if selected.p then
+                selected.set_state(find_enum("StateFlags")["Selected"])
+              end
+              s_renderer.mark_dirty()
+            end
+            
+            local last_mpos = vec2(0, 0)
+            local receiver = entity.find_component("cReceiver")
+            receiver.add_mouse_left_down_listener(function(p)
+              last_mpos.x = p.x
+              last_mpos.y = p.y
+            end)
+            receiver.add_mouse_left_up_listener(function(p)
+              if p.x == last_mpos.x and p.y == last_mpos.y then
+                local e = {}
+                e.p = canvas.pickup(last_mpos)
+                make_obj(e, "flame::Entity")
+                select(e)
+              end
+            end)
           </cScript>
+          <eElement name="debug" />
+          <entity name="hud_global_axes" visible="false" >
+            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,100" />
+            <cScript>
+              local element = entity.find_component("cElement")
+              flame_perspective(0, 45, 1, 1, 100)
+              element.add_drawer(function(canvas)
+                local p0 = element.get_point(0)
+                local p2 = element.get_point(2)
+                local sz = p2 - p0
+                p0 = p0 + sz * 0.5
+                __mat_id__ = 1
+                canvas.get_view_matrix()
+
+                local a0 = flame_transform(1, vec4(0, 0, 0, 0))
+                a0.z = a0.z - 5
+                a0 = flame_transform(0, a0)
+                a0.x = a0.x / a0.w
+                a0.y = a0.y / a0.w
+                local a0_2 = vec2(a0.x, a0.y)
+
+                local ax = flame_transform(1, vec4(1, 0, 0, 0))
+                ax.z = ax.z - 5
+                ax = flame_transform(0, ax)
+                ax.x = ax.x / ax.w
+                ax.y = ax.y / ax.w
+                canvas.begin_path()
+                canvas.move_to(a0_2 * sz + p0)
+                canvas.line_to(vec2(ax.x, ax.y) * sz + p0)
+                canvas.stroke(vec4(255, 0, 0, 255), 2, false)
+
+                local ay = flame_transform(1, vec4(0, 1, 0, 0))
+                ay.z = ay.z - 5
+                ay = flame_transform(0, ay)
+                ay.x = ay.x / ay.w
+                ay.y = ay.y / ay.w
+                canvas.begin_path()
+                canvas.move_to(a0_2 * sz + p0)
+                canvas.line_to(vec2(ay.x, ay.y) * sz + p0)
+                canvas.stroke(vec4(0, 255, 0, 255), 2, false)
+
+                local az = flame_transform(1, vec4(0, 0, 1, 0))
+                az.z = az.z - 5
+                az = flame_transform(0, az)
+                az.x = az.x / az.w
+                az.y = az.y / az.w
+                canvas.begin_path()
+                canvas.move_to(a0_2 * sz + p0)
+                canvas.line_to(vec2(az.x, az.y) * sz + p0)
+                canvas.stroke(vec4(0, 0, 255, 255), 2, false)
+              end, true)
+            </cScript>
+          </entity>
+          <entity name="hud_crosshair" visible="false" >
+            <cElement alignx="MinMax" aligny="MinMax" />
+            <cScript>
+              local element = entity.find_component("cElement")
+              element.add_drawer(function(canvas)
+                local p0 = element.get_point(0)
+                local p2 = element.get_point(2)
+                local sz = p2 - p0
+                p0 = p0 + sz * 0.5
+                canvas.begin_path()
+                canvas.move_to(p0 - vec2(4, 0))
+                canvas.line_to(p0 + vec2(4, 0))
+                canvas.move_to(p0 - vec2(0, 4))
+                canvas.line_to(p0 + vec2(0, 4))
+                canvas.stroke(vec4(255, 0, 0, 255), 1, false)
+              end, true)
+            </cScript>
+          </entity>
         </eElement>
       </eSplitter>
       <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
