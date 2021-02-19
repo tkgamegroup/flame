@@ -28,7 +28,7 @@ namespace flame
 					element->culled = element_culled;
 					e->data_changed(element, S<"culled"_h>);
 				}
-				else
+				if (!element_culled)
 				{
 					for (auto& d : element->drawers[0])
 						d->call(canvas);

@@ -31,12 +31,15 @@ namespace flame
 		const wchar_t* get_title() const override { return title.c_str(); };
 		void set_title(const wchar_t* title) override;
 
+		void notify_selected(bool v);
+
 		void on_load_finished() override;
 	};
 
 	struct dTreeNodePrivate : dTreeNode
 	{
 		dTreePrivate* tree;
+		EntityPrivate* e_title;
 		cTextPrivate* title_text;
 		cTextPrivate* arrow_text;
 		EntityPrivate* items;
@@ -45,6 +48,8 @@ namespace flame
 
 		const wchar_t* get_title() const override { return title.c_str(); };
 		void set_title(const wchar_t* title) override;
+
+		void notify_selected(bool v);
 
 		void toggle_collapse() override;
 

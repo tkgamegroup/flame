@@ -162,6 +162,7 @@ namespace flame
 		scr_ins->set_member_name("p");
 		scr_ins->set_object_type("flame::Entity");
 		scr_ins->set_global_name("root");
+		scr_ins->excute_file(L"world_setup.lua");
 
 		if (app->windows.empty())
 		{

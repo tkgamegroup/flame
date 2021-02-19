@@ -1,9 +1,17 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity>
-    <cElement alignx="MinMax" aligny="MinMax" />
+  <eElement alignx="MinMax" aligny="MinMax">
+    <cReceiver mute="true" />
+    <cScript>
+      if not scene then 
+        scene = entity
+        entity.find_component("cReceiver").set_mute(false)
+      end
+    </cScript>
     <eNode>
-      <cScript src="defe:shoot_ball.lua defe:plane_tree.lua" />
+      <cScript  src="defe:shoot_ball.lua defe:plane_tree.lua" >
+        object_root = entity
+      </cScript>
       <entity src="D:\sky\sky" />
       <eCube pos="0,150,0" dynamic="false" />
       <eCube pos="10,150,0" dynamic="false" />
@@ -30,5 +38,5 @@
       <cElement />
       <cPostEffect enable_bloom="true" />
     </entity>
-  </entity>
+  </eElement>
 </prefab>

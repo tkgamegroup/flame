@@ -11,6 +11,11 @@ namespace flame
 		return dispatcher->active == this;
 	}
 
+	void cReceiverPrivate::set_mute(bool v)
+	{
+		mute = v;
+	}
+
 	void cReceiverPrivate::set_ignore_occluders(bool v)
 	{
 		ignore_occluders = v;

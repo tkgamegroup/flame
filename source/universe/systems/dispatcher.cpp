@@ -144,7 +144,7 @@ namespace flame
 	void sDispatcherPrivate::dispatch_mouse_single(cReceiverPrivate* er, bool force)
 	{
 		auto frame = looper().get_frame();
-		if (er->frame >= frame)
+		if (er->mute || er->frame >= frame)
 			return;
 
 		if (debug_target == er)

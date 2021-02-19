@@ -27,14 +27,35 @@ namespace flame
 		}
 	}
 
-	void dTreePrivate::set_selected(Entity* e)
+	void dTreePrivate::set_selected(Entity* _e)
 	{
+		auto e = (EntityPrivate*)_e;
 		if (selected == e)
 			return;
 		if (selected)
-			selected->set_state((StateFlags)(selected->state & (~StateSelected)));
+		{
+			auto dtn = selected->get_driver_t<dTreeNodePrivate>();
+			if (dtn)
+				dtn->notify_selected(false);
+			else
+			{
+				auto dtl = selected->get_driver_t<dTreeLeafPrivate>();
+				if (dtl)
+					dtl->notify_selected(false);
+			}
+		}
 		if (e)
-			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
+		{
+			auto dtn = e->get_driver_t<dTreeNodePrivate>();
+			if (dtn)
+				dtn->notify_selected(true);
+			else
+			{
+				auto dtl = e->get_driver_t<dTreeLeafPrivate>();
+				if (dtl)
+					dtl->notify_selected(true);
+			}
+		}
 		selected = (EntityPrivate*)e;
 	}
 
@@ -103,6 +124,11 @@ namespace flame
 			title_text->set_text(title.c_str());
 	}
 
+	void dTreeLeafPrivate::notify_selected(bool v)
+	{
+		entity->set_state(v ? (StateFlags)(entity->state | StateSelected) : (StateFlags)(entity->state & (~StateSelected)));
+	}
+
 	void dTreeLeafPrivate::on_load_finished()
 	{
 		title_text = entity->get_component_t<cTextPrivate>();
@@ -128,13 +154,18 @@ namespace flame
 			title_text->set_text(title.c_str());
 	}
 
+	void dTreeNodePrivate::notify_selected(bool v)
+	{
+		e_title->set_state(v ? (StateFlags)(e_title->state | StateSelected) : (StateFlags)(e_title->state & (~StateSelected)));
+	}
+
 	void dTreeNodePrivate::on_load_finished()
 	{
-		auto etitle = entity->find_child("title");
-		fassert(etitle);
-		title_text = etitle->get_component_t<cTextPrivate>();
+		e_title = entity->find_child("title");
+		fassert(e_title);
+		title_text = e_title->get_component_t<cTextPrivate>();
 		fassert(title_text);
-		auto title_receiver = etitle->get_component_t<cReceiverPrivate>();
+		auto title_receiver = e_title->get_component_t<cReceiverPrivate>();
 		fassert(title_receiver);
 
 		title_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {

@@ -27,11 +27,15 @@ namespace flame
 		sDispatcherPrivate* dispatcher = nullptr;
 		uint frame = 0;
 
+		bool mute = false;
 		bool ignore_occluders = false;
 		uint64 drag_hash = 0;
 		std::vector<uint64> acceptable_drops;
 
 		bool is_active();
+
+		bool get_mute() const override { return mute; }
+		void set_mute(bool v) override;
 
 		bool get_ignore_occluders() const override { return ignore_occluders; }
 		void set_ignore_occluders(bool v) override;
