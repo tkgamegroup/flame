@@ -15,7 +15,7 @@ namespace flame
 		res_id = id;
 		refres_res();
 		if (entity)
-			entity->data_changed(this, S<"res_id"_h>);
+			entity->component_data_changed(this, S<"res_id"_h>);
 	}
 
 	void cImagePrivate::set_tile_id(int id)
@@ -25,7 +25,7 @@ namespace flame
 		tile_id = id;
 		refres_res();
 		if (entity)
-			entity->data_changed(this, S<"tile_id"_h>);
+			entity->component_data_changed(this, S<"tile_id"_h>);
 	}
 
 	void cImagePrivate::set_src(const std::string& _src)
@@ -35,7 +35,7 @@ namespace flame
 		src = _src;
 		refres_res();
 		if (entity)
-			entity->data_changed(this, S<"src"_h>);
+			entity->component_data_changed(this, S<"src"_h>);
 	}
 
 	void cImagePrivate::set_uv(const vec4& uv)
@@ -47,7 +47,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"uv"_h>);
+			entity->component_data_changed(this, S<"uv"_h>);
 	}
 
 	void cImagePrivate::refres_res()
@@ -72,14 +72,14 @@ namespace flame
 							{
 								res_id = slot;
 								if (entity)
-									entity->data_changed(this, S<"res_id"_h>);
+									entity->component_data_changed(this, S<"res_id"_h>);
 							}
 							slot = tile->get_index();
 							if (tile_id != slot)
 							{
 								tile_id = slot;
 								if (entity)
-									entity->data_changed(this, S<"tile_id"_h>);
+									entity->component_data_changed(this, S<"tile_id"_h>);
 							}
 							iv = r.ia->get_image()->get_view();
 							atlas = r.ia;
@@ -94,13 +94,13 @@ namespace flame
 						{
 							res_id = slot;
 							if (entity)
-								entity->data_changed(this, S<"res_id"_h>);
+								entity->component_data_changed(this, S<"res_id"_h>);
 						}
 						if (tile_id != -1)
 						{
 							tile_id = -1;
 							if (entity)
-								entity->data_changed(this, S<"tile_id"_h>);
+								entity->component_data_changed(this, S<"tile_id"_h>);
 						}
 						iv = r.iv;
 					}

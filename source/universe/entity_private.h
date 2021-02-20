@@ -79,12 +79,14 @@ namespace flame
 #endif
 		std::pair<std::filesystem::path, uint> created_location;
 
-		std::vector<std::unique_ptr<Driver, Delector>> drivers;
+		std::vector<DriverSlot> drivers;
 		std::unordered_map<uint64, ComponentSlot> components;
 		uint component_id = 0;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 
 		std::vector<void*> events;
+
+		void* userdata = nullptr;
 
 		EntityPrivate();
 		~EntityPrivate();
@@ -105,6 +107,9 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
+		const char* get_src() const override { return src.c_str(); }
+		const wchar_t* get_path() const override { return path.c_str(); }
+
 		Component* get_component(uint64 hash) const override;
 		Component* find_component(const std::string& name) const;
 		Component* find_first_dfs_component(const std::string& name) const;
@@ -114,7 +119,7 @@ namespace flame
 		void remove_component(Component* c, bool destroy = true);
 
 		uint get_children_count() const override { return children.size(); }
-		Entity* get_child(uint idx) const override { return children[idx].get(); }
+		Entity* get_child(uint idx) const override { fassert(idx < children.size()); return children[idx].get(); }
 		void add_child(EntityPrivate* e, int position = -1);
 		void reposition_child(uint pos1, uint pos2) override;
 		void on_child_removed(EntityPrivate* e) const;
@@ -124,15 +129,22 @@ namespace flame
 		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;
 		Driver* find_driver(const std::string& name) const;
 
-		void data_changed(Component* c, uint64 h) override;
-		void* add_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
-		void remove_data_listener(void* lis, Component* c) override;
+		void component_data_changed(Component* c, uint64 h) override;
+		void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
+		void remove_component_data_listener(void* lis, Component* c) override;
+
+		void driver_data_changed(Driver* d, uint64 h) override;
+		void* add_driver_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Driver* d) override;
+		void remove_driver_data_listener(void* lis, Driver* d) override;
 
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;
 		void remove_event(void* ev) override;
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);
+
+		void* get_userdata() const override { return userdata; }
+		void set_userdata(void* d) override { userdata = d; }
 	};
 
 	inline Component* EntityBridge::find_component(const char* name) const

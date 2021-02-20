@@ -556,7 +556,7 @@ namespace flame
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element.dsl");
 				element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
-				element_index_buffer.create(device, BufferUsageIndex, 240000);
+				element_index_buffer.create(device, BufferUsageIndex, 240000, AccessIndexRead);
 				for (auto i = 0; i < element_resources.size(); i++)
 					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
@@ -1105,7 +1105,7 @@ namespace flame
 							mrm->weight_buffer.upload(cb);
 						}
 
-						mrm->index_buffer.create(device, BufferUsageIndex, ms->indices.size());
+						mrm->index_buffer.create(device, BufferUsageIndex, ms->indices.size(), AccessIndexRead);
 						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
 						mrm->index_buffer.upload(cb);
 

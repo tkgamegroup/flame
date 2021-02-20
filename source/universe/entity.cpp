@@ -358,9 +358,9 @@ namespace flame
 
 		if (e->redirectable && position == -1)
 		{
-			for (auto& d : drivers)
+			for (auto i = (int)drivers.size() - 1; i >= 0; i--)
 			{
-				if (d->on_child_added(e))
+				if (drivers[i].d->on_child_added(e))
 					return;
 			}
 		}
@@ -473,14 +473,14 @@ namespace flame
 		{
 			for (auto& d : drivers)
 			{
-				if (d->type_hash == hash)
-					return d.get();
+				if (d.d->type_hash == hash)
+					return d.d.get();
 			}
 		}
 		else
 		{
 			idx = max(0U, (int)drivers.size() - 1 - idx);
-			return drivers[idx].get();
+			return drivers[idx].d.get();
 		}
 		return nullptr;
 	}
@@ -491,18 +491,18 @@ namespace flame
 		auto name = _name;
 		for (auto& d : drivers)
 		{
-			if (d->type_name == _name)
+			if (d.d->type_name == _name)
 			{
-				ret = d.get();
+				ret = d.d.get();
 				break;
 			}
 		}
 		name = "flame::" + _name;
 		for (auto& d : drivers)
 		{
-			if (d->type_name == name)
+			if (d.d->type_name == name)
 			{
-				ret = d.get();
+				ret = d.d.get();
 				break;
 			}
 		}
@@ -515,7 +515,7 @@ namespace flame
 		return ret;
 	}
 
-	void EntityPrivate::data_changed(Component* c, uint64 h)
+	void EntityPrivate::component_data_changed(Component* c, uint64 h)
 	{
 		auto it = components.find(c->type_hash);
 		if (it != components.end())
@@ -525,7 +525,7 @@ namespace flame
 		}
 	}
 
-	void* EntityPrivate::add_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Component* c)
+	void* EntityPrivate::add_component_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Component* c)
 	{
 		auto it = components.find(c->type_hash);
 		if (it != components.end())
@@ -553,7 +553,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void EntityPrivate::remove_data_listener(void* lis, Component* c)
+	void EntityPrivate::remove_component_data_listener(void* lis, Component* c)
 	{
 		auto it = components.find(c->type_hash);
 		if (it != components.end())
@@ -561,6 +561,62 @@ namespace flame
 			std::erase_if(it->second.data_listeners, [&](const auto& i) {
 				return i == (decltype(i))lis;
 			});
+		}
+	}
+
+	void EntityPrivate::driver_data_changed(Driver* _d, uint64 h)
+	{
+		for (auto& d : drivers)
+		{
+			if (d.d->type_hash == _d->type_hash)
+			{
+				for (auto& l : d.data_listeners)
+					l->call(h);
+			}
+		}
+	}
+
+	void* EntityPrivate::add_driver_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Driver* _d)
+	{
+		for (auto& d : drivers)
+		{
+			if (d.d->type_hash == _d->type_hash)
+			{
+				if (!callback)
+				{
+					auto slot = (uint)&capture;
+					callback = [](Capture& c, uint64 h) {
+						auto scr_ins = script::Instance::get_default();
+						scr_ins->get_global("callbacks");
+						scr_ins->get_member(nullptr, c.data<uint>());
+						scr_ins->get_member("f");
+						scr_ins->push_pointer((void*)h);
+						scr_ins->call(1);
+						scr_ins->pop(2);
+					};
+					auto c = new Closure(callback, Capture().set_data(&slot));
+					d.data_listeners.emplace_back(c);
+					return c;
+				}
+				auto c = new Closure(callback, capture);
+				d.data_listeners.emplace_back(c);
+				return c;
+			}
+		}
+		return nullptr;
+	}
+
+	void EntityPrivate::remove_driver_data_listener(void* lis, Driver* _d)
+	{
+		for (auto& d : drivers)
+		{
+			if (d.d->type_hash == _d->type_hash)
+			{
+				std::erase_if(d.data_listeners, [&](const auto& i) {
+					return i == (decltype(i))lis;
+				});
+				return;
+			}
 		}
 	}
 
@@ -606,10 +662,7 @@ namespace flame
 	}
 
 	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
-		const std::filesystem::path& filename,
-		bool first,
-		const std::vector<uint>& los,
-		std::vector<std::unique_ptr<StateRule>>& state_rules)
+		const std::filesystem::path& filename, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
 		auto set_attribute = [&](void* o, Type* ot, const std::string& name, const std::string& value) {
 			auto sp = SUS::split(name, '.');
@@ -628,8 +681,6 @@ namespace flame
 				auto fs = att->setter;
 				if (rule == "state_rules")
 				{
-					auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-					fassert(ei);
 					auto rule = new StateRule;
 					rule->o = o;
 					rule->vname = vname;
@@ -647,14 +698,15 @@ namespace flame
 						}
 						else if (pair.size() == 2)
 						{
-							ei->unserialize(&state, pair[0].c_str());
+							TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
+								->unserialize(&state, pair[0].c_str());
 							type->unserialize(d, pair[1].c_str());
 						}
 						else
 							fassert(0);
 						rule->values.emplace_back(state, d);
 					}
-					state_rules.emplace_back(rule);
+					first_e->state_rules.emplace_back(rule);
 				}
 				else
 				{
@@ -711,13 +763,15 @@ namespace flame
 			}
 			else if (name == "driver")
 			{
-				fassert(first);
+				fassert(first_e == e_dst);
 				Type* dt = find_driver_type(a.value());
 				if (dt)
 				{
 					auto d = (Driver*)dt->create();
 					d->entity = e_dst;
-					e_dst->drivers.emplace_back(d);
+					EntityPrivate::DriverSlot slot;
+					slot.d.reset(d);
+					e_dst->drivers.push_back(std::move(slot));
 				}
 				else
 					printf("cannot find driver type: %s\n", a.value());
@@ -727,10 +781,11 @@ namespace flame
 				auto ok = false;
 				auto name = std::string(a.name());
 				auto value = std::string(a.value());
-				for (auto& d : e_dst->drivers)
+				for (auto i = (int)e_dst->drivers.size() - 1; i >= 0; i--)
 				{
+					auto d = e_dst->drivers[i].d.get();
 					auto dt = find_driver_type(d->type_name, nullptr);
-					if (dt && set_attribute(d.get(), dt, name, value))
+					if (dt && set_attribute(d, dt, name, value))
 					{
 						ok = true;
 						break;
@@ -800,14 +855,14 @@ namespace flame
 						break;
 					}
 				}
-				load_prefab(e, n_c, filename, false, los, state_rules);
+				load_prefab(e, n_c, filename, first_e, los);
 				e_dst->add_child(e);
 			}
 		}
 
-		if (first && !e_dst->drivers.empty())
+		if (first_e == e_dst && !e_dst->drivers.empty())
 		{
-			auto d = e_dst->drivers.back().get();
+			auto d = e_dst->drivers.back().d.get();
 			if (!d->load_finished)
 			{
 				d->load_finished = true;
@@ -860,11 +915,10 @@ namespace flame
 			fn = std::filesystem::canonical(fn);
 		fn.make_preferred();
 		path = fn;
-		load_prefab(this, doc_root.first_child(), fn, true, los, state_rules);
+		load_prefab(this, doc_root.first_child(), fn, this, los);
 	}
 
-	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src,
-		bool first)
+	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, bool first)
 	{
 		if (!e_src->name.empty())
 			n_dst.append_attribute("name").set_value(e_src->name.c_str());
@@ -873,7 +927,20 @@ namespace flame
 		if (!e_src->drivers.empty())
 			;
 		if (!e_src->src.empty())
-			n_dst.append_attribute("src").set_value(e_src->src.c_str());
+		{
+			auto found = false;
+			for (auto& pair : prefabs_map)
+			{
+				if (pair.second == e_src->src)
+				{
+					n_dst.set_name(pair.first.c_str());
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				n_dst.append_attribute("src").set_value(e_src->src.c_str());
+		}
 
 		if (e_src->src.empty())
 		{
@@ -894,8 +961,6 @@ namespace flame
 					auto isrule = false;
 					if (first)
 					{
-						auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-						fassert(ei);
 						for (auto& r : e_src->state_rules)
 						{
 							if (r->vname == a.first)
@@ -912,7 +977,8 @@ namespace flame
 									};
 									if (v.first)
 									{
-										ei->serialize(&v.first, &str, str_alloc);
+										TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
+											->serialize(&v.first, &str, str_alloc);
 										value += str;
 										value += ":";
 									}

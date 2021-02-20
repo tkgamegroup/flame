@@ -17,7 +17,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"x"_h>);
+			entity->component_data_changed(this, S<"x"_h>);
 	}
 
 	void cElementPrivate::set_y(float y)
@@ -29,7 +29,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"y"_h>);
+			entity->component_data_changed(this, S<"y"_h>);
 	}
 
 	void cElementPrivate::set_pos(const vec2& p)
@@ -41,7 +41,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"pos"_h>);
+			entity->component_data_changed(this, S<"pos"_h>);
 	}
 
 	void cElementPrivate::add_pos(const vec2& p)
@@ -60,7 +60,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"width"_h>);
+			entity->component_data_changed(this, S<"width"_h>);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -74,7 +74,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"height"_h>);
+			entity->component_data_changed(this, S<"height"_h>);
 	}
 
 	void cElementPrivate::set_size(const vec2& s)
@@ -89,7 +89,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"size"_h>);
+			entity->component_data_changed(this, S<"size"_h>);
 	}
 
 	void cElementPrivate::add_size(const vec2& s)
@@ -108,7 +108,7 @@ namespace flame
 		mark_transform_dirty();
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"padding"_h>);
+			entity->component_data_changed(this, S<"padding"_h>);
 	}
 
 	void cElementPrivate::add_padding(const vec4& p)
@@ -132,7 +132,7 @@ namespace flame
 		pivot.x = p;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"pivotx"_h>);
+			entity->component_data_changed(this, S<"pivotx"_h>);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -142,7 +142,7 @@ namespace flame
 		pivot.y = p;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"pivoty"_h>);
+			entity->component_data_changed(this, S<"pivoty"_h>);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -152,7 +152,7 @@ namespace flame
 		scl.x = s;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"scalex"_h>);
+			entity->component_data_changed(this, S<"scalex"_h>);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -162,7 +162,7 @@ namespace flame
 		scl.y = s;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"scaley"_h>);
+			entity->component_data_changed(this, S<"scaley"_h>);
 	}
 
 	void cElementPrivate::set_scale(const vec2& s)
@@ -172,7 +172,7 @@ namespace flame
 		scl = s;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"scale"_h>);
+			entity->component_data_changed(this, S<"scale"_h>);
 	}
 
 	void cElementPrivate::set_angle(float a)
@@ -182,7 +182,7 @@ namespace flame
 		angle = a;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"angle"_h>);
+			entity->component_data_changed(this, S<"angle"_h>);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -192,7 +192,7 @@ namespace flame
 		skew.x = s;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"skewx"_h>);
+			entity->component_data_changed(this, S<"skewx"_h>);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -202,7 +202,7 @@ namespace flame
 		skew.y = s;
 		mark_transform_dirty();
 		if (entity)
-			entity->data_changed(this, S<"skewy"_h>);
+			entity->component_data_changed(this, S<"skewy"_h>);
 	}
 
 	void cElementPrivate::set_align_in_layout(bool v)
@@ -213,7 +213,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"align_in_layout"_h>);
+			entity->component_data_changed(this, S<"align_in_layout"_h>);
 	}
 
 	void cElementPrivate::set_align_absolute(bool a)
@@ -224,7 +224,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"align_absolute"_h>);
+			entity->component_data_changed(this, S<"align_absolute"_h>);
 	}
 
 	void cElementPrivate::set_margin(const vec4& m)
@@ -237,7 +237,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"margin"_h>);
+			entity->component_data_changed(this, S<"margin"_h>);
 	}
 
 	void cElementPrivate::set_alignx(Align a)
@@ -252,7 +252,7 @@ namespace flame
 			pelement->mark_layout_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"alignx"_h>);
+			entity->component_data_changed(this, S<"alignx"_h>);
 	}
 
 	void cElementPrivate::set_aligny(Align a)
@@ -267,7 +267,7 @@ namespace flame
 			pelement->mark_layout_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"aligny"_h>);
+			entity->component_data_changed(this, S<"aligny"_h>);
 	}
 
 	void cElementPrivate::set_width_factor(float f)
@@ -278,7 +278,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"width_factor"_h>);
+			entity->component_data_changed(this, S<"width_factor"_h>);
 	}
 
 	void cElementPrivate::set_height_factor(float f)
@@ -289,7 +289,7 @@ namespace flame
 		if (pelement)
 			pelement->mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"height_factor"_h>);
+			entity->component_data_changed(this, S<"height_factor"_h>);
 	}
 
 	void cElementPrivate::set_layout_type(LayoutType t)
@@ -300,7 +300,7 @@ namespace flame
 		layout_type = t;
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"layout_type"_h>);
+			entity->component_data_changed(this, S<"layout_type"_h>);
 	}
 
 	void cElementPrivate::set_layout_gap(float g)
@@ -310,7 +310,7 @@ namespace flame
 		layout_gap = g;
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"layout_gap"_h>);
+			entity->component_data_changed(this, S<"layout_gap"_h>);
 	}
 
 	//	void cElementPrivate::set_column(uint c)
@@ -331,7 +331,7 @@ namespace flame
 		mark_size_dirty();
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"auto_width"_h>);
+			entity->component_data_changed(this, S<"auto_width"_h>);
 	}
 
 	void cElementPrivate::set_auto_height(bool a)
@@ -342,7 +342,7 @@ namespace flame
 		mark_size_dirty();
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"auto_height"_h>);
+			entity->component_data_changed(this, S<"auto_height"_h>);
 	}
 
 	void cElementPrivate::set_scrollx(float s)
@@ -352,7 +352,7 @@ namespace flame
 		scroll.x = s;
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"scrollx"_h>);
+			entity->component_data_changed(this, S<"scrollx"_h>);
 	}
 
 	void cElementPrivate::set_scrolly(float s)
@@ -362,7 +362,7 @@ namespace flame
 		scroll.y = s;
 		mark_layout_dirty();
 		if (entity)
-			entity->data_changed(this, S<"scrolly"_h>);
+			entity->component_data_changed(this, S<"scrolly"_h>);
 	}
 
 	void cElementPrivate::set_fill_color(const cvec4& c)
@@ -372,7 +372,7 @@ namespace flame
 		fill_color = c;
 		mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"fill_color"_h>);
+			entity->component_data_changed(this, S<"fill_color"_h>);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -382,7 +382,7 @@ namespace flame
 		border = b;
 		mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"border"_h>);
+			entity->component_data_changed(this, S<"border"_h>);
 	}
 
 	void cElementPrivate::set_border_color(const cvec4& c)
@@ -392,7 +392,7 @@ namespace flame
 		border_color = c;
 		mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"border_color"_h>);
+			entity->component_data_changed(this, S<"border_color"_h>);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -402,7 +402,7 @@ namespace flame
 		clipping = c;
 		mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"clipping"_h>);
+			entity->component_data_changed(this, S<"clipping"_h>);
 	}
 
 	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop)

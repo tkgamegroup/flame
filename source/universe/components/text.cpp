@@ -23,7 +23,7 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"font_size"_h>);
+			entity->component_data_changed(this, S<"font_size"_h>);
 	}
 
 	void cTextPrivate::set_font_color(const cvec4& col)
@@ -37,7 +37,7 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"font_color"_h>);
+			entity->component_data_changed(this, S<"font_color"_h>);
 	}
 
 	void cTextPrivate::row_layout(int offset, vec2& size, uint& num_chars)
@@ -72,7 +72,7 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"text"_h>);
+			entity->component_data_changed(this, S<"text"_h>);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)

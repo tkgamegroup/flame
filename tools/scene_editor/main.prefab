@@ -9,16 +9,12 @@
         <eMenuItem text="open" >
           <cScript>
             entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-              local d = find_udt("Entity").static_functions.create()
-		          d.load("prefabs/input_dialog")
-              local l = find_udt("Entity").static_functions.create()
-		          l.load("prefabs/layer")
+              local d = create_entity("prefabs/input_dialog")
+              local l = create_entity("prefabs/layer")
               
               d.find_driver("dWindow").set_title("File Name")
               d.find_driver("dInputDialog").add_callback(function(ok, text)
-                if ok then 
-                  load_scene(text)
-                end
+                if ok then load_scene(text) end
                 l.get_parent().remove_child(l)
               end)
               l.add_child(d)
@@ -28,7 +24,18 @@
         </eMenuItem>
         <eMenuItem text="save" >
           <cScript>
-
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local d = create_entity("prefabs/input_dialog")
+              local l = create_entity("prefabs/layer")
+              
+              d.find_driver("dWindow").set_title("File Name")
+              d.find_driver("dInputDialog").add_callback(function(ok, text)
+                if ok then save_scene(text) end
+                l.get_parent().remove_child(l)
+              end)
+              l.add_child(d)
+              ui.add_child(l)
+            end)
           </cScript>
         </eMenuItem>
       </eMenu>
@@ -76,8 +83,7 @@
               menu_item.set_checked(checked)
               if checked then
                 if not ui_reflector.p then
-                  ui_reflector = find_udt("Entity").static_functions.create()
-		              ui_reflector.load("ui_reflector")
+                  ui_reflector = create_entity("ui_reflector")
                   ui.add_child(ui_reflector)
                 end
               else
@@ -143,14 +149,18 @@
             
             function load_scene(filename)
               if prefab.p then scene.remove_child(prefab) end
-              prefab = find_udt("Entity").static_functions.create()
-		          prefab.load(filename)
+              prefab = create_entity(filename)
               scene.add_child(prefab, 0)
               
               update_hierachy()
             end
+            
+            function save_scene(filename)
+              if not prefab.p then return end
+              prefab.save(filename)
+            end
       
-            function select(e)
+            function select(e, from_hierarchy)
               if selected.p then
                 selected.set_state(find_enum("StateFlags")["None"])
               end
@@ -159,6 +169,18 @@
                 selected.set_state(find_enum("StateFlags")["Selected"])
               end
               s_renderer.mark_dirty()
+              if not from_hierarchy then
+                local o = {}
+                if selected.p then
+                  o = selected.get_userdata()
+                else
+                  o = { p=nil }
+                end
+                local tree = hierarchy.find_driver("dTree")
+                tree.set_selected(o)
+                tree.expand_to_selected()
+              end
+              update_inspector()
             end
             
             local last_mpos = vec2(0, 0)
@@ -172,7 +194,7 @@
                 local e = {}
                 e.p = canvas.pickup(last_mpos)
                 make_obj(e, "flame::Entity")
-                select(e)
+                select(e, false)
               end
             end)
           </cScript>
@@ -254,6 +276,21 @@
           <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
             <cScript>
               hierarchy = entity
+              local tree = hierarchy.find_driver("dTree")
+              local selected_h = flame_hash("selected")
+              hierarchy.add_driver_data_listener(function(h)
+                if h == selected_h then
+                  local s = tree.get_selected()
+                  if s.p then
+                    local o = { p=s.get_userdata() }
+                    make_obj(o, "flame::Entity")
+                    select(o, true)
+                  else
+                    select({ p=nil }, true)
+                  end
+                end
+              end, tree)
+              
               function update_hierachy()
                 if hierarchy.get_children_count() > 0 then
                   hierarchy.remove_child(hierarchy.get_child(0))
@@ -262,18 +299,20 @@
                   function create_nodes(src, dst)
                     local count = src.get_children_count()
                     if count > 0 then
-                      local e = find_udt("Entity").static_functions.create()
-                      e.load("prefabs/tree_node")
+                      local e = create_entity("prefabs/tree_node")
                       e.find_driver("dTreeNode").set_title("["..src.get_name().."]")
+                      e.set_userdata(src)
+                      src.set_userdata(e)
                       dst.add_child(e)
-                      for i = 0, count-1, 1 do
+                      for i=0, count-1, 1 do
                         local c = src.get_child(i)
                         create_nodes(c, e)
                       end
                     else
-                      local e = find_udt("Entity").static_functions.create()
-                      e.load("prefabs/tree_leaf")
+                      local e = create_entity("prefabs/tree_leaf")
                       e.find_driver("dTreeLeaf").set_title("["..src.get_name().."]")
+                      e.set_userdata(src)
+                      src.set_userdata(e)
                       dst.add_child(e)
                     end
                   end
@@ -284,7 +323,46 @@
           </eTree>
         </eScroller>
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1">
-          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" />
+          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax" aligny="MinMax">
+            <cScript>
+              inspector = entity
+            
+              function update_inspector()
+                  local count = inspector.get_children_count()
+                  if count > 0 then
+                    for i=0, count-1, 1 do
+                      inspector.remove_child(inspector.get_child(0))
+                    end
+                  end
+                
+                  if not selected.p then return end
+                  
+                  local e, ens, evs, en, ev
+                  
+                  function add_group(name)
+                    e = create_entity("attribute_group")
+                    e.find_driver("dTreeNode").set_title(name)
+                    inspector.add_child(e)
+                    ens = e.find_child("names") 
+                    evs = e.find_child("values")
+                  end
+                  
+                  function add_attribute(name, value)
+                    en = create_entity("prefabs/text")
+                    en.find_component("cText").set_text(name)
+                    ens.add_child(en)
+                    ev = create_entity("prefabs/text")
+                    ev.find_component("cText").set_text(value)
+                    evs.add_child(ev)
+                  end
+                  
+                  add_group("entity")
+                  add_attribute("Name: ", selected.get_name())
+                  add_attribute("Src: ", selected.get_src())
+                  add_attribute("Path: ", selected.get_path())
+              end
+            </cScript>
+          </eTree>
         </eScroller>
       </eSplitter>
     </eSplitter>

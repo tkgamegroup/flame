@@ -13,7 +13,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"blur_radius"_h>);
+			entity->component_data_changed(this, S<"blur_radius"_h>);
 	}
 
 	void cPostEffectPrivate::set_enable_bloom(bool v)
@@ -24,7 +24,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		if (entity)
-			entity->data_changed(this, S<"enable_bloom"_h>);
+			entity->component_data_changed(this, S<"enable_bloom"_h>);
 	}
 
 	void cPostEffectPrivate::draw(graphics::Canvas* canvas)

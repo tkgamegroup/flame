@@ -57,28 +57,34 @@ namespace flame
 			}
 		}
 		selected = (EntityPrivate*)e;
+		entity->driver_data_changed(this, S<"selected"_h>);
 	}
 
-	//	static void expand(Entity* e, Entity* r)
-	//	{
-	//		if (e == r)
-	//			return;
-	//		e->set_visible(true);
-	//		auto p = e->parent;
-	//		p->children[0]->children[0]->get_component(cText)->set_text(Icon_CARET_DOWN);
-	//		expand(p->parent, r);
-	//	}
+	static void expand(EntityPrivate* e)
+	{
+		auto dt = e->get_driver_t<dTreePrivate>();
+		if (dt)
+			return;
+		auto dtn = e->get_driver_t<dTreeNodePrivate>();
+		if (dtn)
+		{
+			if (!dtn->items->visible)
+				dtn->toggle_collapse();
+		}
+		expand(e->parent);
+	}
 
 	void dTreePrivate::expand_to_selected()
 	{
-		//if (!selected)
-		//	return;
-		//expand(selected->parent, entity);
-		//looper().add_event([](Capture& c) {
-		//	auto thiz = c.thiz<cTreePrivate>();
-		//	auto selected = thiz->selected;
-		//	if (!selected)
-		//		return;
+		if (!selected)
+			return;
+		expand(selected);
+
+		looper().add_event([](Capture& c) {
+			auto thiz = c.thiz<dTreePrivate>();
+			auto selected = thiz->selected;
+			if (!selected)
+				return;
 		//	auto parent = thiz->entity->parent;
 		//	if (!parent || parent->children.s < 2)
 		//		return;
@@ -92,7 +98,7 @@ namespace flame
 		//	e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y *
 		//		(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
 		//	e_thumb->get_component(cScrollbarThumb)->update(0.f);
-		//}, Capture().set_thiz(this), 1U);
+		}, Capture().set_thiz(this), 1U);
 	}
 
 	bool dTreePrivate::on_child_added(Entity* e)

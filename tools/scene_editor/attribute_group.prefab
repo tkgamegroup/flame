@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<prefab>
+  <eTreeNode>
+    <eElement layout_type="Horizontal" layout_gap="4" >
+      <eElement name="names" layout_type="Vertical" layout_gap="2" />
+      <eElement name="values" layout_type="Vertical" layout_gap="2" />
+    </eElement>
+  </eTreeNode>
+</prefab>

@@ -236,6 +236,7 @@ namespace flame
 			DevicePrivate* d = nullptr;
 			BufferUsageFlags usage;
 			uint capacity = 0;
+			AccessFlags access;
 			T* stag = nullptr;
 			uint stagnum = 0;
 
@@ -260,11 +261,12 @@ namespace flame
 				}
 			}
 
-			void create(DevicePrivate* _d, BufferUsageFlags _usage, uint _capacity)
+			void create(DevicePrivate* _d, BufferUsageFlags _usage, uint _capacity, AccessFlags _access = AccessVertexAttributeRead)
 			{
 				d = _d;
 				usage = _usage;
 				capacity = _capacity;
+				access = _access;
 				rebuild();
 			}
 
@@ -285,7 +287,7 @@ namespace flame
 				BufferCopy cpy;
 				cpy.size = stagnum * sizeof(T);
 				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
 			}
 		};
 

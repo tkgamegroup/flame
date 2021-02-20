@@ -31,16 +31,17 @@ namespace flame
 		return false;
 	}
 
-	void dListPrivate::set_selected(Entity* e)
+	void dListPrivate::set_selected(Entity* _e)
 	{
+		auto e = (EntityPrivate*)_e;
 		if (selected == e)
 			return;
 		if (selected)
 			selected->set_state((StateFlags)(selected->state & (~StateSelected)));
 		if (e)
-			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
-		selected = (EntityPrivate*)e;
-		//data_changed(S<"selected"_h>);
+			e->set_state((StateFlags)(e->state | StateSelected));
+		selected = e;
+		entity->driver_data_changed(this, S<"selected"_h>);
 	}
 
 	dList* dList::create()

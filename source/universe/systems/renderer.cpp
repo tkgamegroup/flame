@@ -26,7 +26,7 @@ namespace flame
 				if (element->culled != element_culled)
 				{
 					element->culled = element_culled;
-					e->data_changed(element, S<"culled"_h>);
+					e->component_data_changed(element, S<"culled"_h>);
 				}
 				if (!element_culled)
 				{

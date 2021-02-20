@@ -10,7 +10,7 @@ namespace flame
 			return;
 		src = fn;
 		if (entity)
-			entity->data_changed(this, S<"src"_h>);
+			entity->component_data_changed(this, S<"src"_h>);
 	}
 
 	void cScriptPrivate::set_content(const char* _content)
