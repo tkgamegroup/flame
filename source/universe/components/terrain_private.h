@@ -25,7 +25,6 @@ namespace flame
 		vec3 scale = vec3(100.f);
 		uint tess_levels = 32.f;
 
-		std::filesystem::path path;
 		std::string height_map_name;
 		std::string normal_map_name;
 		std::string material_name;
@@ -58,8 +57,6 @@ namespace flame
 		void on_removed() override;
 		void on_entered_world() override;
 		void on_left_world() override;
-
-		void set_path(const wchar_t* _path) override { path = _path; path = path.parent_path(); }
 	};
 
 	inline void cTerrainBridge::set_height_map(const char* name)

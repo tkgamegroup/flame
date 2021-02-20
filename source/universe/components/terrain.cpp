@@ -102,7 +102,10 @@ namespace flame
 			{
 				isfile = true;
 				if (!fn.is_absolute())
-					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
+				{
+					auto& srcs = entity->srcs;
+					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
+				}
 			}
 			height_map_id = canvas->find_texture_resource(fn.string().c_str());
 			if (height_map_id == -1 && isfile)
@@ -118,7 +121,10 @@ namespace flame
 			{
 				isfile = true;
 				if (!fn.is_absolute())
-					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
+				{
+					auto& srcs = entity->srcs;
+					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
+				}
 			}
 			normal_map_id = canvas->find_texture_resource(fn.string().c_str());
 			if (normal_map_id == -1 && isfile)
@@ -134,7 +140,10 @@ namespace flame
 			{
 				isfile = true;
 				if (!fn.is_absolute())
-					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
+				{
+					auto& srcs = entity->srcs;
+					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
+				}
 			}
 			material_id = canvas->find_material_resource(fn.string().c_str());
 			if (material_id == -1 && isfile)

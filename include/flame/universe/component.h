@@ -18,6 +18,8 @@ namespace flame
 		Entity* entity = nullptr;
 #endif
 
+		int src_id = -1;
+
 		Component(const char* name, uint64 hash) :
 			type_name(name),
 			type_hash(hash)
@@ -37,7 +39,5 @@ namespace flame
 		virtual void on_child_added(Entity* e) {}
 		virtual void on_child_removed(Entity* e) {}
 		virtual void on_reposition(uint from, uint to) {}
-
-		virtual void set_path(const wchar_t* path) {}
 	};
 }

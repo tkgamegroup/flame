@@ -26,8 +26,7 @@ namespace flame
 		virtual StateFlags get_state() const = 0;
 		virtual void set_state(StateFlags state) = 0;
 
-		virtual const char* get_src() const = 0;
-		virtual const wchar_t* get_path() const = 0;
+		virtual const wchar_t* get_srcs() const = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
 		virtual Component* find_component(const char* name) const = 0;

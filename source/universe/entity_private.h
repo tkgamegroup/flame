@@ -69,15 +69,15 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
-		std::string src;
-		std::filesystem::path path;
+		std::vector<std::filesystem::path> srcs;
+		std::wstring srcs_str;
 
 		int created_frame;
 		int created_id;
 #ifdef FLAME_UNIVERSE_DEBUG
 		std::vector<StackFrameInfo> created_stack;
 #endif
-		std::pair<std::filesystem::path, uint> created_location;
+		uint created_location;
 
 		std::vector<DriverSlot> drivers;
 		std::unordered_map<uint64, ComponentSlot> components;
@@ -107,8 +107,8 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
-		const char* get_src() const override { return src.c_str(); }
-		const wchar_t* get_path() const override { return path.c_str(); }
+		void add_src(const std::filesystem::path& p);
+		const wchar_t* get_srcs() const override;
 
 		Component* get_component(uint64 hash) const override;
 		Component* find_component(const std::string& name) const;

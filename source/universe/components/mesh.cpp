@@ -60,7 +60,10 @@ namespace flame
 				{
 					isfile = true;
 					if (!fn.is_absolute())
-						fn = (path.empty() ? entity->path.parent_path() : path) / fn;
+					{
+						auto& srcs = entity->srcs;
+						fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
+					}
 				}
 				model_id = canvas->find_model_resource(fn.string().c_str());
 				if (model_id == -1 && isfile)

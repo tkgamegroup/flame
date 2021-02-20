@@ -358,8 +358,7 @@
                   
                   add_group("entity")
                   add_attribute("Name: ", selected.get_name())
-                  add_attribute("Src: ", selected.get_src())
-                  add_attribute("Path: ", selected.get_path())
+                  add_attribute("Srcs: ", selected.get_srcs())
               end
             </cScript>
           </eTree>

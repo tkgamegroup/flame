@@ -258,6 +258,17 @@ namespace flame
 			c.second.c->on_state_changed(state);
 	}
 
+	void EntityPrivate::add_src(const std::filesystem::path& p)
+	{
+		srcs.insert(srcs.begin(), p);
+		srcs_str += p.wstring() + L";";
+	}
+
+	const wchar_t* EntityPrivate::get_srcs() const
+	{
+		return srcs_str.c_str();
+	}
+
 	Component* EntityPrivate::get_component(uint64 hash) const
 	{
 		auto it = components.find(hash);
@@ -756,11 +767,7 @@ namespace flame
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
 			else if (name == "src")
-			{
-				if (e_dst->src.empty())
-					e_dst->src = a.value();
 				e_dst->load(a.value());
-			}
 			else if (name == "driver")
 			{
 				fassert(first_e == e_dst);
@@ -821,7 +828,15 @@ namespace flame
 					if (!c)
 					{
 						c = (Component*)ct->create();
-						c->set_path(filename.c_str());
+						auto& srcs = e_dst->srcs;
+						for (auto i = (int)srcs.size() - 1; i >= 0; i--)
+						{
+							if (srcs[i] == filename)
+							{
+								c->src_id = srcs.size() - i - 1;
+								break;
+							}
+						}
 						isnew = true;
 					}
 					for (auto a : n_c.attributes())
@@ -844,14 +859,13 @@ namespace flame
 			else if (name[0] == 'e')
 			{
 				auto e = f_new<EntityPrivate>();
-				e->path = e_dst->path;
-				e->created_location.first = filename;
+				e->add_src(filename);
 				auto offset = n_c.offset_debug();
 				for (auto i = 0; i < los.size(); i++)
 				{
 					if (offset < los[i])
 					{
-						e->created_location.second = i + 1;
+						e->created_location = i + 1;
 						break;
 					}
 				}
@@ -914,7 +928,7 @@ namespace flame
 		if (!fn.is_absolute())
 			fn = std::filesystem::canonical(fn);
 		fn.make_preferred();
-		path = fn;
+		add_src(fn);
 		load_prefab(this, doc_root.first_child(), fn, this, los);
 	}
 
@@ -926,12 +940,12 @@ namespace flame
 			n_dst.append_attribute("visible").set_value("false");
 		if (!e_src->drivers.empty())
 			;
-		if (!e_src->src.empty())
+		if (!e_src->srcs.empty())
 		{
 			auto found = false;
 			for (auto& pair : prefabs_map)
 			{
-				if (pair.second == e_src->src)
+				if (pair.second == e_src->srcs.back())
 				{
 					n_dst.set_name(pair.first.c_str());
 					found = true;
@@ -939,71 +953,64 @@ namespace flame
 				}
 			}
 			if (!found)
-				n_dst.append_attribute("src").set_value(e_src->src.c_str());
+				n_dst.append_attribute("src").set_value(e_src->srcs.back().c_str());
 		}
 
-		if (e_src->src.empty())
+		std::vector<std::pair<uint, Component*>> components;
+		for (auto& c : e_src->components)
+			components.emplace_back(c.second.id, c.second.c.get());
+		std::sort(components.begin(), components.end(), [](const auto& a, const auto& b) {
+			return a.first < b.first;
+		});
+		for (auto& c : components)
 		{
-			std::vector<std::pair<uint, Component*>> components;
-			for (auto& c : e_src->components)
-				components.emplace_back(c.second.id, c.second.c.get());
-			std::sort(components.begin(), components.end(), [](const auto& a, const auto& b) {
-				return a.first < b.first;
-			});
-			for (auto& c : components)
+			std::string cname;
+			auto ct = find_component_type(c.second->type_name, &cname);
+			fassert(ct);
+			auto n_c = n_dst.append_child(cname.c_str());
+			for (auto& a : ct->attributes)
 			{
-				std::string cname;
-				auto ct = find_component_type(c.second->type_name, &cname);
-				fassert(ct);
-				auto n_c = n_dst.append_child(cname.c_str());
-				for (auto& a : ct->attributes)
+				auto isrule = false;
+				if (first)
 				{
-					auto isrule = false;
-					if (first)
+					for (auto& r : e_src->state_rules)
 					{
-						for (auto& r : e_src->state_rules)
+						if (r->vname == a.first)
 						{
-							if (r->vname == a.first)
+							isrule = true;
+							std::string value;
+							for (auto& v : r->values)
 							{
-								isrule = true;
-								std::string value;
-								for (auto& v : r->values)
+								std::string str;
+								auto str_alloc = [](void* _str, uint size) {
+									auto& str = *(std::string*)_str;
+									str.resize(size);
+									return str.data();
+								};
+								if (v.first)
 								{
-									std::string str;
-									auto str_alloc = [](void* _str, uint size) {
-										auto& str = *(std::string*)_str;
-										str.resize(size);
-										return str.data();
-									};
-									if (v.first)
-									{
-										TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
-											->serialize(&v.first, &str, str_alloc);
-										value += str;
-										value += ":";
-									}
-									r->type->serialize(v.second, &str, str_alloc);
+									TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
+										->serialize(&v.first, &str, str_alloc);
 									value += str;
-									value += "  ";
+									value += ":";
 								}
-								value.erase(value.end() - 1);
-								n_c.append_attribute((a.first + "state_rules").c_str()).set_value(value.c_str());
-								break;
+								r->type->serialize(v.second, &str, str_alloc);
+								value += str;
+								value += "  ";
 							}
+							value.erase(value.end() - 1);
+							n_c.append_attribute((a.first + "state_rules").c_str()).set_value(value.c_str());
+							break;
 						}
 					}
-					if (!isrule)
-					{
-						auto value = a.second.serialize(c.second);
-						if (!value.empty())
-							n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
-					}
+				}
+				if (!isrule)
+				{
+					auto value = a.second.serialize(c.second);
+					if (!value.empty())
+						n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
 				}
 			}
-		}
-		else
-		{
-
 		}
 	}
 
