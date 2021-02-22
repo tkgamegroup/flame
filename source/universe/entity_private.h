@@ -35,8 +35,8 @@ namespace flame
 		void remove_child(Entity* e, bool destroy) override;
 		Entity* find_child(const char* name) const override;
 		Driver* find_driver(const char* name) const override;
-		void load(const wchar_t* filename) override;
-		void save(const wchar_t* filename) override;
+		bool load(const wchar_t* filename) override;
+		bool save(const wchar_t* filename) override;
 	};
 
 	struct EntityPrivate : EntityBridge
@@ -114,7 +114,6 @@ namespace flame
 		Component* find_component(const std::string& name) const;
 		Component* find_first_dfs_component(const std::string& name) const;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
-		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
 		void remove_component(Component* c, bool destroy = true);
 
@@ -126,8 +125,13 @@ namespace flame
 		void remove_child(EntityPrivate* e, bool destroy = true);
 		EntityPrivate* find_child(const std::string& name) const;
 
-		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;
+		void traversal(const std::function<bool(EntityPrivate*)>& callback);
+
+		Driver* get_driver(uint64 hash, int idx = -1) const override;
 		Driver* find_driver(const std::string& name) const;
+
+		void push_driver(Driver* d) override;
+		void pop_driver() override;
 
 		void component_data_changed(Component* c, uint64 h) override;
 		void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
@@ -140,8 +144,8 @@ namespace flame
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;
 		void remove_event(void* ev) override;
 
-		void load(const std::filesystem::path& filename);
-		void save(const std::filesystem::path& filename);
+		bool load(const std::filesystem::path& filename);
+		bool save(const std::filesystem::path& filename);
 
 		void* get_userdata() const override { return userdata; }
 		void set_userdata(void* d) override { userdata = d; }
@@ -177,13 +181,13 @@ namespace flame
 		return ((EntityPrivate*)this)->find_driver(name);
 	}
 
-	inline void EntityBridge::load(const wchar_t* filename)
+	inline bool EntityBridge::load(const wchar_t* filename)
 	{
-		((EntityPrivate*)this)->load(filename);
+		return ((EntityPrivate*)this)->load(filename);
 	}
 
-	inline void EntityBridge::save(const wchar_t* filename)
+	inline bool EntityBridge::save(const wchar_t* filename)
 	{
-		((EntityPrivate*)this)->save(filename);
+		return ((EntityPrivate*)this)->save(filename);
 	}
 }

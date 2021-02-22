@@ -1,3 +1,16 @@
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
 function find_enum(n)
 	local enum = enums[n]
 	if (enum == nil) then
@@ -34,6 +47,29 @@ function get_callback_slot(f)
 	return get_callback_slot(f)
 end
 
+function __setup()
+	for k, udt in pairs(udts) do
+		udt.static_functions = {}
+		for k, func in pairs(udt.functions) do
+			if func.static then
+				if func.type == "" then
+					udt.static_functions[k] = function(...)
+						return flame_call({...}, func.func)
+					end
+				else
+					udt.static_functions[k] = function(...)
+						__type__ = func.type
+						local ret = {}
+						ret.p = flame_call({...}, func.func)
+						make_obj(ret, __type__)
+						return ret
+					end
+				end
+			end
+		end
+	end
+end
+
 function make_obj(o, n)
 	local udt = find_udt(n)
 	if (udt == nil) then
@@ -41,12 +77,13 @@ function make_obj(o, n)
 	end
 	if not o.p then return end
 	for k, vari in pairs(udt.variables) do
-		if vari.tag == "pointer" then
-			local v = {}
-			v.p = flame_get_pointer_variable(o.p, vari.offset)
-			make_obj(v, vari.type)
-			o[k] = v
+		local v = flame_get_variable(o.p, vari.offset, vari.tag, vari.basic)
+		if type(v) == "userdata" then
+			local vv = { p=v }
+			make_obj(vv, vari.type)
+			v = vv
 		end
+		o[k] = v
 	end
 	for k, func in pairs(udt.functions) do
 		if func.type == "" then
@@ -168,25 +205,52 @@ function vec4(x, y, z, w)
 	return o
 end
 
-function __setup()
-	for k, udt in pairs(udts) do
-		udt.static_functions = {}
-		for k, func in pairs(udt.functions) do
-			if func.static then
-				if func.type == "" then
-					udt.static_functions[k] = function(...)
-						return flame_call({...}, func.func)
-					end
-				else
-					udt.static_functions[k] = function(...)
-						__type__ = func.type
-						local ret = {}
-						ret.p = flame_call({...}, func.func)
-						make_obj(ret, __type__)
-						return ret
-					end
+function split_by_newline(str)
+	local lines = {}
+	for s in str:gmatch("[^\r\n]+") do
+		table.insert(lines, s)
+	end
+	return lines
+end
+
+function load_ini(fn)
+	local file = flame_load_file(fn)
+	local data = {}
+	local section
+	local lines = split_by_newline(file)
+	for i, line in ipairs(lines) do
+		local temp_section = line:match('^%[([%w]+)%]$')
+		if temp_section then
+			section = temp_section
+			data[section] = {}
+		else
+			local param, value = line:match('^([%w|_]+)%s-=%s-(.+)$')
+			if (param and value ~= nil) then
+				if (tonumber(value)) then
+					value = tonumber(value)
+				elseif (value == 'true') then
+					value = true
+				elseif (value == 'false') then
+					value = false
 				end
+				if (tonumber(param)) then
+					param = tonumber(param)
+				end
+				data[section][param] = value
 			end
 		end
 	end
+	return data
+end
+
+function save_ini(fn, data)
+	local contents = ""
+	for section, param in pairs(data) do
+		contents = contents .. ('[%s]\n'):format(section)
+		for key, value in pairs(param) do
+			contents = contents .. ('%s=%s\n'):format(key, tostring(value))
+		end
+		contents = contents .. '\n'
+	end
+	flame_save_file(fn, contents)
 end

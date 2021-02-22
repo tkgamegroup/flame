@@ -43,9 +43,12 @@ namespace flame
 		virtual void remove_child(Entity* e, bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
 
-		virtual Driver* get_driver(uint64 hash = 0, uint idx = 0) const = 0;
+		virtual Driver* get_driver(uint64 hash, int idx = -1) const = 0;
 		virtual Driver* find_driver(const char* name) const = 0;
-		template <class T> inline T* get_driver_t() const { return (T*)get_driver(T::type_hash, 0); }
+		template <class T> inline T* get_driver_t() const { return (T*)get_driver(T::type_hash); }
+
+		virtual void push_driver(Driver* d) = 0;
+		virtual void pop_driver() = 0;
 
 		virtual void component_data_changed(Component* c, uint64 h) = 0;
 		virtual void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) = 0;
@@ -58,8 +61,8 @@ namespace flame
 		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f /* 0 means every frame */ ) = 0;
 		virtual void remove_event(void* ev) = 0;
 
-		virtual void load(const wchar_t* filename) = 0;
-		virtual void save(const wchar_t* filename) = 0;
+		virtual bool load(const wchar_t* filename) = 0;
+		virtual bool save(const wchar_t* filename) = 0;
 
 		virtual void* get_userdata() const = 0;
 		virtual void set_userdata(void* d) = 0;

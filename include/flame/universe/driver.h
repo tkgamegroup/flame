@@ -18,6 +18,8 @@ namespace flame
 		Entity* entity = nullptr;
 #endif
 
+		int src_id = -1;
+
 		bool load_finished = false;
 
 		Driver(const char* name, uint64 hash) :

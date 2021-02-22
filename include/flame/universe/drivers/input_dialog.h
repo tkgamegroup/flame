@@ -14,6 +14,8 @@ namespace flame
 		{
 		}
 
+		virtual void set_text(const wchar_t* text) = 0;
+
 		virtual void* add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture) = 0;
 		virtual void remove_callback(void* ret) = 0;
 

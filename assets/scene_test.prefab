@@ -3,40 +3,32 @@
   <eElement alignx="MinMax" aligny="MinMax">
     <cReceiver mute="true" />
     <cScript>
-      if not scene then 
+      if not scene then
         scene = entity
         entity.find_component("cReceiver").set_mute(false)
       end
     </cScript>
-    <eNode>
-      <cScript  src="defe:shoot_ball.lua defe:plane_tree.lua" >
+    <eNode name="object_root" >
+      <cScript src="defe:shoot_ball.lua defe:plane_tree.lua" >
         object_root = entity
       </cScript>
-      <entity src="D:\sky\sky" />
+      <entity src="D:\sky\sky" name="sky" />
       <eCube pos="0,150,0" dynamic="false" />
       <eCube pos="10,150,0" dynamic="false" />
       <eCube pos="0,150,5" dynamic="false" />
-      <entity name="character" src="D:\character\character" >
-        <cNode pos="0,155,0" />
+      <entity src="D:\character\character" name="character" pos="0,155,0" >
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />
-        <entity name="camera">
-          <cNode pos="0,5,0" euler="0,0,0" />
+        <eNode name="camera" pos="0,5,0" euler="0,0,0" >
           <cCamera current="true" />
           <cScript src="camera_third.lua" />
-        </entity>
+        </eNode>
       </entity>
-      <entity name="terrain" src="D:\terrain\terrain">
-        <cNode pos="-100,100,-100" />
-      </entity>
-      <entity>
-        <cNode euler="0,90,0" />
-        <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
-      </entity>
+      <entity src="D:\terrain\terrain" name="terrain" pos="-100,100,-100" />
+      <eLight name="sun" euler="0,90,0" type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
     </eNode>
-    <entity>
-      <cElement />
+    <eElement name="post_effect" >
       <cPostEffect enable_bloom="true" />
-    </entity>
+    </eElement>
   </eElement>
 </prefab>

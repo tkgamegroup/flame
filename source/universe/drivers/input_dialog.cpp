@@ -6,6 +6,11 @@
 
 namespace flame
 {
+	void dInputDialogPrivate::set_text(const wchar_t* _text)
+	{
+		text->set_text(_text);
+	}
+
 	void* dInputDialogPrivate::add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture)
 	{
 		if (!callback)

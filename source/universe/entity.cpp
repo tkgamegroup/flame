@@ -321,14 +321,6 @@ namespace flame
 		return nullptr;
 	}
 
-	void EntityPrivate::traversal(const std::function<bool(EntityPrivate*)>& callback)
-	{
-		if (!callback(this))
-			return;
-		for (auto& c : children)
-			c->traversal(callback);
-	}
-
 	void EntityPrivate::add_component(Component* c)
 	{
 		fassert(!parent || c->type_hash == S<"cSpy"_h>);
@@ -478,9 +470,17 @@ namespace flame
 		return nullptr;
 	}
 
-	Driver* EntityPrivate::get_driver(uint64 hash, uint idx) const
+	void EntityPrivate::traversal(const std::function<bool(EntityPrivate*)>& callback)
 	{
-		if (idx == 0)
+		if (!callback(this))
+			return;
+		for (auto& c : children)
+			c->traversal(callback);
+	}
+
+	Driver* EntityPrivate::get_driver(uint64 hash, int idx) const
+	{
+		if (idx == -1)
 		{
 			for (auto& d : drivers)
 			{
@@ -490,7 +490,7 @@ namespace flame
 		}
 		else
 		{
-			idx = max(0U, (int)drivers.size() - 1 - idx);
+			idx = max(0, (int)drivers.size() - 1 - idx);
 			return drivers[idx].d.get();
 		}
 		return nullptr;
@@ -524,6 +524,23 @@ namespace flame
 			script->set_global_name("__type__");
 		}
 		return ret;
+	}
+
+	void EntityPrivate::push_driver(Driver* d)
+	{
+		fassert(!d->entity && d->entity != this);
+		fassert(!get_driver(d->type_hash));
+
+		d->entity = this;
+		EntityPrivate::DriverSlot slot;
+		slot.d.reset(d);
+		drivers.push_back(std::move(slot));
+	}
+
+	void EntityPrivate::pop_driver()
+	{
+		if (!drivers.empty())
+			drivers.pop_back();
 	}
 
 	void EntityPrivate::component_data_changed(Component* c, uint64 h)
@@ -673,7 +690,7 @@ namespace flame
 	}
 
 	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
-		const std::filesystem::path& filename, EntityPrivate* first_e, const std::vector<uint>& los)
+		const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
 		auto set_attribute = [&](void* o, Type* ot, const std::string& name, const std::string& value) {
 			auto sp = SUS::split(name, '.');
@@ -759,11 +776,7 @@ namespace flame
 		{
 			auto name = std::string(a.name());
 			if (name == "name")
-			{
-				std::string name = a.value();
-				if (!name.empty())
-					e_dst->name = name;
-			}
+				e_dst->name = a.value();
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
 			else if (name == "src")
@@ -775,10 +788,16 @@ namespace flame
 				if (dt)
 				{
 					auto d = (Driver*)dt->create();
-					d->entity = e_dst;
-					EntityPrivate::DriverSlot slot;
-					slot.d.reset(d);
-					e_dst->drivers.push_back(std::move(slot));
+					auto& srcs = e_dst->srcs;
+					for (auto i = (int)srcs.size() - 1; i >= 0; i--)
+					{
+						if (srcs[i] == fn)
+						{
+							d->src_id = srcs.size() - i - 1;
+							break;
+						}
+					}
+					e_dst->push_driver(d);
 				}
 				else
 					printf("cannot find driver type: %s\n", a.value());
@@ -831,7 +850,7 @@ namespace flame
 						auto& srcs = e_dst->srcs;
 						for (auto i = (int)srcs.size() - 1; i >= 0; i--)
 						{
-							if (srcs[i] == filename)
+							if (srcs[i] == fn)
 							{
 								c->src_id = srcs.size() - i - 1;
 								break;
@@ -859,7 +878,7 @@ namespace flame
 			else if (name[0] == 'e')
 			{
 				auto e = f_new<EntityPrivate>();
-				e->add_src(filename);
+				e->add_src(fn);
 				auto offset = n_c.offset_debug();
 				for (auto i = 0; i < los.size(); i++)
 				{
@@ -869,7 +888,7 @@ namespace flame
 						break;
 					}
 				}
-				load_prefab(e, n_c, filename, first_e, los);
+				load_prefab(e, n_c, fn, first_e, los);
 				e_dst->add_child(e);
 			}
 		}
@@ -901,7 +920,7 @@ namespace flame
 		return fn;
 	}
 
-	void EntityPrivate::load(const std::filesystem::path& filename)
+	bool EntityPrivate::load(const std::filesystem::path& filename)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
@@ -910,7 +929,7 @@ namespace flame
 		if (!doc.load_file(fn.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
 			printf("prefab do not exist or wrong format: %s\n", filename.string().c_str());
-			return;
+			return false;
 		}
 
 		std::vector<uint> los;
@@ -930,22 +949,35 @@ namespace flame
 		fn.make_preferred();
 		add_src(fn);
 		load_prefab(this, doc_root.first_child(), fn, this, los);
+
+		return true;
 	}
 
-	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, bool first)
+	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, EntityPrivate* first_e)
 	{
 		if (!e_src->name.empty())
 			n_dst.append_attribute("name").set_value(e_src->name.c_str());
 		if (!e_src->visible)
 			n_dst.append_attribute("visible").set_value("false");
 		if (!e_src->drivers.empty())
-			;
+		{
+			auto d = e_src->drivers.back().d.get();
+			//if (d->src_id == ??)
+			//{
+			//	std::string name;
+			//	find_driver_type(d->type_name, &name);
+			//	n_dst.append_attribute("driver").set_value(name.c_str());
+			//}
+		}
+		std::filesystem::path src;
 		if (!e_src->srcs.empty())
+			src = e_src->srcs.back();
+		if (!src.empty())
 		{
 			auto found = false;
 			for (auto& pair : prefabs_map)
 			{
-				if (pair.second == e_src->srcs.back())
+				if (pair.second == src)
 				{
 					n_dst.set_name(pair.first.c_str());
 					found = true;
@@ -953,7 +985,7 @@ namespace flame
 				}
 			}
 			if (!found)
-				n_dst.append_attribute("src").set_value(e_src->srcs.back().c_str());
+				n_dst.append_attribute("src").set_value(src.string().c_str());
 		}
 
 		std::vector<std::pair<uint, Component*>> components;
@@ -971,7 +1003,7 @@ namespace flame
 			for (auto& a : ct->attributes)
 			{
 				auto isrule = false;
-				if (first)
+				if (e_src == first_e)
 				{
 					for (auto& r : e_src->state_rules)
 					{
@@ -1014,14 +1046,16 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::save(const std::filesystem::path& filename)
+	bool EntityPrivate::save(const std::filesystem::path& filename)
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root.append_child("entity"), this, true);
+		save_prefab(file_root.append_child("entity"), this, this);
 
 		file.save_file(filename.c_str());
+
+		return true;
 	}
 
 	Entity* Entity::create()

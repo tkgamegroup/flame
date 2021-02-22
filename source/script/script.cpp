@@ -117,6 +117,17 @@ namespace flame
 			return ret;
 		}
 
+		int lua_flame_hash(lua_State* state)
+		{
+			if (lua_isstring(state, -1))
+			{
+				auto hash = std::hash<std::string>()(lua_tostring(state, -1));
+				lua_pushlightuserdata(state, (void*)hash);
+				return 1;
+			}
+			return 0;
+		}
+
 		thread_local mat4 matrices[100];
 
 		int lua_flame_transform(lua_State* state)
@@ -152,15 +163,73 @@ namespace flame
 			return 1;
 		}
 
-		int lua_flame_get_pointer_variable(lua_State* state)
+		int lua_flame_get_variable(lua_State* state)
 		{
-			auto obj = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
-			auto off = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : 0;
-			void* ret = nullptr;
+			auto obj = lua_isuserdata(state, -4) ? lua_touserdata(state, -4) : nullptr;
+			auto off = lua_isinteger(state, -3) ? lua_tointeger(state, -3) : 0;
+			auto tag = lua_isinteger(state, -2) ? (TypeTag)lua_tointeger(state, -2) : TypeData;
+			auto basic = lua_isinteger(state, -1) ? (BasicType)lua_tointeger(state, -1) : VoidType;
 			if (obj)
-				ret = *(void**)((char*)obj + off);
-			lua_pushlightuserdata(state, ret);
-			return 1;
+			{
+				if (tag == TypePointer)
+				{
+					void* ret;
+					ret = *(void**)((char*)obj + off);
+					lua_pushlightuserdata(state, ret);
+					return 1;
+				}
+				else if (tag == TypeData)
+				{
+					switch (basic)
+					{
+					case IntegerType:
+					{
+						int ret;
+						ret = *(int*)((char*)obj + off);
+						lua_pushinteger(state, ret);
+						return 1;
+					}
+						break;
+					case FloatingType:
+					{
+						float ret;
+						ret = *(float*)((char*)obj + off);
+						lua_pushnumber(state, ret);
+						return 1;
+					}
+						break;
+					}
+				}
+			}
+			return 0;
+		}
+
+		int lua_flame_load_file(lua_State* state)
+		{
+			if (lua_isstring(state, -1))
+			{
+				std::filesystem::path fn = lua_tostring(state, -1);
+				if (std::filesystem::exists(fn))
+				{
+					auto str = get_file_content(fn);
+					lua_pushstring(state, str.c_str());
+					return 1;
+				}
+			}
+			return 0;
+		}
+
+		int lua_flame_save_file(lua_State* state)
+		{
+			if (lua_isstring(state, -1) && lua_isstring(state, -2))
+			{
+				std::filesystem::path fn = lua_tostring(state, -2);
+				std::string content = lua_tostring(state, -1);
+				std::ofstream file(fn, std::ios::binary);
+				file.write(content.c_str(), content.size());
+				file.close();
+			}
+			return 0;
 		}
 
 		int lua_flame_call(lua_State* state)
@@ -427,17 +496,6 @@ namespace flame
 			return 0;
 		}
 
-		int lua_flame_hash(lua_State* state)
-		{
-			if (lua_isstring(state, -1))
-			{
-				auto hash = std::hash<std::string>()(lua_tostring(state, -1));
-				lua_pushlightuserdata(state, (void*)hash);
-				return 1;
-			}
-			return 0;
-		}
-
 		InstancePrivate::InstancePrivate()
 		{
 			lua_state = luaL_newstate();
@@ -455,11 +513,17 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_flame_get_fps);
 			lua_setglobal(lua_state, "flame_get_fps");
 
-			lua_pushcfunction(lua_state, lua_flame_get_pointer_variable);
-			lua_setglobal(lua_state, "flame_get_pointer_variable");
+			lua_pushcfunction(lua_state, lua_flame_get_variable);
+			lua_setglobal(lua_state, "flame_get_variable");
 
 			lua_pushcfunction(lua_state, lua_flame_call);
 			lua_setglobal(lua_state, "flame_call");
+
+			lua_pushcfunction(lua_state, lua_flame_load_file);
+			lua_setglobal(lua_state, "flame_load_file");
+
+			lua_pushcfunction(lua_state, lua_flame_save_file);
+			lua_setglobal(lua_state, "flame_save_file");
 
 			if (!excute_file(L"setup.lua"))
 				fassert(0);
@@ -502,25 +566,24 @@ namespace flame
 					{
 						auto variable = ui->get_variable(0);
 						auto type = variable->get_type();
-						switch (type->get_tag())
-						{
-						case TypePointer:
-							lua_pushstring(state, variable->get_name());
 
-							lua_newtable(state);
-							lua_pushstring(state, "tag");
-							lua_pushstring(state, "pointer");
-							lua_settable(state, -3);
-							lua_pushstring(state, "offset");
-							lua_pushinteger(state, variable->get_offset());
-							lua_settable(state, -3);
-							lua_pushstring(state, "type");
-							lua_pushstring(state, type->get_name());
-							lua_settable(state, -3);
+						lua_pushstring(state, variable->get_name());
 
-							lua_settable(state, -3);
-							break;
-						}
+						lua_newtable(state);
+						lua_pushstring(state, "offset");
+						lua_pushinteger(state, variable->get_offset());
+						lua_settable(state, -3);
+						lua_pushstring(state, "tag");
+						lua_pushinteger(state, type->get_tag());
+						lua_settable(state, -3);
+						lua_pushstring(state, "basic");
+						lua_pushinteger(state, type->get_basic());
+						lua_settable(state, -3);
+						lua_pushstring(state, "type");
+						lua_pushstring(state, type->get_name());
+						lua_settable(state, -3);
+
+						lua_settable(state, -3);
 					}
 					lua_settable(state, -3);
 
@@ -623,7 +686,8 @@ namespace flame
 			}, Capture().set_thiz(this));
 
 			lua_getglobal(lua_state, "__setup");
-			lua_check_result(lua_state, lua_pcall(lua_state, 0, 0, 0));
+			if (!lua_check_result(lua_state, lua_pcall(lua_state, 0, 0, 0)))
+				fassert(0);
 		}
 
 		InstancePrivate::~InstancePrivate()

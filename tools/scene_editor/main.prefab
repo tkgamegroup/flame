@@ -3,6 +3,9 @@
   <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
     <cScript>
       ui = entity
+      local config = load_ini("config.ini")
+      local location_config = config["location"]
+      last_open = location_config["last_open"]
     </cScript>
     <eMenuBar>
       <eMenu text="file" >
@@ -13,8 +16,15 @@
               local l = create_entity("prefabs/layer")
               
               d.find_driver("dWindow").set_title("File Name")
-              d.find_driver("dInputDialog").add_callback(function(ok, text)
-                if ok then load_scene(text) end
+              local input_dialog = d.find_driver("dInputDialog")
+              input_dialog.set_text(last_open)
+              input_dialog.add_callback(function(ok, text)
+                if ok then
+                  if load_scene(text) then 
+                    last_open = text
+                    print(last_open)
+                  end
+                end
                 l.get_parent().remove_child(l)
               end)
               l.add_child(d)
@@ -149,10 +159,12 @@
             
             function load_scene(filename)
               if prefab.p then scene.remove_child(prefab) end
-              prefab = create_entity(filename)
+              local ok
+              prefab, ok = create_entity(filename)
               scene.add_child(prefab, 0)
               
               update_hierachy()
+              return ok
             end
             
             function save_scene(filename)
@@ -358,7 +370,9 @@
                   
                   add_group("entity")
                   add_attribute("Name: ", selected.get_name())
-                  add_attribute("Srcs: ", selected.get_srcs())
+                  local srcs = selected.get_srcs()
+                  srcs = srcs:gsub("%;", "\n")
+                  add_attribute("Srcs: ", srcs)
               end
             </cScript>
           </eTree>

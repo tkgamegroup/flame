@@ -6,6 +6,6 @@ canvas = s_renderer.get_canvas()
 
 function create_entity(src)
 	local e = find_udt("Entity").static_functions.create()
-	e.load(src)
-	return e
+	local ok = e.load(src)
+	return e, ok
 end
