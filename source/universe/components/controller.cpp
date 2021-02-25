@@ -27,6 +27,7 @@ namespace flame
 	{
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
+		node->set_auto_update_qut();
 	}
 
 	void cControllerPrivate::on_removed()

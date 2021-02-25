@@ -13,18 +13,23 @@ namespace flame
 	{
 		struct Attribute
 		{
+			std::string name;
+			uint64 hash;
 			TypeInfo* get_type;
 			TypeInfo* set_type;
 			FunctionInfo* getter;
 			FunctionInfo* setter;
 			std::string default_value;
 
-			Attribute(Type* ct, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			Attribute(Type* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+				name(name),
 				get_type(get_type),
 				set_type(set_type),
 				getter(getter),
 				setter(setter)
 			{
+				hash = ch(name.c_str());
+
 				void* d = get_type->create(false);
 				getter->call(ct->dummy, d, nullptr);
 				get_type->serialize(d, &default_value, [](void* _str, uint size) {
@@ -35,18 +40,29 @@ namespace flame
 				get_type->destroy(d, false);
 			}
 
-			std::string serialize(void* c)
+			std::string serialize(void* c, void* r = nullptr)
 			{
-				void* d = get_type->create(false);
-				getter->call(c, d, nullptr);
-				std::string str;
-				get_type->serialize(d, &str, [](void* _str, uint size) {
+				auto str_alloc = [](void* _str, uint size) {
 					auto& str = *(std::string*)_str;
 					str.resize(size);
 					return str.data();
-				});
+				};
+				void* d = get_type->create(false);
+				getter->call(c, d, nullptr);
+				std::string str;
+				get_type->serialize(d, &str, str_alloc);
 				get_type->destroy(d, false);
-				if (str == default_value)
+				if (r)
+				{
+					void* d = get_type->create(false);
+					getter->call(r, d, nullptr);
+					std::string str2;
+					get_type->serialize(d, &str2, str_alloc);
+					get_type->destroy(d, false);
+					if (str == str2)
+						str = "";
+				}
+				else if (str == default_value)
 					str = "";
 				return str;
 			}
@@ -93,7 +109,7 @@ namespace flame
 				{
 					if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
 					{
-						attributes.emplace(std::get<0>(g), Attribute(this, std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
+						attributes.emplace(std::get<0>(g), Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
 						break;
 					}
 				}
@@ -188,6 +204,8 @@ namespace flame
 	{
 		for (auto ev : events)
 			looper().remove_event(ev);
+		for (auto& c : components)
+			c.second.c->on_destroyed();
 	}
 
 	void EntityPrivate::release()
@@ -953,27 +971,36 @@ namespace flame
 		return true;
 	}
 
-	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, EntityPrivate* first_e)
+	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, const std::filesystem::path& fn, EntityPrivate* first_e, 
+		std::vector<std::pair<std::filesystem::path, std::unique_ptr<EntityPrivate>>>& references)
 	{
-		if (!e_src->name.empty())
-			n_dst.append_attribute("name").set_value(e_src->name.c_str());
-		if (!e_src->visible)
-			n_dst.append_attribute("visible").set_value("false");
-		if (!e_src->drivers.empty())
+		auto& srcs = e_src->srcs;
+		if (srcs.empty() || srcs.back() != fn)
 		{
-			auto d = e_src->drivers.back().d.get();
-			//if (d->src_id == ??)
-			//{
-			//	std::string name;
-			//	find_driver_type(d->type_name, &name);
-			//	n_dst.append_attribute("driver").set_value(name.c_str());
-			//}
+			n_dst.parent().remove_child(n_dst);
+			return;
 		}
-		std::filesystem::path src;
-		if (!e_src->srcs.empty())
-			src = e_src->srcs.back();
-		if (!src.empty())
+
+		EntityPrivate* reference = nullptr;
+		if (srcs.size() >= 2)
 		{
+			auto src = srcs[srcs.size() - 2];
+
+			for (auto& r : references)
+			{
+				if (r.first == src)
+				{
+					reference = r.second.get();
+					break;
+				}
+			}
+			if (!reference)
+			{
+				reference = new EntityPrivate;
+				reference->load(src);
+				references.emplace_back(src, reference);
+			}
+
 			auto found = false;
 			for (auto& pair : prefabs_map)
 			{
@@ -988,6 +1015,29 @@ namespace flame
 				n_dst.append_attribute("src").set_value(src.string().c_str());
 		}
 
+		if (!e_src->name.empty())
+			n_dst.append_attribute("name").set_value(e_src->name.c_str());
+		if (!e_src->visible)
+			n_dst.append_attribute("visible").set_value("false");
+		if (!e_src->drivers.empty())
+		{
+			auto d = e_src->drivers.back().d.get();
+			std::string dname;
+			find_driver_type(d->type_name, &dname);
+			if (srcs[srcs.size() - d->src_id - 1] == fn)
+				n_dst.append_attribute("driver").set_value(dname.c_str());
+			for (auto& d : e_src->drivers)
+			{
+				auto dt = find_driver_type(d.d->type_name, nullptr);
+				for (auto& a : dt->attributes)
+				{
+					auto value = a.second.serialize(d.d.get(), reference ? reference->get_driver(d.d->type_hash) : nullptr);
+					if (!value.empty())
+						n_dst.append_attribute(a.first.c_str()).set_value(value.c_str());
+				}
+			}
+		}
+
 		std::vector<std::pair<uint, Component*>> components;
 		for (auto& c : e_src->components)
 			components.emplace_back(c.second.id, c.second.c.get());
@@ -999,51 +1049,68 @@ namespace flame
 			std::string cname;
 			auto ct = find_component_type(c.second->type_name, &cname);
 			fassert(ct);
-			auto n_c = n_dst.append_child(cname.c_str());
-			for (auto& a : ct->attributes)
-			{
-				auto isrule = false;
-				if (e_src == first_e)
+			auto put_attributes = [&](pugi::xml_node n) {
+				for (auto& a : ct->attributes)
 				{
-					for (auto& r : e_src->state_rules)
-					{
-						if (r->vname == a.first)
+					auto find_rule = [&](const std::string& name)->StateRule* {
+						for (auto& r : e_src->state_rules)
 						{
-							isrule = true;
-							std::string value;
-							for (auto& v : r->values)
+							if (r->vname == name)
+								return r.get();
+						}
+						return nullptr;
+					};
+					auto rule = find_rule(a.first);
+					if (rule && e_src == first_e)
+					{
+						std::string value;
+						for (auto& v : rule->values)
+						{
+							std::string str;
+							auto str_alloc = [](void* _str, uint size) {
+								auto& str = *(std::string*)_str;
+								str.resize(size);
+								return str.data();
+							};
+							if (v.first)
 							{
-								std::string str;
-								auto str_alloc = [](void* _str, uint size) {
-									auto& str = *(std::string*)_str;
-									str.resize(size);
-									return str.data();
-								};
-								if (v.first)
-								{
-									TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
-										->serialize(&v.first, &str, str_alloc);
-									value += str;
-									value += ":";
-								}
-								r->type->serialize(v.second, &str, str_alloc);
+								TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
+									->serialize(&v.first, &str, str_alloc);
 								value += str;
-								value += "  ";
+								value += ":";
 							}
-							value.erase(value.end() - 1);
-							n_c.append_attribute((a.first + "state_rules").c_str()).set_value(value.c_str());
-							break;
+							rule->type->serialize(v.second, &str, str_alloc);
+							value += str;
+							value += "  ";
+						}
+						value.pop_back();
+						n.append_attribute((a.first + "state_rules").c_str()).set_value(value.c_str());
+					}
+					else
+					{
+						if (c.second->on_save_attribute(a.second.hash))
+						{
+							auto value = a.second.serialize(c.second, reference ? reference->get_component(c.second->type_hash) : nullptr);
+							if (!value.empty())
+							{
+								if (a.first == "content")
+									n.append_child(pugi::node_pcdata).set_value(value.c_str());
+								else
+									n.append_attribute(a.first.c_str()).set_value(value.c_str());
+							}
 						}
 					}
 				}
-				if (!isrule)
-				{
-					auto value = a.second.serialize(c.second);
-					if (!value.empty())
-						n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
-				}
-			}
+			};
+			if (srcs[srcs.size() - c.second->src_id - 1] == fn)
+				put_attributes(n_dst.append_child(cname.c_str()));
+			else
+				put_attributes(n_dst);
+
 		}
+
+		for (auto& c : e_src->children)
+			save_prefab(n_dst.append_child("entity"), c.get(), fn, first_e, references);
 	}
 
 	bool EntityPrivate::save(const std::filesystem::path& filename)
@@ -1051,7 +1118,8 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root.append_child("entity"), this, this);
+		std::vector<std::pair<std::filesystem::path, std::unique_ptr<EntityPrivate>>> references;
+		save_prefab(file_root.append_child("entity"), this, srcs.empty() ? L"" : srcs.back(), this, references);
 
 		file.save_file(filename.c_str());
 

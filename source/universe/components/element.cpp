@@ -457,13 +457,14 @@ namespace flame
 			transform_dirty = false;
 
 			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f);
-			transform = mat3(1.f);
 			if (pelement)
 			{
 				pelement->update_transform();
 				crooked = crooked && pelement->crooked;
 				transform = pelement->transform;
 			}
+			else
+				transform = mat3(1.f);
 
 			transform = translate(transform, pos);
 			if (crooked)
@@ -662,6 +663,26 @@ namespace flame
 		}
 		else
 			return aabb.contains(p);
+	}
+
+	bool cElementPrivate::on_save_attribute(uint64 h)
+	{
+		switch (h)
+		{
+		case S<"x"_h>:
+		case S<"y"_h>:
+		case S<"width"_h>:
+		case S<"height"_h>:
+		case S<"scalex"_h>:
+		case S<"scaley"_h>:
+			return false;
+		case S<"size"_h>:
+			if ((alignx == AlignMinMax && aligny == AlignMinMax) ||
+				(auto_width && auto_height))
+				return false;
+			break;
+		}
+		return true;
 	}
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)

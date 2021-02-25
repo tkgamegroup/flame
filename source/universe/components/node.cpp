@@ -21,6 +21,7 @@ namespace flame
 			return;
 		qut = q;
 		rot_dirty = true;
+		eul_dirty = true;
 		mark_transform_dirty();
 		if (entity)
 			entity->component_data_changed(this, S<"quat"_h>);
@@ -36,21 +37,17 @@ namespace flame
 			entity->component_data_changed(this, S<"scale"_h>);
 	}
 
-	vec3 cNodePrivate::get_euler() const
-	{
-		return vec3(0.f); // TODO: from qut?
-	}
-
 	void cNodePrivate::set_euler(const vec3& e)
 	{
-		auto m = mat4(1.f);
-		m = rotate(m, radians(e.x), vec3(0.f, 1.f, 0.f));
-		m = rotate(m, radians(e.y), vec3(1.f, 0.f, 0.f));
-		m = rotate(m, radians(e.z), vec3(0.f, 0.f, 1.f));
-		rot = mat3(m);
+		if (eul == e)
+			return;
+		eul = e;
+		rot = mat3(eulerAngleYXZ(glm::radians(e.x), glm::radians(e.y), glm::radians(e.z)));
 		rot_dirty = false;
 		qut_dirty = true;
 		mark_transform_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"euler"_h>);
 	}
 
 	vec3 cNodePrivate::get_local_dir(uint idx)
@@ -88,6 +85,19 @@ namespace flame
 		});
 	}
 
+	void cNodePrivate::update_eul()
+	{
+		if (eul_dirty)
+		{
+			eul_dirty = false;
+
+			auto res = eulerAngles(qut);
+			eul.x = glm::degrees(res.y);
+			eul.y = glm::degrees(res.x);
+			eul.z = glm::degrees(res.z);
+		}
+	}
+
 	void cNodePrivate::update_qut()
 	{
 		if (qut_dirty)
@@ -114,21 +124,27 @@ namespace flame
 		{
 			transform_dirty = false;
 
+			if (auto_update_eul)
+				update_eul();
+			if (auto_update_qut)
+				update_qut();
 			update_rot();
-			update_qut();
 
-			g_qut = qut;
-			g_rot = rot;
-			g_scl = scl;
-			mat4 m(1.f);
-			auto pn = entity->get_parent_component_t<cNodePrivate>();
-			if (pn)
+			mat4 m;
+			if (pnode)
 			{
-				pn->update_transform();
-				g_qut = pn->g_qut * g_qut;
-				g_rot = pn->g_rot * g_rot;
-				g_scl = pn->g_scl * g_scl;
-				m = pn->transform;
+				pnode->update_transform();
+				g_qut = pnode->g_qut * qut;
+				g_rot = pnode->g_rot * rot;
+				g_scl = pnode->g_scl * scl;
+				m = pnode->transform;
+			}
+			else
+			{
+				g_qut = qut;
+				g_rot = rot;
+				g_scl = scl;
+				m = mat4(1.f);
 			}
 			m = translate(m, pos);
 			g_pos = m[3];
@@ -139,6 +155,20 @@ namespace flame
 			if (entity)
 				entity->component_data_changed(this, S<"transform"_h>);
 		}
+	}
+
+	void cNodePrivate::set_auto_update_eul()
+	{
+		auto_update_eul = true;
+		if (pnode)
+			pnode->set_auto_update_eul();
+	}
+
+	void cNodePrivate::set_auto_update_qut()
+	{
+		auto_update_qut = true;
+		if (pnode)
+			pnode->set_auto_update_qut();
 	}
 
 	void cNodePrivate::mark_transform_dirty()
@@ -163,6 +193,16 @@ namespace flame
 			renderer->dirty = true;
 	}
 
+	void cNodePrivate::on_self_added()
+	{
+		pnode = entity->get_parent_component_t<cNodePrivate>();
+	}
+
+	void cNodePrivate::on_self_removed()
+	{
+		pnode = nullptr;
+	}
+
 	void cNodePrivate::on_entered_world()
 	{
 		renderer = entity->world->get_system_t<sRendererPrivate>();
@@ -174,6 +214,19 @@ namespace flame
 	{
 		mark_drawing_dirty();
 		renderer = nullptr;
+	}
+
+	bool cNodePrivate::on_save_attribute(uint64 h)
+	{
+		switch (h)
+		{
+		case S<"euler"_h>:
+			update_eul();
+			return true;
+		case S<"quat"_h>:
+			return false;
+		}
+		return true;
 	}
 
 	cNode* cNode::create()

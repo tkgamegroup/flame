@@ -30,14 +30,17 @@ namespace flame
 
 		virtual void on_added() {}
 		virtual void on_removed() {}
-		virtual void on_entered_world() {}
-		virtual void on_left_world() {}
+		virtual void on_destroyed() {}
 		virtual void on_visibility_changed(bool v) {}
 		virtual void on_state_changed(StateFlags state) {}
+		virtual void on_entered_world() {}
+		virtual void on_left_world() {}
 		virtual void on_self_added() {}
 		virtual void on_self_removed() {}
 		virtual void on_child_added(Entity* e) {}
 		virtual void on_child_removed(Entity* e) {}
 		virtual void on_reposition(uint from, uint to) {}
+
+		virtual bool on_save_attribute(uint64 h) { return true; }
 	};
 }

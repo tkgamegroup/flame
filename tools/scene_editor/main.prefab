@@ -6,23 +6,23 @@
       local config = load_ini("config.ini")
       local location_config = config["location"]
       last_open = location_config["last_open"]
+      last_save = location_config["last_save"]
     </cScript>
     <eMenuBar>
       <eMenu text="file" >
-        <eMenuItem text="open" >
+        <eMenuItem text="open.." >
           <cScript>
             entity.find_component("cReceiver").add_mouse_left_down_listener(function()
               local d = create_entity("prefabs/input_dialog")
               local l = create_entity("prefabs/layer")
               
-              d.find_driver("dWindow").set_title("File Name")
+              d.find_driver("dWindow").set_title("Open")
               local input_dialog = d.find_driver("dInputDialog")
               input_dialog.set_text(last_open)
               input_dialog.add_callback(function(ok, text)
                 if ok then
                   if load_scene(text) then 
                     last_open = text
-                    print(last_open)
                   end
                 end
                 l.get_parent().remove_child(l)
@@ -32,15 +32,21 @@
             end)
           </cScript>
         </eMenuItem>
-        <eMenuItem text="save" >
+        <eMenuItem text="save as.." >
           <cScript>
             entity.find_component("cReceiver").add_mouse_left_down_listener(function()
               local d = create_entity("prefabs/input_dialog")
               local l = create_entity("prefabs/layer")
               
-              d.find_driver("dWindow").set_title("File Name")
-              d.find_driver("dInputDialog").add_callback(function(ok, text)
-                if ok then save_scene(text) end
+              d.find_driver("dWindow").set_title("Save As")
+              local input_dialog = d.find_driver("dInputDialog")
+              input_dialog.set_text(last_save)
+              input_dialog.add_callback(function(ok, text)
+                if ok then 
+                  if save_scene(text) then
+                    last_save = text
+                  end
+                end
                 l.get_parent().remove_child(l)
               end)
               l.add_child(d)

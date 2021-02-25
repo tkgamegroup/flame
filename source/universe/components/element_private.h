@@ -191,6 +191,8 @@ namespace flame
 		void on_visibility_changed(bool v) override;
 		void on_reposition(uint from, uint to) override;
 
+		bool on_save_attribute(uint64 h) override;
+
 		void draw(graphics::Canvas* canvas);
 	};
 }
