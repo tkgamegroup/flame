@@ -83,6 +83,8 @@ namespace flame
 		uint component_id = 0;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 
+		std::vector<std::unique_ptr<Closure<void(Capture&, uint64, void*, void*)>>> message_listeners;
+
 		std::vector<void*> events;
 
 		void* userdata = nullptr;
@@ -131,6 +133,9 @@ namespace flame
 
 		void push_driver(Driver* d) override;
 		void pop_driver() override;
+
+		void* add_message_listener(void (*callback)(Capture& c, uint64 msg, void* parm1, void* parm2), const Capture& capture) override;
+		void remove_message_listener(void* lis) override;
 
 		void component_data_changed(Component* c, uint64 h) override;
 		void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;

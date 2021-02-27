@@ -410,7 +410,22 @@
                   local name = c.type_name
                   add_group(name)
                   local udt = find_udt(name)
+                  
+                  local attrs = {}
 	                for k, attr in pairs(udt.attributes) do
+                    local temp = {}
+                    for kk, vv in pairs(attr) do
+                      temp[kk] = vv
+                    end
+                    temp.name = k
+                    table.insert(attrs, temp)
+                  end
+                  table.sort(attrs, function(a, b)
+                    return a.get.index &lt; b.get.index
+                  end)
+                  
+                  for j=1, #attrs, 1 do
+                    local attr = attrs[j]
                     local v = flame_call(c.p, attr.get.f)
                     local t = type(v)
                     if t ~= "nil" then
@@ -418,21 +433,22 @@
                         if v["x"] ~= nil and v["y"] ~= nil then
                           if v["z"] ~= nil then
                             if v["w"] ~= nil then
-                              add_text_attribute(k..": ", v.x..", "..v.y..", "..v.z..", "..v.w)
+                              add_text_attribute(attr.name..": ", v.x..", "..v.y..", "..v.z..", "..v.w)
                             else
-                              add_text_attribute(k..": ", v.x..", "..v.y..", "..v.z)
+                              add_text_attribute(attr.name..": ", v.x..", "..v.y..", "..v.z)
                             end
                           else
-                              add_text_attribute(k..": ", v.x..", "..v.y)
+                              add_text_attribute(attr.name..": ", v.x..", "..v.y)
                           end
                         end
                       elseif t == "boolean" then
-                        add_check_attribute(k..": ", v)
+                        add_check_attribute(attr.name..": ", v)
                       else
-                        add_text_attribute(k..": ", v)
+                        add_text_attribute(attr.name..": ", v)
                       end
                     end
                   end
+                  
                 end
               end
             </cScript>

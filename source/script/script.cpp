@@ -713,6 +713,9 @@ namespace flame
 						lua_pushstring(state, "static");
 						lua_pushboolean(state, std::get<2>(f));
 						lua_settable(state, -3);
+						lua_pushstring(state, "index");
+						lua_pushinteger(state, std::get<0>(f)->get_index());
+						lua_settable(state, -3);
 
 						lua_settable(state, -3);
 					}

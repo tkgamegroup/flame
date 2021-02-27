@@ -50,6 +50,9 @@ namespace flame
 		virtual void push_driver(Driver* d) = 0;
 		virtual void pop_driver() = 0;
 
+		virtual void* add_message_listener(void (*callback)(Capture& c, uint64 msg, void* parm1, void* parm2), const Capture& capture) = 0;
+		virtual void remove_message_listener(void* lis) = 0;
+
 		virtual void component_data_changed(Component* c, uint64 h) = 0;
 		virtual void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) = 0;
 		virtual void remove_component_data_listener(void* lis, Component* c) = 0;

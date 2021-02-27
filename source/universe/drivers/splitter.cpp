@@ -29,23 +29,6 @@ namespace flame
 
 	void dSplitterPrivate::on_load_finished()
 	{
-		struct cSpy : Component
-		{
-			dSplitterPrivate* thiz;
-
-			cSpy(dSplitterPrivate* _thiz) :
-				Component("cSpy", S<"cSpy"_h>)
-			{
-				thiz = _thiz;
-			}
-
-			void on_state_changed(StateFlags s) override
-			{
-				thiz->bar_receiver->dispatcher->window->set_cursor(
-					(s & StateHovering) != 0 ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
-			}
-		};
-
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
@@ -58,7 +41,16 @@ namespace flame
 
 		set_type(type);
 
-		bar->add_component(f_new<cSpy>(this));
+		bar->add_message_listener([](Capture& c, uint64 msg, void* parm1, void* parm2) {
+			auto thiz = c.thiz<dSplitterPrivate>();
+			switch (msg)
+			{
+			case S<"state_changed"_h>:
+				thiz->bar_receiver->dispatcher->window->set_cursor(
+					((int)parm1 & StateHovering) != 0 ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
+				break;
+			}
+		}, Capture().set_thiz(this));
 
 		bar_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<dSplitterPrivate>();

@@ -96,29 +96,29 @@ namespace flame
 
 	void dEditPrivate::on_load_finished()
 	{
-		struct cSpy : Component
-		{
-			dEditPrivate* thiz;
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
 
-			cSpy(dEditPrivate* _thiz) :
-				Component("cSpy", S<"cSpy"_h>)
+		receiver = entity->get_component_t<cReceiverPrivate>();
+		fassert(receiver);
+
+		text = entity->get_component_t<cTextPrivate>();
+		fassert(text);
+
+		entity->add_message_listener([](Capture& c, uint64 msg, void* parm1, void* parm2) {
+			auto thiz = c.thiz<dEditPrivate>();
+			switch (msg)
 			{
-				thiz = _thiz;
-			}
-			
-			void on_visibility_changed(bool v) override
-			{
-				if (thiz->flash_event && !v)
+			case S<"visibility_changed"_h>:
+				if (thiz->flash_event && !parm1)
 				{
 					looper().remove_event(thiz->flash_event);
 					thiz->flash_event = nullptr;
 				}
-			}
-
-			void on_state_changed(StateFlags s) override
-			{
-				thiz->receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
-				if ((s & StateFocusing) != 0)
+				break;
+			case S<"state_changed"_h>:
+				thiz->receiver->dispatcher->window->set_cursor(((int)parm1 & StateHovering) != 0 ? CursorIBeam : CursorArrow);
+				if (((int)parm1 & StateFocusing) != 0)
 				{
 					if (!thiz->flash_event)
 					{
@@ -145,28 +145,16 @@ namespace flame
 						thiz->changed = false;
 					}
 				}
-			}
-
-			void on_left_world() override
-			{
+				break;
+			case S<"left_world"_h>:
 				if (thiz->flash_event)
 				{
 					looper().remove_event(thiz->flash_event);
 					thiz->flash_event = nullptr;
 				}
+				break;
 			}
-		};
-
-		element = entity->get_component_t<cElementPrivate>();
-		fassert(element);
-
-		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
-
-		text = entity->get_component_t<cTextPrivate>();
-		fassert(text);
-
-		entity->add_component(f_new<cSpy>(this));
+		}, Capture().set_thiz(this));
 
 		element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
 			auto thiz = c.thiz<dEditPrivate>();

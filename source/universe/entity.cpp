@@ -202,10 +202,12 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
-		for (auto ev : events)
-			looper().remove_event(ev);
+		for (auto& l : message_listeners)
+			l->call(S<"destroyed"_h>, nullptr, nullptr);
 		for (auto& c : components)
 			c.second.c->on_destroyed();
+		for (auto ev : events)
+			looper().remove_event(ev);
 	}
 
 	void EntityPrivate::release()
@@ -230,6 +232,8 @@ namespace flame
 		}
 		if (global_visibility != prev_visibility)
 		{
+			for (auto& l : message_listeners)
+				l->call(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
 			for (auto& c : components)
 				c.second.c->on_visibility_changed(global_visibility);
 		}
@@ -272,6 +276,8 @@ namespace flame
 			r->setter->call(r->o, nullptr, d);
 		}
 
+		for (auto& l : message_listeners)
+			l->call(S<"state_changed"_h>, (void*)state, nullptr);
 		for (auto& c : components)
 			c.second.c->on_state_changed(state);
 	}
@@ -357,7 +363,7 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		fassert(!parent || c->type_hash == S<"cSpy"_h>);
+		fassert(!parent);
 		fassert(!c->entity);
 		fassert(components.find(c->type_hash) == components.end());
 
@@ -375,7 +381,7 @@ namespace flame
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		fassert(!parent || c->type_hash == S<"cSpy"_h>);
+		fassert(!parent);
 
 		auto it = components.find(c->type_hash);
 		if (it == components.end())
@@ -413,6 +419,8 @@ namespace flame
 		e->index = position;
 		e->update_visibility();
 
+		for (auto& l : e->message_listeners)
+			l->call(S<"self_added"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
 			c.second.c->on_self_added();
 
@@ -420,12 +428,16 @@ namespace flame
 			if (!e->world && world)
 			{
 				e->world = world;
+				for (auto& l : e->message_listeners)
+					l->call(S<"entered_world"_h>, nullptr, nullptr);
 				for (auto& c : e->components)
 					c.second.c->on_entered_world();
 			}
 			return true;
 		});
 
+		for (auto& l : message_listeners)
+			l->call(S<"child_added"_h>, e, nullptr);
 		for (auto& c : components)
 			c.second.c->on_child_added(e);
 	}
@@ -442,6 +454,8 @@ namespace flame
 		b->index = pos1;
 		std::swap(children[pos1], children[pos2]);
 
+		for (auto& l : message_listeners)
+			l->call(S<"reposition"_h>, (void*)pos1, (void*)pos1);
 		for (auto& c : a->components)
 			c.second.c->on_reposition(pos1, pos2);
 		for (auto& c : b->components)
@@ -453,12 +467,16 @@ namespace flame
 		e->parent = nullptr;
 		e->redirectable = true;
 
+		for (auto& l : e->message_listeners)
+			l->call(S<"self_removed"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
 			c.second.c->on_self_removed();
 
 		e->traversal([](EntityPrivate* e) {
 			if (e->world)
 			{
+				for (auto& l : e->message_listeners)
+					l->call(S<"left_world"_h>, nullptr, nullptr);
 				for (auto& c : e->components)
 					c.second.c->on_left_world();
 				e->world = nullptr;
@@ -467,6 +485,8 @@ namespace flame
 			return true;
 		});
 
+		for (auto& l : message_listeners)
+			l->call(S<"child_removed"_h>, e, nullptr);
 		for (auto& c : components)
 			c.second.c->on_child_removed(e);
 	}
@@ -575,6 +595,35 @@ namespace flame
 	{
 		if (!drivers.empty())
 			drivers.pop_back();
+	}
+
+	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint64 msg, void* parm1, void* parm2), const Capture& capture)
+	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, uint64 msg, void* parm1, void* parm2) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_pointer((void*)msg);
+				scr_ins->push_pointer(parm1);
+				scr_ins->push_pointer(parm2);
+				scr_ins->call(3);
+				scr_ins->pop(2);
+			};
+		}
+		auto c = new Closure(callback, capture);
+		message_listeners.emplace_back(c);
+		return c;
+	}
+
+	void EntityPrivate::remove_message_listener(void* lis)
+	{
+		std::erase_if(message_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	void EntityPrivate::component_data_changed(Component* c, uint64 h)
