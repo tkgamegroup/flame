@@ -1,3 +1,7 @@
+function starts_with(s1, s2)
+   return string.sub(s1, 1, string.len(s2))==s2
+end
+
 function dump(o)
    if type(o) == 'table' then
       local s = '{ '
@@ -52,18 +56,28 @@ function __setup()
 			if func.static then
 				if func.type == "" then
 					udt.static_functions[k] = function(...)
-						return flame_call({...}, func.func)
+						return flame_call({...}, func.f)
 					end
 				else
 					udt.static_functions[k] = function(...)
 						__type__ = func.type
 						local ret = {}
-						ret.p = flame_call({...}, func.func)
+						ret.p = flame_call({...}, func.f)
 						make_obj(ret, __type__)
 						return ret
 					end
 				end
 			end
+		end
+		udt.attributes = {}
+		for k, func in pairs(udt.functions) do
+			if starts_with(k, "get_") then
+				local n = string.sub(k, 5)
+				local func2 = udt.functions["set_"..n]
+                if func2 ~= nil then
+					udt.attributes[n] = { get=func, set=func2 }
+				end
+            end
 		end
 	end
 end
@@ -73,6 +87,9 @@ function make_obj(o, n)
 	if (udt == nil) then
 		if o.p then print("script: cannot find udt "..n) end
 		return
+	end
+	if udt.base ~= "" then
+		make_obj(o, udt.base)
 	end
 	if not o.p then return end
 	for k, vari in pairs(udt.variables) do
@@ -87,19 +104,26 @@ function make_obj(o, n)
 	for k, func in pairs(udt.functions) do
 		if func.type == "" then
 			o[k] = function(...)
-				return flame_call({...}, o.p, func.func)
+				return flame_call({...}, o.p, func.f)
 			end
 		else
 			o[k] = function(...)
 				__type__ = func.type
 				local ret = {}
-				ret.p = flame_call({...}, o.p, func.func)
+				ret.p = flame_call({...}, o.p, func.f)
 				make_obj(ret, __type__)
 				return ret
 			end
 		end
 	end
 	for k, func in pairs(udt.callbacks) do
+		o[k] = function(f, ...)
+			n = get_callback_slot(f)
+			flame_call({ 0, n, ... }, o.p, func)
+			callbacks[n] = nil
+		end
+	end
+	for k, func in pairs(udt.listeners) do
 		o["add_"..k] = function(f, ...)
 			n = get_callback_slot(f)
 			callbacks[n].c = flame_call({ 0, n, ... }, o.p, func.add)

@@ -363,6 +363,7 @@ process:
 		return 0;
 	}
 
+	BOOL b;
 	LONG l;
 	ULONG ul;
 	ULONGLONG ull;
@@ -493,6 +494,15 @@ process:
 					n_udt.append_attribute("name").set_value(udt_name.c_str());
 					n_udt.append_attribute("size").set_value(udt_size);
 
+					IDiaEnumSymbols* s_base_classes;
+					IDiaSymbol* s_base_class;
+					s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
+					if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
+					{
+						s_base_class->get_name(&pwname);
+						n_udt.append_attribute("base_name").set_value(w2s(pwname).c_str());
+					}
+
 					DWORD ctor = 0;
 					DWORD dtor = 0;
 
@@ -582,23 +592,26 @@ process:
 
 					pugi::xml_node n_variables;
 
-					auto get_variables = [&](IDiaSymbol* s_udt) {
-						IDiaEnumSymbols* s_variables;
-						s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
-						IDiaSymbol* s_variable;
-						while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
+					IDiaEnumSymbols* s_variables;
+					s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
+					auto is_virtual = false;
+					if (SUCCEEDED(s_udt->get_virtualTableShapeId(&dw)))
+						is_virtual = true;
+					IDiaSymbol* s_variable;
+					while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
+					{
+						s_variable->get_name(&pwname);
+						auto name = w2s(pwname);
+						if (ur.pass_item(TypeData, name))
 						{
-							s_variable->get_name(&pwname);
-							auto name = w2s(pwname);
-							if (ur.pass_item(TypeData, name))
+							IDiaSymbol* s_type;
+							s_variable->get_type(&s_type);
+
+							s_variable->get_offset(&l);
+							auto offset = l;
+
+							if (is_virtual && offset != 0)
 							{
-								IDiaSymbol* s_type;
-								s_variable->get_type(&s_type);
-
-								s_variable->get_offset(&l);
-								auto offset = l;
-								s_type->get_length(&ull);
-
 								auto desc = typeinfo_from_symbol(s_type);
 								if (desc.name.starts_with("flame::"))
 									desc.name = SUS::cut_tail_if(desc.name, "Private");
@@ -612,15 +625,6 @@ process:
 								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
 								n_variable.append_attribute("name").set_value(name.c_str());
 								n_variable.append_attribute("offset").set_value(offset);
-								//auto meta = std::string();
-								//if (vt)
-								//{
-								//	for (auto& t : vt->meta)
-								//		meta += t + " ";
-								//	if (!meta.empty())
-								//		meta.erase(meta.end() - 1);
-								//}
-								//n_variable.append_attribute("meta").set_value(meta.c_str());
 
 								if (desc.tag != TypePointer)
 								{
@@ -637,24 +641,13 @@ process:
 											n_variable.append_attribute("default_value").set_value(str.c_str());
 									}
 								}
-
-								s_type->Release();
 							}
-							s_variable->Release();
+
+							s_type->Release();
 						}
-						s_variables->Release();
-					};
-
-					get_variables(s_udt);
-
-					IDiaEnumSymbols* s_base_classes;
-					IDiaSymbol* s_base_class;
-					s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
-					if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
-					{
-						s_base_class->get_name(&pwname);
-						get_variables(s_base_class);
+						s_variable->Release();
 					}
+					s_variables->Release();
 
 					if (dtor)
 						a2f<void(*)(void*)>((char*)library + dtor)(obj);

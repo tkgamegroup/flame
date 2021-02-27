@@ -325,6 +325,36 @@ namespace flame
 		return ret;
 	}
 
+	void EntityPrivate::get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const
+	{
+		std::vector<std::pair<uint, Component*>> cmps;
+		for (auto& c : components)
+			cmps.emplace_back(c.second.id, c.second.c.get());
+		std::sort(cmps.begin(), cmps.end(), [](const auto& a, const auto& b) {
+			return a.first < b.first;
+		});
+		if (!callback)
+		{
+			auto scr_ins = script::Instance::get_default();
+			scr_ins->get_global("callbacks");
+			scr_ins->get_member(nullptr, (uint)&capture);
+			for (auto& c : cmps)
+			{
+				scr_ins->get_member("f");
+				scr_ins->push_object();
+				scr_ins->set_object_type("flame::Component", c.second);
+				scr_ins->call(1);
+			}
+			scr_ins->pop(2);
+		}
+		else
+		{
+			for (auto& c : cmps)
+				callback((Capture&)capture, c.second);
+			f_free(capture._data);
+		}
+	}
+
 	void EntityPrivate::add_component(Component* c)
 	{
 		fassert(!parent || c->type_hash == S<"cSpy"_h>);
@@ -1024,16 +1054,14 @@ namespace flame
 			}
 		}
 
-		std::vector<std::pair<uint, Component*>> components;
-		for (auto& c : e_src->components)
-			components.emplace_back(c.second.id, c.second.c.get());
-		std::sort(components.begin(), components.end(), [](const auto& a, const auto& b) {
-			return a.first < b.first;
-		});
-		for (auto& c : components)
+		std::vector<Component*> components;
+		e_src->get_components([](Capture& c, Component* cmp) {
+			c.data<std::vector<Component*>*>()->push_back(cmp);
+		}, Capture().set_data(&components));
+		for (auto c : components)
 		{
 			std::string cname;
-			auto ct = find_component_type(c.second->type_name, &cname);
+			auto ct = find_component_type(c->type_name, &cname);
 			fassert(ct);
 			auto put_attributes = [&](pugi::xml_node n) {
 				for (auto& a : ct->attributes)
@@ -1074,9 +1102,9 @@ namespace flame
 					}
 					else
 					{
-						if (c.second->on_save_attribute(a.second.hash))
+						if (c->on_save_attribute(a.second.hash))
 						{
-							auto value = a.second.serialize(c.second, reference ? reference->get_component(c.second->type_hash) : nullptr);
+							auto value = a.second.serialize(c, reference ? reference->get_component(c->type_hash) : nullptr);
 							if (!value.empty())
 							{
 								if (a.first == "content")
@@ -1088,7 +1116,7 @@ namespace flame
 					}
 				}
 			};
-			if (srcs[srcs.size() - c.second->src_id - 1] == fn)
+			if (srcs[srcs.size() - c->src_id - 1] == fn)
 				put_attributes(n_dst.append_child(cname.c_str()));
 			else
 				put_attributes(n_dst);

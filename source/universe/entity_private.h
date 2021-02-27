@@ -111,8 +111,8 @@ namespace flame
 
 		Component* get_component(uint64 hash) const override;
 		Component* find_component(const std::string& name) const;
-		Component* find_first_dfs_component(const std::string& name) const;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
+		void get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const override;
 		void add_component(Component* c);
 		void remove_component(Component* c, bool destroy = true);
 

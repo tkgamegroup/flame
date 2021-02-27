@@ -1,19 +1,6 @@
-#include "scene_editor.h"
-
 struct cHierarchyItem : Component
 {
-	cElement* element;
-	cReceiver* receiver;
-
-	Entity* e;
-
-	int drop_pos;
-
-	cHierarchyItem() :
-		Component("cHierarchyItem")
-	{
-		drop_pos = -1;
-	}
+	int drop_pos = -1;
 
 	void on_event(EntityEvent e, void* t)
 	{
@@ -22,9 +9,6 @@ struct cHierarchyItem : Component
 		case EntityComponentAdded:
 			if (t == this)
 			{
-				element = entity->get_component(cElement);
-				receiver = entity->get_component(cReceiver);
-
 				receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
 				receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
 				receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cReceiver* er, const ivec2& pos) {
@@ -123,128 +107,3 @@ struct cHierarchyItem : Component
 		}
 	}
 };
-
-static void create_tree_node(Entity* e)
-{
-	auto& ui = scene_editor.window->ui;
-	if (e->children.s > 0)
-	{
-		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name.v).c_str());
-		{
-			auto c_item = f_new<cHierarchyItem>();
-			c_item->e = e;
-			e_tree_node->children[0]->add_component(c_item);
-		}
-
-		auto e_sub_tree = e_tree_node->children[1];
-		for (auto i = 0; i < e->children.s; i++)
-			create_tree_node(e->children[i]);
-		ui.e_end_tree_node();
-	}
-	else
-	{
-		auto e_tree_leaf = ui.e_tree_leaf(s2w(e->name.v).c_str());
-		{
-			auto c_item = f_new<cHierarchyItem>();
-			c_item->e = e;
-			e_tree_leaf->add_component(c_item);
-		}
-	}
-}
-
-cHierarchy::cHierarchy() :
-	Component("cHierarchy")
-{
-	auto& ui = scene_editor.window->ui;
-
-	auto e_page = ui.e_begin_docker_page(L"Hierarchy").second;
-	{
-		auto c_layout = ui.c_layout(LayoutVertical);
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-
-		e_page->add_component(this);
-	}
-
-		ui.e_begin_scrollbar(ScrollbarVertical, true);
-			ui.next_element_padding = 8.f;
-			e_tree = ui.e_begin_tree(true);
-			{
-				auto c_tree = e_tree->get_component(cTree);
-				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-					looper().add_event([](Capture& c) {
-						auto s = c.thiz<Entity>();
-						Entity* selected = nullptr;
-						if (s)
-						{
-							if (s->get_component(cTreeLeaf))
-								selected = s->get_component(cHierarchyItem)->e;
-							else
-								selected = s->children[0]->get_component(cHierarchyItem)->e;
-						}
-						auto different = selected != scene_editor.selected;
-						scene_editor.selected = selected;
-						if (scene_editor.inspector && different)
-							scene_editor.inspector->refresh();
-					}, Capture().set_thiz(c.thiz<cTree>()->selected));
-					return true;
-				}, Capture().set_thiz(c_tree));
-			}
-			ui.e_end_tree();
-		ui.e_end_scrollbar();
-
-		ui.e_end_docker_page();
-
-	refresh();
-}
-
-cHierarchy::~cHierarchy()
-{
-	scene_editor.hierarchy = nullptr;
-}
-
-static Entity* _find_item(Entity* sub_tree, Entity* e)
-{
-	for (auto i = 0; i < sub_tree->children.s; i++)
-	{
-		auto item = sub_tree->children[i];
-		if (item->get_component(cTreeLeaf))
-		{
-			if (item->get_component(cHierarchyItem)->e == e)
-				return item;
-		}
-		else
-		{
-			if (item->children[0]->get_component(cHierarchyItem)->e == e)
-				return item;
-			auto res = _find_item(item->children[1], e);
-			if (res)
-				return res;
-		}
-	}
-	return nullptr;
-}
-
-void cHierarchy::refresh_selected()
-{
-	e_tree->get_component(cTree)->set_selected(scene_editor.selected ? find_item(scene_editor.selected) : nullptr, false);
-}
-
-void cHierarchy::refresh()
-{
-	auto& ui = scene_editor.window->ui;
-	e_tree->remove_children(0, -1);
-	e_tree->get_component(cTree)->selected = nullptr;
-	if (scene_editor.prefab)
-	{
-		ui.parents.push(e_tree);
-		create_tree_node(scene_editor.prefab);
-		ui.parents.pop();
-	}
-	refresh_selected();
-}
-
-Entity* cHierarchy::find_item(Entity* e) const
-{
-	return _find_item(e_tree, e);
-}

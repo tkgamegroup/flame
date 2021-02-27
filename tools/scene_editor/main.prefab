@@ -354,52 +354,86 @@
           </eTree>
         </eScroller>
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1">
-          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax" aligny="MinMax">
+          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
             <cScript>
               inspector = entity
             
               function update_inspector()
-                  local count = inspector.get_children_count()
-                  if count > 0 then
-                    for i=0, count-1, 1 do
-                      inspector.remove_child(inspector.get_child(0))
+                local count = inspector.get_children_count()
+                if count > 0 then
+                  for i=0, count-1, 1 do
+                    inspector.remove_child(inspector.get_child(0))
+                  end
+                end
+                
+                if not selected.p then return end
+                  
+                local e, ens, evs, en, ev
+                  
+                function add_group(name)
+                  e = create_entity("attribute_group")
+                  e.find_driver("dTreeNode").set_title(name)
+                  inspector.add_child(e)
+                  ens = e.find_child("names") 
+                  evs = e.find_child("values")
+                end
+                  
+                function add_text_attribute(name, value)
+                  en = create_entity("prefabs/text")
+                  en.find_component("cText").set_text(name)
+                  ens.add_child(en)
+                  ev = create_entity("prefabs/text")
+                  ev.find_component("cText").set_text(value)
+                  evs.add_child(ev)
+                end
+                  
+                function add_check_attribute(name, value)
+                  en = create_entity("prefabs/text")
+                  en.find_component("cText").set_text(name)
+                  ens.add_child(en)
+                  ev = create_entity("prefabs/checkbox")
+                  ev.find_driver("dCheckbox").set_checked(value)
+                  evs.add_child(ev)
+                end
+                  
+                add_group("entity")
+                add_text_attribute("Name: ", selected.get_name())
+                add_text_attribute("Srcs: ", selected.get_srcs())
+                add_check_attribute("Visible: ", selected.get_visible())
+                  
+                local components = {}
+                selected.get_components(function(cmp)
+                  table.insert(components, cmp)
+                end)
+                for i=1, #components, 1 do
+                  local c = components[i]
+                  local name = c.type_name
+                  add_group(name)
+                  local udt = find_udt(name)
+	                for k, attr in pairs(udt.attributes) do
+                    local v = flame_call(c.p, attr.get.f)
+                    local t = type(v)
+                    if t ~= "nil" then
+                      if t == "table" then
+                        if v["x"] ~= nil and v["y"] ~= nil then
+                          if v["z"] ~= nil then
+                            if v["w"] ~= nil then
+                              add_text_attribute(k..": ", v.x..", "..v.y..", "..v.z..", "..v.w)
+                            else
+                              add_text_attribute(k..": ", v.x..", "..v.y..", "..v.z)
+                            end
+                          else
+                              add_text_attribute(k..": ", v.x..", "..v.y)
+                          end
+                        end
+                      elseif t == "boolean" then
+                        add_check_attribute(k..": ", v)
+                      else
+                        add_text_attribute(k..": ", v)
+                      end
                     end
                   end
-                
-                  if not selected.p then return end
-                  
-                  local e, ens, evs, en, ev
-                  
-                  function add_group(name)
-                    e = create_entity("attribute_group")
-                    e.find_driver("dTreeNode").set_title(name)
-                    inspector.add_child(e)
-                    ens = e.find_child("names") 
-                    evs = e.find_child("values")
-                  end
-                  
-                  function add_text_attribute(name, value)
-                    en = create_entity("prefabs/text")
-                    en.find_component("cText").set_text(name)
-                    ens.add_child(en)
-                    ev = create_entity("prefabs/text")
-                    ev.find_component("cText").set_text(value)
-                    evs.add_child(ev)
-                  end
-                  
-                  function add_check_attribute(name, value)
-                    en = create_entity("prefabs/text")
-                    en.find_component("cText").set_text(name)
-                    ens.add_child(en)
-                    ev = create_entity("prefabs/checkbox")
-                    ev.find_driver("dCheckbox").set_checked(value)
-                    evs.add_child(ev)
-                  end
-                  
-                  add_group("entity")
-                  add_text_attribute("Name: ", selected.get_name())
-                  add_text_attribute("Srcs: ", selected.get_srcs())
-                  add_check_attribute("Visible: ", selected.get_visible())
+                end
               end
             </cScript>
           </eTree>

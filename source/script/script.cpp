@@ -173,9 +173,30 @@ namespace flame
 			{
 				if (tag == TypePointer)
 				{
-					void* ret;
-					ret = *(void**)((char*)obj + off);
-					lua_pushlightuserdata(state, ret);
+					switch (basic)
+					{
+					case CharType:
+					{
+						char* ret;
+						ret = *(char**)((char*)obj + off);
+						lua_pushstring(state, ret);
+					}
+						break;
+					case WideCharType:
+					{
+						wchar_t* ret;
+						ret = *(wchar_t**)((char*)obj + off);
+						lua_pushstring(state, w2s(ret).c_str());
+					}
+						break;
+					default:
+					{
+						void* ret;
+						ret = *(void**)((char*)obj + off);
+						lua_pushlightuserdata(state, ret);
+					}
+						break;
+					}
 					return 1;
 				}
 				else if (tag == TypeData)
@@ -591,25 +612,40 @@ namespace flame
 
 					lua_newtable(state);
 
+					lua_pushstring(state, "base");
+					lua_pushstring(state, ui->get_base_name());
+					lua_settable(state, -3);
+
 					lua_pushstring(state, "variables");
 					lua_newtable(state);
 					auto variables_count = ui->get_variables_count();
 					for (auto i = 0; i < variables_count; i++)
 					{
-						auto variable = ui->get_variable(0);
+						auto variable = ui->get_variable(i);
 						auto type = variable->get_type();
 
 						lua_pushstring(state, variable->get_name());
+
+						auto tag = type->get_tag();
+						BasicType basic;
+						if (tag == TypePointer)
+						{
+							auto pointed_type = type->get_pointed_type();
+							basic = pointed_type ?
+								pointed_type->get_basic() : ElseType;
+						}
+						else
+							basic = type->get_basic();
 
 						lua_newtable(state);
 						lua_pushstring(state, "offset");
 						lua_pushinteger(state, variable->get_offset());
 						lua_settable(state, -3);
 						lua_pushstring(state, "tag");
-						lua_pushinteger(state, type->get_tag());
+						lua_pushinteger(state, tag);
 						lua_settable(state, -3);
 						lua_pushstring(state, "basic");
-						lua_pushinteger(state, type->get_basic());
+						lua_pushinteger(state, basic);
 						lua_settable(state, -3);
 						lua_pushstring(state, "type");
 						lua_pushstring(state, type->get_name());
@@ -621,7 +657,8 @@ namespace flame
 
 					auto functions_count = ui->get_functions_count();
 					std::vector<std::tuple<FunctionInfo*, std::string, bool>> functions;
-					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> callbacks;
+					std::vector<FunctionInfo*> callbacks;
+					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> listeners;
 					for (auto i = 0; i < functions_count; i++)
 					{
 						auto function = ui->get_function(i);
@@ -637,8 +674,10 @@ namespace flame
 									auto name = fname.substr(4);
 									auto function2 = ui->find_function(("remove_" + name).c_str());
 									if (function2)
-										callbacks.emplace_back(name, function, function2);
+										listeners.emplace_back(name, function, function2);
 								}
+								else
+									callbacks.push_back(function);
 								function = nullptr;
 								break;
 							}
@@ -665,7 +704,7 @@ namespace flame
 						lua_pushstring(state, std::get<0>(f)->get_name());
 
 						lua_newtable(state);
-						lua_pushstring(state, "func");
+						lua_pushstring(state, "f");
 						lua_pushlightuserdata(state, std::get<0>(f));
 						lua_settable(state, -3);
 						lua_pushstring(state, "type");
@@ -681,16 +720,26 @@ namespace flame
 
 					lua_pushstring(state, "callbacks");
 					lua_newtable(state);
-					for (auto& c : callbacks)
+					for (auto c : callbacks)
 					{
-						lua_pushstring(state, std::get<0>(c).c_str());
+						lua_pushstring(state, c->get_name());
+						lua_pushlightuserdata(state, c);
+						lua_settable(state, -3);
+					}
+					lua_settable(state, -3);
+
+					lua_pushstring(state, "listeners");
+					lua_newtable(state);
+					for (auto& l : listeners)
+					{
+						lua_pushstring(state, std::get<0>(l).c_str());
 
 						lua_newtable(state);
 						lua_pushstring(state, "add");
-						lua_pushlightuserdata(state, std::get<1>(c));
+						lua_pushlightuserdata(state, std::get<1>(l));
 						lua_settable(state, -3);
 						lua_pushstring(state, "remove");
-						lua_pushlightuserdata(state, std::get<2>(c));
+						lua_pushlightuserdata(state, std::get<2>(l));
 						lua_settable(state, -3);
 
 						lua_settable(state, -3);
