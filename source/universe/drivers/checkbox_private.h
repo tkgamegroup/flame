@@ -7,9 +7,10 @@ namespace flame
 {
 	struct cReceiverPrivate;
 
-	struct cCheckboxPrivate : dCheckbox
+	struct dCheckboxPrivate : dCheckbox
 	{
-		cReceiverPrivate* receiver = nullptr;
+		cReceiverPrivate* receiver;
+		EntityPrivate* box;
 
 		bool checked = false;
 

@@ -30,7 +30,6 @@ namespace flame
 	struct EntityBridge : Entity
 	{
 		Component* find_component(const char* name) const override;
-		Component* find_first_dfs_component(const char* name) const override;
 		void add_child(Entity* e, int position) override;
 		void remove_child(Entity* e, bool destroy) override;
 		Entity* find_child(const char* name) const override;
@@ -154,11 +153,6 @@ namespace flame
 	inline Component* EntityBridge::find_component(const char* name) const
 	{
 		return ((EntityPrivate*)this)->find_component(name);
-	}
-
-	inline Component* EntityBridge::find_first_dfs_component(const char* name) const
-	{
-		return ((EntityPrivate*)this)->find_first_dfs_component(name);
 	}
 
 	inline void EntityBridge::add_child(Entity* e, int position)

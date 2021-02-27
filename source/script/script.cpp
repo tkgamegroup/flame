@@ -232,6 +232,35 @@ namespace flame
 			return 0;
 		}
 
+		int lua_flame_get_directory_files(lua_State* state)
+		{
+			if (lua_isstring(state, -1))
+			{
+				std::filesystem::path fn = lua_tostring(state, -1);
+				auto ok = std::filesystem::exists(fn);
+				if (!ok)
+				{
+					auto engine_path = getenv("FLAME_PATH");
+					if (engine_path)
+						fn = std::filesystem::path(engine_path) / "assets" / fn;
+					ok = std::filesystem::exists(fn);
+				}
+				lua_newtable(state);
+				auto idx = 1;
+				for (auto& p : std::filesystem::directory_iterator(fn))
+				{
+					if (!p.is_directory())
+					{
+						lua_pushinteger(state, idx++);
+						lua_pushstring(state, p.path().filename().string().c_str());
+						lua_settable(state, -3);
+					}
+				}
+				return 1;
+			}
+			return 0;
+		}
+
 		int lua_flame_call(lua_State* state)
 		{
 			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
@@ -525,6 +554,9 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_flame_save_file);
 			lua_setglobal(lua_state, "flame_save_file");
 
+			lua_pushcfunction(lua_state, lua_flame_get_directory_files);
+			lua_setglobal(lua_state, "flame_get_directory_files");
+			
 			if (!excute_file(L"setup.lua"))
 				fassert(0);
 

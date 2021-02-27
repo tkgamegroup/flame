@@ -6,15 +6,13 @@
     <entity name="box">
       <cElement width="20.0" height="20.0" border="2.0" 
               fill_color.state_rules="220,220,220,255
-              Selected|Active|Hovering:69,94,222,255
               Selected|Hovering:78,108,239,255
               Selected:86,119,252,255
-              Active|Hovering:225,225,225,255
               Hovering:230,230,230,255" />
     </entity>
     <entity name="text">
       <cElement padding="4,0,4,0" aligny="Middle" />
-      <cText text="checkbox" />
+      <cText/>
     </entity>
   </entity>
 </prefab>

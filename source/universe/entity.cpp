@@ -325,20 +325,6 @@ namespace flame
 		return ret;
 	}
 
-	Component* EntityPrivate::find_first_dfs_component(const std::string& name) const
-	{
-		auto ret = find_component(name);
-		if (ret)
-			return ret;
-		for (auto& c : children)
-		{
-			auto ret = c->find_first_dfs_component(name);
-			if (ret)
-				return ret;
-		}
-		return nullptr;
-	}
-
 	void EntityPrivate::add_component(Component* c)
 	{
 		fassert(!parent || c->type_hash == S<"cSpy"_h>);

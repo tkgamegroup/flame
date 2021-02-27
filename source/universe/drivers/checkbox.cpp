@@ -4,32 +4,32 @@
 
 namespace flame
 {
-	void cCheckboxPrivate::set_checked(bool c)
+	void dCheckboxPrivate::set_checked(bool c)
 	{
 		if (checked == c)
 			return;
 		checked = c;
-		auto& s = entity->state;
-		if (checked)
-			s = (StateFlags)(int)(s | StateSelected);
-		else
-			s = (StateFlags)(int)(s & ~StateSelected);
-		//data_changed(S<"checked"_h>);
+		entity->set_state(checked ? (entity->state | StateSelected) :
+			(StateFlags)(entity->state & ~StateSelected));
+		entity->driver_data_changed(this, S<"checked"_h>);
 	}
 
-	void cCheckboxPrivate::on_load_finished()
+	void dCheckboxPrivate::on_load_finished()
 	{
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);
 
 		receiver->add_mouse_click_listener([](Capture& c) {
-			auto thiz = c.thiz<cCheckboxPrivate>();
+			auto thiz = c.thiz<dCheckboxPrivate>();
 			thiz->set_checked(!thiz->checked);
 		}, Capture().set_thiz(this));
+
+		box = entity->find_child("box");
+		fassert(receiver);
 	}
 
 	dCheckbox* dCheckbox::create()
 	{
-		return f_new<cCheckboxPrivate>();
+		return f_new<dCheckboxPrivate>();
 	}
 }

@@ -154,6 +154,18 @@
     <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" >
       <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8" >
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" >
+          <eList name="prefab_list">
+            <cScript>
+              prefab_list = entity
+              
+              local prefabs = flame_get_directory_files("prefabs")
+              for i=1, #prefabs, 1 do
+                  local e = create_entity("prefabs/list_item")
+                  e.find_component("cText").set_text(prefabs[i]:gsub("%.prefab", ""))
+                  prefab_list.add_child(e)
+              end
+            </cScript>
+          </eList>
         </eScroller>
         <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8" >
           <cReceiver />
@@ -294,6 +306,7 @@
           <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
             <cScript>
               hierarchy = entity
+              
               local tree = hierarchy.find_driver("dTree")
               local selected_h = flame_hash("selected")
               hierarchy.add_driver_data_listener(function(h)
@@ -365,7 +378,7 @@
                     evs = e.find_child("values")
                   end
                   
-                  function add_attribute(name, value)
+                  function add_text_attribute(name, value)
                     en = create_entity("prefabs/text")
                     en.find_component("cText").set_text(name)
                     ens.add_child(en)
@@ -374,11 +387,19 @@
                     evs.add_child(ev)
                   end
                   
+                  function add_check_attribute(name, value)
+                    en = create_entity("prefabs/text")
+                    en.find_component("cText").set_text(name)
+                    ens.add_child(en)
+                    ev = create_entity("prefabs/checkbox")
+                    ev.find_driver("dCheckbox").set_checked(value)
+                    evs.add_child(ev)
+                  end
+                  
                   add_group("entity")
-                  add_attribute("Name: ", selected.get_name())
-                  local srcs = selected.get_srcs()
-                  srcs = srcs:gsub("%;", "\n")
-                  add_attribute("Srcs: ", srcs)
+                  add_text_attribute("Name: ", selected.get_name())
+                  add_text_attribute("Srcs: ", selected.get_srcs())
+                  add_check_attribute("Visible: ", selected.get_visible())
               end
             </cScript>
           </eTree>

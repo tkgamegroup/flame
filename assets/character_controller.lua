@@ -1,6 +1,17 @@
 local node = entity.find_component("cNode")
 
-local mesh = entity.find_first_dfs_component("cMesh")
+local find_first_dfs_component
+find_first_dfs_component = function(e, n)
+	local ret = e.find_component(n)
+	if ret.p then return ret end
+    for i=0, e.get_children_count()-1, 1 do
+		local ret = find_first_dfs_component(e.get_child(i), n)
+		if ret.p then return ret end
+	end
+	return { p=nil }
+end
+
+local mesh = find_first_dfs_component(entity, "cMesh")
 
 local controller = entity.find_component("cController")
 

@@ -16,7 +16,6 @@ function find_enum(n)
 	if (enum == nil) then
 		enum = enums["flame::"..n]
 		if (enum == nil) then
-			print("script: cannot find enum "..n)
 			return nil
 		end
 	end
@@ -28,7 +27,6 @@ function find_udt(n)
 	if (udt == nil) then
 		udt = udts["flame::"..n]
 		if (udt == nil) then
-			print("script: cannot find udt "..n)
 			return nil
 		end
 	end
@@ -73,6 +71,7 @@ end
 function make_obj(o, n)
 	local udt = find_udt(n)
 	if (udt == nil) then
+		if o.p then print("script: cannot find udt "..n) end
 		return
 	end
 	if not o.p then return end
