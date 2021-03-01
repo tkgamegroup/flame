@@ -503,10 +503,8 @@ namespace flame
 						b->info = info;
 
 						if (bindings.size() <= b->binding)
-						{
 							bindings.resize(b->binding + 1);
-							bindings[b->binding].reset(b);
-						}
+						bindings[b->binding].reset(b);
 					};
 
 					for (auto& r : resources.uniform_buffers)

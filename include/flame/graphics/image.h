@@ -68,6 +68,8 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
+			virtual void get_samples(uint count, const vec2* uvs, vec4* dst) = 0;
+
 			virtual void save(const wchar_t* filename) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);

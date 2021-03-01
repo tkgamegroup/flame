@@ -8,7 +8,10 @@ namespace flame
 	namespace graphics
 	{
 		struct DevicePrivate;
+		struct BufferPrivate;
 		struct ImageViewPrivate;
+		struct PipelinePrivate;
+		struct DescriptorSetPrivate;
 
 		struct ImageBridge : Image
 		{
@@ -33,6 +36,10 @@ namespace flame
 			VkImage vk_image = 0;
 			std::vector<std::unique_ptr<ImageViewPrivate>> views;
 
+			std::unique_ptr<BufferPrivate> sample_uvs;
+			std::unique_ptr<BufferPrivate> sample_res;
+			std::unique_ptr<DescriptorSetPrivate> sample_descriptorset;
+
 			void init(const uvec2& size);
 			void build_default_views();
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
@@ -50,6 +57,8 @@ namespace flame
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
+
+			void get_samples(uint count, const vec2* uvs, vec4* dst) override;
 
 			void save(const std::filesystem::path& filename);
 

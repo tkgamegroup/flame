@@ -1,0 +1,7 @@
+#include "image_sample.pll"
+
+void main()
+{
+	uint id = gl_WorkGroupID.x;
+	results[id] = texture(tex, samples[id]);
+}

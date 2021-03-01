@@ -38,7 +38,7 @@ namespace flame
 
 			std::unique_ptr<BufferPrivate> buf;
 
-			ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data);
+			ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data, BufferUsageFlags extra_usage = BufferUsageNone);
 		};
 	}
 }

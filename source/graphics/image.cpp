@@ -135,6 +135,54 @@ namespace flame
 			}
 		}
 
+		PipelinePrivate* sample_pipeline = nullptr;
+
+		void ImagePrivate::get_samples(uint count, const vec2* uvs, vec4* dst)
+		{
+			if (!sample_pipeline)
+			{
+				sample_pipeline = PipelinePrivate::create(device, ShaderPrivate::get(device, L"image_sample/image_sample.comp"), 
+					PipelineLayoutPrivate::get(device, L"image_sample/image_sample.pll"));
+			}
+			if (!sample_uvs)
+				sample_uvs.reset(new BufferPrivate(device, sizeof(vec2) * 1024 * 1024, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice));
+			if (!sample_res)
+				sample_res.reset(new BufferPrivate(device, sizeof(vec4) * 1024 * 1024, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice));
+			if (!sample_descriptorset)
+			{
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"image_sample/image_sample.dsl");
+				sample_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
+				sample_descriptorset->set_image(dsl->find_binding("tex"), 0, views[0].get(), SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
+				sample_descriptorset->set_buffer(dsl->find_binding("Samples"), 0, sample_uvs.get());
+				sample_descriptorset->set_buffer(dsl->find_binding("Results"), 0, sample_res.get());
+			}
+
+			ImmediateStagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);
+
+			{
+				ImmediateCommandBuffer icb(device);
+				auto cb = icb.cb.get();
+				BufferCopy cpy;
+				cpy.size = sizeof(vec2) * count;
+				memcpy(stag.buf->mapped, uvs, cpy.size);
+				cb->copy_buffer(stag.buf.get(), sample_uvs.get(), { &cpy, 1 });
+				cb->buffer_barrier(sample_uvs.get(), AccessTransferWrite, AccessShaderRead);
+				cb->bind_pipeline(sample_pipeline);
+				cb->bind_descriptor_set(sample_descriptorset.get(), 0);
+				cb->dispatch(vec3(count, 1, 1));
+			}
+
+			{
+				ImmediateCommandBuffer icb(device);
+				auto cb = icb.cb.get();
+				BufferCopy cpy;
+				cpy.size = sizeof(vec4) * count;
+				cb->copy_buffer(sample_res.get(), stag.buf.get(), { &cpy, 1 });
+			}
+
+			memcpy(dst, stag.buf->mapped, sizeof(vec4) * count);
+		}
+
 		void ImagePrivate::save(const std::filesystem::path& filename)
 		{
 			fassert(usage & ImageUsageTransferSrc);

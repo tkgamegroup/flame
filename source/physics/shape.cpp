@@ -2,7 +2,6 @@
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/model.h>
-#include <flame/graphics/command.h>
 #include "shape_private.h"
 #include "device_private.h"
 #include "material_private.h"
@@ -64,93 +63,35 @@ namespace flame
 #ifdef USE_PHYSX
 			auto w = blocks.x * tess_levels;
 			auto h = blocks.y * tess_levels;
-			std::vector<uint> samples;
-			samples.resize((w + 1) * (h + 1));
+			std::vector<uint> samples((w + 1) * (h + 1));
+			std::vector<vec2> uvs(samples.size());
+			std::vector<vec4> res(samples.size());
+			auto idx = 0;
+			for (auto x = 0; x <= w; x++)
 			{
-				auto dev = graphics::Device::get_default();
-				auto img_size = height_map->get_size();
-				auto buf = graphics::Buffer::create(dev, img_size.x * img_size.y, graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
-				auto cb = graphics::CommandBuffer::create(graphics::CommandPool::get(dev));
-				cb->begin(true);
-				cb->image_barrier(height_map, {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutTransferSrc);
-				graphics::BufferImageCopy cpy;
-				cpy.image_extent = img_size;
-				cb->copy_image_to_buffer(height_map, buf, 1, &cpy);
-				cb->image_barrier(height_map, {}, graphics::ImageLayoutTransferSrc, graphics::ImageLayoutShaderReadOnly);
-				cb->end();
-				auto que = graphics::Queue::get(dev);
-				que->submit(1, &cb, nullptr, nullptr, nullptr);
-				que->wait_idle();
-				buf->map();
-				auto src = (uchar*)buf->get_mapped();
-				auto dst = (PxHeightFieldSample*)samples.data();
-				auto sample = [&](int x, int y) {
-					if (x < 0)
-						x = 0;
-					else if (x >= img_size.x)
-						x = img_size.x - 1;
-					if (y < 0)
-						y = 0;
-					else if (y >= img_size.y)
-						y = img_size.y - 1;
-					return src[y * img_size.x + x] / 255.f;
-				};
-				auto lvhf = tess_levels >> 1;
-				for (auto x = 0; x <= w; x++)
+				for (auto y = 0; y <= h; y++)
+					uvs[idx++] = vec2(x / (float)w, y / (float)h);
+			}
+			height_map->get_samples(uvs.size(), uvs.data(), res.data());
+			auto dst = (PxHeightFieldSample*)samples.data();
+			auto lvhf = tess_levels >> 1;
+			idx = 0;
+			for (auto x = 0; x <= w; x++)
+			{
+				for (auto y = 0; y <= h; y++)
 				{
-					for (auto y = 0; y <= h; y++)
-					{
-						auto tc = vec2(x / (float)w, y / (float)h) * vec2(img_size);
-						auto itc = ivec2(tc);
-						auto ftc = tc - vec2(itc);
-						float height;
-						if (ftc.x > 0.5f && ftc.y > 0.5f)
-						{
-							ftc.x -= 0.5f;
-							ftc.y -= 0.5f;
-							height =
-								(sample(itc.x, itc.y) * (1.f - ftc.x) + sample(itc.x + 1, itc.y) * ftc.x) * (1.f - ftc.y) +
-								(sample(itc.x, itc.y + 1) * (1.f - ftc.x) + sample(itc.x + 1, itc.y + 1) * ftc.x) * ftc.y;
-						}
-						else if (ftc.x > 0.5f && ftc.y < 0.5f)
-						{
-							ftc.x -= 0.5f;
-							ftc.y += 0.5f;
-							height =
-								(sample(itc.x, itc.y - 1) * (1.f - ftc.x) + sample(itc.x + 1, itc.y - 1) * ftc.x) * (1.f - ftc.y) +
-								(sample(itc.x, itc.y) * (1.f - ftc.x) + sample(itc.x + 1, itc.y) * ftc.x) * ftc.y;
-						}
-						else if (ftc.x < 0.5f && ftc.y > 0.5f)
-						{
-							ftc.x += 0.5f;
-							ftc.y -= 0.5f;
-							height =
-								(sample(itc.x - 1, itc.y) * (1.f - ftc.x) + sample(itc.x, itc.y) * ftc.x) * (1.f - ftc.y) +
-								(sample(itc.x - 1, itc.y + 1) * (1.f - ftc.x) + sample(itc.x, itc.y + 1) * ftc.x) * ftc.y;
-						}
-						else
-						{
-							ftc.x += 0.5f;
-							ftc.y += 0.5f;
-							height =
-								(sample(itc.x - 1, itc.y - 1) * (1.f - ftc.x) + sample(itc.x, itc.y - 1) * ftc.x) * (1.f - ftc.y) +
-								(sample(itc.x - 1, itc.y) * (1.f - ftc.x) + sample(itc.x, itc.y) * ftc.x) * ftc.y;
-						}
-						dst->height = height * height_field_precision;
+					dst->height = res[idx++][0] * height_field_precision;
 
-						dst->materialIndex0 = 0;
-						dst->materialIndex1 = 0;
-						auto s1 = x % tess_levels < lvhf ? 1 : -1;
-						auto s2 = y % tess_levels < lvhf ? 1 : -1;
-						if (s1 * s2 > 0)
-							dst->setTessFlag();
-						else
-							dst->clearTessFlag();
-						dst++;
-					}
+					dst->materialIndex0 = 0;
+					dst->materialIndex1 = 0;
+					auto s1 = x % tess_levels < lvhf ? 1 : -1;
+					auto s2 = y % tess_levels < lvhf ? 1 : -1;
+					if (s1 * s2 > 0)
+						dst->setTessFlag();
+					else
+						dst->clearTessFlag();
+					dst++;
 				}
-				cb->release();
-				buf->release();
 			}
 
 			PxHeightFieldDesc height_field_desc;

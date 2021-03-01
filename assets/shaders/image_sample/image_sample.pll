@@ -1,0 +1,2 @@
+#define IMAGE_SAMPLE_SET 0
+#include "image_sample.dsl"
