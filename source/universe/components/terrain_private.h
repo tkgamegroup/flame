@@ -31,6 +31,8 @@ namespace flame
 		int height_map_id = -1;
 		int normal_map_id = -1;
 		int material_id = -1;
+		graphics::Image* height_texture = nullptr;
+		graphics::Image* normal_texture = nullptr;
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
@@ -50,6 +52,9 @@ namespace flame
 		void set_normal_map(const std::string& name);
 		const char* get_material_name() const override { return material_name.c_str(); }
 		void set_material_name(const std::string& name);
+
+		graphics::Image* get_height_texture() const override { return height_texture; }
+		graphics::Image* get_normal_texture() const override { return normal_texture; }
 
 		void draw(graphics::Canvas* canvas);
 

@@ -110,9 +110,11 @@ namespace flame
 			height_map_id = canvas->find_texture_resource(fn.string().c_str());
 			if (height_map_id == -1 && isfile)
 			{
-				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
-				height_map_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
+				height_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
+				height_map_id = canvas->set_texture_resource(-1, height_texture->get_view(0), nullptr, fn.string().c_str());
 			}
+			else
+				height_texture = canvas->get_element_resource(height_map_id).iv->get_image();
 		}
 		{
 			auto isfile = false;
@@ -129,9 +131,11 @@ namespace flame
 			normal_map_id = canvas->find_texture_resource(fn.string().c_str());
 			if (normal_map_id == -1 && isfile)
 			{
-				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false);
-				normal_map_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
+				normal_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false);
+				normal_map_id = canvas->set_texture_resource(-1, normal_texture->get_view(0), nullptr, fn.string().c_str());
 			}
+			else
+				normal_texture = canvas->get_element_resource(normal_map_id).iv->get_image();
 		}
 		{
 			auto isfile = false;

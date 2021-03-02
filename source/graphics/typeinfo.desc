@@ -1,5 +1,23 @@
 <desc>
   <udts>
+    <rule name="^flame::graphics::Buffer$" >
+      <includes>
+        <item type="function" name="[\w]+$" />
+      </includes>
+      <excludes>
+        <item type="function" name="^ctor$" />
+        <item type="function" name="^dtor$" />
+      </excludes>
+    </rule>
+    <rule name="^flame::graphics::Image$" >
+      <includes>
+        <item type="function" name="[\w]+$" />
+      </includes>
+      <excludes>
+        <item type="function" name="^ctor$" />
+        <item type="function" name="^dtor$" />
+      </excludes>
+    </rule>
     <rule name="^flame::graphics::Canvas$" >
       <includes>
         <item type="function" name="[\w]+$" />

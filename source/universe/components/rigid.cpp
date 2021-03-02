@@ -17,18 +17,17 @@ namespace flame
 
 	void cRigidPrivate::set_dynamic(bool v)
 	{
-		if (dynamic != v)
+		if (dynamic == v)
+			return;
+		dynamic = v;
+		if (phy_rigid)
 		{
-			dynamic = v;
-			if (phy_rigid)
-			{
-				for (auto s : phy_shapes)
-					phy_rigid->remove_shape(s);
-				destroy();
-				create();
-				for (auto s : phy_shapes)
-					phy_rigid->add_shape(s);
-			}
+			for (auto s : phy_shapes)
+				phy_rigid->remove_shape(s);
+			destroy();
+			create();
+			for (auto s : phy_shapes)
+				phy_rigid->add_shape(s);
 		}
 	}
 

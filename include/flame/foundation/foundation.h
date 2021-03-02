@@ -607,7 +607,8 @@ namespace flame
 			return true;
 		}
 
-		bool get_item(const std::string& name, std::string& dst)
+		template <class T>
+		bool get_item(const std::string& name, T& dst)
 		{
 			if (!has(name))
 				return false;

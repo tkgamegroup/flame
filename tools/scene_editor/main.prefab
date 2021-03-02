@@ -134,14 +134,58 @@
           </cScript>
         </eMenuItem>
       </eMenu>
+      <eMenu text="tools" >
+        <eMenuItem text="plane grass on terrain" >
+          <cScript>
+            local menu_item = entity.find_driver("dMenuItem")
+            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+              local e_object_root = scene.find_child("object_root")
+              if not e_object_root.p then return end
+              local e_terrain = e_object_root.find_child("terrain")
+              if not e_terrain.p then return end
+              local terrain = e_terrain.find_component("cTerrain")
+              
+              local blocks = terrain.get_blocks()
+              local scale = terrain.get_scale()
+              local num = 100
+              local uvs = flame_malloc(num * 16)
+              local samples = flame_malloc(num * 32)
+              
+              local tag = find_enum("TypeTag")["Data"]
+              local basic = find_enum("BasicType")["FloatingType"]
+              for i=0,num-1,1 do
+                local uv = vec2(math.random(), math.random())
+                flame_set(uvs, i * 16, tag, basic, 2, 1, uv)
+              end
+              
+              local height_texture = terrain.get_height_texture()
+              height_texture.get_samples(num, uvs, samples)
+              
+              local e_grass_root = create_entity("prefabs/node")
+              e_grass_root.set_name("grass_root")
+              for i=0,num-1,1 do
+                local uv = flame_get(uvs, i * 16, tag, basic, 2, 1)
+                local sample = flame_get(samples, i * 32, tag, basic, 4, 1)
+                local e = create_entity("D:\\grass\\01_d.prefab")
+                e.find_component("cNode").set_pos(vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z))
+                e_grass_root.add_child(e)
+              end
+              e_object_root.add_child(e_grass_root)
+              
+              flame_free(uvs)
+              flame_free(samples)
+            end)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
       <eMenu text="settings" >
         <eMenuItem checkable="true" text="always update" >
           <cScript>
             local menu_item = entity.find_driver("dMenuItem")
             entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-            local checked = menu_item.get_checked()
-            checked = not checked
-            menu_item.set_checked(checked)
+              local checked = menu_item.get_checked()
+              checked = not checked
+              menu_item.set_checked(checked)
             end)
           </cScript>
         </eMenuItem>

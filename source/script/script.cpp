@@ -120,6 +120,23 @@ namespace flame
 			return ret;
 		}
 
+		int lua_flame_malloc(lua_State* state)
+		{
+			if (lua_isinteger(state, -1))
+			{
+				lua_pushlightuserdata(state, malloc(lua_tointeger(state, -1)));
+				return 1;
+			}
+			return 0;
+		}
+
+		int lua_flame_free(lua_State* state)
+		{
+			if (lua_isuserdata(state, -1))
+				free(lua_touserdata(state, -1));
+			return 0;
+		}
+
 		int lua_flame_hash(lua_State* state)
 		{
 			if (lua_isstring(state, -1))
@@ -179,51 +196,62 @@ namespace flame
 				switch (tag)
 				{
 				case TypeData:
-					switch (basic)
+					switch (vec_size)
 					{
-					case IntegerType:
-					{
-						int ret;
-						ret = *(int*)((char*)obj + off);
-						lua_pushinteger(state, ret);
-						return 1;
-					}
-						break;
-					case FloatingType:
-					{
-						switch (col_size)
+					case 1:
+						switch (basic)
 						{
-						case 1:
+						case IntegerType:
+						{
+							int ret;
+							ret = *(int*)((char*)obj + off);
+							lua_pushinteger(state, ret);
+							return 1;
+						}
+						case FloatingType:
 						{
 							float ret;
 							ret = *(float*)((char*)obj + off);
 							lua_pushnumber(state, ret);
+							return 1;
 						}
-							break;
-						case 2:
+						}
+						break;
+					case 2:
+						switch (basic)
+						{
+						case FloatingType:
 						{
 							vec2 ret;
 							ret = *(vec2*)((char*)obj + off);
 							lua_push_vec2(state, ret);
+							return 1;
 						}
-							break;
-						case 3:
+						}
+						break;
+					case 3:
+						switch (basic)
+						{
+						case FloatingType:
 						{
 							vec3 ret;
 							ret = *(vec3*)((char*)obj + off);
 							lua_push_vec3(state, ret);
+							return 1;
 						}
-							break;
-						case 4:
+						}
+						break;
+					case 4:
+						switch (basic)
+						{
+						case FloatingType:
 						{
 							vec4 ret;
 							ret = *(vec4*)((char*)obj + off);
 							lua_push_vec4(state, ret);
+							return 1;
 						}
-							break;
 						}
-						return 1;
-					}
 						break;
 					}
 					break;
@@ -271,29 +299,42 @@ namespace flame
 				switch (tag)
 				{
 				case TypeData:
-					switch (basic)
+					switch (vec_size)
 					{
-					case IntegerType:
-						*(int*)((char*)obj + off) = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : 0;
-						break;
-					case FloatingType:
-					{
-						switch (col_size)
+					case 1:
+						switch (basic)
 						{
-						case 1:
+						case IntegerType:
+							*(int*)((char*)obj + off) = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : 0;
+							break;
+						case FloatingType:
 							*(float*)((char*)obj + off) = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : 0;
 							break;
-						case 2:
+						}
+						break;
+					case 2:
+						switch (basic)
+						{
+						case FloatingType:
 							*(vec2*)((char*)obj + off) = lua_to_vec2(state, -1);
 							break;
-						case 3:
+						}
+						break;
+					case 3:
+						switch (basic)
+						{
+						case FloatingType:
 							*(vec3*)((char*)obj + off) = lua_to_vec3(state, -1);
 							break;
-						case 4:
+						}
+						break;
+					case 4:
+						switch (basic)
+						{
+						case FloatingType:
 							*(vec4*)((char*)obj + off) = lua_to_vec4(state, -1);
 							break;
 						}
-					}
 						break;
 					}
 					break;
@@ -366,11 +407,11 @@ namespace flame
 			if (f)
 			{
 				char parms[4 * sizeof(void*)];
-				auto parms_count = f->get_parameters_count();
 				auto p = parms;
 				std::vector<std::unique_ptr<std::string>> temp_strs;
 				std::vector<std::unique_ptr<std::wstring>> temp_wstrs;
 				std::vector<std::unique_ptr<char>> temp_datas;
+				auto parms_count = f->get_parameters_count();
 				for (auto i = 0; i < parms_count; i++)
 				{
 					auto type = f->get_parameter(i);
@@ -411,71 +452,123 @@ namespace flame
 							auto pointed_type = type->get_pointed_type();
 							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
 							auto vec_size = pointed_type ? pointed_type->get_vec_size() : 1;
-							if (vec_size == 1)
-							{
-								switch (basic)
-								{
-								case CharType:
-								{
-									auto t = type->create();
-									auto str = new std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-									*(void**)p = (char*)str->c_str();
-									temp_strs.emplace_back(str);
-								}
-									break;
-								case WideCharType:
-								{
-									auto str = new std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
-									*(void**)p = (wchar_t*)str->c_str();
-									temp_wstrs.emplace_back(str);
-								}
-									break;
-								default:
-									if (lua_isuserdata(state, -1))
-										*(void**)p = lua_touserdata(state, -1);
-									else if (lua_isnumber(state, -1))
-										*(void**)p = (void*)lua_tointeger(state, -1);
-									else if (lua_istable(state, -1))
-									{
-										lua_pushstring(state, "p");
-										lua_gettable(state, -2);
-										*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
-										lua_pop(state, 1);
-									}
-									else
-										*(void**)p = nullptr;
-								}
-							}
+							if (lua_isuserdata(state, -1))
+								*(void**)p = lua_touserdata(state, -1);
 							else
 							{
-								auto d = new char[pointed_type->get_size()];
-								switch (basic)
+								switch (vec_size)
 								{
-								case FloatingType:
-									switch (vec_size)
+								case 1:
+									switch (basic)
 									{
-									case 2:
-										*(vec2*)d = lua_to_vec2(state, -1);
+									case CharType:
+									{
+										auto t = type->create();
+										auto str = new std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
+										*(void**)p = (char*)str->c_str();
+										temp_strs.emplace_back(str);
+									}
 										break;
-									case 3:
-										*(vec3*)d = lua_to_vec3(state, -1);
+									case WideCharType:
+									{
+										auto str = new std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
+										*(void**)p = (wchar_t*)str->c_str();
+										temp_wstrs.emplace_back(str);
+									}
 										break;
-									case 4:
-										*(vec4*)d = lua_to_vec4(state, -1);
+									default:
+										if (lua_isnumber(state, -1))
+											*(void**)p = (void*)lua_tointeger(state, -1);
+										else if (lua_istable(state, -1))
+										{
+											lua_pushstring(state, "p");
+											lua_gettable(state, -2);
+											*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
+											lua_pop(state, 1);
+										}
+										else
+											*(void**)p = nullptr;
+									}
+									break;
+								case 2:
+									switch (basic)
+									{
+									case IntegerType:
+									{
+										auto d = new ivec2(lua_to_vec2(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case FloatingType:
+									{
+										auto d = new vec2(lua_to_vec2(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case CharType:
+									{
+										auto d = new cvec2(lua_to_vec2(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
 										break;
 									}
 									break;
-								case CharType:
-									switch (vec_size)
+								case 3:
+									switch (basic)
 									{
-									case 4:
-										*(cvec4*)d = lua_to_vec4(state, -1);
+									case IntegerType:
+									{
+										auto d = new ivec3(lua_to_vec3(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case FloatingType:
+									{
+										auto d = new vec3(lua_to_vec3(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case CharType:
+									{
+										auto d = new cvec3(lua_to_vec3(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									}
+									break;
+								case 4:
+									switch (basic)
+									{
+									case IntegerType:
+									{
+										auto d = new ivec4(lua_to_vec4(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case FloatingType:
+									{
+										auto d = new vec4(lua_to_vec4(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
+										break;
+									case CharType:
+									{
+										auto d = new cvec4(lua_to_vec4(state, -1));
+										*(void**)p = d;
+										temp_datas.emplace_back((char*)d);
+									}
 										break;
 									}
 									break;
 								}
-								*(void**)p = d;
-								temp_datas.emplace_back(d);
 							}
 
 							p += sizeof(void*);
@@ -527,8 +620,16 @@ namespace flame
 							case 2:
 								switch (basic)
 								{
+								case IntegerType:
+									lua_push_vec2(state, *(ivec2*)ret);
+									pushed_number = 1;
+									break;
 								case FloatingType:
 									lua_push_vec2(state, *(vec2*)ret);
+									pushed_number = 1;
+									break;
+								case CharType:
+									lua_push_vec2(state, *(cvec2*)ret);
 									pushed_number = 1;
 									break;
 								}
@@ -536,8 +637,16 @@ namespace flame
 							case 3:
 								switch (basic)
 								{
+								case IntegerType:
+									lua_push_vec3(state, *(ivec3*)ret);
+									pushed_number = 1;
+									break;
 								case FloatingType:
 									lua_push_vec3(state, *(vec3*)ret);
+									pushed_number = 1;
+									break;
+								case CharType:
+									lua_push_vec3(state, *(cvec3*)ret);
 									pushed_number = 1;
 									break;
 								}
@@ -545,8 +654,16 @@ namespace flame
 							case 4:
 								switch (basic)
 								{
+								case IntegerType:
+									lua_push_vec4(state, *(ivec4*)ret);
+									pushed_number = 1;
+									break;
 								case FloatingType:
 									lua_push_vec4(state, *(vec4*)ret);
+									pushed_number = 1;
+									break;
+								case CharType:
+									lua_push_vec4(state, *(cvec4*)ret);
 									pushed_number = 1;
 									break;
 								}
@@ -580,31 +697,19 @@ namespace flame
 						{
 							auto pointed_type = ret_type->get_pointed_type();
 							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
-							auto vec_size = pointed_type ? pointed_type->get_vec_size() : 1;
-							auto col_size = pointed_type ? pointed_type->get_col_size() : 1;
-							switch (col_size)
+							switch (basic)
 							{
-							case 1:
-								switch (vec_size)
-								{
-								case 1:
-									switch (basic)
-									{
-									case CharType:
-										lua_pushstring(state, pointer ? (char*)pointer : "");
-										pushed_number = 1;
-										break;
-									case WideCharType:
-										lua_pushstring(state, pointer ? w2s((wchar_t*)pointer).c_str() : "");
-										pushed_number = 1;
-										break;
-									default:
-										lua_pushlightuserdata(state, pointer);
-										pushed_number = 1;
-										break;
-									}
-									break;
-								}
+							case CharType:
+								lua_pushstring(state, pointer ? (char*)pointer : "");
+								pushed_number = 1;
+								break;
+							case WideCharType:
+								lua_pushstring(state, pointer ? w2s((wchar_t*)pointer).c_str() : "");
+								pushed_number = 1;
+								break;
+							default:
+								lua_pushlightuserdata(state, pointer);
+								pushed_number = 1;
 								break;
 							}
 						}
@@ -631,6 +736,12 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_flame_hash);
 			lua_setglobal(lua_state, "flame_hash");
 
+			lua_pushcfunction(lua_state, lua_flame_malloc);
+			lua_setglobal(lua_state, "flame_malloc");
+
+			lua_pushcfunction(lua_state, lua_flame_free);
+			lua_setglobal(lua_state, "flame_free");
+
 			lua_pushcfunction(lua_state, lua_flame_transform);
 			lua_setglobal(lua_state, "flame_transform");
 
@@ -642,6 +753,9 @@ namespace flame
 
 			lua_pushcfunction(lua_state, lua_flame_get);
 			lua_setglobal(lua_state, "flame_get");
+
+			lua_pushcfunction(lua_state, lua_flame_set);
+			lua_setglobal(lua_state, "flame_set");
 
 			lua_pushcfunction(lua_state, lua_flame_call);
 			lua_setglobal(lua_state, "flame_call");

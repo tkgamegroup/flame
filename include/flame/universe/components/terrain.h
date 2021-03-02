@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Image;
+	}
+
 	struct cTerrain : Component
 	{
 		inline static auto type_name = "flame::cTerrain";
@@ -27,6 +32,9 @@ namespace flame
 		virtual void set_normal_map(const char* name) = 0;
 		virtual const char* get_material_name() const = 0;
 		virtual void set_material_name(const char* name) = 0;
+
+		virtual graphics::Image* get_height_texture() const = 0;
+		virtual graphics::Image* get_normal_texture() const = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cTerrain* create();
 	};
