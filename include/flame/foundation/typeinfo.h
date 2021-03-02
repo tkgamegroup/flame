@@ -5,17 +5,6 @@
 
 namespace flame
 {
-	enum BasicType
-	{
-		VoidType,
-		BooleanType,
-		IntegerType,
-		FloatingType,
-		CharType,
-		WideCharType,
-		ElseType
-	};
-
 	enum TypeTag
 	{
 		TypeEnumSingle,
@@ -27,6 +16,17 @@ namespace flame
 		TypeArrayOfPointer,
 
 		TypeTagCount
+	};
+
+	enum BasicType
+	{
+		VoidType,
+		BooleanType,
+		IntegerType,
+		FloatingType,
+		CharType,
+		WideCharType,
+		ElseType
 	};
 
 	struct EnumInfo;
@@ -167,15 +167,4 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
 	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture);
-
-	inline UdtInfo* find_underlay_udt(const std::string& name)
-	{
-		auto ret = find_udt(name.c_str());
-		if (!ret)
-			return nullptr;
-		auto underlay = find_udt((name + "Private").c_str());
-		if (underlay)
-			ret = underlay;
-		return ret;
-	}
 }

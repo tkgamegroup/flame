@@ -1,0 +1,8 @@
+<desc>
+  <enums>
+    <rule name="^flame::TypeTag$" />
+    <rule name="^flame::BasicType$" />
+  </enums>
+  <udts>
+  </udts>
+</desc>

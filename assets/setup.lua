@@ -93,7 +93,7 @@ function make_obj(o, n)
 	end
 	if not o.p then return end
 	for k, vari in pairs(udt.variables) do
-		local v = flame_get_variable(o.p, vari.offset, vari.tag, vari.basic)
+		local v = flame_get(o.p, vari.offset, vari.tag, vari.basic, vari.vec_size, vari.col_size)
 		if type(v) == "userdata" then
 			local vv = { p=v }
 			make_obj(vv, vari.type)

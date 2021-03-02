@@ -1241,7 +1241,9 @@ namespace flame
 
 				for (auto n_variable : n_udt.child("variables"))
 				{
-					auto type = TypeInfoPrivate::get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
+					TypeTag tag;
+					TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n_variable.attribute("type_tag").value());
+					auto type = TypeInfoPrivate::get(tag, n_variable.attribute("type_name").value());
 					auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(), n_variable.attribute("offset").as_uint(),
 						n_variable.attribute("meta").value());
 					u->variables.emplace_back(v);
@@ -1255,12 +1257,17 @@ namespace flame
 
 				for (auto n_function : n_udt.child("functions"))
 				{
+					TypeTag tag;
+					TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n_function.attribute("type_tag").value());
 					auto f = new FunctionInfoPrivate(this, u, u->functions.size(), n_function.attribute("name").value(), 
 						n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
-						TypeInfoPrivate::get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
+						TypeInfoPrivate::get(tag, n_function.attribute("type_name").value()));
 					u->functions.emplace_back(f);
 					for (auto n_parameter : n_function.child("parameters"))
-						f->parameters.push_back(TypeInfoPrivate::get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
+					{
+						TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n_parameter.attribute("type_tag").value());
+						f->parameters.push_back(TypeInfoPrivate::get(tag, n_parameter.attribute("type_name").value()));
+					}
 				}
 			}
 

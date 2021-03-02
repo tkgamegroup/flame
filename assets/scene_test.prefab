@@ -9,7 +9,7 @@
       end
     </cScript>
     <eNode name="object_root" >
-      <cScript src="defe:shoot_ball.lua defe:plane_tree.lua" >
+      <cScript src="shoot_ball.lua plane_tree.lua" >
         object_root = entity
       </cScript>
       <entity src="D:\sky\sky" name="sky" />

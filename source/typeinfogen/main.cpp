@@ -469,6 +469,12 @@ process:
 		}
 	}
 
+	auto str_alloc = [](void* _str, uint size) {
+		auto& str = *(std::string*)_str;
+		str.resize(size);
+		return str.data();
+	};
+
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
 	IDiaSymbol* s_udt;
@@ -544,7 +550,11 @@ process:
 								n_function.append_attribute("name").set_value(name.c_str());
 								n_function.append_attribute("rva").set_value(rva);
 								n_function.append_attribute("voff").set_value(voff);
-								n_function.append_attribute("type_tag").set_value(ret_type.tag);
+								{
+									std::string str;
+									TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&ret_type.tag, &str, str_alloc);
+									n_function.append_attribute("type_tag").set_value(str.c_str());
+								}
 								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
 
 								pugi::xml_node n_parameters;
@@ -564,7 +574,11 @@ process:
 									if (!n_parameters)
 										n_parameters = n_function.append_child("parameters");
 									auto n_parameter = n_parameters.append_child("parameter");
-									n_parameter.append_attribute("type_tag").set_value(desc.tag);
+									{
+										std::string str;
+										TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&desc.tag, &str, str_alloc);
+										n_parameter.append_attribute("type_tag").set_value(str.c_str());
+									}
 									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
 									s_type->Release();
@@ -621,7 +635,11 @@ process:
 								if (!n_variables)
 									n_variables = n_udt.prepend_child("variables");
 								auto n_variable = n_variables.append_child("variable");
-								n_variable.append_attribute("type_tag").set_value(desc.tag);
+								{
+									std::string str;
+									TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&desc.tag, &str, str_alloc);
+									n_variable.append_attribute("type_tag").set_value(str.c_str());
+								}
 								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
 								n_variable.append_attribute("name").set_value(name.c_str());
 								n_variable.append_attribute("offset").set_value(offset);

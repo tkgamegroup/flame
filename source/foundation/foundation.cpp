@@ -138,7 +138,7 @@ namespace flame
 		auto path = std::filesystem::path(filename);
 		auto parent_path = path.parent_path();
 		std::deque<std::filesystem::path> remains;
-		std::unordered_map<std::string, uint> toucheds;
+		std::vector<std::string> list;
 		remains.push_back(path.filename());
 		while (!remains.empty())
 		{
@@ -158,11 +158,19 @@ namespace flame
 						break;
 
 					auto pstr = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
-					if (toucheds.find(pstr) == toucheds.end())
+					auto found = false;
+					for (auto& s : list)
+					{
+						if (s == pstr)
+						{
+							found = true;
+							break;
+						}
+					}
+					if (!found)
 					{
 						remains.push_back(pstr);
-						toucheds.emplace(pstr, 0);
-						callback((Capture&)capture, (parent_path / pstr).c_str());
+						list.push_back(pstr);
 					}
 
 					importDesc++;
@@ -170,6 +178,8 @@ namespace flame
 			}
 			ImageUnload(image);
 		}
+		for (auto i = (int)list.size() - 1; i >= 0; i--)
+			callback((Capture&)capture, (parent_path / list[i]).c_str());
 
 		f_free(capture._data);
 	}
