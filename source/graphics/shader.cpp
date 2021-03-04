@@ -905,8 +905,50 @@ namespace flame
 			delete this;
 		}
 
+		std::vector<std::string> ShaderPrivate::format_defines(const std::string& defines)
+		{
+			std::vector<std::string> ret;
+			auto sp = SUS::split(defines);
+			for (auto& s : sp)
+			{
+				SUS::trim(s);
+				if (!s.empty())
+					ret.push_back(s);
+			}
+			return ret;
+		}
+
+		std::vector<std::pair<std::string, std::string>> ShaderPrivate::format_substitutes(const std::string& substitutes)
+		{
+			std::vector<std::pair<std::string, std::string>> ret;
+			auto sp = SUS::split(substitutes);
+			for (auto i = 0; i < (int)sp.size() - 1; i += 2)
+			{
+				SUS::trim(sp[i]);
+				SUS::trim(sp[i + 1]);
+				if (!sp[i].empty() && !sp[i + 1].empty())
+					ret.emplace_back(sp[i], sp[i + 1]);
+			}
+			return ret;
+		}
+
 		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
+			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes), extra_dependencies);
+		}
+
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
+		{
+			auto filename = _filename;
+			filename.make_preferred();
+
+			auto defines = _defines;
+			std::sort(defines.begin(), defines.end());
+			auto substitutes = _substitutes;
+			std::sort(substitutes.begin(), substitutes.end(), [](const auto& a, const auto& b) {
+				return a.first < b.first;
+			});
+
 			for (auto& s : device->sds)
 			{
 				if (s.second->filename == filename && s.second->defines == defines && s.second->substitutes == substitutes)
@@ -915,39 +957,6 @@ namespace flame
 					return s.second.get();
 				}
 			}
-			auto s = ShaderPrivate::create(device, filename, defines, substitutes, extra_dependencies);
-			fassert(s);
-			device->sds.emplace_back(1, s);
-			return s;
-		}
-
-		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content) :
-			device(device),
-			filename(filename),
-			defines(defines),
-			substitutes(substitutes)
-		{
-			type = shader_stage_from_ext(filename.extension());
-
-			VkShaderModuleCreateInfo shader_info;
-			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			shader_info.flags = 0;
-			shader_info.pNext = nullptr;
-			shader_info.codeSize = spv_content.size();
-			shader_info.pCode = (uint*)spv_content.data();
-			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &vk_module));
-		}
-
-		ShaderPrivate::~ShaderPrivate()
-		{
-			if (vk_module)
-				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
-		}
-
-		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
-		{
-			auto filename = _filename;
-			filename.make_preferred();
 
 			auto path = filename;
 			if (!get_resource_path(path, L"assets\\shaders"))
@@ -957,7 +966,11 @@ namespace flame
 			}
 			auto ppath = path.parent_path();
 
-			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(defines) ^ std::hash<std::string>()(substitutes);
+			auto hash = std::hash<std::wstring>()(filename);
+			for (auto& d : defines)
+				hash = hash ^ std::hash<std::string>()(d);
+			for (auto& s : substitutes)
+				hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
 			auto str_hash = std::to_wstring(hash);
 
 			auto spv_path = path;
@@ -971,35 +984,28 @@ namespace flame
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
-					std::vector<std::pair<std::string, std::string>> replace_pairs;
-					{
-						auto sp = SUS::split(substitutes);
-						fassert(sp.size() % 2 == 0);
-						for (auto i = 0; i < sp.size(); i += 2)
-						{
-							auto from = sp[i];
-							auto to = sp[i + 1];
-							if (from.ends_with("_FILE"))
-							{
-								auto fn = std::filesystem::path(to);
-								if (!fn.is_absolute())
-									fn = ppath / fn;
-								to = get_file_content(fn);
-								fassert(!to.empty());
-								SUS::remove_ch(to, '\r');
-							}
-							replace_pairs.emplace_back(from, to);
-						}
-					}
-
 					auto temp = basic_glsl_prefix();
 					std::ifstream glsl(path);
 					while (!glsl.eof())
 					{
 						std::string line;
 						std::getline(glsl, line);
-						for (auto& p : replace_pairs)
-							SUS::replace_all(line, p.first, p.second);
+						for (auto& s : substitutes)
+						{
+							std::string content;
+							if (s.first.ends_with("_FILE"))
+							{
+								auto fn = std::filesystem::path(s.second);
+								if (!fn.is_absolute())
+									fn = ppath / fn;
+								content = get_file_content(fn);
+								fassert(!content.empty());
+								SUS::remove_ch(content, '\r');
+							}
+							else
+								content = s.second;
+							SUS::replace_all(line, s.first, content);
+						}
 						temp += line + "\n";
 					}
 					glsl.close();
@@ -1018,11 +1024,26 @@ namespace flame
 					glslc_path /= L"Bin/glslc.exe";
 
 					auto command_line = std::wstring(L" -g " + temp_fn.wstring() + L" -o" + spv_path.wstring());
-					auto sp = SUS::split(defines);
-					for (auto& d : sp)
+					for (auto& d : defines)
 						command_line += L" -D" + s2w(d);
 
-					printf("compiling shader: %s (%s) (%s)", path.string().c_str(), defines.c_str(), substitutes.c_str());
+					{
+						std::string defines_str;
+						std::string substitutes_str;
+						for (auto i = 0; i < defines.size(); i++)
+						{
+							defines_str += defines[i];
+							if (i < defines.size() - 1)
+								defines_str += " ";
+						}
+						for (auto i = 0; i < substitutes.size(); i++)
+						{
+							substitutes_str += substitutes[i].first + " " + substitutes[i].second;
+							if (i < substitutes.size() - 1)
+								substitutes_str += " ";
+						}
+						printf("compiling shader: %s (%s) (%s)", path.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
+					}
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
@@ -1057,7 +1078,49 @@ namespace flame
 				return nullptr;
 			}
 
-			return new ShaderPrivate(device, filename, defines, substitutes, spv_file);
+			auto s = new ShaderPrivate(device, filename, defines, substitutes, spv_file);
+			device->sds.emplace_back(1, s);
+			return s;
+		}
+
+		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
+			device(device),
+			filename(filename),
+			defines(defines),
+			substitutes(substitutes)
+		{
+			auto ext = filename.extension();
+			if (ext == L".vert")
+				type = ShaderStageVert;
+			else if (ext == L".tesc")
+				type = ShaderStageTesc;
+			else if (ext == L".tese")
+				type = ShaderStageTese;
+			else if (ext == L".geom")
+				type = ShaderStageGeom;
+			else if (ext == L".frag")
+				type = ShaderStageFrag;
+			else if (ext == L".comp")
+				type = ShaderStageComp;
+
+			VkShaderModuleCreateInfo shader_info;
+			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			shader_info.flags = 0;
+			shader_info.pNext = nullptr;
+			shader_info.codeSize = spv_content.size();
+			shader_info.pCode = (uint*)spv_content.data();
+			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &vk_module));
+		}
+
+		ShaderPrivate::~ShaderPrivate()
+		{
+			if (vk_module)
+				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+		}
+
+		Shader* Shader::get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes)
+		{
+			return ShaderPrivate::get((DevicePrivate*)device, filename, defines, substitutes);
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,

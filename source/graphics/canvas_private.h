@@ -29,6 +29,14 @@ namespace flame
 			MaterialUsageCount
 		};
 
+		struct MaterialPipeline
+		{
+			std::filesystem::path mat;
+			std::vector<std::string> defines;
+			uint ref_count = 1;
+			std::unique_ptr<PipelinePrivate> pipeline;
+		};
+
 		struct RenderPreferencesPrivate : RenderPreferences
 		{
 			DevicePrivate* device;
@@ -43,20 +51,20 @@ namespace flame
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
 			std::unique_ptr<RenderpassPrivate> pickup_renderpass;
-			std::vector<std::tuple<std::filesystem::path, std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
+			std::vector<MaterialPipeline> material_pipelines[MaterialUsageCount];
 			std::unique_ptr<PipelinePrivate> element_pipeline;
 			std::unique_ptr<PipelinePrivate> sky_pipeline;
 			PipelineLayoutPrivate* mesh_pipeline_layout;
 			PipelineLayoutPrivate* terrain_pipeline_layout;
-			std::unique_ptr<PipelinePrivate> mesh_wireframe_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
-			std::unique_ptr<PipelinePrivate> terrain_wireframe_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_pickup_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_armature_pickup_pipeline;
-			std::unique_ptr<PipelinePrivate> terrain_pickup_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_outline_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_armature_outline_pipeline;
-			std::unique_ptr<PipelinePrivate> terrain_outline_pipeline;
+			PipelinePrivate* mesh_wireframe_pipeline;
+			PipelinePrivate* mesh_armature_wireframe_pipeline;
+			PipelinePrivate* terrain_wireframe_pipeline;
+			PipelinePrivate* mesh_pickup_pipeline;
+			PipelinePrivate* mesh_armature_pickup_pipeline;
+			PipelinePrivate* terrain_pickup_pipeline;
+			PipelinePrivate* mesh_outline_pipeline;
+			PipelinePrivate* mesh_armature_outline_pipeline;
+			PipelinePrivate* terrain_outline_pipeline;
 			std::unique_ptr<PipelinePrivate> line_pipeline;
 			std::unique_ptr<PipelinePrivate> triangle_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
@@ -75,7 +83,6 @@ namespace flame
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr);
 
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
-			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
 		};
 

@@ -819,7 +819,7 @@ namespace flame
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
 						dst->textures[1].filename = filename;
-						dst->pipeline_defines += "ALPHA_MAP ";
+						dst->pipeline_defines += "ALPHA_MAP ALPHA_TEST ";
 						dst->alpha_test = 0.5f;
 					}
 				}

@@ -194,9 +194,9 @@ namespace flame
 		struct ShaderPrivate : Shader
 		{
 			std::filesystem::path filename;
-			std::string defines;
-			std::string substitutes;
-			ShaderStageFlags type;
+			std::vector<std::string> defines;
+			std::vector<std::pair<std::string, std::string>> substitutes;
+			ShaderStageFlags type = ShaderStageNone;
 
 			DevicePrivate* device;
 
@@ -205,16 +205,17 @@ namespace flame
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content);
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content);
 			~ShaderPrivate();
 
 			void release() override;
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
-			const char* get_defines() const override { return defines.c_str(); }
 
+			static std::vector<std::string> format_defines(const std::string& defines);
+			static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& substitutes);
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
-			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::vector<std::filesystem::path>& extra_dependencies);
 		};
 
 		struct PipelinePrivate : Pipeline

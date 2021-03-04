@@ -124,53 +124,13 @@ namespace flame
 			BlendFactor dst_alpha = BlendFactorZero;
 		};
 
-		inline std::wstring shader_stage_name(ShaderStageFlags s)
-		{
-			switch (s)
-			{
-			case ShaderStageVert:
-				return L"vert";
-			case ShaderStageTesc:
-				return L"tesc";
-			case ShaderStageTese:
-				return L"tese";
-			case ShaderStageGeom:
-				return L"geom";
-			case ShaderStageFrag:
-				return L"frag";
-			case ShaderStageComp:
-				return L"comp";
-			}
-		}
-
-		inline ShaderStageFlags shader_stage_from_ext(const std::wstring& extension)
-		{
-			if (extension == L".vert")
-				return ShaderStageVert;
-			else if (extension == L".tesc")
-				return ShaderStageTesc;
-			else if (extension == L".tese")
-				return ShaderStageTese;
-			else if (extension == L".geom")
-				return ShaderStageGeom;
-			else if (extension == L".frag")
-				return ShaderStageFrag;
-			else if (extension == L".comp")
-				return ShaderStageComp;
-			return ShaderStageNone;
-		}
-
-		// stage variables:
-		//  'i_' or 'o_' will be eliminated to verify between stages
-
 		struct Shader
 		{
 			virtual void release() = 0;
 
 			virtual const wchar_t* get_filename() const = 0;
-			virtual const char* get_defines() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
+			FLAME_GRAPHICS_EXPORTS static Shader* get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
 		};
 
 		struct Pipeline

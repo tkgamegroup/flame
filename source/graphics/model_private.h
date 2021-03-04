@@ -25,6 +25,7 @@ namespace flame
 			float metallic = 0.f;
 			float roughness = 1.f;
 			float alpha_test = 0.f;
+			bool double_side = false;
 
 			std::filesystem::path pipeline_file = "standard.mat";
 			std::string pipeline_defines;
