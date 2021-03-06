@@ -10,6 +10,11 @@ namespace flame
 	}
 	struct cCamera;
 
+	struct sRendererParms
+	{
+		bool hdr = true;
+	};
+
 	struct sRenderer : System
 	{
 		inline static auto type_name = "flame::sRenderer";
@@ -31,6 +36,6 @@ namespace flame
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static sRenderer* create();
+		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};
 }

@@ -55,6 +55,6 @@ namespace flame
 
 		virtual void on_key_event(KeyboardKey key, bool down = true) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cReceiver* create();
+		FLAME_UNIVERSE_EXPORTS static cReceiver* create(void* parms = nullptr);
 	};
 }

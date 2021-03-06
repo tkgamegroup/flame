@@ -167,7 +167,7 @@ namespace flame
 		}
 	}
 
-	dMenu* dMenu::create()
+	dMenu* dMenu::create(void* parms)
 	{
 		return f_new<dMenuPrivate>();
 	}
@@ -231,12 +231,12 @@ namespace flame
 		element->add_padding(vec4(text->font_size, 0.f, 0.f, 0.f));
 	}
 
-	dMenuItem* dMenuItem::create()
+	dMenuItem* dMenuItem::create(void* parms)
 	{
 		return f_new<dMenuItemPrivate>();
 	}
 
-	dMenuBar* dMenuBar::create()
+	dMenuBar* dMenuBar::create(void* parms)
 	{
 		return f_new<dMenuBarPrivate>();
 	}

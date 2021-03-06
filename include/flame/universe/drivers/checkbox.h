@@ -17,6 +17,6 @@ namespace flame
 		virtual bool get_checked() const = 0;
 		virtual void set_checked(bool checked) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dCheckbox* create();
+		FLAME_UNIVERSE_EXPORTS static dCheckbox* create(void* parms = nullptr);
 	};
 }

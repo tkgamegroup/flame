@@ -117,7 +117,7 @@ namespace flame
 		return false;
 	}
 
-	dSplitter* dSplitter::create()
+	dSplitter* dSplitter::create(void* parms)
 	{
 		return f_new<dSplitterPrivate>();
 	}

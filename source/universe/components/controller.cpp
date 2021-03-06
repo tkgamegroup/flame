@@ -60,7 +60,7 @@ namespace flame
 		physics = nullptr;
 	}
 
-	cController* cController::create()
+	cController* cController::create(void* parms)
 	{
 		return f_new<cControllerPrivate>();
 	}

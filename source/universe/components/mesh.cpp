@@ -277,7 +277,7 @@ namespace flame
 		mesh = nullptr;
 	}
 
-	cMesh* cMesh::create()
+	cMesh* cMesh::create(void* parms)
 	{
 		return f_new<cMeshPrivate>();
 	}

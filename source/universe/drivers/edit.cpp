@@ -444,7 +444,7 @@ namespace flame
 		}
 	}
 
-	dEdit* dEdit::create()
+	dEdit* dEdit::create(void* parms)
 	{
 		return f_new<dEditPrivate>();
 	}

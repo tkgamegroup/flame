@@ -70,7 +70,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	dInputDialog* dInputDialog::create()
+	dInputDialog* dInputDialog::create(void* parms)
 	{
 		return f_new<dInputDialogPrivate>();
 	}

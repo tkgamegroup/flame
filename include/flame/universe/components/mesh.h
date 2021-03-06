@@ -22,6 +22,6 @@ namespace flame
 
 		virtual void set_animation(const char* name, bool loop = true, uint layer = 0) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cMesh* create();
+		FLAME_UNIVERSE_EXPORTS static cMesh* create(void* parms = nullptr);
 	};
 }

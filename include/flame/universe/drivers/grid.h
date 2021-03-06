@@ -14,6 +14,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static dGrid* create();
+		FLAME_UNIVERSE_EXPORTS static dGrid* create(void* parms = nullptr);
 	};
 }

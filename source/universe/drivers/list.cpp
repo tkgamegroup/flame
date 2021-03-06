@@ -44,7 +44,7 @@ namespace flame
 		entity->driver_data_changed(this, S<"selected"_h>);
 	}
 
-	dList* dList::create()
+	dList* dList::create(void* parms)
 	{
 		return f_new<dListPrivate>();
 	}

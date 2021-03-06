@@ -712,7 +712,7 @@ namespace flame
 		}
 	}
 
-	cElement* cElement::create()
+	cElement* cElement::create(void* parms)
 	{
 		return f_new<cElementPrivate>();
 	}

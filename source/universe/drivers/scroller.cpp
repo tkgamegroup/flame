@@ -135,7 +135,7 @@ namespace flame
 		}
 	}
 
-	dScroller* dScroller::create()
+	dScroller* dScroller::create(void* parms)
 	{
 		return f_new<dScrollerPrivate>();
 	}

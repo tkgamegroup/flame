@@ -17,6 +17,6 @@ namespace flame
 		virtual Entity* get_selected() const = 0;
 		virtual void set_selected(Entity* e) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dList* create();
+		FLAME_UNIVERSE_EXPORTS static dList* create(void* parms = nullptr);
 	};
 }

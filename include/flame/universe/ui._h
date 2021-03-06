@@ -2,29 +2,6 @@ namespace flame
 {
 	struct UI
 	{
-		void style_set_to_light()
-		{
-			change_style(FontSize, common(Vec1u(16U)));
-			change_style(BackgroundColor, common(Vec4c(240, 240, 240, 255)));
-			change_style(ForegroundColor, common(Vec4c(0, 0, 0, 255)));
-			change_style(TextColorNormal, common(Vec4c(0, 0, 0, 255)));
-			change_style(TextColorElse, common(Vec4c(0, 120, 205, 255)));
-			change_style(FrameColorNormal, common(Vec4c(220, 220, 220, 255)));
-			change_style(FrameColorHovering, common(Vec4c(230, 230, 230, 255)));
-			change_style(FrameColorActive, common(Vec4c(225, 225, 225, 255)));
-			change_style(SelectedColorNormal, common(Vec4c(200, 220, 245, 255)));
-			change_style(SelectedColorHovering, common(Vec4c(205, 225, 250, 255)));
-			change_style(SelectedColorActive, common(Vec4c(195, 215, 240, 255)));
-			change_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
-			change_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
-			change_style(TabTextColorNormal, common(Vec4c(0, 0, 0, 255)));
-			change_style(TabTextColorElse, common(Vec4c(255, 255, 255, 255)));
-			change_style(SelectedTabColorNormal, common(Vec4c(0, 122, 204, 255)));
-			change_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
-			change_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
-			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
-		}
-
 		inline Entity* e_drag_edit()
 		{
 			auto e = e_begin_layout(LayoutVertical);
@@ -72,69 +49,6 @@ namespace flame
 			}, Capture().set_data(&capture));
 
 			return e;
-		}
-
-		inline Entity* e_end_combobox(int idx = -1)
-		{
-			auto max_width = 0U;
-			for (auto c : eis->children)
-			{
-				auto ct = c->get_component(cText);
-				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text.v).x());
-			}
-			ecb->get_component(cElement)->add_width(8.f + max_width + style(FontSize).u.x());
-		}
-		
-		inline Entity* e_begin_button_menu(const wchar_t* text)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(text);
-			c_event_receiver();
-			auto cm = c_menu(cMenu::ModeMain);
-			cm->root = current_root;
-			auto cs = c_style_color();
-			cs->color_normal = style(ButtonColorNormal).c;
-			cs->color_hovering = style(ButtonColorHovering).c;
-			cs->color_active = style(ButtonColorActive).c;
-			cs->style();
-			parents.push(cm->items);
-			return e;
-		}
-
-		inline Entity* e_separator()
-		{
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->size.y() = style(FontSize).u.x() * 0.5f;
-			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			ce->color = style(FrameColorNormal).c;
-			auto ceed = c_extra_element_drawing();
-			ceed->draw_flags = ExtraDrawHorizontalLine;
-			ceed->thickness = 1.f;
-			ceed->color = style(TextColorNormal).c.copy().set_w(128);
-			c_aligner(AlignMinMax | AlignGreedy, 0);
-			return e;
-		}
-
-		inline void e_begin_popup_menu(bool attach_to_parent = true)
-		{
-			if (attach_to_parent)
-				current_entity = parents.top();
-			auto cm = c_menu(cMenu::ModeContext);
-			cm->root = current_root;
-			parents.push(cm->items);
-		}
-
-		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
-		{
-					e_button(Icon_TIMES, [](Capture& c) {
-						looper().add_event([](Capture& c) {
-							auto e = c.thiz<Entity>();
-							e->parent->remove_child(e);
-						}, Capture().set_thiz(c.thiz<Entity>()));
-					}, Capture().set_thiz(e), false);
-					c_aligner(AlignMax | AlignAbsolute, 0);
 		}
 
 		inline Entity* e_begin_docker_floating_container()
@@ -232,25 +146,6 @@ namespace flame
 			return std::make_pair(et, ep);
 		}
 
-		inline Entity* e_begin_dialog()
-		{
-			auto l = add_layer(current_root, nullptr, true, Vec4c(0, 0, 0, 127));
-			current_entity = l;
-			c_layout();
-			parents.push(l);
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->padding = Vec4f(8.f);
-			ce->frame_thickness = 2.f;
-			ce->color = style(BackgroundColor).c;
-			ce->frame_color = col3_inv(style(BackgroundColor).c);
-			c_aligner(AlignMiddle, AlignMiddle);
-			c_layout(LayoutVertical)->item_padding = 4.f;
-			parents.pop();
-			parents.push(e);
-			return e;
-		}
-
 		inline Entity* e_message_dialog(const wchar_t* message)
 		{
 			auto e = e_begin_dialog();
@@ -287,41 +182,6 @@ namespace flame
 				auto& m = c.data<Capturing>();
 				remove_layer(m.l);
 				m.f(c.release<Capturing>(), false);
-			}, Capture().absorb(&capture, _capture));
-			f_free(_capture._data);
-			e_end_layout();
-			e_end_dialog();
-			return e;
-		}
-
-		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& _capture, const wchar_t* default_text = nullptr)
-		{
-			auto e = e_begin_dialog();
-			auto l = e->parent;
-			e_text(title);
-			auto ct = e_edit(100.f)->get_component(cText);
-			if (default_text)
-				ct->set_text(default_text);
-			e_begin_layout(LayoutHorizontal, 4.f);
-			c_aligner(AlignMiddle, 0);
-			struct Capturing
-			{
-				Entity* l;
-				cText* t;
-				void(*f)(Capture&, bool, const wchar_t*);
-			}capture;
-			capture.l = l;
-			capture.t = ct;
-			capture.f = callback;
-			e_button(L"OK", [](Capture& c) {
-				auto& m = c.data<Capturing>();
-				remove_layer(m.l);
-				m.f(c.release<Capturing>(), true, m.t->text.v);
-			}, Capture().absorb(&capture, _capture));
-			e_button(L"Cancel", [](Capture& c) {
-				auto& m = c.data<Capturing>();
-				remove_layer(m.l);
-				m.f(c.release<Capturing>(), false, nullptr);
 			}, Capture().absorb(&capture, _capture));
 			f_free(_capture._data);
 			e_end_layout();

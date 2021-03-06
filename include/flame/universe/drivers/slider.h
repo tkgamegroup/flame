@@ -21,6 +21,6 @@ namespace flame
 		virtual float get_value_max() const = 0;
 		virtual void set_value_max(float v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dSlider* create();
+		FLAME_UNIVERSE_EXPORTS static dSlider* create(void* parms = nullptr);
 	};
 }

@@ -24,6 +24,6 @@ namespace flame
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cLight* create();
+		FLAME_UNIVERSE_EXPORTS static cLight* create(void* parms = nullptr);
 	};
 }

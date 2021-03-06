@@ -45,7 +45,7 @@ namespace flame
 		}
 	}
 
-	cScript* cScript::create()
+	cScript* cScript::create(void* parms)
 	{
 		return f_new<cScriptPrivate>();
 	}

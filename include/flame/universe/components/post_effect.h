@@ -20,6 +20,6 @@ namespace flame
 		virtual bool get_enable_bloom() const = 0;
 		virtual void set_enable_bloom(bool v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cPostEffect* create();
+		FLAME_UNIVERSE_EXPORTS static cPostEffect* create(void* parms = nullptr);
 	};
 }

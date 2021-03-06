@@ -163,7 +163,7 @@ namespace flame
 		canvas = nullptr;
 	}
 
-	cTerrain* cTerrain::create()
+	cTerrain* cTerrain::create(void* parms)
 	{
 		return f_new<cTerrainPrivate>();
 	}

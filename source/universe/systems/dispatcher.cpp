@@ -461,7 +461,7 @@ namespace flame
 		char_inputs.clear();
 	}
 
-	sDispatcher* sDispatcher::create()
+	sDispatcher* sDispatcher::create(void* parms)
 	{
 		return f_new<sDispatcherPrivate>();
 	}

@@ -91,7 +91,7 @@ namespace flame
 		canvas = nullptr;
 	}
 
-	cSky* cSky::create()
+	cSky* cSky::create(void* parms)
 	{
 		return f_new<cSkyPrivate>();
 	}

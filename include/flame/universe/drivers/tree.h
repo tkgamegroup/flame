@@ -19,7 +19,7 @@ namespace flame
 
 		virtual void expand_to_selected() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dTree* create();
+		FLAME_UNIVERSE_EXPORTS static dTree* create(void* parms = nullptr);
 	};
 
 	struct dTreeLeaf : Driver
@@ -35,7 +35,7 @@ namespace flame
 		virtual const wchar_t* get_title() const = 0;
 		virtual void set_title(const wchar_t* title) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dTreeLeaf* create();
+		FLAME_UNIVERSE_EXPORTS static dTreeLeaf* create(void* parms = nullptr);
 	};
 
 	struct dTreeNode : Driver
@@ -53,6 +53,6 @@ namespace flame
 
 		virtual void toggle_collapse() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dTreeNode* create();
+		FLAME_UNIVERSE_EXPORTS static dTreeNode* create(void* parms = nullptr);
 	};
 }

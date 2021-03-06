@@ -27,6 +27,6 @@ namespace flame
 		
 		virtual void on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cRigid* create();
+		FLAME_UNIVERSE_EXPORTS static cRigid* create(void* parms = nullptr);
 	};
 }

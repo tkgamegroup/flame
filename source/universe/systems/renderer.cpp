@@ -8,6 +8,15 @@
 
 namespace flame
 {
+	sRendererPrivate::sRendererPrivate(sRendererParms* _parms)
+	{
+		sRendererParms parms;
+		if (_parms)
+			parms = *_parms;
+
+
+	}
+
 	void sRendererPrivate::render(EntityPrivate* e, bool element_culled, bool node_culled)
 	{
 		if (!e->global_visibility)
@@ -79,8 +88,8 @@ namespace flame
 		dirty = false;
 	}
 
-	sRenderer* sRenderer::create()
+	sRenderer* sRenderer::create(void* parms)
 	{
-		return f_new<sRendererPrivate>();
+		return f_new<sRendererPrivate>((sRendererParms*)parms);
 	}
 }

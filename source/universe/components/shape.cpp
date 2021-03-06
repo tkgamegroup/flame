@@ -166,7 +166,7 @@ namespace flame
 		}
 	}
 
-	cShape* cShape::create()
+	cShape* cShape::create(void* parms)
 	{
 		return new cShapePrivate();
 	}

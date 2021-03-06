@@ -81,7 +81,7 @@ namespace flame
 		thumb_receiver->remove_mouse_move_listener(thumb_mouse_listener);
 	}
 
-	dSlider* dSlider::create()
+	dSlider* dSlider::create(void* parms)
 	{
 		return f_new<dSliderPrivate>();
 	}

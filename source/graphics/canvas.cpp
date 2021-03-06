@@ -338,6 +338,8 @@ namespace flame
 				depth_test = false;
 				depth_write = false;
 			}
+			if (find_define("DOUBLE_SIDE"))
+				cull_mode == CullModeNone;
 			if (use_mat)
 			{
 				defines.push_back("MAT");
@@ -1291,7 +1293,7 @@ namespace flame
 
 				auto vtx_cnt0 = cmd->vertices_count;
 
-				auto closed = points[0] == points[points.size() - 1];
+				auto closed = points[0] == points.back();
 				auto normals = calculate_normals(points, closed);
 
 				if (aa)

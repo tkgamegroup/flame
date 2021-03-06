@@ -373,7 +373,7 @@ namespace flame
 		dispatcher->dirty = true;
 	}
 
-	cReceiver* cReceiver::create()
+	cReceiver* cReceiver::create(void* parms)
 	{
 		return f_new<cReceiverPrivate>();
 	}

@@ -14,7 +14,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static dMenu* create();
+		FLAME_UNIVERSE_EXPORTS static dMenu* create(void* parms = nullptr);
 	};
 
 	struct dMenuItem : Driver
@@ -34,7 +34,7 @@ namespace flame
 		virtual void set_checked(bool v) = 0;
 		virtual void set_single_checked() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dMenuItem* create();
+		FLAME_UNIVERSE_EXPORTS static dMenuItem* create(void* parms = nullptr);
 	};
 
 	struct dMenuBar : Driver
@@ -47,6 +47,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static dMenuBar* create();
+		FLAME_UNIVERSE_EXPORTS static dMenuBar* create(void* parms = nullptr);
 	};
 }

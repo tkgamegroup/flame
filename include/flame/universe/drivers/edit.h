@@ -28,6 +28,6 @@ namespace flame
 		//virtual bool get_trigger_changed_on_lost_focus() const = 0;
 		//virtual void set_trigger_changed_on_lost_focus(bool b) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dEdit* create();
+		FLAME_UNIVERSE_EXPORTS static dEdit* create(void* parms = nullptr);
 	};
 }

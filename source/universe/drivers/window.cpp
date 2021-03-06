@@ -101,7 +101,7 @@ namespace flame
 		return false;
 	}
 
-	dWindow* dWindow::create()
+	dWindow* dWindow::create(void* parms)
 	{
 		return f_new<dWindowPrivate>();
 	}

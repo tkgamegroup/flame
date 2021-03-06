@@ -108,7 +108,7 @@ namespace flame
 		}
 	}
 
-	sPhysics* sPhysics::create()
+	sPhysics* sPhysics::create(void* parms)
 	{
 		return new sPhysicsPrivate();
 	}

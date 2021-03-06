@@ -111,7 +111,7 @@ namespace flame
 		phy_rigid = nullptr;
 	}
 
-	cRigid* cRigid::create()
+	cRigid* cRigid::create(void* parms)
 	{
 		return new cRigidPrivate();
 	}

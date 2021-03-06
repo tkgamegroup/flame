@@ -24,6 +24,6 @@ namespace flame
 		virtual cvec4 get_font_color() const = 0;
 		virtual void set_font_color(const cvec4& col) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cText* create();
+		FLAME_UNIVERSE_EXPORTS static cText* create(void* parms = nullptr);
 	};
 }

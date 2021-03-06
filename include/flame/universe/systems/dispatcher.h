@@ -22,6 +22,6 @@ namespace flame
 		virtual cReceiver* get_active() const = 0;
 		virtual void set_next_focusing(cReceiver* er) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static sDispatcher* create();
+		FLAME_UNIVERSE_EXPORTS static sDispatcher* create(void* parms = nullptr);
 	};
 }

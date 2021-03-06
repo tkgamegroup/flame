@@ -24,6 +24,6 @@ namespace flame
 		virtual bool get_trigger() const = 0;
 		virtual void set_trigger(bool v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cShape* create();
+		FLAME_UNIVERSE_EXPORTS static cShape* create(void* parms = nullptr);
 	};
 }

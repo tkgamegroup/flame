@@ -186,7 +186,7 @@ namespace flame
 		}
 	}
 
-	cImage* cImage::create()
+	cImage* cImage::create(void* parms)
 	{
 		return f_new<cImagePrivate>();
 	}

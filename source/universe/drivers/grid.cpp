@@ -49,7 +49,7 @@ namespace flame
 		return false;
 	}
 
-	dGrid* dGrid::create()
+	dGrid* dGrid::create(void* parms)
 	{
 		return f_new<dGridPrivate>();
 	}

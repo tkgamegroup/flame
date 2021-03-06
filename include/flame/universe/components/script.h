@@ -20,6 +20,6 @@ namespace flame
 		virtual const char* get_content() const = 0;
 		virtual void set_content(const char* content) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cScript* create();
+		FLAME_UNIVERSE_EXPORTS static cScript* create(void* parms = nullptr);
 	};
 }

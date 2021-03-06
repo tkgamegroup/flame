@@ -16,6 +16,6 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static sLayout* create();
+		FLAME_UNIVERSE_EXPORTS static sLayout* create(void* parms = nullptr);
 	};
 }

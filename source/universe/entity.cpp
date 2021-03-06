@@ -78,7 +78,10 @@ namespace flame
 			udt(udt)
 		{
 			auto fc = udt->find_function("create");
-			fassert(fc && fc->check(TypeInfo::get(TypePointer, udt->get_name())));
+			{
+				TypeInfo* parms[] = { TypeInfo::get(TypePointer, "void") };
+				fassert(fc && fc->check(TypeInfo::get(TypePointer, udt->get_name()), 1, parms));
+			}
 			creator = fc;
 
 			dummy = create();
@@ -119,7 +122,8 @@ namespace flame
 		void* create()
 		{
 			void* ret;
-			creator->call(nullptr, &ret, nullptr);
+			void* p = nullptr;
+			creator->call(nullptr, &ret, &p);
 			return ret;
 		}
 

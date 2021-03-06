@@ -30,6 +30,6 @@ namespace flame
 		virtual vec3 get_global_pos() = 0;
 		virtual vec3 get_global_dir(uint idx) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cNode* create();
+		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
 	};
 }

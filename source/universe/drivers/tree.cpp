@@ -118,7 +118,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	dTree* dTree::create()
+	dTree* dTree::create(void* parms)
 	{
 		return f_new<dTreePrivate>();
 	}
@@ -148,7 +148,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	dTreeLeaf* dTreeLeaf::create()
+	dTreeLeaf* dTreeLeaf::create(void* parms)
 	{
 		return f_new<dTreeLeafPrivate>();
 	}
@@ -211,7 +211,7 @@ namespace flame
 		arrow_text->set_text(items->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 	}
 
-	dTreeNode* dTreeNode::create()
+	dTreeNode* dTreeNode::create(void* parms)
 	{
 		return f_new<dTreeNodePrivate>();
 	}

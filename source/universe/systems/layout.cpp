@@ -324,7 +324,7 @@ namespace flame
 		}
 	}
 
-	sLayout* sLayout::create()
+	sLayout* sLayout::create(void* parms)
 	{
 		return f_new<sLayoutPrivate>();
 	}

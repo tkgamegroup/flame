@@ -20,6 +20,8 @@ namespace flame
 		bool always_update = false;
 		bool dirty = true;
 
+		sRendererPrivate(sRendererParms* parms);
+
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
@@ -31,10 +33,10 @@ namespace flame
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
 
+		void render(EntityPrivate* e, bool element_culled, bool node_culled);
+
 		void on_added() override;
 
 		void update() override;
-
-		void render(EntityPrivate* e, bool element_culled, bool node_culled);
 	};
 }

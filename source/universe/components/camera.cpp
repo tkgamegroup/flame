@@ -76,7 +76,7 @@ namespace flame
 			apply_current();
 	}
 
-	cCamera* cCamera::create()
+	cCamera* cCamera::create(void* parms)
 	{
 		return f_new<cCameraPrivate>();
 	}

@@ -17,6 +17,6 @@ namespace flame
 		virtual bool get_current() const = 0;
 		virtual void set_current(bool v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cCamera* create();
+		FLAME_UNIVERSE_EXPORTS static cCamera* create(void* parms = nullptr);
 	};
 }

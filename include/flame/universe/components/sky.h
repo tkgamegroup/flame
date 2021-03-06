@@ -23,6 +23,6 @@ namespace flame
 		virtual const char* get_lut_texture() const = 0;
 		virtual void set_lut_texture(const char* name) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cSky* create();
+		FLAME_UNIVERSE_EXPORTS static cSky* create(void* parms = nullptr);
 	};
 }

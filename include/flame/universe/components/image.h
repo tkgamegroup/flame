@@ -29,6 +29,6 @@ namespace flame
 
 		virtual void refres_res() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cImage* create();
+		FLAME_UNIVERSE_EXPORTS static cImage* create(void* parms = nullptr);
 	};
 }

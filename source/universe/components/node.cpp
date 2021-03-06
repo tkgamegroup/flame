@@ -229,7 +229,7 @@ namespace flame
 		return true;
 	}
 
-	cNode* cNode::create()
+	cNode* cNode::create(void* parms)
 	{
 		return f_new<cNodePrivate>();
 	}

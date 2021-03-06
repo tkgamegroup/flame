@@ -17,6 +17,6 @@ namespace flame
 		virtual int get_index() const = 0;
 		virtual void set_index(int index) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dCombobox* create();
+		FLAME_UNIVERSE_EXPORTS static dCombobox* create(void* parms = nullptr);
 	};
 }

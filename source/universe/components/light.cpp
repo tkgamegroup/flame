@@ -44,7 +44,7 @@ namespace flame
 		node = nullptr;
 	}
 
-	cLight* cLight::create()
+	cLight* cLight::create(void* parms)
 	{
 		return f_new<cLightPrivate>();
 	}

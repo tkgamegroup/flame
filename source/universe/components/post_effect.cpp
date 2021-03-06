@@ -35,7 +35,7 @@ namespace flame
 			canvas->add_bloom();
 	}
 
-	cPostEffect* cPostEffect::create()
+	cPostEffect* cPostEffect::create(void* parms)
 	{
 		return f_new<cPostEffectPrivate>();
 	}
