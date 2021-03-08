@@ -47,6 +47,8 @@ namespace flame
 
 		struct RenderPreferences
 		{
+			virtual void release() = 0;
+
 			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true);
 		};
 

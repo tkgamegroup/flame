@@ -41,14 +41,7 @@ namespace flame
 			mesh_desc.triangles.count = indices.size() / 3;
 			mesh_desc.triangles.stride = 3 * sizeof(PxU32);
 			mesh_desc.triangles.data = indices.data();
-			px_triangle_mesh = device->px_cooking->createTriangleMesh(mesh_desc, device->px_instance->getPhysicsInsertionCallback());
-#endif
-		}
-
-		TriangleMeshPrivate::~TriangleMeshPrivate()
-		{
-#ifdef USE_PHYSX
-			px_triangle_mesh->release();
+			px_triangle_mesh.reset(device->px_cooking->createTriangleMesh(mesh_desc, device->px_instance->getPhysicsInsertionCallback()));
 #endif
 		}
 
@@ -99,14 +92,7 @@ namespace flame
 			height_field_desc.nbRows = h + 1;
 			height_field_desc.samples.data = samples.data();
 			height_field_desc.samples.stride = sizeof(uint);
-			px_height_field = device->px_cooking->createHeightField(height_field_desc, device->px_instance->getPhysicsInsertionCallback());
-#endif
-		}
-
-		HeightFieldPrivate::~HeightFieldPrivate()
-		{
-#ifdef USE_PHYSX
-			px_height_field->release();
+			px_height_field.reset(device->px_cooking->createHeightField(height_field_desc, device->px_instance->getPhysicsInsertionCallback()));
 #endif
 		}
 
@@ -120,7 +106,7 @@ namespace flame
 			if (!material)
 				material = device->mat.get();
 #ifdef USE_PHYSX
-			px_shape = device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material);
+			px_shape.reset(device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material));
 #endif
 			px_shape->userData = this;
 		}
@@ -130,7 +116,7 @@ namespace flame
 			if (!material)
 				material = device->mat.get();
 #ifdef USE_PHYSX
-			px_shape = device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material);
+			px_shape.reset(device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material));
 #endif
 			px_shape->userData = this;
 		}
@@ -140,7 +126,7 @@ namespace flame
 			if (!material)
 				material = device->mat.get();
 #ifdef USE_PHYSX
-			px_shape = device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material);
+			px_shape.reset(device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material));
 			px_shape->setLocalPose(PxTransform(PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
 #endif
 			px_shape->userData = this;
@@ -152,7 +138,7 @@ namespace flame
 				material = device->mat.get();
 #ifdef USE_PHYSX
 
-			px_shape = device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh, PxMeshScale(scale)), *material->px_material);
+			px_shape.reset(device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh.get(), PxMeshScale(scale)), *material->px_material));
 #endif
 			px_shape->userData = this;
 		}
@@ -163,17 +149,10 @@ namespace flame
 				material = device->mat.get();
 #ifdef USE_PHYSX
 
-			px_shape = device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field, PxMeshGeometryFlags(),
-				scale.y / height_field_precision, scale.x / height_field->tess_levels, scale.z / height_field->tess_levels), *material->px_material);
+			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),
+				scale.y / height_field_precision, scale.x / height_field->tess_levels, scale.z / height_field->tess_levels), *material->px_material));
 #endif
 			px_shape->userData = this;
-		}
-
-		ShapePrivate::~ShapePrivate()
-		{
-#ifdef USE_PHYSX
-			px_shape->release();
-#endif
 		}
 
 		void ShapePrivate::set_trigger(bool v)

@@ -8,9 +8,9 @@
         entity.find_component("cReceiver").set_mute(false)
       end
     </cScript>
-    <eNode name="object_root" >
+    <eNode name="node_root" >
       <cScript src="shoot_ball.lua plane_tree.lua" >
-        object_root = entity
+        node_root = entity
       </cScript>
       <entity src="D:\sky\sky" name="sky" />
       <eCube pos="200,60,200" dynamic="false" />

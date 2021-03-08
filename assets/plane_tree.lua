@@ -10,6 +10,6 @@ scene.find_component("cReceiver").add_key_down_listener(function(k)
 		local node = e.find_component("cNode")
 		node.set_pos(pos)
 		--node.set_quat(character.node.get_quat())
-		object_root.add_child(e.p)
+		node_root.add_child(e.p)
 	end
 end)

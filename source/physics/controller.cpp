@@ -17,14 +17,7 @@ namespace flame
 			desc.contactOffset = 0.01f;
 			desc.radius = radius;
 			desc.height = height;
-			px_controller = scene->px_controller_manager->createController(desc);
-#endif
-		}
-
-		ControllerPrivate::~ControllerPrivate()
-		{
-#ifdef USE_PHYSX
-			px_controller->release();
+			px_controller.reset(scene->px_controller_manager->createController(desc));
 #endif
 		}
 

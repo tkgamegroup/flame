@@ -4,12 +4,31 @@
 
 namespace flame
 {
+	struct Window;
+
+	namespace graphics
+	{
+		struct Device;
+		struct Renderpass;
+		struct Framebuffer;
+		struct Pipeline;
+		struct Swapchain;
+	}
+
 	struct EntityPrivate;
 	struct cElementPrivate;
 	struct cCameraPrivate;
 
 	struct sRendererPrivate : sRenderer
 	{
+		bool hdr;
+
+		Window* window;
+
+		graphics::Device* device;
+		graphics::Swapchain* swapchain;
+		std::vector<FlmPtr<graphics::Framebuffer>> fb_targets;
+
 		bool wireframe = false;
 		graphics::Canvas* canvas = nullptr;
 		cCameraPrivate* camera = nullptr;
@@ -22,6 +41,10 @@ namespace flame
 
 		sRendererPrivate(sRendererParms* parms);
 
+		void set_targets();
+
+		void render(EntityPrivate* e, bool element_culled, bool node_culled);
+
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
@@ -32,8 +55,6 @@ namespace flame
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
-
-		void render(EntityPrivate* e, bool element_culled, bool node_culled);
 
 		void on_added() override;
 

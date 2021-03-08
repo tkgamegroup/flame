@@ -1060,11 +1060,10 @@ namespace flame
 				icon_fn = engine_path / icon_fn;
 			if (std::filesystem::exists(icon_fn))
 			{
-				auto icon_image = BitmapPrivate::create(icon_fn);
+				FlmPtr<BitmapPrivate> icon_image(BitmapPrivate::create(icon_fn));
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());
-				icon_image->release();
 			}
 			wcex.hCursor = NULL;
 			wcex.hbrBackground = 0;
@@ -1182,6 +1181,12 @@ namespace flame
 	{
 		for (auto& l : destroy_listeners)
 			l->call();
+	}
+
+	void WindowPrivate::release()
+	{
+		DestroyWindow(hWnd);
+		dead = true;
 	}
 
 	LRESULT WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -1353,12 +1358,6 @@ namespace flame
 			ShowCursor(false);
 
 		cursor_type = type;
-	}
-
-	void WindowPrivate::close()
-	{
-		DestroyWindow(hWnd);
-		dead = true;
 	}
 
 	void* WindowPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)

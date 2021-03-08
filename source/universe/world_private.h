@@ -19,6 +19,8 @@ namespace flame
 
 		std::vector<std::unique_ptr<System, Delector>> systems;
 		std::unique_ptr<EntityPrivate, Delector> root;
+		std::unique_ptr<EntityPrivate, Delector> element_root;
+		std::unique_ptr<EntityPrivate, Delector> node_root;
 
 		WorldPrivate();
 
@@ -33,6 +35,8 @@ namespace flame
 		void remove_system(System* s) override;
 
 		Entity* get_root() const override { return root.get(); }
+		Entity* get_element_root() const override { return element_root.get(); }
+		Entity* get_node_root() const override { return node_root.get(); }
 
 		void update() override;
 	};

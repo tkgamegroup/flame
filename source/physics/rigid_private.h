@@ -21,11 +21,10 @@ namespace flame
 			bool dynamic;
 
 #ifdef USE_PHYSX
-			PxRigidActor* px_rigid;
+			FlmPtr<PxRigidActor> px_rigid;
 #endif
 
 			RigidPrivate(DevicePrivate* device, bool dynamic);
-			~RigidPrivate();
 
 			void release() override { delete this; }
 

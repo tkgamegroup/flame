@@ -62,19 +62,19 @@ namespace flame
 
 		App* app;
 
-		Window* window = nullptr;
+		FlmPtr<Window> window;
 
-		graphics::Swapchain* swapchain = nullptr;
+		FlmPtr<graphics::Swapchain> swapchain;
 		int swapchain_image_index = -1;
-		std::vector<graphics::CommandBuffer*> swapchain_commandbuffers;
-		graphics::Fence* submit_fence = nullptr;
-		graphics::Semaphore* render_finished_semaphore = nullptr;
-		graphics::RenderPreferences* render_preferences = nullptr;
-		graphics::Canvas* canvas = nullptr;
+		std::vector<FlmPtr<graphics::CommandBuffer>> commandbuffers;
+		FlmPtr<graphics::Fence> submit_fence;
+		FlmPtr<graphics::Semaphore> render_finished;
+		FlmPtr<graphics::RenderPreferences> render_preferences;
+		FlmPtr<graphics::Canvas> canvas;
 
-		physics::Scene* physics_scene = nullptr;
+		FlmPtr<physics::Scene> physics_scene;
 
-		World* world = nullptr;
+		FlmPtr<World> world;
 		sLayout* s_layout = nullptr;
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
@@ -110,31 +110,32 @@ namespace flame
 	{
 		window = Window::create(title, size, styles, parent);
 		window->add_destroy_listener([](Capture& c) {
-			c.thiz<GraphicsWindow>()->window = nullptr;
+			c.thiz<GraphicsWindow>()->window.release();
 		}, Capture().set_thiz(this));
 
-		swapchain = graphics::Swapchain::create(graphics::Device::get_default(), window);
-		swapchain_commandbuffers.resize(swapchain->get_images_count());
-		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
-			swapchain_commandbuffers[i] = graphics::CommandBuffer::create(app->graphics_command_pool);
-		submit_fence = graphics::Fence::create(graphics::Device::get_default());
-		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get_default());
+		swapchain.reset(graphics::Swapchain::create(graphics::Device::get_default(), window.get()));
+		commandbuffers.resize(swapchain->get_images_count());
+		for (auto i = 0; i < commandbuffers.size(); i++)
+			commandbuffers[i].reset(graphics::CommandBuffer::create(app->graphics_command_pool));
+		submit_fence.reset(graphics::Fence::create(graphics::Device::get_default()));
+		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
-		render_preferences = graphics::RenderPreferences::create(graphics::Device::get_default(), hdr);
-		canvas = graphics::Canvas::create(render_preferences);
+		render_preferences.reset(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr));
+		canvas.reset(graphics::Canvas::create(render_preferences.get()));
 		set_canvas_output();
 		canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");
 
-		physics_scene = physics::Scene::create(physics::Device::get_default(), -9.81f, 2);
+		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
 
 		window->add_resize_listener([](Capture& c, const uvec2&) {
 			c.thiz<GraphicsWindow>()->set_canvas_output();
 		}, Capture().set_thiz(this));
 
-		world = World::create();
-		world->register_object(window, "flame::Window");
-		world->register_object(canvas, "flame::graphics::Canvas");
-		world->register_object(physics_scene, "flame::physics::Scene");
+		world.reset(World::create());
+		world->register_object(window.get(), "flame::Window");
+		world->register_object(swapchain.get(), "flame::graphics::Swapchain");
+		world->register_object(canvas.get(), "flame::graphics::Canvas");
+		world->register_object(physics_scene.get(), "flame::physics::Scene");
 		s_layout = sLayout::create();
 		world->add_system(s_layout);
 		s_dispatcher = sDispatcher::create();
@@ -181,19 +182,6 @@ namespace flame
 			app->main_window = nullptr;
 			return;
 		}
-		if (window)
-			window->close();
-		swapchain->release();
-		for (auto cb : swapchain_commandbuffers)
-			cb->release();
-		submit_fence->release();
-		render_finished_semaphore->release();
-		if (canvas)
-			canvas->release();
-		if (physics_scene)
-			physics_scene->release();
-		if (world)
-			world->release();
 	}
 
 	void GraphicsWindow::set_canvas_output()
@@ -212,15 +200,15 @@ namespace flame
 		submit_fence->wait();
 		if (swapchain_image_index >= 0)
 		{
-			auto cb = swapchain_commandbuffers[swapchain_image_index];
+			auto cb = commandbuffers[swapchain_image_index].get();
 
 			cb->begin(false);
 			if (canvas)
 				canvas->record(cb, swapchain_image_index);
 			cb->end();
 
-			app->graphics_queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished_semaphore, submit_fence);
-			app->graphics_queue->present(swapchain, render_finished_semaphore);
+			app->graphics_queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
+			app->graphics_queue->present(swapchain.get(), render_finished.get());
 			swapchain_image_index = -1;
 		}
 	}

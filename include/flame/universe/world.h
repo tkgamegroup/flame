@@ -22,6 +22,8 @@ namespace flame
 		virtual void remove_system(System* s) = 0;
 
 		virtual Entity* get_root() const = 0;
+		virtual Entity* get_element_root() const = 0;
+		virtual Entity* get_node_root() const = 0;
 
 		virtual void update() = 0;
 

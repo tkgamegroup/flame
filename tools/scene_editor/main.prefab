@@ -139,9 +139,9 @@
           <cScript>
             local menu_item = entity.find_driver("dMenuItem")
             entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-              local e_object_root = scene.find_child("object_root")
-              if not e_object_root.p then return end
-              local e_terrain = e_object_root.find_child("terrain")
+              local e_node_root = scene.find_child("node_root")
+              if not e_node_root.p then return end
+              local e_terrain = e_node_root.find_child("terrain")
               if not e_terrain.p then return end
               local terrain = e_terrain.find_component("cTerrain")
               
@@ -170,7 +170,7 @@
                 e.find_component("cNode").set_pos(vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z))
                 e_grass_root.add_child(e)
               end
-              e_object_root.add_child(e_grass_root)
+              e_node_root.add_child(e_grass_root)
               
               flame_free(uvs)
               flame_free(samples)

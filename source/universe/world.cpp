@@ -9,6 +9,14 @@ namespace flame
 		root.reset(f_new<EntityPrivate>());
 		root->world = this;
 		root->global_visibility = true;
+
+		element_root.reset(f_new<EntityPrivate>());
+		element_root->world = this;
+		element_root->global_visibility = true;
+
+		node_root.reset(f_new<EntityPrivate>());
+		node_root->world = this;
+		node_root->global_visibility = true;
 	}
 
 	void WorldPrivate::register_object(void* o, const std::string& name)
@@ -76,6 +84,14 @@ namespace flame
 
 	void WorldPrivate::remove_system(System* s)
 	{
+		for (auto it = systems.begin(); it != systems.end(); it++)
+		{
+			if ((*it)->type_hash == s->type_hash)
+			{
+				systems.erase(it);
+				return;
+			}
+		}
 	}
 
 	void WorldPrivate::update()

@@ -13,22 +13,15 @@ namespace flame
 #ifdef USE_PHYSX
 			if (dynamic)
 			{
-				px_rigid = device->px_instance->createRigidDynamic(PxTransform(PxVec3(0.f)));
-				PxRigidBodyExt::updateMassAndInertia(*(PxRigidDynamic*)px_rigid, 10.0);
+				px_rigid.reset(device->px_instance->createRigidDynamic(PxTransform(PxVec3(0.f))));
+				PxRigidBodyExt::updateMassAndInertia(*(PxRigidDynamic*)px_rigid.get(), 10.0);
 				//if (kinematic) 
 				//	body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			}
 			else
-				px_rigid = device->px_instance->createRigidStatic(PxTransform(PxVec3(0.f)));
+				px_rigid.reset(device->px_instance->createRigidStatic(PxTransform(PxVec3(0.f))));
 
 			px_rigid->userData = this;
-#endif
-		}
-
-		RigidPrivate::~RigidPrivate()
-		{
-#ifdef USE_PHYSX
-			px_rigid->release();
 #endif
 		}
 
@@ -69,7 +62,7 @@ namespace flame
 			if (!dynamic)
 				return;
 #ifdef USE_PHYSX
-			((PxRigidDynamic*)px_rigid)->addForce(cvt(v), PxForceMode::eIMPULSE);
+			((PxRigidDynamic*)px_rigid.get())->addForce(cvt(v), PxForceMode::eIMPULSE);
 #endif
 		}
 
@@ -78,7 +71,7 @@ namespace flame
 			if (!dynamic)
 				return;
 #ifdef USE_PHYSX
-			((PxRigidDynamic*)px_rigid)->addForce(cvt(v));
+			((PxRigidDynamic*)px_rigid.get())->addForce(cvt(v));
 #endif
 		}
 
@@ -87,7 +80,7 @@ namespace flame
 			if (!dynamic)
 				return;
 #ifdef USE_PHYSX
-			((PxRigidDynamic*)px_rigid)->clearForce();
+			((PxRigidDynamic*)px_rigid.get())->clearForce();
 #endif
 		}
 

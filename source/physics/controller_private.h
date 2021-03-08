@@ -13,11 +13,10 @@ namespace flame
 		struct ControllerPrivate : Controller
 		{
 #ifdef USE_PHYSX
-			PxController* px_controller;
+			FlmPtr<PxController> px_controller;
 #endif
 
 			ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height);
-			~ControllerPrivate();
 
 			void release() override { delete this; }
 

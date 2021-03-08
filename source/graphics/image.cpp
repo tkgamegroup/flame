@@ -332,7 +332,7 @@ namespace flame
 			}
 			else
 			{
-				auto bmp = Bitmap::create(filename.c_str());
+				FlmPtr<Bitmap> bmp(Bitmap::create(filename.c_str()));
 				if (srgb)
 					bmp->srgb_to_linear();
 
@@ -348,8 +348,6 @@ namespace flame
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 				cb->copy_buffer_to_image(stag.buf.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-
-				bmp->release();
 			}
 
 			if (generate_mipmaps)

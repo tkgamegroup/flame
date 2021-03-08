@@ -1,4 +1,7 @@
+#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
+#include <flame/graphics/renderpass.h>
+#include <flame/graphics/swapchain.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
@@ -14,7 +17,19 @@ namespace flame
 		if (_parms)
 			parms = *_parms;
 
+		hdr = parms.hdr;
+	}
 
+	void sRendererPrivate::set_targets()
+	{
+		fb_targets.clear();
+		auto count = swapchain->get_images_count();
+		fb_targets.resize(count);
+		for (auto i = 0; i < count; i++)
+		{
+			auto v = swapchain->get_image(i)->get_view();
+
+		}
 	}
 
 	void sRendererPrivate::render(EntityPrivate* e, bool element_culled, bool node_culled)
@@ -75,6 +90,17 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
+		window = (Window*)world->find_object("flame::Window");
+		window->add_resize_listener([](Capture& c, const uvec2&) {
+			c.thiz<sRendererPrivate>()->set_targets();
+		}, Capture().set_thiz(this));
+		swapchain;
+
+		device = graphics::Device::get_default();
+		swapchain = (graphics::Swapchain*)world->find_object("flame::graphics::Swapchain");
+
+		set_targets();
+
 		canvas = (graphics::Canvas*)world->find_object("flame::graphics::Canvas");
 	}
 

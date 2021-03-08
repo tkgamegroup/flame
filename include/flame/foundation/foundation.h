@@ -44,6 +44,68 @@ namespace flame
 		}
 	};
 
+	template <class T>
+	struct FlmPtr
+	{
+		T* p;
+
+		FlmPtr() :
+			p(nullptr)
+		{
+		}
+
+		FlmPtr(T* p) : 
+			p(p)
+		{
+		}
+
+		~FlmPtr()
+		{
+			if (p)
+				p->release();
+		}
+
+		FlmPtr(FlmPtr&& oth) noexcept
+		{
+			oth.swap(*this);
+		}
+
+		FlmPtr& operator=(FlmPtr&& oth) noexcept
+		{
+			oth.swap(*this);
+			return *this;
+		}
+
+		FlmPtr(FlmPtr const&) = delete;
+		FlmPtr& operator=(FlmPtr const&) = delete; 
+
+		T* operator->() const { return p; }
+		T& operator*()  const { return *p; }
+		T* get() const { return p; }
+		explicit operator bool() const { return p; }
+
+		T* release()
+		{
+			auto temp = p;
+			p = nullptr;
+			return temp;
+		}
+
+		void swap(FlmPtr& oth) noexcept
+		{
+			auto temp = p;
+			p = oth.p;
+			oth.p = temp;
+		}
+
+		void reset(T* _p = nullptr)
+		{
+			if (p)
+				p->release();
+			p = _p;
+		}
+	};
+
 	struct Guid
 	{
 		uint d1;
@@ -715,6 +777,8 @@ namespace flame
 
 	struct Window
 	{
+		virtual void release() = 0;
+
 		virtual void* get_native() = 0;
 
 		virtual ivec2 get_pos() const = 0;
@@ -731,8 +795,6 @@ namespace flame
 
 		virtual CursorType get_cursor() = 0;
 		virtual void set_cursor(CursorType type) = 0;
-
-		virtual void close() = 0;
 
 		virtual void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) = 0;
 		virtual void remove_key_down_listener(void* lis) = 0;

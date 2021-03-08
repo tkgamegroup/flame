@@ -15,6 +15,9 @@ namespace flame
 		struct RenderpassPrivate;
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
+		struct ShaderPrivate;
+		struct PipelineLayoutPrivate;
+		struct PipelinePrivate;
 		struct CommandBufferPrivate;
 		struct CanvasPrivate;
 
@@ -39,9 +42,9 @@ namespace flame
 
 		struct RenderPreferencesPrivate : RenderPreferences
 		{
-			DevicePrivate* device;
-
 			bool hdr;
+
+			DevicePrivate* device;
 
 			std::unique_ptr<RenderpassPrivate> rgba8_renderpass;
 			std::unique_ptr<RenderpassPrivate> rgba16_renderpass;
@@ -81,6 +84,8 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> gamma_pipeline;
 
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr);
+
+			void release() override { delete this; }
 
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);

@@ -45,6 +45,8 @@ namespace flame
 		WindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, WindowPrivate* parent);
 		~WindowPrivate();
 
+		void release() override;
+
 		LRESULT wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
 
 		void* get_native() override;
@@ -63,8 +65,6 @@ namespace flame
 
 		CursorType get_cursor() override { return cursor_type; }
 		void set_cursor(CursorType type) override;
-
-		void close() override;
 
 		void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) override;
 		void remove_key_down_listener(void* lis) override;
