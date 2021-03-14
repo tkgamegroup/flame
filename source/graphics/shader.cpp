@@ -10,195 +10,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* device) :
-			device(device)
-		{
-			VkDescriptorPoolSize descriptorPoolSizes[] = {
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
-			};
-
-			VkDescriptorPoolCreateInfo descriptorPoolInfo;
-			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.poolSizeCount = size(descriptorPoolSizes);
-			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 128;
-			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
-		}
-
-		DescriptorPoolPrivate::~DescriptorPoolPrivate()
-		{
-			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
-		}
-
-		DescriptorPool* DescriptorPool::create(Device* device)
-		{
-			return new DescriptorPoolPrivate((DevicePrivate*)device);
-		}
-
-		DescriptorBindingPrivate::DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info) :
-			binding(binding),
-			type(info.type),
-			count(info.count),
-			name(info.name)
-		{
-		}
-
-		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
-		{
-			for (auto n_type : root.child("types"))
-			{
-				auto t = new ShaderType;
-				t->id = n_type.attribute("id").as_uint();
-				t->tag = (ShaderTypeTag)n_type.attribute("tag").as_int();
-				t->name = n_type.attribute("name").value();
-				t->size = n_type.attribute("size").as_uint();
-				for (auto n_variable : n_type.child("variables"))
-				{
-					ShaderVariable v;
-					v.name = n_variable.attribute("name").value();
-					v.offset = n_variable.attribute("offset").as_uint();
-					v.size = n_variable.attribute("size").as_uint();
-					v.array_count = n_variable.attribute("array_count").as_uint();
-					v.array_stride = n_variable.attribute("array_stride").as_uint();
-					v.info = (ShaderType*)n_variable.attribute("type_id").as_uint();
-					t->variables.push_back(v);
-				}
-				t->make_map();
-				types.emplace_back(t);
-			}
-			for (auto& t : types)
-			{
-				for (auto& v : t->variables)
-					v.info = find_type(types, (uint)v.info);
-			}
-		}
-
-		static void save_res_types(pugi::xml_node root, const std::vector<std::unique_ptr<ShaderType>>& types)
-		{
-			auto n_types = root.append_child("types");
-			for (auto& t : types)
-			{
-				auto n_type = n_types.append_child("type");
-				n_type.append_attribute("id").set_value(t->id);
-				n_type.append_attribute("tag").set_value((int)t->tag);
-				n_type.append_attribute("name").set_value(t->name.c_str());
-				n_type.append_attribute("size").set_value(t->size);
-				if (!t->variables.empty())
-				{
-					auto n_variables = n_type.append_child("variables");
-					for (auto& v : t->variables)
-					{
-						auto n_variable = n_variables.append_child("variable");
-						n_variable.append_attribute("name").set_value(v.name.c_str());
-						n_variable.append_attribute("offset").set_value(v.offset);
-						n_variable.append_attribute("size").set_value(v.size);
-						n_variable.append_attribute("array_count").set_value(v.array_count);
-						n_variable.append_attribute("array_stride").set_value(v.array_stride);
-						n_variable.append_attribute("type_id").set_value(v.info->id);
-					}
-				}
-			}
-		}
-
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> _bindings) :
-			device(device)
-		{
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
-			bindings.resize(_bindings.size());
-			for (auto i = 0; i < bindings.size(); i++)
-			{
-				auto& src = _bindings[i];
-				auto& dst = vk_bindings[i];
-
-				dst.binding = i;
-				dst.descriptorType = to_backend(src.type);
-				dst.descriptorCount = src.count;
-				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-				dst.pImmutableSamplers = nullptr;
-
-				bindings[i].reset(new DescriptorBindingPrivate(i, src));
-			}
-
-			VkDescriptorSetLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.bindingCount = vk_bindings.size();
-			info.pBindings = vk_bindings.data();
-
-			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
-		}
-
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& _types, std::vector<std::unique_ptr<DescriptorBindingPrivate>>& _bindings) :
-			device(device),
-			filename(filename)
-		{
-			types.resize(_types.size());
-			for (auto i = 0; i < types.size(); i++)
-				types[i].reset(_types[i].release());
-			bindings.resize(_bindings.size());
-			for (auto i = 0; i < bindings.size(); i++)
-				bindings[i].reset(_bindings[i].release());
-
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-			for (auto& src : bindings)
-			{
-				if (src)
-				{
-					VkDescriptorSetLayoutBinding dst;
-					dst.binding = src->binding;
-					dst.descriptorType = to_backend(src->type);
-					dst.descriptorCount = max(src->count, 1U);
-					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-					dst.pImmutableSamplers = nullptr;
-					vk_bindings.push_back(dst);
-				}
-			}
-
-			VkDescriptorSetLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.bindingCount = vk_bindings.size();
-			info.pBindings = vk_bindings.data();
-
-			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
-		}
-
-		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
-		{
-			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
-		}
-
-		int DescriptorSetLayoutPrivate::find_binding(const std::string& name)
-		{
-			for (auto i = 0; i < bindings.size(); i++)
-			{
-				if (bindings[i]->name == name)
-					return i;
-			}
-			return -1;
-		}
-
-		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
-		{
-			auto fn = filename.filename();
-			for (auto& d : device->dsls)
-			{
-				if (d->filename.filename() == fn)
-					return d.get();
-			}
-			auto dsl = DescriptorSetLayoutPrivate::create(device, filename);
-			fassert(dsl);
-			device->dsls.emplace_back(dsl);
-			return dsl;
-		}
-
 		void get_shader_type(const spirv_cross::CompilerGLSL& glsl, std::vector<std::unique_ptr<ShaderType>>& types, const spirv_cross::SPIRType& src, ShaderType* dst)
 		{
 			if (src.basetype == spirv_cross::SPIRType::Struct)
@@ -415,32 +226,216 @@ namespace flame
 			return ret;
 		}
 
-		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
+		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* device) :
+			device(device)
 		{
-			auto filename = _filename;
-			filename.make_preferred();
+			VkDescriptorPoolSize descriptorPoolSizes[] = {
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
+				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
+			};
 
-			auto path = filename;
-			if (!get_resource_path(path, L"assets\\shaders"))
+			VkDescriptorPoolCreateInfo descriptorPoolInfo;
+			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			descriptorPoolInfo.pNext = nullptr;
+			descriptorPoolInfo.poolSizeCount = size(descriptorPoolSizes);
+			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
+			descriptorPoolInfo.maxSets = 128;
+			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
+		}
+
+		DescriptorPoolPrivate::~DescriptorPoolPrivate()
+		{
+			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
+		}
+
+		DescriptorPool* DescriptorPool::get_default(Device* device)
+		{
+			return ((DevicePrivate*)device)->dsp.get();
+		}
+
+		DescriptorPool* DescriptorPool::create(Device* device)
+		{
+			return new DescriptorPoolPrivate((DevicePrivate*)device);
+		}
+
+		DescriptorBindingPrivate::DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info) :
+			binding(binding),
+			type(info.type),
+			count(info.count),
+			name(info.name)
+		{
+		}
+
+		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
+		{
+			for (auto n_type : root.child("types"))
 			{
-				wprintf(L"cannot find dsl: %s\n", filename.c_str());
-				return nullptr;
+				auto t = new ShaderType;
+				t->id = n_type.attribute("id").as_uint();
+				t->tag = (ShaderTypeTag)n_type.attribute("tag").as_int();
+				t->name = n_type.attribute("name").value();
+				t->size = n_type.attribute("size").as_uint();
+				for (auto n_variable : n_type.child("variables"))
+				{
+					ShaderVariable v;
+					v.name = n_variable.attribute("name").value();
+					v.offset = n_variable.attribute("offset").as_uint();
+					v.size = n_variable.attribute("size").as_uint();
+					v.array_count = n_variable.attribute("array_count").as_uint();
+					v.array_stride = n_variable.attribute("array_stride").as_uint();
+					v.info = (ShaderType*)n_variable.attribute("type_id").as_uint();
+					t->variables.push_back(v);
+				}
+				t->make_map();
+				types.emplace_back(t);
+			}
+			for (auto& t : types)
+			{
+				for (auto& v : t->variables)
+					v.info = find_type(types, (uint)v.info);
+			}
+		}
+
+		static void save_res_types(pugi::xml_node root, const std::vector<std::unique_ptr<ShaderType>>& types)
+		{
+			auto n_types = root.append_child("types");
+			for (auto& t : types)
+			{
+				auto n_type = n_types.append_child("type");
+				n_type.append_attribute("id").set_value(t->id);
+				n_type.append_attribute("tag").set_value((int)t->tag);
+				n_type.append_attribute("name").set_value(t->name.c_str());
+				n_type.append_attribute("size").set_value(t->size);
+				if (!t->variables.empty())
+				{
+					auto n_variables = n_type.append_child("variables");
+					for (auto& v : t->variables)
+					{
+						auto n_variable = n_variables.append_child("variable");
+						n_variable.append_attribute("name").set_value(v.name.c_str());
+						n_variable.append_attribute("offset").set_value(v.offset);
+						n_variable.append_attribute("size").set_value(v.size);
+						n_variable.append_attribute("array_count").set_value(v.array_count);
+						n_variable.append_attribute("array_stride").set_value(v.array_stride);
+						n_variable.append_attribute("type_id").set_value(v.info->id);
+					}
+				}
+			}
+		}
+
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> _bindings) :
+			device(device)
+		{
+			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
+			bindings.resize(_bindings.size());
+			for (auto i = 0; i < bindings.size(); i++)
+			{
+				auto& src = _bindings[i];
+				auto& dst = vk_bindings[i];
+
+				dst.binding = i;
+				dst.descriptorType = to_backend(src.type);
+				dst.descriptorCount = src.count;
+				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+				dst.pImmutableSamplers = nullptr;
+
+				bindings[i].reset(new DescriptorBindingPrivate(i, src));
 			}
 
-			auto res_path = path;
+			VkDescriptorSetLayoutCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			info.bindingCount = vk_bindings.size();
+			info.pBindings = vk_bindings.data();
+
+			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
+		}
+
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& _types, std::vector<std::unique_ptr<DescriptorBindingPrivate>>& _bindings) :
+			device(device),
+			filename(filename)
+		{
+			types.resize(_types.size());
+			for (auto i = 0; i < types.size(); i++)
+				types[i].reset(_types[i].release());
+			bindings.resize(_bindings.size());
+			for (auto i = 0; i < bindings.size(); i++)
+				bindings[i].reset(_bindings[i].release());
+
+			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
+			for (auto& src : bindings)
+			{
+				if (src)
+				{
+					VkDescriptorSetLayoutBinding dst;
+					dst.binding = src->binding;
+					dst.descriptorType = to_backend(src->type);
+					dst.descriptorCount = max(src->count, 1U);
+					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+					dst.pImmutableSamplers = nullptr;
+					vk_bindings.push_back(dst);
+				}
+			}
+
+			VkDescriptorSetLayoutCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			info.bindingCount = vk_bindings.size();
+			info.pBindings = vk_bindings.data();
+
+			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
+		}
+
+		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
+		{
+			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
+		}
+
+		int DescriptorSetLayoutPrivate::find_binding(const std::string& name)
+		{
+			for (auto i = 0; i < bindings.size(); i++)
+			{
+				if (bindings[i]->name == name)
+					return i;
+			}
+			return -1;
+		}
+
+		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
+		{
+			auto filename = _filename;
+			if (!get_resource_path(filename, L"assets\\shaders"))
+			{
+				wprintf(L"cannot find dsl: %s\n", _filename.c_str());
+				return nullptr;
+			}
+			filename.make_preferred();
+
+			for (auto& d : device->dsls)
+			{
+				if (d->filename.filename() == filename)
+					return d.get();
+			}
+
+			auto res_path = filename;
 			res_path += L".res";
 
 			std::vector<std::unique_ptr<ShaderType>> types;
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
 
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(path))
+			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
 					auto temp = basic_glsl_prefix();
 					temp += "#define MAKE_DSL\n";
-					std::ifstream dsl(path);
+					std::ifstream dsl(filename);
 					while (!dsl.eof())
 					{
 						std::string line;
@@ -450,7 +445,7 @@ namespace flame
 					temp += "void main()\n{\n}\n";
 					dsl.close();
 
-					auto temp_fn = path;
+					auto temp_fn = filename;
 					temp_fn.replace_filename(L"temp.frag");
 					std::ofstream temp_file(temp_fn);
 					temp_file << temp << std::endl;
@@ -464,7 +459,7 @@ namespace flame
 
 					auto command_line = std::wstring(L" -g " + temp_fn.wstring());
 
-					printf("compiling dsl: %s", path.string().c_str());
+					printf("compiling dsl: %s", filename.string().c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
@@ -494,7 +489,7 @@ namespace flame
 						types.emplace_back(info);
 						info->id = r.base_type_id;
 						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
-						
+
 						auto b = new DescriptorBindingPrivate;
 						b->type = type;
 						b->binding = glsl.get_decoration(r.id, spv::DecorationBinding);
@@ -577,12 +572,19 @@ namespace flame
 				}
 			}
 
-			return new DescriptorSetLayoutPrivate(device, filename, types, bindings);
+			auto dsl = new DescriptorSetLayoutPrivate(device, filename, types, bindings);
+			device->dsls.emplace_back(dsl);
+			return dsl;
 		}
 
 		DescriptorSetLayout* DescriptorSetLayout::create(Device* device, uint binding_count, const DescriptorBindingInfo* bindings)
 		{
 			return new DescriptorSetLayoutPrivate((DevicePrivate*)device, { bindings, binding_count });
+		}
+
+		DescriptorSetLayout* DescriptorSetLayout::get(Device* device, const wchar_t* filename)
+		{
+			return DescriptorSetLayoutPrivate::get((DevicePrivate*)device, filename);
 		}
 
 		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l) :
@@ -738,39 +740,29 @@ namespace flame
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
-		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
+		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
-			auto fn = filename.filename();
+			auto filename = _filename;
+			if (!get_resource_path(filename, L"assets\\shaders"))
+			{
+				wprintf(L"cannot find pll: %s\n", _filename.c_str());
+				return nullptr;
+			}
+			filename.make_preferred();
+
 			for (auto& p : device->plls)
 			{
-				if (p->filename == fn)
+				if (p->filename == filename)
 					return p.get();
 			}
 
-			auto pll = PipelineLayoutPrivate::create(device, filename);
-			device->plls.emplace_back(pll);
-			return pll;
-		}
-
-		PipelineLayoutPrivate* PipelineLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
-		{
-			auto filename = _filename;
-			filename.make_preferred();
-
-			auto path = filename;
-			if (!get_resource_path(path, L"assets\\shaders"))
-			{
-				wprintf(L"cannot find pll: %s\n", filename.c_str());
-				return nullptr;
-			}
-
-			auto res_path = path;
+			auto res_path = filename;
 			res_path += L".res";
 
 			std::vector<DescriptorSetLayoutPrivate*> dsls;
 
-			auto ppath = path.parent_path();
-			auto dependencies = get_make_dependencies(path);
+			auto ppath = filename.parent_path();
+			auto dependencies = get_make_dependencies(filename);
 			for (auto& d : dependencies)
 			{
 				if (d.extension() == L".dsl")
@@ -780,14 +772,14 @@ namespace flame
 			std::vector<std::unique_ptr<ShaderType>> types;
 			ShaderType* push_constant = nullptr;
 
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(path))
+			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
 					auto temp = basic_glsl_prefix();
 					temp += "#define MAKE_PLL\n";
-					std::ifstream pll(path);
+					std::ifstream pll(filename);
 					while (!pll.eof())
 					{
 						std::string line;
@@ -797,7 +789,7 @@ namespace flame
 					temp += "void main()\n{\n}\n";
 					pll.close();
 
-					auto temp_fn = path;
+					auto temp_fn = filename;
 					temp_fn.replace_filename(L"temp.frag");
 					std::ofstream temp_file(temp_fn);
 					temp_file << temp << std::endl;
@@ -811,7 +803,7 @@ namespace flame
 
 					auto command_line = std::wstring(L" -g " + temp_fn.wstring());
 
-					printf("compiling pll: %s", path.string().c_str());
+					printf("compiling pll: %s", filename.string().c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
@@ -842,7 +834,7 @@ namespace flame
 						types.emplace_back(info);
 						info->id = r.base_type_id;
 						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
-						
+
 						push_constant = info;
 						break;
 					}
@@ -881,12 +873,19 @@ namespace flame
 				push_constant = find_type(types, n_push_constant.attribute("type_id").as_uint());
 			}
 
-			return new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);
+			auto pll = new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);
+			device->plls.emplace_back(pll);
+			return pll;
 		}
 
 		PipelineLayout* PipelineLayout::create(Device* device, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
 		{
 			return new PipelineLayoutPrivate((DevicePrivate*)device, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
+		}
+
+		PipelineLayout* PipelineLayout::get(Device* device, const wchar_t* filename)
+		{
+			return PipelineLayoutPrivate::get((DevicePrivate*)device, filename);
 		}
 
 		void ShaderPrivate::release()
@@ -940,6 +939,11 @@ namespace flame
 		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
 			auto filename = _filename;
+			if (!get_resource_path(filename, L"assets\\shaders"))
+			{
+				wprintf(L"cannot find shader: %s\n", _filename.c_str());
+				return nullptr;
+			}
 			filename.make_preferred();
 
 			auto defines = _defines;
@@ -958,13 +962,7 @@ namespace flame
 				}
 			}
 
-			auto path = filename;
-			if (!get_resource_path(path, L"assets\\shaders"))
-			{
-				wprintf(L"cannot find shader: %s\n", filename.c_str());
-				return nullptr;
-			}
-			auto ppath = path.parent_path();
+			auto ppath = filename.parent_path();
 
 			auto hash = std::hash<std::wstring>()(filename);
 			for (auto& d : defines)
@@ -973,10 +971,10 @@ namespace flame
 				hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
 			auto str_hash = std::to_wstring(hash);
 
-			auto spv_path = path;
+			auto spv_path = filename;
 			spv_path += L"." + str_hash;
 
-			auto dependencies = get_make_dependencies(path);
+			auto dependencies = get_make_dependencies(filename);
 			for (auto& e : extra_dependencies)
 				dependencies.push_back(e.is_absolute() ? e : (ppath / e));
 			if (should_remake(dependencies, spv_path))
@@ -985,7 +983,7 @@ namespace flame
 				if (vk_sdk_path)
 				{
 					auto temp = basic_glsl_prefix();
-					std::ifstream glsl(path);
+					std::ifstream glsl(filename);
 					while (!glsl.eof())
 					{
 						std::string line;
@@ -1010,7 +1008,7 @@ namespace flame
 					}
 					glsl.close();
 
-					auto temp_fn = path;
+					auto temp_fn = filename;
 					temp_fn.replace_filename(L"temp");
 					temp_fn.replace_extension(filename.extension());
 					std::ofstream temp_file(temp_fn);
@@ -1042,7 +1040,7 @@ namespace flame
 							if (i < substitutes.size() - 1)
 								substitutes_str += " ";
 						}
-						printf("compiling shader: %s (%s) (%s)", path.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
+						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
 					}
 
 					std::string output;
@@ -1408,7 +1406,7 @@ namespace flame
 			return new PipelinePrivate(device, compute_shader, pll);
 		}
 
-		Pipeline* create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, 
+		Pipeline* Pipeline::create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll,
 			Renderpass* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth,
 			uint blend_options_count, const BlendOption* blend_options,
 			uint dynamic_states_count, const uint* dynamic_states)
@@ -1418,7 +1416,7 @@ namespace flame
 				{ blend_options , blend_options_count }, { dynamic_states , dynamic_states_count });
 		}
 
-		Pipeline* create(Device* device, Shader* compute_shader, PipelineLayout* pll)
+		Pipeline* Pipeline::create(Device* device, Shader* compute_shader, PipelineLayout* pll)
 		{
 			return PipelinePrivate::create((DevicePrivate*)device, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
 		}

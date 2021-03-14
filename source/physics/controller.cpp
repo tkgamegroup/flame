@@ -13,7 +13,7 @@ namespace flame
 				material = scene->device->mat.get();
 #ifdef USE_PHYSX
 			PxCapsuleControllerDesc desc;
-			desc.material = material->px_material;
+			desc.material = material->px_material.get();
 			desc.contactOffset = 0.01f;
 			desc.radius = radius;
 			desc.height = height;

@@ -569,10 +569,11 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element.dsl");
 				element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
+				auto bd = dsl->find_binding("images");
+				for (auto i = 0; i < element_resources.size(); i++)
+					element_descriptorset->set_image(bd, i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
 				element_index_buffer.create(device, BufferUsageIndex, 240000, AccessIndexRead);
-				for (auto i = 0; i < element_resources.size(); i++)
-					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 			
 			{
@@ -591,7 +592,7 @@ namespace flame
 					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 
-			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post/post.dsl");
+			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
 
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"light.dsl");
@@ -1977,16 +1978,16 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
-			element_vertex_buffer.stagnum = 0;
-			element_index_buffer.stagnum = 0;
+			element_vertex_buffer.stag_num = 0;
+			element_index_buffer.stag_num = 0;
 
 			meshes.clear();
 			terrains.clear();
 			directional_lights.clear();
 			point_lights.clear();
 
-			line_buffer.stagnum = 0;
-			triangle_buffer.stagnum = 0;
+			line_buffer.stag_num = 0;
+			triangle_buffer.stag_num = 0;
 
 			curr_viewport = curr_scissor = Rect(0.f, 0.f, output_size.x, output_size.y);
 

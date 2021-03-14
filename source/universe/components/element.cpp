@@ -436,17 +436,48 @@ namespace flame
 		});
 	}
 
-	void* cElementPrivate::add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture)
+	void* cElementPrivate::add_drawer2(void (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
 	{
-		auto c = new Closure(measurable, capture);
-		measurables.emplace_back(c);
+		if (!drawer)
+		{
+			auto slot = (uint)&capture;
+			drawer = [](Capture& c, uint, sRenderer* render) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_object();
+				scr_ins->set_object_type("flame::sRenderer", render);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(drawer, Capture().set_data(&slot));
+			drawers2.emplace_back(c);
+			return c;
+		}
+		auto c = new Closure(drawer, capture);
+		drawers2.emplace_back(c);
 		return c;
 	}
 
-	void cElementPrivate::remove_measurable(void* measurable)
+	void cElementPrivate::remove_drawer2(void* drawer)
 	{
-		std::erase_if(measurables, [&](const auto& i) {
-			return i == (decltype(i))measurable;
+		std::erase_if(drawers2, [&](const auto& i) {
+			return i == (decltype(i))drawer;
+		});
+	}
+
+	void* cElementPrivate::add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture)
+	{
+		auto c = new Closure(measurer, capture);
+		measurers.emplace_back(c);
+		return c;
+	}
+
+	void cElementPrivate::remove_measurer(void* measurer)
+	{
+		std::erase_if(measurers, [&](const auto& i) {
+			return i == (decltype(i))measurer;
 		});
 	}
 
@@ -534,7 +565,7 @@ namespace flame
 
 	void cElementPrivate::mark_size_dirty()
 	{
-		if (pending_sizing || measurables.empty() || !(auto_width || auto_height) || !layout_system)
+		if (pending_sizing || measurers.empty() || !(auto_width || auto_height) || !layout_system)
 			return;
 
 		auto it = layout_system->sizing_list.begin();
@@ -708,6 +739,20 @@ namespace flame
 				canvas->line_to(points[3]);
 				canvas->close_path();
 				canvas->stroke(border_color, border);
+			}
+		}
+	}
+
+	void cElementPrivate::draw2(uint layer, sRenderer* renderer)
+	{
+		if (alpha > 0.f)
+		{
+			if (fill_color.a > 0)
+				renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
+
+			if (border > 0.f && border_color.a > 0)
+			{
+
 			}
 		}
 	}

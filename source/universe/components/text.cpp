@@ -77,7 +77,7 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
+		//canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
 	}
 
 	void cTextPrivate::measure(vec2* ret)
@@ -99,7 +99,7 @@ namespace flame
 			auto thiz = c.thiz<cTextPrivate>();
 			thiz->draw(canvas);
 		}, Capture().set_thiz(this));
-		measurable = element->add_measurable([](Capture& c, vec2* ret) {
+		measurable = element->add_measurer([](Capture& c, vec2* ret) {
 			auto thiz = c.thiz<cTextPrivate>();
 			thiz->measure(ret);
 		}, Capture().set_thiz(this));
@@ -110,13 +110,15 @@ namespace flame
 	void cTextPrivate::on_removed()
 	{
 		element->remove_drawer(drawer);
-		element->remove_measurable(measurable);
+		element->remove_measurer(measurable);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cTextPrivate::on_entered_world()
 	{
+		return;
+
 		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
 		fassert(canvas);
 		if (res_id != -1)

@@ -9,9 +9,9 @@ int main(int argc, char** args)
 {
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, L"Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable, true);
+	auto w = new GraphicsWindow(&g_app, L"Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
 
-	w->canvas->set_clear_color(cvec4(255));
+	//w->canvas->set_clear_color(cvec4(255));
 
 	{
 		auto e = Entity::create();

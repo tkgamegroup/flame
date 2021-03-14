@@ -22,7 +22,7 @@ namespace flame
 			virtual Semaphore* get_image_avalible() const = 0;
 
 			virtual uint get_image_index() const = 0;
-			virtual void acquire_image() = 0;
+			virtual int acquire_image() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Format get_format();
 

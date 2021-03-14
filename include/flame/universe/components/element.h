@@ -9,6 +9,8 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct sRenderer;
+
 	struct cElement : Component
 	{
 		inline static auto type_name = "flame::cElement";
@@ -130,6 +132,10 @@ namespace flame
 
 		virtual void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) = 0;
 		virtual void remove_drawer(void* drawer, bool ontop = true) = 0;
+		virtual void* add_drawer2(void (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) = 0;
+		virtual void remove_drawer2(void* drawer) = 0;
+		virtual void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) = 0;
+		virtual void remove_measurer(void* measurer) = 0;
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

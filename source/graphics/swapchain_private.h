@@ -37,7 +37,7 @@ namespace flame
 			Semaphore* get_image_avalible() const override { return (Semaphore*)image_avalible.get(); }
 
 			uint get_image_index() const override { return image_index; }
-			void acquire_image() override;
+			int acquire_image() override;
 
 			void update();
 		};

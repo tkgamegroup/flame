@@ -38,9 +38,12 @@ namespace flame
 				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
 		}
 
-		void SwapchainPrivate::acquire_image()
+		int SwapchainPrivate::acquire_image()
 		{
+			if (images.empty())
+				return -1;
 			chk_res(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+			return image_index;
 		}
 
 		void SwapchainPrivate::update()

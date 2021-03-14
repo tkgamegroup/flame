@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+  <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" fill_color="255,255,255,255" >
     <cScript>
       ui = entity
       local config = load_ini("config.ini")

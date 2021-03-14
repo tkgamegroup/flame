@@ -135,7 +135,7 @@ namespace flame
 			auto thiz = c.thiz<cImagePrivate>();
 			thiz->draw(canvas);
 		}, Capture().set_thiz(this));
-		measurable = element->add_measurable([](Capture& c, vec2* ret) {
+		measurable = element->add_measurer([](Capture& c, vec2* ret) {
 			auto thiz = c.thiz<cImagePrivate>();
 			thiz->measure(ret);
 		}, Capture().set_thiz(this));
@@ -146,7 +146,7 @@ namespace flame
 	void cImagePrivate::on_removed()
 	{
 		element->remove_drawer(drawer);
-		element->remove_measurable(measurable);
+		element->remove_measurer(measurable);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}

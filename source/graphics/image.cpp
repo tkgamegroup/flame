@@ -135,6 +135,16 @@ namespace flame
 			}
 		}
 
+		void ImagePrivate::clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color)
+		{
+			ImmediateCommandBuffer icb(device);
+			auto cb = icb.cb.get();
+
+			cb->image_barrier(this, {}, src_layout, ImageLayoutTransferDst);
+			cb->clear_color_image(this, color);
+			cb->image_barrier(this, {}, ImageLayoutTransferDst, dst_layout);
+		}
+
 		PipelinePrivate* sample_pipeline = nullptr;
 
 		void ImagePrivate::get_samples(uint count, const vec2* uvs, vec4* dst)
@@ -473,9 +483,9 @@ namespace flame
 			return s;
 		}
 
-		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
+		Sampler* Sampler::get(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
 		{
-			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, linear_mipmap, address_mode);
+			return SamplerPrivate::get((DevicePrivate*)device, mag_filter, min_filter, linear_mipmap, address_mode);
 		}
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::wstring& filename)

@@ -91,13 +91,7 @@ namespace flame
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
 		};
 
-		struct ShaderBufferBase
-		{
-			std::unique_ptr<BufferPrivate> buf;
-			std::unique_ptr<BufferPrivate> stgbuf;
-		};
-
-		struct ShaderBuffer : ShaderBufferBase
+		struct ShaderBuffer
 		{
 			struct Piece
 			{
@@ -110,6 +104,9 @@ namespace flame
 			uint size;
 			uint arrsize = 0;
 			char* stag = nullptr;
+
+			std::unique_ptr<BufferPrivate> buf;
+			std::unique_ptr<BufferPrivate> stgbuf;
 
 			ShaderType* t = nullptr;
 			std::vector<Piece> pieces;
@@ -243,22 +240,25 @@ namespace flame
 		};
 
 		template <class T>
-		struct ShaderGeometryBuffer : ShaderBufferBase
+		struct ShaderGeometryBuffer
 		{
-			DevicePrivate* d = nullptr;
 			BufferUsageFlags usage;
 			uint capacity = 0;
 			AccessFlags access;
 			T* stag = nullptr;
-			uint stagnum = 0;
+			uint stag_num = 0;
+
+			DevicePrivate* d = nullptr;
+			std::unique_ptr<BufferPrivate> buf;
+			std::unique_ptr<BufferPrivate> stgbuf;
 
 			void rebuild()
 			{
 				T* temp = nullptr;
 				auto n = 0;
-				if (stagnum > 0)
+				if (stag_num > 0)
 				{
-					n = stagnum;
+					n = stag_num;
 					temp = new T[n];
 					memcpy(temp, stgbuf->mapped, sizeof(T) * n);
 				}
@@ -284,20 +284,20 @@ namespace flame
 
 			void push(uint cnt, const T* p)
 			{
-				if (stagnum + cnt > capacity)
+				if (stag_num + cnt > capacity)
 				{
-					capacity = (stagnum + cnt) * 2;
+					capacity = (stag_num + cnt) * 2;
 					rebuild();
 				}
 
-				memcpy(stag + stagnum, p, sizeof(T) * cnt);
-				stagnum += cnt;
+				memcpy(stag + stag_num, p, sizeof(T) * cnt);
+				stag_num += cnt;
 			}
 
 			void upload(CommandBufferPrivate* cb)
 			{
 				BufferCopy cpy;
-				cpy.size = stagnum * sizeof(T);
+				cpy.size = stag_num * sizeof(T);
 				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
 			}

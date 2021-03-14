@@ -33,30 +33,24 @@ namespace flame
 	{
 		struct sBeforeRender : System
 		{
+			inline static auto type_name = "flame::sBeforeRender";
+			inline static auto type_hash = ch(type_name);
+
 			GraphicsWindow* thiz;
 
-			sBeforeRender(GraphicsWindow* _w) :
-				System("sBeforeRender", ch("sBeforeRender"))
+			sBeforeRender(GraphicsWindow* w) :
+				System(type_name, type_hash)
 			{
-				thiz = _w;
+				thiz = w;
 			}
 
 			void update() override
 			{
-				if (!thiz->s_renderer->is_dirty())
-					return;
-				if (thiz->swapchain_image_index < 0)
+				if (thiz->s_renderer->is_dirty())
 				{
-					if (thiz->swapchain->get_images_count() > 0)
-					{
-						thiz->swapchain->acquire_image();
-						thiz->swapchain_image_index = thiz->swapchain->get_image_index();
-					}
-					thiz->canvas->prepare();
+					thiz->swapchain_image_index = thiz->swapchain->acquire_image();
+					//thiz->canvas->prepare();
 				}
-
-				if (thiz->swapchain_image_index >= 0)
-					thiz->on_frame();
 			}
 		};
 
@@ -84,7 +78,6 @@ namespace flame
 		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
-		virtual void on_frame() {}
 		void update();
 	};
 
@@ -92,9 +85,6 @@ namespace flame
 	{
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
-
-		graphics::CommandPool* graphics_command_pool;
-		graphics::Queue* graphics_queue;
 
 		graphics::FontAtlas* font_atlas;
 
@@ -116,14 +106,14 @@ namespace flame
 		swapchain.reset(graphics::Swapchain::create(graphics::Device::get_default(), window.get()));
 		commandbuffers.resize(swapchain->get_images_count());
 		for (auto i = 0; i < commandbuffers.size(); i++)
-			commandbuffers[i].reset(graphics::CommandBuffer::create(app->graphics_command_pool));
+			commandbuffers[i].reset(graphics::CommandBuffer::create(graphics::CommandPool::get(graphics::Device::get_default())));
 		submit_fence.reset(graphics::Fence::create(graphics::Device::get_default()));
 		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
-		render_preferences.reset(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr));
-		canvas.reset(graphics::Canvas::create(render_preferences.get()));
-		set_canvas_output();
-		canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");
+		//render_preferences.reset(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr));
+		//canvas.reset(graphics::Canvas::create(render_preferences.get()));
+		//set_canvas_output();
+		//canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");
 
 		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
 
@@ -186,6 +176,7 @@ namespace flame
 
 	void GraphicsWindow::set_canvas_output()
 	{
+		return;
 		std::vector<graphics::ImageView*> vs(swapchain->get_images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = swapchain->get_image(i)->get_view();
@@ -202,13 +193,14 @@ namespace flame
 		{
 			auto cb = commandbuffers[swapchain_image_index].get();
 
-			cb->begin(false);
-			if (canvas)
-				canvas->record(cb, swapchain_image_index);
+			cb->begin();
+			s_renderer->record_element_drawing_commands(swapchain_image_index, cb);
+			//canvas->record(cb, swapchain_image_index);
 			cb->end();
 
-			app->graphics_queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
-			app->graphics_queue->present(swapchain.get(), render_finished.get());
+			auto queue = graphics::Queue::get(graphics::Device::get_default());
+			queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
+			queue->present(swapchain.get(), render_finished.get());
 			swapchain_image_index = -1;
 		}
 	}
@@ -240,8 +232,6 @@ namespace flame
 
 		network::initialize();
 		graphics::Device::set_default(graphics::Device::create(graphics_debug));
-		graphics_command_pool = graphics::CommandPool::get(graphics::Device::get_default());
-		graphics_queue = graphics::Queue::get(graphics::Device::get_default());
 		physics::Device::set_default(physics::Device::create());
 		sound::Device::set_default(sound::Device::create());
 		script::Instance::set_default(script::Instance::create());

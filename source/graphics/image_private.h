@@ -58,6 +58,8 @@ namespace flame
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
+			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
+
 			void get_samples(uint count, const vec2* uvs, vec4* dst) override;
 
 			void save(const std::filesystem::path& filename);

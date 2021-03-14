@@ -17,6 +17,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
+			FLAME_GRAPHICS_EXPORTS static DescriptorPool* get_default(Device* device);
 			FLAME_GRAPHICS_EXPORTS static DescriptorPool* create(Device* device);
 		};
 
@@ -41,9 +42,10 @@ namespace flame
 
 			virtual uint get_bindings_count() const = 0;
 			virtual DescriptorBinding* get_binding(uint binding) const = 0;
+			virtual int find_binding(const char* name) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, uint bindings_count, const DescriptorBindingInfo* bindings);
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* get(Device* device, const wchar_t* filename);
 		};
 
 		struct DescriptorSet
@@ -63,7 +65,7 @@ namespace flame
 			virtual void release() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, uint push_constant_size);
-			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayout* get(Device* device, const wchar_t* filename);
 		};
 
 		struct VertexAttributeInfo

@@ -38,6 +38,8 @@ namespace flame
 
 		vec2 scroll = vec2(0.f);
 
+		bool new_layer = true;
+
 		cElementPrivate* pelement = nullptr;
 		bool transform_dirty = true;
 		bool crooked = false;
@@ -60,7 +62,8 @@ namespace flame
 		bool culled = false;
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers[2];
-		std::vector<std::unique_ptr<Closure<void(Capture&, vec2*)>>> measurables;
+		std::vector<std::unique_ptr<Closure<void(Capture&, uint, sRenderer*)>>> drawers2;
+		std::vector<std::unique_ptr<Closure<void(Capture&, vec2*)>>> measurers;
 		bool pending_sizing = false;
 		bool pending_layout = false;
 
@@ -168,8 +171,10 @@ namespace flame
 
 		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) override;
 		void remove_drawer(void* drawer, bool ontop = true) override;
-		void* add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture);
-		void remove_measurable(void* measurable);
+		void* add_drawer2(void (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) override;
+		void remove_drawer2(void* drawer) override;
+		void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) override;
+		void remove_measurer(void* measurer) override;
 
 		void update_transform();
 
@@ -194,5 +199,6 @@ namespace flame
 		bool on_save_attribute(uint64 h) override;
 
 		void draw(graphics::Canvas* canvas);
+		void draw2(uint layer, sRenderer* renderer);
 	};
 }

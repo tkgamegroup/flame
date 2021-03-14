@@ -93,7 +93,7 @@ namespace flame
 		{
 			auto e = sizing_list.front();
 			auto size = vec2(-1.f);
-			for (auto& m : e->measurables)
+			for (auto& m : e->measurers)
 			{
 				auto r = vec2(0.f);
 				m->call(&r);
@@ -148,6 +148,7 @@ namespace flame
 				{
 					for (auto al : als[i])
 					{
+						al->new_layer = true;
 						apply_basic_h(l, al, false);
 						apply_basic_v(l, al, false);
 					}
@@ -160,6 +161,7 @@ namespace flame
 				auto factor = 0.f;
 				for (auto al : als[0])
 				{
+					al->new_layer = false;
 					if (al->alignx == AlignMinMax)
 					{
 						factor += al->width_factor;
@@ -196,6 +198,7 @@ namespace flame
 					apply_basic_v(l, al, true);
 				for (auto al : als[1])
 				{
+					al->new_layer = true;
 					apply_basic_h(l, al, false);
 					apply_basic_v(l, al, false);
 				}
@@ -208,6 +211,7 @@ namespace flame
 				auto factor = 0.f;
 				for (auto al : als[0])
 				{
+					al->new_layer = false;
 					w = max((al->alignx == AlignMinMax ? al->desired_size.x : al->size.x) + al->margin_size[0], w);
 					if (al->aligny == AlignMinMax)
 					{
@@ -243,6 +247,7 @@ namespace flame
 				}
 				for (auto al : als[1])
 				{
+					al->new_layer = true;
 					apply_basic_h(l, al, false);
 					apply_basic_v(l, al, false);
 				}
@@ -265,6 +270,7 @@ namespace flame
 				for (auto i = 0; i < als[0].size(); i++)
 				{
 					auto& al = als[0][i];
+					al->new_layer = false;
 
 					lw += al->size.x + l->layout_gap;
 					lh = max(al->size.y, lh);
@@ -313,6 +319,7 @@ namespace flame
 				}
 				for (auto al : als[1])
 				{
+					al->new_layer = true;
 					apply_basic_h(l, al, false);
 					apply_basic_v(l, al, false);
 				}

@@ -68,6 +68,8 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
+			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
+
 			virtual void get_samples(uint count, const vec2* uvs, vec4* dst) = 0;
 
 			virtual void save(const wchar_t* filename) = 0;
@@ -95,7 +97,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
+			FLAME_GRAPHICS_EXPORTS static Sampler* get(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 		};
 
 		struct ImageTile

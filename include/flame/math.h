@@ -143,10 +143,7 @@ namespace flame
 		vec2 LT;
 		vec2 RB;
 
-		Rect()
-		{
-			reset();
-		}
+		Rect() = default;
 
 		Rect(float LT_x, float LT_y, float RB_x, float RB_y)
 		{

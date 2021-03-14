@@ -107,7 +107,12 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
+		struct DescriptorSetLayoutBridge : DescriptorSetLayout
+		{
+			int find_binding(const char* name) const override;
+		};
+
+		struct DescriptorSetLayoutPrivate : DescriptorSetLayoutBridge
 		{
 			DevicePrivate* device;
 
@@ -129,8 +134,12 @@ namespace flame
 			int find_binding(const std::string& name);
 
 			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
-			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
+
+		inline int DescriptorSetLayoutBridge::find_binding(const char* name) const
+		{
+			return ((DescriptorSetLayoutPrivate*)this)->find_binding(name);
+		}
 
 		struct DescriptorSetBridge : DescriptorSet
 		{
@@ -188,7 +197,6 @@ namespace flame
 			uint get_idx(uint64 h) { return descriptor_set_layouts_map[h]; };
 
 			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
-			static PipelineLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
 		struct ShaderPrivate : Shader
