@@ -7,7 +7,7 @@
 
 using namespace flame;
 
-std::string format_type(const wchar_t* in, bool* is_array)
+std::string format_type(const wchar_t* in)
 {
 	auto str = w2s(in);
 
@@ -22,24 +22,6 @@ std::string format_type(const wchar_t* in, bool* is_array)
 	{
 		static auto reg = std::regex(R"(__int64 )");
 		str = std::regex_replace(str, reg, "int64");
-	}
-	{
-		static auto reg = std::regex(R"(flame::String<char>)");
-		str = std::regex_replace(str, reg, "flame::StringA");
-	}
-	{
-		static auto reg = std::regex(R"(flame::String<wchar_t>)");
-		str = std::regex_replace(str, reg, "flame::StringW");
-	}
-	{
-		static auto array_str = std::string("flame::Array");
-		if (str.compare(0, array_str.size(), array_str.c_str()) == 0 && str.size() > array_str.size() + 1)
-		{
-			if (is_array)
-				*is_array = true;
-			str.erase(str.begin(), str.begin() + array_str.size() + 1);
-			str.erase(str.end() - 1);
-		}
 	}
 
 	SUS::remove_ch(str, ' ');
@@ -119,7 +101,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagEnum:
 	{
 		s_type->get_name(&pwname);
-		auto name = format_type(pwname, nullptr);
+		auto name = format_type(pwname);
 		return TagAndName(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name);
 	}
 	case SymTagBaseType:
@@ -130,29 +112,27 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		IDiaSymbol* pointer_type;
 		s_type->get_type(&pointer_type);
 		pointer_type->get_symTag(&dw);
-		auto is_array = false;
 		switch (dw)
 		{
 		case SymTagBaseType:
 			name = base_type_name(pointer_type);
 			break;
 		case SymTagPointerType:
-			fassert(0);
+
 			break;
 		case SymTagUDT:
 			pointer_type->get_name(&pwname);
-			name = format_type(pwname, &is_array);
+			name = format_type(pwname);
 			break;
 		}
 		pointer_type->Release();
-		return TagAndName(is_array ? TypeArrayOfPointer : TypePointer, name);
+		return TagAndName(TypePointer, name);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
-		auto is_array = false;
-		auto name = format_type(pwname, &is_array);
-		return TagAndName(is_array ? TypeArrayOfData : TypeData, name);
+		auto name = format_type(pwname);
+		return TagAndName(TypeData, name);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -469,12 +449,6 @@ process:
 		}
 	}
 
-	auto str_alloc = [](void* _str, uint size) {
-		auto& str = *(std::string*)_str;
-		str.resize(size);
-		return str.data();
-	};
-
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
 	IDiaSymbol* s_udt;
@@ -550,11 +524,7 @@ process:
 								n_function.append_attribute("name").set_value(name.c_str());
 								n_function.append_attribute("rva").set_value(rva);
 								n_function.append_attribute("voff").set_value(voff);
-								{
-									std::string str;
-									TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&ret_type.tag, &str, str_alloc);
-									n_function.append_attribute("type_tag").set_value(str.c_str());
-								}
+								n_function.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&ret_type.tag).c_str());
 								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
 
 								pugi::xml_node n_parameters;
@@ -574,11 +544,7 @@ process:
 									if (!n_parameters)
 										n_parameters = n_function.append_child("parameters");
 									auto n_parameter = n_parameters.append_child("parameter");
-									{
-										std::string str;
-										TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&desc.tag, &str, str_alloc);
-										n_parameter.append_attribute("type_tag").set_value(str.c_str());
-									}
+									n_parameter.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&desc.tag).c_str());
 									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
 									s_type->Release();
@@ -635,11 +601,7 @@ process:
 								if (!n_variables)
 									n_variables = n_udt.prepend_child("variables");
 								auto n_variable = n_variables.append_child("variable");
-								{
-									std::string str;
-									TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->serialize(&desc.tag, &str, str_alloc);
-									n_variable.append_attribute("type_tag").set_value(str.c_str());
-								}
+								n_variable.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&desc.tag).c_str());
 								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
 								n_variable.append_attribute("name").set_value(name.c_str());
 								n_variable.append_attribute("offset").set_value(offset);

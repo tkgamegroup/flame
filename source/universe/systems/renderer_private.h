@@ -73,16 +73,27 @@ namespace flame
 		std::vector<vec2> points;
 		std::wstring text;
 		cvec4 color;
-		Rect scissor;
+		vec4 misc;
 	};
 
 	struct sRendererBridge : sRenderer
 	{
+		int find_element_res(const char* name) const override;
+		void draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
+			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 		void fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color) override;
+		void stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
 	};
 
 	struct sRendererPrivate : sRendererBridge
 	{
+		struct ElementRes
+		{
+			ElementResType type;
+			void* v;
+			std::string name;
+		};
+
 		bool hdr;
 		bool wireframe = false;
 		bool always_update = false;
@@ -107,6 +118,8 @@ namespace flame
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
+		std::vector<ElementRes> element_reses;
+
 		bool dirty = true;
 
 		vec2 tar_size;
@@ -114,7 +127,7 @@ namespace flame
 		cElementPrivate* last_element;
 		bool last_element_changed;
 
-		std::vector<ElementDrawCmd> draw_layers[64];
+		std::vector<ElementDrawCmd> draw_layers[128];
 
 		sRendererPrivate(sRendererParms* parms);
 
@@ -125,7 +138,14 @@ namespace flame
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
+		void get_element_res(uint idx, ElementResType* type, void** v, char** name) const override;
+		void set_element_res(int idx, ElementResType type, void* v, const char* name) override;
+		int find_element_res(const std::string& name) const;
+
 		void fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color);
+		void stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color);
+		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id,
+			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
 
 		graphics::Canvas* get_canvas() const override { return canvas; }
 
@@ -146,5 +166,20 @@ namespace flame
 	inline void sRendererBridge::fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color)
 	{
 		((sRendererPrivate*)this)->fill_rect(layer, (cElementPrivate*)element, pos, size, color);
+	}
+
+	inline void sRendererBridge::stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
+	{
+		((sRendererPrivate*)this)->stroke_rect(layer, (cElementPrivate*)element, pos, size, thickness, color);
+	}
+
+	inline int sRendererBridge::find_element_res(const char* name) const
+	{
+		return ((sRendererPrivate*)this)->find_element_res(name);
+	}
+	inline void sRendererBridge::draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
+		const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
+	{
+		((sRendererPrivate*)this)->draw_text(layer, (cElementPrivate*)element, pos, font_size, font_id, text_beg, text_end, color);
 	}
 }

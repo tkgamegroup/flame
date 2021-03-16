@@ -77,7 +77,14 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		//canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
+		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
+	}
+
+	uint cTextPrivate::draw2(uint layer, sRenderer* renderer)
+	{
+		layer++;
+		renderer->draw_text(layer, element, element->padding.xy(), font_size, res_id, text.c_str(), text.c_str() + text.size(), font_color);
+		return layer;
 	}
 
 	void cTextPrivate::measure(vec2* ret)
@@ -95,11 +102,15 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		drawer = element->add_drawer2([](Capture& c, uint layer, sRenderer* renderer) {
 			auto thiz = c.thiz<cTextPrivate>();
-			thiz->draw(canvas);
+			return thiz->draw2(layer, renderer);
 		}, Capture().set_thiz(this));
-		measurable = element->add_measurer([](Capture& c, vec2* ret) {
+		//drawer = element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		//	auto thiz = c.thiz<cTextPrivate>();
+		//	thiz->draw(canvas);
+		//}, Capture().set_thiz(this));
+		measurer = element->add_measurer([](Capture& c, vec2* ret) {
 			auto thiz = c.thiz<cTextPrivate>();
 			thiz->measure(ret);
 		}, Capture().set_thiz(this));
@@ -110,28 +121,30 @@ namespace flame
 	void cTextPrivate::on_removed()
 	{
 		element->remove_drawer(drawer);
-		element->remove_measurer(measurable);
+		element->remove_measurer(measurer);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cTextPrivate::on_entered_world()
 	{
-		return;
-
-		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
-		fassert(canvas);
+		renderer = entity->world->get_system_t<sRenderer>();
+		fassert(renderer);
+		canvas = renderer->get_canvas();
 		if (res_id != -1)
 		{
 			if (!atlas)
-				canvas->get_element_resource(res_id).fa;
+				renderer->get_element_res(res_id, nullptr, (void**)&atlas, nullptr);
+				//atlas = canvas->get_element_resource(res_id).fa;
 		}
 		else
 		{
-			res_id = canvas->find_element_resource("default_font");
+			res_id = renderer->find_element_res("default_font");
+			//res_id = canvas->find_element_resource("default_font");
 			if (res_id != -1)
 			{
-				atlas = canvas->get_element_resource(res_id).fa;
+				renderer->get_element_res(res_id, nullptr, (void**)&atlas, nullptr);
+				//atlas = canvas->get_element_resource(res_id).fa;
 				if (!atlas)
 					res_id = -1;
 			}
@@ -140,7 +153,7 @@ namespace flame
 
 	void cTextPrivate::on_left_world()
 	{
-		canvas = nullptr;
+		renderer = nullptr;
 		res_id = -1;
 		atlas = nullptr;
 	}

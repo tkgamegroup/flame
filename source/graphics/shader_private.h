@@ -71,22 +71,13 @@ namespace flame
 			return nullptr;
 		}
 
-		struct DescriptorBindingPrivate : DescriptorBinding
+		struct DescriptorBinding
 		{
-			DescriptorType type;
-			uint binding;
+			DescriptorType type = DescriptorMax;
 			uint count;
 			std::string name;
 
 			ShaderType* info = nullptr;
-
-			DescriptorBindingPrivate() {}
-			DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info);
-
-			uint get_binding() const override { return binding; }
-			DescriptorType get_type() const override { return type; }
-			uint get_count() const override { return count; }
-			const char* get_name() const override { return name.c_str(); }
 		};
 
 		struct ShaderInOutInfo
@@ -119,18 +110,18 @@ namespace flame
 			std::filesystem::path filename;
 
 			std::vector<std::unique_ptr<ShaderType>> types;
-			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
+			std::vector<DescriptorBinding> bindings;
 
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
 			DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> bindings);
-			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& types, std::vector<std::unique_ptr<DescriptorBindingPrivate>>& bindings);
+			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& types, std::vector<DescriptorBinding>& bindings);
 			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
 
 			uint get_bindings_count() const override { return bindings.size(); }
-			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
+			void get_binding(uint binding, DescriptorBindingInfo* ret) const override;
 			int find_binding(const std::string& name);
 
 			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);

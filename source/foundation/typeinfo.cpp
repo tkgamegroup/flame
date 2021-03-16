@@ -614,78 +614,6 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_StringA : TypeInfoPrivate
-	{
-		TypeInfoPrivate_StringA() :
-			TypeInfoPrivate(TypeData, "flame::StringA", sizeof(StringA))
-		{
-		}
-
-		void* create(bool) const override
-		{
-			return f_new<StringA>();
-		}
-		void destroy(void* p, bool) const override
-		{
-			f_delete((StringA*)p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			*(StringA*)dst = *(StringA*)src;
-		}
-		bool compare(void* dst, const void* src) const override
-		{
-			return (*(StringA*)dst).str() == (*(StringA*)src).str();
-		}
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
-		{
-			const auto& s = *(StringA*)src;
-			auto dst = str_allocator(str, s.s);
-			if (s.v)
-				strcpy(dst, s.v);
-			else
-				dst[0] = 0;
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(StringA*)dst = src;
-		}
-	};
-
-	struct TypeInfoPrivate_StringW : TypeInfoPrivate
-	{
-		TypeInfoPrivate_StringW() :
-			TypeInfoPrivate(TypeData, "flame::StringW", sizeof(StringW))
-		{
-		}
-
-		void* create(bool) const override
-		{
-			return f_new<StringW>();
-		}
-		void destroy(void* p, bool) const override
-		{
-			f_delete((StringW*)p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			*(StringW*)dst = *(StringW*)src;
-		}
-		bool compare(void* a, const void* b) const override
-		{
-			return (*(StringW*)a).str() == (*(StringW*)b).str();
-		}
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
-		{
-			const auto s = w2s((*(StringW*)src).str());
-			strcpy(str_allocator(str, s.size()), s.c_str());
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(StringW*)dst = s2w(src);
-		}
-	};
-
 	struct TypeInfoPrivate_Pointer : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Pointer(const std::string& base_name) :
@@ -924,14 +852,6 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_quat;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-			}
-			{
-				auto t = new TypeInfoPrivate_StringA;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-			}
-			{
-				auto t = new TypeInfoPrivate_StringW;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 			}
 			{

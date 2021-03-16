@@ -15,6 +15,7 @@ namespace flame
 			InstancePrivate();
 			~InstancePrivate();
 
+			int to_int(int idx) override;
 			void push_bool(bool b) override;
 			void push_int(int i) override;
 			void push_float(float f) override;
@@ -30,7 +31,7 @@ namespace flame
 			void set_object_type(const char* type_name, void* p = INVALID_POINTER) override;
 			void set_member_name(const char* name) override;
 			void set_global_name(const char* name) override;
-			void call(uint parameters_count) override;
+			void call(uint parms_num) override;
 			bool excute(const char* str) override;
 			bool excute_file(const wchar_t* filename) override;
 		};

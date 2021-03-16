@@ -28,20 +28,12 @@ namespace flame
 			const char* name = "";
 		};
 
-		struct DescriptorBinding
-		{
-			virtual uint get_binding() const = 0;
-			virtual DescriptorType get_type() const = 0;
-			virtual uint get_count() const = 0;
-			virtual const char* get_name() const = 0;
-		};
-
 		struct DescriptorSetLayout
 		{
 			virtual void release() = 0;
 
 			virtual uint get_bindings_count() const = 0;
-			virtual DescriptorBinding* get_binding(uint binding) const = 0;
+			virtual void get_binding(uint binding, DescriptorBindingInfo* ret) const = 0;
 			virtual int find_binding(const char* name) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, uint bindings_count, const DescriptorBindingInfo* bindings);

@@ -567,7 +567,7 @@ namespace flame
 			}
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element/element.dsl");
 				element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				auto bd = dsl->find_binding("images");
 				for (auto i = 0; i < element_resources.size(); i++)
@@ -672,7 +672,7 @@ namespace flame
 			}
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(device, L"terrain.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"terrain/terrain.dsl");
 				terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				terrain_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "TerrainInfo"), 1);
 				terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
@@ -738,7 +738,7 @@ namespace flame
 			back_nearest_descriptorsets.clear();
 			back_linear_descriptorsets.clear();
 
-			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post.dsl");
+			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
 
 			if (views.empty())
 				output_size = vec2(0.f);
@@ -1249,8 +1249,6 @@ namespace flame
 			paths.back().push_back(paths.back().front());
 		}
 
-		static const auto feather = 1.f;
-
 		static std::vector<vec2> calculate_normals(const std::vector<vec2>& points, bool closed)
 		{
 			std::vector<vec2> normals(points.size());
@@ -1277,6 +1275,8 @@ namespace flame
 			}
 			return normals;
 		}
+
+		static const auto feather = 1.f;
 
 		void CanvasPrivate::stroke(const cvec4& col, float thickness, bool aa)
 		{

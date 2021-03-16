@@ -1,3 +1,4 @@
+#include <flame/foundation/typeinfo.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
@@ -261,14 +262,6 @@ namespace flame
 			return new DescriptorPoolPrivate((DevicePrivate*)device);
 		}
 
-		DescriptorBindingPrivate::DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info) :
-			binding(binding),
-			type(info.type),
-			count(info.count),
-			name(info.name)
-		{
-		}
-
 		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
 		{
 			for (auto n_type : root.child("types"))
@@ -342,7 +335,10 @@ namespace flame
 				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 				dst.pImmutableSamplers = nullptr;
 
-				bindings[i].reset(new DescriptorBindingPrivate(i, src));
+				auto& dst2 = bindings[i];
+				dst2.type = src.type;
+				dst2.count = src.count;
+				dst2.name = src.name;
 			}
 
 			VkDescriptorSetLayoutCreateInfo info;
@@ -355,26 +351,25 @@ namespace flame
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& _types, std::vector<std::unique_ptr<DescriptorBindingPrivate>>& _bindings) :
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& _types, std::vector<DescriptorBinding>& _bindings) :
 			device(device),
 			filename(filename)
 		{
 			types.resize(_types.size());
 			for (auto i = 0; i < types.size(); i++)
 				types[i].reset(_types[i].release());
-			bindings.resize(_bindings.size());
-			for (auto i = 0; i < bindings.size(); i++)
-				bindings[i].reset(_bindings[i].release());
+			bindings = _bindings;
 
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-			for (auto& src : bindings)
+			for (auto i = 0; i < bindings.size(); i++)
 			{
-				if (src)
+				auto& src = bindings[i];
+				if (src.type != DescriptorMax)
 				{
 					VkDescriptorSetLayoutBinding dst;
-					dst.binding = src->binding;
-					dst.descriptorType = to_backend(src->type);
-					dst.descriptorCount = max(src->count, 1U);
+					dst.binding = i;
+					dst.descriptorType = to_backend(src.type);
+					dst.descriptorCount = max(src.count, 1U);
 					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 					dst.pImmutableSamplers = nullptr;
 					vk_bindings.push_back(dst);
@@ -396,11 +391,19 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
+		void DescriptorSetLayoutPrivate::get_binding(uint binding, DescriptorBindingInfo* ret) const
+		{
+			auto& b = bindings[binding];
+			ret->type = b.type;
+			ret->count = b.count;
+			ret->name = b.name.c_str();
+		}
+
 		int DescriptorSetLayoutPrivate::find_binding(const std::string& name)
 		{
 			for (auto i = 0; i < bindings.size(); i++)
 			{
-				if (bindings[i]->name == name)
+				if (bindings[i].name == name)
 					return i;
 			}
 			return -1;
@@ -426,7 +429,7 @@ namespace flame
 			res_path += L".res";
 
 			std::vector<std::unique_ptr<ShaderType>> types;
-			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
+			std::vector<DescriptorBinding> bindings;
 
 			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
 			{
@@ -490,16 +493,15 @@ namespace flame
 						info->id = r.base_type_id;
 						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
 
-						auto b = new DescriptorBindingPrivate;
-						b->type = type;
-						b->binding = glsl.get_decoration(r.id, spv::DecorationBinding);
-						b->count = glsl.get_type(r.type_id).array[0];
-						b->name = r.name;
-						b->info = info;
+						auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
+						if (bindings.size() <= binding)
+							bindings.resize(binding + 1);
 
-						if (bindings.size() <= b->binding)
-							bindings.resize(b->binding + 1);
-						bindings[b->binding].reset(b);
+						auto& b = bindings[binding];
+						b.type = type;
+						b.count = glsl.get_type(r.type_id).array[0];
+						b.name = r.name;
+						b.info = info;
 					};
 
 					for (auto& r : resources.uniform_buffers)
@@ -517,19 +519,18 @@ namespace flame
 					save_res_types(root, types);
 
 					auto n_bindings = root.append_child("bindings");
-					for (auto& b : bindings)
+					for (auto i = 0; i < bindings.size(); i++)
 					{
-						auto n_binding = n_bindings.append_child("binding");
-						if (b)
+						auto& b = bindings[i];
+						if (b.type != DescriptorMax)
 						{
-							n_binding.append_attribute("type").set_value((int)b->type);
-							n_binding.append_attribute("binding").set_value(b->binding);
-							n_binding.append_attribute("count").set_value(b->count);
-							n_binding.append_attribute("name").set_value(b->name.c_str());
-							n_binding.append_attribute("type_id").set_value(b->info->id);
+							auto n_binding = n_bindings.append_child("binding");
+							n_binding.append_attribute("type").set_value(ti_es("flame::graphics::DescriptorType")->serialize(&b.type).c_str());
+							n_binding.append_attribute("binding").set_value(i);
+							n_binding.append_attribute("count").set_value(b.count);
+							n_binding.append_attribute("name").set_value(b.name.c_str());
+							n_binding.append_attribute("type_id").set_value(b.info->id);
 						}
-						else
-							n_binding.append_attribute("binding").set_value("-1");
 					}
 
 					res.save_file(res_path.c_str());
@@ -559,16 +560,15 @@ namespace flame
 					auto binding = n_binding.attribute("binding").as_int();
 					if (binding != -1)
 					{
-						auto b = new DescriptorBindingPrivate;
-						b->type = (DescriptorType)n_binding.attribute("type").as_int();
-						b->binding = n_binding.attribute("binding").as_int();
-						b->count = n_binding.attribute("count").as_uint();
-						b->name = n_binding.attribute("name").value();
-						b->info = find_type(types, n_binding.attribute("type_id").as_uint());
+						if (binding >= bindings.size())
+							bindings.resize(binding + 1);
+						auto& b = bindings[binding];
+						ti_es("flame::graphics::DescriptorType")->unserialize(&b.type, n_binding.attribute("type").value());
+						b.count = n_binding.attribute("count").as_uint();
+						b.name = n_binding.attribute("name").value();
+						b.info = find_type(types, n_binding.attribute("type_id").as_uint());
 						bindings.emplace_back(b);
 					}
-					else
-						bindings.emplace_back(nullptr);
 				}
 			}
 
@@ -619,7 +619,7 @@ namespace flame
 			write.dstSet = vk_descriptor_set;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(descriptor_layout->bindings[binding]->type);
+			write.descriptorType = to_backend(descriptor_layout->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -632,7 +632,7 @@ namespace flame
 		{
 			VkDescriptorImageInfo i;
 			i.imageView = iv->vk_image_view;
-			i.imageLayout = descriptor_layout->bindings[binding]->type == DescriptorSampledImage ? 
+			i.imageLayout = descriptor_layout->bindings[binding].type == DescriptorSampledImage ? 
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
 			i.sampler = sp ? sp->vk_sampler : nullptr;
 
@@ -642,7 +642,7 @@ namespace flame
 			write.dstSet = vk_descriptor_set;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(descriptor_layout->bindings[binding]->type);
+			write.descriptorType = to_backend(descriptor_layout->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;

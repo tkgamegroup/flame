@@ -11,6 +11,8 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct sRenderer;
+
 	struct cElementPrivate;
 
 	struct cTextBridge : cText
@@ -20,14 +22,15 @@ namespace flame
 
 	struct cTextPrivate : cTextBridge
 	{
-		cElementPrivate* element = nullptr;
-		void* drawer = nullptr;
-		void* measurable = nullptr;
-		graphics::Canvas* canvas = nullptr;
-
 		std::wstring text;
 		uint font_size = 16;
 		cvec4 font_color = cvec4(0, 0, 0, 255);
+
+		cElementPrivate* element = nullptr;
+		void* drawer = nullptr;
+		void* measurer = nullptr;
+		graphics::Canvas* canvas = nullptr;
+		sRenderer* renderer = nullptr;
 
 		int res_id = -1;
 		graphics::FontAtlas* atlas = nullptr;
@@ -47,6 +50,7 @@ namespace flame
 		void mark_text_changed();
 
 		void draw(graphics::Canvas* canvas);
+		uint draw2(uint layer, sRenderer* renderer);
 
 		void measure(vec2* ret);
 

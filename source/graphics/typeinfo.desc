@@ -32,4 +32,7 @@
       </excludes>
     </rule>
   </udts>
+  <enums>
+    <rule name="^flame::graphics::DescriptorType$" />
+  </enums>
 </desc>

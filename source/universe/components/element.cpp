@@ -436,7 +436,7 @@ namespace flame
 		});
 	}
 
-	void* cElementPrivate::add_drawer2(void (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
+	void* cElementPrivate::add_drawer2(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
 	{
 		if (!drawer)
 		{
@@ -449,7 +449,9 @@ namespace flame
 				scr_ins->push_object();
 				scr_ins->set_object_type("flame::sRenderer", render);
 				scr_ins->call(1);
-				scr_ins->pop(2);
+				auto ret = scr_ins->to_int(-1);
+				scr_ins->pop(3);
+				return (uint)ret;
 			};
 			auto c = new Closure(drawer, Capture().set_data(&slot));
 			drawers2.emplace_back(c);
@@ -749,11 +751,8 @@ namespace flame
 		{
 			if (fill_color.a > 0)
 				renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
-
 			if (border > 0.f && border_color.a > 0)
-			{
-
-			}
+				renderer->stroke_rect(layer, this, vec2(0.f), size, border, border_color);
 		}
 	}
 

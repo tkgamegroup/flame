@@ -12,8 +12,6 @@ namespace flame
 		TypeData,
 		TypePointer,
 		TypeFunction,
-		TypeArrayOfData,
-		TypeArrayOfPointer,
 
 		TypeTagCount
 	};
@@ -50,10 +48,25 @@ namespace flame
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual bool compare(void* dst, const void* src) const = 0;
 		virtual void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const = 0;
+		inline std::string serialize(const void* src)
+		{
+			std::string str;
+			serialize(src, &str, [](void* _str, uint size) {
+				auto& str = *(std::string*)_str;
+				str.resize(size);
+				return str.data();
+			});
+			return str;
+		}
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name);
 	};
+
+	inline TypeInfo* ti_es(const char* name)
+	{
+		return TypeInfo::get(TypeEnumSingle, name);
+	}
 
 	struct ReflectMeta
 	{

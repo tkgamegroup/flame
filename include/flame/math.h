@@ -158,10 +158,20 @@ namespace flame
 		{
 		}
 
+		Rect(const vec4& v) :
+			Rect(v.x, v.y, v.z, v.w)
+		{
+		}
+
 		void reset()
 		{
 			LT = vec2(10000.f);
 			RB = vec2(-10000.f);
+		}
+
+		operator vec4() const
+		{
+			return vec4(LT.x, LT.y, RB.x, RB.y);
 		}
 
 		bool operator==(const Rect& rhs)

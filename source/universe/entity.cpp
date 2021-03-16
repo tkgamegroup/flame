@@ -32,32 +32,21 @@ namespace flame
 
 				void* d = get_type->create(false);
 				getter->call(ct->dummy, d, nullptr);
-				get_type->serialize(d, &default_value, [](void* _str, uint size) {
-					auto& str = *(std::string*)_str;
-					str.resize(size);
-					return str.data();
-				});
+				default_value = get_type->serialize(d);
 				get_type->destroy(d, false);
 			}
 
 			std::string serialize(void* c, void* r = nullptr)
 			{
-				auto str_alloc = [](void* _str, uint size) {
-					auto& str = *(std::string*)_str;
-					str.resize(size);
-					return str.data();
-				};
 				void* d = get_type->create(false);
 				getter->call(c, d, nullptr);
-				std::string str;
-				get_type->serialize(d, &str, str_alloc);
+				auto str = get_type->serialize(d);
 				get_type->destroy(d, false);
 				if (r)
 				{
 					void* d = get_type->create(false);
 					getter->call(r, d, nullptr);
-					std::string str2;
-					get_type->serialize(d, &str2, str_alloc);
+					auto str2 = get_type->serialize(d);
 					get_type->destroy(d, false);
 					if (str == str2)
 						str = "";
@@ -1133,21 +1122,12 @@ namespace flame
 						std::string value;
 						for (auto& v : rule->values)
 						{
-							std::string str;
-							auto str_alloc = [](void* _str, uint size) {
-								auto& str = *(std::string*)_str;
-								str.resize(size);
-								return str.data();
-							};
 							if (v.first)
 							{
-								TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
-									->serialize(&v.first, &str, str_alloc);
-								value += str;
+								value += ti_es("flame::StateFlags")->serialize(&v.first);
 								value += ":";
 							}
-							rule->type->serialize(v.second, &str, str_alloc);
-							value += str;
+							value += rule->type->serialize(v.second);
 							value += "  ";
 						}
 						value.pop_back();

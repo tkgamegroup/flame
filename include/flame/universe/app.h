@@ -118,7 +118,7 @@ namespace flame
 		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
 
 		window->add_resize_listener([](Capture& c, const uvec2&) {
-			c.thiz<GraphicsWindow>()->set_canvas_output();
+			//c.thiz<GraphicsWindow>()->set_canvas_output();
 		}, Capture().set_thiz(this));
 
 		world.reset(World::create());
@@ -137,6 +137,7 @@ namespace flame
 		if (always_update)
 			s_renderer->set_always_update(true);
 		world->add_system(s_renderer);
+		s_renderer->set_element_res(-1, sRenderer::ElementResFont, app->font_atlas, "default_font");
 
 		root = world->get_root();
 		root->add_component(cElement::create());
@@ -176,7 +177,7 @@ namespace flame
 
 	void GraphicsWindow::set_canvas_output()
 	{
-		return;
+		//return;
 		std::vector<graphics::ImageView*> vs(swapchain->get_images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = swapchain->get_image(i)->get_view();

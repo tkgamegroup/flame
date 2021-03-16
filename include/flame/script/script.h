@@ -14,6 +14,7 @@ namespace flame
 	{
 		struct Instance
 		{
+			virtual int to_int(int idx) = 0;
 			virtual void push_bool(bool b) = 0;
 			virtual void push_int(int i) = 0;
 			virtual void push_float(float f) = 0;
@@ -29,7 +30,7 @@ namespace flame
 			virtual void set_object_type(const char* type_name, void* p = INVALID_POINTER) = 0;
 			virtual void set_member_name(const char* name) = 0;
 			virtual void set_global_name(const char* name) = 0;
-			virtual void call(uint parameters_count) = 0;
+			virtual void call(uint parms_num) = 0;
 			virtual bool excute(const char* str) = 0;
 			virtual bool excute_file(const wchar_t* filename) = 0;
 

@@ -979,6 +979,11 @@ namespace flame
 			remove_assert_callback(assert_callback);
 		}
 
+		int InstancePrivate::to_int(int idx)
+		{
+			return lua_tointeger(lua_state, idx);
+		}
+
 		void InstancePrivate::push_bool(bool b)
 		{
 			lua_pushboolean(lua_state, b);
@@ -1072,9 +1077,9 @@ namespace flame
 			lua_setglobal(lua_state, name);
 		}
 
-		void InstancePrivate::call(uint parameters_count)
+		void InstancePrivate::call(uint parms_num)
 		{
-			lua_check_result(lua_state, lua_pcall(lua_state, parameters_count, 0, 0));
+			lua_check_result(lua_state, lua_pcall(lua_state, parms_num, 0, 0));
 		}
 
 		bool InstancePrivate::excute(const char* str)
