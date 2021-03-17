@@ -818,7 +818,7 @@ namespace flame
 		ElementRenderStatus status;
 		status.renderer = this;
 		status.scissor = Rect(vec2(0.f), tar_size);
-		element_render(status, 0, world->root->get_component_t<cElementPrivate>());
+		element_render(status, 0, world->element_root->get_component_t<cElementPrivate>());
 		//render(world->root.get(), false, !camera);
 
 		dirty = false;

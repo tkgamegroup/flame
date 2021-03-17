@@ -126,6 +126,9 @@ namespace flame
 		void remove_child(EntityPrivate* e, bool destroy = true);
 		EntityPrivate* find_child(const std::string& name) const;
 
+		void on_entered_world(WorldPrivate* world);
+		void on_left_world();
+
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 
 		Driver* get_driver(uint64 hash, int idx = -1) const override;

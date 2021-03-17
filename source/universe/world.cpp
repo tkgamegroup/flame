@@ -1,24 +1,13 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/script/script.h>
+#include "entity_private.h"
+#include "components/element_private.h"
+#include "components/receiver_private.h"
+#include "components/node_private.h"
 #include "world_private.h"
 
 namespace flame
 {
-	WorldPrivate::WorldPrivate()
-	{
-		root.reset(f_new<EntityPrivate>());
-		root->world = this;
-		root->global_visibility = true;
-
-		element_root.reset(f_new<EntityPrivate>());
-		element_root->world = this;
-		element_root->global_visibility = true;
-
-		node_root.reset(f_new<EntityPrivate>());
-		node_root->world = this;
-		node_root->global_visibility = true;
-	}
-
 	void WorldPrivate::register_object(void* o, const std::string& name)
 	{
 		objects.emplace_back(o, name);
@@ -94,10 +83,57 @@ namespace flame
 		}
 	}
 
+	Entity* WorldPrivate::get_element_root()
+	{
+		if (!element_root)
+		{
+			element_root.reset(f_new<EntityPrivate>());
+			element_root->global_visibility = true;
+			element_root->add_component(cElement::create());
+			auto cer = cReceiver::create();
+			cer->set_ignore_occluders(true);
+			element_root->add_component(cer);
+			element_root->on_entered_world(this);
+		}
+		return element_root.get();
+	}
+
+	Entity* WorldPrivate::get_node_root()
+	{
+		if (!node_root)
+		{
+			node_root.reset(f_new<EntityPrivate>());
+			node_root->global_visibility = true;
+			node_root->add_component(cNode::create());
+			node_root->on_entered_world(this);
+		}
+		return node_root.get();
+	}
+
 	void WorldPrivate::update()
 	{
 		for (auto& s : systems)
+		{
+			for (auto& l : update_listeners)
+				l->call(s.get(), true);
 			s->update();
+			for (auto& l : update_listeners)
+				l->call(s.get(), false);
+		}
+	}
+
+	void* WorldPrivate::add_update_listener(void (*callback)(Capture& c, System* system, bool before), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		update_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WorldPrivate::remove_update_listener(void* ret)
+	{
+		std::erase_if(update_listeners, [&](const auto& i) {
+			return i == (decltype(i))ret;
+		});
 	}
 
 	World* World::create()

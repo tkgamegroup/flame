@@ -31,29 +31,6 @@ namespace flame
 
 	struct GraphicsWindow
 	{
-		struct sBeforeRender : System
-		{
-			inline static auto type_name = "flame::sBeforeRender";
-			inline static auto type_hash = ch(type_name);
-
-			GraphicsWindow* thiz;
-
-			sBeforeRender(GraphicsWindow* w) :
-				System(type_name, type_hash)
-			{
-				thiz = w;
-			}
-
-			void update() override
-			{
-				if (thiz->s_renderer->is_dirty())
-				{
-					thiz->swapchain_image_index = thiz->swapchain->acquire_image();
-					//thiz->canvas->prepare();
-				}
-			}
-		};
-
 		App* app;
 
 		FlmPtr<Window> window;
@@ -73,7 +50,8 @@ namespace flame
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
 		sPhysics* s_physics = nullptr;
-		Entity* root = nullptr;
+		Entity* element_root = nullptr;
+		Entity* node_root = nullptr;
 
 		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
@@ -129,27 +107,29 @@ namespace flame
 		world->add_system(s_dispatcher);
 		s_physics = sPhysics::create();
 		world->add_system(s_physics);
-		world->add_system(new sBeforeRender(this));
 		s_renderer = sRenderer::create();
 		if (always_update)
 			s_renderer->set_always_update(true);
 		world->add_system(s_renderer);
+		world->add_update_listener([](Capture& c, System* system, bool before) {
+			auto thiz = c.thiz<GraphicsWindow>();
+			if (before && system == thiz->s_renderer)
+			{
+				if (thiz->s_renderer->is_dirty())
+					thiz->swapchain_image_index = thiz->swapchain->acquire_image();
+			}
+		}, Capture().set_thiz(this));
 
-		root = world->get_root();
-		root->add_component(cElement::create());
-		{
-			auto cer = cReceiver::create();
-			cer->set_ignore_occluders(true);
-			root->add_component(cer);
-			s_dispatcher->set_next_focusing(cer);
-		}
+		element_root = world->get_element_root();
+		node_root = world->get_node_root();
+		s_dispatcher->set_next_focusing(element_root->get_component_t<cReceiver>());
 
 		auto scr_ins = script::Instance::get_default();
 		scr_ins->push_object();
-		scr_ins->push_pointer(root);
+		scr_ins->push_pointer(world.get());
 		scr_ins->set_member_name("p");
-		scr_ins->set_object_type("flame::Entity");
-		scr_ins->set_global_name("root");
+		scr_ins->set_object_type("flame::World");
+		scr_ins->set_global_name("world");
 		scr_ins->excute_file(L"world_setup.lua");
 
 		if (app->windows.empty())

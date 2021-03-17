@@ -198,7 +198,7 @@ namespace flame
 				if (thiz->enter_to_throw_focus)
 				{
 					auto dp = thiz->receiver->dispatcher;
-					dp->next_focusing = dp->world->root->get_component_t<cReceiverPrivate>();
+					dp->next_focusing = dp->world->element_root->get_component_t<cReceiverPrivate>();
 				}
 				break;
 			case Keyboard_Left:

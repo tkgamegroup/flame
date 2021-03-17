@@ -31,7 +31,7 @@ namespace flame
 			switch (msg)
 			{
 			case S<"entered_world"_h>:
-				thiz->root = thiz->entity->world->root.get();
+				thiz->root = thiz->entity->world->element_root.get();
 				break;
 			}
 		}, Capture().set_thiz(this));

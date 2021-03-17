@@ -218,7 +218,7 @@ namespace flame
 			global_visibility = visible && parent->global_visibility;
 		else
 		{
-			if (!world || world->root.get() == this)
+			if (!world)
 				global_visibility = true;
 			else
 				global_visibility = false;
@@ -419,13 +419,7 @@ namespace flame
 
 		e->traversal([this](EntityPrivate* e) {
 			if (!e->world && world)
-			{
-				e->world = world;
-				for (auto& l : e->message_listeners)
-					l->call(S<"entered_world"_h>, nullptr, nullptr);
-				for (auto& c : e->components)
-					c.second.c->on_entered_world();
-			}
+				e->on_entered_world(world);
 			return true;
 		});
 
@@ -467,13 +461,7 @@ namespace flame
 
 		e->traversal([](EntityPrivate* e) {
 			if (e->world)
-			{
-				for (auto& l : e->message_listeners)
-					l->call(S<"left_world"_h>, nullptr, nullptr);
-				for (auto& c : e->components)
-					c.second.c->on_left_world();
-				e->world = nullptr;
-			}
+				e->on_left_world();
 
 			return true;
 		});
@@ -515,6 +503,24 @@ namespace flame
 				return res;
 		}
 		return nullptr;
+	}
+
+	void EntityPrivate::on_entered_world(WorldPrivate* _world)
+	{
+		world = _world;
+		for (auto& l : message_listeners)
+			l->call(S<"entered_world"_h>, nullptr, nullptr);
+		for (auto& c : components)
+			c.second.c->on_entered_world();
+	}
+
+	void EntityPrivate::on_left_world()
+	{
+		for (auto& l : message_listeners)
+			l->call(S<"left_world"_h>, nullptr, nullptr);
+		for (auto& c : components)
+			c.second.c->on_left_world();
+		world = nullptr;
 	}
 
 	void EntityPrivate::traversal(const std::function<bool(EntityPrivate*)>& callback)

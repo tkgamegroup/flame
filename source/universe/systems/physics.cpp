@@ -28,7 +28,7 @@ namespace flame
 		{
 			if (world && phy_scene)
 			{
-				visualization_layer = world->root->find_child("debug")->get_component_t<cElementPrivate>();
+				visualization_layer = world->element_root->find_child("debug")->get_component_t<cElementPrivate>();
 				if (visualization_layer)
 				{
 					phy_scene->set_visualization(true);

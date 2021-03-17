@@ -21,11 +21,13 @@ namespace flame
 		virtual void add_system(System* s) = 0;
 		virtual void remove_system(System* s) = 0;
 
-		virtual Entity* get_root() const = 0;
-		virtual Entity* get_element_root() const = 0;
-		virtual Entity* get_node_root() const = 0;
+		virtual Entity* get_element_root() = 0;
+		virtual Entity* get_node_root() = 0;
 
 		virtual void update() = 0;
+
+		virtual void* add_update_listener(void (*callback)(Capture& c, System* system, bool before /* or after */), const Capture& capture) = 0;
+		virtual void remove_update_listener(void* ret) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
 	};

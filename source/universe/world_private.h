@@ -18,11 +18,10 @@ namespace flame
 		std::vector<std::pair<void*, std::string>> objects;
 
 		std::vector<std::unique_ptr<System, Delector>> systems;
-		std::unique_ptr<EntityPrivate, Delector> root;
 		std::unique_ptr<EntityPrivate, Delector> element_root;
 		std::unique_ptr<EntityPrivate, Delector> node_root;
 
-		WorldPrivate();
+		std::vector<std::unique_ptr<Closure<void(Capture&, System*, bool)>>> update_listeners;
 
 		void release() override { delete this; }
 
@@ -34,11 +33,13 @@ namespace flame
 		void add_system(System* s) override;
 		void remove_system(System* s) override;
 
-		Entity* get_root() const override { return root.get(); }
-		Entity* get_element_root() const override { return element_root.get(); }
-		Entity* get_node_root() const override { return node_root.get(); }
+		Entity* get_element_root() override;
+		Entity* get_node_root() override;
 
 		void update() override;
+
+		void* add_update_listener(void (*callback)(Capture& c, System* system, bool before), const Capture& capture) override;
+		void remove_update_listener(void* ret) override;
 	};
 
 	inline void WorldBridge::register_object(void* o, const char* name)
