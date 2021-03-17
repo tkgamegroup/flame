@@ -6,16 +6,27 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* device, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
-			device(device)
+		BufferPrivate::BufferPrivate(DevicePrivate* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
+			device(device),
+			size(size),
+			usage(usage),
+			mem_prop(mem_prop)
 		{
-			size = _size;
+			create();
+		}
 
+		BufferPrivate::~BufferPrivate()
+		{
+			destroy();
+		}
+
+		void BufferPrivate::create()
+		{
 			VkBufferCreateInfo buffer_info;
 			buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
-			buffer_info.size = _size;
+			buffer_info.size = size;
 			buffer_info.usage = to_backend_flags<BufferUsageFlags>(usage);
 			buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = 0;
@@ -27,7 +38,7 @@ namespace flame
 			VkMemoryRequirements mem_requirements;
 			vkGetBufferMemoryRequirements(device->vk_device, vk_buffer, &mem_requirements);
 
-			fassert(_size <= mem_requirements.size);
+			fassert(size <= mem_requirements.size);
 
 			VkMemoryAllocateInfo alloc_info;
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -40,7 +51,7 @@ namespace flame
 			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
 		}
 
-		BufferPrivate::~BufferPrivate()
+		void BufferPrivate::destroy()
 		{
 			if (mapped)
 				unmap();
@@ -76,6 +87,13 @@ namespace flame
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
 			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
+		}
+
+		void BufferPrivate::recreate(uint new_size)
+		{
+			destroy();
+			size = new_size;
+			create();
 		}
 
 		Buffer* Buffer::create(Device* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)

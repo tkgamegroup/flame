@@ -8,22 +8,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
-		struct Image;
 		struct ImageView;
-
-		inline uvec2 get_latin_code_range()
-		{
-			return uvec2(0x20, 0xff);
-		}
-
-		struct Font
-		{
-			virtual void release() = 0;
-
-			virtual const wchar_t* get_filename() const = 0;
-
-			FLAME_GRAPHICS_EXPORTS static Font* create(const wchar_t* filename);
-		};
 
 		struct Glyph
 		{
@@ -134,7 +119,7 @@ namespace flame
 
 			virtual ImageView* get_view() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* device, uint fonts_count, Font* const* fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* get(Device* device, const wchar_t* res);
 		};
 	}
 

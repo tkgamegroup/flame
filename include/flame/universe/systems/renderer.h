@@ -7,6 +7,8 @@ namespace flame
 	namespace graphics
 	{
 		struct CommandBuffer;
+		struct Material;
+		struct Mesh;
 		struct Canvas;
 	}
 
@@ -15,7 +17,6 @@ namespace flame
 
 	struct sRendererParms
 	{
-		bool hdr = true;
 	};
 
 	struct sRenderer : System
@@ -38,14 +39,20 @@ namespace flame
 		virtual void set_shade_wireframe(bool v) = 0;
 		virtual void set_always_update(bool a) = 0;
 
-		virtual void get_element_res(uint idx, ElementResType* type, void** v, char** name) const = 0;
-		virtual void set_element_res(int idx, ElementResType type, void* v, const char* name) = 0;
-		virtual int find_element_res(const char* name) const = 0;
+		virtual void* get_element_res(uint idx, ElementResType* type) const = 0;
+		virtual int set_element_res(int idx, ElementResType type, void* v) = 0;
+		virtual int find_element_res(void* v) const = 0;
 
 		virtual void fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color) = 0;
 		virtual void stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) = 0;
 		virtual void draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) = 0;
+
+		virtual int set_material_res(int idx, graphics::Material* mesh) = 0;
+		virtual int find_material_res(graphics::Material* mesh) const = 0;
+
+		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
+		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
 
 		virtual graphics::Canvas* get_canvas() const = 0;
 

@@ -8,17 +8,33 @@ namespace flame
 	{
 		struct Material
 		{
+			virtual const char* get_name() const = 0;
+
+			virtual vec4 get_color() const = 0;
+			virtual float get_metallic() const = 0;
+			virtual float get_roughness() const = 0;
+
 			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* filename);
 		};
 
 		struct Bone
 		{
+			struct Weight
+			{
+				uint vid;
+				float w;
+			};
+
 			virtual const char* get_name() const = 0;
+
+			virtual mat4 get_offset_matrix() const = 0;
+			virtual uint get_weights_count() const = 0;
+			virtual const Weight* get_weights() const = 0;
 		};
 
 		struct Mesh
 		{
-			//virtual const char* get_name() const = 0;
+			virtual const char* get_name() const = 0;
 
 			virtual uint get_vertices_count() const = 0;
 			virtual const vec3* get_positions() const = 0;
@@ -94,7 +110,7 @@ namespace flame
 			virtual void generate_prefab(const wchar_t* filename) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const char* name);
-			FLAME_GRAPHICS_EXPORTS static Model* create(const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static Model* get(const wchar_t* filename);
 		};
 	}
 }

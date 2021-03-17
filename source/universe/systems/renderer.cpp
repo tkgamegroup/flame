@@ -15,6 +15,18 @@
 
 namespace flame
 {
+	static graphics::AccessFlags usage2access(graphics::BufferUsageFlags usage)
+	{
+		switch (usage)
+		{
+		case graphics::BufferUsageVertex:
+			return graphics::AccessVertexAttributeRead;
+		case graphics::BufferUsageIndex:
+			return graphics::AccessIndexRead;
+		}
+		return graphics::AccessNone;
+	}
+
 	template <class T>
 	void GeometryBuffer<T>::rebuild()
 	{
@@ -27,8 +39,8 @@ namespace flame
 			memcpy(temp, stagbuf->get_mapped(), sizeof(T) * n);
 		}
 		auto size = capacity * sizeof(T);
-		buf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-		stagbuf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		buf->recreate(size);
+		stagbuf->recreate(size);
 		stagbuf->map();
 		pstag = (T*)stagbuf->get_mapped();
 		if (temp)
@@ -39,13 +51,15 @@ namespace flame
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::create(graphics::Device* _d, graphics::BufferUsageFlags _usage, uint _capacity, graphics::AccessFlags _access)
+	void GeometryBuffer<T>::create(graphics::Device* d, graphics::BufferUsageFlags usage, uint _capacity)
 	{
-		d = _d;
-		usage = _usage;
 		capacity = _capacity;
-		access = _access;
-		rebuild();
+		access = usage2access(usage);
+		auto size = capacity * sizeof(T);
+		buf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+		stagbuf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		stagbuf->map();
+		pstag = (T*)stagbuf->get_mapped();
 	}
 
 	template <class T>
@@ -91,8 +105,6 @@ namespace flame
 		sRendererParms parms;
 		if (_parms)
 			parms = *_parms;
-
-		hdr = parms.hdr;
 	}
 
 	void sRendererPrivate::set_targets()
@@ -235,25 +247,22 @@ namespace flame
 		canvas->set_scissor(last_scissor);
 	}
 
-	void sRendererPrivate::get_element_res(uint idx, ElementResType* type, void** v, char** name) const
+	void* sRendererPrivate::get_element_res(uint idx, ElementResType* type) const
 	{
 		auto& res = element_reses[idx];
 		if (type)
 			*type = res.type;
-		if (v)
-			*v = res.v;
-		if (name)
-			*name = (char*)res.name.c_str();
+		return res.v;
 	}
 
-	void sRendererPrivate::set_element_res(int idx, ElementResType type, void* v, const char* name)
+	int sRendererPrivate::set_element_res(int idx, ElementResType type, void* v)
 	{
 		auto iv_wht = img_wht->get_view(0);
 
 		if (!v)
 		{
 			if (type != ElementResImage)
-				return;
+				return - 1;
 			v = iv_wht;
 		}
 
@@ -272,7 +281,6 @@ namespace flame
 		auto& res = element_reses[idx];
 		res.type = type;
 		res.v = v;
-		res.name = name;
 
 		auto bd = graphics::DescriptorSetLayout::get(device, L"element/element.dsl")->find_binding("images");
 		switch (type)
@@ -287,20 +295,42 @@ namespace flame
 				graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge) :
 				graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge));
 		}
-		break;
+			break;
 		case ElementResFont:
 			ds_element->set_image(bd, idx, ((graphics::FontAtlas*)v)->get_view(), graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge));
 			break;
 		}
+
+		return idx;
 	}
 
-	int sRendererPrivate::find_element_res(const std::string& name) const
+	int sRendererPrivate::find_element_res(void* v) const
 	{
 		for (auto i = 0; i < element_reses.size(); i++)
 		{
-			if (element_reses[i].name == name)
+			if (element_reses[i].v == v)
 				return i;
 		}
+		return -1;
+	}
+
+	int sRendererPrivate::set_material_res(int idx, graphics::Material* mesh)
+	{
+		return idx;
+	}
+
+	int sRendererPrivate::find_material_res(graphics::Material* mesh) const
+	{
+		return -1;
+	}
+
+	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
+	{
+		return idx;
+	}
+
+	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
+	{
 		return -1;
 	}
 
@@ -610,7 +640,7 @@ namespace flame
 					if (scissor == info.misc)
 						cmds.pop_back();
 					else
-						cmds.emplace_back().d.b = info.misc;
+						cmds.back().d.b = info.misc;
 					scissor = info.misc;
 				}
 					break;
@@ -676,6 +706,42 @@ namespace flame
 			att.format = graphics::Format_R16G16B16A16_SFLOAT;
 			rp_rgba16c.reset(graphics::Renderpass::create(device, 1, &att, 1, &sp));
 		}
+		{
+			graphics::RenderpassAttachmentInfo atts[2];
+			atts[0].format = graphics::Format_R16G16B16A16_SFLOAT;
+			atts[0].load_op = graphics::AttachmentClear;
+			atts[0].initia_layout = graphics::ImageLayoutShaderReadOnly;
+			atts[1].format = graphics::Format_Depth16;
+			atts[1].load_op = graphics::AttachmentClear;
+			atts[1].initia_layout = graphics::ImageLayoutAttachment;
+			atts[1].final_layout = graphics::ImageLayoutAttachment;
+			graphics::RenderpassSubpassInfo sp;
+			uint col_refs[] = {
+				0
+			};
+			sp.color_attachments_count = 1;
+			sp.color_attachments = col_refs;
+			sp.depth_attachment = 1;
+			rp_mesh.reset(graphics::Renderpass::create(device, 2, atts, 1, &sp));
+		}
+		{
+			graphics::RenderpassAttachmentInfo atts[2];
+			atts[0].format = graphics::Format_R16_SFLOAT;
+			atts[0].load_op = graphics::AttachmentClear;
+			atts[0].initia_layout = graphics::ImageLayoutShaderReadOnly;
+			atts[1].format = graphics::Format_Depth16;
+			atts[1].load_op = graphics::AttachmentClear;
+			atts[1].initia_layout = graphics::ImageLayoutAttachment;
+			atts[1].final_layout = graphics::ImageLayoutAttachment;
+			graphics::RenderpassSubpassInfo sp;
+			uint col_refs[] = {
+				0
+			};
+			sp.color_attachments_count = 1;
+			sp.color_attachments = col_refs;
+			sp.depth_attachment = 1;
+			rp_esm.reset(graphics::Renderpass::create(device, 2, atts, 1, &sp));
+		}
 
 		set_targets(); 
 
@@ -710,7 +776,7 @@ namespace flame
 		auto dsp = graphics::DescriptorPool::get_default(device);
 
 		buf_element_vtx.create(device, graphics::BufferUsageVertex, 360000);
-		buf_element_idx.create(device, graphics::BufferUsageIndex, 240000, graphics::AccessIndexRead);
+		buf_element_idx.create(device, graphics::BufferUsageIndex, 240000);
 		img_wht.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1, 
 			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_wht->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(255));

@@ -295,7 +295,7 @@ namespace flame
 
 		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
 		{
-			auto defines = ShaderPrivate::format_defines(_defines);
+			auto defines = Shader::format_defines(_defines);
 
 			for (auto& p : material_pipelines[usage])
 			{
@@ -504,7 +504,7 @@ namespace flame
 			if (!std::filesystem::exists(path))
 			{
 				path = material->pipeline_file;
-				get_resource_path(path, L"assets\\shaders");
+				get_engine_path(path, L"assets\\shaders");
 			}
 			pipelines[u] = canvas->preferences->get_material_pipeline(u, path, material->pipeline_defines);
 			return pipelines[u];

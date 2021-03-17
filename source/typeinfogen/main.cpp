@@ -114,6 +114,9 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		pointer_type->get_symTag(&dw);
 		switch (dw)
 		{
+		case SymTagEnum:
+			name = "int";
+			break;
 		case SymTagBaseType:
 			name = base_type_name(pointer_type);
 			break;

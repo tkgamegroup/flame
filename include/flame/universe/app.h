@@ -86,8 +86,6 @@ namespace flame
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
 
-		graphics::FontAtlas* font_atlas;
-
 		std::list<std::unique_ptr<GraphicsWindow>> windows;
 		GraphicsWindow* main_window = nullptr;
 
@@ -113,7 +111,6 @@ namespace flame
 		//render_preferences.reset(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr));
 		//canvas.reset(graphics::Canvas::create(render_preferences.get()));
 		//set_canvas_output();
-		//canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");
 
 		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
 
@@ -137,7 +134,6 @@ namespace flame
 		if (always_update)
 			s_renderer->set_always_update(true);
 		world->add_system(s_renderer);
-		s_renderer->set_element_res(-1, sRenderer::ElementResFont, app->font_atlas, "default_font");
 
 		root = world->get_root();
 		root->add_component(cElement::create());
@@ -237,14 +233,6 @@ namespace flame
 		sound::Device::set_default(sound::Device::create());
 		script::Instance::set_default(script::Instance::create());
 		Entity::initialize();
-
-		{
-			graphics::Font* fonts[] = {
-				graphics::Font::create(L"c:/windows/fonts/msyh.ttc"),
-				graphics::Font::create((engine_path / L"assets/font_awesome.ttf").c_str())
-			};
-			font_atlas = graphics::FontAtlas::create(graphics::Device::get_default(), 2, fonts);
-		}
 	}
 
 	void App::run()

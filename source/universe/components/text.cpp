@@ -1,3 +1,5 @@
+#include <flame/graphics/device.h>
+#include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "element_private.h"
@@ -130,24 +132,20 @@ namespace flame
 	{
 		renderer = entity->world->get_system_t<sRenderer>();
 		fassert(renderer);
-		canvas = renderer->get_canvas();
+
 		if (res_id != -1)
 		{
 			if (!atlas)
-				renderer->get_element_res(res_id, nullptr, (void**)&atlas, nullptr);
-				//atlas = canvas->get_element_resource(res_id).fa;
+				atlas = (graphics::FontAtlas*)renderer->get_element_res(res_id, nullptr);
 		}
 		else
 		{
-			res_id = renderer->find_element_res("default_font");
-			//res_id = canvas->find_element_resource("default_font");
-			if (res_id != -1)
-			{
-				renderer->get_element_res(res_id, nullptr, (void**)&atlas, nullptr);
-				//atlas = canvas->get_element_resource(res_id).fa;
-				if (!atlas)
-					res_id = -1;
-			}
+			atlas = graphics::FontAtlas::get(graphics::Device::get_default(), L"msyh.ttc;font_awesome.ttf");
+			res_id = renderer->find_element_res(atlas);
+			if (res_id == -1)
+				res_id = renderer->set_element_res(-1, sRenderer::ElementResFont, atlas);
+			if (res_id == -1)
+				atlas = nullptr;
 		}
 	}
 

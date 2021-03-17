@@ -64,7 +64,6 @@ namespace flame
 		sRendererPrivate* renderer = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
-		int model_id = -1;
 		int mesh_id = -1;
 		graphics::Model* model = nullptr;
 		graphics::Mesh* mesh = nullptr;

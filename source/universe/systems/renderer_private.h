@@ -27,20 +27,33 @@ namespace flame
 	template <class T>
 	struct GeometryBuffer
 	{
-		graphics::BufferUsageFlags usage;
-		uint capacity = 0;
+		uint capacity;
 		graphics::AccessFlags access;
 		T* pstag = nullptr;
 		uint stag_num = 0;
 
-		graphics::Device* d = nullptr;
 		FlmPtr<graphics::Buffer> buf;
 		FlmPtr<graphics::Buffer> stagbuf;
 
 		void rebuild();
-		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity, graphics::AccessFlags access = graphics::AccessVertexAttributeRead);
+		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity);
 		void push(uint cnt, const T* p);
 		T* stag(uint cnt);
+		void upload(graphics::CommandBuffer* cb);
+	};
+
+	template <class T>
+	struct PileBuffer
+	{
+		uint capacity;
+		graphics::AccessFlags access;
+		T* pstag = nullptr;
+		uint n0 = 0;
+		uint n1 = 0;
+
+		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity);
+		T* alloc(uint n);
+		void free(T* p);
 		void upload(graphics::CommandBuffer* cb);
 	};
 
@@ -56,6 +69,19 @@ namespace flame
 			uv = _uv;
 			col = _col;
 		}
+	};
+
+	struct MeshVertex
+	{
+		vec3 position;
+		vec2 uv;
+		vec3 normal;
+	};
+
+	struct ArmatureMeshVertex : MeshVertex
+	{
+		ivec4 ids;
+		vec4 weights;
 	};
 
 	struct ElementDrawCmd
@@ -76,9 +102,27 @@ namespace flame
 		vec4 misc;
 	};
 
+	enum MaterialUsage
+	{
+		MaterialForMesh,
+		MaterialForMeshArmature,
+		MaterialForMeshShadow,
+		MaterialForMeshShadowArmature,
+		MaterialForTerrain,
+
+		MaterialUsageCount
+	};
+
+	struct MaterialPipeline
+	{
+		std::filesystem::path mat;
+		std::vector<std::string> defines;
+		uint ref_count = 1;
+		FlmPtr<graphics::Pipeline> pipeline;
+	};
+
 	struct sRendererBridge : sRenderer
 	{
-		int find_element_res(const char* name) const override;
 		void draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 		void fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color) override;
@@ -91,10 +135,24 @@ namespace flame
 		{
 			ElementResType type;
 			void* v;
-			std::string name;
 		};
 
-		bool hdr;
+		struct MaterialRes
+		{
+			graphics::Material* mat;
+			uint texs[4];
+		};
+
+		struct MeshRes
+		{
+			graphics::Mesh* mesh;
+			bool arm;
+			uint vtx_off;
+			uint vtx_cnt;
+			uint idx_off;
+			uint idx_cnt;
+		};
+
 		bool wireframe = false;
 		bool always_update = false;
 
@@ -105,16 +163,24 @@ namespace flame
 
 		graphics::Device* device;
 		graphics::Swapchain* swapchain;
+
 		FlmPtr<graphics::Renderpass> rp_rgba8c;
 		FlmPtr<graphics::Renderpass> rp_rgba16c;
+		FlmPtr<graphics::Renderpass> rp_mesh;
+		FlmPtr<graphics::Renderpass> rp_esm;
 		std::vector<FlmPtr<graphics::Framebuffer>> fb_targets;
-		FlmPtr<graphics::Pipeline> pl_element;
-		FlmPtr<graphics::Pipeline> pl_blit8;
-		FlmPtr<graphics::Pipeline> pl_blit16;
-		FlmPtr<graphics::Pipeline> pl_gamma;
+		FlmPtr<graphics::Pipeline>		pl_element;
+		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
+		FlmPtr<graphics::Pipeline>		pl_blit8;
+		FlmPtr<graphics::Pipeline>		pl_blit16;
+		FlmPtr<graphics::Pipeline>		pl_gamma;
 
 		GeometryBuffer<ElementVertex>	buf_element_vtx;
 		GeometryBuffer<uint>			buf_element_idx;
+		PileBuffer<ElementVertex>		buf_mesh_vtx;
+		PileBuffer<uint>				buf_mesh_idx;
+		PileBuffer<ElementVertex>		buf_arm_mesh_vtx;
+		PileBuffer<uint>				buf_arm_mesh_idx;
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
@@ -138,14 +204,23 @@ namespace flame
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
-		void get_element_res(uint idx, ElementResType* type, void** v, char** name) const override;
-		void set_element_res(int idx, ElementResType type, void* v, const char* name) override;
-		int find_element_res(const std::string& name) const;
+		void* get_element_res(uint idx, ElementResType* type) const override;
+		int set_element_res(int idx, ElementResType type, void* v) override;
+		int find_element_res(void* v) const override;
+
+		int set_material_res(int idx, graphics::Material* mesh) override;
+		int find_material_res(graphics::Material* mesh) const override;
+
+		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
+		int find_mesh_res(graphics::Mesh* mesh) const override;
 
 		void fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color);
 		void stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color);
 		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id,
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
+
+		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
+		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);
 
 		graphics::Canvas* get_canvas() const override { return canvas; }
 
@@ -173,10 +248,6 @@ namespace flame
 		((sRendererPrivate*)this)->stroke_rect(layer, (cElementPrivate*)element, pos, size, thickness, color);
 	}
 
-	inline int sRendererBridge::find_element_res(const char* name) const
-	{
-		return ((sRendererPrivate*)this)->find_element_res(name);
-	}
 	inline void sRendererBridge::draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
 		const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
 	{

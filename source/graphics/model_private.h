@@ -33,23 +33,25 @@ namespace flame
 			std::filesystem::path dir;
 			Texture textures[4];
 
+			const char* get_name() const override { return name.c_str(); };
+			vec4 get_color() const override { return color; }
+			float get_metallic() const override { return metallic; }
+			float get_roughness() const override { return roughness; }
+
 			static MaterialPrivate* create(const std::filesystem::path& filename);
 		};
 
 		struct BonePrivate : Bone
 		{
-			struct Weight
-			{
-				uint vid;
-				float w;
-			};
-
 			std::string name;
 
 			mat4 offset_matrix;
 			std::vector<Weight> weights;
 
 			const char* get_name() const override { return name.c_str(); }
+			mat4 get_offset_matrix() const override { return offset_matrix; }
+			uint get_weights_count() const override { return weights.size(); }
+			const Weight* get_weights() const override { return weights.data(); }
 		};
 
 		struct MeshPrivate : Mesh
@@ -67,6 +69,8 @@ namespace flame
 
 			vec3 lower_bound = vec3(0.f);
 			vec3 upper_bound = vec3(0.f);
+
+			const char* get_name() const override { return name.c_str(); }
 
 			uint get_vertices_count() const override { return positions.size(); }
 			const vec3* get_positions() const override { return positions.data(); }
@@ -179,7 +183,7 @@ namespace flame
 			void save(const std::filesystem::path& filename);
 			void generate_prefab(const std::filesystem::path& filename) const;
 
-			static ModelPrivate* create(const std::filesystem::path& filename);
+			static ModelPrivate* get(const std::filesystem::path& filename);
 		};
 
 		inline int ModelBridge::find_mesh(const char* name) const

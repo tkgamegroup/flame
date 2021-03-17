@@ -412,7 +412,7 @@ namespace flame
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
 			auto filename = _filename;
-			if (!get_resource_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"assets\\shaders"))
 			{
 				wprintf(L"cannot find dsl: %s\n", _filename.c_str());
 				return nullptr;
@@ -743,7 +743,7 @@ namespace flame
 		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
 			auto filename = _filename;
-			if (!get_resource_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"assets\\shaders"))
 			{
 				wprintf(L"cannot find pll: %s\n", _filename.c_str());
 				return nullptr;
@@ -904,33 +904,6 @@ namespace flame
 			delete this;
 		}
 
-		std::vector<std::string> ShaderPrivate::format_defines(const std::string& defines)
-		{
-			std::vector<std::string> ret;
-			auto sp = SUS::split(defines);
-			for (auto& s : sp)
-			{
-				SUS::trim(s);
-				if (!s.empty())
-					ret.push_back(s);
-			}
-			return ret;
-		}
-
-		std::vector<std::pair<std::string, std::string>> ShaderPrivate::format_substitutes(const std::string& substitutes)
-		{
-			std::vector<std::pair<std::string, std::string>> ret;
-			auto sp = SUS::split(substitutes);
-			for (auto i = 0; i < (int)sp.size() - 1; i += 2)
-			{
-				SUS::trim(sp[i]);
-				SUS::trim(sp[i + 1]);
-				if (!sp[i].empty() && !sp[i + 1].empty())
-					ret.emplace_back(sp[i], sp[i + 1]);
-			}
-			return ret;
-		}
-
 		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
 			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes), extra_dependencies);
@@ -939,7 +912,7 @@ namespace flame
 		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
 			auto filename = _filename;
-			if (!get_resource_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"assets\\shaders"))
 			{
 				wprintf(L"cannot find shader: %s\n", _filename.c_str());
 				return nullptr;

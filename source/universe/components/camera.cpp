@@ -63,7 +63,7 @@ namespace flame
 	{
 		auto vp = canvas->get_viewport();
 		auto size = max(vec2(1.f), vp.RB - vp.LT);
-		canvas->set_camera(fovy, size.x / size.y, near, far, node->g_rot, node->g_pos);
+		//canvas->set_camera(fovy, size.x / size.y, near, far, node->g_rot, node->g_pos);
 	}
 
 	void cCameraPrivate::set_current(bool v)

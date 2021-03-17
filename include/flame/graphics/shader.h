@@ -124,6 +124,33 @@ namespace flame
 
 			virtual const wchar_t* get_filename() const = 0;
 
+			inline static std::vector<std::string> format_defines(const std::string& defines)
+			{
+				std::vector<std::string> ret;
+				auto sp = SUS::split(defines);
+				for (auto& s : sp)
+				{
+					SUS::trim(s);
+					if (!s.empty())
+						ret.push_back(s);
+				}
+				return ret;
+			}
+
+			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& substitutes)
+			{
+				std::vector<std::pair<std::string, std::string>> ret;
+				auto sp = SUS::split(substitutes);
+				for (auto i = 0; i < (int)sp.size() - 1; i += 2)
+				{
+					SUS::trim(sp[i]);
+					SUS::trim(sp[i + 1]);
+					if (!sp[i].empty() && !sp[i + 1].empty())
+						ret.emplace_back(sp[i], sp[i + 1]);
+				}
+				return ret;
+			}
+
 			FLAME_GRAPHICS_EXPORTS static Shader* get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
 		};
 

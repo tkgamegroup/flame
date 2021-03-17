@@ -22,8 +22,8 @@ namespace flame
 
 	void cLightPrivate::draw(graphics::Canvas* canvas)
 	{
-		node->update_transform();
-		canvas->add_light(type, type == graphics::LightPoint ? mat3(node->g_pos, vec3(0.f), vec3(0.f)) : node->g_rot, color, cast_shadow);
+		//node->update_transform();
+		//canvas->add_light(type, type == graphics::LightPoint ? mat3(node->g_pos, vec3(0.f), vec3(0.f)) : node->g_rot, color, cast_shadow);
 	}
 
 	void cLightPrivate::on_added()

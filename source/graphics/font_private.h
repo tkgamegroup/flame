@@ -3,7 +3,7 @@
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/font.h>
 
-struct stbtt_fontinfo;
+#include <stb_truetype.h>
 
 namespace flame
 {
@@ -12,18 +12,10 @@ namespace flame
 		struct DevicePrivate;
 		struct ImagePrivate;
 
-		struct FontPrivate : Font
+		struct Font
 		{
-			std::filesystem::path filename;
 			std::string file;
-			stbtt_fontinfo* stbtt_info;
-
-			FontPrivate(const std::wstring& filename);
-			~FontPrivate();
-
-			void release() override { delete this; }
-
-			const wchar_t* get_filename() const override { return filename.c_str(); }
+			stbtt_fontinfo stbtt_info;
 		};
 
 		struct GlyphKey
@@ -53,7 +45,7 @@ namespace flame
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			std::vector<FontPrivate*> fonts;
+			std::vector<std::unique_ptr<Font>> fonts;
 
 			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
@@ -64,13 +56,15 @@ namespace flame
 
 			Glyph empty_glyph;
 
-			FontAtlasPrivate(DevicePrivate* device, std::span<FontPrivate*> fonts);
+			FontAtlasPrivate(DevicePrivate* device, const std::vector<Font*>& fonts);
 
 			void release() override { delete this; }
 
 			const Glyph& get_glyph(wchar_t code, uint size) override;
 
 			ImageView* get_view() const override { return view; }
+
+			static FontAtlasPrivate* get(DevicePrivate* device, const std::wstring& res);
 		};
 	}
 }

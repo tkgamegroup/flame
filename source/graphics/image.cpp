@@ -402,7 +402,9 @@ namespace flame
 		{ 
 			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
+
 		Image* Image::create(Device* device, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)device, bmp); }
+
 		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube, bool generate_mipmaps) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube, generate_mipmaps); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :

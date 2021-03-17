@@ -45,7 +45,6 @@ namespace flame
 
 	void cMeshPrivate::apply_src()
 	{
-		model_id = -1;
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;
@@ -54,66 +53,58 @@ namespace flame
 			auto sp = SUS::split(src, '#');
 			if (sp.size() == 2)
 			{
-				auto isfile = false;
 				auto fn = std::filesystem::path(sp[0]);
-				if (!fn.extension().empty())
+				if (fn.extension().empty())
+					model = graphics::Model::get_standard(sp[0].c_str());
+				else
 				{
-					isfile = true;
 					if (!fn.is_absolute())
 					{
 						auto& srcs = entity->srcs;
 						fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
 					}
-				}
-				model_id = canvas->find_model_resource(fn.string().c_str());
-				if (model_id == -1 && isfile)
-				{
-					auto model = graphics::Model::create(fn.c_str());
+					fn.make_preferred();
+					model = graphics::Model::get(fn.c_str());
 					fassert(model);
-					model_id = canvas->set_model_resource(-1, model, fn.string().c_str());
 				}
 
-				if (model_id != -1)
+				if (!model)
+					return;
+				mesh_id = model->find_mesh(sp[1].c_str());
+				if (mesh_id == -1)
+					return;
+				mesh = model->get_mesh(mesh_id);
+
+				auto bones_count = mesh->get_bones_count();
+				if (bones_count == 0)
+					return;
+				deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
+				bones.resize(bones_count);
+				auto armature = entity->parent;
+				if (!armature)
+					return;
+				for (auto i = 0; i < bones_count; i++)
 				{
-					model = (graphics::Model*)canvas->get_model_resource(model_id);
-					mesh_id = model->find_mesh(sp[1].c_str());
-					if (mesh_id != -1)
+					auto& b = bones[i];
+					auto name = std::string(mesh->get_bone(i)->get_name());
+					auto e = armature->find_child(name);
+					if (e)
 					{
-						mesh = model->get_mesh(mesh_id);
-						auto bones_count = mesh->get_bones_count();
-						if (bones_count > 0)
+						auto n = e->get_component_t<cNodePrivate>();
+						if (n)
 						{
-							deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
-							bones.resize(bones_count);
-							auto armature = entity->parent;
-							if (armature)
-							{
-								for (auto i = 0; i < bones_count; i++)
+							b.name = name;
+							b.node = n;
+							b.changed_listener = e->add_component_data_listener([](Capture& c, uint64 h) {
+								auto thiz = c.thiz<cMeshPrivate>();
+								auto id = c.data<int>();
+								auto& b = thiz->bones[id];
+								if (h == S<"transform"_h>)
 								{
-									auto& b = bones[i];
-									auto name = std::string(mesh->get_bone(i)->get_name());
-									auto e = armature->find_child(name);
-									if (e)
-									{
-										auto n = e->get_component_t<cNodePrivate>();
-										if (n)
-										{
-											b.name = name;
-											b.node = n;
-											b.changed_listener = e->add_component_data_listener([](Capture& c, uint64 h) {
-												auto thiz = c.thiz<cMeshPrivate>();
-												auto id = c.data<int>();
-												auto& b = thiz->bones[id];
-												if (h == S<"transform"_h>)
-												{
-													b.node->update_transform();
-													thiz->deformer->set_pose(id, b.node->transform);
-												}
-											}, Capture().set_thiz(this).set_data(&i), b.node);
-										}
-									}
+									b.node->update_transform();
+									thiz->deformer->set_pose(id, b.node->transform);
 								}
-							}
+							}, Capture().set_thiz(this).set_data(&i), b.node);
 						}
 					}
 				}
@@ -228,13 +219,13 @@ namespace flame
 
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
-		if (model_id != -1 && mesh_id != -1)
+		if (model && mesh_id != -1)
 		{
 			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 			if (entity->state & StateSelected)
 				flags = flags | graphics::ShadeOutline;
-			canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
-				flags, entity);
+			//canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
+			//	flags, entity);
 		}
 	}
 
@@ -271,7 +262,6 @@ namespace flame
 	void cMeshPrivate::on_left_world()
 	{
 		canvas = nullptr;
-		model_id = -1;
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;

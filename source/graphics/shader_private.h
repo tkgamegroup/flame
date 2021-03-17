@@ -211,8 +211,6 @@ namespace flame
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
-			static std::vector<std::string> format_defines(const std::string& defines);
-			static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& substitutes);
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::vector<std::filesystem::path>& extra_dependencies);
 		};

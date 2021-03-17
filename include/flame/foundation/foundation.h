@@ -208,7 +208,7 @@ namespace flame
 		}
 	};
 
-	inline bool get_resource_path(std::filesystem::path& path, const std::filesystem::path& subdir)
+	inline bool get_engine_path(std::filesystem::path& path, const std::filesystem::path& subdir)
 	{
 		if (!std::filesystem::exists(path))
 		{

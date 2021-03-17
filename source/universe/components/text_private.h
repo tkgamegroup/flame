@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/graphics/font.h>
 #include <flame/universe/components/text.h>
 
 namespace flame
@@ -29,7 +28,6 @@ namespace flame
 		cElementPrivate* element = nullptr;
 		void* drawer = nullptr;
 		void* measurer = nullptr;
-		graphics::Canvas* canvas = nullptr;
 		sRenderer* renderer = nullptr;
 
 		int res_id = -1;
