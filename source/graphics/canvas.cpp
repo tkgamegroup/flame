@@ -521,8 +521,7 @@ namespace flame
 		{
 			auto device = preferences->device;
 
-			ImmediateCommandBuffer icb(device);
-			auto cb = icb.cb.get();
+			InstanceCB cb(device);
 
 			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -700,8 +699,7 @@ namespace flame
 		{
 			clear_color = color;
 
-			ImmediateCommandBuffer icb(preferences->device);
-			auto cb = icb.cb.get();
+			InstanceCB cb(preferences->device);
 
 			cb->image_barrier(default_sky_box_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 			cb->clear_color_image(default_sky_box_image.get(), color);
@@ -744,8 +742,7 @@ namespace flame
 				output_size = vec2(0.f);
 			else
 			{
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(device);
 
 				output_size = views[0]->image->sizes[0];
 				output_imageviews.resize(views.size());
@@ -996,9 +993,8 @@ namespace flame
 						material_info_buffer.set(dst, S<"map_indices"_h>, ids);
 					}
 
-					ImmediateCommandBuffer icb(device);
-					auto cb = icb.cb.get();
-					material_info_buffer.upload(cb);
+					InstanceCB cb(device);
+					material_info_buffer.upload((CommandBufferPrivate*)cb.get());
 				}
 			}
 			return slot;
@@ -1054,8 +1050,7 @@ namespace flame
 					for (auto i = 0; i < mod->materials.size(); i++)
 						mr->materials[i] = set_material_resource(-1, mod->materials[i].get(), "");
 
-					ImmediateCommandBuffer icb(device);
-					auto cb = icb.cb.get();
+					InstanceCB cb(device);
 
 					mr->meshes.resize(mod->meshes.size());
 					for (auto i = 0; i < mod->meshes.size(); i++)
@@ -1080,24 +1075,18 @@ namespace flame
 								vertices[j].normal = ms->normals[j];
 						}
 						mrm->vertex_buffer.push(vertices.size(), vertices.data());
-						mrm->vertex_buffer.upload(cb);
+						mrm->vertex_buffer.upload((CommandBufferPrivate*)cb.get());
 
 						if (!ms->bones.empty())
 						{
 							mrm->weight_buffer.create(device, BufferUsageVertex, ms->positions.size());
-							std::vector<std::vector<std::pair<uint, float>>> weights;
+							std::vector<std::vector<Bone::Weight>> weights;
 							weights.resize(ms->positions.size());
 							for (auto j = 0; j < ms->bones.size(); j++)
 							{
 								auto& b = ms->bones[j];
 								for (auto& w : b->weights)
 									weights[w.vid].emplace_back(j, w.w);
-							}
-							for (auto& w : weights)
-							{
-								std::sort(w.begin(), w.end(), [](const auto& a, const auto& b) {
-									return a.second < b.second;
-								});
 							}
 							std::vector<MeshWeight> mesh_weights;
 							mesh_weights.resize(weights.size());
@@ -1109,20 +1098,20 @@ namespace flame
 								{
 									if (k < src.size())
 									{
-										dst.ids[k] = src[k].first;
-										dst.weights[k] = src[k].second;
+										dst.ids[k] = src[k].vid;
+										dst.weights[k] = src[k].w;
 									}
 									else
 										dst.ids[k] = -1;
 								}
 							}
 							mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
-							mrm->weight_buffer.upload(cb);
+							mrm->weight_buffer.upload((CommandBufferPrivate*)cb.get());
 						}
 
 						mrm->index_buffer.create(device, BufferUsageIndex, ms->indices.size(), AccessIndexRead);
 						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
-						mrm->index_buffer.upload(cb);
+						mrm->index_buffer.upload((CommandBufferPrivate*)cb.get());
 
 						mrm->material_id = mr->materials[ms->material_index];
 
@@ -1852,8 +1841,7 @@ namespace flame
 			std::vector<void*> userdatas;
 
 			{
-				ImmediateCommandBuffer icb(preferences->device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(preferences->device);
 
 				auto mesh_off = 0;
 				auto terr_off = 0;
@@ -1913,17 +1901,17 @@ namespace flame
 				cb->end_renderpass();
 			}
 
-			ImmediateStagingBuffer stag(preferences->device, sizeof(cvec4), nullptr);
+			StagingBuffer stag(preferences->device, sizeof(cvec4), nullptr);
 			{
-				ImmediateCommandBuffer icb(preferences->device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(preferences->device);
+
 				BufferImageCopy cpy;
 				cpy.image_offset = uvec2(p.x, p.y);
 				cpy.image_extent = uvec2(1);
-				cb->copy_image_to_buffer(pickup_image.get(), stag.buf.get(), { &cpy, 1 });
+				cb->copy_image_to_buffer(pickup_image.get(), stag.get(), 1, &cpy);
 				cb->image_barrier(pickup_image.get(), {}, ImageLayoutTransferSrc, ImageLayoutAttachment);
 			}
-			auto pixel = *(cvec4*)stag.buf->mapped;
+			auto pixel = *(cvec4*)stag.mapped;
 			auto index = (uint)pixel[0];
 			index += pixel[1] << 8;
 			index += pixel[2] << 16;

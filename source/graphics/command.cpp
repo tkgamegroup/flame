@@ -477,20 +477,5 @@ namespace flame
 		{
 			return new QueuePrivate((DevicePrivate*)device, queue_family_idx);
 		}
-
-		ImmediateCommandBuffer::ImmediateCommandBuffer(DevicePrivate* d) :
-			d(d)
-		{
-			cb.reset(new CommandBufferPrivate(d->gcp.get()));
-			cb->begin(true);
-		}
-
-		ImmediateCommandBuffer::~ImmediateCommandBuffer()
-		{
-			cb->end();
-			auto q = d->gq.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
-		}
 	}
 }

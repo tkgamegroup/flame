@@ -132,8 +132,7 @@ namespace flame
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(device);
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{

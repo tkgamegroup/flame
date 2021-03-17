@@ -68,6 +68,7 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
+			virtual void change_layout(ImageLayout src_layout, ImageLayout dst_layout) = 0;
 			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
 
 			virtual void get_samples(uint count, const vec2* uvs, vec4* dst) = 0;

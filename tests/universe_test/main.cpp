@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"scene_test");
+auto test_prefab = std::filesystem::path(L"scene_test2");
 
 int main(int argc, char** args)
 {
@@ -13,13 +13,13 @@ int main(int argc, char** args)
 
 	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(800, 600), WindowFrame | WindowResizable, true);
 
-	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
+	//w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
 	{
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
 		//e->save(L"d:/1.prefab");
-		w->root->add_child(e);
+		w->node_root->add_child(e);
 	}
 
 	looper().add_event([](Capture& c) {

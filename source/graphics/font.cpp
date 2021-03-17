@@ -71,14 +71,14 @@ namespace flame
 						{
 							auto& atlas_pos = n->pos;
 
-							ImmediateStagingBuffer stag(device, image_pitch(g.size.x) * g.size.y, bitmap);
-							ImmediateCommandBuffer icb(device);
-							auto cb = icb.cb.get();
+							StagingBuffer stag(device, image_pitch(g.size.x) * g.size.y, bitmap);
+							InstanceCB cb(device);
+
 							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
 							cpy.image_offset = atlas_pos;
 							cpy.image_extent = g.size;
-							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
+							cb->copy_buffer_to_image(stag.get(), image.get(), 1, &cpy);
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,

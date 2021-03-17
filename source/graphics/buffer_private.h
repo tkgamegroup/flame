@@ -32,20 +32,11 @@ namespace flame
 
 			void* get_mapped() const override { return mapped; }
 
-			void map(uint offset = 0, uint size = 0) override;
+			void* map(uint offset = 0, uint size = 0) override;
 			void unmap() override;
 			void flush() override;
 
 			void recreate(uint new_size) override;
-		};
-
-		struct ImmediateStagingBuffer
-		{
-			DevicePrivate* d;
-
-			std::unique_ptr<BufferPrivate> buf;
-
-			ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data, BufferUsageFlags extra_usage = BufferUsageNone);
 		};
 	}
 }

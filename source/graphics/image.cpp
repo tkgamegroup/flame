@@ -135,10 +135,16 @@ namespace flame
 			}
 		}
 
+		void ImagePrivate::change_layout(ImageLayout src_layout, ImageLayout dst_layout)
+		{
+			InstanceCB cb(device);
+
+			cb->image_barrier(this, {}, src_layout, dst_layout);
+		}
+
 		void ImagePrivate::clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color)
 		{
-			ImmediateCommandBuffer icb(device);
-			auto cb = icb.cb.get();
+			InstanceCB cb(device);
 
 			cb->image_barrier(this, {}, src_layout, ImageLayoutTransferDst);
 			cb->clear_color_image(this, color);
@@ -167,15 +173,15 @@ namespace flame
 				sample_descriptorset->set_buffer(dsl->find_binding("Results"), 0, sample_res.get());
 			}
 
-			ImmediateStagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);
+			StagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);
 
 			{
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(device);
+
 				BufferCopy cpy;
 				cpy.size = sizeof(vec2) * count;
-				memcpy(stag.buf->mapped, uvs, cpy.size);
-				cb->copy_buffer(stag.buf.get(), sample_uvs.get(), { &cpy, 1 });
+				memcpy(stag.mapped, uvs, cpy.size);
+				cb->copy_buffer(stag.get(), sample_uvs.get(), 1, &cpy);
 				cb->buffer_barrier(sample_uvs.get(), AccessTransferWrite, AccessShaderRead);
 				cb->bind_pipeline(sample_pipeline);
 				cb->bind_descriptor_set(sample_descriptorset.get(), 0);
@@ -183,14 +189,14 @@ namespace flame
 			}
 
 			{
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(device);
+
 				BufferCopy cpy;
 				cpy.size = sizeof(vec4) * count;
-				cb->copy_buffer(sample_res.get(), stag.buf.get(), { &cpy, 1 });
+				cb->copy_buffer(sample_res.get(), stag.get(), 1, &cpy);
 			}
 
-			memcpy(dst, stag.buf->mapped, sizeof(vec4) * count);
+			memcpy(dst, stag.mapped, sizeof(vec4) * count);
 		}
 
 		void ImagePrivate::save(const std::filesystem::path& filename)
@@ -214,13 +220,12 @@ namespace flame
 				
 				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(sizes[0], 1), layers, 1, levels);
 
-				ImmediateStagingBuffer stag(device, gli_texture.size(), nullptr);
+				StagingBuffer stag(device, gli_texture.size(), nullptr);
 				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
 				{
-					ImmediateCommandBuffer icb(device);
-					auto cb = icb.cb.get();
+					InstanceCB cb(device);
 					std::vector<BufferImageCopy> cpies;
-					auto dst = (char*)stag.buf->mapped;
+					auto dst = (char*)stag.mapped;
 					auto offset = 0;
 					for (auto i = 0; i < layers; i++)
 					{
@@ -242,7 +247,7 @@ namespace flame
 						}
 					}
 					cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, stag.buf.get(), cpies);
+					cb->copy_image_to_buffer(this, stag.get(), cpies.size(), cpies.data());
 					cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
@@ -261,13 +266,12 @@ namespace flame
 			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
 				uvec2(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
-			ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
-			ImmediateCommandBuffer icb(device);
-			auto cb = icb.cb.get();
+			StagingBuffer stag(device, bmp->get_size(), bmp->get_data());
+			InstanceCB cb(device);
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag.buf.get(), i, { &cpy, 1 });
+			cb->copy_buffer_to_image(stag.get(), i, 1, &cpy);
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 			return i;
@@ -312,11 +316,10 @@ namespace flame
 				ret = new ImagePrivate(device, format, ext, generate_mipmaps ? 0 : levels, layers,
 					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | additional_usage, is_cube);
 
-				ImmediateStagingBuffer stag(device, gli_texture.size(), nullptr);
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				StagingBuffer stag(device, gli_texture.size(), nullptr);
+				InstanceCB cb(device);
 				std::vector<BufferImageCopy> cpies;
-				auto dst = (char*)stag.buf->mapped;
+				auto dst = (char*)stag.mapped;
 				auto offset = 0;
 				for (auto i = 0; i < layers; i++)
 				{
@@ -337,7 +340,7 @@ namespace flame
 					}
 				}
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(stag.buf.get(), ret, cpies);
+				cb->copy_buffer_to_image(stag.get(), ret, cpies.size(), cpies.data());
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 			else
@@ -350,20 +353,18 @@ namespace flame
 					generate_mipmaps ? 0 : 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
-				ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				StagingBuffer stag(device, bmp->get_size(), bmp->get_data());
+				InstanceCB cb(device);
 				BufferImageCopy cpy;
 				cpy.image_extent = ret->sizes[0];
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(stag.buf.get(), ret, { &cpy, 1 });
+				cb->copy_buffer_to_image(stag.get(), ret, 1, &cpy);
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 
 			if (generate_mipmaps)
 			{
-				ImmediateCommandBuffer icb(device);
-				auto cb = icb.cb.get();
+				InstanceCB cb(device);
 
 				for (auto i = 1U; i < ret->levels; i++) 
 				{
@@ -386,7 +387,7 @@ namespace flame
 					blit.dstSubresource.baseArrayLayer = 0;
 					blit.dstSubresource.layerCount = 1;
 
-					vkCmdBlitImage(cb->vk_command_buffer, ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+					vkCmdBlitImage(((CommandBufferPrivate*)cb.get())->vk_command_buffer, ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
 						ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
 					cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly, AccessTransferRead, AccessShaderRead);

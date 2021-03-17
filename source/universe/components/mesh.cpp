@@ -48,7 +48,7 @@ namespace flame
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;
-		if (canvas && !src.empty())
+		if (renderer && !src.empty())
 		{
 			auto sp = SUS::split(src, '#');
 			if (sp.size() == 2)
@@ -70,10 +70,21 @@ namespace flame
 
 				if (!model)
 					return;
-				mesh_id = model->find_mesh(sp[1].c_str());
-				if (mesh_id == -1)
+				auto idx = model->find_mesh(sp[1].c_str());
+				if (idx == -1)
 					return;
-				mesh = model->get_mesh(mesh_id);
+				mesh = model->get_mesh(idx);
+
+				mesh_id = renderer->find_mesh_res(mesh);
+				if (mesh_id == -1)
+				{
+					mesh_id = renderer->set_mesh_res(-1, mesh);
+					if (mesh_id == -1)
+					{
+						mesh = nullptr;
+						return;
+					}
+				}
 
 				auto bones_count = mesh->get_bones_count();
 				if (bones_count == 0)
@@ -251,8 +262,6 @@ namespace flame
 	{
 		renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
-		canvas = renderer->canvas;
-		fassert(canvas);
 
 		apply_src();
 		for (auto i = 0; i < size(animation_layers); i++)

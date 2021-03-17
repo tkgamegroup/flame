@@ -266,6 +266,16 @@ namespace flame
 				if (meshes[i]->name == name)
 					return i;
 			}
+			try
+			{
+				std::string::size_type sz;
+				auto i = std::stoi(name, &sz);
+				if (sz == name.size() && i < meshes.size())
+					return i;
+			}
+			catch (...)
+			{
+			}
 			return -1;
 		}
 
@@ -779,7 +789,8 @@ namespace flame
 					aiProcess_Triangulate |
 					aiProcess_JoinIdenticalVertices |
 					aiProcess_SortByPType |
-					aiProcess_FlipUVs;
+					aiProcess_FlipUVs |
+					aiProcess_LimitBoneWeights;
 				auto scene = importer.ReadFile(filename.string(), load_flags);
 				if (!scene)
 				{

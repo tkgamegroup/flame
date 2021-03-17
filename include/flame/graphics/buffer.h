@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
@@ -16,13 +17,26 @@ namespace flame
 
 			virtual void* get_mapped() const = 0;
 
-			virtual void map(uint offset = 0, uint _size = 0) = 0;
+			virtual void* map(uint offset = 0, uint _size = 0) = 0;
 			virtual void unmap() = 0;
 			virtual void flush() = 0;
 
 			virtual void recreate(uint new_size) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
+		};
+
+		struct StagingBuffer : FlmPtr<Buffer>
+		{
+			void* mapped;
+
+			StagingBuffer(Device* d, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
+			{
+				reset(Buffer::create(d, size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				mapped = p->map();
+				if (data)
+					memcpy(mapped, data, size);
+			}
 		};
 	}
 }

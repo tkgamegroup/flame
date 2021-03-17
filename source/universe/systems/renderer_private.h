@@ -47,9 +47,11 @@ namespace flame
 	{
 		uint capacity;
 		graphics::AccessFlags access;
-		T* pstag = nullptr;
 		uint n0 = 0;
 		uint n1 = 0;
+
+		FlmPtr<graphics::Buffer> buf;
+		FlmPtr<graphics::Buffer> stagbuf;
 
 		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity);
 		T* alloc(uint n);
@@ -73,12 +75,12 @@ namespace flame
 
 	struct MeshVertex
 	{
-		vec3 position;
+		vec3 pos;
 		vec2 uv;
 		vec3 normal;
 	};
 
-	struct ArmatureMeshVertex : MeshVertex
+	struct ArmMeshVertex : MeshVertex
 	{
 		ivec4 ids;
 		vec4 weights;
@@ -145,7 +147,7 @@ namespace flame
 
 		struct MeshRes
 		{
-			graphics::Mesh* mesh;
+			graphics::Mesh* mesh = nullptr;
 			bool arm;
 			uint vtx_off;
 			uint vtx_cnt;
@@ -177,14 +179,17 @@ namespace flame
 
 		GeometryBuffer<ElementVertex>	buf_element_vtx;
 		GeometryBuffer<uint>			buf_element_idx;
-		PileBuffer<ElementVertex>		buf_mesh_vtx;
-		PileBuffer<uint>				buf_mesh_idx;
-		PileBuffer<ElementVertex>		buf_arm_mesh_vtx;
-		PileBuffer<uint>				buf_arm_mesh_idx;
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
 		std::vector<ElementRes> element_reses;
+
+		PileBuffer<MeshVertex>	buf_mesh_vtx;
+		PileBuffer<uint>			buf_mesh_idx;
+		PileBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
+		PileBuffer<uint>			buf_arm_mesh_idx;
+
+		std::vector<MeshRes> mesh_reses;
 
 		bool dirty = true;
 

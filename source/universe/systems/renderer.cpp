@@ -6,6 +6,7 @@
 #include <flame/graphics/command.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/font.h>
+#include <flame/graphics/model.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
@@ -98,6 +99,51 @@ namespace flame
 		cpy.size = stag_num * sizeof(T);
 		cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
 		cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, access);
+	}
+
+	template <class T>
+	void PileBuffer<T>::create(graphics::Device* d, graphics::BufferUsageFlags usage, uint _capacity)
+	{
+		capacity = _capacity;
+		access = usage2access(usage);
+		auto size = capacity * sizeof(T);
+		buf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+		stagbuf.reset(graphics::Buffer::create(d, sizeof(T) * 100, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+	}
+
+	template <class T>
+	T* PileBuffer<T>::alloc(uint n)
+	{
+		fassert(n0 == n1);
+		auto size = n * sizeof(T);
+		fassert(n1 * sizeof(T) + size <= capacity);
+		if (stagbuf->get_size() < n)
+		{
+			stagbuf->recreate(size);
+			stagbuf->map();
+		}
+		n1 += n;
+		return (T*)stagbuf->get_mapped();
+	}
+
+	template <class T>
+	void PileBuffer<T>::free(T* p)
+	{
+
+	}
+
+	template <class T>
+	void PileBuffer<T>::upload(graphics::CommandBuffer* cb)
+	{
+		if (n1 > n0)
+		{
+			graphics::BufferCopy cpy;
+			cpy.size = (n1 - n0) * sizeof(T);
+			cpy.dst_off = n0 * sizeof(T);
+			cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
+			cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, access);
+			n0 = n1;
+		}
 	}
 
 	sRendererPrivate::sRendererPrivate(sRendererParms* _parms)
@@ -196,38 +242,6 @@ namespace flame
 		if (!e->global_visibility)
 			return;
 
-		auto last_scissor = canvas->get_scissor();
-
-		if (!element_culled)
-		{
-			auto element = e->get_component_t<cElementPrivate>();
-			if (element)
-			{
-				element->parent_scissor = last_scissor;
-				element->update_transform();
-				element_culled = !last_scissor.overlapping(element->aabb);
-				if (element->culled != element_culled)
-				{
-					element->culled = element_culled;
-					e->component_data_changed(element, S<"culled"_h>);
-				}
-				if (!element_culled)
-				{
-					element->draw(canvas);
-					for (auto& d : element->drawers[0])
-						d->call(canvas);
-					if (element->clipping)
-						canvas->set_scissor(element->aabb);
-					for (auto& d : element->drawers[1])
-						d->call(canvas);
-				}
-				if (last_element != element)
-				{
-					last_element = element;
-					last_element_changed = true;
-				}
-			}
-		}
 		if (!node_culled)
 		{
 			auto node = e->get_component_t<cNodePrivate>();
@@ -243,8 +257,6 @@ namespace flame
 
 		for (auto& c : e->children)
 			render(c.get(), element_culled, node_culled);
-
-		canvas->set_scissor(last_scissor);
 	}
 
 	void* sRendererPrivate::get_element_res(uint idx, ElementResType* type) const
@@ -277,6 +289,8 @@ namespace flame
 				}
 			}
 		}
+		if (idx == -1)
+			return -1;
 
 		auto& res = element_reses[idx];
 		res.type = type;
@@ -316,6 +330,7 @@ namespace flame
 
 	int sRendererPrivate::set_material_res(int idx, graphics::Material* mesh)
 	{
+
 		return idx;
 	}
 
@@ -326,6 +341,61 @@ namespace flame
 
 	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
 	{
+		if (idx == -1)
+		{
+			for (auto i = 1; i < mesh_reses.size(); i++)
+			{
+				if (mesh_reses[i].mesh == mesh)
+				{
+					idx = i;
+					break;
+				}
+			}
+		}
+		if (idx == -1)
+			return -1;
+
+		auto& dst = mesh_reses[idx];
+		dst.mesh = mesh;
+		if (mesh)
+		{
+			graphics::InstanceCB cb(device);
+
+			auto vtx_cnt = mesh->get_vertices_count();
+			auto idx_cnt = mesh->get_indices_count();
+			auto apos = mesh->get_positions();
+			auto auv = mesh->get_uvs();
+			auto anormal = mesh->get_normals();
+			auto aidx = mesh->get_indices();
+
+			auto bone_cnt = mesh->get_bones_count();
+			if (bone_cnt == 0)
+			{
+				auto pvtx = buf_mesh_vtx.alloc(vtx_cnt);
+				for (auto i = 0; i < vtx_cnt; i++)
+				{
+					auto& vtx = pvtx[i];
+					vtx.pos = apos[i];
+					if (auv)
+						vtx.uv = auv[i];
+					if (anormal)
+						vtx.normal = anormal[i];
+				}
+
+				auto n = buf_mesh_idx.n1;
+				auto pidx = buf_mesh_idx.alloc(idx_cnt);
+				for (auto i = 0; i < idx_cnt; i++)
+					pidx[i] = n + aidx[i];
+			}
+			else
+			{
+				auto n = buf_arm_mesh_idx.n1;
+				auto pidx = buf_arm_mesh_idx.alloc(idx_cnt);
+				for (auto i = 0; i < idx_cnt; i++)
+					pidx[i] = n + aidx[i];
+			}
+		}
+
 		return idx;
 	}
 
@@ -799,6 +869,13 @@ namespace flame
 				res.v = iv_wht;
 			}
 		}
+
+		buf_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
+		buf_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
+		buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
+		buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
+
+		mesh_reses.resize(64);
 
 		canvas = (graphics::Canvas*)world->find_object("flame::graphics::Canvas");
 	}

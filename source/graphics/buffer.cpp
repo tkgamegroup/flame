@@ -60,13 +60,14 @@ namespace flame
 			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
 		}
 
-		void BufferPrivate::map(uint offset, uint _size)
+		void* BufferPrivate::map(uint offset, uint _size)
 		{
 			if (mapped)
-				return;
+				return mapped;
 			if (_size == 0)
 				_size = size;
 			chk_res(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
+			return mapped;
 		}
 
 		void BufferPrivate::unmap()
@@ -99,15 +100,6 @@ namespace flame
 		Buffer* Buffer::create(Device* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
 		{
 			return new BufferPrivate((DevicePrivate*)device, size, usage, mem_prop);
-		}
-
-		ImmediateStagingBuffer::ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data, BufferUsageFlags extra_usage) :
-			d(d)
-		{
-			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
-			buf->map();
-			if (data)
-				memcpy(buf->mapped, data, size);
 		}
 	}
 }

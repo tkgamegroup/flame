@@ -74,8 +74,8 @@ namespace flame
 
 			uint get_vertices_count() const override { return positions.size(); }
 			const vec3* get_positions() const override { return positions.data(); }
-			const vec2* get_uvs() const override { return uvs.data(); }
-			const vec3* get_normals() const override { return normals.data(); }
+			const vec2* get_uvs() const override { return uvs.empty() ? nullptr : uvs.data(); }
+			const vec3* get_normals() const override { return normals.empty() ? nullptr : normals.data(); }
 			uint get_indices_count() const { return indices.size(); }
 			const uint* get_indices() const { return indices.data(); }
 

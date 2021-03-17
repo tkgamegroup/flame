@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
@@ -129,6 +130,26 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Queue* get(Device* device, QueueFamily family = QueueGraphics);
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
+		};
+
+		struct InstanceCB : FlmPtr<CommandBuffer>
+		{
+			Device* d;
+
+			InstanceCB(Device* d) :
+				d(d)
+			{
+				reset(CommandBuffer::create(CommandPool::get(d)));
+				p->begin(true);
+			}
+
+			~InstanceCB()
+			{
+				p->end();
+				auto q = Queue::get(d);
+				q->submit(1, &p, nullptr, nullptr, nullptr);
+				q->wait_idle();
+			}
 		};
 	}
 }

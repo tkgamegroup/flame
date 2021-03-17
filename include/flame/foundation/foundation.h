@@ -65,15 +65,20 @@ namespace flame
 				p->release();
 		}
 
-		FlmPtr(FlmPtr&& oth) noexcept
+		FlmPtr(FlmPtr&& oth)
 		{
 			oth.swap(*this);
 		}
 
-		FlmPtr& operator=(FlmPtr&& oth) noexcept
+		FlmPtr& operator=(FlmPtr&& oth)
 		{
 			oth.swap(*this);
 			return *this;
+		}
+
+		T** operator&()
+		{
+			return &p;
 		}
 
 		FlmPtr(FlmPtr const&) = delete;
