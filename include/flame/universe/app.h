@@ -171,8 +171,7 @@ namespace flame
 			auto cb = commandbuffers[swapchain_image_index].get();
 
 			cb->begin();
-			s_renderer->record_element_drawing_commands(swapchain_image_index, cb);
-			//canvas->record(cb, swapchain_image_index);
+			s_renderer->record_drawing_commands(swapchain_image_index, cb);
 			cb->end();
 
 			auto queue = graphics::Queue::get(graphics::Device::get_default());

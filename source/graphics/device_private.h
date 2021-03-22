@@ -33,7 +33,7 @@ namespace flame
 			std::unique_ptr<DescriptorPoolPrivate> dsp;
 			std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> dsls;
 			std::vector<std::unique_ptr<PipelineLayoutPrivate>> plls;
-			std::vector<std::pair<uint, std::unique_ptr<ShaderPrivate>>> sds;
+			std::vector<std::unique_ptr<ShaderPrivate>> sds;
 			std::unique_ptr<CommandPoolPrivate> gcp;
 			std::unique_ptr<CommandPoolPrivate> tcp;
 			std::unique_ptr<QueuePrivate> gq;

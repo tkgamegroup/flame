@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	struct sRenderer;
+
 	struct cNode : Component
 	{
 		inline static auto type_name = "flame::cNode";
@@ -29,6 +31,9 @@ namespace flame
 
 		virtual vec3 get_global_pos() = 0;
 		virtual vec3 get_global_dir(uint idx) = 0;
+
+		virtual void* add_drawer2(void(*drawer)(Capture&, sRenderer*), const Capture& capture) = 0;
+		virtual void remove_drawer2(void* drawer) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
 	};

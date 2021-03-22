@@ -85,6 +85,20 @@ namespace flame
 		});
 	}
 
+	void* cNodePrivate::add_drawer2(void (*drawer)(Capture&, sRenderer*), const Capture& capture)
+	{
+		auto c = new Closure(drawer, capture);
+		drawers2.emplace_back(c);
+		return c;
+	}
+
+	void cNodePrivate::remove_drawer2(void* drawer)
+	{
+		std::erase_if(drawers2, [&](const auto& i) {
+			return i == (decltype(i))drawer;
+		});
+	}
+
 	void cNodePrivate::update_eul()
 	{
 		if (eul_dirty)

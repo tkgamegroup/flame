@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<renderpass>
+  <attachments>
+    <attachment format="R8G8B8A8_UNORM" initia_layout="ShaderReadOnly" />
+    <attachment format="R8G8B8A8_UNORM" initia_layout="ShaderReadOnly" />
+    <attachment format="Depth16" initia_layout="ShaderReadOnly" />
+    <attachment format="R8G8B8A8_UNORM" initia_layout="ShaderReadOnly" />
+  </attachments>
+  <subpasses>
+    <subpass color_refs="0,1" depth_ref="2" />
+    <subpass color_refs="3" dependencies="0" />
+  </subpasses>
+</renderpass>

@@ -22,6 +22,7 @@ namespace flame
 
 	struct EntityPrivate;
 	struct cElementPrivate;
+	struct cNodePrivate;
 	struct cCameraPrivate;
 
 	template <class T>
@@ -166,30 +167,44 @@ namespace flame
 		graphics::Device* device;
 		graphics::Swapchain* swapchain;
 
-		FlmPtr<graphics::Renderpass> rp_rgba8c;
-		FlmPtr<graphics::Renderpass> rp_rgba16c;
-		FlmPtr<graphics::Renderpass> rp_mesh;
-		FlmPtr<graphics::Renderpass> rp_esm;
 		std::vector<FlmPtr<graphics::Framebuffer>> fb_targets;
-		FlmPtr<graphics::Pipeline>		pl_element;
-		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
-		FlmPtr<graphics::Pipeline>		pl_blit8;
-		FlmPtr<graphics::Pipeline>		pl_blit16;
-		FlmPtr<graphics::Pipeline>		pl_gamma;
+
+		// ==== element drawing ====
+
+		std::vector<ElementRes> element_reses;
 
 		GeometryBuffer<ElementVertex>	buf_element_vtx;
 		GeometryBuffer<uint>			buf_element_idx;
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
-		std::vector<ElementRes> element_reses;
+		FlmPtr<graphics::Pipeline>		pl_element;
+		// =========================
 
-		PileBuffer<MeshVertex>	buf_mesh_vtx;
+		// ==== node drawing ====
+
+		std::vector<MaterialRes> mat_reses;
+		std::vector<MeshRes> mesh_reses;
+		
+		FlmPtr<graphics::Framebuffer> fb_def;
+
+		PileBuffer<MeshVertex>		buf_mesh_vtx;
 		PileBuffer<uint>			buf_mesh_idx;
 		PileBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
 		PileBuffer<uint>			buf_arm_mesh_idx;
 
-		std::vector<MeshRes> mesh_reses;
+		FlmPtr<graphics::Image> img_dep;
+		FlmPtr<graphics::Image> img_def_geo0; // albedo, metallic
+		FlmPtr<graphics::Image> img_def_geo1; // normal, roughness
+
+		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
+		// ======================
+
+		// ==== post ====
+
+		FlmPtr<graphics::Pipeline>		pl_gamma;
+
+		// ==============
 
 		bool dirty = true;
 
@@ -198,13 +213,14 @@ namespace flame
 		cElementPrivate* last_element;
 		bool last_element_changed;
 
-		std::vector<ElementDrawCmd> draw_layers[128];
+		Rect element_drawing_scissor;
+		std::vector<ElementDrawCmd> element_drawing_layers[128];
+
+		std::vector<uint> node_drawing_meshes;
 
 		sRendererPrivate(sRendererParms* parms);
 
 		void set_targets();
-
-		void render(EntityPrivate* e, bool element_culled, bool node_culled);
 
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
@@ -227,16 +243,18 @@ namespace flame
 		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);
 
-		graphics::Canvas* get_canvas() const override { return canvas; }
-
 		cCamera* get_camera() const override { return (cCamera*)camera; }
 		void set_camera(cCamera* c) override { camera = (cCameraPrivate*)c; }
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
 
-		void record_element_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) override;
-		void record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) override;
+		uint element_render(uint layer, cElementPrivate* element);
+		void node_render(cNodePrivate* node);
+
+		void record_element_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb);
+		void record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb);
+		void record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) override;
 
 		void on_added() override;
 

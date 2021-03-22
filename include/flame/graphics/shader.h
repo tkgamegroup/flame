@@ -164,6 +164,7 @@ namespace flame
 				Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr,
 				uint blend_options_count = 0, const BlendOption* blend_options = nullptr, uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, Shader* compute_shader, PipelineLayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
 		};
 	}
 }

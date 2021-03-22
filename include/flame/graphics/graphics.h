@@ -44,7 +44,7 @@ namespace flame
 			Format_Depth_Begin = Format_Depth16,
 			Format_Depth_End = Format_Depth24Stencil8,
 
-			FormatMax = 0xffffffff
+			Format_Max = 0xffffffff
 		};
 
 		enum MemoryPropertyFlags

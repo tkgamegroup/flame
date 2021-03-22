@@ -161,26 +161,21 @@ namespace flame
 		for (auto i = 0; i < count; i++)
 		{
 			auto v = swapchain->get_image(i)->get_view();
-			fb_targets[i].reset(graphics::Framebuffer::create(device, rp_rgba8c.get(), 1, &v));
+			fb_targets[i].reset(graphics::Framebuffer::create(device, 
+				graphics::Renderpass::get(device, L"rgba8c.rp"), 1, &v));
 		}
 		tar_size = swapchain->get_image(0)->get_size();
 	}
 
-	struct ElementRenderStatus
-	{
-		sRendererPrivate* renderer;
-		Rect scissor;
-	};
-
-	static uint element_render(ElementRenderStatus& status, uint layer, cElementPrivate* element)
+	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
 	{
 		auto e = element->entity;
 		if (!e->global_visibility)
 			return layer;
 
-		element->parent_scissor = status.scissor;
+		element->parent_scissor = element_drawing_scissor;
 		element->update_transform();
-		auto culled = !status.scissor.overlapping(element->aabb);
+		auto culled = !element_drawing_scissor.overlapping(element->aabb);
 		if (element->culled != culled)
 		{
 			element->culled = culled;
@@ -189,25 +184,25 @@ namespace flame
 		if (culled)
 			return layer;
 
-		element->draw2(layer, status.renderer);
+		element->draw2(layer, this);
 
 		auto clipping = false;
 		Rect last_scissor;
-		if (element->clipping && !(status.scissor == element->aabb))
+		if (element->clipping && !(element_drawing_scissor == element->aabb))
 		{
 			element->layer_policy = 2;
 
 			clipping = true;
-			last_scissor = status.scissor;
-			status.scissor = element->aabb;
-			auto& info = status.renderer->draw_layers[layer].emplace_back();
+			last_scissor = element_drawing_scissor;
+			element_drawing_scissor = element->aabb;
+			auto& info = element_drawing_layers[layer].emplace_back();
 			info.type = ElementDrawCmd::Scissor;
-			info.misc = status.scissor;
+			info.misc = element_drawing_scissor;
 		}
 
 		auto _layer = layer;
 		for (auto& d : element->drawers2)
-			_layer = max(_layer, d->call(layer, status.renderer));
+			_layer = max(_layer, d->call(layer, this));
 
 		_layer++;
 		auto max_layer = _layer;
@@ -216,7 +211,7 @@ namespace flame
 			auto celement = c->get_component_t<cElementPrivate>();
 			if (celement)
 			{
-				max_layer = max(max_layer, element_render(status, _layer, celement));
+				max_layer = max(max_layer, element_render(_layer, celement));
 				if (celement->layer_policy > 0)
 				{
 					_layer = max_layer + 1;
@@ -228,8 +223,8 @@ namespace flame
 
 		if (clipping)
 		{
-			status.scissor = last_scissor;
-			auto& info = status.renderer->draw_layers[max_layer + 1].emplace_back();
+			element_drawing_scissor = last_scissor;
+			auto& info = element_drawing_layers[max_layer + 1].emplace_back();
 			info.type = ElementDrawCmd::Scissor;
 			info.misc = last_scissor;
 		}
@@ -237,26 +232,26 @@ namespace flame
 		return max_layer;
 	}
 
-	void sRendererPrivate::render(EntityPrivate* e, bool element_culled, bool node_culled)
+	void sRendererPrivate::node_render(cNodePrivate* element)
 	{
+		auto e = element->entity;
 		if (!e->global_visibility)
 			return;
 
-		if (!node_culled)
+		auto node = e->get_component_t<cNodePrivate>();
+		if (node)
 		{
-			auto node = e->get_component_t<cNodePrivate>();
-			if (node)
-			{
-				node->update_transform();
-				if (last_element_changed)
-					canvas->set_viewport(last_element->aabb);
-				for (auto& d : node->drawers)
-					d->call(canvas);
-			}
+			node->update_transform();
+			//for (auto& d : node->drawers)
+			//	d->call(canvas);
 		}
 
 		for (auto& c : e->children)
-			render(c.get(), element_culled, node_culled);
+		{
+			auto cnode = c->get_component_t<cNodePrivate>();
+			if (cnode)
+				node_render(cnode);
+		}
 	}
 
 	void* sRendererPrivate::get_element_res(uint idx, ElementResType* type) const
@@ -343,9 +338,9 @@ namespace flame
 	{
 		if (idx == -1)
 		{
-			for (auto i = 1; i < mesh_reses.size(); i++)
+			for (auto i = 0; i < mesh_reses.size(); i++)
 			{
-				if (mesh_reses[i].mesh == mesh)
+				if (!mesh_reses[i].mesh)
 				{
 					idx = i;
 					break;
@@ -376,16 +371,17 @@ namespace flame
 				{
 					auto& vtx = pvtx[i];
 					vtx.pos = apos[i];
-					if (auv)
-						vtx.uv = auv[i];
-					if (anormal)
-						vtx.normal = anormal[i];
+					vtx.uv = auv ? auv[i] : vec2(0.f);
+					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
 				}
 
 				auto n = buf_mesh_idx.n1;
 				auto pidx = buf_mesh_idx.alloc(idx_cnt);
 				for (auto i = 0; i < idx_cnt; i++)
 					pidx[i] = n + aidx[i];
+
+				buf_mesh_vtx.upload(cb.get());
+				buf_mesh_idx.upload(cb.get());
 			}
 			else
 			{
@@ -406,7 +402,7 @@ namespace flame
 
 	void sRendererPrivate::fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color)
 	{
-		auto& info = draw_layers[layer].emplace_back();
+		auto& info = element_drawing_layers[layer].emplace_back();
 		info.type = ElementDrawCmd::Fill;
 
 		info.res_id = 0;
@@ -433,7 +429,7 @@ namespace flame
 
 	void sRendererPrivate::stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
 	{
-		auto& info = draw_layers[layer].emplace_back();
+		auto& info = element_drawing_layers[layer].emplace_back();
 		info.type = ElementDrawCmd::Stroke;
 
 		info.res_id = 0;
@@ -466,7 +462,7 @@ namespace flame
 		if (!res.type == ElementResFont)
 			return;
 
-		auto& info = draw_layers[layer].emplace_back();
+		auto& info = element_drawing_layers[layer].emplace_back();
 		info.type = ElementDrawCmd::Text;
 
 		info.res_id = font_id;
@@ -537,9 +533,9 @@ namespace flame
 
 		Rect scissor;
 		scissor.reset();
-		for (auto i = 0; i < size(draw_layers); i++)
+		for (auto i = 0; i < size(element_drawing_layers); i++)
 		{
-			for (auto& info : draw_layers[i])
+			for (auto& info : element_drawing_layers[i])
 			{
 				switch (info.type)
 				{
@@ -745,9 +741,169 @@ namespace flame
 		cb->end_renderpass();
 	}
 
+	graphics::Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
+	{
+		auto defines = graphics::Shader::format_defines(_defines);
+
+		for (auto& p : pl_mats[usage])
+		{
+			if (p.mat == mat && p.defines == defines)
+			{
+				p.ref_count++;
+				return p.pipeline.get();
+			}
+		}
+
+		graphics::Pipeline* ret = nullptr;
+
+		std::vector<std::pair<std::string, std::string>> substitutes;
+		graphics::PolygonMode polygon_mode = graphics::PolygonModeFill;
+		graphics::CullMode cull_mode = graphics::CullModeBack;
+		auto depth_test = true;
+		auto depth_write = true;
+		auto use_mat = true;
+		auto find_define = [&](const std::string& s) {
+			for (auto& d : defines)
+			{
+				if (d == s)
+					return true;
+			}
+			return false;
+		};
+		if (find_define("WIREFRAME"))
+		{
+			use_mat = false;
+			polygon_mode = graphics::PolygonModeLine;
+			depth_test = false;
+			depth_write = false;
+		}
+		else if (find_define("PICKUP"))
+			use_mat = false;
+		else if (find_define("OUTLINE"))
+		{
+			use_mat = false;
+			depth_test = false;
+			depth_write = false;
+		}
+		if (find_define("DOUBLE_SIDE"))
+			cull_mode == graphics::CullModeNone;
+		if (use_mat)
+		{
+			defines.push_back("MAT");
+			substitutes.emplace_back("MAT_FILE", mat.string());
+		}
+		switch (usage)
+		{
+		//case MaterialForMeshShadow:
+		//	defines.push_back("SHADOW_PASS");
+		//case MaterialForMesh:
+		//{
+		//	graphics::Shader* shaders[] = {
+		//		graphics::Shader::get(device, L"mesh/forward.vert", defines, {}),
+		//		graphics::Shader::get(device, L"mesh/forward.frag", defines, substitutes)
+		//	};
+		//	graphics::VertexAttributeInfo vias[3];
+		//	vias[0].location = 0;
+		//	vias[0].format = graphics::Format_R32G32B32_SFLOAT;
+		//	vias[1].location = 1;
+		//	vias[1].format = graphics::Format_R32G32_SFLOAT;
+		//	vias[2].location = 2;
+		//	vias[2].format = graphics::Format_R32G32B32_SFLOAT;
+		//	graphics::VertexBufferInfo vib;
+		//	vib.attributes_count = size(vias);
+		//	vib.attributes = vias;
+		//	graphics::VertexInfo vi;
+		//	vi.buffers_count = 1;
+		//	vi.buffers = &vib;
+		//	graphics::RasterInfo rst;
+		//	rst.polygon_mode = polygon_mode;
+		//	graphics::DepthInfo dep;
+		//	dep.test = depth_test;
+		//	dep.write = depth_write;
+		//	ret = graphics::Pipeline::create(device, size(shaders), shaders, 
+		//		graphics::PipelineLayout::get(device, L"mesh/deferred.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+		//}
+		//	break;
+		//case MaterialForMeshShadowArmature:
+		//	defines.push_back("SHADOW_PASS");
+		//case MaterialForMeshArmature:
+		//{
+		//	defines.push_back("ARMATURE");
+		//	graphics::Shader* shaders[] = {
+		//		graphics::Shader::get(device, L"mesh/mesh.vert", defines, {}),
+		//		graphics::Shader::get(device, L"mesh/mesh.frag", defines, substitutes)
+		//	};
+		//	VertexAttributeInfo vias1[3];
+		//	vias1[0].location = 0;
+		//	vias1[0].format = Format_R32G32B32_SFLOAT;
+		//	vias1[1].location = 1;
+		//	vias1[1].format = Format_R32G32_SFLOAT;
+		//	vias1[2].location = 2;
+		//	vias1[2].format = Format_R32G32B32_SFLOAT;
+		//	VertexAttributeInfo vias2[2];
+		//	vias2[0].location = 5;
+		//	vias2[0].format = Format_R32G32B32A32_INT;
+		//	vias2[1].location = 6;
+		//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
+		//	VertexBufferInfo vibs[2];
+		//	vibs[0].attributes_count = size(vias1);
+		//	vibs[0].attributes = vias1;
+		//	vibs[1].attributes_count = size(vias2);
+		//	vibs[1].attributes = vias2;
+		//	VertexInfo vi;
+		//	vi.buffers_count = 2;
+		//	vi.buffers = vibs;
+		//	RasterInfo rst;
+		//	rst.polygon_mode = polygon_mode;
+		//	DepthInfo dep;
+		//	dep.test = depth_test;
+		//	dep.write = depth_write;
+		//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
+		//}
+		//	break;
+		//case MaterialForTerrain:
+		//{
+		//	graphics::Shader* shaders[] = {
+		//		graphics::Shader::get(device, L"terrain/terrain.vert", defines, {}),
+		//		graphics::Shader::get(device, L"terrain/terrain.tesc", defines, {}),
+		//		graphics::Shader::get(device, L"terrain/terrain.tese", defines, {}),
+		//		graphics::Shader::get(device, L"terrain/terrain.frag", defines, substitutes)
+		//	};
+		//	VertexInfo vi;
+		//	vi.primitive_topology = PrimitiveTopologyPatchList;
+		//	vi.patch_control_points = 4;
+		//	RasterInfo rst;
+		//	rst.polygon_mode = polygon_mode;
+		//	DepthInfo dep;
+		//	dep.test = depth_test;
+		//	dep.write = depth_write;
+		//	ret = PipelinePrivate::create(device, shaders, terrain_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
+		//}
+		//	break;
+		}
+
+		MaterialPipeline mp;
+		mp.mat = mat;
+		mp.defines = defines;
+		mp.pipeline.reset(ret);
+		pl_mats[usage].push_back(std::move(mp));
+		return ret;
+	}
+
+	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl)
+	{
+
+	}
+
 	void sRendererPrivate::record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
 
+	}
+
+	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
+	{
+		record_node_drawing_commands(tar_idx, cb);
+		record_element_drawing_commands(tar_idx, cb);
 	}
 
 	void sRendererPrivate::on_added()
@@ -760,58 +916,6 @@ namespace flame
 
 		device = graphics::Device::get_default();
 		swapchain = (graphics::Swapchain*)world->find_object("flame::graphics::Swapchain");
-
-		{
-			graphics::RenderpassAttachmentInfo att;
-			att.format = graphics::Format_R8G8B8A8_UNORM;
-			att.load_op = graphics::AttachmentClear;
-			att.initia_layout = graphics::ImageLayoutShaderReadOnly;
-			graphics::RenderpassSubpassInfo sp;
-			uint col_refs[] = {
-				0
-			};
-			sp.color_attachments_count = 1;
-			sp.color_attachments = col_refs;
-			rp_rgba8c.reset(graphics::Renderpass::create(device, 1, &att, 1, &sp));
-			att.format = graphics::Format_R16G16B16A16_SFLOAT;
-			rp_rgba16c.reset(graphics::Renderpass::create(device, 1, &att, 1, &sp));
-		}
-		{
-			graphics::RenderpassAttachmentInfo atts[2];
-			atts[0].format = graphics::Format_R16G16B16A16_SFLOAT;
-			atts[0].load_op = graphics::AttachmentClear;
-			atts[0].initia_layout = graphics::ImageLayoutShaderReadOnly;
-			atts[1].format = graphics::Format_Depth16;
-			atts[1].load_op = graphics::AttachmentClear;
-			atts[1].initia_layout = graphics::ImageLayoutAttachment;
-			atts[1].final_layout = graphics::ImageLayoutAttachment;
-			graphics::RenderpassSubpassInfo sp;
-			uint col_refs[] = {
-				0
-			};
-			sp.color_attachments_count = 1;
-			sp.color_attachments = col_refs;
-			sp.depth_attachment = 1;
-			rp_mesh.reset(graphics::Renderpass::create(device, 2, atts, 1, &sp));
-		}
-		{
-			graphics::RenderpassAttachmentInfo atts[2];
-			atts[0].format = graphics::Format_R16_SFLOAT;
-			atts[0].load_op = graphics::AttachmentClear;
-			atts[0].initia_layout = graphics::ImageLayoutShaderReadOnly;
-			atts[1].format = graphics::Format_Depth16;
-			atts[1].load_op = graphics::AttachmentClear;
-			atts[1].initia_layout = graphics::ImageLayoutAttachment;
-			atts[1].final_layout = graphics::ImageLayoutAttachment;
-			graphics::RenderpassSubpassInfo sp;
-			uint col_refs[] = {
-				0
-			};
-			sp.color_attachments_count = 1;
-			sp.color_attachments = col_refs;
-			sp.depth_attachment = 1;
-			rp_esm.reset(graphics::Renderpass::create(device, 2, atts, 1, &sp));
-		}
 
 		set_targets(); 
 
@@ -840,7 +944,8 @@ namespace flame
 			bo.src_alpha = graphics::BlendFactorOne;
 			bo.dst_alpha = graphics::BlendFactorZero;
 			pl_element.reset(graphics::Pipeline::create(device, size(shaders), shaders, 
-				graphics::PipelineLayout::get(device, L"element/element.pll"), rp_rgba8c.get(), 0, &vi, nullptr, nullptr, 1, &bo));
+				graphics::PipelineLayout::get(device, L"element/element.pll"), 
+				graphics::Renderpass::get(device, L"rgba8c.rp"), 0, &vi, nullptr, nullptr, 1, &bo));
 		}
 
 		auto dsp = graphics::DescriptorPool::get_default(device);
@@ -887,16 +992,16 @@ namespace flame
 
 		last_element = nullptr;
 		last_element_changed = false;
-		for (auto i = 0; i < size(draw_layers); i++)
-			draw_layers[i].clear();
+
+		element_drawing_scissor = Rect(vec2(0.f), tar_size);
+		for (auto i = 0; i < size(element_drawing_layers); i++)
+			element_drawing_layers[i].clear();
 		buf_element_vtx.stag_num = 0;
 		buf_element_idx.stag_num = 0;
+		element_render(0, world->element_root->get_component_t<cElementPrivate>());
 
-		ElementRenderStatus status;
-		status.renderer = this;
-		status.scissor = Rect(vec2(0.f), tar_size);
-		element_render(status, 0, world->element_root->get_component_t<cElementPrivate>());
-		//render(world->root.get(), false, !camera);
+		node_drawing_meshes.clear();
+		node_render(world->node_root->get_component_t<cNodePrivate>());
 
 		dirty = false;
 	}

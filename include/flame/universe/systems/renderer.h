@@ -13,6 +13,7 @@ namespace flame
 	}
 
 	struct cElement;
+	struct cNode;
 	struct cCamera;
 
 	struct sRendererParms
@@ -54,16 +55,13 @@ namespace flame
 		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
 		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
 
-		virtual graphics::Canvas* get_canvas() const = 0;
-
 		virtual cCamera* get_camera() const = 0;
 		virtual void set_camera(cCamera* camera) = 0;
 
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 
-		virtual void record_element_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) = 0;
-		virtual void record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) = 0;
+		virtual void record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};

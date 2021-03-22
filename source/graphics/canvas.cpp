@@ -24,11 +24,8 @@ namespace flame
 				att.load_op = AttachmentLoad;
 				att.initia_layout = ImageLayoutShaderReadOnly;
 				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
 				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
+				sp.color_attachments = { 0 };
 				rgba8_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
 				att.format = Format_R16G16B16A16_SFLOAT;
 				rgba16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
@@ -51,11 +48,8 @@ namespace flame
 				atts[1].initia_layout = ImageLayoutAttachment;
 				atts[1].final_layout = ImageLayoutAttachment;
 				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
 				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
+				sp.color_attachments = { 0 };
 				sp.depth_attachment = 1;
 				pickup_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
 			}
@@ -69,11 +63,8 @@ namespace flame
 				atts[1].initia_layout = ImageLayoutAttachment;
 				atts[1].final_layout = ImageLayoutAttachment;
 				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
 				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
+				sp.color_attachments = { 0 };
 				sp.depth_attachment = 1;
 				mesh_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
 			}
@@ -87,11 +78,8 @@ namespace flame
 				atts[1].initia_layout = ImageLayoutAttachment;
 				atts[1].final_layout = ImageLayoutAttachment;
 				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
 				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
+				sp.color_attachments = { 0 };
 				sp.depth_attachment = 1;
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
@@ -313,7 +301,6 @@ namespace flame
 			CullMode cull_mode = CullModeBack;
 			auto depth_test = true;
 			auto depth_write = true;
-			std::vector<std::filesystem::path> extra_dependencies;
 			auto use_mat = true;
 			auto find_define = [&](const std::string& s) {
 				for (auto& d : defines)
@@ -344,7 +331,6 @@ namespace flame
 			{
 				defines.push_back("MAT");
 				substitutes.emplace_back("MAT_FILE", mat.string());
-				extra_dependencies.push_back(mat);
 			}
 			switch (usage)
 			{
@@ -353,8 +339,8 @@ namespace flame
 			case MaterialForMesh:
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}, {}),
-					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
+					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -383,8 +369,8 @@ namespace flame
 			{
 				defines.push_back("ARMATURE");
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}, {}),
-					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
+					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
 				};
 				VertexAttributeInfo vias1[3];
 				vias1[0].location = 0;
@@ -417,10 +403,10 @@ namespace flame
 			case MaterialForTerrain:
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"terrain/terrain.vert", defines, {}, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.tesc", defines, {}, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.tese", defines, {}, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"terrain/terrain.vert", defines, {}),
+					ShaderPrivate::get(device, L"terrain/terrain.tesc", defines, {}),
+					ShaderPrivate::get(device, L"terrain/terrain.tese", defines, {}),
+					ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes)
 				};
 				VertexInfo vi;
 				vi.primitive_topology = PrimitiveTopologyPatchList;

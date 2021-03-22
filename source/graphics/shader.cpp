@@ -888,28 +888,12 @@ namespace flame
 			return PipelineLayoutPrivate::get((DevicePrivate*)device, filename);
 		}
 
-		void ShaderPrivate::release()
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes)
 		{
-			for (auto it = device->sds.begin(); it != device->sds.end(); it++)
-			{
-				if (it->second.get() == this)
-				{
-					if (it->first == 1)
-						device->sds.erase(it);
-					else
-						it->first--;
-					return;
-				}
-			}
-			delete this;
+			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes));
 		}
 
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
-		{
-			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes), extra_dependencies);
-		}
-
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes)
 		{
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"assets\\shaders"))
@@ -928,11 +912,8 @@ namespace flame
 
 			for (auto& s : device->sds)
 			{
-				if (s.second->filename == filename && s.second->defines == defines && s.second->substitutes == substitutes)
-				{
-					s.first++;
-					return s.second.get();
-				}
+				if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
+					return s.get();
 			}
 
 			auto ppath = filename.parent_path();
@@ -948,8 +929,22 @@ namespace flame
 			spv_path += L"." + str_hash;
 
 			auto dependencies = get_make_dependencies(filename);
-			for (auto& e : extra_dependencies)
-				dependencies.push_back(e.is_absolute() ? e : (ppath / e));
+
+
+			for (auto& s : substitutes)
+			{
+				if (s.first.ends_with("_FILE"))
+				{
+					auto fn = std::filesystem::path(s.second);
+					if (!fn.is_absolute())
+						fn = ppath / fn;
+					s.second = get_file_content(fn);
+					fassert(!s.second.empty());
+					SUS::remove_ch(s.second, '\r');
+					dependencies.push_back(fn);
+				}
+			}
+
 			if (should_remake(dependencies, spv_path))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
@@ -962,21 +957,7 @@ namespace flame
 						std::string line;
 						std::getline(glsl, line);
 						for (auto& s : substitutes)
-						{
-							std::string content;
-							if (s.first.ends_with("_FILE"))
-							{
-								auto fn = std::filesystem::path(s.second);
-								if (!fn.is_absolute())
-									fn = ppath / fn;
-								content = get_file_content(fn);
-								fassert(!content.empty());
-								SUS::remove_ch(content, '\r');
-							}
-							else
-								content = s.second;
-							SUS::replace_all(line, s.first, content);
-						}
+							SUS::replace_all(line, s.first, s.second);
 						temp += line + "\n";
 					}
 					glsl.close();
@@ -1050,7 +1031,7 @@ namespace flame
 			}
 
 			auto s = new ShaderPrivate(device, filename, defines, substitutes, spv_file);
-			device->sds.emplace_back(1, s);
+			device->sds.emplace_back(s);
 			return s;
 		}
 
@@ -1217,8 +1198,8 @@ namespace flame
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
 			{
-				auto& res_atts = rp->subpasses[subpass_idx]->resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(res_atts.empty() ? SampleCount_1 : res_atts[0]->sample_count);
+				auto& res_atts = rp->subpasses[subpass_idx].resolve_attachments;
+				multisample_state.rasterizationSamples = to_backend(res_atts ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
@@ -1240,7 +1221,7 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(rp->subpasses[subpass_idx]->color_attachments.size());
+			vk_blend_attachment_states.resize(rp->subpasses[subpass_idx].color_attachments_count);
 			for (auto& a : vk_blend_attachment_states)
 			{
 				a = {};

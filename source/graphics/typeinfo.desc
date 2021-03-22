@@ -35,6 +35,7 @@
   <enums>
     <rule name="^flame::graphics::Filter$" />
     <rule name="^flame::graphics::AddressMode$" />
+    <rule name="^flame::graphics::AttachmentLoadOp$" />
     <rule name="^flame::graphics::DescriptorType$" />
   </enums>
 </desc>
