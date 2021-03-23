@@ -139,9 +139,9 @@ namespace flame
 				default_device = nullptr;
 		}
 
-		bool DevicePrivate::has_feature(Feature f) const
+		bool DevicePrivate::has_feature(Feature feature) const
 		{
-			switch (f)
+			switch (feature)
 			{
 			case FeatureTextureCompressionBC:
 				return vk_features.textureCompressionBC;

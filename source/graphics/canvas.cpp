@@ -84,201 +84,201 @@ namespace flame
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
 
-			{
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"element/element.vert"),
-					ShaderPrivate::get(device, L"element/element.frag")
-				};
-				VertexAttributeInfo vias[3];
-				vias[0].location = 0;
-				vias[0].format = Format_R32G32_SFLOAT;
-				vias[1].location = 1;
-				vias[1].format = Format_R32G32_SFLOAT;
-				vias[2].location = 2;
-				vias[2].format = Format_R8G8B8A8_UNORM;
-				VertexBufferInfo vib;
-				vib.attributes_count = size(vias);
-				vib.attributes = vias;
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = &vib;
-				BlendOption bo;
-				bo.enable = true;
-				bo.src_color = BlendFactorSrcAlpha;
-				bo.dst_color = BlendFactorOneMinusSrcAlpha;
-				bo.src_alpha = BlendFactorOne;
-				bo.dst_alpha = BlendFactorZero;
-				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0, &vi, nullptr, nullptr, { &bo, 1 }));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"element/element.vert"),
+			//		ShaderPrivate::get(device, L"element/element.frag")
+			//	};
+			//	VertexAttributeInfo vias[3];
+			//	vias[0].location = 0;
+			//	vias[0].format = Format_R32G32_SFLOAT;
+			//	vias[1].location = 1;
+			//	vias[1].format = Format_R32G32_SFLOAT;
+			//	vias[2].location = 2;
+			//	vias[2].format = Format_R8G8B8A8_UNORM;
+			//	VertexBufferInfo vib;
+			//	vib.attributes_count = size(vias);
+			//	vib.attributes = vias;
+			//	VertexInfo vi;
+			//	vi.buffers_count = 1;
+			//	vi.buffers = &vib;
+			//	BlendOption bo;
+			//	bo.enable = true;
+			//	bo.src_color = BlendFactorSrcAlpha;
+			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
+			//	bo.src_alpha = BlendFactorOne;
+			//	bo.dst_alpha = BlendFactorZero;
+			//	element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0, &vi, nullptr, nullptr, { &bo, 1 }));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"sky/sky.vert"),
-					ShaderPrivate::get(device, L"sky/sky.frag")
-				};
-				VertexAttributeInfo via;
-				via.location = 0;
-				via.format = Format_R32G32B32_SFLOAT;
-				VertexBufferInfo vib;
-				vib.attributes_count = 1;
-				vib.attributes = &via;
-				vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = &vib;
-				RasterInfo rst;
-				rst.depth_clamp = true;
-				rst.cull_mode = CullModeFront;
-				DepthInfo dep;
-				dep.test = false;
-				dep.write = false;
-				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"sky/sky.vert"),
+			//		ShaderPrivate::get(device, L"sky/sky.frag")
+			//	};
+			//	VertexAttributeInfo via;
+			//	via.location = 0;
+			//	via.format = Format_R32G32B32_SFLOAT;
+			//	VertexBufferInfo vib;
+			//	vib.attributes_count = 1;
+			//	vib.attributes = &via;
+			//	vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
+			//	VertexInfo vi;
+			//	vi.buffers_count = 1;
+			//	vi.buffers = &vib;
+			//	RasterInfo rst;
+			//	rst.depth_clamp = true;
+			//	rst.cull_mode = CullModeFront;
+			//	DepthInfo dep;
+			//	dep.test = false;
+			//	dep.write = false;
+			//	sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
+			//}
 
-			mesh_pipeline_layout = PipelineLayoutPrivate::get(device, L"mesh/mesh.pll");
-			terrain_pipeline_layout = PipelineLayoutPrivate::get(device, L"terrain/terrain.pll");
+			//mesh_pipeline_layout = PipelineLayoutPrivate::get(device, L"mesh/mesh.pll");
+			//terrain_pipeline_layout = PipelineLayoutPrivate::get(device, L"terrain/terrain.pll");
 
-			mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
-			mesh_armature_wireframe_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
-			terrain_wireframe_pipeline = get_material_pipeline(MaterialForTerrain, L"", "WIREFRAME");
+			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
+			//mesh_armature_wireframe_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
+			//terrain_wireframe_pipeline = get_material_pipeline(MaterialForTerrain, L"", "WIREFRAME");
 
-			mesh_pickup_pipeline = get_material_pipeline(MaterialForMesh, L"", "PICKUP");
-			mesh_armature_pickup_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "PICKUP");
-			terrain_pickup_pipeline = get_material_pipeline(MaterialForTerrain, L"", "PICKUP");
+			//mesh_pickup_pipeline = get_material_pipeline(MaterialForMesh, L"", "PICKUP");
+			//mesh_armature_pickup_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "PICKUP");
+			//terrain_pickup_pipeline = get_material_pipeline(MaterialForTerrain, L"", "PICKUP");
 
-			mesh_outline_pipeline = get_material_pipeline(MaterialForMesh, L"", "OUTLINE");
-			mesh_armature_outline_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "OUTLINE");
-			terrain_outline_pipeline = get_material_pipeline(MaterialForTerrain, L"", "OUTLINE");
+			//mesh_outline_pipeline = get_material_pipeline(MaterialForMesh, L"", "OUTLINE");
+			//mesh_armature_outline_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "OUTLINE");
+			//terrain_outline_pipeline = get_material_pipeline(MaterialForTerrain, L"", "OUTLINE");
 
-			{
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"plain/plain.vert"),
-					ShaderPrivate::get(device, L"plain/plain.frag")
-				};
-				VertexAttributeInfo vias[2];
-				vias[0].location = 0;
-				vias[0].format = Format_R32G32B32_SFLOAT;
-				vias[1].location = 1;
-				vias[1].format = Format_R8G8B8A8_UNORM;
-				VertexBufferInfo vib;
-				vib.attributes_count = size(vias);
-				vib.attributes = vias;
-				VertexInfo vi;
-				vi.primitive_topology = PrimitiveTopologyLineList;
-				vi.buffers_count = 1;
-				vi.buffers = &vib;
-				RasterInfo rst;
-				rst.cull_mode = CullModeNone;
-				DepthInfo dep;
-				dep.test = true;
-				dep.write = false;
-				BlendOption bo;
-				bo.enable = true;
-				bo.src_color = BlendFactorSrcAlpha;
-				bo.dst_color = BlendFactorOneMinusSrcAlpha;
-				bo.src_alpha = BlendFactorOne;
-				bo.dst_alpha = BlendFactorZero;
-				auto pll = PipelineLayoutPrivate::get(device, L"plain/plain.pll");
-				auto rp = mesh_renderpass.get();
-				line_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
-				vi.primitive_topology = PrimitiveTopologyTriangleList;
-				triangle_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"plain/plain.vert"),
+			//		ShaderPrivate::get(device, L"plain/plain.frag")
+			//	};
+			//	VertexAttributeInfo vias[2];
+			//	vias[0].location = 0;
+			//	vias[0].format = Format_R32G32B32_SFLOAT;
+			//	vias[1].location = 1;
+			//	vias[1].format = Format_R8G8B8A8_UNORM;
+			//	VertexBufferInfo vib;
+			//	vib.attributes_count = size(vias);
+			//	vib.attributes = vias;
+			//	VertexInfo vi;
+			//	vi.primitive_topology = PrimitiveTopologyLineList;
+			//	vi.buffers_count = 1;
+			//	vi.buffers = &vib;
+			//	RasterInfo rst;
+			//	rst.cull_mode = CullModeNone;
+			//	DepthInfo dep;
+			//	dep.test = true;
+			//	dep.write = false;
+			//	BlendOption bo;
+			//	bo.enable = true;
+			//	bo.src_color = BlendFactorSrcAlpha;
+			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
+			//	bo.src_alpha = BlendFactorOne;
+			//	bo.dst_alpha = BlendFactorZero;
+			//	auto pll = PipelineLayoutPrivate::get(device, L"plain/plain.pll");
+			//	auto rp = mesh_renderpass.get();
+			//	line_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
+			//	vi.primitive_topology = PrimitiveTopologyTriangleList;
+			//	triangle_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
+			//}
 
-			auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
-			auto fullscreen_vert = ShaderPrivate::get(device, L"fullscreen.vert");
+			//auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
+			//auto fullscreen_vert = ShaderPrivate::get(device, L"fullscreen.vert");
 
-			for (auto i = 0; i < 10; i++)
-			{
-				{
-					ShaderPrivate* shaders[] = {
-						fullscreen_vert,
-						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " H")
-					};
-					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
-				}
+			//for (auto i = 0; i < 10; i++)
+			//{
+			//	{
+			//		ShaderPrivate* shaders[] = {
+			//			fullscreen_vert,
+			//			ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " H")
+			//		};
+			//		blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
+			//	}
 
-				{
-					ShaderPrivate* shaders[] = {
-						fullscreen_vert,
-						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " V")
-					};
-					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
-				}
-			}
+			//	{
+			//		ShaderPrivate* shaders[] = {
+			//			fullscreen_vert,
+			//			ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " V")
+			//		};
+			//		blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
+			//	}
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					ShaderPrivate::get(device, L"post/blur_depth.frag", "H")
-				};
-				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		ShaderPrivate::get(device, L"post/blur_depth.frag", "H")
+			//	};
+			//	blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					ShaderPrivate::get(device, L"post/blur_depth.frag", "V")
-				};
-				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		ShaderPrivate::get(device, L"post/blur_depth.frag", "V")
+			//	};
+			//	blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					ShaderPrivate::get(device, L"post/blit.frag")
-				};
-				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
-				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
-				BlendOption bo;
-				bo.enable = true;
-				bo.src_color = BlendFactorSrcAlpha;
-				bo.dst_color = BlendFactorOneMinusSrcAlpha;
-				bo.src_alpha = BlendFactorOne;
-				bo.dst_alpha = BlendFactorZero;
-				blend_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-				blend_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		ShaderPrivate::get(device, L"post/blit.frag")
+			//	};
+			//	blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
+			//	blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
+			//	BlendOption bo;
+			//	bo.enable = true;
+			//	bo.src_color = BlendFactorSrcAlpha;
+			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
+			//	bo.src_alpha = BlendFactorOne;
+			//	bo.dst_alpha = BlendFactorZero;
+			//	blend_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
+			//	blend_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					ShaderPrivate::get(device, L"post/filter_bright.frag")
-				};
-				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		ShaderPrivate::get(device, L"post/filter_bright.frag")
+			//	};
+			//	filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
+			//}
 
-			auto box_frag = ShaderPrivate::get(device, L"post/box.frag");
+			//auto box_frag = ShaderPrivate::get(device, L"post/box.frag");
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					box_frag
-				};
-				downsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		box_frag
+			//	};
+			//	downsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					box_frag
-				};
-				BlendOption bo;
-				bo.enable = true;
-				bo.src_color = BlendFactorOne;
-				bo.dst_color = BlendFactorOne;
-				bo.src_alpha = BlendFactorOne;
-				bo.dst_alpha = BlendFactorOne;
-				upsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		box_frag
+			//	};
+			//	BlendOption bo;
+			//	bo.enable = true;
+			//	bo.src_color = BlendFactorOne;
+			//	bo.dst_color = BlendFactorOne;
+			//	bo.src_alpha = BlendFactorOne;
+			//	bo.dst_alpha = BlendFactorOne;
+			//	upsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
+			//}
 
-			{
-				ShaderPrivate* shaders[] = {
-					fullscreen_vert,
-					ShaderPrivate::get(device, L"post/gamma.frag")
-				};
-				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
-			}
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		fullscreen_vert,
+			//		ShaderPrivate::get(device, L"post/gamma.frag")
+			//	};
+			//	gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
+			//}
 		}
 
 		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
@@ -296,130 +296,130 @@ namespace flame
 
 			PipelinePrivate* ret = nullptr;
 
-			std::vector<std::pair<std::string, std::string>> substitutes;
-			PolygonMode polygon_mode = PolygonModeFill;
-			CullMode cull_mode = CullModeBack;
-			auto depth_test = true;
-			auto depth_write = true;
-			auto use_mat = true;
-			auto find_define = [&](const std::string& s) {
-				for (auto& d : defines)
-				{
-					if (d == s)
-						return true;
-				}
-				return false;
-			};
-			if (find_define("WIREFRAME"))
-			{
-				use_mat = false;
-				polygon_mode = PolygonModeLine;
-				depth_test = false;
-				depth_write = false;
-			}
-			else if (find_define("PICKUP"))
-				use_mat = false;
-			else if (find_define("OUTLINE"))
-			{
-				use_mat = false;
-				depth_test = false;
-				depth_write = false;
-			}
-			if (find_define("DOUBLE_SIDE"))
-				cull_mode == CullModeNone;
-			if (use_mat)
-			{
-				defines.push_back("MAT");
-				substitutes.emplace_back("MAT_FILE", mat.string());
-			}
-			switch (usage)
-			{
-			case MaterialForMeshShadow:
-				defines.push_back("SHADOW_PASS");
-			case MaterialForMesh:
-			{
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
-					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
-				};
-				VertexAttributeInfo vias[3];
-				vias[0].location = 0;
-				vias[0].format = Format_R32G32B32_SFLOAT;
-				vias[1].location = 1;
-				vias[1].format = Format_R32G32_SFLOAT;
-				vias[2].location = 2;
-				vias[2].format = Format_R32G32B32_SFLOAT;
-				VertexBufferInfo vib;
-				vib.attributes_count = size(vias);
-				vib.attributes = vias;
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = &vib;
-				RasterInfo rst;
-				rst.polygon_mode = polygon_mode;
-				DepthInfo dep;
-				dep.test = depth_test;
-				dep.write = depth_write;
-				ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-			}
-				break;
-			case MaterialForMeshShadowArmature:
-				defines.push_back("SHADOW_PASS");
-			case MaterialForMeshArmature:
-			{
-				defines.push_back("ARMATURE");
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
-					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
-				};
-				VertexAttributeInfo vias1[3];
-				vias1[0].location = 0;
-				vias1[0].format = Format_R32G32B32_SFLOAT;
-				vias1[1].location = 1;
-				vias1[1].format = Format_R32G32_SFLOAT;
-				vias1[2].location = 2;
-				vias1[2].format = Format_R32G32B32_SFLOAT;
-				VertexAttributeInfo vias2[2];
-				vias2[0].location = 5;
-				vias2[0].format = Format_R32G32B32A32_INT;
-				vias2[1].location = 6;
-				vias2[1].format = Format_R32G32B32A32_SFLOAT;
-				VertexBufferInfo vibs[2];
-				vibs[0].attributes_count = size(vias1);
-				vibs[0].attributes = vias1;
-				vibs[1].attributes_count = size(vias2);
-				vibs[1].attributes = vias2;
-				VertexInfo vi;
-				vi.buffers_count = 2;
-				vi.buffers = vibs;
-				RasterInfo rst;
-				rst.polygon_mode = polygon_mode;
-				DepthInfo dep;
-				dep.test = depth_test;
-				dep.write = depth_write;
-				ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-			}
-				break;
-			case MaterialForTerrain:
-			{
-				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"terrain/terrain.vert", defines, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.tesc", defines, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.tese", defines, {}),
-					ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes)
-				};
-				VertexInfo vi;
-				vi.primitive_topology = PrimitiveTopologyPatchList;
-				vi.patch_control_points = 4;
-				RasterInfo rst;
-				rst.polygon_mode = polygon_mode;
-				DepthInfo dep;
-				dep.test = depth_test;
-				dep.write = depth_write;
-				ret = PipelinePrivate::create(device, shaders, terrain_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-			}
-				break;
-			}
+			//std::vector<std::pair<std::string, std::string>> substitutes;
+			//PolygonMode polygon_mode = PolygonModeFill;
+			//CullMode cull_mode = CullModeBack;
+			//auto depth_test = true;
+			//auto depth_write = true;
+			//auto use_mat = true;
+			//auto find_define = [&](const std::string& s) {
+			//	for (auto& d : defines)
+			//	{
+			//		if (d == s)
+			//			return true;
+			//	}
+			//	return false;
+			//};
+			//if (find_define("WIREFRAME"))
+			//{
+			//	use_mat = false;
+			//	polygon_mode = PolygonModeLine;
+			//	depth_test = false;
+			//	depth_write = false;
+			//}
+			//else if (find_define("PICKUP"))
+			//	use_mat = false;
+			//else if (find_define("OUTLINE"))
+			//{
+			//	use_mat = false;
+			//	depth_test = false;
+			//	depth_write = false;
+			//}
+			//if (find_define("DOUBLE_SIDE"))
+			//	cull_mode == CullModeNone;
+			//if (use_mat)
+			//{
+			//	defines.push_back("MAT");
+			//	substitutes.emplace_back("MAT_FILE", mat.string());
+			//}
+			//switch (usage)
+			//{
+			//case MaterialForMeshShadow:
+			//	defines.push_back("SHADOW_PASS");
+			//case MaterialForMesh:
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
+			//		ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
+			//	};
+			//	VertexAttributeInfo vias[3];
+			//	vias[0].location = 0;
+			//	vias[0].format = Format_R32G32B32_SFLOAT;
+			//	vias[1].location = 1;
+			//	vias[1].format = Format_R32G32_SFLOAT;
+			//	vias[2].location = 2;
+			//	vias[2].format = Format_R32G32B32_SFLOAT;
+			//	VertexBufferInfo vib;
+			//	vib.attributes_count = size(vias);
+			//	vib.attributes = vias;
+			//	VertexInfo vi;
+			//	vi.buffers_count = 1;
+			//	vi.buffers = &vib;
+			//	RasterInfo rst;
+			//	rst.polygon_mode = polygon_mode;
+			//	DepthInfo dep;
+			//	dep.test = depth_test;
+			//	dep.write = depth_write;
+			//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			//}
+			//	break;
+			//case MaterialForMeshShadowArmature:
+			//	defines.push_back("SHADOW_PASS");
+			//case MaterialForMeshArmature:
+			//{
+			//	defines.push_back("ARMATURE");
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
+			//		ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
+			//	};
+			//	VertexAttributeInfo vias1[3];
+			//	vias1[0].location = 0;
+			//	vias1[0].format = Format_R32G32B32_SFLOAT;
+			//	vias1[1].location = 1;
+			//	vias1[1].format = Format_R32G32_SFLOAT;
+			//	vias1[2].location = 2;
+			//	vias1[2].format = Format_R32G32B32_SFLOAT;
+			//	VertexAttributeInfo vias2[2];
+			//	vias2[0].location = 5;
+			//	vias2[0].format = Format_R32G32B32A32_INT;
+			//	vias2[1].location = 6;
+			//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
+			//	VertexBufferInfo vibs[2];
+			//	vibs[0].attributes_count = size(vias1);
+			//	vibs[0].attributes = vias1;
+			//	vibs[1].attributes_count = size(vias2);
+			//	vibs[1].attributes = vias2;
+			//	VertexInfo vi;
+			//	vi.buffers_count = 2;
+			//	vi.buffers = vibs;
+			//	RasterInfo rst;
+			//	rst.polygon_mode = polygon_mode;
+			//	DepthInfo dep;
+			//	dep.test = depth_test;
+			//	dep.write = depth_write;
+			//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			//}
+			//	break;
+			//case MaterialForTerrain:
+			//{
+			//	ShaderPrivate* shaders[] = {
+			//		ShaderPrivate::get(device, L"terrain/terrain.vert", defines, {}),
+			//		ShaderPrivate::get(device, L"terrain/terrain.tesc", defines, {}),
+			//		ShaderPrivate::get(device, L"terrain/terrain.tese", defines, {}),
+			//		ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes)
+			//	};
+			//	VertexInfo vi;
+			//	vi.primitive_topology = PrimitiveTopologyPatchList;
+			//	vi.patch_control_points = 4;
+			//	RasterInfo rst;
+			//	rst.polygon_mode = polygon_mode;
+			//	DepthInfo dep;
+			//	dep.test = depth_test;
+			//	dep.write = depth_write;
+			//	ret = PipelinePrivate::create(device, shaders, terrain_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			//}
+			//	break;
+			//}
 
 			MaterialPipeline mp;
 			mp.mat = mat;

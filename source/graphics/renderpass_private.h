@@ -15,6 +15,8 @@ namespace flame
 		{
 			DevicePrivate* device;
 
+			std::filesystem::path filename;
+
 			std::vector<RenderpassAttachmentInfo> attachments;
 			std::vector<RenderpassSubpassInfo> subpasses;
 

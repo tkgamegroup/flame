@@ -178,7 +178,7 @@ namespace flame
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
-		FlmPtr<graphics::Pipeline>		pl_element;
+		graphics::Pipeline*				pl_element;
 		// =========================
 
 		// ==== node drawing ====

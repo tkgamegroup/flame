@@ -80,13 +80,6 @@ namespace flame
 			ShaderType* info = nullptr;
 		};
 
-		struct ShaderInOutInfo
-		{
-			uint location;
-			std::string name;
-			std::string type;
-		};
-
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
 			DevicePrivate* device;
@@ -165,6 +158,38 @@ namespace flame
 			((DescriptorSetPrivate*)this)->set_image(binding, index, (ImageViewPrivate*)v, (SamplerPrivate*)sampler);
 		}
 
+		struct ShaderPrivate : Shader
+		{
+			struct InOutInfo
+			{
+				uint location;
+				std::string name;
+				std::string type;
+			};
+
+			std::filesystem::path filename;
+			std::vector<std::string> defines;
+			std::vector<std::pair<std::string, std::string>> substitutes;
+			ShaderStageFlags type = ShaderStageNone;
+
+			DevicePrivate* device;
+
+			//std::vector<InOutInfo> inputs;
+			//std::vector<InOutInfo> outputs;
+
+			VkShaderModule vk_module = 0;
+
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content);
+			~ShaderPrivate();
+
+			void release() override { delete this; }
+
+			const wchar_t* get_filename() const override { return filename.c_str(); }
+
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
+		};
+
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
 			DevicePrivate* device;
@@ -190,34 +215,11 @@ namespace flame
 			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
-		struct ShaderPrivate : Shader
-		{
-			std::filesystem::path filename;
-			std::vector<std::string> defines;
-			std::vector<std::pair<std::string, std::string>> substitutes;
-			ShaderStageFlags type = ShaderStageNone;
-
-			DevicePrivate* device;
-
-			//std::vector<ShaderInOutInfo> inputs;
-			//std::vector<ShaderInOutInfo> outputs;
-
-			VkShaderModule vk_module = 0;
-
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content);
-			~ShaderPrivate();
-
-			void release() override { delete this; }
-
-			const wchar_t* get_filename() const override { return filename.c_str(); }
-
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
-		};
-
 		struct PipelinePrivate : Pipeline
 		{
 			PipelineType type;
+
+			std::filesystem::path filename;
 
 			DevicePrivate* device;
 			PipelineLayoutPrivate* pipeline_layout;
@@ -225,16 +227,13 @@ namespace flame
 
 			VkPipeline vk_pipeline;
 
-			PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
-				RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr, 
-				std::span<const BlendOption> blend_options = {}, std::span<const uint> dynamic_states = {});
+			PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info);
 			PipelinePrivate(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 			~PipelinePrivate();
 
-			static PipelinePrivate* create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
-				Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr, 
-				std::span<const BlendOption> blend_options = {}, std::span<const uint> dynamic_states = {});
+			static PipelinePrivate* create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info);
 			static PipelinePrivate* create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			static PipelinePrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 
 			void release() override { delete this; }
 

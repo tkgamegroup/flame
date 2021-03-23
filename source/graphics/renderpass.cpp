@@ -152,6 +152,12 @@ namespace flame
 			}
 			filename.make_preferred();
 
+			for (auto& rp : device->rps)
+			{
+				if (rp->filename == filename)
+					return rp.get();
+			}
+
 			pugi::xml_document doc;
 			pugi::xml_node doc_root;
 
@@ -235,7 +241,10 @@ namespace flame
 					depens.push_back(uvec2(t, i));
 			}
 
-			return new RenderpassPrivate((DevicePrivate*)device, atts, sps, depens);
+			auto rp = new RenderpassPrivate(device, atts, sps, depens);
+			rp->filename = filename;
+			device->rps.emplace_back(rp);
+			return rp;
 		}
 
 		Renderpass* Renderpass::get(Device* device, const wchar_t* filename)

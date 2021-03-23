@@ -10,10 +10,12 @@ namespace flame
 	namespace graphics
 	{
 		struct SamplerPrivate;
+		struct RenderpassPrivate;
 		struct DescriptorPoolPrivate;
 		struct DescriptorSetLayoutPrivate;
 		struct PipelineLayoutPrivate;
 		struct ShaderPrivate;
+		struct PipelinePrivate;
 		struct CommandPoolPrivate;
 		struct QueuePrivate;
 		struct DevicePrivate;
@@ -31,9 +33,11 @@ namespace flame
 
 			std::vector<std::unique_ptr<SamplerPrivate>> sps;
 			std::unique_ptr<DescriptorPoolPrivate> dsp;
+			std::vector<std::unique_ptr<RenderpassPrivate>> rps;
 			std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> dsls;
 			std::vector<std::unique_ptr<PipelineLayoutPrivate>> plls;
 			std::vector<std::unique_ptr<ShaderPrivate>> sds;
+			std::vector<std::unique_ptr<PipelinePrivate>> pls;
 			std::unique_ptr<CommandPoolPrivate> gcp;
 			std::unique_ptr<CommandPoolPrivate> tcp;
 			std::unique_ptr<QueuePrivate> gq;
@@ -46,7 +50,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			bool has_feature(Feature f) const override;
+			bool has_feature(Feature feature) const override;
 		};
 	}
 }

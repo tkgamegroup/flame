@@ -60,64 +60,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static PipelineLayout* get(Device* device, const wchar_t* filename);
 		};
 
-		struct VertexAttributeInfo
-		{
-			uint location;
-			int offset = -1;
-			Format format;
-		};
-
-		struct VertexBufferInfo
-		{
-			uint attributes_count = 0;
-			const VertexAttributeInfo* attributes = nullptr;
-			VertexInputRate rate = VertexInputRateVertex;
-			uint stride = 0;
-		};
-		 
-		struct VertexInfo
-		{
-			uint buffers_count = 0;
-			const VertexBufferInfo* buffers = nullptr;
-			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
-			uint patch_control_points = 0;
-		};
-
-		struct RasterInfo
-		{
-			bool depth_clamp = false;
-			PolygonMode polygon_mode = PolygonModeFill;
-			CullMode cull_mode = CullModeBack;
-		};
-
-		struct DepthInfo
-		{
-			bool test = true;
-			bool write = true;
-			CompareOp compare_op = CompareOpLess;
-		};
-
-
-		/*
-			if (Enable)
-			{
-				finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
-				finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
-			}
-			else
-				finalColor = newColor;
-
-			finalColor = finalColor & colorWriteMask;
-		*/
-		struct BlendOption
-		{
-			bool enable = false;
-			BlendFactor src_color = BlendFactorZero;
-			BlendFactor dst_color = BlendFactorZero;
-			BlendFactor src_alpha = BlendFactorZero;
-			BlendFactor dst_alpha = BlendFactorZero;
-		};
-
 		struct Shader
 		{
 			virtual void release() = 0;
@@ -154,15 +96,68 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Shader* get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
 		};
 
+		struct VertexAttributeInfo
+		{
+			uint location;
+			int offset = -1;
+			Format format;
+		};
+
+		struct VertexBufferInfo
+		{
+			uint attributes_count = 0;
+			const VertexAttributeInfo* attributes = nullptr;
+			VertexInputRate rate = VertexInputRateVertex;
+			uint stride = 0;
+		};
+		
+		/*
+			if (Enable)
+			{
+				finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+				finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
+			}
+			else
+				finalColor = newColor;
+
+			finalColor = finalColor & colorWriteMask;
+		*/
+		struct BlendOption
+		{
+			bool enable = false;
+			BlendFactor src_color = BlendFactorZero;
+			BlendFactor dst_color = BlendFactorZero;
+			BlendFactor src_alpha = BlendFactorZero;
+			BlendFactor dst_alpha = BlendFactorZero;
+		};
+
+		struct GraphicsPipelineInfo
+		{
+			Renderpass* renderpass;
+			uint subpass_index = 0;
+			uint vertex_buffers_count = 0;
+			const VertexBufferInfo* vertex_buffers = nullptr;
+			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
+			uint patch_control_points = 0;
+			bool depth_clamp = false;
+			PolygonMode polygon_mode = PolygonModeFill;
+			CullMode cull_mode = CullModeBack;
+			bool depth_test = true;
+			bool depth_write = true;
+			CompareOp compare_op = CompareOpLess;
+			uint blend_options_count = 0;
+			const BlendOption* blend_options = nullptr;
+			uint dynamic_states_count = 0;
+			const uint* dynamic_states;
+		};
+
 		struct Pipeline
 		{
 			virtual void release() = 0;
 
 			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, 
-				Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr,
-				uint blend_options_count = 0, const BlendOption* blend_options = nullptr, uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, const GraphicsPipelineInfo& info);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, Shader* compute_shader, PipelineLayout* pll);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
 		};

@@ -720,7 +720,7 @@ namespace flame
 		cb->set_viewport(Rect(vec2(0.f), tar_size));
 		auto cv = vec4(1.f, 1.f, 1.f, 1.f);
 		cb->begin_renderpass(nullptr, fb_targets[tar_idx].get(), &cv);
-		cb->bind_pipeline(pl_element.get());
+		cb->bind_pipeline(pl_element);
 		cb->bind_vertex_buffer(buf_element_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_element_idx.buf.get(), graphics::IndiceTypeUint);
 		cb->bind_descriptor_set(S<"element"_h>, ds_element.get());
@@ -919,34 +919,7 @@ namespace flame
 
 		set_targets(); 
 
-		{
-			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"element/element.vert", "", ""),
-				graphics::Shader::get(device, L"element/element.frag", "", "")
-			};
-			graphics::VertexAttributeInfo vias[3];
-			vias[0].location = 0;
-			vias[0].format = graphics::Format_R32G32_SFLOAT;
-			vias[1].location = 1;
-			vias[1].format = graphics::Format_R32G32_SFLOAT;
-			vias[2].location = 2;
-			vias[2].format = graphics::Format_R8G8B8A8_UNORM;
-			graphics::VertexBufferInfo vib;
-			vib.attributes_count = size(vias);
-			vib.attributes = vias;
-			graphics::VertexInfo vi;
-			vi.buffers_count = 1;
-			vi.buffers = &vib;
-			graphics::BlendOption bo;
-			bo.enable = true;
-			bo.src_color = graphics::BlendFactorSrcAlpha;
-			bo.dst_color = graphics::BlendFactorOneMinusSrcAlpha;
-			bo.src_alpha = graphics::BlendFactorOne;
-			bo.dst_alpha = graphics::BlendFactorZero;
-			pl_element.reset(graphics::Pipeline::create(device, size(shaders), shaders, 
-				graphics::PipelineLayout::get(device, L"element/element.pll"), 
-				graphics::Renderpass::get(device, L"rgba8c.rp"), 0, &vi, nullptr, nullptr, 1, &bo));
-		}
+		pl_element = graphics::Pipeline::get(device, L"element/element.pl");
 
 		auto dsp = graphics::DescriptorPool::get_default(device);
 

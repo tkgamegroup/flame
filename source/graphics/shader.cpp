@@ -1075,9 +1075,7 @@ namespace flame
 			return ShaderPrivate::get((DevicePrivate*)device, filename, defines, substitutes);
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,
-			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth, 
-			std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info) :
 			device(device),
 			pipeline_layout(pll)
 		{
@@ -1088,6 +1086,8 @@ namespace flame
 			std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
+
+			auto renderpass = (RenderpassPrivate*)info.renderpass;
 
 			shaders.resize(_shaders.size());
 			vk_stage_infos.resize(_shaders.size());
@@ -1106,12 +1106,12 @@ namespace flame
 				dst.module = src->vk_module;
 			}
 
-			if (vi)
+			if (info.vertex_buffers_count)
 			{
-				vk_vi_bindings.resize(vi->buffers_count);
+				vk_vi_bindings.resize(info.vertex_buffers_count);
 				for (auto i = 0; i < vk_vi_bindings.size(); i++)
 				{
-					auto& src_buf = vi->buffers[i];
+					auto& src_buf = info.vertex_buffers[i];
 					auto& dst_buf = vk_vi_bindings[i];
 					dst_buf.binding = i;
 					auto offset = 0;
@@ -1146,14 +1146,14 @@ namespace flame
 			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 			assembly_state.flags = 0;
 			assembly_state.pNext = nullptr;
-			assembly_state.topology = to_backend(vi ? vi->primitive_topology : PrimitiveTopologyTriangleList);
+			assembly_state.topology = to_backend(info.primitive_topology);
 			assembly_state.primitiveRestartEnable = VK_FALSE;
 
 			VkPipelineTessellationStateCreateInfo tess_state;
 			tess_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 			tess_state.pNext = nullptr;
 			tess_state.flags = 0;
-			tess_state.patchControlPoints = vi ? vi->patch_control_points : 0;
+			tess_state.patchControlPoints = info.patch_control_points;
 
 			VkViewport viewport;
 			viewport.width = 1.f;
@@ -1182,10 +1182,10 @@ namespace flame
 			raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 			raster_state.pNext = nullptr;
 			raster_state.flags = 0;
-			raster_state.depthClampEnable = raster ? raster->depth_clamp : false;
+			raster_state.depthClampEnable = info.depth_clamp;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = to_backend(raster ? raster->polygon_mode : PolygonModeFill);
-			raster_state.cullMode = to_backend(raster ? raster->cull_mode : CullModeNone);
+			raster_state.polygonMode = to_backend(info.polygon_mode);
+			raster_state.cullMode = to_backend(info.cull_mode);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -1198,8 +1198,8 @@ namespace flame
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
 			{
-				auto& res_atts = rp->subpasses[subpass_idx].resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(res_atts ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
+				auto& res_atts = renderpass->subpasses[info.subpass_index].resolve_attachments;
+				multisample_state.rasterizationSamples = to_backend(res_atts ? renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
@@ -1211,9 +1211,9 @@ namespace flame
 			depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 			depth_stencil_state.flags = 0;
 			depth_stencil_state.pNext = nullptr;
-			depth_stencil_state.depthTestEnable = depth ? depth->test : false;
-			depth_stencil_state.depthWriteEnable = depth ? depth->write : false;
-			depth_stencil_state.depthCompareOp = to_backend(depth ? depth->compare_op : CompareOpLess);
+			depth_stencil_state.depthTestEnable = info.depth_test;
+			depth_stencil_state.depthWriteEnable = info.depth_write;
+			depth_stencil_state.depthCompareOp = to_backend(info.compare_op);
 			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 			depth_stencil_state.minDepthBounds = 0;
 			depth_stencil_state.maxDepthBounds = 0;
@@ -1221,15 +1221,15 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(rp->subpasses[subpass_idx].color_attachments_count);
+			vk_blend_attachment_states.resize(renderpass->subpasses[info.subpass_index].color_attachments_count);
 			for (auto& a : vk_blend_attachment_states)
 			{
 				a = {};
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			for (auto i = 0; i < blend_options.size(); i++)
+			for (auto i = 0; i < info.blend_options_count; i++)
 			{
-				auto& src = blend_options[i];
+				auto& src = info.blend_options[i];
 				auto& dst = vk_blend_attachment_states[i];
 				dst.blendEnable = src.enable;
 				dst.srcColorBlendFactor = to_backend(src.src_color);
@@ -1254,8 +1254,8 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto i = 0; i < dynamic_states.size(); i++)
-				vk_dynamic_states.push_back(to_backend((DynamicState)dynamic_states[i]));
+			for (auto i = 0; i < info.dynamic_states_count; i++)
+				vk_dynamic_states.push_back(to_backend((DynamicState)info.dynamic_states[i]));
 			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
@@ -1284,8 +1284,8 @@ namespace flame
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
 			pipeline_info.layout = pll->vk_pipeline_layout;
-			pipeline_info.renderPass = rp ? rp->vk_renderpass : nullptr;
-			pipeline_info.subpass = subpass_idx;
+			pipeline_info.renderPass = renderpass->vk_renderpass;
+			pipeline_info.subpass = info.subpass_index;
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
@@ -1326,9 +1326,7 @@ namespace flame
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
-			Renderpass* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth, 
-			std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info)
 		{
 			auto has_vert_stage = false;
 			auto tess_stage_count = 0;
@@ -1349,7 +1347,7 @@ namespace flame
 			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
 				return nullptr;
 
-			return new PipelinePrivate(device, shaders, pll, (RenderpassPrivate*)rp, subpass_idx, vi, raster, depth, blend_options, dynamic_states);
+			return new PipelinePrivate(device, shaders, pll, info);
 		}
 
 		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
@@ -1360,19 +1358,114 @@ namespace flame
 			return new PipelinePrivate(device, compute_shader, pll);
 		}
 
-		Pipeline* Pipeline::create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll,
-			Renderpass* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth,
-			uint blend_options_count, const BlendOption* blend_options,
-			uint dynamic_states_count, const uint* dynamic_states)
+		PipelinePrivate* PipelinePrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
-			return PipelinePrivate::create((DevicePrivate*)device, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, 
-				rp, subpass_idx, vi, raster, depth, 
-				{ blend_options , blend_options_count }, { dynamic_states , dynamic_states_count });
+			auto filename = _filename;
+			if (!get_engine_path(filename, L"assets\\shaders"))
+			{
+				wprintf(L"cannot find pl: %s\n", _filename.c_str());
+				return nullptr;
+			}
+			filename.make_preferred();
+
+			for (auto& pl : device->pls)
+			{
+				if (pl->filename == filename)
+					return pl.get();
+			}
+
+			pugi::xml_document doc;
+			pugi::xml_node doc_root;
+
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("pipeline"))
+			{
+				printf("pipeline wrong format: %s\n", _filename.string().c_str());
+				return nullptr;
+			}
+
+			std::vector<ShaderPrivate*> shaders;
+			for (auto n_shdr : doc_root.child("shaders"))
+			{
+				shaders.push_back(ShaderPrivate::get(device, 
+					n_shdr.attribute("filename").value()));
+			}
+
+			auto pll = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
+
+			GraphicsPipelineInfo info;
+
+			auto n_rp = doc_root.child("renderpass");
+			info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
+			info.subpass_index = n_rp.attribute("index").as_uint();
+
+			std::vector<std::vector<VertexAttributeInfo>> v_vertex_attributes;
+			std::vector<VertexBufferInfo> vertex_buffers;
+			for (auto n_buf : doc_root.child("vertex_buffers"))
+			{
+				std::vector<VertexAttributeInfo> atts;
+				for (auto n_att : n_buf)
+				{
+					VertexAttributeInfo att;
+					att.location = n_att.attribute("location").as_uint();
+					if (auto a = n_att.attribute("format"); a)
+						ti_es("flame::graphics::Format")->unserialize(&att.format, a.value());
+					atts.push_back(att);
+				}
+				v_vertex_attributes.push_back(atts);
+
+				VertexBufferInfo vb;
+				vertex_buffers.push_back(vb);
+			}
+			for (auto i = 0; i < vertex_buffers.size(); i++)
+			{
+				auto& vb = vertex_buffers[i];
+				auto& atts = v_vertex_attributes[i];
+				vb.attributes_count = atts.size();
+				vb.attributes = atts.data();
+			}
+
+			info.vertex_buffers_count = vertex_buffers.size();
+			info.vertex_buffers = vertex_buffers.data();
+
+			std::vector<BlendOption> blend_options;
+			for (auto n_bo : doc_root.child("blend_options"))
+			{
+				BlendOption bo;
+				bo.enable = n_bo.attribute("enable").as_bool();
+				if (auto a = n_bo.attribute("src_color"); a)
+					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.src_color, a.value());
+				if (auto a = n_bo.attribute("dst_color"); a)
+					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.dst_color, a.value());
+				if (auto a = n_bo.attribute("src_alpha"); a)
+					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.src_alpha, a.value());
+				if (auto a = n_bo.attribute("dst_alpha"); a)
+					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.dst_alpha, a.value());
+				blend_options.push_back(bo);
+			}
+
+			info.blend_options_count = blend_options.size();
+			info.blend_options = blend_options.data();
+
+			auto pl = PipelinePrivate::create(device, shaders, pll, info);
+			pl->filename = filename;
+			device->pls.emplace_back(pl);
+			return pl;
+			return nullptr;
+		}
+
+		Pipeline* Pipeline::create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, const GraphicsPipelineInfo& info)
+		{
+			return PipelinePrivate::create((DevicePrivate*)device, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, info);
 		}
 
 		Pipeline* Pipeline::create(Device* device, Shader* compute_shader, PipelineLayout* pll)
 		{
 			return PipelinePrivate::create((DevicePrivate*)device, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
+		}
+
+		Pipeline* Pipeline::get(Device* device, const wchar_t* filename)
+		{
+			return PipelinePrivate::get((DevicePrivate*)device, filename);
 		}
 	}
 }
