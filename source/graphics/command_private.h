@@ -77,7 +77,6 @@ namespace flame
 			void bind_vertex_buffer(BufferPrivate* buf, uint id);
 			void bind_index_buffer(BufferPrivate* buf, IndiceType t);
 			void push_constant(uint offset, uint size, const void* data) override;
-			void push_constant_h(uint64 h, uint size, const void* data);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void draw_indirect(BufferPrivate* buf, uint offset, uint count);

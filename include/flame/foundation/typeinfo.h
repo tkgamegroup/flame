@@ -30,6 +30,7 @@ namespace flame
 	struct EnumInfo;
 	struct UdtInfo;
 	struct Library;
+	struct TypeInfoDataBase;
 
 	struct TypeInfo
 	{
@@ -60,7 +61,7 @@ namespace flame
 		}
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name, TypeInfoDataBase* db = nullptr);
 	};
 
 	inline TypeInfo* ti_es(const char* name)
@@ -82,8 +83,10 @@ namespace flame
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_offset() const = 0;
+		virtual uint get_array_size() const = 0;
+		virtual uint get_array_stride() const = 0;
+		virtual const char* get_default_value() const = 0;
 		virtual ReflectMeta* get_meta() const = 0;
-		virtual const void* get_default_value() const = 0;
 	};
 
 	struct EnumItem
@@ -102,6 +105,8 @@ namespace flame
 		virtual EnumItem* get_item(uint idx) const = 0;
 		virtual EnumItem* find_item(const char* name) const = 0;
 		virtual EnumItem* find_item(int value) const = 0;
+		virtual EnumItem* add_item(const char* name, int value, int idx = -1) = 0;
+		virtual void remove_item(EnumItem* item) = 0;
 	};
 
 	struct FunctionInfo
@@ -112,11 +117,16 @@ namespace flame
 		virtual const char* get_name() const = 0;
 		virtual uint get_rva() const = 0;
 		virtual uint get_voff() const = 0;
-		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
 		virtual TypeInfo* get_type() const = 0;
+
 		virtual uint get_parameters_count() const = 0;
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
+		virtual void add_parameter(TypeInfo* ti, int idx = -1) = 0;
+		virtual void remove_parameter(uint idx) = 0;
+
 		virtual const char* get_code() const = 0;
+
+		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
 
 		virtual bool check(TypeInfo* ret, uint parms_count = 0, TypeInfo* const* parms = nullptr) const = 0;
 
@@ -133,9 +143,14 @@ namespace flame
 		virtual uint get_variables_count() const = 0;
 		virtual VariableInfo* get_variable(uint idx) const = 0;
 		virtual VariableInfo* find_variable(const char* name) const = 0;
+		virtual VariableInfo* add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx = -1) = 0;
+		virtual void remove_variable(VariableInfo* vi) = 0;
+
 		virtual uint get_functions_count() const = 0;
 		virtual FunctionInfo* get_function(uint idx) const = 0;
 		virtual FunctionInfo* find_function(const char* name) const = 0;
+		virtual FunctionInfo* add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx = -1) = 0;
+		virtual void remove_function(FunctionInfo* fi) = 0;
 
 		inline void serialize(const void* src, nlohmann::json& dst) const
 		{
@@ -164,6 +179,22 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoDataBase
+	{
+		virtual void release() = 0;
+
+		FLAME_FOUNDATION_EXPORTS static TypeInfoDataBase* create();
+	};
+
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
+
 	struct Library
 	{
 		virtual void release() = 0;
@@ -174,15 +205,4 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename, bool require_typeinfo = true);
 	};
-
-	struct TypeInfoDataBase
-	{
-
-	};
-
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name);
-	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name, uint items_count, char** item_names, int* item_values);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
-	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture);
 }

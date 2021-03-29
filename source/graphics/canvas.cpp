@@ -455,15 +455,15 @@ namespace flame
 			mesh(mesh)
 		{
 			auto dsl = DescriptorSetLayoutPrivate::get(preferences->device, L"armature.dsl");
-			poses_buffer.create(preferences->device, BufferUsageStorage, find_type(dsl->types, "mat4"), mesh->bones.size());
+			//poses_buffer.create(preferences->device, BufferUsageStorage, find_type(dsl->types, "mat4"), mesh->bones.size());
 			descriptorset.reset(new DescriptorSetPrivate(preferences->device->dsp.get(), dsl));
-			descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
+			//descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
 		}
 
 		void ArmatureDeformerPrivate::set_pose(uint id, const mat4& pose)
 		{
-			auto dst = (mat4*)poses_buffer.mark_item(id);
-			*dst = pose * mesh->bones[id]->offset_matrix;
+			//auto dst = (mat4*)poses_buffer.mark_item(id);
+			//*dst = pose * mesh->bones[id]->offset_matrix;
 		}
 
 		ArmatureDeformer* ArmatureDeformer::create(RenderPreferences* preferences, Mesh* mesh)
@@ -528,12 +528,12 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"render_data.dsl");
 				render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				render_data_buffer.create(device, BufferUsageUniform, find_type(dsl->types, "RenderData"));
-				render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
-				render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
-				render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
-				render_data_buffer.set(S<"sky_rad_levels"_h>, 0.f);
-				render_data_descriptorset->set_buffer(dsl->find_binding("RenderData"), 0, render_data_buffer.buf.get());
+				//render_data_buffer.create(device, BufferUsageUniform, find_type(dsl->types, "RenderData"));
+				//render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
+				//render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
+				//render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
+				//render_data_buffer.set(S<"sky_rad_levels"_h>, 0.f);
+				//render_data_descriptorset->set_buffer(dsl->find_binding("RenderData"), 0, render_data_buffer.buf.get());
 			}
 
 			{
@@ -564,15 +564,15 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"mesh.dsl");
 				mesh_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				mesh_matrix_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MeshMatrix"), 10000);
-				mesh_descriptorset->set_buffer(dsl->find_binding("MeshMatrices"), 0, mesh_matrix_buffer.buf.get());
+				//mesh_matrix_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MeshMatrix"), 10000);
+				//mesh_descriptorset->set_buffer(dsl->find_binding("MeshMatrices"), 0, mesh_matrix_buffer.buf.get());
 			}
 
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"material.dsl");
 				material_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
-				material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
+				//material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
+				//material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
 				for (auto i = 0; i < texture_resources.size(); i++)
 					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
@@ -595,14 +595,14 @@ namespace flame
 					shadow_depth_back_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
 
-				light_sets_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightSet"), 1);
-				light_descriptorset->set_buffer(dsl->find_binding("LightSets"), 0, light_sets_buffer.buf.get());
+				//light_sets_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightSet"), 1);
+				//light_descriptorset->set_buffer(dsl->find_binding("LightSets"), 0, light_sets_buffer.buf.get());
 
-				light_infos_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightInfo"), 10000);
-				light_descriptorset->set_buffer(dsl->find_binding("LightInfos"), 0, light_infos_buffer.buf.get());
+				//light_infos_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightInfo"), 10000);
+				//light_descriptorset->set_buffer(dsl->find_binding("LightInfos"), 0, light_infos_buffer.buf.get());
 
-				shadow_matrices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "mat4"), 40);
-				light_descriptorset->set_buffer(dsl->find_binding("ShadowMatrices"), 0, shadow_matrices_buffer.buf.get());
+				//shadow_matrices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "mat4"), 40);
+				//light_descriptorset->set_buffer(dsl->find_binding("ShadowMatrices"), 0, shadow_matrices_buffer.buf.get());
 
 				auto sp1 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
 				auto sp2 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToBorder);
@@ -659,8 +659,8 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"terrain/terrain.dsl");
 				terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				terrain_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "TerrainInfo"), 1);
-				terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
+				//terrain_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "TerrainInfo"), 1);
+				//terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
 			}
 
 			line_buffer.create(device, BufferUsageVertex, 200000);
@@ -676,9 +676,9 @@ namespace flame
 			csm_levels = _csm_levels;
 			csm_factor = _csm_factor;
 
-			render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
-			render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
-			render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
+			//render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
+			//render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
+			//render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
 		}
 
 		void CanvasPrivate::set_clear_color(const cvec4& color)
@@ -948,12 +948,12 @@ namespace flame
 					mr->material = mat;
 					material_resources[slot].reset(mr);
 
-					auto dst = material_info_buffer.mark_item(slot);
+					//auto dst = material_info_buffer.mark_item(slot);
 
-					material_info_buffer.set(dst, S<"color"_h>, mat->color);
-					material_info_buffer.set(dst, S<"metallic"_h>, mat->metallic);
-					material_info_buffer.set(dst, S<"roughness"_h>, mat->roughness);
-					material_info_buffer.set(dst, S<"alpha_test"_h>, mat->alpha_test);
+					//material_info_buffer.set(dst, S<"color"_h>, mat->color);
+					//material_info_buffer.set(dst, S<"metallic"_h>, mat->metallic);
+					//material_info_buffer.set(dst, S<"roughness"_h>, mat->roughness);
+					//material_info_buffer.set(dst, S<"alpha_test"_h>, mat->alpha_test);
 
 					if (!mat->dir.empty())
 					{
@@ -976,11 +976,11 @@ namespace flame
 								dst.second.reset(nullptr);
 							}
 						}
-						material_info_buffer.set(dst, S<"map_indices"_h>, ids);
+						//material_info_buffer.set(dst, S<"map_indices"_h>, ids);
 					}
 
 					InstanceCB cb(device);
-					material_info_buffer.upload((CommandBufferPrivate*)cb.get());
+					//material_info_buffer.upload((CommandBufferPrivate*)cb.get());
 				}
 			}
 			return slot;
@@ -1706,27 +1706,27 @@ namespace flame
 			proj_matrix[1][1] *= -1.f;
 			proj_view_matrix = proj_matrix * view_matrix;
 
-			render_data_buffer.set(S<"fovy"_h>, fovy);
-			render_data_buffer.set(S<"aspect"_h>, aspect);
-			render_data_buffer.set(S<"zNear"_h>, zNear);
-			render_data_buffer.set(S<"zFar"_h>, zFar);
-			render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
-			render_data_buffer.set(S<"camera_dirs"_h>, mat4(camera_dirs));
-			render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
-			render_data_buffer.set(S<"view"_h>, view_matrix);
-			render_data_buffer.set(S<"proj"_h>, proj_matrix);
-			render_data_buffer.set(S<"proj_view"_h>, proj_view_matrix);
+			//render_data_buffer.set(S<"fovy"_h>, fovy);
+			//render_data_buffer.set(S<"aspect"_h>, aspect);
+			//render_data_buffer.set(S<"zNear"_h>, zNear);
+			//render_data_buffer.set(S<"zFar"_h>, zFar);
+			//render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
+			//render_data_buffer.set(S<"camera_dirs"_h>, mat4(camera_dirs));
+			//render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
+			//render_data_buffer.set(S<"view"_h>, view_matrix);
+			//render_data_buffer.set(S<"proj"_h>, proj_matrix);
+			//render_data_buffer.set(S<"proj_view"_h>, proj_view_matrix);
 
 			{
 				vec3 ps[8];
 				get_frustum_points(zNear, zFar, tan(radians(fovy * 0.5f)), aspect, view_inv_matrix, ps);
-				auto dst = (vec4*)render_data_buffer.dst(S<"frustum_planes"_h>);
-				dst[0] = make_plane(ps[0], ps[1], ps[2]); // near
-				dst[1] = make_plane(ps[5], ps[4], ps[6]); // far
-				dst[2] = make_plane(ps[4], ps[0], ps[7]); // left
-				dst[3] = make_plane(ps[1], ps[5], ps[2]); // right
-				dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
-				dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
+				//auto dst = (vec4*)render_data_buffer.dst(S<"frustum_planes"_h>);
+				//dst[0] = make_plane(ps[0], ps[1], ps[2]); // near
+				//dst[1] = make_plane(ps[5], ps[4], ps[6]); // far
+				//dst[2] = make_plane(ps[4], ps[0], ps[7]); // left
+				//dst[3] = make_plane(ps[1], ps[5], ps[2]); // right
+				//dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
+				//dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 			}
 		}
 
@@ -1740,7 +1740,7 @@ namespace flame
 			sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, rad, sp);
 			sky_descriptorset->set_image(dsl->find_binding("sky_lut"), 0, lut, sp);
 
-			render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
+			//render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, ShadeFlags flags, void* userdata)
@@ -1847,7 +1847,7 @@ namespace flame
 					for (auto& m : meshes)
 					{
 						userdatas.push_back(m.userdata);
-					cb->push_constant_ht(S<"i"_h>, ivec4(userdatas.size(), 0, 0, 0));
+						//cb->push_constant_ht(S<"i"_h>, ivec4(userdatas.size(), 0, 0, 0));
 
 						auto mrm = m.res;
 						cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
@@ -1875,7 +1875,7 @@ namespace flame
 					for (auto& t : terrains)
 					{
 						userdatas.push_back(t.userdata);
-					cb->push_constant_ht(S<"i"_h>, ivec4(userdatas.size(), 0, 0, 0));
+						//cb->push_constant_ht(S<"i"_h>, ivec4(userdatas.size(), 0, 0, 0));
 
 						cb->bind_pipeline(preferences->terrain_pickup_pipeline);
 						cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
@@ -2007,7 +2007,7 @@ namespace flame
 					{
 						auto& m = meshes[e];
 						if (m.deformer)
-							m.deformer->poses_buffer.upload(cb);
+							;//m.deformer->poses_buffer.upload(cb);
 					}
 				}
 				case Cmd::DrawTerrain:
@@ -2109,7 +2109,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->element_pipeline.get());
 					cb->bind_descriptor_set(S<"element"_h>, element_descriptorset.get());
-					cb->push_constant_ht(S<"scale"_h>, 2.f / vec2(output_size));
+					//cb->push_constant_ht(S<"scale"_h>, 2.f / vec2(output_size));
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2144,21 +2144,21 @@ namespace flame
 						for (auto i = 0; i < meshes.size(); i++)
 						{
 							auto& src = meshes[i];
-							auto dst = mesh_matrix_buffer.mark_item(i);
-							mesh_matrix_buffer.set(dst, S<"transform"_h>, src.transform);
-							mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(src.transform)))));
+							//auto dst = mesh_matrix_buffer.mark_item(i);
+							//mesh_matrix_buffer.set(dst, S<"transform"_h>, src.transform);
+							//mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(src.transform)))));
 						}
 						for (auto i = 0; i < terrains.size(); i++)
 						{
 							auto& src = terrains[i];
-							auto dst = terrain_info_buffer.mark_item(i);
-							terrain_info_buffer.set(dst, S<"coord"_h>, src.coord);
-							terrain_info_buffer.set(dst, S<"blocks"_h>, src.blocks);
-							terrain_info_buffer.set(dst, S<"scale"_h>, src.scale);
-							terrain_info_buffer.set(dst, S<"tess_levels"_h>, src.tess_levels);
-							terrain_info_buffer.set(dst, S<"height_tex_id"_h>, src.height_tex_id);
-							terrain_info_buffer.set(dst, S<"normal_tex_id"_h>, src.normal_tex_id);
-							terrain_info_buffer.set(dst, S<"material_id"_h>, src.material_id);
+							//auto dst = terrain_info_buffer.mark_item(i);
+							//terrain_info_buffer.set(dst, S<"coord"_h>, src.coord);
+							//terrain_info_buffer.set(dst, S<"blocks"_h>, src.blocks);
+							//terrain_info_buffer.set(dst, S<"scale"_h>, src.scale);
+							//terrain_info_buffer.set(dst, S<"tess_levels"_h>, src.tess_levels);
+							//terrain_info_buffer.set(dst, S<"height_tex_id"_h>, src.height_tex_id);
+							//terrain_info_buffer.set(dst, S<"normal_tex_id"_h>, src.normal_tex_id);
+							//terrain_info_buffer.set(dst, S<"material_id"_h>, src.material_id);
 						}
 
 						auto lights_count = 0;
@@ -2203,17 +2203,17 @@ namespace flame
 									auto c = light * ((LT + RB) * 0.5f);
 									auto w = (RB.x - LT.x) * 0.5f;
 									auto h = (RB.y - LT.y) * 0.5f;
-									*(mat4*)shadow_matrices_buffer.mark_item(shadow_index * 4 + i) = 
-										orthoRH(-w, +w, -h, +h, 0.f, src.shadow_distance) *
-										lookAt(c + src.dir * src.shadow_distance * 0.5f, c, src.up);
+									//*(mat4*)shadow_matrices_buffer.mark_item(shadow_index * 4 + i) = 
+									//	orthoRH(-w, +w, -h, +h, 0.f, src.shadow_distance) *
+									//	lookAt(c + src.dir * src.shadow_distance * 0.5f, c, src.up);
 								}
 							}
 
-							auto dst = light_infos_buffer.mark_item(lights_count++);
-							light_infos_buffer.set(dst, S<"pos"_h>, src.dir);
-							light_infos_buffer.set(dst, S<"distance"_h>, src.shadow_distance);
-							light_infos_buffer.set(dst, S<"color"_h>, src.color);
-							light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
+							//auto dst = light_infos_buffer.mark_item(lights_count++);
+							//light_infos_buffer.set(dst, S<"pos"_h>, src.dir);
+							//light_infos_buffer.set(dst, S<"distance"_h>, src.shadow_distance);
+							//light_infos_buffer.set(dst, S<"color"_h>, src.color);
+							//light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
 						}
 
 						for (auto id = 0; id < point_lights.size(); id++)
@@ -2260,36 +2260,36 @@ namespace flame
 										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
 										break;
 									}
-									*(mat4*)shadow_matrices_buffer.mark_item(16 + shadow_index * 6 + i) = matrix;
+									//*(mat4*)shadow_matrices_buffer.mark_item(16 + shadow_index * 6 + i) = matrix;
 								}
 							}
 
-							auto dst = light_infos_buffer.mark_item(lights_count++);
-							light_infos_buffer.set(dst, S<"pos"_h>, src.coord);
-							light_infos_buffer.set(dst, S<"distance"_h>, distance);
-							light_infos_buffer.set(dst, S<"color"_h>, src.color);
-							light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
+							//auto dst = light_infos_buffer.mark_item(lights_count++);
+							//light_infos_buffer.set(dst, S<"pos"_h>, src.coord);
+							//light_infos_buffer.set(dst, S<"distance"_h>, distance);
+							//light_infos_buffer.set(dst, S<"color"_h>, src.color);
+							//light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
 						}
 
 						{
 							// TODO
-							auto dst = light_sets_buffer.mark_item(0);
-							light_sets_buffer.set(dst, S<"directional_lights_count"_h>, directional_lights.size());
-							auto dstad = (uint*)light_sets_buffer.dst(S<"directional_light_indices"_h>, dst);
-							for (auto i = 0; i < directional_lights.size(); i++)
-								dstad[i] = i;
-							light_sets_buffer.set(dst, S<"point_lights_count"_h>, point_lights.size());
-							auto dstap = (uint*)light_sets_buffer.dst(S<"point_light_indices"_h>, dst);
-							for (auto i = 0; i < point_lights.size(); i++)
-								dstap[i] = i;
+							//auto dst = light_sets_buffer.mark_item(0);
+							//light_sets_buffer.set(dst, S<"directional_lights_count"_h>, directional_lights.size());
+							//auto dstad = (uint*)light_sets_buffer.dst(S<"directional_light_indices"_h>, dst);
+							//for (auto i = 0; i < directional_lights.size(); i++)
+							//	dstad[i] = i;
+							//light_sets_buffer.set(dst, S<"point_lights_count"_h>, point_lights.size());
+							//auto dstap = (uint*)light_sets_buffer.dst(S<"point_light_indices"_h>, dst);
+							//for (auto i = 0; i < point_lights.size(); i++)
+							//	dstap[i] = i;
 						}
 
-						render_data_buffer.upload(cb);
-						mesh_matrix_buffer.upload(cb);
-						terrain_info_buffer.upload(cb);
-						light_sets_buffer.upload(cb);
-						light_infos_buffer.upload(cb);
-						shadow_matrices_buffer.upload(cb);
+						//render_data_buffer.upload(cb);
+						//mesh_matrix_buffer.upload(cb);
+						//terrain_info_buffer.upload(cb);
+						//light_sets_buffer.upload(cb);
+						//light_infos_buffer.upload(cb);
+						//shadow_matrices_buffer.upload(cb);
 
 						cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
 						cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
@@ -2307,8 +2307,8 @@ namespace flame
 								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
 								cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 								cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-								cb->push_constant_ht(S<"i"_h>, ivec4(shadow_index * 4 + i, 0, 0, 0));
-								cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
+								//cb->push_constant_ht(S<"i"_h>, ivec4(shadow_index * 4 + i, 0, 0, 0));
+								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
 								auto mesh_off = 0;
 								for (auto& m : meshes)
 								{
@@ -2367,8 +2367,8 @@ namespace flame
 								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
 								cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 								cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-								cb->push_constant_ht(S<"i"_h>, ivec4(16 + shadow_index * 6 + i, 0, 0, 0));
-								cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
+								//cb->push_constant_ht(S<"i"_h>, ivec4(16 + shadow_index * 6 + i, 0, 0, 0));
+								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
 								auto mesh_off = 0;
 								for (auto& m : meshes)
 								{
@@ -2448,7 +2448,7 @@ namespace flame
 							cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
 							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
 							for (auto& e : c->entries)
 							{
 								auto& m = meshes[e];
@@ -2494,7 +2494,7 @@ namespace flame
 							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
 							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
 							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
 							for (auto& t : terrains)
 							{
 								if (t.flags & ShadeMaterial)
@@ -2531,7 +2531,7 @@ namespace flame
 						{
 							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
 							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
 							for (auto& mi : outline_meshes)
 							{
 								auto& m = *mi.first;
@@ -2558,7 +2558,7 @@ namespace flame
 							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
 							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
 							for (auto& ti : outline_terrains)
 							{
 								auto& t = *ti.first;
@@ -2578,7 +2578,7 @@ namespace flame
 							cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 							cb->bind_pipeline(preferences->downsample_pipeline.get());
 							cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-							cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
+							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
 						}
@@ -2589,7 +2589,7 @@ namespace flame
 							cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 							cb->bind_pipeline(preferences->upsample_pipeline.get());
 							cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-							cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
+							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
 						}
@@ -2601,7 +2601,7 @@ namespace flame
 						{
 							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
 							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
 							for (auto& mi : outline_meshes)
 							{
 								auto& m = *mi.first;
@@ -2628,7 +2628,7 @@ namespace flame
 							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
 							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-							cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
+							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
 							for (auto& ti : outline_terrains)
 							{
 								auto& t = *ti.first;
@@ -2661,7 +2661,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					cb->bind_vertex_buffer(line_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->line_pipeline.get());
-					cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
+					//cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2697,7 +2697,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					cb->bind_vertex_buffer(triangle_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->triangle_pipeline.get());
-					cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
+					//cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2738,7 +2738,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->blurh_pipeline[blur_radius - 1].get());
 					cb->bind_descriptor_set(dst_ds, 0);
-					cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.x);
+					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.x);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
@@ -2747,7 +2747,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->blurv_pipeline[blur_radius - 1].get());
 					cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
-					cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.y);
+					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.y);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}
@@ -2774,7 +2774,7 @@ namespace flame
 						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 						cb->bind_pipeline(preferences->downsample_pipeline.get());
 						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-						cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
+						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2785,7 +2785,7 @@ namespace flame
 						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 						cb->bind_pipeline(preferences->upsample_pipeline.get());
 						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-						cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
+						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2794,7 +2794,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
 					cb->bind_pipeline(preferences->upsample_pipeline.get());
 					cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
-					cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
+					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}

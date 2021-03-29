@@ -302,15 +302,6 @@ process:
 
 	printf("generating typeinfo for %s: ", executable_path.string().c_str());
 
-	std::map<std::string, uint> enums;
-	std::map<std::string, uint> udts;
-	auto has_enum = [&](const std::string& n) {
-		return enums.find(n) != enums.end();
-	};
-	auto has_udt = [&](const std::string& n) {
-		return udts.find(n) != udts.end();
-	};
-
 	if (FAILED(CoInitialize(NULL)))
 	{
 		printf("com initial failed\n");
@@ -353,25 +344,13 @@ process:
 	DWORD dw;
 	wchar_t* pwname;
 
-	auto library = LoadLibraryW(executable_path.c_str());
-
-	pugi::xml_document file;
-	auto file_root = file.append_child("typeinfo");
-	pugi::xml_node n_enums;
-	pugi::xml_node n_udts;
+	auto library = Library::load(executable_path.c_str(), false);
+	auto library_address = library->get_address();
+	auto db = TypeInfoDataBase::create();
 
 	auto new_enum = [&](const std::string& name, IDiaSymbol* s_type) {
-		if (has_enum(name))
+		if (find_enum(name.c_str(), db))
 			return;
-
-		enums.emplace(name, 0);
-
-		if (!n_enums)
-			n_enums = file_root.append_child("enums");
-		auto n_enum = n_enums.append_child("enum");
-		n_enum.append_attribute("name").set_value(name.c_str());
-
-		auto n_items = n_enum.append_child("items");
 
 		std::vector<std::pair<std::string, int>> items;
 
@@ -414,25 +393,9 @@ process:
 				break;
 		}
 
+		auto e = add_enum(name.c_str(), db);
 		for (auto& i : items)
-		{
-			auto n_item = n_items.append_child("item");
-			n_item.append_attribute("name").set_value(i.first.c_str());
-			n_item.append_attribute("value").set_value(i.second);
-		}
-
-		{
-			std::vector<char*> names;
-			std::vector<int> values;
-			names.resize(items.size());
-			values.resize(items.size());
-			for (auto i = 0; i < items.size(); i++)
-			{
-				names[i] = (char*)items[i].first.c_str();
-				values[i] = items[i].second;
-			}
-			add_enum(name.c_str(), items.size(), names.data(), values.data());
-		}
+			e->add_item(i.first.c_str(), i.second);
 	};
 
 	IDiaEnumSymbols* s_enums;
@@ -464,18 +427,11 @@ process:
 		{
 			if (ur.pass(udt_name))
 			{
-				if (!has_udt(udt_name))
+				if (!find_udt(udt_name.c_str(), db))
 				{
-					udts.emplace(udt_name, 0);
-
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
-
-					if (!n_udts)
-						n_udts = file_root.append_child("udts");
-					auto n_udt = n_udts.append_child("udt");
-					n_udt.append_attribute("name").set_value(udt_name.c_str());
-					n_udt.append_attribute("size").set_value(udt_size);
+					std::string base_name;
 
 					IDiaEnumSymbols* s_base_classes;
 					IDiaSymbol* s_base_class;
@@ -483,8 +439,10 @@ process:
 					if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
 					{
 						s_base_class->get_name(&pwname);
-						n_udt.append_attribute("base_name").set_value(w2s(pwname).c_str());
+						base_name = w2s(pwname);
 					}
+
+					auto u = add_udt(udt_name.c_str(), udt_size, base_name.c_str(), db);
 
 					DWORD ctor = 0;
 					DWORD dtor = 0;
@@ -518,19 +476,10 @@ process:
 
 								IDiaSymbol* s_return_type;
 								s_function_type->get_type(&s_return_type);
-								auto ret_type = typeinfo_from_symbol(s_return_type);
+								auto type_desc = typeinfo_from_symbol(s_return_type);
 								s_return_type->Release();
 
-								if (!n_functions)
-									n_functions = n_udt.append_child("functions");
-								auto n_function = n_functions.append_child("function");
-								n_function.append_attribute("name").set_value(name.c_str());
-								n_function.append_attribute("rva").set_value(rva);
-								n_function.append_attribute("voff").set_value(voff);
-								n_function.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&ret_type.tag).c_str());
-								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
-
-								pugi::xml_node n_parameters;
+								auto fi = u->add_function(name.c_str(), rva, voff, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db));
 
 								IDiaEnumSymbols* s_parameters;
 								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -540,15 +489,11 @@ process:
 									IDiaSymbol* s_type;
 									s_parameter->get_type(&s_type);
 
-									auto desc = typeinfo_from_symbol(s_parameter);
-									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-										new_enum(desc.name, s_type);
+									auto type_desc = typeinfo_from_symbol(s_parameter);
+									if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
+										new_enum(type_desc.name, s_type);
 
-									if (!n_parameters)
-										n_parameters = n_function.append_child("parameters");
-									auto n_parameter = n_parameters.append_child("parameter");
-									n_parameter.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&desc.tag).c_str());
-									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
+									fi->add_parameter(TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db));
 
 									s_type->Release();
 
@@ -558,7 +503,7 @@ process:
 
 								s_function_type->Release();
 
-								if (name == "ctor" && !n_parameters)
+								if (name == "ctor" && fi->get_parameters_count() == 0)
 									ctor = rva;
 								else if (name == "dtor")
 									dtor = rva;
@@ -571,7 +516,7 @@ process:
 					auto obj = malloc(udt_size);
 					memset(obj, 0, udt_size);
 					if (ctor)
-						a2f<void(*)(void*)>((char*)library + ctor)(obj);
+						a2f<void(*)(void*)>((char*)library_address + ctor)(obj);
 
 					pugi::xml_node n_variables;
 
@@ -595,35 +540,28 @@ process:
 
 							if (is_virtual && offset != 0)
 							{
-								auto desc = typeinfo_from_symbol(s_type);
-								if (desc.name.starts_with("flame::"))
-									desc.name = SUS::cut_tail_if(desc.name, "Private");
-								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-									new_enum(desc.name, s_type);
+								auto type_desc = typeinfo_from_symbol(s_type);
+								if (type_desc.name.starts_with("flame::"))
+									type_desc.name = SUS::cut_tail_if(type_desc.name, "Private");
+								if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
+									new_enum(type_desc.name, s_type);
+								auto type = TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db);
+								std::string default_value;
 
-								if (!n_variables)
-									n_variables = n_udt.prepend_child("variables");
-								auto n_variable = n_variables.append_child("variable");
-								n_variable.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&desc.tag).c_str());
-								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
-								n_variable.append_attribute("name").set_value(name.c_str());
-								n_variable.append_attribute("offset").set_value(offset);
-
-								if (desc.tag != TypePointer)
+								if (type_desc.tag != TypePointer)
 								{
-									auto type = TypeInfo::get(desc.tag, desc.name.c_str());
 									if (type)
 									{
-										std::string str;
-										type->serialize((char*)obj + offset, &str, [](void* _str, uint size) {
+										type->serialize((char*)obj + offset, &default_value, [](void* _str, uint size) {
 											auto& str = *(std::string*)_str;
 											str.resize(size);
 											return str.data();
 										});
-										if (!str.empty())
-											n_variable.append_attribute("default_value").set_value(str.c_str());
 									}
 								}
+
+								u->add_variable(type, name.c_str(), offset,
+									1, 0, default_value.c_str(), "");
 							}
 
 							s_type->Release();
@@ -633,7 +571,7 @@ process:
 					s_variables->Release();
 
 					if (dtor)
-						a2f<void(*)(void*)>((char*)library + dtor)(obj);
+						a2f<void(*)(void*)>((char*)library_address + dtor)(obj);
 					free(obj);
 				}
 
@@ -644,9 +582,10 @@ process:
 	}
 	s_udts->Release();
 
-	file.save_file(typeinfo_path.string().c_str());
+	save_typeinfo(typeinfo_path.c_str(), db);
 
-	FreeLibrary(library);
+	library->release();
+	db->release();
 
 	printf(" - done\n");
 

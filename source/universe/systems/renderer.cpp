@@ -724,7 +724,7 @@ namespace flame
 		cb->bind_vertex_buffer(buf_element_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_element_idx.buf.get(), graphics::IndiceTypeUint);
 		cb->bind_descriptor_set(S<"element"_h>, ds_element.get());
-		cb->push_constant_ht(S<"scale"_h>, 2.f / tar_size);
+		cb->push_constant_t(0, 2.f / tar_size);
 		auto vtx_off = 0;
 		auto idx_off = 0;
 		for (auto& c : cmds)
@@ -929,7 +929,7 @@ namespace flame
 
 	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
-		record_node_drawing_commands(tar_idx, cb);
+		//record_node_drawing_commands(tar_idx, cb);
 		record_element_drawing_commands(tar_idx, cb);
 	}
 
@@ -1001,7 +1001,7 @@ namespace flame
 				graphics::Renderpass::get(device, L"deferred.rp"), size(vs), vs));
 		}
 
-		get_material_pipeline(MaterialForMesh, L"", "");
+		//get_material_pipeline(MaterialForMesh, L"", "");
 
 		mesh_reses.resize(64);
 	}

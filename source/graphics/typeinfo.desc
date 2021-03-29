@@ -18,19 +18,6 @@
         <item type="function" name="^dtor$" />
       </excludes>
     </rule>
-    <rule name="^flame::graphics::Canvas$" >
-      <includes>
-        <item type="function" name="[\w]+$" />
-      </includes>
-      <excludes>
-        <item type="function" name="^ctor$" />
-        <item type="function" name="^dtor$" />
-        <item type="function" name="_output$" />
-        <item type="function" name="_resource$" />
-        <item type="function" name="^prepare$" />
-        <item type="function" name="^record$" />
-      </excludes>
-    </rule>
   </udts>
   <enums>
     <rule name="^flame::graphics::Filter$" />

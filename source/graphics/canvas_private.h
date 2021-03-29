@@ -91,153 +91,153 @@ namespace flame
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
 		};
 
-		struct ShaderBuffer
-		{
-			struct Piece
-			{
-				uint beg;
-				uint end;
-				bool peeding_update = false;
-				std::list<std::pair<uint, uint>>::iterator cpy_it;
-			};
+		//struct ShaderBuffer
+		//{
+		//	struct Piece
+		//	{
+		//		uint beg;
+		//		uint end;
+		//		bool peeding_update = false;
+		//		std::list<std::pair<uint, uint>>::iterator cpy_it;
+		//	};
 
-			uint size;
-			uint arrsize = 0;
-			char* stag = nullptr;
+		//	uint size;
+		//	uint arrsize = 0;
+		//	char* stag = nullptr;
 
-			std::unique_ptr<BufferPrivate> buf;
-			std::unique_ptr<BufferPrivate> stgbuf;
+		//	std::unique_ptr<BufferPrivate> buf;
+		//	std::unique_ptr<BufferPrivate> stgbuf;
 
-			ShaderType* t = nullptr;
-			std::vector<Piece> pieces;
-			std::list<std::pair<uint, uint>> cpys;
+		//	ShaderType* t = nullptr;
+		//	std::vector<Piece> pieces;
+		//	std::list<std::pair<uint, uint>> cpys;
 
-			void create(DevicePrivate* d, BufferUsageFlags usage, ShaderType* _t, uint _arrsize = 0)
-			{
-				t = _t;
-				size = t->size;
-				auto bufsize = size * (_arrsize == 0 ? 1 : _arrsize);
-				buf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-				stgbuf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-				stgbuf->map();
-				stag = (char*)stgbuf->mapped;
+		//	void create(DevicePrivate* d, BufferUsageFlags usage, ShaderType* _t, uint _arrsize = 0)
+		//	{
+		//		t = _t;
+		//		size = t->size;
+		//		auto bufsize = size * (_arrsize == 0 ? 1 : _arrsize);
+		//		buf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+		//		stgbuf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+		//		stgbuf->map();
+		//		stag = (char*)stgbuf->mapped;
 
-				if (_arrsize == 0)
-				{
-					pieces.resize(t->variables.size());
-					for (auto i = 0; i < pieces.size(); i++)
-					{
-						auto& src = t->variables[i];
-						Piece dst;
-						dst.beg = src.offset;
-						dst.end = src.offset + src.size;
-						pieces[i] = dst;
-					}
-				}
-				else
-				{
-					arrsize = _arrsize;
-					pieces.resize(arrsize);
-					for (auto i = 0; i < pieces.size(); i++)
-					{
-						Piece dst;
-						dst.beg = i * size;
-						dst.end = dst.beg + size;
-						pieces[i] = dst;
-					}
-				}
-			}
+		//		if (_arrsize == 0)
+		//		{
+		//			pieces.resize(t->variables.size());
+		//			for (auto i = 0; i < pieces.size(); i++)
+		//			{
+		//				auto& src = t->variables[i];
+		//				Piece dst;
+		//				dst.beg = src.offset;
+		//				dst.end = src.offset + src.size;
+		//				pieces[i] = dst;
+		//			}
+		//		}
+		//		else
+		//		{
+		//			arrsize = _arrsize;
+		//			pieces.resize(arrsize);
+		//			for (auto i = 0; i < pieces.size(); i++)
+		//			{
+		//				Piece dst;
+		//				dst.beg = i * size;
+		//				dst.end = dst.beg + size;
+		//				pieces[i] = dst;
+		//			}
+		//		}
+		//	}
 
-			void mark_piece_dirty(uint idx)
-			{
-				auto& p = pieces[idx];
-				if (!p.peeding_update)
-				{
-					if (idx > 0)
-					{
-						auto& pp = pieces[idx - 1];
-						if (pp.peeding_update)
-						{
-							p.peeding_update = true;
-							p.cpy_it = pp.cpy_it;
-							pp.cpy_it->second++;
-						}
-					}
-					if (!p.peeding_update)
-					{
-						p.peeding_update = true;
-						p.cpy_it = cpys.emplace(cpys.end(), std::make_pair(idx, 1));
-					}
-					if (idx < pieces.size() - 1)
-					{
-						auto& np = pieces[idx + 1];
-						if (np.peeding_update)
-						{
-							auto it = np.cpy_it;
-							p.cpy_it->second += it->second;
-							for (auto i = 0; i < it->second; i++)
-								pieces[it->first + i].cpy_it = p.cpy_it;
-							cpys.erase(it);
-						}
-					}
-				}
-			}
+		//	void mark_piece_dirty(uint idx)
+		//	{
+		//		auto& p = pieces[idx];
+		//		if (!p.peeding_update)
+		//		{
+		//			if (idx > 0)
+		//			{
+		//				auto& pp = pieces[idx - 1];
+		//				if (pp.peeding_update)
+		//				{
+		//					p.peeding_update = true;
+		//					p.cpy_it = pp.cpy_it;
+		//					pp.cpy_it->second++;
+		//				}
+		//			}
+		//			if (!p.peeding_update)
+		//			{
+		//				p.peeding_update = true;
+		//				p.cpy_it = cpys.emplace(cpys.end(), std::make_pair(idx, 1));
+		//			}
+		//			if (idx < pieces.size() - 1)
+		//			{
+		//				auto& np = pieces[idx + 1];
+		//				if (np.peeding_update)
+		//				{
+		//					auto it = np.cpy_it;
+		//					p.cpy_it->second += it->second;
+		//					for (auto i = 0; i < it->second; i++)
+		//						pieces[it->first + i].cpy_it = p.cpy_it;
+		//					cpys.erase(it);
+		//				}
+		//			}
+		//		}
+		//	}
 
-			char* dst(uint64 h, char* p = nullptr)
-			{
-				if (!p)
-					p = (char*)stag;
-				return p + t->variables[t->variables_map[h]].offset;
-			}
+		//	char* dst(uint64 h, char* p = nullptr)
+		//	{
+		//		if (!p)
+		//			p = (char*)stag;
+		//		return p + t->variables[t->variables_map[h]].offset;
+		//	}
 
-			char* mark(uint64 h)
-			{
-				fassert(arrsize == 0);
-				auto idx = t->variables_map[h];
-				mark_piece_dirty(idx);
-				return stag + t->variables[idx].offset;
-			}
+		//	char* mark(uint64 h)
+		//	{
+		//		fassert(arrsize == 0);
+		//		auto idx = t->variables_map[h];
+		//		mark_piece_dirty(idx);
+		//		return stag + t->variables[idx].offset;
+		//	}
 
-			template <class T>
-			void set(uint64 h, const T& v)
-			{
-				fassert(arrsize == 0);
-				*(T*)mark(h) = v;
-			}
+		//	template <class T>
+		//	void set(uint64 h, const T& v)
+		//	{
+		//		fassert(arrsize == 0);
+		//		*(T*)mark(h) = v;
+		//	}
 
-			char* mark_item(uint idx)
-			{
-				fassert(arrsize != 0);
-				mark_piece_dirty(idx);
-				return stag + pieces[idx].beg;
-			}
+		//	char* mark_item(uint idx)
+		//	{
+		//		fassert(arrsize != 0);
+		//		mark_piece_dirty(idx);
+		//		return stag + pieces[idx].beg;
+		//	}
 
-			template <class T>
-			void set(char* p, uint64 h, const T& v)
-			{
-				fassert(arrsize != 0);
-				*(T*)dst(h, p) = v;
-			}
+		//	template <class T>
+		//	void set(char* p, uint64 h, const T& v)
+		//	{
+		//		fassert(arrsize != 0);
+		//		*(T*)dst(h, p) = v;
+		//	}
 
-			void upload(CommandBufferPrivate* cb)
-			{
-				if (cpys.empty())
-					return;
-				std::vector<BufferCopy> _cpys;
-				for (auto& cpy : cpys)
-				{
-					for (auto i = 0; i < cpy.second; i++)
-						pieces[cpy.first + i].peeding_update = false;
-					BufferCopy _cpy;
-					_cpy.src_off = _cpy.dst_off = pieces[cpy.first].beg;
-					_cpy.size = pieces[cpy.first + cpy.second - 1].end - _cpy.src_off;
-					_cpys.push_back(_cpy);
-				}
-				cb->copy_buffer(stgbuf.get(), buf.get(), _cpys);
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
-				cpys.clear();
-			}
-		};
+		//	void upload(CommandBufferPrivate* cb)
+		//	{
+		//		if (cpys.empty())
+		//			return;
+		//		std::vector<BufferCopy> _cpys;
+		//		for (auto& cpy : cpys)
+		//		{
+		//			for (auto i = 0; i < cpy.second; i++)
+		//				pieces[cpy.first + i].peeding_update = false;
+		//			BufferCopy _cpy;
+		//			_cpy.src_off = _cpy.dst_off = pieces[cpy.first].beg;
+		//			_cpy.size = pieces[cpy.first + cpy.second - 1].end - _cpy.src_off;
+		//			_cpys.push_back(_cpy);
+		//		}
+		//		cb->copy_buffer(stgbuf.get(), buf.get(), _cpys);
+		//		cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+		//		cpys.clear();
+		//	}
+		//};
 
 		template <class T>
 		struct ShaderGeometryBuffer
@@ -306,7 +306,7 @@ namespace flame
 		struct ArmatureDeformerPrivate : ArmatureDeformer
 		{
 			MeshPrivate* mesh;
-			ShaderBuffer poses_buffer;
+			//ShaderBuffer poses_buffer;
 			std::unique_ptr<DescriptorSetPrivate> descriptorset;
 
 			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
@@ -571,7 +571,7 @@ namespace flame
 			ShaderGeometryBuffer<uint> element_index_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
-			ShaderBuffer render_data_buffer;
+			//ShaderBuffer render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
 
 			std::unique_ptr<ImagePrivate> default_sky_box_image;
@@ -579,10 +579,10 @@ namespace flame
 			std::unique_ptr<ImagePrivate> default_sky_rad_image;
 			std::unique_ptr<DescriptorSetPrivate> sky_descriptorset;
 
-			ShaderBuffer mesh_matrix_buffer;
+			//ShaderBuffer mesh_matrix_buffer;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
 
-			ShaderBuffer material_info_buffer;
+			//ShaderBuffer material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
@@ -590,9 +590,9 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> shadow_depth_back_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_depth_back_descriptorset;
 
-			ShaderBuffer light_sets_buffer;
-			ShaderBuffer light_infos_buffer;
-			ShaderBuffer shadow_matrices_buffer;
+			//ShaderBuffer light_sets_buffer;
+			//ShaderBuffer light_infos_buffer;
+			//ShaderBuffer shadow_matrices_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> directional_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_shadow_map_framebuffers;
@@ -604,7 +604,7 @@ namespace flame
 
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
-			ShaderBuffer terrain_info_buffer;
+			//ShaderBuffer terrain_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
 			std::vector<ImageViewPrivate*> output_imageviews;

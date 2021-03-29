@@ -11,53 +11,35 @@ namespace flame
 {
 	namespace graphics
 	{
-		void get_shader_type(const spirv_cross::CompilerGLSL& glsl, std::vector<std::unique_ptr<ShaderType>>& types, const spirv_cross::SPIRType& src, ShaderType* dst)
+		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase* db)
 		{
+			TypeInfo* ret;
+
 			if (src.basetype == spirv_cross::SPIRType::Struct)
 			{
-				dst->tag = ShaderTagStruct;
-				dst->name = glsl.get_name(src.self);
+				auto name = glsl.get_name(src.self);
+				auto size = glsl.get_declared_struct_size(src);
 				{
-					auto s = glsl.get_declared_struct_size(src);
-					auto m = s % 16;
+					auto m = size % 16;
 					if (m != 0)
-						s += (16 - m);
-					dst->size = s;
+						size += (16 - m);
 				}
+
+				ret = TypeInfo::get(TypeData, name.c_str(), db);
+
+				auto ui = add_udt(name.c_str(), size, "", db);
+
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
 					uint32_t id = src.member_types[i];
 
-					ShaderVariable v;
-					v.name = glsl.get_member_name(src.self, i);
-					v.offset = glsl.type_struct_member_offset(src, i);
-					v.size = glsl.get_declared_struct_member_size(src, i);
-					v.array_count = glsl.get_type(id).array[0];
-					v.array_stride = glsl.get_decoration(id, spv::DecorationArrayStride);
-					ShaderType* t = nullptr;
-					for (auto& _t : types)
-					{
-						if (_t->id == id)
-						{
-							t = _t.get();
-							break;
-						}
-					}
-					if (!t)
-					{
-						t = new ShaderType;
-						types.emplace_back(t);
-						t->id = id;
-						get_shader_type(glsl, types, glsl.get_type(id), t);
-					}
-					v.info = t;
-
-					dst->variables.push_back(v);
+					ui->add_variable(get_shader_type(glsl, glsl.get_type(id), db), 
+						glsl.get_member_name(src.self, i).c_str(), glsl.type_struct_member_offset(src, i), 
+						glsl.get_type(id).array[0], glsl.get_decoration(id, spv::DecorationArrayStride), "", "");
 				}
-				dst->make_map();
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
-				dst->tag = ShaderTagImage;
+				ret = TypeInfo::get(TypePointer, "ShaderImage");
 			else
 			{
 				switch (src.basetype)
@@ -69,24 +51,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBasic;
-							dst->name = "int";
-							dst->size = sizeof(int);
+							ret = TypeInfo::get(TypeData, "int");
 							break;
 						case 2:
-							dst->tag = ShaderTagBasic;
-							dst->name = "ivec2";
-							dst->size = sizeof(ivec2);
+							ret = TypeInfo::get(TypeData, "glm::vec<2,int,0>");
 							break;
 						case 3:
-							dst->tag = ShaderTagBasic;
-							dst->name = "ivec3";
-							dst->size = sizeof(ivec3);
+							ret = TypeInfo::get(TypeData, "glm::vec<3,int,0>");
 							break;
 						case 4:
-							dst->tag = ShaderTagBasic;
-							dst->name = "ivec4";
-							dst->size = sizeof(ivec4);
+							ret = TypeInfo::get(TypeData, "glm::vec<4,int,0>");
 							break;
 						default:
 							fassert(0);
@@ -103,24 +77,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBasic;
-							dst->name = "uint";
-							dst->size = sizeof(uint);
+							ret = TypeInfo::get(TypeData, "uint");
 							break;
 						case 2:
-							dst->tag = ShaderTagBasic;
-							dst->name = "uvec2";
-							dst->size = sizeof(uvec2);
+							ret = TypeInfo::get(TypeData, "glm::vec<2,uint,0>");
 							break;
 						case 3:
-							dst->tag = ShaderTagBasic;
-							dst->name = "uvec3";
-							dst->size = sizeof(uvec3);
+							ret = TypeInfo::get(TypeData, "glm::vec<3,uint,0>");
 							break;
 						case 4:
-							dst->tag = ShaderTagBasic;
-							dst->name = "uvec4";
-							dst->size = sizeof(uvec4);
+							ret = TypeInfo::get(TypeData, "glm::vec<4,uint,0>");
 							break;
 						default:
 							fassert(0);
@@ -137,24 +103,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBasic;
-							dst->name = "float";
-							dst->size = sizeof(float);
+							ret = TypeInfo::get(TypeData, "float");
 							break;
 						case 2:
-							dst->tag = ShaderTagBasic;
-							dst->name = "vec2";
-							dst->size = sizeof(vec2);
+							ret = TypeInfo::get(TypeData, "glm::vec<2,float,0>");
 							break;
 						case 3:
-							dst->tag = ShaderTagBasic;
-							dst->name = "vec3";
-							dst->size = sizeof(vec3);
+							ret = TypeInfo::get(TypeData, "glm::vec<3,float,0>");
 							break;
 						case 4:
-							dst->tag = ShaderTagBasic;
-							dst->name = "vec4";
-							dst->size = sizeof(vec4);
+							ret = TypeInfo::get(TypeData, "glm::vec<4,float,0>");
 							break;
 						default:
 							fassert(0);
@@ -164,9 +122,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							dst->tag = ShaderTagBasic;
-							dst->name = "mat2";
-							dst->size = sizeof(mat2);
+							ret = TypeInfo::get(TypeData, "glm::mat<2,2,float,0>");
 							break;
 						default:
 							fassert(0);
@@ -176,9 +132,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							dst->tag = ShaderTagBasic;
-							dst->name = "mat3";
-							dst->size = sizeof(mat3);
+							ret = TypeInfo::get(TypeData, "glm::mat<3,3,float,0>");
 							break;
 						default:
 							fassert(0);
@@ -188,9 +142,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							dst->tag = ShaderTagBasic;
-							dst->name = "mat4";
-							dst->size = sizeof(mat4);
+							ret = TypeInfo::get(TypeData, "glm::mat<4,4,float,0>");
 							break;
 						default:
 							fassert(0);
@@ -202,6 +154,8 @@ namespace flame
 					break;
 				}
 			}
+
+			return ret;
 		}
 
 		static std::string basic_glsl_prefix()
@@ -262,66 +216,6 @@ namespace flame
 			return new DescriptorPoolPrivate((DevicePrivate*)device);
 		}
 
-		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
-		{
-			for (auto n_type : root.child("types"))
-			{
-				auto t = new ShaderType;
-				t->id = n_type.attribute("id").as_uint();
-				t->tag = (ShaderTypeTag)n_type.attribute("tag").as_int();
-				t->name = n_type.attribute("name").value();
-				t->size = n_type.attribute("size").as_uint();
-				for (auto n_variable : n_type.child("variables"))
-				{
-					ShaderVariable v;
-					v.name = n_variable.attribute("name").value();
-					v.offset = n_variable.attribute("offset").as_uint();
-					v.size = n_variable.attribute("size").as_uint();
-					v.array_count = n_variable.attribute("array_count").as_uint(1);
-					v.array_stride = n_variable.attribute("array_stride").as_uint(0);
-					v.info = (ShaderType*)n_variable.attribute("type_id").as_uint();
-					t->variables.push_back(v);
-				}
-				t->make_map();
-				types.emplace_back(t);
-			}
-			for (auto& t : types)
-			{
-				for (auto& v : t->variables)
-					v.info = find_type(types, (uint)v.info);
-			}
-		}
-
-		static void save_res_types(pugi::xml_node root, const std::vector<std::unique_ptr<ShaderType>>& types)
-		{
-			auto n_types = root.append_child("types");
-			for (auto& t : types)
-			{
-				auto n_type = n_types.append_child("type");
-				n_type.append_attribute("id").set_value(t->id);
-				n_type.append_attribute("tag").set_value(ti_es("flame::graphics::ShaderTypeTag")->serialize(&t->tag).c_str());
-				n_type.append_attribute("name").set_value(t->name.c_str());
-				n_type.append_attribute("size").set_value(t->size);
-				if (!t->variables.empty())
-				{
-					auto n_variables = n_type.append_child("variables");
-					for (auto& v : t->variables)
-					{
-						auto n_variable = n_variables.append_child("variable");
-						n_variable.append_attribute("name").set_value(v.name.c_str());
-						n_variable.append_attribute("offset").set_value(v.offset);
-						n_variable.append_attribute("size").set_value(v.size);
-						if (v.array_count > 1)
-						{
-							n_variable.append_attribute("array_count").set_value(v.array_count);
-							n_variable.append_attribute("array_stride").set_value(v.array_stride);
-						}
-						n_variable.append_attribute("type_id").set_value(v.info->id);
-					}
-				}
-			}
-		}
-
 		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> _bindings) :
 			device(device)
 		{
@@ -354,14 +248,12 @@ namespace flame
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& _types, std::vector<DescriptorBinding>& _bindings) :
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<DescriptorBinding>& _bindings, TypeInfoDataBase* db) :
 			device(device),
 			filename(filename)
 		{
-			types.resize(_types.size());
-			for (auto i = 0; i < types.size(); i++)
-				types[i].reset(_types[i].release());
 			bindings = _bindings;
+			tidb.reset(db);
 
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
 			for (auto i = 0; i < bindings.size(); i++)
@@ -431,11 +323,11 @@ namespace flame
 			auto res_path = filename.parent_path() / L"build";
 			if (!std::filesystem::exists(res_path))
 				std::filesystem::create_directories(res_path);
-			res_path += filename.filename();
+			res_path /= filename.filename();
 			res_path += L".res";
 
-			std::vector<std::unique_ptr<ShaderType>> types;
 			std::vector<DescriptorBinding> bindings;
+			TypeInfoDataBase* tidb = TypeInfoDataBase::create();
 
 			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
 			{
@@ -494,10 +386,7 @@ namespace flame
 					auto resources = glsl.get_shader_resources();
 
 					auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-						auto info = new ShaderType;
-						types.emplace_back(info);
-						info->id = r.base_type_id;
-						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
+						get_shader_type(glsl, glsl.get_type(r.base_type_id), tidb);
 
 						auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
 						if (bindings.size() <= binding)
@@ -507,7 +396,8 @@ namespace flame
 						b.type = type;
 						b.count = glsl.get_type(r.type_id).array[0];
 						b.name = r.name;
-						b.info = info;
+						if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+							b.ti = find_udt(glsl.get_name(r.base_type_id).c_str(), tidb);
 					};
 
 					for (auto& r : resources.uniform_buffers)
@@ -519,10 +409,12 @@ namespace flame
 					for (auto& r : resources.storage_images)
 						get_binding(r, DescriptorStorageImage);
 
+					auto ti_path = res_path;
+					ti_path.replace_extension(L".typeinfo");
+					save_typeinfo(ti_path.c_str(), tidb);
+
 					pugi::xml_document res;
 					auto root = res.append_child("res");
-
-					save_res_types(root, types);
 
 					auto n_bindings = root.append_child("bindings");
 					for (auto i = 0; i < bindings.size(); i++)
@@ -535,7 +427,8 @@ namespace flame
 							n_binding.append_attribute("binding").set_value(i);
 							n_binding.append_attribute("count").set_value(b.count);
 							n_binding.append_attribute("name").set_value(b.name.c_str());
-							n_binding.append_attribute("type_id").set_value(b.info->id);
+							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+								n_binding.append_attribute("type_name").set_value(b.ti->get_name());
 						}
 					}
 
@@ -550,6 +443,10 @@ namespace flame
 			}
 			else
 			{
+				auto ti_path = res_path;
+				ti_path.replace_extension(L".typeinfo");
+				load_typeinfo(ti_path.c_str(), tidb);
+
 				pugi::xml_document res;
 				pugi::xml_node root;
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
@@ -558,8 +455,6 @@ namespace flame
 					fassert(0);
 					return nullptr;
 				}
-
-				load_res_types(root, types);
 
 				for (auto n_binding : root.child("bindings"))
 				{
@@ -572,13 +467,14 @@ namespace flame
 						ti_es("flame::graphics::DescriptorType")->unserialize(&b.type, n_binding.attribute("type").value());
 						b.count = n_binding.attribute("count").as_uint();
 						b.name = n_binding.attribute("name").value();
-						b.info = find_type(types, n_binding.attribute("type_id").as_uint());
+						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+							b.ti = find_udt(n_binding.attribute("type_name").value(), tidb);
 						bindings.emplace_back(b);
 					}
 				}
 			}
 
-			auto dsl = new DescriptorSetLayoutPrivate(device, filename, types, bindings);
+			auto dsl = new DescriptorSetLayoutPrivate(device, filename, bindings, tidb);
 			device->dsls.emplace_back(dsl);
 			return dsl;
 		}
@@ -663,14 +559,12 @@ namespace flame
 		}
 
 		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
-			device(device)
+			device(device),
+			push_constant_size(push_constant_size)
 		{
 			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
 				descriptor_set_layouts[i] = _descriptor_set_layouts[i];
-			push_constant = new ShaderType;
-			push_constant->size = push_constant_size;
-			types.emplace_back(push_constant);
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
@@ -694,7 +588,7 @@ namespace flame
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& _types, ShaderType* _push_constant) :
+		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* _pcti) :
 			device(device),
 			filename(filename)
 		{
@@ -707,17 +601,10 @@ namespace flame
 				descriptor_set_layouts_map[ch(fn.c_str())] = i;
 			}
 
+			tidb.reset(db);
+			pcti = _pcti;
 
-			types.resize(_types.size());
-			for (auto i = 0; i < types.size(); i++)
-				types[i].reset(_types[i].release());
-			push_constant = _push_constant;
-			if (!push_constant)
-			{
-				push_constant = new ShaderType;
-				push_constant->size = 0;
-				types.emplace_back(push_constant);
-			}
+			push_constant_size = pcti ? pcti->get_size() : 0;
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
@@ -726,7 +613,7 @@ namespace flame
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;
-			vk_pushconstant_range.size = push_constant->size;
+			vk_pushconstant_range.size = push_constant_size;
 			vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
@@ -735,8 +622,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptor_set_layouts.size();
 			info.pSetLayouts = vk_descriptor_set_layouts.data();
-			info.pushConstantRangeCount = push_constant->size > 0 ? 1 : 0;
-			info.pPushConstantRanges = push_constant->size > 0 ? &vk_pushconstant_range : nullptr;
+			info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
+			info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
@@ -765,7 +652,7 @@ namespace flame
 			auto res_path = filename.parent_path() / L"build";
 			if (!std::filesystem::exists(res_path))
 				std::filesystem::create_directories(res_path);
-			res_path += filename.filename();
+			res_path /= filename.filename();
 			res_path += L".res";
 
 			std::vector<DescriptorSetLayoutPrivate*> dsls;
@@ -778,8 +665,8 @@ namespace flame
 					dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
 			}
 
-			std::vector<std::unique_ptr<ShaderType>> types;
-			ShaderType* push_constant = nullptr;
+			auto tidb = TypeInfoDataBase::create();
+			UdtInfo* pcti = nullptr;
 
 			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
 			{
@@ -839,12 +726,8 @@ namespace flame
 
 					for (auto& r : resources.push_constant_buffers)
 					{
-						auto info = new ShaderType;
-						types.emplace_back(info);
-						info->id = r.base_type_id;
-						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
-
-						push_constant = info;
+						get_shader_type(glsl, glsl.get_type(r.base_type_id), tidb);
+						pcti = find_udt(glsl.get_name(r.base_type_id).c_str(), tidb);
 						break;
 					}
 				}
@@ -855,18 +738,24 @@ namespace flame
 					return nullptr;
 				}
 
+				auto ti_path = res_path;
+				ti_path.replace_extension(L".typeinfo");
+				save_typeinfo(ti_path.c_str(), tidb);
+
 				pugi::xml_document res;
 				auto root = res.append_child("res");
 
-				save_res_types(root, types);
-
 				auto n_push_constant = root.append_child("push_constant");
-				n_push_constant.append_attribute("type_id").set_value(push_constant ? std::to_string(push_constant->id).c_str() : "-1");
+				n_push_constant.append_attribute("type_name").set_value(pcti ? pcti->get_name() : "");
 
 				res.save_file(res_path.c_str());
 			}
 			else
 			{
+				auto ti_path = res_path;
+				ti_path.replace_extension(L".typeinfo");
+				load_typeinfo(ti_path.c_str(), tidb);
+
 				pugi::xml_document res;
 				pugi::xml_node root;
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
@@ -876,13 +765,11 @@ namespace flame
 					return nullptr;
 				}
 
-				load_res_types(root, types);
-
 				auto n_push_constant = root.child("push_constant");
-				push_constant = find_type(types, n_push_constant.attribute("type_id").as_uint());
+				pcti = find_udt(n_push_constant.attribute("type_name").value(), tidb);
 			}
 
-			auto pll = new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);
+			auto pll = new PipelineLayoutPrivate(device, filename, dsls, tidb, pcti);
 			device->plls.emplace_back(pll);
 			return pll;
 		}
@@ -937,7 +824,7 @@ namespace flame
 			auto spv_path = ppath / L"build";
 			if (!std::filesystem::exists(spv_path))
 				std::filesystem::create_directories(spv_path);
-			spv_path += filename.filename();
+			spv_path /= filename.filename();
 			spv_path += L"." + str_hash + L".spv";
 
 			auto dependencies = get_make_dependencies(filename);

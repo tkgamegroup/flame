@@ -7,6 +7,7 @@ namespace flame
 	struct UdtInfoPrivate;
 	struct EnumInfoPrivate;
 	struct LibraryPrivate;
+	struct TypeInfoDataBasePrivate;
 
 	struct TypeInfoPrivate : TypeInfo
 	{
@@ -33,7 +34,7 @@ namespace flame
 		uint get_col_size() const override { return col_size; }
 		TypeInfo* get_pointed_type() const override { return pointed_type; }
 
-		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);
+		static TypeInfoPrivate* get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	};
 
 	struct ReflectMetaBridge : ReflectMeta
@@ -48,6 +49,8 @@ namespace flame
 		uint get_tokens_count() const override { return tokens.size(); }
 		void get_token(char** pname, char** pvalue, uint idx) const override;
 		bool get_token(const std::string& str, char** pvalue) const;
+
+		std::string concat() const;
 	};
 
 	inline bool ReflectMetaBridge::get_token(const char* str, char** pvalue) const
@@ -62,19 +65,22 @@ namespace flame
 		TypeInfoPrivate* type;
 		std::string name;
 		uint offset;
+		uint array_size = 1;
+		uint array_stride = 0;
 		ReflectMetaPrivate meta;
-		void* default_value;
+		std::string default_value;
 
-		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, const std::string& meta);
-		~VariableInfoPrivate();
+		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta);
 
 		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
 		uint get_index() const override { return index; }
 		TypeInfo* get_type() const override { return type; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_offset() const override { return offset; }
+		uint get_array_size() const override { return array_size; }
+		uint get_array_stride() const override { return array_stride; }
 		ReflectMeta* get_meta() const override { return (ReflectMeta*)&meta; }
-		const void* get_default_value() const override { return default_value; }
+		const char* get_default_value() const override { return default_value.c_str(); }
 	};
 
 	struct EnumItemPrivate : EnumItem
@@ -96,6 +102,8 @@ namespace flame
 	{
 		EnumItem* find_item(const char* name) const override;
 		EnumItem* find_item(int value) const override;
+		EnumItem* add_item(const char* name, int value, int idx) override;
+		void remove_item(EnumItem* item) override;
 	};
 
 	struct EnumInfoPrivate : EnumInfoBridge
@@ -112,6 +120,8 @@ namespace flame
 		EnumItem* get_item(uint idx) const override { return items[idx].get(); }
 		EnumItemPrivate* find_item(const std::string& name) const;
 		EnumItemPrivate* find_item(int value) const;
+		EnumItemPrivate* add_item(const std::string& name, int value, int idx = -1);
+		void remove_item(EnumItemPrivate* item);
 	};
 
 	inline EnumItem* EnumInfoBridge::find_item(const char* name) const
@@ -122,6 +132,16 @@ namespace flame
 	inline EnumItem* EnumInfoBridge::find_item(int value) const
 	{
 		return ((EnumInfoPrivate*)this)->find_item(value);
+	}
+
+	inline EnumItem* EnumInfoBridge::add_item(const char* name, int value, int idx)
+	{
+		return ((EnumInfoPrivate*)this)->add_item(name, value, idx);
+	}
+
+	inline void EnumInfoBridge::remove_item(EnumItem* item)
+	{
+		((EnumInfoPrivate*)this)->remove_item((EnumItemPrivate*)item);
 	}
 
 	struct FunctionInfoPrivate : FunctionInfo
@@ -144,13 +164,18 @@ namespace flame
 		const char* get_name() const override { return name.c_str(); }
 		uint get_rva() const override { return rva; }
 		uint get_voff() const override { return voff; }
-		void* get_address(void* obj) const override;
 		TypeInfo* get_type() const override { return type; }
+
 		uint get_parameters_count() const override { return parameters.size(); }
 		TypeInfo* get_parameter(uint idx) const override { return parameters[idx]; }
+		void add_parameter(TypeInfo* ti, int idx) override;
+		void remove_parameter(uint idx) override;
+
 		const char* get_code() const override { return code.c_str(); }
 
 		bool check(TypeInfo* ret, uint parms_count = 0, TypeInfo* const* parms = nullptr) const override;
+
+		void* get_address(void* obj) const override;
 
 		void call(void* obj, void* ret, void* parameters) const override;
 	};
@@ -158,7 +183,11 @@ namespace flame
 	struct UdtInfoBridge : UdtInfo 
 	{
 		VariableInfo* find_variable(const char* name) const override;
+		VariableInfo* add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx) override;
+		void remove_variable(VariableInfo* vi) override;
 		FunctionInfo* find_function(const char* name) const override;
+		FunctionInfo* add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx) override;
+		void remove_function(FunctionInfo* fi) override;
 	};
 
 	struct UdtInfoPrivate : UdtInfoBridge
@@ -176,12 +205,18 @@ namespace flame
 		const char* get_name() const override { return name.c_str(); }
 		uint get_size() const override { return size; }
 		const char* get_base_name() const override { return base_name.c_str(); }
+
 		uint get_variables_count() const override { return variables.size(); }
 		VariableInfo* get_variable(uint idx) const override { return variables[idx].get(); }
 		VariableInfoPrivate* find_variable(const std::string& name) const;
+		VariableInfoPrivate* add_variable(TypeInfoPrivate* ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx = -1);
+		void remove_variable(VariableInfoPrivate* vi);
+
 		uint get_functions_count() const override { return functions.size(); }
 		FunctionInfo* get_function(uint idx) const override { return functions[idx].get(); }
 		FunctionInfoPrivate* find_function(const std::string& name) const;
+		FunctionInfoPrivate* add_function(const std::string& name, uint rva, uint voff, TypeInfoPrivate* ti, int idx = -1);
+		void remove_function(FunctionInfoPrivate* fi);
 	};
 
 	inline VariableInfo* UdtInfoBridge::find_variable(const char* name) const
@@ -189,19 +224,81 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->find_variable(name);
 	}
 
+	inline VariableInfo* UdtInfoBridge::add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx)
+	{
+		return ((UdtInfoPrivate*)this)->add_variable((TypeInfoPrivate*)ti, name, offset, array_size, array_stride, default_value, meta, idx);
+	}
+
+	inline void UdtInfoBridge::remove_variable(VariableInfo* vi)
+	{
+		((UdtInfoPrivate*)this)->remove_variable((VariableInfoPrivate*)vi);
+	}
+
 	inline FunctionInfo* UdtInfoBridge::find_function(const char* name) const
 	{
 		return ((UdtInfoPrivate*)this)->find_function(name);
 	}
 
+	inline FunctionInfo* UdtInfoBridge::add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx)
+	{
+		return ((UdtInfoPrivate*)this)->add_function(name, rva, voff, (TypeInfoPrivate*)ti, idx);
+	}
+
+	inline void UdtInfoBridge::remove_function(FunctionInfo* vi)
+	{
+		((UdtInfoPrivate*)this)->remove_function((FunctionInfoPrivate*)vi);
+	}
+
+	struct TypeInfoKey
+	{
+		int t;
+		std::string n;
+
+		TypeInfoKey(int t, const std::string& n) :
+			t(t),
+			n(n)
+		{
+		}
+
+		bool operator==(const TypeInfoKey& rhs) const
+		{
+			return t == rhs.t && n == rhs.n;
+		}
+	};
+
+	struct Hasher_TypeInfoKey
+	{
+		std::size_t operator()(const TypeInfoKey& k) const
+		{
+			return std::hash<std::string>()(k.n) ^ std::hash<int>()(k.t);
+		}
+	};
+
+
+	struct TypeInfoDataBasePrivate : TypeInfoDataBase
+	{
+		std::unordered_map<TypeInfoKey, std::unique_ptr<TypeInfoPrivate>, Hasher_TypeInfoKey> typeinfos;
+
+		std::unordered_map<std::string, std::unique_ptr<EnumInfoPrivate>> enums;
+		std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;
+		std::unordered_map<std::string, std::unique_ptr<UdtInfoPrivate>> udts;
+
+		void release() override { delete this; }
+	};
+
+	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
+	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
+	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	void save_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db = nullptr);
+
 	struct LibraryPrivate : Library
 	{
 		char* address;
-		std::wstring filename;
+		std::filesystem::path filename;
 		bool has_typeinfo = false;
 		int ref_count = 1;
 
-		LibraryPrivate(const std::wstring& filename, bool require_typeinfo);
+		LibraryPrivate(const std::filesystem::path& filename, bool require_typeinfo);
 		~LibraryPrivate();
 
 		void* _get_exported_function(const char* name);
@@ -211,8 +308,7 @@ namespace flame
 		char* get_address() const override { return address; }
 		const wchar_t* get_filename() const override { return filename.c_str(); }
 		void* get_exported_function(const char* name) override { return _get_exported_function(name); }
-	};
 
-	EnumInfoPrivate* find_enum(const std::string& name);
-	UdtInfoPrivate* find_udt(const std::string& name);
+		static LibraryPrivate* load(const std::filesystem::path& filename, bool require_typeinfo = true);
+	};
 }

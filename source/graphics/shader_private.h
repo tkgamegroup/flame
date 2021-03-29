@@ -2,6 +2,7 @@
 
 #include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/shader.h>
 #include "graphics_private.h"
 
@@ -15,62 +16,13 @@ namespace flame
 		struct RenderpassPrivate;
 		struct DescriptorSetPrivate;
 
-		struct ShaderType;
-
-		struct ShaderVariable
-		{
-			std::string name;
-			uint offset = 0;
-			uint size = 0;
-			uint array_count = 0;
-			uint array_stride = 0;
-
-			ShaderType* info = nullptr;
-		};
-
-		struct ShaderType
-		{
-			uint id = -1;
-			ShaderTypeTag tag = ShaderTagStruct;
-			std::string name;
-			uint size = 0;
-			std::vector<ShaderVariable> variables;
-			std::unordered_map<uint64, uint> variables_map;
-
-			void make_map()
-			{
-				for (auto i = 0; i < variables.size(); i++)
-					variables_map[std::hash<std::string>()(variables[i].name)] = i;
-			}
-		};
-
-		inline ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, uint id)
-		{
-			for (auto& t : types)
-			{
-				if (t->id == id)
-					return t.get();
-			}
-			return nullptr;
-		}
-
-		inline ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, const std::string& name)
-		{
-			for (auto& t : types)
-			{
-				if (t->name == name)
-					return t.get();
-			}
-			return nullptr;
-		}
-
 		struct DescriptorBinding
 		{
 			DescriptorType type = DescriptorMax;
 			uint count;
 			std::string name;
 
-			ShaderType* info = nullptr;
+			UdtInfo* ti = nullptr;
 		};
 
 		struct DescriptorPoolPrivate : DescriptorPool
@@ -95,13 +47,13 @@ namespace flame
 
 			std::filesystem::path filename;
 
-			std::vector<std::unique_ptr<ShaderType>> types;
+			FlmPtr<TypeInfoDataBase> tidb;
 			std::vector<DescriptorBinding> bindings;
 
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
 			DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> bindings);
-			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& types, std::vector<DescriptorBinding>& bindings);
+			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<DescriptorBinding>& bindings, TypeInfoDataBase* db);
 			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
@@ -182,13 +134,14 @@ namespace flame
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_set_layouts;
 			std::unordered_map<uint64, uint> descriptor_set_layouts_map;
 
-			std::vector<std::unique_ptr<ShaderType>> types;
-			ShaderType* push_constant = nullptr;
+			FlmPtr<TypeInfoDataBase> tidb;
+			UdtInfo* pcti = nullptr;
+			uint push_constant_size = 0;
 
 			VkPipelineLayout vk_pipeline_layout;
 
 			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
-			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& types, ShaderType* push_constant);
+			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pcti);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
