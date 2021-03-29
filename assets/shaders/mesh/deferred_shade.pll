@@ -1,0 +1,4 @@
+#ifndef MAKE_PLL
+#define DEFERRED_SHADE_SET 0
+#include "deferred_shade.dsl"
+#endif

@@ -69,22 +69,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "int";
 							dst->size = sizeof(int);
 							break;
 						case 2:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "ivec2";
 							dst->size = sizeof(ivec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "ivec3";
 							dst->size = sizeof(ivec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "ivec4";
 							dst->size = sizeof(ivec4);
 							break;
@@ -103,22 +103,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "uint";
 							dst->size = sizeof(uint);
 							break;
 						case 2:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "uvec2";
 							dst->size = sizeof(uvec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "uvec3";
 							dst->size = sizeof(uvec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "uvec4";
 							dst->size = sizeof(uvec4);
 							break;
@@ -137,22 +137,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "float";
 							dst->size = sizeof(float);
 							break;
 						case 2:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "vec2";
 							dst->size = sizeof(vec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "vec3";
 							dst->size = sizeof(vec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "vec4";
 							dst->size = sizeof(vec4);
 							break;
@@ -164,7 +164,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "mat2";
 							dst->size = sizeof(mat2);
 							break;
@@ -176,7 +176,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "mat3";
 							dst->size = sizeof(mat3);
 							break;
@@ -188,7 +188,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							dst->tag = ShaderTagBase;
+							dst->tag = ShaderTagBasic;
 							dst->name = "mat4";
 							dst->size = sizeof(mat4);
 							break;
@@ -277,8 +277,8 @@ namespace flame
 					v.name = n_variable.attribute("name").value();
 					v.offset = n_variable.attribute("offset").as_uint();
 					v.size = n_variable.attribute("size").as_uint();
-					v.array_count = n_variable.attribute("array_count").as_uint();
-					v.array_stride = n_variable.attribute("array_stride").as_uint();
+					v.array_count = n_variable.attribute("array_count").as_uint(1);
+					v.array_stride = n_variable.attribute("array_stride").as_uint(0);
 					v.info = (ShaderType*)n_variable.attribute("type_id").as_uint();
 					t->variables.push_back(v);
 				}
@@ -299,7 +299,7 @@ namespace flame
 			{
 				auto n_type = n_types.append_child("type");
 				n_type.append_attribute("id").set_value(t->id);
-				n_type.append_attribute("tag").set_value((int)t->tag);
+				n_type.append_attribute("tag").set_value(ti_es("flame::graphics::ShaderTypeTag")->serialize(&t->tag).c_str());
 				n_type.append_attribute("name").set_value(t->name.c_str());
 				n_type.append_attribute("size").set_value(t->size);
 				if (!t->variables.empty())
@@ -311,8 +311,11 @@ namespace flame
 						n_variable.append_attribute("name").set_value(v.name.c_str());
 						n_variable.append_attribute("offset").set_value(v.offset);
 						n_variable.append_attribute("size").set_value(v.size);
-						n_variable.append_attribute("array_count").set_value(v.array_count);
-						n_variable.append_attribute("array_stride").set_value(v.array_stride);
+						if (v.array_count > 1)
+						{
+							n_variable.append_attribute("array_count").set_value(v.array_count);
+							n_variable.append_attribute("array_stride").set_value(v.array_stride);
+						}
 						n_variable.append_attribute("type_id").set_value(v.info->id);
 					}
 				}
@@ -425,7 +428,10 @@ namespace flame
 					return d.get();
 			}
 
-			auto res_path = filename;
+			auto res_path = filename.parent_path() / L"build";
+			if (!std::filesystem::exists(res_path))
+				std::filesystem::create_directories(res_path);
+			res_path += filename.filename();
 			res_path += L".res";
 
 			std::vector<std::unique_ptr<ShaderType>> types;
@@ -548,7 +554,7 @@ namespace flame
 				pugi::xml_node root;
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
-					printf("res file does not exist\n");
+					printf("res file wrong format\n");
 					fassert(0);
 					return nullptr;
 				}
@@ -756,7 +762,10 @@ namespace flame
 					return p.get();
 			}
 
-			auto res_path = filename;
+			auto res_path = filename.parent_path() / L"build";
+			if (!std::filesystem::exists(res_path))
+				std::filesystem::create_directories(res_path);
+			res_path += filename.filename();
 			res_path += L".res";
 
 			std::vector<DescriptorSetLayoutPrivate*> dsls;
@@ -862,7 +871,7 @@ namespace flame
 				pugi::xml_node root;
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
-					printf("res file does not exist\n");
+					printf("res file wrong format\n");
 					fassert(0);
 					return nullptr;
 				}
@@ -925,11 +934,13 @@ namespace flame
 				hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
 			auto str_hash = std::to_wstring(hash);
 
-			auto spv_path = filename;
-			spv_path += L"." + str_hash;
+			auto spv_path = ppath / L"build";
+			if (!std::filesystem::exists(spv_path))
+				std::filesystem::create_directories(spv_path);
+			spv_path += filename.filename();
+			spv_path += L"." + str_hash + L".spv";
 
 			auto dependencies = get_make_dependencies(filename);
-
 
 			for (auto& s : substitutes)
 			{

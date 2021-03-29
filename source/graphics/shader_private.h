@@ -28,13 +28,6 @@ namespace flame
 			ShaderType* info = nullptr;
 		};
 
-		enum ShaderTypeTag
-		{
-			ShaderTagBase,
-			ShaderTagStruct,
-			ShaderTagImage
-		};
-
 		struct ShaderType
 		{
 			uint id = -1;
@@ -160,22 +153,12 @@ namespace flame
 
 		struct ShaderPrivate : Shader
 		{
-			struct InOutInfo
-			{
-				uint location;
-				std::string name;
-				std::string type;
-			};
-
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 			std::vector<std::pair<std::string, std::string>> substitutes;
 			ShaderStageFlags type = ShaderStageNone;
 
 			DevicePrivate* device;
-
-			//std::vector<InOutInfo> inputs;
-			//std::vector<InOutInfo> outputs;
 
 			VkShaderModule vk_module = 0;
 

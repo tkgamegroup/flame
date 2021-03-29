@@ -52,13 +52,13 @@ namespace flame
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::create(graphics::Device* d, graphics::BufferUsageFlags usage, uint _capacity)
+	void GeometryBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 	{
 		capacity = _capacity;
 		access = usage2access(usage);
 		auto size = capacity * sizeof(T);
-		buf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-		stagbuf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+		stagbuf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
 		stagbuf->map();
 		pstag = (T*)stagbuf->get_mapped();
 	}
@@ -102,17 +102,17 @@ namespace flame
 	}
 
 	template <class T>
-	void PileBuffer<T>::create(graphics::Device* d, graphics::BufferUsageFlags usage, uint _capacity)
+	void SparseGeometryBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 	{
 		capacity = _capacity;
 		access = usage2access(usage);
 		auto size = capacity * sizeof(T);
-		buf.reset(graphics::Buffer::create(d, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-		stagbuf.reset(graphics::Buffer::create(d, sizeof(T) * 100, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+		stagbuf.reset(graphics::Buffer::create(device, sizeof(T) * 100, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
 	}
 
 	template <class T>
-	T* PileBuffer<T>::alloc(uint n)
+	T* SparseGeometryBuffer<T>::alloc(uint n)
 	{
 		fassert(n0 == n1);
 		auto size = n * sizeof(T);
@@ -127,13 +127,13 @@ namespace flame
 	}
 
 	template <class T>
-	void PileBuffer<T>::free(T* p)
+	void SparseGeometryBuffer<T>::free(T* p)
 	{
 
 	}
 
 	template <class T>
-	void PileBuffer<T>::upload(graphics::CommandBuffer* cb)
+	void SparseGeometryBuffer<T>::upload(graphics::CommandBuffer* cb)
 	{
 		if (n1 > n0)
 		{
@@ -787,43 +787,57 @@ namespace flame
 		}
 		if (find_define("DOUBLE_SIDE"))
 			cull_mode == graphics::CullModeNone;
-		if (use_mat)
+		if (use_mat && !mat.empty())
 		{
 			defines.push_back("MAT");
 			substitutes.emplace_back("MAT_FILE", mat.string());
 		}
+
+		std::string defines_str;
+		for (auto& t : defines)
+		{
+			defines_str += t;
+			defines_str += ' ';
+		}
+		std::string substitutes_str;
+		for (auto& t : substitutes)
+		{
+			defines_str += t.first;
+			defines_str += ' ';
+			defines_str += t.second;
+			defines_str += ' ';
+		}
+
 		switch (usage)
 		{
 		//case MaterialForMeshShadow:
 		//	defines.push_back("SHADOW_PASS");
-		//case MaterialForMesh:
-		//{
-		//	graphics::Shader* shaders[] = {
-		//		graphics::Shader::get(device, L"mesh/forward.vert", defines, {}),
-		//		graphics::Shader::get(device, L"mesh/forward.frag", defines, substitutes)
-		//	};
-		//	graphics::VertexAttributeInfo vias[3];
-		//	vias[0].location = 0;
-		//	vias[0].format = graphics::Format_R32G32B32_SFLOAT;
-		//	vias[1].location = 1;
-		//	vias[1].format = graphics::Format_R32G32_SFLOAT;
-		//	vias[2].location = 2;
-		//	vias[2].format = graphics::Format_R32G32B32_SFLOAT;
-		//	graphics::VertexBufferInfo vib;
-		//	vib.attributes_count = size(vias);
-		//	vib.attributes = vias;
-		//	graphics::VertexInfo vi;
-		//	vi.buffers_count = 1;
-		//	vi.buffers = &vib;
-		//	graphics::RasterInfo rst;
-		//	rst.polygon_mode = polygon_mode;
-		//	graphics::DepthInfo dep;
-		//	dep.test = depth_test;
-		//	dep.write = depth_write;
-		//	ret = graphics::Pipeline::create(device, size(shaders), shaders, 
-		//		graphics::PipelineLayout::get(device, L"mesh/deferred.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
-		//}
-		//	break;
+		case MaterialForMesh:
+		{
+			graphics::Shader* shaders[] = {
+				graphics::Shader::get(device, L"mesh/deferred_geometry.vert", defines_str.c_str(), substitutes_str.c_str()),
+				graphics::Shader::get(device, L"mesh/deferred_geometry.frag", defines_str.c_str(), substitutes_str.c_str())
+			};
+			graphics::GraphicsPipelineInfo info;
+			graphics::VertexAttributeInfo vias[3];
+			vias[0].location = 0;
+			vias[0].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[1].location = 1;
+			vias[1].format = graphics::Format_R32G32_SFLOAT;
+			vias[2].location = 2;
+			vias[2].format = graphics::Format_R32G32B32_SFLOAT;
+			graphics::VertexBufferInfo vib;
+			vib.attributes_count = size(vias);
+			vib.attributes = vias;
+			info.vertex_buffers_count = 1;
+			info.vertex_buffers = &vib;
+			info.polygon_mode = polygon_mode;
+			info.depth_test = depth_test;
+			info.depth_write = depth_write;
+			ret = graphics::Pipeline::create(device, size(shaders), shaders, 
+				graphics::PipelineLayout::get(device, L"mesh/deferred_geometry.pll"), info);
+		}
+			break;
 		//case MaterialForMeshShadowArmature:
 		//	defines.push_back("SHADOW_PASS");
 		//case MaterialForMeshArmature:
@@ -897,7 +911,20 @@ namespace flame
 
 	void sRendererPrivate::record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
-
+		auto vp = Rect(vec2(0.f), tar_size);
+		cb->set_viewport(vp);
+		cb->set_scissor(vp);
+		vec4 cvs[] = { 
+			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f)
+		};
+		cb->begin_renderpass(nullptr, fb_def.get(), cvs);
+		cb->bind_pipeline(pl_mats[MaterialForMesh][0].pipeline.get());
+		cb->bind_vertex_buffer(buf_mesh_vtx.buf.get(), 0);
+		cb->bind_index_buffer(buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+		cb->end_renderpass();
 	}
 
 	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
@@ -953,18 +980,36 @@ namespace flame
 		buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
 		buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
 
-		mesh_reses.resize(64);
+		buf_transform.create(device, graphics::BufferUsageStorage, 10000);
 
-		canvas = (graphics::Canvas*)world->find_object("flame::graphics::Canvas");
+		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_size, 1, 1,
+			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		img_dep.reset(graphics::Image::create(device, graphics::Format_Depth16, tar_size, 1, 1, 
+			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		img_def_geo0.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
+			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		img_def_geo1.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
+			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+
+		{
+			graphics::ImageView* vs[4];
+			vs[0] = img_def_geo0->get_view();
+			vs[1] = img_def_geo0->get_view();
+			vs[2] = img_dep->get_view();
+			vs[3] = img_back->get_view();
+			fb_def.reset(graphics::Framebuffer::create(device,
+				graphics::Renderpass::get(device, L"deferred.rp"), size(vs), vs));
+		}
+
+		get_material_pipeline(MaterialForMesh, L"", "");
+
+		mesh_reses.resize(64);
 	}
 
 	void sRendererPrivate::update()
 	{
 		if (!dirty && !always_update)
 			return;
-
-		last_element = nullptr;
-		last_element_changed = false;
 
 		element_drawing_scissor = Rect(vec2(0.f), tar_size);
 		for (auto i = 0; i < size(element_drawing_layers); i++)

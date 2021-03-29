@@ -7,8 +7,8 @@
 #include "../light.dsl"
 #define SKY_SET 3
 #include "../sky.dsl"
-#define TRANSFORMATION_SET 4
-#include "../transformation.dsl"
+#define TRANSFOR_SET 4
+#include "../transform.dsl"
 #define ARMATURE_SET 5
 #include "../armature.dsl"
 #endif

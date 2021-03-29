@@ -44,7 +44,7 @@ namespace flame
 	};
 
 	template <class T>
-	struct PileBuffer
+	struct SparseGeometryBuffer
 	{
 		uint capacity;
 		graphics::AccessFlags access;
@@ -58,6 +58,12 @@ namespace flame
 		T* alloc(uint n);
 		void free(T* p);
 		void upload(graphics::CommandBuffer* cb);
+	};
+
+	template <class T>
+	struct StorageBuffer
+	{
+
 	};
 
 	struct ElementVertex
@@ -185,19 +191,25 @@ namespace flame
 
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
-		
-		FlmPtr<graphics::Framebuffer> fb_def;
 
-		PileBuffer<MeshVertex>		buf_mesh_vtx;
-		PileBuffer<uint>			buf_mesh_idx;
-		PileBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
-		PileBuffer<uint>			buf_arm_mesh_idx;
+		SparseGeometryBuffer<MeshVertex>		buf_mesh_vtx;
+		SparseGeometryBuffer<uint>			buf_mesh_idx;
+		SparseGeometryBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
+		SparseGeometryBuffer<uint>			buf_arm_mesh_idx;
 
+		GeometryBuffer<mat4>		buf_transform;
+
+		FlmPtr<graphics::DescriptorSet> ds_transform;
+
+		FlmPtr<graphics::Image> img_back;
 		FlmPtr<graphics::Image> img_dep;
 		FlmPtr<graphics::Image> img_def_geo0; // albedo, metallic
 		FlmPtr<graphics::Image> img_def_geo1; // normal, roughness
+		
+		FlmPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
+
 		// ======================
 
 		// ==== post ====
@@ -209,9 +221,6 @@ namespace flame
 		bool dirty = true;
 
 		vec2 tar_size;
-
-		cElementPrivate* last_element;
-		bool last_element_changed;
 
 		Rect element_drawing_scissor;
 		std::vector<ElementDrawCmd> element_drawing_layers[128];

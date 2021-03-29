@@ -38,10 +38,10 @@ void main()
 	o_normal = mat3(deform) * i_normal;
 	#endif
 #else
-	o_coordw = vec3(mesh_matrices[mod_idx].transform * vec4(i_position, 1.0));
+	o_coordw = vec3(transforms[mod_idx].transform * vec4(i_position, 1.0));
 
 	#ifndef SHADOW_PASS
-	o_normal = mat3(mesh_matrices[mod_idx].normal_matrix) * i_normal;
+	o_normal = mat3(transforms[mod_idx].normal_matrix) * i_normal;
 	#endif
 #endif
 	o_coordv = render_data.camera_coord - o_coordw;

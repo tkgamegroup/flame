@@ -297,6 +297,13 @@ namespace flame
 
 		inline ShaderStageFlags operator| (ShaderStageFlags a, ShaderStageFlags b) { return (ShaderStageFlags)((int)a | (int)b); }
 
+		enum ShaderTypeTag
+		{
+			ShaderTagBasic,
+			ShaderTagStruct,
+			ShaderTagImage
+		};
+
 		enum BlendFactor
 		{
 			BlendFactorZero,

@@ -228,15 +228,17 @@ namespace flame
 
 	inline std::vector<std::filesystem::path> get_make_dependencies(const std::filesystem::path& path)
 	{
-		auto inc_path = path;
-		inc_path += L".inc";
+		auto build_path = path.parent_path() / L"build";
+		auto dep_path = build_path;
+		dep_path /= path.filename();
+		dep_path += L".dep";
 
 		std::vector<std::filesystem::path> includes;
 
-		if (!std::filesystem::exists(inc_path) || std::filesystem::last_write_time(inc_path) < std::filesystem::last_write_time(path))
+		if (!std::filesystem::exists(dep_path) || std::filesystem::last_write_time(dep_path) < std::filesystem::last_write_time(path))
 		{
-			std::ofstream inc(inc_path);
-			inc << path.string() << std::endl;
+			std::ofstream dep(dep_path);
+			dep << path.string() << std::endl;
 			includes.push_back(path);
 			std::stack<std::filesystem::path> remains;
 			remains.push(path);
@@ -252,14 +254,16 @@ namespace flame
 					{
 						std::string line;
 						std::getline(target, line);
-						static auto reg = std::regex(R"(#include \"(.*)\")");
+						static auto reg1 = std::regex(R"(#include\s+\"(.*)\")");
+						static auto reg2 = std::regex(R"(#include\s+\<(.*)\>)");
 						std::smatch res;
-						if (std::regex_search(line, res, reg))
+						if (std::regex_search(line, res, reg1) || 
+							std::regex_search(line, res, reg2))
 						{
 							auto fn = std::filesystem::path(res[1].str());
 							if (!fn.is_absolute())
 								fn = p / fn;
-							inc << fn.string() << std::endl;
+							dep << fn.string() << std::endl;
 							includes.push_back(fn);
 							remains.push(fn);
 						}
@@ -267,19 +271,22 @@ namespace flame
 					target.close();
 				}
 			}
-			inc.close();
+			dep.close();
 		}
 		else
 		{
-			std::ifstream inc(inc_path);
-			while (!inc.eof())
+			if (!std::filesystem::exists(build_path))
+				std::filesystem::create_directories(build_path);
+
+			std::ifstream dep(dep_path);
+			while (!dep.eof())
 			{
 				std::string line;
-				std::getline(inc, line);
+				std::getline(dep, line);
 				if (!line.empty())
 					includes.push_back(line);
 			}
-			inc.close();
+			dep.close();
 		}
 
 		return includes;

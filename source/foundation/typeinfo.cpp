@@ -1261,15 +1261,8 @@ namespace flame
 		}
 		return nullptr;
 	}
-	UdtInfoPrivate* find_udt(const std::string& name)
-	{
-		for (auto& u : udts)
-		{
-			if (u.second->name == name)
-				return u.second.get();
-		}
-		return nullptr;
-	}
+
+	EnumInfo* find_enum(const char* name) { return find_enum(std::string(name)); }
 
 	EnumInfo* add_enum(const char* name, uint items_count, char** item_names, int* item_values)
 	{
@@ -1282,7 +1275,16 @@ namespace flame
 		return e;
 	}
 
-	EnumInfo* find_enum(const char* name) { return find_enum(std::string(name)); }
+	UdtInfoPrivate* find_udt(const std::string& name)
+	{
+		for (auto& u : udts)
+		{
+			if (u.second->name == name)
+				return u.second.get();
+		}
+		return nullptr;
+	}
+
 	UdtInfo* find_udt(const char* name) { return find_udt(std::string(name)); }
 
 	void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture)
