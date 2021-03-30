@@ -63,7 +63,10 @@ namespace flame
 	template <class T>
 	struct StorageBuffer
 	{
+		T* pstag = nullptr;
 
+		FlmPtr<graphics::Buffer> buf;
+		FlmPtr<graphics::Buffer> stagbuf;
 	};
 
 	struct ElementVertex
@@ -192,7 +195,7 @@ namespace flame
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
 
-		SparseGeometryBuffer<MeshVertex>		buf_mesh_vtx;
+		SparseGeometryBuffer<MeshVertex>	buf_mesh_vtx;
 		SparseGeometryBuffer<uint>			buf_mesh_idx;
 		SparseGeometryBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
 		SparseGeometryBuffer<uint>			buf_arm_mesh_idx;

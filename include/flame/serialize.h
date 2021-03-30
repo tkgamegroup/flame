@@ -186,6 +186,14 @@ namespace flame
 		return buf;
 	}
 
+	template <class T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+	inline std::string to_hex_string(T v)
+	{
+		std::stringstream ss;
+		ss << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << v;
+		return ss.str();
+	}
+
 	template <class T>
 	std::wstring to_wstring(T v)
 	{
@@ -207,6 +215,14 @@ namespace flame
 		wchar_t buf[32 * 4];
 		fmt(buf, size(buf), v);
 		return buf;
+	}
+
+	template <class T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+	inline std::wstring to_hex_wstring(T v)
+	{
+		std::wstringstream ss;
+		ss << std::setfill(L'0') << std::setw(sizeof(T) * 2) << std::hex << v;
+		return ss.str();
 	}
 
 	template <class T>

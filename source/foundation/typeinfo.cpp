@@ -18,7 +18,7 @@ namespace flame
 		void destroy(void* p, bool) const override { free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
 		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override {}
+		void serialize(const void* src, char* dst) const override {}
 		void unserialize(void* dst, const char* src) const override {}
 	};
 
@@ -29,10 +29,10 @@ namespace flame
 		{
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			const auto& s = find_enum(name)->find_item(*(int*)src)->name;
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -47,7 +47,7 @@ namespace flame
 		{
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto e = find_enum(name);
 			std::string s;
@@ -62,7 +62,7 @@ namespace flame
 				}
 				v >>= 1;
 			}
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -92,10 +92,10 @@ namespace flame
 			basic_type = BooleanType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(bool*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -117,10 +117,10 @@ namespace flame
 			basic_type = CharType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(char*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -137,10 +137,10 @@ namespace flame
 			is_signed = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uchar*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -156,10 +156,10 @@ namespace flame
 			basic_type = WideCharType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(wchar_t*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -175,10 +175,10 @@ namespace flame
 			basic_type = IntegerType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(int*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -195,10 +195,10 @@ namespace flame
 			is_signed = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uint*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -214,10 +214,10 @@ namespace flame
 			basic_type = IntegerType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(int64*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -234,10 +234,10 @@ namespace flame
 			is_signed = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uint64*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -253,10 +253,10 @@ namespace flame
 			basic_type = FloatingType;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(float*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -274,10 +274,12 @@ namespace flame
 			vec_size = 2;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "cvec2"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(cvec2*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -296,10 +298,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "cvec3"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(cvec3*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -318,10 +322,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "cvec4"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(cvec4*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -339,10 +345,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "ivec2"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(ivec2*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -360,10 +368,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "ivec3"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(ivec3*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -381,10 +391,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "ivec4"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(ivec4*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -403,10 +415,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "uvec2"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uvec2*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -425,10 +439,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "uvec3"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uvec3*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -447,10 +463,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "uvec4"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uvec4*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -468,10 +486,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "vec2"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(vec2*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -489,10 +509,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "vec3"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(vec3*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -510,10 +532,12 @@ namespace flame
 			ret_by_reg = false;
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "vec4"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(vec4*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -540,6 +564,8 @@ namespace flame
 			col_size = 2;
 			ret_by_reg = false;
 		}
+
+		const char* get_code_name() const override { return "mat2"; }
 	};
 
 	struct TypeInfoPrivate_mat3 : TypeInfoPrivate_Pod
@@ -552,6 +578,8 @@ namespace flame
 			col_size = 3;
 			ret_by_reg = false;
 		}
+
+		const char* get_code_name() const override { return "mat3"; }
 	};
 
 	struct TypeInfoPrivate_mat4 : TypeInfoPrivate_Pod
@@ -564,6 +592,8 @@ namespace flame
 			col_size = 4;
 			ret_by_reg = false;
 		}
+
+		const char* get_code_name() const override { return "mat4"; }
 	};
 
 	struct TypeInfoPrivate_quat : TypeInfoPrivate_Pod
@@ -573,10 +603,12 @@ namespace flame
 		{
 		}
 
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		const char* get_code_name() const override { return "quat"; }
+
+		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(quat*)src);
-			strcpy(str_allocator(str, s.size()), s.data());
+			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -605,10 +637,10 @@ namespace flame
 				pointed_type->destroy(*(void**)p);
 			free(p); 
 		}
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			if (pointed_type)
-				pointed_type->serialize(*(void**)src, str, str_allocator);
+				pointed_type->serialize(*(void**)src, dst);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -648,10 +680,10 @@ namespace flame
 		{
 			return std::string(*(char**)a) == std::string(*(char**)b);
 		}
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
+		void serialize(const void* src, char* dst) const override
 		{
 			auto& p = *(char**)src;
-			strcpy(str_allocator(str, strlen(p)), p);
+			strcpy(dst, p);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -693,11 +725,11 @@ namespace flame
 		{
 			return std::wstring(*(wchar_t**)a) == std::wstring(*(wchar_t**)b);
 		}
-		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override 
+		void serialize(const void* src, char* dst) const override 
 		{
 			auto& p = *(wchar_t**)src;
-			const auto s = w2s(p);
-			strcpy(str_allocator(str, s.size()), s.c_str());
+			auto s = w2s(p);
+			strcpy(dst, s.c_str());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -885,6 +917,13 @@ namespace flame
 			break;
 		case TypePointer:
 			t = new TypeInfoPrivate_Pointer(name);
+			break;
+		case TypeData:
+		{
+			auto udt = find_udt(name, db);
+			if (udt)
+				t = new TypeInfoPrivate_Pod(TypeData, name, udt->size);
+		}
 			break;
 		}
 		if (!t)
@@ -1192,6 +1231,36 @@ namespace flame
 		}
 	}
 
+	void TypeInfoDataBasePrivate::sort_udts()
+	{
+		if (!udts_sorted)
+			udts_sorted = true;
+		for (auto& u : udts)
+			u.second->ranking = -1;
+		std::function<void(UdtInfoPrivate* u)> get_ranking;
+		get_ranking = [&](UdtInfoPrivate* u) {
+			if (u->ranking == -1)
+			{
+				auto ranking = 0;
+				for (auto& v : u->variables)
+				{
+					if (v->type->tag == TypePointer || v->type->tag == TypeData)
+					{
+						auto t = find_udt(v->type->name, this);
+						if (t && t != u)
+						{
+							get_ranking(t);
+							ranking = max(ranking, t->ranking + 1);
+						}
+					}
+				}
+				u->ranking = ranking;
+			}
+		};
+		for (auto& u : udts)
+			get_ranking(u.second.get());
+	}
+
 	TypeInfoDataBase* TypeInfoDataBase::create()
 	{
 		return new TypeInfoDataBasePrivate;
@@ -1217,11 +1286,38 @@ namespace flame
 
 	EnumInfo* find_enum(const char* name, TypeInfoDataBase* db) { return find_enum(std::string(name), (TypeInfoDataBasePrivate*)db); }
 
+	EnumInfoPrivate* add_enum(const std::string& name, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
+	{
+		if (!db)
+			db = &tidb;
+		auto ret = new EnumInfoPrivate(library, name);
+		db->enums.emplace(ret->name, ret);
+		return ret;
+	}
+
 	EnumInfo* add_enum(const char* name, TypeInfoDataBase* db)
 	{
-		auto ret = new EnumInfoPrivate(nullptr, name);
-		((TypeInfoDataBasePrivate*)db)->enums.emplace(ret->name, ret);
-		return ret;
+		return add_enum(name, nullptr, (TypeInfoDataBasePrivate*)db);
+	}
+
+	void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* _db)
+	{
+		auto db = (TypeInfoDataBasePrivate*)_db;
+		if (!db)
+			db = &tidb;
+		if (len)
+			*len = db->enums.size();
+		if (dst)
+		{
+			std::vector<EnumInfoPrivate*> vec(db->enums.size());
+			auto idx = 0;
+			for (auto& i : db->enums)
+				vec[idx++] = i.second.get();
+			std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+				return a->name < b->name;
+			});
+			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
+		}
 	}
 
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db)
@@ -1244,34 +1340,40 @@ namespace flame
 
 	UdtInfo* find_udt(const char* name, TypeInfoDataBase* db) { return find_udt(std::string(name), (TypeInfoDataBasePrivate*)db); }
 
-	UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* _db)
+	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
 	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
 		if (!db)
 			db = &tidb;
-		auto ret = new UdtInfoPrivate(nullptr, name, size, base_name);
+		db->udts_sorted = false;
+		auto ret = new UdtInfoPrivate(library, name, size, base_name);
 		db->udts.emplace(ret->name, ret);
 		return ret;
 	}
 
-	void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture, TypeInfoDataBase* _db)
+	UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* db)
 	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		for (auto& e : db->enums)
-			callback((Capture&)capture, e.second.get());
-		free(capture._data);
+		return add_udt(name, size, base_name, nullptr, (TypeInfoDataBasePrivate*)db);
 	}
 
-	void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture, TypeInfoDataBase* _db)
+	void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* _db)
 	{
 		auto db = (TypeInfoDataBasePrivate*)_db;
 		if (!db)
 			db = &tidb;
-		for (auto& u : db->udts)
-			callback((Capture&)capture, u.second.get());
-		free(capture._data);
+		if (len)
+			*len = db->udts.size();
+		if (dst)
+		{
+			db->sort_udts();
+			std::vector<UdtInfoPrivate*> vec(db->udts.size());
+			auto idx = 0;
+			for (auto& i : db->udts)
+				vec[idx++] = i.second.get();
+			std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+				return a->ranking < b->ranking;
+			});
+			memcpy(dst, vec.data(), sizeof(void*)* vec.size());
+		}
 	}
 
 	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
@@ -1305,16 +1407,14 @@ namespace flame
 
 		for (auto n_enum : file_root.child("enums"))
 		{
-			auto e = new EnumInfoPrivate(library, n_enum.attribute("name").value());
-			db->enums.emplace(e->name, e);
+			auto e = add_enum(n_enum.attribute("name").value(), library, db);
 
 			for (auto n_item : n_enum.child("items"))
 				e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
 		}
 		for (auto n_udt : file_root.child("udts"))
 		{
-			auto u = new UdtInfoPrivate(library, n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value());
-			db->udts.emplace(u->name, u);
+			auto u = add_udt(n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value(), library, db);
 
 			for (auto n_variable : n_udt.child("variables"))
 			{

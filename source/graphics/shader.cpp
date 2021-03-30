@@ -13,7 +13,7 @@ namespace flame
 	{
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase* db)
 		{
-			TypeInfo* ret;
+			TypeInfo* ret = nullptr;
 
 			if (src.basetype == spirv_cross::SPIRType::Struct)
 			{
@@ -25,17 +25,22 @@ namespace flame
 						size += (16 - m);
 				}
 
-				ret = TypeInfo::get(TypeData, name.c_str(), db);
-
 				auto ui = add_udt(name.c_str(), size, "", db);
+
+				ret = TypeInfo::get(TypeData, name.c_str(), db);
 
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
 					uint32_t id = src.member_types[i];
 
-					ui->add_variable(get_shader_type(glsl, glsl.get_type(id), db), 
-						glsl.get_member_name(src.self, i).c_str(), glsl.type_struct_member_offset(src, i), 
-						glsl.get_type(id).array[0], glsl.get_decoration(id, spv::DecorationArrayStride), "", "");
+					auto type = get_shader_type(glsl, glsl.get_type(id), db);
+					auto name = glsl.get_member_name(src.self, i);
+					auto offset = glsl.type_struct_member_offset(src, i);
+					auto arr_size = glsl.get_type(id).array[0];
+					auto arr_stride = glsl.get_decoration(id, spv::DecorationArrayStride);
+					if (arr_stride == 0)
+						arr_size = 1;
+					ui->add_variable(type, name.c_str(), offset, arr_size, arr_stride, "", "");
 				}
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
@@ -156,6 +161,66 @@ namespace flame
 			}
 
 			return ret;
+		}
+
+		static void write_udts_to_header(std::ofstream& header_file, TypeInfoDataBase* tidb)
+		{
+			std::vector<UdtInfo*> udts;
+			{
+				uint len;
+				get_udts(nullptr, &len, tidb);
+				udts.resize(len);
+				get_udts(udts.data(), nullptr, tidb);
+			}
+			for (auto udt : udts)
+			{
+				header_file << std::string("\tstruct ") + udt->get_name() + "\n\t{\n";
+				auto var_cnt = udt->get_variables_count();
+				auto off = 0;
+				auto dummy_id = 0;
+				auto push_dummy = [&](int d) {
+					switch (d)
+					{
+					case 4:
+						header_file << "\t\tfloat dummy_" + std::to_string(dummy_id) + ";\n";
+						break;
+					case 8:
+						header_file << "\t\tvec2 dummy_" + std::to_string(dummy_id) + ";\n";
+						break;
+					case 12:
+						header_file << "\t\tvec3 dummy_" + std::to_string(dummy_id) + ";\n";
+						break;
+					default:
+						fassert(0);
+					}
+				};
+				for (auto i = 0; i < var_cnt; i++)
+				{
+					auto var = udt->get_variable(i);
+					auto off2 = (int)var->get_offset();
+					if (off != off2)
+					{
+						push_dummy(off2 - off);
+						off = off2;
+						dummy_id++;
+					}
+					auto type = var->get_type();
+					header_file << std::string("\t\t") + type->get_code_name() + " " + var->get_name();
+					auto size = type->get_size();
+					auto array_size = var->get_array_size();
+					if (array_size > 1)
+					{
+						fassert(size == var->get_array_stride());
+						header_file << "[" + std::to_string(array_size) + "]";
+					}
+					header_file << ";\n";
+					off += size * array_size;
+				}
+				auto size = (int)udt->get_size();
+				if (off != size)
+					push_dummy(size - off);
+				header_file << "\t};\n\n";
+			}
 		}
 
 		static std::string basic_glsl_prefix()
@@ -326,10 +391,14 @@ namespace flame
 			res_path /= filename.filename();
 			res_path += L".res";
 
+			auto ti_path = res_path;
+			ti_path.replace_extension(L".typeinfo");
+
 			std::vector<DescriptorBinding> bindings;
 			TypeInfoDataBase* tidb = TypeInfoDataBase::create();
 
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
+			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
+				!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
@@ -409,8 +478,6 @@ namespace flame
 					for (auto& r : resources.storage_images)
 						get_binding(r, DescriptorStorageImage);
 
-					auto ti_path = res_path;
-					ti_path.replace_extension(L".typeinfo");
 					save_typeinfo(ti_path.c_str(), tidb);
 
 					pugi::xml_document res;
@@ -472,6 +539,18 @@ namespace flame
 						bindings.emplace_back(b);
 					}
 				}
+			}
+
+			auto header_path = res_path;
+			header_path.replace_extension(L".h");
+			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
+			{
+				std::ofstream header_file(header_path);
+				header_file << "#pragma once\n\n";
+				header_file << "namespace DSL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				write_udts_to_header(header_file, tidb);
+				header_file << "}\n";
+				header_file.close();
 			}
 
 			auto dsl = new DescriptorSetLayoutPrivate(device, filename, bindings, tidb);
@@ -655,6 +734,9 @@ namespace flame
 			res_path /= filename.filename();
 			res_path += L".res";
 
+			auto ti_path = res_path;
+			ti_path.replace_extension(L".typeinfo");
+
 			std::vector<DescriptorSetLayoutPrivate*> dsls;
 
 			auto ppath = filename.parent_path();
@@ -668,7 +750,8 @@ namespace flame
 			auto tidb = TypeInfoDataBase::create();
 			UdtInfo* pcti = nullptr;
 
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename))
+			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
+				!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
@@ -738,8 +821,6 @@ namespace flame
 					return nullptr;
 				}
 
-				auto ti_path = res_path;
-				ti_path.replace_extension(L".typeinfo");
 				save_typeinfo(ti_path.c_str(), tidb);
 
 				pugi::xml_document res;
@@ -767,6 +848,22 @@ namespace flame
 
 				auto n_push_constant = root.child("push_constant");
 				pcti = find_udt(n_push_constant.attribute("type_name").value(), tidb);
+			}
+
+			auto header_path = res_path;
+			header_path.replace_extension(L".h");
+			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
+			{
+				std::ofstream header_file(header_path);
+				header_file << "#pragma once\n\n";
+				header_file << "namespace PLL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				header_file << "\tenum Binding\n\t{\n";
+				for (auto& dsl : dsls)
+					header_file << "\t\tBinding_" + dsl->filename.filename().stem().string() + ",\n";
+				header_file << "\t};\n\n";
+				write_udts_to_header(header_file, tidb);
+				header_file << "}\n";
+				header_file.close();
 			}
 
 			auto pll = new PipelineLayoutPrivate(device, filename, dsls, tidb, pcti);
@@ -814,12 +911,12 @@ namespace flame
 
 			auto ppath = filename.parent_path();
 
-			auto hash = std::hash<std::wstring>()(filename);
+			auto hash = 0U;
 			for (auto& d : defines)
 				hash = hash ^ std::hash<std::string>()(d);
 			for (auto& s : substitutes)
 				hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
-			auto str_hash = std::to_wstring(hash);
+			auto str_hash = to_hex_wstring(hash);
 
 			auto spv_path = ppath / L"build";
 			if (!std::filesystem::exists(spv_path))

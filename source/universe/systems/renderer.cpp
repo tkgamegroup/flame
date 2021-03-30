@@ -14,6 +14,9 @@
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
+#include <element/build/element.pll.h>
+#include <build/transform.dsl.h>
+
 namespace flame
 {
 	static graphics::AccessFlags usage2access(graphics::BufferUsageFlags usage)
@@ -723,8 +726,8 @@ namespace flame
 		cb->bind_pipeline(pl_element);
 		cb->bind_vertex_buffer(buf_element_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_element_idx.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_descriptor_set(S<"element"_h>, ds_element.get());
-		cb->push_constant_t(0, 2.f / tar_size);
+		cb->bind_descriptor_set(PLL_element_aec9::Binding_element, ds_element.get());
+		cb->push_constant_t(0, PLL_element_aec9::PushConstant{ 2.f / tar_size });
 		auto vtx_off = 0;
 		auto idx_off = 0;
 		for (auto& c : cmds)
@@ -819,6 +822,8 @@ namespace flame
 				graphics::Shader::get(device, L"mesh/deferred_geometry.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			graphics::GraphicsPipelineInfo info;
+			info.renderpass = graphics::Renderpass::get(device, L"deferred.rp");
+			info.subpass_index = 0;
 			graphics::VertexAttributeInfo vias[3];
 			vias[0].location = 0;
 			vias[0].format = graphics::Format_R32G32B32_SFLOAT;
@@ -1001,7 +1006,7 @@ namespace flame
 				graphics::Renderpass::get(device, L"deferred.rp"), size(vs), vs));
 		}
 
-		//get_material_pipeline(MaterialForMesh, L"", "");
+		get_material_pipeline(MaterialForMesh, L"", "");
 
 		mesh_reses.resize(64);
 	}

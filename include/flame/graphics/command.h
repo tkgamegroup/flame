@@ -80,8 +80,12 @@ namespace flame
 			virtual void set_scissor(const Rect& rect) = 0;
 			virtual void bind_pipeline_layout(PipelineLayout* pll) = 0;
 			virtual void bind_pipeline(Pipeline* pl) = 0;
-			virtual void bind_descriptor_set(DescriptorSet* ds, uint idx) = 0;
-			virtual void bind_descriptor_set(uint64 h, DescriptorSet* ds) = 0;
+			virtual void bind_descriptor_sets(uint idx, uint cnt, DescriptorSet** dss) = 0;
+			inline void bind_descriptor_set(uint idx, DescriptorSet* ds)
+			{
+				DescriptorSet* dss[] = { ds };
+				bind_descriptor_sets(idx, 1, dss);
+			}
 			virtual void bind_vertex_buffer(Buffer* buf, uint id) = 0;
 			virtual void bind_index_buffer(Buffer* buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;

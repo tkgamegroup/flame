@@ -184,7 +184,7 @@ namespace flame
 				cb->copy_buffer(stag.get(), sample_uvs.get(), 1, &cpy);
 				cb->buffer_barrier(sample_uvs.get(), AccessTransferWrite, AccessShaderRead);
 				cb->bind_pipeline(sample_pipeline);
-				cb->bind_descriptor_set(sample_descriptorset.get(), 0);
+				cb->bind_descriptor_set(0, sample_descriptorset.get());
 				cb->dispatch(vec3(count, 1, 1));
 			}
 

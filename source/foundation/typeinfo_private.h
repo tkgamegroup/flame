@@ -26,6 +26,7 @@ namespace flame
 
 		TypeTag get_tag() const override { return tag; }
 		const char* get_name() const override { return name.c_str(); }
+		const char* get_code_name() const override { return name.c_str(); }
 		uint get_size() const override { return size; }
 
 		BasicType get_basic() const override { return basic_type; }
@@ -199,6 +200,8 @@ namespace flame
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 
+		int ranking = -1;
+
 		UdtInfoPrivate(LibraryPrivate* db, const std::string& name, uint size, const std::string& base_name);
 
 		Library* get_library() const override { return (Library*)library; }
@@ -283,11 +286,19 @@ namespace flame
 		std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;
 		std::unordered_map<std::string, std::unique_ptr<UdtInfoPrivate>> udts;
 
+		bool udts_sorted = false;
+
 		void release() override { delete this; }
+
+		void sort_udts();
 	};
 
 	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
+	EnumInfoPrivate* add_enum(const std::string& name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
+	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+
 	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
 	void save_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db = nullptr);
 

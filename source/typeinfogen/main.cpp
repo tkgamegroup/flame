@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <dia2.h>
 #include <atlbase.h>
+#include <chrono>
 
 using namespace flame;
 
@@ -175,6 +176,7 @@ process:
 
 	auto pdb_path = executable_path;
 	pdb_path.replace_extension(L".pdb");
+	auto pdb_lwt = std::filesystem::last_write_time(pdb_path);
 
 	if (ap.has("-rm"))
 	{
@@ -293,14 +295,14 @@ process:
 	if (std::filesystem::exists(typeinfo_path))
 	{
 		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-		if (lwt > std::filesystem::last_write_time(pdb_path) && lwt > std::filesystem::last_write_time(desc_path))
+		if (lwt > pdb_lwt && lwt > std::filesystem::last_write_time(desc_path))
 		{
 			printf("typeinfo up to date\n");
 			return 0;
 		}
 	}
 
-	printf("generating typeinfo for %s: ", executable_path.string().c_str());
+	printf("generating typeinfo for %s\n", executable_path.string().c_str());
 
 	if (FAILED(CoInitialize(NULL)))
 	{
@@ -316,12 +318,15 @@ process:
 		fassert(0);
 		return 0;
 	}
+
 	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
 	{
 		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
 		fassert(0);
 		return 0;
 	}
+	printf("pdb last write time: %lld\n", std::chrono::duration_cast<std::chrono::milliseconds>(pdb_lwt.time_since_epoch()).count());
+
 	CComPtr<IDiaSession> session;
 	if (FAILED(dia_source->openSession(&session)))
 	{
@@ -329,6 +334,7 @@ process:
 		fassert(0);
 		return 0;
 	}
+
 	CComPtr<IDiaSymbol> global;
 	if (FAILED(session->get_globalScope(&global)))
 	{
@@ -551,17 +557,10 @@ process:
 								if (type_desc.tag != TypePointer)
 								{
 									if (type)
-									{
-										type->serialize((char*)obj + offset, &default_value, [](void* _str, uint size) {
-											auto& str = *(std::string*)_str;
-											str.resize(size);
-											return str.data();
-										});
-									}
+										default_value = type->serialize((char*)obj + offset);
 								}
 
-								u->add_variable(type, name.c_str(), offset,
-									1, 0, default_value.c_str(), "");
+								u->add_variable(type, name.c_str(), offset, 1, 0, default_value.c_str(), "");
 							}
 
 							s_type->Release();
@@ -587,7 +586,7 @@ process:
 	library->release();
 	db->release();
 
-	printf(" - done\n");
+	printf("typeinfo generated\n");
 
 	return 0;
 }

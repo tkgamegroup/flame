@@ -8,7 +8,9 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Device;
 		struct Buffer;
+		struct ImageView;
 		struct Renderpass;
 		struct Sampler;
 		struct DescriptorSet;

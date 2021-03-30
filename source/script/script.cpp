@@ -773,49 +773,62 @@ namespace flame
 				fassert(0);
 
 			lua_newtable(lua_state);
-			traverse_enums([](Capture& c, EnumInfo* ei) {
-				auto state = c.thiz<InstancePrivate>()->lua_state;
+			std::vector<EnumInfo*> enums;
+			{
+				uint len;
+				get_enums(nullptr, &len);
+				enums.resize(len);
+				get_enums(enums.data(), nullptr);
+			}
+			for (auto ei : enums)
+			{
+				lua_pushstring(lua_state, ei->get_name());
 
-				lua_pushstring(state, ei->get_name());
-
-				lua_newtable(state);
+				lua_newtable(lua_state);
 
 				auto count = ei->get_items_count();
 				for (auto i = 0; i < count; i++)
 				{
 					auto item = ei->get_item(i);
-					lua_pushstring(state, item->get_name());
-					lua_pushinteger(state, item->get_value());
-					lua_settable(state, -3);
+					lua_pushstring(lua_state, item->get_name());
+					lua_pushinteger(lua_state, item->get_value());
+					lua_settable(lua_state, -3);
 				}
 
-				lua_settable(state, -3);
-			}, Capture().set_thiz(this));
+				lua_settable(lua_state, -3);
+			}
 			lua_setglobal(lua_state, "enums");
 
 			lua_newtable(lua_state);
-			traverse_udts([](Capture& c, UdtInfo* ui) {
-				auto state = c.thiz<InstancePrivate>()->lua_state;
+			std::vector<UdtInfo*> udts;
+			{
+				uint len;
+				get_udts(nullptr, &len);
+				udts.resize(len);
+				get_udts(udts.data(), nullptr);
+			}
+			for (auto ui : udts)
+			{
 				auto udt_name = std::string(ui->get_name());
 				if (!udt_name.ends_with("Private"))
 				{
-					lua_pushstring(state, udt_name.c_str());
+					lua_pushstring(lua_state, udt_name.c_str());
 
-					lua_newtable(state);
+					lua_newtable(lua_state);
 
-					lua_pushstring(state, "base");
-					lua_pushstring(state, ui->get_base_name());
-					lua_settable(state, -3);
+					lua_pushstring(lua_state, "base");
+					lua_pushstring(lua_state, ui->get_base_name());
+					lua_settable(lua_state, -3);
 
-					lua_pushstring(state, "variables");
-					lua_newtable(state);
-					auto variables_count = ui->get_variables_count();
-					for (auto i = 0; i < variables_count; i++)
+					lua_pushstring(lua_state, "variables");
+					lua_newtable(lua_state);
+					auto var_cnt = ui->get_variables_count();
+					for (auto i = 0; i < var_cnt; i++)
 					{
 						auto variable = ui->get_variable(i);
 						auto type = variable->get_type();
 
-						lua_pushstring(state, variable->get_name());
+						lua_pushstring(lua_state, variable->get_name());
 
 						auto tag = type->get_tag();
 						BasicType basic;
@@ -828,35 +841,35 @@ namespace flame
 						else
 							basic = type->get_basic();
 
-						lua_newtable(state);
-						lua_pushstring(state, "offset");
-						lua_pushinteger(state, variable->get_offset());
-						lua_settable(state, -3);
-						lua_pushstring(state, "tag");
-						lua_pushinteger(state, tag);
-						lua_settable(state, -3);
-						lua_pushstring(state, "type");
-						lua_pushstring(state, type->get_name());
-						lua_settable(state, -3);
-						lua_pushstring(state, "basic");
-						lua_pushinteger(state, basic);
-						lua_settable(state, -3);
-						lua_pushstring(state, "vec_size");
-						lua_pushinteger(state, type->get_vec_size());
-						lua_settable(state, -3);
-						lua_pushstring(state, "col_size");
-						lua_pushinteger(state, type->get_col_size());
-						lua_settable(state, -3);
+						lua_newtable(lua_state);
+						lua_pushstring(lua_state, "offset");
+						lua_pushinteger(lua_state, variable->get_offset());
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "tag");
+						lua_pushinteger(lua_state, tag);
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "type");
+						lua_pushstring(lua_state, type->get_name());
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "basic");
+						lua_pushinteger(lua_state, basic);
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "vec_size");
+						lua_pushinteger(lua_state, type->get_vec_size());
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "col_size");
+						lua_pushinteger(lua_state, type->get_col_size());
+						lua_settable(lua_state, -3);
 
-						lua_settable(state, -3);
+						lua_settable(lua_state, -3);
 					}
-					lua_settable(state, -3);
+					lua_settable(lua_state, -3);
 
-					auto functions_count = ui->get_functions_count();
+					auto fun_cnt = ui->get_functions_count();
 					std::vector<std::tuple<FunctionInfo*, std::string, bool>> functions;
 					std::vector<FunctionInfo*> callbacks;
 					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> listeners;
-					for (auto i = 0; i < functions_count; i++)
+					for (auto i = 0; i < fun_cnt; i++)
 					{
 						auto function = ui->get_function(i);
 						auto parms_count = function->get_parameters_count();
@@ -894,61 +907,61 @@ namespace flame
 						}
 					}
 
-					lua_pushstring(state, "functions");
-					lua_newtable(state);
+					lua_pushstring(lua_state, "functions");
+					lua_newtable(lua_state);
 					for (auto& f : functions)
 					{
-						lua_pushstring(state, std::get<0>(f)->get_name());
+						lua_pushstring(lua_state, std::get<0>(f)->get_name());
 
-						lua_newtable(state);
-						lua_pushstring(state, "f");
-						lua_pushlightuserdata(state, std::get<0>(f));
-						lua_settable(state, -3);
-						lua_pushstring(state, "type");
-						lua_pushstring(state, std::get<1>(f).c_str());
-						lua_settable(state, -3);
-						lua_pushstring(state, "static");
-						lua_pushboolean(state, std::get<2>(f));
-						lua_settable(state, -3);
-						lua_pushstring(state, "index");
-						lua_pushinteger(state, std::get<0>(f)->get_index());
-						lua_settable(state, -3);
+						lua_newtable(lua_state);
+						lua_pushstring(lua_state, "f");
+						lua_pushlightuserdata(lua_state, std::get<0>(f));
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "type");
+						lua_pushstring(lua_state, std::get<1>(f).c_str());
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "static");
+						lua_pushboolean(lua_state, std::get<2>(f));
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "index");
+						lua_pushinteger(lua_state, std::get<0>(f)->get_index());
+						lua_settable(lua_state, -3);
 
-						lua_settable(state, -3);
+						lua_settable(lua_state, -3);
 					}
-					lua_settable(state, -3);
+					lua_settable(lua_state, -3);
 
-					lua_pushstring(state, "callbacks");
-					lua_newtable(state);
+					lua_pushstring(lua_state, "callbacks");
+					lua_newtable(lua_state);
 					for (auto c : callbacks)
 					{
-						lua_pushstring(state, c->get_name());
-						lua_pushlightuserdata(state, c);
-						lua_settable(state, -3);
+						lua_pushstring(lua_state, c->get_name());
+						lua_pushlightuserdata(lua_state, c);
+						lua_settable(lua_state, -3);
 					}
-					lua_settable(state, -3);
+					lua_settable(lua_state, -3);
 
-					lua_pushstring(state, "listeners");
-					lua_newtable(state);
+					lua_pushstring(lua_state, "listeners");
+					lua_newtable(lua_state);
 					for (auto& l : listeners)
 					{
-						lua_pushstring(state, std::get<0>(l).c_str());
+						lua_pushstring(lua_state, std::get<0>(l).c_str());
 
-						lua_newtable(state);
-						lua_pushstring(state, "add");
-						lua_pushlightuserdata(state, std::get<1>(l));
-						lua_settable(state, -3);
-						lua_pushstring(state, "remove");
-						lua_pushlightuserdata(state, std::get<2>(l));
-						lua_settable(state, -3);
+						lua_newtable(lua_state);
+						lua_pushstring(lua_state, "add");
+						lua_pushlightuserdata(lua_state, std::get<1>(l));
+						lua_settable(lua_state, -3);
+						lua_pushstring(lua_state, "remove");
+						lua_pushlightuserdata(lua_state, std::get<2>(l));
+						lua_settable(lua_state, -3);
 
-						lua_settable(state, -3);
+						lua_settable(lua_state, -3);
 					}
-					lua_settable(state, -3);
+					lua_settable(lua_state, -3);
 
-					lua_settable(state, -3);
+					lua_settable(lua_state, -3);
 				}
-			}, Capture().set_thiz(this));
+			}
 			lua_setglobal(lua_state, "udts");
 
 			assert_callback = add_assert_callback([](Capture& c) {

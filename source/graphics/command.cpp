@@ -137,16 +137,14 @@ namespace flame
 			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
 		}
 
-		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* ds, uint idx)
+		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPrivate*> dss)
 		{
+			std::vector<VkDescriptorSet> vk_sets(dss.size());
+			auto i = 0;
+			for (auto d : dss)
+				vk_sets[i++] = d->vk_descriptor_set;
 			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline ? pipeline->type : PipelineGraphics),
-				pipeline_layout->vk_pipeline_layout, idx, 1, &ds->vk_descriptor_set, 0, nullptr);
-		}
-
-		void CommandBufferPrivate::bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds)
-		{
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline ? pipeline->type : PipelineGraphics),
-				pipeline_layout->vk_pipeline_layout, pipeline_layout->get_idx(h), 1, &ds->vk_descriptor_set, 0, nullptr);
+				pipeline_layout->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* buf, uint id)

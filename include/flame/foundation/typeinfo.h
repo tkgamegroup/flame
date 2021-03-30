@@ -36,6 +36,7 @@ namespace flame
 	{
 		virtual TypeTag get_tag() const = 0;
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
+		virtual const char* get_code_name() const = 0;
 		virtual uint get_size() const = 0;
 
 		virtual BasicType get_basic() const = 0;
@@ -48,15 +49,11 @@ namespace flame
 		virtual void destroy(void* p, bool destroy_pointing = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual bool compare(void* dst, const void* src) const = 0;
-		virtual void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const = 0;
+		virtual void serialize(const void* src, char* dst) const = 0;
 		inline std::string serialize(const void* src)
 		{
-			std::string str;
-			serialize(src, &str, [](void* _str, uint size) {
-				auto& str = *(std::string*)_str;
-				str.resize(size);
-				return str.data();
-			});
+			char str[256];
+			serialize(src, str);
 			return str;
 		}
 		virtual void unserialize(void* dst, const char* src) const = 0;
@@ -158,13 +155,7 @@ namespace flame
 			for (auto i = 0; i < count; i++)
 			{
 				auto v = get_variable(i);
-				std::string str;
-				v->get_type()->serialize(src, &str, [](void* _str, uint size) {
-					auto& str = *(std::string*)_str;
-					str.resize(size);
-					return str.data();
-				});
-				dst[v->get_name()] = str;
+				dst[v->get_name()] = v->get_type()->serialize(src);
 			}
 		}
 
@@ -188,10 +179,12 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* db = nullptr);
+
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* db = nullptr);
-	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture, TypeInfoDataBase* db = nullptr);
-	FLAME_FOUNDATION_EXPORTS void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture, TypeInfoDataBase* db = nullptr);
+	FLAME_FOUNDATION_EXPORTS void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* db = nullptr);
+
 	FLAME_FOUNDATION_EXPORTS void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
 

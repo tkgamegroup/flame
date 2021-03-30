@@ -114,6 +114,8 @@ set(PHYSX_LIBRARY_DIR "${temp}/physx/bin/win.x86_64.vc142.mt/debug" CACHE PATH "
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
 
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
+
 add_subdirectory(source)
 add_subdirectory(tests)
 add_subdirectory(tools)

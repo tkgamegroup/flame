@@ -1842,8 +1842,8 @@ namespace flame
 				if (!meshes.empty())
 				{
 					cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-					cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-					cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+					//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+					//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 					for (auto& m : meshes)
 					{
 						userdatas.push_back(m.userdata);
@@ -1856,12 +1856,12 @@ namespace flame
 						{
 							cb->bind_pipeline(preferences->mesh_armature_pickup_pipeline);
 							cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-							cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+							//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 						}
 						else
 						{
 							cb->bind_pipeline(preferences->mesh_pickup_pipeline);
-							cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+							//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 						}
 						cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
 						mesh_off++;
@@ -1870,16 +1870,16 @@ namespace flame
 				if (!terrains.empty())
 				{
 					cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-					cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-					cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+					//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+					//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 					for (auto& t : terrains)
 					{
 						userdatas.push_back(t.userdata);
 						//cb->push_constant_ht(S<"i"_h>, ivec4(userdatas.size(), 0, 0, 0));
 
 						cb->bind_pipeline(preferences->terrain_pickup_pipeline);
-						cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-						cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
+						//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+						//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, terr_off << 16);
 						terr_off++;
 					}
@@ -2108,7 +2108,7 @@ namespace flame
 					cb->bind_index_buffer(element_index_buffer.buf.get(), IndiceTypeUint);
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->element_pipeline.get());
-					cb->bind_descriptor_set(S<"element"_h>, element_descriptorset.get());
+					//cb->bind_descriptor_set(S<"element"_h>, element_descriptorset.get());
 					//cb->push_constant_ht(S<"scale"_h>, 2.f / vec2(output_size));
 					for (auto& i : p.cmd_ids)
 					{
@@ -2305,8 +2305,8 @@ namespace flame
 								};
 								cb->begin_renderpass(nullptr, directional_light_depth_framebuffers[shadow_index * 4 + i].get(), cvs);
 								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-								cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-								cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
+								//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+								//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
 								//cb->push_constant_ht(S<"i"_h>, ivec4(shadow_index * 4 + i, 0, 0, 0));
 								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
 								auto mesh_off = 0;
@@ -2322,12 +2322,12 @@ namespace flame
 										{
 											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadowArmature));
 											cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-											cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+											//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 										}
 										else
 										{
 											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadow));
-											cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+											//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 										}
 										cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
 									}
@@ -2338,7 +2338,7 @@ namespace flame
 								//cb->image_barrier(directional_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 								//cb->begin_renderpass(nullptr, shadow_depth_back_framebuffer.get());
 								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-								//cb->bind_descriptor_set(S<"post"_h>, directional_shadow_map_descriptorsets[map_idx * 4 + i].get());
+								////cb->bind_descriptor_set(S<"post"_h>, directional_shadow_map_descriptorsets[map_idx * 4 + i].get());
 								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
@@ -2346,7 +2346,7 @@ namespace flame
 								//cb->image_barrier(shadow_depth_back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 								//cb->begin_renderpass(nullptr, directional_shadow_map_framebuffers[map_idx * 4 + i].get());
 								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-								//cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
+								////cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
 								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
@@ -2365,8 +2365,8 @@ namespace flame
 								};
 								cb->begin_renderpass(nullptr, point_light_depth_framebuffers[shadow_index * 6 + i].get(), cvs);
 								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-								cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-								cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
+								//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+								//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
 								//cb->push_constant_ht(S<"i"_h>, ivec4(16 + shadow_index * 6 + i, 0, 0, 0));
 								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
 								auto mesh_off = 0;
@@ -2382,12 +2382,12 @@ namespace flame
 										{
 											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadowArmature));
 											cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-											cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+											//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 										}
 										else
 										{
 											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadow));
-											cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+											//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 										}
 										cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
 									}
@@ -2398,7 +2398,7 @@ namespace flame
 								//cb->image_barrier(point_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 								//cb->begin_renderpass(nullptr, shadow_depth_back_framebuffer.get());
 								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-								//cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
+								////cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
 								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
@@ -2406,7 +2406,7 @@ namespace flame
 								//cb->image_barrier(shadow_depth_back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 								//cb->begin_renderpass(nullptr, point_shadow_map_framebuffers[map_idx * 6 + i].get());
 								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-								//cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
+								////cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
 								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
@@ -2424,8 +2424,8 @@ namespace flame
 					if (mesh_off == 0 && terr_off == 0) // sky
 					{
 						cb->bind_pipeline(preferences->sky_pipeline.get());
-						cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-						cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
+						//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+						//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
 						auto mrm = model_resources[1]->meshes[0].get();
 						cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 						cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
@@ -2444,10 +2444,10 @@ namespace flame
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
 							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+							//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
+							//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
 							for (auto& e : c->entries)
 							{
@@ -2459,10 +2459,10 @@ namespace flame
 								if (m.deformer)
 								{
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-									cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 								}
 								else
-									cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 								if (m.flags & ShadeMaterial)
 								{
 									if (m.deformer)
@@ -2489,11 +2489,11 @@ namespace flame
 						{
 							auto c = (CmdDrawTerrain*)cmd.get();
 							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+							//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
+							//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
+							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
 							for (auto& t : terrains)
 							{
@@ -2530,7 +2530,7 @@ namespace flame
 						if (!outline_meshes.empty())
 						{
 							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
 							for (auto& mi : outline_meshes)
 							{
@@ -2542,10 +2542,10 @@ namespace flame
 								if (m.deformer)
 								{
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-									cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 								}
 								else
-									cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 								if (m.deformer)
 									cb->bind_pipeline(preferences->mesh_armature_outline_pipeline);
 								else
@@ -2556,8 +2556,8 @@ namespace flame
 						if (!outline_terrains.empty())
 						{
 							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
 							for (auto& ti : outline_terrains)
 							{
@@ -2577,7 +2577,7 @@ namespace flame
 							cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
 							cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 							cb->bind_pipeline(preferences->downsample_pipeline.get());
-							cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+							//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
 							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
@@ -2588,7 +2588,7 @@ namespace flame
 							cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
 							cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 							cb->bind_pipeline(preferences->upsample_pipeline.get());
-							cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+							//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
 							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
@@ -2600,7 +2600,7 @@ namespace flame
 						if (!outline_meshes.empty())
 						{
 							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
 							for (auto& mi : outline_meshes)
 							{
@@ -2612,10 +2612,10 @@ namespace flame
 								if (m.deformer)
 								{
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-									cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
+									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
 								}
 								else
-									cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 								if (m.deformer)
 									cb->bind_pipeline(preferences->mesh_armature_outline_pipeline);
 								else
@@ -2626,8 +2626,8 @@ namespace flame
 						if (!outline_terrains.empty())
 						{
 							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
+							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
 							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
 							for (auto& ti : outline_terrains)
 							{
@@ -2642,7 +2642,7 @@ namespace flame
 						cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 						cb->begin_renderpass(nullptr, dst_fb);
 						cb->bind_pipeline(hdr_image ? preferences->blend_16_pipeline.get() : preferences->blend_8_pipeline.get());
-						cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
+						//cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2737,7 +2737,7 @@ namespace flame
 						blur_range.RB.x + blur_radius, blur_range.RB.y + blur_radius));
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->blurh_pipeline[blur_radius - 1].get());
-					cb->bind_descriptor_set(dst_ds, 0);
+					//cb->bind_descriptor_set(dst_ds, 0);
 					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.x);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
@@ -2746,7 +2746,7 @@ namespace flame
 					cb->set_scissor(blur_range);
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->blurv_pipeline[blur_radius - 1].get());
-					cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
+					//cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
 					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.y);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
@@ -2763,7 +2763,7 @@ namespace flame
 					cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->filter_bright_pipeline.get());
-					cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
+					//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
@@ -2773,7 +2773,7 @@ namespace flame
 						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
 						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 						cb->bind_pipeline(preferences->downsample_pipeline.get());
-						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
 						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
@@ -2784,7 +2784,7 @@ namespace flame
 						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
 						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 						cb->bind_pipeline(preferences->upsample_pipeline.get());
-						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
 						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
@@ -2793,7 +2793,7 @@ namespace flame
 					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
 					cb->bind_pipeline(preferences->upsample_pipeline.get());
-					cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
+					//cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
 					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
@@ -2809,7 +2809,7 @@ namespace flame
 				cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 				cb->begin_renderpass(nullptr, output_framebuffers[image_index].get());
 				cb->bind_pipeline(preferences->gamma_pipeline.get());
-				cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
+				//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}

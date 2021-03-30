@@ -14,7 +14,7 @@ void main()
 	o_mat = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
 
-	vec3 coordw = vec3(transforms[mod_idx].transform * vec4(i_position, 1.0));
-	o_normal = mat3(transforms[mod_idx].normal_matrix) * i_normal;
+	vec3 coordw = vec3(transforms[mod_idx].mat * vec4(i_position, 1.0));
+	o_normal = mat3(transforms[mod_idx].nor) * i_normal;
 	gl_Position = render_data.proj_view * vec4(coordw, 1.0);
 }

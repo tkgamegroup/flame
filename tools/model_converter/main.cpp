@@ -47,7 +47,7 @@ show_usage:
 
 process:
 
-	auto m = Model::create(input.c_str());
+	auto m = Model::get(input.c_str());
 	if (!m)
 		return 0;
 	if (!output_model.empty())

@@ -299,7 +299,7 @@ namespace flame
 		auto lwt = std::filesystem::last_write_time(target);
 		for (auto& d : dependencies)
 		{
-			if (!std::filesystem::exists(d) || lwt < std::filesystem::last_write_time(d))
+			if (lwt < std::filesystem::last_write_time(d))
 				return true;
 		}
 		return false;

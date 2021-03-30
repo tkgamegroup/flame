@@ -10,5 +10,5 @@ struct Transform
 
 layout (set = TRANSFORM_SET, binding = 0) buffer readonly Transforms
 {
-	Transform transforms[];
+	Transform transforms[65536];
 };

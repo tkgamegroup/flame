@@ -1186,7 +1186,15 @@ namespace flame
 
 	void Entity::initialize()
 	{
-		traverse_udts([](Capture&, UdtInfo* ui) {
+		std::vector<UdtInfo*> udts;
+		{
+			uint len;
+			get_udts(nullptr, &len);
+			udts.resize(len);
+			get_udts(udts.data(), nullptr);
+		}
+		for (auto ui : udts)
+		{
 			static auto reg_com = std::regex(R"(^flame::(c[\w]+)$)");
 			static auto reg_dri = std::regex(R"(^flame::(d[\w]+)$)");
 			std::smatch res;
@@ -1195,7 +1203,7 @@ namespace flame
 				component_types.emplace(res[1].str(), ui);
 			else if (std::regex_search(name, res, reg_dri))
 				driver_types.emplace(res[1].str(), ui);
-		}, Capture());
+		}
 
 		auto engine_path = getenv("FLAME_PATH");
 		if (engine_path)
