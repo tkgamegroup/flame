@@ -26,9 +26,6 @@ namespace flame
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
-	template<class T, size_t N>
-	constexpr size_t size(T(&)[N]) { return N; }
-
 	template <class T>
 	void* var_end(T* p)
 	{

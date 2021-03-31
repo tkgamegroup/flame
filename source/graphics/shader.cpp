@@ -260,7 +260,7 @@ namespace flame
 			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.poolSizeCount = size(descriptorPoolSizes);
+			descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 128;
 			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
@@ -877,6 +877,7 @@ namespace flame
 					if (!d.empty())
 						header += "\t\tBinding_" + d.filename().stem().string() + ",\n";
 				}
+				header += "\t\tBinding_Max\n";
 				header += "\t};\n\n";
 				write_udts_to_header(header, tidb);
 				header += "}\n";

@@ -24,7 +24,7 @@ namespace flame
 	cMeshPrivate::~cMeshPrivate()
 	{
 		destroy_deformer();
-		for (auto i = 0; i < size(animation_layers); i++)
+		for (auto i = 0; i < _countof(animation_layers); i++)
 			stop_animation(i);
 	}
 
@@ -240,21 +240,31 @@ namespace flame
 		}
 	}
 
+	void cMeshPrivate::draw2(sRenderer* renderer)
+	{
+		if (mesh_id != -1)
+			renderer->draw_mesh(node, mesh_id);
+	}
+
 	void cMeshPrivate::on_added()
 	{
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		//drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		//	auto thiz = c.thiz<cMeshPrivate>();
+		//	thiz->draw(canvas);
+		//}, Capture().set_thiz(this));
+		drawer = node->add_drawer2([](Capture& c, sRenderer* renderer) {
 			auto thiz = c.thiz<cMeshPrivate>();
-			thiz->draw(canvas);
+			thiz->draw2(renderer);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
 
 	void cMeshPrivate::on_removed()
 	{
-		node->remove_drawer(drawer);
+		node->remove_drawer2(drawer);
 		node = nullptr;
 	}
 
@@ -264,7 +274,7 @@ namespace flame
 		fassert(renderer);
 
 		apply_src();
-		for (auto i = 0; i < size(animation_layers); i++)
+		for (auto i = 0; i < _countof(animation_layers); i++)
 			apply_animation(i);
 	}
 

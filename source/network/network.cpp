@@ -149,7 +149,7 @@ namespace flame
 
 			if (type == SocketWeb)
 			{
-				auto n = recv(fd, (char*)buf, size(buf), 0);
+				auto n = recv(fd, (char*)buf, _countof(buf), 0);
 				if (n <= 0)
 					return false;
 
@@ -247,7 +247,7 @@ namespace flame
 			}
 			else
 			{
-				auto n = recv(fd, (char*)buf, size(buf), 0);
+				auto n = recv(fd, (char*)buf, _countof(buf), 0);
 				if (n <= 0)
 					return false;
 				auto p = buf;

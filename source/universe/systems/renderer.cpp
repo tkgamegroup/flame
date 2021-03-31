@@ -14,9 +14,6 @@
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
-#include <element/element.pll.h>
-#include <transform.dsl.h>
-
 namespace flame
 {
 	static graphics::AccessFlags usage2access(graphics::BufferUsageFlags usage)
@@ -27,12 +24,14 @@ namespace flame
 			return graphics::AccessVertexAttributeRead;
 		case graphics::BufferUsageIndex:
 			return graphics::AccessIndexRead;
+		case graphics::BufferUsageIndirect:
+			return graphics::AccessIndirectCommandRead;
 		}
 		return graphics::AccessNone;
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::rebuild()
+	void SequentialBuffer<T>::rebuild()
 	{
 		T* temp = nullptr;
 		auto n = 0;
@@ -55,7 +54,7 @@ namespace flame
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
+	void SequentialBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 	{
 		capacity = _capacity;
 		access = usage2access(usage);
@@ -67,7 +66,7 @@ namespace flame
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::push(uint cnt, const T* p)
+	void SequentialBuffer<T>::push(uint cnt, const T* p)
 	{
 		fassert(stag_num + cnt <= capacity);
 		//if (stag_num + cnt > capacity)
@@ -81,7 +80,7 @@ namespace flame
 	}
 
 	template <class T>
-	T* GeometryBuffer<T>::stag(uint cnt)
+	T* SequentialBuffer<T>::stag(uint cnt)
 	{
 		fassert(stag_num + cnt <= capacity);
 		//if (stag_num + cnt > capacity)
@@ -96,7 +95,7 @@ namespace flame
 	}
 
 	template <class T>
-	void GeometryBuffer<T>::upload(graphics::CommandBuffer* cb)
+	void SequentialBuffer<T>::upload(graphics::CommandBuffer* cb)
 	{
 		graphics::BufferCopy cpy;
 		cpy.size = stag_num * sizeof(T);
@@ -105,38 +104,40 @@ namespace flame
 	}
 
 	template <class T>
-	void SparseGeometryBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
+	void SparseBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 	{
 		capacity = _capacity;
 		access = usage2access(usage);
 		auto size = capacity * sizeof(T);
 		buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-		stagbuf.reset(graphics::Buffer::create(device, sizeof(T) * 100, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		stag_capacity = 100;
+		stagbuf.reset(graphics::Buffer::create(device, sizeof(T) * stag_capacity, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		pstag = (T*)stagbuf->map();
 	}
 
 	template <class T>
-	T* SparseGeometryBuffer<T>::alloc(uint n)
+	T* SparseBuffer<T>::alloc(uint n)
 	{
 		fassert(n0 == n1);
-		auto size = n * sizeof(T);
-		fassert(n1 * sizeof(T) + size <= capacity);
-		if (stagbuf->get_size() < n)
+		fassert(n1 + n <= capacity);
+		if (stag_capacity < n)
 		{
-			stagbuf->recreate(size);
-			stagbuf->map();
+			stag_capacity = n;
+			stagbuf->recreate(n * sizeof(T));
+			pstag = (T*)stagbuf->map();
 		}
 		n1 += n;
-		return (T*)stagbuf->get_mapped();
+		return pstag;
 	}
 
 	template <class T>
-	void SparseGeometryBuffer<T>::free(T* p)
+	void SparseBuffer<T>::free(T* p)
 	{
 
 	}
 
 	template <class T>
-	void SparseGeometryBuffer<T>::upload(graphics::CommandBuffer* cb)
+	void SparseBuffer<T>::upload(graphics::CommandBuffer* cb)
 	{
 		if (n1 > n0)
 		{
@@ -147,6 +148,22 @@ namespace flame
 			cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, access);
 			n0 = n1;
 		}
+	}
+
+	template <class T>
+	void StorageBuffer<T>::create(graphics::Device* device, graphics::BufferUsageFlags usage)
+	{
+		buf.reset(graphics::Buffer::create(device, sizeof(T), graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+		stagbuf.reset(graphics::Buffer::create(device, sizeof(T), graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+		pstag = (T*)stagbuf->map();
+	}
+
+	template <class T>
+	void StorageBuffer<T>::upload(graphics::CommandBuffer* cb)
+	{
+		cb->copy_buffer(stagbuf.get(), buf.get(), cpies.size(), cpies.data());
+		cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, graphics::AccessShaderRead);
+		cpies.clear();
 	}
 
 	sRendererPrivate::sRendererPrivate(sRendererParms* _parms)
@@ -393,6 +410,8 @@ namespace flame
 				for (auto i = 0; i < idx_cnt; i++)
 					pidx[i] = n + aidx[i];
 			}
+
+
 		}
 
 		return idx;
@@ -832,14 +851,14 @@ namespace flame
 			vias[2].location = 2;
 			vias[2].format = graphics::Format_R32G32B32_SFLOAT;
 			graphics::VertexBufferInfo vib;
-			vib.attributes_count = size(vias);
+			vib.attributes_count = _countof(vias);
 			vib.attributes = vias;
 			info.vertex_buffers_count = 1;
 			info.vertex_buffers = &vib;
 			info.polygon_mode = polygon_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, size(shaders), shaders, 
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, L"mesh/deferred_geometry.pll"), info);
 		}
 			break;
@@ -914,8 +933,50 @@ namespace flame
 
 	}
 
+	void sRendererPrivate::draw_mesh(cNodePrivate* node, uint mesh_id)
+	{
+		fassert(transform_idx < _countof(DSL_transform_9c0d::Transforms::transforms));
+
+		node->update_transform();
+
+		auto& data = (*buf_transform.pstag).transforms[transform_idx];
+		data.mat = node->transform;
+		data.nor = mat4(node->rot);
+		transform_idx++;
+
+
+	}
+
 	void sRendererPrivate::record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
+		if (!camera)
+			return;
+
+		{
+			auto node = camera->node;
+			node->update_transform();
+			auto view = mat4(node->rot);
+			view[3] = vec4(node->g_pos, 1.f);
+			view = inverse(view);
+			auto proj = perspective(radians(camera->fovy), tar_size.x / tar_size.y, camera->near, camera->far);
+			proj[1][1] *= -1.f;
+			auto& data = *(buf_render_data.pstag);
+			data.proj_view = proj * view;
+
+			graphics::BufferCopy cpy;
+			cpy.size = sizeof(data);
+			buf_render_data.cpies.push_back(cpy);
+		}
+		buf_render_data.upload(cb);
+
+		{
+			graphics::BufferCopy cpy;
+			cpy.size = sizeof(DSL_transform_9c0d::Transform) * transform_idx;
+			buf_render_data.cpies.push_back(cpy);
+			transform_idx = 0;
+		}
+		buf_transform.upload(cb);
+
 		auto vp = Rect(vec2(0.f), tar_size);
 		cb->set_viewport(vp);
 		cb->set_scissor(vp);
@@ -929,12 +990,16 @@ namespace flame
 		cb->bind_pipeline(pl_mats[MaterialForMesh][0].pipeline.get());
 		cb->bind_vertex_buffer(buf_mesh_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+		graphics::DescriptorSet* sets[PLL_deferred_geometry_0756::Binding_Max];
+		sets[PLL_deferred_geometry_0756::Binding_render_data] = ds_render_data.get();
+		sets[PLL_deferred_geometry_0756::Binding_transform] = ds_transform.get();
+		cb->bind_descriptor_sets(0, _countof(sets), sets);
 		cb->end_renderpass();
 	}
 
 	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
-		//record_node_drawing_commands(tar_idx, cb);
+		record_node_drawing_commands(tar_idx, cb);
 		record_element_drawing_commands(tar_idx, cb);
 	}
 
@@ -971,8 +1036,8 @@ namespace flame
 			for (auto i = 0; i < bd.count; i++)
 			{
 				ds_element->set_image(idx, i, iv_wht,
-					graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, 
-					false, graphics::AddressClampToEdge));
+					graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear,
+						false, graphics::AddressClampToEdge));
 
 				auto& res = element_reses[i];
 				res.type = ElementResImage;
@@ -985,7 +1050,19 @@ namespace flame
 		buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
 		buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
 
-		buf_transform.create(device, graphics::BufferUsageStorage, 10000);
+		buf_render_data.create(device, graphics::BufferUsageUniform);
+		{
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"render_data.dsl");
+			ds_render_data.reset(graphics::DescriptorSet::create(dsp, dsl));
+			ds_render_data->set_buffer(dsl->find_binding("RenderData"), 0, buf_render_data.buf.get());
+		}
+
+		buf_transform.create(device, graphics::BufferUsageStorage);
+		{
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"transform.dsl");
+			ds_transform.reset(graphics::DescriptorSet::create(dsp, dsl));
+			ds_transform->set_buffer(dsl->find_binding("Transforms"), 0, buf_transform.buf.get());
+		}
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
@@ -1003,7 +1080,7 @@ namespace flame
 			vs[2] = img_dep->get_view();
 			vs[3] = img_back->get_view();
 			fb_def.reset(graphics::Framebuffer::create(device,
-				graphics::Renderpass::get(device, L"deferred.rp"), size(vs), vs));
+				graphics::Renderpass::get(device, L"deferred.rp"), _countof(vs), vs));
 		}
 
 		get_material_pipeline(MaterialForMesh, L"", "");

@@ -88,6 +88,7 @@ namespace flame
 		void stop_animation(uint layer);
 
 		void draw(graphics::Canvas* canvas);
+		void draw2(sRenderer* renderer);
 
 		void on_added() override;
 		void on_removed() override;

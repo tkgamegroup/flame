@@ -31,7 +31,7 @@ namespace flame
 			std::string pipeline_defines;
 
 			std::filesystem::path dir;
-			Texture textures[4];
+			Texture textures[4] = {};
 
 			const char* get_name() const override { return name.c_str(); };
 			vec4 get_color() const override { return color; }
@@ -59,6 +59,7 @@ namespace flame
 			std::string name;
 
 			uint material_index = 0;
+			MaterialPrivate* material = nullptr;
 
 			std::vector<vec3> positions;
 			std::vector<vec2> uvs;
@@ -71,6 +72,8 @@ namespace flame
 			vec3 upper_bound = vec3(0.f);
 
 			const char* get_name() const override { return name.c_str(); }
+
+			Material* get_material() const override { return material; }
 
 			uint get_vertices_count() const override { return positions.size(); }
 			const vec3* get_positions() const override { return positions.data(); }

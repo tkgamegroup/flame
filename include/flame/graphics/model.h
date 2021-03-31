@@ -36,6 +36,8 @@ namespace flame
 		{
 			virtual const char* get_name() const = 0;
 
+			virtual Material* get_material() const = 0;
+
 			virtual uint get_vertices_count() const = 0;
 			virtual const vec3* get_positions() const = 0;
 			virtual const vec2* get_uvs() const = 0;

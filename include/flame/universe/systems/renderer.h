@@ -58,6 +58,8 @@ namespace flame
 		virtual cCamera* get_camera() const = 0;
 		virtual void set_camera(cCamera* camera) = 0;
 
+		virtual void draw_mesh(cNode* node, uint mesh_id) = 0;
+
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 

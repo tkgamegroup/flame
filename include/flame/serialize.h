@@ -167,7 +167,7 @@ namespace flame
 	std::string to_string(T v)
 	{
 		char buf[32];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 
@@ -175,14 +175,14 @@ namespace flame
 	std::string to_string(const vec<N, T>& v)
 	{
 		char buf[32 * N];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 
 	inline std::string to_string(const quat& v)
 	{
 		char buf[32 * 4];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 
@@ -198,7 +198,7 @@ namespace flame
 	std::wstring to_wstring(T v)
 	{
 		wchar_t buf[32];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 
@@ -206,14 +206,14 @@ namespace flame
 	std::wstring to_wstring(const vec<N, T>& v)
 	{
 		wchar_t buf[32 * N];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 
 	inline std::wstring to_wstring(const quat& v)
 	{
 		wchar_t buf[32 * 4];
-		fmt(buf, size(buf), v);
+		fmt(buf, _countof(buf), v);
 		return buf;
 	}
 

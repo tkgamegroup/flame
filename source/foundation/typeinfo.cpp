@@ -866,7 +866,7 @@ namespace flame
 			}
 
 			wchar_t app_name[260];
-			GetModuleFileNameW(nullptr, app_name, size(app_name));
+			GetModuleFileNameW(nullptr, app_name, _countof(app_name));
 			get_library_dependencies(app_name, [](Capture& c, const wchar_t* filename) {
 				auto path = std::filesystem::path(filename);
 				path.replace_extension(".typeinfo");

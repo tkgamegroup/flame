@@ -1,7 +1,12 @@
 #pragma once
 
-#include <flame/graphics/graphics.h>
+#include <flame/graphics/command.h>
 #include <flame/universe/systems/renderer.h>
+
+#include <element/element.pll.h>
+#include <render_data.dsl.h>
+#include <transform.dsl.h>
+#include <mesh/deferred_geometry.pll.h>
 
 namespace flame
 {
@@ -26,7 +31,7 @@ namespace flame
 	struct cCameraPrivate;
 
 	template <class T>
-	struct GeometryBuffer
+	struct SequentialBuffer
 	{
 		uint capacity;
 		graphics::AccessFlags access;
@@ -37,14 +42,14 @@ namespace flame
 		FlmPtr<graphics::Buffer> stagbuf;
 
 		void rebuild();
-		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity);
+		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint capacity);
 		void push(uint cnt, const T* p);
 		T* stag(uint cnt);
 		void upload(graphics::CommandBuffer* cb);
 	};
 
 	template <class T>
-	struct SparseGeometryBuffer
+	struct SparseBuffer
 	{
 		uint capacity;
 		graphics::AccessFlags access;
@@ -53,8 +58,10 @@ namespace flame
 
 		FlmPtr<graphics::Buffer> buf;
 		FlmPtr<graphics::Buffer> stagbuf;
+		uint stag_capacity;
+		T* pstag = nullptr;
 
-		void create(graphics::Device* d, graphics::BufferUsageFlags usage, uint capacity);
+		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint capacity);
 		T* alloc(uint n);
 		void free(T* p);
 		void upload(graphics::CommandBuffer* cb);
@@ -67,6 +74,11 @@ namespace flame
 
 		FlmPtr<graphics::Buffer> buf;
 		FlmPtr<graphics::Buffer> stagbuf;
+
+		std::vector<graphics::BufferCopy> cpies;
+
+		void create(graphics::Device* device, graphics::BufferUsageFlags usage);
+		void upload(graphics::CommandBuffer* cb);
 	};
 
 	struct ElementVertex
@@ -139,6 +151,7 @@ namespace flame
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 		void fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color) override;
 		void stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
+		void draw_mesh(cNode* node, uint mesh_id) override;
 	};
 
 	struct sRendererPrivate : sRendererBridge
@@ -182,8 +195,8 @@ namespace flame
 
 		std::vector<ElementRes> element_reses;
 
-		GeometryBuffer<ElementVertex>	buf_element_vtx;
-		GeometryBuffer<uint>			buf_element_idx;
+		SequentialBuffer<ElementVertex>	buf_element_vtx;
+		SequentialBuffer<uint>			buf_element_idx;
 		FlmPtr<graphics::Image>			img_wht;
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
@@ -195,14 +208,18 @@ namespace flame
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
 
-		SparseGeometryBuffer<MeshVertex>	buf_mesh_vtx;
-		SparseGeometryBuffer<uint>			buf_mesh_idx;
-		SparseGeometryBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
-		SparseGeometryBuffer<uint>			buf_arm_mesh_idx;
+		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_cmds;
 
-		GeometryBuffer<mat4>		buf_transform;
+		SparseBuffer<MeshVertex>	buf_mesh_vtx;
+		SparseBuffer<uint>			buf_mesh_idx;
+		SparseBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
+		SparseBuffer<uint>			buf_arm_mesh_idx;
 
-		FlmPtr<graphics::DescriptorSet> ds_transform;
+		StorageBuffer<DSL_render_data_5604::RenderData>	buf_render_data;
+		FlmPtr<graphics::DescriptorSet>					ds_render_data;
+		StorageBuffer<DSL_transform_9c0d::Transforms>	buf_transform;
+		uint											transform_idx = 0;
+		FlmPtr<graphics::DescriptorSet>					ds_transform;
 
 		FlmPtr<graphics::Image> img_back;
 		FlmPtr<graphics::Image> img_dep;
@@ -249,14 +266,15 @@ namespace flame
 
 		void fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color);
 		void stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color);
-		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id,
-			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
+		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
 
 		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);
 
 		cCamera* get_camera() const override { return (cCamera*)camera; }
 		void set_camera(cCamera* c) override { camera = (cCameraPrivate*)c; }
+
+		void draw_mesh(cNodePrivate* node, uint mesh_id);
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
@@ -283,9 +301,13 @@ namespace flame
 		((sRendererPrivate*)this)->stroke_rect(layer, (cElementPrivate*)element, pos, size, thickness, color);
 	}
 
-	inline void sRendererBridge::draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
-		const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
+	inline void sRendererBridge::draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
 	{
 		((sRendererPrivate*)this)->draw_text(layer, (cElementPrivate*)element, pos, font_size, font_id, text_beg, text_end, color);
+	}
+
+	inline void sRendererBridge::draw_mesh(cNode* node, uint mesh_id)
+	{
+		((sRendererPrivate*)this)->draw_mesh((cNodePrivate*)node, mesh_id);
 	}
 }

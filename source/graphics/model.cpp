@@ -56,6 +56,8 @@ namespace flame
 			return MaterialPrivate::create(filename);
 		}
 
+		static MaterialPrivate* default_material = new MaterialPrivate;
+
 		void MeshPrivate::add_vertices(uint n, vec3* _positions, vec3* _uvs, vec3* _normals)
 		{
 			auto b = positions.size();
@@ -308,7 +310,7 @@ namespace flame
 					write_t(file, m->alpha_test);
 					write_s(file, m->pipeline_file.string());
 					write_s(file, m->pipeline_defines);
-					for (auto i = 0; i < size(m->textures); i++)
+					for (auto i = 0; i < _countof(m->textures); i++)
 					{
 						auto& src = m->textures[i];
 						write_s(file, src.filename.string());
@@ -516,6 +518,7 @@ namespace flame
 					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
+					mesh->material = default_material;
 					mesh->add_cube(vec3(1.f), vec3(0.f), mat3(1.f));
 					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
@@ -532,6 +535,7 @@ namespace flame
 					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
+					mesh->material = default_material;
 					mesh->add_sphere(0.5f, 12, 12, vec3(0.f), mat3(1.f));
 					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
@@ -584,7 +588,7 @@ namespace flame
 					read_t(file, m->alpha_test);
 					read_fn(file, m->pipeline_file);
 					read_s(file, m->pipeline_defines);
-					for (auto i = 0; i < size(m->textures); i++)
+					for (auto i = 0; i < _countof(m->textures); i++)
 					{
 						auto& dst = m->textures[i];
 						read_fn(file, dst.filename);
@@ -602,6 +606,7 @@ namespace flame
 					ret->meshes[i].reset(m);
 					read_s(file, m->name);
 					m->material_index = read_i(file);
+					m->material = ret->materials[m->material_index].get();
 					read_t(file, m->lower_bound);
 					read_t(file, m->upper_bound);
 					auto n = read_u(file);
@@ -692,6 +697,7 @@ namespace flame
 					auto m = new MeshPrivate;
 					m->name = n_mesh.attribute("name").value();
 					m->material_index = n_mesh.attribute("material_index").as_uint();
+					m->material = ret->materials[m->material_index].get();
 					m->lower_bound = sto<vec3>(n_mesh.attribute("lower_bound").value());
 					m->upper_bound = sto<vec3>(n_mesh.attribute("upper_bound").value());
 					{
@@ -858,6 +864,7 @@ namespace flame
 						dst->name = std::to_string(i);
 
 					dst->material_index = src->mMaterialIndex;
+					dst->material = ret->materials[dst->material_index].get();
 
 					dst->add_vertices(src->mNumVertices, (vec3*)src->mVertices, (vec3*)src->mTextureCoords[0], (vec3*)src->mNormals);
 
