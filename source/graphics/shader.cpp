@@ -163,7 +163,7 @@ namespace flame
 			return ret;
 		}
 
-		static void write_udts_to_header(std::ofstream& header_file, TypeInfoDataBase* tidb)
+		static void write_udts_to_header(std::string& header, TypeInfoDataBase* tidb)
 		{
 			std::vector<UdtInfo*> udts;
 			{
@@ -174,7 +174,7 @@ namespace flame
 			}
 			for (auto udt : udts)
 			{
-				header_file << std::string("\tstruct ") + udt->get_name() + "\n\t{\n";
+				header += std::string("\tstruct ") + udt->get_name() + "\n\t{\n";
 				auto var_cnt = udt->get_variables_count();
 				auto off = 0;
 				auto dummy_id = 0;
@@ -182,13 +182,13 @@ namespace flame
 					switch (d)
 					{
 					case 4:
-						header_file << "\t\tfloat dummy_" + std::to_string(dummy_id) + ";\n";
+						header += "\t\tfloat dummy_" + std::to_string(dummy_id) + ";\n";
 						break;
 					case 8:
-						header_file << "\t\tvec2 dummy_" + std::to_string(dummy_id) + ";\n";
+						header += "\t\tvec2 dummy_" + std::to_string(dummy_id) + ";\n";
 						break;
 					case 12:
-						header_file << "\t\tvec3 dummy_" + std::to_string(dummy_id) + ";\n";
+						header += "\t\tvec3 dummy_" + std::to_string(dummy_id) + ";\n";
 						break;
 					default:
 						fassert(0);
@@ -205,21 +205,21 @@ namespace flame
 						dummy_id++;
 					}
 					auto type = var->get_type();
-					header_file << std::string("\t\t") + type->get_code_name() + " " + var->get_name();
+					header += std::string("\t\t") + type->get_code_name() + " " + var->get_name();
 					auto size = type->get_size();
 					auto array_size = var->get_array_size();
 					if (array_size > 1)
 					{
 						fassert(size == var->get_array_stride());
-						header_file << "[" + std::to_string(array_size) + "]";
+						header += "[" + std::to_string(array_size) + "]";
 					}
-					header_file << ";\n";
+					header += ";\n";
 					off += size * array_size;
 				}
 				auto size = (int)udt->get_size();
 				if (off != size)
 					push_dummy(size - off);
-				header_file << "\t};\n\n";
+				header += "\t};\n\n";
 			}
 		}
 
@@ -379,10 +379,13 @@ namespace flame
 			}
 			filename.make_preferred();
 
-			for (auto& d : device->dsls)
+			if (device)
 			{
-				if (d->filename.filename() == filename)
-					return d.get();
+				for (auto& d : device->dsls)
+				{
+					if (d->filename.filename() == filename)
+						return d.get();
+				}
 			}
 
 			auto res_path = filename.parent_path() / L"build";
@@ -541,21 +544,27 @@ namespace flame
 				}
 			}
 
-			auto header_path = res_path;
-			header_path.replace_extension(L".h");
+			auto header_path = filename;
+			header_path += L".h";
 			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 			{
-				std::ofstream header_file(header_path);
-				header_file << "#pragma once\n\n";
-				header_file << "namespace DSL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
-				write_udts_to_header(header_file, tidb);
-				header_file << "}\n";
-				header_file.close();
+				std::string header;
+				header += "#pragma once\n\n";
+				header += "namespace DSL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				write_udts_to_header(header, tidb);
+				header += "}\n";
+				std::ofstream file(header_path);
+				file << header;
+				file.close();
 			}
 
-			auto dsl = new DescriptorSetLayoutPrivate(device, filename, bindings, tidb);
-			device->dsls.emplace_back(dsl);
-			return dsl;
+			if (device)
+			{
+				auto dsl = new DescriptorSetLayoutPrivate(device, filename, bindings, tidb);
+				device->dsls.emplace_back(dsl);
+				return dsl;
+			}
+			return nullptr;
 		}
 
 		DescriptorSetLayout* DescriptorSetLayout::create(Device* device, uint binding_count, const DescriptorBindingInfo* bindings)
@@ -722,10 +731,13 @@ namespace flame
 			}
 			filename.make_preferred();
 
-			for (auto& p : device->plls)
+			if (device)
 			{
-				if (p->filename == filename)
-					return p.get();
+				for (auto& p : device->plls)
+				{
+					if (p->filename == filename)
+						return p.get();
+				}
 			}
 
 			auto res_path = filename.parent_path() / L"build";
@@ -745,6 +757,8 @@ namespace flame
 			{
 				if (d.extension() == L".dsl")
 					dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
+				else
+					d.clear();
 			}
 
 			auto tidb = TypeInfoDataBase::create();
@@ -850,25 +864,34 @@ namespace flame
 				pcti = find_udt(n_push_constant.attribute("type_name").value(), tidb);
 			}
 
-			auto header_path = res_path;
-			header_path.replace_extension(L".h");
+			auto header_path = filename;
+			header_path += L".h";
 			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 			{
-				std::ofstream header_file(header_path);
-				header_file << "#pragma once\n\n";
-				header_file << "namespace PLL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
-				header_file << "\tenum Binding\n\t{\n";
-				for (auto& dsl : dsls)
-					header_file << "\t\tBinding_" + dsl->filename.filename().stem().string() + ",\n";
-				header_file << "\t};\n\n";
-				write_udts_to_header(header_file, tidb);
-				header_file << "}\n";
-				header_file.close();
+				std::string header;
+				header += "#pragma once\n\n";
+				header += "namespace PLL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				header += "\tenum Binding\n\t{\n";
+				for (auto& d : dependencies)
+				{
+					if (!d.empty())
+						header += "\t\tBinding_" + d.filename().stem().string() + ",\n";
+				}
+				header += "\t};\n\n";
+				write_udts_to_header(header, tidb);
+				header += "}\n";
+				std::ofstream file(header_path);
+				file << header;
+				file.close();
 			}
 
-			auto pll = new PipelineLayoutPrivate(device, filename, dsls, tidb, pcti);
-			device->plls.emplace_back(pll);
-			return pll;
+			if (device)
+			{
+				auto pll = new PipelineLayoutPrivate(device, filename, dsls, tidb, pcti);
+				device->plls.emplace_back(pll);
+				return pll;
+			}
+			return nullptr;
 		}
 
 		PipelineLayout* PipelineLayout::create(Device* device, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
@@ -903,10 +926,13 @@ namespace flame
 				return a.first < b.first;
 			});
 
-			for (auto& s : device->sds)
+			if (device)
 			{
-				if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
-					return s.get();
+				for (auto& s : device->sds)
+				{
+					if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
+						return s.get();
+				}
 			}
 
 			auto ppath = filename.parent_path();
@@ -1025,9 +1051,13 @@ namespace flame
 				return nullptr;
 			}
 
-			auto s = new ShaderPrivate(device, filename, defines, substitutes, spv_file);
-			device->sds.emplace_back(s);
-			return s;
+			if (device)
+			{
+				auto s = new ShaderPrivate(device, filename, defines, substitutes, spv_file);
+				device->sds.emplace_back(s);
+				return s;
+			}
+			return nullptr;
 		}
 
 		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
@@ -1363,10 +1393,13 @@ namespace flame
 			}
 			filename.make_preferred();
 
-			for (auto& pl : device->pls)
+			if (device)
 			{
-				if (pl->filename == filename)
-					return pl.get();
+				for (auto& pl : device->pls)
+				{
+					if (pl->filename == filename)
+						return pl.get();
+				}
 			}
 
 			pugi::xml_document doc;
@@ -1441,10 +1474,13 @@ namespace flame
 			info.blend_options_count = blend_options.size();
 			info.blend_options = blend_options.data();
 
-			auto pl = PipelinePrivate::create(device, shaders, pll, info);
-			pl->filename = filename;
-			device->pls.emplace_back(pl);
-			return pl;
+			if (device)
+			{
+				auto pl = PipelinePrivate::create(device, shaders, pll, info);
+				pl->filename = filename;
+				device->pls.emplace_back(pl);
+				return pl;
+			}
 			return nullptr;
 		}
 

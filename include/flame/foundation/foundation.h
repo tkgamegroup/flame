@@ -47,10 +47,9 @@ namespace flame
 	template <class T>
 	struct FlmPtr
 	{
-		T* p;
+		T* p = nullptr;
 
-		FlmPtr() :
-			p(nullptr)
+		FlmPtr()
 		{
 		}
 

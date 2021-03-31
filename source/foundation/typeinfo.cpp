@@ -926,9 +926,9 @@ namespace flame
 		}
 			break;
 		}
-		if (!t)
-			return nullptr;
-		db->typeinfos.emplace(key, t);
+
+		if (t)
+			db->typeinfos.emplace(key, t);
 		return t;
 	}
 
@@ -1309,15 +1309,23 @@ namespace flame
 			*len = db->enums.size();
 		if (dst)
 		{
-			std::vector<EnumInfoPrivate*> vec(db->enums.size());
-			auto idx = 0;
-			for (auto& i : db->enums)
-				vec[idx++] = i.second.get();
-			std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
-				return a->name < b->name;
-			});
+			auto vec = get_enums(db);
 			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
 		}
+	}
+
+	std::vector<EnumInfoPrivate*> get_enums(TypeInfoDataBasePrivate* db)
+	{
+		if (!db)
+			db = &tidb;
+		std::vector<EnumInfoPrivate*> ret(db->enums.size());
+		auto idx = 0;
+		for (auto& i : db->enums)
+			ret[idx++] = i.second.get();
+		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+			return a->name < b->name;
+		});
+		return ret;
 	}
 
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db)
@@ -1364,16 +1372,24 @@ namespace flame
 			*len = db->udts.size();
 		if (dst)
 		{
-			db->sort_udts();
-			std::vector<UdtInfoPrivate*> vec(db->udts.size());
-			auto idx = 0;
-			for (auto& i : db->udts)
-				vec[idx++] = i.second.get();
-			std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
-				return a->ranking < b->ranking;
-			});
+			auto vec = get_udts(db);
 			memcpy(dst, vec.data(), sizeof(void*)* vec.size());
 		}
+	}
+
+	std::vector<UdtInfoPrivate*> get_udts(TypeInfoDataBasePrivate* db)
+	{
+		if (!db)
+			db = &tidb;
+		db->sort_udts();
+		std::vector<UdtInfoPrivate*> ret(db->udts.size());
+		auto idx = 0;
+		for (auto& i : db->udts)
+			ret[idx++] = i.second.get();
+		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+			return a->ranking < b->ranking;
+		});
+		return ret;
 	}
 
 	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
@@ -1399,10 +1415,10 @@ namespace flame
 			fassert(0);
 		}
 
-		auto read_ti = [](pugi::xml_node n) {
+		auto read_ti = [&](pugi::xml_node n) {
 			TypeTag tag;
-			TypeInfo::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n.attribute("type_tag").value());
-			return TypeInfoPrivate::get(tag, n.attribute("type_name").value());
+			TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n.attribute("type_tag").value());
+			return TypeInfoPrivate::get(tag, n.attribute("type_name").value(), db);
 		};
 
 		for (auto n_enum : file_root.child("enums"))
@@ -1450,13 +1466,14 @@ namespace flame
 
 		if (!db->enums.empty())
 		{
+			auto enums = get_enums(db);
 			auto n_enums = file_root.append_child("enums");
-			for (auto& ei : db->enums)
+			for (auto& ei : enums)
 			{
 				auto n_enum = n_enums.append_child("enum");
-				n_enum.append_attribute("name").set_value(ei.second->name.c_str());
+				n_enum.append_attribute("name").set_value(ei->name.c_str());
 				auto n_items = n_enum.append_child("items");
-				for (auto& i : ei.second->items)
+				for (auto& i : ei->items)
 				{
 					auto n_item = n_items.append_child("item");
 					n_item.append_attribute("name").set_value(i->name.c_str());
@@ -1466,17 +1483,18 @@ namespace flame
 		}
 		if (!db->udts.empty())
 		{
+			auto udts = get_udts(db);
 			auto n_udts = file_root.append_child("udts");
-			for (auto& ui : db->udts)
+			for (auto& ui : udts)
 			{
 				auto n_udt = n_udts.append_child("udt");
-				n_udt.append_attribute("name").set_value(ui.second->name.c_str());
-				n_udt.append_attribute("size").set_value(ui.second->size);
-				n_udt.append_attribute("base_name").set_value(ui.second->base_name.c_str());
-				if (!ui.second->variables.empty())
+				n_udt.append_attribute("name").set_value(ui->name.c_str());
+				n_udt.append_attribute("size").set_value(ui->size);
+				n_udt.append_attribute("base_name").set_value(ui->base_name.c_str());
+				if (!ui->variables.empty())
 				{
 					auto n_variables = n_udt.prepend_child("variables");
-					for (auto& vi : ui.second->variables)
+					for (auto& vi : ui->variables)
 					{
 						auto n_variable = n_variables.append_child("variable");
 						write_ti(vi->type, n_variable);
@@ -1488,10 +1506,10 @@ namespace flame
 						n_variable.append_attribute("meta").set_value(vi->meta.concat().c_str());
 					}
 				}
-				if (!ui.second->functions.empty())
+				if (!ui->functions.empty())
 				{
 					auto n_functions = n_udt.append_child("functions");
-					for (auto& fi : ui.second->functions)
+					for (auto& fi : ui->functions)
 					{
 						auto n_function = n_functions.append_child("function");
 						n_function.append_attribute("name").set_value(fi->name.c_str());

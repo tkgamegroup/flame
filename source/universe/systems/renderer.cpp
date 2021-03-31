@@ -14,8 +14,8 @@
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
-#include <element/build/element.pll.h>
-#include <build/transform.dsl.h>
+#include <element/element.pll.h>
+#include <transform.dsl.h>
 
 namespace flame
 {

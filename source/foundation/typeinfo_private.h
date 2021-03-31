@@ -295,9 +295,11 @@ namespace flame
 
 	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	EnumInfoPrivate* add_enum(const std::string& name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	std::vector<EnumInfoPrivate*> get_enums(TypeInfoDataBasePrivate* db = nullptr);
 
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	std::vector<UdtInfoPrivate*> get_udts(TypeInfoDataBasePrivate* db = nullptr);
 
 	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
 	void save_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db = nullptr);

@@ -9,18 +9,18 @@ int main(int argc, char **args)
 {
 	if (argc == 2)
 	{
-		auto device = Device::create(true);
-
 		auto filename = std::filesystem::path(args[1]);
+		wprintf(L"compile: %s\n", filename.c_str());
+
 		auto ext = filename.extension();
 		if (ext == L".dsl")
-			DescriptorSetLayout::get(device, filename.c_str());
+			DescriptorSetLayout::get(nullptr, filename.c_str());
 		else if (ext == L".pll")
-			PipelineLayout::get(device, filename.c_str());
+			PipelineLayout::get(nullptr, filename.c_str());
 		else if (ext == L".pl")
-			Pipeline::get(device, filename.c_str());
+			Pipeline::get(nullptr, filename.c_str());
 		else
-			Shader::get(device, filename.c_str(), "", "");
+			Shader::get(nullptr, filename.c_str(), "", "");
 	}
 	else
 		printf("usage: shader_compiler xxx\n");
