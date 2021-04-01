@@ -106,7 +106,7 @@ namespace flame
 						{
 							b.name = name;
 							b.node = n;
-							b.changed_listener = e->add_component_data_listener([](Capture& c, uint64 h) {
+							b.changed_listener = e->add_component_data_listener([](Capture& c, uint h) {
 								auto thiz = c.thiz<cMeshPrivate>();
 								auto id = c.data<int>();
 								auto& b = thiz->bones[id];

@@ -105,7 +105,7 @@ namespace flame
 		text = entity->get_component_t<cTextPrivate>();
 		fassert(text);
 
-		entity->add_message_listener([](Capture& c, uint64 msg, void* parm1, void* parm2) {
+		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			auto thiz = c.thiz<dEditPrivate>();
 			switch (msg)
 			{

@@ -28,7 +28,7 @@ namespace flame
 		void register_object(void* o, const std::string& name);
 		void* find_object(const std::string& name) const;
 
-		System* get_system(uint64 type_hash) const override;
+		System* get_system(uint type_hash) const override;
 		System* find_system(const std::string& name) const;
 		void add_system(System* s) override;
 		void remove_system(System* s) override;

@@ -7,14 +7,12 @@
 
 namespace flame
 {
-	static bool debug = false;
-
 	struct Type
 	{
 		struct Attribute
 		{
 			std::string name;
-			uint64 hash;
+			uint hash;
 			TypeInfo* get_type;
 			TypeInfo* set_type;
 			FunctionInfo* getter;
@@ -186,11 +184,6 @@ namespace flame
 		static auto id = 0;
 		created_frame = looper().get_frame();
 		created_id = id++;
-
-		if (debug)
-		{
-
-		}
 	}
 
 	EntityPrivate::~EntityPrivate()
@@ -198,7 +191,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"destroyed"_h>, nullptr, nullptr);
 		for (auto& c : components)
-			c.second.c->on_destroyed();
+			c->on_destroyed();
 		for (auto ev : events)
 			looper().remove_event(ev);
 	}
@@ -228,7 +221,7 @@ namespace flame
 			for (auto& l : message_listeners)
 				l->call(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
 			for (auto& c : components)
-				c.second.c->on_visibility_changed(global_visibility);
+				c->on_visibility_changed(global_visibility);
 		}
 
 		for (auto& e : children)
@@ -272,7 +265,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"state_changed"_h>, (void*)state, nullptr);
 		for (auto& c : components)
-			c.second.c->on_state_changed(state);
+			c->on_state_changed(state);
 	}
 
 	void EntityPrivate::add_src(const std::filesystem::path& p)
@@ -286,11 +279,11 @@ namespace flame
 		return srcs_str.c_str();
 	}
 
-	Component* EntityPrivate::get_component(uint64 hash) const
+	Component* EntityPrivate::get_component(uint hash) const
 	{
-		auto it = components.find(hash);
-		if (it != components.end())
-			return it->second.c.get();
+		auto it = components_map.find(hash);
+		if (it != components_map.end())
+			return it->second.first;
 		return nullptr;
 	}
 
@@ -300,18 +293,18 @@ namespace flame
 		auto name = _name;
 		for (auto& c : components)
 		{
-			if (c.second.c->type_name == _name)
+			if (c->type_name == _name)
 			{
-				ret = c.second.c.get();
+				ret = c.get();
 				break;
 			}
 		}
 		name = "flame::" + _name;
 		for (auto& c : components)
 		{
-			if (c.second.c->type_name == name)
+			if (c->type_name == name)
 			{
-				ret = c.second.c.get();
+				ret = c.get();
 				break;
 			}
 		}
@@ -326,30 +319,24 @@ namespace flame
 
 	void EntityPrivate::get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const
 	{
-		std::vector<std::pair<uint, Component*>> cmps;
-		for (auto& c : components)
-			cmps.emplace_back(c.second.id, c.second.c.get());
-		std::sort(cmps.begin(), cmps.end(), [](const auto& a, const auto& b) {
-			return a.first < b.first;
-		});
 		if (!callback)
 		{
 			auto scr_ins = script::Instance::get_default();
 			scr_ins->get_global("callbacks");
 			scr_ins->get_member(nullptr, (uint)&capture);
-			for (auto& c : cmps)
+			for (auto& c : components)
 			{
 				scr_ins->get_member("f");
 				scr_ins->push_object();
-				scr_ins->set_object_type("flame::Component", c.second);
+				scr_ins->set_object_type("flame::Component", c.get());
 				scr_ins->call(1);
 			}
 			scr_ins->pop(2);
 		}
 		else
 		{
-			for (auto& c : cmps)
-				callback((Capture&)capture, c.second);
+			for (auto& c : components)
+				callback((Capture&)capture, c.get());
 			f_free(capture._data);
 		}
 	}
@@ -358,7 +345,7 @@ namespace flame
 	{
 		fassert(!parent);
 		fassert(!c->entity);
-		fassert(components.find(c->type_hash) == components.end());
+		fassert(components_map.find(c->type_hash) == components_map.end());
 
 		c->entity = this;
 
@@ -366,26 +353,32 @@ namespace flame
 		if (world)
 			c->on_entered_world();
 
-		ComponentSlot slot;
-		slot.c.reset(c);
-		slot.id = component_id++;
-		components.emplace(c->type_hash, std::move(slot));
+		components.emplace_back(c);
+		components_map.emplace(c->type_hash, std::make_pair(c, DataListeners()));
 	}
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
 		fassert(!parent);
 
-		auto it = components.find(c->type_hash);
-		if (it == components.end())
+		auto it = components_map.find(c->type_hash);
+		if (it == components_map.end())
 		{
 			fassert(0);
 			return;
 		}
+		components_map.erase(it);
 
-		if (!destroy)
-			it->second.c.release();
-		components.erase(it);
+		for (auto it = components.begin(); it != components.end(); it++)
+		{
+			if (it->get() == c)
+			{
+				if (!destroy)
+					it->release();
+				components.erase(it);
+				break;
+			}
+		}
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
@@ -396,7 +389,7 @@ namespace flame
 		{
 			for (auto i = (int)drivers.size() - 1; i >= 0; i--)
 			{
-				if (drivers[i].d->on_child_added(e))
+				if (drivers[i]->on_child_added(e))
 					return;
 			}
 		}
@@ -415,7 +408,7 @@ namespace flame
 		for (auto& l : e->message_listeners)
 			l->call(S<"self_added"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
-			c.second.c->on_self_added();
+			c->on_self_added();
 
 		e->traversal([this](EntityPrivate* e) {
 			if (!e->world && world)
@@ -426,7 +419,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"child_added"_h>, e, nullptr);
 		for (auto& c : components)
-			c.second.c->on_child_added(e);
+			c->on_child_added(e);
 	}
 
 	void EntityPrivate::reposition_child(uint pos1, uint pos2)
@@ -444,9 +437,9 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"reposition"_h>, (void*)pos1, (void*)pos1);
 		for (auto& c : a->components)
-			c.second.c->on_reposition(pos1, pos2);
+			c->on_reposition(pos1, pos2);
 		for (auto& c : b->components)
-			c.second.c->on_reposition(pos2, pos1);
+			c->on_reposition(pos2, pos1);
 	}
 
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
@@ -457,7 +450,7 @@ namespace flame
 		for (auto& l : e->message_listeners)
 			l->call(S<"self_removed"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
-			c.second.c->on_self_removed();
+			c->on_self_removed();
 
 		e->traversal([](EntityPrivate* e) {
 			if (e->world)
@@ -469,7 +462,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"child_removed"_h>, e, nullptr);
 		for (auto& c : components)
-			c.second.c->on_child_removed(e);
+			c->on_child_removed(e);
 	}
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
@@ -511,7 +504,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"entered_world"_h>, nullptr, nullptr);
 		for (auto& c : components)
-			c.second.c->on_entered_world();
+			c->on_entered_world();
 	}
 
 	void EntityPrivate::on_left_world()
@@ -519,7 +512,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"left_world"_h>, nullptr, nullptr);
 		for (auto& c : components)
-			c.second.c->on_left_world();
+			c->on_left_world();
 		world = nullptr;
 	}
 
@@ -531,20 +524,20 @@ namespace flame
 			c->traversal(callback);
 	}
 
-	Driver* EntityPrivate::get_driver(uint64 hash, int idx) const
+	Driver* EntityPrivate::get_driver(uint hash, int idx) const
 	{
 		if (idx == -1)
 		{
 			for (auto& d : drivers)
 			{
-				if (d.d->type_hash == hash)
-					return d.d.get();
+				if (d->type_hash == hash)
+					return d.get();
 			}
 		}
 		else
 		{
 			idx = max(0, (int)drivers.size() - 1 - idx);
-			return drivers[idx].d.get();
+			return drivers[idx].get();
 		}
 		return nullptr;
 	}
@@ -555,18 +548,18 @@ namespace flame
 		auto name = _name;
 		for (auto& d : drivers)
 		{
-			if (d.d->type_name == _name)
+			if (d->type_name == _name)
 			{
-				ret = d.d.get();
+				ret = d.get();
 				break;
 			}
 		}
 		name = "flame::" + _name;
 		for (auto& d : drivers)
 		{
-			if (d.d->type_name == name)
+			if (d->type_name == name)
 			{
-				ret = d.d.get();
+				ret = d.get();
 				break;
 			}
 		}
@@ -585,9 +578,8 @@ namespace flame
 		fassert(!get_driver(d->type_hash));
 
 		d->entity = this;
-		EntityPrivate::DriverSlot slot;
-		slot.d.reset(d);
-		drivers.push_back(std::move(slot));
+		drivers.emplace_back(d);
+		drivers_map.emplace(d->type_hash, std::make_pair(d, DataListeners()));
 	}
 
 	void EntityPrivate::pop_driver()
@@ -596,12 +588,12 @@ namespace flame
 			drivers.pop_back();
 	}
 
-	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint64 msg, void* parm1, void* parm2), const Capture& capture)
+	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture)
 	{
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
-			callback = [](Capture& c, uint64 msg, void* parm1, void* parm2) {
+			callback = [](Capture& c, uint msg, void* parm1, void* parm2) {
 				auto scr_ins = script::Instance::get_default();
 				scr_ins->get_global("callbacks");
 				scr_ins->get_member(nullptr, c.data<uint>());
@@ -625,25 +617,25 @@ namespace flame
 		});
 	}
 
-	void EntityPrivate::component_data_changed(Component* c, uint64 h)
+	void EntityPrivate::component_data_changed(Component* c, uint h)
 	{
-		auto it = components.find(c->type_hash);
-		if (it != components.end())
+		auto it = components_map.find(c->type_hash);
+		if (it != components_map.end())
 		{
-			for (auto& l : it->second.data_listeners)
+			for (auto& l : it->second.second)
 				l->call(h);
 		}
 	}
 
-	void* EntityPrivate::add_component_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Component* c)
+	void* EntityPrivate::add_component_data_listener(void (*callback)(Capture& c, uint h), const Capture& capture, Component* c)
 	{
-		auto it = components.find(c->type_hash);
-		if (it != components.end())
+		auto it = components_map.find(c->type_hash);
+		if (it != components_map.end())
 		{
 			if (!callback)
 			{
 				auto slot = (uint)&capture;
-				callback = [](Capture& c, uint64 h) {
+				callback = [](Capture& c, uint h) {
 					auto scr_ins = script::Instance::get_default();
 					scr_ins->get_global("callbacks");
 					scr_ins->get_member(nullptr, c.data<uint>());
@@ -653,11 +645,11 @@ namespace flame
 					scr_ins->pop(2);
 				};
 				auto c = new Closure(callback, Capture().set_data(&slot));
-				it->second.data_listeners.emplace_back(c);
+				it->second.second.emplace_back(c);
 				return c;
 			}
 			auto c = new Closure(callback, capture);
-			it->second.data_listeners.emplace_back(c);
+			it->second.second.emplace_back(c);
 			return c;
 		}
 		return nullptr;
@@ -665,68 +657,61 @@ namespace flame
 
 	void EntityPrivate::remove_component_data_listener(void* lis, Component* c)
 	{
-		auto it = components.find(c->type_hash);
-		if (it != components.end())
+		auto it = components_map.find(c->type_hash);
+		if (it != components_map.end())
 		{
-			std::erase_if(it->second.data_listeners, [&](const auto& i) {
+			std::erase_if(it->second.second, [&](const auto& i) {
 				return i == (decltype(i))lis;
 			});
 		}
 	}
 
-	void EntityPrivate::driver_data_changed(Driver* _d, uint64 h)
+	void EntityPrivate::driver_data_changed(Driver* d, uint h)
 	{
-		for (auto& d : drivers)
+		auto it = drivers_map.find(d->type_hash);
+		if (it != drivers_map.end())
 		{
-			if (d.d->type_hash == _d->type_hash)
-			{
-				for (auto& l : d.data_listeners)
-					l->call(h);
-			}
+			for (auto& l : it->second.second)
+				l->call(h);
 		}
 	}
 
-	void* EntityPrivate::add_driver_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Driver* _d)
+	void* EntityPrivate::add_driver_data_listener(void (*callback)(Capture& c, uint h), const Capture& capture, Driver* d)
 	{
-		for (auto& d : drivers)
+		auto it = drivers_map.find(d->type_hash);
+		if (it != drivers_map.end())
 		{
-			if (d.d->type_hash == _d->type_hash)
+			if (!callback)
 			{
-				if (!callback)
-				{
-					auto slot = (uint)&capture;
-					callback = [](Capture& c, uint64 h) {
-						auto scr_ins = script::Instance::get_default();
-						scr_ins->get_global("callbacks");
-						scr_ins->get_member(nullptr, c.data<uint>());
-						scr_ins->get_member("f");
-						scr_ins->push_pointer((void*)h);
-						scr_ins->call(1);
-						scr_ins->pop(2);
-					};
-					auto c = new Closure(callback, Capture().set_data(&slot));
-					d.data_listeners.emplace_back(c);
-					return c;
-				}
-				auto c = new Closure(callback, capture);
-				d.data_listeners.emplace_back(c);
+				auto slot = (uint)&capture;
+				callback = [](Capture& c, uint h) {
+					auto scr_ins = script::Instance::get_default();
+					scr_ins->get_global("callbacks");
+					scr_ins->get_member(nullptr, c.data<uint>());
+					scr_ins->get_member("f");
+					scr_ins->push_pointer((void*)h);
+					scr_ins->call(1);
+					scr_ins->pop(2);
+				};
+				auto c = new Closure(callback, Capture().set_data(&slot));
+				it->second.second.emplace_back(c);
 				return c;
 			}
+			auto c = new Closure(callback, capture);
+			it->second.second.emplace_back(c);
+			return c;
 		}
 		return nullptr;
 	}
 
-	void EntityPrivate::remove_driver_data_listener(void* lis, Driver* _d)
+	void EntityPrivate::remove_driver_data_listener(void* lis, Driver* d)
 	{
-		for (auto& d : drivers)
+		auto it = drivers_map.find(d->type_hash);
+		if (it != drivers_map.end())
 		{
-			if (d.d->type_hash == _d->type_hash)
-			{
-				std::erase_if(d.data_listeners, [&](const auto& i) {
-					return i == (decltype(i))lis;
-				});
-				return;
-			}
+			std::erase_if(it->second.second, [&](const auto& i) {
+				return i == (decltype(i))lis;
+			});
 		}
 	}
 
@@ -891,7 +876,7 @@ namespace flame
 				auto value = std::string(a.value());
 				for (auto i = (int)e_dst->drivers.size() - 1; i >= 0; i--)
 				{
-					auto d = e_dst->drivers[i].d.get();
+					auto d = e_dst->drivers[i].get();
 					auto dt = find_driver_type(d->type_name, nullptr);
 					if (dt && set_attribute(d, dt, name, value))
 					{
@@ -903,8 +888,8 @@ namespace flame
 				{
 					for (auto& c : e_dst->components)
 					{
-						auto ct = find_component_type(c.second.c->type_name, nullptr);
-						if (ct && set_attribute(c.second.c.get(), ct, name, value))
+						auto ct = find_component_type(c->type_name, nullptr);
+						if (ct && set_attribute(c.get(), ct, name, value))
 						{
 							ok = true;
 							break;
@@ -977,7 +962,7 @@ namespace flame
 
 		if (first_e == e_dst && !e_dst->drivers.empty())
 		{
-			auto d = e_dst->drivers.back().d.get();
+			auto d = e_dst->drivers.back().get();
 			if (!d->load_finished)
 			{
 				d->load_finished = true;
@@ -1085,28 +1070,24 @@ namespace flame
 			n_dst.append_attribute("visible").set_value("false");
 		if (!e_src->drivers.empty())
 		{
-			auto d = e_src->drivers.back().d.get();
+			auto d = e_src->drivers.back().get();
 			std::string dname;
 			find_driver_type(d->type_name, &dname);
 			if (srcs[srcs.size() - d->src_id - 1] == fn)
 				n_dst.append_attribute("driver").set_value(dname.c_str());
 			for (auto& d : e_src->drivers)
 			{
-				auto dt = find_driver_type(d.d->type_name, nullptr);
+				auto dt = find_driver_type(d->type_name, nullptr);
 				for (auto& a : dt->attributes)
 				{
-					auto value = a.second.serialize(d.d.get(), reference ? reference->get_driver(d.d->type_hash) : nullptr);
+					auto value = a.second.serialize(d.get(), reference ? reference->get_driver(d->type_hash) : nullptr);
 					if (!value.empty())
 						n_dst.append_attribute(a.first.c_str()).set_value(value.c_str());
 				}
 			}
 		}
 
-		std::vector<Component*> components;
-		e_src->get_components([](Capture& c, Component* cmp) {
-			c.data<std::vector<Component*>*>()->push_back(cmp);
-		}, Capture().set_data(&components));
-		for (auto c : components)
+		for (auto& c : e_src->components)
 		{
 			std::string cname;
 			auto ct = find_component_type(c->type_name, &cname);
@@ -1143,7 +1124,7 @@ namespace flame
 					{
 						if (c->on_save_attribute(a.second.hash))
 						{
-							auto value = a.second.serialize(c, reference ? reference->get_component(c->type_hash) : nullptr);
+							auto value = a.second.serialize(c.get(), reference ? reference->get_component(c->type_hash) : nullptr);
 							if (!value.empty())
 							{
 								if (a.first == "content")
@@ -1224,10 +1205,5 @@ namespace flame
 				}
 			}
 		}
-	}
-
-	void Entity::set_debug(bool v)
-	{
-		debug = v;
 	}
 }

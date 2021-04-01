@@ -204,7 +204,7 @@ struct TagView
 	{
 		auto e_search_bar = e->find_child("tag_search_bar");
 		c_search = e_search_bar->get_component_t<cText>();
-		e_search_bar->add_data_listener(c_search, [](Capture& c, uint64 h) {
+		e_search_bar->add_data_listener(c_search, [](Capture& c, uint h) {
 			auto thiz = c.thiz<TagView>();
 			if (h == S<"text"_h>)
 				thiz->search(thiz->c_search->get_text());
@@ -309,7 +309,7 @@ struct MainView
 				thumbnail->data = data;
 				thumbnail->id = id;
 				e->add_component(thumbnail);
-				e->add_data_listener(element, [](Capture& c, uint64 h) {
+				e->add_data_listener(element, [](Capture& c, uint h) {
 					auto thiz = c.thiz<cThumbnail>();
 					if (h == S<"culled"_h>)
 						thiz->toggle();

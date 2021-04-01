@@ -74,7 +74,7 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		view->add_component_data_listener([](Capture& c, uint64 h) {
+		view->add_component_data_listener([](Capture& c, uint h) {
 			auto thiz = c.thiz<dScrollerPrivate>();
 			switch (h)
 			{
@@ -99,7 +99,7 @@ namespace flame
 			target = (EntityPrivate*)e;
 			target_element = target->get_component_t<cElementPrivate>();
 			fassert(target_element);
-			target->add_component_data_listener([](Capture& c, uint64 h) {
+			target->add_component_data_listener([](Capture& c, uint h) {
 				auto thiz = c.thiz<dScrollerPrivate>();
 				switch (h)
 				{

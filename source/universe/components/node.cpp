@@ -230,7 +230,7 @@ namespace flame
 		renderer = nullptr;
 	}
 
-	bool cNodePrivate::on_save_attribute(uint64 h)
+	bool cNodePrivate::on_save_attribute(uint h)
 	{
 		switch (h)
 		{

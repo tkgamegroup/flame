@@ -41,7 +41,7 @@ namespace flame
 
 		set_type(type);
 
-		bar->add_message_listener([](Capture& c, uint64 msg, void* parm1, void* parm2) {
+		bar->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			auto thiz = c.thiz<dSplitterPrivate>();
 			switch (msg)
 			{

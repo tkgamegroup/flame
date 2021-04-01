@@ -131,8 +131,7 @@ namespace flame
 
 			std::filesystem::path filename;
 
-			std::vector<DescriptorSetLayoutPrivate*> descriptor_set_layouts;
-			std::unordered_map<uint64, uint> descriptor_set_layouts_map;
+			std::vector<std::pair<std::string, DescriptorSetLayoutPrivate*>> descriptor_set_layouts;
 
 			FlmPtr<TypeInfoDataBase> tidb;
 			UdtInfo* pcti = nullptr;
@@ -145,8 +144,6 @@ namespace flame
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
-
-			uint get_idx(uint64 h) { return descriptor_set_layouts_map[h]; };
 
 			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};

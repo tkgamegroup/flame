@@ -23,7 +23,7 @@ namespace flame
 		return nullptr;
 	}
 
-	System* WorldPrivate::get_system(uint64 type_hash) const
+	System* WorldPrivate::get_system(uint type_hash) const
 	{
 		for (auto& s : systems)
 		{

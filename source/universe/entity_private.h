@@ -40,18 +40,7 @@ namespace flame
 
 	struct EntityPrivate : EntityBridge
 	{
-		struct ComponentSlot
-		{
-			std::unique_ptr<Component, Delector> c;
-			uint id;
-			std::vector<std::unique_ptr<Closure<void(Capture&, uint64)>>> data_listeners;
-		};
-
-		struct DriverSlot
-		{
-			std::unique_ptr<Driver, Delector> d;
-			std::vector<std::unique_ptr<Closure<void(Capture&, uint64)>>> data_listeners;
-		};
+		typedef std::vector<std::unique_ptr<Closure<void(Capture&, uint)>>> DataListeners;
 
 		std::string name;
 
@@ -78,12 +67,13 @@ namespace flame
 #endif
 		uint created_location;
 
-		std::vector<DriverSlot> drivers;
-		std::unordered_map<uint64, ComponentSlot> components;
-		uint component_id = 0;
+		std::vector<std::unique_ptr<Driver, Delector>> drivers;
+		std::unordered_map<uint, std::pair<Driver*, DataListeners>> drivers_map;
+		std::vector<std::unique_ptr<Component, Delector>> components;
+		std::unordered_map<uint, std::pair<Component*, DataListeners>> components_map;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, uint64, void*, void*)>>> message_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, uint, void*, void*)>>> message_listeners;
 
 		std::vector<void*> events;
 
@@ -111,7 +101,7 @@ namespace flame
 		void add_src(const std::filesystem::path& p);
 		const wchar_t* get_srcs() const override;
 
-		Component* get_component(uint64 hash) const override;
+		Component* get_component(uint hash) const override;
 		Component* find_component(const std::string& name) const;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const override;
@@ -131,21 +121,21 @@ namespace flame
 
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 
-		Driver* get_driver(uint64 hash, int idx = -1) const override;
+		Driver* get_driver(uint hash, int idx = -1) const override;
 		Driver* find_driver(const std::string& name) const;
 
 		void push_driver(Driver* d) override;
 		void pop_driver() override;
 
-		void* add_message_listener(void (*callback)(Capture& c, uint64 msg, void* parm1, void* parm2), const Capture& capture) override;
+		void* add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture) override;
 		void remove_message_listener(void* lis) override;
 
-		void component_data_changed(Component* c, uint64 h) override;
-		void* add_component_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
+		void component_data_changed(Component* c, uint h) override;
+		void* add_component_data_listener(void (*callback)(Capture& c, uint hash), const Capture& capture, Component* c) override;
 		void remove_component_data_listener(void* lis, Component* c) override;
 
-		void driver_data_changed(Driver* d, uint64 h) override;
-		void* add_driver_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Driver* d) override;
+		void driver_data_changed(Driver* d, uint h) override;
+		void* add_driver_data_listener(void (*callback)(Capture& c, uint hash), const Capture& capture, Driver* d) override;
 		void remove_driver_data_listener(void* lis, Driver* d) override;
 
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;

@@ -698,7 +698,7 @@ namespace flame
 			return aabb.contains(p);
 	}
 
-	bool cElementPrivate::on_save_attribute(uint64 h)
+	bool cElementPrivate::on_save_attribute(uint h)
 	{
 		switch (h)
 		{

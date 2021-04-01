@@ -652,12 +652,12 @@ namespace flame
 		{
 			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				descriptor_set_layouts[i] = _descriptor_set_layouts[i];
+				descriptor_set_layouts[i] = std::make_pair("", _descriptor_set_layouts[i]);
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
+				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i].second->vk_descriptor_set_layout;
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;
@@ -684,9 +684,7 @@ namespace flame
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
 			{
 				auto dsl = _descriptor_set_layouts[i];
-				descriptor_set_layouts[i] = dsl;
-				auto fn = dsl->filename.filename().stem().string();
-				descriptor_set_layouts_map[ch(fn.c_str())] = i;
+				descriptor_set_layouts[i] = std::make_pair(dsl->filename.filename().stem().string(), dsl);
 			}
 
 			tidb.reset(db);
@@ -697,7 +695,7 @@ namespace flame
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
+				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i].second->vk_descriptor_set_layout;
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;

@@ -37,7 +37,7 @@ namespace flame
 
 	void dSliderPrivate::on_gain_bar_element()
 	{
-		//bar_element_listener = bar_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//bar_element_listener = bar_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint h) {
 		//	auto thiz = c.thiz<dSliderPrivate>();
 		//	if (t == thiz->bar_element)
 		//	{

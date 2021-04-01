@@ -40,7 +40,7 @@ namespace flame
 		return std::span(&(T&)v, 1);
 	}
 
-	constexpr uint64 ch(char const* str)
+	constexpr uint ch(char const* str)
 	{
 		auto ret = std::_FNV_offset_basis;
 		while (*str)
@@ -52,7 +52,7 @@ namespace flame
 		return ret;
 	}
 
-	constexpr uint64 operator "" _h(char const* str, std::size_t len)
+	constexpr uint operator "" _h(char const* str, std::size_t len)
 	{
 		return ch(str);
 	}

@@ -10,7 +10,7 @@ namespace flame
 	struct Component
 	{
 		const char* type_name;
-		const uint64 type_hash;
+		const uint type_hash;
 
 #ifdef FLAME_UNIVERSE_MODULE
 		EntityPrivate* entity = nullptr;
@@ -20,7 +20,7 @@ namespace flame
 
 		int src_id = -1;
 
-		Component(const char* name, uint64 hash) :
+		Component(const char* name, uint hash) :
 			type_name(name),
 			type_hash(hash)
 		{
@@ -41,6 +41,6 @@ namespace flame
 		virtual void on_child_removed(Entity* e) {}
 		virtual void on_reposition(uint from, uint to) {}
 
-		virtual bool on_save_attribute(uint64 h) { return true; }
+		virtual bool on_save_attribute(uint h) { return true; }
 	};
 }

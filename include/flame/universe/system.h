@@ -10,7 +10,7 @@ namespace flame
 	struct System
 	{
 		const char* type_name;
-		const uint64 type_hash;
+		const uint type_hash;
 
 #ifdef FLAME_UNIVERSE_MODULE
 		WorldPrivate* world = nullptr;
@@ -18,7 +18,7 @@ namespace flame
 		World* world = nullptr;
 #endif
 
-		System(const char* name, uint64 hash) :
+		System(const char* name, uint hash) :
 			type_name(name),
 			type_hash(hash)
 		{

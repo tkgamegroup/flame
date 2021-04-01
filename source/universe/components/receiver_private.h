@@ -29,8 +29,8 @@ namespace flame
 
 		bool mute = false;
 		bool ignore_occluders = false;
-		uint64 drag_hash = 0;
-		std::vector<uint64> acceptable_drops;
+		uint drag_hash = 0;
+		std::vector<uint> acceptable_drops;
 
 		bool is_active();
 

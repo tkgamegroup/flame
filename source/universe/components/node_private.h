@@ -67,7 +67,7 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 
-		bool on_save_attribute(uint64 h) override;
+		bool on_save_attribute(uint h) override;
 
 		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture);
 		void remove_drawer(void* drawer);
