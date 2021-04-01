@@ -175,14 +175,13 @@ namespace flame
 
 	void sRendererPrivate::set_targets()
 	{
-		fb_targets.clear();
+		fb_tars.clear();
 		auto count = swapchain->get_images_count();
-		fb_targets.resize(count);
+		fb_tars.resize(count);
 		for (auto i = 0; i < count; i++)
 		{
 			auto v = swapchain->get_image(i)->get_view();
-			fb_targets[i].reset(graphics::Framebuffer::create(device, 
-				graphics::Renderpass::get(device, L"rgba8c.rp"), 1, &v));
+			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_rgba8c, 1, &v));
 		}
 		tar_size = swapchain->get_image(0)->get_size();
 	}
@@ -262,8 +261,8 @@ namespace flame
 		if (node)
 		{
 			node->update_transform();
-			//for (auto& d : node->drawers)
-			//	d->call(canvas);
+			for (auto& d : node->drawers2)
+				d->call(this);
 		}
 
 		for (auto& c : e->children)
@@ -376,8 +375,8 @@ namespace flame
 		{
 			graphics::InstanceCB cb(device);
 
-			auto vtx_cnt = mesh->get_vertices_count();
-			auto idx_cnt = mesh->get_indices_count();
+			dst.vtx_cnt = mesh->get_vertices_count();
+			dst.idx_cnt = mesh->get_indices_count();
 			auto apos = mesh->get_positions();
 			auto auv = mesh->get_uvs();
 			auto anormal = mesh->get_normals();
@@ -386,8 +385,9 @@ namespace flame
 			auto bone_cnt = mesh->get_bones_count();
 			if (bone_cnt == 0)
 			{
-				auto pvtx = buf_mesh_vtx.alloc(vtx_cnt);
-				for (auto i = 0; i < vtx_cnt; i++)
+				dst.vtx_off = buf_mesh_vtx.n1;
+				auto pvtx = buf_mesh_vtx.alloc(dst.vtx_cnt);
+				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
 					auto& vtx = pvtx[i];
 					vtx.pos = apos[i];
@@ -395,10 +395,10 @@ namespace flame
 					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
 				}
 
-				auto n = buf_mesh_idx.n1;
-				auto pidx = buf_mesh_idx.alloc(idx_cnt);
-				for (auto i = 0; i < idx_cnt; i++)
-					pidx[i] = n + aidx[i];
+				dst.idx_off = buf_mesh_idx.n1;
+				auto pidx = buf_mesh_idx.alloc(dst.idx_cnt);
+				for (auto i = 0; i < dst.idx_cnt; i++)
+					pidx[i] = dst.idx_off + aidx[i];
 
 				buf_mesh_vtx.upload(cb.get());
 				buf_mesh_idx.upload(cb.get());
@@ -406,8 +406,8 @@ namespace flame
 			else
 			{
 				auto n = buf_arm_mesh_idx.n1;
-				auto pidx = buf_arm_mesh_idx.alloc(idx_cnt);
-				for (auto i = 0; i < idx_cnt; i++)
+				auto pidx = buf_arm_mesh_idx.alloc(dst.idx_cnt);
+				for (auto i = 0; i < dst.idx_cnt; i++)
 					pidx[i] = n + aidx[i];
 			}
 
@@ -419,6 +419,11 @@ namespace flame
 
 	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
 	{
+		for (auto i = 0; i < mesh_reses.size(); i++)
+		{
+			if (mesh_reses[i].mesh == mesh)
+				return i;
+		}
 		return -1;
 	}
 
@@ -555,7 +560,7 @@ namespace flame
 
 		Rect scissor;
 		scissor.reset();
-		for (auto i = 0; i < size(element_drawing_layers); i++)
+		for (auto i = 0; i < _countof(element_drawing_layers); i++)
 		{
 			for (auto& info : element_drawing_layers[i])
 			{
@@ -741,7 +746,7 @@ namespace flame
 
 		cb->set_viewport(Rect(vec2(0.f), tar_size));
 		auto cv = vec4(1.f, 1.f, 1.f, 1.f);
-		cb->begin_renderpass(nullptr, fb_targets[tar_idx].get(), &cv);
+		cb->begin_renderpass(nullptr, fb_tars[tar_idx].get(), &cv);
 		cb->bind_pipeline(pl_element);
 		cb->bind_vertex_buffer(buf_element_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_element_idx.buf.get(), graphics::IndiceTypeUint);
@@ -884,9 +889,9 @@ namespace flame
 		//	vias2[1].location = 6;
 		//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
 		//	VertexBufferInfo vibs[2];
-		//	vibs[0].attributes_count = size(vias1);
+		//	vibs[0].attributes_count = _countof(vias1);
 		//	vibs[0].attributes = vias1;
-		//	vibs[1].attributes_count = size(vias2);
+		//	vibs[1].attributes_count = _countof(vias2);
 		//	vibs[1].attributes = vias2;
 		//	VertexInfo vi;
 		//	vi.buffers_count = 2;
@@ -942,9 +947,10 @@ namespace flame
 		auto& data = (*buf_transform.pstag).transforms[transform_idx];
 		data.mat = node->transform;
 		data.nor = mat4(node->rot);
+
+		node_drawing_meshes[0].emplace_back(transform_idx, mesh_id); // TODO: 0 -> mat id
+
 		transform_idx++;
-
-
 	}
 
 	void sRendererPrivate::record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
@@ -972,10 +978,31 @@ namespace flame
 		{
 			graphics::BufferCopy cpy;
 			cpy.size = sizeof(DSL_transform_9c0d::Transform) * transform_idx;
-			buf_render_data.cpies.push_back(cpy);
+			buf_transform.cpies.push_back(cpy);
 			transform_idx = 0;
 		}
 		buf_transform.upload(cb);
+
+		buf_indirs.stag_num = 0;
+		for (auto mat_id = 0; mat_id < node_drawing_meshes.size(); mat_id++)
+		{
+			auto& vec = node_drawing_meshes[mat_id];
+			if (!vec.empty())
+			{
+				auto indirs = buf_indirs.stag(vec.size());
+				for (auto i = 0; i < vec.size(); i++)
+				{
+					auto& src = mesh_reses[vec[i].second];
+					auto& dst = indirs[i];
+					dst.vertex_offset = src.vtx_off;
+					dst.first_index = src.idx_off;
+					dst.index_count = src.idx_cnt;
+					dst.first_instance = (vec[i].first << 16) + mat_id;
+					dst.instance_count = 1;
+				}
+			}
+		}
+		buf_indirs.upload(cb);
 
 		auto vp = Rect(vec2(0.f), tar_size);
 		cb->set_viewport(vp);
@@ -983,7 +1010,7 @@ namespace flame
 		vec4 cvs[] = { 
 			vec4(0.f, 0.f, 0.f, 0.f),
 			vec4(0.f, 0.f, 0.f, 0.f),
-			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(1.f, 0.f, 0.f, 0.f),
 			vec4(0.f, 0.f, 0.f, 0.f)
 		};
 		cb->begin_renderpass(nullptr, fb_def.get(), cvs);
@@ -994,13 +1021,34 @@ namespace flame
 		sets[PLL_deferred_geometry_0756::Binding_render_data] = ds_render_data.get();
 		sets[PLL_deferred_geometry_0756::Binding_transform] = ds_transform.get();
 		cb->bind_descriptor_sets(0, _countof(sets), sets);
+		auto indir_off = 0;
+		for (auto mat_id = 0; mat_id < node_drawing_meshes.size(); mat_id++)
+		{
+			auto& vec = node_drawing_meshes[mat_id];
+			if (!vec.empty())
+			{
+				cb->draw_indexed_indirect(buf_indirs.buf.get(), indir_off, vec.size());
+				indir_off += vec.size();
+			}
+		}
+		cb->next_pass();
+		cb->bind_pipeline(pl_def_sha);
+		cb->bind_descriptor_set(0, ds_def_sha.get());
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
+		cb->image_barrier(img_back.get(), {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutAttachment, graphics::AccessColorAttachmentWrite);
+		cb->begin_renderpass(rp_rgba8, fb_tars[tar_idx].get());
+		cb->bind_pipeline(pl_gamma);
+		cb->bind_descriptor_set(0, ds_back.get());
+		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 	}
 
 	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
 		record_node_drawing_commands(tar_idx, cb);
-		record_element_drawing_commands(tar_idx, cb);
+		//record_element_drawing_commands(tar_idx, cb);
 	}
 
 	void sRendererPrivate::on_added()
@@ -1014,7 +1062,9 @@ namespace flame
 		device = graphics::Device::get_default();
 		swapchain = (graphics::Swapchain*)world->find_object("flame::graphics::Swapchain");
 
-		set_targets(); 
+		rp_rgba8c = graphics::Renderpass::get(device, L"rgba8c.rp");
+		rp_rgba8 = graphics::Renderpass::get(device, L"rgba8.rp");
+		set_targets();
 
 		pl_element = graphics::Pipeline::get(device, L"element/element.pl");
 
@@ -1033,17 +1083,22 @@ namespace flame
 			dsl->get_binding(idx, &bd);
 			element_reses.resize(bd.count);
 			auto iv_wht = img_wht->get_view(0);
+			auto sp = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge);
 			for (auto i = 0; i < bd.count; i++)
 			{
-				ds_element->set_image(idx, i, iv_wht,
-					graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear,
-						false, graphics::AddressClampToEdge));
+				ds_element->set_image(idx, i, iv_wht, sp);
 
 				auto& res = element_reses[i];
 				res.type = ElementResImage;
 				res.v = iv_wht;
 			}
 		}
+
+		mat_reses.resize(128);
+		mesh_reses.resize(64);
+		node_drawing_meshes.resize(mat_reses.size());
+		
+		buf_indirs.create(device, graphics::BufferUsageIndirect, 65536);
 
 		buf_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
 		buf_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
@@ -1085,7 +1140,23 @@ namespace flame
 
 		get_material_pipeline(MaterialForMesh, L"", "");
 
-		mesh_reses.resize(64);
+		pl_def_sha = graphics::Pipeline::get(device, L"mesh/deferred_shade.pl");
+
+		{
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"mesh/deferred_shade.dsl");
+			ds_def_sha.reset(graphics::DescriptorSet::create(dsp, dsl));
+			auto sp = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+			ds_def_sha->set_image(dsl->find_binding("image0"), 0, img_def_geo0->get_view(), sp);
+			ds_def_sha->set_image(dsl->find_binding("image1"), 0, img_def_geo1->get_view(), sp);
+		}
+
+		{
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"post/post.dsl");
+			ds_back.reset(graphics::DescriptorSet::create(dsp, dsl));
+			auto sp = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+			ds_back->set_image(dsl->find_binding("image"), 0, img_back->get_view(), sp);
+		}
+		pl_gamma = graphics::Pipeline::get(device, L"post/gamma.pl");
 	}
 
 	void sRendererPrivate::update()
@@ -1094,13 +1165,14 @@ namespace flame
 			return;
 
 		element_drawing_scissor = Rect(vec2(0.f), tar_size);
-		for (auto i = 0; i < size(element_drawing_layers); i++)
+		for (auto i = 0; i < _countof(element_drawing_layers); i++)
 			element_drawing_layers[i].clear();
 		buf_element_vtx.stag_num = 0;
 		buf_element_idx.stag_num = 0;
 		element_render(0, world->element_root->get_component_t<cElementPrivate>());
 
-		node_drawing_meshes.clear();
+		for (auto i = 0; i < node_drawing_meshes.size(); i++)
+			node_drawing_meshes[i].clear();
 		node_render(world->node_root->get_component_t<cNodePrivate>());
 
 		dirty = false;

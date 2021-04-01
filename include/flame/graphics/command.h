@@ -75,6 +75,7 @@ namespace flame
 			virtual void begin(bool once = false) = 0;
 
 			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* cvs = nullptr) = 0;
+			virtual void next_pass() = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;

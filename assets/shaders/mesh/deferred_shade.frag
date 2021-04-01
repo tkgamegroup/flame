@@ -8,4 +8,5 @@ void main()
 {
 	vec4 sample0 = texture(image0, i_uv);
 	vec4 sample1 = texture(image1, i_uv);
+	o_color = vec4(sample0.rgb, 1.0);
 }

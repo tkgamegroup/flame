@@ -150,7 +150,7 @@ namespace flame
 			uint blend_options_count = 0;
 			const BlendOption* blend_options = nullptr;
 			uint dynamic_states_count = 0;
-			const uint* dynamic_states;
+			const uint* dynamic_states = nullptr;
 		};
 
 		struct Pipeline

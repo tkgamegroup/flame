@@ -9,6 +9,6 @@ layout (location = 1) out vec4 o_result1;
 
 void main()
 {
-	o_result0 = vec4(vec3(1), 0);
-	o_result1 = vec4(i_normal, 1);
+	o_result0 = vec4(vec3(1), 1);
+	o_result1 = vec4(i_normal * 0.5 + vec3(0.5), 1);
 }

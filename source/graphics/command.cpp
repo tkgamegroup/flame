@@ -97,6 +97,11 @@ namespace flame
 			vkCmdBeginRenderPass(vk_command_buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 		}
 
+		void CommandBufferPrivate::next_pass()
+		{
+			vkCmdNextSubpass(vk_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
+		}
+
 		void CommandBufferPrivate::end_renderpass()
 		{
 			vkCmdEndRenderPass(vk_command_buffer);

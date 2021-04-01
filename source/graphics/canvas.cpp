@@ -97,7 +97,7 @@ namespace flame
 			//	vias[2].location = 2;
 			//	vias[2].format = Format_R8G8B8A8_UNORM;
 			//	VertexBufferInfo vib;
-			//	vib.attributes_count = size(vias);
+			//	vib.attributes_count = _countof(vias);
 			//	vib.attributes = vias;
 			//	VertexInfo vi;
 			//	vi.buffers_count = 1;
@@ -161,7 +161,7 @@ namespace flame
 			//	vias[1].location = 1;
 			//	vias[1].format = Format_R8G8B8A8_UNORM;
 			//	VertexBufferInfo vib;
-			//	vib.attributes_count = size(vias);
+			//	vib.attributes_count = _countof(vias);
 			//	vib.attributes = vias;
 			//	VertexInfo vi;
 			//	vi.primitive_topology = PrimitiveTopologyLineList;
@@ -350,7 +350,7 @@ namespace flame
 			//	vias[2].location = 2;
 			//	vias[2].format = Format_R32G32B32_SFLOAT;
 			//	VertexBufferInfo vib;
-			//	vib.attributes_count = size(vias);
+			//	vib.attributes_count = _countof(vias);
 			//	vib.attributes = vias;
 			//	VertexInfo vi;
 			//	vi.buffers_count = 1;
@@ -385,9 +385,9 @@ namespace flame
 			//	vias2[1].location = 6;
 			//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
 			//	VertexBufferInfo vibs[2];
-			//	vibs[0].attributes_count = size(vias1);
+			//	vibs[0].attributes_count = _countof(vias1);
 			//	vibs[0].attributes = vias1;
-			//	vibs[1].attributes_count = size(vias2);
+			//	vibs[1].attributes_count = _countof(vias2);
 			//	vibs[1].attributes = vias2;
 			//	VertexInfo vi;
 			//	vi.buffers_count = 2;
@@ -958,7 +958,7 @@ namespace flame
 					if (!mat->dir.empty())
 					{
 						ivec4 ids;
-						for (auto i = 0; i < size(mr->textures); i++)
+						for (auto i = 0; i < _countof(mr->textures); i++)
 						{
 							auto& src = mat->textures[i];
 							auto& dst = mr->textures[i];

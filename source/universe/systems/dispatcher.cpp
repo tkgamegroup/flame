@@ -9,9 +9,9 @@ namespace flame
 {
 	sDispatcherPrivate::sDispatcherPrivate()
 	{
-		for (auto i = 0; i < size(kbtns_temp); i++)
+		for (auto i = 0; i < _countof(kbtns_temp); i++)
 			kbtns_temp[i].second = false;
-		for (auto i = 0; i < size(mbtns_temp); i++)
+		for (auto i = 0; i < _countof(mbtns_temp); i++)
 			mbtns_temp[i].second = false;
 	}
 
@@ -218,7 +218,7 @@ namespace flame
 			debug_break();
 		}
 
-		for (int i = 0; i < size(kbtns); i++)
+		for (int i = 0; i < _countof(kbtns); i++)
 		{
 			if (kbtns_temp[i].second)
 			{
@@ -228,7 +228,7 @@ namespace flame
 			else
 				kbtns[i].second = false;
 		}
-		for (int i = 0; i < size(mbtns); i++)
+		for (int i = 0; i < _countof(mbtns); i++)
 		{
 			if (mbtns_temp[i].second)
 			{

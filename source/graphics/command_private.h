@@ -66,6 +66,7 @@ namespace flame
 
 			void begin(bool once = false);
 			void begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* cvs = nullptr);
+			void next_pass() override;
 			void end_renderpass() override;
 			void set_viewport(const Rect& rect) override;
 			void set_scissor(const Rect& rect) override;

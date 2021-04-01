@@ -189,11 +189,16 @@ namespace flame
 		graphics::Device* device;
 		graphics::Swapchain* swapchain;
 
-		std::vector<FlmPtr<graphics::Framebuffer>> fb_targets;
+		graphics::Renderpass* rp_rgba8c;
+		graphics::Renderpass* rp_rgba8;
+		std::vector<FlmPtr<graphics::Framebuffer>> fb_tars;
 
 		// ==== element drawing ====
 
 		std::vector<ElementRes> element_reses;
+
+		Rect						element_drawing_scissor;
+		std::vector<ElementDrawCmd> element_drawing_layers[128];
 
 		SequentialBuffer<ElementVertex>	buf_element_vtx;
 		SequentialBuffer<uint>			buf_element_idx;
@@ -201,6 +206,7 @@ namespace flame
 		FlmPtr<graphics::DescriptorSet>	ds_element;
 
 		graphics::Pipeline*				pl_element;
+
 		// =========================
 
 		// ==== node drawing ====
@@ -208,7 +214,9 @@ namespace flame
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
 
-		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_cmds;
+		std::vector<std::vector<std::pair<uint, uint>>> node_drawing_meshes;
+
+		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_indirs;
 
 		SparseBuffer<MeshVertex>	buf_mesh_vtx;
 		SparseBuffer<uint>			buf_mesh_idx;
@@ -229,23 +237,21 @@ namespace flame
 		FlmPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
+		graphics::Pipeline*				pl_def_sha;
+		FlmPtr<graphics::DescriptorSet>	ds_def_sha;
 
 		// ======================
 
 		// ==== post ====
 
-		FlmPtr<graphics::Pipeline>		pl_gamma;
+		FlmPtr<graphics::DescriptorSet>	ds_back;
+		graphics::Pipeline*				pl_gamma;
 
 		// ==============
 
 		bool dirty = true;
 
 		vec2 tar_size;
-
-		Rect element_drawing_scissor;
-		std::vector<ElementDrawCmd> element_drawing_layers[128];
-
-		std::vector<uint> node_drawing_meshes;
 
 		sRendererPrivate(sRendererParms* parms);
 
