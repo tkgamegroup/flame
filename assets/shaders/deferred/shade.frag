@@ -1,4 +1,4 @@
-#include "deferred_shade.pll"
+#include "shade.pll"
 
 layout (location = 0) in vec2 i_uv;
 

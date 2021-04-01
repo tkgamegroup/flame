@@ -842,8 +842,8 @@ namespace flame
 		case MaterialForMesh:
 		{
 			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"mesh/deferred_geometry.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"mesh/deferred_geometry.frag", defines_str.c_str(), substitutes_str.c_str())
+				graphics::Shader::get(device, L"mesh/defe_geom.vert", defines_str.c_str(), substitutes_str.c_str()),
+				graphics::Shader::get(device, L"mesh/defe_geom.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			graphics::GraphicsPipelineInfo info;
 			info.renderpass = graphics::Renderpass::get(device, L"deferred.rp");
@@ -864,7 +864,7 @@ namespace flame
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
-				graphics::PipelineLayout::get(device, L"mesh/deferred_geometry.pll"), info);
+				graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"), info);
 		}
 			break;
 		//case MaterialForMeshShadowArmature:
@@ -1017,9 +1017,9 @@ namespace flame
 		cb->bind_pipeline(pl_mats[MaterialForMesh][0].pipeline.get());
 		cb->bind_vertex_buffer(buf_mesh_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
-		graphics::DescriptorSet* sets[PLL_deferred_geometry_0756::Binding_Max];
-		sets[PLL_deferred_geometry_0756::Binding_render_data] = ds_render_data.get();
-		sets[PLL_deferred_geometry_0756::Binding_transform] = ds_transform.get();
+		graphics::DescriptorSet* sets[PLL_defe_geom_25c1::Binding_Max];
+		sets[PLL_defe_geom_25c1::Binding_render_data] = ds_render_data.get();
+		sets[PLL_defe_geom_25c1::Binding_transform] = ds_transform.get();
 		cb->bind_descriptor_sets(0, _countof(sets), sets);
 		auto indir_off = 0;
 		for (auto mat_id = 0; mat_id < node_drawing_meshes.size(); mat_id++)
@@ -1032,8 +1032,8 @@ namespace flame
 			}
 		}
 		cb->next_pass();
-		cb->bind_pipeline(pl_def_sha);
-		cb->bind_descriptor_set(0, ds_def_sha.get());
+		cb->bind_pipeline(pl_defe_shad);
+		cb->bind_descriptor_set(0, ds_defe_shad.get());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
@@ -1140,14 +1140,14 @@ namespace flame
 
 		get_material_pipeline(MaterialForMesh, L"", "");
 
-		pl_def_sha = graphics::Pipeline::get(device, L"mesh/deferred_shade.pl");
+		pl_defe_shad = graphics::Pipeline::get(device, L"deferred/shade.pl");
 
 		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"mesh/deferred_shade.dsl");
-			ds_def_sha.reset(graphics::DescriptorSet::create(dsp, dsl));
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"deferred/shade.dsl");
+			ds_defe_shad.reset(graphics::DescriptorSet::create(dsp, dsl));
 			auto sp = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
-			ds_def_sha->set_image(dsl->find_binding("image0"), 0, img_def_geo0->get_view(), sp);
-			ds_def_sha->set_image(dsl->find_binding("image1"), 0, img_def_geo1->get_view(), sp);
+			ds_defe_shad->set_image(dsl->find_binding("image0"), 0, img_def_geo0->get_view(), sp);
+			ds_defe_shad->set_image(dsl->find_binding("image1"), 0, img_def_geo1->get_view(), sp);
 		}
 
 		{

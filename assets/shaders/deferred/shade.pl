@@ -2,8 +2,8 @@
 <pipeline>
   <shaders>
     <shader filename="fullscreen.vert" />
-    <shader filename="mesh/deferred_shade.frag" />
+    <shader filename="deferred/shade.frag" />
   </shaders>
-  <layout filename="mesh/deferred_shade.pll" />
+  <layout filename="deferred/shade.pll" />
   <renderpass filename="deferred.rp" index="1" />
 </pipeline>

@@ -6,7 +6,7 @@
 #include <element/element.pll.h>
 #include <render_data.dsl.h>
 #include <transform.dsl.h>
-#include <mesh/deferred_geometry.pll.h>
+#include <mesh/defe_geom.pll.h>
 
 namespace flame
 {
@@ -237,8 +237,8 @@ namespace flame
 		FlmPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
-		graphics::Pipeline*				pl_def_sha;
-		FlmPtr<graphics::DescriptorSet>	ds_def_sha;
+		graphics::Pipeline*				pl_defe_shad;
+		FlmPtr<graphics::DescriptorSet>	ds_defe_shad;
 
 		// ======================
 
