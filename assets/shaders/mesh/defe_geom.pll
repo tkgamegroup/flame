@@ -2,5 +2,7 @@
 #define RENDER_DATA_SET 0
 #include "../render_data.dsl"
 #define TRANSFORM_SET 1
-#include "../transform.dsl"
+#include "../transform.dsl"=
+#define MATERIAL_SET 2
+#include "../material.dsl"
 #endif

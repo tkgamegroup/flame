@@ -4,10 +4,10 @@
 
 struct LightSet
 {
-	uint directional_lights_count;
-	uint directional_light_indices[7];
-	uint point_lights_count;
-	uint point_light_indices[1015];
+	uint directional_count;
+	uint directional_indices[7];
+	uint point_count;
+	uint point_indices[1015];
 };
 
 struct LightInfo
@@ -29,10 +29,15 @@ layout (set = LIGHT_SET, binding = 1) buffer readonly LightInfos
 	LightInfo light_infos[];
 };
 
-layout (set = LIGHT_SET, binding = 2) buffer readonly ShadowMatrices
+layout (set = LIGHT_SET, binding = 2) buffer readonly DirectionalShadowMatrices
 {
-	mat4 shadow_matrices[];
+	mat4 directional_shadow_matrices[];
 };
 
-layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_shadow_maps[4];
-layout (set = LIGHT_SET, binding = 4) uniform samplerCube point_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 3) buffer readonly PointShadowMatrices
+{
+	mat4 point_shadow_matrices[];
+};
+
+layout (set = LIGHT_SET, binding = 4) uniform sampler2DArray	directional_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 5) uniform samplerCube		point_shadow_maps[4];

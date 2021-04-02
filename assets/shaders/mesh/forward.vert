@@ -10,7 +10,7 @@ layout (location = 5) in ivec4 i_bone_ids;
 layout (location = 6) in vec4 i_bone_weights;
 #endif
 
-layout (location = 0) out flat uint o_mat_id;
+layout (location = 0) out flat uint o_mat;
 layout (location = 1) out vec2 o_uv;
 layout (location = 2) out vec3 o_coordw;
 layout (location = 3) out vec3 o_coordv;
@@ -21,7 +21,7 @@ layout (location = 4) out vec3 o_normal;
 void main()
 {
 	uint mod_idx = gl_InstanceIndex >> 16;
-	o_mat_id = gl_InstanceIndex & 0xffff;
+	o_mat = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
 
 #ifdef ARMATURE

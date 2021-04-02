@@ -9,6 +9,13 @@ layout (location = 1) out vec4 o_result1;
 
 void main()
 {
-	o_result0 = vec4(vec3(1), 1);
-	o_result1 = vec4(i_normal * 0.5 + vec3(0.5), 1);
+	MaterialInfo material = material_infos[i_mat];
+
+	vec3 N = normalize(i_normal);
+	//vec3 V = normalize(i_coordv);
+	
+	MAT_FILE
+
+	o_result0 = vec4(albedo, metallic);
+	o_result1 = vec4(i_normal * 0.5 + vec3(0.5), roughness);
 }

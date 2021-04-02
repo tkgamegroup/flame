@@ -10,7 +10,7 @@ int main(int argc, char **args)
 	if (argc == 2)
 	{
 		auto filename = std::filesystem::path(args[1]);
-		wprintf(L"compile: %s\n", filename.c_str());
+		wprintf(L"shader compiler: %s\n", filename.c_str());
 
 		auto ext = filename.extension();
 		if (ext == L".dsl")

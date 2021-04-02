@@ -176,7 +176,6 @@ process:
 
 	auto pdb_path = executable_path;
 	pdb_path.replace_extension(L".pdb");
-	auto pdb_lwt = std::filesystem::last_write_time(pdb_path);
 
 	if (ap.has("-rm"))
 	{
@@ -295,7 +294,7 @@ process:
 	if (std::filesystem::exists(typeinfo_path))
 	{
 		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-		if (lwt > pdb_lwt && lwt > std::filesystem::last_write_time(desc_path))
+		if (lwt > std::filesystem::last_write_time(pdb_path) && lwt > std::filesystem::last_write_time(desc_path))
 		{
 			printf("typeinfo up to date\n");
 			return 0;
@@ -325,7 +324,6 @@ process:
 		fassert(0);
 		return 0;
 	}
-	printf("pdb last write time: %lld\n", std::chrono::duration_cast<std::chrono::milliseconds>(pdb_lwt.time_since_epoch()).count());
 
 	CComPtr<IDiaSession> session;
 	if (FAILED(dia_source->openSession(&session)))

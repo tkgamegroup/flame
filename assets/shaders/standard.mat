@@ -1,27 +1,22 @@
-vec3 color;
-
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
 		if (texture(maps[material.map_indices[1]], i_uv).r < material.alpha_test)
 			discard;
-		color = texture(maps[material.map_indices[0]], i_uv).rgb;
+		vec4 color = texture(maps[material.map_indices[0]], i_uv);
 	#else
 		#ifdef COLOR_MAP
-		{
-			vec4 samp = texture(maps[material.map_indices[0]], i_uv);
-			if (samp.a < material.alpha_test)
+			vec4 color = texture(maps[material.map_indices[0]], i_uv);
+			if (color.a < material.alpha_test)
 				discard;
-			color = samp.rgb;
-		}
 		#else
-			color = material.color.rgb;
+			vec4 color = material.color;
 		#endif
 	#endif
 #else
 	#ifdef COLOR_MAP
-		color = texture(maps[material.map_indices[0]], i_uv).rgb;
+		vec4 color = texture(maps[material.map_indices[0]], i_uv);
 	#else
-		color = material.color.rgb;
+		vec4 color = material.color;
 	#endif
 #endif
 		
@@ -29,8 +24,10 @@ vec3 color;
 	float metallic = material.metallic;
 	float roughness = material.roughness;
 
-	vec3 albedo = (1.0 - metallic) * color;
-	vec3 spec = mix(vec3(0.04), color, metallic);
+	vec3 albedo = (1.0 - metallic) * color.rgb;
 	
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, metallic, albedo, spec, roughness), 1.0);
+	#ifndef DEFERRED
+		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
+		o_color = vec4(shading(i_coordw, i_coordv, N, V, metallic, albedo, spec, roughness), 1.0);
+	#endif
 #endif

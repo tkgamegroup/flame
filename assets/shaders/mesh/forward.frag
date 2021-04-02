@@ -1,7 +1,7 @@
 #include "mesh.pll"
 #include "../shading.glsl"
 
-layout (location = 0) in flat uint i_mat_id;
+layout (location = 0) in flat uint i_mat;
 layout (location = 1) in vec2 i_uv;
 layout (location = 2) in vec3 i_coordw;
 layout (location = 3) in vec3 i_coordv;
@@ -18,7 +18,7 @@ layout (location = 0) out float o_depth;
 void main()
 {
 	#ifdef MAT
-		MaterialInfo material = material_infos[i_mat_id];
+		MaterialInfo material = material_infos[i_mat];
 		
 		#ifndef SHADOW_PASS
 		vec3 N = normalize(i_normal);
