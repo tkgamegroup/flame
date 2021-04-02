@@ -6,7 +6,6 @@ namespace flame
 {
 	struct UdtInfoPrivate;
 	struct EnumInfoPrivate;
-	struct LibraryPrivate;
 	struct TypeInfoDataBasePrivate;
 
 	struct TypeInfoPrivate : TypeInfo
@@ -109,13 +108,11 @@ namespace flame
 
 	struct EnumInfoPrivate : EnumInfoBridge
 	{
-		LibraryPrivate* library;
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
 
-		EnumInfoPrivate(LibraryPrivate* db, const std::string& name);
+		EnumInfoPrivate(const std::string& name);
 
-		Library* get_library() const override { return (Library*)library; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_items_count() const override { return items.size(); }
 		EnumItem* get_item(uint idx) const override { return items[idx].get(); }
@@ -147,7 +144,7 @@ namespace flame
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
-		LibraryPrivate* library;
+		void* library;
 		UdtInfoPrivate* udt;
 		uint index;
 		std::string name;
@@ -157,9 +154,9 @@ namespace flame
 		std::vector<TypeInfoPrivate*> parameters;
 		std::string code;
 
-		FunctionInfoPrivate(LibraryPrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
+		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
 
-		Library* get_library() const override { return (Library*)library; }
+		void* get_library() const override { return library; }
 		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
@@ -193,7 +190,7 @@ namespace flame
 
 	struct UdtInfoPrivate : UdtInfoBridge
 	{
-		LibraryPrivate* library;
+		void* library;
 		std::string name;
 		uint size;
 		std::string base_name;
@@ -202,9 +199,9 @@ namespace flame
 
 		int ranking = -1;
 
-		UdtInfoPrivate(LibraryPrivate* db, const std::string& name, uint size, const std::string& base_name);
+		UdtInfoPrivate(void* library, const std::string& name, uint size, const std::string& base_name);
 
-		Library* get_library() const override { return (Library*)library; }
+		void* get_library() const override { return library; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_size() const override { return size; }
 		const char* get_base_name() const override { return base_name.c_str(); }
@@ -294,34 +291,13 @@ namespace flame
 	};
 
 	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
-	EnumInfoPrivate* add_enum(const std::string& name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	EnumInfoPrivate* add_enum(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	std::vector<EnumInfoPrivate*> get_enums(TypeInfoDataBasePrivate* db = nullptr);
 
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
-	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, void* library, TypeInfoDataBasePrivate* db = nullptr);
 	std::vector<UdtInfoPrivate*> get_udts(TypeInfoDataBasePrivate* db = nullptr);
 
-	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db = nullptr);
+	void load_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db = nullptr);
 	void save_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db = nullptr);
-
-	struct LibraryPrivate : Library
-	{
-		char* address;
-		std::filesystem::path filename;
-		bool has_typeinfo = false;
-		int ref_count = 1;
-
-		LibraryPrivate(const std::filesystem::path& filename, bool require_typeinfo);
-		~LibraryPrivate();
-
-		void* _get_exported_function(const char* name);
-
-		void release() override;
-
-		char* get_address() const override { return address; }
-		const wchar_t* get_filename() const override { return filename.c_str(); }
-		void* get_exported_function(const char* name) override { return _get_exported_function(name); }
-
-		static LibraryPrivate* load(const std::filesystem::path& filename, bool require_typeinfo = true);
-	};
 }

@@ -29,7 +29,6 @@ namespace flame
 
 	struct EnumInfo;
 	struct UdtInfo;
-	struct Library;
 	struct TypeInfoDataBase;
 
 	struct TypeInfo
@@ -96,7 +95,6 @@ namespace flame
 
 	struct EnumInfo
 	{
-		virtual Library* get_library() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_items_count() const = 0;
 		virtual EnumItem* get_item(uint idx) const = 0;
@@ -108,8 +106,8 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		virtual Library* get_library() const = 0;
 		virtual UdtInfo* get_udt() const = 0;
+		virtual void* get_library() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_rva() const = 0;
@@ -132,7 +130,7 @@ namespace flame
 
 	struct UdtInfo
 	{
-		virtual Library* get_library() const = 0;
+		virtual void* get_library() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_size() const = 0;
 		virtual const char* get_base_name() const = 0; // base class name
@@ -187,15 +185,4 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
-
-	struct Library
-	{
-		virtual void release() = 0;
-
-		virtual char* get_address() const = 0;
-		virtual const wchar_t* get_filename() const = 0;
-		virtual void* get_exported_function(const char* name) = 0;
-
-		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename, bool require_typeinfo = true);
-	};
 }

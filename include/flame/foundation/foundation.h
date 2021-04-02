@@ -372,7 +372,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void get_module_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str, wchar_t* (*str_allocator)(void* str, uint size));
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, uchar** out_data);

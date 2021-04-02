@@ -53,5 +53,5 @@ add_executable(editor ${SOURCES})
 set_target_properties(editor PROPERTIES FOLDER "tools")
 target_compile_definitions(editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")
 target_link_libraries(editor flame_universe)
-add_dependencies(editor typeinfogen)
+add_dependencies(editor typeinfogen_dep)
 

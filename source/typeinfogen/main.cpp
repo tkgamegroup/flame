@@ -166,21 +166,28 @@ show_usage:
 	return 0;
 
 process:
-
-	auto executable_path = std::filesystem::path(input);
-	if (!std::filesystem::exists(executable_path))
+	auto target_path = std::filesystem::path(input);
+	printf("typeinfogen: %s\n", target_path.string().c_str());
+	if (!std::filesystem::exists(target_path))
 	{
-		printf("executable does not exist: %s\n", executable_path.string().c_str());
+		printf("target does not exist: %s\n", target_path.string().c_str());
 		return 0;
 	}
 
-	auto pdb_path = executable_path;
-	pdb_path.replace_extension(L".pdb");
-
-	if (ap.has("-rm"))
+	wchar_t app_path[260];
+	get_app_path(app_path, false);
+	auto foundation_path = std::filesystem::path(app_path) / L"flame_foundation.dll";
+	if (target_path != foundation_path)
 	{
-		if (std::filesystem::exists(pdb_path))
-			std::filesystem::remove(pdb_path);
+		foundation_path.replace_extension(L".typeinfo");
+		load_typeinfo(foundation_path.c_str());
+	}
+
+	auto pdb_path = target_path;
+	pdb_path.replace_extension(L".pdb");
+	if (!std::filesystem::exists(pdb_path))
+	{
+		printf("pdb does not exist: %s\n", pdb_path.string().c_str());
 		return 0;
 	}
 
@@ -288,7 +295,7 @@ process:
 		udt_rules.push_back(ur);
 	}
 
-	auto typeinfo_path = executable_path;
+	auto typeinfo_path = target_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 
 	if (std::filesystem::exists(typeinfo_path))
@@ -296,33 +303,31 @@ process:
 		auto lwt = std::filesystem::last_write_time(typeinfo_path);
 		if (lwt > std::filesystem::last_write_time(pdb_path) && lwt > std::filesystem::last_write_time(desc_path))
 		{
-			printf("typeinfo up to date\n");
+			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
 			return 0;
 		}
 	}
 
-	printf("generating typeinfo for %s\n", executable_path.string().c_str());
-
 	if (FAILED(CoInitialize(NULL)))
 	{
-		printf("com initial failed\n");
+		printf("typeinfogen: com initial failed, exit\n");
 		fassert(0);
-		return 0;
+		return 1;
 	}
 
 	CComPtr<IDiaDataSource> dia_source;
 	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 	{
-		printf("dia not found\n");
+		printf("typeinfogen: dia not found, exit\n");
 		fassert(0);
-		return 0;
+		return 1;
 	}
 
 	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
 	{
 		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
 		fassert(0);
-		return 0;
+		return 1;
 	}
 
 	CComPtr<IDiaSession> session;
@@ -330,7 +335,7 @@ process:
 	{
 		printf("session failed to open\n");
 		fassert(0);
-		return 0;
+		return 1;
 	}
 
 	CComPtr<IDiaSymbol> global;
@@ -338,7 +343,7 @@ process:
 	{
 		printf("failed to get global\n");
 		fassert(0);
-		return 0;
+		return 1;
 	}
 
 	BOOL b;
@@ -348,8 +353,7 @@ process:
 	DWORD dw;
 	wchar_t* pwname;
 
-	auto library = Library::load(executable_path.c_str(), false);
-	auto library_address = library->get_address();
+	auto library = LoadLibraryW(target_path.c_str());
 	auto db = TypeInfoDataBase::create();
 
 	auto new_enum = [&](const std::string& name, IDiaSymbol* s_type) {
@@ -520,7 +524,7 @@ process:
 					auto obj = malloc(udt_size);
 					memset(obj, 0, udt_size);
 					if (ctor)
-						a2f<void(*)(void*)>((char*)library_address + ctor)(obj);
+						a2f<void(*)(void*)>((char*)library + ctor)(obj);
 
 					pugi::xml_node n_variables;
 
@@ -568,7 +572,7 @@ process:
 					s_variables->Release();
 
 					if (dtor)
-						a2f<void(*)(void*)>((char*)library_address + dtor)(obj);
+						a2f<void(*)(void*)>((char*)library + dtor)(obj);
 					free(obj);
 				}
 
@@ -581,10 +585,10 @@ process:
 
 	save_typeinfo(typeinfo_path.c_str(), db);
 
-	library->release();
+	FreeLibrary(library);
 	db->release();
 
-	printf("typeinfo generated\n");
+	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
 
 	return 0;
 }

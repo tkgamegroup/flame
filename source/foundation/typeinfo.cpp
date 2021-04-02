@@ -865,14 +865,19 @@ namespace flame
 				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 			}
 
-			wchar_t app_name[260];
-			GetModuleFileNameW(nullptr, app_name, _countof(app_name));
-			get_library_dependencies(app_name, [](Capture& c, const wchar_t* filename) {
-				auto path = std::filesystem::path(filename);
-				path.replace_extension(".typeinfo");
-				if (std::filesystem::exists(path))
-					LibraryPrivate::load(filename);
-			}, Capture());
+			wchar_t app_name_buf[260];
+			get_app_path(app_name_buf, true);
+			auto app_name = std::wstring(app_name_buf);
+			if (!app_name.ends_with(L"typeinfogen.exe"))
+			{
+				get_module_dependencies(app_name.c_str(), [](Capture& c, const wchar_t* filename) {
+					auto path = std::filesystem::path(filename);
+					auto ti_path = path;
+					ti_path.replace_extension(".typeinfo");
+					if (std::filesystem::exists(ti_path))
+						load_typeinfo(path);
+				}, Capture());
+			}
 		}
 	};
 	static _Initializer _initializer;
@@ -997,8 +1002,7 @@ namespace flame
 	{
 	}
 
-	EnumInfoPrivate::EnumInfoPrivate(LibraryPrivate* library, const std::string& name) :
-		library(library),
+	EnumInfoPrivate::EnumInfoPrivate(const std::string& name) :
 		name(name)
 	{
 	}
@@ -1045,9 +1049,9 @@ namespace flame
 		}
 	}
 
-	FunctionInfoPrivate::FunctionInfoPrivate(LibraryPrivate* library, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type) :
-		library(library),
+	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type) :
 		udt(udt),
+		library(library),
 		index(index),
 		name(name),
 		rva(rva),
@@ -1086,7 +1090,7 @@ namespace flame
 
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
-		auto address = rva ? library->address + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
+		auto address = rva ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
 		fassert(address);
 		return address;
 	}
@@ -1159,7 +1163,7 @@ namespace flame
 		}
 	}
 
-	UdtInfoPrivate::UdtInfoPrivate(LibraryPrivate* library, const std::string& name, uint size, const std::string& base_name) :
+	UdtInfoPrivate::UdtInfoPrivate(void* library, const std::string& name, uint size, const std::string& base_name) :
 		library(library),
 		name(name),
 		size(size),
@@ -1213,7 +1217,7 @@ namespace flame
 	{
 		if (idx == -1)
 			idx = functions.size();
-		auto ret = new FunctionInfoPrivate(library, this, idx, name, rva, voff, ti);
+		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, ti);
 		functions.emplace(functions.begin() + idx, ret);
 		return ret;
 	}
@@ -1286,18 +1290,18 @@ namespace flame
 
 	EnumInfo* find_enum(const char* name, TypeInfoDataBase* db) { return find_enum(std::string(name), (TypeInfoDataBasePrivate*)db); }
 
-	EnumInfoPrivate* add_enum(const std::string& name, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
+	EnumInfoPrivate* add_enum(const std::string& name, TypeInfoDataBasePrivate* db)
 	{
 		if (!db)
 			db = &tidb;
-		auto ret = new EnumInfoPrivate(library, name);
+		auto ret = new EnumInfoPrivate(name);
 		db->enums.emplace(ret->name, ret);
 		return ret;
 	}
 
 	EnumInfo* add_enum(const char* name, TypeInfoDataBase* db)
 	{
-		return add_enum(name, nullptr, (TypeInfoDataBasePrivate*)db);
+		return add_enum(std::string(name), (TypeInfoDataBasePrivate*)db);
 	}
 
 	void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* _db)
@@ -1348,7 +1352,7 @@ namespace flame
 
 	UdtInfo* find_udt(const char* name, TypeInfoDataBase* db) { return find_udt(std::string(name), (TypeInfoDataBasePrivate*)db); }
 
-	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
+	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, void* library, TypeInfoDataBasePrivate* db)
 	{
 		if (!db)
 			db = &tidb;
@@ -1392,26 +1396,31 @@ namespace flame
 		return ret;
 	}
 
-	void load_typeinfo(const std::filesystem::path& filename, LibraryPrivate* library, TypeInfoDataBasePrivate* db)
+	void load_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db)
 	{
 		if (!db)
 			db = &tidb;
 
-		std::filesystem::path library_path(filename);
-		if (!library_path.is_absolute())
+		std::filesystem::path path(filename);
+		if (!path.is_absolute())
 		{
 			wchar_t app_path[260];
 			get_app_path(app_path);
-			library_path = app_path / library_path;
+			path = app_path / path;
 		}
-		auto typeinfo_path = library_path;
-		typeinfo_path.replace_extension(L".typeinfo");
+
+		void* library = nullptr;
+		if (path.extension() != L".typeinfo")
+		{
+			library = LoadLibraryW(path.c_str());
+			path.replace_extension(L".typeinfo");
+		}
 
 		pugi::xml_document file;
 		pugi::xml_node file_root;
-		if (!file.load_file(typeinfo_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
+		if (!file.load_file(path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 		{
-			printf("cannot find typeinfo or wrong format: %s\n", typeinfo_path.string().c_str());
+			printf("cannot find typeinfo or wrong format: %s\n", path.string().c_str());
 			fassert(0);
 		}
 
@@ -1423,7 +1432,7 @@ namespace flame
 
 		for (auto n_enum : file_root.child("enums"))
 		{
-			auto e = add_enum(n_enum.attribute("name").value(), library, db);
+			auto e = add_enum(std::string(n_enum.attribute("name").value()), db);
 
 			for (auto n_item : n_enum.child("items"))
 				e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
@@ -1441,7 +1450,7 @@ namespace flame
 			}
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = new FunctionInfoPrivate(library, u, u->functions.size(), n_function.attribute("name").value(),
+				auto f = new FunctionInfoPrivate(u, library, u->functions.size(), n_function.attribute("name").value(),
 					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
 					read_ti(n_function));
 				u->functions.emplace_back(f);
@@ -1532,87 +1541,11 @@ namespace flame
 
 	void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db)
 	{
-		load_typeinfo(std::filesystem::path(filename), nullptr, (TypeInfoDataBasePrivate*)db);
+		load_typeinfo(std::filesystem::path(filename), (TypeInfoDataBasePrivate*)db);
 	}
 
 	void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db)
 	{
 		save_typeinfo(std::filesystem::path(filename), (TypeInfoDataBasePrivate*)db);
-	}
-
-	std::vector<std::unique_ptr<LibraryPrivate>> libraries;
-
-	LibraryPrivate::LibraryPrivate(const std::filesystem::path& filename, bool require_typeinfo) :
-		filename(filename)
-	{
-		address = (char*)LoadLibraryW(filename.c_str());
-
-		if (require_typeinfo)
-		{
-			load_typeinfo(filename, this);
-			has_typeinfo = true;
-		}
-	}
-
-	LibraryPrivate::~LibraryPrivate()
-	{
-		if (address)
-			FreeLibrary((HMODULE)address);
-
-		if (has_typeinfo)
-		{
-			for (auto it = tidb.enums.begin(); it != tidb.enums.end();)
-			{
-				if (it->second->library == this)
-					it = tidb.enums.erase(it);
-				else
-					it++;
-			}
-			for (auto it = tidb.udts.begin(); it != tidb.udts.end();)
-			{
-				if (it->second->library == this)
-					it = tidb.udts.erase(it);
-				else
-					it++;
-			}
-		}
-	}
-
-	void LibraryPrivate::release()
-	{
-		ref_count--;
-		if (ref_count == 0)
-		{
-			for (auto it = libraries.begin(); it != libraries.end(); it++)
-			{
-				if (it->get() == this)
-				{
-					libraries.erase(it);
-					break;
-				}
-			}
-		}
-	}
-
-	void* LibraryPrivate::_get_exported_function(const char* name)
-	{
-		return GetProcAddress((HMODULE)address, name);
-	}
-
-	LibraryPrivate* LibraryPrivate::load(const std::filesystem::path& filename, bool require_typeinfo)
-	{
-		for (auto& l : libraries)
-		{
-			if (l->filename == filename)
-				return l.get();
-		}
-		auto library = new LibraryPrivate(filename, require_typeinfo);
-		libraries.emplace_back(library);
-		return library;
-	}
-
-	Library* Library::load(const wchar_t* filename, bool require_typeinfo)
-	{
-		return LibraryPrivate::load(filename, require_typeinfo);
 	}
 }

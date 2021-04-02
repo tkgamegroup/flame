@@ -133,7 +133,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture)
+	void get_module_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture)
 	{
 		auto path = std::filesystem::path(filename);
 		auto parent_path = path.parent_path();
