@@ -6,6 +6,7 @@
 #include <element/element.pll.h>
 #include <render_data.dsl.h>
 #include <transform.dsl.h>
+#include <material.dsl.h>
 #include <mesh/defe_geom.pll.h>
 
 namespace flame
@@ -166,6 +167,7 @@ namespace flame
 		{
 			graphics::Material* mat;
 			uint texs[4];
+			graphics::Pipeline* pls[MaterialUsageCount] = {};
 		};
 
 		struct MeshRes
@@ -176,6 +178,7 @@ namespace flame
 			uint vtx_cnt;
 			uint idx_off;
 			uint idx_cnt;
+			uint mat_id;
 		};
 
 		bool wireframe = false;
@@ -228,6 +231,8 @@ namespace flame
 		StorageBuffer<DSL_transform_9c0d::Transforms>	buf_transform;
 		uint											transform_idx = 0;
 		FlmPtr<graphics::DescriptorSet>					ds_transform;
+		StorageBuffer<DSL_material_6528::MaterialInfos>	buf_material;
+		FlmPtr<graphics::DescriptorSet>					ds_material;
 
 		FlmPtr<graphics::Image> img_back;
 		FlmPtr<graphics::Image> img_dep;

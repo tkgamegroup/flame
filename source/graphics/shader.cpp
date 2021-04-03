@@ -444,7 +444,6 @@ namespace flame
 					{
 						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						fassert(0);
 						return nullptr;
 					}
 
@@ -507,7 +506,6 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					fassert(0);
 					return nullptr;
 				}
 			}
@@ -522,7 +520,6 @@ namespace flame
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
 					printf("res file wrong format\n");
-					fassert(0);
 					return nullptr;
 				}
 
@@ -802,17 +799,15 @@ namespace flame
 						str.resize(size);
 						return str.data();
 					});
+					std::filesystem::remove(temp_fn);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						fassert(0);
 						return nullptr;
 					}
 
 					printf(" done\n");
-
-					std::filesystem::remove(temp_fn);
 
 					auto spv = get_file_content(L"a.spv");
 					std::filesystem::remove(L"a.spv");
@@ -829,7 +824,6 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					fassert(0);
 					return nullptr;
 				}
 
@@ -854,7 +848,6 @@ namespace flame
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
 					printf("res file wrong format\n");
-					fassert(0);
 					return nullptr;
 				}
 
@@ -1027,7 +1020,6 @@ namespace flame
 					{
 						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						fassert(0);
 						return nullptr;
 					}
 
@@ -1038,21 +1030,13 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					fassert(0);
 					return nullptr;
 				}
 			}
 
-			auto spv_file = get_file_content(spv_path);
-			if (spv_file.empty())
-			{
-				fassert(0);
-				return nullptr;
-			}
-
 			if (device)
 			{
-				auto s = new ShaderPrivate(device, filename, defines, substitutes, spv_file);
+				auto s = new ShaderPrivate(device, filename, defines, substitutes, get_file_content(spv_path));
 				device->sds.emplace_back(s);
 				return s;
 			}

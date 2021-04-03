@@ -1119,6 +1119,13 @@ namespace flame
 			ds_transform->set_buffer(dsl->find_binding("Transforms"), 0, buf_transform.buf.get());
 		}
 
+		buf_material.create(device, graphics::BufferUsageStorage);
+		{
+			auto dsl = graphics::DescriptorSetLayout::get(device, L"material.dsl");
+			ds_material.reset(graphics::DescriptorSet::create(dsp, dsl));
+			ds_material->set_buffer(dsl->find_binding("MaterialInfos"), 0, buf_material.buf.get());
+		}
+
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 		img_dep.reset(graphics::Image::create(device, graphics::Format_Depth16, tar_size, 1, 1, 
