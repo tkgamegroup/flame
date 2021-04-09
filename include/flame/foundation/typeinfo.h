@@ -27,10 +27,6 @@ namespace flame
 		ElseType
 	};
 
-	struct EnumInfo;
-	struct UdtInfo;
-	struct TypeInfoDataBase;
-
 	struct TypeInfo
 	{
 		virtual TypeTag get_tag() const = 0;
@@ -42,7 +38,7 @@ namespace flame
 		virtual bool get_signed() const = 0;
 		virtual uint get_vec_size() const = 0;
 		virtual uint get_col_size() const = 0;
-		virtual TypeInfo* get_pointed_type() const = 0;
+		virtual TypeInfoPtr get_pointed_type() const = 0;
 
 		virtual void* create(bool create_pointing = true) const = 0;
 		virtual void destroy(void* p, bool destroy_pointing = true) const = 0;
@@ -57,12 +53,12 @@ namespace flame
 		}
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name, TypeInfoDataBase* db = nullptr);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name, TypeInfoDataBase* = nullptr);
 	};
 
-	inline TypeInfo* ti_es(const char* name)
+	inline TypeInfoPtr ti_es(const char* name)
 	{
-		return TypeInfo::get(TypeEnumSingle, name);
+		return (TypeInfoPtr)TypeInfo::get(TypeEnumSingle, name);
 	}
 
 	struct ReflectMeta
@@ -74,7 +70,7 @@ namespace flame
 
 	struct VariableInfo
 	{
-		virtual UdtInfo* get_udt() const = 0;
+		virtual UdtInfoPtr get_udt() const = 0;
 		virtual uint get_index() const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
@@ -85,9 +81,9 @@ namespace flame
 		virtual ReflectMeta* get_meta() const = 0;
 	};
 
-	struct EnumItem
+	struct EnumItemInfo
 	{
-		virtual EnumInfo* get_enum() const = 0;
+		virtual EnumInfoPtr get_enum() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual int get_value() const = 0;
@@ -97,25 +93,25 @@ namespace flame
 	{
 		virtual const char* get_name() const = 0;
 		virtual uint get_items_count() const = 0;
-		virtual EnumItem* get_item(uint idx) const = 0;
-		virtual EnumItem* find_item(const char* name) const = 0;
-		virtual EnumItem* find_item(int value) const = 0;
-		virtual EnumItem* add_item(const char* name, int value, int idx = -1) = 0;
-		virtual void remove_item(EnumItem* item) = 0;
+		virtual EnumItemInfoPtr get_item(uint idx) const = 0;
+		virtual EnumItemInfoPtr find_item(const char* name) const = 0;
+		virtual EnumItemInfoPtr find_item(int value) const = 0;
+		virtual EnumItemInfoPtr add_item(const char* name, int value, int idx = -1) = 0;
+		virtual void remove_item(EnumItemInfoPtr item) = 0;
 	};
 
 	struct FunctionInfo
 	{
-		virtual UdtInfo* get_udt() const = 0;
+		virtual UdtInfoPtr get_udt() const = 0;
 		virtual void* get_library() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_rva() const = 0;
 		virtual uint get_voff() const = 0;
-		virtual TypeInfo* get_type() const = 0;
+		virtual TypeInfoPtr get_type() const = 0;
 
 		virtual uint get_parameters_count() const = 0;
-		virtual TypeInfo* get_parameter(uint idx) const = 0;
+		virtual TypeInfoPtr get_parameter(uint idx) const = 0;
 		virtual void add_parameter(TypeInfo* ti, int idx = -1) = 0;
 		virtual void remove_parameter(uint idx) = 0;
 
@@ -136,36 +132,16 @@ namespace flame
 		virtual const char* get_base_name() const = 0; // base class name
 
 		virtual uint get_variables_count() const = 0;
-		virtual VariableInfo* get_variable(uint idx) const = 0;
-		virtual VariableInfo* find_variable(const char* name) const = 0;
-		virtual VariableInfo* add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx = -1) = 0;
-		virtual void remove_variable(VariableInfo* vi) = 0;
+		virtual VariableInfoPtr get_variable(uint idx) const = 0;
+		virtual VariableInfoPtr find_variable(const char* name) const = 0;
+		virtual VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx = -1) = 0;
+		virtual void remove_variable(VariableInfoPtr vi) = 0;
 
 		virtual uint get_functions_count() const = 0;
-		virtual FunctionInfo* get_function(uint idx) const = 0;
-		virtual FunctionInfo* find_function(const char* name) const = 0;
-		virtual FunctionInfo* add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx = -1) = 0;
-		virtual void remove_function(FunctionInfo* fi) = 0;
-
-		inline void serialize(const void* src, nlohmann::json& dst) const
-		{
-			auto count = get_variables_count();
-			for (auto i = 0; i < count; i++)
-			{
-				auto v = get_variable(i);
-				dst[v->get_name()] = v->get_type()->serialize(src);
-			}
-		}
-
-		inline void unserialize(const nlohmann::json& src, const void* dst) const
-		{
-			auto count = get_variables_count();
-			for (auto i = 0; i < count; i++)
-			{
-				auto v = get_variable(i);
-				v->get_type()->unserialize((char*)dst + v->get_offset(), src[v->get_name()].get<std::string>().c_str());
-			}
-		}
+		virtual FunctionInfoPtr get_function(uint idx) const = 0;
+		virtual FunctionInfoPtr find_function(const char* name) const = 0;
+		virtual FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, int idx = -1) = 0;
+		virtual void remove_function(FunctionInfoPtr fi) = 0;
 	};
 
 	struct TypeInfoDataBase

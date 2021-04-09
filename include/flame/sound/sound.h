@@ -2,16 +2,34 @@
 
 #ifdef FLAME_SOUND_MODULE
 #define FLAME_SOUND_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlameSoundTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_SOUND_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlameSoundTypeSelector
+{
+	typedef T result;
+};
 #endif
 
-#include <flame/math.h>
+#define FLAME_SOUND_TYPE(name) struct name; struct name##Private; \
+	typedef FlameSoundTypeSelector<name*, name##Private*>::result name##Ptr;
+
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
 	namespace sound
 	{
+		FLAME_SOUND_TYPE(Device);
+		FLAME_SOUND_TYPE(Recorder);
+		FLAME_SOUND_TYPE(Buffer);
+		FLAME_SOUND_TYPE(Source);
+
 		inline uint get_samples_count(float duration, uint frequency)
 		{
 			return frequency * duration;

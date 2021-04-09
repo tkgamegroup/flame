@@ -95,6 +95,9 @@ namespace flame
 		canvas = renderer->canvas;
 		fassert(canvas);
 
+		auto device = graphics::Device::get_default();
+		auto ppath = entity->get_src(src_id).parent_path();
+
 		{
 			auto isfile = false;
 			auto fn = std::filesystem::path(height_map_name);

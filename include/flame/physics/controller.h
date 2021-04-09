@@ -6,9 +6,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct Scene;
-		struct Material;
-
 		struct Controller
 		{
 			virtual void release() = 0;

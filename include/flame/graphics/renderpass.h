@@ -6,10 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-		struct Image;
-		struct ImageView;
-
 		struct RenderpassAttachmentInfo
 		{
 			Format format = Format_R8G8B8A8_UNORM;
@@ -37,7 +33,7 @@ namespace flame
 			virtual uint get_subpasses_count() const = 0;
 			virtual void get_subpass_info(uint idx, RenderpassSubpassInfo* dst) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *device, 
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device* device, 
 				uint attachments_count, const RenderpassAttachmentInfo* attachments, 
 				uint subpasses_count, const RenderpassSubpassInfo* subpasses, 
 				uint dependencies_count = 0, const uvec2* dependencies = nullptr);
@@ -48,9 +44,9 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual Renderpass* get_renderpass() const = 0;
+			virtual RenderpassPtr get_renderpass() const = 0;
 			virtual uint get_views_count() const = 0;
-			virtual ImageView* get_view(uint idx) const = 0;
+			virtual ImageViewPtr get_view(uint idx) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* device, Renderpass* rp, uint views_count, ImageView* const* views);
 		};

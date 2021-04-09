@@ -7,18 +7,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-		struct BufferPrivate;
-		struct ImageViewPrivate;
-		struct PipelinePrivate;
-		struct DescriptorSetPrivate;
-
-		struct ImageBridge : Image
-		{
-			void save(const wchar_t* filename) override;
-		};
-
-		struct ImagePrivate : ImageBridge
+		struct ImagePrivate : Image
 		{
 			DevicePrivate* device;
 			
@@ -56,7 +45,7 @@ namespace flame
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
-			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
+			ImageViewPtr get_view(uint idx) const override { return views[idx].get(); }
 
 			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
 			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
@@ -64,20 +53,16 @@ namespace flame
 			void get_samples(uint count, const vec2* uvs, vec4* dst) override;
 
 			void save(const std::filesystem::path& filename);
+			void save(const wchar_t* filename) override { save(std::filesystem::path(filename)); }
 
 			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
 			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false, bool generate_mipmaps = false);
 		};
 
-		inline void ImageBridge::save(const wchar_t* filename)
-		{
-			((ImagePrivate*)this)->save(filename);
-		}
-
 		struct ImageViewPrivate : ImageView
 		{
-			DevicePrivate* device;
-			ImagePrivate* image;
+			DevicePtr device;
+			ImagePtr image;
 
 			ImageViewType type;
 			ImageSubresource subresource;
@@ -94,7 +79,7 @@ namespace flame
 			ImageSubresource get_subresource() const override { return subresource; }
 			ImageSwizzle get_swizzle() const override { return swizzle; }
 
-			Image* get_image() const override { return image; }
+			ImagePtr get_image() const override { return image; }
 		};
 
 		inline ImageAspectFlags aspect_from_format(Format fmt)
@@ -130,33 +115,21 @@ namespace flame
 			static SamplerPrivate* get(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 		};
 
-		struct ImageTilePrivate : ImageTile
+		struct ImageAtlasPrivate : ImageAtlas
 		{
-			uint index;
-			std::string name;
-			ivec2 pos;
-			ivec2 size;
-			vec4 uv;
+			struct Tile
+			{
+				uint index;
+				std::string name;
+				ivec2 pos;
+				ivec2 size;
+				vec4 uv;
+			};
 
-			uint get_index() const override { return index; }
-			const char* get_name() const override { return name.c_str(); }
-			ivec2 get_pos() const override { return pos; }
-			ivec2 get_size() const override { return size; }
-			vec4 get_uv() const override { return uv; }
-		};
-
-		struct ImageAtlasBridge : ImageAtlas
-		{
-			ImageTile* get_tile(uint id) const override;
-			ImageTile* find_tile(const char* name) const override;
-		};
-
-		struct ImageAtlasPrivate : ImageAtlasBridge
-		{
 			bool border = false;
 
-			ImagePrivate* image;
-			std::vector<std::unique_ptr<ImageTilePrivate>> tiles;
+			ImagePtr image;
+			std::vector<Tile> tiles;
 
 			ImageAtlasPrivate(DevicePrivate* device, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
@@ -165,21 +138,13 @@ namespace flame
 
 			bool get_border() const override { return border; }
 
-			ImageTilePrivate* get_tile(uint id) const override { return tiles[id].get(); }
-			ImageTilePrivate* find_tile(const std::string& name) const;
+			uint get_tiles_count() const override { return tiles.size(); };
+			void get_tile(uint id, TileInfo* dst) const override;
+			int find_tile(const std::string& name) const;
+			bool find_tile(const char* name, TileInfo* dst) const override;
 
-			Image* get_image() const override { return image; }
+			ImagePtr get_image() const override { return image; }
 		};
-
-		inline ImageTile* ImageAtlasBridge::get_tile(uint id) const
-		{
-			return ((ImageAtlasPrivate*)this)->get_tile(id);
-		}
-
-		inline ImageTile* ImageAtlasBridge::find_tile(const char* name) const
-		{
-			return ((ImageAtlasPrivate*)this)->find_tile(name);
-		}
 	}
 }
 

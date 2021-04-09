@@ -2,16 +2,31 @@
 
 #ifdef FLAME_SCRIPT_MODULE
 #define FLAME_SCRIPT_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlameScriptTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_SCRIPT_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlameScriptTypeSelector
+{
+	typedef T result;
+};
 #endif
 
-#include <flame/math.h>
+#define FLAME_SCRIPT_TYPE(name) struct name; struct name##Private; \
+	typedef FlameScriptTypeSelector<name*, name##Private*>::result name##Ptr;
+
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
 	namespace script
 	{
+		FLAME_SCRIPT_TYPE(Instance);
+
 		struct Instance
 		{
 			virtual int to_int(int idx) = 0;

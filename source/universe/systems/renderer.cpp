@@ -342,14 +342,39 @@ namespace flame
 		return -1;
 	}
 
-	int sRendererPrivate::set_material_res(int idx, graphics::Material* mesh)
+	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
 	{
+		if (idx == -1)
+		{
+			for (auto i = 0; i < mat_reses.size(); i++)
+			{
+				if (!mat_reses[i].mat)
+				{
+					idx = i;
+					break;
+				}
+			}
+		}
+		if (idx == -1)
+			return -1;
+
+		auto& dst = mat_reses[idx];
+		dst.mat = mat;
+		if (mat)
+		{
+
+		}
 
 		return idx;
 	}
 
-	int sRendererPrivate::find_material_res(graphics::Material* mesh) const
+	int sRendererPrivate::find_material_res(graphics::Material* mat) const
 	{
+		for (auto i = 0; i < mat_reses.size(); i++)
+		{
+			if (mat_reses[i].mat == mat)
+				return i;
+		}
 		return -1;
 	}
 
@@ -411,7 +436,11 @@ namespace flame
 					pidx[i] = n + aidx[i];
 			}
 
-
+			auto mat = mesh->get_material();
+			auto mid = find_material_res(mat);
+			if (mid == -1)
+				mid = set_material_res(-1, mat);
+			dst.mat_id = mid;
 		}
 
 		return idx;
@@ -1094,7 +1123,7 @@ namespace flame
 			}
 		}
 
-		mat_reses.resize(128);
+		mat_reses.resize(_countof(DSL_material_6528::MaterialInfos::material_infos));
 		mesh_reses.resize(64);
 		node_drawing_meshes.resize(mat_reses.size());
 		

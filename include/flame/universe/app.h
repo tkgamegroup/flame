@@ -33,19 +33,19 @@ namespace flame
 	{
 		App* app;
 
-		FlmPtr<Window> window;
+		UniPtr<Window> window;
 
-		FlmPtr<graphics::Swapchain> swapchain;
+		UniPtr<graphics::Swapchain> swapchain;
 		int swapchain_image_index = -1;
-		std::vector<FlmPtr<graphics::CommandBuffer>> commandbuffers;
-		FlmPtr<graphics::Fence> submit_fence;
-		FlmPtr<graphics::Semaphore> render_finished;
-		FlmPtr<graphics::RenderPreferences> render_preferences;
-		FlmPtr<graphics::Canvas> canvas;
+		std::vector<UniPtr<graphics::CommandBuffer>> commandbuffers;
+		UniPtr<graphics::Fence> submit_fence;
+		UniPtr<graphics::Semaphore> render_finished;
+		UniPtr<graphics::RenderPreferences> render_preferences;
+		UniPtr<graphics::Canvas> canvas;
 
-		FlmPtr<physics::Scene> physics_scene;
+		UniPtr<physics::Scene> physics_scene;
 
-		FlmPtr<World> world;
+		UniPtr<World> world;
 		sLayout* s_layout = nullptr;
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;

@@ -533,139 +533,139 @@ namespace flame
 			return s;
 		}
 
-		FrameSyncServerPrivate::~FrameSyncServerPrivate()
-		{
-			stop();
-			wait_event(ev_ended, -1);
-			destroy_event(ev_ended);
-		}
+		//FrameSyncServerPrivate::~FrameSyncServerPrivate()
+		//{
+		//	stop();
+		//	wait_event(ev_ended, -1);
+		//	destroy_event(ev_ended);
+		//}
 
-		bool FrameSyncServerPrivate::send(uint client_id, uint size, void* data)
-		{
-			return _send(type, fd_cs[client_id], size, data);
-		}
+		//bool FrameSyncServerPrivate::send(uint client_id, uint size, void* data)
+		//{
+		//	return _send(type, fd_cs[client_id], size, data);
+		//}
 
-		void FrameSyncServerPrivate::stop()
-		{
-			for (auto& fd : fd_cs)
-			{
-				if (fd)
-				{
-					closesocket(fd);
-					fd = 0;
-				}
-			}
-		}
+		//void FrameSyncServerPrivate::stop()
+		//{
+		//	for (auto& fd : fd_cs)
+		//	{
+		//		if (fd)
+		//		{
+		//			closesocket(fd);
+		//			fd = 0;
+		//		}
+		//	}
+		//}
 
-		FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint client_count)
-		{
-			int res;
+		//FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint client_count)
+		//{
+		//	int res;
 
-			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			fassert(fd_s != INVALID_SOCKET);
-			sockaddr_in address = {};
-			address.sin_family = AF_INET;
-			address.sin_addr.S_un.S_addr = INADDR_ANY;
-			address.sin_port = htons(port);
-			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			fassert(res == 0);
-			res = listen(fd_s, client_count);
-			fassert(res == 0);
+		//	auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
+		//	fassert(fd_s != INVALID_SOCKET);
+		//	sockaddr_in address = {};
+		//	address.sin_family = AF_INET;
+		//	address.sin_addr.S_un.S_addr = INADDR_ANY;
+		//	address.sin_port = htons(port);
+		//	res = bind(fd_s, (sockaddr*)&address, sizeof(address));
+		//	fassert(res == 0);
+		//	res = listen(fd_s, client_count);
+		//	fassert(res == 0);
 
-			std::vector<int> fd_cs;
-			while (fd_cs.size() < client_count)
-			{
-				auto fd = accept(fd_s, nullptr, nullptr);
-				if (fd == INVALID_SOCKET)
-					return nullptr;
+		//	std::vector<int> fd_cs;
+		//	while (fd_cs.size() < client_count)
+		//	{
+		//		auto fd = accept(fd_s, nullptr, nullptr);
+		//		if (fd == INVALID_SOCKET)
+		//			return nullptr;
 
-				if (!shakehank(type, fd))
-					continue;
+		//		if (!shakehank(type, fd))
+		//			continue;
 
-				fd_cs.push_back(fd);
-			}
+		//		fd_cs.push_back(fd);
+		//	}
 
-			closesocket(fd_s);
+		//	closesocket(fd_s);
 
-			{
-				srand(time(0));
-				nlohmann::json json = {
-					{"action", "start"},
-					{"seed", rand()}
-				};
-				auto str = json.dump();
-				for (auto fd : fd_cs)
-				{
-					if (!_send(type, fd, str.size(), str.data()))
-						return nullptr;
-				}
-			}
+		//	{
+		//		srand(time(0));
+		//		nlohmann::json json = {
+		//			{"action", "start"},
+		//			{"seed", rand()}
+		//		};
+		//		auto str = json.dump();
+		//		for (auto fd : fd_cs)
+		//		{
+		//			if (!_send(type, fd, str.size(), str.data()))
+		//				return nullptr;
+		//		}
+		//	}
 
-			auto s = new FrameSyncServerPrivate;
-			s->type = type;
-			s->frame = 0;
-			s->semaphore = 0;
-			s->fd_cs = fd_cs;
-			s->ev_ended = create_event(false, true);
+		//	auto s = new FrameSyncServerPrivate;
+		//	s->type = type;
+		//	s->frame = 0;
+		//	s->semaphore = 0;
+		//	s->fd_cs = fd_cs;
+		//	s->ev_ended = create_event(false, true);
 
-			std::thread([type, s]() {
-				while (true)
-				{
-					fd_set rfds;
-					FD_ZERO(&rfds);
-					for (auto fd : s->fd_cs)
-						FD_SET(fd, &rfds);
-					auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
-					if (res < 0)
-					{
-						s->stop();
-						set_event(s->ev_ended);
-						return;
-					}
-					for (auto i = 0; i < s->fd_cs.size(); i++)
-					{
-						auto fd = s->fd_cs[i];
-						if (FD_ISSET(fd, &rfds))
-						{
-							std::vector<std::string> reqs;
-							if (!_recv(type, fd, reqs))
-							{
-								s->stop();
-								set_event(s->ev_ended);
-								return;
-							}
-							auto req = nlohmann::json::parse(reqs[0]);
-							auto n_frame = req.find("frame");
-							if (n_frame != req.end())
-							{
-								auto frame = n_frame->get<int>();
-								if (frame == s->frame)
-								{
-									s->semaphore++;
-									auto dst = s->frame_data[std::to_string(i)];
-									for (auto& i : req["data"].items())
-										dst[i.key()] = i.value();
+		//	std::thread([type, s]() {
+		//		while (true)
+		//		{
+		//			fd_set rfds;
+		//			FD_ZERO(&rfds);
+		//			for (auto fd : s->fd_cs)
+		//				FD_SET(fd, &rfds);
+		//			auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
+		//			if (res < 0)
+		//			{
+		//				s->stop();
+		//				set_event(s->ev_ended);
+		//				return;
+		//			}
+		//			for (auto i = 0; i < s->fd_cs.size(); i++)
+		//			{
+		//				auto fd = s->fd_cs[i];
+		//				if (FD_ISSET(fd, &rfds))
+		//				{
+		//					std::vector<std::string> reqs;
+		//					if (!_recv(type, fd, reqs))
+		//					{
+		//						s->stop();
+		//						set_event(s->ev_ended);
+		//						return;
+		//					}
+		//					auto req = nlohmann::json::parse(reqs[0]);
+		//					auto n_frame = req.find("frame");
+		//					if (n_frame != req.end())
+		//					{
+		//						auto frame = n_frame->get<int>();
+		//						if (frame == s->frame)
+		//						{
+		//							s->semaphore++;
+		//							auto dst = s->frame_data[std::to_string(i)];
+		//							for (auto& i : req["data"].items())
+		//								dst[i.key()] = i.value();
 
-									if (s->semaphore >= s->fd_cs.size())
-									{
-										s->frame++;
-										s->semaphore = 0;
+		//							if (s->semaphore >= s->fd_cs.size())
+		//							{
+		//								s->frame++;
+		//								s->semaphore = 0;
 
-										s->frame_data["action"] = "frame";
-										auto str = s->frame_data.dump();
-										for (auto i = 0; i < 2; i++)
-											s->send(i, str.size(), str.data());
-										s->frame_data.clear();
-									}
-								}
-							}
-						}
-					}
-				}
-			}).detach();
+		//								s->frame_data["action"] = "frame";
+		//								auto str = s->frame_data.dump();
+		//								for (auto i = 0; i < 2; i++)
+		//									s->send(i, str.size(), str.data());
+		//								s->frame_data.clear();
+		//							}
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}).detach();
 
-			return s;
-		}
+		//	return s;
+		//}
 
 		void board_cast(uint port, uint size, void* data, uint _timeout, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture)
 		{

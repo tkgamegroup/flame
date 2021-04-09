@@ -7,17 +7,13 @@ namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
-		struct MaterialPrivate;
-		struct RigidPrivate;
-
 		struct TriangleMeshPrivate : TriangleMesh
 		{
 #ifdef USE_PHYSX
-			FlmPtr<PxTriangleMesh> px_triangle_mesh;
+			UniPtr<PxTriangleMesh> px_triangle_mesh;
 #endif
 
-			TriangleMeshPrivate(DevicePrivate* device, graphics::Mesh* mesh);
+			TriangleMeshPrivate(DevicePrivate* device, graphics::model::Mesh* mesh);
 
 			void release() override { delete this; }
 		};
@@ -27,7 +23,7 @@ namespace flame
 			uint tess_levels;
 
 #ifdef USE_PHYSX
-			FlmPtr<PxHeightField> px_height_field;
+			UniPtr<PxHeightField> px_height_field;
 #endif
 
 			HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels);
@@ -40,7 +36,7 @@ namespace flame
 			RigidPrivate* rigid = nullptr; 
 
 #ifdef USE_PHYSX
-			FlmPtr<PxShape> px_shape;
+			UniPtr<PxShape> px_shape;
 #endif
 
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext);

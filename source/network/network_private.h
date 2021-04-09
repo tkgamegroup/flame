@@ -2,6 +2,8 @@
 
 #include <flame/network/network.h>
 
+//#include <nlohmann/json.hpp>
+
 namespace flame
 {
 	namespace network
@@ -69,25 +71,25 @@ namespace flame
 			void stop();
 		};
 
-		struct FrameSyncServerPrivate : FrameSyncServer
-		{
-			SocketType type;
+		//struct FrameSyncServerPrivate : FrameSyncServer
+		//{
+		//	SocketType type;
 
-			int frame;
-			int semaphore;
+		//	int frame;
+		//	int semaphore;
 
-			std::vector<int> fd_cs;
+		//	std::vector<int> fd_cs;
 
-			nlohmann::json frame_data;
+		//	nlohmann::json frame_data;
 
-			void* ev_ended;
+		//	void* ev_ended;
 
-			~FrameSyncServerPrivate();
+		//	~FrameSyncServerPrivate();
 
-			void release() override { delete this; }
+		//	void release() override { delete this; }
 
-			bool send(uint client_id, uint size, void* data) override;
-			void stop();
-		};
+		//	bool send(uint client_id, uint size, void* data) override;
+		//	void stop();
+		//};
 	}
 }

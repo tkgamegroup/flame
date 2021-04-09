@@ -10,21 +10,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-		struct BufferPrivate;
-		struct ImagePrivate;
-		struct RenderpassPrivate;
-		struct DescriptorSetPrivate;
-
-		struct DescriptorBinding
-		{
-			DescriptorType type = DescriptorMax;
-			uint count;
-			std::string name;
-
-			UdtInfo* ti = nullptr;
-		};
-
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
 			DevicePrivate* device;
@@ -36,18 +21,22 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		struct DescriptorSetLayoutBridge : DescriptorSetLayout
+		struct DescriptorBinding
 		{
-			int find_binding(const char* name) const override;
+			DescriptorType type = DescriptorMax;
+			uint count;
+			std::string name;
+
+			UdtInfo* ti = nullptr;
 		};
 
-		struct DescriptorSetLayoutPrivate : DescriptorSetLayoutBridge
+		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
 
 			std::filesystem::path filename;
 
-			FlmPtr<TypeInfoDataBase> tidb;
+			UniPtr<TypeInfoDataBase> tidb;
 			std::vector<DescriptorBinding> bindings;
 
 			VkDescriptorSetLayout vk_descriptor_set_layout;
@@ -60,48 +49,51 @@ namespace flame
 
 			uint get_bindings_count() const override { return bindings.size(); }
 			void get_binding(uint binding, DescriptorBindingInfo* ret) const override;
-			int find_binding(const std::string& name);
+			int find_binding(const std::string& name) const;
+			int find_binding(const char* name) const override { return find_binding(std::string(name)); }
 
 			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
-		inline int DescriptorSetLayoutBridge::find_binding(const char* name) const
+		struct DescriptorSetPrivate : DescriptorSet
 		{
-			return ((DescriptorSetLayoutPrivate*)this)->find_binding(name);
-		}
-
-		struct DescriptorSetBridge : DescriptorSet
-		{
-			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range) override;
-			void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) override;
-		};
-
-		struct DescriptorSetPrivate : DescriptorSetBridge
-		{
-			DescriptorPoolPrivate* descriptor_pool;
-			DescriptorSetLayoutPrivate* descriptor_layout;
+			DescriptorPoolPrivate* pool;
+			DescriptorSetLayoutPrivate* layout;
 			VkDescriptorSet vk_descriptor_set;
 
-			DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l);
+			DescriptorSetPrivate(DescriptorPoolPrivate* pool, DescriptorSetLayoutPrivate* layout);
 			~DescriptorSetPrivate();
 
 			void release() override { delete this; }
 
-			DescriptorSetLayout* get_layout() const override { return descriptor_layout; }
+			DescriptorSetLayoutPtr get_layout() const override { return layout; }
 
-			void set_buffer(uint binding, uint index, BufferPrivate* b, uint offset = 0, uint range = 0);
-			void set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sp);
+			void set_buffer(uint binding, uint index, BufferPtr b, uint offset = 0, uint range = 0) override;
+			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
 		};
 
-		inline void DescriptorSetBridge::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
+		struct PipelineLayoutPrivate : PipelineLayout
 		{
-			((DescriptorSetPrivate*)this)->set_buffer(binding, index, (BufferPrivate*)b, offset, range);
-		}
+			DevicePrivate* device;
 
-		inline void DescriptorSetBridge::set_image(uint binding, uint index, ImageView* v, Sampler* sampler)
-		{
-			((DescriptorSetPrivate*)this)->set_image(binding, index, (ImageViewPrivate*)v, (SamplerPrivate*)sampler);
-		}
+			std::filesystem::path filename;
+
+			std::vector<std::pair<std::string, DescriptorSetLayoutPrivate*>> descriptor_set_layouts;
+
+			UniPtr<TypeInfoDataBase> tidb;
+			UdtInfo* pcti = nullptr;
+			uint push_constant_size = 0;
+
+			VkPipelineLayout vk_pipeline_layout;
+
+			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
+			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pcti);
+			~PipelineLayoutPrivate();
+
+			void release() override { delete this; }
+
+			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
+		};
 
 		struct ShaderPrivate : Shader
 		{
@@ -123,29 +115,6 @@ namespace flame
 
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
-		};
-
-		struct PipelineLayoutPrivate : PipelineLayout
-		{
-			DevicePrivate* device;
-
-			std::filesystem::path filename;
-
-			std::vector<std::pair<std::string, DescriptorSetLayoutPrivate*>> descriptor_set_layouts;
-
-			FlmPtr<TypeInfoDataBase> tidb;
-			UdtInfo* pcti = nullptr;
-			uint push_constant_size = 0;
-
-			VkPipelineLayout vk_pipeline_layout;
-
-			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
-			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pcti);
-			~PipelineLayoutPrivate();
-
-			void release() override { delete this; }
-
-			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
 		struct PipelinePrivate : Pipeline

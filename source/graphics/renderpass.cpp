@@ -2,6 +2,8 @@
 #include "device_private.h"
 #include "renderpass_private.h"
 
+#include <pugixml.hpp>
+
 namespace flame
 {
 	namespace graphics

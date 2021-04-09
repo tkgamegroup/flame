@@ -7,8 +7,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-
 		struct SemaphorePrivate : Semaphore
 		{
 			DevicePrivate* device;

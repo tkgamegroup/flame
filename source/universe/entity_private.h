@@ -100,6 +100,7 @@ namespace flame
 
 		void add_src(const std::filesystem::path& p);
 		const wchar_t* get_srcs() const override;
+		std::filesystem::path get_src(uint id) const { return srcs[srcs.size() - id - 1]; }
 
 		Component* get_component(uint hash) const override;
 		Component* find_component(const std::string& name) const;

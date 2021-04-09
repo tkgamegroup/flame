@@ -12,7 +12,7 @@ namespace flame
 		struct MaterialPrivate : Material
 		{
 #ifdef USE_PHYSX
-			FlmPtr<PxMaterial> px_material;
+			UniPtr<PxMaterial> px_material;
 #endif
 
 			MaterialPrivate(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution);

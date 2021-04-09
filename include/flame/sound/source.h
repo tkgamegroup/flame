@@ -6,8 +6,6 @@ namespace flame
 {
 	namespace sound
 	{
-		struct Buffer;
-
 		struct Source
 		{
 			virtual void release() = 0;
@@ -17,7 +15,7 @@ namespace flame
 			virtual void play() = 0;
 			virtual void stop() = 0;
 
-			FLAME_SOUND_EXPORTS static Source *create(Buffer *buffer);
+			FLAME_SOUND_EXPORTS static Source* create(Buffer* buffer);
 		};
 	}
 }

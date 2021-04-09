@@ -28,14 +28,15 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
-		CommandPool* CommandPool::get(Device* device, QueueFamily family)
+		CommandPool* CommandPool::get(Device* _device, QueueFamily family)
 		{
+			auto device = (DevicePrivate*)_device;
 			switch (family)
 			{
 			case QueueGraphics:
-				return ((DevicePrivate*)device)->gcp.get();
+				return device->gcp.get();
 			case QueueTransfer:
-				return ((DevicePrivate*)device)->tcp.get();
+				return device->tcp.get();
 			}
 			return nullptr;
 		}
@@ -45,7 +46,7 @@ namespace flame
 			return new CommandPoolPrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
-		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPrivate* p, bool sub) :
+		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPtr p, bool sub) :
 			pool(p)
 		{
 			VkCommandBufferAllocateInfo info;
@@ -78,7 +79,7 @@ namespace flame
 			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
 		}
 
-		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* cvs)
+		void CommandBufferPrivate::begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs)
 		{
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -129,20 +130,20 @@ namespace flame
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 
-		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr pll)
 		{
 			pipeline_layout = pll;
 			pipeline = nullptr;
 		}
 
-		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* pl)
+		void CommandBufferPrivate::bind_pipeline(PipelinePtr pl)
 		{
 			pipeline_layout = pl->pipeline_layout;
 			pipeline = pl;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
 		}
 
-		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPrivate*> dss)
+		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss)
 		{
 			std::vector<VkDescriptorSet> vk_sets(dss.size());
 			auto i = 0;
@@ -152,13 +153,13 @@ namespace flame
 				pipeline_layout->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
 		}
 
-		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* buf, uint id)
+		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
 		{
 			VkDeviceSize offset = 0;
 			vkCmdBindVertexBuffers(vk_command_buffer, id, 1, &buf->vk_buffer, &offset);
 		}
 
-		void CommandBufferPrivate::bind_index_buffer(BufferPrivate* buf, IndiceType t)
+		void CommandBufferPrivate::bind_index_buffer(BufferPtr buf, IndiceType t)
 		{
 			vkCmdBindIndexBuffer(vk_command_buffer, buf->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 		}
@@ -179,12 +180,12 @@ namespace flame
 			vkCmdDrawIndexed(vk_command_buffer, count, instance_count, first_index, vertex_offset, first_instance);
 		}
 
-		void CommandBufferPrivate::draw_indirect(BufferPrivate* buf, uint offset, uint count)
+		void CommandBufferPrivate::draw_indirect(BufferPtr buf, uint offset, uint count)
 		{
 			vkCmdDrawIndirect(vk_command_buffer, buf->vk_buffer, offset * sizeof(VkDrawIndirectCommand), count, sizeof(VkDrawIndirectCommand));
 		}
 
-		void CommandBufferPrivate::draw_indexed_indirect(BufferPrivate* buf, uint offset, uint count)
+		void CommandBufferPrivate::draw_indexed_indirect(BufferPtr buf, uint offset, uint count)
 		{
 			vkCmdDrawIndexedIndirect(vk_command_buffer, buf->vk_buffer, offset * sizeof(VkDrawIndexedIndirectCommand), count, sizeof(VkDrawIndexedIndirectCommand));
 		}
@@ -194,7 +195,7 @@ namespace flame
 			vkCmdDispatch(vk_command_buffer, v.x, v.y, v.z);
 		}
 
-		void CommandBufferPrivate::buffer_barrier(BufferPrivate* buf, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkBufferMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -211,7 +212,7 @@ namespace flame
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePrivate* img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -292,7 +293,7 @@ namespace flame
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 		}
 
-		void CommandBufferPrivate::copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies)
+		void CommandBufferPrivate::copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies)
 		{
 			std::vector<VkBufferCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
@@ -304,7 +305,7 @@ namespace flame
 			vkCmdCopyBuffer(vk_command_buffer, src->vk_buffer, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
-		void CommandBufferPrivate::copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies)
+		void CommandBufferPrivate::copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies)
 		{
 			std::vector<VkImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
@@ -347,7 +348,25 @@ namespace flame
 			return vk_cpy;
 		}
 
-		void CommandBufferPrivate::copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies)
+		VkImageBlit to_backend(const ImageBlit& src)
+		{
+			VkImageBlit ret = {};
+			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.srcSubresource.mipLevel = src.src_subres.base_level;
+			ret.srcSubresource.baseArrayLayer = src.src_subres.base_layer;
+			ret.srcSubresource.layerCount = src.src_subres.layer_count;
+			ret.srcOffsets[0] = { src.src_range.x, src.src_range.y, 0 };
+			ret.srcOffsets[1] = { src.src_range.z, src.src_range.w, 1 };
+			ret.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.dstSubresource.mipLevel = src.dst_subres.base_level;
+			ret.dstSubresource.baseArrayLayer = src.dst_subres.base_layer;
+			ret.dstSubresource.layerCount = src.dst_subres.layer_count;
+			ret.srcOffsets[0] = { src.dst_range.x, src.dst_range.y, 0 };
+			ret.srcOffsets[1] = { src.dst_range.z, src.dst_range.w, 1 };
+			return ret;
+		}
+
+		void CommandBufferPrivate::copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies)
 		{
 			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(dst->format));
 
@@ -358,18 +377,25 @@ namespace flame
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 		}
 
-		void CommandBufferPrivate::copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
+		void CommandBufferPrivate::copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies)
 		{
 			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(src->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
 				vk_copies[i] = to_backend(copies[i], aspect);
-			vkCmdCopyImageToBuffer(vk_command_buffer, src->vk_image,
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
+			vkCmdCopyImageToBuffer(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
-		void CommandBufferPrivate::clear_color_image(ImagePrivate* img, const cvec4& color)
+		void CommandBufferPrivate::blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter)
+		{
+			std::vector<VkImageBlit> vk_blits(blits.size());
+			for (auto i = 0; i < vk_blits.size(); i++)
+				vk_blits[i] = to_backend(blits[i]);
+			vkCmdBlitImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_blits.size(), vk_blits.data(), to_backend(filter));
+		}
+
+		void CommandBufferPrivate::clear_color_image(ImagePtr img, const cvec4& color)
 		{
 			VkClearColorValue cv;
 			cv.float32[0] = color.x / 255.f;
@@ -385,7 +411,7 @@ namespace flame
 			vkCmdClearColorImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
 		}
 
-		void CommandBufferPrivate::clear_depth_image(ImagePrivate* img, float depth)
+		void CommandBufferPrivate::clear_depth_image(ImagePtr img, float depth)
 		{
 			VkClearDepthStencilValue cv;
 			cv.depth = depth;
@@ -404,9 +430,9 @@ namespace flame
 			chk_res(vkEndCommandBuffer(vk_command_buffer));
 		}
 
-		CommandBuffer* CommandBuffer::create(CommandPool* p, bool sub)
+		CommandBuffer* CommandBuffer::create(CommandPool* pool, bool sub)
 		{
-			return new CommandBufferPrivate((CommandPoolPrivate*)p, sub);
+			return new CommandBufferPrivate((CommandPoolPrivate*)pool, sub);
 		}
 
 		QueuePrivate::QueuePrivate(DevicePrivate* device, uint queue_family_idx) :
@@ -420,7 +446,7 @@ namespace flame
 			chk_res(vkQueueWaitIdle(vk_queue));
 		}
 
-		void QueuePrivate::submit(std::span<CommandBufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
+		void QueuePrivate::submit(std::span<CommandBufferPtr> cbs, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence)
 		{
 			VkSubmitInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -443,7 +469,7 @@ namespace flame
 				signal_fence->value = 1;
 		}
 
-		void QueuePrivate::present(SwapchainPrivate* sc, SemaphorePrivate* wait_semaphore)
+		void QueuePrivate::present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore)
 		{
 			VkPresentInfoKHR info;
 			info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -452,19 +478,20 @@ namespace flame
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
 			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->vk_semaphore : nullptr;
 			info.swapchainCount = 1;
-			info.pSwapchains = &sc->vk_swapchain;
-			info.pImageIndices = &sc->image_index;
+			info.pSwapchains = &swapchain->vk_swapchain;
+			info.pImageIndices = &swapchain->image_index;
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 
-		Queue* Queue::get(Device* device, QueueFamily family)
+		Queue* Queue::get(Device* _device, QueueFamily family)
 		{
+			auto device = (DevicePrivate*)_device;
 			switch (family)
 			{
 			case QueueGraphics:
-				return ((DevicePrivate*)device)->gq.get();
+				return device->gq.get();
 			case QueueTransfer:
-				return ((DevicePrivate*)device)->tq.get();
+				return device->tq.get();
 			}
 			return nullptr;
 		}

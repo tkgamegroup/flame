@@ -1,14 +1,11 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-
 		struct Buffer
 		{
 			virtual void release() = 0;
@@ -23,16 +20,16 @@ namespace flame
 
 			virtual void recreate(uint new_size) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
+			FLAME_GRAPHICS_EXPORTS static Buffer* create(Device* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
 		};
 
-		struct StagingBuffer : FlmPtr<Buffer>
+		struct StagingBuffer : UniPtr<Buffer>
 		{
 			void* mapped;
 
-			StagingBuffer(Device* d, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
+			StagingBuffer(Device* device, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
 			{
-				reset(Buffer::create(d, size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				reset(Buffer::create(device, size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				mapped = p->map();
 				if (data)
 					memcpy(mapped, data, size);

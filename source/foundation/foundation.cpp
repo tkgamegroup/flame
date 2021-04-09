@@ -1060,7 +1060,7 @@ namespace flame
 				icon_fn = engine_path / icon_fn;
 			if (std::filesystem::exists(icon_fn))
 			{
-				FlmPtr<BitmapPrivate> icon_image(BitmapPrivate::create(icon_fn));
+				UniPtr<BitmapPrivate> icon_image(BitmapPrivate::create(icon_fn));
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());

@@ -6,20 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DescriptorPool;
-		struct Sampler;
-		struct CommandPool;
-		struct Queue;
-
-		enum Feature
-		{
-			FeatureTextureCompressionBC,
-			FeatureTextureCompressionASTC_LDR,
-			FeatureTextureCompressionETC2,
-
-			FeatureCount
-		};
-
 		struct Device
 		{
 			virtual void release() = 0;

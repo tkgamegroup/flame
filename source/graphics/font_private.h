@@ -3,19 +3,18 @@
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/font.h>
 
-#include <stb_truetype.h>
+struct stbtt_fontinfo;
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-		struct ImagePrivate;
-
 		struct Font
 		{
 			std::string file;
-			stbtt_fontinfo stbtt_info;
+			stbtt_fontinfo* stbtt_info;
+
+			~Font();
 		};
 
 		struct GlyphKey
@@ -50,21 +49,21 @@ namespace flame
 			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
-			DevicePrivate* device;
+			DevicePtr device;
 			std::unique_ptr<ImagePrivate> image;
-			ImageViewPrivate* view;
+			ImageViewPtr view;
 
 			Glyph empty_glyph;
 
-			FontAtlasPrivate(DevicePrivate* device, const std::vector<Font*>& fonts);
+			FontAtlasPrivate(DevicePtr device, const std::vector<Font*>& fonts);
 
 			void release() override { delete this; }
 
 			const Glyph& get_glyph(wchar_t code, uint size) override;
 
-			ImageView* get_view() const override { return view; }
+			ImageViewPtr get_view() const override { return view; }
 
-			static FontAtlasPrivate* get(DevicePrivate* device, const std::wstring& res);
+			static FontAtlasPtr get(DevicePtr device, const std::wstring& res);
 		};
 	}
 }

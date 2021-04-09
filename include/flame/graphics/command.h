@@ -1,24 +1,11 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-		struct Buffer;
-		struct Image;
-		struct Renderpass;
-		struct Framebuffer;
-		struct Pipeline;
-		struct PipelineLayout;
-		struct DescriptorSet;
-		struct Swapchain;
-		struct Semaphore;
-		struct Fence;
-
 		struct CommandPool
 		{
 			virtual void release() = 0;
@@ -51,6 +38,14 @@ namespace flame
 			uint image_layer_count = 1;
 		};
 
+		struct ImageBlit
+		{
+			ImageSubresource src_subres;
+			ivec4 src_range;
+			ImageSubresource dst_subres;
+			ivec4 dst_range;
+		};
+
 		struct DrawIndirectCommand
 		{
 			uint vertex_count;
@@ -74,21 +69,21 @@ namespace flame
 
 			virtual void begin(bool once = false) = 0;
 
-			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* cvs = nullptr) = 0;
+			virtual void begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs = nullptr) = 0;
 			virtual void next_pass() = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
-			virtual void bind_pipeline_layout(PipelineLayout* pll) = 0;
-			virtual void bind_pipeline(Pipeline* pl) = 0;
-			virtual void bind_descriptor_sets(uint idx, uint cnt, DescriptorSet** dss) = 0;
-			inline void bind_descriptor_set(uint idx, DescriptorSet* ds)
+			virtual void bind_pipeline_layout(PipelineLayoutPtr pll) = 0;
+			virtual void bind_pipeline(PipelinePtr pl) = 0;
+			virtual void bind_descriptor_sets(uint idx, uint cnt, DescriptorSetPtr* dss) = 0;
+			inline void bind_descriptor_set(uint idx, DescriptorSetPtr ds)
 			{
-				DescriptorSet* dss[] = { ds };
+				DescriptorSetPtr dss[] = { ds };
 				bind_descriptor_sets(idx, 1, dss);
 			}
-			virtual void bind_vertex_buffer(Buffer* buf, uint id) = 0;
-			virtual void bind_index_buffer(Buffer* buf, IndiceType t) = 0;
+			virtual void bind_vertex_buffer(BufferPtr buf, uint id) = 0;
+			virtual void bind_index_buffer(BufferPtr buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;
 			template <class T>
 			inline void push_constant_t(uint offset, const T& data)
@@ -97,24 +92,23 @@ namespace flame
 			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
-			virtual void draw_indirect(Buffer* buf, uint offset, uint count) = 0;
-			virtual void draw_indexed_indirect(Buffer* buf, uint offset, uint count) = 0;
+			virtual void draw_indirect(BufferPtr buf, uint offset, uint count) = 0;
+			virtual void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void dispatch(const uvec3& v) = 0;
-			virtual void buffer_barrier(Buffer* buf, AccessFlags src_access, AccessFlags dst_access) = 0;
-			virtual void image_barrier(Image* img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
+			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access) = 0;
+			virtual void image_barrier(ImagePtr img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
 
-			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) = 0;
-			virtual void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) = 0;
-			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
-			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
+			virtual void copy_buffer(BufferPtr src, BufferPtr dst, uint copies_count, BufferCopy* copies) = 0;
+			virtual void copy_image(ImagePtr src, ImagePtr dst, uint copies_count, ImageCopy* copies) = 0;
+			virtual void copy_buffer_to_image(BufferPtr src, ImagePtr dst, uint copies_count, BufferImageCopy* copies) = 0;
+			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, uint copies_count, BufferImageCopy* copies) = 0;
+			virtual void blit_image(ImagePtr src, ImagePtr dst, uint blits_count, ImageBlit* blits, Filter filter) = 0;
 
-			virtual void clear_color_image(Image* img, const cvec4& color) = 0;
-			virtual void clear_depth_image(Image* img, float depth) = 0;
+			virtual void clear_color_image(ImagePtr img, const cvec4& color) = 0;
+			virtual void clear_depth_image(ImagePtr img, float depth) = 0;
 
 			virtual void end() = 0;
-
-			virtual void save(const wchar_t* filename) = 0;
 
 			FLAME_GRAPHICS_EXPORTS  static CommandBuffer* create(CommandPool* p, bool sub = false);
 		};
@@ -124,29 +118,29 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual void wait_idle() = 0;
-			virtual void submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
-			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
+			virtual void submit(uint cbs_count, CommandBufferPtr* cbs, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) = 0;
+			virtual void present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Queue* get(Device* device, QueueFamily family = QueueGraphics);
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
 		};
 
-		struct InstanceCB : FlmPtr<CommandBuffer>
+		struct InstanceCB : UniPtr<CommandBuffer>
 		{
-			Device* d;
+			Device* device;
 
-			InstanceCB(Device* d) :
-				d(d)
+			InstanceCB(Device* device) :
+				device(device)
 			{
-				reset(CommandBuffer::create(CommandPool::get(d)));
+				reset(CommandBuffer::create(CommandPool::get(device)));
 				p->begin(true);
 			}
 
 			~InstanceCB()
 			{
 				p->end();
-				auto q = Queue::get(d);
-				q->submit(1, &p, nullptr, nullptr, nullptr);
+				auto q = Queue::get(device);
+				q->submit(1, (CommandBufferPtr*)&p, nullptr, nullptr, nullptr);
 				q->wait_idle();
 			}
 		};

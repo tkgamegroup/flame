@@ -59,14 +59,14 @@ namespace flame
 #endif
 		}
 
-		void ScenePrivate::add_rigid(RigidPrivate* r)
+		void ScenePrivate::add_rigid(RigidPtr r)
 		{
 #ifdef USE_PHYSX
 			px_scene->addActor(*r->px_rigid);
 #endif
 		}
 
-		void ScenePrivate::remove_rigid(RigidPrivate* r)
+		void ScenePrivate::remove_rigid(RigidPtr r)
 		{
 #ifdef USE_PHYSX
 			px_scene->removeActor(*r->px_rigid);
@@ -113,12 +113,12 @@ namespace flame
 #endif
 		}
 
-		void ScenePrivate::get_visualization_data(uint* lines_count, graphics::Line** lines)
+		void ScenePrivate::get_visualization_data(uint* lines_count, Line** lines)
 		{
 #ifdef USE_PHYSX
 			auto& rb = px_scene->getRenderBuffer();
 			*lines_count = rb.getNbLines();
-			*lines = (graphics::Line*)rb.getLines();
+			*lines = (Line*)rb.getLines();
 #endif
 		}
 

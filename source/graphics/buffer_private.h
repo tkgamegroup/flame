@@ -5,8 +5,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-
 		struct BufferPrivate : Buffer
 		{
 			DevicePrivate* device;

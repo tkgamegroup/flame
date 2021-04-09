@@ -7,8 +7,6 @@ namespace flame
 {
 	namespace sound
 	{
-		struct BufferPrivate;
-
 		struct SourcePrivate : Source
 		{
 			ALuint al_src;

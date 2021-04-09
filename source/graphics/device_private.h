@@ -3,8 +3,6 @@
 #include <flame/graphics/device.h>
 #include "graphics_private.h"
 
-#include <flame/type.h>
-
 namespace flame
 {
 	namespace graphics
@@ -18,9 +16,6 @@ namespace flame
 		struct PipelinePrivate;
 		struct CommandPoolPrivate;
 		struct QueuePrivate;
-		struct DevicePrivate;
-
-		extern thread_local DevicePrivate* default_device;
 
 		struct DevicePrivate : Device
 		{

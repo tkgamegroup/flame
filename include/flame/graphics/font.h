@@ -1,15 +1,11 @@
 ﻿#pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-		struct ImageView;
-
 		struct Glyph
 		{
 			ushort code = 0;
@@ -117,7 +113,7 @@ namespace flame
 
 			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
 
-			virtual ImageView* get_view() const = 0;
+			virtual ImageViewPtr get_view() const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static FontAtlas* get(Device* device, const wchar_t* res);
 		};

@@ -8,9 +8,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-		struct RenderpassPrivate;
-
 		struct RenderpassPrivate : Renderpass
 		{
 			DevicePrivate* device;
@@ -39,7 +36,7 @@ namespace flame
 		{
 			DevicePrivate* device;
 
-			RenderpassPrivate* renderpass;
+			RenderpassPtr renderpass;
 			std::vector<ImageViewPrivate*> views;
 			VkFramebuffer vk_framebuffer;
 
@@ -48,9 +45,9 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Renderpass* get_renderpass() const override { return renderpass; }
+			RenderpassPtr get_renderpass() const override { return renderpass; }
 			uint get_views_count() const override { return views.size(); }
-			ImageView* get_view(uint idx) const override { return views[idx]; }
+			ImageViewPtr get_view(uint idx) const override { return views[idx]; }
 		};
 	}
 }

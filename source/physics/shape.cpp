@@ -12,7 +12,7 @@ namespace flame
 	{
 		const auto height_field_precision = 30000.f;
 
-		TriangleMeshPrivate::TriangleMeshPrivate(DevicePrivate* device, graphics::Mesh* mesh)
+		TriangleMeshPrivate::TriangleMeshPrivate(DevicePrivate* device, graphics::model::Mesh* mesh)
 		{
 #ifdef USE_PHYSX
 			PxTolerancesScale scale;
@@ -45,7 +45,7 @@ namespace flame
 #endif
 		}
 
-		TriangleMesh* TriangleMesh::create(Device* device, graphics::Mesh* mesh)
+		TriangleMesh* TriangleMesh::create(Device* device, graphics::model::Mesh* mesh)
 		{
 			return new TriangleMeshPrivate((DevicePrivate*)device, mesh);
 		}

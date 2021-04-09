@@ -41,7 +41,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::add_shape(ShapePrivate* s)
+		void RigidPrivate::add_shape(ShapePtr s)
 		{
 #ifdef USE_PHYSX
 			s->rigid = this;
@@ -49,7 +49,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::remove_shape(ShapePrivate* s)
+		void RigidPrivate::remove_shape(ShapePtr s)
 		{
 #ifdef USE_PHYSX
 			px_rigid->detachShape(*s->px_shape);

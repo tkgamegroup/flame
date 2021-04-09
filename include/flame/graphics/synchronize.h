@@ -6,13 +6,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-
 		struct Semaphore
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Semaphore *create(Device *d);
+			FLAME_GRAPHICS_EXPORTS static Semaphore* create(Device* device);
 		};
 
 		struct Fence

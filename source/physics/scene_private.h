@@ -7,16 +7,7 @@ namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
-		struct RigidPrivate;
-
-		struct SceneBridge : Scene
-		{
-			void add_rigid(Rigid* r) override;
-			void remove_rigid(Rigid* r) override;
-		};
-
-		struct ScenePrivate : SceneBridge
+		struct ScenePrivate : Scene
 		{
 #ifdef USE_PHYSX
 			struct Callback : PxSimulationEventCallback
@@ -44,24 +35,14 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void add_rigid(RigidPrivate* r);
-			void remove_rigid(RigidPrivate* r);
+			void add_rigid(RigidPtr r) override;
+			void remove_rigid(RigidPtr r) override;
 			vec3 raycast(const vec3& origin, const vec3& dir, float max_distance = 1000.f) override;
 			void update(float disp) override;
 			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;
-			void get_visualization_data(uint* lines_count, graphics::Line** lines) override;
+			void get_visualization_data(uint* lines_count, Line** lines) override;
 		};
-
-		inline void SceneBridge::add_rigid(Rigid* s)
-		{
-			((ScenePrivate*)this)->add_rigid((RigidPrivate*)s);
-		}
-
-		inline void SceneBridge::remove_rigid(Rigid* s)
-		{
-			((ScenePrivate*)this)->remove_rigid((RigidPrivate*)s);
-		}
 	}
 }
 

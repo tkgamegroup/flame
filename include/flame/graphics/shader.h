@@ -8,13 +8,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Device;
-		struct Buffer;
-		struct ImageView;
-		struct Renderpass;
-		struct Sampler;
-		struct DescriptorSet;
-
 		struct DescriptorPool
 		{
 			virtual void release() = 0;
@@ -46,12 +39,12 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual DescriptorSetLayout* get_layout() const = 0;
+			virtual DescriptorSetLayoutPtr get_layout() const = 0;
 
-			virtual void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0) = 0;
-			virtual void set_image(uint binding, uint index, ImageView* v, Sampler* sp) = 0;
+			virtual void set_buffer(uint binding, uint index, BufferPtr b, uint offset = 0, uint range = 0) = 0;
+			virtual void set_image(uint binding, uint index, ImageViewPtr v, SamplerPtr sp) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* p, DescriptorSetLayout* l);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* pool, DescriptorSetLayout* layout);
 		};
 
 		struct PipelineLayout
@@ -135,7 +128,7 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
-			Renderpass* renderpass;
+			RenderpassPtr renderpass;
 			uint subpass_index = 0;
 			uint vertex_buffers_count = 0;
 			const VertexBufferInfo* vertex_buffers = nullptr;

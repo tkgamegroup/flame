@@ -11,7 +11,7 @@ namespace flame
 		int graphics_queue_index = -1;
 		int transfer_queue_index = -1;
 
-		thread_local DevicePrivate* default_device = nullptr;
+		thread_local DevicePtr default_device = nullptr;
 
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)

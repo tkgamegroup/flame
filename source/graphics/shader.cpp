@@ -5,12 +5,49 @@
 #include "image_private.h"
 #include "shader_private.h"
 
+#include <pugixml.hpp>
+
 #include <spirv_glsl.hpp>
 
 namespace flame
 {
 	namespace graphics
 	{
+		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* device) :
+			device(device)
+		{
+			VkDescriptorPoolSize descriptorPoolSizes[] = {
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
+				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
+				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
+			};
+
+			VkDescriptorPoolCreateInfo descriptorPoolInfo;
+			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			descriptorPoolInfo.pNext = nullptr;
+			descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
+			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
+			descriptorPoolInfo.maxSets = 128;
+			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
+		}
+
+		DescriptorPoolPrivate::~DescriptorPoolPrivate()
+		{
+			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
+		}
+
+		DescriptorPool* DescriptorPool::get_default(Device* device)
+		{
+			return ((DevicePrivate*)device)->dsp.get();
+		}
+
+		DescriptorPool* DescriptorPool::create(Device* device)
+		{
+			return new DescriptorPoolPrivate((DevicePrivate*)device);
+		}
+
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase* db)
 		{
 			TypeInfo* ret = nullptr;
@@ -246,41 +283,6 @@ namespace flame
 			return ret;
 		}
 
-		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* device) :
-			device(device)
-		{
-			VkDescriptorPoolSize descriptorPoolSizes[] = {
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
-			};
-
-			VkDescriptorPoolCreateInfo descriptorPoolInfo;
-			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
-			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 128;
-			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
-		}
-
-		DescriptorPoolPrivate::~DescriptorPoolPrivate()
-		{
-			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
-		}
-
-		DescriptorPool* DescriptorPool::get_default(Device* device)
-		{
-			return ((DevicePrivate*)device)->dsp.get();
-		}
-
-		DescriptorPool* DescriptorPool::create(Device* device)
-		{
-			return new DescriptorPoolPrivate((DevicePrivate*)device);
-		}
-
 		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> _bindings) :
 			device(device)
 		{
@@ -359,7 +361,7 @@ namespace flame
 			ret->name = b.name.c_str();
 		}
 
-		int DescriptorSetLayoutPrivate::find_binding(const std::string& name)
+		int DescriptorSetLayoutPrivate::find_binding(const std::string& name) const
 		{
 			for (auto i = 0; i < bindings.size(); i++)
 			{
@@ -574,26 +576,26 @@ namespace flame
 			return DescriptorSetLayoutPrivate::get((DevicePrivate*)device, filename);
 		}
 
-		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l) :
-			descriptor_pool(p),
-			descriptor_layout(l)
+		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* pool, DescriptorSetLayoutPrivate* layout) :
+			pool(pool),
+			layout(layout)
 		{
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
-			info.descriptorPool = p->vk_descriptor_pool;
+			info.descriptorPool = pool->vk_descriptor_pool;
 			info.descriptorSetCount = 1;
-			info.pSetLayouts = &l->vk_descriptor_set_layout;
+			info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
-			chk_res(vkAllocateDescriptorSets(p->device->vk_device, &info, &vk_descriptor_set));
+			chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &vk_descriptor_set));
 		}
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
-			chk_res(vkFreeDescriptorSets(descriptor_pool->device->vk_device, descriptor_pool->vk_descriptor_pool, 1, &vk_descriptor_set));
+			chk_res(vkFreeDescriptorSets(pool->device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 		}
 
-		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPrivate* b, uint offset, uint range)
+		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr b, uint offset, uint range)
 		{
 			VkDescriptorBufferInfo i;
 			i.buffer = b->vk_buffer;
@@ -606,20 +608,20 @@ namespace flame
 			write.dstSet = vk_descriptor_set;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(descriptor_layout->bindings[binding].type);
+			write.descriptorType = to_backend(layout->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
 			write.pTexelBufferView = nullptr;
 
-			vkUpdateDescriptorSets(descriptor_pool->device->vk_device, 1, &write, 0, nullptr);
+			vkUpdateDescriptorSets(pool->device->vk_device, 1, &write, 0, nullptr);
 		}
 
-		void DescriptorSetPrivate::set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sp)
+		void DescriptorSetPrivate::set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp)
 		{
 			VkDescriptorImageInfo i;
 			i.imageView = iv->vk_image_view;
-			i.imageLayout = descriptor_layout->bindings[binding].type == DescriptorSampledImage ? 
+			i.imageLayout = layout->bindings[binding].type == DescriptorSampledImage ? 
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
 			i.sampler = sp ? sp->vk_sampler : nullptr;
 
@@ -629,18 +631,18 @@ namespace flame
 			write.dstSet = vk_descriptor_set;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(descriptor_layout->bindings[binding].type);
+			write.descriptorType = to_backend(layout->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
 			write.pTexelBufferView = nullptr;
 
-			vkUpdateDescriptorSets(descriptor_pool->device->vk_device, 1, &write, 0, nullptr);
+			vkUpdateDescriptorSets(pool->device->vk_device, 1, &write, 0, nullptr);
 		}
 
-		DescriptorSet* DescriptorSet::create(DescriptorPool* p, DescriptorSetLayout* l)
+		DescriptorSet* DescriptorSet::create(DescriptorPool* pool, DescriptorSetLayout* layout)
 		{
-			return new DescriptorSetPrivate((DescriptorPoolPrivate*)p, (DescriptorSetLayoutPrivate*)l);
+			return new DescriptorSetPrivate((DescriptorPoolPrivate*)pool, (DescriptorSetLayoutPrivate*)layout);
 		}
 
 		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
@@ -1043,7 +1045,7 @@ namespace flame
 			return nullptr;
 		}
 
-		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
+		ShaderPrivate::ShaderPrivate(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
 			device(device),
 			filename(filename),
 			defines(defines),

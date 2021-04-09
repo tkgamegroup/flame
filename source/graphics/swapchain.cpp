@@ -11,16 +11,16 @@ namespace flame
 	{
 		static auto swapchain_format = Format_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* device, Window* w) :
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* device, Window* window) :
 			device(device),
-			window(w)
+			window(window)
 		{
 			update();
 
-			resize_listener = w->add_resize_listener([](Capture& c, const uvec2& size) {
+			resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {
 				c.thiz<SwapchainPrivate>()->update();
 			}, Capture().set_thiz(this));
-			w->add_destroy_listener([](Capture& c) {
+			window->add_destroy_listener([](Capture& c) {
 				c.thiz<SwapchainPrivate>()->window = nullptr;
 			}, Capture().set_thiz(this));
 
@@ -147,10 +147,9 @@ namespace flame
 			return swapchain_format;
 		}
 
-		Swapchain* Swapchain::create(Device *d, Window* w)
+		Swapchain* Swapchain::create(Device* device, Window* window)
 		{
-			return new SwapchainPrivate((DevicePrivate*)d, w);
+			return new SwapchainPrivate((DevicePrivate*)device, window);
 		}
 	}
 }
-

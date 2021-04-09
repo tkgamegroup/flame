@@ -6,6 +6,8 @@
 #include <atlbase.h>
 #include <chrono>
 
+#include <pugixml.hpp>
+
 using namespace flame;
 
 std::string format_type(const wchar_t* in)

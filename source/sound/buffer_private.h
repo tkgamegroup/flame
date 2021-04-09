@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/sound/buffer.h>
 #include "sound_private.h"
 

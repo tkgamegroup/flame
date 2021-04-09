@@ -13,6 +13,11 @@ namespace flame
 {
 	namespace graphics
 	{
+		Font::~Font()
+		{
+			delete stbtt_info;
+		}
+
 		const auto font_atlas_size = uvec2(1024);
 
 		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* device, const std::vector<Font*>& _fonts) :
@@ -49,7 +54,7 @@ namespace flame
 
 				for (auto& font : fonts)
 				{
-					auto info = &font->stbtt_info;
+					auto info = font->stbtt_info;
 					auto index = stbtt_FindGlyphIndex(info, code);
 					if (index == 0)
 						continue;
@@ -78,7 +83,7 @@ namespace flame
 							BufferImageCopy cpy;
 							cpy.image_offset = atlas_pos;
 							cpy.image_extent = g.size;
-							cb->copy_buffer_to_image(stag.get(), image.get(), 1, &cpy);
+							cb->copy_buffer_to_image((BufferPrivate*)stag.get(), image.get(), 1, &cpy);
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
@@ -101,9 +106,9 @@ namespace flame
 			return empty_glyph;
 		}
 
-		static std::vector<std::pair<std::vector<std::wstring>, FlmPtr<FontAtlasPrivate>>> loaded_atlas;
+		static std::vector<std::pair<std::vector<std::wstring>, UniPtr<FontAtlasPrivate>>> loaded_atlas;
 
-		FontAtlasPrivate* FontAtlasPrivate::get(DevicePrivate* device, const std::wstring& res)
+		FontAtlasPtr FontAtlasPrivate::get(DevicePtr device, const std::wstring& res)
 		{
 			auto sp = SUW::split(res, L';');
 			std::sort(sp.begin(), sp.end());
@@ -126,7 +131,7 @@ namespace flame
 				auto font = new Font;
 				font->file = get_file_content(fn);
 				if (font->file.empty() ||
-					!stbtt_InitFont(&font->stbtt_info, (uchar*)font->file.data(), stbtt_GetFontOffsetForIndex((uchar*)font->file.data(), 0)))
+					!stbtt_InitFont(font->stbtt_info, (uchar*)font->file.data(), stbtt_GetFontOffsetForIndex((uchar*)font->file.data(), 0)))
 				{
 					wprintf(L"cannot load font: %s\n", s.c_str());
 					return nullptr;

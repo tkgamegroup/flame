@@ -2,16 +2,76 @@
 
 #ifdef FLAME_GRAPHICS_MODULE
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlameGraphicsTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlameGraphicsTypeSelector
+{
+	typedef T result;
+};
 #endif
 
-#include <flame/math.h>
+#define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
+	typedef FlameGraphicsTypeSelector<name*, name##Private*>::result name##Ptr;
+
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
 	namespace graphics
 	{
+		FLAME_GRAPHICS_TYPE(Device);
+		FLAME_GRAPHICS_TYPE(Buffer);
+		FLAME_GRAPHICS_TYPE(Image);
+		FLAME_GRAPHICS_TYPE(ImageView);
+		FLAME_GRAPHICS_TYPE(CommandPool);
+		FLAME_GRAPHICS_TYPE(CommandBuffer);
+		FLAME_GRAPHICS_TYPE(Semaphore);
+		FLAME_GRAPHICS_TYPE(Fence);
+		FLAME_GRAPHICS_TYPE(Queue);
+		FLAME_GRAPHICS_TYPE(Shader);
+		FLAME_GRAPHICS_TYPE(DescriptorPool);
+		FLAME_GRAPHICS_TYPE(DescriptorSetLayout);
+		FLAME_GRAPHICS_TYPE(DescriptorSet);
+		FLAME_GRAPHICS_TYPE(Sampler);
+		FLAME_GRAPHICS_TYPE(Renderpass);
+		FLAME_GRAPHICS_TYPE(Framebuffer);
+		FLAME_GRAPHICS_TYPE(PipelineLayout);
+		FLAME_GRAPHICS_TYPE(Pipeline);
+		FLAME_GRAPHICS_TYPE(Swapchain);
+
+		FLAME_GRAPHICS_TYPE(ImageAtlas);
+		FLAME_GRAPHICS_TYPE(FontAtlas);
+		FLAME_GRAPHICS_TYPE(Material);
+
+		namespace animation
+		{
+			FLAME_GRAPHICS_TYPE(Channel);
+			FLAME_GRAPHICS_TYPE(Animation);
+		}
+
+		namespace model
+		{
+			FLAME_GRAPHICS_TYPE(Bone);
+			FLAME_GRAPHICS_TYPE(Mesh);
+			FLAME_GRAPHICS_TYPE(Node);
+			FLAME_GRAPHICS_TYPE(Model);
+		}
+
+		enum Feature
+		{
+			FeatureTextureCompressionBC,
+			FeatureTextureCompressionASTC_LDR,
+			FeatureTextureCompressionETC2,
+
+			FeatureCount
+		};
+
 		enum Format
 		{
 			Format_Undefined,

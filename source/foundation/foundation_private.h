@@ -7,12 +7,7 @@
 
 namespace flame
 {
-	struct WindowBridge : Window
-	{
-		void set_title(const wchar_t* title) override;
-	};
-
-	struct WindowPrivate : WindowBridge
+	struct WindowPrivate : Window
 	{
 		HWND hWnd = 0;
 
@@ -60,6 +55,7 @@ namespace flame
 
 		const wchar_t* get_title() const override { return title.c_str(); }
 		void set_title(const std::wstring& _title);
+		void set_title(const wchar_t* title) override { set_title(std::wstring(title)); }
 
 		int get_style() const override { return style; }
 
@@ -93,11 +89,6 @@ namespace flame
 		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_destroy_listener(void* lis) override;
 	};
-
-	inline void WindowBridge::set_title(const wchar_t* _title)
-	{
-		((WindowPrivate*)this)->set_title(_title);
-	}
 
 	struct LooperPrivate : Looper
 	{

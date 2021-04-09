@@ -7,8 +7,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct MaterialPrivate;
-
 		struct DevicePrivate : Device
 		{
 #ifdef USE_PHYSX

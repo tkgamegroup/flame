@@ -6,10 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DevicePrivate;
-		struct SemaphorePrivate;
-		struct ImagePrivate;
-
 		struct SwapchainPrivate : Swapchain
 		{
 			Window* window;
@@ -26,15 +22,15 @@ namespace flame
 
 			void* resize_listener;
 
-			SwapchainPrivate(DevicePrivate *d, Window* w);
+			SwapchainPrivate(DevicePrivate *device, Window* window);
 			~SwapchainPrivate();
 
 			void release() override { delete this; }
 
 			Window* get_window() const override { return window; }
 			uint get_images_count() const override { return images.size(); }
-			Image* get_image(uint idx) const override { return images[idx].get(); }
-			Semaphore* get_image_avalible() const override { return (Semaphore*)image_avalible.get(); }
+			ImagePtr get_image(uint idx) const override { return images[idx].get(); }
+			SemaphorePtr get_image_avalible() const override { return image_avalible.get(); }
 
 			uint get_image_index() const override { return image_index; }
 			int acquire_image() override;

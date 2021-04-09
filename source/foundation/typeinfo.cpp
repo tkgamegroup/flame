@@ -2,6 +2,8 @@
 #include "typeinfo_private.h"
 
 #include <Windows.h>
+#include <functional>
+#include <pugixml.hpp>
 
 namespace flame
 {
@@ -939,7 +941,7 @@ namespace flame
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const char* name, TypeInfoDataBase* db)
 	{
-		return TypeInfoPrivate::get(tag, name, (TypeInfoDataBasePrivate*)db);
+		return TypeInfoPrivate::get(tag, std::string(name), (TypeInfoDataBasePrivate*)db);
 	}
 
 	void ReflectMetaPrivate::get_token(char** pname, char** pvalue, uint idx) const
@@ -994,7 +996,7 @@ namespace flame
 		}
 	}
 
-	EnumItemPrivate::EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
+	EnumItemInfoPrivate::EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
 		ei(ei),
 		index(index),
 		name(name),
@@ -1007,7 +1009,7 @@ namespace flame
 	{
 	}
 
-	EnumItemPrivate* EnumInfoPrivate::find_item(const std::string& name) const
+	EnumItemInfoPtr EnumInfoPrivate::find_item(const std::string& name) const
 	{
 		for (auto& i : items)
 		{
@@ -1017,7 +1019,7 @@ namespace flame
 		return nullptr;
 	}
 
-	EnumItemPrivate* EnumInfoPrivate::find_item(int value) const
+	EnumItemInfoPtr EnumInfoPrivate::find_item(int value) const
 	{
 		for (auto& i : items)
 		{
@@ -1027,16 +1029,16 @@ namespace flame
 		return nullptr;
 	}
 
-	EnumItemPrivate* EnumInfoPrivate::add_item(const std::string& name, int value, int idx)
+	EnumItemInfoPtr EnumInfoPrivate::add_item(const std::string& name, int value, int idx)
 	{
 		if (idx == -1)
 			idx = items.size();
-		auto ret = new EnumItemPrivate(this, idx, name, value);
+		auto ret = new EnumItemInfoPrivate(this, idx, name, value);
 		items.emplace(items.begin() + idx, ret);
 		return ret;
 	}
 
-	void EnumInfoPrivate::remove_item(EnumItemPrivate* item)
+	void EnumInfoPrivate::remove_item(EnumItemInfoPtr item)
 	{
 		fassert(item->ei == this);
 		for (auto it = items.begin(); it != items.end(); it++)
@@ -1171,7 +1173,7 @@ namespace flame
 	{
 	}
 
-	VariableInfoPrivate* UdtInfoPrivate::find_variable(const std::string& name) const
+	VariableInfoPtr UdtInfoPrivate::find_variable(const std::string& name) const
 	{
 		for (auto& v : variables)
 		{
@@ -1181,7 +1183,7 @@ namespace flame
 		return nullptr;
 	}
 
-	VariableInfoPrivate* UdtInfoPrivate::add_variable(TypeInfoPrivate* ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx)
+	VariableInfoPtr UdtInfoPrivate::add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx)
 	{
 		if (idx == -1)
 			idx = variables.size();
@@ -1190,7 +1192,7 @@ namespace flame
 		return ret;
 	}
 
-	void UdtInfoPrivate::remove_variable(VariableInfoPrivate* vi)
+	void UdtInfoPrivate::remove_variable(VariableInfoPtr vi)
 	{
 		fassert(vi->udt == this);
 		for (auto it = variables.begin(); it != variables.end(); it++)
@@ -1203,7 +1205,7 @@ namespace flame
 		}
 	}
 
-	FunctionInfoPrivate* UdtInfoPrivate::find_function(const std::string& name) const
+	FunctionInfoPtr UdtInfoPrivate::find_function(const std::string& name) const
 	{
 		for (auto& f : functions)
 		{
@@ -1213,7 +1215,7 @@ namespace flame
 		return nullptr;
 	}
 
-	FunctionInfoPrivate* UdtInfoPrivate::add_function(const std::string& name, uint rva, uint voff, TypeInfoPrivate* ti, int idx)
+	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, int idx)
 	{
 		if (idx == -1)
 			idx = functions.size();
@@ -1222,7 +1224,7 @@ namespace flame
 		return ret;
 	}
 
-	void UdtInfoPrivate::remove_function(FunctionInfoPrivate* fi)
+	void UdtInfoPrivate::remove_function(FunctionInfoPtr fi)
 	{
 		fassert(fi->udt == this);
 		for (auto it = functions.begin(); it != functions.end(); it++)
@@ -1435,7 +1437,7 @@ namespace flame
 			auto e = add_enum(std::string(n_enum.attribute("name").value()), db);
 
 			for (auto n_item : n_enum.child("items"))
-				e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
+				e->items.emplace_back(new EnumItemInfoPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
 		}
 		for (auto n_udt : file_root.child("udts"))
 		{

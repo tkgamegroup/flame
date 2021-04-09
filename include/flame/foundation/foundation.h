@@ -2,9 +2,22 @@
 
 #ifdef FLAME_FOUNDATION_MODULE
 #define FLAME_FOUNDATION_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlameFoundationTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_FOUNDATION_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlameFoundationTypeSelector
+{
+	typedef T result;
+};
 #endif
+
+#define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
+	typedef FlameFoundationTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include <flame/serialize.h>
 
@@ -14,6 +27,21 @@
 
 namespace flame
 {
+	FLAME_FOUNDATION_TYPE(Window);
+	FLAME_FOUNDATION_TYPE(Looper);
+	FLAME_FOUNDATION_TYPE(Schedule);
+
+	FLAME_FOUNDATION_TYPE(Bitmap);
+
+	FLAME_FOUNDATION_TYPE(TypeInfo);
+	FLAME_FOUNDATION_TYPE(ReflectMeta);
+	FLAME_FOUNDATION_TYPE(VariableInfo);
+	FLAME_FOUNDATION_TYPE(EnumItemInfo);
+	FLAME_FOUNDATION_TYPE(EnumInfo);
+	FLAME_FOUNDATION_TYPE(FunctionInfo);
+	FLAME_FOUNDATION_TYPE(UdtInfo);
+	FLAME_FOUNDATION_TYPE(TypeInfoDataBase);
+
 	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size));
 
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
@@ -45,31 +73,31 @@ namespace flame
 	};
 
 	template <class T>
-	struct FlmPtr
+	struct UniPtr
 	{
 		T* p = nullptr;
 
-		FlmPtr()
+		UniPtr()
 		{
 		}
 
-		FlmPtr(T* p) : 
+		UniPtr(T* p) : 
 			p(p)
 		{
 		}
 
-		~FlmPtr()
+		~UniPtr()
 		{
 			if (p)
 				p->release();
 		}
 
-		FlmPtr(FlmPtr&& oth)
+		UniPtr(UniPtr&& oth)
 		{
 			oth.swap(*this);
 		}
 
-		FlmPtr& operator=(FlmPtr&& oth)
+		UniPtr& operator=(UniPtr&& oth)
 		{
 			oth.swap(*this);
 			return *this;
@@ -80,8 +108,8 @@ namespace flame
 			return &p;
 		}
 
-		FlmPtr(FlmPtr const&) = delete;
-		FlmPtr& operator=(FlmPtr const&) = delete; 
+		UniPtr(UniPtr const&) = delete;
+		UniPtr& operator=(UniPtr const&) = delete; 
 
 		T* operator->() const { return p; }
 		T& operator*()  const { return *p; }
@@ -95,7 +123,7 @@ namespace flame
 			return temp;
 		}
 
-		void swap(FlmPtr& oth) noexcept
+		void swap(UniPtr& oth) noexcept
 		{
 			auto temp = p;
 			p = oth.p;
@@ -486,7 +514,7 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes = true, bool sync = true);
-	// set_event to returned ev to end the file watching
+	// set_event to the returned ev to end the file watching
 
 	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(Capture& c), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_all_works();
@@ -523,8 +551,6 @@ namespace flame
 
 		Cursor_Count
 	};
-
-	struct Window;
 
 	struct Window
 	{

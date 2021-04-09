@@ -2,22 +2,36 @@
 
 #ifdef FLAME_PHYSICS_MODULE
 #define FLAME_PHYSICS_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlamePhysicsTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_PHYSICS_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlamePhysicsTypeSelector
+{
+	typedef T result;
+};
 #endif
 
-#include <flame/math.h>
+#define FLAME_PHYSICS_TYPE(name) struct name; struct name##Private; \
+	typedef FlamePhysicsTypeSelector<name*, name##Private*>::result name##Ptr;
+
+#include <flame/foundation/foundation.h>
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Image;
-		struct Mesh;
-	}
-
 	namespace physics
 	{
+		FLAME_PHYSICS_TYPE(Device);
+		FLAME_PHYSICS_TYPE(Rigid);
+		FLAME_PHYSICS_TYPE(Shape);
+		FLAME_PHYSICS_TYPE(Controller);
+		FLAME_PHYSICS_TYPE(Material);
+		FLAME_PHYSICS_TYPE(Scene);
+
 		enum TouchType
 		{
 			TouchFound,

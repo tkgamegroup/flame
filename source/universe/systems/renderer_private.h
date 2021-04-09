@@ -39,8 +39,8 @@ namespace flame
 		T* pstag = nullptr;
 		uint stag_num = 0;
 
-		FlmPtr<graphics::Buffer> buf;
-		FlmPtr<graphics::Buffer> stagbuf;
+		UniPtr<graphics::Buffer> buf;
+		UniPtr<graphics::Buffer> stagbuf;
 
 		void rebuild();
 		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint capacity);
@@ -57,8 +57,8 @@ namespace flame
 		uint n0 = 0;
 		uint n1 = 0;
 
-		FlmPtr<graphics::Buffer> buf;
-		FlmPtr<graphics::Buffer> stagbuf;
+		UniPtr<graphics::Buffer> buf;
+		UniPtr<graphics::Buffer> stagbuf;
 		uint stag_capacity;
 		T* pstag = nullptr;
 
@@ -73,8 +73,8 @@ namespace flame
 	{
 		T* pstag = nullptr;
 
-		FlmPtr<graphics::Buffer> buf;
-		FlmPtr<graphics::Buffer> stagbuf;
+		UniPtr<graphics::Buffer> buf;
+		UniPtr<graphics::Buffer> stagbuf;
 
 		std::vector<graphics::BufferCopy> cpies;
 
@@ -143,7 +143,7 @@ namespace flame
 		std::filesystem::path mat;
 		std::vector<std::string> defines;
 		uint ref_count = 1;
-		FlmPtr<graphics::Pipeline> pipeline;
+		UniPtr<graphics::Pipeline> pipeline;
 	};
 
 	struct sRendererBridge : sRenderer
@@ -194,7 +194,7 @@ namespace flame
 
 		graphics::Renderpass* rp_rgba8c;
 		graphics::Renderpass* rp_rgba8;
-		std::vector<FlmPtr<graphics::Framebuffer>> fb_tars;
+		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 
 		// ==== element drawing ====
 
@@ -205,8 +205,8 @@ namespace flame
 
 		SequentialBuffer<ElementVertex>	buf_element_vtx;
 		SequentialBuffer<uint>			buf_element_idx;
-		FlmPtr<graphics::Image>			img_wht;
-		FlmPtr<graphics::DescriptorSet>	ds_element;
+		UniPtr<graphics::Image>			img_wht;
+		UniPtr<graphics::DescriptorSet>	ds_element;
 
 		graphics::Pipeline*				pl_element;
 
@@ -227,29 +227,29 @@ namespace flame
 		SparseBuffer<uint>			buf_arm_mesh_idx;
 
 		StorageBuffer<DSL_render_data_5604::RenderData>	buf_render_data;
-		FlmPtr<graphics::DescriptorSet>					ds_render_data;
+		UniPtr<graphics::DescriptorSet>					ds_render_data;
 		StorageBuffer<DSL_transform_9c0d::Transforms>	buf_transform;
 		uint											transform_idx = 0;
-		FlmPtr<graphics::DescriptorSet>					ds_transform;
+		UniPtr<graphics::DescriptorSet>					ds_transform;
 		StorageBuffer<DSL_material_6528::MaterialInfos>	buf_material;
-		FlmPtr<graphics::DescriptorSet>					ds_material;
+		UniPtr<graphics::DescriptorSet>					ds_material;
 
-		FlmPtr<graphics::Image> img_back;
-		FlmPtr<graphics::Image> img_dep;
-		FlmPtr<graphics::Image> img_def_geo0; // albedo, metallic
-		FlmPtr<graphics::Image> img_def_geo1; // normal, roughness
+		UniPtr<graphics::Image> img_back;
+		UniPtr<graphics::Image> img_dep;
+		UniPtr<graphics::Image> img_def_geo0; // albedo, metallic
+		UniPtr<graphics::Image> img_def_geo1; // normal, roughness
 		
-		FlmPtr<graphics::Framebuffer> fb_def;
+		UniPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
 		graphics::Pipeline*				pl_defe_shad;
-		FlmPtr<graphics::DescriptorSet>	ds_defe_shad;
+		UniPtr<graphics::DescriptorSet>	ds_defe_shad;
 
 		// ======================
 
 		// ==== post ====
 
-		FlmPtr<graphics::DescriptorSet>	ds_back;
+		UniPtr<graphics::DescriptorSet>	ds_back;
 		graphics::Pipeline*				pl_gamma;
 
 		// ==============
@@ -269,8 +269,8 @@ namespace flame
 		int set_element_res(int idx, ElementResType type, void* v) override;
 		int find_element_res(void* v) const override;
 
-		int set_material_res(int idx, graphics::Material* mesh) override;
-		int find_material_res(graphics::Material* mesh) const override;
+		int set_material_res(int idx, graphics::Material* mat) override;
+		int find_material_res(graphics::Material* mat) const override;
 
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;

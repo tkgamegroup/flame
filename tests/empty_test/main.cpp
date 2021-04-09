@@ -1,13 +1,11 @@
-#include <typeinfo>
-#include <stdio.h>
+#include <flame/foundation/typeinfo.h>
 
-enum WTF
-{
+using namespace flame;
 
-};
+const std::vector<int*> a;
 
 int main(int argc, char** args)
 {
-	printf(typeid(WTF).name());
+	a.data();
 	return 0;
 }

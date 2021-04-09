@@ -7,13 +7,10 @@ namespace flame
 {
 	namespace physics
 	{
-		struct ScenePrivate;
-		struct MaterialPrivate;
-
 		struct ControllerPrivate : Controller
 		{
 #ifdef USE_PHYSX
-			FlmPtr<PxController> px_controller;
+			UniPtr<PxController> px_controller;
 #endif
 
 			ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height);

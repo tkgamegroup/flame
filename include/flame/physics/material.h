@@ -6,8 +6,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct Device;
-
 		struct Material
 		{
 			virtual void release() = 0;

@@ -13,7 +13,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		static uint get_pixel_size(ImagePrivate* i)
+		static uint get_pixel_size(ImagePtr i)
 		{
 			switch (i->format)
 			{
@@ -151,7 +151,7 @@ namespace flame
 			cb->image_barrier(this, {}, ImageLayoutTransferDst, dst_layout);
 		}
 
-		PipelinePrivate* sample_pipeline = nullptr;
+		PipelinePtr sample_pipeline = nullptr;
 
 		void ImagePrivate::get_samples(uint count, const vec2* uvs, vec4* dst)
 		{
@@ -160,10 +160,11 @@ namespace flame
 				sample_pipeline = PipelinePrivate::create(device, ShaderPrivate::get(device, L"image_sample/image_sample.comp"), 
 					PipelineLayoutPrivate::get(device, L"image_sample/image_sample.pll"));
 			}
+			const auto MaxSamples = 1024 * 1024;
 			if (!sample_uvs)
-				sample_uvs.reset(new BufferPrivate(device, sizeof(vec2) * 1024 * 1024, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice));
+				sample_uvs.reset(new BufferPrivate(device, sizeof(vec2) * MaxSamples, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice));
 			if (!sample_res)
-				sample_res.reset(new BufferPrivate(device, sizeof(vec4) * 1024 * 1024, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice));
+				sample_res.reset(new BufferPrivate(device, sizeof(vec4) * MaxSamples, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice));
 			if (!sample_descriptorset)
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"image_sample/image_sample.dsl");
@@ -181,7 +182,7 @@ namespace flame
 				BufferCopy cpy;
 				cpy.size = sizeof(vec2) * count;
 				memcpy(stag.mapped, uvs, cpy.size);
-				cb->copy_buffer(stag.get(), sample_uvs.get(), 1, &cpy);
+				cb->copy_buffer((BufferPrivate*)stag.get(), sample_uvs.get(), 1, &cpy);
 				cb->buffer_barrier(sample_uvs.get(), AccessTransferWrite, AccessShaderRead);
 				cb->bind_pipeline(sample_pipeline);
 				cb->bind_descriptor_set(0, sample_descriptorset.get());
@@ -193,7 +194,7 @@ namespace flame
 
 				BufferCopy cpy;
 				cpy.size = sizeof(vec4) * count;
-				cb->copy_buffer(sample_res.get(), stag.get(), 1, &cpy);
+				cb->copy_buffer(sample_res.get(), (BufferPrivate*)stag.get(), 1, &cpy);
 			}
 
 			memcpy(dst, stag.mapped, sizeof(vec4) * count);
@@ -247,7 +248,7 @@ namespace flame
 						}
 					}
 					cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, stag.get(), cpies.size(), cpies.data());
+					cb->copy_image_to_buffer(this, (BufferPrivate*)stag.get(), cpies.size(), cpies.data());
 					cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
@@ -271,7 +272,7 @@ namespace flame
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag.get(), i, 1, &cpy);
+			cb->copy_buffer_to_image((BufferPrivate*)stag.get(), i, 1, &cpy);
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 			return i;
@@ -285,7 +286,7 @@ namespace flame
 				return nullptr;
 			}
 
-			ImagePrivate* ret = nullptr;
+			ImagePtr ret = nullptr;
 
 			if (generate_mipmaps)
 				additional_usage = additional_usage | ImageUsageTransferSrc;
@@ -340,12 +341,12 @@ namespace flame
 					}
 				}
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(stag.get(), ret, cpies.size(), cpies.data());
+				cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, cpies.size(), cpies.data());
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 			else
 			{
-				FlmPtr<Bitmap> bmp(Bitmap::create(filename.c_str()));
+				UniPtr<Bitmap> bmp(Bitmap::create(filename.c_str()));
 				if (srgb)
 					bmp->srgb_to_linear();
 
@@ -358,7 +359,7 @@ namespace flame
 				BufferImageCopy cpy;
 				cpy.image_extent = ret->sizes[0];
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(stag.get(), ret, 1, &cpy);
+				cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, 1, &cpy);
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 
@@ -369,27 +370,18 @@ namespace flame
 				for (auto i = 1U; i < ret->levels; i++) 
 				{
 					cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc, AccessShaderRead, AccessTransferRead);
-
-					auto s1 = (ivec2)ret->sizes[i - 1];
-					auto s2 = (ivec2)ret->sizes[i];
-
-					VkImageBlit blit{};
-					blit.srcOffsets[0] = { 0, 0, 0 };
-					blit.srcOffsets[1] = { s1.x, s1.y, 1 };
-					blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					blit.srcSubresource.mipLevel = i - 1;
-					blit.srcSubresource.baseArrayLayer = 0;
-					blit.srcSubresource.layerCount = 1;
-					blit.dstOffsets[0] = { 0, 0, 0 };
-					blit.dstOffsets[1] = { s2.x, s2.y, 1 };
-					blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					blit.dstSubresource.mipLevel = i;
-					blit.dstSubresource.baseArrayLayer = 0;
-					blit.dstSubresource.layerCount = 1;
-
-					vkCmdBlitImage(((CommandBufferPrivate*)cb.get())->vk_command_buffer, ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
-						ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
-
+					ImageBlit blit;
+					blit.src_subres.base_level = i - 1;
+					blit.src_subres.level_count = 1;
+					blit.src_subres.base_layer = 0;
+					blit.src_subres.layer_count = 1;
+					blit.src_range = ivec4(0, 0, ret->sizes[i - 1]);
+					blit.dst_subres.base_level = i;
+					blit.dst_subres.level_count = 1;
+					blit.dst_subres.base_layer = 0;
+					blit.dst_subres.layer_count = 1;
+					blit.dst_range = ivec4(0, 0, ret->sizes[i]);
+					cb->blit_image(ret, ret, 1, &blit, FilterLinear);
 					cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly, AccessTransferRead, AccessShaderRead);
 				}
 
@@ -404,9 +396,15 @@ namespace flame
 			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
 
-		Image* Image::create(Device* device, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)device, bmp); }
+		Image* Image::create(Device* device, Bitmap* bmp) 
+		{ 
+			return ImagePrivate::create((DevicePrivate*)device, bmp);
+		}
 
-		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube, bool generate_mipmaps) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube, generate_mipmaps); }
+		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube, bool generate_mipmaps) 
+		{ 
+			return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube, generate_mipmaps);
+		}
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),
@@ -510,22 +508,22 @@ namespace flame
 
 			for (auto& e : ini.get_section_entries("tiles"))
 			{
-				auto tile = new ImageTilePrivate;
-				tile->index = tiles.size();
+				Tile tile;
+				tile.index = tiles.size();
 				std::string t;
 				std::stringstream ss(e.value);
 				ss >> t;
-				tile->name = t;
+				tile.name = t;
 				ss >> t;
 				auto v = sto<uvec4>(t.c_str());
-				tile->pos = ivec2(v.x, v.y);
-				tile->size = ivec2(v.z, v.w);
-				tile->uv.x = tile->pos.x / w;
-				tile->uv.y = tile->pos.y / h;
-				tile->uv.z = (tile->pos.x + tile->size.x) / w;
-				tile->uv.w = (tile->pos.y + tile->size.y) / h;
+				tile.pos = ivec2(v.x, v.y);
+				tile.size = ivec2(v.z, v.w);
+				tile.uv.x = tile.pos.x / w;
+				tile.uv.y = tile.pos.y / h;
+				tile.uv.z = (tile.pos.x + tile.size.x) / w;
+				tile.uv.w = (tile.pos.y + tile.size.y) / h;
 
-				tiles.emplace_back(tile);
+				tiles.push_back(tile);
 			}
 		}
 
@@ -534,14 +532,37 @@ namespace flame
 			delete image;
 		}
 
-		ImageTilePrivate* ImageAtlasPrivate::find_tile(const std::string& name) const
+		void ImageAtlasPrivate::get_tile(uint id, TileInfo* dst) const
 		{
-			for (auto& t : tiles)
+			if (id >= tiles.size())
+				return;
+			auto& src = tiles[id];
+			dst->id = id;
+			dst->name = src.name.c_str();
+			dst->pos = src.pos;
+			dst->size = src.size;
+			dst->uv = src.uv;
+		}
+
+		int ImageAtlasPrivate::find_tile(const std::string& name) const
+		{
+			for (auto id = 0; id < tiles.size(); id++)
 			{
-				if (t->name == name)
-					return t.get();
+				if (tiles[id].name == name)
+					return id;
 			}
-			return nullptr;;
+			return -1;
+		}
+
+		bool ImageAtlasPrivate::find_tile(const char* name, TileInfo* dst) const
+		{
+			auto id = find_tile(std::string(name));
+			if (id != -1)
+			{
+				get_tile(id, dst);
+				return true;
+			}
+			return false;
 		}
 
 		ImageAtlas* ImageAtlas::create(Device* device, const wchar_t* filename)

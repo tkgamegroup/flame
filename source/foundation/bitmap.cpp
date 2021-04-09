@@ -47,7 +47,7 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
+	void BitmapPrivate::copy_to(BitmapPtr dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
 		auto b2 = b1 << 1;

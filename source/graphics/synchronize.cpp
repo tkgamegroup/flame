@@ -5,7 +5,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		SemaphorePrivate::SemaphorePrivate(DevicePrivate* device) :
+		SemaphorePrivate::SemaphorePrivate(DevicePtr device) :
 			device(device)
 		{
 			VkSemaphoreCreateInfo info = {};
@@ -23,7 +23,7 @@ namespace flame
 			return new SemaphorePrivate((DevicePrivate*)device);
 		}
 
-		FencePrivate::FencePrivate(DevicePrivate* device) :
+		FencePrivate::FencePrivate(DevicePtr device) :
 			device(device)
 		{
 			VkFenceCreateInfo info = {};

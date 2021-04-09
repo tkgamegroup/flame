@@ -34,54 +34,34 @@ namespace flame
 		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
 		fassert(canvas);
 
+		auto device = graphics::Device::get_default();
+		auto ppath = entity->get_src(src_id).parent_path();
+
 		{
 			auto fn = std::filesystem::path(box_texture_name);
-			if (!fn.extension().empty())
-			{
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			box_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			box_texture = graphics::Image::create(device, fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		{
 			auto fn = std::filesystem::path(irr_texture_name);
-			if (!fn.extension().empty())
-			{
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			irr_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			irr_texture = graphics::Image::create(device, fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		{
 			auto fn = std::filesystem::path(rad_texture_name);
-			if (!fn.extension().empty())
-			{
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			rad_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			rad_texture = graphics::Image::create(device, fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		{
 			auto fn = std::filesystem::path(lut_texture_name);
-			if (!fn.extension().empty())
-			{
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			lut_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			lut_texture = graphics::Image::create(device, fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
+
 		canvas->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
 			rad_texture->get_view(rad_texture->get_levels()), lut_texture->get_view());
 	}

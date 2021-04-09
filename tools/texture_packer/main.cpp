@@ -3,6 +3,58 @@
 
 using namespace flame;
 
+struct BinPackTile
+{
+	std::string id;
+	UniPtr<Bitmap> bmp;
+	ivec2 pos;
+};
+
+inline void bin_pack(const uvec2& size, const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
+{
+	auto b1 = border ? 1U : 0U;
+	auto b2 = b1 << 1;
+
+	std::vector<BinPackTile> tiles;
+	for (auto& i : inputs)
+	{
+		BinPackTile t;
+		t.id = i.filename().stem().string();
+		t.bmp.reset(Bitmap::create(i.c_str()));
+		t.pos = ivec2(-1);
+		tiles.push_back(std::move(t));
+	}
+	std::sort(tiles.begin(), tiles.end(), [](const auto& a, const auto& b) {
+		return max(a.bmp->get_width(), a.bmp->get_height()) > max(b.bmp->get_width(), b.bmp->get_height());
+	});
+
+	auto tree = std::make_unique<BinPackNode>(size);
+
+	for (auto& t : tiles)
+	{
+		auto n = tree->find(uvec2(t.bmp->get_width(), t.bmp->get_height()) + b2);
+		if (n)
+			t.pos = n->pos;
+	}
+
+	auto _size = uvec2(0);
+	for (auto& t : tiles)
+	{
+		_size.x = max(t.pos.x + t.bmp->get_width() + b1, _size.x);
+		_size.y = max(t.pos.y + t.bmp->get_height() + b1, _size.y);
+	}
+
+	auto b = Bitmap::create(_size.x, _size.y, 4);
+	for (auto& t : tiles)
+	{
+		if (t.pos.x >= 0 && t.pos.y >= 0)
+			t.bmp->copy_to((BitmapPtr)b, t.bmp->get_width(), t.bmp->get_height(), 0, 0, t.pos.x, t.pos.y, border);
+	}
+	b->save(output.c_str());
+
+	callback(tiles);
+}
+
 int main(int argc, char **args)
 {
 	std::string output;

@@ -32,31 +32,22 @@ namespace flame
 		bool get_signed() const override { return is_signed; }
 		uint get_vec_size() const override { return vec_size; }
 		uint get_col_size() const override { return col_size; }
-		TypeInfo* get_pointed_type() const override { return pointed_type; }
+		TypeInfoPtr get_pointed_type() const override { return pointed_type; }
 
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	};
 
-	struct ReflectMetaBridge : ReflectMeta
-	{
-		bool get_token(const char* str, char** pvalue) const override;
-	};
-
-	struct ReflectMetaPrivate : ReflectMetaBridge
+	struct ReflectMetaPrivate : ReflectMeta
 	{
 		std::vector<std::pair<std::string, std::string>> tokens;
 
 		uint get_tokens_count() const override { return tokens.size(); }
 		void get_token(char** pname, char** pvalue, uint idx) const override;
 		bool get_token(const std::string& str, char** pvalue) const;
+		bool get_token(const char* str, char** pvalue) const override { return get_token(std::string(str), pvalue); }
 
 		std::string concat() const;
 	};
-
-	inline bool ReflectMetaBridge::get_token(const char* str, char** pvalue) const
-	{
-		return ((ReflectMetaPrivate*)this)->get_token(str, pvalue);
-	}
 
 	struct VariableInfoPrivate : VariableInfo
 	{
@@ -72,75 +63,49 @@ namespace flame
 
 		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta);
 
-		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
+		UdtInfoPtr get_udt() const override { return udt; }
 		uint get_index() const override { return index; }
-		TypeInfo* get_type() const override { return type; }
+		TypeInfoPtr get_type() const override { return type; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_offset() const override { return offset; }
 		uint get_array_size() const override { return array_size; }
 		uint get_array_stride() const override { return array_stride; }
-		ReflectMeta* get_meta() const override { return (ReflectMeta*)&meta; }
+		ReflectMetaPtr get_meta() const override { return (const ReflectMetaPtr)&meta; }
 		const char* get_default_value() const override { return default_value.c_str(); }
 	};
 
-	struct EnumItemPrivate : EnumItem
+	struct EnumItemInfoPrivate : EnumItemInfo
 	{
 		EnumInfoPrivate* ei;
 		uint index;
 		std::string name;
 		int value;
 
-		EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value);
+		EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value);
 
-		EnumInfo* get_enum() const override { return (EnumInfo*)ei; }
+		EnumInfoPtr get_enum() const override { return ei; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
 		int get_value() const override { return value; }
 	};
 
-	struct EnumInfoBridge : EnumInfo 
-	{
-		EnumItem* find_item(const char* name) const override;
-		EnumItem* find_item(int value) const override;
-		EnumItem* add_item(const char* name, int value, int idx) override;
-		void remove_item(EnumItem* item) override;
-	};
-
-	struct EnumInfoPrivate : EnumInfoBridge
+	struct EnumInfoPrivate : EnumInfo
 	{
 		std::string name;
-		std::vector<std::unique_ptr<EnumItemPrivate>> items;
+		std::vector<std::unique_ptr<EnumItemInfoPrivate>> items;
 
 		EnumInfoPrivate(const std::string& name);
 
 		const char* get_name() const override { return name.c_str(); }
 		uint get_items_count() const override { return items.size(); }
-		EnumItem* get_item(uint idx) const override { return items[idx].get(); }
-		EnumItemPrivate* find_item(const std::string& name) const;
-		EnumItemPrivate* find_item(int value) const;
-		EnumItemPrivate* add_item(const std::string& name, int value, int idx = -1);
-		void remove_item(EnumItemPrivate* item);
+		EnumItemInfoPtr get_item(uint idx) const override { return items[idx].get(); }
+		EnumItemInfoPtr find_item(const std::string& name) const;
+		EnumItemInfoPtr find_item(const char* name) const override { return find_item(std::string(name)); }
+		EnumItemInfoPtr find_item(int value) const override;
+		EnumItemInfoPtr add_item(const std::string& name, int value, int idx = -1);
+		EnumItemInfoPtr add_item(const char* name, int value, int idx) override { return add_item(std::string(name), value, idx); }
+		void remove_item(EnumItemInfoPtr item) override;
 	};
-
-	inline EnumItem* EnumInfoBridge::find_item(const char* name) const
-	{
-		return ((EnumInfoPrivate*)this)->find_item(name);
-	}
-
-	inline EnumItem* EnumInfoBridge::find_item(int value) const
-	{
-		return ((EnumInfoPrivate*)this)->find_item(value);
-	}
-
-	inline EnumItem* EnumInfoBridge::add_item(const char* name, int value, int idx)
-	{
-		return ((EnumInfoPrivate*)this)->add_item(name, value, idx);
-	}
-
-	inline void EnumInfoBridge::remove_item(EnumItem* item)
-	{
-		((EnumInfoPrivate*)this)->remove_item((EnumItemPrivate*)item);
-	}
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
@@ -157,15 +122,15 @@ namespace flame
 		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
 
 		void* get_library() const override { return library; }
-		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
+		UdtInfoPtr get_udt() const override { return udt; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_rva() const override { return rva; }
 		uint get_voff() const override { return voff; }
-		TypeInfo* get_type() const override { return type; }
+		TypeInfoPtr get_type() const override { return type; }
 
 		uint get_parameters_count() const override { return parameters.size(); }
-		TypeInfo* get_parameter(uint idx) const override { return parameters[idx]; }
+		TypeInfoPtr get_parameter(uint idx) const override { return parameters[idx]; }
 		void add_parameter(TypeInfo* ti, int idx) override;
 		void remove_parameter(uint idx) override;
 
@@ -178,17 +143,7 @@ namespace flame
 		void call(void* obj, void* ret, void* parameters) const override;
 	};
 
-	struct UdtInfoBridge : UdtInfo 
-	{
-		VariableInfo* find_variable(const char* name) const override;
-		VariableInfo* add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx) override;
-		void remove_variable(VariableInfo* vi) override;
-		FunctionInfo* find_function(const char* name) const override;
-		FunctionInfo* add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx) override;
-		void remove_function(FunctionInfo* fi) override;
-	};
-
-	struct UdtInfoPrivate : UdtInfoBridge
+	struct UdtInfoPrivate : UdtInfo
 	{
 		void* library;
 		std::string name;
@@ -207,47 +162,21 @@ namespace flame
 		const char* get_base_name() const override { return base_name.c_str(); }
 
 		uint get_variables_count() const override { return variables.size(); }
-		VariableInfo* get_variable(uint idx) const override { return variables[idx].get(); }
-		VariableInfoPrivate* find_variable(const std::string& name) const;
-		VariableInfoPrivate* add_variable(TypeInfoPrivate* ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx = -1);
-		void remove_variable(VariableInfoPrivate* vi);
+		VariableInfoPtr get_variable(uint idx) const override { return variables[idx].get(); }
+		VariableInfoPtr find_variable(const std::string& name) const;
+		VariableInfoPtr find_variable(const char* name) const override { return find_variable(std::string(name)); }
+		VariableInfoPtr add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx = -1);
+		VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx) override { return add_variable(ti, std::string(name), offset, array_size, array_stride, std::string(default_value), std::string(meta), idx); }
+		void remove_variable(VariableInfoPtr vi) override;
 
 		uint get_functions_count() const override { return functions.size(); }
-		FunctionInfo* get_function(uint idx) const override { return functions[idx].get(); }
-		FunctionInfoPrivate* find_function(const std::string& name) const;
-		FunctionInfoPrivate* add_function(const std::string& name, uint rva, uint voff, TypeInfoPrivate* ti, int idx = -1);
-		void remove_function(FunctionInfoPrivate* fi);
+		FunctionInfoPtr get_function(uint idx) const override { return functions[idx].get(); }
+		FunctionInfoPtr find_function(const std::string& name) const;
+		FunctionInfoPtr find_function(const char* name) const override { return find_function(std::string(name)); }
+		FunctionInfoPtr add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, int idx = -1);
+		FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, int idx) override { return add_function(std::string(name), rva, voff, ti, idx); }
+		void remove_function(FunctionInfoPtr fi) override;
 	};
-
-	inline VariableInfo* UdtInfoBridge::find_variable(const char* name) const
-	{
-		return ((UdtInfoPrivate*)this)->find_variable(name);
-	}
-
-	inline VariableInfo* UdtInfoBridge::add_variable(TypeInfo* ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx)
-	{
-		return ((UdtInfoPrivate*)this)->add_variable((TypeInfoPrivate*)ti, name, offset, array_size, array_stride, default_value, meta, idx);
-	}
-
-	inline void UdtInfoBridge::remove_variable(VariableInfo* vi)
-	{
-		((UdtInfoPrivate*)this)->remove_variable((VariableInfoPrivate*)vi);
-	}
-
-	inline FunctionInfo* UdtInfoBridge::find_function(const char* name) const
-	{
-		return ((UdtInfoPrivate*)this)->find_function(name);
-	}
-
-	inline FunctionInfo* UdtInfoBridge::add_function(const char* name, uint rva, uint voff, TypeInfo* ti, int idx)
-	{
-		return ((UdtInfoPrivate*)this)->add_function(name, rva, voff, (TypeInfoPrivate*)ti, idx);
-	}
-
-	inline void UdtInfoBridge::remove_function(FunctionInfo* vi)
-	{
-		((UdtInfoPrivate*)this)->remove_function((FunctionInfoPrivate*)vi);
-	}
 
 	struct TypeInfoKey
 	{

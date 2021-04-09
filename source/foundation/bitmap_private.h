@@ -4,13 +4,7 @@
 
 namespace flame
 {
-	struct BitmapBridge : Bitmap
-	{
-		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override;
-		void save(const wchar_t* filename) override;
-	};
-
-	struct BitmapPrivate : BitmapBridge
+	struct BitmapPrivate : Bitmap
 	{
 		uint width;
 		uint height;
@@ -36,20 +30,11 @@ namespace flame
 		bool get_srgb() const override { return srgb; }
 
 		void swap_channel(uint ch1, uint ch2) override;
-		void copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border);
+		void copy_to(BitmapPtr dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override;
 		void srgb_to_linear() override;
 		void save(const std::filesystem::path& filename);
+		void save(const wchar_t* filename) override { save(std::filesystem::path(filename)); }
 
 		static BitmapPrivate* create(const std::filesystem::path& filename);
 	};
-
-	inline void BitmapBridge::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
-	{
-		((BitmapPrivate*)this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border);
-	}
-
-	inline void BitmapBridge::save(const wchar_t* filename)
-	{
-		((BitmapPrivate*)this)->save(filename);
-	}
 }

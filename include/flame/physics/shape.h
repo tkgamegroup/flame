@@ -4,6 +4,16 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Image;
+
+		namespace model
+		{
+			struct Mesh;
+		}
+	}
+
 	namespace physics
 	{
 		struct Device;
@@ -14,7 +24,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS static TriangleMesh* create(Device* device, graphics::Mesh* mesh);
+			FLAME_PHYSICS_EXPORTS static TriangleMesh* create(Device* device, graphics::model::Mesh* mesh);
 		};
 
 		struct HeightField
