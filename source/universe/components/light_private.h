@@ -1,15 +1,9 @@
 #pragma once
-#pragma once
 
 #include <flame/universe/components/light.h>
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct cNodePrivate;
 	struct cCamera;
 
@@ -31,7 +25,7 @@ namespace flame
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
 
-		void draw(graphics::Canvas* canvas);
+		void draw(sRenderer* renderer);
 
 		void on_added() override;
 		void on_removed() override;

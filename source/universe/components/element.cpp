@@ -405,38 +405,7 @@ namespace flame
 			entity->component_data_changed(this, S<"clipping"_h>);
 	}
 
-	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop)
-	{
-		if (!drawer)
-		{
-			auto slot = (uint)&capture;
-			drawer = [](Capture& c, graphics::Canvas* canvas) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_object();
-				scr_ins->set_object_type("flame::graphics::Canvas", canvas);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			auto c = new Closure(drawer, Capture().set_data(&slot));
-			drawers[ontop ? 1 : 0].emplace_back(c);
-			return c;
-		}
-		auto c = new Closure(drawer, capture);
-		drawers[ontop ? 1 : 0].emplace_back(c);
-		return c;
-	}
-
-	void cElementPrivate::remove_drawer(void* drawer, bool ontop)
-	{
-		std::erase_if(drawers[ontop ? 1 : 0], [&](const auto& i) {
-			return i == (decltype(i))drawer;
-		});
-	}
-
-	void* cElementPrivate::add_drawer2(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
+	void* cElementPrivate::add_drawer(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
 	{
 		if (!drawer)
 		{
@@ -454,17 +423,17 @@ namespace flame
 				return (uint)ret;
 			};
 			auto c = new Closure(drawer, Capture().set_data(&slot));
-			drawers2.emplace_back(c);
+			drawers.emplace_back(c);
 			return c;
 		}
 		auto c = new Closure(drawer, capture);
-		drawers2.emplace_back(c);
+		drawers.emplace_back(c);
 		return c;
 	}
 
-	void cElementPrivate::remove_drawer2(void* drawer)
+	void cElementPrivate::remove_drawer(void* drawer)
 	{
-		std::erase_if(drawers2, [&](const auto& i) {
+		std::erase_if(drawers, [&](const auto& i) {
 			return i == (decltype(i))drawer;
 		});
 	}
@@ -718,34 +687,7 @@ namespace flame
 		return true;
 	}
 
-	void cElementPrivate::draw(graphics::Canvas* canvas)
-	{
-		if (alpha > 0.f)
-		{
-			if (fill_color.a > 0)
-			{
-				canvas->begin_path();
-				canvas->move_to(points[0]);
-				canvas->line_to(points[1]);
-				canvas->line_to(points[2]);
-				canvas->line_to(points[3]);
-				canvas->fill(fill_color);
-			}
-
-			if (border > 0.f && border_color.a > 0)
-			{
-				canvas->begin_path();
-				canvas->move_to(points[0]);
-				canvas->line_to(points[1]);
-				canvas->line_to(points[2]);
-				canvas->line_to(points[3]);
-				canvas->close_path();
-				canvas->stroke(border_color, border);
-			}
-		}
-	}
-
-	void cElementPrivate::draw2(uint layer, sRenderer* renderer)
+	void cElementPrivate::draw(uint layer, sRenderer* renderer)
 	{
 		if (alpha > 0.f)
 		{

@@ -24,25 +24,25 @@ namespace flame
 		struct ImageCopy
 		{
 			uvec2 src_off = uvec2(0);
+			ImageSub src_sub;
 			uvec2 dst_off = uvec2(0);
+			ImageSub dst_sub;
 			uvec2 size;
 		};
 
 		struct BufferImageCopy
 		{
-			uint buffer_offset = 0;
-			uvec2 image_offset = uvec2(0);
-			uvec2 image_extent;
-			uint image_level = 0;
-			uint image_base_layer = 0;
-			uint image_layer_count = 1;
+			uint buf_off = 0;
+			uvec2 img_off = uvec2(0);
+			uvec2 img_ext;
+			ImageSub img_sub;
 		};
 
 		struct ImageBlit
 		{
-			ImageSubresource src_subres;
+			ImageSub src_sub;
 			ivec4 src_range;
-			ImageSubresource dst_subres;
+			ImageSub dst_sub;
 			ivec4 dst_range;
 		};
 
@@ -96,7 +96,7 @@ namespace flame
 			virtual void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void dispatch(const uvec3& v) = 0;
 			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access) = 0;
-			virtual void image_barrier(ImagePtr img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
+			virtual void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
 
 			virtual void copy_buffer(BufferPtr src, BufferPtr dst, uint copies_count, BufferCopy* copies) = 0;

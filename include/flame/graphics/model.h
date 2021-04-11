@@ -14,7 +14,7 @@ namespace flame
 			virtual float get_metallic() const = 0;
 			virtual float get_roughness() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static Material* get(const wchar_t* filename);
 		};
 
 		namespace animation

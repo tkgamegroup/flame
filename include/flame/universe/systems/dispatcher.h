@@ -4,7 +4,6 @@
 
 namespace flame
 {
-	struct Window;
 	struct cReceiver;
 
 	struct sDispatcher : System

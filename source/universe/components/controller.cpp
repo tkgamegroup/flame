@@ -1,5 +1,3 @@
-#include <flame/physics/device.h>
-#include <flame/physics/material.h>
 #include <flame/physics/controller.h>
 #include "../world_private.h"
 #include "node_private.h"

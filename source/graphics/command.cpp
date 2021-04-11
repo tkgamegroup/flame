@@ -89,7 +89,7 @@ namespace flame
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
 			auto first_view = fb->views[0];
-			auto size = first_view->image->sizes[first_view->subresource.base_level];
+			auto size = first_view->image->sizes[first_view->sub.base_level];
 			info.renderArea.extent.width = size.x;
 			info.renderArea.extent.height = size.y;
 			info.clearValueCount = cvs ? fb->views.size() : 0;
@@ -212,7 +212,7 @@ namespace flame
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -223,10 +223,10 @@ namespace flame
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.image = img->vk_image;
 			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(img->format));
-			barrier.subresourceRange.baseMipLevel = subresource.base_level;
-			barrier.subresourceRange.levelCount = subresource.level_count;
-			barrier.subresourceRange.baseArrayLayer = subresource.base_layer;
-			barrier.subresourceRange.layerCount = subresource.layer_count;
+			barrier.subresourceRange.baseMipLevel = sub.base_level;
+			barrier.subresourceRange.levelCount = sub.level_count;
+			barrier.subresourceRange.baseArrayLayer = sub.base_layer;
+			barrier.subresourceRange.layerCount = sub.layer_count;
 
 			if (src_access == AccessNone)
 			{
@@ -293,15 +293,77 @@ namespace flame
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 		}
 
+		VkBufferCopy to_backend(const BufferCopy& src)
+		{
+			VkBufferCopy ret = {};
+			ret.srcOffset = src.src_off;
+			ret.dstOffset = src.dst_off;
+			ret.size = src.size;
+			return ret;
+		}
+
+		VkImageCopy to_backend(const ImageCopy& src)
+		{
+			VkImageCopy ret = {};
+			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.srcSubresource.mipLevel = src.src_sub.base_level;
+			ret.srcSubresource.baseArrayLayer = src.src_sub.base_layer;
+			ret.srcSubresource.layerCount = src.src_sub.layer_count;
+			ret.srcOffset.x = src.src_off.x;
+			ret.srcOffset.y = src.src_off.y;
+			ret.srcOffset.z = 0;
+			ret.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.dstSubresource.mipLevel = src.dst_sub.base_level;
+			ret.dstSubresource.baseArrayLayer = src.dst_sub.base_layer;
+			ret.dstSubresource.layerCount = src.dst_sub.layer_count;
+			ret.dstOffset.x = src.dst_off.x;
+			ret.dstOffset.y = src.dst_off.y;
+			ret.dstOffset.z = 0;
+			ret.extent.width = src.size.x;
+			ret.extent.height = src.size.y;
+			ret.extent.depth = 1;
+			return ret;
+		}
+
+		VkBufferImageCopy to_backend(const BufferImageCopy& src, VkImageAspectFlags aspect)
+		{
+			VkBufferImageCopy ret = {};
+			ret.bufferOffset = src.buf_off;
+			ret.imageOffset.x = src.img_off.x;
+			ret.imageOffset.y = src.img_off.y;
+			ret.imageExtent.width = src.img_ext.x;
+			ret.imageExtent.height = src.img_ext.y;
+			ret.imageExtent.depth = 1;
+			ret.imageSubresource.aspectMask = aspect;
+			ret.imageSubresource.mipLevel = src.img_sub.base_level;
+			ret.imageSubresource.baseArrayLayer = src.img_sub.base_layer;
+			ret.imageSubresource.layerCount = src.img_sub.layer_count;
+			return ret;
+		}
+
+		VkImageBlit to_backend(const ImageBlit& src)
+		{
+			VkImageBlit ret = {};
+			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.srcSubresource.mipLevel = src.src_sub.base_level;
+			ret.srcSubresource.baseArrayLayer = src.src_sub.base_layer;
+			ret.srcSubresource.layerCount = src.src_sub.layer_count;
+			ret.srcOffsets[0] = { src.src_range.x, src.src_range.y, 0 };
+			ret.srcOffsets[1] = { src.src_range.z, src.src_range.w, 1 };
+			ret.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.dstSubresource.mipLevel = src.dst_sub.base_level;
+			ret.dstSubresource.baseArrayLayer = src.dst_sub.base_layer;
+			ret.dstSubresource.layerCount = src.dst_sub.layer_count;
+			ret.srcOffsets[0] = { src.dst_range.x, src.dst_range.y, 0 };
+			ret.srcOffsets[1] = { src.dst_range.z, src.dst_range.w, 1 };
+			return ret;
+		}
+
 		void CommandBufferPrivate::copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies)
 		{
 			std::vector<VkBufferCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-			{
-				vk_copies[i].srcOffset = copies[i].src_off;
-				vk_copies[i].dstOffset = copies[i].dst_off;
-				vk_copies[i].size = copies[i].size;
-			}
+				vk_copies[i] = to_backend(copies[i]);
 			vkCmdCopyBuffer(vk_command_buffer, src->vk_buffer, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
@@ -309,61 +371,9 @@ namespace flame
 		{
 			std::vector<VkImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-			{
-				vk_copies[i].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				vk_copies[i].srcSubresource.mipLevel = 0;
-				vk_copies[i].srcSubresource.baseArrayLayer = 0;
-				vk_copies[i].srcSubresource.layerCount = 1;
-				vk_copies[i].srcOffset.x = copies[i].src_off.x;
-				vk_copies[i].srcOffset.y = copies[i].src_off.y;
-				vk_copies[i].srcOffset.z = 0;
-				vk_copies[i].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-				vk_copies[i].dstSubresource.mipLevel = 0;
-				vk_copies[i].dstSubresource.baseArrayLayer = 0;
-				vk_copies[i].dstSubresource.layerCount = 1;
-				vk_copies[i].dstOffset.x = copies[i].dst_off.x;
-				vk_copies[i].dstOffset.y = copies[i].dst_off.y;
-				vk_copies[i].dstOffset.z = 0;
-				vk_copies[i].extent.width = copies[i].size.x;
-				vk_copies[i].extent.height = copies[i].size.y;
-				vk_copies[i].extent.depth = 1;
-			}
+				vk_copies[i] = to_backend(copies[i]);
 			vkCmdCopyImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
-		}
-
-		VkBufferImageCopy to_backend(const BufferImageCopy& cpy, VkImageAspectFlags aspect)
-		{
-			VkBufferImageCopy vk_cpy = {};
-			vk_cpy.bufferOffset = cpy.buffer_offset;
-			vk_cpy.imageOffset.x = cpy.image_offset.x;
-			vk_cpy.imageOffset.y = cpy.image_offset.y;
-			vk_cpy.imageExtent.width = cpy.image_extent.x;
-			vk_cpy.imageExtent.height = cpy.image_extent.y;
-			vk_cpy.imageExtent.depth = 1;
-			vk_cpy.imageSubresource.aspectMask = aspect;
-			vk_cpy.imageSubresource.mipLevel = cpy.image_level;
-			vk_cpy.imageSubresource.baseArrayLayer = cpy.image_base_layer;
-			vk_cpy.imageSubresource.layerCount = cpy.image_layer_count;
-			return vk_cpy;
-		}
-
-		VkImageBlit to_backend(const ImageBlit& src)
-		{
-			VkImageBlit ret = {};
-			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			ret.srcSubresource.mipLevel = src.src_subres.base_level;
-			ret.srcSubresource.baseArrayLayer = src.src_subres.base_layer;
-			ret.srcSubresource.layerCount = src.src_subres.layer_count;
-			ret.srcOffsets[0] = { src.src_range.x, src.src_range.y, 0 };
-			ret.srcOffsets[1] = { src.src_range.z, src.src_range.w, 1 };
-			ret.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			ret.dstSubresource.mipLevel = src.dst_subres.base_level;
-			ret.dstSubresource.baseArrayLayer = src.dst_subres.base_layer;
-			ret.dstSubresource.layerCount = src.dst_subres.layer_count;
-			ret.srcOffsets[0] = { src.dst_range.x, src.dst_range.y, 0 };
-			ret.srcOffsets[1] = { src.dst_range.z, src.dst_range.w, 1 };
-			return ret;
 		}
 
 		void CommandBufferPrivate::copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies)

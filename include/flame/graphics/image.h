@@ -67,11 +67,13 @@ namespace flame
 
 			virtual void get_samples(uint count, const vec2* uvs, vec4* dst) = 0;
 
+			virtual void generate_mipmaps() = 0;
+
 			virtual void save(const wchar_t* filename) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false, bool generate_mipmaps = false);
+			FLAME_GRAPHICS_EXPORTS static Image* get(Device* device, const wchar_t* filename, bool srgb);
 		};
 
 		struct ImageView
@@ -81,10 +83,10 @@ namespace flame
 			virtual ImagePtr get_image() const = 0;
 
 			virtual ImageViewType get_type() const = 0;
-			virtual ImageSubresource get_subresource() const = 0;
+			virtual ImageSub get_sub() const = 0;
 			virtual ImageSwizzle get_swizzle() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
+			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSub& sub = {}, const ImageSwizzle& swizzle = {});
 		};
 
 		struct Sampler

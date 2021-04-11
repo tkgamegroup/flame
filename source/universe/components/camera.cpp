@@ -1,5 +1,3 @@
-#include <flame/graphics/image.h>
-#include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
@@ -31,9 +29,9 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		drawer = node->add_drawer([](Capture& c, sRenderer* render) {
 			auto thiz = c.thiz<cCameraPrivate>();
-			thiz->draw(canvas);
+			thiz->draw(render);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
@@ -59,10 +57,11 @@ namespace flame
 		renderer = nullptr;
 	}
 
-	void cCameraPrivate::draw(graphics::Canvas* canvas)
+	void cCameraPrivate::draw(sRenderer* render)
 	{
-		auto vp = canvas->get_viewport();
-		auto size = max(vec2(1.f), vp.RB - vp.LT);
+		// TODO: fix below
+		//auto vp = canvas->get_viewport();
+		//auto size = max(vec2(1.f), vp.RB - vp.LT);
 		//canvas->set_camera(fovy, size.x / size.y, near, far, node->g_rot, node->g_pos);
 	}
 

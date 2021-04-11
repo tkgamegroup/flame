@@ -4,15 +4,6 @@
 
 namespace flame
 {
-	namespace physics
-	{
-		struct Controller;
-	}
-
-	struct cNodePrivate;
-	struct cMeshPrivate;
-	struct sPhysicsPrivate;
-	
 	struct cControllerPrivate : cController
 	{
 		float radius = 0.f;

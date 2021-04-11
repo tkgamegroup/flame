@@ -20,7 +20,7 @@ namespace flame
 		cast_shadow = v;
 	}
 
-	void cLightPrivate::draw(graphics::Canvas* canvas)
+	void cLightPrivate::draw(sRenderer* renderer)
 	{
 		//node->update_transform();
 		//canvas->add_light(type, type == graphics::LightPoint ? mat3(node->g_pos, vec3(0.f), vec3(0.f)) : node->g_rot, color, cast_shadow);
@@ -31,9 +31,9 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		drawer = node->add_drawer([](Capture& c, sRenderer* renderer) {
 			auto thiz = c.thiz<cLightPrivate>();
-			thiz->draw(canvas);
+			thiz->draw(renderer);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}

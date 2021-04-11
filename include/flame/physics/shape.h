@@ -4,16 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Image;
-
-		namespace model
-		{
-			struct Mesh;
-		}
-	}
-
 	namespace physics
 	{
 		struct Device;

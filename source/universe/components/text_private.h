@@ -7,7 +7,6 @@ namespace flame
 	namespace graphics
 	{
 		struct FontAtlas;
-		struct Canvas;
 	}
 
 	struct sRenderer;
@@ -47,8 +46,7 @@ namespace flame
 
 		void mark_text_changed();
 
-		void draw(graphics::Canvas* canvas);
-		uint draw2(uint layer, sRenderer* renderer);
+		uint draw(uint layer, sRenderer* renderer);
 
 		void measure(vec2* ret);
 

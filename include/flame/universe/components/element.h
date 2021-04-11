@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct sRenderer;
 
 	struct cElement : Component
@@ -130,10 +125,8 @@ namespace flame
 
 		virtual bool contains(const vec2& p) = 0;
 
-		virtual void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) = 0;
-		virtual void remove_drawer(void* drawer, bool ontop = true) = 0;
-		virtual void* add_drawer2(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) = 0;
-		virtual void remove_drawer2(void* drawer) = 0;
+		virtual void* add_drawer(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) = 0;
+		virtual void remove_drawer(void* drawer) = 0;
 		virtual void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) = 0;
 		virtual void remove_measurer(void* measurer) = 0;
 

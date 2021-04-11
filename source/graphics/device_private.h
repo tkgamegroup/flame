@@ -7,16 +7,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct SamplerPrivate;
-		struct RenderpassPrivate;
-		struct DescriptorPoolPrivate;
-		struct DescriptorSetLayoutPrivate;
-		struct PipelineLayoutPrivate;
-		struct ShaderPrivate;
-		struct PipelinePrivate;
-		struct CommandPoolPrivate;
-		struct QueuePrivate;
-
 		struct DevicePrivate : Device
 		{
 			VkInstance vk_instance;
@@ -26,6 +16,7 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
+			std::vector<std::unique_ptr<ImagePrivate>> texs[2]; // no_srgb, srgb
 			std::vector<std::unique_ptr<SamplerPrivate>> sps;
 			std::unique_ptr<DescriptorPoolPrivate> dsp;
 			std::vector<std::unique_ptr<RenderpassPrivate>> rps;

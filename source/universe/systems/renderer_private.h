@@ -11,8 +11,6 @@
 
 namespace flame
 {
-	struct Window;
-
 	namespace graphics
 	{
 		struct Device;
@@ -172,7 +170,7 @@ namespace flame
 
 		struct MeshRes
 		{
-			graphics::Mesh* mesh = nullptr;
+			graphics::model::Mesh* mesh = nullptr;
 			bool arm;
 			uint vtx_off;
 			uint vtx_cnt;
@@ -186,7 +184,6 @@ namespace flame
 
 		Window* window;
 
-		graphics::Canvas* canvas = nullptr;
 		cCameraPrivate* camera = nullptr;
 
 		graphics::Device* device;
@@ -214,6 +211,7 @@ namespace flame
 
 		// ==== node drawing ====
 
+		std::vector<graphics::ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
 
@@ -269,15 +267,18 @@ namespace flame
 		int set_element_res(int idx, ElementResType type, void* v) override;
 		int find_element_res(void* v) const override;
 
-		int set_material_res(int idx, graphics::Material* mat) override;
-		int find_material_res(graphics::Material* mat) const override;
-
-		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
-		int find_mesh_res(graphics::Mesh* mesh) const override;
-
 		void fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color);
 		void stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color);
 		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
+
+		int set_texture_res(int idx, graphics::ImageView* tex) override;
+		int find_texture_res(graphics::ImageView* tex) const override;
+
+		int set_material_res(int idx, graphics::Material* mat) override;
+		int find_material_res(graphics::Material* mat) const override;
+
+		int set_mesh_res(int idx, graphics::model::Mesh* mesh) override;
+		int find_mesh_res(graphics::model::Mesh* mesh) const override;
 
 		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);

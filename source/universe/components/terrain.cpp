@@ -58,13 +58,13 @@ namespace flame
 		material_name = name;
 	}
 
-	void cTerrainPrivate::draw(graphics::Canvas* canvas)
+	void cTerrainPrivate::draw(sRendererPrivate* renderer)
 	{
 		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
 		{
-			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
-			if (entity->state & StateSelected)
-				flags = flags | graphics::ShadeOutline;
+			//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+			//if (entity->state & StateSelected)
+			//	flags = flags | graphics::ShadeOutline;
 			//canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
 			//	flags, entity);
 		}
@@ -75,9 +75,9 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		drawer = node->add_drawer([](Capture& c, sRendererPrivate* renderer) {
 			auto thiz = c.thiz<cTerrainPrivate>();
-			thiz->draw(canvas);
+			thiz->draw(renderer);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
@@ -92,78 +92,44 @@ namespace flame
 	{
 		renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
-		canvas = renderer->canvas;
-		fassert(canvas);
 
 		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
 
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(height_map_name);
-			if (!fn.extension().empty())
-			{
-				isfile = true;
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			height_map_id = canvas->find_texture_resource(fn.string().c_str());
-			if (height_map_id == -1 && isfile)
-			{
-				height_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
-				height_map_id = canvas->set_texture_resource(-1, height_texture->get_view(0), nullptr, fn.string().c_str());
-			}
-			else
-				height_texture = canvas->get_element_resource(height_map_id).iv->get_image();
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			height_texture = graphics::Image::get(device, fn.c_str(), false);
+			auto view = height_texture->get_view();
+			height_map_id = renderer->find_texture_res(view);
+			if (height_map_id == -1)
+				height_map_id = renderer->set_texture_res(-1, view);
 		}
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(normal_map_name);
-			if (!fn.extension().empty())
-			{
-				isfile = true;
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			normal_map_id = canvas->find_texture_resource(fn.string().c_str());
-			if (normal_map_id == -1 && isfile)
-			{
-				normal_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false);
-				normal_map_id = canvas->set_texture_resource(-1, normal_texture->get_view(0), nullptr, fn.string().c_str());
-			}
-			else
-				normal_texture = canvas->get_element_resource(normal_map_id).iv->get_image();
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			normal_texture = graphics::Image::get(device, fn.c_str(), false);
+			auto view = normal_texture->get_view();
+			normal_map_id = renderer->find_texture_res(view);
+			if (normal_map_id == -1)
+				normal_map_id = renderer->set_texture_res(-1, view);
 		}
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(material_name);
-			if (!fn.extension().empty())
-			{
-				isfile = true;
-				if (!fn.is_absolute())
-				{
-					auto& srcs = entity->srcs;
-					fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-				}
-			}
-			material_id = canvas->find_material_resource(fn.string().c_str());
-			if (material_id == -1 && isfile)
-			{
-				auto m = graphics::Material::create(fn.c_str());
-				material_id = canvas->set_material_resource(-1, m, fn.string().c_str());
-			}
+			if (!fn.extension().empty() && !fn.is_absolute())
+				fn = ppath / fn;
+			material = graphics::Material::get(fn.c_str());
+			material_id = renderer->find_material_res(material);
+			if (material_id == -1)
+				material_id = renderer->set_material_res(-1, material);
 		}
 	}
 
 	void cTerrainPrivate::on_left_world()
 	{
-		canvas = nullptr;
+		renderer = nullptr;
 	}
 
 	cTerrain* cTerrain::create(void* parms)

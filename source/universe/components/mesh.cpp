@@ -55,7 +55,7 @@ namespace flame
 			{
 				auto fn = std::filesystem::path(sp[0]);
 				if (fn.extension().empty())
-					model = graphics::Model::get_standard(sp[0].c_str());
+					model = graphics::model::Model::get_standard(sp[0].c_str());
 				else
 				{
 					if (!fn.is_absolute())
@@ -64,7 +64,7 @@ namespace flame
 						fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
 					}
 					fn.make_preferred();
-					model = graphics::Model::get(fn.c_str());
+					model = graphics::model::Model::get(fn.c_str());
 					fassert(model);
 				}
 
@@ -89,50 +89,52 @@ namespace flame
 				auto bones_count = mesh->get_bones_count();
 				if (bones_count == 0)
 					return;
-				deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
-				bones.resize(bones_count);
-				auto armature = entity->parent;
-				if (!armature)
-					return;
-				for (auto i = 0; i < bones_count; i++)
-				{
-					auto& b = bones[i];
-					auto name = std::string(mesh->get_bone(i)->get_name());
-					auto e = armature->find_child(name);
-					if (e)
-					{
-						auto n = e->get_component_t<cNodePrivate>();
-						if (n)
-						{
-							b.name = name;
-							b.node = n;
-							b.changed_listener = e->add_component_data_listener([](Capture& c, uint h) {
-								auto thiz = c.thiz<cMeshPrivate>();
-								auto id = c.data<int>();
-								auto& b = thiz->bones[id];
-								if (h == S<"transform"_h>)
-								{
-									b.node->update_transform();
-									thiz->deformer->set_pose(id, b.node->transform);
-								}
-							}, Capture().set_thiz(this).set_data(&i), b.node);
-						}
-					}
-				}
+				// TODO: fix below
+				//deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
+				//bones.resize(bones_count);
+				//auto armature = entity->parent;
+				//if (!armature)
+				//	return;
+				//for (auto i = 0; i < bones_count; i++)
+				//{
+				//	auto& b = bones[i];
+				//	auto name = std::string(mesh->get_bone(i)->get_name());
+				//	auto e = armature->find_child(name);
+				//	if (e)
+				//	{
+				//		auto n = e->get_component_t<cNodePrivate>();
+				//		if (n)
+				//		{
+				//			b.name = name;
+				//			b.node = n;
+				//			b.changed_listener = e->add_component_data_listener([](Capture& c, uint h) {
+				//				auto thiz = c.thiz<cMeshPrivate>();
+				//				auto id = c.data<int>();
+				//				auto& b = thiz->bones[id];
+				//				if (h == S<"transform"_h>)
+				//				{
+				//					b.node->update_transform();
+				//					thiz->deformer->set_pose(id, b.node->transform);
+				//				}
+				//			}, Capture().set_thiz(this).set_data(&i), b.node);
+				//		}
+				//	}
+				//}
 			}
 		}
 	}
 
 	void cMeshPrivate::destroy_deformer()
 	{
-		if (deformer)
-		{
-			deformer->release();
-			deformer = nullptr;
-			//for (auto& b : bones)
-			//	b.node->entity->remove_local_data_changed_listener(b.changed_listener);
-			bones.clear();
-		}
+		// TODO: fix below
+		//if (deformer)
+		//{
+		//	deformer->release();
+		//	deformer = nullptr;
+		//	//for (auto& b : bones)
+		//	//	b.node->entity->remove_local_data_changed_listener(b.changed_listener);
+		//	bones.clear();
+		//}
 	}
 
 	void cMeshPrivate::set_animation(const std::string& name, bool loop, uint layer)
@@ -151,76 +153,77 @@ namespace flame
 	{
 		stop_animation(layer);
 		auto& al = animation_layers[layer];
-		if (model && deformer && !al.name.empty())
-		{
-			auto animation_id = model->find_animation(al.name.c_str());
-			if (animation_id != -1)
-			{
-				auto animation = model->get_animation(animation_id);
-				auto chs = animation->get_channels_count();
-				for (auto i = 0; i < chs; i++)
-				{
-					auto ch = animation->get_channel(i);
-					auto find_bone = [&](const std::string& name) {
-						for (auto i = 0; i < bones.size(); i++)
-						{
-							if (bones[i].name == name)
-								return i;
-						}
-						return -1;
-					};
-					auto bid = find_bone(ch->get_node_name());
-					if (bid != -1)
-					{
-						auto pkc = ch->get_position_keys_count();
-						auto rkc = ch->get_rotation_keys_count();
-						al.max_frame = max(pkc, rkc);
+		// TODO: fix below
+		//if (model && deformer && !al.name.empty())
+		//{
+		//	auto animation_id = model->find_animation(al.name.c_str());
+		//	if (animation_id != -1)
+		//	{
+		//		auto animation = model->get_animation(animation_id);
+		//		auto chs = animation->get_channels_count();
+		//		for (auto i = 0; i < chs; i++)
+		//		{
+		//			auto ch = animation->get_channel(i);
+		//			auto find_bone = [&](const std::string& name) {
+		//				for (auto i = 0; i < bones.size(); i++)
+		//				{
+		//					if (bones[i].name == name)
+		//						return i;
+		//				}
+		//				return -1;
+		//			};
+		//			auto bid = find_bone(ch->get_node_name());
+		//			if (bid != -1)
+		//			{
+		//				auto pkc = ch->get_position_keys_count();
+		//				auto rkc = ch->get_rotation_keys_count();
+		//				al.max_frame = max(pkc, rkc);
 
-						auto& t = al.add_track();
-						t.first = bid;
-						t.second.resize(al.max_frame);
+		//				auto& t = al.add_track();
+		//				t.first = bid;
+		//				t.second.resize(al.max_frame);
 
-						auto pk = ch->get_position_keys();
-						auto rk = ch->get_rotation_keys();
-						for (auto j = 0; j < al.max_frame; j++)
-						{
-							auto& f = t.second[j];
-							f.p = j < pkc ? pk[j].v : vec3(0.f);
-							f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
-						}
-					}
-				}
-				al.frame = 0;
-				al.event = looper().add_event([](Capture& c) {
-					auto thiz = c.thiz<cMeshPrivate>();
-					auto& al = thiz->animation_layers[c.data<uint>()];
-					for (auto i = 0; i < al.poses.size(); i++)
-					{
-						auto& t = al.poses[i];
-						auto& b = thiz->bones[t.first];
-						auto& k = t.second[al.frame];
-						b.node->set_pos(k.p);
-						b.node->set_quat(k.q);
-					}
-					al.frame++;
-					c._current = nullptr;
-					if (al.frame == al.max_frame)
-					{
-						if (al.loop)
-							al.frame = 0;
-						else
-						{
-							al.name = "";
-							al.event = nullptr;
-							al.stop();
-							c._current = INVALID_POINTER;
-						}
-					}
-				}, Capture().set_thiz(this).set_data(&layer), 1.f / 24.f);
-			}
-			else
-				al.name.clear();
-		}
+		//				auto pk = ch->get_position_keys();
+		//				auto rk = ch->get_rotation_keys();
+		//				for (auto j = 0; j < al.max_frame; j++)
+		//				{
+		//					auto& f = t.second[j];
+		//					f.p = j < pkc ? pk[j].v : vec3(0.f);
+		//					f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
+		//				}
+		//			}
+		//		}
+		//		al.frame = 0;
+		//		al.event = looper().add_event([](Capture& c) {
+		//			auto thiz = c.thiz<cMeshPrivate>();
+		//			auto& al = thiz->animation_layers[c.data<uint>()];
+		//			for (auto i = 0; i < al.poses.size(); i++)
+		//			{
+		//				auto& t = al.poses[i];
+		//				auto& b = thiz->bones[t.first];
+		//				auto& k = t.second[al.frame];
+		//				b.node->set_pos(k.p);
+		//				b.node->set_quat(k.q);
+		//			}
+		//			al.frame++;
+		//			c._current = nullptr;
+		//			if (al.frame == al.max_frame)
+		//			{
+		//				if (al.loop)
+		//					al.frame = 0;
+		//				else
+		//				{
+		//					al.name = "";
+		//					al.event = nullptr;
+		//					al.stop();
+		//					c._current = INVALID_POINTER;
+		//				}
+		//			}
+		//		}, Capture().set_thiz(this).set_data(&layer), 1.f / 24.f);
+		//	}
+		//	else
+		//		al.name.clear();
+		//}
 	}
 
 	void cMeshPrivate::stop_animation(uint layer)
@@ -228,22 +231,15 @@ namespace flame
 		animation_layers[layer].stop();
 	}
 
-	void cMeshPrivate::draw(graphics::Canvas* canvas)
-	{
-		if (model && mesh_id != -1)
-		{
-			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
-			if (entity->state & StateSelected)
-				flags = flags | graphics::ShadeOutline;
-			//canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
-			//	flags, entity);
-		}
-	}
-
-	void cMeshPrivate::draw2(sRenderer* renderer)
+	void cMeshPrivate::draw(sRenderer* renderer)
 	{
 		if (mesh_id != -1)
 			renderer->draw_mesh(node, mesh_id);
+		//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+		//if (entity->state & StateSelected)
+		//	flags = flags | graphics::ShadeOutline;
+		//canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
+		//	flags, entity);
 	}
 
 	void cMeshPrivate::on_added()
@@ -251,20 +247,16 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		//drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
-		//	auto thiz = c.thiz<cMeshPrivate>();
-		//	thiz->draw(canvas);
-		//}, Capture().set_thiz(this));
-		drawer = node->add_drawer2([](Capture& c, sRenderer* renderer) {
+		drawer = node->add_drawer([](Capture& c, sRenderer* renderer) {
 			auto thiz = c.thiz<cMeshPrivate>();
-			thiz->draw2(renderer);
+			thiz->draw(renderer);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
 
 	void cMeshPrivate::on_removed()
 	{
-		node->remove_drawer2(drawer);
+		node->remove_drawer(drawer);
 		node = nullptr;
 	}
 
@@ -280,7 +272,7 @@ namespace flame
 
 	void cMeshPrivate::on_left_world()
 	{
-		canvas = nullptr;
+		renderer = nullptr;
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;

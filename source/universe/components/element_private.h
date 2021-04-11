@@ -61,8 +61,7 @@ namespace flame
 		Rect parent_scissor;
 		bool culled = false;
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers[2];
-		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRenderer*)>>> drawers2;
+		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRenderer*)>>> drawers;
 		std::vector<std::unique_ptr<Closure<void(Capture&, vec2*)>>> measurers;
 		bool pending_sizing = false;
 		bool pending_layout = false;
@@ -169,10 +168,8 @@ namespace flame
 
 		vec2 get_point(uint idx) const override { return points[idx]; };
 
-		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) override;
-		void remove_drawer(void* drawer, bool ontop = true) override;
-		void* add_drawer2(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) override;
-		void remove_drawer2(void* drawer) override;
+		void* add_drawer(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) override;
+		void remove_drawer(void* drawer) override;
 		void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) override;
 		void remove_measurer(void* measurer) override;
 
@@ -198,7 +195,6 @@ namespace flame
 
 		bool on_save_attribute(uint h) override;
 
-		void draw(graphics::Canvas* canvas);
-		void draw2(uint layer, sRenderer* renderer);
+		void draw(uint layer, sRenderer* renderer);
 	};
 }

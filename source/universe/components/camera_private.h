@@ -5,14 +5,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
-	struct cNodePrivate;
-	struct sRendererPrivate;
-
 	struct cCameraPrivate : cCamera
 	{
 		float fovy = 45.f;
@@ -30,7 +22,7 @@ namespace flame
 		bool get_current() const override { return current; }
 		void set_current(bool v) override;
 
-		void draw(graphics::Canvas* canvas);
+		void draw(sRenderer* renderer);
 
 		void on_added() override;
 		void on_removed() override;

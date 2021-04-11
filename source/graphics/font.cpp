@@ -81,8 +81,8 @@ namespace flame
 
 							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
-							cpy.image_offset = atlas_pos;
-							cpy.image_extent = g.size;
+							cpy.img_off = atlas_pos;
+							cpy.img_ext = g.size;
 							cb->copy_buffer_to_image((BufferPrivate*)stag.get(), image.get(), 1, &cpy);
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 

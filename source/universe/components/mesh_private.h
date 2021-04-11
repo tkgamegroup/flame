@@ -4,14 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Model;
-		struct Mesh;
-		struct ArmatureDeformer;
-		struct Canvas;
-	}
-
 	struct cNodePrivate;
 	struct sRendererPrivate;
 
@@ -62,12 +54,11 @@ namespace flame
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
 		sRendererPrivate* renderer = nullptr;
-		graphics::Canvas* canvas = nullptr;
 
 		int mesh_id = -1;
-		graphics::Model* model = nullptr;
-		graphics::Mesh* mesh = nullptr;
-		graphics::ArmatureDeformer* deformer = nullptr;
+		graphics::model::Model* model = nullptr;
+		graphics::model::Mesh* mesh = nullptr;
+		//graphics::ArmatureDeformer* deformer = nullptr;
 		std::vector<Bone> bones;
 		AnimationLayer animation_layers[2];
 
@@ -87,8 +78,7 @@ namespace flame
 		void apply_animation(uint layer);
 		void stop_animation(uint layer);
 
-		void draw(graphics::Canvas* canvas);
-		void draw2(sRenderer* renderer);
+		void draw(sRenderer* renderer);
 
 		void on_added() override;
 		void on_removed() override;

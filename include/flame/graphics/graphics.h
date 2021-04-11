@@ -194,7 +194,7 @@ namespace flame
 			ImageViewMax = 0xffffffff
 		};
 
-		struct ImageSubresource
+		struct ImageSub
 		{
 			uint base_level = 0;
 			uint level_count = 1;

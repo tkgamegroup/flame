@@ -77,12 +77,7 @@ namespace flame
 			entity->component_data_changed(this, S<"text"_h>);
 	}
 
-	void cTextPrivate::draw(graphics::Canvas* canvas)
-	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
-	}
-
-	uint cTextPrivate::draw2(uint layer, sRenderer* renderer)
+	uint cTextPrivate::draw(uint layer, sRenderer* renderer)
 	{
 		layer++;
 		renderer->draw_text(layer, element, element->padding.xy(), font_size, res_id, text.c_str(), text.c_str() + text.size(), font_color);
@@ -104,14 +99,10 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		drawer = element->add_drawer2([](Capture& c, uint layer, sRenderer* renderer) {
+		drawer = element->add_drawer([](Capture& c, uint layer, sRenderer* renderer) {
 			auto thiz = c.thiz<cTextPrivate>();
-			return thiz->draw2(layer, renderer);
+			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));
-		//drawer = element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
-		//	auto thiz = c.thiz<cTextPrivate>();
-		//	thiz->draw(canvas);
-		//}, Capture().set_thiz(this));
 		measurer = element->add_measurer([](Capture& c, vec2* ret) {
 			auto thiz = c.thiz<cTextPrivate>();
 			thiz->measure(ret);

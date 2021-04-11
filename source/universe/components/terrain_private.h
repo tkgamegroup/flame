@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Canvas;
+		struct Image;
 	}
 
 	struct cNodePrivate;
@@ -28,16 +28,17 @@ namespace flame
 		std::string height_map_name;
 		std::string normal_map_name;
 		std::string material_name;
-		int height_map_id = -1;
-		int normal_map_id = -1;
-		int material_id = -1;
-		graphics::Image* height_texture = nullptr;
-		graphics::Image* normal_texture = nullptr;
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
 		sRendererPrivate* renderer = nullptr;
-		graphics::Canvas* canvas = nullptr;
+
+		graphics::Image* height_texture = nullptr;
+		graphics::Image* normal_texture = nullptr;
+		graphics::Material* material = nullptr;
+		int height_map_id = -1;
+		int normal_map_id = -1;
+		int material_id = -1;
 
 		uvec2 get_blocks() const override { return blocks; }
 		void set_blocks(const uvec2& b) override;
@@ -56,7 +57,7 @@ namespace flame
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture; }
 
-		void draw(graphics::Canvas* canvas);
+		void draw(sRendererPrivate* renderer);
 
 		void on_added() override;
 		void on_removed() override;

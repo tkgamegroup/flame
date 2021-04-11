@@ -29,13 +29,17 @@ namespace flame
 			std::unique_ptr<BufferPrivate> sample_res;
 			std::unique_ptr<DescriptorSetPrivate> sample_descriptorset;
 
-			void init(const uvec2& size);
+			void build_sizes(const uvec2& size);
 			void build_default_views();
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native);
 			~ImagePrivate();
 
-			void release() override { delete this; }
+			void release() override 
+			{ 
+				// TODO: dec references
+				delete this; // TODO: delete only when no references
+			}
 
 			Format get_format() const override { return format; }
 			uvec2 get_size(uint lv) const override { return sizes[lv]; }
@@ -52,11 +56,13 @@ namespace flame
 
 			void get_samples(uint count, const vec2* uvs, vec4* dst) override;
 
+			void generate_mipmaps() override;
+
 			void save(const std::filesystem::path& filename);
 			void save(const wchar_t* filename) override { save(std::filesystem::path(filename)); }
 
 			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
-			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false, bool generate_mipmaps = false);
+			static ImagePrivate* get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb);
 		};
 
 		struct ImageViewPrivate : ImageView
@@ -65,18 +71,18 @@ namespace flame
 			ImagePtr image;
 
 			ImageViewType type;
-			ImageSubresource subresource;
+			ImageSub sub;
 			ImageSwizzle swizzle;
 
 			VkImageView vk_image_view;
 
-			ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
+			ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSub& sub = {}, const ImageSwizzle& swizzle = {});
 			~ImageViewPrivate();
 
 			void release() override { delete this; }
 
 			ImageViewType get_type() const override { return type; }
-			ImageSubresource get_subresource() const override { return subresource; }
+			ImageSub get_sub() const override { return sub; }
 			ImageSwizzle get_swizzle() const override { return swizzle; }
 
 			ImagePtr get_image() const override { return image; }

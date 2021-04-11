@@ -2,14 +2,72 @@
 
 #ifdef FLAME_UNIVERSE_MODULE
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllexport)
+template<class T, class U>
+struct FlameUniverseTypeSelector
+{
+	typedef U result;
+};
 #else
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
+template<class T, class U>
+struct FlameUniverseTypeSelector
+{
+	typedef T result;
+};
 #endif
 
+#define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
+	typedef FlameUniverseTypeSelector<name*, name##Private*>::result name##Ptr;
+
 #include <flame/foundation/foundation.h>
+#include <flame/network/network.h>
+#include <flame/database/database.h>
+#include <flame/graphics/graphics.h>
+#include <flame/sound/sound.h>
+#include <flame/physics/physics.h>
+#include <flame/script/script.h>
 
 namespace flame
 {
+	FLAME_UNIVERSE_TYPE(Entity);
+	FLAME_UNIVERSE_TYPE(Component);
+	FLAME_UNIVERSE_TYPE(Driver);
+	FLAME_UNIVERSE_TYPE(System);
+	FLAME_UNIVERSE_TYPE(World);
+
+	FLAME_UNIVERSE_TYPE(cElement);
+	FLAME_UNIVERSE_TYPE(cText);
+	FLAME_UNIVERSE_TYPE(cImage);
+	FLAME_UNIVERSE_TYPE(cReceiver);
+	FLAME_UNIVERSE_TYPE(cNode);
+	FLAME_UNIVERSE_TYPE(cMesh);
+	FLAME_UNIVERSE_TYPE(cTerrain);
+	FLAME_UNIVERSE_TYPE(cRigid);
+	FLAME_UNIVERSE_TYPE(cShape);
+	FLAME_UNIVERSE_TYPE(cController);
+	FLAME_UNIVERSE_TYPE(cLight);
+	FLAME_UNIVERSE_TYPE(cCamera);
+	FLAME_UNIVERSE_TYPE(cSky);
+	FLAME_UNIVERSE_TYPE(cScript);
+
+	FLAME_UNIVERSE_TYPE(dEdit);
+	FLAME_UNIVERSE_TYPE(dCheckbox);
+	FLAME_UNIVERSE_TYPE(dSlider);
+	FLAME_UNIVERSE_TYPE(dMenu);
+	FLAME_UNIVERSE_TYPE(dCombobox);
+	FLAME_UNIVERSE_TYPE(dList);
+	FLAME_UNIVERSE_TYPE(dTree);
+	FLAME_UNIVERSE_TYPE(dScroller);
+	FLAME_UNIVERSE_TYPE(dSplitter);
+	FLAME_UNIVERSE_TYPE(dWindow);
+	FLAME_UNIVERSE_TYPE(dInputDialog);
+	FLAME_UNIVERSE_TYPE(dGrid);
+
+	FLAME_UNIVERSE_TYPE(sRenderer);
+	FLAME_UNIVERSE_TYPE(sLayout);
+	FLAME_UNIVERSE_TYPE(sDispatcher);
+	FLAME_UNIVERSE_TYPE(sPhysics);
+
 	enum StateFlags
 	{
 		StateNone = 0,

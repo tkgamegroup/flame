@@ -16,6 +16,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		static std::vector<std::unique_ptr<MaterialPrivate>> loaded_materials;
+
 		void load_material(pugi::xml_node n, MaterialPrivate* m)
 		{
 			m->name = n.attribute("name").value();
@@ -38,8 +40,14 @@ namespace flame
 			}
 		}
 
-		MaterialPrivate* MaterialPrivate::create(const std::filesystem::path& filename)
+		MaterialPrivate* MaterialPrivate::get(const std::filesystem::path& filename)
 		{
+			for (auto& m : loaded_materials)
+			{
+				if (m->filename == filename)
+					return m.get();
+			}
+
 			pugi::xml_document doc;
 			pugi::xml_node doc_root;
 			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("material"))
@@ -49,14 +57,16 @@ namespace flame
 			}
 
 			auto ret = new MaterialPrivate;
+			ret->filename = filename;
 			ret->dir = filename.parent_path();
 			load_material(doc_root, ret);
+			loaded_materials.emplace_back(ret);
 			return ret;
 		}
 
-		Material* Material::create(const wchar_t* filename)
+		Material* Material::get(const wchar_t* filename)
 		{
-			return MaterialPrivate::create(filename);
+			return MaterialPrivate::get(filename);
 		}
 
 		static MaterialPrivate* default_material = new MaterialPrivate;

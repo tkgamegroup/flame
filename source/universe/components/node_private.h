@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-	
 	struct sRendererPrivate;
 
 	struct cNodePrivate : cNode
@@ -32,8 +27,7 @@ namespace flame
 		vec3 g_scl = vec3(1.f);
 		mat4 transform = mat4(1.f);
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers;
-		std::vector<std::unique_ptr<Closure<void(Capture&, sRenderer*)>>> drawers2;
+		std::vector<std::unique_ptr<Closure<void(Capture&, sRenderer*)>>> drawers;
 
 		sRendererPrivate* renderer = nullptr;
 
@@ -69,10 +63,7 @@ namespace flame
 
 		bool on_save_attribute(uint h) override;
 
-		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture);
-		void remove_drawer(void* drawer);
-
-		void* add_drawer2(void (*drawer)(Capture&, sRenderer*), const Capture& capture) override;
-		void remove_drawer2(void* drawer) override;
+		void* add_drawer(void (*drawer)(Capture&, sRenderer*), const Capture& capture) override;
+		void remove_drawer(void* drawer) override;
 	};
 }

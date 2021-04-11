@@ -17,6 +17,8 @@ namespace flame
 				AddressMode address_mode = AddressClampToEdge;
 			};
 
+			std::filesystem::path filename;
+
 			std::string name;
 
 			vec4 color = vec4(1.f);
@@ -36,7 +38,7 @@ namespace flame
 			float get_metallic() const override { return metallic; }
 			float get_roughness() const override { return roughness; }
 
-			static MaterialPrivate* create(const std::filesystem::path& filename);
+			static MaterialPrivate* get(const std::filesystem::path& filename);
 		};
 
 		namespace animation

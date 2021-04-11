@@ -20,6 +20,7 @@ struct FlamePhysicsTypeSelector
 	typedef FlamePhysicsTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include <flame/foundation/foundation.h>
+#include <flame/graphics/graphics.h>
 
 namespace flame
 {

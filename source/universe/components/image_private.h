@@ -8,7 +8,6 @@ namespace flame
 	{
 		struct ImageView;
 		struct ImageAtlas;
-		struct Canvas;
 	}
 
 	struct cElementPrivate;
@@ -22,14 +21,15 @@ namespace flame
 	{
 		std::string src;
 
-		cElementPrivate* element = nullptr;
-		void* drawer = nullptr;
-		void* measurable = nullptr;
-		graphics::Canvas* canvas = nullptr;
-
 		vec2 uv0 = vec2(0.f);
 		vec2 uv1 = vec2(1.f);
 		cvec3 color = cvec3(255);
+
+		cElementPrivate* element = nullptr;
+		void* drawer = nullptr;
+		void* measurable = nullptr;
+
+		sRenderer* renderer = nullptr;
 
 		int res_id = -1;
 		int tile_id = -1;
@@ -47,7 +47,7 @@ namespace flame
 		vec4 get_uv() const override { return vec4(uv0, uv1); }
 		void set_uv(const vec4& uv) override;
 
-		void refres_res() override;
+		void refresh_res() override;
 
 		void on_added() override;
 		void on_removed() override;
@@ -56,7 +56,7 @@ namespace flame
 
 		void measure(vec2* ret);
 
-		void draw(graphics::Canvas* canvas);
+		uint draw(uint layer, sRenderer* renderer);
 	};
 
 	inline void cImageBridge::set_src(const char* src)

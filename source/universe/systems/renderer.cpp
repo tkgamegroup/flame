@@ -203,7 +203,7 @@ namespace flame
 		if (culled)
 			return layer;
 
-		element->draw2(layer, this);
+		element->draw(layer, this);
 
 		auto clipping = false;
 		Rect last_scissor;
@@ -220,7 +220,7 @@ namespace flame
 		}
 
 		auto _layer = layer;
-		for (auto& d : element->drawers2)
+		for (auto& d : element->drawers)
 			_layer = max(_layer, d->call(layer, this));
 
 		_layer++;
@@ -337,120 +337,6 @@ namespace flame
 		for (auto i = 0; i < element_reses.size(); i++)
 		{
 			if (element_reses[i].v == v)
-				return i;
-		}
-		return -1;
-	}
-
-	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
-	{
-		if (idx == -1)
-		{
-			for (auto i = 0; i < mat_reses.size(); i++)
-			{
-				if (!mat_reses[i].mat)
-				{
-					idx = i;
-					break;
-				}
-			}
-		}
-		if (idx == -1)
-			return -1;
-
-		auto& dst = mat_reses[idx];
-		dst.mat = mat;
-		if (mat)
-		{
-
-		}
-
-		return idx;
-	}
-
-	int sRendererPrivate::find_material_res(graphics::Material* mat) const
-	{
-		for (auto i = 0; i < mat_reses.size(); i++)
-		{
-			if (mat_reses[i].mat == mat)
-				return i;
-		}
-		return -1;
-	}
-
-	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
-	{
-		if (idx == -1)
-		{
-			for (auto i = 0; i < mesh_reses.size(); i++)
-			{
-				if (!mesh_reses[i].mesh)
-				{
-					idx = i;
-					break;
-				}
-			}
-		}
-		if (idx == -1)
-			return -1;
-
-		auto& dst = mesh_reses[idx];
-		dst.mesh = mesh;
-		if (mesh)
-		{
-			graphics::InstanceCB cb(device);
-
-			dst.vtx_cnt = mesh->get_vertices_count();
-			dst.idx_cnt = mesh->get_indices_count();
-			auto apos = mesh->get_positions();
-			auto auv = mesh->get_uvs();
-			auto anormal = mesh->get_normals();
-			auto aidx = mesh->get_indices();
-
-			auto bone_cnt = mesh->get_bones_count();
-			if (bone_cnt == 0)
-			{
-				dst.vtx_off = buf_mesh_vtx.n1;
-				auto pvtx = buf_mesh_vtx.alloc(dst.vtx_cnt);
-				for (auto i = 0; i < dst.vtx_cnt; i++)
-				{
-					auto& vtx = pvtx[i];
-					vtx.pos = apos[i];
-					vtx.uv = auv ? auv[i] : vec2(0.f);
-					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
-				}
-
-				dst.idx_off = buf_mesh_idx.n1;
-				auto pidx = buf_mesh_idx.alloc(dst.idx_cnt);
-				for (auto i = 0; i < dst.idx_cnt; i++)
-					pidx[i] = dst.idx_off + aidx[i];
-
-				buf_mesh_vtx.upload(cb.get());
-				buf_mesh_idx.upload(cb.get());
-			}
-			else
-			{
-				auto n = buf_arm_mesh_idx.n1;
-				auto pidx = buf_arm_mesh_idx.alloc(dst.idx_cnt);
-				for (auto i = 0; i < dst.idx_cnt; i++)
-					pidx[i] = n + aidx[i];
-			}
-
-			auto mat = mesh->get_material();
-			auto mid = find_material_res(mat);
-			if (mid == -1)
-				mid = set_material_res(-1, mat);
-			dst.mat_id = mid;
-		}
-
-		return idx;
-	}
-
-	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
-	{
-		for (auto i = 0; i < mesh_reses.size(); i++)
-		{
-			if (mesh_reses[i].mesh == mesh)
 				return i;
 		}
 		return -1;
@@ -795,6 +681,130 @@ namespace flame
 				cb->set_scissor(c.d.b);
 		}
 		cb->end_renderpass();
+	}
+
+	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex)
+	{
+
+	}
+
+	int sRendererPrivate::find_texture_res(graphics::ImageView* tex) const
+	{
+
+	}
+
+	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
+	{
+		if (idx == -1)
+		{
+			for (auto i = 0; i < mat_reses.size(); i++)
+			{
+				if (!mat_reses[i].mat)
+				{
+					idx = i;
+					break;
+				}
+			}
+		}
+		if (idx == -1)
+			return -1;
+
+		auto& dst = mat_reses[idx];
+		dst.mat = mat;
+		if (mat)
+		{
+
+		}
+
+		return idx;
+	}
+
+	int sRendererPrivate::find_material_res(graphics::Material* mat) const
+	{
+		for (auto i = 0; i < mat_reses.size(); i++)
+		{
+			if (mat_reses[i].mat == mat)
+				return i;
+		}
+		return -1;
+	}
+
+	int sRendererPrivate::set_mesh_res(int idx, graphics::model::Mesh* mesh)
+	{
+		if (idx == -1)
+		{
+			for (auto i = 0; i < mesh_reses.size(); i++)
+			{
+				if (!mesh_reses[i].mesh)
+				{
+					idx = i;
+					break;
+				}
+			}
+		}
+		if (idx == -1)
+			return -1;
+
+		auto& dst = mesh_reses[idx];
+		dst.mesh = mesh;
+		if (mesh)
+		{
+			graphics::InstanceCB cb(device);
+
+			dst.vtx_cnt = mesh->get_vertices_count();
+			dst.idx_cnt = mesh->get_indices_count();
+			auto apos = mesh->get_positions();
+			auto auv = mesh->get_uvs();
+			auto anormal = mesh->get_normals();
+			auto aidx = mesh->get_indices();
+
+			auto bone_cnt = mesh->get_bones_count();
+			if (bone_cnt == 0)
+			{
+				dst.vtx_off = buf_mesh_vtx.n1;
+				auto pvtx = buf_mesh_vtx.alloc(dst.vtx_cnt);
+				for (auto i = 0; i < dst.vtx_cnt; i++)
+				{
+					auto& vtx = pvtx[i];
+					vtx.pos = apos[i];
+					vtx.uv = auv ? auv[i] : vec2(0.f);
+					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
+				}
+
+				dst.idx_off = buf_mesh_idx.n1;
+				auto pidx = buf_mesh_idx.alloc(dst.idx_cnt);
+				for (auto i = 0; i < dst.idx_cnt; i++)
+					pidx[i] = dst.idx_off + aidx[i];
+
+				buf_mesh_vtx.upload(cb.get());
+				buf_mesh_idx.upload(cb.get());
+			}
+			else
+			{
+				auto n = buf_arm_mesh_idx.n1;
+				auto pidx = buf_arm_mesh_idx.alloc(dst.idx_cnt);
+				for (auto i = 0; i < dst.idx_cnt; i++)
+					pidx[i] = n + aidx[i];
+			}
+
+			auto mat = mesh->get_material();
+			auto mid = find_material_res(mat);
+			if (mid == -1)
+				mid = set_material_res(-1, mat);
+			dst.mat_id = mid;
+		}
+
+		return idx;
+	}
+
+	int sRendererPrivate::find_mesh_res(graphics::model::Mesh* mesh) const
+	{
+		for (auto i = 0; i < mesh_reses.size(); i++)
+		{
+			if (mesh_reses[i].mesh == mesh)
+				return i;
+		}
+		return -1;
 	}
 
 	graphics::Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
