@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/camera.h>
+#include "camera.h"
 
 namespace flame
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/renderpass.h>
+#include "renderpass.h"
 #include "graphics_private.h"
 #include "image_private.h"
 

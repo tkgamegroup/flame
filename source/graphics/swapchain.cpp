@@ -1,7 +1,7 @@
 #include "device_private.h"
 #include "synchronize_private.h"
 #include "image_private.h"
-#include <flame/graphics/renderpass.h>
+#include "renderpass_private.h"
 #include "command_private.h"
 #include "swapchain_private.h"
 

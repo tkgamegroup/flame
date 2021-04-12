@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/database/database.h>
+#include "database.h"
 
 #ifdef USE_MYSQL
 #include <mysql.h>
@@ -10,8 +10,6 @@ namespace flame
 {
 	namespace database
 	{
-		struct ConnectionPrivate;
-
 		struct ResPrivate : Res
 		{
 #ifdef USE_MYSQL
@@ -26,7 +24,7 @@ namespace flame
 #ifdef USE_MYSQL
 			MYSQL* mysql_connect;
 #endif
-			Error query(const char* sql, uint* row_count, void (*callback)(Capture& c, Res* res), const Capture& capture) override;
+			Error query(const char* sql, uint* row_count, void (*callback)(Capture& c, ResPtr res), const Capture& capture) override;
 
 			static ConnectionPrivate* create(const char* db_name);
 		};

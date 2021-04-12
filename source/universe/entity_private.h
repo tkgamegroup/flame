@@ -1,21 +1,13 @@
 #pragma once
 
-#include <flame/universe/entity.h>
-#include <flame/universe/component.h>
-#include <flame/universe/driver.h>
+#include "entity.h"
+#include "component.h"
+#include "driver.h"
 
 #include <functional>
 
 namespace flame
 {
-	struct TypeInfo;
-	struct UdtInfo;
-	struct FunctionInfo;
-	struct VariableInfo;
-
-	struct Driver;
-	struct WorldPrivate;
-
 	struct StateRule
 	{
 		void* o;
@@ -27,18 +19,7 @@ namespace flame
 		~StateRule();
 	};
 
-	struct EntityBridge : Entity
-	{
-		Component* find_component(const char* name) const override;
-		void add_child(Entity* e, int position) override;
-		void remove_child(Entity* e, bool destroy) override;
-		Entity* find_child(const char* name) const override;
-		Driver* find_driver(const char* name) const override;
-		bool load(const wchar_t* filename) override;
-		bool save(const wchar_t* filename) override;
-	};
-
-	struct EntityPrivate : EntityBridge
+	struct EntityPrivate : Entity
 	{
 		typedef std::vector<std::unique_ptr<Closure<void(Capture&, uint)>>> DataListeners;
 
@@ -91,8 +72,8 @@ namespace flame
 		void update_visibility();
 		void set_visible(bool v) override;
 
-		World* get_world() const override { return (World*)world; }
-		Entity* get_parent() const override { return parent; }
+		WorldPtr get_world() const override { return world; }
+		EntityPtr get_parent() const override { return parent; }
 		uint get_index() const override { return index; }
 
 		StateFlags get_state() const override { return state; }
@@ -104,18 +85,20 @@ namespace flame
 
 		Component* get_component(uint hash) const override;
 		Component* find_component(const std::string& name) const;
+		Component* find_component(const char* name) const override { return find_component(std::string(name)); }
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const override;
 		void add_component(Component* c);
 		void remove_component(Component* c, bool destroy = true);
 
 		uint get_children_count() const override { return children.size(); }
-		Entity* get_child(uint idx) const override { fassert(idx < children.size()); return children[idx].get(); }
-		void add_child(EntityPrivate* e, int position = -1);
+		EntityPtr get_child(uint idx) const override { fassert(idx < children.size()); return children[idx].get(); }
+		void add_child(EntityPtr e, int position = -1) override;
 		void reposition_child(uint pos1, uint pos2) override;
 		void on_child_removed(EntityPrivate* e) const;
-		void remove_child(EntityPrivate* e, bool destroy = true);
+		void remove_child(EntityPtr e, bool destroy = true) override;
 		EntityPrivate* find_child(const std::string& name) const;
+		EntityPtr find_child(const char* name) const override { return find_child(std::string(name)); }
 
 		void on_entered_world(WorldPrivate* world);
 		void on_left_world();
@@ -124,6 +107,7 @@ namespace flame
 
 		Driver* get_driver(uint hash, int idx = -1) const override;
 		Driver* find_driver(const std::string& name) const;
+		Driver* find_driver(const char* name) const override { return find_driver(std::string(name)); }
 
 		void push_driver(Driver* d) override;
 		void pop_driver() override;
@@ -143,44 +127,11 @@ namespace flame
 		void remove_event(void* ev) override;
 
 		bool load(const std::filesystem::path& filename);
+		bool load(const wchar_t* filename) override { return load(std::filesystem::path(filename)); }
 		bool save(const std::filesystem::path& filename);
+		bool save(const wchar_t* filename) override { return save(std::filesystem::path(filename)); }
 
 		void* get_userdata() const override { return userdata; }
 		void set_userdata(void* d) override { userdata = d; }
 	};
-
-	inline Component* EntityBridge::find_component(const char* name) const
-	{
-		return ((EntityPrivate*)this)->find_component(name);
-	}
-
-	inline void EntityBridge::add_child(Entity* e, int position)
-	{
-		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
-	}
-
-	inline Entity* EntityBridge::find_child(const char* name) const
-	{
-		return ((EntityPrivate*)this)->find_child(name);
-	}
-
-	inline void EntityBridge::remove_child(Entity* e, bool destroy)
-	{
-		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
-	}
-
-	inline Driver* EntityBridge::find_driver(const char* name) const
-	{
-		return ((EntityPrivate*)this)->find_driver(name);
-	}
-
-	inline bool EntityBridge::load(const wchar_t* filename)
-	{
-		return ((EntityPrivate*)this)->load(filename);
-	}
-
-	inline bool EntityBridge::save(const wchar_t* filename)
-	{
-		return ((EntityPrivate*)this)->save(filename);
-	}
 }

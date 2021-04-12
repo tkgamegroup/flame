@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/physics/controller.h>
+#include "controller.h"
 #include "physics_private.h"
 
 namespace flame

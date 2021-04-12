@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/universe/components/script.h>
+#include "script.h"
 
 namespace flame
 {

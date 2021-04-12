@@ -1,4 +1,4 @@
-#include <flame/foundation/typeinfo.h>
+#include "../foundation/typeinfo.h"
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"

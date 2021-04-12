@@ -1,7 +1,6 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
-#include <flame/graphics/graphics.h>
+#include "graphics.h"
 
 #define NOMINMAX
 #include <vulkan/vulkan.h>

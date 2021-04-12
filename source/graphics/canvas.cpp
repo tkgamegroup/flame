@@ -1,42 +1,9 @@
-//#include <flame/serialize.h>
-//#include "device_private.h"
-//#include "buffer_private.h"
-//#include "image_private.h"
-//#include "font_private.h"
-//#include "model_private.h"
-//#include "renderpass_private.h"
-//#include "shader_private.h"
-//#include "command_private.h"
-//#include "swapchain_private.h"
-//#include "canvas_private.h"
-//
 //namespace flame
 //{
 //	namespace graphics
 //	{
-//		RenderPreferencesPrivate::RenderPreferencesPrivate(DevicePtr device, bool hdr) :
-//			device(device),
-//			hdr(hdr)
+//		RenderPreferencesPrivate::RenderPreferencesPrivate(DevicePtr device, bool hdr)
 //		{
-//			{
-//				RenderpassAttachmentInfo att;
-//				att.format = Format_R8G8B8A8_UNORM;
-//				att.load_op = AttachmentLoad;
-//				att.initia_layout = ImageLayoutShaderReadOnly;
-//				RenderpassSubpassInfo sp;
-//				sp.color_attachments_count = 1;
-//				sp.color_attachments = { 0 };
-//				rgba8_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
-//				att.format = Format_R16G16B16A16_SFLOAT;
-//				rgba16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
-//				att.format = Format_R16_SFLOAT;
-//				r16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
-//				att.load_op = AttachmentClear;
-//				att.format = Format_R8G8B8A8_UNORM;
-//				rgba8c_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
-//				att.format = Format_R16G16B16A16_SFLOAT;
-//				rgba16c_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
-//			}
 //			{
 //				RenderpassAttachmentInfo atts[2];
 //				atts[0].format = Format_R8G8B8A8_UNORM;
@@ -83,33 +50,6 @@
 //				sp.depth_attachment = 1;
 //				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 //			}
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"element/element.vert"),
-//			//		ShaderPrivate::get(device, L"element/element.frag")
-//			//	};
-//			//	VertexAttributeInfo vias[3];
-//			//	vias[0].location = 0;
-//			//	vias[0].format = Format_R32G32_SFLOAT;
-//			//	vias[1].location = 1;
-//			//	vias[1].format = Format_R32G32_SFLOAT;
-//			//	vias[2].location = 2;
-//			//	vias[2].format = Format_R8G8B8A8_UNORM;
-//			//	VertexBufferInfo vib;
-//			//	vib.attributes_count = _countof(vias);
-//			//	vib.attributes = vias;
-//			//	VertexInfo vi;
-//			//	vi.buffers_count = 1;
-//			//	vi.buffers = &vib;
-//			//	BlendOption bo;
-//			//	bo.enable = true;
-//			//	bo.src_color = BlendFactorSrcAlpha;
-//			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
-//			//	bo.src_alpha = BlendFactorOne;
-//			//	bo.dst_alpha = BlendFactorZero;
-//			//	element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0, &vi, nullptr, nullptr, { &bo, 1 }));
-//			//}
 //
 //			//{
 //			//	ShaderPrivate* shaders[] = {
@@ -1952,9 +1892,6 @@
 //
 //		void CanvasPrivate::prepare()
 //		{
-//			element_vertex_buffer.stag_num = 0;
-//			element_index_buffer.stag_num = 0;
-//
 //			meshes.clear();
 //			terrains.clear();
 //			directional_lights.clear();
@@ -1962,112 +1899,10 @@
 //
 //			line_buffer.stag_num = 0;
 //			triangle_buffer.stag_num = 0;
-//
-//			curr_viewport = curr_scissor = Rect(0.f, 0.f, output_size.x, output_size.y);
-//
-//			cmds.clear();
 //		}
 //
 //		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 //		{
-//			enum PassType
-//			{
-//				PassNone = -1,
-//				Pass2D,
-//				Pass3D,
-//				PassLines,
-//				PassTriangles,
-//				PassBlur,
-//				PassBloom
-//			};
-//			struct Pass
-//			{
-//				PassType type;
-//				std::vector<int> cmd_ids;
-//			};
-//			std::vector<Pass> passes;
-//
-//			for (auto i = 0; i < cmds.size(); i++)
-//			{
-//				switch (cmds[i]->type)
-//				{
-//				case Cmd::DrawElement:
-//				{
-//					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != PassNone))
-//						passes.emplace_back();
-//					passes.back().type = Pass2D;
-//					passes.back().cmd_ids.push_back(i);
-//
-//				}
-//					break;
-//				case Cmd::DrawMesh:
-//				{
-//					auto cmd = (CmdDrawMesh*)cmds[i].get();
-//					for (auto& e : cmd->entries)
-//					{
-//						auto& m = meshes[e];
-//						if (m.deformer)
-//							;//m.deformer->poses_buffer.upload(cb);
-//					}
-//				}
-//				case Cmd::DrawTerrain:
-//				{
-//					if (passes.empty() || (passes.back().type != Pass3D && passes.back().type != PassNone))
-//						passes.emplace_back();
-//					passes.back().type = Pass3D;
-//					passes.back().cmd_ids.push_back(i);
-//
-//				}
-//					break;
-//				case Cmd::DrawLines:
-//				{
-//					if (passes.empty() || (passes.back().type != PassLines && passes.back().type != PassNone))
-//						passes.emplace_back();
-//					passes.back().type = PassLines;
-//					passes.back().cmd_ids.push_back(i);
-//				}
-//					break;
-//				case Cmd::DrawTriangles:
-//				{
-//					if (passes.empty() || (passes.back().type != PassTriangles && passes.back().type != PassNone))
-//						passes.emplace_back();
-//					passes.back().type = PassTriangles;
-//					passes.back().cmd_ids.push_back(i);
-//				}
-//					break;
-//				case Cmd::SetScissor:
-//				{
-//					if (passes.empty() || passes.back().type == PassBlur || passes.back().type == PassBloom)
-//						passes.emplace_back();
-//					passes.back().cmd_ids.push_back(i);
-//				}
-//					break;
-//				case Cmd::SetViewport:
-//				{
-//					if (passes.empty() || passes.back().type != Pass3D)
-//						passes.emplace_back();
-//					passes.back().cmd_ids.push_back(i);
-//				}
-//					break;
-//				case Cmd::Blur:
-//				{
-//					Pass p;
-//					p.type = PassBlur;
-//					p.cmd_ids.push_back(i);
-//					passes.push_back(p);
-//				}
-//					break;
-//				case Cmd::Bloom:
-//				{
-//					Pass p;
-//					p.type = PassBloom;
-//					p.cmd_ids.push_back(i);
-//					passes.push_back(p);
-//				}
-//					break;
-//				}
-//			}
-//
 //			auto dst = hdr_image ? hdr_image.get() : output_imageviews[image_index]->image;
 //			auto dst_fb = hdr_framebuffer ? hdr_framebuffer.get() : output_framebuffers[image_index].get();
 //			auto dst_ds = hdr_descriptorset ? hdr_descriptorset.get() : output_descriptorsets[image_index].get();
@@ -2814,11 +2649,6 @@
 //				cb->end_renderpass();
 //			}
 //			cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutShaderReadOnly, ImageLayoutPresent);
-//		}
-//
-//		Canvas* Canvas::create(RenderPreferences* preferences)
-//		{
-//			return new CanvasPrivate((RenderPreferencesPrivate*)preferences);
 //		}
 //	}
 //}

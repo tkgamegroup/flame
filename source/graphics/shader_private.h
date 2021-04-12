@@ -1,9 +1,7 @@
 #pragma once
 
-#include <flame/serialize.h>
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/typeinfo.h>
-#include <flame/graphics/shader.h>
+#include "../foundation/typeinfo.h"
+#include "shader.h"
 #include "graphics_private.h"
 
 namespace flame

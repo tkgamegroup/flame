@@ -1,4 +1,3 @@
-#include <flame/script/script.h>
 #include "../world_private.h"
 #include "element_private.h"
 #include "receiver_private.h"

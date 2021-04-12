@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/splitter.h>
+#include "splitter.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-
 	struct dSplitterPrivate : dSplitter
 	{
 		cElementPrivate* element;
@@ -23,6 +20,6 @@ namespace flame
 		void set_type(SplitterType type) override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 }

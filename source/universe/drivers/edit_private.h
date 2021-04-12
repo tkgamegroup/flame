@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../components/element_private.h"
-#include <flame/universe/drivers/edit.h>
+#include "edit.h"
 
 namespace flame
 {
-	struct cTextPrivate;
-	struct cReceiverPrivate;
-
 	struct dEditPrivate : dEdit
 	{
 		uint select_start = 0;
@@ -35,7 +32,7 @@ namespace flame
 		
 		void on_load_finished() override;
 		
-		void draw(graphics::Canvas* canvas);
+		uint draw(uint layer, sRendererPtr renderer);
 
 		static dEditPrivate* create();
 	};

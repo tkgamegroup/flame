@@ -1,4 +1,3 @@
-#include <flame/serialize.h>
 #include "typeinfo_private.h"
 
 #include <Windows.h>
@@ -1062,11 +1061,11 @@ namespace flame
 	{
 	}
 
-	void FunctionInfoPrivate::add_parameter(TypeInfo* ti, int idx)
+	void FunctionInfoPrivate::add_parameter(TypeInfoPtr ti, int idx)
 	{
 		if (idx == -1)
 			idx = parameters.size();
-		parameters.emplace(parameters.begin() + idx, (TypeInfoPrivate*)ti);
+		parameters.emplace(parameters.begin() + idx, ti);
 	}
 
 	void FunctionInfoPrivate::remove_parameter(uint idx)
@@ -1076,7 +1075,7 @@ namespace flame
 		parameters.erase(parameters.begin() + idx);
 	}
 
-	bool FunctionInfoPrivate::check(TypeInfo* ret, uint parms_count, TypeInfo* const* parms) const
+	bool FunctionInfoPrivate::check(TypeInfoPtr ret, uint parms_count, TypeInfoPtr const* parms) const
 	{
 		if (type != ret)
 			return false;

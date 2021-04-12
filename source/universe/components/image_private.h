@@ -1,23 +1,10 @@
 #pragma once
 
-#include <flame/universe/components/image.h>
+#include "image.h"
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct ImageView;
-		struct ImageAtlas;
-	}
-
-	struct cElementPrivate;
-
-	struct cImageBridge : cImage
-	{
-		void set_src(const char* src) override;
-	};
-
-	struct cImagePrivate : cImageBridge
+	struct cImagePrivate : cImage
 	{
 		std::string src;
 
@@ -43,6 +30,7 @@ namespace flame
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
+		void set_src(const char* src) override { set_src(std::string(src)); }
 
 		vec4 get_uv() const override { return vec4(uv0, uv1); }
 		void set_uv(const vec4& uv) override;
@@ -58,9 +46,4 @@ namespace flame
 
 		uint draw(uint layer, sRenderer* renderer);
 	};
-
-	inline void cImageBridge::set_src(const char* src)
-	{
-		((cImagePrivate*)this)->set_src(src);
-	}
 }

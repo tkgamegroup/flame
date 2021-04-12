@@ -1,7 +1,6 @@
-#include <flame/physics/device.h>
-#include <flame/physics/scene.h>
-#include <flame/physics/rigid.h>
-#include <flame/script/script.h>
+#include "../../physics/device.h"
+#include "../../physics/scene.h"
+#include "../../physics/rigid.h"
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
@@ -42,7 +41,7 @@ namespace flame
 		}
 	}
 
-	void* cRigidPrivate::add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShape* trigger_shape, cShape* other_shape), const Capture& capture)
+	void* cRigidPrivate::add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShapePtr trigger_shape, cShapePtr other_shape), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		trigger_listeners.emplace_back(c);
@@ -54,12 +53,6 @@ namespace flame
 		std::erase_if(trigger_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
-	}
-
-	void cRigidPrivate::on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape)
-	{
-		for (auto& l : trigger_listeners)
-			l->call(type, trigger_shape, other_shape);
 	}
 
 	void cRigidPrivate::create()

@@ -1,13 +1,11 @@
-#include <flame/graphics/device.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/command.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/font.h>
-#include <flame/graphics/model.h>
-#include <flame/graphics/canvas.h>
+#include "../../graphics/device.h"
+#include "../../graphics/buffer.h"
+#include "../../graphics/image.h"
+#include "../../graphics/renderpass.h"
+#include "../../graphics/shader.h"
+#include "../../graphics/swapchain.h"
+#include "../../graphics/font.h"
+#include "../../graphics/model.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
@@ -261,7 +259,7 @@ namespace flame
 		if (node)
 		{
 			node->update_transform();
-			for (auto& d : node->drawers2)
+			for (auto& d : node->drawers)
 				d->call(this);
 		}
 
@@ -342,7 +340,7 @@ namespace flame
 		return -1;
 	}
 
-	void sRendererPrivate::fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color)
+	void sRendererPrivate::fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color)
 	{
 		auto& info = element_drawing_layers[layer].emplace_back();
 		info.type = ElementDrawCmd::Fill;
@@ -369,7 +367,7 @@ namespace flame
 		info.color = color;
 	}
 
-	void sRendererPrivate::stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
+	void sRendererPrivate::stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
 	{
 		auto& info = element_drawing_layers[layer].emplace_back();
 		info.type = ElementDrawCmd::Stroke;
@@ -398,7 +396,7 @@ namespace flame
 		info.misc[0] = thickness;
 	}
 
-	void sRendererPrivate::draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
+	void sRendererPrivate::draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
 	{
 		auto& res = element_reses[font_id];
 		if (!res.type == ElementResFont)
@@ -685,12 +683,12 @@ namespace flame
 
 	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex)
 	{
-
+		return -1;
 	}
 
 	int sRendererPrivate::find_texture_res(graphics::ImageView* tex) const
 	{
-
+		return -1;
 	}
 
 	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
@@ -710,6 +708,10 @@ namespace flame
 			return -1;
 
 		auto& dst = mat_reses[idx];
+		if (dst.mat)
+		{
+
+		}
 		dst.mat = mat;
 		if (mat)
 		{
@@ -977,7 +979,7 @@ namespace flame
 
 	}
 
-	void sRendererPrivate::draw_mesh(cNodePrivate* node, uint mesh_id)
+	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id)
 	{
 		fassert(transform_idx < _countof(DSL_transform_9c0d::Transforms::transforms));
 
@@ -1183,8 +1185,6 @@ namespace flame
 			fb_def.reset(graphics::Framebuffer::create(device,
 				graphics::Renderpass::get(device, L"deferred.rp"), _countof(vs), vs));
 		}
-
-		get_material_pipeline(MaterialForMesh, L"", "");
 
 		pl_defe_shad = graphics::Pipeline::get(device, L"deferred/shade.pl");
 

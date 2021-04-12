@@ -1,4 +1,4 @@
-#include <flame/foundation/typeinfo.h>
+#include "../foundation/typeinfo.h"
 #include "script_private.h"
 
 #include <lua.hpp>

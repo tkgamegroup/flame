@@ -1,4 +1,3 @@
-#include <flame/script/script.h>
 #include "../entity_private.h"
 #include "script_private.h"
 

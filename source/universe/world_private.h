@@ -1,19 +1,12 @@
 #pragma once
 
-#include <flame/universe/world.h>
-#include <flame/universe/system.h>
+#include "world.h"
+#include "system.h"
 #include "entity_private.h"
 
 namespace flame
 {
-	struct WorldBridge : World
-	{
-		void register_object(void* o, const char* name) override;
-		void* find_object(const char* name) const override;
-		System* find_system(const char* name) const override;
-	};
-
-	struct WorldPrivate : WorldBridge
+	struct WorldPrivate : World
 	{
 		std::vector<std::pair<void*, std::string>> objects;
 
@@ -26,10 +19,13 @@ namespace flame
 		void release() override { delete this; }
 
 		void register_object(void* o, const std::string& name);
+		void register_object(void* o, const char* name) override { register_object(o, std::string(name)); }
 		void* find_object(const std::string& name) const;
+		void* find_object(const char* name) const override { return find_object(std::string(name)); }
 
 		System* get_system(uint type_hash) const override;
 		System* find_system(const std::string& name) const;
+		System* find_system(const char* name) const override { return find_system(std::string(name)); }
 		void add_system(System* s) override;
 		void remove_system(System* s) override;
 
@@ -41,19 +37,4 @@ namespace flame
 		void* add_update_listener(void (*callback)(Capture& c, System* system, bool before), const Capture& capture) override;
 		void remove_update_listener(void* ret) override;
 	};
-
-	inline void WorldBridge::register_object(void* o, const char* name)
-	{
-		((WorldPrivate*)this)->register_object(o, name);
-	}
-
-	inline void* WorldBridge::find_object(const char* name) const
-	{
-		return ((WorldPrivate*)this)->find_object(name);
-	}
-
-	inline System* WorldBridge::find_system(const char* name) const
-	{
-		return ((WorldPrivate*)this)->find_system(name);
-	}
 }

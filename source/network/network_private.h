@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/network/network.h>
+#include "network.h"
 
 //#include <nlohmann/json.hpp>
 

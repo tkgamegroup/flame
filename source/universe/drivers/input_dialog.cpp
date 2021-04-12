@@ -1,4 +1,3 @@
-#include <flame/script/script.h>
 #include "../entity_private.h"
 #include "../components/receiver_private.h"
 #include "../components/text_private.h"

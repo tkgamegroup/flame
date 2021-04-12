@@ -1,7 +1,7 @@
-#include <flame/graphics/device.h>
-#include <flame/graphics/buffer.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/model.h>
+#include "../graphics/device.h"
+#include "../graphics/buffer.h"
+#include "../graphics/image.h"
+#include "../graphics/model.h"
 #include "shape_private.h"
 #include "device_private.h"
 #include "material_private.h"

@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/checkbox.h>
+#include "checkbox.h"
 
 namespace flame
 {
-	struct cReceiverPrivate;
-
 	struct dCheckboxPrivate : dCheckbox
 	{
 		cReceiverPrivate* receiver;

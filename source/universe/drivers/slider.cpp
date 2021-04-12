@@ -14,7 +14,7 @@ namespace flame
 		thumb_element->set_x(proportion * bar_element->size.x);
 		text->set_text(std::to_wstring(value));
 		if (entity)
-			entity->component_data_changed(this, S <"value"_h>);
+			entity->driver_data_changed(this, S <"value"_h>);
 	}
 
 	void dSliderPrivate::set_value_min(float v)
@@ -23,7 +23,7 @@ namespace flame
 		value = proportion * (value_max - value_min) + value_min;
 		text->set_text(std::to_wstring(value));
 		if (entity)
-			entity->component_data_changed(this, S <"value_min"_h>);
+			entity->driver_data_changed(this, S <"value_min"_h>);
 	}
 
 	void dSliderPrivate::set_value_max(float v)
@@ -32,7 +32,7 @@ namespace flame
 		value = proportion * (value_max - value_min) + value_min;
 		text->set_text(std::to_wstring(value));
 		if (entity)
-			entity->component_data_changed(this, S <"value_max"_h>);
+			entity->driver_data_changed(this, S <"value_max"_h>);
 	}
 
 	void dSliderPrivate::on_gain_bar_element()
@@ -71,7 +71,7 @@ namespace flame
 				thiz->thumb_element->set_x(x);
 				thiz->thumb_element->set_y(thiz->bar_element->size.y * 0.5f);
 				thiz->text->set_text(std::to_wstring(thiz->value));
-				thiz->entity->component_data_changed(thiz, S <"value"_h>);
+				thiz->entity->driver_data_changed(thiz, S <"value"_h>);
 			}
 		}, Capture().set_thiz(this));
 	}

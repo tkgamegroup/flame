@@ -1,4 +1,3 @@
-#include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "node_private.h"
 #include "light_private.h"
@@ -20,8 +19,9 @@ namespace flame
 		cast_shadow = v;
 	}
 
-	void cLightPrivate::draw(sRenderer* renderer)
+	void cLightPrivate::draw(sRendererPtr renderer)
 	{
+		// TODO: fix below
 		//node->update_transform();
 		//canvas->add_light(type, type == graphics::LightPoint ? mat3(node->g_pos, vec3(0.f), vec3(0.f)) : node->g_rot, color, cast_shadow);
 	}
@@ -31,7 +31,7 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRenderer* renderer) {
+		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
 			auto thiz = c.thiz<cLightPrivate>();
 			thiz->draw(renderer);
 		}, Capture().set_thiz(this));

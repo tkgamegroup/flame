@@ -92,11 +92,11 @@ namespace flame
 		set_type(type);
 	}
 
-	bool dScrollerPrivate::on_child_added(Entity* e)
+	bool dScrollerPrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished && !target)
 		{
-			target = (EntityPrivate*)e;
+			target = e;
 			target_element = target->get_component_t<cElementPrivate>();
 			fassert(target_element);
 			target->add_component_data_listener([](Capture& c, uint h) {

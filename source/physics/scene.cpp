@@ -30,8 +30,8 @@ namespace flame
 				for (auto i = 0; i < count; i++)
 				{
 					auto type = pairs[i].status == PxPairFlag::eNOTIFY_TOUCH_FOUND ? TouchFound : TouchLost;
-					auto trigger_shape = (Shape*)pairs[i].triggerShape->userData;
-					auto other_shape = (Shape*)pairs[i].otherShape->userData;
+					auto trigger_shape = (ShapePtr)pairs[i].triggerShape->userData;
+					auto other_shape = (ShapePtr)pairs[i].otherShape->userData;
 					thiz->trigger_callback->call(type, trigger_shape, other_shape);
 				}
 			}
@@ -90,7 +90,7 @@ namespace flame
 #endif
 		}
 
-		void ScenePrivate::set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture)
+		void ScenePrivate::set_trigger_callback(void (*callback)(Capture& c, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape), const Capture& capture)
 		{
 			trigger_callback.reset(new Closure(callback, capture));
 		}

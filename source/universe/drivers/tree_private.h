@@ -1,24 +1,21 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/tree.h>
+#include "tree.h"
 
 namespace flame
 {
-	struct cTextPrivate;
-	struct cReceiverPrivate;
-
 	struct dTreePrivate : dTree
 	{
 		EntityPrivate* selected = nullptr;
 
-		Entity* get_selected() const override { return selected; }
-		void set_selected(Entity* e) override;
+		EntityPtr get_selected() const override { return selected; }
+		void set_selected(EntityPtr e) override;
 
 		void expand_to_selected() override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 
 	struct dTreeLeafPrivate : dTreeLeaf
@@ -54,6 +51,6 @@ namespace flame
 		void toggle_collapse() override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 }

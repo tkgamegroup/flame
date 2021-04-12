@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/systems/dispatcher.h>
+#include "dispatcher.h"
 
 namespace flame
 {
-	struct EntityPrivate;
-	struct cReceiverPrivate;
-
 	struct sDispatcherPrivate : sDispatcher
 	{
 		Window* window = nullptr;
@@ -59,10 +56,10 @@ namespace flame
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 
-		cReceiver* get_hovering() const override { return hovering; }
-		cReceiver* get_focusing() const override { return focusing; }
-		cReceiver* get_active() const override { return active; }
-		void set_next_focusing(cReceiver* er) override { next_focusing = (cReceiverPrivate*)er; }
+		cReceiverPtr get_hovering() const override { return hovering; }
+		cReceiverPtr get_focusing() const override { return focusing; }
+		cReceiverPtr get_active() const override { return active; }
+		void set_next_focusing(cReceiverPtr er) override { next_focusing = er; }
 
 		void on_added() override;
 		void on_removed() override;

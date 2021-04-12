@@ -1,7 +1,7 @@
-#include <flame/serialize.h>
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/typeinfo.h>
 #include "blueprint_private.h"
+
+#include <functional>
+#include <pugixml.hpp>
 
 namespace flame
 {
@@ -46,7 +46,7 @@ namespace flame
 			type->copy(data, d);
 	}
 
-	bool bpSlotPrivate::link_to(bpSlotPrivate* target)
+	bool bpSlotPrivate::link_to(bpSlotPtr target)
 	{
 		fassert(io == bpSlotIn);
 		if (io == bpSlotIn)
@@ -511,7 +511,7 @@ namespace flame
 		return n;
 	}
 
-	void bpNodePrivate::remove_child(bpNodePrivate* n)
+	void bpNodePrivate::remove_child(bpNodePtr n)
 	{
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == n;
@@ -544,11 +544,6 @@ namespace flame
 		}
 	}
 
-	bpNode* bpNodeBridge::find_child(const char* name) const
-	{ 
-		return ((bpNodePrivate*)this)->find_child(name);
-	}
-
 	bpNodePrivate* bpNodePrivate::find_child(const std::string& name) const
 	{
 		for (auto& n : children)
@@ -559,7 +554,7 @@ namespace flame
 		return nullptr;
 	}
 
-	bpNode* bpNodePrivate::find_child(const Guid& guid) const
+	bpNodePtr bpNodePrivate::find_child(const Guid& guid) const
 	{
 		for (auto& n : children)
 		{

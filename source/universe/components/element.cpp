@@ -1,6 +1,4 @@
-#include <flame/foundation/typeinfo.h>
-#include <flame/graphics/canvas.h>
-#include <flame/script/script.h>
+#include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
@@ -405,12 +403,12 @@ namespace flame
 			entity->component_data_changed(this, S<"clipping"_h>);
 	}
 
-	void* cElementPrivate::add_drawer(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture)
+	void* cElementPrivate::add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture)
 	{
 		if (!drawer)
 		{
 			auto slot = (uint)&capture;
-			drawer = [](Capture& c, uint, sRenderer* render) {
+			drawer = [](Capture& c, uint, sRendererPtr render) {
 				auto scr_ins = script::Instance::get_default();
 				scr_ins->get_global("callbacks");
 				scr_ins->get_member(nullptr, c.data<uint>());
@@ -594,7 +592,7 @@ namespace flame
 		pelement = nullptr;
 	}
 
-	void cElementPrivate::on_child_added(Entity* e)
+	void cElementPrivate::on_child_added(EntityPtr e)
 	{
 		auto element = e->get_component_t<cElementPrivate>();
 		if (element)
@@ -605,7 +603,7 @@ namespace flame
 		}
 	}
 
-	void cElementPrivate::on_child_removed(Entity* e)
+	void cElementPrivate::on_child_removed(EntityPtr e)
 	{
 		mark_layout_dirty();
 	}

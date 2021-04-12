@@ -1,18 +1,9 @@
 #pragma once
 
-#include <flame/universe/systems/physics.h>
+#include "physics.h"
 
 namespace flame
 {
-	namespace physics
-	{
-		struct Scene;
-	}
-	
-	struct cElementPrivate;
-	struct cRigidPrivate;
-	struct cControllerPrivate;
-
 	struct sPhysicsPrivate : sPhysics
 	{
 		std::vector<cRigidPrivate*> rigids;

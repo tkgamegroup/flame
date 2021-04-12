@@ -1,13 +1,9 @@
 #pragma once
 
-#include <flame/foundation/typeinfo.h>
+#include "typeinfo.h"
 
 namespace flame
 {
-	struct UdtInfoPrivate;
-	struct EnumInfoPrivate;
-	struct TypeInfoDataBasePrivate;
-
 	struct TypeInfoPrivate : TypeInfo
 	{
 		TypeTag tag;
@@ -131,12 +127,12 @@ namespace flame
 
 		uint get_parameters_count() const override { return parameters.size(); }
 		TypeInfoPtr get_parameter(uint idx) const override { return parameters[idx]; }
-		void add_parameter(TypeInfo* ti, int idx) override;
+		void add_parameter(TypeInfoPtr ti, int idx) override;
 		void remove_parameter(uint idx) override;
 
 		const char* get_code() const override { return code.c_str(); }
 
-		bool check(TypeInfo* ret, uint parms_count = 0, TypeInfo* const* parms = nullptr) const override;
+		bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const override;
 
 		void* get_address(void* obj) const override;
 

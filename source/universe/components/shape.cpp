@@ -1,11 +1,11 @@
-#include <flame/foundation/bitmap.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/model.h>
-#include <flame/graphics/canvas.h>
-#include <flame/physics/device.h>
-#include <flame/physics/material.h>
-#include <flame/physics/rigid.h>
-#include <flame/physics/shape.h>
+#include "../../foundation/bitmap.h"
+#include "../../graphics/image.h"
+#include "../../graphics/model.h"
+#include "../../graphics/model.h"
+#include "../../physics/device.h"
+#include "../../physics/material.h"
+#include "../../physics/rigid.h"
+#include "../../physics/shape.h"
 #include "../entity_private.h"
 #include "node_private.h"
 #include "mesh_private.h"
@@ -15,7 +15,7 @@
 
 namespace flame
 {
-	static std::vector<std::tuple<graphics::Mesh*, physics::TriangleMesh*, uint>> triangle_meshes;
+	static std::vector<std::tuple<graphics::model::Mesh*, physics::TriangleMesh*, uint>> triangle_meshes;
 	static std::vector<std::tuple<graphics::Image*, physics::HeightField*, uint>> height_fields;
 
 	void cShapePrivate::set_type(physics::ShapeType t)
@@ -92,9 +92,9 @@ namespace flame
 			}
 			break;
 		case physics::ShapeHeightField:
-			if (terrain && terrain->height_map_id != -1)
+			if (terrain && terrain->height_texture)
 			{
-				auto t = terrain->canvas->get_texture_resource(terrain->height_map_id)->get_image();
+				auto t = terrain->height_texture;
 				physics::HeightField* height_field = nullptr;
 				for (auto& h : height_fields)
 				{

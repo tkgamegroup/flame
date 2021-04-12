@@ -1,8 +1,7 @@
-#include <flame/physics/scene.h>
-#include <flame/physics/rigid.h>
-#include <flame/physics/shape.h>
-#include <flame/physics/controller.h>
-#include <flame/script/script.h>
+#include "../../physics/scene.h"
+#include "../../physics/rigid.h"
+#include "../../physics/shape.h"
+#include "../../physics/controller.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
 #include "../components/element_private.h"
@@ -32,15 +31,18 @@ namespace flame
 				if (visualization_layer)
 				{
 					phy_scene->set_visualization(true);
-					visualization_layer->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+					visualization_layer->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
 						auto thiz = c.thiz<sPhysicsPrivate>();
 						if (thiz->visualization_layer)
 						{
+							layer++;
 							uint lines_count;
-							graphics::Line* lines;
+							Line* lines;
 							thiz->phy_scene->get_visualization_data(&lines_count, &lines);
-							canvas->draw_lines(lines_count, lines);
+							// TODO: fix below
+							//canvas->draw_lines(lines_count, lines);
 						}
+						return layer;
 					}, Capture().set_thiz(this));
 				}
 			}
@@ -53,7 +55,8 @@ namespace flame
 		phy_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
 			auto tri_shp = (cShapePrivate*)trigger_shape->user_data;
 			auto oth_shp = (cShapePrivate*)other_shape->user_data;
-			tri_shp->rigid->on_trigger_event(type, tri_shp, oth_shp);
+			for (auto& l : tri_shp->rigid->trigger_listeners)
+				l->call(type, tri_shp, oth_shp);
 		}, Capture().set_thiz(this));
 	}
 

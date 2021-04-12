@@ -1,17 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/sky.h>
+#include "sky.h"
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Image;
-	}
-
-	struct cNodePrivate;
-	struct sRendererPrivate;
-
 	struct cSkyPrivate : cSky
 	{
 		std::string box_texture_name;

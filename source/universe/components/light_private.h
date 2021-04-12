@@ -1,12 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/light.h>
+#include "light.h"
 
 namespace flame
 {
-	struct cNodePrivate;
-	struct cCamera;
-
 	struct cLightPrivate : cLight
 	{
 		graphics::LightType type = graphics::LightPoint;
@@ -25,7 +22,7 @@ namespace flame
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
 
-		void draw(sRenderer* renderer);
+		void draw(sRendererPtr renderer);
 
 		void on_added() override;
 		void on_removed() override;

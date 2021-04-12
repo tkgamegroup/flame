@@ -1,4 +1,4 @@
-#include <flame/foundation/typeinfo.h>
+#include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
 #include "../systems/renderer_private.h"
@@ -71,7 +71,7 @@ namespace flame
 		return g_rot[idx];
 	}
 
-	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRenderer*), const Capture& capture)
+	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture)
 	{
 		auto c = new Closure(drawer, capture);
 		drawers.emplace_back(c);

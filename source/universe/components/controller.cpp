@@ -1,4 +1,4 @@
-#include <flame/physics/controller.h>
+#include "../../physics/controller.h"
 #include "../world_private.h"
 #include "node_private.h"
 #include "controller_private.h"

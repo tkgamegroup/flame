@@ -1,12 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/receiver.h>
+#include "receiver.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct sDispatcherPrivate;
-
 	struct cReceiverPrivate : cReceiver
 	{
 		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>>> key_down_listeners;

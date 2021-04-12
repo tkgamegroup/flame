@@ -1,24 +1,10 @@
 #pragma once
 
-#include <flame/universe/components/text.h>
+#include "text.h"
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct FontAtlas;
-	}
-
-	struct sRenderer;
-
-	struct cElementPrivate;
-
-	struct cTextBridge : cText
-	{
-		void set_text(const wchar_t* text) override;
-	};
-
-	struct cTextPrivate : cTextBridge
+	struct cTextPrivate : cText
 	{
 		std::wstring text;
 		uint font_size = 16;
@@ -35,6 +21,7 @@ namespace flame
 		const wchar_t* get_text() const override { return text.c_str(); }
 		uint get_text_length() const override { return text.size(); }
 		void set_text(const std::wstring& text);
+		void set_text(const wchar_t* text) override { set_text(std::wstring(text)); }
 
 		uint get_font_size() const override { return font_size; }
 		void set_font_size(uint s) override;
@@ -55,9 +42,4 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 	};
-
-	inline void cTextBridge::set_text(const wchar_t* text)
-	{
-		((cTextPrivate*)this)->set_text(text);
-	}
 }

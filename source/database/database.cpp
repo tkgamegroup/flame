@@ -1,4 +1,3 @@
-#include <flame/foundation/foundation.h>
 #include "database_private.h"
 
 namespace flame
@@ -12,7 +11,7 @@ namespace flame
 #endif
 		}
 
-		Error ConnectionPrivate::query(const char* sql, uint* row_count, void (*callback)(Capture& c, Res* res), const Capture& capture)
+		Error ConnectionPrivate::query(const char* sql, uint* row_count, void (*callback)(Capture& c, ResPtr res), const Capture& capture)
 		{
 #ifdef USE_MYSQL
 			auto eno = mysql_query(mysql_connect, sql);

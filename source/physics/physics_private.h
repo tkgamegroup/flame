@@ -1,7 +1,6 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
-#include <flame/physics/physics.h>
+#include "physics.h"
 
 #ifdef USE_PHYSX
 #include <PxPhysicsAPI.h>

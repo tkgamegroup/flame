@@ -84,11 +84,10 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	bool dMenuPrivate::on_child_added(Entity* _e)
+	bool dMenuPrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
-			auto e = (EntityPrivate*)_e;
 			auto element = e->get_component_t<cElementPrivate>();
 			fassert(element);
 			element->set_alignx(AlignMinMax);

@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/grid.h>
+#include "grid.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-
 	struct dGridPrivate : dGrid
 	{
 		cElementPrivate* element;
@@ -16,6 +13,6 @@ namespace flame
 		cElementPrivate* anchor_element;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 }

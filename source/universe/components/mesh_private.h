@@ -1,19 +1,10 @@
 #pragma once
 
-#include <flame/universe/components/mesh.h>
+#include "mesh.h"
 
 namespace flame
 {
-	struct cNodePrivate;
-	struct sRendererPrivate;
-
-	struct cMeshBridge : cMesh
-	{
-		void set_src(const char* src) override;
-		void set_animation(const char* name, bool loop, uint layer) override;
-	};
-
-	struct cMeshPrivate : cMeshBridge
+	struct cMeshPrivate : cMesh
 	{
 		struct Bone
 		{
@@ -66,6 +57,7 @@ namespace flame
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
+		void set_src(const char* src) override { set_src(std::string(src)); }
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
@@ -75,6 +67,7 @@ namespace flame
 		void destroy_deformer();
 
 		void set_animation(const std::string& name, bool loop, uint layer);
+		void set_animation(const char* name, bool loop, uint layer) override { set_animation(std::string(name), loop, layer); }
 		void apply_animation(uint layer);
 		void stop_animation(uint layer);
 
@@ -85,14 +78,4 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 	};
-
-	inline void cMeshBridge::set_src(const char* src)
-	{
-		((cMeshPrivate*)this)->set_src(src);
-	}
-
-	inline void cMeshBridge::set_animation(const char* name, bool loop, uint layer)
-	{
-		((cMeshPrivate*)this)->set_animation(name, loop, layer);
-	}
 }

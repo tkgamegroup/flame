@@ -1,25 +1,10 @@
 #pragma once
 
-#include <flame/universe/components/terrain.h>
+#include "terrain.h"
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Image;
-	}
-
-	struct cNodePrivate;
-	struct sRendererPrivate;
-
-	struct cTerrainBridge : cTerrain
-	{
-		void set_height_map(const char* name) override;
-		void set_normal_map(const char* name) override;
-		void set_material_name(const char* name) override;
-	};
-
-	struct cTerrainPrivate : cTerrainBridge
+	struct cTerrainPrivate : cTerrain
 	{
 		uvec2 blocks = uvec2(64);
 		vec3 scale = vec3(100.f);
@@ -49,10 +34,13 @@ namespace flame
 
 		const char* get_height_map() const override { return height_map_name.c_str(); }
 		void set_height_map(const std::string& name);
+		void set_height_map(const char* name) override { set_height_map(std::string(name)); }
 		const char* get_normal_map() const override { return normal_map_name.c_str(); }
 		void set_normal_map(const std::string& name);
+		void set_normal_map(const char* name) override { set_normal_map(std::string(name)); }
 		const char* get_material_name() const override { return material_name.c_str(); }
 		void set_material_name(const std::string& name);
+		void set_material_name(const char* name) override { set_material_name(std::string(name)); }
 
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture; }
@@ -64,19 +52,4 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 	};
-
-	inline void cTerrainBridge::set_height_map(const char* name)
-	{
-		((cTerrainPrivate*)this)->set_height_map(name);
-	}
-
-	inline void cTerrainBridge::set_normal_map(const char* name)
-	{
-		((cTerrainPrivate*)this)->set_normal_map(name);
-	}
-
-	inline void cTerrainBridge::set_material_name(const char* name)
-	{
-		((cTerrainPrivate*)this)->set_material_name(name);
-	}
 }

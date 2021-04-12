@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/script/script.h>
+#include "script.h"
 
 struct lua_State;
 

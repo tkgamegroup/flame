@@ -1,6 +1,4 @@
-#include <flame/serialize.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/canvas.h>
+#include "../../graphics/image.h"
 #include "../world_private.h"
 #include "element_private.h"
 #include "image_private.h"
@@ -132,7 +130,7 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRenderer* renderer) {
+		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
 			auto thiz = c.thiz<cImagePrivate>();
 			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));

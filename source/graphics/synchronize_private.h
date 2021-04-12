@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/synchronize.h>
+#include "synchronize.h"
 #include "graphics_private.h"
 
 namespace flame

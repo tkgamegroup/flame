@@ -1,18 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/rigid.h>
+#include "rigid.h"
 
 namespace flame
 {
-	namespace physics
-	{
-		struct Rigid;
-		struct Shape;
-	}
-
-	struct cNodePrivate;
-	struct sPhysicsPrivate;
-
 	struct cRigidPrivate : cRigid
 	{
 		bool dynamic = true;
@@ -20,7 +11,7 @@ namespace flame
 		std::vector<physics::Shape*> phy_shapes;
 		vec3 staging_impulse = vec3(0.f);
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, cShape*, cShape*)>>> trigger_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, cShapePtr, cShapePtr)>>> trigger_listeners;
 
 		cNodePrivate* node = nullptr;
 		sPhysicsPrivate* physics = nullptr;
@@ -32,10 +23,8 @@ namespace flame
 
 		void add_impulse(const vec3& v) override;
 
-		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShape* trigger_shape, cShape* other_shape), const Capture& capture) override;
+		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShapePtr trigger_shape, cShapePtr other_shape), const Capture& capture) override;
 		void remove_trigger_listener(void* lis) override;
-
-		void on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape) override;
 
 		void create();
 		void destroy();

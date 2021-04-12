@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/list.h>
+#include "list.h"
 
 namespace flame
 {
-	struct cReceiverPrivate;
-
 	struct dListPrivate : dList
 	{
 		cReceiverPrivate* receiver;
@@ -15,9 +13,9 @@ namespace flame
 		bool enable_deselect = true;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* _e) override;
+		bool on_child_added(EntityPtr e) override;
 
-		Entity* get_selected() const override { return selected; }
-		void set_selected(Entity* e) override;
+		EntityPtr get_selected() const override { return selected; }
+		void set_selected(EntityPtr e) override;
 	};
 }

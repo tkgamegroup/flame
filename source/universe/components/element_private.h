@@ -1,12 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/element.h>
+#include "element.h"
 
 namespace flame
 {
-	struct sRendererPrivate;
-	struct sLayoutPrivate;
-
 	struct cElementPrivate : cElement
 	{
 		vec2 pos = vec2(0.f);
@@ -61,7 +58,7 @@ namespace flame
 		Rect parent_scissor;
 		bool culled = false;
 
-		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRenderer*)>>> drawers;
+		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRendererPtr)>>> drawers;
 		std::vector<std::unique_ptr<Closure<void(Capture&, vec2*)>>> measurers;
 		bool pending_sizing = false;
 		bool pending_layout = false;
@@ -168,7 +165,7 @@ namespace flame
 
 		vec2 get_point(uint idx) const override { return points[idx]; };
 
-		void* add_drawer(uint (*drawer)(Capture&, uint, sRenderer*), const Capture& capture) override;
+		void* add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture) override;
 		void remove_drawer(void* drawer) override;
 		void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) override;
 		void remove_measurer(void* measurer) override;
@@ -186,8 +183,8 @@ namespace flame
 
 		void on_self_added() override;
 		void on_self_removed() override;
-		void on_child_added(Entity* e) override;
-		void on_child_removed(Entity* e) override;
+		void on_child_added(EntityPtr e) override;
+		void on_child_removed(EntityPtr e) override;
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_visibility_changed(bool v) override;

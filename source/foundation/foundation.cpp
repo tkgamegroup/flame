@@ -1,4 +1,3 @@
-#include <flame/serialize.h>
 #include "foundation_private.h"
 #include "bitmap_private.h"
 

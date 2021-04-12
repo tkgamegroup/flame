@@ -98,13 +98,12 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	bool dSplitterPrivate::on_child_added(Entity* _e)
+	bool dSplitterPrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
 			if (targets.size() < 2)
 			{
-				auto e = (EntityPrivate*)_e;
 				auto element = e->get_component_t<cElementPrivate>();
 				fassert(element);
 				e->redirectable = false;

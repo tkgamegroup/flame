@@ -1,4 +1,4 @@
-#include <flame/foundation/typeinfo.h>
+#include "../foundation/typeinfo.h"
 #include "model_private.h"
 
 #ifdef USE_ASSIMP

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <flame/foundation/bitmap.h>
-#include <flame/graphics/font.h>
+#include "../foundation/bitmap.h"
+#include "font.h"
 
 struct stbtt_fontinfo;
 

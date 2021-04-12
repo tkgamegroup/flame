@@ -16,11 +16,10 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	bool dListPrivate::on_child_added(Entity* _e)
+	bool dListPrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
-			auto e = (EntityPrivate*)_e;
 			auto receiver = e->get_component_t<cReceiverPrivate>();
 			fassert(receiver);
 			receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
@@ -31,9 +30,8 @@ namespace flame
 		return false;
 	}
 
-	void dListPrivate::set_selected(Entity* _e)
+	void dListPrivate::set_selected(EntityPtr e)
 	{
-		auto e = (EntityPrivate*)_e;
 		if (selected == e)
 			return;
 		if (selected)

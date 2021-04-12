@@ -1,5 +1,4 @@
-#include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
+#include "../../graphics/font.h"
 #include "../world_private.h"
 #include "../components/text_private.h"
 #include "../components/receiver_private.h"
@@ -156,9 +155,9 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+		element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
 			auto thiz = c.thiz<dEditPrivate>();
-			thiz->draw(canvas);
+			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));
 
 		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
@@ -392,8 +391,10 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void dEditPrivate::draw(graphics::Canvas* canvas)
+	uint dEditPrivate::draw(uint layer, sRendererPtr renderer)
 	{
+		layer++;
+
 		const auto& str = text->text;
 		auto res_id = text->res_id;
 		auto atlas = text->atlas;
@@ -423,13 +424,14 @@ namespace flame
 				auto p2 = vec2(atlas->text_offset(font_size, str.c_str(), se));
 				if (right < high && str[right] == '\n')
 					p2.x += 4.f;
-				canvas->begin_path();
-				canvas->move_to(pos + axes[0] * p1.x + axes[1] * p1.y);
-				canvas->line_to(pos + axes[0] * p2.x + axes[1] * p2.y);
-				canvas->line_to(pos + axes[0] * p2.x + axes[1] * (p2.y + font_size));
-				canvas->line_to(pos + axes[0] * p1.x + axes[1] * (p1.y + font_size));
-				canvas->fill(cvec4(128, 128, 255, 255));
-				canvas->draw_text(res_id, sb, se, font_size, text->font_color, pos + p1, element->axes);
+				// TODO: fix below
+				//canvas->begin_path();
+				//canvas->move_to(pos + axes[0] * p1.x + axes[1] * p1.y);
+				//canvas->line_to(pos + axes[0] * p2.x + axes[1] * p2.y);
+				//canvas->line_to(pos + axes[0] * p2.x + axes[1] * (p2.y + font_size));
+				//canvas->line_to(pos + axes[0] * p1.x + axes[1] * (p1.y + font_size));
+				//canvas->fill(cvec4(128, 128, 255, 255));
+				//canvas->draw_text(res_id, sb, se, font_size, text->font_color, pos + p1, element->axes);
 			}
 		}
 
@@ -437,11 +439,14 @@ namespace flame
 		{
 			auto off = (vec2)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
 			off.x += 0.5f;
-			canvas->begin_path();
-			canvas->move_to(pos + axes[0] * off.x + axes[1] * off.y);
-			canvas->line_to(pos + axes[0] * off.x + axes[1] * (off.y + font_size));
-			canvas->stroke(text->font_color, max(1.f, round(font_size / 14.f)));
+			// TODO: fix below
+			//canvas->begin_path();
+			//canvas->move_to(pos + axes[0] * off.x + axes[1] * off.y);
+			//canvas->line_to(pos + axes[0] * off.x + axes[1] * (off.y + font_size));
+			//canvas->stroke(text->font_color, max(1.f, round(font_size / 14.f)));
 		}
+
+		return layer;
 	}
 
 	dEdit* dEdit::create(void* parms)

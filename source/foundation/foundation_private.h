@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
+#include "foundation.h"
 
 #define NOMINMAX
 #include <Windows.h>

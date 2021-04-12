@@ -1,4 +1,4 @@
-#include <flame/graphics/font.h>
+#include "../../graphics/font.h"
 #include "../entity_private.h"
 #include "../components/element_private.h"
 #include "../components/text_private.h"
@@ -27,9 +27,8 @@ namespace flame
 		}
 	}
 
-	void dTreePrivate::set_selected(Entity* _e)
+	void dTreePrivate::set_selected(EntityPtr e)
 	{
-		auto e = (EntityPrivate*)_e;
 		if (selected == e)
 			return;
 		if (selected)
@@ -101,10 +100,10 @@ namespace flame
 		}, Capture().set_thiz(this), 1U);
 	}
 
-	bool dTreePrivate::on_child_added(Entity* e)
+	bool dTreePrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
-			populate_tree(this, (EntityPrivate*)e);
+			populate_tree(this, e);
 		return false;
 	}
 
@@ -193,11 +192,10 @@ namespace flame
 		fassert(items);
 	}
 
-	bool dTreeNodePrivate::on_child_added(Entity* _e)
+	bool dTreeNodePrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
-			auto e = (EntityPrivate*)_e;
 			populate_tree(tree, e);
 			items->add_child(e);
 			return true;

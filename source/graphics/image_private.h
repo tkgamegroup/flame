@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/image.h>
+#include "image.h"
 #include "graphics_private.h"
 
 namespace flame

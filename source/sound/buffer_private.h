@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/sound/buffer.h>
+#include "buffer.h"
 #include "sound_private.h"
 
 namespace flame

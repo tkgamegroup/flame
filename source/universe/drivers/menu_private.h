@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/menu.h>
+#include "menu.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-	struct cTextPrivate;
-
 	struct dMenuPrivate : dMenu
 	{
 		cElementPrivate* element;
@@ -23,7 +19,7 @@ namespace flame
 		bool opened = false;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 
 		void open();
 		void close();

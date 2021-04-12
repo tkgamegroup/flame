@@ -1,4 +1,3 @@
-#include <flame/serialize.h>
 #include <flame/foundation/typeinfo.h>
 
 #include <Windows.h>

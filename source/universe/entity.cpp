@@ -1,9 +1,8 @@
-#include <flame/foundation/typeinfo.h>
-#include <flame/script/script.h>
+#include "../foundation/typeinfo.h"
 #include "entity_private.h"
-#include <flame/universe/component.h>
-#include <flame/universe/driver.h>
 #include "world_private.h"
+
+#include <pugixml.hpp>
 
 namespace flame
 {

@@ -1,6 +1,5 @@
-#include <flame/graphics/device.h>
-#include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
+#include "../../graphics/device.h"
+#include "../../graphics/font.h"
 #include "../world_private.h"
 #include "element_private.h"
 #include "text_private.h"
@@ -99,7 +98,7 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRenderer* renderer) {
+		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
 			auto thiz = c.thiz<cTextPrivate>();
 			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));

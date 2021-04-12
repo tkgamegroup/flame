@@ -1,13 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/scroller.h>
+#include "scroller.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-
 	struct dScrollerPrivate : dScroller
 	{
 		ScrollType type = ScrollVertical;
@@ -33,7 +30,7 @@ namespace flame
 		void set_type(ScrollType type) override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 
 		void scroll(const vec2& v) override;
 	};

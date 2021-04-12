@@ -1,11 +1,9 @@
 #pragma once
 
-#include <flame/universe/drivers/input_dialog.h>
+#include "input_dialog.h"
 
 namespace flame
 {
-	struct cTextPrivate;
-
 	struct dInputDialogPrivate  : dInputDialog
 	{
 		cTextPrivate* text;

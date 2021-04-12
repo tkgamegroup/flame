@@ -1,4 +1,3 @@
-#include <flame/serialize.h>
 #include "bitmap_private.h"
 
 #define STB_IMAGE_IMPLEMENTATION

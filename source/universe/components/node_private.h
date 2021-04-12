@@ -1,11 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/node.h>
+#include "node.h"
 
 namespace flame
 {
-	struct sRendererPrivate;
-
 	struct cNodePrivate : cNode
 	{
 		vec3 pos = vec3(0.f);
@@ -27,7 +25,7 @@ namespace flame
 		vec3 g_scl = vec3(1.f);
 		mat4 transform = mat4(1.f);
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, sRenderer*)>>> drawers;
+		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
 
 		sRendererPrivate* renderer = nullptr;
 
@@ -63,7 +61,7 @@ namespace flame
 
 		bool on_save_attribute(uint h) override;
 
-		void* add_drawer(void (*drawer)(Capture&, sRenderer*), const Capture& capture) override;
+		void* add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
 		void remove_drawer(void* drawer) override;
 	};
 }

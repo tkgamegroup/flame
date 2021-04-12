@@ -1,21 +1,9 @@
 #pragma once
 
-#include <flame/universe/components/shape.h>
+#include "shape.h"
 
 namespace flame
 {
-	namespace physics
-	{
-		struct Shape;
-		struct TriangleMesh;
-		struct HeightField;
-	}
-
-	struct cNodePrivate;
-	struct cMeshPrivate;
-	struct cTerrainPrivate;
-	struct cRigidPrivate;
-
 	struct cShapePrivate : cShape
 	{
 		physics::ShapeType type = physics::ShapeCube;

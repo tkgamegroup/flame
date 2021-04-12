@@ -1,7 +1,7 @@
 #pragma once
 
-#include <flame/graphics/command.h>
-#include <flame/universe/systems/renderer.h>
+#include "../../graphics/command.h"
+#include "renderer.h"
 
 #include <element/element.pll.h>
 #include <render_data.dsl.h>
@@ -11,24 +11,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Device;
-		struct Buffer;
-		struct Image;
-		struct Renderpass;
-		struct Framebuffer;
-		struct Pipeline;
-		struct DescriptorSet;
-		struct CommandBuffer;
-		struct Swapchain;
-	}
-
-	struct EntityPrivate;
-	struct cElementPrivate;
-	struct cNodePrivate;
-	struct cCameraPrivate;
-
 	template <class T>
 	struct SequentialBuffer
 	{
@@ -144,16 +126,7 @@ namespace flame
 		UniPtr<graphics::Pipeline> pipeline;
 	};
 
-	struct sRendererBridge : sRenderer
-	{
-		void draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id,
-			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
-		void fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color) override;
-		void stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
-		void draw_mesh(cNode* node, uint mesh_id) override;
-	};
-
-	struct sRendererPrivate : sRendererBridge
+	struct sRendererPrivate : sRenderer
 	{
 		struct ElementRes
 		{
@@ -267,9 +240,9 @@ namespace flame
 		int set_element_res(int idx, ElementResType type, void* v) override;
 		int find_element_res(void* v) const override;
 
-		void fill_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, const cvec4& color);
-		void stroke_rect(uint layer, cElementPrivate* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color);
-		void draw_text(uint layer, cElementPrivate* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color);
+		void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) override;
+		void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
+		void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 
 		int set_texture_res(int idx, graphics::ImageView* tex) override;
 		int find_texture_res(graphics::ImageView* tex) const override;
@@ -283,10 +256,10 @@ namespace flame
 		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);
 
-		cCamera* get_camera() const override { return (cCamera*)camera; }
-		void set_camera(cCamera* c) override { camera = (cCameraPrivate*)c; }
+		cCameraPtr get_camera() const override { return camera; }
+		void set_camera(cCameraPtr c) override { camera = c; }
 
-		void draw_mesh(cNodePrivate* node, uint mesh_id);
+		void draw_mesh(cNodePtr node, uint mesh_id) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
@@ -302,24 +275,4 @@ namespace flame
 
 		void update() override;
 	};
-
-	inline void sRendererBridge::fill_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, const cvec4& color)
-	{
-		((sRendererPrivate*)this)->fill_rect(layer, (cElementPrivate*)element, pos, size, color);
-	}
-
-	inline void sRendererBridge::stroke_rect(uint layer, cElement* element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
-	{
-		((sRendererPrivate*)this)->stroke_rect(layer, (cElementPrivate*)element, pos, size, thickness, color);
-	}
-
-	inline void sRendererBridge::draw_text(uint layer, cElement* element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
-	{
-		((sRendererPrivate*)this)->draw_text(layer, (cElementPrivate*)element, pos, font_size, font_id, text_beg, text_end, color);
-	}
-
-	inline void sRendererBridge::draw_mesh(cNode* node, uint mesh_id)
-	{
-		((sRendererPrivate*)this)->draw_mesh((cNodePrivate*)node, mesh_id);
-	}
 }

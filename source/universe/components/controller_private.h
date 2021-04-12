@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/universe/components/controller.h>
+#include "controller.h"
 
 namespace flame
 {

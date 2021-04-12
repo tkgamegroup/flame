@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/slider.h>
+#include "slider.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-	struct cTextPrivate;
-
 	struct dSliderPrivate : dSlider
 	{
 		float proportion = 0.f;

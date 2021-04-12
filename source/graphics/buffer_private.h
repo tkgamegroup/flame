@@ -1,4 +1,4 @@
-#include <flame/graphics/buffer.h>
+#include "buffer.h"
 #include "graphics_private.h"
 
 namespace flame

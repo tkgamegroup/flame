@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/window.h>
+#include "window.h"
 
 namespace flame
 {
-	struct cElementPrivate;
-	struct cReceiverPrivate;
-	struct cTextPrivate;
-
 	struct dWindowPrivate : dWindow
 	{
 		cElementPrivate* element;
@@ -29,6 +25,6 @@ namespace flame
 		void remove_close_listener(void* lis) override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 }

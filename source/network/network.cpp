@@ -1,7 +1,8 @@
-#include <flame/foundation/foundation.h>
 #include "network_private.h"
 
 #include <winsock2.h>
+
+#include <cppcodec/base64_default_rfc4648.hpp>
 
 #ifdef USE_SHA1
 #include <sha1.hpp>

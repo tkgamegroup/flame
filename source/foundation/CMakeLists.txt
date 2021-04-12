@@ -1,7 +1,5 @@
-get_filename_component(DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-file(GLOB_RECURSE INCLUDES "${INCLUDE_DIR}/${DIR}/*.h*")
-file(GLOB_RECURSE SOURCES "*.h*" "*.c*" "*.asm")
-add_library(flame_foundation SHARED ${INCLUDES} ${SOURCES})
+file(GLOB SOURCES "*.h*" "*.c*" "*.asm")
+add_library(flame_foundation SHARED ${SOURCES})
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 set_target_properties(flame_foundation PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)
@@ -14,3 +12,13 @@ target_include_directories(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include"
 target_link_libraries(flame_foundation imagehlp.lib)
 target_link_libraries(flame_foundation debug "${PUGIXML_DEBUG_STATIC_LIBRARY_PATH}")
 target_link_libraries(flame_foundation optimized "${PUGIXML_RELEASE_STATIC_LIBRARY_PATH}")
+
+file(GLOB PUBLIC_HEADER "../*.h*")
+list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame")
+add_custom_command(TARGET flame_foundation POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame")
+
+file(GLOB PUBLIC_HEADER "*.h*")
+list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
+file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/foundation")
+add_custom_command(TARGET flame_foundation POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/foundation")

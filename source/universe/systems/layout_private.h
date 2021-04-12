@@ -1,13 +1,9 @@
 #pragma once
 
-#include <flame/universe/systems/layout.h>
+#include "layout.h"
 
 namespace flame
 {
-	struct Window;
-
-	struct cElementPrivate;
-
 	struct sLayoutPrivate : sLayout
 	{
 		Window* window = nullptr;

@@ -1,14 +1,12 @@
 #pragma once
 
-#include <flame/physics/material.h>
+#include "material.h"
 #include "physics_private.h"
 
 namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
-
 		struct MaterialPrivate : Material
 		{
 #ifdef USE_PHYSX

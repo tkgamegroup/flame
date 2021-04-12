@@ -29,7 +29,7 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRenderer* render) {
+		drawer = node->add_drawer([](Capture& c, sRendererPtr render) {
 			auto thiz = c.thiz<cCameraPrivate>();
 			thiz->draw(render);
 		}, Capture().set_thiz(this));

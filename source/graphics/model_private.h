@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/graphics/model.h>
+#include "model.h"
 
 namespace flame
 {

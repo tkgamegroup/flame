@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/foundation/bitmap.h>
+#include "bitmap.h"
 
 namespace flame
 {

@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/drivers/combobox.h>
+#include "combobox.h"
 
 namespace flame
 {
-	struct cTextPrivate;
-	struct cReceiverPrivate;
-	struct dMenuPrivate;
-
 	struct dComboboxPrivate : dCombobox
 	{
 		int index = -1;
@@ -20,6 +16,6 @@ namespace flame
 		void set_index(int index) override;
 
 		void on_load_finished() override;
-		bool on_child_added(Entity* e) override;
+		bool on_child_added(EntityPtr e) override;
 	};
 }

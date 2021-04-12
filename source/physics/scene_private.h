@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/physics/scene.h>
+#include "scene.h"
 #include "physics_private.h"
 
 namespace flame
@@ -29,7 +29,7 @@ namespace flame
 			PxControllerManager* px_controller_manager;
 #endif
 
-			std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>> trigger_callback;
+			std::unique_ptr<Closure<void(Capture&, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape)>> trigger_callback;
 
 			ScenePrivate(DevicePrivate* device, float gravity, uint thread_count);
 
@@ -39,7 +39,7 @@ namespace flame
 			void remove_rigid(RigidPtr r) override;
 			vec3 raycast(const vec3& origin, const vec3& dir, float max_distance = 1000.f) override;
 			void update(float disp) override;
-			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
+			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;
 			void get_visualization_data(uint* lines_count, Line** lines) override;
 		};

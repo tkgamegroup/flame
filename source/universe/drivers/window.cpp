@@ -91,11 +91,11 @@ namespace flame
 		fassert(content);
 	}
 
-	bool dWindowPrivate::on_child_added(Entity* _e)
+	bool dWindowPrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
-			content->add_child((EntityPrivate*)_e);
+			content->add_child(e);
 			return true;
 		}
 		return false;

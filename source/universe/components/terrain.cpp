@@ -1,7 +1,6 @@
-#include <flame/graphics/device.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/model.h>
-#include <flame/graphics/canvas.h>
+#include "../../graphics/device.h"
+#include "../../graphics/image.h"
+#include "../../graphics/model.h"
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
@@ -75,7 +74,7 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRendererPrivate* renderer) {
+		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
 			auto thiz = c.thiz<cTerrainPrivate>();
 			thiz->draw(renderer);
 		}, Capture().set_thiz(this));

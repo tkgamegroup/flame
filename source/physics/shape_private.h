@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/physics/shape.h>
+#include "shape.h"
 #include "physics_private.h"
 
 namespace flame
@@ -47,7 +47,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Rigid* get_rigid() const override { return (Rigid*)rigid; }
+			RigidPtr get_rigid() const override { return rigid; }
 
 			void set_trigger(bool v) override;
 
