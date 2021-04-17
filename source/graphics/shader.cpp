@@ -538,7 +538,6 @@ namespace flame
 						b.name = n_binding.attribute("name").value();
 						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
 							b.ti = find_udt(n_binding.attribute("type_name").value(), tidb);
-						bindings.emplace_back(b);
 					}
 				}
 			}
@@ -549,8 +548,15 @@ namespace flame
 			{
 				std::string header;
 				header += "#pragma once\n\n";
-				header += "namespace DSL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
 				write_udts_to_header(header, tidb);
+				auto idx = 0;
+				for (auto& b : bindings)
+				{
+					header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
+					header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
+					idx++;
+				}
 				header += "}\n";
 				std::ofstream file(header_path);
 				file << header;
@@ -595,12 +601,12 @@ namespace flame
 			chk_res(vkFreeDescriptorSets(pool->device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 		}
 
-		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr b, uint offset, uint range)
+		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr buf, uint offset, uint range)
 		{
 			VkDescriptorBufferInfo i;
-			i.buffer = b->vk_buffer;
+			i.buffer = buf->vk_buffer;
 			i.offset = offset;
-			i.range = range == 0 ? b->size : range;
+			i.range = range == 0 ? buf->size : range;
 
 			VkWriteDescriptorSet write;
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -863,7 +869,7 @@ namespace flame
 			{
 				std::string header;
 				header += "#pragma once\n\n";
-				header += "namespace PLL_" + filename.filename().stem().string() + "_" + to_hex_string((ushort)std::hash<std::string>()(filename.string())) + "\n{\n";
+				header += "namespace PLL_" + filename.filename().stem().string() + "\n{\n";
 				header += "\tenum Binding\n\t{\n";
 				for (auto& d : dependencies)
 				{
@@ -919,6 +925,20 @@ namespace flame
 			std::sort(substitutes.begin(), substitutes.end(), [](const auto& a, const auto& b) {
 				return a.first < b.first;
 			});
+			std::string defines_str;
+			std::string substitutes_str;
+			for (auto i = 0; i < defines.size(); i++)
+			{
+				defines_str += defines[i];
+				if (i < defines.size() - 1)
+					defines_str += " ";
+			}
+			for (auto i = 0; i < substitutes.size(); i++)
+			{
+				substitutes_str += substitutes[i].first + " " + substitutes[i].second;
+				if (i < substitutes.size() - 1)
+					substitutes_str += " ";
+			}
 
 			if (device)
 			{
@@ -994,23 +1014,7 @@ namespace flame
 					for (auto& d : defines)
 						command_line += L" -D" + s2w(d);
 
-					{
-						std::string defines_str;
-						std::string substitutes_str;
-						for (auto i = 0; i < defines.size(); i++)
-						{
-							defines_str += defines[i];
-							if (i < defines.size() - 1)
-								defines_str += " ";
-						}
-						for (auto i = 0; i < substitutes.size(); i++)
-						{
-							substitutes_str += substitutes[i].first + " " + substitutes[i].second;
-							if (i < substitutes.size() - 1)
-								substitutes_str += " ";
-						}
-						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
-					}
+					printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {

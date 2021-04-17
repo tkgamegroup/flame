@@ -39,8 +39,8 @@ namespace flame
 
 			virtual DescriptorSetLayoutPtr get_layout() const = 0;
 
-			virtual void set_buffer(uint binding, uint index, BufferPtr b, uint offset = 0, uint range = 0) = 0;
-			virtual void set_image(uint binding, uint index, ImageViewPtr v, SamplerPtr sp) = 0;
+			virtual void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
+			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* pool, DescriptorSetLayout* layout);
 		};

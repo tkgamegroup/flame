@@ -94,6 +94,7 @@ namespace flame
 
 		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
+		auto sp = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 
 		{
 			auto fn = std::filesystem::path(height_map_name);
@@ -103,7 +104,7 @@ namespace flame
 			auto view = height_texture->get_view();
 			height_map_id = renderer->find_texture_res(view);
 			if (height_map_id == -1)
-				height_map_id = renderer->set_texture_res(-1, view);
+				height_map_id = renderer->set_texture_res(-1, view, sp);
 		}
 		{
 			auto fn = std::filesystem::path(normal_map_name);
@@ -113,7 +114,7 @@ namespace flame
 			auto view = normal_texture->get_view();
 			normal_map_id = renderer->find_texture_res(view);
 			if (normal_map_id == -1)
-				normal_map_id = renderer->set_texture_res(-1, view);
+				normal_map_id = renderer->set_texture_res(-1, view, sp);
 		}
 		{
 			auto fn = std::filesystem::path(material_name);

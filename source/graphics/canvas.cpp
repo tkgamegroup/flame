@@ -22,21 +22,6 @@
 //			}
 //			{
 //				RenderpassAttachmentInfo atts[2];
-//				atts[0].format = hdr ? Format_R16G16B16A16_SFLOAT : Format_R8G8B8A8_UNORM;
-//				atts[0].load_op = AttachmentLoad;
-//				atts[0].initia_layout = ImageLayoutShaderReadOnly;
-//				atts[1].format = Format_Depth16;
-//				atts[1].load_op = AttachmentLoad;
-//				atts[1].initia_layout = ImageLayoutAttachment;
-//				atts[1].final_layout = ImageLayoutAttachment;
-//				RenderpassSubpassInfo sp;
-//				sp.color_attachments_count = 1;
-//				sp.color_attachments = { 0 };
-//				sp.depth_attachment = 1;
-//				mesh_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
-//			}
-//			{
-//				RenderpassAttachmentInfo atts[2];
 //				atts[0].format = Format_R16_SFLOAT;
 //				atts[0].load_op = AttachmentClear;
 //				atts[0].initia_layout = ImageLayoutShaderReadOnly;
@@ -75,7 +60,6 @@
 //			//	sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 //			//}
 //
-//			//mesh_pipeline_layout = PipelineLayoutPrivate::get(device, L"mesh/mesh.pll");
 //			//terrain_pipeline_layout = PipelineLayoutPrivate::get(device, L"terrain/terrain.pll");
 //
 //			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
@@ -221,176 +205,6 @@
 //			//}
 //		}
 //
-//		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
-//		{
-//			auto defines = Shader::format_defines(_defines);
-//
-//			for (auto& p : material_pipelines[usage])
-//			{
-//				if (p.mat == mat && p.defines == defines)
-//				{
-//					p.ref_count++;
-//					return p.pipeline.get();
-//				}
-//			}
-//
-//			PipelinePrivate* ret = nullptr;
-//
-//			//std::vector<std::pair<std::string, std::string>> substitutes;
-//			//PolygonMode polygon_mode = PolygonModeFill;
-//			//CullMode cull_mode = CullModeBack;
-//			//auto depth_test = true;
-//			//auto depth_write = true;
-//			//auto use_mat = true;
-//			//auto find_define = [&](const std::string& s) {
-//			//	for (auto& d : defines)
-//			//	{
-//			//		if (d == s)
-//			//			return true;
-//			//	}
-//			//	return false;
-//			//};
-//			//if (find_define("WIREFRAME"))
-//			//{
-//			//	use_mat = false;
-//			//	polygon_mode = PolygonModeLine;
-//			//	depth_test = false;
-//			//	depth_write = false;
-//			//}
-//			//else if (find_define("PICKUP"))
-//			//	use_mat = false;
-//			//else if (find_define("OUTLINE"))
-//			//{
-//			//	use_mat = false;
-//			//	depth_test = false;
-//			//	depth_write = false;
-//			//}
-//			//if (find_define("DOUBLE_SIDE"))
-//			//	cull_mode == CullModeNone;
-//			//if (use_mat)
-//			//{
-//			//	defines.push_back("MAT");
-//			//	substitutes.emplace_back("MAT_FILE", mat.string());
-//			//}
-//			//switch (usage)
-//			//{
-//			//case MaterialForMeshShadow:
-//			//	defines.push_back("SHADOW_PASS");
-//			//case MaterialForMesh:
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
-//			//		ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
-//			//	};
-//			//	VertexAttributeInfo vias[3];
-//			//	vias[0].location = 0;
-//			//	vias[0].format = Format_R32G32B32_SFLOAT;
-//			//	vias[1].location = 1;
-//			//	vias[1].format = Format_R32G32_SFLOAT;
-//			//	vias[2].location = 2;
-//			//	vias[2].format = Format_R32G32B32_SFLOAT;
-//			//	VertexBufferInfo vib;
-//			//	vib.attributes_count = _countof(vias);
-//			//	vib.attributes = vias;
-//			//	VertexInfo vi;
-//			//	vi.buffers_count = 1;
-//			//	vi.buffers = &vib;
-//			//	RasterInfo rst;
-//			//	rst.polygon_mode = polygon_mode;
-//			//	DepthInfo dep;
-//			//	dep.test = depth_test;
-//			//	dep.write = depth_write;
-//			//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-//			//}
-//			//	break;
-//			//case MaterialForMeshShadowArmature:
-//			//	defines.push_back("SHADOW_PASS");
-//			//case MaterialForMeshArmature:
-//			//{
-//			//	defines.push_back("ARMATURE");
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"mesh/mesh.vert", defines, {}),
-//			//		ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes)
-//			//	};
-//			//	VertexAttributeInfo vias1[3];
-//			//	vias1[0].location = 0;
-//			//	vias1[0].format = Format_R32G32B32_SFLOAT;
-//			//	vias1[1].location = 1;
-//			//	vias1[1].format = Format_R32G32_SFLOAT;
-//			//	vias1[2].location = 2;
-//			//	vias1[2].format = Format_R32G32B32_SFLOAT;
-//			//	VertexAttributeInfo vias2[2];
-//			//	vias2[0].location = 5;
-//			//	vias2[0].format = Format_R32G32B32A32_INT;
-//			//	vias2[1].location = 6;
-//			//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
-//			//	VertexBufferInfo vibs[2];
-//			//	vibs[0].attributes_count = _countof(vias1);
-//			//	vibs[0].attributes = vias1;
-//			//	vibs[1].attributes_count = _countof(vias2);
-//			//	vibs[1].attributes = vias2;
-//			//	VertexInfo vi;
-//			//	vi.buffers_count = 2;
-//			//	vi.buffers = vibs;
-//			//	RasterInfo rst;
-//			//	rst.polygon_mode = polygon_mode;
-//			//	DepthInfo dep;
-//			//	dep.test = depth_test;
-//			//	dep.write = depth_write;
-//			//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-//			//}
-//			//	break;
-//			//case MaterialForTerrain:
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"terrain/terrain.vert", defines, {}),
-//			//		ShaderPrivate::get(device, L"terrain/terrain.tesc", defines, {}),
-//			//		ShaderPrivate::get(device, L"terrain/terrain.tese", defines, {}),
-//			//		ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes)
-//			//	};
-//			//	VertexInfo vi;
-//			//	vi.primitive_topology = PrimitiveTopologyPatchList;
-//			//	vi.patch_control_points = 4;
-//			//	RasterInfo rst;
-//			//	rst.polygon_mode = polygon_mode;
-//			//	DepthInfo dep;
-//			//	dep.test = depth_test;
-//			//	dep.write = depth_write;
-//			//	ret = PipelinePrivate::create(device, shaders, terrain_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-//			//}
-//			//	break;
-//			//}
-//
-//			MaterialPipeline mp;
-//			mp.mat = mat;
-//			mp.defines = defines;
-//			mp.pipeline.reset(ret);
-//			material_pipelines[usage].push_back(std::move(mp));
-//			return ret;
-//		}
-//
-//		void RenderPreferencesPrivate::release_material_pipeline(MaterialUsage usage, PipelinePrivate* p)
-//		{
-//			for (auto it = material_pipelines[usage].begin(); it != material_pipelines[usage].end(); it++)
-//			{
-//				if (it->pipeline.get() == p)
-//				{
-//					for (auto s : p->shaders)
-//						s->release();
-//					if (it->ref_count == 1)
-//						material_pipelines[usage].erase(it);
-//					else
-//						it->ref_count--;
-//					break;
-//				}
-//			}
-//		}
-//
-//		RenderPreferences* RenderPreferences::create(DevicePtr device, bool hdr)
-//		{
-//			return new RenderPreferencesPrivate((DevicePrivate*)device, hdr);
-//		}
-//
 //		ArmatureDeformerPrivate::ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh) :
 //			mesh(mesh)
 //		{
@@ -406,42 +220,6 @@
 //			//*dst = pose * mesh->bones[id]->offset_matrix;
 //		}
 //
-//		ArmatureDeformer* ArmatureDeformer::create(RenderPreferences* preferences, Mesh* mesh)
-//		{
-//			return new ArmatureDeformerPrivate((RenderPreferencesPrivate*)preferences, (MeshPrivate*)mesh);
-//		}
-//
-//		MaterialResourcePrivate::~MaterialResourcePrivate()
-//		{
-//			for (auto& t : textures)
-//				canvas->set_texture_resource(t.first, nullptr, nullptr, "");
-//			for (auto i = 0; i < MaterialUsageCount; i++)
-//			{
-//				if (pipelines[i])
-//					canvas->preferences->release_material_pipeline((MaterialUsage)i, pipelines[i]);
-//			}
-//		}
-//
-//		PipelinePrivate* MaterialResourcePrivate::get_pipeline(MaterialUsage u)
-//		{
-//			if (pipelines[u])
-//				return pipelines[u];
-//			auto path = material->dir / material->pipeline_file;
-//			if (!std::filesystem::exists(path))
-//			{
-//				path = material->pipeline_file;
-//				get_engine_path(path, L"assets\\shaders");
-//			}
-//			pipelines[u] = canvas->preferences->get_material_pipeline(u, path, material->pipeline_defines);
-//			return pipelines[u];
-//		}
-//
-//		ModelResourcePrivate::~ModelResourcePrivate()
-//		{
-//			for (auto& m : materials)
-//				canvas->set_material_resource(m, nullptr, "");
-//		}
-//
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
 //			preferences(preferences)
 //		{
@@ -449,21 +227,9 @@
 //
 //			InstanceCB cb(device);
 //
-//			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
-//			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-//			cb->clear_color_image(white_image.get(), cvec4(255));
-//			cb->image_barrier(white_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-//			auto iv_wht = white_image->views[0].get();
-//
-//			element_resources.resize(64);
-//			for (auto i = 0; i < element_resources.size(); i++)
-//				element_resources[i].iv = iv_wht;
-//
 //			texture_resources.resize(128);
 //			for (auto i = 0; i < texture_resources.size(); i++)
 //				texture_resources[i].iv = iv_wht;
-//			material_resources.resize(128);
-//			model_resources.resize(128);
 //			
 //			{
 //				auto dsl = DescriptorSetLayoutPrivate::get(device, L"render_data.dsl");
@@ -489,23 +255,6 @@
 //				default_sky_rad_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
 //				cb->image_barrier(default_sky_rad_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 //				sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, default_sky_rad_image->views.back().get(), sp);
-//			}
-//
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element/element.dsl");
-//				element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				auto bd = dsl->find_binding("images");
-//				for (auto i = 0; i < element_resources.size(); i++)
-//					element_descriptorset->set_image(bd, i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
-//				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
-//				element_index_buffer.create(device, BufferUsageIndex, 240000, AccessIndexRead);
-//			}
-//			
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"mesh.dsl");
-//				mesh_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				//mesh_matrix_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MeshMatrix"), 10000);
-//				//mesh_descriptorset->set_buffer(dsl->find_binding("MeshMatrices"), 0, mesh_matrix_buffer.buf.get());
 //			}
 //
 //			{
@@ -605,9 +354,6 @@
 //
 //			line_buffer.create(device, BufferUsageVertex, 200000);
 //			triangle_buffer.create(device, BufferUsageVertex, 1000);
-//
-//			set_model_resource(-1, (ModelPrivate*)Model::get_standard("cube"), "cube");
-//			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 //		}
 //
 //		void CanvasPrivate::set_shadow(float distance, uint _csm_levels, float _csm_factor)
@@ -619,25 +365,6 @@
 //			//render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
 //			//render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
 //			//render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
-//		}
-//
-//		void CanvasPrivate::set_clear_color(const cvec4& color)
-//		{
-//			clear_color = color;
-//
-//			InstanceCB cb(preferences->device);
-//
-//			cb->image_barrier(default_sky_box_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-//			cb->clear_color_image(default_sky_box_image.get(), color);
-//			cb->image_barrier(default_sky_box_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-//
-//			cb->image_barrier(default_sky_irr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-//			cb->clear_color_image(default_sky_irr_image.get(), color);
-//			cb->image_barrier(default_sky_irr_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-//
-//			cb->image_barrier(default_sky_rad_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-//			cb->clear_color_image(default_sky_rad_image.get(), color);
-//			cb->image_barrier(default_sky_rad_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 //		}
 //
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
@@ -743,355 +470,39 @@
 //			}
 //		}
 //
-//		ElementResource CanvasPrivate::get_element_resource(uint slot)
-//		{
-//			if (slot < element_resources.size())
-//			{
-//				auto& r = element_resources[slot];
-//				return { r.iv, r.ia, r.fa };
-//			}
-//			return { nullptr, nullptr, nullptr };
-//		}
-//
-//		int CanvasPrivate::find_element_resource(const std::string& name)
-//		{
-//			for (auto i = 0; i < element_resources.size(); i++)
-//			{
-//				if (element_resources[i].name == name)
-//					return i;
-//			}
-//			return -1;
-//		}
-//
-//		uint CanvasPrivate::set_element_resource(int slot, ElementResource r, const std::string& name)
-//		{
-//			auto device = preferences->device;
-//			auto iv_wht = white_image->views[0].get();
-//			if (slot == -1)
-//			{
-//				for (auto i = 1; i < element_resources.size(); i++)
-//				{
-//					if (element_resources[i].iv == iv_wht)
-//					{
-//						slot = i;
-//						break;
-//					}
-//				}
-//			}
-//			if (slot != -1)
-//			{
-//				auto& dst = element_resources[slot];
-//				dst.name = name;
-//				dst.iv = (ImageViewPrivate*)r.iv;
-//				dst.ia = (ImageAtlasPrivate*)r.ia;
-//				dst.fa = (FontAtlasPrivate*)r.fa;
-//				if (dst.ia)
-//					element_descriptorset->set_image(0, slot, dst.ia->image->views[0].get(), dst.ia->border ? 
-//						SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge) : 
-//						SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//				else if (dst.fa)
-//					element_descriptorset->set_image(0, slot, dst.fa->view, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//				else
-//					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
-//			}
-//			return slot;
-//		}
-//
-//		ImageViewPtr CanvasPrivate::get_texture_resource(uint slot)
-//		{
-//			if (slot < texture_resources.size())
-//			{
-//				auto& r = texture_resources[slot];
-//				return r.iv;
-//			}
-//			return nullptr;
-//		}
-//
-//		int CanvasPrivate::find_texture_resource(const std::string& name)
-//		{
-//			for (auto i = 0; i < texture_resources.size(); i++)
-//			{
-//				if (texture_resources[i].name == name)
-//					return i;
-//			}
-//			return -1;
-//		}
-//
-//		uint CanvasPrivate::set_texture_resource(int slot, ImageViewPrivate* iv, SamplerPrivate* sp, const std::string& name)
-//		{
-//			auto device = preferences->device;
-//			auto iv_wht = white_image->views[0].get();
-//			if (slot == -1)
-//			{
-//				for (auto i = 1; i < texture_resources.size(); i++)
-//				{
-//					if (texture_resources[i].iv == iv_wht)
-//					{
-//						slot = i;
-//						break;
-//					}
-//				}
-//			}
-//			if (slot != -1)
-//			{
-//				auto& r = texture_resources[slot];
-//				r.name = name;
-//				r.iv = iv;
-//				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
-//			}
-//			return slot;
-//		}
-//
-//		Material* CanvasPrivate::get_material_resource(uint slot)
-//		{
-//			if (slot < material_resources.size())
-//			{
-//				auto& r = material_resources[slot];
-//				return r->material;
-//			}
-//			return nullptr;
-//		}
-//
-//		int CanvasPrivate::find_material_resource(const std::string& name)
-//		{
-//			for (auto i = 0; i < material_resources.size(); i++)
-//			{
-//				if (material_resources[i] && material_resources[i]->name == name)
-//					return i;
-//			}
-//			return -1;
-//		}
-//
-//		uint CanvasPrivate::set_material_resource(int slot, MaterialPrivate* mat, const std::string& name)
-//		{
-//			auto device = preferences->device;
-//
-//			if (slot == -1)
-//			{
-//				for (auto i = 1; i < material_resources.size(); i++)
-//				{
-//					if (!material_resources[i])
-//					{
-//						slot = i;
-//						break;
-//					}
-//				}
-//			}
-//			if (slot != -1)
-//			{
-//				if (!mat)
-//					material_resources[slot].reset();
-//				else
-//				{
-//					auto mr = new MaterialResourcePrivate(this);
-//					mr->name = name;
-//					mr->material = mat;
-//					material_resources[slot].reset(mr);
-//
-//					//auto dst = material_info_buffer.mark_item(slot);
-//
-//					//material_info_buffer.set(dst, S<"color"_h>, mat->color);
-//					//material_info_buffer.set(dst, S<"metallic"_h>, mat->metallic);
-//					//material_info_buffer.set(dst, S<"roughness"_h>, mat->roughness);
-//					//material_info_buffer.set(dst, S<"alpha_test"_h>, mat->alpha_test);
-//
-//					if (!mat->dir.empty())
-//					{
-//						ivec4 ids;
-//						for (auto i = 0; i < _countof(mr->textures); i++)
-//						{
-//							auto& src = mat->textures[i];
-//							auto& dst = mr->textures[i];
-//							if (!src.filename.empty())
-//							{
-//								auto img = ImagePrivate::create(device, mat->dir / src.filename, true);
-//								auto idx = set_texture_resource(-1, img->views.back().get(), SamplerPrivate::get(device, 
-//									src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), "");
-//								ids[i] = dst.first = idx;
-//								dst.second.reset(img);
-//							}
-//							else
-//							{
-//								ids[i] = dst.first = -1;
-//								dst.second.reset(nullptr);
-//							}
-//						}
-//						//material_info_buffer.set(dst, S<"map_indices"_h>, ids);
-//					}
-//
-//					InstanceCB cb(device);
-//					//material_info_buffer.upload((CommandBufferPrivate*)cb.get());
-//				}
-//			}
-//			return slot;
-//		}
-//
-//		Model* CanvasPrivate::get_model_resource(uint slot)
-//		{
-//			if (slot < model_resources.size())
-//			{
-//				auto& r = model_resources[slot];
-//				return r->model;
-//			}
-//			return nullptr;
-//		}
-//
-//		int CanvasPrivate::find_model_resource(const std::string& name)
-//		{
-//			for (auto i = 0; i < model_resources.size(); i++)
-//			{
-//				if (model_resources[i] && model_resources[i]->name == name)
-//					return i;
-//			}
-//			return -1;
-//		}
-//
 //		uint CanvasPrivate::set_model_resource(int slot, ModelPrivate* mod, const std::string& name)
 //		{
-//			auto device = preferences->device;
-//
-//			if (slot == -1)
-//			{
-//				for (auto i = 0; i < model_resources.size(); i++)
-//				{
-//					if (!model_resources[i])
-//					{
-//						slot = i;
-//						break;
-//					}
-//				}
-//			}
-//			if (slot != -1)
-//			{
-//				if (!mod)
-//					model_resources[slot].reset();
-//				else
-//				{
-//					auto mr = new ModelResourcePrivate(this);
-//					mr->name = name;
-//					mr->model = mod;
-//					model_resources[slot].reset(mr);
-//
-//					mr->materials.resize(mod->materials.size());
-//					for (auto i = 0; i < mod->materials.size(); i++)
-//						mr->materials[i] = set_material_resource(-1, mod->materials[i].get(), "");
-//
-//					InstanceCB cb(device);
-//
-//					mr->meshes.resize(mod->meshes.size());
-//					for (auto i = 0; i < mod->meshes.size(); i++)
-//					{
-//						auto ms = mod->meshes[i].get();
-//
-//						auto mrm = new MeshResourcePrivate;
-//
-//						mrm->vertex_buffer.create(device, BufferUsageVertex, ms->positions.size());
-//						std::vector<MeshVertex> vertices;
-//						vertices.resize(ms->positions.size());
-//						for (auto j = 0; j < vertices.size(); j++)
-//							vertices[j].position = ms->positions[j];
-//						if (!ms->uvs.empty())
-//						{
-//							for (auto j = 0; j < vertices.size(); j++)
-//								vertices[j].uv = ms->uvs[j];
-//						}
-//						if (!ms->normals.empty())
-//						{
-//							for (auto j = 0; j < vertices.size(); j++)
-//								vertices[j].normal = ms->normals[j];
-//						}
-//						mrm->vertex_buffer.push(vertices.size(), vertices.data());
-//						mrm->vertex_buffer.upload((CommandBufferPrivate*)cb.get());
-//
-//						if (!ms->bones.empty())
-//						{
-//							mrm->weight_buffer.create(device, BufferUsageVertex, ms->positions.size());
-//							std::vector<std::vector<Bone::Weight>> weights;
-//							weights.resize(ms->positions.size());
-//							for (auto j = 0; j < ms->bones.size(); j++)
-//							{
-//								auto& b = ms->bones[j];
-//								for (auto& w : b->weights)
-//									weights[w.vid].emplace_back(j, w.w);
-//							}
-//							std::vector<MeshWeight> mesh_weights;
-//							mesh_weights.resize(weights.size());
-//							for (auto j = 0; j < weights.size(); j++)
-//							{
-//								auto& src = weights[j];
-//								auto& dst = mesh_weights[j];
-//								for (auto k = 0; k < 4; k++)
-//								{
-//									if (k < src.size())
-//									{
-//										dst.ids[k] = src[k].vid;
-//										dst.weights[k] = src[k].w;
-//									}
-//									else
-//										dst.ids[k] = -1;
-//								}
-//							}
-//							mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
-//							mrm->weight_buffer.upload((CommandBufferPrivate*)cb.get());
-//						}
-//
-//						mrm->index_buffer.create(device, BufferUsageIndex, ms->indices.size(), AccessIndexRead);
-//						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
-//						mrm->index_buffer.upload((CommandBufferPrivate*)cb.get());
-//
-//						mrm->material_id = mr->materials[ms->material_index];
-//
-//						mr->meshes[i].reset(mrm);
-//					}
-//				}
-//			}
-//			return slot;
-//		}
-//
-//		CmdDrawElement* CanvasPrivate::add_draw_element_cmd(uint id)
-//		{
-//			if (cmds.empty() || cmds.back()->type != Cmd::DrawElement || ((CmdDrawElement*)cmds.back().get())->id != id)
-//			{
-//				auto cmd = new CmdDrawElement(id);
-//				cmds.emplace_back(cmd);
-//				return cmd;
-//			}
-//			else
-//				return (CmdDrawElement*)cmds.back().get();
-//		}
-//
-//		void CanvasPrivate::add_vtx(const vec2& position, const vec2& uv, const cvec4& color)
-//		{
-//			ElementVertex v;
-//			v.position = position;
-//			v.uv = uv;
-//			v.color = color;
-//			element_vertex_buffer.push(1, &v);
-//			
-//			((CmdDrawElement*)cmds.back().get())->vertices_count++;
-//		}
-//
-//		void CanvasPrivate::add_idx(uint idx)
-//		{
-//			element_index_buffer.push(1, &idx);
-//
-//			((CmdDrawElement*)cmds.back().get())->indices_count++;
-//		}
-//
-//		void CanvasPrivate::begin_path()
-//		{
-//			paths.clear();
-//		}
-//
-//		void CanvasPrivate::move_to(const vec2& pos)
-//		{
-//			paths.emplace_back();
-//			paths.back().push_back(pos);
-//		}
-//
-//		void CanvasPrivate::line_to(const vec2& pos)
-//		{
-//			paths.back().push_back(pos);
+			//if (!ms->bones.empty())
+			//{
+			//	mrm->weight_buffer.create(device, BufferUsageVertex, ms->positions.size());
+			//	std::vector<std::vector<Bone::Weight>> weights;
+			//	weights.resize(ms->positions.size());
+			//	for (auto j = 0; j < ms->bones.size(); j++)
+			//	{
+			//		auto& b = ms->bones[j];
+			//		for (auto& w : b->weights)
+			//			weights[w.vid].emplace_back(j, w.w);
+			//	}
+			//	std::vector<MeshWeight> mesh_weights;
+			//	mesh_weights.resize(weights.size());
+			//	for (auto j = 0; j < weights.size(); j++)
+			//	{
+			//		auto& src = weights[j];
+			//		auto& dst = mesh_weights[j];
+			//		for (auto k = 0; k < 4; k++)
+			//		{
+			//			if (k < src.size())
+			//			{
+			//				dst.ids[k] = src[k].vid;
+			//				dst.weights[k] = src[k].w;
+			//			}
+			//			else
+			//				dst.ids[k] = -1;
+			//		}
+			//	}
+			//	mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
+			//	mrm->weight_buffer.upload((CommandBufferPrivate*)cb.get());
+			//}
 //		}
 //
 //		/*
@@ -1159,327 +570,6 @@
 //		}
 //		*/
 //
-//		void CanvasPrivate::close_path()
-//		{
-//			paths.back().push_back(paths.back().front());
-//		}
-//
-//		static std::vector<vec2> calculate_normals(const std::vector<vec2>& points, bool closed)
-//		{
-//			std::vector<vec2> normals(points.size());
-//			for (auto i = 0; i < points.size() - 1; i++)
-//			{
-//				auto d = normalize(points[i + 1] - points[i]);
-//				auto normal = vec2(d.y, -d.x);
-//
-//				if (i > 0)
-//				{
-//					auto n = normalize((normal + normals[i]) * 0.5f);
-//					normals[i] = n / dot(n, normal);
-//				}
-//				else
-//					normals[i] = normal;
-//
-//				if (closed && i + 1 == points.size() - 1)
-//				{
-//					auto n = normalize((normal + normals[0]) * 0.5f);
-//					normals.front() = normals.back() = n / dot(n, normal);
-//				}
-//				else
-//					normals[i + 1] = normal;
-//			}
-//			return normals;
-//		}
-//
-//		static const auto feather = 1.f;
-//
-//		void CanvasPrivate::stroke(const cvec4& col, float thickness, bool aa)
-//		{
-//			thickness *= 0.5f;
-//
-//			auto cmd = add_draw_element_cmd(0);
-//
-//			auto uv = vec2(0.5f);
-//
-//			for (auto& path : paths)
-//			{
-//				auto& points = path;
-//				if (points.size() < 2)
-//					continue;
-//
-//				auto vtx_cnt0 = cmd->vertices_count;
-//
-//				auto closed = points[0] == points.back();
-//				auto normals = calculate_normals(points, closed);
-//
-//				if (aa)
-//				{
-//					auto col_c = col;
-//					col_c.a *= min(thickness / feather, 1.f);
-//					auto col_t = col;
-//					col_t.a = 0;
-//
-//					if (thickness > feather)
-//					{
-//						auto edge = thickness - feather;
-//
-//						for (auto i = 0; i < points.size() - 1; i++)
-//						{
-//							if (i == 0)
-//							{
-//								auto p0 = points[0];
-//								auto p1 = points[1];
-//
-//								auto n0 = normals[0];
-//								auto n1 = normals[1];
-//
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_vtx(p0 + n0 * thickness, uv, col_t);
-//								add_vtx(p0 + n0 * edge, uv, col_c);
-//								add_vtx(p0 - n0 * edge, uv, col_c);
-//								add_vtx(p0 - n0 * thickness, uv, col_t);
-//								add_vtx(p1 + n1 * thickness, uv, col_t);
-//								add_vtx(p1 + n1 * edge, uv, col_c);
-//								add_vtx(p1 - n1 * edge, uv, col_c);
-//								add_vtx(p1 - n1 * thickness, uv, col_t);
-//								add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
-//								add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
-//								add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 7); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 7);
-//							}
-//							else if (closed && i == points.size() - 2)
-//							{
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
-//								add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt0 + 3);
-//							}
-//							else
-//							{
-//								auto p1 = points[i + 1];
-//
-//								auto n1 = normals[i + 1];
-//
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_vtx(p1 + n1 * thickness, uv, col_t);
-//								add_vtx(p1 + n1 * edge, uv, col_c);
-//								add_vtx(p1 - n1 * edge, uv, col_c);
-//								add_vtx(p1 - n1 * thickness, uv, col_t);
-//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
-//								add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-//							}
-//						}
-//					}
-//					else
-//					{
-//						for (auto i = 0; i < points.size() - 1; i++)
-//						{
-//							if (i == 0)
-//							{
-//								auto p0 = points[0];
-//								auto p1 = points[1];
-//
-//								auto n0 = normals[0];
-//								auto n1 = normals[1];
-//
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_vtx(p0 + n0 * feather, uv, col_t);
-//								add_vtx(p0, uv, col_c);
-//								add_vtx(p0 - n0 * feather, uv, col_t);
-//								add_vtx(p1 + n1 * feather, uv, col_t);
-//								add_vtx(p1, uv, col_c);
-//								add_vtx(p1 - n1 * feather, uv, col_t);
-//								add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
-//								add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
-//							}
-//							else if (closed && i == points.size() - 2)
-//							{
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
-//							}
-//							else
-//							{
-//								auto p1 = points[i + 1];
-//
-//								auto n1 = normals[i + 1];
-//
-//								auto vtx_cnt = cmd->vertices_count;
-//
-//								add_vtx(p1 + n1 * feather, uv, col_t);
-//								add_vtx(p1, uv, col_c);
-//								add_vtx(p1 - n1 * feather, uv, col_t);
-//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
-//							}
-//						}
-//					}
-//
-//					if (!closed)
-//					{
-//						auto ext = max(feather, thickness);
-//
-//						{
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							auto p0 = points[0];
-//							auto p1 = points[1];
-//
-//							auto n0 = normals[0];
-//
-//							auto p = p0 - normalize(p1 - p0);
-//							add_vtx(p + n0 * ext, uv, col_t);
-//							add_vtx(p - n0 * ext, uv, col_t);
-//							add_vtx(p0 + n0 * ext, uv, col_t);
-//							add_vtx(p0, uv, col_c);
-//							add_vtx(p0 - n0 * ext, uv, col_t);
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4); 
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 0);
-//						}
-//
-//						{
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							auto p0 = points[points.size() - 2];
-//							auto p1 = points[points.size() - 1];
-//
-//							auto n1 = normals[points.size() - 1];
-//
-//							auto p = p1 + normalize(p1 - p0);
-//							add_vtx(p1 + n1 * ext, uv, col_t);
-//							add_vtx(p1, uv, col_c);
-//							add_vtx(p1 - n1 * ext, uv, col_t);
-//							add_vtx(p + n1 * ext, uv, col_t);
-//							add_vtx(p - n1 * ext, uv, col_t);
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
-//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3);
-//						}
-//					}
-//				}
-//				else
-//				{
-//					for (auto i = 0; i < points.size() - 1; i++)
-//					{
-//						if (i == 0)
-//						{
-//							auto p0 = points[0];
-//							auto p1 = points[1];
-//
-//							auto n0 = normals[0];
-//							auto n1 = normals[1];
-//
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_vtx(p0 + n0 * thickness, uv, col);
-//							add_vtx(p0 - n0 * thickness, uv, col);
-//							add_vtx(p1 + n1 * thickness, uv, col);
-//							add_vtx(p1 - n1 * thickness, uv, col);
-//							add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-//						}
-//						else if (closed && i == points.size() - 2)
-//						{
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-//						}
-//						else
-//						{
-//							auto p1 = points[i + 1];
-//
-//							auto n1 = normals[i + 1];
-//
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_vtx(p1 + n1 * thickness, uv, col);
-//							add_vtx(p1 - n1 * thickness, uv, col);
-//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-//						}
-//					}
-//				}
-//			}
-//		}
-//
-//		void CanvasPrivate::fill(const cvec4& col, bool aa)
-//		{
-//			auto cmd = add_draw_element_cmd(0);
-//
-//			auto uv = vec2(0.5f);
-//
-//			for (auto& path : paths)
-//			{
-//				auto& points = path;
-//				if (points.size() < 3)
-//					continue;
-//
-//				for (auto i = 0; i < points.size() - 2; i++)
-//				{
-//					auto vtx_cnt = cmd->vertices_count;
-//
-//					add_vtx(points[0], uv, col);
-//					add_vtx(points[i + 1], uv, col);
-//					add_vtx(points[i + 2], uv, col);
-//					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1);
-//				}
-//
-//				if (aa)
-//				{
-//					auto vtx_cnt0 = cmd->vertices_count;
-//					auto _feather = feather * 2.f;
-//
-//					points.push_back(points.front());
-//					auto normals = calculate_normals(points, true);
-//
-//					auto col_t = col;
-//					col_t.a = 0;
-//
-//					for (auto i = 0; i < points.size() - 1; i++)
-//					{
-//						if (i == 0)
-//						{
-//							auto p0 = points[0];
-//							auto p1 = points[1];
-//
-//							auto n0 = normals[0];
-//							auto n1 = normals[1];
-//
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_vtx(p0, uv, col);
-//							add_vtx(p0 - n0 * _feather, uv, col_t);
-//							add_vtx(p1, uv, col);
-//							add_vtx(p1 - n1 * _feather, uv, col_t);
-//							add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-//						}
-//						else if (i == points.size() - 2)
-//						{
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-//						}
-//						else
-//						{
-//							auto p1 = points[i + 1];
-//
-//							auto n1 = normals[i + 1];
-//
-//							auto vtx_cnt = cmd->vertices_count;
-//
-//							add_vtx(p1, uv, col);
-//							add_vtx(p1 - n1 * _feather, uv, col_t);
-//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-//						}
-//					}
-//				}
-//			}
-//		}
-//
 //		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat2& axes, const vec2& uv0, const vec2& uv1, const cvec4& tint_col)
 //		{
 //			if (res_id >= element_resources.size())
@@ -1506,55 +596,6 @@
 //			add_vtx(pos + size.x * axes[0] + size.y * axes[1], _uv1, tint_col);
 //			add_vtx(pos + size.y * axes[1], vec2(_uv0.x, _uv1.y), tint_col);
 //			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
-//		}
-//
-//		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes)
-//		{
-//			auto& res = element_resources[res_id];
-//			if (!res.fa)
-//				return;
-//			auto atlas = res.fa;
-//
-//			auto cmd = add_draw_element_cmd(res_id);
-//
-//			auto p = vec2(0.f);
-//
-//			auto ptext = text_beg;
-//			while ((!text_end || ptext != text_end) && *ptext)
-//			{
-//				auto ch = *ptext;
-//				if (!ch)
-//					break;
-//				if (ch == '\n')
-//				{
-//					p.y += font_size;
-//					p.x = 0.f;
-//				}
-//				else if (ch != '\r')
-//				{
-//					if (ch == '\t')
-//						ch = ' ';
-//
-//					auto& g = atlas->get_glyph(ch, font_size);
-//					auto o = p + vec2(g.off);
-//					auto s = vec2(g.size);
-//					auto uv = g.uv;
-//					auto uv0 = vec2(uv.x, uv.y);
-//					auto uv1 = vec2(uv.z, uv.w);
-//
-//					auto vtx_cnt = cmd->vertices_count;
-//
-//					add_vtx(pos + o * axes, uv0, col);
-//					add_vtx(pos + o.x * axes[0] + (o.y - s.y) * axes[1], vec2(uv0.x, uv1.y), col);
-//					add_vtx(pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1], uv1, col);
-//					add_vtx(pos + (o.x + s.x) * axes[0] + o.y * axes[1], vec2(uv1.x, uv0.y), col);
-//					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
-//
-//					p.x += g.advance;
-//				}
-//
-//				ptext++;
-//			}
 //		}
 //
 //		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const mat4& transform, vec3* dst)
@@ -1629,16 +670,8 @@
 //			return vec4(n, dot(n, -p1));
 //		}
 //
-//
 //		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const mat3& dirs, const vec3& _coord)
 //		{
-//			fovy = _fovy;
-//			aspect = _aspect;
-//			zNear = _zNear;
-//			zFar = _zFar;
-//			camera_coord = _coord;
-//			camera_dirs = dirs;
-//
 //			view_inv_matrix = mat4(dirs);
 //			view_inv_matrix[3] = vec4(camera_coord, 1.f);
 //			view_matrix = inverse(view_inv_matrix);
@@ -1681,23 +714,6 @@
 //			sky_descriptorset->set_image(dsl->find_binding("sky_lut"), 0, lut, sp);
 //
 //			//render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
-//		}
-//
-//		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, ShadeFlags flags, void* userdata)
-//		{
-//			MeshInfo m;
-//			m.res = model_resources[mod_id]->meshes[mesh_idx].get();
-//			m.transform = transform;
-//			m.cast_shadow = cast_shadow;
-//			m.deformer = (ArmatureDeformerPrivate*)deformer;
-//			m.flags = flags;
-//			m.userdata = userdata;
-//			meshes.push_back(m);
-//
-//			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
-//				cmds.emplace_back(new CmdDrawMesh);
-//
-//			((CmdDrawMesh*)cmds.back().get())->entries.push_back(meshes.size() - 1);
 //		}
 //
 //		void CanvasPrivate::draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, ShadeFlags flags, void* userdata)
@@ -1847,20 +863,6 @@
 //			return userdatas[index - 1];
 //		}
 //
-//		void CanvasPrivate::set_scissor(const Rect& _scissor)
-//		{
-//			auto scissor = Rect(
-//				max(_scissor.LT.x, 0.f),
-//				max(_scissor.LT.y, 0.f),
-//				min(_scissor.RB.x, (float)output_size.x),
-//				min(_scissor.RB.y, (float)output_size.y)
-//			);
-//			if (scissor == curr_scissor)
-//				return;
-//			curr_scissor = scissor;
-//			cmds.emplace_back(new CmdSetScissor(scissor));
-//		}
-//
 //		void CanvasPrivate::set_viewport(const Rect& _viewport)
 //		{
 //			auto viewprot = Rect(
@@ -1885,14 +887,8 @@
 //			cmds.emplace_back(new CmdBlur(range, radius));
 //		}
 //
-//		void CanvasPrivate::add_bloom()
-//		{
-//			cmds.emplace_back(new CmdBloom());
-//		}
-//
 //		void CanvasPrivate::prepare()
 //		{
-//			meshes.clear();
 //			terrains.clear();
 //			directional_lights.clear();
 //			point_lights.clear();
@@ -1918,9 +914,6 @@
 //			cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 //			cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 //
-//			auto ele_vtx_off = 0;
-//			auto ele_idx_off = 0;
-//			auto mesh_off = 0;
 //			auto terr_off = 0;
 //			auto line_off = 0;
 //			auto tri_off = 0;
@@ -1929,49 +922,6 @@
 //			{
 //				switch (p.type)
 //				{
-//				case Pass2D:
-//				{
-//					if (ele_idx_off == 0)
-//					{
-//						element_vertex_buffer.upload(cb);
-//						element_index_buffer.upload(cb);
-//					}
-//
-//					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
-//					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->bind_vertex_buffer(element_vertex_buffer.buf.get(), 0);
-//					cb->bind_index_buffer(element_index_buffer.buf.get(), IndiceTypeUint);
-//					cb->begin_renderpass(nullptr, dst_fb);
-//					cb->bind_pipeline(preferences->element_pipeline.get());
-//					//cb->bind_descriptor_set(S<"element"_h>, element_descriptorset.get());
-//					//cb->push_constant_ht(S<"scale"_h>, 2.f / vec2(output_size));
-//					for (auto& i : p.cmd_ids)
-//					{
-//						auto& cmd = cmds[i];
-//						switch (cmd->type)
-//						{
-//						case Cmd::DrawElement:
-//						{
-//							auto c = (CmdDrawElement*)cmd.get();
-//							if (c->indices_count > 0)
-//							{
-//								cb->draw_indexed(c->indices_count, ele_idx_off, ele_vtx_off, 1, c->id);
-//								ele_vtx_off += c->vertices_count;
-//								ele_idx_off += c->indices_count;
-//							}
-//						}
-//							break;
-//						case Cmd::SetScissor:
-//						{
-//							auto c = (CmdSetScissor*)cmd.get();
-//							cb->set_scissor(c->scissor);
-//						}
-//							break;
-//						}
-//					}
-//					cb->end_renderpass();
-//				}
-//					break;
 //				case Pass3D:
 //				{
 //					if (mesh_off == 0 && terr_off == 0)
@@ -2275,51 +1225,6 @@
 //						auto& cmd = cmds[i];
 //						switch (cmd->type)
 //						{
-//						case Cmd::DrawMesh:
-//						{
-//							auto c = (CmdDrawMesh*)cmd.get();
-//							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
-//							for (auto& e : c->entries)
-//							{
-//								auto& m = meshes[e];
-//								auto mrm = m.res;
-//								auto mat = material_resources[mrm->material_id].get();
-//								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//								if (m.deformer)
-//								{
-//									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-//									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-//								}
-//								else
-//									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-//								if (m.flags & ShadeMaterial)
-//								{
-//									if (m.deformer)
-//										cb->bind_pipeline(mat->get_pipeline(MaterialForMeshArmature));
-//									else
-//										cb->bind_pipeline(mat->get_pipeline(MaterialForMesh));
-//									cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
-//								}
-//								if (m.flags & ShadeWireframe)
-//								{
-//									if (m.deformer)
-//										cb->bind_pipeline(preferences->mesh_armature_wireframe_pipeline);
-//									else
-//										cb->bind_pipeline(preferences->mesh_wireframe_pipeline);
-//									cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
-//								}
-//								if (m.flags & ShadeOutline)
-//									outline_meshes.emplace_back(&m, mesh_off);
-//								mesh_off++;
-//							}
-//						}
-//							break;
 //						case Cmd::DrawTerrain:
 //						{
 //							auto c = (CmdDrawTerrain*)cmd.get();
@@ -2346,12 +1251,6 @@
 //									outline_terrains.emplace_back(&t, terr_off);
 //								terr_off++;
 //							}
-//						}
-//							break;
-//						case Cmd::SetScissor:
-//						{
-//							auto c = (CmdSetScissor*)cmd.get();
-//							cb->set_scissor(c->scissor);
 //						}
 //							break;
 //						}

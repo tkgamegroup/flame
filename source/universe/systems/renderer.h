@@ -37,8 +37,8 @@ namespace flame
 		virtual void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id,
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) = 0;
 
-		virtual int set_texture_res(int idx, graphics::ImageView* view) = 0;
-		virtual int find_texture_res(graphics::ImageView* view) const = 0;
+		virtual int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) = 0;
+		virtual int find_texture_res(graphics::ImageView* tex) const = 0;
 
 		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
 		virtual int find_material_res(graphics::Material* mat) const = 0;

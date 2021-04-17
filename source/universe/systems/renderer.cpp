@@ -12,6 +12,17 @@
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
+#include <element/element.dsl.h>
+#include <element/element.pll.h>
+#include <render_data.dsl.h>
+#include <transform.dsl.h>
+#include <material.dsl.h>
+#include <light.dsl.h>
+#include <mesh/defe_geom.pll.h>
+#include <deferred/shade.dsl.h>
+#include <deferred/shade.pll.h>
+#include <post/post.dsl.h>
+
 namespace flame
 {
 	static graphics::AccessFlags usage2access(graphics::BufferUsageFlags usage)
@@ -281,7 +292,7 @@ namespace flame
 
 	int sRendererPrivate::set_element_res(int idx, ElementResType type, void* v)
 	{
-		auto iv_wht = img_wht->get_view(0);
+		auto iv_wht = img_wht->get_view();
 
 		if (!v)
 		{
@@ -503,6 +514,56 @@ namespace flame
 
 						c.d.a.vtx_cnt += 3;
 						c.d.a.idx_cnt += 3;
+
+						//				if (aa)
+						//				{
+						//					auto vtx_cnt0 = cmd->vertices_count;
+						//					auto feather = 2.f;
+						//
+						//					points.push_back(points.front());
+						//					auto normals = calculate_normals(points, true);
+						//
+						//					auto col_t = col;
+						//					col_t.a = 0;
+						//
+						//					for (auto i = 0; i < points.size() - 1; i++)
+						//					{
+						//						if (i == 0)
+						//						{
+						//							auto p0 = points[0];
+						//							auto p1 = points[1];
+						//
+						//							auto n0 = normals[0];
+						//							auto n1 = normals[1];
+						//
+						//							auto vtx_cnt = cmd->vertices_count;
+						//
+						//							add_vtx(p0, uv, col);
+						//							add_vtx(p0 - n0 * feather, uv, col_t);
+						//							add_vtx(p1, uv, col);
+						//							add_vtx(p1 - n1 * feather, uv, col_t);
+						//							add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+						//						}
+						//						else if (i == points.size() - 2)
+						//						{
+						//							auto vtx_cnt = cmd->vertices_count;
+						//
+						//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+						//						}
+						//						else
+						//						{
+						//							auto p1 = points[i + 1];
+						//
+						//							auto n1 = normals[i + 1];
+						//
+						//							auto vtx_cnt = cmd->vertices_count;
+						//
+						//							add_vtx(p1, uv, col);
+						//							add_vtx(p1 - n1 * feather, uv, col_t);
+						//							add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+						//						}
+						//					}
+						//				}
 					}
 				}
 					break;
@@ -520,66 +581,222 @@ namespace flame
 					auto closed = info.points.front() == info.points.back();
 					auto normals = calculate_normals(info.points, closed);
 
-					auto vtx_cnt0 = c.d.a.vtx_cnt;
-					for (auto i = 0; i < info.points.size() - 1; i++)
+					if (/*aa*/ false)
 					{
-						if (i == 0)
+						//
+						//		static const auto feather = 0.5f;
+						//					auto col_c = col;
+						//					col_c.a *= min(thickness / feather, 1.f);
+						//					auto col_t = col;
+						//					col_t.a = 0;
+						//
+						//					if (thickness > feather)
+						//					{
+						//						auto edge = thickness - feather;
+						//
+						//						for (auto i = 0; i < points.size() - 1; i++)
+						//						{
+						//							if (i == 0)
+						//							{
+						//								auto p0 = points[0];
+						//								auto p1 = points[1];
+						//
+						//								auto n0 = normals[0];
+						//								auto n1 = normals[1];
+						//
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_vtx(p0 + n0 * thickness, uv, col_t);
+						//								add_vtx(p0 + n0 * edge, uv, col_c);
+						//								add_vtx(p0 - n0 * edge, uv, col_c);
+						//								add_vtx(p0 - n0 * thickness, uv, col_t);
+						//								add_vtx(p1 + n1 * thickness, uv, col_t);
+						//								add_vtx(p1 + n1 * edge, uv, col_c);
+						//								add_vtx(p1 - n1 * edge, uv, col_c);
+						//								add_vtx(p1 - n1 * thickness, uv, col_t);
+						//								add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
+						//								add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
+						//								add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 7); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 7);
+						//							}
+						//							else if (closed && i == points.size() - 2)
+						//							{
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
+						//								add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+						//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt0 + 3);
+						//							}
+						//							else
+						//							{
+						//								auto p1 = points[i + 1];
+						//
+						//								auto n1 = normals[i + 1];
+						//
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_vtx(p1 + n1 * thickness, uv, col_t);
+						//								add_vtx(p1 + n1 * edge, uv, col_c);
+						//								add_vtx(p1 - n1 * edge, uv, col_c);
+						//								add_vtx(p1 - n1 * thickness, uv, col_t);
+						//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
+						//								add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+						//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+						//							}
+						//						}
+						//					}
+						//					else
+						//					{
+						//						for (auto i = 0; i < points.size() - 1; i++)
+						//						{
+						//							if (i == 0)
+						//							{
+						//								auto p0 = points[0];
+						//								auto p1 = points[1];
+						//
+						//								auto n0 = normals[0];
+						//								auto n1 = normals[1];
+						//
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_vtx(p0 + n0 * feather, uv, col_t);
+						//								add_vtx(p0, uv, col_c);
+						//								add_vtx(p0 - n0 * feather, uv, col_t);
+						//								add_vtx(p1 + n1 * feather, uv, col_t);
+						//								add_vtx(p1, uv, col_c);
+						//								add_vtx(p1 - n1 * feather, uv, col_t);
+						//								add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
+						//								add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
+						//							}
+						//							else if (closed && i == points.size() - 2)
+						//							{
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+						//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
+						//							}
+						//							else
+						//							{
+						//								auto p1 = points[i + 1];
+						//
+						//								auto n1 = normals[i + 1];
+						//
+						//								auto vtx_cnt = cmd->vertices_count;
+						//
+						//								add_vtx(p1 + n1 * feather, uv, col_t);
+						//								add_vtx(p1, uv, col_c);
+						//								add_vtx(p1 - n1 * feather, uv, col_t);
+						//								add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+						//								add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
+						//							}
+						//						}
+						//					}
+						//
+						//					if (!closed)
+						//					{
+						//						auto ext = max(feather, thickness);
+						//
+						//						{
+						//							auto vtx_cnt = cmd->vertices_count;
+						//
+						//							auto p0 = points[0];
+						//							auto p1 = points[1];
+						//
+						//							auto n0 = normals[0];
+						//
+						//							auto p = p0 - normalize(p1 - p0);
+						//							add_vtx(p + n0 * ext, uv, col_t);
+						//							add_vtx(p - n0 * ext, uv, col_t);
+						//							add_vtx(p0 + n0 * ext, uv, col_t);
+						//							add_vtx(p0, uv, col_c);
+						//							add_vtx(p0 - n0 * ext, uv, col_t);
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4); 
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 0);
+						//						}
+						//
+						//						{
+						//							auto vtx_cnt = cmd->vertices_count;
+						//
+						//							auto p0 = points[points.size() - 2];
+						//							auto p1 = points[points.size() - 1];
+						//
+						//							auto n1 = normals[points.size() - 1];
+						//
+						//							auto p = p1 + normalize(p1 - p0);
+						//							add_vtx(p1 + n1 * ext, uv, col_t);
+						//							add_vtx(p1, uv, col_c);
+						//							add_vtx(p1 - n1 * ext, uv, col_t);
+						//							add_vtx(p + n1 * ext, uv, col_t);
+						//							add_vtx(p - n1 * ext, uv, col_t);
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
+						//							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3);
+						//						}
+						//					}
+					}
+					else
+					{
+						auto vtx_cnt0 = c.d.a.vtx_cnt;
+						for (auto i = 0; i < info.points.size() - 1; i++)
 						{
-							auto p0 = info.points[0];
-							auto p1 = info.points[1];
+							if (i == 0)
+							{
+								auto p0 = info.points[0];
+								auto p1 = info.points[1];
 
-							auto n0 = normals[0];
-							auto n1 = normals[1];
+								auto n0 = normals[0];
+								auto n1 = normals[1];
 
-							auto pvtx = buf_element_vtx.stag(4);
-							pvtx[0].set(p0 + n0 * thickness, vec2(0.5), info.color);
-							pvtx[1].set(p0 - n0 * thickness, vec2(0.5), info.color);
-							pvtx[2].set(p1 + n1 * thickness, vec2(0.5), info.color);
-							pvtx[3].set(p1 - n1 * thickness, vec2(0.5), info.color);
+								auto pvtx = buf_element_vtx.stag(4);
+								pvtx[0].set(p0 + n0 * thickness, vec2(0.5), info.color);
+								pvtx[1].set(p0 - n0 * thickness, vec2(0.5), info.color);
+								pvtx[2].set(p1 + n1 * thickness, vec2(0.5), info.color);
+								pvtx[3].set(p1 - n1 * thickness, vec2(0.5), info.color);
 
-							auto pidx = buf_element_idx.stag(6);
-							pidx[0] = c.d.a.vtx_cnt + 0;
-							pidx[1] = c.d.a.vtx_cnt + 3;
-							pidx[2] = c.d.a.vtx_cnt + 1;
-							pidx[3] = c.d.a.vtx_cnt + 0;
-							pidx[4] = c.d.a.vtx_cnt + 2;
-							pidx[5] = c.d.a.vtx_cnt + 3;
+								auto pidx = buf_element_idx.stag(6);
+								pidx[0] = c.d.a.vtx_cnt + 0;
+								pidx[1] = c.d.a.vtx_cnt + 3;
+								pidx[2] = c.d.a.vtx_cnt + 1;
+								pidx[3] = c.d.a.vtx_cnt + 0;
+								pidx[4] = c.d.a.vtx_cnt + 2;
+								pidx[5] = c.d.a.vtx_cnt + 3;
 
-							c.d.a.vtx_cnt += 4;
-							c.d.a.idx_cnt += 6;
-						}
-						else if (closed && i == info.points.size() - 2)
-						{
-							auto pidx = buf_element_idx.stag(6);
-							pidx[0] = c.d.a.vtx_cnt - 2;
-							pidx[1] = vtx_cnt0 + 1;
-							pidx[2] = c.d.a.vtx_cnt - 1;
-							pidx[3] = c.d.a.vtx_cnt - 2;
-							pidx[4] = vtx_cnt0 + 0;
-							pidx[5] = vtx_cnt0 + 1;
+								c.d.a.vtx_cnt += 4;
+								c.d.a.idx_cnt += 6;
+							}
+							else if (closed && i == info.points.size() - 2)
+							{
+								auto pidx = buf_element_idx.stag(6);
+								pidx[0] = c.d.a.vtx_cnt - 2;
+								pidx[1] = vtx_cnt0 + 1;
+								pidx[2] = c.d.a.vtx_cnt - 1;
+								pidx[3] = c.d.a.vtx_cnt - 2;
+								pidx[4] = vtx_cnt0 + 0;
+								pidx[5] = vtx_cnt0 + 1;
 
-							c.d.a.idx_cnt += 6;
-						}
-						else
-						{
-							auto p1 = info.points[i + 1];
+								c.d.a.idx_cnt += 6;
+							}
+							else
+							{
+								auto p1 = info.points[i + 1];
 
-							auto n1 = normals[i + 1];
+								auto n1 = normals[i + 1];
 
-							auto pvtx = buf_element_vtx.stag(2);
-							pvtx[0].set(p1 + n1 * thickness, vec2(0.5), info.color);
-							pvtx[1].set(p1 - n1 * thickness, vec2(0.5), info.color);
+								auto pvtx = buf_element_vtx.stag(2);
+								pvtx[0].set(p1 + n1 * thickness, vec2(0.5), info.color);
+								pvtx[1].set(p1 - n1 * thickness, vec2(0.5), info.color);
 
-							auto pidx = buf_element_idx.stag(6);
-							pidx[0] = c.d.a.vtx_cnt - 2;
-							pidx[1] = c.d.a.vtx_cnt + 1;
-							pidx[2] = c.d.a.vtx_cnt - 1;
-							pidx[3] = c.d.a.vtx_cnt - 2;
-							pidx[4] = c.d.a.vtx_cnt + 0;
-							pidx[5] = c.d.a.vtx_cnt + 1;
+								auto pidx = buf_element_idx.stag(6);
+								pidx[0] = c.d.a.vtx_cnt - 2;
+								pidx[1] = c.d.a.vtx_cnt + 1;
+								pidx[2] = c.d.a.vtx_cnt - 1;
+								pidx[3] = c.d.a.vtx_cnt - 2;
+								pidx[4] = c.d.a.vtx_cnt + 0;
+								pidx[5] = c.d.a.vtx_cnt + 1;
 
-							c.d.a.vtx_cnt += 2;
-							c.d.a.idx_cnt += 6;
+								c.d.a.vtx_cnt += 2;
+								c.d.a.idx_cnt += 6;
+							}
 						}
 					}
 				}
@@ -663,8 +880,8 @@ namespace flame
 		cb->bind_pipeline(pl_element);
 		cb->bind_vertex_buffer(buf_element_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_element_idx.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_descriptor_set(PLL_element_aec9::Binding_element, ds_element.get());
-		cb->push_constant_t(0, PLL_element_aec9::PushConstant{ 2.f / tar_size });
+		cb->bind_descriptor_set(PLL_element::Binding_element, ds_element.get());
+		cb->push_constant_t(0, PLL_element::PushConstant{ 2.f / tar_size });
 		auto vtx_off = 0;
 		auto idx_off = 0;
 		for (auto& c : cmds)
@@ -681,14 +898,44 @@ namespace flame
 		cb->end_renderpass();
 	}
 
-	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex)
+	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp)
 	{
-		return -1;
+		if (idx == -1)
+		{
+			for (auto i = 0; i < tex_reses.size(); i++)
+			{
+				if (!tex_reses[i])
+				{
+					idx = i;
+					break;
+				}
+			}
+		}
+		if (idx == -1)
+			return -1;
+
+		tex_reses[idx] = tex;
+		ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_wht->get_view(), sp);
+
+		return idx;
 	}
 
 	int sRendererPrivate::find_texture_res(graphics::ImageView* tex) const
 	{
+		for (auto i = 0; i < tex_reses.size(); i++)
+		{
+			if (tex_reses[i] == tex)
+				return i;
+		}
 		return -1;
+	}
+
+	graphics::Pipeline* sRendererPrivate::MaterialRes::get_pl(sRendererPrivate* thiz, MaterialUsage u)
+	{
+		if (pls[u])
+			return pls[u];
+		pls[u] = thiz->get_material_pipeline(u, mat->get_pipeline_file(), mat->get_pipeline_defines());
+		return pls[u];
 	}
 
 	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
@@ -710,12 +957,55 @@ namespace flame
 		auto& dst = mat_reses[idx];
 		if (dst.mat)
 		{
-
+			for (auto i = 0; i < 4; i++)
+			{
+				if (dst.texs[i] != -1)
+					set_texture_res(dst.texs[i], nullptr, nullptr);
+			}
+			for (auto i = 0; i < _countof(dst.pls); i++)
+			{
+				if (dst.pls[i])
+					release_material_pipeline((MaterialUsage)i, dst.pls[i]);
+			}
 		}
 		dst.mat = mat;
 		if (mat)
 		{
+			graphics::InstanceCB cb(device);
 
+			auto& data = (*buf_material.pstag).material_infos[idx];
+			data.color = mat->get_color();
+			data.metallic = mat->get_metallic();
+			data.roughness = mat->get_roughness();
+			data.alpha_test = mat->get_alpha_test();
+			for (auto i = 0; i < 4; i++)
+			{
+				wchar_t buf[260];
+				mat->get_texture_file(i, buf);
+				auto fn = std::filesystem::path(buf);
+				if (fn.empty())
+				{
+					dst.texs[i] = -1;
+					data.map_indices[i] = -1;
+				}
+				else
+				{
+					auto img = graphics::Image::get(device, fn.c_str(), mat->get_texture_srgb(i));
+					auto iv = img->get_view();
+					auto id = find_texture_res(iv);
+					if (id == -1)
+						id = set_texture_res(-1, iv, mat->get_texture_sampler(device, i));
+					dst.texs[i] = id;
+					data.map_indices[i] = id;
+				}
+			}
+			
+			graphics::BufferCopy cpy;
+			cpy.dst_off = idx * sizeof(data);
+			cpy.size = sizeof(data);
+			buf_material.cpies.push_back(cpy);
+
+			buf_material.upload(cb.get());
 		}
 
 		return idx;
@@ -748,6 +1038,10 @@ namespace flame
 			return -1;
 
 		auto& dst = mesh_reses[idx];
+		if (dst.mesh)
+		{
+			// TODO: mark uploaded vertexs invalid
+		}
 		dst.mesh = mesh;
 		if (mesh)
 		{
@@ -861,20 +1155,27 @@ namespace flame
 			substitutes.emplace_back("MAT_FILE", mat.string());
 		}
 
-		std::string defines_str;
-		for (auto& t : defines)
-		{
-			defines_str += t;
-			defines_str += ' ';
-		}
-		std::string substitutes_str;
-		for (auto& t : substitutes)
-		{
-			defines_str += t.first;
-			defines_str += ' ';
-			defines_str += t.second;
-			defines_str += ' ';
-		}
+		auto defines_str = [&]() {
+			std::string ret;
+			for (auto& t : defines)
+			{
+				ret += t;
+				ret += ' ';
+			}
+			return ret;
+		};
+
+		auto substitutes_str = [&]() {
+			std::string ret;
+			for (auto& t : substitutes)
+			{
+				ret += t.first;
+				ret += ' ';
+				ret += t.second;
+				ret += ' ';
+			}
+			return ret;
+		};
 
 		switch (usage)
 		{
@@ -882,9 +1183,10 @@ namespace flame
 		//	defines.push_back("SHADOW_PASS");
 		case MaterialForMesh:
 		{
+			defines.push_back("DEFERRED");
 			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"mesh/defe_geom.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"mesh/defe_geom.frag", defines_str.c_str(), substitutes_str.c_str())
+				graphics::Shader::get(device, L"mesh/defe_geom.vert", defines_str().c_str(), substitutes_str().c_str()),
+				graphics::Shader::get(device, L"mesh/defe_geom.frag", defines_str().c_str(), substitutes_str().c_str())
 			};
 			graphics::GraphicsPipelineInfo info;
 			info.renderpass = graphics::Renderpass::get(device, L"deferred.rp");
@@ -904,8 +1206,7 @@ namespace flame
 			info.polygon_mode = polygon_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
-				graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"), info);
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"), info);
 		}
 			break;
 		//case MaterialForMeshShadowArmature:
@@ -976,12 +1277,24 @@ namespace flame
 
 	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl)
 	{
-
+		//			for (auto it = material_pipelines[usage].begin(); it != material_pipelines[usage].end(); it++)
+		//			{
+		//				if (it->pipeline.get() == p)
+		//				{
+		//					for (auto s : p->shaders)
+		//						s->release();
+		//					if (it->ref_count == 1)
+		//						material_pipelines[usage].erase(it);
+		//					else
+		//						it->ref_count--;
+		//					break;
+		//				}
+		//			}
 	}
 
 	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id)
 	{
-		fassert(transform_idx < _countof(DSL_transform_9c0d::Transforms::transforms));
+		fassert(transform_idx < _countof(DSL_transform::Transforms::transforms));
 
 		node->update_transform();
 
@@ -989,7 +1302,7 @@ namespace flame
 		data.mat = node->transform;
 		data.nor = mat4(node->rot);
 
-		node_drawing_meshes[0].emplace_back(transform_idx, mesh_id); // TODO: 0 -> mat id
+		node_drawing_meshes[mesh_reses[mesh_id].mat_id].emplace_back(transform_idx, mesh_id);
 
 		transform_idx++;
 	}
@@ -1018,7 +1331,7 @@ namespace flame
 
 		{
 			graphics::BufferCopy cpy;
-			cpy.size = sizeof(DSL_transform_9c0d::Transform) * transform_idx;
+			cpy.size = sizeof(DSL_transform::Transform) * transform_idx;
 			buf_transform.cpies.push_back(cpy);
 			transform_idx = 0;
 		}
@@ -1055,26 +1368,35 @@ namespace flame
 			vec4(0.f, 0.f, 0.f, 0.f)
 		};
 		cb->begin_renderpass(nullptr, fb_def.get(), cvs);
-		cb->bind_pipeline(pl_mats[MaterialForMesh][0].pipeline.get());
+		cb->bind_pipeline_layout(graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"));
 		cb->bind_vertex_buffer(buf_mesh_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
-		graphics::DescriptorSet* sets[PLL_defe_geom_25c1::Binding_Max];
-		sets[PLL_defe_geom_25c1::Binding_render_data] = ds_render_data.get();
-		sets[PLL_defe_geom_25c1::Binding_transform] = ds_transform.get();
-		cb->bind_descriptor_sets(0, _countof(sets), sets);
+		{
+			graphics::DescriptorSet* sets[PLL_defe_geom::Binding_Max];
+			sets[PLL_defe_geom::Binding_render_data] = ds_render_data.get();
+			sets[PLL_defe_geom::Binding_transform] = ds_transform.get();
+			sets[PLL_defe_geom::Binding_material] = ds_material.get();
+			cb->bind_descriptor_sets(0, _countof(sets), sets);
+		}
 		auto indir_off = 0;
 		for (auto mat_id = 0; mat_id < node_drawing_meshes.size(); mat_id++)
 		{
 			auto& vec = node_drawing_meshes[mat_id];
 			if (!vec.empty())
 			{
+				cb->bind_pipeline(mat_reses[mat_id].get_pl(this, MaterialForMesh));
 				cb->draw_indexed_indirect(buf_indirs.buf.get(), indir_off, vec.size());
 				indir_off += vec.size();
 			}
 		}
 		cb->next_pass();
 		cb->bind_pipeline(pl_defe_shad);
-		cb->bind_descriptor_set(0, ds_defe_shad.get());
+		{
+			graphics::DescriptorSet* sets[PLL_shade::Binding_Max];
+			sets[PLL_shade::Binding_shade] = ds_defe_shad.get();
+			sets[PLL_shade::Binding_light] = ds_light.get();
+			cb->bind_descriptor_sets(0, _countof(sets), sets);
+		}
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
@@ -1088,9 +1410,12 @@ namespace flame
 
 	void sRendererPrivate::record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb)
 	{
+		// TODO: find a way to combine 2d and 3d
 		record_node_drawing_commands(tar_idx, cb);
 		//record_element_drawing_commands(tar_idx, cb);
 	}
+
+	const auto shadow_map_size = uvec2(1024);
 
 	void sRendererPrivate::on_added()
 	{
@@ -1110,6 +1435,9 @@ namespace flame
 		pl_element = graphics::Pipeline::get(device, L"element/element.pl");
 
 		auto dsp = graphics::DescriptorPool::get_default(device);
+		auto sp_nearest = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+		auto sp_linear = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge);
+		auto iv_wht = img_wht->get_view();
 
 		buf_element_vtx.create(device, graphics::BufferUsageVertex, 360000);
 		buf_element_idx.create(device, graphics::BufferUsageIndex, 240000);
@@ -1119,15 +1447,10 @@ namespace flame
 		{
 			auto dsl = graphics::DescriptorSetLayout::get(device, L"element/element.dsl");
 			ds_element.reset(graphics::DescriptorSet::create(dsp, dsl));
-			auto idx = dsl->find_binding("images");
-			graphics::DescriptorBindingInfo bd;
-			dsl->get_binding(idx, &bd);
-			element_reses.resize(bd.count);
-			auto iv_wht = img_wht->get_view(0);
-			auto sp = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge);
-			for (auto i = 0; i < bd.count; i++)
+			element_reses.resize(DSL_element::images_count);
+			for (auto i = 0; i < element_reses.size(); i++)
 			{
-				ds_element->set_image(idx, i, iv_wht, sp);
+				ds_element->set_image(DSL_element::images_binding, i, iv_wht, sp_linear);
 
 				auto& res = element_reses[i];
 				res.type = ElementResImage;
@@ -1135,8 +1458,10 @@ namespace flame
 			}
 		}
 
-		mat_reses.resize(_countof(DSL_material_6528::MaterialInfos::material_infos));
+		tex_reses.resize(DSL_material::maps_count);
+		mat_reses.resize(_countof(DSL_material::MaterialInfos::material_infos));
 		mesh_reses.resize(64);
+
 		node_drawing_meshes.resize(mat_reses.size());
 		
 		buf_indirs.create(device, graphics::BufferUsageIndirect, 65536);
@@ -1147,61 +1472,69 @@ namespace flame
 		buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
 
 		buf_render_data.create(device, graphics::BufferUsageUniform);
-		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"render_data.dsl");
-			ds_render_data.reset(graphics::DescriptorSet::create(dsp, dsl));
-			ds_render_data->set_buffer(dsl->find_binding("RenderData"), 0, buf_render_data.buf.get());
-		}
+		ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
+		ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, buf_render_data.buf.get());
 
 		buf_transform.create(device, graphics::BufferUsageStorage);
-		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"transform.dsl");
-			ds_transform.reset(graphics::DescriptorSet::create(dsp, dsl));
-			ds_transform->set_buffer(dsl->find_binding("Transforms"), 0, buf_transform.buf.get());
-		}
+		ds_transform.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"transform.dsl")));
+		ds_transform->set_buffer(DSL_transform::Transforms_binding, 0, buf_transform.buf.get());
 
 		buf_material.create(device, graphics::BufferUsageStorage);
-		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"material.dsl");
-			ds_material.reset(graphics::DescriptorSet::create(dsp, dsl));
-			ds_material->set_buffer(dsl->find_binding("MaterialInfos"), 0, buf_material.buf.get());
-		}
+		ds_material.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"material.dsl")));
+		ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, buf_material.buf.get());
+		for (auto i = 0; i < tex_reses.size(); i++)
+			ds_material->set_image(DSL_material::maps_binding, i, iv_wht, sp_linear);
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		img_dep.reset(graphics::Image::create(device, graphics::Format_Depth16, tar_size, 1, 1, 
+		img_dep.reset(graphics::Image::create(device, graphics::Format_Depth16, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		img_def_geo0.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
+		img_alb_met.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		img_def_geo1.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
+		img_nor_rou.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_size, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+
+		buf_light_data.create(device, graphics::BufferUsageStorage);
+		buf_grid_light.create(device, graphics::BufferUsageStorage);
+		img_dir_maps.resize(DSL_light::dir_maps_count);
+		for (auto i = 0; i < img_dir_maps.size(); i++)
+		{
+			img_dir_maps[i].reset(graphics::Image::create(device, graphics::Format_R16_SFLOAT, shadow_map_size, 1, 4,
+				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		}
+		img_pt_maps.resize(DSL_light::pt_maps_count);
+		for (auto i = 0; i < img_pt_maps.size(); i++)
+		{
+			img_pt_maps[i].reset(graphics::Image::create(device, graphics::Format_R16_SFLOAT, vec2(shadow_map_size) * 0.5f, 1, 6,
+				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		}
+		ds_light.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"light.dsl")));
+		ds_light->set_buffer(DSL_light::LightData_binding, 0, buf_light_data.buf.get());
+		ds_light->set_buffer(DSL_light::GridLights_binding, 0, buf_grid_light.buf.get());
+		for (auto i = 0; i < img_dir_maps.size(); i++)
+			ds_light->set_image(DSL_light::dir_maps_binding, i, img_dir_maps[i]->get_view(), sp_linear);
+		for (auto i = 0; i < img_pt_maps.size(); i++)
+			ds_light->set_image(DSL_light::pt_maps_binding, i, img_pt_maps[i]->get_view(), sp_linear);
 
 		{
 			graphics::ImageView* vs[4];
-			vs[0] = img_def_geo0->get_view();
-			vs[1] = img_def_geo0->get_view();
+			vs[0] = img_alb_met->get_view();
+			vs[1] = img_alb_met->get_view();
 			vs[2] = img_dep->get_view();
 			vs[3] = img_back->get_view();
-			fb_def.reset(graphics::Framebuffer::create(device,
-				graphics::Renderpass::get(device, L"deferred.rp"), _countof(vs), vs));
+			fb_def.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"deferred.rp"), _countof(vs), vs));
 		}
 
 		pl_defe_shad = graphics::Pipeline::get(device, L"deferred/shade.pl");
 
-		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"deferred/shade.dsl");
-			ds_defe_shad.reset(graphics::DescriptorSet::create(dsp, dsl));
-			auto sp = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
-			ds_defe_shad->set_image(dsl->find_binding("image0"), 0, img_def_geo0->get_view(), sp);
-			ds_defe_shad->set_image(dsl->find_binding("image1"), 0, img_def_geo1->get_view(), sp);
-		}
+		ds_defe_shad.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"deferred/shade.dsl")));
+		ds_defe_shad->set_image(DSL_shade::img_alb_met_binding, 0, img_alb_met->get_view(), sp_nearest);
+		ds_defe_shad->set_image(DSL_shade::img_nor_rou_binding, 0, img_nor_rou->get_view(), sp_nearest);
+		ds_defe_shad->set_image(DSL_shade::img_dep_binding,		0, img_dep->get_view(), sp_nearest);
 
-		{
-			auto dsl = graphics::DescriptorSetLayout::get(device, L"post/post.dsl");
-			ds_back.reset(graphics::DescriptorSet::create(dsp, dsl));
-			auto sp = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
-			ds_back->set_image(dsl->find_binding("image"), 0, img_back->get_view(), sp);
-		}
+		ds_back.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"post/post.dsl")));
+		ds_back->set_image(DSL_post::image_binding, 0, img_back->get_view(), sp_nearest);
+
 		pl_gamma = graphics::Pipeline::get(device, L"post/gamma.pl");
 	}
 

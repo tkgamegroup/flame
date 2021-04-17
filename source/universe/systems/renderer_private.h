@@ -3,11 +3,26 @@
 #include "../../graphics/command.h"
 #include "renderer.h"
 
-#include <element/element.pll.h>
-#include <render_data.dsl.h>
-#include <transform.dsl.h>
-#include <material.dsl.h>
-#include <mesh/defe_geom.pll.h>
+namespace DSL_render_data
+{
+	struct RenderData;
+}
+
+namespace DSL_transform
+{
+	struct Transforms;
+}
+
+namespace DSL_material
+{
+	struct MaterialInfos;
+}
+
+namespace DSL_light
+{
+	struct LightData;
+	struct GridLights;
+}
 
 namespace flame
 {
@@ -137,8 +152,11 @@ namespace flame
 		struct MaterialRes
 		{
 			graphics::Material* mat;
-			uint texs[4];
+			int texs[4];
 			graphics::Pipeline* pls[MaterialUsageCount] = {};
+
+			graphics::Pipeline* get_pl(sRendererPrivate* thiz, MaterialUsage u);
+
 		};
 
 		struct MeshRes
@@ -156,8 +174,6 @@ namespace flame
 		bool always_update = false;
 
 		Window* window;
-
-		cCameraPrivate* camera = nullptr;
 
 		graphics::Device* device;
 		graphics::Swapchain* swapchain;
@@ -184,6 +200,8 @@ namespace flame
 
 		// ==== node drawing ====
 
+		cCameraPrivate* camera = nullptr;
+
 		std::vector<graphics::ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
@@ -197,19 +215,25 @@ namespace flame
 		SparseBuffer<ArmMeshVertex>	buf_arm_mesh_vtx;
 		SparseBuffer<uint>			buf_arm_mesh_idx;
 
-		StorageBuffer<DSL_render_data_5604::RenderData>	buf_render_data;
-		UniPtr<graphics::DescriptorSet>					ds_render_data;
-		StorageBuffer<DSL_transform_9c0d::Transforms>	buf_transform;
-		uint											transform_idx = 0;
-		UniPtr<graphics::DescriptorSet>					ds_transform;
-		StorageBuffer<DSL_material_6528::MaterialInfos>	buf_material;
-		UniPtr<graphics::DescriptorSet>					ds_material;
+		StorageBuffer<DSL_render_data::RenderData>	buf_render_data;
+		UniPtr<graphics::DescriptorSet>				ds_render_data;
+		StorageBuffer<DSL_transform::Transforms>	buf_transform;
+		uint										transform_idx = 0;
+		UniPtr<graphics::DescriptorSet>				ds_transform;
+		StorageBuffer<DSL_material::MaterialInfos>	buf_material;
+		UniPtr<graphics::DescriptorSet>				ds_material;
 
 		UniPtr<graphics::Image> img_back;
 		UniPtr<graphics::Image> img_dep;
-		UniPtr<graphics::Image> img_def_geo0; // albedo, metallic
-		UniPtr<graphics::Image> img_def_geo1; // normal, roughness
-		
+		UniPtr<graphics::Image> img_alb_met; // albedo, metallic
+		UniPtr<graphics::Image> img_nor_rou; // normal, roughness
+
+		StorageBuffer<DSL_light::LightData>			buf_light_data;
+		StorageBuffer<DSL_light::GridLights>		buf_grid_light;
+		std::vector<UniPtr<graphics::Image>>		img_dir_maps;
+		std::vector<UniPtr<graphics::Image>>		img_pt_maps;
+		UniPtr<graphics::DescriptorSet>				ds_light;
+
 		UniPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
@@ -244,7 +268,7 @@ namespace flame
 		void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
 		void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 
-		int set_texture_res(int idx, graphics::ImageView* tex) override;
+		int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) override;
 		int find_texture_res(graphics::ImageView* tex) const override;
 
 		int set_material_res(int idx, graphics::Material* mat) override;

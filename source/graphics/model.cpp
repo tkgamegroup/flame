@@ -1,4 +1,5 @@
 #include "../foundation/typeinfo.h"
+#include "image_private.h"
 #include "model_private.h"
 
 #ifdef USE_ASSIMP
@@ -32,12 +33,54 @@ namespace flame
 			{
 				auto& dst = m->textures[itex];
 				dst.filename = n_texture.attribute("filename").value();
+				dst.srgb = n_texture.attribute("srgb").as_bool();
 				ti_es("flame::graphics::Filter")->unserialize(&dst.mag_filter, n_texture.attribute("mag_filter").value());
 				ti_es("flame::graphics::Filter")->unserialize(&dst.min_filter, n_texture.attribute("min_filter").value());
 				dst.linear_mipmap = n_texture.attribute("linear_mipmap").as_bool();
 				ti_es("flame::graphics::AddressMode")->unserialize(&dst.address_mode, n_texture.attribute("address_mode").value());
 				itex++;
 			}
+		}
+
+		void MaterialPrivate::get_texture_file(uint idx, wchar_t* dst) const
+		{
+			if (idx < 4)
+			{
+				auto& src = textures[idx];
+				if (src.filename.empty())
+					dst[0] = 0;
+				else
+				{
+					auto path = dir / src.filename;
+					if (!std::filesystem::exists(path))
+					{
+						path = pipeline_file;
+						get_engine_path(path, L"assets\\shaders");
+					}
+					wcscpy(dst, path.c_str());
+				}
+			}
+		}
+
+		SamplerPtr MaterialPrivate::get_texture_sampler(DevicePtr device, uint idx) const
+		{
+			if (idx < 4)
+			{
+				auto& src = textures[idx];
+				return SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode);
+			}
+			return nullptr;
+		}
+
+		void MaterialPrivate::get_pipeline_file(wchar_t* dst) const
+		{
+			auto path = dir / pipeline_file;
+			if (!std::filesystem::exists(path))
+			{
+				path = pipeline_file;
+				get_engine_path(path, L"assets\\shaders");
+			}
+			wcscpy(dst, path.c_str());
 		}
 
 		MaterialPrivate* MaterialPrivate::get(const std::filesystem::path& filename)
@@ -322,6 +365,7 @@ namespace flame
 						{
 							auto& src = m->textures[i];
 							write_s(file, src.filename.string());
+							write_i(file, src.srgb);
 							write_i(file, src.mag_filter);
 							write_i(file, src.min_filter);
 							write_i(file, src.linear_mipmap);
@@ -403,6 +447,7 @@ namespace flame
 						{
 							auto n_texture = n_textures.append_child("texture");
 							n_texture.append_attribute("filename").set_value(t.filename.string().c_str());
+							n_texture.append_attribute("srgb").set_value(t.srgb);
 							n_texture.append_attribute("mag_filter").set_value(ti_es("flame::graphics::Filter")->serialize(&t.mag_filter).c_str());
 							n_texture.append_attribute("min_filter").set_value(ti_es("flame::graphics::Filter")->serialize(&t.min_filter).c_str());
 							n_texture.append_attribute("linear_mipmap").set_value(t.linear_mipmap);
@@ -603,6 +648,7 @@ namespace flame
 						{
 							auto& dst = m->textures[i];
 							read_fn(file, dst.filename);
+							dst.srgb = read_i(file);
 							dst.mag_filter = (Filter)read_i(file);
 							dst.min_filter = (Filter)read_i(file);
 							dst.linear_mipmap = read_i(file);

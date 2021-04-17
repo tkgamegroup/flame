@@ -23,6 +23,7 @@ add_dependencies(flame_universe shader_compiler)
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/element/element.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/defe_geom.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/deferred/shade.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/post/post.pll")
 
 file(GLOB PUBLIC_HEADER "*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")

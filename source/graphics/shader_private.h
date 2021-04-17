@@ -66,7 +66,7 @@ namespace flame
 
 			DescriptorSetLayoutPtr get_layout() const override { return layout; }
 
-			void set_buffer(uint binding, uint index, BufferPtr b, uint offset = 0, uint range = 0) override;
+			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
 			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
 		};
 
