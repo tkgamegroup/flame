@@ -127,7 +127,7 @@ namespace flame
 
 	void cImagePrivate::on_added()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {

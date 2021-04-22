@@ -925,6 +925,16 @@ namespace flame
 			std::sort(substitutes.begin(), substitutes.end(), [](const auto& a, const auto& b) {
 				return a.first < b.first;
 			});
+
+			if (device)
+			{
+				for (auto& s : device->sds)
+				{
+					if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
+						return s.get();
+				}
+			}
+
 			std::string defines_str;
 			std::string substitutes_str;
 			for (auto i = 0; i < defines.size(); i++)
@@ -938,15 +948,6 @@ namespace flame
 				substitutes_str += substitutes[i].first + " " + substitutes[i].second;
 				if (i < substitutes.size() - 1)
 					substitutes_str += " ";
-			}
-
-			if (device)
-			{
-				for (auto& s : device->sds)
-				{
-					if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
-						return s.get();
-				}
 			}
 
 			auto ppath = filename.parent_path();
@@ -1046,6 +1047,7 @@ namespace flame
 				device->sds.emplace_back(s);
 				return s;
 			}
+
 			return nullptr;
 		}
 
@@ -1402,10 +1404,7 @@ namespace flame
 
 			std::vector<ShaderPrivate*> shaders;
 			for (auto n_shdr : doc_root.child("shaders"))
-			{
-				shaders.push_back(ShaderPrivate::get(device, 
-					n_shdr.attribute("filename").value()));
-			}
+				shaders.push_back(ShaderPrivate::get(device, n_shdr.attribute("filename").value()));
 
 			auto pll = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
 
@@ -1470,6 +1469,7 @@ namespace flame
 				device->pls.emplace_back(pl);
 				return pl;
 			}
+
 			return nullptr;
 		}
 

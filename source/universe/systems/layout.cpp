@@ -83,7 +83,7 @@ namespace flame
 	{
 		if (window)
 		{
-			world->element_root->get_component_t<cElementPrivate>()
+			world->root->get_component_i<cElementPrivate>(0)
 				->set_size(window->get_size());
 		}
 
@@ -128,7 +128,7 @@ namespace flame
 			{
 				if (c->global_visibility)
 				{
-					auto e = c->get_component_t<cElementPrivate>();
+					auto e = c->get_component_i<cElementPrivate>(0);
 					if (e)
 					{
 						if (!e->align_in_layout)

@@ -1,7 +1,8 @@
-#include "../../physics/scene.h"
+#include "../../physics/device.h"
 #include "../../physics/rigid.h"
 #include "../../physics/shape.h"
 #include "../../physics/controller.h"
+#include "../../physics/scene.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
 #include "../components/element_private.h"
@@ -16,7 +17,7 @@ namespace flame
 
 	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir)
 	{
-		return phy_scene->raycast(origin, dir, 1000.f);
+		return physics_scene->raycast(origin, dir, 1000.f);
 	}
 
 	void sPhysicsPrivate::set_visualization(bool v)
@@ -25,12 +26,12 @@ namespace flame
 			visualization_layer = nullptr;
 		else
 		{
-			if (world && phy_scene)
+			if (world && physics_scene)
 			{
-				visualization_layer = world->element_root->find_child("debug")->get_component_t<cElementPrivate>();
+				visualization_layer = world->root->find_child("debug")->get_component_i<cElementPrivate>(0);
 				if (visualization_layer)
 				{
-					phy_scene->set_visualization(true);
+					physics_scene->set_visualization(true);
 					visualization_layer->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
 						auto thiz = c.thiz<sPhysicsPrivate>();
 						if (thiz->visualization_layer)
@@ -38,7 +39,7 @@ namespace flame
 							layer++;
 							uint lines_count;
 							Line* lines;
-							thiz->phy_scene->get_visualization_data(&lines_count, &lines);
+							thiz->physics_scene->get_visualization_data(&lines_count, &lines);
 							// TODO: fix below
 							//canvas->draw_lines(lines_count, lines);
 						}
@@ -51,13 +52,18 @@ namespace flame
 
 	void sPhysicsPrivate::on_added()
 	{
-		phy_scene = (physics::Scene*)world->find_object("flame::physics::Scene");
-		phy_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
+		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
+		physics_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
 			auto tri_shp = (cShapePrivate*)trigger_shape->user_data;
 			auto oth_shp = (cShapePrivate*)other_shape->user_data;
 			for (auto& l : tri_shp->rigid->trigger_listeners)
 				l->call(type, tri_shp, oth_shp);
 		}, Capture().set_thiz(this));
+	}
+
+	void sPhysicsPrivate::on_removed()
+	{
+		physics_scene.reset(nullptr);
 	}
 
 	void sPhysicsPrivate::update()
@@ -74,7 +80,7 @@ namespace flame
 			c->disp = vec3(0.f);
 		}
 
-		phy_scene->update(delta_time);
+		physics_scene->update(delta_time);
 
 		for (auto r : rigids)
 		{

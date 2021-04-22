@@ -16,9 +16,9 @@ target_link_libraries(flame_foundation optimized "${PUGIXML_RELEASE_STATIC_LIBRA
 file(GLOB PUBLIC_HEADER "../*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame")
-add_custom_command(TARGET flame_foundation POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame")
+add_custom_command(TARGET flame_foundation PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame")
 
 file(GLOB PUBLIC_HEADER "*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/foundation")
-add_custom_command(TARGET flame_foundation POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/foundation")
+add_custom_command(TARGET flame_foundation PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/foundation")

@@ -173,14 +173,12 @@ namespace flame
 		bool wireframe = false;
 		bool always_update = false;
 
-		Window* window;
-
 		graphics::Device* device;
-		graphics::Swapchain* swapchain;
 
 		graphics::Renderpass* rp_rgba8c;
 		graphics::Renderpass* rp_rgba8;
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
+		vec2 tar_sz;
 
 		// ==== element drawing ====
 
@@ -251,11 +249,7 @@ namespace flame
 
 		bool dirty = true;
 
-		vec2 tar_size;
-
 		sRendererPrivate(sRendererParms* parms);
-
-		void set_targets();
 
 		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
@@ -291,9 +285,8 @@ namespace flame
 		uint element_render(uint layer, cElementPrivate* element);
 		void node_render(cNodePrivate* node);
 
-		void record_element_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb);
-		void record_node_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb);
-		void record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) override;
+		void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) override;
+		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
 
 		void on_added() override;
 

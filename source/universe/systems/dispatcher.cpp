@@ -279,7 +279,7 @@ namespace flame
 		mouse_targets.clear();
 		if (active)
 			dispatch_mouse_single(active, true);
-		dispatch_mouse_recursively(world->element_root.get());
+		dispatch_mouse_recursively(world->root.get());
 
 		auto set_state = [&](cReceiverPrivate* er) {
 			auto e = er->entity;

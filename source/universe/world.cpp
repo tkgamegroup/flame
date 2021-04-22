@@ -7,6 +7,13 @@
 
 namespace flame
 {
+	WorldPrivate::WorldPrivate()
+	{
+		root.reset(f_new<EntityPrivate>());
+		root->world = this;
+		root->global_visibility = true;
+	}
+
 	void WorldPrivate::register_object(void* o, const std::string& name)
 	{
 		objects.emplace_back(o, name);
@@ -80,33 +87,6 @@ namespace flame
 				return;
 			}
 		}
-	}
-
-	Entity* WorldPrivate::get_element_root()
-	{
-		if (!element_root)
-		{
-			element_root.reset(f_new<EntityPrivate>());
-			element_root->global_visibility = true;
-			element_root->add_component(cElement::create());
-			auto cer = cReceiver::create();
-			cer->set_ignore_occluders(true);
-			element_root->add_component(cer);
-			element_root->on_entered_world(this);
-		}
-		return element_root.get();
-	}
-
-	Entity* WorldPrivate::get_node_root()
-	{
-		if (!node_root)
-		{
-			node_root.reset(f_new<EntityPrivate>());
-			node_root->global_visibility = true;
-			node_root->add_component(cNode::create());
-			node_root->on_entered_world(this);
-		}
-		return node_root.get();
 	}
 
 	void WorldPrivate::update()

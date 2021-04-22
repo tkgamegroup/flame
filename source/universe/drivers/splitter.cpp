@@ -29,12 +29,12 @@ namespace flame
 
 	void dSplitterPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		bar = entity->find_child("bar");
 		fassert(bar);
-		bar_element = bar->get_component_t<cElementPrivate>();
+		bar_element = bar->get_component_i<cElementPrivate>(0);
 		fassert(bar_element);
 		bar_receiver = bar->get_component_t<cReceiverPrivate>();
 		fassert(bar_receiver);
@@ -104,7 +104,7 @@ namespace flame
 		{
 			if (targets.size() < 2)
 			{
-				auto element = e->get_component_t<cElementPrivate>();
+				auto element = e->get_component_i<cElementPrivate>(0);
 				fassert(element);
 				e->redirectable = false;
 				entity->add_child(e, targets.size() == 0 ? 0 : 2);

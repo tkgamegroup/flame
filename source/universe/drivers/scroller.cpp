@@ -28,7 +28,7 @@ namespace flame
 
 	void dScrollerPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
@@ -40,19 +40,19 @@ namespace flame
 
 		track = entity->find_child("track");
 		fassert(track);
-		track_element = track->get_component_t<cElementPrivate>();
+		track_element = track->get_component_i<cElementPrivate>(0);
 		fassert(track_element);
 
 		thumb = entity->find_child("thumb");
 		fassert(thumb);
-		thumb_element = thumb->get_component_t<cElementPrivate>();
+		thumb_element = thumb->get_component_i<cElementPrivate>(0);
 		fassert(thumb_element);
 		thumb_receiver = thumb->get_component_t<cReceiverPrivate>();
 		fassert(thumb_receiver);
 
 		view = entity->find_child("view");
 		fassert(view);
-		view_element = view->get_component_t<cElementPrivate>();
+		view_element = view->get_component_i<cElementPrivate>(0);
 		fassert(view_element);
 		 
 		thumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
@@ -97,7 +97,7 @@ namespace flame
 		if (load_finished && !target)
 		{
 			target = e;
-			target_element = target->get_component_t<cElementPrivate>();
+			target_element = target->get_component_i<cElementPrivate>(0);
 			fassert(target_element);
 			target->add_component_data_listener([](Capture& c, uint h) {
 				auto thiz = c.thiz<dScrollerPrivate>();

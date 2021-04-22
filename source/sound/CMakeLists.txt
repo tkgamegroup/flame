@@ -12,4 +12,4 @@ add_custom_command(TARGET flame_sound POST_BUILD COMMAND $<TARGET_FILE:typeinfog
 file(GLOB PUBLIC_HEADER "*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/sound")
-add_custom_command(TARGET flame_sound POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/sound")
+add_custom_command(TARGET flame_sound PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/sound")

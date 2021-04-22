@@ -84,6 +84,7 @@ namespace flame
 		std::filesystem::path get_src(uint id) const { return srcs[srcs.size() - id - 1]; }
 
 		Component* get_component(uint hash) const override;
+		template <class T> inline T* get_component_i(uint idx) const { auto ret = components[idx].get(); return ret->type_hash == T::type_hash ? (T*)ret : nullptr; }
 		Component* find_component(const std::string& name) const;
 		Component* find_component(const char* name) const override { return find_component(std::string(name)); }
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }

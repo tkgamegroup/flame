@@ -14,15 +14,12 @@ namespace flame
 		bool current = false;
 
 		cNodePrivate* node = nullptr;
-		void* drawer = nullptr;
 		sRendererPrivate* renderer = nullptr;
 
 		void apply_current();
 
 		bool get_current() const override { return current; }
 		void set_current(bool v) override;
-
-		void draw(sRenderer* renderer);
 
 		void on_added() override;
 		void on_removed() override;

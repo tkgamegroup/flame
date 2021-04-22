@@ -60,7 +60,7 @@ namespace flame
 		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
 		phy_rigid->user_data = this;
 		physics->rigids.push_back(this);
-		physics->phy_scene->add_rigid(phy_rigid);
+		physics->physics_scene->add_rigid(phy_rigid);
 		node->update_transform();
 		phy_rigid->set_pose(node->g_pos, node->g_qut);
 	}
@@ -72,13 +72,13 @@ namespace flame
 		std::erase_if(physics->rigids, [&](const auto& i) {
 			return i == this;
 		});
-		physics->phy_scene->remove_rigid(phy_rigid);
+		physics->physics_scene->remove_rigid(phy_rigid);
 		phy_rigid->release();
 	}
 
 	void cRigidPrivate::on_added()
 	{
-		node = entity->get_component_t<cNodePrivate>();
+		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 		node->set_auto_update_qut();
 	}

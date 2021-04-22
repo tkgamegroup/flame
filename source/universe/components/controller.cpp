@@ -23,7 +23,7 @@ namespace flame
 
 	void cControllerPrivate::on_added()
 	{
-		node = entity->get_component_t<cNodePrivate>();
+		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 		node->set_auto_update_qut();
 	}
@@ -38,7 +38,7 @@ namespace flame
 		physics = entity->world->get_system_t<sPhysicsPrivate>();
 		fassert(physics);
 
-		phy_controller = physics::Controller::create(physics->phy_scene, nullptr, radius, height);
+		phy_controller = physics::Controller::create(physics->physics_scene.get(), nullptr, radius, height);
 		node->update_transform();
 		phy_controller->set_position(node->g_pos);
 		physics->controllers.push_back(this);

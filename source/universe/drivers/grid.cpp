@@ -8,7 +8,7 @@ namespace flame
 {
 	void dGridPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
@@ -17,7 +17,7 @@ namespace flame
 		anchor = entity->find_child("anchor");
 		fassert(anchor);
 
-		anchor_element = anchor->get_component_t<cElementPrivate>();
+		anchor_element = anchor->get_component_i<cElementPrivate>(0);
 		fassert(anchor_element);
 
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {

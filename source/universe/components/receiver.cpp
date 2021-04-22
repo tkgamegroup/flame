@@ -325,7 +325,7 @@ namespace flame
 
 	void cReceiverPrivate::on_added()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 	}
 

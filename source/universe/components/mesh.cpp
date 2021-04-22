@@ -101,7 +101,7 @@ namespace flame
 				//	auto e = armature->find_child(name);
 				//	if (e)
 				//	{
-				//		auto n = e->get_component_t<cNodePrivate>();
+				//		auto n = e->get_component_i<cNodePrivate>(0);
 				//		if (n)
 				//		{
 				//			b.name = name;
@@ -243,7 +243,7 @@ namespace flame
 
 	void cMeshPrivate::on_added()
 	{
-		node = entity->get_component_t<cNodePrivate>();
+		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
 		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {

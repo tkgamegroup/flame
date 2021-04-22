@@ -35,7 +35,7 @@ namespace flame
 
 	void cShapePrivate::on_added()
 	{
-		node = entity->get_component_t<cNodePrivate>();
+		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
 		terrain = entity->get_component_t<cTerrainPrivate>();

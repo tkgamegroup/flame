@@ -26,4 +26,4 @@ add_custom_command(TARGET flame_graphics POST_BUILD COMMAND $<TARGET_FILE:typein
 file(GLOB PUBLIC_HEADER "*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/graphics")
-add_custom_command(TARGET flame_graphics POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/graphics")
+add_custom_command(TARGET flame_graphics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/graphics")

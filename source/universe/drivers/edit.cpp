@@ -95,7 +95,7 @@ namespace flame
 
 	void dEditPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
@@ -197,7 +197,7 @@ namespace flame
 				if (thiz->enter_to_throw_focus)
 				{
 					auto dp = thiz->receiver->dispatcher;
-					dp->next_focusing = dp->world->element_root->get_component_t<cReceiverPrivate>();
+					dp->next_focusing = dp->world->root->get_component_t<cReceiverPrivate>();
 				}
 				break;
 			case Keyboard_Left:

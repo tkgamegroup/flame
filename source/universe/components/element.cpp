@@ -518,7 +518,7 @@ namespace flame
 			transform_dirty = true;
 			for (auto& c : entity->children)
 			{
-				auto e = c->get_component_t<cElementPrivate>();
+				auto e = c->get_component_i<cElementPrivate>(0);
 				if (e)
 					e->mark_transform_dirty();
 			}
@@ -594,7 +594,7 @@ namespace flame
 
 	void cElementPrivate::on_child_added(EntityPtr e)
 	{
-		auto element = e->get_component_t<cElementPrivate>();
+		auto element = e->get_component_i<cElementPrivate>(0);
 		if (element)
 		{
 			if (element->alignx != AlignNone || element->aligny != AlignNone)
@@ -610,9 +610,12 @@ namespace flame
 
 	void cElementPrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRendererPrivate>();
+		auto world = entity->world;
+		if (!world->first_element)
+			world->first_element = entity;
+		renderer = world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
-		layout_system = entity->world->get_system_t<sLayoutPrivate>();
+		layout_system = world->get_system_t<sLayoutPrivate>();
 		fassert(layout_system);
 		mark_transform_dirty();
 		mark_size_dirty();
@@ -621,6 +624,9 @@ namespace flame
 
 	void cElementPrivate::on_left_world()
 	{
+		auto world = entity->world;
+		if (world->first_element == entity)
+			world->first_element = nullptr;
 		mark_drawing_dirty();
 		remove_from_sizing_list();
 		remove_from_layout_list();

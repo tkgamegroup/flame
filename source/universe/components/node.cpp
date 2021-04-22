@@ -179,7 +179,7 @@ namespace flame
 
 			for (auto& c : entity->children)
 			{
-				auto n = c->get_component_t<cNodePrivate>();
+				auto n = c->get_component_i<cNodePrivate>(0);
 				if (n)
 					n->mark_transform_dirty();
 			}
@@ -205,6 +205,9 @@ namespace flame
 
 	void cNodePrivate::on_entered_world()
 	{
+		auto world = entity->world;
+		if (!world->first_node)
+			world->first_node = entity;
 		renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
 		mark_transform_dirty();
@@ -212,6 +215,9 @@ namespace flame
 
 	void cNodePrivate::on_left_world()
 	{
+		auto world = entity->world;
+		if (world->first_node == entity)
+			world->first_node = nullptr;
 		mark_drawing_dirty();
 		renderer = nullptr;
 	}

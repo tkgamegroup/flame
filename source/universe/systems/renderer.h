@@ -54,7 +54,8 @@ namespace flame
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 
-		virtual void record_drawing_commands(uint tar_idx, graphics::CommandBuffer* cb) = 0;
+		virtual void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) = 0;
+		virtual void record(uint tar_idx, graphics::CommandBuffer* cb) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};

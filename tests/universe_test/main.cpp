@@ -19,7 +19,7 @@ int main(int argc, char** args)
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
 		//e->save(L"d:/1.prefab");
-		w->node_root->add_child(e);
+		w->root->add_child(e);
 	}
 
 	looper().add_event([](Capture& c) {

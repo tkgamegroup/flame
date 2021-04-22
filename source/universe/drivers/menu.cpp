@@ -12,7 +12,7 @@ namespace flame
 
 	void dMenuPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
@@ -31,7 +31,7 @@ namespace flame
 			switch (msg)
 			{
 			case S<"entered_world"_h>:
-				thiz->root = thiz->entity->world->element_root.get();
+				thiz->root = thiz->entity->world->root.get();
 				break;
 			}
 		}, Capture().set_thiz(this));
@@ -88,7 +88,7 @@ namespace flame
 	{
 		if (load_finished)
 		{
-			auto element = e->get_component_t<cElementPrivate>();
+			auto element = e->get_component_i<cElementPrivate>(0);
 			fassert(element);
 			element->set_alignx(AlignMinMax);
 			auto dm = e->get_driver_t<dMenuPrivate>();
@@ -120,7 +120,7 @@ namespace flame
 			}
 		}
 
-		auto items_element = items->get_component_t<cElementPrivate>();
+		auto items_element = items->get_component_i<cElementPrivate>(0);
 		if (items_element)
 		{
 			element->update_transform();
@@ -202,7 +202,7 @@ namespace flame
 
 	void dMenuItemPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();

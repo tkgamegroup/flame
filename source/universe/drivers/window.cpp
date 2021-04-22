@@ -34,7 +34,7 @@ namespace flame
 
 	void dWindowPrivate::on_load_finished()
 	{
-		element = entity->get_component_t<cElementPrivate>();
+		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);

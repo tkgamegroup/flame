@@ -40,18 +40,16 @@ namespace flame
 		UniPtr<graphics::Fence> submit_fence;
 		UniPtr<graphics::Semaphore> render_finished;
 
-		UniPtr<physics::Scene> physics_scene;
-
 		UniPtr<World> world;
 		sLayout* s_layout = nullptr;
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
 		sPhysics* s_physics = nullptr;
-		Entity* element_root = nullptr;
-		Entity* node_root = nullptr;
+		Entity* root = nullptr;
 
 		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
+		void set_targets();
 		void update();
 	};
 
@@ -71,6 +69,9 @@ namespace flame
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);
+		window->add_resize_listener([](Capture& c, const uvec2& size) {
+			c.thiz<GraphicsWindow>()->set_targets();
+		}, Capture().set_thiz(this));
 		window->add_destroy_listener([](Capture& c) {
 			c.thiz<GraphicsWindow>()->window.release();
 		}, Capture().set_thiz(this));
@@ -82,12 +83,8 @@ namespace flame
 		submit_fence.reset(graphics::Fence::create(graphics::Device::get_default()));
 		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
-		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
-
 		world.reset(World::create());
 		world->register_object(window.get(), "flame::Window");
-		world->register_object(swapchain.get(), "flame::graphics::Swapchain");
-		world->register_object(physics_scene.get(), "flame::physics::Scene");
 		s_layout = sLayout::create();
 		world->add_system(s_layout);
 		s_dispatcher = sDispatcher::create();
@@ -107,9 +104,14 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		element_root = world->get_element_root();
-		node_root = world->get_node_root();
-		s_dispatcher->set_next_focusing(element_root->get_component_t<cReceiver>());
+		set_targets();
+
+		root = world->get_root();
+		root->add_component(cElement::create());
+		auto cer = cReceiver::create();
+		cer->set_ignore_occluders(true);
+		root->add_component(cer);
+		s_dispatcher->set_next_focusing((cReceiverPtr)cer);
 
 		auto scr_ins = script::Instance::get_default();
 		scr_ins->push_object();
@@ -138,6 +140,16 @@ namespace flame
 		}
 	}
 
+	void GraphicsWindow::set_targets()
+	{
+		std::vector<graphics::ImageView*> vs;
+		vs.resize(swapchain->get_images_count());
+		for (auto i = 0; i < vs.size(); i++)
+			vs[i] = swapchain->get_image(i)->get_view();
+
+		s_renderer->set_targets(vs.size(), vs.data());
+	}
+
 	void GraphicsWindow::update()
 	{
 		if (world)
@@ -149,7 +161,7 @@ namespace flame
 			auto cb = commandbuffers[swapchain_image_index].get();
 
 			cb->begin();
-			s_renderer->record_drawing_commands(swapchain_image_index, cb);
+			s_renderer->record(swapchain_image_index, cb);
 			cb->end();
 
 			auto queue = graphics::Queue::get(graphics::Device::get_default());

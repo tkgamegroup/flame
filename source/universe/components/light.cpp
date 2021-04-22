@@ -28,7 +28,7 @@ namespace flame
 
 	void cLightPrivate::on_added()
 	{
-		node = entity->get_component_t<cNodePrivate>();
+		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
 		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
