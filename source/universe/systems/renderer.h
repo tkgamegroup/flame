@@ -13,13 +13,6 @@ namespace flame
 		inline static auto type_name = "flame::sRenderer";
 		inline static auto type_hash = ch(type_name);
 
-		enum ElementResType
-		{
-			ElementResImage,
-			ElementResAtlas,
-			ElementResFont
-		};
-
 		sRenderer() :
 			System(type_name, type_hash)
 		{
@@ -28,8 +21,14 @@ namespace flame
 		virtual void set_shade_wireframe(bool v) = 0;
 		virtual void set_always_update(bool a) = 0;
 
-		virtual void* get_element_res(uint idx, ElementResType* type) const = 0;
-		virtual int set_element_res(int idx, ElementResType type, void* v) = 0;
+		/* element res type:
+		*	"ImageView"
+		*	"ImageAtlas"
+		*	"FontAtlas"
+		*/
+
+		virtual void* get_element_res(uint idx, char* type) const = 0;
+		virtual int set_element_res(int idx, const char* type, void* v) = 0;
 		virtual int find_element_res(void* v) const = 0;
 
 		virtual void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) = 0;
@@ -49,6 +48,7 @@ namespace flame
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;
 
+		virtual void add_light(cNodePtr node, const vec3& color, bool cast_shadow) = 0;
 		virtual void draw_mesh(cNodePtr node, uint mesh_id) = 0;
 
 		virtual bool is_dirty() const = 0;

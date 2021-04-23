@@ -11,11 +11,10 @@ void main()
 {
 	MaterialInfo material = material_infos[i_mat];
 
-	vec3 N = normalize(i_normal);
-	//vec3 V = normalize(i_coordv);
+	vec3 N = i_normal;
 	
 	MAT_FILE
 
 	o_res_alb_met = vec4(albedo, metallic);
-	o_res_nor_rou = vec4(i_normal * 0.5 + vec3(0.5), roughness);
+	o_res_nor_rou = vec4(N * 0.5 + vec3(0.5), roughness);
 }

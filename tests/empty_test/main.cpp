@@ -1,11 +1,13 @@
-#include <flame/foundation/typeinfo.h>
-
-using namespace flame;
-
-const std::vector<int*> a;
-
-int main(int argc, char** args)
+struct A
 {
-	a.data();
-	return 0;
+    int i = 5;
+    float f = 0.5f;
+    char c = 'A';
+};
+
+int main()
+{
+    A a;
+    auto& [p1, p2, p3] = a;
+    return 0;
 }

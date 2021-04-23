@@ -22,7 +22,7 @@ namespace flame
 
 			std::string name;
 
-			vec4 color = vec4(1.f);
+			vec4 color = vec4(1.f, 0.f, 0.5f, 1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;
 			float alpha_test = 0.f;

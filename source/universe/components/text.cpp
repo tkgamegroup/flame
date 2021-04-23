@@ -133,7 +133,7 @@ namespace flame
 			atlas = graphics::FontAtlas::get(graphics::Device::get_default(), L"msyh.ttc;font_awesome.ttf");
 			res_id = renderer->find_element_res(atlas);
 			if (res_id == -1)
-				res_id = renderer->set_element_res(-1, sRenderer::ElementResFont, atlas);
+				res_id = renderer->set_element_res(-1, "FontAtlas", atlas);
 			if (res_id == -1)
 				atlas = nullptr;
 		}

@@ -2,7 +2,7 @@
 #define LIGHT_SET 0
 #endif
 
-struct GridLightRef
+struct GridLight
 {
 	uint dir_count;
 	uint dir_indices[7];
@@ -21,15 +21,23 @@ struct LightInfo
 
 layout (set = LIGHT_SET, binding = 0) buffer readonly GridLights
 {
-	GridLightRef grid_lights[20000];
+	GridLight grid_lights[20000];
 };
 
-layout (set = LIGHT_SET, binding = 1) buffer readonly LightData
+layout (set = LIGHT_SET, binding = 1) buffer readonly LightInfos
 {
 	LightInfo light_infos[65536];
-	mat4 dir_mats[16];
-	mat4 pt_mats[24];
-}light_data;
+};
 
-layout (set = LIGHT_SET, binding = 2) uniform sampler2DArray	dir_maps[4];
-layout (set = LIGHT_SET, binding = 3) uniform samplerCube		pt_maps[4];
+layout (set = LIGHT_SET, binding = 2) buffer readonly DirShadowMats
+{
+	mat4 dir_shadow_mats[16];
+};
+
+layout (set = LIGHT_SET, binding = 3) buffer readonly PtShadowMats
+{
+	mat4 pt_shadow_mats[24];
+};
+
+layout (set = LIGHT_SET, binding = 4) uniform sampler2DArray	dir_maps[4];
+layout (set = LIGHT_SET, binding = 5) uniform samplerCube		pt_maps[4];
