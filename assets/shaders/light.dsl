@@ -13,10 +13,10 @@ struct GridLight
 struct LightInfo
 {
 	vec3 pos;
-	float distance;
 	vec3 color;
 	
 	int shadow_index;
+	float shadow_distance;
 };
 
 layout (set = LIGHT_SET, binding = 0) buffer readonly GridLights
@@ -34,10 +34,5 @@ layout (set = LIGHT_SET, binding = 2) buffer readonly DirShadowMats
 	mat4 dir_shadow_mats[16];
 };
 
-layout (set = LIGHT_SET, binding = 3) buffer readonly PtShadowMats
-{
-	mat4 pt_shadow_mats[24];
-};
-
-layout (set = LIGHT_SET, binding = 4) uniform sampler2DArray	dir_maps[4];
-layout (set = LIGHT_SET, binding = 5) uniform samplerCube		pt_maps[4];
+layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray	dir_maps[4];
+layout (set = LIGHT_SET, binding = 4) uniform samplerCube		pt_maps[4];

@@ -1,4 +1,4 @@
-#include "defe_geom.pll"
+#include "gbuffer.pll"
 
 layout (location = 0) in flat uint i_mat;
 layout (location = 1) in vec2 i_uv;

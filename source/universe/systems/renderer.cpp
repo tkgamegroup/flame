@@ -17,7 +17,7 @@
 #include <transform.dsl.h>
 #include <material.dsl.h>
 #include <light.dsl.h>
-#include <mesh/defe_geom.pll.h>
+#include <mesh/gbuffer.pll.h>
 #include <deferred/shade.dsl.h>
 #include <deferred/shade.pll.h>
 #include <post/post.dsl.h>
@@ -365,7 +365,8 @@ namespace flame
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
 
-		std::vector<cLightPrivate*>						lights;
+		std::vector<cNodePrivate*>						dir_shadows;
+		std::vector<cNodePrivate*>						pt_shadows;
 		std::vector<std::vector<std::pair<uint, uint>>> meshes;
 
 		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_indirs;
@@ -386,13 +387,12 @@ namespace flame
 		UniPtr<graphics::Image> img_alb_met; // albedo, metallic
 		UniPtr<graphics::Image> img_nor_rou; // normal, roughness
 
-		StorageBuffer<DSL_light::LightInfos>		buf_light_infos;
-		StorageBuffer<DSL_light::GridLights>		buf_grid_lights;
-		StorageBuffer<DSL_light::DirShadowMats>		buf_dir_shadow_mats;
-		StorageBuffer<DSL_light::PtShadowMats>		buf_pt_shadow_mats;
-		std::vector<UniPtr<graphics::Image>>		img_dir_maps;
-		std::vector<UniPtr<graphics::Image>>		img_pt_maps;
-		UniPtr<graphics::DescriptorSet>				ds_light;
+		SequentialArrayStorageBuffer<DSL_light::LightInfos>			buf_light_infos;
+		ArrayStorageBuffer<DSL_light::GridLights>					buf_grid_lights;
+		SequentialArrayStorageBuffer<DSL_light::DirShadowMats>		buf_dir_shadow_mats;
+		std::vector<UniPtr<graphics::Image>>						img_dir_maps;
+		std::vector<UniPtr<graphics::Image>>						img_pt_maps;
+		UniPtr<graphics::DescriptorSet>								ds_light;
 
 		UniPtr<graphics::Framebuffer> fb_def;
 
@@ -1002,8 +1002,8 @@ namespace flame
 		{
 			defines.push_back("DEFERRED");
 			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"mesh/defe_geom.vert", defines_str().c_str(), substitutes_str().c_str()),
-				graphics::Shader::get(device, L"mesh/defe_geom.frag", defines_str().c_str(), substitutes_str().c_str())
+				graphics::Shader::get(device, L"mesh/gbuffer.vert", defines_str().c_str(), substitutes_str().c_str()),
+				graphics::Shader::get(device, L"mesh/gbuffer.frag", defines_str().c_str(), substitutes_str().c_str())
 			};
 			graphics::GraphicsPipelineInfo info;
 			info.renderpass = graphics::Renderpass::get(device, L"deferred.rp");
@@ -1023,7 +1023,7 @@ namespace flame
 			info.polygon_mode = polygon_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"), info);
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll"), info);
 		}
 			break;
 		//case MaterialForMeshShadowArmature:
@@ -1112,9 +1112,43 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::add_light(cNodePtr node, const vec3& color, bool cast_shadow)
+	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
 	{
 		auto& nd = *_nd;
+
+		node->update_transform();
+
+		auto idx = nd.buf_light_infos.n;
+
+		// TODO
+		{
+			auto& data = nd.buf_light_infos.add_item();
+			data.pos = type == LightDirectional ? -node->g_rot[2] : node->g_pos;
+			data.color = color;
+			data.shadow_index = -1;
+		}
+
+		// TODO
+		{
+			auto& data = nd.buf_grid_lights.set_item(0);
+			switch (type)
+			{
+			case LightDirectional:
+				if (data.dir_count < _countof(data.dir_indices))
+				{
+					data.dir_indices[data.dir_count] = idx;
+					data.dir_count++;
+				}
+				break;
+			case LightPoint:
+				if (data.pt_count < _countof(data.pt_indices))
+				{
+					data.pt_indices[data.pt_count] = idx;
+					data.pt_count++;
+				}
+				break;
+			}
+		}
 	}
 
 	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id)
@@ -1180,13 +1214,25 @@ namespace flame
 			{
 				auto node = camera->node;
 				node->update_transform();
-				auto view = mat4(node->rot);
-				view[3] = vec4(node->g_pos, 1.f);
-				view = inverse(view);
-				auto proj = perspective(radians(camera->fovy), tar_sz.x / tar_sz.y, camera->near, camera->far);
-				proj[1][1] *= -1.f;
+
 				auto& data = *(nd.buf_render_data.pstag);
-				data.proj_view = proj * view;
+				data.sky_rad_levels = 0;
+				data.shadow_distance = 100.f;
+				data.csm_levels = 3;
+				data.csm_factor = 0.3f;
+				data.zNear = camera->near;
+				data.zFar = camera->far;
+				data.camera_coord = node->g_pos;
+				data.view_inv = mat4(node->rot);
+				data.view[3] = vec4(node->g_pos, 1.f);
+				data.view = inverse(data.view_inv);
+				data.proj = perspective(radians(camera->fovy), tar_sz.x / tar_sz.y, camera->near, camera->far);
+				data.proj[1][1] *= -1.f;
+				data.proj_inv = inverse(data.proj);
+				data.proj_view = data.proj * data.view;
+
+				auto wtf = data.proj * vec4(0, 0, -1, 1);
+				auto cut = 1;
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);
@@ -1225,14 +1271,14 @@ namespace flame
 				vec4(0.f, 0.f, 0.f, 0.f)
 			};
 			cb->begin_renderpass(nullptr, nd.fb_def.get(), cvs);
-			cb->bind_pipeline_layout(graphics::PipelineLayout::get(device, L"mesh/defe_geom.pll"));
+			cb->bind_pipeline_layout(graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll"));
 			cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 			cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 			{
-				graphics::DescriptorSet* sets[PLL_defe_geom::Binding_Max];
-				sets[PLL_defe_geom::Binding_render_data] = nd.ds_render_data.get();
-				sets[PLL_defe_geom::Binding_transform] = nd.ds_transform.get();
-				sets[PLL_defe_geom::Binding_material] = nd.ds_material.get();
+				graphics::DescriptorSet* sets[PLL_gbuffer::Binding_Max];
+				sets[PLL_gbuffer::Binding_render_data] = nd.ds_render_data.get();
+				sets[PLL_gbuffer::Binding_transform] = nd.ds_transform.get();
+				sets[PLL_gbuffer::Binding_material] = nd.ds_material.get();
 				cb->bind_descriptor_sets(0, _countof(sets), sets);
 			}
 			auto indir_off = 0;
@@ -1775,7 +1821,6 @@ namespace flame
 		nd.buf_light_infos.create(device, graphics::BufferUsageStorage);
 		nd.buf_grid_lights.create(device, graphics::BufferUsageStorage);
 		nd.buf_dir_shadow_mats.create(device, graphics::BufferUsageStorage);
-		nd.buf_pt_shadow_mats.create(device, graphics::BufferUsageStorage);
 		nd.img_dir_maps.resize(DSL_light::dir_maps_count);
 		for (auto i = 0; i < nd.img_dir_maps.size(); i++)
 		{
@@ -1792,7 +1837,6 @@ namespace flame
 		nd.ds_light->set_buffer(DSL_light::LightInfos_binding, 0, nd.buf_light_infos.buf.get());
 		nd.ds_light->set_buffer(DSL_light::GridLights_binding, 0, nd.buf_grid_lights.buf.get());
 		nd.ds_light->set_buffer(DSL_light::DirShadowMats_binding, 0, nd.buf_dir_shadow_mats.buf.get());
-		nd.ds_light->set_buffer(DSL_light::PtShadowMats_binding, 0, nd.buf_pt_shadow_mats.buf.get());
 		for (auto i = 0; i < nd.img_dir_maps.size(); i++)
 			nd.ds_light->set_image(DSL_light::dir_maps_binding, i, nd.img_dir_maps[i]->get_view(), sp_linear);
 		for (auto i = 0; i < nd.img_pt_maps.size(); i++)

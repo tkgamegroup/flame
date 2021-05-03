@@ -21,7 +21,7 @@ add_dependencies(flame_universe typeinfogen_dep)
 add_custom_command(TARGET flame_universe POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:flame_universe> -d "${CMAKE_CURRENT_SOURCE_DIR}/typeinfo.desc")
 add_dependencies(flame_universe shader_compiler)
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/element/element.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/defe_geom.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/gbuffer.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/deferred/shade.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/post/post.pll")
 

@@ -547,7 +547,6 @@ namespace flame
 			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 			{
 				std::string header;
-				header += "#pragma once\n\n";
 				header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
 				write_udts_to_header(header, tidb);
 				auto idx = 0;
@@ -868,7 +867,6 @@ namespace flame
 			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 			{
 				std::string header;
-				header += "#pragma once\n\n";
 				header += "namespace PLL_" + filename.filename().stem().string() + "\n{\n";
 				header += "\tenum Binding\n\t{\n";
 				for (auto& d : dependencies)

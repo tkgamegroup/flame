@@ -32,7 +32,7 @@ camera.update_dir = function ()
 	camera.dir2 = camera.node.get_local_dir(0)
 end
 
-local root_receiver = element_root.find_component("cReceiver")
+local root_receiver = root.find_component("cReceiver")
 
 root_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then

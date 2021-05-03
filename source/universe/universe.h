@@ -123,4 +123,11 @@ namespace flame
 	};
 
 	inline ExtraDrawFlags operator| (ExtraDrawFlags a, ExtraDrawFlags b) { return (ExtraDrawFlags)((int)a | (int)b); }
+
+	enum LightType
+	{
+		LightDirectional,
+		LightPoint,
+		LightSpot
+	};
 }

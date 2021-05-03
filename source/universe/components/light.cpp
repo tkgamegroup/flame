@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	void cLightPrivate::set_type(graphics::LightType t)
+	void cLightPrivate::set_type(LightType t)
 	{
 		type = t;
 	}
@@ -22,7 +22,7 @@ namespace flame
 
 	void cLightPrivate::draw(sRendererPtr renderer)
 	{
-		renderer->add_light(node, color, cast_shadow);
+		renderer->add_light(node, type, color, cast_shadow);
 	}
 
 	void cLightPrivate::on_added()

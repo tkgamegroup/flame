@@ -36,29 +36,30 @@
 //				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 //			}
 //
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"sky/sky.vert"),
-//			//		ShaderPrivate::get(device, L"sky/sky.frag")
-//			//	};
-//			//	VertexAttributeInfo via;
-//			//	via.location = 0;
-//			//	via.format = Format_R32G32B32_SFLOAT;
-//			//	VertexBufferInfo vib;
-//			//	vib.attributes_count = 1;
-//			//	vib.attributes = &via;
-//			//	vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
-//			//	VertexInfo vi;
-//			//	vi.buffers_count = 1;
-//			//	vi.buffers = &vib;
-//			//	RasterInfo rst;
-//			//	rst.depth_clamp = true;
-//			//	rst.cull_mode = CullModeFront;
-//			//	DepthInfo dep;
-//			//	dep.test = false;
-//			//	dep.write = false;
-//			//	sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
-//			//}
+//
+//			{
+//				ShaderPrivate* shaders[] = {
+//					ShaderPrivate::get(device, L"sky/sky.vert"),
+//					ShaderPrivate::get(device, L"sky/sky.frag")
+//				};
+//				VertexAttributeInfo via;
+//				via.location = 0;
+//				via.format = Format_R32G32B32_SFLOAT;
+//				VertexBufferInfo vib;
+//				vib.attributes_count = 1;
+//				vib.attributes = &via;
+//				vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
+//				VertexInfo vi;
+//				vi.buffers_count = 1;
+//				vi.buffers = &vib;
+//				RasterInfo rst;
+//				rst.depth_clamp = true;
+//				rst.cull_mode = CullModeFront;
+//				DepthInfo dep;
+//				dep.test = false;
+//				dep.write = false;
+//				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
+//			}
 //
 //			//terrain_pipeline_layout = PipelineLayoutPrivate::get(device, L"terrain/terrain.pll");
 //
@@ -227,21 +228,6 @@
 //
 //			InstanceCB cb(device);
 //
-//			texture_resources.resize(128);
-//			for (auto i = 0; i < texture_resources.size(); i++)
-//				texture_resources[i].iv = iv_wht;
-//			
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"render_data.dsl");
-//				render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				//render_data_buffer.create(device, BufferUsageUniform, find_type(dsl->types, "RenderData"));
-//				//render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
-//				//render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
-//				//render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
-//				//render_data_buffer.set(S<"sky_rad_levels"_h>, 0.f);
-//				//render_data_descriptorset->set_buffer(dsl->find_binding("RenderData"), 0, render_data_buffer.buf.get());
-//			}
-//
 //			{
 //				auto dsl = DescriptorSetLayoutPrivate::get(device, L"sky.dsl");
 //				sky_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
@@ -255,15 +241,6 @@
 //				default_sky_rad_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
 //				cb->image_barrier(default_sky_rad_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 //				sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, default_sky_rad_image->views.back().get(), sp);
-//			}
-//
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"material.dsl");
-//				material_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				//material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
-//				//material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
-//				for (auto i = 0; i < texture_resources.size(); i++)
-//					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 //			}
 //
 //			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
@@ -283,12 +260,6 @@
 //					shadow_depth_back_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 //					shadow_depth_back_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 //				}
-//
-//				//light_sets_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightSet"), 1);
-//				//light_descriptorset->set_buffer(dsl->find_binding("LightSets"), 0, light_sets_buffer.buf.get());
-//
-//				//light_infos_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightInfo"), 10000);
-//				//light_descriptorset->set_buffer(dsl->find_binding("LightInfos"), 0, light_infos_buffer.buf.get());
 //
 //				//shadow_matrices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "mat4"), 40);
 //				//light_descriptorset->set_buffer(dsl->find_binding("ShadowMatrices"), 0, shadow_matrices_buffer.buf.get());
@@ -355,23 +326,9 @@
 //			line_buffer.create(device, BufferUsageVertex, 200000);
 //			triangle_buffer.create(device, BufferUsageVertex, 1000);
 //		}
-//
-//		void CanvasPrivate::set_shadow(float distance, uint _csm_levels, float _csm_factor)
-//		{
-//			shadow_distance = distance;
-//			csm_levels = _csm_levels;
-//			csm_factor = _csm_factor;
-//
-//			//render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
-//			//render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
-//			//render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
-//		}
-//
+// 
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
-//			auto device = preferences->device;
-//			auto hdr = preferences->hdr;
-//
 //			output_imageviews.clear();
 //			output_framebuffers.clear();
 //			output_descriptorsets.clear();
@@ -672,24 +629,6 @@
 //
 //		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const mat3& dirs, const vec3& _coord)
 //		{
-//			view_inv_matrix = mat4(dirs);
-//			view_inv_matrix[3] = vec4(camera_coord, 1.f);
-//			view_matrix = inverse(view_inv_matrix);
-//			proj_matrix = perspective(radians(fovy), aspect, zNear, zFar);
-//			proj_matrix[1][1] *= -1.f;
-//			proj_view_matrix = proj_matrix * view_matrix;
-//
-//			//render_data_buffer.set(S<"fovy"_h>, fovy);
-//			//render_data_buffer.set(S<"aspect"_h>, aspect);
-//			//render_data_buffer.set(S<"zNear"_h>, zNear);
-//			//render_data_buffer.set(S<"zFar"_h>, zFar);
-//			//render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
-//			//render_data_buffer.set(S<"camera_dirs"_h>, mat4(camera_dirs));
-//			//render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
-//			//render_data_buffer.set(S<"view"_h>, view_matrix);
-//			//render_data_buffer.set(S<"proj"_h>, proj_matrix);
-//			//render_data_buffer.set(S<"proj_view"_h>, proj_view_matrix);
-//
 //			{
 //				vec3 ps[8];
 //				get_frustum_points(zNear, zFar, tan(radians(fovy * 0.5f)), aspect, view_inv_matrix, ps);
@@ -887,16 +826,6 @@
 //			cmds.emplace_back(new CmdBlur(range, radius));
 //		}
 //
-//		void CanvasPrivate::prepare()
-//		{
-//			terrains.clear();
-//			directional_lights.clear();
-//			point_lights.clear();
-//
-//			line_buffer.stag_num = 0;
-//			triangle_buffer.stag_num = 0;
-//		}
-//
 //		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 //		{
 //			auto dst = hdr_image ? hdr_image.get() : output_imageviews[image_index]->image;
@@ -926,13 +855,6 @@
 //				{
 //					if (mesh_off == 0 && terr_off == 0)
 //					{
-//						for (auto i = 0; i < meshes.size(); i++)
-//						{
-//							auto& src = meshes[i];
-//							//auto dst = mesh_matrix_buffer.mark_item(i);
-//							//mesh_matrix_buffer.set(dst, S<"transform"_h>, src.transform);
-//							//mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(src.transform)))));
-//						}
 //						for (auto i = 0; i < terrains.size(); i++)
 //						{
 //							auto& src = terrains[i];

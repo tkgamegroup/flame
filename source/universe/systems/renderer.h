@@ -48,7 +48,7 @@ namespace flame
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;
 
-		virtual void add_light(cNodePtr node, const vec3& color, bool cast_shadow) = 0;
+		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual void draw_mesh(cNodePtr node, uint mesh_id) = 0;
 
 		virtual bool is_dirty() const = 0;

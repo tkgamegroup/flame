@@ -69,60 +69,54 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 spec, float roughness)
+vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
 	vec3 color = vec3(0.0);
 
 	uint light_count;
-	float distancev = length(coordv);
 	
-	light_count = light_sets[0].directional_lights_count;
+	light_count = grid_lights[0].dir_count;
 	for (int i = 0; i < light_count; i++)
 	{
-		LightInfo light = light_infos[light_sets[0].directional_light_indices[i]];
-		
-		vec3 L = light.pos;
+		LightInfo light = light_infos[grid_lights[0].dir_indices[i]];
 		
 		float shadow = 1.0;
 		if (light.shadow_index != -1 && distancev < render_data.shadow_distance)
 		{
+			vec3 L = light.pos;
 			float d = distancev / render_data.shadow_distance;
 			uint lvs = render_data.csm_levels;
 			float div = 1.0 / lvs;
 			uint lv = 0;
-			while (true)
+			for (; lv < lvs; lv++)
 			{
 				float v = (lv + 1) * div;
 				if (d <= v * v)
 					break;
-				else if (lv < lvs - 1)
-					lv++;
-				else
-					break;
 			}
-			vec4 coordl = shadow_matrices[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
+			vec4 coordl = dir_shadow_mats[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 			float ref = texture(directional_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-			shadow = clamp(exp(-esm_c * render_data.zFar * (coordl.z - ref)), 0.0, 1.0);
+			shadow = clamp(exp(-esm_c * light.shadow_distance * (coordl.z - ref)), 0.0, 1.0);
 		}
 		
 		color += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
 	}
 	
-	light_count = light_sets[0].point_lights_count;
+	light_count = grid_lights[0].pt_count;
 	for (int i = 0; i < light_count; i++)
 	{
-		LightInfo light = light_infos[light_sets[0].point_light_indices[i]];
-
-		vec3 L = light.pos - coordw;
-		float dist = length(L);
-		L = L / dist;
+		LightInfo light = light_infos[grid_lights[0].pt_indices[i]];
 
 		float shadow = 1.0;
-		if (light.shadow_index != -1)
+		if (light.shadow_index != -1 && distancev < render_data.shadow_distance)
 		{
+			vec3 L = light.pos - coordw;
+			float dist = length(L);
+			L = L / dist;
+
 			float ref = texture(point_shadow_maps[light.shadow_index], -L).r;
-			shadow = clamp(exp(-esm_c * (dist - ref * light.distance)), 0.0, 1.0);
+			shadow = clamp(exp(-esm_c * (dist - ref * light.shadow_distance)), 0.0, 1.0);
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);

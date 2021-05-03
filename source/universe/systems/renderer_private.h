@@ -73,7 +73,7 @@ namespace flame
 		cCameraPtr get_camera() const override { return camera; }
 		void set_camera(cCameraPtr c) override { camera = c; }
 
-		void add_light(cNodePtr node, const vec3& color, bool cast_shadow) override;
+		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		void draw_mesh(cNodePtr node, uint mesh_id) override;
 
 		bool is_dirty() const override { return always_update || dirty; }

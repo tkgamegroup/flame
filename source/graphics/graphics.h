@@ -406,12 +406,5 @@ namespace flame
 			DynamicStateStencilWriteMask,
 			DynamicStateStencilReference
 		};
-
-		enum LightType
-		{
-			LightDirectional,
-			LightPoint,
-			LightSpot
-		};
 	}
 }

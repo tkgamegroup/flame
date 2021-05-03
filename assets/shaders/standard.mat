@@ -28,6 +28,6 @@
 	
 	#ifndef DEFERRED
 		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
-		o_color = vec4(shading(i_coordw, i_coordv, N, V, metallic, albedo, spec, roughness), 1.0);
+		o_color = vec4(shading(i_coordw, length(i_coordv), N, V, metallic, albedo, spec, roughness), 1.0);
 	#endif
 #endif
