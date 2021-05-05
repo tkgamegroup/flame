@@ -34,5 +34,5 @@ layout (set = LIGHT_SET, binding = 2) buffer readonly DirShadowMats
 	mat4 dir_shadow_mats[16];
 };
 
-layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray	dir_maps[4];
-layout (set = LIGHT_SET, binding = 4) uniform samplerCube		pt_maps[4];
+layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray	dir_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 4) uniform samplerCube		pt_shadow_maps[4];

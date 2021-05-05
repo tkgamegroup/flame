@@ -23,11 +23,11 @@
 #ifndef SHADOW_PASS
 	float metallic = material.metallic;
 	float roughness = material.roughness;
-
-	vec3 albedo = (1.0 - metallic) * color.rgb;
 	
-	#ifndef DEFERRED
-		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
-		o_color = vec4(shading(i_coordw, length(i_coordv), N, V, metallic, albedo, spec, roughness), 1.0);
-	#endif
+#ifndef DEFERRED
+	vec3 albedo = (1.0 - metallic) * color.rgb;
+	vec3 spec = mix(vec3(0.04), color.rgb, metallic);
+	o_color = vec4(shading(i_coordw, length(i_coordv), N, V, metallic, albedo, spec, roughness), 1.0);
+#endif
+
 #endif

@@ -1,4 +1,8 @@
-#include "terrain.pll"
+#ifndef DEFERRED
+#include "forward.pll"
+#else
+#include "deferred.pll"
+#endif
 
 layout (location = 0) out flat uint o_idx;
 layout (location = 1) out vec2 o_uv;

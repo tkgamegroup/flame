@@ -1,4 +1,8 @@
-#include "terrain.pll"
+#ifndef DEFERRED
+#include "forward.pll"
+#else
+#include "deferred.pll"
+#endif
 
 layout (vertices = 4) out;
  

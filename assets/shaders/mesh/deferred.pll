@@ -1,8 +1,8 @@
 #ifndef MAKE_PLL
 #define RENDER_DATA_SET 0
 #include "../render_data.dsl"
-#define TRANSFORM_SET 1
-#include "../transform.dsl"
-#define MATERIAL_SET 2
+#define MATERIAL_SET 1
 #include "../material.dsl"
+#define TRANSFORM_SET 2
+#include "../transform.dsl"
 #endif

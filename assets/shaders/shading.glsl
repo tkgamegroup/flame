@@ -71,7 +71,7 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
 
 vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
-	vec3 color = vec3(0.0);
+	vec3 ret = vec3(0.0);
 
 	uint light_count;
 	
@@ -79,11 +79,11 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 	for (int i = 0; i < light_count; i++)
 	{
 		LightInfo light = light_infos[grid_lights[0].dir_indices[i]];
+		vec3 L = light.pos;
 		
 		float shadow = 1.0;
 		if (light.shadow_index != -1 && distancev < render_data.shadow_distance)
 		{
-			vec3 L = light.pos;
 			float d = distancev / render_data.shadow_distance;
 			uint lvs = render_data.csm_levels;
 			float div = 1.0 / lvs;
@@ -96,31 +96,32 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 			}
 			vec4 coordl = dir_shadow_mats[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-			float ref = texture(directional_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
+			float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
 			shadow = clamp(exp(-esm_c * light.shadow_distance * (coordl.z - ref)), 0.0, 1.0);
 		}
 		
-		color += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
 	}
+
 	
 	light_count = grid_lights[0].pt_count;
 	for (int i = 0; i < light_count; i++)
 	{
 		LightInfo light = light_infos[grid_lights[0].pt_indices[i]];
+		vec3 L = light.pos - coordw;
+		float dist = length(L);
+		L = L / dist;
+
 
 		float shadow = 1.0;
 		if (light.shadow_index != -1 && distancev < render_data.shadow_distance)
 		{
-			vec3 L = light.pos - coordw;
-			float dist = length(L);
-			L = L / dist;
-
-			float ref = texture(point_shadow_maps[light.shadow_index], -L).r;
+			float ref = texture(pt_shadow_maps[light.shadow_index], -L).r;
 			shadow = clamp(exp(-esm_c * (dist - ref * light.shadow_distance)), 0.0, 1.0);
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);
-		color += lighting(N, V, L, intensity * shadow, metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, intensity * shadow, metallic, albedo, spec, roughness);
 	}
 
 	{
@@ -128,14 +129,14 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		float NdotV = max(dot(N, V), 0.0);
 		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
    
-		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rb;
+		// vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rb;
   
 		float ao = 0.2; // TODO
-		color += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + 
-			textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y)) * ao;
+		// ret += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + 
+		//	textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y)) * ao;
 	}
 
-	color = mix(color, vec3(1), distancev / 1000.0); // TODO: replace this basic fog
+	ret = mix(ret, vec3(1), distancev / 1000.0); // TODO: replace this basic fog
 
-	return color;
+	return ret;
 }
