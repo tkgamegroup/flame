@@ -655,26 +655,6 @@
 //			//render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
 //		}
 //
-//		void CanvasPrivate::draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, ShadeFlags flags, void* userdata)
-//		{
-//			TerrainInfo t;
-//			t.blocks = blocks;
-//			t.scale = scale;
-//			t.coord = coord;
-//			t.tess_levels = tess_levels;
-//			t.height_tex_id = height_tex_id;
-//			t.normal_tex_id = normal_tex_id;
-//			t.material_id = material_id;
-//			t.flags = flags;
-//			t.userdata = userdata;
-//			terrains.push_back(t);
-//
-//			if (cmds.empty() || cmds.back()->type != Cmd::DrawTerrain)
-//				cmds.emplace_back(new CmdDrawTerrain);
-//
-//			((CmdDrawTerrain*)cmds.back().get())->entries.push_back(terrains.size() - 1);
-//		}
-//
 //		void CanvasPrivate::add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow)
 //		{
 //			if (type == LightDirectional)
@@ -843,10 +823,6 @@
 //			cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 //			cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 //
-//			auto terr_off = 0;
-//			auto line_off = 0;
-//			auto tri_off = 0;
-//
 //			for (auto& p : passes)
 //			{
 //				switch (p.type)
@@ -855,19 +831,6 @@
 //				{
 //					if (mesh_off == 0 && terr_off == 0)
 //					{
-//						for (auto i = 0; i < terrains.size(); i++)
-//						{
-//							auto& src = terrains[i];
-//							//auto dst = terrain_info_buffer.mark_item(i);
-//							//terrain_info_buffer.set(dst, S<"coord"_h>, src.coord);
-//							//terrain_info_buffer.set(dst, S<"blocks"_h>, src.blocks);
-//							//terrain_info_buffer.set(dst, S<"scale"_h>, src.scale);
-//							//terrain_info_buffer.set(dst, S<"tess_levels"_h>, src.tess_levels);
-//							//terrain_info_buffer.set(dst, S<"height_tex_id"_h>, src.height_tex_id);
-//							//terrain_info_buffer.set(dst, S<"normal_tex_id"_h>, src.normal_tex_id);
-//							//terrain_info_buffer.set(dst, S<"material_id"_h>, src.material_id);
-//						}
-//
 //						auto lights_count = 0;
 //						std::vector<uint> directional_shadows;
 //						std::vector<uint> point_shadows;
@@ -978,24 +941,6 @@
 //							//light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
 //						}
 //
-//						{
-//							// TODO
-//							//auto dst = light_sets_buffer.mark_item(0);
-//							//light_sets_buffer.set(dst, S<"directional_lights_count"_h>, directional_lights.size());
-//							//auto dstad = (uint*)light_sets_buffer.dst(S<"directional_light_indices"_h>, dst);
-//							//for (auto i = 0; i < directional_lights.size(); i++)
-//							//	dstad[i] = i;
-//							//light_sets_buffer.set(dst, S<"point_lights_count"_h>, point_lights.size());
-//							//auto dstap = (uint*)light_sets_buffer.dst(S<"point_light_indices"_h>, dst);
-//							//for (auto i = 0; i < point_lights.size(); i++)
-//							//	dstap[i] = i;
-//						}
-//
-//						//render_data_buffer.upload(cb);
-//						//mesh_matrix_buffer.upload(cb);
-//						//terrain_info_buffer.upload(cb);
-//						//light_sets_buffer.upload(cb);
-//						//light_infos_buffer.upload(cb);
 //						//shadow_matrices_buffer.upload(cb);
 //
 //						cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
@@ -1142,41 +1087,6 @@
 //					std::vector<std::pair<MeshInfo*, uint>> outline_meshes;
 //					std::vector<std::pair<TerrainInfo*, uint>> outline_terrains;
 //
-//					for (auto i : p.cmd_ids)
-//					{
-//						auto& cmd = cmds[i];
-//						switch (cmd->type)
-//						{
-//						case Cmd::DrawTerrain:
-//						{
-//							auto c = (CmdDrawTerrain*)cmd.get();
-//							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 1.f, 0.f, 1.f));
-//							for (auto& t : terrains)
-//							{
-//								if (t.flags & ShadeMaterial)
-//								{
-//									cb->bind_pipeline(material_resources[t.material_id]->get_pipeline(MaterialForTerrain));
-//									cb->draw(4, t.blocks.x* t.blocks.y, 0, terr_off << 16);
-//								}
-//								if (t.flags & ShadeWireframe)
-//								{
-//									cb->bind_pipeline(preferences->terrain_wireframe_pipeline);
-//									cb->draw(4, t.blocks.x* t.blocks.y, 0, terr_off << 16);
-//								}
-//								if (t.flags & ShadeOutline)
-//									outline_terrains.emplace_back(&t, terr_off);
-//								terr_off++;
-//							}
-//						}
-//							break;
-//						}
-//					}
 //					cb->end_renderpass();
 //
 //					if (!outline_meshes.empty() || !outline_terrains.empty())

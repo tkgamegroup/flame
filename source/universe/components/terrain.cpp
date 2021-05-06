@@ -18,15 +18,6 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_scale(const vec3& s)
-	{
-		if (scale == s)
-			return;
-		scale = s;
-		if (node)
-			node->mark_transform_dirty();
-	}
-
 	void cTerrainPrivate::set_tess_levels(uint l)
 	{
 		if (tess_levels == l)
@@ -60,13 +51,13 @@ namespace flame
 	void cTerrainPrivate::draw(sRendererPrivate* renderer)
 	{
 		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
-		{
-			//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
-			//if (entity->state & StateSelected)
-			//	flags = flags | graphics::ShadeOutline;
-			//canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
-			//	flags, entity);
-		}
+			renderer->draw_terrain(node, blocks, tess_levels, height_map_id, normal_map_id, material_id);
+
+		//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+		//if (entity->state & StateSelected)
+		//	flags = flags | graphics::ShadeOutline;
+		//canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
+		//	flags, entity);
 	}
 
 	void cTerrainPrivate::on_added()

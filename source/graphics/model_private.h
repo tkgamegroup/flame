@@ -30,7 +30,7 @@ namespace flame
 
 			std::filesystem::path dir;
 
-			std::filesystem::path pipeline_file = "standard.mat";
+			std::filesystem::path pipeline_file = "standard_mat.glsl";
 			std::string pipeline_defines;
 
 			Texture textures[4] = {};

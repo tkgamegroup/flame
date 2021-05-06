@@ -110,7 +110,7 @@ namespace flame
 					height_field = physics::HeightField::create(physics::Device::get_default(), t, terrain->blocks, terrain->tess_levels);
 					height_fields.emplace_back(t, height_field, 1);
 				}
-				phy_shape = physics::Shape::create_height_field(physics::Device::get_default(), nullptr, height_field, node->g_scl * terrain->scale);
+				phy_shape = physics::Shape::create_height_field(physics::Device::get_default(), nullptr, height_field, node->g_scl);
 				phy_height_field = height_field;
 			}
 			break;

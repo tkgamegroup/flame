@@ -33,11 +33,11 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(maps[terrain.height_tex_id], uv).r * terrain.scale.y;
+	coordw.y += texture(maps[terrain.height_map_id], uv).r * terrain.scale.y;
 
 	o_idx = idx;
 	o_uv = uv;
-	vec3 n = texture(maps[terrain.normal_tex_id], uv).xyz * 2.0 - vec3(1.0);
+	vec3 n = texture(maps[terrain.normal_map_id], uv).xyz * 2.0 - vec3(1.0);
 	o_normal = vec3(n.x, n.z, -n.y);
 
 #ifndef DEFERRED

@@ -7,7 +7,6 @@ namespace flame
 	struct cTerrainPrivate : cTerrain
 	{
 		uvec2 blocks = uvec2(64);
-		vec3 scale = vec3(100.f);
 		uint tess_levels = 32.f;
 
 		std::string height_map_name;
@@ -27,8 +26,6 @@ namespace flame
 
 		uvec2 get_blocks() const override { return blocks; }
 		void set_blocks(const uvec2& b) override;
-		vec3 get_scale() const override { return scale; }
-		void set_scale(const vec3& s) override;
 		uint get_tess_levels() const override { return tess_levels; }
 		void set_tess_levels(uint l) override;
 

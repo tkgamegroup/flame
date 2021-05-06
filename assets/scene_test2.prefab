@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <prefab>
   <eNode>
-    <eCube pos="0,0,0" dynamic="false" />
-    <eCube pos="10,0,0" dynamic="false" />
-    <eCube pos="0,0,5" dynamic="false" />
+    <eCube pos="200,60,200" dynamic="false" />
+    <eCube pos="210,60,200" dynamic="false" />
+    <eCube pos="200,60,205" dynamic="false" />
+    <entity src="D:\assets\terrain\terrain" name="terrain" />
     <eLight name="sun" euler="0,90,0" type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
-    <eNode name="camera" pos="0,5,0" euler="0,0,0" >
+    <eNode name="camera" pos="200,65,200" euler="0,0,0" >
       <cCamera current="true" />
       <cScript src="camera_fly.lua" />
     </eNode>

@@ -5,18 +5,17 @@
 struct TerrainInfo
 {
 	vec3 coord;
+	vec3 scale;
 
 	uvec2 blocks;
-
-	vec3 scale;
 	float tess_levels;
 
-	uint height_tex_id;
-	uint normal_tex_id;
+	uint height_map_id;
+	uint normal_map_id;
 	uint material_id;
 };
 
 layout(set = TERRAIN_SET, binding = 0) buffer readonly TerrainInfos
 {
-	TerrainInfo terrain_infos[];
+	TerrainInfo terrain_infos[9];
 };

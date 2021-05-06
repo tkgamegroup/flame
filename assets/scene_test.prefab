@@ -14,7 +14,7 @@
         <cScript src="camera_third.lua" />
       </eNode>
     </entity>
-    <entity src="D:\terrain\terrain" name="terrain" />
+    <entity src="D:\assets\terrain\terrain" name="terrain" />
     <eLight name="sun" euler="0,90,0" type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
   </eNode>
   <eElement name="post_effect" >
