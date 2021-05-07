@@ -35,8 +35,8 @@ namespace flame
 		UniPtr<Window> window;
 
 		UniPtr<graphics::Swapchain> swapchain;
-		int swapchain_image_index = -1;
-		std::vector<UniPtr<graphics::CommandBuffer>> commandbuffers;
+		int swapchain_img_idx = -1;
+		std::vector<UniPtr<graphics::CommandBuffer>> cbs;
 		UniPtr<graphics::Fence> submit_fence;
 		UniPtr<graphics::Semaphore> render_finished;
 
@@ -69,17 +69,17 @@ namespace flame
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);
-		window->add_resize_listener([](Capture& c, const uvec2& size) {
-			c.thiz<GraphicsWindow>()->set_targets();
-		}, Capture().set_thiz(this));
 		window->add_destroy_listener([](Capture& c) {
 			c.thiz<GraphicsWindow>()->window.release();
 		}, Capture().set_thiz(this));
 
 		swapchain.reset(graphics::Swapchain::create(graphics::Device::get_default(), window.get()));
-		commandbuffers.resize(swapchain->get_images_count());
-		for (auto i = 0; i < commandbuffers.size(); i++)
-			commandbuffers[i].reset(graphics::CommandBuffer::create(graphics::CommandPool::get(graphics::Device::get_default())));
+		window->add_resize_listener([](Capture& c, const uvec2& size) {
+			c.thiz<GraphicsWindow>()->set_targets();
+		}, Capture().set_thiz(this));
+		cbs.resize(swapchain->get_images_count());
+		for (auto i = 0; i < cbs.size(); i++)
+			cbs[i].reset(graphics::CommandBuffer::create(graphics::CommandPool::get(graphics::Device::get_default())));
 		submit_fence.reset(graphics::Fence::create(graphics::Device::get_default()));
 		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
@@ -100,7 +100,7 @@ namespace flame
 			if (before && system == thiz->s_renderer)
 			{
 				if (thiz->s_renderer->is_dirty())
-					thiz->swapchain_image_index = thiz->swapchain->acquire_image();
+					thiz->swapchain_img_idx = thiz->swapchain->acquire_image();
 			}
 		}, Capture().set_thiz(this));
 
@@ -156,18 +156,18 @@ namespace flame
 			world->update();
 
 		submit_fence->wait();
-		if (swapchain_image_index >= 0)
+		if (swapchain_img_idx >= 0)
 		{
-			auto cb = commandbuffers[swapchain_image_index].get();
+			auto cb = cbs[swapchain_img_idx].get();
 
 			cb->begin();
-			s_renderer->record(swapchain_image_index, cb);
+			s_renderer->record(swapchain_img_idx, cb);
 			cb->end();
 
 			auto queue = graphics::Queue::get(graphics::Device::get_default());
 			queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
 			queue->present(swapchain.get(), render_finished.get());
-			swapchain_image_index = -1;
+			swapchain_img_idx = -1;
 		}
 	}
 
@@ -175,14 +175,14 @@ namespace flame
 	{
 		set_allocator(
 			[](uint size) {
-				return malloc(size);
-			},
+			return malloc(size);
+		},
 			[](void* p) {
-				free(p);
-			},
+			free(p);
+		},
 			[](void* p, uint size) {
-				return realloc(p, size);
-			}
+			return realloc(p, size);
+		}
 		);
 
 		//{

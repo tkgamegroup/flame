@@ -13,6 +13,10 @@ namespace flame
 
 		bool current = false;
 
+		uint view_mark = 0;
+		mat4 view;
+		mat4 view_inv;
+
 		cNodePrivate* node = nullptr;
 		sRendererPrivate* renderer = nullptr;
 
@@ -20,6 +24,8 @@ namespace flame
 
 		bool get_current() const override { return current; }
 		void set_current(bool v) override;
+
+		void update_view();
 
 		void on_added() override;
 		void on_removed() override;

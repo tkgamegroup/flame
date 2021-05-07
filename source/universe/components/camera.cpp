@@ -19,8 +19,8 @@ namespace flame
 		}
 		else
 		{
-			if (renderer->camera == this);
-			renderer->camera = nullptr;
+			if (renderer->camera == this)
+				renderer->camera = nullptr;
 		}
 	}
 
@@ -60,6 +60,20 @@ namespace flame
 
 		if (renderer)
 			apply_current();
+	}
+
+	void cCameraPrivate::update_view()
+	{
+		node->update_transform();
+
+		if (view_mark != node->transform_updated_times)
+		{
+			view_mark = node->transform_updated_times;
+
+			view_inv = mat4(node->rot);
+			view_inv[3] = vec4(node->g_pos, 1.f);
+			view = inverse(view_inv);
+		}
 	}
 
 	cCamera* cCamera::create(void* parms)

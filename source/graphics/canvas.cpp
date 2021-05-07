@@ -20,23 +20,7 @@
 //				sp.depth_attachment = 1;
 //				pickup_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
 //			}
-//			{
-//				RenderpassAttachmentInfo atts[2];
-//				atts[0].format = Format_R16_SFLOAT;
-//				atts[0].load_op = AttachmentClear;
-//				atts[0].initia_layout = ImageLayoutShaderReadOnly;
-//				atts[1].format = Format_Depth16;
-//				atts[1].load_op = AttachmentClear;
-//				atts[1].initia_layout = ImageLayoutAttachment;
-//				atts[1].final_layout = ImageLayoutAttachment;
-//				RenderpassSubpassInfo sp;
-//				sp.color_attachments_count = 1;
-//				sp.color_attachments = { 0 };
-//				sp.depth_attachment = 1;
-//				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
-//			}
-//
-//
+// 
 //			{
 //				ShaderPrivate* shaders[] = {
 //					ShaderPrivate::get(device, L"sky/sky.vert"),
@@ -60,8 +44,6 @@
 //				dep.write = false;
 //				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 //			}
-//
-//			//terrain_pipeline_layout = PipelineLayoutPrivate::get(device, L"terrain/terrain.pll");
 //
 //			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
 //			//mesh_armature_wireframe_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
@@ -224,8 +206,6 @@
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
 //			preferences(preferences)
 //		{
-//			auto device = preferences->device;
-//
 //			InstanceCB cb(device);
 //
 //			{
@@ -242,110 +222,13 @@
 //				cb->image_barrier(default_sky_rad_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 //				sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, default_sky_rad_image->views.back().get(), sp);
 //			}
-//
-//			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
-//
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"light.dsl");
-//				light_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//
-//				shadow_depth_image.reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageAttachment));
-//				cb->image_barrier(shadow_depth_image.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
-//
-//				shadow_depth_back_image.reset(new ImagePrivate(device, Format_R16_SFLOAT, shadow_map_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-//				cb->image_barrier(shadow_depth_back_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//				{
-//					auto iv = shadow_depth_back_image->views[0].get();
-//					shadow_depth_back_framebuffer.reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
-//					shadow_depth_back_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//					shadow_depth_back_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//				}
-//
-//				//shadow_matrices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "mat4"), 40);
-//				//light_descriptorset->set_buffer(dsl->find_binding("ShadowMatrices"), 0, shadow_matrices_buffer.buf.get());
-//
-//				auto sp1 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
-//				auto sp2 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToBorder);
-//
-//				directional_shadow_maps.resize(4);
-//				directional_light_depth_framebuffers.resize(directional_shadow_maps.size() * 4);
-//				directional_shadow_map_framebuffers.resize(directional_shadow_maps.size() * 4);
-//				directional_shadow_map_descriptorsets.resize(directional_shadow_maps.size() * 4);
-//				for (auto i = 0; i < directional_shadow_maps.size(); i++)
-//				{
-//					directional_shadow_maps[i].reset(new ImagePrivate(device, Format_R16_SFLOAT, shadow_map_size, 1, 4, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-//					cb->image_barrier(directional_shadow_maps[i].get(), { 0U, 1U, 0U, 4U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//					for (auto j = 0; j < 4; j++)
-//					{
-//						auto iv = new ImageViewPrivate(directional_shadow_maps[i].get(), true, ImageView2D, { 0U, 1U, (uint)j, 1U });
-//						ImageViewPrivate* vs[] = {
-//							iv,
-//							shadow_depth_image->views[0].get()
-//						};
-//						directional_light_depth_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
-//						directional_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
-//						directional_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//						directional_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, sp1);
-//					}
-//					auto iv = new ImageViewPrivate(directional_shadow_maps[i].get(), true, ImageView2DArray, { 0U, 1U, 0U, 4U });
-//					light_descriptorset->set_image(dsl->find_binding("directional_shadow_maps"), i, iv, sp2);
-//				}
-//
-//				point_shadow_maps.resize(4);
-//				point_light_depth_framebuffers.resize(point_shadow_maps.size() * 6);
-//				point_shadow_map_framebuffers.resize(point_shadow_maps.size() * 6);
-//				point_shadow_map_descriptorsets.resize(point_shadow_maps.size() * 6);
-//				for (auto i = 0; i < point_shadow_maps.size(); i++)
-//				{
-//					point_shadow_maps[i].reset(new ImagePrivate(device, Format_R16_SFLOAT, shadow_map_size, 1, 6, SampleCount_1, ImageUsageSampled | ImageUsageAttachment, true));
-//					cb->image_barrier(point_shadow_maps[i].get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//					for (auto j = 0; j < 6; j++)
-//					{
-//						auto iv = new ImageViewPrivate(point_shadow_maps[i].get(), true, ImageView2D, { 0U, 1U, (uint)j, 1U });
-//						ImageViewPrivate* vs[] = {
-//							iv,
-//							shadow_depth_image->views[0].get()
-//						};
-//						point_light_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
-//						point_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
-//						point_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//						point_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, sp1);
-//					}
-//					auto iv = new ImageViewPrivate(point_shadow_maps[i].get(), true, ImageViewCube, { 0U, 1U, 0U, 6U });
-//					light_descriptorset->set_image(dsl->find_binding("point_shadow_maps"), i, iv, sp2);
-//				}
-//			}
-//
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"terrain/terrain.dsl");
-//				terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				//terrain_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "TerrainInfo"), 1);
-//				//terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
-//			}
-//
+// 
 //			line_buffer.create(device, BufferUsageVertex, 200000);
 //			triangle_buffer.create(device, BufferUsageVertex, 1000);
 //		}
 // 
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
-//			output_imageviews.clear();
-//			output_framebuffers.clear();
-//			output_descriptorsets.clear();
-//
-//			hdr_image.reset();
-//			hdr_framebuffer.reset();
-//			hdr_descriptorset.reset();
-//
-//			depth_image.reset();
-//
-//			mesh_framebuffers.clear();
-//
-//			back_image.reset();
-//			back_framebuffers.clear();
-//			back_nearest_descriptorsets.clear();
-//			back_linear_descriptorsets.clear();
-//
 //			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
 //
 //			if (views.empty())
@@ -353,53 +236,6 @@
 //			else
 //			{
 //				InstanceCB cb(device);
-//
-//				output_size = views[0]->image->sizes[0];
-//				output_imageviews.resize(views.size());
-//				output_framebuffers.resize(views.size());
-//				output_descriptorsets.resize(views.size());
-//				for (auto i = 0; i < views.size(); i++)
-//				{
-//					output_imageviews[i] = views[i];
-//					output_framebuffers[i].reset(new FramebufferPrivate(device, preferences->rgba8_renderpass.get(), { &views[i], 1 }));
-//					output_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//					output_descriptorsets[i]->set_image(0, 0, views[i], SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//				}
-//
-//				if (hdr)
-//				{
-//					hdr_image.reset(new ImagePrivate(device, Format_R16G16B16A16_SFLOAT, output_size, 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment));
-//					cb->image_barrier(hdr_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//					auto iv = hdr_image->views[0].get();
-//					hdr_framebuffer.reset(new FramebufferPrivate(device, preferences->rgba16_renderpass.get(), { &iv, 1 }));
-//					hdr_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//					hdr_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//				}
-//
-//				depth_image.reset(new ImagePrivate(device, Format_Depth16, output_size, 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment));
-//				cb->image_barrier(depth_image.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
-//
-//				if (hdr)
-//				{
-//					mesh_framebuffers.resize(1);
-//					ImageViewPrivate* vs[] = {
-//						hdr_image->views[0].get(),
-//						depth_image->views[0].get()
-//					};
-//					mesh_framebuffers[0].reset(new FramebufferPrivate(device, preferences->mesh_renderpass.get(), vs));
-//				}
-//				else
-//				{
-//					mesh_framebuffers.resize(views.size());
-//					for (auto i = 0; i < views.size(); i++)
-//					{
-//						ImageViewPrivate* vs[] = {
-//							views[i],
-//							depth_image->views[0].get()
-//						};
-//						mesh_framebuffers[i].reset(new FramebufferPrivate(device, preferences->mesh_renderpass.get(), vs));
-//					}
-//				}
 //
 //				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, output_size, 0, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 //				cb->image_barrier(back_image.get(), { 0U, back_image->levels, 0U, 1U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
@@ -555,35 +391,6 @@
 //			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 //		}
 //
-//		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const mat4& transform, vec3* dst)
-//		{
-//			auto y1 = zNear * tan_hf_fovy;
-//			auto y2 = zFar * tan_hf_fovy;
-//			auto x1 = y1 * aspect;
-//			auto x2 = y2 * aspect;
-//
-//			dst[0] = vec3(transform * vec4(-x1, y1, -zNear, 1.f));
-//			dst[1] = vec3(transform * vec4(x1, y1, -zNear, 1.f));
-//			dst[2] = vec3(transform * vec4(x1, -y1, -zNear, 1.f));
-//			dst[3] = vec3(transform * vec4(-x1, -y1, -zNear, 1.f));
-//			dst[4] = vec3(transform * vec4(-x2, y2, -zFar, 1.f));
-//			dst[5] = vec3(transform * vec4(x2, y2, -zFar, 1.f));
-//			dst[6] = vec3(transform * vec4(x2, -y2, -zFar, 1.f));
-//			dst[7] = vec3(transform * vec4(-x2, -y2, -zFar, 1.f));
-//		}
-//
-//		static void get_frustum_points(const mat4& m, vec3* dst)
-//		{
-//			dst[0] = vec3(m * vec4(-1.f, 1.f, 0.f, 1.f));
-//			dst[1] = vec3(m * vec4(1.f, 1.f, 0.f, 1.f));
-//			dst[2] = vec3(m * vec4(1.f, -1.f, 0.f, 1.f));
-//			dst[3] = vec3(m * vec4(-1.f, -1.f, 0.f, 1.f));
-//			dst[4] = vec3(m * vec4(-1.f, 1.f, 1.f, 1.f));
-//			dst[5] = vec3(m * vec4(1.f, 1.f, 1.f, 1.f));
-//			dst[6] = vec3(m * vec4(1.f, -1.f, 1.f, 1.f));
-//			dst[7] = vec3(m * vec4(-1.f, -1.f, 1.f, 1.f));
-//		}
-//
 //		static void draw_frustum(CanvasPrivate* thiz, vec3* ps, const cvec4& col0, const cvec4& col1)
 //		{
 //			std::vector<Triangle> triangles;
@@ -629,7 +436,6 @@
 //
 //		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const mat3& dirs, const vec3& _coord)
 //		{
-//			{
 //				vec3 ps[8];
 //				get_frustum_points(zNear, zFar, tan(radians(fovy * 0.5f)), aspect, view_inv_matrix, ps);
 //				//auto dst = (vec4*)render_data_buffer.dst(S<"frustum_planes"_h>);
@@ -639,7 +445,6 @@
 //				//dst[3] = make_plane(ps[1], ps[5], ps[2]); // right
 //				//dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
 //				//dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
-//			}
 //		}
 //
 //		void CanvasPrivate::set_sky(ImageViewPrivate* box, ImageViewPrivate* irr, ImageViewPrivate* rad, ImageViewPrivate* lut)
@@ -653,48 +458,6 @@
 //			sky_descriptorset->set_image(dsl->find_binding("sky_lut"), 0, lut, sp);
 //
 //			//render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
-//		}
-//
-//		void CanvasPrivate::add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow)
-//		{
-//			if (type == LightDirectional)
-//			{
-//				DirectionalLight l;
-//				l.dir = -dirs[2];
-//				l.side = normalize(dirs[0]);
-//				l.up = normalize(dirs[1]);
-//				l.color = color;
-//				l.cast_shadow = cast_shadow;
-//				directional_lights.push_back(l);
-//			}
-//			else
-//			{
-//				PointLight l;
-//				l.coord = dirs[0];
-//				l.color = color;
-//				l.cast_shadow = cast_shadow;
-//				point_lights.push_back(l);
-//			}
-//		}
-//
-//		void CanvasPrivate::draw_lines(uint lines_count, const Line* lines)
-//		{
-//			if (cmds.empty() || cmds.back()->type != Cmd::DrawLines)
-//				cmds.emplace_back(new CmdDrawLines);
-//
-//			line_buffer.push(lines_count, lines);
-//
-//			((CmdDrawLines*)cmds.back().get())->count += lines_count;
-//		}
-//
-//		void CanvasPrivate::draw_triangles(uint triangles_count, const Triangle* triangles)
-//		{
-//			if (cmds.empty() || cmds.back()->type != Cmd::DrawTriangles)
-//				cmds.emplace_back(new CmdDrawTriangles);
-//
-//			triangle_buffer.push(triangles_count, triangles);
-//
-//			((CmdDrawTriangles*)cmds.back().get())->count += triangles_count;
 //		}
 //
 //		void* CanvasPrivate::pickup(const vec2& p)
@@ -782,20 +545,6 @@
 //			return userdatas[index - 1];
 //		}
 //
-//		void CanvasPrivate::set_viewport(const Rect& _viewport)
-//		{
-//			auto viewprot = Rect(
-//				max(_viewport.LT.x, 0.f),
-//				max(_viewport.LT.y, 0.f),
-//				min(_viewport.RB.x, (float)output_size.x),
-//				min(_viewport.RB.y, (float)output_size.y)
-//			);
-//			if (viewprot == curr_viewport)
-//				return;
-//			curr_viewport = viewprot;
-//			cmds.emplace_back(new CmdSetScissor(viewprot));
-//		}
-//
 //		void CanvasPrivate::add_blur(const Rect& _range, uint radius)
 //		{
 //			auto range = Rect(
@@ -812,262 +561,12 @@
 //			auto dst_fb = hdr_framebuffer ? hdr_framebuffer.get() : output_framebuffers[image_index].get();
 //			auto dst_ds = hdr_descriptorset ? hdr_descriptorset.get() : output_descriptorsets[image_index].get();
 //
-//			cb->image_barrier(dst, {}, hdr_image ? ImageLayoutShaderReadOnly : ImageLayoutPresent, ImageLayoutTransferDst);
-//			cb->clear_color_image(dst, clear_color);
-//			cb->image_barrier(dst, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-//
-//			cb->image_barrier(depth_image.get(), {}, ImageLayoutAttachment, ImageLayoutTransferDst);
-//			cb->clear_depth_image(depth_image.get(), 1.f);
-//			cb->image_barrier(depth_image.get(), {}, ImageLayoutTransferDst, ImageLayoutAttachment);
-//
-//			cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//			cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//
 //			for (auto& p : passes)
 //			{
 //				switch (p.type)
 //				{
 //				case Pass3D:
 //				{
-//					if (mesh_off == 0 && terr_off == 0)
-//					{
-//						auto lights_count = 0;
-//						std::vector<uint> directional_shadows;
-//						std::vector<uint> point_shadows;
-//
-//						for (auto id = 0; id < directional_lights.size(); id++)
-//						{
-//							auto& src = directional_lights[id];
-//
-//							src.shadow_distance = shadow_distance; // TODO
-//							auto shadow_index = -1;
-//							if (src.cast_shadow && directional_shadows.size() < 4)
-//							{
-//								shadow_index = directional_shadows.size();
-//								directional_shadows.push_back(id);
-//
-//								auto zFar = src.shadow_distance;
-//								auto tan_hf_fovy = tan(radians(fovy * 0.5f));
-//								auto view_inv = view_inv_matrix;
-//
-//								for (auto i = 0; i < csm_levels; i++)
-//								{
-//									auto n = i / (float)csm_levels;
-//									n = n * n * zFar;
-//									auto f = (i + 1) / (float)csm_levels;
-//									f = f * f * zFar;
-//
-//									vec3 ps[8];
-//									get_frustum_points(n, f, tan_hf_fovy, aspect, view_inv, ps);
-//
-//									auto light = mat3(src.side, src.up, src.dir);
-//									auto light_inv = inverse(light);
-//									vec3 LT = vec3(+10000.f);
-//									vec3 RB = vec3(-10000.f);
-//									for (auto k = 0; k < 8; k++)
-//									{
-//										auto p = light_inv * ps[k];
-//										LT = min(LT, p);
-//										RB = max(RB, p);
-//									}
-//									auto c = light * ((LT + RB) * 0.5f);
-//									auto w = (RB.x - LT.x) * 0.5f;
-//									auto h = (RB.y - LT.y) * 0.5f;
-//									//*(mat4*)shadow_matrices_buffer.mark_item(shadow_index * 4 + i) = 
-//									//	orthoRH(-w, +w, -h, +h, 0.f, src.shadow_distance) *
-//									//	lookAt(c + src.dir * src.shadow_distance * 0.5f, c, src.up);
-//								}
-//							}
-//
-//							//auto dst = light_infos_buffer.mark_item(lights_count++);
-//							//light_infos_buffer.set(dst, S<"pos"_h>, src.dir);
-//							//light_infos_buffer.set(dst, S<"distance"_h>, src.shadow_distance);
-//							//light_infos_buffer.set(dst, S<"color"_h>, src.color);
-//							//light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
-//						}
-//
-//						for (auto id = 0; id < point_lights.size(); id++)
-//						{
-//							auto& src = point_lights[id];
-//
-//							auto distance = 20.f; // TODO
-//							auto shadow_index = -1;
-//							if (src.cast_shadow && point_shadows.size() < 4)
-//							{
-//								shadow_index = point_shadows.size();
-//								point_shadows.push_back(id);
-//
-//								auto proj = perspective(radians(90.f), 1.f, 1.f, distance);
-//								proj[1][1] *= -1.f;
-//
-//								for (auto i = 0; i < 6; i++)
-//								{
-//									auto matrix = mat4(1.f);
-//									switch (i)
-//									{
-//									case 0:
-//										matrix[0][0] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
-//										break;
-//									case 1:
-//										matrix[0][0] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(-1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
-//										break;
-//									case 2:
-//										matrix[1][1] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f));
-//										break;
-//									case 3:
-//										matrix[1][1] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
-//										break;
-//									case 4:
-//										matrix[0][0] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(0.f, 0.f, 1.f), vec3(0.f, 1.f, 0.f));
-//										break;
-//									case 5:
-//										matrix[0][0] = -1.f;
-//										matrix = matrix * proj * lookAt(src.coord, src.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
-//										break;
-//									}
-//									//*(mat4*)shadow_matrices_buffer.mark_item(16 + shadow_index * 6 + i) = matrix;
-//								}
-//							}
-//
-//							//auto dst = light_infos_buffer.mark_item(lights_count++);
-//							//light_infos_buffer.set(dst, S<"pos"_h>, src.coord);
-//							//light_infos_buffer.set(dst, S<"distance"_h>, distance);
-//							//light_infos_buffer.set(dst, S<"color"_h>, src.color);
-//							//light_infos_buffer.set(dst, S<"shadow_index"_h>, shadow_index);
-//						}
-//
-//						//shadow_matrices_buffer.upload(cb);
-//
-//						cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
-//						cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
-//
-//						for (auto shadow_index = 0; shadow_index < directional_shadows.size(); shadow_index++)
-//						{
-//							auto& src = directional_lights[directional_shadows[shadow_index]];
-//							for (auto i = 0; i < csm_levels; i++)
-//							{
-//								vec4 cvs[] = {
-//									vec4(1.f, 0.f, 0.f, 0.f),
-//									vec4(1.f, 0.f, 0.f, 0.f)
-//								};
-//								cb->begin_renderpass(nullptr, directional_light_depth_framebuffers[shadow_index * 4 + i].get(), cvs);
-//								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-//								//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-//								//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-//								//cb->push_constant_ht(S<"i"_h>, ivec4(shadow_index * 4 + i, 0, 0, 0));
-//								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
-//								auto mesh_off = 0;
-//								for (auto& m : meshes)
-//								{
-//									if (m.cast_shadow)
-//									{
-//										auto mrm = m.res;
-//										auto mat = material_resources[mrm->material_id].get();
-//										cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//										cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//										if (m.deformer)
-//										{
-//											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadowArmature));
-//											cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-//											//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-//										}
-//										else
-//										{
-//											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadow));
-//											//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-//										}
-//										cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
-//									}
-//									mesh_off++;
-//								}
-//								cb->end_renderpass();
-//
-//								//cb->image_barrier(directional_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//								//cb->begin_renderpass(nullptr, shadow_depth_back_framebuffer.get());
-//								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-//								////cb->bind_descriptor_set(S<"post"_h>, directional_shadow_map_descriptorsets[map_idx * 4 + i].get());
-//								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
-//								//cb->draw(3, 1, 0, 0);
-//								//cb->end_renderpass();
-//
-//								//cb->image_barrier(shadow_depth_back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//								//cb->begin_renderpass(nullptr, directional_shadow_map_framebuffers[map_idx * 4 + i].get());
-//								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-//								////cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
-//								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
-//								//cb->draw(3, 1, 0, 0);
-//								//cb->end_renderpass();
-//							}
-//
-//							cb->image_barrier(directional_shadow_maps[shadow_index].get(), { 0U, 1U, 0U, 4U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//						}
-//						for (auto shadow_index = 0; shadow_index < point_shadows.size(); shadow_index++)
-//						{
-//							auto& src = point_lights[point_shadows[shadow_index]];
-//							for (auto i = 0; i < 6; i++)
-//							{
-//								vec4 cvs[] = {
-//									vec4(1.f, 0.f, 0.f, 0.f),
-//									vec4(1.f, 0.f, 0.f, 0.f)
-//								};
-//								cb->begin_renderpass(nullptr, point_light_depth_framebuffers[shadow_index * 6 + i].get(), cvs);
-//								cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-//								//cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-//								//cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-//								//cb->push_constant_ht(S<"i"_h>, ivec4(16 + shadow_index * 6 + i, 0, 0, 0));
-//								//cb->push_constant_ht(S<"f"_h>, vec4(0.f, src.shadow_distance, 0.f, 0.f));
-//								auto mesh_off = 0;
-//								for (auto& m : meshes)
-//								{
-//									if (m.cast_shadow)
-//									{
-//										auto mrm = m.res;
-//										auto mat = material_resources[mrm->material_id].get();
-//										cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//										cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//										if (m.deformer)
-//										{
-//											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadowArmature));
-//											cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-//											//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-//										}
-//										else
-//										{
-//											cb->bind_pipeline(mat->get_pipeline(MaterialForMeshShadow));
-//											//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-//										}
-//										cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
-//									}
-//									mesh_off++;
-//								}
-//								cb->end_renderpass();
-//
-//								//cb->image_barrier(point_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//								//cb->begin_renderpass(nullptr, shadow_depth_back_framebuffer.get());
-//								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-//								////cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
-//								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
-//								//cb->draw(3, 1, 0, 0);
-//								//cb->end_renderpass();
-//
-//								//cb->image_barrier(shadow_depth_back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//								//cb->begin_renderpass(nullptr, point_shadow_map_framebuffers[map_idx * 6 + i].get());
-//								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-//								////cb->bind_descriptor_set(S<"post"_h>, shadow_depth_back_descriptorset.get());
-//								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
-//								//cb->draw(3, 1, 0, 0);
-//								//cb->end_renderpass();
-//							}
-//
-//							cb->image_barrier(point_shadow_maps[shadow_index].get(), { 0U, 1U, 0U, 6U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//						}
-//					}
-//
 //					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
 //					cb->set_viewport(curr_viewport);
 //					cb->set_scissor(curr_viewport);
@@ -1240,12 +739,6 @@
 //							line_off += c->count * 2;
 //						}
 //							break;
-//						case Cmd::SetScissor:
-//						{
-//							auto c = (CmdSetScissor*)cmd.get();
-//							cb->set_scissor(c->scissor);
-//						}
-//							break;
 //						}
 //					}
 //					cb->end_renderpass();
@@ -1274,12 +767,6 @@
 //							auto c = (CmdDrawTriangles*)cmd.get();
 //							cb->draw(c->count * 3, 1, tri_off, 0);
 //							tri_off += c->count * 3;
-//						}
-//							break;
-//						case Cmd::SetScissor:
-//						{
-//							auto c = (CmdSetScissor*)cmd.get();
-//							cb->set_scissor(c->scissor);
 //						}
 //							break;
 //						}
@@ -1320,9 +807,6 @@
 //					break;
 //				case PassBloom:
 //				{
-//					if (!hdr_image)
-//						continue;
-//
 //					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 //
 //					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
@@ -1367,18 +851,7 @@
 //					break;
 //				}
 //			}
-//
-//			if (hdr_image)
-//			{
-//				cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//				cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutPresent, ImageLayoutShaderReadOnly);
-//				cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//				cb->begin_renderpass(nullptr, output_framebuffers[image_index].get());
-//				cb->bind_pipeline(preferences->gamma_pipeline.get());
-//				//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
-//				cb->draw(3, 1, 0, 0);
-//				cb->end_renderpass();
-//			}
+// 
 //			cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutShaderReadOnly, ImageLayoutPresent);
 //		}
 //	}

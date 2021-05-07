@@ -11,7 +11,8 @@ namespace flame
 		MaterialForMeshArmature,
 		MaterialForMeshShadow,
 		MaterialForMeshShadowArmature,
-		MaterialForTerrain,
+		MaterialMeshUsageCount,
+		MaterialForTerrain = MaterialMeshUsageCount,
 
 		MaterialUsageCount
 	};
@@ -74,7 +75,7 @@ namespace flame
 		void set_camera(cCameraPtr c) override { camera = c; }
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
-		void draw_mesh(cNodePtr node, uint mesh_id) override;
+		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) override;
 		void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) override;
 
 		bool is_dirty() const override { return always_update || dirty; }

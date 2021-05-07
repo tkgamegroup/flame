@@ -3,6 +3,6 @@
 #include "../render_data.dsl"
 #define MATERIAL_SET 1
 #include "../material.dsl"
-#define TRANSFORM_SET 2
-#include "../transform.dsl"
+#define MESH_SET 2
+#include "mesh.dsl"
 #endif

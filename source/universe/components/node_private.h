@@ -19,6 +19,7 @@ namespace flame
 
 		cNodePrivate* pnode = nullptr;
 		bool transform_dirty = true;
+		uint transform_updated_times = 0;
 		vec3 g_pos = vec3(0.f);
 		quat g_qut = quat(1.f, 0.f, 0.f, 0.f);
 		mat3 g_rot = mat3(1.f);

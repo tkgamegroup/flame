@@ -123,6 +123,7 @@ namespace flame
 		if (transform_dirty)
 		{
 			transform_dirty = false;
+			transform_updated_times++;
 
 			if (auto_update_eul)
 				update_eul();

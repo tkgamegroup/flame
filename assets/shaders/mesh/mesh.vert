@@ -63,6 +63,14 @@ void main()
 #ifndef SHADOW_PASS
 	gl_Position = render_data.proj_view * vec4(coordw, 1.0);
 #else
-	gl_Position = shadow_matrices[pc.i[0]] * vec4(coordw, 1.0);
+	switch (pc.i[0])
+	{
+	case 0:
+		gl_Position = dir_shadow_mats[pc.i[1]] * vec4(coordw, 1.0);
+		break;
+	case 1:
+		gl_Position = pt_shadow_mats[pc.i[1]] * vec4(coordw, 1.0);
+		break;
+	}
 #endif
 }

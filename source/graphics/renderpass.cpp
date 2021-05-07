@@ -31,11 +31,11 @@ namespace flame
 			std::vector<std::vector<VkAttachmentReference>> v_col_refs(_subpasses.size());
 			std::vector<std::vector<VkAttachmentReference>> v_res_refs(_subpasses.size());
 			std::vector<VkAttachmentReference> v_dep_refs(_subpasses.size());
-			std::vector<VkSubpassDescription> sps(_subpasses.size());
+			std::vector<VkSubpassDescription> vk_sps(_subpasses.size());
 			for (auto i = 0; i < _subpasses.size(); i++)
 			{
 				auto& src = _subpasses[i];
-				auto& dst = sps[i];
+				auto& dst = vk_sps[i];
 
 				dst.flags = 0;
 				dst.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -82,11 +82,11 @@ namespace flame
 				}
 			}
 
-			std::vector<VkSubpassDependency> depens(_dependencies.size());
+			std::vector<VkSubpassDependency> vk_deps(_dependencies.size());
 			for (auto i = 0; i < _dependencies.size(); i++)
 			{
 				auto& src = _dependencies[i];
-				auto& dst = depens[i];
+				auto& dst = vk_deps[i];
 
 				dst.srcSubpass = src[0];
 				dst.dstSubpass = src[1];
@@ -103,10 +103,10 @@ namespace flame
 			create_info.pNext = nullptr;
 			create_info.attachmentCount = atts.size();
 			create_info.pAttachments = atts.data();
-			create_info.subpassCount = sps.size();
-			create_info.pSubpasses = sps.data();
-			create_info.dependencyCount = depens.size();
-			create_info.pDependencies = depens.data();
+			create_info.subpassCount = vk_sps.size();
+			create_info.pSubpasses = vk_sps.data();
+			create_info.dependencyCount = vk_deps.size();
+			create_info.pDependencies = vk_deps.data();
 
 			chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &vk_renderpass));
 

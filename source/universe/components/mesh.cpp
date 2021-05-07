@@ -233,7 +233,7 @@ namespace flame
 	void cMeshPrivate::draw(sRenderer* renderer)
 	{
 		if (mesh_id != -1)
-			renderer->draw_mesh(node, mesh_id);
+			renderer->draw_mesh(node, mesh_id, cast_shadow);
 		//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 		//if (entity->state & StateSelected)
 		//	flags = flags | graphics::ShadeOutline;

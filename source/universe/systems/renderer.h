@@ -49,7 +49,7 @@ namespace flame
 		virtual void set_camera(cCameraPtr camera) = 0;
 
 		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
-		virtual void draw_mesh(cNodePtr node, uint mesh_id) = 0;
+		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) = 0;
 		virtual void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) = 0;
 
 		virtual bool is_dirty() const = 0;

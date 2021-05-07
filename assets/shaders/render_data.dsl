@@ -5,9 +5,9 @@
 layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 {
 	float sky_rad_levels;
-	float shadow_distance;
 	uint csm_levels;
 	float csm_factor;
+	float ptsm_near;
 
 	float zNear;
 	float zFar;

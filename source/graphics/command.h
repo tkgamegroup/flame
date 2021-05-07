@@ -86,9 +86,9 @@ namespace flame
 			virtual void bind_index_buffer(BufferPtr buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;
 			template <class T>
-			inline void push_constant_t(uint offset, const T& data)
+			inline void push_constant_t(const T& data)
 			{
-				push_constant(offset, sizeof(T), &data);
+				push_constant(0, sizeof(T), &data);
 			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
