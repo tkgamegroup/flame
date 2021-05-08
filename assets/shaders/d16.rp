@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <renderpass>
   <attachments>
-    <attachment format="Depth16" initia_layout="ShaderReadOnly" />
+    <attachment format="Depth16" />
   </attachments>
   <subpasses>
     <subpass color_refs="" depth_ref="0" />

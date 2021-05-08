@@ -130,16 +130,16 @@ namespace flame
 		{
 			InstanceCB cb(device);
 
-			cb->image_barrier(this, {}, src_layout, dst_layout);
+			cb->image_barrier(this, { 0, levels, 0, layers }, src_layout, dst_layout);
 		}
 
 		void ImagePrivate::clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color)
 		{
 			InstanceCB cb(device);
 
-			cb->image_barrier(this, {}, src_layout, ImageLayoutTransferDst);
+			cb->image_barrier(this, { 0, levels, 0, layers }, src_layout, ImageLayoutTransferDst);
 			cb->clear_color_image(this, color);
-			cb->image_barrier(this, {}, ImageLayoutTransferDst, dst_layout);
+			cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferDst, dst_layout);
 		}
 
 		PipelinePtr sample_pipeline = nullptr;
@@ -283,9 +283,9 @@ namespace flame
 							offset += size;
 						}
 					}
-					cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferSrc);
+					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferSrc);
 					cb->copy_image_to_buffer(this, (BufferPrivate*)stag.get(), cpies.size(), cpies.data());
-					cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
 					memcpy(std::get<0>(c), std::get<1>(c), std::get<2>(c));
@@ -341,8 +341,8 @@ namespace flame
 				auto gli_texture = gli::load(filename.string());
 
 				auto ext = gli_texture.extent();
-				auto levels = gli_texture.levels();
-				auto layers = gli_texture.layers();
+				auto levels = (uint)gli_texture.levels();
+				auto layers = (uint)gli_texture.layers();
 
 				Format format = Format_Undefined;
 				switch (gli_texture.format())
@@ -382,9 +382,9 @@ namespace flame
 						offset += size;
 					}
 				}
-				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
 				cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, cpies.size(), cpies.data());
-				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 			else
 			{

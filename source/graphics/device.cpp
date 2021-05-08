@@ -17,7 +17,7 @@ namespace flame
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
 			printf("\n%s\n\n", pMessage);
-			fassert(0);
+			//fassert(0);
 
 			return VK_FALSE;
 		}
@@ -38,7 +38,10 @@ namespace flame
 			extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 			extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 			if (debug)
+			{
 				extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+				layers.push_back("VK_LAYER_KHRONOS_validation");
+			}
 			VkInstanceCreateInfo instInfo = {};
 			instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 			instInfo.pApplicationInfo = &appInfo;
@@ -51,15 +54,16 @@ namespace flame
 
 			if (debug)
 			{
-				VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
-				callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-				callbackCreateInfo.pNext = nullptr;
-				callbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-				callbackCreateInfo.pfnCallback = report_callback;
-				callbackCreateInfo.pUserData = nullptr;
+				VkDebugReportCallbackCreateInfoEXT info;
+				info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+				info.pNext = nullptr;
+				info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+				info.pfnCallback = report_callback;
+				info.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"))(vk_instance, &callbackCreateInfo, nullptr, &callback));
+				chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"))
+					(vk_instance, &info, nullptr, &callback));
 				printf("vulkan: debug report callback created\n");
 			}
 
@@ -71,7 +75,9 @@ namespace flame
 			vk_physical_device = physical_devices[0];
 
 			vkGetPhysicalDeviceProperties(vk_physical_device, &vk_props);
-			unsigned int queue_family_property_count = 0;
+			printf("gpu: %s\n", vk_props.deviceName);
+			vkGetPhysicalDeviceFeatures(vk_physical_device, &vk_features);
+			uint queue_family_property_count = 0;
 			std::vector<VkQueueFamilyProperties> queue_family_properties;
 			vkGetPhysicalDeviceQueueFamilyProperties(vk_physical_device, &queue_family_property_count, nullptr);
 			queue_family_properties.resize(queue_family_property_count);
@@ -122,6 +128,7 @@ namespace flame
 			device_info.queueCreateInfoCount = queue_infos.size();
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
+			device_info.pEnabledFeatures = &vk_features;
 			printf("vulkan: creating device\n");
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
 			printf("vulkan: device created\n");

@@ -4,7 +4,7 @@
     <attachment format="R8G8B8A8_UNORM" />
     <attachment format="R8G8B8A8_UNORM" />
     <attachment format="Depth16" />
-    <attachment format="R8G8B8A8_UNORM" />
+    <attachment format="R16G16B16A16_SFLOAT" />
   </attachments>
   <subpasses>
     <subpass color_refs="0,1" depth_ref="2" />

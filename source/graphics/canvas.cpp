@@ -4,47 +4,6 @@
 //	{
 //		RenderPreferencesPrivate::RenderPreferencesPrivate(DevicePtr device, bool hdr)
 //		{
-//			{
-//				RenderpassAttachmentInfo atts[2];
-//				atts[0].format = Format_R8G8B8A8_UNORM;
-//				atts[0].load_op = AttachmentClear;
-//				atts[0].initia_layout = ImageLayoutAttachment;
-//				atts[1].final_layout = ImageLayoutTransferSrc;
-//				atts[1].format = Format_Depth16;
-//				atts[1].load_op = AttachmentClear;
-//				atts[1].initia_layout = ImageLayoutAttachment;
-//				atts[1].final_layout = ImageLayoutAttachment;
-//				RenderpassSubpassInfo sp;
-//				sp.color_attachments_count = 1;
-//				sp.color_attachments = { 0 };
-//				sp.depth_attachment = 1;
-//				pickup_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
-//			}
-// 
-//			{
-//				ShaderPrivate* shaders[] = {
-//					ShaderPrivate::get(device, L"sky/sky.vert"),
-//					ShaderPrivate::get(device, L"sky/sky.frag")
-//				};
-//				VertexAttributeInfo via;
-//				via.location = 0;
-//				via.format = Format_R32G32B32_SFLOAT;
-//				VertexBufferInfo vib;
-//				vib.attributes_count = 1;
-//				vib.attributes = &via;
-//				vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
-//				VertexInfo vi;
-//				vi.buffers_count = 1;
-//				vi.buffers = &vib;
-//				RasterInfo rst;
-//				rst.depth_clamp = true;
-//				rst.cull_mode = CullModeFront;
-//				DepthInfo dep;
-//				dep.test = false;
-//				dep.write = false;
-//				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
-//			}
-//
 //			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
 //			//mesh_armature_wireframe_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
 //			//terrain_wireframe_pipeline = get_material_pipeline(MaterialForTerrain, L"", "WIREFRAME");
@@ -571,17 +530,6 @@
 //					cb->set_viewport(curr_viewport);
 //					cb->set_scissor(curr_viewport);
 //					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-//
-//					if (mesh_off == 0 && terr_off == 0) // sky
-//					{
-//						cb->bind_pipeline(preferences->sky_pipeline.get());
-//						//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//						//cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-//						auto mrm = model_resources[1]->meshes[0].get();
-//						cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//						cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//						cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, 0);
-//					}
 //
 //					std::vector<std::pair<MeshInfo*, uint>> outline_meshes;
 //					std::vector<std::pair<TerrainInfo*, uint>> outline_terrains;

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <renderpass>
   <attachments>
-    <attachment format="R8G8B8A8_UNORM" />
+    <attachment format="B8G8R8A8_UNORM" load_op="DontCare" />
   </attachments>
   <subpasses>
     <subpass color_refs="0" />

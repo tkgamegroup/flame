@@ -30,8 +30,10 @@ namespace flame
 		graphics::Sampler* sp_nearest;
 		graphics::Sampler* sp_linear;
 
-		graphics::Renderpass* rp_rgba8c;
 		graphics::Renderpass* rp_rgba8;
+		graphics::Renderpass* rp_rgba8c;
+		graphics::Renderpass* rp_bgra8;
+		graphics::Renderpass* rp_bgra8c;
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 		vec2 tar_sz;
 

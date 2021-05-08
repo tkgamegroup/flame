@@ -152,6 +152,8 @@ namespace flame
 
 		void upload(graphics::CommandBuffer* cb)
 		{
+			if (stag_num == 0)
+				return;
 			graphics::BufferCopy cpy;
 			cpy.size = stag_num * sizeof(T);
 			cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
@@ -244,6 +246,8 @@ namespace flame
 
 		void upload(graphics::CommandBuffer* cb)
 		{
+			if (cpies.empty())
+				return;
 			cb->copy_buffer(stagbuf.get(), buf.get(), cpies.size(), cpies.data());
 			cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, graphics::AccessShaderRead);
 			cpies.clear();
@@ -1067,11 +1071,14 @@ namespace flame
 			return ret;
 		};
 
+		graphics::Renderpass* rp = nullptr;
+
 		switch (usage)
 		{
 		case MaterialForMeshShadow:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
+			rp = graphics::Renderpass::get(device, L"d16.rp");
 		case MaterialForMesh:
 		{
 			if (deferred)
@@ -1083,7 +1090,9 @@ namespace flame
 				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			graphics::GraphicsPipelineInfo info;
-			info.renderpass = graphics::Renderpass::get(device, deferred ? L"deferred.rp" : L"forward.rp");
+			if (!rp)
+				rp = graphics::Renderpass::get(device, deferred ? L"deferred.rp" : L"forward.rp");
+			info.renderpass = rp;
 			info.subpass_index = 0;
 			graphics::VertexAttributeInfo vias[3];
 			vias[0].location = 0;
@@ -1290,7 +1299,7 @@ namespace flame
 		fb_tars.clear();
 		fb_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
-			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_rgba8c, 1, &ivs[i]));
+			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
 		tar_sz = ivs[0]->get_image()->get_size();
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
@@ -1576,13 +1585,15 @@ namespace flame
 			auto vp = Rect(vec2(0.f), tar_sz);
 			cb->set_viewport(vp);
 			cb->set_scissor(vp);
-			vec4 cvs[] = {
-				vec4(0.f, 0.f, 0.f, 0.f),
-				vec4(0.f, 0.f, 0.f, 0.f),
-				vec4(1.f, 0.f, 0.f, 0.f),
-				vec4(0.f, 0.f, 0.f, 0.f)
-			};
-			cb->begin_renderpass(nullptr, nd.fb_def.get(), cvs);
+			{
+				vec4 cvs[] = {
+					vec4(0.f, 0.f, 0.f, 0.f),
+					vec4(0.f, 0.f, 0.f, 0.f),
+					vec4(1.f, 0.f, 0.f, 0.f),
+					vec4(0.f, 0.f, 0.f, 0.f)
+				};
+				cb->begin_renderpass(nullptr, nd.fb_def.get(), cvs);
+			}
 			bind_mesh_def_res();
 			cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 			cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
@@ -1601,7 +1612,7 @@ namespace flame
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back.get(), {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutAttachment, graphics::AccessColorAttachmentWrite);
-			cb->begin_renderpass(rp_rgba8, tar);
+			cb->begin_renderpass(nullptr, tar);
 			cb->bind_pipeline(nd.pl_gamma);
 			cb->bind_descriptor_set(0, ds_back.get());
 			cb->draw(3, 1, 0, 0);
@@ -2025,7 +2036,7 @@ namespace flame
 
 			cb->set_viewport(Rect(vec2(0.f), tar_sz));
 			auto cv = vec4(1.f, 1.f, 1.f, 1.f);
-			cb->begin_renderpass(nd.should_render ? rp_rgba8 : rp_rgba8c, tar, &cv);
+			cb->begin_renderpass(nd.should_render ? rp_bgra8 : rp_bgra8c, tar, &cv);
 			cb->bind_pipeline(ed.pl_element);
 			cb->bind_vertex_buffer(ed.buf_element_vtx.buf.get(), 0);
 			cb->bind_index_buffer(ed.buf_element_idx.buf.get(), graphics::IndiceTypeUint);
@@ -2058,8 +2069,10 @@ namespace flame
 		sp_nearest = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 		sp_linear = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge);
 
-		rp_rgba8c = graphics::Renderpass::get(device, L"rgba8c.rp");
 		rp_rgba8 = graphics::Renderpass::get(device, L"rgba8.rp");
+		rp_rgba8c = graphics::Renderpass::get(device, L"rgba8c.rp");
+		rp_bgra8 = graphics::Renderpass::get(device, L"bgra8.rp");
+		rp_bgra8c = graphics::Renderpass::get(device, L"bgra8c.rp");
 
 		img_wht.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
@@ -2129,7 +2142,7 @@ namespace flame
 		auto rp_d16 = graphics::Renderpass::get(device, L"d16.rp");
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
-			nd.img_dir_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_R16_SFLOAT, shadow_map_size, 1, 4,
+			nd.img_dir_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, shadow_map_size, 1, 4,
 				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 			for (auto j = 0; j < 4; j++)
 			{
@@ -2141,7 +2154,7 @@ namespace flame
 		nd.fb_pt_shadow_maps.resize(nd.img_pt_shadow_maps.size() * 6);
 		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
 		{
-			nd.img_pt_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_R16_SFLOAT, vec2(shadow_map_size) * 0.5f, 1, 6,
+			nd.img_pt_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
 				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 			for (auto j = 0; j < 6; j++)
 			{
