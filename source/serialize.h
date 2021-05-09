@@ -219,6 +219,16 @@ namespace flame
 		return ss.str();
 	}
 
+	template <class CH>
+	inline uint64 from_hex_string(const std::basic_string<CH>& str)
+	{
+		uint64 ret;
+		std::basic_stringstream<CH> ss;
+		ss << std::hex << str;
+		ss >> ret;
+		return ret;
+	}
+
 	template <class T>
 	T sto(const char* s);
 

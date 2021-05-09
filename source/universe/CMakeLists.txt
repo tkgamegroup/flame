@@ -22,9 +22,9 @@ add_custom_command(TARGET flame_universe POST_BUILD COMMAND $<TARGET_FILE:typein
 add_dependencies(flame_universe shader_compiler)
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/element/element.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/forward.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/deferred.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/terrain/deferred.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/deferred/shade.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/mesh/gbuffer.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/terrain/gbuffer.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/deferred/deferred.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADER_DIR}/post/post.pll")
 
 file(GLOB PUBLIC_HEADER "*.h*")

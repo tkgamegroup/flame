@@ -12,7 +12,7 @@ namespace flame
 			AttachmentLoadOp load_op = AttachmentClear;
 			SampleCount sample_count = SampleCount_1;
 			ImageLayout initia_layout = ImageLayoutUndefined;
-			ImageLayout final_layout = ImageLayoutShaderReadOnly;
+			ImageLayout final_layout = ImageLayoutAttachment;
 		};
 
 		struct RenderpassSubpassInfo

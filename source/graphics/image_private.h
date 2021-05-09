@@ -65,6 +65,8 @@ namespace flame
 			static ImagePrivate* get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb);
 		};
 
+		extern std::vector<ImagePrivate*> __images;
+
 		struct ImageViewPrivate : ImageView
 		{
 			DevicePtr device;

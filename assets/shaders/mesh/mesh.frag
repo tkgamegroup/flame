@@ -2,7 +2,7 @@
 #include "forward.pll"
 #include "../shading.glsl"
 #else
-#include "deferred.pll"
+#include "gbuffer.pll"
 #endif
 
 layout(location = 0) in flat uint i_mat;

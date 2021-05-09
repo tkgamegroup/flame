@@ -1,7 +1,7 @@
 #ifndef DEFERRED
 #include "forward.pll"
 #else
-#include "deferred.pll"
+#include "gbuffer.pll"
 #endif
 
 layout(location = 0) in vec3 i_position;

@@ -8,9 +8,14 @@ namespace flame
 {
 	namespace graphics
 	{
-		RenderpassPrivate::RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> _attachments, std::span<const RenderpassSubpassInfo> _subpasses, std::span<const uvec2> _dependencies) :
+		std::vector<RenderpassPrivate*> __renderpasses;
+
+		RenderpassPrivate::RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> _attachments, 
+			std::span<const RenderpassSubpassInfo> _subpasses, std::span<const uvec2> _dependencies) :
 			device(device)
 		{
+			__renderpasses.push_back(this);
+
 			std::vector<VkAttachmentDescription> atts(_attachments.size());
 			for (auto i = 0; i < _attachments.size(); i++)
 			{
@@ -136,6 +141,10 @@ namespace flame
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
+			std::erase_if(__renderpasses, [&](const auto& rp) {
+				return rp == this;
+			});
+
 			for (auto& sp : subpasses)
 			{
 				delete[]sp.color_attachments;

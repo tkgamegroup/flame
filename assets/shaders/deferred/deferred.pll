@@ -1,6 +1,6 @@
 #ifndef MAKE_PLL
-#define DEFERRED_SHADE_SET 0
-#include "shade.dsl"
+#define DEFERRED_SET 0
+#include "deferred.dsl"
 #define RENDER_DATA_SET 1
 #include "../render_data.dsl"
 #define LIGHT_SET 2

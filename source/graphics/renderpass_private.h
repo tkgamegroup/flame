@@ -19,7 +19,8 @@ namespace flame
 
 			VkRenderPass vk_renderpass;
 
-			RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const uvec2> dependencies = {});
+			RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> attachments, 
+				std::span<const RenderpassSubpassInfo> subpasses, std::span<const uvec2> dependencies = {});
 			~RenderpassPrivate();
 
 			void release() override { delete this; }
@@ -31,6 +32,8 @@ namespace flame
 
 			static RenderpassPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
+
+		extern std::vector<RenderpassPrivate*> __renderpasses;
 
 		struct FramebufferPrivate : Framebuffer
 		{

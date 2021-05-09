@@ -5,5 +5,5 @@
     <shader filename="post/gamma.frag" />
   </shaders>
   <layout filename="post/post.pll" />
-  <renderpass filename="rgba8.rp" index="0" />
+  <renderpass filename="bgra8.rp" index="0" />
 </pipeline>

@@ -5,7 +5,7 @@
     <shader filename="element/element.frag" />
   </shaders>
   <layout filename="element/element.pll" />
-  <renderpass filename="rgba8c.rp" index="0" />
+  <renderpass filename="bgra8c.rp" index="0" />
   <vertex_buffers>
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32_SFLOAT" />

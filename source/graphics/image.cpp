@@ -34,6 +34,8 @@ namespace flame
 			return 0;
 		}
 
+		std::vector<ImagePrivate*> __images;
+
 		void ImagePrivate::build_sizes(const uvec2& size)
 		{
 			auto s = size;
@@ -63,6 +65,8 @@ namespace flame
 			usage(usage),
 			is_cube(is_cube)
 		{
+			__images.push_back(this);
+
 			build_sizes(size);
 
 			VkImageCreateInfo imageInfo;
@@ -110,6 +114,8 @@ namespace flame
 			sample_count(SampleCount_1),
 			usage(usage)
 		{
+			__images.push_back(this);
+
 			build_sizes(size);
 
 			vk_image = (VkImage)native;
@@ -119,6 +125,10 @@ namespace flame
 
 		ImagePrivate::~ImagePrivate()
 		{
+			std::erase_if(__images, [&](const auto& i) {
+				return i == this;
+			});
+
 			if (vk_memory != 0)
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
