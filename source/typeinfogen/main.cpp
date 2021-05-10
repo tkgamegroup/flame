@@ -13,18 +13,11 @@ std::string format_type(const wchar_t* in)
 {
 	auto str = w2s(in);
 
-	{
-		static auto reg = std::regex(R"(enum )");
-		str = std::regex_replace(str, reg, "");
-	}
-	{
-		static auto reg = std::regex(R"(unsigned )");
-		str = std::regex_replace(str, reg, "u");
-	}
-	{
-		static auto reg = std::regex(R"(__int64 )");
-		str = std::regex_replace(str, reg, "int64");
-	}
+	SUS::replace_all(str, "enum ", "");
+	SUS::replace_all(str, "unsigned ", "u");
+	SUS::replace_all(str, "__int64 ", "int64");
+
+	SUS::replace_all(str, "Private", "");
 
 	SUS::remove_ch(str, ' ');
 

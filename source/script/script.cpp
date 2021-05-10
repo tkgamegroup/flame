@@ -1108,6 +1108,11 @@ namespace flame
 				auto engine_path = getenv("FLAME_PATH");
 				if (engine_path)
 					path = std::filesystem::path(engine_path) / "assets" / path;
+				if (!std::filesystem::exists(path))
+				{
+					wprintf(L"script not found: %s\n", path.c_str());
+					return true;
+				}
 			}
 			return lua_check_result(lua_state, luaL_dofile(lua_state, path.string().c_str()));
 		}

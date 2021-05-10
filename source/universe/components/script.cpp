@@ -38,13 +38,8 @@ namespace flame
 		{
 			for (auto& s : SUW::split_with_spaces(src.wstring()))
 			{
-				if (std::filesystem::exists(s))
-				{
-					if (!scr_ins->excute_file(s.c_str()))
-						fassert(0);
-				}
-				else
-					wprintf(L"script not found: %s\n", s.c_str());
+				if (!scr_ins->excute_file(s.c_str()))
+					fassert(0);
 			}
 		}
 	}
