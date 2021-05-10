@@ -601,7 +601,7 @@ namespace flame
 
 	int sRendererPrivate::set_element_res(int idx, const char* _type_name, void* v)
 	{
-		auto iv_wht = img_wht->get_view();
+		auto iv_white = img_white->get_view();
 		auto& ed = *_ed;
 
 		auto type_name = std::string(_type_name);
@@ -619,14 +619,14 @@ namespace flame
 		{
 			if (type != ElementResImage)
 				return - 1;
-			v = iv_wht;
+			v = iv_white;
 		}
 
 		if (idx == -1)
 		{
 			for (auto i = 1; i < ed.reses.size(); i++)
 			{
-				if (ed.reses[i].v == iv_wht)
+				if (ed.reses[i].v == iv_white)
 				{
 					idx = i;
 					break;
@@ -804,7 +804,7 @@ namespace flame
 			return -1;
 
 		nd.tex_reses[idx] = tex;
-		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_wht->get_view(), sp);
+		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_white->get_view(), sp);
 
 		return idx;
 	}
@@ -1204,6 +1204,37 @@ namespace flame
 			//	break;
 			//}
 		}
+	}
+
+	void sRendererPrivate::get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr,
+		graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id)
+	{
+		if (out_box)
+			*out_box = sky_box;
+		if (out_irr)
+			*out_irr = sky_irr;
+		if (out_rad)
+			*out_rad = sky_rad;
+		if (out_lut)
+			*out_lut = sky_lut;
+		if (out_id)
+			*out_id = sky_id;
+	}
+
+	void sRendererPrivate::set_sky(graphics::ImageView* box, graphics::ImageView* irr,
+		graphics::ImageView* rad, graphics::ImageView* lut, void* id)
+	{
+		sky_box = box;
+		sky_irr = irr;
+		sky_rad = rad;
+		sky_lut = lut;
+		sky_id = id;
+
+		auto& nd = *_nd;
+		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut, sp_linear);
 	}
 
 	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
@@ -2095,10 +2126,15 @@ namespace flame
 		rp_bgra8 = graphics::Renderpass::get(device, L"bgra8.rp");
 		rp_bgra8c = graphics::Renderpass::get(device, L"bgra8c.rp");
 
-		img_wht.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+		img_white.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_wht->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(255));
-		auto iv_wht = img_wht->get_view();
+		img_white->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(255));
+		img_black.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
+		img_black->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+
+		auto iv_white = img_white->get_view();
+		auto iv_black = img_black->get_view();
 
 		ds_back.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"post/post.dsl")));
 
@@ -2112,11 +2148,11 @@ namespace flame
 		ed.reses.resize(element::DSL_element::images_count);
 		for (auto i = 0; i < ed.reses.size(); i++)
 		{
-			ed.ds_element->set_image(element::DSL_element::images_binding, i, iv_wht, sp_linear);
+			ed.ds_element->set_image(element::DSL_element::images_binding, i, iv_white, sp_linear);
 
 			auto& res = ed.reses[i];
 			res.type = ElementResImage;
-			res.v = iv_wht;
+			res.v = iv_white;
 		}
 
 		auto& nd = *_nd;
@@ -2144,7 +2180,7 @@ namespace flame
 		nd.ds_material.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"material.dsl")));
 		nd.ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, nd.buf_materials.buf.get());
 		for (auto i = 0; i < nd.tex_reses.size(); i++)
-			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_wht, sp_linear);
+			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_white, sp_linear);
 
 		nd.buf_transforms.create(device, graphics::BufferUsageStorage);
 		nd.ds_mesh.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
@@ -2201,6 +2237,10 @@ namespace flame
 			auto iv = graphics::ImageView::create(nd.img_pt_shadow_maps[i].get(), true, graphics::ImageViewCube, { 0, 1, 0, 6 });
 			nd.ds_light->set_image(DSL_light::pt_shadow_maps_binding, i, iv, sp_shadow);
 		}
+		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
 
 		nd.pll_mesh_fwd = graphics::PipelineLayout::get(device, L"mesh/forward.pll");
 		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");
@@ -2228,6 +2268,8 @@ namespace flame
 			ed.should_render = true;
 			element_render(0, world->first_element->get_component_i<cElementPrivate>(0));
 		}
+		else
+			ed.should_render = false;
 
 		auto& nd = *_nd;
 		nd.dir_shadows.clear();
@@ -2248,6 +2290,8 @@ namespace flame
 			nd.should_render = true;
 			node_render(world->first_node->get_component_i<cNodePrivate>(0));
 		}
+		else
+			nd.should_render = false;
 
 		dirty = false;
 	}

@@ -41,3 +41,8 @@ layout(set = LIGHT_SET, binding = 3) buffer readonly PtShadowMats
 
 layout (set = LIGHT_SET, binding = 4) uniform sampler2DArray	dir_shadow_maps[4];
 layout (set = LIGHT_SET, binding = 5) uniform samplerCube		pt_shadow_maps[4];
+
+layout(set = LIGHT_SET, binding = 6) uniform samplerCube sky_box;
+layout(set = LIGHT_SET, binding = 7) uniform samplerCube sky_irr;
+layout(set = LIGHT_SET, binding = 8) uniform samplerCube sky_rad;
+layout(set = LIGHT_SET, binding = 9) uniform sampler2D sky_lut;

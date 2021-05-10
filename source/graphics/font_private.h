@@ -14,6 +14,7 @@ namespace flame
 			std::string file;
 			stbtt_fontinfo* stbtt_info;
 
+			Font();
 			~Font();
 		};
 

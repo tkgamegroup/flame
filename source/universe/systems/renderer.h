@@ -48,6 +48,11 @@ namespace flame
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;
 
+		virtual void get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr, 
+			graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id) = 0;
+		virtual void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
+			graphics::ImageView* rad, graphics::ImageView* lut, void* id) = 0;
+
 		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) = 0;
 		virtual void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) = 0;

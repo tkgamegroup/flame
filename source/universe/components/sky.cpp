@@ -61,12 +61,21 @@ namespace flame
 			lut_texture = graphics::Image::get(device, fn.c_str(), true);
 		}
 
-		//renderer->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
-		//	rad_texture->get_view(rad_texture->get_levels()), lut_texture->get_view());
+		renderer->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
+			rad_texture->get_view(rad_texture->get_levels()), lut_texture->get_view(), this);
 	}
 
 	void cSkyPrivate::on_left_world()
 	{
+		graphics::ImageView* iv_box; 
+		graphics::ImageView* iv_irr; 
+		graphics::ImageView* iv_rad; 
+		graphics::ImageView* iv_lut;
+		void* id;
+		renderer->get_sky(&iv_box, &iv_irr, &iv_rad, &iv_lut, &id);
+		if (id == this)
+			renderer->set_sky(nullptr, nullptr, nullptr, nullptr, nullptr);
+
 		renderer = nullptr;
 	}
 

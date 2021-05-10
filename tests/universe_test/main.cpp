@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"scene_test2");
+auto test_prefab = std::filesystem::path(L"scene_test");
 
 int main(int argc, char** args)
 {

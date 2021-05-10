@@ -4,9 +4,9 @@
     <cScript>
       ui = entity
       local config = load_ini("config.ini")
-      local location_config = config["location"]
-      last_open = location_config["last_open"]
-      last_save = location_config["last_save"]
+      local locations = config["location"]
+      last_open = locations["last_open"]
+      last_save = locations["last_save"]
     </cScript>
     <eMenuBar>
       <eMenu text="file" >
@@ -135,47 +135,8 @@
         </eMenuItem>
       </eMenu>
       <eMenu text="tools" >
-        <eMenuItem text="plane grass on terrain" >
-          <cScript>
-            local menu_item = entity.find_driver("dMenuItem")
-            entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-              local e_node_root = scene.find_child("node_root")
-              if not e_node_root.p then return end
-              local e_terrain = e_node_root.find_child("terrain")
-              if not e_terrain.p then return end
-              local terrain = e_terrain.find_component("cTerrain")
-              
-              local blocks = terrain.get_blocks()
-              local scale = terrain.get_scale()
-              local num = 100
-              local uvs = flame_malloc(num * 16)
-              local samples = flame_malloc(num * 32)
-              
-              local tag = find_enum("TypeTag")["Data"]
-              local basic = find_enum("BasicType")["FloatingType"]
-              for i=0,num-1,1 do
-                local uv = vec2(math.random(), math.random())
-                flame_set(uvs, i * 16, tag, basic, 2, 1, uv)
-              end
-              
-              local height_texture = terrain.get_height_texture()
-              height_texture.get_samples(num, uvs, samples)
-              
-              local e_grass_root = create_entity("prefabs/node")
-              e_grass_root.set_name("grass_root")
-              for i=0,num-1,1 do
-                local uv = flame_get(uvs, i * 16, tag, basic, 2, 1)
-                local sample = flame_get(samples, i * 32, tag, basic, 4, 1)
-                local e = create_entity("D:\\grass\\01_d.prefab")
-                e.find_component("cNode").set_pos(vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z))
-                e_grass_root.add_child(e)
-              end
-              e_node_root.add_child(e_grass_root)
-              
-              flame_free(uvs)
-              flame_free(samples)
-            end)
-          </cScript>
+        <eMenuItem text="scatter vegetations.." >
+          <cScript src="scatter_vegetations.lua" />
         </eMenuItem>
       </eMenu>
       <eMenu text="settings" >
@@ -213,289 +174,27 @@
         </eScroller>
         <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8" >
           <cReceiver />
-          <cScript>
-            scene = entity
-            
-            prefab = { p=nil }
-            selected = { p=nil }
-            
-            function load_scene(filename)
-              if prefab.p then scene.remove_child(prefab) end
-              local ok
-              prefab, ok = create_entity(filename)
-              scene.add_child(prefab, 0)
-              
-              update_hierachy()
-              return ok
-            end
-            
-            function save_scene(filename)
-              if not prefab.p then return end
-              prefab.save(filename)
-            end
-      
-            function select(e, from_hierarchy)
-              if selected.p then
-                selected.set_state(find_enum("StateFlags")["None"])
-              end
-              selected = e
-              if selected.p then
-                selected.set_state(find_enum("StateFlags")["Selected"])
-              end
-              s_renderer.mark_dirty()
-              if not from_hierarchy then
-                local o = {}
-                if selected.p then
-                  o = selected.get_userdata()
-                else
-                  o = { p=nil }
-                end
-                local tree = hierarchy.find_driver("dTree")
-                tree.set_selected(o)
-                tree.expand_to_selected()
-              end
-              update_inspector()
-            end
-            
-            local last_mpos = vec2(0, 0)
-            local receiver = entity.find_component("cReceiver")
-            receiver.add_mouse_left_down_listener(function(p)
-              last_mpos.x = p.x
-              last_mpos.y = p.y
-            end)
-            receiver.add_mouse_left_up_listener(function(p)
-              if p.x == last_mpos.x and p.y == last_mpos.y then
-                local e = {}
-                e.p = canvas.pickup(last_mpos)
-                make_obj(e, "flame::Entity")
-                select(e, false)
-              end
-            end)
-          </cScript>
+          <cScript src="scene" />
           <eElement name="debug" />
           <entity name="hud_global_axes" visible="false" >
             <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,100" />
-            <cScript>
-              local element = entity.find_component("cElement")
-              flame_perspective(0, 45, 1, 1, 100)
-              element.add_drawer(function(canvas)
-                local p0 = element.get_point(0)
-                local p2 = element.get_point(2)
-                local sz = p2 - p0
-                p0 = p0 + sz * 0.5
-                __mat_id__ = 1
-                canvas.get_view_matrix()
-
-                local a0 = flame_transform(1, vec4(0, 0, 0, 0))
-                a0.z = a0.z - 5
-                a0 = flame_transform(0, a0)
-                a0.x = a0.x / a0.w
-                a0.y = a0.y / a0.w
-                local a0_2 = vec2(a0.x, a0.y)
-
-                local ax = flame_transform(1, vec4(1, 0, 0, 0))
-                ax.z = ax.z - 5
-                ax = flame_transform(0, ax)
-                ax.x = ax.x / ax.w
-                ax.y = ax.y / ax.w
-                canvas.begin_path()
-                canvas.move_to(a0_2 * sz + p0)
-                canvas.line_to(vec2(ax.x, ax.y) * sz + p0)
-                canvas.stroke(vec4(255, 0, 0, 255), 2, false)
-
-                local ay = flame_transform(1, vec4(0, 1, 0, 0))
-                ay.z = ay.z - 5
-                ay = flame_transform(0, ay)
-                ay.x = ay.x / ay.w
-                ay.y = ay.y / ay.w
-                canvas.begin_path()
-                canvas.move_to(a0_2 * sz + p0)
-                canvas.line_to(vec2(ay.x, ay.y) * sz + p0)
-                canvas.stroke(vec4(0, 255, 0, 255), 2, false)
-
-                local az = flame_transform(1, vec4(0, 0, 1, 0))
-                az.z = az.z - 5
-                az = flame_transform(0, az)
-                az.x = az.x / az.w
-                az.y = az.y / az.w
-                canvas.begin_path()
-                canvas.move_to(a0_2 * sz + p0)
-                canvas.line_to(vec2(az.x, az.y) * sz + p0)
-                canvas.stroke(vec4(0, 0, 255, 255), 2, false)
-              end, true)
-            </cScript>
+            <cScript src="hud_global_axes" />
           </entity>
           <entity name="hud_crosshair" visible="false" >
             <cElement alignx="MinMax" aligny="MinMax" />
-            <cScript>
-              local element = entity.find_component("cElement")
-              element.add_drawer(function(canvas)
-                local p0 = element.get_point(0)
-                local p2 = element.get_point(2)
-                local sz = p2 - p0
-                p0 = p0 + sz * 0.5
-                canvas.begin_path()
-                canvas.move_to(p0 - vec2(4, 0))
-                canvas.line_to(p0 + vec2(4, 0))
-                canvas.move_to(p0 - vec2(0, 4))
-                canvas.line_to(p0 + vec2(0, 4))
-                canvas.stroke(vec4(255, 0, 0, 255), 1, false)
-              end, true)
-            </cScript>
+            <cScript src="hud_crosshair" />
           </entity>
         </eElement>
       </eSplitter>
       <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" >
           <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
-            <cScript>
-              hierarchy = entity
-              
-              local tree = hierarchy.find_driver("dTree")
-              local selected_h = flame_hash("selected")
-              hierarchy.add_driver_data_listener(function(h)
-                if h == selected_h then
-                  local s = tree.get_selected()
-                  if s.p then
-                    local o = { p=s.get_userdata() }
-                    make_obj(o, "flame::Entity")
-                    select(o, true)
-                  else
-                    select({ p=nil }, true)
-                  end
-                end
-              end, tree)
-              
-              function update_hierachy()
-                if hierarchy.get_children_count() > 0 then
-                  hierarchy.remove_child(hierarchy.get_child(0))
-                end
-                if prefab.p then
-                  function create_nodes(src, dst)
-                    local count = src.get_children_count()
-                    if count > 0 then
-                      local e = create_entity("prefabs/tree_node")
-                      e.find_driver("dTreeNode").set_title("["..src.get_name().."]")
-                      e.set_userdata(src)
-                      src.set_userdata(e)
-                      dst.add_child(e)
-                      for i=0, count-1, 1 do
-                        local c = src.get_child(i)
-                        create_nodes(c, e)
-                      end
-                    else
-                      local e = create_entity("prefabs/tree_leaf")
-                      e.find_driver("dTreeLeaf").set_title("["..src.get_name().."]")
-                      e.set_userdata(src)
-                      src.set_userdata(e)
-                      dst.add_child(e)
-                    end
-                  end
-                  create_nodes(prefab, hierarchy)
-                end
-              end
-            </cScript>
+            <cScript src="hierarchy.lua" />
           </eTree>
         </eScroller>
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1">
           <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
-            <cScript>
-              inspector = entity
-            
-              function update_inspector()
-                local count = inspector.get_children_count()
-                if count > 0 then
-                  for i=0, count-1, 1 do
-                    inspector.remove_child(inspector.get_child(0))
-                  end
-                end
-                
-                if not selected.p then return end
-                  
-                local e, ens, evs, en, ev
-                  
-                function add_group(name)
-                  e = create_entity("attribute_group")
-                  e.find_driver("dTreeNode").set_title(name)
-                  inspector.add_child(e)
-                  ens = e.find_child("names") 
-                  evs = e.find_child("values")
-                end
-                  
-                function add_text_attribute(name, value)
-                  en = create_entity("prefabs/text")
-                  en.find_component("cText").set_text(name)
-                  ens.add_child(en)
-                  ev = create_entity("prefabs/text")
-                  ev.find_component("cText").set_text(value)
-                  evs.add_child(ev)
-                end
-                  
-                function add_check_attribute(name, value)
-                  en = create_entity("prefabs/text")
-                  en.find_component("cText").set_text(name)
-                  ens.add_child(en)
-                  ev = create_entity("prefabs/checkbox")
-                  ev.find_driver("dCheckbox").set_checked(value)
-                  evs.add_child(ev)
-                end
-                  
-                add_group("entity")
-                add_text_attribute("Name: ", selected.get_name())
-                add_text_attribute("Srcs: ", selected.get_srcs())
-                add_check_attribute("Visible: ", selected.get_visible())
-                  
-                local components = {}
-                selected.get_components(function(cmp)
-                  table.insert(components, cmp)
-                end)
-                for i=1, #components, 1 do
-                  local c = components[i]
-                  local name = c.type_name
-                  add_group(name)
-                  local udt = find_udt(name)
-                  
-                  local attrs = {}
-	                for k, attr in pairs(udt.attributes) do
-                    local temp = {}
-                    for kk, vv in pairs(attr) do
-                      temp[kk] = vv
-                    end
-                    temp.name = k
-                    table.insert(attrs, temp)
-                  end
-                  table.sort(attrs, function(a, b)
-                    return a.get.index &lt; b.get.index
-                  end)
-                  
-                  for j=1, #attrs, 1 do
-                    local attr = attrs[j]
-                    local v = flame_call(c.p, attr.get.f)
-                    local t = type(v)
-                    if t ~= "nil" then
-                      if t == "table" then
-                        if v["x"] ~= nil and v["y"] ~= nil then
-                          if v["z"] ~= nil then
-                            if v["w"] ~= nil then
-                              add_text_attribute(attr.name..": ", v.x..", "..v.y..", "..v.z..", "..v.w)
-                            else
-                              add_text_attribute(attr.name..": ", v.x..", "..v.y..", "..v.z)
-                            end
-                          else
-                              add_text_attribute(attr.name..": ", v.x..", "..v.y)
-                          end
-                        end
-                      elseif t == "boolean" then
-                        add_check_attribute(attr.name..": ", v)
-                      else
-                        add_text_attribute(attr.name..": ", v)
-                      end
-                    end
-                  end
-                  
-                end
-              end
-            </cScript>
+            <cScript src="inspector.lua" />
           </eTree>
         </eScroller>
       </eSplitter>

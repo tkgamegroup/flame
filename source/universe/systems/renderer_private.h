@@ -38,11 +38,18 @@ namespace flame
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 		vec2 tar_sz;
 
-		UniPtr<graphics::Image> img_wht;
+		UniPtr<graphics::Image> img_white;
+		UniPtr<graphics::Image> img_black;
 		UniPtr<graphics::Image> img_back;
 		UniPtr<graphics::DescriptorSet>	ds_back;
 
 		cCameraPrivate* camera = nullptr;
+
+		graphics::ImageView*	sky_box = nullptr;
+		graphics::ImageView*	sky_irr = nullptr;
+		graphics::ImageView*	sky_rad = nullptr;
+		graphics::ImageView*	sky_lut = nullptr;
+		void*					sky_id = nullptr;
 
 		std::unique_ptr<ElemnetRenderData>	_ed;
 		std::unique_ptr<NodeRenderData>		_nd;
@@ -76,6 +83,11 @@ namespace flame
 
 		cCameraPtr get_camera() const override { return camera; }
 		void set_camera(cCameraPtr c) override { camera = c; }
+
+		void get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr,
+			graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id) override;
+		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
+			graphics::ImageView* rad, graphics::ImageView* lut, void* id) override;
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) override;

@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <prefab>
   <eNode>
-    <cScript src="shoot_ball.lua plane_tree.lua" />
-    <entity src="D:\sky\sky" name="sky" />
+    <cScript src="shoot_ball.lua1 plane_tree.lua1" />
+    <entity src="D:\assets\sky\sky" name="sky" />
     <eCube pos="200,60,200" dynamic="false" />
     <eCube pos="210,60,200" dynamic="false" />
     <eCube pos="200,60,205" dynamic="false" />
-    <entity src="D:\character\character" name="character" pos="200,65,200" >
+    <eNode src="D:\character\character1" name="character" pos="200,65,200" >
       <cController radius="0.5" height="1.8" />
       <cScript src="character_controller.lua" />
       <eNode name="camera" pos="0,5,0" euler="0,0,0" >
         <cCamera current="true" />
         <cScript src="camera_third.lua" />
       </eNode>
-    </entity>
+    </eNode>
     <entity src="D:\assets\terrain\terrain" name="terrain" />
     <eLight name="sun" euler="0,90,0" type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
   </eNode>
-  <eElement name="post_effect" >
+  <eElement1 name="post_effect" >
     <cPostEffect enable_bloom="true" />
-  </eElement>
+  </eElement1>
 </prefab>

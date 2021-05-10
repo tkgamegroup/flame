@@ -12,6 +12,11 @@ namespace flame
 {
 	namespace graphics
 	{
+		Font::Font()
+		{
+			stbtt_info = new stbtt_fontinfo;
+		}
+
 		Font::~Font()
 		{
 			delete stbtt_info;
