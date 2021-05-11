@@ -30,8 +30,10 @@ namespace flame
 		struct Instance
 		{
 			virtual int to_int(int idx) = 0;
+			virtual uint to_uint(int idx) = 0;
 			virtual void push_bool(bool b) = 0;
 			virtual void push_int(int i) = 0;
+			virtual void push_uint(uint i) = 0;
 			virtual void push_float(float f) = 0;
 			virtual void push_vec2(const vec2& v) = 0;
 			virtual void push_vec3(const vec3& v) = 0;

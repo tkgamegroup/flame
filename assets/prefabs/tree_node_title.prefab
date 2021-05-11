@@ -7,7 +7,9 @@
               Selected:180,200,225,255
               Hovering:230,230,230,255" />
     <cReceiver />
-    <cText text="tree_node" />
+    <cText font_color.state_rules="255,255,255,255
+           Selected:255,255,255,255
+           Hovering:0,0,0,255" />
     <entity src="prefabs/tree_node_arrow" />
   </entity>
 </prefab>

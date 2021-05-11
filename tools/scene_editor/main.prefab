@@ -82,7 +82,7 @@
     </eElement>
     <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" >
       <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8" >
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" fill_color="0,0,0,100" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" fill_color="0,0,0,150" >
           <eList name="prefab_list">
             <cScript src="prefab_list.lua" />
           </eList>
@@ -92,7 +92,7 @@
           <cScript src="scene.lua" />
           <eElement name="debug" />
           <entity name="hud_global_axes" visible="false" >
-            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,100" />
+            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150" />
             <cScript src="hud_global_axes.lua" />
           </entity>
           <entity name="hud_crosshair" visible="false" >
@@ -102,12 +102,12 @@
         </eElement>
       </eSplitter>
       <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,100" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
           <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
             <cScript src="hierarchy.lua" />
           </eTree>
         </eScroller>
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,100" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
           <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
             <cScript src="inspector.lua" />
           </eTree>

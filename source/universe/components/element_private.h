@@ -51,7 +51,7 @@ namespace flame
 		cvec4 fill_color = cvec4(0);
 
 		float border = 0.f;
-		cvec4 border_color = cvec4(0, 0, 0, 255);
+		cvec4 border_color = cvec4(255);
 
 		bool clipping = false;
 

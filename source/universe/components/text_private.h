@@ -8,7 +8,7 @@ namespace flame
 	{
 		std::wstring text;
 		uint font_size = 16;
-		cvec4 font_color = cvec4(0, 0, 0, 255);
+		cvec4 font_color = cvec4(255);
 
 		cElementPrivate* element = nullptr;
 		void* drawer = nullptr;

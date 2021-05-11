@@ -5,7 +5,7 @@
     <cReceiver />
     <entity name="box">
       <cElement width="14" height="14" border="2.0" 
-              fill_color.state_rules="255,255,255,255
+              fill_color.state_rules="0,0,0,0
               Selected|Hovering:60,83,176,255
               Selected:86,119,252,255
               Hovering:220,220,220,255" />

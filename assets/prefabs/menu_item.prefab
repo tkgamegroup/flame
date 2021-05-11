@@ -2,8 +2,8 @@
 <prefab>
   <entity driver="dMenuItem" >
     <cElement padding="6,2,4,2" alignx="MinMax" 
-              fill_color.state_rules="190,190,190,255
-              Hovering:200,220,240,255" />
+              fill_color.state_rules="60,60,60,255
+              Hovering:100,110,120,255" />
     <cText />
     <cReceiver />
     <entity name="arrow" visible="false" >

@@ -639,7 +639,7 @@ namespace flame
 					scr_ins->get_global("callbacks");
 					scr_ins->get_member(nullptr, c.data<uint>());
 					scr_ins->get_member("f");
-					scr_ins->push_pointer((void*)h);
+					scr_ins->push_uint(h);
 					scr_ins->call(1);
 					scr_ins->pop(2);
 				};
@@ -688,7 +688,7 @@ namespace flame
 					scr_ins->get_global("callbacks");
 					scr_ins->get_member(nullptr, c.data<uint>());
 					scr_ins->get_member("f");
-					scr_ins->push_pointer((void*)h);
+					scr_ins->push_uint(h);
 					scr_ins->call(1);
 					scr_ins->pop(2);
 				};

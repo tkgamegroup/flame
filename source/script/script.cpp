@@ -141,8 +141,8 @@ namespace flame
 		{
 			if (lua_isstring(state, -1))
 			{
-				auto hash = std::hash<std::string>()(lua_tostring(state, -1));
-				lua_pushlightuserdata(state, (void*)hash);
+				auto hash = (uint)std::hash<std::string>()(lua_tostring(state, -1));
+				lua_pushinteger(state, hash);
 				return 1;
 			}
 			return 0;
@@ -997,12 +997,22 @@ namespace flame
 			return lua_tointeger(lua_state, idx);
 		}
 
+		uint InstancePrivate::to_uint(int idx)
+		{
+			return lua_tointeger(lua_state, idx);
+		}
+
 		void InstancePrivate::push_bool(bool b)
 		{
 			lua_pushboolean(lua_state, b);
 		}
 
 		void InstancePrivate::push_int(int i)
+		{
+			lua_pushinteger(lua_state, i);
+		}
+
+		void InstancePrivate::push_uint(uint i)
 		{
 			lua_pushinteger(lua_state, i);
 		}

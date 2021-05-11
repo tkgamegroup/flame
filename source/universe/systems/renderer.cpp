@@ -1249,10 +1249,11 @@ namespace flame
 		sky_id = id;
 
 		auto& nd = *_nd;
-		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut, sp_linear);
+		auto iv_black = img_black->get_view();
+		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box ? box : iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut ? lut : iv_black, sp_linear);
 	}
 
 	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
@@ -2098,9 +2099,12 @@ namespace flame
 
 			cb->set_viewport(Rect(vec2(0.f), tar_sz));
 			cb->set_scissor(Rect(vec2(0.f), tar_sz));
+			if (nd.should_render)
+				cb->begin_renderpass(rp_bgra8, fb_tars[tar_idx].get());
+			else
 			{
-				auto cv = vec4(1.f, 1.f, 1.f, 1.f);
-				cb->begin_renderpass(nd.should_render ? rp_bgra8 : rp_bgra8c, fb_tars[tar_idx].get(), &cv);
+				auto cv = vec4(0.6f, 0.7f, 0.8f, 1.f);
+				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &cv);
 			}
 			cb->bind_pipeline(ed.pl_element);
 			cb->bind_vertex_buffer(ed.buf_element_vtx.buf.get(), 0);

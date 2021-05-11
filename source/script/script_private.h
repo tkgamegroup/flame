@@ -18,8 +18,10 @@ namespace flame
 			~InstancePrivate();
 
 			int to_int(int idx) override;
+			uint to_uint(int idx) override;
 			void push_bool(bool b) override;
 			void push_int(int i) override;
+			void push_uint(uint i) override;
 			void push_float(float f) override;
 			void push_vec2(const vec2& v) override;
 			void push_vec3(const vec3& v) override;

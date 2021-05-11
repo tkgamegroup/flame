@@ -1,9 +1,8 @@
 hierarchy = entity
 
 local tree = hierarchy.find_driver("dTree")
-local selected_h = flame_hash("selected")
 hierarchy.add_driver_data_listener(function(h)
-    if h == selected_h then
+    if h == flame_hash("selected") then
         local s = tree.get_selected()
         if s.p then
             local o = { p=s.get_userdata() }
