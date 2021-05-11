@@ -10,6 +10,8 @@ void main()
 	float dep = texture(img_dep, i_uv).r;
 	vec4 coordv = render_data.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
 	coordv /= coordv.w;
+	vec4 coordw = render_data.view_inv * coordv;
+
 	if (dep < 1.0)
 	{
 		vec4 col_met = texture(img_col_met, i_uv);
@@ -25,5 +27,5 @@ void main()
 		o_color = vec4(shading(coordw.xyz, length(coordv.xyz), normal, normalize(coordv.xyz), metallic, albedo, spec, roughness), 1.0);
 	}
 	else
-		o_color = texture(sky_box, normalize(coordv.xyz));
+		o_color = texture(sky_box, normalize(coordw.xyz));
 }

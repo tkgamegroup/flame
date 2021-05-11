@@ -32,17 +32,17 @@ entity.add_event(function()
 	camera.set_pos()
 end, 0.5)
 
-local root_receiver = root.find_component("cReceiver")
+local scene_receiver = scene.find_component("cReceiver")
 
-root_receiver.add_mouse_left_down_listener(function()
+scene_receiver.add_mouse_left_down_listener(function()
 	camera.dragging = true
 end)
 
-root_receiver.add_mouse_left_up_listener(function()
+scene_receiver.add_mouse_left_up_listener(function()
 	camera.dragging = false
 end)
 
-root_receiver.add_mouse_scroll_listener(function(scroll)
+scene_receiver.add_mouse_scroll_listener(function(scroll)
 	if scroll > 0 then
 		if camera.length > 5 then
 			camera.length = camera.length - 1
@@ -56,7 +56,7 @@ root_receiver.add_mouse_scroll_listener(function(scroll)
 	end
 end)
 
-root_receiver.add_mouse_move_listener(function(disp)
+scene_receiver.add_mouse_move_listener(function(disp)
 	if camera.dragging then
 		camera.yaw = camera.yaw - disp.x
 		camera.pitch = camera.pitch - disp.y

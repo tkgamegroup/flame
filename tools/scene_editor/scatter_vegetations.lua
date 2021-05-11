@@ -1,5 +1,4 @@
-local menu_item = entity.find_driver("dMenuItem")
-entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+function scatter_vegetations()
     local e_node_root = scene.find_child("node_root")
     if not e_node_root.p then return end
     local e_terrain = e_node_root.find_child("terrain")
@@ -36,4 +35,4 @@ entity.find_component("cReceiver").add_mouse_left_down_listener(function()
               
     flame_free(ptr_uvs)
     flame_free(ptr_samples)
-end)
+end

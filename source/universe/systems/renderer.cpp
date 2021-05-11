@@ -700,6 +700,30 @@ namespace flame
 		info.color = color;
 	}
 
+	void sRendererPrivate::stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color)
+	{
+		auto& ed = *_ed;
+
+		auto& info = ed.layers[layer].emplace_back();
+		info.type = ElementDrawCmd::Stroke;
+
+		info.res_id = 0;
+		info.points.resize(pt_cnt);
+		auto c = vec2(element->transform[2]);
+		if (element->crooked)
+		{
+			for (auto i = 0; i < pt_cnt; i++)
+				info.points[i] = c + element->axes * pts[i];
+		}
+		else
+		{
+			for (auto i = 0; i < pt_cnt; i++)
+				info.points[i] = c + pts[i];
+		}
+		info.color = color;
+		info.misc[0] = thickness;
+	}
+
 	void sRendererPrivate::stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
 	{
 		auto& ed = *_ed;
@@ -767,18 +791,12 @@ namespace flame
 			auto normal = vec2(d.y, -d.x);
 
 			if (i > 0)
-			{
-				auto n = normalize((normal + normals[i]) * 0.5f);
-				normals[i] = n / dot(n, normal);
-			}
+				normals[i] = normalize((normal + normals[i]) * 0.5f);
 			else
 				normals[i] = normal;
 
 			if (closed && i + 1 == points.size() - 1)
-			{
-				auto n = normalize((normal + normals[0]) * 0.5f);
-				normals.front() = normals.back() = n / dot(n, normal);
-			}
+				normals.front() = normalize((normal + normals[0]) * 0.5f);
 			else
 				normals[i + 1] = normal;
 		}
@@ -1959,11 +1977,11 @@ namespace flame
 
 									auto pidx = ed.buf_element_idx.stag(6);
 									pidx[0] = c.d.a.vtx_cnt + 0;
-									pidx[1] = c.d.a.vtx_cnt + 3;
-									pidx[2] = c.d.a.vtx_cnt + 1;
+									pidx[1] = c.d.a.vtx_cnt + 1;
+									pidx[2] = c.d.a.vtx_cnt + 3;
 									pidx[3] = c.d.a.vtx_cnt + 0;
-									pidx[4] = c.d.a.vtx_cnt + 2;
-									pidx[5] = c.d.a.vtx_cnt + 3;
+									pidx[4] = c.d.a.vtx_cnt + 3;
+									pidx[5] = c.d.a.vtx_cnt + 2;
 
 									c.d.a.vtx_cnt += 4;
 									c.d.a.idx_cnt += 6;
@@ -1972,11 +1990,11 @@ namespace flame
 								{
 									auto pidx = ed.buf_element_idx.stag(6);
 									pidx[0] = c.d.a.vtx_cnt - 2;
-									pidx[1] = vtx_cnt0 + 1;
-									pidx[2] = c.d.a.vtx_cnt - 1;
+									pidx[1] = c.d.a.vtx_cnt - 1;
+									pidx[2] = vtx_cnt0 + 1;
 									pidx[3] = c.d.a.vtx_cnt - 2;
-									pidx[4] = vtx_cnt0 + 0;
-									pidx[5] = vtx_cnt0 + 1;
+									pidx[4] = vtx_cnt0 + 1;
+									pidx[5] = vtx_cnt0 + 0;
 
 									c.d.a.idx_cnt += 6;
 								}
@@ -1992,11 +2010,11 @@ namespace flame
 
 									auto pidx = ed.buf_element_idx.stag(6);
 									pidx[0] = c.d.a.vtx_cnt - 2;
-									pidx[1] = c.d.a.vtx_cnt + 1;
-									pidx[2] = c.d.a.vtx_cnt - 1;
+									pidx[1] = c.d.a.vtx_cnt - 1;
+									pidx[2] = c.d.a.vtx_cnt + 1;
 									pidx[3] = c.d.a.vtx_cnt - 2;
-									pidx[4] = c.d.a.vtx_cnt + 0;
-									pidx[5] = c.d.a.vtx_cnt + 1;
+									pidx[4] = c.d.a.vtx_cnt + 1;
+									pidx[5] = c.d.a.vtx_cnt + 0;
 
 									c.d.a.vtx_cnt += 2;
 									c.d.a.idx_cnt += 6;

@@ -32,6 +32,7 @@ namespace flame
 		virtual int find_element_res(void* v) const = 0;
 
 		virtual void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) = 0;
+		virtual void stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color) = 0;
 		virtual void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) = 0;
 		virtual void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id,
 			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) = 0;

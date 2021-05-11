@@ -4,6 +4,7 @@
 #include "../components/receiver_private.h"
 #include "edit_private.h"
 #include "../systems/dispatcher_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -39,7 +40,7 @@ namespace flame
 
 		element->update_transform();
 
-		auto pp = element->axes_inv * (mpos - element->points[0]);
+		auto pp = element->axes_inv * (mpos - element->points[4]);
 
 		int n = str.size();
 		float base_y = 0, prev_x;
@@ -400,8 +401,6 @@ namespace flame
 		auto atlas = text->atlas;
 		auto font_size = text->font_size;
 		element->update_transform();
-		auto pos = element->points[4];
-		auto axes = element->axes;
 
 		if (select_start != select_end)
 		{
@@ -424,26 +423,21 @@ namespace flame
 				auto p2 = vec2(atlas->text_offset(font_size, str.c_str(), se));
 				if (right < high && str[right] == '\n')
 					p2.x += 4.f;
-				// TODO: fix below
-				//canvas->begin_path();
-				//canvas->move_to(pos + axes[0] * p1.x + axes[1] * p1.y);
-				//canvas->line_to(pos + axes[0] * p2.x + axes[1] * p2.y);
-				//canvas->line_to(pos + axes[0] * p2.x + axes[1] * (p2.y + font_size));
-				//canvas->line_to(pos + axes[0] * p1.x + axes[1] * (p1.y + font_size));
-				//canvas->fill(cvec4(128, 128, 255, 255));
-				//canvas->draw_text(res_id, sb, se, font_size, text->font_color, pos + p1, element->axes);
+				p2.y += font_size;
+				renderer->fill_rect(layer, element, element->padding.xy() + p1, p2 - p1, cvec4(128, 128, 255, 255));
+				renderer->draw_text(layer, element, element->padding.xy() + p1, font_size, res_id, sb, se, text->font_color);
 			}
 		}
 
 		if (show_cursor)
 		{
-			auto off = (vec2)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
+			auto off = vec2(atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)) + element->padding.xy();
 			off.x += 0.5f;
-			// TODO: fix below
-			//canvas->begin_path();
-			//canvas->move_to(pos + axes[0] * off.x + axes[1] * off.y);
-			//canvas->line_to(pos + axes[0] * off.x + axes[1] * (off.y + font_size));
-			//canvas->stroke(text->font_color, max(1.f, round(font_size / 14.f)));
+			vec2 pts[] = {
+				off,
+				vec2(off.x, off.y + font_size)
+			};
+			renderer->stroke(layer, element, _countof(pts), pts, max(1.f, round(font_size / 14.f)), text->font_color);
 		}
 
 		return layer;
