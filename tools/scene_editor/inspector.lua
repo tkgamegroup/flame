@@ -29,27 +29,39 @@ function update_inspector()
         evs.add_child(ev)
     end
                   
-    function add_check_attribute(name, value)
+    function add_check_attribute(name, value, callback)
         en = create_entity("prefabs/text")
         en.find_component("cText").set_text(name)
         ens.add_child(en)
         ev = create_entity("prefabs/checkbox")
-        ev.find_driver("dCheckbox").set_checked(value)
+        local checkbox = ev.find_driver("dCheckbox")
+        checkbox.set_checked(value)
+        if callback then
+            ev.add_driver_data_listener(function(h)
+                if h == flame_hash("checked") then
+                    callback(checkbox.get_checked())
+                end
+            end, checkbox)
+        end
         evs.add_child(ev)
     end
+
+    local target = selected
                   
     add_group("entity")
-    add_text_attribute("Name: ", selected.get_name())
-    add_text_attribute("Srcs: ", selected.get_srcs())
-    add_check_attribute("Visible: ", selected.get_visible())
+    add_text_attribute("Name: ", target.get_name())
+    add_text_attribute("Srcs: ", target.get_srcs())
+    add_check_attribute("Visible: ", target.get_visible(), function(c)
+        target.set_visible(c)
+    end)
                   
     local components = {}
-    selected.get_components(function(cmp)
+    target.get_components(function(cmp)
         table.insert(components, cmp)
     end)
     for i=1, #components, 1 do
-        local c = components[i]
-        local name = c.type_name
+        local comp = components[i]
+        local name = comp.type_name
 
         add_group(name)
 
@@ -70,7 +82,7 @@ function update_inspector()
                   
         for j=1, #attrs, 1 do
         local attr = attrs[j]
-        local v = flame_call(c.p, attr.get.f)
+        local v = flame_call(comp.p, attr.get.f, {})
         local t = type(v)
         if t ~= "nil" then
             if t == "table" then
@@ -86,7 +98,9 @@ function update_inspector()
                     end
                 end
             elseif t == "boolean" then
-                add_check_attribute(attr.name..": ", v)
+                add_check_attribute(attr.name..": ", v, function(c)
+                    flame_call(comp.p, attr.set.f, { c })
+                end)
             else
                 add_text_attribute(attr.name..": ", v)
             end

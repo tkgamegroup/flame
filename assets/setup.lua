@@ -56,13 +56,13 @@ function __setup()
 			if func.static then
 				if func.type == "" then
 					udt.static_functions[k] = function(...)
-						return flame_call({...}, func.f)
+						return flame_call(nil, func.f, {...})
 					end
 				else
 					udt.static_functions[k] = function(...)
 						__type__ = func.type
 						local ret = {}
-						ret.p = flame_call({...}, func.f)
+						ret.p = flame_call(nil, func.f, {...})
 						make_obj(ret, __type__)
 						return ret
 					end
@@ -104,13 +104,13 @@ function make_obj(o, n)
 	for k, func in pairs(udt.functions) do
 		if func.type == "" then
 			o[k] = function(...)
-				return flame_call({...}, o.p, func.f)
+				return flame_call(o.p, func.f, {...})
 			end
 		else
 			o[k] = function(...)
 				__type__ = func.type
 				local ret = {}
-				ret.p = flame_call({...}, o.p, func.f)
+				ret.p = flame_call(o.p, func.f, {...})
 				make_obj(ret, __type__)
 				return ret
 			end
@@ -119,18 +119,18 @@ function make_obj(o, n)
 	for k, func in pairs(udt.callbacks) do
 		o[k] = function(f, ...)
 			n = get_callback_slot(f)
-			flame_call({ 0, n, ... }, o.p, func)
+			flame_call(o.p, func, { 0, n, ... })
 			callbacks[n] = nil
 		end
 	end
 	for k, func in pairs(udt.listeners) do
 		o["add_"..k] = function(f, ...)
 			n = get_callback_slot(f)
-			callbacks[n].c = flame_call({ 0, n, ... }, o.p, func.add)
+			callbacks[n].c = flame_call(o.p, func.add, { 0, n, ... })
 			return n
 		end
 		o["remove_"..k] = function(n, ...)
-			flame_call({ callbacks[n].c, ...}, o.p, func.remove)
+			flame_call(o.p, func.remove, { callbacks[n].c, ...})
 			callbacks[n] = nil
 			return n
 		end

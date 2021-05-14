@@ -402,8 +402,8 @@ namespace flame
 
 		int lua_flame_call(lua_State* state)
 		{
-			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
-			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
+			auto o = lua_isuserdata(state, -3) ? lua_touserdata(state, -3) : nullptr;
+			auto f = lua_isuserdata(state, -2) ? (FunctionInfo*)lua_touserdata(state, -2) : nullptr;
 			if (f)
 			{
 				char parms[4 * sizeof(void*)];
@@ -418,10 +418,10 @@ namespace flame
 					auto tag = type->get_tag();
 					auto basic = type->get_basic();
 
-					if (lua_istable(state, -3))
+					if (lua_istable(state, -1))
 					{
 						lua_pushinteger(state, i + 1);
-						lua_gettable(state, -4);
+						lua_gettable(state, -2);
 
 						switch (type->get_tag())
 						{

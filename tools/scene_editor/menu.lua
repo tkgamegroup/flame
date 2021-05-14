@@ -8,7 +8,7 @@ function menu_file_open()
     input_dialog.add_callback(function(ok, text)
         if ok then
             if load_scene(text) then 
-            last_open = text
+                last_open = text
             end
         end
         l.get_parent().remove_child(l)
