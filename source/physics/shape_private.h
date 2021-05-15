@@ -13,7 +13,7 @@ namespace flame
 			UniPtr<PxTriangleMesh> px_triangle_mesh;
 #endif
 
-			TriangleMeshPrivate(DevicePrivate* device, graphics::model::Mesh* mesh);
+			TriangleMeshPrivate(DevicePrivate* device, graphics::Mesh* mesh);
 
 			void release() override { delete this; }
 		};

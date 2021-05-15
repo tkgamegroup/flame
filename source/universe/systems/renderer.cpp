@@ -4,6 +4,7 @@
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/font.h"
+#include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
@@ -404,7 +405,7 @@ namespace flame
 
 	struct MeshRes
 	{
-		graphics::model::Mesh* mesh = nullptr;
+		graphics::Mesh* mesh = nullptr;
 		bool arm;
 		uint vtx_off;
 		uint vtx_cnt;
@@ -935,7 +936,7 @@ namespace flame
 		return -1;
 	}
 
-	int sRendererPrivate::set_mesh_res(int idx, graphics::model::Mesh* mesh)
+	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
 	{
 		auto& nd = *_nd;
 
@@ -1009,7 +1010,7 @@ namespace flame
 		return idx;
 	}
 
-	int sRendererPrivate::find_mesh_res(graphics::model::Mesh* mesh) const
+	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
 	{
 		auto& nd = *_nd;
 		for (auto i = 0; i < nd.mesh_reses.size(); i++)

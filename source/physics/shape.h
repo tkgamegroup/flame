@@ -10,7 +10,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS static TriangleMesh* create(Device* device, graphics::model::Mesh* mesh);
+			FLAME_PHYSICS_EXPORTS static TriangleMesh* create(Device* device, graphics::Mesh* mesh);
 		};
 
 		struct HeightField

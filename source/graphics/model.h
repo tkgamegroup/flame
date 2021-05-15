@@ -23,8 +23,6 @@ namespace flame
 
 		struct Mesh
 		{
-			virtual const char* get_name() const = 0;
-
 			virtual MaterialPtr get_material() const = 0;
 
 			virtual uint get_vertices_count() const = 0;

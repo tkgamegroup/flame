@@ -47,6 +47,5 @@ namespace flame
 		};
 
 		extern MaterialPrivate* default_material;
-		extern std::vector<std::unique_ptr<MaterialPrivate>> loaded_materials;
 	}
 }

@@ -54,7 +54,7 @@ namespace flame
 			{
 				auto fn = std::filesystem::path(sp[0]);
 				if (fn.extension().empty())
-					model = graphics::model::Model::get_standard(sp[0].c_str());
+					model = graphics::Model::get_standard(sp[0].c_str());
 				else
 				{
 					if (!fn.is_absolute())
@@ -63,16 +63,13 @@ namespace flame
 						fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
 					}
 					fn.make_preferred();
-					model = graphics::model::Model::get(fn.c_str());
+					model = graphics::Model::get(fn.c_str());
 					fassert(model);
 				}
 
 				if (!model)
 					return;
-				auto idx = model->find_mesh(sp[1].c_str());
-				if (idx == -1)
-					return;
-				mesh = model->get_mesh(idx);
+				mesh = model->get_mesh(std::stoi(sp[1]));
 
 				mesh_id = renderer->find_mesh_res(mesh);
 				if (mesh_id == -1)

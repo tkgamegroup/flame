@@ -47,8 +47,8 @@ namespace flame
 		sRendererPrivate* renderer = nullptr;
 
 		int mesh_id = -1;
-		graphics::model::Model* model = nullptr;
-		graphics::model::Mesh* mesh = nullptr;
+		graphics::Model* model = nullptr;
+		graphics::Mesh* mesh = nullptr;
 		//graphics::ArmatureDeformer* deformer = nullptr;
 		std::vector<Bone> bones;
 		AnimationLayer animation_layers[2];

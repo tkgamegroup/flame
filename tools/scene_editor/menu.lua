@@ -116,7 +116,7 @@ function menu_tools_scatter_vegetations()
     for i=0,num-1,1 do
         local uv = flame_get(ptr_uvs, i * 16, e_type_data, e_floating_type, 2, 1)
         local sample = flame_get(ptr_samples, i * 32, e_type_data, e_floating_type, 4, 1)
-        local e = create_entity("D:\\assets\\grass\\01_d.prefab")
+        local e = create_entity("D:\\assets\\grass\\02_d.prefab")
         e.find_component("cNode").set_pos(vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z))
         e_grass_root.add_child(e)
     end

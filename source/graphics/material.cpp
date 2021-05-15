@@ -9,7 +9,7 @@ namespace flame
 	namespace graphics
 	{
 		MaterialPrivate* default_material = new MaterialPrivate;
-		std::vector<std::unique_ptr<MaterialPrivate>> loaded_materials;
+		static std::vector<std::unique_ptr<MaterialPrivate>> materials;
 
 		void MaterialPrivate::get_texture_file(uint idx, wchar_t* dst) const
 		{
@@ -54,7 +54,7 @@ namespace flame
 
 		MaterialPrivate* MaterialPrivate::get(const std::filesystem::path& filename)
 		{
-			for (auto& m : loaded_materials)
+			for (auto& m : materials)
 			{
 				if (m->filename == filename)
 					return m.get();
@@ -100,7 +100,7 @@ namespace flame
 					ti_es("flame::graphics::AddressMode")->unserialize(&dst.address_mode, n.value());
 				i++;
 			}
-			loaded_materials.emplace_back(ret);
+			materials.emplace_back(ret);
 			return ret;
 		}
 

@@ -199,7 +199,7 @@ namespace flame
 		{
 #ifdef USE_ASSIMP
 			auto filename = std::filesystem::path(_filename);
-			auto model_name = filename.filename().string();
+			auto model_name = filename.filename().stem().string();
 
 			Assimp::Importer importer;
 			auto load_flags =
@@ -228,7 +228,7 @@ namespace flame
 				
 				std::string pipeline_defines;
 
-				pugi::xml_node n_textures;
+				auto n_textures = n_material.append_child("textures");
 				{
 					ai_name.Clear();
 					ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
@@ -237,8 +237,6 @@ namespace flame
 					{
 						if (name[0] == '/')
 							name.erase(name.begin());
-						if (!n_textures)
-							n_textures = n_material.append_child("textures");
 						auto n_texture = n_textures.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
 						pipeline_defines += "COLOR_MAP ";
@@ -253,8 +251,6 @@ namespace flame
 					{
 						if (name[0] == '/')
 							name.erase(name.begin());
-						if (!n_textures)
-							n_textures = n_material.append_child("textures");
 						auto n_texture = n_textures.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
 						pipeline_defines += "ALPHA_MAP ALPHA_TEST ";
@@ -265,18 +261,18 @@ namespace flame
 				if (!pipeline_defines.empty())
 					n_material.append_attribute("pipeline_defines").set_value(pipeline_defines.c_str());
 
-				auto mat_name = std::string(ai_mat->GetName().C_Str());
-				if (mat_name.empty())
-					mat_name = std::to_string(i);
-				mat_name = model_name + mat_name;
-				material_names.push_back(mat_name);
-				doc.save_file(mat_name.c_str());
+				auto material_name = std::string(ai_mat->GetName().C_Str());
+				if (material_name.empty())
+					material_name = std::to_string(i);
+				material_name = model_name + "_" + material_name + ".fmat";
+				material_names.push_back(material_name);
+				doc.save_file(material_name.c_str());
 			}
 
 			pugi::xml_document doc;
 			auto n_model = doc.append_child("model");
 
-			auto n_meshes = doc.append_child("meshes");
+			auto n_meshes = n_model.append_child("meshes");
 			for (auto i = 0; i < scene->mNumMeshes; i++)
 			{
 				auto ai_mesh = scene->mMeshes[i];
@@ -340,7 +336,9 @@ namespace flame
 
 			}
 
-			doc.save_file(filename.c_str());
+			auto model_filename = filename;
+			model_filename.replace_extension(L".fmod");
+			doc.save_file(model_filename.c_str());
 
 			pugi::xml_document doc_prefab;
 
@@ -402,7 +400,6 @@ namespace flame
 			for (auto i = 0; i < scene->mNumAnimations; i++)
 			{
 				auto ai_ani = scene->mAnimations[i];
-				auto name = std::string(ai_ani->mName.C_Str());
 
 				pugi::xml_document doc_animation;
 				auto n_animation = doc_animation.append_child("animation");
@@ -443,6 +440,9 @@ namespace flame
 							base64::encode((char*)rotation_keys.data(), rotation_keys.size() * sizeof(RotationKey)).c_str());
 					}
 				}
+
+				auto name = model_name + "_" + std::string(ai_ani->mName.C_Str());
+				doc_animation.save_file(name.c_str());
 			}
 #else
 			return nullptr;
@@ -486,12 +486,12 @@ namespace flame
 			return nullptr;
 		}
 
-		static std::vector<std::pair<std::filesystem::path, UniPtr<ModelPrivate>>> loaded_models;
+		static std::vector<std::pair<std::filesystem::path, UniPtr<ModelPrivate>>> models;
 
 		Model* Model::get(const wchar_t* _filename)
 		{
 			auto filename = std::filesystem::path(_filename);
-			for (auto& m : loaded_models)
+			for (auto& m : models)
 			{
 				if (m.first == filename)
 					return m.second.get();
@@ -518,11 +518,18 @@ namespace flame
 
 			auto ret = new ModelPrivate();
 			ret->filename = filename;
+			auto ppath = filename.parent_path();
 
 			for (auto& n_mesh : doc_root.child("meshes"))
 			{
 				auto m = new MeshPrivate;
-				m->material = MaterialPrivate::get(n_mesh.attribute("material").value());
+				m->model = ret;
+				auto material_filename = std::filesystem::path(n_mesh.attribute("material").value());
+				auto local_material_filename = ppath / material_filename;
+				if (std::filesystem::exists(local_material_filename))
+					m->material = MaterialPrivate::get(local_material_filename.c_str());
+				else
+					m->material = MaterialPrivate::get(material_filename.c_str());
 				{
 					auto res = base64::decode(std::string(n_mesh.child("positions").attribute("data").value()));
 					m->positions.resize(res.size() / sizeof(vec3));
@@ -571,10 +578,12 @@ namespace flame
 				ret->meshes.emplace_back(m);
 			}
 
-			loaded_models.emplace_back(filename, ret);
+			models.emplace_back(filename, ret);
 
 			return ret;
 		}
+
+		static std::vector<std::unique_ptr<AnimationPrivate>> animations;
 
 		Animation* Animation::get(const wchar_t* _filename)
 		{

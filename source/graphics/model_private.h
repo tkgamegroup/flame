@@ -35,8 +35,6 @@ namespace flame
 			vec3 lower_bound = vec3(0.f);
 			vec3 upper_bound = vec3(0.f);
 
-			const char* get_name() const override { return name.c_str(); }
-
 			MaterialPtr get_material() const override { return material; }
 
 			uint get_vertices_count() const override { return positions.size(); }
@@ -94,7 +92,5 @@ namespace flame
 			uint get_channels_count() const override { return channels.size(); }
 			ChannelPtr get_channel(uint idx) const { return channels[idx].get(); }
 		};
-
-		extern std::vector<std::unique_ptr<AnimationPrivate>> animations;
 	}
 }

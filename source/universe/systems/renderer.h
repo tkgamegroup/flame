@@ -43,8 +43,8 @@ namespace flame
 		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
 		virtual int find_material_res(graphics::Material* mat) const = 0;
 
-		virtual int set_mesh_res(int idx, graphics::model::Mesh* mesh) = 0;
-		virtual int find_mesh_res(graphics::model::Mesh* mesh) const = 0;
+		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
+		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
 
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;

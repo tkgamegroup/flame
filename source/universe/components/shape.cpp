@@ -15,7 +15,7 @@
 
 namespace flame
 {
-	static std::vector<std::tuple<graphics::model::Mesh*, physics::TriangleMesh*, uint>> triangle_meshes;
+	static std::vector<std::tuple<graphics::Mesh*, physics::TriangleMesh*, uint>> triangle_meshes;
 	static std::vector<std::tuple<graphics::Image*, physics::HeightField*, uint>> height_fields;
 
 	void cShapePrivate::set_type(physics::ShapeType t)
