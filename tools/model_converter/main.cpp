@@ -14,16 +14,9 @@ int main(int argc, char** args)
 		input = args[1];
 		auto ext = input.extension();
 		output_model = input;
-		if (ext == L".fmodb")
-			output_model.replace_extension(L".fmod");
-		else if (ext == L".fmod")
-			output_model.replace_extension(L".fmodb");
-		else
-		{
-			output_model.replace_extension(L".fmodb");
-			output_prefab = input;
-			output_prefab.replace_extension(L".prefab");
-		}
+		output_model.replace_extension(L".fmodb");
+		output_prefab = input;
+		output_prefab.replace_extension(L".prefab");
 	}
 	else
 	{

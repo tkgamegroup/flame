@@ -79,6 +79,14 @@ namespace flame
 		dst[7] = vec3(m * vec4(-1.f, -1.f, 1.f, 1.f));
 	}
 
+	static vec4 make_plane(const vec3& p1, const vec3& p2, const vec3& p3)
+	{
+		auto v1 = p2 - p1;
+		auto v2 = p3 - p1;
+		auto n = -normalize(cross(v1, v2));
+		return vec4(n, dot(n, -p1));
+	}
+
 	template <class T>
 	struct SequentialBuffer
 	{
@@ -1412,10 +1420,18 @@ namespace flame
 				data.camera_coord = camera->node->g_pos;
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
-				data.proj = perspective(radians(camera->fovy), tar_aspect, camera->near, camera->far);
+				data.proj = perspective(radians(camera->fovy), tar_aspect, data.zNear, data.zFar);
 				data.proj[1][1] *= -1.f;
 				data.proj_inv = inverse(data.proj);
 				data.proj_view = data.proj * data.view;
+				vec3 ps[8];
+				get_frustum_points(data.zNear, data.zFar, tan(radians(camera->fovy * 0.5f)), tar_aspect, data.view_inv, ps);
+				data.frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
+				data.frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
+				data.frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
+				data.frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
+				data.frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
+				data.frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);

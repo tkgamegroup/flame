@@ -165,23 +165,6 @@
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
 //			preferences(preferences)
 //		{
-//			InstanceCB cb(device);
-//
-//			{
-//				auto dsl = DescriptorSetLayoutPrivate::get(device, L"sky.dsl");
-//				sky_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-//				auto sp = SamplerPrivate::get(preferences->device, FilterLinear, FilterLinear, false, AddressClampToEdge);
-//				default_sky_box_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
-//				cb->image_barrier(default_sky_box_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//				sky_descriptorset->set_image(dsl->find_binding("sky_box"), 0, default_sky_box_image->views.back().get(), sp);
-//				default_sky_irr_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
-//				cb->image_barrier(default_sky_irr_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//				sky_descriptorset->set_image(dsl->find_binding("sky_irr"), 0, default_sky_irr_image->views.back().get(), sp);
-//				default_sky_rad_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
-//				cb->image_barrier(default_sky_rad_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//				sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, default_sky_rad_image->views.back().get(), sp);
-//			}
-// 
 //			line_buffer.create(device, BufferUsageVertex, 200000);
 //			triangle_buffer.create(device, BufferUsageVertex, 1000);
 //		}
@@ -385,40 +368,6 @@
 //			thiz->draw_lines(lines.size(), lines.data());
 //		}
 //
-//		static vec4 make_plane(const vec3& p1, const vec3& p2, const vec3& p3)
-//		{
-//			auto v1 = p2 - p1;
-//			auto v2 = p3 - p1;
-//			auto n = -normalize(cross(v1, v2));
-//			return vec4(n, dot(n, -p1));
-//		}
-//
-//		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const mat3& dirs, const vec3& _coord)
-//		{
-//				vec3 ps[8];
-//				get_frustum_points(zNear, zFar, tan(radians(fovy * 0.5f)), aspect, view_inv_matrix, ps);
-//				//auto dst = (vec4*)render_data_buffer.dst(S<"frustum_planes"_h>);
-//				//dst[0] = make_plane(ps[0], ps[1], ps[2]); // near
-//				//dst[1] = make_plane(ps[5], ps[4], ps[6]); // far
-//				//dst[2] = make_plane(ps[4], ps[0], ps[7]); // left
-//				//dst[3] = make_plane(ps[1], ps[5], ps[2]); // right
-//				//dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
-//				//dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
-//		}
-//
-//		void CanvasPrivate::set_sky(ImageViewPrivate* box, ImageViewPrivate* irr, ImageViewPrivate* rad, ImageViewPrivate* lut)
-//		{
-//			auto device = preferences->device;
-//			auto dsl = DescriptorSetLayoutPrivate::get(device, L"sky.dsl");
-//			auto sp = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
-//			sky_descriptorset->set_image(dsl->find_binding("sky_box"), 0, box, sp);
-//			sky_descriptorset->set_image(dsl->find_binding("sky_irr"), 0, irr, sp);
-//			sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, rad, sp);
-//			sky_descriptorset->set_image(dsl->find_binding("sky_lut"), 0, lut, sp);
-//
-//			//render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
-//		}
-//
 //		void* CanvasPrivate::pickup(const vec2& p)
 //		{
 //			std::vector<void*> userdatas;
@@ -526,15 +475,8 @@
 //				{
 //				case Pass3D:
 //				{
-//					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
-//					cb->set_viewport(curr_viewport);
-//					cb->set_scissor(curr_viewport);
-//					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-//
 //					std::vector<std::pair<MeshInfo*, uint>> outline_meshes;
 //					std::vector<std::pair<TerrainInfo*, uint>> outline_terrains;
-//
-//					cb->end_renderpass();
 //
 //					if (!outline_meshes.empty() || !outline_terrains.empty())
 //					{
@@ -580,8 +522,6 @@
 //							}
 //						}
 //						cb->end_renderpass();
-//
-//						cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 //
 //						auto lvs = min(back_image->levels, 3U);
 //						for (auto i = 0; i < lvs - 1; i++)
@@ -649,14 +589,6 @@
 //								cb->draw(4, t.blocks.x * t.blocks.y, 0, ti.second << 16);
 //							}
 //						}
-//						cb->end_renderpass();
-//
-//						cb->image_barrier(back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//						cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//						cb->begin_renderpass(nullptr, dst_fb);
-//						cb->bind_pipeline(hdr_image ? preferences->blend_16_pipeline.get() : preferences->blend_8_pipeline.get());
-//						//cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
-//						cb->draw(3, 1, 0, 0);
 //						cb->end_renderpass();
 //					}
 //

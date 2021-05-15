@@ -49,19 +49,11 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(FontAtlas);
 		FLAME_GRAPHICS_TYPE(Material);
 
-		namespace animation
-		{
-			FLAME_GRAPHICS_TYPE(Channel);
-			FLAME_GRAPHICS_TYPE(Animation);
-		}
-
-		namespace model
-		{
-			FLAME_GRAPHICS_TYPE(Bone);
-			FLAME_GRAPHICS_TYPE(Mesh);
-			FLAME_GRAPHICS_TYPE(Node);
-			FLAME_GRAPHICS_TYPE(Model);
-		}
+		FLAME_GRAPHICS_TYPE(Bone);
+		FLAME_GRAPHICS_TYPE(Mesh);
+		FLAME_GRAPHICS_TYPE(Model);
+		FLAME_GRAPHICS_TYPE(Channel);
+		FLAME_GRAPHICS_TYPE(Animation);
 
 		enum Feature
 		{
