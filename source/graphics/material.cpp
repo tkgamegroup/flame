@@ -86,17 +86,17 @@ namespace flame
 			for (auto n_texture : n_material.child("textures"))
 			{
 				auto& dst = ret->textures[i];
-				if (auto n = n_material.attribute("filename"); n)
+				if (auto n = n_texture.attribute("filename"); n)
 					dst.filename = n.value();
-				if (auto n = n_material.attribute("srgb"); n)
+				if (auto n = n_texture.attribute("srgb"); n)
 					dst.srgb = n.as_bool();
-				if (auto n = n_material.attribute("mag_filter"); n)
+				if (auto n = n_texture.attribute("mag_filter"); n)
 					ti_es("flame::graphics::Filter")->unserialize(&dst.mag_filter, n.value());
-				if (auto n = n_material.attribute("min_filter"); n)
+				if (auto n = n_texture.attribute("min_filter"); n)
 					ti_es("flame::graphics::Filter")->unserialize(&dst.min_filter, n.value());
-				if (auto n = n_material.attribute("linear_mipmap"); n)
+				if (auto n = n_texture.attribute("linear_mipmap"); n)
 					dst.linear_mipmap = n.as_bool();
-				if (auto n = n_material.attribute("address_mode"); n)
+				if (auto n = n_texture.attribute("address_mode"); n)
 					ti_es("flame::graphics::AddressMode")->unserialize(&dst.address_mode, n.value());
 				i++;
 			}

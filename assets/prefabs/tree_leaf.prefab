@@ -3,8 +3,7 @@
   <entity driver="dTreeLeaf" >
     <cElement padding="18,2,4,2" alignx="MinMax"
               fill_color.state_rules="0,0,0,0
-              Selected|Hovering:200,220,245,255
-              Selected:180,200,225,255
+              Selected:0,50,156,255
               Hovering:230,230,230,255" />
     <cText font_color.state_rules="255,255,255,255
            Selected:255,255,255,255

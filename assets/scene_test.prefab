@@ -11,7 +11,7 @@
       <cScript src="character_controller.lua1" />
       <eNode name="camera" pos="0,5,0" euler="0,0,0" >
         <cCamera current="true" />
-        <cScript src="camera_third.lua" />
+        <cScript src="camera_fly.lua" />
       </eNode>
     </eNode>
     <entity src="D:\assets\terrain\terrain" name="terrain" />

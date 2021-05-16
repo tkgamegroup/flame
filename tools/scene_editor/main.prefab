@@ -102,11 +102,20 @@
         </eElement>
       </eSplitter>
       <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
-          <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
-            <cScript src="hierarchy.lua" />
-          </eTree>
-        </eScroller>
+        <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+          <eButton text="Refresh">
+            <cScript>
+              entity.find_component("cReceiver").add_mouse_click_listener(function()
+                update_hierachy()
+              end)
+            </cScript>
+          </eButton>
+          <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
+            <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
+              <cScript src="hierarchy.lua" />
+            </eTree>
+          </eScroller>
+        </eElement>
         <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
           <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
             <cScript src="inspector.lua" />

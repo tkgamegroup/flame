@@ -52,7 +52,7 @@ namespace flame
 				}
 			}
 			printf("\n%s\n\n", pMessage);
-			fassert(0);
+			//fassert(0);
 
 			return VK_FALSE;
 		}

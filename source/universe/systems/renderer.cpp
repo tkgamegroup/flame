@@ -986,8 +986,7 @@ namespace flame
 
 				dst.idx_off = nd.buf_mesh_idx.n1;
 				auto pidx = nd.buf_mesh_idx.alloc(dst.idx_cnt);
-				for (auto i = 0; i < dst.idx_cnt; i++)
-					pidx[i] = dst.idx_off + aidx[i];
+				memcpy(pidx, aidx, sizeof(uint) * dst.idx_cnt);
 
 				nd.buf_mesh_vtx.upload(cb.get());
 				nd.buf_mesh_idx.upload(cb.get());
