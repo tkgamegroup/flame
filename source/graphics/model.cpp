@@ -284,8 +284,18 @@ namespace flame
 				auto vertex_count = ai_mesh->mNumVertices;
 
 				n_mesh.append_child("positions").append_attribute("data").set_value(base64::encode((char*)ai_mesh->mVertices, vertex_count * sizeof(vec3)).c_str());
-				if (ai_mesh->mTextureCoords[0])
-					n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)ai_mesh->mTextureCoords[0], vertex_count * sizeof(vec2)).c_str());
+				auto puv = ai_mesh->mTextureCoords[0];
+				if (puv)
+				{
+					std::vector<vec2> uvs;
+					uvs.resize(vertex_count);
+					for (auto j = 0; j < vertex_count; j++)
+					{
+						auto& uv = puv[j];
+						uvs[j] = vec2(uv.x, uv.y);
+					}
+					n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)uvs.data(), vertex_count * sizeof(vec2)).c_str());
+				}
 				if (ai_mesh->mNormals)
 					n_mesh.append_child("normals").append_attribute("data").set_value(base64::encode((char*)ai_mesh->mNormals, vertex_count * sizeof(vec3)).c_str());
 
@@ -377,7 +387,7 @@ namespace flame
 					else
 					{
 						auto nm = n.append_child("cMesh");
-						nm.append_attribute("src").set_value((model_name + "#" + std::to_string(src->mMeshes[0])).c_str());
+						nm.append_attribute("src").set_value((model_name + ".fmod#" + std::to_string(src->mMeshes[0])).c_str());
 						if (name.starts_with("sm_"))
 						{
 							auto nr = n.append_child("cRigid");

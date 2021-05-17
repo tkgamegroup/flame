@@ -1045,11 +1045,15 @@ namespace flame
 		auto use_mat = true;
 		auto deferred = true;
 
-		auto find_define = [&](const std::string& s) {
+		auto find_define = [&](const std::string& s, bool remove = false) {
 			for (auto& d : defines)
 			{
 				if (d == s)
+				{
+					if (remove)
+						d = "";
 					return true;
+				}
 			}
 			return false;
 		};
@@ -1068,8 +1072,8 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 		}
-		if (find_define("DOUBLE_SIDE"))
-			cull_mode == graphics::CullModeNone;
+		if (find_define("DOUBLE_SIDE", true))
+			cull_mode = graphics::CullModeNone;
 		if (use_mat && !mat.empty())
 		{
 			defines.push_back("MAT");
@@ -1134,6 +1138,7 @@ namespace flame
 			info.vertex_buffers_count = 1;
 			info.vertex_buffers = &vib;
 			info.polygon_mode = polygon_mode;
+			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 
@@ -1195,6 +1200,7 @@ namespace flame
 			info.primitive_topology = graphics::PrimitiveTopologyPatchList;
 			info.patch_control_points = 4;
 			info.polygon_mode = polygon_mode;
+			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 

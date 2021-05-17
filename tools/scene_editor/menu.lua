@@ -91,41 +91,49 @@ end
 function menu_tools_scatter_vegetations()
     local e_terrain = scene.find_child("terrain")
     if not e_terrain.p then return end
+
     local node = e_terrain.find_component("cNode")
     local terrain = e_terrain.find_component("cTerrain")
               
     local blocks = terrain.get_blocks()
     local scale = node.get_scale()
-    local num = 100
-    local ptr_uvs = flame_malloc(num * 16) -- 16 is the size of vec2
-    local ptr_samples = flame_malloc(num * 32) -- 32 is the size of vec4
-              
-    local e_type_data = find_enum("TypeTag")["Data"]
-    local e_floating_type = find_enum("BasicType")["FloatingType"]
+    local num = 10000
 
-    for i=0,num-1,1 do
-        local uv = vec2(math.random(), math.random())
-        flame_set(ptr_uvs, i * 16, e_type_data, e_floating_type, 2, 1, uv)
-    end
-              
     local height_texture = terrain.get_height_texture()
-    height_texture.get_samples(num, ptr_uvs, ptr_samples)
               
     local e_grass_root = create_entity("prefabs/node")
     e_grass_root.set_name("grass_root")
-    for i=0,num-1,1 do
-        local uv = flame_get(ptr_uvs, i * 16, e_type_data, e_floating_type, 2, 1)
-        local sample = flame_get(ptr_samples, i * 32, e_type_data, e_floating_type, 4, 1)
-        local e = create_entity("D:\\assets\\grass\\02_d.prefab")
-        local node = e.find_component("cNode")
-        local pos = vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z)
-        node.set_pos(pos)
-        e_grass_root.add_child(e)
-    end
-    e_terrain.get_parent().add_child(e_grass_root)
+    
+    for x=0,--[[blocks.x-1]]0,1 do
+        for y=0,--[[blocks.y-1]]0,1 do
+            local ptr_uvs = malloc_vec2(num)
+            local ptr_samples = malloc_vec4(num)
+            
+            local uv_off = vec2(x / blocks.x, y / blocks.y)
+            for i=0,num-1,1 do
+                local uv = vec2(math.random() / blocks.x, math.random() / blocks.y)
+                uv = uv_off + uv
+                set_vec2(ptr_uvs, i, uv)
+            end
+
+            height_texture.get_samples(num, ptr_uvs, ptr_samples)
               
-    flame_free(ptr_uvs)
-    flame_free(ptr_samples)
+            for i=0,num-1,1 do
+                local uv = get_vec2(ptr_uvs, i)
+                local sample = get_vec4(ptr_samples, i)
+                local e = create_entity("D:\\assets\\grass\\02_d.prefab")
+                local node = e.find_component("cNode")
+                local pos = vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z)
+                node.set_pos(pos)
+                e_grass_root.add_child(e)
+            end
+              
+            flame_free(ptr_uvs)
+            flame_free(ptr_samples)
+        end
+    end
+
+    e_terrain.get_parent().add_child(e_grass_root)
 end
 
 function menu_settings_alwawys_update()

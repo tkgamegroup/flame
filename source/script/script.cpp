@@ -979,8 +979,7 @@ namespace flame
 				}
 			}, Capture().set_thiz(this));
 
-			lua_getglobal(lua_state, "__setup");
-			if (!lua_check_result(lua_state, lua_pcall(lua_state, 0, 0, 0)))
+			if (!excute_file(L"setup2.lua"))
 				fassert(0);
 		}
 
