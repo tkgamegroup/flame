@@ -1402,7 +1402,7 @@ namespace flame
 
 			std::vector<ShaderPrivate*> shaders;
 			for (auto n_shdr : doc_root.child("shaders"))
-				shaders.push_back(ShaderPrivate::get(device, n_shdr.attribute("filename").value()));
+				shaders.push_back(ShaderPrivate::get(device, n_shdr.attribute("filename").value(), n_shdr.attribute("defines").value()));
 
 			auto pll = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
 

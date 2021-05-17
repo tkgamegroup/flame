@@ -9,7 +9,7 @@
 #include "mesh.dsl"
 #endif
 
-layout (push_constant) uniform PushConstantT
+layout (push_constant) uniform PushConstant
 {
 	vec4 f;
 	ivec4 i;

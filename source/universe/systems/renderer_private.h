@@ -22,7 +22,6 @@ namespace flame
 
 	struct sRendererPrivate : sRenderer
 	{
-		bool wireframe = false;
 		bool always_update = false;
 
 		graphics::Device* device;
@@ -45,6 +44,8 @@ namespace flame
 
 		cCameraPrivate* camera = nullptr;
 
+		ShadingType shading_type = ShadingCombined;
+
 		graphics::ImageView*	sky_box = nullptr;
 		graphics::ImageView*	sky_irr = nullptr;
 		graphics::ImageView*	sky_rad = nullptr;
@@ -58,7 +59,6 @@ namespace flame
 
 		sRendererPrivate(sRendererParms* parms);
 
-		void set_shade_wireframe(bool v) override { wireframe = v; }
 		void set_always_update(bool a) override { always_update = a; }
 
 		void* get_element_res(uint idx, char* type) const override;
@@ -84,6 +84,8 @@ namespace flame
 
 		cCameraPtr get_camera() const override { return camera; }
 		void set_camera(cCameraPtr c) override { camera = c; }
+
+		void set_shading(ShadingType type) override { shading_type = type; }
 
 		void get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr,
 			graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id) override;

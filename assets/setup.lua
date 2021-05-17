@@ -105,8 +105,7 @@ function make_obj(o, n)
 end
 
 function vec2(x, y)
-	if x == nil then x = 0 end
-	if y == nil then y = 0 end
+	if y == nil then y = x end
 	local o = { x=x, y=y }
 	o.push = function()
 		return  o.x, o.y
@@ -132,9 +131,10 @@ function vec2(x, y)
 end
 
 function vec3(x, y, z)
-	if x == nil then x = 0 end
-	if y == nil then y = 0 end
-	if z == nil then z = 0 end
+	if y == nil and z == nil then 
+		y = x
+		z = x
+	end
 	local o = { x=x, y=y, z=z }
 	o.push = function()
 		return  o.x, o.y, o.z
@@ -159,7 +159,7 @@ function vec3(x, y, z)
 	return o
 end
 
-function v3_distance(a, b)
+function distance_3(a, b)
 	local x = a.x - b.x
 	local y = a.y - b.y
 	local z = a.z - b.z
@@ -167,10 +167,11 @@ function v3_distance(a, b)
 end
 
 function vec4(x, y, z, w)
-	if x == nil then x = 0 end
-	if y == nil then y = 0 end
-	if z == nil then z = 0 end
-	if w == nil then w = 0 end
+	if y == nil and z == nil and w == nil then 
+		y = x
+		z = x
+		w = x
+	end
 	local o = { x=x, y=y, z=z, w=w }
 	o.push = function()
 		return  o.x, o.y, o.z, o.w

@@ -1,4 +1,4 @@
-function menu_file_open()
+function cmd_file_open()
     local d = create_entity("prefabs/input_dialog")
     local l = create_entity("prefabs/layer")
               
@@ -17,7 +17,7 @@ function menu_file_open()
     ui.add_child(l)
 end
 
-function menu_file_save_as()
+function cmd_file_save_as()
     local d = create_entity("prefabs/input_dialog")
     local l = create_entity("prefabs/layer")
               
@@ -36,29 +36,31 @@ function menu_file_save_as()
     ui.add_child(l)
 end
 
-function menu_shading_solid()
-    s_renderer.set_shade_wireframe(false)
-    entity.find_driver("dMenuItem").set_single_checked()
+function cmd_shading_wireframe()
+    s_renderer.set_shading(find_enum("ShadingType")["Wireframe"])
 end
 
-function menu_shading_wireframe()
-    s_renderer.set_shade_wireframe(true)
-    entity.find_driver("dMenuItem").set_single_checked()
+function cmd_shading_combined()
+    s_renderer.set_shading(find_enum("ShadingType")["Combined"])
 end
 
-function menu_show_physics_visualization()
-    local menu_item = entity.find_driver("dMenuItem")
-    local checked = menu_item.get_checked()
+function cmd_shading_normal_data()
+    s_renderer.set_shading(find_enum("ShadingType")["NormalData"])
+end
+
+function cmd_show_physics_visualization()
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
     checked = not checked
-    menu_item.set_checked(checked)
+    cmd_item.set_checked(checked)
     s_physics.set_visualization(checked)
 end
 
-function menu_show_ui_reflector()
-    local menu_item = entity.find_driver("dMenuItem")
-    local checked = menu_item.get_checked()
+function cmd_show_ui_reflector()
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
     checked = not checked
-    menu_item.set_checked(checked)
+    cmd_item.set_checked(checked)
     if checked then
         if not ui_reflector.p then
             ui_reflector = create_entity("ui_reflector")
@@ -72,23 +74,23 @@ function menu_show_ui_reflector()
     end
 end
 
-function menu_show_global_axes()
-    local menu_item = entity.find_driver("dMenuItem")
-    local checked = menu_item.get_checked()
+function cmd_show_global_axes()
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
     checked = not checked
-    menu_item.set_checked(checked)
+    cmd_item.set_checked(checked)
     scene.find_child("hud_global_axes").set_visible(checked)
 end
 
-function menu_show_crosshair()
-    local menu_item = entity.find_driver("dMenuItem")
-    local checked = menu_item.get_checked()
+function cmd_show_crosshair()
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
     checked = not checked
-    menu_item.set_checked(checked)
+    cmd_item.set_checked(checked)
     scene.find_child("hud_crosshair").set_visible(checked)
 end
 
-function menu_tools_scatter_vegetations()
+function cmd_tools_scatter_vegetations()
     local e_terrain = scene.find_child("terrain")
     if not e_terrain.p then return end
 
@@ -97,7 +99,7 @@ function menu_tools_scatter_vegetations()
               
     local blocks = terrain.get_blocks()
     local scale = node.get_scale()
-    local num = 10000
+    local num = 5000
 
     local height_texture = terrain.get_height_texture()
               
@@ -118,15 +120,18 @@ function menu_tools_scatter_vegetations()
 
             height_texture.get_samples(num, ptr_uvs, ptr_samples)
               
+            local e_grass_group = create_entity("prefabs/node")
             for i=0,num-1,1 do
                 local uv = get_vec2(ptr_uvs, i)
                 local sample = get_vec4(ptr_samples, i)
                 local e = create_entity("D:\\assets\\grass\\02_d.prefab")
                 local node = e.find_component("cNode")
-                local pos = vec3(uv.x * blocks.x * scale.x, sample.x * scale.y, uv.y * blocks.y * scale.z)
-                node.set_pos(pos)
-                e_grass_root.add_child(e)
+                node.set_pos(vec3(uv.x * scale.x, sample.x * scale.y, uv.y * scale.z))
+                node.set_euler(vec3(math.random() * 360, 0, 0))
+                node.set_scale(vec3(0.8 + math.random() * 0.4))
+                e_grass_group.add_child(e)
             end
+            e_grass_root.add_child(e_grass_group)
               
             flame_free(ptr_uvs)
             flame_free(ptr_samples)
@@ -136,9 +141,9 @@ function menu_tools_scatter_vegetations()
     e_terrain.get_parent().add_child(e_grass_root)
 end
 
-function menu_settings_alwawys_update()
-    local menu_item = entity.find_driver("dMenuItem")
-    local checked = menu_item.get_checked()
+function cmd_settings_alwawys_update()
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
     checked = not checked
-    menu_item.set_checked(checked)
+    cmd_item.set_checked(checked)
 end

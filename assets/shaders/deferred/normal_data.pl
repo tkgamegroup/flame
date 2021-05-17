@@ -2,7 +2,7 @@
 <pipeline>
   <shaders>
     <shader filename="fullscreen.vert"/>
-    <shader filename="deferred/deferred.frag"/>
+    <shader filename="deferred/deferred.frag" defines="NORMAL_DATA"/>
   </shaders>
   <layout filename="deferred/deferred.pll"/>
   <renderpass filename="deferred/deferred.rp" index="0"/>

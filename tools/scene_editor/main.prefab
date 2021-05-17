@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+  <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical">
     <cScript>
       ui = entity
       local config = load_ini("config.ini")
@@ -13,96 +13,113 @@
       end
     </cScript>
     <eMenuBar>
-      <cScript src="menu.lua" />
-      <eMenu text="file" >
-        <eMenuItem text="open.." >
+      <cScript src="cmd.lua"/>
+      <eMenu text="file">
+        <eMenuItem text="open..">
           <cScript>
-            on_menu(menu_file_open)
+            on_menu(cmd_file_open)
           </cScript>
         </eMenuItem>
-        <eMenuItem text="save as.." >
+        <eMenuItem text="save as..">
           <cScript>
-            on_menu(menu_file_save_as)
-          </cScript>
-        </eMenuItem>
-      </eMenu>
-      <eMenu text="shading" >
-		    <eMenuItem checkable="true" checked="true" text="solid" >
-          <cScript>
-            on_menu(menu_shading_solid)
-          </cScript>
-        </eMenuItem>
-		    <eMenuItem checkable="true" text="wireframe" >
-          <cScript>
-            on_menu(menu_shading_wireframe)
+            on_menu(cmd_file_save_as)
           </cScript>
         </eMenuItem>
       </eMenu>
-      <eMenu text="show" >
-		    <eMenuItem checkable="true" text="physics visualization" >
+      <eMenu text="shading">
+		    <eMenuItem checkable="true" text="wireframe">
           <cScript>
-            on_menu(menu_show_physics_visualization)
+            local e = entity
+            on_menu(function()
+              cmd_shading_wireframe()
+              e.find_driver("dMenuItem").set_single_checked()
+            end)
           </cScript>
         </eMenuItem>
-        <eMenuItem checkable="true" text="ui reflector" >
+		    <eMenuItem checkable="true" checked="true" text="combined">
+          <cScript>
+            local e = entity
+            on_menu(function()
+              cmd_shading_combined()
+              e.find_driver("dMenuItem").set_single_checked()
+            end)
+          </cScript>
+        </eMenuItem>
+		    <eMenuItem checkable="true" text="normal data">
+          <cScript>
+            local e = entity
+            on_menu(function()
+              cmd_shading_normal_data()
+              e.find_driver("dMenuItem").set_single_checked()
+            end)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
+      <eMenu text="show">
+		    <eMenuItem checkable="true" text="physics visualization">
+          <cScript>
+            on_menu(cmd_show_physics_visualization)
+          </cScript>
+        </eMenuItem>
+        <eMenuItem checkable="true" text="ui reflector">
           <cScript>
             ui_reflector = { p=nil }
-            on_menu(menu_show_ui_reflector)
+            on_menu(cmd_show_ui_reflector)
           </cScript>
         </eMenuItem>
-        <eMenuItem checkable="true" text="global axes" >
+        <eMenuItem checkable="true" text="global axes">
           <cScript>
-            on_menu(menu_show_global_axes)
+            on_menu(cmd_show_global_axes)
           </cScript>
         </eMenuItem>
-        <eMenuItem checkable="true" text="crosshair" >
+        <eMenuItem checkable="true" text="crosshair">
           <cScript>
-            on_menu(menu_show_crosshair)
-          </cScript>
-        </eMenuItem>
-      </eMenu>
-      <eMenu text="tools" >
-        <eMenuItem text="scatter vegetations.." >
-          <cScript>
-            on_menu(menu_tools_scatter_vegetations)
+            on_menu(cmd_show_crosshair)
           </cScript>
         </eMenuItem>
       </eMenu>
-      <eMenu text="settings" >
-        <eMenuItem checkable="true" text="always update" >
+      <eMenu text="tools">
+        <eMenuItem text="scatter vegetations..">
           <cScript>
-            on_menu(menu_settings_alwawys_update)
+            on_menu(cmd_tools_scatter_vegetations)
+          </cScript>
+        </eMenuItem>
+      </eMenu>
+      <eMenu text="settings">
+        <eMenuItem checkable="true" text="always update">
+          <cScript>
+            on_menu(cmd_settings_alwawys_update)
           </cScript>
         </eMenuItem>
       </eMenu>
     </eMenuBar>
-    <eElement name="toolbar" layout_type="Horizontal" >
-      <eToolButton text="" />
-      <eToolButton text="" />
+    <eElement name="toolbar" layout_type="Horizontal">
+      <eToolButton text=""/>
+      <eToolButton text=""/>
     </eElement>
-    <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" >
-      <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8" >
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" fill_color="0,0,0,150" >
+    <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax">
+      <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8">
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" fill_color="0,0,0,150">
           <eList name="prefab_list">
-            <cScript src="prefab_list.lua" />
+            <cScript src="prefab_list.lua"/>
           </eList>
         </eScroller>
-        <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8" >
-          <cReceiver />
-          <cScript src="scene.lua" />
-          <eElement name="debug" />
-          <entity name="hud_global_axes" visible="false" >
-            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150" />
-            <cScript src="hud_global_axes.lua" />
+        <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8">
+          <cReceiver/>
+          <cScript src="scene.lua"/>
+          <eElement name="debug"/>
+          <entity name="hud_global_axes" visible="false">
+            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150"/>
+            <cScript src="hud_global_axes.lua"/>
           </entity>
-          <entity name="hud_crosshair" visible="false" >
-            <cElement alignx="MinMax" aligny="MinMax" />
-            <cScript src="hud_crosshair.lua" />
+          <entity name="hud_crosshair" visible="false">
+            <cElement alignx="MinMax" aligny="MinMax"/>
+            <cScript src="hud_crosshair.lua"/>
           </entity>
         </eElement>
       </eSplitter>
-      <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2" >
-        <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" >
+      <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2">
+        <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical">
           <eButton text="Refresh">
             <cScript>
               entity.find_component("cReceiver").add_mouse_click_listener(function()
@@ -110,15 +127,15 @@
               end)
             </cScript>
           </eButton>
-          <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
+          <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150">
             <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
-              <cScript src="hierarchy.lua" />
+              <cScript src="hierarchy.lua"/>
             </eTree>
           </eScroller>
         </eElement>
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150" >
+        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150">
           <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
-            <cScript src="inspector.lua" />
+            <cScript src="inspector.lua"/>
           </eTree>
         </eScroller>
       </eSplitter>

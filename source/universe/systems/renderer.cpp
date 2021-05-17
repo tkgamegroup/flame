@@ -34,6 +34,7 @@ namespace terrain
 #include <deferred/deferred.dsl.h>
 #include <deferred/deferred.pll.h>
 #include <post/post.dsl.h>
+#include <post/post.pll.h>
 
 namespace flame
 {
@@ -483,6 +484,7 @@ namespace flame
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
 		graphics::Pipeline* pl_def;
+		graphics::Pipeline* pl_nor_dat;
 		UniPtr<graphics::DescriptorSet>	ds_def;
 
 		graphics::Pipeline* pl_gamma;
@@ -1626,7 +1628,7 @@ namespace flame
 					auto cv = vec4(1.f, 0.f, 0.f, 0.f);
 					cb->begin_renderpass(nullptr, nd.fb_dir_shadow_maps[i * 4 + lv].get(), &cv);
 					bind_mesh_fwd_res();
-					cb->push_constant_t(mesh::PLL_forward::PushConstantT{ vec4(), ivec4(0, lv, 0, 0) });
+					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i=ivec4(0, lv, 0, 0) });
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
@@ -1646,7 +1648,7 @@ namespace flame
 					auto cv = vec4(1.f, 0.f, 0.f, 0.f);
 					cb->begin_renderpass(nullptr, nd.fb_pt_shadow_maps[i * 6 + ly].get(), &cv);
 					bind_mesh_fwd_res();
-					cb->push_constant_t(mesh::PLL_forward::PushConstantT{ vec4(), ivec4(1, ly, 0, 0) });
+					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i=ivec4(1, ly, 0, 0) });
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
@@ -1685,7 +1687,14 @@ namespace flame
 			cb->image_barrier(nd.img_dep.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 
 			cb->begin_renderpass(nullptr, nd.fb_def.get());
-			cb->bind_pipeline(nd.pl_def);
+			switch (shading_type)
+			{
+			case ShadingNormalData:
+				cb->bind_pipeline(nd.pl_nor_dat);
+				break;
+			default:
+				cb->bind_pipeline(nd.pl_def);
+			}
 			{
 				graphics::DescriptorSet* sets[PLL_deferred::Binding_Max];
 				sets[PLL_deferred::Binding_deferred] = nd.ds_def.get();
@@ -1700,6 +1709,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
 			cb->bind_pipeline(nd.pl_gamma);
 			cb->bind_descriptor_set(0, ds_back.get());
+			cb->push_constant_t(PLL_post::PushConstant{ .f=vec4(shading_type == ShadingCombined ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}
@@ -2291,6 +2301,7 @@ namespace flame
 		nd.pll_terrain_gbuf = graphics::PipelineLayout::get(device, L"terrain/gbuffer.pll");
 
 		nd.pl_def = graphics::Pipeline::get(device, L"deferred/deferred.pl");
+		nd.pl_nor_dat = graphics::Pipeline::get(device, L"deferred/normal_data.pl");
 		nd.ds_def.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));
 
 		nd.pl_gamma = graphics::Pipeline::get(device, L"post/gamma.pl");

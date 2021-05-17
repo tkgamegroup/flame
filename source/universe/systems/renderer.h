@@ -4,6 +4,13 @@
 
 namespace flame
 {
+	enum ShadingType
+	{
+		ShadingWireframe,
+		ShadingCombined,
+		ShadingNormalData
+	};
+
 	struct sRendererParms
 	{
 	};
@@ -18,7 +25,6 @@ namespace flame
 		{
 		}
 
-		virtual void set_shade_wireframe(bool v) = 0;
 		virtual void set_always_update(bool a) = 0;
 
 		/* element res type:
@@ -48,6 +54,8 @@ namespace flame
 
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;
+
+		virtual void set_shading(ShadingType type) = 0;
 
 		virtual void get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr, 
 			graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id) = 0;

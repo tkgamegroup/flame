@@ -15,7 +15,7 @@ camera.set_pos = function ()
 	if s_physics.p then
 		local o = pnode.get_global_pos() + off
 		local p = s_physics.raycast(o, camera.node.get_global_dir(2))
-		d = v3_distance(o, p)
+		d = distance_3(o, p)
 		if d < camera.length then
 			d = d - 1
 		else

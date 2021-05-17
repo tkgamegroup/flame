@@ -1,4 +1,4 @@
-layout (push_constant) uniform PushConstantT
+layout (push_constant) uniform PushConstant
 {
 	mat4 proj_view;
 }pc;
