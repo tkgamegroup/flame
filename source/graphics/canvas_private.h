@@ -29,25 +29,6 @@
 //
 //		struct CanvasPrivate : Canvas
 //		{
-//			std::unique_ptr<ImagePrivate> default_sky_box_image;
-//			std::unique_ptr<ImagePrivate> default_sky_irr_image;
-//			std::unique_ptr<ImagePrivate> default_sky_rad_image;
-//			std::unique_ptr<DescriptorSetPrivate> sky_descriptorset;
-//
-//			//ShaderBuffer shadow_matrices_buffer;
-//			std::vector<std::unique_ptr<ImagePrivate>> directional_shadow_maps;
-//			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_depth_framebuffers;
-//			std::vector<std::unique_ptr<ImagePrivate>> point_shadow_maps;
-//			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_depth_framebuffers;
-//
-//			std::vector<ImageViewPrivate*> output_imageviews;
-//			std::vector<std::unique_ptr<FramebufferPrivate>> output_framebuffers;
-//			std::vector<std::unique_ptr<DescriptorSetPrivate>> output_descriptorsets;
-//
-//			std::unique_ptr<ImagePrivate> depth_image;
-//
-//			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
-//
 //			std::unique_ptr<ImagePrivate> back_image;
 //			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
 //			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;

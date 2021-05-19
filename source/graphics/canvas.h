@@ -2,15 +2,6 @@
 //{
 //	namespace graphics
 //	{
-//		enum ShadeFlags
-//		{
-//			ShadeMaterial = 1 << 0,
-//			ShadeWireframe = 1 << 1,
-//			ShadeOutline = 1 << 2
-//		};
-//
-//		inline ShadeFlags operator| (ShadeFlags a, ShadeFlags b) { return (ShadeFlags)((int)a | (int)b); }
-//
 //		struct ArmatureDeformer
 //		{
 //			virtual void release() = 0;

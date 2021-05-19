@@ -15,7 +15,7 @@
       </eNode>
     </eNode>
     <entity src="D:\assets\terrain\terrain" name="terrain" />
-    <eLight name="sun" euler="0,90,0" type="Directional" color="2.0,2.0,2.0" cast_shadow="true" />
+    <eLight name="sun" euler="0,90,0" type="Directional" color="0.5,0.5,0.5" cast_shadow="true" />
   </eNode>
   <eElement1 name="post_effect" >
     <cPostEffect enable_bloom="true" />

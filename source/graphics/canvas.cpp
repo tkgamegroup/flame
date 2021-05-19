@@ -51,9 +51,6 @@
 //			//	triangle_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
 //			//}
 //
-//			//auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
-//			//auto fullscreen_vert = ShaderPrivate::get(device, L"fullscreen.vert");
-//
 //			//for (auto i = 0; i < 10; i++)
 //			//{
 //			//	{
@@ -171,11 +168,6 @@
 // 
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
-//			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post/post.dsl");
-//
-//			if (views.empty())
-//				output_size = vec2(0.f);
-//			else
 //			{
 //				InstanceCB cb(device);
 //
@@ -465,10 +457,6 @@
 //
 //		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 //		{
-//			auto dst = hdr_image ? hdr_image.get() : output_imageviews[image_index]->image;
-//			auto dst_fb = hdr_framebuffer ? hdr_framebuffer.get() : output_framebuffers[image_index].get();
-//			auto dst_ds = hdr_descriptorset ? hdr_descriptorset.get() : output_descriptorsets[image_index].get();
-//
 //			for (auto& p : passes)
 //			{
 //				switch (p.type)

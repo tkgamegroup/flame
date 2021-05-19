@@ -2,7 +2,6 @@
 #include "../../graphics/image.h"
 #include "../entity_private.h"
 #include "../world_private.h"
-#include "node_private.h"
 #include "sky_private.h"
 #include "../systems/renderer_private.h"
 

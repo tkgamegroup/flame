@@ -37,8 +37,21 @@ void main()
 
 	o_idx = idx;
 	o_uv = uv;
-	vec3 n = texture(maps[terrain.normal_map_id], uv).xyz * 2.0 - vec3(1.0);
-	o_normal = vec3(n.x, n.z, -n.y);
+
+	{
+		vec3 off = vec3(0.00125, 0.00125, 0.0);
+		float hL = texture(maps[terrain.height_map_id], uv - off.xz).r * terrain.scale.y;
+		float hR = texture(maps[terrain.height_map_id], uv + off.xz).r * terrain.scale.y;
+		float hD = texture(maps[terrain.height_map_id], uv - off.zy).r * terrain.scale.y;
+		float hU = texture(maps[terrain.height_map_id], uv + off.zy).r * terrain.scale.y;
+
+		o_normal.x = hL - hR;
+		o_normal.y = 2.0;
+		o_normal.z = hD - hU;
+		o_normal = normalize(o_normal);
+	}
+	//vec3 n = texture(maps[terrain.normal_map_id], uv).xyz * 2.0 - vec3(1.0);
+	//o_normal = vec3(n.x, n.z, -n.y);
 
 #ifndef DEFERRED
 	o_coordw = coordw;
