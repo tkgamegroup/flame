@@ -95,48 +95,45 @@ function cmd_tools_scatter_vegetations()
     if not e_terrain.p then return end
 
     local node = e_terrain.find_component("cNode")
-    local terrain = e_terrain.find_component("cTerrain")
-              
-    local blocks = terrain.get_blocks()
+    local pos = node.get_pos();
     local scale = node.get_scale()
-    local num = 5000
 
+    local terrain = e_terrain.find_component("cTerrain")
+    local blocks = terrain.get_blocks()
     local height_texture = terrain.get_height_texture()
-              
-    local e_grass_root = create_entity("prefabs/node")
-    e_grass_root.set_name("grass_root")
-    
-    for x=0,--[[blocks.x-1]]0,1 do
-        for y=0,--[[blocks.y-1]]0,1 do
-            local ptr_uvs = malloc_vec2(num)
-            local ptr_samples = malloc_vec4(num)
-            
-            local uv_off = vec2(x / blocks.x, y / blocks.y)
-            for i=0,num-1,1 do
-                local uv = vec2(math.random() / blocks.x, math.random() / blocks.y)
-                uv = uv_off + uv
-                set_vec2(ptr_uvs, i, uv)
-            end
 
-            height_texture.get_samples(num, ptr_uvs, ptr_samples)
+    local num = 5000
               
-            local e_grass_group = create_entity("prefabs/node")
-            for i=0,num-1,1 do
-                local uv = get_vec2(ptr_uvs, i)
-                local sample = get_vec4(ptr_samples, i)
-                local e = create_entity("D:\\assets\\grass\\02_d.prefab")
-                local node = e.find_component("cNode")
-                node.set_pos(vec3(uv.x * scale.x, sample.x * scale.y, uv.y * scale.z))
-                node.set_euler(vec3(math.random() * 360, 0, 0))
-                node.set_scale(vec3(0.8 + math.random() * 0.4))
-                e_grass_group.add_child(e)
-            end
-            e_grass_root.add_child(e_grass_group)
-              
-            flame_free(ptr_uvs)
-            flame_free(ptr_samples)
-        end
+    local e_grass_root = create_entity("prefabs/octree")
+    e_grass_root.set_name("grass_root")
+    e_grass_root.find_component("cNode").set_pos(pos + vec3(scale.x * 0.5, 0.0, scale.z * 0.5))
+    local octree = e_grass_root.find_component("cOctree")
+    octree.set_length(math.max(scale.x, scale.y))
+    
+    local ptr_uvs = malloc_vec2(num)
+    local ptr_samples = malloc_vec4(num)
+            
+    for i=0,num-1,1 do
+        local uv = vec2(math.random(), math.random())
+        uv = uv
+        set_vec2(ptr_uvs, i, uv)
     end
+
+    height_texture.get_samples(num, ptr_uvs, ptr_samples)
+              
+    for i=0,num-1,1 do
+        local uv = get_vec2(ptr_uvs, i)
+        local sample = get_vec4(ptr_samples, i)
+        local e = create_entity("D:\\assets\\grass\\02_d.prefab")
+        local node = e.find_component("cNode")
+        node.set_pos(vec3((uv.x - 0.5) * scale.x, sample.x * scale.y, (uv.y - 0.5) * scale.z))
+        node.set_euler(vec3(math.random() * 360, 0, 0))
+        node.set_scale(vec3(0.8 + math.random() * 0.4))
+        e_grass_root.add_child(e)
+    end
+              
+    flame_free(ptr_uvs)
+    flame_free(ptr_samples)
 
     e_terrain.get_parent().add_child(e_grass_root)
 end

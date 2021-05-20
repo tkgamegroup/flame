@@ -436,7 +436,7 @@ namespace flame
 		});
 	}
 
-	void* cElementPrivate::add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture)
+	void* cElementPrivate::add_measurer(bool(*measurer)(Capture&, vec2*), const Capture& capture)
 	{
 		auto c = new Closure(measurer, capture);
 		measurers.emplace_back(c);
@@ -585,6 +585,8 @@ namespace flame
 	void cElementPrivate::on_self_added()
 	{
 		pelement = entity->get_parent_component_t<cElementPrivate>();
+		if (pelement)
+			mark_transform_dirty();
 	}
 
 	void cElementPrivate::on_self_removed()

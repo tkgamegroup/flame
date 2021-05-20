@@ -134,9 +134,9 @@ namespace flame
 			auto thiz = c.thiz<cImagePrivate>();
 			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));
-		measurable = element->add_measurer([](Capture& c, vec2* ret) {
+		measurable = element->add_measurer([](Capture& c, vec2* s) {
 			auto thiz = c.thiz<cImagePrivate>();
-			thiz->measure(ret);
+			return thiz->measure(s);
 		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
@@ -166,14 +166,12 @@ namespace flame
 		atlas = nullptr;
 	}
 
-	void cImagePrivate::measure(vec2* ret)
+	bool cImagePrivate::measure(vec2* s)
 	{
 		if (!iv)
-		{
-			*ret = vec2(-1.f);
-			return;
-		}
-		*ret = iv->get_image()->get_size();
+			return false;
+		*s = iv->get_image()->get_size();
+		return true;
 	}
 
 	uint cImagePrivate::draw(uint layer, sRenderer* renderer)

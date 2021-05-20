@@ -73,7 +73,7 @@ namespace flame
 		void stop_animation(uint layer);
 
 		void draw(sRenderer* renderer);
-		void measure(AABB* ret);
+		bool measure(AABB* b);
 
 		void on_added() override;
 		void on_removed() override;

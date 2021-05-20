@@ -42,7 +42,7 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 
-		void measure(vec2* ret);
+		bool measure(vec2* s);
 
 		uint draw(uint layer, sRenderer* renderer);
 	};

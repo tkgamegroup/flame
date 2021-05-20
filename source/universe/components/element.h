@@ -125,7 +125,7 @@ namespace flame
 
 		virtual void* add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture) = 0;
 		virtual void remove_drawer(void* drawer) = 0;
-		virtual void* add_measurer(void (*measurer)(Capture&, vec2*), const Capture& capture) = 0;
+		virtual void* add_measurer(bool(*measurer)(Capture&, vec2*), const Capture& capture) = 0;
 		virtual void remove_measurer(void* measurer) = 0;
 
 		virtual void mark_transform_dirty() = 0;

@@ -83,14 +83,12 @@ namespace flame
 		return layer;
 	}
 
-	void cTextPrivate::measure(vec2* ret)
+	bool cTextPrivate::measure(vec2* s)
 	{
 		if (!atlas)
-		{
-			*ret = vec2(-1.f);
-			return;
-		}
-		*ret = vec2(atlas->text_size(font_size, text.c_str()));
+			return false;
+		*s = vec2(atlas->text_size(font_size, text.c_str()));
+		return true;
 	}
 
 	void cTextPrivate::on_added()
@@ -102,9 +100,9 @@ namespace flame
 			auto thiz = c.thiz<cTextPrivate>();
 			return thiz->draw(layer, renderer);
 		}, Capture().set_thiz(this));
-		measurer = element->add_measurer([](Capture& c, vec2* ret) {
+		measurer = element->add_measurer([](Capture& c, vec2* s) {
 			auto thiz = c.thiz<cTextPrivate>();
-			thiz->measure(ret);
+			return thiz->measure(s);
 		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();

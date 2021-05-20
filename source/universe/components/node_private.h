@@ -6,11 +6,84 @@ namespace flame
 {
 	inline auto MAX_OCTREE_OBJECTS = 10;
 
+	struct OctreeNode;
+
+	struct cNodePrivate : cNode
+	{
+		vec3 pos = vec3(0.f);
+		vec3 eul = vec3(0.f);
+		quat qut = quat(1.f, 0.f, 0.f, 0.f);
+		mat3 rot = mat3(1.f);
+		vec3 scl = vec3(1.f);
+		bool eul_dirty = false;
+		bool qut_dirty = false;
+		bool rot_dirty = false;
+		bool auto_update_eul = false;
+		bool auto_update_qut = false;
+
+		cNodePrivate* pnode = nullptr;
+		bool transform_dirty = true;
+		uint transform_updated_times = 0;
+		bool bounds_dirty = true;
+		vec3 g_pos;
+		quat g_qut;
+		mat3 g_rot;
+		vec3 g_scl;
+		mat4 transform;
+		AABB bounds;
+
+		OctreeNode* octree_node = nullptr;
+
+		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
+		std::vector<std::unique_ptr<Closure<bool(Capture&, AABB*)>>> measurers;
+
+		sRendererPrivate* renderer = nullptr;
+
+		vec3 get_pos() const override { return pos; }
+		void set_pos(const vec3& pos) override;
+		vec3 get_euler() const override { return eul; }
+		void set_euler(const vec3& e) override;
+		quat get_quat() const override { return qut; }
+		void set_quat(const quat& quat) override;
+		vec3 get_scale() const override { return scl; }
+		void set_scale(const vec3 & scale) override;
+
+		vec3 get_local_dir(uint idx) override;
+
+		vec3 get_global_pos() override;
+		vec3 get_global_dir(uint idx) override;
+
+		void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
+		void remove_drawer(void* drawer) override;
+		void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) override;
+		void remove_measure(void* measurer) override;
+
+		void update_eul();
+		void update_qut();
+		void update_rot();
+		void update_transform();
+		void update_bounds();
+
+		void set_auto_update_eul();
+		void set_auto_update_qut();
+
+		void mark_transform_dirty();
+		void mark_bounds_dirty();
+		void mark_drawing_dirty();
+
+		void on_self_added() override;
+		void on_self_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
+
+		bool on_save_attribute(uint h) override;
+	};
+
 	struct OctreeNode
 	{
 		vec3 center;
 		float length;
-		
+
 		AABB bounds;
 
 		std::vector<cNodePrivate*> objects;
@@ -34,7 +107,6 @@ namespace flame
 		{
 			fassert(!n->octree_node);
 
-			n->update_bounds();
 			if (!bounds.contains(n->bounds))
 				return false;
 			sub_add(n);
@@ -231,14 +303,14 @@ namespace flame
 
 		bool has_any_objects()
 		{
-			if (!objects.empty()) 
+			if (!objects.empty())
 				return true;
 
 			if (!children.empty())
 			{
 				for (auto i = 0; i < 8; i++)
 				{
-					if (children[i]->has_any_objects()) 
+					if (children[i]->has_any_objects())
 						return true;
 				}
 			}
@@ -319,76 +391,5 @@ namespace flame
 			}
 			return total <= MAX_OCTREE_OBJECTS;
 		}
-	};
-
-	struct cNodePrivate : cNode
-	{
-		vec3 pos = vec3(0.f);
-		vec3 eul = vec3(0.f);
-		quat qut = quat(1.f, 0.f, 0.f, 0.f);
-		mat3 rot = mat3(1.f);
-		vec3 scl = vec3(1.f);
-		bool eul_dirty = false;
-		bool qut_dirty = false;
-		bool rot_dirty = false;
-		bool auto_update_eul = false;
-		bool auto_update_qut = false;
-
-		cNodePrivate* pnode = nullptr;
-		bool transform_dirty = true;
-		uint transform_updated_times = 0;
-		bool bounds_dirty = true;
-		vec3 g_pos;
-		quat g_qut;
-		mat3 g_rot;
-		vec3 g_scl;
-		mat4 transform;
-		AABB bounds;
-
-		OctreeNode* octree_node = nullptr;
-
-		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
-		std::vector<std::unique_ptr<Closure<void(Capture&, AABB*)>>> measurers;
-
-		sRendererPrivate* renderer = nullptr;
-
-		vec3 get_pos() const override { return pos; }
-		void set_pos(const vec3& pos) override;
-		vec3 get_euler() const override { return eul; }
-		void set_euler(const vec3& e) override;
-		quat get_quat() const override { return qut; }
-		void set_quat(const quat& quat) override;
-		vec3 get_scale() const override { return scl; }
-		void set_scale(const vec3 & scale) override;
-
-		vec3 get_local_dir(uint idx) override;
-
-		vec3 get_global_pos() override;
-		vec3 get_global_dir(uint idx) override;
-
-		void* add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
-		void remove_drawer(void* drawer) override;
-		void* add_measure(void (*measurer)(Capture&, AABB*), const Capture& capture) override;
-		void remove_measure(void* measurer) override;
-
-		void update_eul();
-		void update_qut();
-		void update_rot();
-		void update_transform();
-		void update_bounds();
-
-		void set_auto_update_eul();
-		void set_auto_update_qut();
-
-		void mark_transform_dirty();
-		void mark_bounds_dirty();
-		void mark_drawing_dirty();
-
-		void on_self_added() override;
-		void on_self_removed() override;
-		void on_entered_world() override;
-		void on_left_world() override;
-
-		bool on_save_attribute(uint h) override;
 	};
 }

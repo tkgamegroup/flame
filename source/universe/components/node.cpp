@@ -85,7 +85,7 @@ namespace flame
 		});
 	}
 
-	void* cNodePrivate::add_measure(void (*measurer)(Capture&, AABB*), const Capture& capture)
+	void* cNodePrivate::add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture)
 	{
 		auto c = new Closure(measurer, capture);
 		measurers.emplace_back(c);
@@ -174,22 +174,39 @@ namespace flame
 
 	void cNodePrivate::update_bounds()
 	{
-		bounds.reset();
-		for (auto& m : measurers)
+		if (bounds_dirty)
 		{
-			AABB r;
-			r.reset();
-			m->call(&r);
-			bounds.expand(r);
-		}
-		for (auto& c : entity->children)
-		{
-			auto node = c->get_component_i<cNodePrivate>(0);
-			if (node)
+			update_transform();
+
+			bounds_dirty = false;
+
+			bounds.reset();
+			for (auto& m : measurers)
 			{
-				node->update_bounds();
-				bounds.expand(node->bounds);
+				AABB b;
+				if (m->call(&b))
+				{
+					vec3 ps[8];
+					b.get_points(ps);
+					b.reset();
+					for (auto i = 0; i < 8; i++)
+						b.expand(transform * vec4(ps[i], 1.f));
+
+					bounds.expand(b);
+				}
 			}
+			for (auto& c : entity->children)
+			{
+				auto node = c->get_component_i<cNodePrivate>(0);
+				if (node)
+				{
+					node->update_bounds();
+					bounds.expand(node->bounds);
+				}
+			}
+
+			if (entity)
+				entity->component_data_changed(this, S<"bounds"_h>);
 		}
 	}
 
@@ -244,6 +261,8 @@ namespace flame
 	void cNodePrivate::on_self_added()
 	{
 		pnode = entity->get_parent_component_t<cNodePrivate>();
+		if (pnode)
+			mark_transform_dirty();
 	}
 
 	void cNodePrivate::on_self_removed()

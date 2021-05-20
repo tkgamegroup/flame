@@ -237,6 +237,24 @@ namespace flame
 			return (a + b) * 0.5f;
 		}
 
+		void get_points(vec3* dst)
+		{
+			dst[0] = vec3(a.x, a.y, a.z);
+			dst[1] = vec3(b.x, a.y, a.z);
+			dst[2] = vec3(a.x, a.y, b.z);
+			dst[3] = vec3(a.x, b.y, a.z);
+			dst[4] = vec3(a.x, b.y, b.z);
+			dst[5] = vec3(b.x, b.y, a.z);
+			dst[6] = vec3(b.x, a.y, b.z);
+			dst[7] = vec3(b.x, b.y, b.z);
+		}
+
+		void expand(const vec3& p)
+		{
+			a = min(a, p);
+			b = max(b, p);
+		}
+
 		void expand(const AABB& oth)
 		{
 			a = min(a, oth.a);
