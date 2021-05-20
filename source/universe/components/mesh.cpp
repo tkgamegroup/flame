@@ -238,6 +238,16 @@ namespace flame
 		//	flags, entity);
 	}
 
+	void cMeshPrivate::measure(AABB* ret)
+	{
+		if (!mesh)
+		{
+			*ret = AABB(vec3(0.f), 0.f);
+			return;
+		}
+		*ret = AABB(mesh->get_lower_bound(), mesh->get_upper_bound());
+	}
+
 	void cMeshPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
@@ -246,6 +256,10 @@ namespace flame
 		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
 			auto thiz = c.thiz<cMeshPrivate>();
 			thiz->draw(renderer);
+		}, Capture().set_thiz(this));
+		measurer = node->add_measure([](Capture& c, AABB* ret) {
+			auto thiz = c.thiz<cMeshPrivate>();
+			thiz->measure(ret);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}

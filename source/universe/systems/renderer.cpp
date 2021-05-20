@@ -1539,19 +1539,19 @@ namespace flame
 					auto f = (i + 1) / (float)csm_levels;
 					f = f * f * dist;
 
-					vec3 LT = vec3(+10000.f);
-					vec3 RB = vec3(-10000.f);
+					vec3 a = vec3(+10000.f);
+					vec3 b = vec3(-10000.f);
 					vec3 ps[8];
 					get_frustum_points(n, f, tan_hf_fovy, tar_aspect, camera->view_inv, ps);
 					for (auto k = 0; k < 8; k++)
 					{
 						auto p = inv * ps[k];
-						LT = min(LT, p);
-						RB = max(RB, p);
+						a = min(a, p);
+						b = max(b, p);
 					}
-					auto c = mat * ((LT + RB) * 0.5f);
-					auto w = (RB.x - LT.x) * 0.5f;
-					auto h = (RB.y - LT.y) * 0.5f;
+					auto c = mat * ((a + b) * 0.5f);
+					auto w = (b.x - a.x) * 0.5f;
+					auto h = (b.y - a.y) * 0.5f;
 					nd.buf_dir_shadow_mats.add_item() = orthoRH(-w, +w, -h, +h, 0.f, dist) * lookAt(c - s.second->g_rot[2] * dist * 0.5f, c, s.second->g_rot[1]);
 				}
 

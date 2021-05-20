@@ -35,8 +35,6 @@ namespace flame
 
 		vec2 scroll = vec2(0.f);
 
-		uint layer_policy = 0; // 0: no new layer, 1: new layer, 2: new layer and need populate
-
 		cElementPrivate* pelement = nullptr;
 		bool transform_dirty = true;
 		bool crooked = false;

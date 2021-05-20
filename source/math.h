@@ -140,21 +140,21 @@ namespace flame
 
 	struct Rect
 	{
-		vec2 LT;
-		vec2 RB;
+		vec2 a;
+		vec2 b;
 
 		Rect() = default;
 
 		Rect(float LT_x, float LT_y, float RB_x, float RB_y)
 		{
-			LT.x = LT_x;
-			LT.y = LT_y;
-			RB.x = RB_x;
-			RB.y = RB_y;
+			a.x = LT_x;
+			a.y = LT_y;
+			b.x = RB_x;
+			b.y = RB_y;
 		}
 
-		Rect(const vec2& LT, const vec2& RB) :
-			Rect(LT.x, LT.y, RB.x, RB.y)
+		Rect(const vec2& a, const vec2& b) :
+			Rect(a.x, a.y, b.x, b.y)
 		{
 		}
 
@@ -165,46 +165,97 @@ namespace flame
 
 		void reset()
 		{
-			LT = vec2(10000.f);
-			RB = vec2(-10000.f);
+			a = vec2(10000.f);
+			b = vec2(-10000.f);
 		}
 
 		operator vec4() const
 		{
-			return vec4(LT.x, LT.y, RB.x, RB.y);
+			return vec4(a.x, a.y, b.x, b.y);
 		}
 
 		bool operator==(const Rect& rhs)
 		{
-			return LT.x == rhs.LT.x && LT.y == rhs.LT.y &&
-				RB.x == rhs.RB.x && RB.y == rhs.RB.y;
+			return a.x == rhs.a.x && a.y == rhs.a.y &&
+				b.x == rhs.b.x && b.y == rhs.b.y;
 		}
 
 		void expand(float length)
 		{
-			LT.x -= length;
-			LT.y += length;
-			RB.x -= length;
-			RB.y += length;
+			a.x -= length;
+			a.y += length;
+			b.x -= length;
+			b.y += length;
 		}
 
 		void expand(const vec2& p)
 		{
-			LT.x = min(LT.x, p.x);
-			LT.y = min(LT.y, p.y);
-			RB.x = max(RB.x, p.x);
-			RB.y = max(RB.y, p.y);
+			a = min(a, p);
+			b = max(b, p);
 		}
 
 		bool contains(const vec2& p)
 		{
-			return p.x > LT.x && p.x < RB.x &&
-				p.y > LT.y && p.y < RB.y;
+			return p.x > a.x && p.x < b.x &&
+				p.y > a.y && p.y < b.y;
 		}
 
 		bool overlapping(const Rect& rhs)
 		{
-			return !(rhs.LT.x > RB.x || rhs.LT.y > RB.y);
+			return !(rhs.a.x > b.x || rhs.a.y > b.y);
+		}
+	};
+
+	struct AABB
+	{
+		vec3 a;
+		vec3 b;
+
+		AABB() = default;
+
+		AABB(const vec3 & a, const vec3& b) :
+			a(a),
+			b(b)
+		{
+		}
+
+		AABB(const vec3& center, float size)
+		{
+			auto hf_size = size * 0.5f;
+			a = center - hf_size;
+			b = center + hf_size;
+		}
+
+		void reset()
+		{
+			a = vec3(10000.f);
+			b = vec3(-10000.f);
+		}
+
+		vec3 center()
+		{
+			return (a + b) * 0.5f;
+		}
+
+		void expand(const AABB& oth)
+		{
+			a = min(a, oth.a);
+			b = max(b, oth.b);
+		}
+
+		bool contains(const vec3& p)
+		{
+			return all(greaterThan(p, a)) && all(greaterThan(b, p));
+		}
+
+		bool contains(const AABB& oth)
+		{
+			return contains(oth.a) && contains(oth.b);
+		}
+
+		bool intersects(const AABB& oth)
+		{
+			return any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a));
 		}
 	};
 }

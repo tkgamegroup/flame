@@ -44,6 +44,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
+		void* measurer = nullptr;
 		sRendererPrivate* renderer = nullptr;
 
 		int mesh_id = -1;
@@ -72,6 +73,7 @@ namespace flame
 		void stop_animation(uint layer);
 
 		void draw(sRenderer* renderer);
+		void measure(AABB* ret);
 
 		void on_added() override;
 		void on_removed() override;

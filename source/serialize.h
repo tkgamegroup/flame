@@ -154,7 +154,7 @@ namespace flame
 	template <class CH>
 	int fmt(CH* buf, int buf_size, const Rect& r)
 	{
-		return fmt(buf, buf_size, vec4(r.LT.x, r.LT.y, r.RB.x, r.RB.y));
+		return fmt(buf, buf_size, vec4(r.a.x, r.a.y, r.b.x, r.b.y));
 	}
 
 	template <class T>

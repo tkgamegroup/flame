@@ -85,6 +85,20 @@ namespace flame
 		});
 	}
 
+	void* cNodePrivate::add_measure(void (*measurer)(Capture&, AABB*), const Capture& capture)
+	{
+		auto c = new Closure(measurer, capture);
+		measurers.emplace_back(c);
+		return c;
+	}
+
+	void cNodePrivate::remove_measure(void* measurer)
+	{
+		std::erase_if(measurers, [&](const auto& i) {
+			return i == (decltype(i))measurer;
+		});
+	}
+
 	void cNodePrivate::update_eul()
 	{
 		if (eul_dirty)
@@ -158,6 +172,27 @@ namespace flame
 		}
 	}
 
+	void cNodePrivate::update_bounds()
+	{
+		bounds.reset();
+		for (auto& m : measurers)
+		{
+			AABB r;
+			r.reset();
+			m->call(&r);
+			bounds.expand(r);
+		}
+		for (auto& c : entity->children)
+		{
+			auto node = c->get_component_i<cNodePrivate>(0);
+			if (node)
+			{
+				node->update_bounds();
+				bounds.expand(node->bounds);
+			}
+		}
+	}
+
 	void cNodePrivate::set_auto_update_eul()
 	{
 		auto_update_eul = true;
@@ -185,7 +220,19 @@ namespace flame
 					n->mark_transform_dirty();
 			}
 		}
+		mark_bounds_dirty();
 		mark_drawing_dirty();
+	}
+
+	void cNodePrivate::mark_bounds_dirty()
+	{
+		if (!bounds_dirty)
+		{
+			bounds_dirty = true;
+
+			if (pnode)
+				pnode->mark_bounds_dirty();
+		}
 	}
 
 	void cNodePrivate::mark_drawing_dirty()

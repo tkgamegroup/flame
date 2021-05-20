@@ -34,7 +34,6 @@ namespace flame
 		void mark_text_changed();
 
 		uint draw(uint layer, sRenderer* renderer);
-
 		void measure(vec2* ret);
 
 		void on_added() override;

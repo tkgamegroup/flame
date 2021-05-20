@@ -32,6 +32,8 @@ namespace flame
 
 		virtual void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) = 0;
 		virtual void remove_drawer(void* drawer) = 0;
+		virtual void* add_measure(void (*measurer)(Capture&, AABB*), const Capture& capture) = 0;
+		virtual void remove_measure(void* measurer) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
 	};

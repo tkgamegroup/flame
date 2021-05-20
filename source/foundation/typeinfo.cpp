@@ -555,6 +555,15 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_AABB : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_AABB() :
+			TypeInfoPrivate_Pod(TypeData, "flame::AABB", sizeof(AABB))
+		{
+			ret_by_reg = false;
+		}
+	};
+
 	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_mat2() :

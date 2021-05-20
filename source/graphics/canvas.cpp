@@ -242,7 +242,7 @@
 //				points.push_back(center + pieces[a % pieces_num] * radius);
 //		}
 //
-//		// roundness: LT RT RB LB
+//		// roundness: a RT b LB
 //		inline void path_rect(std::vector<vec2>& points, const vec2& pos, const vec2& size, const vec4& roundness = vec4(0.f), uint lod = 0)
 //		{
 //			if (roundness[0] > 0.f)
@@ -448,10 +448,10 @@
 //		void CanvasPrivate::add_blur(const Rect& _range, uint radius)
 //		{
 //			auto range = Rect(
-//				max(_range.LT.x, 0.f),
-//				max(_range.LT.y, 0.f),
-//				min(_range.RB.x, (float)output_size.x),
-//				min(_range.RB.y, (float)output_size.y));
+//				max(_range.a.x, 0.f),
+//				max(_range.a.y, 0.f),
+//				min(_range.b.x, (float)output_size.x),
+//				min(_range.b.y, (float)output_size.y));
 //			cmds.emplace_back(new CmdBlur(range, radius));
 //		}
 //
@@ -649,13 +649,13 @@
 //					auto c = (CmdBlur*)cmds[p.cmd_ids[0]].get();
 //					auto blur_radius = clamp(c->radius, 0U, 10U);
 //					auto blur_range = c->range;
-//					auto blur_size = vec2(blur_range.RB.x - blur_range.LT.x, blur_range.RB.y - blur_range.LT.y);
+//					auto blur_size = vec2(blur_range.b.x - blur_range.a.x, blur_range.b.y - blur_range.a.y);
 //					if (blur_size.x < 1.f || blur_size.y < 1.f)
 //						continue;
 //
 //					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//					cb->set_scissor(Rect(blur_range.LT.x - blur_radius, blur_range.LT.y - blur_radius,
-//						blur_range.RB.x + blur_radius, blur_range.RB.y + blur_radius));
+//					cb->set_scissor(Rect(blur_range.a.x - blur_radius, blur_range.a.y - blur_radius,
+//						blur_range.b.x + blur_radius, blur_range.b.y + blur_radius));
 //					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 //					cb->bind_pipeline(preferences->blurh_pipeline[blur_radius - 1].get());
 //					//cb->bind_descriptor_set(dst_ds, 0);
