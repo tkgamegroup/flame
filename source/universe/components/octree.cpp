@@ -9,16 +9,6 @@ namespace flame
 		length = _length;
 	}
 
-	void cOctreePrivate::add_object(cNodePrivate* obj)
-	{
-
-	}
-
-	void cOctreePrivate::remove_object(cNodePrivate* obj)
-	{
-
-	}
-
 	void cOctreePrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
@@ -37,7 +27,11 @@ namespace flame
 		octree.reset(new OctreeNode(length, node->g_pos));
 
 		for (auto& c : entity->children)
-			add_object(c->get_component_i<cNodePrivate>(0));
+		{
+			auto obj = c->get_component_i<cNodePrivate>(0);
+			obj->update_bounds();
+			octree->add(obj);
+		}
 	}
 
 	void cOctreePrivate::on_left_world()
@@ -48,13 +42,17 @@ namespace flame
 	void cOctreePrivate::on_child_added(EntityPtr e)
 	{
 		if (octree)
-			add_object(e->get_component_i<cNodePrivate>(0));
+		{
+			auto obj = e->get_component_i<cNodePrivate>(0);
+			obj->update_bounds();
+			octree->add(obj);
+		}
 	}
 
 	void cOctreePrivate::on_child_removed(EntityPtr e)
 	{
 		if (octree)
-			remove_object(e->get_component_i<cNodePrivate>(0));
+			;
 	}
 
 	cOctree* cOctree::create(void* parms)

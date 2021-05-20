@@ -15,9 +15,6 @@ namespace flame
 		float get_length() const override { return length; }
 		void set_length(float length) override;
 
-		void add_object(cNodePrivate* obj);
-		void remove_object(cNodePrivate* obj);
-
 		void on_added() override;
 		void on_removed() override;
 		void on_entered_world() override;

@@ -247,6 +247,9 @@ namespace flame
 		{
 			bounds_dirty = true;
 
+			if (octree_node)
+				;
+
 			if (pnode)
 				pnode->mark_bounds_dirty();
 		}

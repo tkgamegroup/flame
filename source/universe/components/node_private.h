@@ -103,14 +103,18 @@ namespace flame
 			set_values(length, center);
 		}
 
-		bool add(cNodePrivate* n)
+		void add(cNodePrivate* n)
 		{
 			fassert(!n->octree_node);
 
 			if (!bounds.contains(n->bounds))
-				return false;
+			{
+				objects.push_back(n);
+				n->octree_node = this;
+				return;
+			}
+
 			sub_add(n);
-			return true;
 		}
 
 		void remove(cNodePrivate* n)

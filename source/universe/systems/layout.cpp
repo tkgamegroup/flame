@@ -83,8 +83,9 @@ namespace flame
 	{
 		if (window)
 		{
-			world->root->get_component_i<cElementPrivate>(0)
-				->set_size(window->get_size());
+			auto element = world->root->get_component_i<cElementPrivate>(0);
+			if (element)
+				element->set_size(window->get_size());
 		}
 
 		while (!sizing_list.empty())
