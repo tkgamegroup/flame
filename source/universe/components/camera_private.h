@@ -18,7 +18,7 @@ namespace flame
 		mat4 view_inv;
 
 		cNodePrivate* node = nullptr;
-		sRendererPrivate* renderer = nullptr;
+		sRendererPrivate* s_renderer = nullptr;
 
 		void apply_current();
 

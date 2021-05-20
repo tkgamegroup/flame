@@ -29,8 +29,8 @@ namespace flame
 
 	void cSkyPrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 
 		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
@@ -60,7 +60,7 @@ namespace flame
 			lut_texture = graphics::Image::get(device, fn.c_str(), true);
 		}
 
-		renderer->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
+		s_renderer->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
 			rad_texture->get_view(rad_texture->get_levels()), lut_texture->get_view(), this);
 	}
 
@@ -71,11 +71,11 @@ namespace flame
 		graphics::ImageView* iv_rad; 
 		graphics::ImageView* iv_lut;
 		void* id;
-		renderer->get_sky(&iv_box, &iv_irr, &iv_rad, &iv_lut, &id);
+		s_renderer->get_sky(&iv_box, &iv_irr, &iv_rad, &iv_lut, &id);
 		if (id == this)
-			renderer->set_sky(nullptr, nullptr, nullptr, nullptr, nullptr);
+			s_renderer->set_sky(nullptr, nullptr, nullptr, nullptr, nullptr);
 
-		renderer = nullptr;
+		s_renderer = nullptr;
 	}
 
 	cSky* cSky::create(void* parms)

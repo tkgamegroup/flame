@@ -47,7 +47,7 @@ namespace flame
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;
-		if (renderer && !src.empty())
+		if (s_renderer && !src.empty())
 		{
 			auto sp = SUS::split(src, '#');
 			if (sp.size() == 2)
@@ -71,10 +71,10 @@ namespace flame
 					return;
 				mesh = model->get_mesh(std::stoi(sp[1]));
 
-				mesh_id = renderer->find_mesh_res(mesh);
+				mesh_id = s_renderer->find_mesh_res(mesh);
 				if (mesh_id == -1)
 				{
-					mesh_id = renderer->set_mesh_res(-1, mesh);
+					mesh_id = s_renderer->set_mesh_res(-1, mesh);
 					if (mesh_id == -1)
 					{
 						mesh = nullptr;
@@ -227,11 +227,11 @@ namespace flame
 		animation_layers[layer].stop();
 	}
 
-	void cMeshPrivate::draw(sRenderer* renderer)
+	void cMeshPrivate::draw(sRenderer* s_renderer)
 	{
 		if (mesh_id != -1)
-			renderer->draw_mesh(node, mesh_id, cast_shadow);
-		//auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+			s_renderer->draw_mesh(node, mesh_id, cast_shadow);
+		//auto flags = s_renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 		//if (entity->state & StateSelected)
 		//	flags = flags | graphics::ShadeOutline;
 		//canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
@@ -251,9 +251,9 @@ namespace flame
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
+		drawer = node->add_drawer([](Capture& c, sRendererPtr s_renderer) {
 			auto thiz = c.thiz<cMeshPrivate>();
-			thiz->draw(renderer);
+			thiz->draw(s_renderer);
 		}, Capture().set_thiz(this));
 		measurer = node->add_measure([](Capture& c, AABB* b) {
 			auto thiz = c.thiz<cMeshPrivate>();
@@ -270,8 +270,8 @@ namespace flame
 
 	void cMeshPrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 
 		apply_src();
 		for (auto i = 0; i < _countof(animation_layers); i++)
@@ -280,7 +280,7 @@ namespace flame
 
 	void cMeshPrivate::on_left_world()
 	{
-		renderer = nullptr;
+		s_renderer = nullptr;
 		mesh_id = -1;
 		model = nullptr;
 		mesh = nullptr;

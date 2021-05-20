@@ -32,7 +32,7 @@ namespace flame
 		
 		void on_load_finished() override;
 		
-		uint draw(uint layer, sRendererPtr renderer);
+		uint draw(uint layer, sRendererPtr s_renderer);
 
 		static dEditPrivate* create();
 	};

@@ -15,11 +15,11 @@ namespace flame
 			entity->component_data_changed(this, S<"blur_radius"_h>);
 	}
 
-	void cBlurPrivate::draw(sRenderer* renderer)
+	void cBlurPrivate::draw(sRenderer* s_renderer)
 	{
 		// TODO: fix below
 		//if (blur_radius > 0)
-		//	renderer->add_blur(element->aabb, blur_radius);
+		//	s_renderer->add_blur(element->aabb, blur_radius);
 	}
 
 	cBlur* cBlur::create(void* parms)

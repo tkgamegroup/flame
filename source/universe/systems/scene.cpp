@@ -1,10 +1,12 @@
 #include "../world_private.h"
 #include "../components/element_private.h"
-#include "layout_private.h"
+#include "../components/node_private.h"
+#include "../components/octree_private.h"
+#include "scene_private.h"
 
 namespace flame
 {
-	void sLayoutPrivate::on_added()
+	void sScenePrivate::on_added()
 	{
 		window = (Window*)world->find_object("flame::Window");
 	}
@@ -79,7 +81,7 @@ namespace flame
 			e->desired_size.y = 0.f;
 	}
 
-	void sLayoutPrivate::update()
+	void sScenePrivate::update()
 	{
 		if (window)
 		{
@@ -330,10 +332,23 @@ namespace flame
 			
 			l->pending_layout = false;
 		}
+
+		while (!reindex_list.empty())
+		{
+			auto n = reindex_list.front();
+			n->update_bounds();
+			if (!n->octree_node)
+				n->entity->parent->get_component_t<cOctreePrivate>()->octree->add(n);
+			else
+				n->octree_node->reindex(n);
+
+			n->pending_reindex = false;
+			reindex_list.pop_front();
+		}
 	}
 
-	sLayout* sLayout::create(void* parms)
+	sScene* sScene::create(void* parms)
 	{
-		return f_new<sLayoutPrivate>();
+		return f_new<sScenePrivate>();
 	}
 }

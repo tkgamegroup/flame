@@ -21,7 +21,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/receiver.h>
-#include <flame/universe/systems/layout.h>
+#include <flame/universe/systems/scene.h>
 #include <flame/universe/systems/dispatcher.h>
 #include <flame/universe/systems/physics.h>
 #include <flame/universe/systems/renderer.h>
@@ -43,7 +43,7 @@ namespace flame
 		UniPtr<graphics::Semaphore> render_finished;
 
 		UniPtr<World> world;
-		sLayout* s_layout = nullptr;
+		sScene* s_scene = nullptr;
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
 		sPhysics* s_physics = nullptr;
@@ -87,8 +87,8 @@ namespace flame
 
 		world.reset(World::create());
 		world->register_object(window.get(), "flame::Window");
-		s_layout = sLayout::create();
-		world->add_system(s_layout);
+		s_scene = sScene::create();
+		world->add_system(s_scene);
 		s_dispatcher = sDispatcher::create();
 		world->add_system(s_dispatcher);
 		s_physics = sPhysics::create();

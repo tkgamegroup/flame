@@ -32,7 +32,7 @@ namespace flame
 				if (visualization_layer)
 				{
 					physics_scene->set_visualization(true);
-					visualization_layer->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
+					visualization_layer->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
 						auto thiz = c.thiz<sPhysicsPrivate>();
 						if (thiz->visualization_layer)
 						{

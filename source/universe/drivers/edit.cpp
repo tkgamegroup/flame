@@ -156,9 +156,9 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
+		element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
 			auto thiz = c.thiz<dEditPrivate>();
-			return thiz->draw(layer, renderer);
+			return thiz->draw(layer, s_renderer);
 		}, Capture().set_thiz(this));
 
 		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
@@ -392,7 +392,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	uint dEditPrivate::draw(uint layer, sRendererPtr renderer)
+	uint dEditPrivate::draw(uint layer, sRendererPtr s_renderer)
 	{
 		layer++;
 
@@ -424,8 +424,8 @@ namespace flame
 				if (right < high && str[right] == '\n')
 					p2.x += 4.f;
 				p2.y += font_size;
-				renderer->fill_rect(layer, element, element->padding.xy() + p1, p2 - p1, cvec4(128, 128, 255, 255));
-				renderer->draw_text(layer, element, element->padding.xy() + p1, font_size, res_id, sb, se, text->font_color);
+				s_renderer->fill_rect(layer, element, element->padding.xy() + p1, p2 - p1, cvec4(128, 128, 255, 255));
+				s_renderer->draw_text(layer, element, element->padding.xy() + p1, font_size, res_id, sb, se, text->font_color);
 			}
 		}
 
@@ -437,7 +437,7 @@ namespace flame
 				off,
 				vec2(off.x, off.y + font_size)
 			};
-			renderer->stroke(layer, element, _countof(pts), pts, max(1.f, round(font_size / 14.f)), text->font_color);
+			s_renderer->stroke(layer, element, _countof(pts), pts, max(1.f, round(font_size / 14.f)), text->font_color);
 		}
 
 		return layer;

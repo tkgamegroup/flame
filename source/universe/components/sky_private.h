@@ -11,7 +11,7 @@ namespace flame
 		std::string rad_texture_name;
 		std::string lut_texture_name;
 
-		sRendererPrivate* renderer = nullptr;
+		sRendererPrivate* s_renderer = nullptr;
 
 		graphics::Image* box_texture;
 		graphics::Image* irr_texture;

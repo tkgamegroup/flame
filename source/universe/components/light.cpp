@@ -20,9 +20,9 @@ namespace flame
 		cast_shadow = v;
 	}
 
-	void cLightPrivate::draw(sRendererPtr renderer)
+	void cLightPrivate::draw(sRendererPtr s_renderer)
 	{
-		renderer->add_light(node, type, color, cast_shadow);
+		s_renderer->add_light(node, type, color, cast_shadow);
 	}
 
 	void cLightPrivate::on_added()
@@ -30,9 +30,9 @@ namespace flame
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRendererPtr renderer) {
+		drawer = node->add_drawer([](Capture& c, sRendererPtr s_renderer) {
 			auto thiz = c.thiz<cLightPrivate>();
-			thiz->draw(renderer);
+			thiz->draw(s_renderer);
 		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}

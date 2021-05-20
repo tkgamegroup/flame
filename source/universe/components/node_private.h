@@ -32,12 +32,15 @@ namespace flame
 		mat4 transform;
 		AABB bounds;
 
+		bool under_octree = false;
 		OctreeNode* octree_node = nullptr;
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
 		std::vector<std::unique_ptr<Closure<bool(Capture&, AABB*)>>> measurers;
 
-		sRendererPrivate* renderer = nullptr;
+		sScenePrivate* s_scene = nullptr;
+		bool pending_reindex = false;
+		sRendererPrivate* s_renderer = nullptr;
 
 		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
@@ -70,6 +73,7 @@ namespace flame
 		void mark_transform_dirty();
 		void mark_bounds_dirty();
 		void mark_drawing_dirty();
+		void remove_from_reindex_list();
 
 		void on_self_added() override;
 		void on_self_removed() override;
@@ -88,6 +92,7 @@ namespace flame
 
 		std::vector<cNodePrivate*> objects;
 
+		OctreeNode* parent = nullptr;
 		std::vector<std::unique_ptr<OctreeNode>> children;
 
 		void set_values(float _length, vec3 _center)
@@ -98,8 +103,9 @@ namespace flame
 			bounds = AABB(center, length);
 		}
 
-		OctreeNode(float length, vec3 center)
+		OctreeNode(float length, vec3 center, OctreeNode* _parent = nullptr)
 		{
+			parent = _parent;
 			set_values(length, center);
 		}
 
@@ -108,11 +114,7 @@ namespace flame
 			fassert(!n->octree_node);
 
 			if (!bounds.contains(n->bounds))
-			{
-				objects.push_back(n);
-				n->octree_node = this;
 				return;
-			}
 
 			sub_add(n);
 		}
@@ -136,6 +138,23 @@ namespace flame
 				if (should_merge())
 					merge();
 			}
+		}
+
+		void reindex(cNodePrivate* n)
+		{
+			fassert(n->octree_node == this);
+
+			auto p = this;
+			while (!p->bounds.contains(n->bounds))
+			{
+				if (p->parent)
+					p = p->parent;
+				else
+					break;
+			}
+
+			remove(n);
+			p->add(n);
 		}
 
 		bool is_colliding(const AABB& check_bounds)
@@ -247,9 +266,7 @@ namespace flame
 
 		OctreeNode* shrink_if_possible()
 		{
-			if (length < (2.f))
-				return this;
-			if (objects.empty() && children.empty())
+			if (length < 2.f || (objects.empty() && children.empty()))
 				return this;
 
 			auto best_fit = -1;
@@ -363,14 +380,14 @@ namespace flame
 			auto quarter = length / 4.f;
 			auto hf_length = length / 2;
 			children.resize(8);
-			children[0].reset(new OctreeNode(hf_length, center + vec3(-quarter, quarter, -quarter)));
-			children[1].reset(new OctreeNode(hf_length, center + vec3(quarter, quarter, -quarter)));
-			children[2].reset(new OctreeNode(hf_length, center + vec3(-quarter, quarter, quarter)));
-			children[3].reset(new OctreeNode(hf_length, center + vec3(quarter, quarter, quarter)));
-			children[4].reset(new OctreeNode(hf_length, center + vec3(-quarter, -quarter, -quarter)));
-			children[5].reset(new OctreeNode(hf_length, center + vec3(quarter, -quarter, -quarter)));
-			children[6].reset(new OctreeNode(hf_length, center + vec3(-quarter, -quarter, quarter)));
-			children[7].reset(new OctreeNode(hf_length, center + vec3(quarter, -quarter, quarter)));
+			children[0].reset(new OctreeNode(hf_length, center + vec3(-quarter, quarter, -quarter), this));
+			children[1].reset(new OctreeNode(hf_length, center + vec3(quarter, quarter, -quarter), this));
+			children[2].reset(new OctreeNode(hf_length, center + vec3(-quarter, quarter, quarter), this));
+			children[3].reset(new OctreeNode(hf_length, center + vec3(quarter, quarter, quarter), this));
+			children[4].reset(new OctreeNode(hf_length, center + vec3(-quarter, -quarter, -quarter), this));
+			children[5].reset(new OctreeNode(hf_length, center + vec3(quarter, -quarter, -quarter), this));
+			children[6].reset(new OctreeNode(hf_length, center + vec3(-quarter, -quarter, quarter), this));
+			children[7].reset(new OctreeNode(hf_length, center + vec3(quarter, -quarter, quarter), this));
 		}
 
 		void merge()

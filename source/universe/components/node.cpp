@@ -1,6 +1,7 @@
 #include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
+#include "../systems/scene_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -247,8 +248,17 @@ namespace flame
 		{
 			bounds_dirty = true;
 
-			if (octree_node)
-				;
+			if (under_octree && !pending_reindex)
+			{
+				auto it = s_scene->reindex_list.begin();
+				for (; it != s_scene->reindex_list.end(); it++)
+				{
+					if (entity->depth > (*it)->entity->depth)
+						break;
+				}
+				s_scene->reindex_list.emplace(it, this);
+				pending_reindex = true;
+			}
 
 			if (pnode)
 				pnode->mark_bounds_dirty();
@@ -257,8 +267,18 @@ namespace flame
 
 	void cNodePrivate::mark_drawing_dirty()
 	{
-		if (renderer)
-			renderer->dirty = true;
+		if (s_renderer)
+			s_renderer->dirty = true;
+	}
+
+	void cNodePrivate::remove_from_reindex_list()
+	{
+		if (!pending_reindex)
+			return;
+		std::erase_if(s_scene->reindex_list, [&](const auto& i) {
+			return i == this;
+		});
+		pending_reindex = false;
 	}
 
 	void cNodePrivate::on_self_added()
@@ -278,8 +298,10 @@ namespace flame
 		auto world = entity->world;
 		if (!world->first_node)
 			world->first_node = entity;
-		renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
+		s_scene = entity->world->get_system_t<sScenePrivate>();
+		fassert(s_scene);
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 		mark_transform_dirty();
 	}
 
@@ -288,8 +310,10 @@ namespace flame
 		auto world = entity->world;
 		if (world->first_node == entity)
 			world->first_node = nullptr;
+		remove_from_reindex_list();
 		mark_drawing_dirty();
-		renderer = nullptr;
+		s_scene = nullptr;
+		s_renderer = nullptr;
 	}
 
 	bool cNodePrivate::on_save_attribute(uint h)

@@ -13,7 +13,7 @@ namespace flame
 		cElementPrivate* element = nullptr;
 		void* drawer = nullptr;
 		void* measurer = nullptr;
-		sRenderer* renderer = nullptr;
+		sRenderer* s_renderer = nullptr;
 
 		int res_id = -1;
 		graphics::FontAtlas* atlas = nullptr;
@@ -33,7 +33,7 @@ namespace flame
 
 		void mark_text_changed();
 
-		uint draw(uint layer, sRenderer* renderer);
+		uint draw(uint layer, sRenderer* s_renderer);
 		bool measure(vec2* s);
 
 		void on_added() override;

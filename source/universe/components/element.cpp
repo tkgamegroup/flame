@@ -2,7 +2,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
-#include "../systems/layout_private.h"
+#include "../systems/scene_private.h"
 
 namespace flame
 {
@@ -528,37 +528,37 @@ namespace flame
 
 	void cElementPrivate::mark_drawing_dirty()
 	{
-		if (renderer)
-			renderer->dirty = true;
+		if (s_renderer)
+			s_renderer->dirty = true;
 	}
 
 	void cElementPrivate::mark_size_dirty()
 	{
-		if (pending_sizing || measurers.empty() || !(auto_width || auto_height) || !layout_system)
+		if (pending_sizing || measurers.empty() || !(auto_width || auto_height) || !s_scene)
 			return;
 
-		auto it = layout_system->sizing_list.begin();
-		for (; it != layout_system->sizing_list.end(); it++)
+		auto it = s_scene->sizing_list.begin();
+		for (; it != s_scene->sizing_list.end(); it++)
 		{
 			if ((*it)->entity->depth < entity->depth)
 				break;
 		}
-		layout_system->sizing_list.emplace(it, this);
+		s_scene->sizing_list.emplace(it, this);
 		pending_sizing = true;
 	}
 
 	void cElementPrivate::mark_layout_dirty()
 	{
-		if (pending_layout || !need_layout || !layout_system)
+		if (pending_layout || !need_layout || !s_scene)
 			return;
 
-		auto it = layout_system->layout_list.begin();
-		for (; it != layout_system->layout_list.end(); it++)
+		auto it = s_scene->layout_list.begin();
+		for (; it != s_scene->layout_list.end(); it++)
 		{
 			if (entity->depth < (*it)->entity->depth)
 				break;
 		}
-		layout_system->layout_list.emplace(it, this);
+		s_scene->layout_list.emplace(it, this);
 		pending_layout = true;
 	}
 
@@ -566,7 +566,7 @@ namespace flame
 	{
 		if (!pending_sizing)
 			return;
-		std::erase_if(layout_system->sizing_list, [&](const auto& i) {
+		std::erase_if(s_scene->sizing_list, [&](const auto& i) {
 			return i == this;
 		});
 		pending_sizing = false;
@@ -576,7 +576,7 @@ namespace flame
 	{
 		if (!pending_layout)
 			return;
-		std::erase_if(layout_system->layout_list, [&](const auto& i) {
+		std::erase_if(s_scene->layout_list, [&](const auto& i) {
 			return i == this;
 		});
 		pending_layout = false;
@@ -615,10 +615,10 @@ namespace flame
 		auto world = entity->world;
 		if (!world->first_element)
 			world->first_element = entity;
-		renderer = world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
-		layout_system = world->get_system_t<sLayoutPrivate>();
-		fassert(layout_system);
+		s_scene = world->get_system_t<sScenePrivate>();
+		fassert(s_scene);
+		s_renderer = world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 		mark_transform_dirty();
 		mark_size_dirty();
 		mark_layout_dirty();
@@ -629,11 +629,11 @@ namespace flame
 		auto world = entity->world;
 		if (world->first_element == entity)
 			world->first_element = nullptr;
-		mark_drawing_dirty();
 		remove_from_sizing_list();
 		remove_from_layout_list();
-		renderer = nullptr;
-		layout_system = nullptr;
+		mark_drawing_dirty();
+		s_scene = nullptr;
+		s_renderer = nullptr;
 	}
 
 	void cElementPrivate::on_visibility_changed(bool v)
@@ -693,14 +693,14 @@ namespace flame
 		return true;
 	}
 
-	void cElementPrivate::draw(uint layer, sRenderer* renderer)
+	void cElementPrivate::draw(uint layer, sRenderer* s_renderer)
 	{
 		if (alpha > 0.f)
 		{
 			if (fill_color.a > 0)
-				renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
+				s_renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
 			if (border > 0.f && border_color.a > 0)
-				renderer->stroke_rect(layer, this, vec2(0.f), size, border, border_color);
+				s_renderer->stroke_rect(layer, this, vec2(0.f), size, border, border_color);
 		}
 	}
 

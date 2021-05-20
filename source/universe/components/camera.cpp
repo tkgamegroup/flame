@@ -10,17 +10,17 @@ namespace flame
 	{
 		if (current)
 		{
-			if (renderer->camera != this)
+			if (s_renderer->camera != this)
 			{
-				if (renderer->camera)
-					renderer->camera->current = false;
-				renderer->camera = this;
+				if (s_renderer->camera)
+					s_renderer->camera->current = false;
+				s_renderer->camera = this;
 			}
 		}
 		else
 		{
-			if (renderer->camera == this)
-				renderer->camera = nullptr;
+			if (s_renderer->camera == this)
+				s_renderer->camera = nullptr;
 		}
 	}
 
@@ -39,8 +39,8 @@ namespace flame
 
 	void cCameraPrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 
 		apply_current();
 	}
@@ -49,7 +49,7 @@ namespace flame
 	{
 		current = false;
 		apply_current();
-		renderer = nullptr;
+		s_renderer = nullptr;
 	}
 
 	void cCameraPrivate::set_current(bool v)
@@ -58,7 +58,7 @@ namespace flame
 			return;
 		current = v;
 
-		if (renderer)
+		if (s_renderer)
 			apply_current();
 	}
 

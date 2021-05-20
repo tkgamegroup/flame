@@ -16,7 +16,7 @@ namespace flame
 		void* drawer = nullptr;
 		void* measurable = nullptr;
 
-		sRenderer* renderer = nullptr;
+		sRenderer* s_renderer = nullptr;
 
 		int res_id = -1;
 		int tile_id = -1;
@@ -44,6 +44,6 @@ namespace flame
 
 		bool measure(vec2* s);
 
-		uint draw(uint layer, sRenderer* renderer);
+		uint draw(uint layer, sRenderer* s_renderer);
 	};
 }

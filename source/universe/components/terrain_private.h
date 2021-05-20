@@ -15,7 +15,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
-		sRendererPrivate* renderer = nullptr;
+		sRendererPrivate* s_renderer = nullptr;
 
 		graphics::Image* height_texture = nullptr;
 		graphics::Image* normal_texture = nullptr;
@@ -42,7 +42,7 @@ namespace flame
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture; }
 
-		void draw(sRendererPrivate* renderer);
+		void draw(sRendererPrivate* s_renderer);
 
 		void on_added() override;
 		void on_removed() override;

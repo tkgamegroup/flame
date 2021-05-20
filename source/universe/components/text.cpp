@@ -76,10 +76,10 @@ namespace flame
 			entity->component_data_changed(this, S<"text"_h>);
 	}
 
-	uint cTextPrivate::draw(uint layer, sRenderer* renderer)
+	uint cTextPrivate::draw(uint layer, sRenderer* s_renderer)
 	{
 		layer++;
-		renderer->draw_text(layer, element, element->padding.xy(), font_size, res_id, text.c_str(), text.c_str() + text.size(), font_color);
+		s_renderer->draw_text(layer, element, element->padding.xy(), font_size, res_id, text.c_str(), text.c_str() + text.size(), font_color);
 		return layer;
 	}
 
@@ -96,9 +96,9 @@ namespace flame
 		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
+		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
 			auto thiz = c.thiz<cTextPrivate>();
-			return thiz->draw(layer, renderer);
+			return thiz->draw(layer, s_renderer);
 		}, Capture().set_thiz(this));
 		measurer = element->add_measurer([](Capture& c, vec2* s) {
 			auto thiz = c.thiz<cTextPrivate>();
@@ -118,20 +118,20 @@ namespace flame
 
 	void cTextPrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRenderer>();
-		fassert(renderer);
+		s_renderer = entity->world->get_system_t<sRenderer>();
+		fassert(s_renderer);
 
 		if (res_id != -1)
 		{
 			if (!atlas)
-				atlas = (graphics::FontAtlas*)renderer->get_element_res(res_id, nullptr);
+				atlas = (graphics::FontAtlas*)s_renderer->get_element_res(res_id, nullptr);
 		}
 		else
 		{
 			atlas = graphics::FontAtlas::get(graphics::Device::get_default(), L"msyh.ttc;font_awesome.ttf");
-			res_id = renderer->find_element_res(atlas);
+			res_id = s_renderer->find_element_res(atlas);
 			if (res_id == -1)
-				res_id = renderer->set_element_res(-1, "FontAtlas", atlas);
+				res_id = s_renderer->set_element_res(-1, "FontAtlas", atlas);
 			if (res_id == -1)
 				atlas = nullptr;
 		}
@@ -139,7 +139,7 @@ namespace flame
 
 	void cTextPrivate::on_left_world()
 	{
-		renderer = nullptr;
+		s_renderer = nullptr;
 		res_id = -1;
 		atlas = nullptr;
 	}

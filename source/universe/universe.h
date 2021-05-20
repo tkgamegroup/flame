@@ -65,7 +65,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(dGrid);
 
 	FLAME_UNIVERSE_TYPE(sRenderer);
-	FLAME_UNIVERSE_TYPE(sLayout);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
 	FLAME_UNIVERSE_TYPE(sPhysics);

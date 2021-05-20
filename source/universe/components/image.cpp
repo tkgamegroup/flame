@@ -53,13 +53,13 @@ namespace flame
 		iv = nullptr;
 		atlas = nullptr;
 		// TODO: fix below
-		//if (renderer)
+		//if (s_renderer)
 		//{
 		//	if (!src.empty())
 		//	{
 		//		auto sp = SUS::split(src, '.');
-		//		auto slot = renderer->find_element_res(sp[0].c_str());
-		//		auto r = renderer->get_element_res(slot);
+		//		auto slot = s_renderer->find_element_res(sp[0].c_str());
+		//		auto r = s_renderer->get_element_res(slot);
 		//		if (r.ia)
 		//		{
 		//			if (sp.size() == 2)
@@ -109,12 +109,12 @@ namespace flame
 		//	{
 		//		if (tile_id != -1)
 		//		{
-		//			auto r = renderer->get_element_res(res_id);
+		//			auto r = s_renderer->get_element_res(res_id);
 		//			atlas = r.ia;
 		//			iv = r.ia->get_image()->get_view();
 		//		}
 		//		else
-		//			iv = renderer->get_element_res(res_id).iv;
+		//			iv = s_renderer->get_element_res(res_id).iv;
 		//	}
 		//}
 
@@ -130,9 +130,9 @@ namespace flame
 		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr renderer) {
+		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
 			auto thiz = c.thiz<cImagePrivate>();
-			return thiz->draw(layer, renderer);
+			return thiz->draw(layer, s_renderer);
 		}, Capture().set_thiz(this));
 		measurable = element->add_measurer([](Capture& c, vec2* s) {
 			auto thiz = c.thiz<cImagePrivate>();
@@ -152,14 +152,14 @@ namespace flame
 
 	void cImagePrivate::on_entered_world()
 	{
-		renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(renderer);
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
 		refresh_res();
 	}
 
 	void cImagePrivate::on_left_world()
 	{
-		renderer = nullptr;
+		s_renderer = nullptr;
 		res_id = -1;
 		tile_id = -1;
 		iv = nullptr;
@@ -174,12 +174,12 @@ namespace flame
 		return true;
 	}
 
-	uint cImagePrivate::draw(uint layer, sRenderer* renderer)
+	uint cImagePrivate::draw(uint layer, sRenderer* s_renderer)
 	{
 		if (res_id != -1)
 		{
 			// TODO: fix below
-			//renderer->draw_image(res_id, tile_id, element->points[4],
+			//s_renderer->draw_image(res_id, tile_id, element->points[4],
 			//	element->content_size, element->axes, uv0, uv1, cvec4(255));
 		}
 		return layer;

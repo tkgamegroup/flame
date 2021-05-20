@@ -4,6 +4,13 @@
 
 namespace flame
 {
+	static void new_child(cOctreePrivate* thiz, cNodePrivate* obj)
+	{
+		obj->under_octree = true;
+		obj->update_bounds();
+		thiz->octree->add(obj);
+	}
+
 	void cOctreePrivate::set_length(float _length)
 	{
 		length = _length;
@@ -27,11 +34,7 @@ namespace flame
 		octree.reset(new OctreeNode(length, node->g_pos));
 
 		for (auto& c : entity->children)
-		{
-			auto obj = c->get_component_i<cNodePrivate>(0);
-			obj->update_bounds();
-			octree->add(obj);
-		}
+			new_child(this, c->get_component_i<cNodePrivate>(0));
 	}
 
 	void cOctreePrivate::on_left_world()
@@ -42,11 +45,7 @@ namespace flame
 	void cOctreePrivate::on_child_added(EntityPtr e)
 	{
 		if (octree)
-		{
-			auto obj = e->get_component_i<cNodePrivate>(0);
-			obj->update_bounds();
-			octree->add(obj);
-		}
+			new_child(this, e->get_component_i<cNodePrivate>(0));
 	}
 
 	void cOctreePrivate::on_child_removed(EntityPtr e)

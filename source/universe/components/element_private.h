@@ -60,11 +60,11 @@ namespace flame
 
 		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRendererPtr)>>> drawers;
 		std::vector<std::unique_ptr<Closure<bool(Capture&, vec2*)>>> measurers;
+
+		sScenePrivate* s_scene = nullptr;
 		bool pending_sizing = false;
 		bool pending_layout = false;
-
-		sRendererPrivate* renderer = nullptr;
-		sLayoutPrivate* layout_system = nullptr;
+		sRendererPrivate* s_renderer = nullptr;
 
 		float get_x() const override { return pos.x; }
 		void set_x(float x) override;
@@ -192,6 +192,6 @@ namespace flame
 
 		bool on_save_attribute(uint h) override;
 
-		void draw(uint layer, sRenderer* renderer);
+		void draw(uint layer, sRenderer* s_renderer);
 	};
 }
