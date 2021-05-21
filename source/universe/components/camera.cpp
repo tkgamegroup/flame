@@ -94,6 +94,7 @@ namespace flame
 		dst[1] = view_inv * vec4(x1, y1, -n, 1.f);
 		dst[2] = view_inv * vec4(x1, -y1, -n, 1.f);
 		dst[3] = view_inv * vec4(-x1, -y1, -n, 1.f);
+
 		dst[4] = view_inv * vec4(-x2, y2, -f, 1.f);
 		dst[5] = view_inv * vec4(x2, y2, -f, 1.f);
 		dst[6] = view_inv * vec4(x2, -y2, -f, 1.f);
@@ -104,12 +105,12 @@ namespace flame
 	{
 		vec3 ps[8];
 		get_points(aspect, ps, n, f);
-		dst[0] = Plane(ps[0], ps[2], ps[1]); // near
-		dst[1] = Plane(ps[5], ps[6], ps[4]); // far
-		dst[2] = Plane(ps[4], ps[7], ps[0]); // left
-		dst[3] = Plane(ps[1], ps[2], ps[5]); // right
-		dst[4] = Plane(ps[4], ps[0], ps[5]); // top
-		dst[5] = Plane(ps[3], ps[7], ps[2]); // bottom
+		dst[0] = Plane(ps[0], ps[1], ps[2]); // near
+		dst[1] = Plane(ps[4], ps[7], ps[5]); // far
+		dst[2] = Plane(ps[3], ps[7], ps[4]); // left
+		dst[3] = Plane(ps[1], ps[5], ps[6]); // right
+		dst[4] = Plane(ps[0], ps[4], ps[5]); // top
+		dst[5] = Plane(ps[2], ps[6], ps[7]); // bottom
 	}
 
 	cCamera* cCamera::create(void* parms)

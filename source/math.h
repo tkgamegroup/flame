@@ -295,11 +295,6 @@ namespace flame
 			n = normalize(cross(b - a, c - a));
 			d = -dot(n, a);
 		}
-
-		float distance(const vec3& p) const
-		{
-			return dot(n, p) - d;
-		}
 	};
 
 	inline bool is_AABB_in_frustum(const Plane* planes, const AABB& bounds)
@@ -311,7 +306,7 @@ namespace flame
 			auto outside = true;
 			for (auto j = 0; j < 8; j++)
 			{
-				if (planes[i].distance(ps[j]) > 0.f)
+				if (dot(planes[i].n, ps[j]) + planes[i].d > 0.f)
 				{
 					outside = false;
 					break;

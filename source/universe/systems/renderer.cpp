@@ -555,7 +555,7 @@ namespace flame
 
 		// TODO: LOD level 1
 		Plane frustum_lod1[6];
-		camera->get_planes(tar_aspt, frustum_lod1, -1.f, 20.f);
+		camera->get_planes(tar_aspt, frustum_lod1, -1.f, 50.f);
 
 		if (node->is_octree)
 		{

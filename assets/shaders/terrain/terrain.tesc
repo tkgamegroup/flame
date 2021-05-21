@@ -29,7 +29,7 @@ bool frustum_check()
 
 	for (int i = 0; i < 6; i++) 
 	{
-		if (dot(p, render_data.frustum_planes[i]) > r)
+		if (dot(render_data.frustum_planes[i], p) + r < 0.0)
 			return false;
 	}
 	return true;
