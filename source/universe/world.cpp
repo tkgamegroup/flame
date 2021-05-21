@@ -1,8 +1,5 @@
 #include "../foundation/typeinfo.h"
 #include "entity_private.h"
-#include "components/element_private.h"
-#include "components/receiver_private.h"
-#include "components/node_private.h"
 #include "world_private.h"
 
 namespace flame

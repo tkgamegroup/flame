@@ -9,6 +9,7 @@
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
+#include "../components/octree_private.h"
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
@@ -52,23 +53,6 @@ namespace flame
 		return graphics::AccessNone;
 	}
 
-	static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const mat4& transform, vec3* dst)
-	{
-		auto y1 = zNear * tan_hf_fovy;
-		auto y2 = zFar * tan_hf_fovy;
-		auto x1 = y1 * aspect;
-		auto x2 = y2 * aspect;
-
-		dst[0] = vec3(transform * vec4(-x1, y1, -zNear, 1.f));
-		dst[1] = vec3(transform * vec4(x1, y1, -zNear, 1.f));
-		dst[2] = vec3(transform * vec4(x1, -y1, -zNear, 1.f));
-		dst[3] = vec3(transform * vec4(-x1, -y1, -zNear, 1.f));
-		dst[4] = vec3(transform * vec4(-x2, y2, -zFar, 1.f));
-		dst[5] = vec3(transform * vec4(x2, y2, -zFar, 1.f));
-		dst[6] = vec3(transform * vec4(x2, -y2, -zFar, 1.f));
-		dst[7] = vec3(transform * vec4(-x2, -y2, -zFar, 1.f));
-	}
-
 	static void get_frustum_points(const mat4& m, vec3* dst)
 	{
 		dst[0] = vec3(m * vec4(-1.f, 1.f, 0.f, 1.f));
@@ -79,14 +63,6 @@ namespace flame
 		dst[5] = vec3(m * vec4(1.f, 1.f, 1.f, 1.f));
 		dst[6] = vec3(m * vec4(1.f, -1.f, 1.f, 1.f));
 		dst[7] = vec3(m * vec4(-1.f, -1.f, 1.f, 1.f));
-	}
-
-	static vec4 make_plane(const vec3& p1, const vec3& p2, const vec3& p3)
-	{
-		auto v1 = p2 - p1;
-		auto v2 = p3 - p1;
-		auto n = -normalize(cross(v1, v2));
-		return vec4(n, dot(n, -p1));
 	}
 
 	template <class T>
@@ -567,25 +543,36 @@ namespace flame
 		return max_layer;
 	}
 
-	void sRendererPrivate::node_render(cNodePrivate* element)
+	void sRendererPrivate::node_render(cNodePrivate* node)
 	{
-		auto e = element->entity;
+		auto e = node->entity;
 		if (!e->global_visibility)
 			return;
 
-		auto node = e->get_component_i<cNodePrivate>(0);
-		if (node)
-		{
-			node->update_transform();
-			for (auto& d : node->drawers)
-				d->call(this);
-		}
+		node->update_transform();
+		for (auto& d : node->drawers)
+			d->call(this);
 
-		for (auto& c : e->children)
+		// TODO: LOD level 1
+		Plane frustum_lod1[6];
+		camera->get_planes(tar_aspt, frustum_lod1, -1.f, 20.f);
+
+		if (node->is_octree)
 		{
-			auto cnode = c->get_component_i<cNodePrivate>(0);
-			if (cnode)
-				node_render(cnode);
+			std::vector<cNodePrivate*> objs;
+			auto octree = e->get_component_t<cOctreePrivate>()->octree.get();
+			octree->get_within_frustum(frustum_lod1, objs);
+			for (auto obj : objs)
+				node_render(obj);
+		}
+		else
+		{
+			for (auto& c : e->children)
+			{
+				auto cnode = c->get_component_i<cNodePrivate>(0);
+				if (cnode)
+					node_render(cnode);
+			}
 		}
 	}
 
@@ -1372,6 +1359,7 @@ namespace flame
 		for (auto i = 0; i < tar_cnt; i++)
 			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
 		tar_sz = ivs[0]->get_image()->get_size();
+		tar_aspt = tar_sz.x / tar_sz.y;
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
@@ -1413,7 +1401,6 @@ namespace flame
 		{
 			auto csm_levels = 3U; // TODO
 			auto ptsm_near = 0.01f; // TODO
-			auto tar_aspect = tar_sz.x / tar_sz.y;
 
 			{
 				camera->update_view();
@@ -1428,18 +1415,11 @@ namespace flame
 				data.camera_coord = camera->node->g_pos;
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
-				data.proj = perspective(radians(camera->fovy), tar_aspect, data.zNear, data.zFar);
+				data.proj = perspective(radians(camera->fovy), tar_aspt, data.zNear, data.zFar);
 				data.proj[1][1] *= -1.f;
 				data.proj_inv = inverse(data.proj);
 				data.proj_view = data.proj * data.view;
-				vec3 ps[8];
-				get_frustum_points(data.zNear, data.zFar, tan(radians(camera->fovy * 0.5f)), tar_aspect, data.view_inv, ps);
-				data.frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
-				data.frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
-				data.frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
-				data.frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
-				data.frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
-				data.frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
+				camera->get_planes(tar_aspt, (Plane*)data.frustum_planes);
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);
@@ -1526,8 +1506,6 @@ namespace flame
 				auto& data = nd.buf_light_infos.set_item(s.first, false);
 				data.shadow_distance = dist;
 
-				auto tan_hf_fovy = tan(radians(camera->fovy * 0.5f));
-
 				auto mat = s.second->g_rot;
 				mat[2] *= -1.f;
 				auto inv = inverse(mat);
@@ -1542,7 +1520,7 @@ namespace flame
 					vec3 a = vec3(+10000.f);
 					vec3 b = vec3(-10000.f);
 					vec3 ps[8];
-					get_frustum_points(n, f, tan_hf_fovy, tar_aspect, camera->view_inv, ps);
+					camera->get_points(tar_aspt, ps, n, f);
 					for (auto k = 0; k < 8; k++)
 					{
 						auto p = inv * ps[k];

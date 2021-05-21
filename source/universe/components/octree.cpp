@@ -20,10 +20,12 @@ namespace flame
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
+		node->is_octree = true;
 	}
 
 	void cOctreePrivate::on_removed()
 	{
+		node->is_octree = false;
 		node = nullptr;
 	}
 
@@ -31,7 +33,7 @@ namespace flame
 	{
 		node->update_transform();
 
-		octree.reset(new OctreeNode(length, node->g_pos));
+		octree.reset(new OctNode(length, node->g_pos));
 
 		for (auto& c : entity->children)
 			new_child(this, c->get_component_i<cNodePrivate>(0));

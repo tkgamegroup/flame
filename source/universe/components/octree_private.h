@@ -10,7 +10,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 
-		std::unique_ptr<OctreeNode> octree;
+		std::unique_ptr<OctNode> octree;
 
 		float get_length() const override { return length; }
 		void set_length(float length) override;

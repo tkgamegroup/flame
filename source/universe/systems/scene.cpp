@@ -337,10 +337,10 @@ namespace flame
 		{
 			auto n = reindex_list.front();
 			n->update_bounds();
-			if (!n->octree_node)
+			if (!n->oct_node)
 				n->entity->parent->get_component_t<cOctreePrivate>()->octree->add(n);
 			else
-				n->octree_node->reindex(n);
+				n->oct_node->reindex(n);
 
 			n->pending_reindex = false;
 			reindex_list.pop_front();

@@ -564,6 +564,15 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_Plane : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_Plane() :
+			TypeInfoPrivate_Pod(TypeData, "flame::Plane", sizeof(Plane))
+		{
+			ret_by_reg = false;
+		}
+	};
+
 	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_mat2() :

@@ -232,12 +232,12 @@ namespace flame
 			b = vec3(-10000.f);
 		}
 
-		vec3 center()
+		vec3 center() const
 		{
 			return (a + b) * 0.5f;
 		}
 
-		void get_points(vec3* dst)
+		void get_points(vec3* dst) const
 		{
 			dst[0] = vec3(a.x, a.y, a.z);
 			dst[1] = vec3(b.x, a.y, a.z);
@@ -276,5 +276,51 @@ namespace flame
 			return any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a));
 		}
 	};
+
+	struct Plane
+	{
+		vec3 n;
+		float d;
+
+		Plane() = default;
+
+		Plane(const vec3 &n, float d) :
+			n(n),
+			d(d)
+		{
+		}
+
+		Plane(const vec3& a, const vec3& b, const vec3& c)
+		{
+			n = normalize(cross(b - a, c - a));
+			d = -dot(n, a);
+		}
+
+		float distance(const vec3& p) const
+		{
+			return dot(n, p) - d;
+		}
+	};
+
+	inline bool is_AABB_in_frustum(const Plane* planes, const AABB& bounds)
+	{
+		vec3 ps[8];
+		bounds.get_points(ps);
+		for (auto i = 0; i < 6; i++)
+		{
+			auto outside = true;
+			for (auto j = 0; j < 8; j++)
+			{
+				if (planes[i].distance(ps[j]) > 0.f)
+				{
+					outside = false;
+					break;
+				}
+			}
+			if (outside)
+				return false;
+		}
+		return true;
+	}
 }
 

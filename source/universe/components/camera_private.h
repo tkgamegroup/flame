@@ -27,6 +27,9 @@ namespace flame
 
 		void update_view();
 
+		void get_points(float aspect, vec3* dst, float n = -1.f, float f = -1.f);
+		void get_planes(float aspect, Plane* dst, float n = -1.f, float f = -1.f);
+
 		void on_added() override;
 		void on_removed() override;
 		void on_entered_world() override;

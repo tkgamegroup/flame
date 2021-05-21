@@ -36,6 +36,7 @@ namespace flame
 		std::vector<graphics::ImageView*> iv_tars;
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 		vec2 tar_sz;
+		float tar_aspt;
 
 		UniPtr<graphics::Image> img_white;
 		UniPtr<graphics::Image> img_black;
