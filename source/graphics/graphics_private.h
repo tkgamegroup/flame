@@ -458,6 +458,47 @@ namespace flame
 			return ret;
 		}
 
+		template <>
+		inline VkFlags to_backend_flags<PipelineStageFlags>(uint s)
+		{
+			VkPipelineStageFlags ret = 0;
+			if (s & PipelineStageTop)
+				ret |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			if (s & PipelineStageDrawIndirect)
+				ret |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+			if (s & PipelineStageVertexInput)
+				ret |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+			if (s & PipelineStageVertShader)
+				ret |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+			if (s & PipelineStageTescShader)
+				ret |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+			if (s & PipelineStageTeseShader)
+				ret |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+			if (s & PipelineStageGeomShader)
+				ret |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+			if (s & PipelineStageFragShader)
+				ret |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			if (s & PipelineStageEarlyFragTestShader)
+				ret |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			if (s & PipelineStageLateFragTestShader)
+				ret |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			if (s & PipelineStageColorAttachmentOutput)
+				ret |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			if (s & PipelineStageCompShader)
+				ret |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			if (s & PipelineStageTransfer)
+				ret |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+			if (s & PipelineStageBottom)
+				ret |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			if (s & PipelineStageHost)
+				ret |= VK_PIPELINE_STAGE_HOST_BIT;
+			if (s & PipelineStageAllGraphics)
+				ret |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			if (s & PipelineStageAllCommand)
+				ret |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+			return ret;
+		}
+
 		inline VkAttachmentLoadOp to_backend(AttachmentLoadOp op)
 		{
 			switch (op)

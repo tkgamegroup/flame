@@ -250,6 +250,29 @@ namespace flame
 
 		inline AccessFlags operator| (AccessFlags a, AccessFlags b) { return (AccessFlags)((int)a | (int)b); }
 
+		enum PipelineStageFlags
+		{
+			PipelineStageTop = 1 << 0,
+			PipelineStageDrawIndirect = 1 << 1,
+			PipelineStageVertexInput = 1 << 2,
+			PipelineStageVertShader = 1 << 3,
+			PipelineStageTescShader = 1 << 4,
+			PipelineStageTeseShader = 1 << 5,
+			PipelineStageGeomShader = 1 << 6,
+			PipelineStageFragShader = 1 << 7,
+			PipelineStageEarlyFragTestShader = 1 << 8,
+			PipelineStageLateFragTestShader = 1 << 9,
+			PipelineStageColorAttachmentOutput = 1 << 10,
+			PipelineStageCompShader = 1 << 11,
+			PipelineStageTransfer = 1 << 12,
+			PipelineStageBottom = 1 << 13,
+			PipelineStageHost = 1 << 14,
+			PipelineStageAllGraphics = 1 << 15,
+			PipelineStageAllCommand = 1 << 16
+		};
+
+		inline PipelineStageFlags operator| (PipelineStageFlags a, PipelineStageFlags b) { return (PipelineStageFlags)((int)a | (int)b); }
+
 		enum AttachmentLoadOp
 		{
 			AttachmentLoad,

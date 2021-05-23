@@ -405,6 +405,8 @@ namespace flame
 		UniPtr<graphics::DescriptorSet>	ds_element;
 
 		graphics::Pipeline* pl_element;
+
+		
 	};
 
 	struct NodeRenderData
@@ -1273,7 +1275,7 @@ namespace flame
 			data.color = color;
 			data.shadow_index = -1;
 
-			auto& grid = nd.buf_grid_lights.set_item(0);
+			auto& grid = nd.buf_grid_lights.set_item(0, false);
 			switch (type)
 			{
 			case LightDirectional:
@@ -1358,6 +1360,10 @@ namespace flame
 		fb_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
 			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
+		
+		if (tar_cnt == 0)
+			return;
+
 		tar_sz = ivs[0]->get_image()->get_size();
 		tar_aspt = tar_sz.x / tar_sz.y;
 
@@ -1579,6 +1585,10 @@ namespace flame
 				}
 			}
 
+			nd.buf_light_infos.upload(cb);
+			static auto wtf2 = false;
+			if (!wtf2)
+			nd.buf_grid_lights.upload(cb);
 			nd.buf_dir_shadow_mats.upload(cb);
 			nd.buf_pt_shadow_mats.upload(cb);
 
@@ -1635,9 +1645,6 @@ namespace flame
 
 				cb->image_barrier(nd.img_pt_shadow_maps[i].get(), { 0U, 1U, 0U, 6U }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 			}
-
-			nd.buf_light_infos.upload(cb);
-			nd.buf_grid_lights.upload(cb);
 
 			pack_mesh_indirs(MaterialForMesh);
 
@@ -2135,11 +2142,6 @@ namespace flame
 					cb->set_scissor(c.d.b);
 			}
 			cb->end_renderpass();
-
-			{
-				auto sub = iv_tars[tar_idx]->get_sub();
-				cb->image_barrier(iv_tars[tar_idx]->get_image(), { sub.base_level, 1, sub.base_layer, 1 }, graphics::ImageLayoutAttachment, graphics::ImageLayoutPresent);
-			}
 		}
 
 		nd.should_render = false;

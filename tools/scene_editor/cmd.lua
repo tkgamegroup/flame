@@ -115,7 +115,7 @@ function cmd_tools_scatter_vegetations()
             
     for i=0,num-1,1 do
         local uv = vec2(math.random(), math.random())
-        uv = uv
+        uv = vec2(0.5) + uv * 0.05
         set_vec2(ptr_uvs, i, uv)
     end
 

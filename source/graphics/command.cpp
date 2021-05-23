@@ -194,7 +194,7 @@ namespace flame
 			vkCmdDispatch(vk_command_buffer, v.x, v.y, v.z);
 		}
 
-		void CommandBufferPrivate::buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage)
 		{
 			VkBufferMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -207,26 +207,28 @@ namespace flame
 			barrier.offset = 0;
 			barrier.size = buf->size;
 
-			vkCmdPipelineBarrier(vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			if (src_stage == PipelineStageAllCommand)
+			{
+				switch (src_access)
+				{
+				case AccessTransferWrite:
+					src_stage = PipelineStageTransfer;
+					break;
+				}
+			}
+
+			if (dst_stage == PipelineStageAllCommand)
+			{
+
+			}
+
+			vkCmdPipelineBarrier(vk_command_buffer, to_backend_flags<PipelineStageFlags>(src_stage), to_backend_flags<PipelineStageFlags>(dst_stage),
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
+			AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage)
 		{
-			VkImageMemoryBarrier barrier;
-			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-			barrier.pNext = nullptr;
-			barrier.oldLayout = to_backend(old_layout, img->format);
-			barrier.newLayout = to_backend(new_layout, img->format);
-			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			barrier.image = img->vk_image;
-			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(img->format));
-			barrier.subresourceRange.baseMipLevel = sub.base_level;
-			barrier.subresourceRange.levelCount = sub.level_count;
-			barrier.subresourceRange.baseArrayLayer = sub.base_layer;
-			barrier.subresourceRange.layerCount = sub.layer_count;
-
 			if (src_access == AccessNone)
 			{
 				switch (old_layout)
@@ -272,8 +274,6 @@ namespace flame
 						dst_access = AccessDepthAttachmentWrite;
 					break;
 				case ImageLayoutShaderReadOnly:
-					if (src_access == AccessNone)
-						src_access = AccessHostWrite | AccessTransferWrite;
 					dst_access = AccessShaderRead;
 					break;
 				case ImageLayoutShaderStorage:
@@ -285,10 +285,52 @@ namespace flame
 				}
 			}
 
+			VkImageMemoryBarrier barrier;
+			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			barrier.pNext = nullptr;
 			barrier.srcAccessMask = to_backend_flags<AccessFlags>(src_access);
 			barrier.dstAccessMask = to_backend_flags<AccessFlags>(dst_access);
+			barrier.oldLayout = to_backend(old_layout, img->format);
+			barrier.newLayout = to_backend(new_layout, img->format);
+			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.image = img->vk_image;
+			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(img->format));
+			barrier.subresourceRange.baseMipLevel = sub.base_level;
+			barrier.subresourceRange.levelCount = sub.level_count;
+			barrier.subresourceRange.baseArrayLayer = sub.base_layer;
+			barrier.subresourceRange.layerCount = sub.layer_count;
 
-			vkCmdPipelineBarrier(vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			if (src_stage == PipelineStageAllCommand)
+			{
+				switch (old_layout)
+				{
+				case ImageLayoutAttachment:
+					if (img->format >= Format_Color_Begin && img->format <= Format_Color_End)
+						src_stage = PipelineStageColorAttachmentOutput;
+					else
+						src_stage = PipelineStageEarlyFragTestShader | PipelineStageLateFragTestShader;
+					break;
+				}
+			}
+
+			if (dst_stage == PipelineStageAllCommand)
+			{
+				switch (new_layout)
+				{
+				case ImageLayoutAttachment:
+					if (img->format >= Format_Color_Begin && img->format <= Format_Color_End)
+						dst_stage = PipelineStageColorAttachmentOutput;
+					else
+						dst_stage = PipelineStageEarlyFragTestShader | PipelineStageLateFragTestShader;
+					break;
+				case ImageLayoutShaderReadOnly:
+					dst_stage = PipelineStageFragShader;
+					break;
+				}
+			}
+
+			vkCmdPipelineBarrier(vk_command_buffer, to_backend_flags<PipelineStageFlags>(src_stage), to_backend_flags<PipelineStageFlags>(dst_stage),
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 		}
 

@@ -48,8 +48,9 @@ namespace flame
 			void draw_indirect(BufferPtr buf, uint offset, uint count) override;
 			void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) override;
 			void dispatch(const uvec3& v) override;
-			void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access) override;
-			void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) override;
+			void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage) override;
+			void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
+				AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage) override;
 			void copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies);
 			void copy_buffer(BufferPtr src, BufferPtr dst, uint copies_count, BufferCopy* copies) override { copy_buffer(src, dst, { copies, copies_count }); }
 			void copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies);

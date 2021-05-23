@@ -95,9 +95,11 @@ namespace flame
 			virtual void draw_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void dispatch(const uvec3& v) = 0;
-			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access) = 0;
+			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, 
+				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 			virtual void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
-				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
+				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone,
+				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 
 			virtual void copy_buffer(BufferPtr src, BufferPtr dst, uint copies_count, BufferCopy* copies) = 0;
 			virtual void copy_image(ImagePtr src, ImagePtr dst, uint copies_count, ImageCopy* copies) = 0;
