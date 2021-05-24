@@ -8,6 +8,7 @@ namespace flame
 	{
 		TypeTag tag;
 		std::string name;
+		std::string full_name;
 		uint size;
 
 		BasicType basic_type = ElseType;
@@ -22,6 +23,7 @@ namespace flame
 		TypeTag get_tag() const override { return tag; }
 		const char* get_name() const override { return name.c_str(); }
 		const char* get_code_name() const override { return name.c_str(); }
+		const char* get_full_name() const override { return full_name.c_str(); }
 		uint get_size() const override { return size; }
 
 		BasicType get_basic() const override { return basic_type; }

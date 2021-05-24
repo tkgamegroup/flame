@@ -24,6 +24,7 @@ function update_inspector()
         en = create_entity("prefabs/text")
         en.find_component("cText").set_text(name)
         ens.add_child(en)
+
         ev = create_entity("prefabs/text")
         ev.find_component("cText").set_text(value)
         evs.add_child(ev)
@@ -33,6 +34,7 @@ function update_inspector()
         en = create_entity("prefabs/text")
         en.find_component("cText").set_text(name)
         ens.add_child(en)
+
         ev = create_entity("prefabs/checkbox")
         local checkbox = ev.find_driver("dCheckbox")
         checkbox.set_checked(value)
@@ -44,6 +46,10 @@ function update_inspector()
             end, checkbox)
         end
         evs.add_child(ev)
+    end
+
+    function add_float_attribute()
+        
     end
 
     local target = selected

@@ -51,30 +51,31 @@ end
 
 for k, udt in pairs(udts) do
 	udt.static_functions = {}
-	for k, func in pairs(udt.functions) do
-		if func.static then
-			if func.type == "" then
+	for k, fi in pairs(udt.functions) do
+		if fi.static then
+			local ti = types[fi.ret_type_name]
+			if ti.is_object_type then
 				udt.static_functions[k] = function(...)
-					return flame_call(nil, func.f, {...})
+					__type__ = ti.name
+					local ret = {}
+					ret.p = flame_call(nil, fi.f, {...})
+					make_obj(ret, __type__)
+					return ret
 				end
 			else
 				udt.static_functions[k] = function(...)
-					__type__ = func.type
-					local ret = {}
-					ret.p = flame_call(nil, func.f, {...})
-					make_obj(ret, __type__)
-					return ret
+					return flame_call(nil, fi.f, {...})
 				end
 			end
 		end
 	end
 	udt.attributes = {}
-	for k, func in pairs(udt.functions) do
+	for k, fi in pairs(udt.functions) do
 		if starts_with(k, "get_") then
 			local n = string.sub(k, 5)
 			local func2 = udt.functions["set_"..n]
             if func2 ~= nil then
-				udt.attributes[n] = { get=func, set=func2 }
+				udt.attributes[n] = { get=fi, set=func2 }
 			end
         end
 	end

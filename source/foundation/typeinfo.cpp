@@ -906,6 +906,22 @@ namespace flame
 		name(name),
 		size(size)
 	{
+		switch (tag)
+		{
+		case TypeEnumSingle:
+			full_name = "es__" + name;
+			break;
+		case TypeEnumMulti:
+			full_name = "em__" + name;
+			break;
+		case TypeData:
+			full_name = "d__" + name;
+			break;
+		case TypePointer:
+			full_name = "p__" + name;
+			break;
+		}
+		SUS::replace_all(full_name, "::", "__");
 		ret_by_reg = size <= sizeof(void*);
 	}
 
@@ -1289,6 +1305,34 @@ namespace flame
 		return new TypeInfoDataBasePrivate;
 	}
 
+	std::vector<TypeInfoPrivate*> get_types(TypeInfoDataBasePrivate* db)
+	{
+		if (!db)
+			db = &tidb;
+		std::vector<TypeInfoPrivate*> ret(db->typeinfos.size());
+		auto idx = 0;
+		for (auto& i : db->typeinfos)
+			ret[idx++] = i.second.get();
+		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+			return a->name < b->name;
+		});
+		return ret;
+	}
+
+	void get_types(TypeInfo** dst, uint* len, TypeInfoDataBase* _db)
+	{
+		auto db = (TypeInfoDataBasePrivate*)_db;
+		if (!db)
+			db = &tidb;
+		if (len)
+			*len = db->typeinfos.size();
+		if (dst)
+		{
+			auto vec = get_types(db);
+			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
+		}
+	}
+
 	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db)
 	{
 		if (db && db != &tidb)
@@ -1323,20 +1367,6 @@ namespace flame
 		return add_enum(std::string(name), (TypeInfoDataBasePrivate*)db);
 	}
 
-	void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* _db)
-	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		if (len)
-			*len = db->enums.size();
-		if (dst)
-		{
-			auto vec = get_enums(db);
-			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
-		}
-	}
-
 	std::vector<EnumInfoPrivate*> get_enums(TypeInfoDataBasePrivate* db)
 	{
 		if (!db)
@@ -1349,6 +1379,20 @@ namespace flame
 			return a->name < b->name;
 		});
 		return ret;
+	}
+
+	void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* _db)
+	{
+		auto db = (TypeInfoDataBasePrivate*)_db;
+		if (!db)
+			db = &tidb;
+		if (len)
+			*len = db->enums.size();
+		if (dst)
+		{
+			auto vec = get_enums(db);
+			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
+		}
 	}
 
 	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db)
@@ -1386,20 +1430,6 @@ namespace flame
 		return add_udt(name, size, base_name, nullptr, (TypeInfoDataBasePrivate*)db);
 	}
 
-	void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* _db)
-	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		if (len)
-			*len = db->udts.size();
-		if (dst)
-		{
-			auto vec = get_udts(db);
-			memcpy(dst, vec.data(), sizeof(void*)* vec.size());
-		}
-	}
-
 	std::vector<UdtInfoPrivate*> get_udts(TypeInfoDataBasePrivate* db)
 	{
 		if (!db)
@@ -1413,6 +1443,20 @@ namespace flame
 			return a->ranking < b->ranking;
 		});
 		return ret;
+	}
+
+	void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* _db)
+	{
+		auto db = (TypeInfoDataBasePrivate*)_db;
+		if (!db)
+			db = &tidb;
+		if (len)
+			*len = db->udts.size();
+		if (dst)
+		{
+			auto vec = get_udts(db);
+			memcpy(dst, vec.data(), sizeof(void*)* vec.size());
+		}
 	}
 
 	void load_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db)

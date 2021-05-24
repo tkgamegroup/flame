@@ -20,5 +20,5 @@ struct Armature
 
 layout(set = MESH_SET, binding = 1) buffer readonly Armatures
 {
-	Armature armatures[1024];
+	Armature armatures[128];
 };

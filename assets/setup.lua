@@ -2,8 +2,6 @@ function starts_with(s1, s2)
    return string.sub(s1, 1, string.len(s2))==s2
 end
 
-local fuckkkkkkkkkkk
-
 function dump(o)
    if type(o) == 'table' then
       local s = '{ '
@@ -61,45 +59,47 @@ function make_obj(o, n)
 		make_obj(o, udt.base)
 	end
 	if not o.p then return end
-	for k, vari in pairs(udt.variables) do
-		local v = flame_get(o.p, vari.offset, vari.tag, vari.basic, vari.vec_size, vari.col_size)
-		if type(v) == "userdata" then
+	for k, vi in pairs(udt.variables) do
+		local ti = types[vi.type_name]
+		local v = flame_get(o.p, vi.offset, ti.tag, ti.basic, ti.vec_size, ti.col_size)
+		if ti.is_object_type then
 			local vv = { p=v }
-			make_obj(vv, vari.type)
+			make_obj(vv, ti.name)
 			v = vv
 		end
 		o[k] = v
 	end
-	for k, func in pairs(udt.functions) do
-		if func.type == "" then
+	for k, fi in pairs(udt.functions) do
+		local ti = types[fi.ret_type_name]
+		if ti.is_object_type then
 			o[k] = function(...)
-				return flame_call(o.p, func.f, {...})
-			end
-		else
-			o[k] = function(...)
-				__type__ = func.type
+				__type__ = ti.name
 				local ret = {}
-				ret.p = flame_call(o.p, func.f, {...})
+				ret.p = flame_call(o.p, fi.f, {...})
 				make_obj(ret, __type__)
 				return ret
 			end
+		else
+			o[k] = function(...)
+				return flame_call(o.p, fi.f, {...})
+			end
 		end
 	end
-	for k, func in pairs(udt.callbacks) do
+	for k, fi in pairs(udt.callbacks) do
 		o[k] = function(f, ...)
 			n = get_callback_slot(f)
-			flame_call(o.p, func, { 0, n, ... })
+			flame_call(o.p, fi, { 0, n, ... })
 			callbacks[n] = nil
 		end
 	end
-	for k, func in pairs(udt.listeners) do
+	for k, fi in pairs(udt.listeners) do
 		o["add_"..k] = function(f, ...)
 			n = get_callback_slot(f)
-			callbacks[n].c = flame_call(o.p, func.add, { 0, n, ... })
+			callbacks[n].c = flame_call(o.p, fi.add, { 0, n, ... })
 			return n
 		end
 		o["remove_"..k] = function(n, ...)
-			flame_call(o.p, func.remove, { callbacks[n].c, ...})
+			flame_call(o.p, fi.remove, { callbacks[n].c, ...})
 			callbacks[n] = nil
 			return n
 		end

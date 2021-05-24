@@ -32,6 +32,7 @@ namespace flame
 		virtual TypeTag get_tag() const = 0;
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
 		virtual const char* get_code_name() const = 0;
+		virtual const char* get_full_name() const = 0;
 		virtual uint get_size() const = 0;
 
 		virtual BasicType get_basic() const = 0;
@@ -151,13 +152,45 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static TypeInfoDataBase* create();
 	};
 
+	FLAME_FOUNDATION_EXPORTS void get_types(TypeInfo** dst, uint* len, TypeInfoDataBase* db = nullptr);
+
+	inline std::vector<TypeInfo*> get_types()
+	{
+		std::vector<TypeInfo*> ret;
+		uint len;
+		get_types(nullptr, &len);
+		ret.resize(len);
+		get_types(ret.data(), nullptr);
+		return ret;
+	}
+
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* db = nullptr);
 
+	inline std::vector<EnumInfo*> get_enums()
+	{
+		std::vector<EnumInfo*> ret;
+		uint len;
+		get_enums(nullptr, &len);
+		ret.resize(len);
+		get_enums(ret.data(), nullptr);
+		return ret;
+	}
+
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* db = nullptr);
+
+	inline std::vector<UdtInfo*> get_udts()
+	{
+		std::vector<UdtInfo*> ret;
+		uint len;
+		get_udts(nullptr, &len);
+		ret.resize(len);
+		get_udts(ret.data(), nullptr);
+		return ret;
+	}
 
 	FLAME_FOUNDATION_EXPORTS void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
 	FLAME_FOUNDATION_EXPORTS void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db = nullptr);
