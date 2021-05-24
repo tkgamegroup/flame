@@ -259,15 +259,9 @@ namespace flame
 			//	pnode->mark_bounds_dirty();
 		}
 
-		if (!pending_reindex && octnode.first)
+		if (!pending_reindex && s_scene && octnode.first)
 		{
-			auto it = s_scene->reindex_list.begin();
-			for (; it != s_scene->reindex_list.end(); it++)
-			{
-				if (entity->depth > (*it)->entity->depth)
-					break;
-			}
-			s_scene->reindex_list.emplace(it, this);
+			s_scene->add_to_reindex(this);
 			pending_reindex = true;
 		}
 	}
@@ -282,9 +276,7 @@ namespace flame
 	{
 		if (!pending_reindex)
 			return;
-		std::erase_if(s_scene->reindex_list, [&](const auto& i) {
-			return i == this;
-		});
+		s_scene->remove_from_reindex(this);
 		pending_reindex = false;
 	}
 

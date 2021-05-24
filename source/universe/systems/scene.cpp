@@ -5,6 +5,110 @@
 
 namespace flame
 {
+	void sScenePrivate::add_to_sizing(cElementPrivate* e)
+	{
+		auto depth = e->entity->depth;
+		auto it = sizing_list.begin();
+		for (; it != sizing_list.end(); it++)
+		{
+			if (it->first == depth)
+			{
+				it->second.push_back(e);
+				return;
+			}
+			if (it->first < depth)
+				break;
+		}
+		std::pair<uint, std::deque<cElementPrivate*>> v;
+		v.first = depth;
+		v.second.push_back(e);
+		sizing_list.insert(it, v);
+	}
+
+	void sScenePrivate::remove_from_sizing(cElementPrivate* e)
+	{
+		auto depth = e->entity->depth;
+		for (auto& v : sizing_list)
+		{
+			if (v.first == depth)
+			{
+				std::erase_if(v.second, [&](const auto& i) {
+					return i == e;
+				});
+				break;
+			}
+		}
+	}
+	void sScenePrivate::add_to_layout(cElementPrivate* e)
+	{
+		auto depth = e->entity->depth;
+		auto it = layout_list.begin();
+		for (; it != layout_list.end(); it++)
+		{
+			if (it->first == depth)
+			{
+				it->second.push_back(e);
+				return;
+			}
+			if (it->first > depth)
+				break;
+		}
+		std::pair<uint, std::deque<cElementPrivate*>> v;
+		v.first = depth;
+		v.second.push_back(e);
+		layout_list.insert(it, v);
+	}
+
+	void sScenePrivate::remove_from_layout(cElementPrivate* e)
+	{
+		auto depth = e->entity->depth;
+		for (auto& v : layout_list)
+		{
+			if (v.first == depth)
+			{
+				std::erase_if(v.second, [&](const auto& i) {
+					return i == e;
+				});
+				break;
+			}
+		}
+	}
+
+	void sScenePrivate::add_to_reindex(cNodePrivate* n)
+	{
+		auto depth = n->entity->depth;
+		auto it = reindex_list.begin();
+		for (; it != reindex_list.end(); it++)
+		{
+			if (it->first == depth)
+			{
+				it->second.push_back(n);
+				return;
+			}
+			if (it->first > depth)
+				break;
+		}
+		std::pair<uint, std::deque<cNodePrivate*>> v;
+		v.first = depth;
+		v.second.push_back(n);
+		reindex_list.insert(it, v);
+	}
+
+	void sScenePrivate::remove_from_reindex(cNodePrivate* n)
+	{
+		auto depth = n->entity->depth;
+		for (auto& v : reindex_list)
+		{
+			if (v.first == depth)
+			{
+				std::erase_if(v.second, [&](const auto& i) {
+					return i == n;
+				});
+				break;
+			}
+		}
+	}
+
 	void sScenePrivate::on_added()
 	{
 		window = (Window*)world->find_object("flame::Window");
@@ -91,7 +195,16 @@ namespace flame
 
 		while (!sizing_list.empty())
 		{
-			auto e = sizing_list.front();
+			auto& v = sizing_list.front();
+			if (v.second.empty())
+			{
+				sizing_list.pop_front();
+				continue;
+			}
+
+			auto e = v.second.front();
+			v.second.pop_front();
+
 			auto size = vec2(-1.f);
 			for (auto& m : e->measurers)
 			{
@@ -119,13 +232,19 @@ namespace flame
 
 			e->desired_size = vec2(w, h);
 			e->pending_sizing = false;
-			sizing_list.pop_front();
 		}
 
 		while (!layout_list.empty())
 		{
-			auto l = layout_list.front();
-			layout_list.pop_front();
+			auto& v = layout_list.front();
+			if (v.second.empty())
+			{
+				layout_list.pop_front();
+				continue;
+			}
+
+			auto l = v.second.front();
+			v.second.pop_front();
 
 			std::vector<cElementPrivate*> als[2];
 			for (auto& c : l->entity->children)
@@ -334,7 +453,16 @@ namespace flame
 
 		while (!reindex_list.empty())
 		{
-			auto n = reindex_list.front();
+			auto& v = reindex_list.front();
+			if (v.second.empty())
+			{
+				reindex_list.pop_front();
+				continue;
+			}
+
+			auto n = v.second.front();
+			v.second.pop_front();
+
 			n->update_bounds();
 			if (!n->octnode.second)
 				n->octnode.first->add(n);
@@ -342,7 +470,6 @@ namespace flame
 				n->octnode.second->reindex(n);
 
 			n->pending_reindex = false;
-			reindex_list.pop_front();
 		}
 	}
 

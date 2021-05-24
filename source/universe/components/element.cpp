@@ -537,13 +537,7 @@ namespace flame
 		if (pending_sizing || measurers.empty() || !(auto_width || auto_height) || !s_scene)
 			return;
 
-		auto it = s_scene->sizing_list.begin();
-		for (; it != s_scene->sizing_list.end(); it++)
-		{
-			if ((*it)->entity->depth < entity->depth)
-				break;
-		}
-		s_scene->sizing_list.emplace(it, this);
+		s_scene->add_to_sizing(this);
 		pending_sizing = true;
 	}
 
@@ -552,13 +546,7 @@ namespace flame
 		if (pending_layout || !need_layout || !s_scene)
 			return;
 
-		auto it = s_scene->layout_list.begin();
-		for (; it != s_scene->layout_list.end(); it++)
-		{
-			if (entity->depth < (*it)->entity->depth)
-				break;
-		}
-		s_scene->layout_list.emplace(it, this);
+		s_scene->add_to_layout(this);
 		pending_layout = true;
 	}
 
@@ -566,9 +554,7 @@ namespace flame
 	{
 		if (!pending_sizing)
 			return;
-		std::erase_if(s_scene->sizing_list, [&](const auto& i) {
-			return i == this;
-		});
+		s_scene->remove_from_sizing(this);
 		pending_sizing = false;
 	}
 
@@ -576,9 +562,7 @@ namespace flame
 	{
 		if (!pending_layout)
 			return;
-		std::erase_if(s_scene->layout_list, [&](const auto& i) {
-			return i == this;
-		});
+		s_scene->remove_from_layout(this);
 		pending_layout = false;
 	}
 

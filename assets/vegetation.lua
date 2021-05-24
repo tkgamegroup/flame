@@ -7,7 +7,7 @@ local c_terrain = terrain.find_component("cTerrain")
 local blocks = c_terrain.get_blocks()
 local height_texture = c_terrain.get_height_texture()
 
-local density = 0.5
+local density = 1.5
 
 local lod = 5
               
