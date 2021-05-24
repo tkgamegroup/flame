@@ -14,7 +14,9 @@
         <cScript src="camera_fly.lua" />
       </eNode>
     </eNode>
-    <entity src="D:\assets\terrain\terrain" name="terrain" />
+    <entity src="D:\assets\terrain\terrain" name="terrain">
+      <cScript src="vegetation.lua"/>
+    </entity>
     <eLight name="sun" euler="0,90,0" type="Directional" color="0.5,0.5,0.5" cast_shadow="true" />
   </eNode>
   <eElement1 name="post_effect" >

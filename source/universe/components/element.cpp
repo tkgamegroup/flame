@@ -582,18 +582,6 @@ namespace flame
 		pending_layout = false;
 	}
 
-	void cElementPrivate::on_self_added()
-	{
-		pelement = entity->get_parent_component_t<cElementPrivate>();
-		if (pelement)
-			mark_transform_dirty();
-	}
-
-	void cElementPrivate::on_self_removed()
-	{
-		pelement = nullptr;
-	}
-
 	void cElementPrivate::on_child_added(EntityPtr e)
 	{
 		auto element = e->get_component_i<cElementPrivate>(0);
@@ -615,10 +603,14 @@ namespace flame
 		auto world = entity->world;
 		if (!world->first_element)
 			world->first_element = entity;
+
 		s_scene = world->get_system_t<sScenePrivate>();
 		fassert(s_scene);
 		s_renderer = world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
+
+		pelement = entity->get_parent_component_t<cElementPrivate>();
+
 		mark_transform_dirty();
 		mark_size_dirty();
 		mark_layout_dirty();
@@ -629,11 +621,15 @@ namespace flame
 		auto world = entity->world;
 		if (world->first_element == entity)
 			world->first_element = nullptr;
+
 		remove_from_sizing_list();
 		remove_from_layout_list();
 		mark_drawing_dirty();
+
 		s_scene = nullptr;
 		s_renderer = nullptr;
+
+		pelement = nullptr;
 	}
 
 	void cElementPrivate::on_visibility_changed(bool v)

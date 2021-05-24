@@ -2,6 +2,8 @@ function starts_with(s1, s2)
    return string.sub(s1, 1, string.len(s2))==s2
 end
 
+local fuckkkkkkkkkkk
+
 function dump(o)
    if type(o) == 'table' then
       local s = '{ '

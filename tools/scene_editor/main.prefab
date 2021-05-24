@@ -79,11 +79,6 @@
         </eMenuItem>
       </eMenu>
       <eMenu text="tools">
-        <eMenuItem text="scatter vegetations..">
-          <cScript>
-            on_menu(cmd_tools_scatter_vegetations)
-          </cScript>
-        </eMenuItem>
       </eMenu>
       <eMenu text="settings">
         <eMenuItem checkable="true" text="always update">

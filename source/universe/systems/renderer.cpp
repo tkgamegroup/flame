@@ -9,7 +9,6 @@
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
-#include "../components/octree_private.h"
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
@@ -559,11 +558,10 @@ namespace flame
 		Plane frustum_lod1[6];
 		camera->get_planes(tar_aspt, frustum_lod1, -1.f, 50.f);
 
-		if (node->is_octree)
+		if (node->octree)
 		{
 			std::vector<cNodePrivate*> objs;
-			auto octree = e->get_component_t<cOctreePrivate>()->octree.get();
-			octree->get_within_frustum(frustum_lod1, objs);
+			node->octree->get_within_frustum(frustum_lod1, objs);
 			for (auto obj : objs)
 				node_render(obj);
 		}

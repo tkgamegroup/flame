@@ -33,8 +33,9 @@ namespace flame
 		AABB bounds;
 
 		bool is_octree = false;
-		bool under_octree = false;
-		OctNode* oct_node = nullptr;
+		float octree_length = 200.f;
+		std::unique_ptr<OctNode> octree;
+		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
 		std::vector<std::unique_ptr<Closure<bool(Capture&, AABB*)>>> measurers;
@@ -57,6 +58,12 @@ namespace flame
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
 
+		bool get_is_octree() const override { return is_octree; }
+		void set_is_octree(bool v) override { is_octree = v; }
+
+		float get_octree_length() const override { return octree_length; }
+		void set_octree_length(float len) override;
+
 		void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
 		void remove_drawer(void* drawer) override;
 		void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) override;
@@ -76,8 +83,6 @@ namespace flame
 		void mark_drawing_dirty();
 		void remove_from_reindex_list();
 
-		void on_self_added() override;
-		void on_self_removed() override;
 		void on_entered_world() override;
 		void on_left_world() override;
 
@@ -112,7 +117,7 @@ namespace flame
 
 		void add(cNodePrivate* n)
 		{
-			fassert(!n->oct_node);
+			fassert(!n->octnode.second);
 
 			if (!bounds.contains(n->bounds))
 				return;
@@ -122,14 +127,14 @@ namespace flame
 
 		void remove(cNodePrivate* n)
 		{
-			fassert(n->oct_node == this);
+			fassert(n->octnode.second == this);
 
 			for (auto it = objects.begin(); it != objects.end(); it++)
 			{
 				if (*it == n)
 				{
 					objects.erase(it);
-					n->oct_node = nullptr;
+					n->octnode.second = nullptr;
 					break;
 				}
 			}
@@ -143,7 +148,7 @@ namespace flame
 
 		void reindex(cNodePrivate* n)
 		{
-			fassert(n->oct_node == this);
+			fassert(n->octnode.second == this);
 
 			auto p = this;
 			while (!p->bounds.contains(n->bounds))
@@ -347,7 +352,7 @@ namespace flame
 				if (objects.size() < MAX_OCTREE_OBJECTS || (length / 2.f) < 1.f)
 				{
 					objects.push_back(n);
-					n->oct_node = this;
+					n->octnode.second = this;
 					return;
 				}
 
@@ -372,7 +377,7 @@ namespace flame
 			else
 			{
 				objects.push_back(n);
-				n->oct_node = this;
+				n->octnode.second = this;
 			}
 		}
 
@@ -396,8 +401,12 @@ namespace flame
 			for (auto i = 0; i < 8; i++)
 			{
 				auto c = children[i].get();
-				for (auto j = c->objects.size() - 1; j >= 0; j--)
-					objects.push_back(c->objects[j]);
+				for (auto j = (int)c->objects.size() - 1; j >= 0; j--)
+				{
+					auto obj = c->objects[j];
+					objects.push_back(obj);
+					obj->octnode.second = this;
+				}
 			}
 			children.clear();
 		}

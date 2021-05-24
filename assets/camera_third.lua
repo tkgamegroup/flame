@@ -9,7 +9,7 @@ camera = {
 	dragging = false
 }
 
-camera.set_pos = function ()
+camera.set_pos = function()
 	local off = vec3(0, 3, 0)
 	local d = 0
 	if s_physics.p then

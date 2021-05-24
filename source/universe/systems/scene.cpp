@@ -1,7 +1,6 @@
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
-#include "../components/octree_private.h"
 #include "scene_private.h"
 
 namespace flame
@@ -337,10 +336,10 @@ namespace flame
 		{
 			auto n = reindex_list.front();
 			n->update_bounds();
-			if (!n->oct_node)
-				n->entity->parent->get_component_t<cOctreePrivate>()->octree->add(n);
+			if (!n->octnode.second)
+				n->octnode.first->add(n);
 			else
-				n->oct_node->reindex(n);
+				n->octnode.second->reindex(n);
 
 			n->pending_reindex = false;
 			reindex_list.pop_front();

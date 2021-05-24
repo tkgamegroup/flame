@@ -181,8 +181,6 @@ namespace flame
 
 		bool contains(const vec2& p) override;
 
-		void on_self_added() override;
-		void on_self_removed() override;
 		void on_child_added(EntityPtr e) override;
 		void on_child_removed(EntityPtr e) override;
 		void on_entered_world() override;

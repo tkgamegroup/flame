@@ -72,6 +72,11 @@ namespace flame
 		return g_rot[idx];
 	}
 
+	void cNodePrivate::set_octree_length(float len)
+	{
+
+	}
+
 	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture)
 	{
 		auto c = new Closure(drawer, capture);
@@ -196,15 +201,16 @@ namespace flame
 					bounds.expand(b);
 				}
 			}
-			for (auto& c : entity->children)
-			{
-				auto node = c->get_component_i<cNodePrivate>(0);
-				if (node)
-				{
-					node->update_bounds();
-					bounds.expand(node->bounds);
-				}
-			}
+			// TODO: use children's bounds only when needed
+			//for (auto& c : entity->children)
+			//{
+			//	auto node = c->get_component_i<cNodePrivate>(0);
+			//	if (node)
+			//	{
+			//		node->update_bounds();
+			//		bounds.expand(node->bounds);
+			//	}
+			//}
 
 			if (entity)
 				entity->component_data_changed(this, S<"bounds"_h>);
@@ -248,20 +254,21 @@ namespace flame
 		{
 			bounds_dirty = true;
 
-			if (under_octree && !pending_reindex)
-			{
-				auto it = s_scene->reindex_list.begin();
-				for (; it != s_scene->reindex_list.end(); it++)
-				{
-					if (entity->depth > (*it)->entity->depth)
-						break;
-				}
-				s_scene->reindex_list.emplace(it, this);
-				pending_reindex = true;
-			}
+			// TODO: populate bounds dirty only when needed
+			//if (pnode)
+			//	pnode->mark_bounds_dirty();
+		}
 
-			if (pnode)
-				pnode->mark_bounds_dirty();
+		if (!pending_reindex && octnode.first)
+		{
+			auto it = s_scene->reindex_list.begin();
+			for (; it != s_scene->reindex_list.end(); it++)
+			{
+				if (entity->depth > (*it)->entity->depth)
+					break;
+			}
+			s_scene->reindex_list.emplace(it, this);
+			pending_reindex = true;
 		}
 	}
 
@@ -281,27 +288,37 @@ namespace flame
 		pending_reindex = false;
 	}
 
-	void cNodePrivate::on_self_added()
-	{
-		pnode = entity->get_parent_component_t<cNodePrivate>();
-		if (pnode)
-			mark_transform_dirty();
-	}
-
-	void cNodePrivate::on_self_removed()
-	{
-		pnode = nullptr;
-	}
-
 	void cNodePrivate::on_entered_world()
 	{
 		auto world = entity->world;
 		if (!world->first_node)
 			world->first_node = entity;
+
 		s_scene = entity->world->get_system_t<sScenePrivate>();
 		fassert(s_scene);
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
+
+		pnode = entity->get_parent_component_t<cNodePrivate>();
+
+		if (is_octree)
+		{
+			update_transform();
+			octree.reset(new OctNode(octree_length, g_pos));
+		}
+		else
+		{
+			std::function<OctNode* (cNodePrivate* n)> get_octree;
+			get_octree = [&](cNodePrivate* n)->OctNode* {
+				if (!n)
+					return nullptr;
+				if (n->octree)
+					return n->octree.get();
+				return get_octree(n->pnode);
+			};
+			octnode.first = get_octree(pnode);
+		}
+
 		mark_transform_dirty();
 	}
 
@@ -310,10 +327,18 @@ namespace flame
 		auto world = entity->world;
 		if (world->first_node == entity)
 			world->first_node = nullptr;
+
+		if (octnode.second)
+			octnode.second->remove(this);
+
 		remove_from_reindex_list();
 		mark_drawing_dirty();
+
 		s_scene = nullptr;
 		s_renderer = nullptr;
+
+		pnode = nullptr;
+		octnode = { nullptr, nullptr };
 	}
 
 	bool cNodePrivate::on_save_attribute(uint h)
