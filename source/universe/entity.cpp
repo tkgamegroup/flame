@@ -484,6 +484,18 @@ namespace flame
 		children.erase(it);
 	}
 
+	void EntityPrivate::remove_all_children(bool destroy)
+	{
+		for (auto i = (int)children.size() - 1; i >= 0; i--)
+		{
+			auto e = children[i].get();
+			on_child_removed(e);
+			if (!destroy)
+				children[i].release();
+		}
+		children.clear();
+	}
+
 	EntityPrivate* EntityPrivate::find_child(const std::string& name) const
 	{
 		for (auto& c : children)
@@ -603,6 +615,9 @@ namespace flame
 				scr_ins->call(3);
 				scr_ins->pop(2);
 			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			message_listeners.emplace_back(c);
+			return c;
 		}
 		auto c = new Closure(callback, capture);
 		message_listeners.emplace_back(c);

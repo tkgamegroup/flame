@@ -1,5 +1,8 @@
-local e_type_data = find_enum("TypeTag")["Data"]
-local e_floating_type = find_enum("BasicType")["FloatingType"]
+local e_tag = find_enum("TypeTag")
+e_type_data = e_tag["Data"]
+local e_basic = find_enum("BasicType")
+e_boolean_type = e_basic["BooleanType"]
+e_floating_type = e_basic["FloatingType"]
 
 function malloc_float(n)
 	return flame_malloc(4 * n)
@@ -75,8 +78,11 @@ for k, udt in pairs(udts) do
 			local n = string.sub(k, 5)
 			local func2 = udt.functions["set_"..n]
             if func2 ~= nil then
-				udt.attributes[n] = { get=fi, set=func2 }
+				table.insert(udt.attributes, { name=n, get=fi, set=func2 })
 			end
         end
 	end
+    table.sort(udt.attributes, function(a, b)
+        return a.get.index < b.get.index
+    end)
 end

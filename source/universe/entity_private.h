@@ -104,6 +104,7 @@ namespace flame
 		void reposition_child(uint pos1, uint pos2) override;
 		void on_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPtr e, bool destroy = true) override;
+		void remove_all_children(bool destroy = true) override;
 		EntityPrivate* find_child(const std::string& name) const;
 		EntityPtr find_child(const char* name) const override { return find_child(std::string(name)); }
 

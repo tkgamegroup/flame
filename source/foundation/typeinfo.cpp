@@ -641,6 +641,12 @@ namespace flame
 			TypeInfoPrivate_Pod(TypePointer, base_name, sizeof(void*))
 		{
 			pointed_type = TypeInfoPrivate::get(TypeData, name);
+			if (pointed_type)
+			{
+				basic_type = pointed_type->basic_type;
+				vec_size = pointed_type->vec_size;
+				col_size = pointed_type->col_size;
+			}
 		}
 
 		void* create(bool create_pointing) const override 

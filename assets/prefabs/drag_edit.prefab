@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement driver="dDragEdit" width="100" auto_width="false" layout_type="Vertical">
+    <eText alignx="MinMax"/>
+    <eEdit visible="false" alignx="MinMax"/>
+  </eElement>
+</prefab>

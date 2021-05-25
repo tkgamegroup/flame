@@ -37,6 +37,7 @@ namespace flame
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */ ) = 0;
 		virtual void reposition_child(uint pos1, uint pos2) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
+		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual EntityPtr find_child(const char* name) const = 0;
 
 		virtual Driver* get_driver(uint hash, int idx = -1) const = 0;

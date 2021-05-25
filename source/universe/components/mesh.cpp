@@ -39,7 +39,12 @@ namespace flame
 
 	void cMeshPrivate::set_cast_shadow(bool v)
 	{
-		cast_shadow = v;
+		if (cast_shadow != v)
+		{
+			cast_shadow = v;
+			if (entity)
+				entity->component_data_changed(this, S<"cast_shadow"_h>);
+		}
 	}
 
 	void cMeshPrivate::apply_src()
@@ -85,6 +90,7 @@ namespace flame
 				auto bones_count = mesh->get_bones_count();
 				if (bones_count == 0)
 					return;
+
 				// TODO: fix below
 				//deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
 				//bones.resize(bones_count);
@@ -149,6 +155,7 @@ namespace flame
 	{
 		stop_animation(layer);
 		auto& al = animation_layers[layer];
+
 		// TODO: fix below
 		//if (model && deformer && !al.name.empty())
 		//{
