@@ -62,16 +62,16 @@ function update_inspector()
         checkbox.set_checked(getter())
 
         local tracker = {}
-        tracker.input = false
+        tracker.changing = false
 
         local callback = nil
         if listen_changes then
             local hash = flame_hash(name)
             callback = function(h)
                 if h == hash then
-                    tracker.input = true
+                    tracker.changing = true
                     checkbox.set_checked(getter())
-                    tracker.input = false
+                    tracker.changing = false
                     return true
                 end
                 return false
@@ -81,11 +81,90 @@ function update_inspector()
         local hash_checked = flame_hash("checked")
         ev.add_driver_data_listener(function(h)
             if h == hash_checked then
-                if tracker.input ~= true then
+                if not tracker.changing then
                     setter(checkbox.get_checked())
                 end
             end
         end, checkbox.p)
+
+        evs.add_child(ev)
+
+        return callback
+    end
+
+    function add_float_attribute(name, getter, setter, listen_changes)
+        add_name(name)
+        
+        local ev = create_entity("prefabs/drag_edit")
+        local drag_edit = ev.find_driver("dDragEdit")
+
+        local tracker = {}
+        tracker.changing = false
+
+        local callback = nil
+        if listen_changes then
+            local hash = flame_hash(name)
+            callback = function(h)
+                if h == hash then
+                    tracker.changing = true
+                    tracker.changing = false
+                end
+                return false
+            end
+        end
+
+        local hash_value = flame_hash("value")
+        ev.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                end
+            end
+        end, drag_edit.p)
+
+        evs.add_child(ev)
+
+        return callback
+    end
+
+    function add_vec2_attribute(name, getter, setter, listen_changes)
+        add_name(name)
+        
+        local ev = create_entity("prefabs/drag_edit_2")
+
+        local tracker = {}
+        tracker.changing = false
+
+        local callback = nil
+
+        evs.add_child(ev)
+
+        return callback
+    end
+
+    function add_vec3_attribute(name, getter, setter, listen_changes)
+        add_name(name)
+        
+        local ev = create_entity("prefabs/drag_edit_3")
+
+        local tracker = {}
+        tracker.changing = false
+
+        local callback = nil
+
+        evs.add_child(ev)
+
+        return callback
+    end
+
+    function add_vec4_attribute(name, getter, setter, listen_changes)
+        add_name(name)
+        
+        local ev = create_entity("prefabs/drag_edit_4")
+
+        local tracker = {}
+        tracker.changing = false
+
+        local callback = nil
 
         evs.add_child(ev)
 
@@ -128,6 +207,36 @@ function update_inspector()
                 function(c)
                     flame_call(comp.p, attr.set.f, { c })
                 end, true))
+            elseif type.basic == e_floating_type then
+                if type.vec_size == 1 then
+                    table.insert(data_callbacks, add_float_attribute(attr.name, function()
+                        return flame_call(comp.p, attr.get.f, {})
+                    end,
+                    function(c)
+                        flame_call(comp.p, attr.set.f, { c })
+                    end, true))
+                elseif type.vec_size == 2 then
+                    table.insert(data_callbacks, add_vec2_attribute(attr.name, function()
+                        return flame_call(comp.p, attr.get.f, {})
+                    end,
+                    function(c)
+                        flame_call(comp.p, attr.set.f, { c })
+                    end, true))
+                elseif type.vec_size == 3 then
+                    table.insert(data_callbacks, add_vec3_attribute(attr.name, function()
+                        return flame_call(comp.p, attr.get.f, {})
+                    end,
+                    function(c)
+                        flame_call(comp.p, attr.set.f, { c })
+                    end, true))
+                elseif type.vec_size == 4 then
+                    table.insert(data_callbacks, add_vec4_attribute(attr.name, function()
+                        return flame_call(comp.p, attr.get.f, {})
+                    end,
+                    function(c)
+                        flame_call(comp.p, attr.set.f, { c })
+                    end, true))
+                end
             end
         end
     end

@@ -168,9 +168,12 @@ namespace flame
 			if (!bounds.intersects(check_bounds))
 				return false;
 
-			for (auto o : objects)
+			for (auto obj : objects)
 			{
-				if (o->bounds.intersects(check_bounds))
+				if (!obj->entity->global_visibility)
+					continue;
+
+				if (obj->bounds.intersects(check_bounds))
 					return true;
 			}
 
@@ -217,6 +220,9 @@ namespace flame
 
 			for (auto obj : objects)
 			{
+				if (!obj->entity->global_visibility)
+					continue;
+
 				if (obj->bounds.intersects(check_bounds))
 					res.push_back(obj);
 			}
@@ -254,6 +260,9 @@ namespace flame
 
 			for (auto obj : objects)
 			{
+				if (!obj->entity->global_visibility)
+					continue;
+
 				if (is_AABB_in_frustum(planes, obj->bounds))
 					res.push_back(obj);
 			}

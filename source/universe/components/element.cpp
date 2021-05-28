@@ -673,15 +673,23 @@ namespace flame
 		return true;
 	}
 
-	void cElementPrivate::draw(uint layer, sRenderer* s_renderer)
+	bool cElementPrivate::draw(uint layer, sRenderer* s_renderer)
 	{
+		auto transparent = true;
 		if (alpha > 0.f)
 		{
 			if (fill_color.a > 0)
+			{
+				transparent = false;
 				s_renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
+			}
 			if (border > 0.f && border_color.a > 0)
+			{
+				transparent = false;
 				s_renderer->stroke_rect(layer, this, vec2(0.f), size, border, border_color);
+			}
 		}
+		return transparent;
 	}
 
 	cElement* cElement::create(void* parms)

@@ -329,7 +329,10 @@ namespace flame
 				for (auto l : get_temp_listeners(er->mouse_move_listeners))
 				{
 					if (l.first < er->frame)
+					{
+						l.second->c._current = er;
 						l.second->call(mdisp, mpos);
+					}
 				}
 			}
 			if (mscrl != 0)
@@ -337,7 +340,10 @@ namespace flame
 				for (auto l : get_temp_listeners(er->mouse_scroll_listeners))
 				{
 					if (l.first < er->frame)
+					{
+						l.second->c._current = er;
 						l.second->call(mscrl);
+					}
 				}
 			}
 			if (mbtns[Mouse_Left].second)
@@ -347,7 +353,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_left_down_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 				else
@@ -355,7 +364,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_left_up_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 			}
@@ -366,7 +378,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_right_down_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 				else
@@ -374,7 +389,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_right_up_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 			}
@@ -385,7 +403,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_middle_down_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 				else
@@ -393,7 +414,10 @@ namespace flame
 					for (auto l : get_temp_listeners(er->mouse_middle_up_listeners))
 					{
 						if (l.first < er->frame)
+						{
+							l.second->c._current = er;
 							l.second->call(mpos);
+						}
 					}
 				}
 			}
@@ -407,7 +431,10 @@ namespace flame
 			for (auto l : get_temp_listeners(focusing->mouse_click_listeners))
 			{
 				if (l.first < focusing->frame)
+				{
+					l.second->c._current = focusing;
 					l.second->call();
+				}
 			}
 			//((cReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
@@ -450,7 +477,10 @@ namespace flame
 				for (auto l : char_ls)
 				{
 					if (l.first < keyboard_target->frame)
+					{
+						l.second->c._current = keyboard_target;
 						l.second->call(ch);
+					}
 				}
 			}
 		}

@@ -1,4 +1,3 @@
-#include "../entity_private.h"
 #include "../components/receiver_private.h"
 #include "checkbox_private.h"
 
@@ -25,7 +24,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 
 		box = entity->find_child("box");
-		fassert(receiver);
+		fassert(box);
 	}
 
 	dCheckbox* dCheckbox::create(void* parms)

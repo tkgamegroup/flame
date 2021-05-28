@@ -106,7 +106,7 @@ namespace flame
 			else if (str == "true")
 				*(bool*)dst = true;
 			else
-				*(bool*)dst = std::stoi(str) != 0;
+				*(bool*)dst = sto<int>(str) != 0;
 		}
 	};
 

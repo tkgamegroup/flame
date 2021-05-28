@@ -230,54 +230,253 @@ namespace flame
 	}
 
 	template <class T>
+	T sto(const std::string& s);
+	template <class T>
 	T sto(const char* s);
+
+	template <class T>
+	T sto(const std::wstring& s);
+	template <class T>
+	T sto(const wchar_t* s);
+
+	template <>
+	inline char sto<char>(const std::string& s)
+	{
+		char ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
 
 	template <>
 	inline char sto<char>(const char* s)
 	{
-		return std::stoul(s);
+		return sto<char>(std::string(s));
+	}
+
+	template <>
+	inline uchar sto<uchar>(const std::string& s)
+	{
+		uchar ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline uchar sto<uchar>(const char* s)
 	{
-		return std::stoul(s);
+		return sto<uchar>(std::string(s));
+	}
+
+	template <>
+	inline wchar_t sto<wchar_t>(const std::string& s)
+	{
+		wchar_t ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline wchar_t sto<wchar_t>(const char* s)
 	{
-		return std::stoul(s);
+		return sto<wchar_t>(std::string(s));
+	}
+
+	template <>
+	inline int sto<int>(const std::string& s)
+	{
+		int ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline int sto<int>(const char* s)
 	{
-		return std::stoi(s);
+		return sto<int>(std::string(s));
+	}
+
+	template <>
+	inline uint sto<uint>(const std::string& s)
+	{
+		uint ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline uint sto<uint>(const char* s)
 	{
-		return std::stoul(s);
+		return sto<uint>(std::string(s));
+	}
+
+	template <>
+	inline int64 sto<int64>(const std::string& s)
+	{
+		int64 ret;
+		try { ret = std::stoull(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline int64 sto<int64>(const char* s)
 	{
-		return std::stoll(s);
+		return sto<int64>(std::string(s));
+	}
+
+	template <>
+	inline uint64 sto<uint64>(const std::string& s)
+	{
+		uint64 ret;
+		try { ret = std::stoull(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline uint64 sto<uint64>(const char* s)
 	{
-		return std::stoull(s);
+		return sto<uint64>(std::string(s));
+	}
+
+	template <>
+	inline float sto<float>(const std::string& s)
+	{
+		float ret;
+		try { ret = std::stof(s); }
+		catch (...) { ret = 0; }
+		return ret;
 	}
 
 	template <>
 	inline float sto<float>(const char* s)
 	{
-		return std::stof(s);
+		return sto<float>(std::string(s));
+	}
+
+	template <>
+	inline char sto<char>(const std::wstring& s)
+	{
+		char ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline char sto<char>(const wchar_t* s)
+	{
+		return sto<char>(std::wstring(s));
+	}
+
+	template <>
+	inline uchar sto<uchar>(const std::wstring& s)
+	{
+		uchar ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline uchar sto<uchar>(const wchar_t* s)
+	{
+		return sto<uchar>(std::wstring(s));
+	}
+
+	template <>
+	inline wchar_t sto<wchar_t>(const std::wstring& s)
+	{
+		wchar_t ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline wchar_t sto<wchar_t>(const wchar_t* s)
+	{
+		return sto<wchar_t>(std::wstring(s));
+	}
+
+	template <>
+	inline int sto<int>(const std::wstring& s)
+	{
+		int ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline int sto<int>(const wchar_t* s)
+	{
+		return sto<int>(std::wstring(s));
+	}
+
+	template <>
+	inline uint sto<uint>(const std::wstring& s)
+	{
+		uint ret;
+		try { ret = std::stoi(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline uint sto<uint>(const wchar_t* s)
+	{
+		return sto<uint>(std::wstring(s));
+	}
+
+	template <>
+	inline int64 sto<int64>(const std::wstring& s)
+	{
+		int64 ret;
+		try { ret = std::stoull(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline int64 sto<int64>(const wchar_t* s)
+	{
+		return sto<int64>(std::wstring(s));
+	}
+
+	template <>
+	inline uint64 sto<uint64>(const std::wstring& s)
+	{
+		uint64 ret;
+		try { ret = std::stoull(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline uint64 sto<uint64>(const wchar_t* s)
+	{
+		return sto<uint64>(std::wstring(s));
+	}
+
+	template <>
+	inline float sto<float>(const std::wstring& s)
+	{
+		float ret;
+		try { ret = std::stof(s); }
+		catch (...) { ret = 0; }
+		return ret;
+	}
+
+	template <>
+	inline float sto<float>(const wchar_t* s)
+	{
+		return sto<float>(std::wstring(s));
 	}
 
 	template <>
@@ -384,45 +583,6 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	T sto(const wchar_t* s);
-
-	template <>
-	inline uchar sto<uchar>(const wchar_t* s)
-	{
-		return std::stoul(s);
-	}
-
-	template <>
-	inline int sto<int>(const wchar_t* s)
-	{
-		return std::stoi(s);
-	}
-
-	template <>
-	inline uint sto<uint>(const wchar_t* s)
-	{
-		return std::stoul(s);
-	}
-
-	template <>
-	inline int64 sto<int64>(const wchar_t* s)
-	{
-		return std::stoll(s);
-	}
-
-	template <>
-	inline uint64 sto<uint64>(const wchar_t* s)
-	{
-		return std::stoull(s);
-	}
-
-	template <>
-	inline float sto<float>(const wchar_t* s)
-	{
-		return std::stof(s);
-	}
-
 	template <>
 	inline cvec2 sto<cvec2>(const wchar_t* s)
 	{
@@ -525,19 +685,6 @@ namespace flame
 		quat ret;
 		swscanf(s, L"%f,%f,%f,%f", &ret.w, &ret.x, &ret.y, &ret.z);
 		return ret;
-	}
-
-	template <class T>
-	T sto_t(const wchar_t* s)
-	{
-		try
-		{
-			return sto<T>(s);
-		}
-		catch (...)
-		{
-			return 0;
-		}
 	}
 
 	template <class CH>

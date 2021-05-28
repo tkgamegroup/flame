@@ -36,12 +36,16 @@ namespace flame
 	struct dTreeNodePrivate : dTreeNode
 	{
 		dTreePrivate* tree;
+		cElementPrivate* element;
 		EntityPrivate* e_title;
 		cTextPrivate* title_text;
 		cTextPrivate* arrow_text;
 		EntityPrivate* items;
+		cElementPrivate* items_element;
 
 		std::wstring title;
+
+		bool first_add = true;
 
 		const wchar_t* get_title() const override { return title.c_str(); };
 		void set_title(const wchar_t* title) override;

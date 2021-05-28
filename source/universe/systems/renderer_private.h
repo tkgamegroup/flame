@@ -69,7 +69,8 @@ namespace flame
 		void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) override;
 		void stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color) override;
 		void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
-		void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
+		void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, 
+			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
 
 		int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) override;
 		int find_texture_res(graphics::ImageView* tex) const override;

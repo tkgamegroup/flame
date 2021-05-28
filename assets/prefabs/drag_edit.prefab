@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
-  <eElement driver="dDragEdit" width="100" auto_width="false" layout_type="Vertical">
-    <eText alignx="MinMax"/>
-    <eEdit visible="false" alignx="MinMax"/>
+  <eElement driver="dDragEdit" alignx="MinMax" layout_type="Vertical">
+    <eButton name="drag" alignx="MinMax" padding="0,0,0,0" text="0.0" />
+    <eEdit name="edit" visible="false" width="0" alignx="MinMax" padding="0,0,0,0" border="0" fill_color="0,0,0,127" 
+           enter_to_throw_focus="true" trigger_changed_on_lost_focus="true"/>
   </eElement>
 </prefab>

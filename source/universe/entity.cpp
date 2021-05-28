@@ -239,6 +239,7 @@ namespace flame
 	{
 		if (state == s)
 			return;
+		last_state = state;
 		state = s;
 
 		for (auto& r : state_rules)
@@ -262,7 +263,7 @@ namespace flame
 		}
 
 		for (auto& l : message_listeners)
-			l->call(S<"state_changed"_h>, (void*)state, nullptr);
+			l->call(S<"state_changed"_h>, (void*)state, (void*)last_state);
 		for (auto& c : components)
 			c->on_state_changed(state);
 	}

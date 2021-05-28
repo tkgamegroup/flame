@@ -6,16 +6,8 @@
     <eCube pos="200,60,200" dynamic="false">
        <cScript>
          local mesh = entity.find_component("cMesh")
-         local fuck = {}
-         fuck.yes = true
          entity.add_event(function()
-            if fuck.yes then
-              mesh.set_cast_shadow(true)
-              fuck.yes = false
-            else
-              mesh.set_cast_shadow(false)
-              fuck.yes = true
-            end
+           mesh.set_cast_shadow(not mesh.get_cast_shadow())
          end, 1.0)
        </cScript>
     </eCube>

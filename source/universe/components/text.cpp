@@ -33,10 +33,7 @@ namespace flame
 			return;
 		font_color = col;
 		if (element)
-		{
 			element->mark_drawing_dirty();
-			element->mark_size_dirty();
-		}
 		if (entity)
 			entity->component_data_changed(this, S<"font_color"_h>);
 	}

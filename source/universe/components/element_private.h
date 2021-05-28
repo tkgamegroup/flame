@@ -190,6 +190,6 @@ namespace flame
 
 		bool on_save_attribute(uint h) override;
 
-		void draw(uint layer, sRenderer* s_renderer);
+		bool draw(uint layer, sRenderer* s_renderer);
 	};
 }

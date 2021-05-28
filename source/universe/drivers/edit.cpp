@@ -94,6 +94,39 @@ namespace flame
 			return i + r_num_chars;
 	}
 
+	void dEditPrivate::set_select_start(uint s)
+	{
+		select_start = s;
+		if (element)
+			element->mark_drawing_dirty();
+	}
+
+	void dEditPrivate::set_select_end(uint s)
+	{
+		select_end = s;
+		if (element)
+			element->mark_drawing_dirty();
+	}
+	void dEditPrivate::set_select_all_on_dbclicked(bool b)
+	{
+		select_all_on_dbclicked = b;
+	}
+
+	void dEditPrivate::set_select_all_on_focus(bool b)
+	{
+		select_all_on_focus = b;
+	}
+
+	void dEditPrivate::set_enter_to_throw_focus(bool b)
+	{
+		enter_to_throw_focus = b;
+	}
+
+	void dEditPrivate::set_trigger_changed_on_lost_focus(bool b)
+	{
+		trigger_changed_on_lost_focus = b;
+	}
+
 	void dEditPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
@@ -117,18 +150,29 @@ namespace flame
 				}
 				break;
 			case S<"state_changed"_h>:
-				thiz->receiver->dispatcher->window->set_cursor(((int)parm1 & StateHovering) != 0 ? CursorIBeam : CursorArrow);
-				if (((int)parm1 & StateFocusing) != 0)
+			{
+				auto state = (int)parm1;
+				auto last_state = (int)parm2;
+				thiz->receiver->dispatcher->window->set_cursor((state & StateHovering) ? CursorIBeam : CursorArrow);
+				if ((state & StateFocusing) != 0)
 				{
-					if (!thiz->flash_event)
+					if ((state ^ last_state) & StateFocusing)
 					{
-						thiz->flash_event = looper().add_event([](Capture& c) {
-							c.thiz<dEditPrivate>()->flash_cursor(0);
-							c._current = nullptr;
-						}, Capture().set_thiz(thiz), 0.5f);
+						if (!thiz->flash_event)
+						{
+							thiz->flash_event = looper().add_event([](Capture& c) {
+								c.thiz<dEditPrivate>()->flash_cursor(0);
+								c._current = nullptr;
+							}, Capture().set_thiz(thiz), 0.5f);
+						}
+						if (thiz->select_all_on_focus)
+						{
+							thiz->select_start = 0;
+							thiz->select_end = thiz->text->text.size();
+							if (thiz->element)
+								thiz->element->mark_drawing_dirty();
+						}
 					}
-					//if (thiz->select_all_on_focus)
-					//	thiz->set_select(0, thiz->text->text.s);
 				}
 				else
 				{
@@ -145,6 +189,7 @@ namespace flame
 						thiz->changed = false;
 					}
 				}
+			}
 				break;
 			case S<"left_world"_h>:
 				if (thiz->flash_event)
@@ -385,10 +430,13 @@ namespace flame
 
 		receiver->add_mouse_dbclick_listener([](Capture& c) {
 			auto thiz = c.thiz<dEditPrivate>();
-			//	thiz->select_start = 0;
-			//	thiz->select_end = thiz->text->text.size();
-			//	if (thiz->element)
-			//		thiz->element->mark_drawing_dirty();
+			if (thiz->select_all_on_dbclicked)
+			{
+				thiz->select_start = 0;
+				thiz->select_end = thiz->text->text.size();
+				if (thiz->element)
+					thiz->element->mark_drawing_dirty();
+			}
 		}, Capture().set_thiz(this));
 	}
 

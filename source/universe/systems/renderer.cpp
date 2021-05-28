@@ -398,6 +398,7 @@ namespace flame
 
 		Rect						scissor;
 		std::vector<ElementDrawCmd> layers[128];
+		uint						max_layer;
 
 		SequentialBuffer<ElementVertex>	buf_element_vtx;
 		SequentialBuffer<uint>			buf_element_idx;
@@ -482,8 +483,9 @@ namespace flame
 		auto& ed = *_ed;
 
 		auto e = element->entity;
-		if (!e->global_visibility)
-			return layer;
+
+		if (element->layer_policy == 2)
+			element->layer_policy = 0;
 
 		element->parent_scissor = ed.scissor;
 		element->update_transform();
@@ -496,12 +498,16 @@ namespace flame
 		if (culled)
 			return layer;
 
-		element->draw(layer, this);
+		auto self_transparent = true;
+		if (!element->draw(layer, this))
+			self_transparent = false;
 
 		auto clipping = false;
 		Rect last_scissor;
 		if (element->clipping && !(ed.scissor == element->aabb))
 		{
+			layer = ed.max_layer;
+
 			element->layer_policy = 2;
 
 			clipping = true;
@@ -512,21 +518,30 @@ namespace flame
 			info.misc = ed.scissor;
 		}
 
-		auto _layer = layer;
-		for (auto& d : element->drawers)
-			_layer = max(_layer, d->call(layer, this));
+		if (!element->drawers.empty())
+		{
+			auto l = layer;
+			for (auto& d : element->drawers)
+				layer = max(layer, d->call(l, this));
+			self_transparent = false;
+		}
 
-		_layer++;
-		auto max_layer = _layer;
+		if (!self_transparent)
+			layer++;
+		ed.max_layer = max(ed.max_layer, layer);
+		auto children_max_layer = layer;
 		for (auto& c : e->children)
 		{
+			if (!c->global_visibility)
+				continue;
+
 			auto celement = c->get_component_i<cElementPrivate>(0);
 			if (celement)
 			{
-				max_layer = max(max_layer, element_render(_layer, celement));
+				children_max_layer = max(children_max_layer, element_render(layer, celement));
 				if (celement->layer_policy > 0)
 				{
-					_layer = max_layer + 1;
+					layer = children_max_layer;
 					if (celement->layer_policy == 2)
 						element->layer_policy = 2;
 				}
@@ -536,19 +551,17 @@ namespace flame
 		if (clipping)
 		{
 			ed.scissor = last_scissor;
-			auto& info = ed.layers[max_layer + 1].emplace_back();
+			auto& info = ed.layers[children_max_layer].emplace_back();
 			info.type = ElementDrawCmd::Scissor;
 			info.misc = last_scissor;
 		}
 
-		return max_layer;
+		return layer;
 	}
 
 	void sRendererPrivate::node_render(cNodePrivate* node)
 	{
 		auto e = node->entity;
-		if (!e->global_visibility)
-			return;
 
 		node->update_transform();
 		for (auto& d : node->drawers)
@@ -569,6 +582,9 @@ namespace flame
 		{
 			for (auto& c : e->children)
 			{
+				if (!c->global_visibility)
+					continue;
+
 				auto cnode = c->get_component_i<cNodePrivate>(0);
 				if (cnode)
 					node_render(cnode);
@@ -2296,9 +2312,10 @@ namespace flame
 			ed.layers[i].clear();
 		ed.buf_element_vtx.stag_num = 0;
 		ed.buf_element_idx.stag_num = 0;
-		if (world->first_element)
+		if (world->first_element && world->first_element->global_visibility)
 		{
 			ed.should_render = true;
+			ed.max_layer = 0;
 			element_render(0, world->first_element->get_component_i<cElementPrivate>(0));
 		}
 		else
@@ -2318,7 +2335,7 @@ namespace flame
 			data.dir_count = 0;
 			data.pt_count = 0;
 		}
-		if (world->first_node && camera)
+		if (world->first_node && world->first_node->global_visibility && camera)
 		{
 			nd.should_render = true;
 			node_render(world->first_node->get_component_i<cNodePrivate>(0));

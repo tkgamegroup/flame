@@ -29,6 +29,20 @@ namespace flame
 		void mark_changed();
 		void flash_cursor(int mode);
 		int locate_cursor(const vec2& mpos);
+
+		uint get_select_start() const override { return select_start; }
+		void set_select_start(uint s) override;
+		uint get_select_end() const override { return select_end; }
+		void set_select_end(uint s) override;
+
+		bool get_select_all_on_dbclicked() const override { return select_all_on_dbclicked; }
+		void set_select_all_on_dbclicked(bool b) override;
+		bool get_select_all_on_focus() const override { return select_all_on_focus; }
+		void set_select_all_on_focus(bool b) override;
+		bool get_enter_to_throw_focus() const override { return enter_to_throw_focus; }
+		void set_enter_to_throw_focus(bool b) override;
+		bool get_trigger_changed_on_lost_focus() const override { return trigger_changed_on_lost_focus; }
+		void set_trigger_changed_on_lost_focus(bool b) override;
 		
 		void on_load_finished() override;
 		

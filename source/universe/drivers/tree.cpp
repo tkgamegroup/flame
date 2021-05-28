@@ -166,6 +166,9 @@ namespace flame
 
 	void dTreeNodePrivate::on_load_finished()
 	{
+		element = entity->get_component_i<cElementPrivate>(0);
+		fassert(element);
+
 		e_title = entity->find_child("title");
 		fassert(e_title);
 		title_text = e_title->get_component_t<cTextPrivate>();
@@ -190,12 +193,29 @@ namespace flame
 
 		items = entity->find_child("items");
 		fassert(items);
+		items_element = items->get_component_i<cElementPrivate>(0);
+		fassert(items_element);
 	}
 
 	bool dTreeNodePrivate::on_child_added(EntityPtr e)
 	{
 		if (load_finished)
 		{
+			if (first_add)
+			{
+				first_add = false;
+				if (element->alignx == AlignMinMax)
+				{
+					items_element->set_auto_width(false);
+					entity->add_component_data_listener([](Capture& c, uint hash) {
+						if (hash == S<"width"_h>)
+						{
+							auto thiz = c.thiz<dTreeNodePrivate>();
+							thiz->items_element->set_width(thiz->element->size.x);
+						}
+					}, Capture().set_thiz(this), element);
+				}
+			}
 			populate_tree(tree, e);
 			items->add_child(e);
 			return true;

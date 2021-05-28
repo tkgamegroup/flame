@@ -33,6 +33,7 @@ namespace flame
 		bool redirectable = true;
 
 		StateFlags state = StateNone;
+		StateFlags last_state = StateNone;
 		std::vector<std::unique_ptr<StateRule>> state_rules;
 
 		uint depth = 0;
