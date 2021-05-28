@@ -74,7 +74,11 @@ namespace flame
 
 	void cNodePrivate::set_octree_length(float len)
 	{
-
+		if (octree_length == len)
+			return;
+		octree_length = len;
+		if (entity)
+			entity->component_data_changed(this, S<"octree_length"_h>);
 	}
 
 	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture)

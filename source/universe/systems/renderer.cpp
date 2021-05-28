@@ -506,13 +506,12 @@ namespace flame
 		Rect last_scissor;
 		if (element->clipping && !(ed.scissor == element->aabb))
 		{
-			layer = ed.max_layer;
-
 			element->layer_policy = 2;
 
 			clipping = true;
 			last_scissor = ed.scissor;
 			ed.scissor = element->aabb;
+			layer = ed.max_layer;
 			auto& info = ed.layers[layer].emplace_back();
 			info.type = ElementDrawCmd::Scissor;
 			info.misc = ed.scissor;
@@ -556,7 +555,7 @@ namespace flame
 			info.misc = last_scissor;
 		}
 
-		return layer;
+		return max(layer, children_max_layer);
 	}
 
 	void sRendererPrivate::node_render(cNodePrivate* node)

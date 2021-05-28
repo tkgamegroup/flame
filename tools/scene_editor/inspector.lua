@@ -97,6 +97,7 @@ function update_inspector()
         
         local ev = create_entity("prefabs/drag_edit")
         local drag_edit = ev.find_driver("dDragEdit")
+        drag_edit.set_float(getter())
 
         local tracker = {}
         tracker.changing = false
@@ -107,6 +108,7 @@ function update_inspector()
             callback = function(h)
                 if h == hash then
                     tracker.changing = true
+                    drag_edit.set_float(getter())
                     tracker.changing = false
                 end
                 return false
@@ -117,6 +119,7 @@ function update_inspector()
         ev.add_driver_data_listener(function(h)
             if h == hash_value then
                 if not tracker.changing then
+                    setter(drag_edit.get_float())
                 end
             end
         end, drag_edit.p)
@@ -130,11 +133,47 @@ function update_inspector()
         add_name(name)
         
         local ev = create_entity("prefabs/drag_edit_2")
+        local ev1 = ev.get_child(0)
+        local ev2 = ev.get_child(1)
+        local drag_edit_1 = ev1.find_driver("dDragEdit")
+        local drag_edit_2 = ev2.find_driver("dDragEdit")
+        local v = getter()
+        drag_edit_1.set_float(v.x)
+        drag_edit_2.set_float(v.y)
 
         local tracker = {}
         tracker.changing = false
 
         local callback = nil
+        if listen_changes then
+            local hash = flame_hash(name)
+            callback = function(h)
+                if h == hash then
+                    tracker.changing = true
+                    local v = getter()
+                    drag_edit_1.set_float(v.x)
+                    drag_edit_2.set_float(v.y)
+                    tracker.changing = false
+                end
+                return false
+            end
+        end
+
+        local hash_value = flame_hash("value")
+        ev1.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec2(drag_edit_1.get_float(), drag_edit_2.get_float()))
+                end
+            end
+        end, drag_edit_1.p)
+        ev2.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec2(drag_edit_1.get_float(), drag_edit_2.get_float()))
+                end
+            end
+        end, drag_edit_2.p)
 
         evs.add_child(ev)
 
@@ -145,11 +184,58 @@ function update_inspector()
         add_name(name)
         
         local ev = create_entity("prefabs/drag_edit_3")
+        local ev1 = ev.get_child(0)
+        local ev2 = ev.get_child(1)
+        local ev3 = ev.get_child(2)
+        local drag_edit_1 = ev1.find_driver("dDragEdit")
+        local drag_edit_2 = ev2.find_driver("dDragEdit")
+        local drag_edit_3 = ev3.find_driver("dDragEdit")
+        local v = getter()
+        drag_edit_1.set_float(v.x)
+        drag_edit_2.set_float(v.y)
+        drag_edit_3.set_float(v.z)
 
         local tracker = {}
         tracker.changing = false
 
         local callback = nil
+        if listen_changes then
+            local hash = flame_hash(name)
+            callback = function(h)
+                if h == hash then
+                    tracker.changing = true
+                    local v = getter()
+                    drag_edit_1.set_float(v.x)
+                    drag_edit_2.set_float(v.y)
+                    drag_edit_3.set_float(v.z)
+                    tracker.changing = false
+                end
+                return false
+            end
+        end
+
+        local hash_value = flame_hash("value")
+        ev1.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec3(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float()))
+                end
+            end
+        end, drag_edit_1.p)
+        ev2.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec3(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float()))
+                end
+            end
+        end, drag_edit_2.p)
+        ev3.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec3(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float()))
+                end
+            end
+        end, drag_edit_3.p)
 
         evs.add_child(ev)
 
@@ -160,11 +246,69 @@ function update_inspector()
         add_name(name)
         
         local ev = create_entity("prefabs/drag_edit_4")
+        local ev1 = ev.get_child(0)
+        local ev2 = ev.get_child(1)
+        local ev3 = ev.get_child(2)
+        local ev4 = ev.get_child(3)
+        local drag_edit_1 = ev1.find_driver("dDragEdit")
+        local drag_edit_2 = ev2.find_driver("dDragEdit")
+        local drag_edit_3 = ev3.find_driver("dDragEdit")
+        local drag_edit_4 = ev4.find_driver("dDragEdit")
+        local v = getter()
+        drag_edit_1.set_float(v.x)
+        drag_edit_2.set_float(v.y)
+        drag_edit_3.set_float(v.z)
+        drag_edit_4.set_float(v.w)
 
         local tracker = {}
         tracker.changing = false
-
+        
         local callback = nil
+        if listen_changes then
+            local hash = flame_hash(name)
+            callback = function(h)
+                if h == hash then
+                    tracker.changing = true
+                    local v = getter()
+                    drag_edit_1.set_float(v.x)
+                    drag_edit_2.set_float(v.y)
+                    drag_edit_3.set_float(v.z)
+                    drag_edit_4.set_float(v.w)
+                    tracker.changing = false
+                end
+                return false
+            end
+        end
+
+        local hash_value = flame_hash("value")
+        ev1.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec4(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float(), drag_edit_4.get_float()))
+                end
+            end
+        end, drag_edit_1.p)
+        ev2.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec4(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float(), drag_edit_4.get_float()))
+                end
+            end
+        end, drag_edit_2.p)
+        ev3.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec4(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float(), drag_edit_4.get_float()))
+                end
+            end
+        end, drag_edit_3.p)
+        ev4.add_driver_data_listener(function(h)
+            if h == hash_value then
+                if not tracker.changing then
+                    setter(vec4(drag_edit_1.get_float(), drag_edit_2.get_float(), drag_edit_3.get_float(), drag_edit_4.get_float()))
+                end
+            end
+        end, drag_edit_4.p)
 
         evs.add_child(ev)
 

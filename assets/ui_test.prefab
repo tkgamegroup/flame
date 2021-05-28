@@ -14,13 +14,13 @@
 				<eMenuItem text="1" />
 			</eMenu>
 		</CeMenuBar>
-		<eButton>
+		<CeButton text="Button">
 			<cScript>
-        entity:find_component("cReceiver"):add_mouse_click_listener(function()
+        entity.find_component("cReceiver").add_mouse_click_listener(function()
 					print("Hello World")
         end)
       </cScript>
-		</eButton>
+		</CeButton>
 		<CeCombobox src="combobox">
 		  <eComboboxItem text="1" />
 		  <eComboboxItem text="2" />
@@ -44,22 +44,24 @@
 		  <eListItem />
 		  <eListItem />
 		</CeList>
-    <Centity src="vscroller" >
-      <cElement width="200" height="100" padding="4,4,4,4" border="1" />
-      <entity attach="view" src="list">
-        <cElement padding="0,0,0,20" alignx="MinMax" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-      </entity>
-    </Centity>
+    <eScroller name="scroller" type="Vertical" width="200" height="100" padding="4,4,4,4" border="1" auto_width="false" auto_height="false" >
+      <eList name="list">
+        <eListItem name="item0" text="apple"/>
+        <eListItem name="item1" text="banana"/>
+        <eListItem name="item2" text="cat"/>
+        <eListItem name="item3" text="dog"/>
+        <eListItem name="item4" text="egg"/>
+        <eListItem name="item5" text="fuck"/>
+        <eListItem name="item6" text="girl"/>
+        <eListItem name="item7" text="hello"/>
+        <eListItem name="item8" text="ice-cream"/>
+        <eListItem name="item9" text="java"/>
+        <eListItem name="item10" text="king"/>
+        <eListItem name="item11" text="little"/>
+        <eListItem name="item12" text="monkey"/>
+        <eListItem name="item13" text="nigger"/>
+      </eList>
+    </eScroller>
     <Centity src="hsplitter" >
       <entity>
         <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="255,0,0,255" />
@@ -67,40 +69,6 @@
       <entity>
         <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="0,255,0,255" />
       </entity>
-    </Centity>
-    <Centity>
-      <cElement x="20" y="8" layout_type="Vertical" layout_gap="2" />
-      <entity src="text">
-        <cText text ="Roughness" />
-      </entity>
-      <entity name="NDF_s" src="slider">
-        <cSlider value_min="0" value_max="1" />
-      </entity>
-      <entity name="NDF_t" src="text">
-        <cText text ="NDF: " />
-      </entity>
-      <cScript>
-        local NDF_s = entity.find_child("NDF_s")
-        local NDF_t = entity.find_child("NDF_t")
-        local NDF_s_s = NDF_s.find_component("cSlider")
-        local NDF_t_t = NDF_t.find_component("cText")
-
-        local hash = flame_hash("value")
-        NDF_s.add_local_data_changed_listener_s(function(c, h)
-          if c == NDF_s_s.p and h == hash then
-            local roughness = NDF_s_s.get_value()
-            local a = roughness * roughness
-            local a2 = a * a
-            local NdotH = 1.0
-            local NdotH2 = NdotH * NdotH
-            local nom = a2
-            local denom = (NdotH2 * (a2 - 1.0) + 1.0)
-            denom = math.pi * denom * denom
-            local res = nom / denom
-            NDF_t_t.set_text("NDF(ggx): "..tostring(res))
-          end
-        end)
-      </cScript>
     </Centity>
 		<CeWindow fill_color="240,240,240,50" >
 		  <cBlur radius="10" />

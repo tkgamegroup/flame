@@ -4,15 +4,15 @@
     <cScript src="shoot_ball.lua1 plane_tree.lua1" />
     <entity src="D:\assets\sky\sky" name="sky" />
     <eCube pos="200,60,200" dynamic="false">
-       <cScript>
-         local mesh = entity.find_component("cMesh")
-         entity.add_event(function()
-           mesh.set_cast_shadow(not mesh.get_cast_shadow())
-         end, 1.0)
-       </cScript>
+      <cScript>
+        local node = entity.find_component("cNode")
+        entity.add_event(function()
+          node.set_pos(vec3(200 + math.random(), 60 + math.random(), 200 + math.random()))
+        end, 1.0)
+      </cScript>
     </eCube>
-    <eCube pos="210,60,200" dynamic="false" />
-    <eCube pos="200,60,205" dynamic="false" />
+    <eCube pos="210,60,200" dynamic="false"/>
+    <eCube pos="200,60,205" dynamic="false"/>
     <eNode src="D:\character\character1" name="character" pos="200,65,200" >
       <cController radius="0.5" height="1.8" />
       <cScript src="character_controller.lua1" />
