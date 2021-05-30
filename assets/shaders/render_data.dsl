@@ -4,7 +4,9 @@
 
 layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 {
+	float sky_intensity;
 	float sky_rad_levels;
+
 	uint csm_levels;
 	float csm_factor;
 	float ptsm_near;

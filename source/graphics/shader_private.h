@@ -55,9 +55,33 @@ namespace flame
 
 		struct DescriptorSetPrivate : DescriptorSet
 		{
+			struct BufRes
+			{
+				BufferPrivate* p;
+				uint offset;
+				uint range;
+			};
+
+			struct ImgRes
+			{
+				ImageViewPrivate* p;
+				SamplerPrivate* sp;
+			};
+
+			union Res
+			{
+				BufRes b;
+				ImgRes i;
+			};
+
+			DevicePrivate* device;
 			DescriptorPoolPrivate* pool;
 			DescriptorSetLayoutPrivate* layout;
 			VkDescriptorSet vk_descriptor_set;
+
+			std::vector<std::vector<Res>> reses;
+			std::vector<std::pair<uint, uint>> buf_updates;
+			std::vector<std::pair<uint, uint>> img_updates;
 
 			DescriptorSetPrivate(DescriptorPoolPrivate* pool, DescriptorSetLayoutPrivate* layout);
 			~DescriptorSetPrivate();
@@ -68,6 +92,7 @@ namespace flame
 
 			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
 			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
+			void update() override;
 		};
 
 		struct PipelineLayoutPrivate : PipelineLayout

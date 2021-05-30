@@ -47,10 +47,6 @@ namespace flame
 
 		ShadingType shading_type = ShadingCombined;
 
-		graphics::ImageView*	sky_box = nullptr;
-		graphics::ImageView*	sky_irr = nullptr;
-		graphics::ImageView*	sky_rad = nullptr;
-		graphics::ImageView*	sky_lut = nullptr;
 		void*					sky_id = nullptr;
 
 		std::unique_ptr<ElemnetRenderData>	_ed;
@@ -89,10 +85,9 @@ namespace flame
 
 		void set_shading(ShadingType type) override { shading_type = type; }
 
-		void get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr,
-			graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id) override;
+		void* get_sky_id() override { return sky_id; }
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-			graphics::ImageView* rad, graphics::ImageView* lut, void* id) override;
+			graphics::ImageView* rad, graphics::ImageView* lut, float intensity, void* id) override;
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) override;

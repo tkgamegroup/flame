@@ -32,5 +32,5 @@ void main()
 #endif
 	}
 	else
-		o_color = texture(sky_box, normalize(coordw.xyz));
+		o_color = vec4(texture(sky_box, normalize(coordw.xyz)).rgb * render_data.sky_intensity, 1.0);
 }

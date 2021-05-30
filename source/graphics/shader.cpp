@@ -1,5 +1,6 @@
 #include "../foundation/typeinfo.h"
 #include "device_private.h"
+#include "command_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
@@ -585,6 +586,12 @@ namespace flame
 			pool(pool),
 			layout(layout)
 		{
+			device = pool->device;
+
+			reses.resize(layout->bindings.size());
+			for (auto i = 0; i < reses.size(); i++)
+				reses[i].resize(max(1U, layout->bindings[i].count));
+
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
@@ -592,57 +599,107 @@ namespace flame
 			info.descriptorSetCount = 1;
 			info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
-			chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &vk_descriptor_set));
+			chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &vk_descriptor_set));
 		}
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
-			chk_res(vkFreeDescriptorSets(pool->device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
+			chk_res(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 		}
 
 		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr buf, uint offset, uint range)
 		{
-			VkDescriptorBufferInfo i;
-			i.buffer = buf->vk_buffer;
-			i.offset = offset;
-			i.range = range == 0 ? buf->size : range;
+			if (binding >= reses.size() || index >= reses[binding].size())
+				return;
+			auto& res = reses[binding][index].b;
+			if (res.p == buf && res.offset == offset && res.range == range)
+				return;
 
-			VkWriteDescriptorSet write;
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.pNext = nullptr;
-			write.dstSet = vk_descriptor_set;
-			write.dstBinding = binding;
-			write.dstArrayElement = index;
-			write.descriptorType = to_backend(layout->bindings[binding].type);
-			write.descriptorCount = 1;
-			write.pBufferInfo = &i;
-			write.pImageInfo = nullptr;
-			write.pTexelBufferView = nullptr;
+			res.p = buf;
+			res.offset = offset;
+			res.range = range;
 
-			vkUpdateDescriptorSets(pool->device->vk_device, 1, &write, 0, nullptr);
+			buf_updates.emplace_back(binding, index);
 		}
 
 		void DescriptorSetPrivate::set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp)
 		{
-			VkDescriptorImageInfo i;
-			i.imageView = iv->vk_image_view;
-			i.imageLayout = layout->bindings[binding].type == DescriptorSampledImage ? 
-				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-			i.sampler = sp ? sp->vk_sampler : nullptr;
+			if (binding >= reses.size() || index >= reses[binding].size())
+				return;
+			auto& res = reses[binding][index].i;
+			if (res.p == iv && res.sp == sp)
+				return;
 
-			VkWriteDescriptorSet write;
-			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			write.pNext = nullptr;
-			write.dstSet = vk_descriptor_set;
-			write.dstBinding = binding;
-			write.dstArrayElement = index;
-			write.descriptorType = to_backend(layout->bindings[binding].type);
-			write.descriptorCount = 1;
-			write.pBufferInfo = nullptr;
-			write.pImageInfo = &i;
-			write.pTexelBufferView = nullptr;
+			res.p = iv;
+			res.sp = sp;
 
-			vkUpdateDescriptorSets(pool->device->vk_device, 1, &write, 0, nullptr);
+			img_updates.emplace_back(binding, index);
+		}
+
+		void DescriptorSetPrivate::update()
+		{
+			if (buf_updates.empty() && img_updates.empty())
+				return;
+
+			Queue::get(device)->wait_idle();
+			std::vector<VkDescriptorBufferInfo> vk_buf_infos;
+			std::vector<VkDescriptorImageInfo> vk_img_infos;
+			std::vector<VkWriteDescriptorSet> vk_writes;
+			vk_buf_infos.resize(buf_updates.size());
+			vk_img_infos.resize(img_updates.size());
+			vk_writes.resize(buf_updates.size() + img_updates.size());
+			auto idx = 0;
+			for (auto i = 0; i < vk_buf_infos.size(); i++)
+			{
+				auto& u = buf_updates[i];
+				auto& res = reses[u.first][u.second];
+
+				auto& info = vk_buf_infos[i];
+				info.buffer = res.b.p->vk_buffer;
+				info.offset = res.b.offset;
+				info.range = res.b.range == 0 ? res.b.p->size : res.b.range;
+
+				auto& wrt = vk_writes[idx];
+				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				wrt.pNext = nullptr;
+				wrt.dstSet = vk_descriptor_set;
+				wrt.dstBinding = u.first;
+				wrt.dstArrayElement = u.second;
+				wrt.descriptorType = to_backend(layout->bindings[u.first].type);
+				wrt.descriptorCount = 1;
+				wrt.pBufferInfo = &info;
+				wrt.pImageInfo = nullptr;
+				wrt.pTexelBufferView = nullptr;
+
+				idx++;
+			}
+			for (auto i = 0; i < vk_img_infos.size(); i++)
+			{
+				auto& u = img_updates[i];
+				auto& res = reses[u.first][u.second];
+
+				auto& info = vk_img_infos[i];
+				info.imageView = res.i.p->vk_image_view;
+				info.imageLayout = layout->bindings[u.first].type == DescriptorSampledImage ?
+					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
+				info.sampler = res.i.sp ? res.i.sp->vk_sampler : nullptr;
+
+				auto& wrt = vk_writes[idx];
+				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				wrt.pNext = nullptr;
+				wrt.dstSet = vk_descriptor_set;
+				wrt.dstBinding = u.first;
+				wrt.dstArrayElement = u.second;
+				wrt.descriptorType = to_backend(layout->bindings[u.first].type);
+				wrt.descriptorCount = 1;
+				wrt.pBufferInfo = nullptr;
+				wrt.pImageInfo = &info;
+				wrt.pTexelBufferView = nullptr;
+
+				idx++;
+			}
+
+			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 
 		DescriptorSet* DescriptorSet::create(DescriptorPool* pool, DescriptorSetLayout* layout)

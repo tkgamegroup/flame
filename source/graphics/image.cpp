@@ -173,6 +173,7 @@ namespace flame
 				sample_descriptorset->set_image(dsl->find_binding("tex"), 0, views[0].get(), SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 				sample_descriptorset->set_buffer(dsl->find_binding("Samples"), 0, sample_uvs.get());
 				sample_descriptorset->set_buffer(dsl->find_binding("Results"), 0, sample_res.get());
+				sample_descriptorset->update();
 			}
 
 			StagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);

@@ -669,6 +669,7 @@ namespace flame
 			ed.ds_element->set_image(bd, idx, ((graphics::FontAtlas*)v)->get_view(), sp_nearest);
 			break;
 		}
+		ed.ds_element->update();
 
 		return idx;
 	}
@@ -836,6 +837,7 @@ namespace flame
 
 		nd.tex_reses[idx] = tex;
 		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_white->get_view(), sp);
+		nd.ds_material->update();
 
 		return idx;
 	}
@@ -1242,28 +1244,9 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::get_sky(graphics::ImageView** out_box, graphics::ImageView** out_irr,
-		graphics::ImageView** out_rad, graphics::ImageView** out_lut, void** out_id)
-	{
-		if (out_box)
-			*out_box = sky_box;
-		if (out_irr)
-			*out_irr = sky_irr;
-		if (out_rad)
-			*out_rad = sky_rad;
-		if (out_lut)
-			*out_lut = sky_lut;
-		if (out_id)
-			*out_id = sky_id;
-	}
-
 	void sRendererPrivate::set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-		graphics::ImageView* rad, graphics::ImageView* lut, void* id)
+		graphics::ImageView* rad, graphics::ImageView* lut, float intensity, void* id)
 	{
-		sky_box = box;
-		sky_irr = irr;
-		sky_rad = rad;
-		sky_lut = lut;
 		sky_id = id;
 
 		auto& nd = *_nd;
@@ -1272,6 +1255,8 @@ namespace flame
 		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut ? lut : iv_black, sp_linear);
+		nd.ds_light->update();
+		nd.buf_render_data.pstag->sky_intensity = intensity;
 	}
 
 	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
@@ -1383,6 +1368,7 @@ namespace flame
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 		ds_back->set_image(DSL_post::image_binding, 0, img_back->get_view(), sp_nearest);
+		ds_back->update();
 
 		auto& nd = *_nd;
 
@@ -1409,6 +1395,7 @@ namespace flame
 		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
 		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
 		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
+		nd.ds_def->update();
 	}
 
 	const auto shadow_map_size = uvec2(1024);
@@ -2201,6 +2188,7 @@ namespace flame
 			res.type = ElementResImage;
 			res.v = iv_white;
 		}
+		ed.ds_element->update();
 
 		auto& nd = *_nd;
 
@@ -2222,20 +2210,24 @@ namespace flame
 		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
 		nd.ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());
+		nd.ds_render_data->update();
 
 		nd.buf_materials.create(device, graphics::BufferUsageStorage);
 		nd.ds_material.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"material.dsl")));
 		nd.ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, nd.buf_materials.buf.get());
 		for (auto i = 0; i < nd.tex_reses.size(); i++)
 			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_white, sp_linear);
+		nd.ds_material->update();
 
 		nd.buf_transforms.create(device, graphics::BufferUsageStorage);
 		nd.ds_mesh.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Transforms_binding, 0, nd.buf_transforms.buf.get());
+		nd.ds_mesh->update();
 
 		nd.buf_terrain.create(device, graphics::BufferUsageStorage);
 		nd.ds_terrain.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"terrain/terrain.dsl")));
 		nd.ds_terrain->set_buffer(terrain::DSL_terrain::TerrainInfos_binding, 0, nd.buf_terrain.buf.get());
+		nd.ds_terrain->update();
 
 		nd.buf_light_infos.create(device, graphics::BufferUsageStorage);
 		nd.buf_grid_lights.create(device, graphics::BufferUsageStorage);
@@ -2288,6 +2280,7 @@ namespace flame
 		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
+		nd.ds_light->update();
 
 		nd.pll_mesh_fwd = graphics::PipelineLayout::get(device, L"mesh/forward.pll");
 		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");

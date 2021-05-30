@@ -41,6 +41,7 @@ namespace flame
 
 			virtual void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
 			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
+			virtual void update() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* pool, DescriptorSetLayout* layout);
 		};
@@ -49,7 +50,8 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, 
+				uint push_constant_size);
 			FLAME_GRAPHICS_EXPORTS static PipelineLayout* get(Device* device, const wchar_t* filename);
 		};
 
