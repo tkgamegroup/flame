@@ -2,6 +2,47 @@
 //{
 //	namespace graphics
 //	{
+//		struct ArmatureDeformer
+//		{
+//			virtual void set_pose(uint id, const mat4& pose) = 0;
+//
+//			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(RenderPreferences* preferences, Mesh* mesh);
+//		};
+// 
+//		struct ArmatureDeformerPrivate : ArmatureDeformer
+//		{
+//			MeshPrivate* mesh;
+//			//ShaderBuffer poses_buffer;
+//			std::unique_ptr<DescriptorSetPrivate> descriptorset;
+//
+//			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
+//			void release() override { delete this; }
+//			void set_pose(uint id, const mat4& pose) override;
+//		};
+//
+//		struct MeshWeight
+//		{
+//			ivec4 ids;
+//			vec4 weights;
+//		};
+//
+//		struct CmdBlur : Cmd
+//		{
+//			Rect range;
+//			uint radius;
+//
+//			CmdBlur(const Rect& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+//		};
+//
+//		struct CanvasPrivate : Canvas
+//		{
+//			std::unique_ptr<ImagePrivate> pickup_image;
+//			std::unique_ptr<FramebufferPrivate> pickup_framebuffer;
+//
+//			ShaderGeometryBuffer<Line> line_buffer;
+//			ShaderGeometryBuffer<Triangle> triangle_buffer;
+//		};
+// 
 //		RenderPreferencesPrivate::RenderPreferencesPrivate(DevicePtr device, bool hdr)
 //		{
 //			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");

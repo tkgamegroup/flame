@@ -25,10 +25,6 @@ namespace flame
 			VkImage vk_image = 0;
 			std::vector<std::unique_ptr<ImageViewPrivate>> views;
 
-			std::unique_ptr<BufferPrivate> sample_uvs;
-			std::unique_ptr<BufferPrivate> sample_res;
-			std::unique_ptr<DescriptorSetPrivate> sample_descriptorset;
-
 			void build_sizes(const uvec2& size);
 			void build_default_views();
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
@@ -54,7 +50,7 @@ namespace flame
 			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
 			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
 
-			void get_samples(uint count, const vec2* uvs, vec4* dst) override;
+			void get_samples(uint count, const vec2* uvs, vec4* dst, uint level, uint layer) override;
 
 			void generate_mipmaps() override;
 

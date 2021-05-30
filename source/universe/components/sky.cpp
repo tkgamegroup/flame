@@ -43,7 +43,7 @@ namespace flame
 		if (s_renderer)
 		{
 			if (s_renderer->get_sky_id() == this)
-				s_renderer->set_sky(box_texture_view, irr_texture_view, rad_texture_view, lut_texture_view, intensity, this);
+				s_renderer->set_sky(box_texture_view, irr_texture_view, rad_texture_view, lut_texture_view, fog_color, intensity, this);
 			s_renderer->mark_dirty();
 		}
 		if (entity)
@@ -64,7 +64,21 @@ namespace flame
 				fn = ppath / fn;
 			box_texture = graphics::Image::get(device, fn.c_str(), true);
 			if (box_texture)
-				box_texture_view = box_texture->get_view(box_texture->get_levels());
+			{
+				auto lv = (int)box_texture->get_levels();
+				box_texture_view = box_texture->get_view(lv);
+				lv--;
+				vec4 color = vec4(0.f);
+				vec2 uv = vec2(0.5f);
+				vec4 res;
+				for (auto i = 0; i < 6; i++)
+				{
+					box_texture->get_samples(1, &uv, &res, lv, i);
+					color += res;
+				}
+				color /= 6.f;
+				fog_color = color;
+			}
 		}
 		{
 			auto fn = std::filesystem::path(irr_texture_path);
@@ -91,7 +105,7 @@ namespace flame
 				lut_texture_view = lut_texture->get_view();
 		}
 
-		s_renderer->set_sky(box_texture_view, irr_texture_view, rad_texture_view, lut_texture_view, intensity, this);
+		s_renderer->set_sky(box_texture_view, irr_texture_view, rad_texture_view, lut_texture_view, fog_color, intensity, this);
 	}
 
 	void cSkyPrivate::on_left_world()
@@ -106,7 +120,7 @@ namespace flame
 		lut_texture_view = nullptr;
 
 		if (s_renderer->get_sky_id() == this)
-			s_renderer->set_sky(nullptr, nullptr, nullptr, nullptr, 1.f, nullptr);
+			s_renderer->set_sky(nullptr, nullptr, nullptr, nullptr, vec3(1.f), 1.f, nullptr);
 
 		s_renderer = nullptr;
 	}

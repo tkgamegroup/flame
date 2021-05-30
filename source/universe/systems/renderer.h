@@ -59,7 +59,7 @@ namespace flame
 
 		virtual void* get_sky_id() = 0;
 		virtual void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-			graphics::ImageView* rad, graphics::ImageView* lut, float intensity, void* id) = 0;
+			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) = 0;
 
 		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) = 0;

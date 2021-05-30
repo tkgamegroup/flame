@@ -1245,18 +1245,22 @@ namespace flame
 	}
 
 	void sRendererPrivate::set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-		graphics::ImageView* rad, graphics::ImageView* lut, float intensity, void* id)
+		graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id)
 	{
 		sky_id = id;
 
 		auto& nd = *_nd;
+
 		auto iv_black = img_black->get_view();
 		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box ? box : iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut ? lut : iv_black, sp_linear);
 		nd.ds_light->update();
-		nd.buf_render_data.pstag->sky_intensity = intensity;
+
+		auto& data = *nd.buf_render_data.pstag;
+		data.fog_color = fog_color;
+		data.sky_intensity = intensity;
 	}
 
 	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
@@ -2208,6 +2212,11 @@ namespace flame
 		nd.buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
 
 		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
+		{
+			auto& data = *(nd.buf_render_data.pstag);
+			data.fog_color = vec3(1.f);
+			data.sky_intensity = 1.f;
+		}
 		nd.ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());
 		nd.ds_render_data->update();

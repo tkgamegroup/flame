@@ -152,31 +152,45 @@ namespace flame
 			cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferDst, dst_layout);
 		}
 
-		PipelinePtr sample_pipeline = nullptr;
-
-		void ImagePrivate::get_samples(uint count, const vec2* uvs, vec4* dst)
+		struct
 		{
-			if (!sample_pipeline)
+			bool initialized = false;
+			PipelinePrivate* pl;
+			BufferPrivate* buf_uvs;
+			BufferPrivate* buf_res;
+
+			void initialize(DevicePrivate* device)
 			{
-				sample_pipeline = PipelinePrivate::create(device, ShaderPrivate::get(device, L"image_sample/image_sample.comp"), 
+				const auto MaxSamples = 1024 * 1024;
+				pl = PipelinePrivate::create(device, ShaderPrivate::get(device, L"image_sample/image_sample.comp"),
 					PipelineLayoutPrivate::get(device, L"image_sample/image_sample.pll"));
+				buf_uvs = new BufferPrivate(device, sizeof(vec2) * MaxSamples, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice);
+				buf_res = new BufferPrivate(device, sizeof(vec4) * MaxSamples, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice);
 			}
-			const auto MaxSamples = 1024 * 1024;
-			if (!sample_uvs)
-				sample_uvs.reset(new BufferPrivate(device, sizeof(vec2) * MaxSamples, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice));
-			if (!sample_res)
-				sample_res.reset(new BufferPrivate(device, sizeof(vec4) * MaxSamples, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice));
-			if (!sample_descriptorset)
+		}sample_tool;
+
+		void ImagePrivate::get_samples(uint count, const vec2* uvs, vec4* dst, uint level, uint layer)
+		{
+			StagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);
+
+			if (!sample_tool.initialized)
+			{
+				sample_tool.initialize(device);
+				sample_tool.initialized = true;
+			}
+
+			std::unique_ptr<ImageViewPrivate> iv;
+			iv.reset(new ImageViewPrivate(this, false, ImageView2D, { level < levels ? level : 0, 1, layer < layers ? layer : 0, 1 }));
+
+			std::unique_ptr<DescriptorSetPrivate> ds;
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"image_sample/image_sample.dsl");
-				sample_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				sample_descriptorset->set_image(dsl->find_binding("tex"), 0, views[0].get(), SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
-				sample_descriptorset->set_buffer(dsl->find_binding("Samples"), 0, sample_uvs.get());
-				sample_descriptorset->set_buffer(dsl->find_binding("Results"), 0, sample_res.get());
-				sample_descriptorset->update();
+				ds.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
+				ds->set_image(dsl->find_binding("tex"), 0, iv.get(), SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
+				ds->set_buffer(dsl->find_binding("Samples"), 0, sample_tool.buf_uvs);
+				ds->set_buffer(dsl->find_binding("Results"), 0, sample_tool.buf_res);
+				ds->update();
 			}
-
-			StagingBuffer stag(device, sizeof(vec4) * count, nullptr, BufferUsageTransferDst);
 
 			{
 				InstanceCB cb(device);
@@ -184,10 +198,10 @@ namespace flame
 				BufferCopy cpy;
 				cpy.size = sizeof(vec2) * count;
 				memcpy(stag.mapped, uvs, cpy.size);
-				cb->copy_buffer((BufferPrivate*)stag.get(), sample_uvs.get(), 1, &cpy);
-				cb->buffer_barrier(sample_uvs.get(), AccessTransferWrite, AccessShaderRead);
-				cb->bind_pipeline(sample_pipeline);
-				cb->bind_descriptor_set(0, sample_descriptorset.get());
+				cb->copy_buffer((BufferPrivate*)stag.get(), sample_tool.buf_uvs, 1, &cpy);
+				cb->buffer_barrier(sample_tool.buf_uvs, AccessTransferWrite, AccessShaderRead);
+				cb->bind_pipeline(sample_tool.pl);
+				cb->bind_descriptor_set(0, ds.get());
 				cb->dispatch(vec3(count, 1, 1));
 			}
 
@@ -196,7 +210,7 @@ namespace flame
 
 				BufferCopy cpy;
 				cpy.size = sizeof(vec4) * count;
-				cb->copy_buffer(sample_res.get(), (BufferPrivate*)stag.get(), 1, &cpy);
+				cb->copy_buffer(sample_tool.buf_res, (BufferPrivate*)stag.get(), 1, &cpy);
 			}
 
 			memcpy(dst, stag.mapped, sizeof(vec4) * count);

@@ -4,6 +4,7 @@
 
 layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 {
+	vec3 fog_color;
 	float sky_intensity;
 	float sky_rad_levels;
 

@@ -87,7 +87,7 @@ namespace flame
 
 		void* get_sky_id() override { return sky_id; }
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-			graphics::ImageView* rad, graphics::ImageView* lut, float intensity, void* id) override;
+			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) override;
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow) override;
