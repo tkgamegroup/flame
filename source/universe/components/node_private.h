@@ -85,8 +85,6 @@ namespace flame
 
 		void on_entered_world() override;
 		void on_left_world() override;
-
-		bool on_save_attribute(uint h) override;
 	};
 
 	struct OctNode

@@ -7,6 +7,8 @@
 
 #include <pugixml.hpp>
 
+#include <boost/regex.hpp>
+
 using namespace flame;
 
 std::string format_type(const wchar_t* in)
@@ -187,13 +189,12 @@ process:
 
 	struct EnumRule
 	{
-		std::regex name;
-		std::regex exclude;
+		boost::regex name;
 
-		bool pass(const std::string& _name) const
+		bool pass(const std::string& str) const
 		{
-			if (std::regex_search(_name, name))
-				return exclude._Empty() || !std::regex_search(_name, exclude);
+			if (boost::regex_search(str, name))
+				return true;
 			return false;
 		}
 	};
@@ -202,44 +203,32 @@ process:
 		struct Item
 		{
 			TypeTag type;
-			std::regex name;
+			boost::regex name;
+			std::string metas;
 		};
 
-		std::regex name;
-		std::regex exclude;
-		std::vector<Item> includes;
-		std::vector<Item> excludes;
+		boost::regex name;
+		std::vector<Item> items;
 
-		bool pass(const std::string& _name) const
+		bool pass(const std::string& str) const
 		{
-			if (std::regex_search(_name, name))
-				return exclude._Empty() || !std::regex_search(_name, exclude);
+			if (boost::regex_search(str, name))
+				return true;
 			return false;
 		}
 
-		bool pass_item(TypeTag type, const std::string& name) const
+		bool pass_item(TypeTag type, const std::string& name, std::string* metas = nullptr) const
 		{
-			auto ok = false;
-			for (auto& i : includes)
+			for (auto& i : items)
 			{
-				if (i.type == type && std::regex_search(name, i.name))
+				if (i.type == type && boost::regex_search(name, i.name))
 				{
-					ok = true;
-					break;
+					if (metas)
+						*metas = i.metas;
+					return true;
 				}
 			}
-			if (ok)
-			{
-				for (auto& e : excludes)
-				{
-					if (e.type == type && std::regex_search(name, e.name))
-					{
-						ok = false;
-						break;
-					}
-				}
-			}
-			return ok;
+			return false;
 		}
 	};
 	std::vector<EnumRule> enum_rules;
@@ -258,33 +247,22 @@ process:
 	{
 		EnumRule er;
 		er.name = n_rule.attribute("name").value();
-		auto str = std::string(n_rule.attribute("exclude").value());
-		if (!str.empty())
-			er.exclude = str;
 		enum_rules.push_back(er);
 	}
 	for (auto n_rule : desc_root.child("udts"))
 	{
 		UdtRule ur;
-		ur.name = n_rule.attribute("name").value();
-		auto str = std::string(n_rule.attribute("exclude").value());
-		if (!str.empty())
-			ur.exclude = str;
-		for (auto n_i : n_rule.child("includes"))
+		auto wtf = n_rule.attribute("name").value();
+		ur.name = wtf;
+		for (auto n_i : n_rule)
 		{
 			UdtRule::Item item;
 			auto t = std::string(n_i.attribute("type").value());
 			item.type = t == "function" ? TypeFunction : TypeData;
-			item.name = n_i.attribute("name").value();
-			ur.includes.push_back(item);
-		}
-		for (auto n_e : n_rule.child("excludes"))
-		{
-			UdtRule::Item item;
-			auto t = std::string(n_e.attribute("type").value());
-			item.type = t == "function" ? TypeFunction : TypeData;
-			item.name = n_e.attribute("name").value();
-			ur.excludes.push_back(item);
+			auto wtf = n_i.attribute("name").value();
+			item.name = wtf;
+			item.metas = n_i.attribute("metas").value();
+			ur.items.push_back(item);
 		}
 		udt_rules.push_back(ur);
 	}
@@ -463,7 +441,8 @@ process:
 						else if (name[0] == '~')
 							name = "dtor";
 
-						if (ur.pass_item(TypeFunction, name))
+						std::string metas;
+						if (ur.pass_item(TypeFunction, name, &metas))
 						{
 							s_function->get_relativeVirtualAddress(&dw);
 							auto rva = dw;
@@ -481,7 +460,7 @@ process:
 								auto type_desc = typeinfo_from_symbol(s_return_type);
 								s_return_type->Release();
 
-								auto fi = u->add_function(name.c_str(), rva, voff, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db));
+								auto fi = u->add_function(name.c_str(), rva, voff, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db), metas.c_str());
 
 								IDiaEnumSymbols* s_parameters;
 								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -532,7 +511,8 @@ process:
 					{
 						s_variable->get_name(&pwname);
 						auto name = w2s(pwname);
-						if (ur.pass_item(TypeData, name))
+						std::string metas;
+						if (ur.pass_item(TypeData, name, &metas))
 						{
 							IDiaSymbol* s_type;
 							s_variable->get_type(&s_type);
@@ -547,16 +527,9 @@ process:
 									type_desc.name = SUS::cut_tail_if(type_desc.name, "Private");
 								if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
 									new_enum(type_desc.name, s_type);
+
 								auto type = TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db);
-								std::string default_value;
-
-								if (type_desc.tag != TypePointer)
-								{
-									if (type)
-										default_value = type->serialize((char*)obj + offset);
-								}
-
-								u->add_variable(type, name.c_str(), offset, 1, 0, default_value.c_str(), "");
+								u->add_variable(type, name.c_str(), offset, 1, 0, (char*)obj + offset, metas.c_str());
 							}
 
 							s_type->Release();

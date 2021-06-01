@@ -78,7 +78,7 @@ namespace flame
 					auto arr_stride = glsl.get_decoration(id, spv::DecorationArrayStride);
 					if (arr_stride == 0)
 						arr_size = 1;
-					ui->add_variable(type, name.c_str(), offset, arr_size, arr_stride, "", "");
+					ui->add_variable(type, name.c_str(), offset, arr_size, arr_stride, nullptr, "");
 				}
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)

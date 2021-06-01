@@ -188,8 +188,6 @@ namespace flame
 		void on_visibility_changed(bool v) override;
 		void on_reposition(uint from, uint to) override;
 
-		bool on_save_attribute(uint h) override;
-
 		bool draw(uint layer, sRenderer* s_renderer);
 	};
 }

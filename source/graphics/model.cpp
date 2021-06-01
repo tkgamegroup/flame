@@ -266,7 +266,9 @@ namespace flame
 					material_name = std::to_string(i);
 				material_name = model_name + "_" + material_name + ".fmat";
 				material_names.push_back(material_name);
-				doc.save_file(material_name.c_str());
+				auto material_filename = filename.parent_path();
+				material_filename += material_name;
+				doc.save_file(material_filename.c_str());
 			}
 
 			pugi::xml_document doc;

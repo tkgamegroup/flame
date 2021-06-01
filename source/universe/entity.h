@@ -61,6 +61,7 @@ namespace flame
 		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f /* 0 means every frame */ ) = 0;
 		virtual void remove_event(void* ev) = 0;
 
+		virtual EntityPtr copy() = 0;
 		virtual bool load(const wchar_t* filename) = 0;
 		virtual bool save(const wchar_t* filename) = 0;
 

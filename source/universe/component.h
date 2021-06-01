@@ -33,7 +33,5 @@ namespace flame
 		virtual void on_child_added(EntityPtr e) {}
 		virtual void on_child_removed(EntityPtr e) {}
 		virtual void on_reposition(uint from, uint to) {}
-
-		virtual bool on_save_attribute(uint h) { return true; }
 	};
 }

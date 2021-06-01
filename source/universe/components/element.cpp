@@ -653,26 +653,6 @@ namespace flame
 			return aabb.contains(p);
 	}
 
-	bool cElementPrivate::on_save_attribute(uint h)
-	{
-		switch (h)
-		{
-		case S<"x"_h>:
-		case S<"y"_h>:
-		case S<"width"_h>:
-		case S<"height"_h>:
-		case S<"scalex"_h>:
-		case S<"scaley"_h>:
-			return false;
-		case S<"size"_h>:
-			if ((alignx == AlignMinMax && aligny == AlignMinMax) ||
-				(auto_width && auto_height))
-				return false;
-			break;
-		}
-		return true;
-	}
-
 	bool cElementPrivate::draw(uint layer, sRenderer* s_renderer)
 	{
 		auto transparent = true;

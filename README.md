@@ -1,17 +1,21 @@
 # Flame Game Engine
-An ECS Game Engine Based On Reflection.
+An ECS 3D-Game-Engine.
 
 # Requirements:
 
-- VisualStudio
-
 - VulkanSDK
 
-- PugiXML
+- PugiXML https://github.com/zeux/pugixml
 
-- NJson
+- NJson https://github.com/nlohmann/json
 
-- stb
+- cppcodec https://github.com/tplgy/cppcodec
+
+- boost/regex https://github.com/boostorg/regex
+
+- stb https://github.com/nothings/stb
+
+- SHA1 https://github.com/vog/sha1
 
 - OpenAL
 
@@ -25,10 +29,10 @@ An ECS Game Engine Based On Reflection.
 
 - cmake flame
 
-- run ./set_env.bat (you need to restart your IDE to take that effect)
+- run ./set_env.bat (then you need to restart your IDE)
 
 - regsvr32 msdia140.dll in visual studio's dia sdk i.e. "vs_path/DIA SDK/bin/amd64"
 
 - build
 
-(if you want to build in release config, always build in RelWithDebInfo, because DebugInfo is always needed)
+(if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed)

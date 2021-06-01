@@ -337,19 +337,6 @@ namespace flame
 		octnode = { nullptr, nullptr };
 	}
 
-	bool cNodePrivate::on_save_attribute(uint h)
-	{
-		switch (h)
-		{
-		case S<"euler"_h>:
-			update_eul();
-			return true;
-		case S<"quat"_h>:
-			return false;
-		}
-		return true;
-	}
-
 	cNode* cNode::create(void* parms)
 	{
 		return f_new<cNodePrivate>();

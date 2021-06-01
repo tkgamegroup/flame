@@ -135,6 +135,7 @@ namespace flame
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;
 		void remove_event(void* ev) override;
 
+		EntityPtr copy() override;
 		bool load(const std::filesystem::path& filename);
 		bool load(const wchar_t* filename) override { return load(std::filesystem::path(filename)); }
 		bool save(const std::filesystem::path& filename);

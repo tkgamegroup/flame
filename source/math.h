@@ -59,6 +59,14 @@ namespace flame
 
 	inline SideFlags operator| (SideFlags a, SideFlags b) { return (SideFlags)((int)a | (int)b); }
 
+	union LightCommonValue
+	{
+		cvec4 b;
+		int i;
+		uint u;
+		float f;
+	};
+
 	union CommonValue
 	{
 		cvec4 c;
@@ -67,49 +75,6 @@ namespace flame
 		vec4 f;
 		void* p;
 	};
-
-	template <uint N>
-	CommonValue common(const vec<N, uint, lowp>& v)
-	{
-		CommonValue cv;
-		for (auto i = 0; i < N; i++)
-			cv.c[i] = v[i];
-		return cv;
-	}
-
-	template <uint N>
-	CommonValue common(const vec<N, int, highp>& v)
-	{
-		CommonValue cv;
-		for (auto i = 0; i < N; i++)
-			cv.i[i] = v[i];
-		return cv;
-	}
-
-	template <uint N>
-	CommonValue common(const vec<N, uint, highp>& v)
-	{
-		CommonValue cv;
-		for (auto i = 0; i < N; i++)
-			cv.u[i] = v[i];
-		return cv;
-	}
-
-	template <uint N>
-	CommonValue common(const vec<N, float, highp>& v)
-	{
-		CommonValue cv;
-		for (auto i = 0; i < N; i++)
-			cv.f[i] = v[i];
-		return cv;
-	}
-
-	inline CommonValue common(void* p)
-	{
-		CommonValue cv;
-		cv.p = p;
-		return cv;
-	}
 
 	inline float segment_intersect(const vec2& a, const vec2& b, const vec2& c, const vec2& d)
 	{

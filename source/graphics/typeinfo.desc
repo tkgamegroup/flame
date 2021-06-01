@@ -1,24 +1,4 @@
 <desc>
-  <udts>
-    <rule name="^flame::graphics::Buffer$" >
-      <includes>
-        <item type="function" name="[\w]+$" />
-      </includes>
-      <excludes>
-        <item type="function" name="^ctor$" />
-        <item type="function" name="^dtor$" />
-      </excludes>
-    </rule>
-    <rule name="^flame::graphics::Image$" >
-      <includes>
-        <item type="function" name="[\w]+$" />
-      </includes>
-      <excludes>
-        <item type="function" name="^ctor$" />
-        <item type="function" name="^dtor$" />
-      </excludes>
-    </rule>
-  </udts>
   <enums>
     <rule name="^flame::graphics::Filter$" />
     <rule name="^flame::graphics::AddressMode$" />
@@ -27,4 +7,12 @@
     <rule name="^flame::graphics::ShaderTypeTag" />
     <rule name="^flame::graphics::BlendFactor$" />
   </enums>
+  <udts>
+    <rule name="^flame::graphics::Buffer$" >
+      <item type="function" name="^\w+(?&lt;!ctor)(?&lt;!dtor)$" />
+    </rule>
+    <rule name="^flame::graphics::Image$" >
+      <item type="function" name="^\w+(?&lt;!ctor)(?&lt;!dtor)$" />
+    </rule>
+  </udts>
 </desc>

@@ -905,7 +905,7 @@ namespace flame
 			data.alpha_test = mat->get_alpha_test();
 			for (auto i = 0; i < 4; i++)
 			{
-				wchar_t buf[260];
+				wchar_t buf[260]; buf[0] = 0;
 				mat->get_texture_file(i, buf);
 				auto fn = std::filesystem::path(buf);
 				if (fn.empty())
@@ -1261,6 +1261,7 @@ namespace flame
 		auto& data = *nd.buf_render_data.pstag;
 		data.fog_color = fog_color;
 		data.sky_intensity = intensity;
+		data.sky_rad_levels = rad->get_sub().level_count;
 	}
 
 	void sRendererPrivate::add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow)
@@ -1416,7 +1417,6 @@ namespace flame
 				camera->update_view();
 
 				auto& data = *(nd.buf_render_data.pstag);
-				data.sky_rad_levels = 0;
 				data.csm_levels = csm_levels;
 				data.csm_factor = 0.3f; // TODO
 				data.ptsm_near = ptsm_near;
@@ -2216,6 +2216,7 @@ namespace flame
 			auto& data = *(nd.buf_render_data.pstag);
 			data.fog_color = vec3(1.f);
 			data.sky_intensity = 1.f;
+			data.sky_rad_levels = 0;
 		}
 		nd.ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());

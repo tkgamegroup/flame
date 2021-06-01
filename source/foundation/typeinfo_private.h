@@ -35,16 +35,44 @@ namespace flame
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	};
 
-	struct ReflectMetaPrivate : ReflectMeta
+	struct Metas
 	{
-		std::vector<std::pair<std::string, std::string>> tokens;
+		std::vector<std::pair<TypeMeta, LightCommonValue>> d;
 
-		uint get_tokens_count() const override { return tokens.size(); }
-		void get_token(char** pname, char** pvalue, uint idx) const override;
-		bool get_token(const std::string& str, char** pvalue) const;
-		bool get_token(const char* str, char** pvalue) const override { return get_token(std::string(str), pvalue); }
+		inline void from_string(const std::string& str)
+		{
+			auto e_meta = TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeMeta");
+			for (auto& i : SUS::split(str, ';'))
+			{
+				auto sp = SUS::split(i, ':');
+				auto& m = d.emplace_back();
+				e_meta->unserialize(&m.first, sp[0].c_str());
+				m.second.u = std::stoul(sp[1], 0, 16);;
+			}
+		}
 
-		std::string concat() const;
+		inline std::string to_string() const
+		{
+			std::string ret;
+			auto e_meta = TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeMeta");
+			for (auto& i : d)
+				ret += e_meta->serialize(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+			return ret;
+		}
+
+		inline bool get_meta(TypeMeta m, LightCommonValue* v) const
+		{
+			for (auto& i : d)
+			{
+				if (i.first == m)
+				{
+					if (v)
+						*v = i.second;
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 
 	struct VariableInfoPrivate : VariableInfo
@@ -56,10 +84,12 @@ namespace flame
 		uint offset;
 		uint array_size = 1;
 		uint array_stride = 0;
-		ReflectMetaPrivate meta;
-		std::string default_value;
+		void* default_value = nullptr;
+		Metas metas;
 
-		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta);
+		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
+			uint array_size, uint array_stride, void* default_value, const std::string& metas);
+		~VariableInfoPrivate();
 
 		UdtInfoPtr get_udt() const override { return udt; }
 		uint get_index() const override { return index; }
@@ -68,8 +98,8 @@ namespace flame
 		uint get_offset() const override { return offset; }
 		uint get_array_size() const override { return array_size; }
 		uint get_array_stride() const override { return array_stride; }
-		ReflectMetaPtr get_meta() const override { return (const ReflectMetaPtr)&meta; }
-		const char* get_default_value() const override { return default_value.c_str(); }
+		void* get_default_value() const override { return default_value; }
+		bool get_meta(TypeMeta m, LightCommonValue* v) const override;
 	};
 
 	struct EnumItemInfoPrivate : EnumItemInfo
@@ -114,10 +144,11 @@ namespace flame
 		uint rva;
 		uint voff;
 		TypeInfoPrivate* type;
-		std::vector<TypeInfoPrivate*> parameters;
 		std::string code;
+		Metas metas;
+		std::vector<TypeInfoPrivate*> parameters;
 
-		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
+		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type, const std::string& metas);
 
 		void* get_library() const override { return library; }
 		UdtInfoPtr get_udt() const override { return udt; }
@@ -126,18 +157,17 @@ namespace flame
 		uint get_rva() const override { return rva; }
 		uint get_voff() const override { return voff; }
 		TypeInfoPtr get_type() const override { return type; }
+		const char* get_code() const override { return code.c_str(); }
+		bool get_meta(TypeMeta m, LightCommonValue* v) const override;
 
 		uint get_parameters_count() const override { return parameters.size(); }
 		TypeInfoPtr get_parameter(uint idx) const override { return parameters[idx]; }
 		void add_parameter(TypeInfoPtr ti, int idx) override;
 		void remove_parameter(uint idx) override;
 
-		const char* get_code() const override { return code.c_str(); }
-
 		bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const override;
 
 		void* get_address(void* obj) const override;
-
 		void call(void* obj, void* ret, void* parameters) const override;
 	};
 
@@ -163,16 +193,20 @@ namespace flame
 		VariableInfoPtr get_variable(uint idx) const override { return variables[idx].get(); }
 		VariableInfoPtr find_variable(const std::string& name) const;
 		VariableInfoPtr find_variable(const char* name) const override { return find_variable(std::string(name)); }
-		VariableInfoPtr add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx = -1);
-		VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx) override { return add_variable(ti, std::string(name), offset, array_size, array_stride, std::string(default_value), std::string(meta), idx); }
+		VariableInfoPtr add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, 
+			void* default_value, const std::string& metas, int idx = -1);
+		VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, 
+			void* default_value, const char* metas, int idx) override 
+		{ return add_variable(ti, std::string(name), offset, array_size, array_stride, default_value, std::string(metas), idx); }
 		void remove_variable(VariableInfoPtr vi) override;
 
 		uint get_functions_count() const override { return functions.size(); }
 		FunctionInfoPtr get_function(uint idx) const override { return functions[idx].get(); }
 		FunctionInfoPtr find_function(const std::string& name) const;
 		FunctionInfoPtr find_function(const char* name) const override { return find_function(std::string(name)); }
-		FunctionInfoPtr add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, int idx = -1);
-		FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, int idx) override { return add_function(std::string(name), rva, voff, ti, idx); }
+		FunctionInfoPtr add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, const std::string& metas, int idx = -1);
+		FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, const char* metas, int idx) override 
+		{ return add_function(std::string(name), rva, voff, ti, std::string(metas), idx); }
 		void remove_function(FunctionInfoPtr fi) override;
 	};
 

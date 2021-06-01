@@ -27,6 +27,13 @@ namespace flame
 		ElseType
 	};
 
+	enum TypeMeta
+	{
+		MetaBpInput,
+		MetaBpOutput,
+		MetaSecondaryAttribute
+	};
+
 	struct TypeInfo
 	{
 		virtual TypeTag get_tag() const = 0;
@@ -46,7 +53,7 @@ namespace flame
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual bool compare(void* dst, const void* src) const = 0;
 		virtual void serialize(const void* src, char* dst) const = 0;
-		inline std::string serialize(const void* src)
+		inline std::string serialize(const void* src) const
 		{
 			char str[256];
 			serialize(src, str);
@@ -62,13 +69,6 @@ namespace flame
 		return (TypeInfoPtr)TypeInfo::get(TypeEnumSingle, name);
 	}
 
-	struct ReflectMeta
-	{
-		virtual uint get_tokens_count() const = 0;
-		virtual void get_token(char** name_dst, char** pvalue, uint idx) const = 0;
-		virtual bool get_token(const char* name, char** pvalue = nullptr) const = 0;
-	};
-
 	struct VariableInfo
 	{
 		virtual UdtInfoPtr get_udt() const = 0;
@@ -78,8 +78,8 @@ namespace flame
 		virtual uint get_offset() const = 0;
 		virtual uint get_array_size() const = 0;
 		virtual uint get_array_stride() const = 0;
-		virtual const char* get_default_value() const = 0;
-		virtual ReflectMetaPtr get_meta() const = 0;
+		virtual void* get_default_value() const = 0;
+		virtual bool get_meta(TypeMeta m, LightCommonValue* v) const = 0;
 	};
 
 	struct EnumItemInfo
@@ -110,18 +110,17 @@ namespace flame
 		virtual uint get_rva() const = 0;
 		virtual uint get_voff() const = 0;
 		virtual TypeInfoPtr get_type() const = 0;
+		virtual const char* get_code() const = 0;
+		virtual bool get_meta(TypeMeta m, LightCommonValue* v) const = 0;
 
 		virtual uint get_parameters_count() const = 0;
 		virtual TypeInfoPtr get_parameter(uint idx) const = 0;
 		virtual void add_parameter(TypeInfoPtr ti, int idx = -1) = 0;
 		virtual void remove_parameter(uint idx) = 0;
 
-		virtual const char* get_code() const = 0;
-
-		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
-
 		virtual bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const = 0;
 
+		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
 		virtual void call(void* obj, void* ret, void* parameters) const = 0;
 	};
 
@@ -135,13 +134,14 @@ namespace flame
 		virtual uint get_variables_count() const = 0;
 		virtual VariableInfoPtr get_variable(uint idx) const = 0;
 		virtual VariableInfoPtr find_variable(const char* name) const = 0;
-		virtual VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, const char* default_value, const char* meta, int idx = -1) = 0;
+		virtual VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, 
+			void* default_value, const char* metas, int idx = -1) = 0;
 		virtual void remove_variable(VariableInfoPtr vi) = 0;
 
 		virtual uint get_functions_count() const = 0;
 		virtual FunctionInfoPtr get_function(uint idx) const = 0;
 		virtual FunctionInfoPtr find_function(const char* name) const = 0;
-		virtual FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, int idx = -1) = 0;
+		virtual FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, const char* metas, int idx = -1) = 0;
 		virtual void remove_function(FunctionInfoPtr fi) = 0;
 	};
 

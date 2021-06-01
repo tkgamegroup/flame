@@ -686,7 +686,7 @@ namespace flame
 			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(char**)p = (char*)malloc(sizeof(char));
+				*(char**)p = (char*)malloc(sizeof(char) * 256);
 				(*(char**)p)[0] = 0;
 			}
 			return p;
@@ -699,7 +699,9 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			strcpy(*(char**)dst, *(char**)src);
+			auto str = *(char**)src;
+			if (str)
+				strcpy(*(char**)dst, str);
 		}
 		bool compare(void* a, const void* b) const override
 		{
@@ -731,7 +733,7 @@ namespace flame
 			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(wchar_t**)p = (wchar_t*)malloc(sizeof(wchar_t));
+				*(wchar_t**)p = (wchar_t*)malloc(sizeof(wchar_t) * 256);
 				(*(wchar_t**)p)[0] = 0;
 			}
 			return p;
@@ -744,7 +746,9 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			wcscpy(*(wchar_t**)dst, *(wchar_t**)src);
+			auto str = *(wchar_t**)src;
+			if (str)
+				wcscpy(*(wchar_t**)dst, *(wchar_t**)src);
 		}
 		bool compare(void* a, const void* b) const override
 		{
@@ -983,56 +987,33 @@ namespace flame
 		return TypeInfoPrivate::get(tag, std::string(name), (TypeInfoDataBasePrivate*)db);
 	}
 
-	void ReflectMetaPrivate::get_token(char** pname, char** pvalue, uint idx) const
-	{
-		const auto& s = tokens[idx];
-		*pname = (char*)s.first.data();
-		*pvalue = (char*)s.second.data();
-	}
-
-	bool ReflectMetaPrivate::get_token(const std::string& str, char** pvalue) const
-	{
-		for (auto& t : tokens)
-		{
-			if (t.first == str)
-			{
-				if (pvalue)
-					*pvalue = (char*)t.second.data();
-				return true;
-			}
-		}
-		return false;
-	}
-
-	std::string ReflectMetaPrivate::concat() const
-	{
-		std::string ret;
-		for (auto& t : tokens)
-		{
-			ret += t.first;
-			if (!t.second.empty())
-				ret += "=" + t.second;
-			ret += ' ';
-		}
-		return ret;
-	}
-
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& _meta) :
+	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
+		uint array_size, uint array_stride, void* _default_value, const std::string& _metas) :
 		udt(udt),
 		index(index),
 		type(type),
 		name(name),
 		offset(offset),
 		array_size(array_size),
-		array_stride(array_stride),
-		default_value(default_value)
+		array_stride(array_stride)
 	{
-		auto sp1 = SUS::split(_meta);
-		for (auto& t : sp1)
+		if (_default_value)
 		{
-			auto sp2 = SUS::split(t, '=');
-			meta.tokens.emplace_back(sp2[0], sp2.size() > 1 ? sp2[1] : "");
+			default_value = type->create();
+			type->copy(default_value, _default_value);
 		}
+		metas.from_string(_metas);
+	}
+
+	VariableInfoPrivate::~VariableInfoPrivate()
+	{
+		if (default_value)
+			type->destroy(default_value);
+	}
+
+	bool VariableInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
+	{
+		return metas.get_meta(m, v);
 	}
 
 	EnumItemInfoPrivate::EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
@@ -1090,7 +1071,8 @@ namespace flame
 		}
 	}
 
-	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type) :
+	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, 
+		TypeInfoPrivate* type, const std::string& _metas) :
 		udt(udt),
 		library(library),
 		index(index),
@@ -1099,6 +1081,12 @@ namespace flame
 		voff(voff),
 		type(type)
 	{
+		metas.from_string(_metas);
+	}
+
+	bool FunctionInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
+	{
+		return metas.get_meta(m, v);
 	}
 
 	void FunctionInfoPrivate::add_parameter(TypeInfoPtr ti, int idx)
@@ -1222,11 +1210,12 @@ namespace flame
 		return nullptr;
 	}
 
-	VariableInfoPtr UdtInfoPrivate::add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, const std::string& default_value, const std::string& meta, int idx)
+	VariableInfoPtr UdtInfoPrivate::add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, 
+		void* default_value, const std::string& metas, int idx)
 	{
 		if (idx == -1)
 			idx = variables.size();
-		auto ret = new VariableInfoPrivate(this, idx, ti, name, offset, array_size, array_stride, default_value, meta);
+		auto ret = new VariableInfoPrivate(this, idx, ti, name, offset, array_size, array_stride, default_value, metas);
 		variables.emplace(variables.begin() + idx, ret);
 		return ret;
 	}
@@ -1254,11 +1243,11 @@ namespace flame
 		return nullptr;
 	}
 
-	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, int idx)
+	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, const std::string& metas, int idx)
 	{
 		if (idx == -1)
 			idx = functions.size();
-		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, ti);
+		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, ti, metas);
 		functions.emplace(functions.begin() + idx, ret);
 		return ret;
 	}
@@ -1512,16 +1501,24 @@ namespace flame
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto v = new VariableInfoPrivate(u, u->variables.size(), read_ti(n_variable), n_variable.attribute("name").value(),
+				auto type = read_ti(n_variable);
+				void* default_value = nullptr;
+				if (auto n = n_variable.attribute("default_value"); n)
+				{
+					default_value = type->create();
+					type->unserialize(default_value, n.value());
+				}
+				auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
 					n_variable.attribute("offset").as_uint(), n_variable.attribute("array_size").as_uint(), n_variable.attribute("array_stride").as_uint(),
-					n_variable.attribute("default_value").value(), n_variable.attribute("meta").value());
+					default_value, n_variable.attribute("metas").value());
 				u->variables.emplace_back(v);
+				if (default_value)
+					type->destroy(default_value);
 			}
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto f = new FunctionInfoPrivate(u, library, u->functions.size(), n_function.attribute("name").value(),
-					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
-					read_ti(n_function));
+					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(), read_ti(n_function), n_function.attribute("metas").value());
 				u->functions.emplace_back(f);
 				for (auto n_parameter : n_function.child("parameters"))
 					f->parameters.push_back(read_ti(n_parameter));
@@ -1537,8 +1534,9 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
 
-		auto write_ti = [](TypeInfoPrivate* ti, pugi::xml_node n) {
-			n.append_attribute("type_tag").set_value(ti_es("flame::TypeTag")->serialize(&ti->tag).c_str());
+		auto e_tag = TypeInfo::get(TypeEnumSingle, "flame::TypeTag");
+		auto write_ti = [&](TypeInfoPrivate* ti, pugi::xml_node n) {
+			n.append_attribute("type_tag").set_value(e_tag->serialize(&ti->tag).c_str());
 			n.append_attribute("type_name").set_value(ti->name.c_str());
 		};
 
@@ -1580,8 +1578,8 @@ namespace flame
 						n_variable.append_attribute("offset").set_value(vi->offset);
 						n_variable.append_attribute("array_size").set_value(vi->array_size);
 						n_variable.append_attribute("array_stride").set_value(vi->array_stride);
-						n_variable.append_attribute("default_value").set_value(vi->default_value.c_str());
-						n_variable.append_attribute("meta").set_value(vi->meta.concat().c_str());
+						n_variable.append_attribute("default_value").set_value(vi->default_value ? vi->type->serialize(vi->default_value).c_str() : "");
+						n_variable.append_attribute("metas").set_value(vi->metas.to_string().c_str());
 					}
 				}
 				if (!ui->functions.empty())
@@ -1593,6 +1591,7 @@ namespace flame
 						n_function.append_attribute("name").set_value(fi->name.c_str());
 						n_function.append_attribute("rva").set_value(fi->rva);
 						n_function.append_attribute("voff").set_value(fi->voff);
+						n_function.append_attribute("metas").set_value(fi->metas.to_string().c_str());
 						write_ti(fi->type, n_function);
 						if (!fi->parameters.empty())
 						{

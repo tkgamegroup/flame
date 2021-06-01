@@ -33,16 +33,21 @@ namespace flame
 				get_type->destroy(d, false);
 			}
 
-			std::string serialize(void* c, void* r = nullptr)
+			~Attribute()
+			{
+
+			}
+
+			std::string serialize(void* c, void* ref = nullptr)
 			{
 				void* d = get_type->create(false);
 				getter->call(c, d, nullptr);
 				auto str = get_type->serialize(d);
 				get_type->destroy(d, false);
-				if (r)
+				if (ref)
 				{
 					void* d = get_type->create(false);
-					getter->call(r, d, nullptr);
+					getter->call(ref, d, nullptr);
 					auto str2 = get_type->serialize(d);
 					get_type->destroy(d, false);
 					if (str == str2)
@@ -58,7 +63,7 @@ namespace flame
 		FunctionInfo* creator;
 		void* dummy;
 
-		std::map<std::string, Attribute> attributes;
+		std::map<std::string, std::unique_ptr<Attribute>> attributes;
 
 		Type(UdtInfo* udt) :
 			udt(udt)
@@ -98,7 +103,7 @@ namespace flame
 				{
 					if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
 					{
-						attributes.emplace(std::get<0>(g), Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
+						attributes.emplace(std::get<0>(g), new Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
 						break;
 					}
 				}
@@ -118,7 +123,7 @@ namespace flame
 			auto it = attributes.find(name);
 			if (it == attributes.end())
 				return nullptr;
-			return &it->second;
+			return it->second.get();
 		}
 	};
 
@@ -1002,6 +1007,33 @@ namespace flame
 		return fn;
 	}
 
+	EntityPtr EntityPrivate::copy()
+	{
+		auto ret = f_new<EntityPrivate>();
+		ret->name = name;
+		ret->visible = visible;
+		for (auto& c : components)
+		{
+			auto ct = find_component_type(c->type_name);
+			fassert(ct);
+			auto cc = (Component*)ct->create();
+			for (auto& a : ct->attributes)
+			{
+				if (!a.second->getter->get_meta(MetaSecondaryAttribute, nullptr))
+				{
+
+				}
+			}
+			ret->add_component(cc);
+		}
+		for (auto& c : children)
+		{
+			auto cc = c->copy();
+			ret->add_child(cc);
+		}
+		return ret;
+	}
+
 	bool EntityPrivate::load(const std::filesystem::path& filename)
 	{
 		pugi::xml_document doc;
@@ -1093,9 +1125,10 @@ namespace flame
 			for (auto& d : e_src->drivers)
 			{
 				auto dt = find_driver_type(d->type_name, nullptr);
+				auto ref = reference ? reference->get_driver(d->type_hash) : nullptr;
 				for (auto& a : dt->attributes)
 				{
-					auto value = a.second.serialize(d.get(), reference ? reference->get_driver(d->type_hash) : nullptr);
+					auto value = a.second->serialize(d.get(), ref);
 					if (!value.empty())
 						n_dst.append_attribute(a.first.c_str()).set_value(value.c_str());
 				}
@@ -1107,6 +1140,7 @@ namespace flame
 			std::string cname;
 			auto ct = find_component_type(c->type_name, &cname);
 			fassert(ct);
+			auto ref = reference ? reference->get_component(c->type_hash) : nullptr;
 			auto put_attributes = [&](pugi::xml_node n) {
 				for (auto& a : ct->attributes)
 				{
@@ -1137,9 +1171,9 @@ namespace flame
 					}
 					else
 					{
-						if (c->on_save_attribute(a.second.hash))
+						if (!a.second->getter->get_meta(MetaSecondaryAttribute, nullptr))
 						{
-							auto value = a.second.serialize(c.get(), reference ? reference->get_component(c->type_hash) : nullptr);
+							auto value = a.second->serialize(c.get(), ref);
 							if (!value.empty())
 							{
 								if (a.first == "content")
