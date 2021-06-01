@@ -200,15 +200,20 @@ namespace flame
 #ifdef USE_ASSIMP
 			auto filename = std::filesystem::path(_filename);
 			auto model_name = filename.filename().stem().string();
+			auto model_filename = filename;
+			model_filename.replace_extension(L".fmod");
 
 			Assimp::Importer importer;
+			importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger");
 			auto load_flags =
 				aiProcess_RemoveRedundantMaterials |
 				aiProcess_Triangulate |
 				aiProcess_JoinIdenticalVertices |
 				aiProcess_SortByPType |
 				aiProcess_FlipUVs |
-				aiProcess_LimitBoneWeights;
+				aiProcess_LimitBoneWeights |
+				aiProcess_OptimizeMeshes |
+				aiProcess_OptimizeGraph;
 			auto scene = importer.ReadFile(filename.string(), load_flags);
 			if (!scene)
 			{
@@ -267,12 +272,17 @@ namespace flame
 				material_name = model_name + "_" + material_name + ".fmat";
 				material_names.push_back(material_name);
 				auto material_filename = filename.parent_path();
-				material_filename += material_name;
+				material_filename /= material_name;
 				doc.save_file(material_filename.c_str());
 			}
 
 			pugi::xml_document doc;
 			auto n_model = doc.append_child("model");
+
+			auto model_data_filename = model_filename;
+			model_data_filename += L".dat";
+			std::ofstream model_data_file(model_data_filename, std::ios::binary);
+			auto model_data_off = 0U;
 
 			auto n_meshes = n_model.append_child("meshes");
 			for (auto i = 0; i < scene->mNumMeshes; i++)
@@ -285,7 +295,15 @@ namespace flame
 
 				auto vertex_count = ai_mesh->mNumVertices;
 
-				n_mesh.append_child("positions").append_attribute("data").set_value(base64::encode((char*)ai_mesh->mVertices, vertex_count * sizeof(vec3)).c_str());
+				{
+					auto size = vertex_count * sizeof(vec3);
+					auto n_positions = n_mesh.append_child("positions");
+					n_positions.append_attribute("offset").set_value(model_data_off);
+					n_positions.append_attribute("size").set_value(size);
+					model_data_file.write((char*)ai_mesh->mVertices, size);
+					model_data_off += size;
+				}
+
 				auto puv = ai_mesh->mTextureCoords[0];
 				if (puv)
 				{
@@ -296,19 +314,39 @@ namespace flame
 						auto& uv = puv[j];
 						uvs[j] = vec2(uv.x, uv.y);
 					}
-					n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)uvs.data(), vertex_count * sizeof(vec2)).c_str());
+					auto size = vertex_count * sizeof(vec2);
+					auto n_uvs = n_mesh.append_child("uvs");
+					n_uvs.append_attribute("offset").set_value(model_data_off);
+					n_uvs.append_attribute("size").set_value(size);
+					model_data_file.write((char*)uvs.data(), size);
+					model_data_off += size;
 				}
-				if (ai_mesh->mNormals)
-					n_mesh.append_child("normals").append_attribute("data").set_value(base64::encode((char*)ai_mesh->mNormals, vertex_count * sizeof(vec3)).c_str());
 
-				std::vector<uint> indices(ai_mesh->mNumFaces * 3);
-				for (auto j = 0; j < ai_mesh->mNumFaces; j++)
+				if (ai_mesh->mNormals)
 				{
-					indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
-					indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
-					indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
+					auto size = vertex_count * sizeof(vec3);
+					auto n_normals = n_mesh.append_child("normals");
+					n_normals.append_attribute("offset").set_value(model_data_off);
+					n_normals.append_attribute("size").set_value(size);
+					model_data_file.write((char*)ai_mesh->mNormals, size);
+					model_data_off += size;
 				}
-				n_mesh.append_child("indices").append_attribute("data").set_value(base64::encode((char*)indices.data(), indices.size() * sizeof(uint)).c_str());
+
+				{
+					std::vector<uint> indices(ai_mesh->mNumFaces * 3);
+					for (auto j = 0; j < ai_mesh->mNumFaces; j++)
+					{
+						indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
+						indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
+						indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
+					}
+					auto size = indices.size() * sizeof(uint);
+					auto n_indices = n_mesh.append_child("indices");
+					n_indices.append_attribute("offset").set_value(model_data_off);
+					n_indices.append_attribute("size").set_value(size);
+					model_data_file.write((char*)indices.data(), size);
+					model_data_off += size;
+				}
 
 				auto lower_bound = vec3(0.f);
 				auto upper_bound = vec3(0.f);
@@ -338,18 +376,29 @@ namespace flame
 							vec4(m.a3, m.b3, m.c3, m.d3),
 							vec4(m.a4, m.b4, m.c4, m.d4)
 						);
-						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64::encode((char*)&offset_matrix, sizeof(mat4)).c_str());
+						auto size = sizeof(mat4);
+						auto n_matrix = n_mesh.append_child("offset_matrix");
+						n_matrix.append_attribute("offset").set_value(model_data_off);
+						n_matrix.append_attribute("size").set_value(size);
+						model_data_file.write((char*)&offset_matrix, size);
+						model_data_off += size;
 					}
 
 					if (ai_bone->mNumWeights > 0)
-						n_bone.append_child("weights").append_attribute("data").set_value(
-							base64::encode((char*)ai_bone->mWeights, ai_bone->mNumWeights * sizeof(Bone::Weight)).c_str());
+					{
+						auto size = sizeof(ai_bone->mNumWeights * sizeof(Bone::Weight));
+						auto n_weights = n_mesh.append_child("weights");
+						n_weights.append_attribute("offset").set_value(model_data_off);
+						n_weights.append_attribute("size").set_value(size);
+						model_data_file.write((char*)ai_bone->mWeights, size);
+						model_data_off += size;
+					}
 				}
 
 			}
 
-			auto model_filename = filename;
-			model_filename.replace_extension(L".fmod");
+			model_data_file.close();
+
 			doc.save_file(model_filename.c_str());
 
 			pugi::xml_document doc_prefab;
@@ -377,7 +426,7 @@ namespace flame
 
 				if (src->mNumMeshes > 0)
 				{
-					if (name.starts_with("trigger_"))
+					if (name == "trigger")
 					{
 						auto nr = n.append_child("cRigid");
 						nr.append_attribute("dynamic").set_value(false);
@@ -390,7 +439,7 @@ namespace flame
 					{
 						auto nm = n.append_child("cMesh");
 						nm.append_attribute("src").set_value((model_name + ".fmod#" + std::to_string(src->mMeshes[0])).c_str());
-						if (name.starts_with("sm_"))
+						if (name == "mesh_collider")
 						{
 							auto nr = n.append_child("cRigid");
 							nr.append_attribute("dynamic").set_value(false);
@@ -413,9 +462,19 @@ namespace flame
 			{
 				auto ai_ani = scene->mAnimations[i];
 
+				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
+				auto animation_filename = filename.parent_path();
+				animation_filename /= animation_name;
+
 				pugi::xml_document doc_animation;
 				auto n_animation = doc_animation.append_child("animation");
 				auto n_channels = n_animation.append_child("channels");
+
+				auto data_filename = animation_filename;
+				data_filename += L".dat";
+				std::ofstream data_file(data_filename, std::ios::binary);
+				auto data_off = 0U;
+
 				for (auto j = 0; j < ai_ani->mNumChannels; j++)
 				{
 					auto ai_ch = ai_ani->mChannels[j];
@@ -433,8 +492,14 @@ namespace flame
 							auto& p = ai_key.mValue;
 							dst_k.v = vec3(p.x, p.y, p.z);
 						}
-						n_channel.append_child("position_keys").append_attribute("data").set_value(
-							base64::encode((char*)position_keys.data(), position_keys.size() * sizeof(PositionKey)).c_str());
+						{
+							auto size = position_keys.size() * sizeof(PositionKey);
+							auto n_keys = n_channel.append_child("position_keys");
+							n_keys.append_attribute("offset").set_value(data_off);
+							n_keys.append_attribute("size").set_value(size);
+							data_file.write((char*)position_keys.data(), size);
+							data_off += size;
+						}
 					}
 					if (ai_ch->mNumRotationKeys > 0)
 					{
@@ -448,13 +513,20 @@ namespace flame
 							auto& q = ai_key.mValue;
 							dst_k.v = quat(q.w, q.x, q.y, q.z);
 						}
-						n_channel.append_child("rotation_keys").append_attribute("data").set_value(
-							base64::encode((char*)rotation_keys.data(), rotation_keys.size() * sizeof(RotationKey)).c_str());
+						{
+							auto size = rotation_keys.size() * sizeof(RotationKey);
+							auto n_keys = n_channel.append_child("rotation_keys");
+							n_keys.append_attribute("offset").set_value(data_off);
+							n_keys.append_attribute("size").set_value(size);
+							data_file.write((char*)rotation_keys.data(), size);
+							data_off += size;
+						}
 					}
 				}
 
-				auto name = model_name + "_" + std::string(ai_ani->mName.C_Str());
-				doc_animation.save_file(name.c_str());
+				data_file.close();
+
+				doc_animation.save_file(animation_filename.c_str());
 			}
 #else
 			return nullptr;
@@ -528,6 +600,15 @@ namespace flame
 				return nullptr;
 			}
 
+			auto model_data_filename = filename;
+			model_data_filename += L".dat";
+			std::ifstream model_data_file(model_data_filename, std::ios::binary);
+			if (!model_data_file.good())
+			{
+				printf("missing .dat file for: %s\n", filename.string().c_str());
+				return nullptr;
+			}
+
 			auto ret = new ModelPrivate();
 			ret->filename = filename;
 			auto ppath = filename.parent_path();
@@ -542,34 +623,41 @@ namespace flame
 					m->material = MaterialPrivate::get(local_material_filename.c_str());
 				else
 					m->material = MaterialPrivate::get(material_filename.c_str());
+
+				auto n_positions = n_mesh.child("positions");
 				{
-					auto res = base64::decode(std::string(n_mesh.child("positions").attribute("data").value()));
-					m->positions.resize(res.size() / sizeof(vec3));
-					memcpy(m->positions.data(), res.data(), res.size());
+					auto offset = n_positions.attribute("offset").as_uint();
+					auto size = n_positions.attribute("size").as_uint();
+					m->positions.resize(size / sizeof(vec3));
+					model_data_file.read((char*)m->positions.data(), size);
 				}
+
+				auto n_uvs = n_mesh.child("uvs");
+				if (n_uvs)
 				{
-					auto n = n_mesh.child("uvs");
-					if (n)
-					{
-						auto res = base64::decode(std::string(n.attribute("data").value()));
-						m->uvs.resize(res.size() / sizeof(vec2));
-						memcpy(m->uvs.data(), res.data(), res.size());
-					}
+					auto offset = n_uvs.attribute("offset").as_uint();
+					auto size = n_uvs.attribute("size").as_uint();
+					m->uvs.resize(size / sizeof(vec2));
+					model_data_file.read((char*)m->uvs.data(), size);
 				}
+
+				auto n_normals = n_mesh.child("normals");
+				if (n_normals)
 				{
-					auto n = n_mesh.child("normals");
-					if (n)
-					{
-						auto res = base64::decode(std::string(n.attribute("data").value()));
-						m->normals.resize(res.size() / sizeof(vec3));
-						memcpy(m->normals.data(), res.data(), res.size());
-					}
+					auto offset = n_normals.attribute("offset").as_uint();
+					auto size = n_normals.attribute("size").as_uint();
+					m->normals.resize(size / sizeof(vec3));
+					model_data_file.read((char*)m->normals.data(), size);
 				}
+
+				auto n_indices = n_mesh.child("indices");
 				{
-					auto res = base64::decode(std::string(n_mesh.child("indices").attribute("data").value()));
-					m->indices.resize(res.size() / sizeof(uint));
-					memcpy(m->indices.data(), res.data(), res.size());
+					auto offset = n_indices.attribute("offset").as_uint();
+					auto size = n_indices.attribute("size").as_uint();
+					m->indices.resize(size / sizeof(uint));
+					model_data_file.read((char*)m->indices.data(), size);
 				}
+
 				m->lower_bound = sto<vec3>(n_mesh.attribute("lower_bound").value());
 				m->upper_bound = sto<vec3>(n_mesh.attribute("upper_bound").value());
 				for (auto n_bone : n_mesh.child("bones"))
@@ -577,18 +665,24 @@ namespace flame
 					auto b = new BonePrivate;
 					b->name = n_bone.attribute("name").value();
 					{
-						auto res = base64::decode(std::string(n_bone.child("offset_matrix").attribute("data").value()));
-						memcpy(&b->offset_matrix, res.data(), sizeof(mat4));
+						auto n_matrix = n_bone.child("offset_matrix");
+						auto offset = n_matrix.attribute("offset").as_uint();
+						auto size = n_matrix.attribute("size").as_uint();
+						model_data_file.read((char*)&b->offset_matrix, size);
 					}
 					{
-						auto res = base64::decode(std::string(n_bone.child("weights").attribute("data").value()));
-						b->weights.resize(res.size() / sizeof(BonePrivate::Weight));
-						memcpy(b->weights.data(), res.data(), res.size());
+						auto n_weights = n_bone.child("weights");
+						auto offset = n_weights.attribute("offset").as_uint();
+						auto size = n_weights.attribute("size").as_uint();
+						b->weights.resize(size / sizeof(BonePrivate::Weight));
+						model_data_file.read((char*)b->weights.data(), size);
 					}
 					m->bones.emplace_back(b);
 				}
 				ret->meshes.emplace_back(m);
 			}
+
+			model_data_file.close();
 
 			models.emplace_back(filename, ret);
 
@@ -614,6 +708,15 @@ namespace flame
 				return nullptr;
 			}
 
+			auto data_filename = filename;
+			data_filename += L".dat";
+			std::ifstream data_file(data_filename, std::ios::binary);
+			if (!data_file.good())
+			{
+				printf("missing .dat file for: %s\n", filename.string().c_str());
+				return nullptr;
+			}
+
 			auto ret = new AnimationPrivate;
 			ret->filename = filename;
 
@@ -622,17 +725,23 @@ namespace flame
 				auto c = new ChannelPrivate;
 				c->node_name = n_channel.attribute("node_name").value();
 				{
-					auto res = base64::decode(std::string(n_channel.child("position_keys").attribute("data").value()));
-					c->position_keys.resize(res.size() / sizeof(PositionKey));
-					memcpy(c->position_keys.data(), res.data(), res.size());
+					auto n_keys = n_channel.child("position_keys");
+					auto offset = n_keys.attribute("offset").as_uint();
+					auto size = n_keys.attribute("size").as_uint();
+					c->position_keys.resize(size / sizeof(PositionKey));
+					data_file.read((char*)c->position_keys.data(), size);
 				}
 				{
-					auto res = base64::decode(std::string(n_channel.child("rotation_keys").attribute("data").value()));
-					c->rotation_keys.resize(res.size() / sizeof(RotationKey));
-					memcpy(c->rotation_keys.data(), res.data(), res.size());
+					auto n_keys = n_channel.child("rotation_keys");
+					auto offset = n_keys.attribute("offset").as_uint();
+					auto size = n_keys.attribute("size").as_uint();
+					c->rotation_keys.resize(size / sizeof(RotationKey));
+					data_file.read((char*)c->rotation_keys.data(), size);
 				}
 				ret->channels.emplace_back(c);
 			}
+
+			data_file.close();
 
 			animations.emplace_back(ret);
 

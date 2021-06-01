@@ -16,7 +16,7 @@ namespace flame
 			TypeInfo* set_type;
 			FunctionInfo* getter;
 			FunctionInfo* setter;
-			std::string default_value;
+			void* default_value;
 
 			Attribute(Type* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
 				name(name),
@@ -27,34 +27,34 @@ namespace flame
 			{
 				hash = ch(name.c_str());
 
-				void* d = get_type->create(false);
-				getter->call(ct->dummy, d, nullptr);
-				default_value = get_type->serialize(d);
-				get_type->destroy(d, false);
+				default_value = get_type->create(false);
+				getter->call(ct->dummy, default_value, nullptr);
 			}
 
 			~Attribute()
 			{
-
+				get_type->destroy(default_value, false);
 			}
 
 			std::string serialize(void* c, void* ref = nullptr)
 			{
+				auto same = false;
 				void* d = get_type->create(false);
 				getter->call(c, d, nullptr);
-				auto str = get_type->serialize(d);
-				get_type->destroy(d, false);
 				if (ref)
 				{
-					void* d = get_type->create(false);
-					getter->call(ref, d, nullptr);
-					auto str2 = get_type->serialize(d);
-					get_type->destroy(d, false);
-					if (str == str2)
-						str = "";
+					void* dd = get_type->create(false);
+					getter->call(ref, dd, nullptr);
+					if (get_type->compare(d, dd))
+						same = true;
+					get_type->destroy(dd, false);
 				}
-				else if (str == default_value)
-					str = "";
+				else if (get_type->compare(d, default_value))
+					same = true;
+				std::string str;
+				if (!same)
+					str = get_type->serialize(d);
+				get_type->destroy(d, false);
 				return str;
 			}
 		};
@@ -1012,16 +1012,26 @@ namespace flame
 		auto ret = f_new<EntityPrivate>();
 		ret->name = name;
 		ret->visible = visible;
+		ret->srcs = srcs;
+		ret->srcs_str = srcs_str;
 		for (auto& c : components)
 		{
-			auto ct = find_component_type(c->type_name);
+			std::string type_name = c->type_name;
+			SUS::cut_head_if(type_name, "flame::");
+			auto ct = find_component_type(type_name);
 			fassert(ct);
 			auto cc = (Component*)ct->create();
+			cc->src_id = c->src_id;
 			for (auto& a : ct->attributes)
 			{
-				if (!a.second->getter->get_meta(MetaSecondaryAttribute, nullptr))
+				auto attr = a.second.get();
+				if (!attr->getter->get_meta(MetaSecondaryAttribute, nullptr))
 				{
-
+					auto d = attr->get_type->create(false);
+					attr->getter->call(c.get(), d, nullptr);
+					if (!attr->get_type->compare(d, attr->default_value))
+						attr->setter->call(cc, nullptr, d);
+					attr->get_type->destroy(d, false);
 				}
 			}
 			ret->add_component(cc);
@@ -1225,8 +1235,8 @@ namespace flame
 		}
 		for (auto ui : udts)
 		{
-			static auto reg_com = std::regex(R"(^flame::(c[\w]+)$)");
-			static auto reg_dri = std::regex(R"(^flame::(d[\w]+)$)");
+			static auto reg_com = std::regex(R"(^flame::(c\w+)$)");
+			static auto reg_dri = std::regex(R"(^flame::(d\w+)$)");
 			std::smatch res;
 			auto name = std::string(ui->get_name());
 			if (std::regex_search(name, res, reg_com))

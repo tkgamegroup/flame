@@ -9,10 +9,10 @@
   </enums>
   <udts>
     <rule name="^flame::graphics::Buffer$" >
-      <item type="function" name="^\w+(?&lt;!ctor)(?&lt;!dtor)$" />
+      <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
     </rule>
     <rule name="^flame::graphics::Image$" >
-      <item type="function" name="^\w+(?&lt;!ctor)(?&lt;!dtor)$" />
+      <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
     </rule>
   </udts>
 </desc>

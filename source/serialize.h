@@ -750,18 +750,16 @@ namespace flame
 			return ret;
 		}
 
-		static std::basic_string<CH> cut_head_if(const std::basic_string<CH>& str, const std::basic_string<CH>& head)
+		static void cut_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
 			if (str.starts_with(head))
-				return str.substr(head.size());
-			return str;
+				str = str.substr(head.size());
 		}
 
-		static std::basic_string<CH> cut_tail_if(const std::basic_string<CH>& str, const std::basic_string<CH>& tail)
+		static void cut_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
 		{
 			if (str.ends_with(tail))
-				return str.substr(0, str.size() - tail.size());
-			return str;
+				str = str.substr(0, str.size() - tail.size());
 		}
 
 		static void replace_all(std::basic_string<CH>& str, const std::basic_string<CH>& from, const std::basic_string<CH>& to)

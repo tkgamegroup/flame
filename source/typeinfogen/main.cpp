@@ -524,7 +524,7 @@ process:
 							{
 								auto type_desc = typeinfo_from_symbol(s_type);
 								if (type_desc.name.starts_with("flame::"))
-									type_desc.name = SUS::cut_tail_if(type_desc.name, "Private");
+									SUS::cut_tail_if(type_desc.name, "Private");
 								if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
 									new_enum(type_desc.name, s_type);
 

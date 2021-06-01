@@ -161,7 +161,7 @@ namespace flame
 
 			void initialize(DevicePrivate* device)
 			{
-				const auto MaxSamples = 1024 * 1024;
+				const auto MaxSamples = 2048 * 2048;
 				pl = PipelinePrivate::create(device, ShaderPrivate::get(device, L"image_sample/image_sample.comp"),
 					PipelineLayoutPrivate::get(device, L"image_sample/image_sample.pll"));
 				buf_uvs = new BufferPrivate(device, sizeof(vec2) * MaxSamples, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice);
