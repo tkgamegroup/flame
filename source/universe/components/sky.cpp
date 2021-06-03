@@ -69,11 +69,10 @@ namespace flame
 				box_texture_view = box_texture->get_view(lv);
 				lv--;
 				vec4 color = vec4(0.f);
-				vec2 uv = vec2(0.5f);
-				vec4 res;
 				for (auto i = 0; i < 6; i++)
 				{
-					box_texture->get_samples(1, &uv, &res, lv, i);
+					vec4 res;
+					box_texture->get_samples(vec4(0.5f, 0.5f, 0.f, 0.f), ivec2(1), &res, lv, i);
 					color += res;
 				}
 				color /= 6.f;

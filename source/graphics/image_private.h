@@ -50,7 +50,7 @@ namespace flame
 			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
 			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
 
-			void get_samples(uint count, const vec2* uvs, vec4* dst, uint level, uint layer) override;
+			void get_samples(const vec4& off_step, const ivec2& count, vec4* dst, uint level, uint layer) override;
 
 			void generate_mipmaps() override;
 

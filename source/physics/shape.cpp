@@ -57,18 +57,11 @@ namespace flame
 			auto w = blocks.x * tess_levels;
 			auto h = blocks.y * tess_levels;
 			std::vector<uint> samples((w + 1) * (h + 1));
-			std::vector<vec2> uvs(samples.size());
 			std::vector<vec4> res(samples.size());
-			auto idx = 0;
-			for (auto x = 0; x <= w; x++)
-			{
-				for (auto y = 0; y <= h; y++)
-					uvs[idx++] = vec2(x / (float)w, y / (float)h);
-			}
-			height_map->get_samples(uvs.size(), uvs.data(), res.data());
+			height_map->get_samples(vec4(0.f, 0.f, 1.f / w, 1.f / h), ivec2(w + 1, h + 1), res.data());
 			auto dst = (PxHeightFieldSample*)samples.data();
 			auto lvhf = tess_levels >> 1;
-			idx = 0;
+			auto idx = 0;
 			for (auto x = 0; x <= w; x++)
 			{
 				for (auto y = 0; y <= h; y++)

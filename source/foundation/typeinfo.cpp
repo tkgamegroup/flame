@@ -1124,13 +1124,30 @@ namespace flame
 		return address;
 	}
 
-	extern "C" void __call(void* f, void* list1, void* list2, void* dummy);
+	extern "C" void __call(void* function_data, void* parameters_data);
 
 	void FunctionInfoPrivate::call(void* obj, void* ret, void* ps) const
 	{
-		auto idx = 0;
-		void* list1[6];
-		float list2[4];
+		struct FunctionData
+		{
+			void* address;
+			void* obj;
+			int ret_genre;
+			void* out_ret;
+		}fd;
+
+		struct ParametersData
+		{
+			int count;
+			int types[16];
+			void* values[16];
+		}pd;
+
+		fd.address = get_address(obj);
+		fd.obj = obj;
+		fd.ret_genre = type_genre;
+		fd.out_ret = ret;
+
 		if (obj)
 			list1[idx++] = obj;
 		if (!type->ret_by_reg)
@@ -1140,9 +1157,10 @@ namespace flame
 		}
 
 		auto p = (char*)ps;
-		for (auto parm : parameters)
+		for (auto i = 0; i < parameters.size(); i++)
 		{
-			switch (parm->tag)
+			auto t = parameters[i];
+			switch (t->tag)
 			{
 			case TypeEnumSingle:
 			case TypeEnumMulti:
@@ -1178,18 +1196,7 @@ namespace flame
 			}
 		}
 
-		void* staging_rax;
-		float staging_xmm0;
-		list1[4] = &staging_rax;
-		list1[5] = &staging_xmm0;
-		__call(get_address(obj), list1, list2, nullptr);
-		if (ret)
-		{
-			if (type->basic_type == FloatingType)
-				memcpy(ret, &staging_xmm0, type->size);
-			else
-				memcpy(ret, &staging_rax, type->size);
-		}
+		__call(, list1, list2);
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(void* library, const std::string& name, uint size, const std::string& base_name) :
@@ -1522,6 +1529,14 @@ namespace flame
 				u->functions.emplace_back(f);
 				for (auto n_parameter : n_function.child("parameters"))
 					f->parameters.push_back(read_ti(n_parameter));
+
+				f->type_genre = f->type->ret_by_reg ? 2 : (f->type->basic_type == FloatingType ? 1 : 0);
+				f->parameters_genres.resize(f->parameters.size());
+				for (auto i = 0; i < f->parameters.size(); i++)
+				{
+					auto p = f->parameters[i];
+					f->parameters_genres[i] = p->tag == TypePointer ? 2 : (p->basic_type == FloatingType ? 1 : 0);
+				}
 			}
 		}
 	}

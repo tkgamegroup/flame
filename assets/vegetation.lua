@@ -15,28 +15,19 @@ node.set_is_octree(true)
 terrain.get_parent().add_child(e_vegetation_root, terrain.get_index() + 1)
 
 function scatter(range, density, prefabs, probability, model_scale)
-    local cx = math.floor(range.z / density)
-    local cy = math.floor(range.w / density)
+    local cx = math.floor(range.z / density) + 1
+    local cy = math.floor(range.w / density) + 1
     local num = cx * cy
-    local ptr_uvs = malloc_vec2(num)
     local ptr_samples = malloc_vec4(num)
 
-    local i = 0 
-    for x = 0, cx - 1, 1 do
-	    for y = 0, cy - 1, 1 do
-            local uv = vec2((range.x + x * density) / scale.x, (range.y + y * density) / scale.z)
-            set_vec2(ptr_uvs, i, uv)
-            i = i + 1
-	    end
-    end
-
-    height_texture.get_samples(num, ptr_uvs, ptr_samples)
+    height_texture.get_samples(vec4(range.x / scale.x, range.y / scale.z, 
+        density / scale.x, density / scale.z), vec2(cx, cy), ptr_samples)
 
     local n_prefabs = #prefabs
     local off = vec3(scale.x, 0.0, scale.z) * 0.5;
     local i = 0 
-    for x = 0, cx - 1, 1 do
-	    for y = 0, cy - 1, 1 do
+    for y = 0, cy - 1, 1 do
+	    for x = 0, cx - 1, 1 do
             if math.random() < probability then
                 local sample = get_vec4(ptr_samples, i)
                 local e = prefabs[math.floor(math.random() * n_prefabs) + 1].copy()
@@ -50,7 +41,6 @@ function scatter(range, density, prefabs, probability, model_scale)
 	    end
     end
 
-    flame_free(ptr_uvs)
     flame_free(ptr_samples)
 end
 

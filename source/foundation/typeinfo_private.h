@@ -144,9 +144,11 @@ namespace flame
 		uint rva;
 		uint voff;
 		TypeInfoPrivate* type;
+		int type_genre;
 		std::string code;
 		Metas metas;
 		std::vector<TypeInfoPrivate*> parameters;
+		std::vector<int> parameters_genres;
 
 		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type, const std::string& metas);
 
