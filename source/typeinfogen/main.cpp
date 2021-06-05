@@ -395,6 +395,16 @@ process:
 		}
 	}
 
+	std::vector<std::string> function_types;
+	auto add_function_type = [&](const std::string& n) {
+		for (auto& t : function_types)
+		{
+			if (t == n)
+				return;
+		}
+		function_types.push_back(n);
+	};
+
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
 	IDiaSymbol* s_udt;
@@ -440,17 +450,20 @@ process:
 							name = "ctor";
 						else if (name[0] == '~')
 							name = "dtor";
+						if (name == "__local_vftable_ctor_closure" || name == "__vecDelDtor")
+							continue;
 
 						std::string metas;
 						if (ur.pass_item(TypeFunction, name, &metas))
 						{
-							s_function->get_relativeVirtualAddress(&dw);
-							auto rva = dw;
+							auto rva = 0;
+							auto voff = -1;
+							if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
+								rva = dw;
+							else if (s_function->get_virtualBaseOffset(&dw) == S_OK)
+								voff = dw;
 
-							s_function->get_virtualBaseOffset(&dw);
-							auto voff = dw;
-
-							if (rva || voff != 0)
+							if (rva || voff != -1)
 							{
 								IDiaSymbol* s_function_type;
 								s_function->get_type(&s_function_type);
@@ -460,7 +473,12 @@ process:
 								auto type_desc = typeinfo_from_symbol(s_return_type);
 								s_return_type->Release();
 
-								auto fi = u->add_function(name.c_str(), rva, voff, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db), metas.c_str());
+								IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
+								auto is_static = false;
+								if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
+									is_static = b;
+
+								auto fi = u->add_function(name.c_str(), rva, voff, is_static, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db), metas.c_str());
 
 								IDiaEnumSymbols* s_parameters;
 								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -481,8 +499,9 @@ process:
 									s_parameter->Release();
 								}
 								s_parameters->Release();
-
 								s_function_type->Release();
+
+								add_function_type(fi->get_full_name());
 
 								if (name == "ctor" && fi->get_parameters_count() == 0)
 									ctor = rva;
@@ -556,6 +575,94 @@ process:
 	db->release();
 
 	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
+
+	// compile callers
+	{
+		auto cpp_path = typeinfo_path;
+		cpp_path.replace_filename(typeinfo_path.filename().stem().wstring() + L"_callers");
+		cpp_path.replace_extension(L".cpp");
+		std::ofstream cpp(cpp_path);
+		cpp << "typedef void		V;\n";
+		cpp << "typedef void*		P;\n";
+		cpp << "typedef int			I;\n";
+		cpp << "typedef bool		B;\n";
+		cpp << "typedef char		C;\n";
+		cpp << "typedef wchar_t		W;\n";
+		cpp << "typedef long long	L;\n";
+		cpp << "typedef float		F;\n";
+		cpp << "typedef struct { char a; char b; }						C2;\n";
+		cpp << "typedef struct { char a; char b; char c; }				C3;\n";
+		cpp << "typedef struct { char a; char b; char c; char d; }		C4;\n";
+		cpp << "typedef struct { int a; int b; }						I2;\n";
+		cpp << "typedef struct { int a; int b; int c; }					I3;\n";
+		cpp << "typedef struct { int a; int b; int c; int d; }			I4;\n";
+		cpp << "typedef struct { float a; float b; }					F2;\n";
+		cpp << "typedef struct { float a; float b; float c; }			F3;\n";
+		cpp << "typedef struct { float a; float b; float c; float d; }	F4;\n";
+		cpp << "typedef struct { F3 a; F3 b; }							F6;\n";
+		cpp << "typedef struct { F3 a; F3 b; F3 c; }					F9;\n";
+		cpp << "typedef struct { F4 a; F4 b; F4 c; F4 d; }				F16;\n";
+		cpp << "typedef struct { }										dummy;\n";
+		cpp << "template <class F> F a2f(void* p) { union{ void*p; F f; } cvt; cvt.p = p; return cvt.f; }\n";
+		cpp << "\n";
+		std::sort(function_types.begin(), function_types.end());
+		for (auto& t : function_types)
+		{
+			auto sp = SUS::split(t, '_');
+
+			auto comma = false;
+			cpp << "void " << t << "(void* address, void* obj, void* ret, void** ps)\n";
+			cpp << "{\n";
+
+			// function typedef
+			cpp << "\ttypedef " << sp[1];
+			if (sp[0] == "m")
+				cpp << "(dummy::*func)(";
+			else
+				cpp << "(*func)(";
+			for (auto i = 2; i < sp.size(); i++)
+			{
+				if (comma)
+					cpp << ", ";
+				cpp << sp[i];
+				comma = true;
+			}
+			cpp << ");\n";
+
+			// function call
+			cpp << "\t";
+			if (sp[1] != "V")
+				cpp << "*(" << sp[1] << "*)ret = ";
+			comma = false;
+			if (sp[0] == "m")
+				cpp << "(*(dummy*)obj.*a2f<func>(address))(";
+			else
+				cpp << "((func)address)(";
+			for (auto i = 2; i < sp.size(); i++)
+			{
+				if (comma)
+					cpp << ", ";
+				cpp << "*(" << sp[i] << "*)ps[" << std::to_string(i - 2) << "]";
+				comma = true;
+			}
+			cpp << ");\n";
+
+			cpp << "}\n\n";
+		}
+		cpp << "extern \"C\" __declspec(dllexport) void get_callers(void(*callback)(const char* name, void(*func)(void*, void*, void*, void**)))\n{\n";
+		for (auto& t : function_types)
+			cpp << "\tcallback(\"" << t << "\", " << t << ");\n";
+		cpp << "}\n";
+		cpp.close();
+
+		set_current_path(cpp_path.parent_path().c_str());
+
+		std::wstring compile_command(L"\"");
+		compile_command += s2w(VS_LOCATION);
+		compile_command += L"/VC/Auxiliary/Build/vcvars64.bat\" & cl -LD -MD -EHsc -Zi ";
+		compile_command += cpp_path.wstring();
+		exec(nullptr, (wchar_t*)compile_command.c_str());
+	}
 
 	return 0;
 }

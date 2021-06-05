@@ -406,18 +406,19 @@ namespace flame
 			auto f = lua_isuserdata(state, -2) ? (FunctionInfo*)lua_touserdata(state, -2) : nullptr;
 			if (f)
 			{
-				char parms[4 * sizeof(void*)];
-				auto p = parms;
-				std::vector<std::unique_ptr<std::string>> temp_strs;
-				std::vector<std::unique_ptr<std::wstring>> temp_wstrs;
-				std::vector<std::unique_ptr<char>> temp_datas;
 				auto parms_cnt = f->get_parameters_count();
+				std::vector<void*> ps;
+				ps.resize(parms_cnt);
+				static char buf[1024 * 1024];
+				auto p = buf;
 				for (auto i = 0; i < parms_cnt; i++)
 				{
 					auto type = f->get_parameter(i);
 					auto tag = type->get_tag();
 					auto basic = type->get_basic();
+					auto vec_size = type->get_vec_size();
 
+					ps[i] = p;
 					if (lua_istable(state, -1))
 					{
 						lua_pushinteger(state, i + 1);
@@ -426,10 +427,9 @@ namespace flame
 						switch (type->get_tag())
 						{
 						case TypeEnumSingle:
-							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
-							break;
 						case TypeEnumMulti:
 							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
+							p += sizeof(int);
 							break;
 						case TypeData:
 							switch (basic)
@@ -449,11 +449,11 @@ namespace flame
 							}
 							break;
 						case TypePointer:
-							auto pointed_type = type->get_pointed_type();
-							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
-							auto vec_size = pointed_type ? pointed_type->get_vec_size() : 1;
 							if (lua_isuserdata(state, -1))
+							{
 								*(void**)p = lua_touserdata(state, -1);
+								p += sizeof(void*);
+							}
 							else
 							{
 								switch (vec_size)
@@ -463,17 +463,20 @@ namespace flame
 									{
 									case CharType:
 									{
-										auto t = type->create();
-										auto str = new std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-										*(void**)p = (char*)str->c_str();
-										temp_strs.emplace_back(str);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										auto str = std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
+										strcpy(p, str.c_str());
+										p += str.size() + 1;
 									}
 										break;
 									case WideCharType:
 									{
-										auto str = new std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
-										*(void**)p = (wchar_t*)str->c_str();
-										temp_wstrs.emplace_back(str);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										auto str = std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
+										wcscpy((wchar_t*)p, str.c_str());
+										p += (str.size() + 1) * sizeof(wchar_t);
 									}
 										break;
 									default:
@@ -488,6 +491,7 @@ namespace flame
 										}
 										else
 											*(void**)p = nullptr;
+										p += sizeof(void*);
 									}
 									break;
 								case 2:
@@ -495,23 +499,26 @@ namespace flame
 									{
 									case IntegerType:
 									{
-										auto d = new ivec2(lua_to_vec2(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(ivec2*)p = ivec2(lua_to_vec2(state, -1));
+										p += sizeof(ivec2);
 									}
 										break;
 									case FloatingType:
 									{
-										auto d = new vec2(lua_to_vec2(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(vec2*)p = vec2(lua_to_vec2(state, -1));
+										p += sizeof(vec2);
 									}
 										break;
 									case CharType:
 									{
-										auto d = new cvec2(lua_to_vec2(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(cvec2*)p = cvec2(lua_to_vec2(state, -1));
+										p += sizeof(cvec2);
 									}
 										break;
 									}
@@ -521,23 +528,26 @@ namespace flame
 									{
 									case IntegerType:
 									{
-										auto d = new ivec3(lua_to_vec3(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(ivec3*)p = ivec3(lua_to_vec3(state, -1));
+										p += sizeof(ivec3);
 									}
 										break;
 									case FloatingType:
 									{
-										auto d = new vec3(lua_to_vec3(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(vec3*)p = vec3(lua_to_vec3(state, -1));
+										p += sizeof(vec3);
 									}
 										break;
 									case CharType:
 									{
-										auto d = new cvec3(lua_to_vec3(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(cvec3*)p = cvec3(lua_to_vec3(state, -1));
+										p += sizeof(cvec3);
 									}
 										break;
 									}
@@ -547,23 +557,26 @@ namespace flame
 									{
 									case IntegerType:
 									{
-										auto d = new ivec4(lua_to_vec4(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(ivec4*)p = ivec4(lua_to_vec4(state, -1));
+										p += sizeof(ivec4);
 									}
 										break;
 									case FloatingType:
 									{
-										auto d = new vec4(lua_to_vec4(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(vec4*)p = vec4(lua_to_vec4(state, -1));
+										p += sizeof(vec4);
 									}
 										break;
 									case CharType:
 									{
-										auto d = new cvec4(lua_to_vec4(state, -1));
-										*(void**)p = d;
-										temp_datas.emplace_back((char*)d);
+										*(void**)p = (char*)p + sizeof(void*);
+										p += sizeof(void*);
+										*(cvec4*)p = cvec4(lua_to_vec4(state, -1));
+										p += sizeof(cvec4);
 									}
 										break;
 									}
@@ -571,7 +584,6 @@ namespace flame
 								}
 							}
 
-							p += sizeof(void*);
 							break;
 						}
 						lua_pop(state, 1);
@@ -583,7 +595,7 @@ namespace flame
 				if (ret_type != TypeInfo::get(TypeData, ""))
 					ret = ret_type->create(false);
 
-				f->call(o, ret, parms);
+				f->call(o, ret, ps.data());
 
 				if (ret)
 				{
@@ -695,9 +707,7 @@ namespace flame
 						auto pointer = *(void**)ret;
 						if (pointer)
 						{
-							auto pointed_type = ret_type->get_pointed_type();
-							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
-							switch (basic)
+							switch (ret_type->get_basic())
 							{
 							case CharType:
 								lua_pushstring(state, pointer ? (char*)pointer : "");

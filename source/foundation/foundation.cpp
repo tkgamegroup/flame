@@ -56,6 +56,11 @@ namespace flame
 		return ret;
 	}
 
+	void set_current_path(const wchar_t* path)
+	{
+		SetCurrentDirectoryW(path);
+	}
+
 	void get_app_path(wchar_t* dst, bool has_name)
 	{
 		GetModuleFileNameW(nullptr, dst, 260);

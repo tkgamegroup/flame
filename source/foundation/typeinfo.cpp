@@ -19,7 +19,7 @@ namespace flame
 		void destroy(void* p, bool) const override { free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
 		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
-		void serialize(const void* src, char* dst) const override {}
+		void serialize(const void* src, char* dst) const override { dst[0] = 0; }
 		void unserialize(void* dst, const char* src) const override {}
 	};
 
@@ -28,6 +28,7 @@ namespace flame
 		TypeInfoPrivate_EnumSingle(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypeEnumSingle, base_name, sizeof(int))
 		{
+			short_name = "I";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -46,6 +47,7 @@ namespace flame
 		TypeInfoPrivate_EnumMulti(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypeEnumMulti, base_name, sizeof(int))
 		{
+			short_name = "I";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -91,6 +93,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "bool", sizeof(bool))
 		{
 			basic_type = BooleanType;
+			short_name = "B";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -116,6 +119,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "char", sizeof(char))
 		{
 			basic_type = CharType;
+			short_name = "C";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -136,6 +140,7 @@ namespace flame
 		{
 			basic_type = CharType;
 			is_signed = false;
+			short_name = "C";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -155,6 +160,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "wchar_t", sizeof(wchar_t))
 		{
 			basic_type = WideCharType;
+			short_name = "W";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -174,6 +180,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "int", sizeof(int))
 		{
 			basic_type = IntegerType;
+			short_name = "I";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -194,6 +201,7 @@ namespace flame
 		{
 			basic_type = IntegerType;
 			is_signed = false;
+			short_name = "I";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -213,6 +221,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "int64", sizeof(int64))
 		{
 			basic_type = IntegerType;
+			short_name = "L";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -233,6 +242,7 @@ namespace flame
 		{
 			basic_type = IntegerType;
 			is_signed = false;
+			short_name = "L";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -252,6 +262,7 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "float", sizeof(float))
 		{
 			basic_type = FloatingType;
+			short_name = "F";
 		}
 
 		void serialize(const void* src, char* dst) const override
@@ -273,6 +284,7 @@ namespace flame
 			basic_type = CharType;
 			is_signed = false;
 			vec_size = 2;
+			short_name = "C2";
 		}
 
 		const char* get_code_name() const override { return "cvec2"; }
@@ -296,7 +308,7 @@ namespace flame
 			basic_type = CharType;
 			is_signed = false;
 			vec_size = 3;
-			ret_by_reg = false;
+			short_name = "C3";
 		}
 
 		const char* get_code_name() const override { return "cvec3"; }
@@ -320,7 +332,7 @@ namespace flame
 			basic_type = CharType;
 			is_signed = false;
 			vec_size = 4;
-			ret_by_reg = false;
+			short_name = "C4";
 		}
 
 		const char* get_code_name() const override { return "cvec4"; }
@@ -343,7 +355,7 @@ namespace flame
 		{
 			basic_type = IntegerType;
 			vec_size = 2;
-			ret_by_reg = false;
+			short_name = "I2";
 		}
 
 		const char* get_code_name() const override { return "ivec2"; }
@@ -366,7 +378,7 @@ namespace flame
 		{
 			basic_type = IntegerType;
 			vec_size = 3;
-			ret_by_reg = false;
+			short_name = "I3";
 		}
 
 		const char* get_code_name() const override { return "ivec3"; }
@@ -389,7 +401,7 @@ namespace flame
 		{
 			basic_type = IntegerType;
 			vec_size = 4;
-			ret_by_reg = false;
+			short_name = "I4";
 		}
 
 		const char* get_code_name() const override { return "ivec4"; }
@@ -413,7 +425,7 @@ namespace flame
 			basic_type = IntegerType;
 			is_signed = false;
 			vec_size = 2;
-			ret_by_reg = false;
+			short_name = "I2";
 		}
 
 		const char* get_code_name() const override { return "uvec2"; }
@@ -437,7 +449,7 @@ namespace flame
 			basic_type = IntegerType;
 			is_signed = false;
 			vec_size = 3;
-			ret_by_reg = false;
+			short_name = "I3";
 		}
 
 		const char* get_code_name() const override { return "uvec3"; }
@@ -461,7 +473,7 @@ namespace flame
 			basic_type = IntegerType;
 			is_signed = false;
 			vec_size = 4;
-			ret_by_reg = false;
+			short_name = "I4";
 		}
 
 		const char* get_code_name() const override { return "uvec4"; }
@@ -484,7 +496,7 @@ namespace flame
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
-			ret_by_reg = false;
+			short_name = "F2";
 		}
 
 		const char* get_code_name() const override { return "vec2"; }
@@ -507,7 +519,7 @@ namespace flame
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
-			ret_by_reg = false;
+			short_name = "F3";
 		}
 
 		const char* get_code_name() const override { return "vec3"; }
@@ -530,7 +542,7 @@ namespace flame
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
-			ret_by_reg = false;
+			short_name = "F4";
 		}
 
 		const char* get_code_name() const override { return "vec4"; }
@@ -551,7 +563,7 @@ namespace flame
 		TypeInfoPrivate_Rect() :
 			TypeInfoPrivate_Pod(TypeData, "flame::Rect", sizeof(Rect))
 		{
-			ret_by_reg = false;
+			short_name = "F4";
 		}
 	};
 
@@ -560,7 +572,7 @@ namespace flame
 		TypeInfoPrivate_AABB() :
 			TypeInfoPrivate_Pod(TypeData, "flame::AABB", sizeof(AABB))
 		{
-			ret_by_reg = false;
+			short_name = "F6";
 		}
 	};
 
@@ -569,7 +581,7 @@ namespace flame
 		TypeInfoPrivate_Plane() :
 			TypeInfoPrivate_Pod(TypeData, "flame::Plane", sizeof(Plane))
 		{
-			ret_by_reg = false;
+			short_name = "F4";
 		}
 	};
 
@@ -581,7 +593,7 @@ namespace flame
 			basic_type = FloatingType;
 			vec_size = 2;
 			col_size = 2;
-			ret_by_reg = false;
+			short_name = "F4";
 		}
 
 		const char* get_code_name() const override { return "mat2"; }
@@ -595,7 +607,7 @@ namespace flame
 			basic_type = FloatingType;
 			vec_size = 3;
 			col_size = 3;
-			ret_by_reg = false;
+			short_name = "F9";
 		}
 
 		const char* get_code_name() const override { return "mat3"; }
@@ -609,7 +621,7 @@ namespace flame
 			basic_type = FloatingType;
 			vec_size = 4;
 			col_size = 4;
-			ret_by_reg = false;
+			short_name = "F16";
 		}
 
 		const char* get_code_name() const override { return "mat4"; }
@@ -620,6 +632,7 @@ namespace flame
 		TypeInfoPrivate_quat() :
 			TypeInfoPrivate_Pod(TypeData, "glm::qua<float,0>", sizeof(quat))
 		{
+			short_name = "F4";
 		}
 
 		const char* get_code_name() const override { return "quat"; }
@@ -647,6 +660,7 @@ namespace flame
 				vec_size = pointed_type->vec_size;
 				col_size = pointed_type->col_size;
 			}
+			short_name = "P";
 		}
 
 		void* create(bool create_pointing) const override 
@@ -666,6 +680,8 @@ namespace flame
 		{
 			if (pointed_type)
 				pointed_type->serialize(*(void**)src, dst);
+			else
+				dst[0] = 0;
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -686,8 +702,9 @@ namespace flame
 			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(char**)p = (char*)malloc(sizeof(char) * 256);
-				(*(char**)p)[0] = 0;
+				auto str = (char*)malloc(sizeof(char) * 256);
+				*(char**)p = str;
+				str[0] = 0;
 			}
 			return p;
 		}
@@ -700,8 +717,7 @@ namespace flame
 		void copy(void* dst, const void* src) const override
 		{
 			auto str = *(char**)src;
-			if (str)
-				strcpy(*(char**)dst, str);
+			strcpy(*(char**)dst, str ? str : "");
 		}
 		bool compare(void* a, const void* b) const override
 		{
@@ -709,8 +725,8 @@ namespace flame
 		}
 		void serialize(const void* src, char* dst) const override
 		{
-			auto& p = *(char**)src;
-			strcpy(dst, p);
+			auto str = *(char**)src;
+			strcpy(dst, str ? str : "");
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -733,8 +749,9 @@ namespace flame
 			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(wchar_t**)p = (wchar_t*)malloc(sizeof(wchar_t) * 256);
-				(*(wchar_t**)p)[0] = 0;
+				auto str = (wchar_t*)malloc(sizeof(wchar_t) * 256);
+				*(wchar_t**)p = str;
+				str[0] = 0;
 			}
 			return p;
 		}
@@ -747,8 +764,7 @@ namespace flame
 		void copy(void* dst, const void* src) const override
 		{
 			auto str = *(wchar_t**)src;
-			if (str)
-				wcscpy(*(wchar_t**)dst, *(wchar_t**)src);
+			wcscpy(*(wchar_t**)dst, str ? str : L"");
 		}
 		bool compare(void* a, const void* b) const override
 		{
@@ -756,16 +772,15 @@ namespace flame
 		}
 		void serialize(const void* src, char* dst) const override 
 		{
-			auto& p = *(wchar_t**)src;
-			auto s = w2s(p);
-			strcpy(dst, s.c_str());
+			auto& str = *(wchar_t**)src;
+			strcpy(dst, str ? w2s(str).c_str() : "");
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
 			auto str = s2w(src);
 			auto& p = *(wchar_t**)dst;
 			free(p);
-			p = new wchar_t[str.size() + 1];
+			p = (wchar_t*)malloc(sizeof(wchar_t) * (str.size() + 1));
 			wcscpy(p, str.c_str());
 		}
 	};
@@ -780,6 +795,7 @@ namespace flame
 				auto t = new TypeInfoPrivate_void;
 				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				void_type = t;
+				void_type->short_name = "V";
 			}
 			{
 				auto t = new TypeInfoPrivate_bool;
@@ -932,7 +948,6 @@ namespace flame
 			break;
 		}
 		SUS::replace_all(full_name, "::", "__");
-		ret_by_reg = size <= sizeof(void*);
 	}
 
 	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db)
@@ -1071,14 +1086,15 @@ namespace flame
 		}
 	}
 
-	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, 
-		TypeInfoPrivate* type, const std::string& _metas) :
+	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, int voff, 
+		bool is_static, TypeInfoPrivate* type, const std::string& _metas) :
 		udt(udt),
 		library(library),
 		index(index),
 		name(name),
 		rva(rva),
 		voff(voff),
+		is_static(is_static),
 		type(type)
 	{
 		metas.from_string(_metas);
@@ -1087,6 +1103,25 @@ namespace flame
 	bool FunctionInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
 	{
 		return metas.get_meta(m, v);
+	}
+
+	void FunctionInfoPrivate::update_full_name()
+	{
+		full_name = "";
+		full_name += is_static ? 's' : 'm';
+		full_name += "_" + type->short_name;
+		if (!parameters.empty())
+		{
+			for (auto p : parameters)
+				full_name += "_" + p->short_name;
+		}
+	}
+
+	const char* FunctionInfoPrivate::get_full_name()
+	{
+		if (full_name.empty())
+			update_full_name();
+		return full_name.c_str();
 	}
 
 	void FunctionInfoPrivate::add_parameter(TypeInfoPtr ti, int idx)
@@ -1119,84 +1154,43 @@ namespace flame
 
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
-		auto address = rva ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
+		auto address = voff == -1 ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
 		fassert(address);
 		return address;
 	}
 
-	extern "C" void __call(void* function_data, void* parameters_data);
+	static std::map<std::string, void(*)(void*, void*, void*, void**)> callers;
 
-	void FunctionInfoPrivate::call(void* obj, void* ret, void* ps) const
+	void FunctionInfoPrivate::call(void* obj, void* ret, void** ps)
 	{
-		struct FunctionData
+		if (!caller)
 		{
-			void* address;
-			void* obj;
-			int ret_genre;
-			void* out_ret;
-		}fd;
-
-		struct ParametersData
-		{
-			int count;
-			int types[16];
-			void* values[16];
-		}pd;
-
-		fd.address = get_address(obj);
-		fd.obj = obj;
-		fd.ret_genre = type_genre;
-		fd.out_ret = ret;
-
-		if (obj)
-			list1[idx++] = obj;
-		if (!type->ret_by_reg)
-		{
-			list1[idx++] = ret;
-			ret = nullptr;
-		}
-
-		auto p = (char*)ps;
-		for (auto i = 0; i < parameters.size(); i++)
-		{
-			auto t = parameters[i];
-			switch (t->tag)
+			update_full_name();
+			auto it = callers.find(full_name);
+			if (it != callers.end())
+				caller = it->second;
+			else
 			{
-			case TypeEnumSingle:
-			case TypeEnumMulti:
-				list1[idx++] = (void*)*(int*)p;
-				p += sizeof(int);
-				break;
-			case TypeData:
-				if (parm->basic_type == FloatingType)
-				{
-					list2[idx++] = *(float*)p;
-					p += sizeof(float);
-				}
-				else if (parm->size == 1)
-				{
-					list1[idx++] = (void*)*(char*)p;
-					p += 1;
-				}
-				else if (parm->size == 4)
-				{
-					list1[idx++] = (void*)*(int*)p;
-					p += 4;
-				}
-				else if (parm->size == 8)
-				{
-					list1[idx++] = *(void**)p;
-					p += 8;
-				}
-				break;
-			case TypePointer:
-				list1[idx++] = *(void**)p;
-				p += 8;
-				break;
+				char buf[256];
+				GetModuleFileNameA((HMODULE)library, buf, _countof(buf));
+				std::filesystem::path path(buf);
+				path.replace_filename(path.filename().stem().wstring() + L"_callers");
+				path.replace_extension(L".dll");
+				typedef void (*get_callers)(void(*)(const char*, void(*)(void*, void*, void*, void**)));
+				auto callers_library = LoadLibraryW(path.c_str());
+				((get_callers)GetProcAddress(callers_library, "get_callers"))([](const char* _name, void(*func)(void*, void*, void*, void**)) {
+					auto name = std::string(_name);
+					auto it = callers.find(name);
+					if (it == callers.end())
+						callers[name] = func;
+				});
+
+				caller = callers[full_name];
 			}
 		}
 
-		__call(, list1, list2);
+		fassert(caller);
+		caller(get_address(obj), obj, ret, ps);
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(void* library, const std::string& name, uint size, const std::string& base_name) :
@@ -1250,11 +1244,11 @@ namespace flame
 		return nullptr;
 	}
 
-	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, const std::string& metas, int idx)
+	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, int voff, bool is_static, TypeInfoPtr ti, const std::string& metas, int idx)
 	{
 		if (idx == -1)
 			idx = functions.size();
-		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, ti, metas);
+		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, is_static, ti, metas);
 		functions.emplace(functions.begin() + idx, ret);
 		return ret;
 	}
@@ -1525,18 +1519,11 @@ namespace flame
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto f = new FunctionInfoPrivate(u, library, u->functions.size(), n_function.attribute("name").value(),
-					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(), read_ti(n_function), n_function.attribute("metas").value());
+					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_int(), n_function.attribute("is_static").as_bool(), 
+					read_ti(n_function), n_function.attribute("metas").value());
 				u->functions.emplace_back(f);
-				for (auto n_parameter : n_function.child("parameters"))
+				for (auto n_parameter : n_function)
 					f->parameters.push_back(read_ti(n_parameter));
-
-				f->type_genre = f->type->ret_by_reg ? 2 : (f->type->basic_type == FloatingType ? 1 : 0);
-				f->parameters_genres.resize(f->parameters.size());
-				for (auto i = 0; i < f->parameters.size(); i++)
-				{
-					auto p = f->parameters[i];
-					f->parameters_genres[i] = p->tag == TypePointer ? 2 : (p->basic_type == FloatingType ? 1 : 0);
-				}
 			}
 		}
 	}
@@ -1606,13 +1593,13 @@ namespace flame
 						n_function.append_attribute("name").set_value(fi->name.c_str());
 						n_function.append_attribute("rva").set_value(fi->rva);
 						n_function.append_attribute("voff").set_value(fi->voff);
+						n_function.append_attribute("is_static").set_value(fi->is_static);
 						n_function.append_attribute("metas").set_value(fi->metas.to_string().c_str());
 						write_ti(fi->type, n_function);
 						if (!fi->parameters.empty())
 						{
-							auto n_parameters = n_function.append_child("parameters");
 							for (auto p : fi->parameters)
-								write_ti(p, n_parameters.append_child("parameter"));
+								write_ti(p, n_function.append_child("parameter"));
 						}
 					}
 				}

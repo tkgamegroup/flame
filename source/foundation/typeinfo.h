@@ -107,8 +107,10 @@ namespace flame
 		virtual void* get_library() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
+		virtual const char* get_full_name() = 0;
 		virtual uint get_rva() const = 0;
-		virtual uint get_voff() const = 0;
+		virtual int get_voff() const = 0;
+		virtual bool get_is_static() const = 0;
 		virtual TypeInfoPtr get_type() const = 0;
 		virtual const char* get_code() const = 0;
 		virtual bool get_meta(TypeMeta m, LightCommonValue* v) const = 0;
@@ -121,7 +123,7 @@ namespace flame
 		virtual bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const = 0;
 
 		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
-		virtual void call(void* obj, void* ret, void* parameters) const = 0;
+		virtual void call(void* obj, void* ret, void** parameters) = 0;
 	};
 
 	struct UdtInfo
@@ -141,7 +143,7 @@ namespace flame
 		virtual uint get_functions_count() const = 0;
 		virtual FunctionInfoPtr get_function(uint idx) const = 0;
 		virtual FunctionInfoPtr find_function(const char* name) const = 0;
-		virtual FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, const char* metas, int idx = -1) = 0;
+		virtual FunctionInfoPtr add_function(const char* name, uint rva, int voff, bool is_static, TypeInfoPtr ti, const char* metas, int idx = -1) = 0;
 		virtual void remove_function(FunctionInfoPtr fi) = 0;
 	};
 

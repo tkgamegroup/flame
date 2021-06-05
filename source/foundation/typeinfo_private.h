@@ -9,13 +9,13 @@ namespace flame
 		TypeTag tag;
 		std::string name;
 		std::string full_name;
+		std::string short_name;
 		uint size;
 
 		BasicType basic_type = ElseType;
 		bool is_signed = true;
 		uint vec_size = 1;
 		uint col_size = 1;
-		bool ret_by_reg;
 		TypeInfoPrivate* pointed_type = nullptr;
 
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
@@ -141,23 +141,29 @@ namespace flame
 		UdtInfoPrivate* udt;
 		uint index;
 		std::string name;
+		std::string full_name;
 		uint rva;
-		uint voff;
+		int voff;
+		bool is_static;
 		TypeInfoPrivate* type;
-		int type_genre;
 		std::string code;
 		Metas metas;
 		std::vector<TypeInfoPrivate*> parameters;
-		std::vector<int> parameters_genres;
 
-		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type, const std::string& metas);
+		void(*caller)(void*, void*, void*, void**) = nullptr;
+
+		FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, int voff, 
+			bool is_static, TypeInfoPrivate* type, const std::string& metas);
 
 		void* get_library() const override { return library; }
 		UdtInfoPtr get_udt() const override { return udt; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
+		void update_full_name();
+		const char* get_full_name() override;
 		uint get_rva() const override { return rva; }
-		uint get_voff() const override { return voff; }
+		int get_voff() const override { return voff; }
+		bool get_is_static() const override { return is_static; }
 		TypeInfoPtr get_type() const override { return type; }
 		const char* get_code() const override { return code.c_str(); }
 		bool get_meta(TypeMeta m, LightCommonValue* v) const override;
@@ -170,7 +176,7 @@ namespace flame
 		bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const override;
 
 		void* get_address(void* obj) const override;
-		void call(void* obj, void* ret, void* parameters) const override;
+		void call(void* obj, void* ret, void** parameters) override;
 	};
 
 	struct UdtInfoPrivate : UdtInfo
@@ -199,16 +205,16 @@ namespace flame
 			void* default_value, const std::string& metas, int idx = -1);
 		VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, 
 			void* default_value, const char* metas, int idx) override 
-		{ return add_variable(ti, std::string(name), offset, array_size, array_stride, default_value, std::string(metas), idx); }
+			{ return add_variable(ti, std::string(name), offset, array_size, array_stride, default_value, std::string(metas), idx); }
 		void remove_variable(VariableInfoPtr vi) override;
 
 		uint get_functions_count() const override { return functions.size(); }
 		FunctionInfoPtr get_function(uint idx) const override { return functions[idx].get(); }
 		FunctionInfoPtr find_function(const std::string& name) const;
 		FunctionInfoPtr find_function(const char* name) const override { return find_function(std::string(name)); }
-		FunctionInfoPtr add_function(const std::string& name, uint rva, uint voff, TypeInfoPtr ti, const std::string& metas, int idx = -1);
-		FunctionInfoPtr add_function(const char* name, uint rva, uint voff, TypeInfoPtr ti, const char* metas, int idx) override 
-		{ return add_function(std::string(name), rva, voff, ti, std::string(metas), idx); }
+		FunctionInfoPtr add_function(const std::string& name, uint rva, int voff, bool is_static, TypeInfoPtr ti, const std::string& metas, int idx = -1);
+		FunctionInfoPtr add_function(const char* name, uint rva, int voff, bool is_static, TypeInfoPtr ti, const char* metas, int idx) override
+			{ return add_function(std::string(name), rva, voff, is_static, ti, std::string(metas), idx); }
 		void remove_function(FunctionInfoPtr fi) override;
 	};
 

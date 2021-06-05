@@ -392,6 +392,7 @@ namespace flame
 	}
 
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
+	FLAME_FOUNDATION_EXPORTS void set_current_path(const wchar_t* path);
 	FLAME_FOUNDATION_EXPORTS void get_app_path(wchar_t* dst, bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS uvec2 get_screen_size();

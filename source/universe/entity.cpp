@@ -114,7 +114,8 @@ namespace flame
 		{
 			void* ret;
 			void* p = nullptr;
-			creator->call(nullptr, &ret, &p);
+			void* ps[] = { &p };
+			creator->call(nullptr, &ret, ps);
 			return ret;
 		}
 
@@ -249,22 +250,21 @@ namespace flame
 
 		for (auto& r : state_rules)
 		{
-			void* d = nullptr;
+			void* ps[] = { nullptr };
 			for (auto& v : r->values)
 			{
 				if (v.first == StateNone)
 				{
-					if (!d)
-						d = v.second;
+					if (!ps[0])
+						ps[0] = v.second;
 				}
 				else if ((v.first & state) == v.first)
 				{
-					d = v.second;
+					ps[0] = v.second;
 					break;
 				}
 			}
-
-			r->setter->call(r->o, nullptr, d);
+			r->setter->call(r->o, nullptr, ps);
 		}
 
 		for (auto& l : message_listeners)
@@ -809,12 +809,12 @@ namespace flame
 						if (pair.size() == 1)
 						{
 							type->unserialize(d, pair[0].c_str());
-							fs->call(o, nullptr, d);
+							void* ps[] = { d };
+							fs->call(o, nullptr, ps);
 						}
 						else if (pair.size() == 2)
 						{
-							TypeInfo::get(TypeEnumMulti, "flame::StateFlags")
-								->unserialize(&state, pair[0].c_str());
+							TypeInfo::get(TypeEnumMulti, "flame::StateFlags")->unserialize(&state, pair[0].c_str());
 							type->unserialize(d, pair[1].c_str());
 						}
 						else
@@ -827,7 +827,8 @@ namespace flame
 				{
 					void* d = type->create();
 					type->unserialize(d, value.c_str());
-					fs->call(o, nullptr, d);
+					void* ps[] = { d };
+					fs->call(o, nullptr, ps);
 					type->destroy(d);
 				}
 				return true;
@@ -842,7 +843,8 @@ namespace flame
 				auto fs = att->setter;
 				void* d = type->create();
 				type->unserialize(d, value.c_str());
-				fs->call(c, nullptr, d);
+				void* ps[] = { d };
+				fs->call(c, nullptr, ps);
 				type->destroy(d);
 				return true;
 			}
@@ -1030,7 +1032,10 @@ namespace flame
 					auto d = attr->get_type->create(false);
 					attr->getter->call(c.get(), d, nullptr);
 					if (!attr->get_type->compare(d, attr->default_value))
-						attr->setter->call(cc, nullptr, d);
+					{
+						void* ps[] = { d };
+						attr->setter->call(cc, nullptr, ps);
+					}
 					attr->get_type->destroy(d, false);
 				}
 			}
