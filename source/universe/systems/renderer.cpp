@@ -245,7 +245,7 @@ namespace flame
 		using StorageBuffer<T>::pstag;
 		using StorageBuffer<T>::cpies;
 
-		auto& set_item(uint idx, bool mark_cpy = true)
+		auto& set_item(uint idx, bool mark_cpy = true, uint overwrite_size = 0)
 		{
 			auto& [items] = *pstag;
 			fassert(idx < _countof(items));
@@ -256,7 +256,7 @@ namespace flame
 			{
 				graphics::BufferCopy cpy;
 				cpy.src_off = cpy.dst_off = idx * sizeof(item);
-				cpy.size = sizeof(item);
+				cpy.size = overwrite_size == 0 ? sizeof(item) : overwrite_size;
 				cpies.push_back(cpy);
 			}
 
@@ -273,13 +273,16 @@ namespace flame
 
 		uint n = 0;
 
-		auto& add_item()
+		auto& add_item(uint overwrite_size = 0)
 		{
-			auto& item = set_item(n, false);
+			auto& item = set_item(n, overwrite_size == 0 ? false : true, overwrite_size);
 
-			if (cpies.empty())
-				cpies.emplace_back();
-			cpies.back().size += sizeof(item);
+			if (overwrite_size == 0)
+			{
+				if (cpies.empty())
+					cpies.emplace_back();
+				cpies.back().size += sizeof(item);
+			}
 
 			n++;
 			return item;
@@ -1317,22 +1320,30 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow)
+	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, uint bones_count, const mat4* bones)
 	{
 		auto& nd = *_nd;
 
 		node->update_transform();
 
-		auto idx = nd.buf_transforms.n;
+		auto idx = bones ? nd.buf_armatures.n : nd.buf_transforms.n;
 
-		auto& data = nd.buf_transforms.add_item();
-		data.mat = node->transform;
-		data.nor = mat4(node->rot);
+		if (bones)
+		{
+			auto& data = nd.buf_armatures.add_item(sizeof(mat4) * bones_count);
+			memcpy(data.bones, bones, sizeof(mat4) * bones_count);
+		}
+		else
+		{
+			auto& data = nd.buf_transforms.add_item();
+			data.mat = node->transform;
+			data.nor = mat4(node->rot);
+		}
 
 		auto mat_id = nd.mesh_reses[mesh_id].mat_id;
-		nd.meshes[/*TODO:Armature?MaterialForMeshArmature:*/MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
+		nd.meshes[bones ? MaterialForMeshArmature: MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
 		if (cast_shadow)
-			nd.meshes[/*TODO:Armature?MaterialForMeshShadowArmature:*/MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
+			nd.meshes[bones ? MaterialForMeshShadowArmature: MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
 	}
 
 	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id)
@@ -1435,6 +1446,7 @@ namespace flame
 			nd.buf_render_data.upload(cb);
 
 			nd.buf_transforms.upload(cb);
+			nd.buf_armatures.upload(cb);
 			nd.buf_terrain.upload(cb);
 
 			auto pack_mesh_indirs = [&](MaterialUsage u) {
@@ -1596,19 +1608,8 @@ namespace flame
 			nd.buf_dir_shadow_mats.upload(cb);
 			nd.buf_pt_shadow_mats.upload(cb);
 
-			/*  HOW TO DRAW ARMATURED MESH REFERENCE:
-				auto mrm = m.res;
-				auto mat = material_resources[mrm->material_id].get();
-				if (m.deformer)
-				{
-					cb->bind_pipeline(mat->get_pipeline(MaterialForMeshArmature));
-					cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-					//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-				}
-				cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
-			*/
-
 			pack_mesh_indirs(MaterialForMeshShadow);
+			pack_mesh_indirs(MaterialForMeshShadowArmature);
 
 			cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
 			cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
@@ -1624,6 +1625,9 @@ namespace flame
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
+					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					draw_mesh_indirs(MaterialForMeshShadowArmature);
 					cb->end_renderpass();
 				}
 
@@ -1644,6 +1648,9 @@ namespace flame
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
+					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					draw_mesh_indirs(MaterialForMeshShadowArmature);
 					cb->end_renderpass();
 				}
 
@@ -1651,6 +1658,7 @@ namespace flame
 			}
 
 			pack_mesh_indirs(MaterialForMesh);
+			pack_mesh_indirs(MaterialForMeshArmature);
 
 			auto vp = Rect(vec2(0.f), tar_sz);
 			cb->set_viewport(vp);
@@ -1668,6 +1676,9 @@ namespace flame
 			cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 			cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 			draw_mesh_indirs(MaterialForMesh);
+			cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+			cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+			draw_mesh_indirs(MaterialForMeshArmature);
 			draw_terrains();
 			cb->end_renderpass();
 
@@ -2230,8 +2241,11 @@ namespace flame
 		nd.ds_material->update();
 
 		nd.buf_transforms.create(device, graphics::BufferUsageStorage);
+		nd.buf_armatures.create(device, graphics::BufferUsageStorage);
+		fassert(_countof(mesh::DSL_mesh::Armature::bones) == ArmatureMaxBones);
 		nd.ds_mesh.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Transforms_binding, 0, nd.buf_transforms.buf.get());
+		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Armatures_binding, 0, nd.buf_armatures.buf.get());
 		nd.ds_mesh->update();
 
 		nd.buf_terrain.create(device, graphics::BufferUsageStorage);

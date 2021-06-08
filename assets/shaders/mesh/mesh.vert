@@ -26,7 +26,7 @@ layout(location = 4) out vec3 o_coordv;
 
 void main()
 {
-	uint mod_idx = gl_InstanceIndex >> 16;
+	uint idx = gl_InstanceIndex >> 16;
 	o_mat = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
 
@@ -36,7 +36,7 @@ void main()
 	{
 		int id = i_bone_ids[i];
 		if (id != -1)
-			deform += i_bone_weights[i] * bones[id];
+			deform += i_bone_weights[i] * armatures[idx].bones[id];
 	}
 
 	vec3 coordw = vec3(deform * vec4(i_position, 1.0));
@@ -47,10 +47,10 @@ void main()
 
 #else
 
-	vec3 coordw = vec3(transforms[mod_idx].mat * vec4(i_position, 1.0));
+	vec3 coordw = vec3(transforms[idx].mat * vec4(i_position, 1.0));
 
 #ifndef SHADOW_PASS
-	o_normal = mat3(transforms[mod_idx].nor) * i_normal;
+	o_normal = mat3(transforms[idx].nor) * i_normal;
 #endif
 
 #endif

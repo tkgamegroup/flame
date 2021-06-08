@@ -21,7 +21,7 @@ function scatter(range, density, prefabs, probability, model_scale)
     local ptr_samples = malloc_vec4(num)
 
     height_texture.get_samples(vec4(range.x / scale.x, range.y / scale.z, 
-        density / scale.x, density / scale.z), vec2(cx, cy), ptr_samples)
+        density / scale.x, density / scale.z), vec2(cx, cy), ptr_samples, 0, 0)
 
     local n_prefabs = #prefabs
     local off = vec3(scale.x, 0.0, scale.z) * 0.5;
@@ -45,18 +45,16 @@ function scatter(range, density, prefabs, probability, model_scale)
 end
 
 local e_grasses = {}
---[[
 e_grasses[1] = create_entity("D:\\assets\\vegetation\\grass1.prefab")
 e_grasses[2] = create_entity("D:\\assets\\vegetation\\grass2.prefab")
 e_grasses[3] = create_entity("D:\\assets\\vegetation\\grass3.prefab")
 e_grasses[4] = create_entity("D:\\assets\\vegetation\\grass4.prefab")
 e_grasses[5] = create_entity("D:\\assets\\vegetation\\grass5.prefab")
 e_grasses[6] = create_entity("D:\\assets\\vegetation\\grass6.prefab")
-]]
 
 local e_plants = {}
 e_plants[1] = create_entity("D:\\assets\\vegetation\\plant1.prefab")
---e_plants[2] = create_entity("D:\\assets\\vegetation\\plant2.prefab")
+e_plants[2] = create_entity("D:\\assets\\vegetation\\plant2.prefab")
 
---scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
+scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)

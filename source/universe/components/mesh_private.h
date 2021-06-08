@@ -10,7 +10,6 @@ namespace flame
 		{
 			std::string name;
 			cNodePrivate* node;
-			void* changed_listener;
 		};
 
 		struct AnimationLayer
@@ -21,7 +20,7 @@ namespace flame
 				quat q;
 			};
 
-			std::string name;
+			std::filesystem::path name;
 			bool loop = false;
 			int frame = -1;
 			uint max_frame = 0;
@@ -50,8 +49,8 @@ namespace flame
 		int mesh_id = -1;
 		graphics::Model* model = nullptr;
 		graphics::Mesh* mesh = nullptr;
-		//graphics::ArmatureDeformer* deformer = nullptr;
 		std::vector<Bone> bones;
+		std::vector<mat4> bone_mats;
 		AnimationLayer animation_layers[2];
 
 		~cMeshPrivate();
@@ -65,10 +64,8 @@ namespace flame
 
 		void apply_src();
 
-		void destroy_deformer();
-
-		void set_animation(const std::string& name, bool loop, uint layer);
-		void set_animation(const char* name, bool loop, uint layer) override { set_animation(std::string(name), loop, layer); }
+		void set_animation(const std::filesystem::path& name, bool loop, uint layer);
+		void set_animation(const wchar_t* name, bool loop, uint layer) override { set_animation(std::filesystem::path(name), loop, layer); }
 		void apply_animation(uint layer);
 		void stop_animation(uint layer);
 

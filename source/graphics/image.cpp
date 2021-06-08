@@ -56,7 +56,8 @@ namespace flame
 				views.emplace_back(new ImageViewPrivate(this, false, !is_cube ? ImageView2D : ImageViewCube, { 0U, levels, 0U, layers }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
+			ImageUsageFlags usage, bool is_cube) :
 			device(device),
 			format(format),
 			levels(levels),
@@ -179,7 +180,7 @@ namespace flame
 			}
 
 			std::unique_ptr<ImageViewPrivate> iv;
-			iv.reset(new ImageViewPrivate(this, false, ImageView2D, { level < levels ? level : 0, 1, layer < layers ? layer : 0, 1 }));
+			iv.reset(new ImageViewPrivate(this, false, ImageView2D, { level, 1, layer, 1 }));
 
 			std::unique_ptr<DescriptorSetPrivate> ds;
 			{
