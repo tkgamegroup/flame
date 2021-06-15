@@ -13,29 +13,10 @@ namespace flame
 			mat4 offmat;
 		};
 
-		struct AnimationLayer
+		struct Pose
 		{
-			struct Pose
-			{
-				vec3 p;
-				quat q;
-			};
-
-			std::filesystem::path name;
-			bool loop = false;
-			int frame = -1;
-			uint max_frame = 0;
-			std::vector<std::pair<uint, std::vector<Pose>>> poses;
-
-			void* event = nullptr;
-
-			void stop();
-
-			std::pair<uint, std::vector<Pose>>& add_track()
-			{
-				poses.emplace_back();
-				return poses.back();
-			}
+			vec3 p;
+			quat q;
 		};
 
 		std::string src;
@@ -52,7 +33,12 @@ namespace flame
 		graphics::Mesh* mesh = nullptr;
 		std::vector<Bone> bones;
 		std::vector<mat4> bone_mats;
-		AnimationLayer animation_layers[2];
+		std::filesystem::path ani_name;
+		bool loop_ani = false;
+		int ani_frame = -1;
+		uint ani_frame_max = 0;
+		std::vector<std::pair<uint, std::vector<Pose>>> ani_tracks;
+		void* ani_event = nullptr;
 
 		~cMeshPrivate();
 
@@ -65,10 +51,11 @@ namespace flame
 
 		void apply_src();
 
-		void set_animation(const std::filesystem::path& name, bool loop, uint layer);
-		void set_animation(const wchar_t* name, bool loop, uint layer) override { set_animation(std::filesystem::path(name), loop, layer); }
-		void apply_animation(uint layer);
-		void stop_animation(uint layer);
+		void set_animation(const std::filesystem::path& name, bool loop);
+		void set_animation(const wchar_t* name, bool loop) override { set_animation(std::filesystem::path(name), loop); }
+		void apply_animation();
+		void stop_animation();
+		void advance_frame();
 
 		void draw(sRenderer* s_renderer);
 		bool measure(AABB* b);

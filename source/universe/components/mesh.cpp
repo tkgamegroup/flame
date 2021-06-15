@@ -8,22 +8,9 @@
 
 namespace flame
 {
-	void cMeshPrivate::AnimationLayer::stop()
-	{
-		frame = -1;
-		max_frame = 0;
-		poses.clear();
-		if (event)
-		{
-			looper().remove_event(event);
-			event = nullptr;
-		}
-	}
-
 	cMeshPrivate::~cMeshPrivate()
 	{
-		for (auto i = 0; i < _countof(animation_layers); i++)
-			stop_animation(i);
+		stop_animation();
 	}
 
 	void cMeshPrivate::set_src(const std::string& _src)
@@ -110,97 +97,111 @@ namespace flame
 		}
 	}
 
-	void cMeshPrivate::set_animation(const std::filesystem::path& name, bool loop, uint layer)
+	void cMeshPrivate::set_animation(const std::filesystem::path& name, bool loop)
 	{
-		auto& al = animation_layers[layer];
-		if (al.name == name && al.loop == loop)
+		if (ani_name == name)
+		{
+			if (loop_ani != loop)
+				loop_ani = loop;
 			return;
-		al.name = name;
-		al.loop = loop;
-		apply_animation(layer);
+		}
+		ani_name = name;
+		loop_ani = loop;
+		apply_animation();
 		if (node)
 			node->mark_transform_dirty();
 	}
 
-	void cMeshPrivate::apply_animation(uint layer)
+	void cMeshPrivate::apply_animation()
 	{
-		stop_animation(layer);
-		auto& al = animation_layers[layer];
+		if (bones.empty() || ani_name.empty())
+			return;
 
-		if (!bones.empty() && !al.name.empty())
+		auto fn = std::filesystem::path(ani_name);
+		auto& srcs = entity->srcs;
+		fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
+
+		stop_animation();
+
+		auto animation = graphics::Animation::get(fn.c_str());
+		if (animation)
 		{
-			auto animation = graphics::Animation::get(al.name.c_str());
-			if (animation)
+			auto chs = animation->get_channels_count();
+			for (auto i = 0; i < chs; i++)
 			{
-				auto chs = animation->get_channels_count();
-				for (auto i = 0; i < chs; i++)
-				{
-					auto ch = animation->get_channel(i);
-					auto find_bone = [&](const std::string& name) {
-						for (auto i = 0; i < bones.size(); i++)
-						{
-							if (bones[i].name == name)
-								return i;
-						}
-						return -1;
-					};
-					auto bid = find_bone(ch->get_node_name());
-					if (bid != -1)
+				auto ch = animation->get_channel(i);
+				auto find_bone = [&](const std::string& name) {
+					for (auto i = 0; i < bones.size(); i++)
 					{
-						auto pkc = ch->get_position_keys_count();
-						auto rkc = ch->get_rotation_keys_count();
-						al.max_frame = max(pkc, rkc);
+						if (bones[i].name == name)
+							return i;
+					}
+					return -1;
+				};
+				auto bid = find_bone(ch->get_node_name());
+				if (bid != -1)
+				{
+					auto pkc = ch->get_position_keys_count();
+					auto rkc = ch->get_rotation_keys_count();
+					ani_frame_max = max(pkc, rkc);
 
-						auto& t = al.add_track();
-						t.first = bid;
-						t.second.resize(al.max_frame);
+					auto& t = ani_tracks.emplace_back();
+					t.first = bid;
+					t.second.resize(ani_frame_max);
 
-						auto pk = ch->get_position_keys();
-						auto rk = ch->get_rotation_keys();
-						for (auto j = 0; j < al.max_frame; j++)
-						{
-							auto& f = t.second[j];
-							f.p = j < pkc ? pk[j].v : vec3(0.f);
-							f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
-						}
+					auto pk = ch->get_position_keys();
+					auto rk = ch->get_rotation_keys();
+					for (auto j = 0; j < ani_frame_max; j++)
+					{
+						auto& f = t.second[j];
+						f.p = j < pkc ? pk[j].v : vec3(0.f);
+						f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
 					}
 				}
-				al.frame = 0;
-				al.event = looper().add_event([](Capture& c) {
-					auto thiz = c.thiz<cMeshPrivate>();
-					auto& al = thiz->animation_layers[c.data<uint>()];
-					for (auto i = 0; i < al.poses.size(); i++)
-					{
-						auto& t = al.poses[i];
-						auto& b = thiz->bones[t.first];
-						auto& k = t.second[al.frame];
-						b.node->set_pos(k.p);
-						b.node->set_quat(k.q);
-					}
-					al.frame++;
-					c._current = nullptr;
-					if (al.frame == al.max_frame)
-					{
-						if (al.loop)
-							al.frame = 0;
-						else
-						{
-							al.name = L"";
-							al.event = nullptr;
-							al.stop();
-							c._current = INVALID_POINTER;
-						}
-					}
-				}, Capture().set_thiz(this).set_data(&layer), 1.f / 24.f);
 			}
-			else
-				al.name = L"";
+			ani_frame = 0;
+			ani_event = looper().add_event([](Capture& c) {
+				auto thiz = c.thiz<cMeshPrivate>();
+				thiz->advance_frame();
+				if (thiz->ani_frame != -1)
+					c._current = nullptr;
+			}, Capture().set_thiz(this), 1.f / 24.f);
 		}
 	}
 
-	void cMeshPrivate::stop_animation(uint layer)
+	void cMeshPrivate::stop_animation()
 	{
-		animation_layers[layer].stop();
+		ani_name = L"";
+		ani_frame = -1;
+		ani_frame_max = 0;
+		ani_tracks.clear();
+		if (ani_event)
+		{
+			looper().remove_event(ani_event);
+			ani_event = nullptr;
+		}
+	}
+
+	void cMeshPrivate::advance_frame()
+	{
+		for (auto& t : ani_tracks)
+		{
+			auto& b = bones[t.first];
+			auto& k = t.second[ani_frame];
+			b.node->set_pos(k.p);
+			b.node->set_quat(k.q);
+		}
+		ani_frame++;
+		if (ani_frame == ani_frame_max)
+		{
+			if (loop_ani)
+				ani_frame = 0;
+			else
+			{
+				ani_event = nullptr;
+				stop_animation();
+			}
+		}
 	}
 
 	void cMeshPrivate::draw(sRenderer* s_renderer)
@@ -256,8 +257,7 @@ namespace flame
 		fassert(s_renderer);
 
 		apply_src();
-		for (auto i = 0; i < _countof(animation_layers); i++)
-			apply_animation(i);
+		apply_animation();
 	}
 
 	void cMeshPrivate::on_left_world()

@@ -37,14 +37,14 @@ character.update_dir = function()
 	character.dir2 = character.node.get_local_dir(0)
 end
 
-character.mesh.set_animation("stand.fani", true, 0)
+character.mesh.set_animation("stand.fani", true)
 
 local scene_receiver = scene.find_component("cReceiver")
 
 scene_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
-		character.mesh.set_animation("run.fani", true, 0)
+		character.mesh.set_animation("run.fani", true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = true
@@ -66,7 +66,7 @@ end)
 scene_receiver.add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
-		character.mesh.set_animation("stand.fani", true, 0)
+		character.mesh.set_animation("stand.fani", true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = false
@@ -86,7 +86,7 @@ scene_receiver.add_key_up_listener(function(k)
 end)
 
 scene_receiver.add_mouse_left_up_listener(function()
-	character.mesh.set_animation("attack", false, 0)
+	character.mesh.set_animation("attack", false)
 end)
 
 entity.add_event(function()
