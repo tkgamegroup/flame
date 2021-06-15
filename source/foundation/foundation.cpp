@@ -745,7 +745,7 @@ namespace flame
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	void exec(const wchar_t* filename, wchar_t* parameters, void* output, char* (*output_allocator)(void* str, uint size))
+	void exec(const wchar_t* filename, wchar_t* parameters, char* output)
 	{
 		bool ok;
 		HANDLE hChildStd_OUT_Rd = NULL;
@@ -785,7 +785,8 @@ namespace flame
 		{
 			DWORD size;
 			PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &size, NULL);
-			PeekNamedPipe(hChildStd_OUT_Rd, (void*)output_allocator(output, size), size, NULL, NULL, NULL);
+			PeekNamedPipe(hChildStd_OUT_Rd, output, size, NULL, NULL, NULL);
+			output[size] = 0;
 		}
 	}
 

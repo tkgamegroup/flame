@@ -16,7 +16,7 @@ namespace flame
 			const char* get_name() const override { return name.c_str(); }
 			mat4 get_offset_matrix() const override { return offset_matrix; }
 			uint get_weights_count() const override { return weights.size(); }
-			const Weight* get_weights() const override { return weights.data(); }
+			void get_weights(Weight* dst) const override { memcpy(dst, weights.data(), sizeof(Weight) * weights.size()); }
 		};
 
 		struct MeshPrivate : Mesh

@@ -96,13 +96,15 @@ namespace flame
 				fassert(armature);
 				for (auto i = 0; i < bones_count; i++)
 				{
-					auto& b = bones[i];
-					auto name = std::string(mesh->get_bone(i)->get_name());
+					auto src = mesh->get_bone(i);
+					auto& dst = bones[i];
+					auto name = std::string(src->get_name());
 					auto e = armature->find_child(name);
 					fassert(e);
-					b.name = name;
-					b.node = e->get_component_i<cNodePrivate>(0);
-					fassert(b.node);
+					dst.name = name;
+					dst.node = e->get_component_i<cNodePrivate>(0);
+					fassert(dst.node);
+					dst.offmat = src->get_offset_matrix();
 				}
 			}
 		}
@@ -207,8 +209,9 @@ namespace flame
 		{
 			for (auto i = 0; i < bones.size(); i++)
 			{
-				bones[i].node->update_transform();
-				bone_mats[i] = bones[i].node->transform;
+				auto& b = bones[i];
+				b.node->update_transform();
+				bone_mats[i] = b.node->transform * b.offmat;
 			}
 			s_renderer->draw_mesh(node, mesh_id, cast_shadow, bones.size(), bone_mats.data());
 		}

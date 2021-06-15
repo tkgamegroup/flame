@@ -83,7 +83,7 @@ namespace flame
 			if (auto n = n_material.attribute("pipeline_defines"); n)
 				ret->pipeline_defines = n.value();
 			auto i = 0;
-			for (auto n_texture : n_material.child("textures"))
+			for (auto n_texture : n_material)
 			{
 				auto& dst = ret->textures[i];
 				if (auto n = n_texture.attribute("filename"); n)

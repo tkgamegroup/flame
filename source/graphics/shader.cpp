@@ -438,11 +438,8 @@ namespace flame
 					printf("compiling dsl: %s", filename.string().c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
-						auto& str = *(std::string*)_str;
-						str.resize(size);
-						return str.data();
-					});
+					output.reserve(1024);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						temp = add_lineno_to_temp(temp);
@@ -858,11 +855,8 @@ namespace flame
 					printf("compiling pll: %s", filename.string().c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
-						auto& str = *(std::string*)_str;
-						str.resize(size);
-						return str.data();
-					});
+					output.reserve(1024);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					std::filesystem::remove(temp_fn);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
@@ -1073,11 +1067,8 @@ namespace flame
 					printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
-						auto& str = *(std::string*)_str;
-						str.resize(size);
-						return str.data();
-					});
+					output.reserve(1024);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					if (!std::filesystem::exists(spv_path))
 					{
 						temp = add_lineno_to_temp(temp);

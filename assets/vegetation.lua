@@ -44,6 +44,7 @@ function scatter(range, density, prefabs, probability, model_scale)
     flame_free(ptr_samples)
 end
 
+--[[
 local e_grasses = {}
 e_grasses[1] = create_entity("D:\\assets\\vegetation\\grass1.prefab")
 e_grasses[2] = create_entity("D:\\assets\\vegetation\\grass2.prefab")
@@ -58,3 +59,4 @@ e_plants[2] = create_entity("D:\\assets\\vegetation\\plant2.prefab")
 
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)
+]]

@@ -661,7 +661,9 @@ process:
 		compile_command += s2w(VS_LOCATION);
 		compile_command += L"/VC/Auxiliary/Build/vcvars64.bat\" & cl -LD -MD -EHsc -Zi ";
 		compile_command += cpp_path.wstring();
-		exec(nullptr, (wchar_t*)compile_command.c_str());
+		std::string output;
+		output.reserve(1024 * 1024);
+		exec(nullptr, (wchar_t*)compile_command.c_str(), output.data());
 	}
 
 	return 0;

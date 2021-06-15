@@ -980,8 +980,8 @@ namespace flame
 			auto anormal = mesh->get_normals();
 			auto aidx = mesh->get_indices();
 
-			auto bone_cnt = mesh->get_bones_count();
-			if (bone_cnt == 0)
+			auto bones_cnt = mesh->get_bones_count();
+			if (bones_cnt == 0)
 			{
 				dst.vtx_off = nd.buf_mesh_vtx.n1;
 				auto pvtx = nd.buf_mesh_vtx.alloc(dst.vtx_cnt);
@@ -994,18 +994,53 @@ namespace flame
 				}
 
 				dst.idx_off = nd.buf_mesh_idx.n1;
-				auto pidx = nd.buf_mesh_idx.alloc(dst.idx_cnt);
-				memcpy(pidx, aidx, sizeof(uint) * dst.idx_cnt);
+				memcpy(nd.buf_mesh_idx.alloc(dst.idx_cnt), aidx, sizeof(uint) * dst.idx_cnt);
 
 				nd.buf_mesh_vtx.upload(cb.get());
 				nd.buf_mesh_idx.upload(cb.get());
 			}
 			else
 			{
-				auto n = nd.buf_arm_mesh_idx.n1;
-				auto pidx = nd.buf_arm_mesh_idx.alloc(dst.idx_cnt);
-				for (auto i = 0; i < dst.idx_cnt; i++)
-					pidx[i] = n + aidx[i];
+				dst.vtx_off = nd.buf_arm_mesh_vtx.n1;
+				auto pvtx = nd.buf_arm_mesh_vtx.alloc(dst.vtx_cnt);
+				std::vector<std::vector<std::pair<uint, float>>> vtx_wts;
+				vtx_wts.resize(dst.vtx_cnt);
+				for (auto i = 0; i < bones_cnt; i++)
+				{
+					auto b = mesh->get_bone(i);
+					std::vector<graphics::Bone::Weight> ws;
+					ws.resize(b->get_weights_count());
+					b->get_weights(ws.data());
+					for (auto& w : ws)
+					{
+						if (w.w > 0.f)
+							vtx_wts[w.vid].emplace_back(i, w.w);
+					}
+				}
+				for (auto i = 0; i < dst.vtx_cnt; i++)
+				{
+					auto& vtx = pvtx[i];
+					vtx.pos = apos[i];
+					vtx.uv = auv ? auv[i] : vec2(0.f);
+					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
+					auto& w = vtx_wts[i];
+					for (auto k = 0; k < 4; k++)
+					{
+						if (k < w.size())
+						{
+							vtx.ids[k] = w[k].first;
+							vtx.weights[k] = w[k].second;
+						}
+						else
+							vtx.ids[k] = -1;
+					}
+				}
+
+				dst.idx_off = nd.buf_arm_mesh_idx.n1;
+				memcpy(nd.buf_arm_mesh_idx.alloc(dst.idx_cnt), aidx, sizeof(uint) * dst.idx_cnt);
+
+				nd.buf_arm_mesh_vtx.upload(cb.get());
+				nd.buf_arm_mesh_idx.upload(cb.get());
 			}
 
 			auto mat = mesh->get_material();
@@ -1154,43 +1189,50 @@ namespace flame
 				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
 		}
 			break;
-		//case MaterialForMeshShadowArmature:
-		//	defines.push_back("SHADOW_PASS");
-		//case MaterialForMeshArmature:
-		//{
-		//	defines.push_back("ARMATURE");
-		//	graphics::Shader* shaders[] = {
-		//		graphics::Shader::get(device, L"mesh/mesh.vert", defines, {}),
-		//		graphics::Shader::get(device, L"mesh/mesh.frag", defines, substitutes)
-		//	};
-		//	VertexAttributeInfo vias1[3];
-		//	vias1[0].location = 0;
-		//	vias1[0].format = Format_R32G32B32_SFLOAT;
-		//	vias1[1].location = 1;
-		//	vias1[1].format = Format_R32G32_SFLOAT;
-		//	vias1[2].location = 2;
-		//	vias1[2].format = Format_R32G32B32_SFLOAT;
-		//	VertexAttributeInfo vias2[2];
-		//	vias2[0].location = 5;
-		//	vias2[0].format = Format_R32G32B32A32_INT;
-		//	vias2[1].location = 6;
-		//	vias2[1].format = Format_R32G32B32A32_SFLOAT;
-		//	VertexBufferInfo vibs[2];
-		//	vibs[0].attributes_count = _countof(vias1);
-		//	vibs[0].attributes = vias1;
-		//	vibs[1].attributes_count = _countof(vias2);
-		//	vibs[1].attributes = vias2;
-		//	VertexInfo vi;
-		//	vi.buffers_count = 2;
-		//	vi.buffers = vibs;
-		//	RasterInfo rst;
-		//	rst.polygon_mode = polygon_mode;
-		//	DepthInfo dep;
-		//	dep.test = depth_test;
-		//	dep.write = depth_write;
-		//	ret = PipelinePrivate::create(device, shaders, mesh_pipeline_layout, mesh_renderpass.get(), 0, &vi, &rst, &dep);
-		//}
-		//	break;
+		case MaterialForMeshShadowArmature:
+			deferred = false;
+			defines.push_back("SHADOW_PASS");
+			rp = graphics::Renderpass::get(device, L"d16.rp");
+		case MaterialForMeshArmature:
+		{
+			if (deferred)
+				defines.push_back("DEFERRED");
+			defines.push_back("ARMATURE");
+			auto defines_str = get_defines_str();
+			auto substitutes_str = get_substitutes_str();
+			graphics::Shader* shaders[] = {
+				graphics::Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
+				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
+			};
+			graphics::GraphicsPipelineInfo info;
+			if (!rp)
+				rp = graphics::Renderpass::get(device, deferred ? L"gbuffer.rp" : L"forward.rp");
+			info.renderpass = rp;
+			info.subpass_index = 0;
+			graphics::VertexAttributeInfo vias[5];
+			vias[0].location = 0;
+			vias[0].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[1].location = 1;
+			vias[1].format = graphics::Format_R32G32_SFLOAT;
+			vias[2].location = 2;
+			vias[2].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[3].location = 3;
+			vias[3].format = graphics::Format_R32G32B32A32_INT;
+			vias[4].location = 4;
+			vias[4].format = graphics::Format_R32G32B32A32_SFLOAT;
+			graphics::VertexBufferInfo vib;
+			vib.attributes_count = _countof(vias);
+			vib.attributes = vias;
+			info.vertex_buffers_count = 1;
+			info.vertex_buffers = &vib;
+			info.polygon_mode = polygon_mode;
+			info.cull_mode = cull_mode;
+			info.depth_test = depth_test;
+			info.depth_write = depth_write;
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 
+				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
+		}
+			break;
 		case MaterialForTerrain:
 		{
 			if (deferred)
@@ -2217,10 +2259,10 @@ namespace flame
 		for (auto& b : nd.buf_mesh_indirs)
 			b.create(device, graphics::BufferUsageIndirect, 65536);
 
-		nd.buf_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
-		nd.buf_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
-		nd.buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 10000);
-		nd.buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 10000);
+		nd.buf_mesh_vtx.create(device, graphics::BufferUsageVertex, 200000);
+		nd.buf_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
+		nd.buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 200000);
+		nd.buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
 
 		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
 		{

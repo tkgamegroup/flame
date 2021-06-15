@@ -10,6 +10,7 @@ namespace flame
 		{
 			std::string name;
 			cNodePrivate* node;
+			mat4 offmat;
 		};
 
 		struct AnimationLayer

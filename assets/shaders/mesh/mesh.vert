@@ -4,15 +4,15 @@
 #include "gbuffer.pll"
 #endif
 
-layout(location = 0) in vec3 i_position;
+layout(location = 0) in vec3 i_pos;
 layout(location = 1) in vec2 i_uv;
-layout(location = 2) in vec3 i_normal;
-//layout (location = 3) in vec3 i_tangent;
-//layout (location = 4) in vec3 i_bitangent;
+layout(location = 2) in vec3 i_nor;
 #ifdef ARMATURE
-layout(location = 5) in ivec4 i_bone_ids;
-layout(location = 6) in vec4 i_bone_weights;
+layout(location = 3) in ivec4 i_bids;
+layout(location = 4) in vec4 i_bwgts;
 #endif
+//layout (location = 5) in vec3 i_tan;
+//layout (location = 6) in vec3 i_bit;
 
 layout(location = 0) out flat uint o_mat;
 layout(location = 1) out vec2 o_uv;
@@ -34,23 +34,24 @@ void main()
 	mat4 deform = mat4(0.0);
 	for (int i = 0; i < 4; i++)
 	{
-		int id = i_bone_ids[i];
-		if (id != -1)
-			deform += i_bone_weights[i] * armatures[idx].bones[id];
+		int bid = i_bids[i];
+		if (bid == -1)
+			break;
+		deform += armatures[idx].bones[bid] * i_bwgts[i];
 	}
 
-	vec3 coordw = vec3(deform * vec4(i_position, 1.0));
+	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
 
 #ifndef SHADOW_PASS
-	o_normal = mat3(deform) * i_normal;
+	o_normal = mat3(deform) * i_nor;
 #endif
 
 #else
 
-	vec3 coordw = vec3(transforms[idx].mat * vec4(i_position, 1.0));
+	vec3 coordw = vec3(transforms[idx].mat * vec4(i_pos, 1.0));
 
 #ifndef SHADOW_PASS
-	o_normal = mat3(transforms[idx].nor) * i_normal;
+	o_normal = mat3(transforms[idx].nor) * i_nor;
 #endif
 
 #endif

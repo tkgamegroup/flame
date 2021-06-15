@@ -413,7 +413,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const ivec2& pos);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str is null then the output will be redirect to std output
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* output = nullptr, char* (*output_allocator)(void* str, uint size) = nullptr);
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, char* output = nullptr);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
 	FLAME_FOUNDATION_EXPORTS void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_assert_callback(void* ret);

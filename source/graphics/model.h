@@ -18,7 +18,7 @@ namespace flame
 
 			virtual mat4 get_offset_matrix() const = 0;
 			virtual uint get_weights_count() const = 0;
-			virtual const Weight* get_weights() const = 0;
+			virtual void get_weights(Weight* dst) const = 0;
 		};
 
 		struct Mesh

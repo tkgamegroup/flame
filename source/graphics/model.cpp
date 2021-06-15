@@ -199,6 +199,7 @@ namespace flame
 		{
 #ifdef USE_ASSIMP
 			auto filename = std::filesystem::path(_filename);
+			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto model_filename = filename;
 			model_filename.replace_extension(L".fmod");
@@ -233,7 +234,6 @@ namespace flame
 				
 				std::string pipeline_defines;
 
-				auto n_textures = n_material.append_child("textures");
 				{
 					ai_name.Clear();
 					ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
@@ -242,7 +242,7 @@ namespace flame
 					{
 						if (name[0] == '/')
 							name.erase(name.begin());
-						auto n_texture = n_textures.append_child("texture");
+						auto n_texture = n_material.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
 						pipeline_defines += "COLOR_MAP ";
 					}
@@ -256,7 +256,7 @@ namespace flame
 					{
 						if (name[0] == '/')
 							name.erase(name.begin());
-						auto n_texture = n_textures.append_child("texture");
+						auto n_texture = n_material.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
 						pipeline_defines += "ALPHA_MAP ALPHA_TEST ";
 						n_material.append_attribute("alpha_test").set_value(to_string(0.5f).c_str());
@@ -269,11 +269,17 @@ namespace flame
 				auto material_name = std::string(ai_mat->GetName().C_Str());
 				if (material_name.empty())
 					material_name = std::to_string(i);
+				else
+				{
+					for (auto& ch : material_name)
+					{
+						if (ch == ' ' || ch == ':')
+							ch = '_';
+					}
+				}
 				material_name = model_name + "_" + material_name + ".fmat";
 				material_names.push_back(material_name);
-				auto material_filename = filename.parent_path();
-				material_filename /= material_name;
-				doc.save_file(material_filename.c_str());
+				doc.save_file((ppath / material_name).c_str());
 			}
 
 			pugi::xml_document doc;
@@ -282,7 +288,6 @@ namespace flame
 			auto model_data_filename = model_filename;
 			model_data_filename += L".dat";
 			std::ofstream model_data_file(model_data_filename, std::ios::binary);
-			auto model_data_off = 0U;
 
 			auto n_meshes = n_model.append_child("meshes");
 			for (auto i = 0; i < scene->mNumMeshes; i++)
@@ -298,10 +303,9 @@ namespace flame
 				{
 					auto size = vertex_count * sizeof(vec3);
 					auto n_positions = n_mesh.append_child("positions");
-					n_positions.append_attribute("offset").set_value(model_data_off);
+					n_positions.append_attribute("offset").set_value(model_data_file.tellp());
 					n_positions.append_attribute("size").set_value(size);
 					model_data_file.write((char*)ai_mesh->mVertices, size);
-					model_data_off += size;
 				}
 
 				auto puv = ai_mesh->mTextureCoords[0];
@@ -316,20 +320,18 @@ namespace flame
 					}
 					auto size = vertex_count * sizeof(vec2);
 					auto n_uvs = n_mesh.append_child("uvs");
-					n_uvs.append_attribute("offset").set_value(model_data_off);
+					n_uvs.append_attribute("offset").set_value(model_data_file.tellp());
 					n_uvs.append_attribute("size").set_value(size);
 					model_data_file.write((char*)uvs.data(), size);
-					model_data_off += size;
 				}
 
 				if (ai_mesh->mNormals)
 				{
 					auto size = vertex_count * sizeof(vec3);
 					auto n_normals = n_mesh.append_child("normals");
-					n_normals.append_attribute("offset").set_value(model_data_off);
+					n_normals.append_attribute("offset").set_value(model_data_file.tellp());
 					n_normals.append_attribute("size").set_value(size);
 					model_data_file.write((char*)ai_mesh->mNormals, size);
-					model_data_off += size;
 				}
 
 				{
@@ -342,10 +344,9 @@ namespace flame
 					}
 					auto size = indices.size() * sizeof(uint);
 					auto n_indices = n_mesh.append_child("indices");
-					n_indices.append_attribute("offset").set_value(model_data_off);
+					n_indices.append_attribute("offset").set_value(model_data_file.tellp());
 					n_indices.append_attribute("size").set_value(size);
 					model_data_file.write((char*)indices.data(), size);
-					model_data_off += size;
 				}
 
 				auto lower_bound = vec3(0.f);
@@ -377,21 +378,19 @@ namespace flame
 							vec4(m.a4, m.b4, m.c4, m.d4)
 						);
 						auto size = sizeof(mat4);
-						auto n_matrix = n_mesh.append_child("offset_matrix");
-						n_matrix.append_attribute("offset").set_value(model_data_off);
+						auto n_matrix = n_bone.append_child("offset_matrix");
+						n_matrix.append_attribute("offset").set_value(model_data_file.tellp());
 						n_matrix.append_attribute("size").set_value(size);
 						model_data_file.write((char*)&offset_matrix, size);
-						model_data_off += size;
 					}
 
 					if (ai_bone->mNumWeights > 0)
 					{
-						auto size = sizeof(ai_bone->mNumWeights * sizeof(Bone::Weight));
-						auto n_weights = n_mesh.append_child("weights");
-						n_weights.append_attribute("offset").set_value(model_data_off);
+						auto size = ai_bone->mNumWeights * sizeof(Bone::Weight);
+						auto n_weights = n_bone.append_child("weights");
+						n_weights.append_attribute("offset").set_value(model_data_file.tellp());
 						n_weights.append_attribute("size").set_value(size);
 						model_data_file.write((char*)ai_bone->mWeights, size);
-						model_data_off += size;
 					}
 				}
 
@@ -463,8 +462,7 @@ namespace flame
 				auto ai_ani = scene->mAnimations[i];
 
 				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
-				auto animation_filename = filename.parent_path();
-				animation_filename /= animation_name;
+				auto animation_filename = ppath / animation_name;
 
 				pugi::xml_document doc_animation;
 				auto n_animation = doc_animation.append_child("animation");
@@ -473,7 +471,6 @@ namespace flame
 				auto data_filename = animation_filename;
 				data_filename += L".dat";
 				std::ofstream data_file(data_filename, std::ios::binary);
-				auto data_off = 0U;
 
 				for (auto j = 0; j < ai_ani->mNumChannels; j++)
 				{
@@ -495,10 +492,9 @@ namespace flame
 						{
 							auto size = position_keys.size() * sizeof(PositionKey);
 							auto n_keys = n_channel.append_child("position_keys");
-							n_keys.append_attribute("offset").set_value(data_off);
+							n_keys.append_attribute("offset").set_value(data_file.tellp());
 							n_keys.append_attribute("size").set_value(size);
 							data_file.write((char*)position_keys.data(), size);
-							data_off += size;
 						}
 					}
 					if (ai_ch->mNumRotationKeys > 0)
@@ -516,10 +512,9 @@ namespace flame
 						{
 							auto size = rotation_keys.size() * sizeof(RotationKey);
 							auto n_keys = n_channel.append_child("rotation_keys");
-							n_keys.append_attribute("offset").set_value(data_off);
+							n_keys.append_attribute("offset").set_value(data_file.tellp());
 							n_keys.append_attribute("size").set_value(size);
 							data_file.write((char*)rotation_keys.data(), size);
-							data_off += size;
 						}
 					}
 				}
@@ -586,8 +581,6 @@ namespace flame
 				wprintf(L"cannot find model: %s\n", filename.c_str());
 				return nullptr;
 			}
-
-			auto parent_path = filename.parent_path();
 
 			if (filename.extension() != L".fmod")
 				return nullptr;

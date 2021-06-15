@@ -194,12 +194,6 @@
 //			//descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
 //		}
 //
-//		void ArmatureDeformerPrivate::set_pose(uint id, const mat4& pose)
-//		{
-//			//auto dst = (mat4*)poses_buffer.mark_item(id);
-//			//*dst = pose * mesh->bones[id]->offset_matrix;
-//		}
-//
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
 //			preferences(preferences)
 //		{
@@ -237,42 +231,7 @@
 //				}
 //			}
 //		}
-//
-//		uint CanvasPrivate::set_model_resource(int slot, ModelPrivate* mod, const std::string& name)
-//		{
-			//if (!ms->bones.empty())
-			//{
-			//	mrm->weight_buffer.create(device, BufferUsageVertex, ms->positions.size());
-			//	std::vector<std::vector<Bone::Weight>> weights;
-			//	weights.resize(ms->positions.size());
-			//	for (auto j = 0; j < ms->bones.size(); j++)
-			//	{
-			//		auto& b = ms->bones[j];
-			//		for (auto& w : b->weights)
-			//			weights[w.vid].emplace_back(j, w.w);
-			//	}
-			//	std::vector<MeshWeight> mesh_weights;
-			//	mesh_weights.resize(weights.size());
-			//	for (auto j = 0; j < weights.size(); j++)
-			//	{
-			//		auto& src = weights[j];
-			//		auto& dst = mesh_weights[j];
-			//		for (auto k = 0; k < 4; k++)
-			//		{
-			//			if (k < src.size())
-			//			{
-			//				dst.ids[k] = src[k].vid;
-			//				dst.weights[k] = src[k].w;
-			//			}
-			//			else
-			//				dst.ids[k] = -1;
-			//		}
-			//	}
-			//	mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
-			//	mrm->weight_buffer.upload((CommandBufferPrivate*)cb.get());
-			//}
-//		}
-//
+// 
 //		/*
 //		inline void path_arc(std::vector<vec2>& points, const vec2& center, float radius, float a1, float a2, uint lod = 0)
 //		{
