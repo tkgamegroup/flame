@@ -51,22 +51,25 @@ namespace flame
 		}
 
 		HeightFieldPrivate::HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels) :
+			blocks(blocks),
 			tess_levels(tess_levels)
 		{
 #ifdef USE_PHYSX
 			auto w = blocks.x * tess_levels;
 			auto h = blocks.y * tess_levels;
-			std::vector<uint> samples((w + 1) * (h + 1));
+			auto w1 = w + 1;
+			auto h1 = h + 1;
+			std::vector<uint> samples(w1 * h1);
 			std::vector<vec4> res(samples.size());
-			height_map->get_samples(vec4(0.f, 0.f, 1.f / w, 1.f / h), ivec2(w + 1, h + 1), res.data());
+			height_map->get_samples(vec4(0.f, 0.f, 1.f / w, 1.f / h), ivec2(w1, h1), res.data());
 			auto dst = (PxHeightFieldSample*)samples.data();
 			auto lvhf = tess_levels >> 1;
 			auto idx = 0;
-			for (auto x = 0; x <= w; x++)
+			for (auto x = 0; x < w1; x++)
 			{
-				for (auto y = 0; y <= h; y++)
+				for (auto y = 0; y < h1; y++)
 				{
-					dst->height = res[idx++][0] * height_field_precision;
+					dst->height = res[y * w1 + x][0] * height_field_precision;
 
 					dst->materialIndex0 = 0;
 					dst->materialIndex1 = 0;
@@ -143,7 +146,8 @@ namespace flame
 #ifdef USE_PHYSX
 
 			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),
-				scale.y / height_field_precision, scale.x / height_field->tess_levels, scale.z / height_field->tess_levels), *material->px_material));
+				scale.y / height_field_precision, scale.x / (height_field->blocks.x * height_field->tess_levels), 
+				scale.z / (height_field->blocks.y * height_field->tess_levels)), *material->px_material));
 #endif
 			px_shape->userData = this;
 		}

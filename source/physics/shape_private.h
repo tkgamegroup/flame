@@ -20,6 +20,7 @@ namespace flame
 
 		struct HeightFieldPrivate : HeightField
 		{
+			uvec2 blocks;
 			uint tess_levels;
 
 #ifdef USE_PHYSX

@@ -44,7 +44,7 @@ def name_compat(name):
     else:
         return name.replace(' ', '_')
 
-def pack_mesh(n_meshes, data_file, mat_name, sub_vertics, sub_uvs, sub_normals, sub_indices):
+def export_sub(n_meshes, data_file, mat_name, sub_vertics, sub_uvs, sub_normals, sub_indices):
     from array import array
 
     n_mesh = ET.SubElement(n_meshes, "meshe", material=mat_name)
@@ -87,103 +87,117 @@ class ExportFmod(bpy.types.Operator, ExportHelper):
             bpy.ops.object.mode_set(mode='OBJECT')
 
         if len(context.selected_objects) < 1 :
-            return
+            return {"CANCELLED"}
 
         ob = context.selected_objects[0].original
-
-        me = ob.to_mesh()
-
-        if len(me.uv_layers) == 0:
-            return
-        uvs = me.uv_layers.active.data[:]
-        if len(uvs) == 0:
-            ob.to_mesh_clear()
-            return
-
-        verts = me.vertices[:]
-        if len(verts) == 0:
-            ob.to_mesh_clear()
-            return
-
-        faces = me.polygons[:]
-        if len(faces) == 0:
-            ob.to_mesh_clear()
-            return
         
-        me.calc_normals_split()
-
-        loops = me.loops
-
-        materials = me.materials[:]
-
-        if len(materials) > 1:
-            sort_func = lambda a: (a.material_index, a.use_smooth)
+        oms = []
+        arm = None
+        if ob.type == "MESH":
+            oms.append(ob)
+        elif ob.type == "ARMATURE":
+            arm = ob.data
+            for o in ob.children:
+                oms.append(o)
         else:
-            sort_func = lambda a: a.use_smooth
-        faces.sort(key=sort_func)
-        del sort_func
+            return
 
         filename = self.filepath
         ppath = ntpath.dirname(filename)
         model_name = ntpath.splitext(ntpath.split(filename)[1])[0]
-
-        material_names = []
-        for i, m in enumerate(materials):
-            mat_wrap = node_shader_utils.PrincipledBSDFWrapper(m)
-            n_material = ET.Element("material", color=v3_str(mat_wrap.base_color), metallic=str(mat_wrap.metallic), roughness=str(mat_wrap.roughness))
-            
-            color_tex_wrap = getattr(mat_wrap, "base_color_texture", None)
-            if color_tex_wrap:
-                image = color_tex_wrap.image
-                if image:
-                    image.filepath
-
-            material_name = m.name
-            if not material_name:
-                material_name = str(i)
-            material_name = (model_name + "_" + material_name + ".fmat").replace(' ', '_')
-            material_names.append(material_name)
-            doc = ET.ElementTree(n_material)
-            doc.write(ntpath.join(ppath, material_name))
             
         n_model = ET.Element("model")
         n_meshes = ET.SubElement(n_model, "meshes")
 
         model_data_file = open(filename + ".dat", "wb")
 
-        curr_mat_idx = faces[0].material_index
-        sub_vertics = []
-        sub_uvs = []
-        sub_normals = []
-        sub_indices = []
-        vertex_dict = {}
-        vert_cnt = 0
-        for f in faces:
-            if curr_mat_idx != f.material_index:
-                pack_mesh()
-                vert_cnt = 0
-            for l_idx in f.loop_indices:
-                vi = loops[l_idx].vertex_index
-                uv = uvs[l_idx].uv
-                no = loops[l_idx].normal
-                key = vi, round(uv.x, 4), round(uv.y, 4), round(no.x, 4), round(no.y, 4), round(no.z, 4)
-                idx = vertex_dict.get(key)
-                if idx is None:
-                    idx = vert_cnt
-                    v = verts[vi].co
-                    sub_vertics.append([v.x, v.y, v.z])
-                    sub_uvs.append([uv.x, uv.y])
-                    sub_normals.append([no.x, no.y, no.z])
-                    vertex_dict[key] = idx
-                    vert_cnt += 1
-                sub_indices.append(idx)
+        for ob in oms:
+            me = ob.to_mesh()
 
-        ob.to_mesh_clear()
+            if len(me.uv_layers) == 0:
+                return
+            uvs = me.uv_layers.active.data[:]
+            if len(uvs) == 0:
+                ob.to_mesh_clear()
+                return
+
+            verts = me.vertices[:]
+            if len(verts) == 0:
+                ob.to_mesh_clear()
+                return
+
+            faces = me.polygons[:]
+            if len(faces) == 0:
+                ob.to_mesh_clear()
+                return
+            faces.sort(key=lambda a: (a.material_index, a.use_smooth))
+        
+            me.calc_normals_split()
+
+            loops = me.loops
+        
+            materials = me.materials[:]
+            material_names = []
+            for i, m in enumerate(materials):
+                mat_wrap = node_shader_utils.PrincipledBSDFWrapper(m)
+                n_material = ET.Element("material", color=v3_str(mat_wrap.base_color), metallic=str(mat_wrap.metallic), roughness=str(mat_wrap.roughness))
+            
+                color_tex_wrap = getattr(mat_wrap, "base_color_texture", None)
+                if color_tex_wrap:
+                    image = color_tex_wrap.image
+                    if image:
+                        image.filepath
+
+                material_name = m.name
+                if not material_name:
+                    material_name = str(i)
+                material_name = (model_name + "_" + material_name + ".fmat").replace(' ', '_')
+                material_names.append(material_name)
+                doc = ET.ElementTree(n_material)
+                doc.write(ntpath.join(ppath, material_name))
+
+            group_names = [g.name for g in ob.vertex_groups]
+            if arm:
+                for b in arm.edit_bones:
+                    if b.name not in group_names:
+                        continue
+
+            curr_mat_idx = faces[0].material_index
+            sub_vertics = []
+            sub_uvs = []
+            sub_normals = []
+            sub_indices = []
+            vertex_dict = {}
+            vert_cnt = 0
+            for f in faces:
+                if curr_mat_idx != f.material_index:
+                    export_sub()
+                    vert_cnt = 0
+                for l_idx in f.loop_indices:
+                    vi = loops[l_idx].vertex_index
+                    uv = uvs[l_idx].uv
+                    no = loops[l_idx].normal
+                    key = vi, round(uv.x, 4), round(uv.y, 4), round(no.x, 4), round(no.y, 4), round(no.z, 4)
+                    idx = vertex_dict.get(key)
+                    if idx is None:
+                        idx = vert_cnt
+                        v = verts[vi].co
+                        sub_vertics.append([v.x, v.y, v.z])
+                        sub_uvs.append([uv.x, uv.y])
+                        sub_normals.append([no.x, no.y, no.z])
+                        vertex_dict[key] = idx
+                        vert_cnt += 1
+                    sub_indices.append(idx)
+            export_sub()
+
+            ob.to_mesh_clear()
 
         model_data_file.close()
 
         doc = ET.ElementTree(n_model)
         doc.write(filename)
+
+        return {"FINISHED"}
 
     def draw(self, context):
         pass

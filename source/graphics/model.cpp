@@ -462,6 +462,11 @@ namespace flame
 				auto ai_ani = scene->mAnimations[i];
 
 				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
+				for (auto& ch : animation_name)
+				{
+					if (ch == '|')
+						ch = '_';
+				}
 				auto animation_filename = ppath / animation_name;
 
 				pugi::xml_document doc_animation;

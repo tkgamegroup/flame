@@ -15,7 +15,7 @@
     <eCube pos="200,60,205" dynamic="false"/>
     <eNode src="D:\assets\character\mixamo\mesh" name="character" pos="200,65,200" >
       <cController radius="0.5" height="1.8" />
-      <cScript src="character_controller.lua1" />
+      <cScript src="character_controller.lua" />
       <eNode name="camera" pos="0,5,0" euler="0,0,0" >
         <cCamera current="true" />
         <cScript src="camera_third.lua" />
