@@ -37,6 +37,15 @@ character.update_dir = function()
 	character.dir2 = character.node.get_local_dir(0)
 end
 
+local h_animation = flame_hash("animation")
+character.mesh.entity.add_component_data_listener(function(h)
+	if h == h_animation then
+		if character.mesh.get_animation() == "" then
+			character.mesh.set_animation("stand.fani", true)
+		end
+	end
+end, character.mesh)
+
 character.mesh.set_animation("stand.fani", true)
 
 local scene_receiver = scene.find_component("cReceiver")
@@ -86,7 +95,7 @@ scene_receiver.add_key_up_listener(function(k)
 end)
 
 scene_receiver.add_mouse_left_up_listener(function()
-	character.mesh.set_animation("attack", false)
+	character.mesh.set_animation("attack.fani", false)
 end)
 
 entity.add_event(function()

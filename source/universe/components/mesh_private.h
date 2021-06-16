@@ -51,6 +51,7 @@ namespace flame
 
 		void apply_src();
 
+		const wchar_t* get_animation() const override { return ani_name.c_str(); }
 		void set_animation(const std::filesystem::path& name, bool loop);
 		void set_animation(const wchar_t* name, bool loop) override { set_animation(std::filesystem::path(name), loop); }
 		void apply_animation();

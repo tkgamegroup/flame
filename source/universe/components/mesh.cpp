@@ -110,6 +110,8 @@ namespace flame
 		apply_animation();
 		if (node)
 			node->mark_transform_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"animation"_h>);
 	}
 
 	void cMeshPrivate::apply_animation()
@@ -121,11 +123,12 @@ namespace flame
 		auto& srcs = entity->srcs;
 		fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
 
-		stop_animation();
-
 		auto animation = graphics::Animation::get(fn.c_str());
 		if (animation)
 		{
+			ani_frame = 0;
+			ani_frame_max = 0;
+			ani_tracks.clear();
 			auto chs = animation->get_channels_count();
 			for (auto i = 0; i < chs; i++)
 			{
@@ -159,14 +162,23 @@ namespace flame
 					}
 				}
 			}
-			ani_frame = 0;
-			ani_event = looper().add_event([](Capture& c) {
-				auto thiz = c.thiz<cMeshPrivate>();
-				thiz->advance_frame();
-				if (thiz->ani_frame != -1)
-					c._current = nullptr;
-			}, Capture().set_thiz(this), 1.f / 24.f);
+			if (!ani_event)
+			{
+				ani_event = looper().add_event([](Capture& c) {
+					auto thiz = c.thiz<cMeshPrivate>();
+					thiz->advance_frame();
+					if (thiz->ani_frame != -1)
+						c._current = nullptr;
+					else
+					{
+						thiz->ani_event = nullptr;
+						thiz->stop_animation();
+					}
+				}, Capture().set_thiz(this), 1.f / 24.f);
+			}
 		}
+		else
+			stop_animation();
 	}
 
 	void cMeshPrivate::stop_animation()
@@ -180,6 +192,8 @@ namespace flame
 			looper().remove_event(ani_event);
 			ani_event = nullptr;
 		}
+		if (entity)
+			entity->component_data_changed(this, S<"animation"_h>);
 	}
 
 	void cMeshPrivate::advance_frame()
@@ -193,15 +207,7 @@ namespace flame
 		}
 		ani_frame++;
 		if (ani_frame == ani_frame_max)
-		{
-			if (loop_ani)
-				ani_frame = 0;
-			else
-			{
-				ani_event = nullptr;
-				stop_animation();
-			}
-		}
+			ani_frame = loop_ani ? 0 : -1;
 	}
 
 	void cMeshPrivate::draw(sRenderer* s_renderer)

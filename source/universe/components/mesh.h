@@ -20,6 +20,7 @@ namespace flame
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;
 
+		virtual const wchar_t* get_animation() const = 0;
 		virtual void set_animation(const wchar_t* name, bool loop = true) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cMesh* create(void* parms = nullptr);
