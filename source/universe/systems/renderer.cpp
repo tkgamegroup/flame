@@ -978,10 +978,11 @@ namespace flame
 			auto apos = mesh->get_positions();
 			auto auv = mesh->get_uvs();
 			auto anormal = mesh->get_normals();
+			auto abids = mesh->get_bone_ids();
+			auto abwgts = mesh->get_bone_weights();
 			auto aidx = mesh->get_indices();
 
-			auto bones_cnt = mesh->get_bones_count();
-			if (bones_cnt == 0)
+			if (!abids)
 			{
 				dst.vtx_off = nd.buf_mesh_vtx.n1;
 				auto pvtx = nd.buf_mesh_vtx.alloc(dst.vtx_cnt);
@@ -1003,37 +1004,15 @@ namespace flame
 			{
 				dst.vtx_off = nd.buf_arm_mesh_vtx.n1;
 				auto pvtx = nd.buf_arm_mesh_vtx.alloc(dst.vtx_cnt);
-				std::vector<std::vector<std::pair<uint, float>>> vtx_wts;
-				vtx_wts.resize(dst.vtx_cnt);
-				for (auto i = 0; i < bones_cnt; i++)
-				{
-					auto b = mesh->get_bone(i);
-					std::vector<graphics::Bone::Weight> ws;
-					ws.resize(b->get_weights_count());
-					b->get_weights(ws.data());
-					for (auto& w : ws)
-					{
-						if (w.w > 0.f)
-							vtx_wts[w.vid].emplace_back(i, w.w);
-					}
-				}
+
 				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
 					auto& vtx = pvtx[i];
 					vtx.pos = apos[i];
 					vtx.uv = auv ? auv[i] : vec2(0.f);
 					vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
-					auto& w = vtx_wts[i];
-					for (auto k = 0; k < 4; k++)
-					{
-						if (k < w.size())
-						{
-							vtx.ids[k] = w[k].first;
-							vtx.weights[k] = w[k].second;
-						}
-						else
-							vtx.ids[k] = -1;
-					}
+					vtx.ids = abids ? abids[i] : ivec4(-1);
+					vtx.weights = abwgts ? abwgts[i] : vec4(0.f);
 				}
 
 				dst.idx_off = nd.buf_arm_mesh_idx.n1;
@@ -1362,20 +1341,25 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, uint bones_count, const mat4* bones)
+	uint sRendererPrivate::add_armature(uint bones_count, const mat4* bones)
+	{
+		auto& nd = *_nd;
+
+		auto idx = nd.buf_armatures.n;
+		auto& data = nd.buf_armatures.add_item(sizeof(mat4) * bones_count);
+		memcpy(data.bones, bones, sizeof(mat4) * bones_count);
+		return idx;
+	}
+
+	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id)
 	{
 		auto& nd = *_nd;
 
 		node->update_transform();
 
-		auto idx = bones ? nd.buf_armatures.n : nd.buf_transforms.n;
+		auto idx = armature_id != -1 ? armature_id : nd.buf_transforms.n;
 
-		if (bones)
-		{
-			auto& data = nd.buf_armatures.add_item(sizeof(mat4) * bones_count);
-			memcpy(data.bones, bones, sizeof(mat4) * bones_count);
-		}
-		else
+		if (armature_id == -1)
 		{
 			auto& data = nd.buf_transforms.add_item();
 			data.mat = node->transform;
@@ -1383,9 +1367,9 @@ namespace flame
 		}
 
 		auto mat_id = nd.mesh_reses[mesh_id].mat_id;
-		nd.meshes[bones ? MaterialForMeshArmature: MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
+		nd.meshes[armature_id != -1 ? MaterialForMeshArmature: MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
 		if (cast_shadow)
-			nd.meshes[bones ? MaterialForMeshShadowArmature: MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
+			nd.meshes[armature_id != -1 ? MaterialForMeshShadowArmature: MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
 	}
 
 	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id)

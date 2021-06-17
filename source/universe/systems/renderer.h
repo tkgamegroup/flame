@@ -62,7 +62,8 @@ namespace flame
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) = 0;
 
 		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
-		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, uint bones_count = 0, const mat4* bones = nullptr) = 0;
+		virtual uint add_armature(uint bones_count, const mat4* bones) = 0;
+		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id = -1) = 0;
 		virtual void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) = 0;
 
 		virtual bool is_dirty() const = 0;

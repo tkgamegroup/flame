@@ -289,6 +289,8 @@ namespace flame
 			model_data_filename += L".dat";
 			std::ofstream model_data_file(model_data_filename, std::ios::binary);
 
+			std::vector<std::pair<std::string, mat4>> bones;
+
 			auto n_meshes = n_model.append_child("meshes");
 			for (auto i = 0; i < scene->mNumMeshes; i++)
 			{
@@ -334,6 +336,100 @@ namespace flame
 					model_data_file.write((char*)ai_mesh->mNormals, size);
 				}
 
+				auto lower_bound = vec3(0.f);
+				auto upper_bound = vec3(0.f);
+				for (auto j = 0; j < vertex_count; j++)
+				{
+					auto& p = ai_mesh->mVertices[j];
+					auto v = vec3(p.x, p.y, p.z);
+					lower_bound = min(lower_bound, v);
+					upper_bound = max(upper_bound, v);
+				}
+				n_mesh.append_attribute("lower_bound").set_value(to_string(lower_bound).c_str());
+				n_mesh.append_attribute("upper_bound").set_value(to_string(upper_bound).c_str());
+
+				std::vector<ivec4> bone_ids;
+				std::vector<vec4> bone_weights;
+				if (ai_mesh->mNumBones > 0)
+				{
+					bone_ids.resize(vertex_count);
+					bone_weights.resize(vertex_count);
+					for (auto j = 0; j < vertex_count; j++)
+					{
+						bone_ids[j] = ivec4(-1);
+						bone_weights[j] = vec4(0.f);
+					}
+				}
+
+				for (auto j = 0; j < ai_mesh->mNumBones; j++)
+				{
+					auto ai_bone = ai_mesh->mBones[j];
+
+					auto name = std::string(ai_bone->mName.C_Str());
+					auto find_bone = [&](const std::string& name) {
+						for (auto i = 0; i < bones.size(); i++)
+						{
+							if (bones[i].first == name)
+								return i;
+						}
+						return -1;
+					};
+					auto bid = find_bone(name);
+					if (bid == -1)
+					{
+						bid = bones.size();
+						auto& m = ai_bone->mOffsetMatrix;
+						auto offset_matrix = mat4(
+							vec4(m.a1, m.b1, m.c1, m.d1),
+							vec4(m.a2, m.b2, m.c2, m.d2),
+							vec4(m.a3, m.b3, m.c3, m.d3),
+							vec4(m.a4, m.b4, m.c4, m.d4)
+						);
+						bones.emplace_back(name, offset_matrix);
+					}
+
+					auto weights_count = ai_bone->mNumWeights;
+					if (weights_count > 0)
+					{
+						auto get_idx = [&](uint vi) {
+							auto& ids = bone_ids[vi];
+							for (auto i = 0; i < 4; i++)
+							{
+								if (ids[i] == -1)
+									return i;
+							}
+							return -1;
+						};
+						for (auto j = 0; j < weights_count; j++)
+						{
+							auto w = ai_bone->mWeights[j];
+							auto idx = get_idx(w.mVertexId);
+							if (idx == -1)
+								continue;
+							bone_ids[w.mVertexId][idx] = bid;
+							bone_weights[w.mVertexId][idx] = w.mWeight;
+						}
+					}
+				}
+
+				if (!bone_ids.empty())
+				{
+					auto size = vertex_count * sizeof(ivec4);
+					auto n_bids = n_mesh.append_child("bone_ids");
+					n_bids.append_attribute("offset").set_value(model_data_file.tellp());
+					n_bids.append_attribute("size").set_value(size);
+					model_data_file.write((char*)bone_ids.data() , size);
+				}
+
+				if (!bone_weights.empty())
+				{
+					auto size = vertex_count * sizeof(vec4);
+					auto n_wgts = n_mesh.append_child("bone_weights");
+					n_wgts.append_attribute("offset").set_value(model_data_file.tellp());
+					n_wgts.append_attribute("size").set_value(size);
+					model_data_file.write((char*)bone_weights.data(), size);
+				}
+
 				{
 					std::vector<uint> indices(ai_mesh->mNumFaces * 3);
 					for (auto j = 0; j < ai_mesh->mNumFaces; j++)
@@ -348,52 +444,21 @@ namespace flame
 					n_indices.append_attribute("size").set_value(size);
 					model_data_file.write((char*)indices.data(), size);
 				}
+			}
 
-				auto lower_bound = vec3(0.f);
-				auto upper_bound = vec3(0.f);
-				for (auto i = 0; i < vertex_count; i++)
+			auto n_bones = n_model.append_child("bones");
+			for (auto& b : bones)
+			{
+				auto n_bone = n_bones.append_child("bone");
+				n_bone.append_attribute("name").set_value(b.first.c_str());
+
 				{
-					auto& p = ai_mesh->mVertices[i];
-					auto v = vec3(p.x, p.y, p.z);
-					lower_bound = min(lower_bound, v);
-					upper_bound = max(upper_bound, v);
+					auto size = sizeof(mat4);
+					auto n_matrix = n_bone.append_child("offset_matrix");
+					n_matrix.append_attribute("offset").set_value(model_data_file.tellp());
+					n_matrix.append_attribute("size").set_value(size);
+					model_data_file.write((char*)&b.second, size);
 				}
-				n_mesh.append_attribute("lower_bound").set_value(to_string(lower_bound).c_str());
-				n_mesh.append_attribute("upper_bound").set_value(to_string(upper_bound).c_str());
-
-				auto n_bones = n_mesh.append_child("bones");
-				for (auto j = 0; j < ai_mesh->mNumBones; j++)
-				{
-					auto ai_bone = ai_mesh->mBones[j];
-
-					auto n_bone = n_bones.append_child("bone");
-					n_bone.append_attribute("name").set_value(ai_bone->mName.C_Str());
-
-					{
-						auto& m = ai_bone->mOffsetMatrix;
-						auto offset_matrix = mat4(
-							vec4(m.a1, m.b1, m.c1, m.d1),
-							vec4(m.a2, m.b2, m.c2, m.d2),
-							vec4(m.a3, m.b3, m.c3, m.d3),
-							vec4(m.a4, m.b4, m.c4, m.d4)
-						);
-						auto size = sizeof(mat4);
-						auto n_matrix = n_bone.append_child("offset_matrix");
-						n_matrix.append_attribute("offset").set_value(model_data_file.tellp());
-						n_matrix.append_attribute("size").set_value(size);
-						model_data_file.write((char*)&offset_matrix, size);
-					}
-
-					if (ai_bone->mNumWeights > 0)
-					{
-						auto size = ai_bone->mNumWeights * sizeof(Bone::Weight);
-						auto n_weights = n_bone.append_child("weights");
-						n_weights.append_attribute("offset").set_value(model_data_file.tellp());
-						n_weights.append_attribute("size").set_value(size);
-						model_data_file.write((char*)ai_bone->mWeights, size);
-					}
-				}
-
 			}
 
 			model_data_file.close();
@@ -418,9 +483,21 @@ namespace flame
 					a *= 0.5f;
 					auto q = normalize(vec4(sin(a) * vec3(r.x, r.y, r.z), cos(a)));
 
-					n.append_attribute("pos").set_value(to_string(vec3(p.x, p.y, p.z)).c_str());
-					n.append_attribute("quat").set_value(to_string(quat(q.w, q.x, q.y, q.z)).c_str());
-					n.append_attribute("scale").set_value(to_string(vec3(s.x, s.y, s.z)).c_str());
+					auto pos = vec3(p.x, p.y, p.z);
+					if (pos != vec3(0.f))
+						n.append_attribute("pos").set_value(to_string(pos).c_str());
+					auto qut = quat(q.w, q.x, q.y, q.z);
+					if (qut != quat(1.f, 0.f, 0.f, 0.f))
+						n.append_attribute("quat").set_value(to_string(qut).c_str());
+					auto scl = vec3(s.x, s.y, s.z);
+					if (scl != vec3(1.f))
+						n.append_attribute("scale").set_value(to_string(scl).c_str());
+				}
+
+				if (src == scene->mRootNode && !bones.empty())
+				{
+					auto na = n.append_child("cAnimation");
+					na.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
 				}
 
 				if (src->mNumMeshes > 0)
@@ -437,7 +514,8 @@ namespace flame
 					else
 					{
 						auto nm = n.append_child("cMesh");
-						nm.append_attribute("src").set_value((model_name + ".fmod#" + std::to_string(src->mMeshes[0])).c_str());
+						nm.append_attribute("src").set_value((model_name + ".fmod").c_str());
+						nm.append_attribute("sub_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
 							auto nr = n.append_child("cRigid");
@@ -536,10 +614,10 @@ namespace flame
 		static ModelPrivate* standard_cube = nullptr;
 		static ModelPrivate* standard_sphere = nullptr;
 
-		Model* Model::get_standard(const char* _name)
+		Model* Model::get_standard(const wchar_t* _name)
 		{
-			auto name = std::string(_name);
-			if (name == "cube")
+			auto name = std::wstring(_name);
+			if (name == L"cube")
 			{
 				if (!standard_cube)
 				{
@@ -553,7 +631,7 @@ namespace flame
 				}
 				return standard_cube;
 			}
-			else if (name == "sphere")
+			else if (name == L"sphere")
 			{
 				if (!standard_sphere)
 				{
@@ -648,6 +726,24 @@ namespace flame
 					model_data_file.read((char*)m->normals.data(), size);
 				}
 
+				auto n_bids = n_mesh.child("bone_ids");
+				if (n_bids)
+				{
+					auto offset = n_bids.attribute("offset").as_uint();
+					auto size = n_bids.attribute("size").as_uint();
+					m->bone_ids.resize(size / sizeof(ivec4));
+					model_data_file.read((char*)m->bone_ids.data(), size);
+				}
+
+				auto n_wgts = n_mesh.child("bone_weights");
+				if (n_wgts)
+				{
+					auto offset = n_wgts.attribute("offset").as_uint();
+					auto size = n_wgts.attribute("size").as_uint();
+					m->bone_weights.resize(size / sizeof(vec4));
+					model_data_file.read((char*)m->bone_weights.data(), size);
+				}
+
 				auto n_indices = n_mesh.child("indices");
 				{
 					auto offset = n_indices.attribute("offset").as_uint();
@@ -658,26 +754,21 @@ namespace flame
 
 				m->lower_bound = sto<vec3>(n_mesh.attribute("lower_bound").value());
 				m->upper_bound = sto<vec3>(n_mesh.attribute("upper_bound").value());
-				for (auto n_bone : n_mesh.child("bones"))
-				{
-					auto b = new BonePrivate;
-					b->name = n_bone.attribute("name").value();
-					{
-						auto n_matrix = n_bone.child("offset_matrix");
-						auto offset = n_matrix.attribute("offset").as_uint();
-						auto size = n_matrix.attribute("size").as_uint();
-						model_data_file.read((char*)&b->offset_matrix, size);
-					}
-					{
-						auto n_weights = n_bone.child("weights");
-						auto offset = n_weights.attribute("offset").as_uint();
-						auto size = n_weights.attribute("size").as_uint();
-						b->weights.resize(size / sizeof(BonePrivate::Weight));
-						model_data_file.read((char*)b->weights.data(), size);
-					}
-					m->bones.emplace_back(b);
-				}
+
 				ret->meshes.emplace_back(m);
+			}
+
+			for (auto n_bone : doc_root.child("bones"))
+			{
+				auto b = new BonePrivate;
+				b->name = n_bone.attribute("name").value();
+				{
+					auto n_matrix = n_bone.child("offset_matrix");
+					auto offset = n_matrix.attribute("offset").as_uint();
+					auto size = n_matrix.attribute("size").as_uint();
+					model_data_file.read((char*)&b->offset_matrix, size);
+				}
+				ret->bones.emplace_back(b);
 			}
 
 			model_data_file.close();

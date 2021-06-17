@@ -4,8 +4,6 @@ project(flame)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-enable_language(ASM_MASM)
-
 add_definitions(-W0 -std:c++latest)
 
 include("cmake_utils.cmake")

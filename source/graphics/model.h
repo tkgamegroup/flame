@@ -8,17 +8,9 @@ namespace flame
 	{
 		struct Bone
 		{
-			struct Weight
-			{
-				uint vid;
-				float w;
-			};
-
 			virtual const char* get_name() const = 0;
 
 			virtual mat4 get_offset_matrix() const = 0;
-			virtual uint get_weights_count() const = 0;
-			virtual void get_weights(Weight* dst) const = 0;
 		};
 
 		struct Mesh
@@ -29,12 +21,11 @@ namespace flame
 			virtual const vec3* get_positions() const = 0;
 			virtual const vec2* get_uvs() const = 0;
 			virtual const vec3* get_normals() const = 0;
+			virtual const ivec4* get_bone_ids() const = 0;
+			virtual const vec4* get_bone_weights() const = 0;
 
 			virtual uint get_indices_count() const = 0;
 			virtual const uint* get_indices() const = 0;
-
-			virtual uint get_bones_count() const = 0;
-			virtual BonePtr get_bone(uint idx) const = 0;
 
 			virtual vec3 get_lower_bound() const = 0;
 			virtual vec3 get_upper_bound() const = 0;
@@ -47,8 +38,11 @@ namespace flame
 			virtual uint get_meshes_count() const = 0;
 			virtual MeshPtr get_mesh(uint idx) const = 0;
 
+			virtual uint get_bones_count() const = 0;
+			virtual BonePtr get_bone(uint idx) const = 0;
+
 			FLAME_GRAPHICS_EXPORTS static void convert(const wchar_t* filename);
-			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const char* name);
+			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const wchar_t* name);
 			FLAME_GRAPHICS_EXPORTS static Model* get(const wchar_t* filename);
 		};
 

@@ -1,0 +1,5 @@
+file(GLOB_RECURSE SOURCES "*.c*")
+add_executable(dota_pubg ${SOURCES})
+set_target_properties(dota_pubg PROPERTIES FOLDER "games")
+target_link_libraries(dota_pubg flame_universe)
+set_target_properties(dota_pubg PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

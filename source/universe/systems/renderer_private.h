@@ -92,7 +92,8 @@ namespace flame
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) override;
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
-		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, uint bones_count, const mat4* bones) override;
+		uint add_armature(uint bones_count, const mat4* bones) override;
+		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id) override;
 		void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
