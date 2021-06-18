@@ -172,10 +172,10 @@ namespace flame
 				m = mat4(1.f);
 			}
 			m = translate(m, pos);
-			g_pos = m[3];
-			m = m * mat4(rot);
 			m = scale(m, scl);
+			m = m * mat4(rot);
 			transform = m;
+			g_pos = m[3];
 
 			if (entity)
 				entity->component_data_changed(this, S<"transform"_h>);

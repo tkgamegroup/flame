@@ -4,114 +4,48 @@ character = {
 	animation = entity.find_component("cAnimation"),
 	controller = entity.find_component("cController"),
 	yaw = 0,
-	dir1 = vec3(0, 0, 1),
-	dir2 = vec3(1, 0, 0),
-	w = false,
-	s = false,
-	a = false,
-	d = false,
-	q = false,
-	e = false
+	dir = vec3(0, 0, 1),
+	state = "moving",
+	move_pos = vec2(0)
 }
 
 character.update_dir = function()
 	character.node.set_euler(vec3(character.yaw, 0, 0))
-	character.dir1 = character.node.get_local_dir(2)
-	character.dir2 = character.node.get_local_dir(0)
+	character.dir = character.node.get_local_dir(2)
 end
 
 local h_src = flame_hash("src")
 character.animation.entity.add_component_data_listener(function(h)
 	if h == h_src then
-		if character.animation.get_src() == "" then
-			character.animation.set_src("stand.fani")
+		if character.animation.get_playing() == -1 then
+			character.animation.play(0)
 			character.animation.set_loop(true)
 		end
 	end
 end, character.animation)
 
-character.animation.set_src("stand.fani")
+character.animation.play(0)
 character.animation.set_loop(true)
 
-local scene_receiver = scene.find_component("cReceiver")
-
-scene_receiver.add_key_down_listener(function(k)
-	if k == enums["flame::KeyboardKey"]["W"] then
-		character.w = true
-		character.animation.set_src("run.fani")
-		character.animation.set_loop(true)
-	end
-	if k == enums["flame::KeyboardKey"]["S"] then
-		character.s = true
-	end
-	if k == enums["flame::KeyboardKey"]["A"] then
-		character.a = true
-	end
-	if k == enums["flame::KeyboardKey"]["D"] then
-		character.d = true
-	end
-	if k == enums["flame::KeyboardKey"]["Q"] then
-		character.q = true
-	end
-	if k == enums["flame::KeyboardKey"]["E"] then
-		character.e = true
-	end
-end)
-
-scene_receiver.add_key_up_listener(function(k)
-	if k == enums["flame::KeyboardKey"]["W"] then
-		character.w = false
-		character.animation.set_src("stand.fani")
-		character.animation.set_loop(true)
-	end
-	if k == enums["flame::KeyboardKey"]["S"] then
-		character.s = false
-	end
-	if k == enums["flame::KeyboardKey"]["A"] then
-		character.a = false
-	end
-	if k == enums["flame::KeyboardKey"]["D"] then
-		character.d = false
-	end
-	if k == enums["flame::KeyboardKey"]["Q"] then
-		character.q = false
-	end
-	if k == enums["flame::KeyboardKey"]["E"] then
-		character.e = false
-	end
-end)
-
-scene_receiver.add_mouse_left_up_listener(function()
-	character.animation.set_src("attack.fani")
-	character.animation.set_loop(false)
-end)
-
 entity.add_event(function()
-	yaw = 0
-	if character.a then
-		yaw = yaw + 1
-	end
-	if character.d then
-		yaw = yaw - 1
-	end
-	if yaw ~= 0 then
-		character.yaw = character.yaw + yaw
-		character.update_dir()
-	end
-	disp = vec3(0, 0, 0)
-	if character.w then
-		disp = disp + character.dir1 * character.speed
-	end
-	if character.s then
-		disp = disp + character.dir1 * -character.speed
-	end
-	if character.q then
-		disp = disp + character.dir2 * character.speed
-	end
-	if character.e then
-		disp = disp + character.dir2 * -character.speed
-	end
-	if disp.x ~= 0 or disp.y ~= 0 or disp.z ~= 0 then
-		character.controller.move(disp)
+	if character.state == "moving" then
+		local p = character.node.get_global_pos()
+		local v = character.move_pos - vec2(p.x, p.z)
+		local l = length_2(v)
+		local d = vec2(0)
+		if l > 0 then
+			d = vec2(v.x / l, v.y / l)
+			character.yaw = math.atan(d.y, d.x) / 3.14 * 180
+			character.update_dir()
+		end
+		if l <= character.speed then
+			character.state = "idle"
+			character.animation.play(0)
+			character.animation.set_loop(true)
+			return
+		end
+		character.animation.play(1)
+		character.animation.set_loop(true)
+		character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 	end
 end, 0)

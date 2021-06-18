@@ -19,8 +19,14 @@ namespace flame
 			quat q;
 		};
 
+		struct Action
+		{
+			uint total_frame;
+			std::vector<std::pair<uint, std::vector<Pose>>> tracks;
+		};
+
 		std::filesystem::path model_name;
-		std::filesystem::path src;
+		std::wstring src;
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
@@ -29,10 +35,10 @@ namespace flame
 
 		std::vector<Bone> bones;
 		std::vector<mat4> bone_mats;
+		std::vector<Action> actions;
 		bool loop = false;
+		int playing = -1;
 		int frame = -1;
-		uint frame_max = 0;
-		std::vector<std::pair<uint, std::vector<Pose>>> tracks;
 		void* event = nullptr;
 
 		~cAnimationPrivate();
@@ -42,14 +48,17 @@ namespace flame
 		void set_model_name(const wchar_t* src) override { set_model_name(std::filesystem::path(src)); }
 
 		const wchar_t* get_src() const override { return src.c_str(); }
-		void set_src(const std::filesystem::path& src);
-		void set_src(const wchar_t* src) override { set_src(std::filesystem::path(src)); }
+		void set_src(const std::wstring& src);
+		void set_src(const wchar_t* src) override { set_src(std::wstring(src)); }
+
+		void play(uint id) override;
+		int get_playing() override { return playing; }
+		void stop() override;
 
 		bool get_loop() const override { return loop; }
 		void set_loop(bool l) override;
 
 		void apply_src();
-		void stop();
 		void advance();
 
 		void draw(sRenderer* s_renderer);

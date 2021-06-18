@@ -5,10 +5,10 @@
     <eNode src="D:\assets\character\mixamo\mesh" name="character" pos="200,65,200" >
       <cController radius="0.5" height="1.8" />
       <cScript src="character.lua" />
-      <eNode name="camera">
-        <cCamera current="true" />
-        <cScript src="camera.lua" />
-      </eNode>
+    </eNode>
+    <eNode name="camera">
+      <cCamera current="true" />
+      <cScript src="camera.lua" />
     </eNode>
     <entity src="D:\assets\terrain\terrain" name="terrain">
     </entity>

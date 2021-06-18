@@ -161,13 +161,6 @@ function vec3(x, y, z)
 	return o
 end
 
-function distance_3(a, b)
-	local x = a.x - b.x
-	local y = a.y - b.y
-	local z = a.z - b.z
-	return math.sqrt(x * x + y * y + z * z)
-end
-
 function vec4(x, y, z, w)
 	if y == nil and z == nil and w == nil then 
 		y = x
@@ -196,6 +189,22 @@ function vec4(x, y, z, w)
 		end
 	})
 	return o
+end
+
+function length_2(v)
+	return math.sqrt(v.x * v.x + v.y * v.y)
+end
+
+function distance_2(a, b)
+	return length_2(a - b)
+end
+
+function length_3(v)
+	return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+end
+
+function distance_3(a, b)
+	return length_3(a - b)
 end
 
 function split_by_newline(str)

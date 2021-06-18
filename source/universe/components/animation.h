@@ -20,6 +20,10 @@ namespace flame
 		virtual const wchar_t* get_src() const = 0;
 		virtual void set_src(const wchar_t* src) = 0;
 
+		virtual void play(uint id) = 0;
+		virtual int get_playing() = 0;
+		virtual void stop() = 0;
+
 		virtual bool get_loop() const = 0;
 		virtual void set_loop(bool l) = 0;
 

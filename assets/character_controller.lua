@@ -24,13 +24,13 @@ local h_src = flame_hash("src")
 character.animation.entity.add_component_data_listener(function(h)
 	if h == h_src then
 		if character.animation.get_src() == "" then
-			character.animation.set_src("stand.fani")
+			character.animation.play(0)
 			character.animation.set_loop(true)
 		end
 	end
 end, character.animation)
 
-character.animation.set_src("stand.fani")
+character.animation.play(0)
 character.animation.set_loop(true)
 
 local scene_receiver = scene.find_component("cReceiver")
@@ -38,7 +38,7 @@ local scene_receiver = scene.find_component("cReceiver")
 scene_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
-		character.animation.set_src("run.fani")
+		character.animation.play(1)
 		character.animation.set_loop(true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
@@ -61,7 +61,7 @@ end)
 scene_receiver.add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
-		character.animation.set_src("stand.fani")
+		character.animation.play(0)
 		character.animation.set_loop(true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
@@ -82,7 +82,7 @@ scene_receiver.add_key_up_listener(function(k)
 end)
 
 scene_receiver.add_mouse_left_up_listener(function()
-	character.animation.set_src("attack.fani")
+	character.animation.play(2)
 	character.animation.set_loop(false)
 end)
 

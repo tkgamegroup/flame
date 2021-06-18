@@ -24,7 +24,7 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cAnimationPrivate::set_src(const std::filesystem::path& _src)
+	void cAnimationPrivate::set_src(const std::wstring& _src)
 	{
 		if (src == _src)
 			return;
@@ -32,6 +32,40 @@ namespace flame
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"src"_h>);
+	}
+
+	void cAnimationPrivate::play(uint id)
+	{
+		if (playing == id)
+			return;
+		playing = id;
+		frame = 0;
+		if (!event)
+		{
+			event = looper().add_event([](Capture& c) {
+				auto thiz = c.thiz<cAnimationPrivate>();
+				thiz->advance();
+				if (thiz->frame != -1)
+					c._current = nullptr;
+				else
+				{
+					thiz->event = nullptr;
+					thiz->stop();
+				}
+			}, Capture().set_thiz(this), 1.f / 24.f);
+		}
+	}
+
+	void cAnimationPrivate::stop()
+	{
+		playing = -1;
+		if (event)
+		{
+			looper().remove_event(event);
+			event = nullptr;
+		}
 		if (entity)
 			entity->component_data_changed(this, S<"src"_h>);
 	}
@@ -82,86 +116,62 @@ namespace flame
 		if (bones.empty() || src.empty())
 			return;
 
-		auto fn = std::filesystem::path(src);
-		auto& srcs = entity->srcs;
-		fn = srcs[srcs.size() - src_id - 1].parent_path() / fn;
-
-		auto animation = graphics::Animation::get(fn.c_str());
-		if (animation)
+		auto ppath = entity->get_src(src_id).parent_path();
+		auto sp = SUW::split(src, ';');
+		for (auto& s : sp)
 		{
-			frame = 0;
-			frame_max = 0;
-			tracks.clear();
-			auto chs = animation->get_channels_count();
-			for (auto i = 0; i < chs; i++)
+			auto fn = std::filesystem::path(s);
+			if (!fn.is_absolute())
+				fn = ppath / fn;
+
+			auto animation = graphics::Animation::get(fn.c_str());
+			if (animation)
 			{
-				auto ch = animation->get_channel(i);
-				auto find_bone = [&](const std::string& name) {
-					for (auto i = 0; i < bones.size(); i++)
-					{
-						if (bones[i].name == name)
-							return i;
-					}
-					return -1;
-				};
-				auto bid = find_bone(ch->get_node_name());
-				if (bid != -1)
+				auto& a = actions.emplace_back();
+				a.total_frame = 0;
+
+				auto chs = animation->get_channels_count();
+				for (auto i = 0; i < chs; i++)
 				{
-					auto pkc = ch->get_position_keys_count();
-					auto rkc = ch->get_rotation_keys_count();
-					frame_max = max(pkc, rkc);
-
-					auto& t = tracks.emplace_back();
-					t.first = bid;
-					t.second.resize(frame_max);
-
-					auto pk = ch->get_position_keys();
-					auto rk = ch->get_rotation_keys();
-					for (auto j = 0; j < frame_max; j++)
+					auto ch = animation->get_channel(i);
+					auto find_bone = [&](const std::string& name) {
+						for (auto i = 0; i < bones.size(); i++)
+						{
+							if (bones[i].name == name)
+								return i;
+						}
+						return -1;
+					};
+					auto bid = find_bone(ch->get_node_name());
+					if (bid != -1)
 					{
-						auto& f = t.second[j];
-						f.p = j < pkc ? pk[j].v : vec3(0.f);
-						f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
+						auto pkc = ch->get_position_keys_count();
+						auto rkc = ch->get_rotation_keys_count();
+						a.total_frame = max(a.total_frame, max(pkc, rkc));
+
+						auto& t = a.tracks.emplace_back();
+						t.first = bid;
+						t.second.resize(a.total_frame);
+
+						auto pk = ch->get_position_keys();
+						auto rk = ch->get_rotation_keys();
+						for (auto j = 0; j < a.total_frame; j++)
+						{
+							auto& f = t.second[j];
+							f.p = j < pkc ? pk[j].v : vec3(0.f);
+							f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
+						}
 					}
 				}
-			}
-			if (!event)
-			{
-				event = looper().add_event([](Capture& c) {
-					auto thiz = c.thiz<cAnimationPrivate>();
-					thiz->advance();
-					if (thiz->frame != -1)
-						c._current = nullptr;
-					else
-					{
-						thiz->event = nullptr;
-						thiz->stop();
-					}
-				}, Capture().set_thiz(this), 1.f / 24.f);
-			}
-		}
-		else
-			stop();
-	}
 
-	void cAnimationPrivate::stop()
-	{
-		src = L"";
-		frame = -1;
-		frame_max = 0;
-		tracks.clear();
-		if (event)
-		{
-			looper().remove_event(event);
-			event = nullptr;
+			}
 		}
-		if (entity)
-			entity->component_data_changed(this, S<"src"_h>);
 	}
 
 	void cAnimationPrivate::advance()
 	{
-		for (auto& t : tracks)
+		auto& a = actions[playing];
+		for (auto& t : a.tracks)
 		{
 			auto& b = bones[t.first];
 			auto& k = t.second[frame];
@@ -169,7 +179,7 @@ namespace flame
 			b.node->set_quat(k.q);
 		}
 		frame++;
-		if (frame == frame_max)
+		if (frame == a.total_frame)
 			frame = loop ? 0 : -1;
 	}
 
