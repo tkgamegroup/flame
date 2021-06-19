@@ -41,7 +41,7 @@ namespace flame
 		}
 	}
 
-	void* cRigidPrivate::add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShapePtr trigger_shape, cShapePtr other_shape), const Capture& capture)
+	void* cRigidPrivate::add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, EntityPtr trigger_shape, EntityPtr other_shape), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		trigger_listeners.emplace_back(c);
@@ -58,7 +58,7 @@ namespace flame
 	void cRigidPrivate::create()
 	{
 		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
-		phy_rigid->user_data = this;
+		phy_rigid->user_data = entity;
 		physics->rigids.push_back(this);
 		physics->physics_scene->add_rigid(phy_rigid);
 		node->update_transform();

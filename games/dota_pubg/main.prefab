@@ -16,8 +16,5 @@
     </eCamera>
     <entity src="D:\assets\terrain\terrain" name="terrain" />
     <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-    <entity>
-      <cScript src="init2.lua" />
-    </entity>
   </eNode>
 </prefab>

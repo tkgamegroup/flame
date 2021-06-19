@@ -11,7 +11,7 @@ namespace flame
 		std::vector<physics::Shape*> phy_shapes;
 		vec3 staging_impulse = vec3(0.f);
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, cShapePtr, cShapePtr)>>> trigger_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, EntityPtr, EntityPtr)>>> trigger_listeners;
 
 		cNodePrivate* node = nullptr;
 		sPhysicsPrivate* physics = nullptr;
@@ -23,7 +23,7 @@ namespace flame
 
 		void add_impulse(const vec3& v) override;
 
-		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShapePtr trigger_shape, cShapePtr other_shape), const Capture& capture) override;
+		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, EntityPtr trigger_shape, EntityPtr other_shape), const Capture& capture) override;
 		void remove_trigger_listener(void* lis) override;
 
 		void create();

@@ -12,7 +12,7 @@ namespace flame
 
 		UniPtr<physics::Scene> physics_scene;
 
-		vec3 raycast(const vec3& origin, const vec3& dir) override;
+		vec3 raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e) override;
 		void set_visualization(bool v) override;
 
 		void on_added() override;

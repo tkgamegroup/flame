@@ -260,16 +260,14 @@ namespace flame
 					{
 					case CharType:
 					{
-						char* ret;
-						ret = *(char**)((char*)obj + off);
-						lua_pushstring(state, ret);
+						char** pstr = (char**)((char*)obj + off);
+						lua_pushstring(state, *pstr ? *pstr : "");
 					}
 						break;
 					case WideCharType:
 					{
-						wchar_t* ret;
-						ret = *(wchar_t**)((char*)obj + off);
-						lua_pushstring(state, w2s(ret).c_str());
+						wchar_t** pstr = (wchar_t**)((char*)obj + off);
+						lua_pushstring(state, w2s(*pstr ? *pstr : L"").c_str());
 					}
 						break;
 					default:
@@ -452,6 +450,11 @@ namespace flame
 							if (lua_isuserdata(state, -1))
 							{
 								*(void**)p = lua_touserdata(state, -1);
+								p += sizeof(void*);
+							}
+							else if (lua_isnil(state, -1))
+							{
+								*(void**)p = nullptr;
 								p += sizeof(void*);
 							}
 							else

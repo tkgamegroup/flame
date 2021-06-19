@@ -14,6 +14,8 @@ namespace flame
 			virtual void set_position(const vec3& pos) = 0;
 			virtual void move(const vec3& disp, float delta_time) = 0;
 
+			void* user_data;
+
 			FLAME_PHYSICS_EXPORTS static Controller* create(Scene* scene, Material* material, float radius, float height);
 		};
 	}

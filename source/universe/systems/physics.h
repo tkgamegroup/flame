@@ -14,7 +14,7 @@ namespace flame
 		{
 		}
 
-		virtual vec3 raycast(const vec3& origin, const vec3& dir) = 0;
+		virtual vec3 raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e = nullptr) = 0;
 		virtual void set_visualization(bool v) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sPhysics* create(void* parms = nullptr);

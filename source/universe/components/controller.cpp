@@ -39,6 +39,7 @@ namespace flame
 		fassert(physics);
 
 		phy_controller = physics::Controller::create(physics->physics_scene.get(), nullptr, radius, height);
+		phy_controller->user_data = entity;
 		node->update_transform();
 		phy_controller->set_position(node->g_pos);
 		physics->controllers.push_back(this);

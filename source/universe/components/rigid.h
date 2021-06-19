@@ -19,7 +19,7 @@ namespace flame
 
 		virtual void add_impulse(const vec3& v) = 0;
 
-		virtual void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShapePtr trigger_shape, cShapePtr other_shape), const Capture& capture) = 0;
+		virtual void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, EntityPtr trigger_shape, EntityPtr other_shape), const Capture& capture) = 0;
 		virtual void remove_trigger_listener(void* lis) = 0;
 		
 		FLAME_UNIVERSE_EXPORTS static cRigid* create(void* parms = nullptr);

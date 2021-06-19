@@ -18,6 +18,9 @@ namespace flame
 			desc.radius = radius;
 			desc.height = height;
 			px_controller.reset(scene->px_controller_manager->createController(desc));
+			auto px_actor = px_controller->getActor();
+			px_actor->setName("Controller");
+			px_actor->userData = this;
 #endif
 		}
 

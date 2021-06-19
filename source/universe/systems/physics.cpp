@@ -15,9 +15,13 @@ namespace flame
 {
 	using namespace physics;
 
-	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir)
+	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e)
 	{
-		return physics_scene->raycast(origin, dir, 1000.f);
+		void* p = nullptr;
+		auto pos = physics_scene->raycast(origin, dir, 1000.f, &p);
+		if (out_e)
+			*out_e = (EntityPtr)p;
+		return pos;
 	}
 
 	void sPhysicsPrivate::set_visualization(bool v)
@@ -54,9 +58,9 @@ namespace flame
 	{
 		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
 		physics_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
-			auto tri_shp = (cShapePrivate*)trigger_shape->user_data;
-			auto oth_shp = (cShapePrivate*)other_shape->user_data;
-			for (auto& l : tri_shp->rigid->trigger_listeners)
+			auto tri_shp = (EntityPtr)trigger_shape->user_data;
+			auto oth_shp = (EntityPtr)other_shape->user_data;
+			for (auto& l : tri_shp->get_component_t<cShapePrivate>()->rigid->trigger_listeners)
 				l->call(type, tri_shp, oth_shp);
 		}, Capture().set_thiz(this));
 	}

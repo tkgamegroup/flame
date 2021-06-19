@@ -37,7 +37,7 @@ namespace flame
 
 			void add_rigid(RigidPtr r) override;
 			void remove_rigid(RigidPtr r) override;
-			vec3 raycast(const vec3& origin, const vec3& dir, float max_distance = 1000.f) override;
+			vec3 raycast(const vec3& origin, const vec3& dir, float max_distance, void** out_user_data) override;
 			void update(float disp) override;
 			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;

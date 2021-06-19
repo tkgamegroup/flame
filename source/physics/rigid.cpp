@@ -21,6 +21,7 @@ namespace flame
 			else
 				px_rigid.reset(device->px_instance->createRigidStatic(PxTransform(PxVec3(0.f))));
 
+			px_rigid->setName("Rigid");
 			px_rigid->userData = this;
 #endif
 		}

@@ -1,6 +1,7 @@
 #include "scene_private.h"
 #include "device_private.h"
 #include "rigid_private.h"
+#include "controller_private.h"
 
 namespace flame
 {
@@ -73,11 +74,27 @@ namespace flame
 #endif
 		}
 
-		vec3 ScenePrivate::raycast(const vec3& origin, const vec3& dir, float max_distance)
+		vec3 ScenePrivate::raycast(const vec3& origin, const vec3& dir, float max_distance, void** out_user_data)
 		{
 #ifdef USE_PHYSX
 			PxRaycastBuffer hit;
 			px_scene->raycast(cvt(origin), cvt(dir), max_distance, hit, PxHitFlag::ePOSITION);
+			if (out_user_data)
+			{
+				auto actor = hit.block.actor;
+				if (!actor)
+					*out_user_data = nullptr;
+				else
+				{
+					auto name = std::string(actor->getName());
+					if (name == "Rigid")
+						*out_user_data = ((RigidPtr)actor->userData)->user_data;
+					else if (name == "Controller")
+						*out_user_data = ((ControllerPtr)actor->userData)->user_data;
+					else
+						fassert(0);
+				}
+			}
 			return cvt(hit.block.position);
 #endif
 		}

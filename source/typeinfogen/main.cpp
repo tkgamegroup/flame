@@ -118,7 +118,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			name = base_type_name(pointer_type);
 			break;
 		case SymTagPointerType:
-
+			name = "complex_pointer";
 			break;
 		case SymTagUDT:
 			pointer_type->get_name(&pwname);
