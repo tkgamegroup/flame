@@ -199,12 +199,38 @@ function distance_2(a, b)
 	return length_2(a - b)
 end
 
+function normalize_2(v)
+	local l = length_2(v)
+	return vec2(v.x / l, v.y / l)
+end
+
+function length_and_dir_2(v)
+	local l = length_2(v)
+	if l > 0 then
+		return l, vec2(v.x / l, v.y / l)
+	end
+	return l, nil
+end
+
 function length_3(v)
 	return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
 end
 
 function distance_3(a, b)
 	return length_3(a - b)
+end
+
+function normalize_3(v)
+	local l = length_3(v)
+	return vec3(v.x / l, v.y / l, v.z / l)
+end
+
+function length_and_dir_3(v)
+	local l = length_3(v)
+	if l > 0 then
+		return l, vec3(v.x / l, v.y / l, v.z / l)
+	end
+	return l, nil
 end
 
 function split_by_newline(str)

@@ -73,14 +73,11 @@ namespace flame
 		{
 			std::string node_name;
 
-			std::vector<PositionKey> position_keys;
-			std::vector<RotationKey> rotation_keys;
+			std::vector<BoneKey> keys;
 
 			const char* get_node_name() const override { return node_name.c_str(); }
-			uint get_position_keys_count() const override { return position_keys.size(); }
-			const PositionKey* get_position_keys() const override { return position_keys.data(); }
-			uint get_rotation_keys_count() const { return rotation_keys.size(); }
-			const RotationKey* get_rotation_keys() const { return rotation_keys.data(); }
+			uint get_keys_count() const override { return keys.size(); }
+			const BoneKey* get_keys() const override { return keys.data(); }
 		};
 
 		struct AnimationPrivate : Animation

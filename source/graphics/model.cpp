@@ -560,46 +560,23 @@ namespace flame
 					auto ai_ch = ai_ani->mChannels[j];
 					auto n_channel = n_channels.append_child("channel");
 					n_channel.append_attribute("node_name").set_value(ai_ch->mNodeName.C_Str());
-					if (ai_ch->mNumPositionKeys > 0)
+					fassert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
+						ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
+
+					std::vector<BoneKey> keys;
+					keys.resize(ai_ch->mNumPositionKeys);
+					for (auto k = 0; k < keys.size(); k++)
 					{
-						std::vector<PositionKey> position_keys;
-						position_keys.resize(ai_ch->mNumPositionKeys);
-						for (auto k = 0; k < position_keys.size(); k++)
-						{
-							auto& ai_key = ai_ch->mPositionKeys[k];
-							auto& dst_k = position_keys[k];
-							dst_k.t = ai_key.mTime;
-							auto& p = ai_key.mValue;
-							dst_k.v = vec3(p.x, p.y, p.z);
-						}
-						{
-							auto size = position_keys.size() * sizeof(PositionKey);
-							auto n_keys = n_channel.append_child("position_keys");
-							n_keys.append_attribute("offset").set_value(data_file.tellp());
-							n_keys.append_attribute("size").set_value(size);
-							data_file.write((char*)position_keys.data(), size);
-						}
+						auto& p = ai_ch->mPositionKeys[k].mValue;
+						auto& q = ai_ch->mRotationKeys[k].mValue;
+						keys[k].p = vec3(p.x, p.y, p.z);
+						keys[k].q = quat(q.w, q.x, q.y, q.z);
 					}
-					if (ai_ch->mNumRotationKeys > 0)
-					{
-						std::vector<RotationKey> rotation_keys;
-						rotation_keys.resize(ai_ch->mNumRotationKeys);
-						for (auto k = 0; k < rotation_keys.size(); k++)
-						{
-							auto& ai_key = ai_ch->mRotationKeys[k];
-							auto& dst_k = rotation_keys[k];
-							dst_k.t = ai_key.mTime;
-							auto& q = ai_key.mValue;
-							dst_k.v = quat(q.w, q.x, q.y, q.z);
-						}
-						{
-							auto size = rotation_keys.size() * sizeof(RotationKey);
-							auto n_keys = n_channel.append_child("rotation_keys");
-							n_keys.append_attribute("offset").set_value(data_file.tellp());
-							n_keys.append_attribute("size").set_value(size);
-							data_file.write((char*)rotation_keys.data(), size);
-						}
-					}
+					auto n_keys = n_channel.append_child("keys");
+					n_keys.append_attribute("offset").set_value(data_file.tellp());
+					auto size = sizeof(BoneKey) * keys.size();
+					n_keys.append_attribute("size").set_value(size);
+					data_file.write((char*)keys.data(), size);
 				}
 
 				data_file.close();
@@ -814,18 +791,11 @@ namespace flame
 				auto c = new ChannelPrivate;
 				c->node_name = n_channel.attribute("node_name").value();
 				{
-					auto n_keys = n_channel.child("position_keys");
+					auto n_keys = n_channel.child("keys");
 					auto offset = n_keys.attribute("offset").as_uint();
 					auto size = n_keys.attribute("size").as_uint();
-					c->position_keys.resize(size / sizeof(PositionKey));
-					data_file.read((char*)c->position_keys.data(), size);
-				}
-				{
-					auto n_keys = n_channel.child("rotation_keys");
-					auto offset = n_keys.attribute("offset").as_uint();
-					auto size = n_keys.attribute("size").as_uint();
-					c->rotation_keys.resize(size / sizeof(RotationKey));
-					data_file.read((char*)c->rotation_keys.data(), size);
+					c->keys.resize(size / sizeof(BoneKey));
+					data_file.read((char*)c->keys.data(), size);
 				}
 				ret->channels.emplace_back(c);
 			}

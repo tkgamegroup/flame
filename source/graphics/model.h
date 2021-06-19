@@ -46,25 +46,17 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Model* get(const wchar_t* filename);
 		};
 
-		struct PositionKey
+		struct BoneKey
 		{
-			float t;
-			vec3 v;
-		};
-
-		struct RotationKey
-		{
-			float t;
-			quat v;
+			vec3 p;
+			quat q;
 		};
 
 		struct Channel
 		{
 			virtual const char* get_node_name() const = 0;
-			virtual uint get_position_keys_count() const = 0;
-			virtual const PositionKey* get_position_keys() const = 0;
-			virtual uint get_rotation_keys_count() const = 0;
-			virtual const RotationKey* get_rotation_keys() const = 0;
+			virtual uint get_keys_count() const = 0;
+			virtual const BoneKey* get_keys() const = 0;
 		};
 
 		struct Animation

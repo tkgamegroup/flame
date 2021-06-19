@@ -62,21 +62,40 @@ namespace flame
 			apply_current();
 	}
 
+	void cCameraPrivate::set_screen_size(const uvec2& sz)
+	{
+		if (screen_size == sz)
+			return;
+		screen_size = sz;
+		aspect = (float)sz.x / (float)sz.y;
+		proj_dirty = true;
+	}
+
 	void cCameraPrivate::update_view()
 	{
 		node->update_transform();
 
-		if (view_mark != node->transform_updated_times)
-		{
-			view_mark = node->transform_updated_times;
+		if (view_mark == node->transform_updated_times)
+			return;
 
-			view_inv = mat4(node->rot);
-			view_inv[3] = vec4(node->g_pos, 1.f);
-			view = inverse(view_inv);
-		}
+		view_mark = node->transform_updated_times;
+
+		view_inv = mat4(node->rot);
+		view_inv[3] = vec4(node->g_pos, 1.f);
+		view = inverse(view_inv);
 	}
 
-	void cCameraPrivate::get_points(float aspect, vec3* dst, float n, float f)
+	void cCameraPrivate::update_proj()
+	{
+		if (!proj_dirty)
+			return;
+
+		proj = perspective(radians(fovy), aspect, near, far);
+		proj[1][1] *= -1.f;
+		proj_inv = inverse(proj);
+	}
+
+	void cCameraPrivate::get_points(vec3* dst, float n, float f)
 	{
 		if (n < 0.f)
 			n = near;
@@ -101,16 +120,23 @@ namespace flame
 		dst[7] = view_inv * vec4(-x2, -y2, -f, 1.f);
 	}
 
-	void cCameraPrivate::get_planes(float aspect, Plane* dst, float n, float f)
+	void cCameraPrivate::get_planes(Plane* dst, float n, float f)
 	{
 		vec3 ps[8];
-		get_points(aspect, ps, n, f);
+		get_points(ps, n, f);
 		dst[0] = Plane(ps[0], ps[1], ps[2]); // near
 		dst[1] = Plane(ps[4], ps[7], ps[5]); // far
 		dst[2] = Plane(ps[3], ps[7], ps[4]); // left
 		dst[3] = Plane(ps[1], ps[5], ps[6]); // right
 		dst[4] = Plane(ps[0], ps[4], ps[5]); // top
 		dst[5] = Plane(ps[2], ps[6], ps[7]); // bottom
+	}
+
+	vec3 cCameraPrivate::screen_to_world(const uvec2& pos)
+	{
+		auto p = proj_inv * vec4((float)pos.x / (float)screen_size.x * 2.f - 1.f, (float)pos.y / (float)screen_size.y * 2.f - 1.f, near, 1.f);
+		p = p / p.w;
+		return view_inv * p;
 	}
 
 	cCamera* cCamera::create(void* parms)

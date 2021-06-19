@@ -27,6 +27,9 @@ namespace flame
 		virtual bool get_loop() const = 0;
 		virtual void set_loop(bool l) = 0;
 
+		virtual void* add_callback(void (*callback)(Capture& c, int frame), const Capture& capture) = 0;
+		virtual void remove_callback(void* cb) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cAnimation* create(void* parms = nullptr);
 	};
 }

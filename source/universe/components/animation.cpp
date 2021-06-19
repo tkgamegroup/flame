@@ -54,7 +54,7 @@ namespace flame
 					thiz->event = nullptr;
 					thiz->stop();
 				}
-			}, Capture().set_thiz(this), 1.f / 24.f);
+			}, Capture().set_thiz(this), 1U);
 		}
 	}
 
@@ -75,6 +75,36 @@ namespace flame
 		if (loop == l)
 			return;
 		loop = l;
+	}
+
+	void* cAnimationPrivate::add_callback(void (*callback)(Capture& c, int frame), const Capture& capture)
+	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, int f) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<int>());
+				scr_ins->get_member("f");
+				scr_ins->push_int(f);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			callbacks.emplace_back(c);
+			return c;
+		}
+		auto c = new Closure(callback, capture);
+		callbacks.emplace_back(c);
+		return c;
+	}
+
+	void cAnimationPrivate::remove_callback(void* cb)
+	{
+		std::erase_if(callbacks, [&](const auto& i) {
+			return i == (decltype(i))cb;
+		});
 	}
 
 	void cAnimationPrivate::apply_src()
@@ -145,25 +175,18 @@ namespace flame
 					auto bid = find_bone(ch->get_node_name());
 					if (bid != -1)
 					{
-						auto pkc = ch->get_position_keys_count();
-						auto rkc = ch->get_rotation_keys_count();
-						a.total_frame = max(a.total_frame, max(pkc, rkc));
+						auto count = ch->get_keys_count();
+						if (a.total_frame == 0)
+							a.total_frame = count;
+						else
+							fassert(a.total_frame == count);
 
 						auto& t = a.tracks.emplace_back();
 						t.first = bid;
-						t.second.resize(a.total_frame);
-
-						auto pk = ch->get_position_keys();
-						auto rk = ch->get_rotation_keys();
-						for (auto j = 0; j < a.total_frame; j++)
-						{
-							auto& f = t.second[j];
-							f.p = j < pkc ? pk[j].v : vec3(0.f);
-							f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
-						}
+						t.second.resize(count);
+						memcpy(t.second.data(), ch->get_keys(), sizeof(graphics::BoneKey) * count);
 					}
 				}
-
 			}
 		}
 	}
@@ -181,6 +204,9 @@ namespace flame
 		frame++;
 		if (frame == a.total_frame)
 			frame = loop ? 0 : -1;
+
+		for (auto& cb : callbacks)
+			cb->call(frame);
 	}
 
 	void cAnimationPrivate::draw(sRenderer* s_renderer)

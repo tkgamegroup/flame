@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../graphics/model.h"
 #include "animation.h"
 
 namespace flame
@@ -13,16 +14,10 @@ namespace flame
 			mat4 offmat;
 		};
 
-		struct Pose
-		{
-			vec3 p;
-			quat q;
-		};
-
 		struct Action
 		{
 			uint total_frame;
-			std::vector<std::pair<uint, std::vector<Pose>>> tracks;
+			std::vector<std::pair<uint, std::vector<graphics::BoneKey>>> tracks;
 		};
 
 		std::filesystem::path model_name;
@@ -40,6 +35,7 @@ namespace flame
 		int playing = -1;
 		int frame = -1;
 		void* event = nullptr;
+		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> callbacks;
 
 		~cAnimationPrivate();
 
@@ -57,6 +53,9 @@ namespace flame
 
 		bool get_loop() const override { return loop; }
 		void set_loop(bool l) override;
+
+		void* add_callback(void (*callback)(Capture& c, int frame), const Capture& capture) override;
+		void remove_callback(void* cb) override;
 
 		void apply_src();
 		void advance();

@@ -37,8 +37,7 @@ namespace flame
 		graphics::Renderpass* rp_bgra8c;
 		std::vector<graphics::ImageView*> iv_tars;
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
-		vec2 tar_sz;
-		float tar_aspt;
+		uvec2 tar_sz;
 
 		UniPtr<graphics::Image> img_white;
 		UniPtr<graphics::Image> img_black;

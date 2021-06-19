@@ -571,7 +571,7 @@ namespace flame
 
 		// TODO: LOD level 1
 		Plane frustum_lod1[6];
-		camera->get_planes(tar_aspt, frustum_lod1, -1.f, 50.f);
+		camera->get_planes(frustum_lod1, -1.f, 50.f);
 
 		if (node->octree)
 		{
@@ -1405,7 +1405,6 @@ namespace flame
 			return;
 
 		tar_sz = ivs[0]->get_image()->get_size();
-		tar_aspt = tar_sz.x / tar_sz.y;
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
@@ -1451,7 +1450,9 @@ namespace flame
 			auto ptsm_near = 0.01f; // TODO
 
 			{
+				camera->set_screen_size(tar_sz);
 				camera->update_view();
+				camera->update_proj();
 
 				auto& data = *(nd.buf_render_data.pstag);
 				data.csm_levels = csm_levels;
@@ -1462,11 +1463,10 @@ namespace flame
 				data.camera_coord = camera->node->g_pos;
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
-				data.proj = perspective(radians(camera->fovy), tar_aspt, data.zNear, data.zFar);
-				data.proj[1][1] *= -1.f;
-				data.proj_inv = inverse(data.proj);
+				data.proj = camera->proj;
+				data.proj_inv = camera->proj_inv;
 				data.proj_view = data.proj * data.view;
-				camera->get_planes(tar_aspt, (Plane*)data.frustum_planes);
+				camera->get_planes((Plane*)data.frustum_planes);
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);
@@ -1568,7 +1568,7 @@ namespace flame
 					vec3 a = vec3(+10000.f);
 					vec3 b = vec3(-10000.f);
 					vec3 ps[8];
-					camera->get_points(tar_aspt, ps, n, f);
+					camera->get_points(ps, n, f);
 					for (auto k = 0; k < 8; k++)
 					{
 						auto p = inv * ps[k];
@@ -2168,7 +2168,7 @@ namespace flame
 			cb->bind_vertex_buffer(ed.buf_element_vtx.buf.get(), 0);
 			cb->bind_index_buffer(ed.buf_element_idx.buf.get(), graphics::IndiceTypeUint);
 			cb->bind_descriptor_set(element::PLL_element::Binding_element, ed.ds_element.get());
-			cb->push_constant_t(element::PLL_element::PushConstant{ 2.f / tar_sz });
+			cb->push_constant_t(element::PLL_element::PushConstant{ 2.f / vec2(tar_sz) });
 			auto vtx_off = 0;
 			auto idx_off = 0;
 			for (auto& c : cmds)
