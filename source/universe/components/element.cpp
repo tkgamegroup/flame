@@ -456,11 +456,11 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f);
+			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f && scl.x == 1.f && scl.y == 1.f);
 			if (pelement)
 			{
 				pelement->update_transform();
-				crooked = crooked && pelement->crooked;
+				crooked = crooked || pelement->crooked;
 				transform = pelement->transform;
 			}
 			else

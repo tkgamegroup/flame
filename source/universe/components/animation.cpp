@@ -8,6 +8,17 @@
 
 namespace flame
 {
+	void cAnimationPrivate::Action::apply(Bone* bones, uint frame)
+	{
+		for (auto& t : tracks)
+		{
+			auto& b = bones[t.first];
+			auto& k = t.second[frame];
+			b.node->set_pos(k.p);
+			b.node->set_quat(k.q);
+		}
+	}
+
 	cAnimationPrivate::~cAnimationPrivate()
 	{
 		stop();
@@ -68,6 +79,14 @@ namespace flame
 		}
 		if (entity)
 			entity->component_data_changed(this, S<"src"_h>);
+	}
+
+	void cAnimationPrivate::stop_at(uint id, int frame)
+	{
+		stop();
+
+		auto& a = actions[id];
+		a.apply(bones.data(), frame < 0 ? a.total_frame + frame : frame);
 	}
 
 	void cAnimationPrivate::set_loop(bool l)
@@ -194,13 +213,8 @@ namespace flame
 	void cAnimationPrivate::advance()
 	{
 		auto& a = actions[playing];
-		for (auto& t : a.tracks)
-		{
-			auto& b = bones[t.first];
-			auto& k = t.second[frame];
-			b.node->set_pos(k.p);
-			b.node->set_quat(k.q);
-		}
+		a.apply(bones.data(), frame);
+
 		frame++;
 		if (frame == a.total_frame)
 			frame = loop ? 0 : -1;

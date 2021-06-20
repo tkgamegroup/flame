@@ -17,11 +17,9 @@ scene_receiver.add_mouse_right_down_listener(function(mpos)
 	local name = e.get_name()
 
 	if name == "enemy" then
-		player.character.target = __enemy.character
-		player.character.state = "attack_target"
+		player.character.change_state("attack_target", __enemy.character)
 	elseif name == "terrain" then
-		player.character.target_pos = vec2(pos.x, pos.z)
-		player.character.state = "moving"
+		player.character.change_state("move_to", vec2(pos.x, pos.z))
 	end
 
 end)

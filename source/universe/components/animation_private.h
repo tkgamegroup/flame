@@ -18,6 +18,8 @@ namespace flame
 		{
 			uint total_frame;
 			std::vector<std::pair<uint, std::vector<graphics::BoneKey>>> tracks;
+
+			void apply(Bone* bones, uint frame);
 		};
 
 		std::filesystem::path model_name;
@@ -47,9 +49,10 @@ namespace flame
 		void set_src(const std::wstring& src);
 		void set_src(const wchar_t* src) override { set_src(std::wstring(src)); }
 
-		void play(uint id) override;
 		int get_playing() override { return playing; }
+		void play(uint id) override;
 		void stop() override;
+		void stop_at(uint id, int frame) override;
 
 		bool get_loop() const override { return loop; }
 		void set_loop(bool l) override;

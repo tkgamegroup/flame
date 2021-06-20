@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement width="60" auto_width="false" layout_type="Vertical" fill_color="0,0,0,50">
+    <eText text="999/999" padding="4,0,4,0" font_size="14" />
+    <eElement width="60" aligny="MinMax" align_in_layout="false" fill_color="40,200,40,127" />
+  </eElement>
+</prefab>

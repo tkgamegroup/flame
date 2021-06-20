@@ -1,1 +1,3 @@
+__ui = entity
+
 enemies = {}

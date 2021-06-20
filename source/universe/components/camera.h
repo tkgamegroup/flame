@@ -18,6 +18,7 @@ namespace flame
 		virtual void set_current(bool v) = 0;
 
 		virtual vec3 screen_to_world(const uvec2& pos) = 0;
+		virtual uvec2 world_to_screen(const vec3& pos) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cCamera* create(void* parms = nullptr);
 	};

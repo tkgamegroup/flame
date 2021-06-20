@@ -139,6 +139,13 @@ namespace flame
 		return view_inv * p;
 	}
 
+	uvec2 cCameraPrivate::world_to_screen(const vec3& pos)
+	{
+		auto p = proj * view * vec4(pos, 1.f);
+		p = p / p.w;
+		return uvec2((p.x + 1.f) * 0.5f * screen_size.x, (p.y + 1.f) * 0.5f * screen_size.y);
+	}
+
 	cCamera* cCamera::create(void* parms)
 	{
 		return f_new<cCameraPrivate>();

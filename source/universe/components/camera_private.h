@@ -38,6 +38,7 @@ namespace flame
 		void get_planes(Plane* dst, float n = -1.f, float f = -1.f);
 
 		vec3 screen_to_world(const uvec2& pos) override;
+		uvec2 world_to_screen(const vec3& pos) override;
 
 		void on_added() override;
 		void on_removed() override;
