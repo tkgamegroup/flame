@@ -2,30 +2,6 @@
 //{
 //	namespace graphics
 //	{
-//		struct ArmatureDeformer
-//		{
-//			virtual void set_pose(uint id, const mat4& pose) = 0;
-//
-//			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(RenderPreferences* preferences, Mesh* mesh);
-//		};
-// 
-//		struct ArmatureDeformerPrivate : ArmatureDeformer
-//		{
-//			MeshPrivate* mesh;
-//			//ShaderBuffer poses_buffer;
-//			std::unique_ptr<DescriptorSetPrivate> descriptorset;
-//
-//			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
-//			void release() override { delete this; }
-//			void set_pose(uint id, const mat4& pose) override;
-//		};
-//
-//		struct MeshWeight
-//		{
-//			ivec4 ids;
-//			vec4 weights;
-//		};
-//
 //		struct CmdBlur : Cmd
 //		{
 //			Rect range;
@@ -130,23 +106,6 @@
 //			//{
 //			//	ShaderPrivate* shaders[] = {
 //			//		fullscreen_vert,
-//			//		ShaderPrivate::get(device, L"post/blit.frag")
-//			//	};
-//			//	blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
-//			//	blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
-//			//	BlendOption bo;
-//			//	bo.enable = true;
-//			//	bo.src_color = BlendFactorSrcAlpha;
-//			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
-//			//	bo.src_alpha = BlendFactorOne;
-//			//	bo.dst_alpha = BlendFactorZero;
-//			//	blend_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-//			//	blend_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-//			//}
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		fullscreen_vert,
 //			//		ShaderPrivate::get(device, L"post/filter_bright.frag")
 //			//	};
 //			//	filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
@@ -183,15 +142,6 @@
 //			//	};
 //			//	gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
 //			//}
-//		}
-//
-//		ArmatureDeformerPrivate::ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh) :
-//			mesh(mesh)
-//		{
-//			auto dsl = DescriptorSetLayoutPrivate::get(preferences->device, L"armature.dsl");
-//			//poses_buffer.create(preferences->device, BufferUsageStorage, find_type(dsl->types, "mat4"), mesh->bones.size());
-//			descriptorset.reset(new DescriptorSetPrivate(preferences->device->dsp.get(), dsl));
-//			//descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
 //		}
 //
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :

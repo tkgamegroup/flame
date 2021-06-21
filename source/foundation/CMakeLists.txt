@@ -1,4 +1,4 @@
-file(GLOB SOURCES "*.h*" "*.c*" "*.asm")
+file(GLOB SOURCES "*.h*" "*.c*")
 add_library(flame_foundation SHARED ${SOURCES})
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 set_target_properties(flame_foundation PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")

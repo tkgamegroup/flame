@@ -1,7 +1,11 @@
-local enemy = {
-	character = __character
-}
+enemies = {}
 
-table.insert(enemies, enemy)
+function make_enemy(character)
+	local enemy = {
+		character = character
+	}
 
-__enemy = enemy
+	table.insert(enemies, enemy)
+
+	return enemy
+end

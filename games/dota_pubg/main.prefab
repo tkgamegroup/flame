@@ -1,20 +1,28 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement alignx="MinMax" aligny="MinMax">
-    <cScript src="init.lua" />
+    <cScript>
+       __ui = entity
+    </cScript>
     <eNode>
       <entity src="D:\assets\sky\sky" name="sky" />
-      <eNode src="human" name="player" pos="200,65,200" >
-        <cScript src="character.lua player.lua" />
-      </eNode>
-      <eNode src="human" name="enemy" pos="190,65,190" >
-        <cScript src="character.lua enemy.lua" />
-      </eNode>
       <eCamera name="camera">
         <cScript src="camera.lua" />
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
+      <eNode src="human" name="player" pos="200,65,200" >
+        <cScript>
+           local character = make_character(entity)
+           main_player = make_player(character)
+        </cScript>
+      </eNode>
+      <eNode src="human" name="enemy" pos="190,65,190" >
+        <cScript>
+           local character = make_character(entity)
+           make_enemy(character)
+        </cScript>
+      </eNode>
     </eNode>
   </eElement>
 </prefab>
