@@ -6,15 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Glyph
-		{
-			ushort code = 0;
-			ivec2 off = ivec2(0);
-			uvec2 size = uvec2(0);
-			vec4 uv = vec4(0.f);
-			int advance = 0;
-		};
-
 		struct FontAtlas
 		{
 			virtual void release() = 0;
@@ -108,6 +99,48 @@ namespace flame
 					pstr++;
 				}
 
+				return ret;
+			}
+
+			inline std::vector<GlyphDraw> get_draw_glyphs(uint size, const wchar_t* begin, const wchar_t* end = nullptr, 
+				const vec2& pos = vec2(0.f), const mat2& axes = mat2(1.f))
+			{
+				std::vector<GlyphDraw> ret;
+				ret.resize(end - begin);
+
+				auto p = vec2(0.f);
+				auto idx = 0;
+				auto pstr = begin;
+				while (*pstr && pstr != end)
+				{
+					auto ch = *pstr;
+					if (ch == '\n')
+					{
+						p.y += size;
+						p.x = 0.f;
+					}
+					else if (ch != '\r')
+					{
+						if (ch == '\t')
+							ch = ' ';
+
+						auto& g = get_glyph(ch, size);
+						auto o = p + vec2(g.off);
+						auto s = vec2(g.size);
+
+						auto& dst = ret[idx++];
+						dst.uvs = g.uv;
+						dst.points[0] = pos + o * axes;
+						dst.points[1] = pos + o.x * axes[0] + (o.y - s.y) * axes[1];
+						dst.points[2] = pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1];
+						dst.points[3] = pos + (o.x + s.x) * axes[0] + o.y * axes[1];
+
+						p.x += g.advance;
+					}
+					pstr++;
+				}
+
+				ret.resize(idx);
 				return ret;
 			}
 

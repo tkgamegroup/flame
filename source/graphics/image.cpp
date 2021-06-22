@@ -591,8 +591,17 @@ namespace flame
 			return false;
 		}
 
-		ImageAtlas* ImageAtlas::create(Device* device, const wchar_t* filename)
+		static std::vector<std::pair<std::filesystem::path, UniPtr<ImageAtlasPrivate>>> loaded_atlas;
+
+		ImageAtlas* ImageAtlas::get(Device* device, const wchar_t* fn)
 		{
+			auto filename = std::filesystem::path(fn);
+			for (auto& a : loaded_atlas)
+			{
+				if (a.first == filename)
+					return a.second.get();
+			}
+
 			if (!std::filesystem::exists(filename))
 			{
 				wprintf(L"cannot find atlas: %s\n", filename);

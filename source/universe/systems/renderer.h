@@ -27,21 +27,14 @@ namespace flame
 
 		virtual void set_always_update(bool a) = 0;
 
-		/* element res type:
-		*	"ImageView"
-		*	"ImageAtlas"
-		*	"FontAtlas"
-		*/
+		virtual graphics::ImageView* get_element_res(uint idx) const = 0;
+		virtual int set_element_res(int idx, graphics::ImageView* iv) = 0;
+		virtual int find_element_res(graphics::ImageView* iv) const = 0;
 
-		virtual void* get_element_res(uint idx, char* type) const = 0;
-		virtual int set_element_res(int idx, const char* type, void* v) = 0;
-		virtual int find_element_res(void* v) const = 0;
-
-		virtual void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) = 0;
-		virtual void stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color) = 0;
-		virtual void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) = 0;
-		virtual void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id,
-			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) = 0;
+		virtual void fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color) = 0;
+		virtual void stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed = false) = 0;
+		virtual void draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color) = 0;
+		virtual void draw_image(uint layer, const vec2* pts, uint res_id, const vec2& uv0, const vec2& uv1, const cvec4& tint_color) = 0;
 
 		virtual int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) = 0;
 		virtual int find_texture_res(graphics::ImageView* tex) const = 0;

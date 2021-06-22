@@ -505,9 +505,9 @@ namespace flame
 			points[6] = vec2(d.x, d.y);
 			points[7] = vec2(c.x, d.y);
 
-			aabb.reset();
+			bounds.reset();
 			for (auto i = 0; i < 4; i++)
-				aabb.expand(points[i]);
+				bounds.expand(points[i]);
 		}
 	}
 
@@ -650,7 +650,7 @@ namespace flame
 			return pp.x >= 0.f && pp.x <= size.x && pp.y >= 0.f && pp.y <= size.y;
 		}
 		else
-			return aabb.contains(p);
+			return bounds.contains(p);
 	}
 
 	bool cElementPrivate::draw(uint layer, sRenderer* s_renderer)
@@ -661,12 +661,12 @@ namespace flame
 			if (fill_color.a > 0)
 			{
 				transparent = false;
-				s_renderer->fill_rect(layer, this, vec2(0.f), size, fill_color);
+				s_renderer->fill(layer, 4, points, fill_color);
 			}
 			if (border > 0.f && border_color.a > 0)
 			{
 				transparent = false;
-				s_renderer->stroke_rect(layer, this, vec2(0.f), size, border, border_color);
+				s_renderer->stroke(layer, 4, points, border, border_color, true);
 			}
 		}
 		return transparent;

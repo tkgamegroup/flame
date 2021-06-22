@@ -7,6 +7,7 @@ namespace flame
 	struct cTextPrivate : cText
 	{
 		std::wstring text;
+		std::wstring atlas_name = L"msyh.ttc;font_awesome.ttf";
 		uint font_size = 16;
 		cvec4 font_color = cvec4(255);
 

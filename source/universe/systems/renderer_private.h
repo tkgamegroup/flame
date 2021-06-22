@@ -59,15 +59,14 @@ namespace flame
 
 		void set_always_update(bool a) override { always_update = a; }
 
-		void* get_element_res(uint idx, char* type) const override;
-		int set_element_res(int idx, const char* type, void* v) override;
-		int find_element_res(void* v) const override;
+		graphics::ImageView* get_element_res(uint idx) const override;
+		int set_element_res(int idx, graphics::ImageView* iv) override;
+		int find_element_res(graphics::ImageView* iv) const override;
 
-		void fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color) override;
-		void stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color) override;
-		void stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color) override;
-		void draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, 
-			const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color) override;
+		void fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color) override;
+		void stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed) override;
+		void draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color) override;
+		void draw_image(uint layer, const vec2* pts, uint res_id, const vec2& uv0, const vec2& uv1, const cvec4& tint_color) override;
 
 		int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) override;
 		int find_texture_res(graphics::ImageView* tex) const override;

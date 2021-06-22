@@ -20,7 +20,7 @@ namespace element
 #include <render_data.dsl.h>
 #include <material.dsl.h>
 #include <light.dsl.h>
-namespace mesh 
+namespace mesh
 {
 #include <mesh/mesh.dsl.h>
 #include <mesh/forward.pll.h>
@@ -38,7 +38,7 @@ namespace terrain
 
 namespace flame
 {
-	static graphics::AccessFlags usage2access(graphics::BufferUsageFlags usage)
+	static graphics::AccessFlags access_from_usage(graphics::BufferUsageFlags usage)
 	{
 		switch (usage)
 		{
@@ -100,7 +100,7 @@ namespace flame
 		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
-			access = usage2access(usage);
+			access = access_from_usage(usage);
 			auto size = capacity * sizeof(T);
 			buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
 			stagbuf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
@@ -163,7 +163,7 @@ namespace flame
 		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
-			access = usage2access(usage);
+			access = access_from_usage(usage);
 			auto size = capacity * sizeof(T);
 			buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
 			stag_capacity = 100;
@@ -311,13 +311,6 @@ namespace flame
 		vec2 pos;
 		vec2 uv;
 		cvec4 col;
-
-		void set(const vec2& _pos, const vec2& _uv, const cvec4& _col)
-		{
-			pos = _pos;
-			uv = _uv;
-			col = _col;
-		}
 	};
 
 	struct MeshVertex
@@ -335,33 +328,10 @@ namespace flame
 
 	struct ElementDrawCmd
 	{
-		enum Type
-		{
-			Fill,
-			Stroke,
-			Text,
-			Scissor
-		};
-
-		Type type;
-		uint res_id;
-		std::vector<vec2> points;
-		std::wstring text;
-		cvec4 color;
-		vec4 misc;
-	};
-
-	enum ElementResType
-	{
-		ElementResImage,
-		ElementResAtlas,
-		ElementResFont
-	};
-
-	struct ElementRes
-	{
-		ElementResType type;
-		void* v;
+		uint res;
+		std::vector<ElementVertex> vertices;
+		std::vector<uint> indices;
+		Rect scissor;
 	};
 
 	struct MaterialPipeline
@@ -397,7 +367,7 @@ namespace flame
 	{
 		bool should_render;
 
-		std::vector<ElementRes> reses;
+		std::vector<graphics::ImageView*> reses;
 
 		Rect						scissor;
 		std::vector<ElementDrawCmd> layers[128];
@@ -408,8 +378,6 @@ namespace flame
 		UniPtr<graphics::DescriptorSet>	ds_element;
 
 		graphics::Pipeline* pl_element;
-
-		
 	};
 
 	struct NodeRenderData
@@ -492,7 +460,7 @@ namespace flame
 
 		element->parent_scissor = ed.scissor;
 		element->update_transform();
-		auto culled = !ed.scissor.overlapping(element->aabb);
+		auto culled = !ed.scissor.overlapping(element->bounds);
 		if (element->culled != culled)
 		{
 			element->culled = culled;
@@ -507,17 +475,16 @@ namespace flame
 
 		auto clipping = false;
 		Rect last_scissor;
-		if (element->clipping && !(ed.scissor == element->aabb))
+		if (element->clipping && !(ed.scissor == element->bounds))
 		{
 			element->layer_policy = 2;
 
 			clipping = true;
 			last_scissor = ed.scissor;
-			ed.scissor = element->aabb;
+			ed.scissor = element->bounds;
 			layer = ed.max_layer;
 			auto& info = ed.layers[layer].emplace_back();
-			info.type = ElementDrawCmd::Scissor;
-			info.misc = ed.scissor;
+			info.scissor = ed.scissor;
 		}
 
 		if (!element->drawers.empty())
@@ -554,8 +521,7 @@ namespace flame
 		{
 			ed.scissor = last_scissor;
 			auto& info = ed.layers[children_max_layer].emplace_back();
-			info.type = ElementDrawCmd::Scissor;
-			info.misc = last_scissor;
+			info.scissor = last_scissor;
 		}
 
 		return max(layer, children_max_layer);
@@ -594,55 +560,24 @@ namespace flame
 		}
 	}
 
-	void* sRendererPrivate::get_element_res(uint idx, char* type) const
+	graphics::ImageView* sRendererPrivate::get_element_res(uint idx) const
 	{
-		auto& res = _ed->reses[idx];
-		if (type)
-		{
-			switch (res.type)
-			{
-			case ElementResImage:
-				strcpy(type, "ImageView");
-				break;
-			case ElementResAtlas:
-				strcpy(type, "ImageAtlas");
-				break;
-			case ElementResFont:
-				strcpy(type, "FontAtlas");
-				break;
-			}
-		}
-		return res.v;
+		return _ed->reses[idx];
 	}
 
-	int sRendererPrivate::set_element_res(int idx, const char* _type_name, void* v)
+	int sRendererPrivate::set_element_res(int idx, graphics::ImageView* iv)
 	{
 		auto iv_white = img_white->get_view();
 		auto& ed = *_ed;
 
-		auto type_name = std::string(_type_name);
-		ElementResType type;
-		if (type_name == "ImageView")
-			type = ElementResImage;
-		else if (type_name == "ImageAtlas")
-			type = ElementResAtlas;
-		else if (type_name == "FontAtlas")
-			type = ElementResFont;
-		else
-			fassert(0);
-
-		if (!v)
-		{
-			if (type != ElementResImage)
-				return - 1;
-			v = iv_white;
-		}
+		if (!iv)
+			iv = iv_white;
 
 		if (idx == -1)
 		{
 			for (auto i = 1; i < ed.reses.size(); i++)
 			{
-				if (ed.reses[i].v == iv_white)
+				if (ed.reses[i] == iv_white)
 				{
 					idx = i;
 					break;
@@ -652,172 +587,207 @@ namespace flame
 		if (idx == -1)
 			return -1;
 
-		auto& res = ed.reses[idx];
-		res.type = type;
-		res.v = v;
-
-		auto bd = graphics::DescriptorSetLayout::get(device, L"element/element.dsl")->find_binding("images");
-		switch (type)
-		{
-		case ElementResImage:
-			ed.ds_element->set_image(bd, idx, (graphics::ImageView*)v, sp_linear);
-			break;
-		case ElementResAtlas:
-		{
-			auto ia = (graphics::ImageAtlas*)v;
-			ed.ds_element->set_image(bd, idx, ia->get_image()->get_view(0), ia->get_border() ? sp_linear : sp_nearest);
-		}
-			break;
-		case ElementResFont:
-			ed.ds_element->set_image(bd, idx, ((graphics::FontAtlas*)v)->get_view(), sp_nearest);
-			break;
-		}
+		ed.reses[idx] = iv;
+		ed.ds_element->set_image(graphics::DescriptorSetLayout::get(device, L"element/element.dsl")
+			->find_binding("images"), idx, iv, sp_linear);
 		ed.ds_element->update();
 
 		return idx;
 	}
 
-	int sRendererPrivate::find_element_res(void* v) const
+	int sRendererPrivate::find_element_res(graphics::ImageView* iv) const
 	{
 		auto& ed = *_ed;
 		for (auto i = 0; i < ed.reses.size(); i++)
 		{
-			if (ed.reses[i].v == v)
+			if (ed.reses[i] == iv)
 				return i;
 		}
 		return -1;
 	}
 
-	void sRendererPrivate::fill_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, const cvec4& color)
+	void sRendererPrivate::fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color)
 	{
 		auto& ed = *_ed;
 
-		auto& info = ed.layers[layer].emplace_back();
-		info.type = ElementDrawCmd::Fill;
+		auto vtx_cnt = 3 * (pt_cnt - 2);
+		auto idx_cnt = vtx_cnt;
+		ed.buf_element_vtx.stag_num += vtx_cnt;
+		ed.buf_element_idx.stag_num += idx_cnt;
 
-		info.res_id = 0;
-		info.points.resize(4);
-		auto a = pos - element->pivot * element->size;
-		auto b = a + size;
-		auto c = vec2(element->transform[2]);
-		if (element->crooked)
+		auto& info = ed.layers[layer].emplace_back();
+		info.res = 0;
+		info.vertices.resize(vtx_cnt);
+		info.indices.resize(idx_cnt);
+
+		auto off = 0;
+		for (auto i = 0; i < pt_cnt - 2; i++)
 		{
-			a = c + element->axes * a;
-			b = c + element->axes * b;
+			info.vertices[off + 0] = { pts[0],		vec2(0.5f), color };
+			info.vertices[off + 1] = { pts[i + 1],	vec2(0.5f), color };
+			info.vertices[off + 2] = { pts[i + 2],	vec2(0.5f), color };
+
+			info.indices[off + 0] = off + 0;
+			info.indices[off + 1] = off + 2;
+			info.indices[off + 2] = off + 1;
+
+			off += 3;
 		}
-		else
-		{
-			a += c;
-			b += c;
-		}
-		info.points[0] = vec2(a.x, a.y);
-		info.points[1] = vec2(b.x, a.y);
-		info.points[2] = vec2(b.x, b.y);
-		info.points[3] = vec2(a.x, b.y);
-		info.color = color;
 	}
 
-	void sRendererPrivate::stroke(uint layer, cElementPtr element, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color)
+	void sRendererPrivate::stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed)
 	{
 		auto& ed = *_ed;
 
-		auto& info = ed.layers[layer].emplace_back();
-		info.type = ElementDrawCmd::Stroke;
+		auto vtx_cnt = 2 * pt_cnt;
+		auto idx_cnt = 6 * (pt_cnt - 1);
+		if (closed)
+			idx_cnt += 6;
+		ed.buf_element_vtx.stag_num += vtx_cnt;
+		ed.buf_element_idx.stag_num += idx_cnt;
 
-		info.res_id = 0;
-		info.points.resize(pt_cnt);
-		auto c = vec2(element->transform[2]);
-		if (element->crooked)
+		auto& info = ed.layers[layer].emplace_back();
+		info.res = 0;
+		info.vertices.resize(vtx_cnt);
+		info.indices.resize(idx_cnt);
+
+		auto get_normal = [](const vec2& p1, const vec2& p2) {
+			auto d = normalize(p1 - p1);
+			return vec2(d.y, -d.x);
+		};
+
+		auto vtx_off = 0;
+		auto idx_off = 0;
+		vec2 first_normal;
+		vec2 last_normal;
+
+		first_normal = last_normal = get_normal(pts[0], pts[1]);
+		info.vertices[0] = { pts[0] + first_normal * thickness, vec2(0.5f), color };
+		info.vertices[1] = { pts[0] - first_normal * thickness, vec2(0.5f), color };
+
+		vtx_off += 2;
+		for (auto i = 1; i < pt_cnt - 1; i++)
 		{
-			for (auto i = 0; i < pt_cnt; i++)
-				info.points[i] = c + element->axes * pts[i];
+			auto _n = get_normal(pts[i], pts[i + 1]);
+			auto n = (last_normal + _n) * 0.5f;
+			last_normal = _n;
+			info.vertices[vtx_off + 0] = { pts[i] + n * thickness, vec2(0.5f), color };
+			info.vertices[vtx_off + 1] = { pts[i] - n * thickness, vec2(0.5f), color };
+
+			info.indices[idx_off + 0] = vtx_off - 2;
+			info.indices[idx_off + 1] = vtx_off - 1;
+			info.indices[idx_off + 2] = vtx_off + 1;
+			info.indices[idx_off + 3] = vtx_off - 2;
+			info.indices[idx_off + 4] = vtx_off + 1;
+			info.indices[idx_off + 5] = vtx_off + 0;
+
+			vtx_off += 2;
+			idx_off += 6;
+		}
+
+		if (closed)
+		{
+			auto _n = get_normal(pts[pt_cnt - 1], pts[0]);
+			auto n = (last_normal + _n) * 0.5f;
+
+			info.vertices[vtx_off + 0] = { pts[pt_cnt - 1] + n * thickness, vec2(0.5f), color };
+			info.vertices[vtx_off + 1] = { pts[pt_cnt - 1] - n * thickness, vec2(0.5f), color };
+
+			info.indices[idx_off + 0] = vtx_off - 2;
+			info.indices[idx_off + 1] = vtx_off - 1;
+			info.indices[idx_off + 2] = vtx_off + 1;
+			info.indices[idx_off + 3] = vtx_off - 2;
+			info.indices[idx_off + 4] = vtx_off + 1;
+			info.indices[idx_off + 5] = vtx_off + 0;
+
+			vtx_off += 2;
+			idx_off += 6;
+
+			n = (_n + first_normal) * 0.5f;
+
+			info.vertices[0] = { pts[0] + n * thickness, vec2(0.5f), color };
+			info.vertices[1] = { pts[0] - n * thickness, vec2(0.5f), color };
+
+			info.indices[idx_off + 0] = vtx_off - 2;
+			info.indices[idx_off + 1] = vtx_off - 1;
+			info.indices[idx_off + 2] = 1;
+			info.indices[idx_off + 3] = vtx_off - 2;
+			info.indices[idx_off + 4] = 1;
+			info.indices[idx_off + 5] = 0;
 		}
 		else
 		{
-			for (auto i = 0; i < pt_cnt; i++)
-				info.points[i] = c + pts[i];
+			info.vertices[vtx_off + 0] = { pts[pt_cnt - 1] + last_normal * thickness, vec2(0.5f), color };
+			info.vertices[vtx_off + 1] = { pts[pt_cnt - 1] - last_normal * thickness, vec2(0.5f), color };
+
+			info.indices[idx_off + 0] = vtx_off - 2;
+			info.indices[idx_off + 1] = vtx_off - 1;
+			info.indices[idx_off + 2] = vtx_off + 1;
+			info.indices[idx_off + 3] = vtx_off - 2;
+			info.indices[idx_off + 4] = vtx_off + 1;
+			info.indices[idx_off + 5] = vtx_off + 0;
+
+			vtx_off += 2;
+			idx_off += 6;
 		}
-		info.color = color;
-		info.misc[0] = thickness;
 	}
 
-	void sRendererPrivate::stroke_rect(uint layer, cElementPtr element, const vec2& pos, const vec2& size, float thickness, const cvec4& color)
+	void sRendererPrivate::draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color)
 	{
 		auto& ed = *_ed;
 
-		auto& info = ed.layers[layer].emplace_back();
-		info.type = ElementDrawCmd::Stroke;
-
-		info.res_id = 0;
-		info.points.resize(5);
-		auto a = pos - element->pivot * element->size;
-		auto b = a + size;
-		auto c = vec2(element->transform[2]);
-		if (element->crooked)
-		{
-			a = c + element->axes * a;
-			b = c + element->axes * b;
-		}
-		else
-		{
-			a += c;
-			b += c;
-		}
-		info.points[0] = vec2(a.x, a.y);
-		info.points[1] = vec2(b.x, a.y);
-		info.points[2] = vec2(b.x, b.y);
-		info.points[3] = vec2(a.x, b.y);
-		info.points[4] = info.points[0];
-		info.color = color;
-		info.misc[0] = thickness;
-	}
-
-	void sRendererPrivate::draw_text(uint layer, cElementPtr element, const vec2& pos, uint font_size, uint font_id, const wchar_t* text_beg, const wchar_t* text_end, const cvec4& color)
-	{
-		auto& ed = *_ed;
-
-		auto& res = ed.reses[font_id];
-		if (!res.type == ElementResFont)
-			return;
+		auto vtx_cnt = 4 * cnt;
+		auto idx_cnt = 6 * cnt;
+		ed.buf_element_vtx.stag_num += vtx_cnt;
+		ed.buf_element_idx.stag_num += idx_cnt;
 
 		auto& info = ed.layers[layer].emplace_back();
-		info.type = ElementDrawCmd::Text;
+		info.res = res_id;
+		info.vertices.resize(vtx_cnt);
+		info.indices.resize(idx_cnt);
 
-		info.res_id = font_id;
-		info.points.resize(3);
-		auto a = pos - element->pivot * element->size;
-		auto c = vec2(element->transform[2]);
-		if (element->crooked)
-			a = c + element->axes * a;
-		else
-			a += c;
-		info.points[0] = a;
-		info.points[1] = element->axes[0];
-		info.points[2] = element->axes[1];
-		info.color = color;
-		info.misc[0] = font_size;
-		info.text.assign(text_beg, text_end);
+		auto vtx_off = 0;
+		auto idx_off = 0;
+		for (auto i = 0; i < cnt; i++)
+		{
+			auto& g = glyphs[i];
+
+			info.vertices[vtx_off + 0] = { g.points[0],	g.uvs.xy(), color };
+			info.vertices[vtx_off + 1] = { g.points[1],	g.uvs.xw(), color };
+			info.vertices[vtx_off + 2] = { g.points[2],	g.uvs.zw(), color };
+			info.vertices[vtx_off + 3] = { g.points[3],	g.uvs.zy(), color };
+
+			info.indices[idx_off + 0] = vtx_off + 0;
+			info.indices[idx_off + 1] = vtx_off + 2;
+			info.indices[idx_off + 2] = vtx_off + 1;
+			info.indices[idx_off + 3] = vtx_off + 0;
+			info.indices[idx_off + 4] = vtx_off + 3;
+			info.indices[idx_off + 5] = vtx_off + 2;
+
+			vtx_off += 4;
+			idx_off += 6;
+		}
 	}
 
-	static std::vector<vec2> calculate_normals(const std::vector<vec2>& points, bool closed)
+	void sRendererPrivate::draw_image(uint layer, const vec2* pts, uint res_id, const vec2& uv0, const vec2& uv1, const cvec4& tint_color)
 	{
-		std::vector<vec2> normals(points.size());
-		for (auto i = 0; i < points.size() - 1; i++)
-		{
-			auto d = normalize(points[i + 1] - points[i]);
-			auto normal = vec2(d.y, -d.x);
+		//auto& ed = *_ed;
 
-			if (i > 0)
-				normals[i] = normalize((normal + normals[i]) * 0.5f);
-			else
-				normals[i] = normal;
+		//auto& info = ed.layers[layer].emplace_back();
+		//info.type = ElementDrawCmd::Fill;
 
-			if (closed && i + 1 == points.size() - 1)
-				normals.front() = normalize((normal + normals[0]) * 0.5f);
-			else
-				normals[i + 1] = normal;
-		}
-		return normals;
+		//info.res_id = res_id;
+		//info.points.resize(4);
+		//info.uvs.resize(4);
+
+		//auto& res = ed.reses[res_id];
+
+		//memcpy(info.points.data(), pts, sizeof(vec2) * 4);
+		//info.uvs[0] = vec2(uv0.x, uv0.y);
+		//info.uvs[1] = vec2(uv1.x, uv0.y);
+		//info.uvs[2] = vec2(uv1.x, uv1.y);
+		//info.uvs[3] = vec2(uv0.x, uv1.y);
+		//info.color = tint_color;
 	}
 
 	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp)
@@ -1164,10 +1134,10 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
 		}
-			break;
+		break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
@@ -1208,10 +1178,10 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
 		}
-			break;
+		break;
 		case MaterialForTerrain:
 		{
 			if (deferred)
@@ -1233,10 +1203,10 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders, 
+			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll"), info);
 		}
-			break;
+		break;
 		}
 
 		MaterialPipeline mp;
@@ -1367,9 +1337,9 @@ namespace flame
 		}
 
 		auto mat_id = nd.mesh_reses[mesh_id].mat_id;
-		nd.meshes[armature_id != -1 ? MaterialForMeshArmature: MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
+		nd.meshes[armature_id != -1 ? MaterialForMeshArmature : MaterialForMesh][mat_id].emplace_back(idx, mesh_id);
 		if (cast_shadow)
-			nd.meshes[armature_id != -1 ? MaterialForMeshShadowArmature: MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
+			nd.meshes[armature_id != -1 ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
 	}
 
 	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id)
@@ -1400,7 +1370,7 @@ namespace flame
 		fb_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
 			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
-		
+
 		if (tar_cnt == 0)
 			return;
 
@@ -1630,7 +1600,7 @@ namespace flame
 			nd.buf_light_infos.upload(cb);
 			static auto wtf2 = false;
 			if (!wtf2)
-			nd.buf_grid_lights.upload(cb);
+				nd.buf_grid_lights.upload(cb);
 			nd.buf_dir_shadow_mats.upload(cb);
 			nd.buf_pt_shadow_mats.upload(cb);
 
@@ -1647,7 +1617,7 @@ namespace flame
 					auto cv = vec4(1.f, 0.f, 0.f, 0.f);
 					cb->begin_renderpass(nullptr, nd.fb_dir_shadow_maps[i * 4 + lv].get(), &cv);
 					bind_mesh_fwd_res();
-					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i=ivec4(0, lv, 0, 0) });
+					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(0, lv, 0, 0) });
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
@@ -1670,7 +1640,7 @@ namespace flame
 					auto cv = vec4(1.f, 0.f, 0.f, 0.f);
 					cb->begin_renderpass(nullptr, nd.fb_pt_shadow_maps[i * 6 + ly].get(), &cv);
 					bind_mesh_fwd_res();
-					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i=ivec4(1, ly, 0, 0) });
+					cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(1, ly, 0, 0) });
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					draw_mesh_indirs(MaterialForMeshShadow);
@@ -1735,7 +1705,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
 			cb->bind_pipeline(nd.pl_gamma);
 			cb->bind_descriptor_set(0, ds_back.get());
-			cb->push_constant_t(PLL_post::PushConstant{ .f=vec4(shading_type == ShadingCombined ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
+			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(shading_type == ShadingCombined ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}
@@ -1743,420 +1713,15 @@ namespace flame
 		auto& ed = *_ed;
 		if (ed.should_render)
 		{
-			struct PackedCmd
-			{
-				bool b;
-				union
-				{
-					struct
-					{
-						uint res_id;
-						uint vtx_cnt;
-						uint idx_cnt;
-					}a;
-					Rect b;
-				}d;
-			};
-			std::vector<PackedCmd> cmds;
-			{
-				auto& c = cmds.emplace_back();
-				c.b = true;
-				c.d.b = Rect(vec2(0.f), tar_sz);
-			}
+			auto scissor = Rect(vec2(0.f), tar_sz);
+			cb->set_viewport(scissor);
+			cb->set_scissor(scissor);
 
-			Rect scissor;
-			scissor.reset();
-			for (auto i = 0; i < _countof(ed.layers); i++)
-			{
-				for (auto& info : ed.layers[i])
-				{
-					switch (info.type)
-					{
-					case ElementDrawCmd::Fill:
-					{
-						if (cmds.back().b || cmds.back().d.a.res_id != info.res_id)
-						{
-							auto& c = cmds.emplace_back();
-							c.b = false;
-							c.d.a.res_id = info.res_id;
-						}
-						auto& c = cmds.back();
-
-						for (auto i = 0; i < info.points.size() - 2; i++)
-						{
-							auto pvtx = ed.buf_element_vtx.stag(3);
-							pvtx[0].set(info.points[0], vec2(0.5), info.color);
-							pvtx[1].set(info.points[i + 1], vec2(0.5), info.color);
-							pvtx[2].set(info.points[i + 2], vec2(0.5), info.color);
-
-							auto pidx = ed.buf_element_idx.stag(3);
-							pidx[0] = c.d.a.vtx_cnt + 0;
-							pidx[1] = c.d.a.vtx_cnt + 2;
-							pidx[2] = c.d.a.vtx_cnt + 1;
-
-							c.d.a.vtx_cnt += 3;
-							c.d.a.idx_cnt += 3;
-
-							if (/*aa*/false)
-							{
-								//auto vtx_cnt0 = cmd->vertices_count;
-								//auto feather = 2.f;
-							
-								//points.push_back(points.front());
-								//auto normals = calculate_normals(points, true);
-							
-								//auto col_t = col;
-								//col_t.a = 0;
-							
-								//for (auto i = 0; i < points.size() - 1; i++)
-								//{
-								//	if (i == 0)
-								//	{
-								//		auto p0 = points[0];
-								//		auto p1 = points[1];
-							
-								//		auto n0 = normals[0];
-								//		auto n1 = normals[1];
-							
-								//		auto vtx_cnt = cmd->vertices_count;
-							
-								//		add_vtx(p0, uv, col);
-								//		add_vtx(p0 - n0 * feather, uv, col_t);
-								//		add_vtx(p1, uv, col);
-								//		add_vtx(p1 - n1 * feather, uv, col_t);
-								//		add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-								//	}
-								//	else if (i == points.size() - 2)
-								//	{
-								//		auto vtx_cnt = cmd->vertices_count;
-							
-								//		add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-								//	}
-								//	else
-								//	{
-								//		auto p1 = points[i + 1];
-							
-								//		auto n1 = normals[i + 1];
-							
-								//		auto vtx_cnt = cmd->vertices_count;
-							
-								//		add_vtx(p1, uv, col);
-								//		add_vtx(p1 - n1 * feather, uv, col_t);
-								//		add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-								//	}
-								//}
-							}
-						}
-					}
-						break;
-					case ElementDrawCmd::Stroke:
-					{
-						if (cmds.back().b || cmds.back().d.a.res_id != info.res_id)
-						{
-							auto& c = cmds.emplace_back();
-							c.b = false;
-							c.d.a.res_id = info.res_id;
-						}
-						auto& c = cmds.back();
-
-						auto thickness = info.misc[0];
-						auto closed = info.points.front() == info.points.back();
-						auto normals = calculate_normals(info.points, closed);
-
-						if (/*aa*/ false)
-						{
-							//static const auto feather = 0.5f;
-							//auto col_c = col;
-							//col_c.a *= min(thickness / feather, 1.f);
-							//auto col_t = col;
-							//col_t.a = 0;
-							//
-							//if (thickness > feather)
-							//{
-							//	auto edge = thickness - feather;
-							//
-							//	for (auto i = 0; i < points.size() - 1; i++)
-							//	{
-							//		if (i == 0)
-							//		{
-							//			auto p0 = points[0];
-							//			auto p1 = points[1];
-							//
-							//			auto n0 = normals[0];
-							//			auto n1 = normals[1];
-							//
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_vtx(p0 + n0 * thickness, uv, col_t);
-							//			add_vtx(p0 + n0 * edge, uv, col_c);
-							//			add_vtx(p0 - n0 * edge, uv, col_c);
-							//			add_vtx(p0 - n0 * thickness, uv, col_t);
-							//			add_vtx(p1 + n1 * thickness, uv, col_t);
-							//			add_vtx(p1 + n1 * edge, uv, col_c);
-							//			add_vtx(p1 - n1 * edge, uv, col_c);
-							//			add_vtx(p1 - n1 * thickness, uv, col_t);
-							//			add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
-							//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
-							//			add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 7); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 7);
-							//		}
-							//		else if (closed && i == points.size() - 2)
-							//		{
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
-							//			add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-							//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt0 + 3);
-							//		}
-							//		else
-							//		{
-							//			auto p1 = points[i + 1];
-							//
-							//			auto n1 = normals[i + 1];
-							//
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_vtx(p1 + n1 * thickness, uv, col_t);
-							//			add_vtx(p1 + n1 * edge, uv, col_c);
-							//			add_vtx(p1 - n1 * edge, uv, col_c);
-							//			add_vtx(p1 - n1 * thickness, uv, col_t);
-							//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
-							//			add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-							//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-							//		}
-							//	}
-							//}
-							//else
-							//{
-							//	for (auto i = 0; i < points.size() - 1; i++)
-							//	{
-							//		if (i == 0)
-							//		{
-							//			auto p0 = points[0];
-							//			auto p1 = points[1];
-							//
-							//			auto n0 = normals[0];
-							//			auto n1 = normals[1];
-							//
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_vtx(p0 + n0 * feather, uv, col_t);
-							//			add_vtx(p0, uv, col_c);
-							//			add_vtx(p0 - n0 * feather, uv, col_t);
-							//			add_vtx(p1 + n1 * feather, uv, col_t);
-							//			add_vtx(p1, uv, col_c);
-							//			add_vtx(p1 - n1 * feather, uv, col_t);
-							//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
-							//			add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
-							//		}
-							//		else if (closed && i == points.size() - 2)
-							//		{
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
-							//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
-							//		}
-							//		else
-							//		{
-							//			auto p1 = points[i + 1];
-							//
-							//			auto n1 = normals[i + 1];
-							//
-							//			auto vtx_cnt = cmd->vertices_count;
-							//
-							//			add_vtx(p1 + n1 * feather, uv, col_t);
-							//			add_vtx(p1, uv, col_c);
-							//			add_vtx(p1 - n1 * feather, uv, col_t);
-							//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
-							//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
-							//		}
-							//	}
-							//}
-							//
-							//if (!closed)
-							//{
-							//	auto ext = max(feather, thickness);
-							//
-							//	{
-							//		auto vtx_cnt = cmd->vertices_count;
-							//
-							//		auto p0 = points[0];
-							//		auto p1 = points[1];
-							//
-							//		auto n0 = normals[0];
-							//
-							//		auto p = p0 - normalize(p1 - p0);
-							//		add_vtx(p + n0 * ext, uv, col_t);
-							//		add_vtx(p - n0 * ext, uv, col_t);
-							//		add_vtx(p0 + n0 * ext, uv, col_t);
-							//		add_vtx(p0, uv, col_c);
-							//		add_vtx(p0 - n0 * ext, uv, col_t);
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4); 
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 0);
-							//	}
-							//
-							//	{
-							//		auto vtx_cnt = cmd->vertices_count;
-							//
-							//		auto p0 = points[points.size() - 2];
-							//		auto p1 = points[points.size() - 1];
-							//
-							//		auto n1 = normals[points.size() - 1];
-							//
-							//		auto p = p1 + normalize(p1 - p0);
-							//		add_vtx(p1 + n1 * ext, uv, col_t);
-							//		add_vtx(p1, uv, col_c);
-							//		add_vtx(p1 - n1 * ext, uv, col_t);
-							//		add_vtx(p + n1 * ext, uv, col_t);
-							//		add_vtx(p - n1 * ext, uv, col_t);
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
-							//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3);
-							//	}
-							//}
-						}
-						else
-						{
-							auto vtx_cnt0 = c.d.a.vtx_cnt;
-							for (auto i = 0; i < info.points.size() - 1; i++)
-							{
-								if (i == 0)
-								{
-									auto p0 = info.points[0];
-									auto p1 = info.points[1];
-
-									auto n0 = normals[0];
-									auto n1 = normals[1];
-
-									auto pvtx = ed.buf_element_vtx.stag(4);
-									pvtx[0].set(p0 + n0 * thickness, vec2(0.5), info.color);
-									pvtx[1].set(p0 - n0 * thickness, vec2(0.5), info.color);
-									pvtx[2].set(p1 + n1 * thickness, vec2(0.5), info.color);
-									pvtx[3].set(p1 - n1 * thickness, vec2(0.5), info.color);
-
-									auto pidx = ed.buf_element_idx.stag(6);
-									pidx[0] = c.d.a.vtx_cnt + 0;
-									pidx[1] = c.d.a.vtx_cnt + 1;
-									pidx[2] = c.d.a.vtx_cnt + 3;
-									pidx[3] = c.d.a.vtx_cnt + 0;
-									pidx[4] = c.d.a.vtx_cnt + 3;
-									pidx[5] = c.d.a.vtx_cnt + 2;
-
-									c.d.a.vtx_cnt += 4;
-									c.d.a.idx_cnt += 6;
-								}
-								else if (closed && i == info.points.size() - 2)
-								{
-									auto pidx = ed.buf_element_idx.stag(6);
-									pidx[0] = c.d.a.vtx_cnt - 2;
-									pidx[1] = c.d.a.vtx_cnt - 1;
-									pidx[2] = vtx_cnt0 + 1;
-									pidx[3] = c.d.a.vtx_cnt - 2;
-									pidx[4] = vtx_cnt0 + 1;
-									pidx[5] = vtx_cnt0 + 0;
-
-									c.d.a.idx_cnt += 6;
-								}
-								else
-								{
-									auto p1 = info.points[i + 1];
-
-									auto n1 = normals[i + 1];
-
-									auto pvtx = ed.buf_element_vtx.stag(2);
-									pvtx[0].set(p1 + n1 * thickness, vec2(0.5), info.color);
-									pvtx[1].set(p1 - n1 * thickness, vec2(0.5), info.color);
-
-									auto pidx = ed.buf_element_idx.stag(6);
-									pidx[0] = c.d.a.vtx_cnt - 2;
-									pidx[1] = c.d.a.vtx_cnt - 1;
-									pidx[2] = c.d.a.vtx_cnt + 1;
-									pidx[3] = c.d.a.vtx_cnt - 2;
-									pidx[4] = c.d.a.vtx_cnt + 1;
-									pidx[5] = c.d.a.vtx_cnt + 0;
-
-									c.d.a.vtx_cnt += 2;
-									c.d.a.idx_cnt += 6;
-								}
-							}
-						}
-					}
-						break;
-					case ElementDrawCmd::Text:
-					{
-						if (cmds.back().b || cmds.back().d.a.res_id != info.res_id)
-						{
-							auto& c = cmds.emplace_back();
-							c.b = false;
-							c.d.a.res_id = info.res_id;
-						}
-						auto& c = cmds.back();
-
-						auto atlas = (graphics::FontAtlas*)ed.reses[info.res_id].v;
-						auto pos = info.points[0];
-						auto axes = mat2(info.points[1], info.points[2]);
-						auto font_size = info.misc[0];
-						auto p = vec2(0.f);
-						for (auto ch : info.text)
-						{
-							if (ch == '\n')
-							{
-								p.y += font_size;
-								p.x = 0.f;
-							}
-							else if (ch != '\r')
-							{
-								if (ch == '\t')
-									ch = ' ';
-
-								auto& g = atlas->get_glyph(ch, font_size);
-								auto o = p + vec2(g.off);
-								auto s = vec2(g.size);
-								auto uv = g.uv;
-								auto uv0 = vec2(uv.x, uv.y);
-								auto uv1 = vec2(uv.z, uv.w);
-
-								auto pvtx = ed.buf_element_vtx.stag(4);
-								pvtx[0].set(pos + o * axes, uv0, info.color);
-								pvtx[1].set(pos + o.x * axes[0] + (o.y - s.y) * axes[1], vec2(uv0.x, uv1.y), info.color);
-								pvtx[2].set(pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1], uv1, info.color);
-								pvtx[3].set(pos + (o.x + s.x) * axes[0] + o.y * axes[1], vec2(uv1.x, uv0.y), info.color);
-								auto pidx = ed.buf_element_idx.stag(6);
-								pidx[0] = c.d.a.vtx_cnt + 0;
-								pidx[1] = c.d.a.vtx_cnt + 2;
-								pidx[2] = c.d.a.vtx_cnt + 1;
-								pidx[3] = c.d.a.vtx_cnt + 0;
-								pidx[4] = c.d.a.vtx_cnt + 3;
-								pidx[5] = c.d.a.vtx_cnt + 2;
-
-								c.d.a.vtx_cnt += 4;
-								c.d.a.idx_cnt += 6;
-
-								p.x += g.advance;
-							}
-						}
-					}
-						break;
-					case ElementDrawCmd::Scissor:
-					{
-						if (!cmds.back().b)
-							cmds.emplace_back().b = true;
-						if (scissor == info.misc)
-							cmds.pop_back();
-						else
-							cmds.back().d.b = info.misc;
-						scissor = info.misc;
-					}
-						break;
-					}
-				}
-			}
-
+			auto pvtx = ed.buf_element_vtx.pstag;
+			auto pidx = ed.buf_element_idx.pstag;
 			ed.buf_element_vtx.upload(cb);
 			ed.buf_element_idx.upload(cb);
 
-			cb->set_viewport(Rect(vec2(0.f), tar_sz));
-			cb->set_scissor(Rect(vec2(0.f), tar_sz));
 			if (nd.should_render)
 				cb->begin_renderpass(rp_bgra8, fb_tars[tar_idx].get());
 			else
@@ -2164,6 +1729,7 @@ namespace flame
 				auto cv = vec4(0.6f, 0.7f, 0.8f, 1.f);
 				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &cv);
 			}
+
 			cb->bind_pipeline(ed.pl_element);
 			cb->bind_vertex_buffer(ed.buf_element_vtx.buf.get(), 0);
 			cb->bind_index_buffer(ed.buf_element_idx.buf.get(), graphics::IndiceTypeUint);
@@ -2171,17 +1737,54 @@ namespace flame
 			cb->push_constant_t(element::PLL_element::PushConstant{ 2.f / vec2(tar_sz) });
 			auto vtx_off = 0;
 			auto idx_off = 0;
-			for (auto& c : cmds)
-			{
-				if (!c.b)
+			auto vtx_cnt = 0;
+			auto idx_cnt = 0;
+			auto res = -1;
+
+			auto emit_draw = [&]() {
+				if (vtx_cnt > 0)
 				{
-					cb->draw_indexed(c.d.a.idx_cnt, idx_off, vtx_off, 1, c.d.a.res_id);
-					vtx_off += c.d.a.vtx_cnt;
-					idx_off += c.d.a.idx_cnt;
+					cb->draw_indexed(idx_cnt, idx_off, vtx_off, 1, res);
+					vtx_off += vtx_cnt;
+					idx_off += idx_cnt;
+					vtx_cnt = 0;
+					idx_cnt = 0;
 				}
-				else
-					cb->set_scissor(c.d.b);
+			};
+
+			for (auto i = 0; i < _countof(ed.layers); i++)
+			{
+				for (auto& info : ed.layers[i])
+				{
+					if (info.vertices.empty())
+					{
+						emit_draw();
+						if (!(scissor == info.scissor))
+						{
+							scissor = info.scissor;
+							cb->set_scissor(scissor);
+						}
+					}
+					else
+					{
+						if (res != info.res)
+						{
+							emit_draw();
+							res = info.res;
+						}
+
+						memcpy(pvtx + vtx_off + vtx_cnt, info.vertices.data(), sizeof(ElementVertex) * info.vertices.size());
+						for (auto i = 0; i < info.indices.size(); i++)
+							pidx[idx_off + idx_cnt + i] = vtx_cnt + info.indices[i];
+						vtx_cnt += info.vertices.size();
+						idx_cnt += info.indices.size();
+					}
+
+				}
 			}
+
+			emit_draw();
+
 			cb->end_renderpass();
 		}
 
@@ -2224,10 +1827,7 @@ namespace flame
 		for (auto i = 0; i < ed.reses.size(); i++)
 		{
 			ed.ds_element->set_image(element::DSL_element::images_binding, i, iv_white, sp_linear);
-
-			auto& res = ed.reses[i];
-			res.type = ElementResImage;
-			res.v = iv_white;
+			ed.reses[i] = iv_white;
 		}
 		ed.ds_element->update();
 
@@ -2239,7 +1839,7 @@ namespace flame
 
 		for (auto& v : nd.meshes)
 			v.resize(nd.mat_reses.size());
-		
+
 		for (auto& b : nd.buf_mesh_indirs)
 			b.create(device, graphics::BufferUsageIndirect, 65536);
 

@@ -421,5 +421,20 @@ namespace flame
 			DynamicStateStencilWriteMask,
 			DynamicStateStencilReference
 		};
+
+		struct Glyph
+		{
+			ushort code = 0;
+			ivec2 off = ivec2(0);
+			uvec2 size = uvec2(0);
+			vec4 uv = vec4(0.f);
+			int advance = 0;
+		};
+
+		struct GlyphDraw
+		{
+			vec2 points[4];
+			vec4 uvs;
+		};
 	}
 }

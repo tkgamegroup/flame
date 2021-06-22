@@ -117,7 +117,7 @@ namespace flame
 
 			virtual ImagePtr get_image() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static ImageAtlas* get(Device* device, const wchar_t* filename);
 		};
 	}
 }

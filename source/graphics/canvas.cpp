@@ -10,6 +10,209 @@
 //			CmdBlur(const Rect& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
 //		};
 //
+
+//if (aa) // fill aa
+//{
+//	auto vtx_cnt0 = cmd->vertices_count;
+//	auto feather = 2.f;
+//
+//	points.push_back(points.front());
+//	auto normals = calculate_normals(points, true);
+//
+//	auto col_t = col;
+//	col_t.a = 0;
+//
+//	for (auto i = 0; i < points.size() - 1; i++)
+//	{
+//		if (i == 0)
+//		{
+//			auto p0 = points[0];
+//			auto p1 = points[1];
+//
+//			auto n0 = normals[0];
+//			auto n1 = normals[1];
+//
+//			auto vtx_cnt = cmd->vertices_count;
+//
+//			add_vtx(p0, uv, col);
+//			add_vtx(p0 - n0 * feather, uv, col_t);
+//			add_vtx(p1, uv, col);
+//			add_vtx(p1 - n1 * feather, uv, col_t);
+//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+//		}
+//		else if (i == points.size() - 2)
+//		{
+//			auto vtx_cnt = cmd->vertices_count;
+//
+//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+//		}
+//		else
+//		{
+//			auto p1 = points[i + 1];
+//
+//			auto n1 = normals[i + 1];
+//
+//			auto vtx_cnt = cmd->vertices_count;
+//
+//			add_vtx(p1, uv, col);
+//			add_vtx(p1 - n1 * feather, uv, col_t);
+//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+//		}
+//	}
+//}
+// if (aa) // stroke aa
+// {
+// 
+		//static const auto feather = 0.5f;
+		//auto col_c = col;
+		//col_c.a *= min(thickness / feather, 1.f);
+		//auto col_t = col;
+		//col_t.a = 0;
+		//					
+		//if (thickness > feather)
+		//{
+		//	auto edge = thickness - feather;
+		//					
+		//	for (auto i = 0; i < points.size() - 1; i++)
+		//	{
+		//		if (i == 0)
+		//		{
+		//			auto p0 = points[0];
+		//			auto p1 = points[1];
+		//					
+		//			auto n0 = normals[0];
+		//			auto n1 = normals[1];
+		//					
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_vtx(p0 + n0 * thickness, uv, col_t);
+		//			add_vtx(p0 + n0 * edge, uv, col_c);
+		//			add_vtx(p0 - n0 * edge, uv, col_c);
+		//			add_vtx(p0 - n0 * thickness, uv, col_t);
+		//			add_vtx(p1 + n1 * thickness, uv, col_t);
+		//			add_vtx(p1 + n1 * edge, uv, col_c);
+		//			add_vtx(p1 - n1 * edge, uv, col_c);
+		//			add_vtx(p1 - n1 * thickness, uv, col_t);
+		//			add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
+		//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
+		//			add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 7); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 7);
+		//		}
+		//		else if (closed && i == points.size() - 2)
+		//		{
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
+		//			add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+		//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt0 + 3);
+		//		}
+		//		else
+		//		{
+		//			auto p1 = points[i + 1];
+		//					
+		//			auto n1 = normals[i + 1];
+		//					
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_vtx(p1 + n1 * thickness, uv, col_t);
+		//			add_vtx(p1 + n1 * edge, uv, col_c);
+		//			add_vtx(p1 - n1 * edge, uv, col_c);
+		//			add_vtx(p1 - n1 * thickness, uv, col_t);
+		//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
+		//			add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+		//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	for (auto i = 0; i < points.size() - 1; i++)
+		//	{
+		//		if (i == 0)
+		//		{
+		//			auto p0 = points[0];
+		//			auto p1 = points[1];
+		//					
+		//			auto n0 = normals[0];
+		//			auto n1 = normals[1];
+		//					
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_vtx(p0 + n0 * feather, uv, col_t);
+		//			add_vtx(p0, uv, col_c);
+		//			add_vtx(p0 - n0 * feather, uv, col_t);
+		//			add_vtx(p1 + n1 * feather, uv, col_t);
+		//			add_vtx(p1, uv, col_c);
+		//			add_vtx(p1 - n1 * feather, uv, col_t);
+		//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
+		//			add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
+		//		}
+		//		else if (closed && i == points.size() - 2)
+		//		{
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
+		//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
+		//		}
+		//		else
+		//		{
+		//			auto p1 = points[i + 1];
+		//					
+		//			auto n1 = normals[i + 1];
+		//					
+		//			auto vtx_cnt = cmd->vertices_count;
+		//					
+		//			add_vtx(p1 + n1 * feather, uv, col_t);
+		//			add_vtx(p1, uv, col_c);
+		//			add_vtx(p1 - n1 * feather, uv, col_t);
+		//			add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
+		//			add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
+		//		}
+		//	}
+		//}
+		//					
+		//if (!closed)
+		//{
+		//	auto ext = max(feather, thickness);
+		//					
+		//	{
+		//		auto vtx_cnt = cmd->vertices_count;
+		//					
+		//		auto p0 = points[0];
+		//		auto p1 = points[1];
+		//					
+		//		auto n0 = normals[0];
+		//					
+		//		auto p = p0 - normalize(p1 - p0);
+		//		add_vtx(p + n0 * ext, uv, col_t);
+		//		add_vtx(p - n0 * ext, uv, col_t);
+		//		add_vtx(p0 + n0 * ext, uv, col_t);
+		//		add_vtx(p0, uv, col_c);
+		//		add_vtx(p0 - n0 * ext, uv, col_t);
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4); 
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 0);
+		//	}
+		//					
+		//	{
+		//		auto vtx_cnt = cmd->vertices_count;
+		//					
+		//		auto p0 = points[points.size() - 2];
+		//		auto p1 = points[points.size() - 1];
+		//					
+		//		auto n1 = normals[points.size() - 1];
+		//					
+		//		auto p = p1 + normalize(p1 - p0);
+		//		add_vtx(p1 + n1 * ext, uv, col_t);
+		//		add_vtx(p1, uv, col_c);
+		//		add_vtx(p1 - n1 * ext, uv, col_t);
+		//		add_vtx(p + n1 * ext, uv, col_t);
+		//		add_vtx(p - n1 * ext, uv, col_t);
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
+		//		add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3);
+		//	}
+		//}
+// }
 //		struct CanvasPrivate : Canvas
 //		{
 //			std::unique_ptr<ImagePrivate> pickup_image;
@@ -246,34 +449,6 @@
 //			}
 //		}
 //		*/
-//
-//		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat2& axes, const vec2& uv0, const vec2& uv1, const cvec4& tint_col)
-//		{
-//			if (res_id >= element_resources.size())
-//				res_id = 0;
-//			auto& res = element_resources[res_id];
-//			auto _uv0 = uv0;
-//			auto _uv1 = uv1;
-//			if (res.ia)
-//			{
-//				auto tile = res.ia->tiles[tile_id].get();
-//				auto tuv = tile->uv;
-//				auto tuv0 = vec2(tuv.x, tuv.y);
-//				auto tuv1 = vec2(tuv.z, tuv.w);
-//				_uv0 = mix(tuv0, tuv1, uv0);
-//				_uv1 = mix(tuv0, tuv1, uv1);
-//			}
-//
-//			auto cmd = add_draw_element_cmd(res_id);
-//
-//			auto vtx_cnt = cmd->vertices_count;
-//
-//			add_vtx(pos, _uv0, tint_col);
-//			add_vtx(pos + size.x * axes[0], vec2(_uv1.x, _uv0.y), tint_col);
-//			add_vtx(pos + size.x * axes[0] + size.y * axes[1], _uv1, tint_col);
-//			add_vtx(pos + size.y * axes[1], vec2(_uv0.x, _uv1.y), tint_col);
-//			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
-//		}
 //
 //		static void draw_frustum(CanvasPrivate* thiz, vec3* ps, const cvec4& col0, const cvec4& col1)
 //		{

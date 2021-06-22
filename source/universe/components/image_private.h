@@ -6,7 +6,8 @@ namespace flame
 {
 	struct cImagePrivate : cImage
 	{
-		std::string src;
+		std::filesystem::path src;
+		std::string tile_name;
 
 		vec2 uv0 = vec2(0.f);
 		vec2 uv1 = vec2(1.f);
@@ -20,22 +21,21 @@ namespace flame
 
 		int res_id = -1;
 		int tile_id = -1;
+		vec4 tile_uv;
 		graphics::ImageView* iv = nullptr;
 		graphics::ImageAtlas* atlas = nullptr;
 
-		int get_res_id() const override { return res_id; }
-		void set_res_id(int id) override;
-		int get_tile_id() const override { return tile_id; }
-		void set_tile_id(int id) override;
-
-		const char* get_src() const override { return src.c_str(); }
-		void set_src(const std::string& src);
-		void set_src(const char* src) override { set_src(std::string(src)); }
+		const wchar_t* get_src() const override { return src.c_str(); }
+		void set_src(const std::filesystem::path& src);
+		void set_src(const wchar_t* src) override { set_src(std::filesystem::path(src)); }
+		const char* get_tile_name() const override { return tile_name.c_str(); }
+		void set_tile_name(const std::string& name);
+		void set_tile_name(const char* name) override { set_tile_name(std::string(name)); }
 
 		vec4 get_uv() const override { return vec4(uv0, uv1); }
 		void set_uv(const vec4& uv) override;
 
-		void refresh_res() override;
+		void apply_src();
 
 		void on_added() override;
 		void on_removed() override;

@@ -1,3 +1,4 @@
+#include "../../graphics/device.h"
 #include "../../graphics/image.h"
 #include "../world_private.h"
 #include "element_private.h"
@@ -6,34 +7,24 @@
 
 namespace flame
 {
-	void cImagePrivate::set_res_id(int id)
-	{
-		if (res_id == id)
-			return;
-		res_id = id;
-		refresh_res();
-		if (entity)
-			entity->component_data_changed(this, S<"res_id"_h>);
-	}
-
-	void cImagePrivate::set_tile_id(int id)
-	{
-		if (tile_id == id)
-			return;
-		tile_id = id;
-		refresh_res();
-		if (entity)
-			entity->component_data_changed(this, S<"tile_id"_h>);
-	}
-
-	void cImagePrivate::set_src(const std::string& _src)
+	void cImagePrivate::set_src(const std::filesystem::path& _src)
 	{
 		if (src == _src)
 			return;
 		src = _src;
-		refresh_res();
+		apply_src();
 		if (entity)
 			entity->component_data_changed(this, S<"src"_h>);
+	}
+
+	void cImagePrivate::set_tile_name(const std::string& name)
+	{
+		if (tile_name == name)
+			return;
+		tile_name = name;
+		apply_src();
+		if (entity)
+			entity->component_data_changed(this, S<"tile_name"_h>);
 	}
 
 	void cImagePrivate::set_uv(const vec4& uv)
@@ -48,75 +39,41 @@ namespace flame
 			entity->component_data_changed(this, S<"uv"_h>);
 	}
 
-	void cImagePrivate::refresh_res()
+	void cImagePrivate::apply_src()
 	{
+		res_id = -1;
+		tile_id = -1;
 		iv = nullptr;
 		atlas = nullptr;
-		// TODO: fix below
-		//if (s_renderer)
-		//{
-		//	if (!src.empty())
-		//	{
-		//		auto sp = SUS::split(src, '.');
-		//		auto slot = s_renderer->find_element_res(sp[0].c_str());
-		//		auto r = s_renderer->get_element_res(slot);
-		//		if (r.ia)
-		//		{
-		//			if (sp.size() == 2)
-		//			{
-		//				auto tile = r.ia->find_tile(sp[1].c_str());
-		//				if (tile)
-		//				{
-		//					if (res_id != slot)
-		//					{
-		//						res_id = slot;
-		//						if (entity)
-		//							entity->component_data_changed(this, S<"res_id"_h>);
-		//					}
-		//					slot = tile->get_index();
-		//					if (tile_id != slot)
-		//					{
-		//						tile_id = slot;
-		//						if (entity)
-		//							entity->component_data_changed(this, S<"tile_id"_h>);
-		//					}
-		//					iv = r.ia->get_image()->get_view();
-		//					atlas = r.ia;
-		//				}
-		//			}
-		//		}
-		//		else
-		//		{
-		//			if (sp.size() == 1)
-		//			{
-		//				if (res_id != slot)
-		//				{
-		//					res_id = slot;
-		//					if (entity)
-		//						entity->component_data_changed(this, S<"res_id"_h>);
-		//				}
-		//				if (tile_id != -1)
-		//				{
-		//					tile_id = -1;
-		//					if (entity)
-		//						entity->component_data_changed(this, S<"tile_id"_h>);
-		//				}
-		//				iv = r.iv;
-		//			}
-		//		}
-		//	}
-		//	if (!iv && res_id != -1)
-		//	{
-		//		if (tile_id != -1)
-		//		{
-		//			auto r = s_renderer->get_element_res(res_id);
-		//			atlas = r.ia;
-		//			iv = r.ia->get_image()->get_view();
-		//		}
-		//		else
-		//			iv = s_renderer->get_element_res(res_id).iv;
-		//	}
-		//}
+
+		if (!s_renderer)
+			return;
+		auto device = graphics::Device::get_default();
+		if (tile_name.empty())
+		{
+			auto img = graphics::Image::get(device, src.c_str(), false);
+			fassert(img);
+			iv = img->get_view(0);
+
+			res_id = s_renderer->find_element_res(iv);
+			if (res_id == -1)
+				res_id = s_renderer->set_element_res(-1, iv);
+		}
+		else
+		{
+			atlas = graphics::ImageAtlas::get(device, src.c_str());
+			fassert(atlas);
+			iv = atlas->get_image()->get_view(0);
+
+			res_id = s_renderer->find_element_res(iv);
+			if (res_id == -1)
+				res_id = s_renderer->set_element_res(-1, iv);
+
+			graphics::ImageAtlas::TileInfo ti;
+			tile_id = atlas->find_tile(tile_name.c_str(), &ti);
+			fassert(tile_id != -1);
+			tile_uv = ti.uv;
+		}
 
 		if (element)
 		{
@@ -154,7 +111,7 @@ namespace flame
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
-		refresh_res();
+		apply_src();
 	}
 
 	void cImagePrivate::on_left_world()
@@ -178,9 +135,15 @@ namespace flame
 	{
 		if (res_id != -1)
 		{
-			// TODO: fix below
-			//s_renderer->draw_image(res_id, tile_id, element->points[4],
-			//	element->content_size, element->axes, uv0, uv1, cvec4(255));
+			layer++;
+			if (tile_id == -1)
+				s_renderer->draw_image(layer, element->points + 4, res_id, uv0, uv1, cvec4(255));
+			else
+			{
+				auto _uv0 = mix(tile_uv.xy(), tile_uv.zw(), uv0);
+				auto _uv1 = mix(tile_uv.xy(), tile_uv.zw(), uv1);
+				s_renderer->draw_image(layer, element->points + 4, res_id, _uv0, _uv1, cvec4(255));
+			}
 		}
 		return layer;
 	}

@@ -75,8 +75,12 @@ namespace flame
 
 	uint cTextPrivate::draw(uint layer, sRenderer* s_renderer)
 	{
-		layer++;
-		s_renderer->draw_text(layer, element, element->padding.xy(), font_size, res_id, text.c_str(), text.c_str() + text.size(), font_color);
+		if (res_id != -1)
+		{
+			layer++;
+			auto glyphs = atlas->get_draw_glyphs(font_size, text.c_str(), text.c_str() + text.size(), element->points[4], element->axes);
+			s_renderer->draw_glyphs(layer, glyphs.size(), glyphs.data(), res_id, font_color);
+		}
 		return layer;
 	}
 
@@ -118,20 +122,12 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRenderer>();
 		fassert(s_renderer);
 
-		if (res_id != -1)
-		{
-			if (!atlas)
-				atlas = (graphics::FontAtlas*)s_renderer->get_element_res(res_id, nullptr);
-		}
-		else
-		{
-			atlas = graphics::FontAtlas::get(graphics::Device::get_default(), L"msyh.ttc;font_awesome.ttf");
-			res_id = s_renderer->find_element_res(atlas);
-			if (res_id == -1)
-				res_id = s_renderer->set_element_res(-1, "FontAtlas", atlas);
-			if (res_id == -1)
-				atlas = nullptr;
-		}
+		atlas = graphics::FontAtlas::get(graphics::Device::get_default(), atlas_name.c_str());
+		fassert(atlas);
+		auto iv = atlas->get_view();
+		res_id = s_renderer->find_element_res(iv);
+		if (res_id == -1)
+			res_id = s_renderer->set_element_res(-1, iv);
 	}
 
 	void cTextPrivate::on_left_world()

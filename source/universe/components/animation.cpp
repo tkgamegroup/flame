@@ -1,4 +1,3 @@
-#include "../../graphics/device.h"
 #include "../../graphics/model.h"
 #include "../entity_private.h"
 #include "../world_private.h"

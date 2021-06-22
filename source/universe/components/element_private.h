@@ -44,7 +44,7 @@ namespace flame
 		mat2 axes;
 		mat2 axes_inv;
 		mat3 transform;
-		Rect aabb;
+		Rect bounds;
 
 		float alpha = 1.f;
 
