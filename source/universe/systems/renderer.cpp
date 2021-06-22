@@ -432,6 +432,15 @@ namespace flame
 		UniPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
+		MaterialPipeline pl_wireframe_mesh;
+		MaterialPipeline pl_outline_mesh;
+		MaterialPipeline pl_pickup_mesh;
+		MaterialPipeline pl_wireframe_arm_mesh;
+		MaterialPipeline pl_outline_arm_mesh;
+		MaterialPipeline pl_pickup_arm_mesh;
+		MaterialPipeline pl_wireframe_terrain;
+		MaterialPipeline pl_outline_terrain;
+		MaterialPipeline pl_pickup_terrain;
 		graphics::Pipeline* pl_def;
 		graphics::Pipeline* pl_nor_dat;
 		UniPtr<graphics::DescriptorSet>	ds_def;
@@ -1056,14 +1065,19 @@ namespace flame
 			polygon_mode = graphics::PolygonModeLine;
 			depth_test = false;
 			depth_write = false;
+			deferred = false;
 		}
 		else if (find_define("PICKUP"))
+		{
 			use_mat = false;
+			deferred = false;
+		}
 		else if (find_define("OUTLINE"))
 		{
 			use_mat = false;
 			depth_test = false;
 			depth_write = false;
+			deferred = false;
 		}
 		if (find_define("DOUBLE_SIDE", true))
 			cull_mode = graphics::CullModeNone;
@@ -1137,7 +1151,7 @@ namespace flame
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
 		}
-		break;
+			break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
@@ -1181,7 +1195,7 @@ namespace flame
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
 		}
-		break;
+			break;
 		case MaterialForTerrain:
 		{
 			if (deferred)
@@ -1206,7 +1220,7 @@ namespace flame
 			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
 				graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll"), info);
 		}
-		break;
+			break;
 		}
 
 		MaterialPipeline mp;
@@ -1321,7 +1335,7 @@ namespace flame
 		return idx;
 	}
 
-	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id)
+	void sRendererPrivate::draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
@@ -1342,7 +1356,7 @@ namespace flame
 			nd.meshes[armature_id != -1 ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mat_id].emplace_back(idx, mesh_id);
 	}
 
-	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id)
+	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint material_id, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
@@ -1354,7 +1368,6 @@ namespace flame
 		data.blocks = blocks;
 		data.tess_levels = tess_levels;
 		data.height_map_id = height_map_id;
-		data.normal_map_id = normal_map_id;
 		data.material_id = material_id;
 
 		nd.terrains.emplace_back(blocks.x * blocks.y, material_id);
@@ -1378,7 +1391,7 @@ namespace flame
 
 		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		ds_back->set_image(DSL_post::image_binding, 0, img_back->get_view(), sp_nearest);
+		ds_back->set_image(DSL_post::image_binding, 0, img_back->get_view(0), sp_nearest);
 		ds_back->update();
 
 		auto& nd = *_nd;
@@ -1683,9 +1696,9 @@ namespace flame
 			cb->image_barrier(nd.img_dep.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 
 			cb->begin_renderpass(nullptr, nd.fb_def.get());
-			switch (shading_type)
+			switch (render_type)
 			{
-			case ShadingNormalData:
+			case RenderNormalData:
 				cb->bind_pipeline(nd.pl_nor_dat);
 				break;
 			default:
@@ -1705,7 +1718,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
 			cb->bind_pipeline(nd.pl_gamma);
 			cb->bind_descriptor_set(0, ds_back.get());
-			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(shading_type == ShadingCombined ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
+			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(render_type == RenderShaded ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}

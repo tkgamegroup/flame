@@ -11,7 +11,6 @@ struct TerrainInfo
 	float tess_levels;
 
 	uint height_map_id;
-	uint normal_map_id;
 	uint material_id;
 };
 

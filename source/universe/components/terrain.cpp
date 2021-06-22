@@ -34,13 +34,6 @@ namespace flame
 		height_map_name = name;
 	}
 
-	void cTerrainPrivate::set_normal_map(const std::string& name)
-	{
-		if (normal_map_name == name)
-			return;
-		normal_map_name = name;
-	}
-
 	void cTerrainPrivate::set_material_name(const std::string& name)
 	{
 		if (material_name == name)
@@ -50,8 +43,8 @@ namespace flame
 
 	void cTerrainPrivate::draw(sRendererPrivate* s_renderer)
 	{
-		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
-			s_renderer->draw_terrain(node, blocks, tess_levels, height_map_id, normal_map_id, material_id);
+		if (height_map_id != -1 && material_id != -1)
+			s_renderer->draw_terrain(node, blocks, tess_levels, height_map_id, material_id, shading_flags);
 
 		//auto flags = s_renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 		//if (entity->state & StateSelected)
@@ -96,16 +89,6 @@ namespace flame
 			height_map_id = s_renderer->find_texture_res(view);
 			if (height_map_id == -1)
 				height_map_id = s_renderer->set_texture_res(-1, view, sp);
-		}
-		{
-			auto fn = std::filesystem::path(normal_map_name);
-			if (!fn.extension().empty() && !fn.is_absolute())
-				fn = ppath / fn;
-			normal_texture = graphics::Image::get(device, fn.c_str(), false);
-			auto view = normal_texture->get_view();
-			normal_map_id = s_renderer->find_texture_res(view);
-			if (normal_map_id == -1)
-				normal_map_id = s_renderer->set_texture_res(-1, view, sp);
 		}
 		{
 			auto fn = std::filesystem::path(material_name);

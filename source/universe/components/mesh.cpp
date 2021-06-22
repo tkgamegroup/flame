@@ -39,6 +39,15 @@ namespace flame
 		}
 	}
 
+	void cMeshPrivate::set_shading_flags(ShadingFlags flags)
+	{
+		if (shading_flags == flags)
+			return;
+		shading_flags = flags;
+		if (node)
+			node->mark_transform_dirty();
+	}
+
 	void cMeshPrivate::apply_src()
 	{
 		mesh_id = -1;
@@ -81,7 +90,7 @@ namespace flame
 	void cMeshPrivate::draw(sRenderer* s_renderer)
 	{
 		if (mesh_id != -1)
-			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani->armature_id);
+			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani->armature_id, shading_flags);
 		//auto flags = s_renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
 		//if (entity->state & StateSelected)
 		//	flags = flags | graphics::ShadeOutline;

@@ -449,6 +449,8 @@ namespace flame
 		auto atlas = text->atlas;
 		auto font_size = text->font_size;
 		element->update_transform();
+		auto pos = element->points[4];
+		auto axes = element->axes;
 
 		if (select_start != select_end)
 		{
@@ -467,15 +469,19 @@ namespace flame
 				low = right + 1;
 
 				auto sb = str.c_str() + left, se = str.c_str() + right;
-				auto p1 = vec2(atlas->text_offset(font_size, str.c_str(), sb));
-				auto p2 = vec2(atlas->text_offset(font_size, str.c_str(), se));
+				auto rect = vec4(atlas->text_offset(font_size, str.c_str(), sb),
+					atlas->text_offset(font_size, str.c_str(), se));
 				if (right < high && str[right] == '\n')
-					p2.x += 4.f;
-				p2.y += font_size;
-				//s_renderer->fill_rect(layer, element, element->padding.xy() + p1, p2 - p1, cvec4(128, 128, 255, 255));
-				//s_renderer->draw_text(layer, element, element->padding.xy() + p1, font_size, res_id, sb, se, text->font_color);
-
-				std::wstring_view();
+					rect.x += 4.f;
+				rect.w += font_size;
+				vec2 pts[] = {
+					rect.xy(), rect.zy(), rect.zw(), rect.xw()
+				};
+				for (auto& p : pts)
+					p = pos + p * axes;
+				s_renderer->fill(layer, 4, pts, cvec4(128, 128, 255, 255));
+				auto glyphs = atlas->get_draw_glyphs(font_size, sb, se, pts[0], axes);
+				s_renderer->draw_glyphs(layer, glyphs.size(), glyphs.data(), res_id, text->font_color);
 			}
 		}
 
@@ -487,6 +493,8 @@ namespace flame
 				off,
 				vec2(off.x, off.y + font_size)
 			};
+			for (auto& p : pts)
+				p = pos + p * axes;
 			s_renderer->stroke(layer, 2, pts, max(1.f, round(font_size / 14.f)), text->font_color, false);
 		}
 

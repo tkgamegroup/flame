@@ -11,6 +11,8 @@ namespace flame
 
 		bool cast_shadow = true;
 
+		ShadingFlags shading_flags = ShadingMaterial;
+
 		cNodePrivate* node = nullptr;
 		cAnimationPrivate* pani = nullptr;
 		void* drawer = nullptr;
@@ -28,6 +30,9 @@ namespace flame
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
+
+		ShadingFlags get_shading_flags() const override { return shading_flags; }
+		void set_shading_flags(ShadingFlags flags) override;
 
 		void apply_src();
 

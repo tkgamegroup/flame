@@ -132,4 +132,20 @@ namespace flame
 		LightPoint,
 		LightSpot
 	};
+
+	enum RenderType
+	{
+		RenderWireframe,
+		RenderShaded,
+		RenderNormalData
+	};
+
+	enum ShadingFlags
+	{
+		ShadingMaterial = 1 << 0,
+		ShadingWireframe = 1 << 1,
+		ShadingOutline = 1 << 2
+	};
+
+	inline ShadingFlags operator| (ShadingFlags a, ShadingFlags b) { return (ShadingFlags)((int)a | (int)b); }
 }

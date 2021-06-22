@@ -46,7 +46,7 @@ namespace flame
 
 		cCameraPrivate* camera = nullptr;
 
-		ShadingType shading_type = ShadingCombined;
+		RenderType render_type = RenderShaded;
 
 		void*					sky_id = nullptr;
 
@@ -83,7 +83,7 @@ namespace flame
 		cCameraPtr get_camera() const override { return camera; }
 		void set_camera(cCameraPtr c) override { camera = c; }
 
-		void set_shading(ShadingType type) override { shading_type = type; }
+		void set_render_type(RenderType type) override { render_type = type; }
 
 		void* get_sky_id() override { return sky_id; }
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
@@ -91,8 +91,8 @@ namespace flame
 
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		uint add_armature(uint bones_count, const mat4* bones) override;
-		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id) override;
-		void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, uint material_id) override;
+		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags) override;
+		void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint material_id, ShadingFlags flags) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }

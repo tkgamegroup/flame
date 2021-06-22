@@ -359,7 +359,8 @@
 //			{
 //				InstanceCB cb(device);
 //
-//				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, output_size, 0, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+//				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, output_size, 0, 1, 
+//					SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 //				cb->image_barrier(back_image.get(), { 0U, back_image->levels, 0U, 1U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 //				back_framebuffers.resize(back_image->levels);
 //				back_nearest_descriptorsets.resize(back_image->levels);

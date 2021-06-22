@@ -21,13 +21,10 @@ namespace flame
 
 		virtual const char* get_height_map() const = 0;
 		virtual void set_height_map(const char* name) = 0;
-		virtual const char* get_normal_map() const = 0;
-		virtual void set_normal_map(const char* name) = 0;
 		virtual const char* get_material_name() const = 0;
 		virtual void set_material_name(const char* name) = 0;
 
 		virtual graphics::Image* get_height_texture() const = 0;
-		virtual graphics::Image* get_normal_texture() const = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cTerrain* create(void* parms = nullptr);
 	};
