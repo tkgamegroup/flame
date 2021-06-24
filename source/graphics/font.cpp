@@ -34,7 +34,7 @@ namespace flame
 
 			image.reset(new ImagePrivate(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
 			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-			view = new ImageViewPrivate(image.get(), true, ImageView2D, {}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
+			view = image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 		}
 
 		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)

@@ -351,27 +351,6 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageViewType to_backend(ImageViewType t)
-		{
-			switch (t)
-			{
-				case ImageView1D:
-					return VK_IMAGE_VIEW_TYPE_1D;
-				case ImageView2D:
-					return VK_IMAGE_VIEW_TYPE_2D;
-				case ImageView3D:
-					return VK_IMAGE_VIEW_TYPE_3D;
-				case ImageViewCube:
-					return VK_IMAGE_VIEW_TYPE_CUBE;
-				case ImageView1DArray:
-					return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-				case ImageView2DArray:
-					return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-				case ImageViewCubeArray:
-					return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-			}
-		}
-
 		inline VkComponentSwizzle to_backend(Swizzle s)
 		{
 			switch (s)

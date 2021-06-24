@@ -429,7 +429,6 @@ namespace flame
 		graphics::PipelineLayout* pll_terrain_gbuf;
 
 		UniPtr<graphics::Framebuffer> fb_gbuf;
-		UniPtr<graphics::Framebuffer> fb_def;
 
 		std::vector<MaterialPipeline>	pl_mats[MaterialUsageCount];
 		MaterialPipeline pl_wireframe_mesh;
@@ -1389,10 +1388,8 @@ namespace flame
 
 		tar_sz = ivs[0]->get_image()->get_size();
 
-		img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+		img_dst.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		ds_back->set_image(DSL_post::image_binding, 0, img_back->get_view(0), sp_nearest);
-		ds_back->update();
 
 		auto& nd = *_nd;
 
@@ -1404,16 +1401,12 @@ namespace flame
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 
 		{
-			graphics::ImageView* vs[3];
-			vs[0] = nd.img_col_met->get_view();
-			vs[1] = nd.img_nor_rou->get_view();
-			vs[2] = nd.img_dep->get_view();
+			graphics::ImageView* vs[] = {
+				nd.img_col_met->get_view(),
+				nd.img_nor_rou->get_view(),
+				nd.img_dep->get_view()
+			};
 			nd.fb_gbuf.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"gbuffer.rp"), _countof(vs), vs));
-		}
-
-		{
-			auto iv = img_back->get_view();
-			nd.fb_def.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"deferred/deferred.rp"), 1, &iv));
 		}
 
 		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
@@ -1695,7 +1688,7 @@ namespace flame
 			cb->image_barrier(nd.img_nor_rou.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(nd.img_dep.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 
-			cb->begin_renderpass(nullptr, nd.fb_def.get());
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 			switch (render_type)
 			{
 			case RenderNormalData:
@@ -1714,10 +1707,10 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
-			cb->image_barrier(img_back.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
 			cb->bind_pipeline(nd.pl_gamma);
-			cb->bind_descriptor_set(0, ds_back.get());
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
 			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(render_type == RenderShaded ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
@@ -1827,8 +1820,6 @@ namespace flame
 		auto iv_white = img_white->get_view();
 		auto iv_black = img_black->get_view();
 
-		ds_back.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"post/post.dsl")));
-
 		auto& ed = *_ed;
 
 		ed.pl_element = graphics::Pipeline::get(device, L"element/element.pl");
@@ -1904,9 +1895,9 @@ namespace flame
 			nd.img_dir_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, shadow_map_size, 1, 4,
 				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
 			nd.img_dir_shadow_maps[i]->change_layout(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly);
-			for (auto j = 0; j < 4; j++)
+			for (auto j = 0U; j < 4; j++)
 			{
-				auto iv = graphics::ImageView::create(nd.img_dir_shadow_maps[i].get(), true, graphics::ImageView2D, { 0U, 1U, (uint)j, 1U });
+				auto iv = nd.img_dir_shadow_maps[i]->get_view({ 0U, 1U, j, 1U });
 				nd.fb_dir_shadow_maps[i * 4 + j].reset(graphics::Framebuffer::create(device, rp_d16, 1, &iv));
 			}
 		}
@@ -1917,9 +1908,9 @@ namespace flame
 			nd.img_pt_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
 				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment, true));
 			nd.img_pt_shadow_maps[i]->change_layout(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly);
-			for (auto j = 0; j < 6; j++)
+			for (auto j = 0U; j < 6; j++)
 			{
-				auto iv = graphics::ImageView::create(nd.img_pt_shadow_maps[i].get(), true, graphics::ImageView2D, { 0U, 1U, (uint)j, 1U });
+				auto iv = nd.img_pt_shadow_maps[i]->get_view({ 0U, 1U, j, 1U });
 				nd.fb_pt_shadow_maps[i * 6 + j].reset(graphics::Framebuffer::create(device, rp_d16, 1, &iv));
 			}
 		}
@@ -1931,12 +1922,12 @@ namespace flame
 		auto sp_shadow = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
-			auto iv = graphics::ImageView::create(nd.img_dir_shadow_maps[i].get(), true, graphics::ImageView2DArray, { 0, 1, 0, 4 });
+			auto iv = nd.img_dir_shadow_maps[i]->get_view({ 0, 1, 0, 4 });
 			nd.ds_light->set_image(DSL_light::dir_shadow_maps_binding, i, iv, sp_shadow);
 		}
 		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
 		{
-			auto iv = graphics::ImageView::create(nd.img_pt_shadow_maps[i].get(), true, graphics::ImageViewCube, { 0, 1, 0, 6 });
+			auto iv = nd.img_pt_shadow_maps[i]->get_view({ 0, 1, 0, 6 });
 			nd.ds_light->set_image(DSL_light::pt_shadow_maps_binding, i, iv, sp_shadow);
 		}
 		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, iv_black, sp_linear);

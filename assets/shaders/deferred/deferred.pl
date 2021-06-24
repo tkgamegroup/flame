@@ -5,5 +5,5 @@
     <shader filename="deferred/deferred.frag"/>
   </shaders>
   <layout filename="deferred/deferred.pll"/>
-  <renderpass filename="deferred/deferred.rp" index="0"/>
+  <renderpass filename="rgba16.rp" index="0"/>
 </pipeline>

@@ -34,7 +34,7 @@ namespace flame
 			return 0;
 		}
 
-		std::vector<ImagePrivate*> __images;
+		std::vector<ImagePrivate*> __images; // for debug: get image ptr from vulkan handle
 
 		void ImagePrivate::build_sizes(const uvec2& size)
 		{
@@ -45,15 +45,6 @@ namespace flame
 				s.x >>= 1;
 				s.y >>= 1;
 			}
-		}
-
-		void ImagePrivate::build_default_views()
-		{
-			views.resize(levels);
-			for (auto i = 0; i < levels; i++)
-				views[i].reset(new ImageViewPrivate(this, false, ImageView2D, { (uint)i }));
-			if (levels > 1 || layers > 1)
-				views.emplace_back(new ImageViewPrivate(this, false, !is_cube ? ImageView2D : ImageViewCube, { 0U, levels, 0U, layers }));
 		}
 
 		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
@@ -103,8 +94,6 @@ namespace flame
 			chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &vk_memory));
 
 			chk_res(vkBindImageMemory(device->vk_device, vk_image, vk_memory, 0));
-
-			build_default_views();
 		}
 
 		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native) :
@@ -120,8 +109,6 @@ namespace flame
 			build_sizes(size);
 
 			vk_image = (VkImage)native;
-
-			build_default_views();
 		}
 
 		ImagePrivate::~ImagePrivate()
@@ -135,6 +122,100 @@ namespace flame
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
 			}
+		}
+
+		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle)
+		{
+			uint64 key;
+			{
+				uint hi;
+				uint lo;
+				hi = (sub.base_level & 0xff) << 24;
+				hi |= (sub.level_count & 0xff) << 16;
+				hi |= (sub.base_layer & 0xff) << 8;
+				hi |= sub.layer_count & 0xff;
+				lo = (swizzle.r & 0xff) << 24;
+				lo |= (swizzle.g & 0xff) << 16;
+				lo |= (swizzle.b & 0xff) << 8;
+				lo |= swizzle.a & 0xff;
+				key = (((uint64)hi) << 32) | ((uint64)lo);
+			}
+
+			auto it = views.find(key);
+			if (it != views.end())
+				return it->second.get();
+
+			auto iv = new ImageViewPrivate(this, sub, swizzle);
+			views.emplace(key, iv);
+			return iv;
+		}
+
+		static DescriptorSetLayoutPrivate* simple_dsl = nullptr;
+
+		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp)
+		{
+			auto key = (base_level & 0xff) << 24;
+			key |= (base_layer & 0xff) << 16;
+			key |= (uint)sp & 0xffff;
+
+			auto it = read_dss.find(key);
+			if (it != read_dss.end())
+				return it->second.get();
+
+			if (!simple_dsl)
+			{
+				DescriptorBindingInfo b;
+				b.type = DescriptorSampledImage;
+				simple_dsl = new DescriptorSetLayoutPrivate(device, { &b, 1 });
+			}
+
+			auto ds = new DescriptorSetPrivate(device->dsp.get(), simple_dsl);
+			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }), sp);
+			ds->update();
+			read_dss.emplace(key, ds);
+			return ds;
+		}
+
+		static std::vector<RenderpassPrivate*> simple_rps;
+
+		FramebufferPtr ImagePrivate::get_shader_write_dst(uint base_level, uint base_layer, bool clear)
+		{
+			auto key = (base_level & 0xff) << 24;
+			key |= (base_layer & 0xff) << 16;
+			key |= (uint)clear & 0xffff;
+
+			auto it = write_fbs.find(key);
+			if (it != write_fbs.end())
+				return it->second.get();
+
+			RenderpassPrivate* rp = nullptr;
+			auto load_op = clear ? AttachmentClear : AttachmentDontCare;
+			for (auto& r : simple_rps)
+			{
+				auto& att = r->attachments[0];
+				if (att.format == format && att.load_op == load_op)
+				{
+					rp = r;
+					break;
+				}
+			}
+			if (!rp)
+			{
+				RenderpassAttachmentInfo att;
+				att.format = format;
+				att.load_op = load_op;
+				RenderpassSubpassInfo sp;
+				sp.color_attachments_count = 1;
+				int col_ref[] = { 0 };
+				sp.color_attachments = col_ref;
+				rp = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
+				simple_rps.push_back(rp);
+			}
+
+			ImageViewPrivate* vs[] = { get_view({ base_level, 1, base_layer, 1 }) };
+			auto fb = new FramebufferPrivate(device, rp, vs);
+			write_fbs.emplace(key, fb);
+			return fb;
 		}
 
 		void ImagePrivate::change_layout(ImageLayout src_layout, ImageLayout dst_layout)
@@ -179,14 +260,13 @@ namespace flame
 				sample_tool.initialized = true;
 			}
 
-			std::unique_ptr<ImageViewPrivate> iv;
-			iv.reset(new ImageViewPrivate(this, false, ImageView2D, { level, 1, layer, 1 }));
+			auto iv = new ImageViewPrivate(this, { level, 1, layer, 1 });
 
 			std::unique_ptr<DescriptorSetPrivate> ds;
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"image_sample/image_sample.dsl");
 				ds.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				ds->set_image(dsl->find_binding("tex"), 0, iv.get(), SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
+				ds->set_image(dsl->find_binding("tex"), 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 				ds->set_buffer(dsl->find_binding("Results"), 0, sample_tool.buf_res);
 				ds->update();
 			}
@@ -432,10 +512,9 @@ namespace flame
 			return ImagePrivate::get((DevicePrivate*)device, filename, srgb);
 		}
 
-		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSub& sub, const ImageSwizzle& swizzle) :
+		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, const ImageSub& sub, const ImageSwizzle& swizzle) :
 			image(image),
 			device(image->device),
-			type(type),
 			sub(sub),
 			swizzle(swizzle)
 		{
@@ -448,7 +527,12 @@ namespace flame
 			info.components.b = to_backend(swizzle.b);
 			info.components.a = to_backend(swizzle.a);
 			info.image = image->vk_image;
-			info.viewType = to_backend(type);
+			if (image->is_cube && sub.base_layer == 0 && sub.layer_count == 6)
+				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			else if (sub.layer_count > 1)
+				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			else
+				info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			info.format = to_backend(image->format);
 			info.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = sub.base_level;
@@ -457,19 +541,11 @@ namespace flame
 			info.subresourceRange.layerCount = sub.layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &vk_image_view));
-
-			if (auto_released)
-				image->views.emplace_back(this);
 		}
 
 		ImageViewPrivate::~ImageViewPrivate()
 		{
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
-		}
-
-		ImageView* ImageView::create(Image* image, bool auto_released, ImageViewType type, const ImageSub& sub, const ImageSwizzle& swizzle)
-		{
-			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, sub, swizzle);
 		}
 
 		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) :

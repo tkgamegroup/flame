@@ -53,7 +53,7 @@ namespace flame
 		{
 			auto img = graphics::Image::get(device, src.c_str(), false);
 			fassert(img);
-			iv = img->get_view(0);
+			iv = img->get_view();
 
 			res_id = s_renderer->find_element_res(iv);
 			if (res_id == -1)
@@ -63,7 +63,7 @@ namespace flame
 		{
 			atlas = graphics::ImageAtlas::get(device, src.c_str());
 			fassert(atlas);
-			iv = atlas->get_image()->get_view(0);
+			iv = atlas->get_image()->get_view();
 
 			res_id = s_renderer->find_element_res(iv);
 			if (res_id == -1)

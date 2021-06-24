@@ -57,10 +57,9 @@ namespace flame
 
 			virtual const wchar_t* get_filename() const = 0;
 
-			// [0, level-1]: view of that level
-			// [level]: view of all levels and layers
-			// [>level]: auto released views
-			virtual ImageViewPtr get_view(uint idx = 0) const = 0;
+			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) = 0;
+			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) = 0;
+			virtual FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, bool clear = false) = 0;
 
 			virtual void change_layout(ImageLayout src_layout, ImageLayout dst_layout) = 0;
 			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
@@ -71,24 +70,18 @@ namespace flame
 
 			virtual void save(const wchar_t* filename) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, 
-				SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, 
+				ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
 			FLAME_GRAPHICS_EXPORTS static Image* get(Device* device, const wchar_t* filename, bool srgb);
 		};
 
 		struct ImageView
 		{
-			virtual void release() = 0;
-
 			virtual ImagePtr get_image() const = 0;
 
-			virtual ImageViewType get_type() const = 0;
 			virtual ImageSub get_sub() const = 0;
 			virtual ImageSwizzle get_swizzle() const = 0;
-
-			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* image, bool auto_released, 
-				ImageViewType type = ImageView2D, const ImageSub& sub = {}, const ImageSwizzle& swizzle = {});
 		};
 
 		struct Sampler

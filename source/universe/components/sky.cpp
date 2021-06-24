@@ -65,8 +65,8 @@ namespace flame
 			box_texture = graphics::Image::get(device, fn.c_str(), true);
 			if (box_texture)
 			{
-				auto lv = (int)box_texture->get_levels();
-				box_texture_view = box_texture->get_view(lv);
+				auto lv = (uint)box_texture->get_levels();
+				box_texture_view = box_texture->get_view({ 0, lv, 0, 6 });
 				lv--;
 				vec4 color = vec4(0.f);
 				for (auto i = 0; i < 6; i++)
@@ -85,7 +85,7 @@ namespace flame
 				fn = ppath / fn;
 			irr_texture = graphics::Image::get(device, fn.c_str(), true);
 			if (irr_texture)
-				irr_texture_view = irr_texture->get_view(irr_texture->get_levels());
+				irr_texture_view = irr_texture->get_view({ 0, irr_texture->get_levels(), 0, 6 });
 		}
 		{
 			auto fn = std::filesystem::path(rad_texture_path);
@@ -93,7 +93,7 @@ namespace flame
 				fn = ppath / fn;
 			rad_texture = graphics::Image::get(device, fn.c_str(), true);
 			if (rad_texture)
-				rad_texture_view = rad_texture->get_view(rad_texture->get_levels());
+				rad_texture_view = rad_texture->get_view({ 0, rad_texture->get_levels(), 0, 6 });
 		}
 		{
 			auto fn = std::filesystem::path(lut_texture_path);

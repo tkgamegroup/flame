@@ -263,7 +263,8 @@ namespace flame
 			return RenderpassPrivate::get((DevicePrivate*)device, filename);
 		}
 
-		Renderpass* Renderpass::create(Device* device, uint attachments_count, const RenderpassAttachmentInfo* attachments, uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const uvec2* dependencies)
+		Renderpass* Renderpass::create(Device* device, uint attachments_count, const RenderpassAttachmentInfo* attachments, 
+			uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const uvec2* dependencies)
 		{
 			return new RenderpassPrivate((DevicePrivate*)device, { attachments, attachments_count }, { subpasses, subpasses_count }, { dependencies, dependency_count });
 		}

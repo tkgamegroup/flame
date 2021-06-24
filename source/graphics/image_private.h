@@ -23,11 +23,13 @@ namespace flame
 
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
-			std::vector<std::unique_ptr<ImageViewPrivate>> views;
+			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
+			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
+			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
 
 			void build_sizes(const uvec2& size);
-			void build_default_views();
-			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
+				ImageUsageFlags usage, bool is_cube = false);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native);
 			~ImagePrivate();
 
@@ -45,7 +47,9 @@ namespace flame
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
-			ImageViewPtr get_view(uint idx) const override { return views[idx].get(); }
+			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
+			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) override;
+			FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, bool clear = false) override;
 
 			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
 			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
@@ -68,18 +72,14 @@ namespace flame
 			DevicePtr device;
 			ImagePtr image;
 
-			ImageViewType type;
 			ImageSub sub;
 			ImageSwizzle swizzle;
 
 			VkImageView vk_image_view;
 
-			ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSub& sub = {}, const ImageSwizzle& swizzle = {});
+			ImageViewPrivate(ImagePrivate* image, const ImageSub& sub = {}, const ImageSwizzle& swizzle = {});
 			~ImageViewPrivate();
 
-			void release() override { delete this; }
-
-			ImageViewType get_type() const override { return type; }
 			ImageSub get_sub() const override { return sub; }
 			ImageSwizzle get_swizzle() const override { return swizzle; }
 

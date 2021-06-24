@@ -173,19 +173,6 @@ namespace flame
 
 		inline ImageAspectFlags operator| (ImageAspectFlags a, ImageAspectFlags b) { return (ImageAspectFlags)((int)a | (int)b); }
 
-		enum ImageViewType
-		{
-			ImageView1D,
-			ImageView2D,
-			ImageView3D,
-			ImageViewCube,
-			ImageView1DArray,
-			ImageView2DArray,
-			ImageViewCubeArray,
-
-			ImageViewMax = 0xffffffff
-		};
-
 		struct ImageSub
 		{
 			uint base_level = 0;
