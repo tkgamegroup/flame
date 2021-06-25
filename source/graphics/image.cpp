@@ -38,20 +38,35 @@ namespace flame
 
 		void ImagePrivate::build_sizes(const uvec2& size)
 		{
+			auto auto_lvs = false;
+			if (levels == 0)
+			{
+				auto_lvs = true;
+				levels = 16;
+			}
 			auto s = size;
 			for (auto i = 0; i < levels; i++)
 			{
-				sizes.push_back(max(s, uvec2(1U)));
-				s.x >>= 1;
-				s.y >>= 1;
+				sizes.push_back(s);
+				s.x /= 2;
+				s.y /= 2;
+				if (auto_lvs && s.x == 0 && s.y == 0)
+				{
+					levels = i + 1;
+					break;
+				}
+				if (s.x == 0)
+					s.x = 1;
+				if (s.y == 0)
+					s.y = 1;
 			}
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint lvs, uint layers, SampleCount sample_count, 
 			ImageUsageFlags usage, bool is_cube) :
 			device(device),
 			format(format),
-			levels(levels),
+			levels(lvs),
 			layers(layers),
 			sample_count(sample_count),
 			usage(usage),
@@ -154,6 +169,9 @@ namespace flame
 
 		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp)
 		{
+			if (!sp)
+				sp = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
+
 			auto key = (base_level & 0xff) << 24;
 			key |= (base_layer & 0xff) << 16;
 			key |= (uint)sp & 0xffff;
@@ -205,9 +223,14 @@ namespace flame
 				att.format = format;
 				att.load_op = load_op;
 				RenderpassSubpassInfo sp;
-				sp.color_attachments_count = 1;
-				int col_ref[] = { 0 };
-				sp.color_attachments = col_ref;
+				if (format >= Format_Color_Begin && format <= Format_Color_End)
+				{
+					sp.color_attachments_count = 1;
+					int col_ref[] = { 0 };
+					sp.color_attachments = col_ref;
+				}
+				else
+					sp.depth_attachment = 0;
 				rp = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
 				simple_rps.push_back(rp);
 			}

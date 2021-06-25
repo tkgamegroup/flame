@@ -1,7 +1,7 @@
 camera = {
 	node = entity.find_component("cNode"),
 	camera = entity.find_component("cCamera"),
-	length = 30,
+	length = 10,
 	yaw = 0,
 	pitch = -60
 }

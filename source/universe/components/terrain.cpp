@@ -45,12 +45,6 @@ namespace flame
 	{
 		if (height_map_id != -1 && material_id != -1)
 			s_renderer->draw_terrain(node, blocks, tess_levels, height_map_id, material_id, shading_flags);
-
-		//auto flags = s_renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
-		//if (entity->state & StateSelected)
-		//	flags = flags | graphics::ShadeOutline;
-		//canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
-		//	flags, entity);
 	}
 
 	void cTerrainPrivate::on_added()

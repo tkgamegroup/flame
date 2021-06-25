@@ -90,10 +90,7 @@ namespace flame
 	void cMeshPrivate::draw(sRenderer* s_renderer)
 	{
 		if (mesh_id != -1)
-			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani->armature_id, shading_flags);
-		//auto flags = s_renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
-		//if (entity->state & StateSelected)
-		//	flags = flags | graphics::ShadeOutline;
+			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani->armature_id, shading_flags | ShadingOutline);
 	}
 
 	bool cMeshPrivate::measure(AABB* b)

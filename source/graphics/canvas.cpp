@@ -1,16 +1,3 @@
-//namespace flame
-//{
-//	namespace graphics
-//	{
-//		struct CmdBlur : Cmd
-//		{
-//			Rect range;
-//			uint radius;
-//
-//			CmdBlur(const Rect& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
-//		};
-//
-
 //if (aa) // fill aa
 //{
 //	auto vtx_cnt0 = cmd->vertices_count;
@@ -232,10 +219,6 @@
 //			//mesh_armature_pickup_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "PICKUP");
 //			//terrain_pickup_pipeline = get_material_pipeline(MaterialForTerrain, L"", "PICKUP");
 //
-//			//mesh_outline_pipeline = get_material_pipeline(MaterialForMesh, L"", "OUTLINE");
-//			//mesh_armature_outline_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "OUTLINE");
-//			//terrain_outline_pipeline = get_material_pipeline(MaterialForTerrain, L"", "OUTLINE");
-//
 //			//{
 //			//	ShaderPrivate* shaders[] = {
 //			//		ShaderPrivate::get(device, L"plain/plain.vert"),
@@ -313,38 +296,6 @@
 //			//	};
 //			//	filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
 //			//}
-//
-//			//auto box_frag = ShaderPrivate::get(device, L"post/box.frag");
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		fullscreen_vert,
-//			//		box_frag
-//			//	};
-//			//	downsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
-//			//}
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		fullscreen_vert,
-//			//		box_frag
-//			//	};
-//			//	BlendOption bo;
-//			//	bo.enable = true;
-//			//	bo.src_color = BlendFactorOne;
-//			//	bo.dst_color = BlendFactorOne;
-//			//	bo.src_alpha = BlendFactorOne;
-//			//	bo.dst_alpha = BlendFactorOne;
-//			//	upsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
-//			//}
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		fullscreen_vert,
-//			//		ShaderPrivate::get(device, L"post/gamma.frag")
-//			//	};
-//			//	gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
-//			//}
 //		}
 //
 //		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
@@ -356,34 +307,14 @@
 // 
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
-//			{
 //				InstanceCB cb(device);
 //
-//				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, output_size, 0, 1, 
-//					SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-//				cb->image_barrier(back_image.get(), { 0U, back_image->levels, 0U, 1U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-//				back_framebuffers.resize(back_image->levels);
-//				back_nearest_descriptorsets.resize(back_image->levels);
-//				back_linear_descriptorsets.resize(back_image->levels);
-//				for (auto lv = 0; lv < back_image->levels; lv++)
-//				{
-//					auto iv = back_image->views[lv].get();
-//					back_framebuffers[lv].reset(new FramebufferPrivate(device, hdr ? preferences->rgba16_renderpass.get() : preferences->rgba8_renderpass.get(), { &iv, 1 }));
-//					back_nearest_descriptorsets[lv].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//					back_linear_descriptorsets[lv].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-//					back_nearest_descriptorsets[lv]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
-//					back_linear_descriptorsets[lv]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
-//				}
-//
-//				{
 //					pickup_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, output_size, 1, 1, SampleCount_1, ImageUsageTransferSrc | ImageUsageAttachment));
 //					ImageViewPrivate* vs[] = {
 //						pickup_image->views[0].get(),
 //						depth_image->views[0].get()
 //					};
 //					pickup_framebuffer.reset(new FramebufferPrivate(device, preferences->pickup_renderpass.get(), vs));
-//				}
-//			}
 //		}
 // 
 //		/*
@@ -571,145 +502,12 @@
 //			return userdatas[index - 1];
 //		}
 //
-//		void CanvasPrivate::add_blur(const Rect& _range, uint radius)
-//		{
-//			auto range = Rect(
-//				max(_range.a.x, 0.f),
-//				max(_range.a.y, 0.f),
-//				min(_range.b.x, (float)output_size.x),
-//				min(_range.b.y, (float)output_size.y));
-//			cmds.emplace_back(new CmdBlur(range, radius));
-//		}
-//
 //		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 //		{
 //			for (auto& p : passes)
 //			{
 //				switch (p.type)
 //				{
-//				case Pass3D:
-//				{
-//					std::vector<std::pair<MeshInfo*, uint>> outline_meshes;
-//					std::vector<std::pair<TerrainInfo*, uint>> outline_terrains;
-//
-//					if (!outline_meshes.empty() || !outline_terrains.empty())
-//					{
-//						auto cv = vec4(0.f);
-//						cb->begin_renderpass(hdr_image ? preferences->rgba16c_renderpass.get() : preferences->rgba8c_renderpass.get(), back_framebuffers[0].get(), &cv);
-//						if (!outline_meshes.empty())
-//						{
-//							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
-//							for (auto& mi : outline_meshes)
-//							{
-//								auto& m = *mi.first;
-//								auto mrm = m.res;
-//								auto mat = material_resources[mrm->material_id].get();
-//								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//								if (m.deformer)
-//								{
-//									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-//									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-//								}
-//								else
-//									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-//								if (m.deformer)
-//									cb->bind_pipeline(preferences->mesh_armature_outline_pipeline);
-//								else
-//									cb->bind_pipeline(preferences->mesh_outline_pipeline);
-//								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mi.second << 16) + mrm->material_id);
-//							}
-//						}
-//						if (!outline_terrains.empty())
-//						{
-//							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(1.f, 1.f, 0.f, 1.f));
-//							for (auto& ti : outline_terrains)
-//							{
-//								auto& t = *ti.first;
-//								cb->bind_pipeline(preferences->terrain_outline_pipeline);
-//								cb->draw(4, t.blocks.x * t.blocks.y, 0, ti.second << 16);
-//							}
-//						}
-//						cb->end_renderpass();
-//
-//						auto lvs = min(back_image->levels, 3U);
-//						for (auto i = 0; i < lvs - 1; i++)
-//						{
-//							cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//							cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
-//							cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
-//							cb->bind_pipeline(preferences->downsample_pipeline.get());
-//							//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-//							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
-//							cb->draw(3, 1, 0, 0);
-//							cb->end_renderpass();
-//						}
-//						for (auto i = lvs - 1; i > 0; i--)
-//						{
-//							cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//							cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
-//							cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
-//							cb->bind_pipeline(preferences->upsample_pipeline.get());
-//							//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-//							//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
-//							cb->draw(3, 1, 0, 0);
-//							cb->end_renderpass();
-//						}
-//
-//						cb->image_barrier(back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
-//						cb->set_viewport(curr_viewport);
-//						cb->begin_renderpass(nullptr, back_framebuffers[0].get());
-//						if (!outline_meshes.empty())
-//						{
-//							cb->bind_pipeline_layout(preferences->mesh_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
-//							for (auto& mi : outline_meshes)
-//							{
-//								auto& m = *mi.first;
-//								auto mrm = m.res;
-//								auto mat = material_resources[mrm->material_id].get();
-//								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-//								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-//								if (m.deformer)
-//								{
-//									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-//									//cb->bind_descriptor_set(S<"armature"_h>, m.deformer->descriptorset.get());
-//								}
-//								else
-//									//cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-//								if (m.deformer)
-//									cb->bind_pipeline(preferences->mesh_armature_outline_pipeline);
-//								else
-//									cb->bind_pipeline(preferences->mesh_outline_pipeline);
-//								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mi.second << 16) + mrm->material_id);
-//							}
-//						}
-//						if (!outline_terrains.empty())
-//						{
-//							cb->bind_pipeline_layout(preferences->terrain_pipeline_layout);
-//							//cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-//							//cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-//							//cb->push_constant_ht(S<"f"_h>, vec4(0.f, 0.f, 0.f, 0.f));
-//							for (auto& ti : outline_terrains)
-//							{
-//								auto& t = *ti.first;
-//								cb->bind_pipeline(preferences->terrain_outline_pipeline);
-//								cb->draw(4, t.blocks.x * t.blocks.y, 0, ti.second << 16);
-//							}
-//						}
-//						cb->end_renderpass();
-//					}
-//
-//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//				}
-//					break;
 //				case PassLines:
 //				{
 //					if (line_off == 0)
@@ -845,8 +643,5 @@
 //					break;
 //				}
 //			}
-// 
-//			cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutShaderReadOnly, ImageLayoutPresent);
 //		}
 //	}
-//}
