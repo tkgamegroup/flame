@@ -18,7 +18,7 @@ function scatter(range, density, prefabs, probability, model_scale)
     local cx = math.floor(range.z / density) + 1
     local cy = math.floor(range.w / density) + 1
     local num = cx * cy
-    local ptr_samples = malloc_vec4(num)
+    local ptr_samples = flame_malloc(num * 16)
 
     height_texture.get_samples(vec4(range.x / scale.x, range.y / scale.z, 
         density / scale.x, density / scale.z), vec2(cx, cy), ptr_samples, 0, 0)

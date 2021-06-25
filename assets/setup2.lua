@@ -7,30 +7,6 @@ e_floating_type = e_basic["FloatingType"]
 e_char_type = e_basic["CharType"]
 e_else_type = e_basic["ElseType"]
 
-function malloc_pointer(n)
-	return flame_malloc(8 * n)
-end
-
-function malloc_float(n)
-	return flame_malloc(4 * n)
-end
-
-function malloc_vec2(n)
-	return flame_malloc(8 * n)
-end
-
-function malloc_vec3(n)
-	return flame_malloc(12 * n)
-end
-
-function malloc_vec4(n)
-	return flame_malloc(16 * n)
-end
-
-function set_pointer(p, i, v)
-    flame_set(p, 8 * i, e_type_pointer, e_else_type, 1, 1, v)
-end
-
 function set_float(p, i, v)
     flame_set(p, 4 * i, e_type_data, e_floating_type, 1, 1, v)
 end
@@ -45,10 +21,6 @@ end
 
 function set_vec4(p, i, v)
     flame_set(p, 16 * i, e_type_data, e_floating_type, 4, 1, v)
-end
-
-function get_pointer(p, i)
-    return flame_get(p, 8 * i, e_type_pointer, e_else_type, 1, 1)
 end
 
 function get_float(p, i)

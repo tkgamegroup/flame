@@ -274,7 +274,10 @@ namespace flame
 					{
 						void* ret;
 						ret = *(void**)((char*)obj + off);
-						lua_pushlightuserdata(state, ret);
+						if (ret)
+							lua_pushlightuserdata(state, ret);
+						else
+							lua_pushnil(state);
 					}
 						break;
 					}

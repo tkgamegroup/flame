@@ -50,9 +50,14 @@ function get_callback_slot(f)
 end
 
 function make_obj(o, n)
-	local udt = find_udt(n)
+	local udt = nil
+	if type(n) == "string" then
+		udt = find_udt(n)
+	else
+		udt = n
+	end
 	if (udt == nil) then
-		if o.p then print("script: cannot find udt "..n) end
+		print("script: cannot find udt "..n)
 		return
 	end
 	if udt.base ~= "" then
