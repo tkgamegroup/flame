@@ -615,7 +615,7 @@ namespace flame
 				scr_ins->get_global("callbacks");
 				scr_ins->get_member(nullptr, c.data<uint>());
 				scr_ins->get_member("f");
-				scr_ins->push_pointer((void*)msg);
+				scr_ins->push_uint(msg);
 				scr_ins->push_pointer(parm1);
 				scr_ins->push_pointer(parm2);
 				scr_ins->call(3);
@@ -772,6 +772,7 @@ namespace flame
 			{
 				events.erase(it);
 				looper().remove_event(ev);
+				return;
 			}
 		}
 	}

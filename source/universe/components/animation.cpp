@@ -76,8 +76,6 @@ namespace flame
 			looper().remove_event(event);
 			event = nullptr;
 		}
-		if (entity)
-			entity->component_data_changed(this, S<"src"_h>);
 	}
 
 	void cAnimationPrivate::stop_at(uint id, int frame)
@@ -85,7 +83,7 @@ namespace flame
 		stop();
 
 		auto& a = actions[id];
-		a.apply(bones.data(), frame < 0 ? a.total_frame + frame : frame);
+		peeding_pose = { id, frame < 0 ? a.total_frame + frame : frame };
 	}
 
 	void cAnimationPrivate::set_loop(bool l)
@@ -212,7 +210,7 @@ namespace flame
 	void cAnimationPrivate::advance()
 	{
 		auto& a = actions[playing];
-		a.apply(bones.data(), frame);
+		peeding_pose = { playing, frame };
 
 		frame++;
 		if (frame == a.total_frame)
@@ -226,6 +224,12 @@ namespace flame
 	{
 		if (!bones.empty())
 		{
+			if (peeding_pose.first != -1)
+			{
+				auto& a = actions[peeding_pose.first];
+				a.apply(bones.data(), peeding_pose.second);
+				peeding_pose.first = -1;
+			}
 			for (auto i = 0; i < bones.size(); i++)
 			{
 				auto& b = bones[i];

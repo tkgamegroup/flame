@@ -1,5 +1,7 @@
 function make_character(entity)
 	local character = {
+		dead = false,
+
 		entity = entity,
 		node = entity.find_component("cNode"),
 		animation = entity.find_component("cAnimation"),
@@ -16,6 +18,8 @@ function make_character(entity)
 		target = nil,
 		attack_tick = 0,
 		attacking = false,
+
+		on_die = nil,
 	
 		HP = 100,
 		HP_MAX = 100,
@@ -28,9 +32,15 @@ function make_character(entity)
 	character.ui_bar.bar = character.ui_bar.get_child(1).find_component("cElement")
 	__ui.add_child(character.ui_bar)
 
-	character.destroy = function()
+	character.die = function()
+		if character.on_die then
+			character.on_die()
+		end
+
+		character.entity.remove_event(character.event)
 		character.entity.get_parent().remove_child(character.entity)
-		character.ui_bar.get_parent().remove_child()
+		character.ui_bar.get_parent().remove_child(character.ui_bar)
+		character.dead = true
 	end
 
 	character.update_dir = function()
@@ -47,6 +57,9 @@ function make_character(entity)
 			character.target_pos = t
 			character.attacking = false
 		elseif s == "attack_target" then
+			if character.attacking and character.target ~= t then
+				character.attacking = false
+			end
 			character.target = t
 		end
 		character.state = s
@@ -61,10 +74,7 @@ function make_character(entity)
 					local v = vec2(tp.x, tp.z) - vec2(p.x, p.z)
 					local l, d = length_and_dir_2(v)
 					if l <= character.radius + character.target.radius + 3 then
-						-- damage calculation
-						if character.target.HP >= character.ATTACK_DAMAGE then
-							character.target.HP = character.target.HP - character.ATTACK_DAMAGE
-						end
+						character.target.on_receive_damage(character, character.ATTACK_DAMAGE)
 					end
 				end
 			end
@@ -74,9 +84,17 @@ function make_character(entity)
 		end
 	end, character.animation)
 
+	character.on_receive_damage = function(src, value)
+		if character.HP > value then
+			character.HP = character.HP - value
+		else
+			character.die()
+		end
+	end
+
 	character.change_state("idle")
 
-	character.entity.add_event(function()
+	character.event = character.entity.add_event(function()
 		local p = character.node.get_global_pos()
 
 		character.ui_bar.element.set_pos(camera.camera.world_to_screen(vec3(p.x, p.y + 1.8, p.z)) + vec2(-30, -20))
@@ -101,9 +119,12 @@ function make_character(entity)
 				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 			end
 		elseif character.state == "attack_target" then
-			if not character.target then
+			if not character.target or character.target.dead then
+				character.target = nil
 				character.change_state("idle")
+				return
 			end
+
 			local tp = character.target.node.get_global_pos()
 			local v = vec2(tp.x, tp.z) - vec2(p.x, p.z)
 			local l, d = length_and_dir_2(v)

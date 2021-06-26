@@ -11,17 +11,13 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-      <eNode src="human" name="player" pos="200,65,200" >
-        <cScript>
-           local character = make_character(entity)
-           main_player = make_player(character)
-        </cScript>
-      </eNode>
-      <eNode src="human" name="enemy" pos="190,65,190" >
-        <cScript>
-           local character = make_character(entity)
-           make_enemy(character)
-        </cScript>
+      <eNode is_octree="true" octree_length="400.0">
+        <eNode src="human" name="player" pos="200,65,200" >
+          <cScript>
+             main_player = make_player(make_character(entity))
+          </cScript>
+        </eNode>
+        <cScript src="initialize.lua" />
       </eNode>
     </eNode>
   </eElement>

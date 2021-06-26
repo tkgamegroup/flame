@@ -37,6 +37,7 @@ namespace flame
 		int playing = -1;
 		int frame = -1;
 		void* event = nullptr;
+		std::pair<int, int> peeding_pose = { -1, -1 };
 		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> callbacks;
 
 		~cAnimationPrivate();

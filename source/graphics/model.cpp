@@ -494,11 +494,16 @@ namespace flame
 						n.append_attribute("scale").set_value(to_string(scl).c_str());
 				}
 
-				if (src == scene->mRootNode && !bones.empty())
+				if (src == scene->mRootNode)
 				{
-					auto na = n.append_child("cAnimation");
-					na.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+					if (!bones.empty())
+					{
+						auto na = n.append_child("cAnimation");
+						na.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+					}
 				}
+				else
+					n.append_attribute("assemble_sub").set_value(true);
 
 				if (src->mNumMeshes > 0)
 				{

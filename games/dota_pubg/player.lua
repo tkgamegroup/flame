@@ -1,8 +1,9 @@
 function make_player(character)
 	local player = {
 		character = character,
-		hovered = { p=nil },
-		hovered_pos = vec2(0),
+		hovering = { p=nil },
+		hovering_destroyed_lis = 0,
+		hovering_pos = vec2(0),
 		mpos = vec2(-1000)
 	}
 	
@@ -14,37 +15,43 @@ function make_player(character)
 		local d = normalize_3(camera.camera.screen_to_world(player.mpos) - o)
 		local pe = flame_malloc(8)
 		local pos = s_physics.raycast(o, d, pe)
-		player.hovered_pos = vec2(pos.x, pos.z)
+		player.hovering_pos = vec2(pos.x, pos.z)
 		local p = flame_get(pe, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(pe)
 
-		local hovered = nil
+		local hovering = nil
 		if p then
-			hovered = make_entity(p)
+			hovering = make_entity(p)
 		else
-			hovered = { p=nil }
+			hovering = { p=nil }
 		end
-		if hovered.p ~= player.hovered.p then
-			if player.hovered.p then
-				local e = player.hovered
-				for i=0, e.get_children_count() - 1, 1 do
-					local mesh = e.get_child(i).find_component("cMesh")
-					if mesh.p then
-						mesh.set_shading_flags(e_shading_material)
-					end
-				end
-			end
-			if hovered.p then
-				local e = hovered
-				for i=0, e.get_children_count() - 1, 1 do
-					local mesh = e.get_child(i).find_component("cMesh")
-					if mesh.p then
-						mesh.set_shading_flags(e_shading_material + e_shading_outline)
-					end
+
+		function change_outline(e, f)
+			for i=0, e.get_children_count() - 1, 1 do
+				local mesh = e.get_child(i).find_component("cMesh")
+				if mesh.p then
+					mesh.set_shading_flags(f)
 				end
 			end
 		end
-		player.hovered = hovered
+		if hovering.p ~= player.hovering.p then
+			if player.hovering.p then
+				player.hovering.remove_message_listener(player.hovering_destroyed_lis)
+				change_outline(player.hovering, e_shading_material)
+			end
+			if hovering.p then
+				change_outline(hovering, e_shading_material + e_shading_outline)
+				local hash_destroyed = flame_hash("destroyed")
+				player.hovering_destroyed_lis = hovering.add_message_listener(function(m)
+					if m == hash_destroyed then
+						player.hovering.remove_message_listener(player.hovering_destroyed_lis)
+						player.hovering = { p=nil }
+					end
+				end)
+			end
+
+			player.hovering = hovering
+		end
 	end, 0)
 
 	local scene_receiver = scene.find_component("cReceiver")
@@ -54,15 +61,19 @@ function make_player(character)
 	end)
 
 	scene_receiver.add_mouse_right_down_listener(function(mpos)
-		if player.hovered == nil then
+		if player.hovering == nil then
 			return
 		end
 
-		local name = player.hovered.get_name()
-		if name == "enemy" then
-			player.character.change_state("attack_target", enemies[1].character)
+		local name = player.hovering.get_name()
+		if starts_with(name, "enemy_") then
+			name = string.sub(name, 7)
+			local enemy = enemies[name]
+			if enemy then
+				player.character.change_state("attack_target", enemy.character)
+			end
 		elseif name == "terrain" then
-			player.character.change_state("move_to", player.hovered_pos)
+			player.character.change_state("move_to", player.hovering_pos)
 		end
 	end)
 

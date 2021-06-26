@@ -9,7 +9,7 @@ local height_texture = c_terrain.get_height_texture()
   
 local e_vegetation_root = create_entity("prefabs/node")
 local node = e_vegetation_root.find_component("cNode")
-node.set_pos(pos + vec3(scale.x * 0.5, 0.0, scale.z * 0.5))
+node.set_pos(pos)
 node.set_octree_length(math.max(math.max(scale.x, scale.z), scale.y))
 node.set_is_octree(true)
 terrain.get_parent().add_child(e_vegetation_root, terrain.get_index() + 1)
@@ -24,7 +24,6 @@ function scatter(range, density, prefabs, probability, model_scale)
         density / scale.x, density / scale.z), vec2(cx, cy), ptr_samples, 0, 0)
 
     local n_prefabs = #prefabs
-    local off = vec3(scale.x, 0.0, scale.z) * 0.5;
     local i = 0 
     for y = 0, cy - 1, 1 do
 	    for x = 0, cx - 1, 1 do
@@ -32,7 +31,7 @@ function scatter(range, density, prefabs, probability, model_scale)
                 local sample = get_vec4(ptr_samples, i)
                 local e = prefabs[math.floor(math.random() * n_prefabs) + 1].copy()
                 local node = e.find_component("cNode")
-                node.set_pos(vec3(range.x + (x + math.random() - 0.5) * density, sample.x * scale.y, range.y + (y + math.random() - 0.5) * density) - off)
+                node.set_pos(vec3(range.x + (x + math.random() - 0.5) * density, sample.x * scale.y, range.y + (y + math.random() - 0.5) * density))
                 node.set_euler(vec3(math.random() * 360, 0, 0))
                 node.set_scale(vec3((0.8 + math.random() * 0.4) * model_scale))
                 e_vegetation_root.add_child(e)

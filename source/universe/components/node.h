@@ -30,9 +30,11 @@ namespace flame
 		virtual vec3 get_global_pos() = 0;
 		virtual vec3 get_global_dir(uint idx) = 0;
 
+		virtual bool get_assemble_sub() const = 0;
+		virtual void set_assemble_sub(bool v) = 0;
+
 		virtual bool get_is_octree() const = 0;
 		virtual void set_is_octree(bool v) = 0;
-
 		virtual float get_octree_length() const = 0;
 		virtual void set_octree_length(float len) = 0;
 

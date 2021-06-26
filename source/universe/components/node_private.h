@@ -32,6 +32,8 @@ namespace flame
 		mat4 transform;
 		AABB bounds;
 
+		bool assemble_sub = false;
+
 		bool is_octree = false;
 		float octree_length = 200.f;
 		std::unique_ptr<OctNode> octree;
@@ -58,9 +60,11 @@ namespace flame
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
 
+		bool get_assemble_sub() const override { return assemble_sub; }
+		void set_assemble_sub(bool v) override { assemble_sub = v; }
+
 		bool get_is_octree() const override { return is_octree; }
 		void set_is_octree(bool v) override { is_octree = v; }
-
 		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
 

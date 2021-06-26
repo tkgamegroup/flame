@@ -205,16 +205,19 @@ namespace flame
 					bounds.expand(b);
 				}
 			}
-			// TODO: use children's bounds only when needed
-			//for (auto& c : entity->children)
-			//{
-			//	auto node = c->get_component_i<cNodePrivate>(0);
-			//	if (node)
-			//	{
-			//		node->update_bounds();
-			//		bounds.expand(node->bounds);
-			//	}
-			//}
+
+			if (!assemble_sub)
+			{
+				for (auto& c : entity->children)
+				{
+					auto node = c->get_component_i<cNodePrivate>(0);
+					if (node)
+					{
+						node->update_bounds();
+						bounds.expand(node->bounds);
+					}
+				}
+			}
 
 			if (entity)
 				entity->component_data_changed(this, S<"bounds"_h>);
@@ -258,12 +261,11 @@ namespace flame
 		{
 			bounds_dirty = true;
 
-			// TODO: populate bounds dirty only when needed
-			//if (pnode)
-			//	pnode->mark_bounds_dirty();
+			if (assemble_sub && pnode)
+				pnode->mark_bounds_dirty();
 		}
 
-		if (!pending_reindex && s_scene && octnode.first)
+		if (!assemble_sub && !pending_reindex && s_scene && octnode.first)
 		{
 			s_scene->add_to_reindex(this);
 			pending_reindex = true;
@@ -300,7 +302,7 @@ namespace flame
 		if (is_octree)
 		{
 			update_transform();
-			octree.reset(new OctNode(octree_length, g_pos));
+			octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
 		}
 		else
 		{
