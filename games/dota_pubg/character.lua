@@ -23,10 +23,14 @@ function make_character(entity)
 
 		on_die = nil,
 	
-		HP = 100,
 		HP_MAX = 100,
-		ATTACK_DAMAGE = 10
+		HP_RECOVER = 1,
+		ATTACK_DAMAGE = 10,
+
+		recover_tick = 0
 	}
+
+	character.HP = character.HP_MAX
 
 	character.ui_bar = create_entity("bar")
 	character.ui_bar.element = character.ui_bar.find_component("cElement")
@@ -94,6 +98,13 @@ function make_character(entity)
 		end
 	end
 
+	character.on_receive_heal = function(src, value)
+		character.HP = character.HP + value
+		if character.HP > character.HP_MAX then
+			character.HP = character.HP_MAX
+		end
+	end
+
 	character.change_state("idle")
 
 	character.event = character.entity.add_event(function()
@@ -105,6 +116,13 @@ function make_character(entity)
 
 		if character.attack_tick > 0 then
 			character.attack_tick = character.attack_tick - 1
+		end
+
+		if character.recover_tick > 0 then
+			character.recover_tick = character.recover_tick - 1
+		else
+			character.on_receive_heal(character, character.HP_RECOVER)
+			character.recover_tick = 60
 		end
 
 		if character.state == "move_to" then
@@ -130,7 +148,7 @@ function make_character(entity)
 			end
 		elseif character.state == "attack_target" then
 			if character.target and character.target.dead ~= true then
-				local tp = character.target.node.get_global_pos()
+				local tp = character.target.pos
 				local v = vec2(tp.x, tp.z) - vec2(pos.x, pos.z)
 				local l, d = length_and_dir_2(v)
 				if d then -- aim

@@ -6,11 +6,20 @@ function make_player(character)
 		hovering_pos = vec2(0),
 		mpos = vec2(-1000)
 	}
+
+	local scene_receiver = scene.find_component("cReceiver")
+
+	player.character.on_die = function()
+		player.character.entity.remove_event(player.event)
+		
+		scene_receiver.remove_mouse_move_listener(player.mouse_move_list)
+		scene_receiver.remove_mouse_right_down_listener(player.mouse_rightdown_list)
+	end
 	
 	local e_shading_flags = find_enum("ShadingFlags")
 	local e_shading_material = e_shading_flags["Material"]
 	local e_shading_outline = e_shading_flags["Outline"]
-	player.character.entity.add_event(function()
+	player.event = player.character.entity.add_event(function()
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(player.mpos) - o)
 		local pe = flame_malloc(8)
@@ -53,14 +62,12 @@ function make_player(character)
 			player.hovering = hovering
 		end
 	end, 0)
-
-	local scene_receiver = scene.find_component("cReceiver")
 	
-	scene_receiver.add_mouse_move_listener(function(disp, mpos)
+	player.mouse_move_list = scene_receiver.add_mouse_move_listener(function(disp, mpos)
 		player.mpos = mpos
 	end)
 
-	scene_receiver.add_mouse_right_down_listener(function(mpos)
+	player.mouse_rightdown_list = scene_receiver.add_mouse_right_down_listener(function(mpos)
 		if player.hovering == nil then
 			return
 		end
