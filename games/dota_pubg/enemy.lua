@@ -6,9 +6,12 @@ function make_enemy(character)
 	}
 
 	enemy.event = enemy.character.entity.add_event(function()
+		if distance_3(enemy.character.pos, main_player.character.pos) < 5 then
+			enemy.character.change_state("attack_target", main_player.character)
+		end
 		if enemy.character.state == "idle" then
 			if math.random() < 0.002 then
-				local pos = enemy.character.node.get_global_pos()
+				local pos = enemy.character.pos
 				pos.x = pos.x - 3 + math.random() * 6
 				pos.z = pos.z - 3 + math.random() * 6
 				enemy.character.change_state("move_to", vec2(pos.x, pos.z))

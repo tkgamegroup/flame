@@ -265,7 +265,7 @@ namespace flame
 				pnode->mark_bounds_dirty();
 		}
 
-		if (!assemble_sub && !pending_reindex && s_scene && octnode.first)
+		if (!pending_reindex && octnode.first)
 		{
 			s_scene->add_to_reindex(this);
 			pending_reindex = true;
@@ -304,7 +304,7 @@ namespace flame
 			update_transform();
 			octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
 		}
-		else
+		else if (!assemble_sub)
 		{
 			std::function<OctNode* (cNodePrivate* n)> get_octree;
 			get_octree = [&](cNodePrivate* n)->OctNode* {

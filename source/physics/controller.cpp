@@ -44,7 +44,7 @@ namespace flame
 		void ControllerPrivate::move(const vec3& disp, float delta_time)
 		{
 #ifdef USE_PHYSX
-			px_controller->move(cvt(disp), 0.f, delta_time, physx::PxControllerFilters());
+			px_controller->move(cvt(disp), 0.f, delta_time, {});
 
 			// if (o->pxController->move(disp, 0.f, dist, nullptr) & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)
 			//	o->floatingTime = 0.f;
