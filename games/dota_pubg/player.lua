@@ -7,8 +7,6 @@ function make_player(character)
 		mpos = vec2(-1000)
 	}
 
-	local scene_receiver = scene.find_component("cReceiver")
-
 	player.character.on_die = function()
 		player.character.entity.remove_event(player.event)
 		
@@ -82,7 +80,11 @@ function make_player(character)
 				player.character.change_state("attack_target", enemy.character)
 			end
 		elseif name == "terrain" then
-			player.character.change_state("move_to", player.hovering_pos)
+			if not alt_pressing then
+				player.character.change_state("move_to", player.hovering_pos)
+			else
+				player.character.change_state("attack_on_pos", player.hovering_pos)
+			end
 		end
 	end)
 

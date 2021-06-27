@@ -9,6 +9,7 @@ int main(int argc, char** args)
 {
 	g_app.create();
 
+	L"";
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
 
 	auto script_ins = script::Instance::get_default();

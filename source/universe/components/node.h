@@ -38,6 +38,8 @@ namespace flame
 		virtual float get_octree_length() const = 0;
 		virtual void set_octree_length(float len) = 0;
 
+		virtual uint get_closest_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count) = 0;
+
 		virtual void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) = 0;
 		virtual void remove_drawer(void* drawer) = 0;
 		virtual void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) = 0;

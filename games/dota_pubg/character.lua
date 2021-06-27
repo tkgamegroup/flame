@@ -70,6 +70,8 @@ function make_character(entity)
 				character.attacking = false
 			end
 			character.target = t
+		elseif s == "attack_on_pos" then
+			character.target_pos = t
 		end
 		character.state = s
 	end
@@ -77,7 +79,7 @@ function make_character(entity)
 	character.animation.add_callback(function(frame)
 		if character.attacking then
 			if frame == 12 then
-				if character.target then
+				if character.target and not character.target.dead then
 					local p = character.pos
 					local tp = character.target.pos
 					local l, d = length_and_dir_2(vec2(tp.x, tp.z) - vec2(p.x, p.z))
@@ -152,19 +154,53 @@ function make_character(entity)
 			character.recover_tick = 60
 		end
 
-		if character.state == "move_to" then
+		function move_to_pos()
 			local v = character.target_pos - vec2(pos.x, pos.z)
 			local l, d = length_and_dir_2(v)
 			if d then -- aim
 				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
 				character.update_dir()
 			end
+
 			if l <= character.speed then
+				return false
+			end
+
+			character.animation.play(1)
+			character.animation.set_loop(true)
+			character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+			return true
+		end
+
+		function attack_target()
+			local tp = character.target.pos
+			local v = vec2(tp.x, tp.z) - vec2(pos.x, pos.z)
+			local l, d = length_and_dir_2(v)
+			if d then -- aim
+				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
+				character.update_dir()
+			end
+			if not character.attacking then
+				if l <= character.radius + character.target.radius + 1 then
+					if character.attack_tick == 0 then
+						character.attack_tick = character.attack_interval
+						character.attacking = true
+						character.animation.play(2)
+						character.animation.set_loop(false)
+					else
+						character.animation.stop_at(2, -1)
+					end
+				else
+					character.animation.play(1)
+					character.animation.set_loop(true)
+					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+				end
+			end
+		end
+
+		if character.state == "move_to" then
+			if not move_to_pos() then
 				character.change_state("idle")
-			else
-				character.animation.play(1)
-				character.animation.set_loop(true)
-				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 			end
 
 			if distance_3(pos, character.pos) < 0.001 then
@@ -174,33 +210,39 @@ function make_character(entity)
 				end
 			end
 		elseif character.state == "attack_target" then
-			if character.target and character.target.dead ~= true then
-				local tp = character.target.pos
-				local v = vec2(tp.x, tp.z) - vec2(pos.x, pos.z)
-				local l, d = length_and_dir_2(v)
-				if d then -- aim
-					character.yaw = math.atan(d.x, d.y) / 3.14 * 180
-					character.update_dir()
-				end
-				if not character.attacking then
-					if l <= character.radius + character.target.radius + 1 then
-						if character.attack_tick == 0 then
-							character.attack_tick = character.attack_interval
-							character.attacking = true
-							character.animation.play(2)
-							character.animation.set_loop(false)
-						else
-							character.animation.stop_at(2, -1)
-						end
-					else
-						character.animation.play(1)
-						character.animation.set_loop(true)
-						character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
-					end
-				end
+			if character.target and not character.target.dead then
+				attack_target()
 			else
 				character.target = nil
 				character.change_state("idle")
+			end
+		elseif character.state == "attack_on_pos" then
+			if not character.attacking then
+				character.target = nil
+
+				local e = nil
+				local pe = flame_malloc(8 * 2)
+				local n = octnode.get_closest_within_circle(vec2(pos.x, pos.z), 5, pe, 2)
+				if n >= 2 then
+					e = flame_get(pe, 8, e_type_pointer, e_else_type, 1, 1)
+				end
+				flame_free(pe)
+
+				if e then
+					for n, en in pairs(enemies) do
+						if en.character.entity.p == e then
+							character.target = en.character
+							break
+						end
+					end
+				end
+			end
+			
+			if character.target and not character.target.dead then
+				attack_target()
+			else
+				character.target = nil
+				move_to_pos()
 			end
 		end
 

@@ -68,6 +68,8 @@ namespace flame
 		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
 
+		uint get_closest_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count) override;
+
 		void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
 		void remove_drawer(void* drawer) override;
 		void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) override;

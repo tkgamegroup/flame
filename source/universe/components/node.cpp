@@ -81,6 +81,32 @@ namespace flame
 			entity->component_data_changed(this, S<"octree_length"_h>);
 	}
 
+	uint cNodePrivate::get_closest_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count)
+	{
+		fassert(octree.get());
+
+		std::vector<cNodePrivate*> res;
+		octree->get_colliding(c, r, res);
+		if (res.empty())
+			return 0;
+
+		std::vector<std::pair<EntityPrivate*, float>> vec;
+		vec.resize(res.size());
+		for (auto i = 0; i < res.size(); i++)
+		{
+			vec[i].first = res[i]->entity;
+			vec[i].second = distance(c, res[i]->g_pos.xz());
+		}
+		std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+			return a.second < b.second;
+		});
+		if (max_count > vec.size())
+			max_count = vec.size();
+		for (auto i = 0; i < max_count; i++)
+			dst[i] = vec[i].first;
+		return max_count;
+	}
+
 	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture)
 	{
 		auto c = new Closure(drawer, capture);

@@ -1127,54 +1127,20 @@ namespace flame
 
 		SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
-		for (auto i = 0; i < Cursor_Count; i++)
-		{
-			switch ((CursorType)i)
-			{
-			case CursorAppStarting:
-				cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
-				break;
-			case CursorArrow:
-				cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
-				break;
-			case CursorCross:
-				cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
-				break;
-			case CursorHand:
-				cursors[i] = LoadCursorA(nullptr, IDC_HAND);
-				break;
-			case CursorHelp:
-				cursors[i] = LoadCursorA(nullptr, IDC_HELP);
-				break;
-			case CursorIBeam:
-				cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
-				break;
-			case CursorNo:
-				cursors[i] = LoadCursorA(nullptr, IDC_NO);
-				break;
-			case CursorSizeAll:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
-				break;
-			case CursorSizeNESW:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
-				break;
-			case CursorSizeNS:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
-				break;
-			case CursorSizeNWSE:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
-				break;
-			case CursorSizeWE:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
-				break;
-			case CursorUpArrwo:
-				cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
-				break;
-			case CursorWait:
-				cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
-				break;
-			}
-		}
+		cursors[CursorAppStarting]	= LoadCursorA(nullptr, IDC_APPSTARTING);
+		cursors[CursorArrow]		= LoadCursorA(nullptr, IDC_ARROW);
+		cursors[CursorCross]		= LoadCursorA(nullptr, IDC_CROSS);
+		cursors[CursorHand]			= LoadCursorA(nullptr, IDC_HAND);
+		cursors[CursorHelp]			= LoadCursorA(nullptr, IDC_HELP);
+		cursors[CursorIBeam]		= LoadCursorA(nullptr, IDC_IBEAM);
+		cursors[CursorNo]			= LoadCursorA(nullptr, IDC_NO);
+		cursors[CursorSizeAll]		= LoadCursorA(nullptr, IDC_SIZEALL);
+		cursors[CursorSizeNESW]		= LoadCursorA(nullptr, IDC_SIZENESW);
+		cursors[CursorSizeNS]		= LoadCursorA(nullptr, IDC_SIZENS);
+		cursors[CursorSizeNWSE]		= LoadCursorA(nullptr, IDC_SIZENWSE);
+		cursors[CursorSizeWE]		= LoadCursorA(nullptr, IDC_SIZEWE);
+		cursors[CursorUpArrwo]		= LoadCursorA(nullptr, IDC_UPARROW);
+		cursors[CursorWait]			= LoadCursorA(nullptr, IDC_WAIT);
 
 		pending_size = size;
 
@@ -1208,6 +1174,7 @@ namespace flame
 		switch (message)
 		{
 		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
 		{
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
@@ -1218,6 +1185,7 @@ namespace flame
 		}
 			return true;
 		case WM_KEYUP:
+		case WM_SYSKEYUP:
 		{
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
@@ -1357,12 +1325,12 @@ namespace flame
 		if (type == cursor_type)
 			return;
 
+		cursor_type = type;
+
 		if (cursor_type == CursorNone)
 			ShowCursor(true);
 		if (type == CursorNone)
 			ShowCursor(false);
-
-		cursor_type = type;
 	}
 
 	void* WindowPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
