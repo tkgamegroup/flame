@@ -28,18 +28,12 @@ function make_character(entity, group, stats)
 		attacking = false,
 
 		on_die = nil,
-	
-		HP_MAX = 100,
-		HP_RECOVER = 1,
-		ATTACK_DAMAGE = 10,
 
 		recover_tick = 0
 	}
-
-	if stats then
-		for key, val in pairs(stats) do
-			character["key"] = val
-		end
+	
+	for key, val in pairs(stats) do
+		character[key] = val
 	end
 	character.HP = character.HP_MAX
 
@@ -56,7 +50,7 @@ function make_character(entity, group, stats)
 			character.on_die()
 		end
 
-		characters[character.group][name] = nil
+		characters[character.group][character.name] = nil
 
 		character.entity.remove_event(character.event)
 		character.entity.get_parent().remove_child(character.entity)
