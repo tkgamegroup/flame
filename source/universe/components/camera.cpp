@@ -90,7 +90,7 @@ namespace flame
 		if (!proj_dirty)
 			return;
 
-		proj = perspective(radians(fovy), aspect, near, far);
+		proj = perspective(radians(fovy), aspect, near, far); // z range: 0 to 1
 		proj[1][1] *= -1.f;
 		proj_inv = inverse(proj);
 	}
@@ -143,6 +143,8 @@ namespace flame
 	{
 		auto p = proj * view * vec4(pos, 1.f);
 		p = p / p.w;
+		if (p.x < -1.f || p.x > 1.f || p.y < -1.f || p.y > 1.f || p.z < 0.f || p.z > 1.f)
+			return uvec2(-1000);
 		return uvec2((p.x + 1.f) * 0.5f * screen_size.x, (p.y + 1.f) * 0.5f * screen_size.y);
 	}
 

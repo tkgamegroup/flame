@@ -1,30 +1,24 @@
 function make_player(character)
-	local player = {
-		character = character,
-		hovering = { p=nil },
-		hovering_destroyed_lis = 0,
-		hovering_pos = vec2(0),
-		mpos = vec2(-1000)
-	}
+	character.hovering = { p=nil }
+	character.hovering_destroyed_lis = 0
+	character.hovering_pos = vec2(0)
+	character.mpos = vec2(-1000)
 
-	player.character.on_die = function()
-		player.character.entity.remove_event(player.event)
+	character.on_die = function()
+		character.entity.remove_event(character.player_event)
 		
-		scene_receiver.remove_mouse_move_listener(player.mouse_move_list)
-		scene_receiver.remove_mouse_right_down_listener(player.mouse_rightdown_list)
-
-		player.character = nil
+		scene_receiver.remove_mouse_move_listener(character.mouse_move_list)
+		scene_receiver.remove_mouse_right_down_listener(character.mouse_rightdown_list)
 	end
 	
 	local e_shading_flags = find_enum("ShadingFlags")
 	local e_shading_material = e_shading_flags["Material"]
 	local e_shading_outline = e_shading_flags["Outline"]
-	player.event = player.character.entity.add_event(function()
+	character.player_event = character.entity.add_event(function()
 		local o = camera.node.get_global_pos()
-		local d = normalize_3(camera.camera.screen_to_world(player.mpos) - o)
+		local d = normalize_3(camera.camera.screen_to_world(character.mpos) - o)
 		local pe = flame_malloc(8)
-		local pos = s_physics.raycast(o, d, pe)
-		player.hovering_pos = vec2(pos.x, pos.z)
+		character.hovering_pos = s_physics.raycast(o, d, pe).to_flat()
 		local p = flame_get(pe, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(pe)
 
@@ -43,50 +37,47 @@ function make_player(character)
 				end
 			end
 		end
-		if hovering.p ~= player.hovering.p then
-			if player.hovering.p then
-				player.hovering.remove_message_listener(player.hovering_destroyed_lis)
-				change_outline(player.hovering, e_shading_material)
+		if hovering.p ~= character.hovering.p then
+			if character.hovering.p then
+				character.hovering.remove_message_listener(character.hovering_destroyed_lis)
+				change_outline(character.hovering, e_shading_material)
 			end
 			if hovering.p then
 				change_outline(hovering, e_shading_material + e_shading_outline)
 				local hash_destroyed = flame_hash("destroyed")
-				player.hovering_destroyed_lis = hovering.add_message_listener(function(m)
+				character.hovering_destroyed_lis = hovering.add_message_listener(function(m)
 					if m == hash_destroyed then
-						player.hovering.remove_message_listener(player.hovering_destroyed_lis)
-						player.hovering = { p=nil }
+						character.hovering.remove_message_listener(character.hovering_destroyed_lis)
+						character.hovering = { p=nil }
 					end
 				end)
 			end
 
-			player.hovering = hovering
+			character.hovering = hovering
 		end
 	end, 0)
 	
-	player.mouse_move_list = scene_receiver.add_mouse_move_listener(function(disp, mpos)
-		player.mpos = mpos
+	character.mouse_move_list = scene_receiver.add_mouse_move_listener(function(disp, mpos)
+		character.mpos = mpos
 	end)
 
-	player.mouse_rightdown_list = scene_receiver.add_mouse_right_down_listener(function(mpos)
-		if player.hovering == nil then
+	character.mouse_rightdown_list = scene_receiver.add_mouse_right_down_listener(function(mpos)
+		if character.hovering == nil then
 			return
 		end
 
-		local name = player.hovering.get_name()
-		if starts_with(name, "enemy_") then
-			name = string.sub(name, 7)
-			local enemy = enemies[name]
-			if enemy then
-				player.character.change_state("attack_target", enemy.character)
-			end
-		elseif name == "terrain" then
+		local name = character.hovering.get_name()
+		if name == "terrain" then
 			if not alt_pressing then
-				player.character.change_state("move_to", player.hovering_pos)
+				character.change_state("move_to", character.hovering_pos)
 			else
-				player.character.change_state("attack_on_pos", player.hovering_pos)
+				character.change_state("attack_on_pos", character.hovering_pos)
+			end
+		else
+			local char = characters[name]
+			if char then
+				character.change_state("attack_target", char)
 			end
 		end
 	end)
-
-	return player
 end

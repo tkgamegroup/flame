@@ -15,7 +15,8 @@
         <cScript src="initialize.lua" />
         <eNode src="human" name="player" pos="200,65,200" >
           <cScript>
-             main_player = make_player(make_character(entity))
+             main_player = make_character(entity, 1)
+             make_player(main_player)
           </cScript>
         </eNode>
       </eNode>

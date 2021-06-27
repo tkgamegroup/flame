@@ -15,7 +15,7 @@ int main(int argc, char** args)
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"character.lua");
 	script_ins->excute_file(L"player.lua");
-	script_ins->excute_file(L"enemy.lua");
+	script_ins->excute_file(L"npc.lua");
 
 	{
 		auto e = Entity::create();

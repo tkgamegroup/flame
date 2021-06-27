@@ -146,6 +146,9 @@ function vec3(x, y, z)
 	o.push = function()
 		return  o.x, o.y, o.z
 	end
+	o.to_flat = function()
+		return  vec2(o.x, o.z)
+	end
 	setmetatable(o, {
 		__unm = function(a)
 			return vec3(-a.x, -a.y, -a.z)

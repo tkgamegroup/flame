@@ -1,5 +1,11 @@
-function make_character(entity)
+characters = {}
+characters[1] = {}
+characters[2] = {}
+
+function make_character(entity, group, stats)
 	local character = {
+		name = entity.get_name(),
+		group = group,
 		dead = false,
 
 		entity = entity,
@@ -30,6 +36,11 @@ function make_character(entity)
 		recover_tick = 0
 	}
 
+	if stats then
+		for key, val in pairs(stats) do
+			character["key"] = val
+		end
+	end
 	character.HP = character.HP_MAX
 
 	character.ui = create_entity("character_hud")
@@ -44,6 +55,8 @@ function make_character(entity)
 		if character.on_die then
 			character.on_die()
 		end
+
+		characters[character.group][name] = nil
 
 		character.entity.remove_event(character.event)
 		character.entity.get_parent().remove_child(character.entity)
@@ -80,9 +93,7 @@ function make_character(entity)
 		if character.attacking then
 			if frame == 12 then
 				if character.target and not character.target.dead then
-					local p = character.pos
-					local tp = character.target.pos
-					local l, d = length_and_dir_2(vec2(tp.x, tp.z) - vec2(p.x, p.z))
+					local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
 					if l <= character.radius + character.target.radius + 3 then
 						character.target.on_receive_damage(character, math.floor(0.5 + character.ATTACK_DAMAGE * (math.random() * 0.2 + 0.9)))
 					end
@@ -119,6 +130,31 @@ function make_character(entity)
 		if character.HP > character.HP_MAX then
 			character.HP = character.HP_MAX
 		end
+	end
+
+	character.find_closest_enemy = function(r)
+		local g = nil
+		if character.group == 1 then
+			g = 2
+		elseif character.group == 2 then
+			g = 1
+		end
+		if not g then
+			return
+		end
+		
+		local min_dis = 1000
+		local min_obj = nil
+		local pos = character.pos.to_flat()
+		for n, char in pairs(characters[g]) do
+			local dis = distance_2(pos, char.pos.to_flat())
+			if dis < r and dis < min_dis then
+				min_dis = dis
+				min_obj = char
+			end
+		end
+
+		return min_obj
 	end
 
 	character.change_state("idle")
@@ -173,9 +209,7 @@ function make_character(entity)
 		end
 
 		function attack_target()
-			local tp = character.target.pos
-			local v = vec2(tp.x, tp.z) - vec2(pos.x, pos.z)
-			local l, d = length_and_dir_2(v)
+			local l, d = length_and_dir_2(character.target.pos.to_flat() - pos.to_flat())
 			if d then -- aim
 				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
 				character.update_dir()
@@ -220,21 +254,9 @@ function make_character(entity)
 			if not character.attacking then
 				character.target = nil
 
-				local e = nil
-				local pe = flame_malloc(8 * 2)
-				local n = octnode.get_closest_within_circle(vec2(pos.x, pos.z), 5, pe, 2)
-				if n >= 2 then
-					e = flame_get(pe, 8, e_type_pointer, e_else_type, 1, 1)
-				end
-				flame_free(pe)
-
-				if e then
-					for n, en in pairs(enemies) do
-						if en.character.entity.p == e then
-							character.target = en.character
-							break
-						end
-					end
+				local char = character.find_closest_enemy(5)
+				if char then 
+					character.target = char
 				end
 			end
 			
@@ -248,6 +270,8 @@ function make_character(entity)
 
 		character.pos = pos
 	end, 0)
+
+	characters[group][character.name] = character
 
 	return character
 

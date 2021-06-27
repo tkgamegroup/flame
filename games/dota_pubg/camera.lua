@@ -7,8 +7,8 @@ camera = {
 }
 
 camera.update_pos = function()
-	if main_player.character then
-		camera.node.set_pos(main_player.character.pos + camera.node.get_local_dir(2) * camera.length)
+	if not main_player.dead then
+		camera.node.set_pos(main_player.pos + camera.node.get_local_dir(2) * camera.length)
 	end
 end
 
