@@ -10,6 +10,7 @@ namespace flame
 		std::wstring atlas_name = L"msyh.ttc;font_awesome.ttf";
 		uint font_size = 16;
 		cvec4 font_color = cvec4(255);
+		Align text_align = AlignMin;
 
 		cElementPrivate* element = nullptr;
 		void* drawer = nullptr;
@@ -29,6 +30,9 @@ namespace flame
 
 		cvec4 get_font_color() const override { return font_color; }
 		void set_font_color(const cvec4& col) override;
+
+		Align get_text_align() const override { return text_align; }
+		void set_text_align(Align a) override;
 
 		void row_layout(int offset, vec2& size, uint& num_chars);
 

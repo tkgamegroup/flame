@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement>
+    <eElement y="-10" name="floating_tips" />
+    <eElement width="60" auto_width="false" layout_type="Vertical" fill_color="0,0,0,50">
+      <eText name="hp_text" text="999/999" padding="4,0,4,0" font_size="14" />
+      <eElement name="hp_bar" width="60" aligny="MinMax" align_in_layout="false" fill_color="40,200,40,127" />
+    </eElement>
+  </eElement>
+</prefab>

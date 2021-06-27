@@ -18,7 +18,7 @@ function make_enemy(character)
 			enemy.chase_tick = enemy.chase_tick - 1
 		end
 
-		if enemy.chase_tick == 0 and distance_3(enemy.character.pos, main_player.character.pos) < 5 then
+		if enemy.chase_tick == 0 and main_player.character and distance_3(enemy.character.pos, main_player.character.pos) < 5 then
 			enemy.character.change_state("attack_target", main_player.character)
 			enemy.chase_start_pos = enemy.character.pos
 			enemy.chase_tick = 600

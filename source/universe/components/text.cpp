@@ -38,6 +38,17 @@ namespace flame
 			entity->component_data_changed(this, S<"font_color"_h>);
 	}
 
+	void cTextPrivate::set_text_align(Align a)
+	{
+		if (text_align == a)
+			return;
+		text_align = a;
+		if (element)
+			element->mark_drawing_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"text_align"_h>);
+	}
+
 	void cTextPrivate::row_layout(int offset, vec2& size, uint& num_chars)
 	{
 		auto width = 0.f;
@@ -78,7 +89,20 @@ namespace flame
 		if (res_id != -1)
 		{
 			layer++;
-			auto glyphs = atlas->get_draw_glyphs(font_size, text.c_str(), text.c_str() + text.size(), element->points[4], element->axes);
+			auto pos = element->points[4];
+			auto axes = element->axes;
+			switch (text_align)
+			{
+			case AlignMin:
+				break;
+			case AlignMiddle:
+				pos += axes[0] * (element->size.x - element->desired_size.x) * 0.5f;
+				break;
+			case AlignMax:
+				pos += axes[0] * (element->size.x - element->desired_size.x);
+				break;
+			}
+			auto glyphs = atlas->get_draw_glyphs(font_size, text.c_str(), text.c_str() + text.size(), pos, axes);
 			s_renderer->draw_glyphs(layer, glyphs.size(), glyphs.data(), res_id, font_color);
 		}
 		return layer;

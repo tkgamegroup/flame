@@ -211,10 +211,8 @@ namespace flame
 				vec2 s;
 				if (m->call(&s))
 				{
-					if (e->auto_width)
-						size.x = max(size.x, s.x);
-					if (e->auto_height)
-						size.y = max(size.y, s.y);
+					size.x = max(size.x, s.x);
+					size.y = max(size.y, s.y);
 				}
 			}
 
@@ -222,12 +220,14 @@ namespace flame
 			if (size.x >= 0.f)
 			{
 				w = size.x + e->padding_size[0];
-				e->set_width(w);
+				if (e->auto_width)
+					e->set_width(w);
 			}
 			if (size.y >= 0.f)
 			{
 				h = size.y + e->padding_size[1];
-				e->set_height(h);
+				if (e->auto_height)
+					e->set_height(h);
 			}
 
 			e->desired_size = vec2(w, h);

@@ -191,6 +191,48 @@ namespace flame
 			return false;
 		}
 
+		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res)
+		{
+			if (!bounds.intersects(check_bounds))
+				return;
+
+			for (auto obj : objects)
+			{
+				if (!obj->entity->global_visibility)
+					continue;
+
+				if (obj->bounds.intersects(check_bounds))
+					res.push_back(obj);
+			}
+
+			if (!children.empty())
+			{
+				for (auto i = 0; i < 8; i++)
+					children[i]->get_colliding(check_bounds, res);
+			}
+		}
+
+		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePrivate*>& res)
+		{
+			if (!bounds.intersects(check_center, check_radius))
+				return;
+
+			for (auto obj : objects)
+			{
+				if (!obj->entity->global_visibility)
+					continue;
+
+				if (obj->bounds.intersects(check_center, check_radius))
+					res.push_back(obj);
+			}
+
+			if (!children.empty())
+			{
+				for (auto i = 0; i < 8; i++)
+					children[i]->get_colliding(check_center, check_radius, res);
+			}
+		}
+
 		//bool is_colliding(const Ray& checkRay, float maxDistance = float.PositiveInfinity)
 		//{
 		//	float distance;
@@ -214,27 +256,6 @@ namespace flame
 
 		//	return false;
 		//}
-
-		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res)
-		{
-			if (!bounds.intersects(check_bounds))
-				return;
-
-			for (auto obj : objects)
-			{
-				if (!obj->entity->global_visibility)
-					continue;
-
-				if (obj->bounds.intersects(check_bounds))
-					res.push_back(obj);
-			}
-
-			if (!children.empty())
-			{
-				for (auto i = 0; i < 8; i++)
-					children[i]->get_colliding(check_bounds, res);
-			}
-		}
 
 		//void get_colliding(ref Ray checkRay, List<T> result, float maxDistance = float.PositiveInfinity)
 		//{
@@ -275,11 +296,6 @@ namespace flame
 					children[i]->get_within_frustum(planes, res);
 			}
 		}
-
-		//void SetChildren(OctNode*[] childOctrees)
-		//{
-		//	children = childOctrees;
-		//}
 
 		OctNode* shrink_if_possible()
 		{

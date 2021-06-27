@@ -14,6 +14,8 @@ function make_player(character)
 		
 		scene_receiver.remove_mouse_move_listener(player.mouse_move_list)
 		scene_receiver.remove_mouse_right_down_listener(player.mouse_rightdown_list)
+
+		player.character = nil
 	end
 	
 	local e_shading_flags = find_enum("ShadingFlags")

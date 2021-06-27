@@ -32,11 +32,13 @@ function make_character(entity)
 
 	character.HP = character.HP_MAX
 
-	character.ui_bar = create_entity("bar")
-	character.ui_bar.element = character.ui_bar.find_component("cElement")
-	character.ui_bar.text = character.ui_bar.get_child(0).find_component("cText")
-	character.ui_bar.bar = character.ui_bar.get_child(1).find_component("cElement")
-	__ui.add_child(character.ui_bar)
+	character.ui = create_entity("character_hud")
+	character.ui.element = character.ui.find_component("cElement")
+	character.ui.floating_tips = character.ui.find_child("floating_tips")
+	character.ui.floating_tips.items = {}
+	character.ui.hp_text = character.ui.find_child("hp_text").find_component("cText")
+	character.ui.hp_bar = character.ui.find_child("hp_bar").find_component("cElement")
+	__ui.add_child(character.ui)
 
 	character.die = function()
 		if character.on_die then
@@ -45,7 +47,7 @@ function make_character(entity)
 
 		character.entity.remove_event(character.event)
 		character.entity.get_parent().remove_child(character.entity)
-		character.ui_bar.get_parent().remove_child(character.ui_bar)
+		character.ui.get_parent().remove_child(character.ui)
 		character.dead = true
 	end
 
@@ -80,7 +82,7 @@ function make_character(entity)
 					local tp = character.target.pos
 					local l, d = length_and_dir_2(vec2(tp.x, tp.z) - vec2(p.x, p.z))
 					if l <= character.radius + character.target.radius + 3 then
-						character.target.on_receive_damage(character, character.ATTACK_DAMAGE)
+						character.target.on_receive_damage(character, math.floor(0.5 + character.ATTACK_DAMAGE * (math.random() * 0.2 + 0.9)))
 					end
 				end
 			end
@@ -91,6 +93,18 @@ function make_character(entity)
 	end, character.animation)
 
 	character.on_receive_damage = function(src, value)
+		local tip_item = {}
+		tip_item.e = create_entity("floating_tip")
+		local text = tip_item.e.find_component("cText")
+		text.set_text(tostring(value))
+		if character == main_player.character then
+			text.set_font_color(vec4(255, 0, 0, 255))
+		end
+		character.ui.floating_tips.add_child(tip_item.e)
+		tip_item.element = tip_item.e.find_component("cElement")
+		tip_item.tick = 35
+		table.insert(character.ui.floating_tips.items, tip_item)
+
 		if character.HP > value then
 			character.HP = character.HP - value
 		else
@@ -110,9 +124,22 @@ function make_character(entity)
 	character.event = character.entity.add_event(function()
 		local pos = character.node.get_global_pos()
 
-		character.ui_bar.element.set_pos(camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z)) + vec2(-30, -20))
-		character.ui_bar.text.set_text(character.HP.."/"..character.HP_MAX)
-		character.ui_bar.bar.set_scalex(character.HP / character.HP_MAX)
+		character.ui.element.set_pos(camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z)) + vec2(-30, -20))
+		character.ui.hp_text.set_text(character.HP.."/"..character.HP_MAX)
+		character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
+
+		local i = 1
+		while i <= #character.ui.floating_tips.items do
+			local item = character.ui.floating_tips.items[i]
+			item.element.add_pos(vec2(0, -2))
+			item.tick = item.tick - 1
+			if item.tick <= 0 then
+				character.ui.floating_tips.remove_child(item.e)
+				table.remove(character.ui.floating_tips.items, i)
+			else
+				i = i + 1
+			end
+		end
 
 		if character.attack_tick > 0 then
 			character.attack_tick = character.attack_tick - 1

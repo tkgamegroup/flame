@@ -21,6 +21,11 @@ namespace flame
 	typedef vec<3, uchar> cvec3;
 	typedef vec<4, uchar> cvec4;
 
+	inline float square(float v)
+	{
+		return v * v;
+	}
+
 	template <class T, class ...Args>
 	T minN(T a, T b, Args... args)
 	{
@@ -240,6 +245,16 @@ namespace flame
 		bool intersects(const AABB& oth)
 		{
 			return any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a));
+		}
+
+		bool intersects(const vec2 center, float radius)
+		{
+			auto d = 0.f;
+			if (center.x < a.x) d += square(center.x - a.x);
+			else if (center.x > b.x) d += square(center.x - b.x);
+			if (center.y < a.z) d += square(center.y - a.z);
+			else if (center.y > b.z) d += square(center.y - b.z);
+			return square(radius) > d;
 		}
 	};
 
