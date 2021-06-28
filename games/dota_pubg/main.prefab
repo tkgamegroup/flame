@@ -2,8 +2,48 @@
 <prefab>
   <eElement alignx="MinMax" aligny="MinMax">
     <cScript>
-       __ui = entity
+        __ui = entity
     </cScript>
+    <eElement>
+      <cScript>
+         __ui_scene = entity
+      </cScript>
+    </eElement>
+    <eElement name="character_panel" padding="8,8,8,8" alignx="Middle" aligny="Max" fill_color="0,0,0,127" clipping="true" layout_type="Horizontal" layout_gap="8">
+        <eElement layout_type="Vertical">
+          <eText name="hp_text" text="HP: 999/999"/>
+          <eText name="lv_text" text="LV: 99" />
+          <eText name="exp_text" text="EXP: 9999/9999" />
+        </eElement>
+        <eElement layout_type="Vertical">
+          <eElement layout_type="Horizontal">
+            <entity src="item_block" tip.text="MH" />
+            <entity src="item_block" tip.text="HD" />
+            <entity src="item_block" tip.text="LG" />
+          </eElement>
+          <eElement layout_type="Horizontal">
+            <entity src="item_block" tip.text="SH" />
+            <entity src="item_block" tip.text="CH" />
+            <entity src="item_block" tip.text="FT" />
+          </eElement>
+        </eElement>
+        <eElement layout_type="Vertical">
+          <eElement layout_type="Horizontal">
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+          </eElement>
+          <eElement layout_type="Horizontal">
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+            <entity src="item_block" />
+          </eElement>
+        </eElement>
+    </eElement>
     <eNode>
       <entity src="D:\assets\sky\sky" name="sky" />
       <eCamera name="camera">
@@ -11,9 +51,7 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-      <eNode is_octree="true" octree_length="400.0">
-        <cScript src="initialize.lua" />
-      </eNode>
+      <eNode name="obj_root" is_octree="true" octree_length="400.0" />
     </eNode>
   </eElement>
 </prefab>

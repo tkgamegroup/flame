@@ -2,7 +2,7 @@
 <prefab>
   <entity>
     <cElement padding="4,2,4,2" alignx="MinMax" 
-              fill_color.state_rules="220,220,220,255
+              fill_color.state_rule="220,220,220,255
               Selected|Hovering:205,225,250,255
               Selected:200,220,245,255
               Hovering:230,230,230,255" />

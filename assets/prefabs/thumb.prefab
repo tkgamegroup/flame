@@ -2,7 +2,7 @@
 <prefab>
   <entity name="thumb">
     <cElement width="10" height="10" 
-              fill_color.state_rules="194,195,201,255
+              fill_color.state_rule="194,195,201,255
               Active|Hovering:91,91,91,255
               Hovering:104,104,104,255" />
     <cReceiver />

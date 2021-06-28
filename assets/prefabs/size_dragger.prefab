@@ -2,7 +2,7 @@
 <prefab>
     <entity name="size_dragger" >
         <cElement width="8.0" height="8.0" alignx="Max" aligny="Max" align_in_layout="false" 
-                fill_color.state_rules="120,120,120,255
+                fill_color.state_rule="120,120,120,255
                 Active|Hovering:125,125,125,255
                 Hovering:130,130,130,155" />
         <cReceiver />

@@ -780,61 +780,64 @@ namespace flame
 	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
 		const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
-		auto set_attribute = [&](void* o, Type* ot, const std::string& name, const std::string& value) {
-			auto sp = SUS::split(name, '.');
-			std::string vname;
-			std::string rule;
-			vname = sp[0];
-			if (sp.size() == 2)
-			{
-				vname = sp[0];
-				rule = sp[1];
-			}
+		auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value, bool is_state_rule) {
 			auto att = ot->find_attribute(vname);
-			if (att)
+			if (!att)
+				return false;
+
+			auto type = att->set_type;
+			auto fs = att->setter;
+			if (is_state_rule)
 			{
-				auto type = att->set_type;
-				auto fs = att->setter;
-				if (rule == "state_rules")
+				StateRule* rule = nullptr;
+				for (auto& r : first_e->state_rules)
 				{
-					auto rule = new StateRule;
+					if (r->o == o && r->vname == vname)
+					{
+						rule = r.get();
+						rule->values.clear();
+						break;
+					}
+				}
+				if (!rule)
+				{
+					rule = new StateRule;
 					rule->o = o;
 					rule->vname = vname;
 					rule->type = type;
 					rule->setter = fs;
-					for (auto& s : SUS::split_with_spaces(value))
-					{
-						auto pair = SUS::split(s, ':');
-						auto state = StateNone;
-						void* d = type->create();
-						if (pair.size() == 1)
-						{
-							type->unserialize(d, pair[0].c_str());
-							void* ps[] = { d };
-							fs->call(o, nullptr, ps);
-						}
-						else if (pair.size() == 2)
-						{
-							TypeInfo::get(TypeEnumMulti, "flame::StateFlags")->unserialize(&state, pair[0].c_str());
-							type->unserialize(d, pair[1].c_str());
-						}
-						else
-							fassert(0);
-						rule->values.emplace_back(state, d);
-					}
 					first_e->state_rules.emplace_back(rule);
 				}
-				else
+				for (auto& s : SUS::split_with_spaces(value))
 				{
+					auto sp = SUS::split(s, ':');
+					fassert(sp.size() <= 2);
+
+					auto state = StateNone;
 					void* d = type->create();
-					type->unserialize(d, value.c_str());
-					void* ps[] = { d };
-					fs->call(o, nullptr, ps);
-					type->destroy(d);
+					if (sp.size() == 1)
+					{
+						type->unserialize(d, sp[0].c_str());
+						void* ps[] = { d };
+						fs->call(o, nullptr, ps);
+					}
+					else if (sp.size() == 2)
+					{
+						TypeInfo::get(TypeEnumMulti, "flame::StateFlags")->unserialize(&state, sp[0].c_str());
+						type->unserialize(d, sp[1].c_str());
+					}
+					rule->values.emplace_back(state, d);
 				}
-				return true;
 			}
-			return false;
+			else
+			{
+				void* d = type->create();
+				type->unserialize(d, value.c_str());
+				void* ps[] = { d };
+				fs->call(o, nullptr, ps);
+				type->destroy(d);
+			}
+			return true;
 		};
 		auto set_content = [&](Component* c, Type* ct, const std::string& value) {
 			auto att = ct->find_attribute("content");
@@ -895,32 +898,50 @@ namespace flame
 			else
 			{
 				auto ok = false;
-				auto name = std::string(a.name());
+				auto sp = SUS::split(std::string(a.name()), '.');
 				auto value = std::string(a.value());
-				for (auto i = (int)e_dst->drivers.size() - 1; i >= 0; i--)
+				auto is_state_rule = false;
+				if (sp.size() >= 2 && sp.back() == "state_rule")
 				{
-					auto d = e_dst->drivers[i].get();
-					auto dt = find_driver_type(d->type_name, nullptr);
-					if (dt && set_attribute(d, dt, name, value))
-					{
-						ok = true;
-						break;
-					}
+					is_state_rule = true;
+					sp.pop_back();
 				}
-				if (!ok)
+				fassert(sp.size() <= 2);
+				auto vname = sp.back();
+				auto e = e_dst;
+				if (sp.size() > 1)
 				{
-					for (auto& c : e_dst->components)
+					e = e_dst->find_child(sp[0]);
+					if (!e)
+						printf("cannot find child: %s\n", sp[0].c_str());
+				}
+				if (e)
+				{
+					for (auto it = e->drivers.rbegin(); it != e->drivers.rend(); it++)
 					{
-						auto ct = find_component_type(c->type_name, nullptr);
-						if (ct && set_attribute(c.get(), ct, name, value))
+						auto d = (*it).get();
+						auto dt = find_driver_type(d->type_name, nullptr);
+						if (dt && set_attribute(d, dt, vname, value, is_state_rule))
 						{
 							ok = true;
 							break;
 						}
 					}
+					if (!ok)
+					{
+						for (auto& c : e->components)
+						{
+							auto ct = find_component_type(c->type_name, nullptr);
+							if (ct && set_attribute(c.get(), ct, vname, value, is_state_rule))
+							{
+								ok = true;
+								break;
+							}
+						}
+					}
+					if (!ok)
+						printf("cannot find attribute: %s\n", a.name());
 				}
-				if (!ok)
-					printf("cannot find attribute: %s\n", a.name());
 			}
 		}
 
@@ -950,7 +971,8 @@ namespace flame
 					}
 					for (auto a : n_c.attributes())
 					{
-						if (!set_attribute(c, ct, a.name(), a.value()))
+						auto sp = SUS::split(std::string(a.name()), '.');
+						if (!set_attribute(c, ct, sp.front(), a.value(), sp.size() == 2 && sp.back() == "state_rule"))
 							printf("cannot find attribute: %s\n", a.name());
 					}
 					auto content = std::string(n_c.child_value());

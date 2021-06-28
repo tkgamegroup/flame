@@ -2,7 +2,7 @@
 <prefab>
   <entity driver="dMenuItem" >
     <cElement padding="6,2,4,2" alignx="MinMax" 
-              fill_color.state_rules="60,60,60,255
+              fill_color.state_rule="60,60,60,255
               Hovering:100,110,120,255" />
     <cText />
     <cReceiver />

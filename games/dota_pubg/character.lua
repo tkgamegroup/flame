@@ -48,9 +48,8 @@ function make_character(entity, group, stats)
 	character.ui.element = character.ui.find_component("cElement")
 	character.ui.floating_tips = character.ui.find_child("floating_tips")
 	character.ui.floating_tips.items = {}
-	character.ui.hp_text = character.ui.find_child("hp_text").find_component("cText")
 	character.ui.hp_bar = character.ui.find_child("hp_bar").find_component("cElement")
-	__ui.add_child(character.ui)
+	__ui_scene.add_child(character.ui)
 
 	character.die = function()
 		if character.on_die then
@@ -163,7 +162,7 @@ function make_character(entity, group, stats)
 		if not g then return nil end
 		
 		local parr = flame_malloc(8)
-		local n = obj_root.get_within_circle(character.pos.to_flat(), 5, parr, 1, g)
+		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, parr, 1, g)
 		local p = flame_get(parr, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(parr)
 
@@ -184,8 +183,12 @@ function make_character(entity, group, stats)
 			if ui_pos.x > -100 then
 				character.ui.set_visible(true)
 				character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-				character.ui.hp_text.set_text(character.HP.."/"..character.HP_MAX)
-				character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
+				local percent = character.HP / character.HP_MAX
+				character.ui.hp_bar.set_scalex(percent)
+				if percent > 0.5 then		character.ui.hp_bar.set_fill_color(vec4(0,255,0,127))
+				elseif percent > 0.2 then	character.ui.hp_bar.set_fill_color(vec4(255,255,0,127))
+				else						character.ui.hp_bar.set_fill_color(vec4(255,0,0,127))
+				end
 
 				local i = 1
 				while i <= #character.ui.floating_tips.items do

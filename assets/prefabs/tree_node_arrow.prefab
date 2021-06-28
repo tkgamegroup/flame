@@ -3,7 +3,7 @@
   <entity name="arrow">
     <cElement padding="4,2,4,2" />
     <cText text=""
-         font_color.state_rules="255,255,255,255
+         font_color.state_rule="255,255,255,255
               Hovering:128,128,128,255"/>
     <cReceiver />
   </entity>

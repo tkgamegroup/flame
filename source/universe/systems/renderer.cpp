@@ -488,10 +488,6 @@ namespace flame
 		if (culled)
 			return layer;
 
-		auto self_transparent = true;
-		if (!element->draw(layer, this))
-			self_transparent = false;
-
 		auto clipping = false;
 		Rect last_scissor;
 		if (element->clipping && !(ed.scissor == element->bounds))
@@ -505,6 +501,10 @@ namespace flame
 			auto& info = ed.layers[layer].emplace_back();
 			info.scissor = ed.scissor;
 		}
+
+		auto self_transparent = true;
+		if (!element->draw(layer, this))
+			self_transparent = false;
 
 		if (!element->drawers.empty())
 		{
@@ -671,7 +671,7 @@ namespace flame
 		info.indices.resize(idx_cnt);
 
 		auto get_normal = [](const vec2& p1, const vec2& p2) {
-			auto d = normalize(p1 - p1);
+			auto d = normalize(p2 - p1);
 			return vec2(d.y, -d.x);
 		};
 

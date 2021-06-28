@@ -1,4 +1,5 @@
-obj_root = entity.find_component("cNode")
+obj_root = scene.find_child("obj_root")
+obj_root_n = obj_root.find_component("cNode")
 
 alt_pressing = false
 
@@ -33,20 +34,28 @@ e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_character(e, 1, PLAYER_STAT)
 make_player(main_player)
 main_player.awake()
-entity.add_child(e)
+obj_root.add_child(e)
 
-for i=1, 200, 1 do
+local character_panel = scene.find_child("character_panel")
+local hp_text = character_panel.find_child("hp_text").find_component("cText")
+obj_root.add_event(function()
+	hp_text.set_text("HP: "..main_player.HP.."/"..main_player.HP_MAX)
+end, 0.0)
+
+--[[
+for i=1, 300, 1 do
 	local e = create_entity("human")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
 	e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
 	--e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
     make_npc(make_character(e, 2, STAT))
-	entity.add_child(e)
+	obj_root.add_child(e)
 end
+]]
 
-entity.add_event(function()
+obj_root.add_event(function()
 	for n, char in pairs(characters[2]) do
-		if obj_root.is_any_within_circle(char.pos.to_flat(), 50, 1) then
+		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, 1) then
 			char.awake()
 		else
 			char.sleep()

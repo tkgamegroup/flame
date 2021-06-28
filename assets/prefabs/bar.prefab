@@ -2,7 +2,7 @@
 <prefab>
   <entity name="bar">
     <cElement width="8" height="8" 
-              fill_color.state_rules="0,0,0,0
+              fill_color.state_rule="0,0,0,0
               Active:220,220,220,255
               Hovering:190,190,190,255" />
     <cReceiver />

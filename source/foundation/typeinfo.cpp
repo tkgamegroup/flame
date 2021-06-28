@@ -25,43 +25,48 @@ namespace flame
 
 	struct TypeInfoPrivate_EnumSingle : TypeInfoPrivate_Pod
 	{
+		EnumInfoPrivate* ei = nullptr;
+
 		TypeInfoPrivate_EnumSingle(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypeEnumSingle, base_name, sizeof(int))
 		{
 			short_name = "I";
+			ei = find_enum(name);
 		}
 
 		void serialize(const void* src, char* dst) const override
 		{
-			const auto& s = find_enum(name)->find_item(*(int*)src)->name;
+			const auto& s = ei->find_item(*(int*)src)->name;
 			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(int*)dst = find_enum(name)->find_item(src)->value;
+			*(int*)dst = ei->find_item(src)->value;
 		}
 	};
 
 	struct TypeInfoPrivate_EnumMulti : TypeInfoPrivate_Pod
 	{
+		EnumInfoPrivate* ei = nullptr;
+
 		TypeInfoPrivate_EnumMulti(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypeEnumMulti, base_name, sizeof(int))
 		{
 			short_name = "I";
+			ei = find_enum(name);
 		}
 
 		void serialize(const void* src, char* dst) const override
 		{
-			auto e = find_enum(name);
 			std::string s;
 			auto v = *(int*)src;
-			for (auto i = 0; i < e->items.size(); i++)
+			for (auto i = 0; i < ei->items.size(); i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (i > 0)
 						s += '|';
-					s += e->find_item(1 << i)->name;
+					s += ei->find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
@@ -69,11 +74,10 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			auto e = find_enum(name);
 			auto v = 0;
 			auto sp = SUS::split(src, '|');
 			for (auto& t : sp)
-				v |= e->find_item(t)->value;
+				v |= ei->find_item(t)->value;
 			*(int*)dst = v;
 		}
 	};
