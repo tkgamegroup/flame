@@ -2,11 +2,7 @@ function make_npc(character)
 	character.chase_start_pos = vec2(-1000)
 	character.chase_tick = 0
 
-	character.on_die = function()
-		character.entity.remove_event(character.npc_event)
-	end
-
-	character.npc_event = character.entity.add_event(function()
+	character.on_event = function()
 		if character.chase_tick > 0 then
 			character.chase_tick = character.chase_tick - 1
 		end
@@ -32,5 +28,5 @@ function make_npc(character)
 				character.change_state("move_to", vec2(p.x, p.z))
 			end
 		end
-	end, 0)
+	end
 end

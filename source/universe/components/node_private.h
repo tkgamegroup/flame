@@ -68,7 +68,8 @@ namespace flame
 		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
 
-		uint get_closest_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count) override;
+		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0) override;
+		uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0) override;
 
 		void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
 		void remove_drawer(void* drawer) override;
@@ -150,31 +151,15 @@ namespace flame
 			}
 		}
 
-		void reindex(cNodePrivate* n)
-		{
-			fassert(n->octnode.second == this);
-
-			auto p = this;
-			while (!p->bounds.contains(n->bounds))
-			{
-				if (p->parent)
-					p = p->parent;
-				else
-					break;
-			}
-
-			remove(n);
-			p->add(n);
-		}
-
-		bool is_colliding(const AABB& check_bounds)
+		bool is_colliding(const AABB& check_bounds, uint filter_tag = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return false;
 
 			for (auto obj : objects)
 			{
-				if (!obj->entity->global_visibility)
+				auto e = obj->entity;
+				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -185,7 +170,7 @@ namespace flame
 			{
 				for (auto i = 0; i < 8; i++)
 				{
-					if (children[i]->is_colliding(check_bounds))
+					if (children[i]->is_colliding(check_bounds, filter_tag))
 						return true;
 				}
 			}
@@ -193,14 +178,15 @@ namespace flame
 			return false;
 		}
 
-		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res)
+		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return;
 
 			for (auto obj : objects)
 			{
-				if (!obj->entity->global_visibility)
+				auto e = obj->entity;
+				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -210,18 +196,46 @@ namespace flame
 			if (!children.empty())
 			{
 				for (auto i = 0; i < 8; i++)
-					children[i]->get_colliding(check_bounds, res);
+					children[i]->get_colliding(check_bounds, res, filter_tag);
 			}
 		}
 
-		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePrivate*>& res)
+		bool is_colliding(const vec2& check_center, float check_radius, uint filter_tag = 0)
+		{
+			if (!bounds.intersects(check_center, check_radius))
+				return false;
+
+			for (auto obj : objects)
+			{
+				auto e = obj->entity;
+				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+					continue;
+
+				if (obj->bounds.intersects(check_center, check_radius))
+					return true;
+			}
+
+			if (!children.empty())
+			{
+				for (auto i = 0; i < 8; i++)
+				{
+					if (children[i]->is_colliding(check_center, check_radius, filter_tag))
+						return true;
+				}
+			}
+
+			return false;
+		}
+
+		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
 
 			for (auto obj : objects)
 			{
-				if (!obj->entity->global_visibility)
+				auto e = obj->entity;
+				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -231,7 +245,7 @@ namespace flame
 			if (!children.empty())
 			{
 				for (auto i = 0; i < 8; i++)
-					children[i]->get_colliding(check_center, check_radius, res);
+					children[i]->get_colliding(check_center, check_radius, res, filter_tag);
 			}
 		}
 
@@ -278,14 +292,15 @@ namespace flame
 		//	}
 		//}
 
-		void get_within_frustum(const Plane* planes, std::vector<cNodePrivate*>& res)
+		void get_within_frustum(const Plane* planes, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
 		{
 			if (!is_AABB_in_frustum(planes, bounds))
 				return;
 
 			for (auto obj : objects)
 			{
-				if (!obj->entity->global_visibility)
+				auto e = obj->entity;
+				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
 					continue;
 
 				if (is_AABB_in_frustum(planes, obj->bounds))
@@ -295,7 +310,7 @@ namespace flame
 			if (!children.empty())
 			{
 				for (auto i = 0; i < 8; i++)
-					children[i]->get_within_frustum(planes, res);
+					children[i]->get_within_frustum(planes, res, filter_tag);
 			}
 		}
 

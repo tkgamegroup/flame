@@ -81,12 +81,19 @@ namespace flame
 			entity->component_data_changed(this, S<"octree_length"_h>);
 	}
 
-	uint cNodePrivate::get_closest_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count)
+	bool cNodePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)
+	{
+		fassert(octree.get());
+
+		return octree->is_colliding(c, r, filter_tag);
+	}
+
+	uint cNodePrivate::get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag)
 	{
 		fassert(octree.get());
 
 		std::vector<cNodePrivate*> res;
-		octree->get_colliding(c, r, res);
+		octree->get_colliding(c, r, res, filter_tag);
 		if (res.empty())
 			return 0;
 

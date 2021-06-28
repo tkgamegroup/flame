@@ -55,6 +55,7 @@ namespace flame
 		bool dirty = true;
 
 		sRendererPrivate(sRendererParms* parms);
+		~sRendererPrivate();
 
 		void set_always_update(bool a) override { always_update = a; }
 

@@ -128,9 +128,12 @@ namespace flame
 
 		ImagePrivate::~ImagePrivate()
 		{
-			std::erase_if(__images, [&](const auto& i) {
-				return i == this;
-			});
+			if (!__images.empty())
+			{
+				std::erase_if(__images, [&](const auto& i) {
+					return i == this;
+				});
+			}
 
 			if (vk_memory != 0)
 			{

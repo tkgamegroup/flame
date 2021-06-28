@@ -12,6 +12,9 @@ namespace flame
 		virtual const char* get_name() const = 0;
 		virtual void set_name(const char* name) = 0;
 
+		virtual uint get_tag() const = 0;
+		virtual void set_tag(uint tag) = 0;
+
 		virtual bool get_visible() const = 0;
 		virtual void set_visible(bool v) = 0;
 

@@ -467,7 +467,10 @@ namespace flame
 			if (!n->octnode.second)
 				n->octnode.first->add(n);
 			else
-				n->octnode.second->reindex(n);
+			{
+				n->octnode.second->remove(n);
+				n->octnode.first->add(n);
+			}
 
 			n->pending_reindex = false;
 		}

@@ -76,6 +76,9 @@ namespace flame
 
 		for (auto c : controllers)
 		{
+			if (!c->entity->global_visibility)
+				continue;
+
 			auto disp = c->disp;
 			disp.y -= 1.f;
 			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
@@ -88,6 +91,9 @@ namespace flame
 
 		for (auto r : rigids)
 		{
+			if (!r->entity->global_visibility)
+				continue;
+
 			if (r->dynamic && !r->node->transform_dirty)
 			{
 				vec3 coord;
@@ -109,6 +115,9 @@ namespace flame
 		}
 		for (auto c : controllers)
 		{
+			if (!c->entity->global_visibility)
+				continue;
+
 			auto coord = c->phy_controller->get_position();
 			auto pn = c->entity->get_parent_component_t<cNodePrivate>();
 			if (pn)

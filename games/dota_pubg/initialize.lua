@@ -1,4 +1,4 @@
-octnode = entity.find_component("cNode")
+obj_root = entity.find_component("cNode")
 
 alt_pressing = false
 
@@ -29,16 +29,27 @@ STAT = {
 
 local e = create_entity("human")
 e.set_name("player")
-e.find_component("cNode").set_pos(vec3(200, 80, 200))
+e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_character(e, 1, PLAYER_STAT)
 make_player(main_player)
+main_player.awake()
 entity.add_child(e)
 
-for i=1, 10, 1 do
+for i=1, 200, 1 do
 	local e = create_entity("human")
-	e.set_name("enemy_"..tostring(math.random() * 10000))
-	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 80, 190 + math.random() * 20))
-	--e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
+	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
+	e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
+	--e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
     make_npc(make_character(e, 2, STAT))
 	entity.add_child(e)
 end
+
+entity.add_event(function()
+	for n, char in pairs(characters[2]) do
+		if obj_root.is_any_within_circle(char.pos.to_flat(), 50, 1) then
+			char.awake()
+		else
+			char.sleep()
+		end
+	end
+end, 1.0)

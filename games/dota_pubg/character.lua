@@ -6,6 +6,7 @@ function make_character(entity, group, stats)
 	local character = {
 		name = entity.get_name(),
 		group = group,
+		sleeping = true,
 		dead = false,
 
 		entity = entity,
@@ -28,9 +29,14 @@ function make_character(entity, group, stats)
 		attacking = false,
 
 		on_die = nil,
+		on_event = nil,
 
 		recover_tick = 0
 	}
+
+	entity.set_tag(group)
+	entity.set_visible(false)
+	character.pos = character.node.get_global_pos()
 	
 	for key, val in pairs(stats) do
 		character[key] = val
@@ -38,6 +44,7 @@ function make_character(entity, group, stats)
 	character.HP = character.HP_MAX
 
 	character.ui = create_entity("character_hud")
+	character.ui.set_visible(false)
 	character.ui.element = character.ui.find_component("cElement")
 	character.ui.floating_tips = character.ui.find_child("floating_tips")
 	character.ui.floating_tips.items = {}
@@ -58,9 +65,33 @@ function make_character(entity, group, stats)
 		character.dead = true
 	end
 
+	character.sleep = function()
+		if not character.sleeping then
+			character.sleeping = true
+			character.entity.set_visible(false)
+			character.entity.remove_event(character.event)
+		end
+	end
+
+	character.awake = function()
+		if character.sleeping then
+			character.sleeping = false
+			character.entity.set_visible(true)
+			character.event = character.entity.add_event(function()
+				character.do_logic()
+			end, 0)
+		end
+	end
+
 	character.update_dir = function()
 		character.node.set_euler(vec3(character.yaw, 0, 0))
 		character.dir = character.node.get_local_dir(2)
+	end
+
+	character.get_enemy_group = function()
+		if character.group == 1 then return 2 end
+		if character.group == 2 then return 1 end
+		return nil
 	end
 
 	character.change_state = function(s, t)
@@ -79,6 +110,7 @@ function make_character(entity, group, stats)
 			character.target = t
 		elseif s == "attack_on_pos" then
 			character.target_pos = t
+			character.attacking = false
 		end
 		character.state = s
 	end
@@ -127,49 +159,46 @@ function make_character(entity, group, stats)
 	end
 
 	character.find_closest_enemy = function(r)
-		local g = nil
-		if character.group == 1 then
-			g = 2
-		elseif character.group == 2 then
-			g = 1
-		end
-		if not g then
-			return
-		end
+		local g = character.get_enemy_group()
+		if not g then return nil end
 		
-		local min_dis = 1000
-		local min_obj = nil
-		local pos = character.pos.to_flat()
-		for n, char in pairs(characters[g]) do
-			local dis = distance_2(pos, char.pos.to_flat())
-			if dis < r and dis < min_dis then
-				min_dis = dis
-				min_obj = char
-			end
-		end
+		local parr = flame_malloc(8)
+		local n = obj_root.get_within_circle(character.pos.to_flat(), 5, parr, 1, g)
+		local p = flame_get(parr, 0, e_type_pointer, e_else_type, 1, 1)
+		flame_free(parr)
 
-		return min_obj
+		if n == 0 or not p then return nil end
+
+		local e = make_entity(p)
+		local name = e.get_name()
+		return characters[g][name]
 	end
 
-	character.change_state("idle")
-
-	character.event = character.entity.add_event(function()
+	character.do_logic = function()
 		local pos = character.node.get_global_pos()
+		local dis_to_mp = distance_3(pos, main_player.pos)
+		
+		character.ui.set_visible(false)
+		if dis_to_mp < 50 then
+			local ui_pos = camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z))
+			if ui_pos.x > -100 then
+				character.ui.set_visible(true)
+				character.ui.element.set_pos(ui_pos + vec2(-30, -20))
+				character.ui.hp_text.set_text(character.HP.."/"..character.HP_MAX)
+				character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
 
-		character.ui.element.set_pos(camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z)) + vec2(-30, -20))
-		character.ui.hp_text.set_text(character.HP.."/"..character.HP_MAX)
-		character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
-
-		local i = 1
-		while i <= #character.ui.floating_tips.items do
-			local item = character.ui.floating_tips.items[i]
-			item.element.add_pos(vec2(0, -2))
-			item.tick = item.tick - 1
-			if item.tick <= 0 then
-				character.ui.floating_tips.remove_child(item.e)
-				table.remove(character.ui.floating_tips.items, i)
-			else
-				i = i + 1
+				local i = 1
+				while i <= #character.ui.floating_tips.items do
+					local item = character.ui.floating_tips.items[i]
+					item.element.add_pos(vec2(0, -2))
+					item.tick = item.tick - 1
+					if item.tick <= 0 then
+						character.ui.floating_tips.remove_child(item.e)
+						table.remove(character.ui.floating_tips.items, i)
+					else
+						i = i + 1
+					end
+				end
 			end
 		end
 
@@ -263,7 +292,13 @@ function make_character(entity, group, stats)
 		end
 
 		character.pos = pos
-	end, 0)
+
+		if character.on_event then
+			character.on_event()
+		end
+	end
+
+	character.change_state("idle")
 
 	characters[group][character.name] = character
 

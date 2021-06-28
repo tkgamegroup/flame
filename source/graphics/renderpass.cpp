@@ -141,9 +141,12 @@ namespace flame
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
-			std::erase_if(__renderpasses, [&](const auto& rp) {
-				return rp == this;
-			});
+			if (!__renderpasses.empty())
+			{
+				std::erase_if(__renderpasses, [&](const auto& rp) {
+					return rp == this;
+				});
+			}
 
 			for (auto& sp : subpasses)
 			{

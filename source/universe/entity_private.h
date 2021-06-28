@@ -24,6 +24,7 @@ namespace flame
 		typedef std::vector<std::unique_ptr<Closure<void(Capture&, uint)>>> DataListeners;
 
 		std::string name;
+		uint tag = 0xffffffff;
 
 		bool visible = true;
 		bool global_visibility = false;
@@ -68,6 +69,9 @@ namespace flame
 
 		const char* get_name() const override { return name.c_str(); };
 		void set_name(const char* _name) override { name = _name; }
+
+		uint get_tag() const override { return tag; }
+		void set_tag(uint _tag) override { tag = _tag; }
 
 		bool get_visible() const override { return visible; }
 		void update_visibility();

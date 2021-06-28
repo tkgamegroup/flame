@@ -5,8 +5,6 @@ function make_player(character)
 	character.mpos = vec2(-1000)
 
 	character.on_die = function()
-		character.entity.remove_event(character.player_event)
-		
 		scene_receiver.remove_mouse_move_listener(character.mouse_move_list)
 		scene_receiver.remove_mouse_right_down_listener(character.mouse_rightdown_list)
 	end
@@ -14,7 +12,7 @@ function make_player(character)
 	local e_shading_flags = find_enum("ShadingFlags")
 	local e_shading_material = e_shading_flags["Material"]
 	local e_shading_outline = e_shading_flags["Outline"]
-	character.player_event = character.entity.add_event(function()
+	character.on_event = function()
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(character.mpos) - o)
 		local pe = flame_malloc(8)
@@ -37,6 +35,7 @@ function make_player(character)
 				end
 			end
 		end
+
 		if hovering.p ~= character.hovering.p then
 			if character.hovering.p then
 				character.hovering.remove_message_listener(character.hovering_destroyed_lis)
@@ -55,14 +54,14 @@ function make_player(character)
 
 			character.hovering = hovering
 		end
-	end, 0)
+	end
 	
 	character.mouse_move_list = scene_receiver.add_mouse_move_listener(function(disp, mpos)
 		character.mpos = mpos
 	end)
 
 	character.mouse_rightdown_list = scene_receiver.add_mouse_right_down_listener(function(mpos)
-		if character.hovering == nil then
+		if not character.hovering.p then
 			return
 		end
 
@@ -74,7 +73,7 @@ function make_player(character)
 				character.change_state("attack_on_pos", character.hovering_pos)
 			end
 		else
-			local char = characters[name]
+			local char = characters[2][name]
 			if char then
 				character.change_state("attack_target", char)
 			end

@@ -463,6 +463,11 @@ namespace flame
 		_nd.reset(new NodeRenderData);
 	}
 
+	sRendererPrivate::~sRendererPrivate()
+	{
+		graphics::Queue::get(device)->wait_idle();
+	}
+
 	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
 	{
 		auto& ed = *_ed;
