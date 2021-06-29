@@ -12,41 +12,19 @@
 
 namespace flame
 {
-	static void* (*pf_allocate)(uint size);
-	static void  (*pf_deallocate)(void* p);
-	static void* (*pf_reallocate)(void* p, uint size);
-
-	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size))
-	{
-		pf_allocate = allocate;
-		pf_deallocate = deallocate;
-		pf_reallocate = reallocate;
-	}
-
 	void* f_malloc(uint size)
 	{
-		if (!pf_allocate)
-			return malloc(size);
-		return pf_allocate(size);
+		return malloc(size);
 	}
 
 	void* f_realloc(void* p, uint size)
 	{
-		if (!p)
-			return f_malloc(size);
-		if (!pf_reallocate)
-			return realloc(p, size);
-		return pf_reallocate(p, size);
+		return realloc(p, size);
 	}
 
 	void f_free(void* p)
 	{
-		if (!pf_deallocate)
-		{
-			free(p);
-			return;
-		}
-		pf_deallocate(p);
+		free(p);
 	}
 
 	Guid generate_guid()

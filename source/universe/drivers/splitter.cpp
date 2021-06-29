@@ -115,6 +115,6 @@ namespace flame
 
 	dSplitter* dSplitter::create(void* parms)
 	{
-		return f_new<dSplitterPrivate>();
+		return new dSplitterPrivate();
 	}
 }

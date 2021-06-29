@@ -83,6 +83,6 @@ namespace flame
 
 	dSlider* dSlider::create(void* parms)
 	{
-		return f_new<dSliderPrivate>();
+		return new dSliderPrivate();
 	}
 }

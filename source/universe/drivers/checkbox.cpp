@@ -29,6 +29,6 @@ namespace flame
 
 	dCheckbox* dCheckbox::create(void* parms)
 	{
-		return f_new<dCheckboxPrivate>();
+		return new dCheckboxPrivate();
 	}
 }

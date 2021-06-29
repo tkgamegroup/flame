@@ -42,8 +42,6 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(UdtInfo);
 	FLAME_FOUNDATION_TYPE(TypeInfoDataBase);
 
-	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size));
-
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);

@@ -150,6 +150,6 @@ namespace flame
 
 	cImage* cImage::create(void* parms)
 	{
-		return f_new<cImagePrivate>();
+		return new cImagePrivate();
 	}
 }

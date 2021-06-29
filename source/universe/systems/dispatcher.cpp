@@ -491,6 +491,6 @@ namespace flame
 
 	sDispatcher* sDispatcher::create(void* parms)
 	{
-		return f_new<sDispatcherPrivate>();
+		return new sDispatcherPrivate();
 	}
 }

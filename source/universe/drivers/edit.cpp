@@ -503,6 +503,6 @@ namespace flame
 
 	dEdit* dEdit::create(void* parms)
 	{
-		return f_new<dEditPrivate>();
+		return new dEditPrivate();
 	}
 }

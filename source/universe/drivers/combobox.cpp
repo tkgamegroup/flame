@@ -53,6 +53,6 @@ namespace flame
 
 	dCombobox* dCombobox::create(void* parms)
 	{
-		return f_new<dComboboxPrivate>();
+		return new dComboboxPrivate();
 	}
 }

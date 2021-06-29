@@ -24,6 +24,6 @@ namespace flame
 
 	cBlur* cBlur::create(void* parms)
 	{
-		return f_new<cBlurPrivate>();
+		return new cBlurPrivate();
 	}
 }

@@ -44,6 +44,6 @@ namespace flame
 
 	dList* dList::create(void* parms)
 	{
-		return f_new<dListPrivate>();
+		return new dListPrivate();
 	}
 }

@@ -150,6 +150,6 @@ namespace flame
 
 	cCamera* cCamera::create(void* parms)
 	{
-		return f_new<cCameraPrivate>();
+		return new cCameraPrivate();
 	}
 }

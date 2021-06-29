@@ -171,7 +171,7 @@ namespace flame
 
 	dMenu* dMenu::create(void* parms)
 	{
-		return f_new<dMenuPrivate>();
+		return new dMenuPrivate();
 	}
 
 	void dMenuItemPrivate::set_checkable(bool v)
@@ -235,11 +235,11 @@ namespace flame
 
 	dMenuItem* dMenuItem::create(void* parms)
 	{
-		return f_new<dMenuItemPrivate>();
+		return new dMenuItemPrivate();
 	}
 
 	dMenuBar* dMenuBar::create(void* parms)
 	{
-		return f_new<dMenuBarPrivate>();
+		return new dMenuBarPrivate();
 	}
 }

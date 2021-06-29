@@ -374,6 +374,6 @@ namespace flame
 
 	cNode* cNode::create(void* parms)
 	{
-		return f_new<cNodePrivate>();
+		return new cNodePrivate();
 	}
 }

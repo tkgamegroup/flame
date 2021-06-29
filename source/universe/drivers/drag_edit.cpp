@@ -143,6 +143,6 @@ namespace flame
 
 	dDragEdit* dDragEdit::create(void* parms)
 	{
-		return f_new<dDragEditPrivate>();
+		return new dDragEditPrivate();
 	}
 }

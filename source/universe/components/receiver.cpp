@@ -406,6 +406,6 @@ namespace flame
 
 	cReceiver* cReceiver::create(void* parms)
 	{
-		return f_new<cReceiverPrivate>();
+		return new cReceiverPrivate();
 	}
 }

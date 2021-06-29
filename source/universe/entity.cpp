@@ -990,7 +990,7 @@ namespace flame
 			}
 			else if (name[0] == 'e')
 			{
-				auto e = f_new<EntityPrivate>();
+				auto e = new EntityPrivate();
 				e->add_src(fn);
 				auto offset = n_c.offset_debug();
 				for (auto i = 0; i < los.size(); i++)
@@ -1035,7 +1035,7 @@ namespace flame
 
 	EntityPtr EntityPrivate::copy()
 	{
-		auto ret = f_new<EntityPrivate>();
+		auto ret = new EntityPrivate();
 		ret->name = name;
 		ret->visible = visible;
 		ret->srcs = srcs;
@@ -1250,7 +1250,7 @@ namespace flame
 
 	Entity* Entity::create()
 	{
-		return f_new<EntityPrivate>();
+		return new EntityPrivate();
 	}
 
 	void Entity::initialize()

@@ -61,6 +61,6 @@ namespace flame
 
 	cController* cController::create(void* parms)
 	{
-		return f_new<cControllerPrivate>();
+		return new cControllerPrivate();
 	}
 }

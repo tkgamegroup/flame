@@ -274,6 +274,6 @@ namespace flame
 
 	cAnimation* cAnimation::create(void* parms)
 	{
-		return f_new<cAnimationPrivate>();
+		return new cAnimationPrivate();
 	}
 }

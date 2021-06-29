@@ -158,6 +158,6 @@ namespace flame
 
 	cTerrain* cTerrain::create(void* parms)
 	{
-		return f_new<cTerrainPrivate>();
+		return new cTerrainPrivate();
 	}
 }

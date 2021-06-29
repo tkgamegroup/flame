@@ -120,7 +120,7 @@ namespace flame
 
 	dTree* dTree::create(void* parms)
 	{
-		return f_new<dTreePrivate>();
+		return new dTreePrivate();
 	}
 
 	void dTreeLeafPrivate::set_title(const wchar_t* _title)
@@ -150,7 +150,7 @@ namespace flame
 
 	dTreeLeaf* dTreeLeaf::create(void* parms)
 	{
-		return f_new<dTreeLeafPrivate>();
+		return new dTreeLeafPrivate();
 	}
 
 	void dTreeNodePrivate::set_title(const wchar_t* _title)
@@ -232,6 +232,6 @@ namespace flame
 
 	dTreeNode* dTreeNode::create(void* parms)
 	{
-		return f_new<dTreeNodePrivate>();
+		return new dTreeNodePrivate();
 	}
 }

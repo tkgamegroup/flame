@@ -126,6 +126,6 @@ namespace flame
 
 	cSky* cSky::create(void* parms)
 	{
-		return f_new<cSkyPrivate>();
+		return new cSkyPrivate();
 	}
 }

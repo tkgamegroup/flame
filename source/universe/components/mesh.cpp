@@ -140,6 +140,6 @@ namespace flame
 
 	cMesh* cMesh::create(void* parms)
 	{
-		return f_new<cMeshPrivate>();
+		return new cMeshPrivate();
 	}
 }

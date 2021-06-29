@@ -175,18 +175,6 @@ namespace flame
 
 	void App::create(bool graphics_debug)
 	{
-		set_allocator(
-			[](uint size) {
-			return malloc(size);
-		},
-			[](void* p) {
-			free(p);
-		},
-			[](void* p, uint size) {
-			return realloc(p, size);
-		}
-		);
-
 		//{
 		//	auto config = parse_ini_file(L"config.ini");
 		//	for (auto& e : config.get_section_entries(""))

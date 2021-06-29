@@ -103,6 +103,6 @@ namespace flame
 
 	dWindow* dWindow::create(void* parms)
 	{
-		return f_new<dWindowPrivate>();
+		return new dWindowPrivate();
 	}
 }

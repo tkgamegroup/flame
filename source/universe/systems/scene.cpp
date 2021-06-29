@@ -478,6 +478,6 @@ namespace flame
 
 	sScene* sScene::create(void* parms)
 	{
-		return f_new<sScenePrivate>();
+		return new sScenePrivate();
 	}
 }

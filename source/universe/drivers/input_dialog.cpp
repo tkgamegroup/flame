@@ -71,6 +71,6 @@ namespace flame
 
 	dInputDialog* dInputDialog::create(void* parms)
 	{
-		return f_new<dInputDialogPrivate>();
+		return new dInputDialogPrivate();
 	}
 }

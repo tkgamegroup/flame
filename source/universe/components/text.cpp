@@ -164,6 +164,6 @@ namespace flame
 
 	cText* cText::create(void* parms)
 	{
-		return f_new<cTextPrivate>();
+		return new cTextPrivate();
 	}
 }
