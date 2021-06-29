@@ -16,6 +16,6 @@ namespace flame
 		void set_index(int index) override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 	};
 }

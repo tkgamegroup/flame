@@ -95,12 +95,13 @@ namespace flame
 		//	auto e_tree = thiz->entity;
 		//	auto c_tree_layout = e_tree->get_component(cLayout);
 		//	e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y *
-		//		(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
+		//		(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - 
+		// c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
 		//	e_thumb->get_component(cScrollbarThumb)->update(0.f);
 		}, Capture().set_thiz(this), 1U);
 	}
 
-	bool dTreePrivate::on_child_added(EntityPtr e)
+	bool dTreePrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 			populate_tree(this, e);
@@ -197,7 +198,7 @@ namespace flame
 		fassert(items_element);
 	}
 
-	bool dTreeNodePrivate::on_child_added(EntityPtr e)
+	bool dTreeNodePrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{

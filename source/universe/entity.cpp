@@ -390,24 +390,26 @@ namespace flame
 	{
 		fassert(e && e != this && !e->parent);
 
-		if (e->redirectable && position == -1)
+		uint pos;
+		if (position == -1)
+			pos = children.size();
+		else
+			pos = position;
+
+		if (position == -1)
 		{
-			for (auto i = (int)drivers.size() - 1; i >= 0; i--)
+			for (auto it = drivers.rbegin(); it != drivers.rend(); it++)
 			{
-				if (drivers[i]->on_child_added(e))
+				if ((*it)->on_child_added(e, pos))
 					return;
 			}
 		}
 
-		if (position == -1)
-			position = children.size();
-
-		children.emplace(children.begin() + position, e);
+		children.emplace(children.begin() + pos, e);
 
 		e->parent = this;
-		e->redirectable = false;
 		e->depth = depth + 1;
-		e->index = position;
+		e->index = pos;
 		e->update_visibility();
 
 		for (auto& l : e->message_listeners)
@@ -450,7 +452,6 @@ namespace flame
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
 	{
 		e->parent = nullptr;
-		e->redirectable = true;
 
 		for (auto& l : e->message_listeners)
 			l->call(S<"self_removed"_h>, nullptr, nullptr);

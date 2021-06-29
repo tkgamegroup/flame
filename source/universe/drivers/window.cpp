@@ -91,7 +91,7 @@ namespace flame
 		fassert(content);
 	}
 
-	bool dWindowPrivate::on_child_added(EntityPtr e)
+	bool dWindowPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{

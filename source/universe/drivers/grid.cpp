@@ -39,7 +39,7 @@ namespace flame
 
 	}
 
-	bool dGridPrivate::on_child_added(EntityPtr e)
+	bool dGridPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{

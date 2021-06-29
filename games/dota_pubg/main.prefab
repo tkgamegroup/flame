@@ -59,7 +59,7 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-      <eNode name="obj_root" is_octree="true" octree_length="400.0" />
+      <eNode name="obj_root" octree_length="400.0" />
     </eNode>
   </eElement>
 </prefab>

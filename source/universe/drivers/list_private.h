@@ -13,7 +13,7 @@ namespace flame
 		bool enable_deselect = true;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 
 		EntityPtr get_selected() const override { return selected; }
 		void set_selected(EntityPtr e) override;

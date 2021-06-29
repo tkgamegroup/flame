@@ -31,7 +31,6 @@ namespace flame
 
 		WorldPrivate* world = nullptr;
 		EntityPrivate* parent = nullptr;
-		bool redirectable = true;
 
 		StateFlags state = StateNone;
 		StateFlags last_state = StateNone;

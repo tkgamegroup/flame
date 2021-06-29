@@ -332,7 +332,7 @@ namespace flame
 
 		pnode = entity->get_parent_component_t<cNodePrivate>();
 
-		if (is_octree)
+		if (octree_length > 0.f)
 		{
 			update_transform();
 			octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));

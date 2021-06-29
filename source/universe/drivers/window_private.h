@@ -25,6 +25,6 @@ namespace flame
 		void remove_close_listener(void* lis) override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 	};
 }

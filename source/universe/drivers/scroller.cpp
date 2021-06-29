@@ -92,7 +92,7 @@ namespace flame
 		set_type(type);
 	}
 
-	bool dScrollerPrivate::on_child_added(EntityPtr e)
+	bool dScrollerPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished && !target)
 		{

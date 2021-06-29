@@ -25,6 +25,7 @@ namespace flame
 
 		items = entity->find_child("items");
 		fassert(items);
+		items->name = "##items";
 
 		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			auto thiz = c.thiz<dMenuPrivate>();
@@ -84,22 +85,25 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	bool dMenuPrivate::on_child_added(EntityPtr e)
+	bool dMenuPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{
-			auto element = e->get_component_i<cElementPrivate>(0);
-			fassert(element);
-			element->set_alignx(AlignMinMax);
-			auto dm = e->get_driver_t<dMenuPrivate>();
-			if (dm)
+			if (e->name != "##items")
 			{
-				dm->type = MenuSub;
-				dm->element->add_padding(vec4(0.f, 0.f, text->font_size, 0.f));
-				dm->arrow->set_visible(true);
+				auto element = e->get_component_i<cElementPrivate>(0);
+				fassert(element);
+				element->set_alignx(AlignMinMax);
+				auto dm = e->get_driver_t<dMenuPrivate>();
+				if (dm)
+				{
+					dm->type = MenuSub;
+					dm->element->add_padding(vec4(0.f, 0.f, text->font_size, 0.f));
+					dm->arrow->set_visible(true);
+				}
+				items->add_child(e);
+				return true;
 			}
-			items->add_child(e);
-			return true;
 		}
 		return false;
 	}
@@ -149,7 +153,6 @@ namespace flame
 
 		root->remove_child(items, false);
 		items->set_visible(false);
-		items->redirectable = false;
 		entity->add_child(items);
 
 		opened = false;

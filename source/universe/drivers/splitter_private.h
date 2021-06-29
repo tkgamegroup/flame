@@ -20,6 +20,6 @@ namespace flame
 		void set_type(SplitterType type) override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 	};
 }

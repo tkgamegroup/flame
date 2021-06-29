@@ -30,7 +30,7 @@ namespace flame
 		void set_type(ScrollType type) override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 
 		void scroll(const vec2& v) override;
 	};

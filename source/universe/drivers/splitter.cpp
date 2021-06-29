@@ -98,7 +98,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	bool dSplitterPrivate::on_child_added(EntityPtr e)
+	bool dSplitterPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{
@@ -106,12 +106,9 @@ namespace flame
 			{
 				auto element = e->get_component_i<cElementPrivate>(0);
 				fassert(element);
-				e->redirectable = false;
-				entity->add_child(e, targets.size() == 0 ? 0 : 2);
+				pos = targets.size() == 0 ? 0 : 2;
 				targets.push_back(element);
-				return true;
 			}
-			return false;
 		}
 		return false;
 	}

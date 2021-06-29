@@ -15,7 +15,7 @@ namespace flame
 		void expand_to_selected() override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 	};
 
 	struct dTreeLeafPrivate : dTreeLeaf
@@ -55,6 +55,6 @@ namespace flame
 		void toggle_collapse() override;
 
 		void on_load_finished() override;
-		bool on_child_added(EntityPtr e) override;
+		bool on_child_added(EntityPtr e, uint& pos) override;
 	};
 }

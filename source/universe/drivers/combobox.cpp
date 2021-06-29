@@ -37,7 +37,7 @@ namespace flame
 		fassert(text);
 	}
 
-	bool dComboboxPrivate::on_child_added(EntityPtr e)
+	bool dComboboxPrivate::on_child_added(EntityPtr e, uint& pos)
 	{
 		if (load_finished)
 		{

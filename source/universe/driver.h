@@ -22,6 +22,6 @@ namespace flame
 		}
 
 		virtual void on_load_finished() {}
-		virtual bool on_child_added(EntityPtr e) { return false; }
+		virtual bool on_child_added(EntityPtr e, uint& pos) { return false; }
 	};
 }
