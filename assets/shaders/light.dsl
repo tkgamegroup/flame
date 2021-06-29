@@ -16,7 +16,7 @@ struct LightInfo
 	vec3 color;
 	
 	int shadow_index;
-	float shadow_distance;
+	vec2 shadow_range;
 };
 
 layout (set = LIGHT_SET, binding = 0) buffer readonly GridLights

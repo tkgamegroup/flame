@@ -39,7 +39,7 @@ obj_root.add_child(e)
 local character_panel = scene.find_child("character_panel")
 local hp_text = character_panel.find_child("hp_text").find_component("cText")
 obj_root.add_event(function()
-	hp_text.set_text("HP: "..main_player.HP.."/"..main_player.HP_MAX)
+	hp_text.set_text("HP: "..main_player.HP.."/"..main_player.HP_MAX.."  +"..main_player.HP_RECOVER)
 end, 0.0)
 
 --[[

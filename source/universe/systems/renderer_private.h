@@ -58,6 +58,8 @@ namespace flame
 		~sRendererPrivate();
 
 		void set_always_update(bool a) override { always_update = a; }
+		void set_render_type(RenderType type) override { render_type = type; }
+		void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) override;
 
 		graphics::ImageView* get_element_res(uint idx) const override;
 		int set_element_res(int idx, graphics::ImageView* iv) override;
@@ -82,8 +84,6 @@ namespace flame
 
 		cCameraPtr get_camera() const override { return camera; }
 		void set_camera(cCameraPtr c) override { camera = c; }
-
-		void set_render_type(RenderType type) override { render_type = type; }
 
 		void* get_sky_id() override { return sky_id; }
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,

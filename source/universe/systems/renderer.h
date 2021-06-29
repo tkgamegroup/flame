@@ -19,6 +19,8 @@ namespace flame
 		}
 
 		virtual void set_always_update(bool a) = 0;
+		virtual void set_render_type(RenderType type) = 0;
+		virtual void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) = 0;
 
 		virtual graphics::ImageView* get_element_res(uint idx) const = 0;
 		virtual int set_element_res(int idx, graphics::ImageView* iv) = 0;
@@ -40,8 +42,6 @@ namespace flame
 
 		virtual cCameraPtr get_camera() const = 0;
 		virtual void set_camera(cCameraPtr camera) = 0;
-
-		virtual void set_render_type(RenderType type) = 0;
 
 		virtual void* get_sky_id() = 0;
 		virtual void set_sky(graphics::ImageView* box, graphics::ImageView* irr,

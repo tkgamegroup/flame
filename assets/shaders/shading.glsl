@@ -82,10 +82,10 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		vec3 L = light.pos;
 		
 		float shadow = 1.0;
-		if (light.shadow_index != -1 && distancev < light.shadow_distance)
+		if (light.shadow_index != -1 && distancev < light.shadow_range.y)
 		{
-			float d = distancev / light.shadow_distance;
-			uint lvs = render_data.csm_levels;
+			float d = distancev / light.shadow_range.y;
+			uint lvs = render_data.dir_shadow_levels;
 			float div = 1.0 / lvs;
 			uint lv = 0;
 			for (; lv < lvs; lv++)
@@ -97,8 +97,8 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 			vec4 coordl = dir_shadow_mats[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 			float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-			ref = ref * light.shadow_distance;
-			float dist = coordl.z * light.shadow_distance;
+			ref = ref * light.shadow_range.y;
+			float dist = coordl.z * light.shadow_range.y;
 			shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 		}
 		
@@ -115,11 +115,11 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		L = L / dist;
 
 		float shadow = 1.0;
-		if (light.shadow_index != -1 && distancev < light.shadow_distance)
+		if (light.shadow_index != -1 && distancev < light.shadow_range.y)
 		{
 			float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
-			float zNear = render_data.ptsm_near;
-			float zFar = light.shadow_distance;
+			float zNear = light.shadow_range.x;
+			float zFar = light.shadow_range.y;
 			ref = 2.0 * zNear * zFar / (zFar + zNear - ref * (zFar - zNear));
 			shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 		}

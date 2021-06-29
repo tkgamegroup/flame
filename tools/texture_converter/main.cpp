@@ -25,7 +25,7 @@ show_usage:
 
 process:
 	auto d = Device::create(true);
-	auto i = Image::create(d, std::filesystem::path(input).c_str(), srgb, ImageUsageNone, false, true);
+	auto i = Image::get(d, std::filesystem::path(input).c_str(), srgb);
 	i->save(std::filesystem::path(output).c_str());
 
 	printf("converted\n");

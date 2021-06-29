@@ -10,6 +10,7 @@ int main(int argc, char** args)
 	g_app.create();
 
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
+	w->s_renderer->set_shadow_props(3, 50.f, 20.f);
 
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"character.lua");

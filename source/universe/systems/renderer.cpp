@@ -384,6 +384,11 @@ namespace flame
 	{
 		bool should_render;
 
+		uint dir_shadow_levels = 3U;
+		float dir_shadow_dist = 100.f;
+		float pt_shadow_dist = 20.f;
+		float pt_shadow_near = 0.1f;
+
 		std::vector<graphics::ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
 		std::vector<MeshRes> mesh_reses;
@@ -579,6 +584,15 @@ namespace flame
 		}
 	}
 
+	void sRendererPrivate::set_shadow_props(uint dir_levels, float dir_dist, float pt_dist)
+	{
+		auto& nd = *_nd;
+
+		nd.dir_shadow_levels = dir_levels;
+		nd.dir_shadow_dist = dir_dist;
+		nd.pt_shadow_dist = pt_dist;
+	}
+
 	graphics::ImageView* sRendererPrivate::get_element_res(uint idx) const
 	{
 		return _ed->reses[idx];
@@ -627,6 +641,9 @@ namespace flame
 
 	void sRendererPrivate::fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color)
 	{
+		if (pt_cnt == 0)
+			return;
+
 		auto& ed = *_ed;
 
 		auto vtx_cnt = 3 * (pt_cnt - 2);
@@ -656,6 +673,9 @@ namespace flame
 
 	void sRendererPrivate::stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed)
 	{
+		if (pt_cnt == 0)
+			return;
+
 		auto& ed = *_ed;
 
 		auto vtx_cnt = 2 * pt_cnt;
@@ -753,6 +773,9 @@ namespace flame
 
 	void sRendererPrivate::draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color)
 	{
+		if (cnt == 0)
+			return;
+
 		auto& ed = *_ed;
 
 		auto vtx_cnt = 4 * cnt;
@@ -1451,18 +1474,13 @@ namespace flame
 		auto& nd = *_nd;
 		if (nd.should_render)
 		{
-			auto csm_levels = 3U; // TODO
-			auto ptsm_near = 0.01f; // TODO
-
 			{
 				camera->set_screen_size(tar_sz);
 				camera->update_view();
 				camera->update_proj();
 
 				auto& data = *(nd.buf_render_data.pstag);
-				data.csm_levels = csm_levels;
-				data.csm_factor = 0.3f; // TODO
-				data.ptsm_near = ptsm_near;
+				data.dir_shadow_levels = nd.dir_shadow_levels;
 				data.zNear = camera->near;
 				data.zFar = camera->far;
 				data.camera_coord = camera->node->g_pos;
@@ -1554,21 +1572,19 @@ namespace flame
 
 			for (auto& s : nd.dir_shadows)
 			{
-				auto dist = 100.f; // TODO
-
-				auto& data = nd.buf_light_infos.set_item(s.first, false);
-				data.shadow_distance = dist;
+				nd.buf_light_infos.set_item(s.first, false).
+					shadow_range = vec2(0.f, nd.dir_shadow_dist);
 
 				auto mat = s.second->g_rot;
 				mat[2] *= -1.f;
 				auto inv = inverse(mat);
 
-				for (auto i = 0; i < csm_levels; i++)
+				for (auto i = 0; i < nd.dir_shadow_levels; i++)
 				{
-					auto n = i / (float)csm_levels;
-					n = n * n * dist;
-					auto f = (i + 1) / (float)csm_levels;
-					f = f * f * dist;
+					auto n = i / (float)nd.dir_shadow_levels;
+					n = n * n * nd.dir_shadow_dist;
+					auto f = (i + 1) / (float)nd.dir_shadow_levels;
+					f = f * f * nd.dir_shadow_dist;
 
 					vec3 a = vec3(+10000.f);
 					vec3 b = vec3(-10000.f);
@@ -1583,18 +1599,22 @@ namespace flame
 					auto c = mat * ((a + b) * 0.5f);
 					auto w = (b.x - a.x) * 0.5f;
 					auto h = (b.y - a.y) * 0.5f;
-					nd.buf_dir_shadow_mats.add_item() = orthoRH(-w, +w, -h, +h, 0.f, dist) * lookAt(c - s.second->g_rot[2] * dist * 0.5f, c, s.second->g_rot[1]);
+					nd.buf_dir_shadow_mats.add_item() = orthoRH(-w, +w, -h, +h, 0.f, nd.dir_shadow_dist) * 
+						lookAt(c - s.second->g_rot[2] * nd.dir_shadow_dist * 0.5f, c, s.second->g_rot[1]);
 				}
 
-				if (csm_levels < 4)
-					nd.buf_dir_shadow_mats.add_empty(4 - csm_levels);
+				if (nd.dir_shadow_levels < 4)
+					nd.buf_dir_shadow_mats.add_empty(4 - nd.dir_shadow_levels);
 			}
 
 			for (auto& s : nd.pt_shadows)
 			{
-				auto dist = 20.f; // TODO
+				auto near = 0.1f;
 
-				auto proj = perspective(radians(90.f), ptsm_near, 1.f, dist);
+				nd.buf_light_infos.set_item(s.first, false).
+					shadow_range = vec2(near, nd.pt_shadow_dist);
+
+				auto proj = perspective(radians(90.f), near, 1.f, nd.pt_shadow_dist);
 				proj[1][1] *= -1.f;
 
 				for (auto i = 0; i < 6; i++)
@@ -1647,7 +1667,7 @@ namespace flame
 
 			for (auto i = 0; i < nd.dir_shadows.size(); i++)
 			{
-				for (auto lv = 0; lv < csm_levels; lv++)
+				for (auto lv = 0; lv < nd.dir_shadow_levels; lv++)
 				{
 					auto cv = vec4(1.f, 0.f, 0.f, 0.f);
 					cb->begin_renderpass(nullptr, nd.img_dir_shadow_maps[i]->get_shader_write_dst(0, lv, true), &cv);
@@ -1662,7 +1682,7 @@ namespace flame
 					cb->end_renderpass();
 				}
 
-				cb->image_barrier(nd.img_dir_shadow_maps[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_dir_shadow_maps[i].get(), { 0U, 1U, 0U, nd.dir_shadow_levels }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
 			}
 
 			cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x * 0.5f, shadow_map_size.y * 0.5f));

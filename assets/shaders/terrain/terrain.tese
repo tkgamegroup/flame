@@ -39,7 +39,7 @@ void main()
 	o_uv = uv;
 
 	{
-		vec3 off = vec3(0.5 / terrain.scale.x, 0.5 / terrain.scale.z, 0.0);
+		vec3 off = vec3(1.0 / terrain.scale.x, 1.0 / terrain.scale.z, 0.0);
 		float hL = texture(maps[terrain.height_map_id], uv - off.xz).r * terrain.scale.y;
 		float hR = texture(maps[terrain.height_map_id], uv + off.xz).r * terrain.scale.y;
 		float hD = texture(maps[terrain.height_map_id], uv - off.zy).r * terrain.scale.y;

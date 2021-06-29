@@ -103,7 +103,8 @@ namespace flame
 				break;
 			}
 			auto glyphs = atlas->get_draw_glyphs(font_size, text.c_str(), text.c_str() + text.size(), pos, axes);
-			s_renderer->draw_glyphs(layer, glyphs.size(), glyphs.data(), res_id, font_color);
+			if (!glyphs.empty())
+				s_renderer->draw_glyphs(layer, glyphs.size(), glyphs.data(), res_id, font_color);
 		}
 		return layer;
 	}

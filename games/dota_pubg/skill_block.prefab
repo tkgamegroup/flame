@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement layout_type="Horizontal">
+    <eElement size="48,48" padding="2,2,2,2" border="1" />
+    <eText name="tip" padding="2,2,0,0" font_size="16" font_color="255,255,255,180" align_in_layout="false" />
+  </eElement>
+</prefab>
