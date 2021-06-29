@@ -56,9 +56,11 @@ namespace flame
 			void copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies);
 			void copy_image(ImagePtr src, ImagePtr dst, uint copies_count, ImageCopy* copies) override { copy_image(src, dst, { copies, copies_count }); }
 			void copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies);
-			void copy_buffer_to_image(BufferPtr src, ImagePtr dst, uint copies_count, BufferImageCopy* copies) override { copy_buffer_to_image(src, dst, { copies, copies_count }); }
+			void copy_buffer_to_image(BufferPtr src, ImagePtr dst, uint copies_count, BufferImageCopy* copies) override { copy_buffer_to_image(src, dst, 
+				{ copies, copies_count }); }
 			void copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies);
-			void copy_image_to_buffer(ImagePtr src, BufferPtr dst, uint copies_count, BufferImageCopy* copies) override { copy_image_to_buffer(src, dst, { copies, copies_count }); }
+			void copy_image_to_buffer(ImagePtr src, BufferPtr dst, uint copies_count, BufferImageCopy* copies) override { copy_image_to_buffer(src, dst, 
+				{ copies, copies_count }); }
 			void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter);
 			void blit_image(ImagePtr src, ImagePtr dst, uint blits_count, ImageBlit* blits, Filter filter) override { blit_image(src, dst, { blits, blits_count }, filter); }
 			void clear_color_image(ImagePtr img, const cvec4& color) override;

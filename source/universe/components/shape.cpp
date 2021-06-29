@@ -60,13 +60,14 @@ namespace flame
 	{
 		node->update_transform();
 
+		auto device = physics::Device::get_default();
 		switch (type)
 		{
 		case physics::ShapeCube:
-			phy_shape = physics::Shape::create_box(physics::Device::get_default(), nullptr, size * vec3(0.5f) * node->g_scl);
+			phy_shape = physics::Shape::create_box(device, nullptr, size * vec3(0.5f) * node->g_scl);
 			break;
 		case physics::ShapeSphere:
-			phy_shape = physics::Shape::create_sphere(physics::Device::get_default(), nullptr, size.x * 0.5f * node->g_scl.x);
+			phy_shape = physics::Shape::create_sphere(device, nullptr, size.x * 0.5f * node->g_scl.x);
 			break;
 		case physics::ShapeTriangleMesh:
 			if (mesh && mesh->mesh)
@@ -84,10 +85,10 @@ namespace flame
 				}
 				if (!triangle_mesh)
 				{
-					triangle_mesh = physics::TriangleMesh::create(physics::Device::get_default(), m);
+					triangle_mesh = physics::TriangleMesh::create(device, m);
 					triangle_meshes.emplace_back(m, triangle_mesh, 1);
 				}
-				phy_shape = physics::Shape::create_triangle_mesh(physics::Device::get_default(), nullptr, triangle_mesh, size.x * node->g_scl.x);
+				phy_shape = physics::Shape::create_triangle_mesh(device, nullptr, triangle_mesh, size.x * node->g_scl.x);
 				phy_triangle_mesh = triangle_mesh;
 			}
 			break;
@@ -107,10 +108,11 @@ namespace flame
 				}
 				if (!height_field)
 				{
-					height_field = physics::HeightField::create(physics::Device::get_default(), t, terrain->blocks, terrain->tess_levels);
+					height_field = physics::HeightField::create(device, t, uvec2(terrain->blocks), terrain->tess_levels);
 					height_fields.emplace_back(t, height_field, 1);
 				}
-				phy_shape = physics::Shape::create_height_field(physics::Device::get_default(), nullptr, height_field, node->g_scl);
+				auto ext = terrain->extent;
+				phy_shape = physics::Shape::create_height_field(device, nullptr, height_field, vec3(ext.x, ext.y, ext.x));
 				phy_height_field = height_field;
 			}
 			break;

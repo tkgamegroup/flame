@@ -92,7 +92,8 @@ namespace flame
 		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
 		uint add_armature(uint bones_count, const mat4* bones) override;
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags) override;
-		void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint material_id, ShadingFlags flags) override;
+		void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
+			uint material_id, ShadingFlags flags) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }

@@ -50,7 +50,8 @@ namespace flame
 		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual uint add_armature(uint bones_count, const mat4* bones) = 0;
 		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id = -1, ShadingFlags flags = ShadingMaterial) = 0;
-		virtual void draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint mat_id, ShadingFlags flags = ShadingMaterial) = 0;
+		virtual void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
+			uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
 
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;

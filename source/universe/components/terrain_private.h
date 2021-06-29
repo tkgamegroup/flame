@@ -6,7 +6,8 @@ namespace flame
 {
 	struct cTerrainPrivate : cTerrain
 	{
-		uvec2 blocks = uvec2(64);
+		vec2 extent = vec2(100.f);
+		uint blocks = 64;
 		uint tess_levels = 32.f;
 
 		std::string height_map_name;
@@ -19,12 +20,16 @@ namespace flame
 		sRendererPrivate* s_renderer = nullptr;
 
 		graphics::Image* height_texture = nullptr;
+		UniPtr<graphics::Image> normal_texture;
 		graphics::Material* material = nullptr;
 		int height_map_id = -1;
+		int normal_map_id = -1;
 		int material_id = -1;
 
-		uvec2 get_blocks() const override { return blocks; }
-		void set_blocks(const uvec2& b) override;
+		vec2 get_extent() const override { return extent; }
+		void set_extent(const vec2& ext) override;
+		uint get_blocks() const override { return blocks; }
+		void set_blocks(uint b) override;
 		uint get_tess_levels() const override { return tess_levels; }
 		void set_tess_levels(uint l) override;
 

@@ -5,12 +5,13 @@
 struct TerrainInfo
 {
 	vec3 coord;
-	vec3 scale;
+	vec3 extent;
 
 	uvec2 blocks;
 	float tess_levels;
 
 	uint height_map_id;
+	uint normal_map_id;
 	uint material_id;
 };
 

@@ -22,7 +22,7 @@ void main(void)
 	vec2 v = vec2((tile_idx % terrain.blocks.x), (tile_idx / terrain.blocks.x)) + vs[gl_VertexIndex];
 	v /= terrain.blocks;
 
-	gl_Position = vec4(terrain.coord + vec3(v.x, 0.0, v.y) * terrain.scale, 1.0);
+	gl_Position = vec4(terrain.coord + vec3(v.x, 0.0, v.y) * terrain.extent, 1.0);
 	o_idx = idx;
 	o_uv = v;
 }

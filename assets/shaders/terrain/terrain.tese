@@ -33,25 +33,12 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(maps[terrain.height_map_id], uv).r * terrain.scale.y;
+	coordw.y += texture(maps[terrain.height_map_id], uv).r * terrain.extent.y;
 
 	o_idx = idx;
 	o_uv = uv;
 
-	{
-		vec3 off = vec3(1.0 / terrain.scale.x, 1.0 / terrain.scale.z, 0.0);
-		float hL = texture(maps[terrain.height_map_id], uv - off.xz).r * terrain.scale.y;
-		float hR = texture(maps[terrain.height_map_id], uv + off.xz).r * terrain.scale.y;
-		float hD = texture(maps[terrain.height_map_id], uv - off.zy).r * terrain.scale.y;
-		float hU = texture(maps[terrain.height_map_id], uv + off.zy).r * terrain.scale.y;
-
-		o_normal.x = hL - hR;
-		o_normal.y = 2.0;
-		o_normal.z = hD - hU;
-		o_normal = normalize(o_normal);
-	}
-	//vec3 n = texture(maps[terrain.normal_map_id], uv).xyz * 2.0 - vec3(1.0);
-	//o_normal = vec3(n.x, n.z, -n.y);
+	o_normal = texture(maps[terrain.normal_map_id], uv).xyz * 2.0 - vec3(1.0);
 
 #ifndef DEFERRED
 	o_coordw = coordw;

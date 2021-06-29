@@ -851,7 +851,7 @@ namespace flame
 			return -1;
 
 		nd.tex_reses[idx] = tex;
-		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_white->get_view(), sp);
+		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_white->get_view(), sp ? sp : sp_linear);
 		nd.ds_material->update();
 
 		return idx;
@@ -1400,7 +1400,8 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::draw_terrain(cNodePtr node, const uvec2& blocks, uint tess_levels, uint height_map_id, uint material_id, ShadingFlags flags)
+	void sRendererPrivate::draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
+		uint material_id, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
@@ -1408,10 +1409,11 @@ namespace flame
 
 		auto& data = nd.buf_terrain.add_item();
 		data.coord = node->g_pos;
-		data.scale = node->g_scl;
+		data.extent = extent;
 		data.blocks = blocks;
 		data.tess_levels = tess_levels;
 		data.height_map_id = height_map_id;
+		data.normal_map_id = normal_map_id;
 		data.material_id = material_id;
 
 		auto dispatch_count = blocks.x * blocks.y;
