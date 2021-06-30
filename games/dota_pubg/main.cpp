@@ -13,6 +13,7 @@ int main(int argc, char** args)
 	w->s_renderer->set_shadow_props(3, 50.f, 20.f);
 
 	auto script_ins = script::Instance::get_default();
+	script_ins->excute_file(L"terrain_scatter.lua");
 	script_ins->excute_file(L"character.lua");
 	script_ins->excute_file(L"player.lua");
 	script_ins->excute_file(L"npc.lua");

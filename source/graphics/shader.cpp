@@ -243,7 +243,116 @@ namespace flame
 						dummy_id++;
 					}
 					auto type = var->get_type();
-					header += std::string("\t\t") + type->get_code_name() + " " + var->get_name();
+					std::string type_name;
+					auto basic = type->get_basic();
+					auto is_signed = type->get_signed();
+					auto col_size = type->get_col_size();
+					auto vec_size = type->get_vec_size();
+					switch (col_size)
+					{
+					case 1:
+						switch (vec_size)
+						{
+						case 1:
+							switch (basic)
+							{
+							case IntegerType:
+								if (is_signed)
+									type_name = "int";
+								else
+									type_name = "uint";
+								break;
+							case FloatingType:
+								type_name = "float";
+								break;
+							}
+							break;
+						case 2:
+							switch (basic)
+							{
+							case IntegerType:
+								if (is_signed)
+									type_name = "ivec2";
+								else
+									type_name = "uvec2";
+								break;
+							case FloatingType:
+								type_name = "vec2";
+								break;
+							}
+							break;
+						case 3:
+							switch (basic)
+							{
+							case IntegerType:
+								if (is_signed)
+									type_name = "ivec3";
+								else
+									type_name = "uvec3";
+								break;
+							case FloatingType:
+								type_name = "vec3";
+								break;
+							}
+							break;
+						case 4:
+							switch (basic)
+							{
+							case IntegerType:
+								if (is_signed)
+									type_name = "ivec4";
+								else
+									type_name = "uvec4";
+								break;
+							case FloatingType:
+								type_name = "vec4";
+								break;
+							}
+							break;
+						}
+						break;
+					case 2:
+						switch (vec_size)
+						{
+						case 2:
+							switch (basic)
+							{
+							case FloatingType:
+								type_name = "mat2";
+								break;
+							}
+							break;
+						}
+						break;
+					case 3:
+						switch (vec_size)
+						{
+						case 3:
+							switch (basic)
+							{
+							case FloatingType:
+								type_name = "mat3";
+								break;
+							}
+							break;
+						}
+						break;
+					case 4:
+						switch (vec_size)
+						{
+						case 4:
+							switch (basic)
+							{
+							case FloatingType:
+								type_name = "mat4";
+								break;
+							}
+							break;
+						}
+						break;
+					}
+					fassert(!type_name.empty());
+					header += std::string("\t\t") + type_name + " " + var->get_name();
 					auto size = type->get_size();
 					auto array_size = var->get_array_size();
 					if (array_size > 1)
@@ -403,6 +512,8 @@ namespace flame
 			std::vector<DescriptorBinding> bindings;
 			TypeInfoDataBase* tidb = TypeInfoDataBase::create();
 
+			auto ti_desctype = TypeInfo::get(TypeEnumSingle, "flame::graphics::DescriptorType");
+
 			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
 				!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
 			{
@@ -492,7 +603,7 @@ namespace flame
 						if (b.type != DescriptorMax)
 						{
 							auto n_binding = n_bindings.append_child("binding");
-							n_binding.append_attribute("type").set_value(ti_es("flame::graphics::DescriptorType")->serialize(&b.type).c_str());
+							n_binding.append_attribute("type").set_value(ti_desctype->serialize(&b.type).c_str());
 							n_binding.append_attribute("binding").set_value(i);
 							n_binding.append_attribute("count").set_value(b.count);
 							n_binding.append_attribute("name").set_value(b.name.c_str());
@@ -531,7 +642,7 @@ namespace flame
 						if (binding >= bindings.size())
 							bindings.resize(binding + 1);
 						auto& b = bindings[binding];
-						ti_es("flame::graphics::DescriptorType")->unserialize(&b.type, n_binding.attribute("type").value());
+						ti_desctype->unserialize(&b.type, n_binding.attribute("type").value());
 						b.count = n_binding.attribute("count").as_uint();
 						b.name = n_binding.attribute("name").value();
 						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
@@ -1460,6 +1571,7 @@ namespace flame
 			info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
 			info.subpass_index = n_rp.attribute("index").as_uint();
 
+			auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format");
 			std::vector<std::vector<VertexAttributeInfo>> v_vertex_attributes;
 			std::vector<VertexBufferInfo> vertex_buffers;
 			for (auto n_buf : doc_root.child("vertex_buffers"))
@@ -1470,7 +1582,7 @@ namespace flame
 					VertexAttributeInfo att;
 					att.location = n_att.attribute("location").as_uint();
 					if (auto a = n_att.attribute("format"); a)
-						ti_es("flame::graphics::Format")->unserialize(&att.format, a.value());
+						ti_format->unserialize(&att.format, a.value());
 					atts.push_back(att);
 				}
 				v_vertex_attributes.push_back(atts);
@@ -1489,19 +1601,20 @@ namespace flame
 			info.vertex_buffers_count = vertex_buffers.size();
 			info.vertex_buffers = vertex_buffers.data();
 
+			auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor");
 			std::vector<BlendOption> blend_options;
 			for (auto n_bo : doc_root.child("blend_options"))
 			{
 				BlendOption bo;
 				bo.enable = n_bo.attribute("enable").as_bool();
 				if (auto a = n_bo.attribute("src_color"); a)
-					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.src_color, a.value());
+					ti_blendfactor->unserialize(&bo.src_color, a.value());
 				if (auto a = n_bo.attribute("dst_color"); a)
-					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.dst_color, a.value());
+					ti_blendfactor->unserialize(&bo.dst_color, a.value());
 				if (auto a = n_bo.attribute("src_alpha"); a)
-					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.src_alpha, a.value());
+					ti_blendfactor->unserialize(&bo.src_alpha, a.value());
 				if (auto a = n_bo.attribute("dst_alpha"); a)
-					ti_es("flame::graphics::BlendFactor")->unserialize(&bo.dst_alpha, a.value());
+					ti_blendfactor->unserialize(&bo.dst_alpha, a.value());
 				blend_options.push_back(bo);
 			}
 

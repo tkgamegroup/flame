@@ -212,6 +212,10 @@ function normalize_2(v)
 	return vec2(v.x / l, v.y / l)
 end
 
+function dot_2(a, b)
+	return a.x * b.x + a.y * b.y
+end
+
 function length_and_dir_2(v)
 	local l = length_2(v)
 	if l > 0 then
@@ -231,6 +235,10 @@ end
 function normalize_3(v)
 	local l = length_3(v)
 	return vec3(v.x / l, v.y / l, v.z / l)
+end
+
+function dot_3(a, b)
+	return a.x * b.x + a.y * b.y + a.z * b.z
 end
 
 function length_and_dir_3(v)

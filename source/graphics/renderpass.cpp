@@ -181,21 +181,25 @@ namespace flame
 				return nullptr;
 			}
 
+			auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format");
+			auto ti_loadop = TypeInfo::get(TypeEnumSingle, "flame::graphics::AttachmentLoadOp");
+			auto ti_sampcnt = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount");
+			auto ti_imglayout = TypeInfo::get(TypeEnumSingle, "flame::graphics::ImageLayout");
 			std::vector<RenderpassAttachmentInfo> atts;
 			auto n_atts = doc_root.child("attachments");
 			for (auto n_att : n_atts.children())
 			{
 				RenderpassAttachmentInfo att;
 				if (auto a = n_att.attribute("format"); a)
-					ti_es("flame::graphics::Format")->unserialize(&att.format, a.value());
+					ti_format->unserialize(&att.format, a.value());
 				if (auto a = n_att.attribute("load_op"); a)
-					ti_es("flame::graphics::AttachmentLoadOp")->unserialize(&att.load_op, a.value());
+					ti_loadop->unserialize(&att.load_op, a.value());
 				if (auto a = n_att.attribute("sample_count"); a)
-					ti_es("flame::graphics::SampleCount")->unserialize(&att.sample_count, a.value());
+					ti_sampcnt->unserialize(&att.sample_count, a.value());
 				if (auto a = n_att.attribute("initia_layout"); a)
-					ti_es("flame::graphics::ImageLayout")->unserialize(&att.initia_layout, a.value());
+					ti_imglayout->unserialize(&att.initia_layout, a.value());
 				if (auto a = n_att.attribute("final_layout"); a)
-					ti_es("flame::graphics::ImageLayout")->unserialize(&att.final_layout, a.value());
+					ti_imglayout->unserialize(&att.final_layout, a.value());
 				atts.push_back(att);
 			}
 

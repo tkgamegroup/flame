@@ -795,13 +795,12 @@ namespace flame
 				auto is_object_type = false;
 				if (ti->get_tag() == TypePointer)
 				{
-					auto pt = ti->get_pointed_type();
-					auto basic = pt ? pt->get_basic() : ElseType;
+					auto basic = ti->get_basic();
 					if (basic != VoidType && basic != CharType && basic != WideCharType)
 						is_object_type = true;
 				}
 
-				lua_pushstring(lua_state, ti->get_full_name());
+				lua_pushinteger(lua_state, ti->get_hash());
 
 				lua_newtable(lua_state);
 
@@ -880,7 +879,7 @@ namespace flame
 					lua_pushinteger(lua_state, variable->get_offset());
 					lua_settable(lua_state, -3);
 					lua_pushstring(lua_state, "type_name");
-					lua_pushstring(lua_state, type->get_full_name());
+					lua_pushinteger(lua_state, type->get_hash());
 					lua_settable(lua_state, -3);
 
 					lua_settable(lua_state, -3);
@@ -929,7 +928,7 @@ namespace flame
 					lua_pushlightuserdata(lua_state, f);
 					lua_settable(lua_state, -3);
 					lua_pushstring(lua_state, "ret_type_name");
-					lua_pushstring(lua_state, f->get_type()->get_full_name());
+					lua_pushinteger(lua_state, f->get_type()->get_hash());
 					lua_settable(lua_state, -3);
 					lua_pushstring(lua_state, "static");
 					lua_pushboolean(lua_state, (bool)f->get_rva());

@@ -112,11 +112,7 @@ namespace flame
 
 		void* create()
 		{
-			void* ret;
-			void* p = nullptr;
-			void* ps[] = { &p };
-			creator->call(nullptr, &ret, ps);
-			return ret;
+			return a2f<void*(*)(void*)>(creator->get_address())(nullptr);
 		}
 
 		Attribute* find_attribute(const std::string& name)
@@ -781,6 +777,7 @@ namespace flame
 	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
 		const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
+		auto ti_stateflags = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 		auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value, bool is_state_rule) {
 			auto att = ot->find_attribute(vname);
 			if (!att)
@@ -824,7 +821,7 @@ namespace flame
 					}
 					else if (sp.size() == 2)
 					{
-						TypeInfo::get(TypeEnumMulti, "flame::StateFlags")->unserialize(&state, sp[0].c_str());
+						ti_stateflags->unserialize(&state, sp[0].c_str());
 						type->unserialize(d, sp[1].c_str());
 					}
 					rule->values.emplace_back(state, d);
@@ -1174,6 +1171,7 @@ namespace flame
 			}
 		}
 
+		auto ti_stateflags = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 		for (auto& c : e_src->components)
 		{
 			std::string cname;
@@ -1199,7 +1197,7 @@ namespace flame
 						{
 							if (v.first)
 							{
-								value += ti_es("flame::StateFlags")->serialize(&v.first);
+								value += ti_stateflags->serialize(&v.first);
 								value += ":";
 							}
 							value += rule->type->serialize(v.second);

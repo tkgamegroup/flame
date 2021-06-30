@@ -90,7 +90,7 @@ namespace flame
 	void cMeshPrivate::draw(sRenderer* s_renderer)
 	{
 		if (mesh_id != -1)
-			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani->armature_id, shading_flags);
+			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani ? pani->armature_id : -1, shading_flags);
 	}
 
 	bool cMeshPrivate::measure(AABB* b)

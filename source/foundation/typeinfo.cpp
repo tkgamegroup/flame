@@ -291,8 +291,6 @@ namespace flame
 			short_name = "C2";
 		}
 
-		const char* get_code_name() const override { return "cvec2"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(cvec2*)src);
@@ -314,8 +312,6 @@ namespace flame
 			vec_size = 3;
 			short_name = "C3";
 		}
-
-		const char* get_code_name() const override { return "cvec3"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -339,8 +335,6 @@ namespace flame
 			short_name = "C4";
 		}
 
-		const char* get_code_name() const override { return "cvec4"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(cvec4*)src);
@@ -361,8 +355,6 @@ namespace flame
 			vec_size = 2;
 			short_name = "I2";
 		}
-
-		const char* get_code_name() const override { return "ivec2"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -385,8 +377,6 @@ namespace flame
 			short_name = "I3";
 		}
 
-		const char* get_code_name() const override { return "ivec3"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(ivec3*)src);
@@ -407,8 +397,6 @@ namespace flame
 			vec_size = 4;
 			short_name = "I4";
 		}
-
-		const char* get_code_name() const override { return "ivec4"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -432,8 +420,6 @@ namespace flame
 			short_name = "I2";
 		}
 
-		const char* get_code_name() const override { return "uvec2"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uvec2*)src);
@@ -455,8 +441,6 @@ namespace flame
 			vec_size = 3;
 			short_name = "I3";
 		}
-
-		const char* get_code_name() const override { return "uvec3"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -480,8 +464,6 @@ namespace flame
 			short_name = "I4";
 		}
 
-		const char* get_code_name() const override { return "uvec4"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(uvec4*)src);
@@ -502,8 +484,6 @@ namespace flame
 			vec_size = 2;
 			short_name = "F2";
 		}
-
-		const char* get_code_name() const override { return "vec2"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -526,8 +506,6 @@ namespace flame
 			short_name = "F3";
 		}
 
-		const char* get_code_name() const override { return "vec3"; }
-
 		void serialize(const void* src, char* dst) const override
 		{
 			auto s = to_string(*(vec3*)src);
@@ -548,8 +526,6 @@ namespace flame
 			vec_size = 4;
 			short_name = "F4";
 		}
-
-		const char* get_code_name() const override { return "vec4"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -599,8 +575,6 @@ namespace flame
 			col_size = 2;
 			short_name = "F4";
 		}
-
-		const char* get_code_name() const override { return "mat2"; }
 	};
 
 	struct TypeInfoPrivate_mat3 : TypeInfoPrivate_Pod
@@ -613,8 +587,6 @@ namespace flame
 			col_size = 3;
 			short_name = "F9";
 		}
-
-		const char* get_code_name() const override { return "mat3"; }
 	};
 
 	struct TypeInfoPrivate_mat4 : TypeInfoPrivate_Pod
@@ -627,8 +599,6 @@ namespace flame
 			col_size = 4;
 			short_name = "F16";
 		}
-
-		const char* get_code_name() const override { return "mat4"; }
 	};
 
 	struct TypeInfoPrivate_quat : TypeInfoPrivate_Pod
@@ -638,8 +608,6 @@ namespace flame
 		{
 			short_name = "F4";
 		}
-
-		const char* get_code_name() const override { return "quat"; }
 
 		void serialize(const void* src, char* dst) const override
 		{
@@ -797,121 +765,121 @@ namespace flame
 		{
 			{
 				auto t = new TypeInfoPrivate_void;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 				void_type = t;
 				void_type->short_name = "V";
 			}
 			{
 				auto t = new TypeInfoPrivate_bool;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_char;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uchar;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_wchar;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int64;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint64;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_float;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec2;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec3;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec4;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec2;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec3;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec4;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec2;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec3;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec4;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec2;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec3;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec4;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Rect;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_mat2;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_mat3;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_mat4;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_quat;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_charp;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
 				auto t = new TypeInfoPrivate_wcharp;
-				tidb.typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				tidb.typeinfos.emplace(t->hash, t);
 			}
 
 			wchar_t app_name_buf[260];
@@ -936,22 +904,8 @@ namespace flame
 		name(name),
 		size(size)
 	{
-		switch (tag)
-		{
-		case TypeEnumSingle:
-			full_name = "es__" + name;
-			break;
-		case TypeEnumMulti:
-			full_name = "em__" + name;
-			break;
-		case TypeData:
-			full_name = "d__" + name;
-			break;
-		case TypePointer:
-			full_name = "p__" + name;
-			break;
-		}
-		SUS::replace_all(full_name, "::", "__");
+		hash = ch(name.c_str());
+		hash ^= std::hash<int>()(tag);
 	}
 
 	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db)
@@ -962,7 +916,8 @@ namespace flame
 		if (!db)
 			db = &tidb;
 
-		auto key = TypeInfoKey(tag, name);
+		auto key = ch(name.c_str());
+		key ^= std::hash<int>()(tag);
 		if (db != &tidb)
 		{
 			auto it = db->typeinfos.find(key);

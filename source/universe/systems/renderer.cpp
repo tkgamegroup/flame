@@ -1082,15 +1082,11 @@ namespace flame
 
 		graphics::Renderpass* rp = nullptr;
 
-		auto find_define = [&](const std::string& s, bool remove = false) {
+		auto find_define = [&](const std::string& s) {
 			for (auto& d : defines)
 			{
 				if (d == s)
-				{
-					if (remove)
-						d = "";
 					return true;
-				}
 			}
 			return false;
 		};
@@ -1115,7 +1111,7 @@ namespace flame
 			deferred = false;
 			rp = graphics::Renderpass::get(device, L"rgba16.rp");
 		}
-		if (find_define("DOUBLE_SIDE", true))
+		if (find_define("DOUBLE_SIDE"))
 			cull_mode = graphics::CullModeNone;
 		if (use_mat && !mat.empty())
 		{

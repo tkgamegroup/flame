@@ -8,8 +8,8 @@ namespace flame
 	{
 		TypeTag tag;
 		std::string name;
-		std::string full_name;
 		std::string short_name;
+		uint hash;
 		uint size;
 
 		BasicType basic_type = ElseType;
@@ -22,8 +22,7 @@ namespace flame
 
 		TypeTag get_tag() const override { return tag; }
 		const char* get_name() const override { return name.c_str(); }
-		const char* get_code_name() const override { return name.c_str(); }
-		const char* get_full_name() const override { return full_name.c_str(); }
+		uint get_hash() const override { return hash; }
 		uint get_size() const override { return size; }
 
 		BasicType get_basic() const override { return basic_type; }
@@ -218,35 +217,9 @@ namespace flame
 		void remove_function(FunctionInfoPtr fi) override;
 	};
 
-	struct TypeInfoKey
-	{
-		int t;
-		std::string n;
-
-		TypeInfoKey(int t, const std::string& n) :
-			t(t),
-			n(n)
-		{
-		}
-
-		bool operator==(const TypeInfoKey& rhs) const
-		{
-			return t == rhs.t && n == rhs.n;
-		}
-	};
-
-	struct Hasher_TypeInfoKey
-	{
-		std::size_t operator()(const TypeInfoKey& k) const
-		{
-			return std::hash<std::string>()(k.n) ^ std::hash<int>()(k.t);
-		}
-	};
-
-
 	struct TypeInfoDataBasePrivate : TypeInfoDataBase
 	{
-		std::unordered_map<TypeInfoKey, std::unique_ptr<TypeInfoPrivate>, Hasher_TypeInfoKey> typeinfos;
+		std::unordered_map<uint, std::unique_ptr<TypeInfoPrivate>> typeinfos;
 
 		std::unordered_map<std::string, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;

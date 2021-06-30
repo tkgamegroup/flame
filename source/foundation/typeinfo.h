@@ -38,8 +38,7 @@ namespace flame
 	{
 		virtual TypeTag get_tag() const = 0;
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
-		virtual const char* get_code_name() const = 0;
-		virtual const char* get_full_name() const = 0;
+		virtual uint get_hash() const = 0;
 		virtual uint get_size() const = 0;
 
 		virtual BasicType get_basic() const = 0;
@@ -63,11 +62,6 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name, TypeInfoDataBase* = nullptr);
 	};
-
-	inline TypeInfoPtr ti_es(const char* name)
-	{
-		return (TypeInfoPtr)TypeInfo::get(TypeEnumSingle, name);
-	}
 
 	struct VariableInfo
 	{
@@ -123,6 +117,7 @@ namespace flame
 		virtual bool check(TypeInfoPtr ret, uint parms_count = 0, TypeInfoPtr const* parms = nullptr) const = 0;
 
 		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
+
 		virtual void call(void* obj, void* ret, void** parameters) = 0;
 	};
 

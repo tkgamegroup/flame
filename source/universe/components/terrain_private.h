@@ -41,6 +41,7 @@ namespace flame
 		void set_material_name(const char* name) override { set_material_name(std::string(name)); }
 
 		graphics::Image* get_height_texture() const override { return height_texture; }
+		graphics::Image* get_normal_texture() const override { return normal_texture.get(); }
 
 		void draw(sRendererPrivate* s_renderer);
 

@@ -18,7 +18,7 @@ function make_character(entity, group, stats)
 		dir = vec3(0, 0, 1),
 
 		radius = 0.28,
-		speed = 0.057,
+		speed = 0.06,
 		attack_interval = 100,
 
 		state = "null",
