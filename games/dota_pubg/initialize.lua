@@ -16,22 +16,6 @@ scene_receiver.add_key_up_listener(function(key)
 	end
 end)
 
-PLAYER_STAT = {
-	HP_MAX = 200,
-	MP_MAX = 100,
-	HP_RECOVER = 1,
-	MP_RECOVER = 1,
-	ATTACK_DAMAGE = 15
-}
-
-STAT = {
-	HP_MAX = 100,
-	MP_MAX = 100,
-	HP_RECOVER = 1,
-	MP_RECOVER = 1,
-	ATTACK_DAMAGE = 10
-}
-
 EXP_NEXT_LIST = {
 	100,
 	200
@@ -40,11 +24,7 @@ EXP_NEXT_LIST = {
 local e = create_entity("player")
 e.set_name("player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
-main_player = make_character(e, 1, PLAYER_STAT)
-main_player.LV = 1
-main_player.EXP = 0
-main_player.EXP_NEXT = EXP_NEXT_LIST[1]
-make_player(main_player)
+main_player = make_player(e)
 main_player.awake()
 obj_root.add_child(e)
 
@@ -80,9 +60,9 @@ local exp_text = character_panel.find_child("exp_text").find_component("cText")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
 obj_root.add_event(function()
 	hp_bar.set_scalex(main_player.HP / main_player.HP_MAX)
-	hp_text.set_text(main_player.HP.."/"..main_player.HP_MAX.."  +"..main_player.HP_RECOVER)
+	hp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.HP / 10.0), math.floor(main_player.HP_MAX / 10.0), main_player.HP_RECOVER / 10.0))
 	mp_bar.set_scalex(main_player.MP / main_player.MP_MAX)
-	mp_text.set_text(main_player.MP.."/"..main_player.MP_MAX.."  +"..main_player.MP_RECOVER)
+	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX / 10.0), main_player.MP_RECOVER / 10.0))
 	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 end, 0.0)
@@ -100,16 +80,17 @@ btn_attributes.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
---[[
-for i=1, 300, 1 do
-	local e = create_entity("human")
+for i=1, 10, 1 do
+	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
-	e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
+	--e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
 	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
-    make_npc(make_character(e, 2, STAT))
+	local npc = make_npc(e, 1)
+	npc.drop_gold = 10
+	npc.drop_exp = 20
 	obj_root.add_child(e)
 end
-]]
+
 
 obj_root.add_event(function()
 	for n, char in pairs(characters[2]) do

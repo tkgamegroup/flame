@@ -2,7 +2,7 @@ characters = {}
 characters[1] = {}
 characters[2] = {}
 
-function make_character(entity, group, stats)
+function make_character(entity, group, HP_MAX, MP_MAX, HP_RECOVER, MP_RECOVER, ATK_DMG, ATK_TYPE)
 	local character = {
 		name = entity.get_name(),
 		group = group,
@@ -27,23 +27,28 @@ function make_character(entity, group, stats)
 		target = nil,
 		attack_tick = 0,
 		attacking = false,
+		last_hit_character = nil,
+		drop_gold = 0,
+		drop_exp = 0,
 
-		on_die = nil,
 		on_event = nil,
+		on_die = nil,
+		on_reward = nil,
 
+		HP_MAX = HP_MAX,
+		HP = HP_MAX,
+		MP_MAX = MP_MAX,
+		MP = MP_MAX,
+		HP_RECOVER = HP_RECOVER,
+		MP_RECOVER = MP_RECOVER,
+		ATK_DMG = ATK_DMG,
+		ATK_TYPE = ATK_TYPE,
 		recover_tick = 0
 	}
 
 	entity.set_tag(group)
 	entity.set_visible(false)
 	character.pos = character.node.get_global_pos()
-	
-	for key, val in pairs(stats) do
-		character[key] = val
-	end
-
-	character.HP = character.HP_MAX
-	character.MP = character.MP_MAX
 
 	character.ui = create_entity("character_hud")
 	character.ui.set_visible(false)
@@ -56,6 +61,12 @@ function make_character(entity, group, stats)
 	character.die = function()
 		if character.on_die then
 			character.on_die()
+		end
+
+		if character.last_hit_character then
+			if character.last_hit_character.on_reward then
+				character.last_hit_character.on_reward(character.drop_gold, character.drop_exp)
+			end
 		end
 
 		characters[character.group][character.name] = nil
@@ -122,7 +133,7 @@ function make_character(entity, group, stats)
 				if character.target and not character.target.dead then
 					local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
 					if l <= character.radius + character.target.radius + 3 then
-						character.target.on_receive_damage(character, math.floor(0.5 + character.ATTACK_DAMAGE * (math.random() * 0.2 + 0.9)))
+						character.target.receive_damage(character, math.floor(0.5 + character.ATK_DMG * (math.random() * 0.2 + 0.9)))
 					end
 				end
 			end
@@ -132,14 +143,16 @@ function make_character(entity, group, stats)
 		end
 	end, character.animation)
 
-	character.on_receive_damage = function(src, value)
+	character.receive_damage = function(src, value)
+		character.last_hit_character = src
+
 		if character.HP > value then
 			character.HP = character.HP - value
 
 			local tip_item = {}
 			tip_item.e = create_entity("floating_tip")
 			local text = tip_item.e.find_component("cText")
-			text.set_text(tostring(value))
+			text.set_text(tostring(math.floor(value / 10.0)))
 			if character == main_player.character then
 				text.set_font_color(vec4(255, 0, 0, 255))
 			end
@@ -152,7 +165,7 @@ function make_character(entity, group, stats)
 		end
 	end
 
-	character.on_receive_heal = function(src, value)
+	character.receive_heal = function(src, value)
 		character.HP = character.HP + value
 		if character.HP > character.HP_MAX then
 			character.HP = character.HP_MAX
@@ -209,7 +222,7 @@ function make_character(entity, group, stats)
 		if character.recover_tick > 0 then
 			character.recover_tick = character.recover_tick - 1
 		else
-			character.on_receive_heal(character, character.HP_RECOVER)
+			character.receive_heal(character, character.HP_RECOVER)
 			character.recover_tick = 60
 		end
 
@@ -287,7 +300,7 @@ function make_character(entity, group, stats)
 				attack_target()
 			else
 				character.target = nil
-				move_to_pos()
+				if not move_to_pos() then character.animation.stop_at(2, -1) end
 			end
 		end
 

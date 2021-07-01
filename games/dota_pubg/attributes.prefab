@@ -7,8 +7,10 @@
 				<eText text="MP MAX: 9999" />
 				<eText text="LV: 99" />
 				<eText text="EXP: 9999/9999" />
-				<eText text="PHY ATK: 999" />
-				<eText text="MAG ATK: 999" />
+				<eText text="PHY DMG: 999" />
+				<eText text="MAG DMG: 999" />
+				<eText text="ATK DMG: 999" />
+				<eText text="ATK TYPE: PHY" />
 			</eElement>
 			<eElement layout_type="Vertical">
 				<eText text="STA: 999" />

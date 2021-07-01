@@ -24,7 +24,7 @@
             <eText name="exp_text" alignx="MinMax" auto_width="false" text="99 9999/9999" text_align="Middle" />
           </eElement>
         </eElement>
-        <eElement layout_type="Horizontal">
+        <eElement layout_type="Horizontal" layout_gap="4">
           <eElement layout_type="Vertical" margin="0,0,8,0" layout_gap="4">
             <eButton name="btn_attributes" text="Attributes" />
             <eButton name="btn_settings" text="Settings" />

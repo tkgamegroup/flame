@@ -1,32 +1,48 @@
-function make_npc(character)
-	character.chase_start_pos = vec2(-1000)
-	character.chase_tick = 0
+NPC_STATS = {
+	{
+		HP_MAX = 1000,
+		MP_MAX = 500,
+		HP_RECOVER = 5,
+		MP_RECOVER = 5,
+		ATK_DMG = 100,
+		ATK_TYPE = "PHY"
+	}
+}
 
-	character.on_event = function()
-		if character.chase_tick > 0 then
-			character.chase_tick = character.chase_tick - 1
+function make_npc(e, ID)
+	local stats = NPC_STATS[ID]
+	local npc = make_character(e, 2, stats.HP_MAX, stats.MP_MAX, stats.HP_RECOVER, stats.MP_RECOVER, stats.ATK_DMG, stats.ATK_TYPE)
+
+	npc.chase_start_pos = vec2(-1000)
+	npc.chase_tick = 0
+
+	npc.on_event = function()
+		if npc.chase_tick > 0 then
+			npc.chase_tick = npc.chase_tick - 1
 		end
 		
-		if character.chase_tick == 0 then
-			local char = character.find_closest_enemy(5)
+		if npc.chase_tick == 0 then
+			local char = npc.find_closest_enemy(5)
 			if char then
-				character.change_state("attack_target", char)
-				character.chase_start_pos = character.pos
-				character.chase_tick = 600
+				npc.change_state("attack_target", char)
+				npc.chase_start_pos = npc.pos
+				npc.chase_tick = 600
 			end
 		end
-		if character.state == "attack_target" and distance_3(character.pos, character.chase_start_pos) > 20 then
-			local p = character.chase_start_pos
-			character.change_state("move_to", vec2(p.x, p.z))
-			character.chase_tick = 600
+		if npc.state == "attack_target" and distance_3(npc.pos, npc.chase_start_pos) > 20 then
+			local p = npc.chase_start_pos
+			npc.change_state("move_to", vec2(p.x, p.z))
+			npc.chase_tick = 600
 		end
-		if character.state == "idle" then
+		if npc.state == "idle" then
 			if math.random() < 0.002 then
-				local p = character.pos
+				local p = npc.pos
 				p.x = p.x - 3 + math.random() * 6
 				p.z = p.z - 3 + math.random() * 6
-				character.change_state("move_to", vec2(p.x, p.z))
+				npc.change_state("move_to", vec2(p.x, p.z))
 			end
 		end
 	end
+
+	return npc
 end
