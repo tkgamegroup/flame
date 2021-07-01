@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<prefab>
+	<eWindow name="wnd_attributes" alignx="Middle" aligny="Middle" nomove="true" noresize="true" title="Attributes">
+		<eElement layout_type="Horizontal" layout_gap="16">
+			<eElement layout_type="Vertical">
+				<eText text="HP MAX: 9999" />
+				<eText text="MP MAX: 9999" />
+				<eText text="LV: 99" />
+				<eText text="EXP: 9999/9999" />
+				<eText text="PHY ATK: 999" />
+				<eText text="MAG ATK: 999" />
+			</eElement>
+			<eElement layout_type="Vertical">
+				<eText text="STA: 999" />
+				<eText text="SPI: 999" />
+				<eText text="LUK: 999" />
+				<eText text="STR: 999" />
+				<eText text="AGI: 999" />
+				<eText text="INT: 999" />
+			</eElement>
+    </eElement>
+	</eWindow>
+</prefab>

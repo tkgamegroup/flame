@@ -9,46 +9,61 @@
          __ui_scene = entity
       </cScript>
     </eElement>
-    <eElement name="character_panel" padding="8,8,8,8" alignx="Middle" aligny="Max" fill_color="0,0,0,127" clipping="true" layout_type="Horizontal" layout_gap="8">
-        <eElement layout_type="Vertical">
-          <eText name="hp_text" text="HP: 999/999  +1"/>
-          <eText name="lv_text" text="LV: 99" />
-          <eText name="exp_text" text="EXP: 9999/9999" />
+    <eElement name="character_panel" padding="8,8,8,8" alignx="Middle" aligny="Max" fill_color="0,0,0,127" align_in_layout="false" layout_type="Vertical" layout_gap="8">
+        <eElement alignx="MinMax" layout_type="Vertical">
+          <eElement alignx="MinMax" layout_type="Vertical" fill_color="0,0,0,100">
+            <eElement name="hp_bar" alignx="MinMax" aligny="MinMax" align_in_layout="false" fill_color="0,255,0,127" />
+            <eText name="hp_text" alignx="MinMax" auto_width="false" text="999/999  +1" text_align="Middle" />
+          </eElement>
+          <eElement alignx="MinMax" layout_type="Vertical" fill_color="0,0,0,100">
+            <eElement name="mp_bar" alignx="MinMax" aligny="MinMax" align_in_layout="false" fill_color="0,0,255,127" />
+            <eText name="mp_text" alignx="MinMax" auto_width="false" text="999/999  +1" text_align="Middle" />
+          </eElement>
+          <eElement alignx="MinMax" layout_type="Vertical" fill_color="0,0,0,100">
+            <eElement name="exp_bar" alignx="MinMax" aligny="MinMax" align_in_layout="false" fill_color="255,255,0,127" />
+            <eText name="exp_text" alignx="MinMax" auto_width="false" text="99 9999/9999" text_align="Middle" />
+          </eElement>
         </eElement>
         <eElement layout_type="Horizontal">
-          <entity src="skill_block" tip.text="Q" />
-          <entity src="skill_block" tip.text="W" />
-          <entity src="skill_block" tip.text="E" />
-          <entity src="skill_block" tip.text="R" />
-          <entity src="skill_block" tip.text="D" />
-          <entity src="skill_block" tip.text="F" />
-        </eElement>
-        <eElement layout_type="Vertical">
-          <eElement layout_type="Horizontal">
-            <entity src="item_block" tip.text="MH" />
-            <entity src="item_block" tip.text="HD" />
-            <entity src="item_block" tip.text="LG" />
+          <eElement layout_type="Vertical" margin="0,0,8,0" layout_gap="4">
+            <eButton name="btn_attributes" text="Attributes" />
+            <eButton name="btn_settings" text="Settings" />
           </eElement>
           <eElement layout_type="Horizontal">
-            <entity src="item_block" tip.text="SH" />
-            <entity src="item_block" tip.text="CH" />
-            <entity src="item_block" tip.text="FT" />
+            <entity src="skill_block" tip.text="Q" />
+            <entity src="skill_block" tip.text="W" />
+            <entity src="skill_block" tip.text="E" />
+            <entity src="skill_block" tip.text="R" />
+            <entity src="skill_block" tip.text="D" />
+            <entity src="skill_block" tip.text="F" />
           </eElement>
-        </eElement>
-        <eElement layout_type="Vertical">
-          <eElement layout_type="Horizontal">
-            <entity src="item_block" tip.text="1" />
-            <entity src="item_block" tip.text="2" />
-            <entity src="item_block" tip.text="3" />
-            <entity src="item_block" tip.text="4" />
-            <entity src="item_block" tip.text="5" />
+          <eElement layout_type="Vertical">
+            <eElement layout_type="Horizontal">
+              <entity src="item_block" tip.text="MH" />
+              <entity src="item_block" tip.text="HD" />
+              <entity src="item_block" tip.text="LG" />
+            </eElement>
+            <eElement layout_type="Horizontal">
+              <entity src="item_block" tip.text="SH" />
+              <entity src="item_block" tip.text="CH" />
+              <entity src="item_block" tip.text="FT" />
+            </eElement>
           </eElement>
-          <eElement layout_type="Horizontal">
-            <entity src="item_block" tip.text="6" />
-            <entity src="item_block" tip.text="7" />
-            <entity src="item_block" tip.text="8" />
-            <entity src="item_block" tip.text="9" />
-            <entity src="item_block" tip.text="0" />
+          <eElement layout_type="Vertical">
+            <eElement layout_type="Horizontal">
+              <entity src="item_block" tip.text="1" />
+              <entity src="item_block" tip.text="2" />
+              <entity src="item_block" tip.text="3" />
+              <entity src="item_block" tip.text="4" />
+              <entity src="item_block" tip.text="5" />
+            </eElement>
+            <eElement layout_type="Horizontal">
+              <entity src="item_block" tip.text="6" />
+              <entity src="item_block" tip.text="7" />
+              <entity src="item_block" tip.text="8" />
+              <entity src="item_block" tip.text="9" />
+              <entity src="item_block" tip.text="0" />
+            </eElement>
           </eElement>
         </eElement>
     </eElement>

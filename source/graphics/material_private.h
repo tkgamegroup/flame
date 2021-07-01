@@ -11,7 +11,7 @@ namespace flame
 			struct Texture
 			{
 				std::filesystem::path filename;
-				bool srgb = true;
+				bool srgb = false;
 				Filter mag_filter = FilterLinear;
 				Filter min_filter = FilterLinear;
 				bool linear_mipmap = true;

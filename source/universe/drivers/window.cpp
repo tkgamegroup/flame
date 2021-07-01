@@ -19,15 +19,52 @@ namespace flame
 			title_text->set_text(title.c_str());
 	}
 
+	void dWindowPrivate::set_nomove(bool v)
+	{
+		nomove = v;
+	}
+
+	void dWindowPrivate::set_noresize(bool v)
+	{
+		noresize = v;
+		size_dragger->set_visible(!noresize);
+
+		element->set_auto_width(noresize);
+		element->set_auto_height(noresize);
+		content_element->set_alignx(noresize ? AlignNone : AlignMinMax);
+		content_element->set_aligny(noresize ? AlignNone : AlignMinMax);
+	}
+
 	void* dWindowPrivate::add_close_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
-		if (load_finished)
-			close_button->set_visible(!close_listeners.empty());
-		return nullptr;
+		close_button->set_visible(true);
+
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->call(0);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			close_listeners.emplace_back(c);
+			return c;
+		}
+		auto c = new Closure(callback, capture);
+		close_listeners.emplace_back(c);
+		return c;
 	}
 
 	void dWindowPrivate::remove_close_listener(void* lis)
 	{
+		std::erase_if(close_listeners, [&](const auto& i) {
+			return i.get() == (decltype(i.get()))lis;
+		});
+
 		if (load_finished)
 			close_button->set_visible(!close_listeners.empty());
 	}
@@ -41,7 +78,7 @@ namespace flame
 
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<dWindowPrivate>();
-			if (thiz->receiver->is_active())
+			if (!thiz->nomove && thiz->receiver->is_active())
 				thiz->element->add_pos(vec2(disp) / thiz->element->scl);
 		}, Capture().set_thiz(this));
 
@@ -52,29 +89,28 @@ namespace flame
 				parent->reposition_child(parent->children.size() - 1, e->index);
 		}, Capture().set_thiz(this));
 
-		auto size_dragger = entity->find_child("size_dragger");
-		if (size_dragger)
-		{
-			size_dragger_receiver = size_dragger->get_component_t<cReceiverPrivate>();
-			fassert(size_dragger_receiver);
+		size_dragger = entity->find_child("size_dragger");
+		fassert(size_dragger);
+		size_dragger_receiver = size_dragger->get_component_t<cReceiverPrivate>();
+		fassert(size_dragger_receiver);
 
-			size_dragger_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
-				auto thiz = c.thiz<dWindowPrivate>();
-				if (thiz->size_dragger_receiver->is_active())
-					thiz->element->add_size(disp);
-			}, Capture().set_thiz(this));
+		size_dragger_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
+			auto thiz = c.thiz<dWindowPrivate>();
+			if (thiz->size_dragger_receiver->is_active())
+				thiz->element->add_size(disp);
+		}, Capture().set_thiz(this));
 
-			//block_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
-			//	auto thiz = c.thiz<cDragResizePrivate>();
-			//	switch (msg)
-			//	{
-			//	case MessageStateChanged:
-			//		thiz->block_receiver->dispatcher->window->set_cursor(
-			//			(state & StateHovering) ? CursorSizeNWSE : CursorArrow);
-			//		break;
-			//	}
-			//}, Capture().set_thiz(this));
-		}
+		//block_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
+		//	auto thiz = c.thiz<cDragResizePrivate>();
+		//	switch (msg)
+		//	{
+		//	case MessageStateChanged:
+		//		thiz->block_receiver->dispatcher->window->set_cursor(
+		//			(state & StateHovering) ? CursorS
+		// izeNWSE : CursorArrow);
+		//		break;
+		//	}
+		//}, Capture().set_thiz(this));
 
 		auto etitle = entity->find_child("title");
 		fassert(etitle);
@@ -86,9 +122,16 @@ namespace flame
 		close_button = entity->find_child("close_button");
 		fassert(close_button);
 		close_button->set_visible(!close_listeners.empty());
+		close_button->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
+			auto thiz = c.thiz<dWindowPrivate>();
+			for (auto& l : thiz->close_listeners)
+					l->call();
+		}, Capture().set_thiz(this));
 
 		content = entity->find_child("content");
 		fassert(content);
+		content_element = content->get_component_t<cElementPrivate>();
+		fassert(content_element);
 	}
 
 	bool dWindowPrivate::on_child_added(EntityPtr e, uint& pos)

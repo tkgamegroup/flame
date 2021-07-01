@@ -471,18 +471,37 @@ namespace flame
 									{
 										*(void**)p = (char*)p + sizeof(void*);
 										p += sizeof(void*);
-										auto str = std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-										strcpy(p, str.c_str());
-										p += str.size() + 1;
+										if (lua_isstring(state, -1))
+										{
+											auto str = lua_tostring(state, -1);
+											auto len = strlen(str);
+											strncpy(p, str, len);
+											p[len] = 0;
+											p += len + 1;
+										}
+										else
+										{
+											*p = 0;
+											p++;
+										}
 									}
 										break;
 									case WideCharType:
 									{
 										*(void**)p = (char*)p + sizeof(void*);
 										p += sizeof(void*);
-										auto str = std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
-										wcscpy((wchar_t*)p, str.c_str());
-										p += (str.size() + 1) * sizeof(wchar_t);
+										if (lua_isstring(state, -1))
+										{
+											auto str = s2w(lua_tostring(state, -1));
+											wcsncpy((wchar_t*)p, str.c_str(), str.size());
+											((wchar_t*)p)[str.size()] = 0;
+											p += (str.size() + 1) * sizeof(wchar_t);
+										}
+										else
+										{
+											*(wchar_t*)p = 0;
+											p += sizeof(wchar_t);
+										}
 									}
 										break;
 									default:

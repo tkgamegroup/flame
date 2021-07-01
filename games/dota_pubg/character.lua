@@ -41,7 +41,9 @@ function make_character(entity, group, stats)
 	for key, val in pairs(stats) do
 		character[key] = val
 	end
+
 	character.HP = character.HP_MAX
+	character.MP = character.MP_MAX
 
 	character.ui = create_entity("character_hud")
 	character.ui.set_visible(false)
@@ -131,20 +133,20 @@ function make_character(entity, group, stats)
 	end, character.animation)
 
 	character.on_receive_damage = function(src, value)
-		local tip_item = {}
-		tip_item.e = create_entity("floating_tip")
-		local text = tip_item.e.find_component("cText")
-		text.set_text(tostring(value))
-		if character == main_player.character then
-			text.set_font_color(vec4(255, 0, 0, 255))
-		end
-		character.ui.floating_tips.add_child(tip_item.e)
-		tip_item.element = tip_item.e.find_component("cElement")
-		tip_item.tick = 35
-		table.insert(character.ui.floating_tips.items, tip_item)
-
 		if character.HP > value then
 			character.HP = character.HP - value
+
+			local tip_item = {}
+			tip_item.e = create_entity("floating_tip")
+			local text = tip_item.e.find_component("cText")
+			text.set_text(tostring(value))
+			if character == main_player.character then
+				text.set_font_color(vec4(255, 0, 0, 255))
+			end
+			character.ui.floating_tips.add_child(tip_item.e)
+			tip_item.element = tip_item.e.find_component("cElement")
+			tip_item.tick = 35
+			table.insert(character.ui.floating_tips.items, tip_item)
 		else
 			character.die()
 		end
@@ -183,12 +185,7 @@ function make_character(entity, group, stats)
 			if ui_pos.x > -100 then
 				character.ui.set_visible(true)
 				character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-				local percent = character.HP / character.HP_MAX
-				character.ui.hp_bar.set_scalex(percent)
-				if percent > 0.5 then		character.ui.hp_bar.set_fill_color(vec4(0,255,0,127))
-				elseif percent > 0.2 then	character.ui.hp_bar.set_fill_color(vec4(255,255,0,127))
-				else						character.ui.hp_bar.set_fill_color(vec4(255,0,0,127))
-				end
+				character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
 
 				local i = 1
 				while i <= #character.ui.floating_tips.items do
