@@ -4,8 +4,12 @@ ITEM_LIST = {
 	{
 		type = "Equipment",
 		name = "wood_stick",
+		display_name = "Wood Stick",
 		stack_num = 1,
-		ATK_TYPE = "PHY",
-		ATK = 5
+		data = {
+			slot = 1,
+			ATK_TYPE = "PHY",
+			ATK = 5
+		}
 	}
 }

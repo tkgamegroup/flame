@@ -42,7 +42,7 @@ function make_player(e)
 
 	player.on_die = function()
 		scene_receiver.remove_mouse_move_listener(player.mouse_move_list)
-		scene_receiver.remove_mouse_right_down_listener(player.mouse_rightdown_list)
+		scene_receiver.remove_mouse_right_down_listener(player.mouse_rightdown_lis)
 	end
 	
 	local e_shading_flags = find_enum("ShadingFlags")
@@ -155,6 +155,30 @@ function make_player(e)
 				end
 			end
 		end
+		return num
+	end
+
+	player.use_bag_item = function(idx)
+		local slot = player.items[idx]
+		if slot then
+			local item_type = ITEM_LIST[slot.id]
+			if item_type.type == "Equipment" then
+				local euip_slot = item_type.data.slot
+
+				local ori_id = nil
+				if player.equipments[euip_slot] then ori_id = player.equipments[euip_slot].id end
+				player.equipments[euip_slot] = { id=slot.id }
+				ui_equipment_slots[euip_slot].image.set_tile_name(item_type.name)
+
+				player.items[idx] = nil
+				ui_item_slots[idx].image.set_tile_name("")
+
+				if ori_id then
+					player.receive_item(ori_id, 1)
+				end
+				player.calc_stats()
+			end
+		end
 	end
 
 	player.calc_stats = function()
@@ -168,13 +192,15 @@ function make_player(e)
 		player.MP_RECOVER = player.SPI
 		player.PHY_DMG = player.STR
 		player.MAG_DMG = player.INT
-		if player.equipments[1] then
-			local weapon = ITEM_LIST[player.equipments[1].id]
-			player.ATK_TYPE = weapon.ATK_TYPE
+
+		local weapon = player.equipments[1]
+		if weapon then
+			local data = ITEM_LIST[weapon.id].data
+			player.ATK_TYPE = data.ATK_TYPE
 			if player.ATK_TYPE == "PHY" then
-				player.ATK_DMG = (weapon.ATK + player.PHY_DMG) * 10
+				player.ATK_DMG = (data.ATK + player.PHY_DMG) * 10
 			else
-				player.ATK_DMG = (weapon.ATK + player.MAG_DMG) * 10
+				player.ATK_DMG = (data.ATK + player.MAG_DMG) * 10
 			end
 		else
 			player.ATK_TYPE = "PHY"
@@ -183,10 +209,14 @@ function make_player(e)
 	end
 	
 	player.mouse_move_list = scene_receiver.add_mouse_move_listener(function(disp, mpos)
+		if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
+
 		player.mpos = mpos
 	end)
 
-	player.mouse_rightdown_list = scene_receiver.add_mouse_right_down_listener(function(mpos)
+	player.mouse_rightdown_lis = scene_receiver.add_mouse_right_down_listener(function(mpos)
+		if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
+
 		if not player.hovering.p then
 			return
 		end

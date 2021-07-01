@@ -2,6 +2,7 @@
 <prefab>
   <eElement layout_type="Horizontal">
     <eElement name="icon" size="48,48" border="1">
+      <cReceiver />
       <cImage />
     </eElement>
     <eText name="tip" padding="2,2,0,0" font_size="16" font_color="255,255,255,180" align_in_layout="false" />

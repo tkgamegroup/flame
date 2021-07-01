@@ -39,14 +39,14 @@
           </eElement>
           <eElement layout_type="Vertical">
             <eElement layout_type="Horizontal">
-              <entity src="item_slot" tip.text="MH" />
-              <entity src="item_slot" tip.text="HD" />
-              <entity src="item_slot" tip.text="LG" />
+              <entity name="equipment_slot1" src="item_slot" tip.text="MH" />
+              <entity name="equipment_slot3" src="item_slot" tip.text="HD" />
+              <entity name="equipment_slot5" src="item_slot" tip.text="LG" />
             </eElement>
             <eElement layout_type="Horizontal">
-              <entity src="item_slot" tip.text="SH" />
-              <entity src="item_slot" tip.text="CH" />
-              <entity src="item_slot" tip.text="FT" />
+              <entity name="equipment_slot2" src="item_slot" tip.text="SH" />
+              <entity name="equipment_slot4" src="item_slot" tip.text="CH" />
+              <entity name="equipment_slot6" src="item_slot" tip.text="FT" />
             </eElement>
           </eElement>
           <eElement layout_type="Vertical">

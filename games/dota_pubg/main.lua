@@ -55,10 +55,30 @@ obj_root.add_event(function()
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 end, 0.0)
 
+ui_equipment_slots = {}
+for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
+	local ui = scene.find_child("equipment_slot"..i)
+	ui_equipment_slots[i] = ui
+	local icon = ui.find_child("icon")
+	ui.receiver = icon.find_component("cReceiver")
+	ui.image = icon.find_component("cImage")
+
+	ui.receiver.add_mouse_right_down_listener(function(mpos)
+		
+	end)
+end
+
 ui_item_slots = {}
 for i=1, ITEM_SLOTS_COUNT, 1 do
-	ui_item_slots[i] = scene.find_child("item_slot"..i)
-	ui_item_slots[i].image = ui_item_slots[i].find_child("icon").find_component("cImage")
+	local ui = scene.find_child("item_slot"..i)
+	ui_item_slots[i] = ui
+	local icon = ui.find_child("icon")
+	ui.receiver = icon.find_component("cReceiver")
+	ui.image = icon.find_component("cImage")
+
+	ui.receiver.add_mouse_right_down_listener(function(mpos)
+		main_player.use_bag_item(i)
+	end)
 end
 
 local attributes_btn = scene.find_child("attributes_btn")
