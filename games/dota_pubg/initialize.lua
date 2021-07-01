@@ -67,16 +67,102 @@ obj_root.add_event(function()
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 end, 0.0)
 
-local btn_attributes = scene.find_child("btn_attributes")
-btn_attributes.wnd = nil
-btn_attributes.find_component("cReceiver").add_mouse_click_listener(function()
-	if not btn_attributes.wnd_openning then
-		btn_attributes.wnd = create_entity("attributes")
-		btn_attributes.wnd.find_driver("dWindow").add_close_listener(function()
-			__ui.remove_child(btn_attributes.wnd)
-			btn_attributes.wnd = nil
+local attributes_btn = scene.find_child("attributes_btn")
+attributes_btn.wnd = nil
+attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
+	if not attributes_btn.wnd_openning then
+		attributes_btn.wnd = create_entity("attributes")
+		attributes_btn.wnd.find_driver("dWindow").add_close_listener(function()
+			__ui.remove_child(attributes_btn.wnd)
+			attributes_btn.wnd = nil
 		end)
-		__ui.add_child(btn_attributes.wnd)
+
+		local hp_max_text = attributes_btn.wnd.find_child("hp_max_text").find_component("cText")
+		local mp_max_text = attributes_btn.wnd.find_child("mp_max_text").find_component("cText")
+		local lv_text = attributes_btn.wnd.find_child("lv_text").find_component("cText")
+		local exp_text = attributes_btn.wnd.find_child("exp_text").find_component("cText")
+		local phy_dmg_text = attributes_btn.wnd.find_child("phy_dmg_text").find_component("cText")
+		local mag_dmg_text = attributes_btn.wnd.find_child("mag_dmg_text").find_component("cText")
+		local atk_dmg_text = attributes_btn.wnd.find_child("atk_dmg_text").find_component("cText")
+		local sta_text = attributes_btn.wnd.find_child("sta_text").find_component("cText")
+		local spi_text = attributes_btn.wnd.find_child("spi_text").find_component("cText")
+		local luk_text = attributes_btn.wnd.find_child("luk_text").find_component("cText")
+		local str_text = attributes_btn.wnd.find_child("str_text").find_component("cText")
+		local agi_text = attributes_btn.wnd.find_child("agi_text").find_component("cText")
+		local int_text = attributes_btn.wnd.find_child("int_text").find_component("cText")
+		local points_text = attributes_btn.wnd.find_child("points_text").find_component("cText")
+
+		local add_sta_btn = attributes_btn.wnd.find_child("add_sta_btn")
+		local add_spi_btn = attributes_btn.wnd.find_child("add_spi_btn")
+		local add_luk_btn = attributes_btn.wnd.find_child("add_luk_btn")
+		local add_str_btn = attributes_btn.wnd.find_child("add_str_btn")
+		local add_agi_btn = attributes_btn.wnd.find_child("add_agi_btn")
+		local add_int_btn = attributes_btn.wnd.find_child("add_int_btn")
+		if main_player.attribute_points > 0 then
+			add_sta_btn.set_visible(true)
+			add_spi_btn.set_visible(true)
+			add_luk_btn.set_visible(true)
+			add_str_btn.set_visible(true)
+			add_agi_btn.set_visible(true)
+			add_int_btn.set_visible(true)
+		end
+
+		function update()
+			hp_max_text.set_text(string.format("HP MAX: %d", math.floor(main_player.HP_MAX / 10.0)))
+			mp_max_text.set_text(string.format("MP MAX: %d", math.floor(main_player.MP_MAX / 10.0)))
+			lv_text.set_text(string.format("LV: %d", main_player.LV))
+			exp_text.set_text(string.format("EXP: %d/%d", main_player.EXP, main_player.EXP_NEXT))
+			phy_dmg_text.set_text(string.format("PHY DMG: %d", main_player.PHY_DMG))
+			mag_dmg_text.set_text(string.format("MAG DMG: %d", main_player.MAG_DMG))
+			atk_dmg_text.set_text(string.format("ATK DMG: %d (%s)", math.floor(main_player.ATK_DMG / 10.0), main_player.ATK_TYPE))
+		
+			sta_text.set_text(string.format("STA: %d", main_player.STA))
+			spi_text.set_text(string.format("SPI: %d", main_player.SPI))
+			luk_text.set_text(string.format("LUK: %d", main_player.LUK))
+			str_text.set_text(string.format("STR: %d", main_player.STR))
+			agi_text.set_text(string.format("AGI: %d", main_player.AGI))
+			int_text.set_text(string.format("INT: %d", main_player.INT))
+			points_text.set_text(string.format("Points: %d", main_player.attribute_points))
+		end
+
+		function add_attribute(attr)
+			if main_player.attribute_points > 0 then
+				main_player[attr] = main_player[attr] + 1
+				main_player.calc_stats()
+				update()
+				main_player.attribute_points = main_player.attribute_points - 1
+				if main_player.attribute_points == 0 then
+					add_sta_btn.set_visible(false)
+					add_spi_btn.set_visible(false)
+					add_luk_btn.set_visible(false)
+					add_str_btn.set_visible(false)
+					add_agi_btn.set_visible(false)
+					add_int_btn.set_visible(false)
+				end
+			end
+		end
+		add_sta_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("STA")
+		end)
+		add_spi_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("SPI")
+		end)
+		add_luk_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("LUK")
+		end)
+		add_str_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("STR")
+		end)
+		add_agi_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("AGI")
+		end)
+		add_int_btn.find_component("cReceiver").add_mouse_click_listener(function()
+			add_attribute("INT")
+		end)
+
+		update()
+
+		__ui.add_child(attributes_btn.wnd)
 	end
 end)
 
@@ -87,7 +173,7 @@ for i=1, 10, 1 do
 	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
 	local npc = make_npc(e, 1)
 	npc.drop_gold = 10
-	npc.drop_exp = 20
+	npc.drop_exp = 40
 	obj_root.add_child(e)
 end
 

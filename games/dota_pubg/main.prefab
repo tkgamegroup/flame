@@ -26,8 +26,8 @@
         </eElement>
         <eElement layout_type="Horizontal" layout_gap="4">
           <eElement layout_type="Vertical" margin="0,0,8,0" layout_gap="4">
-            <eButton name="btn_attributes" text="Attributes" />
-            <eButton name="btn_settings" text="Settings" />
+            <eButton name="attributes_btn" text="Attributes" />
+            <eButton name="settings_btn" text="Settings" />
           </eElement>
           <eElement layout_type="Horizontal">
             <entity src="skill_block" tip.text="Q" />
