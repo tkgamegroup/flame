@@ -129,8 +129,8 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 			if main_player.attribute_points > 0 then
 				main_player[attr] = main_player[attr] + 1
 				main_player.calc_stats()
-				update()
 				main_player.attribute_points = main_player.attribute_points - 1
+				update()
 				if main_player.attribute_points == 0 then
 					add_sta_btn.set_visible(false)
 					add_spi_btn.set_visible(false)
@@ -172,8 +172,6 @@ for i=1, 10, 1 do
 	--e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
 	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
 	local npc = make_npc(e, 1)
-	npc.drop_gold = 10
-	npc.drop_exp = 40
 	obj_root.add_child(e)
 end
 

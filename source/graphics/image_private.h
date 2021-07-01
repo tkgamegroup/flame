@@ -130,17 +130,13 @@ namespace flame
 				vec4 uv;
 			};
 
-			bool border = false;
-
 			ImagePtr image;
 			std::vector<Tile> tiles;
 
-			ImageAtlasPrivate(DevicePrivate* device, const std::wstring& atlas_filename);
+			ImageAtlasPrivate(DevicePrivate* device, const std::filesystem::path& atlas_filename);
 			~ImageAtlasPrivate();
 
 			void release() override { delete this; }
-
-			bool get_border() const override { return border; }
 
 			uint get_tiles_count() const override { return tiles.size(); };
 			void get_tile(uint id, TileInfo* dst) const override;

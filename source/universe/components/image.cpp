@@ -46,7 +46,7 @@ namespace flame
 		iv = nullptr;
 		atlas = nullptr;
 
-		if (!s_renderer)
+		if (!s_renderer || src.empty())
 			return;
 		auto device = graphics::Device::get_default();
 		if (tile_name.empty())
@@ -69,10 +69,13 @@ namespace flame
 			if (res_id == -1)
 				res_id = s_renderer->set_element_res(-1, iv);
 
-			graphics::ImageAtlas::TileInfo ti;
-			tile_id = atlas->find_tile(tile_name.c_str(), &ti);
-			fassert(tile_id != -1);
-			tile_uv = ti.uv;
+			if (!tile_name.empty())
+			{
+				graphics::ImageAtlas::TileInfo ti;
+				tile_id = atlas->find_tile(tile_name.c_str(), &ti);
+				fassert(tile_id != -1);
+				tile_uv = ti.uv;
+			}
 		}
 
 		if (element)

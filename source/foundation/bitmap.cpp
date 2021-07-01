@@ -49,7 +49,7 @@ namespace flame
 	void BitmapPrivate::copy_to(BitmapPtr dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
-		auto b2 = b1 << 1;
+		auto b2 = b1 * 2;
 		fassert(byte_per_channel == 1 &&
 			channel == dst->channel &&
 			byte_per_channel == dst->byte_per_channel &&
@@ -121,9 +121,9 @@ namespace flame
 		auto ext = std::filesystem::path(filename).extension();
 
 		if (ext == L".png")
-			stbi_write_png(w2s(filename).c_str(), width, height, channel, data, pitch);
+			stbi_write_png(filename.string().c_str(), width, height, channel, data, pitch);
 		else if (ext == L".bmp")
-			stbi_write_bmp(w2s(filename).c_str(), width, height, channel, data);
+			stbi_write_bmp(filename.string().c_str(), width, height, channel, data);
 	}
 
 	BitmapPrivate* BitmapPrivate::create(const std::filesystem::path& filename)

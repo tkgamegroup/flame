@@ -8,12 +8,20 @@ struct BinPackTile
 	std::string id;
 	UniPtr<Bitmap> bmp;
 	ivec2 pos;
+	uvec2 size;
 };
 
-inline void bin_pack(const uvec2& size, const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
+int main(int argc, char **args)
 {
-	auto b1 = border ? 1U : 0U;
-	auto b2 = b1 << 1;
+	auto current_path = std::filesystem::current_path();
+	auto output_path = current_path.filename();
+
+	std::vector<std::filesystem::path> inputs;
+	for (std::filesystem::directory_iterator end, it(current_path); it != end; it++)
+	{
+		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
+			inputs.push_back(it->path());
+	}
 
 	std::vector<BinPackTile> tiles;
 	for (auto& i : inputs)
@@ -22,73 +30,43 @@ inline void bin_pack(const uvec2& size, const std::vector<std::filesystem::path>
 		t.id = i.filename().stem().string();
 		t.bmp.reset(Bitmap::create(i.c_str()));
 		t.pos = ivec2(-1);
+		t.size = uvec2(t.bmp->get_width(), t.bmp->get_height());
 		tiles.push_back(std::move(t));
 	}
 	std::sort(tiles.begin(), tiles.end(), [](const auto& a, const auto& b) {
-		return max(a.bmp->get_width(), a.bmp->get_height()) > max(b.bmp->get_width(), b.bmp->get_height());
+		return max(a.size.x, a.size.y) > max(b.size.x, b.size.y);
 	});
+
+	auto size = uvec2(1024, 4096);
 
 	auto tree = std::make_unique<BinPackNode>(size);
 
 	for (auto& t : tiles)
 	{
-		auto n = tree->find(uvec2(t.bmp->get_width(), t.bmp->get_height()) + b2);
+		auto n = tree->find(t.size + 2U);
 		if (n)
 			t.pos = n->pos;
 	}
 
 	auto _size = uvec2(0);
 	for (auto& t : tiles)
-	{
-		_size.x = max(t.pos.x + t.bmp->get_width() + b1, _size.x);
-		_size.y = max(t.pos.y + t.bmp->get_height() + b1, _size.y);
-	}
+		_size = max(uvec2(t.pos) + t.size + 2U, _size);
 
 	auto b = Bitmap::create(_size.x, _size.y, 4);
 	for (auto& t : tiles)
 	{
 		if (t.pos.x >= 0 && t.pos.y >= 0)
-			t.bmp->copy_to((BitmapPtr)b, t.bmp->get_width(), t.bmp->get_height(), 0, 0, t.pos.x, t.pos.y, border);
-	}
-	b->save(output.c_str());
-
-	callback(tiles);
-}
-
-int main(int argc, char **args)
-{
-	std::string output;
-	auto ap = pack_args(argc, args);
-	auto border = false;
-	if (!ap.get_item("-o", output))
-		return 0;
-	if (ap.has("-b"))
-		border = true;
-	auto output_path = std::filesystem::path(output);
-	std::vector<std::filesystem::path> inputs;
-	for (std::filesystem::directory_iterator end, it(std::filesystem::current_path()); it != end; it++)
-	{
-		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
-			inputs.push_back(it->path());
+			t.bmp->copy_to((BitmapPtr)b, t.size.x, t.size.y, 0, 0, t.pos.x, t.pos.y, true);
 	}
 
-	auto image_path = output_path;
-	image_path.replace_extension(L".png");
-	auto ext = output_path.extension();
-	if (auto p = output_path.parent_path(); !std::filesystem::exists(p))
-		std::filesystem::create_directories(p);
-	if (ext == L".atlas")
-	{
-		bin_pack(uvec2(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
-			std::ofstream file(output_path);
-			file << "image = \"" << image_path.filename().string() << "\"\n";
-			file << "border = " << (border ? "1" : "0") << "\n";
-			file << "\n[tiles]\n";
-			for (auto& t : tiles)
-				file << t.id + " " + to_string(uvec4(uvec2(t.pos) + (border ? 1U : 0U), uvec2(t.b->get_width(), t.b->get_height()))) + "\n";
-			file.close();
-		});
-	}
+	output_path.replace_extension(L".png");
+	b->save(output_path.c_str());
+
+	output_path.replace_extension(L".png");
+	std::ofstream file(output_path);
+	for (auto& t : tiles)
+		file << t.id + " " + to_string(uvec4(uvec2(t.pos) + 1U, t.size)) + "\n";
+	file.close();
 
 	return 0;
 }

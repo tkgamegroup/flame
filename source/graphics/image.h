@@ -104,8 +104,6 @@ namespace flame
 
 			virtual void release() = 0; 
 
-			virtual bool get_border() const = 0;
-
 			virtual uint get_tiles_count() const = 0;
 			virtual void get_tile(uint id, TileInfo* dst) const = 0;
 			virtual bool find_tile(const char* name, TileInfo* dst) const = 0;

@@ -617,24 +617,18 @@ namespace flame
 			return SamplerPrivate::get((DevicePrivate*)device, mag_filter, min_filter, linear_mipmap, address_mode);
 		}
 
-		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::wstring& filename)
+		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::filesystem::path& fn)
 		{
-			std::wstring image_filename;
+			auto filename = fn;
 			auto ini = parse_ini_file(filename);
-			for (auto& e : ini.get_section_entries(""))
-			{
-				if (e.key == "image")
-					image_filename = std::filesystem::path(filename).parent_path() / e.value;
-				else if (e.key == "border")
-					border = !(e.value == "0");
-			}
 
-			image = ImagePrivate::get(device, image_filename.c_str(), false);
+			filename.replace_extension(L".png");
+			image = ImagePrivate::get(device, filename.c_str(), false);
 
 			auto w = (float)image->sizes[0].x;
 			auto h = (float)image->sizes[0].y;
 
-			for (auto& e : ini.get_section_entries("tiles"))
+			for (auto& e : ini.get_section_entries(""))
 			{
 				Tile tile;
 				tile.index = tiles.size();

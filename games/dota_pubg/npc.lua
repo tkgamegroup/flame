@@ -1,17 +1,24 @@
-NPC_STATS = {
+NPC_LIST = {
 	{
-		HP_MAX = 1000,
-		MP_MAX = 500,
-		HP_RECOVER = 5,
-		MP_RECOVER = 5,
-		ATK_DMG = 100,
-		ATK_TYPE = "PHY"
+		stats = {
+			HP_MAX = 500,
+			MP_MAX = 500,
+			HP_RECOVER = 5,
+			MP_RECOVER = 5,
+			ATK_DMG = 100,
+			ATK_TYPE = "PHY"
+		},
+		drop_gold = 10,
+		drop_exp = 40
 	}
 }
 
 function make_npc(e, ID)
-	local stats = NPC_STATS[ID]
+	local data = NPC_LIST[ID]
+	local stats = data.stats
 	local npc = make_character(e, 2, stats.HP_MAX, stats.MP_MAX, stats.HP_RECOVER, stats.MP_RECOVER, stats.ATK_DMG, stats.ATK_TYPE)
+	npc.drop_gold = data.drop_gold
+	npc.drop_exp = data.drop_exp
 
 	npc.chase_start_pos = vec2(-1000)
 	npc.chase_tick = 0

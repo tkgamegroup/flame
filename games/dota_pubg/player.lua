@@ -1,3 +1,5 @@
+EQUIPMENT_SLOTS_COUNT = 6
+
 function make_player(e)
 	local player = make_character(e, 1, 0, 0, 0, 0, 0, "PHY")
 	player.LV = 1
@@ -12,6 +14,21 @@ function make_player(e)
 	player.PHY_DMG = 10
 	player.MAG_DMG = 10
 	player.attribute_points = 0
+
+	player.skills = {}
+	for i=1, SKILL_SLOTS_COUNT, 1 do
+		player.skills[i] = nil
+	end
+
+	player.equipments = {}
+	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
+		player.equipments[i] = nil
+	end
+
+	player.items = {}
+	for i=1, ITEM_SLOTS_COUNT, 1 do
+		player.items[i] = nil
+	end
 
 	player.hovering = { p=nil }
 	player.hovering_destroyed_lis = 0
@@ -96,6 +113,42 @@ function make_player(e)
 		end
 	end
 
+	player.receive_item = function(id, num)
+		local max_num = ITEM_LIST[id].stack_num
+		while num > 0 do
+			for i=1, ITEM_SLOTS_COUNT, 1 do
+				local slot = player.items[i]
+				if slot and slot.id == id then
+					local n = max_num - slot.num
+					if n >= num then
+						slot.num = slot.num + num
+						num = 0
+						break
+					else
+						num = num - n
+						slot.num = slot.num + n
+					end
+				end
+			end
+			if num == 0 then break end
+			for i=1, ITEM_SLOTS_COUNT, 1 do
+				local slot = player.items[i]
+				if not slot then
+					slot = { id=id, num=0 }
+					player.items[i] = slot
+					if max_num >= num then
+						slot.num = max_num
+						num = 0
+						break
+					else
+						num = num - max_num
+						slot.num = max_num
+					end
+				end
+			end
+		end
+	end
+
 	player.calc_stats = function()
 		local pre_hp_max = player.HP_MAX
 		local pre_mp_max = player.MP_MAX
@@ -107,10 +160,17 @@ function make_player(e)
 		player.MP_RECOVER = player.SPI
 		player.PHY_DMG = player.STR
 		player.MAG_DMG = player.INT
-		if player.ATK_TYPE == "PHY" then
-			player.ATK_DMG = player.PHY_DMG * 10
+		if player.equipments[1] then
+			local weapon = ITEM_LIST[player.equipments[1].id]
+			player.ATK_TYPE = weapon.ATK_TYPE
+			if player.ATK_TYPE == "PHY" then
+				player.ATK_DMG = (weapon.ATK + player.PHY_DMG) * 10
+			else
+				player.ATK_DMG = (weapon.ATK + player.MAG_DMG) * 10
+			end
 		else
-			player.ATK_DMG = player.MAG_DMG * 10
+			player.ATK_TYPE = "PHY"
+			player.ATK_DMG = player.PHY_DMG * 10
 		end
 	end
 	

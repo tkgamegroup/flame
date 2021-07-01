@@ -17,6 +17,8 @@ int main(int argc, char** args)
 	script_ins->excute_file(L"character.lua");
 	script_ins->excute_file(L"player.lua");
 	script_ins->excute_file(L"npc.lua");
+	script_ins->excute_file(L"skill.lua");
+	script_ins->excute_file(L"item.lua");
 	{
 		auto e = Entity::create();
 		e->load(L"main");

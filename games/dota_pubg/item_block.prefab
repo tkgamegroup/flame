@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eElement size="24,24" padding="2,2,2,2" border="1" />
+    <eElement name="icon" size="24,24" border="1">
+      <cImage />
+    </eElement>
     <eText name="tip" padding="2,2,0,0" font_size="13" font_color="255,255,255,180" align_in_layout="false" />
   </eElement>
 </prefab>
