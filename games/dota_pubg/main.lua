@@ -16,18 +16,6 @@ scene_receiver.add_key_up_listener(function(key)
 	end
 end)
 
-EXP_NEXT_LIST = {
-	100,
-	200
-}
-
-local e = create_entity("player")
-e.set_name("player")
-e.find_component("cNode").set_pos(vec3(200, 65, 200))
-main_player = make_player(e)
-main_player.awake()
-obj_root.add_child(e)
-
 local e_grasses = {}
 local e = create_entity("D:\\assets\\vegetation\\grass1.prefab")
 table.insert(e_grasses, e)
@@ -66,6 +54,12 @@ obj_root.add_event(function()
 	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 end, 0.0)
+
+ui_item_slots = {}
+for i=1, ITEM_SLOTS_COUNT, 1 do
+	ui_item_slots[i] = scene.find_child("item_slot"..i)
+	ui_item_slots[i].image = ui_item_slots[i].find_child("icon").find_component("cImage")
+end
 
 local attributes_btn = scene.find_child("attributes_btn")
 attributes_btn.wnd = nil
@@ -166,6 +160,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
+
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
@@ -175,6 +170,13 @@ for i=1, 10, 1 do
 	obj_root.add_child(e)
 end
 
+local e = create_entity("player")
+e.set_name("player")
+e.find_component("cNode").set_pos(vec3(200, 65, 200))
+main_player = make_player(e)
+main_player.receive_item(1, 1)
+main_player.awake()
+obj_root.add_child(e)
 
 obj_root.add_event(function()
 	for n, char in pairs(characters[2]) do

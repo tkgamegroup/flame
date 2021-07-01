@@ -24,7 +24,7 @@ int main(int argc, char** args)
 		e->load(L"main");
 		w->root->add_child(e);
 	}
-	script_ins->excute_file(L"initialize.lua");
+	script_ins->excute_file(L"main.lua");
 
 	looper().add_event([](Capture& c) {
 		printf("fps: %d\n", looper().get_fps());

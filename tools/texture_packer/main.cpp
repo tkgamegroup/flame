@@ -19,8 +19,12 @@ int main(int argc, char **args)
 	std::vector<std::filesystem::path> inputs;
 	for (std::filesystem::directory_iterator end, it(current_path); it != end; it++)
 	{
-		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
-			inputs.push_back(it->path());
+		if (!std::filesystem::is_directory(it->status()))
+		{
+			auto& path = it->path();
+			if (is_image_file(path.extension()) && path.filename().stem() != output_path)
+				inputs.push_back(it->path());
+		}
 	}
 
 	std::vector<BinPackTile> tiles;
@@ -48,11 +52,11 @@ int main(int argc, char **args)
 			t.pos = n->pos;
 	}
 
-	auto _size = uvec2(0);
+	auto shrink_size = uvec2(0);
 	for (auto& t : tiles)
-		_size = max(uvec2(t.pos) + t.size + 2U, _size);
+		shrink_size = max(uvec2(t.pos) + t.size + 2U, shrink_size);
 
-	auto b = Bitmap::create(_size.x, _size.y, 4);
+	auto b = Bitmap::create(shrink_size.x, shrink_size.y, 4);
 	for (auto& t : tiles)
 	{
 		if (t.pos.x >= 0 && t.pos.y >= 0)
@@ -62,7 +66,7 @@ int main(int argc, char **args)
 	output_path.replace_extension(L".png");
 	b->save(output_path.c_str());
 
-	output_path.replace_extension(L".png");
+	output_path.replace_extension(L".atlas");
 	std::ofstream file(output_path);
 	for (auto& t : tiles)
 		file << t.id + " " + to_string(uvec4(uvec2(t.pos) + 1U, t.size)) + "\n";

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eElement name="icon" size="24,24" border="1">
-      <cImage />
+    <eElement name="icon" padding="1,1,1,1" size="25,25" border="1">
+      <cImage src="D:/assets/item_icons/item_icons.atlas" />
     </eElement>
     <eText name="tip" padding="2,2,0,0" font_size="13" font_color="255,255,255,180" align_in_layout="false" />
   </eElement>

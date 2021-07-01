@@ -49,7 +49,7 @@ namespace flame
 		if (!s_renderer || src.empty())
 			return;
 		auto device = graphics::Device::get_default();
-		if (tile_name.empty())
+		if (src.extension() != L".atlas")
 		{
 			auto img = graphics::Image::get(device, src.c_str(), false);
 			fassert(img);
@@ -139,9 +139,9 @@ namespace flame
 		if (res_id != -1)
 		{
 			layer++;
-			if (tile_id == -1)
+			if (!atlas)
 				s_renderer->draw_image(layer, element->points + 4, res_id, uv0, uv1, cvec4(255));
-			else
+			else if(tile_id != -1)
 			{
 				auto _uv0 = mix(tile_uv.xy(), tile_uv.zw(), uv0);
 				auto _uv1 = mix(tile_uv.xy(), tile_uv.zw(), uv1);

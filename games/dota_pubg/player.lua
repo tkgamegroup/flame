@@ -1,5 +1,10 @@
 EQUIPMENT_SLOTS_COUNT = 6
 
+EXP_NEXT_LIST = {
+	100,
+	200
+}
+
 function make_player(e)
 	local player = make_character(e, 1, 0, 0, 0, 0, 0, "PHY")
 	player.LV = 1
@@ -114,7 +119,8 @@ function make_player(e)
 	end
 
 	player.receive_item = function(id, num)
-		local max_num = ITEM_LIST[id].stack_num
+		local item_type = ITEM_LIST[id]
+		local max_num = item_type.stack_num
 		while num > 0 do
 			for i=1, ITEM_SLOTS_COUNT, 1 do
 				local slot = player.items[i]
@@ -136,6 +142,7 @@ function make_player(e)
 				if not slot then
 					slot = { id=id, num=0 }
 					player.items[i] = slot
+					ui_item_slots[i].image.set_tile_name(item_type.name)
 					if max_num >= num then
 						slot.num = max_num
 						num = 0
@@ -144,6 +151,7 @@ function make_player(e)
 						num = num - max_num
 						slot.num = max_num
 					end
+					break
 				end
 			end
 		end

@@ -813,23 +813,27 @@ namespace flame
 
 	void sRendererPrivate::draw_image(uint layer, const vec2* pts, uint res_id, const vec2& uv0, const vec2& uv1, const cvec4& tint_color)
 	{
-		//auto& ed = *_ed;
+		auto& ed = *_ed;
 
-		//auto& info = ed.layers[layer].emplace_back();
-		//info.type = ElementDrawCmd::Fill;
+		ed.buf_element_vtx.stag_num += 4;
+		ed.buf_element_idx.stag_num += 6;
 
-		//info.res_id = res_id;
-		//info.points.resize(4);
-		//info.uvs.resize(4);
+		auto& info = ed.layers[layer].emplace_back();
+		info.res = res_id;
+		info.vertices.resize(4);
+		info.indices.resize(6);
 
-		//auto& res = ed.reses[res_id];
+		info.vertices[0] = { pts[0], vec2(uv0.x, uv0.y), tint_color };
+		info.vertices[1] = { pts[1], vec2(uv1.x, uv0.y), tint_color };
+		info.vertices[2] = { pts[2], vec2(uv1.x, uv1.y), tint_color };
+		info.vertices[3] = { pts[3], vec2(uv0.x, uv1.y), tint_color };
 
-		//memcpy(info.points.data(), pts, sizeof(vec2) * 4);
-		//info.uvs[0] = vec2(uv0.x, uv0.y);
-		//info.uvs[1] = vec2(uv1.x, uv0.y);
-		//info.uvs[2] = vec2(uv1.x, uv1.y);
-		//info.uvs[3] = vec2(uv0.x, uv1.y);
-		//info.color = tint_color;
+		info.indices[0] = 0;
+		info.indices[1] = 2;
+		info.indices[2] = 1;
+		info.indices[3] = 0;
+		info.indices[4] = 3;
+		info.indices[5] = 2;
 	}
 
 	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp)

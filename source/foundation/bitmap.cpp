@@ -63,7 +63,7 @@ namespace flame
 			return;
 
 		auto dst_x = _dst_x + b1;
-		auto dst_y = _dst_y + b2;
+		auto dst_y = _dst_y + b1;
 		auto dst_data = dst->data;
 		auto dst_pitch = dst->pitch;
 		for (auto i = 0; i < h; i++)
