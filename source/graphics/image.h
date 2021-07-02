@@ -64,7 +64,8 @@ namespace flame
 			virtual void change_layout(ImageLayout src_layout, ImageLayout dst_layout) = 0;
 			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
 
-			virtual void get_samples(const vec4& off_step, const ivec2& count, vec4* dst, uint level = 0, uint layer = 0) = 0;
+			virtual void grid_sample(const vec4& off_step, const ivec2& count, vec4* dst, uint level = 0, uint layer = 0) = 0;
+			virtual void arbitrarily_sample(uint count, vec2* uvs, vec4* dst, uint level = 0, uint layer = 0) = 0;
 
 			virtual void generate_mipmaps() = 0;
 

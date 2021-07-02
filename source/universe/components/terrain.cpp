@@ -105,7 +105,7 @@ namespace flame
 
 			std::vector<vec4> res;
 			res.resize((tex_size.x + 1) * (tex_size.y + 1));
-			height_texture->get_samples(vec4(vec2(0.f), vec2(1.f) / vec2(tex_size)), tex_size + 1U, res.data());
+			height_texture->grid_sample(vec4(vec2(0.f), vec2(1.f) / vec2(tex_size)), tex_size + 1U, res.data());
 
 			graphics::StagingBuffer stag(device, sizeof(vec4) * tex_size.x * tex_size.y, nullptr, graphics::BufferUsageTransferDst);
 			auto nor_dat = (cvec4*)stag.mapped;

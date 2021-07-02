@@ -127,12 +127,37 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
 		};
 
+		struct Event
+		{
+			virtual void release() = 0;
+
+			FLAME_GRAPHICS_EXPORTS static Event* create(Device* device);
+		};
+
+		struct Semaphore
+		{
+			virtual void release() = 0;
+
+			FLAME_GRAPHICS_EXPORTS static Semaphore* create(Device* device);
+		};
+
+		struct Fence
+		{
+			virtual void release() = 0;
+
+			virtual void wait(bool auto_reset = true) = 0;
+
+			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* device, bool signaled = true);
+		};
+
 		struct InstanceCB : UniPtr<CommandBuffer>
 		{
 			Device* device;
+			Fence* fence;
 
-			InstanceCB(Device* device) :
-				device(device)
+			InstanceCB(Device* device, Fence* fence = nullptr) :
+				device(device),
+				fence(fence)
 			{
 				reset(CommandBuffer::create(CommandPool::get(device)));
 				p->begin(true);
@@ -142,8 +167,11 @@ namespace flame
 			{
 				p->end();
 				auto q = Queue::get(device);
-				q->submit(1, (CommandBufferPtr*)&p, nullptr, nullptr, nullptr);
-				q->wait_idle();
+				q->submit(1, (CommandBufferPtr*)&p, nullptr, nullptr, (FencePtr)fence);
+				if (!fence)
+					q->wait_idle();
+				else
+					fence->wait();
 			}
 		};
 	}

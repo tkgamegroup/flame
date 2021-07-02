@@ -1054,8 +1054,16 @@ namespace flame
 					attr->getter->call(c.get(), d, nullptr);
 					if (!attr->get_type->compare(d, attr->default_value))
 					{
-						void* ps[] = { d };
-						attr->setter->call(cc, nullptr, ps);
+						if (attr->get_type->get_tag() == TypeData && attr->set_type->get_tag() == TypePointer)
+						{
+							void* ps[] = { &d };
+							attr->setter->call(cc, nullptr, ps);
+						}
+						else
+						{
+							void* ps[] = { d };
+							attr->setter->call(cc, nullptr, ps);
+						}
 					}
 					attr->get_type->destroy(d, false);
 				}

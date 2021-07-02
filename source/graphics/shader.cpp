@@ -1565,68 +1565,81 @@ namespace flame
 
 			auto pll = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
 
-			GraphicsPipelineInfo info;
-
-			auto n_rp = doc_root.child("renderpass");
-			info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
-			info.subpass_index = n_rp.attribute("index").as_uint();
-
-			auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format");
-			std::vector<std::vector<VertexAttributeInfo>> v_vertex_attributes;
-			std::vector<VertexBufferInfo> vertex_buffers;
-			for (auto n_buf : doc_root.child("vertex_buffers"))
+			if (shaders.size() > 1)
 			{
-				std::vector<VertexAttributeInfo> atts;
-				for (auto n_att : n_buf)
+				GraphicsPipelineInfo info;
+
+				auto n_rp = doc_root.child("renderpass");
+				info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
+				info.subpass_index = n_rp.attribute("index").as_uint();
+
+				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format");
+				std::vector<std::vector<VertexAttributeInfo>> v_vertex_attributes;
+				std::vector<VertexBufferInfo> vertex_buffers;
+				for (auto n_buf : doc_root.child("vertex_buffers"))
 				{
-					VertexAttributeInfo att;
-					att.location = n_att.attribute("location").as_uint();
-					if (auto a = n_att.attribute("format"); a)
-						ti_format->unserialize(&att.format, a.value());
-					atts.push_back(att);
+					std::vector<VertexAttributeInfo> atts;
+					for (auto n_att : n_buf)
+					{
+						VertexAttributeInfo att;
+						att.location = n_att.attribute("location").as_uint();
+						if (auto a = n_att.attribute("format"); a)
+							ti_format->unserialize(&att.format, a.value());
+						atts.push_back(att);
+					}
+					v_vertex_attributes.push_back(atts);
+
+					VertexBufferInfo vb;
+					vertex_buffers.push_back(vb);
 				}
-				v_vertex_attributes.push_back(atts);
+				for (auto i = 0; i < vertex_buffers.size(); i++)
+				{
+					auto& vb = vertex_buffers[i];
+					auto& atts = v_vertex_attributes[i];
+					vb.attributes_count = atts.size();
+					vb.attributes = atts.data();
+				}
 
-				VertexBufferInfo vb;
-				vertex_buffers.push_back(vb);
+				info.vertex_buffers_count = vertex_buffers.size();
+				info.vertex_buffers = vertex_buffers.data();
+
+				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor");
+				std::vector<BlendOption> blend_options;
+				for (auto n_bo : doc_root.child("blend_options"))
+				{
+					BlendOption bo;
+					bo.enable = n_bo.attribute("enable").as_bool();
+					if (auto a = n_bo.attribute("src_color"); a)
+						ti_blendfactor->unserialize(&bo.src_color, a.value());
+					if (auto a = n_bo.attribute("dst_color"); a)
+						ti_blendfactor->unserialize(&bo.dst_color, a.value());
+					if (auto a = n_bo.attribute("src_alpha"); a)
+						ti_blendfactor->unserialize(&bo.src_alpha, a.value());
+					if (auto a = n_bo.attribute("dst_alpha"); a)
+						ti_blendfactor->unserialize(&bo.dst_alpha, a.value());
+					blend_options.push_back(bo);
+				}
+
+				info.blend_options_count = blend_options.size();
+				info.blend_options = blend_options.data();
+
+				if (device)
+				{
+					auto pl = PipelinePrivate::create(device, shaders, pll, info);
+					pl->filename = filename;
+					device->pls.emplace_back(pl);
+					return pl;
+				}
 			}
-			for (auto i = 0; i < vertex_buffers.size(); i++)
+			else
 			{
-				auto& vb = vertex_buffers[i];
-				auto& atts = v_vertex_attributes[i];
-				vb.attributes_count = atts.size();
-				vb.attributes = atts.data();
-			}
-
-			info.vertex_buffers_count = vertex_buffers.size();
-			info.vertex_buffers = vertex_buffers.data();
-
-			auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor");
-			std::vector<BlendOption> blend_options;
-			for (auto n_bo : doc_root.child("blend_options"))
-			{
-				BlendOption bo;
-				bo.enable = n_bo.attribute("enable").as_bool();
-				if (auto a = n_bo.attribute("src_color"); a)
-					ti_blendfactor->unserialize(&bo.src_color, a.value());
-				if (auto a = n_bo.attribute("dst_color"); a)
-					ti_blendfactor->unserialize(&bo.dst_color, a.value());
-				if (auto a = n_bo.attribute("src_alpha"); a)
-					ti_blendfactor->unserialize(&bo.src_alpha, a.value());
-				if (auto a = n_bo.attribute("dst_alpha"); a)
-					ti_blendfactor->unserialize(&bo.dst_alpha, a.value());
-				blend_options.push_back(bo);
-			}
-
-			info.blend_options_count = blend_options.size();
-			info.blend_options = blend_options.data();
-
-			if (device)
-			{
-				auto pl = PipelinePrivate::create(device, shaders, pll, info);
-				pl->filename = filename;
-				device->pls.emplace_back(pl);
-				return pl;
+				if (device)
+				{
+					auto pl = PipelinePrivate::create(device, shaders[0], pll);
+					pl->filename = filename;
+					device->pls.emplace_back(pl);
+					return pl;
+				}
 			}
 
 			return nullptr;

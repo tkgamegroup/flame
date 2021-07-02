@@ -72,7 +72,7 @@ namespace flame
 				for (auto i = 0; i < 6; i++)
 				{
 					vec4 res;
-					box_texture->get_samples(vec4(0.5f, 0.5f, 0.f, 0.f), ivec2(1), &res, lv, i);
+					box_texture->grid_sample(vec4(0.5f, 0.5f, 0.f, 0.f), ivec2(1), &res, lv, i);
 					color += res;
 				}
 				color /= 6.f;

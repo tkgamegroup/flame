@@ -82,5 +82,30 @@ namespace flame
 			void submit(uint cbs_count, CommandBufferPtr* cbs, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) override { submit({ cbs, cbs_count }, wait_semaphore, signal_semaphore, signal_fence); }
 			void present(SwapchainPtr s, SemaphorePtr wait_semaphore) override;
 		};
+
+		struct SemaphorePrivate : Semaphore
+		{
+			DevicePrivate* device;
+			VkSemaphore vk_semaphore;
+
+			SemaphorePrivate(DevicePrivate* device);
+			~SemaphorePrivate();
+
+			void release() override { delete this; }
+		};
+
+		struct FencePrivate : Fence
+		{
+			DevicePrivate* device;
+			uint value = 0;
+			VkFence vk_fence;
+
+			FencePrivate(DevicePrivate* device, bool signaled);
+			~FencePrivate();
+
+			void release() override { delete this; }
+
+			void wait(bool auto_reset = true) override;
+		};
 	}
 }

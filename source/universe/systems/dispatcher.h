@@ -14,6 +14,7 @@ namespace flame
 		{
 		}
 
+		virtual ivec2 get_mouse_pos() const = 0;
 		virtual cReceiverPtr get_hovering() const = 0;
 		virtual cReceiverPtr get_focusing() const = 0;
 		virtual cReceiverPtr get_active() const = 0;
