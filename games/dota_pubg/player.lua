@@ -33,6 +33,34 @@ function make_player(e)
 		player.items[i] = nil
 	end
 
+	player.on_extra_state = function()
+		if player.state == "pick_up_item" then
+			local item_obj = player.target
+			if not move_to_pos(item_obj.node.get_global_pos().to_flat(), 0.2) then
+				if player.receive_item(item_obj.id, item_obj.num) == 0 then
+					item_obj.die()
+				end
+				player.change_state("idle")
+			end
+		elseif player.state == "attack_on_pos" then
+			if not player.attacking then
+				player.target = nil
+
+				local char = player.find_closest_enemy(5)
+				if char then 
+					player.target = char
+				end
+			end
+			
+			if player.target and not player.target.dead then
+				attack_target()
+			else
+				player.target = nil
+				if not move_to_pos(player.target_pos, 0) then player.animation.stop_at(2, -1) end
+			end
+		end
+	end
+
 	player.on_reward = function(gold, exp)
 		player.EXP = player.EXP + exp
 		local lv = player.LV

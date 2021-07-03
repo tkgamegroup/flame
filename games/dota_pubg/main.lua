@@ -6,8 +6,9 @@ TAG_CHARACTER_G2 = 2
 TAG_ITEM_OBJ = 3
 
 alt_pressing = false
-hovering_e = { p=nil }
-hovering_destroyed_lis = 0
+hovering_entity = { p=nil }
+hovering_entity_lis = 0
+hovering_obj = nil
 hovering_pos = vec2(0)
 
 scene_receiver = scene.find_component("cReceiver")
@@ -27,24 +28,22 @@ end)
 
 scene_receiver.add_mouse_right_down_listener(function()
 	if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
+	if not hovering_obj then return end
 
-	if not hovering_e.p then
-		return
-	end
-
-	local name = hovering_e.get_name()
-	if name == "terrain" then
+	if hovering_obj.name == "terrain" then
 		if not alt_pressing then
 			main_player.change_state("move_to", hovering_pos)
 		else
 			main_player.change_state("attack_on_pos", hovering_pos)
 		end
 	else
-		local tag = hovering_e.get_tag()
-		if tag == TAG_CHARACTER_G1 and name ~= "main_player" then
-			
+		local tag = hovering_obj.tag
+		if tag == TAG_CHARACTER_G1 then
+
 		elseif tag == TAG_CHARACTER_G2 then
-			main_player.change_state("attack_target", characters[2][name])
+			main_player.change_state("attack_target", hovering_obj)
+		elseif tag == TAG_ITEM_OBJ then
+			main_player.change_state("pick_up_item", hovering_obj)
 		end
 	end
 end)
@@ -72,6 +71,17 @@ obj_root.add_event(function()
 		return false
 	end
 
+	function item_tip(item_type)
+		local str = item_type.display_name
+		if item_type.type == "EQUIPMENT" then
+			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.data.slot]
+			if item_type.data.slot == EQUIPMENT_SLOT_MAIN_HAND then
+				str = str.."\n"..string.format("%s DMG %d", item_type.data.ATK_TYPE, item_type.data.ATK)
+			end
+		end
+		return str
+	end
+
 	local hovering_r = s_dispatcher.get_hovering().p
 	if hovering_r == scene_receiver.p then
 		local mpos = s_dispatcher.get_mouse_pos()
@@ -82,11 +92,11 @@ obj_root.add_event(function()
 		local p = flame_get(pe, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(pe)
 
-		local _hovering_e = nil
+		local _hovering_entity = nil
 		if p then
-			_hovering_e = make_entity(p)
+			_hovering_entity = make_entity(p)
 		else
-			_hovering_e = { p=nil }
+			_hovering_entity = { p=nil }
 		end
 
 		function change_outline(e, f)
@@ -102,36 +112,52 @@ obj_root.add_event(function()
 			end
 		end
 
-		if _hovering_e.p ~= hovering_e.p then
-			if hovering_e.p then
-				hovering_e.remove_message_listener(hovering_destroyed_lis)
-				change_outline(hovering_e, e_shading_material)
+		if _hovering_entity.p ~= hovering_entity.p then
+			if hovering_entity.p then
+				hovering_entity.remove_message_listener(hovering_entity_lis)
+				change_outline(hovering_entity, e_shading_material)
 			end
-			if _hovering_e.p then
-				change_outline(_hovering_e, e_shading_material + e_shading_outline)
+			if _hovering_entity.p then
+				change_outline(_hovering_entity, e_shading_material + e_shading_outline)
 				local hash_destroyed = flame_hash("destroyed")
-				hovering_destroyed_lis = _hovering_e.add_message_listener(function(m)
+				hovering_entity_lis = _hovering_entity.add_message_listener(function(m)
 					if m == hash_destroyed then
-						hovering_e.remove_message_listener(hovering_destroyed_lis)
-						hovering_e = { p=nil }
+						hovering_entity.remove_message_listener(hovering_entity_lis)
+						hovering_entity = { p=nil }
 					end
 				end)
 			end
 
-			hovering_e = _hovering_e
-		end
-	else
-		function item_tip(item_type)
-			local str = item_type.display_name
-			if item_type.type == "EQUIPMENT" then
-				str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.data.slot]
-				if item_type.data.slot == EQUIPMENT_SLOT_MAIN_HAND then
-					str = str.."\n"..string.format("%s DMG %d", item_type.data.ATK_TYPE, item_type.data.ATK)
+			hovering_entity = _hovering_entity
+
+			if hovering_entity.p then
+				local name = hovering_entity.get_name()
+				if name == "terrain" then
+					hovering_obj = { name="terrain", tag=0 }
+				else
+					local tag = hovering_entity.get_tag()
+					if tag == TAG_CHARACTER_G1 and name ~= "main_player" then
+						hovering_obj = characters[TAG_CHARACTER_G1][name]
+					elseif tag == TAG_CHARACTER_G2 then
+						hovering_obj = characters[TAG_CHARACTER_G2][name]
+					elseif tag == TAG_ITEM_OBJ then
+						hovering_obj = item_objs[name]
+					end
 				end
+			else
+				hovering_obj = nil
 			end
-			return str
 		end
 
+		if not has_tip and hovering_obj then
+			if hovering_obj.tag == TAG_ITEM_OBJ then
+				if new_tip(hovering_entity.p) then
+					ui_tip.element.set_pos(mpos + vec2(10, -20))
+					ui_tip.text.set_text(ITEM_LIST[hovering_obj.id].display_name)
+				end
+			end
+		end
+	else
 		if not has_tip then
 			for i=1, ITEM_SLOTS_COUNT, 1 do
 				local ui_slot = ui_item_slots[i]
@@ -356,7 +382,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
---[[
+
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
@@ -365,22 +391,21 @@ for i=1, 10, 1 do
 	local npc = make_npc(e, 1)
 	obj_root.add_child(e)
 end
-]]
+
 
 local e_chest = create_entity("chest")
-function add_chest(pos)
+function add_chest(pos, item_id, item_num)
 	local e = e_chest.copy()
+	e.set_name("item_"..tostring(math.floor(math.random() * 10000)))
 	e.find_component("cNode").set_pos(pos)
 	obj_root.add_child(e)
+	make_item_obj(e, item_id, item_num)
 end
-
-add_chest(vec3(200, 55, 200))
 
 local e = create_entity("player")
 e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
-main_player.receive_item(1, 1)
 main_player.awake()
 obj_root.add_child(e)
 

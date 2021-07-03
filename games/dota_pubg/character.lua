@@ -5,9 +5,10 @@ characters[2] = {}
 function make_character(entity, group, stats)
 	local character = {
 		name = entity.get_name(),
+		tag = group == 1 and TAG_CHARACTER_G1 or TAG_CHARACTER_G2,
+		dead = false,
 		group = group,
 		sleeping = true,
-		dead = false,
 
 		entity = entity,
 		node = entity.find_component("cNode"),
@@ -28,11 +29,10 @@ function make_character(entity, group, stats)
 		attack_tick = 0,
 		attacking = false,
 		last_hit_character = nil,
-		drop_gold = 0,
-		drop_exp = 0,
 
 		on_event = nil,
 		on_die = nil,
+		on_extra_state = nil,
 		on_reward = nil,
 
 		HP_MAX =		stats and stats.HP_MAX or 0,
@@ -46,13 +46,7 @@ function make_character(entity, group, stats)
 		recover_tick = 0
 	}
 	
-	local tag = 0
-	if group == 1 then
-		tag = TAG_CHARACTER_G1
-	elseif group == 2 then
-		tag = TAG_CHARACTER_G2
-	end
-	entity.set_tag(tag)
+	entity.set_tag(character.tag)
 	entity.set_visible(false)
 	character.pos = character.node.get_global_pos()
 
@@ -67,12 +61,6 @@ function make_character(entity, group, stats)
 	character.die = function()
 		if character.on_die then
 			character.on_die()
-		end
-
-		if character.last_hit_character then
-			if character.last_hit_character.on_reward then
-				character.last_hit_character.on_reward(character.drop_gold, character.drop_exp)
-			end
 		end
 
 		characters[character.group][character.name] = nil
@@ -128,6 +116,9 @@ function make_character(entity, group, stats)
 			character.target = t
 		elseif s == "attack_on_pos" then
 			character.target_pos = t
+			character.attacking = false
+		elseif s == "pick_up_item" then
+			character.target = t
 			character.attacking = false
 		end
 		character.state = s
@@ -236,15 +227,15 @@ function make_character(entity, group, stats)
 			character.recover_tick = 60
 		end
 
-		function move_to_pos()
-			local v = character.target_pos - vec2(pos.x, pos.z)
+		function move_to_pos(tp, r)
+			local v = tp - vec2(pos.x, pos.z)
 			local l, d = length_and_dir_2(v)
 			if d then -- aim
 				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
 				character.update_dir()
 			end
 
-			if l <= character.speed then
+			if l <= character.speed + r then
 				return false
 			end
 
@@ -279,7 +270,7 @@ function make_character(entity, group, stats)
 		end
 
 		if character.state == "move_to" then
-			if not move_to_pos() then
+			if not move_to_pos(character.target_pos, 0) then
 				character.change_state("idle")
 			end
 
@@ -296,22 +287,8 @@ function make_character(entity, group, stats)
 				character.target = nil
 				character.change_state("idle")
 			end
-		elseif character.state == "attack_on_pos" then
-			if not character.attacking then
-				character.target = nil
-
-				local char = character.find_closest_enemy(5)
-				if char then 
-					character.target = char
-				end
-			end
-			
-			if character.target and not character.target.dead then
-				attack_target()
-			else
-				character.target = nil
-				if not move_to_pos() then character.animation.stop_at(2, -1) end
-			end
+		elseif character.on_extra_state then
+			character.on_extra_state()
 		end
 
 		character.pos = pos

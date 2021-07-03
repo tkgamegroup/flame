@@ -31,3 +31,31 @@ ITEM_LIST = {
 }
 
 item_objs = {}
+
+function make_item_obj(entity, id, num)
+	local item_obj = {
+		name = entity.get_name(),
+		tag = TAG_ITEM_OBJ,
+		dead = false,
+
+		entity = entity,
+		node = entity.find_component("cNode"),
+		pos = vec3(0),
+
+		id = id,
+		num = num
+	}
+
+	entity.set_tag(item_obj.tag)
+
+	item_obj.die = function()
+		item_objs[item_obj.name] = nil
+
+		item_obj.entity.get_parent().remove_child(item_obj.entity)
+		item_obj.dead = true
+	end
+
+	item_objs[item_obj.name] = item_obj
+
+	return item_obj
+end
