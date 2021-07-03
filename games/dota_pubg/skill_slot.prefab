@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eElement name="icon" size="48,48" border="1">
+    <eElement name="icon" size="48,48" auto_width="false" auto_height="false" border="1">
       <cReceiver />
       <cImage />
     </eElement>

@@ -16,6 +16,8 @@ NPC_LIST = {
 	}
 }
 
+local CHASE_TICK_MAX = 600
+
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
 	local npc = make_character(e, 2, data.stats)
@@ -26,30 +28,29 @@ function make_npc(e, ID)
 	npc.chase_start_pos = vec2(-1000)
 	npc.chase_tick = 0
 
-	npc.on_event = function()
+	npc.on_tick = function()
 		if npc.chase_tick > 0 then
 			npc.chase_tick = npc.chase_tick - 1
 		end
 		
 		if npc.chase_tick == 0 then
-			local char = npc.find_closest_enemy(5)
+			local char = npc.find_closest_obj(npc.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
 			if char then
 				npc.change_state("attack_target", char)
 				npc.chase_start_pos = npc.pos
-				npc.chase_tick = 600
+				npc.chase_tick = CHASE_TICK_MAX
 			end
 		end
 		if npc.state == "attack_target" and distance_3(npc.pos, npc.chase_start_pos) > 20 then
-			local p = npc.chase_start_pos
-			npc.change_state("move_to", vec2(p.x, p.z))
-			npc.chase_tick = 600
+			npc.change_state("move_to", npc.chase_start_pos)
+			npc.chase_tick = CHASE_TICK_MAX
 		end
 		if npc.state == "idle" then
 			if math.random() < 0.002 then
 				local p = npc.pos
 				p.x = p.x - 3 + math.random() * 6
 				p.z = p.z - 3 + math.random() * 6
-				npc.change_state("move_to", vec2(p.x, p.z))
+				npc.change_state("move_to", p)
 			end
 		end
 	end

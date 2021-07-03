@@ -9,7 +9,7 @@ alt_pressing = false
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
 hovering_obj = nil
-hovering_pos = vec2(0)
+hovering_pos = vec3(0)
 
 scene_receiver = scene.find_component("cReceiver")
 
@@ -43,10 +43,17 @@ scene_receiver.add_mouse_right_down_listener(function()
 		elseif tag == TAG_CHARACTER_G2 then
 			main_player.change_state("attack_target", hovering_obj)
 		elseif tag == TAG_ITEM_OBJ then
-			main_player.change_state("pick_up_item", hovering_obj)
+			main_player.change_state("pick_up", hovering_obj)
 		end
 	end
 end)
+
+local ui_action_tip1 = scene.find_child("action_tip1")
+ui_action_tip1.element = ui_action_tip1.find_component("cElement")
+ui_action_tip1.image = ui_action_tip1.find_component("cImage")
+local ui_action_tip2 = scene.find_child("action_tip2")
+ui_action_tip2.element = ui_action_tip2.find_component("cElement")
+ui_action_tip2.image = ui_action_tip2.find_component("cImage")
 
 local ui_tip = nil
 
@@ -68,7 +75,56 @@ end
 local e_shading_flags = find_enum("ShadingFlags")
 local e_shading_material = e_shading_flags["Material"]
 local e_shading_outline = e_shading_flags["Outline"]
+
+local character_panel = scene.find_child("character_panel")
+local hp_bar = character_panel.find_child("hp_bar").find_component("cElement")
+local hp_text = character_panel.find_child("hp_text").find_component("cText")
+local mp_bar = character_panel.find_child("mp_bar").find_component("cElement")
+local mp_text = character_panel.find_child("mp_text").find_component("cText")
+local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
+local exp_text = character_panel.find_child("exp_text").find_component("cText")
+local exp_text = character_panel.find_child("exp_text").find_component("cText")
+
 obj_root.add_event(function()
+	for g=1, 2, 1 do
+		for _, char in pairs(characters[g]) do
+			if not char.sleeping then
+				char.tick()
+			end
+		end
+	end
+	for _, item in pairs(item_objs) do
+		item.pos = item.node.get_global_pos()
+	end
+
+	local state = main_player.state
+	if state == "move_to" or state == "attack_on_pos" then
+		ui_action_tip1.set_visible(true)
+		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos))
+		ui_action_tip1.image.set_tile_name("move")
+	else
+		ui_action_tip1.set_visible(false)
+	end
+	if state == "attack_target" or state == "attack_on_pos" then
+		if main_player.target then
+			ui_action_tip2.set_visible(true)
+			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos + vec3(0, 1.8, 0)) + vec2(0, 10))
+			ui_action_tip2.image.set_tile_name("attack")
+		else
+			ui_action_tip2.set_visible(false)
+		end
+	elseif state == "pick_up" then
+		if main_player.target then
+			ui_action_tip2.set_visible(true)
+			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos) + vec2(0, 10))
+			ui_action_tip2.image.set_tile_name("pick_up")
+		else
+			ui_action_tip2.set_visible(false)
+		end
+	else
+		ui_action_tip2.set_visible(false)
+	end
+
 	local has_tip = false
 	function new_tip(p)
 		has_tip = true
@@ -104,7 +160,7 @@ obj_root.add_event(function()
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(mpos) - o)
 		local pe = flame_malloc(8)
-		hovering_pos = s_physics.raycast(o, d, pe).to_flat()
+		hovering_pos = s_physics.raycast(o, d, pe)
 		local p = flame_get(pe, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(pe)
 
@@ -219,6 +275,13 @@ obj_root.add_event(function()
 			i = i + 1
 		end
 	end
+
+	hp_bar.set_scalex(main_player.HP / main_player.HP_MAX)
+	hp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.HP / 10.0), math.floor(main_player.HP_MAX / 10.0), main_player.HP_RECOVER / 10.0))
+	mp_bar.set_scalex(main_player.MP / main_player.MP_MAX)
+	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX / 10.0), main_player.MP_RECOVER / 10.0))
+	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
+	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 end, 0.0)
 
 local e_grasses = {}
@@ -244,23 +307,6 @@ table.insert(e_plants, create_entity("D:\\assets\\vegetation\\plant1.prefab"))
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)
 ]]
-
-local character_panel = scene.find_child("character_panel")
-local hp_bar = character_panel.find_child("hp_bar").find_component("cElement")
-local hp_text = character_panel.find_child("hp_text").find_component("cText")
-local mp_bar = character_panel.find_child("mp_bar").find_component("cElement")
-local mp_text = character_panel.find_child("mp_text").find_component("cText")
-local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
-local exp_text = character_panel.find_child("exp_text").find_component("cText")
-local exp_text = character_panel.find_child("exp_text").find_component("cText")
-obj_root.add_event(function()
-	hp_bar.set_scalex(main_player.HP / main_player.HP_MAX)
-	hp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.HP / 10.0), math.floor(main_player.HP_MAX / 10.0), main_player.HP_RECOVER / 10.0))
-	mp_bar.set_scalex(main_player.MP / main_player.MP_MAX)
-	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX / 10.0), main_player.MP_RECOVER / 10.0))
-	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
-	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
-end, 0.0)
 
 ui_equipment_slots = {}
 for i=1, EQUIPMENT_SLOTS_COUNT, 1 do

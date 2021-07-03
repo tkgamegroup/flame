@@ -32,11 +32,22 @@ function make_player(e)
 	for i=1, ITEM_SLOTS_COUNT, 1 do
 		player.items[i] = nil
 	end
+	
+	player.on_change_extra_state = function(s, t)
+		if s == "attack_on_pos" then
+			player.target_pos = t
+		elseif s == "pick_up" then
+			player.target = t
+			player.attacking = false
+		elseif s == "pick_up_on_pos" then
+			player.target_pos = t
+		end
+	end
 
-	player.on_extra_state = function()
-		if player.state == "pick_up_item" then
+	player.on_process_extra_state = function()
+		if player.state == "pick_up" then
 			local item_obj = player.target
-			if not move_to_pos(item_obj.node.get_global_pos().to_flat(), 0.2) then
+			if not player.move_to_pos(item_obj.pos.to_flat(), 0.2) then
 				if player.receive_item(item_obj.id, item_obj.num) == 0 then
 					item_obj.die()
 				end
@@ -44,20 +55,19 @@ function make_player(e)
 			end
 		elseif player.state == "attack_on_pos" then
 			if not player.attacking then
-				player.target = nil
-
-				local char = player.find_closest_enemy(5)
-				if char then 
-					player.target = char
-				end
+				player.target = player.find_closest_obj(player.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
 			end
 			
 			if player.target and not player.target.dead then
-				attack_target()
+				player.attack_target()
 			else
 				player.target = nil
-				if not move_to_pos(player.target_pos, 0) then player.animation.stop_at(2, -1) end
+				if not player.move_to_pos(player.target_pos.to_flat(), 0) then 
+					player.change_state("idle")
+				end
 			end
+		elseif player.state == "pick_up_on_pos" then
+			
 		end
 	end
 

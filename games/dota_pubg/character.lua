@@ -23,16 +23,17 @@ function make_character(entity, group, stats)
 		attack_interval = 100,
 
 		state = "null",
-		target_pos = vec2(0),
+		target_pos = vec3(0),
 		stuck_tick = 0,
 		target = nil,
 		attack_tick = 0,
 		attacking = false,
 		last_hit_character = nil,
 
-		on_event = nil,
+		on_tick = nil,
 		on_die = nil,
-		on_extra_state = nil,
+		on_change_extra_state = nil,
+		on_process_extra_state = nil,
 		on_reward = nil,
 
 		HP_MAX =		stats and stats.HP_MAX or 0,
@@ -63,7 +64,6 @@ function make_character(entity, group, stats)
 
 		characters[character.group][character.name] = nil
 
-		character.entity.remove_event(character.event)
 		character.entity.get_parent().remove_child(character.entity)
 		character.ui.get_parent().remove_child(character.ui)
 		character.dead = true
@@ -73,7 +73,6 @@ function make_character(entity, group, stats)
 		if not character.sleeping then
 			character.sleeping = true
 			character.entity.set_visible(false)
-			character.entity.remove_event(character.event)
 		end
 	end
 
@@ -81,9 +80,6 @@ function make_character(entity, group, stats)
 		if character.sleeping then
 			character.sleeping = false
 			character.entity.set_visible(true)
-			character.event = character.entity.add_event(function()
-				character.do_logic()
-			end, 0)
 		end
 	end
 
@@ -112,12 +108,8 @@ function make_character(entity, group, stats)
 				character.attacking = false
 			end
 			character.target = t
-		elseif s == "attack_on_pos" then
-			character.target_pos = t
-			character.attacking = false
-		elseif s == "pick_up_item" then
-			character.target = t
-			character.attacking = false
+		elseif character.on_change_extra_state then
+			character.on_change_extra_state(s, t)
 		end
 		character.state = s
 	end
@@ -166,38 +158,71 @@ function make_character(entity, group, stats)
 		end
 	end
 
-	character.find_closest_enemy = function(r)
-		local g = character.get_enemy_group()
-		if not g then return nil end
-		
+	character.find_closest_obj = function(tag, r)
 		local arr = flame_malloc(8)
-		local tag = 0
-		if g == 1 then
-			tag = TAG_CHARACTER_G1
-		elseif g == 2 then
-			tag = TAG_CHARACTER_G2
-		end
 		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, arr, 1, tag)
 		local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
 		flame_free(arr)
 
 		if n == 0 or not p then return nil end
 
-		return characters[g][make_entity(p).get_name()]
+		local name = make_entity(p).get_name()
+		if tag == TAG_CHARACTER_G1 then return characters[1][name] end
+		if tag == TAG_CHARACTER_G2 then return characters[2][name] end
+		if tag == TAG_ITEM_OBJ then return item_objs[name] end
 	end
 
-	character.do_logic = function()
+	character.move_to_pos = function(tp, r)
+		local v = tp - character.pos.to_flat()
+		local l, d = length_and_dir_2(v)
+		if d then -- aim
+			character.yaw = math.atan(d.x, d.y) / 3.14 * 180
+			character.update_dir()
+		end
+
+		if l <= character.speed + r then
+			return false
+		end
+
+		character.animation.play(1)
+		character.animation.set_loop(true)
+		character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+		return true
+	end
+
+	character.attack_target = function()
+		local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
+		if d then -- aim
+			character.yaw = math.atan(d.x, d.y) / 3.14 * 180
+			character.update_dir()
+		end
+		if not character.attacking then
+			if l <= character.radius + character.target.radius + 1 then
+				if character.attack_tick == 0 then
+					character.attack_tick = character.attack_interval
+					character.attacking = true
+					character.animation.play(2)
+					character.animation.set_loop(false)
+				else
+					character.animation.stop_at(2, -1)
+				end
+			else
+				character.animation.play(1)
+				character.animation.set_loop(true)
+				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+			end
+		end
+	end
+
+	character.tick = function()
 		local pos = character.node.get_global_pos()
-		local dis_to_mp = distance_3(pos, main_player.pos)
 		
 		character.ui.set_visible(false)
-		if dis_to_mp < 50 then
-			local ui_pos = camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z))
-			if ui_pos.x > -100 then
-				character.ui.set_visible(true)
-				character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-				character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
-			end
+		local ui_pos = camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z))
+		if ui_pos.x > -100 then
+			character.ui.set_visible(true)
+			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
+			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
 		end
 
 		if character.attack_tick > 0 then
@@ -211,50 +236,8 @@ function make_character(entity, group, stats)
 			character.recover_tick = 60
 		end
 
-		function move_to_pos(tp, r)
-			local v = tp - vec2(pos.x, pos.z)
-			local l, d = length_and_dir_2(v)
-			if d then -- aim
-				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
-				character.update_dir()
-			end
-
-			if l <= character.speed + r then
-				return false
-			end
-
-			character.animation.play(1)
-			character.animation.set_loop(true)
-			character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
-			return true
-		end
-
-		function attack_target()
-			local l, d = length_and_dir_2(character.target.pos.to_flat() - pos.to_flat())
-			if d then -- aim
-				character.yaw = math.atan(d.x, d.y) / 3.14 * 180
-				character.update_dir()
-			end
-			if not character.attacking then
-				if l <= character.radius + character.target.radius + 1 then
-					if character.attack_tick == 0 then
-						character.attack_tick = character.attack_interval
-						character.attacking = true
-						character.animation.play(2)
-						character.animation.set_loop(false)
-					else
-						character.animation.stop_at(2, -1)
-					end
-				else
-					character.animation.play(1)
-					character.animation.set_loop(true)
-					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
-				end
-			end
-		end
-
 		if character.state == "move_to" then
-			if not move_to_pos(character.target_pos, 0) then
+			if not character.move_to_pos(character.target_pos.to_flat(), 0) then
 				character.change_state("idle")
 			end
 
@@ -266,19 +249,19 @@ function make_character(entity, group, stats)
 			end
 		elseif character.state == "attack_target" then
 			if character.target and not character.target.dead then
-				attack_target()
+				character.attack_target()
 			else
 				character.target = nil
 				character.change_state("idle")
 			end
-		elseif character.on_extra_state then
-			character.on_extra_state()
+		elseif character.on_process_extra_state then
+			character.on_process_extra_state()
 		end
 
 		character.pos = pos
 
-		if character.on_event then
-			character.on_event()
+		if character.on_tick then
+			character.on_tick()
 		end
 	end
 

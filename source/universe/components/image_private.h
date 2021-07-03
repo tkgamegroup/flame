@@ -22,6 +22,7 @@ namespace flame
 		int res_id = -1;
 		int tile_id = -1;
 		vec4 tile_uv;
+		vec2 tile_sz;
 		graphics::ImageView* iv = nullptr;
 		graphics::ImageAtlas* atlas = nullptr;
 

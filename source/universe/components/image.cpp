@@ -54,6 +54,7 @@ namespace flame
 			auto img = graphics::Image::get(device, src.c_str(), false);
 			fassert(img);
 			iv = img->get_view();
+			tile_sz = img->get_size();
 
 			res_id = s_renderer->find_element_res(iv);
 			if (res_id == -1)
@@ -75,6 +76,7 @@ namespace flame
 				tile_id = atlas->find_tile(tile_name.c_str(), &ti);
 				fassert(tile_id != -1);
 				tile_uv = ti.uv;
+				tile_sz = ti.size;
 			}
 		}
 
@@ -130,7 +132,8 @@ namespace flame
 	{
 		if (!iv)
 			return false;
-		*s = iv->get_image()->get_size();
+		if (iv)
+			*s = tile_sz;
 		return true;
 	}
 

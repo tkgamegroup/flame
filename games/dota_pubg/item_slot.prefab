@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eElement name="icon" padding="1,1,1,1" size="25,25" border="1">
+    <eElement name="icon" padding="1,1,1,1" size="25,25" auto_width="false" auto_height="false" border="1">
       <cReceiver />
       <cImage src="D:/assets/item_icons/item_icons.atlas" />
     </eElement>
