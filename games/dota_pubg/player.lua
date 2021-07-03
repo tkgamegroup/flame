@@ -44,14 +44,25 @@ function make_player(e)
 		end
 	end
 
+	player.pick_up_target = function()
+		local item_obj = player.target
+		if player.move_to_pos(item_obj.pos.to_flat(), 0.2) then
+			if player.receive_item(item_obj.id, item_obj.num) == 0 then
+				item_obj.die()
+			end
+			return true
+		end
+		return false
+	end
+
 	player.on_process_extra_state = function()
 		if player.state == "pick_up" then
-			local item_obj = player.target
-			if not player.move_to_pos(item_obj.pos.to_flat(), 0.2) then
-				if player.receive_item(item_obj.id, item_obj.num) == 0 then
-					item_obj.die()
-				end
+			if not player.target or player.target.dead then
 				player.change_state("idle")
+			else
+				if player.pick_up_target() then
+					player.change_state("idle")
+				end
 			end
 		elseif player.state == "attack_on_pos" then
 			if not player.attacking then
@@ -62,12 +73,21 @@ function make_player(e)
 				player.attack_target()
 			else
 				player.target = nil
-				if not player.move_to_pos(player.target_pos.to_flat(), 0) then 
+				if player.move_to_pos(player.target_pos.to_flat(), 0) then 
 					player.change_state("idle")
 				end
 			end
 		elseif player.state == "pick_up_on_pos" then
+			player.target = player.find_closest_obj(TAG_ITEM_OBJ, 5)
 			
+			if player.target and not player.target.dead then
+				player.pick_up_target()
+			else
+				player.target = nil
+				if player.move_to_pos(player.target_pos.to_flat(), 0) then 
+					player.change_state("idle")
+				end
+			end
 		end
 	end
 

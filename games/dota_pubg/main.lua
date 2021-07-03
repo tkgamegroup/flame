@@ -5,6 +5,7 @@ TAG_CHARACTER_G1 = 1
 TAG_CHARACTER_G2 = 2
 TAG_ITEM_OBJ = 3
 
+ctrl_pressing = false
 alt_pressing = false
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
@@ -13,15 +14,22 @@ hovering_pos = vec3(0)
 
 scene_receiver = scene.find_component("cReceiver")
 
-local e_key_alt = find_enum("KeyboardKey")["Alt"]
+local e_keyboardkey = find_enum("KeyboardKey")
+local e_key_ctrl = e_keyboardkey["Ctrl"]
+local e_key_alt = e_keyboardkey["Alt"]
+
 scene_receiver.add_key_down_listener(function(key)
-	if key == e_key_alt then
+	if key == e_key_ctrl then
+		ctrl_pressing = true
+	elseif key == e_key_alt then
 		alt_pressing = true
 	end
 end)
 
 scene_receiver.add_key_up_listener(function(key)
-	if key == e_key_alt then
+	if key == e_key_ctrl then
+		ctrl_pressing = false
+	elseif key == e_key_alt then
 		alt_pressing = false
 	end
 end)
@@ -31,10 +39,12 @@ scene_receiver.add_mouse_right_down_listener(function()
 	if not hovering_obj then return end
 
 	if hovering_obj.name == "terrain" then
-		if not alt_pressing then
-			main_player.change_state("move_to", hovering_pos)
-		else
+		if alt_pressing then
 			main_player.change_state("attack_on_pos", hovering_pos)
+		elseif ctrl_pressing then
+			main_player.change_state("pick_up_on_pos", hovering_pos)
+		else
+			main_player.change_state("move_to", hovering_pos)
 		end
 	else
 		local tag = hovering_obj.tag
@@ -98,7 +108,7 @@ obj_root.add_event(function()
 	end
 
 	local state = main_player.state
-	if state == "move_to" or state == "attack_on_pos" then
+	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
 		ui_action_tip1.set_visible(true)
 		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos))
 		ui_action_tip1.image.set_tile_name("move")
@@ -113,7 +123,7 @@ obj_root.add_event(function()
 		else
 			ui_action_tip2.set_visible(false)
 		end
-	elseif state == "pick_up" then
+	elseif state == "pick_up" or state == "pick_up_on_pos" then
 		if main_player.target then
 			ui_action_tip2.set_visible(true)
 			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos) + vec2(0, 10))

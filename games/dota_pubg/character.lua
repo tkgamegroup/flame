@@ -181,13 +181,13 @@ function make_character(entity, group, stats)
 		end
 
 		if l <= character.speed + r then
-			return false
+			return true
 		end
 
 		character.animation.play(1)
 		character.animation.set_loop(true)
 		character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
-		return true
+		return false
 	end
 
 	character.attack_target = function()
@@ -237,7 +237,7 @@ function make_character(entity, group, stats)
 		end
 
 		if character.state == "move_to" then
-			if not character.move_to_pos(character.target_pos.to_flat(), 0) then
+			if character.move_to_pos(character.target_pos.to_flat(), 0) then
 				character.change_state("idle")
 			end
 
