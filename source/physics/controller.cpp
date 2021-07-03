@@ -9,8 +9,6 @@ namespace flame
 	{
 		ControllerPrivate::ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height)
 		{
-			if (!material)
-				material = scene->device->mat.get();
 #ifdef USE_PHYSX
 			PxCapsuleControllerDesc desc;
 			desc.material = material->px_material.get();

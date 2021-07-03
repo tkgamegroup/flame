@@ -28,6 +28,26 @@ namespace flame
 		size = s;
 	}
 
+	void cShapePrivate::set_offset(const vec3& o)
+	{
+		off = o;
+	}
+
+	void cShapePrivate::set_static_friction(float v)
+	{
+		static_friction = v;
+	}
+
+	void cShapePrivate::set_dynamic_friction(float v)
+	{
+		dynamic_friction = v;
+	}
+
+	void cShapePrivate::set_restitution(float v)
+	{
+		restitution = v;
+	}
+
 	void cShapePrivate::set_trigger(bool v)
 	{
 		trigger = v;
@@ -61,13 +81,17 @@ namespace flame
 		node->update_transform();
 
 		auto device = physics::Device::get_default();
+		auto material = physics::Material::get(device, static_friction, dynamic_friction, restitution);
 		switch (type)
 		{
 		case physics::ShapeCube:
-			phy_shape = physics::Shape::create_box(device, nullptr, size * vec3(0.5f) * node->g_scl);
+			phy_shape = physics::Shape::create_box(device, material, size * node->g_scl);
 			break;
 		case physics::ShapeSphere:
-			phy_shape = physics::Shape::create_sphere(device, nullptr, size.x * 0.5f * node->g_scl.x);
+			phy_shape = physics::Shape::create_sphere(device, material, size.x * node->g_scl.x);
+			break;
+		case physics::ShapeCapsule:
+			phy_shape = physics::Shape::create_capsule(device, material, size.x * node->g_scl.x, size.y * 0.5f * node->g_scl.y);
 			break;
 		case physics::ShapeTriangleMesh:
 			if (mesh && mesh->mesh)
@@ -88,7 +112,7 @@ namespace flame
 					triangle_mesh = physics::TriangleMesh::create(device, m);
 					triangle_meshes.emplace_back(m, triangle_mesh, 1);
 				}
-				phy_shape = physics::Shape::create_triangle_mesh(device, nullptr, triangle_mesh, size.x * node->g_scl.x);
+				phy_shape = physics::Shape::create_triangle_mesh(device, material, triangle_mesh, node->g_scl.x);
 				phy_triangle_mesh = triangle_mesh;
 			}
 			break;
@@ -112,7 +136,7 @@ namespace flame
 					height_fields.emplace_back(t, height_field, 1);
 				}
 				auto ext = terrain->extent;
-				phy_shape = physics::Shape::create_height_field(device, nullptr, height_field, vec3(ext.x, ext.y, ext.x));
+				phy_shape = physics::Shape::create_height_field(device, material, height_field, vec3(ext.x, ext.y, ext.x));
 				phy_height_field = height_field;
 			}
 			break;
@@ -120,6 +144,7 @@ namespace flame
 
 		if (phy_shape)
 		{
+			phy_shape->set_pose(off, quat(1, 0, 0, 0));
 			phy_shape->user_data = entity;
 			if (trigger)
 				phy_shape->set_trigger(true);

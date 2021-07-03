@@ -14,12 +14,14 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, EntityPtr, EntityPtr)>>> trigger_listeners;
 
 		cNodePrivate* node = nullptr;
-		sPhysicsPrivate* physics = nullptr;
+		sPhysicsPrivate* phy_scene = nullptr;
 
 		~cRigidPrivate();
 
 		bool get_dynamic() const override { return dynamic; }
 		void set_dynamic(bool v) override;
+
+		bool is_sleeping() const override;
 
 		void add_impulse(const vec3& v) override;
 

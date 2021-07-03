@@ -99,8 +99,6 @@ namespace flame
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext)
 		{
-			if (!material)
-				material = device->mat.get();
 #ifdef USE_PHYSX
 			px_shape.reset(device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material));
 #endif
@@ -109,8 +107,6 @@ namespace flame
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius)
 		{
-			if (!material)
-				material = device->mat.get();
 #ifdef USE_PHYSX
 			px_shape.reset(device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material));
 #endif
@@ -119,8 +115,6 @@ namespace flame
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius, float height)
 		{
-			if (!material)
-				material = device->mat.get();
 #ifdef USE_PHYSX
 			px_shape.reset(device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material));
 			px_shape->setLocalPose(PxTransform(PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
@@ -130,8 +124,6 @@ namespace flame
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, TriangleMeshPrivate* tri_mesh, float scale)
 		{
-			if (!material)
-				material = device->mat.get();
 #ifdef USE_PHYSX
 
 			px_shape.reset(device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh.get(), PxMeshScale(scale)), *material->px_material));
@@ -141,8 +133,6 @@ namespace flame
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const vec3& scale)
 		{
-			if (!material)
-				material = device->mat.get();
 #ifdef USE_PHYSX
 
 			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),
@@ -175,6 +165,11 @@ namespace flame
 		Shape* Shape::create_sphere(Device* device, Material* material, float radius)
 		{
 			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, radius);
+		}
+
+		Shape* Shape::create_capsule(Device* device, Material* material, float radius, float height)
+		{
+			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, radius, height);
 		}
 
 		Shape* Shape::create_triangle_mesh(Device* device, Material* material, TriangleMesh* tri_mesh, float scale)

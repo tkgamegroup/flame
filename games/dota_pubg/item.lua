@@ -29,3 +29,5 @@ ITEM_LIST = {
 		}
 	}
 }
+
+item_objs = {}

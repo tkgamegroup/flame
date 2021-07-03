@@ -1,6 +1,10 @@
 obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
 
+TAG_CHARACTER_G1 = 1
+TAG_CHARACTER_G2 = 2
+TAG_ITEM_OBJ = 3
+
 alt_pressing = false
 hovering_e = { p=nil }
 hovering_destroyed_lis = 0
@@ -36,9 +40,11 @@ scene_receiver.add_mouse_right_down_listener(function()
 			main_player.change_state("attack_on_pos", hovering_pos)
 		end
 	else
-		local char = characters[2][name]
-		if char then
-			main_player.change_state("attack_target", char)
+		local tag = hovering_e.get_tag()
+		if tag == TAG_CHARACTER_G1 and name ~= "main_player" then
+			
+		elseif tag == TAG_CHARACTER_G2 then
+			main_player.change_state("attack_target", characters[2][name])
 		end
 	end
 end)
@@ -84,6 +90,10 @@ obj_root.add_event(function()
 		end
 
 		function change_outline(e, f)
+			local mesh = e.find_component("cMesh")
+			if mesh.p then
+				mesh.set_shading_flags(f)
+			end
 			for i=0, e.get_children_count() - 1, 1 do
 				local mesh = e.get_child(i).find_component("cMesh")
 				if mesh.p then
@@ -359,13 +369,15 @@ end
 
 local e_chest = create_entity("chest")
 function add_chest(pos)
-	terrain_spawn(terrain_ext, terrain_height_tex, obj_root, { pos }, e_chest, 0.2)
+	local e = e_chest.copy()
+	e.find_component("cNode").set_pos(pos)
+	obj_root.add_child(e)
 end
 
-add_chest(vec2(200, 200))
+add_chest(vec3(200, 55, 200))
 
 local e = create_entity("player")
-e.set_name("player")
+e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
 main_player.receive_item(1, 1)

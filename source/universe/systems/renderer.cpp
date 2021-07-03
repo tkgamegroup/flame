@@ -2082,6 +2082,7 @@ namespace flame
 		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");
 		nd.pll_terrain_gbuf = graphics::PipelineLayout::get(device, L"terrain/gbuffer.pll");
 
+		nd.pl_outline_mesh = get_material_pipeline(MaterialForMesh, L"", "OUTLINE");
 		nd.pl_outline_arm_mesh = get_material_pipeline(MaterialForMeshArmature, L"", "OUTLINE");
 
 		nd.pl_def = graphics::Pipeline::get(device, L"deferred/deferred.pl");

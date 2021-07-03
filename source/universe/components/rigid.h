@@ -17,6 +17,8 @@ namespace flame
 		virtual bool get_dynamic() const = 0;
 		virtual void set_dynamic(bool v) = 0;
 
+		virtual bool is_sleeping() const = 0;
+
 		virtual void add_impulse(const vec3& v) = 0;
 
 		virtual void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, EntityPtr trigger_shape, EntityPtr other_shape), const Capture& capture) = 0;

@@ -18,7 +18,7 @@ namespace flame
 			PxDefaultErrorCallback px_error_callback;
 #endif
 
-			std::unique_ptr<MaterialPrivate> mat;
+			std::vector<std::unique_ptr<MaterialPrivate>> materials;
 
 			DevicePrivate();
 			~DevicePrivate();

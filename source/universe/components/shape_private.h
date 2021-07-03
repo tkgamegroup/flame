@@ -7,7 +7,11 @@ namespace flame
 	struct cShapePrivate : cShape
 	{
 		physics::ShapeType type = physics::ShapeCube;
-		vec3 size = vec3(1.f);
+		vec3 size = vec3(0.5f);
+		vec3 off = vec3(0.f);
+		float static_friction = 0.2f;
+		float dynamic_friction = 0.2f;
+		float restitution = 0.3f;
 
 		bool trigger = false;
 
@@ -25,6 +29,18 @@ namespace flame
 
 		vec3 get_size() const override { return size; }
 		void set_size(const vec3& s) override;
+
+		vec3 get_offset() const override { return off; }
+		void set_offset(const vec3& o) override;
+
+		float get_static_friction() const override { return static_friction; }
+		void set_static_friction(float v) override;
+
+		float get_dynamic_friction() const override { return dynamic_friction; }
+		void set_dynamic_friction(float v) override;
+
+		float get_restitution() const override { return restitution; }
+		void set_restitution(float v) override;
 
 		bool get_trigger() const override { return trigger; }
 		void set_trigger(bool v) override;

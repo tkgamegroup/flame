@@ -15,8 +15,7 @@ NPC_LIST = {
 
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
-	local stats = data.stats
-	local npc = make_character(e, 2, stats.HP_MAX, stats.MP_MAX, stats.HP_RECOVER, stats.MP_RECOVER, stats.ATK_DMG, stats.ATK_TYPE)
+	local npc = make_character(e, 2, data.stats)
 	npc.drop_gold = data.drop_gold
 	npc.drop_exp = data.drop_exp
 

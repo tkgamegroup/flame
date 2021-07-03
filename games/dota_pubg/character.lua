@@ -2,7 +2,7 @@ characters = {}
 characters[1] = {}
 characters[2] = {}
 
-function make_character(entity, group, HP_MAX, MP_MAX, HP_RECOVER, MP_RECOVER, ATK_DMG, ATK_TYPE)
+function make_character(entity, group, stats)
 	local character = {
 		name = entity.get_name(),
 		group = group,
@@ -35,18 +35,24 @@ function make_character(entity, group, HP_MAX, MP_MAX, HP_RECOVER, MP_RECOVER, A
 		on_die = nil,
 		on_reward = nil,
 
-		HP_MAX = HP_MAX,
-		HP = HP_MAX,
-		MP_MAX = MP_MAX,
-		MP = MP_MAX,
-		HP_RECOVER = HP_RECOVER,
-		MP_RECOVER = MP_RECOVER,
-		ATK_DMG = ATK_DMG,
-		ATK_TYPE = ATK_TYPE,
+		HP_MAX =		stats and stats.HP_MAX or 0,
+		HP =			stats and stats.HP_MAX or 0,
+		MP_MAX =		stats and stats.MP_MAX or 0,
+		MP =			stats and stats.MP_MAX or 0,
+		HP_RECOVER =	stats and stats.HP_RECOVER or 0,
+		MP_RECOVER =	stats and stats.MP_RECOVER or 0,
+		ATK_DMG =		stats and stats.ATK_DMG or 0,
+		ATK_TYPE =		stats and stats.ATK_TYPE or 0,
 		recover_tick = 0
 	}
-
-	entity.set_tag(group)
+	
+	local tag = 0
+	if group == 1 then
+		tag = TAG_CHARACTER_G1
+	elseif group == 2 then
+		tag = TAG_CHARACTER_G2
+	end
+	entity.set_tag(tag)
 	entity.set_visible(false)
 	character.pos = character.node.get_global_pos()
 
@@ -176,16 +182,20 @@ function make_character(entity, group, HP_MAX, MP_MAX, HP_RECOVER, MP_RECOVER, A
 		local g = character.get_enemy_group()
 		if not g then return nil end
 		
-		local parr = flame_malloc(8)
-		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, parr, 1, g)
-		local p = flame_get(parr, 0, e_type_pointer, e_else_type, 1, 1)
-		flame_free(parr)
+		local arr = flame_malloc(8)
+		local tag = 0
+		if g == 1 then
+			tag = TAG_CHARACTER_G1
+		elseif g == 2 then
+			tag = TAG_CHARACTER_G2
+		end
+		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, arr, 1, tag)
+		local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+		flame_free(arr)
 
 		if n == 0 or not p then return nil end
 
-		local e = make_entity(p)
-		local name = e.get_name()
-		return characters[g][name]
+		return characters[g][make_entity(p).get_name()]
 	end
 
 	character.do_logic = function()

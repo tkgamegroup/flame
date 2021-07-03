@@ -19,6 +19,8 @@ namespace flame
 
 			void release() override { delete this; }
 
+			bool is_sleeping() const override;
+
 			void get_pose(vec3& coord, quat& qut) const override;
 			void set_pose(const vec3& coord, const quat& qut) override;
 

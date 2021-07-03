@@ -4,7 +4,7 @@ EXP_NEXT_LIST = {
 }
 
 function make_player(e)
-	local player = make_character(e, 1, 0, 0, 0, 0, 0, "PHY")
+	local player = make_character(e, 1)
 	player.LV = 1
 	player.EXP = 0
 	player.EXP_NEXT = EXP_NEXT_LIST[1]

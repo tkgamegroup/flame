@@ -26,6 +26,13 @@ namespace flame
 #endif
 		}
 
+		bool RigidPrivate::is_sleeping() const
+		{
+			if (dynamic)
+				return ((PxRigidDynamic*)px_rigid.get())->isSleeping();
+			return false;
+		}
+
 		void RigidPrivate::get_pose(vec3& coord, quat& qut) const
 		{
 #ifdef USE_PHYSX

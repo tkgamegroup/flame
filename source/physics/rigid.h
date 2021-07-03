@@ -10,6 +10,8 @@ namespace flame
 		{
 			virtual void release() = 0;
 
+			virtual bool is_sleeping() const = 0;
+
 			virtual void get_pose(vec3& coord, quat& qut) const = 0;
 			virtual void set_pose(const vec3& coord, const quat& qut) = 0;
 

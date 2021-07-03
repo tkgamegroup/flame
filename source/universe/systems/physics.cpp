@@ -94,23 +94,13 @@ namespace flame
 			if (!r->entity->global_visibility)
 				continue;
 
-			if (r->dynamic && !r->node->transform_dirty)
+			if (r->dynamic && !r->is_sleeping() && !r->node->transform_dirty)
 			{
 				vec3 coord;
 				quat qut;
 				r->phy_rigid->get_pose(coord, qut);
-				auto pn = r->entity->get_parent_component_t<cNodePrivate>();
-				if (pn)
-				{
-					auto q_inv = inverse(pn->g_qut);
-					r->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
-					r->node->set_quat(q_inv * qut);
-				}
-				else
-				{
-					r->node->set_pos(coord);
-					r->node->set_quat(qut);
-				}
+				r->node->set_pos(coord);
+				r->node->set_quat(qut);
 			}
 		}
 		for (auto c : controllers)
@@ -119,14 +109,7 @@ namespace flame
 				continue;
 
 			auto coord = c->phy_controller->get_position();
-			auto pn = c->entity->get_parent_component_t<cNodePrivate>();
-			if (pn)
-			{
-				auto q_inv = inverse(pn->g_qut);
-				c->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
-			}
-			else
-				c->node->set_pos(coord);
+			c->node->set_pos(coord);
 		}
 	}
 

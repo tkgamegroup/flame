@@ -18,15 +18,12 @@ namespace flame
 		bool eul_dirty = false;
 		bool qut_dirty = false;
 		bool rot_dirty = false;
-		bool auto_update_eul = false;
-		bool auto_update_qut = false;
 
 		cNodePrivate* pnode = nullptr;
 		bool transform_dirty = true;
 		uint transform_updated_times = 0;
 		bool bounds_dirty = true;
 		vec3 g_pos;
-		quat g_qut;
 		mat3 g_rot;
 		vec3 g_scl;
 		mat4 transform;
@@ -78,9 +75,6 @@ namespace flame
 		void update_rot();
 		void update_transform();
 		void update_bounds();
-
-		void set_auto_update_eul();
-		void set_auto_update_qut();
 
 		void mark_transform_dirty();
 		void mark_bounds_dirty();

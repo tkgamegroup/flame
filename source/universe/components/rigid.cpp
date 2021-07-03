@@ -18,16 +18,15 @@ namespace flame
 	{
 		if (dynamic == v)
 			return;
+		fassert(!phy_rigid);
 		dynamic = v;
+	}
+
+	bool cRigidPrivate::is_sleeping() const
+	{
 		if (phy_rigid)
-		{
-			for (auto s : phy_shapes)
-				phy_rigid->remove_shape(s);
-			destroy();
-			create();
-			for (auto s : phy_shapes)
-				phy_rigid->add_shape(s);
-		}
+			return phy_rigid->is_sleeping();
+		return false;
 	}
 
 	void cRigidPrivate::add_impulse(const vec3& v)
@@ -59,20 +58,20 @@ namespace flame
 	{
 		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
 		phy_rigid->user_data = entity;
-		physics->rigids.push_back(this);
-		physics->physics_scene->add_rigid(phy_rigid);
+		phy_scene->rigids.push_back(this);
+		phy_scene->physics_scene->add_rigid(phy_rigid);
 		node->update_transform();
-		phy_rigid->set_pose(node->g_pos, node->g_qut);
+		phy_rigid->set_pose(node->pos, node->qut);
 	}
 
 	void cRigidPrivate::destroy()
 	{
 		if (!phy_rigid)
 			return;
-		std::erase_if(physics->rigids, [&](const auto& i) {
+		std::erase_if(phy_scene->rigids, [&](const auto& i) {
 			return i == this;
 		});
-		physics->physics_scene->remove_rigid(phy_rigid);
+		phy_scene->physics_scene->remove_rigid(phy_rigid);
 		phy_rigid->release();
 	}
 
@@ -80,7 +79,6 @@ namespace flame
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
-		node->set_auto_update_qut();
 	}
 
 	void cRigidPrivate::on_removed()
@@ -90,8 +88,8 @@ namespace flame
 
 	void cRigidPrivate::on_entered_world()
 	{
-		physics = entity->world->get_system_t<sPhysicsPrivate>();
-		fassert(physics);
+		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
+		fassert(phy_scene);
 
 		create();
 		phy_rigid->add_impulse(staging_impulse);

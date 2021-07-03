@@ -9,6 +9,10 @@ namespace flame
 	{
 		struct MaterialPrivate : Material
 		{
+			float static_friction;
+			float dynamic_friction;
+			float restitution;
+
 #ifdef USE_PHYSX
 			UniPtr<PxMaterial> px_material;
 #endif
@@ -16,6 +20,8 @@ namespace flame
 			MaterialPrivate(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution);
 
 			void release() override { delete this; }
+
+			static MaterialPrivate* get(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution);
 		};
 	}
 }

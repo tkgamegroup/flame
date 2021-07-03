@@ -182,24 +182,18 @@ namespace flame
 			transform_dirty = false;
 			transform_updated_times++;
 
-			if (auto_update_eul)
-				update_eul();
-			if (auto_update_qut)
-				update_qut();
 			update_rot();
 
 			mat4 m;
 			if (pnode)
 			{
 				pnode->update_transform();
-				g_qut = pnode->g_qut * qut;
 				g_rot = pnode->g_rot * rot;
 				g_scl = pnode->g_scl * scl;
 				m = pnode->transform;
 			}
 			else
 			{
-				g_qut = qut;
 				g_rot = rot;
 				g_scl = scl;
 				m = mat4(1.f);
@@ -255,20 +249,6 @@ namespace flame
 			if (entity)
 				entity->component_data_changed(this, S<"bounds"_h>);
 		}
-	}
-
-	void cNodePrivate::set_auto_update_eul()
-	{
-		auto_update_eul = true;
-		if (pnode)
-			pnode->set_auto_update_eul();
-	}
-
-	void cNodePrivate::set_auto_update_qut()
-	{
-		auto_update_qut = true;
-		if (pnode)
-			pnode->set_auto_update_qut();
 	}
 
 	void cNodePrivate::mark_transform_dirty()
