@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <eElement>
-    <eElement y="-10" name="floating_tips" />
-    <eElement layout_type="Vertical" fill_color="0,0,0,50">
-      <eElement name="hp_bar" size="60,6" align_in_layout="false" fill_color="0,255,0,127" />
-    </eElement>
+  <eElement layout_type="Vertical" fill_color="0,0,0,50">
+    <eElement name="hp_bar" size="60,6" align_in_layout="false" fill_color="0,255,0,127" />
   </eElement>
 </prefab>

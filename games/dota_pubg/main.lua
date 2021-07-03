@@ -49,6 +49,22 @@ scene_receiver.add_mouse_right_down_listener(function()
 end)
 
 local ui_tip = nil
+
+ui_floating_items = {}
+local e_floating_item = create_entity("floating_item")
+function new_floating_item(pos, sp, str)
+	local item = {}
+	item.e = e_floating_item.copy()
+	local text = item.e.find_component("cText")
+	text.set_text(str)
+	__ui_scene.add_child(item.e)
+	item.sp = sp
+	item.element = item.e.find_component("cElement")
+	item.element.set_pos(pos)
+	item.tick = 15
+	table.insert(ui_floating_items, item)
+end
+
 local e_shading_flags = find_enum("ShadingFlags")
 local e_shading_material = e_shading_flags["Material"]
 local e_shading_outline = e_shading_flags["Outline"]
@@ -188,6 +204,19 @@ obj_root.add_event(function()
 		if ui_tip then
 			__ui.remove_child(ui_tip)
 			ui_tip = nil
+		end
+	end
+
+	local i = 1
+	while i <= #ui_floating_items do
+		local item = ui_floating_items[i]
+		item.element.add_pos(item.sp)
+		item.tick = item.tick - 1
+		if item.tick <= 0 then
+			__ui_scene.remove_child(item.e)
+			table.remove(ui_floating_items, i)
+		else
+			i = i + 1
 		end
 	end
 end, 0.0)

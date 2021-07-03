@@ -53,8 +53,6 @@ function make_character(entity, group, stats)
 	character.ui = create_entity("character_hud")
 	character.ui.set_visible(false)
 	character.ui.element = character.ui.find_component("cElement")
-	character.ui.floating_tips = character.ui.find_child("floating_tips")
-	character.ui.floating_tips.items = {}
 	character.ui.hp_bar = character.ui.find_child("hp_bar").find_component("cElement")
 	__ui_scene.add_child(character.ui)
 
@@ -143,20 +141,19 @@ function make_character(entity, group, stats)
 	character.receive_damage = function(src, value)
 		character.last_hit_character = src
 
+		local c = camera.camera
+		local p1 = c.world_to_screen(character.pos + vec3(0, 1.8, 0))
+		local p2 = c.world_to_screen(src.pos + vec3(0, 1.8, 0))
+		local l, d = length_and_dir_2(p1 - p2)
+		if d then
+			l = d * 2
+		else
+			l = vec2(0, -2)
+		end
+		new_floating_item(p1, l, tostring(math.floor(value / 10.0)))
+
 		if character.HP > value then
 			character.HP = character.HP - value
-
-			local tip_item = {}
-			tip_item.e = create_entity("floating_tip")
-			local text = tip_item.e.find_component("cText")
-			text.set_text(tostring(math.floor(value / 10.0)))
-			if character == main_player.character then
-				text.set_font_color(vec4(255, 0, 0, 255))
-			end
-			character.ui.floating_tips.add_child(tip_item.e)
-			tip_item.element = tip_item.e.find_component("cElement")
-			tip_item.tick = 35
-			table.insert(character.ui.floating_tips.items, tip_item)
 		else
 			character.die()
 		end
@@ -200,19 +197,6 @@ function make_character(entity, group, stats)
 				character.ui.set_visible(true)
 				character.ui.element.set_pos(ui_pos + vec2(-30, -20))
 				character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
-
-				local i = 1
-				while i <= #character.ui.floating_tips.items do
-					local item = character.ui.floating_tips.items[i]
-					item.element.add_pos(vec2(0, -2))
-					item.tick = item.tick - 1
-					if item.tick <= 0 then
-						character.ui.floating_tips.remove_child(item.e)
-						table.remove(character.ui.floating_tips.items, i)
-					else
-						i = i + 1
-					end
-				end
 			end
 		end
 
