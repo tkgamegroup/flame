@@ -72,6 +72,9 @@ namespace flame
 		s->world = this;
 		systems.emplace_back(s);
 		s->on_added();
+		update_list.resize(systems.size());
+		for (auto i = 0; i < systems.size(); i++)
+			update_list[i] = systems[i].get();
 	}
 
 	void WorldPrivate::remove_system(System* s)
@@ -81,20 +84,30 @@ namespace flame
 			if ((*it)->type_hash == s->type_hash)
 			{
 				systems.erase(it);
+				update_list.resize(systems.size());
+				for (auto i = 0; i < systems.size(); i++)
+					update_list[i] = systems[i].get();
 				return;
 			}
 		}
 	}
 
+	void WorldPrivate::set_update_list(uint count, uint* indices)
+	{
+		update_list.resize(count);
+		for (auto i = 0; i < count; i++)
+			update_list[i] = systems[indices[i]].get();
+	}
+
 	void WorldPrivate::update()
 	{
-		for (auto& s : systems)
+		for (auto s : update_list)
 		{
 			for (auto& l : update_listeners)
-				l->call(s.get(), true);
+				l->call(s, true);
 			s->update();
 			for (auto& l : update_listeners)
-				l->call(s.get(), false);
+				l->call(s, false);
 		}
 	}
 

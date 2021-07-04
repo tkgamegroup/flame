@@ -104,6 +104,10 @@ namespace flame
 					thiz->swapchain_img_idx = thiz->swapchain->acquire_image();
 			}
 		}, Capture().set_thiz(this));
+		uint update_list[] = {
+			0, 1, 2, 0, 3
+		};
+		world->set_update_list(countof(update_list), update_list);
 
 		set_targets();
 

@@ -10,10 +10,11 @@ namespace flame
 	{
 		std::vector<std::pair<void*, std::string>> objects;
 
-		std::vector<std::unique_ptr<System, Delector>> systems;
-		std::unique_ptr<EntityPrivate, Delector> root;
+		std::vector<std::unique_ptr<System>> systems;
+		std::unique_ptr<EntityPrivate> root;
 		EntityPrivate* first_element = nullptr;
 		EntityPrivate* first_node = nullptr;
+		std::vector<System*> update_list;
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, System*, bool)>>> update_listeners;
 
@@ -33,6 +34,8 @@ namespace flame
 		void remove_system(System* s) override;
 
 		Entity* get_root() override { return root.get(); }
+
+		void set_update_list(uint count, uint* indices) override;
 
 		void update() override;
 

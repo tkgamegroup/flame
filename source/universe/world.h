@@ -20,6 +20,8 @@ namespace flame
 
 		virtual Entity* get_root() = 0;
 
+		virtual void set_update_list(uint count, uint* indices) = 0;
+
 		virtual void update() = 0;
 
 		virtual void* add_update_listener(void (*callback)(Capture& c, System* system, bool before /* or after */), const Capture& capture) = 0;

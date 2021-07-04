@@ -49,11 +49,11 @@ namespace flame
 #endif
 		uint created_location;
 
-		std::vector<std::unique_ptr<Driver, Delector>> drivers;
+		std::vector<std::unique_ptr<Driver>> drivers;
 		std::unordered_map<uint, std::pair<Driver*, DataListeners>> drivers_map;
-		std::vector<std::unique_ptr<Component, Delector>> components;
+		std::vector<std::unique_ptr<Component>> components;
 		std::unordered_map<uint, std::pair<Component*, DataListeners>> components_map;
-		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
+		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, uint, void*, void*)>>> message_listeners;
 
