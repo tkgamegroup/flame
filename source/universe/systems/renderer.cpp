@@ -1588,21 +1588,18 @@ namespace flame
 					auto f = (i + 1) / (float)nd.dir_shadow_levels;
 					f = f * f * nd.dir_shadow_dist;
 
-					vec3 a = vec3(+10000.f);
-					vec3 b = vec3(-10000.f);
 					vec3 ps[8];
+					AABB b;
+					b.reset();
 					camera->get_points(ps, n, f);
 					for (auto k = 0; k < 8; k++)
-					{
-						auto p = inv * ps[k];
-						a = min(a, p);
-						b = max(b, p);
-					}
-					auto c = mat * ((a + b) * 0.5f);
-					auto w = (b.x - a.x) * 0.5f;
-					auto h = (b.y - a.y) * 0.5f;
-					nd.buf_dir_shadow_mats.add_item() = orthoRH(-w, +w, -h, +h, 0.f, nd.dir_shadow_dist) * 
-						lookAt(c - s.second->g_rot[2] * nd.dir_shadow_dist * 0.5f, c, s.second->g_rot[1]);
+						b.expand(inv * ps[k]);
+					auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+					auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 100.f);
+					auto c = mat * b.center();
+					auto view = lookAt(c + mat[2] * 50.f, c, mat[1]);
+					nd.buf_dir_shadow_mats.add_item() = proj * view;
 				}
 
 				if (nd.dir_shadow_levels < 4)

@@ -112,7 +112,12 @@ function make_obj(o, n)
 end
 
 function vec2(x, y)
-	if y == nil then y = x end
+	if type(x) == "table" then
+		y = x.y
+		x = x.x
+	elseif y == nil then
+		y = x
+	end
 	local o = { x=x, y=y }
 	o.push = function()
 		return  o.x, o.y
@@ -138,7 +143,11 @@ function vec2(x, y)
 end
 
 function vec3(x, y, z)
-	if y == nil and z == nil then 
+	if type(x) == "table" then
+		y = x.y
+		z = x.z
+		x = x.x
+	elseif y == nil and z == nil then
 		y = x
 		z = x
 	end
@@ -170,7 +179,12 @@ function vec3(x, y, z)
 end
 
 function vec4(x, y, z, w)
-	if y == nil and z == nil and w == nil then 
+	if type(x) == "table" then
+		y = x.y
+		z = x.z
+		w = x.w
+		x = x.x
+	elseif y == nil and z == nil and w == nil then
 		y = x
 		z = x
 		w = x

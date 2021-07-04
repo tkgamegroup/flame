@@ -41,6 +41,7 @@ function make_player(e)
 			player.attacking = false
 		elseif s == "pick_up_on_pos" then
 			player.target_pos = t
+			player.attacking = false
 		end
 	end
 

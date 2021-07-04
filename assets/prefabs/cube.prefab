@@ -2,7 +2,7 @@
 <prefab>
 	<entity>
 		<cNode />
-			<cMesh src="cube#0" />
+			<cMesh src="cube" />
 			<cRigid />
 			<cShape type="Cube" />
 	</entity>

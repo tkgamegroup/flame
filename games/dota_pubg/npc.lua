@@ -47,7 +47,7 @@ function make_npc(e, ID)
 		end
 		if npc.state == "idle" then
 			if math.random() < 0.002 then
-				local p = npc.pos
+				local p = vec3(npc.pos)
 				p.x = p.x - 3 + math.random() * 6
 				p.z = p.z - 3 + math.random() * 6
 				npc.change_state("move_to", p)
