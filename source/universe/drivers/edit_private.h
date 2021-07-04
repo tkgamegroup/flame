@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct dEditPrivate : dEdit
+	struct dEditPrivate : dEdit, ElementDrawer
 	{
 		uint select_start = 0;
 		uint select_end = 0;
@@ -46,7 +46,7 @@ namespace flame
 		
 		void on_load_finished() override;
 		
-		uint draw(uint layer, sRendererPtr s_renderer);
+		uint draw(uint layer, sRendererPtr s_renderer) override;
 
 		static dEditPrivate* create();
 	};

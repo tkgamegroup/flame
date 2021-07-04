@@ -81,6 +81,30 @@ namespace flame
 			entity->component_data_changed(this, S<"octree_length"_h>);
 	}
 
+	void cNodePrivate::add_drawer(NodeDrawer* d)
+	{
+		drawers.push_back(d);
+	}
+
+	void cNodePrivate::remove_drawer(NodeDrawer* d)
+	{
+		std::erase_if(drawers, [&](const auto& i) {
+			return i == d;
+		});
+	}
+
+	void cNodePrivate::add_measurer(NodeMeasurer* m)
+	{
+		measurers.push_back(m);
+	}
+
+	void cNodePrivate::remove_measurer(NodeMeasurer* m)
+	{
+		std::erase_if(measurers, [&](const auto& i) {
+			return i == m;
+		});
+	}
+
 	bool cNodePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)
 	{
 		fassert(octree.get());
@@ -112,34 +136,6 @@ namespace flame
 		for (auto i = 0; i < max_count; i++)
 			dst[i] = vec[i].first;
 		return max_count;
-	}
-
-	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, sRendererPtr), const Capture& capture)
-	{
-		auto c = new Closure(drawer, capture);
-		drawers.emplace_back(c);
-		return c;
-	}
-
-	void cNodePrivate::remove_drawer(void* drawer)
-	{
-		std::erase_if(drawers, [&](const auto& i) {
-			return i == (decltype(i))drawer;
-		});
-	}
-
-	void* cNodePrivate::add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture)
-	{
-		auto c = new Closure(measurer, capture);
-		measurers.emplace_back(c);
-		return c;
-	}
-
-	void cNodePrivate::remove_measure(void* measurer)
-	{
-		std::erase_if(measurers, [&](const auto& i) {
-			return i == (decltype(i))measurer;
-		});
 	}
 
 	void cNodePrivate::update_eul()
@@ -218,10 +214,10 @@ namespace flame
 			bounds_dirty = false;
 
 			bounds.reset();
-			for (auto& m : measurers)
+			for (auto m : measurers)
 			{
 				AABB b;
-				if (m->call(&b))
+				if (m->measure(&b))
 				{
 					vec3 ps[8];
 					b.get_points(ps);
@@ -297,6 +293,26 @@ namespace flame
 			return;
 		s_scene->remove_from_reindex(this);
 		pending_reindex = false;
+	}
+
+	void cNodePrivate::on_component_added(Component* c)
+	{
+		auto drawer = dynamic_cast<NodeDrawer*>(c);
+		if (drawer)
+			add_drawer(drawer);
+		auto measurer = dynamic_cast<NodeMeasurer*>(c);
+		if (measurer)
+			add_measurer(measurer);
+	}
+
+	void cNodePrivate::on_component_removed(Component* c)
+	{
+		auto drawer = dynamic_cast<NodeDrawer*>(c);
+		if (drawer)
+			remove_drawer(drawer);
+		auto measurer = dynamic_cast<NodeMeasurer*>(c);
+		if (measurer)
+			remove_measurer(measurer);
 	}
 
 	void cNodePrivate::on_entered_world()

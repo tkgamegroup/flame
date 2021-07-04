@@ -92,22 +92,12 @@ namespace flame
 		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<cImagePrivate>();
-			return thiz->draw(layer, s_renderer);
-		}, Capture().set_thiz(this));
-		measurable = element->add_measurer([](Capture& c, vec2* s) {
-			auto thiz = c.thiz<cImagePrivate>();
-			return thiz->measure(s);
-		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cImagePrivate::on_removed()
 	{
-		element->remove_drawer(drawer);
-		element->remove_measurer(measurable);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
@@ -137,7 +127,7 @@ namespace flame
 		return true;
 	}
 
-	uint cImagePrivate::draw(uint layer, sRenderer* s_renderer)
+	uint cImagePrivate::draw(uint layer, sRendererPtr s_renderer)
 	{
 		if (res_id != -1)
 		{

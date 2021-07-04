@@ -403,50 +403,27 @@ namespace flame
 			entity->component_data_changed(this, S<"clipping"_h>);
 	}
 
-	void* cElementPrivate::add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture)
+	void cElementPrivate::add_drawer(ElementDrawer* d)
 	{
-		if (!drawer)
-		{
-			auto slot = (uint)&capture;
-			drawer = [](Capture& c, uint, sRendererPtr render) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_object();
-				scr_ins->set_object_type("flame::sRenderer", render);
-				scr_ins->call(1);
-				auto ret = scr_ins->to_int(-1);
-				scr_ins->pop(3);
-				return (uint)ret;
-			};
-			auto c = new Closure(drawer, Capture().set_data(&slot));
-			drawers.emplace_back(c);
-			return c;
-		}
-		auto c = new Closure(drawer, capture);
-		drawers.emplace_back(c);
-		return c;
+		drawers.push_back(d);
 	}
 
-	void cElementPrivate::remove_drawer(void* drawer)
+	void cElementPrivate::remove_drawer(ElementDrawer* d)
 	{
 		std::erase_if(drawers, [&](const auto& i) {
-			return i == (decltype(i))drawer;
+			return i == d;
 		});
 	}
 
-	void* cElementPrivate::add_measurer(bool(*measurer)(Capture&, vec2*), const Capture& capture)
+	void cElementPrivate::add_measurer(ElementMeasurer* m)
 	{
-		auto c = new Closure(measurer, capture);
-		measurers.emplace_back(c);
-		return c;
+		measurers.push_back(m);
 	}
 
-	void cElementPrivate::remove_measurer(void* measurer)
+	void cElementPrivate::remove_measurer(ElementMeasurer* m)
 	{
 		std::erase_if(measurers, [&](const auto& i) {
-			return i == (decltype(i))measurer;
+			return i == m;
 		});
 	}
 
@@ -564,6 +541,26 @@ namespace flame
 			return;
 		s_scene->remove_from_layout(this);
 		pending_layout = false;
+	}
+
+	void cElementPrivate::on_component_added(Component* c)
+	{
+		auto drawer = dynamic_cast<ElementDrawer*>(c);
+		if (drawer)
+			add_drawer(drawer);
+		auto measurer = dynamic_cast<ElementMeasurer*>(c);
+		if (measurer)
+			add_measurer(measurer);
+	}
+
+	void cElementPrivate::on_component_removed(Component* c)
+	{
+		auto drawer = dynamic_cast<ElementDrawer*>(c);
+		if (drawer)
+			remove_drawer(drawer);
+		auto measurer = dynamic_cast<ElementMeasurer*>(c);
+		if (measurer)
+			remove_measurer(measurer);
 	}
 
 	void cElementPrivate::on_child_added(EntityPtr e)

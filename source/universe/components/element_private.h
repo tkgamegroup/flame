@@ -58,8 +58,8 @@ namespace flame
 		Rect parent_scissor;
 		bool culled = false;
 
-		std::vector<std::unique_ptr<Closure<uint(Capture&, uint, sRendererPtr)>>> drawers;
-		std::vector<std::unique_ptr<Closure<bool(Capture&, vec2*)>>> measurers;
+		std::vector<ElementDrawer*> drawers;
+		std::vector<ElementMeasurer*> measurers;
 
 		sScenePrivate* s_scene = nullptr;
 		bool pending_sizing = false;
@@ -161,14 +161,14 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
+		void add_drawer(ElementDrawer* d) override;
+		void remove_drawer(ElementDrawer* d) override;
+		void add_measurer(ElementMeasurer* m) override;
+		void remove_measurer(ElementMeasurer* m) override;
+
 		bool get_culled() const override { return culled; }
 
 		vec2 get_point(uint idx) const override { return points[idx]; };
-
-		void* add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture) override;
-		void remove_drawer(void* drawer) override;
-		void* add_measurer(bool(*measurer)(Capture&, vec2*), const Capture& capture) override;
-		void remove_measurer(void* measurer) override;
 
 		void update_transform();
 
@@ -181,6 +181,8 @@ namespace flame
 
 		bool contains(const vec2& p) override;
 
+		void on_component_added(Component* c) override;
+		void on_component_removed(Component* c) override;
 		void on_child_added(EntityPtr e) override;
 		void on_child_removed(EntityPtr e) override;
 		void on_entered_world() override;

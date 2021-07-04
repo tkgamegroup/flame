@@ -28,8 +28,10 @@ namespace flame
 		virtual void on_state_changed(StateFlags state) {}
 		virtual void on_entered_world() {}
 		virtual void on_left_world() {}
-		virtual void on_self_added() {}
-		virtual void on_self_removed() {}
+		virtual void on_component_added(Component* c) {}
+		virtual void on_component_removed(Component* c) {}
+		virtual void on_entity_added() {}
+		virtual void on_entity_removed() {}
 		virtual void on_child_added(EntityPtr e) {}
 		virtual void on_child_removed(EntityPtr e) {}
 		virtual void on_reposition(uint from, uint to) {}

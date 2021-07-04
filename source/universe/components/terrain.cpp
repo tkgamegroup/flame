@@ -51,7 +51,7 @@ namespace flame
 		material_name = name;
 	}
 
-	void cTerrainPrivate::draw(sRendererPrivate* s_renderer)
+	void cTerrainPrivate::draw(sRendererPtr s_renderer)
 	{
 		if (height_map_id == -1 || material_id == -1)
 			return;
@@ -65,16 +65,11 @@ namespace flame
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<cTerrainPrivate>();
-			thiz->draw(s_renderer);
-		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
 
 	void cTerrainPrivate::on_removed()
 	{
-		node->remove_drawer(drawer);
 		node = nullptr;
 	}
 

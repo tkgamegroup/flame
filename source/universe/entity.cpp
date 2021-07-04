@@ -350,6 +350,8 @@ namespace flame
 
 		c->entity = this;
 
+		for (auto& _c : components)
+			_c->on_component_added(c);
 		c->on_added();
 		if (world)
 			c->on_entered_world();
@@ -374,6 +376,9 @@ namespace flame
 		{
 			if (it->get() == c)
 			{
+				for (auto& _c : components)
+					_c->on_component_removed(c);
+				c->on_removed();
 				if (!destroy)
 					it->release();
 				components.erase(it);
@@ -411,7 +416,7 @@ namespace flame
 		for (auto& l : e->message_listeners)
 			l->call(S<"self_added"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
-			c->on_self_added();
+			c->on_entity_added();
 
 		e->traversal([this](EntityPrivate* e) {
 			if (!e->world && world)
@@ -452,7 +457,7 @@ namespace flame
 		for (auto& l : e->message_listeners)
 			l->call(S<"self_removed"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
-			c->on_self_removed();
+			c->on_entity_removed();
 
 		e->traversal([](EntityPrivate* e) {
 			if (e->world)

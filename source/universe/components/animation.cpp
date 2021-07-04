@@ -220,7 +220,7 @@ namespace flame
 			cb->call(frame);
 	}
 
-	void cAnimationPrivate::draw(sRenderer* s_renderer)
+	void cAnimationPrivate::draw(sRendererPtr s_renderer)
 	{
 		if (!bones.empty())
 		{
@@ -244,17 +244,10 @@ namespace flame
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
-
-		drawer = node->add_drawer([](Capture& c, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<cAnimationPrivate>();
-			thiz->draw(s_renderer);
-		}, Capture().set_thiz(this));
-		node->mark_drawing_dirty();
 	}
 
 	void cAnimationPrivate::on_removed()
 	{
-		node->remove_drawer(drawer);
 		node = nullptr;
 	}
 

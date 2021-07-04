@@ -1,10 +1,11 @@
 #pragma once
 
 #include "mesh.h"
+#include "node_private.h"
 
 namespace flame
 {
-	struct cMeshPrivate : cMesh
+	struct cMeshPrivate : cMesh, NodeDrawer, NodeMeasurer
 	{
 		std::filesystem::path src;
 		uint sub_index;
@@ -15,8 +16,6 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 		cAnimationPrivate* pani = nullptr;
-		void* drawer = nullptr;
-		void* measurer = nullptr;
 		sRendererPrivate* s_renderer = nullptr;
 
 		int mesh_id = -1;
@@ -36,8 +35,8 @@ namespace flame
 
 		void apply_src();
 
-		void draw(sRenderer* s_renderer);
-		bool measure(AABB* b);
+		void draw(sRendererPtr s_renderer) override;
+		bool measure(AABB* b) override;
 
 		void on_added() override;
 		void on_removed() override;

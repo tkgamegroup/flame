@@ -1,14 +1,23 @@
 #pragma once
 
 #include "physics.h"
+#include "../components/element_private.h"
 
 namespace flame
 {
 	struct sPhysicsPrivate : sPhysics
 	{
+		struct Visualizer : ElementDrawer
+		{
+			physics::Scene* scene;
+
+			uint draw(uint layer, sRendererPtr s_renderer) override;
+		};
+
 		std::vector<cRigidPrivate*> rigids;
 		std::vector<cControllerPrivate*> controllers;
 		cElementPrivate* visualization_layer = nullptr;
+		Visualizer visualizer;
 
 		UniPtr<physics::Scene> physics_scene;
 

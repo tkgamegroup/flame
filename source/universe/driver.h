@@ -21,6 +21,8 @@ namespace flame
 		{
 		}
 
+		virtual ~Driver() {}
+
 		virtual void on_load_finished() {}
 		virtual bool on_child_added(EntityPtr e, uint& pos) { return false; }
 	};

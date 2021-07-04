@@ -4,6 +4,16 @@
 
 namespace flame
 {
+	struct ElementDrawer
+	{
+		virtual uint draw(uint, sRendererPtr) = 0;
+	};
+
+	struct ElementMeasurer
+	{
+		virtual bool measure(vec2*) = 0;
+	};
+
 	struct cElement : Component
 	{
 		inline static auto type_name = "flame::cElement";
@@ -117,16 +127,16 @@ namespace flame
 		virtual bool get_clipping() const = 0;
 		virtual void set_clipping(bool c) = 0;
 
+		virtual void add_drawer(ElementDrawer* d) = 0;
+		virtual void remove_drawer(ElementDrawer* d) = 0;
+		virtual void add_measurer(ElementMeasurer* m) = 0;
+		virtual void remove_measurer(ElementMeasurer* m) = 0;
+
 		virtual bool get_culled() const = 0;
 
 		virtual vec2 get_point(uint idx) const = 0;
 
 		virtual bool contains(const vec2& p) = 0;
-
-		virtual void* add_drawer(uint (*drawer)(Capture&, uint, sRendererPtr), const Capture& capture) = 0;
-		virtual void remove_drawer(void* drawer) = 0;
-		virtual void* add_measurer(bool(*measurer)(Capture&, vec2*), const Capture& capture) = 0;
-		virtual void remove_measurer(void* measurer) = 0;
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

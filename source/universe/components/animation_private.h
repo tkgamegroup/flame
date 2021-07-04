@@ -2,10 +2,11 @@
 
 #include "../../graphics/model.h"
 #include "animation.h"
+#include "node_private.h"
 
 namespace flame
 {
-	struct cAnimationPrivate : cAnimation
+	struct cAnimationPrivate : cAnimation, NodeDrawer
 	{
 		struct Bone
 		{
@@ -26,7 +27,6 @@ namespace flame
 		std::wstring src;
 
 		cNodePrivate* node = nullptr;
-		void* drawer = nullptr;
 		sRendererPrivate* s_renderer = nullptr;
 		int armature_id = -1;
 
@@ -64,7 +64,7 @@ namespace flame
 		void apply_src();
 		void advance();
 
-		void draw(sRenderer* s_renderer);
+		void draw(sRendererPtr s_renderer) override;
 
 		void on_added() override;
 		void on_removed() override;

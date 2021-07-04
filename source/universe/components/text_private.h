@@ -1,10 +1,11 @@
 #pragma once
 
 #include "text.h"
+#include "element_private.h"
 
 namespace flame
 {
-	struct cTextPrivate : cText
+	struct cTextPrivate : cText, ElementDrawer, ElementMeasurer
 	{
 		std::wstring text;
 		std::wstring atlas_name = L"msyh.ttc;font_awesome.ttf";
@@ -13,8 +14,6 @@ namespace flame
 		Align text_align = AlignMin;
 
 		cElementPrivate* element = nullptr;
-		void* drawer = nullptr;
-		void* measurer = nullptr;
 		sRenderer* s_renderer = nullptr;
 
 		int res_id = -1;
@@ -38,8 +37,8 @@ namespace flame
 
 		void mark_text_changed();
 
-		uint draw(uint layer, sRenderer* s_renderer);
-		bool measure(vec2* s);
+		uint draw(uint layer, sRendererPtr s_renderer) override;
+		bool measure(vec2* s) override;
 
 		void on_added() override;
 		void on_removed() override;

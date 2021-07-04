@@ -39,7 +39,7 @@ scene_receiver.add_mouse_right_down_listener(function()
 	if not hovering_obj then return end
 
 	if hovering_obj.name == "terrain" then
-		if alt_pressing then
+		if atl_pressing then
 			main_player.change_state("attack_on_pos", hovering_pos)
 		elseif ctrl_pressing then
 			main_player.change_state("pick_up_on_pos", hovering_pos)

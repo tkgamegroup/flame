@@ -1,10 +1,11 @@
 #pragma once
 
 #include "light.h"
+#include "node_private.h"
 
 namespace flame
 {
-	struct cLightPrivate : cLight
+	struct cLightPrivate : cLight, NodeDrawer
 	{
 		LightType type = LightPoint;
 		vec3 color = vec3(1.f);
@@ -22,7 +23,7 @@ namespace flame
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
 
-		void draw(sRendererPtr s_renderer);
+		void draw(sRendererPtr s_renderer) override;
 
 		void on_added() override;
 		void on_removed() override;

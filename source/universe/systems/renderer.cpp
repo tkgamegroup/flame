@@ -514,8 +514,8 @@ namespace flame
 		if (!element->drawers.empty())
 		{
 			auto l = layer;
-			for (auto& d : element->drawers)
-				layer = max(layer, d->call(l, this));
+			for (auto d : element->drawers)
+				layer = max(layer, d->draw(l, this));
 			self_transparent = false;
 		}
 
@@ -556,8 +556,8 @@ namespace flame
 		auto e = node->entity;
 
 		node->update_transform();
-		for (auto& d : node->drawers)
-			d->call(this);
+		for (auto d : node->drawers)
+			d->draw(this);
 
 		// TODO: LOD level 1
 		Plane frustum_lod1[6];

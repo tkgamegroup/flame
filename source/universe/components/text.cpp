@@ -84,7 +84,7 @@ namespace flame
 			entity->component_data_changed(this, S<"text"_h>);
 	}
 
-	uint cTextPrivate::draw(uint layer, sRenderer* s_renderer)
+	uint cTextPrivate::draw(uint layer, sRendererPtr s_renderer)
 	{
 		if (res_id != -1)
 		{
@@ -122,22 +122,12 @@ namespace flame
 		element = entity->get_component_i<cElementPrivate>(0);
 		fassert(element);
 
-		drawer = element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<cTextPrivate>();
-			return thiz->draw(layer, s_renderer);
-		}, Capture().set_thiz(this));
-		measurer = element->add_measurer([](Capture& c, vec2* s) {
-			auto thiz = c.thiz<cTextPrivate>();
-			return thiz->measure(s);
-		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cTextPrivate::on_removed()
 	{
-		element->remove_drawer(drawer);
-		element->remove_measurer(measurer);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}

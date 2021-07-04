@@ -201,10 +201,7 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		element->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<dEditPrivate>();
-			return thiz->draw(layer, s_renderer);
-		}, Capture().set_thiz(this));
+		element->add_drawer(this);
 
 		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
 			auto thiz = c.thiz<dEditPrivate>();

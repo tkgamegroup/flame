@@ -35,8 +35,8 @@ namespace flame
 		std::unique_ptr<OctNode> octree;
 		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, sRendererPtr)>>> drawers;
-		std::vector<std::unique_ptr<Closure<bool(Capture&, AABB*)>>> measurers;
+		std::vector<NodeDrawer*> drawers;
+		std::vector<NodeMeasurer*> measurers;
 
 		sScenePrivate* s_scene = nullptr;
 		bool pending_reindex = false;
@@ -62,13 +62,13 @@ namespace flame
 		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
 
+		void add_drawer(NodeDrawer* d) override;
+		void remove_drawer(NodeDrawer* d) override;
+		void add_measurer(NodeMeasurer* m) override;
+		void remove_measurer(NodeMeasurer* m) override;
+
 		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0) override;
 		uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0) override;
-
-		void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) override;
-		void remove_drawer(void* drawer) override;
-		void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) override;
-		void remove_measure(void* measurer) override;
 
 		void update_eul();
 		void update_qut();
@@ -81,6 +81,8 @@ namespace flame
 		void mark_drawing_dirty();
 		void remove_from_reindex_list();
 
+		void on_component_added(Component* c) override;
+		void on_component_removed(Component* c) override;
 		void on_entered_world() override;
 		void on_left_world() override;
 	};

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "terrain.h"
+#include "node_private.h"
 
 namespace flame
 {
-	struct cTerrainPrivate : cTerrain
+	struct cTerrainPrivate : cTerrain, NodeDrawer
 	{
 		vec2 extent = vec2(100.f);
 		uint blocks = 64;
@@ -16,7 +17,6 @@ namespace flame
 		ShadingFlags shading_flags = ShadingMaterial;
 
 		cNodePrivate* node = nullptr;
-		void* drawer = nullptr;
 		sRendererPrivate* s_renderer = nullptr;
 
 		graphics::Image* height_texture = nullptr;
@@ -43,7 +43,7 @@ namespace flame
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture.get(); }
 
-		void draw(sRendererPrivate* s_renderer);
+		void draw(sRendererPtr s_renderer) override;
 
 		void on_added() override;
 		void on_removed() override;

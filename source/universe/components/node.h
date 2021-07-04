@@ -4,6 +4,16 @@
 
 namespace flame
 {
+	struct NodeDrawer
+	{
+		virtual void draw(sRendererPtr) = 0;
+	};
+
+	struct NodeMeasurer
+	{
+		virtual bool measure(AABB*) = 0;
+	};
+
 	struct cNode : Component
 	{
 		inline static auto type_name = "flame::cNode";
@@ -36,13 +46,13 @@ namespace flame
 		virtual float get_octree_length() const = 0;
 		virtual void set_octree_length(float len) = 0;
 
+		virtual void add_drawer(NodeDrawer* d) = 0;
+		virtual void remove_drawer(NodeDrawer* d) = 0;
+		virtual void add_measurer(NodeMeasurer* m) = 0;
+		virtual void remove_measurer(NodeMeasurer* m) = 0;
+
 		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0) = 0;
 		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0) = 0;
-
-		virtual void* add_drawer(void(*drawer)(Capture&, sRendererPtr), const Capture& capture) = 0;
-		virtual void remove_drawer(void* drawer) = 0;
-		virtual void* add_measure(bool(*measurer)(Capture&, AABB*), const Capture& capture) = 0;
-		virtual void remove_measure(void* measurer) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
 	};

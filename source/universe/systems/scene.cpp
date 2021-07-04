@@ -206,10 +206,10 @@ namespace flame
 			v.second.pop_front();
 
 			auto size = vec2(-1.f);
-			for (auto& m : e->measurers)
+			for (auto m : e->measurers)
 			{
 				vec2 s;
-				if (m->call(&s))
+				if (m->measure(&s))
 				{
 					size.x = max(size.x, s.x);
 					size.y = max(size.y, s.y);

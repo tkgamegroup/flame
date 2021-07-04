@@ -5,7 +5,6 @@
 #include "../../physics/scene.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
-#include "../components/element_private.h"
 #include "../components/rigid_private.h"
 #include "../components/shape_private.h"
 #include "../components/controller_private.h"
@@ -15,6 +14,14 @@ namespace flame
 {
 	using namespace physics;
 
+	uint sPhysicsPrivate::Visualizer::draw(uint layer, sRendererPtr s_renderer)
+	{
+		layer++;
+		uint lines_count;
+		Line* lines;
+		scene->get_visualization_data(&lines_count, &lines);
+		return layer;
+	}
 	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e)
 	{
 		void* p = nullptr;
@@ -27,7 +34,11 @@ namespace flame
 	void sPhysicsPrivate::set_visualization(bool v)
 	{
 		if (!v)
+		{
+			if (visualization_layer)
+				visualization_layer->remove_drawer(&visualizer);
 			visualization_layer = nullptr;
+		}
 		else
 		{
 			if (world && physics_scene)
@@ -36,19 +47,7 @@ namespace flame
 				if (visualization_layer)
 				{
 					physics_scene->set_visualization(true);
-					visualization_layer->add_drawer([](Capture& c, uint layer, sRendererPtr s_renderer) {
-						auto thiz = c.thiz<sPhysicsPrivate>();
-						if (thiz->visualization_layer)
-						{
-							layer++;
-							uint lines_count;
-							Line* lines;
-							thiz->physics_scene->get_visualization_data(&lines_count, &lines);
-							// TODO: fix below
-							//canvas->draw_lines(lines_count, lines);
-						}
-						return layer;
-					}, Capture().set_thiz(this));
+					visualization_layer->add_drawer(&visualizer);
 				}
 			}
 		}
@@ -63,6 +62,7 @@ namespace flame
 			for (auto& l : tri_shp->get_component_t<cShapePrivate>()->rigid->trigger_listeners)
 				l->call(type, tri_shp, oth_shp);
 		}, Capture().set_thiz(this));
+		visualizer.scene = physics_scene.get();
 	}
 
 	void sPhysicsPrivate::on_removed()

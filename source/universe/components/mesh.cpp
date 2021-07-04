@@ -87,7 +87,7 @@ namespace flame
 			pani = entity->parent->get_component_t<cAnimationPrivate>();
 	}
 
-	void cMeshPrivate::draw(sRenderer* s_renderer)
+	void cMeshPrivate::draw(sRendererPtr s_renderer)
 	{
 		if (mesh_id != -1)
 			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani ? pani->armature_id : -1, shading_flags);
@@ -106,20 +106,11 @@ namespace flame
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
-		drawer = node->add_drawer([](Capture& c, sRendererPtr s_renderer) {
-			auto thiz = c.thiz<cMeshPrivate>();
-			thiz->draw(s_renderer);
-		}, Capture().set_thiz(this));
-		measurer = node->add_measure([](Capture& c, AABB* b) {
-			auto thiz = c.thiz<cMeshPrivate>();
-			return thiz->measure(b);
-		}, Capture().set_thiz(this));
 		node->mark_drawing_dirty();
 	}
 
 	void cMeshPrivate::on_removed()
 	{
-		node->remove_drawer(drawer);
 		node = nullptr;
 	}
 

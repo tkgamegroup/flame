@@ -1,10 +1,11 @@
 #pragma once
 
 #include "image.h"
+#include "element_private.h"
 
 namespace flame
 {
-	struct cImagePrivate : cImage
+	struct cImagePrivate : cImage, ElementDrawer, ElementMeasurer
 	{
 		std::filesystem::path src;
 		std::string tile_name;
@@ -14,8 +15,6 @@ namespace flame
 		cvec3 color = cvec3(255);
 
 		cElementPrivate* element = nullptr;
-		void* drawer = nullptr;
-		void* measurable = nullptr;
 
 		sRenderer* s_renderer = nullptr;
 
@@ -43,8 +42,8 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 
-		bool measure(vec2* s);
+		bool measure(vec2* s) override;
 
-		uint draw(uint layer, sRenderer* s_renderer);
+		uint draw(uint layer, sRendererPtr s_renderer) override;
 	};
 }
