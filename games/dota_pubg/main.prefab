@@ -80,6 +80,7 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
+      <eParticleEmitter />
       <eNode name="obj_root" octree_length="400.0">
         <eCube pos="195,70,195" scale="2.0,2.0,2.0" dynamic="false" />
       </eNode>

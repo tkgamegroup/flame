@@ -10,8 +10,7 @@ namespace flame
 		std::filesystem::path src;
 		std::string tile_name;
 
-		vec2 uv0 = vec2(0.f);
-		vec2 uv1 = vec2(1.f);
+		vec4 uvs = vec4(0.f, 0.f, 1.f, 1.f);
 		cvec3 color = cvec3(255);
 
 		cElementPrivate* element = nullptr;
@@ -32,7 +31,7 @@ namespace flame
 		void set_tile_name(const std::string& name);
 		void set_tile_name(const char* name) override { set_tile_name(std::string(name)); }
 
-		vec4 get_uv() const override { return vec4(uv0, uv1); }
+		vec4 get_uv() const override { return uvs; }
 		void set_uv(const vec4& uv) override;
 
 		void apply_src();

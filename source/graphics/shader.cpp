@@ -1603,6 +1603,14 @@ namespace flame
 				info.vertex_buffers_count = vertex_buffers.size();
 				info.vertex_buffers = vertex_buffers.data();
 
+				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode");
+				if (auto n = doc_root.child("cull_mode"); n)
+					ti_cullmode->unserialize(&info.cull_mode, n.attribute("v").value());
+				if (auto n = doc_root.child("depth_test"); n)
+					info.depth_test = n.attribute("v").as_bool();
+				if (auto n = doc_root.child("depth_write"); n)
+					info.depth_write = n.attribute("v").as_bool();
+
 				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor");
 				std::vector<BlendOption> blend_options;
 				for (auto n_bo : doc_root.child("blend_options"))

@@ -68,7 +68,7 @@ namespace flame
 		void fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color) override;
 		void stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed) override;
 		void draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color) override;
-		void draw_image(uint layer, const vec2* pts, uint res_id, const vec2& uv0, const vec2& uv1, const cvec4& tint_color) override;
+		void draw_image(uint layer, const vec2* pts, uint res_id, const vec4& uvs, const cvec4& tint_color) override;
 
 		int set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp) override;
 		int find_texture_res(graphics::ImageView* tex) const override;
@@ -94,6 +94,7 @@ namespace flame
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags) override;
 		void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
 			uint material_id, ShadingFlags flags) override;
+		void draw_particles(uint count, Particle* partcles, uint res_id) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }

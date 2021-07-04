@@ -1,6 +1,7 @@
 #pragma once
 
 #include "node.h"
+#include "../entity_private.h"
 
 namespace flame
 {

@@ -27,12 +27,11 @@ namespace flame
 			entity->component_data_changed(this, S<"tile_name"_h>);
 	}
 
-	void cImagePrivate::set_uv(const vec4& uv)
+	void cImagePrivate::set_uv(const vec4& _uvs)
 	{
-		if (uv0 == uv.xy() && uv1 == uv.zw())
+		if (uvs == _uvs)
 			return;
-		uv0 = uv.xy;
-		uv1 = uv.zw;
+		uvs = _uvs;
 		if (element)
 			element->mark_drawing_dirty();
 		if (entity)
@@ -133,12 +132,12 @@ namespace flame
 		{
 			layer++;
 			if (!atlas)
-				s_renderer->draw_image(layer, element->points + 4, res_id, uv0, uv1, cvec4(255));
+				s_renderer->draw_image(layer, element->points + 4, res_id, uvs, cvec4(255));
 			else if(tile_id != -1)
 			{
-				auto _uv0 = mix(tile_uv.xy(), tile_uv.zw(), uv0);
-				auto _uv1 = mix(tile_uv.xy(), tile_uv.zw(), uv1);
-				s_renderer->draw_image(layer, element->points + 4, res_id, _uv0, _uv1, cvec4(255));
+				auto _uvs = vec4(mix(tile_uv.xy(), tile_uv.zw(), uvs.xy()),
+					mix(tile_uv.xy(), tile_uv.zw(), uvs.zw()));
+				s_renderer->draw_image(layer, element->points + 4, res_id, _uvs, cvec4(255));
 			}
 		}
 		return layer;
