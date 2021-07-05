@@ -498,8 +498,8 @@ namespace flame
 				{
 					if (!bones.empty())
 					{
-						auto na = n.append_child("cAnimation");
-						na.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+						auto na = n.append_child("cArmature");
+						na.append_attribute("model").set_value((model_name + ".fmod").c_str());
 					}
 				}
 				else

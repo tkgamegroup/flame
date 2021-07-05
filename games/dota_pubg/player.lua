@@ -143,7 +143,7 @@ function make_player(e)
 				if not slot then
 					slot = { id=id, num=0 }
 					player.items[i] = slot
-					ui_item_slots[i].image.set_tile_name(item_type.name)
+					ui_item_slots[i].image.set_tile(item_type.name)
 					if max_num >= num then
 						slot.num = max_num
 						num = 0
@@ -172,10 +172,10 @@ function make_player(e)
 
 				local ori_id = player.equipments[euip_slot]
 				player.equipments[euip_slot] = slot.id
-				ui_equipment_slots[euip_slot].image.set_tile_name(item_type.name)
+				ui_equipment_slots[euip_slot].image.set_tile(item_type.name)
 
 				player.items[idx] = nil
-				ui_item_slots[idx].image.set_tile_name("")
+				ui_item_slots[idx].image.set_tile("")
 
 				if ori_id ~= 0 then
 					player.receive_item(ori_id, 1)

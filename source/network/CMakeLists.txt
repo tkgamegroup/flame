@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_network SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_network SHARED ${source_files})
 set_target_properties(flame_network PROPERTIES FOLDER "flame")
 set_target_properties(flame_network PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_network PRIVATE FLAME_NETWORK_MODULE)

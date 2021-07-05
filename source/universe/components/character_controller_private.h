@@ -1,10 +1,10 @@
 #pragma once
 
-#include "controller.h"
+#include "character_controller.h"
 
 namespace flame
 {
-	struct cControllerPrivate : cController
+	struct cCharacterControllerPrivate : cCharacterController
 	{
 		float radius = 0.f;
 		float height = 0.f;

@@ -7,7 +7,7 @@
 #include "../components/node_private.h"
 #include "../components/rigid_private.h"
 #include "../components/shape_private.h"
-#include "../components/controller_private.h"
+#include "../components/character_controller_private.h"
 #include "physics_private.h"
 
 namespace flame

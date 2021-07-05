@@ -1,12 +1,12 @@
 #pragma once
 
 #include "../../graphics/model.h"
-#include "animation.h"
+#include "armature.h"
 #include "node_private.h"
 
 namespace flame
 {
-	struct cAnimationPrivate : cAnimation, NodeDrawer
+	struct cArmaturePrivate : cArmature, NodeDrawer
 	{
 		struct Bone
 		{
@@ -24,7 +24,7 @@ namespace flame
 		};
 
 		std::filesystem::path model_name;
-		std::wstring src;
+		std::wstring animation_names;
 
 		cNodePrivate* node = nullptr;
 		sRendererPrivate* s_renderer = nullptr;
@@ -40,15 +40,15 @@ namespace flame
 		std::pair<int, int> peeding_pose = { -1, -1 };
 		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> callbacks;
 
-		~cAnimationPrivate();
+		~cArmaturePrivate();
 
-		const wchar_t* get_model_name() const override { return model_name.c_str(); }
-		void set_model_name(const std::filesystem::path& src);
-		void set_model_name(const wchar_t* src) override { set_model_name(std::filesystem::path(src)); }
+		const wchar_t* get_model() const override { return model_name.c_str(); }
+		void set_model(const std::filesystem::path& src);
+		void set_model(const wchar_t* src) override { set_model(std::filesystem::path(src)); }
 
-		const wchar_t* get_src() const override { return src.c_str(); }
-		void set_src(const std::wstring& src);
-		void set_src(const wchar_t* src) override { set_src(std::wstring(src)); }
+		const wchar_t* get_animations() const override { return animation_names.c_str(); }
+		void set_animations(const std::wstring& src);
+		void set_animations(const wchar_t* src) override { set_animations(std::wstring(src)); }
 
 		int get_playing() override { return playing; }
 		void play(uint id) override;

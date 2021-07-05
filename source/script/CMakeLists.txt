@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_script SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_script SHARED ${source_files})
 set_target_properties(flame_script PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_script PRIVATE FLAME_SCRIPT_MODULE)
 target_include_directories(flame_script PRIVATE "${LUA_INCLUDE_DIR}")

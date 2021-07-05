@@ -1,6 +1,6 @@
 generate_config()
-file(GLOB_RECURSE SOURCES "*.c*")
-add_executable(media_browser ${SOURCES})
+file(GLOB_RECURSE source_files "*.c*")
+add_executable(media_browser ${source_files})
 set_target_properties(media_browser PROPERTIES FOLDER "tools")
 target_link_libraries(media_browser flame_universe)
 set_target_properties(media_browser PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -1,6 +1,6 @@
 generate_config()
-file(GLOB_RECURSE SOURCES "*.h*" "*.c*")
-add_executable(tetris ${SOURCES})
+file(GLOB_RECURSE source_files "*.h*" "*.c*")
+add_executable(tetris ${source_files})
 set_target_properties(tetris PROPERTIES FOLDER "games")
 target_link_libraries(tetris flame_network)
 target_link_libraries(tetris flame_universe)

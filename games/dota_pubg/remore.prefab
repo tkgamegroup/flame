@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
     <eNode src="D:\assets\character\mixamo\romero" >
-        <cController radius="0.28" height="1.5" />
+        <cCharacterController radius="0.28" height="1.5" />
     </eNode>
 </prefab>

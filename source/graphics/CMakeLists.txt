@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_graphics SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_graphics SHARED ${source_files})
 set_target_properties(flame_graphics PROPERTIES FOLDER "flame")
 set_target_properties(flame_graphics PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_graphics PRIVATE FLAME_GRAPHICS_MODULE)

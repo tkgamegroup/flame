@@ -14,10 +14,10 @@ namespace flame
 		{
 		}
 
-		virtual const wchar_t* get_src() const = 0;
-		virtual void set_src(const wchar_t* src) = 0;
-		virtual const char* get_tile_name() const = 0;
-		virtual void set_tile_name(const char* name) = 0;
+		virtual const wchar_t* get_img() const = 0;
+		virtual void set_img(const wchar_t* src) = 0;
+		virtual const char* get_tile() const = 0;
+		virtual void set_tile(const char* name) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cParticleEmitter* create(void* parms = nullptr);
 	};

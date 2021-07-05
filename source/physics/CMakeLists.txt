@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_physics SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_physics SHARED ${source_files})
 set_target_properties(flame_physics PROPERTIES FOLDER "flame")
 set_target_properties(flame_physics PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)

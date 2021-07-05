@@ -1,8 +1,8 @@
 character = {
 	speed = 0.1,
 	node = entity.find_component("cNode"),
-	animation = entity.find_component("cAnimation"),
-	controller = entity.find_component("cController"),
+	armature = entity.find_component("cArmature"),
+	controller = entity.find_component("cCharacterController"),
 	yaw = 0,
 	dir1 = vec3(0, 0, 1),
 	dir2 = vec3(1, 0, 0),
@@ -21,25 +21,25 @@ character.update_dir = function()
 end
 
 local h_src = flame_hash("src")
-character.animation.entity.add_component_data_listener(function(h)
+character.armature.entity.add_component_data_listener(function(h)
 	if h == h_src then
-		if character.animation.get_src() == "" then
-			character.animation.play(0)
-			character.animation.set_loop(true)
+		if character.armature.get_src() == "" then
+			character.armature.play(0)
+			character.armature.set_loop(true)
 		end
 	end
-end, character.animation)
+end, character.armature)
 
-character.animation.play(0)
-character.animation.set_loop(true)
+character.armature.play(0)
+character.armature.set_loop(true)
 
 local scene_receiver = scene.find_component("cReceiver")
 
 scene_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
-		character.animation.play(1)
-		character.animation.set_loop(true)
+		character.armature.play(1)
+		character.armature.set_loop(true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = true
@@ -61,8 +61,8 @@ end)
 scene_receiver.add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
-		character.animation.play(0)
-		character.animation.set_loop(true)
+		character.armature.play(0)
+		character.armature.set_loop(true)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = false
@@ -82,8 +82,8 @@ scene_receiver.add_key_up_listener(function(k)
 end)
 
 scene_receiver.add_mouse_left_up_listener(function()
-	character.animation.play(2)
-	character.animation.set_loop(false)
+	character.armature.play(2)
+	character.armature.set_loop(false)
 end)
 
 entity.add_event(function()

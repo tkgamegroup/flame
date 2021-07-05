@@ -8,12 +8,8 @@
       <cScript>
          __ui_scene = entity
       </cScript>
-      <eImage name="action_tip1" visible="false" pivotx="0.5" pivoty="1.0">
-        <cImage src="D:/assets/action_icons/action_icons.atlas" />
-      </eImage>
-      <eImage name="action_tip2" visible="false" pivotx="0.5" pivoty="1.0">
-        <cImage src="D:/assets/action_icons/action_icons.atlas" />
-      </eImage>
+      <eImage name="action_tip1" visible="false" pivotx="0.5" pivoty="1.0" img="D:/assets/action_icons/action_icons.atlas" />
+      <eImage name="action_tip2" visible="false" pivotx="0.5" pivoty="1.0" img="D:/assets/action_icons/action_icons.atlas" />
     </eElement>
     <eElement name="character_panel" padding="8,8,8,8" alignx="Middle" aligny="Max" fill_color="0,0,0,127" align_in_layout="false" layout_type="Vertical" layout_gap="8">
         <eElement alignx="MinMax" layout_type="Vertical">
@@ -80,8 +76,7 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-      <eParticleEmitter pos="200,55,200">
-        <cParticleEmitter src="D:\assets\ptc.png" />
+      <eParticleEmitter pos="200,55,200" img="D:\assets\ptc.png">
       </eParticleEmitter>
       <eNode name="obj_root" octree_length="400.0">
         <eCube pos="195,52,195" scale="2.0,2.0,2.0" dynamic="false" />

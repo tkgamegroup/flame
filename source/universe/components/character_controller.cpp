@@ -3,53 +3,53 @@
 #include "../../physics/material.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "controller_private.h"
+#include "character_controller_private.h"
 #include "../systems/physics_private.h"
 
 namespace flame
 {
-	void cControllerPrivate::set_radius(float r)
+	void cCharacterControllerPrivate::set_radius(float r)
 	{
 		radius = r;
 	}
 
-	void cControllerPrivate::set_height(float h)
+	void cCharacterControllerPrivate::set_height(float h)
 	{
 		height = h;
 	}
 
-	void cControllerPrivate::set_static_friction(float v)
+	void cCharacterControllerPrivate::set_static_friction(float v)
 	{
 		static_friction = v;
 	}
 
-	void cControllerPrivate::set_dynamic_friction(float v)
+	void cCharacterControllerPrivate::set_dynamic_friction(float v)
 	{
 		dynamic_friction = v;
 	}
 
-	void cControllerPrivate::set_restitution(float v)
+	void cCharacterControllerPrivate::set_restitution(float v)
 	{
 		restitution = v;
 	}
 
-	void cControllerPrivate::move(const vec3& _disp)
+	void cCharacterControllerPrivate::move(const vec3& _disp)
 	{ 
 		disp = _disp; 
 	}
 
-	void cControllerPrivate::on_added()
+	void cCharacterControllerPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 	}
 
-	void cControllerPrivate::on_removed()
+	void cCharacterControllerPrivate::on_removed()
 	{
 		node = nullptr;
 	}
 
-	void cControllerPrivate::on_entered_world()
+	void cCharacterControllerPrivate::on_entered_world()
 	{
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
 		fassert(phy_scene);
@@ -63,7 +63,7 @@ namespace flame
 		phy_scene->controllers.push_back(this);
 	}
 
-	void cControllerPrivate::on_left_world()
+	void cCharacterControllerPrivate::on_left_world()
 	{
 		if (phy_controller)
 		{
@@ -77,8 +77,8 @@ namespace flame
 		phy_scene = nullptr;
 	}
 
-	cController* cController::create(void* parms)
+	cCharacterController* cCharacterController::create(void* parms)
 	{
-		return new cControllerPrivate();
+		return new cCharacterControllerPrivate();
 	}
 }

@@ -2,12 +2,12 @@
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "animation_private.h"
+#include "armature_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
-	void cAnimationPrivate::Action::apply(Bone* bones, uint frame)
+	void cArmaturePrivate::Action::apply(Bone* bones, uint frame)
 	{
 		for (auto& t : tracks)
 		{
@@ -18,12 +18,12 @@ namespace flame
 		}
 	}
 
-	cAnimationPrivate::~cAnimationPrivate()
+	cArmaturePrivate::~cArmaturePrivate()
 	{
 		stop();
 	}
 
-	void cAnimationPrivate::set_model_name(const std::filesystem::path& name)
+	void cArmaturePrivate::set_model(const std::filesystem::path& name)
 	{
 		if (model_name == name)
 			return;
@@ -34,11 +34,11 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cAnimationPrivate::set_src(const std::wstring& _src)
+	void cArmaturePrivate::set_animations(const std::wstring& _animation_names)
 	{
-		if (src == _src)
+		if (animation_names == _animation_names)
 			return;
-		src = _src;
+		animation_names = _animation_names;
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
@@ -46,7 +46,7 @@ namespace flame
 			entity->component_data_changed(this, S<"src"_h>);
 	}
 
-	void cAnimationPrivate::play(uint id)
+	void cArmaturePrivate::play(uint id)
 	{
 		if (playing == id)
 			return;
@@ -55,7 +55,7 @@ namespace flame
 		if (!event)
 		{
 			event = looper().add_event([](Capture& c) {
-				auto thiz = c.thiz<cAnimationPrivate>();
+				auto thiz = c.thiz<cArmaturePrivate>();
 				thiz->advance();
 				if (thiz->frame != -1)
 					c._current = nullptr;
@@ -68,7 +68,7 @@ namespace flame
 		}
 	}
 
-	void cAnimationPrivate::stop()
+	void cArmaturePrivate::stop()
 	{
 		playing = -1;
 		if (event)
@@ -78,7 +78,7 @@ namespace flame
 		}
 	}
 
-	void cAnimationPrivate::stop_at(uint id, int frame)
+	void cArmaturePrivate::stop_at(uint id, int frame)
 	{
 		stop();
 
@@ -86,14 +86,14 @@ namespace flame
 		peeding_pose = { id, frame < 0 ? a.total_frame + frame : frame };
 	}
 
-	void cAnimationPrivate::set_loop(bool l)
+	void cArmaturePrivate::set_loop(bool l)
 	{
 		if (loop == l)
 			return;
 		loop = l;
 	}
 
-	void* cAnimationPrivate::add_callback(void (*callback)(Capture& c, int frame), const Capture& capture)
+	void* cArmaturePrivate::add_callback(void (*callback)(Capture& c, int frame), const Capture& capture)
 	{
 		if (!callback)
 		{
@@ -116,14 +116,14 @@ namespace flame
 		return c;
 	}
 
-	void cAnimationPrivate::remove_callback(void* cb)
+	void cArmaturePrivate::remove_callback(void* cb)
 	{
 		std::erase_if(callbacks, [&](const auto& i) {
 			return i == (decltype(i))cb;
 		});
 	}
 
-	void cAnimationPrivate::apply_src()
+	void cArmaturePrivate::apply_src()
 	{
 		if (bones.empty() && entity)
 		{
@@ -159,11 +159,11 @@ namespace flame
 			}
 		}
 
-		if (bones.empty() || src.empty())
+		if (bones.empty() || animation_names.empty())
 			return;
 
 		auto ppath = entity->get_src(src_id).parent_path();
-		auto sp = SUW::split(src, ';');
+		auto sp = SUW::split(animation_names, ';');
 		for (auto& s : sp)
 		{
 			auto fn = std::filesystem::path(s);
@@ -207,7 +207,7 @@ namespace flame
 		}
 	}
 
-	void cAnimationPrivate::advance()
+	void cArmaturePrivate::advance()
 	{
 		auto& a = actions[playing];
 		peeding_pose = { playing, frame };
@@ -220,7 +220,7 @@ namespace flame
 			cb->call(frame);
 	}
 
-	void cAnimationPrivate::draw(sRendererPtr s_renderer)
+	void cArmaturePrivate::draw(sRendererPtr s_renderer)
 	{
 		if (!bones.empty())
 		{
@@ -240,18 +240,18 @@ namespace flame
 		}
 	}
 
-	void cAnimationPrivate::on_added()
+	void cArmaturePrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 	}
 
-	void cAnimationPrivate::on_removed()
+	void cArmaturePrivate::on_removed()
 	{
 		node = nullptr;
 	}
 
-	void cAnimationPrivate::on_entered_world()
+	void cArmaturePrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
@@ -259,14 +259,14 @@ namespace flame
 		apply_src();
 	}
 
-	void cAnimationPrivate::on_left_world()
+	void cArmaturePrivate::on_left_world()
 	{
 		s_renderer = nullptr;
 		stop();
 	}
 
-	cAnimation* cAnimation::create(void* parms)
+	cArmature* cArmature::create(void* parms)
 	{
-		return new cAnimationPrivate();
+		return new cArmaturePrivate();
 	}
 }

@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_blueprint SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_blueprint SHARED ${source_files})
 set_target_properties(flame_blueprint PROPERTIES FOLDER "flame")
 set_target_properties(flame_blueprint PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_blueprint PRIVATE FLAME_BLUEPRINT_MODULE)

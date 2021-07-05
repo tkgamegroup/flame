@@ -20,7 +20,7 @@ namespace flame
 			int ttl;
 		};
 
-		std::filesystem::path src;
+		std::filesystem::path img_src;
 		std::string tile_name;
 
 		cNodePrivate* node = nullptr;
@@ -56,12 +56,12 @@ namespace flame
 		uint emt_ttl_max = 120;
 		uint ptc_num_max = 0xffff;
 
-		const wchar_t* get_src() const override { return src.c_str(); }
-		void set_src(const std::filesystem::path& src);
-		void set_src(const wchar_t* src) override { set_src(std::filesystem::path(src)); }
-		const char* get_tile_name() const override { return tile_name.c_str(); }
-		void set_tile_name(const std::string& name);
-		void set_tile_name(const char* name) override { set_tile_name(std::string(name)); }
+		const wchar_t* get_img() const override { return img_src.c_str(); }
+		void set_img(const std::filesystem::path& src);
+		void set_img(const wchar_t* src) override { set_img(std::filesystem::path(src)); }
+		const char* get_tile() const override { return tile_name.c_str(); }
+		void set_tile(const std::string& name);
+		void set_tile(const char* name) override { set_tile(std::string(name)); }
 
 		void apply_src();
 

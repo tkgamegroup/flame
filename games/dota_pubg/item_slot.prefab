@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eElement name="icon" padding="1,1,1,1" size="25,25" auto_width="false" auto_height="false" border="1">
+    <eImage name="icon" padding="1,1,1,1" size="25,25" auto_width="false" auto_height="false" border="1" img="D:/assets/item_icons/item_icons.atlas">
       <cReceiver />
-      <cImage src="D:/assets/item_icons/item_icons.atlas" />
-    </eElement>
+    </eImage>
     <eText name="tip" padding="2,2,0,0" font_size="13" font_color="255,255,255,180" align_in_layout="false" />
   </eElement>
 </prefab>

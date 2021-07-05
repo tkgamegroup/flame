@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_executable(typeinfogen ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_executable(typeinfogen ${source_files})
 set_target_properties(typeinfogen PROPERTIES FOLDER "flame")
 target_compile_definitions(typeinfogen PRIVATE VS_LOCATION="${VS_LOCATION}")
 target_include_directories(typeinfogen PRIVATE "${VS_LOCATION}/DIA SDK/include")

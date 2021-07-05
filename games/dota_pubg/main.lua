@@ -111,7 +111,7 @@ obj_root.add_event(function()
 	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
 		ui_action_tip1.set_visible(true)
 		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos))
-		ui_action_tip1.image.set_tile_name("move")
+		ui_action_tip1.image.set_tile("move")
 	else
 		ui_action_tip1.set_visible(false)
 	end
@@ -119,7 +119,7 @@ obj_root.add_event(function()
 		if main_player.target then
 			ui_action_tip2.set_visible(true)
 			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos + vec3(0, 1.8, 0)) + vec2(0, 10))
-			ui_action_tip2.image.set_tile_name("attack")
+			ui_action_tip2.image.set_tile("attack")
 		else
 			ui_action_tip2.set_visible(false)
 		end
@@ -127,7 +127,7 @@ obj_root.add_event(function()
 		if main_player.target then
 			ui_action_tip2.set_visible(true)
 			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos) + vec2(0, 10))
-			ui_action_tip2.image.set_tile_name("pick_up")
+			ui_action_tip2.image.set_tile("pick_up")
 		else
 			ui_action_tip2.set_visible(false)
 		end
@@ -336,9 +336,9 @@ function update_ui_equipment_slots()
 	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 		local id = main_player.equipments[i]
 		if id == 0 then
-			ui_equipment_slots[i].image.set_tile_name("")
+			ui_equipment_slots[i].image.set_tile("")
 		else
-			ui_equipment_slots[i].image.set_tile_name(ITEM_LIST[id].name)
+			ui_equipment_slots[i].image.set_tile(ITEM_LIST[id].name)
 		end
 	end
 end
@@ -361,9 +361,9 @@ function update_ui_item_slots()
 	for i=1, ITEM_SLOTS_COUNT, 1 do
 		local slot = main_player.items[i]
 		if not slot then
-			ui_item_slots[i].image.set_tile_name("")
+			ui_item_slots[i].image.set_tile("")
 		else
-			ui_item_slots[i].image.set_tile_name(ITEM_LIST[slot.id].name)
+			ui_item_slots[i].image.set_tile(ITEM_LIST[slot.id].name)
 		end
 	end
 end

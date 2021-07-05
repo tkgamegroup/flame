@@ -1,6 +1,6 @@
 generate_config()
-file(GLOB_RECURSE SOURCES "*.c*")
-add_executable(scene_editor ${SOURCES})
+file(GLOB_RECURSE source_files "*.c*")
+add_executable(scene_editor ${source_files})
 set_target_properties(scene_editor PROPERTIES FOLDER "tools")
 target_link_libraries(scene_editor flame_universe)
 set_target_properties(scene_editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

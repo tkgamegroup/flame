@@ -6,24 +6,24 @@
 
 namespace flame
 {
-	void cParticleEmitterPrivate::set_src(const std::filesystem::path& _src)
+	void cParticleEmitterPrivate::set_img(const std::filesystem::path& src)
 	{
-		if (src == _src)
+		if (img_src == src)
 			return;
-		src = _src;
+		img_src = src;
 		apply_src();
 		if (entity)
-			entity->component_data_changed(this, S<"src"_h>);
+			entity->component_data_changed(this, S<"img"_h>);
 	}
 
-	void cParticleEmitterPrivate::set_tile_name(const std::string& name)
+	void cParticleEmitterPrivate::set_tile(const std::string& name)
 	{
 		if (tile_name == name)
 			return;
 		tile_name = name;
 		apply_src();
 		if (entity)
-			entity->component_data_changed(this, S<"tile_name"_h>);
+			entity->component_data_changed(this, S<"tile"_h>);
 	}
 
 	void cParticleEmitterPrivate::apply_src()
@@ -33,12 +33,12 @@ namespace flame
 		iv = nullptr;
 		atlas = nullptr;
 
-		if (!s_renderer || src.empty())
+		if (!s_renderer || img_src.empty())
 			return;
 		auto device = graphics::Device::get_default();
-		if (src.extension() != L".atlas")
+		if (img_src.extension() != L".atlas")
 		{
-			auto img = graphics::Image::get(device, src.c_str(), false);
+			auto img = graphics::Image::get(device, img_src.c_str(), false);
 			fassert(img);
 			iv = img->get_view();
 
@@ -48,7 +48,7 @@ namespace flame
 		}
 		else
 		{
-			atlas = graphics::ImageAtlas::get(device, src.c_str());
+			atlas = graphics::ImageAtlas::get(device, img_src.c_str());
 			fassert(atlas);
 			iv = atlas->get_image()->get_view();
 

@@ -4,12 +4,12 @@
 
 namespace flame
 {
-	struct cController : Component
+	struct cCharacterController : Component
 	{
-		inline static auto type_name = "flame::cController";
+		inline static auto type_name = "flame::cCharacterController";
 		inline static auto type_hash = ch(type_name);
 
-		cController() :
+		cCharacterController() :
 			Component(type_name, type_hash)
 		{
 		}
@@ -30,6 +30,6 @@ namespace flame
 
 		virtual void move(const vec3& disp) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cController* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cCharacterController* create(void* parms = nullptr);
 	};
 }

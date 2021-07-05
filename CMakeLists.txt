@@ -6,7 +6,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_definitions(-W0 -std:c++latest)
 
-include("cmake_utils.cmake")
+include("utils.cmake")
 
 foreach(type ${CMAKE_CONFIGURATION_TYPES})
 	string(TOUPPER ${type} type_u)
@@ -112,7 +112,8 @@ else()
 	set(USE_PHYSX ON)
 endif()
 
-set(SHADER_DIR "${CMAKE_SOURCE_DIR}/assets/shaders")
+set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(SHADERS_DIR "${ASSETS_DIR}/shaders")
 
 add_subdirectory(source)
 add_subdirectory(tests)

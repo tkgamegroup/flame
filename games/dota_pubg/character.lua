@@ -12,8 +12,8 @@ function make_character(entity, group, stats)
 
 		entity = entity,
 		node = entity.find_component("cNode"),
-		animation = entity.find_component("cAnimation"),
-		controller = entity.find_component("cController"),
+		armature = entity.find_component("cArmature"),
+		controller = entity.find_component("cCharacterController"),
 		pos = vec3(0),
 		yaw = 0,
 		dir = vec3(0, 0, 1),
@@ -96,8 +96,8 @@ function make_character(entity, group, stats)
 
 	character.change_state = function(s, t)
 		if s == "idle" then
-			character.animation.play(0)
-			character.animation.set_loop(true)
+			character.armature.play(0)
+			character.armature.set_loop(true)
 			character.attacking = false
 		elseif s == "move_to" then
 			character.target_pos = t
@@ -114,7 +114,7 @@ function make_character(entity, group, stats)
 		character.state = s
 	end
 
-	character.animation.add_callback(function(frame)
+	character.armature.add_callback(function(frame)
 		if character.attacking then
 			if frame == 12 then
 				if character.target and not character.target.dead then
@@ -128,7 +128,7 @@ function make_character(entity, group, stats)
 				character.attacking = false
 			end
 		end
-	end, character.animation)
+	end, character.armature)
 
 	character.receive_damage = function(src, value)
 		character.last_hit_character = src
@@ -184,8 +184,8 @@ function make_character(entity, group, stats)
 			return true
 		end
 
-		character.animation.play(1)
-		character.animation.set_loop(true)
+		character.armature.play(1)
+		character.armature.set_loop(true)
 		character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 		return false
 	end
@@ -201,14 +201,14 @@ function make_character(entity, group, stats)
 				if character.attack_tick == 0 then
 					character.attack_tick = character.attack_interval
 					character.attacking = true
-					character.animation.play(2)
-					character.animation.set_loop(false)
+					character.armature.play(2)
+					character.armature.set_loop(false)
 				else
-					character.animation.stop_at(2, -1)
+					character.armature.stop_at(2, -1)
 				end
 			else
-				character.animation.play(1)
-				character.animation.set_loop(true)
+				character.armature.play(1)
+				character.armature.set_loop(true)
 				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 			end
 		end

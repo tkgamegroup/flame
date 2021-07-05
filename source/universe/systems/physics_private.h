@@ -15,7 +15,7 @@ namespace flame
 		};
 
 		std::vector<cRigidPrivate*> rigids;
-		std::vector<cControllerPrivate*> controllers;
+		std::vector<cCharacterControllerPrivate*> controllers;
 		cElementPrivate* visualization_layer = nullptr;
 		Visualizer visualizer;
 

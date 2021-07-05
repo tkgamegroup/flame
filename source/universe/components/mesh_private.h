@@ -15,7 +15,7 @@ namespace flame
 		ShadingFlags shading_flags = ShadingMaterial;
 
 		cNodePrivate* node = nullptr;
-		cAnimationPrivate* pani = nullptr;
+		cArmaturePrivate* pani = nullptr;
 		sRendererPrivate* s_renderer = nullptr;
 
 		int mesh_id = -1;

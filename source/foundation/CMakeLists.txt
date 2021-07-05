@@ -1,5 +1,5 @@
-file(GLOB SOURCES "*.h*" "*.c*")
-add_library(flame_foundation SHARED ${SOURCES})
+file(GLOB source_files "*.h*" "*.c*")
+add_library(flame_foundation SHARED ${source_files})
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 set_target_properties(flame_foundation PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)

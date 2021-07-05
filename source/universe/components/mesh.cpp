@@ -4,7 +4,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "mesh_private.h"
-#include "animation_private.h"
+#include "armature_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -84,7 +84,7 @@ namespace flame
 		}
 
 		if (model->get_bones_count() > 0)
-			pani = entity->parent->get_component_t<cAnimationPrivate>();
+			pani = entity->parent->get_component_t<cArmaturePrivate>();
 	}
 
 	void cMeshPrivate::draw(sRendererPtr s_renderer)
