@@ -43,7 +43,7 @@ namespace flame
 		if (eul == e)
 			return;
 		eul = e;
-		rot = mat3(eulerAngleYXZ(glm::radians(e.x), glm::radians(e.y), glm::radians(e.z)));
+		rot = mat3(eulerAngleYXZ(radians(e.x), radians(e.y), radians(e.z)));
 		rot_dirty = false;
 		qut_dirty = true;
 		mark_transform_dirty();

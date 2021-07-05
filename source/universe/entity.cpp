@@ -857,7 +857,6 @@ namespace flame
 			}
 			return false;
 		};
-
 		auto ename = std::string(n_src.name());
 		if (ename != "entity")
 		{

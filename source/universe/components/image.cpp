@@ -1,7 +1,6 @@
 #include "../../graphics/device.h"
 #include "../../graphics/image.h"
 #include "../world_private.h"
-#include "element_private.h"
 #include "image_private.h"
 #include "../systems/renderer_private.h"
 

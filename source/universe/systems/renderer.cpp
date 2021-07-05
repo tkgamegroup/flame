@@ -1460,12 +1460,12 @@ namespace flame
 		auto pidx = nd.buf_ptc_idx.stag(count * 6);
 		for (auto i = 0; i < count; i++)
 		{
-			pidx[i * 6 + 0] = base + 0;
-			pidx[i * 6 + 1] = base + 2;
-			pidx[i * 6 + 2] = base + 1;
-			pidx[i * 6 + 3] = base + 0;
-			pidx[i * 6 + 4] = base + 3;
-			pidx[i * 6 + 5] = base + 2;
+			pidx[i * 6 + 0] = base + i * 4 + 0;
+			pidx[i * 6 + 1] = base + i * 4 + 2;
+			pidx[i * 6 + 2] = base + i * 4 + 1;
+			pidx[i * 6 + 3] = base + i * 4 + 0;
+			pidx[i * 6 + 4] = base + i * 4 + 3;
+			pidx[i * 6 + 5] = base + i * 4 + 2;
 		}
 
 		nd.particles.back().second += count;
