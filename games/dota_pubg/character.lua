@@ -325,10 +325,10 @@ function make_character(entity, group, stats)
 		if slot then
 			local skill_type = SKILL_LIST[slot.id]
 			if skill_type.type == "ACTIVE" then
-				if slot.cd == 0 and skill_type.data.cast_mana <= character.MP and 
+				if slot.cd == 0 and skill_type.data.cost_mana <= character.MP and 
 				distance_2(target.pos.to_flat(), character.pos.to_flat()) <= skill_type.data.distance + 1 then
 					slot.cd = skill_type.data.cool_down
-					character.MP = character.MP - skill_type.data.cast_mana
+					character.MP = character.MP - skill_type.data.cost_mana
 					skill_type.data.logic(character, target)
 				end
 			end

@@ -111,6 +111,15 @@ function make_obj(o, n)
 	end
 end
 
+function array_find(arr, val)
+	for _, v in ipairs(arr) do
+        if v == val then
+            return true
+        end
+    end
+    return false
+end
+
 function vec2(x, y)
 	if type(x) == "table" then
 		y = x.y

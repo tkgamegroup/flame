@@ -15,13 +15,15 @@ hovering_entity_lis = 0
 hovering_obj = nil
 hovering_pos = vec3(0)
 select_mode = false
+select_mode_filters = nil
 select_mode_callback = nil
 
 local ui_mouse_icon = scene.find_child("mouse_icon")
 ui_mouse_icon.element = ui_mouse_icon.find_component("cElement")
 ui_mouse_icon.image = ui_mouse_icon.find_component("cImage")
 
-function enter_select_mode(callback)
+function enter_select_mode(filters, callback)
+	select_mode_filters = filters
 	select_mode_callback = callback
 	if not select_mode then
 		ui_mouse_icon.image.set_tile("select")
@@ -31,14 +33,14 @@ function enter_select_mode(callback)
 	end
 end
 
-function exit_select_mode(target)
+function exit_select_mode(tag, target)
 	if select_mode then
 		ui_mouse_icon.image.set_tile("mouse")
 		ui_mouse_icon.element.set_pivotx(0.0)
 		ui_mouse_icon.element.set_pivoty(0.0)
 		select_mode = false
 		if select_mode_callback and target then
-			select_mode_callback(target)
+			select_mode_callback(tag, target)
 		end
 	end
 end
@@ -48,13 +50,49 @@ scene_receiver = scene.find_component("cReceiver")
 local e_keyboardkey = find_enum("KeyboardKey")
 local e_key_ctrl = e_keyboardkey["Ctrl"]
 local e_key_alt = e_keyboardkey["Alt"]
+local e_key_a = e_keyboardkey["A"]
+local e_key_s = e_keyboardkey["S"]
+local e_key_g = e_keyboardkey["G"]
 local e_key_q = e_keyboardkey["Q"]
+local e_key_w = e_keyboardkey["W"]
+local e_key_e = e_keyboardkey["E"]
+local e_key_r = e_keyboardkey["R"]
+local e_key_d = e_keyboardkey["D"]
+local e_key_f = e_keyboardkey["F"]
+local e_key_0 = e_keyboardkey["0"]
+local e_key_1 = e_keyboardkey["1"]
+local e_key_2 = e_keyboardkey["2"]
+local e_key_3 = e_keyboardkey["3"]
+local e_key_4 = e_keyboardkey["4"]
+local e_key_5 = e_keyboardkey["5"]
+local e_key_6 = e_keyboardkey["6"]
+local e_key_7 = e_keyboardkey["7"]
+local e_key_8 = e_keyboardkey["8"]
+local e_key_9 = e_keyboardkey["9"]
 
 scene_receiver.add_key_down_listener(function(key)
 	if key == e_key_ctrl then
 		ctrl_pressing = true
 	elseif key == e_key_alt then
 		alt_pressing = true
+	elseif key == e_key_a then
+		enter_select_mode({ TAG_TERRAIN, TAG_CHARACTER_G2 }, function(tag, target)
+			if tag == TAG_TERRAIN then
+				main_player.change_state("attack_on_pos", target)
+				auto_attack = true
+			else
+				main_player.change_state("attack_target", target)
+				auto_attack = true
+			end
+		end)
+	elseif key == e_key_g then
+		enter_select_mode({ TAG_TERRAIN, TAG_ITEM_OBJ }, function(tag, target)
+			if tag == TAG_TERRAIN then
+				main_player.change_state("pick_up_on_pos", target)
+			else
+				main_player.change_state("pick_up", target)
+			end
+		end)
 	elseif key == e_key_q then
 		skill_click(1)
 	end
@@ -73,16 +111,25 @@ scene_receiver.add_mouse_left_down_listener(function()
 		if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
 		
 		if not hovering_obj then return end
-		if hovering_obj.name == "terrain" then return end
-		if hovering_obj.tag == TAG_CHARACTER_G2 then
-			exit_select_mode(hovering_obj)
+
+		if hovering_obj.name == "terrain" and array_find(select_mode_filters, TAG_TERRAIN) then 
+			exit_select_mode(TAG_TERRAIN, hovering_pos)
+			return 
+		end
+		
+		if hovering_obj.tag == TAG_CHARACTER_G1 and array_find(select_mode_filters, TAG_CHARACTER_G1) then
+			exit_select_mode(TAG_CHARACTER_G1, hovering_obj)
+		end
+		if hovering_obj.tag == TAG_CHARACTER_G2 and array_find(select_mode_filters, TAG_CHARACTER_G2) then
+			exit_select_mode(TAG_CHARACTER_G2, hovering_obj)
 		end
 	end
 end)
 
+local auto_attack = false
 scene_receiver.add_mouse_right_down_listener(function()
 	if select_mode then 
-		exit_select_mode(nil) 
+		exit_select_mode(nil, nil) 
 		return
 	end
 
@@ -90,21 +137,18 @@ scene_receiver.add_mouse_right_down_listener(function()
 
 	if not hovering_obj then return end
 	if hovering_obj.name == "terrain" then
-		if alt_pressing then
-			main_player.change_state("attack_on_pos", hovering_pos)
-		elseif ctrl_pressing then
-			main_player.change_state("pick_up_on_pos", hovering_pos)
-		else
-			main_player.change_state("move_to", hovering_pos)
-		end
+		main_player.change_state("move_to", hovering_pos)
+		auto_attack = false
 	else
 		local tag = hovering_obj.tag
 		if tag == TAG_CHARACTER_G1 then
 
 		elseif tag == TAG_CHARACTER_G2 then
 			main_player.change_state("attack_target", hovering_obj)
+			auto_attack = true
 		elseif tag == TAG_ITEM_OBJ then
 			main_player.change_state("pick_up", hovering_obj)
+			auto_attack = false
 		end
 	end
 end)
@@ -182,8 +226,17 @@ obj_root.add_event(function()
 
 	local mpos = s_dispatcher.get_mouse_pos()
 	ui_mouse_icon.element.set_pos(mpos)
-
+	
 	local state = main_player.state
+
+	if state == "idle" and auto_attack then
+		local target = main_player.find_closest_obj(TAG_CHARACTER_G2, 5)
+		if target and not target.dead then
+			main_player.change_state("attack_target", target)
+		end
+	end
+
+	-- action tips
 	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
 		ui_action_tip1.set_visible(true)
 		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos))
@@ -397,9 +450,12 @@ function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
 		local skill_type = SKILL_LIST[slot.id]
-		if skill_type.type == "ACTIVE" and skill_type.data.cast_mana <= main_player.MP then
+		if skill_type.type == "ACTIVE" and skill_type.data.cost_mana <= main_player.MP then
 			if skill_type.data.target_type ~= "NULL" then
-				enter_select_mode(function(target)
+				local filters = nil
+				if skill_type.data.target_type == "ENEMY" then filters = { TAG_CHARACTER_G2 }
+				end
+				enter_select_mode(filters, function(tag, target)
 					main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.data.distance })
 				end)
 			else
