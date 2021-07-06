@@ -164,19 +164,19 @@ obj_root.add_event(function()
 	end
 
 	-- process projectiles
-	for _, prjtl in pairs(projectiles) do
-		prjtl.pos = prjtl.node.get_global_pos()
+	for _, pt in pairs(projectiles) do
+		pt.pos = pt.node.get_global_pos()
 
-		local tpos = prjtl.target.pos + vec3(0, prjtl.target.height * 0.8, 0)
-		local l, d = length_and_dir_3(tpos - prjtl.pos)
+		local tpos = pt.target.pos + vec3(0, pt.target.height * 0.8, 0)
+		local l, d = length_and_dir_3(tpos - pt.pos)
 		if d then
-			prjtl.node.look_at(tpos)
+			pt.node.look_at(tpos)
 		end
 
-		if l <= prjtl.speed then
-			prjtl.die()
+		if l <= pt.speed then
+			pt.die()
 		else
-			prjtl.node.add_pos(d * prjtl.speed)
+			pt.node.add_pos(d * pt.speed)
 		end
 	end
 
@@ -219,7 +219,7 @@ obj_root.add_event(function()
 			ui_tip.data = p
 			ui_tip.element = ui_tip.find_component("cElement")
 			ui_tip.text = ui_tip.find_component("cText")
-			__ui.add_child(ui_tip)
+			__ui_pop.add_child(ui_tip)
 			return true
 		end
 		if ui_tip.data ~= p then
@@ -343,7 +343,7 @@ obj_root.add_event(function()
 
 	if not has_tip then
 		if ui_tip then
-			__ui.remove_child(ui_tip)
+			__ui_pop.remove_child(ui_tip)
 			ui_tip = nil
 		end
 	end
@@ -400,10 +400,10 @@ function skill_click(idx)
 		if skill_type.type == "ACTIVE" and skill_type.data.cast_mana <= main_player.MP then
 			if skill_type.data.target_type ~= "NULL" then
 				enter_select_mode(function(target)
-					main_player.use_skill(idx, target)
+					main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.data.distance })
 				end)
 			else
-				main_player.use_skill(idx)
+				main_player.change_state("use_skill", nil, { idx=idx })
 			end
 		end
 	end
@@ -490,7 +490,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	if not attributes_btn.wnd_openning then
 		attributes_btn.wnd = create_entity("attributes")
 		attributes_btn.wnd.find_driver("dWindow").add_close_listener(function()
-			__ui.remove_child(attributes_btn.wnd)
+			__ui_pop.remove_child(attributes_btn.wnd)
 			attributes_btn.wnd = nil
 		end)
 
@@ -579,7 +579,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 
 		update()
 
-		__ui.add_child(attributes_btn.wnd)
+		__ui_pop.add_child(attributes_btn.wnd)
 	end
 end)
 

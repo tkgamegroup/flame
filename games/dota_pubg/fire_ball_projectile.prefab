@@ -3,7 +3,7 @@
     <eParticleEmitter pos="200,55,200" img="D:\assets\Fireball - Effect\Effects_Fire_0_01.png" 
                     ptc_num_max="6" emt_intv="3" emt_prob="1.0" emt_num_min="1" emt_num_max="1" 
                     emt_ttl_min="216000" emt_ttl_max="216000" 
-                    emt_sz_min="0.5,0.25" emt_sz_max="0.5,0.25" 
+                    emt_sz_min="1.5,0.25" emt_sz_max="1.5,0.25" 
                     emt_rot_min="90,0,0" emt_rot_max="90,0,0"
                     emt_mov_dir_min="0,0,0" emt_mov_dir_max="0,0,0" 
                     emt_mov_sp_min="0" emt_mov_sp_max="0" 

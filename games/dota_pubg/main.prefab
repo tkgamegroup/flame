@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement alignx="MinMax" aligny="MinMax">
-    <cScript>
-        __ui = entity
-    </cScript>
     <eElement>
       <cScript>
          __ui_scene = entity
@@ -68,6 +65,11 @@
             </eElement>
           </eElement>
         </eElement>
+    </eElement>
+    <eElement alignx="MinMax" aligny="MinMax">
+      <cScript>
+          __ui_pop = entity
+      </cScript>
     </eElement>
     <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>

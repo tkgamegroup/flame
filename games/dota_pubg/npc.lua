@@ -56,9 +56,9 @@ function make_npc(e, ID)
 	end
 
 	npc.on_die = function()
-		if npc.last_hit_character then
-			if npc.last_hit_character.on_reward then
-				npc.last_hit_character.on_reward(npc.drop_gold, npc.drop_exp)
+		if npc.last_receive_damage_src then
+			if npc.last_receive_damage_src.on_reward then
+				npc.last_receive_damage_src.on_reward(npc.drop_gold, npc.drop_exp)
 				for i=1, #npc.drop_items, 1 do
 					local item = npc.drop_items[i]
 					if math.random() < item.prob then

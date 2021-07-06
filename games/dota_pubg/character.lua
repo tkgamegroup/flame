@@ -15,8 +15,6 @@ function make_character(entity, group, stats)
 		armature = entity.find_component("cArmature"),
 		controller = entity.find_component("cCharacterController"),
 		pos = vec3(0),
-		yaw = 0,
-		dir = vec3(0, 0, 1),
 
 		radius = 0.28,
 		height = 1.8,
@@ -24,12 +22,13 @@ function make_character(entity, group, stats)
 		attack_interval = 100,
 
 		state = "null",
+		state_date = nil,
 		target_pos = vec3(0),
-		stuck_tick = 0,
 		target = nil,
-		attack_tick = 0,
+		stuck_tick = 0,
 		attacking = false,
-		last_hit_character = nil,
+		attack_tick = 0,
+		last_receive_damage_src = nil,
 
 		on_tick = nil,
 		on_die = nil,
@@ -50,6 +49,21 @@ function make_character(entity, group, stats)
 	
 	entity.set_tag(character.tag)
 	character.pos = character.node.get_global_pos()
+
+	character.skills = {}
+	for i=1, SKILL_SLOTS_COUNT, 1 do
+		character.skills[i] = nil
+	end
+
+	character.equipments = {}
+	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
+		character.equipments[i] = 0
+	end
+
+	character.items = {}
+	for i=1, ITEM_SLOTS_COUNT, 1 do
+		character.items[i] = nil
+	end
 
 	character.ui = create_entity("character_hud")
 	character.ui.set_visible(false)
@@ -77,18 +91,13 @@ function make_character(entity, group, stats)
 		character.sleeping = false
 	end
 
-	character.update_dir = function()
-		character.node.set_euler(vec3(character.yaw, 0, 0))
-		character.dir = character.node.get_local_dir(2)
-	end
-
 	character.get_enemy_group = function()
 		if character.group == 1 then return 2 end
 		if character.group == 2 then return 1 end
 		return nil
 	end
 
-	character.change_state = function(s, t)
+	character.change_state = function(s, t, d)
 		if s == "idle" then
 			character.armature.play(0)
 			character.armature.set_loop(true)
@@ -102,6 +111,13 @@ function make_character(entity, group, stats)
 				character.attacking = false
 			end
 			character.target = t
+		elseif s == "use_skill_to_target" then
+			character.attacking = false
+			character.target = t
+			character.state_date = d
+		elseif s == "pick_up" then
+			character.target = t
+			character.attacking = false
 		elseif character.on_change_extra_state then
 			character.on_change_extra_state(s, t)
 		end
@@ -125,7 +141,7 @@ function make_character(entity, group, stats)
 	end, character.armature)
 
 	character.receive_damage = function(src, value)
-		character.last_hit_character = src
+		character.last_receive_damage_src = src
 
 		local c = camera.camera
 		local p1 = c.world_to_screen(character.pos + vec3(0, 1.8, 0))
@@ -152,6 +168,13 @@ function make_character(entity, group, stats)
 		end
 	end
 
+	character.receive_mana = function(src, value)
+		character.MP = character.MP + value
+		if character.MP > character.MP_MAX then
+			character.MP = character.MP_MAX
+		end
+	end
+
 	character.find_closest_obj = function(tag, r)
 		local arr = flame_malloc(8)
 		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, arr, 1, tag)
@@ -170,8 +193,7 @@ function make_character(entity, group, stats)
 		local v = tp - character.pos.to_flat()
 		local l, d = length_and_dir_2(v)
 		if d then -- aim
-			character.yaw = math.atan(d.x, d.y) / 3.14 * 180
-			character.update_dir()
+			character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
 		end
 
 		if l <= character.speed + r then
@@ -187,8 +209,7 @@ function make_character(entity, group, stats)
 	character.attack_target = function()
 		local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
 		if d then -- aim
-			character.yaw = math.atan(d.x, d.y) / 3.14 * 180
-			character.update_dir()
+			character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
 		end
 		if not character.attacking then
 			if l <= character.radius + character.target.radius + 1 then
@@ -227,6 +248,7 @@ function make_character(entity, group, stats)
 			character.recover_tick = character.recover_tick - 1
 		else
 			character.receive_heal(character, character.HP_RECOVER)
+			character.receive_mana(character, character.MP_RECOVER)
 			character.recover_tick = 60
 		end
 
@@ -248,6 +270,32 @@ function make_character(entity, group, stats)
 				character.target = nil
 				character.change_state("idle")
 			end
+		elseif character.state == "pick_up" then
+			if not character.target or character.target.dead then
+				character.change_state("idle")
+			else
+				if character.pick_up_target() then
+					character.change_state("idle")
+				end
+			end
+		elseif character.state == "use_skill_to_target" then
+			if character.target and not character.target.dead then
+				local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
+				if d then -- aim
+					character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
+				end
+				if l <= character.state_date.dist then
+					character.use_skill(character.state_date.idx, character.target)
+					character.change_state("idle")
+				else
+					character.armature.play(1)
+					character.armature.set_loop(true)
+					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+				end
+			else
+				character.target = nil
+				character.change_state("idle")
+			end
 		elseif character.on_process_extra_state then
 			character.on_process_extra_state()
 		end
@@ -256,6 +304,118 @@ function make_character(entity, group, stats)
 
 		if character.on_tick then
 			character.on_tick()
+		end
+	end
+
+	character.learn_skill = function(id)
+		for i=1, SKILL_SLOTS_COUNT, 1 do
+			if not character.skills[i] then
+				character.skills[i] = { id=id, cd=0 }
+				if character == main_player then
+					update_ui_skill_slots()
+				end
+				return true
+			end
+		end
+		return false
+	end
+
+	character.use_skill = function(idx, target)
+		local slot = character.skills[idx]
+		if slot then
+			local skill_type = SKILL_LIST[slot.id]
+			if skill_type.type == "ACTIVE" then
+				if slot.cd == 0 and skill_type.data.cast_mana <= character.MP and 
+				distance_2(target.pos.to_flat(), character.pos.to_flat()) <= skill_type.data.distance + 1 then
+					slot.cd = skill_type.data.cool_down
+					character.MP = character.MP - skill_type.data.cast_mana
+					skill_type.data.logic(character, target)
+				end
+			end
+		end
+	end
+
+	character.receive_item = function(id, num)
+		local item_type = ITEM_LIST[id]
+		local max_num = item_type.stack_num
+		local ori_num = num
+		while num > 0 do
+			for i=1, ITEM_SLOTS_COUNT, 1 do
+				local slot = character.items[i]
+				if slot and slot.id == id then
+					local n = max_num - slot.num
+					if n >= num then
+						slot.num = slot.num + num
+						num = 0
+						break
+					else
+						num = num - n
+						slot.num = slot.num + n
+					end
+				end
+			end
+			if num == 0 then break end
+			for i=1, ITEM_SLOTS_COUNT, 1 do
+				local slot = character.items[i]
+				if not slot then
+					slot = { id=id, num=0 }
+					character.items[i] = slot
+					if max_num >= num then
+						slot.num = max_num
+						num = 0
+						break
+					else
+						num = num - max_num
+						slot.num = max_num
+					end
+					break
+				end
+			end
+		end
+		
+		if character == main_player and num ~= ori_num then
+			update_ui_item_slots()
+		end
+		return num
+	end
+
+	character.use_item = function(idx, target)
+		local slot = character.items[idx]
+		if slot then
+			local item_type = ITEM_LIST[slot.id]
+			if item_type.type == "EQUIPMENT" then
+				local euip_slot = item_type.data.slot
+
+				local ori_id = character.equipments[euip_slot]
+				character.equipments[euip_slot] = slot.id
+				ui_equipment_slots[euip_slot].image.set_tile(item_type.name)
+
+				character.items[idx] = nil
+
+				if ori_id ~= 0 then
+					character.receive_item(ori_id, 1)
+				end
+				character.calc_stats()
+
+				if character == main_player then
+					update_ui_item_slots()
+					update_ui_equipment_slots()
+				end
+			end
+		end
+	end
+
+	character.use_equipment = function(idx)
+		local equipment = character.equipments[idx]
+		if equipment ~= 0 then
+			if character.receive_item(equipment, 1) == 0 then
+				character.equipments[idx] = 0
+				character.calc_stats()
+
+				if character == main_player then
+					update_ui_equipment_slots()
+				end
+			end
 		end
 	end
 

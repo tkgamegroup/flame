@@ -17,28 +17,10 @@ function make_player(e)
 	player.PHY_DMG = 10
 	player.MAG_DMG = 10
 	player.attribute_points = 0
-
-	player.skills = {}
-	for i=1, SKILL_SLOTS_COUNT, 1 do
-		player.skills[i] = nil
-	end
-
-	player.equipments = {}
-	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
-		player.equipments[i] = 0
-	end
-
-	player.items = {}
-	for i=1, ITEM_SLOTS_COUNT, 1 do
-		player.items[i] = nil
-	end
 	
 	player.on_change_extra_state = function(s, t)
 		if s == "attack_on_pos" then
 			player.target_pos = t
-		elseif s == "pick_up" then
-			player.target = t
-			player.attacking = false
 		elseif s == "pick_up_on_pos" then
 			player.target_pos = t
 			player.attacking = false
@@ -57,15 +39,7 @@ function make_player(e)
 	end
 
 	player.on_process_extra_state = function()
-		if player.state == "pick_up" then
-			if not player.target or player.target.dead then
-				player.change_state("idle")
-			else
-				if player.pick_up_target() then
-					player.change_state("idle")
-				end
-			end
-		elseif player.state == "attack_on_pos" then
+		if player.state == "attack_on_pos" then
 			if not player.attacking then
 				player.target = player.find_closest_obj(player.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
 			end
@@ -115,117 +89,6 @@ function make_player(e)
 			player.INT = player.INT + diff
 			player.calc_stats()
 			player.attribute_points = player.attribute_points + diff * 5
-		end
-	end
-
-	player.learn_skill = function(id)
-		for i=1, SKILL_SLOTS_COUNT, 1 do
-			if not player.skills[i] then
-				player.skills[i] = { id=id, cd=0 }
-				if player == main_player then
-					update_ui_skill_slots()
-				end
-				return true
-			end
-		end
-		return false
-	end
-
-	player.use_skill = function(idx, target)
-		local slot = player.skills[idx]
-		if slot then
-			local skill_type = SKILL_LIST[slot.id]
-			if skill_type.type == "ACTIVE" then
-				if slot.cd == 0 and skill_type.data.cast_mana <= player.MP then
-					slot.cd = skill_type.data.cool_down
-					player.MP = player.MP - skill_type.data.cast_mana
-					skill_type.data.logic(player, target)
-				end
-			end
-		end
-	end
-
-	player.receive_item = function(id, num)
-		local item_type = ITEM_LIST[id]
-		local max_num = item_type.stack_num
-		local ori_num = num
-		while num > 0 do
-			for i=1, ITEM_SLOTS_COUNT, 1 do
-				local slot = player.items[i]
-				if slot and slot.id == id then
-					local n = max_num - slot.num
-					if n >= num then
-						slot.num = slot.num + num
-						num = 0
-						break
-					else
-						num = num - n
-						slot.num = slot.num + n
-					end
-				end
-			end
-			if num == 0 then break end
-			for i=1, ITEM_SLOTS_COUNT, 1 do
-				local slot = player.items[i]
-				if not slot then
-					slot = { id=id, num=0 }
-					player.items[i] = slot
-					if max_num >= num then
-						slot.num = max_num
-						num = 0
-						break
-					else
-						num = num - max_num
-						slot.num = max_num
-					end
-					break
-				end
-			end
-		end
-		
-		if player == main_player and num ~= ori_num then
-			update_ui_item_slots()
-		end
-		return num
-	end
-
-	player.use_item = function(idx, target)
-		local slot = player.items[idx]
-		if slot then
-			local item_type = ITEM_LIST[slot.id]
-			if item_type.type == "EQUIPMENT" then
-				local euip_slot = item_type.data.slot
-
-				local ori_id = player.equipments[euip_slot]
-				player.equipments[euip_slot] = slot.id
-				ui_equipment_slots[euip_slot].image.set_tile(item_type.name)
-
-				player.items[idx] = nil
-
-				if ori_id ~= 0 then
-					player.receive_item(ori_id, 1)
-				end
-				player.calc_stats()
-
-				if player == main_player then
-					update_ui_item_slots()
-					update_ui_equipment_slots()
-				end
-			end
-		end
-	end
-
-	player.use_equipment = function(idx)
-		local equipment = player.equipments[idx]
-		if equipment ~= 0 then
-			if player.receive_item(equipment, 1) == 0 then
-				player.equipments[idx] = 0
-				player.calc_stats()
-
-				if player == main_player then
-					update_ui_equipment_slots()
-				end
-			end
 		end
 	end
 
