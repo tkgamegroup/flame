@@ -48,12 +48,21 @@ namespace flame
 		if (eul == e)
 			return;
 		eul = e;
-		rot = mat3(eulerAngleYXZ(radians(e.x), radians(e.y), radians(e.z)));
-		rot_dirty = false;
+		rot_dirty = true;
 		qut_dirty = true;
 		mark_transform_dirty();
 		if (entity)
 			entity->component_data_changed(this, S<"euler"_h>);
+	}
+
+	void cNodePrivate::look_at(const vec3& t)
+	{
+		update_transform();
+		rot = inverse(lookAt(vec3(0.f), t - g_pos, vec3(0.f, 1.f, 0.f)));
+		rot_dirty = false;
+		qut_dirty = true;
+		eul_dirty = true;
+		mark_transform_dirty();
 	}
 
 	vec3 cNodePrivate::get_local_dir(uint idx)
@@ -172,7 +181,12 @@ namespace flame
 		{
 			rot_dirty = false;
 
-			rot = mat3(qut);
+			if (!qut_dirty)
+				rot = mat3(qut);
+			else if (!eul_dirty)
+				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+			else
+				fassert(0);
 		}
 	}
 

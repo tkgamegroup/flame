@@ -53,6 +53,8 @@ namespace flame
 		vec3 get_scale() const override { return scl; }
 		void set_scale(const vec3 & scale) override;
 
+		void look_at(const vec3& t) override;
+
 		vec3 get_local_dir(uint idx) override;
 
 		vec3 get_global_pos() override;
@@ -154,7 +156,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -181,7 +183,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -203,7 +205,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -230,7 +232,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -295,7 +297,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (e->tag & filter_tag) != filter_tag)
+				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
 				if (is_AABB_in_frustum(planes, obj->bounds))

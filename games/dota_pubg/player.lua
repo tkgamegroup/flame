@@ -135,10 +135,11 @@ function make_player(e)
 		local slot = player.skills[idx]
 		if slot then
 			local skill_type = SKILL_LIST[slot.id]
-			if skill_type == "ACTIVE" then
+			if skill_type.type == "ACTIVE" then
 				if slot.cd == 0 and skill_type.data.cast_mana <= player.MP then
 					slot.cd = skill_type.data.cool_down
 					player.MP = player.MP - skill_type.data.cast_mana
+					skill_type.data.logic(player, target)
 				end
 			end
 		end

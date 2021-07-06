@@ -36,6 +36,8 @@ namespace flame
 		virtual vec3 get_euler() const = 0;
 		virtual void set_euler(const vec3& e) = 0;
 
+		virtual void look_at(const vec3& t) = 0;
+
 		virtual vec3 get_local_dir(uint idx) = 0;
 
 		virtual vec3 get_global_pos() = 0;

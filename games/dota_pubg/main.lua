@@ -3,9 +3,10 @@ obj_root_n = obj_root.find_component("cNode")
 
 projectile_root = scene.find_child("projectile_root")
 
-TAG_CHARACTER_G1 = 1
-TAG_CHARACTER_G2 = 2
-TAG_ITEM_OBJ = 3
+TAG_TERRAIN = 1
+TAG_CHARACTER_G1 = 2
+TAG_CHARACTER_G2 = 3
+TAG_ITEM_OBJ = 4
 
 ctrl_pressing = false
 alt_pressing = false
@@ -14,21 +15,32 @@ hovering_entity_lis = 0
 hovering_obj = nil
 hovering_pos = vec3(0)
 select_mode = false
+select_mode_callback = nil
 
 local ui_mouse_icon = scene.find_child("mouse_icon")
 ui_mouse_icon.element = ui_mouse_icon.find_component("cElement")
 ui_mouse_icon.image = ui_mouse_icon.find_component("cImage")
 
-function enter_select_mode()
-	ui_mouse_icon.image.set_tile("select")
-	ui_mouse_icon.element.set_pivotx(0.5)
-	ui_mouse_icon.element.set_pivoty(0.5)
+function enter_select_mode(callback)
+	select_mode_callback = callback
+	if not select_mode then
+		ui_mouse_icon.image.set_tile("select")
+		ui_mouse_icon.element.set_pivotx(0.5)
+		ui_mouse_icon.element.set_pivoty(0.5)
+		select_mode = true
+	end
 end
 
-function exit_select_mode()
-	ui_mouse_icon.image.set_tile("mouse")
-	ui_mouse_icon.element.set_pivotx(0.0)
-	ui_mouse_icon.element.set_pivoty(0.0)
+function exit_select_mode(target)
+	if select_mode then
+		ui_mouse_icon.image.set_tile("mouse")
+		ui_mouse_icon.element.set_pivotx(0.0)
+		ui_mouse_icon.element.set_pivoty(0.0)
+		select_mode = false
+		if select_mode_callback and target then
+			select_mode_callback(target)
+		end
+	end
 end
 
 scene_receiver = scene.find_component("cReceiver")
@@ -36,12 +48,15 @@ scene_receiver = scene.find_component("cReceiver")
 local e_keyboardkey = find_enum("KeyboardKey")
 local e_key_ctrl = e_keyboardkey["Ctrl"]
 local e_key_alt = e_keyboardkey["Alt"]
+local e_key_q = e_keyboardkey["Q"]
 
 scene_receiver.add_key_down_listener(function(key)
 	if key == e_key_ctrl then
 		ctrl_pressing = true
 	elseif key == e_key_alt then
 		alt_pressing = true
+	elseif key == e_key_q then
+		skill_click(1)
 	end
 end)
 
@@ -53,10 +68,27 @@ scene_receiver.add_key_up_listener(function(key)
 	end
 end)
 
-scene_receiver.add_mouse_right_down_listener(function()
-	if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
-	if not hovering_obj then return end
+scene_receiver.add_mouse_left_down_listener(function()
+	if select_mode then 
+		if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
+		
+		if not hovering_obj then return end
+		if hovering_obj.name == "terrain" then return end
+		if hovering_obj.tag == TAG_CHARACTER_G2 then
+			exit_select_mode(hovering_obj)
+		end
+	end
+end)
 
+scene_receiver.add_mouse_right_down_listener(function()
+	if select_mode then 
+		exit_select_mode(nil) 
+		return
+	end
+
+	if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
+
+	if not hovering_obj then return end
 	if hovering_obj.name == "terrain" then
 		if alt_pressing then
 			main_player.change_state("attack_on_pos", hovering_pos)
@@ -116,11 +148,6 @@ local exp_text = character_panel.find_child("exp_text").find_component("cText")
 
 local target = { pos = vec3(220, 60, 220) }
 
-local e = create_entity("fire_ball_projectile")
-e.set_name("projectile_"..tostring(math.random(1, 10000)))
-projectile_root.add_child(e)
-make_projectile(e, target, 0.05).node.set_pos(vec3(200, 60, 200))
-
 obj_root.add_event(function()
 	-- process characters
 	for g=1, 2, 1 do
@@ -140,9 +167,10 @@ obj_root.add_event(function()
 	for _, prjtl in pairs(projectiles) do
 		prjtl.pos = prjtl.node.get_global_pos()
 
-		local l, d = length_and_dir_3(prjtl.target.pos - prjtl.pos)
+		local tpos = prjtl.target.pos + vec3(0, prjtl.target.height * 0.8, 0)
+		local l, d = length_and_dir_3(tpos - prjtl.pos)
 		if d then
-			prjtl.node.set_euler(vec3(math.atan(d.x, d.z) / 3.14 * 180 - 90, 0, math.atan(d.y, d.z) / 3.14 * 180))
+			prjtl.node.look_at(tpos)
 		end
 
 		if l <= prjtl.speed then
@@ -266,9 +294,9 @@ obj_root.add_event(function()
 				else
 					local tag = hovering_entity.get_tag()
 					if tag == TAG_CHARACTER_G1 and name ~= "main_player" then
-						hovering_obj = characters[TAG_CHARACTER_G1][name]
+						hovering_obj = characters[1][name]
 					elseif tag == TAG_CHARACTER_G2 then
-						hovering_obj = characters[TAG_CHARACTER_G2][name]
+						hovering_obj = characters[2][name]
 					elseif tag == TAG_ITEM_OBJ then
 						hovering_obj = item_objs[name]
 					end
@@ -365,6 +393,22 @@ scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)
 ]]
 
+function skill_click(idx)
+	local slot = main_player.skills[idx]
+	if slot then
+		local skill_type = SKILL_LIST[slot.id]
+		if skill_type.type == "ACTIVE" and skill_type.data.cast_mana <= main_player.MP then
+			if skill_type.data.target_type ~= "NULL" then
+				enter_select_mode(function(target)
+					main_player.use_skill(idx, target)
+				end)
+			else
+				main_player.use_skill(idx)
+			end
+		end
+	end
+end
+
 ui_skill_slots = {}
 for i=1, SKILL_SLOTS_COUNT, 1 do
 	local ui = scene.find_child("skill_slot"..i)
@@ -375,18 +419,7 @@ for i=1, SKILL_SLOTS_COUNT, 1 do
 	ui.image = icon.find_component("cImage")
 
 	ui.receiver.add_mouse_left_down_listener(function()
-		local slot = player.skills[idx]
-		if slot then
-			local skill_type = SKILL_LIST[slot.id]
-			if skill_type == "ACTIVE" then
-				if slot.cd == 0 and skill_type.data.cast_mana <= player.MP then
-					if skill_type.data.target_type ~= "NULL" then
-					else
-						main_player.use_skill(i)
-					end
-				end
-			end
-		end
+		skill_click(i)
 	end)
 end
 
@@ -550,16 +583,14 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
---[[
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
 	--e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
-	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 200, 190 + math.random() * 20))
-	local npc = make_npc(e, 1)
+	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 100, 190 + math.random() * 20))
+	make_npc(e, 1)
 	obj_root.add_child(e)
 end
-]]
 
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)
@@ -579,8 +610,8 @@ main_player.awake()
 obj_root.add_child(e)
 
 obj_root.add_event(function()
-	for n, char in pairs(characters[2]) do
-		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, 1) then
+	for _, char in pairs(characters[2]) do
+		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, TAG_CHARACTER_G2) then
 			char.awake()
 		else
 			char.sleep()

@@ -19,6 +19,7 @@ function make_character(entity, group, stats)
 		dir = vec3(0, 0, 1),
 
 		radius = 0.28,
+		height = 1.8,
 		speed = 0.06,
 		attack_interval = 100,
 
@@ -48,7 +49,6 @@ function make_character(entity, group, stats)
 	}
 	
 	entity.set_tag(character.tag)
-	entity.set_visible(false)
 	character.pos = character.node.get_global_pos()
 
 	character.ui = create_entity("character_hud")
@@ -70,17 +70,11 @@ function make_character(entity, group, stats)
 	end
 
 	character.sleep = function()
-		if not character.sleeping then
-			character.sleeping = true
-			character.entity.set_visible(false)
-		end
+		character.sleeping = true
 	end
 
 	character.awake = function()
-		if character.sleeping then
-			character.sleeping = false
-			character.entity.set_visible(true)
-		end
+		character.sleeping = false
 	end
 
 	character.update_dir = function()
