@@ -32,12 +32,12 @@
             <eButton name="settings_btn" text="Settings" />
           </eElement>
           <eElement layout_type="Horizontal">
-            <entity src="skill_slot" tip.text="Q" />
-            <entity src="skill_slot" tip.text="W" />
-            <entity src="skill_slot" tip.text="E" />
-            <entity src="skill_slot" tip.text="R" />
-            <entity src="skill_slot" tip.text="D" />
-            <entity src="skill_slot" tip.text="F" />
+            <entity name="skill_slot1" src="skill_slot" tip.text="Q" />
+            <entity name="skill_slot2" src="skill_slot" tip.text="W" />
+            <entity name="skill_slot3" src="skill_slot" tip.text="E" />
+            <entity name="skill_slot4" src="skill_slot" tip.text="R" />
+            <entity name="skill_slot5" src="skill_slot" tip.text="D" />
+            <entity name="skill_slot6" src="skill_slot" tip.text="F" />
           </eElement>
           <eElement layout_type="Vertical">
             <eElement layout_type="Horizontal">
@@ -69,6 +69,7 @@
           </eElement>
         </eElement>
     </eElement>
+    <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>
       <entity src="D:\assets\sky\sky" name="sky" />
       <eCamera name="camera">
@@ -76,11 +77,9 @@
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />
       <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
-      <eParticleEmitter pos="200,55,200" img="D:\assets\ptc.png">
-      </eParticleEmitter>
       <eNode name="obj_root" octree_length="400.0">
-        <eCube pos="195,52,195" scale="2.0,2.0,2.0" dynamic="false" />
       </eNode>
+      <eNode name="projectile_root" />
     </eNode>
   </eElement>
 </prefab>

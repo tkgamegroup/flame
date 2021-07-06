@@ -16,6 +16,11 @@ namespace flame
 			entity->component_data_changed(this, S<"pos"_h>);
 	}
 
+	void cNodePrivate::add_pos(const vec3& p)
+	{
+		set_pos(pos + p);
+	}
+
 	void cNodePrivate::set_quat(const quat& q)
 	{
 		if (qut == q)

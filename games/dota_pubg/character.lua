@@ -142,7 +142,7 @@ function make_character(entity, group, stats)
 		else
 			l = vec2(0, -2)
 		end
-		new_floating_item(p1, l, tostring(math.floor(value / 10.0)))
+		new_floating_tip(p1, l, tostring(math.floor(value / 10.0)))
 
 		if character.HP > value then
 			character.HP = character.HP - value

@@ -52,6 +52,7 @@ namespace flame
 			return;
 		playing = id;
 		frame = 0;
+		frame_accumulate = 0.f;
 		if (!event)
 		{
 			event = looper().add_event([](Capture& c) {
@@ -212,12 +213,21 @@ namespace flame
 		auto& a = actions[playing];
 		peeding_pose = { playing, frame };
 
-		frame++;
-		if (frame == a.total_frame)
-			frame = loop ? 0 : -1;
+		frame_accumulate += speed;
+		while (frame_accumulate > 1.f)
+		{
+			frame++;
+			if (frame == a.total_frame)
+				frame = loop ? 0 : -1;
 
-		for (auto& cb : callbacks)
-			cb->call(frame);
+			for (auto& cb : callbacks)
+				cb->call(frame);
+
+			if (frame == -1)
+				break;
+			
+			frame_accumulate -= 1.f;
+		}
 	}
 
 	void cArmaturePrivate::draw(sRendererPtr s_renderer)

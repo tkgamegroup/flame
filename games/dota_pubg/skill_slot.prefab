@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <eElement layout_type="Horizontal">
-    <eImage name="icon" size="48,48" auto_width="false" auto_height="false" border="1">
+    <eImage name="icon" padding="1,1,1,1" size="33,33" auto_width="false" auto_height="false" border="1" img="D:/assets/skill_icons/skill_icons.atlas">
       <cReceiver />
     </eImage>
     <eText name="tip" padding="2,2,0,0" font_size="16" font_color="255,255,255,180" align_in_layout="false" />

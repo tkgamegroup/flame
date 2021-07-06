@@ -34,8 +34,10 @@ namespace flame
 		std::vector<mat4> bone_mats;
 		std::vector<Action> actions;
 		bool loop = false;
+		float speed = 1.f;
 		int playing = -1;
 		int frame = -1;
+		float frame_accumulate = 0.f;
 		void* event = nullptr;
 		std::pair<int, int> peeding_pose = { -1, -1 };
 		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> callbacks;
@@ -57,6 +59,9 @@ namespace flame
 
 		bool get_loop() const override { return loop; }
 		void set_loop(bool l) override;
+
+		float get_speed() const override { return speed; }
+		void set_speed(float v) override { speed = v; }
 
 		void* add_callback(void (*callback)(Capture& c, int frame), const Capture& capture) override;
 		void remove_callback(void* cb) override;

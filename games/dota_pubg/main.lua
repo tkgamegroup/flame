@@ -1,6 +1,8 @@
 obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
 
+projectile_root = scene.find_child("projectile_root")
+
 TAG_CHARACTER_G1 = 1
 TAG_CHARACTER_G2 = 2
 TAG_ITEM_OBJ = 3
@@ -11,6 +13,23 @@ hovering_entity = { p=nil }
 hovering_entity_lis = 0
 hovering_obj = nil
 hovering_pos = vec3(0)
+select_mode = false
+
+local ui_mouse_icon = scene.find_child("mouse_icon")
+ui_mouse_icon.element = ui_mouse_icon.find_component("cElement")
+ui_mouse_icon.image = ui_mouse_icon.find_component("cImage")
+
+function enter_select_mode()
+	ui_mouse_icon.image.set_tile("select")
+	ui_mouse_icon.element.set_pivotx(0.5)
+	ui_mouse_icon.element.set_pivoty(0.5)
+end
+
+function exit_select_mode()
+	ui_mouse_icon.image.set_tile("mouse")
+	ui_mouse_icon.element.set_pivotx(0.0)
+	ui_mouse_icon.element.set_pivoty(0.0)
+end
 
 scene_receiver = scene.find_component("cReceiver")
 
@@ -67,11 +86,11 @@ ui_action_tip2.image = ui_action_tip2.find_component("cImage")
 
 local ui_tip = nil
 
-ui_floating_items = {}
-local e_floating_item = create_entity("floating_item")
-function new_floating_item(pos, sp, str)
+ui_floating_tips = {}
+local e_floating_tip = create_entity("floating_tip")
+function new_floating_tip(pos, sp, str)
 	local item = {}
-	item.e = e_floating_item.copy()
+	item.e = e_floating_tip.copy()
 	local text = item.e.find_component("cText")
 	text.set_text(str)
 	__ui_scene.add_child(item.e)
@@ -79,7 +98,7 @@ function new_floating_item(pos, sp, str)
 	item.element = item.e.find_component("cElement")
 	item.element.set_pos(pos)
 	item.tick = 15
-	table.insert(ui_floating_items, item)
+	table.insert(ui_floating_tips, item)
 end
 
 local e_shading_flags = find_enum("ShadingFlags")
@@ -95,7 +114,15 @@ local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
 
+local target = { pos = vec3(220, 60, 220) }
+
+local e = create_entity("fire_ball_projectile")
+e.set_name("projectile_"..tostring(math.random(1, 10000)))
+projectile_root.add_child(e)
+make_projectile(e, target, 0.05).node.set_pos(vec3(200, 60, 200))
+
 obj_root.add_event(function()
+	-- process characters
 	for g=1, 2, 1 do
 		for _, char in pairs(characters[g]) do
 			if not char.sleeping then
@@ -103,9 +130,30 @@ obj_root.add_event(function()
 			end
 		end
 	end
+
+	-- process item objs
 	for _, item in pairs(item_objs) do
 		item.pos = item.node.get_global_pos()
 	end
+
+	-- process projectiles
+	for _, prjtl in pairs(projectiles) do
+		prjtl.pos = prjtl.node.get_global_pos()
+
+		local l, d = length_and_dir_3(prjtl.target.pos - prjtl.pos)
+		if d then
+			prjtl.node.set_euler(vec3(math.atan(d.x, d.z) / 3.14 * 180 - 90, 0, math.atan(d.y, d.z) / 3.14 * 180))
+		end
+
+		if l <= prjtl.speed then
+			prjtl.die()
+		else
+			prjtl.node.add_pos(d * prjtl.speed)
+		end
+	end
+
+	local mpos = s_dispatcher.get_mouse_pos()
+	ui_mouse_icon.element.set_pos(mpos)
 
 	local state = main_player.state
 	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
@@ -166,7 +214,6 @@ obj_root.add_event(function()
 
 	local hovering_r = s_dispatcher.get_hovering().p
 	if hovering_r == scene_receiver.p then
-		local mpos = s_dispatcher.get_mouse_pos()
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(mpos) - o)
 		local pe = flame_malloc(8)
@@ -274,13 +321,13 @@ obj_root.add_event(function()
 	end
 
 	local i = 1
-	while i <= #ui_floating_items do
-		local item = ui_floating_items[i]
+	while i <= #ui_floating_tips do
+		local item = ui_floating_tips[i]
 		item.element.add_pos(item.sp)
 		item.tick = item.tick - 1
 		if item.tick <= 0 then
 			__ui_scene.remove_child(item.e)
-			table.remove(ui_floating_items, i)
+			table.remove(ui_floating_tips, i)
 		else
 			i = i + 1
 		end
@@ -317,6 +364,42 @@ table.insert(e_plants, create_entity("D:\\assets\\vegetation\\plant1.prefab"))
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
 scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)
 ]]
+
+ui_skill_slots = {}
+for i=1, SKILL_SLOTS_COUNT, 1 do
+	local ui = scene.find_child("skill_slot"..i)
+	ui_skill_slots[i] = ui
+	local icon = ui.find_child("icon")
+	ui.element = icon.find_component("cElement")
+	ui.receiver = icon.find_component("cReceiver")
+	ui.image = icon.find_component("cImage")
+
+	ui.receiver.add_mouse_left_down_listener(function()
+		local slot = player.skills[idx]
+		if slot then
+			local skill_type = SKILL_LIST[slot.id]
+			if skill_type == "ACTIVE" then
+				if slot.cd == 0 and skill_type.data.cast_mana <= player.MP then
+					if skill_type.data.target_type ~= "NULL" then
+					else
+						main_player.use_skill(i)
+					end
+				end
+			end
+		end
+	end)
+end
+
+function update_ui_skill_slots()
+	for i=1, SKILL_SLOTS_COUNT, 1 do
+		local slot = main_player.skills[i]
+		if not slot then
+			ui_skill_slots[i].image.set_tile("")
+		else
+			ui_skill_slots[i].image.set_tile(SKILL_LIST[slot.id].name)
+		end
+	end
+end
 
 ui_equipment_slots = {}
 for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
@@ -481,7 +564,7 @@ end
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)
 	local e = e_chest.copy()
-	e.set_name("item_"..tostring(math.floor(math.random() * 10000)))
+	e.set_name("item_obj_"..tostring(math.random(1, 10000)))
 	e.find_component("cNode").set_pos(pos)
 	obj_root.add_child(e)
 	make_item_obj(e, item_id, item_num)
@@ -491,6 +574,7 @@ local e = create_entity("player")
 e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
+main_player.learn_skill(1)
 main_player.awake()
 obj_root.add_child(e)
 

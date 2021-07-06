@@ -118,6 +118,32 @@ function make_player(e)
 		end
 	end
 
+	player.learn_skill = function(id)
+		for i=1, SKILL_SLOTS_COUNT, 1 do
+			if not player.skills[i] then
+				player.skills[i] = { id=id, cd=0 }
+				if player == main_player then
+					update_ui_skill_slots()
+				end
+				return true
+			end
+		end
+		return false
+	end
+
+	player.use_skill = function(idx, target)
+		local slot = player.skills[idx]
+		if slot then
+			local skill_type = SKILL_LIST[slot.id]
+			if skill_type == "ACTIVE" then
+				if slot.cd == 0 and skill_type.data.cast_mana <= player.MP then
+					slot.cd = skill_type.data.cool_down
+					player.MP = player.MP - skill_type.data.cast_mana
+				end
+			end
+		end
+	end
+
 	player.receive_item = function(id, num)
 		local item_type = ITEM_LIST[id]
 		local max_num = item_type.stack_num
@@ -143,7 +169,6 @@ function make_player(e)
 				if not slot then
 					slot = { id=id, num=0 }
 					player.items[i] = slot
-					ui_item_slots[i].image.set_tile(item_type.name)
 					if max_num >= num then
 						slot.num = max_num
 						num = 0
@@ -163,7 +188,7 @@ function make_player(e)
 		return num
 	end
 
-	player.use_item = function(idx)
+	player.use_item = function(idx, target)
 		local slot = player.items[idx]
 		if slot then
 			local item_type = ITEM_LIST[slot.id]
@@ -175,7 +200,6 @@ function make_player(e)
 				ui_equipment_slots[euip_slot].image.set_tile(item_type.name)
 
 				player.items[idx] = nil
-				ui_item_slots[idx].image.set_tile("")
 
 				if ori_id ~= 0 then
 					player.receive_item(ori_id, 1)
@@ -183,6 +207,7 @@ function make_player(e)
 				player.calc_stats()
 
 				if player == main_player then
+					update_ui_item_slots()
 					update_ui_equipment_slots()
 				end
 			end

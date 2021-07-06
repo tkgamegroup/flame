@@ -1303,10 +1303,9 @@ namespace flame
 		if (type == cursor_type)
 			return;
 
-		cursor_type = type;
-
 		if (cursor_type == CursorNone)
 			ShowCursor(true);
+		cursor_type = type;
 		if (type == CursorNone)
 			ShowCursor(false);
 	}

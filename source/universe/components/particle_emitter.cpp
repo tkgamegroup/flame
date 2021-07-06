@@ -110,30 +110,30 @@ namespace flame
 		if (atlas && tile_id == -1)
 			return;
 
-		if (linearRand(0.f, 1.f) < emt_prob)
+		if (emt_tick % emt_intv == 0 && linearRand(0.f, 1.f) < emt_prob)
 		{
 			auto n = linearRand(emt_num_min, emt_num_max);
 			n = min(n, ptc_num_max - (uint)ptcs.size());
 			for (auto i = 0; i < n; i++)
 			{
 				Particle p;
-				p.coord = vec3(0.f);
-				p.xlen = linearRand(emt_xlen_min, emt_xlen_max);
-				p.ylen = linearRand(emt_ylen_min, emt_ylen_max);
+				p.pos = vec3(0.f);
+				p.sz = linearRand(emt_sz_min, emt_sz_max);
 				p.rot = linearRand(emt_rot_min, emt_rot_max);
 				auto hsva = linearRand(emt_hsva_min, emt_hsva_max);
 				p.col = cvec4(vec4(rgbColor(hsva.rgb()), hsva.a) * 255.f);
-				p.mov_sp = euler_rot(linearRand(emt_mov_ori_min, emt_mov_ori_max)) * 
+				p.mov_sp = euler_rot(linearRand(emt_mov_dir_min, emt_mov_dir_max)) * 
 					vec3(1.f, 0.f, 0.f) * linearRand(emt_mov_sp_min, emt_mov_sp_max);
 				p.rot_sp = linearRand(emt_rot_sp_min, emt_rot_sp_max);
 				p.ttl = linearRand(emt_ttl_min, emt_ttl_max);
 				ptcs.push_back(p);
 			}
 		}
+		emt_tick++;
 
 		for (auto& p : ptcs)
 		{
-			p.coord += p.mov_sp;
+			p.pos += p.mov_sp;
 			p.rot += p.rot_sp;
 			p.ttl--;
 		}
@@ -154,10 +154,10 @@ namespace flame
 		for (auto& src : ptcs)
 		{
 			auto& dst = renderer_ptcs[idx];
-			dst.coord = node->transform * vec4(src.coord, 1.f);
+			dst.coord = node->transform * vec4(src.pos, 1.f);
 			auto rot = node->g_rot * euler_rot(src.rot);
-			dst.xext = src.xlen * rot[0];
-			dst.yext = src.ylen * rot[1];
+			dst.xext = src.sz[0] * rot[0];
+			dst.yext = src.sz[1] * rot[1];
 			dst.uvs = vec4(0.f, 0.f, 1.f, 1.f);
 			dst.color = src.col;
 			idx++;
