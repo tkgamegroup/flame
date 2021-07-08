@@ -136,7 +136,7 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(PipelinePtr pl)
 		{
-			pipeline_layout = pl->pipeline_layout;
+			pipeline_layout = pl->layout;
 			pipeline = pl;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
 		}

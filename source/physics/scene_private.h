@@ -41,7 +41,7 @@ namespace flame
 			void update(float disp) override;
 			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;
-			void get_visualization_data(uint* lines_count, Line** lines) override;
+			void get_visualization_data(uint* lines_count, graphics::Line** lines) override;
 		};
 	}
 }

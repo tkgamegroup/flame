@@ -94,7 +94,9 @@ namespace flame
 		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags) override;
 		void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
 			uint material_id, ShadingFlags flags) override;
-		void draw_particles(uint count, Particle* partcles, uint res_id) override;
+		void draw_particles(uint count, graphics::Particle* partcles, uint res_id) override;
+
+		void draw_lines(uint count, graphics::Line* lines) override;
 
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }

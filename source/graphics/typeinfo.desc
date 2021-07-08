@@ -6,6 +6,7 @@
     <rule name="^flame::graphics::DescriptorType$" />
     <rule name="^flame::graphics::ShaderTypeTag" />
     <rule name="^flame::graphics::CullMode$" />
+    <rule name="^flame::graphics::PrimitiveTopology$" />
     <rule name="^flame::graphics::BlendFactor$" />
   </enums>
   <udts>

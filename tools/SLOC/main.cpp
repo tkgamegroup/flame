@@ -38,6 +38,7 @@ void add_default_extensions()
 	extensions.push_back(L".c");
 	extensions.push_back(L".cpp");
 	extensions.push_back(L".cxx");
+	extensions.push_back(L".lua");
 	extensions.push_back(L".js");
 }
 

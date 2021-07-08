@@ -36,5 +36,4 @@
 	o_res_col_met = vec4(color.rgb, metallic);
 	o_res_nor_rou = vec4(N * 0.5 + vec3(0.5), roughness);
 	#endif
-
 #endif

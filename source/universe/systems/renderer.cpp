@@ -444,6 +444,7 @@ namespace flame
 		graphics::PipelineLayout* pll_terrain_gbuf;
 
 		UniPtr<graphics::Framebuffer> fb_gbuf;
+		UniPtr<graphics::Framebuffer> fb_fwd_dc;
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
 		graphics::Pipeline* pl_wireframe_mesh;
@@ -463,7 +464,9 @@ namespace flame
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
 		SequentialBuffer<uint>				buf_ptc_idx;
 		graphics::Pipeline*					pl_ptc;
-		UniPtr<graphics::Framebuffer>		fb_ptc;
+
+		SequentialBuffer<graphics::Line>	buf_lines;
+		graphics::Pipeline*					pl_line;
 
 		graphics::Pipeline* pl_downsample;
 		graphics::Pipeline* pl_upsample;
@@ -1116,11 +1119,13 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
+			rp = graphics::Renderpass::get(device, L"rgba16.rp");
 		}
 		else if (find_define("PICKUP"))
 		{
 			use_mat = false;
 			deferred = false;
+			rp = graphics::Renderpass::get(device, L"rgba16.rp");
 		}
 		else if (find_define("OUTLINE"))
 		{
@@ -1130,8 +1135,6 @@ namespace flame
 			deferred = false;
 			rp = graphics::Renderpass::get(device, L"rgba16.rp");
 		}
-		if (find_define("DOUBLE_SIDE"))
-			cull_mode = graphics::CullModeNone;
 		if (use_mat && !mat.empty())
 		{
 			defines.push_back("MAT");
@@ -1172,11 +1175,14 @@ namespace flame
 				defines.push_back("DEFERRED");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
+			graphics::GraphicsPipelineInfo info;
 			graphics::Shader* shaders[] = {
 				graphics::Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
 				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
-			graphics::GraphicsPipelineInfo info;
+			info.shaders_count = _countof(shaders);
+			info.shaders = shaders;
+			info.layout = graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
 				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
 			info.renderpass = rp;
@@ -1197,8 +1203,7 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
-				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
+			ret = graphics::Pipeline::create(device, info);
 		}
 			break;
 		case MaterialForMeshShadowArmature:
@@ -1212,11 +1217,14 @@ namespace flame
 			defines.push_back("ARMATURE");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
+			graphics::GraphicsPipelineInfo info;
 			graphics::Shader* shaders[] = {
 				graphics::Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
 				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
-			graphics::GraphicsPipelineInfo info;
+			info.shaders_count = _countof(shaders);
+			info.shaders = shaders;
+			info.layout = graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
 				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
 			info.renderpass = rp;
@@ -1241,8 +1249,7 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
-				graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll"), info);
+			ret = graphics::Pipeline::create(device, info);
 		}
 			break;
 		case MaterialForTerrain:
@@ -1251,13 +1258,16 @@ namespace flame
 				defines.push_back("DEFERRED");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
+			graphics::GraphicsPipelineInfo info;
 			graphics::Shader* shaders[] = {
 				graphics::Shader::get(device, L"terrain/terrain.vert", defines_str.c_str(), substitutes_str.c_str()),
 				graphics::Shader::get(device, L"terrain/terrain.tesc", defines_str.c_str(), substitutes_str.c_str()),
 				graphics::Shader::get(device, L"terrain/terrain.tese", defines_str.c_str(), substitutes_str.c_str()),
 				graphics::Shader::get(device, L"terrain/terrain.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
-			graphics::GraphicsPipelineInfo info;
+			info.shaders_count = _countof(shaders);
+			info.shaders = shaders;
+			info.layout = graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
 			info.renderpass = graphics::Renderpass::get(device, deferred ? L"gbuffer.rp" : L"forward.rp");
 			info.subpass_index = 0;
 			info.primitive_topology = graphics::PrimitiveTopologyPatchList;
@@ -1266,8 +1276,7 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, _countof(shaders), shaders,
-				graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll"), info);
+			ret = graphics::Pipeline::create(device, info);
 		}
 			break;
 		}
@@ -1396,7 +1405,7 @@ namespace flame
 		{
 			auto& data = nd.buf_transforms.add_item();
 			data.mat = node->transform;
-			data.nor = mat4(node->rot);
+			data.nor = mat4(node->g_rot);
 		}
 
 		if (flags & ShadingMaterial)
@@ -1438,7 +1447,7 @@ namespace flame
 			nd.outline_terrains.emplace_back(dispatch_count, material_id);
 	}
 
-	void sRendererPrivate::draw_particles(uint count, Particle* partcles, uint res_id)
+	void sRendererPrivate::draw_particles(uint count, graphics::Particle* partcles, uint res_id)
 	{
 		auto& nd = *_nd;
 
@@ -1451,10 +1460,10 @@ namespace flame
 		for (auto i = 0; i < count; i++)
 		{
 			auto& p = partcles[i];
-			pvtx[i * 4 + 0] = { p.coord - p.xext - p.yext, p.uvs.xy(), p.color };
-			pvtx[i * 4 + 1] = { p.coord + p.xext - p.yext, p.uvs.zy(), p.color };
-			pvtx[i * 4 + 2] = { p.coord + p.xext + p.yext, p.uvs.zw(), p.color };
-			pvtx[i * 4 + 3] = { p.coord - p.xext + p.yext, p.uvs.xw(), p.color };
+			pvtx[i * 4 + 0] = { p.pos - p.xext - p.yext, p.uvs.xy(), p.col };
+			pvtx[i * 4 + 1] = { p.pos + p.xext - p.yext, p.uvs.zy(), p.col };
+			pvtx[i * 4 + 2] = { p.pos + p.xext + p.yext, p.uvs.zw(), p.col };
+			pvtx[i * 4 + 3] = { p.pos - p.xext + p.yext, p.uvs.xw(), p.col };
 		}
 
 		auto pidx = nd.buf_ptc_idx.stag(count * 6);
@@ -1469,6 +1478,13 @@ namespace flame
 		}
 
 		nd.particles.back().second += count;
+	}
+
+	void sRendererPrivate::draw_lines(uint count, graphics::Line* lines)
+	{
+		auto& nd = *_nd;
+
+		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(graphics::Line));
 	}
 
 	void sRendererPrivate::set_targets(uint tar_cnt, graphics::ImageView* const* ivs)
@@ -1508,18 +1524,18 @@ namespace flame
 			nd.fb_gbuf.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"gbuffer.rp"), _countof(vs), vs));
 		}
 
-		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
-		nd.ds_def->update();
-
 		{
 			graphics::ImageView* vs[] = {
 				img_dst->get_view(),
 				nd.img_dep->get_view()
 			};
-			nd.fb_ptc.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"particle/particle.rp"), _countof(vs), vs));
+			nd.fb_fwd_dc.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"rgba16_d16.rp"), _countof(vs), vs));
 		}
+
+		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
+		nd.ds_def->update();
 
 		nd.img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
 			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
@@ -1631,7 +1647,7 @@ namespace flame
 			for (auto& s : nd.dir_shadows)
 			{
 				nd.buf_light_infos.set_item(s.first, false).
-					shadow_range = vec2(0.f, 100.f);
+					shadow_range = vec2(0.f, nd.dir_shadow_dist);
 
 				auto mat = s.second->g_rot;
 				mat[2] *= -1.f;
@@ -1652,9 +1668,10 @@ namespace flame
 					auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 					auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
 
-					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 100.f);
+					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, nd.dir_shadow_dist);
+					proj[1][1] *= -1.f;
 					auto c = mat * b.center();
-					auto view = lookAt(c + mat[2] * 50.f, c, mat[1]);
+					auto view = lookAt(c + mat[2] * nd.dir_shadow_dist * 0.5f, c, mat[1]);
 					nd.buf_dir_shadow_mats.add_item() = proj * view;
 				}
 
@@ -1816,7 +1833,7 @@ namespace flame
 				nd.buf_ptc_vtx.upload(cb);
 				nd.buf_ptc_idx.upload(cb);
 
-				cb->begin_renderpass(nullptr, nd.fb_ptc.get());
+				cb->begin_renderpass(nullptr, nd.fb_fwd_dc.get());
 				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
 				cb->bind_index_buffer(nd.buf_ptc_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(nd.pl_ptc);
@@ -1948,6 +1965,20 @@ namespace flame
 			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(render_type == RenderShaded ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
+
+			if (nd.buf_lines.stag_num > 0)
+			{
+				auto count = nd.buf_lines.stag_num;
+				nd.buf_lines.upload(cb);
+
+				cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
+				cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
+				cb->bind_pipeline(nd.pl_line);
+				auto& data = *(nd.buf_render_data.pstag);
+				cb->push_constant_t(data.proj_view);
+				cb->draw(count * 2, 1, 0, 0);
+				cb->end_renderpass();
+			}
 		}
 
 		auto& ed = *_ed;
@@ -2088,6 +2119,8 @@ namespace flame
 		nd.buf_ptc_vtx.create(device, graphics::BufferUsageVertex, 6000);
 		nd.buf_ptc_idx.create(device, graphics::BufferUsageIndex, 4000);
 
+		nd.buf_lines.create(device, graphics::BufferUsageVertex, 2000000);
+
 		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
 		{
 			auto& data = *(nd.buf_render_data.pstag);
@@ -2163,14 +2196,25 @@ namespace flame
 		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");
 		nd.pll_terrain_gbuf = graphics::PipelineLayout::get(device, L"terrain/gbuffer.pll");
 
+		nd.pl_wireframe_mesh = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
 		nd.pl_outline_mesh = get_material_pipeline(MaterialForMesh, L"", "OUTLINE");
+		nd.pl_pickup_mesh = get_material_pipeline(MaterialForMesh, L"", "PICKUP");
+
+		nd.pl_wireframe_arm_mesh = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
 		nd.pl_outline_arm_mesh = get_material_pipeline(MaterialForMeshArmature, L"", "OUTLINE");
+		nd.pl_pickup_arm_mesh = get_material_pipeline(MaterialForMeshArmature, L"", "PICKUP");
+
+		nd.pl_wireframe_terrain = get_material_pipeline(MaterialForTerrain, L"", "WIREFRAME");
+		nd.pl_outline_terrain = get_material_pipeline(MaterialForTerrain, L"", "OUTLINE");
+		nd.pl_pickup_terrain = get_material_pipeline(MaterialForTerrain, L"", "PICKUP");
 
 		nd.pl_def = graphics::Pipeline::get(device, L"deferred/deferred.pl");
 		nd.pl_nor_dat = graphics::Pipeline::get(device, L"deferred/normal_data.pl");
 		nd.ds_def.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));
 
 		nd.pl_ptc = graphics::Pipeline::get(device, L"particle/particle.pl");
+
+		nd.pl_line = graphics::Pipeline::get(device, L"plain/line.pl");
 		
 		nd.pl_downsample = graphics::Pipeline::get(device, L"post/downsample.pl");
 		nd.pl_upsample = graphics::Pipeline::get(device, L"post/upsample.pl");

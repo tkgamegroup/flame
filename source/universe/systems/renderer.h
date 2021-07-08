@@ -10,15 +10,6 @@ namespace flame
 
 	struct sRenderer : System
 	{
-		struct Particle
-		{
-			vec3 coord;
-			vec3 xext;
-			vec3 yext;
-			vec4 uvs;
-			cvec4 color;
-		};
-
 		inline static auto type_name = "flame::sRenderer";
 		inline static auto type_hash = ch(type_name);
 
@@ -61,7 +52,9 @@ namespace flame
 		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id = -1, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
 			uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
-		virtual void draw_particles(uint count, Particle* partcles, uint res_id) = 0;
+		virtual void draw_particles(uint count, graphics::Particle* partcles, uint res_id) = 0;
+
+		virtual void draw_lines(uint count, graphics::Line* lines) = 0;
 
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;

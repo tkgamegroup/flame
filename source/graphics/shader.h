@@ -128,6 +128,9 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
+			uint shaders_count;
+			Shader** shaders;
+			PipelineLayout* layout;
 			RenderpassPtr renderpass;
 			uint subpass_index = 0;
 			uint vertex_buffers_count = 0;
@@ -146,14 +149,20 @@ namespace flame
 			const uint* dynamic_states = nullptr;
 		};
 
+		struct ComputePipelineInfo
+		{
+			Shader* shader;
+			PipelineLayout* layout;
+		};
+
 		struct Pipeline
 		{
 			virtual void release() = 0;
 
 			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, const GraphicsPipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, Shader* compute_shader, PipelineLayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const GraphicsPipelineInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const ComputePipelineInfo& info);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
 		};
 	}

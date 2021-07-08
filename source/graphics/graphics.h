@@ -423,5 +423,26 @@ namespace flame
 			vec2 points[4];
 			vec4 uvs;
 		};
+
+		struct Point
+		{
+			vec3 pos;
+			cvec4 col;
+		};
+
+		struct Line
+		{
+			Point a;
+			Point b;
+		};
+
+		struct Particle
+		{
+			vec3 pos;
+			vec3 xext;
+			vec3 yext;
+			vec4 uvs;
+			cvec4 col;
+		};
 	}
 }

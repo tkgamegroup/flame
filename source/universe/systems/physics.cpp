@@ -9,6 +9,7 @@
 #include "../components/shape_private.h"
 #include "../components/character_controller_private.h"
 #include "physics_private.h"
+#include "renderer_private.h"
 
 namespace flame
 {
@@ -18,8 +19,9 @@ namespace flame
 	{
 		layer++;
 		uint lines_count;
-		Line* lines;
+		graphics::Line* lines;
 		scene->get_visualization_data(&lines_count, &lines);
+		s_renderer->draw_lines(lines_count, lines);
 		return layer;
 	}
 	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e)
@@ -38,16 +40,21 @@ namespace flame
 			if (visualization_layer)
 				visualization_layer->remove_drawer(&visualizer);
 			visualization_layer = nullptr;
+			physics_scene->set_visualization(false);
 		}
 		else
 		{
 			if (world && physics_scene)
 			{
-				visualization_layer = world->root->find_child("debug")->get_component_i<cElementPrivate>(0);
-				if (visualization_layer)
+				auto e_debug = world->root->find_child("physics_debug_layer");
+				if (e_debug)
 				{
-					physics_scene->set_visualization(true);
-					visualization_layer->add_drawer(&visualizer);
+					visualization_layer = e_debug->get_component_i<cElementPrivate>(0);
+					if (visualization_layer)
+					{
+						visualization_layer->add_drawer(&visualizer);
+						physics_scene->set_visualization(true);
+					}
 				}
 			}
 		}

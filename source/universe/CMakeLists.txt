@@ -2,6 +2,7 @@ file(GLOB_RECURSE source_files "*.h*" "*.c*")
 file(GLOB_RECURSE script_files "${ASSETS_DIR}/*.lua")
 file(GLOB_RECURSE prefab_files "${ASSETS_DIR}/*.prefab")
 file(GLOB_RECURSE shader_files 
+	"${SHADERS_DIR}/*.glsl"
 	"${SHADERS_DIR}/*.vert"
 	"${SHADERS_DIR}/*.tesc"
 	"${SHADERS_DIR}/*.tese"

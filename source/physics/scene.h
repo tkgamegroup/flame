@@ -6,18 +6,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct Point
-		{
-			vec3 pos;
-			cvec4 col;
-		};
-
-		struct Line
-		{
-			Point a;
-			Point b;
-		};
-
 		struct Scene
 		{
 			virtual void release() = 0;
@@ -28,7 +16,7 @@ namespace flame
 			virtual void update(float disp) = 0;
 			virtual void set_trigger_callback(void (*callback)(Capture& c, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape), const Capture& capture) = 0;
 			virtual void set_visualization(bool v) = 0;
-			virtual void get_visualization_data(uint* lines_count, Line** lines) = 0;
+			virtual void get_visualization_data(uint* lines_count, graphics::Line** lines) = 0;
 
 			FLAME_PHYSICS_EXPORTS static Scene* create(Device* device, float gravity, uint threads_count);
 		};

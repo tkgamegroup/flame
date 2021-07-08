@@ -1248,9 +1248,9 @@ namespace flame
 			return ShaderPrivate::get((DevicePrivate*)device, filename, defines, substitutes);
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* device, const GraphicsPipelineInfo& info) :
 			device(device),
-			pipeline_layout(pll)
+			layout((PipelineLayoutPrivate*)info.layout)
 		{
 			type = PipelineGraphics;
 
@@ -1262,12 +1262,11 @@ namespace flame
 
 			auto renderpass = (RenderpassPrivate*)info.renderpass;
 
-			shaders.resize(_shaders.size());
-			vk_stage_infos.resize(_shaders.size());
-			for (auto i = 0; i < _shaders.size(); i++)
+			shaders.resize(info.shaders_count);
+			vk_stage_infos.resize(shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
 			{
-				auto src = _shaders[i];
-				shaders[i] = src;
+				auto shader = (ShaderPrivate*)info.shaders[i];
 
 				auto& dst = vk_stage_infos[i];
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1275,8 +1274,9 @@ namespace flame
 				dst.pNext = nullptr;
 				dst.pSpecializationInfo = nullptr;
 				dst.pName = "main";
-				dst.stage = to_backend(src->type);
-				dst.module = src->vk_module;
+				dst.stage = to_backend(shader->type);
+				dst.module = shader->vk_module;
+				shaders[i] = shader;
 			}
 
 			if (info.vertex_buffers_count)
@@ -1456,7 +1456,7 @@ namespace flame
 			pipeline_info.pDepthStencilState = &depth_stencil_state;
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
-			pipeline_info.layout = pll->vk_pipeline_layout;
+			pipeline_info.layout = layout->vk_pipeline_layout;
 			pipeline_info.renderPass = renderpass->vk_renderpass;
 			pipeline_info.subpass = info.subpass_index;
 			pipeline_info.basePipelineHandle = 0;
@@ -1465,14 +1465,15 @@ namespace flame
 			chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* device, const ComputePipelineInfo& info) :
 			device(device),
-			pipeline_layout(pll)
+			layout((PipelineLayoutPrivate*)info.layout)
 		{
 			type = PipelineCompute;
 
+			auto shader = (ShaderPrivate*)info.shader;
 			shaders.resize(1);
-			shaders[0] = compute_shader;
+			shaders[0] = shader;
 
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -1485,11 +1486,11 @@ namespace flame
 			pipeline_info.stage.pSpecializationInfo = nullptr;
 			pipeline_info.stage.pName = "main";
 			pipeline_info.stage.stage = to_backend(ShaderStageComp);
-			pipeline_info.stage.module = compute_shader->vk_module;
+			pipeline_info.stage.module = shader->vk_module;
 
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
-			pipeline_info.layout = pll->vk_pipeline_layout;
+			pipeline_info.layout = layout->vk_pipeline_layout;
 
 			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
 		}
@@ -1499,36 +1500,14 @@ namespace flame
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, const GraphicsPipelineInfo& info)
 		{
-			auto has_vert_stage = false;
-			auto tess_stage_count = 0;
-			for (auto& s : shaders)
-			{
-				for (auto& ss : shaders)
-				{
-					if (ss != s && (ss->filename == s->filename || ss->type == s->type))
-						return nullptr;
-				}
-				if (s->type == ShaderStageComp)
-					return nullptr;
-				if (s->type == ShaderStageVert)
-					has_vert_stage = true;
-				if (s->type == ShaderStageTesc || s->type == ShaderStageTese)
-					tess_stage_count++;
-			}
-			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
-				return nullptr;
-
-			return new PipelinePrivate(device, shaders, pll, info);
+			return new PipelinePrivate(device, info);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, const ComputePipelineInfo& info)
 		{
-			if (compute_shader->type != ShaderStageComp)
-				return nullptr;
-
-			return new PipelinePrivate(device, compute_shader, pll);
+			return new PipelinePrivate(device, info);
 		}
 
 		PipelinePrivate* PipelinePrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
@@ -1561,16 +1540,27 @@ namespace flame
 
 			std::vector<ShaderPrivate*> shaders;
 			for (auto n_shdr : doc_root.child("shaders"))
-				shaders.push_back(ShaderPrivate::get(device, n_shdr.attribute("filename").value(), n_shdr.attribute("defines").value()));
+			{
+				auto shader = ShaderPrivate::get(device, n_shdr.attribute("filename").value(), n_shdr.attribute("defines").value());
+				fassert(shader);
+				shaders.push_back(shader);
+			}
 
-			auto pll = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
+			auto layout = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
+			fassert(layout);
 
 			if (shaders.size() > 1)
 			{
 				GraphicsPipelineInfo info;
 
+				info.shaders_count = shaders.size();
+				info.shaders = (Shader**)shaders.data();
+
+				info.layout = layout;
+
 				auto n_rp = doc_root.child("renderpass");
 				info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
+				fassert(info.renderpass);
 				info.subpass_index = n_rp.attribute("index").as_uint();
 
 				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format");
@@ -1606,6 +1596,9 @@ namespace flame
 				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode");
 				if (auto n = doc_root.child("cull_mode"); n)
 					ti_cullmode->unserialize(&info.cull_mode, n.attribute("v").value());
+				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology");
+				if (auto n = doc_root.child("primitive_topology"); n)
+					ti_prim->unserialize(&info.primitive_topology, n.attribute("v").value());
 				if (auto n = doc_root.child("depth_test"); n)
 					info.depth_test = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_write"); n)
@@ -1633,7 +1626,7 @@ namespace flame
 
 				if (device)
 				{
-					auto pl = PipelinePrivate::create(device, shaders, pll, info);
+					auto pl = PipelinePrivate::create(device, info);
 					pl->filename = filename;
 					device->pls.emplace_back(pl);
 					return pl;
@@ -1643,7 +1636,13 @@ namespace flame
 			{
 				if (device)
 				{
-					auto pl = PipelinePrivate::create(device, shaders[0], pll);
+					ComputePipelineInfo info;
+
+					info.shader = shaders[0];
+
+					info.layout = layout;
+
+					auto pl = PipelinePrivate::create(device, info);
 					pl->filename = filename;
 					device->pls.emplace_back(pl);
 					return pl;
@@ -1653,14 +1652,14 @@ namespace flame
 			return nullptr;
 		}
 
-		Pipeline* Pipeline::create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, const GraphicsPipelineInfo& info)
+		Pipeline* Pipeline::create(Device* device, const GraphicsPipelineInfo& info)
 		{
-			return PipelinePrivate::create((DevicePrivate*)device, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, info);
+			return PipelinePrivate::create((DevicePrivate*)device, info);
 		}
 
-		Pipeline* Pipeline::create(Device* device, Shader* compute_shader, PipelineLayout* pll)
+		Pipeline* Pipeline::create(Device* device, const ComputePipelineInfo& info)
 		{
-			return PipelinePrivate::create((DevicePrivate*)device, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
+			return PipelinePrivate::create((DevicePrivate*)device, info);
 		}
 
 		Pipeline* Pipeline::get(Device* device, const wchar_t* filename)

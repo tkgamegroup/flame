@@ -148,18 +148,18 @@ namespace flame
 
 		node->update_transform();
 
-		std::vector<sRenderer::Particle> renderer_ptcs;
+		std::vector<graphics::Particle> renderer_ptcs;
 		renderer_ptcs.resize(ptcs.size());
 		auto idx = 0;
 		for (auto& src : ptcs)
 		{
 			auto& dst = renderer_ptcs[idx];
-			dst.coord = node->transform * vec4(src.pos, 1.f);
+			dst.pos = node->transform * vec4(src.pos, 1.f);
 			auto rot = node->g_rot * euler_rot(src.rot);
 			dst.xext = src.sz[0] * rot[0];
 			dst.yext = src.sz[1] * rot[1];
 			dst.uvs = vec4(0.f, 0.f, 1.f, 1.f);
-			dst.color = src.col;
+			dst.col = src.col;
 			idx++;
 		}
 		s_renderer->draw_particles(renderer_ptcs.size(), renderer_ptcs.data(), res_id);

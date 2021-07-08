@@ -28,6 +28,8 @@ int main(int argc, char** args)
 	}
 	script_ins->excute_file(L"main.lua");
 
+	w->s_physics->set_visualization(true);
+
 	looper().add_event([](Capture& c) {
 		printf("fps: %d\n", looper().get_fps());
 		c._current = nullptr;

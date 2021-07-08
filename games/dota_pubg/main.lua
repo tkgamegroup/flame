@@ -39,7 +39,7 @@ function exit_select_mode(tag, target)
 		ui_mouse_icon.element.set_pivotx(0.0)
 		ui_mouse_icon.element.set_pivoty(0.0)
 		select_mode = false
-		if select_mode_callback and target then
+		if select_mode_callback then
 			select_mode_callback(tag, target)
 		end
 	end
@@ -77,20 +77,24 @@ scene_receiver.add_key_down_listener(function(key)
 		alt_pressing = true
 	elseif key == e_key_a then
 		enter_select_mode({ TAG_TERRAIN, TAG_CHARACTER_G2 }, function(tag, target)
-			if tag == TAG_TERRAIN then
-				main_player.change_state("attack_on_pos", target)
-				auto_attack = true
-			else
-				main_player.change_state("attack_target", target)
-				auto_attack = true
+			if tag then
+				if tag == TAG_TERRAIN then
+					main_player.change_state("attack_on_pos", target)
+					auto_attack = true
+				else
+					main_player.change_state("attack_target", target)
+					auto_attack = true
+				end
 			end
 		end)
 	elseif key == e_key_g then
 		enter_select_mode({ TAG_TERRAIN, TAG_ITEM_OBJ }, function(tag, target)
-			if tag == TAG_TERRAIN then
-				main_player.change_state("pick_up_on_pos", target)
-			else
-				main_player.change_state("pick_up", target)
+			if tag then
+				if tag == TAG_TERRAIN then
+					main_player.change_state("pick_up_on_pos", target)
+				else
+					main_player.change_state("pick_up", target)
+				end
 			end
 		end)
 	elseif key == e_key_q then
@@ -455,8 +459,16 @@ function skill_click(idx)
 				local filters = nil
 				if skill_type.data.target_type == "ENEMY" then filters = { TAG_CHARACTER_G2 }
 				end
+				local element = ui_skill_slots[idx].element
+				element.set_border(2)
+				element.set_border_color(vec4(255, 255, 0, 255))
 				enter_select_mode(filters, function(tag, target)
-					main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.data.distance })
+					if tag then
+						main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.data.distance })
+					end
+					local element = ui_skill_slots[idx].element
+					element.set_border(1)
+					element.set_border_color(vec4(255))
 				end)
 			else
 				main_player.change_state("use_skill", nil, { idx=idx })
@@ -499,7 +511,7 @@ for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 	ui.receiver = icon.find_component("cReceiver")
 	ui.image = icon.find_component("cImage")
 
-	ui.receiver.add_mouse_right_down_listener(function()
+	ui.receiver.add_mouse_left_down_listener(function()
 		main_player.use_equipment(i)
 	end)
 end
@@ -524,7 +536,7 @@ for i=1, ITEM_SLOTS_COUNT, 1 do
 	ui.receiver = icon.find_component("cReceiver")
 	ui.image = icon.find_component("cImage")
 
-	ui.receiver.add_mouse_right_down_listener(function()
+	ui.receiver.add_mouse_left_down_listener(function()
 		main_player.use_item(i)
 	end)
 end
@@ -639,6 +651,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
+--[[
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
@@ -647,6 +660,7 @@ for i=1, 10, 1 do
 	make_npc(e, 1)
 	obj_root.add_child(e)
 end
+]]
 
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)

@@ -147,17 +147,17 @@ namespace flame
 			std::filesystem::path filename;
 
 			DevicePrivate* device;
-			PipelineLayoutPrivate* pipeline_layout;
+			PipelineLayoutPrivate* layout;
 			std::vector<ShaderPrivate*> shaders;
 
 			VkPipeline vk_pipeline;
 
-			PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info);
-			PipelinePrivate(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* device, const GraphicsPipelineInfo& info);
+			PipelinePrivate(DevicePrivate* device, const ComputePipelineInfo& info);
 			~PipelinePrivate();
 
-			static PipelinePrivate* create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, const GraphicsPipelineInfo& info);
-			static PipelinePrivate* create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			static PipelinePrivate* create(DevicePrivate* device, const GraphicsPipelineInfo& info);
+			static PipelinePrivate* create(DevicePrivate* device, const ComputePipelineInfo& info);
 			static PipelinePrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 
 			void release() override { delete this; }

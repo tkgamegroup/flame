@@ -211,49 +211,6 @@
 // 
 //		RenderPreferencesPrivate::RenderPreferencesPrivate(DevicePtr device, bool hdr)
 //		{
-//			//mesh_wireframe_pipeline = get_material_pipeline(MaterialForMesh, L"", "WIREFRAME");
-//			//mesh_armature_wireframe_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME");
-//			//terrain_wireframe_pipeline = get_material_pipeline(MaterialForTerrain, L"", "WIREFRAME");
-//
-//			//mesh_pickup_pipeline = get_material_pipeline(MaterialForMesh, L"", "PICKUP");
-//			//mesh_armature_pickup_pipeline = get_material_pipeline(MaterialForMeshArmature, L"", "PICKUP");
-//			//terrain_pickup_pipeline = get_material_pipeline(MaterialForTerrain, L"", "PICKUP");
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		ShaderPrivate::get(device, L"plain/plain.vert"),
-//			//		ShaderPrivate::get(device, L"plain/plain.frag")
-//			//	};
-//			//	VertexAttributeInfo vias[2];
-//			//	vias[0].location = 0;
-//			//	vias[0].format = Format_R32G32B32_SFLOAT;
-//			//	vias[1].location = 1;
-//			//	vias[1].format = Format_R8G8B8A8_UNORM;
-//			//	VertexBufferInfo vib;
-//			//	vib.attributes_count = _countof(vias);
-//			//	vib.attributes = vias;
-//			//	VertexInfo vi;
-//			//	vi.primitive_topology = PrimitiveTopologyLineList;
-//			//	vi.buffers_count = 1;
-//			//	vi.buffers = &vib;
-//			//	RasterInfo rst;
-//			//	rst.cull_mode = CullModeNone;
-//			//	DepthInfo dep;
-//			//	dep.test = true;
-//			//	dep.write = false;
-//			//	BlendOption bo;
-//			//	bo.enable = true;
-//			//	bo.src_color = BlendFactorSrcAlpha;
-//			//	bo.dst_color = BlendFactorOneMinusSrcAlpha;
-//			//	bo.src_alpha = BlendFactorOne;
-//			//	bo.dst_alpha = BlendFactorZero;
-//			//	auto pll = PipelineLayoutPrivate::get(device, L"plain/plain.pll");
-//			//	auto rp = mesh_renderpass.get();
-//			//	line_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
-//			//	vi.primitive_topology = PrimitiveTopologyTriangleList;
-//			//	triangle_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
-//			//}
-//
 //			//for (auto i = 0; i < 10; i++)
 //			//{
 //			//	{
@@ -508,66 +465,6 @@
 //			{
 //				switch (p.type)
 //				{
-//				case PassLines:
-//				{
-//					if (line_off == 0)
-//						line_buffer.upload(cb);
-//					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
-//					cb->set_viewport(curr_viewport);
-//					cb->set_scissor(curr_viewport);
-//					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-//					cb->bind_vertex_buffer(line_buffer.buf.get(), 0);
-//					cb->bind_pipeline(preferences->line_pipeline.get());
-//					//cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
-//					for (auto& i : p.cmd_ids)
-//					{
-//						auto& cmd = cmds[i];
-//						switch (cmd->type)
-//						{
-//						case Cmd::DrawLines:
-//						{
-//							auto c = (CmdDrawLines*)cmd.get();
-//							cb->draw(c->count * 2, 1, line_off, 0);
-//							line_off += c->count * 2;
-//						}
-//							break;
-//						}
-//					}
-//					cb->end_renderpass();
-//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//				}
-//					break;
-//				case PassTriangles:
-//				{
-//					if (tri_off == 0)
-//						triangle_buffer.upload(cb);
-//					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment, AccessColorAttachmentWrite);
-//					cb->set_viewport(curr_viewport);
-//					cb->set_scissor(curr_viewport);
-//					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-//					cb->bind_vertex_buffer(triangle_buffer.buf.get(), 0);
-//					cb->bind_pipeline(preferences->triangle_pipeline.get());
-//					//cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
-//					for (auto& i : p.cmd_ids)
-//					{
-//						auto& cmd = cmds[i];
-//						switch (cmd->type)
-//						{
-//						case Cmd::DrawTriangles:
-//						{
-//							auto c = (CmdDrawTriangles*)cmd.get();
-//							cb->draw(c->count * 3, 1, tri_off, 0);
-//							tri_off += c->count * 3;
-//						}
-//							break;
-//						}
-//					}
-//					cb->end_renderpass();
-//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//				}
-//					break;
 //				case PassBlur:
 //				{
 //					auto c = (CmdBlur*)cmds[p.cmd_ids[0]].get();
