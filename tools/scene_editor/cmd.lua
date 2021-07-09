@@ -1,11 +1,11 @@
 function cmd_file_open()
-    local d = create_entity("prefabs/input_dialog")
     local l = create_entity("prefabs/layer")
-              
+
+    local d = create_entity("prefabs/file_selector")
+
     d.find_driver("dWindow").set_title("Open")
-    local input_dialog = d.find_driver("dInputDialog")
-    input_dialog.set_text(last_open)
-    input_dialog.add_callback(function(ok, text)
+    local file_selector = d.find_driver("dFileSelector")
+    file_selector.add_callback(function(ok, text)
         if ok then
             if load_scene(text) then 
                 last_open = text
@@ -13,13 +13,14 @@ function cmd_file_open()
         end
         l.get_parent().remove_child(l)
     end)
+
     l.add_child(d)
     ui.add_child(l)
 end
 
 function cmd_file_save_as()
-    local d = create_entity("prefabs/input_dialog")
     local l = create_entity("prefabs/layer")
+    local d = create_entity("prefabs/input_dialog")
               
     d.find_driver("dWindow").set_title("Save As")
     local input_dialog = d.find_driver("dInputDialog")
@@ -32,6 +33,7 @@ function cmd_file_save_as()
         end
         l.get_parent().remove_child(l)
     end)
+
     l.add_child(d)
     ui.add_child(l)
 end

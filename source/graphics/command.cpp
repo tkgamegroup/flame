@@ -445,7 +445,7 @@ namespace flame
 			vkCmdBlitImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_blits.size(), vk_blits.data(), to_backend(filter));
 		}
 
-		void CommandBufferPrivate::clear_color_image(ImagePtr img, const cvec4& color)
+		void CommandBufferPrivate::clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color)
 		{
 			VkClearColorValue cv;
 			cv.float32[0] = color.x / 255.f;
@@ -454,24 +454,24 @@ namespace flame
 			cv.float32[3] = color.w / 255.f;
 			VkImageSubresourceRange range;
 			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			range.baseMipLevel = 0;
-			range.levelCount = 1;
-			range.baseArrayLayer = 0;
-			range.layerCount = 1;
+			range.baseMipLevel = sub.base_level;
+			range.levelCount = sub.level_count;
+			range.baseArrayLayer = sub.base_layer;
+			range.layerCount = sub.layer_count;
 			vkCmdClearColorImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
 		}
 
-		void CommandBufferPrivate::clear_depth_image(ImagePtr img, float depth)
+		void CommandBufferPrivate::clear_depth_image(ImagePtr img, const ImageSub& sub, float depth)
 		{
 			VkClearDepthStencilValue cv;
 			cv.depth = depth;
 			cv.stencil = 0;
 			VkImageSubresourceRange range;
 			range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-			range.baseMipLevel = 0;
-			range.levelCount = 1;
-			range.baseArrayLayer = 0;
-			range.layerCount = 1;
+			range.baseMipLevel = sub.base_level;
+			range.levelCount = sub.level_count;
+			range.baseArrayLayer = sub.base_layer;
+			range.layerCount = sub.layer_count;
 			vkCmdClearDepthStencilImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
 		}
 

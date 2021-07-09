@@ -426,8 +426,8 @@ namespace flame
 		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, vec2(mpos)))
 		if (focusing && mbtns[Mouse_Left] == std::make_pair(false, true) && focusing->element->contains(vec2(mpos)))
 		{
-			//auto disp = mouse_pos - active_pos;
-			//auto db = dbclick_timer > 0.f;
+			auto disp = mpos - active_pos;
+			auto db = dbclick_timer > 0.f;
 			for (auto l : get_temp_listeners(focusing->mouse_click_listeners))
 			{
 				if (l.first < focusing->frame)
@@ -436,11 +436,20 @@ namespace flame
 					l.second->call();
 				}
 			}
-			//((cReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
-			//if (db)
-			//	dbclick_timer = -1.f;
-			//else if (disp == 0)
-			//	dbclick_timer = 0.5f;
+			if (db)
+			{
+				for (auto l : get_temp_listeners(focusing->mouse_dbclick_listeners))
+				{
+					if (l.first < focusing->frame)
+					{
+						l.second->c._current = focusing;
+						l.second->call();
+					}
+				}
+				dbclick_timer = -1.f;
+			}
+			else if (disp == ivec2(0))
+				dbclick_timer = 0.5f;
 		}
 
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)

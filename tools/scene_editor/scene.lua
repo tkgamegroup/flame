@@ -1,13 +1,23 @@
 scene = entity
-            
+
 prefab = { p=nil }
 selected = { p=nil }
             
 function load_scene(filename)
-    if prefab.p then scene.remove_child(prefab) end
+    if prefab.p then 
+        scene.remove_child(prefab) 
+    end
+
     local ok
     prefab, ok = create_entity(filename)
     scene.add_child(prefab, 0)
+
+    if prefab.find_component("cNode").p and prefab.find_child("camera").p == nil then
+        local e = create_entity("prefabs/camera")
+        e.find_component("cNode").set_pos(vec3(0, 0, 5))
+        e.find_component("cCamera").set_current(true)
+        scene.add_child(e)
+    end
               
     update_hierachy()
     return ok
@@ -15,6 +25,7 @@ end
             
 function save_scene(filename)
     if not prefab.p then return end
+
     prefab.save(filename)
 end
       
@@ -51,9 +62,11 @@ end)
 
 receiver.add_mouse_left_up_listener(function(p)
     if p.x == last_mpos.x and p.y == last_mpos.y then
+        --[[ TODO
         local e = {}
         e.p = s_renderer.pickup(last_mpos)
         make_obj(e, "flame::Entity")
         select(e, false)
+        ]]
     end
 end)

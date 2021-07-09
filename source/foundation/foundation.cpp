@@ -34,6 +34,11 @@ namespace flame
 		return ret;
 	}
 
+	void get_current_path(wchar_t* path)
+	{
+		GetCurrentDirectoryW(256, path);
+	}
+
 	void set_current_path(const wchar_t* path)
 	{
 		SetCurrentDirectoryW(path);
@@ -48,6 +53,29 @@ namespace flame
 			wcsncpy(dst, path.c_str(), path.size());
 			dst[path.size()] = 0;
 		}
+	}
+
+	void get_logical_drives(uint* count, wchar_t** names)
+	{
+		wchar_t buf[256];
+		GetLogicalDriveStringsW(countof(buf), buf);
+
+		auto n = 1;
+		names[0] = buf;
+		auto pstr = buf;
+		while (true)
+		{
+			if (pstr[0] == 0 && pstr[1] == 0)
+				break;
+			if (pstr[0] == 0)
+			{
+				names[n] = pstr;
+				n++;
+			}
+			pstr++;
+		}
+
+		*count = n;
 	}
 
 	void* get_hinst()

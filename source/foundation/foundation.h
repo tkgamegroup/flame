@@ -153,14 +153,19 @@ namespace flame
 
 		Capture() {}
 
-		template <class T>
-		Capture& set_data(T* p)
+		Capture& set_data(uint s, void* p)
 		{
 			assert(!_data);
-			size = sizeof(T);
+			size = s;
 			_data = f_malloc(size);
 			memcpy(_data, p, size);
 			return *this;
+		}
+
+		template <class T>
+		Capture& set_data(T* p)
+		{
+			return set_data(sizeof(T), p);
 		}
 
 		Capture& set_thiz(void* thiz)
@@ -390,8 +395,10 @@ namespace flame
 	}
 
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
+	FLAME_FOUNDATION_EXPORTS void get_current_path(wchar_t* path);
 	FLAME_FOUNDATION_EXPORTS void set_current_path(const wchar_t* path);
 	FLAME_FOUNDATION_EXPORTS void get_app_path(wchar_t* dst, bool has_name = false);
+	FLAME_FOUNDATION_EXPORTS void get_logical_drives(uint *count, wchar_t** names);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS uvec2 get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);

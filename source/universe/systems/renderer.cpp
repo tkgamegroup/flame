@@ -511,6 +511,10 @@ namespace flame
 		if (culled)
 			return layer;
 
+		auto self_transparent = true;
+		if (!element->draw(layer, this))
+			self_transparent = false;
+
 		auto clipping = false;
 		Rect last_scissor;
 		if (element->clipping && !(ed.scissor == element->bounds))
@@ -524,10 +528,6 @@ namespace flame
 			auto& info = ed.layers[layer].emplace_back();
 			info.scissor = ed.scissor;
 		}
-
-		auto self_transparent = true;
-		if (!element->draw(layer, this))
-			self_transparent = false;
 
 		if (!element->drawers.empty())
 		{
@@ -1318,9 +1318,10 @@ namespace flame
 		auto& nd = *_nd;
 
 		auto iv_black = img_black->get_view();
-		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box ? box : iv_black, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black, sp_linear);
+		auto iv_black_cube = img_black_cube->get_view({ 0, 1, 0, 6 });
+		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box ? box : iv_black_cube, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black_cube, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black_cube, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut ? lut : iv_black, sp_linear);
 		nd.ds_light->update();
 
@@ -2081,9 +2082,13 @@ namespace flame
 		img_black.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
 			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_black->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+		img_black_cube.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
+			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, true));
+		img_black_cube->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
 
 		auto iv_white = img_white->get_view();
 		auto iv_black = img_black->get_view();
+		auto iv_black_cube = img_black_cube->get_view({ 0, 1, 0, 6 });
 
 		auto& ed = *_ed;
 
@@ -2186,9 +2191,9 @@ namespace flame
 			auto iv = nd.img_pt_shadow_maps[i]->get_view({ 0, 1, 0, 6 });
 			nd.ds_light->set_image(DSL_light::pt_shadow_maps_binding, i, iv, sp_shadow);
 		}
-		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, iv_black, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, iv_black, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, iv_black, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, iv_black_cube, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, iv_black_cube, sp_linear);
+		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, iv_black_cube, sp_linear);
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
 		nd.ds_light->update();
 

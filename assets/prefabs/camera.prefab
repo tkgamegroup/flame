@@ -2,6 +2,6 @@
 <prefab>
   <entity>
     <cNode />
-    <cCamera current="true" />
+    <cCamera />
   </entity>
 </prefab>

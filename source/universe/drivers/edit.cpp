@@ -76,7 +76,7 @@ namespace flame
 			prev_x = 0.f;
 			for (k = 0; k < r_num_chars; ++k)
 			{
-				auto w = atlas->get_glyph(str[i], font_size).advance;
+				auto w = atlas->get_glyph(str[i + k], font_size).advance;
 				if (pp.x < prev_x + w)
 				{
 					if (pp.x < prev_x + w / 2)
@@ -484,7 +484,7 @@ namespace flame
 
 		if (show_cursor)
 		{
-			auto off = vec2(atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)) + element->padding.xy();
+			auto off = vec2(atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end));
 			off.x += 0.5f;
 			vec2 pts[] = {
 				off,

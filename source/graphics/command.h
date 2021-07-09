@@ -107,8 +107,8 @@ namespace flame
 			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void blit_image(ImagePtr src, ImagePtr dst, uint blits_count, ImageBlit* blits, Filter filter) = 0;
 
-			virtual void clear_color_image(ImagePtr img, const cvec4& color) = 0;
-			virtual void clear_depth_image(ImagePtr img, float depth) = 0;
+			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color) = 0;
+			virtual void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) = 0;
 
 			virtual void end() = 0;
 

@@ -41,6 +41,7 @@ namespace flame
 
 		UniPtr<graphics::Image> img_white;
 		UniPtr<graphics::Image> img_black;
+		UniPtr<graphics::Image> img_black_cube;
 		UniPtr<graphics::Image> img_dst;
 
 		cCameraPrivate* camera = nullptr;

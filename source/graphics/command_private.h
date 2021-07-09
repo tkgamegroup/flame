@@ -63,8 +63,8 @@ namespace flame
 				{ copies, copies_count }); }
 			void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter);
 			void blit_image(ImagePtr src, ImagePtr dst, uint blits_count, ImageBlit* blits, Filter filter) override { blit_image(src, dst, { blits, blits_count }, filter); }
-			void clear_color_image(ImagePtr img, const cvec4& color) override;
-			void clear_depth_image(ImagePtr img, float depth) override;
+			void clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color) override;
+			void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) override;
 			void end() override;
 		};
 

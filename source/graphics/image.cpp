@@ -256,7 +256,7 @@ namespace flame
 			InstanceCB cb(device);
 
 			cb->image_barrier(this, { 0, levels, 0, layers }, src_layout, ImageLayoutTransferDst);
-			cb->clear_color_image(this, color);
+			cb->clear_color_image(this, { 0, levels, 0, layers }, color);
 			cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferDst, dst_layout);
 		}
 

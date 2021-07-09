@@ -75,7 +75,7 @@
     <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>
       <entity src="D:\assets\sky\sky" name="sky" />
-      <eCamera name="camera">
+      <eCamera name="camera" current="true">
         <cScript src="camera.lua" />
       </eCamera>
       <entity src="D:\assets\terrain\terrain" name="terrain" />

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<prefab>
+	<eWindow driver="dFileSelector" pos="200,100" size="400,400" title="File Selector">
+    <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="8">
+      <eButton name="back_btn" text="" />
+      <eButton name="forward_btn" text="" />
+      <eButton name="up_btn" text="" />
+      <eEdit name="folder_edit" alignx="MinMax" />
+    </eElement>
+    <eElement alignx="MinMax" aligny="MinMax" layout_type="Horizontal" layout_gap="4">
+      <eElement layout_type="Vertical" layout_gap="4">
+        <eElement layout_type="Horizontal" layout_gap="4">
+          <eText text="Recent" />
+          <eButton name="clear_recent_btn" text="" />
+        </eElement>
+        <eList name="recent_list" />
+      </eElement>
+      <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1">
+        <eList name="file_list" />
+      </eScroller>
+    </eElement>
+    <eElement layout_type="Horizontal" layout_gap="4" >
+      <eEdit name="path_edit" alignx="MinMax" />
+      <eButton name="ok_btn" text="OK" />
+      <eButton name="cancel_btn" text="Cancel" />
+    </eElement>
+	</eWindow>
+</prefab>

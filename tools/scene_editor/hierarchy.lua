@@ -17,6 +17,7 @@ end, tree)
               
 function update_hierachy()
     if hierarchy.get_children_count() > 0 then
+        tree.set_selected(nil)
         hierarchy.remove_child(hierarchy.get_child(0))
     end
     if prefab.p then
