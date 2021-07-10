@@ -19,7 +19,7 @@
         <eList name="file_list" />
       </eScroller>
     </eElement>
-    <eElement layout_type="Horizontal" layout_gap="4" >
+    <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="4" >
       <eEdit name="path_edit" alignx="MinMax" />
       <eButton name="ok_btn" text="OK" />
       <eButton name="cancel_btn" text="Cancel" />

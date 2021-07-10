@@ -26,23 +26,23 @@ layout(location = 1) out vec4 o_res_nor_rou;
 
 void main()
 {
-#if defined(PICKUP)
-	o_color = pack_uint_to_v4(pc.i[0]);
+#ifdef MAT
+	MaterialInfo material = material_infos[i_mat];
+	
+#ifndef SHADOW_PASS
+	vec3 N = i_normal;
+#ifndef DEFERRED
+	vec3 V = i_coordv;
+#endif
+#endif
+
+	MAT_FILE
 #else
-	#ifdef MAT
-		MaterialInfo material = material_infos[i_mat];
-
-		#ifndef SHADOW_PASS
-		vec3 N = i_normal;
-		#ifndef DEFERRED
-		vec3 V = i_coordv;
-		#endif
-		#endif
-
-		MAT_FILE
-	#else
-		#ifndef SHADOW_PASS
-		o_color = pc.f;
+	#ifndef SHADOW_PASS
+		#if defined(PICKUP)
+			o_color = pack_uint_to_v4(pc.i[0]);
+		#else
+			o_color = pc.f;
 		#endif
 	#endif
 #endif

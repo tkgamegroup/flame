@@ -126,29 +126,13 @@ function make_third_camera(entity)
 		length = 5,
 		yaw = 0,
 		pitch = -90,
-		dragging = false,
-		infront_occluder = false
+		dragging = false
 	}
 	
 	local pnode = entity.get_parent().find_component("cNode")
 	camera.set_pos = function()
-		local off = vec3(0, 3, 0)
-		local d = 0
-		if infront_occluder and s_physics.p then
-			local o = pnode.get_global_pos() + off
-			local p = s_physics.raycast(o, camera.node.get_global_dir(2))
-			d = distance_3(o, p)
-			d = d < camera.length and d - 1 or camera.length
-		else
-			d = camera.length
-		end
-		if d < 0.1 then d = 0.1 end
-		camera.node.set_pos(camera.node.get_local_dir(2) * d + off)
+		camera.node.set_pos(camera.node.get_local_dir(2) * camera.length)
 	end
-
-	entity.add_event(function()
-		camera.set_pos()
-	end, 0.5)
 
 	local scene_receiver = scene.find_component("cReceiver")
 
@@ -163,6 +147,7 @@ function make_third_camera(entity)
 	scene_receiver.add_mouse_scroll_listener(function(scroll)
 		if scroll > 0 then
 			camera.length = camera.length * 0.9 - 0.1
+			if camera.length < 0.1 then camera.length = 0.1 end
 		else
 			camera.length = camera.length * 1.1 + 0.1
 		end

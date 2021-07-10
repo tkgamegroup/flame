@@ -24,12 +24,9 @@ void main()
 		float roughness = nor_rou.a;
 		vec3 albedo = (1.0 - metallic) * color;
 		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
-#ifdef NORMAL_DATA
-		o_color = vec4(normal, 1.0);
-#else
+
 		normal = nor_rou.xyz * 2.0 - vec3(1.0);
 		o_color = vec4(shading(coordw.xyz, length(coordv.xyz), normal, normalize(coordv.xyz), metallic, albedo, spec, roughness), 1.0);
-#endif
 	}
 	else
 		o_color = vec4(texture(sky_box, normalize(coordw.xyz)).rgb * render_data.sky_intensity, 1.0);

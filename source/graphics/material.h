@@ -14,12 +14,6 @@ namespace flame
 			virtual float get_alpha_test() const = 0;
 
 			virtual void get_pipeline_file(wchar_t* dst) const = 0;
-			inline std::filesystem::path get_pipeline_file() const
-			{
-				wchar_t buf[260];
-				get_pipeline_file(buf);
-				return buf;
-			}
 
 			virtual const char* get_pipeline_defines() const = 0;
 

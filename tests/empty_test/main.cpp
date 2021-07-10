@@ -1,21 +1,9 @@
-struct Base
-{
-    virtual ~Base() {}
-};
-
-struct Fucker
-{
-    virtual int fuck(int a)
-    {
-        return a - a;
-    }
-};
+#include <Windows.h>
 
 int main()
 {
-    auto f = new Fucker;
-    auto b = new Base;
-    auto wtf1 = dynamic_cast<Fucker*>(f);
-    auto wtf2 = dynamic_cast<Fucker*>(b);
+    HWND vs_hwnd = (HWND)0x2072C;
+    SetWindowLong(vs_hwnd, GWL_EXSTYLE, GetWindowLong(vs_hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+    SetLayeredWindowAttributes(vs_hwnd, 0, 255, LWA_ALPHA);
     return 0;
 }

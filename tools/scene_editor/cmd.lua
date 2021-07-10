@@ -38,19 +38,24 @@ function cmd_file_save_as()
     ui.add_child(l)
 end
 
+local e_rendertype = find_enum("RenderType")
+local e_wireframe = e_rendertype["Wireframe"]
+local e_shaded = e_rendertype["Shaded"]
+local e_normaldata = e_rendertype["NormalData"]
+
 function cmd_shading_wireframe()
-    s_renderer.set_shading(find_enum("ShadingType")["Wireframe"])
+    s_renderer.set_render_type(e_wireframe)
 end
 
-function cmd_shading_combined()
-    s_renderer.set_shading(find_enum("ShadingType")["Combined"])
+function cmd_shading_shaded()
+    s_renderer.set_render_type(e_shaded)
 end
 
 function cmd_shading_normal_data()
-    s_renderer.set_shading(find_enum("ShadingType")["NormalData"])
+    s_renderer.set_render_type(e_normaldata)
 end
 
-function cmd_show_physics_visualization()
+function cmd_show_physics_visualization(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
     checked = not checked
@@ -58,7 +63,8 @@ function cmd_show_physics_visualization()
     s_physics.set_visualization(checked)
 end
 
-function cmd_show_ui_reflector()
+ui_reflector = { p=nil }
+function cmd_show_ui_reflector(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
     checked = not checked
@@ -76,7 +82,7 @@ function cmd_show_ui_reflector()
     end
 end
 
-function cmd_show_global_axes()
+function cmd_show_global_axes(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
     checked = not checked
@@ -84,7 +90,7 @@ function cmd_show_global_axes()
     scene.find_child("hud_global_axes").set_visible(checked)
 end
 
-function cmd_show_crosshair()
+function cmd_show_crosshair(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
     checked = not checked
@@ -92,7 +98,7 @@ function cmd_show_crosshair()
     scene.find_child("hud_crosshair").set_visible(checked)
 end
 
-function cmd_settings_alwawys_update()
+function cmd_settings_alwawys_update(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
     checked = not checked

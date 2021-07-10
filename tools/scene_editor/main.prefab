@@ -9,7 +9,10 @@
       last_save = locations["last_save"]
       
       function on_menu(ev)
-        entity.find_component("cReceiver").add_mouse_left_down_listener(ev)
+        local e = entity
+        e.find_component("cReceiver").add_mouse_left_down_listener(function()
+          ev(e)
+        end)
       end
     </cScript>
     <eMenuBar>
@@ -36,11 +39,11 @@
             end)
           </cScript>
         </eMenuItem>
-		    <eMenuItem checkable="true" checked="true" text="combined">
+		    <eMenuItem checkable="true" checked="true" text="shaded">
           <cScript>
             local e = entity
             on_menu(function()
-              cmd_shading_combined()
+              cmd_shading_shaded()
               e.find_driver("dMenuItem").set_single_checked()
             end)
           </cScript>
@@ -63,7 +66,6 @@
         </eMenuItem>
         <eMenuItem checkable="true" text="ui reflector">
           <cScript>
-            ui_reflector = { p=nil }
             on_menu(cmd_show_ui_reflector)
           </cScript>
         </eMenuItem>

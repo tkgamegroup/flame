@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<renderpass>
+  <attachments>
+    <attachment format="R16G16B16A16_SFLOAT" />
+    <attachment format="Depth16" />
+  </attachments>
+  <subpasses>
+    <subpass color_refs="0" depth_ref="1" />
+  </subpasses>
+</renderpass>

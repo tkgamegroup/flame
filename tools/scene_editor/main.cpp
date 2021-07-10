@@ -11,6 +11,8 @@ int main(int argc, char** args)
 
 	auto w = new GraphicsWindow(&g_app, L"Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
 
+	auto script_ins = script::Instance::get_default();
+	script_ins->excute_file(L"camera.lua");
 	{
 		auto e = Entity::create();
 		e->load(L"main");
