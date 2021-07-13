@@ -6,7 +6,7 @@ namespace flame
 {
 	struct NodeDrawer
 	{
-		virtual void draw(sRendererPtr) = 0;
+		virtual void draw(sRendererPtr, bool, bool) = 0;
 	};
 
 	struct NodeMeasurer
@@ -48,6 +48,8 @@ namespace flame
 
 		virtual float get_octree_length() const = 0;
 		virtual void set_octree_length(float len) = 0;
+		virtual uint get_octree_lod() const = 0;
+		virtual void set_octree_lod(uint lod) = 0;
 
 		virtual void add_drawer(NodeDrawer* d) = 0;
 		virtual void remove_drawer(NodeDrawer* d) = 0;

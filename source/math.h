@@ -274,14 +274,66 @@ namespace flame
 		{
 		}
 
+		Plane(const vec3& n, const vec3& p) :
+			n(n),
+			d(-dot(n, p))
+		{
+		}
+
 		Plane(const vec3& a, const vec3& b, const vec3& c)
 		{
 			n = normalize(cross(b - a, c - a));
 			d = -dot(n, a);
 		}
+
+		float distance(const vec3& p) const
+		{
+			return dot(n, p) + d;
+		}
 	};
 
-	inline bool is_AABB_in_frustum(const Plane* planes, const AABB& bounds)
+	struct Frustum
+	{
+		Plane planes[6];
+
+		Frustum() = default;
+
+		void set(const vec3* points)
+		{
+			planes[0] = Plane(points[0], points[1], points[2]); // near
+			planes[1] = Plane(points[4], points[7], points[5]); // far
+			planes[2] = Plane(points[3], points[7], points[4]); // left
+			planes[3] = Plane(points[1], points[5], points[6]); // right
+			planes[4] = Plane(points[0], points[4], points[5]); // top
+			planes[5] = Plane(points[2], points[6], points[7]); // bottom
+		}
+
+		Frustum(const vec3* points)
+		{
+			set(points);
+		}
+
+		Frustum(const mat4& inv)
+		{
+			vec3 points[8];
+			auto trans_point = [&](const vec3& p) {
+				auto ret = inv * vec4(p, 1.f);
+				ret /= ret.w;
+				return ret;
+			};
+			points[0] = trans_point(vec3(-1.f, -1.f, 0.f));
+			points[1] = trans_point(vec3(+1.f, -1.f, 0.f));
+			points[2] = trans_point(vec3(+1.f, +1.f, 0.f));
+			points[3] = trans_point(vec3(-1.f, +1.f, 0.f));
+			points[4] = trans_point(vec3(-1.f, -1.f, 1.f));
+			points[5] = trans_point(vec3(+1.f, -1.f, 1.f));
+			points[6] = trans_point(vec3(+1.f, +1.f, 1.f));
+			points[7] = trans_point(vec3(-1.f, +1.f, 1.f));
+			set(points);
+		}
+	};
+
+	inline bool AABB_frustum_check(const Frustum& frustum, const AABB& bounds)
 	{
 		vec3 ps[8];
 		bounds.get_points(ps);
@@ -290,7 +342,7 @@ namespace flame
 			auto outside = true;
 			for (auto j = 0; j < 8; j++)
 			{
-				if (dot(planes[i].n, ps[j]) + planes[i].d > 0.f)
+				if (frustum.planes[i].distance(ps[j]) > 0.f)
 				{
 					outside = false;
 					break;

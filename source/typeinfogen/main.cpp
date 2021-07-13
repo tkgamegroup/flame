@@ -602,6 +602,7 @@ process:
 		cpp << "typedef struct { F3 a; F3 b; }							F6;\n";
 		cpp << "typedef struct { F3 a; F3 b; F3 c; }					F9;\n";
 		cpp << "typedef struct { F4 a; F4 b; F4 c; F4 d; }				F16;\n";
+		cpp << "typedef struct { F4 a; F4 b; F4 c; F4 d; F4 e; F4 f; }	F24;\n";
 		cpp << "typedef struct { }										dummy;\n";
 		cpp << "template <class F> F a2f(void* p) { union{ void*p; F f; } cvt; cvt.p = p; return cvt.f; }\n";
 		cpp << "\n";

@@ -23,16 +23,17 @@ namespace flame
 		cNodePrivate* pnode = nullptr;
 		bool transform_dirty = true;
 		uint transform_updated_times = 0;
-		bool bounds_dirty = true;
 		vec3 g_pos;
 		mat3 g_rot;
 		vec3 g_scl;
 		mat4 transform;
 		AABB bounds;
+		bool bounds_invalid = true;
 
 		bool assemble_sub = false;
 
 		float octree_length = 0.f;
+		uint octree_lod = 0;
 		std::unique_ptr<OctNode> octree;
 		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
@@ -40,8 +41,9 @@ namespace flame
 		std::vector<NodeMeasurer*> measurers;
 
 		sScenePrivate* s_scene = nullptr;
-		bool pending_reindex = false;
+		bool pending_bounds = false;
 		sRendererPrivate* s_renderer = nullptr;
+		uint frame = 0;
 
 		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
@@ -65,6 +67,8 @@ namespace flame
 
 		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
+		uint get_octree_lod() const override { return octree_lod; }
+		void set_octree_lod(uint lod) override;
 
 		void add_drawer(NodeDrawer* d) override;
 		void remove_drawer(NodeDrawer* d) override;
@@ -78,12 +82,13 @@ namespace flame
 		void update_qut();
 		void update_rot();
 		void update_transform();
-		void update_bounds();
 
 		void mark_transform_dirty();
 		void mark_bounds_dirty();
 		void mark_drawing_dirty();
 		void remove_from_reindex_list();
+
+		void draw(uint frame, bool shadow_pass);
 
 		void on_component_added(Component* c) override;
 		void on_component_removed(Component* c) override;
@@ -159,7 +164,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
-				if (obj->bounds.intersects(check_bounds))
+				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
 					return true;
 			}
 
@@ -186,7 +191,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
-				if (obj->bounds.intersects(check_bounds))
+				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
 					res.push_back(obj);
 			}
 
@@ -208,7 +213,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
-				if (obj->bounds.intersects(check_center, check_radius))
+				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
 					return true;
 			}
 
@@ -235,7 +240,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
-				if (obj->bounds.intersects(check_center, check_radius))
+				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
 					res.push_back(obj);
 			}
 
@@ -289,9 +294,9 @@ namespace flame
 		//	}
 		//}
 
-		void get_within_frustum(const Plane* planes, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
+		void get_within_frustum(const Frustum& frustum, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
 		{
-			if (!is_AABB_in_frustum(planes, bounds))
+			if (!AABB_frustum_check(frustum, bounds))
 				return;
 
 			for (auto obj : objects)
@@ -300,14 +305,14 @@ namespace flame
 				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
 					continue;
 
-				if (is_AABB_in_frustum(planes, obj->bounds))
+				if (!obj->bounds_invalid && AABB_frustum_check(frustum, obj->bounds))
 					res.push_back(obj);
 			}
 
 			if (!children.empty())
 			{
 				for (auto i = 0; i < 8; i++)
-					children[i]->get_within_frustum(planes, res, filter_tag);
+					children[i]->get_within_frustum(frustum, res, filter_tag);
 			}
 		}
 

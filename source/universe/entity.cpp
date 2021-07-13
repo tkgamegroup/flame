@@ -409,7 +409,10 @@ namespace flame
 		children.emplace(children.begin() + pos, e);
 
 		e->parent = this;
-		e->depth = depth + 1;
+		e->traversal([this](EntityPrivate* e) {
+			e->depth = e->parent->depth + 1;
+			return true;
+		});
 		e->index = pos;
 		e->update_visibility();
 

@@ -23,7 +23,7 @@ namespace flame
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
 
-		void draw(sRendererPtr s_renderer) override;
+		void draw(sRendererPtr s_renderer, bool, bool) override;
 
 		void on_added() override;
 		void on_removed() override;

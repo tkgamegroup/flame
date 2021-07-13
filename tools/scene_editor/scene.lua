@@ -19,7 +19,6 @@ function load_scene(filename)
 
     if prefab.find_component("cNode").p and prefab.find_child("camera").p == nil then
         prefab.wrapper = create_entity("prefabs/node")
-        
         local e = create_entity("prefabs/cube")
         local node = e.find_component("cNode")
         node.set_pos(vec3(0, -1, 0))

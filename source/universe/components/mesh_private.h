@@ -15,7 +15,8 @@ namespace flame
 		ShadingFlags shading_flags = ShadingMaterial;
 
 		cNodePrivate* node = nullptr;
-		cArmaturePrivate* pani = nullptr;
+		cArmaturePrivate* parm = nullptr;
+		int transform_id = -1;
 		sRendererPrivate* s_renderer = nullptr;
 
 		int mesh_id = -1;
@@ -35,7 +36,7 @@ namespace flame
 
 		void apply_src();
 
-		void draw(sRendererPtr s_renderer) override;
+		void draw(sRendererPtr s_renderer, bool first, bool shadow_pass) override;
 		bool measure(AABB* b) override;
 
 		void on_added() override;

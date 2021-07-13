@@ -50,6 +50,7 @@ namespace flame
 
 		void*					sky_id = nullptr;
 
+		uint frame;
 		std::unique_ptr<ElemnetRenderData>	_ed;
 		std::unique_ptr<NodeRenderData>		_nd;
 
@@ -60,6 +61,7 @@ namespace flame
 
 		void set_always_update(bool a) override { always_update = a; }
 		void set_render_type(RenderType type) override { render_type = type; }
+		void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) override;
 		void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) override;
 
 		graphics::ImageView* get_element_res(uint idx) const override;
@@ -90,10 +92,12 @@ namespace flame
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) override;
 
-		void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) override;
-		uint add_armature(uint bones_count, const mat4* bones) override;
-		void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id, ShadingFlags flags) override;
-		void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
+		void add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) override;
+		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
+		uint add_mesh_armature(uint bones_count, const mat4* bones) override;
+		void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags) override;
+		void add_mesh_occluder(uint idx, uint mesh_id) override;
+		void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
 			uint material_id, ShadingFlags flags) override;
 		void draw_particles(uint count, graphics::Particle* partcles, uint res_id) override;
 
@@ -103,10 +107,13 @@ namespace flame
 		void mark_dirty() override { dirty = true; }
 
 		uint element_render(uint layer, cElementPrivate* element);
-		void node_render(cNodePrivate* node);
+		void node_render(cNodePrivate* node, Frustum* lod_frustums);
 
 		void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) override;
 		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
+
+		uint get_shadow_count(LightType t) override;
+		void get_shadow_matrices(LightType t, uint idx, mat4* dst) override;
 
 		void on_added() override;
 

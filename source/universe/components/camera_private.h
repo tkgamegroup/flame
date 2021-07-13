@@ -27,15 +27,15 @@ namespace flame
 
 		void apply_current();
 
-		bool get_current() const override { return current; }
-		void set_current(bool v) override;
-
 		void set_screen_size(const uvec2& sz);
 		void update_view();
 		void update_proj();
 
-		void get_points(vec3* dst, float n = -1.f, float f = -1.f);
-		void get_planes(Plane* dst, float n = -1.f, float f = -1.f);
+		bool get_current() const override { return current; }
+		void set_current(bool v) override;
+
+		void get_points(vec3* dst, float n = -1.f, float f = -1.f) override;
+		Frustum get_frustum(float n = -1.f, float f = -1.f) override;
 
 		vec3 screen_to_world(const uvec2& pos) override;
 		uvec2 world_to_screen(const vec3& pos) override;

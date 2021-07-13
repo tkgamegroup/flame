@@ -2,7 +2,7 @@
 #define LIGHT_SET 0
 #endif
 
-struct GridLight
+struct TileLights
 {
 	uint dir_count;
 	uint dir_indices[7];
@@ -16,12 +16,25 @@ struct LightInfo
 	vec3 color;
 	
 	int shadow_index;
-	vec2 shadow_range;
 };
 
-layout (set = LIGHT_SET, binding = 0) buffer readonly GridLights
+struct DirShadow
 {
-	GridLight grid_lights[20000];
+	mat4 mats[4];
+	float splits[4];
+	float far;
+};
+
+struct PtShadow
+{
+	mat4 mats[6];
+	float near;
+	float far;
+};
+
+layout (set = LIGHT_SET, binding = 0) buffer readonly TileLightsMap
+{
+	TileLights tile_lights[20000];
 };
 
 layout (set = LIGHT_SET, binding = 1) buffer readonly LightInfos
@@ -29,14 +42,14 @@ layout (set = LIGHT_SET, binding = 1) buffer readonly LightInfos
 	LightInfo light_infos[65536];
 };
 
-layout (set = LIGHT_SET, binding = 2) buffer readonly DirShadowMats
+layout (set = LIGHT_SET, binding = 2) buffer readonly DirShadows
 {
-	mat4 dir_shadow_mats[16];
+	DirShadow dir_shadows[4];
 };
 
-layout(set = LIGHT_SET, binding = 3) buffer readonly PtShadowMats
+layout(set = LIGHT_SET, binding = 3) buffer readonly PtShadows
 {
-	mat4 pt_shadow_mats[24];
+	PtShadow pt_shadows[4];
 };
 
 layout (set = LIGHT_SET, binding = 4) uniform sampler2DArray	dir_shadow_maps[4];

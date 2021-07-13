@@ -78,6 +78,17 @@ namespace flame
 			lua_check_result(state, lua_pcall(state, 4, 1, 0));
 		}
 
+		void lua_push_mat4(lua_State* state, const mat4& v)
+		{
+			lua_getglobal(state, "mat4");
+			for (auto i = 0; i < 4; i++)
+			{
+				for (auto j = 0; j < 4; j++)
+					lua_pushnumber(state, v[i][j]);
+			}
+			lua_check_result(state, lua_pcall(state, 16, 1, 0));
+		}
+
 		vec2 lua_to_vec2(lua_State* state, int idx)
 		{
 			lua_pushvalue(state, idx);
@@ -120,6 +131,26 @@ namespace flame
 			return ret;
 		}
 
+		mat4 lua_to_mat4(lua_State* state, int idx)
+		{
+			lua_pushvalue(state, idx);
+			lua_pushstring(state, "push");
+			lua_gettable(state, -2);
+			lua_check_result(state, lua_pcall(state, 0, 16, 0));
+			mat4 ret;
+			auto n = 16;
+			for (auto i = 0; i < 4; i++)
+			{
+				for (auto j = 0; j < 4; j++)
+				{
+					ret[i][j] = lua_tonumber(state, -n);
+					n--;
+				}
+			}
+			lua_pop(state, 17);
+			return ret;
+		}
+
 		int lua_flame_malloc(lua_State* state)
 		{
 			if (lua_isinteger(state, -1))
@@ -148,33 +179,29 @@ namespace flame
 			return 0;
 		}
 
-		thread_local mat4 matrices[100];
-
-		int lua_flame_transform(lua_State* state)
+		int lua_flame_mat4_transform(lua_State* state)
 		{
-			auto mat_id = lua_isinteger(state, -2) ? lua_tointeger(state, -2) : -1;
+			auto mat = lua_to_mat4(state, -2);
 			auto v = lua_to_vec4(state, -1);
-			if (mat_id != -1)
-			{
-				lua_push_vec4(state, matrices[mat_id] * v);
-				return 1;
-			}
-			return 0;
+			lua_push_vec4(state, mat * v);
+			return 1;
 		}
 
-		int lua_flame_perspective(lua_State* state)
+		int lua_flame_mat4_inverse(lua_State* state)
 		{
-			auto mat_id = lua_isinteger(state, -5) ? lua_tointeger(state, -5) : -1;
+			auto mat = lua_to_mat4(state, -1);
+			lua_push_mat4(state, inverse(mat));
+			return 1;
+		}
+
+		int lua_flame_perspective_matrix(lua_State* state)
+		{
 			auto fovy = lua_isnumber(state, -4) ? lua_tonumber(state, -4) : 0.f;
 			auto aspect = lua_isnumber(state, -3) ? lua_tonumber(state, -3) : 0.f;
 			auto zNear = lua_isnumber(state, -2) ? lua_tonumber(state, -2) : 0.f;
 			auto zFar = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : 0.f;
-			if (mat_id != -1)
-			{
-				matrices[mat_id] = perspective(radians(fovy), aspect, zNear, zFar);
-				matrices[mat_id][1][1] *= -1.f;
-			}
-			return 0;
+			lua_push_mat4(state, perspective(radians(fovy), aspect, zNear, zFar));
+			return 1;
 		}
 
 		int lua_flame_get_fps(lua_State* state)
@@ -196,61 +223,89 @@ namespace flame
 				switch (tag)
 				{
 				case TypeData:
-					switch (vec_size)
+					switch (col_size)
 					{
 					case 1:
-						switch (basic)
+						switch (vec_size)
 						{
-						case IntegerType:
-						{
-							int ret;
-							ret = *(int*)((char*)obj + off);
-							lua_pushinteger(state, ret);
-							return 1;
-						}
-						case FloatingType:
-						{
-							float ret;
-							ret = *(float*)((char*)obj + off);
-							lua_pushnumber(state, ret);
-							return 1;
-						}
-						}
-						break;
-					case 2:
-						switch (basic)
-						{
-						case FloatingType:
-						{
-							vec2 ret;
-							ret = *(vec2*)((char*)obj + off);
-							lua_push_vec2(state, ret);
-							return 1;
-						}
-						}
-						break;
-					case 3:
-						switch (basic)
-						{
-						case FloatingType:
-						{
-							vec3 ret;
-							ret = *(vec3*)((char*)obj + off);
-							lua_push_vec3(state, ret);
-							return 1;
-						}
+						case 1:
+							switch (basic)
+							{
+							case IntegerType:
+							{
+								int ret;
+								ret = *(int*)((char*)obj + off);
+								lua_pushinteger(state, ret);
+								return 1;
+							}
+							case FloatingType:
+							{
+								float ret;
+								ret = *(float*)((char*)obj + off);
+								lua_pushnumber(state, ret);
+								return 1;
+							}
+							}
+							break;
+						case 2:
+							switch (basic)
+							{
+							case FloatingType:
+							{
+								vec2 ret;
+								ret = *(vec2*)((char*)obj + off);
+								lua_push_vec2(state, ret);
+								return 1;
+							}
+							}
+							break;
+						case 3:
+							switch (basic)
+							{
+							case FloatingType:
+							{
+								vec3 ret;
+								ret = *(vec3*)((char*)obj + off);
+								lua_push_vec3(state, ret);
+								return 1;
+							}
+							}
+							break;
+						case 4:
+							switch (basic)
+							{
+							case FloatingType:
+							{
+								vec4 ret;
+								ret = *(vec4*)((char*)obj + off);
+								lua_push_vec4(state, ret);
+								return 1;
+							}
+							case CharType:
+							{
+								cvec4 ret;
+								ret = *(cvec4*)((char*)obj + off);
+								lua_push_vec4(state, ret);
+								return 1;
+							}
+							}
+							break;
 						}
 						break;
 					case 4:
-						switch (basic)
+						switch (vec_size)
 						{
-						case FloatingType:
-						{
-							vec4 ret;
-							ret = *(vec4*)((char*)obj + off);
-							lua_push_vec4(state, ret);
-							return 1;
-						}
+						case 4:
+							switch (basic)
+							{
+							case FloatingType:
+							{
+								mat4 ret;
+								ret = *(mat4*)((char*)obj + off);
+								lua_push_mat4(state, ret);
+								return 1;
+							}
+							}
 						}
 						break;
 					}
@@ -335,12 +390,27 @@ namespace flame
 						case FloatingType:
 							*(vec4*)((char*)obj + off) = lua_to_vec4(state, -1);
 							break;
+						case CharType:
+							*(cvec4*)((char*)obj + off) = (cvec4)lua_to_vec4(state, -1);
+							break;
 						}
 						break;
 					}
 					break;
 				}
 			}
+			return 0;
+		}
+
+		int lua_flame_cpy(lua_State* state)
+		{
+			auto dst_obj = lua_isuserdata(state, -5) ? lua_touserdata(state, -5) : nullptr;
+			auto dst_off = lua_isinteger(state, -4) ? lua_tointeger(state, -4) : 0;
+			auto src_obj = lua_isuserdata(state, -3) ? lua_touserdata(state, -3) : nullptr;
+			auto src_off = lua_isinteger(state, -2) ? lua_tointeger(state, -2) : 0;
+			auto size = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : 0;
+			if (dst_obj && src_obj && size)
+				memcpy((char*)dst_obj + dst_off, (char*)src_obj + src_off, size);
 			return 0;
 		}
 
@@ -714,11 +784,8 @@ namespace flame
 								switch (basic)
 								{
 								case FloatingType:
-									lua_getglobal(state, "__mat_id__");
-									auto mat_id = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
-									lua_pop(state, 1);
-									if (mat_id != -1)
-										memcpy(&matrices[mat_id], ret, sizeof(mat4));
+									lua_push_mat4(state, *(mat4*)ret);
+									pushed_number = 1;
 									break;
 								}
 								break;
@@ -777,11 +844,14 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_flame_free);
 			lua_setglobal(lua_state, "flame_free");
 
-			lua_pushcfunction(lua_state, lua_flame_transform);
-			lua_setglobal(lua_state, "flame_transform");
+			lua_pushcfunction(lua_state, lua_flame_mat4_transform);
+			lua_setglobal(lua_state, "flame_mat4_transform");
 
-			lua_pushcfunction(lua_state, lua_flame_perspective);
-			lua_setglobal(lua_state, "flame_perspective");
+			lua_pushcfunction(lua_state, lua_flame_mat4_inverse);
+			lua_setglobal(lua_state, "flame_mat4_inverse");
+
+			lua_pushcfunction(lua_state, lua_flame_perspective_matrix);
+			lua_setglobal(lua_state, "flame_perspective_matrix");
 
 			lua_pushcfunction(lua_state, lua_flame_get_fps);
 			lua_setglobal(lua_state, "flame_get_fps");
@@ -791,6 +861,9 @@ namespace flame
 
 			lua_pushcfunction(lua_state, lua_flame_set);
 			lua_setglobal(lua_state, "flame_set");
+
+			lua_pushcfunction(lua_state, lua_flame_cpy);
+			lua_setglobal(lua_state, "flame_cpy");
 
 			lua_pushcfunction(lua_state, lua_flame_call);
 			lua_setglobal(lua_state, "flame_call");

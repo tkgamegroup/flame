@@ -42,8 +42,7 @@ callbacks = {}
 function get_callback_slot(f)
 	local s = math.random(0, 10000)
 	if (callbacks[s] == nil) then
-		callbacks[s] = {}
-		callbacks[s].f = f
+		callbacks[s] = { f=f }
 		return s
 	end
 	return get_callback_slot(f)
@@ -219,6 +218,28 @@ function vec4(x, y, z, w)
 			return vec4(a.x * b, a.y * b, a.z * b, a.w * b)
 		end
 	})
+	return o
+end
+
+function mat4(
+	a1, a2, a3, a4,
+	b1, b2, b3, b4,
+	c1, c2, c3, c4,
+	d1, d2, d3, d4
+)
+	local o = {
+		a1=a1, a2=a2, a3=a3, a4=a4,
+		b1=b1, b2=b2, b3=b3, b4=b4,
+		c1=c1, c2=c2, c3=c3, c4=c4,
+		d1=d1, d2=d2, d3=d3, d4=d4
+	}
+	o.push = function()
+		return  
+			o.a1, o.a2, o.a3, o.a4,
+			o.b1, o.b2, o.b3, o.b4,
+			o.c1, o.c2, o.c3, o.c4,
+			o.d1, o.d2, o.d3, o.d4
+	end
 	return o
 end
 

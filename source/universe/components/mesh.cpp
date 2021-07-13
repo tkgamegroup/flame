@@ -83,14 +83,22 @@ namespace flame
 			}
 		}
 
-		if (model->get_bones_count() > 0)
-			pani = entity->parent->get_component_t<cArmaturePrivate>();
+		if (mesh->get_bone_ids())
+			parm = entity->parent->get_component_t<cArmaturePrivate>();
 	}
 
-	void cMeshPrivate::draw(sRendererPtr s_renderer)
+	void cMeshPrivate::draw(sRendererPtr s_renderer, bool first, bool shadow_pass)
 	{
 		if (mesh_id != -1)
-			s_renderer->draw_mesh(node, mesh_id, cast_shadow, pani ? pani->armature_id : -1, shading_flags);
+		{
+			if (!parm && first)
+				transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
+			auto idx = parm ? parm->armature_id : transform_id;
+			if (!shadow_pass)
+				s_renderer->draw_mesh(idx, mesh_id, shading_flags);
+			else if (cast_shadow)
+				s_renderer->add_mesh_occluder(idx, mesh_id);
+		}
 	}
 
 	bool cMeshPrivate::measure(AABB* b)
@@ -120,6 +128,7 @@ namespace flame
 		fassert(s_renderer);
 
 		apply_src();
+		node->mark_bounds_dirty();
 	}
 
 	void cMeshPrivate::on_left_world()

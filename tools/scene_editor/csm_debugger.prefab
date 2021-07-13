@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<prefab>
+    <eWindow pos="200,100" title="CSM Debugger">
+      <eButton name="capture_btn" text="Capture" />
+      <eButton name="clear_btn" text="Clear" />
+      <cScript src="csm_debugger.lua" />
+    </eWindow>
+</prefab>

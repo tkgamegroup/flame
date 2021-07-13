@@ -73,59 +73,55 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 {
 	vec3 ret = vec3(0.0);
 
-	uint light_count;
-	
-	light_count = grid_lights[0].dir_count;
-	for (int i = 0; i < light_count; i++)
+	TileLights tile_lights = tile_lights[0];
+
+	for (int i = 0; i < tile_lights.dir_count; i++)
 	{
-		LightInfo light = light_infos[grid_lights[0].dir_indices[i]];
+		LightInfo light = light_infos[tile_lights.dir_indices[i]];
 		vec3 L = light.pos;
 		
-		float shadow = 1.0;
-		if (light.shadow_index != -1 && distancev < light.shadow_range.y)
+		float shadowed = 1.0;
+		if (light.shadow_index != -1)
 		{
-			float d = distancev / light.shadow_range.y;
-			uint lvs = render_data.dir_shadow_levels;
-			float div = 1.0 / lvs;
-			uint lv = 0;
-			for (; lv < lvs; lv++)
+			DirShadow shadow = dir_shadows[light.shadow_index];
+
+			for (uint lv = 0; lv < 4; lv++)
 			{
-				float v = (lv + 1) * div;
-				if (d <= v * v)
-					break;
+				float split = shadow.splits[lv];
+				if (distancev >= split)
+					continue;
+				vec4 coordl = shadow.mats[lv] * vec4(coordw, 1.0);
+				coordl.xy = coordl.xy * 0.5 + vec2(0.5);
+				float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
+				shadowed = clamp(exp(-esm_c * (coordl.z - ref) * shadow.far), 0.0, 1.0);
+				break;
 			}
-			vec4 coordl = dir_shadow_mats[light.shadow_index * 4 + lv] * vec4(coordw, 1.0);
-			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-			float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-			ref = ref * light.shadow_range.y;
-			float dist = coordl.z * light.shadow_range.y;
-			shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 		}
 		
-		ret += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color * shadowed, metallic, albedo, spec, roughness);
 	}
 
-	
-	light_count = grid_lights[0].pt_count;
-	for (int i = 0; i < light_count; i++)
+	for (int i = 0; i < tile_lights.pt_count; i++)
 	{
-		LightInfo light = light_infos[grid_lights[0].pt_indices[i]];
+		LightInfo light = light_infos[tile_lights.pt_indices[i]];
 		vec3 L = light.pos - coordw;
 		float dist = length(L);
 		L = L / dist;
 
-		float shadow = 1.0;
-		if (light.shadow_index != -1 && distancev < light.shadow_range.y)
+		float shadowed = 1.0;
+		if (light.shadow_index != -1)
 		{
-			float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
-			float zNear = light.shadow_range.x;
-			float zFar = light.shadow_range.y;
-			ref = 2.0 * zNear * zFar / (zFar + zNear - ref * (zFar - zNear));
-			shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
+			PtShadow shadow = pt_shadows[light.shadow_index];
+
+			if (distancev < shadow.far)
+			{
+				float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
+				ref = linear_depth(shadow.near, shadow.far, ref);
+				shadowed = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
+			}
 		}
 
-		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);
-		ret += lighting(N, V, L, intensity * shadow, metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color / max(dist * dist * 0.01, 1.0) * shadowed , metallic, albedo, spec, roughness);
 	}
 
 	{

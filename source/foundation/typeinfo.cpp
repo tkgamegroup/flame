@@ -565,6 +565,15 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_Frustum : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_Frustum() :
+			TypeInfoPrivate_Pod(TypeData, "flame::Frustum", sizeof(Plane))
+		{
+			short_name = "F24";
+		}
+	};
+
 	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_mat2() :
@@ -855,6 +864,18 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_Rect;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfoPrivate_AABB;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfoPrivate_Plane;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfoPrivate_Frustum;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{

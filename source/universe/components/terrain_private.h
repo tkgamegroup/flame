@@ -43,7 +43,7 @@ namespace flame
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture.get(); }
 
-		void draw(sRendererPtr s_renderer) override;
+		void draw(sRendererPtr s_renderer, bool, bool) override;
 
 		void on_added() override;
 		void on_removed() override;

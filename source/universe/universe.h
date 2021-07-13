@@ -148,4 +148,6 @@ namespace flame
 	};
 
 	inline ShadingFlags operator| (ShadingFlags a, ShadingFlags b) { return (ShadingFlags)((int)a | (int)b); }
+
+	inline constexpr uint MaxLod = 6;
 }

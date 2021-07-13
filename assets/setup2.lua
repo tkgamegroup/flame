@@ -3,41 +3,10 @@ e_type_data = e_tag["Data"]
 e_type_pointer = e_tag["Pointer"]
 local e_basic = find_enum("BasicType")
 e_boolean_type = e_basic["BooleanType"]
+e_integer_type = e_basic["IntegerType"]
 e_floating_type = e_basic["FloatingType"]
 e_char_type = e_basic["CharType"]
 e_else_type = e_basic["ElseType"]
-
-function set_float(p, i, v)
-    flame_set(p, 4 * i, e_type_data, e_floating_type, 1, 1, v)
-end
-
-function set_vec2(p, i, v)
-    flame_set(p, 8 * i, e_type_data, e_floating_type, 2, 1, v)
-end
-
-function set_vec3(p, i, v)
-    flame_set(p, 12 * i, e_type_data, e_floating_type, 3, 1, v)
-end
-
-function set_vec4(p, i, v)
-    flame_set(p, 16 * i, e_type_data, e_floating_type, 4, 1, v)
-end
-
-function get_float(p, i)
-    return flame_get(p, 4 * i, e_type_data, e_floating_type, 1, 1)
-end
-
-function get_vec2(p, i)
-    return flame_get(p, 8 * i, e_type_data, e_floating_type, 2, 1)
-end
-
-function get_vec3(p, i)
-    return flame_get(p, 12 * i, e_type_data, e_floating_type, 3, 1)
-end
-
-function get_vec4(p, i)
-    return flame_get(p, 16 * i, e_type_data, e_floating_type, 4, 1)
-end
 
 for k, udt in pairs(udts) do
 	udt.static_functions = {}

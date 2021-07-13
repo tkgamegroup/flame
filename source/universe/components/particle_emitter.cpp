@@ -103,7 +103,7 @@ namespace flame
 		return mat3(eulerAngleYXZ(radians(e.x), radians(e.y), radians(e.z)));
 	}
 
-	void cParticleEmitterPrivate::draw(sRendererPtr s_renderer)
+	void cParticleEmitterPrivate::draw(sRendererPtr s_renderer, bool, bool)
 	{
 		if (res_id == -1)
 			return;

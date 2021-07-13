@@ -42,18 +42,15 @@ void main()
 
 	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
 
-#ifndef SHADOW_PASS
-	o_normal = mat3(deform) * i_nor;
-#endif
-
+	#ifndef SHADOW_PASS
+		o_normal = mat3(deform) * i_nor;
+	#endif
 #else
-
 	vec3 coordw = vec3(transforms[idx].mat * vec4(i_pos, 1.0));
 
-#ifndef SHADOW_PASS
-	o_normal = mat3(transforms[idx].nor) * i_nor;
-#endif
-
+	#ifndef SHADOW_PASS
+		o_normal = mat3(transforms[idx].nor) * i_nor;
+	#endif
 #endif
 
 #if !defined(DEFERRED) && !defined(SHADOW_PASS)
@@ -67,10 +64,10 @@ void main()
 	switch (pc.i[0])
 	{
 	case 0:
-		gl_Position = dir_shadow_mats[pc.i[1]] * vec4(coordw, 1.0);
+		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 		break;
 	case 1:
-		gl_Position = pt_shadow_mats[pc.i[1]] * vec4(coordw, 1.0);
+		gl_Position = pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 		break;
 	}
 #endif

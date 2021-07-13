@@ -69,7 +69,7 @@ namespace flame
 		void apply_src();
 		void advance();
 
-		void draw(sRendererPtr s_renderer) override;
+		void draw(sRendererPtr s_renderer, bool, bool) override;
 
 		void on_added() override;
 		void on_removed() override;

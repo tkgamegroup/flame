@@ -230,8 +230,10 @@ namespace flame
 		}
 	}
 
-	void cArmaturePrivate::draw(sRendererPtr s_renderer)
+	void cArmaturePrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
+		if (!first)
+			return;
 		if (!bones.empty())
 		{
 			if (peeding_pose.first != -1)
@@ -246,7 +248,7 @@ namespace flame
 				b.node->update_transform();
 				bone_mats[i] = b.node->transform * b.offmat;
 			}
-			armature_id = s_renderer->add_armature(bones.size(), bone_mats.data());
+			armature_id = s_renderer->add_mesh_armature(bones.size(), bone_mats.data());
 		}
 	}
 

@@ -49,6 +49,7 @@ namespace flame
 			void add_vertices(uint n, vec3* positions, vec3* uvs, vec3* normals);
 			void add_indices(uint n, uint* indices);
 
+			void calc_bounds();
 			void add_cube(const vec3& extent, const vec3& center, const mat3& rotation);
 			void add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const vec3& center, const mat3& rotation);
 		};

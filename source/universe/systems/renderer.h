@@ -20,6 +20,7 @@ namespace flame
 
 		virtual void set_always_update(bool a) = 0;
 		virtual void set_render_type(RenderType type) = 0;
+		virtual void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) = 0;
 		virtual void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) = 0;
 
 		virtual graphics::ImageView* get_element_res(uint idx) const = 0;
@@ -47,10 +48,12 @@ namespace flame
 		virtual void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) = 0;
 
-		virtual void add_light(cNodePtr node, LightType type, const vec3& color, bool cast_shadow) = 0;
-		virtual uint add_armature(uint bones_count, const mat4* bones) = 0;
-		virtual void draw_mesh(cNodePtr node, uint mesh_id, bool cast_shadow, int armature_id = -1, ShadingFlags flags = ShadingMaterial) = 0;
-		virtual void draw_terrain(cNodePtr node, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
+		virtual void add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) = 0;
+		virtual uint add_mesh_transform(const mat4& mat, const mat3& nor) = 0;
+		virtual uint add_mesh_armature(uint bones_count, const mat4* bones) = 0;
+		virtual void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags = ShadingMaterial) = 0;
+		virtual void add_mesh_occluder(uint idx, uint mesh_id) = 0;
+		virtual void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
 			uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_particles(uint count, graphics::Particle* partcles, uint res_id) = 0;
 
@@ -61,6 +64,10 @@ namespace flame
 
 		virtual void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) = 0;
 		virtual void record(uint tar_idx, graphics::CommandBuffer* cb) = 0;
+
+		/* for debug use */
+		virtual uint get_shadow_count(LightType t) = 0;
+		virtual void get_shadow_matrices(LightType t, uint idx, mat4* dst) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};

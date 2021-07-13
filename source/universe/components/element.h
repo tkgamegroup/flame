@@ -9,6 +9,15 @@ namespace flame
 		virtual uint draw(uint, sRendererPtr) = 0;
 	};
 
+	struct ElementScriptDrawer : ElementDrawer
+	{
+		virtual void release() = 0;
+
+		virtual void set_callback(uint slot) = 0;
+
+		FLAME_UNIVERSE_EXPORTS static ElementScriptDrawer* create(void* parms = nullptr);
+	};
+
 	struct ElementMeasurer
 	{
 		virtual bool measure(vec2*) = 0;

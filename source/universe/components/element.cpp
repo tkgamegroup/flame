@@ -6,6 +6,25 @@
 
 namespace flame
 {
+	uint ElementScriptDrawerPrivate::draw(uint layer, sRendererPtr renderer)
+	{
+		auto scr_ins = script::Instance::get_default();
+		scr_ins->get_global("callbacks");
+		scr_ins->get_member(nullptr, callback_slot);
+		scr_ins->get_member("f");
+		scr_ins->push_uint(layer);
+		scr_ins->push_object();
+		scr_ins->set_object_type("sRenderer", renderer);
+		scr_ins->call(2);
+		scr_ins->pop(2);
+		return layer;
+	}
+
+	ElementScriptDrawer* ElementScriptDrawer::create(void* parms)
+	{
+		return new ElementScriptDrawerPrivate();
+	}
+
 	void cElementPrivate::set_x(float x)
 	{
 		if (pos.x == x)
@@ -650,7 +669,7 @@ namespace flame
 			return bounds.contains(p);
 	}
 
-	bool cElementPrivate::draw(uint layer, sRenderer* s_renderer)
+	bool cElementPrivate::draw(uint layer)
 	{
 		auto transparent = true;
 		if (alpha > 0.f)

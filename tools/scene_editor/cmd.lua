@@ -63,25 +63,6 @@ function cmd_show_physics_visualization(entity)
     s_physics.set_visualization(checked)
 end
 
-ui_reflector = { p=nil }
-function cmd_show_ui_reflector(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
-    if checked then
-        if not ui_reflector.p then
-            ui_reflector = create_entity("ui_reflector")
-            ui.add_child(ui_reflector)
-        end
-    else
-        if ui_reflector.p then
-            ui_reflector.get_parent().remove_child(ui_reflector)
-            ui_reflector.p = nil
-        end
-    end
-end
-
 function cmd_show_global_axes(entity)
     local cmd_item = entity.find_driver("dMenuItem")
     local checked = cmd_item.get_checked()
@@ -96,6 +77,49 @@ function cmd_show_crosshair(entity)
     checked = not checked
     cmd_item.set_checked(checked)
     scene.find_child("hud_crosshair").set_visible(checked)
+end
+
+ui_reflector = { p=nil }
+function cmd_tools_ui_reflector(entity)
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
+    checked = not checked
+    cmd_item.set_checked(checked)
+    if checked then
+        if not ui_reflector.p then
+            ui_reflector = create_entity("ui_reflector")
+            ui.add_child(ui_reflector)
+        end
+    else
+        if ui_reflector.p then
+            ui.remove_child(ui_reflector)
+            ui_reflector.p = nil
+        end
+    end
+end
+
+csm_debugger = { p=nil }
+function cmd_tools_csm_debugger(entity)
+    local cmd_item = entity.find_driver("dMenuItem")
+    local checked = cmd_item.get_checked()
+    checked = not checked
+    cmd_item.set_checked(checked)
+    if checked then
+        if not csm_debugger.p then
+            csm_debugger = create_entity("csm_debugger")
+            csm_debugger.find_driver("dWindow").add_close_listener(function()
+                cmd_item.set_checked(false)
+                ui.remove_child(csm_debugger)
+                csm_debugger.p = nil
+            end)
+            ui.add_child(csm_debugger)
+        end
+    else
+        if csm_debugger.p then
+            ui.remove_child(csm_debugger)
+            csm_debugger.p = nil
+        end
+    end
 end
 
 function cmd_settings_alwawys_update(entity)

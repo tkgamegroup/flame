@@ -46,7 +46,7 @@ namespace flame
 		{
 			if (world && physics_scene)
 			{
-				auto e_debug = world->root->find_child("physics_debug_layer");
+				auto e_debug = world->root->find_child("debug_layer");
 				if (e_debug)
 				{
 					visualization_layer = e_debug->get_component_i<cElementPrivate>(0);

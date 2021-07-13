@@ -109,6 +109,6 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 
-		void draw(sRendererPtr s_renderer) override;
+		void draw(sRendererPtr s_renderer, bool, bool) override;
 	};
 }

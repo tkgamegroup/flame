@@ -255,13 +255,6 @@
 //			//}
 //		}
 //
-//		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
-//			preferences(preferences)
-//		{
-//			line_buffer.create(device, BufferUsageVertex, 200000);
-//			triangle_buffer.create(device, BufferUsageVertex, 1000);
-//		}
-// 
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
 //				InstanceCB cb(device);

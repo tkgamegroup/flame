@@ -120,16 +120,11 @@ namespace flame
 		dst[7] = view_inv * vec4(-x2, -y2, -f, 1.f);
 	}
 
-	void cCameraPrivate::get_planes(Plane* dst, float n, float f)
+	Frustum cCameraPrivate::get_frustum(float n, float f)
 	{
 		vec3 ps[8];
 		get_points(ps, n, f);
-		dst[0] = Plane(ps[0], ps[1], ps[2]); // near
-		dst[1] = Plane(ps[4], ps[7], ps[5]); // far
-		dst[2] = Plane(ps[3], ps[7], ps[4]); // left
-		dst[3] = Plane(ps[1], ps[5], ps[6]); // right
-		dst[4] = Plane(ps[0], ps[4], ps[5]); // top
-		dst[5] = Plane(ps[2], ps[6], ps[7]); // bottom
+		return Frustum(ps);
 	}
 
 	vec3 cCameraPrivate::screen_to_world(const uvec2& pos)

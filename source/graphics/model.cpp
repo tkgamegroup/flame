@@ -25,8 +25,6 @@ namespace flame
 			{
 				auto& p = _positions[i];
 				positions[b + i] = p;
-				lower_bound = min(lower_bound, p);
-				upper_bound = max(upper_bound, p);
 			}
 			if (_uvs)
 			{
@@ -48,6 +46,15 @@ namespace flame
 			indices.resize(b + n);
 			for (auto i = 0; i < n; i++)
 				indices[b + i] = _indices[i];
+		}
+
+		void MeshPrivate::calc_bounds()
+		{
+			for (auto& p : positions)
+			{
+				lower_bound = min(lower_bound, p);
+				upper_bound = max(upper_bound, p);
+			}
 		}
 
 		void MeshPrivate::add_cube(const vec3& extent, const vec3& center, const mat3& rotation)
@@ -605,8 +612,10 @@ namespace flame
 				{
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
+					mesh->model = m;
 					mesh->material = default_material;
 					mesh->add_cube(vec3(1.f), vec3(0.f), mat3(1.f));
+					mesh->calc_bounds();
 					m->meshes.emplace_back(mesh);
 
 					standard_cube = m;
@@ -619,8 +628,10 @@ namespace flame
 				{
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
+					mesh->model = m;
 					mesh->material = default_material;
 					mesh->add_sphere(0.5f, 12, 12, vec3(0.f), mat3(1.f));
+					mesh->calc_bounds();
 					m->meshes.emplace_back(mesh);
 
 					standard_sphere = m;

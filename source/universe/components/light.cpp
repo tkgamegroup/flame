@@ -20,9 +20,9 @@ namespace flame
 		cast_shadow = v;
 	}
 
-	void cLightPrivate::draw(sRendererPtr s_renderer)
+	void cLightPrivate::draw(sRendererPtr s_renderer, bool, bool)
 	{
-		s_renderer->add_light(node, type, color, cast_shadow);
+		s_renderer->add_light(node->transform, type, color, cast_shadow);
 	}
 
 	void cLightPrivate::on_added()

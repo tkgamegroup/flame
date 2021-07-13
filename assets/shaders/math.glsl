@@ -23,3 +23,8 @@ vec4 pack_uint_to_v4(uint id)
 	ret[3] = (id & 0xff) / 255.0;
 	return ret;
 }
+
+float linear_depth(float near, float far, float d)
+{
+	return 2.0 * near * far / (far + near - d * (far - near));
+}

@@ -95,6 +95,15 @@ namespace flame
 			entity->component_data_changed(this, S<"octree_length"_h>);
 	}
 
+	void cNodePrivate::set_octree_lod(uint lod)
+	{
+		if (octree_lod == lod)
+			return;
+		octree_lod = lod;
+		if (entity)
+			entity->component_data_changed(this, S<"octree_lod"_h>);
+	}
+
 	void cNodePrivate::add_drawer(NodeDrawer* d)
 	{
 		drawers.push_back(d);
@@ -224,48 +233,6 @@ namespace flame
 		}
 	}
 
-	void cNodePrivate::update_bounds()
-	{
-		if (bounds_dirty)
-		{
-			update_transform();
-
-			bounds_dirty = false;
-
-			bounds.reset();
-			for (auto m : measurers)
-			{
-				AABB b;
-				if (m->measure(&b))
-				{
-					vec3 ps[8];
-					b.get_points(ps);
-					b.reset();
-					for (auto i = 0; i < 8; i++)
-						b.expand(transform * vec4(ps[i], 1.f));
-
-					bounds.expand(b);
-				}
-			}
-
-			if (!assemble_sub)
-			{
-				for (auto& c : entity->children)
-				{
-					auto node = c->get_component_i<cNodePrivate>(0);
-					if (node)
-					{
-						node->update_bounds();
-						bounds.expand(node->bounds);
-					}
-				}
-			}
-
-			if (entity)
-				entity->component_data_changed(this, S<"bounds"_h>);
-		}
-	}
-
 	void cNodePrivate::mark_transform_dirty()
 	{
 		if (!transform_dirty)
@@ -285,19 +252,17 @@ namespace flame
 
 	void cNodePrivate::mark_bounds_dirty()
 	{
-		if (!bounds_dirty)
+		if (!pending_bounds)
 		{
-			bounds_dirty = true;
-
-			if (assemble_sub && pnode)
-				pnode->mark_bounds_dirty();
+			if (s_scene)
+			{
+				s_scene->add_to_bounds(this);
+				pending_bounds = true;
+			}
 		}
 
-		if (!pending_reindex && octnode.first)
-		{
-			s_scene->add_to_reindex(this);
-			pending_reindex = true;
-		}
+		if (assemble_sub && pnode)
+			pnode->mark_bounds_dirty();
 	}
 
 	void cNodePrivate::mark_drawing_dirty()
@@ -308,10 +273,22 @@ namespace flame
 
 	void cNodePrivate::remove_from_reindex_list()
 	{
-		if (!pending_reindex)
+		if (!pending_bounds)
 			return;
-		s_scene->remove_from_reindex(this);
-		pending_reindex = false;
+		s_scene->remove_from_bounds(this);
+		pending_bounds = false;
+	}
+
+	void cNodePrivate::draw(uint _frame, bool shadow_pass)
+	{
+		auto first = false;
+		if (_frame > frame)
+		{
+			first = true;
+			frame = _frame;
+		}
+		for (auto d : drawers)
+			d->draw(s_renderer, first, shadow_pass);
 	}
 
 	void cNodePrivate::on_component_added(Component* c)

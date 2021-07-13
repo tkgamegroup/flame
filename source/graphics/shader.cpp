@@ -265,6 +265,9 @@ namespace flame
 							case FloatingType:
 								type_name = "float";
 								break;
+							default:
+								type_name = type->get_name();
+								break;
 							}
 							break;
 						case 2:
@@ -549,7 +552,7 @@ namespace flame
 					printf("compiling dsl: %s", filename.string().c_str());
 
 					std::string output;
-					output.reserve(1024);
+					output.reserve(4096);
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					if (!std::filesystem::exists(L"a.spv"))
 					{
@@ -966,7 +969,7 @@ namespace flame
 					printf("compiling pll: %s", filename.string().c_str());
 
 					std::string output;
-					output.reserve(1024);
+					output.reserve(4096);
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					std::filesystem::remove(temp_fn);
 					if (!std::filesystem::exists(L"a.spv"))
@@ -1178,7 +1181,7 @@ namespace flame
 					printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
 
 					std::string output;
-					output.reserve(1024);
+					output.reserve(4096);
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), output.data());
 					if (!std::filesystem::exists(spv_path))
 					{

@@ -8,8 +8,6 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	float sky_intensity;
 	float sky_rad_levels;
 
-	uint dir_shadow_levels;
-
 	float zNear;
 	float zFar;
 	

@@ -74,30 +74,30 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::add_to_reindex(cNodePrivate* n)
+	void sScenePrivate::add_to_bounds(cNodePrivate* n)
 	{
 		auto depth = n->entity->depth;
-		auto it = reindex_list.begin();
-		for (; it != reindex_list.end(); it++)
+		auto it = bounds_list.begin();
+		for (; it != bounds_list.end(); it++)
 		{
 			if (it->first == depth)
 			{
 				it->second.push_back(n);
 				return;
 			}
-			if (it->first > depth)
+			if (it->first < depth)
 				break;
 		}
 		std::pair<uint, std::deque<cNodePrivate*>> v;
 		v.first = depth;
 		v.second.push_back(n);
-		reindex_list.insert(it, v);
+		bounds_list.insert(it, v);
 	}
 
-	void sScenePrivate::remove_from_reindex(cNodePrivate* n)
+	void sScenePrivate::remove_from_bounds(cNodePrivate* n)
 	{
 		auto depth = n->entity->depth;
-		for (auto& v : reindex_list)
+		for (auto& v : bounds_list)
 		{
 			if (v.first == depth)
 			{
@@ -451,28 +451,67 @@ namespace flame
 			l->pending_layout = false;
 		}
 
-		while (!reindex_list.empty())
+		while (!bounds_list.empty())
 		{
-			auto& v = reindex_list.front();
+			auto& v = bounds_list.front();
 			if (v.second.empty())
 			{
-				reindex_list.pop_front();
+				bounds_list.pop_front();
 				continue;
 			}
 
 			auto n = v.second.front();
 			v.second.pop_front();
 
-			n->update_bounds();
-			if (!n->octnode.second)
-				n->octnode.first->add(n);
-			else
+			n->update_transform();
+
+			n->bounds.reset();
+			for (auto m : n->measurers)
 			{
-				n->octnode.second->remove(n);
-				n->octnode.first->add(n);
+				AABB b;
+				if (m->measure(&b))
+				{
+					vec3 ps[8];
+					b.get_points(ps);
+					b.reset();
+					for (auto i = 0; i < 8; i++)
+						b.expand(n->transform * vec4(ps[i], 1.f));
+
+					n->bounds.expand(b);
+					n->bounds_invalid = false;
+				}
 			}
 
-			n->pending_reindex = false;
+			if (!n->assemble_sub)
+			{
+				for (auto& c : n->entity->children)
+				{
+					auto node = c->get_component_i<cNodePrivate>(0);
+					if (node)
+					{
+						if (!node->bounds_invalid)
+						{
+							n->bounds.expand(node->bounds);
+							n->bounds_invalid = false;
+						}
+					}
+				}
+			}
+
+			n->entity->component_data_changed(n, S<"bounds"_h>);
+
+			if (n->octnode.first)
+			{
+				if (!n->octnode.second)
+					n->octnode.first->add(n);
+				else
+				{
+					n->octnode.second->remove(n);
+					n->octnode.first->add(n);
+				}
+			}
+
+			n->pending_bounds = false;
 		}
 	}
 
