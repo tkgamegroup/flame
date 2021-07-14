@@ -84,9 +84,9 @@ namespace flame
 		void update_transform();
 
 		void mark_transform_dirty();
-		void mark_bounds_dirty();
+		void mark_bounds_dirty(bool child_caused);
 		void mark_drawing_dirty();
-		void remove_from_reindex_list();
+		void remove_from_bounds_list();
 
 		void draw(uint frame, bool shadow_pass);
 

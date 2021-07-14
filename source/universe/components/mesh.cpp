@@ -91,7 +91,7 @@ namespace flame
 	{
 		if (mesh_id != -1)
 		{
-			if (!parm && first)
+			if (first && !parm)
 				transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
 			auto idx = parm ? parm->armature_id : transform_id;
 			if (!shadow_pass)
@@ -101,11 +101,18 @@ namespace flame
 		}
 	}
 
-	bool cMeshPrivate::measure(AABB* b)
+	bool cMeshPrivate::measure(AABB* ret)
 	{
 		if (!mesh)
 			return false;
-		*b = AABB(mesh->get_lower_bound(), mesh->get_upper_bound());
+		auto b = AABB(mesh->get_lower_bound(), mesh->get_upper_bound());
+		vec3 ps[8];
+		b.get_points(ps);
+		b.reset();
+		auto& mat = parm ? node->pnode->transform : node->transform;
+		for (auto i = 0; i < 8; i++)
+			b.expand(mat * vec4(ps[i], 1.f));
+		*ret = b;
 		return true;
 	}
 
@@ -128,7 +135,7 @@ namespace flame
 		fassert(s_renderer);
 
 		apply_src();
-		node->mark_bounds_dirty();
+		node->mark_bounds_dirty(false);
 	}
 
 	void cMeshPrivate::on_left_world()

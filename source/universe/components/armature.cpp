@@ -232,9 +232,7 @@ namespace flame
 
 	void cArmaturePrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
-		if (!first)
-			return;
-		if (!bones.empty())
+		if (first && !bones.empty())
 		{
 			if (peeding_pose.first != -1)
 			{

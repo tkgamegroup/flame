@@ -471,12 +471,6 @@ namespace flame
 				AABB b;
 				if (m->measure(&b))
 				{
-					vec3 ps[8];
-					b.get_points(ps);
-					b.reset();
-					for (auto i = 0; i < 8; i++)
-						b.expand(n->transform * vec4(ps[i], 1.f));
-
 					n->bounds.expand(b);
 					n->bounds_invalid = false;
 				}
@@ -487,13 +481,10 @@ namespace flame
 				for (auto& c : n->entity->children)
 				{
 					auto node = c->get_component_i<cNodePrivate>(0);
-					if (node)
+					if (node && !node->bounds_invalid)
 					{
-						if (!node->bounds_invalid)
-						{
-							n->bounds.expand(node->bounds);
-							n->bounds_invalid = false;
-						}
+						n->bounds.expand(node->bounds);
+						n->bounds_invalid = false;
 					}
 				}
 			}

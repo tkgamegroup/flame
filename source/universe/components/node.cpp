@@ -246,12 +246,15 @@ namespace flame
 					n->mark_transform_dirty();
 			}
 		}
-		mark_bounds_dirty();
+		mark_bounds_dirty(false);
 		mark_drawing_dirty();
 	}
 
-	void cNodePrivate::mark_bounds_dirty()
+	void cNodePrivate::mark_bounds_dirty(bool child_caused)
 	{
+		if (!child_caused && measurers.empty())
+			return;
+
 		if (!pending_bounds)
 		{
 			if (s_scene)
@@ -262,7 +265,7 @@ namespace flame
 		}
 
 		if (assemble_sub && pnode)
-			pnode->mark_bounds_dirty();
+			pnode->mark_bounds_dirty(true);
 	}
 
 	void cNodePrivate::mark_drawing_dirty()
@@ -271,7 +274,7 @@ namespace flame
 			s_renderer->dirty = true;
 	}
 
-	void cNodePrivate::remove_from_reindex_list()
+	void cNodePrivate::remove_from_bounds_list()
 	{
 		if (!pending_bounds)
 			return;
@@ -354,7 +357,7 @@ namespace flame
 		if (octnode.second)
 			octnode.second->remove(this);
 
-		remove_from_reindex_list();
+		remove_from_bounds_list();
 		mark_drawing_dirty();
 
 		s_scene = nullptr;

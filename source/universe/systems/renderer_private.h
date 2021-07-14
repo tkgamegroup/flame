@@ -19,7 +19,7 @@ namespace flame
 
 	inline uint const ArmatureMaxBones = 128;
 
-	struct ElemnetRenderData;
+	struct ElemenetRenderData;
 	struct NodeRenderData;
 
 	struct sRendererPrivate : sRenderer
@@ -51,7 +51,7 @@ namespace flame
 		void*					sky_id = nullptr;
 
 		uint frame;
-		std::unique_ptr<ElemnetRenderData>	_ed;
+		std::unique_ptr<ElemenetRenderData>	_ed;
 		std::unique_ptr<NodeRenderData>		_nd;
 
 		bool dirty = true;
