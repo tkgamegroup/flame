@@ -2,8 +2,8 @@
 <prefab>
 	<entity>
 		<cNode />
-			<cMesh src="cube" />
-			<cRigid />
-			<cShape type="Cube" />
+		<cMesh src="cube" />
+		<cRigid />
+		<cShape type="Box" />
 	</entity>
 </prefab>

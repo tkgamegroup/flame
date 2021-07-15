@@ -100,6 +100,7 @@ namespace flame
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext)
 		{
 #ifdef USE_PHYSX
+			type = ShapeBox;
 			px_shape.reset(device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material));
 #endif
 			px_shape->userData = this;
@@ -108,6 +109,7 @@ namespace flame
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius)
 		{
 #ifdef USE_PHYSX
+			type = ShapeSphere;
 			px_shape.reset(device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material));
 #endif
 			px_shape->userData = this;
@@ -116,6 +118,7 @@ namespace flame
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius, float height)
 		{
 #ifdef USE_PHYSX
+			type = ShapeCapsule;
 			px_shape.reset(device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material));
 			px_shape->setLocalPose(PxTransform(PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
 #endif
@@ -125,7 +128,7 @@ namespace flame
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, TriangleMeshPrivate* tri_mesh, float scale)
 		{
 #ifdef USE_PHYSX
-
+			type = ShapeTriangleMesh;
 			px_shape.reset(device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh.get(), PxMeshScale(scale)), *material->px_material));
 #endif
 			px_shape->userData = this;
@@ -134,7 +137,7 @@ namespace flame
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const vec3& scale)
 		{
 #ifdef USE_PHYSX
-
+			type = ShapeHeightField;
 			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),
 				scale.y / height_field_precision, scale.x / (height_field->blocks.x * height_field->tess_levels), 
 				scale.z / (height_field->blocks.y * height_field->tess_levels)), *material->px_material));
@@ -153,7 +156,10 @@ namespace flame
 		void ShapePrivate::set_pose(const vec3& coord, const quat& qut)
 		{
 #ifdef USE_PHYSX
-			px_shape->setLocalPose(PxTransform(cvt(coord), cvt(qut)));
+			auto trans = PxTransform(cvt(coord), cvt(qut));
+			if (type == ShapeCapsule)
+				trans = trans * PxTransform(PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f)));
+			px_shape->setLocalPose(trans);
 #endif
 		}
 

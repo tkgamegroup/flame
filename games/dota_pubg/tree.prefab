@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+    <entity src="D:\\assets\\vegetation\\tree1.prefab">
+        <cRigid dynamic="false" />
+		<cShape type="Capsule" size="0.2,6.0,0.0" offset="0,3.0,0" />
+    </entity>
+</prefab>

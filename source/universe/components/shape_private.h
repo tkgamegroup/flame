@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cShapePrivate : cShape
 	{
-		physics::ShapeType type = physics::ShapeCube;
+		physics::ShapeType type = physics::ShapeBox;
 		vec3 size = vec3(0.5f);
 		vec3 off = vec3(0.f);
 		float static_friction = 0.2f;

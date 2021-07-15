@@ -427,11 +427,11 @@ obj_root.add_event(function()
 end, 0.0)
 
 local e_grasses = {}
-local e = create_entity("D:\\assets\\vegetation\\grass1.prefab")
+local e = create_entity("grass")
 table.insert(e_grasses, e)
 
 local e_trees = {}
-local e = create_entity("D:\\assets\\vegetation\\tree1.prefab")
+local e = create_entity("tree")
 table.insert(e_trees, e)
 
 local e_terrain = scene.find_child("terrain")

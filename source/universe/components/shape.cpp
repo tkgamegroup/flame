@@ -84,7 +84,7 @@ namespace flame
 		auto material = physics::Material::get(device, static_friction, dynamic_friction, restitution);
 		switch (type)
 		{
-		case physics::ShapeCube:
+		case physics::ShapeBox:
 			phy_shape = physics::Shape::create_box(device, material, size * node->g_scl);
 			break;
 		case physics::ShapeSphere:

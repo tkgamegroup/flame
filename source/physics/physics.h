@@ -41,7 +41,7 @@ namespace flame
 
 		enum ShapeType
 		{
-			ShapeCube,
+			ShapeBox,
 			ShapeSphere,
 			ShapeCapsule,
 			ShapeTriangleMesh,

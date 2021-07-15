@@ -34,6 +34,7 @@ namespace flame
 
 		struct ShapePrivate : Shape
 		{
+			ShapeType type;
 			RigidPrivate* rigid = nullptr; 
 
 #ifdef USE_PHYSX

@@ -394,7 +394,7 @@ namespace flame
 	{
 		bool should_render;
 
-		uint dir_shadow_levels = 1U;
+		uint dir_shadow_levels = 3U;
 		float dir_shadow_dist = 100.f;
 		float pt_shadow_dist = 20.f;
 		float pt_shadow_near = 0.1f;
