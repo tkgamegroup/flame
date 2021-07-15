@@ -21,6 +21,32 @@ namespace flame
 		set_pos(pos + p);
 	}
 
+	vec3 cNodePrivate::get_euler()
+	{ 
+		if (eul_dirty)
+			update_eul();
+		return eul; 
+	}
+
+	void cNodePrivate::set_euler(const vec3& e)
+	{
+		if (eul == e)
+			return;
+		eul = e;
+		rot_dirty = true;
+		qut_dirty = true;
+		mark_transform_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"euler"_h>);
+	}
+
+	quat cNodePrivate::get_quat() 
+	{ 
+		if (qut_dirty)
+			update_qut();
+		return qut; 
+	}
+
 	void cNodePrivate::set_quat(const quat& q)
 	{
 		if (qut == q)
@@ -41,18 +67,6 @@ namespace flame
 		mark_transform_dirty();
 		if (entity)
 			entity->component_data_changed(this, S<"scale"_h>);
-	}
-
-	void cNodePrivate::set_euler(const vec3& e)
-	{
-		if (eul == e)
-			return;
-		eul = e;
-		rot_dirty = true;
-		qut_dirty = true;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"euler"_h>);
 	}
 
 	void cNodePrivate::look_at(const vec3& t)

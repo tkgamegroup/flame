@@ -27,14 +27,13 @@ namespace flame
 		virtual vec3 get_pos() const = 0;
 		virtual void set_pos(const vec3& pos) = 0;
 		virtual void add_pos(const vec3& pos) = 0;
-		virtual quat get_quat() const = 0;
+		// yaw, pitch, roll, in angle
+		virtual vec3 get_euler() = 0;
+		virtual void set_euler(const vec3& e) = 0;
+		virtual quat get_quat() = 0;
 		virtual void set_quat(const quat& quat) = 0;
 		virtual vec3 get_scale() const = 0;
 		virtual void set_scale(const vec3& scale) = 0;
-
-		// yaw, pitch, roll, in angle
-		virtual vec3 get_euler() const = 0;
-		virtual void set_euler(const vec3& e) = 0;
 
 		virtual void look_at(const vec3& t) = 0;
 

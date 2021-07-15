@@ -48,9 +48,9 @@ namespace flame
 		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
 		void add_pos(const vec3& pos) override;
-		vec3 get_euler() const override { return eul; }
+		vec3 get_euler() override;
 		void set_euler(const vec3& e) override;
-		quat get_quat() const override { return qut; }
+		quat get_quat() override;
 		void set_quat(const quat& quat) override;
 		vec3 get_scale() const override { return scl; }
 		void set_scale(const vec3 & scale) override;
