@@ -1,8 +1,0 @@
-#define IMAGE_SAMPLE_SET 0
-#include "image_sample.dsl"
-
-layout(push_constant) uniform PushConstant
-{
-	vec2 offset;
-	vec2 step;
-}pc;

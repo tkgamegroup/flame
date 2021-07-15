@@ -94,26 +94,33 @@ namespace flame
 		{
 			auto tex_size = height_texture->get_size();
 			fassert(tex_size.x == tex_size.y);
+			auto s = tex_size.x;
+			auto s1 = s + 1;
+
 			normal_texture.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1, 
 				graphics::SampleCount_1, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 			normal_map_id = s_renderer->set_texture_res(-1, normal_texture->get_view(), nullptr);
 
-			std::vector<vec4> res;
-			res.resize((tex_size.x + 1) * (tex_size.y + 1));
-			height_texture->grid_sample(vec4(vec2(0.f), vec2(1.f) / vec2(tex_size)), tex_size + 1U, res.data());
-
-			graphics::StagingBuffer stag(device, sizeof(vec4) * tex_size.x * tex_size.y, nullptr, graphics::BufferUsageTransferDst);
-			auto nor_dat = (cvec4*)stag.mapped;
-			auto h = extent.y * (extent.x / tex_size.x);
-			auto ln = tex_size.x + 1;
-			for (auto y = 0; y < tex_size.y; y++)
+			std::vector<float> res;
+			res.resize(s1 * s1);
+			auto pres = res.data();
+			for (auto y = 0; y < s1; y++)
 			{
-				for (auto x = 0; x < tex_size.x; x++)
+				for (auto x = 0; x < s1; x++)
+					*pres++ = height_texture->linear_sample(vec2((float)x / s, (float)y / s)).x;
+			}
+
+			graphics::StagingBuffer stag(device, sizeof(vec4) * s * s, nullptr, graphics::BufferUsageTransferDst);
+			auto nor_dat = (cvec4*)stag.mapped;
+			auto h = extent.y * (extent.x / s);
+			for (auto y = 0; y < s; y++)
+			{
+				for (auto x = 0; x < s; x++)
 				{
-					auto LT = res[y * ln + x].x;
-					auto RT = res[y * ln + x + 1].x;
-					auto LB = res[(y + 1) * ln + x].x;
-					auto RB = res[(y + 1) * ln + x + 1].x;
+					auto LT = res[y * s1 + x];
+					auto RT = res[y * s1 + x + 1];
+					auto LB = res[(y + 1) * s1 + x];
+					auto RB = res[(y + 1) * s1 + x + 1];
 
 					float hL = (LT + LB) * 0.5f * h;
 					float hR = (RT + RB) * 0.5f * h;

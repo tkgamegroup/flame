@@ -1,6 +1,0 @@
-#include "image_sample.pll"
-
-void main()
-{
-	results[gl_WorkGroupID.x] = texture(tex, uvs[gl_WorkGroupID.x]);
-}

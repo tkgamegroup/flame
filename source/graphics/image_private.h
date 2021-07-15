@@ -9,10 +9,18 @@ namespace flame
 	{
 		struct ImagePrivate : Image
 		{
+			struct Data
+			{
+				std::unique_ptr<uchar> p;
+				uvec2 size;
+				uint pitch;
+			};
+
 			DevicePrivate* device;
 			
 			Format format;
 			std::vector<uvec2> sizes;
+			uint pixel_size;
 			uint levels;
 			uint layers;
 			SampleCount sample_count;
@@ -26,9 +34,9 @@ namespace flame
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
-			std::vector<std::vector<std::unique_ptr<uchar>>> data;
+			std::vector<std::vector<Data>> data;
 
-			void build_sizes(const uvec2& size);
+			void initialize(const uvec2& size);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
 				ImageUsageFlags usage, bool is_cube = false);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native);
@@ -48,6 +56,8 @@ namespace flame
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
+			Data& get_data(uint level, uint layer);
+
 			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) override;
 			FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, bool clear = false) override;
@@ -55,8 +65,7 @@ namespace flame
 			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
 			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
 
-			void grid_sample(const vec4& off_step, const ivec2& count, vec4* dst, uint level, uint layer) override;
-			void arbitrarily_sample(uint count, vec2* uvs, vec4* dst, uint level = 0, uint layer = 0) override;
+			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
 			void generate_mipmaps() override;
 

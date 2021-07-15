@@ -45,6 +45,28 @@ namespace flame
 			}
 		}
 
+		inline uint get_pixel_size(Format format)
+		{
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				return 1;
+			case Format_R16_UNORM:
+				return 2;
+			case Format_R32_SFLOAT:
+				return 4;
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
+				return 4;
+			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+				return 8;
+			case Format_R32G32B32A32_SFLOAT:
+				return 16;
+			case Format_Depth16:
+				return 2;
+			}
+			return 0;
+		}
+
 		struct Image
 		{
 			virtual void release() = 0;
@@ -64,8 +86,7 @@ namespace flame
 			virtual void change_layout(ImageLayout src_layout, ImageLayout dst_layout) = 0;
 			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
 
-			virtual void grid_sample(const vec4& off_step, const ivec2& count, vec4* dst, uint level = 0, uint layer = 0) = 0;
-			virtual void arbitrarily_sample(uint count, vec2* uvs, vec4* dst, uint level = 0, uint layer = 0) = 0;
+			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
 			virtual void generate_mipmaps() = 0;
 

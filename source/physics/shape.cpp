@@ -60,8 +60,6 @@ namespace flame
 			auto w1 = w + 1;
 			auto h1 = h + 1;
 			std::vector<uint> samples(w1 * h1);
-			std::vector<vec4> res(samples.size());
-			height_map->grid_sample(vec4(0.f, 0.f, 1.f / w, 1.f / h), ivec2(w1, h1), res.data());
 			auto dst = (PxHeightFieldSample*)samples.data();
 			auto lvhf = tess_levels >> 1;
 			auto idx = 0;
@@ -69,7 +67,7 @@ namespace flame
 			{
 				for (auto y = 0; y < h1; y++)
 				{
-					dst->height = res[y * w1 + x][0] * height_field_precision;
+					dst->height = height_map->linear_sample(vec2((float)x / w, (float)y / h)).x * height_field_precision;
 
 					dst->materialIndex0 = 0;
 					dst->materialIndex1 = 0;

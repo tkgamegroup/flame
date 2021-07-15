@@ -12,32 +12,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		static uint get_pixel_size(ImagePtr i)
-		{
-			switch (i->format)
-			{
-			case Format_R8_UNORM:
-				return 1;
-			case Format_R16_UNORM:
-				return 2;
-			case Format_R32_SFLOAT:
-				return 4;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
-				return 4;
-			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
-				return 8;
-			case Format_R32G32B32A32_SFLOAT:
-				return 16;
-			case Format_Depth16:
-				return 2;
-			}
-			return 0;
-		}
-
 		std::vector<ImagePrivate*> __images; // for debug: get image ptr from vulkan handle
 
-		void ImagePrivate::build_sizes(const uvec2& size)
+		void ImagePrivate::initialize(const uvec2& size)
 		{
+			pixel_size = get_pixel_size(format);
+
 			auto auto_lvs = false;
 			if (levels == 0)
 			{
@@ -60,6 +40,10 @@ namespace flame
 				if (s.y == 0)
 					s.y = 1;
 			}
+
+			data.resize(levels);
+			for (auto& vec : data)
+				vec.resize(layers);
 		}
 
 		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint lvs, uint layers, SampleCount sample_count, 
@@ -74,7 +58,7 @@ namespace flame
 		{
 			__images.push_back(this);
 
-			build_sizes(size);
+			initialize(size);
 
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -121,7 +105,7 @@ namespace flame
 		{
 			__images.push_back(this);
 
-			build_sizes(size);
+			initialize(size);
 
 			vk_image = (VkImage)native;
 		}
@@ -140,6 +124,31 @@ namespace flame
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
 			}
+		}
+
+		ImagePrivate::Data& ImagePrivate::get_data(uint level, uint layer)
+		{
+			auto& d = data[level][layer];
+			if (!d.p)
+			{
+				d.size = sizes[level];
+				d.pitch = image_pitch(pixel_size * d.size.x);
+				auto size = d.pitch * d.size.y;
+
+				StagingBuffer stag(device, size, nullptr, BufferUsageTransferDst);
+				{
+					InstanceCB cb(device);
+					BufferImageCopy cpy;
+					cpy.img_ext = d.size;
+					cpy.img_sub = { level, 1, layer, 1 };
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+					cb->copy_image_to_buffer(this, (BufferPrivate*)stag.get(), 1, &cpy);
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+				}
+				d.p.reset(new uchar[size]);
+				memcpy(d.p.get(), stag.mapped, size);
+			}
+			return d;
 		}
 
 		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle)
@@ -260,106 +269,40 @@ namespace flame
 			cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferDst, dst_layout);
 		}
 
-		struct
+		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
 		{
-			bool initialized = false;
-			DevicePrivate* dv;
-			DescriptorSetLayoutPrivate* dsl;
-			std::map<uint, DescriptorSetPrivate*> dss;
-			PipelinePrivate* pl_grid;
-			PipelinePrivate* pl_arb;
-			BufferPrivate* buf_uvs;
-			BufferPrivate* buf_res;
-			BufferPrivate* stag_uvs;
-			BufferPrivate* stag_res;
-			void* pstag_uvs;
-			void* pstag_res;
-			FencePrivate* fence;
+			auto& data = get_data(level, layer);
 
-			void initialize(DevicePrivate* device)
-			{
-				dv = device;
-				dsl = DescriptorSetLayoutPrivate::get(dv, L"image_sample/image_sample.dsl");
-				pl_grid = PipelinePrivate::get(dv, L"image_sample/grid.pl");
-				pl_arb = PipelinePrivate::get(dv, L"image_sample/arb.pl");
-				auto max_num = 2048 * 2048;
-				buf_uvs = new BufferPrivate(dv, sizeof(vec2) * max_num, BufferUsageStorage | BufferUsageTransferDst, MemoryPropertyDevice);
-				buf_res = new BufferPrivate(dv, sizeof(vec4) * max_num, BufferUsageStorage | BufferUsageTransferSrc, MemoryPropertyDevice);
-				stag_uvs = new BufferPrivate(dv, sizeof(vec2) * max_num, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
-				stag_res = new BufferPrivate(dv, sizeof(vec4) * max_num, BufferUsageTransferDst, MemoryPropertyHost | MemoryPropertyCoherent);
-				pstag_uvs = stag_uvs->map();
-				pstag_res = stag_res->map();
-				fence = new FencePrivate(dv, false);
-			}
+			auto get_color = [&](ivec2 p) {
+				if (p.x < 0)
+					p.x = 0;
+				if (p.y < 0)
+					p.y = 0;
+				if (p.x >= data.size.x)
+					p.x = data.size.x - 1;
+				if (p.y >= data.size.y)
+					p.y = data.size.y - 1;
 
-			DescriptorSetPrivate* get_ds(ImagePrivate* img, uint level, uint layer)
-			{
-				auto key = ((level & 0xff) << 24) + ((layer & 0xff) << 16) + ((uint)img & 0xffff);
-				auto it = dss.find(key);
-				if (it != dss.end())
-					return it->second;
-				auto ds = new DescriptorSetPrivate(dv->dsp.get(), dsl);
-				ds->set_image(dsl->find_binding("tex"), 0, img->get_view({ level, 1, layer, 1 }),
-					SamplerPrivate::get(dv, FilterLinear, FilterLinear, false, AddressClampToEdge));
-				ds->set_buffer(dsl->find_binding("UVs"), 0, buf_uvs);
-				ds->set_buffer(dsl->find_binding("Results"), 0, buf_res);
-				ds->update();
-				dss.emplace(key, ds);
-				return ds;
-			}
-		}sample_tool;
+				auto pixel = data.p.get() + data.pitch * p.y + pixel_size * p.x;
+				switch (format)
+				{
+				case Format_R8_UNORM:
+					return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
+				case Format_R8G8B8A8_UNORM:
+					return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
+				default:
+					fassert(0);
+				}
+			};
 
-		void ImagePrivate::grid_sample(const vec4& off_step, const ivec2& count, vec4* dst, uint level, uint layer)
-		{
-			if (!sample_tool.initialized)
-			{
-				sample_tool.initialize(device);
-				sample_tool.initialized = true;
-			}
-
-			auto number = count.x * count.y;
-
-			{
-				InstanceCB cb(device, sample_tool.fence);
-
-				cb->bind_pipeline(sample_tool.pl_grid);
-				cb->bind_descriptor_set(0, sample_tool.get_ds(this, level, layer));
-				cb->push_constant_t(off_step);
-				cb->dispatch(uvec3(count, 1));
-				cb->buffer_barrier(sample_tool.buf_res, AccessShaderWrite, AccessTransferRead);
-				BufferCopy cpy;
-				cpy.size = sizeof(vec4) * number;
-				cb->copy_buffer(sample_tool.buf_res, sample_tool.stag_res, 1, &cpy);
-			}
-
-			memcpy(dst, sample_tool.pstag_res, sizeof(vec4) * number);
-		}
-
-		void ImagePrivate::arbitrarily_sample(uint count, vec2* uvs, vec4* dst, uint level, uint layer)
-		{
-			if (!sample_tool.initialized)
-			{
-				sample_tool.initialize(device);
-				sample_tool.initialized = true;
-			}
-
-			{
-				InstanceCB cb(device, sample_tool.fence);
-				BufferCopy cpy;
-
-				memcpy(sample_tool.pstag_uvs, uvs, sizeof(vec2) * count);
-				cpy.size = sizeof(vec2) * count;
-				cb->copy_buffer(sample_tool.stag_uvs, sample_tool.buf_uvs, 1, &cpy);
-				cb->buffer_barrier(sample_tool.buf_uvs, AccessTransferWrite, AccessShaderRead);
-				cb->bind_pipeline(sample_tool.pl_arb);
-				cb->bind_descriptor_set(0, sample_tool.get_ds(this, level, layer));
-				cb->dispatch(uvec3(count, 1, 1));
-				cpy.size = sizeof(vec4) * count;
-				cb->copy_buffer(sample_tool.buf_res, sample_tool.stag_res, 1, &cpy);
-				cb->buffer_barrier(sample_tool.buf_res, AccessShaderWrite, AccessTransferRead);
-			}
-
-			memcpy(dst, sample_tool.pstag_res, sizeof(vec4) * count);
+			auto coord = uv * vec2(data.size) - 0.5f;
+			auto coordi = ivec2(floor(coord));
+			auto coordf = coord - vec2(coordi);
+			
+			return mix(
+				mix(get_color(coordi + ivec2(0, 0)), get_color(coordi + ivec2(1, 0)), coordf.x),
+				mix(get_color(coordi + ivec2(0, 1)), get_color(coordi + ivec2(1, 1)), coordf.x),
+				coordf.y);
 		}
 
 		void ImagePrivate::generate_mipmaps()
@@ -472,7 +415,8 @@ namespace flame
 		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Bitmap* bmp)
 		{
 			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
-				uvec2(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | ImageUsageTransferSrc);
+				uvec2(bmp->get_width(), bmp->get_height()), 1, 1, 
+				SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | ImageUsageTransferSrc);
 
 			StagingBuffer stag(device, bmp->get_size(), bmp->get_data());
 			InstanceCB cb(device);

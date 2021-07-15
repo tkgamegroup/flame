@@ -70,11 +70,7 @@ namespace flame
 				lv--;
 				vec4 color = vec4(0.f);
 				for (auto i = 0; i < 6; i++)
-				{
-					vec4 res;
-					box_texture->grid_sample(vec4(0.5f, 0.5f, 0.f, 0.f), ivec2(1), &res, lv, i);
-					color += res;
-				}
+					color += box_texture->linear_sample(vec2(0.5f), lv, i);
 				color /= 6.f;
 				fog_color = color;
 			}

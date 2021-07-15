@@ -1,7 +1,0 @@
-#include "image_sample.pll"
-
-void main()
-{
-	uint idx = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
-	results[idx] = texture(tex, pc.offset + vec2(gl_WorkGroupID.x * pc.step.x, gl_WorkGroupID.y * pc.step.y));
-}
