@@ -26,6 +26,7 @@ namespace flame
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
+			std::vector<std::vector<std::unique_ptr<uchar>>> data;
 
 			void build_sizes(const uvec2& size);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 

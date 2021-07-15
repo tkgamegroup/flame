@@ -51,9 +51,9 @@ namespace flame
 		material_name = name;
 	}
 
-	void cTerrainPrivate::draw(sRendererPtr s_renderer, bool, bool)
+	void cTerrainPrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
-		if (height_map_id == -1 || material_id == -1)
+		if (!first || height_map_id == -1 || material_id == -1)
 			return;
 
 		s_renderer->draw_terrain(node->g_pos, vec3(extent.x, extent.y, extent.x), uvec2(blocks), tess_levels, height_map_id, normal_map_id,

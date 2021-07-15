@@ -20,8 +20,8 @@ namespace flame
 		physics::HeightField* phy_height_field = nullptr;
 
 		cNodePrivate* node = nullptr;
-		cMeshPrivate* mesh = nullptr;
-		cTerrainPrivate* terrain = nullptr;
+		cMeshPrivate* c_mesh = nullptr;
+		cTerrainPrivate* c_terrain = nullptr;
 		cRigidPrivate* rigid = nullptr;
 
 		physics::ShapeType get_type() const override { return type; }

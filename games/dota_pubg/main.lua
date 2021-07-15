@@ -434,21 +434,19 @@ local e_trees = {}
 local e = create_entity("tree")
 table.insert(e_trees, e)
 
+local e_rocks = {}
+local e = create_entity("rock")
+table.insert(e_rocks, e)
+
 local e_terrain = scene.find_child("terrain")
 local terrain = e_terrain.find_component("cTerrain")
 local terrain_ext = terrain.get_extent()
 local terrain_height_tex = terrain.get_height_texture()
 local terrain_normal_tex = terrain.get_normal_texture()
 local vegetation_root = e_terrain.find_child("vegetation")
-terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 0.2, e_grasses, 0.03, 0.8)
-terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 2.5, e_trees, 0.1, 0.8)
---[[
-local e_plants = {}
-table.insert(e_plants, create_entity("D:\\assets\\vegetation\\plant1.prefab"))
-
-scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.2, e_grasses, 0.05, 2.5)
-scatter(vec4(0.0, 0.0, 400.0, 400.0), 0.5, e_plants, 0.0025, 1.0)
-]]
+terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 0.2, e_grasses, 0.03, 0.9, 0.8)
+terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 2.5, e_trees, 0.1, 0.9, 0.8)
+terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 3.0, e_rocks, 0.2, 0.0, 0.8)
 
 function skill_click(idx)
 	local slot = main_player.skills[idx]
@@ -511,8 +509,8 @@ for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 	ui.receiver = icon.find_component("cReceiver")
 	ui.image = icon.find_component("cImage")
 
-	ui.receiver.add_mouse_left_down_listener(function()
-		main_player.use_equipment(i)
+	ui.receiver.add_mouse_right_down_listener(function()
+		main_player.take_off_equipment(i)
 	end)
 end
 
@@ -536,7 +534,7 @@ for i=1, ITEM_SLOTS_COUNT, 1 do
 	ui.receiver = icon.find_component("cReceiver")
 	ui.image = icon.find_component("cImage")
 
-	ui.receiver.add_mouse_left_down_listener(function()
+	ui.receiver.add_mouse_right_down_listener(function()
 		main_player.use_item(i)
 	end)
 end
@@ -651,7 +649,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
-
+--[[
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
@@ -660,7 +658,7 @@ for i=1, 10, 1 do
 	make_npc(e, 1)
 	obj_root.add_child(e)
 end
-
+]]
 
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)

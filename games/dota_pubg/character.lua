@@ -388,7 +388,6 @@ function make_character(entity, group, stats)
 
 				local ori_id = character.equipments[euip_slot]
 				character.equipments[euip_slot] = slot.id
-				ui_equipment_slots[euip_slot].image.set_tile(item_type.name)
 
 				character.items[idx] = nil
 
@@ -405,7 +404,7 @@ function make_character(entity, group, stats)
 		end
 	end
 
-	character.use_equipment = function(idx)
+	character.take_off_equipment = function(idx)
 		local equipment = character.equipments[idx]
 		if equipment ~= 0 then
 			if character.receive_item(equipment, 1) == 0 then

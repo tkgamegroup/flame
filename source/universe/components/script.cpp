@@ -32,13 +32,21 @@ namespace flame
 		if (!content.empty())
 		{
 			if (!scr_ins->excute(content.c_str()))
-				fassert(0);
+				fassert(0); 
 		}
 		if (!src.empty())
 		{
+			auto ppath = entity->get_src(src_id).parent_path();
 			for (auto& s : SUW::split_with_spaces(src.wstring()))
 			{
-				if (!scr_ins->excute_file(s.c_str()))
+				std::filesystem::path fn(s);
+				if (!fn.is_absolute())
+				{
+					fn = ppath / fn;
+					if (!std::filesystem::exists(fn))
+						fn = s;
+				}
+				if (!scr_ins->excute_file(fn.c_str()))
 					fassert(0);
 			}
 		}

@@ -103,11 +103,9 @@ namespace flame
 		return mat3(eulerAngleYXZ(radians(e.x), radians(e.y), radians(e.z)));
 	}
 
-	void cParticleEmitterPrivate::draw(sRendererPtr s_renderer, bool, bool)
+	void cParticleEmitterPrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
-		if (res_id == -1)
-			return;
-		if (atlas && tile_id == -1)
+		if (!first || res_id == -1 || (atlas && tile_id == -1))
 			return;
 
 		if (emt_tick % emt_intv == 0 && linearRand(0.f, 1.f) < emt_prob)

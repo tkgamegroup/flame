@@ -25,7 +25,7 @@ function terrain_spawn(extent, height_tex, e_dst, poses, prefab, y_off)
     flame_free(heights)
 end
 
-function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, probability, scale)
+function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, probability, normal_constraint, scale)
     local cx = math.floor(range.z / density) + 1
     local cy = math.floor(range.w / density) + 1
 
@@ -45,7 +45,7 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
 	    for x = 0, cx - 1, 1 do
             local normal4 = flame_get(normals, 16 * i, e_type_data, e_floating_type, 4, 1)
             local normal = vec3(normal4.x, normal4.y, normal4.z) * 2 - vec3(1)
-            if math.random() < probability and dot_3(normal, vec3(0, 1, 0)) > 0.9 then
+            if math.random() < probability and dot_3(normal, vec3(0, 1, 0)) > normal_constraint then
                 local e = prefabs[math.floor(math.random() * n_prefabs) + 1].copy()
                 local node = e.find_component("cNode")
                 node.set_pos(vec3(

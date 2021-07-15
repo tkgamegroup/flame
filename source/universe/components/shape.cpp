@@ -58,8 +58,17 @@ namespace flame
 		node = entity->get_component_i<cNodePrivate>(0);
 		fassert(node);
 
-		terrain = entity->get_component_t<cTerrainPrivate>();
+		c_mesh = entity->get_component_t<cMeshPrivate>();
+		c_terrain = entity->get_component_t<cTerrainPrivate>();
+	}
 
+	void cShapePrivate::on_removed()
+	{
+		node = nullptr;
+	}
+
+	void cShapePrivate::on_entered_world()
+	{
 		auto e = entity;
 		while (e)
 		{
@@ -68,20 +77,13 @@ namespace flame
 				break;
 			e = e->parent;
 		}
-	}
+		fassert(rigid);
 
-	void cShapePrivate::on_removed()
-	{
-		node = nullptr;
-		rigid = nullptr;
-	}
-
-	void cShapePrivate::on_entered_world()
-	{
 		node->update_transform();
 
 		auto device = physics::Device::get_default();
 		auto material = physics::Material::get(device, static_friction, dynamic_friction, restitution);
+		phy_shape = nullptr;
 		switch (type)
 		{
 		case physics::ShapeBox:
@@ -94,9 +96,9 @@ namespace flame
 			phy_shape = physics::Shape::create_capsule(device, material, size.x * node->g_scl.x, size.y * 0.5f * node->g_scl.y);
 			break;
 		case physics::ShapeTriangleMesh:
-			if (mesh && mesh->mesh)
+			if (c_mesh && c_mesh->mesh)
 			{
-				auto m = mesh->mesh;
+				auto m = c_mesh->mesh;
 				physics::TriangleMesh* triangle_mesh = nullptr;
 				for (auto& t : triangle_meshes)
 				{
@@ -117,9 +119,9 @@ namespace flame
 			}
 			break;
 		case physics::ShapeHeightField:
-			if (terrain && terrain->height_texture)
+			if (c_terrain && c_terrain->height_texture)
 			{
-				auto t = terrain->height_texture;
+				auto t = c_terrain->height_texture;
 				physics::HeightField* height_field = nullptr;
 				for (auto& h : height_fields)
 				{
@@ -132,10 +134,10 @@ namespace flame
 				}
 				if (!height_field)
 				{
-					height_field = physics::HeightField::create(device, t, uvec2(terrain->blocks), terrain->tess_levels);
+					height_field = physics::HeightField::create(device, t, uvec2(c_terrain->blocks), c_terrain->tess_levels);
 					height_fields.emplace_back(t, height_field, 1);
 				}
-				auto ext = terrain->extent;
+				auto ext = c_terrain->extent;
 				phy_shape = physics::Shape::create_height_field(device, material, height_field, vec3(ext.x, ext.y, ext.x));
 				phy_height_field = height_field;
 			}
@@ -155,6 +157,8 @@ namespace flame
 
 	void cShapePrivate::on_left_world()
 	{
+		rigid = nullptr;
+
 		if (phy_shape)
 		{
 			std::erase_if(rigid->phy_shapes, [&](const auto& i) {

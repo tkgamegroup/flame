@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<prefab>
+    <eNode>
+      <cRigid dynamic="false" />
+      <eNode src="D:\\assets\\Rock_7\\Rock_7.prefab" scale="0.004,0.004,0.004">
+		    <cShape type="TriangleMesh" />
+      </eNode>
+    </eNode>
+</prefab>

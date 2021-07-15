@@ -1934,12 +1934,12 @@ namespace flame
 			if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
 			{
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-				cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 				if (!wireframe_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
 					for (auto& m : wireframe_meshes)
 					{
@@ -1953,6 +1953,7 @@ namespace flame
 					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
 					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
 					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
 					for (auto& m : wireframe_arm_meshes)
 					{
@@ -1964,6 +1965,7 @@ namespace flame
 				if (!wireframe_terrains.empty())
 				{
 					bind_terrain_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 					for (auto i = 0; i < wireframe_terrains.size(); i++)
 					{
 						cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
