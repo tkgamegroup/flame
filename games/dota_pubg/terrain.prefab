@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+	<eNode src="D:\assets\terrain\terrain" name="terrain">
+    <eNode name="obj_root" octree_length="400" />
+  </eNode>
+</prefab>

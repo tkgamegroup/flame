@@ -73,11 +73,10 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 {
 	vec3 ret = vec3(0.0);
 
-	TileLights tile_lights = tile_lights[0];
-
-	for (int i = 0; i < tile_lights.dir_count; i++)
+	uint dir_num = tile_lights[0].dir_count;
+	for (int i = 0; i < dir_num; i++)
 	{
-		LightInfo light = light_infos[tile_lights.dir_indices[i]];
+		LightInfo light = light_infos[tile_lights[0].dir_indices[i]];
 		vec3 L = light.pos;
 		
 		float shadowed = 1.0;
@@ -100,10 +99,11 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		
 		ret += lighting(N, V, L, light.color * shadowed, metallic, albedo, spec, roughness);
 	}
-
-	for (int i = 0; i < tile_lights.pt_count; i++)
+	
+	uint pt_num = tile_lights[0].pt_count;
+	for (int i = 0; i < pt_num; i++)
 	{
-		LightInfo light = light_infos[tile_lights.pt_indices[i]];
+		LightInfo light = light_infos[tile_lights[0].pt_indices[i]];
 		vec3 L = light.pos - coordw;
 		float dist = length(L);
 		L = L / dist;
@@ -124,15 +124,17 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		ret += lighting(N, V, L, light.color / max(dist * dist * 0.01, 1.0) * shadowed , metallic, albedo, spec, roughness);
 	}
 
+	// IBL
 	{
 		float NdotV = max(dot(N, V), 0.0);
 		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
-		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rb;
+		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
   
 		float ao = 0.2; // TODO
 		ret += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * render_data.sky_intensity * albedo + 
 			textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * render_data.sky_intensity * (F * envBRDF.x + envBRDF.y)) * ao;
 	}
+	
 
 	ret = mix(ret, render_data.fog_color * render_data.sky_intensity, distancev / render_data.zFar);
 

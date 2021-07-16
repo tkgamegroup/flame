@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
     <eNode src="D:\assets\medieval_chest\medieval_chest" scale="0.2,0.2,0.2" >
-        <cRigid />
-			  <cShape type="Box" size="1.0,0.5,0.5" static_friction="0.9" dynamic_friction="0.9" restitution="0.9" />
+        <cRigid dynamic="false" />
+			  <cShape type="Box" size="1.0,0.5,0.5" />
     </eNode>
 </prefab>

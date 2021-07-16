@@ -438,16 +438,6 @@ local e_rocks = {}
 local e = create_entity("rock")
 table.insert(e_rocks, e)
 
-local e_terrain = scene.find_child("terrain")
-local terrain = e_terrain.find_component("cTerrain")
-local terrain_ext = terrain.get_extent()
-local terrain_height_tex = terrain.get_height_texture()
-local terrain_normal_tex = terrain.get_normal_texture()
-local vegetation_root = e_terrain.find_child("vegetation")
-terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 0.2, e_grasses, 0.03, 0.9, 0.8)
-terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 2.5, e_trees, 0.1, 0.9, 0.8)
-terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, vegetation_root, vec4(190, 190, 20, 20), 3.0, e_rocks, 0.2, 0.0, 0.8)
-
 function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
@@ -677,7 +667,50 @@ main_player.learn_skill(1)
 main_player.awake()
 obj_root.add_child(e)
 
+local e_terrain = scene.find_child("terrain")
+local terrain = e_terrain.find_component("cTerrain")
+local terrain_ext = terrain.get_extent()
+local terrain_height_tex = terrain.get_height_texture()
+local terrain_normal_tex = terrain.get_normal_texture()
+local terrain_obj_root = e_terrain.find_child("obj_root")
+
+local grid_size = 10
+local grid_num = terrain_ext.x / grid_size
+local grids = {}
+for i=1, grid_num * grid_num, 1 do
+	grids[i] = false
+end
+
+function build_grid(x, z)
+	if x < 0 then x = 0 end
+	if z < 0 then z = 0 end
+	if x >= grid_num then x = grid_num - 1 end
+	if z >= grid_num then z = grid_num - 1 end
+	local idx = z * grid_num + x
+	if not grids[idx] then
+		grids[idx] = true
+
+		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.2, e_grasses, 0.03, 0.9, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 2.5, e_trees, 0.1, 0.9, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_rocks, 0.1, 0.0, 0.8)
+	end
+end
+
 obj_root.add_event(function()
+	local x = math.floor(main_player.pos.x / grid_size)
+	local z = math.floor(main_player.pos.z / grid_size)
+
+	build_grid(x, z)
+	build_grid(x - 1, z)
+	build_grid(x + 1, z)
+	build_grid(x, z - 1)
+	build_grid(x, z + 1)
+	build_grid(x - 1, z - 1)
+	build_grid(x + 1, z - 1)
+	build_grid(x - 1, z + 1)
+	build_grid(x + 1, z + 1)
+
 	for _, char in pairs(characters[2]) do
 		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, TAG_CHARACTER_G2) then
 			char.awake()
