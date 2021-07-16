@@ -157,8 +157,6 @@ namespace flame
 
 	void cShapePrivate::on_left_world()
 	{
-		rigid = nullptr;
-
 		if (phy_shape)
 		{
 			std::erase_if(rigid->phy_shapes, [&](const auto& i) {
@@ -195,6 +193,8 @@ namespace flame
 				phy_height_field = nullptr;
 			}
 		}
+
+		rigid = nullptr;
 	}
 
 	cShape* cShape::create(void* parms)

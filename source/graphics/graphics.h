@@ -442,7 +442,7 @@ namespace flame
 			vec3 xext;
 			vec3 yext;
 			vec4 uvs;
-			cvec4 col;
+			vec4 col;
 		};
 	}
 }

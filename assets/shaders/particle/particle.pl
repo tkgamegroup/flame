@@ -10,7 +10,7 @@
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32B32_SFLOAT" />
       <vertex_attribute location="1" format="R32G32_SFLOAT" />
-      <vertex_attribute location="2" format="R8G8B8A8_UNORM" />
+      <vertex_attribute location="2" format="R32G32B32A32_SFLOAT" />
     </vertex_buffer>
   </vertex_buffers>
   <cull_mode v="None" />

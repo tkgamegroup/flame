@@ -322,7 +322,7 @@ namespace flame
 	{
 		vec3 pos;
 		vec2 uv;
-		cvec4 col;
+		vec4 col;
 	};
 
 	struct ElementDrawCmd
@@ -409,6 +409,7 @@ namespace flame
 		std::vector<std::pair<uint, vec3>>				pt_shadows;
 		std::vector<std::vector<std::pair<uint, uint>>>	meshes[MaterialMeshUsageCount];
 		std::vector<std::pair<uint, uint>>				terrains[MaterialTypeCount];
+		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
 		std::vector<std::pair<uint, uint>>				particles;
 
 		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_mesh_indirs[MaterialMeshUsageCount];
@@ -464,9 +465,15 @@ namespace flame
 		graphics::Pipeline* pl_downsample;
 		graphics::Pipeline* pl_upsample;
 		graphics::Pipeline* pl_add;
+		graphics::Pipeline* pl_bright;
 		graphics::Pipeline* pl_gamma;
 
 		UniPtr<graphics::Image> img_back;
+
+		NodeRenderData()
+		{
+			particles.emplace_back(0xffff, 0);
+		}
 	};
 
 	sRendererPrivate::sRendererPrivate(sRendererParms* _parms)
@@ -2004,43 +2011,73 @@ namespace flame
 				cb->end_renderpass();
 			}
 
-			//					cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-			//					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
-			//					cb->bind_pipeline(preferences->filter_bright_pipeline.get());
-			//					//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
-			//					cb->draw(3, 1, 0, 0);
-			//					cb->end_renderpass();
-			//
-			//					for (auto i = 0; i < back_image->levels - 1; i++)
-			//					{
-			//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-			//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
-			//						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
-			//						cb->bind_pipeline(preferences->downsample_pipeline.get());
-			//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-			//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
-			//						cb->draw(3, 1, 0, 0);
-			//						cb->end_renderpass();
-			//					}
-			//					for (auto i = back_image->levels - 1; i > 1; i--)
-			//					{
-			//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-			//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
-			//						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
-			//						cb->bind_pipeline(preferences->upsample_pipeline.get());
-			//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-			//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
-			//						cb->draw(3, 1, 0, 0);
-			//						cb->end_renderpass();
-			//					}
-			//					cb->image_barrier(back_image.get(), { 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-			//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-			//					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
-			//					cb->bind_pipeline(preferences->upsample_pipeline.get());
-			//					//cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
-			//					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
-			//					cb->draw(3, 1, 0, 0);
-			//					cb->end_renderpass();
+			if (nd.particles.size() > 1)
+			{
+				nd.buf_ptc_vtx.upload(cb);
+				nd.buf_ptc_idx.upload(cb);
+
+				cb->begin_renderpass(nullptr, nd.fb_fwd_dc.get());
+				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
+				cb->bind_index_buffer(nd.buf_ptc_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(nd.pl_ptc);
+				{
+					graphics::DescriptorSet* sets[PLL_particle::Binding_Max];
+					sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
+					sets[PLL_particle::Binding_material] = nd.ds_material.get();
+					cb->bind_descriptor_sets(0, _countof(sets), sets);
+				}
+				auto cnt = 0;
+				for (auto& vec : nd.particles)
+				{
+					if (vec.second == 0)
+						continue;
+					cb->draw_indexed(vec.second * 6, cnt * 4, cnt * 6, 1, vec.first);
+					cnt += vec.second;
+				}
+				cb->end_renderpass();
+
+				nd.particles.clear();
+				nd.particles.emplace_back(0xffff, 0);
+			}
+
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst());
+			cb->bind_pipeline(nd.pl_bright);
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
+
+			auto lvs = nd.img_back->get_levels();
+			for (auto i = 0; i < lvs - 1; i++)
+			{
+				cb->image_barrier(nd.img_back.get(), { (uint)i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i + 1)));
+				cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i + 1));
+				cb->bind_pipeline(nd.pl_downsample);
+				cb->bind_descriptor_set(0, nd.img_back->get_shader_read_src(i, 0, sp_linear));
+				cb->push_constant_t(1.f / vec2(nd.img_back->get_size(i)));
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			}
+			for (auto i = lvs - 1; i > 1; i--)
+			{
+				cb->image_barrier(nd.img_back.get(), { (uint)i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i - 1)));
+				cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i - 1));
+				cb->bind_pipeline(nd.pl_upsample);
+				cb->bind_descriptor_set(0, nd.img_back->get_shader_read_src(i, 0, sp_linear));
+				cb->push_constant_t(1.f / vec2(nd.img_back->get_size(i)));
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			}
+			cb->image_barrier(nd.img_back.get(), { 1U }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->set_viewport(vp);
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+			cb->bind_pipeline(nd.pl_upsample);
+			cb->bind_descriptor_set(0, nd.img_back->get_shader_read_src(1, 0, sp_linear));
+			cb->push_constant_t(1.f / vec2(nd.img_back->get_size(1)));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
 
 			auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
 			auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
@@ -2088,35 +2125,6 @@ namespace flame
 					wireframe_terrains.clear();
 				}
 				cb->end_renderpass();
-			}
-
-			if (nd.particles.size() > 1)
-			{
-				nd.buf_ptc_vtx.upload(cb);
-				nd.buf_ptc_idx.upload(cb);
-
-				cb->begin_renderpass(nullptr, nd.fb_fwd_dc.get());
-				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_ptc_idx.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(nd.pl_ptc);
-				{
-					graphics::DescriptorSet* sets[PLL_particle::Binding_Max];
-					sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
-					sets[PLL_particle::Binding_material] = nd.ds_material.get();
-					cb->bind_descriptor_sets(0, _countof(sets), sets);
-				}
-				auto cnt = 0;
-				for (auto& vec : nd.particles)
-				{
-					if (vec.second == 0)
-						continue;
-					cb->draw_indexed(vec.second * 6, cnt * 4, cnt * 6, 1, vec.first);
-					cnt += vec.second;
-				}
-				cb->end_renderpass();
-
-				nd.particles.clear();
-				nd.particles.emplace_back(0xffff, 0);
 			}
 
 			auto& outline_meshes = nd.meshes[MaterialForMesh][MaterialOutline];
@@ -2464,7 +2472,7 @@ namespace flame
 		{
 			auto& data = *nd.buf_render_data.pstag;
 			data.fog_color = vec3(0.f);
-			data.sky_intensity = 1.f;
+			data.sky_intensity = 0.2f;
 			data.sky_rad_levels = 0;
 		}
 		nd.ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
@@ -2546,6 +2554,7 @@ namespace flame
 		nd.pl_downsample = graphics::Pipeline::get(device, L"post/downsample.pl");
 		nd.pl_upsample = graphics::Pipeline::get(device, L"post/upsample.pl");
 		nd.pl_add = graphics::Pipeline::get(device, L"post/add.pl");
+		nd.pl_bright = graphics::Pipeline::get(device, L"post/bright.pl");
 		nd.pl_gamma = graphics::Pipeline::get(device, L"post/gamma.pl");
 	}
 

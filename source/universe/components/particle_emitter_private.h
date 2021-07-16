@@ -12,7 +12,7 @@ namespace flame
 			vec3 pos;
 			vec2 sz;
 			vec3 rot;
-			cvec4 col;
+			vec4 col;
 
 			vec3 mov_sp;
 			vec3 rot_sp;

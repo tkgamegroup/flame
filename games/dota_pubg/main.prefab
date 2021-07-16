@@ -72,15 +72,15 @@
       <cScript>
           __ui_pop = entity
       </cScript>
+      
     </eElement>
     <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>
-      <entity src="D:\assets\sky\sky1" name="sky" />
+      <entity src="D:\assets\sky_test\sky" name="sky" />
       <eCamera name="camera" current="true">
         <cScript src="camera.lua" />
       </eCamera>
       <eNode src="terrain.prefab" />
-      <eLight name="sun" euler="0,70,0" type="Directional" color="1.7,1.7,1.7" cast_shadow="true" />
       <eNode name="obj_root" octree_length="400.0">
       </eNode>
       <eNode name="projectile_root" />

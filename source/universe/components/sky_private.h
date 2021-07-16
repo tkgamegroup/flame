@@ -23,7 +23,7 @@ namespace flame
 		graphics::ImageView* lut_texture_view = nullptr;
 
 		vec3 fog_color = vec3(0.f);
-		float intensity = 1.f;
+		float intensity = 0.2f;
 
 		const wchar_t* get_box_texture_path() const override { return box_texture_path.c_str(); }
 		void set_box_texture_path(const std::filesystem::path& path);

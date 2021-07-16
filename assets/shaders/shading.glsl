@@ -121,7 +121,7 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 			}
 		}
 
-		ret += lighting(N, V, L, light.color / max(dist * dist * 0.01, 1.0) * shadowed , metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color / max(dist * dist * 0.2, 1.0) * shadowed , metallic, albedo, spec, roughness);
 	}
 	
 	float sky_intensity = render_data.sky_intensity;
@@ -136,7 +136,7 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
 		vec3 specular = textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
-		float ao = 0.2; // TODO
+		float ao = 1.0; // TODO
 		ret += ((1.0 - F) * (1.0 - metallic) * diffuse + specular) * sky_intensity * ao;
 	}
 

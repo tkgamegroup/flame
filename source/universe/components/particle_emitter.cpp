@@ -119,7 +119,7 @@ namespace flame
 				p.sz = linearRand(emt_sz_min, emt_sz_max);
 				p.rot = linearRand(emt_rot_min, emt_rot_max);
 				auto hsva = linearRand(emt_hsva_min, emt_hsva_max);
-				p.col = cvec4(vec4(rgbColor(hsva.rgb()), hsva.a) * 255.f);
+				p.col = vec4(rgbColor(hsva.rgb()), hsva.a);
 				p.mov_sp = euler_rot(linearRand(emt_mov_dir_min, emt_mov_dir_max)) * 
 					vec3(1.f, 0.f, 0.f) * linearRand(emt_mov_sp_min, emt_mov_sp_max);
 				p.rot_sp = linearRand(emt_rot_sp_min, emt_rot_sp_max);
