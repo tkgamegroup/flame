@@ -26,12 +26,17 @@ function load_scene(filename)
         e.find_component("cRigid").set_dynamic(false)
         prefab.wrapper.add_child(e)
         
+        --[[
         local e = create_entity("prefabs/light")
         e.find_component("cNode").set_euler(vec3(0, 70, 0))
         local light = e.find_component("cLight")
         light.set_type(e_directional)
         light.set_color(vec3(1.7))
         light.set_cast_shadow(true)
+        prefab.wrapper.add_child(e)
+        ]]
+
+        local e = create_entity("D:\\assets\\sky_test\\sky")
         prefab.wrapper.add_child(e)
 
         local e = create_entity("prefabs/camera")

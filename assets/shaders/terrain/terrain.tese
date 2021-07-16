@@ -42,7 +42,7 @@ void main()
 
 #ifndef DEFERRED
 	o_coordw = coordw;
-	o_coordv = render_data.camera_coord - coordw;
+	o_coordv = normalize(render_data.camera_coord - coordw);
 #endif
 
 	gl_Position = render_data.proj_view * vec4(coordw, 1.0);

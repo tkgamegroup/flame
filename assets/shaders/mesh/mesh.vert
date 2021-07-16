@@ -55,7 +55,7 @@ void main()
 
 #if !defined(DEFERRED) && !defined(SHADOW_PASS)
 	o_coordw = coordw;
-	o_coordv = render_data.camera_coord - coordw;
+	o_coordv = normalize(render_data.camera_coord - coordw);
 #endif
 
 #ifndef SHADOW_PASS

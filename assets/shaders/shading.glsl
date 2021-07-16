@@ -123,20 +123,24 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 
 		ret += lighting(N, V, L, light.color / max(dist * dist * 0.01, 1.0) * shadowed , metallic, albedo, spec, roughness);
 	}
+	
+	float sky_intensity = render_data.sky_intensity;
 
 	// IBL
 	{
 		float NdotV = max(dot(N, V), 0.0);
 		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
-		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
-  
-		float ao = 0.2; // TODO
-		ret += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * render_data.sky_intensity * albedo + 
-			textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * render_data.sky_intensity * (F * envBRDF.x + envBRDF.y)) * ao;
-	}
-	
 
-	ret = mix(ret, render_data.fog_color * render_data.sky_intensity, distancev / render_data.zFar);
+		vec3 diffuse = texture(sky_irr, N).rgb * albedo;
+
+		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
+		vec3 specular = textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+
+		float ao = 0.2; // TODO
+		ret += ((1.0 - F) * (1.0 - metallic) * diffuse + specular) * sky_intensity * ao;
+	}
+
+	ret = mix(ret, render_data.fog_color * sky_intensity, distancev / render_data.zFar);
 
 	return ret;
 }

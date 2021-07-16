@@ -290,6 +290,9 @@ namespace flame
 					return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
 				case Format_R8G8B8A8_UNORM:
 					return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
+				case Format_R16G16B16A16_SFLOAT:
+					return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]), 
+						unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
 				default:
 					fassert(0);
 				}
@@ -453,11 +456,20 @@ namespace flame
 			auto ext = filename.extension();
 			if (ext == L".ktx" || ext == L".dds")
 			{
+				auto is_cube = false;
+
 				auto gli_texture = gli::load(filename.string());
 
 				auto ext = gli_texture.extent();
 				auto levels = (uint)gli_texture.levels();
 				auto layers = (uint)gli_texture.layers();
+				auto faces = (uint)gli_texture.faces();
+				if (faces == 6)
+				{
+					fassert(layers == 1);
+					is_cube = true;
+					layers = 6;
+				}
 
 				Format format = Format_Undefined;
 				switch (gli_texture.format())
@@ -468,11 +480,14 @@ namespace flame
 				case gli::FORMAT_RGBA16_SFLOAT_PACK16:
 					format = Format_R16G16B16A16_SFLOAT;
 					break;
+				case gli::FORMAT_RGBA32_SFLOAT_PACK32:
+					format = Format_R32G32B32A32_SFLOAT;
+					break;
 				}
 				fassert(format != Format_Undefined);
 
 				ret = new ImagePrivate(device, format, ext, levels, layers,
-					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, layers == 6);
+					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);
 
 				StagingBuffer stag(device, gli_texture.size(), nullptr);
 				InstanceCB cb(device);
@@ -485,7 +500,12 @@ namespace flame
 					{
 						auto size = gli_texture.size(j);
 						auto ext = gli_texture.extent(j);
-						memcpy(dst + offset, gli_texture.data(i, 0, j), size);
+						void* data;
+						if (is_cube)
+							data = gli_texture.data(0, i, j);
+						else
+							data = gli_texture.data(i, 0, j);
+						memcpy(dst + offset, data, size);
 
 						BufferImageCopy cpy;
 						cpy.buf_off = offset;
@@ -579,11 +599,11 @@ namespace flame
 			info.magFilter = to_backend(mag_filter);
 			info.minFilter = to_backend(min_filter);
 			info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			info.addressModeU = info.addressModeV = info.addressModeW =
-				to_backend(address_mode);
+			info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
 			info.maxAnisotropy = 1.f;
-			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+			info.maxLod = VK_LOD_CLAMP_NONE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
+			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &vk_sampler));
 		}

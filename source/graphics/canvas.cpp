@@ -205,7 +205,6 @@
 //			std::unique_ptr<ImagePrivate> pickup_image;
 //			std::unique_ptr<FramebufferPrivate> pickup_framebuffer;
 //
-//			ShaderGeometryBuffer<Line> line_buffer;
 //			ShaderGeometryBuffer<Triangle> triangle_buffer;
 //		};
 // 
@@ -257,8 +256,6 @@
 //
 //		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
 //		{
-//				InstanceCB cb(device);
-//
 //					pickup_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, output_size, 1, 1, SampleCount_1, ImageUsageTransferSrc | ImageUsageAttachment));
 //					ImageViewPrivate* vs[] = {
 //						pickup_image->views[0].get(),
@@ -267,7 +264,6 @@
 //					pickup_framebuffer.reset(new FramebufferPrivate(device, preferences->pickup_renderpass.get(), vs));
 //		}
 // 
-//		/*
 //		inline void path_arc(std::vector<vec2>& points, const vec2& center, float radius, float a1, float a2, uint lod = 0)
 //		{
 //			int a = pieces_num * a1;
@@ -329,42 +325,6 @@
 //				path_bezier(points, p1, p12, p123, p1234, level + 1);
 //				path_bezier(points, p1234, p234, p34, p4, level + 1);
 //			}
-//		}
-//		*/
-//
-//		static void draw_frustum(CanvasPrivate* thiz, vec3* ps, const cvec4& col0, const cvec4& col1)
-//		{
-//			std::vector<Triangle> triangles;
-//			std::vector<Line> lines;
-//
-//			triangles.push_back({ { ps[0], col0 }, { ps[3], col0 }, { ps[1], col0 } });
-//			triangles.push_back({ { ps[1], col0 }, { ps[3], col0 }, { ps[2], col0 } });
-//			triangles.push_back({ { ps[4], col0 }, { ps[5], col0 }, { ps[6], col0 } });
-//			triangles.push_back({ { ps[4], col0 }, { ps[6], col0 }, { ps[7], col0 } });
-//			triangles.push_back({ { ps[5], col0 }, { ps[4], col0 }, { ps[0], col0 } });
-//			triangles.push_back({ { ps[5], col0 }, { ps[0], col0 }, { ps[1], col0 } });
-//			triangles.push_back({ { ps[7], col0 }, { ps[6], col0 }, { ps[2], col0 } });
-//			triangles.push_back({ { ps[7], col0 }, { ps[2], col0 }, { ps[3], col0 } });
-//			triangles.push_back({ { ps[0], col0 }, { ps[4], col0 }, { ps[7], col0 } });
-//			triangles.push_back({ { ps[0], col0 }, { ps[7], col0 }, { ps[3], col0 } });
-//			triangles.push_back({ { ps[5], col0 }, { ps[1], col0 }, { ps[2], col0 } });
-//			triangles.push_back({ { ps[5], col0 }, { ps[2], col0 }, { ps[6], col0 } });
-//
-//			lines.push_back({ { ps[0], col1 }, { ps[1], col1 } });
-//			lines.push_back({ { ps[1], col1 }, { ps[2], col1 } });
-//			lines.push_back({ { ps[2], col1 }, { ps[3], col1 } });
-//			lines.push_back({ { ps[3], col1 }, { ps[0], col1 } });
-//			lines.push_back({ { ps[4], col1 }, { ps[5], col1 } });
-//			lines.push_back({ { ps[5], col1 }, { ps[6], col1 } });
-//			lines.push_back({ { ps[6], col1 }, { ps[7], col1 } });
-//			lines.push_back({ { ps[7], col1 }, { ps[4], col1 } });
-//			lines.push_back({ { ps[0], col1 }, { ps[4], col1 } });
-//			lines.push_back({ { ps[1], col1 }, { ps[5], col1 } });
-//			lines.push_back({ { ps[2], col1 }, { ps[6], col1 } });
-//			lines.push_back({ { ps[3], col1 }, { ps[7], col1 } });
-//
-//			thiz->draw_triangles(triangles.size(), triangles.data());
-//			thiz->draw_lines(lines.size(), lines.data());
 //		}
 //
 //		void* CanvasPrivate::pickup(const vec2& p)
@@ -483,50 +443,6 @@
 //					cb->bind_pipeline(preferences->blurv_pipeline[blur_radius - 1].get());
 //					//cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
 //					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.y);
-//					cb->draw(3, 1, 0, 0);
-//					cb->end_renderpass();
-//				}
-//					break;
-//				case PassBloom:
-//				{
-//					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-//
-//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
-//					cb->bind_pipeline(preferences->filter_bright_pipeline.get());
-//					//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
-//					cb->draw(3, 1, 0, 0);
-//					cb->end_renderpass();
-//
-//					for (auto i = 0; i < back_image->levels - 1; i++)
-//					{
-//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
-//						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
-//						cb->bind_pipeline(preferences->downsample_pipeline.get());
-//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
-//						cb->draw(3, 1, 0, 0);
-//						cb->end_renderpass();
-//					}
-//					for (auto i = back_image->levels - 1; i > 1; i--)
-//					{
-//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
-//						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
-//						cb->bind_pipeline(preferences->upsample_pipeline.get());
-//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
-//						cb->draw(3, 1, 0, 0);
-//						cb->end_renderpass();
-//					}
-//					cb->image_barrier(back_image.get(), { 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
-//					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
-//					cb->bind_pipeline(preferences->upsample_pipeline.get());
-//					//cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
-//					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
 //					cb->draw(3, 1, 0, 0);
 //					cb->end_renderpass();
 //				}

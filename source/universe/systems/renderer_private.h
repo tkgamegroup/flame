@@ -30,6 +30,7 @@ namespace flame
 		graphics::DescriptorPool* dsp;
 		graphics::Sampler* sp_nearest;
 		graphics::Sampler* sp_linear;
+		graphics::Sampler* sp_tri_linear;
 
 		graphics::Renderpass* rp_rgba8;
 		graphics::Renderpass* rp_rgba8c;

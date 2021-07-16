@@ -1345,7 +1345,7 @@ namespace flame
 		auto& data = *nd.buf_render_data.pstag;
 		data.fog_color = fog_color;
 		data.sky_intensity = intensity;
-		data.sky_rad_levels = rad->get_sub().level_count;
+		data.sky_rad_levels = rad->get_sub().level_count - 1;
 	}
 
 	void sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
@@ -2004,6 +2004,44 @@ namespace flame
 				cb->end_renderpass();
 			}
 
+			//					cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+			//					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
+			//					cb->bind_pipeline(preferences->filter_bright_pipeline.get());
+			//					//cb->bind_descriptor_set(hdr_descriptorset.get(), 0);
+			//					cb->draw(3, 1, 0, 0);
+			//					cb->end_renderpass();
+			//
+			//					for (auto i = 0; i < back_image->levels - 1; i++)
+			//					{
+			//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+			//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i + 1]));
+			//						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
+			//						cb->bind_pipeline(preferences->downsample_pipeline.get());
+			//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+			//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
+			//						cb->draw(3, 1, 0, 0);
+			//						cb->end_renderpass();
+			//					}
+			//					for (auto i = back_image->levels - 1; i > 1; i--)
+			//					{
+			//						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+			//						cb->set_viewport(Rect(vec2(0.f), back_image->sizes[i - 1]));
+			//						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
+			//						cb->bind_pipeline(preferences->upsample_pipeline.get());
+			//						//cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
+			//						//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
+			//						cb->draw(3, 1, 0, 0);
+			//						cb->end_renderpass();
+			//					}
+			//					cb->image_barrier(back_image.get(), { 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+			//					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
+			//					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
+			//					cb->bind_pipeline(preferences->upsample_pipeline.get());
+			//					//cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
+			//					//cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
+			//					cb->draw(3, 1, 0, 0);
+			//					cb->end_renderpass();
+
 			auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
 			auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
 			auto& wireframe_terrains = nd.terrains[MaterialWireframe];
@@ -2424,8 +2462,8 @@ namespace flame
 
 		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
 		{
-			auto& data = *(nd.buf_render_data.pstag);
-			data.fog_color = vec3(1.f);
+			auto& data = *nd.buf_render_data.pstag;
+			data.fog_color = vec3(0.f);
 			data.sky_intensity = 1.f;
 			data.sky_rad_levels = 0;
 		}
