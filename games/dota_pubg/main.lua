@@ -638,7 +638,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 		__ui_pop.add_child(attributes_btn.wnd)
 	end
 end)
-
+--[[
 for i=1, 10, 1 do
 	local e = create_entity("remore")
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
@@ -647,7 +647,7 @@ for i=1, 10, 1 do
 	make_npc(e, 1)
 	obj_root.add_child(e)
 end
-
+]]
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)
 	local e = e_chest.copy()

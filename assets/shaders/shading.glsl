@@ -69,9 +69,13 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 spec, float roughness)
+vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
 	vec3 ret = vec3(0.0);
+
+	vec3 coordv = render_data.camera_coord - coordw;
+	vec3 V = normalize(coordv);
+	float distv = dot(render_data.camera_dir, -coordv);
 
 	uint dir_num = tile_lights[0].dir_count;
 	for (int i = 0; i < dir_num; i++)
@@ -87,7 +91,7 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 			for (uint lv = 0; lv < 4; lv++)
 			{
 				float split = shadow.splits[lv];
-				if (distancev >= split)
+				if (distv >= split)
 					continue;
 				vec4 coordl = shadow.mats[lv] * vec4(coordw, 1.0);
 				coordl.xy = coordl.xy * 0.5 + vec2(0.5);
@@ -113,7 +117,7 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		{
 			PtShadow shadow = pt_shadows[light.shadow_index];
 
-			if (distancev < shadow.far)
+			if (dist < shadow.far)
 			{
 				float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
 				ref = linear_depth(shadow.near, shadow.far, ref);
@@ -140,7 +144,7 @@ vec3 shading(vec3 coordw, float distancev, vec3 N, vec3 V, float metallic, vec3 
 		ret += ((1.0 - F) * (1.0 - metallic) * diffuse + specular) * sky_intensity * ao;
 	}
 
-	ret = mix(ret, render_data.fog_color * sky_intensity, distancev / render_data.zFar);
+	ret = mix(ret, render_data.fog_color * sky_intensity, distv / render_data.zFar);
 
 	return ret;
 }

@@ -3,95 +3,57 @@
   <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical">
     <cScript>
       ui = entity
-      local config = load_ini("config.ini")
-      local locations = config["location"]
-      last_open = locations["last_open"]
-      last_save = locations["last_save"]
-      
-      function on_menu(ev)
-        local e = entity
-        e.find_component("cReceiver").add_mouse_left_down_listener(function()
-          ev(e)
-        end)
-      end
     </cScript>
-    <eMenuBar>
-      <cScript src="cmd.lua"/>
+    <eMenuBar fill_color="0,0,0,127">
       <eMenu text="file">
         <eMenuItem text="open..">
-          <cScript>
-            on_menu(cmd_file_open)
-          </cScript>
+          <cScript>on_menu(cmd_file_open)</cScript>
         </eMenuItem>
         <eMenuItem text="save as..">
-          <cScript>
-            on_menu(cmd_file_save_as)
-          </cScript>
+          <cScript>on_menu(cmd_file_save_as)</cScript>
         </eMenuItem>
       </eMenu>
       <eMenu text="shading">
 		    <eMenuItem checkable="true" text="wireframe">
-          <cScript>
-            local e = entity
-            on_menu(function()
-              cmd_shading_wireframe()
-              e.find_driver("dMenuItem").set_single_checked()
-            end)
-          </cScript>
+          <cScript>on_single_check_menu(cmd_shading_wireframe)</cScript>
         </eMenuItem>
 		    <eMenuItem checkable="true" checked="true" text="shaded">
-          <cScript>
-            local e = entity
-            on_menu(function()
-              cmd_shading_shaded()
-              e.find_driver("dMenuItem").set_single_checked()
-            end)
-          </cScript>
+          <cScript>on_single_check_menu(cmd_shading_shaded)</cScript>
         </eMenuItem>
 		    <eMenuItem checkable="true" text="normal data">
-          <cScript>
-            local e = entity
-            on_menu(function()
-              cmd_shading_normal_data()
-              e.find_driver("dMenuItem").set_single_checked()
-            end)
-          </cScript>
+          <cScript>on_single_check_menu(cmd_shading_normal_data)</cScript>
         </eMenuItem>
       </eMenu>
-      <eMenu text="show">
+      <eMenu text="view">
 		    <eMenuItem checkable="true" text="physics visualization">
-          <cScript>
-            on_menu(cmd_show_physics_visualization)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_view_physics_visualization)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="global axes">
-          <cScript>
-            on_menu(cmd_show_global_axes)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_view_global_axes)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="crosshair">
-          <cScript>
-            on_menu(cmd_show_crosshair)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_view_crosshair)</cScript>
         </eMenuItem>
+        <eMenu text="camera">
+          <eMenuItem checkable="true" text="fly">
+            <cScript>on_single_check_menu(cmd_view_camera_fly)</cScript>
+          </eMenuItem>
+          <eMenuItem checkable="true" checked="true" text="arcball">
+            <cScript>on_single_check_menu(cmd_view_camera_arcball)</cScript>
+          </eMenuItem>
+        </eMenu>
       </eMenu>
       <eMenu text="tools">
         <eMenuItem checkable="true" text="ui reflector">
-          <cScript>
-            on_menu(cmd_tools_ui_reflector)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_tools_ui_reflector)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="csm debugger">
-          <cScript>
-            on_menu(cmd_tools_csm_debugger)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_tools_csm_debugger)</cScript>
         </eMenuItem>
       </eMenu>
       <eMenu text="settings">
         <eMenuItem checkable="true" text="always update">
-          <cScript>
-            on_menu(cmd_settings_alwawys_update)
-          </cScript>
+          <cScript>on_multi_check_menu(cmd_settings_alwawys_update)</cScript>
         </eMenuItem>
       </eMenu>
     </eMenuBar>

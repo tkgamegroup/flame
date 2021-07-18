@@ -412,7 +412,7 @@ namespace flame
 		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
 		std::vector<std::pair<uint, uint>>				particles;
 
-		SequentialBuffer<graphics::DrawIndexedIndirectCommand>	buf_mesh_indirs[MaterialMeshUsageCount];
+		SequentialBuffer<graphics::DrawIndexedIndirectCommand> buf_mesh_indirs[MaterialMeshUsageCount];
 
 		SparseBuffer<MeshVertex>	buf_mesh_vtx;
 		SparseBuffer<uint>			buf_mesh_idx;
@@ -1355,7 +1355,7 @@ namespace flame
 		data.sky_rad_levels = rad->get_sub().level_count - 1;
 	}
 
-	void sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
+	uint sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
 	{
 		auto& nd = *_nd;
 
@@ -1365,6 +1365,7 @@ namespace flame
 		{
 			auto& data = nd.buf_light_infos.add_item();
 			data.color = color;
+			data.type = type;
 			data.shadow_index = -1;
 
 			auto& tile = nd.buf_tile_lights.item(0, false);
@@ -1410,6 +1411,27 @@ namespace flame
 				break;
 			}
 		}
+		
+		return idx;
+	}
+
+	mat4 sRendererPrivate::get_shaodw_mat(uint id, uint idx) const
+	{
+		auto& nd = *_nd;
+
+		auto& info = nd.buf_light_infos.pstag->light_infos[id];
+		if (info.shadow_index == -1)
+			return mat4(1.f);
+
+		switch (info.type)
+		{
+		case LightDirectional:
+			return nd.buf_dir_shadows.pstag->dir_shadows[info.shadow_index].mats[idx];
+		case LightPoint:
+			return nd.buf_pt_shadows.pstag->pt_shadows[info.shadow_index].mats[idx];
+		}
+
+		return mat4(1.f);
 	}
 
 	uint sRendererPrivate::add_mesh_transform(const mat4& mat, const mat3& nor)
@@ -1602,13 +1624,13 @@ namespace flame
 				data.zNear = camera->near;
 				data.zFar = camera->far;
 				data.camera_coord = camera->node->g_pos;
+				data.camera_dir = -camera->node->g_rot[2];
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
 				data.proj = camera->proj;
 				data.proj_inv = camera->proj_inv;
 				data.proj_view = data.proj * data.view;
-				auto frustum = camera->get_frustum();
-				memcpy(data.frustum_planes, frustum.planes, sizeof(vec4) * 6);
+				*(Frustum*)data.frustum_planes = camera->get_frustum();
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);
@@ -1743,7 +1765,7 @@ namespace flame
 					auto inv = inverse(rot);
 
 					auto& data = nd.buf_dir_shadows.add_item();
-					data.far = nd.dir_shadow_dist;
+					data.far = camera->far;
 
 					auto& mesh_indirs_vec = dir_shadow_mesh_indirs.emplace_back();
 					auto& mesh_arm_indirs_vec = dir_shadow_mesh_arm_indirs.emplace_back();
@@ -1752,9 +1774,9 @@ namespace flame
 						if (i < nd.dir_shadow_levels)
 						{
 							auto n = i / (float)nd.dir_shadow_levels;
-							n = n * n * data.far;
+							n = n * n * nd.dir_shadow_dist;
 							auto f = (i + 1) / (float)nd.dir_shadow_levels;
-							f = f * f * data.far;
+							f = f * f * nd.dir_shadow_dist;
 
 							AABB b; b.reset();
 							vec3 ps[8];
@@ -1767,7 +1789,7 @@ namespace flame
 
 							auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, data.far);
 							proj[1][1] *= -1.f;
-							auto view = lookAt(c + rot[2] * data.far * 0.5f, c, rot[1]);
+							auto view = lookAt(c + rot[2] * (data.far - (b.b.z - b.a.z)), c, rot[1]);
 
 							auto mat = proj * view;
 							data.mats[i] = mat;
@@ -2351,34 +2373,6 @@ namespace flame
 
 		nd.should_render = false;
 		ed.should_render = false;
-	}
-
-	uint sRendererPrivate::get_shadow_count(LightType t)
-	{
-		auto& nd = *_nd;
-		switch (t)
-		{
-		case LightDirectional:
-			return nd.dir_shadows.size();
-		case LightPoint:
-			return nd.pt_shadows.size();
-		}
-		return 0;
-	}
-
-	void sRendererPrivate::get_shadow_matrices(LightType t, uint idx, mat4* dst)
-	{
-		auto& nd = *_nd;
-
-		switch (t)
-		{
-		case LightDirectional:
-			memcpy(dst, nd.buf_dir_shadows.item(idx, false).mats, 4 * sizeof(mat4));
-			break;
-		case LightPoint:
-			memcpy(dst, nd.buf_pt_shadows.item(idx, false).mats, 6 * sizeof(mat4));
-			break;
-		}
 	}
 
 	void sRendererPrivate::on_added()

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<prefab>
+    <eNode>
+      <eNode src="tree.prefab" pos="0,0,0" />
+      <eNode src="tree.prefab" pos="10,0,10" />
+      <eNode src="tree.prefab" pos="20,0,20" />
+      <eNode src="tree.prefab" pos="30,0,30" />
+      <eNode src="tree.prefab" pos="40,0,40" />
+      <eNode src="tree.prefab" pos="50,0,50" />
+    </eNode>
+</prefab>

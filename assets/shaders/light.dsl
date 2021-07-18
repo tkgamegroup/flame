@@ -13,6 +13,7 @@ struct TileLights
 struct LightInfo
 {
 	vec3 pos;
+	uint type;
 	vec3 color;
 	
 	int shadow_index;

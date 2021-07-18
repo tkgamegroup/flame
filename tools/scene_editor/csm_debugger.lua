@@ -5,12 +5,7 @@ if layer.p then
 	local debugger = {
 		ppoints = nil,
 		camera_lines = { nil, nil, nil, nil },
-		light_lines = { 
-			{ nil, nil, nil, nil },
-			{ nil, nil, nil, nil },
-			{ nil, nil, nil, nil },
-			{ nil, nil, nil, nil }
-		},
+		light_lines = { nil, nil, nil, nil },
 
 		drawer = nil
 	}
@@ -24,11 +19,8 @@ if layer.p then
 			end
 		end
 		for i=1, 4, 1 do
-			local lines = debugger.light_lines[i]
-			for j=1, 4, 1 do
-				if lines[j] then
-					r.draw_lines(12, lines[j])
-				end
+			if debugger.light_lines[i] then
+				r.draw_lines(12, debugger.light_lines[i])
 			end
 		end
 	end))
@@ -136,36 +128,29 @@ if layer.p then
 			flame_free(points)
 		end
 		
-		local e_dir = find_enum("LightType")["Directional"]
-		local n = s_renderer.get_shadow_count(e_dir)
-		if n > 0 then
+		local sun = root.find_child("sun")
+		if sun.p then
 			local points = flame_malloc(8 * 12)
 
 			local col = flame_malloc(4)
-			flame_set(col, 0, e_type_data, e_char_type, 4, 1, vec4(255, 255, 0, 255))
+			flame_set(col, 0, e_type_data, e_char_type, 4, 1, vec4(0, 0, 255, 255))
 
-			local matrices = flame_malloc(4 * 64)
-			for i=0, n-1, 1 do
-				s_renderer.get_shadow_matrices(e_dir, i, matrices)
-
-				local lines = debugger.light_lines[i + 1]
-				for j=0, lvs-1, 1 do
-					if not lines[j + 1] then 
-						lines[j + 1] = flame_malloc(12 * 32)
-					end
-					local m = flame_mat4_inverse(flame_get(matrices, j * 64, e_type_data, e_floating_type, 4, 4))
-					flame_set(points, 12 * 0, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, 1, 0, 1))))
-					flame_set(points, 12 * 1, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, 1, 0, 1))))
-					flame_set(points, 12 * 2, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, -1, 0, 1))))
-					flame_set(points, 12 * 3, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, -1, 0, 1))))
-					flame_set(points, 12 * 4, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, 1, 1, 1))))
-					flame_set(points, 12 * 5, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, 1, 1, 1))))
-					flame_set(points, 12 * 6, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, -1, 1, 1))))
-					flame_set(points, 12 * 7, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, -1, 1, 1))))
-					set_lines(lines[j + 1], points, col)
+			local light = sun.find_component("cLight")
+			for i=0, lvs-1, 1 do
+				if not debugger.light_lines[i + 1] then 
+					debugger.light_lines[i + 1] = flame_malloc(12 * 32)
 				end
+				local m = flame_mat4_inverse(light.get_shadow_mat(i))
+				flame_set(points, 12 * 0, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, 1, 0, 1))))
+				flame_set(points, 12 * 1, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, 1, 0, 1))))
+				flame_set(points, 12 * 2, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, -1, 0, 1))))
+				flame_set(points, 12 * 3, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, -1, 0, 1))))
+				flame_set(points, 12 * 4, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, 1, 1, 1))))
+				flame_set(points, 12 * 5, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, 1, 1, 1))))
+				flame_set(points, 12 * 6, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, -1, 1, 1))))
+				flame_set(points, 12 * 7, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, -1, 1, 1))))
+				set_lines(debugger.light_lines[i + 1], points, col)
 			end
-			flame_free(matrices)
 
 			flame_free(col)
 
@@ -181,12 +166,9 @@ if layer.p then
 			end
 		end
 		for i=1, 4, 1 do
-			local lines = debugger.light_lines[i]
-			for j=1, 4, 1 do
-				if lines[j] then
-					flame_free(lines[j])
-					lines[j] = nil
-				end
+			if debugger.light_lines[i] then
+				flame_free(debugger.light_lines[i])
+				debugger.light_lines[i] = nil
 			end
 		end
 	end)

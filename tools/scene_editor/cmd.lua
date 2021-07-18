@@ -55,36 +55,34 @@ function cmd_shading_normal_data()
     s_renderer.set_render_type(e_normaldata)
 end
 
-function cmd_show_physics_visualization(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
+function cmd_view_physics_visualization(checked)
     s_physics.set_visualization(checked)
 end
 
-function cmd_show_global_axes(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
+function cmd_view_global_axes(checked)
     scene.find_child("hud_global_axes").set_visible(checked)
 end
 
-function cmd_show_crosshair(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
+function cmd_view_crosshair(checked)
     scene.find_child("hud_crosshair").set_visible(checked)
 end
 
+function cmd_view_camera_fly()
+    if camera then
+        camera.destroy()
+        camera = make_fly_camera(camera.entity)
+    end
+end
+
+function cmd_view_camera_arcball()
+    if camera then
+        camera.destroy()
+        camera = make_arcball_camera(camera.entity)
+    end
+end
+
 ui_reflector = { p=nil }
-function cmd_tools_ui_reflector(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
+function cmd_tools_ui_reflector(checked)
     if checked then
         if not ui_reflector.p then
             ui_reflector = create_entity("ui_reflector")
@@ -99,11 +97,7 @@ function cmd_tools_ui_reflector(entity)
 end
 
 csm_debugger = { p=nil }
-function cmd_tools_csm_debugger(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
-    cmd_item.set_checked(checked)
+function cmd_tools_csm_debugger(checked)
     if checked then
         if not csm_debugger.p then
             csm_debugger = create_entity("csm_debugger")
@@ -122,9 +116,6 @@ function cmd_tools_csm_debugger(entity)
     end
 end
 
-function cmd_settings_alwawys_update(entity)
-    local cmd_item = entity.find_driver("dMenuItem")
-    local checked = cmd_item.get_checked()
-    checked = not checked
+function cmd_settings_alwawys_update(checked)
     cmd_item.set_checked(checked)
 end

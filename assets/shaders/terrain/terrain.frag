@@ -11,7 +11,6 @@ layout(location = 1) in vec2 i_uv;
 layout(location = 2) in vec3 i_normal;
 #ifndef DEFERRED
 layout(location = 3) in vec3 i_coordw;
-layout(location = 4) in vec3 i_coordv;
 #endif
 
 #ifndef DEFERRED
@@ -24,18 +23,9 @@ layout(location = 1) out vec4 o_res_nor_rou;
 void main()
 {
 #ifdef MAT
-	TerrainInfo terrain = terrain_infos[i_id];
-	MaterialInfo material = material_infos[terrain.material_id];
+	MaterialInfo material = material_infos[terrain_infos[i_id].material_id];
 	
-#ifndef SHADOW_PASS
-	vec3 N = i_normal;
-#ifndef DEFERRED
-	vec3 V = i_coordv;
-#endif
-
 	MAT_FILE
-#endif
-
 #else
 	#ifndef SHADOW_PASS
 		#if defined(PICKUP)

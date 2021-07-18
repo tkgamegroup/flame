@@ -13,6 +13,8 @@ int main(int argc, char** args)
 
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"camera.lua");
+	script_ins->excute_file(L"cmd.lua");
+	script_ins->excute_file(L"main.lua");
 	{
 		auto e = Entity::create();
 		e->load(L"main");

@@ -17,33 +17,30 @@ function load_scene(filename)
     local ok
     prefab, ok = create_entity(filename)
 
-    if prefab.find_component("cNode").p and prefab.find_child("camera").p == nil then
+    if prefab.find_component("cNode").p then
         prefab.wrapper = create_entity("prefabs/node")
-        local e = create_entity("prefabs/cube")
-        local node = e.find_component("cNode")
-        node.set_pos(vec3(0, -1, 0))
-        node.set_scale(vec3(10, 0.1, 10))
-        e.find_component("cRigid").set_dynamic(false)
-        prefab.wrapper.add_child(e)
-        
-        --[[
-        local e = create_entity("prefabs/light")
-        e.find_component("cNode").set_euler(vec3(0, 70, 0))
-        local light = e.find_component("cLight")
-        light.set_type(e_directional)
-        light.set_color(vec3(1.7))
-        light.set_cast_shadow(true)
-        prefab.wrapper.add_child(e)
-        ]]
 
-        local e = create_entity("D:\\assets\\sky_test\\sky")
-        prefab.wrapper.add_child(e)
+        if prefab.find_child("camera").p == nil then
+            local e = create_entity("prefabs/cube")
+            local node = e.find_component("cNode")
+            node.set_pos(vec3(0, -0.1, 0))
+            node.set_scale(vec3(100, 0.1, 100))
+            e.find_component("cRigid").set_dynamic(false)
+            prefab.wrapper.add_child(e)
+
+            local e = create_entity("D:\\assets\\sky_test\\sky")
+            prefab.wrapper.add_child(e)
+
+            local e = create_entity("prefabs/camera")
+            e.find_component("cNode").set_pos(vec3(0, 0, 5))
+            e.find_component("cCamera").set_current(true)
+            prefab.wrapper.add_child(e)
+            camera = make_arcball_camera(e)
+        end
 
         local e = create_entity("prefabs/camera")
-        e.find_component("cNode").set_pos(vec3(0, 0, 5))
-        e.find_component("cCamera").set_current(true)
+        e.set_name("watcher_camera")
         prefab.wrapper.add_child(e)
-        make_third_camera(e)
         
         prefab.wrapper.add_child(prefab)
         scene.add_child(prefab.wrapper)

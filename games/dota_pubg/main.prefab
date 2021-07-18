@@ -72,7 +72,6 @@
       <cScript>
           __ui_pop = entity
       </cScript>
-      
     </eElement>
     <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>

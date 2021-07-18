@@ -878,7 +878,16 @@ namespace flame
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
 			else if (name == "src")
-				e_dst->load(a.value());
+			{
+				std::filesystem::path path(a.value());
+				if (!path.is_absolute())
+				{
+					auto temp = fn.parent_path() / path;
+					if (std::filesystem::exists(temp))
+						path = temp;
+				}
+				e_dst->load(path);
+			}
 			else if (name == "driver")
 			{
 				fassert(first_e == e_dst);

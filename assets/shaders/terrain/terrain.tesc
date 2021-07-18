@@ -12,19 +12,20 @@ layout (location = 1) in vec2 i_uvs[];
 layout (location = 0) out flat uint o_idxs[4];
 layout (location = 1) out vec2 o_uvs[4];
 
-TerrainInfo terrain;
+uint idx;
 
 float screen_space_tessellation_factor(vec4 p0, vec4 p1)
 {
 	float v = distance(render_data.camera_coord, (p0.xyz + p1.xyz) * 0.5) / render_data.zFar;
 	v = v * v;
 	v = 1.0 - v;
-	return max(v * terrain.tess_levels, 1.0);
+	return max(v * terrain_infos[idx].tess_levels, 1.0);
 }
 
 bool frustum_check()
 {
-	float r = max(max(terrain.extent.x, terrain.extent.z), terrain.extent.y);
+	vec3 ext = terrain_infos[idx].extent;
+	float r = max(max(ext.x, ext.z), ext.y);
 	vec4 p = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position + gl_in[3].gl_Position) * 0.25;
 
 	for (int i = 0; i < 6; i++) 
@@ -37,8 +38,7 @@ bool frustum_check()
 
 void main()
 {
-	uint idx = i_idxs[gl_InvocationID];
-	terrain = terrain_infos[idx];
+	idx = i_idxs[gl_InvocationID];
 
 	if (gl_InvocationID == 0)
 	{

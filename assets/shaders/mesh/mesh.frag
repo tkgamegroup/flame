@@ -11,7 +11,6 @@ layout(location = 1) in vec2 i_uv;
 layout(location = 2) in vec3 i_normal;
 #ifndef DEFERRED
 layout(location = 3) in vec3 i_coordw;
-layout(location = 4) in vec3 i_coordv;
 #endif
 #endif
 
@@ -29,13 +28,6 @@ void main()
 #ifdef MAT
 	MaterialInfo material = material_infos[i_mat];
 	
-#ifndef SHADOW_PASS
-	vec3 N = i_normal;
-#ifndef DEFERRED
-	vec3 V = i_coordv;
-#endif
-#endif
-
 	MAT_FILE
 #else
 	#ifndef SHADOW_PASS

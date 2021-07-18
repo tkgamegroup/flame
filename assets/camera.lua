@@ -1,7 +1,9 @@
 function make_fly_camera(entity)
 	local camera = {
 		speed = 0.5,
+		entity = entity,
 		node = entity.find_component("cNode"),
+		c_camera = entity.find_component("cCamera"),
 		yaw = 0,
 		pitch = 0,
 		dir1 = vec3(0, 0, 1),
@@ -12,7 +14,14 @@ function make_fly_camera(entity)
 		a = false,
 		d = false,
 		sp = false,
-		sh = false
+		sh = false,
+
+		kdown_lis = nil,
+		kup_lis = nil,
+		mldown_lis = nil,
+		mlup_lis = nil,
+		mmove_lis = nil,
+		event = nil
 	}
 
 	camera.move = function(dir, v)
@@ -35,7 +44,7 @@ function make_fly_camera(entity)
 	local e_key_d = e_keyboardkey["D"]
 	local e_key_sp = e_keyboardkey["Space"]
 	local e_key_shift = e_keyboardkey["Shift"]
-	scene_receiver.add_key_down_listener(function(k)
+	camera.kdown_lis = scene_receiver.add_key_down_listener(function(k)
 		if k == e_key_w then
 			camera.w = true
 		elseif k == e_key_s then
@@ -51,7 +60,7 @@ function make_fly_camera(entity)
 		end
 	end)
 
-	scene_receiver.add_key_up_listener(function(k)
+	camera.kup_lis = scene_receiver.add_key_up_listener(function(k)
 		if k == e_key_w then
 			camera.w = false
 		elseif k == e_key_s then
@@ -67,15 +76,15 @@ function make_fly_camera(entity)
 		end
 	end)
 
-	scene_receiver.add_mouse_left_down_listener(function()
+	camera.mldown_lis =  scene_receiver.add_mouse_left_down_listener(function()
 		camera.dragging = true
 	end)
 
-	scene_receiver.add_mouse_left_up_listener(function()
+	camera.mlup_lis =  scene_receiver.add_mouse_left_up_listener(function()
 		camera.dragging = false
 	end)
 
-	scene_receiver.add_mouse_move_listener(function(disp)
+	camera.mmove_lis = scene_receiver.add_mouse_move_listener(function(disp)
 		if camera.dragging then
 			camera.yaw = camera.yaw - disp.x
 			camera.pitch = camera.pitch - disp.y
@@ -83,10 +92,10 @@ function make_fly_camera(entity)
 		end
 	end)
 
-	entity.add_event(function()
+	camera.event = entity.add_event(function()
 		local moved = false
 		if camera.w then
-			camera.pos = camera.pos - camera.dir * camera.speed
+			camera.pos = camera.pos - camera.dir1 * camera.speed
 			moved = true
 		end
 		if camera.s then
@@ -94,7 +103,7 @@ function make_fly_camera(entity)
 			moved = true
 		end
 		if camera.a then
-			camera.pos = camera.pos - dir2 * camera.speed
+			camera.pos = camera.pos - camera.dir2 * camera.speed
 			moved = true
 		end
 		if camera.d then
@@ -114,37 +123,52 @@ function make_fly_camera(entity)
 		end
 	end)
 
+	camera.destroy = function()
+		scene_receiver.remove_key_down_listener(camera.kdown_lis)
+		scene_receiver.remove_key_up_listener(camera.kup_lis)
+		scene_receiver.remove_mouse_left_down_listener(camera.mldown_lis)
+		scene_receiver.remove_mouse_left_up_listener(camera.mlup_lis)
+		scene_receiver.remove_mouse_move_listener(camera.mmove_lis)
+		scene_receiver.remove_event(camera.event)
+	end
+
 	camera.node.set_euler(vec3(camera.yaw, camera.pitch, 0))
 	camera.pos = camera.node.get_pos()
 
 	return camera
 end
 
-function make_third_camera(entity)
+function make_arcball_camera(entity)
 	local camera = {
+		entity = entity,
 		node = entity.find_component("cNode"),
+		c_camera = entity.find_component("cCamera"),
 		length = 5,
 		yaw = 0,
 		pitch = -90,
-		dragging = false
+		dragging = false,
+
+		mldown_lis = nil,
+		mlup_lis = nil,
+		mscroll_lis = nil,
+		mmove_lis = nil
 	}
 	
-	local pnode = entity.get_parent().find_component("cNode")
 	camera.set_pos = function()
 		camera.node.set_pos(camera.node.get_local_dir(2) * camera.length)
 	end
 
 	local scene_receiver = scene.find_component("cReceiver")
 
-	scene_receiver.add_mouse_left_down_listener(function()
+	camera.mldown_lis = scene_receiver.add_mouse_left_down_listener(function()
 		camera.dragging = true
 	end)
 
-	scene_receiver.add_mouse_left_up_listener(function()
+	camera.mlup_lis = scene_receiver.add_mouse_left_up_listener(function()
 		camera.dragging = false
 	end)
 
-	scene_receiver.add_mouse_scroll_listener(function(scroll)
+	camera.mscroll_lis = scene_receiver.add_mouse_scroll_listener(function(scroll)
 		if scroll > 0 then
 			camera.length = camera.length * 0.9 - 0.1
 			if camera.length < 0.1 then camera.length = 0.1 end
@@ -154,7 +178,7 @@ function make_third_camera(entity)
 		camera.set_pos()
 	end)
 
-	scene_receiver.add_mouse_move_listener(function(disp)
+	camera.mmove_lis = scene_receiver.add_mouse_move_listener(function(disp)
 		if camera.dragging then
 			camera.yaw = camera.yaw - disp.x
 			camera.pitch = camera.pitch - disp.y
@@ -162,6 +186,13 @@ function make_third_camera(entity)
 			camera.set_pos()
 		end
 	end)
+
+	camera.destroy = function()
+		scene_receiver.remove_mouse_left_down_listener(camera.mldown_lis)
+		scene_receiver.remove_mouse_left_up_listener(camera.mlup_lis)
+		scene_receiver.remove_mouse_scroll_listener(camera.mscroll_lis)
+		scene_receiver.remove_mouse_move_listener(camera.mmove_lis)
+	end
 
 	camera.node.set_euler(vec3(camera.yaw, camera.pitch, 0))
 	camera.set_pos()

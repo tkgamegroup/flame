@@ -12,6 +12,7 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	float zFar;
 	
 	vec3 camera_coord;
+	vec3 camera_dir;
 
 	mat4 view;
 	mat4 view_inv;

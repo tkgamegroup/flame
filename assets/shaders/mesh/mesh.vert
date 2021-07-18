@@ -20,7 +20,6 @@ layout(location = 1) out vec2 o_uv;
 layout(location = 2) out vec3 o_normal; 
 #ifndef DEFERRED
 layout(location = 3) out vec3 o_coordw;
-layout(location = 4) out vec3 o_coordv;
 #endif
 #endif
 
@@ -55,7 +54,6 @@ void main()
 
 #if !defined(DEFERRED) && !defined(SHADOW_PASS)
 	o_coordw = coordw;
-	o_coordv = normalize(render_data.camera_coord - coordw);
 #endif
 
 #ifndef SHADOW_PASS

@@ -1,4 +1,5 @@
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "light_private.h"
 #include "../systems/renderer_private.h"
@@ -20,10 +21,17 @@ namespace flame
 		cast_shadow = v;
 	}
 
+	mat4 cLightPrivate::get_shadow_mat(uint idx) const
+	{
+		if (s_renderer)
+			return s_renderer->get_shaodw_mat(id, idx);
+		return mat4(1);
+	}
+
 	void cLightPrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
 		if (first)
-			s_renderer->add_light(node->transform, type, color, cast_shadow);
+			id = s_renderer->add_light(node->transform, type, color, cast_shadow);
 	}
 
 	void cLightPrivate::on_added()
@@ -35,6 +43,17 @@ namespace flame
 	void cLightPrivate::on_removed()
 	{
 		node = nullptr;
+	}
+
+	void cLightPrivate::on_entered_world()
+	{
+		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(s_renderer);
+	}
+
+	void cLightPrivate::on_left_world()
+	{
+		s_renderer = nullptr;
 	}
 
 	cLight* cLight::create(void* parms)

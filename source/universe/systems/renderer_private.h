@@ -49,7 +49,7 @@ namespace flame
 
 		RenderType render_type = RenderShaded;
 
-		void*					sky_id = nullptr;
+		void* sky_id = nullptr;
 
 		uint frame;
 		std::unique_ptr<ElemenetRenderData>	_ed;
@@ -93,7 +93,8 @@ namespace flame
 		void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) override;
 
-		void add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) override;
+		uint add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) override;
+		mat4 get_shaodw_mat(uint id, uint idx) const;
 		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
 		uint add_mesh_armature(uint bones_count, const mat4* bones) override;
 		void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags) override;
@@ -112,9 +113,6 @@ namespace flame
 
 		void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) override;
 		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
-
-		uint get_shadow_count(LightType t) override;
-		void get_shadow_matrices(LightType t, uint idx, mat4* dst) override;
 
 		void on_added() override;
 

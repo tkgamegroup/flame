@@ -48,7 +48,7 @@ namespace flame
 		virtual void set_sky(graphics::ImageView* box, graphics::ImageView* irr,
 			graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id) = 0;
 
-		virtual void add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) = 0;
+		virtual uint add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual uint add_mesh_transform(const mat4& mat, const mat3& nor) = 0;
 		virtual uint add_mesh_armature(uint bones_count, const mat4* bones) = 0;
 		virtual void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags = ShadingMaterial) = 0;
@@ -64,10 +64,6 @@ namespace flame
 
 		virtual void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) = 0;
 		virtual void record(uint tar_idx, graphics::CommandBuffer* cb) = 0;
-
-		/* for debug use */
-		virtual uint get_shadow_count(LightType t) = 0;
-		virtual void get_shadow_matrices(LightType t, uint idx, mat4* dst) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};
