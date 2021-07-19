@@ -110,20 +110,21 @@ namespace flame
 
 		if (emt_tick % emt_intv == 0 && linearRand(0.f, 1.f) < emt_prob)
 		{
-			auto n = linearRand(emt_num_min, emt_num_max);
+			auto n = emt_num_rand > 0 ? linearRand(emt_num, emt_num + emt_num_rand) : emt_num;
 			n = min(n, ptc_num_max - (uint)ptcs.size());
 			for (auto i = 0; i < n; i++)
 			{
 				Particle p;
 				p.pos = vec3(0.f);
-				p.sz = linearRand(emt_sz_min, emt_sz_max);
-				p.rot = linearRand(emt_rot_min, emt_rot_max);
-				auto hsva = linearRand(emt_hsva_min, emt_hsva_max);
+				p.sz = any(greaterThan(emt_sz_rand, vec2(0.f))) ? linearRand(emt_sz, emt_sz + emt_sz_rand) : emt_sz;
+				p.rot = any(greaterThan(emt_rot_rand, vec3(0.f))) ? linearRand(emt_rot, emt_rot + emt_rot_rand) : emt_rot;
+				auto hsva = any(greaterThan(emt_hsva, vec4(0.f))) ? linearRand(emt_hsva, emt_hsva + emt_hsva_rand) : emt_hsva;
 				p.col = vec4(rgbColor(hsva.rgb()), hsva.a);
-				p.mov_sp = euler_rot(linearRand(emt_mov_dir_min, emt_mov_dir_max)) * 
-					vec3(1.f, 0.f, 0.f) * linearRand(emt_mov_sp_min, emt_mov_sp_max);
-				p.rot_sp = linearRand(emt_rot_sp_min, emt_rot_sp_max);
-				p.ttl = linearRand(emt_ttl_min, emt_ttl_max);
+				p.mov_sp = euler_rot(any(greaterThan(emt_mov_dir_rand, vec3(0.f))) ? 
+					linearRand(emt_mov_dir, emt_mov_dir + emt_mov_dir_rand) : emt_mov_dir) *
+					vec3(1.f, 0.f, 0.f) * (emt_mov_sp_rand > 0.f ? linearRand(emt_mov_sp, emt_mov_sp + emt_mov_sp_rand) : emt_mov_sp);
+				p.rot_sp = any(greaterThan(emt_rot_sp_rand, vec3(0.f))) ? linearRand(emt_rot_sp, emt_rot_sp + emt_rot_sp_rand) : emt_rot_sp;
+				p.ttl = emt_ttl_rand > 0 ? linearRand(emt_ttl, emt_ttl + emt_ttl_rand) : emt_ttl;
 				ptcs.push_back(p);
 			}
 		}

@@ -1,0 +1,16 @@
+#ifdef MAKE_DSL
+#define WATER_SET 0
+#endif
+
+struct WaterInfo
+{
+	vec3 coord;
+	vec3 extent;
+
+	uint material_id;
+};
+
+layout(set = WATER_SET, binding = 0) buffer readonly WaterInfos
+{
+	WaterInfo water_infos[16];
+};

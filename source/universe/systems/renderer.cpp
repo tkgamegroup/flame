@@ -32,6 +32,11 @@ namespace terrain
 #include <terrain/forward.pll.h>
 #include <terrain/gbuffer.pll.h>
 }
+namespace water
+{
+#include <water/water.dsl.h>
+#include <water/water.pll.h>
+}
 #include <deferred/deferred.dsl.h>
 #include <deferred/deferred.pll.h>
 #include <particle/particle.pll.h>
@@ -321,7 +326,9 @@ namespace flame
 	struct ParticleVertex
 	{
 		vec3 pos;
-		vec2 uv;
+		vec3 xext;
+		vec3 yext;
+		vec4 uv;
 		vec4 col;
 	};
 
@@ -456,7 +463,6 @@ namespace flame
 		UniPtr<graphics::DescriptorSet>	ds_def;
 
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
-		SequentialBuffer<uint>				buf_ptc_idx;
 		graphics::Pipeline*					pl_ptc;
 
 		SequentialBuffer<graphics::Line>	buf_lines;
@@ -1513,6 +1519,15 @@ namespace flame
 			nd.terrains[MaterialNormalData].emplace_back(dispatch_count, material_id);
 	}
 
+	void sRendererPrivate::draw_water(const vec3& coord, const vec3& extent,
+		uint material_id, ShadingFlags flags)
+	{
+		auto& nd = *_nd;
+
+		if (render_type != ShadingMaterial)
+			flags = (ShadingFlags)(flags & ~ShadingMaterial);
+	}
+
 	void sRendererPrivate::draw_particles(uint count, graphics::Particle* partcles, uint res_id)
 	{
 		auto& nd = *_nd;
@@ -1522,25 +1537,11 @@ namespace flame
 
 		auto base = nd.particles.back().second;
 
-		auto pvtx = nd.buf_ptc_vtx.stag(count * 4);
+		auto pvtx = nd.buf_ptc_vtx.stag(count);
 		for (auto i = 0; i < count; i++)
 		{
 			auto& p = partcles[i];
-			pvtx[i * 4 + 0] = { p.pos - p.xext - p.yext, p.uvs.xy(), p.col };
-			pvtx[i * 4 + 1] = { p.pos + p.xext - p.yext, p.uvs.zy(), p.col };
-			pvtx[i * 4 + 2] = { p.pos + p.xext + p.yext, p.uvs.zw(), p.col };
-			pvtx[i * 4 + 3] = { p.pos - p.xext + p.yext, p.uvs.xw(), p.col };
-		}
-
-		auto pidx = nd.buf_ptc_idx.stag(count * 6);
-		for (auto i = 0; i < count; i++)
-		{
-			pidx[i * 6 + 0] = base + i * 4 + 0;
-			pidx[i * 6 + 1] = base + i * 4 + 2;
-			pidx[i * 6 + 2] = base + i * 4 + 1;
-			pidx[i * 6 + 3] = base + i * 4 + 0;
-			pidx[i * 6 + 4] = base + i * 4 + 3;
-			pidx[i * 6 + 5] = base + i * 4 + 2;
+			pvtx[i] = { p.pos, p.xext, p.yext, p.uvs, p.col };
 		}
 
 		nd.particles.back().second += count;
@@ -2036,11 +2037,9 @@ namespace flame
 			if (nd.particles.size() > 1)
 			{
 				nd.buf_ptc_vtx.upload(cb);
-				nd.buf_ptc_idx.upload(cb);
 
 				cb->begin_renderpass(nullptr, nd.fb_fwd_dc.get());
 				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_ptc_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(nd.pl_ptc);
 				{
 					graphics::DescriptorSet* sets[PLL_particle::Binding_Max];
@@ -2053,7 +2052,7 @@ namespace flame
 				{
 					if (vec.second == 0)
 						continue;
-					cb->draw_indexed(vec.second * 6, cnt * 4, cnt * 6, 1, vec.first);
+					cb->draw(vec.second, 1, cnt, vec.first);
 					cnt += vec.second;
 				}
 				cb->end_renderpass();
@@ -2457,8 +2456,7 @@ namespace flame
 		nd.buf_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
 		nd.buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 200000);
 		nd.buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
-		nd.buf_ptc_vtx.create(device, graphics::BufferUsageVertex, 6000);
-		nd.buf_ptc_idx.create(device, graphics::BufferUsageIndex, 4000);
+		nd.buf_ptc_vtx.create(device, graphics::BufferUsageVertex, 10000);
 
 		nd.buf_lines.create(device, graphics::BufferUsageVertex, 2000000);
 

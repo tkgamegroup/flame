@@ -2,6 +2,7 @@
 <pipeline>
   <shaders>
     <shader filename="particle/particle.vert" />
+    <shader filename="particle/particle.geom" />
     <shader filename="particle/particle.frag" />
   </shaders>
   <layout filename="particle/particle.pll" />
@@ -9,11 +10,14 @@
   <vertex_buffers>
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32B32_SFLOAT" />
-      <vertex_attribute location="1" format="R32G32_SFLOAT" />
-      <vertex_attribute location="2" format="R32G32B32A32_SFLOAT" />
+      <vertex_attribute location="1" format="R32G32B32_SFLOAT" />
+      <vertex_attribute location="2" format="R32G32B32_SFLOAT" />
+      <vertex_attribute location="3" format="R32G32B32A32_SFLOAT" />
+      <vertex_attribute location="4" format="R32G32B32A32_SFLOAT" />
     </vertex_buffer>
   </vertex_buffers>
   <cull_mode v="None" />
+  <primitive_topology v="PointList" />
   <depth_test v="true" />
   <depth_write v="false" />
   <blend_options>
