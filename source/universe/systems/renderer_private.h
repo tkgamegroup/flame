@@ -13,6 +13,7 @@ namespace flame
 		MaterialForMeshShadowArmature,
 		MaterialMeshUsageCount,
 		MaterialForTerrain = MaterialMeshUsageCount,
+		MaterialForWater,
 
 		MaterialUsageCount
 	};
@@ -101,7 +102,7 @@ namespace flame
 		void add_mesh_occluder(uint idx, uint mesh_id) override;
 		void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
 			uint material_id, ShadingFlags flags) override;
-		void draw_water(const vec3& coord, const vec3& extent,
+		void draw_water(const vec3& coord, const vec2& extent,
 			uint material_id, ShadingFlags flags) override;
 		void draw_particles(uint count, graphics::Particle* partcles, uint res_id) override;
 

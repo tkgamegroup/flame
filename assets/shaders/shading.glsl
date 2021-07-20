@@ -44,7 +44,7 @@ vec3 fresnel_schlick(float cos_theta, vec3 f0)
 
 vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness)
 {
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(max(1.0 - cos_theta, 0.0), 5.0);
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - cos_theta, 5.0);
 }   
 
 vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
@@ -56,10 +56,9 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
 	
 	float NDF = distribution_GGX(N, H, roughness);        
     float G   = geometry_smith(N, V, L, roughness);      
-    vec3 F    = fresnel_schlick(max(dot(H, V), 0.0), f0);
+    vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), f0);
 	
-	vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
+    vec3 kD = vec3(1.0) - F;
     kD *= 1.0 - metallic;	  
         
     vec3 numerator    = NDF * G * F;
@@ -69,7 +68,7 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
+vec4 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
 	vec3 ret = vec3(0.0);
 
@@ -129,11 +128,14 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 	}
 	
 	float sky_intensity = render_data.sky_intensity;
+	
+	float NdotV = max(dot(N, V), 0.0);
+	vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
+	vec3 kD = vec3(1.0) - F;
+	kD *= 1.0 - metallic;
 
 	// IBL
 	{
-		float NdotV = max(dot(N, V), 0.0);
-		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
 
 		vec3 diffuse = texture(sky_irr, N).rgb * albedo;
 
@@ -141,10 +143,10 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 		vec3 specular = textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
 		float ao = 1.0; // TODO
-		ret += ((1.0 - F) * (1.0 - metallic) * diffuse + specular) * sky_intensity * ao;
+		ret += (kD * diffuse + specular) * sky_intensity * ao;
 	}
 
 	ret = mix(ret, render_data.fog_color * sky_intensity, distv / render_data.zFar);
 
-	return ret;
+	return vec4(ret, 1.0 - kD);
 }

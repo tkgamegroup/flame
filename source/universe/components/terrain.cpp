@@ -51,6 +51,15 @@ namespace flame
 		material_name = name;
 	}
 
+	void cTerrainPrivate::set_shading_flags(ShadingFlags flags)
+	{
+		if (shading_flags == flags)
+			return;
+		shading_flags = flags;
+		if (node)
+			node->mark_transform_dirty();
+	}
+
 	void cTerrainPrivate::draw(sRendererPtr s_renderer, bool first, bool)
 	{
 		if (!first || height_map_id == -1 || material_id == -1)
@@ -142,6 +151,8 @@ namespace flame
 			cb->copy_buffer_to_image(stag.get(), normal_texture.get(), 1, &cpy);
 			cb->image_barrier(normal_texture.get(), {}, graphics::ImageLayoutTransferDst, graphics::ImageLayoutShaderReadOnly);
 		}
+
+		if (!material_name.empty())
 		{
 			auto fn = std::filesystem::path(material_name);
 			if (!fn.extension().empty() && !fn.is_absolute())

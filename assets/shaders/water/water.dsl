@@ -5,7 +5,7 @@
 struct WaterInfo
 {
 	vec3 coord;
-	vec3 extent;
+	vec2 extent;
 
 	uint material_id;
 };

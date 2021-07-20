@@ -40,6 +40,9 @@ namespace flame
 		void set_material_name(const std::string& name);
 		void set_material_name(const char* name) override { set_material_name(std::string(name)); }
 
+		ShadingFlags get_shading_flags() const override { return shading_flags; }
+		void set_shading_flags(ShadingFlags flags) override;
+
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture.get(); }
 

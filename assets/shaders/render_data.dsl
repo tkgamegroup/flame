@@ -21,4 +21,6 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	mat4 proj_view;
 	
 	vec4 frustum_planes[6];
+
+	uint time;
 }render_data;

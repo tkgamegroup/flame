@@ -26,6 +26,9 @@ namespace flame
 		virtual const char* get_material_name() const = 0;
 		virtual void set_material_name(const char* name) = 0;
 
+		virtual ShadingFlags get_shading_flags() const = 0;
+		virtual void set_shading_flags(ShadingFlags flags) = 0;
+
 		virtual graphics::Image* get_height_texture() const = 0;
 		virtual graphics::Image* get_normal_texture() const = 0;
 

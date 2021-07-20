@@ -75,11 +75,12 @@
     </eElement>
     <eImage name="mouse_icon" visible="true" img="D:/assets/action_icons/action_icons.atlas" tile="mouse"/>
     <eNode>
-      <entity src="D:\assets\sky_test\sky" name="sky" />
+      <eNode src="D:\assets\sky_test\sky" name="sky" />
       <eCamera name="camera" current="true">
         <cScript src="camera.lua" />
       </eCamera>
       <eNode src="terrain.prefab" />
+      <eNode src="water.prefab" pos="150,52,150" />
       <eNode name="obj_root" octree_length="400.0">
       </eNode>
       <eNode name="projectile_root" />

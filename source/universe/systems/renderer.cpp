@@ -435,6 +435,8 @@ namespace flame
 		UniPtr<graphics::DescriptorSet>										ds_mesh;
 		SequentialArrayStorageBuffer<terrain::DSL_terrain::TerrainInfos>	buf_terrain;
 		UniPtr<graphics::DescriptorSet>										ds_terrain;
+		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
+		UniPtr<graphics::DescriptorSet>										ds_water;
 
 		UniPtr<graphics::Image> img_dep;
 		UniPtr<graphics::Image> img_col_met; // color, metallic
@@ -452,6 +454,7 @@ namespace flame
 		graphics::PipelineLayout* pll_mesh_gbuf;
 		graphics::PipelineLayout* pll_terrain_fwd;
 		graphics::PipelineLayout* pll_terrain_gbuf;
+		graphics::PipelineLayout* pll_water;
 
 		UniPtr<graphics::Framebuffer> fb_gbuf;
 		UniPtr<graphics::Framebuffer> fb_fwd;
@@ -1298,7 +1301,9 @@ namespace flame
 			info.shaders_count = _countof(shaders);
 			info.shaders = shaders;
 			info.layout = graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
-			info.renderpass = graphics::Renderpass::get(device, deferred ? L"gbuffer.rp" : L"forward.rp");
+			if (!rp)
+				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
+			info.renderpass = rp;
 			info.subpass_index = 0;
 			info.primitive_topology = graphics::PrimitiveTopologyPatchList;
 			info.patch_control_points = 4;
@@ -1306,6 +1311,38 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
+			ret = graphics::Pipeline::create(device, info);
+		}
+			break;
+		case MaterialForWater:
+		{
+			auto defines_str = get_defines_str();
+			auto substitutes_str = get_substitutes_str();
+			graphics::GraphicsPipelineInfo info;
+			graphics::Shader* shaders[] = {
+				graphics::Shader::get(device, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
+				graphics::Shader::get(device, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
+			};
+			info.shaders_count = _countof(shaders);
+			info.shaders = shaders;
+			info.layout = graphics::PipelineLayout::get(device, L"water/water.pll");
+			if (!rp)
+				rp = graphics::Renderpass::get(device, L"forward.rp");
+			info.renderpass = rp;
+			info.subpass_index = 0;
+			info.primitive_topology = graphics::PrimitiveTopologyTriangleList;
+			info.polygon_mode = polygon_mode;
+			info.cull_mode = cull_mode;
+			info.depth_test = depth_test;
+			info.depth_write = false;
+			info.blend_options_count = 1;
+			graphics::BlendOption bo;
+			bo.enable = true;
+			bo.src_color = graphics::BlendFactorSrcAlpha;
+			bo.dst_color = graphics::BlendFactorOneMinusSrcAlpha;
+			bo.src_alpha = graphics::BlendFactorOne;
+			bo.dst_alpha = graphics::BlendFactorZero;
+			info.blend_options = &bo;
 			ret = graphics::Pipeline::create(device, info);
 		}
 			break;
@@ -1519,13 +1556,27 @@ namespace flame
 			nd.terrains[MaterialNormalData].emplace_back(dispatch_count, material_id);
 	}
 
-	void sRendererPrivate::draw_water(const vec3& coord, const vec3& extent,
+	void sRendererPrivate::draw_water(const vec3& coord, const vec2& extent,
 		uint material_id, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
 		if (render_type != ShadingMaterial)
 			flags = (ShadingFlags)(flags & ~ShadingMaterial);
+
+		auto& data = nd.buf_water.add_item();
+		data.coord = coord;
+		data.extent = extent;
+		data.material_id = material_id;
+
+		if (flags & ShadingMaterial)
+			nd.waters[MaterialCustom].emplace_back(0, material_id);
+		if (render_type == RenderWireframe || (flags & ShadingWireframe))
+			nd.waters[MaterialWireframe].emplace_back(0, material_id);
+		if (flags & ShadingOutline)
+			nd.waters[MaterialOutline].emplace_back(0, material_id);
+		if (render_type == RenderNormalData)
+			nd.waters[MaterialNormalData].emplace_back(0, material_id);
 	}
 
 	void sRendererPrivate::draw_particles(uint count, graphics::Particle* partcles, uint res_id)
@@ -1632,6 +1683,7 @@ namespace flame
 				data.proj_inv = camera->proj_inv;
 				data.proj_view = data.proj * data.view;
 				*(Frustum*)data.frustum_planes = camera->get_frustum();
+				data.time = frame;
 			}
 			nd.buf_render_data.cpy_whole();
 			nd.buf_render_data.upload(cb);
@@ -1697,7 +1749,7 @@ namespace flame
 
 			auto bind_terrain_fwd_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_terrain_fwd);
-				graphics::DescriptorSet* sets[mesh::PLL_forward::Binding_Max];
+				graphics::DescriptorSet* sets[terrain::PLL_forward::Binding_Max];
 				sets[terrain::PLL_forward::Binding_render_data] = nd.ds_render_data.get();
 				sets[terrain::PLL_forward::Binding_material] = nd.ds_material.get();
 				sets[terrain::PLL_forward::Binding_light] = nd.ds_light.get();
@@ -1707,7 +1759,7 @@ namespace flame
 
 			auto bind_terrain_def_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_terrain_gbuf);
-				graphics::DescriptorSet* sets[mesh::PLL_gbuffer::Binding_Max];
+				graphics::DescriptorSet* sets[terrain::PLL_gbuffer::Binding_Max];
 				sets[terrain::PLL_gbuffer::Binding_render_data] = nd.ds_render_data.get();
 				sets[terrain::PLL_gbuffer::Binding_material] = nd.ds_material.get();
 				sets[terrain::PLL_gbuffer::Binding_terrain] = nd.ds_terrain.get();
@@ -1720,6 +1772,26 @@ namespace flame
 				{
 					cb->bind_pipeline(nd.mat_reses[vec[i].second].get_pl(this, MaterialForTerrain));
 					cb->draw(4, vec[i].first, 0, i << 16);
+				}
+				vec.clear();
+			};
+
+			auto bind_water_res = [&]() {
+				cb->bind_pipeline_layout(nd.pll_water);
+				graphics::DescriptorSet* sets[water::PLL_water::Binding_Max];
+				sets[water::PLL_water::Binding_render_data] = nd.ds_render_data.get();
+				sets[water::PLL_water::Binding_material] = nd.ds_material.get();
+				sets[water::PLL_water::Binding_light] = nd.ds_light.get();
+				sets[water::PLL_water::Binding_water] = nd.ds_water.get();
+				cb->bind_descriptor_sets(0, _countof(sets), sets);
+			};
+
+			auto draw_waters = [&]() {
+				auto& vec = nd.waters[MaterialCustom];
+				for (auto i = 0; i < vec.size(); i++)
+				{
+					cb->bind_pipeline(nd.mat_reses[vec[i].second].get_pl(this, MaterialForWater));
+					cb->draw(6, 1, 0, i << 16);
 				}
 				vec.clear();
 			};
@@ -2031,6 +2103,16 @@ namespace flame
 					break;
 				}
 
+				cb->end_renderpass();
+			}
+
+			if (!nd.waters[MaterialCustom].empty())
+			{
+				nd.buf_water.upload(cb);
+
+				cb->begin_renderpass(nullptr, nd.fb_fwd_dc.get());
+				bind_water_res();
+				draw_waters();
 				cb->end_renderpass();
 			}
 
@@ -2491,6 +2573,11 @@ namespace flame
 		nd.ds_terrain->set_buffer(terrain::DSL_terrain::TerrainInfos_binding, 0, nd.buf_terrain.buf.get());
 		nd.ds_terrain->update();
 
+		nd.buf_water.create(device, graphics::BufferUsageStorage);
+		nd.ds_water.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"water/water.dsl")));
+		nd.ds_water->set_buffer(water::DSL_water::WaterInfos_binding, 0, nd.buf_water.buf.get());
+		nd.ds_water->update();
+
 		nd.buf_light_infos.create(device, graphics::BufferUsageStorage);
 		nd.buf_tile_lights.create(device, graphics::BufferUsageStorage);
 		nd.buf_dir_shadows.create(device, graphics::BufferUsageStorage);
@@ -2535,6 +2622,7 @@ namespace flame
 		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");
 		nd.pll_terrain_fwd = graphics::PipelineLayout::get(device, L"terrain/forward.pll");
 		nd.pll_terrain_gbuf = graphics::PipelineLayout::get(device, L"terrain/gbuffer.pll");
+		nd.pll_water = graphics::PipelineLayout::get(device, L"water/water.pll");
 
 		nd.pl_def = graphics::Pipeline::get(device, L"deferred/deferred.pl");
 		nd.ds_def.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));

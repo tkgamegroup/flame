@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+    <eNode>
+      <cWater extent="100,100" material_name="water.fmat" />
+    </eNode>
+</prefab>

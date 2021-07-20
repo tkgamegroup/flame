@@ -4,8 +4,8 @@
 #include "gbuffer.pll"
 #endif
 
-layout (location = 0) out flat uint o_idx;
-layout (location = 1) out vec2 o_uv;
+layout(location = 0) out flat uint o_idx;
+layout(location = 1) out vec2 o_uv;
 
 void main(void)
 {
@@ -22,7 +22,7 @@ void main(void)
 	vec2 v = vec2((tile_idx % blocks.x), (tile_idx / blocks.x)) + vs[gl_VertexIndex];
 	v /= blocks;
 
-	gl_Position = vec4(terrain_infos[idx].coord + vec3(v.x, 0.0, v.y) * terrain_infos[idx].extent, 1.0);
 	o_idx = idx;
 	o_uv = v;
+	gl_Position = vec4(terrain_infos[idx].coord + vec3(v.x, 0.0, v.y) * terrain_infos[idx].extent, 1.0);
 }
