@@ -80,7 +80,9 @@
         <cScript src="camera.lua" />
       </eCamera>
       <eNode src="terrain.prefab" />
-      <eNode src="water.prefab" pos="150,52,150" />
+      <eNode src="water.prefab" pos="0,35,0">
+        <cWater extent="400,400" />
+      </eNode>
       <eNode name="obj_root" octree_length="400.0">
       </eNode>
       <eNode name="projectile_root" />

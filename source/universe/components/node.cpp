@@ -35,6 +35,7 @@ namespace flame
 		eul = e;
 		rot_dirty = true;
 		qut_dirty = true;
+		eul_dirty = false;
 		mark_transform_dirty();
 		if (entity)
 			entity->component_data_changed(this, S<"euler"_h>);
@@ -54,6 +55,7 @@ namespace flame
 		qut = q;
 		rot_dirty = true;
 		eul_dirty = true;
+		qut_dirty = false;
 		mark_transform_dirty();
 		if (entity)
 			entity->component_data_changed(this, S<"quat"_h>);
@@ -170,8 +172,11 @@ namespace flame
 		});
 		if (max_count > vec.size())
 			max_count = vec.size();
-		for (auto i = 0; i < max_count; i++)
-			dst[i] = vec[i].first;
+		if (dst)
+		{
+			for (auto i = 0; i < max_count; i++)
+				dst[i] = vec[i].first;
+		}
 		return max_count;
 	}
 

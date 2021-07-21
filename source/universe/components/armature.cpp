@@ -46,8 +46,10 @@ namespace flame
 			entity->component_data_changed(this, S<"src"_h>);
 	}
 
-	void cArmaturePrivate::play(uint id)
+	void cArmaturePrivate::play(uint id, float _speed)
 	{
+		speed = _speed;
+
 		if (playing == id)
 			return;
 		playing = id;

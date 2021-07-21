@@ -16,8 +16,8 @@ function make_projectile(entity, target, pos, speed, callback)
 
 	projectile.node.set_pos(pos)
 
-	projectile.die = function()
-		if projectile.callback then
+	projectile.die = function(lost_target)
+		if not lost_target and projectile.callback then
 			projectile.callback()
 		end
 

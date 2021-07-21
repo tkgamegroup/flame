@@ -293,6 +293,11 @@ function length_and_dir_3(v)
 	return l, nil
 end
 
+function circle_rand(r)
+	local rad = math.rad(math.random() * 360.0)
+	return vec2(math.cos(rad) * r, math.sin(rad) * r)
+end
+
 function split_by_newline(str)
 	local lines = {}
 	for s in str:gmatch("[^\r\n]+") do

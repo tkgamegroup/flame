@@ -22,10 +22,20 @@ ITEM_LIST = {
 		name = "wood_stick",
 		display_name = "Wood Stick",
 		stack_num = 1,
-		data = {
-			slot = EQUIPMENT_SLOT_MAIN_HAND,
+		slot = EQUIPMENT_SLOT_MAIN_HAND,
+		attributes = {
 			ATK_TYPE = "PHY",
 			ATK = 5
+		}
+	},
+	{
+		type = "EQUIPMENT",
+		name = "leather_shoes",
+		display_name = "Leather Shoes",
+		stack_num = 1,
+		slot = EQUIPMENT_SLOT_FOOT,
+		attributes = {
+			MOV_SP = 10
 		}
 	}
 }

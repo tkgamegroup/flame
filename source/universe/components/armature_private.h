@@ -53,15 +53,12 @@ namespace flame
 		void set_animations(const wchar_t* src) override { set_animations(std::wstring(src)); }
 
 		int get_playing() override { return playing; }
-		void play(uint id) override;
+		void play(uint id, float speed) override;
 		void stop() override;
 		void stop_at(uint id, int frame) override;
 
 		bool get_loop() const override { return loop; }
 		void set_loop(bool l) override;
-
-		float get_speed() const override { return speed; }
-		void set_speed(float v) override { speed = v; }
 
 		void* add_callback(void (*callback)(Capture& c, int frame), const Capture& capture) override;
 		void remove_callback(void* cb) override;

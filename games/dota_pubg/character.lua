@@ -15,6 +15,7 @@ function make_character(entity, group, stats)
 		armature = entity.find_component("cArmature"),
 		controller = entity.find_component("cCharacterController"),
 		pos = vec3(0),
+		prev_pos = vec3(0),
 
 		radius = 0.28,
 		height = 1.8,
@@ -30,10 +31,6 @@ function make_character(entity, group, stats)
 		attack_tick = 0,
 		last_receive_damage_src = nil,
 
-		on_tick = nil,
-		on_die = nil,
-		on_change_extra_state = nil,
-		on_process_extra_state = nil,
 		on_reward = nil,
 
 		HP_MAX =		stats and stats.HP_MAX or 0,
@@ -42,6 +39,7 @@ function make_character(entity, group, stats)
 		MP =			stats and stats.MP_MAX or 0,
 		HP_RECOVER =	stats and stats.HP_RECOVER or 0,
 		MP_RECOVER =	stats and stats.MP_RECOVER or 0,
+		MOV_SP =		stats and stats.MOV_SP or 0,
 		ATK_DMG =		stats and stats.ATK_DMG or 0,
 		ATK_TYPE =		stats and stats.ATK_TYPE or 0,
 		recover_tick = 0
@@ -72,10 +70,6 @@ function make_character(entity, group, stats)
 	__ui_scene.add_child(character.ui)
 
 	character.die = function()
-		if character.on_die then
-			character.on_die()
-		end
-
 		characters[character.group][character.name] = nil
 
 		character.entity.get_parent().remove_child(character.entity)
@@ -99,29 +93,31 @@ function make_character(entity, group, stats)
 
 	character.change_state = function(s, t, d)
 		if s == "idle" then
-			character.armature.play(0)
+			character.armature.play(0, 1.0)
 			character.armature.set_loop(true)
 			character.attacking = false
+			character.state = s
 		elseif s == "move_to" then
 			character.target_pos = t
 			character.stuck_tick = 0
 			character.attacking = false
+			character.state = s
 		elseif s == "attack_target" then
 			if character.attacking and character.target ~= t then
 				character.attacking = false
 			end
 			character.target = t
+			character.state = s
 		elseif s == "use_skill_to_target" then
 			character.attacking = false
 			character.target = t
 			character.state_date = d
+			character.state = s
 		elseif s == "pick_up" then
 			character.target = t
 			character.attacking = false
-		elseif character.on_change_extra_state then
-			character.on_change_extra_state(s, t)
+			character.state = s
 		end
-		character.state = s
 	end
 
 	character.armature.add_callback(function(frame)
@@ -200,9 +196,10 @@ function make_character(entity, group, stats)
 			return true
 		end
 
-		character.armature.play(1)
+		local ratio = character.MOV_SP / 100.0
+		character.armature.play(1, ratio)
 		character.armature.set_loop(true)
-		character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+		character.controller.move(vec3(d.x, 0, d.y) * character.speed * ratio)
 		return false
 	end
 
@@ -216,48 +213,26 @@ function make_character(entity, group, stats)
 				if character.attack_tick == 0 then
 					character.attack_tick = character.attack_interval
 					character.attacking = true
-					character.armature.play(2)
+					character.armature.play(2, 1.0)
 					character.armature.set_loop(false)
 				else
 					character.armature.stop_at(2, -1)
 				end
 			else
-				character.armature.play(1)
+				character.armature.play(1, 1.0)
 				character.armature.set_loop(true)
 				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 			end
 		end
 	end
 
-	character.tick = function()
-		local pos = character.node.get_global_pos()
-		
-		character.ui.set_visible(false)
-		local ui_pos = camera.camera.world_to_screen(vec3(pos.x, pos.y + 1.8, pos.z))
-		if ui_pos.x > -100 then
-			character.ui.set_visible(true)
-			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
-		end
-
-		if character.attack_tick > 0 then
-			character.attack_tick = character.attack_tick - 1
-		end
-
-		if character.recover_tick > 0 then
-			character.recover_tick = character.recover_tick - 1
-		else
-			character.receive_heal(character, character.HP_RECOVER)
-			character.receive_mana(character, character.MP_RECOVER)
-			character.recover_tick = 60
-		end
-
+	character.process_state = function()
 		if character.state == "move_to" then
 			if character.move_to_pos(character.target_pos.to_flat(), 0) then
 				character.change_state("idle")
 			end
 
-			if distance_3(pos, character.pos) < 0.001 then
+			if distance_3(character.prev_pos, character.pos) < 0.001 then
 				character.stuck_tick = character.stuck_tick + 1
 				if character.stuck_tick >= 5 then
 					character.change_state("idle")
@@ -288,7 +263,7 @@ function make_character(entity, group, stats)
 					character.use_skill(character.state_date.idx, character.target)
 					character.change_state("idle")
 				else
-					character.armature.play(1)
+					character.armature.play(1, 1.0)
 					character.armature.set_loop(true)
 					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 				end
@@ -296,15 +271,37 @@ function make_character(entity, group, stats)
 				character.target = nil
 				character.change_state("idle")
 			end
-		elseif character.on_process_extra_state then
-			character.on_process_extra_state()
+		end
+	end
+
+	character.tick = function()
+		character.prev_pos = character.pos
+		character.pos = character.node.get_global_pos()
+		
+		character.ui.set_visible(false)
+		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0))
+		if ui_pos.x > -100 then
+			character.ui.set_visible(true)
+			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
+			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
 		end
 
-		character.pos = pos
-
-		if character.on_tick then
-			character.on_tick()
+		if character.attack_tick > 0 then
+			character.attack_tick = character.attack_tick - 1
 		end
+
+		if character.recover_tick > 0 then
+			character.recover_tick = character.recover_tick - 1
+		else
+			character.receive_heal(character, character.HP_RECOVER)
+			character.receive_mana(character, character.MP_RECOVER)
+			character.recover_tick = 60
+		end
+
+		character.process_state()
+	end
+
+	character.calc_stats = function()
 	end
 
 	character.learn_skill = function(id)
@@ -325,11 +322,11 @@ function make_character(entity, group, stats)
 		if slot then
 			local skill_type = SKILL_LIST[slot.id]
 			if skill_type.type == "ACTIVE" then
-				if slot.cd == 0 and skill_type.data.cost_mana <= character.MP and 
-				distance_2(target.pos.to_flat(), character.pos.to_flat()) <= skill_type.data.distance + 1 then
-					slot.cd = skill_type.data.cool_down
-					character.MP = character.MP - skill_type.data.cost_mana
-					skill_type.data.logic(character, target)
+				if slot.cd == 0 and skill_type.cost_mana <= character.MP and 
+				distance_2(target.pos.to_flat(), character.pos.to_flat()) <= skill_type.distance + 1 then
+					slot.cd = skill_type.cool_down
+					character.MP = character.MP - skill_type.cost_mana
+					skill_type.logic(character, target)
 				end
 			end
 		end
@@ -384,7 +381,7 @@ function make_character(entity, group, stats)
 		if slot then
 			local item_type = ITEM_LIST[slot.id]
 			if item_type.type == "EQUIPMENT" then
-				local euip_slot = item_type.data.slot
+				local euip_slot = item_type.slot
 
 				local ori_id = character.equipments[euip_slot]
 				character.equipments[euip_slot] = slot.id
@@ -405,9 +402,9 @@ function make_character(entity, group, stats)
 	end
 
 	character.take_off_equipment = function(idx)
-		local equipment = character.equipments[idx]
-		if equipment ~= 0 then
-			if character.receive_item(equipment, 1) == 0 then
+		local id = character.equipments[idx]
+		if id ~= 0 then
+			if character.receive_item(id, 1) == 0 then
 				character.equipments[idx] = 0
 				character.calc_stats()
 

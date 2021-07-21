@@ -203,28 +203,38 @@ obj_root.add_event(function()
 			if not char.sleeping then
 				char.tick()
 			end
+			if char.pos.y < -100 then
+				char.die()
+			end
 		end
 	end
 
 	-- process item objs
 	for _, item in pairs(item_objs) do
 		item.pos = item.node.get_global_pos()
+		if item.pos.y < -100 then
+			item.die()
+		end
 	end
 
 	-- process projectiles
 	for _, pt in pairs(projectiles) do
-		pt.pos = pt.node.get_global_pos()
-
-		local tpos = pt.target.pos + vec3(0, pt.target.height * 0.8, 0)
-		local l, d = length_and_dir_3(tpos - pt.pos)
-		if d then
-			pt.node.look_at(tpos)
-		end
-
-		if l <= pt.speed then
-			pt.die()
+		if not pt.target or pt.target.dead then
+			pt.die(true)
 		else
-			pt.node.add_pos(d * pt.speed)
+			pt.pos = pt.node.get_global_pos()
+
+			local tpos = pt.target.pos + vec3(0, pt.target.height * 0.8, 0)
+			local l, d = length_and_dir_3(tpos - pt.pos)
+			if d then
+				pt.node.look_at(tpos)
+			end
+
+			if l <= pt.speed then
+				pt.die(false)
+			else
+				pt.node.add_pos(d * pt.speed)
+			end
 		end
 	end
 
@@ -289,9 +299,9 @@ obj_root.add_event(function()
 	function item_tip(item_type)
 		local str = item_type.display_name
 		if item_type.type == "EQUIPMENT" then
-			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.data.slot]
-			if item_type.data.slot == EQUIPMENT_SLOT_MAIN_HAND then
-				str = str.."\n"..string.format("%s DMG %d", item_type.data.ATK_TYPE, item_type.data.ATK)
+			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.slot]
+			for k, v in pairs(item_type.attributes) do
+				str = str.."\n"..string.format("%s=%s", k, tostring(v))
 			end
 		end
 		return str
@@ -442,17 +452,17 @@ function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
 		local skill_type = SKILL_LIST[slot.id]
-		if skill_type.type == "ACTIVE" and skill_type.data.cost_mana <= main_player.MP then
-			if skill_type.data.target_type ~= "NULL" then
+		if skill_type.type == "ACTIVE" and skill_type.cost_mana <= main_player.MP then
+			if skill_type.target_type ~= "NULL" then
 				local filters = nil
-				if skill_type.data.target_type == "ENEMY" then filters = { TAG_CHARACTER_G2 }
+				if skill_type.target_type == "ENEMY" then filters = { TAG_CHARACTER_G2 }
 				end
 				local element = ui_skill_slots[idx].element
 				element.set_border(2)
 				element.set_border_color(vec4(255, 255, 0, 255))
 				enter_select_mode(filters, function(tag, target)
 					if tag then
-						main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.data.distance })
+						main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.distance })
 					end
 					local element = ui_skill_slots[idx].element
 					element.set_border(1)
@@ -638,32 +648,27 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 		__ui_pop.add_child(attributes_btn.wnd)
 	end
 end)
---[[
-for i=1, 10, 1 do
-	local e = create_entity("remore")
-	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
-	--e.find_component("cNode").set_pos(vec3(math.random() * 400, 200, math.random() * 400))
-	e.find_component("cNode").set_pos(vec3(190 + math.random() * 20, 100, 190 + math.random() * 20))
-	make_npc(e, 1)
-	obj_root.add_child(e)
-end
-]]
+
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)
 	local e = e_chest.copy()
 	e.set_name("item_obj_"..tostring(math.random(1, 10000)))
 	e.find_component("cNode").set_pos(pos)
-	obj_root.add_child(e)
 	make_item_obj(e, item_id, item_num)
+	obj_root.add_child(e)
 end
 
-local e = create_entity("player")
+local e_player = create_entity("player")
+
+local e = e_player.copy()
 e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
 main_player.learn_skill(1)
 main_player.awake()
 obj_root.add_child(e)
+
+add_chest(vec3(0, -200, 0), 1, 1)
 
 local e_terrain = scene.find_child("terrain")
 local terrain = e_terrain.find_component("cTerrain")
@@ -689,28 +694,50 @@ function build_grid(x, z)
 		grids[idx] = true
 
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.2, e_grasses, 0.03, 0.9, 0.8)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 2.5, e_trees, 0.1, 0.9, 0.8)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_rocks, 0.1, 0.0, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.2, e_grasses, 0.03, 35.0, 0.9, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 2.5, e_trees, 0.1, 35.0, 0.9, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_rocks, 0.1, 0.0, 0.0, 0.8)
 	end
 end
 
-obj_root.add_event(function()
-	local x = math.floor(main_player.pos.x / grid_size)
-	local z = math.floor(main_player.pos.z / grid_size)
+local e_npcs = {}
+function add_creep(pos, ID)
+	local data = NPC_LIST[ID]
+	local e = e_npcs[data.name]
+	if e == nil then
+		e = create_entity(data.name)
+		e_npcs[data.name] = e
+	end
+	e = e.copy()
+	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
+	e.find_component("cNode").set_pos(pos)
+	make_npc(e, data)
+	obj_root.add_child(e)
+end
 
-	build_grid(x, z)
-	build_grid(x - 1, z)
-	build_grid(x + 1, z)
-	build_grid(x, z - 1)
-	build_grid(x, z + 1)
-	build_grid(x - 1, z - 1)
-	build_grid(x + 1, z - 1)
-	build_grid(x - 1, z + 1)
-	build_grid(x + 1, z + 1)
+obj_root.add_event(function()
+	local px = math.floor(main_player.pos.x / grid_size)
+	local pz = math.floor(main_player.pos.z / grid_size)
+
+	build_grid(px, pz)
+	build_grid(px - 1, pz)
+	build_grid(px + 1, pz)
+	build_grid(px, pz - 1)
+	build_grid(px, pz + 1)
+	build_grid(px - 1, pz - 1)
+	build_grid(px + 1, pz - 1)
+	build_grid(px - 1, pz + 1)
+	build_grid(px + 1, pz + 1)
+
+	local pos = main_player.pos.to_flat() + circle_rand(20.0)
+	if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
+		if not obj_root_n.is_any_within_circle(pos, 5, TAG_CHARACTER_G2) then
+			add_creep(vec3(pos.x, 100.0, pos.y), 1)
+		end
+	end
 
 	for _, char in pairs(characters[2]) do
-		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, TAG_CHARACTER_G2) then
+		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, TAG_CHARACTER_G1) then
 			char.awake()
 		else
 			char.sleep()

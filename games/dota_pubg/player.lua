@@ -18,12 +18,17 @@ function make_player(e)
 	player.MAG_DMG = 10
 	player.attribute_points = 0
 	
-	player.on_change_extra_state = function(s, t)
+	local character_change_state = player.change_state
+	player.change_state = function(s, t, d)
 		if s == "attack_on_pos" then
 			player.target_pos = t
+			player.state = s
 		elseif s == "pick_up_on_pos" then
 			player.target_pos = t
 			player.attacking = false
+			player.state = s
+		else
+			character_change_state(s, t, d)
 		end
 	end
 
@@ -38,7 +43,8 @@ function make_player(e)
 		return false
 	end
 
-	player.on_process_extra_state = function()
+	local character_process_state = player.process_state
+	player.process_state = function()
 		if player.state == "attack_on_pos" then
 			if not player.attacking then
 				player.target = player.find_closest_obj(player.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
@@ -63,6 +69,8 @@ function make_player(e)
 					player.change_state("idle")
 				end
 			end
+		else
+			character_process_state()
 		end
 	end
 
@@ -93,29 +101,39 @@ function make_player(e)
 	end
 
 	player.calc_stats = function()
-		local pre_hp_max = player.HP_MAX
-		local pre_mp_max = player.MP_MAX
+		player.ATK_TYPE = "PHY"
+		player.ATK_DMG = 0
+		player.MOV_SP = 100
+
+		for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
+			local id = player.equipments[i]
+			if id ~= 0 then
+				local item_type = ITEM_LIST[id]
+				for k, v in pairs(item_type.attributes) do
+					if k == "ATK_TYPE" then
+						player.ATK_TYPE = v
+					else
+						player[k] = player[k] + v
+					end
+				end
+			end
+		end
+
+		local pre_hp_ratio = player.HP_MAX > 0 and player.HP / player.HP_MAX or 1
+		local pre_mp_ratio = player.MP_MAX > 0 and player.MP / player.MP_MAX or 1
 		player.HP_MAX = 1000 + player.STA * 100
 		player.MP_MAX = 1000 + player.SPI * 100
-		if player.HP_MAX > pre_hp_max then player.receive_heal(player, player.HP_MAX - pre_hp_max) end
-		if player.MP_MAX > pre_mp_max then player.MP = player.MP + (player.MP_MAX - pre_mp_max) end
+		player.HP = pre_hp_ratio * player.HP_MAX
+		player.MP = pre_mp_ratio * player.MP_MAX
 		player.HP_RECOVER = player.STA
 		player.MP_RECOVER = player.SPI
 		player.PHY_DMG = player.STR
 		player.MAG_DMG = player.INT
 
-		local weapon = player.equipments[1]
-		if weapon ~= 0 then
-			local data = ITEM_LIST[weapon].data
-			player.ATK_TYPE = data.ATK_TYPE
-			if player.ATK_TYPE == "PHY" then
-				player.ATK_DMG = (data.ATK + player.PHY_DMG) * 10
-			else
-				player.ATK_DMG = (data.ATK + player.MAG_DMG) * 10
-			end
+		if player.ATK_TYPE == "PHY" then
+			player.ATK_DMG = (player.ATK_DMG + player.PHY_DMG) * 10
 		else
-			player.ATK_TYPE = "PHY"
-			player.ATK_DMG = player.PHY_DMG * 10
+			player.ATK_DMG = (player.ATK_DMG + player.MAG_DMG) * 10
 		end
 	end
 

@@ -124,7 +124,7 @@ vec4 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 			}
 		}
 
-		ret += lighting(N, V, L, light.color / max(dist * dist * 0.2, 1.0) * shadowed , metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color / max(dist * dist, 1.0) * shadowed , metallic, albedo, spec, roughness);
 	}
 	
 	float sky_intensity = render_data.sky_intensity;
