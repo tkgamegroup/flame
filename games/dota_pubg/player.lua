@@ -25,7 +25,6 @@ function make_player(e)
 			player.state = s
 		elseif s == "pick_up_on_pos" then
 			player.target_pos = t
-			player.attacking = false
 			player.state = s
 		else
 			character_change_state(s, t, d)
@@ -46,7 +45,7 @@ function make_player(e)
 	local character_process_state = player.process_state
 	player.process_state = function()
 		if player.state == "attack_on_pos" then
-			if not player.attacking then
+			if player.curr_anim ~= 2 then
 				player.target = player.find_closest_obj(player.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
 			end
 			

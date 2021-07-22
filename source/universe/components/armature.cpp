@@ -46,13 +46,14 @@ namespace flame
 			entity->component_data_changed(this, S<"src"_h>);
 	}
 
-	void cArmaturePrivate::play(uint id, float _speed)
+	void cArmaturePrivate::play(uint id, float _speed, bool _loop)
 	{
 		speed = _speed;
+		loop = _loop;
 
-		if (playing == id)
+		if (anim == id)
 			return;
-		playing = id;
+		anim = id;
 		frame = 0;
 		frame_accumulate = 0.f;
 		if (!event)
@@ -73,7 +74,7 @@ namespace flame
 
 	void cArmaturePrivate::stop()
 	{
-		playing = -1;
+		anim = -1;
 		if (event)
 		{
 			looper().remove_event(event);
@@ -87,43 +88,6 @@ namespace flame
 
 		auto& a = actions[id];
 		peeding_pose = { id, frame < 0 ? a.total_frame + frame : frame };
-	}
-
-	void cArmaturePrivate::set_loop(bool l)
-	{
-		if (loop == l)
-			return;
-		loop = l;
-	}
-
-	void* cArmaturePrivate::add_callback(void (*callback)(Capture& c, int frame), const Capture& capture)
-	{
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, int f) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<int>());
-				scr_ins->get_member("f");
-				scr_ins->push_int(f);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			callbacks.emplace_back(c);
-			return c;
-		}
-		auto c = new Closure(callback, capture);
-		callbacks.emplace_back(c);
-		return c;
-	}
-
-	void cArmaturePrivate::remove_callback(void* cb)
-	{
-		std::erase_if(callbacks, [&](const auto& i) {
-			return i == (decltype(i))cb;
-		});
 	}
 
 	void cArmaturePrivate::apply_src()
@@ -212,23 +176,20 @@ namespace flame
 
 	void cArmaturePrivate::advance()
 	{
-		auto& a = actions[playing];
-		peeding_pose = { playing, frame };
+		auto& a = actions[anim];
+		peeding_pose = { anim, frame };
 
 		frame_accumulate += speed;
 		while (frame_accumulate > 1.f)
 		{
+			frame_accumulate -= 1.f;
+
 			frame++;
 			if (frame == a.total_frame)
 				frame = loop ? 0 : -1;
 
-			for (auto& cb : callbacks)
-				cb->call(frame);
-
 			if (frame == -1)
 				break;
-			
-			frame_accumulate -= 1.f;
 		}
 	}
 

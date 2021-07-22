@@ -35,12 +35,11 @@ namespace flame
 		std::vector<Action> actions;
 		bool loop = false;
 		float speed = 1.f;
-		int playing = -1;
+		int anim = -1;
 		int frame = -1;
 		float frame_accumulate = 0.f;
 		void* event = nullptr;
 		std::pair<int, int> peeding_pose = { -1, -1 };
-		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> callbacks;
 
 		~cArmaturePrivate();
 
@@ -52,16 +51,11 @@ namespace flame
 		void set_animations(const std::wstring& src);
 		void set_animations(const wchar_t* src) override { set_animations(std::wstring(src)); }
 
-		int get_playing() override { return playing; }
-		void play(uint id, float speed) override;
+		int get_curr_anim() override { return anim; }
+		int get_curr_frame() override { return frame; }
+		void play(uint id, float speed, bool loop) override;
 		void stop() override;
 		void stop_at(uint id, int frame) override;
-
-		bool get_loop() const override { return loop; }
-		void set_loop(bool l) override;
-
-		void* add_callback(void (*callback)(Capture& c, int frame), const Capture& capture) override;
-		void remove_callback(void* cb) override;
 
 		void apply_src();
 		void advance();

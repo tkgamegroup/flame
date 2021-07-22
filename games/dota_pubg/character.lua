@@ -17,6 +17,9 @@ function make_character(entity, group, stats)
 		pos = vec3(0),
 		prev_pos = vec3(0),
 
+		curr_anim = -1,
+		curr_frame = -1,
+
 		radius = 0.28,
 		height = 1.8,
 		speed = 0.06,
@@ -27,7 +30,7 @@ function make_character(entity, group, stats)
 		target_pos = vec3(0),
 		target = nil,
 		stuck_tick = 0,
-		attacking = false,
+		attack_semp = true,
 		attack_tick = 0,
 		last_receive_damage_src = nil,
 
@@ -93,48 +96,24 @@ function make_character(entity, group, stats)
 
 	character.change_state = function(s, t, d)
 		if s == "idle" then
-			character.armature.play(0, 1.0)
-			character.armature.set_loop(true)
-			character.attacking = false
+			character.armature.play(0, 1.0, true)
 			character.state = s
 		elseif s == "move_to" then
 			character.target_pos = t
 			character.stuck_tick = 0
-			character.attacking = false
 			character.state = s
 		elseif s == "attack_target" then
-			if character.attacking and character.target ~= t then
-				character.attacking = false
-			end
 			character.target = t
 			character.state = s
 		elseif s == "use_skill_to_target" then
-			character.attacking = false
 			character.target = t
 			character.state_date = d
 			character.state = s
 		elseif s == "pick_up" then
 			character.target = t
-			character.attacking = false
 			character.state = s
 		end
 	end
-
-	character.armature.add_callback(function(frame)
-		if character.attacking then
-			if frame == 12 then
-				if character.target and not character.target.dead then
-					local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
-					if l <= character.radius + character.target.radius + 3 then
-						character.target.receive_damage(character, math.floor(0.5 + character.ATK_DMG * (math.random() * 0.2 + 0.9)))
-					end
-				end
-			end
-			if frame == -1 then
-				character.attacking = false
-			end
-		end
-	end, character.armature)
 
 	character.receive_damage = function(src, value)
 		character.last_receive_damage_src = src
@@ -197,8 +176,7 @@ function make_character(entity, group, stats)
 		end
 
 		local ratio = character.MOV_SP / 100.0
-		character.armature.play(1, ratio)
-		character.armature.set_loop(true)
+		character.armature.play(1, ratio, true)
 		character.controller.move(vec3(d.x, 0, d.y) * character.speed * ratio)
 		return false
 	end
@@ -208,21 +186,24 @@ function make_character(entity, group, stats)
 		if d then -- aim
 			character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
 		end
-		if not character.attacking then
+		if character.curr_anim ~= 2 then
 			if l <= character.radius + character.target.radius + 1 then
 				if character.attack_tick == 0 then
 					character.attack_tick = character.attack_interval
-					character.attacking = true
-					character.armature.play(2, 1.0)
-					character.armature.set_loop(false)
+					character.armature.play(2, 1.0, false)
+					character.attack_semp = true
 				else
 					character.armature.stop_at(2, -1)
 				end
 			else
-				character.armature.play(1, 1.0)
-				character.armature.set_loop(true)
+				character.armature.play(1, 1.0, true)
 				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 			end
+		elseif character.attack_semp and (character.curr_frame == -1 or character.curr_frame >= 12) then
+			if l <= character.radius + character.target.radius + 3 then
+				character.target.receive_damage(character, math.floor(0.5 + character.ATK_DMG * (math.random() * 0.2 + 0.9)))
+			end
+			character.attack_semp = false
 		end
 	end
 
@@ -263,8 +244,7 @@ function make_character(entity, group, stats)
 					character.use_skill(character.state_date.idx, character.target)
 					character.change_state("idle")
 				else
-					character.armature.play(1, 1.0)
-					character.armature.set_loop(true)
+					character.armature.play(1, 1.0, true)
 					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
 				end
 			else
@@ -277,6 +257,9 @@ function make_character(entity, group, stats)
 	character.tick = function()
 		character.prev_pos = character.pos
 		character.pos = character.node.get_global_pos()
+
+		character.curr_anim = character.armature.get_curr_anim()
+		character.curr_frame = character.armature.get_curr_frame()
 		
 		character.ui.set_visible(false)
 		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0))
