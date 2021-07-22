@@ -24,7 +24,7 @@ namespace flame
 		typedef std::vector<std::unique_ptr<Closure<void(Capture&, uint)>>> DataListeners;
 
 		std::string name;
-		uint tag = 0xffffffff;
+		uint tag = 0x80000000;
 
 		bool visible = true;
 		bool global_visibility = false;

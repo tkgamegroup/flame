@@ -20,8 +20,6 @@ NPC_LIST = {
 	}
 }
 
-local CHASE_TICK_MAX = 600
-
 function make_npc(e, data)
 	local npc = make_character(e, 2, data.stats)
 	npc.drop_gold = data.drop_gold
@@ -35,24 +33,16 @@ function make_npc(e, data)
 	npc.tick = function()
 		character_tick()
 
-		if npc.chase_tick > 0 then
-			npc.chase_tick = npc.chase_tick - 1
+		if npc.state == "attack_target" and distance_3(npc.pos, npc.chase_start_pos) > 18 then
+			npc.change_state("move_to", npc.chase_start_pos)
 		end
-		
-		if npc.chase_tick == 0 then
+
+		if npc.state == "idle" then
 			local char = npc.find_closest_obj(npc.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
 			if char then
 				npc.change_state("attack_target", char)
 				npc.chase_start_pos = npc.pos
-				npc.chase_tick = CHASE_TICK_MAX
-			end
-		end
-		if npc.state == "attack_target" and distance_3(npc.pos, npc.chase_start_pos) > 20 then
-			npc.change_state("move_to", npc.chase_start_pos)
-			npc.chase_tick = CHASE_TICK_MAX
-		end
-		if npc.state == "idle" then
-			if math.random() < 0.002 then
+			elseif math.random() < 0.002 then
 				local p = vec3(npc.pos)
 				p.x = p.x - 3 + math.random() * 6
 				p.z = p.z - 3 + math.random() * 6
@@ -69,7 +59,7 @@ function make_npc(e, data)
 				for i=1, #npc.drop_items, 1 do
 					local item = npc.drop_items[i]
 					if math.random() < item.prob then
-						add_chest(npc.pos + vec3(0, 0.1, 0), item.id, math.random(item.min_num, item.max_num))
+						add_chest(npc.pos.to_flat() + circle_rand(math.random() * 1.5), item.id, math.random(item.min_num, item.max_num))
 					end
 				end
 			end

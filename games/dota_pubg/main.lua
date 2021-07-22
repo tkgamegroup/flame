@@ -5,8 +5,8 @@ projectile_root = scene.find_child("projectile_root")
 
 TAG_TERRAIN = 1
 TAG_CHARACTER_G1 = 2
-TAG_CHARACTER_G2 = 3
-TAG_ITEM_OBJ = 4
+TAG_CHARACTER_G2 = 4
+TAG_ITEM_OBJ = 8
 
 ctrl_pressing = false
 alt_pressing = false
@@ -15,7 +15,7 @@ hovering_entity_lis = 0
 hovering_obj = nil
 hovering_pos = vec3(0)
 select_mode = false
-select_mode_filters = nil
+select_mode_filters = -1
 select_mode_callback = nil
 
 local ui_mouse_icon = scene.find_child("mouse_icon")
@@ -76,7 +76,7 @@ scene_receiver.add_key_down_listener(function(key)
 	elseif key == e_key_alt then
 		alt_pressing = true
 	elseif key == e_key_a then
-		enter_select_mode({ TAG_TERRAIN, TAG_CHARACTER_G2 }, function(tag, target)
+		enter_select_mode(TAG_TERRAIN + TAG_CHARACTER_G2, function(tag, target)
 			if tag then
 				if tag == TAG_TERRAIN then
 					main_player.change_state("attack_on_pos", target)
@@ -88,7 +88,7 @@ scene_receiver.add_key_down_listener(function(key)
 			end
 		end)
 	elseif key == e_key_g then
-		enter_select_mode({ TAG_TERRAIN, TAG_ITEM_OBJ }, function(tag, target)
+		enter_select_mode(TAG_TERRAIN + TAG_ITEM_OBJ, function(tag, target)
 			if tag then
 				if tag == TAG_TERRAIN then
 					main_player.change_state("pick_up_on_pos", target)
@@ -116,15 +116,11 @@ scene_receiver.add_mouse_left_down_listener(function()
 		
 		if not hovering_obj then return end
 
-		if hovering_obj.name == "terrain" and array_find(select_mode_filters, TAG_TERRAIN) then 
+		if hovering_obj.tag == TAG_TERRAIN and (select_mode_filters & TAG_TERRAIN) ~= 0 then 
 			exit_select_mode(TAG_TERRAIN, hovering_pos)
-			return 
-		end
-		
-		if hovering_obj.tag == TAG_CHARACTER_G1 and array_find(select_mode_filters, TAG_CHARACTER_G1) then
+		elseif hovering_obj.tag == TAG_CHARACTER_G1 and (select_mode_filters & TAG_CHARACTER_G1) ~= 0 then
 			exit_select_mode(TAG_CHARACTER_G1, hovering_obj)
-		end
-		if hovering_obj.tag == TAG_CHARACTER_G2 and array_find(select_mode_filters, TAG_CHARACTER_G2) then
+		elseif hovering_obj.tag == TAG_CHARACTER_G2 and (select_mode_filters & TAG_CHARACTER_G2) ~= 0 then
 			exit_select_mode(TAG_CHARACTER_G2, hovering_obj)
 		end
 	end
@@ -140,7 +136,8 @@ scene_receiver.add_mouse_right_down_listener(function()
 	if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
 
 	if not hovering_obj then return end
-	if hovering_obj.name == "terrain" then
+
+	if hovering_obj.tag == TAG_TERRAIN then
 		main_player.change_state("move_to", hovering_pos)
 		auto_attack = false
 	else
@@ -301,7 +298,7 @@ obj_root.add_event(function()
 		if item_type.type == "EQUIPMENT" then
 			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.slot]
 			for k, v in pairs(item_type.attributes) do
-				str = str.."\n"..string.format("%s=%s", k, tostring(v))
+				str = str.."\n"..string.format("%s %s", k, tostring(v))
 			end
 		end
 		return str
@@ -311,16 +308,28 @@ obj_root.add_event(function()
 	if hovering_r == scene_receiver.p then
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(mpos) - o)
-		local pe = flame_malloc(8)
-		hovering_pos = s_physics.raycast(o, d, pe)
-		local p = flame_get(pe, 0, e_type_pointer, e_else_type, 1, 1)
-		flame_free(pe)
+		local arr = flame_malloc(8)
+		hovering_pos = s_physics.raycast(o, d, arr)
+		local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+		flame_free(arr)
 
-		local _hovering_entity = nil
+		local _hovering_entity = { p=nil }
 		if p then
 			_hovering_entity = make_entity(p)
-		else
-			_hovering_entity = { p=nil }
+			local tag = _hovering_entity.get_tag()
+			if tag == -2147483648 then _hovering_entity = { p=nil } end
+			if select_mode then
+				if (tag & select_mode_filters) == 0 then
+					local arr = flame_malloc(8)
+					if obj_root_n.get_within_circle(hovering_pos.to_flat(), 5, arr, 1, select_mode_filters) > 0 then
+						local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+						flame_free(arr)
+						if p then
+							_hovering_entity = make_entity(p)
+						end
+					end
+				end
+			end
 		end
 
 		function change_outline(e, f)
@@ -356,17 +365,15 @@ obj_root.add_event(function()
 
 			if hovering_entity.p then
 				local name = hovering_entity.get_name()
-				if name == "terrain" then
-					hovering_obj = { name="terrain", tag=0 }
-				else
-					local tag = hovering_entity.get_tag()
-					if tag == TAG_CHARACTER_G1 and name ~= "main_player" then
-						hovering_obj = characters[1][name]
-					elseif tag == TAG_CHARACTER_G2 then
-						hovering_obj = characters[2][name]
-					elseif tag == TAG_ITEM_OBJ then
-						hovering_obj = item_objs[name]
-					end
+				local tag = hovering_entity.get_tag()
+				if tag == TAG_TERRAIN then
+					hovering_obj = { tag=TAG_TERRAIN }
+				elseif tag == TAG_CHARACTER_G1 and name ~= "main_player" then
+					hovering_obj = characters[1][name]
+				elseif tag == TAG_CHARACTER_G2 then
+					hovering_obj = characters[2][name]
+				elseif tag == TAG_ITEM_OBJ then
+					hovering_obj = item_objs[name]
 				end
 			else
 				hovering_obj = nil
@@ -454,8 +461,8 @@ function skill_click(idx)
 		local skill_type = SKILL_LIST[slot.id]
 		if skill_type.type == "ACTIVE" and skill_type.cost_mana <= main_player.MP then
 			if skill_type.target_type ~= "NULL" then
-				local filters = nil
-				if skill_type.target_type == "ENEMY" then filters = { TAG_CHARACTER_G2 }
+				local filters = -1
+				if skill_type.target_type == "ENEMY" then filters = TAG_CHARACTER_G2
 				end
 				local element = ui_skill_slots[idx].element
 				element.set_border(2)
@@ -649,14 +656,33 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
+local e_terrain = scene.find_child("terrain")
+local terrain = e_terrain.find_component("cTerrain")
+local terrain_ext = terrain.get_extent()
+local terrain_height_tex = terrain.get_height_texture()
+local terrain_normal_tex = terrain.get_normal_texture()
+local terrain_obj_root = e_terrain.find_child("obj_root")
+e_terrain.set_tag(TAG_TERRAIN)
+
+local grid_size = 10
+local grid_num = terrain_ext.x / grid_size
+local grids = {}
+for i=1, grid_num * grid_num, 1 do
+	grids[i] = false
+end
+
 local e_chest = create_entity("chest")
 function add_chest(pos, item_id, item_num)
 	local e = e_chest.copy()
 	e.set_name("item_obj_"..tostring(math.random(1, 10000)))
-	e.find_component("cNode").set_pos(pos)
+    e.find_component("cNode").set_pos(vec3(pos.x, 
+        terrain_height_tex.linear_sample(vec2(pos.x / terrain_ext.x, pos.y / terrain_ext.x), 0, 0).x * terrain_ext.y + 0.1, 
+    pos.y))
 	make_item_obj(e, item_id, item_num)
 	obj_root.add_child(e)
 end
+
+add_chest(vec3(0, -200, 0), 1, 1)
 
 local e_player = create_entity("player")
 
@@ -667,22 +693,6 @@ main_player = make_player(e)
 main_player.learn_skill(1)
 main_player.awake()
 obj_root.add_child(e)
-
-add_chest(vec3(0, -200, 0), 1, 1)
-
-local e_terrain = scene.find_child("terrain")
-local terrain = e_terrain.find_component("cTerrain")
-local terrain_ext = terrain.get_extent()
-local terrain_height_tex = terrain.get_height_texture()
-local terrain_normal_tex = terrain.get_normal_texture()
-local terrain_obj_root = e_terrain.find_child("obj_root")
-
-local grid_size = 10
-local grid_num = terrain_ext.x / grid_size
-local grids = {}
-for i=1, grid_num * grid_num, 1 do
-	grids[i] = false
-end
 
 function build_grid(x, z)
 	if x < 0 then x = 0 end
@@ -729,9 +739,9 @@ obj_root.add_event(function()
 	build_grid(px - 1, pz + 1)
 	build_grid(px + 1, pz + 1)
 
-	local pos = main_player.pos.to_flat() + circle_rand(20.0)
+	local pos = main_player.pos.to_flat() + circle_rand(30.0)
 	if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
-		if not obj_root_n.is_any_within_circle(pos, 5, TAG_CHARACTER_G2) then
+		if not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
 			add_creep(vec3(pos.x, 100.0, pos.y), 1)
 		end
 	end

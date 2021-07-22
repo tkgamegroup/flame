@@ -75,8 +75,8 @@ namespace flame
 		void add_measurer(NodeMeasurer* m) override;
 		void remove_measurer(NodeMeasurer* m) override;
 
-		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0) override;
-		uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0) override;
+		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) override;
+		uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) override;
 
 		void update_eul();
 		void update_qut();
@@ -153,7 +153,7 @@ namespace flame
 			}
 		}
 
-		bool is_colliding(const AABB& check_bounds, uint filter_tag = 0)
+		bool is_colliding(const AABB& check_bounds, uint filter_tag = 0xffffffff)
 		{
 			if (!bounds.intersects(check_bounds))
 				return false;
@@ -161,7 +161,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
+				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
 				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
@@ -180,7 +180,7 @@ namespace flame
 			return false;
 		}
 
-		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
+		void get_colliding(const AABB& check_bounds, std::vector<cNodePrivate*>& res, uint filter_tag = 0xffffffff)
 		{
 			if (!bounds.intersects(check_bounds))
 				return;
@@ -188,7 +188,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
+				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
 				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
@@ -202,7 +202,7 @@ namespace flame
 			}
 		}
 
-		bool is_colliding(const vec2& check_center, float check_radius, uint filter_tag = 0)
+		bool is_colliding(const vec2& check_center, float check_radius, uint filter_tag = 0xffffffff)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return false;
@@ -210,7 +210,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
+				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
 				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
@@ -229,7 +229,7 @@ namespace flame
 			return false;
 		}
 
-		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
+		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePrivate*>& res, uint filter_tag = 0xffffffff)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
@@ -237,7 +237,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
+				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
 				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
@@ -294,7 +294,7 @@ namespace flame
 		//	}
 		//}
 
-		void get_within_frustum(const Frustum& frustum, std::vector<cNodePrivate*>& res, uint filter_tag = 0)
+		void get_within_frustum(const Frustum& frustum, std::vector<cNodePrivate*>& res, uint filter_tag = 0xffffffff)
 		{
 			if (!AABB_frustum_check(frustum, bounds))
 				return;
@@ -302,7 +302,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_visibility || (filter_tag && e->tag != filter_tag))
+				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
 				if (!obj->bounds_invalid && AABB_frustum_check(frustum, obj->bounds))

@@ -55,8 +55,8 @@ namespace flame
 		virtual void add_measurer(NodeMeasurer* m) = 0;
 		virtual void remove_measurer(NodeMeasurer* m) = 0;
 
-		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0) = 0;
-		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0) = 0;
+		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) = 0;
+		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
 	};
