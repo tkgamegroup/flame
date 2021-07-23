@@ -261,13 +261,14 @@ function make_character(entity, group, stats)
 		character.curr_anim = character.armature.get_curr_anim()
 		character.curr_frame = character.armature.get_curr_frame()
 		
-		character.ui.set_visible(false)
+		local show_ui = false
 		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0))
 		if ui_pos.x > -100 then
-			character.ui.set_visible(true)
+			show_ui = true
 			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
 			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
 		end
+		character.ui.set_visible(show_ui)
 
 		if character.attack_tick > 0 then
 			character.attack_tick = character.attack_tick - 1
@@ -279,6 +280,13 @@ function make_character(entity, group, stats)
 			character.receive_heal(character, character.HP_RECOVER)
 			character.receive_mana(character, character.MP_RECOVER)
 			character.recover_tick = 60
+		end
+
+		for i=1, SKILL_SLOTS_COUNT, 1 do
+			local slot = character.skills[i]
+			if slot and slot.cd > 0 then
+				slot.cd = slot.cd - 1
+			end
 		end
 
 		character.process_state()

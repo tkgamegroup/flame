@@ -441,6 +441,19 @@ obj_root.add_event(function()
 	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX / 10.0), main_player.MP_RECOVER / 10.0))
 	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
+
+	for i=1, SKILL_SLOTS_COUNT, 1 do
+		local slot = main_player.skills[i]
+		if slot then
+			local ui = ui_skill_slots[i]
+			if slot.cd > 0 then
+				ui.cooldown.set_visible(true)
+				ui.cooldown.text.set_text(string.format("%.1f", slot.cd / 60.0))
+			else
+				ui.cooldown.set_visible(false)
+			end
+		end
+	end
 end, 0.0)
 
 local e_grasses = {}
@@ -459,7 +472,7 @@ function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
 		local skill_type = SKILL_LIST[slot.id]
-		if skill_type.type == "ACTIVE" and skill_type.cost_mana <= main_player.MP then
+		if skill_type.type == "ACTIVE" and skill_type.cost_mana <= main_player.MP and slot.cd == 0 then
 			if skill_type.target_type ~= "NULL" then
 				local filters = -1
 				if skill_type.target_type == "ENEMY" then filters = TAG_CHARACTER_G2
@@ -490,6 +503,8 @@ for i=1, SKILL_SLOTS_COUNT, 1 do
 	ui.element = icon.find_component("cElement")
 	ui.receiver = icon.find_component("cReceiver")
 	ui.image = icon.find_component("cImage")
+	ui.cooldown = ui.find_child("cooldown")
+	ui.cooldown.text = ui.cooldown.find_component("cText")
 
 	ui.receiver.add_mouse_left_down_listener(function()
 		skill_click(i)
