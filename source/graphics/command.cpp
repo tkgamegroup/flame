@@ -342,17 +342,17 @@ namespace flame
 			return ret;
 		}
 
-		VkImageCopy to_backend(const ImageCopy& src)
+		VkImageCopy to_backend(const ImageCopy& src, VkImageAspectFlags aspect)
 		{
 			VkImageCopy ret = {};
-			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.srcSubresource.aspectMask = aspect;
 			ret.srcSubresource.mipLevel = src.src_sub.base_level;
 			ret.srcSubresource.baseArrayLayer = src.src_sub.base_layer;
 			ret.srcSubresource.layerCount = src.src_sub.layer_count;
 			ret.srcOffset.x = src.src_off.x;
 			ret.srcOffset.y = src.src_off.y;
 			ret.srcOffset.z = 0;
-			ret.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			ret.dstSubresource.aspectMask = aspect;
 			ret.dstSubresource.mipLevel = src.dst_sub.base_level;
 			ret.dstSubresource.baseArrayLayer = src.dst_sub.base_layer;
 			ret.dstSubresource.layerCount = src.dst_sub.layer_count;
@@ -409,9 +409,11 @@ namespace flame
 
 		void CommandBufferPrivate::copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies)
 		{
+			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(src->format));
+
 			std::vector<VkImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-				vk_copies[i] = to_backend(copies[i]);
+				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 		}
@@ -442,7 +444,8 @@ namespace flame
 			std::vector<VkImageBlit> vk_blits(blits.size());
 			for (auto i = 0; i < vk_blits.size(); i++)
 				vk_blits[i] = to_backend(blits[i]);
-			vkCmdBlitImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_blits.size(), vk_blits.data(), to_backend(filter));
+			vkCmdBlitImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+				vk_blits.size(), vk_blits.data(), to_backend(filter));
 		}
 
 		void CommandBufferPrivate::clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color)

@@ -68,7 +68,7 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec4 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
+vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
 	vec3 ret = vec3(0.0);
 
@@ -128,14 +128,13 @@ vec4 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 	}
 	
 	float sky_intensity = render_data.sky_intensity;
-	
-	float NdotV = max(dot(N, V), 0.0);
-	vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
-	vec3 kD = vec3(1.0) - F;
-	kD *= 1.0 - metallic;
 
 	// IBL
 	{
+		float NdotV = max(dot(N, V), 0.0);
+		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
+		vec3 kD = vec3(1.0) - F;
+		kD *= 1.0 - metallic;
 
 		vec3 diffuse = texture(sky_irr, N).rgb * albedo;
 
@@ -148,5 +147,5 @@ vec4 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 
 	ret = mix(ret, render_data.fog_color * sky_intensity, distv / render_data.zFar);
 
-	return vec4(ret, 1.0 - kD);
+	return ret;
 }

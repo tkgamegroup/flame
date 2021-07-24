@@ -13,6 +13,18 @@ void main()
 	MaterialInfo material = material_infos[water_infos[i_idx].material_id];
 	
 	MAT_FILE
+
+	float d1 = texture(img_depth, gl_FragCoord.xy / render_data.viewport).r;
+	d1 = d1 * 0.5 + 0.5;
+	float d2 = gl_FragCoord.z;
+	d2 = d2 * 0.5 + 0.5;
+	d1 = linear_depth(render_data.zNear, render_data.zFar, d1);
+	d2 = linear_depth(render_data.zNear, render_data.zFar, d2);
+	float reduction = 1.0 - (d1 - d2) * 20.0 / render_data.zFar;
+	reduction = clamp(reduction * reduction, 0.0, 0.99);
+
+	float foam = d2 + 0.2 > d1 ? 1.0 - (d1 - d2) / 0.2 : 0.0;
+	o_color = vec4(shading(i_coordw, N, 0.0, mix(vec3(0.01, 0.17, 0.21), vec3(1.0), foam), vec3(0.04), 0.05), reduction);
 #else
 
 #endif

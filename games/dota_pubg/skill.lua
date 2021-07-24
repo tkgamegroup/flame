@@ -10,12 +10,20 @@ SKILL_LIST = {
 		target_type = "ENEMY",
 		distance = 10,
 		logic = function(caster, target)
-			local e = create_entity("fire_ball_projectile")
-			e.set_name("projectile_"..tostring(math.random(1, 10000)))
-			make_projectile(e, target, caster.pos + vec3(0, caster.height * 0.5, 0), 0.2, function()
-				target.receive_damage(caster,  math.floor(0.5 + (caster.MAG_DMG * 10 + 300) * (math.random() * 0.2 + 0.9)))
+			add_projectile("fire_ball_projectile", caster.pos + vec3(0, caster.height * 0.5, 0), 0.2, function()
+				target.receive_damage(caster, target, math.floor(0.5 + (caster.MAG_DMG * 10 + 300) * (math.random() * 0.2 + 0.9)))
 			end)
-			projectile_root.add_child(e)
+		end
+	},
+	{
+		type = "ACTIVE",
+		name = "trample",
+		display_name = "Trample",
+		cost_mana = 1500,
+		cool_down = 600,
+		target_type = "NONE",
+		logic = function(caster, target)
+
 		end
 	}
 }

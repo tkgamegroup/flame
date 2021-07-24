@@ -59,7 +59,7 @@ function make_npc(e, data)
 				for i=1, #npc.drop_items, 1 do
 					local item = npc.drop_items[i]
 					if math.random() < item.prob then
-						add_chest(npc.pos.to_flat() + circle_rand(math.random() * 1.5), item.id, math.random(item.min_num, item.max_num))
+						add_item_obj(npc.pos.to_flat() + circle_rand(math.random() * 1.5), item.id, math.random(item.min_num, item.max_num))
 					end
 				end
 			end

@@ -14,3 +14,5 @@ layout(set = WATER_SET, binding = 0) buffer readonly WaterInfos
 {
 	WaterInfo water_infos[16];
 };
+
+layout (set = WATER_SET, binding = 1) uniform sampler2D img_depth;

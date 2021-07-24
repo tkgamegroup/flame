@@ -10,6 +10,8 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 
 	float zNear;
 	float zFar;
+
+	vec2 viewport;
 	
 	vec3 camera_coord;
 	vec3 camera_dir;

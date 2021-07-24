@@ -45,30 +45,32 @@ namespace water
 
 namespace flame
 {
-	static graphics::AccessFlags access_from_usage(graphics::BufferUsageFlags usage)
+	using namespace graphics;
+
+	static AccessFlags access_from_usage(BufferUsageFlags usage)
 	{
 		switch (usage)
 		{
-		case graphics::BufferUsageVertex:
-			return graphics::AccessVertexAttributeRead;
-		case graphics::BufferUsageIndex:
-			return graphics::AccessIndexRead;
-		case graphics::BufferUsageIndirect:
-			return graphics::AccessIndirectCommandRead;
+		case BufferUsageVertex:
+			return AccessVertexAttributeRead;
+		case BufferUsageIndex:
+			return AccessIndexRead;
+		case BufferUsageIndirect:
+			return AccessIndirectCommandRead;
 		}
-		return graphics::AccessNone;
+		return AccessNone;
 	}
 
 	template <class T>
 	struct SequentialBuffer
 	{
 		uint capacity;
-		graphics::AccessFlags access;
+		AccessFlags access;
 		T* pstag = nullptr;
 		uint stag_num = 0;
 
-		UniPtr<graphics::Buffer> buf;
-		UniPtr<graphics::Buffer> stagbuf;
+		UniPtr<Buffer> buf;
+		UniPtr<Buffer> stagbuf;
 
 		void rebuild()
 		{
@@ -92,13 +94,13 @@ namespace flame
 			}
 		}
 
-		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
+		void create(Device* device, BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
 			access = access_from_usage(usage);
 			auto size = capacity * sizeof(T);
-			buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-			stagbuf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+			stagbuf.reset(Buffer::create(device, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			stagbuf->map();
 			pstag = (T*)stagbuf->get_mapped();
 		}
@@ -130,14 +132,14 @@ namespace flame
 			return dst;
 		}
 
-		void upload(graphics::CommandBuffer* cb)
+		void upload(CommandBuffer* cb)
 		{
 			if (stag_num == 0)
 				return;
-			graphics::BufferCopy cpy;
+			BufferCopy cpy;
 			cpy.size = stag_num * sizeof(T);
 			cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
-			cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, access);
+			cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
 			stag_num = 0;
 		}
 	};
@@ -146,24 +148,24 @@ namespace flame
 	struct SparseBuffer
 	{
 		uint capacity;
-		graphics::AccessFlags access;
+		AccessFlags access;
 		uint n0 = 0;
 		uint n1 = 0;
 
-		UniPtr<graphics::Buffer> buf;
-		UniPtr<graphics::Buffer> stagbuf;
+		UniPtr<Buffer> buf;
+		UniPtr<Buffer> stagbuf;
 		uint stag_capacity;
 		T* pstag = nullptr;
 
-		void create(graphics::Device* device, graphics::BufferUsageFlags usage, uint _capacity)
+		void create(Device* device, BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
 			access = access_from_usage(usage);
 			auto size = capacity * sizeof(T);
-			buf.reset(graphics::Buffer::create(device, size, graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
+			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 			stag_capacity = 100;
-			stagbuf.reset(graphics::Buffer::create(device, sizeof(T) * stag_capacity, graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | 
-				graphics::MemoryPropertyCoherent));
+			stagbuf.reset(Buffer::create(device, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost | 
+				MemoryPropertyCoherent));
 			pstag = (T*)stagbuf->map();
 		}
 
@@ -186,15 +188,15 @@ namespace flame
 			// TODO
 		}
 
-		void upload(graphics::CommandBuffer* cb)
+		void upload(CommandBuffer* cb)
 		{
 			if (n1 > n0)
 			{
-				graphics::BufferCopy cpy;
+				BufferCopy cpy;
 				cpy.size = (n1 - n0) * sizeof(T);
 				cpy.dst_off = n0 * sizeof(T);
 				cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
-				cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, access);
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
 				n0 = n1;
 			}
 		}
@@ -205,32 +207,32 @@ namespace flame
 	{
 		T* pstag = nullptr;
 
-		UniPtr<graphics::Buffer> buf;
-		UniPtr<graphics::Buffer> stagbuf;
+		UniPtr<Buffer> buf;
+		UniPtr<Buffer> stagbuf;
 
-		std::vector<graphics::BufferCopy> cpies;
+		std::vector<BufferCopy> cpies;
 
-		void create(graphics::Device* device, graphics::BufferUsageFlags usage)
+		void create(Device* device, BufferUsageFlags usage)
 		{
-			buf.reset(graphics::Buffer::create(device, sizeof(T), graphics::BufferUsageTransferDst | usage, graphics::MemoryPropertyDevice));
-			stagbuf.reset(graphics::Buffer::create(device, sizeof(T), graphics::BufferUsageTransferSrc, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent));
+			buf.reset(Buffer::create(device, sizeof(T), BufferUsageTransferDst | usage, MemoryPropertyDevice));
+			stagbuf.reset(Buffer::create(device, sizeof(T), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			pstag = (T*)stagbuf->map();
 		}
 
 		void cpy_whole()
 		{
 			fassert(cpies.empty());
-			graphics::BufferCopy cpy;
+			BufferCopy cpy;
 			cpy.size = sizeof(T);
 			cpies.push_back(cpy);
 		}
 
-		void upload(graphics::CommandBuffer* cb)
+		void upload(CommandBuffer* cb)
 		{
 			if (cpies.empty())
 				return;
 			cb->copy_buffer(stagbuf.get(), buf.get(), cpies.size(), cpies.data());
-			cb->buffer_barrier(buf.get(), graphics::AccessTransferWrite, graphics::AccessShaderRead);
+			cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessShaderRead);
 			cpies.clear();
 		}
 	};
@@ -250,7 +252,7 @@ namespace flame
 
 			if (mark_cpy)
 			{
-				graphics::BufferCopy cpy;
+				BufferCopy cpy;
 				cpy.src_off = cpy.dst_off = idx * sizeof(item);
 				cpy.size = sizeof(item);
 				cpies.push_back(cpy);
@@ -286,7 +288,7 @@ namespace flame
 			auto& i = item(n, false);
 
 			{
-				graphics::BufferCopy cpy;
+				BufferCopy cpy;
 				cpy.src_off = cpy.dst_off = n * sizeof(i);
 				cpy.size = overwrite_size;
 				cpies.push_back(cpy);
@@ -296,7 +298,7 @@ namespace flame
 			return i;
 		}
 
-		void upload(graphics::CommandBuffer* cb)
+		void upload(CommandBuffer* cb)
 		{
 			StorageBuffer<T>::upload(cb);
 			n = 0;
@@ -345,24 +347,24 @@ namespace flame
 		std::filesystem::path mat;
 		std::vector<std::string> defines;
 		uint ref_count = 1;
-		UniPtr<graphics::Pipeline> pipeline;
+		UniPtr<Pipeline> pipeline;
 	};
 
 	struct MaterialRes
 	{
-		graphics::Material* mat;
+		Material* mat;
 		std::filesystem::path pipeline_file;
 		std::string pipeline_defines;
 		int texs[4];
-		graphics::Pipeline* pls[MaterialUsageCount] = {};
+		Pipeline* pls[MaterialUsageCount] = {};
 
-		graphics::Pipeline* get_pl(sRendererPrivate* thiz, MaterialUsage u);
+		Pipeline* get_pl(sRendererPrivate* thiz, MaterialUsage u);
 
 	};
 
 	struct MeshRes
 	{
-		graphics::Mesh* mesh = nullptr;
+		Mesh* mesh = nullptr;
 		bool arm;
 		uint vtx_off;
 		uint vtx_cnt;
@@ -375,7 +377,7 @@ namespace flame
 	{
 		bool should_render;
 
-		std::vector<graphics::ImageView*> reses;
+		std::vector<ImageView*> reses;
 
 		Rect						scissor;
 		std::vector<ElementDrawCmd> layers[128];
@@ -383,9 +385,9 @@ namespace flame
 
 		SequentialBuffer<ElementVertex>	buf_vtx;
 		SequentialBuffer<uint>			buf_idx;
-		UniPtr<graphics::DescriptorSet>	ds_element;
+		UniPtr<DescriptorSet>	ds_element;
 
-		graphics::Pipeline* pl_element;
+		Pipeline* pl_element;
 	};
 
 	enum MaterialType
@@ -407,7 +409,7 @@ namespace flame
 		float pt_shadow_dist = 20.f;
 		float pt_shadow_near = 0.1f;
 
-		std::vector<graphics::ImageView*> tex_reses;
+		std::vector<ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
 		uint max_mat_id = 0;
 		std::vector<MeshRes> mesh_reses;
@@ -419,7 +421,7 @@ namespace flame
 		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
 		std::vector<std::pair<uint, uint>>				particles;
 
-		SequentialBuffer<graphics::DrawIndexedIndirectCommand> buf_mesh_indirs[MaterialMeshUsageCount];
+		SequentialBuffer<DrawIndexedIndirectCommand> buf_mesh_indirs[MaterialMeshUsageCount];
 
 		SparseBuffer<MeshVertex>	buf_mesh_vtx;
 		SparseBuffer<uint>			buf_mesh_idx;
@@ -427,57 +429,57 @@ namespace flame
 		SparseBuffer<uint>			buf_arm_mesh_idx;
 
 		StorageBuffer<DSL_render_data::RenderData>							buf_render_data;
-		UniPtr<graphics::DescriptorSet>										ds_render_data;
+		UniPtr<DescriptorSet>										ds_render_data;
 		ArrayStorageBuffer<DSL_material::MaterialInfos>						buf_materials;
-		UniPtr<graphics::DescriptorSet>										ds_material;
+		UniPtr<DescriptorSet>										ds_material;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Transforms>			buf_mesh_transforms;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Armatures>				buf_mesh_armatures;
-		UniPtr<graphics::DescriptorSet>										ds_mesh;
+		UniPtr<DescriptorSet>										ds_mesh;
 		SequentialArrayStorageBuffer<terrain::DSL_terrain::TerrainInfos>	buf_terrain;
-		UniPtr<graphics::DescriptorSet>										ds_terrain;
+		UniPtr<DescriptorSet>										ds_terrain;
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
-		UniPtr<graphics::DescriptorSet>										ds_water;
+		UniPtr<DescriptorSet>										ds_water;
 
-		UniPtr<graphics::Image> img_dep;
-		UniPtr<graphics::Image> img_col_met; // color, metallic
-		UniPtr<graphics::Image> img_nor_rou; // normal, roughness
+		UniPtr<Image> img_dep;
+		UniPtr<Image> img_col_met; // color, metallic
+		UniPtr<Image> img_nor_rou; // normal, roughness
+		UniPtr<Image> img_back;
+		UniPtr<Image> img_dep_back;
 
 		SequentialArrayStorageBuffer<DSL_light::LightInfos>			buf_light_infos;
 		ArrayStorageBuffer<DSL_light::TileLightsMap>				buf_tile_lights;
 		SequentialArrayStorageBuffer<DSL_light::DirShadows>			buf_dir_shadows;
 		SequentialArrayStorageBuffer<DSL_light::PtShadows>			buf_pt_shadows;
-		std::vector<UniPtr<graphics::Image>>						img_dir_shadow_maps;
-		std::vector<UniPtr<graphics::Image>>						img_pt_shadow_maps;
-		UniPtr<graphics::DescriptorSet>								ds_light;
+		std::vector<UniPtr<Image>>						img_dir_shadow_maps;
+		std::vector<UniPtr<Image>>						img_pt_shadow_maps;
+		UniPtr<DescriptorSet>								ds_light;
 
-		graphics::PipelineLayout* pll_mesh_fwd;
-		graphics::PipelineLayout* pll_mesh_gbuf;
-		graphics::PipelineLayout* pll_terrain_fwd;
-		graphics::PipelineLayout* pll_terrain_gbuf;
-		graphics::PipelineLayout* pll_water;
+		PipelineLayout* pll_mesh_fwd;
+		PipelineLayout* pll_mesh_gbuf;
+		PipelineLayout* pll_terrain_fwd;
+		PipelineLayout* pll_terrain_gbuf;
+		PipelineLayout* pll_water;
 
-		UniPtr<graphics::Framebuffer> fb_gbuf;
-		UniPtr<graphics::Framebuffer> fb_fwd;
-		UniPtr<graphics::Framebuffer> fb_fwd_dc;
+		UniPtr<Framebuffer> fb_gbuf;
+		UniPtr<Framebuffer> fb_fwd;
+		UniPtr<Framebuffer> fb_fwd_dc;
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
 
-		graphics::Pipeline* pl_def;
-		UniPtr<graphics::DescriptorSet>	ds_def;
+		Pipeline* pl_def;
+		UniPtr<DescriptorSet>	ds_def;
 
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
-		graphics::Pipeline*					pl_ptc;
+		Pipeline*					pl_ptc;
 
-		SequentialBuffer<graphics::Line>	buf_lines;
-		graphics::Pipeline*					pl_line;
+		Pipeline* pl_downsample;
+		Pipeline* pl_upsample;
+		Pipeline* pl_add;
+		Pipeline* pl_bright;
+		Pipeline* pl_gamma;
 
-		graphics::Pipeline* pl_downsample;
-		graphics::Pipeline* pl_upsample;
-		graphics::Pipeline* pl_add;
-		graphics::Pipeline* pl_bright;
-		graphics::Pipeline* pl_gamma;
-
-		UniPtr<graphics::Image> img_back;
+		SequentialBuffer<Line>	buf_lines;
+		Pipeline*					pl_line;
 
 		NodeRenderData()
 		{
@@ -497,7 +499,7 @@ namespace flame
 
 	sRendererPrivate::~sRendererPrivate()
 	{
-		graphics::Queue::get(device)->wait_idle();
+		Queue::get(device)->wait_idle();
 	}
 
 	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
@@ -627,12 +629,12 @@ namespace flame
 		nd.pt_shadow_dist = pt_dist;
 	}
 
-	graphics::ImageView* sRendererPrivate::get_element_res(uint idx) const
+	ImageView* sRendererPrivate::get_element_res(uint idx) const
 	{
 		return _ed->reses[idx];
 	}
 
-	int sRendererPrivate::set_element_res(int idx, graphics::ImageView* iv)
+	int sRendererPrivate::set_element_res(int idx, ImageView* iv)
 	{
 		auto iv_white = img_white->get_view();
 		auto& ed = *_ed;
@@ -655,14 +657,14 @@ namespace flame
 			return -1;
 
 		ed.reses[idx] = iv;
-		ed.ds_element->set_image(graphics::DescriptorSetLayout::get(device, L"element/element.dsl")
+		ed.ds_element->set_image(DescriptorSetLayout::get(device, L"element/element.dsl")
 			->find_binding("images"), idx, iv, sp_linear);
 		ed.ds_element->update();
 
 		return idx;
 	}
 
-	int sRendererPrivate::find_element_res(graphics::ImageView* iv) const
+	int sRendererPrivate::find_element_res(ImageView* iv) const
 	{
 		auto& ed = *_ed;
 		for (auto i = 0; i < ed.reses.size(); i++)
@@ -805,7 +807,7 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::draw_glyphs(uint layer, uint cnt, const graphics::GlyphDraw* glyphs, uint res_id, const cvec4& color)
+	void sRendererPrivate::draw_glyphs(uint layer, uint cnt, const GlyphDraw* glyphs, uint res_id, const cvec4& color)
 	{
 		if (cnt == 0)
 			return;
@@ -870,7 +872,7 @@ namespace flame
 		info.indices[5] = 2;
 	}
 
-	int sRendererPrivate::set_texture_res(int idx, graphics::ImageView* tex, graphics::Sampler* sp)
+	int sRendererPrivate::set_texture_res(int idx, ImageView* tex, Sampler* sp)
 	{
 		auto& nd = *_nd;
 
@@ -895,7 +897,7 @@ namespace flame
 		return idx;
 	}
 
-	int sRendererPrivate::find_texture_res(graphics::ImageView* tex) const
+	int sRendererPrivate::find_texture_res(ImageView* tex) const
 	{
 		auto& nd = *_nd;
 		for (auto i = 0; i < nd.tex_reses.size(); i++)
@@ -906,7 +908,7 @@ namespace flame
 		return -1;
 	}
 
-	graphics::Pipeline* MaterialRes::get_pl(sRendererPrivate* thiz, MaterialUsage u)
+	Pipeline* MaterialRes::get_pl(sRendererPrivate* thiz, MaterialUsage u)
 	{
 		if (pls[u])
 			return pls[u];
@@ -914,7 +916,7 @@ namespace flame
 		return pls[u];
 	}
 
-	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
+	int sRendererPrivate::set_material_res(int idx, Material* mat)
 	{
 		auto& nd = *_nd;
 
@@ -955,7 +957,7 @@ namespace flame
 		dst.pipeline_defines = mat->get_pipeline_defines();
 		if (mat)
 		{
-			graphics::InstanceCB cb(device);
+			InstanceCB cb(device);
 
 			auto& data = nd.buf_materials.item(idx);
 			data.color = mat->get_color();
@@ -974,7 +976,7 @@ namespace flame
 				}
 				else
 				{
-					auto img = graphics::Image::get(device, fn.c_str(), mat->get_texture_srgb(i));
+					auto img = Image::get(device, fn.c_str(), mat->get_texture_srgb(i));
 					auto iv = img->get_view();
 					auto id = find_texture_res(iv);
 					if (id == -1)
@@ -991,7 +993,7 @@ namespace flame
 		return idx;
 	}
 
-	int sRendererPrivate::find_material_res(graphics::Material* mat) const
+	int sRendererPrivate::find_material_res(Material* mat) const
 	{
 		auto& nd = *_nd;
 		for (auto i = 0; i < nd.mat_reses.size(); i++)
@@ -1002,7 +1004,7 @@ namespace flame
 		return -1;
 	}
 
-	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
+	int sRendererPrivate::set_mesh_res(int idx, Mesh* mesh)
 	{
 		auto& nd = *_nd;
 
@@ -1028,7 +1030,7 @@ namespace flame
 		dst.mesh = mesh;
 		if (mesh)
 		{
-			graphics::InstanceCB cb(device);
+			InstanceCB cb(device);
 
 			dst.vtx_cnt = mesh->get_vertices_count();
 			dst.idx_cnt = mesh->get_indices_count();
@@ -1093,7 +1095,7 @@ namespace flame
 		return idx;
 	}
 
-	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
+	int sRendererPrivate::find_mesh_res(Mesh* mesh) const
 	{
 		auto& nd = *_nd;
 		for (auto i = 0; i < nd.mesh_reses.size(); i++)
@@ -1104,11 +1106,11 @@ namespace flame
 		return -1;
 	}
 
-	graphics::Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
+	Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
 	{
 		auto& nd = *_nd;
 
-		auto defines = graphics::Shader::format_defines(_defines);
+		auto defines = Shader::format_defines(_defines);
 
 		for (auto& p : nd.pl_mats[usage])
 		{
@@ -1119,17 +1121,17 @@ namespace flame
 			}
 		}
 
-		graphics::Pipeline* ret = nullptr;
+		Pipeline* ret = nullptr;
 
 		std::vector<std::pair<std::string, std::string>> substitutes;
-		auto polygon_mode = graphics::PolygonModeFill;
-		auto cull_mode = graphics::CullModeBack;
+		auto polygon_mode = PolygonModeFill;
+		auto cull_mode = CullModeBack;
 		auto depth_test = true;
 		auto depth_write = true;
 		auto use_mat = true;
 		auto deferred = true;
 
-		graphics::Renderpass* rp = nullptr;
+		Renderpass* rp = nullptr;
 
 		auto find_define = [&](const std::string& s) {
 			for (auto& d : defines)
@@ -1142,17 +1144,17 @@ namespace flame
 		if (find_define("WIREFRAME"))
 		{
 			use_mat = false;
-			polygon_mode = graphics::PolygonModeLine;
+			polygon_mode = PolygonModeLine;
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
-			rp = graphics::Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(device, L"rgba16.rp");
 		}
 		else if (find_define("PICKUP"))
 		{
 			use_mat = false;
 			deferred = false;
-			rp = graphics::Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(device, L"rgba16.rp");
 		}
 		else if (find_define("OUTLINE"))
 		{
@@ -1160,13 +1162,13 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
-			rp = graphics::Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(device, L"rgba16.rp");
 		}
 		else if (find_define("NORMAL_DATA"))
 		{
 			use_mat = false;
 			deferred = false;
-			rp = graphics::Renderpass::get(device, L"rgba16c_d16c.rp");
+			rp = Renderpass::get(device, L"rgba16c_d16c.rp");
 		}
 		if (use_mat && !mat.empty())
 		{
@@ -1201,33 +1203,33 @@ namespace flame
 		case MaterialForMeshShadow:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
-			rp = graphics::Renderpass::get(device, L"d16.rp");
+			rp = Renderpass::get(device, L"d16.rp");
 		case MaterialForMesh:
 		{
 			if (deferred)
 				defines.push_back("DEFERRED");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
-			graphics::GraphicsPipelineInfo info;
-			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
+			GraphicsPipelineInfo info;
+			Shader* shaders[] = {
+				Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = _countof(shaders);
 			info.shaders = shaders;
-			info.layout = graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
+			info.layout = PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
-				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
+				rp = Renderpass::get(device, L"gbuffer.rp");
 			info.renderpass = rp;
 			info.subpass_index = 0;
-			graphics::VertexAttributeInfo vias[3];
+			VertexAttributeInfo vias[3];
 			vias[0].location = 0;
-			vias[0].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[0].format = Format_R32G32B32_SFLOAT;
 			vias[1].location = 1;
-			vias[1].format = graphics::Format_R32G32_SFLOAT;
+			vias[1].format = Format_R32G32_SFLOAT;
 			vias[2].location = 2;
-			vias[2].format = graphics::Format_R32G32B32_SFLOAT;
-			graphics::VertexBufferInfo vib;
+			vias[2].format = Format_R32G32B32_SFLOAT;
+			VertexBufferInfo vib;
 			vib.attributes_count = _countof(vias);
 			vib.attributes = vias;
 			info.vertex_buffers_count = 1;
@@ -1236,13 +1238,13 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, info);
+			ret = Pipeline::create(device, info);
 		}
 			break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
-			rp = graphics::Renderpass::get(device, L"d16.rp");
+			rp = Renderpass::get(device, L"d16.rp");
 		case MaterialForMeshArmature:
 		{
 			if (deferred)
@@ -1250,30 +1252,30 @@ namespace flame
 			defines.push_back("ARMATURE");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
-			graphics::GraphicsPipelineInfo info;
-			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
+			GraphicsPipelineInfo info;
+			Shader* shaders[] = {
+				Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = _countof(shaders);
 			info.shaders = shaders;
-			info.layout = graphics::PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
+			info.layout = PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
-				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
+				rp = Renderpass::get(device, L"gbuffer.rp");
 			info.renderpass = rp;
 			info.subpass_index = 0;
-			graphics::VertexAttributeInfo vias[5];
+			VertexAttributeInfo vias[5];
 			vias[0].location = 0;
-			vias[0].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[0].format = Format_R32G32B32_SFLOAT;
 			vias[1].location = 1;
-			vias[1].format = graphics::Format_R32G32_SFLOAT;
+			vias[1].format = Format_R32G32_SFLOAT;
 			vias[2].location = 2;
-			vias[2].format = graphics::Format_R32G32B32_SFLOAT;
+			vias[2].format = Format_R32G32B32_SFLOAT;
 			vias[3].location = 3;
-			vias[3].format = graphics::Format_R32G32B32A32_INT;
+			vias[3].format = Format_R32G32B32A32_INT;
 			vias[4].location = 4;
-			vias[4].format = graphics::Format_R32G32B32A32_SFLOAT;
-			graphics::VertexBufferInfo vib;
+			vias[4].format = Format_R32G32B32A32_SFLOAT;
+			VertexBufferInfo vib;
 			vib.attributes_count = _countof(vias);
 			vib.attributes = vias;
 			info.vertex_buffers_count = 1;
@@ -1282,7 +1284,7 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, info);
+			ret = Pipeline::create(device, info);
 		}
 			break;
 		case MaterialForTerrain:
@@ -1291,59 +1293,59 @@ namespace flame
 				defines.push_back("DEFERRED");
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
-			graphics::GraphicsPipelineInfo info;
-			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"terrain/terrain.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"terrain/terrain.tesc", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"terrain/terrain.tese", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"terrain/terrain.frag", defines_str.c_str(), substitutes_str.c_str())
+			GraphicsPipelineInfo info;
+			Shader* shaders[] = {
+				Shader::get(device, L"terrain/terrain.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"terrain/terrain.tesc", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"terrain/terrain.tese", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"terrain/terrain.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = _countof(shaders);
 			info.shaders = shaders;
-			info.layout = graphics::PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
+			info.layout = PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
 			if (!rp)
-				rp = graphics::Renderpass::get(device, L"gbuffer.rp");
+				rp = Renderpass::get(device, L"gbuffer.rp");
 			info.renderpass = rp;
 			info.subpass_index = 0;
-			info.primitive_topology = graphics::PrimitiveTopologyPatchList;
+			info.primitive_topology = PrimitiveTopologyPatchList;
 			info.patch_control_points = 4;
 			info.polygon_mode = polygon_mode;
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = graphics::Pipeline::create(device, info);
+			ret = Pipeline::create(device, info);
 		}
 			break;
 		case MaterialForWater:
 		{
 			auto defines_str = get_defines_str();
 			auto substitutes_str = get_substitutes_str();
-			graphics::GraphicsPipelineInfo info;
-			graphics::Shader* shaders[] = {
-				graphics::Shader::get(device, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
-				graphics::Shader::get(device, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
+			GraphicsPipelineInfo info;
+			Shader* shaders[] = {
+				Shader::get(device, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(device, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = _countof(shaders);
 			info.shaders = shaders;
-			info.layout = graphics::PipelineLayout::get(device, L"water/water.pll");
+			info.layout = PipelineLayout::get(device, L"water/water.pll");
 			if (!rp)
-				rp = graphics::Renderpass::get(device, L"forward.rp");
+				rp = Renderpass::get(device, L"forward.rp");
 			info.renderpass = rp;
 			info.subpass_index = 0;
-			info.primitive_topology = graphics::PrimitiveTopologyTriangleList;
+			info.primitive_topology = PrimitiveTopologyTriangleList;
 			info.polygon_mode = polygon_mode;
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = false;
 			info.blend_options_count = 1;
-			graphics::BlendOption bo;
+			BlendOption bo;
 			bo.enable = true;
-			bo.src_color = graphics::BlendFactorSrcAlpha;
-			bo.dst_color = graphics::BlendFactorOneMinusSrcAlpha;
-			bo.src_alpha = graphics::BlendFactorOne;
-			bo.dst_alpha = graphics::BlendFactorZero;
+			bo.src_color = BlendFactorOne;
+			bo.dst_color = BlendFactorSrcAlpha;
+			bo.src_alpha = BlendFactorOne;
+			bo.dst_alpha = BlendFactorZero;
 			info.blend_options = &bo;
-			ret = graphics::Pipeline::create(device, info);
+			ret = Pipeline::create(device, info);
 		}
 			break;
 		}
@@ -1356,7 +1358,7 @@ namespace flame
 		return ret;
 	}
 
-	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl)
+	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, Pipeline* pl)
 	{
 		fassert(0);
 
@@ -1377,8 +1379,8 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::set_sky(graphics::ImageView* box, graphics::ImageView* irr,
-		graphics::ImageView* rad, graphics::ImageView* lut, const vec3& fog_color, float intensity, void* id)
+	void sRendererPrivate::set_sky(ImageView* box, ImageView* irr,
+		ImageView* rad, ImageView* lut, const vec3& fog_color, float intensity, void* id)
 	{
 		sky_id = id;
 
@@ -1579,7 +1581,7 @@ namespace flame
 			nd.waters[MaterialNormalData].emplace_back(0, material_id);
 	}
 
-	void sRendererPrivate::draw_particles(uint count, graphics::Particle* partcles, uint res_id)
+	void sRendererPrivate::draw_particles(uint count, Particle* partcles, uint res_id)
 	{
 		auto& nd = *_nd;
 
@@ -1598,14 +1600,14 @@ namespace flame
 		nd.particles.back().second += count;
 	}
 
-	void sRendererPrivate::draw_lines(uint count, graphics::Line* lines)
+	void sRendererPrivate::draw_lines(uint count, Line* lines)
 	{
 		auto& nd = *_nd;
 
-		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(graphics::Line));
+		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(Line));
 	}
 
-	void sRendererPrivate::set_targets(uint tar_cnt, graphics::ImageView* const* ivs)
+	void sRendererPrivate::set_targets(uint tar_cnt, ImageView* const* ivs)
 	{
 		iv_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
@@ -1614,41 +1616,46 @@ namespace flame
 		fb_tars.clear();
 		fb_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
-			fb_tars[i].reset(graphics::Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
+			fb_tars[i].reset(Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
 
 		if (tar_cnt == 0)
 			return;
 
 		tar_sz = ivs[0]->get_image()->get_size();
 
-		img_dst.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		img_dst.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 
 		auto& nd = *_nd;
 
-		nd.img_dep.reset(graphics::Image::create(device, graphics::Format_Depth16, tar_sz, 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		nd.img_col_met.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-		nd.img_nor_rou.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		nd.img_dep.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferSrc));
+		nd.img_col_met.reset(Image::create(device, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_nor_rou.reset(Image::create(device, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_back.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_dep_back.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
+		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 
 		{
-			graphics::ImageView* vs[] = {
+			ImageView* vs[] = {
 				nd.img_col_met->get_view(),
 				nd.img_nor_rou->get_view(),
 				nd.img_dep->get_view()
 			};
-			nd.fb_gbuf.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"gbuffer.rp"), _countof(vs), vs));
+			nd.fb_gbuf.reset(Framebuffer::create(device, Renderpass::get(device, L"gbuffer.rp"), _countof(vs), vs));
 		}
 
 		{
-			graphics::ImageView* vs[] = {
+			ImageView* vs[] = {
 				img_dst->get_view(),
 				nd.img_dep->get_view()
 			};
-			nd.fb_fwd.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"rgba16c_d16c.rp"), _countof(vs), vs));
-			nd.fb_fwd_dc.reset(graphics::Framebuffer::create(device, graphics::Renderpass::get(device, L"rgba16_d16.rp"), _countof(vs), vs));
+			nd.fb_fwd.reset(Framebuffer::create(device, Renderpass::get(device, L"rgba16c_d16c.rp"), _countof(vs), vs));
+			nd.fb_fwd_dc.reset(Framebuffer::create(device, Renderpass::get(device, L"rgba16_d16.rp"), _countof(vs), vs));
 		}
 
 		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
@@ -1656,13 +1663,13 @@ namespace flame
 		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
 		nd.ds_def->update();
 
-		nd.img_back.reset(graphics::Image::create(device, graphics::Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
-			graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
+		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
+		nd.ds_water->update();
 	}
 
 	const auto shadow_map_size = uvec2(1024);
 
-	void sRendererPrivate::record(uint tar_idx, graphics::CommandBuffer* cb)
+	void sRendererPrivate::record(uint tar_idx, CommandBuffer* cb)
 	{
 		auto& nd = *_nd;
 		if (nd.should_render)
@@ -1675,6 +1682,7 @@ namespace flame
 				auto& data = *(nd.buf_render_data.pstag);
 				data.zNear = camera->near;
 				data.zFar = camera->far;
+				data.viewport = tar_sz;
 				data.camera_coord = camera->node->g_pos;
 				data.camera_dir = -camera->node->g_rot[2];
 				data.view = camera->view;
@@ -1719,7 +1727,7 @@ namespace flame
 
 			auto bind_mesh_fwd_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_mesh_fwd);
-				graphics::DescriptorSet* sets[mesh::PLL_forward::Binding_Max];
+				DescriptorSet* sets[mesh::PLL_forward::Binding_Max];
 				sets[mesh::PLL_forward::Binding_render_data] = nd.ds_render_data.get();
 				sets[mesh::PLL_forward::Binding_material] = nd.ds_material.get();
 				sets[mesh::PLL_forward::Binding_light] = nd.ds_light.get();
@@ -1729,7 +1737,7 @@ namespace flame
 
 			auto bind_mesh_def_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_mesh_gbuf);
-				graphics::DescriptorSet* sets[mesh::PLL_gbuffer::Binding_Max];
+				DescriptorSet* sets[mesh::PLL_gbuffer::Binding_Max];
 				sets[mesh::PLL_gbuffer::Binding_render_data] = nd.ds_render_data.get();
 				sets[mesh::PLL_gbuffer::Binding_material] = nd.ds_material.get();
 				sets[mesh::PLL_gbuffer::Binding_mesh] = nd.ds_mesh.get();
@@ -1749,7 +1757,7 @@ namespace flame
 
 			auto bind_terrain_fwd_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_terrain_fwd);
-				graphics::DescriptorSet* sets[terrain::PLL_forward::Binding_Max];
+				DescriptorSet* sets[terrain::PLL_forward::Binding_Max];
 				sets[terrain::PLL_forward::Binding_render_data] = nd.ds_render_data.get();
 				sets[terrain::PLL_forward::Binding_material] = nd.ds_material.get();
 				sets[terrain::PLL_forward::Binding_light] = nd.ds_light.get();
@@ -1759,7 +1767,7 @@ namespace flame
 
 			auto bind_terrain_def_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_terrain_gbuf);
-				graphics::DescriptorSet* sets[terrain::PLL_gbuffer::Binding_Max];
+				DescriptorSet* sets[terrain::PLL_gbuffer::Binding_Max];
 				sets[terrain::PLL_gbuffer::Binding_render_data] = nd.ds_render_data.get();
 				sets[terrain::PLL_gbuffer::Binding_material] = nd.ds_material.get();
 				sets[terrain::PLL_gbuffer::Binding_terrain] = nd.ds_terrain.get();
@@ -1778,7 +1786,7 @@ namespace flame
 
 			auto bind_water_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_water);
-				graphics::DescriptorSet* sets[water::PLL_water::Binding_Max];
+				DescriptorSet* sets[water::PLL_water::Binding_Max];
 				sets[water::PLL_water::Binding_render_data] = nd.ds_render_data.get();
 				sets[water::PLL_water::Binding_material] = nd.ds_material.get();
 				sets[water::PLL_water::Binding_light] = nd.ds_light.get();
@@ -1958,15 +1966,15 @@ namespace flame
 						bind_mesh_fwd_res();
 						cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(0, i, lv, 0) });
 						cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+						cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 						dir_mesh_indirs_off = draw_meshes(MaterialForMeshShadow, mesh_indirs_vec[lv], dir_mesh_indirs_off);
 						cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+						cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 						dir_mesh_arm_indirs_off = draw_meshes(MaterialForMeshShadowArmature, mesh_arm_indirs_vec[lv], dir_mesh_arm_indirs_off);
 						cb->end_renderpass();
 					}
 
-					cb->image_barrier(nd.img_dir_shadow_maps[i].get(), { 0U, 1U, 0U, nd.dir_shadow_levels }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_dir_shadow_maps[i].get(), { 0U, 1U, 0U, nd.dir_shadow_levels }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				}
 
 				cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x * 0.5f, shadow_map_size.y * 0.5f));
@@ -1985,15 +1993,15 @@ namespace flame
 						bind_mesh_fwd_res();
 						cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(1, i, ly, 0) });
 						cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+						cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 						pt_mesh_indirs_off = draw_meshes(MaterialForMeshShadow, mesh_indirs_vec[ly], pt_mesh_indirs_off);
 						cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+						cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 						pt_mesh_arm_indirs_off = draw_meshes(MaterialForMeshShadowArmature, mesh_arm_indirs_vec[ly], pt_mesh_arm_indirs_off);
 						cb->end_renderpass();
 					}
 
-					cb->image_barrier(nd.img_pt_shadow_maps[i].get(), { 0U, 1U, 0U, 6U }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_pt_shadow_maps[i].get(), { 0U, 1U, 0U, 6U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				}
 			}
 
@@ -2019,23 +2027,23 @@ namespace flame
 
 				bind_mesh_def_res();
 				cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 				draw_meshes(MaterialForMesh, mesh_indirs);
 				cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 				draw_meshes(MaterialForMeshArmature, mesh_arm_indirs);
 				bind_terrain_def_res();
 				draw_terrains();
 
 				cb->end_renderpass();
 
-				cb->image_barrier(nd.img_col_met.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(nd.img_nor_rou.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(nd.img_dep.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_col_met.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_nor_rou.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_def);
-				graphics::DescriptorSet* sets[PLL_deferred::Binding_Max];
+				DescriptorSet* sets[PLL_deferred::Binding_Max];
 				sets[PLL_deferred::Binding_deferred] = nd.ds_def.get();
 				sets[PLL_deferred::Binding_render_data] = nd.ds_render_data.get();
 				sets[PLL_deferred::Binding_light] = nd.ds_light.get();
@@ -2063,7 +2071,7 @@ namespace flame
 						if (!meshes.empty())
 						{
 							cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 							bind_mesh_fwd_res();
 							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
 							for (auto& m : meshes)
@@ -2076,7 +2084,7 @@ namespace flame
 						if (!arm_meshes.empty())
 						{
 							cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 							bind_mesh_fwd_res();
 							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
@@ -2106,6 +2114,16 @@ namespace flame
 				cb->end_renderpass();
 			}
 
+			{
+				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+				cb->image_barrier(nd.img_dep_back.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+				ImageCopy cpy;
+				cpy.size = nd.img_dep->get_size();
+				cb->copy_image(nd.img_dep.get(), nd.img_dep_back.get(), 1, &cpy);
+				cb->image_barrier(nd.img_dep_back.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+			}
+
 			if (!nd.waters[MaterialCustom].empty())
 			{
 				nd.buf_water.upload(cb);
@@ -2124,7 +2142,7 @@ namespace flame
 				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
 				cb->bind_pipeline(nd.pl_ptc);
 				{
-					graphics::DescriptorSet* sets[PLL_particle::Binding_Max];
+					DescriptorSet* sets[PLL_particle::Binding_Max];
 					sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
 					sets[PLL_particle::Binding_material] = nd.ds_material.get();
 					cb->bind_descriptor_sets(0, _countof(sets), sets);
@@ -2143,7 +2161,7 @@ namespace flame
 				nd.particles.emplace_back(0xffff, 0);
 			}
 
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst());
 			cb->bind_pipeline(nd.pl_bright);
 			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
@@ -2153,7 +2171,7 @@ namespace flame
 			auto lvs = nd.img_back->get_levels();
 			for (auto i = 0; i < lvs - 1; i++)
 			{
-				cb->image_barrier(nd.img_back.get(), { (uint)i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i + 1)));
 				cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i + 1));
 				cb->bind_pipeline(nd.pl_downsample);
@@ -2164,7 +2182,7 @@ namespace flame
 			}
 			for (auto i = lvs - 1; i > 1; i--)
 			{
-				cb->image_barrier(nd.img_back.get(), { (uint)i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i - 1)));
 				cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i - 1));
 				cb->bind_pipeline(nd.pl_upsample);
@@ -2173,7 +2191,7 @@ namespace flame
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
-			cb->image_barrier(nd.img_back.get(), { 1U }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(nd.img_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 			cb->set_viewport(vp);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 			cb->bind_pipeline(nd.pl_upsample);
@@ -2191,7 +2209,7 @@ namespace flame
 				if (!wireframe_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
@@ -2205,7 +2223,7 @@ namespace flame
 				if (!wireframe_arm_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
@@ -2240,7 +2258,7 @@ namespace flame
 				if (!outline_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
@@ -2253,7 +2271,7 @@ namespace flame
 				if (!outline_arm_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
@@ -2278,7 +2296,7 @@ namespace flame
 				auto lvs = min(nd.img_back->get_levels(), 3U);
 				for (auto i = 0U; i < lvs - 1; i++)
 				{
-					cb->image_barrier(nd.img_back.get(), { i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i + 1)));
 					cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i + 1, 0));
 					cb->bind_pipeline(nd.pl_downsample);
@@ -2289,7 +2307,7 @@ namespace flame
 				}
 				for (auto i = lvs - 1; i > 0; i--)
 				{
-					cb->image_barrier(nd.img_back.get(), { i }, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_back->get_size(i - 1)));
 					cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst(i - 1, 0));
 					cb->bind_pipeline(nd.pl_upsample);
@@ -2299,13 +2317,13 @@ namespace flame
 					cb->end_renderpass();
 				}
 
-				cb->image_barrier(nd.img_back.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(vp);
 				cb->begin_renderpass(nullptr, nd.img_back->get_shader_write_dst());
 				if (!outline_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
@@ -2319,7 +2337,7 @@ namespace flame
 				if (!outline_arm_meshes.empty())
 				{
 					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 					bind_mesh_fwd_res();
 					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
 					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
@@ -2343,7 +2361,7 @@ namespace flame
 				}
 				cb->end_renderpass();
 
-				cb->image_barrier(nd.img_back.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_add);
 				cb->bind_descriptor_set(0, nd.img_back->get_shader_read_src(0, 0, sp_nearest));
@@ -2351,7 +2369,7 @@ namespace flame
 				cb->end_renderpass();
 			}
 
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
 			cb->bind_pipeline(nd.pl_gamma);
 			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
@@ -2396,7 +2414,7 @@ namespace flame
 
 			cb->bind_pipeline(ed.pl_element);
 			cb->bind_vertex_buffer(ed.buf_vtx.buf.get(), 0);
-			cb->bind_index_buffer(ed.buf_idx.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_index_buffer(ed.buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_descriptor_set(element::PLL_element::Binding_element, ed.ds_element.get());
 			cb->push_constant_t(element::PLL_element::PushConstant{ 2.f / vec2(tar_sz) });
 			auto vtx_off = 0;
@@ -2458,25 +2476,25 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
-		device = graphics::Device::get_default();
-		dsp = graphics::DescriptorPool::get_default(device);
-		sp_nearest = graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
-		sp_linear = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge);
+		device = Device::get_default();
+		dsp = DescriptorPool::get_default(device);
+		sp_nearest = Sampler::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge);
+		sp_linear = Sampler::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
 
-		rp_rgba8 = graphics::Renderpass::get(device, L"rgba8.rp");
-		rp_rgba8c = graphics::Renderpass::get(device, L"rgba8c.rp");
-		rp_bgra8 = graphics::Renderpass::get(device, L"bgra8.rp");
-		rp_bgra8c = graphics::Renderpass::get(device, L"bgra8c.rp");
+		rp_rgba8 = Renderpass::get(device, L"rgba8.rp");
+		rp_rgba8c = Renderpass::get(device, L"rgba8c.rp");
+		rp_bgra8 = Renderpass::get(device, L"bgra8.rp");
+		rp_bgra8c = Renderpass::get(device, L"bgra8c.rp");
 
-		img_white.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_white->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(255));
-		img_black.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
-			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_black->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-		img_black_cube.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
-			graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, true));
-		img_black_cube->clear(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+		img_white.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
+		img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(255));
+		img_black.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
+		img_black->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+		img_black_cube.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
+			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled, true));
+		img_black_cube->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
 
 		auto iv_white = img_white->get_view();
 		auto iv_black = img_black->get_view();
@@ -2484,11 +2502,11 @@ namespace flame
 
 		auto& ed = *_ed;
 
-		ed.pl_element = graphics::Pipeline::get(device, L"element/element.pl");
+		ed.pl_element = Pipeline::get(device, L"element/element.pl");
 
-		ed.buf_vtx.create(device, graphics::BufferUsageVertex, 360000);
-		ed.buf_idx.create(device, graphics::BufferUsageIndex, 240000);
-		ed.ds_element.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"element/element.dsl")));
+		ed.buf_vtx.create(device, BufferUsageVertex, 360000);
+		ed.buf_idx.create(device, BufferUsageIndex, 240000);
+		ed.ds_element.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"element/element.dsl")));
 		ed.reses.resize(element::DSL_element::images_count);
 		for (auto i = 0; i < ed.reses.size(); i++)
 		{
@@ -2507,101 +2525,101 @@ namespace flame
 			v.resize(nd.mat_reses.size());
 
 		for (auto& b : nd.buf_mesh_indirs)
-			b.create(device, graphics::BufferUsageIndirect, 65536);
+			b.create(device, BufferUsageIndirect, 65536);
 
 		{
 			auto& dst = nd.mat_reses[MaterialWireframe];
-			dst.mat = (graphics::Material*)INVALID_POINTER;
+			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
 			dst.pipeline_defines = "WIREFRAME";
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialOutline];
-			dst.mat = (graphics::Material*)INVALID_POINTER;
+			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
 			dst.pipeline_defines = "OUTLINE";
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialPickup];
-			dst.mat = (graphics::Material*)INVALID_POINTER;
+			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
 			dst.pipeline_defines = "PICKUP";
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialNormalData];
-			dst.mat = (graphics::Material*)INVALID_POINTER;
+			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
 			dst.pipeline_defines = "NORMAL_DATA";
 		}
 
-		nd.buf_mesh_vtx.create(device, graphics::BufferUsageVertex, 200000);
-		nd.buf_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
-		nd.buf_arm_mesh_vtx.create(device, graphics::BufferUsageVertex, 200000);
-		nd.buf_arm_mesh_idx.create(device, graphics::BufferUsageIndex, 200000);
-		nd.buf_ptc_vtx.create(device, graphics::BufferUsageVertex, 10000);
+		nd.buf_mesh_vtx.create(device, BufferUsageVertex, 200000);
+		nd.buf_mesh_idx.create(device, BufferUsageIndex, 200000);
+		nd.buf_arm_mesh_vtx.create(device, BufferUsageVertex, 200000);
+		nd.buf_arm_mesh_idx.create(device, BufferUsageIndex, 200000);
+		nd.buf_ptc_vtx.create(device, BufferUsageVertex, 10000);
 
-		nd.buf_lines.create(device, graphics::BufferUsageVertex, 2000000);
+		nd.buf_lines.create(device, BufferUsageVertex, 2000000);
 
-		nd.buf_render_data.create(device, graphics::BufferUsageUniform);
+		nd.buf_render_data.create(device, BufferUsageUniform);
 		{
 			auto& data = *nd.buf_render_data.pstag;
 			data.fog_color = vec3(0.f);
 			data.sky_intensity = 0.2f;
 			data.sky_rad_levels = 0;
 		}
-		nd.ds_render_data.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"render_data.dsl")));
+		nd.ds_render_data.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"render_data.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());
 		nd.ds_render_data->update();
 
-		nd.buf_materials.create(device, graphics::BufferUsageStorage);
-		nd.ds_material.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"material.dsl")));
+		nd.buf_materials.create(device, BufferUsageStorage);
+		nd.ds_material.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"material.dsl")));
 		nd.ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, nd.buf_materials.buf.get());
 		for (auto i = 0; i < nd.tex_reses.size(); i++)
 			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_white, sp_linear);
 		nd.ds_material->update();
 
-		nd.buf_mesh_transforms.create(device, graphics::BufferUsageStorage);
-		nd.buf_mesh_armatures.create(device, graphics::BufferUsageStorage);
+		nd.buf_mesh_transforms.create(device, BufferUsageStorage);
+		nd.buf_mesh_armatures.create(device, BufferUsageStorage);
 		fassert(_countof(mesh::DSL_mesh::Armature::bones) == ArmatureMaxBones);
-		nd.ds_mesh.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
+		nd.ds_mesh.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Transforms_binding, 0, nd.buf_mesh_transforms.buf.get());
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Armatures_binding, 0, nd.buf_mesh_armatures.buf.get());
 		nd.ds_mesh->update();
 
-		nd.buf_terrain.create(device, graphics::BufferUsageStorage);
-		nd.ds_terrain.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"terrain/terrain.dsl")));
+		nd.buf_terrain.create(device, BufferUsageStorage);
+		nd.ds_terrain.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"terrain/terrain.dsl")));
 		nd.ds_terrain->set_buffer(terrain::DSL_terrain::TerrainInfos_binding, 0, nd.buf_terrain.buf.get());
 		nd.ds_terrain->update();
 
-		nd.buf_water.create(device, graphics::BufferUsageStorage);
-		nd.ds_water.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"water/water.dsl")));
+		nd.buf_water.create(device, BufferUsageStorage);
+		nd.ds_water.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"water/water.dsl")));
 		nd.ds_water->set_buffer(water::DSL_water::WaterInfos_binding, 0, nd.buf_water.buf.get());
 		nd.ds_water->update();
 
-		nd.buf_light_infos.create(device, graphics::BufferUsageStorage);
-		nd.buf_tile_lights.create(device, graphics::BufferUsageStorage);
-		nd.buf_dir_shadows.create(device, graphics::BufferUsageStorage);
-		nd.buf_pt_shadows.create(device, graphics::BufferUsageStorage);
+		nd.buf_light_infos.create(device, BufferUsageStorage);
+		nd.buf_tile_lights.create(device, BufferUsageStorage);
+		nd.buf_dir_shadows.create(device, BufferUsageStorage);
+		nd.buf_pt_shadows.create(device, BufferUsageStorage);
 		nd.img_dir_shadow_maps.resize(DSL_light::dir_shadow_maps_count);
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
-			nd.img_dir_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, shadow_map_size, 1, 4,
-				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment));
-			nd.img_dir_shadow_maps[i]->change_layout(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly);
+			nd.img_dir_shadow_maps[i].reset(Image::create(device, Format_Depth16, shadow_map_size, 1, 4,
+				SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+			nd.img_dir_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 		}
 		nd.img_pt_shadow_maps.resize(DSL_light::pt_shadow_maps_count);
 		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
 		{
-			nd.img_pt_shadow_maps[i].reset(graphics::Image::create(device, graphics::Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
-				graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageAttachment, true));
-			nd.img_pt_shadow_maps[i]->change_layout(graphics::ImageLayoutUndefined, graphics::ImageLayoutShaderReadOnly);
+			nd.img_pt_shadow_maps[i].reset(Image::create(device, Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
+				SampleCount_1, ImageUsageSampled | ImageUsageAttachment, true));
+			nd.img_pt_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 		}
-		nd.ds_light.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"light.dsl")));
+		nd.ds_light.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"light.dsl")));
 		nd.ds_light->set_buffer(DSL_light::LightInfos_binding, 0, nd.buf_light_infos.buf.get());
 		nd.ds_light->set_buffer(DSL_light::TileLightsMap_binding, 0, nd.buf_tile_lights.buf.get());
 		nd.ds_light->set_buffer(DSL_light::DirShadows_binding, 0, nd.buf_dir_shadows.buf.get());
 		nd.ds_light->set_buffer(DSL_light::PtShadows_binding, 0, nd.buf_pt_shadows.buf.get());
-		auto sp_shadow = graphics::Sampler::get(device, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+		auto sp_shadow = Sampler::get(device, FilterLinear, FilterLinear, false, AddressClampToBorder);
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
 			auto iv = nd.img_dir_shadow_maps[i]->get_view({ 0, 1, 0, 4 });
@@ -2618,24 +2636,24 @@ namespace flame
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
 		nd.ds_light->update();
 
-		nd.pll_mesh_fwd = graphics::PipelineLayout::get(device, L"mesh/forward.pll");
-		nd.pll_mesh_gbuf = graphics::PipelineLayout::get(device, L"mesh/gbuffer.pll");
-		nd.pll_terrain_fwd = graphics::PipelineLayout::get(device, L"terrain/forward.pll");
-		nd.pll_terrain_gbuf = graphics::PipelineLayout::get(device, L"terrain/gbuffer.pll");
-		nd.pll_water = graphics::PipelineLayout::get(device, L"water/water.pll");
+		nd.pll_mesh_fwd = PipelineLayout::get(device, L"mesh/forward.pll");
+		nd.pll_mesh_gbuf = PipelineLayout::get(device, L"mesh/gbuffer.pll");
+		nd.pll_terrain_fwd = PipelineLayout::get(device, L"terrain/forward.pll");
+		nd.pll_terrain_gbuf = PipelineLayout::get(device, L"terrain/gbuffer.pll");
+		nd.pll_water = PipelineLayout::get(device, L"water/water.pll");
 
-		nd.pl_def = graphics::Pipeline::get(device, L"deferred/deferred.pl");
-		nd.ds_def.reset(graphics::DescriptorSet::create(dsp, graphics::DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));
+		nd.pl_def = Pipeline::get(device, L"deferred/deferred.pl");
+		nd.ds_def.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));
 
-		nd.pl_ptc = graphics::Pipeline::get(device, L"particle/particle.pl");
+		nd.pl_ptc = Pipeline::get(device, L"particle/particle.pl");
 
-		nd.pl_line = graphics::Pipeline::get(device, L"plain/line.pl");
+		nd.pl_line = Pipeline::get(device, L"plain/line.pl");
 		
-		nd.pl_downsample = graphics::Pipeline::get(device, L"post/downsample.pl");
-		nd.pl_upsample = graphics::Pipeline::get(device, L"post/upsample.pl");
-		nd.pl_add = graphics::Pipeline::get(device, L"post/add.pl");
-		nd.pl_bright = graphics::Pipeline::get(device, L"post/bright.pl");
-		nd.pl_gamma = graphics::Pipeline::get(device, L"post/gamma.pl");
+		nd.pl_downsample = Pipeline::get(device, L"post/downsample.pl");
+		nd.pl_upsample = Pipeline::get(device, L"post/upsample.pl");
+		nd.pl_add = Pipeline::get(device, L"post/add.pl");
+		nd.pl_bright = Pipeline::get(device, L"post/bright.pl");
+		nd.pl_gamma = Pipeline::get(device, L"post/gamma.pl");
 	}
 
 	void sRendererPrivate::update()

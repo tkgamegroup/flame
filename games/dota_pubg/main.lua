@@ -687,7 +687,7 @@ for i=1, grid_num * grid_num, 1 do
 end
 
 local e_chest = create_entity("chest")
-function add_chest(pos, item_id, item_num)
+function add_item_obj(pos, item_id, item_num)
 	local e = e_chest.copy()
 	e.set_name("item_obj_"..tostring(math.random(1, 10000)))
     e.find_component("cNode").set_pos(vec3(pos.x, 
@@ -697,7 +697,20 @@ function add_chest(pos, item_id, item_num)
 	obj_root.add_child(e)
 end
 
-add_chest(vec3(0, -200, 0), 1, 1)
+local e_projectiles = {}
+function add_projectile(name, target, pos, sp, cb)
+	local e = e_projectiles[name]
+	if not e then
+		e = create_entity(name)
+		e_projectiles[name] = e
+	end
+	e = e.copy()
+	e.set_name("projectile_"..tostring(math.random(1, 10000)))
+	make_projectile(e, target, pos, sp, cb)
+	projectile_root.add_child(e)
+end
+
+add_item_obj(vec3(0, -200, 0), 1, 1)
 
 local e_player = create_entity("player")
 

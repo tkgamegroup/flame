@@ -24,7 +24,7 @@ vec4 pack_uint_to_v4(uint id)
 	return ret;
 }
 
-float linear_depth(float near, float far, float d)
+float linear_depth(float near, float far, float d /* -1, +1 */)
 {
 	return 2.0 * near * far / (far + near - d * (far - near));
 }

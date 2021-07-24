@@ -25,7 +25,7 @@ void main()
 		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
 
 		normal = nor_rou.xyz * 2.0 - vec3(1.0);
-		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness).rgb, 1.0);
+		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness), 1.0);
 	}
 	else
 		o_color = vec4(texture(sky_box, normalize(coordw.xyz)).rgb * render_data.sky_intensity, 1.0);
