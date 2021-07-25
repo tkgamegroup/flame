@@ -22,6 +22,9 @@ namespace flame
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;
 
+		virtual bool get_is_billboard() const = 0;
+		virtual void set_is_billboard(bool v) = 0;
+
 		virtual ShadingFlags get_shading_flags() const = 0;
 		virtual void set_shading_flags(ShadingFlags flags) = 0;
 

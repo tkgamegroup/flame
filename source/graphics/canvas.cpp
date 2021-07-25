@@ -244,13 +244,6 @@
 //			//	};
 //			//	blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
 //			//}
-//
-//			//{
-//			//	ShaderPrivate* shaders[] = {
-//			//		fullscreen_vert,
-//			//		ShaderPrivate::get(device, L"post/filter_bright.frag")
-//			//	};
-//			//	filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
 //			//}
 //		}
 //

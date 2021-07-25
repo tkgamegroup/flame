@@ -64,7 +64,7 @@ namespace flame
 			pugi::xml_node n_material;
 			if (!doc.load_file(filename.c_str()) || (n_material = doc.first_child()).name() != std::string("material"))
 			{
-				printf("model does not exist: %s\n", filename.string().c_str());
+				printf("material does not exist: %s\n", filename.string().c_str());
 				return nullptr;
 			}
 
@@ -73,11 +73,11 @@ namespace flame
 			if (auto n = n_material.attribute("color"); n)
 				ret->color = sto<vec4>(n.value());
 			if (auto n = n_material.attribute("metallic"); n)
-				ret->metallic = sto<float>(n.value());
+				ret->metallic = n.as_float();
 			if (auto n = n_material.attribute("roughness"); n)
-				ret->roughness = sto<float>(n.value());
-			if (auto n = n_material.attribute("alpha_test"); n)
-				ret->alpha_test = sto<float>(n.value());
+				ret->roughness = n.as_float();
+			if (auto n = n_material.attribute("is_opaque"); n)
+				ret->opaque = n.as_bool();
 			if (auto n = n_material.attribute("pipeline_file"); n)
 				ret->pipeline_file = n.value();
 			if (auto n = n_material.attribute("pipeline_defines"); n)

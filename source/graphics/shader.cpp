@@ -428,7 +428,8 @@ namespace flame
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<DescriptorBinding>& _bindings, TypeInfoDataBase* db) :
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, 
+			std::vector<DescriptorBinding>& _bindings, TypeInfoDataBase* db) :
 			device(device),
 			filename(filename)
 		{
@@ -848,7 +849,8 @@ namespace flame
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* _pcti) :
+		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, 
+			std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* _pcti) :
 			device(device),
 			filename(filename)
 		{
@@ -1072,7 +1074,8 @@ namespace flame
 			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes));
 		}
 
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes)
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, 
+			const std::vector<std::pair<std::string, std::string>>& _substitutes)
 		{
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"assets\\shaders"))
@@ -1211,7 +1214,8 @@ namespace flame
 			return nullptr;
 		}
 
-		ShaderPrivate::ShaderPrivate(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
+		ShaderPrivate::ShaderPrivate(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, 
+			const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
 			device(device),
 			filename(filename),
 			defines(defines),
@@ -1358,7 +1362,7 @@ namespace flame
 			raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 			raster_state.pNext = nullptr;
 			raster_state.flags = 0;
-			raster_state.depthClampEnable = info.depth_clamp;
+			raster_state.depthClampEnable = VK_FALSE;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
 			raster_state.polygonMode = to_backend(info.polygon_mode);
 			raster_state.cullMode = to_backend(info.cull_mode);
@@ -1597,15 +1601,18 @@ namespace flame
 				info.vertex_buffers = vertex_buffers.data();
 
 				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode");
+				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology");
+				auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp");
 				if (auto n = doc_root.child("cull_mode"); n)
 					ti_cullmode->unserialize(&info.cull_mode, n.attribute("v").value());
-				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology");
 				if (auto n = doc_root.child("primitive_topology"); n)
 					ti_prim->unserialize(&info.primitive_topology, n.attribute("v").value());
 				if (auto n = doc_root.child("depth_test"); n)
 					info.depth_test = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_write"); n)
 					info.depth_write = n.attribute("v").as_bool();
+				if (auto n = doc_root.child("compare_op"); n)
+					ti_compare->unserialize(&info.compare_op, n.attribute("v").value());
 
 				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor");
 				std::vector<BlendOption> blend_options;

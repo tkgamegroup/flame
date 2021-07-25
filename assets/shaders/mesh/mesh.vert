@@ -52,11 +52,10 @@ void main()
 	#endif
 #endif
 
-#if !defined(DEFERRED) && !defined(SHADOW_PASS)
-	o_coordw = coordw;
-#endif
-
 #ifndef SHADOW_PASS
+	#ifndef DEFERRED
+		o_coordw = coordw;
+	#endif
 	gl_Position = render_data.proj_view * vec4(coordw, 1.0);
 #else
 	switch (pc.i[0])

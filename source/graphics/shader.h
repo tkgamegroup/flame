@@ -137,7 +137,6 @@ namespace flame
 			const VertexBufferInfo* vertex_buffers = nullptr;
 			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
 			uint patch_control_points = 0;
-			bool depth_clamp = false;
 			PolygonMode polygon_mode = PolygonModeFill;
 			CullMode cull_mode = CullModeBack;
 			bool depth_test = true;

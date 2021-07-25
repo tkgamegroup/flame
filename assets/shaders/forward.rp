@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <renderpass>
   <attachments>
-    <attachment format="R16G16B16A16_SFLOAT" />
-    <attachment format="Depth16" />
+    <attachment format="R16G16B16A16_SFLOAT" load_op="Load" initia_layout="Attachment" />
+    <attachment format="Depth16" load_op="Load" initia_layout="ShaderReadOnly" />
   </attachments>
   <subpasses>
     <subpass color_refs="0" depth_ref="1" />

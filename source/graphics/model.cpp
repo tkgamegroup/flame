@@ -241,6 +241,8 @@ namespace flame
 				
 				std::string pipeline_defines;
 
+				auto map_id = 0;
+
 				{
 					ai_name.Clear();
 					ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
@@ -251,7 +253,7 @@ namespace flame
 							name.erase(name.begin());
 						auto n_texture = n_material.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
-						pipeline_defines += "COLOR_MAP ";
+						pipeline_defines += sfmt("COLOR_MAP=%d ", map_id++);
 					}
 				}
 
@@ -265,7 +267,8 @@ namespace flame
 							name.erase(name.begin());
 						auto n_texture = n_material.append_child("texture");
 						n_texture.append_attribute("filename").set_value(name.c_str());
-						pipeline_defines += "ALPHA_MAP ALPHA_TEST ";
+						pipeline_defines += "ALPHA_TEST ";
+						pipeline_defines += sfmt("ALPHA_MAP=%d ", map_id++);
 						n_material.append_attribute("alpha_test").set_value(to_string(0.5f).c_str());
 					}
 				}

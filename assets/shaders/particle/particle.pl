@@ -6,7 +6,7 @@
     <shader filename="particle/particle.frag" />
   </shaders>
   <layout filename="particle/particle.pll" />
-  <renderpass filename="rgba16_d16.rp" index="0" />
+  <renderpass filename="forward.rp" index="0" />
   <vertex_buffers>
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32B32_SFLOAT" />

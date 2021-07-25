@@ -7,7 +7,6 @@ struct MaterialInfo
 	vec4 color;
 	float metallic;
 	float roughness;
-	float alpha_test;
 
 	ivec4 map_indices;
 };

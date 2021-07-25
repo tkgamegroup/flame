@@ -23,8 +23,7 @@ namespace flame
 			vec4 color = vec4(1.f, 0.f, 0.5f, 1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;
-			float alpha_test = 0.f;
-			bool double_side = false;
+			bool opaque = true;
 
 			std::filesystem::path pipeline_file = "standard_mat.glsl";
 			std::string pipeline_defines;
@@ -34,7 +33,7 @@ namespace flame
 			vec4 get_color() const override { return color; }
 			float get_metallic() const override { return metallic; }
 			float get_roughness() const override { return roughness; }
-			float get_alpha_test() const override { return alpha_test; }
+			bool get_is_opaque() const override { return opaque; }
 
 			void get_pipeline_file(wchar_t* dst) const override;
 			const char* get_pipeline_defines() const override { return pipeline_defines.c_str(); }
