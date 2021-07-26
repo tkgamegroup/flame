@@ -39,15 +39,6 @@ namespace flame
 			entity->component_data_changed(this, S<"cast_shadow"_h>);
 	}
 
-	void cMeshPrivate::set_is_billboard(bool v)
-	{
-		if (billboard == v)
-			return;
-		billboard = v;
-		if (entity)
-			entity->component_data_changed(this, S<"is_billboard"_h>);
-	}
-
 	void cMeshPrivate::set_shading_flags(ShadingFlags flags)
 	{
 		if (shading_flags == flags)
@@ -101,14 +92,7 @@ namespace flame
 		if (mesh_id != -1)
 		{
 			if (first && !parm)
-			{
-				if (billboard)
-				{
-					node->look_at(s_renderer->camera->node->g_pos);
-					node->update_transform();
-				}
 				transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
-			}
 			auto idx = parm ? parm->armature_id : transform_id;
 			if (!shadow_pass)
 				s_renderer->draw_mesh(idx, mesh_id, shading_flags);

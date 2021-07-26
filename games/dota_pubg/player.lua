@@ -100,8 +100,7 @@ function make_player(e)
 	end
 
 	player.calc_stats = function()
-		player.ATK_TYPE = "PHY"
-		player.ATK_DMG = 0
+		player.ATK = 0
 		player.MOV_SP = 100
 
 		for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
@@ -109,11 +108,7 @@ function make_player(e)
 			if id ~= 0 then
 				local item_type = ITEM_LIST[id]
 				for k, v in pairs(item_type.attributes) do
-					if k == "ATK_TYPE" then
-						player.ATK_TYPE = v
-					else
-						player[k] = player[k] + v
-					end
+					player[k] = player[k] + v
 				end
 			end
 		end
@@ -129,11 +124,7 @@ function make_player(e)
 		player.PHY_DMG = player.STR
 		player.MAG_DMG = player.INT
 
-		if player.ATK_TYPE == "PHY" then
-			player.ATK_DMG = (player.ATK_DMG + player.PHY_DMG) * 10
-		else
-			player.ATK_DMG = (player.ATK_DMG + player.MAG_DMG) * 10
-		end
+		player.ATK = (player.ATK + player.PHY_DMG) * 10
 	end
 
 	player.calc_stats()

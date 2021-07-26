@@ -43,8 +43,8 @@ function make_character(entity, group, stats)
 		HP_RECOVER =	stats and stats.HP_RECOVER or 0,
 		MP_RECOVER =	stats and stats.MP_RECOVER or 0,
 		MOV_SP =		stats and stats.MOV_SP or 0,
-		ATK_DMG =		stats and stats.ATK_DMG or 0,
-		ATK_TYPE =		stats and stats.ATK_TYPE or 0,
+		ATK =			stats and stats.ATK or 0,
+
 		recover_tick = 0
 	}
 	
@@ -201,7 +201,7 @@ function make_character(entity, group, stats)
 			end
 		elseif character.attack_semp and (character.curr_frame == -1 or character.curr_frame >= 12) then
 			if l <= character.radius + character.target.radius + 3 then
-				character.target.receive_damage(character, math.floor(0.5 + character.ATK_DMG * (math.random() * 0.2 + 0.9)))
+				character.target.receive_damage(character, math.floor(0.5 + character.ATK * (math.random() * 0.2 + 0.9)))
 			end
 			character.attack_semp = false
 		end

@@ -293,6 +293,10 @@ function length_and_dir_3(v)
 	return l, nil
 end
 
+function rand2(min, max)
+	return math.random() * (max - min) + min
+end
+
 function circle_rand(r)
 	local rad = math.rad(math.random() * 360.0)
 	return vec2(math.cos(rad) * r, math.sin(rad) * r)

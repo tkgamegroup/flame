@@ -17,10 +17,10 @@ layout(location = 4) in vec4 i_bwgts;
 layout(location = 0) out flat uint o_mat;
 layout(location = 1) out vec2 o_uv;
 #ifndef SHADOW_PASS
-layout(location = 2) out vec3 o_normal; 
-#ifndef DEFERRED
-layout(location = 3) out vec3 o_coordw;
-#endif
+	layout(location = 2) out vec3 o_normal; 
+	#ifndef DEFERRED
+		layout(location = 3) out vec3 o_coordw;
+	#endif
 #endif
 
 void main()

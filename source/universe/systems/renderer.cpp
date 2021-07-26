@@ -1313,6 +1313,12 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
+			if (alpha_blend)
+			{
+				BlendOption bo = { true, BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorOne, BlendFactorZero };
+				info.blend_options_count = 1;
+				info.blend_options = &bo;
+			}
 			ret = Pipeline::create(device, info);
 		}
 			break;
@@ -1730,40 +1736,39 @@ namespace flame
 					if (!vec.empty())
 					{
 						auto indirs = nd.buf_mesh_indirs[u].stag(vec.size());
-						auto fill_indir = [&](uint i, uint j) {
-							auto& src = vec[j];
-							auto& mr = nd.mesh_reses[src.second];
-							auto& dst = indirs[i];
-							dst.vertex_offset = mr.vtx_off;
-							dst.first_index = mr.idx_off;
-							dst.index_count = mr.idx_cnt;
-							dst.first_instance = (src.first << 16) + mat_id;
-							dst.instance_count = 1;
+						auto fill_indirs = [&](const std::vector<std::pair<uint, uint>>& vec) {
+							for (auto i = 0; i < vec.size(); i++)
+							{
+								auto& src = vec[i];
+								auto& mr = nd.mesh_reses[src.second];
+								auto& dst = indirs[i];
+								dst.vertex_offset = mr.vtx_off;
+								dst.first_index = mr.idx_off;
+								dst.index_count = mr.idx_cnt;
+								dst.first_instance = (src.first << 16) + mat_id;
+								dst.instance_count = 1;
+							}
 						};
 						if (!opaque)
 						{
 							auto& trans = nd.buf_mesh_transforms.pstag->transforms;
-							std::vector<uint> idxs;
-							idxs.resize(vec.size());
-							for (auto i = 0; i < idxs.size(); i++)
-								idxs[i] = i;
 							auto cam_coord = camera->node->g_pos;
 							auto cam_dir = -camera->node->g_rot[2];
-							std::sort(idxs.begin(), idxs.end(), [&](uint a, uint b) {
-								auto p1 = vec3(trans[vec[a].first].mat[3]) - cam_coord;
-								auto p2 = vec3(trans[vec[b].first].mat[3]) - cam_coord;
+
+							auto _vec = vec;
+							std::sort(_vec.begin(), _vec.end(), [&](const auto& a, const auto& b) {
+								auto p1 = vec3(trans[a.first].mat[3]);
+								auto p2 = vec3(trans[b.first].mat[3]);
+								p1 -= cam_coord;
+								p2 -= cam_coord;
 								auto d1 = dot(p1, cam_dir);
 								auto d2 = dot(p2, cam_dir);
-								return d1 < d2;
+								return d1 > d2;
 							});
-							for (auto i = 0; i < idxs.size(); i++)
-								fill_indir(i, idxs[i]);
+							fill_indirs(_vec);
 						}
 						else
-						{
-							for (auto i = 0; i < vec.size(); i++)
-								fill_indir(i, i);
-						}
+							fill_indirs(vec);
 						ret.emplace_back(mat_id, (uint)vec.size());
 						vec.clear();
 					}

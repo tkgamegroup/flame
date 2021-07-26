@@ -7,7 +7,7 @@ function terrain_spawn(extent, height_tex, e_dst, pos, prefab, y_off)
     e_dst.add_child(e)
 end
 
-function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, probability, height_constraint, normal_constraint, scale)
+function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, probability, height_constraint, normal_constraint, rotation_range, scale_range)
     local cx = math.floor(range.z / density) + 1
     local cy = math.floor(range.w / density) + 1
 
@@ -19,16 +19,24 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
             if math.random() < probability and dot_3(normal, vec3(0, 1, 0)) > normal_constraint then
                 local height = height_tex.linear_sample(uv, 0, 0).x * extent.y
                 if height > height_constraint then
-                    local e = prefabs[math.floor(math.random() * n_prefabs) + 1].copy()
-                    local node = e.find_component("cNode")
-                    node.set_pos(vec3(
-                        range.x + (x + math.random() - 0.5) * density, 
-                        height, 
-                        range.y + (y + math.random() - 0.5) * density
-                    ))
-                    node.set_euler(vec3(math.random() * 360, 0, 0))
-                    node.set_scale(vec3((0.8 + math.random() * 0.4) * scale))
-                    e_dst.add_child(e)
+                    local p = math.random()
+                    for i=1, n_prefabs, 1 do
+                        if p < prefabs[i].p then
+                            local e = prefabs[i].e.copy()
+                            local node = e.find_component("cNode")
+                            node.set_pos(vec3(
+                                range.x + (x + math.random() - 0.5) * density, 
+                                height, 
+                                range.y + (y + math.random() - 0.5) * density
+                            ))
+                            node.set_euler(vec3(rand2(rotation_range.x, rotation_range.y), 0, 0))
+                            node.set_scale(vec3(rand2(scale_range.x, scale_range.y)))
+                            e_dst.add_child(e)
+                            break
+                        else
+                            p = p - prefabs[i].p
+                        end
+                    end
                 end
             end
 	    end

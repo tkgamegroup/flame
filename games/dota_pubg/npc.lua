@@ -8,8 +8,7 @@ NPC_LIST = {
 			HP_RECOVER = 5,
 			MP_RECOVER = 5,
 			MOV_SP = 100,
-			ATK_DMG = 100,
-			ATK_TYPE = "PHY"
+			ATK = 100
 		},
 		drop_gold = 10,
 		drop_exp = 40,

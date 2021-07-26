@@ -135,9 +135,7 @@ scene_receiver.add_mouse_right_down_listener(function()
 
 	if s_dispatcher.get_hovering().p ~= scene_receiver.p then return end
 
-	if not hovering_obj then return end
-
-	if hovering_obj.tag == TAG_TERRAIN then
+	if not hovering_obj or hovering_obj.tag == TAG_TERRAIN then
 		main_player.change_state("move_to", hovering_pos)
 		auto_attack = false
 	else
@@ -456,18 +454,6 @@ obj_root.add_event(function()
 	end
 end, 0.0)
 
-local e_grasses = {}
-local e = create_entity("grass")
-table.insert(e_grasses, e)
-
-local e_trees = {}
-local e = create_entity("tree")
-table.insert(e_trees, e)
-
-local e_rocks = {}
-local e = create_entity("rock")
-table.insert(e_rocks, e)
-
 function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
@@ -619,7 +605,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 			exp_text.set_text(string.format("EXP: %d/%d", main_player.EXP, main_player.EXP_NEXT))
 			phy_dmg_text.set_text(string.format("PHY DMG: %d", main_player.PHY_DMG))
 			mag_dmg_text.set_text(string.format("MAG DMG: %d", main_player.MAG_DMG))
-			atk_dmg_text.set_text(string.format("ATK DMG: %d (%s)", math.floor(main_player.ATK_DMG / 10.0), main_player.ATK_TYPE))
+			atk_dmg_text.set_text(string.format("ATK: %d", math.floor(main_player.ATK / 10.0)))
 		
 			sta_text.set_text(string.format("STA: %d", main_player.STA))
 			spi_text.set_text(string.format("SPI: %d", main_player.SPI))
@@ -722,6 +708,23 @@ main_player.learn_skill(1)
 main_player.awake()
 obj_root.add_child(e)
 
+local e_grasses = {}
+table.insert(e_grasses, { e=create_entity("grass1"), p=0.35 })
+table.insert(e_grasses, { e=create_entity("grass2"), p=0.35 })
+table.insert(e_grasses, { e=create_entity("grass3"), p=0.1 })
+table.insert(e_grasses, { e=create_entity("grass4"), p=0.1 })
+table.insert(e_grasses, { e=create_entity("grass5"), p=0.05 })
+table.insert(e_grasses, { e=create_entity("grass6"), p=0.05 })
+
+local e_trees = {}
+table.insert(e_trees, { e=create_entity("tree1"), p=0.5 })
+table.insert(e_trees, { e=create_entity("tree2"), p=0.5 })
+
+local e_rocks = {}
+table.insert(e_rocks, { e=create_entity("rock1"), p=0.35 })
+table.insert(e_rocks, { e=create_entity("rock2"), p=0.35 })
+table.insert(e_rocks, { e=create_entity("rock3"), p=0.3 })
+
 function build_grid(x, z)
 	if x < 0 then x = 0 end
 	if z < 0 then z = 0 end
@@ -732,9 +735,9 @@ function build_grid(x, z)
 		grids[idx] = true
 
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.2, e_grasses, 0.3, 35.0, 0.9, 1.5)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 2.5, e_trees, 0.1, 35.0, 0.9, 0.8)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_rocks, 0.1, 0.0, 0.0, 0.8)
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.3, e_grasses, 0.04, 35.0, 0.8, vec2(180, 180), vec2(2.1, 2.4))
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_trees, 0.1, 35.0, 0.9, vec2(0, 360), vec2(0.8, 1.0))
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 4.0, e_rocks, 0.1, 0.0, 0.0, vec2(0, 360), vec2(0.7, 0.9))
 	end
 end
 

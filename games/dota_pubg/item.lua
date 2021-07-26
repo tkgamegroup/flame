@@ -24,7 +24,6 @@ ITEM_LIST = {
 		stack_num = 1,
 		slot = EQUIPMENT_SLOT_MAIN_HAND,
 		attributes = {
-			ATK_TYPE = "PHY",
 			ATK = 5
 		}
 	},

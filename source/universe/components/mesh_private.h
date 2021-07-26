@@ -12,8 +12,6 @@ namespace flame
 
 		bool cast_shadow = true;
 
-		bool billboard = false;
-
 		ShadingFlags shading_flags = ShadingMaterial;
 
 		cNodePrivate* node = nullptr;
@@ -32,9 +30,6 @@ namespace flame
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
-
-		bool get_is_billboard() const override { return billboard; }
-		void set_is_billboard(bool v) override;
 
 		ShadingFlags get_shading_flags() const override { return shading_flags; }
 		void set_shading_flags(ShadingFlags flags) override;
