@@ -24,11 +24,11 @@ function load_scene(filename)
             local e = create_entity("prefabs/cube")
             local node = e.find_component("cNode")
             node.set_pos(vec3(0, -0.1, 0))
-            node.set_scale(vec3(100, 0.1, 100))
+            node.set_scale(vec3(10, 0.1, 10))
             e.find_component("cRigid").set_dynamic(false)
             prefab.wrapper.add_child(e)
 
-            local e = create_entity("D:\\assets\\sky_test\\sky")
+            local e = create_entity("prefabs/sky")
             prefab.wrapper.add_child(e)
 
             local e = create_entity("prefabs/camera")

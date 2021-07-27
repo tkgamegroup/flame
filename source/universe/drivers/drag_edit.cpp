@@ -48,7 +48,7 @@ namespace flame
 
 		drag_receiver->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<dDragEditPrivate>();
-			if (!thiz->dragging)
+			if (!thiz->dragging && thiz->drag_receiver->is_active())
 			{
 				thiz->drag->set_visible(false);
 				thiz->edit->set_visible(true);

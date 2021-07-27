@@ -20,7 +20,7 @@ namespace flame
 		{
 			ModelPrivate* model;
 
-			MaterialPtr material = nullptr;
+			std::vector<MaterialPrivate*> materials;
 
 			std::vector<vec3> positions;
 			std::vector<vec2> uvs;
@@ -32,7 +32,8 @@ namespace flame
 			vec3 lower_bound = vec3(0.f);
 			vec3 upper_bound = vec3(0.f);
 
-			MaterialPtr get_material() const override { return material; }
+			uint get_skins_count() const override { return materials.size(); }
+			MaterialPtr get_material(uint skin) const override { return materials[skin]; }
 
 			uint get_vertices_count() const override { return positions.size(); }
 			const vec3* get_positions() const override { return positions.data(); }

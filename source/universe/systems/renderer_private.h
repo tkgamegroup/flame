@@ -98,8 +98,8 @@ namespace flame
 		mat4 get_shaodw_mat(uint id, uint idx) const;
 		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
 		uint add_mesh_armature(uint bones_count, const mat4* bones) override;
-		void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags) override;
-		void add_mesh_occluder(uint idx, uint mesh_id) override;
+		void draw_mesh(uint idx, uint mesh_id, uint skin, ShadingFlags flags) override;
+		void draw_mesh_occluder(uint idx, uint mesh_id, uint skin) override;
 		void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
 			uint material_id, ShadingFlags flags) override;
 		void draw_water(const vec3& coord, const vec2& extent,

@@ -51,8 +51,8 @@ namespace flame
 		virtual uint add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow) = 0;
 		virtual uint add_mesh_transform(const mat4& mat, const mat3& nor) = 0;
 		virtual uint add_mesh_armature(uint bones_count, const mat4* bones) = 0;
-		virtual void draw_mesh(uint idx, uint mesh_id, ShadingFlags flags = ShadingMaterial) = 0;
-		virtual void add_mesh_occluder(uint idx, uint mesh_id) = 0;
+		virtual void draw_mesh(uint idx, uint mesh_id, uint skin, ShadingFlags flags = ShadingMaterial) = 0;
+		virtual void draw_mesh_occluder(uint idx, uint mesh_id, uint skin) = 0;
 		virtual void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
 			uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_water(const vec3& coord, const vec2& extent, uint material_id, ShadingFlags flags = ShadingMaterial) = 0;

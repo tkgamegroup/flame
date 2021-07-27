@@ -30,6 +30,13 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
+	void cMeshPrivate::set_skin(uint _skin)
+	{
+		if (skin == _skin)
+			return;
+		skin = _skin;
+	}
+
 	void cMeshPrivate::set_cast_shadow(bool v)
 	{
 		if (cast_shadow == v)
@@ -95,9 +102,9 @@ namespace flame
 				transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
 			auto idx = parm ? parm->armature_id : transform_id;
 			if (!shadow_pass)
-				s_renderer->draw_mesh(idx, mesh_id, shading_flags);
+				s_renderer->draw_mesh(idx, mesh_id, skin, shading_flags);
 			else if (cast_shadow)
-				s_renderer->add_mesh_occluder(idx, mesh_id);
+				s_renderer->draw_mesh_occluder(idx, mesh_id, skin);
 		}
 	}
 

@@ -616,7 +616,7 @@ namespace flame
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
 					mesh->model = m;
-					mesh->material = default_material;
+					mesh->materials.push_back(default_material);
 					mesh->add_cube(vec3(1.f), vec3(0.f), mat3(1.f));
 					mesh->calc_bounds();
 					m->meshes.emplace_back(mesh);
@@ -632,7 +632,7 @@ namespace flame
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
 					mesh->model = m;
-					mesh->material = default_material;
+					mesh->materials.push_back(default_material);
 					mesh->add_sphere(0.5f, 12, 12, vec3(0.f), mat3(1.f));
 					mesh->calc_bounds();
 					m->meshes.emplace_back(mesh);
@@ -689,12 +689,14 @@ namespace flame
 			{
 				auto m = new MeshPrivate;
 				m->model = ret;
-				auto material_filename = std::filesystem::path(n_mesh.attribute("material").value());
-				auto local_material_filename = ppath / material_filename;
-				if (std::filesystem::exists(local_material_filename))
-					m->material = MaterialPrivate::get(local_material_filename.c_str());
-				else
-					m->material = MaterialPrivate::get(material_filename.c_str());
+				for (auto& sp : SUS::split(n_mesh.attribute("material").value()))
+				{
+					auto material_filename = std::filesystem::path(sp);
+					auto fn = ppath / material_filename;
+					if (!std::filesystem::exists(fn))
+						fn = material_filename;
+					m->materials.push_back(MaterialPrivate::get(fn.c_str()));
+				}
 
 				auto n_positions = n_mesh.child("positions");
 				{

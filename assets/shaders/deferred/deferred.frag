@@ -28,5 +28,5 @@ void main()
 		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness), 1.0);
 	}
 	else
-		o_color = vec4(texture(sky_box, normalize(coordw.xyz)).rgb * render_data.sky_intensity, 1.0);
+		o_color = vec4(texture(sky_box, cube_coord(normalize(coordw.xyz))).rgb * render_data.sky_intensity, 1.0);
 }

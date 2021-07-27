@@ -464,12 +464,13 @@ namespace flame
 				auto levels = (uint)gli_texture.levels();
 				auto layers = (uint)gli_texture.layers();
 				auto faces = (uint)gli_texture.faces();
-				if (faces == 6)
+				if (faces > 1)
 				{
 					fassert(layers == 1);
-					is_cube = true;
-					layers = 6;
+					layers = faces;
 				}
+				if (layers == 6)
+					is_cube = true;
 
 				Format format = Format_Undefined;
 				switch (gli_texture.format())
@@ -501,7 +502,7 @@ namespace flame
 						auto size = gli_texture.size(j);
 						auto ext = gli_texture.extent(j);
 						void* data;
-						if (is_cube)
+						if (faces > 1)
 							data = gli_texture.data(0, i, j);
 						else
 							data = gli_texture.data(i, 0, j);

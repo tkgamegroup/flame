@@ -68,7 +68,7 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float roughness)
+vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 ret = vec3(0.0);
 
@@ -100,7 +100,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 			}
 		}
 		
-		ret += lighting(N, V, L, light.color * shadowed, metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color * shadowed, metallic, albedo, f0, roughness);
 	}
 	
 	uint pt_num = tile_lights[0].pt_count;
@@ -124,7 +124,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 			}
 		}
 
-		ret += lighting(N, V, L, light.color / max(dist * dist, 1.0) * shadowed , metallic, albedo, spec, roughness);
+		ret += lighting(N, V, L, light.color / max(dist * dist, 1.0) * shadowed , metallic, albedo, f0, roughness);
 	}
 	
 	float sky_intensity = render_data.sky_intensity;
@@ -132,14 +132,14 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 spec, float 
 	// IBL
 	{
 		float NdotV = max(dot(N, V), 0.0);
-		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
+		vec3 F = fresnel_schlick_roughness(NdotV, f0, roughness);
 		vec3 kD = vec3(1.0) - F;
 		kD *= 1.0 - metallic;
 
-		vec3 diffuse = texture(sky_irr, N).rgb * albedo;
+		vec3 diffuse = texture(sky_irr, cube_coord(N)).rgb * albedo;
 
 		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
-		vec3 specular = textureLod(sky_rad, reflect(-V, N), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+		vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
 		float ao = 1.0; // TODO
 		ret += (kD * diffuse + specular) * sky_intensity * ao;

@@ -61,6 +61,7 @@ namespace flame
 		phy_scene->rigids.push_back(this);
 		phy_scene->physics_scene->add_rigid(phy_rigid);
 		node->update_transform();
+		node->update_qut();
 		phy_rigid->set_pose(node->pos, node->qut);
 	}
 

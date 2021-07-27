@@ -18,6 +18,8 @@ namespace flame
 		virtual void set_src(const wchar_t* src) = 0;
 		virtual uint get_sub_index() const = 0;
 		virtual void set_sub_index(uint idx) = 0;
+		virtual uint get_skin() const = 0;
+		virtual void set_skin(uint skin) = 0;
 
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;

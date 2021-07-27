@@ -9,6 +9,7 @@ namespace flame
 	{
 		std::filesystem::path src;
 		uint sub_index;
+		uint skin = 0;
 
 		bool cast_shadow = true;
 
@@ -27,6 +28,8 @@ namespace flame
 		void set_src(const wchar_t* src) override { set_src(std::filesystem::path(src)); }
 		uint get_sub_index() const override { return sub_index; }
 		void set_sub_index(uint idx) override;
+		uint get_skin() const override { return skin; }
+		void set_skin(uint skin) override;
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;

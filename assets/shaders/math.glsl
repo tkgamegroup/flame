@@ -28,3 +28,8 @@ float linear_depth(float near, float far, float d /* -1, +1 */)
 {
 	return 2.0 * near * far / (far + near - d * (far - near));
 }
+
+vec3 cube_coord(vec3 v)
+{
+	return vec3(v.x, v.y, v.z);
+}

@@ -370,7 +370,7 @@ namespace flame
 		uint vtx_cnt;
 		uint idx_off;
 		uint idx_cnt;
-		uint mat_id;
+		std::vector<uint> mat_ids;
 	};
 
 	struct ElemenetRenderData
@@ -1102,11 +1102,15 @@ namespace flame
 				nd.buf_arm_mesh_idx.upload(cb.get());
 			}
 
-			auto mat = mesh->get_material();
-			auto mid = find_material_res(mat);
-			if (mid == -1)
-				mid = set_material_res(-1, mat);
-			dst.mat_id = mid;
+			dst.mat_ids.resize(mesh->get_skins_count());
+			for (auto i = 0; i < dst.mat_ids.size(); i++)
+			{
+				auto mat = mesh->get_material(i);
+				auto mid = find_material_res(mat);
+				if (mid == -1)
+					mid = set_material_res(-1, mat);
+				dst.mat_ids[i] = mid;
+			}
 		}
 
 		return idx;
@@ -1532,7 +1536,7 @@ namespace flame
 		return idx;
 	}
 
-	void sRendererPrivate::draw_mesh(uint idx, uint mesh_id, ShadingFlags flags)
+	void sRendererPrivate::draw_mesh(uint idx, uint mesh_id, uint skin, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
@@ -1543,7 +1547,7 @@ namespace flame
 		auto usage = mesh.arm ? MaterialForMeshArmature : MaterialForMesh;
 
 		if (flags & ShadingMaterial)
-			nd.meshes[usage][mesh.mat_id].emplace_back(idx, mesh_id);
+			nd.meshes[usage][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
 		if (render_type == RenderWireframe || (flags & ShadingWireframe))
 			nd.meshes[usage][MaterialWireframe].emplace_back(idx, mesh_id);
 		if (flags & ShadingOutline)
@@ -1552,12 +1556,12 @@ namespace flame
 			nd.meshes[usage][MaterialNormalData].emplace_back(idx, mesh_id);
 	}
 
-	void sRendererPrivate::add_mesh_occluder(uint idx, uint mesh_id)
+	void sRendererPrivate::draw_mesh_occluder(uint idx, uint mesh_id, uint skin)
 	{
 		auto& nd = *_nd;
 
 		auto& mesh = nd.mesh_reses[mesh_id];
-		nd.meshes[mesh.arm ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mesh.mat_id].emplace_back(idx, mesh_id);
+		nd.meshes[mesh.arm ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
 	}
 
 	void sRendererPrivate::draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
@@ -2161,7 +2165,7 @@ namespace flame
 							for (auto& m : meshes)
 							{
 								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 							}
 							meshes.clear();
 						}
@@ -2175,7 +2179,7 @@ namespace flame
 							for (auto& m : arm_meshes)
 							{
 								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 							}
 							arm_meshes.clear();
 						}
@@ -2296,7 +2300,7 @@ namespace flame
 					for (auto& m : wireframe_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 					wireframe_meshes.clear();
 				}
@@ -2310,7 +2314,7 @@ namespace flame
 					for (auto& m : wireframe_arm_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 					wireframe_arm_meshes.clear();
 				}
@@ -2345,7 +2349,7 @@ namespace flame
 					for (auto& m : outline_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 				}
 				if (!outline_arm_meshes.empty())
@@ -2358,7 +2362,7 @@ namespace flame
 					for (auto& m : outline_arm_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 				}
 				if (!outline_terrains.empty())
@@ -2410,7 +2414,7 @@ namespace flame
 					for (auto& m : outline_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 					outline_meshes.clear();
 				}
@@ -2424,7 +2428,7 @@ namespace flame
 					for (auto& m : outline_arm_meshes)
 					{
 						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_id);
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
 					}
 					outline_arm_meshes.clear();
 				}

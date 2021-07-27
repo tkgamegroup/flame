@@ -50,10 +50,22 @@ namespace flame
 		if (!path_text->text.empty())
 		{
 			auto folder = curr_folder();
-			std::ofstream file(recent_folders_path, std::ios::ate);
-			file << folder.string() << "\n";
-			file.close();
 			auto path = folder / path_text->text;
+			auto found = false;
+			for (auto& i : recent_list.items)
+			{
+				if (i.data == folder)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				std::ofstream file(recent_folders_path, std::ios::app);
+				file << folder.string() << "\n";
+				file.close();
+			}
 			for (auto& cb : callbacks)
 				cb->call(true, path.c_str());
 		}

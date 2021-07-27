@@ -15,7 +15,8 @@ namespace flame
 
 		struct Mesh
 		{
-			virtual MaterialPtr get_material() const = 0;
+			virtual uint get_skins_count() const = 0;
+			virtual MaterialPtr get_material(uint skin = 0) const = 0;
 
 			virtual uint get_vertices_count() const = 0;
 			virtual const vec3* get_positions() const = 0;

@@ -15,26 +15,29 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
     for y = 0, cy - 1, 1 do
 	    for x = 0, cx - 1, 1 do
             local uv = vec2((range.x + x * density) / extent.x, (range.y + y * density) / extent.x)
-            local normal = vec3(normal_tex.linear_sample(uv, 0, 0)) * 2 - vec3(1)
-            if math.random() < probability and dot_3(normal, vec3(0, 1, 0)) > normal_constraint then
+            if math.random() < probability then
                 local height = height_tex.linear_sample(uv, 0, 0).x * extent.y
                 if height > height_constraint then
-                    local p = math.random()
-                    for i=1, n_prefabs, 1 do
-                        if p < prefabs[i].p then
-                            local e = prefabs[i].e.copy()
-                            local node = e.find_component("cNode")
-                            node.set_pos(vec3(
-                                range.x + (x + math.random() - 0.5) * density, 
-                                height, 
-                                range.y + (y + math.random() - 0.5) * density
-                            ))
-                            node.set_euler(vec3(rand2(rotation_range.x, rotation_range.y), 0, 0))
-                            node.set_scale(vec3(rand2(scale_range.x, scale_range.y)))
-                            e_dst.add_child(e)
-                            break
-                        else
-                            p = p - prefabs[i].p
+                    local normal = vec3(normal_tex.linear_sample(uv, 0, 0)) * 2 - vec3(1)
+                    local ndotup = dot_3(normal, vec3(0, 1, 0))
+                    if ndotup > normal_constraint then
+                        local p = math.random()
+                        for i=1, n_prefabs, 1 do
+                            if p < prefabs[i].p then
+                                local e = prefabs[i].e.copy()
+                                local node = e.find_component("cNode")
+                                node.set_pos(vec3(
+                                    range.x + (x + math.random() - 0.5) * density, 
+                                    height, 
+                                    range.y + (y + math.random() - 0.5) * density
+                                ))
+                                node.set_euler(vec3(rand2(rotation_range.x, rotation_range.y), 0, 0))
+                                node.set_scale(vec3(rand2(scale_range.x, scale_range.y)))
+                                e_dst.add_child(e)
+                                break
+                            else
+                                p = p - prefabs[i].p
+                            end
                         end
                     end
                 end
