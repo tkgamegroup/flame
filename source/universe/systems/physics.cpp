@@ -24,6 +24,21 @@ namespace flame
 		s_renderer->draw_lines(lines_count, lines);
 		return layer;
 	}
+
+	void sPhysicsPrivate::add_rigid(cRigidPrivate* r)
+	{
+		rigids.push_back(r);
+		physics_scene->add_rigid(r->phy_rigid);
+	}
+
+	void sPhysicsPrivate::remove_rigid(cRigidPrivate* r)
+	{
+		std::erase_if(rigids, [&](const auto& i) {
+			return i == r;
+		});
+		physics_scene->remove_rigid(r->phy_rigid);
+	}
+
 	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e)
 	{
 		void* p = nullptr;

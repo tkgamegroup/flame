@@ -30,6 +30,7 @@ namespace flame
 		// yaw, pitch, roll, in angle
 		virtual vec3 get_euler() = 0;
 		virtual void set_euler(const vec3& e) = 0;
+		virtual void add_euler(const vec3& e) = 0;
 		virtual quat get_quat() = 0;
 		virtual void set_quat(const quat& quat) = 0;
 		virtual vec3 get_scale() const = 0;

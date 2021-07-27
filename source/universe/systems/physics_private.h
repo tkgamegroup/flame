@@ -21,6 +21,9 @@ namespace flame
 
 		UniPtr<physics::Scene> physics_scene;
 
+		void add_rigid(cRigidPrivate* r);
+		void remove_rigid(cRigidPrivate* r);
+
 		vec3 raycast(const vec3& origin, const vec3& dir, EntityPtr* out_e) override;
 		void set_visualization(bool v) override;
 

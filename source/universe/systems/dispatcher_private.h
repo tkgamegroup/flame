@@ -56,6 +56,8 @@ namespace flame
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 
+		bool get_keyboard_state(KeyboardKey k) const override { return kbtns[k].first; }
+		bool get_mouse_state(MouseKey k) const override { return mbtns[k].first; }
 		ivec2 get_mouse_pos() const override { return mpos; }
 		cReceiverPtr get_hovering() const override { return hovering; }
 		cReceiverPtr get_focusing() const override { return focusing; }

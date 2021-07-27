@@ -14,7 +14,8 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
     local n_prefabs = #prefabs
     for y = 0, cy - 1, 1 do
 	    for x = 0, cx - 1, 1 do
-            local uv = vec2((range.x + x * density) / extent.x, (range.y + y * density) / extent.x)
+            local uv = vec2((range.x + (x + math.random() - 0.5) * density) / extent.x, 
+                            (range.y + (y + math.random() - 0.5) * density) / extent.x)
             if math.random() < probability then
                 local height = height_tex.linear_sample(uv, 0, 0).x * extent.y
                 if height > height_constraint then
@@ -26,11 +27,7 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
                             if p < prefabs[i].p then
                                 local e = prefabs[i].e.copy()
                                 local node = e.find_component("cNode")
-                                node.set_pos(vec3(
-                                    range.x + (x + math.random() - 0.5) * density, 
-                                    height, 
-                                    range.y + (y + math.random() - 0.5) * density
-                                ))
+                                node.set_pos(vec3(uv.x * extent.x, height, uv.y * extent.x))
                                 node.set_euler(vec3(rand2(rotation_range.x, rotation_range.y), 0, 0))
                                 node.set_scale(vec3(rand2(scale_range.x, scale_range.y)))
                                 e_dst.add_child(e)

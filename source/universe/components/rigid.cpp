@@ -9,11 +9,6 @@
 
 namespace flame
 {
-	cRigidPrivate::~cRigidPrivate()
-	{
-		destroy();
-	}
-
 	void cRigidPrivate::set_dynamic(bool v)
 	{
 		if (dynamic == v)
@@ -54,28 +49,6 @@ namespace flame
 		});
 	}
 
-	void cRigidPrivate::create()
-	{
-		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
-		phy_rigid->user_data = entity;
-		phy_scene->rigids.push_back(this);
-		phy_scene->physics_scene->add_rigid(phy_rigid);
-		node->update_transform();
-		node->update_qut();
-		phy_rigid->set_pose(node->pos, node->qut);
-	}
-
-	void cRigidPrivate::destroy()
-	{
-		if (!phy_rigid)
-			return;
-		std::erase_if(phy_scene->rigids, [&](const auto& i) {
-			return i == this;
-		});
-		phy_scene->physics_scene->remove_rigid(phy_rigid);
-		phy_rigid->release();
-	}
-
 	void cRigidPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
@@ -92,15 +65,40 @@ namespace flame
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
 		fassert(phy_scene);
 
-		create();
+		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
+		phy_rigid->user_data = entity;
+		phy_scene->add_rigid(this);
+		node->update_transform();
+		phy_rigid->set_pose(node->g_pos, node->get_quat());
 		phy_rigid->add_impulse(staging_impulse);
 		staging_impulse = vec3(0.f);
+
+		if (!dynamic)
+		{
+			node_lis = entity->add_component_data_listener([](Capture& c, uint h) {
+				if (h == S<"transform"_h>)
+				{
+					auto thiz = c.thiz<cRigidPrivate>();
+					thiz->phy_rigid->set_pose(thiz->node->g_pos, thiz->node->get_quat());
+				}
+			}, Capture().set_thiz(this), node);
+		}
 	}
 
 	void cRigidPrivate::on_left_world()
 	{
-		destroy();
+		if (!phy_rigid)
+			return;
+
+		phy_scene->remove_rigid(this);
+		phy_rigid->release();
 		phy_rigid = nullptr;
+
+		if (!dynamic)
+		{
+			entity->remove_component_data_listener(node_lis, node);
+			node_lis = nullptr;
+		}
 	}
 
 	cRigid* cRigid::create(void* parms)

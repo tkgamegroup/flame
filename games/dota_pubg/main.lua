@@ -1,6 +1,7 @@
+DEBUG = false
+
 obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
-
 projectile_root = scene.find_child("projectile_root")
 
 TAG_TERRAIN = 1
@@ -8,8 +9,6 @@ TAG_CHARACTER_G1 = 2
 TAG_CHARACTER_G2 = 4
 TAG_ITEM_OBJ = 8
 
-ctrl_pressing = false
-alt_pressing = false
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
 hovering_obj = nil
@@ -69,13 +68,13 @@ local e_key_6 = e_keyboardkey["6"]
 local e_key_7 = e_keyboardkey["7"]
 local e_key_8 = e_keyboardkey["8"]
 local e_key_9 = e_keyboardkey["9"]
+local e_key_left = e_keyboardkey["Left"]
+local e_key_up = e_keyboardkey["Up"]
+local e_key_right = e_keyboardkey["Right"]
+local e_key_down = e_keyboardkey["Down"]
 
 scene_receiver.add_key_down_listener(function(key)
-	if key == e_key_ctrl then
-		ctrl_pressing = true
-	elseif key == e_key_alt then
-		alt_pressing = true
-	elseif key == e_key_a then
+	if key == e_key_a then
 		enter_select_mode(TAG_TERRAIN + TAG_CHARACTER_G2, function(tag, target)
 			if tag then
 				if tag == TAG_TERRAIN then
@@ -99,14 +98,6 @@ scene_receiver.add_key_down_listener(function(key)
 		end)
 	elseif key == e_key_q then
 		skill_click(1)
-	end
-end)
-
-scene_receiver.add_key_up_listener(function(key)
-	if key == e_key_ctrl then
-		ctrl_pressing = false
-	elseif key == e_key_alt then
-		alt_pressing = false
 	end
 end)
 
@@ -187,9 +178,6 @@ local mp_bar = character_panel.find_child("mp_bar").find_component("cElement")
 local mp_text = character_panel.find_child("mp_text").find_component("cText")
 local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
-local exp_text = character_panel.find_child("exp_text").find_component("cText")
-
-local target = { pos = vec3(220, 60, 220) }
 
 obj_root.add_event(function()
 	-- process characters
@@ -315,7 +303,9 @@ obj_root.add_event(function()
 		if p then
 			_hovering_entity = make_entity(p)
 			local tag = _hovering_entity.get_tag()
-			if tag == -2147483648 then _hovering_entity = { p=nil } end
+			if tag == -2147483648 and not DEBUG then 
+				_hovering_entity = { p=nil } 
+			end
 			if select_mode then
 				if (tag & select_mode_filters) == 0 then
 					local arr = flame_malloc(8)
@@ -785,3 +775,34 @@ obj_root.add_event(function()
 		end
 	end
 end, 1.0)
+
+local e_debugger = scene.find_child("debugger")
+if e_debugger.p and e_debugger.get_visible() then
+	DEBUG = true
+
+	local hovering_pos_text = e_debugger.find_child("hovering_pos_text").find_component("cText")
+	local hovering_entity_pos_text = e_debugger.find_child("hovering_entity_pos_text").find_component("cText")
+	obj_root.add_event(function()
+		hovering_pos_text.set_text(string.format("%.2f %.2f %.2f", hovering_pos.x, hovering_pos.y, hovering_pos.z))
+		if hovering_entity.p and hovering_entity.get_tag() ~= TAG_TERRAIN then
+			local node = hovering_entity.find_component("cNode")
+			local pos = node.get_global_pos()
+			hovering_entity_pos_text.set_text(string.format("%.2f %.2f %.2f", pos.x, pos.y, pos.z))
+			
+			if s_dispatcher.get_keyboard_state(e_key_left) then
+				node.add_euler(vec3(-0.5, 0, 0))
+			end
+			if s_dispatcher.get_keyboard_state(e_key_right) then
+				node.add_euler(vec3(0.5, 0, 0))
+			end
+			if s_dispatcher.get_keyboard_state(e_key_up) then
+				node.add_pos(vec3(0, 0.01, 0))
+			end
+			if s_dispatcher.get_keyboard_state(e_key_down) then
+				node.add_pos(vec3(0, -0.01, 0))
+			end
+		else
+			hovering_entity_pos_text.set_text("")
+		end
+	end, 0.0)
+end

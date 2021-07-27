@@ -14,9 +14,8 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, EntityPtr, EntityPtr)>>> trigger_listeners;
 
 		cNodePrivate* node = nullptr;
+		void* node_lis = nullptr;
 		sPhysicsPrivate* phy_scene = nullptr;
-
-		~cRigidPrivate();
 
 		bool get_dynamic() const override { return dynamic; }
 		void set_dynamic(bool v) override;
@@ -27,9 +26,6 @@ namespace flame
 
 		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, EntityPtr trigger_shape, EntityPtr other_shape), const Capture& capture) override;
 		void remove_trigger_listener(void* lis) override;
-
-		void create();
-		void destroy();
 
 		void on_added() override;
 		void on_removed() override;

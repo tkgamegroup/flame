@@ -41,6 +41,11 @@ namespace flame
 			entity->component_data_changed(this, S<"euler"_h>);
 	}
 
+	void cNodePrivate::add_euler(const vec3& e)
+	{
+		set_euler(eul + e);
+	}
+
 	quat cNodePrivate::get_quat() 
 	{ 
 		if (qut_dirty)
