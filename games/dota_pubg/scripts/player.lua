@@ -105,7 +105,7 @@ function make_player(e)
 
 		for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 			local id = player.equipments[i]
-			if id ~= 0 then
+			if id then
 				local item_type = ITEM_LIST[id]
 				for k, v in pairs(item_type.attributes) do
 					player[k] = player[k] + v

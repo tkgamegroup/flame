@@ -12,6 +12,7 @@ namespace flame
 		float dynamic_friction = 0.2f;
 		float restitution = 0.3f;
 		vec3 disp = vec3(0.f);
+		float floating_time = 0.f;
 
 		physics::Controller* phy_controller = nullptr;
 

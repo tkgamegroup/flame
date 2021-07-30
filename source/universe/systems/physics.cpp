@@ -15,6 +15,8 @@ namespace flame
 {
 	using namespace physics;
 
+	const inline auto gravity = -5.f;
+
 	uint sPhysicsPrivate::Visualizer::draw(uint layer, sRendererPtr s_renderer)
 	{
 		layer++;
@@ -77,7 +79,7 @@ namespace flame
 
 	void sPhysicsPrivate::on_added()
 	{
-		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), -9.81f, 2));
+		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), gravity, 2));
 		physics_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
 			auto tri_shp = (EntityPtr)trigger_shape->user_data;
 			auto oth_shp = (EntityPtr)other_shape->user_data;
@@ -102,10 +104,11 @@ namespace flame
 				continue;
 
 			auto disp = c->disp;
-			disp.y -= 1.f;
-			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
-			// o->floatingTime += dist;
-			c->phy_controller->move(disp, delta_time);
+			disp.y += (c->floating_time + delta_time) * gravity;
+			if (c->phy_controller->move(disp, delta_time))
+				c->floating_time = 0.f;
+			else
+				c->floating_time += delta_time;
 			c->disp = vec3(0.f);
 		}
 

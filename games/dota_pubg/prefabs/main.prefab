@@ -30,39 +30,39 @@
             <eButton name="settings_btn" text="Settings" />
           </eElement>
           <eElement layout_type="Horizontal">
-            <entity name="skill_slot1" src="skill_slot" tip.text="Q" />
-            <entity name="skill_slot2" src="skill_slot" tip.text="W" />
-            <entity name="skill_slot3" src="skill_slot" tip.text="E" />
-            <entity name="skill_slot4" src="skill_slot" tip.text="R" />
-            <entity name="skill_slot5" src="skill_slot" tip.text="D" />
-            <entity name="skill_slot6" src="skill_slot" tip.text="F" />
+            <entity name="skill_slot1" src="prefabs/ui/skill_slot" tip.text="Q" />
+            <entity name="skill_slot2" src="prefabs/ui/skill_slot" tip.text="W" />
+            <entity name="skill_slot3" src="prefabs/ui/skill_slot" tip.text="E" />
+            <entity name="skill_slot4" src="prefabs/ui/skill_slot" tip.text="R" />
+            <entity name="skill_slot5" src="prefabs/ui/skill_slot" tip.text="D" />
+            <entity name="skill_slot6" src="prefabs/ui/skill_slot" tip.text="F" />
           </eElement>
           <eElement layout_type="Vertical">
             <eElement layout_type="Horizontal">
-              <entity name="equipment_slot1" src="item_slot" tip.text="MH" />
-              <entity name="equipment_slot3" src="item_slot" tip.text="HD" />
-              <entity name="equipment_slot5" src="item_slot" tip.text="LG" />
+              <entity name="equipment_slot1" src="prefabs/ui/item_slot" tip.text="MH" />
+              <entity name="equipment_slot3" src="prefabs/ui/item_slot" tip.text="HD" />
+              <entity name="equipment_slot5" src="prefabs/ui/item_slot" tip.text="LG" />
             </eElement>
             <eElement layout_type="Horizontal">
-              <entity name="equipment_slot2" src="item_slot" tip.text="SH" />
-              <entity name="equipment_slot4" src="item_slot" tip.text="CH" />
-              <entity name="equipment_slot6" src="item_slot" tip.text="FT" />
+              <entity name="equipment_slot2" src="prefabs/ui/item_slot" tip.text="SH" />
+              <entity name="equipment_slot4" src="prefabs/ui/item_slot" tip.text="CH" />
+              <entity name="equipment_slot6" src="prefabs/ui/item_slot" tip.text="FT" />
             </eElement>
           </eElement>
           <eElement layout_type="Vertical">
             <eElement layout_type="Horizontal">
-              <entity name="item_slot1" src="item_slot" tip.text="1" />
-              <entity name="item_slot2" src="item_slot" tip.text="2" />
-              <entity name="item_slot3" src="item_slot" tip.text="3" />
-              <entity name="item_slot4" src="item_slot" tip.text="4" />
-              <entity name="item_slot5" src="item_slot" tip.text="5" />
+              <entity name="item_slot1" src="prefabs/ui/item_slot" tip.text="1" />
+              <entity name="item_slot2" src="prefabs/ui/item_slot" tip.text="2" />
+              <entity name="item_slot3" src="prefabs/ui/item_slot" tip.text="3" />
+              <entity name="item_slot4" src="prefabs/ui/item_slot" tip.text="4" />
+              <entity name="item_slot5" src="prefabs/ui/item_slot" tip.text="5" />
             </eElement>
             <eElement layout_type="Horizontal">
-              <entity name="item_slot6" src="item_slot" tip.text="6" />
-              <entity name="item_slot7" src="item_slot" tip.text="7" />
-              <entity name="item_slot8" src="item_slot" tip.text="8" />
-              <entity name="item_slot9" src="item_slot" tip.text="9" />
-              <entity name="item_slot10" src="item_slot" tip.text="0" />
+              <entity name="item_slot6" src="prefabs/ui/item_slot" tip.text="6" />
+              <entity name="item_slot7" src="prefabs/ui/item_slot" tip.text="7" />
+              <entity name="item_slot8" src="prefabs/ui/item_slot" tip.text="8" />
+              <entity name="item_slot9" src="prefabs/ui/item_slot" tip.text="9" />
+              <entity name="item_slot10" src="prefabs/ui/item_slot" tip.text="0" />
             </eElement>
           </eElement>
         </eElement>
@@ -80,7 +80,7 @@
     <eNode>
       <eNode src="prefabs/sky" name="sky" />
       <eCamera name="camera" current="true">
-        <cScript src="camera.lua" />
+        <cScript src="scripts/camera.lua" />
       </eCamera>
       <eNode src="terrain.prefab" />
       <eNode src="water.prefab" pos="0,33,0">

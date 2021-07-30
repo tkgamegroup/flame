@@ -153,7 +153,7 @@ ui_action_tip2.image = ui_action_tip2.find_component("cImage")
 local ui_tip = nil
 
 ui_floating_tips = {}
-local e_floating_tip = create_entity("floating_tip")
+local e_floating_tip = create_entity("prefabs/ui/floating_tip")
 function new_floating_tip(pos, sp, str)
 	local item = {}
 	item.e = e_floating_tip.copy()
@@ -265,7 +265,7 @@ obj_root.add_event(function()
 	function new_tip(p)
 		has_tip = true
 		if not ui_tip then
-			ui_tip = create_entity("tip")
+			ui_tip = create_entity("prefabs/ui/tip")
 			ui_tip.data = p
 			ui_tip.element = ui_tip.find_component("cElement")
 			ui_tip.text = ui_tip.find_component("cText")
@@ -287,6 +287,23 @@ obj_root.add_event(function()
 				str = str.."\n"..string.format("%s %s", k, tostring(v))
 			end
 		end
+		return str
+	end
+
+	function skill_tip(skill_type)
+		local str = skill_type.display_name
+		if skill_type.type == "ACTIVE" then
+			str = str.."\n".."Active"
+			if skill_type.target_type == "ENEMY" then
+				str = str.."\n".."Target: Enemy"
+				str = str.."\n"..string.format("Distance: %d", skill_type.distance)
+			end
+			str = str.."\n"..string.format("Mana: %d", skill_type.cost_mana / 10)
+			str = str.."\n"..string.format("Cooldown: %ds", skill_type.cool_down / 60)
+		else
+			str = str.."\n".."Passive"
+		end
+		str = str.."\n"..skill_type.description
 		return str
 	end
 
@@ -392,11 +409,23 @@ obj_root.add_event(function()
 		if not has_tip then
 			for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 				local ui_slot = ui_equipment_slots[i]
-				local equipment = main_player.equipments[i]
-				if equipment ~= 0 and ui_slot.receiver.p == hovering_r then
+				local slot = main_player.equipments[i]
+				if slot and ui_slot.receiver.p == hovering_r then
 					if new_tip(ui_slot.receiver.p) then
 						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						ui_tip.text.set_text(item_tip(ITEM_LIST[equipment]))
+						ui_tip.text.set_text(item_tip(ITEM_LIST[slot]))
+					end
+				end
+			end
+		end
+		if not has_tip then
+			for i=1, SKILL_SLOTS_COUNT, 1 do
+				local ui_slot = ui_skill_slots[i]
+				local slot = main_player.skills[i]
+				if slot and ui_slot.receiver.p == hovering_r then
+					if new_tip(ui_slot.receiver.p) then
+						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
+						ui_tip.text.set_text(skill_tip(SKILL_LIST[slot.id]))
 					end
 				end
 			end
@@ -552,7 +581,7 @@ local attributes_btn = scene.find_child("attributes_btn")
 attributes_btn.wnd = nil
 attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	if not attributes_btn.wnd_openning then
-		attributes_btn.wnd = create_entity("attributes")
+		attributes_btn.wnd = create_entity("prefabs/ui/attributes")
 		attributes_btn.wnd.find_driver("dWindow").add_close_listener(function()
 			__ui_pop.remove_child(attributes_btn.wnd)
 			attributes_btn.wnd = nil
@@ -662,13 +691,11 @@ for i=1, grid_num * grid_num, 1 do
 	grids[i] = false
 end
 
-local e_chest = create_entity("chest")
+local e_chest = create_entity("prefabs/chest")
 function add_item_obj(pos, item_id, item_num)
 	local e = e_chest.copy()
 	e.set_name("item_obj_"..tostring(math.random(1, 10000)))
-    e.find_component("cNode").set_pos(vec3(pos.x, 
-        terrain_height_tex.linear_sample(vec2(pos.x / terrain_ext.x, pos.y / terrain_ext.x), 0, 0).x * terrain_ext.y + 0.1, 
-    pos.y))
+    e.find_component("cNode").set_pos(s_physics.raycast(vec3(pos.x, 1000, pos.y), vec3(0, -1, 0)))
 	make_item_obj(e, item_id, item_num)
 	obj_root.add_child(e)
 end
@@ -677,7 +704,7 @@ local e_projectiles = {}
 function add_projectile(name, target, pos, sp, cb)
 	local e = e_projectiles[name]
 	if not e then
-		e = create_entity(name)
+		e = create_entity("prefabs/projectiles/"..name)
 		e_projectiles[name] = e
 	end
 	e = e.copy()
@@ -688,32 +715,32 @@ end
 
 add_item_obj(vec3(0, -200, 0), 1, 1)
 
-local e_player = create_entity("player")
+local e_player = create_entity("prefabs/player")
 
 local e = e_player.copy()
 e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
-main_player.learn_skill(1)
+main_player.learn_skill("fire_ball")
 main_player.awake()
 obj_root.add_child(e)
 
 local e_grasses = {}
-table.insert(e_grasses, { e=create_entity("grass1"), p=0.35 })
-table.insert(e_grasses, { e=create_entity("grass2"), p=0.35 })
-table.insert(e_grasses, { e=create_entity("grass3"), p=0.1 })
-table.insert(e_grasses, { e=create_entity("grass4"), p=0.1 })
-table.insert(e_grasses, { e=create_entity("grass5"), p=0.05 })
-table.insert(e_grasses, { e=create_entity("grass6"), p=0.05 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass1"), p=0.35 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass2"), p=0.35 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass3"), p=0.1 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass4"), p=0.1 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass5"), p=0.05 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass6"), p=0.05 })
 
 local e_trees = {}
-table.insert(e_trees, { e=create_entity("tree1"), p=0.5 })
-table.insert(e_trees, { e=create_entity("tree2"), p=0.5 })
+table.insert(e_trees, { e=create_entity("prefabs/tree1"), p=0.5 })
+table.insert(e_trees, { e=create_entity("prefabs/tree2"), p=0.5 })
 
 local e_rocks = {}
-table.insert(e_rocks, { e=create_entity("rock1"), p=0.35 })
-table.insert(e_rocks, { e=create_entity("rock2"), p=0.35 })
-table.insert(e_rocks, { e=create_entity("rock3"), p=0.3 })
+table.insert(e_rocks, { e=create_entity("prefabs/rock1"), p=0.35 })
+table.insert(e_rocks, { e=create_entity("prefabs/rock2"), p=0.35 })
+table.insert(e_rocks, { e=create_entity("prefabs/rock3"), p=0.3 })
 
 function build_grid(x, z)
 	if x < 0 then x = 0 end
@@ -725,9 +752,14 @@ function build_grid(x, z)
 		grids[idx] = true
 
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 0.3, e_grasses, 0.04, 35.0, 0.8, vec2(0, 360), vec2(3.8, 4.5))
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 3.0, e_trees, 0.1, 35.0, 0.9, vec2(0, 360), vec2(0.8, 1.0))
-		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 4.0, e_rocks, 0.1, 0.0, 0.0, vec2(0, 360), vec2(0.7, 0.9))
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
+			0.3, e_grasses, 0.04, vec2(35.0, 200), vec2(0.8, 1.0), vec2(0, 360), vec2(3.8, 4.5))
+
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
+			3.0, e_trees, 0.1, vec2(35.0, 200), vec2(0.9, 1.0), vec2(0, 360), vec2(0.8, 1.0))
+
+		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
+			4.0, e_rocks, 0.1, vec2(0.0, 200), vec2(0.0, 1.0), vec2(0, 360), vec2(0.7, 0.9))
 	end
 end
 
@@ -736,7 +768,7 @@ function add_creep(pos, ID)
 	local data = NPC_LIST[ID]
 	local e = e_npcs[data.name]
 	if e == nil then
-		e = create_entity(data.name)
+		e = create_entity("prefabs/"..data.name)
 		e_npcs[data.name] = e
 	end
 	e = e.copy()

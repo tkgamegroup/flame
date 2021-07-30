@@ -44,6 +44,7 @@ function make_character(entity, group, stats)
 		MP_RECOVER =	stats and stats.MP_RECOVER or 0,
 		MOV_SP =		stats and stats.MOV_SP or 0,
 		ATK =			stats and stats.ATK or 0,
+		ARMOR =			stats and stats.ARMOR or 0,
 
 		recover_tick = 0
 	}
@@ -58,7 +59,7 @@ function make_character(entity, group, stats)
 
 	character.equipments = {}
 	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
-		character.equipments[i] = 0
+		character.equipments[i] = nil
 	end
 
 	character.items = {}
@@ -66,7 +67,7 @@ function make_character(entity, group, stats)
 		character.items[i] = nil
 	end
 
-	character.ui = create_entity("character_hud")
+	character.ui = create_entity("prefabs/ui/character_hud")
 	character.ui.set_visible(false)
 	character.ui.element = character.ui.find_component("cElement")
 	character.ui.hp_bar = character.ui.find_child("hp_bar").find_component("cElement")
@@ -293,6 +294,7 @@ function make_character(entity, group, stats)
 	end
 
 	character.calc_stats = function()
+
 	end
 
 	character.learn_skill = function(id)
@@ -379,7 +381,7 @@ function make_character(entity, group, stats)
 
 				character.items[idx] = nil
 
-				if ori_id ~= 0 then
+				if ori_id then
 					character.receive_item(ori_id, 1)
 				end
 				character.calc_stats()
@@ -394,7 +396,7 @@ function make_character(entity, group, stats)
 
 	character.take_off_equipment = function(idx)
 		local id = character.equipments[idx]
-		if id ~= 0 then
+		if id then
 			if character.receive_item(id, 1) == 0 then
 				character.equipments[idx] = 0
 				character.calc_stats()

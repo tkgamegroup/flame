@@ -18,10 +18,10 @@ function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, 
                             (range.y + (y + math.random() - 0.5) * density) / extent.x)
             if math.random() < probability then
                 local height = height_tex.linear_sample(uv, 0, 0).x * extent.y
-                if height > height_constraint then
+                if height > height_constraint.x and height < height_constraint.y then
                     local normal = vec3(normal_tex.linear_sample(uv, 0, 0)) * 2 - vec3(1)
                     local ndotup = dot_3(normal, vec3(0, 1, 0))
-                    if ndotup > normal_constraint then
+                    if ndotup > normal_constraint.x and ndotup < normal_constraint.y then
                         local p = math.random()
                         for i=1, n_prefabs, 1 do
                             if p < prefabs[i].p then

@@ -19,7 +19,7 @@ namespace flame
 
 			vec3 get_position() const override;
 			void set_position(const vec3& pos) override;
-			void move(const vec3& disp, float delta_time) override;
+			bool move(const vec3& disp, float delta_time) override;
 		};
 	}
 }

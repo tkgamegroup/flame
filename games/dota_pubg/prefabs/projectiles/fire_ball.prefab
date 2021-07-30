@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-    <eParticleEmitter img="D:\assets\Fireball - Effect\Effects_Fire_0_01.png" 
+    <eParticleEmitter img="D:\assets\Fireball_Effect\Effects_Fire_0_01.png" 
                     ptc_num_max="6" emt_intv="3" emt_prob="1.0" emt_num="1" 
                     emt_ttl="216000"
                     emt_hsva="0,0,2.0,1"

@@ -16,18 +16,18 @@ int main(int argc, char** args)
 
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"terrain_scatter.lua");
-	script_ins->excute_file(L"character.lua");
-	script_ins->excute_file(L"player.lua");
-	script_ins->excute_file(L"npc.lua");
-	script_ins->excute_file(L"skill.lua");
-	script_ins->excute_file(L"item.lua");
-	script_ins->excute_file(L"projectile.lua");
+	script_ins->excute_file(L"scripts/character.lua");
+	script_ins->excute_file(L"scripts/player.lua");
+	script_ins->excute_file(L"scripts/npc.lua");
+	script_ins->excute_file(L"scripts/skill.lua");
+	script_ins->excute_file(L"scripts/item.lua");
+	script_ins->excute_file(L"scripts/projectile.lua");
 	{
 		auto e = Entity::create();
-		e->load(L"main");
+		e->load(L"prefabs/main");
 		w->root->add_child(e);
 	}
-	script_ins->excute_file(L"main.lua");
+	script_ins->excute_file(L"scripts/main.lua");
 
 	//w->s_physics->set_visualization(true);
 

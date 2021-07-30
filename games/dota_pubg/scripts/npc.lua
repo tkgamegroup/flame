@@ -8,13 +8,18 @@ NPC_LIST = {
 			HP_RECOVER = 5,
 			MP_RECOVER = 5,
 			MOV_SP = 100,
-			ATK = 100
+			ATK = 100,
+			ARMOR = 2
 		},
 		drop_gold = 10,
 		drop_exp = 40,
 		drop_items = {
-			{ prob=0.1, id=1, min_num=1, max_num=1 },
-			{ prob=0.1, id=2, min_num=1, max_num=1 },
+			{ prob=0.1, id="wooden_stick", min_num=1, max_num=1 },
+			{ prob=0.1, id="wooden_shield", min_num=1, max_num=1 },
+			{ prob=0.1, id="leather_hat", min_num=1, max_num=1 },
+			{ prob=0.1, id="leather_clothes", min_num=1, max_num=1 },
+			{ prob=0.1, id="leather_pants", min_num=1, max_num=1 },
+			{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 },
 		}
 	}
 }
@@ -58,7 +63,7 @@ function make_npc(e, data)
 				for i=1, #npc.drop_items, 1 do
 					local item = npc.drop_items[i]
 					if math.random() < item.prob then
-						add_item_obj(npc.pos.to_flat() + circle_rand(math.random() * 1.5), item.id, math.random(item.min_num, item.max_num))
+						add_item_obj(npc.pos.to_flat() + circle_rand(1.0), item.id, math.random(item.min_num, item.max_num))
 					end
 				end
 			end

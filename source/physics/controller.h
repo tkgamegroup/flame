@@ -12,7 +12,7 @@ namespace flame
 
 			virtual vec3 get_position() const = 0;
 			virtual void set_position(const vec3& pos) = 0;
-			virtual void move(const vec3& disp, float delta_time) = 0;
+			virtual bool move(const vec3& disp, float delta_time) = 0;
 
 			void* user_data;
 

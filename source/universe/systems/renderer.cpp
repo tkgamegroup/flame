@@ -1996,6 +1996,7 @@ namespace flame
 			nd.buf_mesh_armatures.upload(cb);
 			nd.buf_terrain.upload(cb);
 			nd.buf_water.upload(cb);
+			nd.buf_ptc_vtx.upload(cb);
 			nd.buf_light_infos.upload(cb);
 			nd.buf_tile_lights.upload(cb);
 			nd.buf_dir_shadows.upload(cb);
@@ -2137,6 +2138,29 @@ namespace flame
 					draw_waters();
 				}
 
+				if (nd.particles.size() > 1)
+				{
+					cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
+					cb->bind_pipeline(nd.pl_ptc);
+					{
+						DescriptorSet* sets[PLL_particle::Binding_Max];
+						sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
+						sets[PLL_particle::Binding_material] = nd.ds_material.get();
+						cb->bind_descriptor_sets(0, _countof(sets), sets);
+					}
+					auto cnt = 0;
+					for (auto& vec : nd.particles)
+					{
+						if (vec.second == 0)
+							continue;
+						cb->draw(vec.second, 1, cnt, vec.first);
+						cnt += vec.second;
+					}
+
+					nd.particles.clear();
+					nd.particles.emplace_back(0xffff, 0);
+				}
+
 				cb->end_renderpass();
 			}
 			else
@@ -2200,33 +2224,6 @@ namespace flame
 				}
 
 				cb->end_renderpass();
-			}
-
-			if (nd.particles.size() > 1)
-			{
-				nd.buf_ptc_vtx.upload(cb);
-
-				cb->begin_renderpass(nullptr, nd.fb_fwd.get());
-				cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
-				cb->bind_pipeline(nd.pl_ptc);
-				{
-					DescriptorSet* sets[PLL_particle::Binding_Max];
-					sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
-					sets[PLL_particle::Binding_material] = nd.ds_material.get();
-					cb->bind_descriptor_sets(0, _countof(sets), sets);
-				}
-				auto cnt = 0;
-				for (auto& vec : nd.particles)
-				{
-					if (vec.second == 0)
-						continue;
-					cb->draw(vec.second, 1, cnt, vec.first);
-					cnt += vec.second;
-				}
-				cb->end_renderpass();
-
-				nd.particles.clear();
-				nd.particles.emplace_back(0xffff, 0);
 			}
 
 			cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);

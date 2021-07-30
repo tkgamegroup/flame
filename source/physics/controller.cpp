@@ -39,13 +39,10 @@ namespace flame
 #endif
 		}
 
-		void ControllerPrivate::move(const vec3& disp, float delta_time)
+		bool ControllerPrivate::move(const vec3& disp, float delta_time)
 		{
 #ifdef USE_PHYSX
-			px_controller->move(cvt(disp), 0.f, delta_time, {});
-
-			// if (o->pxController->move(disp, 0.f, dist, nullptr) & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)
-			//	o->floatingTime = 0.f;
+			return px_controller->move(cvt(disp), 0.f, delta_time, {}).isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
 #endif
 		}
 
