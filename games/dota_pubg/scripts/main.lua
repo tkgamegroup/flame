@@ -4,11 +4,6 @@ obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
 projectile_root = scene.find_child("projectile_root")
 
-TAG_TERRAIN = 1
-TAG_CHARACTER_G1 = 2
-TAG_CHARACTER_G2 = 4
-TAG_ITEM_OBJ = 8
-
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
 hovering_obj = nil
@@ -173,13 +168,13 @@ obj_root.add_event(function()
 	frame = flame_get_frame()
 
 	-- process characters
-	for g=1, 2, 1 do
-		for _, char in pairs(characters[g]) do
-			if not char.sleeping then
-				char.tick()
+	for _, g in pairs({ TAG_CHARACTER_G1, TAG_CHARACTER_G2 }) do
+		for _, chr in pairs(characters[g]) do
+			if not chr.sleeping then
+				chr.tick()
 			end
-			if char.pos.y < -100 then
-				char.die()
+			if chr.pos.y < -100 then
+				chr.die()
 			end
 		end
 	end
@@ -273,10 +268,19 @@ obj_root.add_event(function()
 
 	function item_tip(item_type)
 		local str = item_type.display_name
-		if item_type.type == "EQUIPMENT" then
+		if item_type.type == "Equipment" then
 			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.slot]
 			for k, v in pairs(item_type.attributes) do
-				str = str.."\n"..string.format("%s %s", k, tostring(v))
+				if type(v) == "string" then
+					str = str.."\n"..string.format("%s: %s", k, v)
+				else
+					if v.a then
+						str = str.."\n"..string.format("+%d %s", v, k)
+					end
+					if v.p then
+						str = str.."\n"..string.format("+%d%% %s", v, k)
+					end
+				end
 			end
 		end
 		return str
@@ -284,9 +288,9 @@ obj_root.add_event(function()
 
 	function skill_tip(skill_type)
 		local str = skill_type.display_name
-		if skill_type.type == "ACTIVE" then
+		if skill_type.type == "Active" then
 			str = str.."\n".."Active"
-			if skill_type.target_type == "ENEMY" then
+			if skill_type.target_type == "Enemy" then
 				str = str.."\n".."Target: Enemy"
 				str = str.."\n"..string.format("Distance: %d", skill_type.distance)
 			end
@@ -305,7 +309,7 @@ obj_root.add_event(function()
 		local d = normalize_3(camera.camera.screen_to_world(mpos) - o)
 		local arr = flame_malloc(8)
 		hovering_pos = s_physics.raycast(o, d, arr)
-		local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+		local p = flame_get_p(arr, 0)
 		flame_free(arr)
 
 		local _hovering_entity = { p=nil }
@@ -319,7 +323,7 @@ obj_root.add_event(function()
 				if (tag & select_mode_filters) == 0 then
 					local arr = flame_malloc(8)
 					if obj_root_n.get_within_circle(hovering_pos.to_flat(), 5, arr, 1, select_mode_filters) > 0 then
-						local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+						local p = flame_get_p(arr, 0)
 						flame_free(arr)
 						if p then
 							_hovering_entity = make_entity(p)
@@ -366,9 +370,9 @@ obj_root.add_event(function()
 				if tag == TAG_TERRAIN then
 					hovering_obj = { tag=TAG_TERRAIN }
 				elseif tag == TAG_CHARACTER_G1 and name ~= "main_player" then
-					hovering_obj = characters[1][name]
+					hovering_obj = characters[TAG_CHARACTER_G1][name]
 				elseif tag == TAG_CHARACTER_G2 then
-					hovering_obj = characters[2][name]
+					hovering_obj = characters[TAG_CHARACTER_G2][name]
 				elseif tag == TAG_ITEM_OBJ then
 					hovering_obj = item_objs[name]
 				end
@@ -469,10 +473,10 @@ function skill_click(idx)
 	local slot = main_player.skills[idx]
 	if slot then
 		local skill_type = SKILL_LIST[slot.id]
-		if skill_type.type == "ACTIVE" and skill_type.cost_mana <= main_player.MP and slot.cd == 0 then
+		if skill_type.type == "Active" and skill_type.cost_mana <= main_player.MP and slot.cd == 0 then
 			if skill_type.target_type ~= "NULL" then
 				local filters = -1
-				if skill_type.target_type == "ENEMY" then filters = TAG_CHARACTER_G2
+				if skill_type.target_type == "Enemy" then filters = TAG_CHARACTER_G2
 				end
 				local element = ui_skill_slots[idx].element
 				element.set_border(2)
@@ -692,6 +696,11 @@ function add_item_obj(pos, item_id, item_num)
 	obj_root.add_child(e)
 end
 
+local e_particles = {}
+function add_particle(name)
+	
+end
+
 local e_projectiles = {}
 function add_projectile(name, target, pos, sp, cb)
 	local e = e_projectiles[name]
@@ -794,11 +803,11 @@ obj_root.add_event(function()
 		end
 	end
 
-	for _, char in pairs(characters[2]) do
-		if obj_root_n.is_any_within_circle(char.pos.to_flat(), 50, TAG_CHARACTER_G1) then
-			char.awake()
+	for _, chr in pairs(characters[TAG_CHARACTER_G2]) do
+		if obj_root_n.is_any_within_circle(chr.pos.to_flat(), 50, TAG_CHARACTER_G1) then
+			chr.awake()
 		else
-			char.sleep()
+			chr.sleep()
 		end
 	end
 end, 1.0)

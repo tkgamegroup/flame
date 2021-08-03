@@ -1,13 +1,13 @@
 characters = {}
-characters[1] = {}
-characters[2] = {}
+characters[TAG_CHARACTER_G1] = {}
+characters[TAG_CHARACTER_G2] = {}
 
-function make_character(entity, group, stats)
+function make_character(entity, tag, stats)
 	local character = {
 		name = entity.get_name(),
-		tag = group == 1 and TAG_CHARACTER_G1 or TAG_CHARACTER_G2,
+		tag = tag,
+		enemy_tag = tag == TAG_CHARACTER_G1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1,
 		dead = false,
-		group = group,
 		sleeping = true,
 
 		entity = entity,
@@ -111,7 +111,7 @@ function make_character(entity, group, stats)
 	__ui_scene.add_child(character.ui)
 
 	character.die = function()
-		characters[character.group][character.name] = nil
+		characters[character.tag][character.name] = nil
 
 		character.entity.get_parent().remove_child(character.entity)
 		character.ui.get_parent().remove_child(character.ui)
@@ -190,15 +190,16 @@ function make_character(entity, group, stats)
 	character.find_closest_obj = function(tag, r)
 		local arr = flame_malloc(8)
 		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, arr, 1, tag)
-		local p = flame_get(arr, 0, e_type_pointer, e_else_type, 1, 1)
+		local p = flame_get_p(arr, 0)
 		flame_free(arr)
 
-		if n == 0 or not p then return nil end
+		if n == 0 then return nil end
 
 		local name = make_entity(p).get_name()
-		if tag == TAG_CHARACTER_G1 then return characters[1][name] end
-		if tag == TAG_CHARACTER_G2 then return characters[2][name] end
+		if tag == TAG_CHARACTER_G1 then return characters[TAG_CHARACTER_G1][name] end
+		if tag == TAG_CHARACTER_G2 then return characters[TAG_CHARACTER_G2][name] end
 		if tag == TAG_ITEM_OBJ then return item_objs[name] end
+		return nil
 	end
 
 	character.aim = function(p)
@@ -280,7 +281,7 @@ function make_character(entity, group, stats)
 			end
 		elseif character.state == "attack_on_pos" then
 			if character.curr_anim ~= 2 then
-				character.target = character.find_closest_obj(character.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
+				character.target = character.find_closest_obj(character.enemy_tag, 5)
 			end
 			
 			if character.target and not character.target.dead then
@@ -438,9 +439,12 @@ function make_character(entity, group, stats)
 		local slot = character.skills[idx]
 		if slot then
 			local skill_type = SKILL_LIST[slot.id]
-			if skill_type.type == "ACTIVE" then
-				if slot.cd == 0 and skill_type.cost_mana <= character.MP and 
-				distance_2(target.pos.to_flat(), character.pos.to_flat()) <= skill_type.distance + 1 then
+			if skill_type.type == "Active" then
+				if slot.cd == 0 and skill_type.cost_mana <= character.MP then
+					if skill_type.target_type ~= "None" and 
+						distance_2(target.pos.to_flat(), character.pos.to_flat()) > skill_type.distance + 1 then
+							return
+					end
 					slot.cd = skill_type.cool_down
 					character.MP = character.MP - skill_type.cost_mana
 					skill_type.logic(character, target)
@@ -497,7 +501,7 @@ function make_character(entity, group, stats)
 		local slot = character.items[idx]
 		if slot then
 			local item_type = ITEM_LIST[slot.id]
-			if item_type.type == "EQUIPMENT" then
+			if item_type.type == "Equipment" then
 				local euip_slot = item_type.slot
 
 				local ori_id = character.equipments[euip_slot]
@@ -538,7 +542,7 @@ function make_character(entity, group, stats)
 
 	character.change_state("idle")
 
-	characters[group][character.name] = character
+	characters[tag][character.name] = character
 
 	return character
 end

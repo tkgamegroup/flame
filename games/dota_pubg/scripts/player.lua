@@ -10,10 +10,11 @@ EXP_NEXT_LIST = {
 }
 
 function make_player(e)
-	local player = make_character(e, 1)
+	local player = make_character(e, TAG_CHARACTER_G1)
 	player.LV = 1
 	player.EXP = 0
 	player.EXP_NEXT = EXP_NEXT_LIST[1]
+	player.GOLD = 0
 	player.STA = new_attribute(10) -- stamina, increase hp max and hp recover
 	player.SPI = new_attribute(10) -- spirit, increase mp max and mp recover
 	player.LUK = new_attribute(10) -- luck,

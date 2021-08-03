@@ -8,6 +8,10 @@ e_floating_type = e_basic["FloatingType"]
 e_char_type = e_basic["CharType"]
 e_else_type = e_basic["ElseType"]
 
+function flame_get_p(p, o)
+	return flame_get(p, o, e_type_pointer, e_else_type, 1, 1)
+end
+
 for k, udt in pairs(udts) do
 	udt.static_functions = {}
 	for k, fi in pairs(udt.functions) do

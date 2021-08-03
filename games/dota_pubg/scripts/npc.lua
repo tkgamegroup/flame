@@ -3,6 +3,7 @@ NPC_LIST = {}
 local n = {
 	name = "zombie",
 	display_name = "Zombie",
+	tag = TAG_CHARACTER_G2,
 	stats = {
 		HP_MAX = 500,
 		MP_MAX = 500,
@@ -29,6 +30,7 @@ NPC_LIST[n.name] = n
 local n = {
 	name = "crazy_zombie",
 	display_name = "Crazy Zombie",
+	tag = TAG_CHARACTER_G2,
 	stats = {
 		HP_MAX = 5000,
 		MP_MAX = 5000,
@@ -54,7 +56,7 @@ NPC_LIST[n.name] = n
 
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
-	local npc = make_character(e, 2, data.stats)
+	local npc = make_character(e, data.tag, data.stats)
 	npc.drop_gold = data.drop_gold
 	npc.drop_exp = data.drop_exp
 	npc.drop_items = data.drop_items
@@ -77,7 +79,7 @@ function make_npc(e, ID)
 				local tar = npc.last_damage_src
 				if tar and (npc.last_damage_src_frame + 90 < frame or distance_3(npc.pos, tar.pos) > 20) then tar = nil end
 				if not tar then
-					tar = npc.find_closest_obj(npc.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
+					tar = npc.find_closest_obj(npc.enemy_tag, 5)
 				end
 				if tar then
 					npc.change_state("attack_target", tar)
@@ -93,12 +95,18 @@ function make_npc(e, ID)
 			if distance_3(npc.pos, npc.chase_start_pos) > 18 or distance_3(npc.pos, npc.target.pos) > 21 then
 				npc.change_state("move_to", npc.chase_start_pos)
 				npc.target_tick = 600
-			elseif npc.curr_anim ~= 2 and npc.target_tick == 0 then
-				local tar = npc.find_closest_obj(npc.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
-				if tar then
-					npc.target = tar
+			elseif npc.curr_anim ~= 2 then
+				if npc.target_tick == 0 then
+					local tar = npc.find_closest_obj(npc.enemy_tag, 5)
+					if tar then
+						npc.target = tar
+					end
+					npc.target_tick = 60
 				end
-				npc.target_tick = 60
+				
+				for i=1, SKILL_SLOTS_COUNT, 1 do
+					npc.use_skill(i)
+				end
 			end
 		end
 	end

@@ -20,7 +20,7 @@ EQUIPMENT_SLOT_NAMES = {
 ITEM_LIST = {}
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "wooden_stick",
 	display_name = "Wooden Stick",
 	stack_num = 1,
@@ -33,7 +33,7 @@ local i = {
 ITEM_LIST[i.name] = i
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "wooden_shield",
 	display_name = "Wooden Shield",
 	stack_num = 1,
@@ -45,7 +45,7 @@ local i = {
 ITEM_LIST[i.name] = i
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "leather_hat",
 	display_name = "Leather Hat",
 	stack_num = 1,
@@ -57,7 +57,7 @@ local i = {
 ITEM_LIST[i.name] = i
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "leather_clothes",
 	display_name = "Leather Clothes",
 	stack_num = 1,
@@ -69,7 +69,7 @@ local i = {
 ITEM_LIST[i.name] = i
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "leather_pants",
 	display_name = "Leather Pants",
 	stack_num = 1,
@@ -81,7 +81,7 @@ local i = {
 ITEM_LIST[i.name] = i
 
 local i = {
-	type = "EQUIPMENT",
+	type = "Equipment",
 	name = "leather_shoes",
 	display_name = "Leather Shoes",
 	stack_num = 1,
