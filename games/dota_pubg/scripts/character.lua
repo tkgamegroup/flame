@@ -22,8 +22,6 @@ function make_character(entity, group, stats)
 
 		radius = 0.28,
 		height = 1.8,
-		speed = 0.06,
-		attack_interval = 100,
 
 		state = "null",
 		state_date = nil,
@@ -32,25 +30,64 @@ function make_character(entity, group, stats)
 		stuck_tick = 0,
 		attack_semp = true,
 		attack_tick = 0,
-		last_receive_damage_src = nil,
+		last_damage_src = nil,
 
 		on_reward = nil,
-
-		HP_MAX =		stats and stats.HP_MAX or 0,
-		HP =			stats and stats.HP_MAX or 0,
-		MP_MAX =		stats and stats.MP_MAX or 0,
-		MP =			stats and stats.MP_MAX or 0,
-		HP_RECOVER =	stats and stats.HP_RECOVER or 0,
-		MP_RECOVER =	stats and stats.MP_RECOVER or 0,
-		MOV_SP =		stats and stats.MOV_SP or 0,
-		ATK =			stats and stats.ATK or 0,
-		ARMOR =			stats and stats.ARMOR or 0,
 
 		recover_tick = 0
 	}
 	
 	entity.set_tag(character.tag)
 	character.pos = character.node.get_global_pos()
+	
+	character.HP_MAX = new_attribute(1000) -- health point max
+	character.MP_MAX = new_attribute(1000) -- magic point max
+	character.HP_REC = new_attribute() -- health point recover
+	character.MP_REC = new_attribute() -- magic point recover
+	character.MOV_SP = new_attribute() -- movement speed
+	
+	character.ATK_TYPE = "Physical"
+	character.ATK_DMG = new_attribute(100) -- attack damage
+	character.ATK_SP = new_attribute() -- attack speed, in frames
+	character.PHY_INC = new_attribute() -- inflicted physical damage increase, in percentage
+	character.PHY_INC.p = nil
+	character.MAG_INC = new_attribute() -- inflicted magical damage increase, in percentage
+	character.MAG_INC.p = nil
+	character.DMG_INC =	new_attribute() -- inflicted damage increase, in percentage
+	character.DMG_INC.p = nil
+
+	character.ARMOR   = new_attribute() -- physical resistance
+	character.MAG_RES =	new_attribute() -- magical resistance
+	character.PHY_RED = new_attribute() -- received physical damage reduction, in percentage
+	character.PHY_RED.p = nil
+	character.MAG_RED = new_attribute() -- received magical damage reduction, in percentage
+	character.MAG_RED.p = nil
+	character.DMG_RED =	new_attribute() -- received damage reduction, in percentage
+	character.DMG_RED.p = nil
+	
+	if stats then
+		if stats.HP_MAX then character.HP_MAX.b = stats.HP_MAX end
+		if stats.MP_MAX then character.MP_MAX.b = stats.MP_MAX end
+		if stats.HP_REC then character.HP_REC.b = stats.HP_REC end
+		if stats.MP_REC then character.MP_REC.b = stats.MP_REC end
+		if stats.MOV_SP then character.MOV_SP.d = stats.MOV_SP end
+
+		if stats.ATK_TYPE then character.ATK_TYPE = stats.ATK_TYPE end
+		if stats.ATK_DMG then character.ATK_DMG.b = stats.ATK_DMG end
+		if stats.ATK_SP then character.ATK_SP.d = stats.ATK_SP end
+		if stats.PHY_INC then character.PHY_INC.b = stats.PHY_INC end
+		if stats.MAG_INC then character.MAG_INC.b = stats.MAG_INC end
+		if stats.DMG_INC then character.DMG_INC.b = stats.DMG_INC end
+
+		if stats.ARMOR then character.ARMOR.b = stats.ARMOR end
+		if stats.MAG_RES then character.MAG_RES.b = stats.MAG_RES end
+		if stats.PHY_RED then character.PHY_RED.b = stats.PHY_RED end
+		if stats.MAG_RED then character.MAG_RED.b = stats.MAG_RED end
+		if stats.DMG_RED then character.DMG_RED.b = stats.DMG_RED end
+	end
+
+	character.HP = character.HP_MAX.t
+	character.MP = character.MP_MAX.t
 
 	character.skills = {}
 	for i=1, SKILL_SLOTS_COUNT, 1 do
@@ -106,7 +143,7 @@ function make_character(entity, group, stats)
 		elseif s == "attack_target" then
 			character.target = t
 			character.state = s
-		elseif s == "use_skill_to_target" then
+		elseif s == "use_skill_on_target" then
 			character.target = t
 			character.state_date = d
 			character.state = s
@@ -116,19 +153,31 @@ function make_character(entity, group, stats)
 		end
 	end
 
-	character.receive_damage = function(src, value)
-		character.last_receive_damage_src = src
-
-		local c = camera.camera
-		local p1 = c.world_to_screen(character.pos + vec3(0, 1.8, 0))
-		local p2 = c.world_to_screen(src.pos + vec3(0, 1.8, 0))
-		local l, d = length_and_dir_2(p1 - p2)
-		if d then
-			l = d * 2
+	character.inflict_damage = function(tar, type, value)
+		if type == "Physical" then
+			value = value * (1.0 + character.PHY_INC.t / 100.0)
 		else
-			l = vec2(0, -2)
+			value = value * (1.0 + character.MAG_INC.t / 100.0)
 		end
-		new_floating_tip(p1, l, tostring(math.floor(value / 10.0)))
+		value = value * (1.0 + character.DMG_INC.t / 100.0)
+		tar.receive_damage(character, type, value)
+	end
+
+	character.receive_damage = function(src, type, value)
+		character.last_damage_src = src
+
+		local cam = camera.camera
+		local p1 = cam.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-50, -16, -50, -16))
+		if p1.x < 10000 then
+			local p2 = cam.world_to_screen(src.pos + vec3(0, 1.8, 0), vec4(0))
+			local l, d = length_and_dir_2(p1 - p2)
+			if d then
+				d = d * 2
+			else
+				d = vec2(0, -2)
+			end
+			new_floating_tip(p1, d, tostring(math.floor(value / 10.0)))
+		end
 
 		if character.HP > value then
 			character.HP = character.HP - value
@@ -138,17 +187,11 @@ function make_character(entity, group, stats)
 	end
 
 	character.receive_heal = function(src, value)
-		character.HP = character.HP + value
-		if character.HP > character.HP_MAX then
-			character.HP = character.HP_MAX
-		end
+		character.HP = math.min(character.HP + value, character.HP_MAX.t)
 	end
 
 	character.receive_mana = function(src, value)
-		character.MP = character.MP + value
-		if character.MP > character.MP_MAX then
-			character.MP = character.MP_MAX
-		end
+		character.MP = math.min(character.MP + value, character.MP_MAX.t)
 	end
 
 	character.find_closest_obj = function(tag, r)
@@ -165,47 +208,62 @@ function make_character(entity, group, stats)
 		if tag == TAG_ITEM_OBJ then return item_objs[name] end
 	end
 
-	character.move_to_pos = function(tp, r)
-		local v = tp - character.pos.to_flat()
-		local l, d = length_and_dir_2(v)
-		if d then -- aim
+	character.aim = function(p)
+		local l, d = length_and_dir_2(p - character.pos.to_flat())
+		if d then
 			character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
 		end
+		return l, d
+	end
 
-		if l <= character.speed + r then
+	character.move = function(d)
+		character.armature.play(1, character.MOV_SP.p, true)
+		character.controller.move(vec3(d.x, 0, d.y) * character.MOV_SP.t)
+	end
+
+	character.move_to_pos = function(tp, r)
+		local l, d = character.aim(tp)
+
+		if l <= character.MOV_SP.t + r then
 			return true
 		end
 
-		local ratio = character.MOV_SP / 100.0
-		character.armature.play(1, ratio, true)
-		character.controller.move(vec3(d.x, 0, d.y) * character.speed * ratio)
+		character.move(d)
 		return false
 	end
 
 	character.attack_target = function()
-		local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
-		if d then -- aim
-			character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
-		end
+		local l, d = character.aim(character.target.pos.to_flat())
+
 		if character.curr_anim ~= 2 then
 			if l <= character.radius + character.target.radius + 1 then
 				if character.attack_tick == 0 then
-					character.attack_tick = character.attack_interval
-					character.armature.play(2, 1.0, false)
+					character.attack_tick = character.ATK_SP.t
+					character.armature.play(2, character.ATK_SP.p, false)
 					character.attack_semp = true
 				else
 					character.armature.stop_at(2, -1)
 				end
 			else
-				character.armature.play(1, 1.0, true)
-				character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+				character.move(d)
 			end
 		elseif character.attack_semp and (character.curr_frame == -1 or character.curr_frame >= 12) then
 			if l <= character.radius + character.target.radius + 3 then
-				character.target.receive_damage(character, math.floor(0.5 + character.ATK * (math.random() * 0.2 + 0.9)))
+				character.inflict_damage(character.target, character.ATK_TYPE, math.floor(0.5 + character.ATK_DMG.t * (math.random() * 0.2 + 0.9)))
 			end
 			character.attack_semp = false
 		end
+	end
+
+	character.pick_up_target = function()
+		local item_obj = character.target
+		if character.move_to_pos(item_obj.pos.to_flat(), 0.2) then
+			if character.receive_item(item_obj.id, item_obj.num) == 0 then
+				item_obj.die()
+			end
+			return true
+		end
+		return false
 	end
 
 	character.process_state = function()
@@ -228,25 +286,22 @@ function make_character(entity, group, stats)
 				character.change_state("idle")
 			end
 		elseif character.state == "pick_up" then
-			if not character.target or character.target.dead then
-				character.change_state("idle")
-			else
+			if character.target and not character.target.dead then
 				if character.pick_up_target() then
 					character.change_state("idle")
 				end
+			else
+				character.target = nil
+				character.change_state("idle")
 			end
-		elseif character.state == "use_skill_to_target" then
+		elseif character.state == "use_skill_on_target" then
 			if character.target and not character.target.dead then
-				local l, d = length_and_dir_2(character.target.pos.to_flat() - character.pos.to_flat())
-				if d then -- aim
-					character.node.set_euler(vec3(math.atan(d.x, d.y) / 3.14 * 180, 0, 0))
-				end
+				local l, d = character.aim(character.target.pos.to_flat())
 				if l <= character.state_date.dist then
 					character.use_skill(character.state_date.idx, character.target)
 					character.change_state("idle")
 				else
-					character.armature.play(1, 1.0, true)
-					character.controller.move(vec3(d.x * character.speed, 0, d.y * character.speed))
+					character.move(d)
 				end
 			else
 				character.target = nil
@@ -263,11 +318,11 @@ function make_character(entity, group, stats)
 		character.curr_frame = character.armature.get_curr_frame()
 		
 		local show_ui = false
-		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0))
-		if ui_pos.x > -100 then
+		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-60, -6, -60, -6))
+		if ui_pos.x < 10000 then
 			show_ui = true
 			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX)
+			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX.t)
 		end
 		character.ui.set_visible(show_ui)
 
@@ -278,8 +333,8 @@ function make_character(entity, group, stats)
 		if character.recover_tick > 0 then
 			character.recover_tick = character.recover_tick - 1
 		else
-			character.receive_heal(character, character.HP_RECOVER)
-			character.receive_mana(character, character.MP_RECOVER)
+			character.receive_heal(character, character.HP_REC.t)
+			character.receive_mana(character, character.MP_REC.t)
 			character.recover_tick = 60
 		end
 
@@ -293,8 +348,71 @@ function make_character(entity, group, stats)
 		character.process_state()
 	end
 
-	character.calc_stats = function()
+	character.collect_attribute = function(n)
+		local a = character[n]
+		if a.a then a.a = 0 end
+		if a.p then a.p = 0 end
+		for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
+			local id = character.equipments[i]
+			if id then
+				local _a = ITEM_LIST[id].attributes[n]
+				if _a then
+					if _a.a then
+						a.a = a.a + _a.a
+					end
+					if _a.p then
+						a.p = a.p + _a.p
+					end
+				end
+			end
+		end
+	end
 
+	character.calc_stats = function()
+		local hp_ratio = character.HP_MAX.t > 0 and character.HP / character.HP_MAX.t or 1.0
+		local mp_ratio = character.MP_MAX.t > 0 and character.MP / character.MP_MAX.t or 1.0
+
+		character.collect_attribute("HP_MAX")
+		character.HP_MAX.calc()
+		character.collect_attribute("MP_MAX")
+		character.MP_MAX.calc()
+		character.collect_attribute("HP_REC")
+		character.HP_REC.calc()
+		character.collect_attribute("MP_REC")
+		character.MP_REC.calc()
+		character.collect_attribute("MOV_SP")
+		character.MOV_SP.p = 1.0 + (character.MOV_SP.b + character.MOV_SP.a) / 100.0
+		character.MOV_SP.t = character.MOV_SP.d * character.MOV_SP.p
+		
+		character.collect_attribute("ATK_DMG")
+		character.ATK_DMG.calc()
+		character.collect_attribute("ATK_SP")
+		character.ATK_SP.p = 1.0 + (character.ATK_SP.b + character.ATK_SP.a) / 100.0
+		character.ATK_SP.t = math.floor(character.ATK_SP.d / character.ATK_SP.p)
+		character.collect_attribute("PHY_INC")
+		character.PHY_INC.calc()
+		character.collect_attribute("MAG_INC")
+		character.MAG_INC.calc()
+		character.collect_attribute("DMG_INC")
+		character.DMG_INC.calc()
+		
+		character.collect_attribute("ARMOR")
+		character.ARMOR.calc()
+		character.collect_attribute("MAG_RES")
+		character.MAG_RES.calc()
+		local v = 0.06 * character.ARMOR.t
+		character.PHY_RED.b = math.floor(v / (1.0 + v) * 100.0)
+		character.collect_attribute("PHY_RED")
+		character.PHY_RED.calc()
+		local v = 0.06 * character.MAG_RES.t
+		character.MAG_RED.b = math.floor(v / (1.0 + v) * 100.0)
+		character.collect_attribute("MAG_RED")
+		character.MAG_RED.calc()
+		character.collect_attribute("DMG_RED")
+		character.DMG_RED.calc()
+
+		character.HP = hp_ratio * character.HP_MAX.t
+		character.MP = mp_ratio * character.MP_MAX.t
 	end
 
 	character.learn_skill = function(id)
@@ -408,10 +526,13 @@ function make_character(entity, group, stats)
 		end
 	end
 
+	if stats then
+		character.calc_stats()
+	end
+
 	character.change_state("idle")
 
 	characters[group][character.name] = character
 
 	return character
-
 end

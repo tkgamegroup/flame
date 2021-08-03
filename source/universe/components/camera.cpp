@@ -62,6 +62,27 @@ namespace flame
 			apply_current();
 	}
 
+	void cCameraPrivate::set_fovy(float v) 
+	{
+		if (fovy == v)
+			return;
+		fovy = v;
+	}
+
+	void cCameraPrivate::set_near(float v) 
+	{
+		if (near == v)
+			return;
+		near = v;
+	}
+
+	void cCameraPrivate::set_far(float v) 
+	{
+		if (far == v)
+			return;
+		far = v;
+	}
+
 	void cCameraPrivate::set_screen_size(const uvec2& sz)
 	{
 		if (screen_size == sz)
@@ -129,18 +150,25 @@ namespace flame
 
 	vec3 cCameraPrivate::screen_to_world(const uvec2& pos)
 	{
-		auto p = proj_inv * vec4((float)pos.x / (float)screen_size.x * 2.f - 1.f, (float)pos.y / (float)screen_size.y * 2.f - 1.f, near, 1.f);
+		auto p = proj_inv * vec4((vec2)pos / (vec2)screen_size * 2.f - 1.f, near, 1.f);
 		p = p / p.w;
 		return view_inv * p;
 	}
 
-	uvec2 cCameraPrivate::world_to_screen(const vec3& pos)
+	ivec2 cCameraPrivate::world_to_screen(const vec3& pos, const ivec4& border)
 	{
 		auto p = proj * view * vec4(pos, 1.f);
 		p = p / p.w;
-		if (p.x < -1.f || p.x > 1.f || p.y < -1.f || p.y > 1.f || p.z < 0.f || p.z > 1.f)
-			return uvec2(-1000);
-		return uvec2((p.x + 1.f) * 0.5f * screen_size.x, (p.y + 1.f) * 0.5f * screen_size.y);
+		if (p.z > 0.f && p.z < 1.f)
+		{
+			auto ret = ivec2((p.xy() + 1.f) * 0.5f * (vec2)screen_size);
+			if (ret.x > border.x &&
+				ret.x < screen_size.x - border.z &&
+				ret.y > border.y &&
+				ret.y < screen_size.y - border.w)
+			return ret;
+		}
+		return ivec2(10000);
 	}
 
 	cCamera* cCamera::create(void* parms)

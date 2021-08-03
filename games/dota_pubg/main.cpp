@@ -16,6 +16,7 @@ int main(int argc, char** args)
 
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"terrain_scatter.lua");
+	script_ins->excute_file(L"scripts/attribute.lua");
 	script_ins->excute_file(L"scripts/character.lua");
 	script_ins->excute_file(L"scripts/player.lua");
 	script_ins->excute_file(L"scripts/npc.lua");

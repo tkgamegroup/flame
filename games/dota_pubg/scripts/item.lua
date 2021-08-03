@@ -26,7 +26,8 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_MAIN_HAND,
 	attributes = {
-		ATK = 5
+		ATK_TYPE = "Physical",
+		ATK_DMG = { a=5 }
 	}
 }
 ITEM_LIST[i.name] = i
@@ -38,7 +39,7 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_SUB_HAND,
 	attributes = {
-		ARMOR = 3
+		ARMOR = { a=3 }
 	}
 }
 ITEM_LIST[i.name] = i
@@ -50,7 +51,7 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_HEAD,
 	attributes = {
-		ARMOR = 1
+		ARMOR = { a=1 }
 	}
 }
 ITEM_LIST[i.name] = i
@@ -62,7 +63,7 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_CHEST,
 	attributes = {
-		ARMOR = 2
+		ARMOR = { a=2 }
 	}
 }
 ITEM_LIST[i.name] = i
@@ -74,7 +75,7 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_LEG,
 	attributes = {
-		ARMOR = 1
+		ARMOR = { a=1 }
 	}
 }
 ITEM_LIST[i.name] = i
@@ -86,8 +87,8 @@ local i = {
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_FOOT,
 	attributes = {
-		ARMOR = 1,
-		MOV_SP = 10
+		ARMOR = { a=1 },
+		MOV_SP = { a=10 }
 	}
 }
 ITEM_LIST[i.name] = i

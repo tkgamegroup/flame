@@ -14,6 +14,16 @@ namespace flame
 		{
 		}
 
+		virtual float get_fovy() const = 0;
+		virtual void set_fovy(float v) = 0;
+		virtual float get_near() const = 0;
+		virtual void set_near(float v) = 0;
+		virtual float get_far() const = 0;
+		virtual void set_far(float v) = 0;
+		virtual uvec2 get_screen_size() const = 0;
+		virtual void set_screen_size(const uvec2& v) = 0;
+
+
 		virtual bool get_current() const = 0;
 		virtual void set_current(bool v) = 0;
 
@@ -21,7 +31,7 @@ namespace flame
 		virtual Frustum get_frustum(float n = -1.f, float f = -1.f) = 0;
 
 		virtual vec3 screen_to_world(const uvec2& pos) = 0;
-		virtual uvec2 world_to_screen(const vec3& pos) = 0;
+		virtual ivec2 world_to_screen(const vec3& pos, const ivec4& border) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cCamera* create(void* parms = nullptr);
 	};

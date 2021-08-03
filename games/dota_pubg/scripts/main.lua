@@ -236,7 +236,7 @@ obj_root.add_event(function()
 	-- action tips
 	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
 		ui_action_tip1.set_visible(true)
-		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos))
+		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos, vec4(0)))
 		ui_action_tip1.image.set_tile("move")
 	else
 		ui_action_tip1.set_visible(false)
@@ -244,7 +244,7 @@ obj_root.add_event(function()
 	if state == "attack_target" or state == "attack_on_pos" then
 		if main_player.target then
 			ui_action_tip2.set_visible(true)
-			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos + vec3(0, 1.8, 0)) + vec2(0, 10))
+			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos + vec3(0, 1.8, 0), vec4(0)) + vec2(0, 10))
 			ui_action_tip2.image.set_tile("attack")
 		else
 			ui_action_tip2.set_visible(false)
@@ -252,7 +252,7 @@ obj_root.add_event(function()
 	elseif state == "pick_up" or state == "pick_up_on_pos" then
 		if main_player.target then
 			ui_action_tip2.set_visible(true)
-			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos) + vec2(0, 10))
+			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos, vec4(0)) + vec2(0, 10))
 			ui_action_tip2.image.set_tile("pick_up")
 		else
 			ui_action_tip2.set_visible(false)
@@ -452,10 +452,10 @@ obj_root.add_event(function()
 		end
 	end
 
-	hp_bar.set_scalex(main_player.HP / main_player.HP_MAX)
-	hp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.HP / 10.0), math.floor(main_player.HP_MAX / 10.0), main_player.HP_RECOVER / 10.0))
-	mp_bar.set_scalex(main_player.MP / main_player.MP_MAX)
-	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX / 10.0), main_player.MP_RECOVER / 10.0))
+	hp_bar.set_scalex(main_player.HP / main_player.HP_MAX.t)
+	hp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.HP / 10.0), math.floor(main_player.HP_MAX.t / 10.0), main_player.HP_REC.t / 10.0))
+	mp_bar.set_scalex(main_player.MP / main_player.MP_MAX.t)
+	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX.t / 10.0), main_player.MP_REC.t / 10.0))
 	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
 
@@ -487,7 +487,7 @@ function skill_click(idx)
 				element.set_border_color(vec4(255, 255, 0, 255))
 				enter_select_mode(filters, function(tag, target)
 					if tag then
-						main_player.change_state("use_skill_to_target", target, { idx=idx, dist=skill_type.distance })
+						main_player.change_state("use_skill_on_target", target, { idx=idx, dist=skill_type.distance })
 					end
 					local element = ui_skill_slots[idx].element
 					element.set_border(1)
@@ -591,9 +591,9 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 		local mp_max_text = attributes_btn.wnd.find_child("mp_max_text").find_component("cText")
 		local lv_text = attributes_btn.wnd.find_child("lv_text").find_component("cText")
 		local exp_text = attributes_btn.wnd.find_child("exp_text").find_component("cText")
-		local phy_dmg_text = attributes_btn.wnd.find_child("phy_dmg_text").find_component("cText")
-		local mag_dmg_text = attributes_btn.wnd.find_child("mag_dmg_text").find_component("cText")
 		local atk_dmg_text = attributes_btn.wnd.find_child("atk_dmg_text").find_component("cText")
+		local arrmor_text = attributes_btn.wnd.find_child("arrmor_text").find_component("cText")
+		local mov_sp_text = attributes_btn.wnd.find_child("mov_sp_text").find_component("cText")
 		local sta_text = attributes_btn.wnd.find_child("sta_text").find_component("cText")
 		local spi_text = attributes_btn.wnd.find_child("spi_text").find_component("cText")
 		local luk_text = attributes_btn.wnd.find_child("luk_text").find_component("cText")
@@ -618,20 +618,20 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 		end
 
 		function update()
-			hp_max_text.set_text(string.format("HP MAX: %d", math.floor(main_player.HP_MAX / 10.0)))
-			mp_max_text.set_text(string.format("MP MAX: %d", math.floor(main_player.MP_MAX / 10.0)))
+			hp_max_text.set_text(string.format("HP MAX: %d", math.floor(main_player.HP_MAX.t / 10.0)))
+			mp_max_text.set_text(string.format("MP MAX: %d", math.floor(main_player.MP_MAX.t / 10.0)))
 			lv_text.set_text(string.format("LV: %d", main_player.LV))
 			exp_text.set_text(string.format("EXP: %d/%d", main_player.EXP, main_player.EXP_NEXT))
-			phy_dmg_text.set_text(string.format("PHY DMG: %d", main_player.PHY_DMG))
-			mag_dmg_text.set_text(string.format("MAG DMG: %d", main_player.MAG_DMG))
-			atk_dmg_text.set_text(string.format("ATK: %d", math.floor(main_player.ATK / 10.0)))
+			atk_dmg_text.set_text(string.format("ATK: %d (%s)", math.floor(main_player.ATK_DMG.t / 10.0), main_player.ATK_TYPE))
+			arrmor_text.set_text(string.format("Arrmor: %d", main_player.ARRMOR.t))
+			mov_sp_text.set_text(string.format("MOV SP: %d", main_player.MOV_SP.a))
 		
-			sta_text.set_text(string.format("STA: %d", main_player.STA))
-			spi_text.set_text(string.format("SPI: %d", main_player.SPI))
-			luk_text.set_text(string.format("LUK: %d", main_player.LUK))
-			str_text.set_text(string.format("STR: %d", main_player.STR))
-			agi_text.set_text(string.format("AGI: %d", main_player.AGI))
-			int_text.set_text(string.format("INT: %d", main_player.INT))
+			sta_text.set_text(string.format("STA: %d", main_player.STA.t))
+			spi_text.set_text(string.format("SPI: %d", main_player.SPI.t))
+			luk_text.set_text(string.format("LUK: %d", main_player.LUK.t))
+			str_text.set_text(string.format("STR: %d", main_player.STR.t))
+			agi_text.set_text(string.format("AGI: %d", main_player.AGI.t))
+			int_text.set_text(string.format("INT: %d", main_player.INT.t))
 			points_text.set_text(string.format("Points: %d", main_player.attribute_points))
 		end
 

@@ -13,7 +13,7 @@ local s = {
 	description = "Shot a fire ball to an enemy unit, deal 30 damage",
 	logic = function(caster, target)
 		add_projectile("fire_ball", target, caster.pos + vec3(0, caster.height * 0.5, 0), 0.2, function()
-			target.receive_damage(caster, math.floor(0.5 + (caster.MAG_DMG * 10 + 300) * (math.random() * 0.2 + 0.9)))
+			caster.inflict_damage(target, "MAGICAL", math.floor(0.5 + 300 * (math.random() * 0.2 + 0.9)))
 		end)
 	end
 }

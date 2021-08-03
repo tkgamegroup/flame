@@ -1,6 +1,12 @@
 EXP_NEXT_LIST = {
-	100,
-	200
+	200,
+	300,
+	400,
+	500,
+	600,
+	700,
+	800,
+	900
 }
 
 function make_player(e)
@@ -8,14 +14,12 @@ function make_player(e)
 	player.LV = 1
 	player.EXP = 0
 	player.EXP_NEXT = EXP_NEXT_LIST[1]
-	player.STA = 10
-	player.SPI = 10
-	player.LUK = 10
-	player.STR = 10
-	player.AGI = 10
-	player.INT = 10
-	player.PHY_DMG = 10
-	player.MAG_DMG = 10
+	player.STA = new_attribute(10) -- stamina, increase hp max and hp recover
+	player.SPI = new_attribute(10) -- spirit, increase mp max and mp recover
+	player.LUK = new_attribute(10) -- luck,
+	player.STR = new_attribute(10) -- strength, increase physical damage by percentage
+	player.AGI = new_attribute(10) -- agile, increase attack speed
+	player.INT = new_attribute(10) -- intelligence, increase physical damage by percentage
 	player.attribute_points = 0
 	
 	local character_change_state = player.change_state
@@ -29,17 +33,6 @@ function make_player(e)
 		else
 			character_change_state(s, t, d)
 		end
-	end
-
-	player.pick_up_target = function()
-		local item_obj = player.target
-		if player.move_to_pos(item_obj.pos.to_flat(), 0.2) then
-			if player.receive_item(item_obj.id, item_obj.num) == 0 then
-				item_obj.die()
-			end
-			return true
-		end
-		return false
 	end
 
 	local character_process_state = player.process_state
@@ -88,43 +81,51 @@ function make_player(e)
 		end
 		if player.LV > lv then
 			local diff = player.LV - lv
-			player.STA = player.STA + diff
-			player.SPI = player.SPI + diff
-			player.LUK = player.LUK + diff
-			player.STR = player.STR + diff
-			player.AGI = player.AGI + diff
-			player.INT = player.INT + diff
+			player.STA.b = player.STA.b + diff
+			player.SPI.b = player.SPI.b + diff
+			player.LUK.b = player.LUK.b + diff
+			player.STR.b = player.STR.b + diff
+			player.AGI.b = player.AGI.b + diff
+			player.INT.b = player.INT.b + diff
 			player.calc_stats()
 			player.attribute_points = player.attribute_points + diff * 5
 		end
 	end
-
+	
+	local character_calc_stats = player.calc_stats
 	player.calc_stats = function()
-		player.ATK = 0
-		player.MOV_SP = 100
-
-		for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
-			local id = player.equipments[i]
-			if id then
-				local item_type = ITEM_LIST[id]
-				for k, v in pairs(item_type.attributes) do
-					player[k] = player[k] + v
-				end
-			end
+		player.ATK_TYPE = "Physical" 
+		local id = player.equipments[EQUIPMENT_SLOT_MAIN_HAND]
+		if id then
+			player.ATK_TYPE = ITEM_LIST[id].attributes.ATK_TYPE
 		end
+		
+		player.collect_attribute("STA")
+		player.STA.calc()
+		player.collect_attribute("SPI")
+		player.SPI.calc()
+		player.collect_attribute("LUK")
+		player.LUK.calc()
+		player.collect_attribute("STR")
+		player.STR.calc()
+		player.collect_attribute("AGI")
+		player.AGI.calc()
+		player.collect_attribute("INT")
+		player.INT.calc()
 
-		local pre_hp_ratio = player.HP_MAX > 0 and player.HP / player.HP_MAX or 1
-		local pre_mp_ratio = player.MP_MAX > 0 and player.MP / player.MP_MAX or 1
-		player.HP_MAX = 1000 + player.STA * 100
-		player.MP_MAX = 1000 + player.SPI * 100
-		player.HP = pre_hp_ratio * player.HP_MAX
-		player.MP = pre_mp_ratio * player.MP_MAX
-		player.HP_RECOVER = player.STA
-		player.MP_RECOVER = player.SPI
-		player.PHY_DMG = player.STR
-		player.MAG_DMG = player.INT
+		player.HP_MAX.b = 1000 + player.STA.t * 100
+		player.MP_MAX.b = 1000 + player.SPI.t * 100
+		player.HP_REC.b = player.STA.t
+		player.MP_REC.b = player.SPI.t
 
-		player.ATK = (player.ATK + player.PHY_DMG) * 10
+		player.MOV_SP.d = 0.06
+
+		player.PHY_INC.b = player.STR.t
+		player.ATK_SP.d = 100
+		player.ATK_SP.b = player.AGI.t
+		player.MAG_INC.b = player.INT.t
+
+		character_calc_stats()
 	end
 
 	player.calc_stats()

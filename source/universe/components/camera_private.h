@@ -27,7 +27,15 @@ namespace flame
 
 		void apply_current();
 
-		void set_screen_size(const uvec2& sz);
+		float get_fovy() const override { return fovy; }
+		void set_fovy(float v) override;
+		float get_near() const override { return near; }
+		void set_near(float v) override;
+		float get_far() const override { return far; }
+		void set_far(float v) override;
+		uvec2 get_screen_size() const override { return screen_size; }
+		void set_screen_size(const uvec2& v) override;
+
 		void update_view();
 		void update_proj();
 
@@ -38,7 +46,7 @@ namespace flame
 		Frustum get_frustum(float n = -1.f, float f = -1.f) override;
 
 		vec3 screen_to_world(const uvec2& pos) override;
-		uvec2 world_to_screen(const vec3& pos) override;
+		ivec2 world_to_screen(const vec3& pos, const ivec4& border) override;
 
 		void on_added() override;
 		void on_removed() override;

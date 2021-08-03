@@ -5,10 +5,11 @@ NPC_LIST = {
 		stats = {
 			HP_MAX = 500,
 			MP_MAX = 500,
-			HP_RECOVER = 5,
-			MP_RECOVER = 5,
-			MOV_SP = 100,
-			ATK = 100,
+			HP_REC = 5,
+			MP_REC = 5,
+			MOV_SP = 0.06,
+			ATK_DMG = 100,
+			ATK_SP = 100,
 			ARMOR = 2
 		},
 		drop_gold = 10,
@@ -57,14 +58,12 @@ function make_npc(e, data)
 	
 	local character_die = npc.die
 	npc.die = function()
-		if npc.last_receive_damage_src then
-			if npc.last_receive_damage_src.on_reward then
-				npc.last_receive_damage_src.on_reward(npc.drop_gold, npc.drop_exp)
-				for i=1, #npc.drop_items, 1 do
-					local item = npc.drop_items[i]
-					if math.random() < item.prob then
-						add_item_obj(npc.pos.to_flat() + circle_rand(1.0), item.id, math.random(item.min_num, item.max_num))
-					end
+		if npc.last_damage_src and npc.last_damage_src.on_reward then
+			npc.last_damage_src.on_reward(npc.drop_gold, npc.drop_exp)
+			for i=1, #npc.drop_items, 1 do
+				local item = npc.drop_items[i]
+				if math.random() < item.prob then
+					add_item_obj(npc.pos.to_flat() + circle_rand(1.0), item.id, math.random(item.min_num, item.max_num))
 				end
 			end
 		end
