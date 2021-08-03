@@ -86,16 +86,6 @@ scene_receiver.add_key_down_listener(function(key)
 				end
 			end
 		end)
-	elseif key == e_key_g then
-		enter_select_mode(TAG_TERRAIN + TAG_ITEM_OBJ, function(tag, target)
-			if tag then
-				if tag == TAG_TERRAIN then
-					main_player.change_state("pick_up_on_pos", target)
-				else
-					main_player.change_state("pick_up", target)
-				end
-			end
-		end)
 	elseif key == e_key_q then
 		skill_click(1)
 	end
@@ -180,6 +170,8 @@ local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
 
 obj_root.add_event(function()
+	frame = flame_get_frame()
+
 	-- process characters
 	for g=1, 2, 1 do
 		for _, char in pairs(characters[g]) do
@@ -765,16 +757,15 @@ end
 
 local e_npcs = {}
 function add_creep(pos, ID)
-	local data = NPC_LIST[ID]
-	local e = e_npcs[data.name]
+	local e = e_npcs[ID]
 	if e == nil then
-		e = create_entity("prefabs/"..data.name)
-		e_npcs[data.name] = e
+		e = create_entity("prefabs/"..ID)
+		e_npcs[ID] = e
 	end
 	e = e.copy()
 	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
 	e.find_component("cNode").set_pos(pos)
-	make_npc(e, data)
+	make_npc(e, ID)
 	obj_root.add_child(e)
 end
 
@@ -795,7 +786,11 @@ obj_root.add_event(function()
 	local pos = main_player.pos.to_flat() + circle_rand(30.0)
 	if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
 		if not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
-			add_creep(vec3(pos.x, 100.0, pos.y), 1)
+			if math.random() < 0.1 then
+				add_creep(vec3(pos.x, 100.0, pos.y), "crazy_zombie")
+			else
+				add_creep(vec3(pos.x, 100.0, pos.y), "zombie")
+			end
 		end
 	end
 

@@ -22,50 +22,6 @@ function make_player(e)
 	player.INT = new_attribute(10) -- intelligence, increase physical damage by percentage
 	player.attribute_points = 0
 	
-	local character_change_state = player.change_state
-	player.change_state = function(s, t, d)
-		if s == "attack_on_pos" then
-			player.target_pos = t
-			player.state = s
-		elseif s == "pick_up_on_pos" then
-			player.target_pos = t
-			player.state = s
-		else
-			character_change_state(s, t, d)
-		end
-	end
-
-	local character_process_state = player.process_state
-	player.process_state = function()
-		if player.state == "attack_on_pos" then
-			if player.curr_anim ~= 2 then
-				player.target = player.find_closest_obj(player.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
-			end
-			
-			if player.target and not player.target.dead then
-				player.attack_target()
-			else
-				player.target = nil
-				if player.move_to_pos(player.target_pos.to_flat(), 0) then 
-					player.change_state("idle")
-				end
-			end
-		elseif player.state == "pick_up_on_pos" then
-			player.target = player.find_closest_obj(TAG_ITEM_OBJ, 5)
-			
-			if player.target and not player.target.dead then
-				player.pick_up_target()
-			else
-				player.target = nil
-				if player.move_to_pos(player.target_pos.to_flat(), 0) then 
-					player.change_state("idle")
-				end
-			end
-		else
-			character_process_state()
-		end
-	end
-
 	player.on_reward = function(gold, exp)
 		player.EXP = player.EXP + exp
 		local lv = player.LV

@@ -880,6 +880,7 @@ namespace flame
 			else if (name == "src")
 			{
 				std::filesystem::path path(a.value());
+				path.replace_extension(L".prefab");
 				if (!path.is_absolute())
 				{
 					auto temp = fn.parent_path() / path;
@@ -920,7 +921,6 @@ namespace flame
 					is_state_rule = true;
 					sp.pop_back();
 				}
-				fassert(sp.size() <= 2);
 				auto vname = sp.back();
 				auto e = e_dst;
 				if (sp.size() > 1)

@@ -62,6 +62,7 @@ namespace flame
 
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
+		vec3 get_global_scale() override;
 
 		bool get_assemble_sub() const override { return assemble_sub; }
 		void set_assemble_sub(bool v) override { assemble_sub = v; }

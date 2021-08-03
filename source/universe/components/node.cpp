@@ -97,7 +97,7 @@ namespace flame
 	{
 		update_transform();
 
-		return transform[3];
+		return g_pos;
 	}
 
 	vec3 cNodePrivate::get_global_dir(uint idx)
@@ -105,6 +105,13 @@ namespace flame
 		update_transform();
 
 		return g_rot[idx];
+	}
+
+	vec3 cNodePrivate::get_global_scale()
+	{
+		update_transform();
+
+		return g_scl;
 	}
 
 	void cNodePrivate::set_octree_length(float len)

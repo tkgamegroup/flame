@@ -14,14 +14,9 @@ function make_character(entity, group, stats)
 		node = entity.find_component("cNode"),
 		armature = entity.find_component("cArmature"),
 		controller = entity.find_component("cCharacterController"),
-		pos = vec3(0),
-		prev_pos = vec3(0),
 
 		curr_anim = -1,
 		curr_frame = -1,
-
-		radius = 0.28,
-		height = 1.8,
 
 		state = "null",
 		state_date = nil,
@@ -31,6 +26,7 @@ function make_character(entity, group, stats)
 		attack_semp = true,
 		attack_tick = 0,
 		last_damage_src = nil,
+		last_damage_src_frame = 0,
 
 		on_reward = nil,
 
@@ -39,6 +35,10 @@ function make_character(entity, group, stats)
 	
 	entity.set_tag(character.tag)
 	character.pos = character.node.get_global_pos()
+	character.prev_pos = character.pos
+	character.scale = character.node.get_global_scale().x
+	character.radius = character.controller.get_radius() * character.scale
+	character.height = character.controller.get_height() * character.scale
 	
 	character.HP_MAX = new_attribute(1000) -- health point max
 	character.MP_MAX = new_attribute(1000) -- magic point max
@@ -126,31 +126,23 @@ function make_character(entity, group, stats)
 		character.sleeping = false
 	end
 
-	character.get_enemy_group = function()
-		if character.group == 1 then return 2 end
-		if character.group == 2 then return 1 end
-		return nil
-	end
-
 	character.change_state = function(s, t, d)
 		if s == "idle" then
 			character.armature.play(0, 1.0, true)
-			character.state = s
 		elseif s == "move_to" then
 			character.target_pos = t
 			character.stuck_tick = 0
-			character.state = s
 		elseif s == "attack_target" then
 			character.target = t
-			character.state = s
+		elseif s == "attack_target" then
+			character.target_pos = t
 		elseif s == "use_skill_on_target" then
 			character.target = t
 			character.state_date = d
-			character.state = s
 		elseif s == "pick_up" then
 			character.target = t
-			character.state = s
 		end
+		character.state = s
 	end
 
 	character.inflict_damage = function(tar, type, value)
@@ -165,6 +157,7 @@ function make_character(entity, group, stats)
 
 	character.receive_damage = function(src, type, value)
 		character.last_damage_src = src
+		character.last_damage_src_frame = frame
 
 		local cam = camera.camera
 		local p1 = cam.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-50, -16, -50, -16))
@@ -284,6 +277,19 @@ function make_character(entity, group, stats)
 			else
 				character.target = nil
 				character.change_state("idle")
+			end
+		elseif character.state == "attack_on_pos" then
+			if character.curr_anim ~= 2 then
+				character.target = character.find_closest_obj(character.group == 1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1, 5)
+			end
+			
+			if character.target and not character.target.dead then
+				character.attack_target()
+			else
+				character.target = nil
+				if character.move_to_pos(character.target_pos.to_flat(), 0) then 
+					character.change_state("idle")
+				end
 			end
 		elseif character.state == "pick_up" then
 			if character.target and not character.target.dead then

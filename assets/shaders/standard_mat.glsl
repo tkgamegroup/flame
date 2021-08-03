@@ -5,6 +5,9 @@
 		#ifndef SHADOW_PASS
 			#ifdef COLOR_MAP
 				vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+				#ifdef TINT_COLOR
+					color *= material.color;
+				#endif
 			#else
 				vec4 color = material.color;
 			#endif
@@ -12,6 +15,9 @@
 	#else
 		#ifdef COLOR_MAP
 			vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+			#ifdef TINT_COLOR
+				color *= material.color;
+			#endif
 		#else
 			vec4 color = material.color;
 		#endif
@@ -22,6 +28,9 @@
 	#ifdef COLOR_MAP
 		#ifndef SHADOW_PASS
 			vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+			#ifdef TINT_COLOR
+				color *= material.color;
+			#endif
 		#endif
 	#else
 		vec4 color = material.color;

@@ -204,6 +204,12 @@ namespace flame
 			return 1;
 		}
 
+		int lua_flame_get_frame(lua_State* state)
+		{
+			lua_pushinteger(state, looper().get_frame());
+			return 1;
+		}
+
 		int lua_flame_get_fps(lua_State* state)
 		{
 			lua_pushinteger(state, looper().get_fps());
@@ -852,6 +858,9 @@ namespace flame
 
 			lua_pushcfunction(lua_state, lua_flame_perspective_matrix);
 			lua_setglobal(lua_state, "flame_perspective_matrix");
+
+			lua_pushcfunction(lua_state, lua_flame_get_frame);
+			lua_setglobal(lua_state, "flame_get_frame");
 
 			lua_pushcfunction(lua_state, lua_flame_get_fps);
 			lua_setglobal(lua_state, "flame_get_fps");
