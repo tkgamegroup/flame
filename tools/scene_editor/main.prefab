@@ -34,6 +34,9 @@
         <eMenuItem checkable="true" text="crosshair">
           <cScript>on_multi_check_menu(cmd_view_crosshair)</cScript>
         </eMenuItem>
+        <eMenuItem checkable="true" text="bounds">
+          <cScript>on_multi_check_menu(cmd_view_bounds)</cScript>
+        </eMenuItem>
         <eMenu text="camera">
           <eMenuItem checkable="true" text="fly">
             <cScript>on_single_check_menu(cmd_view_camera_fly)</cScript>
@@ -72,14 +75,15 @@
           <cReceiver/>
           <cScript src="scene.lua"/>
           <eElement name="debug_layer"/>
-          <entity name="hud_global_axes" visible="false">
-            <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150"/>
+          <eElement name="debug_bounds" visible="false">
+            <cScript src="debug_bounds.lua"/>
+          </eElement>
+          <eElement name="hud_global_axes" visible="false" width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150">
             <cScript src="hud_global_axes.lua"/>
-          </entity>
-          <entity name="hud_crosshair" visible="false">
-            <cElement alignx="MinMax" aligny="MinMax"/>
+          </eElement>
+          <eElement name="hud_crosshair" visible="false" alignx="MinMax" aligny="MinMax">
             <cScript src="hud_crosshair.lua"/>
-          </entity>
+          </eElement>
         </eElement>
       </eSplitter>
       <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2">

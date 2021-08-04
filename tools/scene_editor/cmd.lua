@@ -67,6 +67,10 @@ function cmd_view_crosshair(checked)
     scene.find_child("hud_crosshair").set_visible(checked)
 end
 
+function cmd_view_bounds(checked)
+    scene.find_child("debug_bounds").set_visible(checked)
+end
+
 function cmd_view_camera_fly()
     if camera then
         camera.destroy()

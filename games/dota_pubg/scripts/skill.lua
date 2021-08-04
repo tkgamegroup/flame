@@ -33,10 +33,10 @@ local s = {
 	description = "Damaging nearby enemy units by 15 damage",
 	logic = function(caster, target)
 		local arr = flame_malloc(MAX_AOE_NUM * 8)
-		local n = obj_root_n.get_within_circle(character.pos.to_flat(), 5, arr, MAX_AOE_NUM, character.enemy_tag)
+		local n = obj_root_n.get_within_circle(caster.pos.to_flat(), 5, arr, MAX_AOE_NUM, caster.enemy_tag)
 		for i=0, n-1, 1 do
 			local name = make_entity(flame_get_p(arr, i * 8)).get_name()
-			local tar = characters[character.enemy_tag][name]
+			local tar = characters[caster.enemy_tag][name]
 			caster.inflict_damage(tar, "Physical", math.floor(0.5 + 150 * (math.random() * 0.2 + 0.9)))
 		end
 		flame_free(arr)

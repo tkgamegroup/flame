@@ -28,6 +28,7 @@ function make_character(entity, tag, stats)
 		last_damage_src = nil,
 		last_damage_src_frame = 0,
 
+		on_tick = nil,
 		on_reward = nil,
 
 		recover_tick = 0
@@ -90,19 +91,8 @@ function make_character(entity, tag, stats)
 	character.MP = character.MP_MAX.t
 
 	character.skills = {}
-	for i=1, SKILL_SLOTS_COUNT, 1 do
-		character.skills[i] = nil
-	end
-
 	character.equipments = {}
-	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
-		character.equipments[i] = nil
-	end
-
 	character.items = {}
-	for i=1, ITEM_SLOTS_COUNT, 1 do
-		character.items[i] = nil
-	end
 
 	character.ui = create_entity("prefabs/ui/character_hud")
 	character.ui.set_visible(false)
@@ -260,7 +250,50 @@ function make_character(entity, tag, stats)
 		return false
 	end
 
-	character.process_state = function()
+	character.tick = function()
+		character.prev_pos = character.pos
+		character.pos = character.node.get_global_pos()
+		
+		if character.pos.y < -100 then
+			character.die()
+			return
+		end
+
+		if character.sleeping then
+			return
+		end
+
+		character.curr_anim = character.armature.get_curr_anim()
+		character.curr_frame = character.armature.get_curr_frame()
+		
+		local show_ui = false
+		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-60, -6, -60, -6))
+		if ui_pos.x < 10000 then
+			show_ui = true
+			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
+			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX.t)
+		end
+		character.ui.set_visible(show_ui)
+
+		if character.attack_tick > 0 then
+			character.attack_tick = character.attack_tick - 1
+		end
+
+		if character.recover_tick > 0 then
+			character.recover_tick = character.recover_tick - 1
+		else
+			character.receive_heal(character, character.HP_REC.t)
+			character.receive_mana(character, character.MP_REC.t)
+			character.recover_tick = 60
+		end
+
+		for i=1, SKILL_SLOTS_COUNT, 1 do
+			local slot = character.skills[i]
+			if slot and slot.cd > 0 then
+				slot.cd = slot.cd - 1
+			end
+		end
+		
 		if character.state == "move_to" then
 			if character.move_to_pos(character.target_pos.to_flat(), 0) then
 				character.change_state("idle")
@@ -315,44 +348,10 @@ function make_character(entity, tag, stats)
 				character.change_state("idle")
 			end
 		end
-	end
 
-	character.tick = function()
-		character.prev_pos = character.pos
-		character.pos = character.node.get_global_pos()
-
-		character.curr_anim = character.armature.get_curr_anim()
-		character.curr_frame = character.armature.get_curr_frame()
-		
-		local show_ui = false
-		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-60, -6, -60, -6))
-		if ui_pos.x < 10000 then
-			show_ui = true
-			character.ui.element.set_pos(ui_pos + vec2(-30, -20))
-			character.ui.hp_bar.set_scalex(character.HP / character.HP_MAX.t)
+		if character.on_tick then
+			character.on_tick()
 		end
-		character.ui.set_visible(show_ui)
-
-		if character.attack_tick > 0 then
-			character.attack_tick = character.attack_tick - 1
-		end
-
-		if character.recover_tick > 0 then
-			character.recover_tick = character.recover_tick - 1
-		else
-			character.receive_heal(character, character.HP_REC.t)
-			character.receive_mana(character, character.MP_REC.t)
-			character.recover_tick = 60
-		end
-
-		for i=1, SKILL_SLOTS_COUNT, 1 do
-			local slot = character.skills[i]
-			if slot and slot.cd > 0 then
-				slot.cd = slot.cd - 1
-			end
-		end
-
-		character.process_state()
 	end
 
 	character.collect_attribute = function(n)
@@ -526,7 +525,7 @@ function make_character(entity, tag, stats)
 		local id = character.equipments[idx]
 		if id then
 			if character.receive_item(id, 1) == 0 then
-				character.equipments[idx] = 0
+				character.equipments[idx] = nil
 				character.calc_stats()
 
 				if character == main_player then

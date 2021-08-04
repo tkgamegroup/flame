@@ -2,7 +2,7 @@ DEBUG = false
 
 obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
-projectile_root = scene.find_child("projectile_root")
+praticle_root = scene.find_child("praticle_root")
 
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
@@ -170,42 +170,13 @@ obj_root.add_event(function()
 	-- process characters
 	for _, g in pairs({ TAG_CHARACTER_G1, TAG_CHARACTER_G2 }) do
 		for _, chr in pairs(characters[g]) do
-			if not chr.sleeping then
-				chr.tick()
-			end
-			if chr.pos.y < -100 then
-				chr.die()
-			end
-		end
-	end
-
-	-- process item objs
-	for _, item in pairs(item_objs) do
-		item.pos = item.node.get_global_pos()
-		if item.pos.y < -100 then
-			item.die()
+			chr.tick()
 		end
 	end
 
 	-- process projectiles
 	for _, pt in pairs(projectiles) do
-		if not pt.target or pt.target.dead then
-			pt.die(true)
-		else
-			pt.pos = pt.node.get_global_pos()
-
-			local tpos = pt.target.pos + vec3(0, pt.target.height * 0.8, 0)
-			local l, d = length_and_dir_3(tpos - pt.pos)
-			if d then
-				pt.node.look_at(tpos)
-			end
-
-			if l <= pt.speed then
-				pt.die(false)
-			else
-				pt.node.add_pos(d * pt.speed)
-			end
-		end
+		pt.tick()
 	end
 
 	local mpos = s_dispatcher.get_mouse_pos()
@@ -275,10 +246,10 @@ obj_root.add_event(function()
 					str = str.."\n"..string.format("%s: %s", k, v)
 				else
 					if v.a then
-						str = str.."\n"..string.format("+%d %s", v, k)
+						str = str.."\n"..string.format("+%d %s", v.a, k)
 					end
 					if v.p then
-						str = str.."\n"..string.format("+%d%% %s", v, k)
+						str = str.."\n"..string.format("+%d%% %s", v.p, k)
 					end
 				end
 			end
@@ -540,11 +511,7 @@ end
 function update_ui_equipment_slots()
 	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 		local id = main_player.equipments[i]
-		if id == 0 then
-			ui_equipment_slots[i].image.set_tile("")
-		else
-			ui_equipment_slots[i].image.set_tile(ITEM_LIST[id].name)
-		end
+		ui_equipment_slots[i].image.set_tile(id and ITEM_LIST[id].name or "")
 	end
 end
 
@@ -619,7 +586,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 			lv_text.set_text(string.format("LV: %d", main_player.LV))
 			exp_text.set_text(string.format("EXP: %d/%d", main_player.EXP, main_player.EXP_NEXT))
 			atk_dmg_text.set_text(string.format("ATK: %d (%s)", math.floor(main_player.ATK_DMG.t / 10.0), main_player.ATK_TYPE))
-			arrmor_text.set_text(string.format("Arrmor: %d", main_player.ARRMOR.t))
+			arrmor_text.set_text(string.format("Arrmor: %d", main_player.ARMOR.t))
 			mov_sp_text.set_text(string.format("MOV SP: %d", main_player.MOV_SP.a))
 		
 			sta_text.set_text(string.format("STA: %d", main_player.STA.t))
@@ -697,8 +664,17 @@ function add_item_obj(pos, item_id, item_num)
 end
 
 local e_particles = {}
-function add_particle(name)
-	
+function add_particle(name, pos, ttl)
+	local e = e_particles[name]
+	if not e then
+		e = create_entity("prefabs/particles/"..name)
+		e_particles[name] = e
+	end
+	e = e.copy()
+	e.set_name("particles"..tostring(math.random(1, 10000)))
+	e.find_component("cNode").set_pos(pos)
+	make_praticle(e, ttl)
+	praticle_root.add_child(e)
 end
 
 local e_projectiles = {}
@@ -710,11 +686,20 @@ function add_projectile(name, target, pos, sp, cb)
 	end
 	e = e.copy()
 	e.set_name("projectile_"..tostring(math.random(1, 10000)))
-	make_projectile(e, target, pos, sp, cb)
-	projectile_root.add_child(e)
+	e.find_component("cNode").set_pos(pos)
+	make_projectile(e, target, sp, cb)
+	praticle_root.add_child(e)
 end
 
-add_item_obj(vec3(0, -200, 0), 1, 1)
+local basic_items = {
+	"wooden_stick",
+	"wooden_shield",
+	"leather_hat",
+	"leather_clothes",
+	"leather_pants",
+	"leather_shoes"
+}
+add_item_obj(vec2(200, 200) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
 
 local e_player = create_entity("prefabs/player")
 
@@ -795,10 +780,11 @@ obj_root.add_event(function()
 	local pos = main_player.pos.to_flat() + circle_rand(30.0)
 	if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
 		if not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
-			if math.random() < 0.1 then
-				add_creep(vec3(pos.x, 100.0, pos.y), "crazy_zombie")
+			local pos = s_physics.raycast(vec3(pos.x, 1000, pos.y), vec3(0, -1, 0))
+			if math.random() < 1.0 then
+				add_creep(pos, "crazy_zombie")
 			else
-				add_creep(vec3(pos.x, 100.0, pos.y), "zombie")
+				add_creep(pos, "zombie")
 			end
 		end
 	end

@@ -1,5 +1,3 @@
-local e = entity
-
 local layer = root.find_child("debug_layer")
 if layer.p then
 	local debugger = {
@@ -25,12 +23,12 @@ if layer.p then
 		end
 	end))
 	element.add_drawer(debugger.drawer)
-	e.find_driver("dWindow").add_close_listener(function()
+	entity.find_driver("dWindow").add_close_listener(function()
 		element.remove_drawer(debugger.drawer)
 		debugger.drawer.release()
 	end)
 
-	e.find_child("capture_btn").find_component("cReceiver").add_mouse_click_listener(function()
+	entity.find_child("capture_btn").find_component("cReceiver").add_mouse_click_listener(function()
 		local camera = s_renderer.get_camera()
 		if not camera.p then return end
 
@@ -158,7 +156,7 @@ if layer.p then
 		end
 	end)
 
-	e.find_child("clear_btn").find_component("cReceiver").add_mouse_click_listener(function()
+	entity.find_child("clear_btn").find_component("cReceiver").add_mouse_click_listener(function()
 		for i=1, 4, 1 do
 			if debugger.camera_lines[i] then
 				flame_free(debugger.camera_lines[i])

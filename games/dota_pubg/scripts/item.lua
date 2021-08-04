@@ -103,13 +103,13 @@ function make_item_obj(entity, id, num)
 
 		entity = entity,
 		node = entity.find_component("cNode"),
-		pos = vec3(0),
 
 		id = id,
 		num = num
 	}
 
 	entity.set_tag(item_obj.tag)
+	item_obj.pos = item_obj.node.get_global_pos()
 
 	item_obj.die = function()
 		item_objs[item_obj.name] = nil

@@ -44,7 +44,7 @@ namespace flame
 		vec3 emt_rot_rand = vec3(0.f);
 		vec3 emt_mov_dir = vec3(0.f);
 		vec3 emt_mov_dir_rand = vec3(0.f);
-		float emt_mov_sp = 0.02f;
+		float emt_mov_sp = 0.f;
 		float emt_mov_sp_rand = 0.f;
 		vec3 emt_rot_sp = vec3(0.f);
 		vec3 emt_rot_sp_rand = vec3(0.f);

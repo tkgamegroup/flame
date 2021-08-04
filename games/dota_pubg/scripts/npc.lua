@@ -14,6 +14,8 @@ local n = {
 		ATK_SP = 100,
 		ARMOR = 2
 	},
+	skills = {
+	},
 	drop_gold = 10,
 	drop_exp = 40,
 	drop_items = {
@@ -41,6 +43,9 @@ local n = {
 		ATK_SP = 100,
 		ARMOR = 5
 	},
+	skills = {
+		"trample"
+	},
 	drop_gold = 50,
 	drop_exp = 400,
 	drop_items = {
@@ -57,6 +62,9 @@ NPC_LIST[n.name] = n
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
 	local npc = make_character(e, data.tag, data.stats)
+	for _, v in pairs(data.skills) do
+		npc.learn_skill(v)
+	end
 	npc.drop_gold = data.drop_gold
 	npc.drop_exp = data.drop_exp
 	npc.drop_items = data.drop_items
@@ -64,10 +72,7 @@ function make_npc(e, ID)
 	npc.chase_start_pos = vec3(-1000)
 	npc.target_tick = 0
 
-	local character_tick = npc.tick
-	npc.tick = function()
-		character_tick()
-
+	npc.on_tick = function()
 		if npc.state == "idle" then
 			npc.target_tick = 0
 		elseif npc.target_tick > 0 then
@@ -85,7 +90,9 @@ function make_npc(e, ID)
 					npc.change_state("attack_target", tar)
 					npc.chase_start_pos = npc.pos
 				end
-			elseif math.random() < 0.002 then
+			end
+
+			if math.random() < 0.002 then
 				local p = vec3(npc.pos)
 				p.x = p.x - 3 + math.random() * 6
 				p.z = p.z - 3 + math.random() * 6
@@ -105,7 +112,17 @@ function make_npc(e, ID)
 				end
 				
 				for i=1, SKILL_SLOTS_COUNT, 1 do
-					npc.use_skill(i)
+					local slot = npc.skills[i]
+					if slot then
+						local skill_type = SKILL_LIST[slot.id]
+						if skill_type.type == "Active" and slot.cd == 0 and skill_type.cost_mana <= npc.MP then
+							if skill_type.target_type == "None" then
+								if skill_type.range and skill_type.range < distance_2(npc.pos.to_flat(), npc.target.pos.to_flat()) then
+									npc.use_skill(i)
+								end
+							end
+						end
+					end
 				end
 			end
 		end

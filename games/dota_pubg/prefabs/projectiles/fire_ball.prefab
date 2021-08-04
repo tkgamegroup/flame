@@ -6,8 +6,6 @@
                     emt_hsva="0,0,2.0,1"
                     emt_sz="1.5,0.25"
                     emt_rot="90,0,0"
-                    emt_mov_dir="0,0,0"
-                    emt_mov_sp="0"
                     emt_rot_sp="0,30,0">
       <eLight type="Point" color="3.8,3.8,3.5" />
     </eParticleEmitter >

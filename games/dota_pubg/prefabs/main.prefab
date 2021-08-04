@@ -86,9 +86,8 @@
       <eNode src="water.prefab" pos="0,33,0">
         <cWater extent="400,400" />
       </eNode>
-      <eNode name="obj_root" octree_length="400.0">
-      </eNode>
-      <eNode name="projectile_root" />
+      <eNode name="obj_root" octree_length="400.0" />
+      <eNode name="praticle_root" />
     </eNode>
   </eElement>
 </prefab>
