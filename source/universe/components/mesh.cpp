@@ -112,7 +112,7 @@ namespace flame
 	{
 		if (!mesh)
 			return false;
-		auto b = AABB(mesh->get_lower_bound(), mesh->get_upper_bound());
+		auto b = mesh->get_bounds();
 		vec3 ps[8];
 		b.get_points(ps);
 		b.reset();

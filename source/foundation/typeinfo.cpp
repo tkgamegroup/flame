@@ -298,7 +298,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(cvec2*)dst = sto<cvec2>(src);
+			*(cvec2*)dst = sto<2, uchar>(src);
 		}
 	};
 
@@ -320,7 +320,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(cvec3*)dst = sto<cvec3>(src);
+			*(cvec3*)dst = sto<3, uchar>(src);
 		}
 	};
 
@@ -342,7 +342,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(cvec4*)dst = sto<cvec4>(src);
+			*(cvec4*)dst = sto<4, uchar>(src);
 		}
 	};
 
@@ -363,7 +363,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(ivec2*)dst = sto<ivec2>(src);
+			*(ivec2*)dst = sto<2, int>(src);
 		}
 	};
 
@@ -384,7 +384,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(ivec3*)dst = sto<ivec3>(src);
+			*(ivec3*)dst = sto<3, int>(src);
 		}
 	};
 
@@ -405,7 +405,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(ivec4*)dst = sto<ivec4>(src);
+			*(ivec4*)dst = sto<4, int>(src);
 		}
 	};
 
@@ -427,7 +427,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(uvec2*)dst = sto<uvec2>(src);
+			*(uvec2*)dst = sto<2, uint>(src);
 		}
 	};
 
@@ -449,7 +449,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(uvec3*)dst = sto<uvec3>(src);
+			*(uvec3*)dst = sto<3, uint>(src);
 		}
 	};
 
@@ -471,7 +471,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(uvec4*)dst = sto<uvec4>(src);
+			*(uvec4*)dst = sto<4, uint>(src);
 		}
 	};
 
@@ -492,7 +492,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(vec2*)dst = sto<vec2>(src);
+			*(vec2*)dst = sto<2, float>(src);
 		}
 	};
 
@@ -513,7 +513,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(vec3*)dst = sto<vec3>(src);
+			*(vec3*)dst = sto<3, float>(src);
 		}
 	};
 
@@ -534,7 +534,7 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(vec4*)dst = sto<vec4>(src);
+			*(vec4*)dst = sto<4, float>(src);
 		}
 	};
 
@@ -544,6 +544,16 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "flame::Rect", sizeof(Rect))
 		{
 			short_name = "F4";
+		}
+
+		void serialize(const void* src, char* dst) const override
+		{
+			auto s = to_string(*(vec4*)src);
+			strcpy(dst, s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(vec4*)dst = sto<4, float>(src);
 		}
 	};
 
@@ -562,6 +572,16 @@ namespace flame
 			TypeInfoPrivate_Pod(TypeData, "flame::Plane", sizeof(Plane))
 		{
 			short_name = "F4";
+		}
+
+		void serialize(const void* src, char* dst) const override
+		{
+			auto s = to_string(*(vec4*)src);
+			strcpy(dst, s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(vec4*)dst = sto<4, float>(src);
 		}
 	};
 
@@ -620,12 +640,12 @@ namespace flame
 
 		void serialize(const void* src, char* dst) const override
 		{
-			auto s = to_string(*(quat*)src);
+			auto s = to_string((*(vec4*)src).yzwx());
 			strcpy(dst, s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(quat*)dst = sto<quat>(src);
+			*(vec4*)dst = sto<4, float>(src).yzwx();
 		}
 	};
 

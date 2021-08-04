@@ -71,7 +71,7 @@ namespace flame
 			auto ret = new MaterialPrivate;
 			ret->filename = filename;
 			if (auto n = n_material.attribute("color"); n)
-				ret->color = sto<vec4>(n.value());
+				ret->color = sto<4, float>(n.value());
 			if (auto n = n_material.attribute("metallic"); n)
 				ret->metallic = n.as_float();
 			if (auto n = n_material.attribute("roughness"); n)

@@ -27,6 +27,12 @@ namespace flame
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
+	template <class T>
+	concept long_signed_integral = std::signed_integral<T> && sizeof(T) > sizeof(int);
+
+	template <class T>
+	concept long_unsigned_integral = std::unsigned_integral<T> && sizeof(T) > sizeof(uint);
+
 #define FLAME_PTR(name) struct name; typedef name name##T; typedef name* name##Ptr;
 #define FLAME_PTR_P(name) struct name##Private; typedef name##Private name##T; typedef name##Private* name##Ptr;
 

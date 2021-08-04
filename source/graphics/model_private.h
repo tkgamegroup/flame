@@ -29,8 +29,7 @@ namespace flame
 			std::vector<vec4> bone_weights;
 			std::vector<uint> indices;
 
-			vec3 lower_bound = vec3(0.f);
-			vec3 upper_bound = vec3(0.f);
+			AABB bounds;
 
 			uint get_skins_count() const override { return materials.size(); }
 			MaterialPtr get_material(uint skin) const override { return materials[skin]; }
@@ -44,8 +43,7 @@ namespace flame
 			uint get_indices_count() const { return indices.size(); }
 			const uint* get_indices() const { return indices.data(); }
 
-			vec3 get_lower_bound() const override { return lower_bound; }
-			vec3 get_upper_bound() const override { return upper_bound; }
+			AABB get_bounds() const override { return bounds; }
 
 			void add_vertices(uint n, vec3* positions, vec3* uvs, vec3* normals);
 			void add_indices(uint n, uint* indices);

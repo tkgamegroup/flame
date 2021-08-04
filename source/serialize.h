@@ -13,210 +13,93 @@
 
 namespace flame
 {
-	inline int fmt(char* buf, int buf_size, bool v)
+	template <std::floating_point T>
+	std::string to_string(T v)
 	{
-		return sprintf_s(buf, buf_size, "%s", v ? "true" : "false");
-	}
-
-	inline int fmt(char* buf, int buf_size, uchar v)
-	{
-		return sprintf_s(buf, buf_size, "%d", v);
-	}
-
-	inline int fmt(char* buf, int buf_size, int v)
-	{
-		return sprintf_s(buf, buf_size, "%d", v);
-	}
-
-	inline int fmt(char* buf, int buf_size, uint v)
-	{
-		return sprintf_s(buf, buf_size, "%d", v);
-	}
-
-	inline int fmt(char* buf, int buf_size, int64 v)
-	{
-		return sprintf_s(buf, buf_size, "%lld", v);
-	}
-
-	inline int fmt(char* buf, int buf_size, uint64 v)
-	{
-		return sprintf_s(buf, buf_size, "%llu", v);
-	}
-
-	inline int fmt(char* buf, int buf_size, float v)
-	{
-		auto ret = sprintf_s(buf, buf_size, "%.6f", v);
-		if (ret > 0)
-		{
-			for (ret--; ret >= 0; ret--)
-			{
-				auto ch = buf[ret];
-				if (ch == '.')
-				{
-					buf[ret + 1] = '0';
-					ret += 2;
-					break;
-				}
-				if (ch == '0')
-					buf[ret] = 0;
-				else
-				{
-					ret += 1;
-					break;
-				}
-			}
-		}
-		return ret;
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, bool v)
-	{
-		return swprintf_s(buf, buf_size, L"%d", v ? L"1" : L"0");
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, uchar v)
-	{
-		return swprintf_s(buf, buf_size, L"%d", v);
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, int v)
-	{
-		return swprintf_s(buf, buf_size, L"%d", v);
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, uint v)
-	{
-		return swprintf_s(buf, buf_size, L"%d", v);
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, int64 v)
-	{
-		return swprintf_s(buf, buf_size, L"%lld", v);
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, uint64 v)
-	{
-		return swprintf_s(buf, buf_size, L"%llu", v);
-	}
-
-	inline int fmt(wchar_t* buf, int buf_size, float v)
-	{
-		auto ret = swprintf_s(buf, buf_size, L"%.6f", v);
-		if (ret > 0)
-		{
-			for (ret--; ret >= 0; ret--)
-			{
-				auto ch = buf[ret];
-				if (ch == L'.')
-				{
-					buf[ret + 1] = L'0';
-					ret += 2;
-					break;
-				}
-				if (ch == L'0')
-					buf[ret] = 0;
-				else
-				{
-					ret += 1;
-					break;
-				}
-			}
-		}
-		return ret;
-	}
-
-	template <class CH, uint N, class T>
-	int fmt(CH* buf, int buf_size, const vec<N, T>& v)
-	{
-		auto p = buf;
-		auto s = buf_size;
-		for (auto i = 0; i < N; i++)
-		{
-			auto ret = fmt(p, s, v[i]);
-			p += ret;
-			s -= ret;
-			if (i < N - 1)
-			{
-				*p = ',';
-				p++;
-				s--;
-			}
-		}
-		return buf_size - s;
-	}
-
-	template <class CH>
-	int fmt(CH* buf, int buf_size, const quat& q)
-	{
-		return fmt(buf, buf_size, vec4(q.w, q.x, q.y, q.z));
-	}
-
-	template <class CH>
-	int fmt(CH* buf, int buf_size, const Rect& r)
-	{
-		return fmt(buf, buf_size, vec4(r.a.x, r.a.y, r.b.x, r.b.y));
+		std::ostringstream ss;
+		ss.precision(6);
+		ss << v;
+		return ss.str();
 	}
 
 	template <class T>
 	std::string to_string(T v)
 	{
-		char buf[32];
-		fmt(buf, _countof(buf), v);
-		return buf;
+		return std::to_string(v);
 	}
 
 	template <uint N, class T>
 	std::string to_string(const vec<N, T>& v)
 	{
-		char buf[32 * N];
-		fmt(buf, _countof(buf), v);
-		return buf;
+		std::string ret;
+		ret += to_string(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += ",";
+			ret += to_string(v[i]);
+		}
+		return ret;
 	}
 
-	inline std::string to_string(const quat& v)
+	template <uint C, uint R, class T>
+	std::string to_string(const mat<C, R, T>& v)
 	{
-		char buf[32 * 4];
-		fmt(buf, _countof(buf), v);
-		return buf;
+		std::string ret;
+		for (auto i = 0; i < C; i++)
+		{
+			for (auto j = 0; j < R; j++)
+			{
+				if (i > 0 || j > 0)
+					ret += ",";
+				ret += to_string(v[i][j]);
+			}
+		}
+		return ret;
 	}
 
-	template <class T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+	template <std::integral T>
 	inline std::string to_hex_string(T v, bool zero_fill = true)
 	{
-		std::stringstream ss;
+		std::ostringstream ss;
 		if (zero_fill)
 			ss << std::setfill('0') << std::setw(sizeof(T) * 2); 
 		ss << std::hex << v;
 		return ss.str();
 	}
 
+
+	template <std::floating_point T>
+	std::wstring to_wstring(T v)
+	{
+		std::wostringstream ss;
+		ss.precision(6);
+		ss << v;
+		return ss.str();
+	}
+
 	template <class T>
 	std::wstring to_wstring(T v)
 	{
-		wchar_t buf[32];
-		fmt(buf, _countof(buf), v);
-		return buf;
+		return std::to_wstring(v);
 	}
 
 	template <uint N, class T>
 	std::wstring to_wstring(const vec<N, T>& v)
 	{
-		wchar_t buf[32 * N];
-		fmt(buf, _countof(buf), v);
-		return buf;
+		std::wstring ret;
+		ret += to_wstring(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += L",";
+			ret += to_wstring(v[i]);
+		}
+		return ret;
 	}
 
-	inline std::wstring to_wstring(const quat& v)
-	{
-		wchar_t buf[32 * 4];
-		fmt(buf, _countof(buf), v);
-		return buf;
-	}
-
-	template <class T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+	template <std::integral T>
 	inline std::wstring to_hex_wstring(T v, bool zero_fill = true)
 	{
-		std::wstringstream ss;
+		std::wostringstream ss;
 		if (zero_fill)
 			ss << std::setfill(L'0') << std::setw(sizeof(T) * 2);
 		ss << std::hex << v;
@@ -233,462 +116,122 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	T sto(const std::string& s);
-	template <class T>
-	T sto(const char* s);
-
-	template <class T>
-	T sto(const std::wstring& s);
-	template <class T>
-	T sto(const wchar_t* s);
-
-	template <>
-	inline char sto<char>(const std::string& s)
+	template <std::signed_integral T, class CH>
+	inline T sto(const std::basic_string<CH>& s)
 	{
-		char ret;
+		T ret;
 		try { ret = std::stoi(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
 
-	template <>
-	inline char sto<char>(const char* s)
+	template <std::signed_integral T, class CH>
+	inline T sto(const CH* s)
 	{
-		return sto<char>(std::string(s));
+		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline uchar sto<uchar>(const std::string& s)
+	template <std::unsigned_integral T, class CH>
+	inline T sto(const std::basic_string<CH>& s)
 	{
-		uchar ret;
-		try { ret = std::stoi(s); }
+		T ret;
+		try { ret = std::stoul(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
 
-	template <>
-	inline uchar sto<uchar>(const char* s)
+	template <std::unsigned_integral T, class CH>
+	inline T sto(const CH* s)
 	{
-		return sto<uchar>(std::string(s));
+		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline wchar_t sto<wchar_t>(const std::string& s)
+	template <long_signed_integral T, class CH>
+	inline T sto(const std::basic_string<CH>& s)
 	{
-		wchar_t ret;
-		try { ret = std::stoi(s); }
+		T ret;
+		try { ret = std::stoul(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
 
-	template <>
-	inline wchar_t sto<wchar_t>(const char* s)
+	template <long_signed_integral T, class CH>
+	inline T sto(const CH* s)
 	{
-		return sto<wchar_t>(std::string(s));
+		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline int sto<int>(const std::string& s)
+	template <long_unsigned_integral T, class CH>
+	inline T sto(const std::basic_string<CH>& s)
 	{
-		int ret;
-		try { ret = std::stoi(s); }
+		T ret;
+		try { ret = std::stoul(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
 
-	template <>
-	inline int sto<int>(const char* s)
+	template <long_unsigned_integral T, class CH>
+	inline T sto(const CH* s)
 	{
-		return sto<int>(std::string(s));
+		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline uint sto<uint>(const std::string& s)
+	template <std::floating_point T, class CH>
+	inline T sto(const std::basic_string<CH>& s)
 	{
-		uint ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline uint sto<uint>(const char* s)
-	{
-		return sto<uint>(std::string(s));
-	}
-
-	template <>
-	inline int64 sto<int64>(const std::string& s)
-	{
-		int64 ret;
-		try { ret = std::stoull(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline int64 sto<int64>(const char* s)
-	{
-		return sto<int64>(std::string(s));
-	}
-
-	template <>
-	inline uint64 sto<uint64>(const std::string& s)
-	{
-		uint64 ret;
-		try { ret = std::stoull(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline uint64 sto<uint64>(const char* s)
-	{
-		return sto<uint64>(std::string(s));
-	}
-
-	template <>
-	inline float sto<float>(const std::string& s)
-	{
-		float ret;
+		T ret;
 		try { ret = std::stof(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
 
-	template <>
-	inline float sto<float>(const char* s)
+	template <std::floating_point T, class CH>
+	inline T sto(const CH* s)
 	{
-		return sto<float>(std::string(s));
+		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline char sto<char>(const std::wstring& s)
+	template <uint N, class T, class CH>
+	inline vec<N, T> sto(const std::basic_string<CH>& s)
 	{
-		char ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
+		vec<N, T> ret;
+		std::basic_istringstream ss(s);
+		std::string token;
+		for (auto i = 0; i < N; i++)
+		{
+			std::getline(ss, token, ',');
+			ret[i] = sto<T, CH>(token);
+		}
 		return ret;
 	}
 
-	template <>
-	inline char sto<char>(const wchar_t* s)
+	template <uint N, class T, class CH>
+	inline vec<N, T> sto(const CH* s)
 	{
-		return sto<char>(std::wstring(s));
+		return sto<N, T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <>
-	inline uchar sto<uchar>(const std::wstring& s)
+	template <uint C, uint R, class T, class CH>
+	inline mat<C, R, T> sto(const std::basic_string<CH>& s)
 	{
-		uchar ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
+		mat<C, R, T> ret;
+		std::basic_istringstream ss(s);
+		std::string token;
+		for (auto i = 0; i < C; i++)
+		{
+			for (auto j = 0; j < R; j++)
+			{
+				std::getline(ss, token, ',');
+				ret[i][j] = sto<T, CH>(token);
+			}
+		}
 		return ret;
 	}
 
-	template <>
-	inline uchar sto<uchar>(const wchar_t* s)
+	template <uint C, uint R, class T, class CH>
+	inline mat<C, R, T> sto(const CH* s)
 	{
-		return sto<uchar>(std::wstring(s));
-	}
-
-	template <>
-	inline wchar_t sto<wchar_t>(const std::wstring& s)
-	{
-		wchar_t ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline wchar_t sto<wchar_t>(const wchar_t* s)
-	{
-		return sto<wchar_t>(std::wstring(s));
-	}
-
-	template <>
-	inline int sto<int>(const std::wstring& s)
-	{
-		int ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline int sto<int>(const wchar_t* s)
-	{
-		return sto<int>(std::wstring(s));
-	}
-
-	template <>
-	inline uint sto<uint>(const std::wstring& s)
-	{
-		uint ret;
-		try { ret = std::stoi(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline uint sto<uint>(const wchar_t* s)
-	{
-		return sto<uint>(std::wstring(s));
-	}
-
-	template <>
-	inline int64 sto<int64>(const std::wstring& s)
-	{
-		int64 ret;
-		try { ret = std::stoull(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline int64 sto<int64>(const wchar_t* s)
-	{
-		return sto<int64>(std::wstring(s));
-	}
-
-	template <>
-	inline uint64 sto<uint64>(const std::wstring& s)
-	{
-		uint64 ret;
-		try { ret = std::stoull(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline uint64 sto<uint64>(const wchar_t* s)
-	{
-		return sto<uint64>(std::wstring(s));
-	}
-
-	template <>
-	inline float sto<float>(const std::wstring& s)
-	{
-		float ret;
-		try { ret = std::stof(s); }
-		catch (...) { ret = 0; }
-		return ret;
-	}
-
-	template <>
-	inline float sto<float>(const wchar_t* s)
-	{
-		return sto<float>(std::wstring(s));
-	}
-
-	template <>
-	inline cvec2 sto<cvec2>(const char* s)
-	{
-		ivec2 ret;
-		sscanf(s, "%d,%d", &ret.x, &ret.y);
-		return cvec2(ret);
-	}
-
-	template <>
-	inline cvec3 sto<cvec3>(const char* s)
-	{
-		ivec3 ret;
-		sscanf(s, "%d,%d,%d", &ret.x, &ret.y, &ret.z);
-		return cvec3(ret);
-	}
-
-	template <>
-	inline cvec4 sto<cvec4>(const char* s)
-	{
-		ivec4 ret;
-		sscanf(s, "%d,%d,%d,%d", &ret.x, &ret.y, &ret.z, &ret.w);
-		return cvec4(ret);
-	}
-
-	template <>
-	inline ivec2 sto<ivec2>(const char* s)
-	{
-		ivec2 ret;
-		sscanf(s, "%d,%d", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline ivec3 sto<ivec3>(const char* s)
-	{
-		ivec3 ret;
-		sscanf(s, "%d,%d,%d", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline ivec4 sto<ivec4>(const char* s)
-	{
-		ivec4 ret;
-		sscanf(s, "%d,%d,%d,%d", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline uvec2 sto<uvec2>(const char* s)
-	{
-		uvec2 ret;
-		sscanf(s, "%u,%u", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline uvec3 sto<uvec3>(const char* s)
-	{
-		uvec3 ret;
-		sscanf(s, "%u,%u,%u", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline uvec4 sto<uvec4>(const char* s)
-	{
-		uvec4 ret;
-		sscanf(s, "%u,%u,%u,%u", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline vec2 sto<vec2>(const char* s)
-	{
-		vec2 ret;
-		sscanf(s, "%f,%f", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline vec3 sto<vec3>(const char* s)
-	{
-		vec3 ret;
-		sscanf(s, "%f,%f,%f", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline vec4 sto<vec4>(const char* s)
-	{
-		vec4 ret;
-		sscanf(s, "%f,%f,%f,%f", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline quat sto<quat>(const char* s)
-	{
-		quat ret;
-		sscanf(s, "%f,%f,%f,%f", &ret.w, &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline cvec2 sto<cvec2>(const wchar_t* s)
-	{
-		ivec2 ret;
-		swscanf(s, L"%d,%d", &ret.x, &ret.y);
-		return cvec2(ret);
-	}
-
-	template <>
-	inline cvec3 sto<cvec3>(const wchar_t* s)
-	{
-		ivec3 ret;
-		swscanf(s, L"%d,%d,%d", &ret.x, &ret.y, &ret.z);
-		return cvec3(ret);
-	}
-
-	template <>
-	inline cvec4 sto<cvec4>(const wchar_t* s)
-	{
-		ivec4 ret;
-		swscanf(s, L"%d,%d,%d,%d", &ret.x, &ret.y, &ret.z, &ret.w);
-		return cvec4(ret);
-	}
-
-	template <>
-	inline ivec2 sto<ivec2>(const wchar_t* s)
-	{
-		ivec2 ret;
-		swscanf(s, L"%d,%d", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline ivec3 sto<ivec3>(const wchar_t* s)
-	{
-		ivec3 ret;
-		swscanf(s, L"%d,%d,%d", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline ivec4 sto<ivec4>(const wchar_t* s)
-	{
-		ivec4 ret;
-		swscanf(s, L"%d,%d,%d,%d", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline uvec2 sto<uvec2>(const wchar_t* s)
-	{
-		uvec2 ret;
-		swscanf(s, L"%u,%u", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline uvec3 sto<uvec3>(const wchar_t* s)
-	{
-		uvec3 ret;
-		swscanf(s, L"%u,%u,%u", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline uvec4 sto<uvec4>(const wchar_t* s)
-	{
-		uvec4 ret;
-		swscanf(s, L"%u,%u,%u,%u", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline vec2 sto<vec2>(const wchar_t* s)
-	{
-		vec2 ret;
-		swscanf(s, L"%f,%f", &ret.x, &ret.y);
-		return ret;
-	}
-
-	template <>
-	inline vec3 sto<vec3>(const wchar_t* s)
-	{
-		vec3 ret;
-		swscanf(s, L"%f,%f,%f", &ret.x, &ret.y, &ret.z);
-		return ret;
-	}
-
-	template <>
-	inline vec4 sto<vec4>(const wchar_t* s)
-	{
-		vec4 ret;
-		swscanf(s, L"%f,%f,%f,%f", &ret.x, &ret.y, &ret.z, &ret.w);
-		return ret;
-	}
-
-	template <>
-	inline quat sto<quat>(const wchar_t* s)
-	{
-		quat ret;
-		swscanf(s, L"%f,%f,%f,%f", &ret.w, &ret.x, &ret.y, &ret.z);
-		return ret;
+		return sto<C, R, T, CH>(std::basic_string<CH>(s));
 	}
 
 	template <class CH>

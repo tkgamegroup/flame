@@ -50,11 +50,9 @@ namespace flame
 
 		void MeshPrivate::calc_bounds()
 		{
+			bounds.reset();
 			for (auto& p : positions)
-			{
-				lower_bound = min(lower_bound, p);
-				upper_bound = max(upper_bound, p);
-			}
+				bounds.expand(p);
 		}
 
 		void MeshPrivate::add_cube(const vec3& extent, const vec3& center, const mat3& rotation)
@@ -346,17 +344,14 @@ namespace flame
 					model_data_file.write((char*)ai_mesh->mNormals, size);
 				}
 
-				auto lower_bound = vec3(0.f);
-				auto upper_bound = vec3(0.f);
+				AABB bounds;
+				bounds.reset();
 				for (auto j = 0; j < vertex_count; j++)
 				{
-					auto& p = ai_mesh->mVertices[j];
-					auto v = vec3(p.x, p.y, p.z);
-					lower_bound = min(lower_bound, v);
-					upper_bound = max(upper_bound, v);
+					auto& p = ai_mesh->mVertices[j]; 
+					bounds.expand(vec3(p.x, p.y, p.z));
 				}
-				n_mesh.append_attribute("lower_bound").set_value(to_string(lower_bound).c_str());
-				n_mesh.append_attribute("upper_bound").set_value(to_string(upper_bound).c_str());
+				n_mesh.append_attribute("bounds").set_value(to_string((mat2x3&)bounds).c_str());
 
 				std::vector<ivec4> bone_ids;
 				std::vector<vec4> bone_weights;
@@ -496,8 +491,8 @@ namespace flame
 					auto pos = vec3(p.x, p.y, p.z);
 					if (pos != vec3(0.f))
 						n.append_attribute("pos").set_value(to_string(pos).c_str());
-					auto qut = quat(q.w, q.x, q.y, q.z);
-					if (qut != quat(1.f, 0.f, 0.f, 0.f))
+					auto qut = vec4(q.w, q.x, q.y, q.z);
+					if (qut != vec4(1.f, 0.f, 0.f, 0.f))
 						n.append_attribute("quat").set_value(to_string(qut).c_str());
 					auto scl = vec3(s.x, s.y, s.z);
 					if (scl != vec3(1.f))
@@ -750,8 +745,7 @@ namespace flame
 					model_data_file.read((char*)m->indices.data(), size);
 				}
 
-				m->lower_bound = sto<vec3>(n_mesh.attribute("lower_bound").value());
-				m->upper_bound = sto<vec3>(n_mesh.attribute("upper_bound").value());
+				m->bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
 
 				ret->meshes.emplace_back(m);
 			}

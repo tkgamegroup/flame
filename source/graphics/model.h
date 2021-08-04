@@ -28,8 +28,7 @@ namespace flame
 			virtual uint get_indices_count() const = 0;
 			virtual const uint* get_indices() const = 0;
 
-			virtual vec3 get_lower_bound() const = 0;
-			virtual vec3 get_upper_bound() const = 0;
+			virtual AABB get_bounds() const = 0;
 		};
 
 		struct Model

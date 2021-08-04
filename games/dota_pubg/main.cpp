@@ -7,7 +7,6 @@ App g_app;
 
 int main(int argc, char** args)
 {
-	auto wtf = floor(-0.5f);
 	g_app.create();
 
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);

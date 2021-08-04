@@ -651,7 +651,7 @@ namespace flame
 				ss >> t;
 				tile.name = t;
 				ss >> t;
-				auto v = sto<uvec4>(t.c_str());
+				auto v = sto<4, uint>(t.c_str());
 				tile.pos = ivec2(v.x, v.y);
 				tile.size = ivec2(v.z, v.w);
 				tile.uv.x = tile.pos.x / w;
