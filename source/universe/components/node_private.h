@@ -41,7 +41,7 @@ namespace flame
 		std::vector<NodeMeasurer*> measurers;
 
 		sScenePrivate* s_scene = nullptr;
-		bool pending_bounds = false;
+		bool pending_update_bounds = false;
 		sRendererPrivate* s_renderer = nullptr;
 		uint frame = 0;
 
@@ -63,6 +63,8 @@ namespace flame
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
 		vec3 get_global_scale() override;
+
+		AABB get_bounds() override { return bounds; }
 
 		bool get_assemble_sub() const override { return assemble_sub; }
 		void set_assemble_sub(bool v) override { assemble_sub = v; }

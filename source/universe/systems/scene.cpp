@@ -74,11 +74,11 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::add_to_bounds(cNodePrivate* n)
+	void sScenePrivate::add_to_update_bounds(cNodePrivate* n)
 	{
 		auto depth = n->entity->depth;
-		auto it = bounds_list.begin();
-		for (; it != bounds_list.end(); it++)
+		auto it = update_bounds_list.begin();
+		for (; it != update_bounds_list.end(); it++)
 		{
 			if (it->first == depth)
 			{
@@ -91,13 +91,13 @@ namespace flame
 		std::pair<uint, std::deque<cNodePrivate*>> v;
 		v.first = depth;
 		v.second.push_back(n);
-		bounds_list.insert(it, v);
+		update_bounds_list.insert(it, v);
 	}
 
-	void sScenePrivate::remove_from_bounds(cNodePrivate* n)
+	void sScenePrivate::remove_from_update_bounds(cNodePrivate* n)
 	{
 		auto depth = n->entity->depth;
-		for (auto& v : bounds_list)
+		for (auto& v : update_bounds_list)
 		{
 			if (v.first == depth)
 			{
@@ -451,12 +451,12 @@ namespace flame
 			l->pending_layout = false;
 		}
 
-		while (!bounds_list.empty())
+		while (!update_bounds_list.empty())
 		{
-			auto& v = bounds_list.front();
+			auto& v = update_bounds_list.front();
 			if (v.second.empty())
 			{
-				bounds_list.pop_front();
+				update_bounds_list.pop_front();
 				continue;
 			}
 
@@ -502,7 +502,7 @@ namespace flame
 				}
 			}
 
-			n->pending_bounds = false;
+			n->pending_update_bounds = false;
 		}
 	}
 

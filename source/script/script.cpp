@@ -78,6 +78,17 @@ namespace flame
 			lua_check_result(state, lua_pcall(state, 4, 1, 0));
 		}
 
+		void lua_push_mat2x3(lua_State* state, const mat2x3& v)
+		{
+			lua_getglobal(state, "mat2x3");
+			for (auto i = 0; i < 2; i++)
+			{
+				for (auto j = 0; j < 3; j++)
+					lua_pushnumber(state, v[i][j]);
+			}
+			lua_check_result(state, lua_pcall(state, 6, 1, 0));
+		}
+
 		void lua_push_mat4(lua_State* state, const mat4& v)
 		{
 			lua_getglobal(state, "mat4");
@@ -128,6 +139,26 @@ namespace flame
 			ret.z = lua_tonumber(state, -2);
 			ret.w = lua_tonumber(state, -1);
 			lua_pop(state, 5);
+			return ret;
+		}
+
+		mat2x3 lua_to_mat2x3(lua_State* state, int idx)
+		{
+			lua_pushvalue(state, idx);
+			lua_pushstring(state, "push");
+			lua_gettable(state, -2);
+			lua_check_result(state, lua_pcall(state, 0, 6, 0));
+			mat4 ret;
+			auto n = 6;
+			for (auto i = 0; i < 2; i++)
+			{
+				for (auto j = 0; j < 3; j++)
+				{
+					ret[i][j] = lua_tonumber(state, -n);
+					n--;
+				}
+			}
+			lua_pop(state, 7);
 			return ret;
 		}
 
@@ -312,6 +343,7 @@ namespace flame
 								return 1;
 							}
 							}
+							break;
 						}
 						break;
 					}
@@ -777,6 +809,20 @@ namespace flame
 									break;
 								case CharType:
 									lua_push_vec4(state, *(cvec4*)ret);
+									pushed_number = 1;
+									break;
+								}
+								break;
+							}
+							break;
+						case 2:
+							switch (vec_size)
+							{
+							case 3:
+								switch (basic)
+								{
+								case FloatingType:
+									lua_push_mat2x3(state, *(mat2x3*)ret);
 									pushed_number = 1;
 									break;
 								}

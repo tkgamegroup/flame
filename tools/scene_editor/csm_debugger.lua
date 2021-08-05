@@ -35,72 +35,10 @@ if layer.p then
 		local plvs = flame_malloc(4)
 		local pdist = flame_malloc(4)
 		s_renderer.get_shadow_props(plvs, pdist, nil)
-		local lvs = flame_get(plvs, 0, e_type_data, e_integer_type, 1, 1)
-		local dist = flame_get(pdist, 0, e_type_data, e_floating_type, 1, 1)
+		local lvs = flame_get_i(plvs, 0)
+		local dist = flame_get_F(pdist, 0)
 		flame_free(plvs)
 		flame_free(pdist)
-
-		function set_lines(dst, points, col)
-			flame_cpy(dst, 32 * 0 + 16 * 0 + 0, points, 0, 12)
-			flame_cpy(dst, 32 * 0 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 0 + 16 * 1 + 0, points, 12, 12)
-			flame_cpy(dst, 32 * 0 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 1 + 16 * 0 + 0, points, 12, 12)
-			flame_cpy(dst, 32 * 1 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 1 + 16 * 1 + 0, points, 24, 12)
-			flame_cpy(dst, 32 * 1 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 2 + 16 * 0 + 0, points, 24, 12)
-			flame_cpy(dst, 32 * 2 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 2 + 16 * 1 + 0, points, 36, 12)
-			flame_cpy(dst, 32 * 2 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 3 + 16 * 0 + 0, points, 36, 12)
-			flame_cpy(dst, 32 * 3 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 3 + 16 * 1 + 0, points, 0, 12)
-			flame_cpy(dst, 32 * 3 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 4 + 16 * 0 + 0, points, 48, 12)
-			flame_cpy(dst, 32 * 4 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 4 + 16 * 1 + 0, points, 60, 12)
-			flame_cpy(dst, 32 * 4 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 5 + 16 * 0 + 0, points, 60, 12)
-			flame_cpy(dst, 32 * 5 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 5 + 16 * 1 + 0, points, 72, 12)
-			flame_cpy(dst, 32 * 5 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 6 + 16 * 0 + 0, points, 72, 12)
-			flame_cpy(dst, 32 * 6 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 6 + 16 * 1 + 0, points, 84, 12)
-			flame_cpy(dst, 32 * 6 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 7 + 16 * 0 + 0, points, 84, 12)
-			flame_cpy(dst, 32 * 7 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 7 + 16 * 1 + 0, points, 48, 12)
-			flame_cpy(dst, 32 * 7 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 8 + 16 * 0 + 0, points, 0, 12)
-			flame_cpy(dst, 32 * 8 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 8 + 16 * 1 + 0, points, 48, 12)
-			flame_cpy(dst, 32 * 8 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 9 + 16 * 0 + 0, points, 12, 12)
-			flame_cpy(dst, 32 * 9 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 9 + 16 * 1 + 0, points, 60, 12)
-			flame_cpy(dst, 32 * 9 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 10 + 16 * 0 + 0, points, 24, 12)
-			flame_cpy(dst, 32 * 10 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 10 + 16 * 1 + 0, points, 72, 12)
-			flame_cpy(dst, 32 * 10 + 16 * 1 + 12, col, 0, 4)
-
-			flame_cpy(dst, 32 * 11 + 16 * 0 + 0, points, 36, 12)
-			flame_cpy(dst, 32 * 11 + 16 * 0 + 12, col, 0, 4)
-			flame_cpy(dst, 32 * 11 + 16 * 1 + 0, points, 84, 12)
-			flame_cpy(dst, 32 * 11 + 16 * 1 + 12, col, 0, 4)
-		end
 
 		if lvs > 0 then
 			local points = flame_malloc(8 * 12)
@@ -118,7 +56,7 @@ if layer.p then
 				local f = i / lvs
 				f = f * f
 				camera.get_points(points, n * dist, f * dist)
-				set_lines(debugger.camera_lines[i], points, col)
+				hexahedron_draw_lines(debugger.camera_lines[i], points, col)
 			end
 
 			flame_free(col)
@@ -147,7 +85,7 @@ if layer.p then
 				flame_set(points, 12 * 5, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, 1, 1, 1))))
 				flame_set(points, 12 * 6, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(1, -1, 1, 1))))
 				flame_set(points, 12 * 7, e_type_data, e_floating_type, 3, 1, vec3(flame_mat4_transform(m, vec4(-1, -1, 1, 1))))
-				set_lines(debugger.light_lines[i + 1], points, col)
+				hexahedron_draw_lines(debugger.light_lines[i + 1], points, col)
 			end
 
 			flame_free(col)

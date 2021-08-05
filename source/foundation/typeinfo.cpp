@@ -543,6 +543,9 @@ namespace flame
 		TypeInfoPrivate_Rect() :
 			TypeInfoPrivate_Pod(TypeData, "flame::Rect", sizeof(Rect))
 		{
+			basic_type = FloatingType;
+			vec_size = 2;
+			col_size = 2;
 			short_name = "F4";
 		}
 
@@ -562,7 +565,20 @@ namespace flame
 		TypeInfoPrivate_AABB() :
 			TypeInfoPrivate_Pod(TypeData, "flame::AABB", sizeof(AABB))
 		{
+			basic_type = FloatingType;
+			vec_size = 3;
+			col_size = 2;
 			short_name = "F6";
+		}
+
+		void serialize(const void* src, char* dst) const override
+		{
+			auto s = to_string(*(mat2x3*)src);
+			strcpy(dst, s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(mat2x3*)dst = sto<2, 3, float>(src);
 		}
 	};
 
@@ -571,6 +587,8 @@ namespace flame
 		TypeInfoPrivate_Plane() :
 			TypeInfoPrivate_Pod(TypeData, "flame::Plane", sizeof(Plane))
 		{
+			basic_type = FloatingType;
+			vec_size = 4;
 			short_name = "F4";
 		}
 

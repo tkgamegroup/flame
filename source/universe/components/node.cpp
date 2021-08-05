@@ -286,12 +286,12 @@ namespace flame
 		if (!child_caused && measurers.empty())
 			return;
 
-		if (!pending_bounds)
+		if (!pending_update_bounds)
 		{
 			if (s_scene)
 			{
-				s_scene->add_to_bounds(this);
-				pending_bounds = true;
+				s_scene->add_to_update_bounds(this);
+				pending_update_bounds = true;
 			}
 		}
 
@@ -307,10 +307,10 @@ namespace flame
 
 	void cNodePrivate::remove_from_bounds_list()
 	{
-		if (!pending_bounds)
+		if (!pending_update_bounds)
 			return;
-		s_scene->remove_from_bounds(this);
-		pending_bounds = false;
+		s_scene->remove_from_update_bounds(this);
+		pending_update_bounds = false;
 	}
 
 	void cNodePrivate::draw(uint _frame, bool shadow_pass)

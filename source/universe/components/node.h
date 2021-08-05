@@ -44,6 +44,8 @@ namespace flame
 		virtual vec3 get_global_dir(uint idx) = 0;
 		virtual vec3 get_global_scale() = 0;
 
+		virtual AABB get_bounds() = 0;
+
 		virtual bool get_assemble_sub() const = 0;
 		virtual void set_assemble_sub(bool v) = 0;
 

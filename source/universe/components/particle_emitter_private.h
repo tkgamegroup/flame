@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct cParticleEmitterPrivate : cParticleEmitter, NodeDrawer
+	struct cParticleEmitterPrivate : cParticleEmitter, NodeDrawer, NodeMeasurer
 	{
 		struct Particle
 		{
@@ -21,6 +21,8 @@ namespace flame
 
 		std::filesystem::path img_src;
 		std::string tile_name;
+
+		AABB bounds = { vec3(0.f), vec3(0.f) };
 
 		cNodePrivate* node = nullptr;
 
@@ -62,6 +64,9 @@ namespace flame
 		const char* get_tile() const override { return tile_name.c_str(); }
 		void set_tile(const std::string& name);
 		void set_tile(const char* name) override { set_tile(std::string(name)); }
+
+		AABB get_bounds() const override { return bounds; }
+		void set_bounds(const AABB& v) override;
 
 		uint get_emt_intv() const override { return emt_intv; }
 		void set_emt_intv(uint v) { emt_intv = v; }
@@ -110,5 +115,6 @@ namespace flame
 		void on_left_world() override;
 
 		void draw(sRendererPtr s_renderer, bool, bool) override;
+		bool measure(AABB* b) override;
 	};
 }

@@ -26,6 +26,11 @@ namespace flame
 			entity->component_data_changed(this, S<"tile"_h>);
 	}
 
+	void cParticleEmitterPrivate::set_bounds(const AABB& v)
+	{
+		bounds = v;
+	}
+
 	void cParticleEmitterPrivate::apply_src()
 	{
 		res_id = -1;
@@ -162,6 +167,18 @@ namespace flame
 			idx++;
 		}
 		s_renderer->draw_particles(renderer_ptcs.size(), renderer_ptcs.data(), res_id);
+	}
+
+	bool cParticleEmitterPrivate::measure(AABB* ret)
+	{
+		auto b = bounds;
+		vec3 ps[8];
+		b.get_points(ps);
+		b.reset();
+		for (auto i = 0; i < 8; i++)
+			b.expand(node->transform * vec4(ps[i], 1.f));
+		*ret = b;
+		return true;
 	}
 
 	cParticleEmitter* cParticleEmitter::create(void* parms)

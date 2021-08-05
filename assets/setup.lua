@@ -221,6 +221,36 @@ function vec4(x, y, z, w)
 	return o
 end
 
+function AABB(a, b)
+	local o = {
+		a=a, b=b
+	}
+	o.get_points = function(dst)
+		flame_set_v3(dst, 0 * 12, vec3(o.a.x, o.a.y, o.a.z))
+		flame_set_v3(dst, 1 * 12, vec3(o.b.x, o.a.y, o.a.z))
+		flame_set_v3(dst, 2 * 12, vec3(o.b.x, o.a.y, o.b.z))
+		flame_set_v3(dst, 3 * 12, vec3(o.a.x, o.a.y, o.b.z))
+		flame_set_v3(dst, 4 * 12, vec3(o.a.x, o.b.y, o.a.z))
+		flame_set_v3(dst, 5 * 12, vec3(o.b.x, o.b.y, o.a.z))
+		flame_set_v3(dst, 6 * 12, vec3(o.b.x, o.b.y, o.b.z))
+		flame_set_v3(dst, 7 * 12, vec3(o.a.x, o.b.y, o.b.z))
+	end
+	return o
+end
+
+function mat2x3(a1, a2, a3, b1, b2, b3)
+	local o = {
+		a1=a1, a2=a2, a3=a3,
+		b1=b1, b2=b2, b3=b3
+	}
+	o.push = function()
+		return
+			o.a1, o.a2, o.a3,
+			o.b1, o.b2, o.b3
+	end
+	return o
+end
+
 function mat4(a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4, d1, d2, d3, d4)
 	local o = {
 		a1=a1, a2=a2, a3=a3, a4=a4,
@@ -236,6 +266,88 @@ function mat4(a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4, d1, d2, d3, d4)
 			o.d1, o.d2, o.d3, o.d4
 	end
 	return o
+end
+
+function flame_get_i(p, o)
+	flame_get(p, o, e_type_data, e_integer_type, 1, 1)
+end
+
+function flame_get_f(p, o)
+	flame_get(p, o, e_type_data, e_floating_type, 1, 1)
+end
+
+function flame_get_p(p, o)
+	return flame_get(p, o, e_type_pointer, e_else_type, 1, 1)
+end
+
+function flame_set_c4(p, o, v)
+	flame_set(p, o, e_type_data, e_char_type, 4, 1, v)
+end
+
+function flame_set_v3(p, o, v)
+	flame_set(p, o, e_type_data, e_floating_type, 3, 1, v)
+end
+
+function hexahedron_draw_lines(dst, points, col)
+	flame_cpy(dst, 32 * 0 + 16 * 0 + 0, points, 0, 12)
+	flame_cpy(dst, 32 * 0 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 0 + 16 * 1 + 0, points, 12, 12)
+	flame_cpy(dst, 32 * 0 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 1 + 16 * 0 + 0, points, 12, 12)
+	flame_cpy(dst, 32 * 1 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 1 + 16 * 1 + 0, points, 24, 12)
+	flame_cpy(dst, 32 * 1 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 2 + 16 * 0 + 0, points, 24, 12)
+	flame_cpy(dst, 32 * 2 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 2 + 16 * 1 + 0, points, 36, 12)
+	flame_cpy(dst, 32 * 2 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 3 + 16 * 0 + 0, points, 36, 12)
+	flame_cpy(dst, 32 * 3 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 3 + 16 * 1 + 0, points, 0, 12)
+	flame_cpy(dst, 32 * 3 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 4 + 16 * 0 + 0, points, 48, 12)
+	flame_cpy(dst, 32 * 4 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 4 + 16 * 1 + 0, points, 60, 12)
+	flame_cpy(dst, 32 * 4 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 5 + 16 * 0 + 0, points, 60, 12)
+	flame_cpy(dst, 32 * 5 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 5 + 16 * 1 + 0, points, 72, 12)
+	flame_cpy(dst, 32 * 5 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 6 + 16 * 0 + 0, points, 72, 12)
+	flame_cpy(dst, 32 * 6 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 6 + 16 * 1 + 0, points, 84, 12)
+	flame_cpy(dst, 32 * 6 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 7 + 16 * 0 + 0, points, 84, 12)
+	flame_cpy(dst, 32 * 7 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 7 + 16 * 1 + 0, points, 48, 12)
+	flame_cpy(dst, 32 * 7 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 8 + 16 * 0 + 0, points, 0, 12)
+	flame_cpy(dst, 32 * 8 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 8 + 16 * 1 + 0, points, 48, 12)
+	flame_cpy(dst, 32 * 8 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 9 + 16 * 0 + 0, points, 12, 12)
+	flame_cpy(dst, 32 * 9 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 9 + 16 * 1 + 0, points, 60, 12)
+	flame_cpy(dst, 32 * 9 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 10 + 16 * 0 + 0, points, 24, 12)
+	flame_cpy(dst, 32 * 10 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 10 + 16 * 1 + 0, points, 72, 12)
+	flame_cpy(dst, 32 * 10 + 16 * 1 + 12, col, 0, 4)
+
+	flame_cpy(dst, 32 * 11 + 16 * 0 + 0, points, 36, 12)
+	flame_cpy(dst, 32 * 11 + 16 * 0 + 12, col, 0, 4)
+	flame_cpy(dst, 32 * 11 + 16 * 1 + 0, points, 84, 12)
+	flame_cpy(dst, 32 * 11 + 16 * 1 + 12, col, 0, 4)
 end
 
 function length_2(v)

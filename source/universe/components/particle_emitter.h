@@ -19,6 +19,9 @@ namespace flame
 		virtual const char* get_tile() const = 0;
 		virtual void set_tile(const char* name) = 0;
 
+		virtual AABB get_bounds() const = 0;
+		virtual void set_bounds(const AABB& v) = 0;
+
 		virtual uint get_emt_intv() const = 0;
 		virtual void set_emt_intv(uint v) = 0;
 		virtual float get_emt_prob() const = 0;
