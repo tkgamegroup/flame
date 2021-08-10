@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
 <prefab>
     <eParticleEmitter img="D:\assets\ptc.png" 
+                    bounds="-5,-0.1,-5,5,0.1,5"
                     ptc_num_max="1" emt_intv="1" emt_prob="1.0" emt_num="1" 
-                    emt_ttl="60"
+                    ptc_ttl="32"
                     emt_hsva="0,0,1.0,1"
                     emt_sz="5,5"
+                    ptc_sz_ttl="2,0.2,0.8,0"
                     emt_rot="0,90,0">
     </eParticleEmitter >
 </prefab>

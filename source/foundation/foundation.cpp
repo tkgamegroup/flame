@@ -27,6 +27,18 @@ namespace flame
 		free(p);
 	}
 
+	float apply_general_formula(float v, const vec4& f)
+	{
+		switch ((int)f[0])
+		{
+		case GeneralFormula_v_mul_a_add_b:
+			return v * f[1] + f[2];
+		case GeneralFormula_1minsv_mul_a_add_b:
+			return (1.0 - v) * f[1] + f[2];
+		}
+		return v;
+	}
+
 	Guid generate_guid()
 	{
 		Guid ret;

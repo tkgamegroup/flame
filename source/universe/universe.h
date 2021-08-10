@@ -117,15 +117,6 @@ namespace flame
 		MenuSub
 	};
 
-	enum ExtraDrawFlags
-	{
-		ExtraDrawFilledCornerSE = 1 << 0,
-		ExtraDrawHorizontalLine = 1 << 1,
-		ExtraDrawVerticalLine = 1 << 2
-	};
-
-	inline ExtraDrawFlags operator| (ExtraDrawFlags a, ExtraDrawFlags b) { return (ExtraDrawFlags)((int)a | (int)b); }
-
 	enum LightType
 	{
 		LightDirectional,

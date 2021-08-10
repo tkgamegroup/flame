@@ -22,6 +22,7 @@ int main(int argc, char** args)
 	script_ins->excute_file(L"scripts/npc.lua");
 	script_ins->excute_file(L"scripts/skill.lua");
 	script_ins->excute_file(L"scripts/item.lua");
+	script_ins->excute_file(L"scripts/particle.lua");
 	script_ins->excute_file(L"scripts/projectile.lua");
 	{
 		auto e = Entity::create();

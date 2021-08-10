@@ -9,6 +9,9 @@ namespace flame
 	{
 		struct Particle
 		{
+			vec2 base_sz;
+			int base_ttl;
+
 			vec3 pos;
 			vec2 sz;
 			vec3 rot;
@@ -42,6 +45,7 @@ namespace flame
 		uint emt_num_rand = 0;
 		vec2 emt_sz = vec2(0.1f);
 		vec2 emt_sz_rand = vec2(0.f);
+		vec4 ptc_sz_ttl = vec4(0.f);
 		vec3 emt_rot = vec3(0.f);
 		vec3 emt_rot_rand = vec3(0.f);
 		vec3 emt_mov_dir = vec3(0.f);
@@ -52,8 +56,8 @@ namespace flame
 		vec3 emt_rot_sp_rand = vec3(0.f);
 		vec4 emt_hsva = vec4(0.f, 0.f, 1.f, 1.f);
 		vec4 emt_hsva_rand = vec4(0.f);
-		uint emt_ttl = 120;
-		uint emt_ttl_rand = 0;
+		uint ptc_ttl = 120;
+		uint ptc_ttl_rand = 0;
 		uint ptc_num_max = 0xffff;
 
 		uint emt_tick = 0;
@@ -80,6 +84,8 @@ namespace flame
 		void set_emt_sz(const vec2& v) override { emt_sz = v; }
 		vec2 get_emt_sz_rand() const override { return emt_sz_rand; }
 		void set_emt_sz_rand(const vec2& v) override { emt_sz_rand = v; }
+		vec4 get_ptc_sz_ttl() const override { return ptc_sz_ttl; }
+		void set_ptc_sz_ttl(const vec4& v) override { ptc_sz_ttl = v; }
 		vec3 get_emt_rot() const override { return emt_rot; }
 		void set_emt_rot(const vec3& v) override { emt_rot = v; }
 		vec3 get_emt_rot_rand() const override { return emt_rot_rand; }
@@ -100,10 +106,10 @@ namespace flame
 		void set_emt_hsva(const vec4& v) override { emt_hsva = v; }
 		vec4 get_emt_hsva_rand() const override { return emt_hsva_rand; }
 		void set_emt_hsva_rand(const vec4& v) override { emt_hsva_rand = v; }
-		uint get_emt_ttl() const override { return emt_ttl; }
-		void set_emt_ttl(uint v) override { emt_ttl = v; }
-		uint get_emt_ttl_rand() const override { return emt_ttl_rand; }
-		void set_emt_ttl_rand(uint v) override { emt_ttl_rand = v; }
+		uint get_ptc_ttl() const override { return ptc_ttl; }
+		void set_ptc_ttl(uint v) override { ptc_ttl = v; }
+		uint get_ptc_ttl_rand() const override { return ptc_ttl_rand; }
+		void set_ptc_ttl_rand(uint v) override { ptc_ttl_rand = v; }
 		uint get_ptc_num_max() const override { return ptc_num_max; }
 		void set_ptc_num_max(uint v) override { ptc_num_max = v; }
 

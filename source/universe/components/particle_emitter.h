@@ -34,6 +34,8 @@ namespace flame
 		virtual void set_emt_sz(const vec2& v) = 0;
 		virtual vec2 get_emt_sz_rand() const = 0;
 		virtual void set_emt_sz_rand(const vec2& v) = 0;
+		virtual vec4 get_ptc_sz_ttl() const = 0;
+		virtual void set_ptc_sz_ttl(const vec4& v) = 0;
 		virtual vec3 get_emt_rot() const = 0;
 		virtual void set_emt_rot(const vec3& v) = 0;
 		virtual vec3 get_emt_rot_rand() const = 0;
@@ -54,10 +56,10 @@ namespace flame
 		virtual void set_emt_hsva(const vec4& v) = 0;
 		virtual vec4 get_emt_hsva_rand() const = 0;
 		virtual void set_emt_hsva_rand(const vec4& v) = 0;
-		virtual uint get_emt_ttl() const = 0;
-		virtual void set_emt_ttl(uint v) = 0;
-		virtual uint get_emt_ttl_rand() const = 0;
-		virtual void set_emt_ttl_rand(uint v) = 0;
+		virtual uint get_ptc_ttl() const = 0;
+		virtual void set_ptc_ttl(uint v) = 0;
+		virtual uint get_ptc_ttl_rand() const = 0;
+		virtual void set_ptc_ttl_rand(uint v) = 0;
 		virtual uint get_ptc_num_max() const = 0;
 		virtual void set_ptc_num_max(uint v) = 0;
 

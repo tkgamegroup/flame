@@ -2,7 +2,6 @@ DEBUG = false
 
 obj_root = scene.find_child("obj_root")
 obj_root_n = obj_root.find_component("cNode")
-praticle_root = scene.find_child("praticle_root")
 
 hovering_entity = { p=nil }
 hovering_entity_lis = 0
@@ -172,6 +171,11 @@ obj_root.add_event(function()
 		for _, chr in pairs(characters[g]) do
 			chr.tick()
 		end
+	end
+
+	-- process particles 
+	for _, pt in pairs(particles) do
+		pt.tick()
 	end
 
 	-- process projectiles
@@ -673,8 +677,8 @@ function add_particle(name, pos, ttl)
 	e = e.copy()
 	e.set_name("particles"..tostring(math.random(1, 10000)))
 	e.find_component("cNode").set_pos(pos)
-	make_praticle(e, ttl)
-	praticle_root.add_child(e)
+	make_particle(e, ttl)
+	obj_root.add_child(e)
 end
 
 local e_projectiles = {}
@@ -688,7 +692,7 @@ function add_projectile(name, target, pos, sp, cb)
 	e.set_name("projectile_"..tostring(math.random(1, 10000)))
 	e.find_component("cNode").set_pos(pos)
 	make_projectile(e, target, sp, cb)
-	praticle_root.add_child(e)
+	obj_root.add_child(e)
 end
 
 local basic_items = {

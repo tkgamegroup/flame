@@ -93,6 +93,8 @@ function make_character(entity, tag, stats)
 	character.skills = {}
 	character.equipments = {}
 	character.items = {}
+	character.perks = {}
+	character.buffs = {}
 
 	character.ui = create_entity("prefabs/ui/character_hud")
 	character.ui.set_visible(false)

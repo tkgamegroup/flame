@@ -335,6 +335,15 @@ namespace flame
 		return false;
 	}
 
+	enum GeneralFormula
+	{
+		GeneralFormula_None,
+		GeneralFormula_v_mul_a_add_b,
+		GeneralFormula_1minsv_mul_a_add_b
+	};
+
+	FLAME_FOUNDATION_EXPORTS float apply_general_formula(float v, const vec4& f);
+
 	enum KeyboardKey
 	{
 		Keyboard_Backspace,
@@ -355,8 +364,11 @@ namespace flame
 		Keyboard_Ins,
 		Keyboard_Del,
 		Keyboard_0, Keyboard_1, Keyboard_2, Keyboard_3, Keyboard_4, Keyboard_5, Keyboard_6, Keyboard_7, Keyboard_8, Keyboard_9,
-		Keyboard_A, Keyboard_B, Keyboard_C, Keyboard_D, Keyboard_E, Keyboard_F, Keyboard_G, Keyboard_H, Keyboard_I, Keyboard_J, Keyboard_K, Keyboard_L, Keyboard_M, Keyboard_N, Keyboard_O, Keyboard_P, Keyboard_Q, Keyboard_R, Keyboard_S, Keyboard_T, Keyboard_U, Keyboard_V, Keyboard_W, Keyboard_X, Keyboard_Y, Keyboard_Z,
-		Keyboard_Numpad0, Keyboard_Numpad1, Keyboard_Numpad2, Keyboard_Numpad3, Keyboard_Numpad4, Keyboard_Numpad5, Keyboard_Numpad6, Keyboard_Numpad7, Keyboard_Numpad8, Keyboard_Numpad9,
+		Keyboard_A, Keyboard_B, Keyboard_C, Keyboard_D, Keyboard_E, Keyboard_F, Keyboard_G, Keyboard_H, Keyboard_I, Keyboard_J, Keyboard_K, 
+		Keyboard_L, Keyboard_M, Keyboard_N, Keyboard_O, Keyboard_P, Keyboard_Q, Keyboard_R, Keyboard_S, Keyboard_T, Keyboard_U, Keyboard_V, 
+		Keyboard_W, Keyboard_X, Keyboard_Y, Keyboard_Z,
+		Keyboard_Numpad0, Keyboard_Numpad1, Keyboard_Numpad2, Keyboard_Numpad3, Keyboard_Numpad4, Keyboard_Numpad5, 
+		Keyboard_Numpad6, Keyboard_Numpad7, Keyboard_Numpad8, Keyboard_Numpad9,
 		Keyboard_Add, Keyboard_Subtract, Keyboard_Multiply, Keyboard_Divide,
 		Keyboard_Separator,
 		Keyboard_Decimal,
