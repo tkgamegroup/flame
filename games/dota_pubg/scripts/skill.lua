@@ -32,7 +32,7 @@ local s = {
 	range = 5,
 	description = "Damaging nearby enemy units by 15 damage",
 	logic = function(caster, target)
-		add_particle("trample", caster.pos + vec3(0.0, 0.8, 0.0), 30)
+		add_particle("trample", caster.pos + vec3(0.0, 0.8, 0.0), 20)
 
 		local arr = flame_malloc(MAX_AOE_NUM * 8)
 		local n = obj_root_n.get_within_circle(caster.pos.to_flat(), 5, arr, MAX_AOE_NUM, caster.enemy_tag)

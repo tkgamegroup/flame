@@ -703,13 +703,13 @@ local basic_items = {
 	"leather_pants",
 	"leather_shoes"
 }
-add_item_obj(vec2(200, 200) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
+add_item_obj(vec2(380, 380) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
 
 local e_player = create_entity("prefabs/player")
 
 local e = e_player.copy()
 e.set_name("main_player")
-e.find_component("cNode").set_pos(vec3(200, 65, 200))
+e.find_component("cNode").set_pos(vec3(380, 65, 380))
 main_player = make_player(e)
 main_player.learn_skill("fire_ball")
 main_player.awake()
@@ -749,7 +749,7 @@ function build_grid(x, z)
 			3.0, e_trees, 0.1, vec2(35.0, 200), vec2(0.9, 1.0), vec2(0, 360), vec2(0.8, 1.0))
 
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
-			4.0, e_rocks, 0.1, vec2(0.0, 200), vec2(0.0, 1.0), vec2(0, 360), vec2(0.7, 0.9))
+			4.0, e_rocks, 0.1, vec2(0.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(0.7, 0.9))
 	end
 end
 
@@ -767,6 +767,26 @@ function add_creep(pos, ID)
 	obj_root.add_child(e)
 end
 
+local ns = {}
+for str in string.gmatch(flame_load_file("blocks.txt"), "([^%s]+)") do
+	table.insert(ns, tonumber(str))
+end
+
+local blocks = {}
+local n_blocks = ns[1]
+for i=1, n_blocks, 1 do
+	blocks[i] = {}
+end
+local i=2
+for x=1, n_blocks, 1 do
+	for y=1, n_blocks, 1 do
+		blocks[x][y] = ns[i]
+		i = i + 1
+	end
+end
+
+local block_ext = terrain_ext.x / n_blocks
+
 obj_root.add_event(function()
 	local px = math.floor(main_player.pos.x / grid_size)
 	local pz = math.floor(main_player.pos.z / grid_size)
@@ -781,14 +801,18 @@ obj_root.add_event(function()
 	build_grid(px - 1, pz + 1)
 	build_grid(px + 1, pz + 1)
 
-	local pos = main_player.pos.to_flat() + circle_rand(30.0)
-	if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
-		if not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
-			local pos = s_physics.raycast(vec3(pos.x, 1000, pos.y), vec3(0, -1, 0))
-			if math.random() < 1.0 then
-				add_creep(pos, "crazy_zombie")
-			else
-				add_creep(pos, "zombie")
+	for n=1, 10, 1 do
+		local pos = main_player.pos.to_flat() + circle_rand(30.0)
+		if pos.x > 10.0 and pos.x < 390.0 and pos.y > 10.0 and pos.y < 390.0 then
+			local bx = math.floor(pos.x / block_ext) + 1
+			local by = math.floor(pos.y / block_ext) + 1
+			if blocks[bx][by] == 0 and not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
+				local pos = s_physics.raycast(vec3(pos.x, 1000, pos.y), vec3(0, -1, 0))
+				if math.random() < 0.1 then
+					add_creep(pos, "crazy_zombie")
+				else
+					add_creep(pos, "zombie")
+				end
 			end
 		end
 	end

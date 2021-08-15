@@ -124,8 +124,8 @@ namespace flame
 				p.base_sz = any(greaterThan(emt_sz_rand, vec2(0.f))) ? linearRand(emt_sz, emt_sz + emt_sz_rand) : emt_sz;
 				p.sz = p.base_sz;
 				p.rot = any(greaterThan(emt_rot_rand, vec3(0.f))) ? linearRand(emt_rot, emt_rot + emt_rot_rand) : emt_rot;
-				auto hsva = any(greaterThan(emt_hsva, vec4(0.f))) ? linearRand(emt_hsva, emt_hsva + emt_hsva_rand) : emt_hsva;
-				p.col = vec4(rgbColor(hsva.rgb()), hsva.a);
+				p.base_hsva = any(greaterThan(emt_hsva, vec4(0.f))) ? linearRand(emt_hsva, emt_hsva + emt_hsva_rand) : emt_hsva;
+				p.col = vec4(rgbColor(p.base_hsva.rgb()), p.base_hsva.a);
 				p.mov_sp = euler_rot(any(greaterThan(emt_mov_dir_rand, vec3(0.f))) ? 
 					linearRand(emt_mov_dir, emt_mov_dir + emt_mov_dir_rand) : emt_mov_dir) *
 					vec3(1.f, 0.f, 0.f) * (emt_mov_sp_rand > 0.f ? linearRand(emt_mov_sp, emt_mov_sp + emt_mov_sp_rand) : emt_mov_sp);
@@ -139,11 +139,13 @@ namespace flame
 
 		for (auto& p : ptcs)
 		{
-			auto v = (float)p.ttl / (float)p.base_ttl;
+			auto v = 1.f - (float)p.ttl / (float)p.base_ttl;
 
 			p.pos += p.mov_sp;
 			if (ptc_sz_ttl.x > 0.f)
 				p.sz = p.base_sz * apply_general_formula(v, ptc_sz_ttl);
+			if (ptc_alpha_ttl.x > 0.f)
+				p.col.a = p.base_hsva.a * apply_general_formula(v, ptc_alpha_ttl);
 			p.rot += p.rot_sp;
 			p.ttl--;
 		}

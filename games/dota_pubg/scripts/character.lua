@@ -17,6 +17,7 @@ function make_character(entity, tag, stats)
 
 		curr_anim = -1,
 		curr_frame = -1,
+		anim_swap_tick = 0,
 
 		state = "null",
 		state_date = nil,
@@ -126,7 +127,7 @@ function make_character(entity, tag, stats)
 			character.stuck_tick = 0
 		elseif s == "attack_target" then
 			character.target = t
-		elseif s == "attack_target" then
+		elseif s == "attack_on_pos" then
 			character.target_pos = t
 		elseif s == "use_skill_on_target" then
 			character.target = t
@@ -228,10 +229,13 @@ function make_character(entity, tag, stats)
 					character.armature.play(2, character.ATK_SP.p, false)
 					character.attack_semp = true
 				else
-					character.armature.stop_at(2, -1)
+					if character.anim_swap_tick == 0 then
+						character.armature.stop_at(2, -1)
+					end
 				end
 			else
 				character.move(d)
+				character.anim_swap_tick = 60
 			end
 		elseif character.attack_semp and (character.curr_frame == -1 or character.curr_frame >= 12) then
 			if l <= character.radius + character.target.radius + 3 then
@@ -267,6 +271,9 @@ function make_character(entity, tag, stats)
 
 		character.curr_anim = character.armature.get_curr_anim()
 		character.curr_frame = character.armature.get_curr_frame()
+		if character.anim_swap_tick > 0 then
+			character.anim_swap_tick = character.anim_swap_tick - 1
+		end
 		
 		local show_ui = false
 		local ui_pos = camera.camera.world_to_screen(character.pos + vec3(0, 1.8, 0), vec4(-60, -6, -60, -6))

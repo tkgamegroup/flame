@@ -124,6 +124,8 @@ namespace flame
 			stbi_write_png(filename.string().c_str(), width, height, channel, data, pitch);
 		else if (ext == L".bmp")
 			stbi_write_bmp(filename.string().c_str(), width, height, channel, data);
+		else if (ext == L".jpg" || ext == L".jpeg")
+			stbi_write_jpg(filename.string().c_str(), width, height, channel, data, 0);
 	}
 
 	BitmapPrivate* BitmapPrivate::create(const std::filesystem::path& filename)

@@ -10,6 +10,7 @@ namespace flame
 		struct Particle
 		{
 			vec2 base_sz;
+			vec4 base_hsva;
 			int base_ttl;
 
 			vec3 pos;
@@ -56,6 +57,7 @@ namespace flame
 		vec3 emt_rot_sp_rand = vec3(0.f);
 		vec4 emt_hsva = vec4(0.f, 0.f, 1.f, 1.f);
 		vec4 emt_hsva_rand = vec4(0.f);
+		vec4 ptc_alpha_ttl = vec4(0.f);
 		uint ptc_ttl = 120;
 		uint ptc_ttl_rand = 0;
 		uint ptc_num_max = 0xffff;
@@ -106,6 +108,8 @@ namespace flame
 		void set_emt_hsva(const vec4& v) override { emt_hsva = v; }
 		vec4 get_emt_hsva_rand() const override { return emt_hsva_rand; }
 		void set_emt_hsva_rand(const vec4& v) override { emt_hsva_rand = v; }
+		vec4 get_ptc_alpha_ttl() const override { return ptc_alpha_ttl; }
+		void set_ptc_alpha_ttl(const vec4& v) override { ptc_alpha_ttl = v; }
 		uint get_ptc_ttl() const override { return ptc_ttl; }
 		void set_ptc_ttl(uint v) override { ptc_ttl = v; }
 		uint get_ptc_ttl_rand() const override { return ptc_ttl_rand; }

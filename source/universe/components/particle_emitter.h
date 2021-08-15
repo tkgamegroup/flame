@@ -56,6 +56,8 @@ namespace flame
 		virtual void set_emt_hsva(const vec4& v) = 0;
 		virtual vec4 get_emt_hsva_rand() const = 0;
 		virtual void set_emt_hsva_rand(const vec4& v) = 0;
+		virtual vec4 get_ptc_alpha_ttl() const = 0;
+		virtual void set_ptc_alpha_ttl(const vec4& v) = 0;
 		virtual uint get_ptc_ttl() const = 0;
 		virtual void set_ptc_ttl(uint v) = 0;
 		virtual uint get_ptc_ttl_rand() const = 0;

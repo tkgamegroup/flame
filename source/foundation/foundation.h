@@ -338,8 +338,7 @@ namespace flame
 	enum GeneralFormula
 	{
 		GeneralFormula_None,
-		GeneralFormula_v_mul_a_add_b,
-		GeneralFormula_1minsv_mul_a_add_b
+		GeneralFormula_v_mul_a_add_b
 	};
 
 	FLAME_FOUNDATION_EXPORTS float apply_general_formula(float v, const vec4& f);

@@ -33,8 +33,6 @@ namespace flame
 		{
 		case GeneralFormula_v_mul_a_add_b:
 			return v * f[1] + f[2];
-		case GeneralFormula_1minsv_mul_a_add_b:
-			return (1.0 - v) * f[1] + f[2];
 		}
 		return v;
 	}
