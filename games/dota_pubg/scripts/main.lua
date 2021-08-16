@@ -651,13 +651,6 @@ local terrain_normal_tex = terrain.get_normal_texture()
 local terrain_obj_root = e_terrain.find_child("obj_root")
 e_terrain.set_tag(TAG_TERRAIN)
 
-local grid_size = 10
-local grid_num = terrain_ext.x / grid_size
-local grids = {}
-for i=1, grid_num * grid_num, 1 do
-	grids[i] = false
-end
-
 local e_chest = create_entity("prefabs/chest")
 function add_item_obj(pos, item_id, item_num)
 	local e = e_chest.copy()
@@ -715,6 +708,20 @@ main_player.learn_skill("fire_ball")
 main_player.awake()
 obj_root.add_child(e)
 
+local e_npcs = {}
+function add_creep(pos, ID)
+	local e = e_npcs[ID]
+	if e == nil then
+		e = create_entity("prefabs/"..ID)
+		e_npcs[ID] = e
+	end
+	e = e.copy()
+	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
+	e.find_component("cNode").set_pos(pos)
+	make_npc(e, ID)
+	obj_root.add_child(e)
+end
+
 local e_grasses = {}
 table.insert(e_grasses, { e=create_entity("prefabs/grass1"), p=0.35 })
 table.insert(e_grasses, { e=create_entity("prefabs/grass2"), p=0.35 })
@@ -732,39 +739,36 @@ table.insert(e_rocks, { e=create_entity("prefabs/rock1"), p=0.35 })
 table.insert(e_rocks, { e=create_entity("prefabs/rock2"), p=0.35 })
 table.insert(e_rocks, { e=create_entity("prefabs/rock3"), p=0.3 })
 
+local grid_size = 10
+local grid_num = terrain_ext.x / grid_size
+local grids = {}
+for i=1, grid_num * grid_num, 1 do
+	grids[i] = false
+end
+
 function build_grid(x, z)
 	if x < 0 then x = 0 end
 	if z < 0 then z = 0 end
+
 	if x >= grid_num then x = grid_num - 1 end
 	if z >= grid_num then z = grid_num - 1 end
+
 	local idx = z * grid_num + x
 	if not grids[idx] then
 		grids[idx] = true
-
+		
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
-			0.3, e_grasses, 0.04, vec2(35.0, 200), vec2(0.8, 1.0), vec2(0, 360), vec2(3.8, 4.5))
-
+			0.1, e_grasses, 0.5, vec2(35.0, 200), vec2(0.8, 1.0), vec2(0, 360), vec2(3.8, 4.5))
+			
+		--[[
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
 			3.0, e_trees, 0.1, vec2(35.0, 200), vec2(0.9, 1.0), vec2(0, 360), vec2(0.8, 1.0))
 
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
 			4.0, e_rocks, 0.1, vec2(0.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(0.7, 0.9))
+		]]
 	end
-end
-
-local e_npcs = {}
-function add_creep(pos, ID)
-	local e = e_npcs[ID]
-	if e == nil then
-		e = create_entity("prefabs/"..ID)
-		e_npcs[ID] = e
-	end
-	e = e.copy()
-	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
-	e.find_component("cNode").set_pos(pos)
-	make_npc(e, ID)
-	obj_root.add_child(e)
 end
 
 local ns = {}

@@ -823,6 +823,8 @@ namespace flame
 		auto c = new Closure(callback, capture);
 		assert_callbacks.emplace_back(c);
 		return c;
+#else
+		return nullptr;
 #endif
 	}
 

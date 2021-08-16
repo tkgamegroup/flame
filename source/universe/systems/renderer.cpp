@@ -1265,9 +1265,9 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
+			BlendOption bo = { true, BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorOne, BlendFactorZero };
 			if (alpha_blend)
 			{
-				BlendOption bo = { true, BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorOne, BlendFactorZero };
 				info.blend_options_count = 1;
 				info.blend_options = &bo;
 			}
@@ -1759,17 +1759,18 @@ namespace flame
 							auto cam_coord = camera->node->g_pos;
 							auto cam_dir = -camera->node->g_rot[2];
 
-							auto _vec = vec;
-							std::sort(_vec.begin(), _vec.end(), [&](const auto& a, const auto& b) {
-								auto p1 = vec3(trans[a.first].mat[3]);
-								auto p2 = vec3(trans[b.first].mat[3]);
-								p1 -= cam_coord;
-								p2 -= cam_coord;
-								auto d1 = dot(p1, cam_dir);
-								auto d2 = dot(p2, cam_dir);
-								return d1 > d2;
-							});
-							fill_indirs(_vec);
+							//auto _vec = vec;
+							//std::sort(_vec.begin(), _vec.end(), [&](const auto& a, const auto& b) {
+							//	auto p1 = vec3(trans[a.first].mat[3]);
+							//	auto p2 = vec3(trans[b.first].mat[3]);
+							//	p1 -= cam_coord;
+							//	p2 -= cam_coord;
+							//	auto d1 = dot(p1, cam_dir);
+							//	auto d2 = dot(p2, cam_dir);
+							//	return d1 > d2;
+							//});
+							//fill_indirs(_vec);
+							fill_indirs(vec);
 						}
 						else
 							fill_indirs(vec);

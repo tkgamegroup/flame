@@ -1404,7 +1404,13 @@ namespace flame
 			vk_blend_attachment_states.resize(renderpass->subpasses[info.subpass_index].color_attachments_count);
 			for (auto& a : vk_blend_attachment_states)
 			{
-				a = {};
+				a.blendEnable = VK_FALSE;
+				a.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+				a.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+				a.colorBlendOp = VK_BLEND_OP_ADD;
+				a.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+				a.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+				a.alphaBlendOp = VK_BLEND_OP_ADD;
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
 			for (auto i = 0; i < info.blend_options_count; i++)

@@ -235,11 +235,11 @@ namespace flame
 				att.format = format;
 				att.load_op = load_op;
 				RenderpassSubpassInfo sp;
+				int col_ref = 0;
 				if (format >= Format_Color_Begin && format <= Format_Color_End)
 				{
 					sp.color_attachments_count = 1;
-					int col_ref[] = { 0 };
-					sp.color_attachments = col_ref;
+					sp.color_attachments = &col_ref;
 				}
 				else
 					sp.depth_attachment = 0;

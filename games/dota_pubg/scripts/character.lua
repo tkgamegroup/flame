@@ -235,7 +235,7 @@ function make_character(entity, tag, stats)
 				end
 			else
 				character.move(d)
-				character.anim_swap_tick = 60
+				character.anim_swap_tick = 5
 			end
 		elseif character.attack_semp and (character.curr_frame == -1 or character.curr_frame >= 12) then
 			if l <= character.radius + character.target.radius + 3 then
