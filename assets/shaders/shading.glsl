@@ -47,7 +47,7 @@ vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - cos_theta, 5.0);
 }   
 
-vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
+vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 H = normalize(V + L);
 	
@@ -68,13 +68,9 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness)
+vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 ret = vec3(0.0);
-
-	vec3 coordv = render_data.camera_coord - coordw;
-	vec3 V = normalize(coordv);
-	float distv = dot(render_data.camera_dir, -coordv);
 
 	uint dir_num = tile_lights[0].dir_count;
 	for (int i = 0; i < dir_num; i++)
@@ -82,7 +78,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 		LightInfo light = light_infos[tile_lights[0].dir_indices[i]];
 		vec3 L = light.pos;
 		
-		float shadowed = 1.0;
+		float f_shadow = 1.0;
 		if (light.shadow_index != -1)
 		{
 			DirShadow shadow = dir_shadows[light.shadow_index];
@@ -95,12 +91,13 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 				vec4 coordl = shadow.mats[lv] * vec4(coordw, 1.0);
 				coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 				float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-				shadowed = clamp(exp(-esm_c * (coordl.z - ref) * shadow.far), 0.0, 1.0);
+				f_shadow = clamp(exp(-esm_c * (coordl.z - ref) * shadow.far), 0.0, 1.0);
 				break;
 			}
 		}
 		
-		ret += lighting(N, V, L, light.color * shadowed, metallic, albedo, f0, roughness);
+		if (f_shadow > 0.0)
+			ret += brdf(N, V, L, light.color * f_shadow, metallic, albedo, f0, roughness);
 	}
 	
 	uint pt_num = tile_lights[0].pt_count;
@@ -111,7 +108,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 		float dist = length(L);
 		L = L / dist;
 
-		float shadowed = 1.0;
+		float f_shadow = 1.0;
 		if (light.shadow_index != -1)
 		{
 			PtShadow shadow = pt_shadows[light.shadow_index];
@@ -120,32 +117,51 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 			{
 				float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
 				ref = linear_depth(shadow.near, shadow.far, ref);
-				shadowed = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
+				f_shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 			}
 		}
-
-		ret += lighting(N, V, L, light.color / max(dist * dist, 1.0) * shadowed , metallic, albedo, f0, roughness);
-	}
-	
-	float sky_intensity = render_data.sky_intensity;
-
-	// IBL
-	{
-		float NdotV = max(dot(N, V), 0.0);
-		vec3 F = fresnel_schlick_roughness(NdotV, f0, roughness);
-		vec3 kD = vec3(1.0) - F;
-		kD *= 1.0 - metallic;
-
-		vec3 diffuse = texture(sky_irr, cube_coord(N)).rgb * albedo;
-
-		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
-		vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
-
-		float ao = 1.0; // TODO
-		ret += (kD * diffuse + specular) * sky_intensity * ao;
+		
+		if (f_shadow > 0.0)
+			ret += brdf(N, V, L, light.color / max(dist * dist, 1.0) * f_shadow , metallic, albedo, f0, roughness);
 	}
 
-	ret = mix(ret, render_data.fog_color * sky_intensity, distv / render_data.zFar);
+	return ret;
+}
+
+vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
+{
+	float NdotV = max(dot(N, V), 0.0);
+	vec3 F = fresnel_schlick_roughness(NdotV, f0, roughness);
+	vec3 kD = vec3(1.0) - F;
+	kD *= 1.0 - metallic;
+
+	vec3 diffuse = texture(sky_irr, cube_coord(N)).rgb * albedo;
+
+	vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
+	vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+
+	float ao = 1.0; // TODO
+	return (kD * diffuse + specular) * render_data.sky_intensity * ao;
+}
+
+vec3 get_fog(vec3 color, float dist)
+{
+	return mix(color, render_data.fog_color * render_data.sky_intensity, dist / render_data.zFar);
+}
+
+vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness)
+{
+	vec3 ret = vec3(0.0);
+
+	vec3 coordv = render_data.camera_coord - coordw;
+	vec3 V = normalize(coordv);
+	float distv = dot(render_data.camera_dir, -coordv);
+
+	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
+
+	ret += get_ibl(N, V, metallic, albedo, f0, roughness);
+
+	ret = get_fog(ret, distv);
 
 	return ret;
 }

@@ -1755,9 +1755,9 @@ namespace flame
 						};
 						if (!opaque)
 						{
-							auto& trans = nd.buf_mesh_transforms.pstag->transforms;
-							auto cam_coord = camera->node->g_pos;
-							auto cam_dir = -camera->node->g_rot[2];
+							//auto& trans = nd.buf_mesh_transforms.pstag->transforms;
+							//auto cam_coord = camera->node->g_pos;
+							//auto cam_dir = -camera->node->g_rot[2];
 
 							//auto _vec = vec;
 							//std::sort(_vec.begin(), _vec.end(), [&](const auto& a, const auto& b) {

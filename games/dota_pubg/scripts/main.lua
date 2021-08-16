@@ -547,7 +547,7 @@ end
 local attributes_btn = scene.find_child("attributes_btn")
 attributes_btn.wnd = nil
 attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
-	if not attributes_btn.wnd_openning then
+	if not attributes_btn.wnd then
 		attributes_btn.wnd = create_entity("prefabs/ui/attributes")
 		attributes_btn.wnd.find_driver("dWindow").add_close_listener(function()
 			__ui_pop.remove_child(attributes_btn.wnd)
@@ -759,7 +759,7 @@ function build_grid(x, z)
 		
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
-			0.1, e_grasses, 0.5, vec2(35.0, 200), vec2(0.8, 1.0), vec2(0, 360), vec2(3.8, 4.5))
+			0.15, e_grasses, 0.5, vec2(35.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(3.0, 4.0))
 			
 		--[[
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
