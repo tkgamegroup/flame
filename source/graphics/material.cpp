@@ -76,8 +76,10 @@ namespace flame
 				ret->metallic = n.as_float();
 			if (auto n = n_material.attribute("roughness"); n)
 				ret->roughness = n.as_float();
-			if (auto n = n_material.attribute("is_opaque"); n)
+			if (auto n = n_material.attribute("opaque"); n)
 				ret->opaque = n.as_bool();
+			if (auto n = n_material.attribute("sort"); n)
+				ret->sort = n.as_bool();
 			if (auto n = n_material.attribute("pipeline_file"); n)
 				ret->pipeline_file = n.value();
 			if (auto n = n_material.attribute("pipeline_defines"); n)

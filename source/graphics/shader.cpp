@@ -440,7 +440,7 @@ namespace flame
 			for (auto i = 0; i < bindings.size(); i++)
 			{
 				auto& src = bindings[i];
-				if (src.type != DescriptorMax)
+				if (src.type != Descriptor_Max)
 				{
 					VkDescriptorSetLayoutBinding dst;
 					dst.binding = i;
@@ -604,7 +604,7 @@ namespace flame
 					for (auto i = 0; i < bindings.size(); i++)
 					{
 						auto& b = bindings[i];
-						if (b.type != DescriptorMax)
+						if (b.type != Descriptor_Max)
 						{
 							auto n_binding = n_bindings.append_child("binding");
 							n_binding.append_attribute("type").set_value(ti_desctype->serialize(&b.type).c_str());
@@ -1377,14 +1377,17 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
+			if (info.sample_count == SampleCount_1)
 			{
 				auto& res_atts = renderpass->subpasses[info.subpass_index].resolve_attachments;
 				multisample_state.rasterizationSamples = to_backend(res_atts ? renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
+			else
+				multisample_state.rasterizationSamples = to_backend(info.sample_count);
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
-			multisample_state.alphaToCoverageEnable = VK_FALSE;
+			multisample_state.alphaToCoverageEnable = info.alpha_to_coverage;
 			multisample_state.alphaToOneEnable = VK_FALSE;
 
 			VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
@@ -1606,13 +1609,18 @@ namespace flame
 				info.vertex_buffers_count = vertex_buffers.size();
 				info.vertex_buffers = vertex_buffers.data();
 
-				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode");
 				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology");
+				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode");
+				auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount");
 				auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp");
-				if (auto n = doc_root.child("cull_mode"); n)
-					ti_cullmode->unserialize(&info.cull_mode, n.attribute("v").value());
 				if (auto n = doc_root.child("primitive_topology"); n)
 					ti_prim->unserialize(&info.primitive_topology, n.attribute("v").value());
+				if (auto n = doc_root.child("cull_mode"); n)
+					ti_cullmode->unserialize(&info.cull_mode, n.attribute("v").value());
+				if (auto n = doc_root.child("sample_count"); n)
+					ti_samplecount->unserialize(&info.sample_count, n.attribute("v").value());
+				if (auto n = doc_root.child("alpha_to_coverage"); n)
+					info.alpha_to_coverage = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_test"); n)
 					info.depth_test = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_write"); n)

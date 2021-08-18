@@ -139,6 +139,8 @@ namespace flame
 			uint patch_control_points = 0;
 			PolygonMode polygon_mode = PolygonModeFill;
 			CullMode cull_mode = CullModeBack;
+			SampleCount sample_count = SampleCount_1;
+			bool alpha_to_coverage = false;
 			bool depth_test = true;
 			bool depth_write = true;
 			CompareOp compare_op = CompareOpLess;

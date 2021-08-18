@@ -219,11 +219,11 @@ namespace flame
 				return it->second.get();
 
 			RenderpassPrivate* rp = nullptr;
-			auto load_op = clear ? AttachmentClear : AttachmentDontCare;
+			auto load_op = clear ? AttachmentLoadClear : AttachmentLoadDontCare;
 			for (auto& r : simple_rps)
 			{
 				auto& att = r->attachments[0];
-				if (att.format == format && att.load_op == load_op)
+				if (att.format == format && att.load_op == load_op && att.sample_count == sample_count)
 				{
 					rp = r;
 					break;
@@ -234,6 +234,7 @@ namespace flame
 				RenderpassAttachmentInfo att;
 				att.format = format;
 				att.load_op = load_op;
+				att.sample_count = sample_count;
 				RenderpassSubpassInfo sp;
 				int col_ref = 0;
 				if (format >= Format_Color_Begin && format <= Format_Color_End)

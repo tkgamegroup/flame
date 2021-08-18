@@ -482,12 +482,23 @@ namespace flame
 		{
 			switch (op)
 			{
-			case AttachmentLoad:
+			case AttachmentLoadLoad:
 				return VK_ATTACHMENT_LOAD_OP_LOAD;
-			case AttachmentClear:
+			case AttachmentLoadClear:
 				return VK_ATTACHMENT_LOAD_OP_CLEAR;
-			case AttachmentDontCare:
+			case AttachmentLoadDontCare:
 				return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			}
+		}
+
+		inline VkAttachmentStoreOp to_backend(AttachmentStoreOp op)
+		{
+			switch (op)
+			{
+			case AttachmentStoreStore:
+				return VK_ATTACHMENT_STORE_OP_STORE;
+			case AttachmentStoreDontCare:
+				return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			}
 		}
 

@@ -11,7 +11,8 @@ namespace flame
 			virtual vec4 get_color() const = 0;
 			virtual float get_metallic() const = 0;
 			virtual float get_roughness() const = 0;
-			virtual bool get_is_opaque() const = 0;
+			virtual bool get_opaque() const = 0;
+			virtual bool get_sort() const = 0;
 
 			virtual void get_pipeline_file(wchar_t* dst) const = 0;
 

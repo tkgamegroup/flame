@@ -153,7 +153,11 @@ int main(int argc, char** args)
 		//return 0;
 	}
 
-	g_app.create();
+#if _DEBUG
+	g_app.create(true);
+#else
+	g_app.create(false);
+#endif
 
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
 	w->window->set_cursor(CursorNone);

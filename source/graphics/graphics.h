@@ -105,7 +105,7 @@ namespace flame
 			MemoryPropertyHost = 1 << 1,
 			MemoryPropertyCoherent = 1 << 2,
 
-			MemoryPropertyMax = 0xffffffff
+			MemoryProperty_Max = 0xffffffff
 		};
 
 		inline MemoryPropertyFlags operator| (MemoryPropertyFlags a, MemoryPropertyFlags b) { return (MemoryPropertyFlags)((int)a | (int)b); }
@@ -119,7 +119,7 @@ namespace flame
 			SampleCount_16,
 			SampleCount_32,
 
-			SampleCountMax = 0xffffffff
+			SampleCount_Max = 0xffffffff
 		};
 
 		enum BufferUsageFlags
@@ -133,7 +133,7 @@ namespace flame
 			BufferUsageVertex = 1 << 5,
 			BufferUsageIndirect = 1 << 6,
 
-			BufferUsageMax = 0xffffffff
+			BufferUsage_Max = 0xffffffff
 		};
 
 		inline BufferUsageFlags operator| (BufferUsageFlags a, BufferUsageFlags b) { return (BufferUsageFlags)((int)a | (int)b); }
@@ -147,7 +147,7 @@ namespace flame
 			ImageUsageStorage = 1 << 3,
 			ImageUsageAttachment = 1 << 4,
 
-			ImageUsageMax = 0xffffffff
+			ImageUsage_Max = 0xffffffff
 		};
 
 		inline ImageUsageFlags operator| (ImageUsageFlags a, ImageUsageFlags b) { return (ImageUsageFlags)((int)a | (int)b); }
@@ -262,9 +262,15 @@ namespace flame
 
 		enum AttachmentLoadOp
 		{
-			AttachmentLoad,
-			AttachmentClear,
-			AttachmentDontCare
+			AttachmentLoadLoad,
+			AttachmentLoadClear,
+			AttachmentLoadDontCare
+		};
+
+		enum AttachmentStoreOp
+		{
+			AttachmentStoreStore,
+			AttachmentStoreDontCare
 		};
 
 		enum QueueFamily
@@ -280,7 +286,7 @@ namespace flame
 			DescriptorSampledImage,
 			DescriptorStorageImage,
 
-			DescriptorMax = 0xffffffff
+			Descriptor_Max = 0xffffffff
 		};
 
 		enum PipelineType
@@ -354,7 +360,7 @@ namespace flame
 			ShaderStageComp = 1 << 5,
 			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag | ShaderStageComp,
 
-			ShaderStageMax = 0xffffffff
+			ShaderStage_Max = 0xffffffff
 		};
 
 		inline ShaderStageFlags operator| (ShaderStageFlags a, ShaderStageFlags b) { return (ShaderStageFlags)((int)a | (int)b); }

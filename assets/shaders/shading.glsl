@@ -52,7 +52,9 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, ve
 	vec3 H = normalize(V + L);
 	
 	float NdotV = max(dot(N, V), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
+	float NdotL = dot(N, L);
+	if (NdotL <= 0.0)
+		return vec3(0.0);
 	
 	float NDF = distribution_GGX(N, H, roughness);        
     float G   = geometry_smith(N, V, L, roughness);      
@@ -97,7 +99,13 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		}
 		
 		if (f_shadow > 0.0)
-			ret += brdf(N, V, L, light.color * f_shadow, metallic, albedo, f0, roughness);
+		{
+			vec3 radiance = light.color * f_shadow;
+			ret += brdf(N, V, L, radiance, metallic, albedo, f0, roughness);
+			#ifdef DOUBLE_SIDE
+				ret += brdf(-N, V, L, radiance, metallic, albedo, f0, roughness);
+			#endif
+		}
 	}
 	
 	uint pt_num = tile_lights[0].pt_count;
@@ -122,7 +130,13 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		}
 		
 		if (f_shadow > 0.0)
-			ret += brdf(N, V, L, light.color / max(dist * dist, 1.0) * f_shadow , metallic, albedo, f0, roughness);
+		{
+			vec3 radiance = light.color / max(dist * dist, 1.0) * f_shadow;
+			ret += brdf(N, V, L, radiance, metallic, albedo, f0, roughness);
+			#ifdef DOUBLE_SIDE
+				ret += brdf(-N, V, L, radiance, metallic, albedo, f0, roughness);
+			#endif
+		}
 	}
 
 	return ret;

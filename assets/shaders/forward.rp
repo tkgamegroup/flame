@@ -2,7 +2,7 @@
 <renderpass>
   <attachments>
     <attachment format="R16G16B16A16_SFLOAT" load_op="Load" initia_layout="Attachment" />
-    <attachment format="Depth16" load_op="Load" initia_layout="ShaderReadOnly" />
+    <attachment format="Depth16" load_op="Load" initia_layout="Attachment" />
   </attachments>
   <subpasses>
     <subpass color_refs="0" depth_ref="1" />

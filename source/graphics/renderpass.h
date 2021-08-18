@@ -9,7 +9,8 @@ namespace flame
 		struct RenderpassAttachmentInfo
 		{
 			Format format = Format_R8G8B8A8_UNORM;
-			AttachmentLoadOp load_op = AttachmentClear;
+			AttachmentLoadOp load_op = AttachmentLoadClear;
+			AttachmentStoreOp store_op = AttachmentStoreStore;
 			SampleCount sample_count = SampleCount_1;
 			ImageLayout initia_layout = ImageLayoutUndefined;
 			ImageLayout final_layout = ImageLayoutAttachment;
