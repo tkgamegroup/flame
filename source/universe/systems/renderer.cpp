@@ -1157,6 +1157,7 @@ namespace flame
 		std::vector<std::pair<std::string, std::string>> substitutes;
 		auto polygon_mode = PolygonModeFill;
 		auto cull_mode = CullModeBack;
+		auto a2c = false;
 		auto depth_test = true;
 		auto depth_write = true;
 		auto use_mat = true;
@@ -1207,6 +1208,8 @@ namespace flame
 			deferred = false;
 			alpha_blend = true;
 		}
+		if (find_define("ALPHA_TEST"))
+			a2c = true;
 		if (use_mat && !mat.empty())
 		{
 			defines.push_back("MAT");
@@ -1263,7 +1266,6 @@ namespace flame
 				{
 					rp = Renderpass::get(device, L"forward_ms4.rp");
 					info.sample_count = MsaaSampleCount;
-					info.alpha_to_coverage = true;
 				}
 			}
 			info.renderpass = rp;
@@ -1282,6 +1284,7 @@ namespace flame
 			info.vertex_buffers = &vib;
 			info.polygon_mode = polygon_mode;
 			info.cull_mode = cull_mode;
+			info.alpha_to_coverage = a2c;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
 			BlendOption bo = { true, BlendFactorSrcAlpha, BlendFactorOneMinusSrcAlpha, BlendFactorOne, BlendFactorZero };
@@ -1320,7 +1323,6 @@ namespace flame
 				{
 					rp = Renderpass::get(device, L"forward_ms4.rp");
 					info.sample_count = MsaaSampleCount;
-					info.alpha_to_coverage = true;
 				}
 			}
 			info.renderpass = rp;
@@ -1343,6 +1345,7 @@ namespace flame
 			info.vertex_buffers = &vib;
 			info.polygon_mode = polygon_mode;
 			info.cull_mode = cull_mode;
+			info.alpha_to_coverage = a2c;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
 			if (alpha_blend)

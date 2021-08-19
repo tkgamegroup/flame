@@ -23,8 +23,8 @@ namespace flame
 					auto path = filename.parent_path() / src.filename;
 					if (!std::filesystem::exists(path))
 					{
-						path = pipeline_file;
-						get_engine_path(path, L"assets\\shaders");
+						path = src.filename;
+						get_engine_path(path, L"assets");
 					}
 					wcscpy(dst, path.c_str());
 				}

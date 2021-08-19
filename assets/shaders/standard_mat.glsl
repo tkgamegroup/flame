@@ -1,6 +1,6 @@
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
-		if (texture(maps[material.map_indices[ALPHA_MAP]], i_uv).r < ALPHA_TEST)
+		if (texture(maps[material.map_indices[ALPHA_MAP]], i_uv).r < 0.5)
 			discard;
 		#ifndef SHADOW_PASS
 			#ifdef COLOR_MAP
@@ -21,7 +21,7 @@
 		#else
 			vec4 color = material.color;
 		#endif
-		if (color.a < ALPHA_TEST)
+		if (color.a < 0.5)
 			discard;
 	#endif
 #else
