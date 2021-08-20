@@ -20,6 +20,7 @@ namespace flame
 
 			virtual void get_texture_file(uint idx, wchar_t* dst) const = 0;
 			virtual bool get_texture_srgb(uint idx) const = 0;
+			virtual bool get_texture_auto_mipmap(uint idx) const = 0;
 			virtual SamplerPtr get_texture_sampler(DevicePtr device, uint idx) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Material* get(const wchar_t* filename);

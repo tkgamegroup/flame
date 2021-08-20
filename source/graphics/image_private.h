@@ -11,16 +11,21 @@ namespace flame
 		{
 			struct Data
 			{
-				std::unique_ptr<uchar> p;
+				Format format;
 				uvec2 size;
+				uint pixel_size;
 				uint pitch;
+				uint data_size;
+				std::unique_ptr<uchar> p;
+
+				vec4 get_pixel(ivec2 pos);
+				void set_pixel(ivec2 pos, const vec4& v);
 			};
 
 			DevicePrivate* device;
 			
 			Format format;
 			std::vector<uvec2> sizes;
-			uint pixel_size;
 			uint levels;
 			uint layers;
 			SampleCount sample_count;
@@ -28,6 +33,7 @@ namespace flame
 			bool is_cube = false;
 
 			std::filesystem::path filename;
+			bool srgb = false;
 
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
@@ -35,6 +41,7 @@ namespace flame
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
 			std::vector<std::vector<Data>> data;
+			uint data_size;
 
 			void initialize(const uvec2& size);
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, 
@@ -42,11 +49,7 @@ namespace flame
 			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native);
 			~ImagePrivate();
 
-			void release() override 
-			{ 
-				// TODO: dec references
-				delete this; // TODO: delete only when no references
-			}
+			void release() override;
 
 			Format get_format() const override { return format; }
 			uvec2 get_size(uint lv) const override { return sizes[lv]; }
@@ -68,6 +71,8 @@ namespace flame
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
 			void generate_mipmaps() override;
+			float alpha_test_coverage(uint level, float ref, uint channel, float scale) override;
+			void scale_alpha_to_coverage(uint level, float desired, float ref, uint channel) override;
 
 			void save(const std::filesystem::path& filename);
 			void save(const wchar_t* filename) override { save(std::filesystem::path(filename)); }

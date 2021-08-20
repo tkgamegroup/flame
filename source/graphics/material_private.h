@@ -16,6 +16,7 @@ namespace flame
 				Filter min_filter = FilterLinear;
 				bool linear_mipmap = true;
 				AddressMode address_mode = AddressClampToEdge;
+				bool auto_mipmap = false;
 			};
 
 			std::filesystem::path filename;
@@ -41,7 +42,8 @@ namespace flame
 			const char* get_pipeline_defines() const override { return pipeline_defines.c_str(); }
 
 			void get_texture_file(uint idx, wchar_t* dst) const override;
-			bool get_texture_srgb(uint idx) const override { return idx < 4 ? textures[idx].srgb : false; }
+			bool get_texture_srgb(uint idx) const override { return textures[idx].srgb; }
+			bool get_texture_auto_mipmap(uint idx) const override { return textures[idx].auto_mipmap; }
 			SamplerPtr get_texture_sampler(DevicePtr device, uint idx) const override;
 
 			static MaterialPrivate* get(const std::filesystem::path& filename);

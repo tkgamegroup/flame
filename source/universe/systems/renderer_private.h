@@ -84,7 +84,7 @@ namespace flame
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
 
-		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
+		graphics::Pipeline* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, std::vector<std::string> defines);
 		void release_material_pipeline(MaterialUsage usage, graphics::Pipeline* pl);
 
 		cCameraPtr get_camera() const override { return camera; }

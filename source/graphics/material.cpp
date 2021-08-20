@@ -103,6 +103,8 @@ namespace flame
 					dst.linear_mipmap = n.as_bool();
 				if (auto n = n_texture.attribute("address_mode"); n)
 					ti_addrmod->unserialize(&dst.address_mode, n.value());
+				if (auto n = n_texture.attribute("auto_mipmap"); n)
+					dst.auto_mipmap = n.as_bool();
 				i++;
 			}
 			materials.emplace_back(ret);

@@ -724,11 +724,11 @@ end
 
 local e_grasses = {}
 table.insert(e_grasses, { e=create_entity("prefabs/grass1"), p=0.35 })
-table.insert(e_grasses, { e=create_entity("prefabs/grass2"), p=0.35 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass2"), p=0.35 })--[[
 table.insert(e_grasses, { e=create_entity("prefabs/grass3"), p=0.1 })
 table.insert(e_grasses, { e=create_entity("prefabs/grass4"), p=0.1 })
 table.insert(e_grasses, { e=create_entity("prefabs/grass5"), p=0.05 })
-table.insert(e_grasses, { e=create_entity("prefabs/grass6"), p=0.05 })
+table.insert(e_grasses, { e=create_entity("prefabs/grass6"), p=0.05 })]]
 
 local e_trees = {}
 table.insert(e_trees, { e=create_entity("prefabs/tree1"), p=0.5 })

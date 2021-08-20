@@ -89,6 +89,8 @@ namespace flame
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
 			virtual void generate_mipmaps() = 0;
+			virtual float alpha_test_coverage(uint level, float ref, uint channel, float scale) = 0;
+			virtual void scale_alpha_to_coverage(uint level, float desired, float ref, uint channel) = 0;
 
 			virtual void save(const wchar_t* filename) = 0;
 

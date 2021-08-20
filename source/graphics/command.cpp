@@ -394,8 +394,8 @@ namespace flame
 			ret.dstSubresource.mipLevel = src.dst_sub.base_level;
 			ret.dstSubresource.baseArrayLayer = src.dst_sub.base_layer;
 			ret.dstSubresource.layerCount = src.dst_sub.layer_count;
-			ret.srcOffsets[0] = { src.dst_range.x, src.dst_range.y, 0 };
-			ret.srcOffsets[1] = { src.dst_range.z, src.dst_range.w, 1 };
+			ret.dstOffsets[0] = { src.dst_range.x, src.dst_range.y, 0 };
+			ret.dstOffsets[1] = { src.dst_range.z, src.dst_range.w, 1 };
 			return ret;
 		}
 

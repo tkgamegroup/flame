@@ -16,7 +16,7 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
-			std::vector<std::unique_ptr<ImagePrivate>> texs[2]; // no_srgb, srgb
+			std::vector<std::pair<uint, std::unique_ptr<ImagePrivate>>> texs[2]; // no_srgb, srgb
 			std::vector<std::unique_ptr<SamplerPrivate>> sps;
 			std::unique_ptr<DescriptorPoolPrivate> dsp;
 			std::vector<std::unique_ptr<RenderpassPrivate>> rps;

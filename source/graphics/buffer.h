@@ -29,7 +29,7 @@ namespace flame
 
 			StagingBuffer(Device* device, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
 			{
-				reset(Buffer::create(device, size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				reset(Buffer::create(device, size, BufferUsageTransferSrc | BufferUsageTransferDst | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				mapped = p->map();
 				if (data)
 					memcpy(mapped, data, size);

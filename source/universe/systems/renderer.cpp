@@ -356,7 +356,7 @@ namespace flame
 		bool opaque;
 		bool sort;
 		std::filesystem::path pipeline_file;
-		std::string pipeline_defines;
+		std::vector<std::string> pipeline_defines;
 		int texs[4];
 		Pipeline* pls[MaterialUsageCount] = {};
 
@@ -933,6 +933,24 @@ namespace flame
 		return pls[u];
 	}
 
+	bool parse_define(const std::vector<std::string>& defines, const std::string& n, std::string& v) 
+	{
+		for (auto& d : defines)
+		{
+			if (d.compare(0, n.size(), n) == 0)
+			{
+				if (d.size() == n.size())
+					return true;
+				if (d[n.size()] == '=')
+				{
+					v = d.substr(n.size() + 1);
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
 	int sRendererPrivate::set_material_res(int idx, Material* mat)
 	{
 		auto& nd = *_nd;
@@ -977,9 +995,9 @@ namespace flame
 			mat->get_pipeline_file(buf);
 			dst.pipeline_file = buf;
 		}
-		dst.pipeline_defines = mat->get_pipeline_defines();
+		dst.pipeline_defines = Shader::format_defines(mat->get_pipeline_defines());
 		if (!opaque)
-			dst.pipeline_defines += " TRANSPARENT ";
+			dst.pipeline_defines.push_back("TRANSPARENT");
 		if (mat)
 		{
 			InstanceCB cb(device);
@@ -988,20 +1006,56 @@ namespace flame
 			data.color = mat->get_color();
 			data.metallic = mat->get_metallic();
 			data.roughness = mat->get_roughness();
+			auto alpha_map_id = std::make_pair(-1, 0);
+			auto alpha_test = 0.f;
+			std::string str;
+			if (parse_define(dst.pipeline_defines, "ALPHA_TEST", str))
+				alpha_test = std::stof(str);
+			if (parse_define(dst.pipeline_defines, "ALPHA_MAP", str))
+				alpha_map_id = { std::stoi(str), 0 };
+			else if (parse_define(dst.pipeline_defines, "COLOR_MAP", str))
+				alpha_map_id = { std::stoi(str), 3 };
 			for (auto i = 0; i < 4; i++)
 			{
 				wchar_t buf[260]; buf[0] = 0;
 				mat->get_texture_file(i, buf);
 				auto fn = std::filesystem::path(buf);
-				if (fn.empty())
+				if (fn.empty() || !std::filesystem::exists(fn))
 				{
 					dst.texs[i] = -1;
 					data.map_indices[i] = -1;
 				}
 				else
 				{
-					auto img = Image::get(device, fn.c_str(), mat->get_texture_srgb(i));
-					auto iv = img->get_view();
+					auto srgb = mat->get_texture_srgb(i);
+					if (mat->get_texture_auto_mipmap(i))
+					{
+						auto ext = fn.extension();
+						if (ext != L".dds" && ext != L".ktx")
+						{
+							auto dds_fn = fn;
+							dds_fn += L".dds";
+							if (!std::filesystem::exists(dds_fn))
+							{
+								auto img = Image::get(device, fn.c_str(), srgb);
+								img->generate_mipmaps();
+								if (alpha_test > 0.f && alpha_map_id.first == i)
+								{
+									auto coverage = img->alpha_test_coverage(0, alpha_test, alpha_map_id.second, 1.f);
+									auto lvs = img->get_levels();
+									for (auto i = 1; i < lvs; i++)
+										img->scale_alpha_to_coverage(i, coverage, alpha_test, alpha_map_id.second);
+								}
+								img->save(dds_fn.c_str());
+								img->release();
+							}
+							fn = dds_fn;
+							srgb = false;
+						}
+					}
+
+					auto img = Image::get(device, fn.c_str(), srgb);
+					auto iv = img->get_view({ 0, img->get_levels(), 0, 1 });
 					auto id = find_texture_res(iv);
 					if (id == -1)
 						id = set_texture_res(-1, iv, mat->get_texture_sampler(device, i));
@@ -1137,11 +1191,9 @@ namespace flame
 		return -1;
 	}
 
-	Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
+	Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, std::vector<std::string> defines)
 	{
 		auto& nd = *_nd;
-
-		auto defines = Shader::format_defines(_defines);
 
 		for (auto& p : nd.pl_mats[usage])
 		{
@@ -1166,15 +1218,8 @@ namespace flame
 
 		Renderpass* rp = nullptr;
 
-		auto find_define = [&](const std::string& s) {
-			for (auto& d : defines)
-			{
-				if (d == s)
-					return true;
-			}
-			return false;
-		};
-		if (find_define("WIREFRAME"))
+		std::string str;
+		if (parse_define(defines, "WIREFRAME", str))
 		{
 			use_mat = false;
 			polygon_mode = PolygonModeLine;
@@ -1183,13 +1228,13 @@ namespace flame
 			deferred = false;
 			rp = Renderpass::get(device, L"rgba16.rp");
 		}
-		else if (find_define("PICKUP"))
+		else if (parse_define(defines, "PICKUP", str))
 		{
 			use_mat = false;
 			deferred = false;
 			rp = Renderpass::get(device, L"rgba16.rp");
 		}
-		else if (find_define("OUTLINE"))
+		else if (parse_define(defines, "OUTLINE", str))
 		{
 			use_mat = false;
 			depth_test = false;
@@ -1197,18 +1242,18 @@ namespace flame
 			deferred = false;
 			rp = Renderpass::get(device, L"rgba16.rp");
 		}
-		else if (find_define("NORMAL_DATA"))
+		else if (parse_define(defines, "NORMAL_DATA", str))
 		{
 			use_mat = false;
 			deferred = false;
 			rp = Renderpass::get(device, L"forward_c.rp");
 		}
-		if (find_define("TRANSPARENT"))
+		if (parse_define(defines, "TRANSPARENT", str))
 		{
 			deferred = false;
 			alpha_blend = true;
 		}
-		if (find_define("ALPHA_TEST"))
+		if (parse_define(defines, "ALPHA_TEST", str))
 			a2c = true;
 		if (use_mat && !mat.empty())
 		{
@@ -1244,6 +1289,7 @@ namespace flame
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
 			rp = Renderpass::get(device, L"d16.rp");
+			alpha_blend = false;
 		case MaterialForMesh:
 		{
 			if (deferred)
@@ -1300,6 +1346,7 @@ namespace flame
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
 			rp = Renderpass::get(device, L"d16.rp");
+			alpha_blend = false;
 		case MaterialForMeshArmature:
 		{
 			if (deferred)
@@ -2684,25 +2731,25 @@ namespace flame
 			auto& dst = nd.mat_reses[MaterialWireframe];
 			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
-			dst.pipeline_defines = "WIREFRAME";
+			dst.pipeline_defines.push_back("WIREFRAME");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialOutline];
 			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
-			dst.pipeline_defines = "OUTLINE";
+			dst.pipeline_defines.push_back("OUTLINE");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialPickup];
 			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
-			dst.pipeline_defines = "PICKUP";
+			dst.pipeline_defines.push_back("PICKUP");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialNormalData];
 			dst.mat = (Material*)INVALID_POINTER;
 			dst.pipeline_file = L"standard_mat.glsl";
-			dst.pipeline_defines = "NORMAL_DATA";
+			dst.pipeline_defines.push_back("NORMAL_DATA");
 		}
 
 		nd.buf_mesh_vtx.create(device, BufferUsageVertex, 200000);
