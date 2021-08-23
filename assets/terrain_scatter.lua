@@ -7,21 +7,22 @@ function terrain_spawn(extent, height_tex, e_dst, pos, prefab, y_off)
     e_dst.add_child(e)
 end
 
-function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, probability, height_constraint, normal_constraint, rotation_range, scale_range)
-    local cx = math.floor(range.z / density) + 1
-    local cy = math.floor(range.w / density) + 1
+function terrain_scatter(extent, height_tex, normal_tex, e_dst, range, density, prefabs, 
+probability, height_constraint, normal_constraint, rotation_range, scale_range)
+    local cx = math.floor(range.z / density + 0.5)
+    local cy = math.floor(range.w / density + 0.5)
 
     local n_prefabs = #prefabs
     for y = 0, cy - 1, 1 do
 	    for x = 0, cx - 1, 1 do
-            local uv = vec2((range.x + (x + math.random() - 0.25) * density) / extent.x, 
-                            (range.y + (y + math.random() - 0.25) * density) / extent.x)
+            local uv = vec2((range.x + (x + math.random() - 0.15) * density) / extent.x, 
+                            (range.y + (y + math.random() - 0.15) * density) / extent.x)
             if math.random() < probability then
                 local height = height_tex.linear_sample(uv, 0, 0).x * extent.y
-                if height > height_constraint.x and height < height_constraint.y then
+                if height >= height_constraint.x and height <= height_constraint.y then
                     local normal = vec3(normal_tex.linear_sample(uv, 0, 0)) * 2 - vec3(1)
                     local ndotup = dot_3(normal, vec3(0, 1, 0))
-                    if ndotup > normal_constraint.x and ndotup < normal_constraint.y then
+                    if ndotup >= normal_constraint.x and ndotup <= normal_constraint.y then
                         local p = math.random()
                         for i=1, n_prefabs, 1 do
                             if p < prefabs[i].p then

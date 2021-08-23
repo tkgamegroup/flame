@@ -40,7 +40,7 @@ local n = {
 		MP_REC = 20,
 		MOV_SP = 0.09,
 		ATK_DMG = 200,
-		ATK_SP = 1000,
+		ATK_SP = 100,
 		ARMOR = 5
 	},
 	skills = {

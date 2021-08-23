@@ -165,12 +165,9 @@ namespace flame
 
 		ImagePrivate::~ImagePrivate()
 		{
-			if (!__images.empty())
-			{
-				std::erase_if(__images, [&](const auto& i) {
-					return i == this;
-				});
-			}
+			std::erase_if(__images, [&](const auto& i) {
+				return i == this;
+			});
 
 			if (vk_memory != 0)
 			{
@@ -184,13 +181,14 @@ namespace flame
 			if (!filename.empty())
 			{
 				auto& texs = device->texs[srgb ? 1 : 0];
-				for (auto& tex : texs)
+				for (auto it = texs.begin(); it != texs.end(); it++)
 				{
+					auto& tex = *it;
 					if (tex.second.get() == this)
 					{
 						tex.first--;
 						if (tex.first == 0)
-							delete this;
+							texs.erase(it);
 						return;
 					}
 				}
@@ -433,7 +431,7 @@ namespace flame
 			{
 				auto current_coverage = alpha_test_coverage(level, ref, channel, alpha_scale);
 
-				auto error = fabsf(current_coverage - desired);
+				auto error = abs(current_coverage - desired);
 				if (error < best_error)
 				{
 					best_error = error;
@@ -462,13 +460,16 @@ namespace flame
 				}
 			}
 
-			StagingBuffer sb(device, d.data_size, d.p.get());
-			InstanceCB cb(device);
-			BufferImageCopy cpy;
-			cpy.img_ext = d.size;
-			cb->image_barrier(this, { level, 1, 0, 1 }, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image((BufferPrivate*)sb.get(), this, 1, &cpy);
-			cb->image_barrier(this, { level, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			{
+				StagingBuffer sb(device, d.data_size, d.p.get());
+				InstanceCB cb(device);
+				BufferImageCopy cpy;
+				cpy.img_ext = d.size;
+				cpy.img_sub.base_level = level;
+				cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), this, 1, &cpy);
+				cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			}
 		}
 
 		void ImagePrivate::save(const std::filesystem::path& filename)

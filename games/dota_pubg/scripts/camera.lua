@@ -1,4 +1,4 @@
-local FIXED_DIST = 7
+local FIXED_DIST = 17
 
 camera = {
 	node = entity.find_component("cNode"),

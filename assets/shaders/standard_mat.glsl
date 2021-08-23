@@ -1,10 +1,12 @@
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
-		if (texture(maps[material.map_indices[ALPHA_MAP]], i_uv).r < ALPHA_TEST)
+		vec4 color;
+		color.a = texture(maps[material.map_indices[ALPHA_MAP]], i_uv).r;
+		if (color.a < ALPHA_TEST)
 			discard;
 		#ifndef SHADOW_PASS
 			#ifdef COLOR_MAP
-				vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+				color.rgb = texture(maps[material.map_indices[COLOR_MAP]], i_uv).rgb;
 				#ifdef TINT_COLOR
 					color *= material.color;
 				#endif
