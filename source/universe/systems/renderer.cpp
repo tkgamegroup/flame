@@ -1456,13 +1456,8 @@ namespace flame
 			info.layout = PipelineLayout::get(device, L"water/water.pll");
 			if (!rp)
 			{
-				if (deferred)
-					rp = Renderpass::get(device, L"gbuffer.rp");
-				else
-				{
-					rp = Renderpass::get(device, L"forward_ms4.rp");
-					info.sample_count = MsaaSampleCount;
-				}
+				rp = Renderpass::get(device, L"forward_ms4.rp");
+				info.sample_count = MsaaSampleCount;
 			}
 			info.renderpass = rp;
 			info.subpass_index = 0;
@@ -1712,8 +1707,6 @@ namespace flame
 
 	void sRendererPrivate::draw_particles(uint count, Particle* partcles, uint res_id)
 	{
-		return;
-
 		auto& nd = *_nd;
 
 		if (nd.particles.back().first != res_id)

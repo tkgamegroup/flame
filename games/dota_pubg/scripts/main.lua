@@ -761,15 +761,13 @@ function build_grid(x, z)
 		
 		local range = vec4(x * grid_size, z * grid_size, grid_size, grid_size)
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
-			0.15, e_grasses, 0.05, vec2(35.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(3.0, 4.0))
+			0.15, e_grasses, 0.05, vec2(40.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(3.0, 4.0))
 			
-		--[[
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
-			5.0, e_trees, 0.1, vec2(35.0, 200), vec2(0.9, 1.0), vec2(0, 360), vec2(0.8, 1.0))
+			5.0, e_trees, 0.1, vec2(35.0, 200), vec2(0.9, 1.0), vec2(0, 360), vec2(0.5, 0.7))
 			
 		terrain_scatter(terrain_ext, terrain_height_tex, terrain_normal_tex, terrain_obj_root, range, 
 			5.0, e_rocks, 0.1, vec2(0.0, 200), vec2(0.7, 1.0), vec2(0, 360), vec2(0.7, 0.9))
-		]]
 	end
 end
 

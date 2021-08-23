@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
-    <eNode src="D:\\assets\\outdoor\\rock2.prefab">
+    <eNode>
       <cRigid dynamic="false" />
-		  <cShape type="TriangleMesh" />
+      <eNode src="D:\\assets\\outdoor\\Rock_5\\Rock_5.prefab">
+		    <cShape type="TriangleMesh" />
+      </eNode>
     </eNode>
 </prefab>

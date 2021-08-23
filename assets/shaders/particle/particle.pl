@@ -6,7 +6,7 @@
     <shader filename="particle/particle.frag" />
   </shaders>
   <layout filename="particle/particle.pll" />
-  <renderpass filename="forward.rp" index="0" />
+  <renderpass filename="forward_ms4.rp" index="0" />
   <vertex_buffers>
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32B32_SFLOAT" />
@@ -18,6 +18,7 @@
   </vertex_buffers>
   <cull_mode v="None" />
   <primitive_topology v="PointList" />
+  <sample_count v="4" />
   <depth_test v="true" />
   <depth_write v="false" />
   <blend_options>
