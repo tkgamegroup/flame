@@ -432,9 +432,9 @@ namespace flame
 	{
 		bool should_render;
 
-		float min_log_lum = -10.f;
-		float max_log_lum = +2.f;
-		float white_point = 1.f;
+		float min_log_lum = -5.f;
+		float max_log_lum = +5.f;
+		float white_point = 4.f;
 		float gamma = 2.2f;
 		uint dir_shadow_levels = 3U;
 		float dir_shadow_dist = 100.f;
@@ -2165,7 +2165,7 @@ namespace flame
 					for (auto lv = 0; lv < nd.dir_shadow_levels; lv++)
 					{
 						auto cv = vec4(1.f, 0.f, 0.f, 0.f);
-						cb->begin_renderpass(nullptr, nd.img_dir_shadow_maps[i]->get_shader_write_dst(0, lv, true), &cv);
+						cb->begin_renderpass(nullptr, nd.img_dir_shadow_maps[i]->get_shader_write_dst(0, lv, AttachmentLoadClear), &cv);
 						bind_mesh_fwd_res();
 						cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(0, i, lv, 0) });
 						cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
@@ -2192,7 +2192,7 @@ namespace flame
 					for (auto ly = 0; ly < 6; ly++)
 					{
 						auto cv = vec4(1.f, 0.f, 0.f, 0.f);
-						cb->begin_renderpass(nullptr, nd.img_pt_shadow_maps[i]->get_shader_write_dst(0, ly, true), &cv);
+						cb->begin_renderpass(nullptr, nd.img_pt_shadow_maps[i]->get_shader_write_dst(0, ly, AttachmentLoadClear), &cv);
 						bind_mesh_fwd_res();
 						cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(1, i, ly, 0) });
 						cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
@@ -2321,9 +2321,9 @@ namespace flame
 				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutGeneral);
 				cb->bind_pipeline_layout(nd.pll_lum, PipelineCompute);
 				cb->bind_descriptor_set(0, nd.ds_lum.get());
-				cb->push_constant_t(PLL_luminance::PushConstant{ nd.min_log_lum, nd.max_log_lum - nd.min_log_lum, 0.016f, float(tar_sz.x * tar_sz.y) });
+				cb->push_constant_t(PLL_luminance::PushConstant{ nd.min_log_lum, nd.max_log_lum - nd.min_log_lum, 1.1f, float(tar_sz.x * tar_sz.y) });
 				cb->bind_pipeline(nd.pl_lum_htg);
-				cb->dispatch(uvec3(ceil(tar_sz.x / 16), ceil(tar_sz.x / 16), 1));
+				cb->dispatch(uvec3(ceil(tar_sz.x / 16), ceil(tar_sz.y / 16), 1));
 				cb->buffer_barrier(nd.buf_lum_htg.buf.get(), AccessShaderRead | AccessShaderWrite, AccessShaderRead | AccessShaderWrite,
 					PipelineStageCompShader, PipelineStageCompShader);
 				cb->bind_pipeline(nd.pl_lum_avg);
@@ -2355,7 +2355,7 @@ namespace flame
 				{
 					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
-					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1));
+					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0, AttachmentLoadLoad));
 					cb->bind_pipeline(nd.pl_upsample);
 					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
 					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
@@ -2364,7 +2364,7 @@ namespace flame
 				}
 				cb->image_barrier(nd.img_dst_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(vp);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, AttachmentLoadLoad));
 				cb->bind_pipeline(nd.pl_upsample);
 				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));
 				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(1)));

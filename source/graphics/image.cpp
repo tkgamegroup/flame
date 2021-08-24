@@ -275,18 +275,17 @@ namespace flame
 
 		static std::vector<RenderpassPrivate*> simple_rps;
 
-		FramebufferPtr ImagePrivate::get_shader_write_dst(uint base_level, uint base_layer, bool clear)
+		FramebufferPtr ImagePrivate::get_shader_write_dst(uint base_level, uint base_layer, AttachmentLoadOp load_op)
 		{
 			auto key = (base_level & 0xff) << 24;
 			key |= (base_layer & 0xff) << 16;
-			key |= (uint)clear & 0xffff;
+			key |= (uint)load_op & 0xffff;
 
 			auto it = write_fbs.find(key);
 			if (it != write_fbs.end())
 				return it->second.get();
 
 			RenderpassPrivate* rp = nullptr;
-			auto load_op = clear ? AttachmentLoadClear : AttachmentLoadDontCare;
 			for (auto& r : simple_rps)
 			{
 				auto& att = r->attachments[0];
@@ -302,6 +301,12 @@ namespace flame
 				att.format = format;
 				att.load_op = load_op;
 				att.sample_count = sample_count;
+				switch (load_op)
+				{
+				case AttachmentLoadLoad:
+					att.initia_layout = ImageLayoutAttachment;
+					break;
+				}
 				RenderpassSubpassInfo sp;
 				int col_ref = 0;
 				if (format >= Format_Color_Begin && format <= Format_Color_End)

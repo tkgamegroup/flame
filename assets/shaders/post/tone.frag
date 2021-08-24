@@ -14,7 +14,7 @@ void main()
 {
 	vec3 rgb = texture(image, i_uv).rgb;
 	vec3 Yxy = rgb2Yxy(rgb);
-	float lp = Yxy.x / (9.6 * 0.1 + 0.0001);
+	float lp = Yxy.x / (9.6 * average_lum + 0.0001);
 	Yxy.x = reinhard2(lp, pc.white_point);
 	rgb = Yxy2rgb(Yxy);
 	o_color = vec4(pow(rgb, vec3(pc.one_over_gamma)), 1.0);

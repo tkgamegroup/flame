@@ -821,7 +821,7 @@ namespace flame
 
 		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
 			device(device),
-			push_constant_size(push_constant_size)
+			pc_sz(push_constant_size)
 		{
 			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
@@ -864,7 +864,7 @@ namespace flame
 			tidb.reset(db);
 			pcti = _pcti;
 
-			push_constant_size = pcti ? pcti->get_size() : 0;
+			pc_sz = pcti ? pcti->get_size() : 0;
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
@@ -873,7 +873,7 @@ namespace flame
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;
-			vk_pushconstant_range.size = push_constant_size;
+			vk_pushconstant_range.size = pc_sz;
 			vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
@@ -882,8 +882,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptor_set_layouts.size();
 			info.pSetLayouts = vk_descriptor_set_layouts.data();
-			info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
-			info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
+			info.pushConstantRangeCount = pc_sz > 0 ? 1 : 0;
+			info.pPushConstantRanges = pc_sz > 0 ? &vk_pushconstant_range : nullptr;
 
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
@@ -1267,7 +1267,7 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			auto renderpass = (RenderpassPrivate*)info.renderpass;
+			rp = (RenderpassPrivate*)info.renderpass;
 
 			shaders.resize(info.shaders_count);
 			vk_stage_infos.resize(shaders.size());
@@ -1379,8 +1379,8 @@ namespace flame
 			multisample_state.pNext = nullptr;
 			if (info.sample_count == SampleCount_1)
 			{
-				auto& res_atts = renderpass->subpasses[info.subpass_index].resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(res_atts ? renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
+				auto& res_atts = rp->subpasses[info.subpass_index].resolve_attachments;
+				multisample_state.rasterizationSamples = to_backend(res_atts ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
 			else
 				multisample_state.rasterizationSamples = to_backend(info.sample_count);
@@ -1404,7 +1404,7 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(renderpass->subpasses[info.subpass_index].color_attachments_count);
+			vk_blend_attachment_states.resize(rp->subpasses[info.subpass_index].color_attachments_count);
 			for (auto& a : vk_blend_attachment_states)
 			{
 				a.blendEnable = VK_FALSE;
@@ -1473,7 +1473,7 @@ namespace flame
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
 			pipeline_info.layout = layout->vk_pipeline_layout;
-			pipeline_info.renderPass = renderpass->vk_renderpass;
+			pipeline_info.renderPass = rp->vk_renderpass;
 			pipeline_info.subpass = info.subpass_index;
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;

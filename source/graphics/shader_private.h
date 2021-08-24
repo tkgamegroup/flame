@@ -105,7 +105,7 @@ namespace flame
 
 			UniPtr<TypeInfoDataBase> tidb;
 			UdtInfo* pcti = nullptr;
-			uint push_constant_size = 0;
+			uint pc_sz = 0;
 
 			VkPipelineLayout vk_pipeline_layout;
 
@@ -148,6 +148,7 @@ namespace flame
 
 			DevicePrivate* device;
 			PipelineLayoutPrivate* layout;
+			RenderpassPrivate* rp = nullptr;
 			std::vector<ShaderPrivate*> shaders;
 
 			VkPipeline vk_pipeline;

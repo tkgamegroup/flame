@@ -5,7 +5,7 @@
     <shader filename="post/box.frag" />
   </shaders>
   <layout filename="post/post.pll" />
-  <renderpass filename="rgba16.rp" index="0" />
+  <renderpass filename="rgba16_l.rp" index="0" />
   <blend_options>
     <blend_option enable="true" src_color="One" dst_color="One" 
                   src_alpha="One" dst_alpha="One" />
