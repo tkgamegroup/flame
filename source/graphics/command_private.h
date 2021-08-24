@@ -20,8 +20,9 @@ namespace flame
 		{
 			CommandPoolPrivate* pool;
 
-			PipelineLayoutPrivate* pipeline_layout = nullptr;
-			PipelinePrivate* pipeline = nullptr;
+			PipelineLayoutPrivate* pll = nullptr;
+			PipelineType plt = PipelineGraphics;
+			PipelinePrivate* pl = nullptr;
 
 			VkCommandBuffer vk_command_buffer;
 
@@ -36,7 +37,7 @@ namespace flame
 			void end_renderpass() override;
 			void set_viewport(const Rect& rect) override;
 			void set_scissor(const Rect& rect) override;
-			void bind_pipeline_layout(PipelineLayoutPtr pll) override;
+			void bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt = PipelineGraphics) override;
 			void bind_pipeline(PipelinePtr pl) override;
 			void bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss);
 			void bind_descriptor_sets(uint idx, uint cnt, DescriptorSetPtr* dss) override { bind_descriptor_sets(idx, { dss, cnt }); }

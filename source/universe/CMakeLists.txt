@@ -41,6 +41,8 @@ add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/deferred/deferred.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/particle/particle.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/post.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/luminance.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/tone.pll")
 
 file(GLOB PUBLIC_HEADER_FILES "*.h*")
 list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")

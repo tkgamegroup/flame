@@ -1,0 +1,12 @@
+#ifndef MAKE_PLL
+#define LUMINANCE_SET 0
+#include "luminance.dsl"
+#endif
+
+layout (push_constant) uniform PushConstant
+{
+	float min_log_lum;
+	float log_lum_range;
+	float time_coeff;
+	float num_pixels;
+}pc;

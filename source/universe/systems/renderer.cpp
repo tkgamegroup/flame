@@ -42,14 +42,18 @@ namespace water
 #include <particle/particle.pll.h>
 #include <post/post.dsl.h>
 #include <post/post.pll.h>
+#include <post/luminance.dsl.h>
+#include <post/luminance.pll.h>
+#include <post/tone.dsl.h>
+#include <post/tone.pll.h>
 
 namespace flame
 {
 	using namespace graphics;
 
-	static AccessFlags access_from_usage(BufferUsageFlags usage)
+	inline AccessFlags u2a(BufferUsageFlags u)
 	{
-		switch (usage)
+		switch (u)
 		{
 		case BufferUsageVertex:
 			return AccessVertexAttributeRead;
@@ -61,11 +65,25 @@ namespace flame
 		return AccessNone;
 	}
 
+	inline PipelineStageFlags u2s(BufferUsageFlags u)
+	{
+		switch (u)
+		{
+		case BufferUsageVertex:
+		case BufferUsageIndex:
+			return PipelineStageVertexInput;
+		case BufferUsageIndirect:
+			return PipelineStageDrawIndirect;
+		}
+		return PipelineStageAllCommand;
+	}
+
 	template <class T>
 	struct SequentialBuffer
 	{
 		uint capacity;
 		AccessFlags access;
+		PipelineStageFlags plstg;
 		T* pstag = nullptr;
 		uint stag_num = 0;
 
@@ -97,7 +115,8 @@ namespace flame
 		void create(Device* device, BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
-			access = access_from_usage(usage);
+			access = u2a(usage);
+			plstg = u2s(usage);
 			auto size = capacity * sizeof(T);
 			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 			stagbuf.reset(Buffer::create(device, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -139,7 +158,7 @@ namespace flame
 			BufferCopy cpy;
 			cpy.size = stag_num * sizeof(T);
 			cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
-			cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
+			cb->buffer_barrier(buf.get(), AccessTransferWrite, access, PipelineStageTransfer, plstg);
 			stag_num = 0;
 		}
 	};
@@ -149,6 +168,7 @@ namespace flame
 	{
 		uint capacity;
 		AccessFlags access;
+		PipelineStageFlags plstg;
 		uint n0 = 0;
 		uint n1 = 0;
 
@@ -160,11 +180,12 @@ namespace flame
 		void create(Device* device, BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
-			access = access_from_usage(usage);
+			access = u2a(usage);
+			plstg = u2s(usage);
 			auto size = capacity * sizeof(T);
 			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 			stag_capacity = 100;
-			stagbuf.reset(Buffer::create(device, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost | 
+			stagbuf.reset(Buffer::create(device, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost |
 				MemoryPropertyCoherent));
 			pstag = (T*)stagbuf->map();
 		}
@@ -196,7 +217,7 @@ namespace flame
 				cpy.size = (n1 - n0) * sizeof(T);
 				cpy.dst_off = n0 * sizeof(T);
 				cb->copy_buffer(stagbuf.get(), buf.get(), 1, &cpy);
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, access);
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, access, PipelineStageTransfer, plstg);
 				n0 = n1;
 			}
 		}
@@ -232,7 +253,7 @@ namespace flame
 			if (cpies.empty())
 				return;
 			cb->copy_buffer(stagbuf.get(), buf.get(), cpies.size(), cpies.data());
-			cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessShaderRead);
+			cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessShaderRead, PipelineStageTransfer);
 			cpies.clear();
 		}
 	};
@@ -387,7 +408,7 @@ namespace flame
 
 		SequentialBuffer<ElementVertex>	buf_vtx;
 		SequentialBuffer<uint>			buf_idx;
-		UniPtr<DescriptorSet>	ds_element;
+		UniPtr<DescriptorSet>			ds_element;
 
 		Pipeline* pl_element;
 	};
@@ -411,6 +432,10 @@ namespace flame
 	{
 		bool should_render;
 
+		float min_log_lum = -10.f;
+		float max_log_lum = +2.f;
+		float white_point = 1.f;
+		float gamma = 2.2f;
 		uint dir_shadow_levels = 3U;
 		float dir_shadow_dist = 100.f;
 		float pt_shadow_dist = 20.f;
@@ -478,12 +503,13 @@ namespace flame
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
 
-		Pipeline*				pl_def;
+		Pipeline* pl_def;
 		UniPtr<DescriptorSet>	ds_def;
 
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
-		Pipeline*							pl_ptc;
+		Pipeline* pl_ptc;
 
+		Pipeline* pl_blit_rgba8;
 		Pipeline* pl_blit_rgba16;
 		Pipeline* pl_blit_rgba16ms4;
 		Pipeline* pl_blit_d16;
@@ -492,11 +518,21 @@ namespace flame
 		Pipeline* pl_fxaa;
 		Pipeline* pl_downsample;
 		Pipeline* pl_upsample;
+
+		StorageBuffer<DSL_luminance::Histogram>		buf_lum_htg;
+		StorageBuffer<DSL_luminance::AverageLum>	buf_lum_avg;
+		UniPtr<DescriptorSet>						ds_lum;
+		PipelineLayout* pll_lum;
+		Pipeline* pl_lum_htg;
+		Pipeline* pl_lum_avg;
+
 		Pipeline* pl_bright;
-		Pipeline* pl_gamma;
+
+		Pipeline* pl_tone;
+		UniPtr<DescriptorSet>	ds_tone;
 
 		SequentialBuffer<Line>	buf_lines;
-		Pipeline*				pl_line;
+		Pipeline* pl_line;
 
 		NodeRenderData()
 		{
@@ -933,7 +969,7 @@ namespace flame
 		return pls[u];
 	}
 
-	bool parse_define(const std::vector<std::string>& defines, const std::string& n, std::string& v) 
+	bool parse_define(const std::vector<std::string>& defines, const std::string& n, std::string& v)
 	{
 		for (auto& d : defines)
 		{
@@ -1342,7 +1378,7 @@ namespace flame
 			}
 			ret = Pipeline::create(device, info);
 		}
-			break;
+		break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
@@ -1404,7 +1440,7 @@ namespace flame
 			}
 			ret = Pipeline::create(device, info);
 		}
-			break;
+		break;
 		case MaterialForTerrain:
 		{
 			if (deferred)
@@ -1441,7 +1477,7 @@ namespace flame
 			info.depth_write = depth_write;
 			ret = Pipeline::create(device, info);
 		}
-			break;
+		break;
 		case MaterialForWater:
 		{
 			auto defines_str = get_defines_str();
@@ -1471,7 +1507,7 @@ namespace flame
 			info.blend_options = &bo;
 			ret = Pipeline::create(device, info);
 		}
-			break;
+		break;
 		}
 
 		MaterialPipeline mp;
@@ -1558,7 +1594,7 @@ namespace flame
 					}
 				}
 			}
-				break;
+			break;
 			case LightPoint:
 			{
 				auto pos = vec3(mat[3]);
@@ -1577,10 +1613,10 @@ namespace flame
 					}
 				}
 			}
-				break;
+			break;
 			}
 		}
-		
+
 		return idx;
 	}
 
@@ -1746,7 +1782,7 @@ namespace flame
 		tar_sz = ivs[0]->get_image()->get_size();
 
 		img_dst.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageStorage));
 
 		auto& nd = *_nd;
 
@@ -1800,6 +1836,12 @@ namespace flame
 
 		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
 		nd.ds_water->update();
+
+		nd.ds_lum->set_image(DSL_luminance::img_col_binding, 0, img_dst->get_view(), nullptr);
+		nd.ds_lum->update();
+
+		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
+		nd.ds_tone->update();
 	}
 
 	const auto shadow_map_size = uvec2(1024);
@@ -2169,6 +2211,7 @@ namespace flame
 			nd.dir_shadows.clear();
 			nd.pt_shadows.clear();
 
+			auto fb_tar = fb_tars[tar_idx].get();
 			auto vp = Rect(vec2(0.f), tar_sz);
 			cb->set_viewport(vp);
 			cb->set_scissor(vp);
@@ -2205,7 +2248,7 @@ namespace flame
 
 				cb->image_barrier(nd.img_col_met.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->image_barrier(nd.img_nor_rou.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->image_barrier(nd.img_dep.get(),		{}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_def);
@@ -2274,314 +2317,313 @@ namespace flame
 					nd.particles.emplace_back(0xffff, 0);
 				}
 				cb->end_renderpass();
-			}
-			else
-			{
-				vec4 cvs[] = {
-					vec4(0.f, 0.f, 0.f, 0.f),
-					vec4(1.f, 0.f, 0.f, 0.f)
-				};
-				cb->begin_renderpass(nullptr, nd.fb_fwd_c.get(), cvs);
 
-				switch (render_type)
-				{
-				case RenderNormalData:
-				{
-					auto& meshes = nd.meshes[MaterialForMesh][MaterialNormalData];
-					auto& arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialNormalData];
-					auto& terrains = nd.terrains[MaterialNormalData];
-					if (!meshes.empty() || !arm_meshes.empty() || !terrains.empty())
-					{
-						if (!meshes.empty())
-						{
-							cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-							bind_mesh_fwd_res();
-							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
-							for (auto& m : meshes)
-							{
-								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-							}
-							meshes.clear();
-						}
-						if (!arm_meshes.empty())
-						{
-							cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-							bind_mesh_fwd_res();
-							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
-							for (auto& m : arm_meshes)
-							{
-								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-							}
-							arm_meshes.clear();
-						}
-						if (!terrains.empty())
-						{
-							bind_terrain_fwd_res();
-							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-							for (auto i = 0; i < terrains.size(); i++)
-							{
-								cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForTerrain));
-								cb->draw(4, terrains[i].first, 0, i << 16);
-							}
-							terrains.clear();
-						}
-					}
-				}
-					break;
-				}
+				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutGeneral);
+				cb->bind_pipeline_layout(nd.pll_lum, PipelineCompute);
+				cb->bind_descriptor_set(0, nd.ds_lum.get());
+				cb->push_constant_t(PLL_luminance::PushConstant{ nd.min_log_lum, nd.max_log_lum - nd.min_log_lum, 0.016f, float(tar_sz.x * tar_sz.y) });
+				cb->bind_pipeline(nd.pl_lum_htg);
+				cb->dispatch(uvec3(ceil(tar_sz.x / 16), ceil(tar_sz.x / 16), 1));
+				cb->buffer_barrier(nd.buf_lum_htg.buf.get(), AccessShaderRead | AccessShaderWrite, AccessShaderRead | AccessShaderWrite,
+					PipelineStageCompShader, PipelineStageCompShader);
+				cb->bind_pipeline(nd.pl_lum_avg);
+				cb->dispatch(uvec3(256, 1, 1));
+				cb->buffer_barrier(nd.buf_lum_avg.buf.get(), AccessShaderRead | AccessShaderWrite, AccessShaderRead,
+					PipelineStageCompShader, PipelineStageAllGraphics);
 
-				cb->end_renderpass();
-			}
-
-			//cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
-			//cb->bind_pipeline(nd.pl_blit_rgba16);
-			//cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-			//cb->draw(3, 1, 0, 0);
-			//cb->end_renderpass();
-
-			//cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			//cb->bind_pipeline(nd.pl_fxaa);
-			//cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(0, 0, sp_nearest));
-			//cb->push_constant_t(vec2(tar_sz));
-			//cb->draw(3, 1, 0, 0);
-			//cb->end_renderpass();
-
-			cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
-			cb->bind_pipeline(nd.pl_bright);
-			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
-			auto lvs = nd.img_dst_back->get_levels();
-			for (auto i = 0; i < lvs - 1; i++)
-			{
-				cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
-				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1));
-				cb->bind_pipeline(nd.pl_downsample);
-				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
+				cb->image_barrier(img_dst.get(), {}, ImageLayoutGeneral, ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
+				cb->bind_pipeline(nd.pl_bright);
+				cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+				cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(nd.white_point, 0.f, 0.f, 0.f) });
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
-			}
-			for (auto i = lvs - 1; i > 1; i--)
-			{
-				cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
-				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1));
-				cb->bind_pipeline(nd.pl_upsample);
-				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-			}
-			cb->image_barrier(nd.img_dst_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			cb->set_viewport(vp);
-			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			cb->bind_pipeline(nd.pl_upsample);
-			cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));
-			cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(1)));
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
 
-			auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
-			auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
-			auto& wireframe_terrains = nd.terrains[MaterialWireframe];
-			if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
-			{
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-				if (!wireframe_meshes.empty())
+				auto lvs = nd.img_dst_back->get_levels();
+				for (auto i = 0; i < lvs - 1; i++)
 				{
-					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
-					for (auto& m : wireframe_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					wireframe_meshes.clear();
-				}
-				if (!wireframe_arm_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
-					for (auto& m : wireframe_arm_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					wireframe_arm_meshes.clear();
-				}
-				if (!wireframe_terrains.empty())
-				{
-					bind_terrain_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					for (auto i = 0; i < wireframe_terrains.size(); i++)
-					{
-						cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
-						cb->draw(4, wireframe_terrains[i].first, 0, i << 16);
-					}
-					wireframe_terrains.clear();
-				}
-				cb->end_renderpass();
-			}
-
-			auto& outline_meshes = nd.meshes[MaterialForMesh][MaterialOutline];
-			auto& outline_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialOutline];
-			auto& outline_terrains = nd.terrains[MaterialOutline];
-			if (!outline_meshes.empty() || !outline_arm_meshes.empty() || !outline_terrains.empty())
-			{
-				auto cv = vec4(0.f);
-				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(0, 0, true), &cv);
-				if (!outline_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
-					for (auto& m : outline_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-				}
-				if (!outline_arm_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
-					for (auto& m : outline_arm_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-				}
-				if (!outline_terrains.empty())
-				{
-					bind_terrain_fwd_res();
-					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-					for (auto i = 0; i < outline_terrains.size(); i++)
-					{
-						cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
-						cb->draw(4, outline_terrains[i].first, 0, i << 16);
-					}
-				}
-				cb->end_renderpass();
-
-				auto lvs = min(nd.img_dst_back->get_levels(), 3U);
-				for (auto i = 0U; i < lvs - 1; i++)
-				{
-					cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
-					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1, 0));
+					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1));
 					cb->bind_pipeline(nd.pl_downsample);
 					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
 					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
 					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();	
+					cb->end_renderpass();
 				}
-				for (auto i = lvs - 1; i > 0; i--)
+				for (auto i = lvs - 1; i > 1; i--)
 				{
-					cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
-					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0));
+					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1));
 					cb->bind_pipeline(nd.pl_upsample);
 					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
 					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}
-
-				cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->image_barrier(nd.img_dst_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(vp);
-				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
-				if (!outline_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
-					for (auto& m : outline_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					outline_meshes.clear();
-				}
-				if (!outline_arm_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
-					for (auto& m : outline_arm_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					outline_arm_meshes.clear();
-				}
-				if (!outline_terrains.empty())
-				{
-					bind_terrain_fwd_res();
-					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-					for (auto i = 0; i < outline_terrains.size(); i++)
-					{
-						cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
-						cb->draw(4, outline_terrains[i].first, 0, i << 16);
-					}
-					outline_terrains.clear();
-				}
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->bind_pipeline(nd.pl_upsample);
+				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));
+				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(1)));
+				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 
-				cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_add);
-				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(0, 0, sp_nearest));
+				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, fb_tar);
+				cb->bind_pipeline(nd.pl_tone);
+				cb->bind_descriptor_set(0, nd.ds_tone.get());
+				cb->push_constant_t(PLL_tone::PushConstant{ nd.white_point, 1.f / nd.gamma });
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
-
-			cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
-			cb->bind_pipeline(nd.pl_gamma);
-			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-			cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(render_type == RenderShaded ? 2.2 : 1.0, 0.f, 0.f, 0.f) });
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
-			if (nd.buf_lines.stag_num > 0)
+			else
 			{
-				auto count = nd.buf_lines.stag_num;
-				nd.buf_lines.upload(cb);
+				//vec4 cvs[] = {
+				//	vec4(0.f, 0.f, 0.f, 0.f),
+				//	vec4(1.f, 0.f, 0.f, 0.f)
+				//};
+				//cb->begin_renderpass(nullptr, nd.fb_fwd_c.get(), cvs);
 
-				cb->begin_renderpass(nullptr, fb_tars[tar_idx].get());
-				cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
-				cb->bind_pipeline(nd.pl_line);
-				auto& data = *(nd.buf_render_data.pstag);
-				cb->push_constant_t(data.proj_view);
-				cb->draw(count * 2, 1, 0, 0);
-				cb->end_renderpass();
+				//switch (render_type)
+				//{
+				//case RenderNormalData:
+				//{
+				//	auto& meshes = nd.meshes[MaterialForMesh][MaterialNormalData];
+				//	auto& arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialNormalData];
+				//	auto& terrains = nd.terrains[MaterialNormalData];
+				//	if (!meshes.empty() || !arm_meshes.empty() || !terrains.empty())
+				//	{
+				//		if (!meshes.empty())
+				//		{
+				//			cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+				//			cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+				//			bind_mesh_fwd_res();
+				//			cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
+				//			for (auto& m : meshes)
+				//			{
+				//				auto& mr = nd.mesh_reses[m.second];
+				//				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+				//			}
+				//			meshes.clear();
+				//		}
+				//		if (!arm_meshes.empty())
+				//		{
+				//			cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+				//			cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+				//			bind_mesh_fwd_res();
+				//			cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+				//			cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
+				//			for (auto& m : arm_meshes)
+				//			{
+				//				auto& mr = nd.mesh_reses[m.second];
+				//				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+				//			}
+				//			arm_meshes.clear();
+				//		}
+				//		if (!terrains.empty())
+				//		{
+				//			bind_terrain_fwd_res();
+				//			cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+				//			for (auto i = 0; i < terrains.size(); i++)
+				//			{
+				//				cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForTerrain));
+				//				cb->draw(4, terrains[i].first, 0, i << 16);
+				//			}
+				//			terrains.clear();
+				//		}
+				//	}
+				//}
+				//	break;
+				//}
+
+				//cb->end_renderpass();
 			}
+
+			//auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
+			//auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
+			//auto& wireframe_terrains = nd.terrains[MaterialWireframe];
+			//if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
+			//{
+			//	cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+			//	if (!wireframe_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
+			//		for (auto& m : wireframe_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//		wireframe_meshes.clear();
+			//	}
+			//	if (!wireframe_arm_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
+			//		for (auto& m : wireframe_arm_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//		wireframe_arm_meshes.clear();
+			//	}
+			//	if (!wireframe_terrains.empty())
+			//	{
+			//		bind_terrain_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+			//		for (auto i = 0; i < wireframe_terrains.size(); i++)
+			//		{
+			//			cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
+			//			cb->draw(4, wireframe_terrains[i].first, 0, i << 16);
+			//		}
+			//		wireframe_terrains.clear();
+			//	}
+			//	cb->end_renderpass();
+			//}
+
+			//auto& outline_meshes = nd.meshes[MaterialForMesh][MaterialOutline];
+			//auto& outline_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialOutline];
+			//auto& outline_terrains = nd.terrains[MaterialOutline];
+			//if (!outline_meshes.empty() || !outline_arm_meshes.empty() || !outline_terrains.empty())
+			//{
+			//	auto cv = vec4(0.f);
+			//	cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(0, 0, true), &cv);
+			//	if (!outline_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
+			//		for (auto& m : outline_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//	}
+			//	if (!outline_arm_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
+			//		for (auto& m : outline_arm_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//	}
+			//	if (!outline_terrains.empty())
+			//	{
+			//		bind_terrain_fwd_res();
+			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+			//		for (auto i = 0; i < outline_terrains.size(); i++)
+			//		{
+			//			cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
+			//			cb->draw(4, outline_terrains[i].first, 0, i << 16);
+			//		}
+			//	}
+			//	cb->end_renderpass();
+
+			//	auto lvs = min(nd.img_dst_back->get_levels(), 3U);
+			//	for (auto i = 0U; i < lvs - 1; i++)
+			//	{
+			//		cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+			//		cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
+			//		cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1, 0));
+			//		cb->bind_pipeline(nd.pl_downsample);
+			//		cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
+			//		cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
+			//		cb->draw(3, 1, 0, 0);
+			//		cb->end_renderpass();	
+			//	}
+			//	for (auto i = lvs - 1; i > 0; i--)
+			//	{
+			//		cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+			//		cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
+			//		cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0));
+			//		cb->bind_pipeline(nd.pl_upsample);
+			//		cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
+			//		cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
+			//		cb->draw(3, 1, 0, 0);
+			//		cb->end_renderpass();
+			//	}
+
+			//	cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+			//	cb->set_viewport(vp);
+			//	cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
+			//	if (!outline_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
+			//		for (auto& m : outline_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//		outline_meshes.clear();
+			//	}
+			//	if (!outline_arm_meshes.empty())
+			//	{
+			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+			//		bind_mesh_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
+			//		for (auto& m : outline_arm_meshes)
+			//		{
+			//			auto& mr = nd.mesh_reses[m.second];
+			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+			//		}
+			//		outline_arm_meshes.clear();
+			//	}
+			//	if (!outline_terrains.empty())
+			//	{
+			//		bind_terrain_fwd_res();
+			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+			//		for (auto i = 0; i < outline_terrains.size(); i++)
+			//		{
+			//			cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
+			//			cb->draw(4, outline_terrains[i].first, 0, i << 16);
+			//		}
+			//		outline_terrains.clear();
+			//	}
+			//	cb->end_renderpass();
+
+			//	cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+			//	cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+			//	cb->bind_pipeline(nd.pl_add);
+			//	cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(0, 0, sp_nearest));
+			//	cb->draw(3, 1, 0, 0);
+			//	cb->end_renderpass();
+			//}
+
+			//if (nd.buf_lines.stag_num > 0)
+			//{
+			//	auto count = nd.buf_lines.stag_num;
+			//	nd.buf_lines.upload(cb);
+
+			//	cb->begin_renderpass(nullptr, fb_tar);
+			//	cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
+			//	cb->bind_pipeline(nd.pl_line);
+			//	auto& data = *(nd.buf_render_data.pstag);
+			//	cb->push_constant_t(data.proj_view);
+			//	cb->draw(count * 2, 1, 0, 0);
+			//	cb->end_renderpass();
+			//}
 		}
 
 		auto& ed = *_ed;
@@ -2842,6 +2884,7 @@ namespace flame
 
 		nd.pl_line = Pipeline::get(device, L"plain/line.pl");
 
+		nd.pl_blit_rgba8 = Pipeline::get(device, L"post/blit_rgba8.pl");
 		nd.pl_blit_rgba16 = Pipeline::get(device, L"post/blit_rgba16.pl");
 		nd.pl_blit_rgba16ms4 = Pipeline::get(device, L"post/blit_rgba16ms4.pl");
 		nd.pl_blit_d16 = Pipeline::get(device, L"post/blit_d16.pl");
@@ -2850,8 +2893,23 @@ namespace flame
 		nd.pl_fxaa = Pipeline::get(device, L"post/fxaa.pl");
 		nd.pl_downsample = Pipeline::get(device, L"post/downsample.pl");
 		nd.pl_upsample = Pipeline::get(device, L"post/upsample.pl");
+
+		nd.buf_lum_htg.create(device, BufferUsageStorage);
+		nd.buf_lum_avg.create(device, BufferUsageStorage);
+		nd.ds_lum.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"post/luminance.dsl")));
+		nd.ds_lum->set_buffer(DSL_luminance::Histogram_binding, 0, nd.buf_lum_htg.buf.get());
+		nd.ds_lum->set_buffer(DSL_luminance::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
+		nd.ds_lum->update();
+		nd.pll_lum = PipelineLayout::get(device, L"post/luminance.pll");
+		nd.pl_lum_htg = Pipeline::get(device, L"post/luminance_histogram.pl");
+		nd.pl_lum_avg = Pipeline::get(device, L"post/luminance_average.pl");
+
 		nd.pl_bright = Pipeline::get(device, L"post/bright.pl");
-		nd.pl_gamma = Pipeline::get(device, L"post/gamma.pl");
+
+		nd.ds_tone.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"post/tone.dsl")));
+		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
+		nd.ds_tone->update();
+		nd.pl_tone = Pipeline::get(device, L"post/tone.pl");
 	}
 
 	void sRendererPrivate::update()

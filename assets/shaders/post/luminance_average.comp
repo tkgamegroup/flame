@@ -1,0 +1,35 @@
+#include "luminance.pll"
+
+#define GROUP_SIZE 256
+
+layout (local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+shared uint histogram_local[GROUP_SIZE];
+
+void main() 
+{
+    uint count_for_this_bin = histogram[gl_LocalInvocationIndex];
+    histogram_local[gl_LocalInvocationIndex] = count_for_this_bin * gl_LocalInvocationIndex;
+
+    barrier();
+
+    histogram[gl_LocalInvocationIndex] = 0;
+
+    for (uint cutoff = (GROUP_SIZE >> 1); cutoff > 0; cutoff >>= 1) 
+    {
+        if (uint(gl_LocalInvocationIndex) < cutoff)
+            histogram_local[gl_LocalInvocationIndex] += histogram_local[gl_LocalInvocationIndex + cutoff];
+
+        barrier();
+    }
+
+    if (gl_LocalInvocationIndex == 0) 
+    {
+        float weighted_log_average = (histogram_local[0] / max(pc.num_pixels - float(count_for_this_bin), 1.0)) - 1.0;
+        float weighted_avg_lum = exp2(((weighted_log_average / 254.0) * pc.log_lum_range) + pc.min_log_lum);
+
+        float lum_last_frame = average_lum;
+        float adapted_lum = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
+        average_lum = adapted_lum;
+    }
+}

@@ -128,16 +128,18 @@ namespace flame
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 
-		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr pll)
+		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr _pll, PipelineType _plt)
 		{
-			pipeline_layout = pll;
-			pipeline = nullptr;
+			pll = _pll;
+			plt = _plt;
+			pl = nullptr;
 		}
 
-		void CommandBufferPrivate::bind_pipeline(PipelinePtr pl)
+		void CommandBufferPrivate::bind_pipeline(PipelinePtr _pl)
 		{
-			pipeline_layout = pl->layout;
-			pipeline = pl;
+			pll = _pl->layout;
+			plt = _pl->type;
+			pl = _pl;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
 		}
 
@@ -147,8 +149,7 @@ namespace flame
 			auto i = 0;
 			for (auto d : dss)
 				vk_sets[i++] = d->vk_descriptor_set;
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline ? pipeline->type : PipelineGraphics),
-				pipeline_layout->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(plt), pll->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
@@ -164,7 +165,7 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
-			vkCmdPushConstants(vk_command_buffer, pipeline_layout->vk_pipeline_layout,
+			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout,
 				to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
@@ -253,6 +254,9 @@ namespace flame
 				case ImageLayoutPresent:
 					src_access = AccessMemoryRead;
 					break;
+				case ImageLayoutGeneral:
+					src_access = AccessShaderRead | AccessShaderWrite;
+					break;
 				}
 			}
 
@@ -280,6 +284,9 @@ namespace flame
 					break;
 				case ImageLayoutPresent:
 					dst_access = AccessMemoryRead;
+					break;
+				case ImageLayoutGeneral:
+					dst_access = AccessShaderRead | AccessShaderWrite;
 					break;
 				}
 			}

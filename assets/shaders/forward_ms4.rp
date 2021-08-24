@@ -2,7 +2,7 @@
 <renderpass>
   <attachments>
     <attachment format="R16G16B16A16_SFLOAT"  load_op="Load" store_op="DontCare" sample_count="4" initia_layout="Attachment" />
-    <attachment format="Depth16"              load_op="Load" store_op="DontCare" sample_count="4" initia_layout="Attachment" />
+    <attachment format="Depth16"              load_op="Load" sample_count="4" initia_layout="Attachment" />
     <attachment format="R16G16B16A16_SFLOAT"  load_op="DontCare" />
   </attachments>
   <subpasses>

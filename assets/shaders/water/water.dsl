@@ -10,7 +10,7 @@ struct WaterInfo
 	uint material_id;
 };
 
-layout(set = WATER_SET, binding = 0) buffer readonly WaterInfos
+layout (set = WATER_SET, binding = 0) buffer readonly WaterInfos
 {
 	WaterInfo water_infos[16];
 };

@@ -2,8 +2,8 @@
 <pipeline>
   <shaders>
     <shader filename="fullscreen.vert" />
-    <shader filename="post/gamma.frag" />
+    <shader filename="post/blit.frag" />
   </shaders>
   <layout filename="post/post.pll" />
-  <renderpass filename="bgra8.rp" index="0" />
+  <renderpass filename="rgba8.rp" index="0" />
 </pipeline>
