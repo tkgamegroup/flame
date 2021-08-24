@@ -198,6 +198,7 @@ namespace flame
 		{
 			eul_dirty = false;
 
+			fassert(!qut_dirty);
 			auto res = eulerAngles(qut);
 			eul.x = glm::degrees(res.y);
 			eul.y = glm::degrees(res.x);
@@ -211,6 +212,7 @@ namespace flame
 		{
 			qut_dirty = false;
 
+			fassert(!rot_dirty);
 			qut = quat(rot);
 		}
 	}

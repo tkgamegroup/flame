@@ -2355,6 +2355,7 @@ namespace flame
 				{
 					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
+					cb->image_barrier(nd.img_dst_back.get(), { (uint)i - 1 }, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
 					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0, AttachmentLoadLoad));
 					cb->bind_pipeline(nd.pl_upsample);
 					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
@@ -2364,6 +2365,7 @@ namespace flame
 				}
 				cb->image_barrier(nd.img_dst_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->set_viewport(vp);
+				cb->image_barrier(img_dst.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, AttachmentLoadLoad));
 				cb->bind_pipeline(nd.pl_upsample);
 				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));

@@ -3,7 +3,9 @@
     <eNode>
       <cRigid dynamic="false" />
       <eNode src="D:\\assets\\outdoor\\tree1.prefab">
-		    <cShape type="Capsule" size="0.2,6.0,0.0" offset="0,3.0,0" />
+        <eNode pos="0,3,0">
+		      <cShape type="Capsule" size="0.2,6.0,0.0" />
+        </eNode>
       </eNode>
     </eNode>
 </prefab>

@@ -28,11 +28,6 @@ namespace flame
 		size = s;
 	}
 
-	void cShapePrivate::set_offset(const vec3& o)
-	{
-		off = o;
-	}
-
 	void cShapePrivate::set_static_friction(float v)
 	{
 		static_friction = v;
@@ -146,7 +141,7 @@ namespace flame
 
 		if (phy_shape)
 		{
-			phy_shape->set_pose(off, quat(1, 0, 0, 0));
+			phy_shape->set_pose(node->pos, node->get_quat());
 			phy_shape->user_data = entity;
 			if (trigger)
 				phy_shape->set_trigger(true);
