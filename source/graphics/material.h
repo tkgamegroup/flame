@@ -6,6 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		inline const auto MaxMaterialTexturesCount = 8U;
+
 		struct Material
 		{
 			virtual vec4 get_color() const = 0;

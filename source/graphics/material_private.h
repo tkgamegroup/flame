@@ -30,7 +30,7 @@ namespace flame
 			std::filesystem::path pipeline_file = "standard_mat.glsl";
 			std::string pipeline_defines;
 
-			Texture textures[4] = {};
+			Texture textures[MaxMaterialTexturesCount] = {};
 
 			vec4 get_color() const override { return color; }
 			float get_metallic() const override { return metallic; }

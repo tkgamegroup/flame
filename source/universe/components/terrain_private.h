@@ -21,9 +21,11 @@ namespace flame
 
 		graphics::Image* height_texture = nullptr;
 		UniPtr<graphics::Image> normal_texture;
+		UniPtr<graphics::Image> tangent_texture;
 		graphics::Material* material = nullptr;
 		int height_map_id = -1;
 		int normal_map_id = -1;
+		int tangent_map_id = -1;
 		int material_id = -1;
 
 		vec2 get_extent() const override { return extent; }
@@ -45,6 +47,7 @@ namespace flame
 
 		graphics::Image* get_height_texture() const override { return height_texture; }
 		graphics::Image* get_normal_texture() const override { return normal_texture.get(); }
+		graphics::Image* get_tangent_texture() const override { return tangent_texture.get(); }
 
 		void draw(sRendererPtr s_renderer, bool, bool) override;
 

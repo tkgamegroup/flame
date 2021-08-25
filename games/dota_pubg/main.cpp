@@ -20,9 +20,6 @@ int main(int argc, char** args)
 		auto base_height = 30.f;
 		auto block_height = 4.f;
 
-		std::random_device rd;
-		std::mt19937 g(rd());
-
 		std::vector<std::vector<int>> blocks;
 		blocks.resize(n_blocks);
 		for (auto& col : blocks)
@@ -31,10 +28,9 @@ int main(int argc, char** args)
 		auto number = n_blocks * n_blocks / 2;
 		for (auto i = 0; i < number; i++)
 		{
-			auto x = g() % n_blocks;
-			auto y = g() % n_blocks;
-			if (blocks[x][y] == 0)
-				blocks[x][y] = 1;
+			auto& b = blocks[linearRand(0, n_blocks - 1)][linearRand(0, n_blocks - 1)];
+			if (b == 0)
+				b = 1;
 			else
 				i--;
 		}
@@ -49,6 +45,9 @@ int main(int argc, char** args)
 		//regions.resize(n_regions);
 		//for (auto& col : regions)
 		//	col.resize(n_regions);
+
+		//std::random_device rd;
+		//std::mt19937 g(rd());
 
 		//std::function<bool(int x, int y)> visit;
 		//visit = [&](int x, int y) {
@@ -153,24 +152,71 @@ int main(int argc, char** args)
 
 		auto h1 = int(base_height / ext_y * 255.f);
 		auto h2 = int((block_height + base_height) / ext_y * 255.f);
-		for (auto x = 0; x < n_blocks; x++)
-		{
-			for (auto y = 0; y < n_blocks; y++)
-			{
-				auto h = blocks[x][y] ? h2 : h1;
-				each_pixel(x* block_pixels, (x + 1) * block_pixels, 
-				y * block_pixels, (y + 1) * block_pixels, [&](int x, int y) {
-					auto idx = img_ext.x * y + x;
-					pixels[idx] = h + fbm_pixels[idx] * fbm_scale;
-				});
-			}
-		}
 
+		each_pixel(0, img_ext.x, 0, img_ext.y, [&](int x, int y) {
+			auto ibx = x / block_pixels;
+			auto iby = y / block_pixels;
+			auto fbx = fract((float)x / block_pixels);
+			auto fby = fract((float)y / block_pixels);
+			auto pid = img_ext.x * y + x;
+			float h;
+			if (blocks[ibx][iby])
+			{
+				h = h2;
+				if (fbx < 0.25f && ibx > 0 && blocks[ibx - 1][iby] == 0)
+				{
+					if (perlin(vec2(ibx, (float)y / img_ext.y * 47.149f)) * 0.25f > fbx)
+						h = h1;
+				}
+				if (fbx > 0.75f && ibx < n_blocks - 1 && blocks[ibx + 1][iby] == 0)
+				{
+					if (fbx > 1.f + perlin(vec2(ibx + 1, (float)y / img_ext.y * 47.149f)) * 0.25f)
+						h = h1;
+				}
+				if (fby < 0.25f && iby > 0 && blocks[ibx][iby - 1] == 0)
+				{
+					if (perlin(vec2((float)x / img_ext.x * 47.149f, iby)) * 0.25f > fby)
+						h = h1;
+				}
+				if (fby > 0.75f && iby < n_blocks - 1 && blocks[ibx][iby + 1] == 0)
+				{
+					if (fbx > 1.f + perlin(vec2((float)x / img_ext.x * 47.149f, iby + 1)) * 0.25f)
+						h = h1;
+				}
+			}
+			else
+			{
+				h = h1;
+				if (fbx < 0.25f && ibx > 0 && blocks[ibx - 1][iby] == 1)
+				{
+					if (perlin(vec2(ibx, (float)y / img_ext.y * 47.149f)) * 0.25f - 0.25f > fbx)
+						h = h2;
+				}
+				if (fbx > 0.75f && ibx < n_blocks - 1 && blocks[ibx + 1][iby] == 1)
+				{
+					if (fbx > 1.f + perlin(vec2(ibx + 1, (float)y / img_ext.y * 47.149f)) * 0.25f)
+						h = h2;
+				}
+				if (fby < 0.25f && iby > 0 && blocks[ibx][iby - 1] == 1)
+				{
+					if (perlin(vec2((float)x / img_ext.x * 47.149f, iby)) * 0.25f > fby)
+						h = h2;
+				}
+				if (fby > 0.75f && iby < n_blocks - 1 && blocks[ibx][iby + 1] == 1)
+				{
+					if (fbx > 1.f + perlin(vec2((float)x / img_ext.x * 47.149f, iby + 1)) * 0.25f)
+						h = h2;
+				}
+			}
+			pixels[pid] = h + fbm_pixels[pid] * fbm_scale;
+		});
+
+		// slopes
 		for (auto y = 0; y < n_blocks; y++)
 		{
 			for (auto x = 1; x < n_blocks; x++)
 			{
-				if ((float)g() / (float)g.max() > 0.8f)
+				if (linearRand(0.f, 1.f) > 0.8f)
 				{
 					if (blocks[x - 1][y] == 0 && blocks[x][y] == 1)
 					{
@@ -199,7 +245,7 @@ int main(int argc, char** args)
 		{
 			for (auto y = 1; y < n_blocks; y++)
 			{
-				if ((float)g() / (float)g.max() > 0.8f)
+				if (linearRand(0.f, 1.f) > 0.8f)
 				{
 					if (blocks[x][y - 1] == 0 && blocks[x][y] == 1)
 					{
@@ -221,69 +267,6 @@ int main(int argc, char** args)
 					}
 					else
 						continue;
-				}
-			}
-		}
-		auto coner = int(0.5f * block_pixels);
-		for (auto x = 1; x < n_blocks; x++)
-		{
-			for (auto y = 1; y < n_blocks; y++)
-			{
-				if (blocks[x - 1][y - 1] == 1 && blocks[x][y - 1] == 0 && blocks[x - 1][y] == 0)
-				{
-					auto xb = x * block_pixels;
-					auto yb = y * block_pixels;
-					auto xa = xb - coner;
-					auto ya = yb - coner;
-					each_pixel(xa, xb, ya, yb, [&](int x, int y) {
-						if (distance(vec2(x, y), vec2(xa, ya)) > coner)
-						{
-							auto idx = img_ext.x * y + x;
-							pixels[idx] = h1 + fbm_pixels[idx] * fbm_scale;
-						}
-					});
-				}
-				if (blocks[x][y - 1] == 1 && blocks[x - 1][y - 1] == 0 && blocks[x][y] == 0)
-				{
-					auto xa = x * block_pixels;
-					auto yb = y * block_pixels;
-					auto xb = xa + coner;
-					auto ya = yb - coner;
-					each_pixel(xa, xb, ya, yb, [&](int x, int y) {
-						if (distance(vec2(x, y), vec2(xb, ya)) > coner)
-						{
-							auto idx = img_ext.x * y + x;
-							pixels[idx] = h1 + fbm_pixels[idx] * fbm_scale;
-						}
-					});
-				}
-				if (blocks[x][y] == 1 && blocks[x][y - 1] == 0 && blocks[x - 1][y] == 0)
-				{
-					auto xa = x * block_pixels;
-					auto ya = y * block_pixels;
-					auto xb = xa + coner;
-					auto yb = ya + coner;
-					each_pixel(xa, xb, ya, yb, [&](int x, int y) {
-						if (distance(vec2(x, y), vec2(xb, yb)) > coner)
-						{
-							auto idx = img_ext.x * y + x;
-							pixels[idx] = h1 + fbm_pixels[idx] * fbm_scale;
-						}
-					});
-				}
-				if (blocks[x - 1][y] == 1 && blocks[x - 1][y - 1] == 0 && blocks[x][y] == 0)
-				{
-					auto xb = x * block_pixels;
-					auto ya = y * block_pixels;
-					auto xa = xb - coner;
-					auto yb = ya + coner;
-					each_pixel(xa, xb, ya, yb, [&](int x, int y) {
-						if (distance(vec2(x, y), vec2(xa, yb)) > coner)
-						{
-							auto idx = img_ext.x * y + x;
-							pixels[idx] = h1 + fbm_pixels[idx] * fbm_scale;
-						}
-					});
 				}
 			}
 		}

@@ -9,8 +9,9 @@
 layout(location = 0) in flat uint i_id;
 layout(location = 1) in vec2 i_uv;
 layout(location = 2) in vec3 i_normal;
+layout(location = 3) in vec3 i_tangent;
 #ifndef DEFERRED
-layout(location = 3) in vec3 i_coordw;
+layout(location = 4) in vec3 i_coordw;
 #endif
 
 #ifndef DEFERRED

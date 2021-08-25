@@ -378,7 +378,7 @@ namespace flame
 		bool sort;
 		std::filesystem::path pipeline_file;
 		std::vector<std::string> pipeline_defines;
-		int texs[4];
+		int texs[MaxMaterialTexturesCount];
 		Pipeline* pls[MaterialUsageCount] = {};
 
 		Pipeline* get_pl(sRendererPrivate* thiz, MaterialUsage u);
@@ -1012,7 +1012,7 @@ namespace flame
 		auto& dst = nd.mat_reses[idx];
 		if (dst.mat)
 		{
-			for (auto i = 0; i < 4; i++)
+			for (auto i = 0; i < MaxMaterialTexturesCount; i++)
 			{
 				if (dst.texs[i] != -1)
 					set_texture_res(dst.texs[i], nullptr, nullptr);
@@ -1051,7 +1051,7 @@ namespace flame
 				alpha_map_id = { std::stoi(str), 0 };
 			else if (parse_define(dst.pipeline_defines, "COLOR_MAP", str))
 				alpha_map_id = { std::stoi(str), 3 };
-			for (auto i = 0; i < 4; i++)
+			for (auto i = 0; i < MaxMaterialTexturesCount; i++)
 			{
 				wchar_t buf[260]; buf[0] = 0;
 				mat->get_texture_file(i, buf);
@@ -1690,8 +1690,8 @@ namespace flame
 		nd.meshes[mesh.arm ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
 	}
 
-	void sRendererPrivate::draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id,
-		uint material_id, ShadingFlags flags)
+	void sRendererPrivate::draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, 
+		uint normal_map_id, uint tangent_map_id, uint material_id, ShadingFlags flags)
 	{
 		auto& nd = *_nd;
 
@@ -1705,6 +1705,7 @@ namespace flame
 		data.tess_levels = tess_levels;
 		data.height_map_id = height_map_id;
 		data.normal_map_id = normal_map_id;
+		data.tangent_map_id = tangent_map_id;
 		data.material_id = material_id;
 
 		auto dispatch_count = blocks.x * blocks.y;

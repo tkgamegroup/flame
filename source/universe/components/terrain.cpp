@@ -65,8 +65,8 @@ namespace flame
 		if (!first || height_map_id == -1 || material_id == -1)
 			return;
 
-		s_renderer->draw_terrain(node->g_pos, vec3(extent.x, extent.y, extent.x), uvec2(blocks), tess_levels, height_map_id, normal_map_id,
-			material_id, shading_flags);
+		s_renderer->draw_terrain(node->g_pos, vec3(extent.x, extent.y, extent.x), uvec2(blocks), tess_levels, height_map_id, 
+			normal_map_id, tangent_map_id, material_id, shading_flags);
 	}
 
 	void cTerrainPrivate::on_added()
@@ -108,28 +108,34 @@ namespace flame
 
 			normal_texture.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1, 
 				graphics::SampleCount_1, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
+			tangent_texture.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1,
+				graphics::SampleCount_1, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 			normal_map_id = s_renderer->set_texture_res(-1, normal_texture->get_view(), nullptr);
+			tangent_map_id = s_renderer->set_texture_res(-1, tangent_texture->get_view(), nullptr);
 
-			std::vector<float> res;
-			res.resize(s1 * s1);
-			auto pres = res.data();
+			std::vector<float> heights;
+			heights.resize(s1 * s1);
+			auto pres = heights.data();
 			for (auto y = 0; y < s1; y++)
 			{
 				for (auto x = 0; x < s1; x++)
 					*pres++ = height_texture->linear_sample(vec2((float)x / s, (float)y / s)).x;
 			}
 
-			graphics::StagingBuffer stag(device, sizeof(vec4) * s * s, nullptr, graphics::BufferUsageTransferDst);
-			auto nor_dat = (cvec4*)stag.mapped;
+			auto img_sz = sizeof(vec4) * s * s;
+			graphics::StagingBuffer nor_stag(device, img_sz, nullptr, graphics::BufferUsageTransferDst);
+			graphics::StagingBuffer tan_stag(device, img_sz, nullptr, graphics::BufferUsageTransferDst);
+			auto nor_dat = (cvec4*)nor_stag.mapped;
+			auto tan_dat = (cvec4*)tan_stag.mapped;
 			auto h = extent.y * (extent.x / s);
 			for (auto y = 0; y < s; y++)
 			{
 				for (auto x = 0; x < s; x++)
 				{
-					auto LT = res[y * s1 + x];
-					auto RT = res[y * s1 + x + 1];
-					auto LB = res[(y + 1) * s1 + x];
-					auto RB = res[(y + 1) * s1 + x + 1];
+					auto LT = heights[y * s1 + x];
+					auto RT = heights[y * s1 + x + 1];
+					auto LB = heights[(y + 1) * s1 + x];
+					auto RB = heights[(y + 1) * s1 + x + 1];
 
 					float hL = (LT + LB) * 0.5f * h;
 					float hR = (RT + RB) * 0.5f * h;
@@ -141,15 +147,23 @@ namespace flame
 					n += 1.f;
 					n *= 0.5f;
 					*nor_dat++ = cvec4(n * 255.f, 255);
+
+					auto t = normalize(vec3(+1.f, hR, 0.f) - vec3(-1.f, hL, 0.f));
+					t += 1.f;
+					t *= 0.5f;
+					*tan_dat++ = cvec4(t * 255.f, 255);
 				}
 			}
 
 			graphics::InstanceCB cb(device);
-			cb->image_barrier(normal_texture.get(), {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);
 			graphics::BufferImageCopy cpy;
 			cpy.img_ext = tex_size;
-			cb->copy_buffer_to_image(stag.get(), normal_texture.get(), 1, &cpy);
+			cb->image_barrier(normal_texture.get(), {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(nor_stag.get(), normal_texture.get(), 1, &cpy);
 			cb->image_barrier(normal_texture.get(), {}, graphics::ImageLayoutTransferDst, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(tangent_texture.get(), {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(tan_stag.get(), tangent_texture.get(), 1, &cpy);
+			cb->image_barrier(tangent_texture.get(), {}, graphics::ImageLayoutTransferDst, graphics::ImageLayoutShaderReadOnly);
 		}
 
 		if (!material_name.empty())

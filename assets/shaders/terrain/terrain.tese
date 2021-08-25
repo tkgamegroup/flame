@@ -12,8 +12,9 @@ layout(location = 1) in vec2 i_uvs[];
 layout(location = 0) out flat uint o_idx;
 layout(location = 1) out vec2 o_uv;
 layout(location = 2) out vec3 o_normal;
+layout(location = 3) out vec3 o_tangent;
 #ifndef DEFERRED
-layout(location = 3) out vec3 o_coordw;
+layout(location = 4) out vec3 o_coordw;
 #endif
 
 void main()
@@ -37,6 +38,7 @@ void main()
 	o_uv = uv;
 
 	o_normal = texture(maps[terrain_infos[idx].normal_map_id], uv).xyz * 2.0 - vec3(1.0);
+	o_tangent = texture(maps[terrain_infos[idx].tangent_map_id], uv).xyz * 2.0 - vec3(1.0);
 
 #ifndef DEFERRED
 	o_coordw = coordw;

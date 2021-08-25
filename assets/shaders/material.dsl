@@ -8,7 +8,7 @@ struct MaterialInfo
 	float metallic;
 	float roughness;
 
-	ivec4 map_indices;
+	int map_indices[8];
 };
 
 layout (set = MATERIAL_SET, binding = 0) buffer readonly MaterialInfos

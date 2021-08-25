@@ -53,8 +53,8 @@ namespace flame
 		virtual uint add_mesh_armature(uint bones_count, const mat4* bones) = 0;
 		virtual void draw_mesh(uint idx, uint mesh_id, uint skin, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_mesh_occluder(uint idx, uint mesh_id, uint skin) = 0;
-		virtual void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, uint normal_map_id, 
-			uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
+		virtual void draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, 
+			uint normal_map_id, uint tangent_map_id, uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_water(const vec3& coord, const vec2& extent, uint material_id, ShadingFlags flags = ShadingMaterial) = 0;
 		virtual void draw_particles(uint count, graphics::Particle* partcles, uint res_id) = 0;
 

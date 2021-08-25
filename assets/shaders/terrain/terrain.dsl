@@ -12,6 +12,7 @@ struct TerrainInfo
 
 	uint height_map_id;
 	uint normal_map_id;
+	uint tangent_map_id;
 	uint material_id;
 };
 

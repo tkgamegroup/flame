@@ -13,32 +13,25 @@ namespace flame
 
 		void MaterialPrivate::get_texture_file(uint idx, wchar_t* dst) const
 		{
-			if (idx < 4)
+			auto& src = textures[idx];
+			if (src.filename.empty())
+				dst[0] = 0;
+			else
 			{
-				auto& src = textures[idx];
-				if (src.filename.empty())
-					dst[0] = 0;
-				else
+				auto path = filename.parent_path() / src.filename;
+				if (!std::filesystem::exists(path))
 				{
-					auto path = filename.parent_path() / src.filename;
-					if (!std::filesystem::exists(path))
-					{
-						path = src.filename;
-						get_engine_path(path, L"assets");
-					}
-					wcscpy(dst, path.c_str());
+					path = src.filename;
+					get_engine_path(path, L"assets");
 				}
+				wcscpy(dst, path.c_str());
 			}
 		}
 
 		SamplerPtr MaterialPrivate::get_texture_sampler(DevicePtr device, uint idx) const
 		{
-			if (idx < 4)
-			{
-				auto& src = textures[idx];
-				return SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode);
-			}
-			return nullptr;
+			auto& src = textures[idx];
+			return SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode);
 		}
 
 		void MaterialPrivate::get_pipeline_file(wchar_t* dst) const
