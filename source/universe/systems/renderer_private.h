@@ -36,8 +36,9 @@ namespace flame
 		graphics::Renderpass* rp_rgba8;
 		graphics::Renderpass* rp_rgba8c;
 		graphics::Renderpass* rp_bgra8;
+		graphics::Renderpass* rp_bgra8l;
 		graphics::Renderpass* rp_bgra8c;
-		std::vector<graphics::ImageView*> iv_tars;
+		std::vector<graphics::Image*> img_tars;
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 		uvec2 tar_sz;
 

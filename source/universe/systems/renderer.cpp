@@ -474,8 +474,9 @@ namespace flame
 		UniPtr<DescriptorSet>												ds_water;
 
 		UniPtr<Image> img_dep;
-		UniPtr<Image> img_col_met; // color, metallic
-		UniPtr<Image> img_nor_rou; // normal, roughness
+		UniPtr<Image> img_col_met;	// color, metallic
+		UniPtr<Image> img_nor_rou;	// normal, roughness
+		UniPtr<Image> img_ao;		// ambient occlusion
 		UniPtr<Image> img_col_ms;
 		UniPtr<Image> img_dep_ms;
 		UniPtr<Image> img_dst_back;
@@ -497,7 +498,7 @@ namespace flame
 		PipelineLayout* pll_post;
 
 		UniPtr<Framebuffer> fb_gbuf;
-		UniPtr<Framebuffer> fb_fwd_c;
+		std::vector<UniPtr<Framebuffer>> fb_tars_dep;
 		UniPtr<Framebuffer> fb_fwd;
 		UniPtr<Framebuffer> fb_fwd_ms4;
 
@@ -514,7 +515,9 @@ namespace flame
 		Pipeline* pl_blit_rgba16ms4;
 		Pipeline* pl_blit_d16;
 		Pipeline* pl_blit_d16ms4;
-		Pipeline* pl_add;
+		Pipeline* pl_add_bgra8;
+		Pipeline* pl_add_rgba8;
+		Pipeline* pl_add_rgba16;
 		Pipeline* pl_fxaa;
 		Pipeline* pl_downsample;
 		Pipeline* pl_upsample;
@@ -1262,7 +1265,7 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(device, L"bgra8l.rp");
 		}
 		else if (parse_define(defines, "PICKUP", str))
 		{
@@ -1282,7 +1285,7 @@ namespace flame
 		{
 			use_mat = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"forward_c.rp");
+			rp = Renderpass::get(device, L"bgra8d16c.rp");
 		}
 		if (parse_define(defines, "TRANSPARENT", str))
 		{
@@ -1768,9 +1771,9 @@ namespace flame
 
 	void sRendererPrivate::set_targets(uint tar_cnt, ImageView* const* ivs)
 	{
-		iv_tars.resize(tar_cnt);
+		img_tars.resize(tar_cnt);
 		for (auto i = 0; i < tar_cnt; i++)
-			iv_tars[i] = ivs[i];
+			img_tars[i] = ivs[i]->get_image();
 
 		fb_tars.clear();
 		fb_tars.resize(tar_cnt);
@@ -1812,12 +1815,23 @@ namespace flame
 			nd.fb_gbuf.reset(Framebuffer::create(device, Renderpass::get(device, L"gbuffer.rp"), countof(vs), vs));
 		}
 
+		nd.fb_tars_dep.clear();
+		nd.fb_tars_dep.resize(tar_cnt);
+		auto rp_bgra8d16c = Renderpass::get(device, L"bgra8d16c.rp");
+		for (auto i = 0; i < tar_cnt; i++)
+		{
+			ImageView* vs[] = {
+				ivs[i],
+				nd.img_dep->get_view()
+			};
+			nd.fb_tars_dep[i].reset(Framebuffer::create(device, rp_bgra8d16c, countof(vs), vs));
+		}
+
 		{
 			ImageView* vs[] = {
 				img_dst->get_view(),
 				nd.img_dep->get_view()
 			};
-			nd.fb_fwd_c.reset(Framebuffer::create(device, Renderpass::get(device, L"forward_c.rp"), countof(vs), vs));
 			nd.fb_fwd.reset(Framebuffer::create(device, Renderpass::get(device, L"forward.rp"), countof(vs), vs));
 		}
 
@@ -2384,249 +2398,249 @@ namespace flame
 			}
 			else
 			{
-				//vec4 cvs[] = {
-				//	vec4(0.f, 0.f, 0.f, 0.f),
-				//	vec4(1.f, 0.f, 0.f, 0.f)
-				//};
-				//cb->begin_renderpass(nullptr, nd.fb_fwd_c.get(), cvs);
+				vec4 cvs[] = {
+					vec4(0.f, 0.f, 0.f, 0.f),
+					vec4(1.f, 0.f, 0.f, 0.f)
+				};
+				cb->begin_renderpass(nullptr, nd.fb_tars_dep[tar_idx].get(), cvs);
 
-				//switch (render_type)
-				//{
-				//case RenderNormalData:
-				//{
-				//	auto& meshes = nd.meshes[MaterialForMesh][MaterialNormalData];
-				//	auto& arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialNormalData];
-				//	auto& terrains = nd.terrains[MaterialNormalData];
-				//	if (!meshes.empty() || !arm_meshes.empty() || !terrains.empty())
-				//	{
-				//		if (!meshes.empty())
-				//		{
-				//			cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-				//			cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-				//			bind_mesh_fwd_res();
-				//			cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
-				//			for (auto& m : meshes)
-				//			{
-				//				auto& mr = nd.mesh_reses[m.second];
-				//				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-				//			}
-				//			meshes.clear();
-				//		}
-				//		if (!arm_meshes.empty())
-				//		{
-				//			cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-				//			cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-				//			bind_mesh_fwd_res();
-				//			cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-				//			cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
-				//			for (auto& m : arm_meshes)
-				//			{
-				//				auto& mr = nd.mesh_reses[m.second];
-				//				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-				//			}
-				//			arm_meshes.clear();
-				//		}
-				//		if (!terrains.empty())
-				//		{
-				//			bind_terrain_fwd_res();
-				//			cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-				//			for (auto i = 0; i < terrains.size(); i++)
-				//			{
-				//				cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForTerrain));
-				//				cb->draw(4, terrains[i].first, 0, i << 16);
-				//			}
-				//			terrains.clear();
-				//		}
-				//	}
-				//}
-				//	break;
-				//}
+				switch (render_type)
+				{
+				case RenderNormalData:
+				{
+					auto& meshes = nd.meshes[MaterialForMesh][MaterialNormalData];
+					auto& arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialNormalData];
+					auto& terrains = nd.terrains[MaterialNormalData];
+					if (!meshes.empty() || !arm_meshes.empty() || !terrains.empty())
+					{
+						if (!meshes.empty())
+						{
+							cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+							cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+							bind_mesh_fwd_res();
+							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
+							for (auto& m : meshes)
+							{
+								auto& mr = nd.mesh_reses[m.second];
+								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+							}
+							meshes.clear();
+						}
+						if (!arm_meshes.empty())
+						{
+							cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+							cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+							bind_mesh_fwd_res();
+							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
+							for (auto& m : arm_meshes)
+							{
+								auto& mr = nd.mesh_reses[m.second];
+								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+							}
+							arm_meshes.clear();
+						}
+						if (!terrains.empty())
+						{
+							bind_terrain_fwd_res();
+							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+							for (auto i = 0; i < terrains.size(); i++)
+							{
+								cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForTerrain));
+								cb->draw(4, terrains[i].first, 0, i << 16);
+							}
+							terrains.clear();
+						}
+					}
+				}
+					break;
+				}
 
-				//cb->end_renderpass();
+				cb->end_renderpass();
 			}
 
-			//auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
-			//auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
-			//auto& wireframe_terrains = nd.terrains[MaterialWireframe];
-			//if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
-			//{
-			//	cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			//	if (!wireframe_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
-			//		for (auto& m : wireframe_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//		wireframe_meshes.clear();
-			//	}
-			//	if (!wireframe_arm_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
-			//		for (auto& m : wireframe_arm_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//		wireframe_arm_meshes.clear();
-			//	}
-			//	if (!wireframe_terrains.empty())
-			//	{
-			//		bind_terrain_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-			//		for (auto i = 0; i < wireframe_terrains.size(); i++)
-			//		{
-			//			cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
-			//			cb->draw(4, wireframe_terrains[i].first, 0, i << 16);
-			//		}
-			//		wireframe_terrains.clear();
-			//	}
-			//	cb->end_renderpass();
-			//}
+			auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
+			auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
+			auto& wireframe_terrains = nd.terrains[MaterialWireframe];
+			if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
+			{
+				cb->begin_renderpass(rp_bgra8l, fb_tar);
+				if (!wireframe_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
+					for (auto& m : wireframe_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+					wireframe_meshes.clear();
+				}
+				if (!wireframe_arm_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
+					for (auto& m : wireframe_arm_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+					wireframe_arm_meshes.clear();
+				}
+				if (!wireframe_terrains.empty())
+				{
+					bind_terrain_fwd_res();
+					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
+					for (auto i = 0; i < wireframe_terrains.size(); i++)
+					{
+						cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
+						cb->draw(4, wireframe_terrains[i].first, 0, i << 16);
+					}
+					wireframe_terrains.clear();
+				}
+				cb->end_renderpass();
+			}
 
-			//auto& outline_meshes = nd.meshes[MaterialForMesh][MaterialOutline];
-			//auto& outline_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialOutline];
-			//auto& outline_terrains = nd.terrains[MaterialOutline];
-			//if (!outline_meshes.empty() || !outline_arm_meshes.empty() || !outline_terrains.empty())
-			//{
-			//	auto cv = vec4(0.f);
-			//	cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(0, 0, true), &cv);
-			//	if (!outline_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
-			//		for (auto& m : outline_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//	}
-			//	if (!outline_arm_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
-			//		for (auto& m : outline_arm_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//	}
-			//	if (!outline_terrains.empty())
-			//	{
-			//		bind_terrain_fwd_res();
-			//		cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
-			//		for (auto i = 0; i < outline_terrains.size(); i++)
-			//		{
-			//			cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
-			//			cb->draw(4, outline_terrains[i].first, 0, i << 16);
-			//		}
-			//	}
-			//	cb->end_renderpass();
+			auto& outline_meshes = nd.meshes[MaterialForMesh][MaterialOutline];
+			auto& outline_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialOutline];
+			auto& outline_terrains = nd.terrains[MaterialOutline];
+			if (!outline_meshes.empty() || !outline_arm_meshes.empty() || !outline_terrains.empty())
+			{
+				auto cv = vec4(0.f);
+				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(0, 0, AttachmentLoadClear), &cv);
+				if (!outline_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
+					for (auto& m : outline_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+				}
+				if (!outline_arm_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
+					for (auto& m : outline_arm_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+				}
+				if (!outline_terrains.empty())
+				{
+					bind_terrain_fwd_res();
+					cb->push_constant_t(vec4(1.f, 1.f, 0.f, 1.f));
+					for (auto i = 0; i < outline_terrains.size(); i++)
+					{
+						cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
+						cb->draw(4, outline_terrains[i].first, 0, i << 16);
+					}
+				}
+				cb->end_renderpass();
 
-			//	auto lvs = min(nd.img_dst_back->get_levels(), 3U);
-			//	for (auto i = 0U; i < lvs - 1; i++)
-			//	{
-			//		cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//		cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
-			//		cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1, 0));
-			//		cb->bind_pipeline(nd.pl_downsample);
-			//		cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-			//		cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
-			//		cb->draw(3, 1, 0, 0);
-			//		cb->end_renderpass();	
-			//	}
-			//	for (auto i = lvs - 1; i > 0; i--)
-			//	{
-			//		cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//		cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
-			//		cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0));
-			//		cb->bind_pipeline(nd.pl_upsample);
-			//		cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-			//		cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
-			//		cb->draw(3, 1, 0, 0);
-			//		cb->end_renderpass();
-			//	}
+				auto lvs = min(nd.img_dst_back->get_levels(), 3U);
+				for (auto i = 0U; i < lvs - 1; i++)
+				{
+					cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
+					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1, 0));
+					cb->bind_pipeline(nd.pl_downsample);
+					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
+					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();	
+				}
+				for (auto i = lvs - 1; i > 0; i--)
+				{
+					cb->image_barrier(nd.img_dst_back.get(), { i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
+					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0));
+					cb->bind_pipeline(nd.pl_upsample);
+					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
+					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
 
-			//	cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//	cb->set_viewport(vp);
-			//	cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
-			//	if (!outline_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
-			//		for (auto& m : outline_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//		outline_meshes.clear();
-			//	}
-			//	if (!outline_arm_meshes.empty())
-			//	{
-			//		cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-			//		cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-			//		bind_mesh_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-			//		cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
-			//		for (auto& m : outline_arm_meshes)
-			//		{
-			//			auto& mr = nd.mesh_reses[m.second];
-			//			cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-			//		}
-			//		outline_arm_meshes.clear();
-			//	}
-			//	if (!outline_terrains.empty())
-			//	{
-			//		bind_terrain_fwd_res();
-			//		cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
-			//		for (auto i = 0; i < outline_terrains.size(); i++)
-			//		{
-			//			cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
-			//			cb->draw(4, outline_terrains[i].first, 0, i << 16);
-			//		}
-			//		outline_terrains.clear();
-			//	}
-			//	cb->end_renderpass();
+				cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->set_viewport(vp);
+				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
+				if (!outline_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMesh));
+					for (auto& m : outline_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+					outline_meshes.clear();
+				}
+				if (!outline_arm_meshes.empty())
+				{
+					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
+					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
+					bind_mesh_fwd_res();
+					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+					cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForMeshArmature));
+					for (auto& m : outline_arm_meshes)
+					{
+						auto& mr = nd.mesh_reses[m.second];
+						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
+					}
+					outline_arm_meshes.clear();
+				}
+				if (!outline_terrains.empty())
+				{
+					bind_terrain_fwd_res();
+					cb->push_constant_t(vec4(0.f, 0.f, 0.f, 1.f));
+					for (auto i = 0; i < outline_terrains.size(); i++)
+					{
+						cb->bind_pipeline(nd.mat_reses[MaterialOutline].get_pl(this, MaterialForTerrain));
+						cb->draw(4, outline_terrains[i].first, 0, i << 16);
+					}
+					outline_terrains.clear();
+				}
+				cb->end_renderpass();
 
-			//	cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-			//	cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			//	cb->bind_pipeline(nd.pl_add);
-			//	cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(0, 0, sp_nearest));
-			//	cb->draw(3, 1, 0, 0);
-			//	cb->end_renderpass();
-			//}
+				cb->image_barrier(nd.img_dst_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(rp_bgra8l, fb_tar);
+				cb->bind_pipeline(nd.pl_add_bgra8);
+				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(0, 0, sp_nearest));
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			}
 
-			//if (nd.buf_lines.stag_num > 0)
-			//{
-			//	auto count = nd.buf_lines.stag_num;
-			//	nd.buf_lines.upload(cb);
+			if (nd.buf_lines.stag_num > 0)
+			{
+				auto count = nd.buf_lines.stag_num;
+				nd.buf_lines.upload(cb);
 
-			//	cb->begin_renderpass(nullptr, fb_tar);
-			//	cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
-			//	cb->bind_pipeline(nd.pl_line);
-			//	auto& data = *(nd.buf_render_data.pstag);
-			//	cb->push_constant_t(data.proj_view);
-			//	cb->draw(count * 2, 1, 0, 0);
-			//	cb->end_renderpass();
-			//}
+				cb->begin_renderpass(rp_bgra8l, fb_tar);
+				cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
+				cb->bind_pipeline(nd.pl_line);
+				auto& data = *(nd.buf_render_data.pstag);
+				cb->push_constant_t(data.proj_view);
+				cb->draw(count * 2, 1, 0, 0);
+				cb->end_renderpass();
+			}
 		}
 
 		auto& ed = *_ed;
@@ -2642,7 +2656,7 @@ namespace flame
 			ed.buf_idx.upload(cb);
 
 			if (nd.should_render)
-				cb->begin_renderpass(rp_bgra8, fb_tars[tar_idx].get());
+				cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
 			else
 			{
 				auto cv = vec4(0.6f, 0.7f, 0.8f, 1.f);
@@ -2707,6 +2721,8 @@ namespace flame
 			cb->end_renderpass();
 		}
 
+		cb->image_barrier(img_tars[tar_idx], {}, ImageLayoutAttachment, ImageLayoutPresent);
+
 		nd.should_render = false;
 		ed.should_render = false;
 	}
@@ -2721,6 +2737,7 @@ namespace flame
 		rp_rgba8 = Renderpass::get(device, L"rgba8.rp");
 		rp_rgba8c = Renderpass::get(device, L"rgba8c.rp");
 		rp_bgra8 = Renderpass::get(device, L"bgra8.rp");
+		rp_bgra8l = Renderpass::get(device, L"bgra8l.rp");
 		rp_bgra8c = Renderpass::get(device, L"bgra8c.rp");
 
 		img_white.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
@@ -2892,7 +2909,9 @@ namespace flame
 		nd.pl_blit_rgba16ms4 = Pipeline::get(device, L"post/blit_rgba16ms4.pl");
 		nd.pl_blit_d16 = Pipeline::get(device, L"post/blit_d16.pl");
 		nd.pl_blit_d16ms4 = Pipeline::get(device, L"post/blit_d16ms4.pl");
-		nd.pl_add = Pipeline::get(device, L"post/add.pl");
+		nd.pl_add_bgra8 = Pipeline::get(device, L"post/add_bgra8.pl");
+		nd.pl_add_rgba8 = Pipeline::get(device, L"post/add_rgba8.pl");
+		nd.pl_add_rgba16 = Pipeline::get(device, L"post/add_rgba16.pl");
 		nd.pl_fxaa = Pipeline::get(device, L"post/fxaa.pl");
 		nd.pl_downsample = Pipeline::get(device, L"post/downsample.pl");
 		nd.pl_upsample = Pipeline::get(device, L"post/upsample.pl");

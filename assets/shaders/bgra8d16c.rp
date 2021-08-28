@@ -2,8 +2,9 @@
 <renderpass>
   <attachments>
     <attachment format="B8G8R8A8_UNORM" />
+    <attachment format="Depth16" />
   </attachments>
   <subpasses>
-    <subpass color_refs="0" />
+    <subpass color_refs="0" depth_ref="1" />
   </subpasses>
 </renderpass>
