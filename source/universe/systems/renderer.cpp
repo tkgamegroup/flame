@@ -37,6 +37,8 @@ namespace water
 #include <water/water.dsl.h>
 #include <water/water.pll.h>
 }
+#include <deferred/ssao.dsl.h>
+#include <deferred/ssao.pll.h>
 #include <deferred/deferred.dsl.h>
 #include <deferred/deferred.pll.h>
 #include <particle/particle.pll.h>
@@ -440,6 +442,8 @@ namespace flame
 		float dir_shadow_dist = 100.f;
 		float pt_shadow_dist = 20.f;
 		float pt_shadow_near = 0.1f;
+		float ssao_radius = 0.5f;
+		float ssao_bias = 0.025f;
 
 		std::vector<ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
@@ -477,6 +481,7 @@ namespace flame
 		UniPtr<Image> img_col_met;	// color, metallic
 		UniPtr<Image> img_nor_rou;	// normal, roughness
 		UniPtr<Image> img_ao;		// ambient occlusion
+		UniPtr<Image> img_ao_back;
 		UniPtr<Image> img_col_ms;
 		UniPtr<Image> img_dep_ms;
 		UniPtr<Image> img_dst_back;
@@ -499,12 +504,17 @@ namespace flame
 
 		UniPtr<Framebuffer> fb_gbuf;
 		std::vector<UniPtr<Framebuffer>> fb_tars_dep;
-		UniPtr<Framebuffer> fb_fwd;
 		UniPtr<Framebuffer> fb_fwd_ms4;
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
 
-		Pipeline* pl_def;
+		StorageBuffer<DSL_ssao::SampleLocations>	buf_ssao_loc;
+		StorageBuffer<DSL_ssao::SampleNoises>		buf_ssao_noi;
+		Pipeline*									pl_ssao;
+		Pipeline*									pl_ssao_blur;
+		UniPtr<DescriptorSet>						ds_ssao;
+
+		Pipeline*				pl_def;
 		UniPtr<DescriptorSet>	ds_def;
 
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
@@ -1784,6 +1794,7 @@ namespace flame
 			return;
 
 		tar_sz = ivs[0]->get_image()->get_size();
+		auto hf_tar_sz = tar_sz / 2U;
 
 		img_dst.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageStorage));
@@ -1796,6 +1807,8 @@ namespace flame
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 		nd.img_nor_rou.reset(Image::create(device, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_ao.reset(Image::create(device, Format_R8_UNORM, hf_tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 		nd.img_col_ms.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			MsaaSampleCount, ImageUsageAttachment));
 		nd.img_dep_ms.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
@@ -1805,6 +1818,8 @@ namespace flame
 		nd.img_dep_back.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
 		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+		nd.img_ao_back.reset(Image::create(device, Format_R8_UNORM, hf_tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 
 		{
 			ImageView* vs[] = {
@@ -1829,14 +1844,6 @@ namespace flame
 
 		{
 			ImageView* vs[] = {
-				img_dst->get_view(),
-				nd.img_dep->get_view()
-			};
-			nd.fb_fwd.reset(Framebuffer::create(device, Renderpass::get(device, L"forward.rp"), countof(vs), vs));
-		}
-
-		{
-			ImageView* vs[] = {
 				nd.img_col_ms->get_view(),
 				nd.img_dep_ms->get_view(),
 				img_dst->get_view()
@@ -1844,8 +1851,13 @@ namespace flame
 			nd.fb_fwd_ms4.reset(Framebuffer::create(device, Renderpass::get(device, L"forward_ms4.rp"), countof(vs), vs));
 		}
 
+		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
+		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
+		nd.ds_ssao->update();
+
 		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
 		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_ao_binding, 0, nd.img_ao->get_view(), sp_nearest);
 		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
 		nd.ds_def->update();
 
@@ -1877,6 +1889,8 @@ namespace flame
 				data.viewport = tar_sz;
 				data.camera_coord = camera->node->g_pos;
 				data.camera_dir = -camera->node->g_rot[2];
+				data.camera_tan = camera->node->g_rot[0];
+				data.camera_bit = camera->node->g_rot[1];
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
 				data.proj = camera->proj;
@@ -2265,13 +2279,38 @@ namespace flame
 				cb->image_barrier(nd.img_nor_rou.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
+				cb->set_viewport(vec4(vp) * 0.5f);
+				cb->begin_renderpass(nullptr, nd.img_ao_back->get_shader_write_dst());
+				cb->bind_pipeline(nd.pl_ssao);
+				{
+					DescriptorSet* sets[PLL_ssao::Binding_Max];
+					sets[PLL_ssao::Binding_ssao] = nd.ds_ssao.get();
+					sets[PLL_ssao::Binding_render_data] = nd.ds_render_data.get();
+					cb->bind_descriptor_sets(0, countof(sets), sets);
+				}
+				cb->push_constant_t(PLL_ssao::PushConstant{ nd.ssao_radius, nd.ssao_bias });
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+
+				cb->image_barrier(nd.img_ao_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, nd.img_ao->get_shader_write_dst());
+				cb->bind_pipeline(nd.pl_ssao_blur);
+				cb->bind_descriptor_set(0, nd.img_ao_back->get_shader_read_src());
+				cb->push_constant_t(PLL_post::PushConstant{ .pxsz = { 1.f / vec2(nd.img_ao->get_size()) } });
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+				cb->image_barrier(nd.img_ao.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
+
+				cb->set_viewport(vp);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_def);
-				DescriptorSet* sets[PLL_deferred::Binding_Max];
-				sets[PLL_deferred::Binding_deferred] = nd.ds_def.get();
-				sets[PLL_deferred::Binding_render_data] = nd.ds_render_data.get();
-				sets[PLL_deferred::Binding_light] = nd.ds_light.get();
-				cb->bind_descriptor_sets(0, countof(sets), sets);
+				{
+					DescriptorSet* sets[PLL_deferred::Binding_Max];
+					sets[PLL_deferred::Binding_deferred] = nd.ds_def.get();
+					sets[PLL_deferred::Binding_render_data] = nd.ds_render_data.get();
+					sets[PLL_deferred::Binding_light] = nd.ds_light.get();
+					cb->bind_descriptor_sets(0, countof(sets), sets);
+				}
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
@@ -2734,6 +2773,8 @@ namespace flame
 		sp_nearest = Sampler::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge);
 		sp_linear = Sampler::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
 
+		InstanceCB cb(device);
+
 		rp_rgba8 = Renderpass::get(device, L"rgba8.rp");
 		rp_rgba8c = Renderpass::get(device, L"rgba8c.rp");
 		rp_bgra8 = Renderpass::get(device, L"bgra8.rp");
@@ -2896,6 +2937,44 @@ namespace flame
 		nd.pll_terrain_gbuf = PipelineLayout::get(device, L"terrain/gbuffer.pll");
 		nd.pll_water = PipelineLayout::get(device, L"water/water.pll");
 		nd.pll_post = PipelineLayout::get(device, L"post/post.pll");
+
+		std::uniform_real_distribution<float> r(0.f, 1.f);
+		std::default_random_engine rd;
+
+		nd.buf_ssao_loc.create(device, BufferUsageUniform);
+		{
+			auto& data = *nd.buf_ssao_loc.pstag;
+			for (auto i = 0; i < _countof(data.sample_locations); i++)
+			{
+				vec3 sample(r(rd) * 2.f - 1.f, r(rd) * 2.f - 1.f, r(rd));
+				sample = normalize(sample);
+				sample *= r(rd);
+
+				auto scale = float(i) / _countof(data.sample_locations);
+				// scale samples s.t. they're more aligned to center of kernel
+				scale = lerp(0.1f, 1.f, scale * scale);
+				sample *= scale;
+				data.sample_locations[i] = vec4(sample, 0.f);
+			}
+
+			nd.buf_ssao_loc.cpy_whole();
+			nd.buf_ssao_loc.upload(cb.get());
+		}
+		nd.buf_ssao_noi.create(device, BufferUsageUniform);
+		{
+			auto& data = *nd.buf_ssao_noi.pstag;
+			for (auto i = 0; i < _countof(data.sample_noises); i++)
+				data.sample_noises[i] = vec4(normalize(vec2(r(rd) * 2.f - 1.f, r(rd) * 2.f - 1.f)), 0.f, 0.f);
+
+			nd.buf_ssao_noi.cpy_whole();
+			nd.buf_ssao_noi.upload(cb.get());
+		}
+		nd.pl_ssao = Pipeline::get(device, L"deferred/ssao.pl");
+		nd.pl_ssao_blur = Pipeline::get(device, L"deferred/ssao_blur.pl");
+		nd.ds_ssao.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"deferred/ssao.dsl")));
+		nd.ds_ssao->set_buffer(DSL_ssao::SampleLocations_binding, 0, nd.buf_ssao_loc.buf.get());
+		nd.ds_ssao->set_buffer(DSL_ssao::SampleNoises_binding, 0, nd.buf_ssao_noi.buf.get());
+		nd.ds_ssao->update();
 
 		nd.pl_def = Pipeline::get(device, L"deferred/deferred.pl");
 		nd.ds_def.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));

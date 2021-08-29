@@ -15,6 +15,8 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	
 	vec3 camera_coord;
 	vec3 camera_dir;
+	vec3 camera_tan;
+	vec3 camera_bit;
 
 	mat4 view;
 	mat4 view_inv;

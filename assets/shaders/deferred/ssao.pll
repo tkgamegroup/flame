@@ -1,0 +1,12 @@
+#ifndef MAKE_PLL
+#define SSAO_SET 0
+#include "ssao.dsl"
+#define RENDER_DATA_SET 1
+#include "../render_data.dsl"
+#endif
+
+layout (push_constant) uniform PushConstant
+{
+	float radius;
+	float bias;
+}pc;

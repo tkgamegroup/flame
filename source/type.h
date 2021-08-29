@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <memory>
 #include <algorithm>
+#include <random>
 
 namespace flame
 {

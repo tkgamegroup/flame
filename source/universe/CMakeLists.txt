@@ -38,6 +38,7 @@ add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/terrain/forward.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/terrain/gbuffer.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/water/water.pll")
+add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/deferred/ssao.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/deferred/deferred.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/particle/particle.pll")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/post.pll")
