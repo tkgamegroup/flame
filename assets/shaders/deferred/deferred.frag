@@ -25,7 +25,7 @@ void main()
 		vec3 albedo = (1.0 - metallic) * color;
 		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
 
-		normal = nor_rou.xyz * 2.0 - 1.0;
+		normal = normalize(nor_rou.xyz * 2.0 - 1.0);
 		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness, ao), 1.0);
 	}
 	else

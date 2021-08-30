@@ -13,11 +13,11 @@ void main()
     vec3 frag_pos = p.xyz;
 
 	vec3 normal = texture(img_nor_rou, i_uv).xyz;
-	normal = normal * 2.0 - 1.0;
+	normal = normalize(normal * 2.0 - 1.0);
     vec3 rand_vec = vec3(sample_noises[
         (int(gl_FragCoord.y) % NOISE_CY) * NOISE_CX
         + int(gl_FragCoord.x) % NOISE_CX].xy, 0.0);
-    rand_vec = rand_vec.x * render_data.camera_tan + rand_vec.y * render_data.camera_bit;
+    rand_vec = normalize(rand_vec.x * render_data.camera_tan + rand_vec.y * render_data.camera_bit);
     vec3 tangent = normalize(rand_vec - normal * dot(rand_vec, normal));
     vec3 bitangent = cross(tangent, normal);
 

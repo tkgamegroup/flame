@@ -42,13 +42,13 @@ void main()
 	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
 
 	#ifndef SHADOW_PASS
-		o_normal = mat3(deform) * i_nor;
+		o_normal = normalize(mat3(deform) * i_nor);
 	#endif
 #else
 	vec3 coordw = vec3(transforms[idx].mat * vec4(i_pos, 1.0));
 
 	#ifndef SHADOW_PASS
-		o_normal = mat3(transforms[idx].nor) * i_nor;
+		o_normal = normalize(mat3(transforms[idx].nor) * i_nor);
 	#endif
 #endif
 

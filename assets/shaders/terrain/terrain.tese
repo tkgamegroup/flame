@@ -37,8 +37,8 @@ void main()
 	o_idx = idx;
 	o_uv = uv;
 
-	o_normal = texture(maps[terrain_infos[idx].normal_map_id], uv).xyz * 2.0 - vec3(1.0);
-	o_tangent = texture(maps[terrain_infos[idx].tangent_map_id], uv).xyz * 2.0 - vec3(1.0);
+	o_normal = normalize(texture(maps[terrain_infos[idx].normal_map_id], uv).xyz * 2.0 - 1.0);
+	o_tangent = normalize(texture(maps[terrain_infos[idx].tangent_map_id], uv).xyz * 2.0 - 1.0);
 
 #ifndef DEFERRED
 	o_coordw = coordw;

@@ -142,7 +142,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	return ret;
 }
 
-vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
+vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotV = max(dot(N, V), 0.0);
 	vec3 F = fresnel_schlick_roughness(NdotV, f0, roughness);
@@ -154,7 +154,7 @@ vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 	vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
 	vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
-	return (kD * diffuse + specular) * render_data.sky_intensity * ao;
+	return (kD * diffuse + specular) * render_data.sky_intensity;
 }
 
 vec3 get_fog(vec3 color, float dist)
@@ -172,9 +172,9 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
 
-	ret += get_ibl(N, V, metallic, albedo, f0, roughness, ao);
+	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * ao;
 
 	ret = get_fog(ret, distv);
-
+	
 	return ret;
 }

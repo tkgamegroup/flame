@@ -49,6 +49,6 @@
 		o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0), color.a);
 	#else
 		o_res_col_met = vec4(color.rgb, metallic);
-		o_res_nor_rou = vec4(i_normal * 0.5 + vec3(0.5), roughness);
+		o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, roughness);
 	#endif
 #endif

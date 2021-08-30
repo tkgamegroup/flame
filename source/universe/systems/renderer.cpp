@@ -442,8 +442,8 @@ namespace flame
 		float dir_shadow_dist = 100.f;
 		float pt_shadow_dist = 20.f;
 		float pt_shadow_near = 0.1f;
-		float ssao_radius = 0.5f;
-		float ssao_bias = 0.025f;
+		float ssao_radius = 1.f;
+		float ssao_bias = 0.0025f;
 
 		std::vector<ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
@@ -2946,7 +2946,7 @@ namespace flame
 			auto& data = *nd.buf_ssao_loc.pstag;
 			for (auto i = 0; i < _countof(data.sample_locations); i++)
 			{
-				vec3 sample(r(rd) * 2.f - 1.f, r(rd) * 2.f - 1.f, r(rd));
+				vec3 sample(r(rd) * 2.f - 1.f, r(rd), r(rd) * 2.f - 1.f);
 				sample = normalize(sample);
 				sample *= r(rd);
 
