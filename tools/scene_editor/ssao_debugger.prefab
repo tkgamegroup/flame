@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<prefab>
+    <eWindow pos="200,100" title="SSAO Debugger">
+      <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="2">
+        <eText text="radius" />
+        <eDragEdit name="radius_drag" min="0" max="10" speed="0.01" />
+      </eElement>
+      <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="2">
+        <eText text="bias" />
+        <eDragEdit name="bias_drag" min="0" max="1" speed="0.005" />
+      </eElement>
+      <cScript src="ssao_debugger.lua" />
+    </eWindow>
+</prefab>

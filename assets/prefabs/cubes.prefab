@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+	<eNode>
+    <eCube pos="1,0,0" />
+    <eCube pos="0,0,1" />
+	</eNode>
+</prefab>

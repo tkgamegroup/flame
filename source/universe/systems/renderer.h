@@ -22,6 +22,8 @@ namespace flame
 		virtual void set_render_type(RenderType type) = 0;
 		virtual void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) = 0;
 		virtual void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) = 0;
+		virtual void get_ssao_props(float* radius, float* bias) = 0;
+		virtual void set_ssao_props(float radius, float bias) = 0;
 
 		virtual graphics::ImageView* get_element_res(uint idx) const = 0;
 		virtual int set_element_res(int idx, graphics::ImageView* iv) = 0;

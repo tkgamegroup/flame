@@ -15,7 +15,7 @@ namespace flame
 	void dDragEditPrivate::set_int(int _i)
 	{
 		fassert(type == IntegerType);
-		i = _i;
+		i = clamp(_i, (int)min_v, (int)max_v);
 		if (dragging)
 			drag_i = i;
 		drag_text->set_text(to_wstring(i));
@@ -24,7 +24,7 @@ namespace flame
 	void dDragEditPrivate::set_float(float _f)
 	{
 		fassert(type == FloatingType);
-		f = _f;
+		f = clamp(_f, min_v, max_v);
 		if (dragging)
 			drag_f = f;
 		drag_text->set_text(to_wstring(f));
@@ -69,25 +69,36 @@ namespace flame
 				{
 				case IntegerType:
 				{
-					auto c = (int)(pos.x - thiz->drag_pos) * 0.1f;
+					auto c = int((pos.x - thiz->drag_pos) * thiz->sp);
 					if (c != 0)
 					{
-						thiz->i = thiz->drag_i + c;
-						thiz->drag_pos = pos.x;
-						thiz->drag_i = thiz->i;
-						thiz->drag_text->set_text(to_wstring(thiz->i));
-						thiz->entity->driver_data_changed(thiz, S<"value"_h>);
+						auto v = clamp(thiz->drag_i + c, (int)thiz->min_v, (int)thiz->max_v);
+						if (v != thiz->i)
+						{
+							thiz->i = v;
+							thiz->drag_pos = pos.x;
+							thiz->drag_i = v;
+							thiz->drag_text->set_text(to_wstring(v));
+							thiz->entity->driver_data_changed(thiz, S<"value"_h>);
+						}
 					}
 				}
 					break;
 				case FloatingType:
 				{
-					auto c = (pos.x - thiz->drag_pos) * 0.05f;
-					thiz->f = thiz->drag_f + c;
-					thiz->drag_pos = pos.x;
-					thiz->drag_f = thiz->f;
-					thiz->drag_text->set_text(to_wstring(thiz->f));
-					thiz->entity->driver_data_changed(thiz, S<"value"_h>);
+					auto c = (pos.x - thiz->drag_pos) * thiz->sp;
+					if (c != 0.f)
+					{
+						auto v = clamp(thiz->drag_f + c, thiz->min_v, thiz->max_v);
+						if (v != thiz->f)
+						{
+							thiz->f = thiz->drag_f + c;
+							thiz->drag_pos = pos.x;
+							thiz->drag_f = v;
+							thiz->drag_text->set_text(to_wstring(v));
+							thiz->entity->driver_data_changed(thiz, S<"value"_h>);
+						}
+					}
 				}
 					break;
 				}

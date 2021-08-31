@@ -268,26 +268,6 @@ function mat4(a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4, d1, d2, d3, d4)
 	return o
 end
 
-function flame_get_i(p, o)
-	flame_get(p, o, e_type_data, e_integer_type, 1, 1)
-end
-
-function flame_get_f(p, o)
-	flame_get(p, o, e_type_data, e_floating_type, 1, 1)
-end
-
-function flame_get_p(p, o)
-	return flame_get(p, o, e_type_pointer, e_else_type, 1, 1)
-end
-
-function flame_set_c4(p, o, v)
-	flame_set(p, o, e_type_data, e_char_type, 4, 1, v)
-end
-
-function flame_set_v3(p, o, v)
-	flame_set(p, o, e_type_data, e_floating_type, 3, 1, v)
-end
-
 function hexahedron_draw_lines(dst, points, col)
 	flame_cpy(dst, 32 * 0 + 16 * 0 + 0, points, 0, 12)
 	flame_cpy(dst, 32 * 0 + 16 * 0 + 12, col, 0, 4)
@@ -407,6 +387,53 @@ end
 function circle_rand(r)
 	local rad = math.rad(math.random() * 360.0)
 	return vec2(math.cos(rad) * r, math.sin(rad) * r)
+end
+
+function flame_get_i(p, o)
+	return flame_get(p, o, e_type_data, e_integer_type, 1, 1)
+end
+
+function flame_get_f(p, o)
+	return flame_get(p, o, e_type_data, e_floating_type, 1, 1)
+end
+
+function flame_get_p(p, o)
+	return flame_get(p, o, e_type_pointer, e_else_type, 1, 1)
+end
+
+function flame_set_f(p, o, v)
+	flame_set(p, o, e_type_data, e_floating_type, 1, 1, v)
+end
+
+function flame_set_c4(p, o, v)
+	flame_set(p, o, e_type_data, e_char_type, 4, 1, v)
+end
+
+function flame_set_v3(p, o, v)
+	flame_set(p, o, e_type_data, e_floating_type, 3, 1, v)
+end
+
+function flame_float_var(v)
+	local ret = {}
+	ret.p = flame_malloc(4)
+
+	ret.get = function()
+		return flame_get_f(ret.p, 0)
+	end
+
+	ret.set = function(v)
+		flame_set_f(ret.p, 0, v)
+	end
+
+	ret.get_ = function()
+		local v = ret.get()
+		flame_free(ret.p)
+		return v
+	end
+	
+	if v then ret.set(v) end
+	
+	return ret
 end
 
 function split_by_newline(str)

@@ -283,7 +283,10 @@ int main(int argc, char** args)
 
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
 	w->window->set_cursor(CursorNone);
-	w->s_renderer->set_shadow_props(3, 50.f, 20.f);
+
+	auto renderer = w->s_renderer;
+	renderer->set_shadow_props(3, 50.f, 20.f);
+	renderer->set_ssao_props(1.64f, 0.04f);
 
 	auto script_ins = script::Instance::get_default();
 	script_ins->excute_file(L"terrain_scatter.lua");

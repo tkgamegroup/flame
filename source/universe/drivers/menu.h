@@ -32,7 +32,7 @@ namespace flame
 
 		virtual bool get_checked() const = 0;
 		virtual void set_checked(bool v) = 0;
-		virtual void set_single_checked() = 0;
+		virtual void set_radio_checked() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static dMenuItem* create(void* parms = nullptr);
 	};

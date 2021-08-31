@@ -442,8 +442,8 @@ namespace flame
 		float dir_shadow_dist = 100.f;
 		float pt_shadow_dist = 20.f;
 		float pt_shadow_near = 0.1f;
-		float ssao_radius = 1.f;
-		float ssao_bias = 0.0025f;
+		float ssao_radius = 0.5f;
+		float ssao_bias = 0.025f;
 
 		std::vector<ImageView*> tex_reses;
 		std::vector<MaterialRes> mat_reses;
@@ -693,6 +693,24 @@ namespace flame
 		nd.dir_shadow_levels = dir_levels;
 		nd.dir_shadow_dist = dir_dist;
 		nd.pt_shadow_dist = pt_dist;
+	}
+
+	void sRendererPrivate::get_ssao_props(float* radius, float* bias)
+	{
+		auto& nd = *_nd;
+
+		if (radius)
+			*radius = nd.ssao_radius;
+		if (bias)
+			*bias = nd.ssao_bias;
+	}
+
+	void sRendererPrivate::set_ssao_props(float radius, float bias)
+	{
+		auto& nd = *_nd;
+
+		nd.ssao_radius = radius;
+		nd.ssao_bias = bias;
 	}
 
 	ImageView* sRendererPrivate::get_element_res(uint idx) const
@@ -1889,8 +1907,6 @@ namespace flame
 				data.viewport = tar_sz;
 				data.camera_coord = camera->node->g_pos;
 				data.camera_dir = -camera->node->g_rot[2];
-				data.camera_tan = camera->node->g_rot[0];
-				data.camera_bit = camera->node->g_rot[1];
 				data.view = camera->view;
 				data.view_inv = camera->view_inv;
 				data.proj = camera->proj;
@@ -2947,11 +2963,9 @@ namespace flame
 			for (auto i = 0; i < _countof(data.sample_locations); i++)
 			{
 				vec3 sample(r(rd) * 2.f - 1.f, r(rd), r(rd) * 2.f - 1.f);
-				sample = normalize(sample);
-				sample *= r(rd);
+				sample = normalize(sample) * r(rd);
 
 				auto scale = float(i) / _countof(data.sample_locations);
-				// scale samples s.t. they're more aligned to center of kernel
 				scale = lerp(0.1f, 1.f, scale * scale);
 				sample *= scale;
 				data.sample_locations[i] = vec4(sample, 0.f);
@@ -2964,7 +2978,7 @@ namespace flame
 		{
 			auto& data = *nd.buf_ssao_noi.pstag;
 			for (auto i = 0; i < _countof(data.sample_noises); i++)
-				data.sample_noises[i] = vec4(normalize(vec2(r(rd) * 2.f - 1.f, r(rd) * 2.f - 1.f)), 0.f, 0.f);
+				data.sample_noises[i] = vec4(normalize(vec3(r(rd) * 2.f - 1.f, 0.f, r(rd) * 2.f - 1.f)), 0.f);
 
 			nd.buf_ssao_noi.cpy_whole();
 			nd.buf_ssao_noi.upload(cb.get());

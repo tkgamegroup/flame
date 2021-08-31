@@ -24,6 +24,14 @@ namespace flame
 		virtual float get_float() const = 0;
 		virtual void set_float(float f) = 0;
 
+		virtual float get_min() const = 0;
+		virtual void set_min(float v) = 0;
+		virtual float get_max() const = 0;
+		virtual void set_max(float v) = 0;
+
+		virtual float get_speed() const = 0;
+		virtual void set_speed(float v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static dDragEdit* create(void* parms = nullptr);
 	};
 }

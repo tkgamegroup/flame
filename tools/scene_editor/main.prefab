@@ -15,48 +15,51 @@
       </eMenu>
       <eMenu text="shading">
 		    <eMenuItem checkable="true" text="wireframe">
-          <cScript>on_single_check_menu(cmd_shading_wireframe)</cScript>
+          <cScript>on_radio_menu(cmd_shading_wireframe)</cScript>
         </eMenuItem>
 		    <eMenuItem checkable="true" checked="true" text="shaded">
-          <cScript>on_single_check_menu(cmd_shading_shaded)</cScript>
+          <cScript>on_radio_menu(cmd_shading_shaded)</cScript>
         </eMenuItem>
 		    <eMenuItem checkable="true" text="normal data">
-          <cScript>on_single_check_menu(cmd_shading_normal_data)</cScript>
+          <cScript>on_radio_menu(cmd_shading_normal_data)</cScript>
         </eMenuItem>
       </eMenu>
       <eMenu text="view">
 		    <eMenuItem checkable="true" text="physics visualization">
-          <cScript>on_multi_check_menu(cmd_view_physics_visualization)</cScript>
+          <cScript>on_check_menu(cmd_view_physics_visualization)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="global axes">
-          <cScript>on_multi_check_menu(cmd_view_global_axes)</cScript>
+          <cScript>on_check_menu(cmd_view_global_axes)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="crosshair">
-          <cScript>on_multi_check_menu(cmd_view_crosshair)</cScript>
+          <cScript>on_check_menu(cmd_view_crosshair)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="bounds">
-          <cScript>on_multi_check_menu(cmd_view_bounds)</cScript>
+          <cScript>on_check_menu(cmd_view_bounds)</cScript>
         </eMenuItem>
         <eMenu text="camera">
           <eMenuItem checkable="true" text="fly">
-            <cScript>on_single_check_menu(cmd_view_camera_fly)</cScript>
+            <cScript>on_radio_menu(cmd_view_camera_fly)</cScript>
           </eMenuItem>
           <eMenuItem checkable="true" checked="true" text="arcball">
-            <cScript>on_single_check_menu(cmd_view_camera_arcball)</cScript>
+            <cScript>on_radio_menu(cmd_view_camera_arcball)</cScript>
           </eMenuItem>
         </eMenu>
       </eMenu>
       <eMenu text="tools">
         <eMenuItem checkable="true" text="ui reflector">
-          <cScript>on_multi_check_menu(cmd_tools_ui_reflector)</cScript>
+          <cScript>on_check_menu(cmd_tools_ui_reflector)</cScript>
         </eMenuItem>
         <eMenuItem checkable="true" text="csm debugger">
-          <cScript>on_multi_check_menu(cmd_tools_csm_debugger)</cScript>
+          <cScript>on_check_menu(cmd_tools_csm_debugger)</cScript>
+        </eMenuItem>
+        <eMenuItem checkable="true" text="ssao debugger">
+          <cScript>on_check_menu(cmd_tools_ssao_debugger)</cScript>
         </eMenuItem>
       </eMenu>
       <eMenu text="settings">
         <eMenuItem checkable="true" text="always update">
-          <cScript>on_multi_check_menu(cmd_settings_alwawys_update)</cScript>
+          <cScript>on_check_menu(cmd_settings_alwawys_update)</cScript>
         </eMenuItem>
       </eMenu>
     </eMenuBar>

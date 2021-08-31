@@ -190,7 +190,7 @@ namespace flame
 			arrow->set_visible(checked);
 	}
 
-	void dMenuItemPrivate::set_single_checked()
+	void dMenuItemPrivate::set_radio_checked()
 	{
 		set_checked(true);
 		for (auto& c : entity->parent->children)

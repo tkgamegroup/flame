@@ -10,6 +10,9 @@ namespace flame
 		BasicType type = FloatingType;
 		int i = 0;
 		float f = 0.f;
+		float min_v = -10000.f;
+		float max_v = +10000.f;
+		float sp = 0.1f;
 
 		int drag_pos;
 		int drag_i;
@@ -33,6 +36,14 @@ namespace flame
 
 		float get_float() const override { return f; }
 		void set_float(float f) override;
+
+		float get_min() const override { return min_v; }
+		void set_min(float v) override { min_v = v; }
+		float get_max() const override { return max_v; }
+		void set_max(float v) override { max_v = v; }
+
+		float get_speed() const override { return sp; }
+		void set_speed(float v) override { sp = v; }
 
 		void on_load_finished() override;
 	};

@@ -66,6 +66,8 @@ namespace flame
 		void set_render_type(RenderType type) override { render_type = type; }
 		void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) override;
 		void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) override;
+		void get_ssao_props(float* radius, float* bias) override;
+		void set_ssao_props(float radius, float bias) override;
 
 		graphics::ImageView* get_element_res(uint idx) const override;
 		int set_element_res(int idx, graphics::ImageView* iv) override;

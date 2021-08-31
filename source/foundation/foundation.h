@@ -219,13 +219,13 @@ namespace flame
 		}
 	};
 
-	template <class F>
+	template <class Function>
 	struct Closure
 	{
-		F* f;
+		Function* f;
 		Capture c;
 
-		Closure(F* f, const Capture& c) :
+		Closure(Function* f, const Capture& c) :
 			f(f),
 			c(c)
 		{
@@ -236,7 +236,7 @@ namespace flame
 			f_free(c._data);
 		}
 
-		template <class FF = F, class ...Args>
+		template <class FF = Function, class ...Args>
 		auto call(Args... args)
 		{
 			return ((FF*)f)(c, args...);
@@ -402,7 +402,8 @@ namespace flame
 
 	inline uint64 get_now_ns()
 	{
-		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+		return std::chrono::time_point_cast<std::chrono::nanoseconds>
+			(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
