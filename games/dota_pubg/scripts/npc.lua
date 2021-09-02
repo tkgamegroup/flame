@@ -118,7 +118,7 @@ function make_npc(e, ID)
 						if skill_type.type == "Active" and slot.cd == 0 and skill_type.cost_mana <= npc.MP then
 							if math.random() < 0.15 then
 								if skill_type.target_type == "None" then
-									if skill_type.range and skill_type.range < distance_2(npc.pos.to_flat(), npc.target.pos.to_flat()) then
+									if skill_type.range and skill_type.range * 0.9 > distance_2(npc.pos.to_flat(), npc.target.pos.to_flat()) then
 										npc.use_skill(i)
 									end
 								end

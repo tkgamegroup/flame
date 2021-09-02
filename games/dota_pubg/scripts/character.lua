@@ -296,6 +296,24 @@ function make_character(entity, tag, stats)
 			character.recover_tick = 60
 		end
 
+		local i=1
+		local b = character.buffs[1]
+		local buff_changed = false
+		while b do
+			if b.t > 0 then
+				b.t = b.t - 1
+				i = i + 1
+				b = character.buffs[i]
+			else
+				table.remove(character.buffs, i)
+				b = character.buffs[i]
+				buff_changed = true
+			end
+		end
+		if buff_changed then
+			character.calc_stats()
+		end
+
 		for i=1, SKILL_SLOTS_COUNT, 1 do
 			local slot = character.skills[i]
 			if slot and slot.cd > 0 then
@@ -381,6 +399,17 @@ function make_character(entity, tag, stats)
 				end
 			end
 		end
+		for i=1, #character.buffs, 1 do
+			local _a = BUFF_LIST[character.buffs[i].id].attributes[n]
+			if _a then
+				if _a.a then
+					a.a = a.a + _a.a
+				end
+				if _a.p then
+					a.p = a.p + _a.p
+				end
+			end
+		end
 	end
 
 	character.calc_stats = function()
@@ -459,6 +488,12 @@ function make_character(entity, tag, stats)
 				end
 			end
 		end
+	end
+
+	character.receive_buff = function(src, id)
+		local b = { id=id, t=BUFF_LIST[id].duration }
+		table.insert(character.buffs, b)
+		character.calc_stats()
 	end
 
 	character.receive_item = function(id, num)

@@ -82,6 +82,16 @@ scene_receiver.add_key_down_listener(function(key)
 		end)
 	elseif key == e_key_q then
 		skill_click(1)
+	elseif key == e_key_w then
+		skill_click(2)
+	elseif key == e_key_e then
+		skill_click(3)
+	elseif key == e_key_r then
+		skill_click(4)
+	elseif key == e_key_d then
+		skill_click(5)
+	elseif key == e_key_f then
+		skill_click(6)
 	end
 end)
 
@@ -705,6 +715,7 @@ e.set_name("main_player")
 e.find_component("cNode").set_pos(vec3(200, 65, 200))
 main_player = make_player(e)
 main_player.learn_skill("fire_ball")
+main_player.learn_skill("ice_bolt")
 main_player.awake()
 obj_root.add_child(e)
 

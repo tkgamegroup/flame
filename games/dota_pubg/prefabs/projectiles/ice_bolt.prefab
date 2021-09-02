@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-    <eParticleEmitter img="D:\assets\particles\fire_ball.png" 
+    <eParticleEmitter img="D:\assets\particles\ice_bolt.png" 
                     bounds="-0.25,-0.25,-1.5,0.25,0.25,1.5"
                     ptc_num_max="6" emt_intv="3" emt_prob="1.0" emt_num="1" 
                     ptc_ttl="216000"
