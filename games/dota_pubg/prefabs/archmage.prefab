@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+    <eNode src="D:\assets\character\mixamo\alien_soldier" >
+        <cCharacterController radius="0.28" height="1.5" />
+    </eNode>
+</prefab>

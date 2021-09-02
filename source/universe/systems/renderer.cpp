@@ -2863,10 +2863,10 @@ namespace flame
 			dst.pipeline_defines.push_back("NORMAL_DATA");
 		}
 
-		nd.buf_mesh_vtx.create(device, BufferUsageVertex, 200000);
-		nd.buf_mesh_idx.create(device, BufferUsageIndex, 200000);
-		nd.buf_arm_mesh_vtx.create(device, BufferUsageVertex, 200000);
-		nd.buf_arm_mesh_idx.create(device, BufferUsageIndex, 200000);
+		nd.buf_mesh_vtx.create(device, BufferUsageVertex, 2000000);
+		nd.buf_mesh_idx.create(device, BufferUsageIndex, 2000000);
+		nd.buf_arm_mesh_vtx.create(device, BufferUsageVertex, 2000000);
+		nd.buf_arm_mesh_idx.create(device, BufferUsageIndex, 2000000);
 		nd.buf_ptc_vtx.create(device, BufferUsageVertex, 10000);
 
 		nd.buf_lines.create(device, BufferUsageVertex, 2000000);

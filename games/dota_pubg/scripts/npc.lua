@@ -59,6 +59,29 @@ local n = {
 }
 NPC_LIST[n.name] = n
 
+local n = {
+	name = "priestess",
+	display_name = "Priestess",
+	tag = TAG_CHARACTER_G3,
+	stats = {
+		HP_MAX = 5000,
+		MP_MAX = 5000,
+		HP_REC = 10,
+		MP_REC = 10,
+		MOV_SP = 0.06,
+		ATK_DMG = 100,
+		ATK_SP = 100,
+		ARMOR = 2
+	},
+	skills = {
+	},
+	drop_gold = 0,
+	drop_exp = 0,
+	drop_items = {
+	}
+}
+NPC_LIST[n.name] = n
+
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
 	local npc = make_character(e, data.tag, data.stats)

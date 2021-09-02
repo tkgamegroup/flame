@@ -698,6 +698,31 @@ function add_projectile(name, target, pos, sp, cb)
 	obj_root.add_child(e)
 end
 
+local e_player = create_entity("prefabs/player")
+
+local e = e_player.copy()
+e.set_name("main_player")
+e.find_component("cNode").set_pos(vec3(215, 65, 215))
+main_player = make_player(e)
+main_player.learn_skill("fire_ball")
+main_player.learn_skill("ice_bolt")
+main_player.awake()
+obj_root.add_child(e)
+
+local e_npcs = {}
+function add_npc(pos, ID)
+	local e = e_npcs[ID]
+	if e == nil then
+		e = create_entity("prefabs/"..ID)
+		e_npcs[ID] = e
+	end
+	e = e.copy()
+	e.set_name("npc_"..tostring(math.floor(math.random() * 10000)))
+	e.find_component("cNode").set_pos(pos)
+	make_npc(e, ID)
+	obj_root.add_child(e)
+end
+
 local basic_items = {
 	"wooden_stick",
 	"wooden_shield",
@@ -706,32 +731,9 @@ local basic_items = {
 	"leather_pants",
 	"leather_shoes"
 }
-add_item_obj(vec2(200, 200) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
+add_item_obj(vec2(215, 215) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
 
-local e_player = create_entity("prefabs/player")
-
-local e = e_player.copy()
-e.set_name("main_player")
-e.find_component("cNode").set_pos(vec3(200, 65, 200))
-main_player = make_player(e)
-main_player.learn_skill("fire_ball")
-main_player.learn_skill("ice_bolt")
-main_player.awake()
-obj_root.add_child(e)
-
-local e_npcs = {}
-function add_creep(pos, ID)
-	local e = e_npcs[ID]
-	if e == nil then
-		e = create_entity("prefabs/"..ID)
-		e_npcs[ID] = e
-	end
-	e = e.copy()
-	e.set_name("enemy_"..tostring(math.floor(math.random() * 10000)))
-	e.find_component("cNode").set_pos(pos)
-	make_npc(e, ID)
-	obj_root.add_child(e)
-end
+add_npc(vec3(217, 65, 213), "archmage")
 
 local e_grasses = {}
 table.insert(e_grasses, { e=create_entity("prefabs/grass1"), p=0.35 })
@@ -762,6 +764,7 @@ end
 function build_grid(x, z)
 	if x < 0 then x = 0 end
 	if z < 0 then z = 0 end
+	if x == 21 and z == 21 then return end
 
 	if x >= grid_num then x = grid_num - 1 end
 	if z >= grid_num then z = grid_num - 1 end
@@ -824,9 +827,9 @@ obj_root.add_event(function()
 			if blocks[bx][by] == 0 and not obj_root_n.is_any_within_circle(pos, 10, TAG_CHARACTER_G2) then
 				local pos = s_physics.raycast(vec3(pos.x, 1000, pos.y), vec3(0, -1, 0))
 				if math.random() < 0.1 then
-					add_creep(pos, "crazy_zombie")
+					add_npc(pos, "crazy_zombie")
 				else
-					add_creep(pos, "zombie")
+					add_npc(pos, "zombie")
 				end
 			end
 		end

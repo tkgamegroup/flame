@@ -30,11 +30,11 @@ local s = {
 	cool_down = 360,
 	target_type = "Enemy",
 	distance = 10,
-	description = "Shot a ice bolt to an enemy unit, inflict 25 damage and reduce its move speed by 20% in 5 sec",
+	description = "Shot a ice bolt to an enemy unit, inflict 24 damage and reduce its move speed by 20% in 5 sec",
 	logic = function(caster, target)
 		if caster.tag == target.tag then return end
 		add_projectile("ice_bolt", target, caster.pos + vec3(0, caster.height * 0.5, 0), 0.2, function()
-			caster.inflict_damage(target, "Magical", math.floor(0.5 + 250 * (math.random() * 0.2 + 0.9)))
+			caster.inflict_damage(target, "Magical", math.floor(0.5 + 240 * (math.random() * 0.2 + 0.9)))
 			target.receive_buff(caster, "ice_bolt")
 		end)
 	end

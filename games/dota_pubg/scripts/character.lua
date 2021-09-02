@@ -1,12 +1,12 @@
 characters = {}
 characters[TAG_CHARACTER_G1] = {}
 characters[TAG_CHARACTER_G2] = {}
+characters[TAG_CHARACTER_G3] = {}
 
 function make_character(entity, tag, stats)
 	local character = {
 		name = entity.get_name(),
 		tag = tag,
-		enemy_tag = tag == TAG_CHARACTER_G1 and TAG_CHARACTER_G2 or TAG_CHARACTER_G1,
 		dead = false,
 		sleeping = true,
 
@@ -36,6 +36,14 @@ function make_character(entity, tag, stats)
 	}
 	
 	entity.set_tag(character.tag)
+	if tag == TAG_CHARACTER_G1 then
+		character.enemy_tag = TAG_CHARACTER_G2
+	elseif tag == TAG_CHARACTER_G2 then
+		character.enemy_tag = TAG_CHARACTER_G1
+	else
+		character.enemy_tag = 0
+	end
+
 	character.pos = character.node.get_global_pos()
 	character.prev_pos = character.pos
 	character.scale = character.node.get_global_scale().x
