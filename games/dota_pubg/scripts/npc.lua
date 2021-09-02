@@ -60,8 +60,8 @@ local n = {
 NPC_LIST[n.name] = n
 
 local n = {
-	name = "priestess",
-	display_name = "Priestess",
+	name = "archmage",
+	display_name = "Archmage",
 	tag = TAG_CHARACTER_G3,
 	stats = {
 		HP_MAX = 5000,

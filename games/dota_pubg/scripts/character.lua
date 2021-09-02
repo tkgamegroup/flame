@@ -137,10 +137,10 @@ function make_character(entity, tag, stats)
 			character.target = t
 		elseif s == "attack_on_pos" then
 			character.target_pos = t
-		elseif s == "use_skill_on_target" then
+		elseif s == "cast_to_target" then
 			character.target = t
 			character.state_date = d
-		elseif s == "pick_up" then
+		elseif s == "interact" then
 			character.target = t
 		end
 		character.state = s
@@ -253,11 +253,14 @@ function make_character(entity, tag, stats)
 		end
 	end
 
-	character.pick_up_target = function()
-		local item_obj = character.target
-		if character.move_to_pos(item_obj.pos.to_flat(), 0.2) then
-			if character.receive_item(item_obj.id, item_obj.num) == 0 then
-				item_obj.die()
+	character.interact = function()
+		local target = character.target
+		local tag = target.tag
+		if character.move_to_pos(target.pos.to_flat(), 1.0) then
+			if tag == TAG_ITEM_OBJ then
+				if character.receive_item(target.id, target.num) == 0 then
+					target.die()
+				end
 			end
 			return true
 		end
@@ -360,16 +363,16 @@ function make_character(entity, tag, stats)
 					character.change_state("idle")
 				end
 			end
-		elseif character.state == "pick_up" then
+		elseif character.state == "interact" then
 			if character.target and not character.target.dead then
-				if character.pick_up_target() then
+				if character.interact() then
 					character.change_state("idle")
 				end
 			else
 				character.target = nil
 				character.change_state("idle")
 			end
-		elseif character.state == "use_skill_on_target" then
+		elseif character.state == "cast_to_target" then
 			if character.target and not character.target.dead then
 				local l, d = character.aim(character.target.pos.to_flat())
 				if l <= character.state_date.dist then

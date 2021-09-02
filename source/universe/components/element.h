@@ -66,6 +66,9 @@ namespace flame
 		virtual float get_pivoty() const = 0;
 		virtual void set_pivoty(float p) = 0;
 
+		virtual vec2 get_pivot() const = 0;
+		virtual void set_pivot(const vec2& p) = 0;
+
 		virtual float get_scalex() const = 0;
 		virtual void set_scalex(float s) = 0;
 

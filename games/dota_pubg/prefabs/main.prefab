@@ -6,8 +6,6 @@
          __ui_scene = entity
       </cScript>
       <eElement name="physics_debug_layer1" />
-      <eImage name="action_tip1" visible="false" pivotx="0.5" pivoty="1.0" img="../../../../assets/action_icons/action_icons.atlas" />
-      <eImage name="action_tip2" visible="false" pivotx="0.5" pivoty="1.0" img="../../../../assets/action_icons/action_icons.atlas" />
     </eElement>
     <eElement name="character_panel" padding="8,8,8,8" alignx="Middle" aligny="Max" fill_color="0,0,0,127" align_in_layout="false" layout_type="Vertical" layout_gap="8">
         <eElement alignx="MinMax" layout_type="Vertical">

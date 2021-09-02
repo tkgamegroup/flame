@@ -149,7 +149,7 @@ namespace flame
 		pivot.x = p;
 		mark_transform_dirty();
 		if (entity)
-			entity->component_data_changed(this, S<"pivotx"_h>);
+			entity->component_data_changed(this, S<"pivot"_h>);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -159,7 +159,17 @@ namespace flame
 		pivot.y = p;
 		mark_transform_dirty();
 		if (entity)
-			entity->component_data_changed(this, S<"pivoty"_h>);
+			entity->component_data_changed(this, S<"pivot"_h>);
+	}
+
+	void cElementPrivate::set_pivot(const vec2& p)
+	{
+		if (pivot == p)
+			return;
+		pivot = p;
+		mark_transform_dirty();
+		if (entity)
+			entity->component_data_changed(this, S<"pivot"_h>);
 	}
 
 	void cElementPrivate::set_scalex(float s)

@@ -18,19 +18,11 @@ ui_mouse_icon.image = ui_mouse_icon.find_component("cImage")
 function enter_select_mode(filters, callback)
 	select_mode_filters = filters
 	select_mode_callback = callback
-	if not select_mode then
-		ui_mouse_icon.image.set_tile("select")
-		ui_mouse_icon.element.set_pivotx(0.5)
-		ui_mouse_icon.element.set_pivoty(0.5)
-		select_mode = true
-	end
+	select_mode = true
 end
 
 function exit_select_mode(tag, target)
 	if select_mode then
-		ui_mouse_icon.image.set_tile("mouse")
-		ui_mouse_icon.element.set_pivotx(0.0)
-		ui_mouse_icon.element.set_pivoty(0.0)
 		select_mode = false
 		if select_mode_callback then
 			select_mode_callback(tag, target)
@@ -107,6 +99,8 @@ scene_receiver.add_mouse_left_down_listener(function()
 			exit_select_mode(TAG_CHARACTER_G1, hovering_obj)
 		elseif hovering_obj.tag == TAG_CHARACTER_G2 and (select_mode_filters & TAG_CHARACTER_G2) ~= 0 then
 			exit_select_mode(TAG_CHARACTER_G2, hovering_obj)
+		elseif hovering_obj.tag == TAG_CHARACTER_G3 and (select_mode_filters & TAG_CHARACTER_G3) ~= 0 then
+			exit_select_mode(TAG_CHARACTER_G3, hovering_obj)
 		end
 	end
 end)
@@ -130,19 +124,14 @@ scene_receiver.add_mouse_right_down_listener(function()
 		elseif tag == TAG_CHARACTER_G2 then
 			main_player.change_state("attack_target", hovering_obj)
 			auto_attack = true
+		elseif tag == TAG_CHARACTER_G3 then
+			main_player.change_state("interact", hovering_obj)
 		elseif tag == TAG_ITEM_OBJ then
-			main_player.change_state("pick_up", hovering_obj)
+			main_player.change_state("interact", hovering_obj)
 			auto_attack = false
 		end
 	end
 end)
-
-local ui_action_tip1 = scene.find_child("action_tip1")
-ui_action_tip1.element = ui_action_tip1.find_component("cElement")
-ui_action_tip1.image = ui_action_tip1.find_component("cImage")
-local ui_action_tip2 = scene.find_child("action_tip2")
-ui_action_tip2.element = ui_action_tip2.find_component("cElement")
-ui_action_tip2.image = ui_action_tip2.find_component("cImage")
 
 local ui_tip = nil
 
@@ -203,34 +192,6 @@ obj_root.add_event(function()
 		if target and not target.dead then
 			main_player.change_state("attack_target", target)
 		end
-	end
-
-	-- action tips
-	if state == "move_to" or state == "attack_on_pos" or state == "pick_up_on_pos" then
-		ui_action_tip1.set_visible(true)
-		ui_action_tip1.element.set_pos(camera.camera.world_to_screen(main_player.target_pos, vec4(0)))
-		ui_action_tip1.image.set_tile("move")
-	else
-		ui_action_tip1.set_visible(false)
-	end
-	if state == "attack_target" or state == "attack_on_pos" then
-		if main_player.target then
-			ui_action_tip2.set_visible(true)
-			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos + vec3(0, 1.8, 0), vec4(0)) + vec2(0, 10))
-			ui_action_tip2.image.set_tile("attack")
-		else
-			ui_action_tip2.set_visible(false)
-		end
-	elseif state == "pick_up" or state == "pick_up_on_pos" then
-		if main_player.target then
-			ui_action_tip2.set_visible(true)
-			ui_action_tip2.element.set_pos(camera.camera.world_to_screen(main_player.target.pos, vec4(0)) + vec2(0, 10))
-			ui_action_tip2.image.set_tile("pick_up")
-		else
-			ui_action_tip2.set_visible(false)
-		end
-	else
-		ui_action_tip2.set_visible(false)
 	end
 
 	local has_tip = false
@@ -354,10 +315,12 @@ obj_root.add_event(function()
 				local tag = hovering_entity.get_tag()
 				if tag == TAG_TERRAIN then
 					hovering_obj = { tag=TAG_TERRAIN }
-				elseif tag == TAG_CHARACTER_G1 and name ~= "main_player" then
+				elseif tag == TAG_CHARACTER_G1 then
 					hovering_obj = characters[TAG_CHARACTER_G1][name]
 				elseif tag == TAG_CHARACTER_G2 then
 					hovering_obj = characters[TAG_CHARACTER_G2][name]
+				elseif tag == TAG_CHARACTER_G3 then
+					hovering_obj = characters[TAG_CHARACTER_G3][name]
 				elseif tag == TAG_ITEM_OBJ then
 					hovering_obj = item_objs[name]
 				end
@@ -374,6 +337,7 @@ obj_root.add_event(function()
 				end
 			end
 		end
+
 	else
 		if not has_tip then
 			for i=1, ITEM_SLOTS_COUNT, 1 do
@@ -410,6 +374,26 @@ obj_root.add_event(function()
 					end
 				end
 			end
+		end
+	end
+
+	if select_mode then
+		ui_mouse_icon.image.set_tile("select")
+		ui_mouse_icon.element.set_pivot(vec2(0.5))
+	else
+		local tag = hovering_obj and hovering_obj.tag or 0
+		if tag == TAG_CHARACTER_G2 then
+			ui_mouse_icon.image.set_tile("attack")
+			ui_mouse_icon.element.set_pivot(vec2(0.5))
+		elseif tag == TAG_CHARACTER_G3 then
+			ui_mouse_icon.image.set_tile("talk")
+			ui_mouse_icon.element.set_pivot(vec2(0.5))
+		elseif tag == TAG_ITEM_OBJ then
+			ui_mouse_icon.image.set_tile("pick_up")
+			ui_mouse_icon.element.set_pivot(vec2(0.5))
+		else
+			ui_mouse_icon.image.set_tile("mouse")
+			ui_mouse_icon.element.set_pivot(vec2(0.0))
 		end
 	end
 
@@ -468,7 +452,7 @@ function skill_click(idx)
 				element.set_border_color(vec4(255, 255, 0, 255))
 				enter_select_mode(filters, function(tag, target)
 					if tag then
-						main_player.change_state("use_skill_on_target", target, { idx=idx, dist=skill_type.distance })
+						main_player.change_state("cast_to_target", target, { idx=idx, dist=skill_type.distance })
 					end
 					local element = ui_skill_slots[idx].element
 					element.set_border(1)

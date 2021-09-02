@@ -110,6 +110,9 @@ namespace flame
 		float get_pivoty() const override { return pivot.y; }
 		void set_pivoty(float p) override;
 
+		vec2 get_pivot() const override { return pivot; }
+		void set_pivot(const vec2& p) override;
+
 		float get_scalex() const override { return scl.x; }
 		void set_scalex(float s) override;
 
