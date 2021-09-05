@@ -243,6 +243,12 @@ namespace flame
 		}
 	};
 
+	template <class Function>
+	struct ListenerManagement
+	{
+
+	};
+
 	inline bool get_engine_path(std::filesystem::path& path, const std::filesystem::path& subdir)
 	{
 		if (!std::filesystem::exists(path))

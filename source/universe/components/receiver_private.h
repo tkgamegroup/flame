@@ -25,17 +25,17 @@ namespace flame
 		uint frame = 0;
 
 		bool mute = false;
-		bool ignore_occluders = false;
+		bool floating = false;
 		uint drag_hash = 0;
 		std::vector<uint> acceptable_drops;
 
 		bool is_active();
 
 		bool get_mute() const override { return mute; }
-		void set_mute(bool v) override;
+		void set_mute(bool v) override { mute = v; }
 
-		bool get_ignore_occluders() const override { return ignore_occluders; }
-		void set_ignore_occluders(bool v) override;
+		bool get_floating() const override { return floating; }
+		void set_floating(bool v) override { floating = v; }
 
 		void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) override;
 		void remove_key_down_listener(void* lis) override;

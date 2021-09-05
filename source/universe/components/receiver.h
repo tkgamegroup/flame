@@ -17,8 +17,8 @@ namespace flame
 		virtual bool get_mute() const = 0;
 		virtual void set_mute(bool v) = 0;
 
-		virtual bool get_ignore_occluders() const = 0;
-		virtual void set_ignore_occluders(bool v) = 0;
+		virtual bool get_floating() const = 0;
+		virtual void set_floating(bool v) = 0;
 
 //		uint drag_hash; // non-zero means it can be draged to drop
 

@@ -26,7 +26,7 @@ namespace flame
 		virtual void set_ssao_props(float radius, float bias) = 0;
 
 		virtual graphics::ImageView* get_element_res(uint idx) const = 0;
-		virtual int set_element_res(int idx, graphics::ImageView* iv) = 0;
+		virtual int set_element_res(int idx, graphics::ImageView* iv, graphics::Sampler* sp) = 0;
 		virtual int find_element_res(graphics::ImageView* iv) const = 0;
 
 		virtual void fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color) = 0;

@@ -70,7 +70,7 @@ namespace flame
 		void set_ssao_props(float radius, float bias) override;
 
 		graphics::ImageView* get_element_res(uint idx) const override;
-		int set_element_res(int idx, graphics::ImageView* iv) override;
+		int set_element_res(int idx, graphics::ImageView* iv, graphics::Sampler* sp) override;
 		int find_element_res(graphics::ImageView* iv) const override;
 
 		void fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color) override;

@@ -10,16 +10,6 @@ namespace flame
 		return dispatcher->active == this;
 	}
 
-	void cReceiverPrivate::set_mute(bool v)
-	{
-		mute = v;
-	}
-
-	void cReceiverPrivate::set_ignore_occluders(bool v)
-	{
-		ignore_occluders = v;
-	}
-
 	void* cReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
 		if (!callback)
@@ -350,7 +340,7 @@ namespace flame
 	{
 		for (auto l : get_temp_listeners(down ? key_down_listeners : key_up_listeners))
 		{
-			if (l.first < frame)
+			//if (l.first < frame)
 				l.second->call(key);
 		}
 	}

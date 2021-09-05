@@ -114,7 +114,7 @@ namespace flame
 		root = world->get_root();
 		root->add_component(cElement::create());
 		auto cer = cReceiver::create();
-		cer->set_ignore_occluders(true);
+		cer->set_floating(true);
 		root->add_component(cer);
 		s_dispatcher->set_next_focusing((cReceiverPtr)cer);
 

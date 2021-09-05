@@ -718,7 +718,7 @@ namespace flame
 		return _ed->reses[idx];
 	}
 
-	int sRendererPrivate::set_element_res(int idx, ImageView* iv)
+	int sRendererPrivate::set_element_res(int idx, ImageView* iv, Sampler* sp)
 	{
 		auto iv_white = img_white->get_view();
 		auto& ed = *_ed;
@@ -742,7 +742,7 @@ namespace flame
 
 		ed.reses[idx] = iv;
 		ed.ds_element->set_image(DescriptorSetLayout::get(device, L"element/element.dsl")
-			->find_binding("images"), idx, iv, sp_linear);
+			->find_binding("images"), idx, iv, sp ? sp : sp_linear);
 		ed.ds_element->update();
 
 		return idx;

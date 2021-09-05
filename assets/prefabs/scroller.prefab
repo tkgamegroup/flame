@@ -2,7 +2,7 @@
 <prefab>
   <entity driver="dScroller" >
     <cElement width="100" height="100" auto_width="false" auto_height="false" />
-    <cReceiver ignore_occluders="true" />
+    <cReceiver floating="true" />
     <entity name="view">
       <cElement alignx="MinMax" aligny="MinMax" clipping="true" />
     </entity>

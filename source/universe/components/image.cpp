@@ -56,7 +56,7 @@ namespace flame
 
 			res_id = s_renderer->find_element_res(iv);
 			if (res_id == -1)
-				res_id = s_renderer->set_element_res(-1, iv);
+				res_id = s_renderer->set_element_res(-1, iv, nullptr);
 		}
 		else
 		{
@@ -66,7 +66,7 @@ namespace flame
 
 			res_id = s_renderer->find_element_res(iv);
 			if (res_id == -1)
-				res_id = s_renderer->set_element_res(-1, iv);
+				res_id = s_renderer->set_element_res(-1, iv, nullptr);
 
 			if (!tile_name.empty())
 			{

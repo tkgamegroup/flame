@@ -1,4 +1,5 @@
 #include "../../graphics/device.h"
+#include "../../graphics/image.h"
 #include "../../graphics/font.h"
 #include "../world_private.h"
 #include "element_private.h"
@@ -137,12 +138,15 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRenderer>();
 		fassert(s_renderer);
 
-		atlas = graphics::FontAtlas::get(graphics::Device::get_default(), atlas_name.c_str());
+		auto device = graphics::Device::get_default();
+
+		atlas = graphics::FontAtlas::get(device, atlas_name.c_str());
 		fassert(atlas);
 		auto iv = atlas->get_view();
 		res_id = s_renderer->find_element_res(iv);
 		if (res_id == -1)
-			res_id = s_renderer->set_element_res(-1, iv);
+			res_id = s_renderer->set_element_res(-1, iv, graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, 
+				false, graphics::AddressClampToEdge));
 	}
 
 	void cTextPrivate::on_left_world()
