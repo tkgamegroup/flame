@@ -133,8 +133,6 @@ scene_receiver.add_mouse_right_down_listener(function()
 	end
 end)
 
-local ui_tip = nil
-
 ui_floating_tips = {}
 local e_floating_tip = create_entity("prefabs/ui/floating_tip")
 function new_floating_tip(pos, sp, str)
@@ -162,11 +160,13 @@ local mp_text = character_panel.find_child("mp_text").find_component("cText")
 local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
 
+local ui_tip = nil
+
 obj_root.add_event(function()
 	frame = flame_get_frame()
 
 	-- process characters
-	for _, g in pairs({ TAG_CHARACTER_G1, TAG_CHARACTER_G2 }) do
+	for _, g in pairs({ TAG_CHARACTER_G1, TAG_CHARACTER_G2, TAG_CHARACTER_G3 }) do
 		for _, chr in pairs(characters[g]) do
 			chr.tick()
 		end
@@ -201,7 +201,8 @@ obj_root.add_event(function()
 			ui_tip = create_entity("prefabs/ui/tip")
 			ui_tip.data = p
 			ui_tip.element = ui_tip.find_component("cElement")
-			ui_tip.text = ui_tip.find_component("cText")
+			ui_tip.txt_attr = ui_tip.find_child("txt_attr").find_component("cText")
+			ui_tip.txt_desc = ui_tip.find_child("txt_desc").find_component("cText")
 			__ui_pop.add_child(ui_tip)
 			return true
 		end
@@ -212,7 +213,7 @@ obj_root.add_event(function()
 		return false
 	end
 
-	function item_tip(item_type)
+	function set_item_tip(ui_tip, item_type)
 		local str = item_type.display_name
 		if item_type.type == "Equipment" then
 			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.slot]
@@ -229,10 +230,10 @@ obj_root.add_event(function()
 				end
 			end
 		end
-		return str
+		ui_tip.txt_attr.set_text(str)
 	end
 
-	function skill_tip(skill_type)
+	function set_skill_tip(ui_tip, skill_type)
 		local str = skill_type.display_name
 		if skill_type.type == "Active" then
 			str = str.."\n".."Active"
@@ -245,8 +246,8 @@ obj_root.add_event(function()
 		else
 			str = str.."\n".."Passive"
 		end
-		str = str.."\n"..skill_type.description
-		return str
+		ui_tip.txt_attr.set_text(str)
+		ui_tip.txt_desc.set_text(skill_type.description)
 	end
 
 	local hovering_r = s_dispatcher.get_hovering().p
@@ -333,7 +334,7 @@ obj_root.add_event(function()
 			if hovering_obj.tag == TAG_ITEM_OBJ then
 				if new_tip(hovering_entity.p) then
 					ui_tip.element.set_pos(mpos + vec2(10, -20))
-					ui_tip.text.set_text(ITEM_LIST[hovering_obj.id].display_name)
+					ui_tip.txt_attr.set_text(ITEM_LIST[hovering_obj.id].display_name)
 				end
 			end
 		end
@@ -346,7 +347,7 @@ obj_root.add_event(function()
 				if slot and ui_slot.receiver.p == hovering_r then
 					if new_tip(ui_slot.receiver.p) then
 						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						ui_tip.text.set_text(item_tip(ITEM_LIST[slot.id]))
+						set_item_tip(ui_tip, ITEM_LIST[slot.id])
 					end
 				end
 			end
@@ -358,7 +359,7 @@ obj_root.add_event(function()
 				if slot and ui_slot.receiver.p == hovering_r then
 					if new_tip(ui_slot.receiver.p) then
 						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						ui_tip.text.set_text(item_tip(ITEM_LIST[slot]))
+						set_item_tip(ui_tip, ITEM_LIST[slot])
 					end
 				end
 			end
@@ -370,7 +371,7 @@ obj_root.add_event(function()
 				if slot and ui_slot.receiver.p == hovering_r then
 					if new_tip(ui_slot.receiver.p) then
 						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						ui_tip.text.set_text(skill_tip(SKILL_LIST[slot.id]))
+						set_skill_tip(ui_tip, SKILL_LIST[slot.id])
 					end
 				end
 			end
@@ -637,6 +638,54 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
+local npc_dialog = nil
+function open_npc_dialog(npc)
+	if npc_dialog and npc_dialog.npc == npc then return end
+
+	npc_dialog = create_entity("prefabs/ui/npc_dialog")
+	npc_dialog.content = npc_dialog.find_child("content")
+	local d_window = npc_dialog.find_driver("dWindow")
+	d_window.set_title(npc.name)
+	d_window.add_close_listener(function()
+		__ui_pop.remove_child(npc_dialog)
+		npc_dialog = nil
+	end)
+	npc_dialog.npc = npc
+
+	local ui_text = create_entity("prefabs/text")
+	ui_text.find_component("cText").set_text(npc.interact.text)
+	npc_dialog.add_child(ui_text)
+
+	local options = npc.interact.options
+	for i=1, #options, 1 do
+		local ui_option = create_entity("prefabs/ui/npc_dialog_option")
+		local option = options[i]
+		ui_option.find_component("cText").set_text(option.title)
+		ui_option.find_component("cReceiver").add_mouse_click_listener(function()
+			npc_dialog.content.remove_all_children()
+
+			if option.type == "shop" then
+				npc_dialog.shop = create_entity("prefabs/ui/npc_dialog_shop")
+				npc_dialog.shop.list = npc_dialog.shop.find_child("list")
+				local items = option.items
+				for i=1, #items, 1 do
+					local item = items[i]
+					local item_type = ITEM_LIST[item.id]
+					local ui_item = create_entity("prefabs/ui/npc_dialog_shop_item")
+					ui_item.find_child("icon").find_component("cImage").set_tile(item_type.name)
+					ui_item.find_child("name").find_component("cText").set_text(item_type.display_name)
+					ui_item.find_child("price").find_component("cText").set_text(tostring(item.price))
+					npc_dialog.shop.list.add_child(ui_item)
+				end
+				npc_dialog.content.add_child(npc_dialog.shop)
+			end
+		end)
+		npc_dialog.add_child(ui_option)
+	end
+
+	__ui_pop.add_child(npc_dialog)
+end
+
 local e_terrain = scene.find_child("terrain")
 local terrain = e_terrain.find_component("cTerrain")
 local terrain_ext = terrain.get_extent()
@@ -694,14 +743,17 @@ main_player.awake()
 obj_root.add_child(e)
 
 local e_npcs = {}
-function add_npc(pos, ID)
+function add_npc(pos, ID, n)
 	local e = e_npcs[ID]
 	if e == nil then
 		e = create_entity("prefabs/"..ID)
 		e_npcs[ID] = e
 	end
 	e = e.copy()
-	e.set_name("npc_"..tostring(math.floor(math.random() * 10000)))
+	if not n then
+		n = "npc_"..tostring(math.floor(math.random() * 10000))
+	end
+	e.set_name(n)
 	e.find_component("cNode").set_pos(pos)
 	make_npc(e, ID)
 	obj_root.add_child(e)
@@ -717,7 +769,7 @@ local basic_items = {
 }
 add_item_obj(vec2(215, 215) + circle_rand(1.0), basic_items[math.random(1, #basic_items)], 1)
 
-add_npc(vec3(217, 65, 213), "archmage")
+add_npc(vec3(217, 65, 213), "archmage", "Archmage")
 
 local e_grasses = {}
 table.insert(e_grasses, { e=create_entity("prefabs/grass1"), p=0.35 })
@@ -790,6 +842,11 @@ end
 local block_ext = terrain_ext.x / n_blocks
 
 obj_root.add_event(function()
+	if npc_dialog and distance_3(main_player.pos, npc_dialog.npc.pos) > 1.5 then
+		__ui_pop.remove_child(npc_dialog)
+		npc_dialog = nil
+	end
+
 	local px = math.floor(main_player.pos.x / grid_size)
 	local pz = math.floor(main_player.pos.z / grid_size)
 

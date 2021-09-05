@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement layout_type="Vertical">
+    <eElement name="list" layout_type="Vertical" layout_gap="2" />
+  </eElement>
+</prefab>

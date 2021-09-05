@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement layout_type="Horizontal" layout_gap="4">
+    <eImage name="icon" padding="1,1,1,1" size="25,25" auto_width="false" auto_height="false" border="1" img="D:/assets/item_icons/item_icons.atlas">
+      <cReceiver />
+    </eImage>
+    <eText name="name" aligny="Middle" />
+    <eText name="price" aligny="Middle" />
+    <eButton name="btn_buy" aligny="Middle" text="buy" />
+  </eElement>
+</prefab>

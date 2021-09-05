@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-	<eWindow name="wnd_attributes" alignx="Middle" aligny="Middle" nomove="true" noresize="true" title="Attributes">
+	<eWindow name="wnd_attributes" alignx="Middle" aligny="Middle" noresize="true" title="Attributes">
 		<eElement layout_type="Horizontal" layout_gap="16">
 			<eElement layout_type="Vertical">
 				<eText name="hp_max_text" text="HP MAX: 9999" />

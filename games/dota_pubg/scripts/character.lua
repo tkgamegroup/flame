@@ -258,9 +258,14 @@ function make_character(entity, tag, stats)
 		local tag = target.tag
 		if character.move_to_pos(target.pos.to_flat(), 1.0) then
 			if tag == TAG_ITEM_OBJ then
-				if character.receive_item(target.id, target.num) == 0 then
+				local n = character.receive_item(target.id, target.num)
+				if n == 0 then
 					target.die()
+				else
+					target.num = target.num - n
 				end
+			elseif tag == TAG_CHARACTER_G3 then
+				target.on_interact()
 			end
 			return true
 		end
@@ -276,9 +281,7 @@ function make_character(entity, tag, stats)
 			return
 		end
 
-		if character.sleeping then
-			return
-		end
+		if character.sleeping then return end
 
 		character.curr_anim = character.armature.get_curr_anim()
 		character.curr_frame = character.armature.get_curr_frame()

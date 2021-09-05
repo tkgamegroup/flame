@@ -1,6 +1,44 @@
 NPC_LIST = {}
 
 local n = {
+	name = "archmage",
+	display_name = "Archmage",
+	tag = TAG_CHARACTER_G3,
+	stats = {
+		HP_MAX = 5000,
+		MP_MAX = 5000,
+		HP_REC = 10,
+		MP_REC = 10,
+		MOV_SP = 0.06,
+		ATK_DMG = 100,
+		ATK_SP = 100,
+		ARMOR = 2
+	},
+	interact = {
+		text = "i can help you in someway",
+		options = {
+			{ 
+				title="want to buy something?",
+				type="shop",
+				items = {
+					{ id="wooden_stick", price=100 },
+					{ id="wooden_shield", price=100 },
+					{ id="leather_hat", price=100 },
+					{ id="leather_clothes", price=100 },
+					{ id="leather_pants", price=100 },
+					{ id="leather_shoes", price=100 }
+				}
+			},
+			{ 
+				title="want to learn skills?",
+				type="trainer"
+			}
+		}
+	}
+}
+NPC_LIST[n.name] = n
+
+local n = {
 	name = "zombie",
 	display_name = "Zombie",
 	tag = TAG_CHARACTER_G2,
@@ -24,7 +62,7 @@ local n = {
 		{ prob=0.1, id="leather_hat", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_clothes", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_pants", min_num=1, max_num=1 },
-		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 },
+		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 }
 	}
 }
 NPC_LIST[n.name] = n
@@ -54,30 +92,7 @@ local n = {
 		{ prob=0.1, id="leather_hat", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_clothes", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_pants", min_num=1, max_num=1 },
-		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 },
-	}
-}
-NPC_LIST[n.name] = n
-
-local n = {
-	name = "archmage",
-	display_name = "Archmage",
-	tag = TAG_CHARACTER_G3,
-	stats = {
-		HP_MAX = 5000,
-		MP_MAX = 5000,
-		HP_REC = 10,
-		MP_REC = 10,
-		MOV_SP = 0.06,
-		ATK_DMG = 100,
-		ATK_SP = 100,
-		ARMOR = 2
-	},
-	skills = {
-	},
-	drop_gold = 0,
-	drop_exp = 0,
-	drop_items = {
+		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 }
 	}
 }
 NPC_LIST[n.name] = n
@@ -85,12 +100,15 @@ NPC_LIST[n.name] = n
 function make_npc(e, ID)
 	local data = NPC_LIST[ID]
 	local npc = make_character(e, data.tag, data.stats)
-	for _, v in pairs(data.skills) do
-		npc.learn_skill(v)
+	if data.skills then
+		for _, v in pairs(data.skills) do
+			npc.learn_skill(v)
+		end
 	end
 	npc.drop_gold = data.drop_gold
 	npc.drop_exp = data.drop_exp
 	npc.drop_items = data.drop_items
+	npc.interact = data.interact
 
 	npc.chase_start_pos = vec3(-1000)
 	npc.target_tick = 0
@@ -166,6 +184,12 @@ function make_npc(e, ID)
 		end
 
 		character_die()
+	end
+
+	npc.on_interact = function()
+		if not npc.interact then return end
+
+		open_npc_dialog(npc)
 	end
 
 	return npc

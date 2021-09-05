@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<prefab>
+	<eWindow name="wnd_attributes" x="100" aligny="Middle" noresize="true" title="NPC">
+	</eWindow>
+</prefab>
