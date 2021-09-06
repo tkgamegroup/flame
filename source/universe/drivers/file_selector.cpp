@@ -32,7 +32,7 @@ namespace flame
 					thiz->set_folder(path);
 				}, Capture().set_thiz(this).set_data(&item.e));
 
-				item.t->set_text(std::wstring(Icon_FOLDER) + L" " + item.data);
+				item.t->set_text(std::wstring(ICON_FA_FOLDER) + L" " + item.data);
 			}
 			else
 			{
@@ -40,7 +40,7 @@ namespace flame
 					auto thiz = c.thiz<dFileSelectorPrivate>();
 					thiz->confirm();
 				}, Capture().set_thiz(this).set_data(&item.e));
-				item.t->set_text(std::wstring(Icon_FILE) + L" " + item.data);
+				item.t->set_text(std::wstring(ICON_FA_FILE) + L" " + item.data);
 			}
 		}
 	}

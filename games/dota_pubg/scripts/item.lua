@@ -25,6 +25,7 @@ local i = {
 	display_name = "Wooden Stick",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_MAIN_HAND,
+	price = 100,
 	attributes = {
 		ATK_TYPE = "Physical",
 		ATK_DMG = { a=5 }
@@ -38,6 +39,7 @@ local i = {
 	display_name = "Wooden Shield",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_SUB_HAND,
+	price = 100,
 	attributes = {
 		ARMOR = { a=3 }
 	}
@@ -50,6 +52,7 @@ local i = {
 	display_name = "Leather Hat",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_HEAD,
+	price = 100,
 	attributes = {
 		ARMOR = { a=1 }
 	}
@@ -62,6 +65,7 @@ local i = {
 	display_name = "Leather Clothes",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_CHEST,
+	price = 100,
 	attributes = {
 		ARMOR = { a=2 }
 	}
@@ -74,6 +78,7 @@ local i = {
 	display_name = "Leather Pants",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_LEG,
+	price = 100,
 	attributes = {
 		ARMOR = { a=1 }
 	}
@@ -86,6 +91,7 @@ local i = {
 	display_name = "Leather Shoes",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_FOOT,
+	price = 100,
 	attributes = {
 		ARMOR = { a=1 },
 		MOV_SP = { a=10 }

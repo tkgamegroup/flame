@@ -227,7 +227,7 @@ namespace flame
 	void dTreeNodePrivate::toggle_collapse()
 	{
 		items->set_visible(!items->visible);
-		arrow_text->set_text(items->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
+		arrow_text->set_text(items->visible ? ICON_FA_CARET_DOWN : ICON_FA_CARET_RIGHT);
 	}
 
 	dTreeNode* dTreeNode::create(void* parms)

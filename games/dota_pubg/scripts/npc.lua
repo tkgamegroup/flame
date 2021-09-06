@@ -21,12 +21,12 @@ local n = {
 				title="want to buy something?",
 				type="shop",
 				items = {
-					{ id="wooden_stick", price=100 },
-					{ id="wooden_shield", price=100 },
-					{ id="leather_hat", price=100 },
-					{ id="leather_clothes", price=100 },
-					{ id="leather_pants", price=100 },
-					{ id="leather_shoes", price=100 }
+					{ id="wooden_stick" },
+					{ id="wooden_shield" },
+					{ id="leather_hat" },
+					{ id="leather_clothes" },
+					{ id="leather_pants" },
+					{ id="leather_shoes" }
 				}
 			},
 			{ 

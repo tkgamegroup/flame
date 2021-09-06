@@ -159,6 +159,7 @@ local mp_bar = character_panel.find_child("mp_bar").find_component("cElement")
 local mp_text = character_panel.find_child("mp_text").find_component("cText")
 local exp_bar = character_panel.find_child("exp_bar").find_component("cElement")
 local exp_text = character_panel.find_child("exp_text").find_component("cText")
+local gold_text = character_panel.find_child("gold_text").find_component("cText")
 
 local ui_tip = nil
 
@@ -229,6 +230,9 @@ obj_root.add_event(function()
 					end
 				end
 			end
+		end
+		if npc_dialog and npc_dialog.shop and item_type.price ~= 0 then
+			str = str.."\n\xef\x94\x9e "..tostring(item_type.price)
 		end
 		ui_tip.txt_attr.set_text(str)
 	end
@@ -407,6 +411,7 @@ obj_root.add_event(function()
 	mp_text.set_text(string.format("%d/%d +%.1f", math.floor(main_player.MP / 10.0), math.floor(main_player.MP_MAX.t / 10.0), main_player.MP_REC.t / 10.0))
 	exp_bar.set_scalex(main_player.EXP / main_player.EXP_NEXT)
 	exp_text.set_text("LV "..main_player.LV..":  "..main_player.EXP.."/"..main_player.EXP_NEXT)
+	gold_text.set_text("Gold "..main_player.GOLD)
 
 	for i=1, SKILL_SLOTS_COUNT, 1 do
 		local slot = main_player.skills[i]
@@ -630,7 +635,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	end
 end)
 
-local npc_dialog = nil
+npc_dialog = nil
 function open_npc_dialog(npc)
 	if npc_dialog and npc_dialog.npc == npc then return end
 
@@ -667,11 +672,10 @@ function open_npc_dialog(npc)
 					e_icon.find_component("cImage").set_tile(item_type.name)
 					e_icon.find_component("cReceiver").set_tooltip("item "..item.id)
 					ui_item.find_child("name").find_component("cText").set_text(item_type.display_name)
-					ui_item.find_child("price").find_component("cText").set_text(tostring(item.price))
 					ui_item.find_child("buy").find_component("cReceiver").add_mouse_click_listener(function()
-						if main_player.GOLD >= item.price then
+						if main_player.GOLD >= item_type.price then
 							if main_player.receive_item(item.id, 1) == 0 then
-								main_player.GOLD = main_player.GOLD - item.price
+								main_player.GOLD = main_player.GOLD - item_type.price
 							end
 						end
 					end)
@@ -739,6 +743,7 @@ e.find_component("cNode").set_pos(vec3(215, 65, 215))
 main_player = make_player(e)
 main_player.learn_skill("fire_ball")
 main_player.learn_skill("ice_bolt")
+main_player.GOLD = 500
 main_player.awake()
 obj_root.add_child(e)
 

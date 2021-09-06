@@ -97,7 +97,7 @@ namespace flame
 			case AlignMin:
 				break;
 			case AlignMiddle:
-				pos += axes[0] * (element->size.x - element->desired_size.x) * 0.5f;
+				pos += floor(axes[0] * (element->size.x - element->desired_size.x) * 0.5f);
 				break;
 			case AlignMax:
 				pos += axes[0] * (element->size.x - element->desired_size.x);
