@@ -93,7 +93,6 @@ cmd_tools_ui_reflector = {
                 ui_reflector = create_entity("ui_reflector")
                 ui_reflector.find_driver("dWindow").add_close_listener(function()
                     cmd_tools_ui_reflector.dmi.set_checked(false)
-                    ui.remove_child(ui_reflector)
                     ui_reflector.p = nil
                 end)
                 ui.add_child(ui_reflector)
@@ -115,7 +114,6 @@ cmd_tools_csm_debugger = {
                 csm_debugger = create_entity("csm_debugger")
                 csm_debugger.find_driver("dWindow").add_close_listener(function()
                     cmd_tools_csm_debugger.dmi.set_checked(false)
-                    ui.remove_child(csm_debugger)
                     csm_debugger.p = nil
                 end)
                 ui.add_child(csm_debugger)
@@ -137,7 +135,6 @@ cmd_tools_ssao_debugger = {
                 ssao_debugger = create_entity("ssao_debugger")
                 ssao_debugger.find_driver("dWindow").add_close_listener(function()
                     cmd_tools_ssao_debugger.dmi.set_checked(false)
-                    ui.remove_child(ssao_debugger)
                     ssao_debugger.p = nil
                 end)
                 ui.add_child(ssao_debugger)

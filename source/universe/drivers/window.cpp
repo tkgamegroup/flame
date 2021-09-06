@@ -126,6 +126,8 @@ namespace flame
 			auto thiz = c.thiz<dWindowPrivate>();
 			for (auto& l : thiz->close_listeners)
 					l->call();
+			auto e = thiz->entity;
+			e->get_parent()->remove_child(e);
 		}, Capture().set_thiz(this));
 
 		content = entity->find_child("content");

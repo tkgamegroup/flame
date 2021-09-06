@@ -310,7 +310,7 @@ namespace flame
 				while (e)
 				{
 					auto er = e->get_component_t<cReceiverPrivate>();
-					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
+					if (er && !(er->key_down_listeners.list.empty() && er->key_up_listeners.list.empty() && er->char_listeners.list.empty()))
 					{
 						keyboard_target = er;
 						break;
@@ -324,50 +324,51 @@ namespace flame
 
 		for (auto er : mouse_targets)
 		{
+			er->mouse_left_down_listeners.begin_staging();
+			er->mouse_left_up_listeners.begin_staging();
+			er->mouse_right_down_listeners.begin_staging();
+			er->mouse_right_up_listeners.begin_staging();
+			er->mouse_middle_down_listeners.begin_staging();
+			er->mouse_middle_up_listeners.begin_staging();
+			er->mouse_move_listeners.begin_staging();
+			er->mouse_scroll_listeners.begin_staging();
+			er->mouse_click_listeners.begin_staging();
+			er->mouse_dbclick_listeners.begin_staging();
+		}
+		for (auto er : mouse_targets)
+		{
 			if (mdisp.x != 0 || mdisp.y != 0)
 			{
-				for (auto l : get_temp_listeners(er->mouse_move_listeners))
+				for (auto& l : er->mouse_move_listeners.list)
 				{
-					//if (l.first < er->frame)
-					{
-						l.second->c._current = er;
-						l.second->call(mdisp, mpos);
-					}
+					l->c._current = er;
+					l->call(mdisp, mpos);
 				}
 			}
 			if (mscrl != 0)
 			{
-				for (auto l : get_temp_listeners(er->mouse_scroll_listeners))
+				for (auto& l : er->mouse_scroll_listeners.list)
 				{
-					//if (l.first < er->frame)
-					{
-						l.second->c._current = er;
-						l.second->call(mscrl);
-					}
+					l->c._current = er;
+					l->call(mscrl);
 				}
 			}
 			if (mbtns[Mouse_Left].second)
 			{
 				if (mbtns[Mouse_Left].first)
 				{
-					for (auto l : get_temp_listeners(er->mouse_left_down_listeners))
+					for (auto& l : er->mouse_left_down_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 				else
 				{
-					for (auto l : get_temp_listeners(er->mouse_left_up_listeners))
+					for (auto& l : er->mouse_left_up_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 			}
@@ -375,24 +376,18 @@ namespace flame
 			{
 				if (mbtns[Mouse_Right].first)
 				{
-					for (auto l : get_temp_listeners(er->mouse_right_down_listeners))
+					for (auto& l : er->mouse_right_down_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 				else
 				{
-					for (auto l : get_temp_listeners(er->mouse_right_up_listeners))
+					for (auto& l : er->mouse_right_up_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 			}
@@ -400,27 +395,34 @@ namespace flame
 			{
 				if (mbtns[Mouse_Middle].first)
 				{
-					for (auto l : get_temp_listeners(er->mouse_middle_down_listeners))
+					for (auto& l : er->mouse_middle_down_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 				else
 				{
-					for (auto l : get_temp_listeners(er->mouse_middle_up_listeners))
+					for (auto& l : er->mouse_middle_up_listeners.list)
 					{
-						//if (l.first < er->frame)
-						{
-							l.second->c._current = er;
-							l.second->call(mpos);
-						}
+						l->c._current = er;
+						l->call(mpos);
 					}
 				}
 			}
+		}
+		for (auto er : mouse_targets)
+		{
+			er->mouse_left_down_listeners.end_staging();
+			er->mouse_left_up_listeners.end_staging();
+			er->mouse_right_down_listeners.end_staging();
+			er->mouse_right_up_listeners.end_staging();
+			er->mouse_middle_down_listeners.end_staging();
+			er->mouse_middle_up_listeners.end_staging();
+			er->mouse_move_listeners.end_staging();
+			er->mouse_scroll_listeners.end_staging();
+			er->mouse_click_listeners.end_staging();
+			er->mouse_dbclick_listeners.end_staging();
 		}
 
 		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, vec2(mpos)))
@@ -428,23 +430,17 @@ namespace flame
 		{
 			auto disp = mpos - active_pos;
 			auto db = dbclick_timer > 0.f;
-			for (auto l : get_temp_listeners(focusing->mouse_click_listeners))
+			for (auto& l : focusing->mouse_click_listeners.list)
 			{
-				//if (l.first < focusing->frame)
-				{
-					l.second->c._current = focusing;
-					l.second->call();
-				}
+				l->c._current = focusing;
+				l->call();
 			}
 			if (db)
 			{
-				for (auto l : get_temp_listeners(focusing->mouse_dbclick_listeners))
+				for (auto& l : focusing->mouse_dbclick_listeners.list)
 				{
-					//if (l.first < focusing->frame)
-					{
-						l.second->c._current = focusing;
-						l.second->call();
-					}
+					l->c._current = focusing;
+					l->call();
 				}
 				dbclick_timer = -1.f;
 			}
@@ -480,16 +476,12 @@ namespace flame
 				keyboard_target->on_key_event(key, true);
 			for (auto& key : key_up_inputs)
 				keyboard_target->on_key_event(key, false);
-			auto char_ls = get_temp_listeners(keyboard_target->char_listeners);
 			for (auto& ch : char_inputs)
 			{
-				for (auto l : char_ls)
+				for (auto& l : keyboard_target->char_listeners.list)
 				{
-					//if (l.first < keyboard_target->frame)
-					{
-						l.second->c._current = keyboard_target;
-						l.second->call(ch);
-					}
+					l->c._current = keyboard_target;
+					l->call(ch);
 				}
 			}
 		}

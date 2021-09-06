@@ -136,6 +136,14 @@ namespace flame
 		}
 	};
 
+	FLAME_FOUNDATION_EXPORTS void raise_assert(const char* expression, const char* file, uint line);
+
+#ifdef NDEBUG
+#define fassert(expression)
+#else
+#define fassert(expression) ((!!(expression)) || (raise_assert(#expression, __FILE__, __LINE__), 0))
+#endif
+
 	struct Guid
 	{
 		uint d1;
@@ -246,7 +254,56 @@ namespace flame
 	template <class Function>
 	struct ListenerManagement
 	{
+		std::vector<std::unique_ptr<Closure<Function>>> list;
+		bool staging = false;
+		std::vector<std::unique_ptr<Closure<Function>>> staging_adds;
+		std::vector<void*> staging_removes;
 
+		void* add(Function *f, const Capture& capture)
+		{
+			auto c = new Closure(f, capture);
+			if (staging)
+				staging_adds.emplace_back(c);
+			else
+				list.emplace_back(c);
+			return c;
+		}
+
+		void remove(void* c)
+		{
+			if (staging)
+				staging_removes.push_back(c);
+			else
+			{
+				std::erase_if(list, [&](const auto& i) {
+					return i.get() == (decltype(i.get()))c;
+				});
+			}
+		}
+
+		void begin_staging()
+		{
+			fassert(!staging);
+
+			staging = true;
+		}
+
+		void end_staging()
+		{
+			fassert(staging);
+
+			staging = false;
+			for (auto& c : staging_adds)
+				list.push_back(std::move(c));
+			staging_adds.clear();
+			for (auto c : staging_removes)
+			{
+				std::erase_if(list, [&](const auto& i) {
+					return i.get() == (decltype(i.get()))c;
+				});
+			}
+			staging_removes.clear();
+		}
 	};
 
 	inline bool get_engine_path(std::filesystem::path& path, const std::filesystem::path& subdir)
@@ -440,14 +497,6 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void debug_break();
 	FLAME_FOUNDATION_EXPORTS void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_assert_callback(void* ret);
-	FLAME_FOUNDATION_EXPORTS void raise_assert(const char* expression, const char* file, uint line);
-
-
-#ifdef NDEBUG
-#define fassert(expression)
-#else
-#define fassert(expression) ((!!(expression)) || (raise_assert(#expression, __FILE__, __LINE__), 0))
-#endif
 
 	struct ArgPack
 	{

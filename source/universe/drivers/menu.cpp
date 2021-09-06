@@ -25,7 +25,6 @@ namespace flame
 
 		items = entity->find_child("items");
 		fassert(items);
-		items->name = "##items";
 
 		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			auto thiz = c.thiz<dMenuPrivate>();
@@ -33,6 +32,7 @@ namespace flame
 			{
 			case S<"entered_world"_h>:
 				thiz->root = thiz->entity->world->root.get();
+				thiz->root_receiver = thiz->root->get_component_t<cReceiverPrivate>();
 				break;
 			}
 		}, Capture().set_thiz(this));
@@ -64,7 +64,7 @@ namespace flame
 
 			thiz->open();
 
-			root_mouse_listener = thiz->root->get_component_t<cReceiver>()->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			root_mouse_listener = thiz->root_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<dMenuPrivate>();
 
 				for (auto m : root_menus)
@@ -73,7 +73,7 @@ namespace flame
 					m->mark_ancestor_opened(false);
 				}
 
-				thiz->root->get_component_t<cReceiver>()->remove_mouse_left_down_listener(root_mouse_listener);
+				thiz->root_receiver->remove_mouse_left_down_listener(root_mouse_listener);
 				root_mouse_listener = nullptr;
 			}, Capture().set_thiz(thiz));
 		}, Capture().set_thiz(this));
@@ -89,7 +89,7 @@ namespace flame
 	{
 		if (load_finished)
 		{
-			if (e->name != "##items")
+			if (e->name != "items")
 			{
 				auto element = e->get_component_i<cElementPrivate>(0);
 				fassert(element);
@@ -124,14 +124,8 @@ namespace flame
 			}
 		}
 
-		auto items_element = items->get_component_i<cElementPrivate>(0);
-		if (items_element)
-		{
-			element->update_transform();
-			auto pos = element->points[(type == MenuTop) ? 3 : 1];
-			items_element->set_x(pos.x);
-			items_element->set_y(pos.y);
-		}
+		element->update_transform();
+		items->get_component_i<cElementPrivate>(0)->set_pos(element->points[(type == MenuTop) ? 3 : 1]);
 		entity->remove_child(items, false);
 		items->set_visible(true);
 		root->add_child(items);

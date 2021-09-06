@@ -6,19 +6,19 @@ namespace flame
 {
 	struct cReceiverPrivate : cReceiver
 	{
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>>> key_down_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>>> key_up_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, wchar_t)>>>> char_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_left_down_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_left_up_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_right_down_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_right_up_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_middle_down_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&)>>>> mouse_middle_up_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, const ivec2&, const ivec2&)>>>> mouse_move_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&, int)>>>> mouse_scroll_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&)>>>> mouse_click_listeners;
-		std::vector<std::pair<uint, std::unique_ptr<Closure<void(Capture&)>>>> mouse_dbclick_listeners;
+		ListenerManagement<void(Capture&, KeyboardKey)>					key_down_listeners;
+		ListenerManagement<void(Capture&, KeyboardKey)>					key_up_listeners;
+		ListenerManagement<void(Capture&, wchar_t)>						char_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_left_down_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_left_up_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_right_down_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_right_up_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_middle_down_listeners;
+		ListenerManagement<void(Capture&, const ivec2&)>				mouse_middle_up_listeners;
+		ListenerManagement<void(Capture&, const ivec2&, const ivec2&)>	mouse_move_listeners;
+		ListenerManagement<void(Capture&, int)>							mouse_scroll_listeners;
+		ListenerManagement<void(Capture&)>								mouse_click_listeners;
+		ListenerManagement<void(Capture&)>								mouse_dbclick_listeners;
 
 		cElementPrivate* element = nullptr;
 		sDispatcherPrivate* dispatcher = nullptr;
@@ -71,17 +71,4 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 	};
-
-	template <class F>
-	std::vector<std::pair<uint, Closure<F>*>> get_temp_listeners(const std::vector<std::pair<uint, std::unique_ptr<Closure<F>>>>& ls)
-	{
-		std::vector<std::pair<uint, Closure<F>*>> ret;
-		ret.resize(ls.size());
-		for (auto i = 0; i < ls.size(); i++)
-		{
-			ret[i].first = ls[i].first;
-			ret[i].second = ls[i].second.get();
-		}
-		return ret;
-	}
 }

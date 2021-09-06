@@ -24,20 +24,14 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			key_down_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return key_down_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		key_down_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return key_down_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_key_down_listener(void* lis)
 	{
-		std::erase_if(key_down_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		key_down_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
@@ -54,34 +48,24 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			key_up_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return key_up_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		key_up_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return key_up_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_key_up_listener(void* lis)
 	{
-		std::erase_if(key_up_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		key_up_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture)
 	{
-		auto c = new Closure(callback, capture);
-		char_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return char_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_char_listener(void* lis)
 	{
-		std::erase_if(char_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		char_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
@@ -98,20 +82,14 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_left_down_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_left_down_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_left_down_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_left_down_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_left_down_listener(void* lis)
 	{
-		std::erase_if(mouse_left_down_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_left_down_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
@@ -128,20 +106,14 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_left_up_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_left_up_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_left_up_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_left_up_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_left_up_listener(void* lis)
 	{
-		std::erase_if(mouse_left_up_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_left_up_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
@@ -158,20 +130,14 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_right_down_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_right_down_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_right_down_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_right_down_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_right_down_listener(void* lis)
 	{
-		std::erase_if(mouse_right_down_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_right_down_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
@@ -188,48 +154,34 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_right_up_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_right_up_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_right_up_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_right_up_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_right_up_listener(void* lis)
 	{
-		std::erase_if(mouse_right_up_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_right_up_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-		auto c = new Closure(callback, capture);
-		mouse_middle_down_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_middle_down_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_middle_down_listener(void* lis)
 	{
-		std::erase_if(mouse_middle_down_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_middle_down_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-		auto c = new Closure(callback, capture);
-		mouse_middle_up_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_middle_up_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_middle_up_listener(void* lis)
 	{
-		std::erase_if(mouse_middle_up_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_middle_up_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& disp, const ivec2& pos), const Capture& capture)
@@ -247,20 +199,14 @@ namespace flame
 				scr_ins->call(2);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_move_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_move_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_move_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		mouse_move_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_move_listener(void* lis)
 	{
-		std::erase_if(mouse_move_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_move_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
@@ -277,20 +223,14 @@ namespace flame
 				scr_ins->call(1);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_scroll_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_scroll_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_scroll_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_scroll_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_scroll_listener(void* lis)
 	{
-		std::erase_if(mouse_scroll_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_scroll_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_click_listener(void (*callback)(Capture& c), const Capture& capture)
@@ -306,42 +246,37 @@ namespace flame
 				scr_ins->call(0);
 				scr_ins->pop(2);
 			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			mouse_click_listeners.emplace_back(looper().get_frame(), c);
-			return c;
+			return mouse_click_listeners.add(callback, Capture().set_data(&slot));
 		}
-		auto c = new Closure(callback, capture);
-		mouse_click_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_click_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_click_listener(void* lis)
 	{
-		std::erase_if(mouse_click_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_click_listeners.remove(lis);
 	}
 
 	void* cReceiverPrivate::add_mouse_dbclick_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
-		auto c = new Closure(callback, capture);
-		mouse_dbclick_listeners.emplace_back(looper().get_frame(), c);
-		return c;
+		return mouse_dbclick_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_dbclick_listener(void* lis)
 	{
-		std::erase_if(mouse_dbclick_listeners, [&](const auto& i) {
-			return i.second.get() == (decltype(i.second.get()))lis;
-		});
+		mouse_dbclick_listeners.remove(lis);
 	}
 
 	void cReceiverPrivate::on_key_event(KeyboardKey key, bool down)
 	{
-		for (auto l : get_temp_listeners(down ? key_down_listeners : key_up_listeners))
+		if (down)
 		{
-			//if (l.first < frame)
-				l.second->call(key);
+			for (auto& l : key_down_listeners.list)
+				l->call(key);
+		}
+		else
+		{
+			for (auto& l : key_up_listeners.list)
+				l->call(key);
 		}
 	}
 

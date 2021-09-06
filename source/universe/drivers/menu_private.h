@@ -15,6 +15,7 @@ namespace flame
 		MenuType type = MenuTop;
 		EntityPrivate* items;
 		EntityPrivate* root;
+		cReceiverPrivate* root_receiver;
 		bool ancestor_opened = false;
 		bool opened = false;
 

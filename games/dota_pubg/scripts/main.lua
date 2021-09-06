@@ -545,7 +545,6 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 	if not attributes_btn.wnd then
 		attributes_btn.wnd = create_entity("prefabs/ui/attributes")
 		attributes_btn.wnd.find_driver("dWindow").add_close_listener(function()
-			__ui_pop.remove_child(attributes_btn.wnd)
 			attributes_btn.wnd = nil
 		end)
 
@@ -647,7 +646,6 @@ function open_npc_dialog(npc)
 	local d_window = npc_dialog.find_driver("dWindow")
 	d_window.set_title(npc.name)
 	d_window.add_close_listener(function()
-		__ui_pop.remove_child(npc_dialog)
 		npc_dialog = nil
 	end)
 	npc_dialog.npc = npc
