@@ -55,6 +55,9 @@ namespace flame
 
 		virtual void on_key_event(KeyboardKey key, bool down = true) = 0;
 
+		virtual const char* get_tooltip() const = 0;
+		virtual void set_tooltip(const char* str) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cReceiver* create(void* parms = nullptr);
 	};
 }

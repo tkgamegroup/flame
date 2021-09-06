@@ -6,6 +6,6 @@
     </eImage>
     <eText name="name" aligny="Middle" />
     <eText name="price" aligny="Middle" />
-    <eButton name="btn_buy" aligny="Middle" text="buy" />
+    <eButton name="buy" aligny="Middle" text="buy" />
   </eElement>
 </prefab>

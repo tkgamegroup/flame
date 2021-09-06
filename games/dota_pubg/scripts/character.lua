@@ -514,22 +514,22 @@ function make_character(entity, tag, stats)
 		local item_type = ITEM_LIST[id]
 		local max_num = item_type.stack_num
 		local ori_num = num
-		while num > 0 do
-			for i=1, ITEM_SLOTS_COUNT, 1 do
-				local slot = character.items[i]
-				if slot and slot.id == id then
-					local n = max_num - slot.num
-					if n >= num then
-						slot.num = slot.num + num
-						num = 0
-						break
-					else
-						num = num - n
-						slot.num = slot.num + n
-					end
+
+		for i=1, ITEM_SLOTS_COUNT, 1 do
+			local slot = character.items[i]
+			if slot and slot.id == id then
+				local n = max_num - slot.num
+				if n >= num then
+					slot.num = slot.num + num
+					num = 0
+					break
+				else
+					num = num - n
+					slot.num = slot.num + n
 				end
 			end
-			if num == 0 then break end
+		end
+		if num > 0 then
 			for i=1, ITEM_SLOTS_COUNT, 1 do
 				local slot = character.items[i]
 				if not slot then

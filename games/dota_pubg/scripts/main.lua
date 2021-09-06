@@ -250,8 +250,8 @@ obj_root.add_event(function()
 		ui_tip.txt_desc.set_text(skill_type.description)
 	end
 
-	local hovering_r = s_dispatcher.get_hovering().p
-	if hovering_r == scene_receiver.p then
+	local hovering_r = s_dispatcher.get_hovering()
+	if hovering_r.p == scene_receiver.p then
 		local o = camera.node.get_global_pos()
 		local d = normalize_3(camera.camera.screen_to_world(mpos) - o)
 		local arr = flame_malloc(8)
@@ -330,7 +330,7 @@ obj_root.add_event(function()
 			end
 		end
 
-		if not has_tip and hovering_obj then
+		if hovering_obj then
 			if hovering_obj.tag == TAG_ITEM_OBJ then
 				if new_tip(hovering_entity.p) then
 					ui_tip.element.set_pos(mpos + vec2(10, -20))
@@ -339,40 +339,23 @@ obj_root.add_event(function()
 			end
 		end
 
-	else
-		if not has_tip then
-			for i=1, ITEM_SLOTS_COUNT, 1 do
-				local ui_slot = ui_item_slots[i]
-				local slot = main_player.items[i]
-				if slot and ui_slot.receiver.p == hovering_r then
-					if new_tip(ui_slot.receiver.p) then
-						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						set_item_tip(ui_tip, ITEM_LIST[slot.id])
-					end
-				end
+	elseif hovering_r.p then
+		local str = hovering_r.get_tooltip()
+		if str ~= "" then
+			local pos = hovering_r.entity.find_component("cElement").get_point(0) + vec2(0, -100)
+			local sp = {}
+			for w in str:gmatch("[^%s]+") do
+				table.insert(sp, w)
 			end
-		end
-		if not has_tip then
-			for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
-				local ui_slot = ui_equipment_slots[i]
-				local slot = main_player.equipments[i]
-				if slot and ui_slot.receiver.p == hovering_r then
-					if new_tip(ui_slot.receiver.p) then
-						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						set_item_tip(ui_tip, ITEM_LIST[slot])
-					end
+			if sp[1] == "item" then
+				if new_tip(hovering_r.p) then
+					ui_tip.element.set_pos(pos)
+					set_item_tip(ui_tip, ITEM_LIST[sp[2]])
 				end
-			end
-		end
-		if not has_tip then
-			for i=1, SKILL_SLOTS_COUNT, 1 do
-				local ui_slot = ui_skill_slots[i]
-				local slot = main_player.skills[i]
-				if slot and ui_slot.receiver.p == hovering_r then
-					if new_tip(ui_slot.receiver.p) then
-						ui_tip.element.set_pos(ui_slot.element.get_point(0) + vec2(0, -100))
-						set_skill_tip(ui_tip, SKILL_LIST[slot.id])
-					end
+			elseif sp[1] == "skill" then
+				if new_tip(hovering_r.p) then
+					ui_tip.element.set_pos(pos)
+					set_skill_tip(ui_tip, SKILL_LIST[sp[2]])
 				end
 			end
 		end
@@ -485,10 +468,12 @@ end
 function update_ui_skill_slots()
 	for i=1, SKILL_SLOTS_COUNT, 1 do
 		local slot = main_player.skills[i]
-		if not slot then
-			ui_skill_slots[i].image.set_tile("")
-		else
+		if slot then
 			ui_skill_slots[i].image.set_tile(SKILL_LIST[slot.id].name)
+			ui_skill_slots[i].receiver.set_tooltip("skill "..slot.id)
+		else
+			ui_skill_slots[i].image.set_tile("")
+			ui_skill_slots[i].receiver.set_tooltip("")
 		end
 	end
 end
@@ -510,7 +495,13 @@ end
 function update_ui_equipment_slots()
 	for i=1, EQUIPMENT_SLOTS_COUNT, 1 do
 		local id = main_player.equipments[i]
-		ui_equipment_slots[i].image.set_tile(id and ITEM_LIST[id].name or "")
+		if id then
+			ui_equipment_slots[i].image.set_tile(ITEM_LIST[id].name)
+			ui_equipment_slots[i].receiver.set_tooltip("item "..id)
+		else
+			ui_equipment_slots[i].image.set_tile("")
+			ui_equipment_slots[i].receiver.set_tooltip("")
+		end
 	end
 end
 
@@ -531,10 +522,12 @@ end
 function update_ui_item_slots()
 	for i=1, ITEM_SLOTS_COUNT, 1 do
 		local slot = main_player.items[i]
-		if not slot then
-			ui_item_slots[i].image.set_tile("")
-		else
+		if slot then
 			ui_item_slots[i].image.set_tile(ITEM_LIST[slot.id].name)
+			ui_item_slots[i].receiver.set_tooltip("item "..slot.id)
+		else
+			ui_item_slots[i].image.set_tile("")
+			ui_item_slots[i].receiver.set_tooltip("")
 		end
 	end
 end
@@ -670,9 +663,18 @@ function open_npc_dialog(npc)
 					local item = items[i]
 					local item_type = ITEM_LIST[item.id]
 					local ui_item = create_entity("prefabs/ui/npc_dialog_shop_item")
-					ui_item.find_child("icon").find_component("cImage").set_tile(item_type.name)
+					local e_icon = ui_item.find_child("icon")
+					e_icon.find_component("cImage").set_tile(item_type.name)
+					e_icon.find_component("cReceiver").set_tooltip("item "..item.id)
 					ui_item.find_child("name").find_component("cText").set_text(item_type.display_name)
 					ui_item.find_child("price").find_component("cText").set_text(tostring(item.price))
+					ui_item.find_child("buy").find_component("cReceiver").add_mouse_click_listener(function()
+						if main_player.GOLD >= item.price then
+							if main_player.receive_item(item.id, 1) == 0 then
+								main_player.GOLD = main_player.GOLD - item.price
+							end
+						end
+					end)
 					npc_dialog.shop.list.add_child(ui_item)
 				end
 				npc_dialog.content.add_child(npc_dialog.shop)

@@ -25,7 +25,7 @@
         <eElement layout_type="Horizontal" layout_gap="4">
           <eElement layout_type="Vertical" margin="0,0,8,0" layout_gap="4">
             <eButton name="attributes_btn" text="Attributes" />
-            <eButton name="settings_btn" text="Settings" />
+            <eText name="gold_text" />
           </eElement>
           <eElement layout_type="Horizontal">
             <entity name="skill_slot1" src="prefabs/ui/skill_slot" tip.text="Q" />

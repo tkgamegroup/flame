@@ -29,6 +29,8 @@ namespace flame
 		uint drag_hash = 0;
 		std::vector<uint> acceptable_drops;
 
+		std::string tooltip;
+
 		bool is_active();
 
 		bool get_mute() const override { return mute; }
@@ -65,6 +67,9 @@ namespace flame
 		void remove_mouse_dbclick_listener(void* lis) override;
 
 		void on_key_event(KeyboardKey key, bool down) override;
+
+		const char* get_tooltip() const override { return tooltip.c_str(); }
+		void set_tooltip(const char* str) override { tooltip = str; }
 
 		void on_added() override;
 		void on_visibility_changed(bool v) override;

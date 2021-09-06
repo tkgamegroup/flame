@@ -129,7 +129,7 @@ namespace flame
 			target->set_x(e->scroll.x + e->size.x - p[1] - target->size.x);
 			break;
 		case AlignMiddle:
-			target->set_x(e->scroll.x + p[0] + (e->size.x - p[0] - p[1] - target->size.x) * 0.5f);
+			target->set_x(e->scroll.x + p[0] + floor((e->size.x - p[0] - p[1] - target->size.x) * 0.5f));
 			break;
 		case AlignMinMax:
 			target->set_width(e->size.x - p[0] - p[1]);
