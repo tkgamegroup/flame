@@ -5,6 +5,6 @@
       <cReceiver />
     </eImage>
     <eText name="name" aligny="Middle" />
-    <eButton name="buy" aligny="Middle" text="buy" />
+    <eButton name="buy" aligny="Middle" text="Buy" />
   </eElement>
 </prefab>

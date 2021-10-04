@@ -61,8 +61,8 @@ ITEM_LIST[i.name] = i
 
 local i = {
 	type = "Equipment",
-	name = "leather_clothes",
-	display_name = "Leather Clothes",
+	name = "leather_cloth",
+	display_name = "Leather Cloth",
 	stack_num = 1,
 	slot = EQUIPMENT_SLOT_CHEST,
 	price = 100,

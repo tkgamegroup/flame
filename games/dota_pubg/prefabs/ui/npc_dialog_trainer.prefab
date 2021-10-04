@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement layout_type="Vertical">
+    <eElement layout_type="Horizontal" layout_gap="8">
+      <eElement layout_type="Vertical">
+        <eText text="Available:" />
+        <eList name="available_list" size="100,200" border="1" layout_type="Vertical" layout_gap="2" auto_width="false" auto_height="false" />
+      </eElement>
+      <eElement layout_type="Vertical">
+        <eText text="Learned:" />
+        <eList name="learned_list" size="100,200" border="1" layout_type="Vertical" layout_gap="2" auto_width="false" auto_height="false" />
+      </eElement>
+    </eElement>
+  </eElement>
+</prefab>

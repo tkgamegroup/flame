@@ -24,7 +24,7 @@ local n = {
 					{ id="wooden_stick" },
 					{ id="wooden_shield" },
 					{ id="leather_hat" },
-					{ id="leather_clothes" },
+					{ id="leather_cloth" },
 					{ id="leather_pants" },
 					{ id="leather_shoes" }
 				}
@@ -60,7 +60,7 @@ local n = {
 		{ prob=0.1, id="wooden_stick", min_num=1, max_num=1 },
 		{ prob=0.1, id="wooden_shield", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_hat", min_num=1, max_num=1 },
-		{ prob=0.1, id="leather_clothes", min_num=1, max_num=1 },
+		{ prob=0.1, id="leather_cloth", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_pants", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 }
 	}
@@ -90,7 +90,7 @@ local n = {
 		{ prob=0.1, id="wooden_stick", min_num=1, max_num=1 },
 		{ prob=0.1, id="wooden_shield", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_hat", min_num=1, max_num=1 },
-		{ prob=0.1, id="leather_clothes", min_num=1, max_num=1 },
+		{ prob=0.1, id="leather_cloth", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_pants", min_num=1, max_num=1 },
 		{ prob=0.1, id="leather_shoes", min_num=1, max_num=1 }
 	}

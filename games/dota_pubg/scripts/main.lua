@@ -203,7 +203,8 @@ obj_root.add_event(function()
 			ui_tip.data = p
 			ui_tip.element = ui_tip.find_component("cElement")
 			ui_tip.txt_attr = ui_tip.find_child("txt_attr").find_component("cText")
-			ui_tip.txt_desc = ui_tip.find_child("txt_desc").find_component("cText")
+			ui_tip.e_desc = ui_tip.find_child("txt_desc")
+			ui_tip.txt_desc = ui_tip.e_desc.find_component("cText")
 			__ui_pop.add_child(ui_tip)
 			return true
 		end
@@ -214,11 +215,12 @@ obj_root.add_event(function()
 		return false
 	end
 
-	function set_item_tip(ui_tip, item_type)
+	function set_item_tip(ui_tip, item_type, in_shop)
 		local str = item_type.display_name
 		if item_type.type == "Equipment" then
 			str = str.."\n"..EQUIPMENT_SLOT_NAMES[item_type.slot]
 			for k, v in pairs(item_type.attributes) do
+				k = string.gsub(k, "_", " ")
 				if type(v) == "string" then
 					str = str.."\n"..string.format("%s: %s", k, v)
 				else
@@ -232,7 +234,13 @@ obj_root.add_event(function()
 			end
 		end
 		if npc_dialog and npc_dialog.shop and item_type.price ~= 0 then
-			str = str.."\n\xef\x94\x9e "..tostring(item_type.price)
+			str = str.."\n"
+			local v = item_type.price
+			if not in_shop then
+				str = str.."Sell Price: "
+				v = math.floor(v / 2) 
+			end
+			str = str.."\xef\x94\x9e "..tostring(v)
 		end
 		ui_tip.txt_attr.set_text(str)
 	end
@@ -251,6 +259,7 @@ obj_root.add_event(function()
 			str = str.."\n".."Passive"
 		end
 		ui_tip.txt_attr.set_text(str)
+		ui_tip.e_desc.set_visible(true)
 		ui_tip.txt_desc.set_text(skill_type.description)
 	end
 
@@ -355,6 +364,11 @@ obj_root.add_event(function()
 				if new_tip(hovering_r.p) then
 					ui_tip.element.set_pos(pos)
 					set_item_tip(ui_tip, ITEM_LIST[sp[2]])
+				end
+			elseif sp[1] == "shop_item" then
+				if new_tip(hovering_r.p) then
+					ui_tip.element.set_pos(pos)
+					set_item_tip(ui_tip, ITEM_LIST[sp[2]], true)
 				end
 			elseif sp[1] == "skill" then
 				if new_tip(hovering_r.p) then
@@ -520,7 +534,21 @@ for i=1, ITEM_SLOTS_COUNT, 1 do
 	ui.image = icon.find_component("cImage")
 
 	ui.receiver.add_mouse_right_down_listener(function()
-		main_player.use_item(i)
+		if npc_dialog and npc_dialog.shop then
+			local slot = main_player.items[i]
+			if slot then
+				local price = ITEM_LIST[slot.id].price
+				if price > 0 then
+					price = math.floor(price / 2)
+					price = price * slot.num
+					main_player.GOLD = main_player.GOLD + price
+					main_player.items[i] = nil
+					update_ui_item_slots()
+				end
+			end
+		else
+			main_player.use_item(i)
+		end
 	end)
 end
 
@@ -582,7 +610,7 @@ attributes_btn.find_component("cReceiver").add_mouse_click_listener(function()
 			lv_text.set_text(string.format("LV: %d", main_player.LV))
 			exp_text.set_text(string.format("EXP: %d/%d", main_player.EXP, main_player.EXP_NEXT))
 			atk_dmg_text.set_text(string.format("ATK: %d (%s)", math.floor(main_player.ATK_DMG.t / 10.0), main_player.ATK_TYPE))
-			arrmor_text.set_text(string.format("Arrmor: %d", main_player.ARMOR.t))
+			arrmor_text.set_text(string.format("ARRMMOR: %d", main_player.ARMOR.t))
 			mov_sp_text.set_text(string.format("MOV SP: %d", main_player.MOV_SP.a))
 		
 			sta_text.set_text(string.format("STA: %d", main_player.STA.t))
@@ -670,7 +698,7 @@ function open_npc_dialog(npc)
 					local ui_item = create_entity("prefabs/ui/npc_dialog_shop_item")
 					local e_icon = ui_item.find_child("icon")
 					e_icon.find_component("cImage").set_tile(item_type.name)
-					e_icon.find_component("cReceiver").set_tooltip("item "..item.id)
+					e_icon.find_component("cReceiver").set_tooltip("shop_item "..item.id)
 					ui_item.find_child("name").find_component("cText").set_text(item_type.display_name)
 					ui_item.find_child("buy").find_component("cReceiver").add_mouse_click_listener(function()
 						if main_player.GOLD >= item_type.price then
@@ -682,6 +710,9 @@ function open_npc_dialog(npc)
 					npc_dialog.shop.list.add_child(ui_item)
 				end
 				npc_dialog.content.add_child(npc_dialog.shop)
+			elseif option.type == "trainer" then
+				npc_dialog.trainer = create_entity("prefabs/ui/npc_dialog_trainer")
+				npc_dialog.content.add_child(npc_dialog.trainer)
 			end
 		end)
 		npc_dialog.add_child(ui_option)
@@ -768,7 +799,7 @@ local basic_items = {
 	"wooden_stick",
 	"wooden_shield",
 	"leather_hat",
-	"leather_clothes",
+	"leather_cloth",
 	"leather_pants",
 	"leather_shoes"
 }

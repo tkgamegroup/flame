@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement layout_type="Horizontal" layout_gap="4">
+    <eImage name="icon" padding="1,1,1,1" size="33,33" auto_width="false" auto_height="false" border="1" img="D:/assets/skill_icons/skill_icons.atlas">
+      <cReceiver />
+    </eImage>
+    <eText name="name" aligny="Middle" />
+    <eText name="price" aligny="Middle" />
+    <eButton name="learn" aligny="Middle" text="Learn" />
+  </eElement>
+</prefab>
