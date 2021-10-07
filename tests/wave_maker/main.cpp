@@ -1,7 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 #include <flame/sound/device.h>
-#include <flame/sound/context.h>
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
 
@@ -13,16 +12,14 @@ auto freq = 4000U;
 auto stereo = false;
 auto _16bit = false;
 auto wave_type = sound::WavaSin;
-auto pitch = 220U;
+auto pit = 220U;
 auto dura = 0.1f;
 
 const auto fade_time = 0.1f;
 
 int main(int argc, char** args)
 {
-	auto device = sound::Device::create_player();
-	auto context = sound::Context::create(device);
-	context->make_current();
+	auto device = sound::Device::create();
 
 	while (true)
 	{
@@ -57,7 +54,7 @@ int main(int argc, char** args)
 				else if (sp[0] == "dura")
 					dura = std::stof(sp[1]);
 				else if (sp[0] == "pit")
-					pitch = std::stoi(sp[1]);
+					pit = std::stoi(sp[1]);
 			}
 		}
 
@@ -65,21 +62,21 @@ int main(int argc, char** args)
 			dura = fade_time;
 
 		std::vector<float> samples;
-		samples.resize(sound::get_sample_count(dura, freq));
+		samples.resize(sound::get_samples_count(dura, freq));
 		auto size = sound::get_size(samples.size(), stereo, _16bit);
 		auto data = new uchar[size];
-		sound::wave(samples, freq, wave_type, pitch);
+		sound::wave(samples, freq, wave_type, pit);
 		sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
 
-		auto buffer = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+		auto buffer = sound::Buffer::create(data, freq, stereo, _16bit, dura);
 		auto source = sound::Source::create(buffer);
 		source->play();
 		std::this_thread::sleep_for(std::chrono::milliseconds(int(dura * 1000)));
 		source->stop();
 		delete[]data;
 
-		sound::Source::destroy(source);
-		sound::Buffer::destroy(buffer);
+		source->release();
+		buffer->release();
 	}
 
 	return 0;

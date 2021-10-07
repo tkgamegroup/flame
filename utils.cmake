@@ -1,3 +1,11 @@
+function(check_path p out)
+    if(EXISTS "${p}")
+        set(${out} "${p}" PARENT_SCOPE)
+    else()
+        set(${out} "" PARENT_SCOPE)
+    endif()
+endfunction()
+
 function(assign_source_group parent_path folder_prefix)
     foreach(_source IN ITEMS ${ARGN})
         if (IS_ABSOLUTE "${_source}")
