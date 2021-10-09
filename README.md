@@ -5,6 +5,8 @@ An ECS 3D-Game-Engine.
 
 - VulkanSDK
 
+- GLM https://github.com/g-truc/glm.git
+
 - PugiXML https://github.com/zeux/pugixml
 
 - NJson https://github.com/nlohmann/json
@@ -27,11 +29,9 @@ An ECS 3D-Game-Engine.
 
 # Build:
 
-- cmake flame
+- run setup.py as administrator
 
-- run ./set_env.bat (then you need to restart your IDE)
-
-- regsvr32 msdia140.dll in visual studio's dia sdk i.e. "vs_path/DIA SDK/bin/amd64"
+- cmake
 
 - build
 
