@@ -5,7 +5,7 @@ An ECS 3D-Game-Engine.
 
 - VulkanSDK
 
-- GLM https://github.com/g-truc/glm.git
+- GLM https://github.com/g-truc/glm
 
 - PugiXML https://github.com/zeux/pugixml
 
@@ -19,13 +19,17 @@ An ECS 3D-Game-Engine.
 
 - SHA1 https://github.com/vog/sha1
 
+- GLI https://github.com/g-truc/gli
+
+- SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
+
+- LUA https://github.com/lua/lua
+
+- Assimp https://github.com/assimp/assimp
+
+- PhysX https://github.com/NVIDIAGameWorks/PhysX
+
 - OpenAL
-
-- LUA
-
-- Assimp
-
-- PhysX
 
 # Build:
 
