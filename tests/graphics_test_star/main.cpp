@@ -1,11 +1,9 @@
 ﻿#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
-#include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/command.h>
 #include <flame/graphics/font.h>
-#include <flame/graphics/canvas.h>
 
 using namespace flame;
 using namespace graphics;

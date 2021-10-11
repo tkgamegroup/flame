@@ -16,8 +16,6 @@ if not vs_path.exists():
 	print("Cannot find visual studio, abort")
 	exit(0)
 
-os.system("\"%s/VC/Auxiliary/Build/vcvars64.bat\"" % str(vs_path))
-
 print("Download or build required libraries?\n 1 - Automaticly\n 2 - Manually\n 3 - Skip")
 op = int(input())
 
@@ -178,7 +176,7 @@ if op != 3:
 		print("Build LUA into %s ? y/n" % str(bud_dir))
 		ok = input() == "y"
 	if ok:
-		os.system("nmake -f \"%s\"" % (str(bud_dir) + "/makefile"))
+		os.system("\"\"%s/VC/Auxiliary/Build/vcvars64.bat\" && nmake -f \"%s\"\"" % (str(vs_path), str(bud_dir) + "/makefile"))
 
 	ok = False
 	address = "https://github.com/assimp/assimp.git"

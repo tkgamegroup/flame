@@ -22,12 +22,11 @@ namespace flame
 				void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override;
 			};
 
-			DevicePrivate* device;
-
 			PxScene* px_scene;
 			Callback px_callback;
 			PxControllerManager* px_controller_manager;
 #endif
+			DevicePrivate* device;
 
 			std::unique_ptr<Closure<void(Capture&, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape)>> trigger_callback;
 

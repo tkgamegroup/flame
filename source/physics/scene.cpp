@@ -97,6 +97,7 @@ namespace flame
 			}
 			return cvt(hit.block.position);
 #endif
+			return vec3(0.f);
 		}
 
 		void ScenePrivate::update(float disp)

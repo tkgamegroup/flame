@@ -44,6 +44,7 @@ namespace flame
 #ifdef USE_PHYSX
 			return px_controller->move(cvt(disp), 0.f, delta_time, {}).isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
 #endif
+			return false;
 		}
 
 		Controller* Controller::create(Scene* scene, Material* material, float radius, float height)

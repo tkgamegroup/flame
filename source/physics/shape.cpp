@@ -100,8 +100,8 @@ namespace flame
 #ifdef USE_PHYSX
 			type = ShapeBox;
 			px_shape.reset(device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material));
-#endif
 			px_shape->userData = this;
+#endif
 		}
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius)
@@ -109,8 +109,8 @@ namespace flame
 #ifdef USE_PHYSX
 			type = ShapeSphere;
 			px_shape.reset(device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material));
-#endif
 			px_shape->userData = this;
+#endif
 		}
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius, float height)
@@ -119,8 +119,8 @@ namespace flame
 			type = ShapeCapsule;
 			px_shape.reset(device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material));
 			px_shape->setLocalPose(PxTransform(PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
-#endif
 			px_shape->userData = this;
+#endif
 		}
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, TriangleMeshPrivate* tri_mesh, float scale)
@@ -128,8 +128,8 @@ namespace flame
 #ifdef USE_PHYSX
 			type = ShapeTriangleMesh;
 			px_shape.reset(device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh.get(), PxMeshScale(scale)), *material->px_material));
-#endif
 			px_shape->userData = this;
+#endif
 		}
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const vec3& scale)
@@ -139,8 +139,8 @@ namespace flame
 			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),
 				scale.y / height_field_precision, scale.x / (height_field->blocks.x * height_field->tess_levels), 
 				scale.z / (height_field->blocks.y * height_field->tess_levels)), *material->px_material));
-#endif
 			px_shape->userData = this;
+#endif
 		}
 
 		void ShapePrivate::set_trigger(bool v)

@@ -28,8 +28,10 @@ namespace flame
 
 		bool RigidPrivate::is_sleeping() const
 		{
+#ifdef USE_PHYSX
 			if (dynamic)
 				return ((PxRigidDynamic*)px_rigid.get())->isSleeping();
+#endif
 			return false;
 		}
 

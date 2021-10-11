@@ -1,7 +1,9 @@
 #include "../foundation/typeinfo.h"
 #include "script_private.h"
 
+#ifdef USE_LUA
 #include <lua.hpp>
+#endif
 
 namespace flame
 {
@@ -9,6 +11,7 @@ namespace flame
 	{
 		thread_local InstancePrivate* default_instance = nullptr;
 
+#ifdef USE_LUA
 		bool lua_check_result(lua_State* state, int res)
 		{
 			if (res != LUA_OK)
@@ -881,9 +884,11 @@ namespace flame
 			}
 			return 0;
 		}
+#endif
 
 		InstancePrivate::InstancePrivate()
 		{
+#ifdef USE_LUA
 			lua_state = luaL_newstate();
 			luaL_openlibs(lua_state);
 
@@ -1137,6 +1142,7 @@ namespace flame
 
 			if (!excute_file(L"setup2.lua"))
 				fassert(0);
+#endif
 		}
 
 		InstancePrivate::~InstancePrivate()
@@ -1149,76 +1155,107 @@ namespace flame
 
 		int InstancePrivate::to_int(int idx)
 		{
+#ifdef USE_LUA
 			return lua_tointeger(lua_state, idx);
+#endif
+			return 0;
 		}
 
 		uint InstancePrivate::to_uint(int idx)
 		{
+#ifdef USE_LUA
 			return lua_tointeger(lua_state, idx);
+#endif
+			return 0;
 		}
 
 		void InstancePrivate::push_bool(bool b)
 		{
+#ifdef USE_LUA
 			lua_pushboolean(lua_state, b);
+#endif
 		}
 
 		void InstancePrivate::push_int(int i)
 		{
+#ifdef USE_LUA
 			lua_pushinteger(lua_state, i);
+#endif
 		}
 
 		void InstancePrivate::push_uint(uint i)
 		{
+#ifdef USE_LUA
 			lua_pushinteger(lua_state, i);
+#endif
 		}
 
 		void InstancePrivate::push_float(float f)
 		{
+#ifdef USE_LUA
 			lua_pushnumber(lua_state, f);
+#endif
 		}
 
 		void InstancePrivate::push_vec2(const vec2& v)
 		{
+#ifdef USE_LUA
 			lua_push_vec2(lua_state, v);
+#endif
 		}
 
 		void InstancePrivate::push_vec3(const vec3& v)
 		{
+#ifdef USE_LUA
 			lua_push_vec3(lua_state, v);
+#endif
 		}
 
 		void InstancePrivate::push_vec4(const vec4& v)
 		{
+#ifdef USE_LUA
 			lua_push_vec4(lua_state, v);
+#endif
 		}
 
 		void InstancePrivate::push_string(const char* value)
 		{
+#ifdef USE_LUA
 			lua_pushstring(lua_state, value);
+#endif
 		}
 
 		void InstancePrivate::push_pointer(void* p)
 		{
+#ifdef USE_LUA
 			lua_pushlightuserdata(lua_state, p);
+#endif
 		}
 
 		void InstancePrivate::push_object()
 		{
+#ifdef USE_LUA
 			lua_newtable(lua_state);
+#endif
 		}
 
 		void InstancePrivate::pop(uint number)
 		{
+#ifdef USE_LUA
 			lua_pop(lua_state, number);
+#endif
 		}
 
 		void InstancePrivate::get_global(const char* name)
 		{
+#ifdef USE_LUA
 			lua_getglobal(lua_state, name);
+#endif
 		}
 
 		void InstancePrivate::get_member(const char* name, uint idx)
 		{
+#ifdef USE_LUA
 			if (name)
 			{
 				lua_pushstring(lua_state, name);
@@ -1229,10 +1266,12 @@ namespace flame
 				lua_pushinteger(lua_state, idx);
 				lua_gettable(lua_state, -2);
 			}
+#endif
 		}
 
 		void InstancePrivate::set_object_type(const char* type_name, void* p)
 		{
+#ifdef USE_LUA
 			if (p != INVALID_POINTER)
 			{
 				lua_pushstring(lua_state, "p");
@@ -1240,33 +1279,44 @@ namespace flame
 				lua_settable(lua_state, -3);
 			}
 			lua_set_object_type(lua_state, type_name);
+#endif
 		}
 
 		void InstancePrivate::set_member_name(const char* name)
 		{
+#ifdef USE_LUA
 			lua_pushstring(lua_state, name);
 			lua_pushvalue(lua_state, -2);
 			lua_settable(lua_state, -4);
 			lua_pop(lua_state, 1);
+#endif
 		}
 
 		void InstancePrivate::set_global_name(const char* name)
 		{
+#ifdef USE_LUA
 			lua_setglobal(lua_state, name);
+#endif
 		}
 
 		void InstancePrivate::call(uint parms_num)
 		{
+#ifdef USE_LUA
 			lua_check_result(lua_state, lua_pcall(lua_state, parms_num, 0, 0));
+#endif
 		}
 
 		bool InstancePrivate::excute(const char* str)
 		{
+#ifdef USE_LUA
 			return lua_check_result(lua_state, luaL_dostring(lua_state, str));
+#endif
+			return false;
 		}
 
 		bool InstancePrivate::excute_file(const wchar_t* filename)
 		{
+#ifdef USE_LUA
 			auto path = std::filesystem::path(filename);
 			if (!std::filesystem::exists(path))
 			{
@@ -1280,6 +1330,8 @@ namespace flame
 				}
 			}
 			return lua_check_result(lua_state, luaL_dofile(lua_state, path.string().c_str()));
+#endif
+			return false;
 		}
 
 		Instance* Instance::get_default()

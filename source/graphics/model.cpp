@@ -593,8 +593,6 @@ namespace flame
 
 				doc_animation.save_file(animation_filename.c_str());
 			}
-#else
-			return nullptr;
 #endif
 		}
 
