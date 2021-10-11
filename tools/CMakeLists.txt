@@ -1,4 +1,5 @@
 add_subdirectory(SLOC)
+add_subdirectory(create_template)
 add_subdirectory(texture_converter)
 add_subdirectory(texture_packer)
 add_subdirectory(model_converter)
