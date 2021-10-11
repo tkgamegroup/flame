@@ -8,21 +8,13 @@ print("Current Directory: " + str(current_directory))
 
 os.system("chcp 65001")
 
-p = os.environ.get("VS170COMCOMNTOOLS")
-if p is not None:
-	vs_path = pathlib.Path(p).parent.parent
-else:
-	p = os.environ.get("VS160COMCOMNTOOLS")
-	if p is not None:
-		vs_path = pathlib.Path(p).parent.parent
-	else:
-		p = os.environ.get("VS150COMCOMNTOOLS")
-		if p is not None:
-			vs_path = pathlib.Path(p).parent.parent
-		else:
-			vs_path = None
-			print("Cannot find visual studio (vs2022, vs2019 or vs2017), abort")
-			exit(0)
+os.system("vswhere.exe -latest -property installationPath > temp.txt")
+file = open("temp.txt")
+vs_path = pathlib.Path(file.read().removesuffix("\n"))
+file.close()
+if not vs_path.exists():
+	print("Cannot find visual studio, abort")
+	exit(0)
 
 os.system("\"%s/VC/Auxiliary/Build/vcvars64.bat\"" % str(vs_path))
 
