@@ -10,7 +10,7 @@ os.system("chcp 65001")
 
 os.system("vswhere.exe -latest -property installationPath > temp.txt")
 file = open("temp.txt")
-vs_path = pathlib.Path(file.read().removesuffix("\n"))
+vs_path = pathlib.Path(file.read().strip("\n"))
 file.close()
 if not vs_path.exists():
 	print("Cannot find visual studio, abort")
