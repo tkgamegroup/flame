@@ -115,7 +115,7 @@ namespace flame
 		void on_entered_world(WorldPrivate* world);
 		void on_left_world();
 
-		void traversal(const std::function<bool(EntityPrivate*)>& callback);
+		void traversal(const std::function<void(EntityPrivate*)>& callback);
 
 		Driver* get_driver(uint hash, int idx = -1) const override;
 		Driver* find_driver(const std::string& name) const;

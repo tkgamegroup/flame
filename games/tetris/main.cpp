@@ -2,7 +2,6 @@
 #include <flame/universe/app.h>
 #include <flame/network/network.h>
 #include <flame/universe/components/text.h>
-#include <flame/universe/components/tile_map.h>
 
 using namespace flame;
 

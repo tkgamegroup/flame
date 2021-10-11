@@ -11,7 +11,7 @@
       <cText text="" />
     </entity>
     <entity name="items" visible="false" >
-      <cElement padding="1.0,1.0,1.0,1.0" layout_type="Vertical" />
+      <cElement padding="1,1,1,1" layout_type="Vertical" />
     </entity>
   </entity>
 </prefab>

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
-	<eElement alignx="MinMax" aligny="MinMax" >
-		<CeMenuBar>
+	<eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical" layout_gap="4">
+		<eMenuBar>
 			<eMenu text="1" >
 				<eMenuItem text="1" />
 				<eMenuItem text="2" />
@@ -13,7 +13,7 @@
 			<eMenu text="2" >
 				<eMenuItem text="1" />
 			</eMenu>
-		</CeMenuBar>
+		</eMenuBar>
 		<CeButton text="Button">
 			<cScript>
         entity.find_component("cReceiver").add_mouse_click_listener(function()
@@ -62,14 +62,14 @@
         <eListItem name="item13" text="nigger"/>
       </eList>
     </eScroller>
-    <Centity src="hsplitter" >
+    <CeHsplitter >
       <entity>
         <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="255,0,0,255" />
       </entity>
       <entity>
         <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="0,255,0,255" />
       </entity>
-    </Centity>
+    </CeHsplitter>
 		<CeWindow fill_color="240,240,240,50" >
 		  <cBlur radius="10" />
 		</CeWindow>

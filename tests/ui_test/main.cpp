@@ -185,9 +185,8 @@ void MyApp::create_widgets()
 }
 
 MainForm::MainForm() :
-	GraphicsWindow(&g_app, true, true, "UI Test", uvec2(1280, 720), WindowFrame | WindowResizable)
+	GraphicsWindow(&g_app, L"UI Test", uvec2(1280, 720), WindowFrame | WindowResizable)
 {
-	canvas->set_clear_color(cvec4(100, 100, 100, 255));
 	//canvas->set_resource(-1, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"assets/9.png").c_str())->default_view());
 
 	g_app.create_widgets();
@@ -197,6 +196,11 @@ int main(int argc, char** args)
 {
 	g_app.create();
 	new MainForm();
+	{
+		auto e = Entity::create();
+		e->load(L"ui_test");
+		g_app.main_window->root->add_child(e);
+	}
 	g_app.run();
 
 	return 0;

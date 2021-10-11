@@ -411,7 +411,6 @@ namespace flame
 		e->parent = this;
 		e->traversal([this](EntityPrivate* e) {
 			e->depth = e->parent->depth + 1;
-			return true;
 		});
 		e->index = pos;
 		e->update_visibility();
@@ -424,7 +423,6 @@ namespace flame
 		e->traversal([this](EntityPrivate* e) {
 			if (!e->world && world)
 				e->on_entered_world(world);
-			return true;
 		});
 
 		for (auto& l : message_listeners)
@@ -465,8 +463,6 @@ namespace flame
 		e->traversal([](EntityPrivate* e) {
 			if (e->world)
 				e->on_left_world();
-
-			return true;
 		});
 
 		for (auto& l : message_listeners)
@@ -538,12 +534,11 @@ namespace flame
 		world = nullptr;
 	}
 
-	void EntityPrivate::traversal(const std::function<bool(EntityPrivate*)>& callback)
+	void EntityPrivate::traversal(const std::function<void(EntityPrivate*)>& callback)
 	{
-		if (!callback(this))
-			return;
 		for (auto& c : children)
 			c->traversal(callback);
+		callback(this);
 	}
 
 	Driver* EntityPrivate::get_driver(uint hash, int idx) const
