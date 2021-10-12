@@ -12,6 +12,3 @@ namespace flame
 		return new cTogglePrivate();
 	}
 }
-
-
-

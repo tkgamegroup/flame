@@ -29,6 +29,113 @@ int main(int argc, char **args)
 			return class_name;
 		};
 
+		struct Block
+		{
+			int type = 0; // 0 - line, 1 - block, 2 - semicolon end block, 3 - children, 4 - invalid
+			std::string line;
+			Block* parent = nullptr;
+			int idx = -1;
+			std::vector<std::unique_ptr<Block>> children;
+
+			Block* find(const std::regex& r)
+			{
+				if (type == 4)
+					return nullptr;
+				if (type == 0)
+				{
+					if (std::regex_search(line, r))
+						return this;
+					return nullptr;
+				}
+				for (auto& c : children)
+				{
+					auto ret = c->find(r);
+					if (ret)
+						return ret;
+				}
+				return nullptr;
+			}
+
+			std::string output(int indent)
+			{
+				if (type == 4)
+					return "";
+				std::string ret;
+				std::string indent_str;
+				for (auto i = 0; i < indent; i++)
+					indent_str += "\t";
+				if (type == 0)
+					ret += indent_str + line + "\n";
+				else
+				{
+					if (type != 3)
+					{
+						indent++;
+						ret += indent_str + "{\n";
+					}
+					for (auto& c : children)
+						ret += c->output(indent);
+					if (type != 3)
+					{
+						if (type == 2)
+							ret += indent_str + "};\n";
+						else
+							ret += indent_str + "}\n";
+					}
+				}
+				return ret;
+			}
+		};
+
+		auto gather_blocks = [&](std::ifstream& f) {
+			std::vector<std::string> lines;
+			while (!f.eof())
+			{
+				std::string line;
+				std::getline(f, line);
+				SUS::trim(line);
+				lines.push_back(line);
+			}
+
+			std::function<int(Block* b, int idx)> gather_block;
+			gather_block = [&](Block* b, int idx) {
+				for (auto i = idx; i < lines.size(); i++)
+				{
+					auto& l = lines[i];
+					if (l.size() == 1 && l[0] == '{')
+					{
+						auto nb = new Block;
+						nb->type = 1;
+						nb->parent = b;
+						nb->idx = b->children.size();
+						b->children.emplace_back(nb);
+						i = gather_block(nb, i + 1);
+					}
+					else if (l.size() == 1 && l[0] == '}')
+						return i;
+					else if (l.size() == 2 && l == "};")
+					{
+						b->type = 2;
+						return i;
+					}
+					else
+					{
+						auto nb = new Block;
+						nb->line = l;
+						nb->parent = b;
+						nb->idx = b->children.size();
+						b->children.emplace_back(nb);
+					}
+				}
+				return (int)lines.size();
+			};
+
+			auto top_block = new Block;
+			top_block->type = 3;
+			gather_block(top_block, 0);
+			return top_block;
+		};
+
 		if (cmd == "new_component")
 		{
 			if (name.empty())
@@ -116,114 +223,11 @@ int main(int argc, char **args)
 				return 0;
 			}
 
-			struct Block
-			{
-				int type = 0; // 0 - line, 1 - block, 2 - semicolon end block, 3 - children
-				std::string line;
-				Block* parent = nullptr;
-				int idx = -1;
-				std::vector<std::unique_ptr<Block>> children;
-
-				Block* find(const std::regex& r)
-				{
-					if (type == 0)
-					{
-						if (std::regex_search(line, r))
-							return this;
-						return nullptr;
-					}
-					for (auto& c : children)
-					{
-						auto ret = c->find(r);
-						if (ret)
-							return ret;
-					}
-					return nullptr;
-				}
-
-				std::string output(int indent)
-				{
-					std::string ret;
-					std::string indent_str;
-					for (auto i = 0; i < indent; i++)
-						indent_str += "\t";
-					if (type == 0)
-						ret += indent_str + line + "\n";
-					else
-					{
-						if (type != 3) 
-						{
-							indent++;
-							ret += indent_str + "{\n";
-						}
-						for (auto& c : children)
-							ret += c->output(indent);
-						if (type != 3)
-						{
-							if (type == 2)
-								ret += indent_str + "};\n";
-							else
-								ret += indent_str + "}\n";
-						}
-					}
-					return ret;
-				}
-			};
-
-			auto gather_blocks = [&](std::ifstream& f) {
-				std::vector<std::string> lines;
-				while (!f.eof())
-				{
-					std::string line;
-					std::getline(f, line);
-					SUS::trim(line);
-					lines.push_back(line);
-				}
-
-				std::function<int(Block* b, int idx)> gather_block;
-				gather_block = [&](Block* b, int idx) {
-					for (auto i = idx; i < lines.size(); i++)
-					{
-						auto& l = lines[i];
-						if (l.size() == 1 && l[0] == '{')
-						{
-							auto nb = new Block;
-							nb->type = 1;
-							nb->parent = b;
-							nb->idx = b->children.size();
-							b->children.emplace_back(nb);
-							i = gather_block(nb, i + 1);
-						}
-						else if (l.size() == 1 && l[0] == '}')
-							return i;
-						else if (l.size() == 2 && l == "};")
-						{
-							b->type = 2;
-							return i + 1;
-						}
-						else
-						{
-							auto nb = new Block;
-							nb->line = l;
-							nb->parent = b;
-							nb->idx = b->children.size();
-							b->children.emplace_back(nb);
-						}
-					}
-					return (int)lines.size();
-				};
-
-				auto top_block = new Block;
-				top_block->type = 3;
-				gather_block(top_block, 0);
-				return top_block;
-			};
-
 			std::ifstream public_header_ifile(public_header_fn);
 			auto public_header_blocks = gather_blocks(public_header_ifile);
 			public_header_ifile.close();
 			{
-				std::regex r("static " + class_name + "\\* create\\(void\\* parms = nullptr\\);");
+				std::regex r("static " + class_name + "\\* create\\(");
 				auto n = public_header_blocks->find(r);
 				if (n)
 				{
@@ -245,7 +249,6 @@ int main(int argc, char **args)
 					}
 				}
 			}
-
 			std::ofstream public_header_ofile(public_header_fn);
 			public_header_ofile << public_header_blocks->output(0);
 			public_header_ofile.close();
@@ -283,7 +286,6 @@ int main(int argc, char **args)
 					}
 				}
 			}
-
 			std::ofstream private_header_ofile(private_header_fn);
 			private_header_ofile << private_header_blocks->output(0);
 			private_header_ofile.close();
@@ -292,7 +294,7 @@ int main(int argc, char **args)
 			auto source_blocks = gather_blocks(source_ifile);
 			source_ifile.close();
 			{
-				std::regex r(class_name + "\\* " + class_name + "::create\\(void\\* parms\\)");
+				std::regex r(class_name + "\\* " + class_name + "::create\\(");
 				auto n = source_blocks->find(r);
 				if (n)
 				{
@@ -319,7 +321,73 @@ int main(int argc, char **args)
 					}
 				}
 			}
+			std::ofstream source_ofile(source_fn);
+			source_ofile << source_blocks->output(0);
+			source_ofile.close();
+		}
+		else if (cmd == "remove_attribute")
+		{
+			if (path.empty())
+				return 0;
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::cin >> name;
+			}
+			if (name.empty())
+				return 0;
 
+			auto p = std::filesystem::path(path);
+			auto pp = p.parent_path();
+
+			auto fn = p.stem().string();
+			SUS::cut_tail_if(fn, "_private");
+			auto class_name = get_class_name(fn);
+			auto public_header_fn = pp.string() + "/" + fn + ".h";
+			auto private_header_fn = pp.string() + "/" + fn + "_private.h";
+			auto source_fn = pp.string() + "/" + fn + ".cpp";
+			if (!std::filesystem::exists(public_header_fn) || !std::filesystem::exists(private_header_fn) || !std::filesystem::exists(source_fn))
+			{
+				printf("cannot find %s or %s or %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
+				system("pause");
+				return 0;
+			}
+
+			std::ifstream public_header_ifile(public_header_fn);
+			auto public_header_blocks = gather_blocks(public_header_ifile);
+			public_header_ifile.close();
+			{
+				std::regex r("\\s[gs]et_" + name + "\\(");
+				auto n = public_header_blocks->find(r);
+				if (n)
+				{
+					n->type = 4;
+					n = n->parent->find(r);
+					if (n)
+						n->type = 4;
+				}
+			}
+			auto wtf = public_header_blocks->output(0);
+			std::ofstream public_header_ofile(public_header_fn);
+			public_header_ofile << public_header_blocks->output(0);
+			public_header_ofile.close();
+
+			std::ifstream private_header_ifile(private_header_fn);
+			auto private_header_blocks = gather_blocks(private_header_ifile);
+			private_header_ifile.close();
+			{
+
+			}
+			std::ofstream private_header_ofile(private_header_fn);
+			private_header_ofile << private_header_blocks->output(0);
+			private_header_ofile.close();
+
+			std::ifstream source_ifile(source_fn);
+			auto source_blocks = gather_blocks(source_ifile);
+			source_ifile.close();
+			{
+
+			}
 			std::ofstream source_ofile(source_fn);
 			source_ofile << source_blocks->output(0);
 			source_ofile.close();

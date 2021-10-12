@@ -13,6 +13,4 @@ namespace flame
 		bool get_toggled() const override { return toggled; }
 		void set_toggled(bool v) override;
 	};
-	
-	
 }

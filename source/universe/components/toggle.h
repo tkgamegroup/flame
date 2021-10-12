@@ -12,12 +12,10 @@ namespace flame
 		cToggle() : Component(type_name, type_hash)
 		{
 		}
-		
+
 		virtual bool get_toggled() const = 0;
 		virtual void set_toggled(bool v) = 0;
-		
+
 		FLAME_UNIVERSE_EXPORTS static cToggle* create(void* parms = nullptr);
 	};
-	
-	
 }
