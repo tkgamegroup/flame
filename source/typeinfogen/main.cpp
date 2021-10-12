@@ -147,10 +147,10 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 
 int main(int argc, char **args)
 {
-	std::string input;
-	std::string desc;
-	auto ap = pack_args(argc, args);
-	if (!ap.get_item("-i", input) || !ap.get_item("-d", desc))
+	auto ap = parse_args(argc, args);
+	auto input = ap.get_item("-i");
+	auto desc = ap.get_item("-d");
+	if (input.empty() || desc.empty())
 		goto show_usage;
 
 	goto process;

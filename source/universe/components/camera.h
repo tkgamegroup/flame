@@ -23,7 +23,6 @@ namespace flame
 		virtual uvec2 get_screen_size() const = 0;
 		virtual void set_screen_size(const uvec2& v) = 0;
 
-
 		virtual bool get_current() const = 0;
 		virtual void set_current(bool v) = 0;
 

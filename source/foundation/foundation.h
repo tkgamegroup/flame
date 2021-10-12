@@ -513,28 +513,25 @@ namespace flame
 			return args.find(name) != args.end();
 		}
 
-		bool get_items(const std::string& name, std::vector<std::string>& dst)
+		std::string get_item(const std::string& name)
 		{
 			if (!has(name))
-				return false;
-			dst = args[name].items;
-			return true;
-		}
-
-		template <class T>
-		bool get_item(const std::string& name, T& dst)
-		{
-			if (!has(name))
-				return false;
+				return "";
 			auto& items = args[name].items;
 			if (items.size() != 1)
-				return false;
-			dst = items[0];
-			return true;
+				return "";
+			return items[0];
+		}
+
+		std::vector<std::string> get_items(const std::string& name)
+		{
+			if (!has(name))
+				return std::vector<std::string>();
+			return args[name].items;
 		}
 	};
 
-	inline ArgsPack pack_args(int argc, char** args)
+	inline ArgsPack parse_args(int argc, char** args)
 	{
 		ArgsPack ret;
 		for (auto i = 1; i < argc; i++)

@@ -7,13 +7,12 @@ using namespace graphics;
 
 int main(int argc, char** args)
 {
-	std::string input;
-	std::string output;
-	auto srgb = false;
-	auto ap = pack_args(argc, args);
-	if (!ap.get_item("-i", input) || !ap.get_item("-o", output))
+	auto ap = parse_args(argc, args);
+	auto input = ap.get_item("-i");
+	auto output = ap.get_item("-o");
+	if (input.empty() || output.empty())
 		goto show_usage;
-	srgb = ap.has("-srgb");
+	auto srgb = ap.has("-srgb");
 
 	goto process;
 
