@@ -161,7 +161,7 @@ int main(int argc, char **args)
 			public_header_file << "\t\tinline static auto type_name = \"" << (internal ? "flame::" : "") << class_name << "\";\n";
 			public_header_file << "\t\tinline static auto type_hash = ch(type_name);\n\n";
 			public_header_file << "\t\t" << class_name << "() : Component(type_name, type_hash)\n";
-			public_header_file << "\t\tFLAME_UNIVERSE_EXPORTS static " << class_name << "* create(void* parms = nullptr);\n";
+			public_header_file << "\t\t" << (internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
 			public_header_file << "\t};\n}\n";
 			public_header_file.close();
 
@@ -227,8 +227,7 @@ int main(int argc, char **args)
 			auto public_header_blocks = gather_blocks(public_header_ifile);
 			public_header_ifile.close();
 			{
-				std::regex r("static " + class_name + "\\* create\\(");
-				auto n = public_header_blocks->find(r);
+				auto n = public_header_blocks->find(std::regex("static\\s+" + class_name + "\\s+\\*\\s+create\\("));
 				if (n)
 				{
 					auto p = n->parent;
@@ -257,8 +256,7 @@ int main(int argc, char **args)
 			auto private_header_blocks = gather_blocks(private_header_ifile);
 			private_header_ifile.close();
 			{
-				std::regex r("struct " + class_name + "Private : " + class_name);
-				auto n = private_header_blocks->find(r);
+				auto n = private_header_blocks->find(std::regex("struct " + class_name + "Private : " + class_name));
 				if (n)
 				{
 					auto p = n->parent->children[n->idx + 1].get();
@@ -294,8 +292,7 @@ int main(int argc, char **args)
 			auto source_blocks = gather_blocks(source_ifile);
 			source_ifile.close();
 			{
-				std::regex r(class_name + "\\* " + class_name + "::create\\(");
-				auto n = source_blocks->find(r);
+				auto n = source_blocks->find(std::regex(class_name + "\\* " + class_name + "::create\\("));
 				if (n)
 				{
 					auto p = n->parent;
@@ -357,6 +354,7 @@ int main(int argc, char **args)
 			auto public_header_blocks = gather_blocks(public_header_ifile);
 			public_header_ifile.close();
 			{
+				std::regex r1();
 				std::regex r("\\s[gs]et_" + name + "\\(");
 				auto n = public_header_blocks->find(r);
 				if (n)
@@ -376,7 +374,7 @@ int main(int argc, char **args)
 			auto private_header_blocks = gather_blocks(private_header_ifile);
 			private_header_ifile.close();
 			{
-
+				std::regex(type + "\\s");
 			}
 			std::ofstream private_header_ofile(private_header_fn);
 			private_header_ofile << private_header_blocks->output(0);
