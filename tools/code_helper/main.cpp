@@ -110,7 +110,11 @@ int main(int argc, char **args)
 			auto private_header_fn = pp.string() + "/" + fn + "_private.h";
 			auto source_fn = pp.string() + "/" + fn + ".cpp";
 			if (!std::filesystem::exists(public_header_fn) || !std::filesystem::exists(private_header_fn) || !std::filesystem::exists(source_fn))
+			{
+				printf("cannot find %s or %s or %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
+				system("pause");
 				return 0;
+			}
 
 			struct Block
 			{

@@ -6,10 +6,13 @@ namespace flame
 {
 	struct cTogglePrivate : cToggle
 	{
-		int a = 1;
+		bool toggled = false;
 		
 		cReceiverPrivate* receiver;
 		EntityPrivate* box;
+		bool get_toggled() const override { return toggled; }
+		void set_toggled(bool v) override;
 	};
+	
+	
 }
-
