@@ -227,7 +227,7 @@ int main(int argc, char **args)
 			auto public_header_blocks = gather_blocks(public_header_ifile);
 			public_header_ifile.close();
 			{
-				auto n = public_header_blocks->find(std::regex("static\\s+" + class_name + "\\s+\\*\\s+create\\("));
+				auto n = public_header_blocks->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s+\\*\\s+create\\("));
 				if (n)
 				{
 					auto p = n->parent;
@@ -256,7 +256,7 @@ int main(int argc, char **args)
 			auto private_header_blocks = gather_blocks(private_header_ifile);
 			private_header_ifile.close();
 			{
-				auto n = private_header_blocks->find(std::regex("struct " + class_name + "Private : " + class_name));
+				auto n = private_header_blocks->find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name));
 				if (n)
 				{
 					auto p = n->parent->children[n->idx + 1].get();
@@ -292,7 +292,7 @@ int main(int argc, char **args)
 			auto source_blocks = gather_blocks(source_ifile);
 			source_ifile.close();
 			{
-				auto n = source_blocks->find(std::regex(class_name + "\\* " + class_name + "::create\\("));
+				auto n = source_blocks->find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("));
 				if (n)
 				{
 					auto p = n->parent;
@@ -354,16 +354,12 @@ int main(int argc, char **args)
 			auto public_header_blocks = gather_blocks(public_header_ifile);
 			public_header_ifile.close();
 			{
-				std::regex r1();
-				std::regex r("\\s[gs]et_" + name + "\\(");
-				auto n = public_header_blocks->find(r);
+				auto n = public_header_blocks->find(std::regex("^virtual\\s+" + type + "\\s+get_" + name + "\\("));
 				if (n)
-				{
 					n->type = 4;
-					n = n->parent->find(r);
-					if (n)
-						n->type = 4;
-				}
+				n = public_header_blocks->find(std::regex("^virtual\\s+void\\s+set_" + name + "\\("));
+				if (n)
+					n->type = 4;
 			}
 			auto wtf = public_header_blocks->output(0);
 			std::ofstream public_header_ofile(public_header_fn);
@@ -374,7 +370,7 @@ int main(int argc, char **args)
 			auto private_header_blocks = gather_blocks(private_header_ifile);
 			private_header_ifile.close();
 			{
-				std::regex(type + "\\s");
+
 			}
 			std::ofstream private_header_ofile(private_header_fn);
 			private_header_ofile << private_header_blocks->output(0);
