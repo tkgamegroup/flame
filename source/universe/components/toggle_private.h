@@ -7,7 +7,6 @@ namespace flame
 	struct cTogglePrivate : cToggle
 	{
 		bool toggled = false;
-		int test = 0;
 		
 		cReceiverPrivate* receiver;
 		EntityPrivate* box;

@@ -155,7 +155,7 @@ int main(int argc, char **args)
 			}
 		};
 
-		std::list<Block>::iterator it;
+		std::list<Block>::iterator it1, it2;
 
 		if (cmd == "new_component")
 		{
@@ -245,39 +245,42 @@ int main(int argc, char **args)
 			}
 
 			Block public_header_blocks(0, public_header_fn);
-			if (public_header_blocks.find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it))
+			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*Component"), it1))
 			{
-				auto& list = it->parent->children;
-				list.emplace(it, "virtual " + type + " get_" + name + "() const = 0;\n");
-				list.emplace(it, "virtual void set_" + name + "(" + type + " v) = 0;\n");
-				list.emplace(it, "\n");
+				if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it2))
+				{
+					auto& list = it2->parent->children;
+					list.emplace(it2, "virtual " + type + " get_" + name + "() const = 0;\n");
+					list.emplace(it2, "virtual void set_" + name + "(" + type + " v) = 0;\n");
+					list.emplace(it2, "\n");
+				}
 			}
 			public_header_blocks.output_file(public_header_fn);
 
 			Block private_header_blocks(0, private_header_fn);
-			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it))
+			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
 			{
-				auto& list = it->children;
-				it = it->children.begin();
-				for (; it != list.end(); it++)
+				auto& list = it1->children;
+				it2 = it1->children.begin();
+				for (; it2 != list.end(); it2++)
 				{
-					if (it->type != 0 || it->line == "\n")
+					if (it2->type != 0 || it2->line == "\n")
 						break;
 				}
-				list.emplace(it, type + " " + name + " = " + value + ";\n");
+				list.emplace(it2, type + " " + name + " = " + value + ";\n");
 				list.emplace_back(type + " get_" + name + "() const override { return " + name + "; }\n");
 				list.emplace_back("void set_" + name + "(" + type + " v) override;\n");
 			}
 			private_header_blocks.output_file(private_header_fn);
 
 			Block source_blocks(0, source_fn);
-			if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it))
+			if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it1))
 			{
-				auto& list = it->parent->children;
-				auto& nb = *list.emplace(it, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
+				auto& list = it1->parent->children;
+				auto& nb = *list.emplace(it1, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
 				nb.type = 1;
 				nb.children.emplace_back(name + " = v;\n");
-				list.emplace(it, "\n");
+				list.emplace(it1, "\n");
 			}
 			source_blocks.output_file(source_fn);
 		}
@@ -310,17 +313,37 @@ int main(int argc, char **args)
 			}
 
 			Block public_header_blocks(0, public_header_fn);
-			if (public_header_blocks.find(std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\("), it))
-				it->parent->children.erase(it);
-			if (public_header_blocks.find(std::regex("^virtual\\s+void\\s+set_" + name + "\\("), it))
-				it->parent->children.erase(it);
+			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), it1))
+			{
+				if (it1->find(std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\("), it2))
+					it2->parent->children.erase(it2);
+				if (it1->find(std::regex("^virtual\\s+void\\s+set_" + name + "\\("), it2))
+					it2->parent->children.erase(it2);
+			}
 			public_header_blocks.output_file(public_header_fn);
 
 			Block private_header_blocks(0, private_header_fn);
+			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
+			{
+				if (it1->find(std::regex("^\\w+\\s+" + name + "\\s+=\\s+"), it2))
+					it2->parent->children.erase(it2);
+				if (it1->find(std::regex("^\\w+\\s+get_" + name + "\\("), it2))
+					it2->parent->children.erase(it2);
+				if (it1->find(std::regex("^void\\s+set_" + name + "\\("), it2))
+					it2->parent->children.erase(it2);
+			}
 			private_header_blocks.output_file(private_header_fn);
 
 			Block source_blocks(0, source_fn);
+			if (source_blocks.find(std::regex("^void\\s+" + class_name + "Private::set_" + name + "\\("), it1))
+			{
+				it1->parent->children.erase(it1);
+			}
 			source_blocks.output_file(source_fn);
+		}
+		else if (cmd == "alter_attribute")
+		{
+
 		}
 	}
 	return 0;
