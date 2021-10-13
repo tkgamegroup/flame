@@ -43,6 +43,51 @@ int main(int argc, char **args)
 			{
 			}
 
+			Block(int _place_holder, const std::string& fn)
+			{
+				std::ifstream file(fn);
+				std::vector<std::string> lines;
+				while (!file.eof())
+				{
+					std::string line;
+					std::getline(file, line);
+					SUS::trim(line);
+					lines.push_back(line + '\n');
+				}
+				file.close();
+				lines.back().pop_back();
+
+				std::function<int(Block& b, int idx)> gather_block;
+				gather_block = [&](Block& b, int idx) {
+					for (auto i = idx; i < lines.size(); i++)
+					{
+						auto& l = lines[i];
+						if (l.size() == 2 && l == "{\n")
+						{
+							auto& nb = b.children.emplace_back();
+							nb.type = 1;
+							i = gather_block(nb, i + 1);
+						}
+						else if (l.size() == 2 && l == "}\n")
+						{
+							b.type = 1;
+							return i;
+						}
+						else if (l.size() == 3 && l == "};\n")
+						{
+							b.type = 2;
+							return i;
+						}
+						else
+							b.children.emplace_back(l);
+					}
+					return (int)lines.size();
+				};
+
+				gather_block(*this, 0);
+				init();
+			}
+
 			void init()
 			{
 				for (auto it = children.begin(); it != children.end();)
@@ -101,49 +146,16 @@ int main(int argc, char **args)
 				}
 				return ret;
 			}
-		};
 
-		auto gather_blocks = [&](std::ifstream& f, Block& top_block) {
-			std::vector<std::string> lines;
-			while (!f.eof())
+			void output_file(const std::string& fn)
 			{
-				std::string line;
-				std::getline(f, line);
-				SUS::trim(line);
-				lines.push_back(line + '\n');
+				std::ofstream file(fn);
+				file << output(0);
+				file.close();
 			}
-			lines.back().pop_back();
-
-			std::function<int(Block& b, int idx)> gather_block;
-			gather_block = [&](Block& b, int idx) {
-				for (auto i = idx; i < lines.size(); i++)
-				{
-					auto& l = lines[i];
-					if (l.size() == 2 && l == "{\n")
-					{
-						auto& nb = b.children.emplace_back();
-						nb.type = 1;
-						i = gather_block(nb, i + 1);
-					}
-					else if (l.size() == 2 && l == "}\n")
-					{
-						b.type = 1;
-						return i;
-					}
-					else if (l.size() == 3 && l == "};\n")
-					{
-						b.type = 2;
-						return i;
-					}
-					else
-						b.children.emplace_back(l);
-				}
-				return (int)lines.size();
-			};
-
-			gather_block(top_block, 0);
-			top_block.init();
 		};
+
+		std::list<Block>::iterator it;
 
 		if (cmd == "new_component")
 		{
@@ -232,67 +244,42 @@ int main(int argc, char **args)
 				return 0;
 			}
 
-			std::ifstream public_header_ifile(public_header_fn);
-			Block public_header_blocks;
-			gather_blocks(public_header_ifile, public_header_blocks);
-			public_header_ifile.close();
+			Block public_header_blocks(0, public_header_fn);
+			if (public_header_blocks.find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it))
 			{
-				std::list<Block>::iterator it;
-				if (public_header_blocks.find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it))
-				{
-					auto& list = it->parent->children;
-					list.emplace(it, "virtual " + type + " get_" + name + "() const = 0;\n");
-					list.emplace(it, "virtual void set_" + name + "(" + type + " v) = 0;\n");
-					list.emplace(it, "\n");
-				}
+				auto& list = it->parent->children;
+				list.emplace(it, "virtual " + type + " get_" + name + "() const = 0;\n");
+				list.emplace(it, "virtual void set_" + name + "(" + type + " v) = 0;\n");
+				list.emplace(it, "\n");
 			}
-			std::ofstream public_header_ofile(public_header_fn);
-			public_header_ofile << public_header_blocks.output(0);
-			public_header_ofile.close();
+			public_header_blocks.output_file(public_header_fn);
 
-			std::ifstream private_header_ifile(private_header_fn);
-			Block private_header_blocks;
-			gather_blocks(private_header_ifile, private_header_blocks);
-			private_header_ifile.close();
+			Block private_header_blocks(0, private_header_fn);
+			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it))
 			{
-				std::list<Block>::iterator it;
-				if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it))
+				auto& list = it->children;
+				it = it->children.begin();
+				for (; it != list.end(); it++)
 				{
-					auto& list = it->children;
-					it = it->children.begin();
-					for (; it != list.end(); it++)
-					{
-						if (it->type != 0 || it->line == "\n")
-							break;
-					}
-					list.emplace(it, type + " " + name + " = " + value + ";\n");
-					list.emplace_back(type + " get_" + name + "() const override { return " + name + "; }\n");
-					list.emplace_back("void set_" + name + "(" + type + " v) override;\n");
+					if (it->type != 0 || it->line == "\n")
+						break;
 				}
+				list.emplace(it, type + " " + name + " = " + value + ";\n");
+				list.emplace_back(type + " get_" + name + "() const override { return " + name + "; }\n");
+				list.emplace_back("void set_" + name + "(" + type + " v) override;\n");
 			}
-			auto wtf0 = private_header_blocks.output(0);
-			std::ofstream private_header_ofile(private_header_fn);
-			private_header_ofile << private_header_blocks.output(0);
-			private_header_ofile.close();
+			private_header_blocks.output_file(private_header_fn);
 
-			std::ifstream source_ifile(source_fn);
-			Block source_blocks;
-			gather_blocks(source_ifile, source_blocks);
-			source_ifile.close();
+			Block source_blocks(0, source_fn);
+			if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it))
 			{
-				std::list<Block>::iterator it;
-				if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it))
-				{
-					auto& list = it->parent->children;
-					auto& nb = *list.emplace(it, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
-					nb.type = 1;
-					nb.children.emplace_back(name + " = v;\n");
-					list.emplace(it, "\n");
-				}
+				auto& list = it->parent->children;
+				auto& nb = *list.emplace(it, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
+				nb.type = 1;
+				nb.children.emplace_back(name + " = v;\n");
+				list.emplace(it, "\n");
 			}
-			std::ofstream source_ofile(source_fn);
-			source_ofile << source_blocks.output(0);
-			source_ofile.close();
+			source_blocks.output_file(source_fn);
 		}
 		else if (cmd == "remove_attribute")
 		{
@@ -322,41 +309,18 @@ int main(int argc, char **args)
 				return 0;
 			}
 
-			//std::ifstream public_header_ifile(public_header_fn);
-			//auto public_header_blocks = gather_blocks(public_header_ifile);
-			//public_header_ifile.close();
-			//{
-			//	auto n = public_header_blocks->find(std::regex("^virtual\\s+" + type + "\\s+get_" + name + "\\("));
-			//	if (n)
-			//		n->type = 4;
-			//	n = public_header_blocks->find(std::regex("^virtual\\s+void\\s+set_" + name + "\\("));
-			//	if (n)
-			//		n->type = 4;
-			//}
-			//auto wtf = public_header_blocks->output(0);
-			//std::ofstream public_header_ofile(public_header_fn);
-			//public_header_ofile << public_header_blocks->output(0);
-			//public_header_ofile.close();
+			Block public_header_blocks(0, public_header_fn);
+			if (public_header_blocks.find(std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\("), it))
+				it->parent->children.erase(it);
+			if (public_header_blocks.find(std::regex("^virtual\\s+void\\s+set_" + name + "\\("), it))
+				it->parent->children.erase(it);
+			public_header_blocks.output_file(public_header_fn);
 
-			//std::ifstream private_header_ifile(private_header_fn);
-			//auto private_header_blocks = gather_blocks(private_header_ifile);
-			//private_header_ifile.close();
-			//{
+			Block private_header_blocks(0, private_header_fn);
+			private_header_blocks.output_file(private_header_fn);
 
-			//}
-			//std::ofstream private_header_ofile(private_header_fn);
-			//private_header_ofile << private_header_blocks->output(0);
-			//private_header_ofile.close();
-
-			//std::ifstream source_ifile(source_fn);
-			//auto source_blocks = gather_blocks(source_ifile);
-			//source_ifile.close();
-			//{
-
-			//}
-			//std::ofstream source_ofile(source_fn);
-			//source_ofile << source_blocks->output(0);
-			//source_ofile.close();
+			Block source_blocks(0, source_fn);
+			source_blocks.output_file(source_fn);
 		}
 	}
 	return 0;
