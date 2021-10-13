@@ -1,7 +1,3 @@
-
-
-
-
 #pragma once
 
 #include "../component.h"
@@ -23,7 +19,3 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cToggle* create(void* parms = nullptr);
 	};
 }
-
-
-
-

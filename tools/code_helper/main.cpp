@@ -43,6 +43,25 @@ int main(int argc, char **args)
 			{
 			}
 
+			void init()
+			{
+				for (auto it = children.begin(); it != children.end();)
+				{
+					it->parent = this;
+					auto t = it; t++;
+					if (it->line.size() > 2 && *(it->line.end() - 2) != ';' && t->type != 0)
+					{
+						it->children = t->children;
+						it->type = t->type;
+						it = children.erase(t);
+					}
+					else
+						it++;
+				}
+				for (auto& c : children)
+					c.init();
+			}
+
 			bool find(const std::regex& r, std::list<Block>::iterator& out_it)
 			{
 				for (auto it = children.begin(); it != children.end(); it++)
@@ -64,15 +83,13 @@ int main(int argc, char **args)
 				std::string indent_str;
 				for (auto i = 0; i < indent; i++)
 					indent_str += "\t";
+				if (!line.empty())
+					ret += indent_str + line;
 				if (type != 0)
 				{
-					if (!line.empty())
-						ret += indent_str + line + "\n";
-					indent++;
 					ret += indent_str + "{\n";
+					indent++;
 				}
-				else
-					ret += indent_str + line + "\n";
 				for (auto& c : children)
 					ret += c.output(indent);
 				if (type != 0)
@@ -93,42 +110,39 @@ int main(int argc, char **args)
 				std::string line;
 				std::getline(f, line);
 				SUS::trim(line);
-				lines.push_back(line);
+				lines.push_back(line + '\n');
 			}
+			lines.back().pop_back();
 
 			std::function<int(Block& b, int idx)> gather_block;
 			gather_block = [&](Block& b, int idx) {
 				for (auto i = idx; i < lines.size(); i++)
 				{
 					auto& l = lines[i];
-					if (l.size() == 1 && l[0] == '{')
+					if (l.size() == 2 && l == "{\n")
 					{
 						auto& nb = b.children.emplace_back();
 						nb.type = 1;
-						nb.parent = &b;
 						i = gather_block(nb, i + 1);
 					}
-					else if (l.size() == 1 && l[0] == '}')
+					else if (l.size() == 2 && l == "}\n")
 					{
 						b.type = 1;
 						return i;
 					}
-					else if (l.size() == 2 && l == "};")
+					else if (l.size() == 3 && l == "};\n")
 					{
 						b.type = 2;
 						return i;
 					}
 					else
-					{
-						auto& nb = b.children.emplace_back();
-						nb.line = l;
-						nb.parent = &b;
-					}
+						b.children.emplace_back(l);
 				}
 				return (int)lines.size();
 			};
 
 			gather_block(top_block, 0);
+			top_block.init();
 		};
 
 		if (cmd == "new_component")
@@ -227,84 +241,58 @@ int main(int argc, char **args)
 				if (public_header_blocks.find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it))
 				{
 					auto& list = it->parent->children;
-					list.emplace(it, "virtual " + type + " get_" + name + "() const = 0;");
-					list.emplace(it, "virtual void set_" + name + "(" + type + " v) = 0;");
-					list.emplace(it, "");
+					list.emplace(it, "virtual " + type + " get_" + name + "() const = 0;\n");
+					list.emplace(it, "virtual void set_" + name + "(" + type + " v) = 0;\n");
+					list.emplace(it, "\n");
 				}
 			}
 			std::ofstream public_header_ofile(public_header_fn);
 			public_header_ofile << public_header_blocks.output(0);
 			public_header_ofile.close();
 
-			//std::ifstream private_header_ifile(private_header_fn);
-			//auto private_header_blocks = gather_blocks(private_header_ifile);
-			//private_header_ifile.close();
-			//{
-			//	auto n = private_header_blocks->find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name));
-			//	if (n)
-			//	{
-			//		auto p = n->parent->children[n->idx + 1].get();
-			//		auto i = 0;
-			//		for (; i < p->children.size(); i++)
-			//		{
-			//			auto& c = p->children[i];
-			//			if (c->type == 0 && c->line.empty())
-			//				break;
-			//		}
-			//		{
-			//			auto nb = new Block;
-			//			nb->line = type + " " + name + " = " + value + ";";
-			//			p->children.emplace(p->children.begin() + i, nb);
-			//		}
-			//		{
-			//			auto nb = new Block;
-			//			nb->line = type + " get_" + name + "() const override { return " + name + "; }";
-			//			p->children.emplace_back(nb);
-			//		}
-			//		{
-			//			auto nb = new Block;
-			//			nb->line = "void set_" + name + "(" + type + " v) override;";
-			//			p->children.emplace_back(nb);
-			//		}
-			//	}
-			//}
-			//std::ofstream private_header_ofile(private_header_fn);
-			//private_header_ofile << private_header_blocks->output(0);
-			//private_header_ofile.close();
+			std::ifstream private_header_ifile(private_header_fn);
+			Block private_header_blocks;
+			gather_blocks(private_header_ifile, private_header_blocks);
+			private_header_ifile.close();
+			{
+				std::list<Block>::iterator it;
+				if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it))
+				{
+					auto& list = it->children;
+					it = it->children.begin();
+					for (; it != list.end(); it++)
+					{
+						if (it->type != 0 || it->line == "\n")
+							break;
+					}
+					list.emplace(it, type + " " + name + " = " + value + ";\n");
+					list.emplace_back(type + " get_" + name + "() const override { return " + name + "; }\n");
+					list.emplace_back("void set_" + name + "(" + type + " v) override;\n");
+				}
+			}
+			auto wtf0 = private_header_blocks.output(0);
+			std::ofstream private_header_ofile(private_header_fn);
+			private_header_ofile << private_header_blocks.output(0);
+			private_header_ofile.close();
 
-			//std::ifstream source_ifile(source_fn);
-			//auto source_blocks = gather_blocks(source_ifile);
-			//source_ifile.close();
-			//{
-			//	auto n = source_blocks->find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("));
-			//	if (n)
-			//	{
-			//		auto p = n->parent;
-			//		{
-			//			auto nb = new Block;
-			//			nb->line = "void " + class_name + "Private::set_" + name + "(" + type + " v)";
-			//			p->children.emplace(p->children.begin() + n->idx, nb);
-			//		}
-			//		{
-			//			auto nb = new Block;
-			//			nb->type = 1;
-			//			p->children.emplace(p->children.begin() + n->idx + 1, nb);
-			//			{
-			//				auto nnb = new Block;
-			//				nnb->line = name + " = v;";
-			//				nb->children.emplace_back(nnb);
-			//			}
-			//		}
-			//		{
-			//			auto nb = new Block;
-			//			nb->line = "";
-			//			p->children.emplace(p->children.begin() + n->idx + 2, nb);
-			//		}
-			//	}
-			//}
-			//std::ofstream source_ofile(source_fn);
-			//source_ofile << source_blocks->output(0);
-			//source_ofile.close();
+			std::ifstream source_ifile(source_fn);
+			Block source_blocks;
+			gather_blocks(source_ifile, source_blocks);
+			source_ifile.close();
+			{
+				std::list<Block>::iterator it;
+				if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it))
+				{
+					auto& list = it->parent->children;
+					auto& nb = *list.emplace(it, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
+					nb.type = 1;
+					nb.children.emplace_back(name + " = v;\n");
+					list.emplace(it, "\n");
+				}
+			}
+			std::ofstream source_ofile(source_fn);
+			source_ofile << source_blocks.output(0);
+			source_ofile.close();
 		}
 		else if (cmd == "remove_attribute")
 		{
