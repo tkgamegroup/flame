@@ -422,6 +422,10 @@ int main(int argc, char **args)
 				}
 			}
 		}
+		else if (cmd == "new_public_function")
+		{
+
+		}
 	}
 	return 0;
 }
