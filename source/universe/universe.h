@@ -53,7 +53,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cScript);
 
 	FLAME_UNIVERSE_TYPE(dEdit);
-	FLAME_UNIVERSE_TYPE(dCheckbox);
 	FLAME_UNIVERSE_TYPE(dSlider);
 	FLAME_UNIVERSE_TYPE(dMenu);
 	FLAME_UNIVERSE_TYPE(dCombobox);

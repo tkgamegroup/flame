@@ -14,21 +14,22 @@
 				<eMenuItem text="1" />
 			</eMenu>
 		</eMenuBar>
-		<CeButton text="Button">
-			<cScript>
+		<eButton text="Button">
+			<CcScript>
         entity.find_component("cReceiver").add_mouse_click_listener(function()
 					print("Hello World")
         end)
-      </cScript>
-		</CeButton>
-		<CeCombobox src="combobox">
+      </CcScript>
+		</eButton>
+    <eToggle text.text="123" />
+		<CeCombobox>
 		  <eComboboxItem text="1" />
 		  <eComboboxItem text="2" />
 		  <eComboboxItem text="3" />
 		</CeCombobox>
 		<CeTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
-		  <eTreeNode src="tree_node" >
-			<eTreeLeaf />
+		  <eTreeNode >
+				<eTreeLeaf />
 		  </eTreeNode>
 		  <eTreeNode />
 		</CeTree>

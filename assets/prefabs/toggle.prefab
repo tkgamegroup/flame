@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+    <cElement layout_type="Horizontal" />
+    <cReceiver />
+    <cToggle />
+    <entity name="box">
+      <cElement width="14" height="14" border="2.0"
+              fill_color.state_rule="0,0,0,0
+              Selected|Hovering:60,83,176,255
+              Selected:86,119,252,255
+              Hovering:220,220,220,255" />
+    </entity>
+    <entity name="text">
+      <cElement padding="4,0,4,0" aligny="Middle" />
+      <cText/>
+    </entity>
+  </entity>
+</prefab>

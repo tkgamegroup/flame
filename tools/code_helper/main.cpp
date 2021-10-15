@@ -1,6 +1,7 @@
 #include <flame/foundation/foundation.h>
 
 #include <iostream>
+#include <conio.h>
 #include <functional>
 
 using namespace flame;
@@ -179,11 +180,34 @@ int main(int argc, char **args)
 				system("pause");
 				return false;
 			}
+			printf("public header: %s\nprivate header: %s\nsource: %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
 			return true;
 		};
 
+		if (cmd.empty())
+		{
+			const char* cmds[] = {
+				"new_component",
+				"new_attribute",
+				"remove_attribute",
+				"alter_attribute",
+				"new_public_function"
+			};
+			printf("what you want?\n");
+			for (auto i = 0; i < _countof(cmds); i++)
+				printf("%d %s\n", i, cmds[i]);
+			auto id = getch() - '0';
+			if (id >= 0 && id < _countof(cmds))
+			{
+				cmd = cmds[id];
+				printf("you choose %s\n", cmd.c_str());
+			}
+		}
+
 		if (cmd == "new_component")
 		{
+			printf("current directory: %s\n", path.c_str());
+
 			if (name.empty())
 			{
 				std::cout << "name: ";
@@ -206,7 +230,7 @@ int main(int argc, char **args)
 			public_header_file << "\tstruct " << class_name << " : Component\n\t{\n";
 			public_header_file << "\t\tinline static auto type_name = \"" << (internal ? "flame::" : "") << class_name << "\";\n";
 			public_header_file << "\t\tinline static auto type_hash = ch(type_name);\n\n";
-			public_header_file << "\t\t" << class_name << "() : Component(type_name, type_hash)\n";
+			public_header_file << "\t\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
 			public_header_file << "\t\t" << (internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
 			public_header_file << "\t};\n}\n";
 			public_header_file.close();
@@ -229,6 +253,9 @@ int main(int argc, char **args)
 		}
 		else if (cmd == "new_attribute")
 		{
+			if (!init_vars())
+				return 0;
+
 			if (path.empty())
 				return 0;
 			if (name.empty())
@@ -251,9 +278,6 @@ int main(int argc, char **args)
 				std::getline(std::cin, value);
 			}
 			if (value.empty())
-				return 0;
-
-			if (!init_vars())
 				return 0;
 
 			Block public_header_blocks(0, public_header_fn);
@@ -298,6 +322,9 @@ int main(int argc, char **args)
 		}
 		else if (cmd == "remove_attribute")
 		{
+			if (!init_vars())
+				return 0;
+
 			if (path.empty())
 				return 0;
 			if (name.empty())
@@ -306,9 +333,6 @@ int main(int argc, char **args)
 				std::getline(std::cin, name);
 			}
 			if (name.empty())
-				return 0;
-
-			if (!init_vars())
 				return 0;
 
 			Block public_header_blocks(0, public_header_fn);
@@ -342,6 +366,9 @@ int main(int argc, char **args)
 		}
 		else if (cmd == "alter_attribute")
 		{
+			if (!init_vars())
+				return 0;
+
 			if (path.empty())
 				return 0;
 			if (name.empty())
@@ -363,9 +390,6 @@ int main(int argc, char **args)
 				std::cout << "type: ";
 				std::getline(std::cin, type);
 			}
-
-			if (!init_vars())
-				return 0;
 
 			Block private_header_blocks(0, private_header_fn);
 			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
