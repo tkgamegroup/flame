@@ -1,6 +1,5 @@
 #include "../components/text_private.h"
 #include "../components/receiver_private.h"
-#include "edit_private.h"
 #include "drag_edit_private.h"
 #include "../systems/dispatcher_private.h"
 

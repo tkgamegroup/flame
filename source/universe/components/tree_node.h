@@ -10,6 +10,9 @@ namespace flame
 		inline static auto type_hash = ch(type_name);
 
 		cTreeNode() : Component(type_name, type_hash)
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS static cTreeNode* create(void* parms = nullptr);
 	};
 }

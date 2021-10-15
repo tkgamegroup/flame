@@ -191,7 +191,8 @@ int main(int argc, char **args)
 				"new_attribute",
 				"remove_attribute",
 				"alter_attribute",
-				"new_function"
+				"new_function",
+				"remove_function"
 			};
 			printf("what you want?\n");
 			for (auto i = 0; i < _countof(cmds); i++)
@@ -532,6 +533,10 @@ int main(int argc, char **args)
 					SUS::trim(p2);
 					parameters2 += p2;
 				}
+				if (parameters1 == "void")
+					parameters1.clear();
+				if (parameters2 == "void")
+					parameters2.clear();
 			}
 
 			if (is_public)
@@ -565,13 +570,16 @@ int main(int argc, char **args)
 			if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it1))
 			{
 				auto& list = it1->parent->children;
-				auto& nb = *list.emplace(it1, type + class_name + (is_static ? "::" : "Private::") + name + "(" + parameters2 + ") " + (is_const ? "const\n" : "\n"));
+				auto& nb = *list.emplace(it1, type + " " + class_name + (is_static ? "::" : "Private::") + name + "(" + parameters2 + ") " + (is_const ? "const\n" : "\n"));
 				nb.type = 1;
 				nb.children.emplace_back("\n");
 				list.emplace(it1, "\n");
 			}
 			source_blocks.output_file(source_fn);
 
+			name.clear();
+			type.clear();
+			value.clear();
 			goto new_function_process;
 		}
 		else if (cmd == "remove_function")
@@ -610,6 +618,7 @@ int main(int argc, char **args)
 				it1->parent->children.erase(it1);
 			source_blocks.output_file(source_fn);
 
+			name.clear();
 			goto remove_function_process;
 		}
 	}

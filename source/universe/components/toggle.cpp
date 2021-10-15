@@ -1,5 +1,5 @@
 #include "../entity_private.h"
-#include "../components/receiver_private.h"
+#include "receiver_private.h"
 #include "toggle_private.h"
 
 namespace flame

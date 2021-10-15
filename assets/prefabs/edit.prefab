@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dEdit" >
+  <entity>
     <cElement width="100.0" padding="4,2,4,2" auto_width="false" border="1.0" clipping="true" />
     <cText />
     <cReceiver />
+    <cEdit />
   </entity>
 </prefab>

@@ -10,6 +10,9 @@ namespace flame
 		inline static auto type_hash = ch(type_name);
 
 		cDropDown() : Component(type_name, type_hash)
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS static cDropDown* create(void* parms = nullptr);
 	};
 }

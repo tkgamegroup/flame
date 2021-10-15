@@ -10,6 +10,9 @@ namespace flame
 		inline static auto type_hash = ch(type_name);
 
 		cMenu() : Component(type_name, type_hash)
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS static cMenu* create(void* parms = nullptr);
 	};
 }

@@ -14,6 +14,7 @@
 				<eMenuItem text="1" />
 			</eMenu>
 		</eMenuBar>
+    <eText text="Hello 123" />
 		<eButton text="Button">
 			<CcScript>
         entity.find_component("cReceiver").add_mouse_click_listener(function()
@@ -22,6 +23,7 @@
       </CcScript>
 		</eButton>
     <eToggle text.text="123" />
+    <eEdit width="100" />
 		<CeCombobox>
 		  <eComboboxItem text="1" />
 		  <eComboboxItem text="2" />

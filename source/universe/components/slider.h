@@ -10,6 +10,9 @@ namespace flame
 		inline static auto type_hash = ch(type_name);
 
 		cSlider() : Component(type_name, type_hash)
+		{
+		}
+
 		FLAME_UNIVERSE_EXPORTS static cSlider* create(void* parms = nullptr);
 	};
 }
