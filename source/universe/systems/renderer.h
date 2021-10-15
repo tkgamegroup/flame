@@ -13,8 +13,7 @@ namespace flame
 		inline static auto type_name = "flame::sRenderer";
 		inline static auto type_hash = ch(type_name);
 
-		sRenderer() :
-			System(type_name, type_hash)
+		sRenderer() : System(type_name, type_hash)
 		{
 		}
 

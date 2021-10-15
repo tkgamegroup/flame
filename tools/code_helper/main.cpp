@@ -600,7 +600,7 @@ int main(int argc, char **args)
 			Block public_header_blocks(0, public_header_fn);
 			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), it1))
 			{
-				if (it1->find(std::regex(name + "\\("), it2))
+				if (it1->find(std::regex("\\b" + name + "\\("), it2))
 					it2->parent->children.erase(it2);
 			}
 			public_header_blocks.output_file(public_header_fn);
@@ -608,7 +608,7 @@ int main(int argc, char **args)
 			Block private_header_blocks(0, private_header_fn);
 			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
 			{
-				if (it1->find(std::regex(name + "\\("), it2))
+				if (it1->find(std::regex("\\b" + name + "\\("), it2))
 					it2->parent->children.erase(it2);
 			}
 			private_header_blocks.output_file(private_header_fn);
