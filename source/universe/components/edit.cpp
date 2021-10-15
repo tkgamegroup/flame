@@ -12,6 +12,7 @@ namespace flame
 		select_end = v;
 	}
 	
+	
 	cEdit* cEdit::create(void* parms)
 	{
 		return new cEditPrivate();

@@ -191,7 +191,7 @@ int main(int argc, char **args)
 				"new_attribute",
 				"remove_attribute",
 				"alter_attribute",
-				"new_public_function"
+				"new_function"
 			};
 			printf("what you want?\n");
 			for (auto i = 0; i < _countof(cmds); i++)
@@ -218,20 +218,20 @@ int main(int argc, char **args)
 
 			auto class_name = get_class_name(name);
 
-			auto internal = std::filesystem::exists("../component.h");
+			auto is_internal = std::filesystem::exists("../component.h");
 
 			std::ofstream public_header_file(name + ".h");
 			public_header_file << "#pragma once\n\n";
-			if (internal)
+			if (is_internal)
 				public_header_file << "#include \"../component.h\"\n\n";
 			else
 				public_header_file << "#include <flame/universe/component.h>\n\n";
 			public_header_file << "namespace flame\n{\n";
 			public_header_file << "\tstruct " << class_name << " : Component\n\t{\n";
-			public_header_file << "\t\tinline static auto type_name = \"" << (internal ? "flame::" : "") << class_name << "\";\n";
+			public_header_file << "\t\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
 			public_header_file << "\t\tinline static auto type_hash = ch(type_name);\n\n";
 			public_header_file << "\t\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
-			public_header_file << "\t\t" << (internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
+			public_header_file << "\t\t" << (is_internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
 			public_header_file << "\t};\n}\n";
 			public_header_file.close();
 
@@ -256,8 +256,8 @@ int main(int argc, char **args)
 			if (!init_vars())
 				return 0;
 
-			if (path.empty())
-				return 0;
+			new_attribute_process:
+
 			if (name.empty())
 			{
 				std::cout << "name: ";
@@ -319,14 +319,19 @@ int main(int argc, char **args)
 				list.emplace(it1, "\n");
 			}
 			source_blocks.output_file(source_fn);
+
+			name.clear();
+			type.clear();
+			value.clear();
+			goto new_attribute_process;
 		}
 		else if (cmd == "remove_attribute")
 		{
 			if (!init_vars())
 				return 0;
 
-			if (path.empty())
-				return 0;
+			remove_attribute_process:
+
 			if (name.empty())
 			{
 				std::cout << "name: ";
@@ -363,24 +368,27 @@ int main(int argc, char **args)
 			if (source_blocks.find(std::regex("^void\\s+" + class_name + "Private::set_" + name + "\\(\\w+"), it1))
 				it1->parent->children.erase(it1);
 			source_blocks.output_file(source_fn);
+
+			name.clear();
+			goto remove_attribute_process;
 		}
 		else if (cmd == "alter_attribute")
 		{
 			if (!init_vars())
 				return 0;
 
-			if (path.empty())
-				return 0;
+			alter_attribute_process:
+
 			if (name.empty())
 			{
-				std::cout << "name: ";
+				std::cout << "original name: ";
 				std::getline(std::cin, name);
 			}
 			if (name.empty())
 				return 0;
 			if (name2.empty())
 			{
-				std::cout << "name2: ";
+				std::cout << "new name: ";
 				std::getline(std::cin, name2);
 			}
 			if (name2.empty())
@@ -445,10 +453,164 @@ int main(int argc, char **args)
 					}
 				}
 			}
-		}
-		else if (cmd == "new_public_function")
-		{
 
+			name.clear();
+			name2.clear();
+			type.clear();
+			goto alter_attribute_process;
+		}
+		else if (cmd == "new_function")
+		{
+			if (!init_vars())
+				return 0;
+
+			auto is_internal = std::filesystem::exists("../component.h");
+
+			new_function_process:
+
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+			auto is_public = false;
+			auto is_static = false;
+			auto is_const = false;
+			auto is_override = false;
+			{
+				auto sp = SUS::split(name);
+				if (sp.size() >= 2)
+				{
+					name = sp[0];
+					for (auto i = 1; i < sp.size(); i++)
+					{
+						if (sp[i] == "public")
+						{
+							is_public = true;
+							is_override = true;
+						}
+						else if (sp[i] == "static")
+						{
+							is_public = true;
+							is_static = true;
+						}
+						else if (sp[i] == "const")
+							is_const = true;
+						else if (sp[i] == "override")
+							is_override = true;
+					}
+				}
+			}
+			if (type.empty())
+			{
+				std::cout << "type: ";
+				std::getline(std::cin, type);
+			}
+			if (type.empty())
+				return 0;
+			if (value.empty())
+			{
+				std::cout << "parameters: ";
+				std::getline(std::cin, value);
+			}
+			if (value.empty())
+				return 0;
+			std::string parameters1;
+			std::string parameters2;
+			{
+				auto sp = SUS::split(value, ',');
+				for (auto& p : sp)
+				{
+					if (!parameters1.empty())
+						parameters1 += ", ";
+					parameters1 += p;
+					if (!parameters2.empty())
+						parameters2 += ", ";
+					auto p2 = p.substr(0, p.find('='));
+					SUS::trim(p2);
+					parameters2 += p2;
+				}
+			}
+
+			if (is_public)
+			{
+				Block public_header_blocks(0, public_header_fn);
+				if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), it1))
+				{
+					if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), it2))
+					{
+						auto& list = it2->parent->children;
+						list.emplace(it2, (is_static ? (is_internal ? "FLAME_UNIVERSE_EXPORTS static " : "__declspec(dllexport) static ") : "virtual ") + 
+							type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + " = 0;\n");
+						list.emplace(it2, "\n");
+					}
+				}
+				public_header_blocks.output_file(public_header_fn);
+			}
+
+			if (!is_static)
+			{
+				Block private_header_blocks(0, private_header_fn);
+				if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
+				{
+					auto& list = it1->children;
+					list.emplace_back(type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + (is_override ? " override" : "") + ";\n");
+				}
+				private_header_blocks.output_file(private_header_fn);
+			}
+
+			Block source_blocks(0, source_fn);
+			if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), it1))
+			{
+				auto& list = it1->parent->children;
+				auto& nb = *list.emplace(it1, type + class_name + (is_static ? "::" : "Private::") + name + "(" + parameters2 + ") " + (is_const ? "const\n" : "\n"));
+				nb.type = 1;
+				nb.children.emplace_back("\n");
+				list.emplace(it1, "\n");
+			}
+			source_blocks.output_file(source_fn);
+
+			goto new_function_process;
+		}
+		else if (cmd == "remove_function")
+		{
+			if (!init_vars())
+				return 0;
+
+			remove_function_process:
+
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+
+			Block public_header_blocks(0, public_header_fn);
+			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), it1))
+			{
+				if (it1->find(std::regex(name + "\\("), it2))
+					it2->parent->children.erase(it2);
+			}
+			public_header_blocks.output_file(public_header_fn);
+
+			Block private_header_blocks(0, private_header_fn);
+			if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), it1))
+			{
+				if (it1->find(std::regex(name + "\\("), it2))
+					it2->parent->children.erase(it2);
+			}
+			private_header_blocks.output_file(private_header_fn);
+
+			Block source_blocks(0, source_fn);
+			if (source_blocks.find(std::regex(class_name + "(Private)?::" + name + "\\("), it1))
+				it1->parent->children.erase(it1);
+			source_blocks.output_file(source_fn);
+
+			goto remove_function_process;
 		}
 	}
 	return 0;

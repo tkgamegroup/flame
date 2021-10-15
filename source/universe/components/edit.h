@@ -19,6 +19,8 @@ namespace flame
 		virtual uint get_select_end() const = 0;
 		virtual void set_select_end(uint v) = 0;
 		
+		
 		FLAME_UNIVERSE_EXPORTS static cEdit* create(void* parms = nullptr);
 	};
 }
+

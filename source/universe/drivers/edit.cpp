@@ -107,6 +107,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 	}
+
 	void dEditPrivate::set_select_all_on_dbclicked(bool b)
 	{
 		select_all_on_dbclicked = b;
