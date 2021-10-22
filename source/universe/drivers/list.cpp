@@ -32,14 +32,6 @@ namespace flame
 
 	void dListPrivate::set_selected(EntityPtr e)
 	{
-		if (selected == e)
-			return;
-		if (selected)
-			selected->set_state((StateFlags)(selected->state & (~StateSelected)));
-		if (e)
-			e->set_state((StateFlags)(e->state | StateSelected));
-		selected = e;
-		entity->driver_data_changed(this, S<"selected"_h>);
 	}
 
 	dList* dList::create(void* parms)
