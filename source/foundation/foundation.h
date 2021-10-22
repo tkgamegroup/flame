@@ -123,9 +123,7 @@ namespace flame
 
 		void swap(UniPtr& oth) noexcept
 		{
-			auto temp = p;
-			p = oth.p;
-			oth.p = temp;
+			std::swap(p, oth.p);
 		}
 
 		void reset(T* _p = nullptr)

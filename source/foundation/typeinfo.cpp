@@ -1172,9 +1172,7 @@ namespace flame
 
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
-		auto address = voff == -1 ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
-		fassert(address);
-		return address;
+		return voff == -1 ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
 	}
 
 	static std::map<std::string, void(*)(void*, void*, void*, void**)> callers;

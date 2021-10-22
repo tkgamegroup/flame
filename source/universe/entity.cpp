@@ -6,19 +6,35 @@
 
 namespace flame
 {
-	struct Type
+	struct ReflectedType
 	{
 		struct Attribute
 		{
 			std::string name;
-			uint hash;
-			TypeInfo* get_type;
-			TypeInfo* set_type;
-			FunctionInfo* getter;
-			FunctionInfo* setter;
-			void* default_value;
+			uint hash = 0;
+			TypeInfo* get_type = nullptr;
+			TypeInfo* set_type = nullptr;
+			FunctionInfo* getter = nullptr;
+			FunctionInfo* setter = nullptr;
+			void* default_value = nullptr;
 
-			Attribute(Type* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			Attribute()
+			{
+			}
+
+			Attribute& operator=(Attribute&& oth)
+			{
+				std::swap(name, oth.name);
+				std::swap(hash, oth.hash);
+				std::swap(get_type, oth.get_type);
+				std::swap(set_type, oth.set_type);
+				std::swap(getter, oth.getter);
+				std::swap(setter, oth.setter);
+				std::swap(default_value, oth.default_value);
+				return *this;
+			}
+
+			Attribute(ReflectedType* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
 				name(name),
 				get_type(get_type),
 				set_type(set_type),
@@ -29,11 +45,6 @@ namespace flame
 
 				default_value = get_type->create(false);
 				getter->call(ct->dummy, default_value, nullptr);
-			}
-
-			~Attribute()
-			{
-				get_type->destroy(default_value, false);
 			}
 
 			std::string serialize(void* c, void* ref = nullptr)
@@ -59,13 +70,26 @@ namespace flame
 			}
 		};
 
-		UdtInfo* udt;
-		FunctionInfo* creator;
-		void* dummy;
+		UdtInfo* udt = nullptr;
+		FunctionInfo* creator = nullptr;
+		void* dummy = nullptr;
 
-		std::map<std::string, std::unique_ptr<Attribute>> attributes;
+		std::map<std::string, Attribute> attributes;
 
-		Type(UdtInfo* udt) :
+		ReflectedType()
+		{
+		}
+
+		ReflectedType& operator=(ReflectedType&& oth)
+		{
+			std::swap(udt, oth.udt);
+			std::swap(creator, oth.creator);
+			std::swap(dummy, oth.dummy);
+			std::swap(attributes, oth.attributes);
+			return *this;
+		}
+
+		ReflectedType(UdtInfo* udt) :
 			udt(udt)
 		{
 			auto fc = udt->find_function("create");
@@ -76,35 +100,38 @@ namespace flame
 			creator = fc;
 
 			dummy = create();
-			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> getters;
-			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> setters;
-			auto num_funs = udt->get_functions_count();
-			for (auto i = 0; i < num_funs; i++)
+			if (dummy)
 			{
-				auto f = udt->get_function(i);
-				auto name = std::string(f->get_name());
-				auto ft = f->get_type();
-				auto pc = f->get_parameters_count();
-				if (name.compare(0, 4, "get_") == 0 && pc == 0)
+				std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> getters;
+				std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> setters;
+				auto num_funs = udt->get_functions_count();
+				for (auto i = 0; i < num_funs; i++)
 				{
-					if (ft->get_name() != std::string("void"))
-						getters.emplace_back(name.substr(4), ft, f);
-				}
-				else if (name.compare(0, 4, "set_") == 0 && pc == 1 && ft == TypeInfo::get(TypeData, ""))
-				{
-					auto t = f->get_parameter(0);
-					if (t->get_name() != std::string("void"))
-						setters.emplace_back(name.substr(4), t, f);
-				}
-			}
-			for (auto& g : getters)
-			{
-				for (auto& s : setters)
-				{
-					if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
+					auto f = udt->get_function(i);
+					auto name = std::string(f->get_name());
+					auto ft = f->get_type();
+					auto pc = f->get_parameters_count();
+					if (name.compare(0, 4, "get_") == 0 && pc == 0)
 					{
-						attributes.emplace(std::get<0>(g), new Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
-						break;
+						if (ft->get_name() != std::string("void"))
+							getters.emplace_back(name.substr(4), ft, f);
+					}
+					else if (name.compare(0, 4, "set_") == 0 && pc == 1 && ft == TypeInfo::get(TypeData, ""))
+					{
+						auto t = f->get_parameter(0);
+						if (t->get_name() != std::string("void"))
+							setters.emplace_back(name.substr(4), t, f);
+					}
+				}
+				for (auto& g : getters)
+				{
+					for (auto& s : setters)
+					{
+						if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
+						{
+							attributes[std::get<0>(g)] = Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s));
+							break;
+						}
 					}
 				}
 			}
@@ -112,7 +139,10 @@ namespace flame
 
 		void* create()
 		{
-			return a2f<void*(*)(void*)>(creator->get_address())(nullptr);
+			auto addr = creator->get_address();
+			if (!addr)
+				return nullptr;
+			return a2f<void*(*)(void*)>(addr)(nullptr);
 		}
 
 		Attribute* find_attribute(const std::string& name)
@@ -120,13 +150,13 @@ namespace flame
 			auto it = attributes.find(name);
 			if (it == attributes.end())
 				return nullptr;
-			return it->second.get();
+			return &it->second;
 		}
 	};
 
-	static std::map<std::string, Type> component_types;
+	static std::map<std::string, ReflectedType> component_types;
 
-	Type* find_component_type(const std::string& name)
+	ReflectedType* find_component_type(const std::string& name)
 	{
 		auto it = component_types.find(name);
 		if (it == component_types.end())
@@ -134,7 +164,7 @@ namespace flame
 		return &it->second;
 	}
 
-	Type* find_component_type(const std::string& udt_name, std::string* name)
+	ReflectedType* find_component_type(const std::string& udt_name, std::string* name)
 	{
 		for (auto& t : component_types)
 		{
@@ -148,9 +178,9 @@ namespace flame
 		return nullptr;
 	}
 
-	static std::map<std::string, Type> driver_types;
+	static std::map<std::string, ReflectedType> driver_types;
 
-	Type* find_driver_type(const std::string& name)
+	ReflectedType* find_driver_type(const std::string& name)
 	{
 		auto it = driver_types.find(name);
 		if (it == driver_types.end())
@@ -158,7 +188,7 @@ namespace flame
 		return &it->second;
 	}
 
-	Type* find_driver_type(const std::string& udt_name, std::string* name)
+	ReflectedType* find_driver_type(const std::string& udt_name, std::string* name)
 	{
 		for (auto& t : driver_types)
 		{
@@ -781,7 +811,7 @@ namespace flame
 		const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
 		auto ti_stateflags = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-		auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value, bool is_state_rule) {
+		auto set_attribute = [&](void* o, ReflectedType* ot, const std::string& vname, const std::string& value, bool is_state_rule) {
 			auto att = ot->find_attribute(vname);
 			if (!att)
 				return false;
@@ -840,7 +870,7 @@ namespace flame
 			}
 			return true;
 		};
-		auto set_content = [&](Component* c, Type* ct, const std::string& value) {
+		auto set_content = [&](Component* c, ReflectedType* ct, const std::string& value) {
 			auto att = ct->find_attribute("content");
 			if (att)
 			{
@@ -887,7 +917,7 @@ namespace flame
 			else if (name == "driver")
 			{
 				fassert(first_e == e_dst);
-				Type* dt = find_driver_type(a.value());
+				ReflectedType* dt = find_driver_type(a.value());
 				if (dt)
 				{
 					auto d = (Driver*)dt->create();
@@ -959,7 +989,7 @@ namespace flame
 			auto name = std::string(n_c.name());
 			if (name[0] == 'c')
 			{
-				Type* ct = find_component_type(name);
+				ReflectedType* ct = find_component_type(name);
 				if (ct)
 				{
 					auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
@@ -1058,25 +1088,25 @@ namespace flame
 			cc->src_id = c->src_id;
 			for (auto& a : ct->attributes)
 			{
-				auto attr = a.second.get();
-				if (!attr->getter->get_meta(MetaSecondaryAttribute, nullptr))
+				auto& attr = a.second;
+				if (!attr.getter->get_meta(MetaSecondaryAttribute, nullptr))
 				{
-					auto d = attr->get_type->create(false);
-					attr->getter->call(c.get(), d, nullptr);
-					if (!attr->get_type->compare(d, attr->default_value))
+					auto d = attr.get_type->create(false);
+					attr.getter->call(c.get(), d, nullptr);
+					if (!attr.get_type->compare(d, attr.default_value))
 					{
-						if (attr->get_type->get_tag() == TypeData && attr->set_type->get_tag() == TypePointer)
+						if (attr.get_type->get_tag() == TypeData && attr.set_type->get_tag() == TypePointer)
 						{
 							void* ps[] = { &d };
-							attr->setter->call(cc, nullptr, ps);
+							attr.setter->call(cc, nullptr, ps);
 						}
 						else
 						{
 							void* ps[] = { d };
-							attr->setter->call(cc, nullptr, ps);
+							attr.setter->call(cc, nullptr, ps);
 						}
 					}
-					attr->get_type->destroy(d, false);
+					attr.get_type->destroy(d, false);
 				}
 			}
 			ret->add_component(cc);
@@ -1183,7 +1213,7 @@ namespace flame
 				auto ref = reference ? reference->get_driver(d->type_hash) : nullptr;
 				for (auto& a : dt->attributes)
 				{
-					auto value = a.second->serialize(d.get(), ref);
+					auto value = a.second.serialize(d.get(), ref);
 					if (!value.empty())
 						n_dst.append_attribute(a.first.c_str()).set_value(value.c_str());
 				}
@@ -1227,9 +1257,9 @@ namespace flame
 					}
 					else
 					{
-						if (!a.second->getter->get_meta(MetaSecondaryAttribute, nullptr))
+						if (!a.second.getter->get_meta(MetaSecondaryAttribute, nullptr))
 						{
-							auto value = a.second->serialize(c.get(), ref);
+							auto value = a.second.serialize(c.get(), ref);
 							if (!value.empty())
 							{
 								if (a.first == "content")
@@ -1286,9 +1316,17 @@ namespace flame
 			std::smatch res;
 			auto name = std::string(ui->get_name());
 			if (std::regex_search(name, res, reg_com))
-				component_types.emplace(res[1].str(), ui);
+			{
+				ReflectedType t(ui);
+				if (t.dummy)
+					component_types[res[1].str()] = std::move(t);
+			}
 			else if (std::regex_search(name, res, reg_dri))
-				driver_types.emplace(res[1].str(), ui);
+			{
+				ReflectedType t(ui);
+				if (t.dummy)
+					driver_types[res[1].str()] = std::move(t);
+			}
 		}
 
 		auto engine_path = getenv("FLAME_PATH");
