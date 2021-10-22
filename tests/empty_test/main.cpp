@@ -1,14 +1,45 @@
-#include <math.h>
+#include <vector>
+#include <list>
+#include <map>
+#include <memory>
+
+struct T
+{
+	int* d;
+
+	T(int v)
+	{
+		d = new int;
+		*d = v;
+	}
+
+	~T()
+	{
+		delete d;
+	}
+
+	T(T&& oth) noexcept
+	{
+		d = oth.d;
+		oth.d = nullptr;
+	}
+
+	T(const T&) = delete;
+	T& operator=(const T&) = delete;
+};
 
 int main()
 {
-	auto a = 0.16187f * 0.2125000059604644775390625 +
-		0.26904f * 0.7153999805450439453125 +
-		0.04825f * 0.07209999859333038330078125;
-	a = log2(a);
-	a = a - (-10.f);
-	a /= 12.f;
-	auto i = int(a * 254.f + 1.0);
-	auto wtf = 1;
+	std::vector<T> v;
+	std::list<T> l;
+	std::map<int, T> m;
+
+	//for (auto i = 0; i < 1000; i++)
+	//	v.emplace_back();
+	//for (auto i = 0; i < 1000; i++)
+	//	l.emplace_back();
+	for (auto i = 0; i < 100000; i++)
+		m.emplace(0, 0);
+
 	return 0;
 }

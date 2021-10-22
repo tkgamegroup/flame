@@ -14,7 +14,7 @@ namespace flame
 		entity->component_data_changed(this, S<"checked"_h>);
 	}
 
-	void cTogglePrivate::on_entered_world()
+	void cTogglePrivate::on_load_finished()
 	{
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);

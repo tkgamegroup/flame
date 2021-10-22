@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dMenuItem" >
+  <entity>
     <cElement padding="6,2,4,2" alignx="MinMax" 
               fill_color.state_rule="60,60,60,255
               Hovering:100,110,120,255" />
@@ -10,5 +10,6 @@
       <cElement padding="4,2,4,2" align_absolute="true" alignx="Min" />
       <cText text="" />
     </entity>
+    <cMenuItem/>
   </entity>
 </prefab>

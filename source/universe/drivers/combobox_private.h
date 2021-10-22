@@ -9,7 +9,7 @@ namespace flame
 	{
 		int index = -1;
 
-		dMenuPrivate* menu = nullptr;
+		cMenuPrivate* menu = nullptr;
 		cTextPrivate* text = nullptr;
 
 		int get_index() const override { return index; }

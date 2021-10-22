@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dMenu" >
+  <entity>
     <cElement padding="4,2,4,2" 
               fill_color.state_rule="60,60,60,255
               Hovering:100,110,120,255" />
@@ -13,5 +13,6 @@
     <entity name="items" visible="false" >
       <cElement padding="1,1,1,1" layout_type="Vertical" />
     </entity>
+    <cMenu/>
   </entity>
 </prefab>
