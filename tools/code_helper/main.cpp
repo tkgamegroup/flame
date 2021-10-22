@@ -11,10 +11,6 @@ int main(int argc, char** args)
 	auto ap = parse_args(argc, args);
 	auto cmd = ap.get_item("-cmd");
 	auto path = std::filesystem::path(ap.get_item("-path"));
-	if (path.empty())
-		path = std::filesystem::current_path();
-	else
-		std::filesystem::current_path(path);
 	path.make_preferred();
 	auto ppath = path.parent_path();
 	auto name = ap.get_item("-name");
@@ -175,6 +171,11 @@ int main(int argc, char** args)
 		SUS::remove_ch(class_name, '_');
 	};
 
+	auto get_class_name2 = [&](Block& block) {
+		if (block.find(std::regex("^struct\\s+(c|s)?" + class_name + "\\b"), match, it1))
+			class_name = match[1].str() + class_name;
+	};
+
 	auto init_vars = [&]() {
 		auto fn = path.stem().string();
 		SUS::cut_tail_if(fn, "_private");
@@ -228,12 +229,12 @@ int main(int argc, char** args)
 		auto id = getch() - '0';
 		if (id >= 0 && id < _countof(templates))
 		{
-			cmd = "new_" + std::string(templates[id]);
+			cmd = templates[id];
 			printf("you choose %s\n", cmd.c_str());
 		}
-	}
-	if (cmd == "new_template")
-	{
+
+		if (path.empty())
+			path = std::filesystem::current_path();
 		printf("current directory: %s\n", path.string().c_str());
 
 		if (name.empty())
@@ -245,7 +246,10 @@ int main(int argc, char** args)
 			return 0;
 
 		get_class_name(name);
-		class_name = "c" + class_name;
+		if (cmd == "component")
+			class_name = 'c' + class_name;
+		else if (cmd == "system")
+			class_name = 's' + class_name;
 
 		auto indent_str = is_internal ? "\t" : "";
 
@@ -288,8 +292,6 @@ int main(int argc, char** args)
 		if (!init_vars())
 			return 0;
 
-		class_name = "c" + class_name;
-
 		new_attribute_process:
 
 		if (name.empty())
@@ -315,7 +317,8 @@ int main(int argc, char** args)
 			return 0;
 
 		Block public_header_blocks(0, public_header_fn);
-		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), match, it1))
+		get_class_name2(public_header_blocks);
+		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 		{
 			if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
 			{
@@ -334,7 +337,7 @@ int main(int argc, char** args)
 			it2 = it1->children.begin();
 			for (; it2 != list.end(); it2++)
 			{
-				if (it2->type != 0 || it2->line == "\n")
+				if (it2->type == 1 || it2->line == "\n")
 					break;
 			}
 			list.emplace(it2, type + " " + name + " = " + value + ";\n");
@@ -364,8 +367,6 @@ int main(int argc, char** args)
 		if (!init_vars())
 			return 0;
 
-		class_name = "c" + class_name;
-
 		remove_attribute_process:
 
 		if (name.empty())
@@ -377,7 +378,8 @@ int main(int argc, char** args)
 			return 0;
 
 		Block public_header_blocks(0, public_header_fn);
-		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), match, it1))
+		get_class_name2(public_header_blocks);
+		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 		{
 			if (it1->find(std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\("), match, it2))
 				it2->parent->children.erase(it2);
@@ -413,8 +415,6 @@ int main(int argc, char** args)
 		if (!init_vars())
 			return 0;
 
-		class_name = "c" + class_name;
-
 		alter_attribute_process:
 
 		if (name.empty())
@@ -437,11 +437,22 @@ int main(int argc, char** args)
 			std::getline(std::cin, type);
 		}
 
+		Block public_header_blocks(0, public_header_fn);
+		get_class_name2(public_header_blocks);
+		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
+		{
+			std::regex reg1 = std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\(");
+			if (it1->find(reg1, match, it2))
+				it2->line = std::regex_replace(it2->line, reg1, "virtual " + type + " get_" + name2 + "(");
+			std::regex reg2 = std::regex("^virtual\\s+void\\s+set_" + name + "\\(\\w+");
+			if (it1->find(reg2, match, it2))
+				it2->line = std::regex_replace(it2->line, reg2, "virtual void set_" + name2 + "(" + type);
+		}
+		public_header_blocks.output_file(public_header_fn);
+
 		Block private_header_blocks(0, private_header_fn);
 		if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
 		{
-			Block public_header_blocks(0, public_header_fn);
-			Block source_blocks(0, source_fn);
 
 			std::regex reg1 = std::regex("^\\w+\\s+" + name + "\\s+=\\s+");
 			if (it1->find(reg1, match, it2))
@@ -464,33 +475,23 @@ int main(int argc, char** args)
 							it2->line = std::regex_replace(it2->line, reg2, "void set_" + name2 + "(" + type);
 					}
 
-					if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), match, it1))
-					{
-						std::regex reg1 = std::regex("^virtual\\s+\\w+\\s+get_" + name + "\\(");
-						if (it1->find(reg1, match, it2))
-							it2->line = std::regex_replace(it2->line, reg1, "virtual " + type + " get_" + name2 + "(");
-						std::regex reg2 = std::regex("^virtual\\s+void\\s+set_" + name + "\\(\\w+");
-						if (it1->find(reg2, match, it2))
-							it2->line = std::regex_replace(it2->line, reg2, "virtual void set_" + name2 + "(" + type);
-					}
-
-					{
-						std::regex reg = std::regex("\\w+\\s+" + class_name + "Private::get_" + name + "\\(");
-						if (source_blocks.find(reg, match, it1))
-							it1->line = std::regex_replace(it1->line, reg, type + " " + class_name + "Private::get_" + name2 + "(");
-					}
-					{
-						std::regex reg = std::regex("^void\\s+" + class_name + "Private::set_" + name + "\\(\\w+");
-						if (source_blocks.find(reg, match, it1))
-							it1->line = std::regex_replace(it1->line, reg, "void " + class_name + "Private::set_" + name2 + "(" + type);
-					}
-
-					public_header_blocks.output_file(public_header_fn);
 					private_header_blocks.output_file(private_header_fn);
-					source_blocks.output_file(source_fn);
 				}
 			}
 		}
+
+		Block source_blocks(0, source_fn);
+		{
+			std::regex reg = std::regex("\\w+\\s+" + class_name + "Private::get_" + name + "\\(");
+			if (source_blocks.find(reg, match, it1))
+				it1->line = std::regex_replace(it1->line, reg, type + " " + class_name + "Private::get_" + name2 + "(");
+		}
+		{
+			std::regex reg = std::regex("^void\\s+" + class_name + "Private::set_" + name + "\\(\\w+");
+			if (source_blocks.find(reg, match, it1))
+				it1->line = std::regex_replace(it1->line, reg, "void " + class_name + "Private::set_" + name2 + "(" + type);
+		}
+		source_blocks.output_file(source_fn);
 
 		name.clear();
 		name2.clear();
@@ -501,8 +502,6 @@ int main(int argc, char** args)
 	{
 		if (!init_vars())
 			return 0;
-
-		class_name = "c" + class_name;
 
 		new_function_process:
 
@@ -576,10 +575,11 @@ int main(int argc, char** args)
 				parameters2.clear();
 		}
 
+		Block public_header_blocks(0, public_header_fn);
+		get_class_name2(public_header_blocks);
 		if (is_public)
 		{
-			Block public_header_blocks(0, public_header_fn);
-			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), match, it1))
+			if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 			{
 				if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
 				{
@@ -637,7 +637,7 @@ int main(int argc, char** args)
 			return 0;
 
 		Block public_header_blocks(0, public_header_fn);
-		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\s*:\\s*Component"), match, it1))
+		if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 		{
 			if (it1->find(std::regex("\\b" + name + "\\("), match, it2))
 				it2->parent->children.erase(it2);
