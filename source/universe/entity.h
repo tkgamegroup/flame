@@ -6,7 +6,6 @@ namespace flame
 {
 	struct Entity
 	{
-		// if it is a child, it will be removed first
 		virtual void release() = 0;
 
 		virtual const char* get_name() const = 0;

@@ -18,11 +18,7 @@ namespace flame
 			FunctionInfo* setter = nullptr;
 			void* default_value = nullptr;
 
-			Attribute()
-			{
-			}
-
-			Attribute& operator=(Attribute&& oth)
+			Attribute(Attribute&& oth)
 			{
 				std::swap(name, oth.name);
 				std::swap(hash, oth.hash);
@@ -31,7 +27,6 @@ namespace flame
 				std::swap(getter, oth.getter);
 				std::swap(setter, oth.setter);
 				std::swap(default_value, oth.default_value);
-				return *this;
 			}
 
 			Attribute(ReflectedType* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
@@ -76,17 +71,12 @@ namespace flame
 
 		std::map<std::string, Attribute> attributes;
 
-		ReflectedType()
-		{
-		}
-
-		ReflectedType& operator=(ReflectedType&& oth)
+		ReflectedType(ReflectedType&& oth)
 		{
 			std::swap(udt, oth.udt);
 			std::swap(creator, oth.creator);
 			std::swap(dummy, oth.dummy);
 			std::swap(attributes, oth.attributes);
-			return *this;
 		}
 
 		ReflectedType(UdtInfo* udt) :
@@ -129,7 +119,8 @@ namespace flame
 					{
 						if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
 						{
-							attributes[std::get<0>(g)] = Attribute(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s));
+							Attribute a(this, std::get<0>(g), std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s));
+							attributes.emplace(a.name, std::move(a));
 							break;
 						}
 					}
@@ -221,8 +212,6 @@ namespace flame
 	{
 		for (auto& l : message_listeners)
 			l->call(S<"destroyed"_h>, nullptr, nullptr);
-		for (auto& c : components)
-			c->on_destroyed();
 		for (auto ev : events)
 			looper().remove_event(ev);
 	}
@@ -434,6 +423,11 @@ namespace flame
 				if ((*it)->on_child_added(e, pos))
 					return;
 			}
+			for (auto it = components.rbegin(); it != components.rend(); it++)
+			{
+				if ((*it)->on_before_adding_child(e))
+					return;
+			}
 		}
 
 		children.emplace(children.begin() + pos, e);
@@ -446,7 +440,7 @@ namespace flame
 		e->update_visibility();
 
 		for (auto& l : e->message_listeners)
-			l->call(S<"self_added"_h>, nullptr, nullptr);
+			l->call(S<"entity_added"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_added();
 
@@ -486,7 +480,7 @@ namespace flame
 		e->parent = nullptr;
 
 		for (auto& l : e->message_listeners)
-			l->call(S<"self_removed"_h>, nullptr, nullptr);
+			l->call(S<"entity_removed"_h>, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
@@ -1044,13 +1038,25 @@ namespace flame
 			}
 		}
 
-		if (first_e == e_dst && !e_dst->drivers.empty())
+		if (first_e == e_dst)
 		{
-			auto d = e_dst->drivers.back().get();
-			if (!d->load_finished)
+			for (auto it = e_dst->components.rbegin(); it != e_dst->components.rend(); it++)
 			{
-				d->load_finished = true;
-				d->on_load_finished();
+				auto c = (*it).get();
+				if (!c->load_finished)
+				{
+					c->load_finished = true;
+					c->on_load_finished();
+				}
+			}
+			if (!e_dst->drivers.empty())
+			{
+				auto d = e_dst->drivers.back().get();
+				if (!d->load_finished)
+				{
+					d->load_finished = true;
+					d->on_load_finished();
+				}
 			}
 		}
 	}
@@ -1319,13 +1325,13 @@ namespace flame
 			{
 				ReflectedType t(ui);
 				if (t.dummy)
-					component_types[res[1].str()] = std::move(t);
+					component_types.emplace(res[1].str(), std::move(t));
 			}
 			else if (std::regex_search(name, res, reg_dri))
 			{
 				ReflectedType t(ui);
 				if (t.dummy)
-					driver_types[res[1].str()] = std::move(t);
+					driver_types.emplace(res[1].str(), std::move(t));
 			}
 		}
 

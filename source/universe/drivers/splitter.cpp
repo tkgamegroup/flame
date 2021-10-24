@@ -106,8 +106,9 @@ namespace flame
 			{
 				auto element = e->get_component_i<cElementPrivate>(0);
 				fassert(element);
-				pos = targets.size() == 0 ? 0 : 2;
+				entity->add_child(e, targets.size() == 0 ? 0 : 2);
 				targets.push_back(element);
+				return true;
 			}
 		}
 		return false;

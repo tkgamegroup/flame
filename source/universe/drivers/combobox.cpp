@@ -1,7 +1,7 @@
 #include "../entity_private.h"
 #include "../components/text_private.h"
 #include "../components/receiver_private.h"
-#include "menu_private.h"
+#include "../components/menu_private.h"
 #include "combobox_private.h"
 
 namespace flame
@@ -30,7 +30,7 @@ namespace flame
 
 	void dComboboxPrivate::on_load_finished()
 	{
-		menu = entity->get_driver_t<dMenuPrivate>();
+		menu = entity->get_component_t<cMenuPrivate>();
 		fassert(menu);
 
 		text = entity->get_component_t<cTextPrivate>();
