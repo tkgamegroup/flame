@@ -633,8 +633,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		bp_editor.c_auto_update = ui.e_checkbox()->get_component(cCheckbox);
 		ui.e_end_layout();
 		bp_editor.c_auto_update->data_changed_listeners.add([](Capture&, uint hash, void*) {
-			if (hash == FLAME_CHASH("checked"))
-				bp_editor.auto_update = bp_editor.c_auto_update->checked;
+			if (hash == FLAME_CHASH("toggled"))
+				bp_editor.auto_update = bp_editor.c_auto_update->toggled;
 			return true;
 		}, Capture());
 		ui.e_button(L"Update (F2)", [](Capture&) {
