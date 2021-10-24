@@ -43,7 +43,7 @@ namespace flame
 		int locate_cursor(const vec2& mpos);
 		
 		void on_entered_world() override;
-
+		
 		uint draw(uint layer,  sRendererPtr s_renderer) override;
 	};
 }
