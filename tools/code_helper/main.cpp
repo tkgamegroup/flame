@@ -115,8 +115,8 @@ int main(int argc, char** args)
 	{
 		struct Block
 		{
-			std::string text;
 			int type = 0; // 0 - no brackets, 1 - brackets, 2 - brackets end with semicolon
+			std::string text;
 			std::list<Block> children;
 			Block* parent = nullptr;
 
@@ -165,7 +165,7 @@ int main(int argc, char** args)
 				{
 					it->parent = this;
 					auto it2 = it; it2++;
-					if (it->text.size() > 2 && *(it->text.end() - 2) != ';' && it2->type != 0)
+					if (it2 != children.end() && it->text.size() > 2 && *(it->text.end() - 2) != ';' && it2->type != 0)
 					{
 						it->children = it2->children;
 						it->type = it2->type;
@@ -234,7 +234,7 @@ int main(int argc, char** args)
 		std::string source_fn;
 		std::smatch match;
 		std::list<Block>::iterator it1, it2;
-		bool found;
+		bool ok;
 
 		{
 			auto fn = path.stem().string();
@@ -279,6 +279,35 @@ int main(int argc, char** args)
 
 			auto private_header_lines = get_file_lines(private_header_fn);
 			auto source_lines = get_file_lines(source_fn);
+
+			std::vector<std::string> anchor;
+			if (line != 0)
+			{
+				auto p = line - 1;
+				while (p >= 0)
+				{
+					auto& str = private_header_lines[p];
+					if (str.size() > 1)
+					{
+						if (std::regex_search(str, match, std::regex("^([\\w:]+)\\s+(\\w+)\\s*=")))
+						{
+							anchor.resize(3);
+							anchor[0] = "A";
+							anchor[1] = match[1].str();
+							anchor[2] = match[2].str();
+						}
+						else if (std::regex_search(str, match, std::regex("^([\\w:]+)\\s+(\\w+)\\(")))
+						{
+							anchor.resize(3);
+							anchor[0] = "F";
+							anchor[1] = match[1].str();
+							anchor[2] = match[2].str();
+						}
+						break;
+					}
+					p--;
+				}
+			}
 
 			Block private_header_blocks(private_header_lines);
 			Block source_blocks(source_lines);
@@ -327,46 +356,24 @@ int main(int argc, char** args)
 				if (value.empty())
 					return 0;
 
-				std::vector<std::string> anchor;
-				if (line != 0)
-				{
-					auto p = line - 1;
-					while (p >= 0)
-					{
-						auto& str = private_header_lines[p];
-						if (str.size() > 1)
-						{
-							if (std::regex_search(str, match, std::regex("^([\\w:]+)\\s+(\\w+)\\s*=")))
-							{
-								anchor.resize(3);
-								anchor[0] = "A";
-								anchor[1] = match[1].str();
-								anchor[2] = match[2].str();
-							}
-							break;
-						}
-						p--;
-					}
-				}
-
 				if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 				{
 					auto& list = it1->children;
-					found = false;
-					if (anchor.empty())
+					ok = false;
+					if (anchor.empty() || anchor[0] != "A")
 					{
 						if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
-							found = true;
+							ok = true;
 					}
 					else
 					{
 						if (it1->find(std::regex("^virtual void set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
-							found = true;
+							ok = true;
 						}
 					}
-					if (found)
+					if (ok)
 					{
 						list.emplace(it2, "virtual " + type + " get_" + name + "() const = 0;\n");
 						list.emplace(it2, "virtual void set_" + name + "(" + type + " v) = 0;\n");
@@ -377,37 +384,37 @@ int main(int argc, char** args)
 				if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
 				{
 					auto& list = it1->children;
-					found = false;
-					if (anchor.empty())
+					ok = false;
+					if (anchor.empty() || anchor[0] != "A")
 					{
 						it2 = list.begin();
-						found = true;
+						ok = true;
 					}
 					else
 					{
 						if (it1->find(std::regex("^" + anchor[1] + "\\s+" + anchor[2] + "\\s*="), match, it2))
 						{
 							it2++;
-							found = true;
+							ok = true;
 						}
 					}
-					if (found)
+					if (ok)
 						list.emplace(it2, type + " " + name + " = " + value + ";\n");
-					found = false;
-					if (anchor.empty())
+					ok = false;
+					if (anchor.empty() || anchor[0] != "A")
 					{
 						it2 = list.end();
-						found = true;
+						ok = true;
 					}
 					else
 					{
 						if (it1->find(std::regex("^void set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
-							found = true;
+							ok = true;
 						}
 					}
-					if (found)
+					if (ok)
 					{
 						it2 = list.emplace(it2, type + " get_" + name + "() const override { return " + name + "; }\n");
 						it2++;
@@ -418,23 +425,24 @@ int main(int argc, char** args)
 
 				if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), match, it1))
 				{
-					auto& list = it1->parent->children;
-					found = false;
-					if (anchor.empty())
+					auto range = it1->parent;
+					auto& list = range->children;
+					ok = false;
+					if (anchor.empty() || anchor[0] != "A")
 					{
 						it2 = it1;
 						it2--;
-						found = true;
+						ok = true;
 					}
 					else
 					{
-						if (source_blocks.find(std::regex("^void\\s+" + class_name + "Private::set_" + anchor[2] + "\\("), match, it2))
+						if (range->find(std::regex("^void\\s+" + class_name + "Private::set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
-							found = true;
+							ok = true;
 						}
 					}
-					if (found)
+					if (ok)
 					{
 						list.emplace(it2, "\n");
 						auto& nb = *list.emplace(it2, "void " + class_name + "Private::set_" + name + "(" + type + " v)\n");
@@ -641,40 +649,81 @@ int main(int argc, char** args)
 						parameters2.clear();
 				}
 
-				if (is_public)
+				if (is_public && public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
 				{
-					if (public_header_blocks.find(std::regex("^struct\\s+" + class_name + "\\b"), match, it1))
+					auto& list = it1->children;
+					ok = false;
+					if (anchor.empty() || anchor[0] != "F")
 					{
 						if (it1->find(std::regex("^\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
+							ok = true;
+					}
+					else
+					{
+						if (it1->find(std::regex("\\b" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
 						{
-							auto& list = it2->parent->children;
-							list.emplace(it2, (is_static ? (is_internal ? "FLAME_UNIVERSE_EXPORTS static " : "__declspec(dllexport) static ") : "virtual ") +
-								type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + " = 0;\n");
-							list.emplace(it2, "\n");
+							it2++;
+							ok = true;
 						}
+					}
+					if (ok)
+					{
+						list.emplace(it2, (is_static ? (is_internal ? "FLAME_UNIVERSE_EXPORTS static " : "__declspec(dllexport) static ") : "virtual ") +
+							type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + " = 0;\n");
 					}
 					public_header_blocks.output_file(public_header_fn);
 				}
 
-				if (!is_static)
+				if (!is_static && private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
 				{
-					if (private_header_blocks.find(std::regex("^struct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
+					auto& list = it1->children;
+					ok = false;
+					if (anchor.empty() || anchor[0] != "F")
 					{
-						auto& list = it1->children;
-						list.emplace_back(type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + (is_override ? " override" : "") + ";\n");
+						it2 = list.end();
+						ok = true;
 					}
+					else
+					{
+						if (it1->find(std::regex("^" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
+						{
+							it2++;
+							ok = true;
+						}
+					}
+					if (ok)
+						list.emplace(it2, type + " " + name + "(" + parameters1 + ")" + (is_const ? " const" : "") + (is_override ? " override" : "") + ";\n");
 					private_header_blocks.output_file(private_header_fn);
 				}
 
 				if (source_blocks.find(std::regex("^" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), match, it1))
 				{
-					auto& list = it1->parent->children;
-					auto& nb = *list.emplace(it1, type + " " + class_name + (is_static ? "::" : "Private::") + name + "(" + parameters2 + ") " + (is_const ? "const\n" : "\n"));
-					nb.type = 1;
-					nb.children.emplace_back("\n");
-					list.emplace(it1, "\n");
+					auto range = it1->parent;
+					auto& list = range->children;
+					ok = false;
+					if (anchor.empty() || anchor[0] != "F")
+					{
+						it2 = it1;
+						it2--;
+						ok = true;
+					}
+					else
+					{
+						if (range->find(std::regex("^" + anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
+						{
+							it2++;
+							ok = true;
+						}
+					}
+					if (ok)
+					{
+						list.emplace(it2, "\n");
+						auto& nb = *list.emplace(it2, type + " " + class_name + (is_static ? "::" : "Private::") + name + "(" + parameters2 + ") " + (is_const ? "const\n" : "\n"));
+						nb.type = 1;
+						nb.children.emplace_back("\n");
+					}
+					source_blocks.output_file(source_fn);
 				}
-				source_blocks.output_file(source_fn);
 
 				name.clear();
 				type.clear();

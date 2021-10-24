@@ -19,9 +19,10 @@ namespace flame
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);
 		
-		receiver->add_mouse_click_listener([](Capture& c) {
-		auto thiz = c.thiz<cTogglePrivate>();
-		thiz->set_toggled(!thiz->toggled);
+		receiver->add_mouse_click_listener([](Capture& c) 
+		{
+			auto thiz = c.thiz<cTogglePrivate>();
+			thiz->set_toggled(!thiz->toggled);
 		}, Capture().set_thiz(this));
 		
 		box = entity->find_child("box");

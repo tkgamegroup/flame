@@ -137,7 +137,8 @@ namespace flame
 		text = entity->get_component_t<cTextPrivate>();
 		fassert(text);
 
-		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
+		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			switch (msg)
 			{
@@ -159,10 +160,11 @@ namespace flame
 					{
 						if (!thiz->flash_event)
 						{
-							thiz->flash_event = looper().add_event([](Capture& c) {
+							thiz->flash_event = looper().add_event([](Capture& c) 
+							{
 								c.thiz<cEditPrivate>()->flash_cursor(0);
 								c._current = nullptr;
-								}, Capture().set_thiz(thiz), 0.5f);
+							}, Capture().set_thiz(thiz), 0.5f);
 						}
 						if (thiz->select_all_on_focus)
 						{
@@ -202,7 +204,8 @@ namespace flame
 
 		element->add_drawer(this);
 
-		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
+		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
@@ -211,7 +214,8 @@ namespace flame
 			auto high = max(select_start, select_end);
 			auto ed = thiz->receiver->dispatcher;
 
-			auto line_start = [&](int p) {
+			auto line_start = [&](int p) 
+			{
 				p--;
 				do
 				{
@@ -223,7 +227,8 @@ namespace flame
 				} while (p >= 0);
 				return 0;
 			};
-			auto line_end = [&](int p) {
+			auto line_end = [&](int p) 
+			{
 				while (p < str.size())
 				{
 					if (str[p] == '\n')
@@ -288,7 +293,7 @@ namespace flame
 						select_start = select_end;
 				}
 			}
-			break;
+				break;
 			case Keyboard_Down:
 			{
 				if (ed->kbtns[Keyboard_Shift].first)
@@ -310,7 +315,7 @@ namespace flame
 						select_start = select_end;
 				}
 			}
-			break;
+				break;
 			case Keyboard_Home:
 				select_end = (ed->kbtns[Keyboard_Ctrl].first) ? 0 : line_start(select_end);
 				if (!(ed->kbtns[Keyboard_Shift].first))
@@ -340,9 +345,10 @@ namespace flame
 			}
 
 			thiz->flash_cursor(2);
-			}, Capture().set_thiz(this));
+		}, Capture().set_thiz(this));
 
-		receiver->add_char_listener([](Capture& c, wchar_t ch) {
+		receiver->add_char_listener([](Capture& c, wchar_t ch) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
@@ -407,24 +413,27 @@ namespace flame
 			}
 
 			thiz->flash_cursor(2);
-			}, Capture().set_thiz(this));
+		}, Capture().set_thiz(this));
 
-		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			thiz->select_start = thiz->select_end = thiz->locate_cursor((vec2)pos);
 			thiz->flash_cursor(2);
-			}, Capture().set_thiz(this));
+		}, Capture().set_thiz(this));
 
-		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			if (thiz->receiver->dispatcher->active == thiz->receiver)
 			{
 				thiz->select_end = thiz->locate_cursor((vec2)pos);
 				thiz->flash_cursor(2);
 			}
-			}, Capture().set_thiz(this));
+		}, Capture().set_thiz(this));
 
-		receiver->add_mouse_dbclick_listener([](Capture& c) {
+		receiver->add_mouse_dbclick_listener([](Capture& c) 
+		{
 			auto thiz = c.thiz<cEditPrivate>();
 			if (thiz->select_all_on_dbclicked)
 			{
@@ -433,7 +442,7 @@ namespace flame
 				if (thiz->element)
 					thiz->element->mark_drawing_dirty();
 			}
-			}, Capture().set_thiz(this));
+		}, Capture().set_thiz(this));
 	}
 	
 	uint cEditPrivate::draw(uint layer, sRendererPtr s_renderer) 
