@@ -13,6 +13,9 @@ namespace flame
 		{
 		}
 
+		virtual SplitterType get_type() const = 0;
+		virtual void set_type(SplitterType v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cSplitter* create(void* parms = nullptr);
 	};
 }
