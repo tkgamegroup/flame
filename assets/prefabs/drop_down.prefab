@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<prefab>
+  <eMenu width="100.0" padding="4,2,18,2" auto_width="false" border="1.0"
+         fill_color.state_rule="0,0,0,0
+         Hovering:230,230,230,255">
+    <cDropDown/>
+  </eMenu>
+</prefab>

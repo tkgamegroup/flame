@@ -18,13 +18,13 @@ namespace flame
 	struct List
 	{
 		EntityPrivate* e;
-		dListPrivate* d;
+		cListPrivate* d;
 		std::vector<ListItem<T>> items;
 
 		void build(EntityPrivate* _e)
 		{
 			e = _e;
-			d = e->get_driver_t<dListPrivate>();
+			d = e->get_component_t<cListPrivate>();
 		}
 
 		int find(EntityPrivate* e)

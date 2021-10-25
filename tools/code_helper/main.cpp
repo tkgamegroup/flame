@@ -183,10 +183,10 @@ int main(int argc, char** args)
 				for (auto it = children.begin(); it != children.end();)
 				{
 					it->parent = this;
-					if (it->children.empty() && it->text.size() > 1 && it->text.back() != ';')
+					if (it->b1.empty() && it->text.size() > 1 && it->text.back() != ';')
 					{
 						auto it2 = it; it2++;
-						if (it2 != children.end() && !it2->children.empty())
+						if (it2 != children.end() && !it2->b1.empty())
 						{
 							it->children = it2->children;
 							it->b1 = it2->b1;
@@ -472,7 +472,7 @@ int main(int argc, char** args)
 					if (ok)
 					{
 						list.emplace(it2, std::format(
-							"{0}{1} get_{2}() const override { return {2}; }\n"
+							"{0}{1} get_{2}() const override {{ return {2}; }}\n"
 							"{0}void set_{2}({1} v) override;\n",
 							indent, type, name));
 						ok2 = true;
@@ -491,7 +491,8 @@ int main(int argc, char** args)
 					if (anchor.empty() || anchor[0] != "A")
 					{
 						it2 = it1;
-						it2--;
+						if (it2 != list.begin())
+							it2--;
 						ok = true;
 					}
 					else
@@ -507,9 +508,9 @@ int main(int argc, char** args)
 						list.emplace(it2, std::format(
 							"\n"
 							"{0}void {3}Private::set_{2}({1} v)\n"
-							"{0}{\n"
+							"{0}{{\n"
 							"{0}\t{2} = v;\n"
-							"{0}}\n",
+							"{0}}}\n",
 							indent, type, name, class_name));
 						ok2 = true;
 					}
@@ -622,7 +623,7 @@ int main(int argc, char** args)
 					}
 					if (ok)
 					{
-						list.emplace(it2, std::format("{0}{1} {2}({3}){4}{5}",
+						list.emplace(it2, std::format("{0}{1} {2}({3}){4}{5};",
 							indent, type, name, parms1, (is_const ? " const" : ""), (is_override ? " override" : "")));
 						ok2 = true;
 					}
@@ -656,11 +657,11 @@ int main(int argc, char** args)
 						list.emplace(it2, std::format(
 							"\n"
 							"{0}{1} {4}{2}({3}){5}\n"
-							"{0}{\n"
-							"{0}}\n",
+							"{0}{{\n\n"
+							"{0}}}\n",
 							indent, type, name, parms2,
 							class_name + (is_static ? "::" : "Private::"),
-							(is_const ? "const" : "")));
+							(is_const ? " const" : "")));
 						ok2 = true;
 					}
 					if (ok2)

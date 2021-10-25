@@ -13,6 +13,9 @@ namespace flame
 		{
 		}
 
+		virtual int get_index() const = 0;
+		virtual void set_index(int v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cDropDown* create(void* parms = nullptr);
 	};
 }

@@ -1,5 +1,5 @@
 #include "../../graphics/font.h"
-#include "list_private.h"
+#include "../components/list_private.h"
 #include "../components/receiver_private.h"
 #include "../components/text_private.h"
 #include "file_selector_private.h"

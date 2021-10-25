@@ -13,5 +13,8 @@ namespace flame
 
 		EntityPtr get_selected() const override { return selected; }
 		void set_selected(EntityPtr v) override;
+
+		void on_load_finished() override;
+		bool on_before_adding_child(EntityPtr e);
 	};
 }
