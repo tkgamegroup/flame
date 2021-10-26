@@ -13,6 +13,9 @@ namespace flame
 		{
 		}
 
+		virtual const wchar_t* get_title() const = 0;
+		virtual void set_title(const wchar_t* v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create(void* parms = nullptr);
 	};
 }

@@ -13,6 +13,11 @@ namespace flame
 		{
 		}
 
+		virtual EntityPtr get_selected() const = 0;
+		virtual void set_selected(EntityPtr v) = 0;
+
+		virtual void expand_to_selected() = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cTree* create(void* parms = nullptr);
 	};
 }

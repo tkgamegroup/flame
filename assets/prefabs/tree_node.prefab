@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dTreeNode" >
+  <entity>
     <cElement layout_type="Vertical" />
+    <cTreeNode/>
     <entity src="prefabs/tree_node_title" />
     <entity name="items">
       <cElement padding="7,0,0,0" layout_type="Vertical" />

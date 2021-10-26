@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dTree" >
+  <entity>
     <cElement layout_type="Vertical" layout_gap="2" />
     <cReceiver />
+    <cTree/>
   </entity>
 </prefab>

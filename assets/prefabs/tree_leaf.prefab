@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity driver="dTreeLeaf" >
+  <entity>
     <cElement padding="18,2,4,2" alignx="MinMax"
               fill_color.state_rule="0,0,0,0
               Selected:0,50,156,255
@@ -9,5 +9,6 @@
            Selected:255,255,255,255
            Hovering:0,0,0,255" />
     <cReceiver />
+    <cTreeLeaf/>
   </entity>
 </prefab>
