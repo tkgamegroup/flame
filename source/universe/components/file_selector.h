@@ -1,16 +1,15 @@
 #pragma once
 
-#include "../driver.h"
+#include "../component.h"
 
 namespace flame
 {
-	struct dFileSelector : Driver
+	struct cFileSelector : Component
 	{
-		inline static auto type_name = "flame::dFileSelector";
+		inline static auto type_name = "flame::cFileSelector";
 		inline static auto type_hash = ch(type_name);
 
-		dFileSelector() :
-			Driver(type_name, type_hash)
+		cFileSelector() : Component(type_name, type_hash)
 		{
 		}
 
@@ -19,6 +18,6 @@ namespace flame
 		virtual void* add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture) = 0;
 		virtual void remove_callback(void* ret) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static dFileSelector* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cFileSelector* create(void* parms = nullptr);
 	};
 }

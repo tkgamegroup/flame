@@ -40,6 +40,7 @@ int main(int argc, char** args)
 	if (std::filesystem::is_directory(path))
 	{
 		printf("current directory: %s\n", path.string().c_str());
+		std::filesystem::current_path(path);
 
 		if (cmd.empty())
 		{
@@ -57,59 +58,59 @@ int main(int argc, char** args)
 				cmd = cmds[id];
 				printf("you choose %s\n", cmd.c_str());
 			}
-
-			if (name.empty())
-			{
-				std::cout << "name: ";
-				std::getline(std::cin, name);
-			}
-			if (name.empty())
-				return 0;
-
-			get_class_name(name);
-			if (cmd == "new_component_template")
-				class_name = 'c' + class_name;
-			else if (cmd == "new_system_template")
-				class_name = 's' + class_name;
-
-			auto indent_str = is_internal ? "\t" : "";
-
-			std::ofstream public_header_file(name + ".h");
-			public_header_file << "#pragma once\n\n";
-			if (is_internal)
-				public_header_file << "#include \"../component.h\"\n\n";
-			else
-				public_header_file << "#include <flame/universe/component.h>\n\n";
-			if (is_internal) public_header_file << "namespace flame\n{\n";
-			public_header_file << indent_str << "\\bstruct " << class_name << " : Component\n\t{\n";
-			public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
-			public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
-			public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
-			public_header_file << indent_str << "\t" << (is_internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
-			public_header_file << indent_str << "};\n";
-			if (is_internal) public_header_file << "}\n";
-			public_header_file.close();
-
-			std::ofstream private_header_file(name + "_private.h");
-			private_header_file << "#pragma once\n\n";
-			private_header_file << "#include \"" << name << ".h\"\n\n";
-			if (is_internal) private_header_file << "namespace flame\n{\n";
-			private_header_file << indent_str << "\\bstruct " << class_name << "Private : " << class_name << "\n\t{\n";
-			private_header_file << indent_str << "};\n";
-			if (is_internal) private_header_file << "}\n";
-			private_header_file.close();
-
-			std::ofstream source_file(name + ".cpp");
-			source_file << "#include \"" << name << "_private.h\"\n\n";
-			if (is_internal) source_file << "namespace flame\n{\n";
-			source_file << indent_str << class_name << "* " << class_name << "::create(void* parms)\n\t{\n";
-			source_file << indent_str << "\treturn new " << class_name << "Private();\n";
-			source_file << indent_str << "}\n";
-			if (is_internal) source_file << "}\n";
-			source_file.close();
-
-			cmd.clear();
 		}
+
+		if (name.empty())
+		{
+			std::cout << "name: ";
+			std::getline(std::cin, name);
+		}
+		if (name.empty())
+			return 0;
+
+		get_class_name(name);
+		if (cmd == "new_component_template")
+			class_name = 'c' + class_name;
+		else if (cmd == "new_system_template")
+			class_name = 's' + class_name;
+
+		auto indent_str = is_internal ? "\t" : "";
+
+		std::ofstream public_header_file(name + ".h");
+		public_header_file << "#pragma once\n\n";
+		if (is_internal)
+			public_header_file << "#include \"../component.h\"\n\n";
+		else
+			public_header_file << "#include <flame/universe/component.h>\n\n";
+		if (is_internal) public_header_file << "namespace flame\n{\n";
+		public_header_file << indent_str << "struct " << class_name << " : Component\n\t{\n";
+		public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
+		public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
+		public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
+		public_header_file << indent_str << "\t" << (is_internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
+		public_header_file << indent_str << "};\n";
+		if (is_internal) public_header_file << "}\n";
+		public_header_file.close();
+
+		std::ofstream private_header_file(name + "_private.h");
+		private_header_file << "#pragma once\n\n";
+		private_header_file << "#include \"" << name << ".h\"\n\n";
+		if (is_internal) private_header_file << "namespace flame\n{\n";
+		private_header_file << indent_str << "struct " << class_name << "Private : " << class_name << "\n\t{\n";
+		private_header_file << indent_str << "};\n";
+		if (is_internal) private_header_file << "}\n";
+		private_header_file.close();
+
+		std::ofstream source_file(name + ".cpp");
+		source_file << "#include \"" << name << "_private.h\"\n\n";
+		if (is_internal) source_file << "namespace flame\n{\n";
+		source_file << indent_str << class_name << "* " << class_name << "::create(void* parms)\n\t{\n";
+		source_file << indent_str << "\treturn new " << class_name << "Private();\n";
+		source_file << indent_str << "}\n";
+		if (is_internal) source_file << "}\n";
+		source_file.close();
+
+		cmd.clear();
 	}
 	else
 	{
@@ -414,18 +415,18 @@ int main(int argc, char** args)
 					auto indent = get_indent(it1->b1) + '\t';
 					ok2 = false;
 					ok = false;
-					if (anchor.empty() || anchor[0] != "A")
-					{
-						if (it1->find(std::regex("\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
-							ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "A")
 					{
 						if (it1->find(std::regex("virtual void set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
 						}
+					}
+					if (!ok)
+					{
+						if (it1->find(std::regex("\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
+							ok = true;
 					}
 					if (ok)
 					{
@@ -445,12 +446,7 @@ int main(int argc, char** args)
 					auto indent = get_indent(it1->b1) + '\t';
 					ok2 = false;
 					ok = false;
-					if (anchor.empty() || anchor[0] != "A")
-					{
-						it2 = list.begin();
-						ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "A")
 					{
 						if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\s*="), match, it2))
 						{
@@ -458,24 +454,29 @@ int main(int argc, char** args)
 							ok = true;
 						}
 					}
+					if (!ok)
+					{
+						it2 = list.begin();
+						ok = true;
+					}
 					if (ok)
 					{
 						list.emplace(it2, std::format("{0}{1} {2}{3};\n", indent, type, name, !value.empty() ? " = " + value : ""));
 						ok2 = true;
 					}
 					ok = false;
-					if (anchor.empty() || anchor[0] != "A")
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "A")
 					{
 						if (it1->find(std::regex("void set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
 						}
+					}
+					if (!ok)
+					{
+						it2 = list.end();
+						ok = true;
 					}
 					if (ok)
 					{
@@ -507,20 +508,18 @@ int main(int argc, char** args)
 					auto indent = get_indent(range->b1) + '\t';
 					ok2 = false;
 					ok = false;
-					if (anchor.empty() || anchor[0] != "A")
-					{
-						it2 = it1;
-						if (it2 != list.begin())
-							it2--;
-						ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "A")
 					{
 						if (range->find(std::regex("void\\s+" + class_name + "Private::set_" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
 						}
+					}
+					if (!ok)
+					{
+						it2 = it1;
+						ok = true;
 					}
 					if (ok)
 					{
@@ -640,18 +639,18 @@ int main(int argc, char** args)
 					auto indent = get_indent(it1->b1) + '\t';
 					ok2 = false;
 					ok = false;
-					if (anchor.empty() || anchor[0] != "F")
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "F")
 					{
 						if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
 						}
+					}
+					if (!ok)
+					{
+						it2 = list.end();
+						ok = true;
 					}
 					if (ok)
 					{
@@ -670,19 +669,18 @@ int main(int argc, char** args)
 					auto indent = get_indent(range->b1) + '\t';
 					ok2 = false;
 					ok = false;
-					if (anchor.empty() || anchor[0] != "F")
-					{
-						it2 = it1;
-						it2--;
-						ok = true;
-					}
-					else
+					if (!anchor.empty() && anchor[0] == "F")
 					{
 						if (range->find(std::regex("" + anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
 						}
+					}
+					if (!ok)
+					{
+						it2 = it1;
+						ok = true;
 					}
 					if (ok)
 					{

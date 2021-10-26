@@ -13,6 +13,11 @@ namespace flame
 		{
 		}
 
+		virtual void set_text(const wchar_t* v) = 0;
+
+		virtual void* add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture) = 0;
+		virtual void remove_callback(void* ret) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cInputDialog* create(void* parms = nullptr);
 	};
 }

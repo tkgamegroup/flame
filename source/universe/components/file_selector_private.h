@@ -65,7 +65,7 @@ namespace flame
 
 	static std::filesystem::path recent_folders_path;
 
-	struct dFileSelectorPrivate : dFileSelector
+	struct cFileSelectorPrivate : cFileSelector
 	{
 		std::vector<std::filesystem::path> folders;
 		int folder_idx = -1;
@@ -88,10 +88,6 @@ namespace flame
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, bool, const wchar_t*)>>> callbacks;
 
-		std::filesystem::path& curr_folder() { return folders[folder_idx]; };
-		void folder_changed();
-		void confirm();
-
 		void set_folder(const wchar_t* path) override { set_folder(std::filesystem::path(path)); }
 		void set_folder(const std::filesystem::path& path);
 
@@ -99,5 +95,9 @@ namespace flame
 		void remove_callback(void* ret) override;
 
 		void on_load_finished() override;
+
+		std::filesystem::path& curr_folder() { return folders[folder_idx]; }
+		void folder_changed();
+		void confirm();
 	};
 }
