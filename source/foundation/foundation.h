@@ -688,17 +688,4 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
-
-	struct Schedule
-	{
-		virtual void release() = 0;
-
-		virtual void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture) = 0;
-		virtual void begin_group() = 0;
-		virtual void end_group() = 0;
-		virtual void start() = 0;
-		virtual void stop() = 0;
-
-		FLAME_FOUNDATION_EXPORTS static Schedule* create(bool once = true);
-	};
 }
