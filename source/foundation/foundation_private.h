@@ -32,9 +32,6 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, const uvec2&)>>> resize_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> destroy_listeners;
 
-		bool sizing = false;
-		uvec2 pending_size;
-
 		bool dead = false;
 
 		NativeWindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
@@ -90,7 +87,7 @@ namespace flame
 		void remove_destroy_listener(void* lis) override;
 	};
 
-	struct LooperPrivate : Looper
+	struct ApplicationPrivate : Application
 	{
 		uint frame = 0;
 		uint64 last_time = 0;
@@ -116,8 +113,6 @@ namespace flame
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) override;
 		void reset_event(void* ev) override;
 		void remove_event(void* ev) override;
-		void remove_events(int id) override;
+		void clear_events(int id) override;
 	};
-
-	extern LooperPrivate _looper;
 }

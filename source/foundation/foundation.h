@@ -28,8 +28,7 @@ struct FlameFoundationTypeSelector
 namespace flame
 {
 	FLAME_FOUNDATION_TYPE(NativeWindow);
-	FLAME_FOUNDATION_TYPE(Looper);
-	FLAME_FOUNDATION_TYPE(Schedule);
+	FLAME_FOUNDATION_TYPE(Application);
 
 	FLAME_FOUNDATION_TYPE(Bitmap);
 
@@ -584,10 +583,6 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes = true, bool sync = true);
 	// set_event to the returned ev to end the file watching
 
-	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(Capture& c), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void clear_all_works();
-	FLAME_FOUNDATION_EXPORTS void wait_all_works();
-
 	enum NativeWindowStyleFlags
 	{
 		NativeWindowFrame = 1 << 0,
@@ -671,21 +666,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent = nullptr);
 	};
 
-	struct Looper
-	{
-		virtual uint get_frame() const = 0;
-		virtual float get_delta_time() const = 0; // second
-		virtual float get_total_time() const = 0; // second
-		virtual uint get_fps() const = 0;
+	virtual uint get_frame() const = 0;
+	virtual float get_delta_time() const = 0; // second
+	virtual float get_total_time() const = 0; // second
+	virtual uint get_fps() const = 0;
 
-		virtual int loop(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
+	virtual int run(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
 
-		/* set c._current to null to keep event */
-		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
-		virtual void reset_event(void* ev) = 0;
-		virtual void remove_event(void* ev) = 0;
-		virtual void remove_events(int id = 0) = 0; /* id=-1 means all */
-	};
-
-	FLAME_FOUNDATION_EXPORTS Looper& looper();
+	/* set c._current to null to keep event */
+	virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float time = 0.f, uint id = 0) = 0;
+	virtual void reset_event(void* ev) = 0;
+	virtual void remove_event(void* ev) = 0;
+	virtual void clear_events(int id = 0) = 0; /* id=-1 means all */
 }

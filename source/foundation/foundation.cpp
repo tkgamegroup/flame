@@ -992,63 +992,6 @@ namespace flame
 		return nullptr;
 	}
 
-	const auto all_workers = 3;
-	static std::mutex mtx;
-	static std::condition_variable cv;
-	static auto workers = all_workers;
-
-	static std::vector<std::unique_ptr<Closure<void(Capture&)>>> works;
-
-	static void try_distribute_work()
-	{
-		if (!works.empty() && workers > 0)
-		{
-			mtx.lock();
-
-			workers--;
-			auto w = works.front().release();
-			works.erase(works.begin());
-
-			std::thread([=]() {
-				w->call();
-				delete w;
-				mtx.lock();
-				workers++;
-				cv.notify_one();
-				mtx.unlock();
-				try_distribute_work();
-			}).detach();
-
-			mtx.unlock();
-		}
-	}
-
-	void add_work(void (*function)(Capture& c), const Capture& capture)
-	{
-		mtx.lock();
-		works.emplace_back(new Closure(function, capture));
-		mtx.unlock();
-
-		try_distribute_work();
-	}
-
-	void clear_all_works()
-	{
-		mtx.lock();
-		works.clear();
-		mtx.unlock();
-
-		wait_all_works();
-	}
-
-	void wait_all_works()
-	{
-		std::unique_lock<std::mutex> lock(mtx);
-
-		while (workers != all_workers)
-			cv.wait(lock);
-	}
-
 	enum KeyEventType
 	{
 		KeyEventNull,
@@ -1160,8 +1103,6 @@ namespace flame
 		cursors[CursorUpArrwo]		= LoadCursorA(nullptr, IDC_UPARROW);
 		cursors[CursorWait]			= LoadCursorA(nullptr, IDC_WAIT);
 
-		pending_size = size;
-
 		set_cursor(CursorArrow);
 		_looper.windows.emplace_back(this);
 	}
@@ -1181,12 +1122,6 @@ namespace flame
 	LRESULT NativeWindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
-			if (size != pending_size)
-			{
-				size = pending_size;
-				for (auto& l : resize_listeners)
-					l->call(size);
-			}
 		};
 
 		switch (message)
@@ -1278,24 +1213,10 @@ namespace flame
 		case WM_DESTROY:
 			dead = true; 
 			return true;
-		case WM_ENTERSIZEMOVE:
-			sizing = true;
-			SetTimer(hWnd, 0, 16, NULL);
-			return true;
-		case WM_EXITSIZEMOVE:
-			sizing = false;
-			KillTimer(hWnd, 0);
-			resize();
-			return true;
-		case WM_TIMER:
-			if (wParam == 0)
-				resize();
-			_looper.one_frame();
-			return true;
 		case WM_SIZE:
-			pending_size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			if (!sizing)
-				resize();
+			size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : resize_listeners)
+				l->call(size);
 			return true;
 		case WM_MOVE:
 			pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
@@ -1537,7 +1458,7 @@ namespace flame
 		return new NativeWindowPrivate(title, size, style, (NativeWindowPrivate*)parent);
 	}
 
-	int LooperPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)
+	int ApplicationPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)
 	{
 		if (!_frame_callback)
 		{
@@ -1591,7 +1512,7 @@ namespace flame
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	bool LooperPrivate::one_frame()
+	bool ApplicationPrivate::one_frame()
 	{
 		for (auto it = windows.begin(); it != windows.end(); )
 		{
@@ -1663,7 +1584,7 @@ namespace flame
 		return true;
 	}
 
-	void* LooperPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
+	void* ApplicationPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
@@ -1677,13 +1598,13 @@ namespace flame
 		return e;
 	}
 
-	void LooperPrivate::reset_event(void* _ev)
+	void ApplicationPrivate::reset_event(void* _ev)
 	{
 		auto ev = (Event*)_ev;
 		ev->rest = ev->interval;
 	}
 
-	void LooperPrivate::remove_event(void* ev)
+	void ApplicationPrivate::remove_event(void* ev)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
@@ -1699,27 +1620,22 @@ namespace flame
 		}
 	}
 
-	void LooperPrivate::remove_events(int id)
+	void ApplicationPrivate::clear_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
-			events.clear();
-		else
 		{
-			for (auto it = events.begin(); it != events.end();)
-			{
-				if ((*it)->id == id)
-					it = events.erase(it);
-				else
-					it++;
-			}
+			events.clear();
+			return;
+		}
+		for (auto it = events.begin(); it != events.end();)
+		{
+			if ((*it)->id == id)
+				it = events.erase(it);
+			else
+				it++;
 		}
 	}
 
-	LooperPrivate _looper;
-
-	Looper& looper()
-	{
-		return _looper;
-	}
+	ApplicationPrivate* app = nullptr;
 }
