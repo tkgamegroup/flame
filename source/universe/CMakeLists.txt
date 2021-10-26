@@ -55,11 +55,6 @@ list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/universe/components")
 add_custom_command(TARGET flame_universe PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER_FILES} "${CMAKE_SOURCE_DIR}/include/flame/universe/components")
 
-file(GLOB PUBLIC_HEADER_FILES "drivers/*.h*")
-list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")
-file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/universe/drivers")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER_FILES} "${CMAKE_SOURCE_DIR}/include/flame/universe/drivers")
-
 file(GLOB PUBLIC_HEADER_FILES "systems/*.h*")
 list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/universe/systems")

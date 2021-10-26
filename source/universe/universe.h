@@ -69,9 +69,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cSky);
 	FLAME_UNIVERSE_TYPE(cScript);
 
-	FLAME_UNIVERSE_TYPE(dDragEdit);
-	FLAME_UNIVERSE_TYPE(dWindow);
-
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
