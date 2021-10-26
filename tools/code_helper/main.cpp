@@ -314,6 +314,14 @@ int main(int argc, char** args)
 			return ret;
 		};
 
+		auto get_type2 = [](const std::string& type)->std::string {
+			if (type == "std::string")
+				return "const char*";
+			if (type == "std::wstring")
+				return "const wchar_t*";
+			return type;
+		};
+
 		auto public_header_lines = get_file_lines(public_header_fn);
 
 		Block public_header_blocks(public_header_lines);
@@ -400,6 +408,8 @@ int main(int argc, char** args)
 				if (value.empty())
 					return 0;
 
+				auto type2 = get_type2(type);
+
 				if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
 				{
 					auto& list = it1->children;
@@ -424,7 +434,7 @@ int main(int argc, char** args)
 						list.emplace(it2, std::format(
 							"{0}virtual {1} get_{2}() const = 0;\n"
 							"{0}virtual void set_{2}({1} v) = 0;\n",
-							indent, type, name));
+							indent, type2, name));
 						ok2 = true;
 					}
 					if (ok2)
@@ -472,9 +482,9 @@ int main(int argc, char** args)
 					if (ok)
 					{
 						list.emplace(it2, std::format(
-							"{0}{1} get_{2}() const override {{ return {2}; }}\n"
+							"{0}{1} get_{2}() const override {{ return {2}{3}; }}\n"
 							"{0}void set_{2}({1} v) override;\n",
-							indent, type, name));
+							indent, type2, name, type == type2 ? "" : ".c_str()"));
 						ok2 = true;
 					}
 					if (ok2)
@@ -511,7 +521,7 @@ int main(int argc, char** args)
 							"{0}{{\n"
 							"{0}\t{2} = v;\n"
 							"{0}}}\n",
-							indent, type, name, class_name));
+							indent, type2, name, class_name));
 						ok2 = true;
 					}
 					if (ok2)
