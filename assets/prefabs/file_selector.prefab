@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
-	<eWindow driver="dFileSelector" pos="200,100" size="400,400" title="File Selector">
+	<eWindow pos="200,100" size="400,400" title="File Selector">
+    <cFileSelector/>
     <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="8">
       <eButton name="back_btn" text="" />
       <eButton name="forward_btn" text="" />

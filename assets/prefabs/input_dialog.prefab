@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
-  <eWindow driver="dInputDialog" pos="200,100" >
+  <eWindow pos="200,100" >
+    <cInoutDialog/>
     <eEdit name="text" alignx="MinMax" />
     <eElement layout_type="Horizontal" layout_gap="4" >
       <eButton name="ok" text="Ok" />

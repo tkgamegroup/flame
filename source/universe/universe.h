@@ -31,7 +31,6 @@ namespace flame
 {
 	FLAME_UNIVERSE_TYPE(Entity);
 	FLAME_UNIVERSE_TYPE(Component);
-	FLAME_UNIVERSE_TYPE(Driver);
 	FLAME_UNIVERSE_TYPE(System);
 	FLAME_UNIVERSE_TYPE(World);
 

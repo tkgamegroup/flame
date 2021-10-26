@@ -3,8 +3,8 @@ function cmd_file_open()
 
     local d = create_entity("prefabs/file_selector")
 
-    d.find_driver("dWindow").set_title("Open")
-    local file_selector = d.find_driver("dFileSelector")
+    d.find_component("cWindow").set_title("Open")
+    local file_selector = d.find_component("cFileSelector")
     file_selector.add_callback(function(ok, text)
         if ok then
             if load_scene(text) then 
@@ -22,8 +22,8 @@ function cmd_file_save_as()
     local l = create_entity("prefabs/layer")
     local d = create_entity("prefabs/input_dialog")
               
-    d.find_driver("dWindow").set_title("Save As")
-    local input_dialog = d.find_driver("dInputDialog")
+    d.find_component("cWindow").set_title("Save As")
+    local input_dialog = d.find_component("cInputDialog")
     input_dialog.set_text(last_save)
     input_dialog.add_callback(function(ok, text)
         if ok then 
@@ -91,7 +91,7 @@ cmd_tools_ui_reflector = {
         if checked then
             if not ui_reflector.p then
                 ui_reflector = create_entity("ui_reflector")
-                ui_reflector.find_driver("dWindow").add_close_listener(function()
+                ui_reflector.find_component("cWindow").add_close_listener(function()
                     cmd_tools_ui_reflector.dmi.set_checked(false)
                     ui_reflector.p = nil
                 end)
@@ -112,7 +112,7 @@ cmd_tools_csm_debugger = {
         if checked then
             if not csm_debugger.p then
                 csm_debugger = create_entity("csm_debugger")
-                csm_debugger.find_driver("dWindow").add_close_listener(function()
+                csm_debugger.find_component("cWindow").add_close_listener(function()
                     cmd_tools_csm_debugger.dmi.set_checked(false)
                     csm_debugger.p = nil
                 end)
@@ -133,7 +133,7 @@ cmd_tools_ssao_debugger = {
         if checked then
             if not ssao_debugger.p then
                 ssao_debugger = create_entity("ssao_debugger")
-                ssao_debugger.find_driver("dWindow").add_close_listener(function()
+                ssao_debugger.find_component("cWindow").add_close_listener(function()
                     cmd_tools_ssao_debugger.dmi.set_checked(false)
                     ssao_debugger.p = nil
                 end)

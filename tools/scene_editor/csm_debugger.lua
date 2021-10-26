@@ -23,7 +23,7 @@ if layer.p then
 		end
 	end))
 	element.add_drawer(debugger.drawer)
-	entity.find_driver("dWindow").add_close_listener(function()
+	entity.find_component("cWindow").add_close_listener(function()
 		element.remove_drawer(debugger.drawer)
 		debugger.drawer.release()
 	end)

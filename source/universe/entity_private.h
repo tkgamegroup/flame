@@ -2,7 +2,6 @@
 
 #include "entity.h"
 #include "component.h"
-#include "driver.h"
 
 #include <functional>
 
@@ -49,8 +48,6 @@ namespace flame
 #endif
 		uint created_location;
 
-		std::vector<std::unique_ptr<Driver>> drivers;
-		std::unordered_map<uint, std::pair<Driver*, DataListeners>> drivers_map;
 		std::vector<std::unique_ptr<Component>> components;
 		std::unordered_map<uint, std::pair<Component*, DataListeners>> components_map;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
@@ -117,23 +114,12 @@ namespace flame
 
 		void traversal(const std::function<void(EntityPrivate*)>& callback);
 
-		Driver* get_driver(uint hash, int idx = -1) const override;
-		Driver* find_driver(const std::string& name) const;
-		Driver* find_driver(const char* name) const override { return find_driver(std::string(name)); }
-
-		void push_driver(Driver* d) override;
-		void pop_driver() override;
-
 		void* add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture) override;
 		void remove_message_listener(void* lis) override;
 
 		void component_data_changed(Component* c, uint h) override;
 		void* add_component_data_listener(void (*callback)(Capture& c, uint hash), const Capture& capture, Component* c) override;
 		void remove_component_data_listener(void* lis, Component* c) override;
-
-		void driver_data_changed(Driver* d, uint h) override;
-		void* add_driver_data_listener(void (*callback)(Capture& c, uint hash), const Capture& capture, Driver* d) override;
-		void remove_driver_data_listener(void* lis, Driver* d) override;
 
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;
 		void remove_event(void* ev) override;

@@ -1,8 +1,8 @@
 hierarchy = entity
 
-local tree = hierarchy.find_driver("dTree")
+local tree = hierarchy.find_component("cTree")
 local hash_selected = flame_hash("selected")
-hierarchy.add_driver_data_listener(function(h)
+hierarchy.add_component_data_listener(function(h)
     if h == hash_selected then
         local s = tree.get_selected()
         if s.p then
@@ -25,7 +25,7 @@ function update_hierachy()
             local count = src.get_children_count()
             if count > 0 then
                 local e = create_entity("prefabs/tree_node")
-                local tree_node = e.find_driver("dTreeNode")
+                local tree_node = e.find_component("cTreeNode")
                 tree_node.toggle_collapse()
                 tree_node.set_title("["..src.get_name().."]")
                 e.set_userdata(src)
@@ -37,7 +37,7 @@ function update_hierachy()
                 end
             else
                 local e = create_entity("prefabs/tree_leaf")
-                e.find_driver("dTreeLeaf").set_title("["..src.get_name().."]")
+                e.find_component("cTreeLeaf").set_title("["..src.get_name().."]")
                 e.set_userdata(src)
                 src.set_userdata(e)
                 dst.add_child(e)

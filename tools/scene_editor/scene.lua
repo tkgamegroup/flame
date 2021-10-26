@@ -74,7 +74,7 @@ function select(e, from_hierarchy)
         else
             o = { p=nil }
         end
-        local tree = hierarchy.find_driver("dTree")
+        local tree = hierarchy.find_component("cTree")
         tree.set_selected(o)
         tree.expand_to_selected()
     end

@@ -169,30 +169,6 @@ namespace flame
 		return nullptr;
 	}
 
-	static std::map<std::string, ReflectedType> driver_types;
-
-	ReflectedType* find_driver_type(const std::string& name)
-	{
-		auto it = driver_types.find(name);
-		if (it == driver_types.end())
-			return nullptr;
-		return &it->second;
-	}
-
-	ReflectedType* find_driver_type(const std::string& udt_name, std::string* name)
-	{
-		for (auto& t : driver_types)
-		{
-			if (t.second.udt->get_name() == udt_name)
-			{
-				if (name)
-					*name = t.first;
-				return &t.second;
-			}
-		}
-		return nullptr;
-	}
-
 	static std::map<std::string, std::filesystem::path> prefabs_map;
 
 	StateRule::~StateRule()
@@ -418,11 +394,6 @@ namespace flame
 
 		if (position == -1)
 		{
-			for (auto it = drivers.rbegin(); it != drivers.rend(); it++)
-			{
-				if ((*it)->on_child_added(e, pos))
-					return;
-			}
 			for (auto it = components.rbegin(); it != components.rend(); it++)
 			{
 				if ((*it)->on_before_adding_child(e))
@@ -565,70 +536,6 @@ namespace flame
 		callback(this);
 	}
 
-	Driver* EntityPrivate::get_driver(uint hash, int idx) const
-	{
-		if (idx == -1)
-		{
-			for (auto& d : drivers)
-			{
-				if (d->type_hash == hash)
-					return d.get();
-			}
-		}
-		else
-		{
-			idx = max(0, (int)drivers.size() - 1 - idx);
-			return drivers[idx].get();
-		}
-		return nullptr;
-	}
-
-	Driver* EntityPrivate::find_driver(const std::string& _name) const
-	{
-		Driver* ret = nullptr;
-		auto name = _name;
-		for (auto& d : drivers)
-		{
-			if (d->type_name == _name)
-			{
-				ret = d.get();
-				break;
-			}
-		}
-		name = "flame::" + _name;
-		for (auto& d : drivers)
-		{
-			if (d->type_name == name)
-			{
-				ret = d.get();
-				break;
-			}
-		}
-		if (ret)
-		{
-			auto script = script::Instance::get_default();
-			script->push_string(name.c_str());
-			script->set_global_name("__type__");
-		}
-		return ret;
-	}
-
-	void EntityPrivate::push_driver(Driver* d)
-	{
-		fassert(!d->entity && d->entity != this);
-		fassert(!get_driver(d->type_hash));
-
-		d->entity = this;
-		drivers.emplace_back(d);
-		drivers_map.emplace(d->type_hash, std::make_pair(d, DataListeners()));
-	}
-
-	void EntityPrivate::pop_driver()
-	{
-		if (!drivers.empty())
-			drivers.pop_back();
-	}
-
 	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture)
 	{
 		if (!callback)
@@ -703,55 +610,6 @@ namespace flame
 	{
 		auto it = components_map.find(c->type_hash);
 		if (it != components_map.end())
-		{
-			std::erase_if(it->second.second, [&](const auto& i) {
-				return i == (decltype(i))lis;
-			});
-		}
-	}
-
-	void EntityPrivate::driver_data_changed(Driver* d, uint h)
-	{
-		auto it = drivers_map.find(d->type_hash);
-		if (it != drivers_map.end())
-		{
-			for (auto& l : it->second.second)
-				l->call(h);
-		}
-	}
-
-	void* EntityPrivate::add_driver_data_listener(void (*callback)(Capture& c, uint h), const Capture& capture, Driver* d)
-	{
-		auto it = drivers_map.find(d->type_hash);
-		if (it != drivers_map.end())
-		{
-			if (!callback)
-			{
-				auto slot = (uint)&capture;
-				callback = [](Capture& c, uint h) {
-					auto scr_ins = script::Instance::get_default();
-					scr_ins->get_global("callbacks");
-					scr_ins->get_member(nullptr, c.data<uint>());
-					scr_ins->get_member("f");
-					scr_ins->push_uint(h);
-					scr_ins->call(1);
-					scr_ins->pop(2);
-				};
-				auto c = new Closure(callback, Capture().set_data(&slot));
-				it->second.second.emplace_back(c);
-				return c;
-			}
-			auto c = new Closure(callback, capture);
-			it->second.second.emplace_back(c);
-			return c;
-		}
-		return nullptr;
-	}
-
-	void EntityPrivate::remove_driver_data_listener(void* lis, Driver* d)
-	{
-		auto it = drivers_map.find(d->type_hash);
-		if (it != drivers_map.end())
 		{
 			std::erase_if(it->second.second, [&](const auto& i) {
 				return i == (decltype(i))lis;
@@ -908,27 +766,6 @@ namespace flame
 				}
 				e_dst->load(path);
 			}
-			else if (name == "driver")
-			{
-				fassert(first_e == e_dst);
-				ReflectedType* dt = find_driver_type(a.value());
-				if (dt)
-				{
-					auto d = (Driver*)dt->create();
-					auto& srcs = e_dst->srcs;
-					for (auto i = (int)srcs.size() - 1; i >= 0; i--)
-					{
-						if (srcs[i] == fn)
-						{
-							d->src_id = srcs.size() - i - 1;
-							break;
-						}
-					}
-					e_dst->push_driver(d);
-				}
-				else
-					printf("cannot find driver type: %s\n", a.value());
-			}
 			else
 			{
 				auto ok = false;
@@ -950,16 +787,6 @@ namespace flame
 				}
 				if (e)
 				{
-					for (auto it = e->drivers.rbegin(); it != e->drivers.rend(); it++)
-					{
-						auto d = (*it).get();
-						auto dt = find_driver_type(d->type_name, nullptr);
-						if (dt && set_attribute(d, dt, vname, value, is_state_rule))
-						{
-							ok = true;
-							break;
-						}
-					}
 					if (!ok)
 					{
 						for (auto& c : e->components)
@@ -1047,15 +874,6 @@ namespace flame
 				{
 					c->load_finished = true;
 					c->on_load_finished();
-				}
-			}
-			if (!e_dst->drivers.empty())
-			{
-				auto d = e_dst->drivers.back().get();
-				if (!d->load_finished)
-				{
-					d->load_finished = true;
-					d->on_load_finished();
 				}
 			}
 		}
@@ -1206,25 +1024,6 @@ namespace flame
 			n_dst.append_attribute("name").set_value(e_src->name.c_str());
 		if (!e_src->visible)
 			n_dst.append_attribute("visible").set_value("false");
-		if (!e_src->drivers.empty())
-		{
-			auto d = e_src->drivers.back().get();
-			std::string dname;
-			find_driver_type(d->type_name, &dname);
-			if (srcs[srcs.size() - d->src_id - 1] == fn)
-				n_dst.append_attribute("driver").set_value(dname.c_str());
-			for (auto& d : e_src->drivers)
-			{
-				auto dt = find_driver_type(d->type_name, nullptr);
-				auto ref = reference ? reference->get_driver(d->type_hash) : nullptr;
-				for (auto& a : dt->attributes)
-				{
-					auto value = a.second.serialize(d.get(), ref);
-					if (!value.empty())
-						n_dst.append_attribute(a.first.c_str()).set_value(value.c_str());
-				}
-			}
-		}
 
 		auto ti_stateflags = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 		for (auto& c : e_src->components)
@@ -1318,7 +1117,6 @@ namespace flame
 		for (auto ui : udts)
 		{
 			static auto reg_com = std::regex(R"(^flame::(c\w+)$)");
-			static auto reg_dri = std::regex(R"(^flame::(d\w+)$)");
 			std::smatch res;
 			auto name = std::string(ui->get_name());
 			if (std::regex_search(name, res, reg_com))
@@ -1326,12 +1124,6 @@ namespace flame
 				ReflectedType t(ui);
 				if (t.dummy)
 					component_types.emplace(res[1].str(), std::move(t));
-			}
-			else if (std::regex_search(name, res, reg_dri))
-			{
-				ReflectedType t(ui);
-				if (t.dummy)
-					driver_types.emplace(res[1].str(), std::move(t));
 			}
 		}
 

@@ -8,7 +8,7 @@ function on_menu(ev)
 end
 
 function on_radio_menu(f)
-    local dmi = entity.find_driver("dMenuItem")
+    local dmi = entity.find_component("cMenuItem")
     entity.find_component("cReceiver").add_mouse_left_down_listener(function()
         dmi.set_radio_checked()
         f(true)
@@ -16,7 +16,7 @@ function on_radio_menu(f)
 end
 
 function on_check_menu(o)
-    local dmi = entity.find_driver("dMenuItem")
+    local dmi = entity.find_component("cMenuItem")
     if type(o) == "table" then
         o.dmi = dmi
     end

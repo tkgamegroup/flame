@@ -8,11 +8,6 @@
       <item type="variable" name="^entity$" />
       <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
     </rule>
-    <rule name="^flame::Driver$">
-      <item type="variable" name="^type_name$" />
-      <item type="variable" name="^entity$" />
-      <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-    </rule>
     <rule name="^flame::System$">
       <item type="variable" name="^type_name$" />
       <item type="variable" name="^world$" />
@@ -35,9 +30,6 @@
       <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
     </rule>
     <rule name="^flame::c\w+(?&lt;!Bridge)(?&lt;!Private)$" >
-      <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-    </rule>
-    <rule name="^flame::d\w+(?&lt;!Bridge)(?&lt;!Private)$" >
       <item type="function" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
     </rule>
     <rule name="^flame::s\w+(?&lt;!Bridge)(?&lt;!Private)$" >
