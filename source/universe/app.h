@@ -32,7 +32,7 @@ namespace flame
 	{
 		App* app;
 
-		UniPtr<Window> window;
+		UniPtr<NativeWindow> window;
 
 		UniPtr<graphics::Swapchain> swapchain;
 		int swapchain_img_idx = -1;
@@ -47,7 +47,7 @@ namespace flame
 		sPhysics* s_physics = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
+		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool hdr = false, bool always_update = false, NativeWindow* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_targets();
 		void update();
@@ -65,10 +65,10 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool always_update, Window* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool hdr, bool always_update, NativeWindow* parent) :
 		app(app)
 	{
-		window = Window::create(title, size, styles, parent);
+		window = NativeWindow::create(title, size, styles, parent);
 		window->add_destroy_listener([](Capture& c) {
 			c.thiz<GraphicsWindow>()->window.release();
 		}, Capture().set_thiz(this));
@@ -84,7 +84,7 @@ namespace flame
 		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
 		world.reset(World::create());
-		world->register_object(window.get(), "flame::Window");
+		world->register_object(window.get(), "flame::NativeWindow");
 		s_scene = sScene::create();
 		world->add_system(s_scene);
 		s_dispatcher = sDispatcher::create();

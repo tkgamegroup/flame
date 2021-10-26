@@ -6,7 +6,7 @@ namespace flame
 {
 	struct sScenePrivate : sScene
 	{
-		Window* window = nullptr;
+		NativeWindow* window = nullptr;
 
 		std::deque<std::pair<uint, std::deque<cElementPrivate*>>> sizing_list;
 		std::deque<std::pair<uint, std::deque<cElementPrivate*>>> layout_list;

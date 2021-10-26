@@ -10,7 +10,7 @@ namespace flame
 	{
 		static auto swapchain_format = Format_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* device, Window* window) :
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* device, NativeWindow* window) :
 			device(device),
 			window(window)
 		{
@@ -146,7 +146,7 @@ namespace flame
 			return swapchain_format;
 		}
 
-		Swapchain* Swapchain::create(Device* device, Window* window)
+		Swapchain* Swapchain::create(Device* device, NativeWindow* window)
 		{
 			return new SwapchainPrivate((DevicePrivate*)device, window);
 		}

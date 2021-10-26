@@ -10,7 +10,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual Window* get_window() const = 0;
+			virtual NativeWindow* get_window() const = 0;
 			virtual uint get_images_count() const = 0;
 			virtual ImagePtr get_image(uint idx) const = 0;
 			virtual SemaphorePtr get_image_avalible() const = 0;
@@ -20,7 +20,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Format get_format();
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device* device, Window* window);
+			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device* device, NativeWindow* window);
 		};
 	}
 }

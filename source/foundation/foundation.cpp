@@ -1058,13 +1058,13 @@ namespace flame
 
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
+		auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0);
 		if (w)
 			return w->wnd_proc(message, wParam, lParam);
 		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 
-	WindowPrivate::WindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, WindowPrivate* parent)
+	NativeWindowPrivate::NativeWindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1103,7 +1103,7 @@ namespace flame
 		size = _size;
 		style = _style;
 
-		fassert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+		fassert(!(style & NativeWindowFullscreen) || (!(style & NativeWindowFrame) && !(style & NativeWindowResizable)));
 
 		uvec2 final_size;
 		auto screen_size = get_screen_size();
@@ -1113,18 +1113,18 @@ namespace flame
 			win32_style |= WS_POPUP | WS_BORDER;
 		else
 		{
-			if (style & WindowFrame)
+			if (style & NativeWindowFrame)
 				win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-			if (style & WindowResizable)
+			if (style & NativeWindowResizable)
 				win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-			if (style & WindowFullscreen)
+			if (style & NativeWindowFullscreen)
 				final_size = screen_size;
-			if (style & WindowMaximized)
+			if (style & NativeWindowMaximized)
 				win32_style |= WS_MAXIMIZE;
 		}
 
 		auto win32_ex_style = 0L;
-		if (style & WindowTopmost)
+		if (style & NativeWindowTopmost)
 			win32_ex_style |= WS_EX_TOPMOST;
 
 		{
@@ -1166,19 +1166,19 @@ namespace flame
 		_looper.windows.emplace_back(this);
 	}
 
-	WindowPrivate::~WindowPrivate()
+	NativeWindowPrivate::~NativeWindowPrivate()
 	{
 		for (auto& l : destroy_listeners)
 			l->call();
 	}
 
-	void WindowPrivate::release()
+	void NativeWindowPrivate::release()
 	{
 		DestroyWindow(hWnd);
 		dead = true;
 	}
 
-	LRESULT WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
+	LRESULT NativeWindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
 			if (size != pending_size)
@@ -1308,22 +1308,22 @@ namespace flame
 		}
 	}
 
-	void* WindowPrivate::get_native() 
+	void* NativeWindowPrivate::get_native() 
 	{
 		return hWnd;
 	}
 
-	void WindowPrivate::set_pos(const ivec2& _pos)
+	void NativeWindowPrivate::set_pos(const ivec2& _pos)
 	{
 		 pos = _pos;
 		SetWindowPos(hWnd, HWND_TOP, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void WindowPrivate::set_size(const uvec2& size)
+	void NativeWindowPrivate::set_size(const uvec2& size)
 	{
 	}
 
-	ivec2 WindowPrivate::global_to_local(const ivec2& p)
+	ivec2 NativeWindowPrivate::global_to_local(const ivec2& p)
 	{
 		POINT pt;
 		pt.x = p.x;
@@ -1332,13 +1332,13 @@ namespace flame
 		return ivec2(pt.x, pt.y);
 	}
 
-	void WindowPrivate::set_title(const std::wstring& _title)
+	void NativeWindowPrivate::set_title(const std::wstring& _title)
 	{
 		title = _title;
 		SetWindowTextW(hWnd, title.c_str());
 	}
 
-	void WindowPrivate::set_cursor(CursorType type) 
+	void NativeWindowPrivate::set_cursor(CursorType type) 
 	{
 		if (type == cursor_type)
 			return;
@@ -1350,191 +1350,191 @@ namespace flame
 			ShowCursor(false);
 	}
 
-	void* WindowPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
+	void* NativeWindowPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		key_down_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_key_down_listener(void* lis)
+	void NativeWindowPrivate::remove_key_down_listener(void* lis)
 	{
 		std::erase_if(key_down_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
+	void* NativeWindowPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		key_up_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_key_up_listener(void* lis)
+	void NativeWindowPrivate::remove_key_up_listener(void* lis)
 	{
 		std::erase_if(key_up_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture)
+	void* NativeWindowPrivate::add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		char_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_char_listener(void* lis)
+	void NativeWindowPrivate::remove_char_listener(void* lis)
 	{
 		std::erase_if(char_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_down_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_left_down_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_left_down_listener(void* lis)
 	{
 		std::erase_if(mouse_left_down_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_up_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_left_up_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_left_up_listener(void* lis)
 	{
 		std::erase_if(mouse_left_up_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_down_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_right_down_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_right_down_listener(void* lis)
 	{
 		std::erase_if(mouse_right_down_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_up_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_right_up_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_right_up_listener(void* lis)
 	{
 		std::erase_if(mouse_right_up_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_down_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_middle_down_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_middle_down_listener(void* lis)
 	{
 		std::erase_if(mouse_middle_down_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_up_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_middle_up_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_middle_up_listener(void* lis)
 	{
 		std::erase_if(mouse_middle_up_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_move_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_move_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_move_listener(void* lis)
 	{
 		std::erase_if(mouse_move_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
+	void* NativeWindowPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_scroll_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_scroll_listener(void* lis)
+	void NativeWindowPrivate::remove_mouse_scroll_listener(void* lis)
 	{
 		std::erase_if(mouse_scroll_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const uvec2& size), const Capture& capture)
+	void* NativeWindowPrivate::add_resize_listener(void (*callback)(Capture& c, const uvec2& size), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		resize_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_resize_listener(void* lis)
+	void NativeWindowPrivate::remove_resize_listener(void* lis)
 	{
 		std::erase_if(resize_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
+	void* NativeWindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		destroy_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_destroy_listener(void* lis)
+	void NativeWindowPrivate::remove_destroy_listener(void* lis)
 	{
 		std::erase_if(destroy_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	Window* Window::create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, Window* parent)
+	NativeWindow* NativeWindow::create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent)
 	{
-		return new WindowPrivate(title, size, style, (WindowPrivate*)parent);
+		return new NativeWindowPrivate(title, size, style, (NativeWindowPrivate*)parent);
 	}
 
 	int LooperPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)

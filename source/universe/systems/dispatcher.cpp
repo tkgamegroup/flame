@@ -15,7 +15,7 @@ namespace flame
 
 	void sDispatcherPrivate::on_added()
 	{
-		window = (Window*)world->find_object("flame::Window");
+		window = (NativeWindow*)world->find_object("flame::NativeWindow");
 		if (window)
 		{
 			key_down_listener = window->add_key_down_listener([](Capture& c, KeyboardKey key) {

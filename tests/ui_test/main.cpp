@@ -19,7 +19,7 @@ void MyApp::create()
 }
 
 MainForm::MainForm() :
-	GraphicsWindow(&g_app, L"UI Test", uvec2(1280, 720), WindowFrame | WindowResizable)
+	GraphicsWindow(&g_app, L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable)
 {
 
 }

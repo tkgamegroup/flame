@@ -7,7 +7,7 @@
 
 namespace flame
 {
-	struct WindowPrivate : Window
+	struct NativeWindowPrivate : NativeWindow
 	{
 		HWND hWnd = 0;
 
@@ -37,8 +37,8 @@ namespace flame
 
 		bool dead = false;
 
-		WindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, WindowPrivate* parent);
-		~WindowPrivate();
+		NativeWindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
+		~NativeWindowPrivate();
 
 		void release() override;
 
@@ -100,7 +100,7 @@ namespace flame
 		uint fps_counting = 0;
 		float fps_delta = 0.f;
 
-		std::vector<std::unique_ptr<WindowPrivate>> windows;
+		std::vector<std::unique_ptr<NativeWindowPrivate>> windows;
 		void (*frame_callback)(Capture& c, float delta_time) = nullptr;
 		Capture frame_capture = {};
 

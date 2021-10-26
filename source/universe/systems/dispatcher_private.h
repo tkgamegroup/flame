@@ -7,7 +7,7 @@ namespace flame
 {
 	struct sDispatcherPrivate : sDispatcher
 	{
-		Window* window = nullptr;
+		NativeWindow* window = nullptr;
 		void* key_down_listener = nullptr;
 		void* key_up_listener = nullptr;
 		void* char_listener = nullptr;

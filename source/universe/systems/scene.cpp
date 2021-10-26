@@ -111,7 +111,7 @@ namespace flame
 
 	void sScenePrivate::on_added()
 	{
-		window = (Window*)world->find_object("flame::Window");
+		window = (NativeWindow*)world->find_object("flame::NativeWindow");
 	}
 
 	static void apply_basic_h(cElementPrivate* e, cElementPrivate* target, bool force_align)

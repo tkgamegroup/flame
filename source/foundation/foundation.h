@@ -27,7 +27,7 @@ struct FlameFoundationTypeSelector
 
 namespace flame
 {
-	FLAME_FOUNDATION_TYPE(Window);
+	FLAME_FOUNDATION_TYPE(NativeWindow);
 	FLAME_FOUNDATION_TYPE(Looper);
 	FLAME_FOUNDATION_TYPE(Schedule);
 
@@ -588,16 +588,16 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void clear_all_works();
 	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
-	enum WindowStyleFlags
+	enum NativeWindowStyleFlags
 	{
-		WindowFrame = 1 << 0,
-		WindowResizable = 1 << 1,
-		WindowFullscreen = 1 << 2,
-		WindowMaximized = 1 << 3,
-		WindowTopmost = 1 << 4
+		NativeWindowFrame = 1 << 0,
+		NativeWindowResizable = 1 << 1,
+		NativeWindowFullscreen = 1 << 2,
+		NativeWindowMaximized = 1 << 3,
+		NativeWindowTopmost = 1 << 4
 	};
 
-	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }
+	inline NativeWindowStyleFlags operator| (NativeWindowStyleFlags a, NativeWindowStyleFlags b) { return (NativeWindowStyleFlags)((int)a | (int)b); }
 
 	enum CursorType
 	{
@@ -620,7 +620,7 @@ namespace flame
 		Cursor_Count
 	};
 
-	struct Window
+	struct NativeWindow
 	{
 		virtual void release() = 0;
 
@@ -668,7 +668,7 @@ namespace flame
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Window* create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, Window* parent = nullptr);
+		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent = nullptr);
 	};
 
 	struct Looper

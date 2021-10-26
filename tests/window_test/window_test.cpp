@@ -4,9 +4,9 @@ using namespace flame;
 
 int main(int argc, char** args)
 {
-	auto w = Window::create(L"Window Test", uvec2(1280, 720), WindowFrame);
+	auto w = NativeWindow::create(L"Window Test", uvec2(1280, 720), NativeWindowFrame);
 	w->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-		c.thiz<Window>()->release();
+		c.thiz<NativeWindow>()->release();
 	}, Capture().set_thiz(w));
 
 	looper().loop([](Capture&, float delta_time) {
