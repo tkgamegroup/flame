@@ -47,9 +47,8 @@ namespace flame
 		sPhysics* s_physics = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool hdr = false, bool always_update = false, NativeWindow* parent = nullptr);
+		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool always_update = false, NativeWindow* parent = nullptr);
 		virtual ~GraphicsWindow();
-		void set_targets();
 		void update();
 	};
 
@@ -65,7 +64,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool hdr, bool always_update, NativeWindow* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles, bool always_update, NativeWindow* parent) :
 		app(app)
 	{
 		window = NativeWindow::create(title, size, styles, parent);
@@ -74,9 +73,6 @@ namespace flame
 		}, Capture().set_thiz(this));
 
 		swapchain.reset(graphics::Swapchain::create(graphics::Device::get_default(), window.get()));
-		window->add_resize_listener([](Capture& c, const uvec2& size) {
-			c.thiz<GraphicsWindow>()->set_targets();
-		}, Capture().set_thiz(this));
 		cbs.resize(swapchain->get_images_count());
 		for (auto i = 0; i < cbs.size(); i++)
 			cbs[i].reset(graphics::CommandBuffer::create(graphics::CommandPool::get(graphics::Device::get_default())));
@@ -84,7 +80,6 @@ namespace flame
 		render_finished.reset(graphics::Semaphore::create(graphics::Device::get_default()));
 
 		world.reset(World::create());
-		world->register_object(window.get(), "flame::NativeWindow");
 		s_scene = sScene::create();
 		world->add_system(s_scene);
 		s_dispatcher = sDispatcher::create();
@@ -107,8 +102,6 @@ namespace flame
 			0, 1, 2, 0, 3
 		};
 		world->set_update_list(countof(update_list), update_list);
-
-		set_targets();
 
 		root = world->get_root();
 		root->add_component(cElement::create());
@@ -142,16 +135,6 @@ namespace flame
 			app->main_window = nullptr;
 			return;
 		}
-	}
-
-	void GraphicsWindow::set_targets()
-	{
-		std::vector<graphics::ImageView*> vs;
-		vs.resize(swapchain->get_images_count());
-		for (auto i = 0; i < vs.size(); i++)
-			vs[i] = swapchain->get_image(i)->get_view();
-
-		s_renderer->set_targets(vs.size(), vs.data());
 	}
 
 	void GraphicsWindow::update()
@@ -198,20 +181,18 @@ namespace flame
 
 	void App::run()
 	{
-		looper().loop([](Capture& c, float) {
+		flame::run([](Capture& c, float) {
 			auto thiz = c.thiz<App>();
-
-			{
-				auto t = (0.02 - looper().get_delta_time());
-				if (t > 0.f)
-					std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
-			}
 
 			for (auto it = thiz->windows.begin(); it != thiz->windows.end();)
 			{
 				auto w = it->get();
 				if (!w->window)
+				{
+					if (w == thiz->main_window)
+						c._current = INVALID_POINTER;
 					it = thiz->windows.erase(it);
+				}
 				else
 				{
 					w->update();

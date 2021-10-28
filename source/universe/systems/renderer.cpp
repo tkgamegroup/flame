@@ -6,6 +6,7 @@
 #include "../../graphics/font.h"
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
+#include "../../graphics/swapchain.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
@@ -1889,6 +1890,17 @@ namespace flame
 		nd.ds_tone->update();
 	}
 
+	void sRendererPrivate::set_targets_from_window()
+	{
+		std::vector<ImageView*> vs;
+		auto swapchain = (Swapchain*)window->swapchain;
+		vs.resize(swapchain->get_images_count());
+		for (auto i = 0; i < vs.size(); i++)
+			vs[i] = swapchain->get_image(i)->get_view();
+
+		set_targets(vs.size(), vs.data());
+	}
+
 	const auto shadow_map_size = uvec2(1024);
 
 	void sRendererPrivate::record(uint tar_idx, CommandBuffer* cb)
@@ -2784,6 +2796,11 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
+		window = get_window(0);
+		window_resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {
+			c.thiz<sRendererPrivate>()->set_targets_from_window();
+		}, Capture().set_thiz(this));
+
 		device = Device::get_default();
 		dsp = DescriptorPool::get_default(device);
 		sp_nearest = Sampler::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge);
@@ -3025,6 +3042,8 @@ namespace flame
 		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_tone->update();
 		nd.pl_tone = Pipeline::get(device, L"post/tone.pl");
+
+		set_targets_from_window();
 	}
 
 	void sRendererPrivate::update()
@@ -3032,7 +3051,7 @@ namespace flame
 		if (fb_tars.empty() || (!dirty && !always_update))
 			return;
 
-		frame = looper().get_frame();
+		frame = get_frames();
 
 		auto& ed = *_ed;
 		ed.scissor = Rect(vec2(0.f), tar_sz);

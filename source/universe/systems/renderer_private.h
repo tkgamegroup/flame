@@ -25,6 +25,9 @@ namespace flame
 
 	struct sRendererPrivate : sRenderer
 	{
+		NativeWindow* window = nullptr;
+		void* window_resize_listener = nullptr;
+
 		bool always_update = false;
 
 		graphics::Device* device;
@@ -118,6 +121,7 @@ namespace flame
 		void node_render(cNodePrivate* node, Frustum* lod_frustums);
 
 		void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) override;
+		void set_targets_from_window();
 		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
 
 		void on_added() override;

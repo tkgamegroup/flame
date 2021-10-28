@@ -49,7 +49,7 @@ namespace flame
 		else if (mode == 2)
 		{
 			if (flash_event)
-			looper().reset_event(flash_event);
+				reset_event(flash_event);
 			show_cursor = true;
 		}
 		else
@@ -144,7 +144,7 @@ namespace flame
 				case S<"visibility_changed"_h>:
 					if (thiz->flash_event && !parm1)
 					{
-						looper().remove_event(thiz->flash_event);
+						remove_event(thiz->flash_event);
 						thiz->flash_event = nullptr;
 					}
 					break;
@@ -159,7 +159,7 @@ namespace flame
 						{
 							if (!thiz->flash_event)
 							{
-								thiz->flash_event = looper().add_event([](Capture& c) {
+								thiz->flash_event = add_event([](Capture& c) {
 									c.thiz<cEditPrivate>()->flash_cursor(0);
 									c._current = nullptr;
 								}, Capture().set_thiz(thiz), 0.5f);
@@ -177,7 +177,7 @@ namespace flame
 					{
 						if (thiz->flash_event)
 						{
-							looper().remove_event(thiz->flash_event);
+							remove_event(thiz->flash_event);
 							thiz->flash_event = nullptr;
 						}
 						thiz->select_start = thiz->select_end = 0;
@@ -193,7 +193,7 @@ namespace flame
 				case S<"left_world"_h>:
 					if (thiz->flash_event)
 					{
-						looper().remove_event(thiz->flash_event);
+						remove_event(thiz->flash_event);
 						thiz->flash_event = nullptr;
 					}
 					break;

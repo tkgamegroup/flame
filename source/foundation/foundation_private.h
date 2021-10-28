@@ -39,8 +39,6 @@ namespace flame
 
 		void release() override;
 
-		LRESULT wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
-
 		void* get_native() override;
 
 		ivec2 get_pos() const override { return pos; }
@@ -85,34 +83,5 @@ namespace flame
 		void remove_resize_listener(void* lis) override;
 		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_destroy_listener(void* lis) override;
-	};
-
-	struct ApplicationPrivate : Application
-	{
-		uint frame = 0;
-		uint64 last_time = 0;
-		float delta_time = 0.f;
-		float total_time = 0.f;
-		uint fps = 0;
-		uint fps_counting = 0;
-		float fps_delta = 0.f;
-
-		std::vector<std::unique_ptr<NativeWindowPrivate>> windows;
-		void (*frame_callback)(Capture& c, float delta_time) = nullptr;
-		Capture frame_capture = {};
-
-		uint get_frame() const override { return frame; }
-		float get_delta_time() const override { return delta_time; }
-		float get_total_time() const override { return total_time; }
-		uint get_fps() const override { return fps; }
-
-		bool one_frame();
-
-		int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) override;
-
-		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) override;
-		void reset_event(void* ev) override;
-		void remove_event(void* ev) override;
-		void clear_events(int id) override;
 	};
 }

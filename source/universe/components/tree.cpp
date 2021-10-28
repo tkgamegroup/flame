@@ -78,7 +78,7 @@ namespace flame
 			return;
 		expand(selected);
 
-		looper().add_event([](Capture& c) {
+		add_event([](Capture& c) {
 			auto thiz = c.thiz<cTreePrivate>();
 			auto selected = thiz->selected;
 			if (!selected)

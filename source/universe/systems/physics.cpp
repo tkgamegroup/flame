@@ -96,7 +96,7 @@ namespace flame
 
 	void sPhysicsPrivate::update()
 	{
-		auto delta_time = looper().get_delta_time();
+		auto delta_time = get_delta_time();
 
 		for (auto c : controllers)
 		{

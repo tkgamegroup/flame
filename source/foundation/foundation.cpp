@@ -101,27 +101,27 @@ namespace flame
 		return ret;
 	}
 
-	void* create_event(bool signaled, bool manual)
+	void* create_native_event(bool signaled, bool manual)
 	{
 		return CreateEvent(NULL, manual, signaled, NULL);
 	}
 
-	void set_event(void* ev)
+	void set_native_event(void* ev)
 	{
 		SetEvent(ev);
 	}
 
-	void reset_event(void* ev)
+	void reset_native_event(void* ev)
 	{
 		ResetEvent(ev);
 	}
 
-	bool wait_event(void* ev, int timeout)
+	bool wait_native_event(void* ev, int timeout)
 	{
 		return WaitForSingleObject(ev, timeout < 0 ? INFINITE : timeout) == WAIT_OBJECT_0;
 	}
 
-	void destroy_event(void* ev)
+	void destroy_native_event(void* ev)
 	{
 		CloseHandle((HANDLE)ev);
 	}
@@ -891,7 +891,7 @@ namespace flame
 		BYTE notify_buf[1024];
 
 		OVERLAPPED overlapped;
-		auto event_changed = create_event(false);
+		auto event_changed = create_native_event(false);
 
 		auto flags = FILE_NOTIFY_CHANGE_LAST_WRITE;
 		if (all_changes)
@@ -961,11 +961,11 @@ namespace flame
 
 		f_free(capture._data);
 
-		destroy_event(event_changed);
-		destroy_event(dir_handle);
+		destroy_native_event(event_changed);
+		destroy_native_event(dir_handle);
 
 		if (event_end)
-			destroy_event(event_end);
+			destroy_native_event(event_end);
 	}
 
 	void* add_file_watcher(const wchar_t* _path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes, bool sync)
@@ -974,7 +974,7 @@ namespace flame
 
 		if (!sync)
 		{
-			auto ev = create_event(false);
+			auto ev = create_native_event(false);
 
 			std::thread([=]() {
 				do_file_watch(ev, all_changes, path, callback, (Capture&)capture);
@@ -999,11 +999,125 @@ namespace flame
 		KeyEventUp
 	};
 
-	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+	static uint frames = 0;
+	static uint64 last_time = 0;
+	static float delta_time = 0.f;
+	static float total_time = 0.f;
+	static uint fps = 0;
+	static uint fps_counting = 0;
+	static float fps_delta = 0.f;
+
+	static std::vector<std::unique_ptr<NativeWindowPrivate>> windows;
+
+	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0);
 		if (w)
-			return w->wnd_proc(message, wParam, lParam);
+		{
+			switch (message)
+			{
+			case WM_KEYDOWN:
+			case WM_SYSKEYDOWN:
+			{
+				auto v = vk_code_to_key(wParam);
+				if (v > 0)
+				{
+					for (auto& l : w->key_down_listeners)
+						l->call(v);
+				}
+			}
+				return true;
+			case WM_KEYUP:
+			case WM_SYSKEYUP:
+			{
+				auto v = vk_code_to_key(wParam);
+				if (v > 0)
+				{
+					for (auto& l : w->key_up_listeners)
+						l->call(v);
+				}
+			}
+				return true;
+			case WM_CHAR:
+				for (auto& l : w->char_listeners)
+					l->call(wParam);
+				return true;
+			case WM_LBUTTONDOWN:
+			{
+				SetCapture(hWnd);
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_left_down_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_LBUTTONUP:
+			{
+				ReleaseCapture();
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_left_up_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_RBUTTONDOWN:
+			{
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_right_down_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_RBUTTONUP:
+			{
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_right_up_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_MBUTTONDOWN:
+			{
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_middle_down_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_MBUTTONUP:
+			{
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_middle_up_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_MOUSEMOVE:
+			{
+				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_move_listeners)
+					l->call(pos);
+			}
+				return true;
+			case WM_MOUSEWHEEL:
+			{
+				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
+				for (auto& l : w->mouse_scroll_listeners)
+					l->call(v);
+			}
+				return true;
+			case WM_DESTROY:
+				w->dead = true;
+				return true;
+			case WM_SIZE:
+				w->size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->resize_listeners)
+					l->call(w->size);
+				return true;
+			case WM_MOVE:
+				w->pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
+				return true;
+			case WM_SETCURSOR:
+				SetCursor(w->cursors[w->cursor_type]);
+				return true;
+			default:
+				return DefWindowProcW(hWnd, message, wParam, lParam);
+			}
+		}
 		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 
@@ -1015,7 +1129,7 @@ namespace flame
 			WNDCLASSEXW wcex;
 			wcex.cbSize = sizeof(WNDCLASSEXW);
 			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = _wnd_proc;
+			wcex.lpfnWndProc = wnd_proc;
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
@@ -1104,7 +1218,7 @@ namespace flame
 		cursors[CursorWait]			= LoadCursorA(nullptr, IDC_WAIT);
 
 		set_cursor(CursorArrow);
-		_looper.windows.emplace_back(this);
+		windows.emplace_back(this);
 	}
 
 	NativeWindowPrivate::~NativeWindowPrivate()
@@ -1117,116 +1231,6 @@ namespace flame
 	{
 		DestroyWindow(hWnd);
 		dead = true;
-	}
-
-	LRESULT NativeWindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
-	{
-		auto resize = [=]() {
-		};
-
-		switch (message)
-		{
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-		{
-			auto v = vk_code_to_key(wParam);
-			if (v > 0)
-			{
-				for (auto& l : key_down_listeners)
-					l->call(v);
-			}
-		}
-			return true;
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-		{
-			auto v = vk_code_to_key(wParam);
-			if (v > 0)
-			{
-				for (auto& l : key_up_listeners)
-					l->call(v);
-			}
-		}
-			return true;
-		case WM_CHAR:
-			for (auto& l : char_listeners)
-				l->call(wParam);
-			return true;
-		case WM_LBUTTONDOWN:
-		{
-			SetCapture(hWnd);
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_left_down_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_LBUTTONUP:
-		{
-			ReleaseCapture();
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_left_up_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_RBUTTONDOWN:
-		{
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_right_down_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_RBUTTONUP:
-		{
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_right_up_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_MBUTTONDOWN:
-		{
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_middle_down_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_MBUTTONUP:
-		{
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_middle_up_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_MOUSEMOVE:
-		{
-			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_move_listeners)
-				l->call(pos);
-		}
-			return true;
-		case WM_MOUSEWHEEL:
-		{
-			auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-			for (auto& l : mouse_scroll_listeners)
-				l->call(v);
-		}
-			return true;
-		case WM_DESTROY:
-			dead = true; 
-			return true;
-		case WM_SIZE:
-			size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : resize_listeners)
-				l->call(size);
-			return true;
-		case WM_MOVE:
-			pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
-			return true;
-		case WM_SETCURSOR:
-			SetCursor(cursors[cursor_type]);
-			return true;
-		default:
-			return DefWindowProcW(hWnd, message, wParam, lParam);
-		}
 	}
 
 	void* NativeWindowPrivate::get_native() 
@@ -1458,9 +1462,51 @@ namespace flame
 		return new NativeWindowPrivate(title, size, style, (NativeWindowPrivate*)parent);
 	}
 
-	int ApplicationPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)
+	uint get_frames()
 	{
-		if (!_frame_callback)
+		return frames;
+	}
+
+	float get_delta_time()
+	{
+		return delta_time;
+	}
+
+	float get_total_time()
+	{
+		return total_time;
+	}
+
+	uint get_fps()
+	{
+		return fps;
+	}
+
+	NativeWindow* get_window(uint idx)
+	{
+		return windows[idx].get();
+	}
+
+	struct Event
+	{
+		uint id;
+		float interval;
+		float rest;
+		void(*callback)(Capture& c);
+		Capture capture;
+
+		~Event()
+		{
+			f_free(capture._data);
+		}
+	};
+
+	static std::list<std::unique_ptr<Event>> events;
+	static std::recursive_mutex event_mtx;
+
+	int run(void (*callback)(Capture& c, float delta_time), const Capture& capture)
+	{
+		if (!callback)
 		{
 			for (;;)
 			{
@@ -1476,11 +1522,8 @@ namespace flame
 		if (windows.empty())
 			return 1;
 
-		frame_callback = _frame_callback;
-		frame_capture = capture;
-
 		last_time = get_now_ns();
-		frame = 0;
+		frames = 0;
 
 		for (;;)
 		{
@@ -1490,107 +1533,75 @@ namespace flame
 				TranslateMessage(&msg);
 				DispatchMessageW(&msg);
 			}
-			if (!one_frame())
-				break;
-		}
-	}
 
-	struct Event
-	{
-		uint id;
-		CountDown interval;
-		CountDown rest;
-		void(*callback)(Capture& c);
-		Capture capture;
-
-		~Event()
-		{
-			f_free(capture._data);
-		}
-	};
-
-	static std::list<std::unique_ptr<Event>> events;
-	static std::recursive_mutex event_mtx;
-
-	bool ApplicationPrivate::one_frame()
-	{
-		for (auto it = windows.begin(); it != windows.end(); )
-		{
-			auto w = it->get();
-
-			if (w->dead)
-				it = windows.erase(it);
-			else
-				it++;
-		}
-
-		if (windows.empty())
-		{
-			f_free(frame_capture._data);
-			return false;
-		}
-
-		{
-			std::lock_guard<std::recursive_mutex> lock(event_mtx);
-			for (auto it = events.begin(); it != events.end();)
+			for (auto it = windows.begin(); it != windows.end(); )
 			{
-				auto& e = *it;
-				auto excute = false;
-				if (e->rest.is_frame)
-				{
-					if (e->rest.v.frames == 0)
-						excute = true;
-					else
-						e->rest.v.frames--;
-				}
+				auto w = it->get();
+
+				if (w->dead)
+					it = windows.erase(it);
 				else
+					it++;
+			}
+
+			if (windows.empty())
+			{
+				f_free(capture._data);
+				return 0;
+			}
+
+			{
+				std::lock_guard<std::recursive_mutex> lock(event_mtx);
+				for (auto it = events.begin(); it != events.end();)
 				{
-					e->rest.v.time -= delta_time;
-					if (e->rest.v.time <= 0)
+					auto& e = *it;
+					auto excute = false;
+					e->rest -= delta_time;
+					if (e->rest <= 0)
 						excute = true;
-				}
-				if (excute)
-				{
-					e->capture._current = INVALID_POINTER;
-					e->callback(e->capture);
-					if (e->capture._current == INVALID_POINTER)
+					if (excute)
 					{
-						it = events.erase(it);
-						continue;
+						e->capture._current = INVALID_POINTER;
+						e->callback(e->capture);
+						if (e->capture._current == INVALID_POINTER)
+						{
+							it = events.erase(it);
+							continue;
+						}
+						e->rest = e->interval;
 					}
-					e->rest = e->interval;
+					it++;
 				}
-				it++;
+			}
+
+			callback((Capture&)capture, delta_time);
+			if (capture._current == INVALID_POINTER)
+				return 0;
+
+			frames++;
+			auto et = last_time;
+			last_time = get_now_ns();
+			et = last_time - et;
+			delta_time = et / 1000000000.f;
+			total_time += delta_time;
+			fps_counting++;
+			fps_delta += delta_time;
+			if (fps_delta >= 1.f)
+			{
+				fps = fps_counting;
+				fps_counting = 0;
+				fps_delta = 0.f;
 			}
 		}
-
-		frame_callback(frame_capture, delta_time);
-
-		frame++;
-		auto et = last_time;
-		last_time = get_now_ns();
-		et = last_time - et;
-		delta_time = et / 1000000000.f;
-		total_time += delta_time;
-		fps_counting++;
-		fps_delta += delta_time;
-		if (fps_delta >= 1.f)
-		{
-			fps = fps_counting;
-			fps_counting = 0;
-			fps_delta = 0.f;
-		}
-
-		return true;
 	}
 
-	void* ApplicationPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
+	void* add_event(void (*callback)(Capture& c), const Capture& capture, float time, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
 		e->id = id;
-		e->interval = interval;
-		e->rest = interval;
+		e->interval = time;
+		e->rest = time;
 		e->callback = callback;
 		e->capture = capture;
 		events.emplace_back(e);
@@ -1598,13 +1609,13 @@ namespace flame
 		return e;
 	}
 
-	void ApplicationPrivate::reset_event(void* _ev)
+	void reset_event(void* _ev)
 	{
 		auto ev = (Event*)_ev;
 		ev->rest = ev->interval;
 	}
 
-	void ApplicationPrivate::remove_event(void* ev)
+	void remove_event(void* ev)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
@@ -1620,7 +1631,7 @@ namespace flame
 		}
 	}
 
-	void ApplicationPrivate::clear_events(int id)
+	void clear_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
@@ -1636,6 +1647,4 @@ namespace flame
 				it++;
 		}
 	}
-
-	ApplicationPrivate* app = nullptr;
 }

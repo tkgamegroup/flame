@@ -15,7 +15,7 @@ namespace flame
 
 	void sDispatcherPrivate::on_added()
 	{
-		window = (NativeWindow*)world->find_object("flame::NativeWindow");
+		window = get_window(0);
 		if (window)
 		{
 			key_down_listener = window->add_key_down_listener([](Capture& c, KeyboardKey key) {
@@ -141,7 +141,7 @@ namespace flame
 
 	void sDispatcherPrivate::dispatch_mouse_single(cReceiverPrivate* er, bool force)
 	{
-		auto frame = looper().get_frame();
+		auto frame = get_frames();
 		if (er->mute || er->frame >= frame)
 			return;
 
@@ -184,7 +184,7 @@ namespace flame
 //			}
 //		}
 
-		er->frame = looper().get_frame();
+		er->frame = frame;
 	}
 
 	void sDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
@@ -204,7 +204,7 @@ namespace flame
 	void sDispatcherPrivate::update()
 	{
 		if (dbclick_timer > 0.f)
-			dbclick_timer -= looper().get_delta_time();
+			dbclick_timer -= get_delta_time();
 
 		if (!dirty)
 			return;

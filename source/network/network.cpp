@@ -291,9 +291,9 @@ namespace flame
 		ClientPrivate::~ClientPrivate()
 		{
 			stop(false);
-			wait_event(ev_ended, -1);
+			wait_native_event(ev_ended, -1);
 			f_free(capture._data);
-			destroy_event(ev_ended);
+			destroy_native_event(ev_ended);
 		}
 
 		void ClientPrivate::send(uint size, void* data)
@@ -333,7 +333,7 @@ namespace flame
 			auto c = new ClientPrivate;
 			c->type = type;
 			c->fd = fd;
-			c->ev_ended = create_event(false, true);
+			c->ev_ended = create_native_event(false, true);
 			c->on_message = on_message;
 			c->on_close = on_close;
 			c->capture = capture;
@@ -345,7 +345,7 @@ namespace flame
 					if (!_recv(type, c->fd, res))
 					{
 						c->stop(true);
-						set_event(c->ev_ended);
+						set_native_event(c->ev_ended);
 						return;
 					}
 					std::lock_guard lock(c->mtx);
@@ -366,7 +366,7 @@ namespace flame
 		ServerPrivate::Client::~Client()
 		{
 			f_free(capture._data);
-			destroy_event(ev_ended);
+			destroy_native_event(ev_ended);
 		}
 
 		void ServerPrivate::Client::stop(bool passive)
@@ -384,13 +384,13 @@ namespace flame
 		ServerPrivate::~ServerPrivate()
 		{
 			stop();
-			wait_event(ev_ended_d, -1);
-			wait_event(ev_ended_s, -1);
+			wait_native_event(ev_ended_d, -1);
+			wait_native_event(ev_ended_s, -1);
 			for (auto& c : cs)
-				wait_event(c->ev_ended, -1);
+				wait_native_event(c->ev_ended, -1);
 			f_free(capture._data);
-			destroy_event(ev_ended_d);
-			destroy_event(ev_ended_s);
+			destroy_native_event(ev_ended_d);
+			destroy_native_event(ev_ended_s);
 		}
 
 		void ServerPrivate::stop()
@@ -458,8 +458,8 @@ namespace flame
 			s->type = type;
 			s->fd_d = fd_d;
 			s->fd_s = fd_s;
-			s->ev_ended_d = create_event(false, true);
-			s->ev_ended_s = create_event(false, true);
+			s->ev_ended_d = create_native_event(false, true);
+			s->ev_ended_s = create_native_event(false, true);
 			s->on_dgram = on_dgram;
 			s->on_connect = on_connect;
 			s->capture = capture;
@@ -479,7 +479,7 @@ namespace flame
 							closesocket(s->fd_d);
 							s->fd_d = 0;
 						}
-						set_event(s->ev_ended_d);
+						set_native_event(s->ev_ended_d);
 						return;
 					}
 					DgramAddress da;
@@ -497,12 +497,12 @@ namespace flame
 					if (fd == INVALID_SOCKET)
 					{
 						s->stop();
-						set_event(s->ev_ended_s);
+						set_native_event(s->ev_ended_s);
 						return;
 					}
 					auto c = new ServerPrivate::Client;
 					c->fd = fd;
-					c->ev_ended = create_event(false, true);
+					c->ev_ended = create_native_event(false, true);
 					s->on_connect(s->capture, c);
 					if (c->on_message || c->on_close)
 						s->cs.emplace_back(c);
@@ -520,7 +520,7 @@ namespace flame
 							if (!_recv(type, c->fd, res))
 							{
 								c->stop(true);
-								set_event(c->ev_ended);
+								set_native_event(c->ev_ended);
 								return;
 							}
 							std::lock_guard lock(c->mtx);
@@ -537,8 +537,8 @@ namespace flame
 		//FrameSyncServerPrivate::~FrameSyncServerPrivate()
 		//{
 		//	stop();
-		//	wait_event(ev_ended, -1);
-		//	destroy_event(ev_ended);
+		//	wait_native_event(ev_ended, -1);
+		//	destroy_native_event(ev_ended);
 		//}
 
 		//bool FrameSyncServerPrivate::send(uint client_id, uint size, void* data)
@@ -607,7 +607,7 @@ namespace flame
 		//	s->frame = 0;
 		//	s->semaphore = 0;
 		//	s->fd_cs = fd_cs;
-		//	s->ev_ended = create_event(false, true);
+		//	s->ev_ended = create_native_event(false, true);
 
 		//	std::thread([type, s]() {
 		//		while (true)
@@ -620,7 +620,7 @@ namespace flame
 		//			if (res < 0)
 		//			{
 		//				s->stop();
-		//				set_event(s->ev_ended);
+		//				set_native_event(s->ev_ended);
 		//				return;
 		//			}
 		//			for (auto i = 0; i < s->fd_cs.size(); i++)
@@ -632,7 +632,7 @@ namespace flame
 		//					if (!_recv(type, fd, reqs))
 		//					{
 		//						s->stop();
-		//						set_event(s->ev_ended);
+		//						set_native_event(s->ev_ended);
 		//						return;
 		//					}
 		//					auto req = nlohmann::json::parse(reqs[0]);

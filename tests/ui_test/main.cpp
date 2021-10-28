@@ -3,37 +3,18 @@
 using namespace flame;
 using namespace graphics;
 
-struct MyApp : App
-{
-	void create();
-}g_app;
-
-struct MainForm : GraphicsWindow
-{
-	MainForm();
-};
-
-void MyApp::create()
-{
-	App::create();
-}
-
-MainForm::MainForm() :
-	GraphicsWindow(&g_app, L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable)
-{
-
-}
+App app;
 
 int main(int argc, char** args)
 {
-	g_app.create();
-	new MainForm();
+	app.create();
+	new GraphicsWindow(&app, L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable);
 	{
 		auto e = Entity::create();
 		e->load(L"ui_test");
-		g_app.main_window->root->add_child(e);
+		app.main_window->root->add_child(e);
 	}
-	g_app.run();
+	app.run();
 
 	return 0;
 }

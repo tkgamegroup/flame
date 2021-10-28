@@ -58,7 +58,7 @@ namespace flame
 		frame_accumulate = 0.f;
 		if (!event)
 		{
-			event = looper().add_event([](Capture& c) {
+			event = add_event([](Capture& c) {
 				auto thiz = c.thiz<cArmaturePrivate>();
 				thiz->advance();
 				if (thiz->frame != -1)
@@ -77,7 +77,7 @@ namespace flame
 		anim = -1;
 		if (event)
 		{
-			looper().remove_event(event);
+			remove_event(event);
 			event = nullptr;
 		}
 	}

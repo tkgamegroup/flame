@@ -9,7 +9,7 @@ int main(int argc, char** args)
 		c.thiz<NativeWindow>()->release();
 	}, Capture().set_thiz(w));
 
-	looper().loop([](Capture&, float delta_time) {
+	run([](Capture&, float delta_time) {
 	}, Capture());
 
 	return 0;

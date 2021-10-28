@@ -473,11 +473,11 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_logical_drives(uint *count, wchar_t** names);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS uvec2 get_screen_size();
-	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);
-	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
-	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS void* create_native_event(bool signaled, bool manual = false);
+	FLAME_FOUNDATION_EXPORTS void set_native_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS void reset_native_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS bool wait_native_event(void* ev, int timeout);
+	FLAME_FOUNDATION_EXPORTS void destroy_native_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void get_module_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str, wchar_t* (*str_allocator)(void* str, uint size));
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
@@ -663,19 +663,26 @@ namespace flame
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
+		void* swapchain = nullptr;
+		void* userdata = nullptr;
+
 		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent = nullptr);
 	};
 
-	virtual uint get_frame() const = 0;
-	virtual float get_delta_time() const = 0; // second
-	virtual float get_total_time() const = 0; // second
-	virtual uint get_fps() const = 0;
+	FLAME_FOUNDATION_EXPORTS uint get_frames();
+	/* second */
+	FLAME_FOUNDATION_EXPORTS float get_delta_time();
+	/* second */ 
+	FLAME_FOUNDATION_EXPORTS float get_total_time();
+	FLAME_FOUNDATION_EXPORTS uint get_fps();
 
-	virtual int run(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
+	FLAME_FOUNDATION_EXPORTS NativeWindow* get_window(uint idx);
+	FLAME_FOUNDATION_EXPORTS int run(void (*callback)(Capture& c, float delta_time), const Capture& capture);
 
 	/* set c._current to null to keep event */
-	virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float time = 0.f, uint id = 0) = 0;
-	virtual void reset_event(void* ev) = 0;
-	virtual void remove_event(void* ev) = 0;
-	virtual void clear_events(int id = 0) = 0; /* id=-1 means all */
+	FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c), const Capture& capture, float time = 0.f, uint id = 0);
+	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS void remove_event(void* ev);
+	/* id=-1 to clear all */
+	FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0);
 }

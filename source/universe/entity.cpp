@@ -180,7 +180,7 @@ namespace flame
 	EntityPrivate::EntityPrivate()
 	{
 		static auto id = 0;
-		created_frame = looper().get_frame();
+		created_frame = get_frames();
 		created_id = id++;
 	}
 
@@ -189,7 +189,7 @@ namespace flame
 		for (auto& l : message_listeners)
 			l->call(S<"destroyed"_h>, nullptr, nullptr);
 		for (auto ev : events)
-			looper().remove_event(ev);
+			remove_event(ev);
 	}
 
 	void EntityPrivate::release()
@@ -619,12 +619,6 @@ namespace flame
 
 	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, float interval)
 	{
-		CountDown cd;
-		if (interval != 0.f)
-		{
-			cd.is_frame = false;
-			cd.v.time = interval;
-		}
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -637,11 +631,11 @@ namespace flame
 				scr_ins->pop(2);
 				c._current = nullptr;
 			};
-			auto ev = looper().add_event(callback, Capture().set_data(&slot), cd);
+			auto ev = add_event(callback, Capture().set_data(&slot), interval);
 			events.push_back(ev);
 			return ev;
 		}
-		auto ev = looper().add_event(callback, capture, cd);
+		auto ev = add_event(callback, capture, interval);
 		events.push_back(ev);
 		return ev;
 	}
@@ -653,7 +647,7 @@ namespace flame
 			if (*it == ev)
 			{
 				events.erase(it);
-				looper().remove_event(ev);
+				remove_event(ev);
 				return;
 			}
 		}
