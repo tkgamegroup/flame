@@ -29,6 +29,8 @@ An ECS 3D-Game-Engine.
 
 - PhysX https://github.com/NVIDIAGameWorks/PhysX
 
+- imgui https://github.com/ocornut/imgui
+
 - OpenAL
 
 # Build:
