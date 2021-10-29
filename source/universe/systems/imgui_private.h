@@ -6,5 +6,6 @@ namespace flame
 {
 	struct sImguiPrivate : sImgui
 	{
+		void update() override;
 	};
 }

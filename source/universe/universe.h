@@ -67,11 +67,13 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cCamera);
 	FLAME_UNIVERSE_TYPE(cSky);
 	FLAME_UNIVERSE_TYPE(cScript);
+	FLAME_UNIVERSE_TYPE(cImgui);
 
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
 	FLAME_UNIVERSE_TYPE(sPhysics);
+	FLAME_UNIVERSE_TYPE(sImgui);
 
 	enum StateFlags
 	{

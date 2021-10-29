@@ -78,15 +78,33 @@ int main(int argc, char** args)
 
 		std::ofstream public_header_file(name + ".h");
 		public_header_file << "#pragma once\n\n";
-		if (is_internal)
-			public_header_file << "#include \"../component.h\"\n\n";
-		else
-			public_header_file << "#include <flame/universe/component.h>\n\n";
+		if (cmd == "new_component_template")
+		{
+			if (is_internal)
+				public_header_file << "#include \"../component.h\"\n\n";
+			else
+				public_header_file << "#include <flame/universe/component.h>\n\n";
+		}
+		else if (cmd == "new_system_template")
+		{
+			if (is_internal)
+				public_header_file << "#include \"../system.h\"\n\n";
+			else
+				public_header_file << "#include <flame/universe/system.h>\n\n";
+		}
 		if (is_internal) public_header_file << "namespace flame\n{\n";
-		public_header_file << indent_str << "struct " << class_name << " : Component\n\t{\n";
+		public_header_file << indent_str << "struct " << class_name;
+		if (cmd == "new_component_template")
+			public_header_file << " : Component";
+		else if (cmd == "new_system_template")
+			public_header_file << " : System";
+		public_header_file << "\n\t{\n";
 		public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
 		public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
-		public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
+		if (cmd == "new_component_template")
+			public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
+		else if (cmd == "new_system_template")
+			public_header_file << indent_str << "\t" << class_name << "() : System(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
 		public_header_file << indent_str << "\t" << (is_internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
 		public_header_file << indent_str << "};\n";
 		if (is_internal) public_header_file << "}\n";
