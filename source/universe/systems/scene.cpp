@@ -5,6 +5,13 @@
 
 namespace flame
 {
+	void sScenePrivate::setup(NativeWindow* _window)
+	{
+		fassert(!window);
+
+		window = _window;
+	}
+
 	void sScenePrivate::add_to_sizing(cElementPrivate* e)
 	{
 		auto depth = e->entity->depth;
@@ -107,11 +114,6 @@ namespace flame
 				break;
 			}
 		}
-	}
-
-	void sScenePrivate::on_added()
-	{
-		window = get_window(0);
 	}
 
 	static void apply_basic_h(cElementPrivate* e, cElementPrivate* target, bool force_align)

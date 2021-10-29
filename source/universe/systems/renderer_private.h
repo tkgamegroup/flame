@@ -25,8 +25,7 @@ namespace flame
 
 	struct sRendererPrivate : sRenderer
 	{
-		NativeWindow* window = nullptr;
-		void* window_resize_listener = nullptr;
+		graphics::Swapchain* swapchain = nullptr;
 
 		bool always_update = false;
 
@@ -64,6 +63,9 @@ namespace flame
 
 		sRendererPrivate(sRendererParms* parms);
 		~sRendererPrivate();
+
+		void setup(graphics::Swapchain* swapchain) override;
+		void setup(graphics::ImageView* imageview) override;
 
 		void set_always_update(bool a) override { always_update = a; }
 		void set_render_type(RenderType type) override { render_type = type; }
@@ -120,11 +122,10 @@ namespace flame
 		uint element_render(uint layer, cElementPrivate* element);
 		void node_render(cNodePrivate* node, Frustum* lod_frustums);
 
-		void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) override;
-		void set_targets_from_window();
-		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
-
 		void on_added() override;
+
+		void set_targets(const std::vector<graphics::ImageView*>& views);
+		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
 
 		void update() override;
 	};

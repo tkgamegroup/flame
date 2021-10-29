@@ -282,7 +282,7 @@ int main(int argc, char** args)
 #endif
 
 	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
-	w->window->set_cursor(CursorNone);
+	w->native_window->set_cursor(CursorNone);
 
 	auto renderer = w->s_renderer;
 	renderer->set_shadow_props(3, 50.f, 20.f);

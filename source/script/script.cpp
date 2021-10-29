@@ -1346,7 +1346,10 @@ namespace flame
 
 		Instance* Instance::create()
 		{
-			return new InstancePrivate;
+			auto ret = new InstancePrivate;
+			if (!default_instance)
+				default_instance = ret;
+			return ret;
 		}
 	}
 }

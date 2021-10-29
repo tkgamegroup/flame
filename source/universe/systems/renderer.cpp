@@ -675,6 +675,33 @@ namespace flame
 		}
 	}
 
+	void sRendererPrivate::setup(graphics::Swapchain* _swapchain)
+	{
+		fassert(!swapchain);
+
+		swapchain = _swapchain;
+		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
+			auto thiz = c.thiz<sRendererPrivate>();
+			std::vector<ImageView*> views;
+
+			auto swapchain = thiz->swapchain;
+			views.resize(swapchain->get_images_count());
+			for (auto i = 0; i < views.size(); i++)
+				views[i] = swapchain->get_image(i)->get_view();
+
+			thiz->set_targets(views);
+		};
+
+		set_targets_from_swapchain(Capture().set_thiz(this), uvec2(0));
+
+		swapchain->get_window()->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
+	}
+
+	void sRendererPrivate::setup(graphics::ImageView* imageview)
+	{
+
+	}
+
 	void sRendererPrivate::get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist)
 	{
 		auto& nd = *_nd;
@@ -1798,21 +1825,21 @@ namespace flame
 		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(Line));
 	}
 
-	void sRendererPrivate::set_targets(uint tar_cnt, ImageView* const* ivs)
+	void sRendererPrivate::set_targets(const std::vector<graphics::ImageView*>& views)
 	{
-		img_tars.resize(tar_cnt);
-		for (auto i = 0; i < tar_cnt; i++)
-			img_tars[i] = ivs[i]->get_image();
+		img_tars.resize(views.size());
+		for (auto i = 0; i < views.size(); i++)
+			img_tars[i] = views[i]->get_image();
 
 		fb_tars.clear();
-		fb_tars.resize(tar_cnt);
-		for (auto i = 0; i < tar_cnt; i++)
-			fb_tars[i].reset(Framebuffer::create(device, rp_bgra8, 1, &ivs[i]));
+		fb_tars.resize(views.size());
+		for (auto i = 0; i < views.size(); i++)
+			fb_tars[i].reset(Framebuffer::create(device, rp_bgra8, 1, &views[i]));
 
-		if (tar_cnt == 0)
+		if (views.empty())
 			return;
 
-		tar_sz = ivs[0]->get_image()->get_size();
+		tar_sz = views[0]->get_image()->get_size();
 		auto hf_tar_sz = tar_sz / 2U;
 
 		img_dst.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
@@ -1850,12 +1877,12 @@ namespace flame
 		}
 
 		nd.fb_tars_dep.clear();
-		nd.fb_tars_dep.resize(tar_cnt);
+		nd.fb_tars_dep.resize(views.size());
 		auto rp_bgra8d16c = Renderpass::get(device, L"bgra8d16c.rp");
-		for (auto i = 0; i < tar_cnt; i++)
+		for (auto i = 0; i < views.size(); i++)
 		{
 			ImageView* vs[] = {
-				ivs[i],
+				views[i],
 				nd.img_dep->get_view()
 			};
 			nd.fb_tars_dep[i].reset(Framebuffer::create(device, rp_bgra8d16c, countof(vs), vs));
@@ -1888,17 +1915,6 @@ namespace flame
 
 		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
 		nd.ds_tone->update();
-	}
-
-	void sRendererPrivate::set_targets_from_window()
-	{
-		std::vector<ImageView*> vs;
-		auto swapchain = (Swapchain*)window->swapchain;
-		vs.resize(swapchain->get_images_count());
-		for (auto i = 0; i < vs.size(); i++)
-			vs[i] = swapchain->get_image(i)->get_view();
-
-		set_targets(vs.size(), vs.data());
 	}
 
 	const auto shadow_map_size = uvec2(1024);
@@ -2796,11 +2812,6 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
-		window = get_window(0);
-		window_resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {
-			c.thiz<sRendererPrivate>()->set_targets_from_window();
-		}, Capture().set_thiz(this));
-
 		device = Device::get_default();
 		dsp = DescriptorPool::get_default(device);
 		sp_nearest = Sampler::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge);
@@ -3042,8 +3053,6 @@ namespace flame
 		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_tone->update();
 		nd.pl_tone = Pipeline::get(device, L"post/tone.pl");
-
-		set_targets_from_window();
 	}
 
 	void sRendererPrivate::update()

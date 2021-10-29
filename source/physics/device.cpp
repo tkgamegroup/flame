@@ -42,7 +42,10 @@ namespace flame
 
 		Device* Device::create()
 		{
-			return new DevicePrivate;
+			auto ret = new DevicePrivate;
+			if (!default_device)
+				default_device = ret;
+			return ret;
 		}
 	}
 }

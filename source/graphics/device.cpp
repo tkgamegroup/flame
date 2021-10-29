@@ -220,7 +220,10 @@ namespace flame
 
 		Device* Device::create(bool debug)
 		{
-			return new DevicePrivate(debug);
+			auto ret = new DevicePrivate(debug);
+			if (!default_device)
+				default_device = ret;
+			return ret;
 		}
 	}
 }

@@ -14,7 +14,6 @@ namespace flame
 			device(device),
 			window(window)
 		{
-			window->swapchain = this;
 			update();
 
 			resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {

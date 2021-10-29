@@ -12,7 +12,7 @@ int main(int argc, char** args)
 	{
 		auto e = Entity::create();
 		e->load(L"ui_test");
-		app.main_window->root->add_child(e);
+		app.root->add_child(e);
 	}
 	app.run();
 

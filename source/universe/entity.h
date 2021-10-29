@@ -60,6 +60,7 @@ namespace flame
 		virtual void set_userdata(void* d) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
-		FLAME_UNIVERSE_EXPORTS static void initialize();
 	};
+
+	FLAME_UNIVERSE_EXPORTS void load_default_prefab_types();
 }

@@ -282,10 +282,19 @@ namespace flame
 			}
 		}
 
+		static bool initialized = false;
 		void initialize()
 		{
+			if (!initialized)
+				return;
 			WSADATA wsad = {};
 			WSAStartup(MAKEWORD(1, 1), &wsad);
+			initialized = true;
+		}
+
+		ClientPrivate::ClientPrivate()
+		{
+			initialize();
 		}
 
 		ClientPrivate::~ClientPrivate()
@@ -379,6 +388,11 @@ namespace flame
 				if (passive)
 					on_close(capture);
 			}
+		}
+
+		ServerPrivate::ServerPrivate()
+		{
+			initialize();
 		}
 
 		ServerPrivate::~ServerPrivate()

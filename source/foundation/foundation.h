@@ -663,7 +663,6 @@ namespace flame
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
-		void* swapchain = nullptr;
 		void* userdata = nullptr;
 
 		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent = nullptr);

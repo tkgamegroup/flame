@@ -17,6 +17,9 @@ namespace flame
 		{
 		}
 
+		virtual void setup(graphics::Swapchain* swapchain) = 0;
+		virtual void setup(graphics::ImageView* imageview) = 0;
+
 		virtual void set_always_update(bool a) = 0;
 		virtual void set_render_type(RenderType type) = 0;
 		virtual void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) = 0;
@@ -64,7 +67,6 @@ namespace flame
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 
-		virtual void set_targets(uint tar_cnt, graphics::ImageView* const* ivs) = 0;
 		virtual void record(uint tar_idx, graphics::CommandBuffer* cb) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);

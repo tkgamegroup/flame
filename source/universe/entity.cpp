@@ -1099,7 +1099,7 @@ namespace flame
 		return new EntityPrivate();
 	}
 
-	void Entity::initialize()
+	void load_default_prefab_types()
 	{
 		std::vector<UdtInfo*> udts;
 		{

@@ -28,8 +28,6 @@ namespace flame
 		FLAME_NETWORK_TYPE(Client);
 		FLAME_NETWORK_TYPE(Server);
 
-		FLAME_NETWORK_EXPORTS void initialize();
-
 		enum SocketType
 		{
 			SocketTcp,

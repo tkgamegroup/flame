@@ -12,6 +12,8 @@ namespace flame
 		std::deque<std::pair<uint, std::deque<cElementPrivate*>>> layout_list;
 		std::deque<std::pair<uint, std::deque<cNodePrivate*>>> update_bounds_list;
 
+		void setup(NativeWindow* window) override;
+
 		void add_to_sizing(cElementPrivate* e);
 		void remove_from_sizing(cElementPrivate* e);
 		void add_to_layout(cElementPrivate* e);
@@ -19,7 +21,6 @@ namespace flame
 		void add_to_update_bounds(cNodePrivate* n);
 		void remove_from_update_bounds(cNodePrivate* n);
 
-		void on_added() override;
 		void update() override;
 	};
 }

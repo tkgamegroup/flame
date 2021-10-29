@@ -14,6 +14,8 @@ namespace flame
 		{
 		}
 
+		virtual void setup(NativeWindow* window) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static sScene* create(void* parms = nullptr);
 	};
 }

@@ -21,6 +21,7 @@ namespace flame
 			std::recursive_mutex mtx;
 			void* ev_ended;
 
+			ClientPrivate();
 			~ClientPrivate();
 
 			void release() override { delete this; }
@@ -62,6 +63,7 @@ namespace flame
 			void* ev_ended_d;
 			void* ev_ended_s;
 
+			ServerPrivate();
 			~ServerPrivate();
 
 			void release() override { delete this; }

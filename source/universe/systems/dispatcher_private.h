@@ -8,18 +8,6 @@ namespace flame
 	struct sDispatcherPrivate : sDispatcher
 	{
 		NativeWindow* window = nullptr;
-		void* key_down_listener = nullptr;
-		void* key_up_listener = nullptr;
-		void* char_listener = nullptr;
-		void* mouse_left_down_listener = nullptr;
-		void* mouse_left_up_listener = nullptr;
-		void* mouse_right_down_listener = nullptr;
-		void* mouse_right_up_listener = nullptr;
-		void* mouse_middle_down_listener = nullptr;
-		void* mouse_middle_up_listener = nullptr;
-		void* mouse_move_listener = nullptr;
-		void* mouse_scroll_listener = nullptr;
-		void* destroy_listener = nullptr;
 
 		std::pair<bool, bool> kbtns[KeyboardKey_Count];
 		std::pair<bool, bool> kbtns_temp[KeyboardKey_Count];
@@ -52,6 +40,8 @@ namespace flame
 		cReceiverPrivate* debug_target = nullptr;
 
 		sDispatcherPrivate();
+		void setup(NativeWindow* window) override;
+
 		void dispatch_mouse_single(cReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
@@ -63,8 +53,5 @@ namespace flame
 		cReceiverPtr get_focusing() const override { return focusing; }
 		cReceiverPtr get_active() const override { return active; }
 		void set_next_focusing(cReceiverPtr er) override { next_focusing = er; }
-
-		void on_added() override;
-		void on_removed() override;
 	};
 }
