@@ -24,9 +24,12 @@ namespace flame
 
 		const auto font_atlas_size = uvec2(1024);
 
-		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* device, const std::vector<Font*>& _fonts) :
-			device(device)
+		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* _device, const std::vector<Font*>& _fonts) :
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+
 			for (auto& f : _fonts)
 				fonts.emplace_back(f);
 

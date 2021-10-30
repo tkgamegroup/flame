@@ -55,14 +55,13 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
 
-		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
 
 		{
 			auto fn = std::filesystem::path(box_texture_path);
 			if (!fn.extension().empty() && !fn.is_absolute())
 				fn = ppath / fn;
-			box_texture = graphics::Image::get(device, fn.c_str(), true);
+			box_texture = graphics::Image::get(nullptr, fn.c_str(), true);
 			if (box_texture)
 			{
 				auto lv = (uint)box_texture->get_levels();
@@ -79,7 +78,7 @@ namespace flame
 			auto fn = std::filesystem::path(irr_texture_path);
 			if (!fn.extension().empty() && !fn.is_absolute())
 				fn = ppath / fn;
-			irr_texture = graphics::Image::get(device, fn.c_str(), true);
+			irr_texture = graphics::Image::get(nullptr, fn.c_str(), true);
 			if (irr_texture)
 				irr_texture_view = irr_texture->get_view({ 0, irr_texture->get_levels(), 0, 6 });
 		}
@@ -87,7 +86,7 @@ namespace flame
 			auto fn = std::filesystem::path(rad_texture_path);
 			if (!fn.extension().empty() && !fn.is_absolute())
 				fn = ppath / fn;
-			rad_texture = graphics::Image::get(device, fn.c_str(), true);
+			rad_texture = graphics::Image::get(nullptr, fn.c_str(), true);
 			if (rad_texture)
 				rad_texture_view = rad_texture->get_view({ 0, rad_texture->get_levels(), 0, 6 });
 		}
@@ -95,7 +94,7 @@ namespace flame
 			auto fn = std::filesystem::path(lut_texture_path);
 			if (!fn.extension().empty() && !fn.is_absolute())
 				fn = ppath / fn;
-			lut_texture = graphics::Image::get(device, fn.c_str(), true);
+			lut_texture = graphics::Image::get(nullptr, fn.c_str(), true);
 			if (lut_texture)
 				lut_texture_view = lut_texture->get_view();
 		}

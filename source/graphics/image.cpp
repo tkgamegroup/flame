@@ -99,9 +99,9 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint lvs, uint layers, SampleCount sample_count, 
+		ImagePrivate::ImagePrivate(DevicePrivate* _device, Format format, const uvec2& size, uint lvs, uint layers, SampleCount sample_count, 
 			ImageUsageFlags usage, bool is_cube) :
-			device(device),
+			device(_device),
 			format(format),
 			levels(lvs),
 			layers(layers),
@@ -109,6 +109,9 @@ namespace flame
 			usage(usage),
 			is_cube(is_cube)
 		{
+			if (!device)
+				device = default_device;
+
 			__images.push_back(this);
 
 			initialize(size);
@@ -148,14 +151,17 @@ namespace flame
 			chk_res(vkBindImageMemory(device->vk_device, vk_image, vk_memory, 0));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native) :
-			device(device),
+		ImagePrivate::ImagePrivate(DevicePrivate* _device, Format format, const uvec2& size, uint levels, uint layers, void* native) :
+			device(_device),
 			format(format),
 			levels(levels),
 			layers(layers),
 			sample_count(SampleCount_1),
 			usage(usage)
 		{
+			if (!device)
+				device = default_device;
+
 			__images.push_back(this);
 
 			initialize(size);
@@ -321,7 +327,7 @@ namespace flame
 			}
 
 			ImageViewPrivate* vs[] = { get_view({ base_level, 1, base_layer, 1 }) };
-			auto fb = new FramebufferPrivate(device, rp, vs);
+			auto fb = new FramebufferPrivate(rp, vs);
 			write_fbs.emplace(key, fb);
 			return fb;
 		}
@@ -713,13 +719,16 @@ namespace flame
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) :
-			device(device),
+		SamplerPrivate::SamplerPrivate(DevicePrivate* _device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) :
+			device(_device),
 			mag_filter(mag_filter),
 			min_filter(min_filter),
 			linear_mipmap(linear_mipmap),
 			address_mode(address_mode)
 		{
+			if (!device)
+				device = default_device;
+
 			VkSamplerCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			info.magFilter = to_backend(mag_filter);
@@ -741,6 +750,9 @@ namespace flame
 
 		SamplerPrivate* SamplerPrivate::get(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
 		{
+			if (!device)
+				device = default_device;
+
 			for (auto& s : device->sps)
 			{
 				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
@@ -758,6 +770,9 @@ namespace flame
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::filesystem::path& fn)
 		{
+			if (!device)
+				device = default_device;
+
 			auto filename = fn;
 			auto ini = parse_ini_file(filename);
 

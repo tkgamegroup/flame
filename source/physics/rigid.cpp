@@ -7,9 +7,13 @@ namespace flame
 {
 	namespace physics
 	{
-		RigidPrivate::RigidPrivate(DevicePrivate* device, bool dynamic) :
+		RigidPrivate::RigidPrivate(DevicePrivate* _device, bool dynamic) :
+			device(_device),
 			dynamic(dynamic)
 		{
+			if (!device)
+				device = default_device;
+
 #ifdef USE_PHYSX
 			if (dynamic)
 			{

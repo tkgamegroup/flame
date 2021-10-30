@@ -79,7 +79,7 @@ namespace flame
 
 	void sPhysicsPrivate::on_added()
 	{
-		physics_scene.reset(physics::Scene::create(physics::Device::get_default(), gravity, 2));
+		physics_scene.reset(physics::Scene::create(nullptr, gravity, 2));
 		physics_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
 			auto tri_shp = (EntityPtr)trigger_shape->user_data;
 			auto oth_shp = (EntityPtr)other_shape->user_data;

@@ -29,8 +29,6 @@ namespace flame
 
 		bool always_update = false;
 
-		graphics::Device* device;
-		graphics::DescriptorPool* dsp;
 		graphics::Sampler* sp_nearest;
 		graphics::Sampler* sp_linear;
 		graphics::Sampler* sp_tri_linear;

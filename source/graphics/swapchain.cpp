@@ -10,10 +10,13 @@ namespace flame
 	{
 		static auto swapchain_format = Format_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* device, NativeWindow* window) :
-			device(device),
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* _device, NativeWindow* window) :
+			device(_device),
 			window(window)
 		{
+			if (!device)
+				device = default_device;
+
 			update();
 
 			resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {

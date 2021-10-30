@@ -43,7 +43,7 @@ namespace flame
 			std::vector<ImageViewPrivate*> views;
 			VkFramebuffer vk_framebuffer;
 
-			FramebufferPrivate(DevicePrivate* device, RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
+			FramebufferPrivate(RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
 			~FramebufferPrivate();
 
 			void release() override { delete this; }

@@ -87,14 +87,13 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
 
-		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
 
 		{
 			auto fn = std::filesystem::path(height_map_name);
 			if (!fn.extension().empty() && !fn.is_absolute())
 				fn = ppath / fn;
-			height_texture = graphics::Image::get(device, fn.c_str(), false);
+			height_texture = graphics::Image::get(nullptr, fn.c_str(), false);
 			auto view = height_texture->get_view();
 			height_map_id = s_renderer->find_texture_res(view);
 			if (height_map_id == -1)
@@ -106,9 +105,9 @@ namespace flame
 			auto s = tex_size.x;
 			auto s1 = s + 1;
 
-			normal_texture.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1, 
+			normal_texture.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1,
 				graphics::SampleCount_1, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-			tangent_texture.reset(graphics::Image::create(device, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1,
+			tangent_texture.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, tex_size, 1, 1,
 				graphics::SampleCount_1, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 			normal_map_id = s_renderer->set_texture_res(-1, normal_texture->get_view(), nullptr);
 			tangent_map_id = s_renderer->set_texture_res(-1, tangent_texture->get_view(), nullptr);
@@ -123,8 +122,8 @@ namespace flame
 			}
 
 			auto img_sz = sizeof(vec4) * s * s;
-			graphics::StagingBuffer nor_stag(device, img_sz, nullptr, graphics::BufferUsageTransferDst);
-			graphics::StagingBuffer tan_stag(device, img_sz, nullptr, graphics::BufferUsageTransferDst);
+			graphics::StagingBuffer nor_stag(nullptr, img_sz, nullptr, graphics::BufferUsageTransferDst);
+			graphics::StagingBuffer tan_stag(nullptr, img_sz, nullptr, graphics::BufferUsageTransferDst);
 			auto nor_dat = (cvec4*)nor_stag.mapped;
 			auto tan_dat = (cvec4*)tan_stag.mapped;
 			auto h = extent.y * (extent.x / s);
@@ -155,7 +154,7 @@ namespace flame
 				}
 			}
 
-			graphics::InstanceCB cb(device);
+			graphics::InstanceCB cb(nullptr);
 			graphics::BufferImageCopy cpy;
 			cpy.img_ext = tex_size;
 			cb->image_barrier(normal_texture.get(), {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);

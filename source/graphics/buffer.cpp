@@ -6,12 +6,14 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
-			device(device),
+		BufferPrivate::BufferPrivate(DevicePrivate* _device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
+			device(_device),
 			size(size),
 			usage(usage),
 			mem_prop(mem_prop)
 		{
+			if (!device)
+				device = default_device;
 			create();
 		}
 

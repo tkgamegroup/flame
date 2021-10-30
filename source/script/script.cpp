@@ -240,13 +240,13 @@ namespace flame
 
 		int lua_flame_get_frame(lua_State* state)
 		{
-			lua_pushinteger(state, looper().get_frame());
+			lua_pushinteger(state, get_frames());
 			return 1;
 		}
 
 		int lua_flame_get_fps(lua_State* state)
 		{
-			lua_pushinteger(state, looper().get_fps());
+			lua_pushinteger(state, get_fps());
 			return 1;
 		}
 

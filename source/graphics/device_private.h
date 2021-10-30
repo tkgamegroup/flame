@@ -38,5 +38,7 @@ namespace flame
 
 			bool has_feature(Feature feature) const override;
 		};
+
+		extern DevicePrivate* default_device;
 	}
 }

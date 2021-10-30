@@ -6,6 +6,7 @@ namespace flame
 {
 	void sImguiPrivate::update()
 	{
+#if USE_IMGUI
 		ImGui::NewFrame();
 
 		std::function<void(EntityPrivate*)> draw;
@@ -17,6 +18,7 @@ namespace flame
 				draw(c.get());
 		};
 		draw(world->root.get());
+#endif
 	}
 
 	sImgui* sImgui::create(void* parms)

@@ -9,6 +9,8 @@ namespace flame
 	{
 		struct RigidPrivate : Rigid
 		{
+			DevicePrivate* device;
+			
 			bool dynamic;
 
 #ifdef USE_PHYSX
@@ -33,4 +35,3 @@ namespace flame
 		};
 	}
 }
-

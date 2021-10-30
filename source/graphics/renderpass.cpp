@@ -10,10 +10,13 @@ namespace flame
 	{
 		std::vector<RenderpassPrivate*> __renderpasses;
 
-		RenderpassPrivate::RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> _attachments, 
+		RenderpassPrivate::RenderpassPrivate(DevicePrivate* _device, std::span<const RenderpassAttachmentInfo> _attachments, 
 			std::span<const RenderpassSubpassInfo> _subpasses, std::span<const uvec2> _dependencies) :
-			device(device)
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+
 			__renderpasses.push_back(this);
 
 			std::vector<VkAttachmentDescription> atts(_attachments.size());
@@ -158,6 +161,9 @@ namespace flame
 
 		RenderpassPrivate* RenderpassPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
+			if (!device)
+				device = default_device;
+
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"assets\\shaders"))
 			{
@@ -276,8 +282,8 @@ namespace flame
 			return new RenderpassPrivate((DevicePrivate*)device, { attachments, attachments_count }, { subpasses, subpasses_count }, { dependencies, dependency_count });
 		}
 
-		FramebufferPrivate::FramebufferPrivate(DevicePrivate* device, RenderpassPrivate* rp, std::span<ImageViewPrivate*> _views) :
-			device(device),
+		FramebufferPrivate::FramebufferPrivate(RenderpassPrivate* rp, std::span<ImageViewPrivate*> _views) :
+			device(rp->device),
 			renderpass(rp)
 		{
 			std::vector<VkImageView> vk_views(_views.size());
@@ -309,9 +315,9 @@ namespace flame
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 		}
 
-		Framebuffer* Framebuffer::create(Device* device, Renderpass* rp, uint views_count, ImageView* const* views)
+		Framebuffer* Framebuffer::create(Renderpass* rp, uint views_count, ImageView* const* views)
 		{
-			return new FramebufferPrivate((DevicePrivate*)device, (RenderpassPrivate*)rp, { (ImageViewPrivate**)views, views_count });
+			return new FramebufferPrivate((RenderpassPrivate*)rp, { (ImageViewPrivate**)views, views_count });
 		}
 	}
 }

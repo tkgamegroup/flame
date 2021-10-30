@@ -34,14 +34,14 @@ struct DynamicAtlas
 		cx = _cx;
 		cy = _cy;
 		size = _size;
-		image = Image::create(Device::get_default(), Format_R8G8B8A8_UNORM, uvec2(cx * size, cy * size), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
+		image = Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(cx * size, cy * size), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 		id = canvas->set_element_resource(-1, { image->get_view(), nullptr, nullptr });
 		map.resize(cx * cy);
 		for (auto i = 0; i < map.size(); i++)
 			map[i] = 0;
 
-		cb = CommandBuffer::create(CommandPool::get(Device::get_default()));
-		buf = Buffer::create(Device::get_default(), sizeof(cvec4) * size * size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
+		cb = CommandBuffer::create(CommandPool::get(nullptr));
+		buf = Buffer::create(nullptr, sizeof(cvec4) * size * size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 		buf->map();
 	}
 
@@ -60,7 +60,7 @@ struct DynamicAtlas
 				cpy.image_extent = uvec2(w, h);
 				cb->copy_buffer_to_image(buf, image, 1, &cpy);
 				cb->end();
-				auto q = Queue::get(Device::get_default());
+				auto q = Queue::get(nullptr);
 				q->submit(1, &cb, nullptr, nullptr, nullptr);
 				q->wait_idle();
 				map[i] = 1;
@@ -145,7 +145,7 @@ struct ImageView
 		id = _id;
 		if (image)
 			image->release();
-		image = Image::create(Device::get_default(), items[id].filename.c_str(), true);
+		image = Image::create(nullptr, items[id].filename.c_str(), true);
 		canvas->set_element_resource(res_id, { image->get_view(), nullptr, nullptr });
 
 		if (!e)

@@ -4,7 +4,7 @@ namespace flame
 {
 	namespace sound
 	{
-		thread_local DevicePrivate* default_device = nullptr;
+		DevicePrivate* default_device = nullptr;
 
 		DevicePrivate::DevicePrivate()
 		{

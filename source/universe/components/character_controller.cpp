@@ -54,9 +54,8 @@ namespace flame
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
 		fassert(phy_scene);
 
-		auto device = physics::Device::get_default();
 		phy_controller = physics::Controller::create(phy_scene->physics_scene.get(), 
-			physics::Material::get(device, static_friction, dynamic_friction, restitution), radius, height);
+			physics::Material::get(nullptr, static_friction, dynamic_friction, restitution), radius, height);
 		phy_controller->user_data = entity;
 		node->update_transform();
 		phy_controller->set_position(node->pos);

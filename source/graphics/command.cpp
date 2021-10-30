@@ -10,9 +10,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		CommandPoolPrivate::CommandPoolPrivate(DevicePrivate* device, int queue_family_idx) :
-			device(device)
+		CommandPoolPrivate::CommandPoolPrivate(DevicePrivate* _device, int queue_family_idx) :
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+
 			VkCommandPoolCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 			info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -30,6 +33,9 @@ namespace flame
 		CommandPool* CommandPool::get(Device* _device, QueueFamily family)
 		{
 			auto device = (DevicePrivate*)_device;
+			if (!device)
+				device = default_device;
+
 			switch (family)
 			{
 			case QueueGraphics:
@@ -45,17 +51,20 @@ namespace flame
 			return new CommandPoolPrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
-		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPtr p, bool sub) :
-			pool(p)
+		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPtr _pool, bool sub) :
+			pool(_pool)
 		{
+			if (!pool)
+				pool = (CommandPoolPrivate*)CommandPool::get();
+
 			VkCommandBufferAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 			info.pNext = nullptr;
 			info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-			info.commandPool = p->vk_command_buffer_pool;
+			info.commandPool = pool->vk_command_buffer_pool;
 			info.commandBufferCount = 1;
 
-			chk_res(vkAllocateCommandBuffers(p->device->vk_device, &info, &vk_command_buffer));
+			chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &vk_command_buffer));
 
 			begin();
 			end();
@@ -495,9 +504,12 @@ namespace flame
 			return new CommandBufferPrivate((CommandPoolPrivate*)pool, sub);
 		}
 
-		QueuePrivate::QueuePrivate(DevicePrivate* device, uint queue_family_idx) :
-			device(device)
+		QueuePrivate::QueuePrivate(DevicePrivate* _device, uint queue_family_idx) :
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+
 			vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &vk_queue);
 		}
 
@@ -546,6 +558,9 @@ namespace flame
 		Queue* Queue::get(Device* _device, QueueFamily family)
 		{
 			auto device = (DevicePrivate*)_device;
+			if (!device)
+				device = default_device;
+
 			switch (family)
 			{
 			case QueueGraphics:
@@ -561,9 +576,12 @@ namespace flame
 			return new QueuePrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
-		SemaphorePrivate::SemaphorePrivate(DevicePtr device) :
-			device(device)
+		SemaphorePrivate::SemaphorePrivate(DevicePtr _device) :
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+			
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &vk_semaphore));
@@ -579,9 +597,12 @@ namespace flame
 			return new SemaphorePrivate((DevicePrivate*)device);
 		}
 
-		FencePrivate::FencePrivate(DevicePtr device, bool signaled) :
-			device(device)
+		FencePrivate::FencePrivate(DevicePtr _device, bool signaled) :
+			device(_device)
 		{
+			if (!device)
+				device = default_device;
+
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			if (signaled)

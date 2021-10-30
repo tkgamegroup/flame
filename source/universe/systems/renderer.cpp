@@ -115,14 +115,14 @@ namespace flame
 			}
 		}
 
-		void create(Device* device, BufferUsageFlags usage, uint _capacity)
+		void create(BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
 			access = u2a(usage);
 			plstg = u2s(usage);
 			auto size = capacity * sizeof(T);
-			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-			stagbuf.reset(Buffer::create(device, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			buf.reset(Buffer::create(nullptr, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+			stagbuf.reset(Buffer::create(nullptr, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			stagbuf->map();
 			pstag = (T*)stagbuf->get_mapped();
 		}
@@ -180,15 +180,15 @@ namespace flame
 		uint stag_capacity;
 		T* pstag = nullptr;
 
-		void create(Device* device, BufferUsageFlags usage, uint _capacity)
+		void create(BufferUsageFlags usage, uint _capacity)
 		{
 			capacity = _capacity;
 			access = u2a(usage);
 			plstg = u2s(usage);
 			auto size = capacity * sizeof(T);
-			buf.reset(Buffer::create(device, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+			buf.reset(Buffer::create(nullptr, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 			stag_capacity = 100;
-			stagbuf.reset(Buffer::create(device, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost |
+			stagbuf.reset(Buffer::create(nullptr, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost |
 				MemoryPropertyCoherent));
 			pstag = (T*)stagbuf->map();
 		}
@@ -236,10 +236,10 @@ namespace flame
 
 		std::vector<BufferCopy> cpies;
 
-		void create(Device* device, BufferUsageFlags usage)
+		void create(BufferUsageFlags usage)
 		{
-			buf.reset(Buffer::create(device, sizeof(T), BufferUsageTransferDst | usage, MemoryPropertyDevice));
-			stagbuf.reset(Buffer::create(device, sizeof(T), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			buf.reset(Buffer::create(nullptr, sizeof(T), BufferUsageTransferDst | usage, MemoryPropertyDevice));
+			stagbuf.reset(Buffer::create(nullptr, sizeof(T), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			pstag = (T*)stagbuf->map();
 		}
 
@@ -566,7 +566,7 @@ namespace flame
 
 	sRendererPrivate::~sRendererPrivate()
 	{
-		Queue::get(device)->wait_idle();
+		Queue::get(nullptr)->wait_idle();
 	}
 
 	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
@@ -769,7 +769,7 @@ namespace flame
 			return -1;
 
 		ed.reses[idx] = iv;
-		ed.ds_element->set_image(DescriptorSetLayout::get(device, L"element/element.dsl")
+		ed.ds_element->set_image(DescriptorSetLayout::get(nullptr, L"element/element.dsl")
 			->find_binding("images"), idx, iv, sp ? sp : sp_linear);
 		ed.ds_element->update();
 
@@ -1095,7 +1095,7 @@ namespace flame
 			dst.pipeline_defines.push_back("TRANSPARENT");
 		if (mat)
 		{
-			InstanceCB cb(device);
+			InstanceCB cb(nullptr);
 
 			auto& data = nd.buf_materials.item(idx);
 			data.color = mat->get_color();
@@ -1132,7 +1132,7 @@ namespace flame
 							dds_fn += L".dds";
 							if (!std::filesystem::exists(dds_fn))
 							{
-								auto img = Image::get(device, fn.c_str(), srgb);
+								auto img = Image::get(nullptr, fn.c_str(), srgb);
 								img->generate_mipmaps();
 								if (alpha_test > 0.f && alpha_map_id.first == i)
 								{
@@ -1149,11 +1149,11 @@ namespace flame
 						}
 					}
 
-					auto img = Image::get(device, fn.c_str(), srgb);
+					auto img = Image::get(nullptr, fn.c_str(), srgb);
 					auto iv = img->get_view({ 0, img->get_levels(), 0, 1 });
 					auto id = find_texture_res(iv);
 					if (id == -1)
-						id = set_texture_res(-1, iv, mat->get_texture_sampler(device, i));
+						id = set_texture_res(-1, iv, mat->get_texture_sampler(nullptr, i));
 					dst.texs[i] = id;
 					data.map_indices[i] = id;
 				}
@@ -1206,7 +1206,7 @@ namespace flame
 		dst.mesh = mesh;
 		if (mesh)
 		{
-			InstanceCB cb(device);
+			InstanceCB cb(nullptr);
 
 			dst.vtx_cnt = mesh->get_vertices_count();
 			dst.idx_cnt = mesh->get_indices_count();
@@ -1321,13 +1321,13 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"bgra8l.rp");
+			rp = Renderpass::get(nullptr, L"bgra8l.rp");
 		}
 		else if (parse_define(defines, "PICKUP", str))
 		{
 			use_mat = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(nullptr, L"rgba16.rp");
 		}
 		else if (parse_define(defines, "OUTLINE", str))
 		{
@@ -1335,13 +1335,13 @@ namespace flame
 			depth_test = false;
 			depth_write = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"rgba16.rp");
+			rp = Renderpass::get(nullptr, L"rgba16.rp");
 		}
 		else if (parse_define(defines, "NORMAL_DATA", str))
 		{
 			use_mat = false;
 			deferred = false;
-			rp = Renderpass::get(device, L"bgra8d16c.rp");
+			rp = Renderpass::get(nullptr, L"bgra8d16c.rp");
 		}
 		if (parse_define(defines, "TRANSPARENT", str))
 		{
@@ -1384,7 +1384,7 @@ namespace flame
 		case MaterialForMeshShadow:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
-			rp = Renderpass::get(device, L"d16.rp");
+			rp = Renderpass::get(nullptr, L"d16.rp");
 			alpha_blend = false;
 		case MaterialForMesh:
 		{
@@ -1394,19 +1394,19 @@ namespace flame
 			auto substitutes_str = get_substitutes_str();
 			GraphicsPipelineInfo info;
 			Shader* shaders[] = {
-				Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
+				Shader::get(nullptr, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = countof(shaders);
 			info.shaders = shaders;
-			info.layout = PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
+			info.layout = PipelineLayout::get(nullptr, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
 			{
 				if (deferred)
-					rp = Renderpass::get(device, L"gbuffer.rp");
+					rp = Renderpass::get(nullptr, L"gbuffer.rp");
 				else
 				{
-					rp = Renderpass::get(device, L"forward_ms4.rp");
+					rp = Renderpass::get(nullptr, L"forward_ms4.rp");
 					info.sample_count = MsaaSampleCount;
 				}
 			}
@@ -1435,13 +1435,13 @@ namespace flame
 				info.blend_options_count = 1;
 				info.blend_options = &bo;
 			}
-			ret = Pipeline::create(device, info);
+			ret = Pipeline::create(nullptr, info);
 		}
 		break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
-			rp = Renderpass::get(device, L"d16.rp");
+			rp = Renderpass::get(nullptr, L"d16.rp");
 			alpha_blend = false;
 		case MaterialForMeshArmature:
 		{
@@ -1452,19 +1452,19 @@ namespace flame
 			auto substitutes_str = get_substitutes_str();
 			GraphicsPipelineInfo info;
 			Shader* shaders[] = {
-				Shader::get(device, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
+				Shader::get(nullptr, L"mesh/mesh.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"mesh/mesh.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = countof(shaders);
 			info.shaders = shaders;
-			info.layout = PipelineLayout::get(device, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
+			info.layout = PipelineLayout::get(nullptr, deferred ? L"mesh/gbuffer.pll" : L"mesh/forward.pll");
 			if (!rp)
 			{
 				if (deferred)
-					rp = Renderpass::get(device, L"gbuffer.rp");
+					rp = Renderpass::get(nullptr, L"gbuffer.rp");
 				else
 				{
-					rp = Renderpass::get(device, L"forward_ms4.rp");
+					rp = Renderpass::get(nullptr, L"forward_ms4.rp");
 					info.sample_count = MsaaSampleCount;
 				}
 			}
@@ -1497,7 +1497,7 @@ namespace flame
 				info.blend_options_count = 1;
 				info.blend_options = &bo;
 			}
-			ret = Pipeline::create(device, info);
+			ret = Pipeline::create(nullptr, info);
 		}
 		break;
 		case MaterialForTerrain:
@@ -1508,21 +1508,21 @@ namespace flame
 			auto substitutes_str = get_substitutes_str();
 			GraphicsPipelineInfo info;
 			Shader* shaders[] = {
-				Shader::get(device, L"terrain/terrain.vert", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"terrain/terrain.tesc", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"terrain/terrain.tese", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"terrain/terrain.frag", defines_str.c_str(), substitutes_str.c_str())
+				Shader::get(nullptr, L"terrain/terrain.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"terrain/terrain.tesc", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"terrain/terrain.tese", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"terrain/terrain.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = countof(shaders);
 			info.shaders = shaders;
-			info.layout = PipelineLayout::get(device, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
+			info.layout = PipelineLayout::get(nullptr, deferred ? L"terrain/gbuffer.pll" : L"terrain/forward.pll");
 			if (!rp)
 			{
 				if (deferred)
-					rp = Renderpass::get(device, L"gbuffer.rp");
+					rp = Renderpass::get(nullptr, L"gbuffer.rp");
 				else
 				{
-					rp = Renderpass::get(device, L"forward_ms4.rp");
+					rp = Renderpass::get(nullptr, L"forward_ms4.rp");
 					info.sample_count = MsaaSampleCount;
 				}
 			}
@@ -1534,7 +1534,7 @@ namespace flame
 			info.cull_mode = cull_mode;
 			info.depth_test = depth_test;
 			info.depth_write = depth_write;
-			ret = Pipeline::create(device, info);
+			ret = Pipeline::create(nullptr, info);
 		}
 		break;
 		case MaterialForWater:
@@ -1543,15 +1543,15 @@ namespace flame
 			auto substitutes_str = get_substitutes_str();
 			GraphicsPipelineInfo info;
 			Shader* shaders[] = {
-				Shader::get(device, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(device, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
+				Shader::get(nullptr, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
+				Shader::get(nullptr, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
 			};
 			info.shaders_count = countof(shaders);
 			info.shaders = shaders;
-			info.layout = PipelineLayout::get(device, L"water/water.pll");
+			info.layout = PipelineLayout::get(nullptr, L"water/water.pll");
 			if (!rp)
 			{
-				rp = Renderpass::get(device, L"forward_ms4.rp");
+				rp = Renderpass::get(nullptr, L"forward_ms4.rp");
 				info.sample_count = MsaaSampleCount;
 			}
 			info.renderpass = rp;
@@ -1564,7 +1564,7 @@ namespace flame
 			info.blend_options_count = 1;
 			BlendOption bo = { true, BlendFactorOne, BlendFactorSrcAlpha, BlendFactorOne, BlendFactorZero };
 			info.blend_options = &bo;
-			ret = Pipeline::create(device, info);
+			ret = Pipeline::create(nullptr, info);
 		}
 		break;
 		}
@@ -1834,7 +1834,7 @@ namespace flame
 		fb_tars.clear();
 		fb_tars.resize(views.size());
 		for (auto i = 0; i < views.size(); i++)
-			fb_tars[i].reset(Framebuffer::create(device, rp_bgra8, 1, &views[i]));
+			fb_tars[i].reset(Framebuffer::create(rp_bgra8, 1, &views[i]));
 
 		if (views.empty())
 			return;
@@ -1842,29 +1842,29 @@ namespace flame
 		tar_sz = views[0]->get_image()->get_size();
 		auto hf_tar_sz = tar_sz / 2U;
 
-		img_dst.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+		img_dst.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageStorage));
 
 		auto& nd = *_nd;
 
-		nd.img_dep.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
+		nd.img_dep.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferSrc));
-		nd.img_col_met.reset(Image::create(device, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+		nd.img_col_met.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_nor_rou.reset(Image::create(device, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+		nd.img_nor_rou.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_ao.reset(Image::create(device, Format_R8_UNORM, hf_tar_sz, 1, 1,
+		nd.img_ao.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_col_ms.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+		nd.img_col_ms.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
 			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dep_ms.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
+		nd.img_dep_ms.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
 			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dst_back.reset(Image::create(device, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
+		nd.img_dst_back.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_dep_back.reset(Image::create(device, Format_Depth16, tar_sz, 1, 1,
+		nd.img_dep_back.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
 		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-		nd.img_ao_back.reset(Image::create(device, Format_R8_UNORM, hf_tar_sz, 1, 1,
+		nd.img_ao_back.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 
 		{
@@ -1873,19 +1873,19 @@ namespace flame
 				nd.img_nor_rou->get_view(),
 				nd.img_dep->get_view()
 			};
-			nd.fb_gbuf.reset(Framebuffer::create(device, Renderpass::get(device, L"gbuffer.rp"), countof(vs), vs));
+			nd.fb_gbuf.reset(Framebuffer::create(Renderpass::get(nullptr, L"gbuffer.rp"), countof(vs), vs));
 		}
 
 		nd.fb_tars_dep.clear();
 		nd.fb_tars_dep.resize(views.size());
-		auto rp_bgra8d16c = Renderpass::get(device, L"bgra8d16c.rp");
+		auto rp_bgra8d16c = Renderpass::get(nullptr, L"bgra8d16c.rp");
 		for (auto i = 0; i < views.size(); i++)
 		{
 			ImageView* vs[] = {
 				views[i],
 				nd.img_dep->get_view()
 			};
-			nd.fb_tars_dep[i].reset(Framebuffer::create(device, rp_bgra8d16c, countof(vs), vs));
+			nd.fb_tars_dep[i].reset(Framebuffer::create(rp_bgra8d16c, countof(vs), vs));
 		}
 
 		{
@@ -1894,7 +1894,7 @@ namespace flame
 				nd.img_dep_ms->get_view(),
 				img_dst->get_view()
 			};
-			nd.fb_fwd_ms4.reset(Framebuffer::create(device, Renderpass::get(device, L"forward_ms4.rp"), countof(vs), vs));
+			nd.fb_fwd_ms4.reset(Framebuffer::create(Renderpass::get(nullptr, L"forward_ms4.rp"), countof(vs), vs));
 		}
 
 		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
@@ -2812,26 +2812,24 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
-		device = Device::get_default();
-		dsp = DescriptorPool::get_default(device);
-		sp_nearest = Sampler::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge);
-		sp_linear = Sampler::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
+		sp_nearest = Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge);
+		sp_linear = Sampler::get(nullptr, FilterLinear, FilterLinear, false, AddressClampToEdge);
 
-		InstanceCB cb(device);
+		InstanceCB cb(nullptr);
 
-		rp_rgba8 = Renderpass::get(device, L"rgba8.rp");
-		rp_rgba8c = Renderpass::get(device, L"rgba8c.rp");
-		rp_bgra8 = Renderpass::get(device, L"bgra8.rp");
-		rp_bgra8l = Renderpass::get(device, L"bgra8l.rp");
-		rp_bgra8c = Renderpass::get(device, L"bgra8c.rp");
+		rp_rgba8 = Renderpass::get(nullptr, L"rgba8.rp");
+		rp_rgba8c = Renderpass::get(nullptr, L"rgba8c.rp");
+		rp_bgra8 = Renderpass::get(nullptr, L"bgra8.rp");
+		rp_bgra8l = Renderpass::get(nullptr, L"bgra8l.rp");
+		rp_bgra8c = Renderpass::get(nullptr, L"bgra8c.rp");
 
-		img_white.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+		img_white.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
 			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 		img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(255));
-		img_black.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
+		img_black.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
 			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 		img_black->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-		img_black_cube.reset(Image::create(device, Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
+		img_black_cube.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
 			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled, true));
 		img_black_cube->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
 
@@ -2841,11 +2839,11 @@ namespace flame
 
 		auto& ed = *_ed;
 
-		ed.pl_element = Pipeline::get(device, L"element/element.pl");
+		ed.pl_element = Pipeline::get(nullptr, L"element/element.pl");
 
-		ed.buf_vtx.create(device, BufferUsageVertex, 360000);
-		ed.buf_idx.create(device, BufferUsageIndex, 240000);
-		ed.ds_element.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"element/element.dsl")));
+		ed.buf_vtx.create(BufferUsageVertex, 360000);
+		ed.buf_idx.create(BufferUsageIndex, 240000);
+		ed.ds_element.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"element/element.dsl")));
 		ed.reses.resize(element::DSL_element::images_count);
 		for (auto i = 0; i < ed.reses.size(); i++)
 		{
@@ -2864,7 +2862,7 @@ namespace flame
 			v.resize(MaxMatCount);
 
 		for (auto& b : nd.buf_mesh_indirs)
-			b.create(device, BufferUsageIndirect, 65536);
+			b.create(BufferUsageIndirect, 65536);
 
 		{
 			auto& dst = nd.mat_reses[MaterialWireframe];
@@ -2891,74 +2889,74 @@ namespace flame
 			dst.pipeline_defines.push_back("NORMAL_DATA");
 		}
 
-		nd.buf_mesh_vtx.create(device, BufferUsageVertex, 2000000);
-		nd.buf_mesh_idx.create(device, BufferUsageIndex, 2000000);
-		nd.buf_arm_mesh_vtx.create(device, BufferUsageVertex, 2000000);
-		nd.buf_arm_mesh_idx.create(device, BufferUsageIndex, 2000000);
-		nd.buf_ptc_vtx.create(device, BufferUsageVertex, 10000);
+		nd.buf_mesh_vtx.create(BufferUsageVertex, 2000000);
+		nd.buf_mesh_idx.create(BufferUsageIndex, 2000000);
+		nd.buf_arm_mesh_vtx.create(BufferUsageVertex, 2000000);
+		nd.buf_arm_mesh_idx.create(BufferUsageIndex, 2000000);
+		nd.buf_ptc_vtx.create(BufferUsageVertex, 10000);
 
-		nd.buf_lines.create(device, BufferUsageVertex, 2000000);
+		nd.buf_lines.create(BufferUsageVertex, 2000000);
 
-		nd.buf_render_data.create(device, BufferUsageUniform);
+		nd.buf_render_data.create(BufferUsageUniform);
 		{
 			auto& data = *nd.buf_render_data.pstag;
 			data.fog_color = vec3(0.f);
 			data.sky_intensity = 0.2f;
 			data.sky_rad_levels = 0;
 		}
-		nd.ds_render_data.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"render_data.dsl")));
+		nd.ds_render_data.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"render_data.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());
 		nd.ds_render_data->update();
 
-		nd.buf_materials.create(device, BufferUsageStorage);
-		nd.ds_material.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"material.dsl")));
+		nd.buf_materials.create(BufferUsageStorage);
+		nd.ds_material.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"material.dsl")));
 		nd.ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, nd.buf_materials.buf.get());
 		for (auto i = 0; i < nd.tex_reses.size(); i++)
 			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_white, sp_linear);
 		nd.ds_material->update();
 
-		nd.buf_mesh_transforms.create(device, BufferUsageStorage);
-		nd.buf_mesh_armatures.create(device, BufferUsageStorage);
+		nd.buf_mesh_transforms.create(BufferUsageStorage);
+		nd.buf_mesh_armatures.create(BufferUsageStorage);
 		fassert(_countof(mesh::DSL_mesh::Armature::bones) == ArmatureMaxBones);
-		nd.ds_mesh.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"mesh/mesh.dsl")));
+		nd.ds_mesh.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"mesh/mesh.dsl")));
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Transforms_binding, 0, nd.buf_mesh_transforms.buf.get());
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Armatures_binding, 0, nd.buf_mesh_armatures.buf.get());
 		nd.ds_mesh->update();
 
-		nd.buf_terrain.create(device, BufferUsageStorage);
-		nd.ds_terrain.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"terrain/terrain.dsl")));
+		nd.buf_terrain.create(BufferUsageStorage);
+		nd.ds_terrain.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"terrain/terrain.dsl")));
 		nd.ds_terrain->set_buffer(terrain::DSL_terrain::TerrainInfos_binding, 0, nd.buf_terrain.buf.get());
 		nd.ds_terrain->update();
 
-		nd.buf_water.create(device, BufferUsageStorage);
-		nd.ds_water.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"water/water.dsl")));
+		nd.buf_water.create(BufferUsageStorage);
+		nd.ds_water.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"water/water.dsl")));
 		nd.ds_water->set_buffer(water::DSL_water::WaterInfos_binding, 0, nd.buf_water.buf.get());
 		nd.ds_water->update();
 
-		nd.buf_light_infos.create(device, BufferUsageStorage);
-		nd.buf_tile_lights.create(device, BufferUsageStorage);
-		nd.buf_dir_shadows.create(device, BufferUsageStorage);
-		nd.buf_pt_shadows.create(device, BufferUsageStorage);
+		nd.buf_light_infos.create(BufferUsageStorage);
+		nd.buf_tile_lights.create(BufferUsageStorage);
+		nd.buf_dir_shadows.create(BufferUsageStorage);
+		nd.buf_pt_shadows.create(BufferUsageStorage);
 		nd.img_dir_shadow_maps.resize(DSL_light::dir_shadow_maps_count);
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
-			nd.img_dir_shadow_maps[i].reset(Image::create(device, Format_Depth16, shadow_map_size, 1, 4,
+			nd.img_dir_shadow_maps[i].reset(Image::create(nullptr, Format_Depth16, shadow_map_size, 1, 4,
 				SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 			nd.img_dir_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 		}
 		nd.img_pt_shadow_maps.resize(DSL_light::pt_shadow_maps_count);
 		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
 		{
-			nd.img_pt_shadow_maps[i].reset(Image::create(device, Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
+			nd.img_pt_shadow_maps[i].reset(Image::create(nullptr, Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
 				SampleCount_1, ImageUsageSampled | ImageUsageAttachment, true));
 			nd.img_pt_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 		}
-		nd.ds_light.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"light.dsl")));
+		nd.ds_light.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"light.dsl")));
 		nd.ds_light->set_buffer(DSL_light::LightInfos_binding, 0, nd.buf_light_infos.buf.get());
 		nd.ds_light->set_buffer(DSL_light::TileLightsMap_binding, 0, nd.buf_tile_lights.buf.get());
 		nd.ds_light->set_buffer(DSL_light::DirShadows_binding, 0, nd.buf_dir_shadows.buf.get());
 		nd.ds_light->set_buffer(DSL_light::PtShadows_binding, 0, nd.buf_pt_shadows.buf.get());
-		auto sp_shadow = Sampler::get(device, FilterLinear, FilterLinear, false, AddressClampToBorder);
+		auto sp_shadow = Sampler::get(nullptr, FilterLinear, FilterLinear, false, AddressClampToBorder);
 		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
 		{
 			auto iv = nd.img_dir_shadow_maps[i]->get_view({ 0, 1, 0, 4 });
@@ -2975,17 +2973,17 @@ namespace flame
 		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
 		nd.ds_light->update();
 
-		nd.pll_mesh_fwd = PipelineLayout::get(device, L"mesh/forward.pll");
-		nd.pll_mesh_gbuf = PipelineLayout::get(device, L"mesh/gbuffer.pll");
-		nd.pll_terrain_fwd = PipelineLayout::get(device, L"terrain/forward.pll");
-		nd.pll_terrain_gbuf = PipelineLayout::get(device, L"terrain/gbuffer.pll");
-		nd.pll_water = PipelineLayout::get(device, L"water/water.pll");
-		nd.pll_post = PipelineLayout::get(device, L"post/post.pll");
+		nd.pll_mesh_fwd = PipelineLayout::get(nullptr, L"mesh/forward.pll");
+		nd.pll_mesh_gbuf = PipelineLayout::get(nullptr, L"mesh/gbuffer.pll");
+		nd.pll_terrain_fwd = PipelineLayout::get(nullptr, L"terrain/forward.pll");
+		nd.pll_terrain_gbuf = PipelineLayout::get(nullptr, L"terrain/gbuffer.pll");
+		nd.pll_water = PipelineLayout::get(nullptr, L"water/water.pll");
+		nd.pll_post = PipelineLayout::get(nullptr, L"post/post.pll");
 
 		std::uniform_real_distribution<float> r(0.f, 1.f);
 		std::default_random_engine rd;
 
-		nd.buf_ssao_loc.create(device, BufferUsageUniform);
+		nd.buf_ssao_loc.create(BufferUsageUniform);
 		{
 			auto& data = *nd.buf_ssao_loc.pstag;
 			for (auto i = 0; i < _countof(data.sample_locations); i++)
@@ -3002,7 +3000,7 @@ namespace flame
 			nd.buf_ssao_loc.cpy_whole();
 			nd.buf_ssao_loc.upload(cb.get());
 		}
-		nd.buf_ssao_noi.create(device, BufferUsageUniform);
+		nd.buf_ssao_noi.create(BufferUsageUniform);
 		{
 			auto& data = *nd.buf_ssao_noi.pstag;
 			for (auto i = 0; i < _countof(data.sample_noises); i++)
@@ -3011,48 +3009,48 @@ namespace flame
 			nd.buf_ssao_noi.cpy_whole();
 			nd.buf_ssao_noi.upload(cb.get());
 		}
-		nd.pl_ssao = Pipeline::get(device, L"deferred/ssao.pl");
-		nd.pl_ssao_blur = Pipeline::get(device, L"deferred/ssao_blur.pl");
-		nd.ds_ssao.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"deferred/ssao.dsl")));
+		nd.pl_ssao = Pipeline::get(nullptr, L"deferred/ssao.pl");
+		nd.pl_ssao_blur = Pipeline::get(nullptr, L"deferred/ssao_blur.pl");
+		nd.ds_ssao.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/ssao.dsl")));
 		nd.ds_ssao->set_buffer(DSL_ssao::SampleLocations_binding, 0, nd.buf_ssao_loc.buf.get());
 		nd.ds_ssao->set_buffer(DSL_ssao::SampleNoises_binding, 0, nd.buf_ssao_noi.buf.get());
 		nd.ds_ssao->update();
 
-		nd.pl_def = Pipeline::get(device, L"deferred/deferred.pl");
-		nd.ds_def.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"deferred/deferred.dsl")));
+		nd.pl_def = Pipeline::get(nullptr, L"deferred/deferred.pl");
+		nd.ds_def.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/deferred.dsl")));
 
-		nd.pl_ptc = Pipeline::get(device, L"particle/particle.pl");
+		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pl");
 
-		nd.pl_line = Pipeline::get(device, L"plain/line.pl");
+		nd.pl_line = Pipeline::get(nullptr, L"plain/line.pl");
 
-		nd.pl_blit_rgba8 = Pipeline::get(device, L"post/blit_rgba8.pl");
-		nd.pl_blit_rgba16 = Pipeline::get(device, L"post/blit_rgba16.pl");
-		nd.pl_blit_rgba16ms4 = Pipeline::get(device, L"post/blit_rgba16ms4.pl");
-		nd.pl_blit_d16 = Pipeline::get(device, L"post/blit_d16.pl");
-		nd.pl_blit_d16ms4 = Pipeline::get(device, L"post/blit_d16ms4.pl");
-		nd.pl_add_bgra8 = Pipeline::get(device, L"post/add_bgra8.pl");
-		nd.pl_add_rgba8 = Pipeline::get(device, L"post/add_rgba8.pl");
-		nd.pl_add_rgba16 = Pipeline::get(device, L"post/add_rgba16.pl");
-		nd.pl_fxaa = Pipeline::get(device, L"post/fxaa.pl");
-		nd.pl_downsample = Pipeline::get(device, L"post/downsample.pl");
-		nd.pl_upsample = Pipeline::get(device, L"post/upsample.pl");
+		nd.pl_blit_rgba8 = Pipeline::get(nullptr, L"post/blit_rgba8.pl");
+		nd.pl_blit_rgba16 = Pipeline::get(nullptr, L"post/blit_rgba16.pl");
+		nd.pl_blit_rgba16ms4 = Pipeline::get(nullptr, L"post/blit_rgba16ms4.pl");
+		nd.pl_blit_d16 = Pipeline::get(nullptr, L"post/blit_d16.pl");
+		nd.pl_blit_d16ms4 = Pipeline::get(nullptr, L"post/blit_d16ms4.pl");
+		nd.pl_add_bgra8 = Pipeline::get(nullptr, L"post/add_bgra8.pl");
+		nd.pl_add_rgba8 = Pipeline::get(nullptr, L"post/add_rgba8.pl");
+		nd.pl_add_rgba16 = Pipeline::get(nullptr, L"post/add_rgba16.pl");
+		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pl");
+		nd.pl_downsample = Pipeline::get(nullptr, L"post/downsample.pl");
+		nd.pl_upsample = Pipeline::get(nullptr, L"post/upsample.pl");
 
-		nd.buf_lum_htg.create(device, BufferUsageStorage);
-		nd.buf_lum_avg.create(device, BufferUsageStorage);
-		nd.ds_lum.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"post/luminance.dsl")));
+		nd.buf_lum_htg.create(BufferUsageStorage);
+		nd.buf_lum_avg.create(BufferUsageStorage);
+		nd.ds_lum.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"post/luminance.dsl")));
 		nd.ds_lum->set_buffer(DSL_luminance::Histogram_binding, 0, nd.buf_lum_htg.buf.get());
 		nd.ds_lum->set_buffer(DSL_luminance::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_lum->update();
-		nd.pll_lum = PipelineLayout::get(device, L"post/luminance.pll");
-		nd.pl_lum_htg = Pipeline::get(device, L"post/luminance_histogram.pl");
-		nd.pl_lum_avg = Pipeline::get(device, L"post/luminance_average.pl");
+		nd.pll_lum = PipelineLayout::get(nullptr, L"post/luminance.pll");
+		nd.pl_lum_htg = Pipeline::get(nullptr, L"post/luminance_histogram.pl");
+		nd.pl_lum_avg = Pipeline::get(nullptr, L"post/luminance_average.pl");
 
-		nd.pl_bright = Pipeline::get(device, L"post/bright.pl");
+		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pl");
 
-		nd.ds_tone.reset(DescriptorSet::create(dsp, DescriptorSetLayout::get(device, L"post/tone.dsl")));
+		nd.ds_tone.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"post/tone.dsl")));
 		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_tone->update();
-		nd.pl_tone = Pipeline::get(device, L"post/tone.pl");
+		nd.pl_tone = Pipeline::get(nullptr, L"post/tone.pl");
 	}
 
 	void sRendererPrivate::update()

@@ -49,7 +49,7 @@ namespace flame
 			virtual uint get_views_count() const = 0;
 			virtual ImageViewPtr get_view(uint idx) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* device, Renderpass* rp, uint views_count, ImageView* const* views);
+			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Renderpass* rp, uint views_count, ImageView* const* views);
 		};
 	}
 }

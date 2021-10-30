@@ -50,7 +50,6 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(s_renderer);
 
-		auto device = graphics::Device::get_default();
 		auto ppath = entity->get_src(src_id).parent_path();
 
 		if (!material_name.empty())

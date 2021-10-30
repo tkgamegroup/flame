@@ -40,10 +40,10 @@ namespace flame
 
 		if (!s_renderer || img_src.empty())
 			return;
-		auto device = graphics::Device::get_default();
+
 		if (img_src.extension() != L".atlas")
 		{
-			auto img = graphics::Image::get(device, img_src.c_str(), false);
+			auto img = graphics::Image::get(nullptr, img_src.c_str(), false);
 			fassert(img);
 			iv = img->get_view();
 
@@ -53,7 +53,7 @@ namespace flame
 		}
 		else
 		{
-			atlas = graphics::ImageAtlas::get(device, img_src.c_str());
+			atlas = graphics::ImageAtlas::get(nullptr, img_src.c_str());
 			fassert(atlas);
 			iv = atlas->get_image()->get_view();
 

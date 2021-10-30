@@ -65,7 +65,7 @@ namespace flame
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
 		fassert(phy_scene);
 
-		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
+		phy_rigid = physics::Rigid::create(nullptr, dynamic);
 		phy_rigid->user_data = entity;
 		phy_scene->add_rigid(this);
 		node->update_transform();

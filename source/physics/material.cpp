@@ -5,11 +5,15 @@ namespace flame
 {
 	namespace physics
 	{
-		MaterialPrivate::MaterialPrivate(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution) :
+		MaterialPrivate::MaterialPrivate(DevicePrivate* _device, float static_friction, float dynamic_friction, float restitution) :
+			device(_device),
 			static_friction(static_friction),
 			dynamic_friction(dynamic_friction),
 			restitution(restitution)
 		{
+			if (!device)
+				device = default_device;
+
 #ifdef USE_PHYSX
 			px_material.reset(device->px_instance->createMaterial(static_friction, dynamic_friction, restitution));
 #endif

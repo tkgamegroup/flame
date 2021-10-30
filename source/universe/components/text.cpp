@@ -138,14 +138,12 @@ namespace flame
 		s_renderer = entity->world->get_system_t<sRenderer>();
 		fassert(s_renderer);
 
-		auto device = graphics::Device::get_default();
-
-		atlas = graphics::FontAtlas::get(device, atlas_name.c_str());
+		atlas = graphics::FontAtlas::get(nullptr, atlas_name.c_str());
 		fassert(atlas);
 		auto iv = atlas->get_view();
 		res_id = s_renderer->find_element_res(iv);
 		if (res_id == -1)
-			res_id = s_renderer->set_element_res(-1, iv, graphics::Sampler::get(device, graphics::FilterNearest, graphics::FilterNearest, 
+			res_id = s_renderer->set_element_res(-1, iv, graphics::Sampler::get(nullptr, graphics::FilterNearest, graphics::FilterNearest,
 				false, graphics::AddressClampToEdge));
 	}
 

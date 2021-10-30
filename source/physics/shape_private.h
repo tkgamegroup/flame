@@ -9,6 +9,8 @@ namespace flame
 	{
 		struct TriangleMeshPrivate : TriangleMesh
 		{
+			DevicePrivate* device;
+
 #ifdef USE_PHYSX
 			UniPtr<PxTriangleMesh> px_triangle_mesh;
 #endif
@@ -20,6 +22,8 @@ namespace flame
 
 		struct HeightFieldPrivate : HeightField
 		{
+			DevicePrivate* device;
+
 			uvec2 blocks;
 			uint tess_levels;
 
@@ -34,6 +38,8 @@ namespace flame
 
 		struct ShapePrivate : Shape
 		{
+			DevicePrivate* device;
+
 			ShapeType type;
 			RigidPrivate* rigid = nullptr; 
 

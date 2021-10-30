@@ -9,6 +9,8 @@ namespace flame
 	{
 		struct MaterialPrivate : Material
 		{
+			DevicePrivate* device;
+
 			float static_friction;
 			float dynamic_friction;
 			float restitution;

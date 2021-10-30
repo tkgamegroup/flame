@@ -10,7 +10,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static CommandPool* get(Device* device, QueueFamily family = QueueGraphics);
+			FLAME_GRAPHICS_EXPORTS static CommandPool* get(Device* device = nullptr, QueueFamily family = QueueGraphics);
 			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* device, int queue_family_idx);
 		};
 

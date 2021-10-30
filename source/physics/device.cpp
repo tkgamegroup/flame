@@ -5,7 +5,7 @@ namespace flame
 {
 	namespace physics
 	{
-		thread_local DevicePrivate* default_device = nullptr;
+		DevicePrivate* default_device = nullptr;
 
 		DevicePrivate::DevicePrivate()
 		{

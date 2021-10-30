@@ -76,19 +76,18 @@ namespace flame
 
 		node->update_transform();
 
-		auto device = physics::Device::get_default();
-		auto material = physics::Material::get(device, static_friction, dynamic_friction, restitution);
+		auto material = physics::Material::get(nullptr, static_friction, dynamic_friction, restitution);
 		phy_shape = nullptr;
 		switch (type)
 		{
 		case physics::ShapeBox:
-			phy_shape = physics::Shape::create_box(device, material, size * node->g_scl);
+			phy_shape = physics::Shape::create_box(nullptr, material, size * node->g_scl);
 			break;
 		case physics::ShapeSphere:
-			phy_shape = physics::Shape::create_sphere(device, material, size.x * node->g_scl.x);
+			phy_shape = physics::Shape::create_sphere(nullptr, material, size.x * node->g_scl.x);
 			break;
 		case physics::ShapeCapsule:
-			phy_shape = physics::Shape::create_capsule(device, material, size.x * node->g_scl.x, size.y * 0.5f * node->g_scl.y);
+			phy_shape = physics::Shape::create_capsule(nullptr, material, size.x * node->g_scl.x, size.y * 0.5f * node->g_scl.y);
 			break;
 		case physics::ShapeTriangleMesh:
 			if (c_mesh && c_mesh->mesh)
@@ -106,10 +105,10 @@ namespace flame
 				}
 				if (!triangle_mesh)
 				{
-					triangle_mesh = physics::TriangleMesh::create(device, m);
+					triangle_mesh = physics::TriangleMesh::create(nullptr, m);
 					triangle_meshes.emplace_back(m, triangle_mesh, 1);
 				}
-				phy_shape = physics::Shape::create_triangle_mesh(device, material, triangle_mesh, node->g_scl.x);
+				phy_shape = physics::Shape::create_triangle_mesh(nullptr, material, triangle_mesh, node->g_scl.x);
 				phy_triangle_mesh = triangle_mesh;
 			}
 			break;
@@ -129,11 +128,11 @@ namespace flame
 				}
 				if (!height_field)
 				{
-					height_field = physics::HeightField::create(device, t, uvec2(c_terrain->blocks), c_terrain->tess_levels);
+					height_field = physics::HeightField::create(nullptr, t, uvec2(c_terrain->blocks), c_terrain->tess_levels);
 					height_fields.emplace_back(t, height_field, 1);
 				}
 				auto ext = c_terrain->extent;
-				phy_shape = physics::Shape::create_height_field(device, material, height_field, vec3(ext.x, ext.y, ext.x));
+				phy_shape = physics::Shape::create_height_field(nullptr, material, height_field, vec3(ext.x, ext.y, ext.x));
 				phy_height_field = height_field;
 			}
 			break;

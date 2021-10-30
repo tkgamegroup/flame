@@ -10,7 +10,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorPool* get_default(Device* device);
+			FLAME_GRAPHICS_EXPORTS static DescriptorPool* get_default(Device* device = nullptr);
 			FLAME_GRAPHICS_EXPORTS static DescriptorPool* create(Device* device);
 		};
 
