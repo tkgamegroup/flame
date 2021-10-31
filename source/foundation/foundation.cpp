@@ -1112,8 +1112,12 @@ namespace flame
 				w->pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
 				return true;
 			case WM_SETCURSOR:
-				SetCursor(w->cursors[w->cursor_type]);
-				return true;
+				if (LOWORD(lParam) == HTCLIENT)
+				{
+					SetCursor(w->cursors[w->cursor_type]);
+					return true;
+				}
+				break;
 			default:
 				return DefWindowProcW(hWnd, message, wParam, lParam);
 			}

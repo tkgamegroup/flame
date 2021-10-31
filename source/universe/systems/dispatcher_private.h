@@ -40,6 +40,8 @@ namespace flame
 		cReceiverPrivate* debug_target = nullptr;
 
 		sDispatcherPrivate();
+
+		void on_added() override;
 		void setup(NativeWindow* window) override;
 
 		void dispatch_mouse_single(cReceiverPrivate* er, bool force);

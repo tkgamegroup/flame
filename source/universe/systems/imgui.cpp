@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	void sImguiPrivate::on_added()
+	{
+
+	}
+
 	void sImguiPrivate::update()
 	{
 #if USE_IMGUI

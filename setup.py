@@ -217,6 +217,18 @@ if op != 3:
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 
+	ok = False
+	address = "https://github.com/ocornut/imgui.git"
+	lib_dir = parent_directory / "imgui"
+	if op == 2:
+		print("Download IMGUI from %s into %s ? y/n" % (address, str(lib_dir)))
+		ok = input() == "y"
+	if ok:
+		if not lib_dir.exists():
+			os.system("git clone --depth 1 %s %s && git checkout docking && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
+
 os.system("setx FLAME_PATH \"%s\"" % str(current_directory))
 
 os.system("regsvr32 \"%s/DIA SDK/bin/amd64/msdia140.dll\"" % str(vs_path))

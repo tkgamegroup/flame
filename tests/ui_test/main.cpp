@@ -8,13 +8,15 @@ App app;
 int main(int argc, char** args)
 {
 	app.create();
-	new GraphicsWindow(&app, L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable);
+	app.create_main_window(L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable);
 	{
 		auto e = Entity::create();
 		e->load(L"ui_test");
 		app.root->add_child(e);
 	}
-	app.run();
+	run([](Capture& c, float) {
+		app.update();
+	}, Capture());
 
 	return 0;
 }
