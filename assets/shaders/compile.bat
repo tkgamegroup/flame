@@ -1,0 +1,1 @@
+../../bin/debug/shader_compiler.exe -filter .pll

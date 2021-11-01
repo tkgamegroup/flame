@@ -2840,7 +2840,7 @@ namespace flame
 
 		auto& ed = *_ed;
 
-		ed.pl_element = Pipeline::get(nullptr, L"element/element.pl");
+		ed.pl_element = Pipeline::get(nullptr, L"element/element.pipeline");
 
 		ed.buf_vtx.create(BufferUsageVertex, 360000);
 		ed.buf_idx.create(BufferUsageIndex, 240000);
@@ -3010,31 +3010,31 @@ namespace flame
 			nd.buf_ssao_noi.cpy_whole();
 			nd.buf_ssao_noi.upload(cb.get());
 		}
-		nd.pl_ssao = Pipeline::get(nullptr, L"deferred/ssao.pl");
-		nd.pl_ssao_blur = Pipeline::get(nullptr, L"deferred/ssao_blur.pl");
+		nd.pl_ssao = Pipeline::get(nullptr, L"deferred/ssao.pipeline");
+		nd.pl_ssao_blur = Pipeline::get(nullptr, L"deferred/ssao_blur.pipeline");
 		nd.ds_ssao.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/ssao.dsl")));
 		nd.ds_ssao->set_buffer(DSL_ssao::SampleLocations_binding, 0, nd.buf_ssao_loc.buf.get());
 		nd.ds_ssao->set_buffer(DSL_ssao::SampleNoises_binding, 0, nd.buf_ssao_noi.buf.get());
 		nd.ds_ssao->update();
 
-		nd.pl_def = Pipeline::get(nullptr, L"deferred/deferred.pl");
+		nd.pl_def = Pipeline::get(nullptr, L"deferred/deferred.pipeline");
 		nd.ds_def.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/deferred.dsl")));
 
-		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pl");
+		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pipeline");
 
-		nd.pl_line = Pipeline::get(nullptr, L"plain/line.pl");
+		nd.pl_line = Pipeline::get(nullptr, L"plain/line.pipeline");
 
-		nd.pl_blit_rgba8 = Pipeline::get(nullptr, L"post/blit_rgba8.pl");
-		nd.pl_blit_rgba16 = Pipeline::get(nullptr, L"post/blit_rgba16.pl");
-		nd.pl_blit_rgba16ms4 = Pipeline::get(nullptr, L"post/blit_rgba16ms4.pl");
-		nd.pl_blit_d16 = Pipeline::get(nullptr, L"post/blit_d16.pl");
-		nd.pl_blit_d16ms4 = Pipeline::get(nullptr, L"post/blit_d16ms4.pl");
-		nd.pl_add_bgra8 = Pipeline::get(nullptr, L"post/add_bgra8.pl");
-		nd.pl_add_rgba8 = Pipeline::get(nullptr, L"post/add_rgba8.pl");
-		nd.pl_add_rgba16 = Pipeline::get(nullptr, L"post/add_rgba16.pl");
-		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pl");
-		nd.pl_downsample = Pipeline::get(nullptr, L"post/downsample.pl");
-		nd.pl_upsample = Pipeline::get(nullptr, L"post/upsample.pl");
+		nd.pl_blit_rgba8 = Pipeline::get(nullptr, L"post/blit_rgba8.pipeline");
+		nd.pl_blit_rgba16 = Pipeline::get(nullptr, L"post/blit_rgba16.pipeline");
+		nd.pl_blit_rgba16ms4 = Pipeline::get(nullptr, L"post/blit_rgba16ms4.pipeline");
+		nd.pl_blit_d16 = Pipeline::get(nullptr, L"post/blit_d16.pipeline");
+		nd.pl_blit_d16ms4 = Pipeline::get(nullptr, L"post/blit_d16ms4.pipeline");
+		nd.pl_add_bgra8 = Pipeline::get(nullptr, L"post/add_bgra8.pipeline");
+		nd.pl_add_rgba8 = Pipeline::get(nullptr, L"post/add_rgba8.pipeline");
+		nd.pl_add_rgba16 = Pipeline::get(nullptr, L"post/add_rgba16.pipeline");
+		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pipeline");
+		nd.pl_downsample = Pipeline::get(nullptr, L"post/downsample.pipeline");
+		nd.pl_upsample = Pipeline::get(nullptr, L"post/upsample.pipeline");
 
 		nd.buf_lum_htg.create(BufferUsageStorage);
 		nd.buf_lum_avg.create(BufferUsageStorage);
@@ -3043,15 +3043,15 @@ namespace flame
 		nd.ds_lum->set_buffer(DSL_luminance::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_lum->update();
 		nd.pll_lum = PipelineLayout::get(nullptr, L"post/luminance.pll");
-		nd.pl_lum_htg = Pipeline::get(nullptr, L"post/luminance_histogram.pl");
-		nd.pl_lum_avg = Pipeline::get(nullptr, L"post/luminance_average.pl");
+		nd.pl_lum_htg = Pipeline::get(nullptr, L"post/luminance_histogram.pipeline");
+		nd.pl_lum_avg = Pipeline::get(nullptr, L"post/luminance_average.pipeline");
 
-		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pl");
+		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pipeline");
 
 		nd.ds_tone.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"post/tone.dsl")));
 		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
 		nd.ds_tone->update();
-		nd.pl_tone = Pipeline::get(nullptr, L"post/tone.pl");
+		nd.pl_tone = Pipeline::get(nullptr, L"post/tone.pipeline");
 	}
 
 	void sRendererPrivate::update()

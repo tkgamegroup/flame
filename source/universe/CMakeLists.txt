@@ -11,7 +11,7 @@ file(GLOB_RECURSE shader_files
 	"${SHADERS_DIR}/*.comp"
 	"${SHADERS_DIR}/*.dsl"
 	"${SHADERS_DIR}/*.pll"
-	"${SHADERS_DIR}/*.pl"
+	"${SHADERS_DIR}/*.pipeline"
 	"${SHADERS_DIR}/*.rp"
 )
 if (USE_IMGUI)
@@ -41,19 +41,6 @@ target_link_libraries(flame_universe flame_script)
 target_include_directories(flame_universe PRIVATE "${SHADERS_DIR}")
 add_dependencies(flame_universe typeinfogen_dep)
 add_custom_command(TARGET flame_universe POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:flame_universe> -d "${CMAKE_CURRENT_SOURCE_DIR}/typeinfo.desc")
-add_dependencies(flame_universe shader_compiler)
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/element/element.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/mesh/forward.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/mesh/gbuffer.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/terrain/forward.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/terrain/gbuffer.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/water/water.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/deferred/ssao.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/deferred/deferred.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/particle/particle.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/post.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/luminance.pll")
-add_custom_command(TARGET flame_universe PRE_BUILD COMMAND $<TARGET_FILE:shader_compiler> "${SHADERS_DIR}/post/tone.pll")
 
 file(GLOB PUBLIC_HEADER_FILES "*.h*")
 list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")
