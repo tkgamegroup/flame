@@ -8,9 +8,9 @@ namespace flame
 	{
 		struct SwapchainPrivate : Swapchain
 		{
-			NativeWindow* window;
-
 			DevicePrivate* device;
+
+			NativeWindow* window;
 
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;

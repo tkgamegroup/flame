@@ -17,6 +17,8 @@ namespace flame
 		{
 		}
 
+		virtual void setup(graphics::Window* window) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static sImgui* create(void* parms = nullptr);
 	};
 }

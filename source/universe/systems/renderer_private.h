@@ -25,7 +25,7 @@ namespace flame
 
 	struct sRendererPrivate : sRenderer
 	{
-		graphics::Swapchain* swapchain = nullptr;
+		graphics::Window* window = nullptr;
 
 		bool always_update = false;
 
@@ -62,7 +62,7 @@ namespace flame
 		sRendererPrivate(sRendererParms* parms);
 		~sRendererPrivate();
 
-		void setup(graphics::Swapchain* swapchain) override;
+		void setup(graphics::Window* window) override;
 		void setup(graphics::ImageView* imageview) override;
 
 		void set_always_update(bool a) override { always_update = a; }
@@ -123,8 +123,8 @@ namespace flame
 		void on_added() override;
 
 		void set_targets(const std::vector<graphics::ImageView*>& views);
-		void record(uint tar_idx, graphics::CommandBuffer* cb) override;
 
+		void render(uint tar_idx, graphics::CommandBuffer* cb);
 		void update() override;
 	};
 }

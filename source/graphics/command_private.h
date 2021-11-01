@@ -14,6 +14,8 @@ namespace flame
 			~CommandPoolPrivate();
 
 			void release() override { delete this; }
+
+			static CommandPoolPrivate* get(DevicePrivate* device = nullptr, QueueFamily family = QueueGraphics);
 		};
 
 		struct CommandBufferPrivate : CommandBuffer
@@ -101,7 +103,7 @@ namespace flame
 			uint value = 0;
 			VkFence vk_fence;
 
-			FencePrivate(DevicePrivate* device, bool signaled);
+			FencePrivate(DevicePrivate* device, bool signaled = true);
 			~FencePrivate();
 
 			void release() override { delete this; }

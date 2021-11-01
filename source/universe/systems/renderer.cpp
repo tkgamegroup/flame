@@ -7,6 +7,7 @@
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/swapchain.h"
+#include "../../graphics/window.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
@@ -675,16 +676,16 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::setup(graphics::Swapchain* _swapchain)
+	void sRendererPrivate::setup(graphics::Window* _window)
 	{
-		fassert(!swapchain);
+		fassert(!window);
 
-		swapchain = _swapchain;
+		window = _window;
 		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
 			auto thiz = c.thiz<sRendererPrivate>();
 			std::vector<ImageView*> views;
 
-			auto swapchain = thiz->swapchain;
+			auto swapchain = thiz->window->get_swapchain();
 			views.resize(swapchain->get_images_count());
 			for (auto i = 0; i < views.size(); i++)
 				views[i] = swapchain->get_image(i)->get_view();
@@ -694,7 +695,7 @@ namespace flame
 
 		set_targets_from_swapchain(Capture().set_thiz(this), uvec2(0));
 
-		swapchain->get_window()->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
+		window->get_native()->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
 	}
 
 	void sRendererPrivate::setup(graphics::ImageView* imageview)
@@ -1919,7 +1920,7 @@ namespace flame
 
 	const auto shadow_map_size = uvec2(1024);
 
-	void sRendererPrivate::record(uint tar_idx, CommandBuffer* cb)
+	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
 	{
 		auto& nd = *_nd;
 		if (nd.should_render)
@@ -3093,6 +3094,14 @@ namespace flame
 			nd.should_render = false;
 
 		dirty = false;
+
+		if (window)
+		{
+			window->add_renderer([](Capture& c, uint img_idx, CommandBuffer* commandbuffer) {
+				auto thiz = c.thiz<sRendererPrivate>();
+				thiz->render(img_idx, commandbuffer);
+			}, Capture().set_thiz(this));
+		}
 	}
 
 	sRenderer* sRenderer::create(void* parms)

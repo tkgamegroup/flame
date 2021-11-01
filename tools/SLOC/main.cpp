@@ -48,7 +48,6 @@ void add_default_excludes()
 }
 
 long long total_lines = 0;
-long long empty_lines = 0;
 
 void iter(const std::wstring &p)
 {
@@ -87,8 +86,8 @@ void iter(const std::wstring &p)
 		}
 		else
 		{
-			auto accept = false;
 			auto ext = it->path().extension();
+			auto accept = false;
 			for (auto &e : extensions)
 			{
 				if (e == ext)
@@ -100,23 +99,10 @@ void iter(const std::wstring &p)
 			if (accept)
 			{
 				std::ifstream file(ffn);
-				while (!file.eof())
-				{
-					std::string line;
-					std::getline(file, line);
-
-					total_lines++;
-					empty_lines++;
-					for (auto chr : line)
-					{
-						if (!std::isspace((uchar)chr))
-						{
-							empty_lines--;
-							break;
-						}
-					}
-
-				}
+				std::stringstream buffer;
+				buffer << file.rdbuf();
+				auto str = buffer.str();
+				total_lines += std::count(str.begin(), str.end(), '\n');
 				file.close();
 			}
 		}
@@ -157,8 +143,7 @@ int main(int argc, char **args)
 
 	iter(curr_path.wstring());
 
-	printf("total:%d\n", total_lines);
-	printf("empty:%d\n", empty_lines);
+	printf("lines:%d\n", total_lines);
 
 	system("pause");
 

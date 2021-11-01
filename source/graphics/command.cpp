@@ -30,9 +30,8 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
-		CommandPool* CommandPool::get(Device* _device, QueueFamily family)
+		CommandPoolPrivate* CommandPoolPrivate::get(DevicePrivate* device, QueueFamily family)
 		{
-			auto device = (DevicePrivate*)_device;
 			if (!device)
 				device = default_device;
 
@@ -44,6 +43,11 @@ namespace flame
 				return device->tcp.get();
 			}
 			return nullptr;
+		}
+
+		CommandPool* CommandPool::get(Device* device, QueueFamily family)
+		{
+			return CommandPoolPrivate::get((DevicePrivate*)device, family);
 		}
 
 		CommandPool* CommandPool::create(Device* device, int queue_family_idx)

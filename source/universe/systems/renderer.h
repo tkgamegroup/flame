@@ -17,7 +17,7 @@ namespace flame
 		{
 		}
 
-		virtual void setup(graphics::Swapchain* swapchain) = 0;
+		virtual void setup(graphics::Window* window) = 0;
 		virtual void setup(graphics::ImageView* imageview) = 0;
 
 		virtual void set_always_update(bool a) = 0;
@@ -66,8 +66,6 @@ namespace flame
 
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
-
-		virtual void record(uint tar_idx, graphics::CommandBuffer* cb) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sRenderer* create(void* parms = nullptr);
 	};

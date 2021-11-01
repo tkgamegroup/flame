@@ -3,8 +3,8 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/graphics/device.h>
-#include <flame/graphics/swapchain.h>
 #include <flame/graphics/command.h>
+#include <flame/graphics/window.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 #include <flame/sound/device.h>
@@ -44,6 +44,8 @@ namespace flame
 		sRenderer* s_renderer = nullptr;
 		sImgui* s_imgui = nullptr;
 		Entity* root = nullptr;
+
+		graphics::Window* window = nullptr;
 
 		void create(bool graphics_debug = true, bool always_render = false)
 		{
@@ -91,43 +93,28 @@ namespace flame
 			scr_ins->excute_file(L"world_setup.lua");
 		}
 
-		void create_main_window(const wchar_t* title, const uvec2 size, NativeWindowStyleFlags styles)
+		void set_main_window(graphics::Window* _window)
 		{
-			auto window = NativeWindow::create(title, size, styles);
-			swapchain.reset(graphics::Swapchain::create(nullptr, window));
+			window = _window;
 
-			s_dispatcher->setup(window);
-			s_scene->setup(window);
-			s_renderer->setup(swapchain.get());
+			auto native_window = window->get_native();
+
+			s_dispatcher->setup(native_window);
+			s_scene->setup(native_window);
+			s_renderer->setup(window);
 		}
 
 		void update()
 		{
-			auto img_idx = -1;
-
-			if (s_imgui)
-				s_imgui->update();
+			//if (s_imgui)
+			//	s_imgui->update();
 			s_dispatcher->update();
 			s_physics->update();
 			s_scene->update();
-			if (s_renderer->is_dirty())
-				img_idx = swapchain->acquire_image();
 			if (s_renderer)
 				s_renderer->update();
 
-			submit_fence->wait();
-
-			commandbuffer->begin();
-			if (img_idx != -1)
-				s_renderer->record(img_idx, commandbuffer.get());
-			commandbuffer->end();
-
-			if (img_idx != -1)
-			{
-				auto queue = graphics::Queue::get(nullptr);
-				queue->submit(1, &commandbuffer, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
-				queue->present(swapchain.get(), render_finished.get());
-			}
+			window->update();
 		}
 	};
 }

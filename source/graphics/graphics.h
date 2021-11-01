@@ -44,6 +44,7 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(PipelineLayout);
 		FLAME_GRAPHICS_TYPE(Pipeline);
 		FLAME_GRAPHICS_TYPE(Swapchain);
+		FLAME_GRAPHICS_TYPE(Window);
 
 		FLAME_GRAPHICS_TYPE(ImageAtlas);
 		FLAME_GRAPHICS_TYPE(FontAtlas);
