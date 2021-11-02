@@ -36,8 +36,8 @@ namespace flame
 	void sImguiPrivate::setup(Window* _window)
 	{
 		fassert(!window);
-
 		window = _window;
+
 		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
 			auto thiz = c.thiz<sImguiPrivate>();
 			std::vector<ImageView*> views;
@@ -52,17 +52,32 @@ namespace flame
 
 		set_targets_from_swapchain(Capture().set_thiz(this), uvec2(0));
 
-		window->get_native()->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
+		auto native_window = window->get_native();
+
+		native_window->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
 
 		window->add_renderer([](Capture& c, uint img_idx, CommandBuffer* commandbuffer) {
 			c.thiz<sImguiPrivate>()->render(img_idx, commandbuffer);
 		}, Capture().set_thiz(this));
+
+		native_window->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<sDispatcherPrivate>();
+			ImGuiIO& io = ImGui::GetIO();
+			io.MouseDown[0] = true;
+		}, Capture().set_thiz(this));
+
+		native_window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<sDispatcherPrivate>();
+			ImGuiIO& io = ImGui::GetIO();
+			io.MouseDown[0] = false;
+		}, Capture().set_thiz(this));
+
+		native_window->add_mouse_move_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<sImguiPrivate>();
+			ImGuiIO& io = ImGui::GetIO();
+			io.MousePos = ImVec2(pos.x, pos.y);
+		}, Capture().set_thiz(this));
 	}
-
-	struct BackendData
-	{
-
-	};
 
 	void sImguiPrivate::on_added()
 	{
@@ -92,10 +107,8 @@ namespace flame
 		style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		
-		IM_ASSERT(io.BackendPlatformUserData == NULL && "Already initialized a platform backend!");
+		fassert(!io.BackendPlatformUserData);
 
-		auto bd = new BackendData;
-		io.BackendPlatformUserData = bd;
 		io.BackendPlatformName = "imgui_impl_flame";
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
@@ -241,6 +254,10 @@ namespace flame
 		draw(world->root.get());
 
 		ImGui::Button("Test");
+
+		auto& io = ImGui::GetIO();
+		mouse_consumed = io.WantCaptureMouse;
+		keyboard_consumed = io.WantCaptureKeyboard;
 #endif
 
 		if (window)

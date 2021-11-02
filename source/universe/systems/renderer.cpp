@@ -404,8 +404,8 @@ namespace flame
 	void sRendererPrivate::setup(Window* _window)
 	{
 		fassert(!window);
-
 		window = _window;
+
 		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
 			auto thiz = c.thiz<sRendererPrivate>();
 			std::vector<ImageView*> views;

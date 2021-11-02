@@ -17,6 +17,9 @@ namespace flame
 	{
 		graphics::Window* window = nullptr;
 
+		bool mouse_consumed = false;
+		bool keyboard_consumed = false;
+
 		graphics::Renderpass* rp_bgra8;
 		graphics::Renderpass* rp_bgra8l;
 		graphics::Renderpass* rp_bgra8c;

@@ -9,6 +9,8 @@ namespace flame
 	{
 		NativeWindow* window = nullptr;
 
+		sImguiPrivate* imgui = nullptr;
+
 		std::pair<bool, bool> kbtns[KeyboardKey_Count];
 		std::pair<bool, bool> kbtns_temp[KeyboardKey_Count];
 		std::pair<bool, bool> mbtns[MouseKeyCount];
@@ -36,8 +38,6 @@ namespace flame
 		std::vector<cReceiverPrivate*> mouse_targets;
 
 		bool dirty = false;
-
-		cReceiverPrivate* debug_target = nullptr;
 
 		sDispatcherPrivate();
 

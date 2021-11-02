@@ -3,30 +3,22 @@
 using namespace flame;
 using namespace graphics;
 
-App g_app;
+App app;
 
 int main(int argc, char** args)
 {
-	g_app.create();
+	app.create();
+	app.set_main_window(Window::create(nullptr, NativeWindow::create(L"Scene Editor", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable)));
 
-	auto w = new GraphicsWindow(&g_app, L"Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
+	//auto script_ins = script::Instance::get_default();
+	//script_ins->excute_file(L"camera.lua");
+	//script_ins->excute_file(L"cmd.lua");
+	//script_ins->excute_file(L"main.lua");
 
-	auto script_ins = script::Instance::get_default();
-	script_ins->excute_file(L"camera.lua");
-	script_ins->excute_file(L"cmd.lua");
-	script_ins->excute_file(L"main.lua");
-	{
-		auto e = Entity::create();
-		e->load(L"main");
-		w->root->add_child(e);
-	}
 
-	looper().add_event([](Capture& c) {
-		printf("%d\n", looper().get_fps());
-		c._current = nullptr;
-	}, Capture(), 1.f);
-
-	g_app.run();
+	run([](Capture& c, float) {
+		app.update();
+	}, Capture());
 
 	return 0;
 }
