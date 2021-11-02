@@ -118,6 +118,9 @@ namespace flame
 			cb->copy_buffer_to_image(stag.get(), rd.img_font.get(), 1, &cpy);
 			cb->image_barrier(rd.img_font.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 		}
+
+		rd.ds->set_image(0, 0, rd.img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
+		rd.ds->update();
 #endif
 	}
 
@@ -151,14 +154,75 @@ namespace flame
 
 		auto& rd = *_rd;
 
-		cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
+		auto draw_data = ImGui::GetDrawData();
+		int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+		int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+		if (fb_width > 0 || fb_height > 0)
+		{
+			if (draw_data->TotalVtxCount > 0)
+			{
+				auto pvtx = rd.buf_vtx.stag(draw_data->TotalVtxCount);
+				auto pidx = rd.buf_idx.stag(draw_data->TotalIdxCount);
 
-		cb->bind_pipeline(rd.pl);
-		cb->bind_vertex_buffer(rd.buf_vtx.buf.get(), 0);
-		cb->bind_index_buffer(rd.buf_idx.buf.get(), IndiceTypeUshort);
-		cb->bind_descriptor_set(0, rd.ds.get());
+				for (int n = 0; n < draw_data->CmdListsCount; n++)
+				{
+					const ImDrawList* cmd_list = draw_data->CmdLists[n];
+					memcpy(pvtx, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+					memcpy(pidx, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+					pvtx += cmd_list->VtxBuffer.Size;
+					pidx += cmd_list->IdxBuffer.Size;
+				}
 
-		cb->end_renderpass();
+				rd.buf_vtx.upload(cb);
+				rd.buf_idx.upload(cb);
+				rd.buf_vtx.stag_num = 0;
+				rd.buf_idx.stag_num = 0;
+			}
+
+			cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
+
+			cb->set_viewport(Rect(0, 0, fb_width, fb_height));
+
+			cb->bind_pipeline(rd.pl);
+			cb->bind_vertex_buffer(rd.buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(rd.buf_idx.buf.get(), IndiceTypeUshort);
+			cb->bind_descriptor_set(0, rd.ds.get());
+			auto scale = 2.f / vec2(draw_data->DisplaySize.x, draw_data->DisplaySize.y);
+			cb->push_constant_t(vec4(scale,
+				-1.f - draw_data->DisplayPos.x * scale[0],
+				-1.f - draw_data->DisplayPos.y * scale[1]));
+
+			ImVec2 clip_off = draw_data->DisplayPos;
+			ImVec2 clip_scale = draw_data->FramebufferScale;
+
+			int global_vtx_offset = 0;
+			int global_idx_offset = 0;
+			for (int n = 0; n < draw_data->CmdListsCount; n++)
+			{
+				const ImDrawList* cmd_list = draw_data->CmdLists[n];
+				for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+				{
+					const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+
+					ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+					ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+
+					if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+					if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+					if (clip_max.x > fb_width) { clip_max.x = (float)fb_width; }
+					if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
+					if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
+						continue;
+
+					cb->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));
+					cb->draw_indexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 1, 0);
+				}
+				global_idx_offset += cmd_list->IdxBuffer.Size;
+				global_vtx_offset += cmd_list->VtxBuffer.Size;
+			}
+
+			cb->end_renderpass();
+		}
 	}
 
 	void sImguiPrivate::update()
@@ -175,6 +239,8 @@ namespace flame
 				draw(c.get());
 		};
 		draw(world->root.get());
+
+		ImGui::Button("Test");
 #endif
 
 		if (window)
