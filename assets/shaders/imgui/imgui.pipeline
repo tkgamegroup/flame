@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <pipeline>
   <shaders>
-    <shader filename="element/element.vert" />
-    <shader filename="element/element.frag" />
+    <shader filename="imgui/imgui.vert" />
+    <shader filename="imgui/imgui.frag" />
   </shaders>
-  <layout filename="element/element.pll" />
+  <layout filename="imgui/imgui.pll" />
   <renderpass filename="bgra8c.rp" index="0" />
   <vertex_buffers>
     <vertex_buffer>

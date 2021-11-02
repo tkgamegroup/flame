@@ -1,4 +1,4 @@
-#include "element.pll"
+#include "imgui.pll"
 
 layout (location = 0) in vec2 i_position;
 layout (location = 1) in vec2 i_uv;
@@ -11,5 +11,5 @@ void main()
 {
 	o_color = i_color;
 	o_uv = i_uv;
-	gl_Position = vec4(i_position * pc.scale - vec2(1.0), 0, 1);
+	gl_Position = vec4(i_position * pc.scale + pc.translate, 0, 1);
 }

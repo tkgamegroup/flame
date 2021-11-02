@@ -15,18 +15,6 @@ namespace flame
 
 	void sDispatcherPrivate::on_added()
 	{
-		auto root = world->root.get();
-		cReceiverPrivate* cer;
-		cer = root->get_component_t<cReceiverPrivate>();
-		if (!cer)
-		{
-			root->add_component(new cElementPrivate);
-
-			cer = new cReceiverPrivate;
-			cer->set_floating(true);
-			root->add_component(cer);
-		}
-		set_next_focusing(cer);
 	}
 
 	void sDispatcherPrivate::setup(NativeWindow* _window)
@@ -138,6 +126,19 @@ namespace flame
 
 			thiz->dirty = true;
 		}, Capture().set_thiz(this));
+
+		auto root = world->root.get();
+		cReceiverPrivate* cer;
+		cer = root->get_component_t<cReceiverPrivate>();
+		if (!cer)
+		{
+			root->add_component(new cElementPrivate);
+
+			cer = new cReceiverPrivate;
+			cer->set_floating(true);
+			root->add_component(cer);
+		}
+		set_next_focusing(cer);
 	}
 
 	void sDispatcherPrivate::dispatch_mouse_single(cReceiverPrivate* er, bool force)

@@ -17,6 +17,8 @@ namespace flame
 
 		virtual Entity* get_root() = 0;
 
+		virtual void update() = 0;
+
 		FLAME_UNIVERSE_EXPORTS static World* create();
 	};
 }

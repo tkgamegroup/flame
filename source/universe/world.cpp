@@ -71,6 +71,12 @@ namespace flame
 		}
 	}
 
+	void WorldPrivate::update()
+	{
+		for (auto& s : systems)
+			s->update();
+	}
+
 	World* World::create()
 	{
 		return new WorldPrivate;

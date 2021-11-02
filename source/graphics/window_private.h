@@ -17,6 +17,7 @@ namespace flame
 			UniPtr<SemaphorePrivate> render_finished;
 
 			std::vector<std::unique_ptr<Closure<void(Capture&, uint img_idx, CommandBuffer*)>>> renders;
+			bool dirty = false;
 
 			WindowPrivate* next = nullptr;
 
@@ -33,6 +34,9 @@ namespace flame
 			Window* get_next() const override { return next; }
 
 			void* add_renderer(void (*render)(Capture& c, uint img_idx, CommandBuffer* commandbuffer), const Capture& capture) override;
+			void remove_renderer(void* c) override;
+
+			void mark_dirty() override { dirty = true; }
 		};
 	}
 }

@@ -14,6 +14,9 @@ namespace flame
 			virtual SwapchainPtr get_swapchain() const = 0;
 
 			virtual void* add_renderer(void (*render)(Capture& c, uint img_idx, CommandBuffer* commandbuffer), const Capture& capture) = 0;
+			virtual void remove_renderer(void* c) = 0;
+
+			virtual void mark_dirty() = 0;
 
 			virtual void update() = 0;
 

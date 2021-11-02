@@ -50,9 +50,16 @@ namespace flame
 			return c;
 		}
 
+		void WindowPrivate::remove_renderer(void* c)
+		{
+			std::erase_if(renders, [&](const auto& i) {
+				return i == (decltype(i))c;
+			});
+		}
+
 		void WindowPrivate::update()
 		{
-			if (renders.empty())
+			if (!dirty)
 				return;
 
 			submit_fence->wait();
@@ -62,12 +69,14 @@ namespace flame
 			commandbuffer->begin();
 			for (auto& r : renders)
 				r->call(img_idx, commandbuffer.get());
-			renders.clear();
+			commandbuffer->image_barrier(swapchain->images[img_idx].get(), {}, ImageLayoutAttachment, ImageLayoutPresent);
 			commandbuffer->end();
 
 			auto queue = graphics::Queue::get(nullptr);
 			queue->submit(1, &commandbuffer, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
 			queue->present(swapchain.get(), render_finished.get());
+
+			dirty = false;
 		}
 
 		Window* Window::create(Device* device, NativeWindow* native)

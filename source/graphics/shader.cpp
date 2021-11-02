@@ -1575,7 +1575,7 @@ namespace flame
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"assets\\shaders"))
 			{
-				wprintf(L"cannot find pl: %s\n", _filename.c_str());
+				wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
 				return nullptr;
 			}
 			filename.make_preferred();

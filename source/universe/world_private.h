@@ -24,5 +24,7 @@ namespace flame
 		void remove_system(System* s) override;
 
 		Entity* get_root() override { return root.get(); }
+
+		void update() override;
 	};
 }

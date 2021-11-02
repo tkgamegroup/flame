@@ -4,6 +4,7 @@
 #include <flame/network/network.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/command.h>
+#include <flame/graphics/swapchain.h>
 #include <flame/graphics/window.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
@@ -71,16 +72,18 @@ namespace flame
 			render_finished.reset(graphics::Semaphore::create(nullptr));
 
 			world.reset(World::create());
+			s_imgui = sImgui::create();
+			world->add_system(s_imgui);
+			s_dispatcher = sDispatcher::create();
+			world->add_system(s_dispatcher);
+			s_physics = sPhysics::create();
+			world->add_system(s_physics);
+			s_scene = sScene::create();
+			world->add_system(s_scene);
 			s_renderer = sRenderer::create();
 			if (always_render)
 				s_renderer->set_always_update(true);
 			world->add_system(s_renderer);
-			s_scene = sScene::create();
-			world->add_system(s_scene);
-			s_physics = sPhysics::create();
-			world->add_system(s_physics);
-			s_dispatcher = sDispatcher::create();
-			world->add_system(s_dispatcher);
 
 			root = world->get_root();
 
@@ -102,19 +105,18 @@ namespace flame
 			s_dispatcher->setup(native_window);
 			s_scene->setup(native_window);
 			s_renderer->setup(window);
+			s_imgui->setup(window);
 		}
 
 		void update()
 		{
-			//if (s_imgui)
-			//	s_imgui->update();
-			s_dispatcher->update();
-			s_physics->update();
-			s_scene->update();
-			if (s_renderer)
-				s_renderer->update();
-
-			window->update();
+			world->update();
+			auto w = window;
+			while (w)
+			{
+				w->update();
+				w = w->get_next();
+			}
 		}
 	};
 }
