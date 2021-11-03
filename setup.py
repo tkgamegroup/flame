@@ -221,11 +221,23 @@ if op != 3:
 	address = "https://github.com/ocornut/imgui.git"
 	lib_dir = parent_directory / "imgui"
 	if op == 2:
-		print("Download IMGUI from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("Download imgui from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
 			os.system("git clone --depth 1 %s %s && git checkout docking && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
+
+	ok = False
+	address = "https://github.com/dfranx/ImFileDialog.git"
+	lib_dir = parent_directory / "ImFileDialog"
+	if op == 2:
+		print("Download ImFileDialog from %s into %s ? y/n" % (address, str(lib_dir)))
+		ok = input() == "y"
+	if ok:
+		if not lib_dir.exists():
+			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 

@@ -2,6 +2,8 @@
 #include "window_scene.h"
 
 #include <flame/serialize.h>
+#include <imgui.h>
+#include <ImFileDialog.h>
 
 std::list<Window*> windows;
 
@@ -63,16 +65,31 @@ void MyApp::init()
 			ImGui::BeginMainMenuBar();
 			if (ImGui::BeginMenu("File"))
 			{
-				ImGui::MenuItem("Open");
+				if (ImGui::MenuItem("Open"))
+					ifd::FileDialog::Instance().Open("OpenDialog", "Open a file", "file (*.prefab){.prefab},.*");
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("View"))
 			{
-				if (ImGui::MenuItem("Scene"))
-					window_scene.open();
+				for (auto w : windows)
+				{
+					auto selected = (bool)w->e;
+					if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
+						w->open();
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
+
+			if (ifd::FileDialog::Instance().IsDone("OpenDialog"))
+			{
+				if (ifd::FileDialog::Instance().HasResult())
+				{
+					auto res = ifd::FileDialog::Instance().GetResult();
+					printf("OPEN[%s]\n", res.string().c_str());
+				}
+				ifd::FileDialog::Instance().Close();
+			}
 
 			const ImGuiViewport* viewport = ImGui::GetMainViewport();
 			ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -99,7 +116,7 @@ void MyApp::init()
 
 int main(int argc, char** args)
 {
-	app.init();
+	app.init(); 
 
 	std::ifstream window_status_i("window_status.txt");
 	if (window_status_i.good())
@@ -110,7 +127,7 @@ int main(int argc, char** args)
 			std::getline(window_status_i, line);
 			if (!line.empty())
 			{
-				for (auto& w : windows)
+				for (auto w : windows)
 				{
 					if (w->name == line)
 					{
@@ -128,7 +145,7 @@ int main(int argc, char** args)
 	}, Capture());
 
 	std::ofstream window_status_o("window_status.txt");
-	for (auto& w : windows)
+	for (auto w : windows)
 	{
 		if (w->e)
 			window_status_o << w->name << "\n";

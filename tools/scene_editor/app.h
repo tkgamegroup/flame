@@ -1,7 +1,6 @@
 #pragma once
 
 #include <flame/universe/app.h>
-#include <imgui.h>
 
 using namespace flame;
 

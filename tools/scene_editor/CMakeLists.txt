@@ -1,5 +1,5 @@
 generate_config()
-file(GLOB_RECURSE source_files "*.c*")
+file(GLOB_RECURSE source_files "*.h" "*.c*")
 file(GLOB scritp_files "*.lua")
 file(GLOB prefab_files "*.prefab")
 add_executable(scene_editor ${source_files} ${scritp_files} ${prefab_files})

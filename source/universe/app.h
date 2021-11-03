@@ -3,11 +3,12 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/graphics/device.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/image.h>
+#include <flame/graphics/font.h>
 #include <flame/graphics/command.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/window.h>
-#include <flame/graphics/image.h>
-#include <flame/graphics/font.h>
 #include <flame/sound/device.h>
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
@@ -26,6 +27,13 @@
 #include <flame/universe/systems/physics.h>
 #include <flame/universe/systems/renderer.h>
 #include <flame/universe/systems/imgui.h>
+
+#if USE_IMGUI
+#include <imgui.h>
+#endif
+#if USE_IM_FILE_DIALOG
+#include <ImFileDialog.h>
+#endif
 
 namespace flame
 {
@@ -95,6 +103,31 @@ namespace flame
 			scr_ins->set_object_type("flame::World");
 			scr_ins->set_global_name("world");
 			scr_ins->excute_file(L"world_setup.lua");
+
+#if USE_IM_FILE_DIALOG
+			ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
+			{
+				auto tex = graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM,
+					uvec2(w, h), 1, 1, graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
+
+				graphics::StagingBuffer stag(nullptr, image_pitch(w * 4) * h, data);
+				graphics::InstanceCB cb(nullptr);
+				cb->image_barrier(tex, {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);
+				graphics::BufferImageCopy cpy;
+				cpy.img_ext = uvec2(w, h);
+				cb->copy_buffer_to_image(stag.get(), tex, 1, &cpy);
+				cb->image_barrier(tex, {}, graphics::ImageLayoutTransferDst, graphics::ImageLayoutShaderReadOnly);
+				return tex;
+			};
+
+			ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
+			{
+				add_event([](Capture& c) {
+					graphics::Queue::get(nullptr)->wait_idle();
+					((graphics::Image*)c.thiz<void>())->release();
+					}, Capture().set_thiz(tex));
+			};
+#endif
 		}
 
 		void set_main_window(graphics::Window* _window)

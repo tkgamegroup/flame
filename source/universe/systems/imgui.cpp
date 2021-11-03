@@ -213,6 +213,7 @@ namespace flame
 
 			int global_vtx_offset = 0;
 			int global_idx_offset = 0;
+			Image* last_tex = nullptr;
 			for (int n = 0; n < draw_data->CmdListsCount; n++)
 			{
 				const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -229,6 +230,13 @@ namespace flame
 					if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
 					if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 						continue;
+
+					if (last_tex != pcmd->TextureId)
+					{
+						auto tex = (Image*)pcmd->TextureId;
+						cb->bind_descriptor_set(0, tex ? tex->get_shader_read_src() : rd.ds.get());
+						last_tex = tex;
+					}
 
 					cb->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));
 					cb->draw_indexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 1, 0);
