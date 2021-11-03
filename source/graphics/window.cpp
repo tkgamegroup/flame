@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		static std::vector<UniPtr<WindowPrivate>> windows;
+		static std::vector<WindowPrivate*> windows;
 
 		WindowPrivate::WindowPrivate(DevicePrivate* _device, NativeWindow* native) :
 			device(_device),
@@ -21,22 +21,25 @@ namespace flame
 			submit_fence.reset(new FencePrivate(device));
 			render_finished.reset(new SemaphorePrivate(device));
 
+			native->add_destroy_listener([](Capture& c) {
+				delete c.thiz<WindowPrivate>();
+			}, Capture().set_thiz(this));
+
 			if (!windows.empty())
 				windows.back()->next = this;
-			windows.emplace_back(this);
+			windows.push_back(this);
 		}
 
 		WindowPrivate::~WindowPrivate()
 		{
 			for (auto it = windows.begin(); it != windows.end();)
 			{
-				if (it->get() == this)
+				if (*it == this)
 				{
 					if (it != windows.begin())
-					{
 						(*(it - 1))->next = (*it)->next;
-					}
 					windows.erase(it);
+					return;
 				}
 				else
 					it++;
@@ -86,7 +89,7 @@ namespace flame
 
 		Window* get_first()
 		{
-			return windows.empty() ? nullptr : windows[0].get();
+			return windows.empty() ? nullptr : windows[0];
 		}
 	}
 }

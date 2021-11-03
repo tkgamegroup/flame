@@ -2504,10 +2504,7 @@ namespace flame
 			if (nd.should_render)
 				cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
 			else
-			{
-				auto cv = vec4(0.6f, 0.7f, 0.8f, 1.f);
-				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &cv);
-			}
+				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &clear_color);
 
 			cb->bind_pipeline(ed.pl_element);
 			cb->bind_vertex_buffer(ed.buf_vtx.buf.get(), 0);

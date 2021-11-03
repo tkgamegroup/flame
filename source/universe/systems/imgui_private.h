@@ -17,6 +17,8 @@ namespace flame
 	{
 		graphics::Window* window = nullptr;
 
+		vec4 clear_color = vec4(0.f);
+
 		bool mouse_consumed = false;
 		bool keyboard_consumed = false;
 
@@ -33,6 +35,8 @@ namespace flame
 		sImguiPrivate();
 		~sImguiPrivate();
 		void setup(graphics::Window* window) override;
+
+		void set_clear_color(const vec4& color) override { clear_color = color; }
 
 		void on_added() override;
 

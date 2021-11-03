@@ -87,7 +87,7 @@ namespace flame
 		Metas metas;
 
 		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
-			uint array_size, uint array_stride, void* default_value, const std::string& metas);
+			uint array_size, uint array_stride, const std::string& default_value_str, const std::string& metas);
 		~VariableInfoPrivate();
 
 		UdtInfoPtr get_udt() const override { return udt; }
@@ -201,10 +201,10 @@ namespace flame
 		VariableInfoPtr find_variable(const std::string& name) const;
 		VariableInfoPtr find_variable(const char* name) const override { return find_variable(std::string(name)); }
 		VariableInfoPtr add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, 
-			void* default_value, const std::string& metas, int idx = -1);
+			const std::string& default_value_str, const std::string& metas, int idx = -1);
 		VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, 
-			void* default_value, const char* metas, int idx) override 
-			{ return add_variable(ti, std::string(name), offset, array_size, array_stride, default_value, std::string(metas), idx); }
+			const char* default_value_str, const char* metas, int idx) override
+			{ return add_variable(ti, std::string(name), offset, array_size, array_stride, std::string(default_value_str), std::string(metas), idx); }
 		void remove_variable(VariableInfoPtr vi) override;
 
 		uint get_functions_count() const override { return functions.size(); }

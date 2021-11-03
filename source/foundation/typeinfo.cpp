@@ -684,7 +684,7 @@ namespace flame
 
 		void* create(bool create_pointing) const override 
 		{ 
-			auto p = new void*;
+			auto p = malloc(sizeof(void*));
 			if (create_pointing && pointed_type)
 				*(void**)p = pointed_type->create();
 			return p; 
@@ -1021,7 +1021,7 @@ namespace flame
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
-		uint array_size, uint array_stride, void* _default_value, const std::string& _metas) :
+		uint array_size, uint array_stride, const std::string& default_value_str, const std::string& _metas) :
 		udt(udt),
 		index(index),
 		type(type),
@@ -1030,11 +1030,12 @@ namespace flame
 		array_size(array_size),
 		array_stride(array_stride)
 	{
-		if (_default_value)
+		if (!default_value_str.empty())
 		{
 			default_value = type->create();
-			type->copy(default_value, _default_value);
+			type->unserialize(default_value, default_value_str.c_str());
 		}
+
 		metas.from_string(_metas);
 	}
 
@@ -1228,11 +1229,11 @@ namespace flame
 	}
 
 	VariableInfoPtr UdtInfoPrivate::add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, 
-		void* default_value, const std::string& metas, int idx)
+		const std::string& default_value_str, const std::string& metas, int idx)
 	{
 		if (idx == -1)
 			idx = variables.size();
-		auto ret = new VariableInfoPrivate(this, idx, ti, name, offset, array_size, array_stride, default_value, metas);
+		auto ret = new VariableInfoPrivate(this, idx, ti, name, offset, array_size, array_stride, default_value_str, metas);
 		variables.emplace(variables.begin() + idx, ret);
 		return ret;
 	}
@@ -1518,19 +1519,10 @@ namespace flame
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto type = read_ti(n_variable);
-				void* default_value = nullptr;
-				if (auto n = n_variable.attribute("default_value"); n)
-				{
-					default_value = type->create();
-					type->unserialize(default_value, n.value());
-				}
-				auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
+				auto v = new VariableInfoPrivate(u, u->variables.size(), read_ti(n_variable), n_variable.attribute("name").value(),
 					n_variable.attribute("offset").as_uint(), n_variable.attribute("array_size").as_uint(), n_variable.attribute("array_stride").as_uint(),
-					default_value, n_variable.attribute("metas").value());
+					n_variable.attribute("default_value").value(), n_variable.attribute("metas").value());
 				u->variables.emplace_back(v);
-				if (default_value)
-					type->destroy(default_value);
 			}
 			for (auto n_function : n_udt.child("functions"))
 			{

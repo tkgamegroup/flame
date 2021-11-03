@@ -20,6 +20,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/receiver.h>
+#include <flame/universe/components/imgui.h>
 #include <flame/universe/systems/scene.h>
 #include <flame/universe/systems/dispatcher.h>
 #include <flame/universe/systems/physics.h>

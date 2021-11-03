@@ -192,7 +192,10 @@ namespace flame
 				rd.buf_idx.stag_num = 0;
 			}
 
-			cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
+			if (clear_color.a == 0.f)
+				cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
+			else
+				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &clear_color);
 
 			cb->set_viewport(Rect(0, 0, fb_width, fb_height));
 
@@ -243,17 +246,20 @@ namespace flame
 #if USE_IMGUI
 		ImGui::NewFrame();
 
+		auto ctx = ImGui::GetCurrentContext();
+
 		std::function<void(EntityPrivate*)> draw;
 		draw = [&](EntityPrivate* e) {
-			auto c = e->get_component_t<cImguiPrivate>();
+			auto c = e->get_component_i<cImguiPrivate>(0);
 			if (c && c->callback)
+			{
+				c->callback->c._current = ctx;
 				c->callback->call();
+			}
 			for (auto& c : e->children)
 				draw(c.get());
 		};
-		draw(world->root.get());
-
-		ImGui::Button("Test");
+		draw(world->first_imgui);
 
 		auto& io = ImGui::GetIO();
 		mouse_consumed = io.WantCaptureMouse;

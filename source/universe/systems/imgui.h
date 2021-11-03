@@ -19,6 +19,8 @@ namespace flame
 
 		virtual void setup(graphics::Window* window) = 0;
 
+		virtual void set_clear_color(const vec4& color) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static sImgui* create(void* parms = nullptr);
 	};
 }

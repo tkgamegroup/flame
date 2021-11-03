@@ -28,6 +28,8 @@ namespace flame
 		graphics::Window* window = nullptr;
 
 		bool always_update = false;
+		RenderType render_type = RenderShaded;
+		vec4 clear_color = vec4(0.6f, 0.7f, 0.8f, 1.f);
 
 		graphics::Sampler* sp_nearest;
 		graphics::Sampler* sp_linear;
@@ -49,8 +51,6 @@ namespace flame
 
 		cCameraPrivate* camera = nullptr;
 
-		RenderType render_type = RenderShaded;
-
 		void* sky_id = nullptr;
 
 		uint frame;
@@ -66,6 +66,7 @@ namespace flame
 		void setup(graphics::ImageView* imageview) override;
 
 		void set_always_update(bool a) override { always_update = a; }
+		void set_clear_color(const vec4& color) override { clear_color = color; }
 		void set_render_type(RenderType type) override { render_type = type; }
 		void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) override;
 		void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) override;

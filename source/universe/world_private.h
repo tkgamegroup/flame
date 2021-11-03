@@ -12,6 +12,7 @@ namespace flame
 		std::unique_ptr<EntityPrivate> root;
 		EntityPrivate* first_element = nullptr;
 		EntityPrivate* first_node = nullptr;
+		EntityPrivate* first_imgui = nullptr;
 
 		WorldPrivate();
 

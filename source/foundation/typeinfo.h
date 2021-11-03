@@ -132,7 +132,7 @@ namespace flame
 		virtual VariableInfoPtr get_variable(uint idx) const = 0;
 		virtual VariableInfoPtr find_variable(const char* name) const = 0;
 		virtual VariableInfoPtr add_variable(TypeInfoPtr ti, const char* name, uint offset, uint array_size, uint array_stride, 
-			void* default_value, const char* metas, int idx = -1) = 0;
+			const char* default_value_str, const char* metas, int idx = -1) = 0;
 		virtual void remove_variable(VariableInfoPtr vi) = 0;
 
 		virtual uint get_functions_count() const = 0;

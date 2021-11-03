@@ -22,6 +22,7 @@ namespace flame
 
 		virtual void set_always_update(bool a) = 0;
 		virtual void set_render_type(RenderType type) = 0;
+		virtual void set_clear_color(const vec4& color) = 0;
 		virtual void get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist) = 0;
 		virtual void set_shadow_props(uint dir_levels, float dir_dist, float pt_dist) = 0;
 		virtual void get_ssao_props(float* radius, float* bias) = 0;
