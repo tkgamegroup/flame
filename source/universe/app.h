@@ -54,6 +54,7 @@ namespace flame
 		sRenderer* s_renderer = nullptr;
 		sImgui* s_imgui = nullptr;
 		Entity* root = nullptr;
+		Entity* imgui_root = nullptr;
 
 		graphics::Window* window = nullptr;
 
@@ -95,6 +96,9 @@ namespace flame
 			world->add_system(s_renderer);
 
 			root = world->get_root();
+			imgui_root = Entity::create();
+			imgui_root->add_component(cImgui::create());
+			root->add_child((EntityPtr)imgui_root);
 
 			auto scr_ins = script::Instance::get_default();
 			scr_ins->push_object();
@@ -107,17 +111,7 @@ namespace flame
 #if USE_IM_FILE_DIALOG
 			ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
 			{
-				auto tex = graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM,
-					uvec2(w, h), 1, 1, graphics::SampleCount_1, graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
-
-				graphics::StagingBuffer stag(nullptr, image_pitch(w * 4) * h, data);
-				graphics::InstanceCB cb(nullptr);
-				cb->image_barrier(tex, {}, graphics::ImageLayoutUndefined, graphics::ImageLayoutTransferDst);
-				graphics::BufferImageCopy cpy;
-				cpy.img_ext = uvec2(w, h);
-				cb->copy_buffer_to_image(stag.get(), tex, 1, &cpy);
-				cb->image_barrier(tex, {}, graphics::ImageLayoutTransferDst, graphics::ImageLayoutShaderReadOnly);
-				return tex;
+				return graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
 			};
 
 			ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
@@ -125,7 +119,7 @@ namespace flame
 				add_event([](Capture& c) {
 					graphics::Queue::get(nullptr)->wait_idle();
 					((graphics::Image*)c.thiz<void>())->release();
-					}, Capture().set_thiz(tex));
+				}, Capture().set_thiz(tex));
 			};
 #endif
 		}

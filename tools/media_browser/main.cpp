@@ -335,11 +335,11 @@ void add_tag(const char* name)
 void collect_files(const std::filesystem::path& dir, const std::vector<const char*>& tags)
 {
 	std::vector<std::pair<std::string, std::filesystem::path>> e_list;
-	for (std::filesystem::directory_iterator end, it(dir); it != end; it++)
+	for (auto& it : std::filesystem::directory_iterator(dir))
 	{
-		if (!std::filesystem::is_directory(it->status()))
+		if (!std::filesystem::is_directory(it.status()))
 		{
-			auto& path = it->path();
+			auto& path = it.path();
 			auto fn = std::to_string(ch(w2s(path.wstring()).c_str()));
 			e_list.emplace_back(fn, path);
 		}

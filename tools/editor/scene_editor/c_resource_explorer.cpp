@@ -292,10 +292,10 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}, Capture().set_data(&capture));
 
 			std::vector<std::filesystem::path> sub_dirs;
-			for (std::filesystem::directory_iterator end, it(s); it != end; it++)
+			for (auto& it : std::filesystem::directory_iterator(s))
 			{
-				if (std::filesystem::is_directory(it->status()))
-					sub_dirs.push_back(it->path());
+				if (std::filesystem::is_directory(it.status()))
+					sub_dirs.push_back(it.path());
 			}
 			if (!sub_dirs.empty())
 			{
@@ -329,18 +329,18 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 
 		std::vector<std::filesystem::path> dirs;
 		std::vector<std::filesystem::path> files;
-		for (std::filesystem::directory_iterator end, it(curr_path); it != end; it++)
+		for (auto& it : std::filesystem::directory_iterator(curr_path))
 		{
-			if (std::filesystem::is_directory(it->status()))
+			if (std::filesystem::is_directory(it.status()))
 			{
-				if (it->path().filename().wstring()[0] != L'.')
-					dirs.push_back(it->path());
+				if (it.path().filename().wstring()[0] != L'.')
+					dirs.push_back(it.path());
 			}
 			else
 			{
-				auto ext = it->path().extension();
+				auto ext = it.path().extension();
 				if (ext != L".ilk" && ext != L".exp")
-					files.push_back(it->path());
+					files.push_back(it.path());
 			}
 		}
 		ui.parents.push(list);

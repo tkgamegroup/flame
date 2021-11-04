@@ -21,9 +21,11 @@ struct Window
 
 struct MyApp : App
 {
-	Entity* imgui_root = nullptr;
+	std::filesystem::path project_path;
 
 	void init();
+
+	void open_project(const std::filesystem::path& path);
 };
 
 extern MyApp app;
