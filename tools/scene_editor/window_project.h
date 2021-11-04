@@ -45,9 +45,11 @@ struct WindowProject : Window
 	std::map<int, UniPtr<graphics::Image>> icons;
 	std::vector<UniPtr<graphics::Image>> thumbnails;
 	std::vector<std::unique_ptr<Item>> items;
+	bool _just_selected;
 
 	WindowProject();
-	void set_item_size(float size);
+	void reset();
+	void set_items_size(float size);
 
 	void open_folder(const std::filesystem::path& path);
 

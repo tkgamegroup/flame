@@ -1,3 +1,4 @@
+#include "selection.h"
 #include "window_project.h"
 
 WindowProject window_project;
@@ -66,11 +67,11 @@ void WindowProject::Item::set_size()
 
 	auto font = ImGui::GetFont();
 	auto font_size = ImGui::GetFontSize();
-	const char* text_end;
-	display_text_width = font->CalcTextSizeA(font_size, metric.size, 0.f, display_text.c_str(), display_text.c_str() + display_text.size(), &text_end).x;
-	if (text_end != display_text.c_str() + display_text.size())
+	const char* clipped_end;
+	display_text_width = font->CalcTextSizeA(font_size, metric.size, 0.f, &*display_text.begin(), display_text.c_str() + display_text.size(), &clipped_end).x;
+	if (clipped_end != display_text.c_str() + display_text.size())
 	{
-		auto str = display_text.substr(0, text_end - display_text.c_str());
+		auto str = display_text.substr(0, clipped_end - display_text.c_str());
 		float w;
 		do
 		{
@@ -123,13 +124,19 @@ void WindowProject::Item::draw()
 	auto active = ImGui::IsItemActive();
 	auto hovered = ImGui::IsItemHovered();
 	ImU32 col;
-	if		(active)  col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
-	else if (hovered) col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
-	else			  col = ImColor(0, 0, 0, 0);
+	if		(active)								col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+	else if (hovered || selection.selecting(path))	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+	else											col = ImColor(0, 0, 0, 0);
 	draw_list->AddRectFilled(p0, p1, col);
 	draw_list->AddImage(thumbnail, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
 	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - display_text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), display_text.c_str(), display_text.c_str() + display_text.size());
 	ImGui::EndGroup();
+
+	if (pressed)
+	{
+		selection.select(path);
+		window_project._just_selected = true;
+	}
 }
 
 WindowProject::WindowProject() :
@@ -137,18 +144,28 @@ WindowProject::WindowProject() :
 {
 }
 
-void WindowProject::set_item_size(float size)
+void WindowProject::reset()
+{
+	items.clear();
+	selected_folder = nullptr;
+	foler_tree.reset(new WindowProject::FolderTreeNode(app.project_path));
+}
+
+void WindowProject::set_items_size(float size)
 {
 	Item::metric.size = size;
 	auto v = ImGui::GetStyle().FramePadding;
 	Item::metric.padding = vec2(v.x, v.y);
 	Item::metric.line_height = ImGui::GetTextLineHeight();
+
+	for (auto& i : items)
+		i->set_size();
 }
 
 void WindowProject::open_folder(const std::filesystem::path& path)
 {
 	if (Item::metric.size == 0)
-		set_item_size(64);
+		set_items_size(64);
 
 	graphics::Queue::get(nullptr)->wait_idle();
 
@@ -164,6 +181,8 @@ void WindowProject::on_draw()
 {
 	if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 	{
+		auto& style = ImGui::GetStyle();
+
 		ImGui::TableNextRow();
 
 		ImGui::TableSetColumnIndex(0);
@@ -172,12 +191,13 @@ void WindowProject::on_draw()
 			foler_tree->draw();
 		ImGui::EndChild();
 
-		ImGui::TableSetColumnIndex(1);
-		ImGui::BeginChild("files", ImVec2(0, -2));
+		ImGui::TableSetColumnIndex(1); 
+		_just_selected = false;
+		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
 		if (!items.empty())
 		{
 			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-			auto spacing = ImGui::GetStyle().ItemSpacing.x;
+			auto spacing = style.ItemSpacing.x;
 			auto item_size = Item::metric.size + Item::metric.padding.x * 2;
 			for (auto i = 0; i < items.size(); i++)
 			{
@@ -189,7 +209,11 @@ void WindowProject::on_draw()
 					ImGui::SameLine();
 			}
 		}
+		if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && !_just_selected)
+			selection.clear();
 		ImGui::EndChild();
+		if (selection.type == Selection::File)
+			ImGui::TextUnformatted(selection.path.string().c_str());
 
 		ImGui::EndTable();
 	}
