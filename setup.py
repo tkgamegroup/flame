@@ -171,12 +171,15 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 
 	ok = True
-	bud_dir = lib_dir
+	bud_dir = lib_dir / "build"
 	if op == 2:
 		print("Build LUA into %s ? y/n" % str(bud_dir))
 		ok = input() == "y"
 	if ok:
-		os.system("\"\"%s/VC/Auxiliary/Build/vcvars64.bat\" && nmake -f \"%s\"\"" % (str(vs_path), str(bud_dir) + "/makefile"))
+		if not bud_dir.exists():
+			os.system("\"\"%s/VC/Auxiliary/Build/vcvars64.bat\" && nmake -f \"%s\"\"" % (str(vs_path), str(bud_dir) + "/makefile"))
+		else:
+			print("%s exists, skip build" % str(bud_dir))
 		
 	ok = True
 	address = "https://github.com/assimp/assimp.git"
