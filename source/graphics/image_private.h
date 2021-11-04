@@ -78,6 +78,7 @@ namespace flame
 			void save(const wchar_t* filename) override { save(std::filesystem::path(filename)); }
 
 			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
+			static ImagePrivate* create(DevicePrivate* device, Format format, const uvec2& size, void* data);
 			static ImagePrivate* get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb);
 		};
 

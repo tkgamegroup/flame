@@ -97,6 +97,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, 
 				ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, void* data);
 			FLAME_GRAPHICS_EXPORTS static Image* get(Device* device, const wchar_t* filename, bool srgb);
 		};
 

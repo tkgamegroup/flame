@@ -49,9 +49,8 @@ int main(int argc, char **args)
 		if (argc > 2)
 			filter = args[2];
 
-		auto end_it = std::filesystem::recursive_directory_iterator();
-		for (auto it = std::filesystem::recursive_directory_iterator(path); it != end_it; it++)
-			compile(it->path(), filter);
+		for (auto& it : std::filesystem::recursive_directory_iterator(path))
+			compile(it.path(), filter);
 	}
 
 	return 0;

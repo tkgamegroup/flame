@@ -1,5 +1,0 @@
-Console
-Hierarchy
-Inspector
-Project
-Scene

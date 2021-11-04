@@ -234,7 +234,7 @@ namespace flame
 
 		HRESULT hr;
 
-		IShellFolder* desktop_folder, * shell_folder;
+		IShellFolder* desktop_folder, *shell_folder;
 		SHGetDesktopFolder(&desktop_folder);
 
 		LPITEMIDLIST pidl;
@@ -254,17 +254,6 @@ namespace flame
 			*out_height = bmp.bmHeight;
 			*out_data = (uchar*)f_malloc(bmp.bmWidth * bmp.bmHeight * 4);
 			GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
-			for (auto y = 0; y < bmp.bmHeight; y++)
-			{
-				for (auto x = 0; x < bmp.bmWidth; x++)
-				{
-					auto pixel = *out_data + (y * bmp.bmWidth * 4 + x * 4);
-					std::swap(pixel[0], pixel[2]);
-					const auto gamma = 2.2f;
-					for (auto i = 0; i < 3; i++)
-						pixel[i] = pow(pixel[i] / 255.f, gamma) * 255.f;
-				}
-			}
 			DeleteObject(hbmp);
 		}
 
@@ -272,6 +261,44 @@ namespace flame
 
 		desktop_folder->Release();
 		shell_folder->Release();
+	}
+
+	void get_icon(const wchar_t* filename, int* out_id, uint* out_width, uint* out_height, uchar** out_data)
+	{
+		SHFILEINFOW file_info = {};
+		auto path = std::filesystem::path(filename);
+		path.make_preferred();
+		SHGetFileInfoW(path.c_str(), 0, &file_info, sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_LARGEICON);
+
+		if (file_info.hIcon == nullptr)
+			return;
+
+		if (out_id)
+		{
+			*out_id = file_info.iIcon;
+			DestroyIcon(file_info.hIcon);
+			return;
+		}
+
+		ICONINFO icon_info = { 0 };
+		GetIconInfo(file_info.hIcon, &icon_info);
+
+		if (icon_info.hbmColor)
+		{
+			DIBSECTION ds;
+			GetObject(icon_info.hbmColor, sizeof(ds), &ds);
+			int byte_size = ds.dsBm.bmWidth * ds.dsBm.bmHeight * (ds.dsBm.bmBitsPixel / 8);
+
+			if (byte_size)
+			{
+				*out_width = ds.dsBm.bmWidth;
+				*out_height = ds.dsBm.bmHeight;
+				*out_data = (uchar*)f_malloc(byte_size);
+				GetBitmapBits(icon_info.hbmColor, byte_size, *out_data);
+			}
+		}
+
+		DestroyIcon(file_info.hIcon);
 	}
 
 	static KeyboardKey vk_code_to_key(int vkCode)

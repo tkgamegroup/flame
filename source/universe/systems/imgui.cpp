@@ -77,6 +77,12 @@ namespace flame
 			ImGuiIO& io = ImGui::GetIO();
 			io.MousePos = ImVec2(pos.x, pos.y);
 		}, Capture().set_thiz(this));
+
+		native_window->add_mouse_scroll_listener([](Capture& c, int scroll) {
+			auto thiz = c.thiz<sImguiPrivate>();
+			ImGuiIO& io = ImGui::GetIO();
+			io.MouseWheel = scroll;
+		}, Capture().set_thiz(this));
 	}
 
 	void sImguiPrivate::on_added()

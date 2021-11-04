@@ -1125,18 +1125,18 @@ namespace flame
 		if (engine_path)
 		{
 			auto path = std::filesystem::path(engine_path) / L"assets/prefabs";
-			for (std::filesystem::directory_iterator end, it(path); it != end; it++)
+			for (auto& it : std::filesystem::directory_iterator(path))
 			{
-				if (it->path().extension() == L".prefab")
+				if (it.path().extension() == L".prefab")
 				{
 					std::string name = "e";
-					auto sp = SUS::split(it->path().filename().stem().string(), '_');
+					auto sp = SUS::split(it.path().filename().stem().string(), '_');
 					for (auto& t : sp)
 					{
 						t[0] = std::toupper(t[0]);
 						name += t;
 					}
-					prefabs_map[name] = it->path();
+					prefabs_map[name] = it.path();
 				}
 			}
 		}

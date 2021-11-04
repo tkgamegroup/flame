@@ -51,10 +51,10 @@ long long total_lines = 0;
 
 void iter(const std::wstring &p)
 {
-	for (std::filesystem::directory_iterator end, it(p); it != end; it++)
+	for (auto& it : std::filesystem::directory_iterator(p))
 	{
-		auto ffn = it->path().wstring();
-		auto fn = it->path().filename().wstring();
+		auto ffn = it.path().wstring();
+		auto fn = it.path().filename().wstring();
 
 		auto ignore = false;
 		for (auto &i : general_excludes)
@@ -78,15 +78,15 @@ void iter(const std::wstring &p)
 		if (ignore)
 			continue;
 
-		if (std::filesystem::is_directory(it->status()))
+		if (std::filesystem::is_directory(it.status()))
 		{
-			auto s = it->path().stem().wstring();
+			auto s = it.path().stem().wstring();
 			if (s.size() > 1 && s[0] != L'.')
-				iter(it->path().wstring());
+				iter(it.path().wstring());
 		}
 		else
 		{
-			auto ext = it->path().extension();
+			auto ext = it.path().extension();
 			auto accept = false;
 			for (auto &e : extensions)
 			{

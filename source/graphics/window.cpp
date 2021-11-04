@@ -32,6 +32,8 @@ namespace flame
 
 		WindowPrivate::~WindowPrivate()
 		{
+			QueuePrivate::get(nullptr)->wait_idle();
+
 			for (auto it = windows.begin(); it != windows.end();)
 			{
 				if (*it == this)

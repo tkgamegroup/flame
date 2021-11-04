@@ -1,9 +1,8 @@
 #include "app.h"
 #include "window_scene.h"
+#include "window_project.h"
 
 #include <flame/serialize.h>
-#include <imgui.h>
-#include <ImFileDialog.h>
 
 std::list<Window*> windows;
 
@@ -56,57 +55,57 @@ void MyApp::init()
 	app.set_main_window(graphics::Window::create(nullptr, NativeWindow::create(L"Scene Editor", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable)));
 	app.s_renderer->set_clear_color(vec4(0.2f, 0.2f, 0.2f, 1.f));
 
-	{
-		app.imgui_root = Entity::create();
-		auto c = cImgui::create();
-		c->on_draw([](Capture& c) {
-			ImGui::SetCurrentContext((ImGuiContext*)c._current);
+	app.imgui_root->get_component_t<cImgui>()->on_draw([](Capture& c) {
+		ImGui::SetCurrentContext((ImGuiContext*)c._current);
 
-			ImGui::BeginMainMenuBar();
-			if (ImGui::BeginMenu("File"))
+		ImGui::BeginMainMenuBar();
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Open Project"))
+				ifd::FileDialog::Instance().Open("OpenProjectDialog", "Open a project", "");
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("View"))
+		{
+			for (auto w : windows)
 			{
-				if (ImGui::MenuItem("Open"))
-					ifd::FileDialog::Instance().Open("OpenDialog", "Open a file", "file (*.prefab){.prefab},.*");
-				ImGui::EndMenu();
+				auto selected = (bool)w->e;
+				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
+					w->open();
 			}
-			if (ImGui::BeginMenu("View"))
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+
+		if (ifd::FileDialog::Instance().IsDone("OpenProjectDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
 			{
-				for (auto w : windows)
+				auto res = ifd::FileDialog::Instance().GetResult();
+				if (!res.has_stem())
 				{
-					auto selected = (bool)w->e;
-					if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
-						w->open();
+					auto str = res.wstring();
+					str.pop_back();
+					res = str;
 				}
-				ImGui::EndMenu();
+				app.open_project(res);
 			}
-			ImGui::EndMainMenuBar();
+			ifd::FileDialog::Instance().Close();
+		}
 
-			if (ifd::FileDialog::Instance().IsDone("OpenDialog"))
-			{
-				if (ifd::FileDialog::Instance().HasResult())
-				{
-					auto res = ifd::FileDialog::Instance().GetResult();
-					printf("OPEN[%s]\n", res.string().c_str());
-				}
-				ifd::FileDialog::Instance().Close();
-			}
-
-			const ImGuiViewport* viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->WorkPos);
-			ImGui::SetNextWindowSize(viewport->WorkSize);
-			ImGui::SetNextWindowViewport(viewport->ID);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-			ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
-			ImGui::PopStyleVar(2);
-			ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-			ImGui::End();
-			}, Capture());
-		app.imgui_root->add_component(c);
-		app.root->add_child(app.imgui_root);
-	}
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
+		ImGui::PopStyleVar(2);
+		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+		ImGui::End();
+	}, Capture());
 
 	//auto script_ins = script::Instance::get_default();
 	//script_ins->excute_file(L"camera.lua");
@@ -114,43 +113,54 @@ void MyApp::init()
 	//script_ins->excute_file(L"main.lua");
 }
 
+void MyApp::open_project(const std::filesystem::path& path)
+{
+	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
+	{
+		project_path = path;
+		window_project.foler_tree.reset(new WindowProject::FolderTreeNode(project_path));
+	}
+}
+
 int main(int argc, char** args)
 {
+	auto ap = parse_args(argc, args);
+
 	app.init(); 
 
-	std::ifstream window_status_i("window_status.txt");
-	if (window_status_i.good())
+	auto settings_i = parse_ini_file(L"settings.ini");
+	for (auto& e : settings_i.get_section_entries("opened_windows"))
 	{
-		while (!window_status_i.eof())
+		for (auto w : windows)
 		{
-			std::string line;
-			std::getline(window_status_i, line);
-			if (!line.empty())
+			if (w->name == e.value)
 			{
-				for (auto w : windows)
-				{
-					if (w->name == line)
-					{
-						w->open();
-						break;
-					}
-				}
+				w->open();
+				break;
 			}
 		}
-		window_status_i.close();
+	}
+	for (auto& e : settings_i.get_section_entries("project_path"))
+	{
+		if (app.project_path.empty())
+			app.open_project(e.value);
+		break;
 	}
 
 	run([](Capture& c, float) {
 		app.update();
 	}, Capture());
 
-	std::ofstream window_status_o("window_status.txt");
+	std::ofstream settings_o("settings.ini");
+	settings_o << "[opened_windows]\n";
 	for (auto w : windows)
 	{
 		if (w->e)
-			window_status_o << w->name << "\n";
+			settings_o << w->name << "\n";
 	}
-	window_status_o.close();
+	settings_o << "[project_path]\n";
+	settings_o << app.project_path.string() << "\n";
+	settings_o.close();
 
 	return 0;
 }

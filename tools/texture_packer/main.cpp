@@ -17,13 +17,13 @@ int main(int argc, char **args)
 	auto output_path = current_path.filename();
 
 	std::vector<std::filesystem::path> inputs;
-	for (std::filesystem::directory_iterator end, it(current_path); it != end; it++)
+	for (auto& it : std::filesystem::directory_iterator(current_path))
 	{
-		if (!std::filesystem::is_directory(it->status()))
+		if (!std::filesystem::is_directory(it.status()))
 		{
-			auto& path = it->path();
+			auto& path = it.path();
 			if (is_image_file(path.extension()) && path.filename().stem() != output_path)
-				inputs.push_back(it->path());
+				inputs.push_back(it.path());
 		}
 	}
 

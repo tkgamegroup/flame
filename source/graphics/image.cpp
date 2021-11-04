@@ -562,6 +562,21 @@ namespace flame
 			return i;
 		}
 
+		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Format format, const uvec2& size, void* data)
+		{
+			auto i = new ImagePrivate(device, format,
+				size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+
+			StagingBuffer stag(nullptr, image_pitch(get_pixel_size(format) * size.x) * size.y, data);
+			InstanceCB cb(nullptr);
+			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			BufferImageCopy cpy;
+			cpy.img_ext = size;
+			cb->copy_buffer_to_image((BufferPrivate*)stag.get(), i, 1, &cpy);
+			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			return i;
+		}
+
 		ImagePrivate* ImagePrivate::get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb)
 		{
 			auto& texs = device->texs[srgb ? 1 : 0];
@@ -676,6 +691,11 @@ namespace flame
 		Image* Image::create(Device* device, Bitmap* bmp) 
 		{ 
 			return ImagePrivate::create((DevicePrivate*)device, bmp);
+		}
+
+		Image* Image::create(Device* device, Format format, const uvec2& size, void* data)
+		{
+			return ImagePrivate::create((DevicePrivate*)device, format, size, data);
 		}
 
 		Image* Image::get(Device* device, const wchar_t* filename, bool srgb) 
