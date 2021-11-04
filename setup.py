@@ -233,7 +233,7 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 			
 	ok = True
-	address = "https://github.com/dfranx/ImFileDialog.git"
+	address = "https://github.com/tkgamegroup/ImFileDialog.git"
 	lib_dir = parent_directory / "ImFileDialog"
 	if op == 2:
 		print("Download ImFileDialog from %s into %s ? y/n" % (address, str(lib_dir)))

@@ -10,17 +10,31 @@ struct WindowProject : Window
 		std::filesystem::path path;
 		std::vector<std::unique_ptr<FolderTreeNode>> children;
 
+		std::string display_text;
+
 		FolderTreeNode(const std::filesystem::path& path);
 
 		void draw();
 	};
 
-	struct FileItem
+	struct Item
 	{
+		struct Metric
+		{
+			float size;
+			vec2 padding;
+			float line_height;
+		};
+		static Metric metric;
+
 		std::filesystem::path path;
 		graphics::Image* thumbnail = nullptr;
 
-		FileItem(const std::filesystem::path& path);
+		std::string display_text;
+		float display_text_width;
+
+		Item(const std::filesystem::path& path);
+		void set_size();
 
 		void draw();
 	};
@@ -30,9 +44,10 @@ struct WindowProject : Window
 
 	std::map<int, UniPtr<graphics::Image>> icons;
 	std::vector<UniPtr<graphics::Image>> thumbnails;
-	std::vector<std::unique_ptr<FileItem>> file_items;
+	std::vector<std::unique_ptr<Item>> items;
 
 	WindowProject();
+	void set_item_size(float size);
 
 	void open_folder(const std::filesystem::path& path);
 

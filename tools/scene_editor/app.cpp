@@ -32,7 +32,10 @@ void Window::close()
 	if (!e)
 		return;
 
-	e->get_parent()->remove_child(e);
+	add_event([](Capture& c) {
+		auto e = c.thiz<Entity>();
+		e->get_parent()->remove_child(e);
+	}, Capture().set_thiz(e));
 	e = nullptr;
 }
 

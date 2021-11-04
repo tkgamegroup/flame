@@ -64,7 +64,7 @@ namespace flame
 
 		void WindowPrivate::update()
 		{
-			if (!dirty)
+			if (!dirty || swapchain->images.empty())
 				return;
 
 			submit_fence->wait();
