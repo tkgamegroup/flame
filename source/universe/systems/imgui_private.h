@@ -30,11 +30,15 @@ namespace flame
 		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
 		uvec2 tar_sz;
 
+		std::vector<UniPtr<graphics::Image>> render_tars;
+
 		RenderData* _rd;
 
 		sImguiPrivate();
 		~sImguiPrivate();
 		void setup(graphics::Window* window) override;
+
+		graphics::Image* set_render_target(graphics::Image* old, const uvec2& new_size) override;
 
 		void set_clear_color(const vec4& color) override { clear_color = color; }
 

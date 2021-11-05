@@ -6,12 +6,14 @@ struct Selection
 {
 	enum Type
 	{
-		Nothing,
-		File
+		tNothing,
+		tFile,
+		tEntity
 	};
 
-	Type type = Nothing;
+	Type type = tNothing;
 	std::filesystem::path path;
+	Entity* entity = nullptr;
 
 	void clear();
 	void select(const std::filesystem::path& path);

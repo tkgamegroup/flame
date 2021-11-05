@@ -2,8 +2,9 @@
 
 void Selection::clear()
 {
-	type = Nothing;
+	type = tNothing;
 	path.clear();
+	entity = nullptr;
 }
 
 void Selection::select(const std::filesystem::path& _path)
@@ -11,13 +12,13 @@ void Selection::select(const std::filesystem::path& _path)
 	if (selecting(_path))
 		return;
 	clear();
-	type = File;
+	type = tFile;
 	path = _path;
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
 {
-	return type == File && _path == path;
+	return type == tFile && _path == path;
 }
 
 Selection selection;

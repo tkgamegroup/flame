@@ -62,8 +62,15 @@ namespace flame
 		sRendererPrivate(sRendererParms* parms);
 		~sRendererPrivate();
 
-		void setup(graphics::Window* window) override;
-		void setup(graphics::ImageView* imageview) override;
+		void setup(graphics::Window* window, bool external_targets = false) override;
+		void set_targets(uint count, graphics::ImageView** views) override 
+		{
+			std::vector<graphics::ImageView*> vec(count);
+			for (auto i = 0; i < count; i++)
+				vec[i] = views[i];
+			set_targets(vec); 
+		}
+		void set_targets(const std::vector<graphics::ImageView*>& views);
 
 		void set_always_update(bool a) override { always_update = a; }
 		void set_clear_color(const vec4& color) override { clear_color = color; }
@@ -122,8 +129,6 @@ namespace flame
 		void node_render(cNodePrivate* node, Frustum* lod_frustums);
 
 		void on_added() override;
-
-		void set_targets(const std::vector<graphics::ImageView*>& views);
 
 		void render(uint tar_idx, graphics::CommandBuffer* cb);
 		void update() override;

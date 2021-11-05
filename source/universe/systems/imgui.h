@@ -19,6 +19,9 @@ namespace flame
 
 		virtual void setup(graphics::Window* window) = 0;
 
+		// return new when old==nullptr or new_size differ, destroy old when new_size.x|y<=0
+		virtual graphics::Image* set_render_target(graphics::Image* old, const uvec2& new_size) = 0;
+
 		virtual void set_clear_color(const vec4& color) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sImgui* create(void* parms = nullptr);

@@ -17,8 +17,8 @@ namespace flame
 		{
 		}
 
-		virtual void setup(graphics::Window* window) = 0;
-		virtual void setup(graphics::ImageView* imageview) = 0;
+		virtual void setup(graphics::Window* window, bool external_targets = false) = 0;
+		virtual void set_targets(uint count, graphics::ImageView** views) = 0;
 
 		virtual void set_always_update(bool a) = 0;
 		virtual void set_render_type(RenderType type) = 0;

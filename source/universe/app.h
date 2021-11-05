@@ -58,7 +58,7 @@ namespace flame
 
 		graphics::Window* window = nullptr;
 
-		void create(bool graphics_debug = true, bool always_render = false)
+		void create(bool graphics_debug = true)
 		{
 			//{
 			//	auto config = parse_ini_file(L"config.ini");
@@ -82,8 +82,10 @@ namespace flame
 			render_finished.reset(graphics::Semaphore::create(nullptr));
 
 			world.reset(World::create());
+#if USE_IMGUI
 			s_imgui = sImgui::create();
 			world->add_system(s_imgui);
+#endif
 			s_dispatcher = sDispatcher::create();
 			world->add_system(s_dispatcher);
 			s_physics = sPhysics::create();
@@ -91,22 +93,22 @@ namespace flame
 			s_scene = sScene::create();
 			world->add_system(s_scene);
 			s_renderer = sRenderer::create();
-			if (always_render)
-				s_renderer->set_always_update(true);
 			world->add_system(s_renderer);
 
 			root = world->get_root();
+#if USE_IMGUI
 			imgui_root = Entity::create();
 			imgui_root->add_component(cImgui::create());
 			root->add_child((EntityPtr)imgui_root);
+#endif
 
-			auto scr_ins = script::Instance::get_default();
-			scr_ins->push_object();
-			scr_ins->push_pointer(world.get());
-			scr_ins->set_member_name("p");
-			scr_ins->set_object_type("flame::World");
-			scr_ins->set_global_name("world");
-			scr_ins->excute_file(L"world_setup.lua");
+			//auto scr_ins = script::Instance::get_default();
+			//scr_ins->push_object();
+			//scr_ins->push_pointer(world.get());
+			//scr_ins->set_member_name("p");
+			//scr_ins->set_object_type("flame::World");
+			//scr_ins->set_global_name("world");
+			//scr_ins->excute_file(L"world_setup.lua");
 
 #if USE_IM_FILE_DIALOG
 			ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
@@ -124,7 +126,7 @@ namespace flame
 #endif
 		}
 
-		void set_main_window(graphics::Window* _window)
+		void set_main_window(graphics::Window* _window, bool render_to_external = false)
 		{
 			window = _window;
 
@@ -132,7 +134,7 @@ namespace flame
 
 			s_dispatcher->setup(native_window);
 			s_scene->setup(native_window);
-			s_renderer->setup(window);
+			s_renderer->setup(window, render_to_external);
 			s_imgui->setup(window);
 		}
 

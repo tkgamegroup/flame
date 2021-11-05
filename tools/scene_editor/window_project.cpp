@@ -212,7 +212,7 @@ void WindowProject::on_draw()
 		if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && !_just_selected)
 			selection.clear();
 		ImGui::EndChild();
-		if (selection.type == Selection::File)
+		if (selection.type == Selection::tFile)
 			ImGui::TextUnformatted(selection.path.string().c_str());
 
 		ImGui::EndTable();

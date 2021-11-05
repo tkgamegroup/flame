@@ -23,6 +23,8 @@ struct MyApp : App
 {
 	std::filesystem::path project_path;
 
+	bool always_update = false;
+
 	void init();
 
 	void open_project(const std::filesystem::path& path);

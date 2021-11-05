@@ -4,6 +4,8 @@
 
 struct WindowScene : Window
 {
+	graphics::Image* render_tar = nullptr;
+
 	WindowScene();
 
 	void on_draw() override;

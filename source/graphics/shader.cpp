@@ -831,6 +831,9 @@ namespace flame
 				idx++;
 			}
 
+			buf_updates.clear();
+			img_updates.clear();
+
 			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 

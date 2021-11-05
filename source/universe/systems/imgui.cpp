@@ -85,6 +85,34 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
+	graphics::Image* sImguiPrivate::set_render_target(graphics::Image* old, const uvec2& new_size)
+	{
+		if (old)
+		{
+			auto found = false;
+			for (auto it = render_tars.begin(); it != render_tars.end(); it++)
+			{
+				if (it->get() == old)
+				{
+					if (old->get_size() == new_size)
+						return old;
+					Queue::get(nullptr)->wait_idle();
+					render_tars.erase(it);
+					found = true;
+					break;
+				}
+			}
+			fassert(found);
+		}
+
+		if (new_size.x == 0 || new_size.y == 0)
+			return nullptr;
+		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, new_size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageTransferDst | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
+		img->clear(ImageLayoutUndefined, ImageLayoutAttachment, cvec4(255));
+		render_tars.emplace_back(img);
+		return img;
+	}
+
 	void sImguiPrivate::on_added()
 	{
 		rp_bgra8 = Renderpass::get(nullptr, L"bgra8.rp");
@@ -198,10 +226,14 @@ namespace flame
 				rd.buf_idx.stag_num = 0;
 			}
 
-			if (clear_color.a == 0.f)
+			if (clear_color.a == 0.f && render_tars.empty())
 				cb->begin_renderpass(rp_bgra8l, fb_tars[tar_idx].get());
 			else
+			{
+				for (auto& t : render_tars)
+					cb->image_barrier(t.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(rp_bgra8c, fb_tars[tar_idx].get(), &clear_color);
+			}
 
 			cb->set_viewport(Rect(0, 0, fb_width, fb_height));
 
@@ -252,6 +284,9 @@ namespace flame
 			}
 
 			cb->end_renderpass();
+
+			for (auto& t : render_tars)
+				cb->image_barrier(t.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
 		}
 	}
 

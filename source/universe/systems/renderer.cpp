@@ -401,26 +401,29 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::setup(Window* _window)
+	void sRendererPrivate::setup(Window* _window, bool external_targets)
 	{
 		fassert(!window);
 		window = _window;
 
-		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
-			auto thiz = c.thiz<sRendererPrivate>();
-			std::vector<ImageView*> views;
+		if (!external_targets)
+		{
+			auto set_targets_from_window = [](Capture& c, const uvec2& size) {
+				auto thiz = c.thiz<sRendererPrivate>();
+				std::vector<ImageView*> views;
 
-			auto swapchain = thiz->window->get_swapchain();
-			views.resize(swapchain->get_images_count());
-			for (auto i = 0; i < views.size(); i++)
-				views[i] = swapchain->get_image(i)->get_view();
+				auto swapchain = thiz->window->get_swapchain();
+				views.resize(swapchain->get_images_count());
+				for (auto i = 0; i < views.size(); i++)
+					views[i] = swapchain->get_image(i)->get_view();
 
-			thiz->set_targets(views);
-		};
+				thiz->set_targets(views);
+			};
 
-		set_targets_from_swapchain(Capture().set_thiz(this), uvec2(0));
+			set_targets_from_window(Capture().set_thiz(this), uvec2(0));
 
-		window->get_native()->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
+			window->get_native()->add_resize_listener(set_targets_from_window, Capture().set_thiz(this));
+		}
 
 		window->add_renderer([](Capture& c, uint img_idx, CommandBuffer* commandbuffer) {
 			auto thiz = c.thiz<sRendererPrivate>();
@@ -428,9 +431,98 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void sRendererPrivate::setup(ImageView* imageview)
+	void sRendererPrivate::set_targets(const std::vector<ImageView*>& views)
 	{
+		img_tars.resize(views.size());
+		for (auto i = 0; i < views.size(); i++)
+			img_tars[i] = views[i]->get_image();
 
+		fb_tars.clear();
+		fb_tars.resize(views.size());
+		for (auto i = 0; i < views.size(); i++)
+			fb_tars[i].reset(Framebuffer::create(rp_bgra8, 1, &views[i]));
+
+		if (views.empty())
+			return;
+
+		tar_sz = views[0]->get_image()->get_size();
+		auto hf_tar_sz = tar_sz / 2U;
+
+		img_dst.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageStorage));
+
+		auto& nd = *_nd;
+
+		nd.img_dep.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferSrc));
+		nd.img_col_met.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_nor_rou.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_ao.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_col_ms.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
+			MsaaSampleCount, ImageUsageAttachment));
+		nd.img_dep_ms.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
+			MsaaSampleCount, ImageUsageAttachment));
+		nd.img_dst_back.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+		nd.img_dep_back.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
+		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+		nd.img_ao_back.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
+			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+
+		{
+			ImageView* vs[] = {
+				nd.img_col_met->get_view(),
+				nd.img_nor_rou->get_view(),
+				nd.img_dep->get_view()
+			};
+			nd.fb_gbuf.reset(Framebuffer::create(Renderpass::get(nullptr, L"gbuffer.rp"), countof(vs), vs));
+		}
+
+		nd.fb_tars_dep.clear();
+		nd.fb_tars_dep.resize(views.size());
+		auto rp_bgra8d16c = Renderpass::get(nullptr, L"bgra8d16c.rp");
+		for (auto i = 0; i < views.size(); i++)
+		{
+			ImageView* vs[] = {
+				views[i],
+				nd.img_dep->get_view()
+			};
+			nd.fb_tars_dep[i].reset(Framebuffer::create(rp_bgra8d16c, countof(vs), vs));
+		}
+
+		{
+			ImageView* vs[] = {
+				nd.img_col_ms->get_view(),
+				nd.img_dep_ms->get_view(),
+				img_dst->get_view()
+			};
+			nd.fb_fwd_ms4.reset(Framebuffer::create(Renderpass::get(nullptr, L"forward_ms4.rp"), countof(vs), vs));
+		}
+
+		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
+		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
+		nd.ds_ssao->update();
+
+		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_ao_binding, 0, nd.img_ao->get_view(), sp_nearest);
+		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
+		nd.ds_def->update();
+
+		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
+		nd.ds_water->update();
+
+		nd.ds_lum->set_image(DSL_luminance::img_col_binding, 0, img_dst->get_view(), nullptr);
+		nd.ds_lum->update();
+
+		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
+		nd.ds_tone->update();
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::get_shadow_props(uint* dir_levels, float* dir_dist, float* pt_dist)
@@ -1168,7 +1260,7 @@ namespace flame
 			}
 			ret = Pipeline::create(nullptr, info);
 		}
-		break;
+			break;
 		case MaterialForMeshShadowArmature:
 			deferred = false;
 			defines.push_back("SHADOW_PASS");
@@ -1230,7 +1322,7 @@ namespace flame
 			}
 			ret = Pipeline::create(nullptr, info);
 		}
-		break;
+			break;
 		case MaterialForTerrain:
 		{
 			if (deferred)
@@ -1267,7 +1359,7 @@ namespace flame
 			info.depth_write = depth_write;
 			ret = Pipeline::create(nullptr, info);
 		}
-		break;
+			break;
 		case MaterialForWater:
 		{
 			auto defines_str = get_defines_str();
@@ -1297,7 +1389,7 @@ namespace flame
 			info.blend_options = &bo;
 			ret = Pipeline::create(nullptr, info);
 		}
-		break;
+			break;
 		}
 
 		MaterialPipeline mp;
@@ -1556,102 +1648,15 @@ namespace flame
 		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(Line));
 	}
 
-	void sRendererPrivate::set_targets(const std::vector<ImageView*>& views)
-	{
-		img_tars.resize(views.size());
-		for (auto i = 0; i < views.size(); i++)
-			img_tars[i] = views[i]->get_image();
-
-		fb_tars.clear();
-		fb_tars.resize(views.size());
-		for (auto i = 0; i < views.size(); i++)
-			fb_tars[i].reset(Framebuffer::create(rp_bgra8, 1, &views[i]));
-
-		if (views.empty())
-			return;
-
-		tar_sz = views[0]->get_image()->get_size();
-		auto hf_tar_sz = tar_sz / 2U;
-
-		img_dst.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageStorage));
-
-		auto& nd = *_nd;
-
-		nd.img_dep.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferSrc));
-		nd.img_col_met.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_nor_rou.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_ao.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_col_ms.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
-			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dep_ms.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
-			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dst_back.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_dep_back.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
-		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-		nd.img_ao_back.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-
-		{
-			ImageView* vs[] = {
-				nd.img_col_met->get_view(),
-				nd.img_nor_rou->get_view(),
-				nd.img_dep->get_view()
-			};
-			nd.fb_gbuf.reset(Framebuffer::create(Renderpass::get(nullptr, L"gbuffer.rp"), countof(vs), vs));
-		}
-
-		nd.fb_tars_dep.clear();
-		nd.fb_tars_dep.resize(views.size());
-		auto rp_bgra8d16c = Renderpass::get(nullptr, L"bgra8d16c.rp");
-		for (auto i = 0; i < views.size(); i++)
-		{
-			ImageView* vs[] = {
-				views[i],
-				nd.img_dep->get_view()
-			};
-			nd.fb_tars_dep[i].reset(Framebuffer::create(rp_bgra8d16c, countof(vs), vs));
-		}
-
-		{
-			ImageView* vs[] = {
-				nd.img_col_ms->get_view(),
-				nd.img_dep_ms->get_view(),
-				img_dst->get_view()
-			};
-			nd.fb_fwd_ms4.reset(Framebuffer::create(Renderpass::get(nullptr, L"forward_ms4.rp"), countof(vs), vs));
-		}
-
-		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
-		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
-		nd.ds_ssao->update();
-
-		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_ao_binding, 0, nd.img_ao->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
-		nd.ds_def->update();
-
-		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
-		nd.ds_water->update();
-
-		nd.ds_lum->set_image(DSL_luminance::img_col_binding, 0, img_dst->get_view(), nullptr);
-		nd.ds_lum->update();
-
-		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
-		nd.ds_tone->update();
-	}
-
 	const auto shadow_map_size = uvec2(1024);
 
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
 	{
+		tar_idx = min((uint)img_tars.size() - 1, tar_idx);
+		if (img_tars.empty() || (!dirty && img_tars.size() == 1)) // window targets count should bigger than 1
+			return;
+		dirty = false;
+
 		frame = get_frames();
 
 		auto& ed = *_ed;
@@ -2813,10 +2818,10 @@ namespace flame
 
 	void sRendererPrivate::update()
 	{
-		if (fb_tars.empty() || (!dirty && !always_update))
+		if (always_update)
+			dirty = true;
+		if (fb_tars.empty() || !dirty)
 			return;
-
-		dirty = false;
 
 		if (window)
 			window->mark_dirty();
