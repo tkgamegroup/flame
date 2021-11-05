@@ -94,8 +94,6 @@ namespace flame
 			{
 				if (it->get() == old)
 				{
-					if (old->get_size() == new_size)
-						return old;
 					Queue::get(nullptr)->wait_idle();
 					render_tars.erase(it);
 					found = true;
@@ -315,6 +313,41 @@ namespace flame
 		auto& io = ImGui::GetIO();
 		mouse_consumed = io.WantCaptureMouse;
 		keyboard_consumed = io.WantCaptureKeyboard;
+
+		auto native = window->get_native();
+		switch (ImGui::GetMouseCursor())
+		{
+		case ImGuiMouseCursor_None:
+			native->set_cursor(CursorNone);
+			break;
+		case ImGuiMouseCursor_Arrow:
+			native->set_cursor(CursorArrow);
+			break;
+		case ImGuiMouseCursor_TextInput:
+			native->set_cursor(CursorIBeam);
+			break;
+		case ImGuiMouseCursor_ResizeAll:
+			native->set_cursor(CursorSizeAll);
+			break;
+		case ImGuiMouseCursor_ResizeNS:
+			native->set_cursor(CursorSizeNS);
+			break;
+		case ImGuiMouseCursor_ResizeEW:
+			native->set_cursor(CursorSizeWE);
+			break;
+		case ImGuiMouseCursor_ResizeNESW:
+			native->set_cursor(CursorSizeNESW);
+			break;
+		case ImGuiMouseCursor_ResizeNWSE:
+			native->set_cursor(CursorSizeNWSE);
+			break;
+		case ImGuiMouseCursor_Hand:
+			native->set_cursor(CursorHand);
+			break;
+		case ImGuiMouseCursor_NotAllowed:
+			native->set_cursor(CursorNo);
+			break;
+		}
 
 		ImGui::EndFrame();
 #endif

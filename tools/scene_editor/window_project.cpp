@@ -1,5 +1,6 @@
 #include "selection.h"
 #include "window_project.h"
+#include "window_scene.h"
 
 WindowProject window_project;
 
@@ -136,6 +137,41 @@ void WindowProject::Item::draw()
 	{
 		selection.select(path);
 		window_project._just_selected = true;
+	}
+	if (ImGui::IsMouseDoubleClicked(0) && active)
+	{
+		if (std::filesystem::is_directory(path))
+		{
+			// open folder will destroy all items, so staging path here
+			auto str = path.wstring();
+			add_event([](Capture& c) {
+				window_project.open_folder((wchar_t*)c._data);
+			}, Capture().set_data((str.size() + 1) * 2, (void*)str.c_str()));
+
+			window_project.selected_folder = nullptr;
+			std::function<FolderTreeNode*(FolderTreeNode*)> select_node;
+			select_node = [&](FolderTreeNode* n)->FolderTreeNode* {
+				if (n->path == path)
+				{
+					window_project.selected_folder = n;
+					return n;
+				}
+				for (auto& c : n->children)
+				{
+					auto ret = select_node(c.get());
+					if (ret)
+						return ret;
+				}
+				return nullptr;
+			};
+			select_node(window_project.foler_tree.get());
+		}
+		else
+		{
+			auto ext = path.extension();
+			if (ext == L".prefab")
+				window_scene.open_prefab(path);
+		}
 	}
 }
 

@@ -7,6 +7,20 @@ WindowScene::WindowScene() :
 {
 }
 
+void WindowScene::open_scene(const std::filesystem::path& path)
+{
+
+}
+
+void WindowScene::open_prefab(const std::filesystem::path& path)
+{
+	if (e_prefab)
+		e_prefab->get_parent()->remove_child(e_prefab);
+	e_prefab = Entity::create();
+	e_prefab->load(path.c_str());
+	app.root->add_child(e_prefab);
+}
+
 void WindowScene::on_draw()
 {
 	auto size = ImGui::GetContentRegionAvail();

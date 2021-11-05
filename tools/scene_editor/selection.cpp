@@ -21,4 +21,18 @@ bool Selection::selecting(const std::filesystem::path& _path)
 	return type == tFile && _path == path;
 }
 
+void Selection::select(Entity* e)
+{
+	if (selecting(e))
+		return;
+	clear();
+	type = tEntity;
+	entity = e;
+}
+
+bool Selection::selecting(Entity* e)
+{
+	return type == tEntity && entity == e;
+}
+
 Selection selection;

@@ -18,6 +18,8 @@ struct Selection
 	void clear();
 	void select(const std::filesystem::path& path);
 	bool selecting(const std::filesystem::path& path);
+	void select(Entity* e);
+	bool selecting(Entity* e);
 };
 
 extern Selection selection;
