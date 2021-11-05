@@ -257,6 +257,8 @@ namespace flame
 
 	void sImguiPrivate::update()
 	{
+		if (fb_tars.empty())
+			return;
 #if USE_IMGUI
 		ImGui::NewFrame();
 
@@ -278,8 +280,9 @@ namespace flame
 		auto& io = ImGui::GetIO();
 		mouse_consumed = io.WantCaptureMouse;
 		keyboard_consumed = io.WantCaptureKeyboard;
-#endif
 
+		ImGui::EndFrame();
+#endif
 		if (window)
 			window->mark_dirty();
 	}

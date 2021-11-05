@@ -1,4 +1,5 @@
 #include "app.h"
+#include "selection.h"
 #include "window_scene.h"
 #include "window_project.h"
 
@@ -32,7 +33,10 @@ void Window::close()
 	if (!e)
 		return;
 
-	e->get_parent()->remove_child(e);
+	add_event([](Capture& c) {
+		auto e = c.thiz<Entity>();
+		e->get_parent()->remove_child(e);
+	}, Capture().set_thiz(e));
 	e = nullptr;
 }
 
@@ -118,7 +122,9 @@ void MyApp::open_project(const std::filesystem::path& path)
 	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
 	{
 		project_path = path;
-		window_project.foler_tree.reset(new WindowProject::FolderTreeNode(project_path));
+		selection.clear();
+
+		window_project.reset();
 	}
 }
 
