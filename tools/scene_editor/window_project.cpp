@@ -14,43 +14,32 @@ void WindowProject::FolderTreeNode::draw()
 {
 	auto flags = window_project.selected_folder == this ? ImGuiTreeNodeFlags_Selected : 0;
 	if (read && children.empty())
+		flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	else
+		flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+	auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags);
+	if (ImGui::IsItemClicked())
 	{
-		ImGui::TreeNodeEx(display_text.c_str(), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
-		if (ImGui::IsItemClicked())
+		if (window_project.selected_folder != this)
 		{
-			if (window_project.selected_folder != this)
-			{
-				window_project.selected_folder = this;
-				window_project.open_folder(path);
-			}
+			window_project.selected_folder = this;
+			window_project.open_folder(path);
 		}
 	}
-	else
+	if (opened)
 	{
-		auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow);
-		if (ImGui::IsItemClicked())
+		if (!read)
 		{
-			if (window_project.selected_folder != this)
+			for (auto& it : std::filesystem::directory_iterator(path))
 			{
-				window_project.selected_folder = this;
-				window_project.open_folder(path);
+				if (std::filesystem::is_directory(it.status()))
+					children.emplace_back(new FolderTreeNode(it.path()));
 			}
+			read = true;
 		}
-		if (opened)
-		{
-			if (!read)
-			{
-				for (auto& it : std::filesystem::directory_iterator(path))
-				{
-					if (std::filesystem::is_directory(it.status()))
-						children.emplace_back(new FolderTreeNode(it.path()));
-				}
-				read = true;
-			}
-			for (auto& c : children)
-				c->draw();
-			ImGui::TreePop();
-		}
+		for (auto& c : children)
+			c->draw();
+		ImGui::TreePop();
 	}
 }
 

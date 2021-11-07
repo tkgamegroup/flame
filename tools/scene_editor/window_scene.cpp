@@ -24,9 +24,10 @@ void WindowScene::open_prefab(const std::filesystem::path& path)
 void WindowScene::on_draw()
 {
 	auto size = ImGui::GetContentRegionAvail();
-	if (!render_tar || render_tar->get_size() != uvec2(size.x, size.y))
+	auto usize = uvec2(size.x, size.y);
+	if (!render_tar || render_tar->get_size() != usize)
 	{
-		render_tar = app.s_imgui->set_render_target(render_tar, uvec2(size.x, size.y));
+		render_tar = app.s_imgui->set_render_target(render_tar, usize);
 		if (render_tar)
 		{
 			auto iv = render_tar->get_view();

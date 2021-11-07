@@ -1,5 +1,5 @@
+#include "selection.h"
 #include "window_inspector.h"
-#include "window_scene.h"
 
 WindowInspector window_inspector;
 
@@ -10,9 +10,9 @@ WindowInspector::WindowInspector() :
 
 void WindowInspector::on_draw()
 {
-	auto e = window_scene.e_prefab;
-	while (e)
+	if (selection.type == Selection::tEntity)
 	{
-		auto n = e->get_children_count();
+		auto e = selection.entity;
+		//e->get_components();
 	}
 }

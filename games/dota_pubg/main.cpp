@@ -8,7 +8,7 @@
 using namespace flame;
 using namespace graphics;
 
-App g_app;
+App app;
 
 int main(int argc, char** args)
 {
@@ -276,15 +276,16 @@ int main(int argc, char** args)
 	}
 
 #if _DEBUG
-	g_app.create(true);
+	app.create(true);
 #else
-	g_app.create(false);
+	app.create(false);
 #endif
 
-	auto w = new GraphicsWindow(&g_app, L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable, true);
-	w->native_window->set_cursor(CursorNone);
+	auto w = Window::create(nullptr, NativeWindow::create(L"Dota Pubg", uvec2(800, 600), NativeWindowFrame | NativeWindowResizable));
+	w->get_native()->set_cursor(CursorNone);
+	app.set_main_window(w);
 
-	auto renderer = w->s_renderer;
+	auto renderer = app.s_renderer;
 	renderer->set_shadow_props(3, 50.f, 20.f);
 	renderer->set_ssao_props(1.64f, 0.04f);
 
@@ -303,18 +304,16 @@ int main(int argc, char** args)
 	{
 		auto e = Entity::create();
 		e->load(L"prefabs/main");
-		w->root->add_child(e);
+		app.root->add_child(e);
 	}
 	script_ins->excute_file(L"scripts/main.lua");
 
 	//w->s_physics->set_visualization(true);
 
-	looper().add_event([](Capture& c) {
-		printf("fps: %d\n", looper().get_fps());
-		c._current = nullptr;
-	}, Capture(), 1.f);
-
-	g_app.run();
+	run([](Capture& c, float) {
+		app.update();
+		printf("fps: %d\n", get_fps());
+	}, Capture());
 
 	return 0;
 }

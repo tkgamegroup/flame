@@ -1,7 +1,6 @@
 file(GLOB source_files "*.h*" "*.c*")
 add_library(flame_sound SHARED ${source_files})
 set_target_properties(flame_sound PROPERTIES FOLDER "flame")
-set_target_properties(flame_sound PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_sound PRIVATE FLAME_SOUND_MODULE)
 target_include_directories(flame_sound PRIVATE "${OPENAL_INCLUDE_DIR}")
 target_link_libraries(flame_sound "${OPENAL_LIB_PATH}")

@@ -1,7 +1,6 @@
 file(GLOB source_files "*.h*" "*.c*")
 add_library(flame_foundation SHARED ${source_files})
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
-set_target_properties(flame_foundation PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)
 target_include_directories(flame_foundation PUBLIC "${GLM_INCLUDE_DIR}")
 target_include_directories(flame_foundation PUBLIC "${PUGIXML_INCLUDE_DIR}")

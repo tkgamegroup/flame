@@ -631,11 +631,11 @@ namespace flame
 				scr_ins->pop(2);
 				c._current = nullptr;
 			};
-			auto ev = add_event(callback, Capture().set_data(&slot), interval);
+			auto ev = ::flame::add_event(callback, Capture().set_data(&slot), interval);
 			events.push_back(ev);
 			return ev;
 		}
-		auto ev = add_event(callback, capture, interval);
+		auto ev = ::flame::add_event(callback, capture, interval);
 		events.push_back(ev);
 		return ev;
 	}

@@ -1,7 +1,6 @@
 file(GLOB source_files "*.h*" "*.c*")
 add_library(flame_network SHARED ${source_files})
 set_target_properties(flame_network PROPERTIES FOLDER "flame")
-set_target_properties(flame_network PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 target_compile_definitions(flame_network PRIVATE FLAME_NETWORK_MODULE)
 target_link_libraries(flame_network flame_foundation)
 target_link_libraries(flame_network ws2_32.lib)

@@ -6,6 +6,8 @@ struct WindowHierarchy : Window
 {
 	WindowHierarchy();
 
+	bool _just_selected;
+
 	void on_draw() override;
 };
 

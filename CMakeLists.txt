@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.16.4)
-
 project(flame)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

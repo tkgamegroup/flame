@@ -31,7 +31,7 @@ namespace flame
 
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
-		fassert(byte_per_channel == 1 && ch1 < channel&& ch2 < channel);
+		fassert(byte_per_channel == 1 && ch1 < channel && ch2 < channel);
 		if (byte_per_channel != 1 || ch1 >= channel || ch2 >= channel)
 			return;
 
@@ -49,18 +49,11 @@ namespace flame
 	void BitmapPrivate::copy_to(BitmapPtr dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
-		auto b2 = b1 * 2;
 		fassert(byte_per_channel == 1 &&
 			channel == dst->channel &&
 			byte_per_channel == dst->byte_per_channel &&
 			src_x + w <= width && src_y + h <= height &&
-			_dst_x + w + b2 <= dst->width && _dst_y + h + b2 <= dst->height);
-		if (byte_per_channel != 1 ||
-			channel != dst->channel ||
-			byte_per_channel != dst->byte_per_channel ||
-			src_x + w > width || src_y + h > height ||
-			_dst_x + w + b2 > dst->width || _dst_y + h + b2 > dst->height)
-			return;
+			_dst_x + w + b1 * 2 <= dst->width && _dst_y + h + b1 * 2 <= dst->height);
 
 		auto dst_x = _dst_x + b1;
 		auto dst_y = _dst_y + b1;

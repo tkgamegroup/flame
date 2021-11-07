@@ -579,6 +579,9 @@ namespace flame
 
 		ImagePrivate* ImagePrivate::get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb)
 		{
+			if (!device)
+				device = default_device;
+
 			auto& texs = device->texs[srgb ? 1 : 0];
 
 			for (auto& tex : texs)

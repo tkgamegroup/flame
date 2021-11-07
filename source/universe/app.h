@@ -102,13 +102,13 @@ namespace flame
 			root->add_child((EntityPtr)imgui_root);
 #endif
 
-			//auto scr_ins = script::Instance::get_default();
-			//scr_ins->push_object();
-			//scr_ins->push_pointer(world.get());
-			//scr_ins->set_member_name("p");
-			//scr_ins->set_object_type("flame::World");
-			//scr_ins->set_global_name("world");
-			//scr_ins->excute_file(L"world_setup.lua");
+			auto scr_ins = script::Instance::get_default();
+			scr_ins->push_object();
+			scr_ins->push_pointer(world.get());
+			scr_ins->set_member_name("p");
+			scr_ins->set_object_type("flame::World");
+			scr_ins->set_global_name("world");
+			scr_ins->excute_file(L"world_setup.lua");
 
 #if USE_IM_FILE_DIALOG
 			ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
