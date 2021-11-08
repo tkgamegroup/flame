@@ -1,3 +1,5 @@
+#ifdef USE_PHYSICS_MODULE
+
 #include "../../physics/device.h"
 #include "../../physics/rigid.h"
 #include "../../physics/shape.h"
@@ -13,6 +15,7 @@
 
 namespace flame
 {
+
 	using namespace physics;
 
 	const inline auto gravity = -5.f;
@@ -143,3 +146,5 @@ namespace flame
 		return new sPhysicsPrivate();
 	}
 }
+
+#endif

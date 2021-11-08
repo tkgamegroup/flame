@@ -1,3 +1,5 @@
+#ifdef USE_PHYSICS_MODULE
+
 #include "../../physics/device.h"
 #include "../../physics/controller.h"
 #include "../../physics/material.h"
@@ -81,3 +83,5 @@ namespace flame
 		return new cCharacterControllerPrivate();
 	}
 }
+
+#endif

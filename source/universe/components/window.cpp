@@ -33,7 +33,7 @@ namespace flame
 	void* cWindowPrivate::add_close_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
 		close_button->set_visible(true);
-
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -49,6 +49,7 @@ namespace flame
 			close_listeners.emplace_back(c);
 			return c;
 		}
+#endif
 		auto c = new Closure(callback, capture);
 		close_listeners.emplace_back(c);
 		return c;
@@ -58,7 +59,7 @@ namespace flame
 	{
 		std::erase_if(close_listeners, [&](const auto& i) {
 			return i.get() == (decltype(i.get()))lis;
-			});
+		});
 
 		if (load_finished)
 			close_button->set_visible(!close_listeners.empty());

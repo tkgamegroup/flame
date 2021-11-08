@@ -1,3 +1,5 @@
+#ifdef USE_PHYSICS_MODULE
+
 #include "../../physics/device.h"
 #include "../../physics/scene.h"
 #include "../../physics/rigid.h"
@@ -106,3 +108,5 @@ namespace flame
 		return new cRigidPrivate();
 	}
 }
+
+#endif

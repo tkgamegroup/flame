@@ -1,3 +1,5 @@
+#ifdef USE_PHYSICS_MODULE
+
 #include "../../foundation/bitmap.h"
 #include "../../graphics/image.h"
 #include "../../graphics/model.h"
@@ -196,3 +198,5 @@ namespace flame
 		return new cShapePrivate();
 	}
 }
+
+#endif

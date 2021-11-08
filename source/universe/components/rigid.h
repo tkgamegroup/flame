@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "../component.h"
 
@@ -27,3 +28,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cRigid* create(void* parms = nullptr);
 	};
 }
+
+#endif

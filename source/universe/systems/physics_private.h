@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "physics.h"
 #include "../components/element_private.h"
@@ -32,3 +33,5 @@ namespace flame
 		void update() override;
 	};
 }
+
+#endif

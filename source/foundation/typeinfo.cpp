@@ -1,8 +1,7 @@
+#include "../xml.h"
 #include "typeinfo_private.h"
 
 #include <Windows.h>
-#include <functional>
-#include <pugixml.hpp>
 
 namespace flame
 {

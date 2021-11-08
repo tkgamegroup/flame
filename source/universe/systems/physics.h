@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "../system.h"
 
@@ -20,3 +21,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static sPhysics* create(void* parms = nullptr);
 	};
 }
+
+#endif

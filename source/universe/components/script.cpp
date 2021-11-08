@@ -1,3 +1,4 @@
+#ifdef USE_SCRIPT_MODULE
 #include "../entity_private.h"
 #include "script_private.h"
 
@@ -57,3 +58,5 @@ namespace flame
 		return new cScriptPrivate();
 	}
 }
+
+#endif

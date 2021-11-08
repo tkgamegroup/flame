@@ -44,9 +44,11 @@ namespace flame
 		}
 		if (ret)
 		{
+#ifdef USE_SCRIPT_MODULE
 			auto script = script::Instance::get_default();
 			script->push_string(name.c_str());
 			script->set_global_name("__type__");
+#endif
 		}
 		return ret;
 	}

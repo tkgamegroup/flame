@@ -1,3 +1,4 @@
+#include "../xml.h"
 #include "../foundation/typeinfo.h"
 #include "device_private.h"
 #include "command_private.h"
@@ -5,8 +6,6 @@
 #include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
-
-#include <pugixml.hpp>
 
 #include <spirv_glsl.hpp>
 

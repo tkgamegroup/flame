@@ -72,9 +72,15 @@ namespace flame
 			engine_path = getenv("FLAME_PATH");
 
 			graphics::Device::create(graphics_debug);
+#if USE_PHYSICS_MODULE
 			physics::Device::create();
+#endif
+#if USE_SOUND_MODULE
 			sound::Device::create();
+#endif
+#if USE_SCRIPT_MODULE
 			script::Instance::create();
+#endif
 			load_default_prefab_types();
 
 			commandbuffer.reset(graphics::CommandBuffer::create(nullptr));
@@ -88,8 +94,10 @@ namespace flame
 #endif
 			s_dispatcher = sDispatcher::create();
 			world->add_system(s_dispatcher);
+#if USE_PHYSICS_MODULE
 			s_physics = sPhysics::create();
 			world->add_system(s_physics);
+#endif
 			s_scene = sScene::create();
 			world->add_system(s_scene);
 			s_renderer = sRenderer::create();
@@ -102,6 +110,7 @@ namespace flame
 			root->add_child((EntityPtr)imgui_root);
 #endif
 
+#ifdef USE_SCRIPT_MODULE
 			auto scr_ins = script::Instance::get_default();
 			scr_ins->push_object();
 			scr_ins->push_pointer(world.get());
@@ -109,6 +118,7 @@ namespace flame
 			scr_ins->set_object_type("flame::World");
 			scr_ins->set_global_name("world");
 			scr_ins->excute_file(L"world_setup.lua");
+#endif
 
 #if USE_IM_FILE_DIALOG
 			ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*

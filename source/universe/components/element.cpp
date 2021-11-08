@@ -8,6 +8,7 @@ namespace flame
 {
 	uint ElementScriptDrawerPrivate::draw(uint layer, sRendererPtr renderer)
 	{
+#ifdef USE_SCRIPT_MODULE
 		auto scr_ins = script::Instance::get_default();
 		scr_ins->get_global("callbacks");
 		scr_ins->get_member(nullptr, callback_slot);
@@ -17,6 +18,7 @@ namespace flame
 		scr_ins->set_object_type("sRenderer", renderer);
 		scr_ins->call(2);
 		scr_ins->pop(2);
+#endif
 		return layer;
 	}
 

@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_SCRIPT_MODULE
 
 #include "../component.h"
 
@@ -23,3 +24,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cScript* create(void* parms = nullptr);
 	};
 }
+
+#endif

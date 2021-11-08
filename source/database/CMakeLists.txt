@@ -1,5 +1,5 @@
 if (USE_MYSQL)
-	set(USE_DATABASE_MODULE on)
+	set(USE_DATABASE_MODULE on PARENT_SCOPE)
 
 	file(GLOB source_files "*.h*" "*.c*")
 	add_library(flame_database SHARED ${source_files})
@@ -18,5 +18,5 @@ if (USE_MYSQL)
 	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/database")
 	add_custom_command(TARGET flame_database PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/database")
 else()
-	set(USE_DATABASE_MODULE off)
+	set(USE_DATABASE_MODULE off PARENT_SCOPE)
 endif()

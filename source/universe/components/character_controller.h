@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "../component.h"
 
@@ -33,3 +34,5 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cCharacterController* create(void* parms = nullptr);
 	};
 }
+
+#endif

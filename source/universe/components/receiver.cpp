@@ -12,6 +12,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -26,6 +27,7 @@ namespace flame
 			};
 			return key_down_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return key_down_listeners.add(callback, capture);
 	}
 
@@ -36,6 +38,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -50,6 +53,7 @@ namespace flame
 			};
 			return key_up_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return key_up_listeners.add(callback, capture);
 	}
 
@@ -70,6 +74,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -84,6 +89,7 @@ namespace flame
 			};
 			return mouse_left_down_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_left_down_listeners.add(callback, capture);
 	}
 
@@ -94,6 +100,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -108,6 +115,7 @@ namespace flame
 			};
 			return mouse_left_up_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_left_up_listeners.add(callback, capture);
 	}
 
@@ -118,6 +126,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -132,6 +141,7 @@ namespace flame
 			};
 			return mouse_right_down_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_right_down_listeners.add(callback, capture);
 	}
 
@@ -142,6 +152,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -156,6 +167,7 @@ namespace flame
 			};
 			return mouse_right_up_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_right_up_listeners.add(callback, capture);
 	}
 
@@ -186,6 +198,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& disp, const ivec2& pos), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -201,7 +214,8 @@ namespace flame
 			};
 			return mouse_move_listeners.add(callback, Capture().set_data(&slot));
 		}
-		mouse_move_listeners.add(callback, capture);
+#endif
+		return mouse_move_listeners.add(callback, capture);
 	}
 
 	void cReceiverPrivate::remove_mouse_move_listener(void* lis)
@@ -211,6 +225,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -225,6 +240,7 @@ namespace flame
 			};
 			return mouse_scroll_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_scroll_listeners.add(callback, capture);
 	}
 
@@ -235,6 +251,7 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_click_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -248,6 +265,7 @@ namespace flame
 			};
 			return mouse_click_listeners.add(callback, Capture().set_data(&slot));
 		}
+#endif
 		return mouse_click_listeners.add(callback, capture);
 	}
 

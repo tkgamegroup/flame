@@ -19,6 +19,7 @@ namespace flame
 
 	void* cFileSelectorPrivate::add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -36,6 +37,7 @@ namespace flame
 			callbacks.emplace_back(c);
 			return c;
 		}
+#endif
 		auto c = new Closure(callback, capture);
 		callbacks.emplace_back(c);
 		return c;

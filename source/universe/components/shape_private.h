@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "shape.h"
 
@@ -47,3 +48,5 @@ namespace flame
 		void on_left_world() override;
 	};
 }
+
+#endif

@@ -1,5 +1,5 @@
 if (USE_LUA)
-	set(USE_SCRIPT_MODULE on)
+	set(USE_SCRIPT_MODULE on PARENT_SCOPE)
 
 	file(GLOB source_files "*.h*" "*.c*")
 	add_library(flame_script SHARED ${source_files})
@@ -15,5 +15,5 @@ if (USE_LUA)
 	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/script")
 	add_custom_command(TARGET flame_script PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/script")
 else()
-	set(USE_SCRIPT_MODULE off)
+	set(USE_SCRIPT_MODULE off PARENT_SCOPE)
 endif()

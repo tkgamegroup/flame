@@ -1,8 +1,7 @@
+#include "../xml.h"
 #include "../foundation/typeinfo.h"
 #include "image_private.h"
 #include "material_private.h"
-
-#include <pugixml.hpp>
 
 namespace flame
 {

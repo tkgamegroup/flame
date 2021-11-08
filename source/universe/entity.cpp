@@ -1,8 +1,7 @@
+#include "../xml.h"
 #include "../foundation/typeinfo.h"
 #include "entity_private.h"
 #include "world_private.h"
-
-#include <pugixml.hpp>
 
 namespace flame
 {
@@ -306,9 +305,11 @@ namespace flame
 		}
 		if (ret)
 		{
+#ifdef USE_SCRIPT_MODULE
 			auto script = script::Instance::get_default();
 			script->push_string(name.c_str());
 			script->set_global_name("__type__");
+#endif
 		}
 		return ret;
 	}
@@ -317,6 +318,7 @@ namespace flame
 	{
 		if (!callback)
 		{
+#ifdef USE_SCRIPT_MODULE
 			auto scr_ins = script::Instance::get_default();
 			scr_ins->get_global("callbacks");
 			scr_ins->get_member(nullptr, (uint)&capture);
@@ -328,6 +330,7 @@ namespace flame
 				scr_ins->call(1);
 			}
 			scr_ins->pop(2);
+#endif
 		}
 		else
 		{
@@ -538,6 +541,7 @@ namespace flame
 
 	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -556,6 +560,7 @@ namespace flame
 			message_listeners.emplace_back(c);
 			return c;
 		}
+#endif
 		auto c = new Closure(callback, capture);
 		message_listeners.emplace_back(c);
 		return c;
@@ -583,6 +588,7 @@ namespace flame
 		auto it = components_map.find(c->type_hash);
 		if (it != components_map.end())
 		{
+#ifdef USE_SCRIPT_MODULE
 			if (!callback)
 			{
 				auto slot = (uint)&capture;
@@ -599,6 +605,7 @@ namespace flame
 				it->second.second.emplace_back(c);
 				return c;
 			}
+#endif
 			auto c = new Closure(callback, capture);
 			it->second.second.emplace_back(c);
 			return c;
@@ -619,6 +626,7 @@ namespace flame
 
 	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, float interval)
 	{
+#ifdef USE_SCRIPT_MODULE
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -635,6 +643,7 @@ namespace flame
 			events.push_back(ev);
 			return ev;
 		}
+#endif
 		auto ev = ::flame::add_event(callback, capture, interval);
 		events.push_back(ev);
 		return ev;

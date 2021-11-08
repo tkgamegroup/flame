@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_SCRIPT_MODULE
 
 #include "script.h"
 
@@ -21,3 +22,5 @@ namespace flame
 		void on_entered_world() override;
 	};
 }
+
+#endif

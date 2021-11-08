@@ -1,11 +1,10 @@
+#include "../xml.h"
 #include <flame/foundation/typeinfo.h>
 
 #include <Windows.h>
 #include <dia2.h>
 #include <atlbase.h>
 #include <chrono>
-
-#include <pugixml.hpp>
 
 #include <boost/regex.hpp>
 

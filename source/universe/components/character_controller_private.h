@@ -1,4 +1,5 @@
 #pragma once
+#ifdef USE_PHYSICS_MODULE
 
 #include "character_controller.h"
 
@@ -41,3 +42,5 @@ namespace flame
 		void on_left_world() override;
 	};
 }
+
+#endif
