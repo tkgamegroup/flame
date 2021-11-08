@@ -281,7 +281,7 @@ int main(int argc, char** args)
 	app.create(false);
 #endif
 
-	auto w = Window::create(nullptr, NativeWindow::create(L"Dota Pubg", uvec2(800, 600), NativeWindowFrame | NativeWindowResizable));
+	auto w = Window::create(nullptr, NativeWindow::create(L"Dota Pubg", uvec2(800, 600), WindowFrame | WindowResizable));
 	w->get_native()->set_cursor(CursorNone);
 	app.set_main_window(w);
 

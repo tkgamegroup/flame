@@ -32,9 +32,6 @@ namespace flame
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
 		fassert(byte_per_channel == 1 && ch1 < channel && ch2 < channel);
-		if (byte_per_channel != 1 || ch1 >= channel || ch2 >= channel)
-			return;
-
 		for (auto j = 0; j < height; j++)
 		{
 			auto line = data + j * pitch;
@@ -85,8 +82,6 @@ namespace flame
 	void BitmapPrivate::srgb_to_linear()
 	{
 		fassert(channel >= 3);
-		if (channel < 3)
-			return;
 		for (auto j = 0; j < height; j++)
 		{
 			auto line = data + j * pitch;

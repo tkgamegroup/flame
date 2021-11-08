@@ -9,14 +9,12 @@ namespace flame
 	{
 		struct DevicePrivate : Device
 		{
-#ifdef USE_PHYSX
 			PxFoundation* px_foundation;
 			PxPvd* px_pvd;
 			PxPhysics* px_instance;
 			PxCooking* px_cooking;
 			PxDefaultAllocator px_allocator;
 			PxDefaultErrorCallback px_error_callback;
-#endif
 
 			std::vector<std::unique_ptr<MaterialPrivate>> materials;
 

@@ -1,3 +1,5 @@
+#include "../base64.h"
+#include "../xml.h"
 #include "../foundation/typeinfo.h"
 #include "material_private.h"
 #include "model_private.h"
@@ -7,11 +9,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #endif
-
-#include <pugixml.hpp>
-#include <cppcodec/base64_default_rfc4648.hpp>
-
-#include <functional>
 
 namespace flame
 {

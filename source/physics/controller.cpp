@@ -9,7 +9,6 @@ namespace flame
 	{
 		ControllerPrivate::ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height)
 		{
-#ifdef USE_PHYSX
 			PxCapsuleControllerDesc desc;
 			desc.material = material->px_material.get();
 			desc.contactOffset = 0.01f;
@@ -19,32 +18,22 @@ namespace flame
 			auto px_actor = px_controller->getActor();
 			px_actor->setName("Controller");
 			px_actor->userData = this;
-#endif
 		}
 
 		vec3 ControllerPrivate::get_position() const
 		{
-#ifdef USE_PHYSX
 			auto p = px_controller->getFootPosition();
 			return vec3(p.x, p.y, p.z);
-#else
-			return vec3(0.f);
-#endif
 		}
 
 		void ControllerPrivate::set_position(const vec3& pos)
 		{
-#ifdef USE_PHYSX
 			px_controller->setFootPosition(physx::PxExtendedVec3(pos.x, pos.y, pos.z));
-#endif
 		}
 
 		bool ControllerPrivate::move(const vec3& disp, float delta_time)
 		{
-#ifdef USE_PHYSX
 			return px_controller->move(cvt(disp), 0.f, delta_time, {}).isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
-#endif
-			return false;
 		}
 
 		Controller* Controller::create(Scene* scene, Material* material, float radius, float height)

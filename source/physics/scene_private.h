@@ -9,7 +9,6 @@ namespace flame
 	{
 		struct ScenePrivate : Scene
 		{
-#ifdef USE_PHYSX
 			struct Callback : PxSimulationEventCallback
 			{
 				ScenePrivate* thiz;
@@ -25,7 +24,7 @@ namespace flame
 			PxScene* px_scene;
 			Callback px_callback;
 			PxControllerManager* px_controller_manager;
-#endif
+
 			DevicePrivate* device;
 
 			std::unique_ptr<Closure<void(Capture&, TouchType type, ShapePtr trigger_shape, ShapePtr other_shape)>> trigger_callback;

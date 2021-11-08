@@ -8,7 +8,7 @@ App app;
 int main(int argc, char** args)
 {
 	app.create();
-	app.set_main_window(Window::create(nullptr, NativeWindow::create(L"UI Test", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable)));
+	app.set_main_window(Window::create(nullptr, NativeWindow::create(L"UI Test", uvec2(1280, 720), WindowFrame | WindowResizable)));
 
 	{
 		auto e = Entity::create();

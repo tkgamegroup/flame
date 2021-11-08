@@ -9,7 +9,6 @@ namespace flame
 
 		DevicePrivate::DevicePrivate()
 		{
-#ifdef USE_PHYSX
 			px_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, px_allocator, px_error_callback);
 			{
 				px_pvd = PxCreatePvd(*px_foundation);
@@ -21,7 +20,6 @@ namespace flame
 				PxTolerancesScale scale;
 				px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation, PxCookingParams(scale));
 			}
-#endif
 		}
 
 		DevicePrivate::~DevicePrivate()

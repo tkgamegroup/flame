@@ -1191,7 +1191,7 @@ namespace flame
 		size = _size;
 		style = _style;
 
-		fassert(!(style & NativeWindowFullscreen) || (!(style & NativeWindowFrame) && !(style & NativeWindowResizable)));
+		fassert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
 		uvec2 final_size;
 		auto screen_size = get_screen_size();
@@ -1201,18 +1201,18 @@ namespace flame
 			win32_style |= WS_POPUP | WS_BORDER;
 		else
 		{
-			if (style & NativeWindowFrame)
+			if (style & WindowFrame)
 				win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-			if (style & NativeWindowResizable)
+			if (style & WindowResizable)
 				win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-			if (style & NativeWindowFullscreen)
+			if (style & WindowFullscreen)
 				final_size = screen_size;
-			if (style & NativeWindowMaximized)
+			if (style & WindowMaximized)
 				win32_style |= WS_MAXIMIZE;
 		}
 
 		auto win32_ex_style = 0L;
-		if (style & NativeWindowTopmost)
+		if (style & WindowTopmost)
 			win32_ex_style |= WS_EX_TOPMOST;
 
 		{
@@ -1488,7 +1488,7 @@ namespace flame
 		});
 	}
 
-	NativeWindow* NativeWindow::create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent)
+	NativeWindow* NativeWindow::create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent)
 	{
 		return new NativeWindowPrivate(title, size, style, (NativeWindowPrivate*)parent);
 	}

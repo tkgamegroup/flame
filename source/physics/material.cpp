@@ -13,9 +13,8 @@ namespace flame
 		{
 			if (!device)
 				device = default_device;
-#ifdef USE_PHYSX
+
 			px_material.reset(device->px_instance->createMaterial(static_friction, dynamic_friction, restitution));
-#endif
 		}
 
 		MaterialPrivate* MaterialPrivate::get(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution)

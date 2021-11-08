@@ -9,9 +9,7 @@ namespace flame
 	{
 		struct ControllerPrivate : Controller
 		{
-#ifdef USE_PHYSX
 			UniPtr<PxController> px_controller;
-#endif
 
 			ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height);
 

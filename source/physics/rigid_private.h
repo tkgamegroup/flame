@@ -13,9 +13,7 @@ namespace flame
 			
 			bool dynamic;
 
-#ifdef USE_PHYSX
 			UniPtr<PxRigidActor> px_rigid;
-#endif
 
 			RigidPrivate(DevicePrivate* device, bool dynamic);
 

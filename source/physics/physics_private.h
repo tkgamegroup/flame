@@ -2,16 +2,13 @@
 
 #include "physics.h"
 
-#ifdef USE_PHYSX
 #include <PxPhysicsAPI.h>
 using namespace physx;
-#endif
 
 namespace flame
 {
 	namespace physics
 	{
-#ifdef USE_PHYSX
 		inline PxVec3 cvt(const vec3& v)
 		{
 			return PxVec3(v.x, v.y, v.z);
@@ -31,7 +28,6 @@ namespace flame
 		{
 			return quat(v.w, v.x, v.y, v.z);
 		}
-#endif
 	}
 }
 

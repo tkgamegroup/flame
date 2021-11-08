@@ -56,7 +56,7 @@ MyApp app;
 void MyApp::init()
 {
 	app.create();
-	app.set_main_window(graphics::Window::create(nullptr, NativeWindow::create(L"Scene Editor", uvec2(1280, 720), NativeWindowFrame | NativeWindowResizable | NativeWindowMaximized)), true);
+	app.set_main_window(graphics::Window::create(nullptr, NativeWindow::create(L"Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized)), true);
 	app.s_renderer->set_clear_color(vec4(0.2f, 0.4f, 0.7f, 1.f));
 	app.s_imgui->set_clear_color(vec4(0.2f, 0.2f, 0.2f, 1.f));
 

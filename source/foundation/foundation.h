@@ -21,6 +21,7 @@ struct FlameFoundationTypeSelector
 
 #include "../serialize.h"
 
+#include <functional>
 #include <chrono>
 #include <thread>
 #include <mutex>
@@ -586,16 +587,16 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes = true, bool sync = true);
 	// set_event to the returned ev to end the file watching
 
-	enum NativeWindowStyleFlags
+	enum WindowStyleFlags
 	{
-		NativeWindowFrame = 1 << 0,
-		NativeWindowResizable = 1 << 1,
-		NativeWindowFullscreen = 1 << 2,
-		NativeWindowMaximized = 1 << 3,
-		NativeWindowTopmost = 1 << 4
+		WindowFrame = 1 << 0,
+		WindowResizable = 1 << 1,
+		WindowFullscreen = 1 << 2,
+		WindowMaximized = 1 << 3,
+		WindowTopmost = 1 << 4
 	};
 
-	inline NativeWindowStyleFlags operator| (NativeWindowStyleFlags a, NativeWindowStyleFlags b) { return (NativeWindowStyleFlags)((int)a | (int)b); }
+	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }
 
 	enum CursorType
 	{
@@ -668,7 +669,7 @@ namespace flame
 
 		void* userdata = nullptr;
 
-		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, NativeWindowStyleFlags style, NativeWindow* parent = nullptr);
+		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent = nullptr);
 	};
 
 	FLAME_FOUNDATION_EXPORTS uint get_frames();
