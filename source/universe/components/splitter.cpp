@@ -1,3 +1,4 @@
+#include "../../foundation/window.h"
 #include "../entity_private.h"
 #include "element_private.h"
 #include "receiver_private.h"

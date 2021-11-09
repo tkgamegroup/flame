@@ -1,5 +1,6 @@
 #include "../xml.h"
 #include <flame/foundation/typeinfo.h>
+#include <flame/foundation/system.h>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -477,7 +478,7 @@ process:
 								if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
 									is_static = b;
 
-								auto fi = u->add_function(name.c_str(), rva, voff, is_static, TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db), metas.c_str());
+								auto fi = u->add_function(name.c_str(), rva, voff, is_static, TypeInfo::get(type_desc.tag, type_desc.name, db), metas.c_str());
 
 								IDiaEnumSymbols* s_parameters;
 								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -546,7 +547,7 @@ process:
 								if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
 									new_enum(type_desc.name, s_type);
 
-								auto type = TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db);
+								auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
 								u->add_variable(type, name.c_str(), offset, 1, 0, (char*)obj + offset, metas.c_str());
 							}
 
@@ -655,7 +656,7 @@ process:
 		cpp << "}\n";
 		cpp.close();
 
-		set_current_path(cpp_path.parent_path().c_str());
+		std::filesystem::current_path(cpp_path.parent_path());
 
 		std::wstring compile_command(L"\"");
 		compile_command += s2w(VS_LOCATION);

@@ -7,20 +7,19 @@
 
 namespace flame
 {
-	BitmapPrivate::BitmapPrivate(uint width, uint height, uint channel, uint byte_per_channel, uchar* _data) :
-		width(width),
-		height(height),
-		channel(channel),
-		byte_per_channel(byte_per_channel)
+	BitmapPrivate::BitmapPrivate(const uvec2& _size, uint _channel, uint _bpp, uchar* _data)
 	{
-		pitch = image_pitch(width * channel * byte_per_channel);
-		size = pitch * height;
-		data = new uchar[size];
+		size = _size;
+		channel = _channel;
+		bpp = _bpp;
+		pitch = image_pitch(size.x * (bpp / 8));
+		data_size = pitch * size.y;
+		data = new uchar[data_size];
 
 		if (!_data)
-			memset(data, 0, size);
+			memset(data, 0, data_size);
 		else
-			memcpy(data, _data, size);
+			memcpy(data, _data, data_size);
 		srgb = false;
 	}
 
@@ -29,13 +28,21 @@ namespace flame
 		delete[]data;
 	}
 
+	void BitmapPrivate::change_channel(uint ch)
+	{
+		data = stbi__convert_format(data, channel, ch, size.x, size.y);
+		channel = ch;
+		pitch = image_pitch(size.x * (bpp / 8));
+		data_size = pitch * size.y;
+	}
+
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
-		fassert(byte_per_channel == 1 && ch1 < channel && ch2 < channel);
-		for (auto j = 0; j < height; j++)
+		fassert(bpp == 32 && ch1 < channel && ch2 < channel);
+		for (auto j = 0; j < size.y; j++)
 		{
 			auto line = data + j * pitch;
-			for (auto i = 0; i < width; i++)
+			for (auto i = 0; i < size.x; i++)
 			{
 				auto p = line + i * channel;
 				std::swap(p[ch1], p[ch2]);
@@ -43,49 +50,46 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::copy_to(BitmapPtr dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
+	void BitmapPrivate::copy_to(BitmapPtr dst, const uvec2& s, const ivec2& src_off, const ivec2& _dst_off, bool border)
 	{
 		auto b1 = border ? 1 : 0;
-		fassert(byte_per_channel == 1 &&
-			channel == dst->channel &&
-			byte_per_channel == dst->byte_per_channel &&
-			src_x + w <= width && src_y + h <= height &&
-			_dst_x + w + b1 * 2 <= dst->width && _dst_y + h + b1 * 2 <= dst->height);
+		fassert(bpp == 32 && channel == dst->channel && bpp == dst->bpp &&
+			all(lessThanEqual(src_off + ivec2(s), ivec2(size))) && 
+			all(lessThanEqual(_dst_off + ivec2(s) + b1 * 2, ivec2(dst->size))));
 
-		auto dst_x = _dst_x + b1;
-		auto dst_y = _dst_y + b1;
+		auto dst_off = _dst_off + b1;
 		auto dst_data = dst->data;
 		auto dst_pitch = dst->pitch;
-		for (auto i = 0; i < h; i++)
+		for (auto i = 0; i < s.y; i++)
 		{
-			auto src_line = data + (src_y + i) * pitch + src_x * channel;
-			auto dst_line = dst_data + (dst_y + i) * dst_pitch + dst_x * channel;
-			memcpy(dst_line, src_line, w * channel);
+			auto src_line = data + (src_off.y + i) * pitch + src_off.x * channel;
+			auto dst_line = dst_data + (dst_off.y + i) * dst_pitch + dst_off.x * channel;
+			memcpy(dst_line, src_line, s.x * channel);
 		}
 
 		if (border)
 		{
-			memcpy(dst->data + (dst_y - 1) * dst_pitch + dst_x * channel, data + src_y * pitch + src_x * channel, w * channel); // top line
-			memcpy(dst->data + (dst_y + h) * dst_pitch + dst_x * channel, data + (src_y + h - 1) * pitch + src_x * channel, w * channel); // bottom line
-			for (auto i = 0; i < h; i++)
-				memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x - 1) * channel, data + (src_y + i) * pitch + src_x * channel, channel); // left line
-			for (auto i = 0; i < h; i++)
-				memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x + w) * channel, data + (src_y + i) * pitch + (src_x + w - 1) * channel, channel); // left line
+			memcpy(dst->data + (dst_off.y - 1) * dst_pitch + dst_off.x * channel, data + src_off.y * pitch + src_off.x * channel, s.x * channel); // top line
+			memcpy(dst->data + (dst_off.y + s.y) * dst_pitch + dst_off.x * channel, data + (src_off.y + s.y - 1) * pitch + src_off.x * channel, s.x * channel); // bottom line
+			for (auto i = 0; i < s.y; i++)
+				memcpy(dst->data + (dst_off.y + i) * dst_pitch + (dst_off.x - 1) * channel, data + (src_off.y + i) * pitch + src_off.x * channel, channel); // left line
+			for (auto i = 0; i < s.y; i++)
+				memcpy(dst->data + (dst_off.y + i) * dst_pitch + (dst_off.x + s.x) * channel, data + (src_off.y + i) * pitch + (src_off.x + s.x - 1) * channel, channel); // left line
 
-			memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x - 1) * channel, data + src_y * pitch + src_x * channel, channel); // left top corner
-			memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x + w) * channel, data + src_y * pitch + (src_x + w - 1) * channel, channel); // right top corner
-			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x - 1) * channel, data + (src_y + h - 1) * pitch + src_x * channel, channel); // left bottom corner
-			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x + w) * channel, data + (src_y + h - 1) * pitch + (src_x + w - 1) * channel, channel); // right bottom corner
+			memcpy(dst->data + (dst_off.y - 1) * dst_pitch + (dst_off.x - 1) * channel, data + src_off.y * pitch + src_off.x * channel, channel); // left top corner
+			memcpy(dst->data + (dst_off.y - 1) * dst_pitch + (dst_off.x + s.x) * channel, data + src_off.y * pitch + (src_off.x + s.x - 1) * channel, channel); // right top corner
+			memcpy(dst->data + (dst_off.y + s.y) * dst_pitch + (dst_off.x - 1) * channel, data + (src_off.y + s.y - 1) * pitch + src_off.x * channel, channel); // left bottom corner
+			memcpy(dst->data + (dst_off.y + s.y) * dst_pitch + (dst_off.x + s.x) * channel, data + (src_off.y + s.y - 1) * pitch + (src_off.x + s.x - 1) * channel, channel); // right bottom corner
 		}
 	}
 
 	void BitmapPrivate::srgb_to_linear()
 	{
 		fassert(channel >= 3);
-		for (auto j = 0; j < height; j++)
+		for (auto j = 0; j < size.y; j++)
 		{
 			auto line = data + j * pitch;
-			for (auto i = 0; i < width; i++)
+			for (auto i = 0; i < size.x; i++)
 			{
 				auto p = line + i * channel;
 				{
@@ -109,14 +113,16 @@ namespace flame
 		auto ext = std::filesystem::path(filename).extension();
 
 		if (ext == L".png")
-			stbi_write_png(filename.string().c_str(), width, height, channel, data, pitch);
+			stbi_write_png(filename.string().c_str(), size.x, size.y, channel, data, pitch);
 		else if (ext == L".bmp")
-			stbi_write_bmp(filename.string().c_str(), width, height, channel, data);
+			stbi_write_bmp(filename.string().c_str(), size.x, size.y, channel, data);
 		else if (ext == L".jpg" || ext == L".jpeg")
-			stbi_write_jpg(filename.string().c_str(), width, height, channel, data, 0);
+			stbi_write_jpg(filename.string().c_str(), size.x, size.y, channel, data, 0);
 	}
 
-	BitmapPrivate* BitmapPrivate::create(const std::filesystem::path& filename)
+	Bitmap* Bitmap::create(const uvec2& size, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(size, channel, byte_per_channel, data); }
+
+	Bitmap* Bitmap::create(const std::filesystem::path& filename)
 	{
 		if (!std::filesystem::exists(filename))
 			return nullptr;
@@ -126,16 +132,8 @@ namespace flame
 		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 0);
 		if (!data)
 			return nullptr;
-		if (channel == 3)
-		{
-			data = stbi__convert_format(data, 3, 4, cx, cy);
-			channel = 4;
-		}
-		auto b = new BitmapPrivate(cx, cy, channel, 1, data);
+		auto b = new BitmapPrivate(uvec2(cx, cy), channel, channel * 8, data);
 		stbi_image_free(data);
 		return b;
 	}
-
-	Bitmap* Bitmap::create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(width, height, channel, byte_per_channel, data); }
-	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate::create(filename); }
 }

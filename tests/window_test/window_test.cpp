@@ -1,13 +1,14 @@
-#include <flame/foundation/foundation.h>
+#include <flame/foundation/window.h>
+#include <flame/foundation/typeinfo.h>
 
 using namespace flame;
 
 int main(int argc, char** args)
 {
-	auto w = NativeWindow::create(L"Window Test", uvec2(1280, 720), WindowFrame);
-	w->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-		c.thiz<NativeWindow>()->release();
-	}, Capture().set_thiz(w));
+	auto w = NativeWindow::create("Window Test", uvec2(1280, 720), WindowFrame);
+	w->add_mouse_left_down_listener([w](const ivec2& pos) {
+		w->release();
+	});
 
 	run([](Capture&, float delta_time) {
 	}, Capture());

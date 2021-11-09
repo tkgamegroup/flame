@@ -6,114 +6,20 @@ namespace flame
 {
 	struct TypeInfoPrivate : TypeInfo
 	{
-		TypeTag tag;
-		std::string name;
-		std::string short_name;
-		uint hash;
-		uint size;
-
-		BasicType basic_type = ElseType;
-		bool is_signed = true;
-		uint vec_size = 1;
-		uint col_size = 1;
-		TypeInfoPrivate* pointed_type = nullptr;
-
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
-
-		TypeTag get_tag() const override { return tag; }
-		const char* get_name() const override { return name.c_str(); }
-		uint get_hash() const override { return hash; }
-		uint get_size() const override { return size; }
-
-		BasicType get_basic() const override { return basic_type; }
-		bool get_signed() const override { return is_signed; }
-		uint get_vec_size() const override { return vec_size; }
-		uint get_col_size() const override { return col_size; }
-		TypeInfoPtr get_pointed_type() const override { return pointed_type; }
 
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db = nullptr);
 	};
 
-	struct Metas
-	{
-		std::vector<std::pair<TypeMeta, LightCommonValue>> d;
-
-		inline void from_string(const std::string& str)
-		{
-			auto e_meta = TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeMeta");
-			for (auto& i : SUS::split(str, ';'))
-			{
-				auto sp = SUS::split(i, ':');
-				auto& m = d.emplace_back();
-				e_meta->unserialize(&m.first, sp[0].c_str());
-				m.second.u = std::stoul(sp[1], 0, 16);;
-			}
-		}
-
-		inline std::string to_string() const
-		{
-			std::string ret;
-			auto e_meta = TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeMeta");
-			for (auto& i : d)
-				ret += e_meta->serialize(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
-			return ret;
-		}
-
-		inline bool get_meta(TypeMeta m, LightCommonValue* v) const
-		{
-			for (auto& i : d)
-			{
-				if (i.first == m)
-				{
-					if (v)
-						*v = i.second;
-					return true;
-				}
-			}
-			return false;
-		}
-	};
-
 	struct VariableInfoPrivate : VariableInfo
 	{
-		UdtInfoPrivate* udt;
-		uint index;
-		TypeInfoPrivate* type;
-		std::string name;
-		uint offset;
-		uint array_size = 1;
-		uint array_stride = 0;
-		void* default_value = nullptr;
-		Metas metas;
-
 		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
 			uint array_size, uint array_stride, const std::string& default_value_str, const std::string& metas);
-		~VariableInfoPrivate();
-
-		UdtInfoPtr get_udt() const override { return udt; }
-		uint get_index() const override { return index; }
-		TypeInfoPtr get_type() const override { return type; }
-		const char* get_name() const override { return name.c_str(); }
-		uint get_offset() const override { return offset; }
-		uint get_array_size() const override { return array_size; }
-		uint get_array_stride() const override { return array_stride; }
-		void* get_default_value() const override { return default_value; }
-		bool get_meta(TypeMeta m, LightCommonValue* v) const override;
 	};
 
 	struct EnumItemInfoPrivate : EnumItemInfo
 	{
-		EnumInfoPrivate* ei;
-		uint index;
-		std::string name;
-		int value;
-
 		EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value);
-
-		EnumInfoPtr get_enum() const override { return ei; }
-		uint get_index() const override { return index; }
-		const char* get_name() const override { return name.c_str(); }
-		int get_value() const override { return value; }
 	};
 
 	struct EnumInfoPrivate : EnumInfo

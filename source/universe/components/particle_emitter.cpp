@@ -6,6 +6,22 @@
 
 namespace flame
 {
+	enum GeneralFormula
+	{
+		GeneralFormula_None,
+		GeneralFormula_v_mul_a_add_b
+	};
+
+	float apply_general_formula(float v, const vec4& f)
+	{
+		switch ((int)f[0])
+		{
+		case GeneralFormula_v_mul_a_add_b:
+			return v * f[1] + f[2];
+		}
+		return v;
+	}
+
 	void cParticleEmitterPrivate::set_img(const std::filesystem::path& src)
 	{
 		if (img_src == src)

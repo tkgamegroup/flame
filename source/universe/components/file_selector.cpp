@@ -1,3 +1,4 @@
+#include "../../foundation/system.h"
 #include "../../graphics/font.h"
 #include "list_private.h"
 #include "receiver_private.h"
@@ -146,8 +147,7 @@ namespace flame
 			file.close();
 		}
 
-		get_current_path(buf);
-		set_folder(buf);
+		set_folder(std::filesystem::current_path());
 	}
 
 	void cFileSelectorPrivate::folder_changed()

@@ -1,3 +1,5 @@
+#include "../../foundation/window.h"
+#include "../../foundation/system.h"
 #include "../../graphics/font.h"
 #include "../entity_private.h"
 #include "../world_private.h"

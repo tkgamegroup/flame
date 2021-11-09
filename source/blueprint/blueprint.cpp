@@ -147,9 +147,9 @@ namespace flame
 			auto size = udt->get_size();
 			object = malloc(size);
 			memset(object, 0, size);
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "in", offsetof(Dummy, in), nullptr));
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumSingle, type_parameter), "in", offsetof(Dummy, in), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumSingle, type_parameter), "out", offsetof(Dummy, out), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
 			update_addr = f2a(&Dummy::update);
 		}
@@ -176,9 +176,9 @@ namespace flame
 			auto size = sizeof(Dummy);
 			object = malloc(size);
 			memset(object, 0, size);
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumMulti, type_parameter.c_str()), "in", offsetof(Dummy, in), nullptr));
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumMulti, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumMulti, type_parameter), "in", offsetof(Dummy, in), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumMulti, type_parameter), "out", offsetof(Dummy, out), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
 			update_addr = f2a(&Dummy::update);
 		}
@@ -211,7 +211,7 @@ namespace flame
 				}
 			};
 #pragma pack()
-			auto type = TypeInfo::get(TypeData, type_parameter.c_str());
+			auto type = TypeInfo::get(TypeData, type_parameter);
 			auto type_size = type->get_size();
 
 			auto size = sizeof(Dummy) + type_size * 2;
@@ -275,13 +275,13 @@ namespace flame
 				base_name.erase(base_name.end() - 1);
 				tag = TypePointer;
 			}
-			auto type = TypeInfo::get(tag, base_name.c_str());
+			auto type = TypeInfo::get(tag, base_name);
 			uint type_size = type->get_size();
 			auto length = stoi(sp[0]);
 			auto size = sizeof(Dummy) + sizeof(Array<int>) + type_size * length;
 			object = malloc(size);
 			memset(object, 0, size);
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeArrayOfData, type_name.c_str()), "out", sizeof(Dummy), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeArrayOfData, type_name), "out", sizeof(Dummy), nullptr));
 			for (auto i = 0; i < length; i++)
 				inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, type, std::to_string(i), sizeof(Dummy) + sizeof(Array<int>) + type_size * i, nullptr));
 			dtor_addr = f2a(&Dummy::dtor);

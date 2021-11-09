@@ -1,3 +1,4 @@
+#include "../../foundation/window.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/receiver_private.h"
@@ -52,15 +53,13 @@ namespace flame
 			thiz->dirty = true;
 		}, Capture().set_thiz(this));
 
-		window->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		window->add_mouse_left_down_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Left] = std::make_pair(true, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-			thiz->mbtns_temp[Mouse_Left] = std::make_pair(true, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
-
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
 		window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<sDispatcherPrivate>();

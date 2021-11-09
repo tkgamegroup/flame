@@ -1,3 +1,4 @@
+#include "../../foundation/window.h"
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
@@ -191,7 +192,7 @@ namespace flame
 		{
 			auto element = world->root->get_component_i<cElementPrivate>(0);
 			if (element)
-				element->set_size(window->get_size());
+				element->set_size(window->size);
 		}
 
 		while (!sizing_list.empty())

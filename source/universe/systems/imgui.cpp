@@ -1,3 +1,4 @@
+#include "../../foundation/window.h"
 #include "../../graphics/buffer.h"
 #include "../../graphics/buffer_ext.h"
 #include "../../graphics/image.h"
@@ -60,11 +61,10 @@ namespace flame
 			c.thiz<sImguiPrivate>()->render(img_idx, commandbuffer);
 		}, Capture().set_thiz(this));
 
-		native_window->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		native_window->add_mouse_left_down_listener([this](const ivec2& pos) {
 			ImGuiIO& io = ImGui::GetIO();
 			io.MouseDown[0] = true;
-		}, Capture().set_thiz(this));
+		});
 
 		native_window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<sDispatcherPrivate>();

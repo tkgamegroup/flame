@@ -547,11 +547,12 @@ namespace flame
 
 		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Bitmap* bmp)
 		{
-			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
-				uvec2(bmp->get_width(), bmp->get_height()), 1, 1, 
+			if (bmp->channel == 3)
+				bmp->change_channel(4);
+			auto i = new ImagePrivate(device, get_image_format(bmp->channel, bmp->bpp), bmp->size, 1, 1,
 				SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | ImageUsageTransferSrc);
 
-			StagingBuffer sb(device, bmp->get_size(), bmp->get_data());
+			StagingBuffer sb(device, bmp->data_size, bmp->data);
 			InstanceCB cb(device);
 			BufferImageCopy cpy;
 			cpy.img_ext = i->sizes[0];

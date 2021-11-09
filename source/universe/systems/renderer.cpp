@@ -1,3 +1,4 @@
+#include "../../foundation/window.h"
 #include "../../graphics/buffer.h"
 #include "../../graphics/buffer_ext.h"
 #include "../../graphics/image.h"

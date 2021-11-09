@@ -1,3 +1,5 @@
+#include "../foundation/window.h"
+#include "../foundation/system.h"
 #include "device_private.h"
 #include "image_private.h"
 #include "renderpass_private.h"
@@ -65,7 +67,7 @@ namespace flame
 				vk_surface = nullptr;
 			}
 
-			auto size = window->get_size();
+			auto size = window->size;
 			if (size.x != 0U || size.y != 0U)
 			{
 				uint image_count = 3;

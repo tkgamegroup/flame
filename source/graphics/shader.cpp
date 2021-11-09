@@ -1,5 +1,6 @@
 #include "../xml.h"
 #include "../foundation/typeinfo.h"
+#include "../foundation/system.h"
 #include "device_private.h"
 #include "command_private.h"
 #include "renderpass_private.h"
@@ -71,7 +72,7 @@ namespace flame
 
 				auto ui = add_udt(name.c_str(), size, "", db);
 
-				ret = TypeInfo::get(TypeData, name.c_str(), db);
+				ret = TypeInfo::get(TypeData, name, db);
 
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{

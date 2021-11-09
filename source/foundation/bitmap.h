@@ -8,22 +8,23 @@ namespace flame
 	{
 		virtual void release() = 0;
 
-		virtual uint get_width() const = 0;
-		virtual uint get_height() const = 0;
-		virtual uint get_channel() const = 0;
-		virtual uint get_byte_per_channel() const = 0;
-		virtual uint get_pitch() const = 0;
-		virtual uchar* get_data() const = 0;
-		virtual uint get_size() const = 0;
-		virtual bool get_srgb() const = 0;
+		uvec2 size;
+		uint channel;
+		// bits per pixel
+		uint bpp;
+		uint pitch;
+		uchar* data;
+		uint data_size;
+		bool srgb;
 
+		virtual void change_channel(uint ch) = 0;
 		virtual void swap_channel(uint ch1, uint ch2) = 0;
-		virtual void copy_to(BitmapPtr dst, uint width, uint height, uint src_x = 0, uint src_y = 0, uint dst_x = 0, uint dst_y = 0, bool border = false) = 0;
+		virtual void copy_to(BitmapPtr dst, const uvec2& size, const ivec2& src_off, const ivec2& dst_off, bool border = false) = 0;
 		virtual void srgb_to_linear() = 0;
-		virtual void save(const wchar_t* filename) = 0;
+		virtual void save(const std::filesystem::path& filename) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(uint width, uint height, uint channel = 4, uint byte_per_channel = 1, uchar* data = nullptr);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const uvec2& size, uint channel = 4, uint bpp = 32, uchar* data = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const std::filesystem::path& filename);
 	};
 
 	struct BinPackNode

@@ -1,7 +1,6 @@
 #include "../xml.h"
+#include "system_private.h"
 #include "typeinfo_private.h"
-
-#include <Windows.h>
 
 namespace flame
 {
@@ -18,8 +17,8 @@ namespace flame
 		void destroy(void* p, bool) const override { free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
 		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
-		void serialize(const void* src, char* dst) const override { dst[0] = 0; }
-		void unserialize(void* dst, const char* src) const override {}
+		std::string serialize(const void* p) const override { return ""; }
+		void unserialize(const std::string& str, void* dst) const override {}
 	};
 
 	struct TypeInfoPrivate_EnumSingle : TypeInfoPrivate_Pod
@@ -33,14 +32,13 @@ namespace flame
 			ei = find_enum(name);
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			const auto& s = ei->find_item(*(int*)src)->name;
-			strcpy(dst, s.data());
+			return ei->find_item(*(int*)p)->name;
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(int*)dst = ei->find_item(src)->value;
+			*(int*)dst = ei->find_item(str)->value;
 		}
 	};
 
@@ -55,26 +53,26 @@ namespace flame
 			ei = find_enum(name);
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			std::string s;
-			auto v = *(int*)src;
+			std::string ret;
+			auto v = *(int*)p;
 			for (auto i = 0; i < ei->items.size(); i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (i > 0)
-						s += '|';
-					s += ei->find_item(1 << i)->name;
+						ret += '|';
+					ret += ei->find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
-			strcpy(dst, s.data());
+			return ret;
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
 			auto v = 0;
-			auto sp = SUS::split(src, '|');
+			auto sp = SUS::split(str, '|');
 			for (auto& t : sp)
 				v |= ei->find_item(t)->value;
 			*(int*)dst = v;
@@ -99,14 +97,12 @@ namespace flame
 			short_name = "B";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(bool*)src);
-			strcpy(dst, s.data());
+			return to_string(*(bool*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			auto str = std::string(src);
 			if (str == "false")
 				*(bool*)dst = false;
 			else if (str == "true")
@@ -125,14 +121,13 @@ namespace flame
 			short_name = "C";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(char*)src);
-			strcpy(dst, s.data());
+			return to_string(*(char*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(char*)dst = sto<char>(src);
+			*(char*)dst = sto<char>(str);
 		}
 	};
 
@@ -146,14 +141,13 @@ namespace flame
 			short_name = "C";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uchar*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uchar*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uchar*)dst = sto<uchar>(src);
+			*(uchar*)dst = sto<uchar>(str);
 		}
 	};
 
@@ -166,14 +160,13 @@ namespace flame
 			short_name = "W";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(wchar_t*)src);
-			strcpy(dst, s.data());
+			return to_string(*(wchar_t*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(wchar_t*)dst = sto<wchar_t>(src);
+			*(wchar_t*)dst = sto<wchar_t>(str);
 		}
 	};
 
@@ -186,14 +179,13 @@ namespace flame
 			short_name = "I";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(int*)src);
-			strcpy(dst, s.data());
+			return to_string(*(int*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(int*)dst = sto<int>(src);
+			*(int*)dst = sto<int>(str);
 		}
 	};
 
@@ -207,14 +199,13 @@ namespace flame
 			short_name = "I";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uint*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uint*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uint*)dst = sto<uint>(src);
+			*(uint*)dst = sto<uint>(str);
 		}
 	};
 
@@ -227,14 +218,13 @@ namespace flame
 			short_name = "L";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(int64*)src);
-			strcpy(dst, s.data());
+			return to_string(*(int64*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(int64*)dst = sto<int64>(src);
+			*(int64*)dst = sto<int64>(str);
 		}
 	};
 
@@ -248,14 +238,13 @@ namespace flame
 			short_name = "L";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uint64*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uint64*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uint64*)dst = sto<uint64>(src);
+			*(uint64*)dst = sto<uint64>(str);
 		}
 	};
 
@@ -268,14 +257,13 @@ namespace flame
 			short_name = "F";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(float*)src);
-			strcpy(dst, s.data());
+			return to_string(*(float*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(float*)dst = sto<float>(src);
+			*(float*)dst = sto<float>(str);
 		}
 	};
 
@@ -290,14 +278,13 @@ namespace flame
 			short_name = "C2";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(cvec2*)src);
-			strcpy(dst, s.data());
+			return to_string(*(cvec2*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec2*)dst = sto<2, uchar>(src);
+			*(cvec2*)dst = sto<2, uchar>(str);
 		}
 	};
 
@@ -312,14 +299,13 @@ namespace flame
 			short_name = "C3";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(cvec3*)src);
-			strcpy(dst, s.data());
+			return to_string(*(cvec3*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec3*)dst = sto<3, uchar>(src);
+			*(cvec3*)dst = sto<3, uchar>(str);
 		}
 	};
 
@@ -334,14 +320,13 @@ namespace flame
 			short_name = "C4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(cvec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(cvec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec4*)dst = sto<4, uchar>(src);
+			*(cvec4*)dst = sto<4, uchar>(str);
 		}
 	};
 
@@ -355,14 +340,13 @@ namespace flame
 			short_name = "I2";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(ivec2*)src);
-			strcpy(dst, s.data());
+			return to_string(*(ivec2*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec2*)dst = sto<2, int>(src);
+			*(ivec2*)dst = sto<2, int>(str);
 		}
 	};
 
@@ -376,14 +360,13 @@ namespace flame
 			short_name = "I3";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(ivec3*)src);
-			strcpy(dst, s.data());
+			return to_string(*(ivec3*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec3*)dst = sto<3, int>(src);
+			*(ivec3*)dst = sto<3, int>(str);
 		}
 	};
 
@@ -397,14 +380,13 @@ namespace flame
 			short_name = "I4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(ivec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(ivec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec4*)dst = sto<4, int>(src);
+			*(ivec4*)dst = sto<4, int>(str);
 		}
 	};
 
@@ -419,14 +401,13 @@ namespace flame
 			short_name = "I2";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uvec2*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uvec2*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec2*)dst = sto<2, uint>(src);
+			*(uvec2*)dst = sto<2, uint>(str);
 		}
 	};
 
@@ -441,14 +422,13 @@ namespace flame
 			short_name = "I3";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uvec3*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uvec3*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec3*)dst = sto<3, uint>(src);
+			*(uvec3*)dst = sto<3, uint>(str);
 		}
 	};
 
@@ -463,14 +443,13 @@ namespace flame
 			short_name = "I4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(uvec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(uvec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec4*)dst = sto<4, uint>(src);
+			*(uvec4*)dst = sto<4, uint>(str);
 		}
 	};
 
@@ -484,14 +463,13 @@ namespace flame
 			short_name = "F2";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(vec2*)src);
-			strcpy(dst, s.data());
+			return to_string(*(vec2*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec2*)dst = sto<2, float>(src);
+			*(vec2*)dst = sto<2, float>(str);
 		}
 	};
 
@@ -505,14 +483,13 @@ namespace flame
 			short_name = "F3";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(vec3*)src);
-			strcpy(dst, s.data());
+			return to_string(*(vec3*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec3*)dst = sto<3, float>(src);
+			*(vec3*)dst = sto<3, float>(str);
 		}
 	};
 
@@ -526,14 +503,13 @@ namespace flame
 			short_name = "F4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(vec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(vec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(src);
+			*(vec4*)dst = sto<4, float>(str);
 		}
 	};
 
@@ -548,14 +524,13 @@ namespace flame
 			short_name = "F4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(vec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(vec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(src);
+			*(vec4*)dst = sto<4, float>(str);
 		}
 	};
 
@@ -570,14 +545,13 @@ namespace flame
 			short_name = "F6";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(mat2x3*)src);
-			strcpy(dst, s.data());
+			return to_string(*(mat2x3*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(mat2x3*)dst = sto<2, 3, float>(src);
+			*(mat2x3*)dst = sto<2, 3, float>(str);
 		}
 	};
 
@@ -591,14 +565,13 @@ namespace flame
 			short_name = "F4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string(*(vec4*)src);
-			strcpy(dst, s.data());
+			return to_string(*(vec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(src);
+			*(vec4*)dst = sto<4, float>(str);
 		}
 	};
 
@@ -655,14 +628,13 @@ namespace flame
 			short_name = "F4";
 		}
 
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto s = to_string((*(vec4*)src).yzwx());
-			strcpy(dst, s.data());
+			return to_string(*(vec4*)p);
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(src).yzwx();
+			*(vec4*)dst = sto<4, float>(str).yzwx();
 		}
 	};
 
@@ -694,17 +666,16 @@ namespace flame
 				pointed_type->destroy(*(void**)p);
 			free(p); 
 		}
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
 			if (pointed_type)
-				pointed_type->serialize(*(void**)src, dst);
-			else
-				dst[0] = 0;
+				return pointed_type->serialize(*(void**)p);
+			return "";
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
 			if (pointed_type)
-				pointed_type->unserialize(*(void**)dst, src);
+				pointed_type->unserialize(str, *(void**)dst);
 		}
 	};
 
@@ -741,17 +712,17 @@ namespace flame
 		{
 			return std::string(*(char**)a) == std::string(*(char**)b);
 		}
-		void serialize(const void* src, char* dst) const override
+		std::string serialize(const void* p) const override
 		{
-			auto str = *(char**)src;
-			strcpy(dst, str ? str : "");
+			auto str = *(char**)p;
+			return str ? str : "";
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& str, void* dst) const override
 		{
 			auto& p = *(char**)dst;
 			free(p);
-			p = (char*)malloc(strlen(src) + 1);
-			strcpy(p, src);
+			p = (char*)malloc(str.size() + 1);
+			strcpy(p, str.c_str());
 		}
 	};
 
@@ -788,14 +759,14 @@ namespace flame
 		{
 			return std::wstring(*(wchar_t**)a) == std::wstring(*(wchar_t**)b);
 		}
-		void serialize(const void* src, char* dst) const override 
+		std::string serialize(const void* p) const override 
 		{
-			auto& str = *(wchar_t**)src;
-			strcpy(dst, str ? w2s(str).c_str() : "");
+			auto str = *(wchar_t**)p;
+			return str ? w2s(str) : "";
 		}
-		void unserialize(void* dst, const char* src) const override
+		void unserialize(const std::string& _str, void* dst) const override
 		{
-			auto str = s2w(src);
+			auto str = s2w(_str);
 			auto& p = *(wchar_t**)dst;
 			free(p);
 			p = (wchar_t*)malloc(sizeof(wchar_t) * (str.size() + 1));
@@ -957,13 +928,20 @@ namespace flame
 	};
 	static _Initializer _initializer;
 
-	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& name, uint size) :
-		tag(tag),
-		name(name),
-		size(size)
+	TypeInfoPrivate::TypeInfoPrivate(TypeTag _tag, const std::string& _name, uint _size)
 	{
+		tag = _tag;
+		name = _name;
+		size = _size;
 		hash = ch(name.c_str());
 		hash ^= std::hash<int>()(tag);
+
+		basic_type = ElseType;
+		is_signed = true;
+		vec_size = 1;
+		col_size = 1;
+		pointed_type = nullptr;
+
 	}
 
 	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db)
@@ -1014,39 +992,23 @@ namespace flame
 		return t;
 	}
 
-	TypeInfo* TypeInfo::get(TypeTag tag, const char* name, TypeInfoDataBase* db)
+	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase* db)
 	{
-		return TypeInfoPrivate::get(tag, std::string(name), (TypeInfoDataBasePrivate*)db);
+		return TypeInfoPrivate::get(tag, name, (TypeInfoDataBasePrivate*)db);
 	}
 
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, 
-		uint array_size, uint array_stride, const std::string& default_value_str, const std::string& _metas) :
-		udt(udt),
-		index(index),
-		type(type),
-		name(name),
-		offset(offset),
-		array_size(array_size),
-		array_stride(array_stride)
+	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* _udt, uint _index, TypeInfoPrivate* _type, const std::string& _name, uint _offset, 
+		uint _array_size, uint _array_stride, const std::string& _default_value, const std::string& _metas)
 	{
-		if (!default_value_str.empty())
-		{
-			default_value = type->create();
-			type->unserialize(default_value, default_value_str.c_str());
-		}
-
+		udt = _udt;
+		index = _index;
+		type = _type;
+		name = _name;
+		offset = _offset;
+		array_size = _array_size;
+		array_stride = _array_stride;
+		default_value = _default_value;
 		metas.from_string(_metas);
-	}
-
-	VariableInfoPrivate::~VariableInfoPrivate()
-	{
-		if (default_value)
-			type->destroy(default_value);
-	}
-
-	bool VariableInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
-	{
-		return metas.get_meta(m, v);
 	}
 
 	EnumItemInfoPrivate::EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
@@ -1120,7 +1082,7 @@ namespace flame
 
 	bool FunctionInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
 	{
-		return metas.get_meta(m, v);
+		return metas.get(m, v);
 	}
 
 	void FunctionInfoPrivate::update_full_name()

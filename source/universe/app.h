@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/window.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/graphics/device.h>

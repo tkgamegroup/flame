@@ -6,35 +6,27 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline Format get_image_format(uint channel, uint byte_per_channel)
+		inline Format get_image_format(uint channel, uint bpp)
 		{
+			if (channel == 0)
+				return Format_R8_UNORM;
 			switch (channel)
 			{
-			case 0:
-				switch (byte_per_channel)
-				{
-				case 1:
-					return Format_R8_UNORM;
-				default:
-					return Format_Undefined;
-
-				}
-				break;
 			case 1:
-				switch (byte_per_channel)
+				switch (bpp)
 				{
-				case 1:
+				case 8:
 					return Format_R8_UNORM;
-				case 2:
+				case 16:
 					return Format_R16_UNORM;
 				default:
 					return Format_Undefined;
 				}
 				break;
 			case 4:
-				switch (byte_per_channel)
+				switch (bpp)
 				{
-				case 1:
+				case 32:
 					return Format_R8G8B8A8_UNORM;
 				default:
 					return Format_Undefined;

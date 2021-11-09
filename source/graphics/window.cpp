@@ -1,3 +1,4 @@
+#include "../foundation/window.h"
 #include "device_private.h"
 #include "swapchain_private.h"
 #include "command_private.h"

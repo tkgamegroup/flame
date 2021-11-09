@@ -2,6 +2,8 @@
 #include "window_project.h"
 #include "window_scene.h"
 
+#include <flame/foundation/system.h>
+
 WindowProject window_project;
 
 WindowProject::FolderTreeNode::FolderTreeNode(const std::filesystem::path& path) :

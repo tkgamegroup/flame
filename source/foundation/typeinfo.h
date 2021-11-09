@@ -36,52 +36,88 @@ namespace flame
 
 	struct TypeInfo
 	{
-		virtual TypeTag get_tag() const = 0;
-		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
-		virtual uint get_hash() const = 0;
-		virtual uint get_size() const = 0;
+		TypeTag tag;
+		// no space, 'unsigned ' will be replace to 'u'
+		std::string name;
+		std::string short_name;
+		uint hash;
+		uint size;
 
-		virtual BasicType get_basic() const = 0;
-		virtual bool get_signed() const = 0;
-		virtual uint get_vec_size() const = 0;
-		virtual uint get_col_size() const = 0;
-		virtual TypeInfoPtr get_pointed_type() const = 0;
+		BasicType basic_type;
+		bool is_signed;
+		uint vec_size;
+		uint col_size;
+		TypeInfoPtr pointed_type;
 
 		virtual void* create(bool create_pointing = true) const = 0;
 		virtual void destroy(void* p, bool destroy_pointing = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual bool compare(void* dst, const void* src) const = 0;
-		virtual void serialize(const void* src, char* dst) const = 0;
-		inline std::string serialize(const void* src) const
-		{
-			char str[256];
-			serialize(src, str);
-			return str;
-		}
-		virtual void unserialize(void* dst, const char* src) const = 0;
+		virtual std::string serialize(const void* p) const = 0;
+		virtual void unserialize(const std::string& str, void* p) const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name, TypeInfoDataBase* = nullptr);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase* = nullptr);
+	};
+
+	struct Metas
+	{
+		std::vector<std::pair<TypeMeta, LightCommonValue>> d;
+
+		inline void from_string(const std::string& str)
+		{
+			auto e_meta = TypeInfo::get(TypeEnumSingle, "flame::TypeMeta");
+			for (auto& i : SUS::split(str, ';'))
+			{
+				auto sp = SUS::split(i, ':');
+				auto& m = d.emplace_back();
+				e_meta->unserialize(sp[0], &m.first);
+				m.second.u = std::stoul(sp[1], 0, 16);;
+			}
+		}
+
+		inline std::string to_string() const
+		{
+			std::string ret;
+			auto e_meta = TypeInfo::get(TypeEnumSingle, "flame::TypeMeta");
+			for (auto& i : d)
+				ret += e_meta->serialize(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+			return ret;
+		}
+
+		inline bool get(TypeMeta m, LightCommonValue* v) const
+		{
+			for (auto& i : d)
+			{
+				if (i.first == m)
+				{
+					if (v)
+						*v = i.second;
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 
 	struct VariableInfo
 	{
-		virtual UdtInfoPtr get_udt() const = 0;
-		virtual uint get_index() const = 0;
-		virtual TypeInfoPtr get_type() const = 0;
-		virtual const char* get_name() const = 0;
-		virtual uint get_offset() const = 0;
-		virtual uint get_array_size() const = 0;
-		virtual uint get_array_stride() const = 0;
-		virtual void* get_default_value() const = 0;
-		virtual bool get_meta(TypeMeta m, LightCommonValue* v) const = 0;
+		UdtInfoPtr udt;
+		uint index;
+		TypeInfoPrivate* type;
+		std::string name;
+		uint offset;
+		uint array_size;
+		uint array_stride;
+		std::string default_value;
+		Metas metas;
 	};
 
 	struct EnumItemInfo
 	{
-		virtual EnumInfoPtr get_enum() const = 0;
-		virtual uint get_index() const = 0;
-		virtual const char* get_name() const = 0;
-		virtual int get_value() const = 0;
+		EnumInfoPtr ei;
+		uint index;
+		std::string name;
+		int value;
 	};
 
 	struct EnumInfo
