@@ -23,7 +23,7 @@ namespace flame
 		void set_extent(const vec2& ext) override;
 
 		const char* get_material_name() const override { return material_name.c_str(); }
-		void set_material_name(const std::string& name);
+		void set_material_name(std::string_view name);
 		void set_material_name(const char* name) override { set_material_name(std::string(name)); }
 
 		void draw(sRendererPtr s_renderer, bool, bool) override;

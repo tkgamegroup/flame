@@ -52,7 +52,7 @@ namespace flame
 		virtual void set_pos(const ivec2& pos) = 0;
 		virtual void set_size(const uvec2& size) = 0;
 		virtual ivec2 global_to_local(const ivec2& p) = 0;
-		virtual void set_title(const std::string& title) = 0;
+		virtual void set_title(std::string_view title) = 0;
 		virtual void set_cursor(CursorType type) = 0;
 
 		virtual void* add_key_down_listener(const std::function<void(KeyboardKey)>& lis) = 0;
@@ -84,6 +84,6 @@ namespace flame
 
 		void* userdata = nullptr;
 
-		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(const std::string& title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent = nullptr);
+		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent = nullptr);
 	};
 }

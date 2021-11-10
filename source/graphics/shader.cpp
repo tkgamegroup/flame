@@ -389,7 +389,7 @@ namespace flame
 			return ret;
 		}
 
-		static std::string add_lineno_to_temp(const std::string& temp)
+		static std::string add_lineno_to_temp(std::string_view temp)
 		{
 			auto lines = SUS::split(temp, '\n');
 			auto ret = std::string();
@@ -489,7 +489,7 @@ namespace flame
 			ret->name = b.name.c_str();
 		}
 
-		int DescriptorSetLayoutPrivate::find_binding(const std::string& name) const
+		int DescriptorSetLayoutPrivate::find_binding(std::string_view name) const
 		{
 			for (auto i = 0; i < bindings.size(); i++)
 			{
@@ -1102,7 +1102,7 @@ namespace flame
 		}
 
 		ShaderPrivate::ShaderPrivate(DevicePtr _device, const std::filesystem::path& filename, const std::vector<std::string>& defines,
-			const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content) :
+			const std::vector<std::pair<std::string, std::string>>& substitutes, std::string_view spv_content) :
 			device(_device),
 			filename(filename),
 			defines(defines),
@@ -1283,7 +1283,7 @@ namespace flame
 			return nullptr;
 		}
 
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes)
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, std::string_view defines, std::string_view substitutes)
 		{
 			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes));
 		}

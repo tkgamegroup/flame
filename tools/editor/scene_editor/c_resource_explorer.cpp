@@ -231,7 +231,7 @@ cResourceExplorer::~cResourceExplorer()
 	scene_editor.resource_explorer = nullptr;
 }
 
-Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
+Entity* cResourceExplorer::create_listitem(std::wstring_view title, uint img_id)
 {
 	auto& ui = scene_editor.window->ui;
 	ui.push_style(FrameColorNormal, common(cvec4(0)));

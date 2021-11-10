@@ -19,7 +19,7 @@ namespace flame
 
 		void* listener = nullptr;
 
-		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, const void* default_value);
+		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, std::string_view name, uint offset, const void* default_value);
 		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfo* vi);
 		~bpSlotPrivate();
 
@@ -68,7 +68,7 @@ namespace flame
 		std::vector<bpNodePrivate*> update_list;
 		bool need_rebuild_update_list = true;
 
-		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
+		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, std::string_view id, bpNodeType type, std::string_view type_parameter, bpObjectRule object_rule);
 		~bpNodePrivate();
 
 		bpScenePtr get_scene() const override { return scene; }
@@ -77,7 +77,7 @@ namespace flame
 		Guid get_guid() const override { return guid; }
 		void set_guid(const Guid& _guid) override { guid = _guid; }
 		const char* get_id() const override { return id.c_str(); }
-		bool set_id(const std::string& id);
+		bool set_id(std::string_view id);
 		bool set_id(const char* id) override { return set_id(std::string(id)); }
 		vec2 get_pos() const override { return pos; }
 		void set_pos(const vec2& _pos) override { pos = _pos; }
@@ -89,19 +89,19 @@ namespace flame
 
 		uint get_inputs_count() const override { return inputs.size(); }
 		bpSlotPtr get_input(uint idx) const override { return inputs[idx].get(); }
-		bpSlotPrivate* find_input(const std::string& name) const;
+		bpSlotPrivate* find_input(std::string_view name) const;
 		bpSlotPtr find_input(const char* name) const override { return find_input(std::string(name)); }
 		uint get_outputs_count() const override { return outputs.size(); }
 		bpSlotPtr get_output(uint idx) const override { return outputs[idx].get(); }
-		bpSlotPrivate* find_output(const std::string& name) const;
+		bpSlotPrivate* find_output(std::string_view name) const;
 		bpSlotPtr find_output(const char* name) const override { return find_output(std::string(name)); }
 
 		uint get_children_count() const override { return children.size(); }
 		bpNodePtr get_child(uint idx) const override { return children[idx].get(); }
-		bpNodePrivate* add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
+		bpNodePrivate* add_child(std::string_view id, bpNodeType type, std::string_view type_parameter, bpObjectRule object_rule);
 		bpNodePtr add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override { return add_child(std::string(id), type, std::string(type_parameter), object_rule); }
 		void remove_child(bpNodePtr n) override;
-		bpNodePrivate* find_child(const std::string& name) const;
+		bpNodePrivate* find_child(std::string_view name) const;
 		bpNodePtr find_child(const char* name) const override { return find_child(std::string(name)); }
 		bpNodePtr find_child(const Guid& guid) const override;
 

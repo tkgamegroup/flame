@@ -28,7 +28,7 @@ namespace flame
 				std::swap(default_value, oth.default_value);
 			}
 
-			Attribute(ReflectedType* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			Attribute(ReflectedType* ct, std::string_view name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
 				name(name),
 				get_type(get_type),
 				set_type(set_type),
@@ -135,7 +135,7 @@ namespace flame
 			return a2f<void*(*)(void*)>(addr)(nullptr);
 		}
 
-		Attribute* find_attribute(const std::string& name)
+		Attribute* find_attribute(std::string_view name)
 		{
 			auto it = attributes.find(name);
 			if (it == attributes.end())
@@ -146,7 +146,7 @@ namespace flame
 
 	static std::map<std::string, ReflectedType> component_types;
 
-	ReflectedType* find_component_type(const std::string& name)
+	ReflectedType* find_component_type(std::string_view name)
 	{
 		auto it = component_types.find(name);
 		if (it == component_types.end())
@@ -154,7 +154,7 @@ namespace flame
 		return &it->second;
 	}
 
-	ReflectedType* find_component_type(const std::string& udt_name, std::string* name)
+	ReflectedType* find_component_type(std::string_view udt_name, std::string* name)
 	{
 		for (auto& t : component_types)
 		{
@@ -282,7 +282,7 @@ namespace flame
 		return nullptr;
 	}
 
-	Component* EntityPrivate::find_component(const std::string& _name) const
+	Component* EntityPrivate::find_component(std::string_view _name) const
 	{
 		Component* ret = nullptr;
 		auto name = _name;
@@ -501,7 +501,7 @@ namespace flame
 		children.clear();
 	}
 
-	EntityPrivate* EntityPrivate::find_child(const std::string& name) const
+	EntityPrivate* EntityPrivate::find_child(std::string_view name) const
 	{
 		for (auto& c : children)
 		{
@@ -666,7 +666,7 @@ namespace flame
 		const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
 	{
 		auto ti_stateflags = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-		auto set_attribute = [&](void* o, ReflectedType* ot, const std::string& vname, const std::string& value, bool is_state_rule) {
+		auto set_attribute = [&](void* o, ReflectedType* ot, std::string_view vname, std::string_view value, bool is_state_rule) {
 			auto att = ot->find_attribute(vname);
 			if (!att)
 				return false;
@@ -725,7 +725,7 @@ namespace flame
 			}
 			return true;
 		};
-		auto set_content = [&](Component* c, ReflectedType* ct, const std::string& value) {
+		auto set_content = [&](Component* c, ReflectedType* ct, std::string_view value) {
 			auto att = ct->find_attribute("content");
 			if (att)
 			{
@@ -1038,7 +1038,7 @@ namespace flame
 			auto put_attributes = [&](pugi::xml_node n) {
 				for (auto& a : ct->attributes)
 				{
-					auto find_rule = [&](const std::string& name)->StateRule* {
+					auto find_rule = [&](std::string_view name)->StateRule* {
 						for (auto& r : e_src->state_rules)
 						{
 							if (r->vname == name)

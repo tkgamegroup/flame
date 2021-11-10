@@ -373,10 +373,8 @@ namespace flame
 		FileTypeModel
 	};
 
-	inline bool is_text_file(const std::wstring& _ext)
+	inline bool is_text_file(const std::filesystem::path& ext)
 	{
-		auto ext = _ext;
-		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
 		if (ext == L".txt" ||
 			ext == L".h" || ext == L".c" || ext == L".cpp" || ext == L".hpp" || ext == L".cxx" || ext == L".inl" ||
 			ext == L".glsl" || ext == L".vert" || ext == L".tesc" || ext == L".tese" || ext == L".geom" || ext == L".frag" || ext == L".hlsl" ||
@@ -387,26 +385,22 @@ namespace flame
 		return false;
 	}
 
-	inline bool is_image_file(const std::wstring& _ext)
+	inline bool is_image_file(const std::filesystem::path& ext)
 	{
-		auto ext = _ext;
-		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
 		if (ext == L".bmp" || ext == L".jpg" || ext == L".jpeg" || ext == L".png" || ext == L".gif" ||
 			ext == L".tga" || ext == L".dds" || ext == L".ktx")
 			return true;
 		return false;
 	}
 
-	inline bool is_model_file(const std::wstring& _ext)
+	inline bool is_model_file(const std::filesystem::path& ext)
 	{
-		auto ext = _ext;
-		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
 		if (ext == L".obj" || ext == L".dae")
 			return true;
 		return false;
 	}
 
-	inline FileType get_file_type(const std::wstring& ext)
+	inline FileType get_file_type(const std::filesystem::path& ext)
 	{
 		if (is_text_file(ext))
 			return FileTypeText;
@@ -502,10 +496,10 @@ namespace flame
 		f.write((char*)&v, sizeof(uint));
 	}
 
-	inline void write_s(std::ofstream& f, const std::string& v)
+	inline void write_s(std::ofstream& f, std::string_view v)
 	{
 		write_u(f, v.size());
-		f.write(v.c_str(), v.size());
+		f.write(v.data(), v.size());
 	}
 
 	template <class T>
@@ -537,7 +531,7 @@ namespace flame
 	{
 		std::vector<INI_Section> sections;
 
-		const std::vector<INI_Entry>& get_section_entries(const std::string& name)
+		const std::vector<INI_Entry>& get_section_entries(std::string_view name)
 		{
 			for (auto& s : sections)
 			{

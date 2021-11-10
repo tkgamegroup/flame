@@ -7,7 +7,7 @@
 
 std::list<Window*> windows;
 
-Window::Window(const std::string& name) :
+Window::Window(std::string_view name) :
 	name(name)
 {
 	windows.push_back(this);

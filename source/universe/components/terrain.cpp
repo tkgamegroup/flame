@@ -37,14 +37,14 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_height_map(const std::string& name)
+	void cTerrainPrivate::set_height_map(std::string_view name)
 	{
 		if (height_map_name == name)
 			return;
 		height_map_name = name;
 	}
 
-	void cTerrainPrivate::set_material_name(const std::string& name)
+	void cTerrainPrivate::set_material_name(std::string_view name)
 	{
 		if (material_name == name)
 			return;

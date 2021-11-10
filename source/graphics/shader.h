@@ -61,7 +61,7 @@ namespace flame
 
 			virtual const wchar_t* get_filename() const = 0;
 
-			inline static std::vector<std::string> format_defines(const std::string& defines)
+			inline static std::vector<std::string> format_defines(std::string_view defines)
 			{
 				std::vector<std::string> ret;
 				auto sp = SUS::split(defines);
@@ -74,7 +74,7 @@ namespace flame
 				return ret;
 			}
 
-			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& substitutes)
+			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(std::string_view substitutes)
 			{
 				std::vector<std::pair<std::string, std::string>> ret;
 				auto sp = SUS::split(substitutes);

@@ -196,7 +196,7 @@ struct BPEditor
 
 	bpNode* add_node(const NodeDesc& desc);
 	void remove_nodes(const std::vector<bpNode*> nodes);
-	void set_node_id(bpNode* n, const std::string& id);
+	void set_node_id(bpNode* n, std::string_view id);
 	void set_nodes_pos(const std::vector<bpNode*>& nodes, const std::vector<vec2>& pos);
 	void set_links(const std::vector<std::pair<bpSlot*, bpSlot*>>& links);
 	void set_data(bpSlot* input, void* data, bool from_editor);
@@ -207,7 +207,7 @@ struct BPEditor
 	bool generate_graph_image();
 	bool auto_set_layout();
 
-	bpNode* _add_node(bpNodeType node_type, const std::string& id, const std::string& type, const vec2& pos);
+	bpNode* _add_node(bpNodeType node_type, std::string_view id, std::string_view type, const vec2& pos);
 	void _remove_nodes(const std::vector<bpNode*>& nodes);
 	std::vector<bpNode*> _duplicate_nodes(const std::vector<bpNode*>& models);
 	void _set_link(bpSlot* in, bpSlot* out);

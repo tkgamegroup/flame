@@ -10,7 +10,7 @@ struct Window
 
 	Entity* e = nullptr;
 
-	Window(const std::string& name);
+	Window(std::string_view name);
 
 	void open();
 	void close();

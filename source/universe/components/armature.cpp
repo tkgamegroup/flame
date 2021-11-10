@@ -34,7 +34,7 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cArmaturePrivate::set_animations(const std::wstring& _animation_names)
+	void cArmaturePrivate::set_animations(std::wstring_view _animation_names)
 	{
 		if (animation_names == _animation_names)
 			return;
@@ -147,7 +147,7 @@ namespace flame
 				for (auto i = 0; i < chs; i++)
 				{
 					auto ch = animation->get_channel(i);
-					auto find_bone = [&](const std::string& name) {
+					auto find_bone = [&](std::string_view name) {
 						for (auto i = 0; i < bones.size(); i++)
 						{
 							if (bones[i].name == name)

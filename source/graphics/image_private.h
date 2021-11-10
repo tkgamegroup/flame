@@ -157,7 +157,7 @@ namespace flame
 
 			uint get_tiles_count() const override { return tiles.size(); };
 			void get_tile(uint id, TileInfo* dst) const override;
-			int find_tile(const std::string& name) const;
+			int find_tile(std::string_view name) const;
 			bool find_tile(const char* name, TileInfo* dst) const override;
 
 			ImagePtr get_image() const override { return image; }

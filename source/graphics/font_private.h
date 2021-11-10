@@ -64,7 +64,7 @@ namespace flame
 
 			ImageViewPtr get_view() const override { return view; }
 
-			static FontAtlasPtr get(DevicePtr device, const std::wstring& res);
+			static FontAtlasPtr get(DevicePtr device, std::wstring_view res);
 		};
 	}
 }

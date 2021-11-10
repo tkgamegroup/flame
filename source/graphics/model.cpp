@@ -368,7 +368,7 @@ namespace flame
 					auto ai_bone = ai_mesh->mBones[j];
 
 					auto name = std::string(ai_bone->mName.C_Str());
-					auto find_bone = [&](const std::string& name) {
+					auto find_bone = [&](std::string_view name) {
 						for (auto i = 0; i < bones.size(); i++)
 						{
 							if (bones[i].first == name)

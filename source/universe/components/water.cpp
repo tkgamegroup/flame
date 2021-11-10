@@ -17,7 +17,7 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cWaterPrivate::set_material_name(const std::string& name)
+	void cWaterPrivate::set_material_name(std::string_view name)
 	{
 		if (material_name == name)
 			return;

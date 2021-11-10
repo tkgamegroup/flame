@@ -47,7 +47,7 @@ namespace flame
 
 			uint get_bindings_count() const override { return bindings.size(); }
 			void get_binding(uint binding, DescriptorBindingInfo* ret) const override;
-			int find_binding(const std::string& name) const;
+			int find_binding(std::string_view name) const;
 			int find_binding(const char* name) const override { return find_binding(std::string(name)); }
 
 			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
@@ -129,14 +129,14 @@ namespace flame
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, const std::string& spv_content);
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, std::string_view spv_content);
 			~ShaderPrivate();
 
 			void release() override { delete this; }
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, std::string_view defines = "", std::string_view substitutes = "");
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
 		};
 

@@ -26,7 +26,7 @@ int main(int argc, char** args)
 	auto is_internal = ppath.string().starts_with(flame_path.string());
 
 	std::string class_name;
-	auto get_class_name = [&](const std::string& n) {
+	auto get_class_name = [&](std::string_view n) {
 		class_name = n;
 		class_name[0] = std::toupper(class_name[0]);
 		for (auto i = 0; i < class_name.size(); i++)
@@ -142,7 +142,7 @@ int main(int argc, char** args)
 
 			Block() {}
 
-			Block(const std::string& line) :
+			Block(std::string_view line) :
 				text(line)
 			{
 			}
@@ -249,7 +249,7 @@ int main(int argc, char** args)
 				return ret;
 			}
 
-			void output_file(const std::string& fn)
+			void output_file(std::string_view fn)
 			{
 				auto text = output();
 				text.pop_back();
@@ -287,7 +287,7 @@ int main(int argc, char** args)
 			printf("public header: %s\nprivate header: %s\nsource: %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
 		}
 
-		auto get_indent = [](const std::string& str) {
+		auto get_indent = [](std::string_view str) {
 			std::string ret;
 			for (auto ch : str)
 			{
@@ -298,7 +298,7 @@ int main(int argc, char** args)
 			return ret;
 		};
 
-		auto get_file_lines = [](const std::string& fn) {
+		auto get_file_lines = [](std::string_view fn) {
 			std::ifstream file(fn);
 			std::vector<std::string> lines;
 			while (!file.eof())
@@ -312,7 +312,7 @@ int main(int argc, char** args)
 			return lines;
 		};
 
-		auto get_parms = [](const std::string& value) {
+		auto get_parms = [](std::string_view value) {
 			std::pair<std::string, std::string> ret;
 			auto sp = SUS::split(value, ',');
 			for (auto& p : sp)
@@ -333,7 +333,7 @@ int main(int argc, char** args)
 			return ret;
 		};
 
-		auto get_type2 = [](const std::string& type)->std::string {
+		auto get_type2 = [](std::string_view type)->std::string {
 			if (type == "std::string")
 				return "const char*";
 			if (type == "std::wstring")

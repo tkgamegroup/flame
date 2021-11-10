@@ -324,7 +324,7 @@ struct MyApp : App
 	void process_player_left(int index);
 	void process_player_ready(int index);
 	void process_game_start();
-	void process_report_board(int index, const std::string& d);
+	void process_report_board(int index, std::string_view d);
 	void process_attack(int index, int value);
 	void process_dead(int index, int rank);
 	void process_gameover();
@@ -850,7 +850,7 @@ void MyApp::process_game_start()
 	}, Capture());
 }
 
-void MyApp::process_report_board(int index, const std::string& d)
+void MyApp::process_report_board(int index, std::string_view d)
 {
 	struct Capturing
 	{

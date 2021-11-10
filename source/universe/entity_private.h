@@ -92,7 +92,7 @@ namespace flame
 			auto ret = components[idx].get();
 			return ret->type_hash == T::type_hash ? (T*)ret : nullptr; 
 		}
-		Component* find_component(const std::string& name) const;
+		Component* find_component(std::string_view name) const;
 		Component* find_component(const char* name) const override { return find_component(std::string(name)); }
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const override;
@@ -106,7 +106,7 @@ namespace flame
 		void on_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPtr e, bool destroy = true) override;
 		void remove_all_children(bool destroy = true) override;
-		EntityPrivate* find_child(const std::string& name) const;
+		EntityPrivate* find_child(std::string_view name) const;
 		EntityPtr find_child(const char* name) const override { return find_child(std::string(name)); }
 
 		void on_entered_world(WorldPrivate* world);

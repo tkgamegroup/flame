@@ -21,7 +21,7 @@ namespace flame
 
 		const wchar_t* get_text() const override { return text.c_str(); }
 		uint get_text_length() const override { return text.size(); }
-		void set_text(const std::wstring& text);
+		void set_text(std::wstring_view text);
 		void set_text(const wchar_t* text) override { set_text(std::wstring(text)); }
 
 		uint get_font_size() const override { return font_size; }

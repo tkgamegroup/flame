@@ -8,7 +8,7 @@
 
 namespace flame
 {
-	void cTextPrivate::set_text(const std::wstring& _text)
+	void cTextPrivate::set_text(std::wstring_view _text)
 	{
 		text = _text;
 		mark_text_changed();

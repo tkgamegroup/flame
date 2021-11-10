@@ -19,7 +19,7 @@ namespace flame
 		void release() override { delete this; }
 
 		System* get_system(uint type_hash) const override;
-		System* find_system(const std::string& name) const;
+		System* find_system(std::string_view name) const;
 		System* find_system(const char* name) const override { return find_system(std::string(name)); }
 		void add_system(System* s) override;
 		void remove_system(System* s) override;

@@ -852,7 +852,7 @@ namespace flame
 		return pls[u];
 	}
 
-	bool parse_define(const std::vector<std::string>& defines, const std::string& n, std::string& v)
+	bool parse_define(const std::vector<std::string>& defines, std::string_view n, std::string& v)
 	{
 		for (auto& d : defines)
 		{

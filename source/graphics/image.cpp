@@ -844,7 +844,7 @@ namespace flame
 			dst->uv = src.uv;
 		}
 
-		int ImageAtlasPrivate::find_tile(const std::string& name) const
+		int ImageAtlasPrivate::find_tile(std::string_view name) const
 		{
 			for (auto id = 0; id < tiles.size(); id++)
 			{

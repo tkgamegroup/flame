@@ -1,4 +1,4 @@
-#include "../xml.h"
+#include <flame/xml.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/system.h>
 
@@ -31,7 +31,7 @@ struct TagAndName
 	TypeTag tag;
 	std::string name;
 
-	TagAndName(TypeTag t, const std::string& n) :
+	TagAndName(TypeTag t, std::string_view n) :
 		tag(t),
 		name(n)
 	{
@@ -170,13 +170,11 @@ process:
 		return 0;
 	}
 
-	wchar_t app_path[260];
-	get_app_path(app_path, false);
-	auto foundation_path = std::filesystem::path(app_path) / L"flame_foundation.dll";
+	auto foundation_path = get_app_path(false) / L"flame_foundation.dll";
 	if (target_path != foundation_path)
 	{
 		foundation_path.replace_extension(L".typeinfo");
-		load_typeinfo(foundation_path.c_str());
+		tidb.load_typeinfo(foundation_path);
 	}
 
 	auto pdb_path = target_path;
@@ -326,10 +324,10 @@ process:
 	wchar_t* pwname;
 
 	auto library = LoadLibraryW(target_path.c_str());
-	auto db = TypeInfoDataBase::create();
+	TypeInfoDataBase db;
 
 	auto new_enum = [&](const std::string& name, IDiaSymbol* s_type) {
-		if (find_enum(name.c_str(), db))
+		if (db.find_enum(name))
 			return;
 
 		std::vector<std::pair<std::string, int>> items;
@@ -373,7 +371,8 @@ process:
 				break;
 		}
 
-		auto e = add_enum(name.c_str(), db);
+		auto& e = db.enums.emplace(name, EnumInfo()).first->second;
+		e.name = name;
 		for (auto& i : items)
 			e->add_item(i.first.c_str(), i.second);
 	};
@@ -395,16 +394,6 @@ process:
 		}
 	}
 
-	std::vector<std::string> function_types;
-	auto add_function_type = [&](const std::string& n) {
-		for (auto& t : function_types)
-		{
-			if (t == n)
-				return;
-		}
-		function_types.push_back(n);
-	};
-
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
 	IDiaSymbol* s_udt;
@@ -417,11 +406,11 @@ process:
 		{
 			if (ur.pass(udt_name))
 			{
-				if (!find_udt(udt_name.c_str(), db))
+				if (!db.find_udt(udt_name))
 				{
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
-					std::string base_name;
+					std::string base_class_name;
 
 					IDiaEnumSymbols* s_base_classes;
 					IDiaSymbol* s_base_class;
@@ -429,10 +418,10 @@ process:
 					if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
 					{
 						s_base_class->get_name(&pwname);
-						base_name = w2s(pwname);
+						base_class_name = w2s(pwname);
 					}
 
-					auto u = add_udt(udt_name.c_str(), udt_size, base_name.c_str(), db);
+					auto u = add_udt(udt_name.c_str(), udt_size, base_class_name.c_str(), db);
 
 					DWORD ctor = 0;
 					DWORD dtor = 0;
@@ -501,8 +490,6 @@ process:
 								s_parameters->Release();
 								s_function_type->Release();
 
-								add_function_type(fi->get_full_name());
-
 								if (name == "ctor" && fi->get_parameters_count() == 0)
 									ctor = rva;
 								else if (name == "dtor")
@@ -569,103 +556,11 @@ process:
 	}
 	s_udts->Release();
 
-	save_typeinfo(typeinfo_path.c_str(), db);
+	db.save_typeinfo(typeinfo_path);
 
 	FreeLibrary(library);
-	db->release();
 
 	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
-
-	// compile callers
-	{
-		auto cpp_path = typeinfo_path;
-		cpp_path.replace_filename(typeinfo_path.filename().stem().wstring() + L"_callers");
-		cpp_path.replace_extension(L".cpp");
-		std::ofstream cpp(cpp_path);
-		cpp << "typedef void		V;\n";
-		cpp << "typedef void*		P;\n";
-		cpp << "typedef int			I;\n";
-		cpp << "typedef bool		B;\n";
-		cpp << "typedef char		C;\n";
-		cpp << "typedef wchar_t		W;\n";
-		cpp << "typedef long long	L;\n";
-		cpp << "typedef float		F;\n";
-		cpp << "typedef struct { char a; char b; }						C2;\n";
-		cpp << "typedef struct { char a; char b; char c; }				C3;\n";
-		cpp << "typedef struct { char a; char b; char c; char d; }		C4;\n";
-		cpp << "typedef struct { int a; int b; }						I2;\n";
-		cpp << "typedef struct { int a; int b; int c; }					I3;\n";
-		cpp << "typedef struct { int a; int b; int c; int d; }			I4;\n";
-		cpp << "typedef struct { float a; float b; }					F2;\n";
-		cpp << "typedef struct { float a; float b; float c; }			F3;\n";
-		cpp << "typedef struct { float a; float b; float c; float d; }	F4;\n";
-		cpp << "typedef struct { F3 a; F3 b; }							F6;\n";
-		cpp << "typedef struct { F3 a; F3 b; F3 c; }					F9;\n";
-		cpp << "typedef struct { F4 a; F4 b; F4 c; F4 d; }				F16;\n";
-		cpp << "typedef struct { F4 a; F4 b; F4 c; F4 d; F4 e; F4 f; }	F24;\n";
-		cpp << "typedef struct { }										dummy;\n";
-		cpp << "template <class F> F a2f(void* p) { union{ void*p; F f; } cvt; cvt.p = p; return cvt.f; }\n";
-		cpp << "\n";
-		std::sort(function_types.begin(), function_types.end());
-		for (auto& t : function_types)
-		{
-			auto sp = SUS::split(t, '_');
-
-			auto comma = false;
-			cpp << "void " << t << "(void* address, void* obj, void* ret, void** ps)\n";
-			cpp << "{\n";
-
-			// function typedef
-			cpp << "\ttypedef " << sp[1];
-			if (sp[0] == "m")
-				cpp << "(dummy::*func)(";
-			else
-				cpp << "(*func)(";
-			for (auto i = 2; i < sp.size(); i++)
-			{
-				if (comma)
-					cpp << ", ";
-				cpp << sp[i];
-				comma = true;
-			}
-			cpp << ");\n";
-
-			// function call
-			cpp << "\t";
-			if (sp[1] != "V")
-				cpp << "*(" << sp[1] << "*)ret = ";
-			comma = false;
-			if (sp[0] == "m")
-				cpp << "(*(dummy*)obj.*a2f<func>(address))(";
-			else
-				cpp << "((func)address)(";
-			for (auto i = 2; i < sp.size(); i++)
-			{
-				if (comma)
-					cpp << ", ";
-				cpp << "*(" << sp[i] << "*)ps[" << std::to_string(i - 2) << "]";
-				comma = true;
-			}
-			cpp << ");\n";
-
-			cpp << "}\n\n";
-		}
-		cpp << "extern \"C\" __declspec(dllexport) void get_callers(void(*callback)(const char* name, void(*func)(void*, void*, void*, void**)))\n{\n";
-		for (auto& t : function_types)
-			cpp << "\tcallback(\"" << t << "\", " << t << ");\n";
-		cpp << "}\n";
-		cpp.close();
-
-		std::filesystem::current_path(cpp_path.parent_path());
-
-		std::wstring compile_command(L"\"");
-		compile_command += s2w(VS_LOCATION);
-		compile_command += L"/VC/Auxiliary/Build/vcvars64.bat\" & cl -LD -MD -EHsc -Zi ";
-		compile_command += cpp_path.wstring();
-		std::string output;
-		output.reserve(1024 * 1024);
-		exec(nullptr, (wchar_t*)compile_command.c_str(), output.data());
-	}
 
 	return 0;
 }

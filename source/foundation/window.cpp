@@ -119,7 +119,7 @@ namespace flame
 		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 
-	NativeWindowPrivate::NativeWindowPrivate(const std::string& _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent)
+	NativeWindowPrivate::NativeWindowPrivate(std::string_view _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -255,7 +255,7 @@ namespace flame
 		return ivec2(pt.x, pt.y);
 	}
 
-	void NativeWindowPrivate::set_title(const std::string& _title)
+	void NativeWindowPrivate::set_title(std::string_view _title)
 	{
 		title = _title;
 		SetWindowTextA(hWnd, title.c_str());
@@ -429,7 +429,7 @@ namespace flame
 		});
 	}
 
-	NativeWindow* NativeWindow::create(const std::string& title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent)
+	NativeWindow* NativeWindow::create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent)
 	{
 		auto ret = new NativeWindowPrivate(title, size, style, (NativeWindowPrivate*)parent);
 		windows.emplace_back(ret);

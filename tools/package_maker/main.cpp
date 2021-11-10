@@ -22,7 +22,7 @@ int main(int argc, char **args)
 		config = "relwithdebinfo";
 	std::transform(config.begin(), config.end(), config.begin(), ::tolower);
 
-	auto replace_config_str = [](const std::string& s) {
+	auto replace_config_str = [](std::string_view s) {
 		static auto reg = std::regex(R"(\{c\})");
 		return std::regex_replace(s, reg, config);
 	};
@@ -40,7 +40,7 @@ int main(int argc, char **args)
 		items.push_back(replace_config_str(e.value));
 
 	auto copied_item_count = 0;
-	auto copy_item = [&](const std::filesystem::path& b, const std::string& i) {
+	auto copy_item = [&](const std::filesystem::path& b, std::string_view i) {
 		auto s = b / i;
 		auto d = dst / i;
 

@@ -36,10 +36,10 @@ namespace flame
 		void set_tess_levels(uint l) override;
 
 		const char* get_height_map() const override { return height_map_name.c_str(); }
-		void set_height_map(const std::string& name);
+		void set_height_map(std::string_view name);
 		void set_height_map(const char* name) override { set_height_map(std::string(name)); }
 		const char* get_material_name() const override { return material_name.c_str(); }
-		void set_material_name(const std::string& name);
+		void set_material_name(std::string_view name);
 		void set_material_name(const char* name) override { set_material_name(std::string(name)); }
 
 		ShadingFlags get_shading_flags() const override { return shading_flags; }

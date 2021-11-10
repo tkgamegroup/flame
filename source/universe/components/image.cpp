@@ -16,7 +16,7 @@ namespace flame
 			entity->component_data_changed(this, S<"img"_h>);
 	}
 
-	void cImagePrivate::set_tile(const std::string& name)
+	void cImagePrivate::set_tile(std::string_view name)
 	{
 		if (tile_name == name)
 			return;

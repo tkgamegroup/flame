@@ -215,7 +215,7 @@ struct TagView
 		search(L"");
 	}
 
-	void search(const std::wstring& name)
+	void search(std::wstring_view name)
 	{
 		tags.clear();
 		e_list->remove_all_children();

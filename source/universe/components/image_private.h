@@ -28,7 +28,7 @@ namespace flame
 		void set_img(const std::filesystem::path& src);
 		void set_img(const wchar_t* src) override { set_img(std::filesystem::path(src)); }
 		const char* get_tile() const override { return tile_name.c_str(); }
-		void set_tile(const std::string& name);
+		void set_tile(std::string_view name);
 		void set_tile(const char* name) override { set_tile(std::string(name)); }
 
 		vec4 get_uv() const override { return uvs; }

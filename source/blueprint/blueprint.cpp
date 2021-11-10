@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, const void* dv) :
+	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, std::string_view name, uint offset, const void* dv) :
 		node(node),
 		io(io),
 		index(index),
@@ -114,7 +114,7 @@ namespace flame
 		return (T*)next_var(p, sizeof(T));
 	}
 
-	bpNodePrivate::bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule) :
+	bpNodePrivate::bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, std::string_view id, bpNodeType type, std::string_view type_parameter, bpObjectRule object_rule) :
 		scene(scene),
 		parent(parent),
 		id(id),
@@ -407,7 +407,7 @@ namespace flame
 		}
 	}
 
-	bool bpNodePrivate::set_id(const std::string& _id)
+	bool bpNodePrivate::set_id(std::string_view _id)
 	{
 		if (_id.empty())
 			return false;
@@ -419,7 +419,7 @@ namespace flame
 		return true;
 	}
 
-	bpSlotPrivate* bpNodePrivate::find_input(const std::string& name) const
+	bpSlotPrivate* bpNodePrivate::find_input(std::string_view name) const
 	{
 		for (auto& in : inputs)
 		{
@@ -429,7 +429,7 @@ namespace flame
 		return nullptr;
 	}
 
-	bpSlotPrivate* bpNodePrivate::find_output(const std::string& name) const
+	bpSlotPrivate* bpNodePrivate::find_output(std::string_view name) const
 	{
 		for (auto& out : outputs)
 		{
@@ -493,7 +493,7 @@ namespace flame
 		return true;
 	}
 
-	bpNodePrivate* bpNodePrivate::add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule)
+	bpNodePrivate* bpNodePrivate::add_child(std::string_view id, bpNodeType type, std::string_view type_parameter, bpObjectRule object_rule)
 	{
 		auto _id = id;
 		if (!check_or_create_id(this, _id))
@@ -544,7 +544,7 @@ namespace flame
 		}
 	}
 
-	bpNodePrivate* bpNodePrivate::find_child(const std::string& name) const
+	bpNodePrivate* bpNodePrivate::find_child(std::string_view name) const
 	{
 		for (auto& n : children)
 		{

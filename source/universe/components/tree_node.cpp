@@ -7,7 +7,7 @@
 
 namespace flame
 {
-	void cTreeNodePrivate::set_title(const std::wstring& _title)
+	void cTreeNodePrivate::set_title(std::wstring_view _title)
 	{
 		title = _title;
 		if (load_finished)

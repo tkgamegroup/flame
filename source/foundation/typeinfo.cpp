@@ -4,1440 +4,197 @@
 
 namespace flame
 {
-	TypeInfoDataBasePrivate tidb;
+	TypeInfoDataBase tidb;
 
-	struct TypeInfoPrivate_Pod : TypeInfoPrivate
-	{
-		TypeInfoPrivate_Pod(TypeTag tag, const std::string& base_name, uint size) :
-			TypeInfoPrivate(tag, base_name, size)
-		{
-		}
-
-		void* create(bool) const override { return malloc(size); }
-		void destroy(void* p, bool) const override { free(p); }
-		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
-		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
-		std::string serialize(const void* p) const override { return ""; }
-		void unserialize(const std::string& str, void* dst) const override {}
-	};
-
-	struct TypeInfoPrivate_EnumSingle : TypeInfoPrivate_Pod
-	{
-		EnumInfoPrivate* ei = nullptr;
-
-		TypeInfoPrivate_EnumSingle(const std::string& base_name) :
-			TypeInfoPrivate_Pod(TypeEnumSingle, base_name, sizeof(int))
-		{
-			short_name = "I";
-			ei = find_enum(name);
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return ei->find_item(*(int*)p)->name;
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(int*)dst = ei->find_item(str)->value;
-		}
-	};
-
-	struct TypeInfoPrivate_EnumMulti : TypeInfoPrivate_Pod
-	{
-		EnumInfoPrivate* ei = nullptr;
-
-		TypeInfoPrivate_EnumMulti(const std::string& base_name) :
-			TypeInfoPrivate_Pod(TypeEnumMulti, base_name, sizeof(int))
-		{
-			short_name = "I";
-			ei = find_enum(name);
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			std::string ret;
-			auto v = *(int*)p;
-			for (auto i = 0; i < ei->items.size(); i++)
-			{
-				if ((v & 1) == 1)
-				{
-					if (i > 0)
-						ret += '|';
-					ret += ei->find_item(1 << i)->name;
-				}
-				v >>= 1;
-			}
-			return ret;
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			auto v = 0;
-			auto sp = SUS::split(str, '|');
-			for (auto& t : sp)
-				v |= ei->find_item(t)->value;
-			*(int*)dst = v;
-		}
-	};
-
-	struct TypeInfoPrivate_void : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_void() :
-			TypeInfoPrivate_Pod(TypeData, "void", 0)
-		{
-			basic_type = VoidType;
-		}
-	};
-
-	struct TypeInfoPrivate_bool : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_bool() :
-			TypeInfoPrivate_Pod(TypeData, "bool", sizeof(bool))
-		{
-			basic_type = BooleanType;
-			short_name = "B";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(bool*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			if (str == "false")
-				*(bool*)dst = false;
-			else if (str == "true")
-				*(bool*)dst = true;
-			else
-				*(bool*)dst = sto<int>(str) != 0;
-		}
-	};
-
-	struct TypeInfoPrivate_char : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_char() :
-			TypeInfoPrivate_Pod(TypeData, "char", sizeof(char))
-		{
-			basic_type = CharType;
-			short_name = "C";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(char*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(char*)dst = sto<char>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uchar : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uchar() :
-			TypeInfoPrivate_Pod(TypeData, "uchar", sizeof(uchar))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			short_name = "C";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uchar*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uchar*)dst = sto<uchar>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_wchar : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_wchar() :
-			TypeInfoPrivate_Pod(TypeData, "wchar_t", sizeof(wchar_t))
-		{
-			basic_type = WideCharType;
-			short_name = "W";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(wchar_t*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(wchar_t*)dst = sto<wchar_t>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_int : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_int() :
-			TypeInfoPrivate_Pod(TypeData, "int", sizeof(int))
-		{
-			basic_type = IntegerType;
-			short_name = "I";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(int*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(int*)dst = sto<int>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uint : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uint() :
-			TypeInfoPrivate_Pod(TypeData, "uint", sizeof(uint))
-		{
-			basic_type = IntegerType;
-			is_signed = false;
-			short_name = "I";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uint*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uint*)dst = sto<uint>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_int64 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_int64() :
-			TypeInfoPrivate_Pod(TypeData, "int64", sizeof(int64))
-		{
-			basic_type = IntegerType;
-			short_name = "L";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(int64*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(int64*)dst = sto<int64>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uint64 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uint64() :
-			TypeInfoPrivate_Pod(TypeData, "uint64", sizeof(uint64))
-		{
-			basic_type = IntegerType;
-			is_signed = false;
-			short_name = "L";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uint64*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uint64*)dst = sto<uint64>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_float : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_float() :
-			TypeInfoPrivate_Pod(TypeData, "float", sizeof(float))
-		{
-			basic_type = FloatingType;
-			short_name = "F";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(float*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(float*)dst = sto<float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_cvec2 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_cvec2() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uchar,0>", sizeof(cvec2))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 2;
-			short_name = "C2";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec2*)dst = sto<2, uchar>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_cvec3 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_cvec3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uchar,0>", sizeof(cvec3))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 3;
-			short_name = "C3";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec3*)dst = sto<3, uchar>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_cvec4 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_cvec4() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec4))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 4;
-			short_name = "C4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec4*)dst = sto<4, uchar>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_ivec2 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_ivec2() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,int,0>", sizeof(ivec2))
-		{
-			basic_type = IntegerType;
-			vec_size = 2;
-			short_name = "I2";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(ivec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec2*)dst = sto<2, int>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_ivec3 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_ivec3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,int,0>", sizeof(ivec3))
-		{
-			basic_type = IntegerType;
-			vec_size = 3;
-			short_name = "I3";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(ivec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec3*)dst = sto<3, int>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_ivec4 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_ivec4() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,int,0>", sizeof(ivec4))
-		{
-			basic_type = IntegerType;
-			vec_size = 4;
-			short_name = "I4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(ivec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec4*)dst = sto<4, int>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uvec2 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uvec2() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uint,0>", sizeof(uvec2))
-		{
-			basic_type = IntegerType;
-			is_signed = false;
-			vec_size = 2;
-			short_name = "I2";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uvec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec2*)dst = sto<2, uint>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uvec3 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uvec3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uint,0>", sizeof(uvec3))
-		{
-			basic_type = IntegerType;
-			is_signed = false;
-			vec_size = 3;
-			short_name = "I3";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uvec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec3*)dst = sto<3, uint>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_uvec4 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_uvec4() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uint,0>", sizeof(uvec4))
-		{
-			basic_type = IntegerType;
-			is_signed = false;
-			vec_size = 4;
-			short_name = "I4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(uvec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec4*)dst = sto<4, uint>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_vec2 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_vec2() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,float,0>", sizeof(vec2))
-		{
-			basic_type = FloatingType;
-			vec_size = 2;
-			short_name = "F2";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec2*)dst = sto<2, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_vec3 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_vec3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,float,0>", sizeof(vec3))
-		{
-			basic_type = FloatingType;
-			vec_size = 3;
-			short_name = "F3";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec3*)dst = sto<3, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_vec4 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_vec4() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,float,0>", sizeof(vec4))
-		{
-			basic_type = FloatingType;
-			vec_size = 4;
-			short_name = "F4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec4*)dst = sto<4, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_Rect : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Rect() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Rect", sizeof(Rect))
-		{
-			basic_type = FloatingType;
-			vec_size = 2;
-			col_size = 2;
-			short_name = "F4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec4*)dst = sto<4, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_AABB : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_AABB() :
-			TypeInfoPrivate_Pod(TypeData, "flame::AABB", sizeof(AABB))
-		{
-			basic_type = FloatingType;
-			vec_size = 3;
-			col_size = 2;
-			short_name = "F6";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(mat2x3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(mat2x3*)dst = sto<2, 3, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_Plane : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Plane() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Plane", sizeof(Plane))
-		{
-			basic_type = FloatingType;
-			vec_size = 4;
-			short_name = "F4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec4*)dst = sto<4, float>(str);
-		}
-	};
-
-	struct TypeInfoPrivate_Frustum : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Frustum() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Frustum", sizeof(Plane))
-		{
-			short_name = "F24";
-		}
-	};
-
-	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_mat2() :
-			TypeInfoPrivate_Pod(TypeData, "glm::mat<2,2,float,0>", sizeof(mat2))
-		{
-			basic_type = FloatingType;
-			vec_size = 2;
-			col_size = 2;
-			short_name = "F4";
-		}
-	};
-
-	struct TypeInfoPrivate_mat3 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_mat3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::mat<3,3,float,0>", sizeof(mat3))
-		{
-			basic_type = FloatingType;
-			vec_size = 3;
-			col_size = 3;
-			short_name = "F9";
-		}
-	};
-
-	struct TypeInfoPrivate_mat4 : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_mat4() :
-			TypeInfoPrivate_Pod(TypeData, "glm::mat<4,4,float,0>", sizeof(mat4))
-		{
-			basic_type = FloatingType;
-			vec_size = 4;
-			col_size = 4;
-			short_name = "F16";
-		}
-	};
-
-	struct TypeInfoPrivate_quat : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_quat() :
-			TypeInfoPrivate_Pod(TypeData, "glm::qua<float,0>", sizeof(quat))
-		{
-			short_name = "F4";
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec4*)dst = sto<4, float>(str).yzwx();
-		}
-	};
-
-	struct TypeInfoPrivate_Pointer : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Pointer(const std::string& base_name) :
-			TypeInfoPrivate_Pod(TypePointer, base_name, sizeof(void*))
-		{
-			pointed_type = TypeInfoPrivate::get(TypeData, name);
-			if (pointed_type)
-			{
-				basic_type = pointed_type->basic_type;
-				vec_size = pointed_type->vec_size;
-				col_size = pointed_type->col_size;
-			}
-			short_name = "P";
-		}
-
-		void* create(bool create_pointing) const override 
-		{ 
-			auto p = malloc(sizeof(void*));
-			if (create_pointing && pointed_type)
-				*(void**)p = pointed_type->create();
-			return p; 
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing && pointed_type)
-				pointed_type->destroy(*(void**)p);
-			free(p); 
-		}
-		std::string serialize(const void* p) const override
-		{
-			if (pointed_type)
-				return pointed_type->serialize(*(void**)p);
-			return "";
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			if (pointed_type)
-				pointed_type->unserialize(str, *(void**)dst);
-		}
-	};
-
-	struct TypeInfoPrivate_charp : TypeInfoPrivate_Pointer
-	{
-		TypeInfoPrivate_charp() :
-			TypeInfoPrivate_Pointer("char")
-		{
-		}
-
-		void* create(bool create_pointing) const override
-		{
-			auto p = malloc(sizeof(void*));
-			if (create_pointing)
-			{
-				auto str = (char*)malloc(sizeof(char) * 256);
-				*(char**)p = str;
-				str[0] = 0;
-			}
-			return p;
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing)
-				free(*(char**)p);
-			free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto str = *(char**)src;
-			strcpy(*(char**)dst, str ? str : "");
-		}
-		bool compare(void* a, const void* b) const override
-		{
-			return std::string(*(char**)a) == std::string(*(char**)b);
-		}
-		std::string serialize(const void* p) const override
-		{
-			auto str = *(char**)p;
-			return str ? str : "";
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			auto& p = *(char**)dst;
-			free(p);
-			p = (char*)malloc(str.size() + 1);
-			strcpy(p, str.c_str());
-		}
-	};
-
-	struct TypeInfoPrivate_wcharp : TypeInfoPrivate_Pointer
-	{
-		TypeInfoPrivate_wcharp() :
-			TypeInfoPrivate_Pointer("wchar_t")
-		{
-		}
-
-		void* create(bool create_pointing) const override
-		{
-			auto p = malloc(sizeof(void*));
-			if (create_pointing)
-			{
-				auto str = (wchar_t*)malloc(sizeof(wchar_t) * 256);
-				*(wchar_t**)p = str;
-				str[0] = 0;
-			}
-			return p;
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing)
-				free(*(wchar_t**)p);
-			free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto str = *(wchar_t**)src;
-			wcscpy(*(wchar_t**)dst, str ? str : L"");
-		}
-		bool compare(void* a, const void* b) const override
-		{
-			return std::wstring(*(wchar_t**)a) == std::wstring(*(wchar_t**)b);
-		}
-		std::string serialize(const void* p) const override 
-		{
-			auto str = *(wchar_t**)p;
-			return str ? w2s(str) : "";
-		}
-		void unserialize(const std::string& _str, void* dst) const override
-		{
-			auto str = s2w(_str);
-			auto& p = *(wchar_t**)dst;
-			free(p);
-			p = (wchar_t*)malloc(sizeof(wchar_t) * (str.size() + 1));
-			wcscpy(p, str.c_str());
-		}
-	};
-
-	static TypeInfoPrivate* void_type = nullptr;
+	static TypeInfo* void_type = nullptr;
 
 	struct _Initializer
 	{
 		_Initializer()
 		{
 			{
-				auto t = new TypeInfoPrivate_void;
-				tidb.typeinfos.emplace(t->hash, t);
-				void_type = t;
-				void_type->short_name = "V";
+				void_type = new TypeInfo_void;
+				tidb.typeinfos.emplace(void_type->hash, void_type);
 			}
 			{
-				auto t = new TypeInfoPrivate_bool;
+				auto t = new TypeInfo_bool;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_char;
+				auto t = new TypeInfo_char;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uchar;
+				auto t = new TypeInfo_uchar;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_wchar;
+				auto t = new TypeInfo_wchar;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_int;
+				auto t = new TypeInfo_int;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uint;
+				auto t = new TypeInfo_uint;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_int64;
+				auto t = new TypeInfo_int64;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uint64;
+				auto t = new TypeInfo_uint64;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_float;
+				auto t = new TypeInfo_float;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_cvec2;
+				auto t = new TypeInfo_cvec2;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_cvec3;
+				auto t = new TypeInfo_cvec3;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_cvec4;
+				auto t = new TypeInfo_cvec4;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_ivec2;
+				auto t = new TypeInfo_ivec2;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_ivec3;
+				auto t = new TypeInfo_ivec3;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_ivec4;
+				auto t = new TypeInfo_ivec4;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uvec2;
+				auto t = new TypeInfo_uvec2;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uvec3;
+				auto t = new TypeInfo_uvec3;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_uvec4;
+				auto t = new TypeInfo_uvec4;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_vec2;
+				auto t = new TypeInfo_vec2;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_vec3;
+				auto t = new TypeInfo_vec3;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_vec4;
+				auto t = new TypeInfo_vec4;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Rect;
+				auto t = new TypeInfo_Rect;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_AABB;
+				auto t = new TypeInfo_AABB;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Plane;
+				auto t = new TypeInfo_Plane;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Frustum;
+				auto t = new TypeInfo_Frustum;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_mat2;
+				auto t = new TypeInfo_mat2;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_mat3;
+				auto t = new TypeInfo_mat3;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_mat4;
+				auto t = new TypeInfo_mat4;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_quat;
+				auto t = new TypeInfo_quat;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_charp;
+				auto t = new TypeInfo_charp(tidb);
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
-				auto t = new TypeInfoPrivate_wcharp;
+				auto t = new TypeInfo_wcharp(tidb);
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 
-			wchar_t app_name_buf[260];
-			get_app_path(app_name_buf, true);
-			auto app_name = std::wstring(app_name_buf);
-			if (!app_name.ends_with(L"typeinfogen.exe"))
+			auto app_name = get_app_path(true);
+			if (app_name.filename() != L"typeinfogen.exe")
 			{
-				get_module_dependencies(app_name.c_str(), [](Capture& c, const wchar_t* filename) {
-					auto path = std::filesystem::path(filename);
+				for (auto& path : get_module_dependencies(app_name))
+				{
 					auto ti_path = path;
 					ti_path.replace_extension(".typeinfo");
 					if (std::filesystem::exists(ti_path))
-						load_typeinfo(path);
-				}, Capture());
+						tidb.load_typeinfo(path);
+				}
 			}
 		}
 	};
 	static _Initializer _initializer;
 
-	TypeInfoPrivate::TypeInfoPrivate(TypeTag _tag, const std::string& _name, uint _size)
-	{
-		tag = _tag;
-		name = _name;
-		size = _size;
-		hash = ch(name.c_str());
-		hash ^= std::hash<int>()(tag);
-
-		basic_type = ElseType;
-		is_signed = true;
-		vec_size = 1;
-		col_size = 1;
-		pointed_type = nullptr;
-
-	}
-
-	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name, TypeInfoDataBasePrivate* db)
+	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase& db)
 	{
 		if (tag == TypeData && name.empty())
 			return void_type;
 
-		if (!db)
-			db = &tidb;
-
-		auto key = ch(name.c_str());
+		auto key = ch(name.data());
 		key ^= std::hash<int>()(tag);
-		if (db != &tidb)
-		{
-			auto it = db->typeinfos.find(key);
-			if (it != db->typeinfos.end())
-				return it->second.get();
-		}
-		{
-			auto it = tidb.typeinfos.find(key);
-			if (it != tidb.typeinfos.end())
-				return it->second.get();
-		}
+		auto it = db.typeinfos.find(key);
+		if (it != db.typeinfos.end())
+			return it->second.get();
 
-		TypeInfoPrivate* t = nullptr;
+		TypeInfo* t = nullptr;
 		switch (tag)
 		{
 		case TypeEnumSingle:
-			t = new TypeInfoPrivate_EnumSingle(name);
+			t = new TypeInfo_EnumSingle(name, db);
 			break;
 		case TypeEnumMulti:
-			t = new TypeInfoPrivate_EnumMulti(name);
+			t = new TypeInfo_EnumMulti(name, db);
 			break;
 		case TypePointer:
-			t = new TypeInfoPrivate_Pointer(name);
+			t = new TypeInfo_Pointer(name, db);
 			break;
 		case TypeData:
 		{
-			auto udt = find_udt(name, db);
+			auto udt = db.find_udt(name);
 			if (udt)
-				t = new TypeInfoPrivate_Pod(TypeData, name, udt->size);
+				t = new TypeInfo(TypeData, name, udt->size);
 		}
 			break;
 		}
 
 		if (t)
-			db->typeinfos.emplace(key, t);
+			db.typeinfos.emplace(key, t);
 		return t;
 	}
 
-	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase* db)
+	void TypeInfoDataBase::load_typeinfo(const std::filesystem::path& filename)
 	{
-		return TypeInfoPrivate::get(tag, name, (TypeInfoDataBasePrivate*)db);
-	}
-
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* _udt, uint _index, TypeInfoPrivate* _type, const std::string& _name, uint _offset, 
-		uint _array_size, uint _array_stride, const std::string& _default_value, const std::string& _metas)
-	{
-		udt = _udt;
-		index = _index;
-		type = _type;
-		name = _name;
-		offset = _offset;
-		array_size = _array_size;
-		array_stride = _array_stride;
-		default_value = _default_value;
-		metas.from_string(_metas);
-	}
-
-	EnumItemInfoPrivate::EnumItemInfoPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
-		ei(ei),
-		index(index),
-		name(name),
-		value(value)
-	{
-	}
-
-	EnumInfoPrivate::EnumInfoPrivate(const std::string& name) :
-		name(name)
-	{
-	}
-
-	EnumItemInfoPtr EnumInfoPrivate::find_item(const std::string& name) const
-	{
-		for (auto& i : items)
-		{
-			if (i->name == name)
-				return i.get();
-		}
-		return nullptr;
-	}
-
-	EnumItemInfoPtr EnumInfoPrivate::find_item(int value) const
-	{
-		for (auto& i : items)
-		{
-			if (i->value == value)
-				return i.get();
-		}
-		return nullptr;
-	}
-
-	EnumItemInfoPtr EnumInfoPrivate::add_item(const std::string& name, int value, int idx)
-	{
-		if (idx == -1)
-			idx = items.size();
-		auto ret = new EnumItemInfoPrivate(this, idx, name, value);
-		items.emplace(items.begin() + idx, ret);
-		return ret;
-	}
-
-	void EnumInfoPrivate::remove_item(EnumItemInfoPtr item)
-	{
-		fassert(item->ei == this);
-		for (auto it = items.begin(); it != items.end(); it++)
-		{
-			if (it->get() == item)
-			{
-				items.erase(it);
-				return;
-			}
-		}
-	}
-
-	FunctionInfoPrivate::FunctionInfoPrivate(UdtInfoPrivate* udt, void* library, uint index, const std::string& name, uint rva, int voff, 
-		bool is_static, TypeInfoPrivate* type, const std::string& _metas) :
-		udt(udt),
-		library(library),
-		index(index),
-		name(name),
-		rva(rva),
-		voff(voff),
-		is_static(is_static),
-		type(type)
-	{
-		metas.from_string(_metas);
-	}
-
-	bool FunctionInfoPrivate::get_meta(TypeMeta m, LightCommonValue* v) const
-	{
-		return metas.get(m, v);
-	}
-
-	void FunctionInfoPrivate::update_full_name()
-	{
-		full_name = "";
-		full_name += is_static ? 's' : 'm';
-		full_name += "_" + type->short_name;
-		if (!parameters.empty())
-		{
-			for (auto p : parameters)
-				full_name += "_" + p->short_name;
-		}
-	}
-
-	const char* FunctionInfoPrivate::get_full_name()
-	{
-		if (full_name.empty())
-			update_full_name();
-		return full_name.c_str();
-	}
-
-	void FunctionInfoPrivate::add_parameter(TypeInfoPtr ti, int idx)
-	{
-		if (idx == -1)
-			idx = parameters.size();
-		parameters.emplace(parameters.begin() + idx, ti);
-	}
-
-	void FunctionInfoPrivate::remove_parameter(uint idx)
-	{
-		if (idx >= parameters.size())
-			return;
-		parameters.erase(parameters.begin() + idx);
-	}
-
-	bool FunctionInfoPrivate::check(TypeInfoPtr ret, uint parms_count, TypeInfoPtr const* parms) const
-	{
-		if (type != ret)
-			return false;
-		if (parameters.size() != parms_count)
-			return false;
-		for (auto i = 0; i < parms_count; i++)
-		{
-			if (parameters[i] != parms[i])
-				return false;
-		}
-		return true;
-	}
-
-	void* FunctionInfoPrivate::get_address(void* obj) const
-	{
-		return voff == -1 ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
-	}
-
-	static std::map<std::string, void(*)(void*, void*, void*, void**)> callers;
-
-	void FunctionInfoPrivate::call(void* obj, void* ret, void** ps)
-	{
-		if (!caller)
-		{
-			update_full_name();
-			auto it = callers.find(full_name);
-			if (it != callers.end())
-				caller = it->second;
-			else
-			{
-				char buf[256];
-				GetModuleFileNameA((HMODULE)library, buf, _countof(buf));
-				std::filesystem::path path(buf);
-				path.replace_filename(path.filename().stem().wstring() + L"_callers");
-				path.replace_extension(L".dll");
-				typedef void (*get_callers)(void(*)(const char*, void(*)(void*, void*, void*, void**)));
-				auto callers_library = LoadLibraryW(path.c_str());
-				((get_callers)GetProcAddress(callers_library, "get_callers"))([](const char* _name, void(*func)(void*, void*, void*, void**)) {
-					auto name = std::string(_name);
-					auto it = callers.find(name);
-					if (it == callers.end())
-						callers[name] = func;
-				});
-
-				caller = callers[full_name];
-			}
-		}
-
-		fassert(caller);
-		caller(get_address(obj), obj, ret, ps);
-	}
-
-	UdtInfoPrivate::UdtInfoPrivate(void* library, const std::string& name, uint size, const std::string& base_name) :
-		library(library),
-		name(name),
-		size(size),
-		base_name(base_name)
-	{
-	}
-
-	VariableInfoPtr UdtInfoPrivate::find_variable(const std::string& name) const
-	{
-		for (auto& v : variables)
-		{
-			if (v->name == name)
-				return v.get();
-		}
-		return nullptr;
-	}
-
-	VariableInfoPtr UdtInfoPrivate::add_variable(TypeInfoPtr ti, const std::string& name, uint offset, uint array_size, uint array_stride, 
-		const std::string& default_value_str, const std::string& metas, int idx)
-	{
-		if (idx == -1)
-			idx = variables.size();
-		auto ret = new VariableInfoPrivate(this, idx, ti, name, offset, array_size, array_stride, default_value_str, metas);
-		variables.emplace(variables.begin() + idx, ret);
-		return ret;
-	}
-
-	void UdtInfoPrivate::remove_variable(VariableInfoPtr vi)
-	{
-		fassert(vi->udt == this);
-		for (auto it = variables.begin(); it != variables.end(); it++)
-		{
-			if (it->get() == vi)
-			{
-				variables.erase(it);
-				return;
-			}
-		}
-	}
-
-	FunctionInfoPtr UdtInfoPrivate::find_function(const std::string& name) const
-	{
-		for (auto& f : functions)
-		{
-			if (f->name == name)
-				return f.get();
-		}
-		return nullptr;
-	}
-
-	FunctionInfoPtr UdtInfoPrivate::add_function(const std::string& name, uint rva, int voff, bool is_static, TypeInfoPtr ti, const std::string& metas, int idx)
-	{
-		if (idx == -1)
-			idx = functions.size();
-		auto ret = new FunctionInfoPrivate(this, library, idx, name, rva, voff, is_static, ti, metas);
-		functions.emplace(functions.begin() + idx, ret);
-		return ret;
-	}
-
-	void UdtInfoPrivate::remove_function(FunctionInfoPtr fi)
-	{
-		fassert(fi->udt == this);
-		for (auto it = functions.begin(); it != functions.end(); it++)
-		{
-			if (it->get() == fi)
-			{
-				functions.erase(it);
-				return;
-			}
-		}
-	}
-
-	void TypeInfoDataBasePrivate::sort_udts()
-	{
-		if (!udts_sorted)
-			udts_sorted = true;
-		for (auto& u : udts)
-			u.second->ranking = -1;
-		std::function<void(UdtInfoPrivate* u)> get_ranking;
-		get_ranking = [&](UdtInfoPrivate* u) {
-			if (u->ranking == -1)
-			{
-				auto ranking = 0;
-				for (auto& v : u->variables)
-				{
-					if (v->type->tag == TypePointer || v->type->tag == TypeData)
-					{
-						auto t = find_udt(v->type->name, this);
-						if (t && t != u)
-						{
-							get_ranking(t);
-							ranking = max(ranking, t->ranking + 1);
-						}
-					}
-				}
-				u->ranking = ranking;
-			}
-		};
-		for (auto& u : udts)
-			get_ranking(u.second.get());
-	}
-
-	TypeInfoDataBase* TypeInfoDataBase::create()
-	{
-		return new TypeInfoDataBasePrivate;
-	}
-
-	std::vector<TypeInfoPrivate*> get_types(TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-		std::vector<TypeInfoPrivate*> ret(db->typeinfos.size());
-		auto idx = 0;
-		for (auto& i : db->typeinfos)
-			ret[idx++] = i.second.get();
-		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
-			return a->name < b->name;
-		});
-		return ret;
-	}
-
-	void get_types(TypeInfo** dst, uint* len, TypeInfoDataBase* _db)
-	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		if (len)
-			*len = db->typeinfos.size();
-		if (dst)
-		{
-			auto vec = get_types(db);
-			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
-		}
-	}
-
-	EnumInfoPrivate* find_enum(const std::string& name, TypeInfoDataBasePrivate* db)
-	{
-		if (db && db != &tidb)
-		{
-			for (auto& e : db->enums)
-			{
-				if (e.second->name == name)
-					return e.second.get();
-			}
-		}
-		for (auto& e : tidb.enums)
-		{
-			if (e.second->name == name)
-				return e.second.get();
-		}
-		return nullptr;
-	}
-
-	EnumInfo* find_enum(const char* name, TypeInfoDataBase* db) { return find_enum(std::string(name), (TypeInfoDataBasePrivate*)db); }
-
-	EnumInfoPrivate* add_enum(const std::string& name, TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-		auto ret = new EnumInfoPrivate(name);
-		db->enums.emplace(ret->name, ret);
-		return ret;
-	}
-
-	EnumInfo* add_enum(const char* name, TypeInfoDataBase* db)
-	{
-		return add_enum(std::string(name), (TypeInfoDataBasePrivate*)db);
-	}
-
-	std::vector<EnumInfoPrivate*> get_enums(TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-		std::vector<EnumInfoPrivate*> ret(db->enums.size());
-		auto idx = 0;
-		for (auto& i : db->enums)
-			ret[idx++] = i.second.get();
-		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
-			return a->name < b->name;
-		});
-		return ret;
-	}
-
-	void get_enums(EnumInfo** dst, uint* len, TypeInfoDataBase* _db)
-	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		if (len)
-			*len = db->enums.size();
-		if (dst)
-		{
-			auto vec = get_enums(db);
-			memcpy(dst, vec.data(), sizeof(void*) * vec.size());
-		}
-	}
-
-	UdtInfoPrivate* find_udt(const std::string& name, TypeInfoDataBasePrivate* db)
-	{
-		if (db && db != &tidb)
-		{
-			for (auto& u : db->udts)
-			{
-				if (u.second->name == name)
-					return u.second.get();
-			}
-		}
-		for (auto& u : tidb.udts)
-		{
-			if (u.second->name == name)
-				return u.second.get();
-		}
-		return nullptr;
-	}
-
-	UdtInfo* find_udt(const char* name, TypeInfoDataBase* db) { return find_udt(std::string(name), (TypeInfoDataBasePrivate*)db); }
-
-	UdtInfoPrivate* add_udt(const std::string& name, uint size, const std::string& base_name, void* library, TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-		db->udts_sorted = false;
-		auto ret = new UdtInfoPrivate(library, name, size, base_name);
-		db->udts.emplace(ret->name, ret);
-		return ret;
-	}
-
-	UdtInfo* add_udt(const char* name, uint size, const char* base_name, TypeInfoDataBase* db)
-	{
-		return add_udt(name, size, base_name, nullptr, (TypeInfoDataBasePrivate*)db);
-	}
-
-	std::vector<UdtInfoPrivate*> get_udts(TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-		db->sort_udts();
-		std::vector<UdtInfoPrivate*> ret(db->udts.size());
-		auto idx = 0;
-		for (auto& i : db->udts)
-			ret[idx++] = i.second.get();
-		std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
-			return a->ranking < b->ranking;
-		});
-		return ret;
-	}
-
-	void get_udts(UdtInfo** dst, uint* len, TypeInfoDataBase* _db)
-	{
-		auto db = (TypeInfoDataBasePrivate*)_db;
-		if (!db)
-			db = &tidb;
-		if (len)
-			*len = db->udts.size();
-		if (dst)
-		{
-			auto vec = get_udts(db);
-			memcpy(dst, vec.data(), sizeof(void*)* vec.size());
-		}
-	}
-
-	void load_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db)
-	{
-		if (!db)
-			db = &tidb;
-
 		std::filesystem::path path(filename);
 		if (!path.is_absolute())
 		{
@@ -1463,128 +220,131 @@ namespace flame
 
 		auto read_ti = [&](pugi::xml_node n) {
 			TypeTag tag;
-			TypeInfoPrivate::get(TypeEnumSingle, "flame::TypeTag")->unserialize(&tag, n.attribute("type_tag").value());
-			return TypeInfoPrivate::get(tag, n.attribute("type_name").value(), db);
+			TypeInfo::get(TypeEnumSingle, "flame::TypeTag", *this)->unserialize(n.attribute("type_tag").value(), &tag);
+			return TypeInfo::get(tag, n.attribute("type_name").value(), *this);
 		};
 
 		for (auto n_enum : file_root.child("enums"))
 		{
-			auto e = add_enum(std::string(n_enum.attribute("name").value()), db);
-
+			auto name = std::string(n_enum.attribute("name").value());
+			auto& e = enums.emplace(name, EnumInfo()).first->second;
+			e.name = name;
 			for (auto n_item : n_enum.child("items"))
-				e->items.emplace_back(new EnumItemInfoPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
+			{
+				auto& i = e.items.emplace_back();
+				i.ei = &e;
+				i.index = e.items.size() - 1;
+				i.name = n_item.attribute("name").value();
+				i.value = n_item.attribute("value").as_int();
+			}
 		}
 		for (auto n_udt : file_root.child("udts"))
 		{
-			auto u = add_udt(n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value(), library, db);
+			auto name = std::string(n_udt.attribute("name").value());
+			auto& u = udts.emplace(name, UdtInfo()).first->second;
+			u.name = name;
+			u.size = n_udt.attribute("size").as_uint();
+			u.base_class_name = n_udt.attribute("base_class_name").as_uint();
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto v = new VariableInfoPrivate(u, u->variables.size(), read_ti(n_variable), n_variable.attribute("name").value(),
-					n_variable.attribute("offset").as_uint(), n_variable.attribute("array_size").as_uint(), n_variable.attribute("array_stride").as_uint(),
-					n_variable.attribute("default_value").value(), n_variable.attribute("metas").value());
-				u->variables.emplace_back(v);
+				auto& v = u.variables.emplace_back();
+				v.udt = &u;
+				v.index = u.variables.size() - 1;
+				v.type = read_ti(n_variable);
+				v.name = n_variable.attribute("name").value();
+				v.offset = n_variable.attribute("offset").as_uint();
+				v.array_size = n_variable.attribute("array_size").as_uint();
+				v.array_stride = n_variable.attribute("array_stride").as_uint();
+				v.default_value = n_variable.attribute("default_value").value();
+				v.metas.from_string(n_variable.attribute("metas").value());
 			}
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = new FunctionInfoPrivate(u, library, u->functions.size(), n_function.attribute("name").value(),
-					n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_int(), n_function.attribute("is_static").as_bool(), 
-					read_ti(n_function), n_function.attribute("metas").value());
-				u->functions.emplace_back(f);
+				auto& f = u.functions.emplace_back();
+				f.udt = &u;
+				f.index = u.functions.size() - 1;
+				f.name = n_function.attribute("name").value();
+				f.rva = n_function.attribute("rva").as_uint();
+				f.voff = n_function.attribute("voff").as_int();
+				f.is_static = n_function.attribute("is_static").as_bool();
+				f.type = read_ti(n_function);
+				f.metas.from_string(n_function.attribute("metas").value());
+				f.library = library;
 				for (auto n_parameter : n_function)
-					f->parameters.push_back(read_ti(n_parameter));
+					f.parameters.push_back(read_ti(n_parameter));
 			}
 		}
 	}
 
-	void save_typeinfo(const std::filesystem::path& filename, TypeInfoDataBasePrivate* db)
+	void TypeInfoDataBase::save_typeinfo(const std::filesystem::path& filename)
 	{
-		if (!db)
-			db = &tidb;
-
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
 
-		auto e_tag = TypeInfo::get(TypeEnumSingle, "flame::TypeTag");
-		auto write_ti = [&](TypeInfoPrivate* ti, pugi::xml_node n) {
+		auto e_tag = TypeInfo::get(TypeEnumSingle, "flame::TypeTag", *this);
+		auto write_ti = [&](TypeInfo* ti, pugi::xml_node n) {
 			n.append_attribute("type_tag").set_value(e_tag->serialize(&ti->tag).c_str());
 			n.append_attribute("type_name").set_value(ti->name.c_str());
 		};
 
-		if (!db->enums.empty())
+		auto n_enums = file_root.append_child("enums");
+		for (auto& ei : enums)
 		{
-			auto enums = get_enums(db);
-			auto n_enums = file_root.append_child("enums");
-			for (auto& ei : enums)
+			auto n_enum = n_enums.append_child("enum");
+			n_enum.append_attribute("name").set_value(ei.second.name.c_str());
+			auto n_items = n_enum.append_child("items");
+			for (auto& i : ei.second.items)
 			{
-				auto n_enum = n_enums.append_child("enum");
-				n_enum.append_attribute("name").set_value(ei->name.c_str());
-				auto n_items = n_enum.append_child("items");
-				for (auto& i : ei->items)
-				{
-					auto n_item = n_items.append_child("item");
-					n_item.append_attribute("name").set_value(i->name.c_str());
-					n_item.append_attribute("value").set_value(i->value);
-				}
+				auto n_item = n_items.append_child("item");
+				n_item.append_attribute("name").set_value(i.name.c_str());
+				n_item.append_attribute("value").set_value(i.value);
 			}
 		}
-		if (!db->udts.empty())
+
+		auto n_udts = file_root.append_child("udts");
+		for (auto& ui : udts)
 		{
-			auto udts = get_udts(db);
-			auto n_udts = file_root.append_child("udts");
-			for (auto& ui : udts)
+			auto n_udt = n_udts.append_child("udt");
+			n_udt.append_attribute("name").set_value(ui.second.name.c_str());
+			n_udt.append_attribute("size").set_value(ui.second.size);
+			n_udt.append_attribute("base_class_name").set_value(ui.second.base_class_name.c_str());
+			if (!ui.second.variables.empty())
 			{
-				auto n_udt = n_udts.append_child("udt");
-				n_udt.append_attribute("name").set_value(ui->name.c_str());
-				n_udt.append_attribute("size").set_value(ui->size);
-				n_udt.append_attribute("base_name").set_value(ui->base_name.c_str());
-				if (!ui->variables.empty())
+				auto n_variables = n_udt.prepend_child("variables");
+				for (auto& vi : ui.second.variables)
 				{
-					auto n_variables = n_udt.prepend_child("variables");
-					for (auto& vi : ui->variables)
-					{
-						auto n_variable = n_variables.append_child("variable");
-						write_ti(vi->type, n_variable);
-						n_variable.append_attribute("name").set_value(vi->name.c_str());
-						n_variable.append_attribute("offset").set_value(vi->offset);
-						n_variable.append_attribute("array_size").set_value(vi->array_size);
-						n_variable.append_attribute("array_stride").set_value(vi->array_stride);
-						n_variable.append_attribute("default_value").set_value(vi->default_value ? vi->type->serialize(vi->default_value).c_str() : "");
-						n_variable.append_attribute("metas").set_value(vi->metas.to_string().c_str());
-					}
+					auto n_variable = n_variables.append_child("variable");
+					write_ti(vi.type, n_variable);
+					n_variable.append_attribute("name").set_value(vi.name.c_str());
+					n_variable.append_attribute("offset").set_value(vi.offset);
+					n_variable.append_attribute("array_size").set_value(vi.array_size);
+					n_variable.append_attribute("array_stride").set_value(vi.array_stride);
+					n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
+					n_variable.append_attribute("metas").set_value(vi.metas.to_string().c_str());
 				}
-				if (!ui->functions.empty())
+			}
+			if (!ui.second.functions.empty())
+			{
+				auto n_functions = n_udt.append_child("functions");
+				for (auto& fi : ui.second.functions)
 				{
-					auto n_functions = n_udt.append_child("functions");
-					for (auto& fi : ui->functions)
+					auto n_function = n_functions.append_child("function");
+					n_function.append_attribute("name").set_value(fi.name.c_str());
+					n_function.append_attribute("rva").set_value(fi.rva);
+					n_function.append_attribute("voff").set_value(fi.voff);
+					n_function.append_attribute("is_static").set_value(fi.is_static);
+					n_function.append_attribute("metas").set_value(fi.metas.to_string().c_str());
+					write_ti(fi.type, n_function);
+					if (!fi.parameters.empty())
 					{
-						auto n_function = n_functions.append_child("function");
-						n_function.append_attribute("name").set_value(fi->name.c_str());
-						n_function.append_attribute("rva").set_value(fi->rva);
-						n_function.append_attribute("voff").set_value(fi->voff);
-						n_function.append_attribute("is_static").set_value(fi->is_static);
-						n_function.append_attribute("metas").set_value(fi->metas.to_string().c_str());
-						write_ti(fi->type, n_function);
-						if (!fi->parameters.empty())
-						{
-							for (auto p : fi->parameters)
-								write_ti(p, n_function.append_child("parameter"));
-						}
+						for (auto p : fi.parameters)
+							write_ti(p, n_function.append_child("parameter"));
 					}
 				}
 			}
 		}
 
 		file.save_file(filename.c_str());
-	}
-
-	void load_typeinfo(const wchar_t* filename, TypeInfoDataBase* db)
-	{
-		load_typeinfo(std::filesystem::path(filename), (TypeInfoDataBasePrivate*)db);
-	}
-
-	void save_typeinfo(const wchar_t* filename, TypeInfoDataBase* db)
-	{
-		save_typeinfo(std::filesystem::path(filename), (TypeInfoDataBasePrivate*)db);
 	}
 }

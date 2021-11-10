@@ -27,7 +27,7 @@ namespace flame
 
 		bool dead = false;
 
-		NativeWindowPrivate(const std::string& _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
+		NativeWindowPrivate(std::string_view _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
 		~NativeWindowPrivate();
 
 		void release() override;
@@ -37,7 +37,7 @@ namespace flame
 		void set_pos(const ivec2& pos) override;
 		void set_size(const uvec2& size) override;
 		ivec2 global_to_local(const ivec2& p) override;
-		void set_title(const std::string& _title) override;
+		void set_title(std::string_view _title) override;
 		void set_cursor(CursorType type) override;
 
 		void* add_key_down_listener(const std::function<void(KeyboardKey)>& lis) override;

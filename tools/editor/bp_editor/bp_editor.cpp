@@ -830,7 +830,7 @@ void BPEditor::remove_nodes(const std::vector<bpNode*> nodes)
 	set_changed(true);
 }
 
-void BPEditor::set_node_id(bpNode* n, const std::string& id)
+void BPEditor::set_node_id(bpNode* n, std::string_view id)
 {
 	auto before_id = n->id.str();
 
@@ -1037,7 +1037,7 @@ bool BPEditor::auto_set_layout()
 	return true;
 }
 
-bpNode* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const vec2& pos)
+bpNode* BPEditor::_add_node(bpNodeType node_type, std::string_view id, std::string_view type, const vec2& pos)
 {
 	auto n = bp_editor.bp->root->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)

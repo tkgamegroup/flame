@@ -21,7 +21,7 @@ namespace flame
 		return nullptr;
 	}
 
-	System* WorldPrivate::find_system(const std::string& _name) const
+	System* WorldPrivate::find_system(std::string_view _name) const
 	{
 		System* ret = nullptr;
 		auto name = _name;

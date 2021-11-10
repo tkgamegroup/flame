@@ -17,6 +17,7 @@ struct FlameFoundationTypeSelector
 #endif
 
 #define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
+	typedef FlameFoundationTypeSelector<name, name##Private>::result name##T; \
 	typedef FlameFoundationTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include "../serialize.h"

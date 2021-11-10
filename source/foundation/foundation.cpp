@@ -51,11 +51,11 @@ namespace flame
 	}
 
 	uint frames = 0;
-	uint64 last_time = 0;
+	static uint64 last_time = 0;
 	float delta_time = 0.f;
 	float total_time = 0.f;
 	uint fps = 0;
-	float fps_delta = 0.f;
+	static float fps_delta = 0.f;
 	static uint fps_counting = 0;
 
 	std::vector<std::unique_ptr<NativeWindowPrivate>> windows;

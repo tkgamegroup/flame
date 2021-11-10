@@ -48,7 +48,7 @@ namespace flame
 		void set_model(const wchar_t* src) override { set_model(std::filesystem::path(src)); }
 
 		const wchar_t* get_animations() const override { return animation_names.c_str(); }
-		void set_animations(const std::wstring& src);
+		void set_animations(std::wstring_view src);
 		void set_animations(const wchar_t* src) override { set_animations(std::wstring(src)); }
 
 		int get_curr_anim() override { return anim; }
