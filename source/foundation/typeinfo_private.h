@@ -11,7 +11,7 @@ namespace flame
 		TypeInfo_EnumSingle(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TypeEnumSingle, base_name, sizeof(int))
 		{
-			ei = db.find_enum(name);
+			ei = find_enum(name, db);
 		}
 
 		std::string serialize(const void* p) const override
@@ -31,7 +31,7 @@ namespace flame
 		TypeInfo_EnumMulti(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TypeEnumMulti, base_name, sizeof(int))
 		{
-			ei = db.find_enum(name);
+			ei = find_enum(name, db);
 		}
 
 		std::string serialize(const void* p) const override

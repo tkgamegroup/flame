@@ -327,9 +327,11 @@ process:
 	TypeInfoDataBase db;
 
 	auto new_enum = [&](const std::string& name, IDiaSymbol* s_type) {
-		if (db.find_enum(name))
+		if (find_enum(name, db))
 			return;
 
+		auto& e = db.enums.emplace(name, EnumInfo()).first->second;
+		e.name = name;
 		std::vector<std::pair<std::string, int>> items;
 
 		IDiaEnumSymbols* s_items;
@@ -371,10 +373,12 @@ process:
 				break;
 		}
 
-		auto& e = db.enums.emplace(name, EnumInfo()).first->second;
-		e.name = name;
 		for (auto& i : items)
-			e->add_item(i.first.c_str(), i.second);
+		{
+			auto& ii = e.items.emplace_back();
+			ii.name = i.first;
+			ii.value = i.second;
+		}
 	};
 
 	IDiaEnumSymbols* s_enums;
@@ -406,7 +410,7 @@ process:
 		{
 			if (ur.pass(udt_name))
 			{
-				if (!db.find_udt(udt_name))
+				if (!find_udt(udt_name, db))
 				{
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
@@ -421,7 +425,10 @@ process:
 						base_class_name = w2s(pwname);
 					}
 
-					auto u = add_udt(udt_name.c_str(), udt_size, base_class_name.c_str(), db);
+					auto& u = db.udts.emplace(udt_name, UdtInfo()).first->second;
+					u.name = udt_name;
+					u.size = udt_size;
+					u.base_class_name = base_class_name;
 
 					DWORD ctor = 0;
 					DWORD dtor = 0;
@@ -435,7 +442,7 @@ process:
 					{
 						s_function->get_name(&pwname);
 						auto name = w2s(pwname);
-						if (name.size() <= udt_name.size() && udt_name.compare(udt_name.size() - name.size(), name.size(), name) == 0)
+						if (udt_name.ends_with(name))
 							name = "ctor";
 						else if (name[0] == '~')
 							name = "dtor";
@@ -467,7 +474,13 @@ process:
 								if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
 									is_static = b;
 
-								auto fi = u->add_function(name.c_str(), rva, voff, is_static, TypeInfo::get(type_desc.tag, type_desc.name, db), metas.c_str());
+								auto& fi = u.functions.emplace_back();
+								fi.name = name;
+								fi.rva = rva;
+								fi.voff = voff;
+								fi.is_static = is_static;
+								fi.type = TypeInfo::get(type_desc.tag, type_desc.name, db);
+								fi.metas.from_string(metas);
 
 								IDiaEnumSymbols* s_parameters;
 								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -481,7 +494,7 @@ process:
 									if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
 										new_enum(type_desc.name, s_type);
 
-									fi->add_parameter(TypeInfo::get(type_desc.tag, type_desc.name.c_str(), db));
+									fi.parameters.push_back(TypeInfo::get(type_desc.tag, type_desc.name, db));
 
 									s_type->Release();
 
@@ -490,7 +503,7 @@ process:
 								s_parameters->Release();
 								s_function_type->Release();
 
-								if (name == "ctor" && fi->get_parameters_count() == 0)
+								if (name == "ctor" && fi.parameters.empty())
 									ctor = rva;
 								else if (name == "dtor")
 									dtor = rva;
@@ -535,7 +548,14 @@ process:
 									new_enum(type_desc.name, s_type);
 
 								auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-								u->add_variable(type, name.c_str(), offset, 1, 0, (char*)obj + offset, metas.c_str());
+								auto& vi = u.variables.emplace_back();
+								vi.type = type;
+								vi.name = name;
+								vi.offset = offset;
+								vi.array_size = 0;
+								vi.array_stride = 0;
+								vi.default_value = type->serialize((char*)obj + offset);
+								vi.metas.from_string(metas);
 							}
 
 							s_type->Release();

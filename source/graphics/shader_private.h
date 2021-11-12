@@ -34,7 +34,7 @@ namespace flame
 
 			std::filesystem::path filename;
 
-			UniPtr<TypeInfoDataBase> tidb;
+			TypeInfoDataBase db;
 			std::vector<DescriptorBinding> bindings;
 
 			VkDescriptorSetLayout vk_descriptor_set_layout;
@@ -103,14 +103,14 @@ namespace flame
 
 			std::vector<std::pair<std::string, DescriptorSetLayoutPrivate*>> descriptor_set_layouts;
 
-			UniPtr<TypeInfoDataBase> tidb;
-			UdtInfo* pcti = nullptr;
+			TypeInfoDataBase db;
+			UdtInfo* pc_ti = nullptr;
 			uint pc_sz = 0;
 
 			VkPipelineLayout vk_pipeline_layout;
 
 			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
-			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pcti);
+			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pc_ti);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
@@ -136,7 +136,7 @@ namespace flame
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, std::string_view defines = "", std::string_view substitutes = "");
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
 			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
 		};
 

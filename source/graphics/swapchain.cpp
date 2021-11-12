@@ -21,12 +21,12 @@ namespace flame
 
 			update();
 
-			resize_listener = window->add_resize_listener([](Capture& c, const uvec2& size) {
-				c.thiz<SwapchainPrivate>()->update();
-			}, Capture().set_thiz(this));
-			window->add_destroy_listener([](Capture& c) {
-				c.thiz<SwapchainPrivate>()->window = nullptr;
-			}, Capture().set_thiz(this));
+			resize_listener = window->add_resize_listener([this](const uvec2& size) {
+				update();
+			});
+			window->add_destroy_listener([this]() {
+				this->window = nullptr;
+			});
 
 			image_avalible.reset(new SemaphorePrivate(device));
 		}

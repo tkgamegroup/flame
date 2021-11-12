@@ -15,20 +15,9 @@ namespace flame
 			TypeInfo* set_type = nullptr;
 			FunctionInfo* getter = nullptr;
 			FunctionInfo* setter = nullptr;
-			void* default_value = nullptr;
+			std::string default_value;
 
-			Attribute(Attribute&& oth)
-			{
-				std::swap(name, oth.name);
-				std::swap(hash, oth.hash);
-				std::swap(get_type, oth.get_type);
-				std::swap(set_type, oth.set_type);
-				std::swap(getter, oth.getter);
-				std::swap(setter, oth.setter);
-				std::swap(default_value, oth.default_value);
-			}
-
-			Attribute(ReflectedType* ct, std::string_view name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			Attribute(ReflectedType* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
 				name(name),
 				get_type(get_type),
 				set_type(set_type),
@@ -37,8 +26,9 @@ namespace flame
 			{
 				hash = ch(name.c_str());
 
-				default_value = get_type->create(false);
+				auto d = get_type->create(false);
 				getter->call(ct->dummy, default_value, nullptr);
+				get_type->destroy(d, false);
 			}
 
 			std::string serialize(void* c, void* ref = nullptr)
@@ -69,14 +59,6 @@ namespace flame
 		void* dummy = nullptr;
 
 		std::map<std::string, Attribute> attributes;
-
-		ReflectedType(ReflectedType&& oth)
-		{
-			std::swap(udt, oth.udt);
-			std::swap(creator, oth.creator);
-			std::swap(dummy, oth.dummy);
-			std::swap(attributes, oth.attributes);
-		}
 
 		ReflectedType(UdtInfo* udt) :
 			udt(udt)
@@ -135,7 +117,7 @@ namespace flame
 			return a2f<void*(*)(void*)>(addr)(nullptr);
 		}
 
-		Attribute* find_attribute(std::string_view name)
+		Attribute* find_attribute(const std::string& name)
 		{
 			auto it = attributes.find(name);
 			if (it == attributes.end())
@@ -146,7 +128,7 @@ namespace flame
 
 	static std::map<std::string, ReflectedType> component_types;
 
-	ReflectedType* find_component_type(std::string_view name)
+	ReflectedType* find_component_type(const std::string& name)
 	{
 		auto it = component_types.find(name);
 		if (it == component_types.end())
@@ -158,7 +140,7 @@ namespace flame
 	{
 		for (auto& t : component_types)
 		{
-			if (t.second.udt->get_name() == udt_name)
+			if (t.second.udt->name == udt_name)
 			{
 				if (name)
 					*name = t.first;

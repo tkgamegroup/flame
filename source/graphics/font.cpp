@@ -109,7 +109,7 @@ namespace flame
 
 		static std::vector<std::pair<std::vector<std::wstring>, UniPtr<FontAtlasPrivate>>> loaded_atlas;
 
-		FontAtlasPtr FontAtlasPrivate::get(DevicePtr device, std::wstring_view res)
+		FontAtlasPtr FontAtlasPrivate::get(DevicePtr device, const std::wstring& res)
 		{
 			auto sp = SUW::split(res, L';');
 			std::sort(sp.begin(), sp.end());

@@ -357,7 +357,7 @@ namespace flame
 				case 3: // Ctrl+C
 					if (low == high)
 						break;
-					set_clipboard(str.substr(low, high - low).c_str());
+					set_clipboard(str.substr(low, high - low));
 					if (ch == 3)
 						break;
 				case L'\b':
@@ -380,12 +380,7 @@ namespace flame
 					break;
 				case 22: // Ctrl+V
 				{
-					std::wstring cb;
-					get_clipboard(&cb, [](void* _str, uint size) {
-					auto& str = *(std::wstring*)_str;
-					str.resize(size);
-					return str.data();
-					});
+					auto cb = get_clipboard();
 					cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
 					if (!cb.empty())
 					{

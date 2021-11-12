@@ -166,6 +166,12 @@ namespace flame
 		auto it = db.typeinfos.find(key);
 		if (it != db.typeinfos.end())
 			return it->second.get();
+		if (&tidb != &db)
+		{
+			it = tidb.typeinfos.find(key);
+			if (it != tidb.typeinfos.end())
+				return it->second.get();
+		}
 
 		TypeInfo* t = nullptr;
 		switch (tag)
@@ -181,7 +187,7 @@ namespace flame
 			break;
 		case TypeData:
 		{
-			auto udt = db.find_udt(name);
+			auto udt = find_udt(name, db);
 			if (udt)
 				t = new TypeInfo(TypeData, name, udt->size);
 		}
@@ -197,11 +203,7 @@ namespace flame
 	{
 		std::filesystem::path path(filename);
 		if (!path.is_absolute())
-		{
-			wchar_t app_path[260];
-			get_app_path(app_path);
-			path = app_path / path;
-		}
+			path = get_app_path() / path;
 
 		void* library = nullptr;
 		if (path.extension() != L".typeinfo")

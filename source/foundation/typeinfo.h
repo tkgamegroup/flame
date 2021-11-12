@@ -207,27 +207,39 @@ namespace flame
 		std::unordered_map<std::string, FunctionInfo> functions;
 		std::unordered_map<std::string, UdtInfo> udts;
 
-		EnumInfo* find_enum(const std::string& name) const
-		{
-			auto it = enums.find(name);
-			if (it == enums.end())
-				return nullptr;
-			return (EnumInfo*)&it->second;
-		}
-
-		UdtInfo* find_udt(const std::string& name) const
-		{
-			auto it = udts.find(name);
-			if (it == udts.end())
-				return nullptr;
-			return (UdtInfo*)&it->second;
-		}
-
 		FLAME_FOUNDATION_EXPORTS void load_typeinfo(const std::filesystem::path& filename);
 		FLAME_FOUNDATION_EXPORTS void save_typeinfo(const std::filesystem::path& filename);
 	};
 
 	FLAME_FOUNDATION_EXPORTS extern TypeInfoDataBase tidb;
+
+	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db)
+	{
+		auto it = db.enums.find(name);
+		if (it != db.enums.end())
+			return &it->second;
+		if (&db != &tidb)
+		{
+			it = tidb.enums.find(name);
+			if (it != tidb.enums.end())
+				return &it->second;
+		}
+		return nullptr;
+	}
+
+	inline UdtInfo* find_udt(const std::string& name, TypeInfoDataBase& db)
+	{
+		auto it = db.udts.find(name);
+		if (it != db.udts.end())
+			return &it->second;
+		if (&db != &tidb)
+		{
+			it = tidb.udts.find(name);
+			if (it != tidb.udts.end())
+				return &it->second;
+		}
+		return nullptr;
+	}
 
 	inline void Metas::from_string(const std::string& str)
 	{

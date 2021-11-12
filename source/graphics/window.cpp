@@ -22,9 +22,9 @@ namespace flame
 			submit_fence.reset(new FencePrivate(device));
 			render_finished.reset(new SemaphorePrivate(device));
 
-			native->add_destroy_listener([](Capture& c) {
-				delete c.thiz<WindowPrivate>();
-			}, Capture().set_thiz(this));
+			native->add_destroy_listener([this]() {
+				delete this;
+			});
 
 			if (!windows.empty())
 				windows.back()->next = this;

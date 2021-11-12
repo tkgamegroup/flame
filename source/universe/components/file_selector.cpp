@@ -120,13 +120,8 @@ namespace flame
 				cb->call(false, nullptr);
 			}, Capture().set_thiz(this));
 
-		wchar_t buf[256];
-
 		if (recent_folders_path.empty())
-		{
-			get_app_path(buf);
-			recent_folders_path = std::filesystem::path(buf) / L"recent_folders.txt";
-		}
+			recent_folders_path = get_app_path() / L"recent_folders.txt";
 		if (std::filesystem::exists(recent_folders_path))
 		{
 			std::ifstream file(recent_folders_path);
@@ -137,7 +132,7 @@ namespace flame
 				if (!line.empty())
 				{
 					auto& item = recent_list.add(line);
-					item.t->set_text(item.data.filename());
+					item.t->set_text(item.data.filename().c_str());
 					item.r->add_mouse_click_listener([](Capture& c) {
 						auto thiz = c.thiz<cFileSelectorPrivate>();
 						thiz->set_folder(thiz->recent_list.find_data(c.data<EntityPrivate*>()));
