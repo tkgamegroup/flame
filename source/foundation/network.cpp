@@ -1,6 +1,6 @@
 #include "../base64.h"
 #include "network_private.h"
-#include "../foundation/system.h"
+#include "system.h"
 
 #include <winsock2.h>
 

@@ -20,12 +20,9 @@ struct FlameUniverseTypeSelector
 	typedef FlameUniverseTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include "../foundation/foundation.h"
-#include "../network/network.h"
-#include "../database/database.h"
 #include "../graphics/graphics.h"
 #include "../sound/sound.h"
 #include "../physics/physics.h"
-#include "../script/script.h"
 
 namespace flame
 {
