@@ -2,8 +2,6 @@
 
 #include "network.h"
 
-//#include <nlohmann/json.hpp>
-
 namespace flame
 {
 	namespace network

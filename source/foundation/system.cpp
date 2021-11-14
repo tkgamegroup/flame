@@ -166,7 +166,7 @@ namespace flame
 		CloseClipboard();
 	}
 
-	std::tuple<uint, uint, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path)
+	std::pair<uvec2, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path)
 	{
 		HRESULT hr;
 
@@ -200,22 +200,22 @@ namespace flame
 		desktop_folder->Release();
 		shell_folder->Release();
 
-		return std::make_tuple(w, h, std::move(data));
+		return std::make_pair(uvec2(w, h), std::move(data));
 	}
 
-	std::tuple<uint, uint, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id)
+	std::pair<uvec2, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id)
 	{
 		SHFILEINFOW file_info = {};
 		SHGetFileInfoW(path.c_str(), 0, &file_info, sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_LARGEICON);
 
 		if (file_info.hIcon == nullptr)
-			return std::make_tuple(0, 0, std::unique_ptr<uchar>());
+			return std::make_pair(uvec2(0), std::unique_ptr<uchar>());
 
 		if (out_id)
 		{
 			*out_id = file_info.iIcon;
 			DestroyIcon(file_info.hIcon);
-			return std::make_tuple(0, 0, std::unique_ptr<uchar>());
+			return std::make_pair(uvec2(0), std::unique_ptr<uchar>());
 		}
 
 		ICONINFO icon_info = { 0 };
@@ -240,7 +240,7 @@ namespace flame
 
 		DestroyIcon(file_info.hIcon);
 
-		return std::make_tuple(w, h, std::move(data));
+		return std::make_pair(uvec2(w, h), std::move(data));
 	}
 
 	bool is_keyboard_pressing(KeyboardKey key)

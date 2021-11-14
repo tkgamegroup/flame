@@ -24,16 +24,15 @@ namespace flame
 	System* WorldPrivate::find_system(std::string_view _name) const
 	{
 		System* ret = nullptr;
-		auto name = _name;
 		for (auto& s : systems)
 		{
-			if (s->type_name == name)
+			if (s->type_name == _name)
 			{
 				ret = s.get();
 				break;
 			}
 		}
-		name = "flame::" + _name;
+		auto name = "flame::" + std::string(_name);
 		for (auto& s : systems)
 		{
 			if (s->type_name == name)

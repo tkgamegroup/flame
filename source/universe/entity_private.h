@@ -7,17 +7,6 @@
 
 namespace flame
 {
-	struct StateRule
-	{
-		void* o;
-		std::string vname;
-		TypeInfo* type;
-		FunctionInfo* setter;
-		std::vector<std::pair<StateFlags, void*>> values;
-
-		~StateRule();
-	};
-
 	struct EntityPrivate : Entity
 	{
 		typedef std::vector<std::unique_ptr<Closure<void(Capture&, uint)>>> DataListeners;
@@ -33,7 +22,6 @@ namespace flame
 
 		StateFlags state = StateNone;
 		StateFlags last_state = StateNone;
-		std::vector<std::unique_ptr<StateRule>> state_rules;
 
 		uint depth = 0;
 		uint index = 0;

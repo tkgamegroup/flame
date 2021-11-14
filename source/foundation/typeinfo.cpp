@@ -33,6 +33,14 @@ namespace flame
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{
+				auto t = new TypeInfo_short;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfo_ushort;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
 				auto t = new TypeInfo_int;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
@@ -98,6 +106,14 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfo_vec4;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfo_string;
+				tidb.typeinfos.emplace(t->hash, t);
+			}
+			{
+				auto t = new TypeInfo_wstring;
 				tidb.typeinfos.emplace(t->hash, t);
 			}
 			{

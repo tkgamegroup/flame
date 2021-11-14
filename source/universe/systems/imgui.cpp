@@ -39,23 +39,22 @@ namespace flame
 		fassert(!window);
 		window = _window;
 
-		auto set_targets_from_swapchain = [](Capture& c, const uvec2& size) {
-			auto thiz = c.thiz<sImguiPrivate>();
+		auto set_targets_from_swapchain = [this](const uvec2& size) {
 			std::vector<ImageView*> views;
 
-			auto swapchain = thiz->window->get_swapchain();
+			auto swapchain = window->get_swapchain();
 			views.resize(swapchain->get_images_count());
 			for (auto i = 0; i < views.size(); i++)
 				views[i] = swapchain->get_image(i)->get_view();
 
-			thiz->set_targets(views);
+			set_targets(views);
 		};
 
-		set_targets_from_swapchain(Capture().set_thiz(this), uvec2(0));
+		set_targets_from_swapchain(uvec2(0));
 
 		auto native_window = window->get_native();
 
-		native_window->add_resize_listener(set_targets_from_swapchain, Capture().set_thiz(this));
+		native_window->add_resize_listener(set_targets_from_swapchain);
 
 		window->add_renderer([](Capture& c, uint img_idx, CommandBuffer* commandbuffer) {
 			c.thiz<sImguiPrivate>()->render(img_idx, commandbuffer);
@@ -66,23 +65,20 @@ namespace flame
 			io.MouseDown[0] = true;
 		});
 
-		native_window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		native_window->add_mouse_left_up_listener([this](const ivec2& pos) {
 			ImGuiIO& io = ImGui::GetIO();
 			io.MouseDown[0] = false;
-		}, Capture().set_thiz(this));
+		});
 
-		native_window->add_mouse_move_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sImguiPrivate>();
+		native_window->add_mouse_move_listener([this](const ivec2& pos) {
 			ImGuiIO& io = ImGui::GetIO();
 			io.MousePos = ImVec2(pos.x, pos.y);
-		}, Capture().set_thiz(this));
+		});
 
-		native_window->add_mouse_scroll_listener([](Capture& c, int scroll) {
-			auto thiz = c.thiz<sImguiPrivate>();
+		native_window->add_mouse_scroll_listener([this](int scroll) {
 			ImGuiIO& io = ImGui::GetIO();
 			io.MouseWheel = scroll;
-		}, Capture().set_thiz(this));
+		});
 	}
 
 	graphics::Image* sImguiPrivate::set_render_target(graphics::Image* old, const uvec2& new_size)

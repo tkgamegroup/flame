@@ -78,28 +78,22 @@ void WindowProject::Item::set_size()
 
 	if (is_image_file(path.extension()))
 	{
-		uint w;
-		uint h;
-		uchar* d;
-		get_thumbnail(metric.size, path.c_str(), &w, &h, &d);
-		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), d);
+		auto d = get_thumbnail(metric.size, path.c_str());
+		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 		thumbnail = img;
 		window_project.thumbnails.emplace_back(img);
 	}
 	else
 	{
 		int icon_id;
-		get_icon(path.c_str(), &icon_id, nullptr, nullptr, nullptr);
+		get_icon(path.c_str(), &icon_id);
 		auto it = window_project.icons.find(icon_id);
 		if (it != window_project.icons.end())
 			thumbnail = it->second.get();
 		else
 		{
-			uint w;
-			uint h;
-			uchar* d;
-			get_icon(path.c_str(), nullptr, &w, &h, &d);
-			auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), d);
+			auto d = get_icon(path.c_str(), nullptr);
+			auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 			thumbnail = img;
 			window_project.icons.emplace(icon_id, img);
 		}

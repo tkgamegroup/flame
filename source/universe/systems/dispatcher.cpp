@@ -25,33 +25,27 @@ namespace flame
 		fassert(!window);
 		window = _window;
 
-		window->add_key_down_listener([](Capture& c, KeyboardKey key) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
-
-			if (thiz->kbtns_temp[key].first)
+		window->add_key_down_listener([this](KeyboardKey key) {
+			if (kbtns_temp[key].first)
 				return;
-			thiz->kbtns_temp[key] = std::make_pair(true, true);
-			thiz->key_down_inputs.push_back(key);
+			kbtns_temp[key] = std::make_pair(true, true);
+			key_down_inputs.push_back(key);
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
-		window->add_key_up_listener([](Capture& c, KeyboardKey key) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		window->add_key_up_listener([this](KeyboardKey key) {
+			kbtns_temp[key] = std::make_pair(false, true);
+			key_up_inputs.push_back(key);
 
-			thiz->kbtns_temp[key] = std::make_pair(false, true);
-			thiz->key_up_inputs.push_back(key);
+			dirty = true;
+		});
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+		window->add_char_listener([this](wchar_t ch) {
+			char_inputs.push_back(ch);
 
-		window->add_char_listener([](Capture& c, wchar_t ch) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
-
-			thiz->char_inputs.push_back(ch);
-
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
 		window->add_mouse_left_down_listener([this](const ivec2& pos) {
 			mbtns_temp[Mouse_Left] = std::make_pair(true, true);
@@ -61,72 +55,58 @@ namespace flame
 			dirty = true;
 		});
 
-		window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		window->add_mouse_left_up_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Left] = std::make_pair(false, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-			thiz->mbtns_temp[Mouse_Left] = std::make_pair(false, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
+			dirty = true;
+		});
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+		window->add_mouse_right_down_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Right] = std::make_pair(true, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-		window->add_mouse_right_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+			dirty = true;
+		});
 
-			thiz->mbtns_temp[Mouse_Right] = std::make_pair(true, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
+		window->add_mouse_right_up_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Right] = std::make_pair(false, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
-		window->add_mouse_right_up_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		window->add_mouse_middle_down_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Middle] = std::make_pair(true, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-			thiz->mbtns_temp[Mouse_Right] = std::make_pair(false, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
+			dirty = true;
+		});
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+		window->add_mouse_middle_up_listener([this](const ivec2& pos) {
+			mbtns_temp[Mouse_Middle] = std::make_pair(false, true);
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-		window->add_mouse_middle_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+			dirty = true;
+		});
 
-			thiz->mbtns_temp[Mouse_Middle] = std::make_pair(true, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
+		window->add_mouse_move_listener([this](const ivec2& pos) {
+			mdisp_temp += pos - mpos;
+			mpos = pos;
 
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
-		window->add_mouse_middle_up_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
+		window->add_mouse_scroll_listener([this](int scroll) {
+			mscrl_temp = scroll;
 
-			thiz->mbtns_temp[Mouse_Middle] = std::make_pair(false, true);
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
-
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
-
-		window->add_mouse_move_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
-
-			thiz->mdisp_temp += pos - thiz->mpos;
-			thiz->mpos = pos;
-
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
-
-		window->add_mouse_scroll_listener([](Capture& c, int scroll) {
-			auto thiz = c.thiz<sDispatcherPrivate>();
-
-			thiz->mscrl_temp = scroll;
-
-			thiz->dirty = true;
-		}, Capture().set_thiz(this));
+			dirty = true;
+		});
 
 		auto root = world->root.get();
 		cReceiverPrivate* cer;

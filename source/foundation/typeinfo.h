@@ -150,7 +150,7 @@ namespace flame
 		Metas metas;
 		void* library;
 
-		inline bool check(TypeInfo* ret, std::span<TypeInfo*> parms) const
+		inline bool check(TypeInfo* ret, const std::vector<TypeInfo*> parms) const
 		{
 			if (type != ret || parameters.size() != parms.size())
 				return false;

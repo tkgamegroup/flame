@@ -147,6 +147,43 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_short : TypeInfo
+	{
+		TypeInfo_short() :
+			TypeInfo(TypeData, "short", sizeof(short))
+		{
+			basic_type = IntegerType;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(short*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(short*)dst = sto<short>(str);
+		}
+	};
+
+	struct TypeInfo_ushort : TypeInfo
+	{
+		TypeInfo_ushort() :
+			TypeInfo(TypeData, "ushort", sizeof(ushort))
+		{
+			basic_type = IntegerType;
+			is_signed = false;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(ushort*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(ushort*)dst = sto<ushort>(str);
+		}
+	};
+
 	struct TypeInfo_int : TypeInfo
 	{
 		TypeInfo_int() :
@@ -472,6 +509,72 @@ namespace flame
 			*(vec4*)dst = sto<4, float>(str);
 		}
 	};
+	
+	struct TypeInfo_string : TypeInfo
+	{
+		TypeInfo_string() :
+			TypeInfo(TypeData, "std::basic_string<char,std::char_traits<char>,std::allocator<char>>", sizeof(std::string))
+		{
+		}
+
+		void* create(bool create_pointing) const override 
+		{ 
+			return new std::string; 
+		}
+		void destroy(void* p, bool destroy_pointing) const override
+		{ 
+			delete (std::string*)p; 
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::string*)dst = *(std::string*)src;
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::string*)d1 == *(std::string*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			return *(std::string*)p;
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(std::string*)dst = str;
+		}
+	};
+
+	struct TypeInfo_wstring : TypeInfo
+	{
+		TypeInfo_wstring() :
+			TypeInfo(TypeData, "std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>", sizeof(std::string))
+		{
+		}
+
+		void* create(bool create_pointing) const override
+		{
+			return new std::wstring;
+		}
+		void destroy(void* p, bool destroy_pointing) const override
+		{
+			delete (std::wstring*)p;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::wstring*)dst = *(std::wstring*)src;
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::wstring*)d1 == *(std::wstring*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			return w2s(*(std::wstring*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(std::wstring*)dst = s2w(str);
+		}
+	};
 
 	struct TypeInfo_Rect : TypeInfo
 	{
@@ -619,14 +722,16 @@ namespace flame
 		}
 		std::string serialize(const void* p) const override
 		{
-			if (pointed_type)
-				return pointed_type->serialize(*(void**)p);
+			auto pp = *(void**)p;
+			if (pointed_type && pp)
+				return pointed_type->serialize(pp);
 			return "";
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			if (pointed_type)
-				pointed_type->unserialize(str, *(void**)dst);
+			auto pp = *(void**)dst;
+			if (pointed_type && pp)
+				pointed_type->unserialize(str, pp);
 		}
 	};
 

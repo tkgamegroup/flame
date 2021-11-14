@@ -31,9 +31,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS std::vector<std::filesystem::path> get_module_dependencies(const std::filesystem::path& path);
 	FLAME_FOUNDATION_EXPORTS std::wstring get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(std::wstring_view str);
-	FLAME_FOUNDATION_EXPORTS std::tuple<uint, uint, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path);
+	FLAME_FOUNDATION_EXPORTS std::pair<uvec2, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path);
 	// if out_id!=nullptr icon id will be assigned, and no icon data will be returned
-	FLAME_FOUNDATION_EXPORTS std::tuple<uint, uint, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id);
+	FLAME_FOUNDATION_EXPORTS std::pair<uvec2, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id);
 	FLAME_FOUNDATION_EXPORTS bool is_keyboard_pressing(KeyboardKey key);
 	FLAME_FOUNDATION_EXPORTS void send_keyboard_event(KeyboardKey key, bool down = true);
 	FLAME_FOUNDATION_EXPORTS void send_mouse_event(MouseKey key, bool down = true);

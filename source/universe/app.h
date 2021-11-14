@@ -82,7 +82,6 @@ namespace flame
 #if USE_SCRIPT_MODULE
 			script::Instance::create();
 #endif
-			load_default_prefab_types();
 
 			commandbuffer.reset(graphics::CommandBuffer::create(nullptr));
 			submit_fence.reset(graphics::Fence::create(nullptr));

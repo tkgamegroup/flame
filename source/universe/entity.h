@@ -61,6 +61,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
-
-	FLAME_UNIVERSE_EXPORTS void load_default_prefab_types();
 }

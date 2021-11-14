@@ -409,21 +409,20 @@ namespace flame
 
 		if (!external_targets)
 		{
-			auto set_targets_from_window = [](Capture& c, const uvec2& size) {
-				auto thiz = c.thiz<sRendererPrivate>();
+			auto set_targets_from_window = [this](const uvec2& size) {
 				std::vector<ImageView*> views;
 
-				auto swapchain = thiz->window->get_swapchain();
+				auto swapchain = window->get_swapchain();
 				views.resize(swapchain->get_images_count());
 				for (auto i = 0; i < views.size(); i++)
 					views[i] = swapchain->get_image(i)->get_view();
 
-				thiz->set_targets(views);
+				set_targets(views);
 			};
 
-			set_targets_from_window(Capture().set_thiz(this), uvec2(0));
+			set_targets_from_window(uvec2(0));
 
-			window->get_native()->add_resize_listener(set_targets_from_window, Capture().set_thiz(this));
+			window->get_native()->add_resize_listener(set_targets_from_window);
 		}
 
 		window->add_renderer([](Capture& c, uint img_idx, CommandBuffer* commandbuffer) {
