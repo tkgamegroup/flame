@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Source
 		{
-			virtual void release() = 0;
+			virtual ~Source() {}
 
 			virtual void set_volume(float v) = 0;
 			virtual void set_looping(bool v) = 0;

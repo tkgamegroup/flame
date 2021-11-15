@@ -39,13 +39,13 @@ namespace flame
 	void cMenuItemPrivate::on_entered_world()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		text = entity->get_component_t<cTextPrivate>();
-		fassert(text);
+		assert(text);
 
 		arrow = entity->find_child("arrow");
 

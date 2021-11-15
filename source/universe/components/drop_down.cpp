@@ -31,10 +31,10 @@ namespace flame
 	void cDropDownPrivate::on_load_finished()
 	{
 		menu = entity->get_component_t<cMenuPrivate>();
-		fassert(menu);
+		assert(menu);
 
 		text = entity->get_component_t<cTextPrivate>();
-		fassert(text);
+		assert(text);
 	}
 
 	bool cDropDownPrivate::on_before_adding_child(EntityPtr e)
@@ -44,7 +44,7 @@ namespace flame
 			if (e != menu->items)
 			{
 				auto receiver = e->get_component_t<cReceiverPrivate>();
-				fassert(receiver);
+				assert(receiver);
 
 				receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 					auto thiz = c.thiz<cDropDownPrivate>();

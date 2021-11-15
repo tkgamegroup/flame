@@ -15,7 +15,7 @@ namespace flame
 			if (res != VK_SUCCESS && res != VK_ERROR_OUT_OF_DATE_KHR)
 			{
 				printf("graphics error: %d\n", res);
-				fassert(0);
+				assert(0);
 			}
 		}
 
@@ -66,7 +66,7 @@ namespace flame
 					return VK_FORMAT_D24_UNORM_S8_UINT;
 
 				default:
-					fassert(0);
+					assert(0);
 			}
 		}
 
@@ -79,7 +79,7 @@ namespace flame
 				case VK_FORMAT_B8G8R8A8_SRGB:
 					return Format_B8G8R8A8_SRGB;
 				default:
-					fassert(0);
+					assert(0);
 			}
 		}
 
@@ -104,7 +104,7 @@ namespace flame
 			//case FLAME_CHASH("Vec(4+float)"):
 			//	return"vec4";
 			//default:
-			//	fassert(0);
+			//	assert(0);
 			//}
 			return "";
 		}
@@ -127,7 +127,7 @@ namespace flame
 			case Format_R32G32B32A32_INT:
 				return 16;
 			default:
-				fassert(0);
+				assert(0);
 			}
 		}
 
@@ -146,7 +146,7 @@ namespace flame
 			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
 				return "Vec(4+float)";
 			default:
-				fassert(0);
+				assert(0);
 			}
 		}
 
@@ -165,7 +165,7 @@ namespace flame
 			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
 				return "vec4";
 			default:
-				fassert(0);
+				assert(0);
 			}
 		}
 

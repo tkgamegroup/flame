@@ -22,7 +22,7 @@ namespace flame
 
 	void sDispatcherPrivate::setup(NativeWindow* _window)
 	{
-		fassert(!window);
+		assert(!window);
 		window = _window;
 
 		window->add_key_down_listener([this](KeyboardKey key) {

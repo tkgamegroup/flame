@@ -38,16 +38,18 @@ namespace flame
 
 	struct NativeWindow
 	{
-		virtual void release() = 0;
-
-		virtual void* get_native() = 0;
-
 		ivec2 pos;
 		uvec2 size;
 		std::string title;
 		uint style;
 
 		CursorType cursor;
+
+		void* userdata = nullptr;
+
+		virtual void* get_native() = 0;
+
+		virtual void close() = 0;
 
 		virtual void set_pos(const ivec2& pos) = 0;
 		virtual void set_size(const uvec2& size) = 0;
@@ -81,8 +83,6 @@ namespace flame
 		virtual void remove_resize_listener(void* lis) = 0;
 		virtual void* add_destroy_listener(const std::function<void()>& lis) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
-
-		void* userdata = nullptr;
 
 		FLAME_FOUNDATION_EXPORTS static NativeWindow* create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindow* parent = nullptr);
 	};

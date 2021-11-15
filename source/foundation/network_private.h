@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../json.h"
 #include "network.h"
 
 namespace flame
@@ -12,9 +13,8 @@ namespace flame
 
 			int fd;
 
-			void (*on_message)(Capture& c, uint size, const char* msg);
-			void (*on_close)(Capture& c);
-			Capture capture;
+			std::function<void(std::string_view msg)> on_message;
+			std::function<void()> on_close;
 
 			std::recursive_mutex mtx;
 			void* ev_ended;
@@ -22,9 +22,7 @@ namespace flame
 			ClientPrivate();
 			~ClientPrivate();
 
-			void release() override { delete this; }
-
-			void send(uint size, void* data) override;
+			void send(std::string_view msg) override;
 			void stop(bool passive);
 		};
 
@@ -34,9 +32,8 @@ namespace flame
 			{
 				int fd;
 
-				void (*on_message)(Capture& c, uint size, const char* msg);
-				void (*on_close)(Capture& c);
-				Capture capture;
+				std::function<void(std::string_view msg)> on_message;
+				std::function<void()> on_close;
 
 				std::recursive_mutex mtx;
 				void* ev_ended;
@@ -53,9 +50,8 @@ namespace flame
 
 			std::vector<std::unique_ptr<Client>> cs;
 
-			void (*on_dgram)(Capture& c, void* id, uint size, const char* msg);
-			void (*on_connect)(Capture& c, void* id);
-			Capture capture;
+			std::function<void(void* id, std::string_view msg)> on_dgram;
+			std::function<void(void* id)> on_connect;
 
 			std::recursive_mutex mtx;
 			void* ev_ended_d;
@@ -64,32 +60,28 @@ namespace flame
 			ServerPrivate();
 			~ServerPrivate();
 
-			void release() override { delete this; }
-
-			void set_client(void* id, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture) override;
-			void send(void* id, uint size, void* data, bool dgram) override;
+			void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override;
+			void send(void* id, std::string_view msg, bool dgram) override;
 			void stop();
 		};
 
-		//struct FrameSyncServerPrivate : FrameSyncServer
-		//{
-		//	SocketType type;
+		struct FrameSyncServerPrivate : FrameSyncServer
+		{
+			SocketType type;
 
-		//	int frame;
-		//	int semaphore;
+			int frame;
+			int semaphore;
 
-		//	std::vector<int> fd_cs;
+			std::vector<int> fd_cs;
 
-		//	nlohmann::json frame_data;
+			nlohmann::json frame_data;
 
-		//	void* ev_ended;
+			void* ev_ended;
 
-		//	~FrameSyncServerPrivate();
+			~FrameSyncServerPrivate();
 
-		//	void release() override { delete this; }
-
-		//	bool send(uint client_id, uint size, void* data) override;
-		//	void stop();
-		//};
+			bool send(uint idx, std::string_view msg) override;
+			void stop();
+		};
 	}
 }

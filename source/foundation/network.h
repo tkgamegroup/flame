@@ -17,32 +17,33 @@ namespace flame
 
 		struct Client
 		{
-			virtual void release() = 0;
+			virtual ~Client() {}
 
-			virtual void send(uint size, void* data) = 0;
+			virtual void send(std::string_view msg) = 0;
 
-			FLAME_FOUNDATION_EXPORTS static Client* create(SocketType type, const char* ip, uint port, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture);
+			FLAME_FOUNDATION_EXPORTS static Client* create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close);
 		};
 
 		struct Server
 		{
-			virtual void release() = 0;
+			virtual ~Server() {}
 
-			virtual void set_client(void* id, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture) = 0;
-			virtual void send(void* id, uint size, void* data, bool dgram) = 0;
+			virtual void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
+			virtual void send(void* id, std::string_view msg, bool dgram) = 0;
 
-			FLAME_FOUNDATION_EXPORTS static Server* create(SocketType type, uint port, void on_dgram(Capture& c, void* id, uint size, const char* msg), void on_connect(Capture& c, void* id), const Capture& capture);
+			FLAME_FOUNDATION_EXPORTS static Server* create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect);
 		};
 
-		//struct FrameSyncServer
-		//{
-		//	virtual void release() = 0;
+		struct FrameSyncServer
+		{
+			virtual ~FrameSyncServer() {}
 
-		//	virtual bool send(uint client_idx, uint size, void* data) = 0;
+			virtual bool send(uint idx, std::string_view msg) = 0;
 
-		//	FLAME_FOUNDATION_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint clients_count);
-		//};
+			FLAME_FOUNDATION_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint num_clients);
+		};
 
-		FLAME_FOUNDATION_EXPORTS void board_cast(uint port, uint size, void* data, uint timeout/* second */, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture);
+		// timeout: second
+		FLAME_FOUNDATION_EXPORTS void board_cast(uint port, std::string_view msg, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message);
 	}
 }

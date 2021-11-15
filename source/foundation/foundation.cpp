@@ -19,37 +19,6 @@ namespace flame
 		free(p);
 	}
 
-#ifdef _DEBUG
-	std::vector<std::unique_ptr<Closure<void(Capture&)>>> assert_callbacks;
-#endif
-
-	void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture)
-	{
-#ifdef _DEBUG
-		auto c = new Closure(callback, capture);
-		assert_callbacks.emplace_back(c);
-		return c;
-#endif
-	}
-
-	void remove_assert_callback(void* ret)
-	{
-#ifdef _DEBUG
-		std::erase_if(assert_callbacks, [&](const auto& i) {
-			return i == (decltype(i))ret;
-		});
-#endif
-	}
-
-	void raise_assert(const char* expression, const char* file, uint line)
-	{
-#ifdef _DEBUG
-		for (auto& c : assert_callbacks)
-			c->call();
-		_wassert(s2w(expression).c_str(), s2w(file).c_str(), line);
-#endif
-	}
-
 	uint frames = 0;
 	static uint64 last_time = 0;
 	float delta_time = 0.f;
@@ -87,22 +56,15 @@ namespace flame
 
 	struct Event
 	{
-		uint id;
 		float interval;
 		float rest;
-		void(*callback)(Capture& c);
-		Capture capture;
-
-		~Event()
-		{
-			f_free(capture._data);
-		}
+		std::function<bool()> callback;
 	};
 
-	static std::list<std::unique_ptr<Event>> events;
+	static std::list<Event> events;
 	static std::recursive_mutex event_mtx;
 
-	int run(void (*callback)(Capture& c, float delta_time), const Capture& capture)
+	int run(const std::function<bool()>& callback)
 	{
 		if (!callback)
 		{
@@ -143,37 +105,27 @@ namespace flame
 			}
 
 			if (windows.empty())
-			{
-				f_free(capture._data);
 				return 0;
-			}
 
 			{
 				std::lock_guard<std::recursive_mutex> lock(event_mtx);
 				for (auto it = events.begin(); it != events.end();)
 				{
-					auto& e = *it;
-					auto excute = false;
-					e->rest -= delta_time;
-					if (e->rest <= 0)
-						excute = true;
-					if (excute)
+					it->rest -= delta_time;
+					if (it->rest <= 0)
 					{
-						e->capture._current = INVALID_POINTER;
-						e->callback(e->capture);
-						if (e->capture._current == INVALID_POINTER)
+						if (!it->callback())
 						{
 							it = events.erase(it);
 							continue;
 						}
-						e->rest = e->interval;
+						it->rest = it->interval;
 					}
 					it++;
 				}
 			}
 
-			callback((Capture&)capture, delta_time);
-			if (capture._current == INVALID_POINTER)
+			if (!callback())
 				return 0;
 
 			frames++;
@@ -193,22 +145,19 @@ namespace flame
 		}
 	}
 
-	void* add_event(void (*callback)(Capture& c), const Capture& capture, float time, uint id)
+	void* add_event(const std::function<bool()>& callback, float time)
 	{
-		event_mtx.lock();
-		auto e = new Event;
-		e->id = id;
-		e->interval = time;
-		e->rest = time;
-		e->callback = callback;
-		e->capture = capture;
-		events.emplace_back(e);
-		event_mtx.unlock();
-		return e;
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
+		auto& e = events.emplace_back();
+		e.interval = time;
+		e.rest = time;
+		e.callback = callback;
+		return &e;
 	}
 
 	void reset_event(void* _ev)
 	{
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		auto ev = (Event*)_ev;
 		ev->rest = ev->interval;
 	}
@@ -218,31 +167,17 @@ namespace flame
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
-			if ((*it).get() == ev)
+			if (&*it == ev)
 			{
-				if ((*it)->capture._current != nullptr)
-					(*it)->capture._current = INVALID_POINTER;
-				else
-					events.erase(it);
+				events.erase(it);
 				break;
 			}
 		}
 	}
 
-	void clear_events(int id)
+	void clear_events()
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
-		if (id == -1)
-		{
-			events.clear();
-			return;
-		}
-		for (auto it = events.begin(); it != events.end();)
-		{
-			if ((*it)->id == id)
-				it = events.erase(it);
-			else
-				it++;
-		}
+		events.clear();
 	}
 }

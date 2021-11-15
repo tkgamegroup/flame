@@ -132,13 +132,10 @@ namespace flame
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
 			wcex.hIcon = 0;
-			auto icon_fn = std::filesystem::path(L"assets\\ico.png");
-			auto engine_path = getenv("FLAME_PATH");
-			if (engine_path)
-				icon_fn = engine_path / icon_fn;
+			auto icon_fn = getenv("FLAME_PATH") / std::filesystem::path(L"default_assets\\ico.png");
 			if (std::filesystem::exists(icon_fn))
 			{
-				UniPtr<Bitmap> icon_image(Bitmap::create(icon_fn));
+				std::unique_ptr<Bitmap> icon_image(Bitmap::create(icon_fn));
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1, icon_image->bpp, nullptr, icon_image->data);
 			}
@@ -159,7 +156,7 @@ namespace flame
 
 		cursor = CursorArrow;
 
-		fassert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+		assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
 		uvec2 final_size;
 		auto screen_size = get_screen_size();
@@ -225,7 +222,7 @@ namespace flame
 			l();
 	}
 
-	void NativeWindowPrivate::release()
+	void NativeWindowPrivate::close()
 	{
 		DestroyWindow(hWnd);
 		dead = true;

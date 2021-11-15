@@ -90,7 +90,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			}
 			break;
 		default:
-			fassert(0);
+			assert(0);
 		}
 	};
 
@@ -295,7 +295,7 @@ process:
 	if (FAILED(CoInitialize(NULL)))
 	{
 		printf("typeinfogen: com initial failed, exit\n");
-		fassert(0);
+		assert(0);
 		return 1;
 	}
 
@@ -303,14 +303,14 @@ process:
 	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 	{
 		printf("typeinfogen: dia not found, exit\n");
-		fassert(0);
+		assert(0);
 		return 1;
 	}
 
 	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
 	{
 		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
-		fassert(0);
+		assert(0);
 		return 1;
 	}
 
@@ -318,7 +318,7 @@ process:
 	if (FAILED(dia_source->openSession(&session)))
 	{
 		printf("session failed to open\n");
-		fassert(0);
+		assert(0);
 		return 1;
 	}
 
@@ -326,7 +326,7 @@ process:
 	if (FAILED(session->get_globalScope(&global)))
 	{
 		printf("failed to get global\n");
-		fassert(0);
+		assert(0);
 		return 1;
 	}
 
@@ -465,7 +465,7 @@ process:
 					s_function_type->get_type(&s_return_type);
 					auto type_desc = typeinfo_from_symbol(s_return_type);
 					fi.type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-					fassert(fi.type);
+					assert(fi.type);
 					s_return_type->Release();
 
 					IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
@@ -490,7 +490,7 @@ process:
 						s_type->Release();
 
 						auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-						fassert(type);
+						assert(type);
 						fi.parameters.push_back(type);
 
 						s_parameter->Release();
@@ -541,7 +541,7 @@ process:
 					new_enum(type_desc.name, s_type);
 
 				auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-				fassert(type);
+				assert(type);
 				auto& vi = u.variables.emplace_back();
 				vi.type = type;
 				vi.name = name;

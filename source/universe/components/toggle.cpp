@@ -17,7 +17,7 @@ namespace flame
 	void cTogglePrivate::on_load_finished()
 	{
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 		
 		receiver->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cTogglePrivate>();
@@ -25,7 +25,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 		
 		box = entity->find_child("box");
-		fassert(box);
+		assert(box);
 	}
 	
 	cToggle* cToggle::create(void* parms)

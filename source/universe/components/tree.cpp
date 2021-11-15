@@ -78,11 +78,9 @@ namespace flame
 			return;
 		expand(selected);
 
-		add_event([](Capture& c) {
-			auto thiz = c.thiz<cTreePrivate>();
-			auto selected = thiz->selected;
+		add_event([this]() {
 			if (!selected)
-				return;
+				return false;
 			//	auto parent = thiz->entity->parent;
 			//	if (!parent || parent->children.s < 2)
 			//		return;
@@ -97,13 +95,13 @@ namespace flame
 			//		(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - 
 			// c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
 			//	e_thumb->get_component(cScrollbarThumb)->update(0.f);
-			}, Capture().set_thiz(this), 1U);
+		});
 	}
 
 	void cTreePrivate::on_load_finished()
 	{
 		auto receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreePrivate>()->set_selected(nullptr);

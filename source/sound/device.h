@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Device
 		{
-			virtual void release() = 0;
+			virtual ~Device() {}
 
 			FLAME_SOUND_EXPORTS static Device* get_default();
 			FLAME_SOUND_EXPORTS static void set_default(Device* device);
@@ -17,7 +17,7 @@ namespace flame
 
 		struct Recorder
 		{
-			virtual void release() = 0;
+			virtual ~Recorder() {}
 
 			virtual void start_record() = 0;
 			virtual void stop_record(void* dst) = 0;

@@ -302,9 +302,9 @@ namespace flame
 			saAttr.bInheritHandle = TRUE;
 			saAttr.lpSecurityDescriptor = NULL;
 			ok = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
-			fassert(ok);
+			assert(ok);
 			ok = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
-			fassert(ok);
+			assert(ok);
 		}
 		else
 			hChildStd_OUT_Wr = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -318,7 +318,7 @@ namespace flame
 		if (!CreateProcessW(filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
-			fassert(0);
+			assert(0);
 		}
 
 		WaitForSingleObject(proc_info.hProcess, INFINITE);
@@ -445,7 +445,7 @@ namespace flame
 	void do_file_watch(void* event_end, bool all_changes, const std::filesystem::path& path, const std::function<void(FileChangeType type, const std::filesystem::path& path)>& callback)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
-		fassert(dir_handle != INVALID_HANDLE_VALUE);
+		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
 
@@ -464,7 +464,7 @@ namespace flame
 			overlapped.hEvent = event_changed;
 
 			ok = ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL);
-			fassert(ok);
+			assert(ok);
 
 			if (event_end)
 			{
@@ -481,7 +481,7 @@ namespace flame
 
 			DWORD ret_bytes;
 			ok = GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false);
-			fassert(ok);
+			assert(ok);
 
 			auto base = 0;
 			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;

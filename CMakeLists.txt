@@ -85,18 +85,6 @@ if (NOT EXISTS "${SPIRV_CROSS_INCLUDE_DIR}" OR (NOT EXISTS "${SPIRV_CROSS_DEBUG_
 	message(SEND_ERROR "required SPIRV-Cross is invalid")
 endif()
 
-check_path("${parent_path}lua/inc" p)
-set(LUA_INCLUDE_DIR "${p}" CACHE PATH "LUA include directory")
-check_path("${parent_path}lua/build/debug/lua.lib" p)
-set(LUA_LIB_PATH "${p}" CACHE FILEPATH "LUA LIB Path")
-check_path("${parent_path}lua/build/debug/lua.dll" p)
-set(LUA_DLL_PATH "${p}" CACHE FILEPATH "LUA DLL Path")
-if (NOT EXISTS "${LUA_INCLUDE_DIR}" OR NOT EXISTS "${LUA_LIB_PATH}" OR NOT EXISTS "${LUA_DLL_PATH}")
-	message(STATUS "optional LUA is invalid, turn off USE_LUA")
-	set(USE_LUA off)
-else()
-	set(USE_LUA on)
-endif()
 
 check_path("${parent_path}/assimp/include" p)
 set(ASSIMP_INCLUDE_DIR "${p}" CACHE PATH "Assimp include directory")
@@ -166,7 +154,7 @@ else()
 	set(USE_MYSQL on)
 endif()
 
-set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
+set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/default_assets")
 set(SHADERS_DIR "${ASSETS_DIR}/shaders")
 
 add_subdirectory(source)

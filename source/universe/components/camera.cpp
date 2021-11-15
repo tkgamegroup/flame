@@ -27,7 +27,7 @@ namespace flame
 	void cCameraPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 
 		node->mark_drawing_dirty();
 	}
@@ -40,7 +40,7 @@ namespace flame
 	void cCameraPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		apply_current();
 	}

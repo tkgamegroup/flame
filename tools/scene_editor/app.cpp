@@ -120,11 +120,6 @@ void MyApp::init()
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
 	}, Capture());
-
-	//auto script_ins = script::Instance::get_default();
-	//script_ins->excute_file(L"camera.lua");
-	//script_ins->excute_file(L"cmd.lua");
-	//script_ins->excute_file(L"main.lua");
 }
 
 void MyApp::open_project(const std::filesystem::path& path)
@@ -163,9 +158,10 @@ int main(int argc, char** args)
 		break;
 	}
 
-	run([](Capture& c, float) {
+	run([]() {
 		app.update();
-	}, Capture());
+		return true;
+	});
 
 	std::ofstream settings_o("settings.ini");
 	settings_o << "[opened_windows]\n";

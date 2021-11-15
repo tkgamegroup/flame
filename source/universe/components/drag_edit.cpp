@@ -7,13 +7,13 @@ namespace flame
 {
 	void cDragEditPrivate::set_type(BasicType t)
 	{
-		fassert(t == IntegerType || t == FloatingType);
+		assert(t == IntegerType || t == FloatingType);
 		type = t;
 	}
 
 	void cDragEditPrivate::set_int(int _i)
 	{
-		fassert(type == IntegerType);
+		assert(type == IntegerType);
 		i = clamp(_i, (int)min_v, (int)max_v);
 		if (dragging)
 			drag_i = i;
@@ -22,7 +22,7 @@ namespace flame
 
 	void cDragEditPrivate::set_float(float _f)
 	{
-		fassert(type == FloatingType);
+		assert(type == FloatingType);
 		f = clamp(_f, min_v, max_v);
 		if (dragging)
 			drag_f = f;
@@ -32,11 +32,11 @@ namespace flame
 	void cDragEditPrivate::on_load_finished()
 	{
 		drag = entity->find_child("drag");
-		fassert(drag);
+		assert(drag);
 		drag_text = drag->get_component_t<cTextPrivate>();
-		fassert(drag_text);
+		assert(drag_text);
 		drag_receiver = drag->get_component_t<cReceiverPrivate>();
-		fassert(drag_receiver);
+		assert(drag_receiver);
 
 		drag_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cDragEditPrivate>();
@@ -107,11 +107,11 @@ namespace flame
 		}, Capture().set_thiz(this));
 
 		edit = entity->find_child("edit");
-		fassert(edit);
+		assert(edit);
 		edit_text = edit->get_component_t<cTextPrivate>();
-		fassert(edit_text);
+		assert(edit_text);
 		edit_receiver = edit->get_component_t<cReceiverPrivate>();
-		fassert(edit_receiver);
+		assert(edit_receiver);
 
 		edit->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			if (msg == S<"state_changed"_h>)

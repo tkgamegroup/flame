@@ -404,7 +404,7 @@ namespace flame
 
 	void sRendererPrivate::setup(Window* _window, bool external_targets)
 	{
-		fassert(!window);
+		assert(!window);
 		window = _window;
 
 		if (!external_targets)
@@ -1402,7 +1402,7 @@ namespace flame
 
 	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, Pipeline* pl)
 	{
-		fassert(0);
+		assert(0);
 
 		auto& nd = *_nd;
 		for (auto it = nd.pl_mats[usage].begin(); it != nd.pl_mats[usage].end(); it++)
@@ -2680,7 +2680,7 @@ namespace flame
 
 		nd.buf_mesh_transforms.create(BufferUsageStorage);
 		nd.buf_mesh_armatures.create(BufferUsageStorage);
-		fassert(_countof(mesh::DSL_mesh::Armature::bones) == ArmatureMaxBones);
+		assert(_countof(mesh::DSL_mesh::Armature::bones) == ArmatureMaxBones);
 		nd.ds_mesh.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"mesh/mesh.dsl")));
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Transforms_binding, 0, nd.buf_mesh_transforms.buf.get());
 		nd.ds_mesh->set_buffer(mesh::DSL_mesh::Armatures_binding, 0, nd.buf_mesh_armatures.buf.get());

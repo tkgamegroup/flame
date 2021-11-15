@@ -19,7 +19,7 @@ namespace flame
 	void cListPrivate::on_load_finished()
 	{
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cListPrivate>();
@@ -33,7 +33,7 @@ namespace flame
 		if (load_finished)
 		{
 			auto receiver = e->get_component_t<cReceiverPrivate>();
-			fassert(receiver);
+			assert(receiver);
 
 			receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<cListPrivate>();

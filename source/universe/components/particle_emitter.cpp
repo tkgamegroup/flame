@@ -60,7 +60,7 @@ namespace flame
 		if (img_src.extension() != L".atlas")
 		{
 			auto img = graphics::Image::get(nullptr, img_src.c_str(), false);
-			fassert(img);
+			assert(img);
 			iv = img->get_view();
 
 			res_id = s_renderer->find_texture_res(iv);
@@ -70,7 +70,7 @@ namespace flame
 		else
 		{
 			atlas = graphics::ImageAtlas::get(nullptr, img_src.c_str());
-			fassert(atlas);
+			assert(atlas);
 			iv = atlas->get_image()->get_view();
 
 			res_id = s_renderer->find_texture_res(iv);
@@ -81,7 +81,7 @@ namespace flame
 			{
 				graphics::ImageAtlas::TileInfo ti;
 				tile_id = atlas->find_tile(tile_name.c_str(), &ti);
-				fassert(tile_id != -1);
+				assert(tile_id != -1);
 				tile_uv = ti.uv;
 			}
 		}
@@ -93,7 +93,7 @@ namespace flame
 	void cParticleEmitterPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 
 		node->mark_drawing_dirty();
 	}
@@ -106,7 +106,7 @@ namespace flame
 	void cParticleEmitterPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 		apply_src();
 	}
 

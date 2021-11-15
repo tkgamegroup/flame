@@ -14,8 +14,6 @@ namespace flame
 
 			DevicePrivate();
 			~DevicePrivate();
-
-			void release() override { delete this; }
 		};
 
 		extern DevicePrivate* default_device;
@@ -26,8 +24,6 @@ namespace flame
 
 			RecorderPrivate(uint frequency, bool stereo, bool _16bit, float duration);
 			~RecorderPrivate();
-
-			void release() override { delete this; }
 
 			void start_record() override;
 			void stop_record(void* dst) override;

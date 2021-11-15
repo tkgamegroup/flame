@@ -30,30 +30,10 @@ struct FlameFoundationTypeSelector
 namespace flame
 {
 	FLAME_FOUNDATION_TYPE(NativeWindow);
-	FLAME_FOUNDATION_TYPE(Application);
-
-	FLAME_FOUNDATION_TYPE(Bitmap);
-
-	FLAME_FOUNDATION_TYPE(TypeInfo);
-	FLAME_FOUNDATION_TYPE(ReflectMeta);
-	FLAME_FOUNDATION_TYPE(VariableInfo);
-	FLAME_FOUNDATION_TYPE(EnumItemInfo);
-	FLAME_FOUNDATION_TYPE(EnumInfo);
-	FLAME_FOUNDATION_TYPE(FunctionInfo);
-	FLAME_FOUNDATION_TYPE(UdtInfo);
-	FLAME_FOUNDATION_TYPE(TypeInfoDataBase);
 
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
-
-	FLAME_FOUNDATION_EXPORTS void raise_assert(const char* expression, const char* file, uint line);
-
-#ifdef _DEBUG
-#define fassert(expression) ((!!(expression)) || (raise_assert(#expression, __FILE__, __LINE__), 0))
-#else
-#define fassert(expression)
-#endif
 
 	template <class T, class ...Args>
 	T* f_new(Args... args)
@@ -69,15 +49,6 @@ namespace flame
 		p->~T();
 		f_free(p);
 	}
-
-	struct Delector
-	{
-		template <class T>
-		void operator()(T* p)
-		{
-			f_delete(p);
-		}
-	};
 
 	template <class T>
 	struct UniPtr
@@ -280,14 +251,14 @@ namespace flame
 
 		void begin_staging()
 		{
-			fassert(!staging);
+			assert(!staging);
 
 			staging = true;
 		}
 
 		void end_staging()
 		{
-			fassert(staging);
+			assert(staging);
 
 			staging = false;
 			for (auto& c : staging_adds)
@@ -524,9 +495,6 @@ namespace flame
 		return ret;
 	}
 
-	FLAME_FOUNDATION_EXPORTS void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void remove_assert_callback(void* ret);
-
 	FLAME_FOUNDATION_EXPORTS uint get_frames();
 	/* second */
 	FLAME_FOUNDATION_EXPORTS float get_delta_time();
@@ -535,12 +503,10 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS uint get_fps();
 
 	FLAME_FOUNDATION_EXPORTS NativeWindow* get_window(uint idx);
-	FLAME_FOUNDATION_EXPORTS int run(void (*callback)(Capture& c, float delta_time), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS int run(const std::function<bool()>& callback);
 
-	/* set c._current to null to keep event */
-	FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c), const Capture& capture, float time = 0.f, uint id = 0);
+	FLAME_FOUNDATION_EXPORTS void* add_event(const std::function<bool()>& callback, float time = 0.f);
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void remove_event(void* ev);
-	/* id=-1 to clear all */
-	FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0);
+	FLAME_FOUNDATION_EXPORTS void clear_events();
 }

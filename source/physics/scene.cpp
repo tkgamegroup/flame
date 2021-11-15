@@ -85,7 +85,7 @@ namespace flame
 					else if (name == "Controller")
 						*out_user_data = ((ControllerPtr)actor->userData)->user_data;
 					else
-						fassert(0);
+						assert(0);
 				}
 			}
 			return cvt(hit.block.position);

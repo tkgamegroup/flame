@@ -121,7 +121,7 @@ namespace flame
 	void cTextPrivate::on_added()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
@@ -136,10 +136,10 @@ namespace flame
 	void cTextPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRenderer>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		atlas = graphics::FontAtlas::get(nullptr, atlas_name.c_str());
-		fassert(atlas);
+		assert(atlas);
 		auto iv = atlas->get_view();
 		res_id = s_renderer->find_element_res(iv);
 		if (res_id == -1)

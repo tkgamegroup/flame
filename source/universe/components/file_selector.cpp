@@ -20,25 +20,6 @@ namespace flame
 
 	void* cFileSelectorPrivate::add_callback(void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, bool ok, const wchar_t* text) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_bool(ok);
-				scr_ins->push_string(text ? w2s(text).c_str() : "");
-				scr_ins->call(2);
-				scr_ins->pop(2);
-			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			callbacks.emplace_back(c);
-			return c;
-		}
-#endif
 		auto c = new Closure(callback, capture);
 		callbacks.emplace_back(c);
 		return c;
@@ -54,7 +35,7 @@ namespace flame
 	void cFileSelectorPrivate::on_load_finished()
 	{
 		back_btn = entity->find_child("back_btn");
-		fassert(back_btn);
+		assert(back_btn);
 		back_btn->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cFileSelectorPrivate>();
 			if (thiz->folder_idx > 0)
@@ -63,7 +44,7 @@ namespace flame
 			}, Capture().set_thiz(this));
 
 		forward_btn = entity->find_child("forward_btn");
-		fassert(forward_btn);
+		assert(forward_btn);
 		forward_btn->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cFileSelectorPrivate>();
 			if (thiz->folder_idx < thiz->folders.size() - 1)
@@ -72,19 +53,19 @@ namespace flame
 			}, Capture().set_thiz(this));
 
 		up_btn = entity->find_child("up_btn");
-		fassert(up_btn);
+		assert(up_btn);
 		up_btn->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cFileSelectorPrivate>();
 			thiz->set_folder(thiz->curr_folder().parent_path());
 			}, Capture().set_thiz(this));
 
 		folder_edit = entity->find_child("folder_edit");
-		fassert(folder_edit);
+		assert(folder_edit);
 		folder_text = folder_edit->get_component_t<cTextPrivate>();
-		fassert(folder_text);
+		assert(folder_text);
 
 		file_list.build(entity->find_child("file_list"));
-		fassert(file_list.e && file_list.d);
+		assert(file_list.e && file_list.d);
 
 		clear_recent_btn = entity->find_child("clear_recent_btn");
 		if (clear_recent_btn)
@@ -98,22 +79,22 @@ namespace flame
 		}
 
 		recent_list.build(entity->find_child("recent_list"));
-		fassert(recent_list.e && recent_list.d);
+		assert(recent_list.e && recent_list.d);
 
 		path_edit = entity->find_child("path_edit");
-		fassert(path_edit);
+		assert(path_edit);
 		path_text = path_edit->get_component_t<cTextPrivate>();
-		fassert(path_text);
+		assert(path_text);
 
 		ok_btn = entity->find_child("ok_btn");
-		fassert(ok_btn);
+		assert(ok_btn);
 		ok_btn->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cFileSelectorPrivate>();
 			thiz->confirm();
 			}, Capture().set_thiz(this));
 
 		cancel_btn = entity->find_child("cancel_btn");
-		fassert(cancel_btn);
+		assert(cancel_btn);
 		cancel_btn->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cFileSelectorPrivate>();
 			for (auto& cb : thiz->callbacks)

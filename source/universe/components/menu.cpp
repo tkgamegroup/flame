@@ -20,18 +20,18 @@ namespace flame
 	void cMenuPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 		
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 		
 		text = entity->get_component_t<cTextPrivate>();
-		fassert(text);
+		assert(text);
 		
 		arrow = entity->find_child("arrow");
 		
 		items = entity->find_child("items");
-		fassert(items);
+		assert(items);
 		
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 		auto thiz = c.thiz<cMenuPrivate>();
@@ -88,7 +88,7 @@ namespace flame
 			if (e->name != "items")
 			{
 				auto element = e->get_component_i<cElementPrivate>(0);
-				fassert(element);
+				assert(element);
 				element->set_alignx(AlignMinMax);
 				auto cm = e->get_component_t<cMenuPrivate>();
 				if (cm)

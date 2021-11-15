@@ -6,7 +6,7 @@ namespace flame
 {
 	struct Entity
 	{
-		virtual void release() = 0;
+		virtual ~Entity() {}
 
 		virtual const char* get_name() const = 0;
 		virtual void set_name(const char* name) = 0;
@@ -48,9 +48,6 @@ namespace flame
 		virtual void component_data_changed(Component* c, uint h) = 0;
 		virtual void* add_component_data_listener(void (*callback)(Capture& c, uint hash), const Capture& capture, Component* c) = 0;
 		virtual void remove_component_data_listener(void* lis, Component* c) = 0;
-
-		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f /* 0 means every frame */ ) = 0;
-		virtual void remove_event(void* ev) = 0;
 
 		virtual EntityPtr copy() = 0;
 		virtual bool load(const wchar_t* filename) = 0;

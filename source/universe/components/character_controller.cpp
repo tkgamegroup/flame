@@ -43,7 +43,7 @@ namespace flame
 	void cCharacterControllerPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 	}
 
 	void cCharacterControllerPrivate::on_removed()
@@ -54,7 +54,7 @@ namespace flame
 	void cCharacterControllerPrivate::on_entered_world()
 	{
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
-		fassert(phy_scene);
+		assert(phy_scene);
 
 		phy_controller = physics::Controller::create(phy_scene->physics_scene.get(), 
 			physics::Material::get(nullptr, static_friction, dynamic_friction, restitution), radius, height);

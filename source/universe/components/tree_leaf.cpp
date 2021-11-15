@@ -21,9 +21,9 @@ namespace flame
 	void cTreeLeafPrivate::on_load_finished()
 	{
 		title_text = entity->get_component_t<cTextPrivate>();
-		fassert(title_text);
+		assert(title_text);
 		auto receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeLeafPrivate>();

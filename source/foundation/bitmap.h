@@ -4,12 +4,12 @@
 
 namespace flame
 {
+	FLAME_FOUNDATION_TYPE(Bitmap);
+
 	struct Bitmap
 	{
-		virtual void release() = 0;
-
 		uvec2 size;
-		uint channel;
+		uint chs;
 		// bits per pixel
 		uint bpp;
 		uint pitch;
@@ -17,13 +17,14 @@ namespace flame
 		uint data_size;
 		bool srgb;
 
-		virtual void change_channel(uint ch) = 0;
+		virtual ~Bitmap() {}
+		virtual void change_format(uint chs) = 0;
 		virtual void swap_channel(uint ch1, uint ch2) = 0;
 		virtual void copy_to(BitmapPtr dst, const uvec2& size, const ivec2& src_off, const ivec2& dst_off, bool border = false) = 0;
 		virtual void srgb_to_linear() = 0;
 		virtual void save(const std::filesystem::path& filename) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const uvec2& size, uint channel = 4, uint bpp = 32, uchar* data = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const uvec2& size, uint chs = 4, uint bpp = 32, uchar* data = nullptr);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const std::filesystem::path& filename);
 	};
 

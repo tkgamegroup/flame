@@ -35,7 +35,7 @@ namespace flame
 	void cWaterPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 
 		node->mark_drawing_dirty();
 	}
@@ -48,7 +48,7 @@ namespace flame
 	void cWaterPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		auto ppath = entity->get_src(src_id).parent_path();
 

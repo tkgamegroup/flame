@@ -33,23 +33,7 @@ namespace flame
 	void* cWindowPrivate::add_close_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
 		close_button->set_visible(true);
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->call(0);
-				scr_ins->pop(2);
-			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			close_listeners.emplace_back(c);
-			return c;
-		}
-#endif
+
 		auto c = new Closure(callback, capture);
 		close_listeners.emplace_back(c);
 		return c;
@@ -68,9 +52,9 @@ namespace flame
 	void cWindowPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<cWindowPrivate>();
@@ -86,9 +70,9 @@ namespace flame
 			}, Capture().set_thiz(this));
 
 		size_dragger = entity->find_child("size_dragger");
-		fassert(size_dragger);
+		assert(size_dragger);
 		size_dragger_receiver = size_dragger->get_component_t<cReceiverPrivate>();
-		fassert(size_dragger_receiver);
+		assert(size_dragger_receiver);
 
 		size_dragger_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<cWindowPrivate>();
@@ -109,14 +93,14 @@ namespace flame
 		//}, Capture().set_thiz(this));
 
 		auto etitle = entity->find_child("title");
-		fassert(etitle);
+		assert(etitle);
 		title_text = etitle->get_component_t<cTextPrivate>();
-		fassert(title_text);
+		assert(title_text);
 		if (!title.empty())
 			title_text->set_text(title.c_str());
 
 		close_button = entity->find_child("close_button");
-		fassert(close_button);
+		assert(close_button);
 		close_button->set_visible(!close_listeners.empty());
 		close_button->get_component_t<cReceiverPrivate>()->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cWindowPrivate>();
@@ -127,9 +111,9 @@ namespace flame
 			}, Capture().set_thiz(this));
 
 		content = entity->find_child("content");
-		fassert(content);
+		assert(content);
 		content_element = content->get_component_t<cElementPrivate>();
-		fassert(content_element);
+		assert(content_element);
 	}
 
 	bool cWindowPrivate::on_before_adding_child(EntityPtr e)
