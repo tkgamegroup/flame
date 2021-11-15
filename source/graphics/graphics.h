@@ -389,20 +389,6 @@ namespace flame
 			BlendFactorOneMinusSrc1Alpha
 		};
 
-		inline bool is_blend_factor_dual(BlendFactor f)
-		{
-			switch (f)
-			{
-			case BlendFactorSrc1Color:
-			case BlendFactorOneMinusSrc1Color:
-			case BlendFactorSrc1Alpha:
-			case BlendFactorOneMinusSrc1Alpha:
-				return true;
-
-			}
-			return false;
-		}
-
 		enum DynamicState
 		{
 			DynamicStateViewport,

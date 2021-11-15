@@ -15,8 +15,6 @@ namespace flame
 			BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration);
 			~BufferPrivate();
 
-			void release() override { delete this; }
-
 			static BufferPrivate* create(const std::filesystem::path& filename);
 		};
 	}

@@ -12,7 +12,7 @@ namespace flame
 {
 	namespace network
 	{
-		static bool shakehank(SocketType type, int fd)
+		static bool websocket_shakehand(SocketType type, int fd)
 		{
 			if (type == SocketWeb)
 			{
@@ -99,8 +99,9 @@ namespace flame
 				return true;
 		}
 
-		bool _send(SocketType type, int fd, uint size, void* data)
+		bool native_send(SocketType type, int fd, std::string_view msg)
 		{
+			auto size = (int)msg.size();
 			char buf[1024 * 64];
 
 			if (type == SocketWeb)
@@ -132,19 +133,19 @@ namespace flame
 					*p++ = size & 0xff;
 				}
 
-				memcpy(p, data, size);
+				memcpy(p, msg.data(), size);
 
 				return send(fd, (char*)buf, int(p - buf) + size, 0) > 0;
 			}
 			else
 			{
 				memcpy(buf, &size, sizeof(uint));
-				memcpy(buf + sizeof(uint), data, size);
+				memcpy(buf + sizeof(uint), msg.data(), size);
 				return send(fd, buf, sizeof(uint) + size, 0) > 0;
 			}
 		}
 
-		bool _recv(SocketType type, int fd, std::vector<std::string>& res)
+		bool native_recv(SocketType type, int fd, std::vector<std::string>& res)
 		{
 			uchar buf[1024 * 64];
 
@@ -301,13 +302,12 @@ namespace flame
 		{
 			stop(false);
 			wait_native_event(ev_ended, -1);
-			f_free(capture._data);
 			destroy_native_event(ev_ended);
 		}
 
-		void ClientPrivate::send(uint size, void* data)
+		void ClientPrivate::send(std::string_view msg)
 		{
-			_send(type, fd, size, data);
+			native_send(type, fd, msg);
 		}
 
 		void ClientPrivate::stop(bool passive)
@@ -318,11 +318,11 @@ namespace flame
 				closesocket(fd);
 				fd = 0;
 				if (passive)
-					on_close(capture);
+					on_close();
 			}
 		}
 
-		Client* Client::create(SocketType type, const char* ip, uint port, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture)
+		Client* Client::create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
 		{
 			int res;
 
@@ -345,13 +345,12 @@ namespace flame
 			c->ev_ended = create_native_event(false, true);
 			c->on_message = on_message;
 			c->on_close = on_close;
-			c->capture = capture;
 
 			std::thread([=]() {
 				while (true)
 				{
 					std::vector<std::string> res;
-					if (!_recv(type, c->fd, res))
+					if (!native_recv(type, c->fd, res))
 					{
 						c->stop(true);
 						set_native_event(c->ev_ended);
@@ -359,7 +358,7 @@ namespace flame
 					}
 					std::lock_guard lock(c->mtx);
 					for (auto& r : res)
-						c->on_message(c->capture, r.size(), r.c_str());
+						c->on_message(r);
 				}
 			}).detach();
 
@@ -374,7 +373,6 @@ namespace flame
 
 		ServerPrivate::Client::~Client()
 		{
-			f_free(capture._data);
 			destroy_native_event(ev_ended);
 		}
 
@@ -386,7 +384,7 @@ namespace flame
 				closesocket(fd);
 				fd = 0;
 				if (passive)
-					on_close(capture);
+					on_close();
 			}
 		}
 
@@ -402,7 +400,6 @@ namespace flame
 			wait_native_event(ev_ended_s, -1);
 			for (auto& c : cs)
 				wait_native_event(c->ev_ended, -1);
-			f_free(capture._data);
 			destroy_native_event(ev_ended_d);
 			destroy_native_event(ev_ended_s);
 		}
@@ -424,26 +421,25 @@ namespace flame
 				c->stop(false);
 		}
 
-		void ServerPrivate::set_client(void* id, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture)
+		void ServerPrivate::set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
 		{
 			auto client = (Client*)id;
 			client->on_message = on_message;
 			client->on_close = on_close;
-			client->capture = capture;
 		}
 
-		void ServerPrivate::send(void* id, uint size, void* data, bool dgram)
+		void ServerPrivate::send(void* id, std::string_view msg, bool dgram)
 		{
 			if (!dgram)
-				_send(type, ((Client*)id)->fd, size, data);
+				native_send(type, ((Client*)id)->fd, msg);
 			else
 			{
 				auto& da = *(DgramAddress*)id;
-				sendto(da.fd, (char*)data, size, 0, da.paddr, sizeof(sockaddr_in));
+				sendto(da.fd, (char*)msg.data(), msg.size(), 0, da.paddr, sizeof(sockaddr_in));
 			}
 		}
 
-		Server* Server::create(SocketType type, uint port, void on_dgram(Capture& c, void* id, uint size, const char* msg), void on_connect(Capture& c, void* id), const Capture& capture)
+		Server* Server::create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect)
 		{
 			int res;
 			sockaddr_in address;
@@ -476,7 +472,6 @@ namespace flame
 			s->ev_ended_s = create_native_event(false, true);
 			s->on_dgram = on_dgram;
 			s->on_connect = on_connect;
-			s->capture = capture;
 
 			std::thread([=]() {
 				while (true)
@@ -499,7 +494,7 @@ namespace flame
 					DgramAddress da;
 					da.fd = s->fd_d;
 					da.paddr = (sockaddr*)&address;
-					s->on_dgram(s->capture, &da, res, buf);
+					s->on_dgram(&da, { buf, res });
 				}
 			}).detach();
 
@@ -517,7 +512,7 @@ namespace flame
 					auto c = new ServerPrivate::Client;
 					c->fd = fd;
 					c->ev_ended = create_native_event(false, true);
-					s->on_connect(s->capture, c);
+					s->on_connect(c);
 					if (c->on_message || c->on_close)
 						s->cs.emplace_back(c);
 					else
@@ -531,7 +526,7 @@ namespace flame
 						while (true)
 						{
 							std::vector<std::string> res;
-							if (!_recv(type, c->fd, res))
+							if (!native_recv(type, c->fd, res))
 							{
 								c->stop(true);
 								set_native_event(c->ev_ended);
@@ -539,7 +534,7 @@ namespace flame
 							}
 							std::lock_guard lock(c->mtx);
 							for (auto& r : res)
-								c->on_message(c->capture, r.size(), r.c_str());
+								c->on_message(r);
 						}
 					}).detach();
 				}
@@ -548,141 +543,141 @@ namespace flame
 			return s;
 		}
 
-		//FrameSyncServerPrivate::~FrameSyncServerPrivate()
-		//{
-		//	stop();
-		//	wait_native_event(ev_ended, -1);
-		//	destroy_native_event(ev_ended);
-		//}
+		FrameSyncServerPrivate::~FrameSyncServerPrivate()
+		{
+			stop();
+			wait_native_event(ev_ended, -1);
+			destroy_native_event(ev_ended);
+		}
 
-		//bool FrameSyncServerPrivate::send(uint client_id, uint size, void* data)
-		//{
-		//	return _send(type, fd_cs[client_id], size, data);
-		//}
+		bool FrameSyncServerPrivate::send(uint idx, std::string_view msg)
+		{
+			return native_send(type, fd_cs[idx], msg);
+		}
 
-		//void FrameSyncServerPrivate::stop()
-		//{
-		//	for (auto& fd : fd_cs)
-		//	{
-		//		if (fd)
-		//		{
-		//			closesocket(fd);
-		//			fd = 0;
-		//		}
-		//	}
-		//}
+		void FrameSyncServerPrivate::stop()
+		{
+			for (auto& fd : fd_cs)
+			{
+				if (fd)
+				{
+					closesocket(fd);
+					fd = 0;
+				}
+			}
+		}
 
-		//FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint client_count)
-		//{
-		//	int res;
+		FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint num_clients)
+		{
+			int res;
 
-		//	auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-		//	assert(fd_s != INVALID_SOCKET);
-		//	sockaddr_in address = {};
-		//	address.sin_family = AF_INET;
-		//	address.sin_addr.S_un.S_addr = INADDR_ANY;
-		//	address.sin_port = htons(port);
-		//	res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-		//	assert(res == 0);
-		//	res = listen(fd_s, client_count);
-		//	assert(res == 0);
+			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
+			assert(fd_s != INVALID_SOCKET);
+			sockaddr_in address = {};
+			address.sin_family = AF_INET;
+			address.sin_addr.S_un.S_addr = INADDR_ANY;
+			address.sin_port = htons(port);
+			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
+			assert(res == 0);
+			res = listen(fd_s, num_clients);
+			assert(res == 0);
 
-		//	std::vector<int> fd_cs;
-		//	while (fd_cs.size() < client_count)
-		//	{
-		//		auto fd = accept(fd_s, nullptr, nullptr);
-		//		if (fd == INVALID_SOCKET)
-		//			return nullptr;
+			std::vector<int> fd_cs;
+			while (fd_cs.size() < num_clients)
+			{
+				auto fd = accept(fd_s, nullptr, nullptr);
+				if (fd == INVALID_SOCKET)
+					return nullptr;
 
-		//		if (!shakehank(type, fd))
-		//			continue;
+				if (!websocket_shakehand(type, fd))
+					continue;
 
-		//		fd_cs.push_back(fd);
-		//	}
+				fd_cs.push_back(fd);
+			}
 
-		//	closesocket(fd_s);
+			closesocket(fd_s);
 
-		//	{
-		//		srand(time(0));
-		//		nlohmann::json json = {
-		//			{"action", "start"},
-		//			{"seed", rand()}
-		//		};
-		//		auto str = json.dump();
-		//		for (auto fd : fd_cs)
-		//		{
-		//			if (!_send(type, fd, str.size(), str.data()))
-		//				return nullptr;
-		//		}
-		//	}
+			{
+				srand(time(0));
+				nlohmann::json json = {
+					{"action", "start"},
+					{"seed", rand()}
+				};
+				auto str = json.dump();
+				for (auto fd : fd_cs)
+				{
+					if (!native_send(type, fd, str))
+						return nullptr;
+				}
+			}
 
-		//	auto s = new FrameSyncServerPrivate;
-		//	s->type = type;
-		//	s->frame = 0;
-		//	s->semaphore = 0;
-		//	s->fd_cs = fd_cs;
-		//	s->ev_ended = create_native_event(false, true);
+			auto s = new FrameSyncServerPrivate;
+			s->type = type;
+			s->frame = 0;
+			s->semaphore = 0;
+			s->fd_cs = fd_cs;
+			s->ev_ended = create_native_event(false, true);
 
-		//	std::thread([type, s]() {
-		//		while (true)
-		//		{
-		//			fd_set rfds;
-		//			FD_ZERO(&rfds);
-		//			for (auto fd : s->fd_cs)
-		//				FD_SET(fd, &rfds);
-		//			auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
-		//			if (res < 0)
-		//			{
-		//				s->stop();
-		//				set_native_event(s->ev_ended);
-		//				return;
-		//			}
-		//			for (auto i = 0; i < s->fd_cs.size(); i++)
-		//			{
-		//				auto fd = s->fd_cs[i];
-		//				if (FD_ISSET(fd, &rfds))
-		//				{
-		//					std::vector<std::string> reqs;
-		//					if (!_recv(type, fd, reqs))
-		//					{
-		//						s->stop();
-		//						set_native_event(s->ev_ended);
-		//						return;
-		//					}
-		//					auto req = nlohmann::json::parse(reqs[0]);
-		//					auto n_frame = req.find("frame");
-		//					if (n_frame != req.end())
-		//					{
-		//						auto frame = n_frame->get<int>();
-		//						if (frame == s->frame)
-		//						{
-		//							s->semaphore++;
-		//							auto dst = s->frame_data[std::to_string(i)];
-		//							for (auto& i : req["data"].items())
-		//								dst[i.key()] = i.value();
+			std::thread([type, s]() {
+				while (true)
+				{
+					fd_set rfds;
+					FD_ZERO(&rfds);
+					for (auto fd : s->fd_cs)
+						FD_SET(fd, &rfds);
+					auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
+					if (res < 0)
+					{
+						s->stop();
+						set_native_event(s->ev_ended);
+						return;
+					}
+					for (auto i = 0; i < s->fd_cs.size(); i++)
+					{
+						auto fd = s->fd_cs[i];
+						if (FD_ISSET(fd, &rfds))
+						{
+							std::vector<std::string> reqs;
+							if (!native_recv(type, fd, reqs))
+							{
+								s->stop();
+								set_native_event(s->ev_ended);
+								return;
+							}
+							auto req = nlohmann::json::parse(reqs[0]);
+							auto n_frame = req.find("frame");
+							if (n_frame != req.end())
+							{
+								auto frame = n_frame->get<int>();
+								if (frame == s->frame)
+								{
+									s->semaphore++;
+									auto dst = s->frame_data[std::to_string(i)];
+									for (auto& i : req["data"].items())
+										dst[i.key()] = i.value();
 
-		//							if (s->semaphore >= s->fd_cs.size())
-		//							{
-		//								s->frame++;
-		//								s->semaphore = 0;
+									if (s->semaphore >= s->fd_cs.size())
+									{
+										s->frame++;
+										s->semaphore = 0;
 
-		//								s->frame_data["action"] = "frame";
-		//								auto str = s->frame_data.dump();
-		//								for (auto i = 0; i < 2; i++)
-		//									s->send(i, str.size(), str.data());
-		//								s->frame_data.clear();
-		//							}
-		//						}
-		//					}
-		//				}
-		//			}
-		//		}
-		//	}).detach();
+										s->frame_data["action"] = "frame";
+										auto str = s->frame_data.dump();
+										for (auto i = 0; i < 2; i++)
+											s->send(i, str);
+										s->frame_data.clear();
+									}
+								}
+							}
+						}
+					}
+				}
+			}).detach();
 
-		//	return s;
-		//}
+			return s;
+		}
 
-		void board_cast(uint port, uint size, void* data, uint timeout, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture)
+		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message)
 		{
 			int res;
 
@@ -710,7 +705,6 @@ namespace flame
 					if (res <= 0)
 					{
 						closesocket(fd);
-						f_free(capture._data);
 						return;
 					}
 
@@ -721,10 +715,9 @@ namespace flame
 					if (res <= 0)
 					{
 						closesocket(fd);
-						f_free(capture._data);
 						return;
 					}
-					on_message((Capture&)capture, inet_ntoa(address.sin_addr), res, buf);
+					on_message(inet_ntoa(address.sin_addr), { buf, res });
 				}
 			}).detach();
 		}

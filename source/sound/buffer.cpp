@@ -20,8 +20,16 @@ namespace flame
 			alDeleteBuffers(1, &al_buf);
 		}
 
-		BufferPrivate* BufferPrivate::create(const std::filesystem::path& filename)
+		Buffer* Buffer::create(void* data, uint frequency, bool stereo, bool _16bit, float duration)
 		{
+			return new BufferPrivate(data, frequency, stereo, _16bit, duration);
+		}
+
+		Buffer* Buffer::create(const std::filesystem::path& filename)
+		{
+			if (!std::filesystem::exists(filename))
+				return nullptr;
+
 			struct RIFF_Header
 			{
 				char RIFF_name[4];
@@ -79,19 +87,6 @@ namespace flame
 			delete[]data;
 
 			return ret;
-		}
-
-		Buffer* Buffer::create(void* data, uint frequency, bool stereo, bool _16bit, float duration)
-		{
-			return new BufferPrivate(data, frequency, stereo, _16bit, duration);
-		}
-
-		Buffer* Buffer::create(const wchar_t* filename)
-		{
-			if (!std::filesystem::exists(filename))
-				return nullptr;
-
-			return BufferPrivate::create(filename);
 		}
 	}
 }
