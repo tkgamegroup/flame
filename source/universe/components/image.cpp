@@ -50,7 +50,7 @@ namespace flame
 		if (img_src.extension() != L".atlas")
 		{
 			auto img = graphics::Image::get(nullptr, img_src.c_str(), false);
-			fassert(img);
+			assert(img);
 			iv = img->get_view();
 			tile_sz = img->get_size();
 
@@ -61,7 +61,7 @@ namespace flame
 		else
 		{
 			atlas = graphics::ImageAtlas::get(nullptr, img_src.c_str());
-			fassert(atlas);
+			assert(atlas);
 			iv = atlas->get_image()->get_view();
 
 			res_id = s_renderer->find_element_res(iv);
@@ -72,7 +72,7 @@ namespace flame
 			{
 				graphics::ImageAtlas::TileInfo ti;
 				tile_id = atlas->find_tile(tile_name.c_str(), &ti);
-				fassert(tile_id != -1);
+				assert(tile_id != -1);
 				tile_uv = ti.uv;
 				tile_sz = ti.size;
 			}
@@ -88,7 +88,7 @@ namespace flame
 	void cImagePrivate::on_added()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
@@ -103,7 +103,7 @@ namespace flame
 	void cImagePrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 		apply_src();
 	}
 

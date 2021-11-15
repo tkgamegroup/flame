@@ -128,7 +128,7 @@ namespace flame
 
 		void add(cNodePrivate* n)
 		{
-			fassert(!n->octnode.second);
+			assert(!n->octnode.second);
 
 			if (!bounds.contains(n->bounds))
 				return;
@@ -138,7 +138,7 @@ namespace flame
 
 		void remove(cNodePrivate* n)
 		{
-			fassert(n->octnode.second == this);
+			assert(n->octnode.second == this);
 
 			for (auto it = objects.begin(); it != objects.end(); it++)
 			{

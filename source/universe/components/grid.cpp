@@ -9,16 +9,16 @@ namespace flame
 	void cGridPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		anchor = entity->find_child("anchor");
-		fassert(anchor);
+		assert(anchor);
 
 		anchor_element = anchor->get_component_i<cElementPrivate>(0);
-		fassert(anchor_element);
+		assert(anchor_element);
 
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<cGridPrivate>();

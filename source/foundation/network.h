@@ -40,7 +40,7 @@ namespace flame
 
 		//	virtual bool send(uint client_idx, uint size, void* data) = 0;
 
-		//	FLAME_FOUNDATION_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint clients_count);
+		//	FLAME_FOUNDATION_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint num_clients);
 		//};
 
 		FLAME_FOUNDATION_EXPORTS void board_cast(uint port, uint size, void* data, uint timeout/* second */, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture);

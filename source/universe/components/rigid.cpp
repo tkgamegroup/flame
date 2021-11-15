@@ -15,7 +15,7 @@ namespace flame
 	{
 		if (dynamic == v)
 			return;
-		fassert(!phy_rigid);
+		assert(!phy_rigid);
 		dynamic = v;
 	}
 
@@ -54,7 +54,7 @@ namespace flame
 	void cRigidPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 	}
 
 	void cRigidPrivate::on_removed()
@@ -65,7 +65,7 @@ namespace flame
 	void cRigidPrivate::on_entered_world()
 	{
 		phy_scene = entity->world->get_system_t<sPhysicsPrivate>();
-		fassert(phy_scene);
+		assert(phy_scene);
 
 		phy_rigid = physics::Rigid::create(nullptr, dynamic);
 		phy_rigid->user_data = entity;

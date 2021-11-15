@@ -28,7 +28,7 @@ namespace flame
 				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
 					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
 			default:
-				fassert(0);
+				assert(0);
 			}
 		}
 
@@ -50,7 +50,7 @@ namespace flame
 				pixel[3] = int(clamp(v[3], 0.f, 1.f) * 255.f);
 				break;
 			default:
-				fassert(0);
+				assert(0);
 			}
 		}
 
@@ -365,7 +365,7 @@ namespace flame
 
 		void ImagePrivate::generate_mipmaps()
 		{
-			fassert(levels == 1);
+			assert(levels == 1);
 
 			auto s = sizes[0];
 			for (auto i = 0; ; i++)
@@ -412,7 +412,7 @@ namespace flame
 
 		float ImagePrivate::alpha_test_coverage(uint level, float ref, uint channel, float scale)
 		{
-			fassert(format == Format_R8G8B8A8_UNORM || format == Format_R8_UNORM);
+			assert(format == Format_R8G8B8A8_UNORM || format == Format_R8_UNORM);
 
 			auto& d = get_data(level, 0);
 
@@ -485,7 +485,7 @@ namespace flame
 
 		void ImagePrivate::save(const std::filesystem::path& filename)
 		{
-			fassert(usage & ImageUsageTransferSrc);
+			assert(usage & ImageUsageTransferSrc);
 
 			auto ext = filename.extension();
 			if (ext == L".dds" || ext == L".ktx")
@@ -500,7 +500,7 @@ namespace flame
 					gli_fmt = gli::FORMAT_RGBA16_SFLOAT_PACK16;
 					break;
 				}
-				fassert(gli_fmt != gli::FORMAT_UNDEFINED);
+				assert(gli_fmt != gli::FORMAT_UNDEFINED);
 				
 				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(sizes[0], 1), layers, 1, levels);
 
@@ -615,7 +615,7 @@ namespace flame
 				auto faces = (uint)gli_texture.faces();
 				if (faces > 1)
 				{
-					fassert(layers == 1);
+					assert(layers == 1);
 					layers = faces;
 				}
 				if (layers == 6)
@@ -634,7 +634,7 @@ namespace flame
 					format = Format_R32G32B32A32_SFLOAT;
 					break;
 				}
-				fassert(format != Format_Undefined);
+				assert(format != Format_Undefined);
 
 				ret = new ImagePrivate(device, format, ext, levels, layers,
 					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);

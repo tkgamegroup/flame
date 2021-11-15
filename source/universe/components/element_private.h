@@ -4,17 +4,6 @@
 
 namespace flame
 {
-	struct ElementScriptDrawerPrivate : ElementScriptDrawer
-	{
-		uint callback_slot;
-
-		void release() override { delete this; }
-
-		uint draw(uint, sRendererPtr) override;
-
-		void set_callback(uint slot) override { callback_slot = slot; }
-	};
-
 	struct cElementPrivate : cElement
 	{
 		vec2 pos = vec2(0.f);

@@ -53,7 +53,7 @@ namespace flame
 	void cShapePrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 
 		c_mesh = entity->get_component_t<cMeshPrivate>();
 		c_terrain = entity->get_component_t<cTerrainPrivate>();
@@ -74,7 +74,7 @@ namespace flame
 				break;
 			e = e->parent;
 		}
-		fassert(rigid);
+		assert(rigid);
 
 		node->update_transform();
 

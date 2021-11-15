@@ -86,7 +86,7 @@ namespace flame
 							"Data: %s\r\n"
 							"\r\n", key.c_str(), time_str);
 						auto res = send(fd, reply, strlen(reply), 0);
-						fassert(res > 0);
+						assert(res > 0);
 					}
 				}
 
@@ -327,7 +327,7 @@ namespace flame
 			int res;
 
 			auto fd = socket(AF_INET, SOCK_STREAM, 0);
-			fassert(fd != INVALID_SOCKET);
+			assert(fd != INVALID_SOCKET);
 			sockaddr_in address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = inet_addr(ip);
@@ -449,24 +449,24 @@ namespace flame
 			sockaddr_in address;
 
 			auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
-			fassert(fd_d != INVALID_SOCKET);
+			assert(fd_d != INVALID_SOCKET);
 			address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = INADDR_ANY;
 			address.sin_port = htons(port);
 			res = bind(fd_d, (sockaddr*)&address, sizeof(address));
-			fassert(res == 0);
+			assert(res == 0);
 
 			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			fassert(fd_s != INVALID_SOCKET);
+			assert(fd_s != INVALID_SOCKET);
 			address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = INADDR_ANY;
 			address.sin_port = htons(port);
 			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			fassert(res == 0);
+			assert(res == 0);
 			res = listen(fd_s, 1);
-			fassert(res == 0);
+			assert(res == 0);
 
 			auto s = new ServerPrivate;
 			s->type = type;
@@ -577,15 +577,15 @@ namespace flame
 		//	int res;
 
 		//	auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-		//	fassert(fd_s != INVALID_SOCKET);
+		//	assert(fd_s != INVALID_SOCKET);
 		//	sockaddr_in address = {};
 		//	address.sin_family = AF_INET;
 		//	address.sin_addr.S_un.S_addr = INADDR_ANY;
 		//	address.sin_port = htons(port);
 		//	res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-		//	fassert(res == 0);
+		//	assert(res == 0);
 		//	res = listen(fd_s, client_count);
-		//	fassert(res == 0);
+		//	assert(res == 0);
 
 		//	std::vector<int> fd_cs;
 		//	while (fd_cs.size() < client_count)
@@ -682,12 +682,12 @@ namespace flame
 		//	return s;
 		//}
 
-		void board_cast(uint port, uint size, void* data, uint _timeout, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture)
+		void board_cast(uint port, uint size, void* data, uint timeout, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture)
 		{
 			int res;
 
 			auto fd = socket(AF_INET, SOCK_DGRAM, 0);
-			fassert(fd != INVALID_SOCKET);
+			assert(fd != INVALID_SOCKET);
 			auto attr = 1;
 			setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&attr, sizeof(attr));
 			sockaddr_in address;
@@ -702,11 +702,11 @@ namespace flame
 
 				while (true)
 				{
-					timeval timeout = { _timeout, 0 };
+					timeval tv = { timeout, 0 };
 					fd_set rfds;
 					FD_ZERO(&rfds);
 					FD_SET(fd, &rfds);
-					res = select(-1, &rfds, nullptr, nullptr, &timeout);
+					res = select(-1, &rfds, nullptr, nullptr, &tv);
 					if (res <= 0)
 					{
 						closesocket(fd);

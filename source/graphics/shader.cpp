@@ -120,11 +120,11 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::vec<4,int,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					default:
-						fassert(0);
+						assert(0);
 					}
 					break;
 				case spirv_cross::SPIRType::UInt:
@@ -146,11 +146,11 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::vec<4,uint,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					default:
-						fassert(0);
+						assert(0);
 					}
 					break;
 				case spirv_cross::SPIRType::Float:
@@ -172,7 +172,7 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::vec<4,float,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					case 2:
@@ -182,7 +182,7 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::mat<2,2,float,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					case 3:
@@ -192,7 +192,7 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::mat<3,3,float,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					case 4:
@@ -202,11 +202,11 @@ namespace flame
 							ret = TypeInfo::get(TypeData, "glm::mat<4,4,float,0>", tidb);
 							break;
 						default:
-							fassert(0);
+							assert(0);
 						}
 						break;
 					default:
-						fassert(0);
+						assert(0);
 					}
 					break;
 				}
@@ -234,7 +234,7 @@ namespace flame
 						header += "\t\tvec3 dummy_" + std::to_string(dummy_id) + ";\n";
 						break;
 					default:
-						fassert(0);
+						assert(0);
 					}
 				};
 				auto off = 0;
@@ -359,13 +359,13 @@ namespace flame
 						}
 						break;
 					}
-					fassert(!type_name.empty());
+					assert(!type_name.empty());
 					header += "\t\t" + type_name + " " + vi.name;
 					auto size = type->size;
 					auto array_size = vi.array_size;
 					if (array_size > 1)
 					{
-						fassert(size == vi.array_stride);
+						assert(size == vi.array_stride);
 						header += "[" + std::to_string(array_size) + "]";
 					}
 					header += ";\n";
@@ -1204,7 +1204,7 @@ namespace flame
 					if (!fn.is_absolute())
 						fn = ppath / fn;
 					s.second = get_file_content(fn);
-					fassert(!s.second.empty());
+					assert(!s.second.empty());
 					SUS::remove_ch(s.second, '\r');
 					dependencies.push_back(fn);
 				}
@@ -1598,12 +1598,12 @@ namespace flame
 			for (auto n_shdr : doc_root.child("shaders"))
 			{
 				auto shader = ShaderPrivate::get(device, n_shdr.attribute("filename").value(), n_shdr.attribute("defines").value());
-				fassert(shader);
+				assert(shader);
 				shaders.push_back(shader);
 			}
 
 			auto layout = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
-			fassert(layout);
+			assert(layout);
 
 			if (shaders.size() > 1)
 			{
@@ -1616,7 +1616,7 @@ namespace flame
 
 				auto n_rp = doc_root.child("renderpass");
 				info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
-				fassert(info.renderpass);
+				assert(info.renderpass);
 				info.subpass_index = n_rp.attribute("index").as_uint();
 
 				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);

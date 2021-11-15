@@ -35,12 +35,12 @@ namespace flame
 			buffer_info.pQueueFamilyIndices = nullptr;
 
 			auto res = vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer);
-			fassert(res == VK_SUCCESS);
+			assert(res == VK_SUCCESS);
 
 			VkMemoryRequirements mem_requirements;
 			vkGetBufferMemoryRequirements(device->vk_device, vk_buffer, &mem_requirements);
 
-			fassert(size <= mem_requirements.size);
+			assert(size <= mem_requirements.size);
 
 			VkMemoryAllocateInfo alloc_info;
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;

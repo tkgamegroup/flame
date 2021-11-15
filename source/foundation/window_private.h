@@ -30,9 +30,9 @@ namespace flame
 		NativeWindowPrivate(std::string_view _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
 		~NativeWindowPrivate();
 
-		void release() override;
-
 		void* get_native() override;
+
+		void close() override;
 
 		void set_pos(const ivec2& pos) override;
 		void set_size(const uvec2& size) override;

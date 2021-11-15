@@ -73,7 +73,7 @@ namespace flame
 			fn.make_preferred();
 			model = graphics::Model::get(fn.c_str());
 		}
-		fassert(model);
+		assert(model);
 
 		if (sub_index >= model->get_meshes_count())
 			return;
@@ -126,7 +126,7 @@ namespace flame
 	void cMeshPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 
 		node->mark_drawing_dirty();
 	}
@@ -139,7 +139,7 @@ namespace flame
 	void cMeshPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		apply_src();
 		node->mark_bounds_dirty(false);

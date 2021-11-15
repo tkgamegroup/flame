@@ -58,17 +58,14 @@ namespace flame
 		frame_accumulate = 0.f;
 		if (!event)
 		{
-			event = add_event([](Capture& c) {
-				auto thiz = c.thiz<cArmaturePrivate>();
-				thiz->advance();
-				if (thiz->frame != -1)
-					c._current = nullptr;
-				else
-				{
-					thiz->event = nullptr;
-					thiz->stop();
-				}
-			}, Capture().set_thiz(this), 1U);
+			event = add_event([this]() {
+				advance();
+				if (frame != -1)
+					return true;
+				event = nullptr;
+				stop();
+				return false;
+			});
 		}
 	}
 
@@ -105,10 +102,10 @@ namespace flame
 				fn.make_preferred();
 				model = graphics::Model::get(fn.c_str());
 			}
-			fassert(model);
+			assert(model);
 
 			auto bones_count = model->get_bones_count();
-			fassert(bones_count);
+			assert(bones_count);
 
 			bones.resize(bones_count);
 			bone_mats.resize(bones_count);
@@ -118,10 +115,10 @@ namespace flame
 				auto& dst = bones[i];
 				auto name = std::string(src->get_name());
 				auto e = entity->find_child(name);
-				fassert(e);
+				assert(e);
 				dst.name = name;
 				dst.node = e->get_component_i<cNodePrivate>(0);
-				fassert(dst.node);
+				assert(dst.node);
 				dst.offmat = src->get_offset_matrix();
 			}
 		}
@@ -162,7 +159,7 @@ namespace flame
 						if (a.total_frame == 0)
 							a.total_frame = count;
 						else
-							fassert(a.total_frame == count);
+							assert(a.total_frame == count);
 
 						auto& t = a.tracks.emplace_back();
 						t.first = bid;
@@ -216,7 +213,7 @@ namespace flame
 	void cArmaturePrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 	}
 
 	void cArmaturePrivate::on_removed()
@@ -227,7 +224,7 @@ namespace flame
 	void cArmaturePrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		apply_src();
 	}

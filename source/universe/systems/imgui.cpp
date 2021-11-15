@@ -36,7 +36,7 @@ namespace flame
 
 	void sImguiPrivate::setup(Window* _window)
 	{
-		fassert(!window);
+		assert(!window);
 		window = _window;
 
 		auto set_targets_from_swapchain = [this](const uvec2& size) {
@@ -96,7 +96,7 @@ namespace flame
 					break;
 				}
 			}
-			fassert(found);
+			assert(found);
 		}
 
 		if (new_size.x == 0 || new_size.y == 0)
@@ -117,8 +117,8 @@ namespace flame
 
 		rd.buf_vtx.create(BufferUsageVertex, 360000);
 		rd.buf_idx.create(BufferUsageIndex, 240000);
-		rd.ds.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"imgui/imgui.dsl")));
-		rd.pl = Pipeline::get(nullptr, L"imgui/imgui.pipeline");
+		rd.ds.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"default_assets/shaders/imgui/imgui.dsl")));
+		rd.pl = Pipeline::get(nullptr, L"default_assets/shaders/imgui/imgui.pipeline");
 
 #if USE_IMGUI
 		IMGUI_CHECKVERSION();
@@ -135,7 +135,7 @@ namespace flame
 		style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		
-		fassert(!io.BackendPlatformUserData);
+		assert(!io.BackendPlatformUserData);
 
 		io.BackendPlatformName = "imgui_impl_flame";
 		io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;

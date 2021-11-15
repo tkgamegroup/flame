@@ -64,7 +64,7 @@ namespace flame
 			{
 				if (font_size > width)
 				{
-					fassert(0);
+					assert(0);
 					return L"";
 				}
 

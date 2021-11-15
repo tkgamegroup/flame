@@ -29,31 +29,31 @@ namespace flame
 	void cScrollerPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 
 		receiver->add_mouse_scroll_listener([](Capture& c, int v) {
 			c.thiz<cScrollerPrivate>()->scroll(vec2(0.f, -v * 20.f));
 			}, Capture().set_thiz(this));
 
 		track = entity->find_child("track");
-		fassert(track);
+		assert(track);
 		track_element = track->get_component_i<cElementPrivate>(0);
-		fassert(track_element);
+		assert(track_element);
 
 		thumb = entity->find_child("thumb");
-		fassert(thumb);
+		assert(thumb);
 		thumb_element = thumb->get_component_i<cElementPrivate>(0);
-		fassert(thumb_element);
+		assert(thumb_element);
 		thumb_receiver = thumb->get_component_t<cReceiverPrivate>();
-		fassert(thumb_receiver);
+		assert(thumb_receiver);
 
 		view = entity->find_child("view");
-		fassert(view);
+		assert(view);
 		view_element = view->get_component_i<cElementPrivate>(0);
-		fassert(view_element);
+		assert(view_element);
 
 		thumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cScrollerPrivate>();
@@ -98,7 +98,7 @@ namespace flame
 		{
 			target = e;
 			target_element = target->get_component_i<cElementPrivate>(0);
-			fassert(target_element);
+			assert(target_element);
 			target->add_component_data_listener([](Capture& c, uint h) {
 				auto thiz = c.thiz<cScrollerPrivate>();
 				switch (h)

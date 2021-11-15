@@ -48,7 +48,7 @@ namespace flame
 
 	bool bpSlotPrivate::link_to(bpSlotPtr target)
 	{
-		fassert(io == bpSlotIn);
+		assert(io == bpSlotIn);
 		if (io == bpSlotIn)
 			return false;
 
@@ -127,7 +127,7 @@ namespace flame
 		{
 		case bpNodeEnumSingle:
 		{
-			fassert(object_rule == bpObjectEntity);
+			assert(object_rule == bpObjectEntity);
 #pragma pack(1)
 			struct Dummy
 			{
@@ -156,7 +156,7 @@ namespace flame
 			break;
 		case bpNodeEnumMulti:
 		{
-			fassert(object_rule == bpObjectEntity);
+			assert(object_rule == bpObjectEntity);
 #pragma pack(1)
 			struct Dummy
 			{
@@ -185,7 +185,7 @@ namespace flame
 			break;
 		case bpNodeVariable:
 		{
-			fassert(object_rule == bpObjectEntity);
+			assert(object_rule == bpObjectEntity);
 #pragma pack(1)
 			struct Dummy
 			{
@@ -227,7 +227,7 @@ namespace flame
 			break;
 		case bpNodeArray:
 		{
-			fassert(object_rule == bpObjectEntity);
+			assert(object_rule == bpObjectEntity);
 			auto sp = SUS::split(type_parameter, ',');
 #pragma pack(1)
 			struct Dummy
@@ -293,7 +293,7 @@ namespace flame
 			break;
 		case bpNodeGroup:
 		{
-			fassert(object_rule == bpObjectEntity);
+			assert(object_rule == bpObjectEntity);
 #pragma pack(1)
 			struct Dummy
 			{
@@ -312,7 +312,7 @@ namespace flame
 
 			if (!udt)
 			{
-				fassert(0);
+				assert(0);
 				printf("add node: udt not found: %s\n", type_parameter.c_str());
 			}
 
@@ -338,7 +338,7 @@ namespace flame
 
 				{
 					auto f = udt->find_function("bp_update");
-					fassert(f && f->check(TypeInfo::get(TypeData, ""), nullptr));
+					assert(f && f->check(TypeInfo::get(TypeData, ""), nullptr));
 					update_addr = f->get_address();
 				}
 
@@ -358,9 +358,9 @@ namespace flame
 				// TODO
 				//{
 				//	auto f = (*udt)->find_function("get_linked_object");
-				//	fassert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
+				//	assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
 				//	object = a2f<F_vp_v>((char*)library + (uint)f->rva)();
-				//	fassert(object);
+				//	assert(object);
 				//}
 
 				if (object_rule == bpObjectRefRead)
@@ -731,7 +731,7 @@ namespace flame
 		//		if (ntype == 0)
 		//		{
 		//			auto f = (*n)->(*udt)->find_function("bp_update");
-		//			fassert(f && check_function(f, "D#void", {}));
+		//			assert(f && check_function(f, "D#void", {}));
 		//			std::string function_code = (*f)->code();
 		//			for (auto& out : n->outputs)
 		//			{
@@ -811,10 +811,10 @@ namespace flame
 		//			}
 		//				break;
 		//			case 'V':
-		//				fassert(0); // WIP
+		//				assert(0); // WIP
 		//				break;
 		//			case 'A':
-		//				fassert(0); // WIP
+		//				assert(0); // WIP
 		//				break;
 		//			}
 		//		}

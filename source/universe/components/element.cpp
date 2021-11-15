@@ -6,27 +6,6 @@
 
 namespace flame
 {
-	uint ElementScriptDrawerPrivate::draw(uint layer, sRendererPtr renderer)
-	{
-#ifdef USE_SCRIPT_MODULE
-		auto scr_ins = script::Instance::get_default();
-		scr_ins->get_global("callbacks");
-		scr_ins->get_member(nullptr, callback_slot);
-		scr_ins->get_member("f");
-		scr_ins->push_uint(layer);
-		scr_ins->push_object();
-		scr_ins->set_object_type("sRenderer", renderer);
-		scr_ins->call(2);
-		scr_ins->pop(2);
-#endif
-		return layer;
-	}
-
-	ElementScriptDrawer* ElementScriptDrawer::create(void* parms)
-	{
-		return new ElementScriptDrawerPrivate();
-	}
-
 	void cElementPrivate::set_x(float x)
 	{
 		if (pos.x == x)
@@ -617,9 +596,9 @@ namespace flame
 			world->first_element = entity;
 
 		s_scene = world->get_system_t<sScenePrivate>();
-		fassert(s_scene);
+		assert(s_scene);
 		s_renderer = world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		pelement = entity->get_parent_component_t<cElementPrivate>();
 

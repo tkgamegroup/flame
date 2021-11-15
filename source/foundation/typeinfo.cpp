@@ -233,7 +233,7 @@ namespace flame
 		if (!file.load_file(path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 		{
 			printf("cannot find typeinfo or wrong format: %s\n", path.string().c_str());
-			fassert(0);
+			assert(0);
 		}
 
 		auto read_ti = [&](pugi::xml_node n) {

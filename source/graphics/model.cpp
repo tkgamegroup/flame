@@ -567,7 +567,7 @@ namespace flame
 					auto ai_ch = ai_ani->mChannels[j];
 					auto n_channel = n_channels.append_child("channel");
 					n_channel.append_attribute("node_name").set_value(ai_ch->mNodeName.C_Str());
-					fassert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
+					assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
 						ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
 
 					std::vector<BoneKey> keys;

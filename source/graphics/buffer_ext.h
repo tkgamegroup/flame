@@ -82,7 +82,7 @@ namespace flame
 
 			void push(uint cnt, const T* p)
 			{
-				fassert(stag_num + cnt <= capacity);
+				assert(stag_num + cnt <= capacity);
 				//if (stag_num + cnt > capacity)
 				//{
 				//	capacity = (stag_num + cnt) * 2;
@@ -95,7 +95,7 @@ namespace flame
 
 			T* stag(uint cnt)
 			{
-				fassert(stag_num + cnt <= capacity);
+				assert(stag_num + cnt <= capacity);
 				//if (stag_num + cnt > capacity)
 				//{
 				//	capacity = (stag_num + cnt) * 2;
@@ -148,8 +148,8 @@ namespace flame
 
 			T* alloc(uint n)
 			{
-				fassert(n0 == n1);
-				fassert(n1 + n <= capacity);
+				assert(n0 == n1);
+				assert(n1 + n <= capacity);
 				if (stag_capacity < n)
 				{
 					stag_capacity = n;
@@ -198,7 +198,7 @@ namespace flame
 
 			void cpy_whole()
 			{
-				fassert(cpies.empty());
+				assert(cpies.empty());
 				BufferCopy cpy;
 				cpy.size = sizeof(T);
 				cpies.push_back(cpy);
@@ -223,7 +223,7 @@ namespace flame
 			auto& item(uint idx, bool mark_cpy = true)
 			{
 				auto& [items] = *pstag;
-				fassert(idx < countof(items));
+				assert(idx < countof(items));
 
 				auto& item = items[idx];
 

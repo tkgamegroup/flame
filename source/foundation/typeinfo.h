@@ -5,6 +5,10 @@
 
 namespace flame
 {
+	struct EnumInfo;
+	struct UdtInfo;
+	struct TypeInfoDataBase;
+
 	enum TypeTag
 	{
 		TypeEnumSingle,

@@ -17,6 +17,7 @@ struct FlameUniverseTypeSelector
 #endif
 
 #define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
+	typedef FlameUniverseTypeSelector<name, name##Private>::result name##T; \
 	typedef FlameUniverseTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include "../foundation/foundation.h"
@@ -63,7 +64,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
 	FLAME_UNIVERSE_TYPE(cSky);
-	FLAME_UNIVERSE_TYPE(cScript);
 	FLAME_UNIVERSE_TYPE(cImgui);
 
 	FLAME_UNIVERSE_TYPE(sRenderer);

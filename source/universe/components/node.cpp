@@ -158,14 +158,14 @@ namespace flame
 
 	bool cNodePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)
 	{
-		fassert(octree.get());
+		assert(octree.get());
 
 		return octree->is_colliding(c, r, filter_tag);
 	}
 
 	uint cNodePrivate::get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag)
 	{
-		fassert(octree.get());
+		assert(octree.get());
 
 		std::vector<cNodePrivate*> res;
 		octree->get_colliding(c, r, res, filter_tag);
@@ -198,7 +198,7 @@ namespace flame
 		{
 			eul_dirty = false;
 
-			fassert(!qut_dirty);
+			assert(!qut_dirty);
 			auto res = eulerAngles(qut);
 			eul.x = glm::degrees(res.y);
 			eul.y = glm::degrees(res.x);
@@ -212,7 +212,7 @@ namespace flame
 		{
 			qut_dirty = false;
 
-			fassert(!rot_dirty);
+			assert(!rot_dirty);
 			qut = quat(rot);
 		}
 	}
@@ -228,7 +228,7 @@ namespace flame
 			else if (!eul_dirty)
 				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
 			else
-				fassert(0);
+				assert(0);
 		}
 	}
 
@@ -354,9 +354,9 @@ namespace flame
 			world->first_node = entity;
 
 		s_scene = entity->world->get_system_t<sScenePrivate>();
-		fassert(s_scene);
+		assert(s_scene);
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 
 		pnode = entity->get_parent_component_t<cNodePrivate>();
 

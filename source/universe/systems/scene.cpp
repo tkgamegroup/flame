@@ -8,7 +8,7 @@ namespace flame
 {
 	void sScenePrivate::setup(NativeWindow* _window)
 	{
-		fassert(!window);
+		assert(!window);
 		window = _window;
 	}
 

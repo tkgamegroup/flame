@@ -119,9 +119,6 @@ struct App
 
 int main(int argc, char** args)
 {
-	std::filesystem::path engine_path = getenv("FLAME_PATH");
-	set_engine_path(engine_path.c_str());
-
 	app.w = Window::create("Graphics Test", uvec2(projector._screen_width, projector._screen_height), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);

@@ -15,7 +15,6 @@
 #include <flame/sound/source.h>
 #include <flame/physics/device.h>
 #include <flame/physics/scene.h>
-#include <flame/script/script.h>
 #include <flame/universe/component.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/system.h>
@@ -79,9 +78,6 @@ namespace flame
 #if USE_SOUND_MODULE
 			sound::Device::create();
 #endif
-#if USE_SCRIPT_MODULE
-			script::Instance::create();
-#endif
 
 			commandbuffer.reset(graphics::CommandBuffer::create(nullptr));
 			submit_fence.reset(graphics::Fence::create(nullptr));
@@ -128,10 +124,11 @@ namespace flame
 
 			ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
 			{
-				add_event([](Capture& c) {
+				add_event([tex]() {
 					graphics::Queue::get(nullptr)->wait_idle();
-					((graphics::Image*)c.thiz<void>())->release();
-				}, Capture().set_thiz(tex));
+					((graphics::Image*)tex)->release();
+					return false;
+				});
 			};
 #endif
 		}

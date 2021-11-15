@@ -37,7 +37,7 @@ namespace flame
 	void cLightPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		fassert(node);
+		assert(node);
 	}
 
 	void cLightPrivate::on_removed()
@@ -48,7 +48,7 @@ namespace flame
 	void cLightPrivate::on_entered_world()
 	{
 		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		fassert(s_renderer);
+		assert(s_renderer);
 	}
 
 	void cLightPrivate::on_left_world()

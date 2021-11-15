@@ -31,14 +31,14 @@ namespace flame
 	void cSplitterPrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		bar = entity->find_child("bar");
-		fassert(bar);
+		assert(bar);
 		bar_element = bar->get_component_i<cElementPrivate>(0);
-		fassert(bar_element);
+		assert(bar_element);
 		bar_receiver = bar->get_component_t<cReceiverPrivate>();
-		fassert(bar_receiver);
+		assert(bar_receiver);
 
 		set_type(type);
 
@@ -106,7 +106,7 @@ namespace flame
 			if (targets.size() < 2)
 			{
 				auto element = e->get_component_i<cElementPrivate>(0);
-				fassert(element);
+				assert(element);
 				entity->add_child(e, targets.size() == 0 ? 0 : 2);
 				targets.push_back(element);
 				return true;

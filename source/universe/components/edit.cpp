@@ -131,13 +131,13 @@ namespace flame
 	void cEditPrivate::on_entered_world()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 		
 		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
+		assert(receiver);
 		
 		text = entity->get_component_t<cTextPrivate>();
-		fassert(text);
+		assert(text);
 		
 		entity->add_message_listener([](Capture& c, uint msg, void* parm1, void* parm2) {
 			auto thiz = c.thiz<cEditPrivate>();
@@ -161,10 +161,10 @@ namespace flame
 						{
 							if (!thiz->flash_event)
 							{
-								thiz->flash_event = add_event([](Capture& c) {
-									c.thiz<cEditPrivate>()->flash_cursor(0);
-									c._current = nullptr;
-								}, Capture().set_thiz(thiz), 0.5f);
+								thiz->flash_event = add_event([this]() {
+									flash_cursor(0);
+									return true;
+								}, 0.5f);
 							}
 							if (thiz->select_all_on_focus)
 							{

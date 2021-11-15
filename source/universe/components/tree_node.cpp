@@ -28,14 +28,14 @@ namespace flame
 	void cTreeNodePrivate::on_load_finished()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 
 		e_title = entity->find_child("title");
-		fassert(e_title);
+		assert(e_title);
 		title_text = e_title->get_component_t<cTextPrivate>();
-		fassert(title_text);
+		assert(title_text);
 		auto title_receiver = e_title->get_component_t<cReceiverPrivate>();
-		fassert(title_receiver);
+		assert(title_receiver);
 
 		title_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeNodePrivate>();
@@ -43,19 +43,19 @@ namespace flame
 		}, Capture().set_thiz(this));
 
 		auto earrow = entity->find_child("arrow");
-		fassert(earrow);
+		assert(earrow);
 		arrow_text = earrow->get_component_t<cTextPrivate>();
-		fassert(arrow_text);
+		assert(arrow_text);
 		auto arrow_receiver = earrow->get_component_t<cReceiverPrivate>();
-		fassert(arrow_receiver);
+		assert(arrow_receiver);
 		arrow_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreeNodePrivate>()->toggle_collapse();
 		}, Capture().set_thiz(this));
 
 		items = entity->find_child("items");
-		fassert(items);
+		assert(items);
 		items_element = items->get_component_i<cElementPrivate>(0);
-		fassert(items_element);
+		assert(items_element);
 	}
 
 	bool cTreeNodePrivate::on_before_adding_child(EntityPtr e)

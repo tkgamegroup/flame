@@ -68,7 +68,7 @@ namespace flame
 	//		udt(udt)
 	//	{
 	//		auto fc = udt->find_function("create");
-	//		fassert(fc && fc->check(TypeInfo::get(TypePointer, udt->name, tidb), { TypeInfo::get(TypePointer, "void", tidb) }));
+	//		assert(fc && fc->check(TypeInfo::get(TypePointer, udt->name, tidb), { TypeInfo::get(TypePointer, "void", tidb) }));
 	//		creator = fc;
 
 	//		dummy = create();
@@ -146,37 +146,37 @@ namespace flame
 	//	return &it->second;
 	//}
 
-	//static std::map<std::string, std::filesystem::path> prefabs_map;
+	static std::map<std::string, std::filesystem::path> prefabs_map;
 
-	//static std::filesystem::path find_prefab_path(const std::string& name)
-	//{
-	//	if (prefabs_map.empty())
-	//	{
-	//		auto engine_path = getenv("FLAME_PATH");
-	//		if (engine_path)
-	//		{
-	//			auto path = std::filesystem::path(engine_path) / L"assets/prefabs";
-	//			for (auto& it : std::filesystem::directory_iterator(path))
-	//			{
-	//				if (it.path().extension() == L".prefab")
-	//				{
-	//					std::string name = "e";
-	//					auto sp = SUS::split(it.path().filename().stem().string(), '_');
-	//					for (auto& t : sp)
-	//					{
-	//						t[0] = std::toupper(t[0]);
-	//						name += t;
-	//					}
-	//					prefabs_map[name] = it.path();
-	//				}
-	//			}
-	//		}
-	//	}
-	//	auto it = prefabs_map.find(name);
-	//	if (it == prefabs_map.end())
-	//		return L"";
-	//	return it->second;
-	//}
+	static std::filesystem::path find_prefab_path(const std::string& name)
+	{
+		if (prefabs_map.empty())
+		{
+			auto engine_path = getenv("FLAME_PATH");
+			if (engine_path)
+			{
+				auto path = std::filesystem::path(engine_path) / L"assets/prefabs";
+				for (auto& it : std::filesystem::directory_iterator(path))
+				{
+					if (it.path().extension() == L".prefab")
+					{
+						std::string name = "e";
+						auto sp = SUS::split(it.path().filename().stem().string(), '_');
+						for (auto& t : sp)
+						{
+							t[0] = std::toupper(t[0]);
+							name += t;
+						}
+						prefabs_map[name] = it.path();
+					}
+				}
+			}
+		}
+		auto it = prefabs_map.find(name);
+		if (it == prefabs_map.end())
+			return L"";
+		return it->second;
+	}
 
 	EntityPrivate::EntityPrivate()
 	{
@@ -189,16 +189,6 @@ namespace flame
 	{
 		for (auto& l : message_listeners)
 			l->call(S<"destroyed"_h>, nullptr, nullptr);
-		for (auto ev : events)
-			remove_event(ev);
-	}
-
-	void EntityPrivate::release()
-	{
-		if (parent)
-			parent->remove_child(this);
-		else
-			f_delete(this);
 	}
 
 	void EntityPrivate::update_visibility()
@@ -285,48 +275,21 @@ namespace flame
 				break;
 			}
 		}
-		if (ret)
-		{
-#ifdef USE_SCRIPT_MODULE
-			auto script = script::Instance::get_default();
-			script->push_string(name.c_str());
-			script->set_global_name("__type__");
-#endif
-		}
 		return ret;
 	}
 
 	void EntityPrivate::get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const
 	{
-		if (!callback)
-		{
-#ifdef USE_SCRIPT_MODULE
-			auto scr_ins = script::Instance::get_default();
-			scr_ins->get_global("callbacks");
-			scr_ins->get_member(nullptr, (uint)&capture);
-			for (auto& c : components)
-			{
-				scr_ins->get_member("f");
-				scr_ins->push_object();
-				scr_ins->set_object_type("flame::Component", c.get());
-				scr_ins->call(1);
-			}
-			scr_ins->pop(2);
-#endif
-		}
-		else
-		{
-			for (auto& c : components)
-				callback((Capture&)capture, c.get());
-			f_free(capture._data);
-		}
+		for (auto& c : components)
+			callback((Capture&)capture, c.get());
+		f_free(capture._data);
 	}
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		fassert(!parent);
-		fassert(!c->entity);
-		fassert(components_map.find(c->type_hash) == components_map.end());
+		assert(!parent);
+		assert(!c->entity);
+		assert(components_map.find(c->type_hash) == components_map.end());
 
 		c->entity = this;
 
@@ -342,12 +305,12 @@ namespace flame
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		fassert(!parent);
+		assert(!parent);
 
 		auto it = components_map.find(c->type_hash);
 		if (it == components_map.end())
 		{
-			fassert(0);
+			assert(0);
 			return;
 		}
 		components_map.erase(it);
@@ -369,7 +332,7 @@ namespace flame
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
-		fassert(e && e != this && !e->parent);
+		assert(e && e != this && !e->parent);
 
 		uint pos;
 		if (position == -1)
@@ -415,7 +378,7 @@ namespace flame
 	{
 		if (pos1 == pos2)
 			return;
-		fassert(pos1 < children.size() && pos2 < children.size());
+		assert(pos1 < children.size() && pos2 < children.size());
 
 		auto a = children[pos1].get();
 		auto b = children[pos2].get();
@@ -453,14 +416,14 @@ namespace flame
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		fassert(e && e != this);
+		assert(e && e != this);
 
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == e;
 		});
 		if (it == children.end())
 		{
-			fassert(0);
+			assert(0);
 			return;
 		}
 
@@ -523,26 +486,6 @@ namespace flame
 
 	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, uint msg, void* parm1, void* parm2) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_uint(msg);
-				scr_ins->push_pointer(parm1);
-				scr_ins->push_pointer(parm2);
-				scr_ins->call(3);
-				scr_ins->pop(2);
-			};
-			auto c = new Closure(callback, Capture().set_data(&slot));
-			message_listeners.emplace_back(c);
-			return c;
-		}
-#endif
 		auto c = new Closure(callback, capture);
 		message_listeners.emplace_back(c);
 		return c;
@@ -570,24 +513,6 @@ namespace flame
 		auto it = components_map.find(c->type_hash);
 		if (it != components_map.end())
 		{
-#ifdef USE_SCRIPT_MODULE
-			if (!callback)
-			{
-				auto slot = (uint)&capture;
-				callback = [](Capture& c, uint h) {
-					auto scr_ins = script::Instance::get_default();
-					scr_ins->get_global("callbacks");
-					scr_ins->get_member(nullptr, c.data<uint>());
-					scr_ins->get_member("f");
-					scr_ins->push_uint(h);
-					scr_ins->call(1);
-					scr_ins->pop(2);
-				};
-				auto c = new Closure(callback, Capture().set_data(&slot));
-				it->second.second.emplace_back(c);
-				return c;
-			}
-#endif
 			auto c = new Closure(callback, capture);
 			it->second.second.emplace_back(c);
 			return c;
@@ -606,44 +531,6 @@ namespace flame
 		}
 	}
 
-	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, float interval)
-	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->call(0);
-				scr_ins->pop(2);
-				c._current = nullptr;
-			};
-			auto ev = ::flame::add_event(callback, Capture().set_data(&slot), interval);
-			events.push_back(ev);
-			return ev;
-		}
-#endif
-		auto ev = ::flame::add_event(callback, capture, interval);
-		events.push_back(ev);
-		return ev;
-	}
-
-	void EntityPrivate::remove_event(void* ev)
-	{
-		for (auto it = events.begin(); it != events.end(); it++)
-		{
-			if (*it == ev)
-			{
-				events.erase(it);
-				remove_event(ev);
-				return;
-			}
-		}
-	}
-
 	EntityPtr EntityPrivate::copy()
 	{
 		auto ret = new EntityPrivate();
@@ -656,7 +543,7 @@ namespace flame
 		//	std::string type_name = c->type_name;
 		//	SUS::cut_head_if(type_name, "flame::");
 		//	auto ct = find_component_type(type_name);
-		//	fassert(ct);
+		//	assert(ct);
 		//	auto cc = (Component*)ct->create();
 		//	cc->src_id = c->src_id;
 		//	for (auto& a : ct->attributes)
@@ -724,9 +611,9 @@ namespace flame
 	//	auto ename = std::string(n_src.name());
 	//	if (ename != "entity")
 	//	{
-	//		auto it = prefabs_map.find(ename);
-	//		if (it != prefabs_map.end())
-	//			e_dst->load(it->second);
+	//		auto path = find_prefab_path(ename);
+	//		if (!path.empty())
+	//			e_dst->load(path);
 	//		else
 	//			printf("cannot find prefab: %s\n", ename.c_str());
 	//	}
@@ -958,7 +845,7 @@ namespace flame
 	//	{
 	//		std::string cname;
 	//		auto ct = find_component_type(c->type_name, &cname);
-	//		fassert(ct);
+	//		assert(ct);
 	//		auto ref = reference ? reference->get_component(c->type_hash) : nullptr;
 	//		auto put_attributes = [&](pugi::xml_node n) {
 	//			for (auto& a : ct->attributes)

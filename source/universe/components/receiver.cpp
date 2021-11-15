@@ -12,22 +12,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, KeyboardKey key) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_int(key);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return key_down_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return key_down_listeners.add(callback, capture);
 	}
 
@@ -38,22 +22,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, KeyboardKey key) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_int(key);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return key_up_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return key_up_listeners.add(callback, capture);
 	}
 
@@ -74,22 +42,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, const ivec2& pos) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_vec2(pos);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return mouse_left_down_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_left_down_listeners.add(callback, capture);
 	}
 
@@ -100,22 +52,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, const ivec2& pos) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_vec2(pos);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return mouse_left_up_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_left_up_listeners.add(callback, capture);
 	}
 
@@ -126,22 +62,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, const ivec2& pos) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_vec2(pos);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return mouse_right_down_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_right_down_listeners.add(callback, capture);
 	}
 
@@ -152,22 +72,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, const ivec2& pos) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_vec2(pos);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return mouse_right_up_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_right_up_listeners.add(callback, capture);
 	}
 
@@ -198,23 +102,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& disp, const ivec2& pos), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, const ivec2& disp, const ivec2& pos) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_vec2(disp);
-				scr_ins->push_vec2(pos);
-				scr_ins->call(2);
-				scr_ins->pop(2);
-			};
-			return mouse_move_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_move_listeners.add(callback, capture);
 	}
 
@@ -225,22 +112,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c, int scroll) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->push_int(scroll);
-				scr_ins->call(1);
-				scr_ins->pop(2);
-			};
-			return mouse_scroll_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_scroll_listeners.add(callback, capture);
 	}
 
@@ -251,21 +122,6 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_click_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
-#ifdef USE_SCRIPT_MODULE
-		if (!callback)
-		{
-			auto slot = (uint)&capture;
-			callback = [](Capture& c) {
-				auto scr_ins = script::Instance::get_default();
-				scr_ins->get_global("callbacks");
-				scr_ins->get_member(nullptr, c.data<uint>());
-				scr_ins->get_member("f");
-				scr_ins->call(0);
-				scr_ins->pop(2);
-			};
-			return mouse_click_listeners.add(callback, Capture().set_data(&slot));
-		}
-#endif
 		return mouse_click_listeners.add(callback, capture);
 	}
 
@@ -301,7 +157,7 @@ namespace flame
 	void cReceiverPrivate::on_added()
 	{
 		element = entity->get_component_i<cElementPrivate>(0);
-		fassert(element);
+		assert(element);
 	}
 
 	void cReceiverPrivate::on_visibility_changed(bool v)
@@ -313,7 +169,7 @@ namespace flame
 	void cReceiverPrivate::on_entered_world()
 	{
 		dispatcher = entity->world->get_system_t<sDispatcherPrivate>();
-		fassert(dispatcher);
+		assert(dispatcher);
 		dispatcher->dirty = true;
 	}
 

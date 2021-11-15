@@ -42,14 +42,10 @@ namespace flame
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, uint, void*, void*)>>> message_listeners;
 
-		std::vector<void*> events;
-
 		void* userdata = nullptr;
 
 		EntityPrivate();
 		~EntityPrivate();
-
-		void release() override;
 
 		const char* get_name() const override { return name.c_str(); };
 		void set_name(const char* _name) override { name = _name; }
@@ -88,7 +84,7 @@ namespace flame
 		void remove_component(Component* c, bool destroy = true);
 
 		uint get_children_count() const override { return children.size(); }
-		EntityPtr get_child(uint idx) const override { fassert(idx < children.size()); return children[idx].get(); }
+		EntityPtr get_child(uint idx) const override { assert(idx < children.size()); return children[idx].get(); }
 		void add_child(EntityPtr e, int position = -1) override;
 		void reposition_child(uint pos1, uint pos2) override;
 		void on_child_removed(EntityPrivate* e) const;
