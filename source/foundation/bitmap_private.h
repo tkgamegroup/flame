@@ -6,7 +6,6 @@ namespace flame
 {
 	struct BitmapPrivate : Bitmap
 	{
-		BitmapPrivate(const uvec2& size, uint chs = 4, uint bpp = 32, uchar* data = nullptr);
 		~BitmapPrivate();
 
 		void change_format(uint chs) override;

@@ -27,10 +27,9 @@ namespace flame
 
 		bool dead = false;
 
-		NativeWindowPrivate(std::string_view _title, const uvec2& _size, uint _style, NativeWindowPrivate* parent);
 		~NativeWindowPrivate();
 
-		void* get_native() override;
+		void* get_hwnd() override { return hWnd; }
 
 		void close() override;
 

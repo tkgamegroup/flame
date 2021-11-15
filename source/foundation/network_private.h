@@ -19,7 +19,6 @@ namespace flame
 			std::recursive_mutex mtx;
 			void* ev_ended;
 
-			ClientPrivate();
 			~ClientPrivate();
 
 			void send(std::string_view msg) override;
@@ -57,7 +56,6 @@ namespace flame
 			void* ev_ended_d;
 			void* ev_ended_s;
 
-			ServerPrivate();
 			~ServerPrivate();
 
 			void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override;

@@ -38,7 +38,7 @@ namespace flame
 #endif
 		}
 
-		Connection* Connection::create(std::string_view db_name)
+		ConnectionPtr Connection::create(std::string_view db_name)
 		{
 #if USE_MYSQL
 			auto connect = mysql_init(nullptr);

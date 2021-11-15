@@ -17,11 +17,6 @@ namespace flame
 #endif
 
 			Error query(std::string_view sql, Result& result) override;
-			Error query(std::string_view sql) override
-			{
-				Result result;
-				return query(sql, result);
-			}
 		};
 	}
 }

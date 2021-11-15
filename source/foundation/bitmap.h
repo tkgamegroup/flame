@@ -24,8 +24,8 @@ namespace flame
 		virtual void srgb_to_linear() = 0;
 		virtual void save(const std::filesystem::path& filename) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const uvec2& size, uint chs = 4, uint bpp = 32, uchar* data = nullptr);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_EXPORTS static BitmapPtr create(const uvec2& size, uint chs = 4, uint bpp = 32, uchar* data = nullptr);
+		FLAME_FOUNDATION_EXPORTS static BitmapPtr create(const std::filesystem::path& filename);
 	};
 
 	struct BinPackNode

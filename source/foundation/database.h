@@ -20,9 +20,13 @@ namespace flame
 		struct Connection
 		{
 			virtual Error query(std::string_view sql, Result& result) = 0;
-			virtual Error query(std::string_view sql) = 0;
+			inline Error query(std::string_view sql)
+			{
+				Result result;
+				return query(sql, result);
+			}
 			
-			FLAME_FOUNDATION_EXPORTS static Connection* create(std::string_view db_name);
+			FLAME_FOUNDATION_EXPORTS static ConnectionPtr create(std::string_view db_name);
 		};
 	}
 }

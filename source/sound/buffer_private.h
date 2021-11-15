@@ -11,11 +11,7 @@ namespace flame
 		{
 			ALuint al_buf;
 
-			BufferPrivate();
-			BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration);
 			~BufferPrivate();
-
-			static BufferPrivate* create(const std::filesystem::path& filename);
 		};
 	}
 }

@@ -7,21 +7,6 @@
 
 namespace flame
 {
-	BitmapPrivate::BitmapPrivate(const uvec2& _size, uint _chs, uint _bpp, uchar* _data)
-	{
-		size = _size;
-		chs = _chs;
-		bpp = _bpp;
-		pitch = image_pitch(size.x * (bpp / 8));
-		data_size = pitch * size.y;
-		data = new uchar[data_size];
-
-		if (!_data)
-			memset(data, 0, data_size);
-		else
-			memcpy(data, _data, data_size);
-		srgb = false;
-	}
 
 	BitmapPrivate::~BitmapPrivate()
 	{
@@ -120,20 +105,34 @@ namespace flame
 			stbi_write_jpg(filename.string().c_str(), size.x, size.y, chs, data, 0);
 	}
 
-	Bitmap* Bitmap::create(const uvec2& size, uint chs, uint byte_per_channel, uchar* data) { return new BitmapPrivate(size, chs, byte_per_channel, data); }
+	BitmapPtr Bitmap::create(const uvec2& size, uint chs, uint bpp, uchar* data) 
+	{
+		auto ret = new BitmapPrivate;
+		ret->size = size;
+		ret->chs = chs;
+		ret->bpp = bpp;
+		ret->pitch = image_pitch(size.x * (bpp / 8));
+		ret->data_size = ret->pitch * size.y;
+		ret->data = new uchar[ret->data_size];
+		if (!data)
+			memset(ret->data, 0, ret->data_size);
+		else
+			memcpy(ret->data, data, ret->data_size);
+		ret->srgb = false;
+		return ret;
+	}
 
-	Bitmap* Bitmap::create(const std::filesystem::path& filename)
+	BitmapPtr Bitmap::create(const std::filesystem::path& filename)
 	{
 		if (!std::filesystem::exists(filename))
 			return nullptr;
 
 		int cx, cy, chs;
-		
 		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, 0);
 		if (!data)
 			return nullptr;
-		auto b = new BitmapPrivate(uvec2(cx, cy), chs, chs * 8, data);
+		auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
 		stbi_image_free(data);
-		return b;
+		return ret;
 	}
 }

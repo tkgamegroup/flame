@@ -322,8 +322,10 @@ namespace flame
 			}
 		}
 
-		Client* Client::create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
+		ClientPtr Client::create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
 		{
+			initialize();
+
 			int res;
 
 			auto fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -439,8 +441,10 @@ namespace flame
 			}
 		}
 
-		Server* Server::create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect)
+		ServerPtr Server::create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect)
 		{
+			initialize();
+
 			int res;
 			sockaddr_in address;
 
@@ -567,8 +571,10 @@ namespace flame
 			}
 		}
 
-		FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint num_clients)
+		FrameSyncServerPtr FrameSyncServer::create(SocketType type, uint port, uint num_clients)
 		{
+			initialize();
+
 			int res;
 
 			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
