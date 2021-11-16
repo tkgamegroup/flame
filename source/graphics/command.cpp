@@ -10,27 +10,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		CommandPoolPrivate::CommandPoolPrivate(DevicePrivate* _device, int queue_family_idx) :
-			device(_device)
-		{
-			if (!device)
-				device = default_device;
-
-			VkCommandPoolCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			info.pNext = nullptr;
-			info.queueFamilyIndex = queue_family_idx;
-
-			chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &vk_command_buffer_pool));
-		}
-
 		CommandPoolPrivate::~CommandPoolPrivate()
 		{
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
-		CommandPoolPrivate* CommandPoolPrivate::get(DevicePrivate* device, QueueFamily family)
+		CommandPoolPtr CommandPool::get(DevicePtr device, QueueFamily family)
 		{
 			if (!device)
 				device = default_device;
@@ -45,33 +30,23 @@ namespace flame
 			return nullptr;
 		}
 
-		CommandPool* CommandPool::get(Device* device, QueueFamily family)
+		CommandPoolPtr CommandPool::create(DevicePtr device, int queue_family_idx)
 		{
-			return CommandPoolPrivate::get((DevicePrivate*)device, family);
-		}
+			if (!device)
+				device = default_device;
 
-		CommandPool* CommandPool::create(Device* device, int queue_family_idx)
-		{
-			return new CommandPoolPrivate((DevicePrivate*)device, queue_family_idx);
-		}
+			auto ret = new CommandPoolPrivate;
+			ret->device = device;
 
-		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPtr _pool, bool sub) :
-			pool(_pool)
-		{
-			if (!pool)
-				pool = (CommandPoolPrivate*)CommandPool::get();
-
-			VkCommandBufferAllocateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			VkCommandPoolCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+			info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 			info.pNext = nullptr;
-			info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-			info.commandPool = pool->vk_command_buffer_pool;
-			info.commandBufferCount = 1;
+			info.queueFamilyIndex = queue_family_idx;
 
-			chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &vk_command_buffer));
+			chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
 
-			begin();
-			end();
+			return ret;
 		}
 
 		CommandBufferPrivate::~CommandBufferPrivate()
@@ -503,18 +478,27 @@ namespace flame
 			chk_res(vkEndCommandBuffer(vk_command_buffer));
 		}
 
-		CommandBuffer* CommandBuffer::create(CommandPool* pool, bool sub)
+		CommandBufferPtr CommandBuffer::create(CommandPoolPtr pool, bool sub)
 		{
-			return new CommandBufferPrivate((CommandPoolPrivate*)pool, sub);
-		}
+			if (!pool)
+				pool = CommandPool::get();
 
-		QueuePrivate::QueuePrivate(DevicePrivate* _device, uint queue_family_idx) :
-			device(_device)
-		{
-			if (!device)
-				device = default_device;
+			auto ret = new CommandBufferPrivate;
+			ret->pool = pool;
 
-			vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &vk_queue);
+			VkCommandBufferAllocateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			info.pNext = nullptr;
+			info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+			info.commandPool = pool->vk_command_buffer_pool;
+			info.commandBufferCount = 1;
+
+			chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &ret->vk_command_buffer));
+
+			ret->begin();
+			ret->end();
+
+			return ret;
 		}
 
 		void QueuePrivate::wait_idle()
@@ -559,9 +543,8 @@ namespace flame
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 
-		Queue* Queue::get(Device* _device, QueueFamily family)
+		QueuePtr Queue::get(DevicePtr device, QueueFamily family)
 		{
-			auto device = (DevicePrivate*)_device;
 			if (!device)
 				device = default_device;
 
@@ -575,20 +558,17 @@ namespace flame
 			return nullptr;
 		}
 
-		Queue* Queue::create(Device* device, uint queue_family_idx)
-		{
-			return new QueuePrivate((DevicePrivate*)device, queue_family_idx);
-		}
-
-		SemaphorePrivate::SemaphorePrivate(DevicePtr _device) :
-			device(_device)
+		QueuePtr Queue::create(DevicePtr device, uint queue_family_idx)
 		{
 			if (!device)
 				device = default_device;
-			
-			VkSemaphoreCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-			chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &vk_semaphore));
+
+			auto ret = new QueuePrivate;
+			ret->device = device;
+
+			vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
+
+			return ret;
 		}
 
 		SemaphorePrivate::~SemaphorePrivate()
@@ -596,25 +576,19 @@ namespace flame
 			vkDestroySemaphore(device->vk_device, vk_semaphore, nullptr);
 		}
 
-		Semaphore* Semaphore::create(Device* device)
-		{
-			return new SemaphorePrivate((DevicePrivate*)device);
-		}
-
-		FencePrivate::FencePrivate(DevicePtr _device, bool signaled) :
-			device(_device)
+		SemaphorePtr Semaphore::create(DevicePtr device)
 		{
 			if (!device)
 				device = default_device;
 
-			VkFenceCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			if (signaled)
-			{
-				info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-				value = 1;
-			}
-			chk_res(vkCreateFence(device->vk_device, &info, nullptr, &vk_fence));
+			auto ret = new SemaphorePrivate;
+			ret->device = device;
+
+			VkSemaphoreCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+			chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
+
+			return ret;
 		}
 
 		FencePrivate::~FencePrivate()
@@ -635,9 +609,24 @@ namespace flame
 			}
 		}
 
-		Fence* Fence::create(Device* device, bool signaled)
+		FencePtr Fence::create(DevicePtr device, bool signaled)
 		{
-			return new FencePrivate((DevicePrivate*)device, signaled);
+			if (!device)
+				device = default_device;
+
+			auto ret = new FencePrivate;
+			ret->device = device;
+
+			VkFenceCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+			if (signaled)
+			{
+				info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+				ret->value = 1;
+			}
+			chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
+
+			return ret;
 		}
 	}
 }

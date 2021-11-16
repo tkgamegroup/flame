@@ -17,6 +17,7 @@ struct FlameGraphicsTypeSelector
 #endif
 
 #define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
+	typedef FlameGraphicsTypeSelector<name, name##Private>::result name##T; \
 	typedef FlameGraphicsTypeSelector<name*, name##Private*>::result name##Ptr;
 
 #include "../foundation/foundation.h"

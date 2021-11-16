@@ -8,47 +8,8 @@ namespace flame
 	{
 		struct MaterialPrivate : Material
 		{
-			struct Texture
-			{
-				std::filesystem::path filename;
-				bool srgb = false;
-				Filter mag_filter = FilterLinear;
-				Filter min_filter = FilterLinear;
-				bool linear_mipmap = true;
-				AddressMode address_mode = AddressClampToEdge;
-				bool auto_mipmap = false;
-			};
-
-			std::filesystem::path filename;
-
-			vec4 color = vec4(1.f);
-			float metallic = 0.f;
-			float roughness = 1.f;
-			bool opaque = true;
-			bool sort = false;
-
-			std::filesystem::path pipeline_file = "standard_mat.glsl";
-			std::string pipeline_defines;
-
-			Texture textures[MaxMaterialTexturesCount] = {};
-
-			vec4 get_color() const override { return color; }
-			float get_metallic() const override { return metallic; }
-			float get_roughness() const override { return roughness; }
-			bool get_opaque() const override { return opaque; }
-			bool get_sort() const override { return sort; }
-
-			void get_pipeline_file(wchar_t* dst) const override;
-			const char* get_pipeline_defines() const override { return pipeline_defines.c_str(); }
-
-			void get_texture_file(uint idx, wchar_t* dst) const override;
-			bool get_texture_srgb(uint idx) const override { return textures[idx].srgb; }
-			bool get_texture_auto_mipmap(uint idx) const override { return textures[idx].auto_mipmap; }
-			SamplerPtr get_texture_sampler(DevicePtr device, uint idx) const override;
-
-			static MaterialPrivate* get(const std::filesystem::path& filename);
 		};
 
-		extern MaterialPrivate* default_material;
+		extern MaterialPtr default_material;
 	}
 }

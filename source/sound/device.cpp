@@ -6,40 +6,21 @@ namespace flame
 	{
 		DevicePrivate* default_device = nullptr;
 
-		DevicePrivate::DevicePrivate()
-		{
-			al_dev = alcOpenDevice(nullptr);
-			al_ctx = alcCreateContext(al_dev, nullptr);
-			alcMakeContextCurrent(al_ctx);
-		}
-
 		DevicePrivate::~DevicePrivate()
 		{
 			alcDestroyContext(al_ctx);
 			alcCloseDevice(al_dev);
 		}
 
-		Device* Device::create()
+		DevicePtr Device::create()
 		{
 			auto ret = new DevicePrivate;
+			ret->al_dev = alcOpenDevice(nullptr);
+			ret->al_ctx = alcCreateContext(ret->al_dev, nullptr);
+			alcMakeContextCurrent(ret->al_ctx);
 			if (!default_device)
 				default_device = ret;
 			return ret;
-		}
-
-		Device* Device::get_default()
-		{
-			return default_device;
-		}
-
-		void Device::set_default(Device* device)
-		{
-			default_device = (DevicePrivate*)device;
-		}
-
-		RecorderPrivate::RecorderPrivate(uint frequency, bool stereo, bool _16bit, float duration)
-		{
-			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
 		}
 
 		RecorderPrivate::~RecorderPrivate()
@@ -60,9 +41,11 @@ namespace flame
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		Recorder* Recorder::create(uint frequency, bool stereo, bool _16bit, float duration)
+		RecorderPtr Recorder::create(uint frequency, bool stereo, bool _16bit, float duration)
 		{
-			return new RecorderPrivate(frequency, stereo, _16bit, duration);
+			auto ret = new RecorderPrivate;
+			ret->al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
+			return ret;
 		}
 	}
 }

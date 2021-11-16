@@ -57,8 +57,43 @@ namespace flame
 			return VK_FALSE;
 		}
 
-		DevicePrivate::DevicePrivate(bool debug)
+		DevicePrivate::~DevicePrivate()
 		{
+			if (default_device == this)
+				default_device = nullptr;
+		}
+
+		bool DevicePrivate::has_feature(Feature feature) const
+		{
+			switch (feature)
+			{
+			case FeatureTextureCompressionBC:
+				return vk_features.textureCompressionBC;
+			case FeatureTextureCompressionASTC_LDR:
+				return vk_features.textureCompressionASTC_LDR;
+			case FeatureTextureCompressionETC2:
+				return vk_features.textureCompressionETC2;
+			default:
+				break;
+			}
+			return false;
+		}
+
+		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
+		{
+			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
+			for (uint i = 0; i < vk_mem_props.memoryTypeCount; i++)
+			{
+				if ((type_filter & (1 << i)) && (vk_mem_props.memoryTypes[i].propertyFlags & p) == p)
+					return i;
+			}
+			return -1;
+		}
+
+		DevicePtr Device::create(bool debug)
+		{
+			auto ret = new DevicePrivate;
+
 			VkApplicationInfo appInfo;
 			appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 			appInfo.pNext = nullptr;
@@ -84,7 +119,7 @@ namespace flame
 			instInfo.ppEnabledExtensionNames = extensions.empty() ? nullptr : extensions.data();
 			instInfo.enabledLayerCount = layers.size();
 			instInfo.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data();
-			chk_res(vkCreateInstance(&instInfo, nullptr, &vk_instance));
+			chk_res(vkCreateInstance(&instInfo, nullptr, &ret->vk_instance));
 			printf("vulkan: instance created\n");
 
 			if (debug)
@@ -97,26 +132,26 @@ namespace flame
 				info.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"))
-					(vk_instance, &info, nullptr, &callback));
+				chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCreateDebugReportCallbackEXT"))
+					(ret->vk_instance, &info, nullptr, &callback));
 				printf("vulkan: debug report callback created\n");
 			}
 
 			uint32_t gpu_count = 0;
 			std::vector<VkPhysicalDevice> physical_devices;
-			chk_res(vkEnumeratePhysicalDevices(vk_instance, &gpu_count, nullptr));
+			chk_res(vkEnumeratePhysicalDevices(ret->vk_instance, &gpu_count, nullptr));
 			physical_devices.resize(gpu_count);
-			chk_res(vkEnumeratePhysicalDevices(vk_instance, &gpu_count, physical_devices.data()));
-			vk_physical_device = physical_devices[0];
+			chk_res(vkEnumeratePhysicalDevices(ret->vk_instance, &gpu_count, physical_devices.data()));
+			ret->vk_physical_device = physical_devices[0];
 
-			vkGetPhysicalDeviceProperties(vk_physical_device, &vk_props);
-			printf("gpu: %s\n", vk_props.deviceName);
-			vkGetPhysicalDeviceFeatures(vk_physical_device, &vk_features);
+			vkGetPhysicalDeviceProperties(ret->vk_physical_device, &ret->vk_props);
+			printf("gpu: %s\n", ret->vk_props.deviceName);
+			vkGetPhysicalDeviceFeatures(ret->vk_physical_device, &ret->vk_features);
 			uint queue_family_property_count = 0;
 			std::vector<VkQueueFamilyProperties> queue_family_properties;
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_physical_device, &queue_family_property_count, nullptr);
+			vkGetPhysicalDeviceQueueFamilyProperties(ret->vk_physical_device, &queue_family_property_count, nullptr);
 			queue_family_properties.resize(queue_family_property_count);
-			vkGetPhysicalDeviceQueueFamilyProperties(vk_physical_device, &queue_family_property_count, queue_family_properties.data());
+			vkGetPhysicalDeviceQueueFamilyProperties(ret->vk_physical_device, &queue_family_property_count, queue_family_properties.data());
 
 			float queue_porities[1] = { 0.f };
 			std::vector<VkDeviceQueueCreateInfo> queue_infos;
@@ -154,7 +189,7 @@ namespace flame
 			//	}
 			//}
 
-			vkGetPhysicalDeviceMemoryProperties(vk_physical_device, &vk_mem_props);
+			vkGetPhysicalDeviceMemoryProperties(ret->vk_physical_device, &ret->vk_mem_props);
 
 			std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 			VkDeviceCreateInfo device_info = {};
@@ -163,64 +198,17 @@ namespace flame
 			device_info.queueCreateInfoCount = queue_infos.size();
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
-			device_info.pEnabledFeatures = &vk_features;
+			device_info.pEnabledFeatures = &ret->vk_features;
 			printf("vulkan: creating device\n");
-			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
+			chk_res(vkCreateDevice(ret->vk_physical_device, &device_info, nullptr, &ret->vk_device));
 			printf("vulkan: device created\n");
 
-			dsp.reset(new DescriptorPoolPrivate(this));
-			gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(this, graphics_queue_index) : nullptr);
-			tcp.reset(transfer_queue_index != -1 ? new CommandPoolPrivate(this, transfer_queue_index) : nullptr);
-			gq.reset(graphics_queue_index != -1 ? new QueuePrivate(this, graphics_queue_index) : nullptr);
-			tq.reset(transfer_queue_index != -1 ? new QueuePrivate(this, transfer_queue_index) : nullptr);
-		}
+			ret->dsp.reset(new DescriptorPoolPrivate(ret));
+			ret->gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(ret, graphics_queue_index) : nullptr);
+			ret->tcp.reset(transfer_queue_index != -1 ? new CommandPoolPrivate(ret, transfer_queue_index) : nullptr);
+			ret->gq.reset(graphics_queue_index != -1 ? new QueuePrivate(ret, graphics_queue_index) : nullptr);
+			ret->tq.reset(transfer_queue_index != -1 ? new QueuePrivate(ret, transfer_queue_index) : nullptr);
 
-		DevicePrivate::~DevicePrivate()
-		{
-			if (default_device == this)
-				default_device = nullptr;
-		}
-
-		bool DevicePrivate::has_feature(Feature feature) const
-		{
-			switch (feature)
-			{
-			case FeatureTextureCompressionBC:
-				return vk_features.textureCompressionBC;
-			case FeatureTextureCompressionASTC_LDR:
-				return vk_features.textureCompressionASTC_LDR;
-			case FeatureTextureCompressionETC2:
-				return vk_features.textureCompressionETC2;
-			default:
-				break;
-			}
-			return false;
-		}
-
-		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
-		{
-			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
-			for (uint i = 0; i < vk_mem_props.memoryTypeCount; i++)
-			{
-				if ((type_filter & (1 << i)) && (vk_mem_props.memoryTypes[i].propertyFlags & p) == p)
-					return i;
-			}
-			return -1;
-		}
-
-		Device* Device::get_default()
-		{
-			return default_device;
-		}
-
-		void Device::set_default(Device* device)
-		{
-			default_device = (DevicePrivate*)device;
-		}
-
-		Device* Device::create(bool debug)
-		{
-			auto ret = new DevicePrivate(debug);
 			if (!default_device)
 				default_device = ret;
 			return ret;

@@ -352,7 +352,7 @@ namespace flame
 		return ret;
 	}
 
-	std::vector<StackFrameInfo> get_call_frames_infos(const std::vector<void*>& frames)
+	std::vector<StackFrameInfo> get_call_frames_infos(std::span<void*> frames)
 	{
 		auto process = GetCurrentProcess();
 		SymInitialize(process, nullptr, true);

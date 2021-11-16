@@ -5,12 +5,6 @@ namespace flame
 {
 	namespace sound
 	{
-		SourcePrivate::SourcePrivate(BufferPrivate* buffer)
-		{
-			alGenSources(1, &al_src);
-			alSourcei(al_src, AL_BUFFER, buffer->al_buf);
-		}
-
 		SourcePrivate::~SourcePrivate()
 		{
 			alDeleteSources(1, &al_src);
@@ -42,9 +36,12 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
-		Source *Source::create(Buffer* buffer)
+		SourcePtr Source::create(BufferPtr buffer)
 		{
-			return new SourcePrivate((BufferPrivate*)buffer);
+			auto ret = new SourcePrivate;
+			alGenSources(1, &ret->al_src);
+			alSourcei(ret->al_src, AL_BUFFER, buffer->al_buf);
+			return ret;
 		}
 	}
 }

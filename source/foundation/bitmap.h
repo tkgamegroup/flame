@@ -4,8 +4,6 @@
 
 namespace flame
 {
-	FLAME_FOUNDATION_TYPE(Bitmap);
-
 	struct Bitmap
 	{
 		uvec2 size;

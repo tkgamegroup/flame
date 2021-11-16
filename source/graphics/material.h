@@ -10,22 +10,31 @@ namespace flame
 
 		struct Material
 		{
-			virtual vec4 get_color() const = 0;
-			virtual float get_metallic() const = 0;
-			virtual float get_roughness() const = 0;
-			virtual bool get_opaque() const = 0;
-			virtual bool get_sort() const = 0;
+			struct Texture
+			{
+				std::filesystem::path filename;
+				bool srgb = false;
+				Filter mag_filter = FilterLinear;
+				Filter min_filter = FilterLinear;
+				bool linear_mipmap = true;
+				AddressMode address_mode = AddressClampToEdge;
+				bool auto_mipmap = false;
+			};
 
-			virtual void get_pipeline_file(wchar_t* dst) const = 0;
+			std::filesystem::path filename;
 
-			virtual const char* get_pipeline_defines() const = 0;
+			vec4 color = vec4(1.f);
+			float metallic = 0.f;
+			float roughness = 1.f;
+			bool opaque = true;
+			bool sort = false;
 
-			virtual void get_texture_file(uint idx, wchar_t* dst) const = 0;
-			virtual bool get_texture_srgb(uint idx) const = 0;
-			virtual bool get_texture_auto_mipmap(uint idx) const = 0;
-			virtual SamplerPtr get_texture_sampler(DevicePtr device, uint idx) const = 0;
+			std::filesystem::path pipeline_file = "standard_mat.glsl";
+			std::string pipeline_defines;
 
-			FLAME_GRAPHICS_EXPORTS static Material* get(const wchar_t* filename);
+			Texture textures[MaxMaterialTexturesCount] = {};
+
+			FLAME_GRAPHICS_EXPORTS static MaterialPtr get(const std::filesystem::path& filename);
 		};
 	}
 }

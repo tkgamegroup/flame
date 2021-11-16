@@ -3,6 +3,7 @@
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
+#include "image_ext.h"
 #include "command_private.h"
 #include "shader_private.h"
 
@@ -12,11 +13,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		vec4 ImagePrivate::Data::get_pixel(ivec2 pos)
+		vec4 ImagePrivate::Data::get_pixel(Format format, ivec2 pos)
 		{
 			pos.x = clamp(pos.x, 0, (int)size.x - 1);
 			pos.y = clamp(pos.y, 0, (int)size.y - 1);
-
+			 
 			auto pixel = p.get() + pitch * pos.y + pixel_size * pos.x;
 			switch (format)
 			{
@@ -32,7 +33,7 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::Data::set_pixel(ivec2 pos, const vec4& v)
+		void ImagePrivate::Data::set_pixel(Format format, ivec2 pos, const vec4& v)
 		{
 			pos.x = clamp(pos.x, 0, (int)size.x - 1);
 			pos.y = clamp(pos.y, 0, (int)size.y - 1);
@@ -89,7 +90,6 @@ namespace flame
 				data[lv].resize(layers);
 				for (auto& d : data[lv])
 				{
-					d.format = format;
 					d.size = sizes[lv];
 					d.pixel_size = pixel_size;
 					d.pitch = image_pitch(pixel_size * d.size.x);
@@ -97,76 +97,6 @@ namespace flame
 					data_size += d.data_size;
 				}
 			}
-		}
-
-		ImagePrivate::ImagePrivate(DevicePrivate* _device, Format format, const uvec2& size, uint lvs, uint layers, SampleCount sample_count, 
-			ImageUsageFlags usage, bool is_cube) :
-			device(_device),
-			format(format),
-			levels(lvs),
-			layers(layers),
-			sample_count(sample_count),
-			usage(usage),
-			is_cube(is_cube)
-		{
-			if (!device)
-				device = default_device;
-
-			__images.push_back(this);
-
-			initialize(size);
-
-			VkImageCreateInfo imageInfo;
-			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-			imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-			imageInfo.pNext = nullptr;
-			imageInfo.imageType = VK_IMAGE_TYPE_2D;
-			imageInfo.format = to_backend(format);
-			imageInfo.extent.width = size.x;
-			imageInfo.extent.height = size.y;
-			imageInfo.extent.depth = 1;
-			imageInfo.mipLevels = levels;
-			imageInfo.arrayLayers = layers;
-			imageInfo.samples = to_backend(sample_count);
-			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-			imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
-			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			imageInfo.queueFamilyIndexCount = 0;
-			imageInfo.pQueueFamilyIndices = nullptr;
-			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-			chk_res(vkCreateImage(device->vk_device, &imageInfo, nullptr, &vk_image));
-
-			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(device->vk_device, vk_image, &memRequirements);
-
-			VkMemoryAllocateInfo allocInfo;
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.pNext = nullptr;
-			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = device->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
-
-			chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &vk_memory));
-
-			chk_res(vkBindImageMemory(device->vk_device, vk_image, vk_memory, 0));
-		}
-
-		ImagePrivate::ImagePrivate(DevicePrivate* _device, Format format, const uvec2& size, uint levels, uint layers, void* native) :
-			device(_device),
-			format(format),
-			levels(levels),
-			layers(layers),
-			sample_count(SampleCount_1),
-			usage(usage)
-		{
-			if (!device)
-				device = default_device;
-
-			__images.push_back(this);
-
-			initialize(size);
-
-			vk_image = (VkImage)native;
 		}
 
 		ImagePrivate::~ImagePrivate()
@@ -182,27 +112,6 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::release()
-		{
-			if (!filename.empty())
-			{
-				auto& texs = device->texs[srgb ? 1 : 0];
-				for (auto it = texs.begin(); it != texs.end(); it++)
-				{
-					auto& tex = *it;
-					if (tex.second.get() == this)
-					{
-						tex.first--;
-						if (tex.first == 0)
-							texs.erase(it);
-						return;
-					}
-				}
-			}
-			else
-				delete this;
-		}
-
 		ImagePrivate::Data& ImagePrivate::get_data(uint level, uint layer)
 		{
 			auto& d = data[level][layer];
@@ -215,11 +124,11 @@ namespace flame
 					cpy.img_ext = d.size;
 					cpy.img_sub = { level, 1, layer, 1 };
 					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), 1, &cpy);
+					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), { &cpy, 1 });
 					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 				}
 				d.p.reset(new uchar[d.data_size]);
-				memcpy(d.p.get(), sb.mapped, d.data_size);
+				memcpy(d.p.get(), sb->mapped, d.data_size);
 			}
 			return d;
 		}
@@ -245,7 +154,36 @@ namespace flame
 			if (it != views.end())
 				return it->second.get();
 
-			auto iv = new ImageViewPrivate(this, sub, swizzle);
+			auto iv = new ImageViewPrivate;
+			iv->image = this;
+			iv->device = device;
+			iv->sub = sub;
+			iv->swizzle = swizzle;
+
+			VkImageViewCreateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			info.flags = 0;
+			info.pNext = nullptr;
+			info.components.r = to_backend(swizzle.r);
+			info.components.g = to_backend(swizzle.g);
+			info.components.b = to_backend(swizzle.b);
+			info.components.a = to_backend(swizzle.a);
+			info.image = vk_image;
+			if (is_cube && sub.base_layer == 0 && sub.layer_count == 6)
+				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			else if (sub.layer_count > 1)
+				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			else
+				info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			info.format = to_backend(format);
+			info.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(format));
+			info.subresourceRange.baseMipLevel = sub.base_level;
+			info.subresourceRange.levelCount = sub.level_count;
+			info.subresourceRange.baseArrayLayer = sub.base_layer;
+			info.subresourceRange.layerCount = sub.layer_count;
+
+			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
+
 			views.emplace(key, iv);
 			return iv;
 		}
@@ -358,129 +296,9 @@ namespace flame
 			auto coordf = coord - vec2(coordi);
 			
 			return mix(
-				mix(d.get_pixel(coordi + ivec2(0, 0)), d.get_pixel(coordi + ivec2(1, 0)), coordf.x),
-				mix(d.get_pixel(coordi + ivec2(0, 1)), d.get_pixel(coordi + ivec2(1, 1)), coordf.x),
+				mix(d.get_pixel(format, coordi + ivec2(0, 0)), d.get_pixel(format, coordi + ivec2(1, 0)), coordf.x),
+				mix(d.get_pixel(format, coordi + ivec2(0, 1)), d.get_pixel(format, coordi + ivec2(1, 1)), coordf.x),
 				coordf.y);
-		}
-
-		void ImagePrivate::generate_mipmaps()
-		{
-			assert(levels == 1);
-
-			auto s = sizes[0];
-			for (auto i = 0; ; i++)
-			{
-				s.x >>= 1;
-				s.y >>= 1;
-				if (s.x == 0 && s.y == 0)
-					break;
-				levels++;
-			}
-
-			auto img = new ImagePrivate(device, format, sizes[0], levels, layers, sample_count, usage, is_cube);
-
-			{
-				InstanceCB cb(device);
-
-				cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-				cb->image_barrier(img, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
-				{
-					ImageCopy cpy;
-					cpy.size = sizes[0];
-					cb->copy_image(this, img, 1, &cpy);
-				}
-				for (auto i = 1U; i < levels; i++)
-				{
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutTransferSrc);
-					ImageBlit blit;
-					blit.src_sub.base_level = i - 1;
-					blit.src_range = ivec4(0, 0, img->sizes[i - 1]);
-					blit.dst_sub.base_level = i;
-					blit.dst_range = ivec4(0, 0, img->sizes[i]);
-					cb->blit_image(img, img, 1, &blit, FilterLinear);
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
-				}
-				cb->image_barrier(img, { img->levels - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			}
-
-			data = std::move(img->data);
-			data_size = img->data_size;
-			std::swap(vk_image, img->vk_image);
-			std::swap(vk_memory, img->vk_memory);
-			delete img;
-		}
-
-		float ImagePrivate::alpha_test_coverage(uint level, float ref, uint channel, float scale)
-		{
-			assert(format == Format_R8G8B8A8_UNORM || format == Format_R8_UNORM);
-
-			auto& d = get_data(level, 0);
-
-			auto coverage = 0.f;
-
-			for (auto y = 0; y < d.size.y; y++)
-			{
-				for (auto x = 0; x < d.size.x; x++)
-				{
-					if (d.get_pixel(ivec2(x, y))[channel] * scale > ref)
-						coverage += 1.f;
-				}
-			}
-
-			return coverage / float(d.size.x * d.size.y);
-		}
-
-		void ImagePrivate::scale_alpha_to_coverage(uint level, float desired, float ref, uint channel)
-		{
-			auto min_alpha_scale = 0.f;
-			auto max_alpha_scale = 4.f;
-			auto alpha_scale = 1.f;
-			auto best_alpha_scale = 1.f;
-			auto best_error = std::numeric_limits<float>::max();
-
-			for (int i = 0; i < 10; i++)
-			{
-				auto current_coverage = alpha_test_coverage(level, ref, channel, alpha_scale);
-
-				auto error = abs(current_coverage - desired);
-				if (error < best_error)
-				{
-					best_error = error;
-					best_alpha_scale = alpha_scale;
-				}
-
-				if (current_coverage < desired)
-					min_alpha_scale = alpha_scale;
-				else if (current_coverage > desired)
-					max_alpha_scale = alpha_scale;
-				else
-					break;
-
-				alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
-			}
-
-			auto& d = get_data(level, 0);
-			for (auto y = 0; y < d.size.y; y++)
-			{
-				for (auto x = 0; x < d.size.x; x++)
-				{
-					auto pos = ivec2(x, y);
-					auto v = d.get_pixel(pos);
-					v[channel] *= best_alpha_scale;
-					d.set_pixel(pos, v);
-				}
-			}
-
-			{
-				StagingBuffer sb(device, d.data_size, d.p.get());
-				InstanceCB cb(device);
-				BufferImageCopy cpy;
-				cpy.img_ext = d.size;
-				cpy.img_sub.base_level = level;
-				cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), this, 1, &cpy);
-				cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			}
 		}
 
 		void ImagePrivate::save(const std::filesystem::path& filename)
@@ -509,7 +327,7 @@ namespace flame
 				{
 					InstanceCB cb(device);
 					std::vector<BufferImageCopy> cpies;
-					auto dst = (char*)sb.mapped;
+					auto dst = (char*)sb->mapped;
 					auto offset = 0;
 					for (auto i = 0; i < layers; i++)
 					{
@@ -531,7 +349,7 @@ namespace flame
 						}
 					}
 					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), cpies.size(), cpies.data());
+					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), cpies);
 					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
@@ -545,40 +363,108 @@ namespace flame
 			}
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Bitmap* bmp)
+		ImagePtr Image::create(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube)
 		{
-			if (bmp->channel == 3)
-				bmp->change_channel(4);
-			auto i = new ImagePrivate(device, get_image_format(bmp->channel, bmp->bpp), bmp->size, 1, 1,
+			if (!device)
+				device = default_device;
+
+			auto ret = new ImagePrivate;
+			ret->device = device;
+			ret->format = format;
+			ret->levels = levels;
+			ret->layers = layers;
+			ret->sample_count = sample_count;
+			ret->usage = usage;
+			ret->is_cube = is_cube;
+			ret->initialize(size);
+
+			VkImageCreateInfo imageInfo;
+			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+			imageInfo.pNext = nullptr;
+			imageInfo.imageType = VK_IMAGE_TYPE_2D;
+			imageInfo.format = to_backend(format);
+			imageInfo.extent.width = size.x;
+			imageInfo.extent.height = size.y;
+			imageInfo.extent.depth = 1;
+			imageInfo.mipLevels = levels;
+			imageInfo.arrayLayers = layers;
+			imageInfo.samples = to_backend(sample_count);
+			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
+			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			imageInfo.queueFamilyIndexCount = 0;
+			imageInfo.pQueueFamilyIndices = nullptr;
+			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+			chk_res(vkCreateImage(device->vk_device, &imageInfo, nullptr, &ret->vk_image));
+
+			VkMemoryRequirements memRequirements;
+			vkGetImageMemoryRequirements(device->vk_device, ret->vk_image, &memRequirements);
+
+			VkMemoryAllocateInfo allocInfo;
+			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+			allocInfo.pNext = nullptr;
+			allocInfo.allocationSize = memRequirements.size;
+			allocInfo.memoryTypeIndex = device->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
+
+			chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
+
+			chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
+
+			__images.push_back(ret);
+			return ret;
+		}
+
+		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec2& size, VkImage native)
+		{
+			auto ret = new ImagePrivate;
+
+			ret->device = device;
+			ret->initialize(size);
+			ret->vk_image = native;
+
+			__images.push_back(ret);
+			return ret;
+		}
+
+		ImagePtr Image::create(DevicePtr device, Bitmap* bmp)
+		{
+			if (bmp->chs == 3)
+				bmp->change_format(4);
+
+			auto ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size, 1, 1, 
 				SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | ImageUsageTransferSrc);
 
 			StagingBuffer sb(device, bmp->data_size, bmp->data);
 			InstanceCB cb(device);
 			BufferImageCopy cpy;
-			cpy.img_ext = i->sizes[0];
-			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image((BufferPrivate*)sb.get(), i, 1, &cpy);
-			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cpy.img_ext = ret->sizes[0];
+			cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, { &cpy, 1 });
+			cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
-			return i;
+			__images.push_back(ret);
+			return ret;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Format format, const uvec2& size, void* data)
+		ImagePtr Image::create(DevicePtr device, Format format, const uvec2& size, void* data)
 		{
-			auto i = new ImagePrivate(device, format,
-				size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+			auto ret = Image::create(device, format, size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
 
 			StagingBuffer stag(nullptr, image_pitch(get_pixel_size(format) * size.x) * size.y, data);
 			InstanceCB cb(nullptr);
-			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy cpy;
 			cpy.img_ext = size;
-			cb->copy_buffer_to_image((BufferPrivate*)stag.get(), i, 1, &cpy);
-			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			return i;
+			cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, { &cpy, 1 });
+			cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+
+			__images.push_back(ret);
+			return ret;
 		}
 
-		ImagePrivate* ImagePrivate::get(DevicePrivate* device, const std::filesystem::path& filename, bool srgb)
+		ImagePtr Image::get(DevicePtr device, const std::filesystem::path& filename, bool srgb)
 		{
 			if (!device)
 				device = default_device;
@@ -636,13 +522,13 @@ namespace flame
 				}
 				assert(format != Format_Undefined);
 
-				ret = new ImagePrivate(device, format, ext, levels, layers,
+				ret = Image::create(device, format, ext, levels, layers,
 					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);
 
 				StagingBuffer sb(device, ret->data_size, nullptr);
 				InstanceCB cb(device);
 				std::vector<BufferImageCopy> cpies;
-				auto dst = (char*)sb.mapped;
+				auto dst = (char*)sb->mapped;
 				auto offset = 0;
 				for (auto i = 0; i < layers; i++)
 				{
@@ -668,12 +554,12 @@ namespace flame
 					}
 				}
 				cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, cpies.size(), cpies.data());
+				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, cpies);
 				cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 			else
 			{
-				UniPtr<Bitmap> bmp(Bitmap::create(filename.c_str()));
+				std::unique_ptr<Bitmap> bmp(Bitmap::create(filename));
 				if (srgb)
 					bmp->srgb_to_linear();
 
@@ -687,55 +573,124 @@ namespace flame
 			return ret;
 		}
 
-		Image* Image::create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
-		{ 
-			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
-		}
-
-		Image* Image::create(Device* device, Bitmap* bmp) 
-		{ 
-			return ImagePrivate::create((DevicePrivate*)device, bmp);
-		}
-
-		Image* Image::create(Device* device, Format format, const uvec2& size, void* data)
+		void ImagePrivate::generate_mipmaps()
 		{
-			return ImagePrivate::create((DevicePrivate*)device, format, size, data);
+			assert(levels == 1);
+
+			auto s = sizes[0];
+			for (auto i = 0; ; i++)
+			{
+				s.x >>= 1;
+				s.y >>= 1;
+				if (s.x == 0 && s.y == 0)
+					break;
+				levels++;
+			}
+
+			auto img = Image::create(device, format, sizes[0], levels, layers, sample_count, usage, is_cube);
+
+			{
+				InstanceCB cb(device);
+
+				cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+				cb->image_barrier(img, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
+				{
+					ImageCopy cpy;
+					cpy.size = sizes[0];
+					cb->copy_image(this, img, { &cpy, 1 });
+				}
+				for (auto i = 1U; i < levels; i++)
+				{
+					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutTransferSrc);
+					ImageBlit blit;
+					blit.src_sub.base_level = i - 1;
+					blit.src_range = ivec4(0, 0, img->sizes[i - 1]);
+					blit.dst_sub.base_level = i;
+					blit.dst_range = ivec4(0, 0, img->sizes[i]);
+					cb->blit_image(img, img, { &blit, 1 }, FilterLinear);
+					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+				}
+				cb->image_barrier(img, { img->levels - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			}
+
+			data = std::move(img->data);
+			data_size = img->data_size;
+			std::swap(vk_image, img->vk_image);
+			std::swap(vk_memory, img->vk_memory);
+			delete img;
 		}
 
-		Image* Image::get(Device* device, const wchar_t* filename, bool srgb) 
-		{ 
-			return ImagePrivate::get((DevicePrivate*)device, filename, srgb);
-		}
-
-		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, const ImageSub& sub, const ImageSwizzle& swizzle) :
-			image(image),
-			device(image->device),
-			sub(sub),
-			swizzle(swizzle)
+		float image_alpha_test_coverage(ImagePtr img, uint level, float ref, uint channel, float scale)
 		{
-			VkImageViewCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.components.r = to_backend(swizzle.r);
-			info.components.g = to_backend(swizzle.g);
-			info.components.b = to_backend(swizzle.b);
-			info.components.a = to_backend(swizzle.a);
-			info.image = image->vk_image;
-			if (image->is_cube && sub.base_layer == 0 && sub.layer_count == 6)
-				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-			else if (sub.layer_count > 1)
-				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-			else
-				info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			info.format = to_backend(image->format);
-			info.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(image->format));
-			info.subresourceRange.baseMipLevel = sub.base_level;
-			info.subresourceRange.levelCount = sub.level_count;
-			info.subresourceRange.baseArrayLayer = sub.base_layer;
-			info.subresourceRange.layerCount = sub.layer_count;
+			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 
-			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &vk_image_view));
+			auto& d = img->get_data(level, 0);
+
+			auto coverage = 0.f;
+
+			for (auto y = 0; y < d.size.y; y++)
+			{
+				for (auto x = 0; x < d.size.x; x++)
+				{
+					if (d.get_pixel(img->format, ivec2(x, y))[channel] * scale > ref)
+						coverage += 1.f;
+				}
+			}
+
+			return coverage / float(d.size.x * d.size.y);
+		}
+
+		void image_alpha_test_coverage(ImagePtr img, uint level, float desired, float ref, uint channel)
+		{
+			auto min_alpha_scale = 0.f;
+			auto max_alpha_scale = 4.f;
+			auto alpha_scale = 1.f;
+			auto best_alpha_scale = 1.f;
+			auto best_error = std::numeric_limits<float>::max();
+
+			for (int i = 0; i < 10; i++)
+			{
+				auto current_coverage = image_alpha_test_coverage(img, level, ref, channel, alpha_scale);
+
+				auto error = abs(current_coverage - desired);
+				if (error < best_error)
+				{
+					best_error = error;
+					best_alpha_scale = alpha_scale;
+				}
+
+				if (current_coverage < desired)
+					min_alpha_scale = alpha_scale;
+				else if (current_coverage > desired)
+					max_alpha_scale = alpha_scale;
+				else
+					break;
+
+				alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
+			}
+
+			auto& d = img->get_data(level, 0);
+			for (auto y = 0; y < d.size.y; y++)
+			{
+				for (auto x = 0; x < d.size.x; x++)
+				{
+					auto pos = ivec2(x, y);
+					auto v = d.get_pixel(img->format, pos);
+					v[channel] *= best_alpha_scale;
+					d.set_pixel(img->format, pos, v);
+				}
+			}
+
+			{
+				StagingBuffer sb(img->device, d.data_size, d.p.get());
+				InstanceCB cb(img->device);
+				BufferImageCopy cpy;
+				cpy.img_ext = d.size;
+				cpy.img_sub.base_level = level;
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			}
 		}
 
 		ImageViewPrivate::~ImageViewPrivate()
@@ -743,15 +698,28 @@ namespace flame
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* _device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) :
-			device(_device),
-			mag_filter(mag_filter),
-			min_filter(min_filter),
-			linear_mipmap(linear_mipmap),
-			address_mode(address_mode)
+		SamplerPrivate::~SamplerPrivate()
+		{
+			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
+		}
+
+		SamplerPtr Sampler::get(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
 		{
 			if (!device)
 				device = default_device;
+
+			for (auto& s : device->sps)
+			{
+				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
+					return s.get();
+			}
+
+			auto ret = new SamplerPrivate;
+			ret->device = device;
+			ret->mag_filter = mag_filter;
+			ret->min_filter = min_filter;
+			ret->linear_mipmap = linear_mipmap;
+			ret->address_mode = address_mode;
 
 			VkSamplerCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -764,67 +732,10 @@ namespace flame
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
 			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &vk_sampler));
-		}
+			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
 
-		SamplerPrivate::~SamplerPrivate()
-		{
-			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
-		}
-
-		SamplerPrivate* SamplerPrivate::get(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
-		{
-			if (!device)
-				device = default_device;
-
-			for (auto& s : device->sps)
-			{
-				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
-					return s.get();
-			}
-			auto s = new SamplerPrivate(device, mag_filter, min_filter, linear_mipmap, address_mode);
-			device->sps.emplace_back(s);
-			return s;
-		}
-
-		Sampler* Sampler::get(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
-		{
-			return SamplerPrivate::get((DevicePrivate*)device, mag_filter, min_filter, linear_mipmap, address_mode);
-		}
-
-		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::filesystem::path& fn)
-		{
-			if (!device)
-				device = default_device;
-
-			auto filename = fn;
-			auto ini = parse_ini_file(filename);
-
-			filename.replace_extension(L".png");
-			image = ImagePrivate::get(device, filename.c_str(), false);
-
-			auto w = (float)image->sizes[0].x;
-			auto h = (float)image->sizes[0].y;
-
-			for (auto& e : ini.get_section_entries(""))
-			{
-				Tile tile;
-				tile.index = tiles.size();
-				std::string t;
-				std::stringstream ss(e.value);
-				ss >> t;
-				tile.name = t;
-				ss >> t;
-				auto v = sto<4, uint>(t.c_str());
-				tile.pos = ivec2(v.x, v.y);
-				tile.size = ivec2(v.z, v.w);
-				tile.uv.x = tile.pos.x / w;
-				tile.uv.y = tile.pos.y / h;
-				tile.uv.z = (tile.pos.x + tile.size.x) / w;
-				tile.uv.w = (tile.pos.y + tile.size.y) / h;
-
-				tiles.push_back(tile);
-			}
+			device->sps.emplace_back(ret);
+			return ret;
 		}
 
 		ImageAtlasPrivate::~ImageAtlasPrivate()
@@ -832,44 +743,10 @@ namespace flame
 			delete image;
 		}
 
-		void ImageAtlasPrivate::get_tile(uint id, TileInfo* dst) const
-		{
-			if (id >= tiles.size())
-				return;
-			auto& src = tiles[id];
-			dst->id = id;
-			dst->name = src.name.c_str();
-			dst->pos = src.pos;
-			dst->size = src.size;
-			dst->uv = src.uv;
-		}
+		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ImageAtlasPrivate>>> loaded_atlas;
 
-		int ImageAtlasPrivate::find_tile(std::string_view name) const
+		ImageAtlasPtr ImageAtlas::get(DevicePtr device, const std::filesystem::path& filename)
 		{
-			for (auto id = 0; id < tiles.size(); id++)
-			{
-				if (tiles[id].name == name)
-					return id;
-			}
-			return -1;
-		}
-
-		bool ImageAtlasPrivate::find_tile(const char* name, TileInfo* dst) const
-		{
-			auto id = find_tile(std::string(name));
-			if (id != -1)
-			{
-				get_tile(id, dst);
-				return true;
-			}
-			return false;
-		}
-
-		static std::vector<std::pair<std::filesystem::path, UniPtr<ImageAtlasPrivate>>> loaded_atlas;
-
-		ImageAtlas* ImageAtlas::get(Device* device, const wchar_t* fn)
-		{
-			auto filename = std::filesystem::path(fn);
 			for (auto& a : loaded_atlas)
 			{
 				if (a.first == filename)
@@ -882,7 +759,34 @@ namespace flame
 				return nullptr;
 			}
 
-			return new ImageAtlasPrivate((DevicePrivate*)device, filename);
+			if (!device)
+				device = default_device;
+
+			auto ret = new ImageAtlasPrivate;
+
+			auto png_filename = filename;
+			png_filename.replace_extension(L".png");
+			ret->image = Image::get(device, png_filename, false);
+
+			auto size = (vec2)ret->image->sizes[0];
+
+			for (auto& e : parse_ini_file(filename).get_section_entries(""))
+			{
+				auto& tile = ret->tiles.emplace_back();
+				tile.index = ret->tiles.size();
+				auto sp = SUS::split(e.value);
+				tile.name = sp[0];
+				auto v = sto<4, uint>(sp[1]);
+				tile.pos = ivec2(v.x, v.y);
+				tile.size = ivec2(v.z, v.w);
+				tile.uv.x = tile.pos.x / size.x;
+				tile.uv.y = tile.pos.y / size.y;
+				tile.uv.z = (tile.pos.x + tile.size.x) / size.x;
+				tile.uv.w = (tile.pos.y + tile.size.y) / size.y;
+			}
+
+			loaded_atlas.emplace_back(filename, ret);
+			return ret;
 		}
 	}
 }

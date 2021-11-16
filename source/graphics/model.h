@@ -8,9 +8,8 @@ namespace flame
 	{
 		struct Bone
 		{
-			virtual const char* get_name() const = 0;
-
-			virtual mat4 get_offset_matrix() const = 0;
+			std::string name;
+			mat4 offset_matrix;
 		};
 
 		struct Mesh

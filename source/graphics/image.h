@@ -61,15 +61,15 @@ namespace flame
 
 		struct Image
 		{
-			virtual void release() = 0;
+			Format format = Format_R8G8B8A8_UNORM;
+			std::vector<uvec2> sizes;
+			uint levels = 1;
+			uint layers = 1;
+			SampleCount sample_count = SampleCount_1;
 
-			virtual Format get_format() const = 0;
-			virtual uvec2 get_size(uint lv = 0) const = 0;
-			virtual uint get_levels() const = 0;
-			virtual uint get_layers() const = 0;
-			virtual SampleCount get_sample_count() const = 0;
+			std::filesystem::path filename;
 
-			virtual const wchar_t* get_filename() const = 0;
+			virtual ~Image() {}
 
 			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) = 0;
 			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) = 0;
@@ -81,53 +81,61 @@ namespace flame
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
 			virtual void generate_mipmaps() = 0;
-			virtual float alpha_test_coverage(uint level, float ref, uint channel, float scale) = 0;
-			virtual void scale_alpha_to_coverage(uint level, float desired, float ref, uint channel) = 0;
 
-			virtual void save(const wchar_t* filename) = 0;
+			virtual void save(const std::filesystem::path& filename) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, 
-				ImageUsageFlags usage, bool is_cube = false);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, void* data);
-			FLAME_GRAPHICS_EXPORTS static Image* get(Device* device, const wchar_t* filename, bool srgb);
+			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Bitmap* bmp);
+			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Format format, const uvec2& size, void* data);
+			FLAME_GRAPHICS_EXPORTS static ImagePtr get(DevicePtr device, const std::filesystem::path& filename, bool srgb);
 		};
 
 		struct ImageView
 		{
-			virtual ImagePtr get_image() const = 0;
-
-			virtual ImageSub get_sub() const = 0;
-			virtual ImageSwizzle get_swizzle() const = 0;
+			ImagePtr image;
+			ImageSub sub;
+			ImageSwizzle swizzle;
 		};
 
 		struct Sampler
 		{
-			virtual void release() = 0;
+			Filter mag_filter;
+			Filter min_filter;
+			bool linear_mipmap;
+			AddressMode address_mode;
 
-			FLAME_GRAPHICS_EXPORTS static Sampler* get(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
+			virtual ~Sampler() {}
+
+			FLAME_GRAPHICS_EXPORTS static SamplerPtr get(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 		};
 
 		struct ImageAtlas
 		{
-			struct TileInfo
+			struct Tile
 			{
-				uint id;
-				const char* name;
+				uint index;
+				std::string name;
 				ivec2 pos;
 				ivec2 size;
 				vec4 uv;
 			};
 
-			virtual void release() = 0; 
+			ImagePtr image;
+			std::vector<Tile> tiles;
 
-			virtual uint get_tiles_count() const = 0;
-			virtual void get_tile(uint id, TileInfo* dst) const = 0;
-			virtual bool find_tile(const char* name, TileInfo* dst) const = 0;
+			virtual ~ImageAtlas() {}
 
-			virtual ImagePtr get_image() const = 0;
+			inline int find_tile(std::string_view name) const
+			{
+				for (auto id = 0; id < tiles.size(); id++)
+				{
+					if (tiles[id].name == name)
+						return id;
+				}
+				return -1;
+			}
 
-			FLAME_GRAPHICS_EXPORTS static ImageAtlas* get(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static ImageAtlasPtr get(DevicePtr device, const std::filesystem::path& filename);
 		};
 	}
 }

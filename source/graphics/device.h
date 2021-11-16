@@ -8,14 +8,14 @@ namespace flame
 	{
 		struct Device
 		{
-			virtual void release() = 0;
+			virtual ~Device() {}
 
 			virtual bool has_feature(Feature f) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Device* get_default();
-			FLAME_GRAPHICS_EXPORTS static void set_default(Device* device);
-			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug);
+			FLAME_GRAPHICS_EXPORTS static DevicePtr create(bool debug);
 		};
+
+		FLAME_GRAPHICS_EXPORTS extern DevicePtr default_device;
 	}
 }
 

@@ -502,7 +502,7 @@ namespace flame
 				device = default_device;
 
 			auto filename = _filename;
-			if (!get_engine_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"default_assets\\shaders"))
 			{
 				wprintf(L"cannot find dsl: %s\n", _filename.c_str());
 				return nullptr;
@@ -923,7 +923,7 @@ namespace flame
 				device = default_device;
 
 			auto filename = _filename;
-			if (!get_engine_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"default_assets\\shaders"))
 			{
 				wprintf(L"cannot find pll: %s\n", _filename.c_str());
 				return nullptr;
@@ -1141,7 +1141,7 @@ namespace flame
 				device = default_device;
 
 			auto filename = _filename;
-			if (!get_engine_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"default_assets\\shaders"))
 			{
 				wprintf(L"cannot find shader: %s\n", _filename.c_str());
 				return nullptr;
@@ -1569,7 +1569,7 @@ namespace flame
 				device = default_device;
 
 			auto filename = _filename;
-			if (!get_engine_path(filename, L"assets\\shaders"))
+			if (!get_engine_path(filename, L"default_assets\\shaders"))
 			{
 				wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
 				return nullptr;

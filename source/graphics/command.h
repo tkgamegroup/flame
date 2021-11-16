@@ -8,10 +8,10 @@ namespace flame
 	{
 		struct CommandPool
 		{
-			virtual void release() = 0;
+			virtual ~CommandPool() {}
 
-			FLAME_GRAPHICS_EXPORTS static CommandPool* get(Device* device = nullptr, QueueFamily family = QueueGraphics);
-			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* device, int queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static CommandPoolPtr get(DevicePtr device = nullptr, QueueFamily family = QueueGraphics);
+			FLAME_GRAPHICS_EXPORTS static CommandPoolPtr create(DevicePtr device, int queue_family_idx);
 		};
 
 		struct BufferCopy
@@ -65,7 +65,7 @@ namespace flame
 
 		struct CommandBuffer
 		{
-			virtual void release() = 0;
+			virtual ~CommandBuffer() {}
 
 			virtual void begin(bool once = false) = 0;
 
@@ -76,17 +76,16 @@ namespace flame
 			virtual void set_scissor(const Rect& rect) = 0;
 			virtual void bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt = PipelineGraphics) = 0;
 			virtual void bind_pipeline(PipelinePtr pl) = 0;
-			virtual void bind_descriptor_sets(uint idx, uint cnt, DescriptorSetPtr* dss) = 0;
-			inline void bind_descriptor_set(uint idx, DescriptorSetPtr ds)
+			virtual void bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> descriptor_sets) = 0;
+			inline void bind_descriptor_set(uint idx, DescriptorSetPtr descriptor_set)
 			{
-				DescriptorSetPtr dss[] = { ds };
-				bind_descriptor_sets(idx, 1, dss);
+				DescriptorSetPtr dss[] = { descriptor_set };
+				bind_descriptor_sets(idx, { dss, 1 });
 			}
 			virtual void bind_vertex_buffer(BufferPtr buf, uint id) = 0;
 			virtual void bind_index_buffer(BufferPtr buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;
-			template <class T>
-			inline void push_constant_t(const T& data)
+			template <class T> inline void push_constant_t(const T& data)
 			{
 				push_constant(0, sizeof(T), &data);
 			}
@@ -101,73 +100,71 @@ namespace flame
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone,
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 
-			virtual void copy_buffer(BufferPtr src, BufferPtr dst, uint copies_count, BufferCopy* copies) = 0;
-			virtual void copy_image(ImagePtr src, ImagePtr dst, uint copies_count, ImageCopy* copies) = 0;
-			virtual void copy_buffer_to_image(BufferPtr src, ImagePtr dst, uint copies_count, BufferImageCopy* copies) = 0;
-			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, uint copies_count, BufferImageCopy* copies) = 0;
-			virtual void blit_image(ImagePtr src, ImagePtr dst, uint blits_count, ImageBlit* blits, Filter filter) = 0;
+			virtual void copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies) = 0;
+			virtual void copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies) = 0;
+			virtual void copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies) = 0;
+			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies) = 0;
+			virtual void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) = 0;
 
 			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color) = 0;
 			virtual void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) = 0;
 
 			virtual void end() = 0;
 
-			FLAME_GRAPHICS_EXPORTS  static CommandBuffer* create(CommandPool* p, bool sub = false);
+			FLAME_GRAPHICS_EXPORTS  static CommandBufferPtr create(CommandPoolPtr p, bool sub = false);
 		};
 
 		struct Queue
 		{
-			virtual void release() = 0;
+			virtual ~Queue() {}
 
 			virtual void wait_idle() = 0;
-			virtual void submit(uint cbs_count, CommandBufferPtr* cbs, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) = 0;
+			virtual void submit(std::span<CommandBufferPtr> commandbuffers, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) = 0;
+			inline void submit1(CommandBufferPtr commandbuffer, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence)
+			{
+				CommandBufferPtr cbs[] = { commandbuffer };
+				submit({ cbs, 1 }, wait_semaphore, signal_semaphore, signal_fence);
+			}
 			virtual void present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Queue* get(Device* device, QueueFamily family = QueueGraphics);
-			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
-		};
-
-		struct Event
-		{
-			virtual void release() = 0;
-
-			FLAME_GRAPHICS_EXPORTS static Event* create(Device* device);
+			FLAME_GRAPHICS_EXPORTS static QueuePtr get(DevicePtr device, QueueFamily family = QueueGraphics);
+			FLAME_GRAPHICS_EXPORTS static QueuePtr create(DevicePtr device, uint queue_family_idx);
 		};
 
 		struct Semaphore
 		{
-			virtual void release() = 0;
+			virtual ~Semaphore() {}
 
-			FLAME_GRAPHICS_EXPORTS static Semaphore* create(Device* device);
+			FLAME_GRAPHICS_EXPORTS static SemaphorePtr create(DevicePtr device);
 		};
 
 		struct Fence
 		{
-			virtual void release() = 0;
+			virtual ~Fence() {}
 
 			virtual void wait(bool auto_reset = true) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* device, bool signaled = true);
+			FLAME_GRAPHICS_EXPORTS static FencePtr create(DevicePtr device, bool signaled = true);
 		};
 
-		struct InstanceCB : UniPtr<CommandBuffer>
+		struct InstanceCB : std::unique_ptr<CommandBufferT>
 		{
-			Device* device;
-			Fence* fence;
+			DevicePtr device;
+			FencePtr fence;
 
-			InstanceCB(Device* device, Fence* fence = nullptr) :
+			InstanceCB(DevicePtr device, FencePtr fence = nullptr) :
 				device(device),
 				fence(fence)
 			{
 				reset(CommandBuffer::create(CommandPool::get(device)));
-				p->begin(true);
+				get()->begin(true);
 			}
 
 			~InstanceCB()
 			{
-				p->end();
+				get()->end();
 				auto q = Queue::get(device);
-				q->submit(1, (CommandBufferPtr*)&p, nullptr, nullptr, (FencePtr)fence);
+				q->submit1(get(), nullptr, nullptr, fence);
 				if (!fence)
 					q->wait_idle();
 				else

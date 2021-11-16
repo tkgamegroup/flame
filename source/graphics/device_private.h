@@ -29,16 +29,11 @@ namespace flame
 			std::unique_ptr<QueuePrivate> gq;
 			std::unique_ptr<QueuePrivate> tq;
 
-			DevicePrivate(bool debug);
 			~DevicePrivate();
 
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 
-			void release() override { delete this; }
-
 			bool has_feature(Feature feature) const override;
 		};
-
-		extern DevicePrivate* default_device;
 	}
 }

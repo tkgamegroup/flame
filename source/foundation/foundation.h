@@ -29,6 +29,7 @@ struct FlameFoundationTypeSelector
 
 namespace flame
 {
+	FLAME_FOUNDATION_TYPE(Bitmap);
 	FLAME_FOUNDATION_TYPE(NativeWindow);
 
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);

@@ -24,22 +24,6 @@ namespace flame
 
 		const auto font_atlas_size = uvec2(1024);
 
-		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* _device, const std::vector<Font*>& _fonts) :
-			device(_device)
-		{
-			if (!device)
-				device = default_device;
-
-			for (auto& f : _fonts)
-				fonts.emplace_back(f);
-
-			bin_pack_root.reset(new BinPackNode(font_atlas_size));
-
-			image.reset(new ImagePrivate(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
-			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-			view = image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
-		}
-
 		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)
 		{
 			if (size == 0)
@@ -84,7 +68,7 @@ namespace flame
 							BufferImageCopy cpy;
 							cpy.img_off = atlas_pos;
 							cpy.img_ext = g.size;
-							cb->copy_buffer_to_image((BufferPrivate*)stag.get(), image.get(), 1, &cpy);
+							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
@@ -109,9 +93,12 @@ namespace flame
 
 		static std::vector<std::pair<std::vector<std::wstring>, UniPtr<FontAtlasPrivate>>> loaded_atlas;
 
-		FontAtlasPtr FontAtlasPrivate::get(DevicePtr device, const std::wstring& res)
+		FontAtlasPtr FontAtlas::get(DevicePtr device, const std::wstring& font_names)
 		{
-			auto sp = SUW::split(res, L';');
+			if (!device)
+				device = default_device;
+
+			auto sp = SUW::split(font_names, L';');
 			std::sort(sp.begin(), sp.end());
 			for (auto& a : loaded_atlas)
 			{
@@ -125,14 +112,13 @@ namespace flame
 				auto fn = std::filesystem::path(s);
 				if (!std::filesystem::exists(fn))
 				{
-					if (!get_engine_path(fn, L"assets"))
+					if (!get_engine_path(fn, L"default_assets"))
 						fn = L"c:\\windows\\fonts" / std::filesystem::path(s);
 				}
 
 				auto font = new Font;
 				font->file = get_file_content(fn);
-				if (font->file.empty() ||
-					!stbtt_InitFont(font->stbtt_info, (uchar*)font->file.data(), stbtt_GetFontOffsetForIndex((uchar*)font->file.data(), 0)))
+				if (font->file.empty() || !stbtt_InitFont(font->stbtt_info, (uchar*)font->file.data(), stbtt_GetFontOffsetForIndex((uchar*)font->file.data(), 0)))
 				{
 					wprintf(L"cannot load font: %s\n", s.c_str());
 					return nullptr;
@@ -141,14 +127,19 @@ namespace flame
 				fonts.push_back(font);
 			}
 
-			auto ret = new FontAtlasPrivate(device, fonts);
+			auto ret = new FontAtlasPrivate;
+			ret->device = device;
+			for (auto& f : fonts)
+				ret->fonts.emplace_back(f);
+
+			ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
+
+			ret->image.reset(new ImagePrivate(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+			ret->image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+			ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
+
 			loaded_atlas.emplace_back(sp, ret);
 			return ret;
-		}
-
-		FontAtlas* FontAtlas::get(Device* device, const wchar_t* res)
-		{
-			return FontAtlasPrivate::get((DevicePrivate*)device, res);
 		}
 	}
 }

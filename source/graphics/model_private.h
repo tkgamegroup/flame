@@ -6,16 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct BonePrivate : Bone
-		{
-			std::string name;
-
-			mat4 offset_matrix;
-
-			const char* get_name() const override { return name.c_str(); }
-			mat4 get_offset_matrix() const override { return offset_matrix; }
-		};
-
 		struct MeshPrivate : Mesh
 		{
 			ModelPrivate* model;

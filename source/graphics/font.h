@@ -8,16 +8,18 @@ namespace flame
 	{
 		struct FontAtlas
 		{
-			virtual void release() = 0;
+			ImageViewPtr view;
 
-			inline uvec2 text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			virtual ~FontAtlas() {}
+
+			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
+
+			inline uvec2 text_offset(uint font_size, std::wstring_view str)
 			{
 				auto off = uvec2(0);
 
-				auto pstr = begin;
-				while (*pstr && pstr != end)
+				for (auto ch : str)
 				{
-					auto ch = *pstr;
 					if (ch == '\n')
 					{
 						off.x = 0.f;
@@ -29,20 +31,17 @@ namespace flame
 							ch = ' ';
 						off.x += get_glyph(ch, font_size).advance;
 					}
-					pstr++;
 				}
 				return off;
 			}
 
-			inline uvec2 text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline uvec2 text_size(uint font_size, std::wstring_view str)
 			{
 				auto size = uvec2(0, font_size);
 				auto x = 0U;
 
-				auto pstr = begin;
-				while (*pstr && pstr != end)
+				for (auto ch : str)
 				{
-					auto ch = *pstr;
 					if (ch == '\n')
 					{
 						size.y += font_size;
@@ -55,12 +54,11 @@ namespace flame
 						x += get_glyph(ch, font_size).advance;
 						size.x = max(size.x, x);
 					}
-					pstr++;
 				}
 				return size;
 			}
 
-			inline std::wstring wrap_text(uint font_size, uint width, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline std::wstring wrap_text(uint font_size, uint width, std::wstring_view str)
 			{
 				if (font_size > width)
 				{
@@ -71,10 +69,8 @@ namespace flame
 				auto ret = std::wstring();
 				auto w = 0U;
 
-				auto pstr = begin;
-				while (*pstr && pstr != end)
+				for (auto ch : str)
 				{
-					auto ch = *pstr;
 					switch (ch)
 					{
 					case '\n':
@@ -96,24 +92,21 @@ namespace flame
 							w += adv;
 						ret += ch;
 					}
-					pstr++;
 				}
 
 				return ret;
 			}
 
-			inline std::vector<GlyphDraw> get_draw_glyphs(uint size, const wchar_t* begin, const wchar_t* end = nullptr, 
-				const vec2& pos = vec2(0.f), const mat2& axes = mat2(1.f))
+			inline std::vector<GlyphDraw> get_draw_glyphs(uint size, std::wstring_view str, const vec2& pos = vec2(0.f), const mat2& axes = mat2(1.f))
 			{
 				std::vector<GlyphDraw> ret;
-				ret.resize(end - begin);
+				ret.resize(str.size());
 
+				auto i = 0;
 				auto p = vec2(0.f);
-				auto idx = 0;
-				auto pstr = begin;
-				while (*pstr && pstr != end)
+				for (i = 0; i < str.size(); i++)
 				{
-					auto ch = *pstr;
+					auto ch = str[i];
 					if (ch == '\n')
 					{
 						p.y += size;
@@ -128,7 +121,7 @@ namespace flame
 						auto o = p + vec2(g.off);
 						auto s = vec2(g.size);
 
-						auto& dst = ret[idx++];
+						auto& dst = ret[i];
 						dst.uvs = g.uv;
 						dst.points[0] = pos + o * axes;
 						dst.points[1] = pos + o.x * axes[0] + (o.y - s.y) * axes[1];
@@ -137,18 +130,14 @@ namespace flame
 
 						p.x += g.advance;
 					}
-					pstr++;
 				}
 
-				ret.resize(idx);
+				ret.resize(i);
 				return ret;
 			}
 
-			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
-
-			virtual ImageViewPtr get_view() const = 0;
-
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* get(Device* device, const wchar_t* res);
+			// font_names is seperated by ';'
+			FLAME_GRAPHICS_EXPORTS static FontAtlasPtr get(DevicePtr device, const std::wstring& font_names);
 		};
 	}
 

@@ -140,7 +140,7 @@ namespace flame
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
-					images[i].reset(new ImagePrivate(device, swapchain_format, size, 1, 1, native_images[i]));
+					images[i].reset(ImagePrivate::create(device, swapchain_format, size, native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutUndefined, ImageLayoutPresent);
 				}
 			}

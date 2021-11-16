@@ -44,7 +44,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void debug_break();
 
 	FLAME_FOUNDATION_EXPORTS std::vector<void*> get_call_frames();
-	FLAME_FOUNDATION_EXPORTS std::vector<StackFrameInfo> get_call_frames_infos(const std::vector<void*>& frames);
+	FLAME_FOUNDATION_EXPORTS std::vector<StackFrameInfo> get_call_frames_infos(std::span<void*> frames);
 
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(KeyboardKey key, const std::function<void(bool down)>& callback);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* lis);

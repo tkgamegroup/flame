@@ -52,19 +52,10 @@ namespace flame
 
 			DevicePtr device;
 			std::unique_ptr<ImagePrivate> image;
-			ImageViewPtr view;
 
 			Glyph empty_glyph;
 
-			FontAtlasPrivate(DevicePtr device, const std::vector<Font*>& fonts);
-
-			void release() override { delete this; }
-
 			const Glyph& get_glyph(wchar_t code, uint size) override;
-
-			ImageViewPtr get_view() const override { return view; }
-
-			static FontAtlasPtr get(DevicePtr device, const std::wstring& res);
 		};
 	}
 }

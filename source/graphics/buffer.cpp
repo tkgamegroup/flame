@@ -6,17 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* _device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
-			device(_device),
-			size(size),
-			usage(usage),
-			mem_prop(mem_prop)
-		{
-			if (!device)
-				device = default_device;
-			create();
-		}
-
 		BufferPrivate::~BufferPrivate()
 		{
 			destroy();
@@ -62,14 +51,14 @@ namespace flame
 			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
 		}
 
-		void* BufferPrivate::map(uint offset, uint _size)
+		void BufferPrivate::map(uint offset, uint _size)
 		{
 			if (mapped)
-				return mapped;
+				return;
 			if (_size == 0)
 				_size = size;
 			chk_res(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
-			return mapped;
+			return;
 		}
 
 		void BufferPrivate::unmap()
@@ -99,9 +88,19 @@ namespace flame
 			create();
 		}
 
-		Buffer* Buffer::create(Device* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
+		BufferPtr Buffer::create(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
 		{
-			return new BufferPrivate((DevicePrivate*)device, size, usage, mem_prop);
+			if (!device)
+				device = default_device;
+
+			auto ret = new BufferPrivate;
+			ret->device = device;
+			ret->size = size;
+			ret->usage = usage;
+			ret->mem_prop = mem_prop;
+			ret->create();
+
+			return ret;
 		}
 	}
 }

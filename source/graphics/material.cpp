@@ -7,44 +7,10 @@ namespace flame
 {
 	namespace graphics
 	{
-		MaterialPrivate* default_material = new MaterialPrivate;
+		MaterialPtr default_material = new MaterialPrivate;
 		static std::vector<std::unique_ptr<MaterialPrivate>> materials;
 
-		void MaterialPrivate::get_texture_file(uint idx, wchar_t* dst) const
-		{
-			auto& src = textures[idx];
-			if (src.filename.empty())
-				dst[0] = 0;
-			else
-			{
-				auto path = filename.parent_path() / src.filename;
-				if (!std::filesystem::exists(path))
-				{
-					path = src.filename;
-					get_engine_path(path, L"assets");
-				}
-				wcscpy(dst, path.c_str());
-			}
-		}
-
-		SamplerPtr MaterialPrivate::get_texture_sampler(DevicePtr device, uint idx) const
-		{
-			auto& src = textures[idx];
-			return SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode);
-		}
-
-		void MaterialPrivate::get_pipeline_file(wchar_t* dst) const
-		{
-			auto path = filename.parent_path() / pipeline_file;
-			if (!std::filesystem::exists(path))
-			{
-				path = pipeline_file;
-				get_engine_path(path, L"assets\\shaders");
-			}
-			wcscpy(dst, path.c_str());
-		}
-
-		MaterialPrivate* MaterialPrivate::get(const std::filesystem::path& filename)
+		MaterialPtr Material::get(const std::filesystem::path& filename)
 		{
 			for (auto& m : materials)
 			{
@@ -63,7 +29,7 @@ namespace flame
 			auto ret = new MaterialPrivate;
 			ret->filename = filename;
 			if (auto n = n_material.attribute("color"); n)
-				ret->color = sto<4, float>(n.value());
+				ret->color = sto<4, float>(std::string(n.value()));
 			if (auto n = n_material.attribute("metallic"); n)
 				ret->metallic = n.as_float();
 			if (auto n = n_material.attribute("roughness"); n)
@@ -99,13 +65,9 @@ namespace flame
 					dst.auto_mipmap = n.as_bool();
 				i++;
 			}
+
 			materials.emplace_back(ret);
 			return ret;
-		}
-
-		Material* Material::get(const wchar_t* filename)
-		{
-			return MaterialPrivate::get(filename);
 		}
 	}
 }

@@ -205,12 +205,6 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, class T, class CH>
-	inline vec<N, T> sto(const CH* s)
-	{
-		return sto<N, T, CH>(std::basic_string<CH>(s));
-	}
-
 	template <uint C, uint R, class T, class CH>
 	inline mat<C, R, T> sto(const std::basic_string<CH>& s)
 	{

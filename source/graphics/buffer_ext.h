@@ -43,8 +43,8 @@ namespace flame
 			T* pstag = nullptr;
 			uint stag_num = 0;
 
-			UniPtr<Buffer> buf;
-			UniPtr<Buffer> stagbuf;
+			std::unique_ptr<BufferT> buf;
+			std::unique_ptr<BufferT> stagbuf;
 
 			void rebuild()
 			{
@@ -54,13 +54,13 @@ namespace flame
 				{
 					n = stag_num;
 					temp = new T[n];
-					memcpy(temp, stagbuf->get_mapped(), sizeof(T) * n);
+					memcpy(temp, stagbuf->mapped, sizeof(T) * n);
 				}
 				auto size = capacity * sizeof(T);
 				buf->recreate(size);
 				stagbuf->recreate(size);
 				stagbuf->map();
-				pstag = (T*)stagbuf->get_mapped();
+				pstag = (T*)stagbuf->mapped;
 				if (temp)
 				{
 					push(n, temp);
@@ -77,7 +77,7 @@ namespace flame
 				buf.reset(Buffer::create(nullptr, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stagbuf.reset(Buffer::create(nullptr, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stagbuf->map();
-				pstag = (T*)stagbuf->get_mapped();
+				pstag = (T*)stagbuf->mapped;
 			}
 
 			void push(uint cnt, const T* p)
@@ -107,7 +107,7 @@ namespace flame
 				return dst;
 			}
 
-			void upload(CommandBuffer* cb)
+			void upload(CommandBufferPtr cb)
 			{
 				if (stag_num == 0)
 					return;
@@ -128,8 +128,8 @@ namespace flame
 			uint n0 = 0;
 			uint n1 = 0;
 
-			UniPtr<Buffer> buf;
-			UniPtr<Buffer> stagbuf;
+			std::unique_ptr<BufferT> buf;
+			std::unique_ptr<BufferT> stagbuf;
 			uint stag_capacity;
 			T* pstag = nullptr;
 
@@ -143,7 +143,8 @@ namespace flame
 				stag_capacity = 100;
 				stagbuf.reset(Buffer::create(nullptr, sizeof(T) * stag_capacity, BufferUsageTransferSrc, MemoryPropertyHost |
 					MemoryPropertyCoherent));
-				pstag = (T*)stagbuf->map();
+				stagbuf->map();
+				pstag = (T*)stagbuf->mapped;
 			}
 
 			T* alloc(uint n)
@@ -154,7 +155,8 @@ namespace flame
 				{
 					stag_capacity = n;
 					stagbuf->recreate(n * sizeof(T));
-					pstag = (T*)stagbuf->map();
+					stagbuf->map();
+					pstag = (T*)stagbuf->mapped;
 				}
 				n1 += n;
 				return pstag;
@@ -165,7 +167,7 @@ namespace flame
 				// TODO
 			}
 
-			void upload(CommandBuffer* cb)
+			void upload(CommandBufferPtr cb)
 			{
 				if (n1 > n0)
 				{
@@ -184,8 +186,8 @@ namespace flame
 		{
 			T* pstag = nullptr;
 
-			UniPtr<Buffer> buf;
-			UniPtr<Buffer> stagbuf;
+			std::unique_ptr<BufferT> buf;
+			std::unique_ptr<BufferT> stagbuf;
 
 			std::vector<BufferCopy> cpies;
 
@@ -193,7 +195,8 @@ namespace flame
 			{
 				buf.reset(Buffer::create(nullptr, sizeof(T), BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stagbuf.reset(Buffer::create(nullptr, sizeof(T), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-				pstag = (T*)stagbuf->map();
+				stagbuf->map();
+				pstag = (T*)stagbuf->mapped;
 			}
 
 			void cpy_whole()
@@ -204,7 +207,7 @@ namespace flame
 				cpies.push_back(cpy);
 			}
 
-			void upload(CommandBuffer* cb)
+			void upload(CommandBufferPtr cb)
 			{
 				if (cpies.empty())
 					return;
@@ -275,7 +278,7 @@ namespace flame
 				return i;
 			}
 
-			void upload(CommandBuffer* cb)
+			void upload(CommandBufferPtr cb)
 			{
 				StorageBuffer<T>::upload(cb);
 				n = 0;

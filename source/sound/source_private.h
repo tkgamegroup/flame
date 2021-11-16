@@ -11,7 +11,6 @@ namespace flame
 		{
 			ALuint al_src;
 
-			SourcePrivate(BufferPrivate* buffer);
 			~SourcePrivate();
 
 			void set_volume(float v) override;

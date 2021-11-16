@@ -4,28 +4,20 @@ namespace flame
 {
 	namespace sound
 	{
-		BufferPrivate::BufferPrivate()
-		{
-			alGenBuffers(1, &al_buf);
-		}
-
-		BufferPrivate::BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration)
-		{
-			alGenBuffers(1, &al_buf);
-			alBufferData(al_buf, to_backend(stereo, _16bit), data, get_size(duration, frequency, stereo, _16bit), frequency);
-		}
-
 		BufferPrivate::~BufferPrivate()
 		{
 			alDeleteBuffers(1, &al_buf);
 		}
 
-		Buffer* Buffer::create(void* data, uint frequency, bool stereo, bool _16bit, float duration)
+		BufferPtr Buffer::create(void* data, uint frequency, bool stereo, bool _16bit, float duration)
 		{
-			return new BufferPrivate(data, frequency, stereo, _16bit, duration);
+			auto ret = new BufferPrivate;
+			alGenBuffers(1, &ret->al_buf);
+			alBufferData(ret->al_buf, to_backend(stereo, _16bit), data, get_size(duration, frequency, stereo, _16bit), frequency);
+			return ret;
 		}
 
-		Buffer* Buffer::create(const std::filesystem::path& filename)
+		BufferPtr Buffer::create(const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
 				return nullptr;
@@ -83,6 +75,7 @@ namespace flame
 			file.seekg(data_offset);
 			file.read(data, data_size);
 			auto ret = new BufferPrivate;
+			alGenBuffers(1, &ret->al_buf);
 			alBufferData(ret->al_buf, to_backend(fmt.channel == 2, fmt.bits_per_sample == 16), data, data_size, fmt.samples_per_sec);
 			delete[]data;
 
