@@ -9,19 +9,30 @@ namespace flame
 	{
 		std::vector<RenderpassPrivate*> __renderpasses;
 
-		RenderpassPrivate::RenderpassPrivate(DevicePrivate* _device, std::span<const RenderpassAttachmentInfo> _attachments, 
-			std::span<const RenderpassSubpassInfo> _subpasses, std::span<const uvec2> _dependencies) :
-			device(_device)
+		RenderpassPrivate::~RenderpassPrivate()
+		{
+			if (!__renderpasses.empty())
+			{
+				std::erase_if(__renderpasses, [&](const auto& rp) {
+					return rp == this;
+					});
+			}
+
+			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
+		}
+
+		RenderpassPtr Renderpass::create(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies)
 		{
 			if (!device)
 				device = default_device;
 
-			__renderpasses.push_back(this);
+			auto ret = new RenderpassPrivate;
+			ret->device = device;
 
-			std::vector<VkAttachmentDescription> atts(_attachments.size());
-			for (auto i = 0; i < _attachments.size(); i++)
+			std::vector<VkAttachmentDescription> atts(attachments.size());
+			for (auto i = 0; i < attachments.size(); i++)
 			{
-				auto& src = _attachments[i];
+				auto& src = attachments[i];
 				auto& dst = atts[i];
 
 				dst.flags = 0;
@@ -35,13 +46,13 @@ namespace flame
 				dst.finalLayout = to_backend(src.final_layout, src.format);
 			}
 
-			std::vector<std::vector<VkAttachmentReference>> v_col_refs(_subpasses.size());
-			std::vector<std::vector<VkAttachmentReference>> v_res_refs(_subpasses.size());
-			std::vector<VkAttachmentReference> v_dep_refs(_subpasses.size());
-			std::vector<VkSubpassDescription> vk_sps(_subpasses.size());
-			for (auto i = 0; i < _subpasses.size(); i++)
+			std::vector<std::vector<VkAttachmentReference>> v_col_refs(subpasses.size());
+			std::vector<std::vector<VkAttachmentReference>> v_res_refs(subpasses.size());
+			std::vector<VkAttachmentReference> v_dep_refs(subpasses.size());
+			std::vector<VkSubpassDescription> vk_sps(subpasses.size());
+			for (auto i = 0; i < subpasses.size(); i++)
 			{
-				auto& src = _subpasses[i];
+				auto& src = subpasses[i];
 				auto& dst = vk_sps[i];
 
 				dst.flags = 0;
@@ -54,23 +65,23 @@ namespace flame
 				dst.pDepthStencilAttachment = nullptr;
 				dst.preserveAttachmentCount = 0;
 				dst.pPreserveAttachments = nullptr;
-				if (src.color_attachments_count > 0)
+				if (!src.color_attachments.empty())
 				{
 					auto& v = v_col_refs[i];
-					v.resize(src.color_attachments_count);
+					v.resize(src.color_attachments.size());
 					for (auto j = 0; j < v.size(); j++)
 					{
 						auto& r = v[j];
 						r.attachment = src.color_attachments[j];
 						r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
-					dst.colorAttachmentCount = src.color_attachments_count;
+					dst.colorAttachmentCount = src.color_attachments.size();
 					dst.pColorAttachments = v.data();
 				}
-				if (src.resolve_attachments_count > 0)
+				if (!src.resolve_attachments.empty())
 				{
 					auto& v = v_res_refs[i];
-					v.resize(src.resolve_attachments_count);
+					v.resize(src.resolve_attachments.size());
 					for (auto j = 0; j < v.size(); j++)
 					{
 						auto& r = v[j];
@@ -89,10 +100,10 @@ namespace flame
 				}
 			}
 
-			std::vector<VkSubpassDependency> vk_deps(_dependencies.size());
-			for (auto i = 0; i < _dependencies.size(); i++)
+			std::vector<VkSubpassDependency> vk_deps(dependencies.size());
+			for (auto i = 0; i < dependencies.size(); i++)
 			{
-				auto& src = _dependencies[i];
+				auto& src = dependencies[i];
 				auto& dst = vk_deps[i];
 
 				dst.srcSubpass = src[0];
@@ -115,66 +126,33 @@ namespace flame
 			create_info.dependencyCount = vk_deps.size();
 			create_info.pDependencies = vk_deps.data();
 
-			chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &vk_renderpass));
+			chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
 
-			attachments.resize(_attachments.size());
-			for (auto i = 0; i < _attachments.size(); i++)
-				attachments[i] = _attachments[i];
-			subpasses.resize(_subpasses.size());
-			for (auto i = 0; i < _subpasses.size(); i++)
-			{
-				auto& src = _subpasses[i];
-				auto& dst = subpasses[i];
-				dst.color_attachments_count = src.color_attachments_count;
-				if (dst.color_attachments_count)
-				{
-					dst.color_attachments = new int[dst.color_attachments_count];
-					memcpy((void*)dst.color_attachments, src.color_attachments, sizeof(int) * dst.color_attachments_count);
-				}
-				dst.resolve_attachments_count = src.resolve_attachments_count;
-				if (dst.resolve_attachments_count)
-				{
-					dst.resolve_attachments = new int[dst.resolve_attachments_count];
-					memcpy((void*)dst.resolve_attachments, src.resolve_attachments, sizeof(int) * dst.resolve_attachments_count);
-				}
-				dst.depth_attachment = src.depth_attachment;
-			}
+			ret->attachments.assign(attachments.begin(), attachments.end());
+			ret->subpasses.assign(subpasses.begin(), subpasses.end());
+
+			__renderpasses.push_back(ret);
+			return ret;
 		}
 
-		RenderpassPrivate::~RenderpassPrivate()
-		{
-			if (!__renderpasses.empty())
-			{
-				std::erase_if(__renderpasses, [&](const auto& rp) {
-					return rp == this;
-				});
-			}
-
-			for (auto& sp : subpasses)
-			{
-				delete[]sp.color_attachments;
-				delete[]sp.resolve_attachments;
-			}
-			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
-		}
-
-		RenderpassPrivate* RenderpassPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
+		RenderpassPtr Renderpass::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
 				device = default_device;
 
 			auto filename = _filename;
-			if (!get_engine_path(filename, L"default_assets\\shaders"))
-			{
-				wprintf(L"cannot find rp: %s\n", _filename.c_str());
-				return nullptr;
-			}
 			filename.make_preferred();
 
 			for (auto& rp : device->rps)
 			{
 				if (rp->filename == filename)
 					return rp.get();
+			}
+
+			if (!get_engine_path(filename, L"default_assets\\shaders"))
+			{
+				wprintf(L"cannot find rp: %s\n", _filename.c_str());
+				return nullptr;
 			}
 
 			pugi::xml_document doc;
@@ -190,11 +168,12 @@ namespace flame
 			auto ti_loadop = TypeInfo::get(TypeEnumSingle, "flame::graphics::AttachmentLoadOp", tidb);
 			auto ti_sampcnt = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
 			auto ti_imglayout = TypeInfo::get(TypeEnumSingle, "flame::graphics::ImageLayout", tidb);
-			std::vector<RenderpassAttachmentInfo> atts;
+
+			std::vector<Attachment> atts;
 			auto n_atts = doc_root.child("attachments");
 			for (auto n_att : n_atts.children())
 			{
-				RenderpassAttachmentInfo att;
+				auto& att = atts.emplace_back();
 				if (auto a = n_att.attribute("format"); a)
 					ti_format->unserialize(a.value(), &att.format);
 				if (auto a = n_att.attribute("load_op"); a)
@@ -205,7 +184,6 @@ namespace flame
 					ti_imglayout->unserialize(a.value(), &att.initia_layout);
 				if (auto a = n_att.attribute("final_layout"); a)
 					ti_imglayout->unserialize(a.value(), &att.final_layout);
-				atts.push_back(att);
 			}
 
 			std::vector<std::vector<int>> v_col_refs;
@@ -250,63 +228,22 @@ namespace flame
 				}
 				v_depens.push_back(depens);
 			}
-			std::vector<RenderpassSubpassInfo> sps(v_col_refs.size());
+			std::vector<Subpass> sps(v_col_refs.size());
 			std::vector<uvec2> depens;
 			for (auto i = 0; i < sps.size(); i++)
 			{
-				auto& src = sps[i];
-				src.color_attachments_count = v_col_refs[i].size();
-				src.color_attachments = v_col_refs[i].data();
-				src.resolve_attachments_count = v_res_refs[i].size();
-				src.resolve_attachments = v_res_refs[i].data();
+				auto& src = sps.emplace_back();
+				src.color_attachments = v_col_refs[i];
+				src.resolve_attachments = v_res_refs[i];
 				src.depth_attachment = v_dep_refs[i];
 				for (auto t : v_depens[i])
 					depens.push_back(uvec2(t, i));
 			}
 
-			auto rp = new RenderpassPrivate(device, atts, sps, depens);
-			rp->filename = filename;
-			device->rps.emplace_back(rp);
-			return rp;
-		}
-
-		Renderpass* Renderpass::get(Device* device, const wchar_t* filename)
-		{
-			return RenderpassPrivate::get((DevicePrivate*)device, filename);
-		}
-
-		Renderpass* Renderpass::create(Device* device, uint attachments_count, const RenderpassAttachmentInfo* attachments, 
-			uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const uvec2* dependencies)
-		{
-			return new RenderpassPrivate((DevicePrivate*)device, { attachments, attachments_count }, { subpasses, subpasses_count }, { dependencies, dependency_count });
-		}
-
-		FramebufferPrivate::FramebufferPrivate(RenderpassPrivate* rp, std::span<ImageViewPrivate*> _views) :
-			device(rp->device),
-			renderpass(rp)
-		{
-			std::vector<VkImageView> vk_views(_views.size());
-			for (auto i = 0; i < _views.size(); i++)
-				vk_views[i] = _views[i]->vk_image_view;
-
-			VkFramebufferCreateInfo create_info;
-			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			create_info.flags = 0;
-			create_info.pNext = nullptr;
-			auto first_view = _views[0];
-			auto size = first_view->image->sizes[first_view->sub.base_level];
-			create_info.width = size.x;
-			create_info.height = size.y;
-			create_info.layers = 1;
-			create_info.renderPass = rp->vk_renderpass;
-			create_info.attachmentCount = vk_views.size();
-			create_info.pAttachments = vk_views.data();
-
-			chk_res(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &vk_framebuffer));
-
-			views.resize(_views.size());
-			for (auto i = 0; i < _views.size(); i++)
-				views[i] = _views[i];
+			auto ret = Renderpass::create(device, atts, sps, depens);
+			ret->filename = filename;
+			device->rps.emplace_back(ret);
+			return ret;
 		}
 
 		FramebufferPrivate::~FramebufferPrivate()
@@ -314,9 +251,33 @@ namespace flame
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 		}
 
-		Framebuffer* Framebuffer::create(Renderpass* rp, uint views_count, ImageView* const* views)
+		FramebufferPtr Framebuffer::create(RenderpassPtr renderpass, std::span<ImageViewPtr> views)
 		{
-			return new FramebufferPrivate((RenderpassPrivate*)rp, { (ImageViewPrivate**)views, views_count });
+			auto ret = new FramebufferPrivate;
+			ret->device = renderpass->device;
+			ret->renderpass = renderpass;
+
+			std::vector<VkImageView> vk_views(views.size());
+			for (auto i = 0; i < views.size(); i++)
+				vk_views[i] = views[i]->vk_image_view;
+
+			VkFramebufferCreateInfo create_info;
+			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			create_info.flags = 0;
+			create_info.pNext = nullptr;
+			auto first_view = views[0];
+			auto size = first_view->image->sizes[first_view->sub.base_level];
+			create_info.width = size.x;
+			create_info.height = size.y;
+			create_info.layers = 1;
+			create_info.renderPass = renderpass->vk_renderpass;
+			create_info.attachmentCount = vk_views.size();
+			create_info.pAttachments = vk_views.data();
+
+			chk_res(vkCreateFramebuffer(ret->device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
+
+			ret->views.assign(views.begin(), views.end());
+			return ret;
 		}
 	}
 }

@@ -205,6 +205,8 @@ namespace flame
 
 	struct TypeInfoDataBase
 	{
+		FLAME_FOUNDATION_EXPORTS TypeInfoDataBase();
+
 		std::unordered_map<uint, std::unique_ptr<TypeInfo>> typeinfos;
 
 		std::unordered_map<std::string, EnumInfo> enums;

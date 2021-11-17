@@ -8,170 +8,6 @@ namespace flame
 
 	static TypeInfo* void_type = nullptr;
 
-	struct _Initializer
-	{
-		_Initializer()
-		{
-			{
-				void_type = new TypeInfo_void;
-				tidb.typeinfos.emplace(void_type->hash, void_type);
-			}
-			{
-				auto t = new TypeInfo_bool;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_char;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uchar;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_wchar;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_short;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_ushort;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_int;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uint;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_int64;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uint64;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_float;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_cvec2;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_cvec3;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_cvec4;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_ivec2;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_ivec3;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_ivec4;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uvec2;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uvec3;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_uvec4;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_vec2;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_vec3;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_vec4;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_string;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_wstring;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_Rect;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_AABB;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_Plane;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_Frustum;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_mat2;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_mat3;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_mat4;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_quat;
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_charp(tidb);
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-			{
-				auto t = new TypeInfo_wcharp(tidb);
-				tidb.typeinfos.emplace(t->hash, t);
-			}
-
-			auto app_name = get_app_path(true);
-			if (app_name.filename() != L"typeinfogen.exe")
-			{
-				for (auto& path : get_module_dependencies(app_name))
-				{
-					auto ti_path = path;
-					ti_path.replace_extension(".typeinfo");
-					if (std::filesystem::exists(ti_path))
-						tidb.load_typeinfo(path);
-				}
-			}
-		}
-	};
-	static _Initializer _initializer;
-
 	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase& db)
 	{
 		if (tag == TypeData && name.empty())
@@ -215,6 +51,169 @@ namespace flame
 		return t;
 	}
 
+	TypeInfoDataBase::TypeInfoDataBase()
+	{
+		if (void_type)
+			return;
+
+		{
+			void_type = new TypeInfo_void;
+			tidb.typeinfos.emplace(void_type->hash, void_type);
+		}
+		{
+			auto t = new TypeInfo_bool;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_char;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uchar;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_wchar;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_short;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_ushort;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_int;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uint;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_int64;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uint64;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_float;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_cvec2;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_cvec3;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_cvec4;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_ivec2;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_ivec3;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_ivec4;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uvec2;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uvec3;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_uvec4;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_vec2;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_vec3;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_vec4;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_string;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_wstring;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_Rect;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_AABB;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_Plane;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_Frustum;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_mat2;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_mat3;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_mat4;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_quat;
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_charp(tidb);
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
+			auto t = new TypeInfo_wcharp(tidb);
+			tidb.typeinfos.emplace(t->hash, t);
+		}
+
+		auto app_name = get_app_path(true);
+		if (app_name.filename() != L"typeinfogen.exe")
+		{
+			for (auto& path : get_module_dependencies(app_name))
+			{
+				auto ti_path = path;
+				ti_path.replace_extension(".typeinfo");
+				if (std::filesystem::exists(ti_path))
+					tidb.load_typeinfo(path);
+			}
+		}
+	}
+
 	void TypeInfoDataBase::load_typeinfo(const std::filesystem::path& filename)
 	{
 		std::filesystem::path path(filename);
@@ -222,7 +221,7 @@ namespace flame
 			path = get_app_path() / path;
 
 		void* library = nullptr;
-		if (path.extension() != L".typeinfo")
+		if (path.extension() == L".dll")
 		{
 			library = LoadLibraryW(path.c_str());
 			path.replace_extension(L".typeinfo");

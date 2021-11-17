@@ -14,11 +14,26 @@ namespace flame
 {
 	namespace graphics
 	{
-		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* _device) :
-			device(_device)
+		DescriptorPoolPrivate::~DescriptorPoolPrivate()
+		{
+			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
+		}
+
+		DescriptorPoolPtr DescriptorPool::get_default(DevicePtr device)
 		{
 			if (!device)
 				device = default_device;
+
+			return device->dsp.get();
+		}
+
+		DescriptorPoolPtr DescriptorPool::create(DevicePtr device)
+		{
+			if (!device)
+				device = default_device;
+
+			auto ret = new DescriptorPoolPrivate;
+			ret->device = device;
 
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
@@ -34,26 +49,9 @@ namespace flame
 			descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 128;
-			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
-		}
+			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
 
-		DescriptorPoolPrivate::~DescriptorPoolPrivate()
-		{
-			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
-		}
-
-		DescriptorPool* DescriptorPool::get_default(Device* _device)
-		{
-			auto device = (DevicePrivate*)_device;
-			if (!device)
-				device = default_device;
-
-			return device->dsp.get();
-		}
-
-		DescriptorPool* DescriptorPool::create(Device* device)
-		{
-			return new DescriptorPoolPrivate((DevicePrivate*)device);
+			return ret;
 		}
 
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase& db)
@@ -401,18 +399,23 @@ namespace flame
 			return ret;
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* _device, std::span<const DescriptorBindingInfo> _bindings) :
-			device(_device)
+		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
+		{
+			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
+		}
+
+		DescriptorSetLayoutPtr DescriptorSetLayout::create(DevicePtr device, std::span<DescriptorBinding> bindings)
 		{
 			if (!device)
 				device = default_device;
 
-			bindings.resize(_bindings.size());
+			auto ret = new DescriptorSetLayoutPrivate;
+			ret->device = device;
 
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
+			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
 			{
-				auto& src = _bindings[i];
+				auto& src = bindings[i];
 				auto& dst = vk_bindings[i];
 
 				dst.binding = i;
@@ -420,11 +423,6 @@ namespace flame
 				dst.descriptorCount = src.count;
 				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 				dst.pImmutableSamplers = nullptr;
-
-				auto& dst2 = bindings[i];
-				dst2.type = src.type;
-				dst2.count = src.count;
-				dst2.name = src.name;
 			}
 
 			VkDescriptorSetLayoutCreateInfo info;
@@ -434,69 +432,14 @@ namespace flame
 			info.bindingCount = vk_bindings.size();
 			info.pBindings = vk_bindings.data();
 
-			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
+			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
+
+			ret->bindings.assign(bindings.begin(), bindings.end());
+
+			return ret;
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* _device, const std::filesystem::path& filename, 
-			std::vector<DescriptorBinding>& bindings, TypeInfoDataBase* db) :
-			device(_device),
-			filename(filename),
-			bindings(bindings),
-			db(std::move(*db))
-		{
-			if (!device)
-				device = default_device;
-
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings;
-			for (auto i = 0; i < bindings.size(); i++)
-			{
-				auto& src = bindings[i];
-				if (src.type != Descriptor_Max)
-				{
-					VkDescriptorSetLayoutBinding dst;
-					dst.binding = i;
-					dst.descriptorType = to_backend(src.type);
-					dst.descriptorCount = max(src.count, 1U);
-					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-					dst.pImmutableSamplers = nullptr;
-					vk_bindings.push_back(dst);
-				}
-			}
-
-			VkDescriptorSetLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.bindingCount = vk_bindings.size();
-			info.pBindings = vk_bindings.data();
-
-			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
-		}
-
-		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
-		{
-			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
-		}
-
-		void DescriptorSetLayoutPrivate::get_binding(uint binding, DescriptorBindingInfo* ret) const
-		{
-			auto& b = bindings[binding];
-			ret->type = b.type;
-			ret->count = b.count;
-			ret->name = b.name.c_str();
-		}
-
-		int DescriptorSetLayoutPrivate::find_binding(std::string_view name) const
-		{
-			for (auto i = 0; i < bindings.size(); i++)
-			{
-				if (bindings[i].name == name)
-					return i;
-			}
-			return -1;
-		}
-
-		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
+		DescriptorSetLayoutPtr DescriptorSetLayout::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
 				device = default_device;
@@ -690,44 +633,13 @@ namespace flame
 
 			if (device)
 			{
-				auto dsl = new DescriptorSetLayoutPrivate(device, filename, bindings, &db);
-				device->dsls.emplace_back(dsl);
-				return dsl;
+				auto ret = DescriptorSetLayout::create(device, bindings);
+				ret->db = std::move(db);
+				ret->filename = filename;
+				device->dsls.emplace_back(ret);
+				return ret;
 			}
 			return nullptr;
-		}
-
-		DescriptorSetLayout* DescriptorSetLayout::create(Device* device, uint binding_count, const DescriptorBindingInfo* bindings)
-		{
-			return new DescriptorSetLayoutPrivate((DevicePrivate*)device, { bindings, binding_count });
-		}
-
-		DescriptorSetLayout* DescriptorSetLayout::get(Device* device, const wchar_t* filename)
-		{
-			return DescriptorSetLayoutPrivate::get((DevicePrivate*)device, filename);
-		}
-
-		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* _pool, DescriptorSetLayoutPrivate* layout) :
-			pool(_pool),
-			layout(layout)
-		{
-			if (!pool)
-				pool = (DescriptorPoolPrivate*)DescriptorPool::get_default();
-
-			device = pool->device;
-
-			reses.resize(layout->bindings.size());
-			for (auto i = 0; i < reses.size(); i++)
-				reses[i].resize(max(1U, layout->bindings[i].count));
-
-			VkDescriptorSetAllocateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			info.pNext = nullptr;
-			info.descriptorPool = pool->vk_descriptor_pool;
-			info.descriptorSetCount = 1;
-			info.pSetLayouts = &layout->vk_descriptor_set_layout;
-
-			chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &vk_descriptor_set));
 		}
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
@@ -739,6 +651,7 @@ namespace flame
 		{
 			if (binding >= reses.size() || index >= reses[binding].size())
 				return;
+
 			auto& res = reses[binding][index].b;
 			if (res.p == buf && res.offset == offset && res.range == range)
 				return;
@@ -754,6 +667,7 @@ namespace flame
 		{
 			if (binding >= reses.size() || index >= reses[binding].size())
 				return;
+
 			auto& res = reses[binding][index].i;
 			if (res.p == iv && res.sp == sp)
 				return;
@@ -833,9 +747,29 @@ namespace flame
 			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 
-		DescriptorSet* DescriptorSet::create(DescriptorPool* pool, DescriptorSetLayout* layout)
+		DescriptorSetPtr DescriptorSet::create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout)
 		{
-			return new DescriptorSetPrivate((DescriptorPoolPrivate*)pool, (DescriptorSetLayoutPrivate*)layout);
+			if (!pool)
+				pool = DescriptorPool::get_default();
+
+			auto ret = new DescriptorSetPrivate;
+			ret->pool = pool;
+			ret->layout = layout;
+
+			ret->reses.resize(layout->bindings.size());
+			for (auto i = 0; i < ret->reses.size(); i++)
+				ret->reses[i].resize(max(1U, layout->bindings[i].count));
+
+			VkDescriptorSetAllocateInfo info;
+			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			info.pNext = nullptr;
+			info.descriptorPool = pool->vk_descriptor_pool;
+			info.descriptorSetCount = 1;
+			info.pSetLayouts = &layout->vk_descriptor_set_layout;
+
+			chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &ret->vk_descriptor_set));
+
+			return ret;
 		}
 
 		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* _device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
@@ -1414,7 +1348,7 @@ namespace flame
 			if (info.sample_count == SampleCount_1)
 			{
 				auto& res_atts = rp->subpasses[info.subpass_index].resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(res_atts ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
+				multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
 			else
 				multisample_state.rasterizationSamples = to_backend(info.sample_count);
@@ -1438,7 +1372,7 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(rp->subpasses[info.subpass_index].color_attachments_count);
+			vk_blend_attachment_states.resize(rp->subpasses[info.subpass_index].color_attachments.size());
 			for (auto& a : vk_blend_attachment_states)
 			{
 				a.blendEnable = VK_FALSE;

@@ -14,56 +14,93 @@ namespace flame
 
 		struct Mesh
 		{
-			virtual uint get_skins_count() const = 0;
-			virtual MaterialPtr get_material(uint skin = 0) const = 0;
+			ModelPtr model;
 
-			virtual uint get_vertices_count() const = 0;
-			virtual const vec3* get_positions() const = 0;
-			virtual const vec2* get_uvs() const = 0;
-			virtual const vec3* get_normals() const = 0;
-			virtual const ivec4* get_bone_ids() const = 0;
-			virtual const vec4* get_bone_weights() const = 0;
+			std::vector<MaterialPtr> materials;
 
-			virtual uint get_indices_count() const = 0;
-			virtual const uint* get_indices() const = 0;
+			std::vector<vec3> positions;
+			std::vector<vec2> uvs;
+			std::vector<vec3> normals;
+			std::vector<ivec4> bone_ids;
+			std::vector<vec4> bone_weights;
+			std::vector<uint> indices;
 
-			virtual AABB get_bounds() const = 0;
+			AABB bounds;
+
+			inline void add_vertices(uint n, vec3* _positions, vec3* _uvs, vec3* _normals)
+			{
+				auto b = positions.size();
+				positions.resize(b + n);
+				for (auto i = 0; i < n; i++)
+				{
+					auto& p = _positions[i];
+					positions[b + i] = p;
+				}
+				if (_uvs)
+				{
+					uvs.resize(b + n);
+					for (auto i = 0; i < n; i++)
+						uvs[b + i] = _uvs[i];
+				}
+				if (_normals)
+				{
+					normals.resize(b + n);
+					for (auto i = 0; i < n; i++)
+						normals[b + i] = _normals[i];
+				}
+			}
+
+			inline void add_indices(uint n, uint* _indices)
+			{
+				auto b = indices.size();
+				indices.resize(b + n);
+				for (auto i = 0; i < n; i++)
+					indices[b + i] = _indices[i];
+			}
+
+			inline void calc_bounds()
+			{
+				bounds.reset();
+				for (auto& p : positions)
+					bounds.expand(p);
+			}
 		};
 
 		struct Model
 		{
-			virtual void release() = 0;
+			std::vector<Mesh> meshes;
+			std::vector<Bone> bones;
 
-			virtual uint get_meshes_count() const = 0;
-			virtual MeshPtr get_mesh(uint idx) const = 0;
+			std::filesystem::path filename;
 
-			virtual uint get_bones_count() const = 0;
-			virtual BonePtr get_bone(uint idx) const = 0;
+			virtual ~Model() {}
 
-			FLAME_GRAPHICS_EXPORTS static void convert(const wchar_t* filename);
-			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const wchar_t* name);
-			FLAME_GRAPHICS_EXPORTS static Model* get(const wchar_t* filename);
-		};
-
-		struct BoneKey
-		{
-			vec3 p;
-			quat q;
+			FLAME_GRAPHICS_EXPORTS static void convert(const std::filesystem::path& filename);
+			FLAME_GRAPHICS_EXPORTS static ModelPtr get_standard(std::string_view name);
+			FLAME_GRAPHICS_EXPORTS static ModelPtr get(const std::filesystem::path& filename);
 		};
 
 		struct Channel
 		{
-			virtual const char* get_node_name() const = 0;
-			virtual uint get_keys_count() const = 0;
-			virtual const BoneKey* get_keys() const = 0;
+			struct Key
+			{
+				vec3 p;
+				quat q;
+			};
+
+			std::string node_name;
+			std::vector<Key> keys;
 		};
 
 		struct Animation
 		{
-			virtual uint get_channels_count() const = 0;
-			virtual ChannelPtr get_channel(uint idx) const = 0;
+			std::vector<Channel> channels;
 
-			FLAME_GRAPHICS_EXPORTS static Animation* get(const wchar_t* filename);
+			std::filesystem::path filename;
+
+			virtual ~Animation() {}
+
+			FLAME_GRAPHICS_EXPORTS static AnimationPtr get(const std::filesystem::path& filename);
 		};
 	}
 }

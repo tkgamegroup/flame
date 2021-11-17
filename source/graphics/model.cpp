@@ -3,6 +3,7 @@
 #include "../foundation/typeinfo.h"
 #include "material_private.h"
 #include "model_private.h"
+#include "model_ext.h"
 
 #ifdef USE_ASSIMP
 #include <assimp/Importer.hpp>
@@ -14,193 +15,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		void MeshPrivate::add_vertices(uint n, vec3* _positions, vec3* _uvs, vec3* _normals)
-		{
-			auto b = positions.size();
-			positions.resize(b + n);
-			for (auto i = 0; i < n; i++)
-			{
-				auto& p = _positions[i];
-				positions[b + i] = p;
-			}
-			if (_uvs)
-			{
-				uvs.resize(b + n);
-				for (auto i = 0; i < n; i++)
-					uvs[b + i] = _uvs[i];
-			}
-			if (_normals)
-			{
-				normals.resize(b + n);
-				for (auto i = 0; i < n; i++)
-					normals[b + i] = _normals[i];
-			}
-		}
-
-		void MeshPrivate::add_indices(uint n, uint* _indices)
-		{
-			auto b = indices.size();
-			indices.resize(b + n);
-			for (auto i = 0; i < n; i++)
-				indices[b + i] = _indices[i];
-		}
-
-		void MeshPrivate::calc_bounds()
-		{
-			bounds.reset();
-			for (auto& p : positions)
-				bounds.expand(p);
-		}
-
-		void MeshPrivate::add_cube(const vec3& extent, const vec3& center, const mat3& rotation)
-		{
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
-			normals.push_back(vec3(+0.f, +0.f, +1.f));
-			normals.push_back(vec3(+0.f, +0.f, +1.f));
-			normals.push_back(vec3(+0.f, +0.f, +1.f));
-			normals.push_back(vec3(+0.f, +0.f, +1.f));
-			indices.push_back(0); indices.push_back(2); indices.push_back(1);
-			indices.push_back(0); indices.push_back(3); indices.push_back(2);
-
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(vec3(+0.f, +0.f, -1.f));
-			normals.push_back(vec3(+0.f, +0.f, -1.f));
-			normals.push_back(vec3(+0.f, +0.f, -1.f));
-			normals.push_back(vec3(+0.f, +0.f, -1.f));
-			indices.push_back(5); indices.push_back(7); indices.push_back(4);
-			indices.push_back(5); indices.push_back(6); indices.push_back(7);
-
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
-			normals.push_back(vec3(+0.f, +1.f, +0.f));
-			normals.push_back(vec3(+0.f, +1.f, +0.f));
-			normals.push_back(vec3(+0.f, +1.f, +0.f));
-			normals.push_back(vec3(+0.f, +1.f, +0.f));
-			indices.push_back(8); indices.push_back(10); indices.push_back(9);
-			indices.push_back(8); indices.push_back(11); indices.push_back(10);
-
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
-			normals.push_back(vec3(+0.f, -1.f, +0.f));
-			normals.push_back(vec3(+0.f, -1.f, +0.f));
-			normals.push_back(vec3(+0.f, -1.f, +0.f));
-			normals.push_back(vec3(+0.f, -1.f, +0.f));
-			indices.push_back(15); indices.push_back(13); indices.push_back(14);
-			indices.push_back(15); indices.push_back(12); indices.push_back(13);
-
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(vec3(-1.f, +0.f, +0.f));
-			normals.push_back(vec3(-1.f, +0.f, +0.f));
-			normals.push_back(vec3(-1.f, +0.f, +0.f));
-			normals.push_back(vec3(-1.f, +0.f, +0.f));
-			indices.push_back(16); indices.push_back(18); indices.push_back(17);
-			indices.push_back(16); indices.push_back(19); indices.push_back(18);
-
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(vec3(+1.f, +0.f, +0.f));
-			normals.push_back(vec3(+1.f, +0.f, +0.f));
-			normals.push_back(vec3(+1.f, +0.f, +0.f));
-			normals.push_back(vec3(+1.f, +0.f, +0.f));
-			indices.push_back(21); indices.push_back(23); indices.push_back(20);
-			indices.push_back(21); indices.push_back(22); indices.push_back(23);
-		}
-
-		void MeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const vec3& center, const mat3& rotation)
-		{
-			std::vector<std::vector<int>> staging_indices;
-			staging_indices.resize(horiSubdiv + 1);
-
-			for (int level = 1; level < horiSubdiv; level++)
-			{
-				for (int i = 0; i < vertSubdiv; i++)
-				{
-					auto radian = radians((level * 180.f / horiSubdiv - 90.f));
-					auto ring_radius = cos(radian) * radius;
-					auto height = sin(radian) * radius;
-					auto ang = radians((i * 360.f / vertSubdiv));
-					staging_indices[level].push_back(positions.size());
-					auto p = rotation * vec3(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
-					normals.push_back(p);
-					positions.push_back(p + center);
-				}
-			}
-
-			{
-				staging_indices[0].push_back(positions.size());
-				auto p = rotation * vec3(0.f, -radius, 0.f);
-				normals.push_back(p);
-				positions.push_back(p + center);
-			}
-
-			{
-				staging_indices[horiSubdiv].push_back(positions.size());
-				auto p = rotation * vec3(0.f, radius, 0.f);
-				normals.push_back(p);
-				positions.push_back(p + center);
-			}
-
-			for (int level = 0; level < horiSubdiv; level++)
-			{
-				if (level == 0)
-				{
-					for (int i = 0; i < vertSubdiv; i++)
-					{
-						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
-
-						indices.push_back(staging_indices[0][0]);
-						indices.push_back(staging_indices[1][i]);
-						indices.push_back(staging_indices[1][ii]);
-					}
-				}
-				else if (level == horiSubdiv - 1)
-				{
-					for (int i = 0; i < vertSubdiv; i++)
-					{
-						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
-
-						indices.push_back(staging_indices[horiSubdiv - 1][i]);
-						indices.push_back(staging_indices[horiSubdiv][0]);
-						indices.push_back(staging_indices[horiSubdiv - 1][ii]);
-					}
-				}
-				else
-				{
-					for (int i = 0; i < vertSubdiv; i++)
-					{
-						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
-
-						indices.push_back(staging_indices[level][i]);
-						indices.push_back(staging_indices[level + 1][i]);
-						indices.push_back(staging_indices[level][ii]);
-
-						indices.push_back(staging_indices[level][ii]);
-						indices.push_back(staging_indices[level + 1][i]);
-						indices.push_back(staging_indices[level + 1][ii]);
-					}
-				}
-			}
-		}
-
-		void Model::convert(const wchar_t* _filename)
+		void Model::convert(const std::filesystem::path& filename)
 		{
 #ifdef USE_ASSIMP
-			auto filename = std::filesystem::path(_filename);
 			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto model_filename = filename;
@@ -593,39 +410,36 @@ namespace flame
 #endif
 		}
 
-		static ModelPrivate* standard_cube = nullptr;
-		static ModelPrivate* standard_sphere = nullptr;
+		static ModelPtr standard_cube = nullptr;
+		static ModelPtr standard_sphere = nullptr;
 
-		Model* Model::get_standard(const wchar_t* _name)
+		ModelPtr Model::get_standard(std::string_view name)
 		{
-			auto name = std::wstring(_name);
-			if (name == L"cube")
+			if (name == "cube")
 			{
 				if (!standard_cube)
 				{
 					auto m = new ModelPrivate;
-					auto mesh = new MeshPrivate;
-					mesh->model = m;
-					mesh->materials.push_back(default_material);
-					mesh->add_cube(vec3(1.f), vec3(0.f), mat3(1.f));
-					mesh->calc_bounds();
-					m->meshes.emplace_back(mesh);
+					auto& mesh = m->meshes.emplace_back();
+					mesh.model = m;
+					mesh.materials.push_back(default_material);
+					mesh_add_cube(mesh, vec3(1.f), vec3(0.f), mat3(1.f));
+					mesh.calc_bounds();
 
 					standard_cube = m;
 				}
 				return standard_cube;
 			}
-			else if (name == L"sphere")
+			else if (name == "sphere")
 			{
 				if (!standard_sphere)
 				{
 					auto m = new ModelPrivate;
-					auto mesh = new MeshPrivate;
-					mesh->model = m;
-					mesh->materials.push_back(default_material);
-					mesh->add_sphere(0.5f, 12, 12, vec3(0.f), mat3(1.f));
-					mesh->calc_bounds();
-					m->meshes.emplace_back(mesh);
+					auto& mesh = m->meshes.emplace_back();
+					mesh.model = m;
+					mesh.materials.push_back(default_material);
+					mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f), mat3(1.f));
+					mesh.calc_bounds();
 
 					standard_sphere = m;
 				}
@@ -634,11 +448,10 @@ namespace flame
 			return nullptr;
 		}
 
-		static std::vector<std::pair<std::filesystem::path, UniPtr<ModelPrivate>>> models;
+		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ModelT>>> models;
 
-		Model* Model::get(const wchar_t* _filename)
+		ModelPtr Model::get(const std::filesystem::path& filename)
 		{
-			auto filename = std::filesystem::path(_filename);
 			for (auto& m : models)
 			{
 				if (m.first == filename)
@@ -677,23 +490,23 @@ namespace flame
 
 			for (auto& n_mesh : doc_root.child("meshes"))
 			{
-				auto m = new MeshPrivate;
-				m->model = ret;
+				auto& m = ret->meshes.emplace_back();
+				m.model = ret;
 				for (auto& sp : SUS::split(n_mesh.attribute("material").value()))
 				{
 					auto material_filename = std::filesystem::path(sp);
 					auto fn = ppath / material_filename;
 					if (!std::filesystem::exists(fn))
 						fn = material_filename;
-					m->materials.push_back(MaterialPrivate::get(fn.c_str()));
+					m.materials.push_back(MaterialPrivate::get(fn.c_str()));
 				}
 
 				auto n_positions = n_mesh.child("positions");
 				{
 					auto offset = n_positions.attribute("offset").as_uint();
 					auto size = n_positions.attribute("size").as_uint();
-					m->positions.resize(size / sizeof(vec3));
-					model_data_file.read((char*)m->positions.data(), size);
+					m.positions.resize(size / sizeof(vec3));
+					model_data_file.read((char*)m.positions.data(), size);
 				}
 
 				auto n_uvs = n_mesh.child("uvs");
@@ -701,8 +514,8 @@ namespace flame
 				{
 					auto offset = n_uvs.attribute("offset").as_uint();
 					auto size = n_uvs.attribute("size").as_uint();
-					m->uvs.resize(size / sizeof(vec2));
-					model_data_file.read((char*)m->uvs.data(), size);
+					m.uvs.resize(size / sizeof(vec2));
+					model_data_file.read((char*)m.uvs.data(), size);
 				}
 
 				auto n_normals = n_mesh.child("normals");
@@ -710,8 +523,8 @@ namespace flame
 				{
 					auto offset = n_normals.attribute("offset").as_uint();
 					auto size = n_normals.attribute("size").as_uint();
-					m->normals.resize(size / sizeof(vec3));
-					model_data_file.read((char*)m->normals.data(), size);
+					m.normals.resize(size / sizeof(vec3));
+					model_data_file.read((char*)m.normals.data(), size);
 				}
 
 				auto n_bids = n_mesh.child("bone_ids");
@@ -719,8 +532,8 @@ namespace flame
 				{
 					auto offset = n_bids.attribute("offset").as_uint();
 					auto size = n_bids.attribute("size").as_uint();
-					m->bone_ids.resize(size / sizeof(ivec4));
-					model_data_file.read((char*)m->bone_ids.data(), size);
+					m.bone_ids.resize(size / sizeof(ivec4));
+					model_data_file.read((char*)m.bone_ids.data(), size);
 				}
 
 				auto n_wgts = n_mesh.child("bone_weights");
@@ -728,34 +541,31 @@ namespace flame
 				{
 					auto offset = n_wgts.attribute("offset").as_uint();
 					auto size = n_wgts.attribute("size").as_uint();
-					m->bone_weights.resize(size / sizeof(vec4));
-					model_data_file.read((char*)m->bone_weights.data(), size);
+					m.bone_weights.resize(size / sizeof(vec4));
+					model_data_file.read((char*)m.bone_weights.data(), size);
 				}
 
 				auto n_indices = n_mesh.child("indices");
 				{
 					auto offset = n_indices.attribute("offset").as_uint();
 					auto size = n_indices.attribute("size").as_uint();
-					m->indices.resize(size / sizeof(uint));
-					model_data_file.read((char*)m->indices.data(), size);
+					m.indices.resize(size / sizeof(uint));
+					model_data_file.read((char*)m.indices.data(), size);
 				}
 
-				m->bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
-
-				ret->meshes.emplace_back(m);
+				m.bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
 			}
 
 			for (auto n_bone : doc_root.child("bones"))
 			{
-				auto b = new BonePrivate;
-				b->name = n_bone.attribute("name").value();
+				auto& b = ret->bones.emplace_back();
+				b.name = n_bone.attribute("name").value();
 				{
 					auto n_matrix = n_bone.child("offset_matrix");
 					auto offset = n_matrix.attribute("offset").as_uint();
 					auto size = n_matrix.attribute("size").as_uint();
-					model_data_file.read((char*)&b->offset_matrix, size);
+					model_data_file.read((char*)&b.offset_matrix, size);
 				}
-				ret->bones.emplace_back(b);
 			}
 
 			model_data_file.close();
@@ -765,11 +575,10 @@ namespace flame
 			return ret;
 		}
 
-		static std::vector<std::unique_ptr<AnimationPrivate>> animations;
+		static std::vector<std::unique_ptr<AnimationT>> animations;
 
-		Animation* Animation::get(const wchar_t* _filename)
+		AnimationPtr Animation::get(const std::filesystem::path& filename)
 		{
-			auto filename = std::filesystem::path(_filename);
 			for (auto& a : animations)
 			{
 				if (a->filename == filename)
@@ -798,14 +607,14 @@ namespace flame
 
 			for (auto n_channel : doc_root.child("channels"))
 			{
-				auto c = new ChannelPrivate;
-				c->node_name = n_channel.attribute("node_name").value();
+				auto& c = ret->channels.emplace_back();
+				c.node_name = n_channel.attribute("node_name").value();
 				{
 					auto n_keys = n_channel.child("keys");
 					auto offset = n_keys.attribute("offset").as_uint();
 					auto size = n_keys.attribute("size").as_uint();
-					c->keys.resize(size / sizeof(BoneKey));
-					data_file.read((char*)c->keys.data(), size);
+					c.keys.resize(size / sizeof(Channel::Key));
+					data_file.read((char*)c.keys.data(), size);
 				}
 				ret->channels.emplace_back(c);
 			}

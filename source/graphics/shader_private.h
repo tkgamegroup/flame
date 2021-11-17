@@ -13,44 +13,18 @@ namespace flame
 			DevicePrivate* device;
 			VkDescriptorPool vk_descriptor_pool;
 
-			DescriptorPoolPrivate(DevicePrivate* device);
 			~DescriptorPoolPrivate();
-
-			void release() override { delete this; }
-		};
-
-		struct DescriptorBinding
-		{
-			DescriptorType type = Descriptor_Max;
-			uint count;
-			std::string name;
-
-			UdtInfo* ti = nullptr;
 		};
 
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
 
-			std::filesystem::path filename;
-
 			TypeInfoDataBase db;
-			std::vector<DescriptorBinding> bindings;
 
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
-			DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> bindings);
-			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<DescriptorBinding>& bindings, TypeInfoDataBase* db);
 			~DescriptorSetLayoutPrivate();
-
-			void release() override { delete this; }
-
-			uint get_bindings_count() const override { return bindings.size(); }
-			void get_binding(uint binding, DescriptorBindingInfo* ret) const override;
-			int find_binding(std::string_view name) const;
-			int find_binding(const char* name) const override { return find_binding(std::string(name)); }
-
-			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
 		struct DescriptorSetPrivate : DescriptorSet
@@ -76,19 +50,13 @@ namespace flame
 
 			DevicePrivate* device;
 			DescriptorPoolPrivate* pool;
-			DescriptorSetLayoutPrivate* layout;
 			VkDescriptorSet vk_descriptor_set;
 
 			std::vector<std::vector<Res>> reses;
 			std::vector<std::pair<uint, uint>> buf_updates;
 			std::vector<std::pair<uint, uint>> img_updates;
 
-			DescriptorSetPrivate(DescriptorPoolPrivate* pool, DescriptorSetLayoutPrivate* layout);
 			~DescriptorSetPrivate();
-
-			void release() override { delete this; }
-
-			DescriptorSetLayoutPtr get_layout() const override { return layout; }
 
 			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
 			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;

@@ -122,36 +122,34 @@ namespace flame
 	//	}
 	//};
 
-	//static std::map<std::string, Type> component_types;
-
 	//static Type* find_component_type(const std::string& name)
 	//{
-	//	if (component_types.empty())
-	//	{
-	//		for (auto& ui : tidb.udts)
-	//		{
-	//			static auto reg_com = std::regex("^(flame::c\\w+)$");
-	//			std::smatch res;
-	//			if (std::regex_search(ui.second.name, res, reg_com))
-	//			{
-	//				Type t(&ui.second);
-	//				if (t.dummy)
-	//					component_types.emplace(res[1].str(), std::move(t));
-	//			}
-	//		}
-	//	}
 	//	auto it = component_types.find(name);
 	//	if (it == component_types.end())
 	//		return nullptr;
 	//	return &it->second;
 	//}
 
-	static std::map<std::string, std::filesystem::path> prefabs_map;
+	//static std::map<std::string, Type> component_types;
 
-	static std::filesystem::path find_prefab_path(const std::string& name)
+	static std::map<std::string, std::filesystem::path> name_to_prefab_path;
+
+	struct _Initializer
 	{
-		if (prefabs_map.empty())
+		_Initializer()
 		{
+			for (auto& ui : tidb.udts)
+			{
+				//static auto reg_com = std::regex("^(flame::c\\w+)$");
+				//std::smatch res;
+				//if (std::regex_search(ui.second.name, res, reg_com))
+				//{
+				//	Type t(&ui.second);
+				//	if (t.dummy)
+				//		component_types.emplace(res[1].str(), std::move(t));
+				//}
+			}
+
 			auto engine_path = getenv("FLAME_PATH");
 			if (engine_path)
 			{
@@ -160,23 +158,22 @@ namespace flame
 				{
 					if (it.path().extension() == L".prefab")
 					{
-						std::string name = "e";
-						auto sp = SUS::split(it.path().filename().stem().string(), '_');
-						for (auto& t : sp)
+						auto name = it.path().stem().string();
+						name[0] = std::toupper(name[0]);
+						for (auto i = 0; i < name.size(); i++)
 						{
-							t[0] = std::toupper(t[0]);
-							name += t;
+							if (name[i] == '_')
+								name[i + 1] = std::toupper(name[i + 1]);
 						}
-						prefabs_map[name] = it.path();
+						SUS::remove_ch(name, '_');
+						name = 'e' + name;
+						name_to_prefab_path[name] = it.path();
 					}
 				}
 			}
 		}
-		auto it = prefabs_map.find(name);
-		if (it == prefabs_map.end())
-			return L"";
-		return it->second;
-	}
+	};
+	static _Initializer _initializer;
 
 	EntityPrivate::EntityPrivate()
 	{
@@ -611,9 +608,9 @@ namespace flame
 	//	auto ename = std::string(n_src.name());
 	//	if (ename != "entity")
 	//	{
-	//		auto path = find_prefab_path(ename);
-	//		if (!path.empty())
-	//			e_dst->load(path);
+	//		auto it = name_to_prefab_path.find(ename);
+	//		if (it != name_to_prefab_path.end())
+	//			e_dst->load(it->second);
 	//		else
 	//			printf("cannot find prefab: %s\n", ename.c_str());
 	//	}
@@ -823,7 +820,7 @@ namespace flame
 	//		}
 
 	//		auto found = false;
-	//		for (auto& p : prefabs_map)
+	//		for (auto& p : name_to_prefab_path)
 	//		{
 	//			if (p.second == src)
 	//			{

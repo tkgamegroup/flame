@@ -8,47 +8,59 @@ namespace flame
 	{
 		struct DescriptorPool
 		{
-			virtual void release() = 0;
+			virtual ~DescriptorPool() {}
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorPool* get_default(Device* device = nullptr);
-			FLAME_GRAPHICS_EXPORTS static DescriptorPool* create(Device* device);
+			FLAME_GRAPHICS_EXPORTS static DescriptorPoolPtr get_default(DevicePtr device = nullptr);
+			FLAME_GRAPHICS_EXPORTS static DescriptorPoolPtr create(DevicePtr device);
 		};
 
-		struct DescriptorBindingInfo
+		struct DescriptorBinding
 		{
-			DescriptorType type;
+			DescriptorType type = Descriptor_Max;
 			uint count = 1;
-			const char* name = "";
+			std::string name;
+
+			UdtInfo* ti = nullptr;
 		};
 
 		struct DescriptorSetLayout
 		{
-			virtual void release() = 0;
+			std::vector<DescriptorBinding> bindings;
 
-			virtual uint get_bindings_count() const = 0;
-			virtual void get_binding(uint binding, DescriptorBindingInfo* ret) const = 0;
-			virtual int find_binding(const char* name) const = 0;
+			std::filesystem::path filename;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, uint bindings_count, const DescriptorBindingInfo* bindings);
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* get(Device* device, const wchar_t* filename);
+			virtual ~DescriptorSetLayout() {}
+
+			inline int find_binding(std::string_view name) const
+			{
+				for (auto i = 0; i < bindings.size(); i++)
+				{
+					if (bindings[i].name == name)
+						return i;
+				}
+				return -1;
+			}
+
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr create(DevicePtr device, std::span<DescriptorBinding> bindings);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct DescriptorSet
 		{
-			virtual void release() = 0;
+			DescriptorSetLayoutPtr layout;
 
-			virtual DescriptorSetLayoutPtr get_layout() const = 0;
+			virtual ~DescriptorSet() {}
 
 			virtual void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
 			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 			virtual void update() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* pool, DescriptorSetLayout* layout);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetPtr create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout);
 		};
 
 		struct PipelineLayout
 		{
-			virtual void release() = 0;
+			virtual ~PipelineLayout() {}
 
 			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, 
 				uint push_constant_size);
