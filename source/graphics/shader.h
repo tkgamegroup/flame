@@ -60,18 +60,28 @@ namespace flame
 
 		struct PipelineLayout
 		{
+			std::vector<DescriptorSetLayoutPtr> descriptor_set_layouts;
+
+			TypeInfoDataBase db;
+			UdtInfo* pc_ti = nullptr;
+			uint pc_sz = 0;
+
+			std::filesystem::path filename;
+
 			virtual ~PipelineLayout() {}
 
-			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, 
-				uint push_constant_size);
-			FLAME_GRAPHICS_EXPORTS static PipelineLayout* get(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_layouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct Shader
 		{
-			virtual void release() = 0;
+			ShaderStageFlags type = ShaderStageNone;
+			std::filesystem::path filename;
+			std::vector<std::string> defines;
+			std::vector<std::pair<std::string, std::string>> substitutes;
 
-			virtual const wchar_t* get_filename() const = 0;
+			virtual ~Shader() {}
 
 			inline static std::vector<std::string> format_defines(const std::string& defines)
 			{
@@ -100,7 +110,7 @@ namespace flame
 				return ret;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static Shader* get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
+			FLAME_GRAPHICS_EXPORTS static ShaderPtr get(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
 		};
 
 		struct VertexAttributeInfo
@@ -168,13 +178,30 @@ namespace flame
 			PipelineLayout* layout;
 		};
 
-		struct Pipeline
+		struct GraphicsPipeline
 		{
-			virtual void release() = 0;
+			PipelineType type;
+			PipelineLayoutPtr layout;
+			std::vector<ShaderPtr> shaders;
 
-			virtual PipelineType get_type() const = 0;
+			std::filesystem::path filename;
+
+			virtual ~GraphicsPipeline() {}
 
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const GraphicsPipelineInfo& info);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
+		};
+
+		struct ComputePipeline
+		{
+			PipelineType type;
+			PipelineLayoutPtr layout;
+			ShaderPtr shader;
+
+			std::filesystem::path filename;
+
+			virtual ~ComputePipeline() {}
+
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const ComputePipelineInfo& info);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
 		};

@@ -411,6 +411,7 @@ namespace flame
 
 			auto ret = new DescriptorSetLayoutPrivate;
 			ret->device = device;
+			ret->bindings.assign(bindings.begin(), bindings.end());
 
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
@@ -433,8 +434,6 @@ namespace flame
 			info.pBindings = vk_bindings.data();
 
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
-
-			ret->bindings.assign(bindings.begin(), bindings.end());
 
 			return ret;
 		}
@@ -772,21 +771,25 @@ namespace flame
 			return ret;
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* _device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
-			device(_device),
-			pc_sz(push_constant_size)
+		PipelineLayoutPrivate::~PipelineLayoutPrivate()
+		{
+			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
+		}
+
+		PipelineLayoutPtr PipelineLayout::create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size)
 		{
 			if (!device)
 				device = default_device;
 
-			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
-			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				descriptor_set_layouts[i] = std::make_pair("", _descriptor_set_layouts[i]);
+			auto ret = new PipelineLayoutPrivate;
+			ret->device = device;
+			ret->descriptor_set_layouts.assign(descriptor_set_layouts.begin(), descriptor_set_layouts.end());
+			ret->pc_sz = push_constant_size;
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i].second->vk_descriptor_set_layout;
+				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;
@@ -802,56 +805,12 @@ namespace flame
 			info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
 			info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
-			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
+			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
+
+			return ret;
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* _device, const std::filesystem::path& filename, 
-			std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pc_ti) :
-			device(_device),
-			filename(filename),
-			db(std::move(*db)),
-			pc_ti(pc_ti)
-		{
-			if (!device)
-				device = default_device;
-
-			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
-			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-			{
-				auto dsl = _descriptor_set_layouts[i];
-				descriptor_set_layouts[i] = std::make_pair(dsl->filename.filename().stem().string(), dsl);
-			}
-
-			pc_sz = pc_ti ? pc_ti->size : 0;
-
-			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
-			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i].second->vk_descriptor_set_layout;
-
-			VkPushConstantRange vk_pushconstant_range;
-			vk_pushconstant_range.offset = 0;
-			vk_pushconstant_range.size = pc_sz;
-			vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-
-			VkPipelineLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.setLayoutCount = vk_descriptor_set_layouts.size();
-			info.pSetLayouts = vk_descriptor_set_layouts.data();
-			info.pushConstantRangeCount = pc_sz > 0 ? 1 : 0;
-			info.pPushConstantRanges = pc_sz > 0 ? &vk_pushconstant_range : nullptr;
-
-			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
-		}
-
-		PipelineLayoutPrivate::~PipelineLayoutPrivate()
-		{
-			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
-		}
-
-		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
+		PipelineLayoutPtr PipelineLayout::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
 				device = default_device;
@@ -1012,54 +971,39 @@ namespace flame
 
 			if (device)
 			{
-				auto pll = new PipelineLayoutPrivate(device, filename, dsls, &db, pc_ti);
-				device->plls.emplace_back(pll);
-				return pll;
+				auto ret = PipelineLayout::create(device, dsls, pc_ti ? pc_ti->size : 0);
+				ret->device = device;
+				ret->db = std::move(db);
+				ret->pc_ti = pc_ti;
+				ret->filename = filename;
+
+				{
+					std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+					vk_descriptor_set_layouts.resize(dsls.size());
+					for (auto i = 0; i < dsls.size(); i++)
+						vk_descriptor_set_layouts[i] = dsls[i]->vk_descriptor_set_layout;
+
+					VkPushConstantRange vk_pushconstant_range;
+					vk_pushconstant_range.offset = 0;
+					vk_pushconstant_range.size = ret->pc_sz;
+					vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+
+					VkPipelineLayoutCreateInfo info;
+					info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+					info.flags = 0;
+					info.pNext = nullptr;
+					info.setLayoutCount = vk_descriptor_set_layouts.size();
+					info.pSetLayouts = vk_descriptor_set_layouts.data();
+					info.pushConstantRangeCount = ret->pc_sz > 0 ? 1 : 0;
+					info.pPushConstantRanges = ret->pc_sz > 0 ? &vk_pushconstant_range : nullptr;
+
+					chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
+				}
+
+				device->plls.emplace_back(ret);
+				return ret;
 			}
 			return nullptr;
-		}
-
-		PipelineLayout* PipelineLayout::create(Device* device, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
-		{
-			return new PipelineLayoutPrivate((DevicePrivate*)device, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
-		}
-
-		PipelineLayout* PipelineLayout::get(Device* device, const wchar_t* filename)
-		{
-			return PipelineLayoutPrivate::get((DevicePrivate*)device, filename);
-		}
-
-		ShaderPrivate::ShaderPrivate(DevicePtr _device, const std::filesystem::path& filename, const std::vector<std::string>& defines,
-			const std::vector<std::pair<std::string, std::string>>& substitutes, std::string_view spv_content) :
-			device(_device),
-			filename(filename),
-			defines(defines),
-			substitutes(substitutes)
-		{
-			if (!device)
-				device = default_device;
-
-			auto ext = filename.extension();
-			if (ext == L".vert")
-				type = ShaderStageVert;
-			else if (ext == L".tesc")
-				type = ShaderStageTesc;
-			else if (ext == L".tese")
-				type = ShaderStageTese;
-			else if (ext == L".geom")
-				type = ShaderStageGeom;
-			else if (ext == L".frag")
-				type = ShaderStageFrag;
-			else if (ext == L".comp")
-				type = ShaderStageComp;
-
-			VkShaderModuleCreateInfo shader_info;
-			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			shader_info.flags = 0;
-			shader_info.pNext = nullptr;
-			shader_info.codeSize = spv_content.size();
-			shader_info.pCode = (uint*)spv_content.data();
-			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &vk_module));
 		}
 
 		ShaderPrivate::~ShaderPrivate()
@@ -1068,8 +1012,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, 
-			const std::vector<std::pair<std::string, std::string>>& _substitutes)
+		ShaderPtr Shader::get(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes)
 		{
 			if (!device)
 				device = default_device;
@@ -1202,22 +1145,39 @@ namespace flame
 
 			if (device)
 			{
-				auto s = new ShaderPrivate(device, filename, defines, substitutes, get_file_content(spv_path));
-				device->sds.emplace_back(s);
-				return s;
+				auto ret = new ShaderPrivate;
+				ret->device = device;
+				auto ext = filename.extension();
+				if (ext == L".vert")
+					ret->type = ShaderStageVert;
+				else if (ext == L".tesc")
+					ret->type = ShaderStageTesc;
+				else if (ext == L".tese")
+					ret->type = ShaderStageTese;
+				else if (ext == L".geom")
+					ret->type = ShaderStageGeom;
+				else if (ext == L".frag")
+					ret->type = ShaderStageFrag;
+				else if (ext == L".comp")
+					ret->type = ShaderStageComp;
+				ret->filename = filename;
+				ret->defines = defines;
+				ret->substitutes = substitutes;
+
+				auto spv_content = get_file_content(spv_path);
+				VkShaderModuleCreateInfo shader_info;
+				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+				shader_info.flags = 0;
+				shader_info.pNext = nullptr;
+				shader_info.codeSize = spv_content.size();
+				shader_info.pCode = (uint*)spv_content.data();
+				chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
+
+				device->sds.emplace_back(ret);
+				return ret;
 			}
 
 			return nullptr;
-		}
-
-		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes)
-		{
-			return ShaderPrivate::get(device, filename, format_defines(defines), format_substitutes(substitutes));
-		}
-
-		Shader* Shader::get(Device* device, const wchar_t* filename, const char* defines, const char* substitutes)
-		{
-			return ShaderPrivate::get((DevicePrivate*)device, filename, defines, substitutes);
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* _device, const GraphicsPipelineInfo& info) :

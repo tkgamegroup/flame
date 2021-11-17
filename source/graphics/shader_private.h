@@ -67,71 +67,28 @@ namespace flame
 		{
 			DevicePrivate* device;
 
-			std::filesystem::path filename;
-
-			std::vector<std::pair<std::string, DescriptorSetLayoutPrivate*>> descriptor_set_layouts;
-
-			TypeInfoDataBase db;
-			UdtInfo* pc_ti = nullptr;
-			uint pc_sz = 0;
-
 			VkPipelineLayout vk_pipeline_layout;
 
-			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
-			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, TypeInfoDataBase* db, UdtInfo* pc_ti);
 			~PipelineLayoutPrivate();
-
-			void release() override { delete this; }
-
-			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
 		struct ShaderPrivate : Shader
 		{
-			std::filesystem::path filename;
-			std::vector<std::string> defines;
-			std::vector<std::pair<std::string, std::string>> substitutes;
-			ShaderStageFlags type = ShaderStageNone;
-
 			DevicePrivate* device;
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes, std::string_view spv_content);
 			~ShaderPrivate();
-
-			void release() override { delete this; }
-
-			const wchar_t* get_filename() const override { return filename.c_str(); }
-
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
-			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
 		};
 
 		struct PipelinePrivate : Pipeline
 		{
-			PipelineType type;
-
-			std::filesystem::path filename;
-
 			DevicePrivate* device;
-			PipelineLayoutPrivate* layout;
 			RenderpassPrivate* rp = nullptr;
-			std::vector<ShaderPrivate*> shaders;
 
 			VkPipeline vk_pipeline;
 
-			PipelinePrivate(DevicePrivate* device, const GraphicsPipelineInfo& info);
-			PipelinePrivate(DevicePrivate* device, const ComputePipelineInfo& info);
 			~PipelinePrivate();
-
-			static PipelinePrivate* create(DevicePrivate* device, const GraphicsPipelineInfo& info);
-			static PipelinePrivate* create(DevicePrivate* device, const ComputePipelineInfo& info);
-			static PipelinePrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
-
-			void release() override { delete this; }
-
-			PipelineType get_type() const override { return type; }
 		};
 	}
 }
