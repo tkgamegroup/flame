@@ -43,7 +43,8 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(Renderpass);
 		FLAME_GRAPHICS_TYPE(Framebuffer);
 		FLAME_GRAPHICS_TYPE(PipelineLayout);
-		FLAME_GRAPHICS_TYPE(Pipeline);
+		FLAME_GRAPHICS_TYPE(GraphicsPipeline);
+		FLAME_GRAPHICS_TYPE(ComputePipeline);
 		FLAME_GRAPHICS_TYPE(Swapchain);
 		FLAME_GRAPHICS_TYPE(Window);
 

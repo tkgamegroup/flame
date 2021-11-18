@@ -93,8 +93,6 @@ namespace flame
 		struct ImageAtlasPrivate : ImageAtlas
 		{
 			~ImageAtlasPrivate();
-
-			int find_tile(std::string_view name) const override;
 		};
 	}
 }

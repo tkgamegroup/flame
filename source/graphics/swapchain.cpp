@@ -5,31 +5,13 @@
 #include "renderpass_private.h"
 #include "command_private.h"
 #include "swapchain_private.h"
+#include "command_ext.h"
 
 namespace flame
 {
 	namespace graphics
 	{
-		static auto swapchain_format = Format_B8G8R8A8_UNORM;
-
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* _device, NativeWindow* window) :
-			device(_device),
-			window(window)
-		{
-			if (!device)
-				device = default_device;
-
-			update();
-
-			resize_listener = window->add_resize_listener([this](const uvec2& size) {
-				update();
-			});
-			window->add_destroy_listener([this]() {
-				this->window = nullptr;
-			});
-
-			image_avalible.reset(new SemaphorePrivate(device));
-		}
+		Format Swapchain::format = Format_B8G8R8A8_UNORM;
 
 		SwapchainPrivate::~SwapchainPrivate()
 		{
@@ -50,7 +32,7 @@ namespace flame
 			return image_index;
 		}
 
-		void SwapchainPrivate::update()
+		void SwapchainPrivate::build()
 		{
 			device->gq.get()->wait_idle();
 
@@ -77,7 +59,7 @@ namespace flame
 				surface_info.flags = 0;
 				surface_info.pNext = nullptr;
 				surface_info.hinstance = (HINSTANCE)get_hinst();
-				surface_info.hwnd = (HWND)window->get_native();
+				surface_info.hwnd = (HWND)window->get_hwnd();
 				chk_res(vkCreateWin32SurfaceKHR(device->vk_instance, &surface_info, nullptr, &vk_surface));
 
 				VkBool32 surface_supported;
@@ -107,7 +89,7 @@ namespace flame
 				surface_formats.resize(surface_format_count);
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, surface_formats.data());
 
-				swapchain_format = graphics::get_format(surface_formats[0].format);
+				format = graphics::get_format(surface_formats[0].format);
 
 				VkSwapchainCreateInfoKHR swapchain_info;
 				swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -115,7 +97,7 @@ namespace flame
 				swapchain_info.pNext = nullptr;
 				swapchain_info.surface = vk_surface;
 				swapchain_info.minImageCount = image_count;
-				swapchain_info.imageFormat = to_backend(swapchain_format);
+				swapchain_info.imageFormat = to_backend(format);
 				swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 				swapchain_info.imageExtent.width = size.x;
 				swapchain_info.imageExtent.height = size.y;
@@ -140,20 +122,31 @@ namespace flame
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
-					images[i].reset(ImagePrivate::create(device, swapchain_format, size, native_images[i]));
+					images[i].reset(ImagePrivate::create(device, format, size, native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutUndefined, ImageLayoutPresent);
 				}
 			}
 		}
 
-		Format Swapchain::get_format()
+		SwapchainPtr Swapchain::create(DevicePtr device, NativeWindow* window)
 		{
-			return swapchain_format;
-		}
+			if (!device)
+				device = default_device;
 
-		Swapchain* Swapchain::create(Device* device, NativeWindow* window)
-		{
-			return new SwapchainPrivate((DevicePrivate*)device, window);
+			auto ret = new SwapchainPrivate;
+			ret->device = device;
+			ret->window = window;
+			ret->build();
+			ret->image_avalible.reset(Semaphore::create(device));
+
+			ret->resize_listener = window->add_resize_listener([ret](const uvec2& size) {
+				ret->build();
+			});
+			window->add_destroy_listener([ret]() {
+				ret->window = nullptr;
+			});
+
+			return ret;
 		}
 	}
 }

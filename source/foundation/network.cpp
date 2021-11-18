@@ -293,11 +293,6 @@ namespace flame
 			initialized = true;
 		}
 
-		ClientPrivate::ClientPrivate()
-		{
-			initialize();
-		}
-
 		ClientPrivate::~ClientPrivate()
 		{
 			stop(false);
@@ -388,11 +383,6 @@ namespace flame
 				if (passive)
 					on_close();
 			}
-		}
-
-		ServerPrivate::ServerPrivate()
-		{
-			initialize();
 		}
 
 		ServerPrivate::~ServerPrivate()
@@ -498,7 +488,7 @@ namespace flame
 					DgramAddress da;
 					da.fd = s->fd_d;
 					da.paddr = (sockaddr*)&address;
-					s->on_dgram(&da, { buf, res });
+					s->on_dgram(&da, { buf, (size_t)res });
 				}
 			}).detach();
 
@@ -723,7 +713,7 @@ namespace flame
 						closesocket(fd);
 						return;
 					}
-					on_message(inet_ntoa(address.sin_addr), { buf, res });
+					on_message(inet_ntoa(address.sin_addr), { buf, (size_t)res });
 				}
 			}).detach();
 		}

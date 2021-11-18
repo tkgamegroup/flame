@@ -1012,7 +1012,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPtr Shader::get(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& _defines, const std::vector<std::pair<std::string, std::string>>& _substitutes)
+		ShaderPtr Shader::get(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes)
 		{
 			if (!device)
 				device = default_device;
@@ -1024,13 +1024,6 @@ namespace flame
 				return nullptr;
 			}
 			filename.make_preferred();
-
-			auto defines = _defines;
-			std::sort(defines.begin(), defines.end());
-			auto substitutes = _substitutes;
-			std::sort(substitutes.begin(), substitutes.end(), [](const auto& a, const auto& b) {
-				return a.first < b.first;
-			});
 
 			if (device)
 			{
@@ -1073,7 +1066,9 @@ namespace flame
 
 			auto dependencies = get_make_dependencies(filename);
 
-			for (auto& s : substitutes)
+			auto parsed_substitutes = substitutes;
+
+			for (auto& s : parsed_substitutes)
 			{
 				if (s.first.ends_with("_FILE"))
 				{
@@ -1098,7 +1093,7 @@ namespace flame
 					{
 						std::string line;
 						std::getline(glsl, line);
-						for (auto& s : substitutes)
+						for (auto& s : parsed_substitutes)
 							SUS::replace_all(line, s.first, s.second);
 						temp += line + "\n";
 					}
@@ -1180,14 +1175,19 @@ namespace flame
 			return nullptr;
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* _device, const GraphicsPipelineInfo& info) :
-			device(_device),
-			layout((PipelineLayoutPrivate*)info.layout)
+		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
+		{
+			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+		}
+
+		GraphicsPipelinePtr GraphicsPipeline::create(DevicePtr device, const GraphicsPipelineInfo& info)
 		{
 			if (!device)
 				device = default_device;
 
-			type = PipelineGraphics;
+			auto ret = new GraphicsPipelinePrivate;
+			ret->device = device;
+			ret->info = info;
 
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
@@ -1195,13 +1195,10 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			rp = (RenderpassPrivate*)info.renderpass;
-
-			shaders.resize(info.shaders_count);
-			vk_stage_infos.resize(shaders.size());
-			for (auto i = 0; i < shaders.size(); i++)
+			vk_stage_infos.resize(info.shaders.size());
+			for (auto i = 0; i < info.shaders.size(); i++)
 			{
-				auto shader = (ShaderPrivate*)info.shaders[i];
+				auto shader = info.shaders[i];
 
 				auto& dst = vk_stage_infos[i];
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1211,34 +1208,30 @@ namespace flame
 				dst.pName = "main";
 				dst.stage = to_backend(shader->type);
 				dst.module = shader->vk_module;
-				shaders[i] = shader;
 			}
 
-			if (info.vertex_buffers_count)
+			vk_vi_bindings.resize(info.vertex_buffers.size());
+			for (auto i = 0; i < vk_vi_bindings.size(); i++)
 			{
-				vk_vi_bindings.resize(info.vertex_buffers_count);
-				for (auto i = 0; i < vk_vi_bindings.size(); i++)
+				auto& src_buf = info.vertex_buffers[i];
+				auto& dst_buf = vk_vi_bindings[i];
+				dst_buf.binding = i;
+				auto offset = 0;
+				for (auto j = 0; j < src_buf.attributes.size(); j++)
 				{
-					auto& src_buf = info.vertex_buffers[i];
-					auto& dst_buf = vk_vi_bindings[i];
-					dst_buf.binding = i;
-					auto offset = 0;
-					for (auto j = 0; j < src_buf.attributes_count; j++)
-					{
-						auto& src_att = src_buf.attributes[j];
-						VkVertexInputAttributeDescription dst_att;
-						dst_att.location = src_att.location;
-						dst_att.binding = i;
-						if (src_att.offset != -1)
-							offset = src_att.offset;
-						dst_att.offset = offset;
-						offset += format_size(src_att.format);
-						dst_att.format = to_backend(src_att.format);
-						vk_vi_attributes.push_back(dst_att);
-					}
-					dst_buf.inputRate = to_backend(src_buf.rate);
-					dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
+					auto& src_att = src_buf.attributes[j];
+					VkVertexInputAttributeDescription dst_att;
+					dst_att.location = src_att.location;
+					dst_att.binding = i;
+					if (src_att.offset != -1)
+						offset = src_att.offset;
+					dst_att.offset = offset;
+					offset += format_size(src_att.format);
+					dst_att.format = to_backend(src_att.format);
+					vk_vi_attributes.push_back(dst_att);
 				}
+				dst_buf.inputRate = to_backend(src_buf.rate);
+				dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
 			}
 
 			VkPipelineVertexInputStateCreateInfo vertex_input_state;
@@ -1307,8 +1300,8 @@ namespace flame
 			multisample_state.pNext = nullptr;
 			if (info.sample_count == SampleCount_1)
 			{
-				auto& res_atts = rp->subpasses[info.subpass_index].resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? rp->attachments[res_atts[0]].sample_count : SampleCount_1);
+				auto& res_atts = info.renderpass->subpasses[info.subpass_index].resolve_attachments;
+				multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 			}
 			else
 				multisample_state.rasterizationSamples = to_backend(info.sample_count);
@@ -1332,7 +1325,7 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(rp->subpasses[info.subpass_index].color_attachments.size());
+			vk_blend_attachment_states.resize(info.renderpass->subpasses[info.subpass_index].color_attachments.size());
 			for (auto& a : vk_blend_attachment_states)
 			{
 				a.blendEnable = VK_FALSE;
@@ -1344,7 +1337,7 @@ namespace flame
 				a.alphaBlendOp = VK_BLEND_OP_ADD;
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			for (auto i = 0; i < info.blend_options_count; i++)
+			for (auto i = 0; i < info.blend_options.size(); i++)
 			{
 				auto& src = info.blend_options[i];
 				auto& dst = vk_blend_attachment_states[i];
@@ -1371,7 +1364,7 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto i = 0; i < info.dynamic_states_count; i++)
+			for (auto i = 0; i < info.dynamic_states.size(); i++)
 				vk_dynamic_states.push_back(to_backend((DynamicState)info.dynamic_states[i]));
 			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -1400,64 +1393,18 @@ namespace flame
 			pipeline_info.pDepthStencilState = &depth_stencil_state;
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
-			pipeline_info.layout = layout->vk_pipeline_layout;
-			pipeline_info.renderPass = rp->vk_renderpass;
+			pipeline_info.layout = info.layout->vk_pipeline_layout;
+			pipeline_info.renderPass = info.renderpass->vk_renderpass;
 			pipeline_info.subpass = info.subpass_index;
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
-			chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
+			chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+
+			return ret;
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* _device, const ComputePipelineInfo& info) :
-			device(_device),
-			layout((PipelineLayoutPrivate*)info.layout)
-		{
-			if (!device)
-				device = default_device;
-
-			type = PipelineCompute;
-
-			auto shader = (ShaderPrivate*)info.shader;
-			shaders.resize(1);
-			shaders[0] = shader;
-
-			VkComputePipelineCreateInfo pipeline_info;
-			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-			pipeline_info.pNext = nullptr;
-			pipeline_info.flags = 0;
-
-			pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			pipeline_info.stage.flags = 0;
-			pipeline_info.stage.pNext = nullptr;
-			pipeline_info.stage.pSpecializationInfo = nullptr;
-			pipeline_info.stage.pName = "main";
-			pipeline_info.stage.stage = to_backend(ShaderStageComp);
-			pipeline_info.stage.module = shader->vk_module;
-
-			pipeline_info.basePipelineHandle = 0;
-			pipeline_info.basePipelineIndex = 0;
-			pipeline_info.layout = layout->vk_pipeline_layout;
-
-			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
-		}
-
-		PipelinePrivate::~PipelinePrivate()
-		{
-			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
-		}
-
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, const GraphicsPipelineInfo& info)
-		{
-			return new PipelinePrivate(device, info);
-		}
-
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, const ComputePipelineInfo& info)
-		{
-			return new PipelinePrivate(device, info);
-		}
-
-		PipelinePrivate* PipelinePrivate::get(DevicePrivate* device, const std::filesystem::path& _filename)
+		GraphicsPipelinePtr GraphicsPipeline::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
 				device = default_device;
@@ -1488,141 +1435,115 @@ namespace flame
 				return nullptr;
 			}
 
-			std::vector<ShaderPrivate*> shaders;
+			GraphicsPipelineInfo info;
+
 			for (auto n_shdr : doc_root.child("shaders"))
 			{
-				auto shader = ShaderPrivate::get(device, n_shdr.attribute("filename").value(), n_shdr.attribute("defines").value());
+				auto shader = Shader::get(device, n_shdr.attribute("filename").value(), Shader::format_defines(n_shdr.attribute("defines").value()), {});
 				assert(shader);
-				shaders.push_back(shader);
+				info.shaders.push_back(shader);
 			}
 
-			auto layout = PipelineLayoutPrivate::get(device, doc_root.child("layout").attribute("filename").value());
-			assert(layout);
+			info.layout = PipelineLayout::get(device, doc_root.child("layout").attribute("filename").value());
+			assert(info.layout);
 
-			if (shaders.size() > 1)
+			auto n_rp = doc_root.child("renderpass");
+			info.renderpass = Renderpass::get(device, n_rp.attribute("filename").value());
+			assert(info.renderpass);
+			info.subpass_index = n_rp.attribute("index").as_uint();
+
+			auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
+			for (auto n_buf : doc_root.child("vertex_buffers"))
 			{
-				GraphicsPipelineInfo info;
-
-				info.shaders_count = shaders.size();
-				info.shaders = (Shader**)shaders.data();
-
-				info.layout = layout;
-
-				auto n_rp = doc_root.child("renderpass");
-				info.renderpass = RenderpassPrivate::get(device, n_rp.attribute("filename").value());
-				assert(info.renderpass);
-				info.subpass_index = n_rp.attribute("index").as_uint();
-
-				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
-				std::vector<std::vector<VertexAttributeInfo>> v_vertex_attributes;
-				std::vector<VertexBufferInfo> vertex_buffers;
-				for (auto n_buf : doc_root.child("vertex_buffers"))
+				auto& vbuf = info.vertex_buffers.emplace_back();
+				for (auto n_att : n_buf)
 				{
-					std::vector<VertexAttributeInfo> atts;
-					for (auto n_att : n_buf)
-					{
-						VertexAttributeInfo att;
-						att.location = n_att.attribute("location").as_uint();
-						if (auto a = n_att.attribute("format"); a)
-							ti_format->unserialize(a.value(), &att.format);
-						atts.push_back(att);
-					}
-					v_vertex_attributes.push_back(atts);
-
-					VertexBufferInfo vb;
-					vertex_buffers.push_back(vb);
-				}
-				for (auto i = 0; i < vertex_buffers.size(); i++)
-				{
-					auto& vb = vertex_buffers[i];
-					auto& atts = v_vertex_attributes[i];
-					vb.attributes_count = atts.size();
-					vb.attributes = atts.data();
-				}
-
-				info.vertex_buffers_count = vertex_buffers.size();
-				info.vertex_buffers = vertex_buffers.data();
-
-				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology", tidb);
-				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode", tidb);
-				auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
-				auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp", tidb);
-				if (auto n = doc_root.child("primitive_topology"); n)
-					ti_prim->unserialize(n.attribute("v").value(), &info.primitive_topology);
-				if (auto n = doc_root.child("cull_mode"); n)
-					ti_cullmode->unserialize(n.attribute("v").value(), &info.cull_mode);
-				if (auto n = doc_root.child("sample_count"); n)
-					ti_samplecount->unserialize(n.attribute("v").value(), &info.sample_count);
-				if (auto n = doc_root.child("alpha_to_coverage"); n)
-					info.alpha_to_coverage = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("depth_test"); n)
-					info.depth_test = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("depth_write"); n)
-					info.depth_write = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("compare_op"); n)
-					ti_compare->unserialize(n.attribute("v").value(), &info.compare_op);
-
-				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor", tidb);
-				std::vector<BlendOption> blend_options;
-				for (auto n_bo : doc_root.child("blend_options"))
-				{
-					BlendOption bo;
-					bo.enable = n_bo.attribute("enable").as_bool();
-					if (auto a = n_bo.attribute("src_color"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.src_color);
-					if (auto a = n_bo.attribute("dst_color"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.dst_color);
-					if (auto a = n_bo.attribute("src_alpha"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.src_alpha);
-					if (auto a = n_bo.attribute("dst_alpha"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.dst_alpha);
-					blend_options.push_back(bo);
-				}
-
-				info.blend_options_count = blend_options.size();
-				info.blend_options = blend_options.data();
-
-				if (device)
-				{
-					auto pl = PipelinePrivate::create(device, info);
-					pl->filename = filename;
-					device->pls.emplace_back(pl);
-					return pl;
+					auto& att = vbuf.attributes.emplace_back();
+					att.location = n_att.attribute("location").as_uint();
+					ti_format->unserialize(n_att.attribute("format").value(), &att.format);
 				}
 			}
-			else
+
+			auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology", tidb);
+			auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode", tidb);
+			auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
+			auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp", tidb);
+			if (auto n = doc_root.child("primitive_topology"); n)
+				ti_prim->unserialize(n.attribute("v").value(), &info.primitive_topology);
+			if (auto n = doc_root.child("cull_mode"); n)
+				ti_cullmode->unserialize(n.attribute("v").value(), &info.cull_mode);
+			if (auto n = doc_root.child("sample_count"); n)
+				ti_samplecount->unserialize(n.attribute("v").value(), &info.sample_count);
+			if (auto n = doc_root.child("alpha_to_coverage"); n)
+				info.alpha_to_coverage = n.attribute("v").as_bool();
+			if (auto n = doc_root.child("depth_test"); n)
+				info.depth_test = n.attribute("v").as_bool();
+			if (auto n = doc_root.child("depth_write"); n)
+				info.depth_write = n.attribute("v").as_bool();
+			if (auto n = doc_root.child("compare_op"); n)
+				ti_compare->unserialize(n.attribute("v").value(), &info.compare_op);
+
+			auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor", tidb);
+			std::vector<BlendOption> blend_options;
+			for (auto n_bo : doc_root.child("blend_options"))
 			{
-				if (device)
-				{
-					ComputePipelineInfo info;
+				auto& bo = info.blend_options.emplace_back();
+				bo.enable = n_bo.attribute("enable").as_bool();
+				if (auto a = n_bo.attribute("src_color"); a)
+					ti_blendfactor->unserialize(a.value(), &bo.src_color);
+				if (auto a = n_bo.attribute("dst_color"); a)
+					ti_blendfactor->unserialize(a.value(), &bo.dst_color);
+				if (auto a = n_bo.attribute("src_alpha"); a)
+					ti_blendfactor->unserialize(a.value(), &bo.src_alpha);
+				if (auto a = n_bo.attribute("dst_alpha"); a)
+					ti_blendfactor->unserialize(a.value(), &bo.dst_alpha);
+			}
 
-					info.shader = shaders[0];
-
-					info.layout = layout;
-
-					auto pl = PipelinePrivate::create(device, info);
-					pl->filename = filename;
-					device->pls.emplace_back(pl);
-					return pl;
-				}
+			if (device)
+			{
+				auto ret = GraphicsPipeline::create(device, info);
+				ret->filename = filename;
+				device->pls.emplace_back(ret);
+				return ret;
 			}
 
 			return nullptr;
 		}
 
-		Pipeline* Pipeline::create(Device* device, const GraphicsPipelineInfo& info)
+		ComputePipelinePrivate::~ComputePipelinePrivate()
 		{
-			return PipelinePrivate::create((DevicePrivate*)device, info);
+			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		Pipeline* Pipeline::create(Device* device, const ComputePipelineInfo& info)
+		ComputePipelinePtr ComputePipeline::create(DevicePtr device, const ComputePipelineInfo& info)
 		{
-			return PipelinePrivate::create((DevicePrivate*)device, info);
-		}
+			if (!device)
+				device = default_device;
 
-		Pipeline* Pipeline::get(Device* device, const wchar_t* filename)
-		{
-			return PipelinePrivate::get((DevicePrivate*)device, filename);
+			auto ret = new ComputePipelinePrivate;
+			ret->device = device;
+			ret->info = info;
+
+			VkComputePipelineCreateInfo pipeline_info;
+			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+			pipeline_info.pNext = nullptr;
+			pipeline_info.flags = 0;
+
+			pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			pipeline_info.stage.flags = 0;
+			pipeline_info.stage.pNext = nullptr;
+			pipeline_info.stage.pSpecializationInfo = nullptr;
+			pipeline_info.stage.pName = "main";
+			pipeline_info.stage.stage = to_backend(ShaderStageComp);
+			pipeline_info.stage.module = info.shader->vk_module;
+
+			pipeline_info.basePipelineHandle = 0;
+			pipeline_info.basePipelineIndex = 0;
+			pipeline_info.layout = info.layout->vk_pipeline_layout;
+
+			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+
+			return ret;
 		}
 	}
 }

@@ -83,23 +83,24 @@ namespace flame
 
 			virtual ~Shader() {}
 
-			inline static std::vector<std::string> format_defines(const std::string& defines)
+			inline static std::vector<std::string> format_defines(const std::string& str)
 			{
 				std::vector<std::string> ret;
-				auto sp = SUS::split(defines);
+				auto sp = SUS::split(str);
 				for (auto& s : sp)
 				{
 					SUS::trim(s);
 					if (!s.empty())
 						ret.push_back(s);
 				}
+				std::sort(ret.begin(), ret.end());
 				return ret;
 			}
 
-			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& substitutes)
+			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& str)
 			{
 				std::vector<std::pair<std::string, std::string>> ret;
-				auto sp = SUS::split(substitutes);
+				auto sp = SUS::split(str);
 				for (auto i = 0; i < (int)sp.size() - 1; i += 2)
 				{
 					SUS::trim(sp[i]);
@@ -107,6 +108,9 @@ namespace flame
 					if (!sp[i].empty() && !sp[i + 1].empty())
 						ret.emplace_back(sp[i], sp[i + 1]);
 				}
+				std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
+					return a.first < b.first;
+				});
 				return ret;
 			}
 
@@ -122,8 +126,7 @@ namespace flame
 
 		struct VertexBufferInfo
 		{
-			uint attributes_count = 0;
-			const VertexAttributeInfo* attributes = nullptr;
+			std::vector<VertexAttributeInfo> attributes;
 			VertexInputRate rate = VertexInputRateVertex;
 			uint stride = 0;
 		};
@@ -150,13 +153,11 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
-			uint shaders_count;
-			Shader** shaders;
-			PipelineLayout* layout;
+			std::vector<ShaderPtr> shaders;
+			PipelineLayoutPtr layout;
 			RenderpassPtr renderpass;
 			uint subpass_index = 0;
-			uint vertex_buffers_count = 0;
-			const VertexBufferInfo* vertex_buffers = nullptr;
+			std::vector<VertexBufferInfo> vertex_buffers;
 			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
 			uint patch_control_points = 0;
 			PolygonMode polygon_mode = PolygonModeFill;
@@ -166,44 +167,37 @@ namespace flame
 			bool depth_test = true;
 			bool depth_write = true;
 			CompareOp compare_op = CompareOpLess;
-			uint blend_options_count = 0;
-			const BlendOption* blend_options = nullptr;
-			uint dynamic_states_count = 0;
-			const uint* dynamic_states = nullptr;
+			std::vector<BlendOption> blend_options;
+			std::vector<DynamicState> dynamic_states;
 		};
 
 		struct ComputePipelineInfo
 		{
-			Shader* shader;
-			PipelineLayout* layout;
+			ShaderPtr shader;
+			PipelineLayoutPtr layout;
 		};
 
 		struct GraphicsPipeline
 		{
-			PipelineType type;
-			PipelineLayoutPtr layout;
-			std::vector<ShaderPtr> shaders;
+			GraphicsPipelineInfo info;
 
 			std::filesystem::path filename;
 
 			virtual ~GraphicsPipeline() {}
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const GraphicsPipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr create(DevicePtr device, const GraphicsPipelineInfo& info);
+			FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr get(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct ComputePipeline
 		{
-			PipelineType type;
-			PipelineLayoutPtr layout;
-			ShaderPtr shader;
+			ComputePipelineInfo info;
 
 			std::filesystem::path filename;
 
 			virtual ~ComputePipeline() {}
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* device, const ComputePipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* get(Device* device, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static ComputePipelinePtr create(DevicePtr device, const ComputePipelineInfo& info);
 		};
 	}
 }

@@ -75,7 +75,8 @@ namespace flame
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
 			virtual void bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt = PipelineGraphics) = 0;
-			virtual void bind_pipeline(PipelinePtr pl) = 0;
+			virtual void bind_pipeline(GraphicsPipelinePtr pl) = 0;
+			virtual void bind_pipeline(ComputePipelinePtr pl) = 0;
 			virtual void bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> descriptor_sets) = 0;
 			inline void bind_descriptor_set(uint idx, DescriptorSetPtr descriptor_set)
 			{
@@ -145,31 +146,6 @@ namespace flame
 			virtual void wait(bool auto_reset = true) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static FencePtr create(DevicePtr device, bool signaled = true);
-		};
-
-		struct InstanceCB : std::unique_ptr<CommandBufferT>
-		{
-			DevicePtr device;
-			FencePtr fence;
-
-			InstanceCB(DevicePtr device, FencePtr fence = nullptr) :
-				device(device),
-				fence(fence)
-			{
-				reset(CommandBuffer::create(CommandPool::get(device)));
-				get()->begin(true);
-			}
-
-			~InstanceCB()
-			{
-				get()->end();
-				auto q = Queue::get(device);
-				q->submit1(get(), nullptr, nullptr, fence);
-				if (!fence)
-					q->wait_idle();
-				else
-					fence->wait();
-			}
 		};
 	}
 }

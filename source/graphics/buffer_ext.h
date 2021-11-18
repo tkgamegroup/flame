@@ -34,6 +34,17 @@ namespace flame
 			return PipelineStageAllCommand;
 		}
 
+		struct StagingBuffer : std::unique_ptr<BufferT>
+		{
+			StagingBuffer(DevicePtr device, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
+			{
+				reset(Buffer::create(device, size, BufferUsageTransferSrc | BufferUsageTransferDst | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				get()->map();
+				if (data)
+					memcpy(get()->mapped, data, size);
+			}
+		};
+
 		template <class T>
 		struct SequentialBuffer
 		{

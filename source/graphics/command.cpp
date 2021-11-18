@@ -2,6 +2,7 @@
 #include "renderpass_private.h"
 #include "swapchain_private.h"
 #include "command_private.h"
+#include "command_ext.h"
 #include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
@@ -116,19 +117,24 @@ namespace flame
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 
-		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr _pll, PipelineType _plt)
+		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt)
 		{
-			pll = _pll;
-			plt = _plt;
-			pl = nullptr;
+			vk_pll = pll->vk_pipeline_layout;
+			vk_plt = to_backend(plt);
 		}
 
-		void CommandBufferPrivate::bind_pipeline(PipelinePtr _pl)
+		void CommandBufferPrivate::bind_pipeline(GraphicsPipelinePtr pl)
 		{
-			pll = _pl->layout;
-			plt = _pl->type;
-			pl = _pl;
-			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
+			vk_pll = pl->info.layout->vk_pipeline_layout;
+			vk_plt = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			vkCmdBindPipeline(vk_command_buffer, vk_plt, pl->vk_pipeline);
+		}
+
+		void CommandBufferPrivate::bind_pipeline(ComputePipelinePtr pl)
+		{
+			vk_pll = pl->info.layout->vk_pipeline_layout;
+			vk_plt = VK_PIPELINE_BIND_POINT_COMPUTE;
+			vkCmdBindPipeline(vk_command_buffer, vk_plt, pl->vk_pipeline);
 		}
 
 		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss)
@@ -137,7 +143,7 @@ namespace flame
 			auto i = 0;
 			for (auto d : dss)
 				vk_sets[i++] = d->vk_descriptor_set;
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(plt), pll->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, vk_plt, vk_pll, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
@@ -153,8 +159,7 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
-			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout,
-				to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(vk_command_buffer, vk_pll, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)

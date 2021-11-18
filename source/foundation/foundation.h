@@ -496,14 +496,11 @@ namespace flame
 		return ret;
 	}
 
-	FLAME_FOUNDATION_EXPORTS uint get_frames();
-	/* second */
-	FLAME_FOUNDATION_EXPORTS float get_delta_time();
-	/* second */ 
-	FLAME_FOUNDATION_EXPORTS float get_total_time();
-	FLAME_FOUNDATION_EXPORTS uint get_fps();
+	FLAME_FOUNDATION_EXPORTS extern uint frames;
+	FLAME_FOUNDATION_EXPORTS extern uint fps;
+	FLAME_FOUNDATION_EXPORTS extern float delta_time; // second
+	FLAME_FOUNDATION_EXPORTS extern float total_time; // second
 
-	FLAME_FOUNDATION_EXPORTS NativeWindow* get_window(uint idx);
 	FLAME_FOUNDATION_EXPORTS int run(const std::function<bool()>& callback);
 
 	FLAME_FOUNDATION_EXPORTS void* add_event(const std::function<bool()>& callback, float time = 0.f);

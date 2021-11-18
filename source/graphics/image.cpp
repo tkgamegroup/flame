@@ -6,6 +6,8 @@
 #include "image_ext.h"
 #include "command_private.h"
 #include "shader_private.h"
+#include "buffer_ext.h"
+#include "command_ext.h"
 
 #include <gli/gli.hpp>
 
@@ -205,12 +207,12 @@ namespace flame
 
 			if (!simple_dsl)
 			{
-				DescriptorBindingInfo b;
+				DescriptorBinding b;
 				b.type = DescriptorSampledImage;
-				simple_dsl = new DescriptorSetLayoutPrivate(device, { &b, 1 });
+				simple_dsl = DescriptorSetLayout::create(device, { &b, 1 });
 			}
 
-			auto ds = new DescriptorSetPrivate(device->dsp.get(), simple_dsl);
+			auto ds = DescriptorSet::create(device->dsp.get(), simple_dsl);
 			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }), sp);
 			ds->update();
 			read_dss.emplace(key, ds);
@@ -241,7 +243,7 @@ namespace flame
 			}
 			if (!rp)
 			{
-				RenderpassAttachmentInfo att;
+				Attachment att;
 				att.format = format;
 				att.load_op = load_op;
 				att.sample_count = sample_count;
@@ -251,21 +253,17 @@ namespace flame
 					att.initia_layout = ImageLayoutAttachment;
 					break;
 				}
-				RenderpassSubpassInfo sp;
-				int col_ref = 0;
+				Subpass sp;
 				if (format >= Format_Color_Begin && format <= Format_Color_End)
-				{
-					sp.color_attachments_count = 1;
-					sp.color_attachments = &col_ref;
-				}
+					sp.color_attachments.push_back(0);
 				else
 					sp.depth_attachment = 0;
-				rp = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
+				rp = Renderpass::create(device, { &att, 1 }, { &sp, 1 });
 				simple_rps.push_back(rp);
 			}
 
 			ImageViewPrivate* vs[] = { get_view({ base_level, 1, base_layer, 1 }) };
-			auto fb = new FramebufferPrivate(rp, vs);
+			auto fb = Framebuffer::create(rp, vs);
 			write_fbs.emplace(key, fb);
 			return fb;
 		}

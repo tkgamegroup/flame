@@ -203,11 +203,11 @@ namespace flame
 			chk_res(vkCreateDevice(ret->vk_physical_device, &device_info, nullptr, &ret->vk_device));
 			printf("vulkan: device created\n");
 
-			ret->dsp.reset(new DescriptorPoolPrivate(ret));
-			ret->gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(ret, graphics_queue_index) : nullptr);
-			ret->tcp.reset(transfer_queue_index != -1 ? new CommandPoolPrivate(ret, transfer_queue_index) : nullptr);
-			ret->gq.reset(graphics_queue_index != -1 ? new QueuePrivate(ret, graphics_queue_index) : nullptr);
-			ret->tq.reset(transfer_queue_index != -1 ? new QueuePrivate(ret, transfer_queue_index) : nullptr);
+			ret->dsp.reset(DescriptorPool::create(ret));
+			ret->gcp.reset(graphics_queue_index != -1 ? CommandPool::create(ret, graphics_queue_index) : nullptr);
+			ret->tcp.reset(transfer_queue_index != -1 ? CommandPool::create(ret, transfer_queue_index) : nullptr);
+			ret->gq.reset(graphics_queue_index != -1 ? QueuePrivate::create(ret, graphics_queue_index) : nullptr);
+			ret->tq.reset(transfer_queue_index != -1 ? QueuePrivate::create(ret, transfer_queue_index) : nullptr);
 
 			if (!default_device)
 				default_device = ret;

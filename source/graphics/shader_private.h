@@ -81,14 +81,22 @@ namespace flame
 			~ShaderPrivate();
 		};
 
-		struct PipelinePrivate : Pipeline
+		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
 			DevicePrivate* device;
-			RenderpassPrivate* rp = nullptr;
 
 			VkPipeline vk_pipeline;
 
-			~PipelinePrivate();
+			~GraphicsPipelinePrivate();
+		};
+
+		struct ComputePipelinePrivate : ComputePipeline
+		{
+			DevicePrivate* device;
+
+			VkPipeline vk_pipeline;
+
+			~ComputePipelinePrivate();
 		};
 	}
 }

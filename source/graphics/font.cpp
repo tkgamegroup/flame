@@ -1,9 +1,11 @@
 #include "../foundation/bitmap.h"
 #include "device_private.h"
-#include "command_private.h"
 #include "buffer_private.h"
+#include "command_private.h"
 #include "image_private.h"
 #include "font_private.h"
+#include "buffer_ext.h"
+#include "command_ext.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
@@ -91,7 +93,7 @@ namespace flame
 			return empty_glyph;
 		}
 
-		static std::vector<std::pair<std::vector<std::wstring>, UniPtr<FontAtlasPrivate>>> loaded_atlas;
+		static std::vector<std::pair<std::vector<std::wstring>, std::unique_ptr<FontAtlasT>>> loaded_atlas;
 
 		FontAtlasPtr FontAtlas::get(DevicePtr device, const std::wstring& font_names)
 		{
@@ -134,7 +136,7 @@ namespace flame
 
 			ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-			ret->image.reset(new ImagePrivate(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+			ret->image.reset(Image::create(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
 			ret->image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
 			ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 

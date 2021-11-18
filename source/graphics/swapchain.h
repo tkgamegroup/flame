@@ -8,19 +8,18 @@ namespace flame
 	{
 		struct Swapchain
 		{
-			virtual void release() = 0;
+			NativeWindow* window;
 
-			virtual NativeWindow* get_window() const = 0;
-			virtual uint get_images_count() const = 0;
-			virtual ImagePtr get_image(uint idx) const = 0;
-			virtual SemaphorePtr get_image_avalible() const = 0;
+			std::vector<std::unique_ptr<ImageT>> images;
+			std::unique_ptr<SemaphoreT> image_avalible;
+			uint image_index;
 
-			virtual uint get_image_index() const = 0;
+			virtual ~Swapchain() {}
+
 			virtual int acquire_image() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Format get_format();
-
-			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device* device, NativeWindow* window);
+			FLAME_GRAPHICS_EXPORTS static Format format;
+			FLAME_GRAPHICS_EXPORTS static SwapchainPtr create(DevicePtr device, NativeWindow* window);
 		};
 	}
 }

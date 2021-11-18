@@ -20,39 +20,13 @@ namespace flame
 	}
 
 	uint frames = 0;
-	static uint64 last_time = 0;
+	uint fps = 0;
 	float delta_time = 0.f;
 	float total_time = 0.f;
-	uint fps = 0;
+
+	static uint64 last_time = 0;
 	static float fps_delta = 0.f;
 	static uint fps_counting = 0;
-
-	std::vector<std::unique_ptr<NativeWindowPrivate>> windows;
-
-	uint get_frames()
-	{
-		return frames;
-	}
-
-	float get_delta_time()
-	{
-		return delta_time;
-	}
-
-	float get_total_time()
-	{
-		return total_time;
-	}
-
-	uint get_fps()
-	{
-		return fps;
-	}
-
-	NativeWindow* get_window(uint idx)
-	{
-		return windows[idx].get();
-	}
 
 	struct Event
 	{

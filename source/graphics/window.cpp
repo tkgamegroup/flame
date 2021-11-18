@@ -1,5 +1,6 @@
 #include "../foundation/window.h"
 #include "device_private.h"
+#include "image_private.h"
 #include "swapchain_private.h"
 #include "command_private.h"
 #include "window_private.h"
@@ -8,58 +9,22 @@ namespace flame
 {
 	namespace graphics
 	{
-		static std::vector<WindowPrivate*> windows;
-
-		WindowPrivate::WindowPrivate(DevicePrivate* _device, NativeWindow* native) :
-			device(_device),
-			native(native)
-		{
-			if (!device)
-				device = default_device;
-
-			swapchain.reset(new SwapchainPrivate(device, native));
-			commandbuffer.reset(new CommandBufferPrivate(CommandPoolPrivate::get(device)));
-			submit_fence.reset(new FencePrivate(device));
-			render_finished.reset(new SemaphorePrivate(device));
-
-			native->add_destroy_listener([this]() {
-				delete this;
-			});
-
-			if (!windows.empty())
-				windows.back()->next = this;
-			windows.push_back(this);
-		}
+		std::vector<std::unique_ptr<WindowT>> windows;
 
 		WindowPrivate::~WindowPrivate()
 		{
 			QueuePrivate::get(nullptr)->wait_idle();
-
-			for (auto it = windows.begin(); it != windows.end();)
-			{
-				if (*it == this)
-				{
-					if (it != windows.begin())
-						(*(it - 1))->next = (*it)->next;
-					windows.erase(it);
-					return;
-				}
-				else
-					it++;
-			}
 		}
 
-		void* WindowPrivate::add_renderer(void (*render)(Capture& c, uint img_idx, CommandBuffer* commandbuffer), const Capture& capture)
+		void* WindowPrivate::add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback)
 		{
-			auto c = new Closure(render, capture);
-			renders.emplace_back(c);
-			return c;
+			return &renders.emplace_back(callback);
 		}
 
-		void WindowPrivate::remove_renderer(void* c)
+		void WindowPrivate::remove_renderer(void* lis)
 		{
 			std::erase_if(renders, [&](const auto& i) {
-				return i == (decltype(i))c;
+				return &i == lis;
 			});
 		}
 
@@ -74,25 +39,44 @@ namespace flame
 
 			commandbuffer->begin();
 			for (auto& r : renders)
-				r->call(img_idx, commandbuffer.get());
+				r(img_idx, commandbuffer.get());
 			commandbuffer->image_barrier(swapchain->images[img_idx].get(), {}, ImageLayoutAttachment, ImageLayoutPresent);
 			commandbuffer->end();
 
 			auto queue = graphics::Queue::get(nullptr);
-			queue->submit(1, &commandbuffer, swapchain->get_image_avalible(), render_finished.get(), submit_fence.get());
+			queue->submit1(commandbuffer.get(), swapchain->image_avalible.get(), render_finished.get(), submit_fence.get());
 			queue->present(swapchain.get(), render_finished.get());
 
 			dirty = false;
 		}
 
-		Window* Window::create(Device* device, NativeWindow* native)
+		WindowPtr Window::create(DevicePtr device, NativeWindow* native)
 		{
-			return new WindowPrivate((DevicePrivate*)device, native);
-		}
+			if (!device)
+				device = default_device;
 
-		Window* get_first()
-		{
-			return windows.empty() ? nullptr : windows[0];
+			auto ret = new WindowPrivate;
+			ret->device = device;
+			ret->native = native;
+
+			ret->swapchain.reset(Swapchain::create(device, native));
+			ret->commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
+			ret->submit_fence.reset(Fence::create(device));
+			ret->render_finished.reset(Semaphore::create(device));
+
+			native->add_destroy_listener([ret]() {
+				for (auto it = windows.begin(); it != windows.end(); it++)
+				{
+					if (it->get() == ret)
+					{
+						windows.erase(it);
+						return;
+					}
+				}
+			});
+
+			windows.emplace_back(ret);
+			return ret;
 		}
 	}
 }
