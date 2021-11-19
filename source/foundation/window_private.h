@@ -66,4 +66,6 @@ namespace flame
 		void* add_destroy_listener(const std::function<void()>& lis) override;
 		void remove_destroy_listener(void* lis) override;
 	};
+
+	extern std::vector<NativeWindowPtr> windows;
 }

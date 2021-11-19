@@ -7,7 +7,6 @@
 
 namespace flame
 {
-
 	BitmapPrivate::~BitmapPrivate()
 	{
 		delete[]data;
@@ -105,34 +104,38 @@ namespace flame
 			stbi_write_jpg(filename.string().c_str(), size.x, size.y, chs, data, 0);
 	}
 
-	BitmapPtr Bitmap::create(const uvec2& size, uint chs, uint bpp, uchar* data) 
+	struct BitmapCreatePrivate : Bitmap::Create
 	{
-		auto ret = new BitmapPrivate;
-		ret->size = size;
-		ret->chs = chs;
-		ret->bpp = bpp;
-		ret->pitch = image_pitch(size.x * (bpp / 8));
-		ret->data_size = ret->pitch * size.y;
-		ret->data = new uchar[ret->data_size];
-		if (!data)
-			memset(ret->data, 0, ret->data_size);
-		else
-			memcpy(ret->data, data, ret->data_size);
-		ret->srgb = false;
-		return ret;
-	}
+		BitmapPtr operator()(const uvec2& size, uint chs, uint bpp, uchar* data) override
+		{
+			auto ret = new BitmapPrivate;
+			ret->size = size;
+			ret->chs = chs;
+			ret->bpp = bpp;
+			ret->pitch = image_pitch(size.x * (bpp / 8));
+			ret->data_size = ret->pitch * size.y;
+			ret->data = new uchar[ret->data_size];
+			if (!data)
+				memset(ret->data, 0, ret->data_size);
+			else
+				memcpy(ret->data, data, ret->data_size);
+			ret->srgb = false;
+			return ret;
+		}
 
-	BitmapPtr Bitmap::create(const std::filesystem::path& filename)
-	{
-		if (!std::filesystem::exists(filename))
-			return nullptr;
+		BitmapPtr operator()(const std::filesystem::path& filename) override
+		{
+			if (!std::filesystem::exists(filename))
+				return nullptr;
 
-		int cx, cy, chs;
-		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, 0);
-		if (!data)
-			return nullptr;
-		auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
-		stbi_image_free(data);
-		return ret;
-	}
+			int cx, cy, chs;
+			auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, 0);
+			if (!data)
+				return nullptr;
+			auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
+			stbi_image_free(data);
+			return ret;
+		}
+	}bitmap_create_private;
+	Bitmap::Create& Bitmap::create = bitmap_create_private;
 }

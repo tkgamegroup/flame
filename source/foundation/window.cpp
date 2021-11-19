@@ -3,8 +3,6 @@
 
 namespace flame
 {
-	std::vector<std::unique_ptr<NativeWindowT>> windows;
-
 	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0);
@@ -420,5 +418,12 @@ namespace flame
 
 		windows.emplace_back(ret);
 		return ret;
+	}
+
+	std::vector<NativeWindowPtr> windows;
+
+	const std::vector<NativeWindowPtr>& get_windows()
+	{
+		return windows;
 	}
 }

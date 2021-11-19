@@ -87,5 +87,5 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static NativeWindowPtr create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent = nullptr);
 	};
 
-	FLAME_FOUNDATION_EXPORTS extern std::vector<std::unique_ptr<NativeWindowT>> windows;
+	FLAME_FOUNDATION_EXPORTS const std::vector<NativeWindowPtr>& get_windows();
 }

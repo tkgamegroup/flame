@@ -23,5 +23,7 @@ namespace flame
 			void* add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback) override;
 			void remove_renderer(void* lis) override;
 		};
+
+		extern std::vector<WindowPtr> windows;
 	}
 }

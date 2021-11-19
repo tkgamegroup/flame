@@ -23,6 +23,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static WindowPtr create(DevicePtr device, NativeWindow* native);
 		};
 
-		FLAME_GRAPHICS_EXPORTS extern std::vector<std::unique_ptr<WindowT>> windows;
+		FLAME_GRAPHICS_EXPORTS const std::vector<WindowPtr> get_windows();
 	}
 }

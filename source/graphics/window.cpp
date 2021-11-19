@@ -9,8 +9,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::vector<std::unique_ptr<WindowT>> windows;
-
 		WindowPrivate::~WindowPrivate()
 		{
 			QueuePrivate::get(nullptr)->wait_idle();
@@ -67,9 +65,10 @@ namespace flame
 			native->add_destroy_listener([ret]() {
 				for (auto it = windows.begin(); it != windows.end(); it++)
 				{
-					if (it->get() == ret)
+					if (*it == ret)
 					{
 						windows.erase(it);
+						delete ret;
 						return;
 					}
 				}
@@ -77,6 +76,13 @@ namespace flame
 
 			windows.emplace_back(ret);
 			return ret;
+		}
+
+		std::vector<WindowPtr> windows;
+
+		const std::vector<WindowPtr> get_windows()
+		{
+			return windows;
 		}
 	}
 }

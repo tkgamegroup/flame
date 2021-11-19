@@ -70,10 +70,11 @@ namespace flame
 
 			for (auto it = windows.begin(); it != windows.end(); )
 			{
-				auto w = it->get();
-
-				if (w->dead)
+				if ((*it)->dead)
+				{
 					it = windows.erase(it);
+					delete *it;
+				}
 				else
 					it++;
 			}
