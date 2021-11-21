@@ -45,7 +45,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			PxSceneDesc desc(device->px_instance->getTolerancesScale());
 			desc.gravity = PxVec3(0.0f, gravity, 0.0f);

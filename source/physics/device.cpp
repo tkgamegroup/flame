@@ -5,7 +5,7 @@ namespace flame
 {
 	namespace physics
 	{
-		DevicePrivate* default_device = nullptr;
+		DevicePrivate* current_device = nullptr;
 
 		DevicePrivate::DevicePrivate()
 		{
@@ -24,25 +24,25 @@ namespace flame
 
 		DevicePrivate::~DevicePrivate()
 		{
-			if (default_device == this)
-				default_device = nullptr;
+			if (current_device == this)
+				current_device = nullptr;
 		}
 
 		Device* Device::get_default()
 		{
-			return default_device;
+			return current_device;
 		}
 
 		void Device::set_default(Device* device)
 		{
-			default_device = (DevicePrivate*)device;
+			current_device = (DevicePrivate*)device;
 		}
 
 		Device* Device::create()
 		{
 			auto ret = new DevicePrivate;
-			if (!default_device)
-				default_device = ret;
+			if (!current_device)
+				current_device = ret;
 			return ret;
 		}
 	}

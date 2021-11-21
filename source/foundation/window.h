@@ -84,7 +84,11 @@ namespace flame
 		virtual void* add_destroy_listener(const std::function<void()>& lis) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static NativeWindowPtr create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent = nullptr);
+		struct Create
+		{
+			virtual NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent = nullptr) = 0;
+		};
+		FLAME_FOUNDATION_EXPORTS static Create& create;
 	};
 
 	FLAME_FOUNDATION_EXPORTS const std::vector<NativeWindowPtr>& get_windows();

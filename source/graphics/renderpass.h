@@ -32,8 +32,17 @@ namespace flame
 
 			virtual ~Renderpass() {}
 
-			FLAME_GRAPHICS_EXPORTS static RenderpassPtr create(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies = {});
-			FLAME_GRAPHICS_EXPORTS static RenderpassPtr get(DevicePtr device, const std::filesystem::path& filename);
+			struct Create
+			{
+				virtual RenderpassPtr operator()(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies = {}) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				virtual RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct Framebuffer
@@ -43,7 +52,11 @@ namespace flame
 
 			virtual ~Framebuffer() {}
 
-			FLAME_GRAPHICS_EXPORTS static FramebufferPtr create(RenderpassPtr renderpass, std::span<ImageViewPtr> views);
+			struct Create
+			{
+				virtual FramebufferPtr operator()(RenderpassPtr renderpass, std::span<ImageViewPtr> views) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 	}
 }

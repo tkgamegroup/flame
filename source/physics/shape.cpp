@@ -16,7 +16,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			PxTolerancesScale scale;
 			PxCookingParams params(scale);
@@ -58,7 +58,7 @@ namespace flame
 			tess_levels(tess_levels)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto w = blocks.x * tess_levels;
 			auto h = blocks.y * tess_levels;
@@ -103,7 +103,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			type = ShapeBox;
 			px_shape.reset(device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material));
@@ -114,7 +114,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			type = ShapeSphere;
 			px_shape.reset(device->px_instance->createShape(PxSphereGeometry(radius), *material->px_material));
@@ -125,7 +125,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			type = ShapeCapsule;
 			px_shape.reset(device->px_instance->createShape(PxCapsuleGeometry(radius, height), *material->px_material));
@@ -137,7 +137,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			type = ShapeTriangleMesh;
 			px_shape.reset(device->px_instance->createShape(PxTriangleMeshGeometry(tri_mesh->px_triangle_mesh.get(), PxMeshScale(scale)), *material->px_material));
@@ -148,7 +148,7 @@ namespace flame
 			device(_device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			type = ShapeHeightField;
 			px_shape.reset(device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field.get(), PxMeshGeometryFlags(),

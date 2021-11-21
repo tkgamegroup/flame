@@ -51,7 +51,7 @@ namespace flame
 		WindowPtr Window::create(DevicePtr device, NativeWindow* native)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new WindowPrivate;
 			ret->device = device;

@@ -10,8 +10,12 @@ namespace flame
 		{
 			virtual ~Buffer() {}
 
-			FLAME_SOUND_EXPORTS static BufferPtr create(void* data, uint frequency = 44100, bool stereo = true, bool _16bit = true, float duration = 1.f);
-			FLAME_SOUND_EXPORTS static BufferPtr create(const std::filesystem::path& filename);
+			struct Create
+			{
+				virtual BufferPtr operator()(void* data, uint frequency = 44100, bool stereo = true, bool _16bit = true, float duration = 1.f) = 0;
+				virtual BufferPtr operator()(const std::filesystem::path& filename) = 0;
+			};
+			FLAME_SOUND_EXPORTS static Create& create;
 		};
 	}
 }

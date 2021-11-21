@@ -24,7 +24,7 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		extern DevicePrivate* default_device;
+		extern DevicePrivate* current_device;
 	}
 }
 

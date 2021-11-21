@@ -4,7 +4,7 @@ namespace flame
 {
 	namespace sound
 	{
-		DevicePrivate* default_device = nullptr;
+		DevicePtr current_device = nullptr;
 
 		DevicePrivate::~DevicePrivate()
 		{
@@ -12,16 +12,29 @@ namespace flame
 			alcCloseDevice(al_dev);
 		}
 
-		DevicePtr Device::create()
+		struct DeviceCreatePrivate : Device::Create
 		{
-			auto ret = new DevicePrivate;
-			ret->al_dev = alcOpenDevice(nullptr);
-			ret->al_ctx = alcCreateContext(ret->al_dev, nullptr);
-			alcMakeContextCurrent(ret->al_ctx);
-			if (!default_device)
-				default_device = ret;
-			return ret;
-		}
+			DevicePtr operator()() override
+			{
+				auto ret = new DevicePrivate;
+				ret->al_dev = alcOpenDevice(nullptr);
+				ret->al_ctx = alcCreateContext(ret->al_dev, nullptr);
+				alcMakeContextCurrent(ret->al_ctx);
+				if (!current_device)
+					current_device = ret;
+				return ret;
+			}
+		}device_create_private;
+		Device::Create& Device::create = device_create_private;
+
+		struct DeviceCurrentPrivate : Device::Current
+		{
+			DevicePtr& operator()() override
+			{
+				return current_device;
+			}
+		}device_current_private;
+		Device::Current& Device::current = device_current_private;
 
 		RecorderPrivate::~RecorderPrivate()
 		{
@@ -41,11 +54,15 @@ namespace flame
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		RecorderPtr Recorder::create(uint frequency, bool stereo, bool _16bit, float duration)
+		struct RecorderCreatePrivate : Recorder::Create
 		{
-			auto ret = new RecorderPrivate;
-			ret->al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
-			return ret;
-		}
+			RecorderPtr operator()(uint frequency, bool stereo, bool _16bit, float duration) override
+			{
+				auto ret = new RecorderPrivate;
+				ret->al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
+				return ret;
+			}
+		}recorder_create_private;
+		Recorder::Create& Recorder::create = recorder_create_private;
 	}
 }

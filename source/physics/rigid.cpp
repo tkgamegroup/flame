@@ -12,7 +12,7 @@ namespace flame
 			dynamic(dynamic)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			if (dynamic)
 			{

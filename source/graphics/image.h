@@ -84,10 +84,19 @@ namespace flame
 
 			virtual void save(const std::filesystem::path& filename) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
-			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static ImagePtr create(DevicePtr device, Format format, const uvec2& size, void* data);
-			FLAME_GRAPHICS_EXPORTS static ImagePtr get(DevicePtr device, const std::filesystem::path& filename, bool srgb);
+			struct Create
+			{
+				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false) = 0;
+				virtual ImagePtr operator()(DevicePtr device, Bitmap* bmp) = 0;
+				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct ImageView
@@ -106,7 +115,11 @@ namespace flame
 
 			virtual ~Sampler() {}
 
-			FLAME_GRAPHICS_EXPORTS static SamplerPtr get(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
+			struct Get
+			{
+				virtual SamplerPtr operator()(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct ImageAtlas
@@ -135,7 +148,12 @@ namespace flame
 				return -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static ImageAtlasPtr get(DevicePtr device, const std::filesystem::path& filename);
+			struct Get
+			{
+				virtual ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+			};
+
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 	}
 }

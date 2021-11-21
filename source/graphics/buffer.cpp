@@ -90,20 +90,24 @@ namespace flame
 			create();
 		}
 
-		BufferPtr Buffer::create(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
+		struct BufferCreatePrivate : Buffer::Create
 		{
-			if (!device)
-				device = default_device;
+			BufferPtr operator()(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new BufferPrivate;
-			ret->device = device;
-			ret->size = size;
-			ret->usage = usage;
-			ret->mem_prop = mem_prop;
-			ret->create();
+				auto ret = new BufferPrivate;
+				ret->device = device;
+				ret->size = size;
+				ret->usage = usage;
+				ret->mem_prop = mem_prop;
+				ret->create();
 
-			return ret;
-		}
+				return ret;
+			}
+		}buffer_create_private;
+		Buffer::Create& Buffer::create = buffer_create_private;
 	}
 }
 

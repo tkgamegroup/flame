@@ -387,7 +387,7 @@ namespace flame
 					assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
 						ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
 
-					std::vector<BoneKey> keys;
+					std::vector<Channel::Key> keys;
 					keys.resize(ai_ch->mNumPositionKeys);
 					for (auto k = 0; k < keys.size(); k++)
 					{
@@ -398,7 +398,7 @@ namespace flame
 					}
 					auto n_keys = n_channel.append_child("keys");
 					n_keys.append_attribute("offset").set_value(data_file.tellp());
-					auto size = sizeof(BoneKey) * keys.size();
+					auto size = sizeof(Channel::Key) * keys.size();
 					n_keys.append_attribute("size").set_value(size);
 					data_file.write((char*)keys.data(), size);
 				}
@@ -413,217 +413,226 @@ namespace flame
 		static ModelPtr standard_cube = nullptr;
 		static ModelPtr standard_sphere = nullptr;
 
-		ModelPtr Model::get_standard(std::string_view name)
-		{
-			if (name == "cube")
-			{
-				if (!standard_cube)
-				{
-					auto m = new ModelPrivate;
-					auto& mesh = m->meshes.emplace_back();
-					mesh.model = m;
-					mesh.materials.push_back(default_material);
-					mesh_add_cube(mesh, vec3(1.f), vec3(0.f), mat3(1.f));
-					mesh.calc_bounds();
-
-					standard_cube = m;
-				}
-				return standard_cube;
-			}
-			else if (name == "sphere")
-			{
-				if (!standard_sphere)
-				{
-					auto m = new ModelPrivate;
-					auto& mesh = m->meshes.emplace_back();
-					mesh.model = m;
-					mesh.materials.push_back(default_material);
-					mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f), mat3(1.f));
-					mesh.calc_bounds();
-
-					standard_sphere = m;
-				}
-				return standard_sphere;
-			}
-			return nullptr;
-		}
-
 		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ModelT>>> models;
 
-		ModelPtr Model::get(const std::filesystem::path& filename)
+		struct ModelGetPrivate : Model::Get
 		{
-			for (auto& m : models)
+			ModelPtr operator()(const std::filesystem::path& filename) override
 			{
-				if (m.first == filename)
-					return m.second.get();
+				if (filename.wstring().starts_with(L"standard:"))
+				{
+					auto name = filename.wstring().substr(9);
+					if (name == L"cube")
+					{
+						if (!standard_cube)
+						{
+							auto m = new ModelPrivate;
+							auto& mesh = m->meshes.emplace_back();
+							mesh.model = m;
+							mesh.materials.push_back(default_material);
+							mesh_add_cube(mesh, vec3(1.f), vec3(0.f), mat3(1.f));
+							mesh.calc_bounds();
+
+							standard_cube = m;
+						}
+						return standard_cube;
+					}
+					else if (name == L"sphere")
+					{
+						if (!standard_sphere)
+						{
+							auto m = new ModelPrivate;
+							auto& mesh = m->meshes.emplace_back();
+							mesh.model = m;
+							mesh.materials.push_back(default_material);
+							mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f), mat3(1.f));
+							mesh.calc_bounds();
+
+							standard_sphere = m;
+						}
+						return standard_sphere;
+					}
+					return nullptr;
+				}
+
+				for (auto& m : models)
+				{
+					if (m.first == filename)
+						return m.second.get();
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find model: %s\n", filename.c_str());
+					return nullptr;
+				}
+
+				if (filename.extension() != L".fmod")
+					return nullptr;
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
+				{
+					printf("model does not exist: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				auto model_data_filename = filename;
+				model_data_filename += L".dat";
+				std::ifstream model_data_file(model_data_filename, std::ios::binary);
+				if (!model_data_file.good())
+				{
+					printf("missing .dat file for: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				auto ret = new ModelPrivate();
+				ret->filename = filename;
+				auto ppath = filename.parent_path();
+
+				for (auto& n_mesh : doc_root.child("meshes"))
+				{
+					auto& m = ret->meshes.emplace_back();
+					m.model = ret;
+					for (auto& sp : SUS::split(n_mesh.attribute("material").value()))
+					{
+						auto material_filename = std::filesystem::path(sp);
+						auto fn = ppath / material_filename;
+						if (!std::filesystem::exists(fn))
+							fn = material_filename;
+						m.materials.push_back(MaterialPrivate::get(fn.c_str()));
+					}
+
+					auto n_positions = n_mesh.child("positions");
+					{
+						auto offset = n_positions.attribute("offset").as_uint();
+						auto size = n_positions.attribute("size").as_uint();
+						m.positions.resize(size / sizeof(vec3));
+						model_data_file.read((char*)m.positions.data(), size);
+					}
+
+					auto n_uvs = n_mesh.child("uvs");
+					if (n_uvs)
+					{
+						auto offset = n_uvs.attribute("offset").as_uint();
+						auto size = n_uvs.attribute("size").as_uint();
+						m.uvs.resize(size / sizeof(vec2));
+						model_data_file.read((char*)m.uvs.data(), size);
+					}
+
+					auto n_normals = n_mesh.child("normals");
+					if (n_normals)
+					{
+						auto offset = n_normals.attribute("offset").as_uint();
+						auto size = n_normals.attribute("size").as_uint();
+						m.normals.resize(size / sizeof(vec3));
+						model_data_file.read((char*)m.normals.data(), size);
+					}
+
+					auto n_bids = n_mesh.child("bone_ids");
+					if (n_bids)
+					{
+						auto offset = n_bids.attribute("offset").as_uint();
+						auto size = n_bids.attribute("size").as_uint();
+						m.bone_ids.resize(size / sizeof(ivec4));
+						model_data_file.read((char*)m.bone_ids.data(), size);
+					}
+
+					auto n_wgts = n_mesh.child("bone_weights");
+					if (n_wgts)
+					{
+						auto offset = n_wgts.attribute("offset").as_uint();
+						auto size = n_wgts.attribute("size").as_uint();
+						m.bone_weights.resize(size / sizeof(vec4));
+						model_data_file.read((char*)m.bone_weights.data(), size);
+					}
+
+					auto n_indices = n_mesh.child("indices");
+					{
+						auto offset = n_indices.attribute("offset").as_uint();
+						auto size = n_indices.attribute("size").as_uint();
+						m.indices.resize(size / sizeof(uint));
+						model_data_file.read((char*)m.indices.data(), size);
+					}
+
+					m.bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
+				}
+
+				for (auto n_bone : doc_root.child("bones"))
+				{
+					auto& b = ret->bones.emplace_back();
+					b.name = n_bone.attribute("name").value();
+					{
+						auto n_matrix = n_bone.child("offset_matrix");
+						auto offset = n_matrix.attribute("offset").as_uint();
+						auto size = n_matrix.attribute("size").as_uint();
+						model_data_file.read((char*)&b.offset_matrix, size);
+					}
+				}
+
+				model_data_file.close();
+
+				models.emplace_back(filename, ret);
+
+				return ret;
 			}
-
-			if (!std::filesystem::exists(filename))
-			{
-				wprintf(L"cannot find model: %s\n", filename.c_str());
-				return nullptr;
-			}
-
-			if (filename.extension() != L".fmod")
-				return nullptr;
-
-			pugi::xml_document doc;
-			pugi::xml_node doc_root;
-			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
-			{
-				printf("model does not exist: %s\n", filename.string().c_str());
-				return nullptr;
-			}
-
-			auto model_data_filename = filename;
-			model_data_filename += L".dat";
-			std::ifstream model_data_file(model_data_filename, std::ios::binary);
-			if (!model_data_file.good())
-			{
-				printf("missing .dat file for: %s\n", filename.string().c_str());
-				return nullptr;
-			}
-
-			auto ret = new ModelPrivate();
-			ret->filename = filename;
-			auto ppath = filename.parent_path();
-
-			for (auto& n_mesh : doc_root.child("meshes"))
-			{
-				auto& m = ret->meshes.emplace_back();
-				m.model = ret;
-				for (auto& sp : SUS::split(n_mesh.attribute("material").value()))
-				{
-					auto material_filename = std::filesystem::path(sp);
-					auto fn = ppath / material_filename;
-					if (!std::filesystem::exists(fn))
-						fn = material_filename;
-					m.materials.push_back(MaterialPrivate::get(fn.c_str()));
-				}
-
-				auto n_positions = n_mesh.child("positions");
-				{
-					auto offset = n_positions.attribute("offset").as_uint();
-					auto size = n_positions.attribute("size").as_uint();
-					m.positions.resize(size / sizeof(vec3));
-					model_data_file.read((char*)m.positions.data(), size);
-				}
-
-				auto n_uvs = n_mesh.child("uvs");
-				if (n_uvs)
-				{
-					auto offset = n_uvs.attribute("offset").as_uint();
-					auto size = n_uvs.attribute("size").as_uint();
-					m.uvs.resize(size / sizeof(vec2));
-					model_data_file.read((char*)m.uvs.data(), size);
-				}
-
-				auto n_normals = n_mesh.child("normals");
-				if (n_normals)
-				{
-					auto offset = n_normals.attribute("offset").as_uint();
-					auto size = n_normals.attribute("size").as_uint();
-					m.normals.resize(size / sizeof(vec3));
-					model_data_file.read((char*)m.normals.data(), size);
-				}
-
-				auto n_bids = n_mesh.child("bone_ids");
-				if (n_bids)
-				{
-					auto offset = n_bids.attribute("offset").as_uint();
-					auto size = n_bids.attribute("size").as_uint();
-					m.bone_ids.resize(size / sizeof(ivec4));
-					model_data_file.read((char*)m.bone_ids.data(), size);
-				}
-
-				auto n_wgts = n_mesh.child("bone_weights");
-				if (n_wgts)
-				{
-					auto offset = n_wgts.attribute("offset").as_uint();
-					auto size = n_wgts.attribute("size").as_uint();
-					m.bone_weights.resize(size / sizeof(vec4));
-					model_data_file.read((char*)m.bone_weights.data(), size);
-				}
-
-				auto n_indices = n_mesh.child("indices");
-				{
-					auto offset = n_indices.attribute("offset").as_uint();
-					auto size = n_indices.attribute("size").as_uint();
-					m.indices.resize(size / sizeof(uint));
-					model_data_file.read((char*)m.indices.data(), size);
-				}
-
-				m.bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
-			}
-
-			for (auto n_bone : doc_root.child("bones"))
-			{
-				auto& b = ret->bones.emplace_back();
-				b.name = n_bone.attribute("name").value();
-				{
-					auto n_matrix = n_bone.child("offset_matrix");
-					auto offset = n_matrix.attribute("offset").as_uint();
-					auto size = n_matrix.attribute("size").as_uint();
-					model_data_file.read((char*)&b.offset_matrix, size);
-				}
-			}
-
-			model_data_file.close();
-
-			models.emplace_back(filename, ret);
-
-			return ret;
-		}
+		}model_get_private;
+		Model::Get& Model::get = model_get_private;
 
 		static std::vector<std::unique_ptr<AnimationT>> animations;
 
-		AnimationPtr Animation::get(const std::filesystem::path& filename)
+		struct AnimationGetPrivate : Animation::Get 
 		{
-			for (auto& a : animations)
+			AnimationPtr operator()(const std::filesystem::path& filename) override
 			{
-				if (a->filename == filename)
-					return a.get();
-			}
-
-			pugi::xml_document doc;
-			pugi::xml_node doc_root;
-			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("animation"))
-			{
-				printf("animation does not exist: %s\n", filename.string().c_str());
-				return nullptr;
-			}
-
-			auto data_filename = filename;
-			data_filename += L".dat";
-			std::ifstream data_file(data_filename, std::ios::binary);
-			if (!data_file.good())
-			{
-				printf("missing .dat file for: %s\n", filename.string().c_str());
-				return nullptr;
-			}
-
-			auto ret = new AnimationPrivate;
-			ret->filename = filename;
-
-			for (auto n_channel : doc_root.child("channels"))
-			{
-				auto& c = ret->channels.emplace_back();
-				c.node_name = n_channel.attribute("node_name").value();
+				for (auto& a : animations)
 				{
-					auto n_keys = n_channel.child("keys");
-					auto offset = n_keys.attribute("offset").as_uint();
-					auto size = n_keys.attribute("size").as_uint();
-					c.keys.resize(size / sizeof(Channel::Key));
-					data_file.read((char*)c.keys.data(), size);
+					if (a->filename == filename)
+						return a.get();
 				}
-				ret->channels.emplace_back(c);
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("animation"))
+				{
+					printf("animation does not exist: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				auto data_filename = filename;
+				data_filename += L".dat";
+				std::ifstream data_file(data_filename, std::ios::binary);
+				if (!data_file.good())
+				{
+					printf("missing .dat file for: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				auto ret = new AnimationPrivate;
+				ret->filename = filename;
+
+				for (auto n_channel : doc_root.child("channels"))
+				{
+					auto& c = ret->channels.emplace_back();
+					c.node_name = n_channel.attribute("node_name").value();
+					{
+						auto n_keys = n_channel.child("keys");
+						auto offset = n_keys.attribute("offset").as_uint();
+						auto size = n_keys.attribute("size").as_uint();
+						c.keys.resize(size / sizeof(Channel::Key));
+						data_file.read((char*)c.keys.data(), size);
+					}
+					ret->channels.emplace_back(c);
+				}
+
+				data_file.close();
+
+				animations.emplace_back(ret);
+
+				return ret;
 			}
-
-			data_file.close();
-
-			animations.emplace_back(ret);
-
-			return ret;
-		}
+		}animation_get_private;
+		Animation::Get& Animation::get = animation_get_private;
 	}
 }

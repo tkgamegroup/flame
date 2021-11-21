@@ -324,101 +324,105 @@ namespace flame
 		});
 	}
 
-	NativeWindowPtr NativeWindow::create(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent)
+	struct NativeWindowCreatePrivate : NativeWindow::Create
 	{
-		static bool initialized = false;
-		if (!initialized)
+		NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent) override
 		{
-			WNDCLASSEXW wcex;
-			wcex.cbSize = sizeof(WNDCLASSEXW);
-			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = wnd_proc;
-			wcex.cbClsExtra = 0;
-			wcex.cbWndExtra = sizeof(void*);
-			wcex.hInstance = (HINSTANCE)get_hinst();
-			wcex.hIcon = 0;
-			auto icon_fn = getenv("FLAME_PATH") / std::filesystem::path(L"default_assets\\ico.png");
-			if (std::filesystem::exists(icon_fn))
+			static bool initialized = false;
+			if (!initialized)
 			{
-				std::unique_ptr<Bitmap> icon_image(Bitmap::create(icon_fn));
-				icon_image->swap_channel(0, 2);
-				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1, icon_image->bpp, nullptr, icon_image->data);
+				WNDCLASSEXW wcex;
+				wcex.cbSize = sizeof(WNDCLASSEXW);
+				wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+				wcex.lpfnWndProc = wnd_proc;
+				wcex.cbClsExtra = 0;
+				wcex.cbWndExtra = sizeof(void*);
+				wcex.hInstance = (HINSTANCE)get_hinst();
+				wcex.hIcon = 0;
+				auto icon_fn = getenv("FLAME_PATH") / std::filesystem::path(L"default_assets\\ico.png");
+				if (std::filesystem::exists(icon_fn))
+				{
+					std::unique_ptr<Bitmap> icon_image(Bitmap::create(icon_fn));
+					icon_image->swap_channel(0, 2);
+					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1, icon_image->bpp, nullptr, icon_image->data);
+				}
+				wcex.hCursor = NULL;
+				wcex.hbrBackground = 0;
+				wcex.lpszMenuName = 0;
+				wcex.lpszClassName = L"flame_wnd";
+				wcex.hIconSm = wcex.hIcon;
+				RegisterClassExW(&wcex);
+
+				initialized = true;
 			}
-			wcex.hCursor = NULL;
-			wcex.hbrBackground = 0;
-			wcex.lpszMenuName = 0;
-			wcex.lpszClassName = L"flame_wnd";
-			wcex.hIconSm = wcex.hIcon;
-			RegisterClassExW(&wcex);
 
-			initialized = true;
+			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+
+			auto ret = new NativeWindowPrivate;
+			ret->title = title;
+			ret->style = style;
+
+			uvec2 final_size;
+			auto screen_size = get_screen_size();
+
+			auto win32_style = WS_VISIBLE;
+			if (style == 0)
+				win32_style |= WS_POPUP | WS_BORDER;
+			else
+			{
+				if (style & WindowFrame)
+					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+				if (style & WindowResizable)
+					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+				if (style & WindowFullscreen)
+					final_size = screen_size;
+				if (style & WindowMaximized)
+					win32_style |= WS_MAXIMIZE;
+			}
+
+			auto win32_ex_style = 0L;
+			if (style & WindowTopmost)
+				win32_ex_style |= WS_EX_TOPMOST;
+
+			{
+				RECT rect = { 0, 0, size.x, size.y };
+				AdjustWindowRect(&rect, win32_style, false);
+				final_size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
+			}
+			ret->pos = ivec2(screen_size - final_size) / 2;
+			ret->hWnd = CreateWindowExA(win32_ex_style, "flame_wnd", title.data(), win32_style,
+				ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+			assert(IsWindowUnicode(ret->hWnd));
+			{
+				RECT rect;
+				GetClientRect(ret->hWnd, &rect);
+				ret->size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
+			}
+
+			SetWindowLongPtr(ret->hWnd, 0, (LONG_PTR)ret);
+
+			ret->cursors[CursorAppStarting] = LoadCursorA(nullptr, IDC_APPSTARTING);
+			ret->cursors[CursorArrow] = LoadCursorA(nullptr, IDC_ARROW);
+			ret->cursors[CursorCross] = LoadCursorA(nullptr, IDC_CROSS);
+			ret->cursors[CursorHand] = LoadCursorA(nullptr, IDC_HAND);
+			ret->cursors[CursorHelp] = LoadCursorA(nullptr, IDC_HELP);
+			ret->cursors[CursorIBeam] = LoadCursorA(nullptr, IDC_IBEAM);
+			ret->cursors[CursorNo] = LoadCursorA(nullptr, IDC_NO);
+			ret->cursors[CursorSizeAll] = LoadCursorA(nullptr, IDC_SIZEALL);
+			ret->cursors[CursorSizeNESW] = LoadCursorA(nullptr, IDC_SIZENESW);
+			ret->cursors[CursorSizeNS] = LoadCursorA(nullptr, IDC_SIZENS);
+			ret->cursors[CursorSizeNWSE] = LoadCursorA(nullptr, IDC_SIZENWSE);
+			ret->cursors[CursorSizeWE] = LoadCursorA(nullptr, IDC_SIZEWE);
+			ret->cursors[CursorUpArrwo] = LoadCursorA(nullptr, IDC_UPARROW);
+			ret->cursors[CursorWait] = LoadCursorA(nullptr, IDC_WAIT);
+
+			ret->set_cursor(CursorArrow);
+
+			windows.emplace_back(ret);
+			return ret;
 		}
-
-		assert(!(style& WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
-
-		auto ret = new NativeWindowPrivate;
-		ret->title = title;
-		ret->style = style;
-
-		uvec2 final_size;
-		auto screen_size = get_screen_size();
-
-		auto win32_style = WS_VISIBLE;
-		if (style == 0)
-			win32_style |= WS_POPUP | WS_BORDER;
-		else
-		{
-			if (style & WindowFrame)
-				win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-			if (style & WindowResizable)
-				win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-			if (style & WindowFullscreen)
-				final_size = screen_size;
-			if (style & WindowMaximized)
-				win32_style |= WS_MAXIMIZE;
-		}
-
-		auto win32_ex_style = 0L;
-		if (style & WindowTopmost)
-			win32_ex_style |= WS_EX_TOPMOST;
-
-		{
-			RECT rect = { 0, 0, size.x, size.y };
-			AdjustWindowRect(&rect, win32_style, false);
-			final_size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
-		}
-		ret->pos = ivec2(screen_size - final_size) / 2;
-		ret->hWnd = CreateWindowExA(win32_ex_style, "flame_wnd", title.data(), win32_style,
-			ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
-		assert(IsWindowUnicode(ret->hWnd));
-		{
-			RECT rect;
-			GetClientRect(ret->hWnd, &rect);
-			ret->size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
-		}
-
-		SetWindowLongPtr(ret->hWnd, 0, (LONG_PTR)ret);
-
-		ret->cursors[CursorAppStarting] = LoadCursorA(nullptr, IDC_APPSTARTING);
-		ret->cursors[CursorArrow] = LoadCursorA(nullptr, IDC_ARROW);
-		ret->cursors[CursorCross] = LoadCursorA(nullptr, IDC_CROSS);
-		ret->cursors[CursorHand] = LoadCursorA(nullptr, IDC_HAND);
-		ret->cursors[CursorHelp] = LoadCursorA(nullptr, IDC_HELP);
-		ret->cursors[CursorIBeam] = LoadCursorA(nullptr, IDC_IBEAM);
-		ret->cursors[CursorNo] = LoadCursorA(nullptr, IDC_NO);
-		ret->cursors[CursorSizeAll] = LoadCursorA(nullptr, IDC_SIZEALL);
-		ret->cursors[CursorSizeNESW] = LoadCursorA(nullptr, IDC_SIZENESW);
-		ret->cursors[CursorSizeNS] = LoadCursorA(nullptr, IDC_SIZENS);
-		ret->cursors[CursorSizeNWSE] = LoadCursorA(nullptr, IDC_SIZENWSE);
-		ret->cursors[CursorSizeWE] = LoadCursorA(nullptr, IDC_SIZEWE);
-		ret->cursors[CursorUpArrwo] = LoadCursorA(nullptr, IDC_UPARROW);
-		ret->cursors[CursorWait] = LoadCursorA(nullptr, IDC_WAIT);
-
-		ret->set_cursor(CursorArrow);
-
-		windows.emplace_back(ret);
-		return ret;
-	}
+	}native_window_create;
+	NativeWindow::Create& NativeWindow::create = native_window_create;
 
 	std::vector<NativeWindowPtr> windows;
 

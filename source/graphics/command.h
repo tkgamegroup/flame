@@ -10,8 +10,17 @@ namespace flame
 		{
 			virtual ~CommandPool() {}
 
-			FLAME_GRAPHICS_EXPORTS static CommandPoolPtr get(DevicePtr device = nullptr, QueueFamily family = QueueGraphics);
-			FLAME_GRAPHICS_EXPORTS static CommandPoolPtr create(DevicePtr device, int queue_family_idx);
+			struct Get
+			{
+				virtual CommandPoolPtr operator()(DevicePtr device = nullptr, QueueFamily family = QueueGraphics) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
+
+			struct Create
+			{
+				virtual CommandPoolPtr operator()(DevicePtr device, int queue_family_idx) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct BufferCopy
@@ -112,7 +121,11 @@ namespace flame
 
 			virtual void end() = 0;
 
-			FLAME_GRAPHICS_EXPORTS  static CommandBufferPtr create(CommandPoolPtr p, bool sub = false);
+			struct Create
+			{
+				virtual CommandBufferPtr operator()(CommandPoolPtr p, bool sub = false) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct Queue
@@ -128,15 +141,28 @@ namespace flame
 			}
 			virtual void present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static QueuePtr get(DevicePtr device, QueueFamily family = QueueGraphics);
-			FLAME_GRAPHICS_EXPORTS static QueuePtr create(DevicePtr device, uint queue_family_idx);
+			struct Get
+			{
+				virtual QueuePtr operator()(DevicePtr device, QueueFamily family = QueueGraphics) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
+
+			struct Create
+			{
+				virtual QueuePtr operator()(DevicePtr device, uint queue_family_idx) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct Semaphore
 		{
 			virtual ~Semaphore() {}
 
-			FLAME_GRAPHICS_EXPORTS static SemaphorePtr create(DevicePtr device);
+			struct Create
+			{
+				virtual SemaphorePtr operator()(DevicePtr device) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct Fence
@@ -145,7 +171,11 @@ namespace flame
 
 			virtual void wait(bool auto_reset = true) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static FencePtr create(DevicePtr device, bool signaled = true);
+			struct Create
+			{
+				virtual FencePtr operator()(DevicePtr device, bool signaled = true) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 	}
 }

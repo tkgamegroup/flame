@@ -10,7 +10,7 @@ namespace flame
 			alDeleteSources(1, &al_src);
 		}
 
-		void SourcePrivate::set_volume(float v) 
+		void SourcePrivate::set_volume(float v)
 		{
 			alSourcef(al_src, AL_GAIN, v);
 		}
@@ -36,12 +36,16 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
-		SourcePtr Source::create(BufferPtr buffer)
+		struct SourceCreatePrivate : Source::Create
 		{
-			auto ret = new SourcePrivate;
-			alGenSources(1, &ret->al_src);
-			alSourcei(ret->al_src, AL_BUFFER, buffer->al_buf);
-			return ret;
-		}
+			SourcePtr operator()(BufferPtr buffer) override
+			{
+				auto ret = new SourcePrivate;
+				alGenSources(1, &ret->al_src);
+				alSourcei(ret->al_src, AL_BUFFER, buffer->al_buf);
+				return ret;
+			}
+		}source_create_private;
+		Source::Create& Source::create = source_create_private;
 	}
 }

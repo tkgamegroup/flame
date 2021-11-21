@@ -131,7 +131,7 @@ namespace flame
 		SwapchainPtr Swapchain::create(DevicePtr device, NativeWindow* window)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new SwapchainPrivate;
 			ret->device = device;

@@ -19,7 +19,12 @@ namespace flame
 			virtual int acquire_image() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Format format;
-			FLAME_GRAPHICS_EXPORTS static SwapchainPtr create(DevicePtr device, NativeWindow* window);
+
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static SwapchainPtr create(DevicePtr device, NativeWindow* window);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 	}
 }

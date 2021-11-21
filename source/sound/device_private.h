@@ -7,6 +7,8 @@ namespace flame
 {
 	namespace sound
 	{
+		extern DevicePtr current_device;
+
 		struct DevicePrivate : Device
 		{
 			ALCdevice *al_dev;

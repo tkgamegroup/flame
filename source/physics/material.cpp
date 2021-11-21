@@ -12,7 +12,7 @@ namespace flame
 			restitution(restitution)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			px_material.reset(device->px_instance->createMaterial(static_friction, dynamic_friction, restitution));
 		}
@@ -20,7 +20,7 @@ namespace flame
 		MaterialPrivate* MaterialPrivate::get(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 			for (auto& m : device->materials)
 			{
 				if (epsilonEqual(m->static_friction, static_friction, 0.0001f) &&

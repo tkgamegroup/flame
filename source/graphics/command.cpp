@@ -16,39 +16,47 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
-		CommandPoolPtr CommandPool::get(DevicePtr device, QueueFamily family)
+		struct CommandPoolGetPrivate : CommandPool::Get
 		{
-			if (!device)
-				device = default_device;
-
-			switch (family)
+			CommandPoolPtr operator()(DevicePtr device, QueueFamily family) override
 			{
-			case QueueGraphics:
-				return device->gcp.get();
-			case QueueTransfer:
-				return device->tcp.get();
+				if (!device)
+					device = current_device;
+
+				switch (family)
+				{
+				case QueueGraphics:
+					return device->gcp.get();
+				case QueueTransfer:
+					return device->tcp.get();
+				}
+				return nullptr;
 			}
-			return nullptr;
-		}
+		}command_pool_get_private;
+		CommandPool::Get& CommandPool::get = command_pool_get_private;
 
-		CommandPoolPtr CommandPool::create(DevicePtr device, int queue_family_idx)
+		struct CommandPoolCreatePrivate : CommandPool::Create
 		{
-			if (!device)
-				device = default_device;
+			CommandPoolPtr operator()(DevicePtr device, int queue_family_idx) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new CommandPoolPrivate;
-			ret->device = device;
+				auto ret = new CommandPoolPrivate;
+				ret->device = device;
 
-			VkCommandPoolCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-			info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-			info.pNext = nullptr;
-			info.queueFamilyIndex = queue_family_idx;
+				VkCommandPoolCreateInfo info;
+				info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+				info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+				info.pNext = nullptr;
+				info.queueFamilyIndex = queue_family_idx;
 
-			chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
+				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
 
-			return ret;
-		}
+				return ret;
+			}
+		}command_pool_create_private;
+		CommandPool::Create& CommandPool::create = command_pool_create_private;
 
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
@@ -483,28 +491,32 @@ namespace flame
 			chk_res(vkEndCommandBuffer(vk_command_buffer));
 		}
 
-		CommandBufferPtr CommandBuffer::create(CommandPoolPtr pool, bool sub)
+		struct CommandBufferCreatePrivate : CommandBuffer::Create
 		{
-			if (!pool)
-				pool = CommandPool::get();
+			CommandBufferPtr operator()(CommandPoolPtr pool, bool sub) override
+			{
+				if (!pool)
+					pool = CommandPool::get();
 
-			auto ret = new CommandBufferPrivate;
-			ret->pool = pool;
+				auto ret = new CommandBufferPrivate;
+				ret->pool = pool;
 
-			VkCommandBufferAllocateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-			info.pNext = nullptr;
-			info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-			info.commandPool = pool->vk_command_buffer_pool;
-			info.commandBufferCount = 1;
+				VkCommandBufferAllocateInfo info;
+				info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+				info.pNext = nullptr;
+				info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+				info.commandPool = pool->vk_command_buffer_pool;
+				info.commandBufferCount = 1;
 
-			chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &ret->vk_command_buffer));
+				chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &ret->vk_command_buffer));
 
-			ret->begin();
-			ret->end();
+				ret->begin();
+				ret->end();
 
-			return ret;
-		}
+				return ret;
+			}
+		}command_buffer_create_private;
+		CommandBuffer::Create& CommandBuffer::create = command_buffer_create_private;
 
 		void QueuePrivate::wait_idle()
 		{
@@ -548,53 +560,65 @@ namespace flame
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 
-		QueuePtr Queue::get(DevicePtr device, QueueFamily family)
+		struct QueueGetPrivate : Queue::Get
 		{
-			if (!device)
-				device = default_device;
-
-			switch (family)
+			QueuePtr operator()(DevicePtr device, QueueFamily family) override
 			{
-			case QueueGraphics:
-				return device->gq.get();
-			case QueueTransfer:
-				return device->tq.get();
+				if (!device)
+					device = current_device;
+
+				switch (family)
+				{
+				case QueueGraphics:
+					return device->gq.get();
+				case QueueTransfer:
+					return device->tq.get();
+				}
+				return nullptr;
 			}
-			return nullptr;
-		}
+		}queue_get_private;
+		Queue::Get& Queue::get = queue_get_private;
 
-		QueuePtr Queue::create(DevicePtr device, uint queue_family_idx)
+		struct QueueCreatePrivate : Queue::Create
 		{
-			if (!device)
-				device = default_device;
+			QueuePtr operator()(DevicePtr device, uint queue_family_idx) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new QueuePrivate;
-			ret->device = device;
+				auto ret = new QueuePrivate;
+				ret->device = device;
 
-			vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
+				vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
 
-			return ret;
-		}
+				return ret;
+			}
+		}queue_create_private;
+		Queue::Create& Queue::create = queue_create_private;
 
 		SemaphorePrivate::~SemaphorePrivate()
 		{
 			vkDestroySemaphore(device->vk_device, vk_semaphore, nullptr);
 		}
 
-		SemaphorePtr Semaphore::create(DevicePtr device)
+		struct SemaphoreCreatePrivate : Semaphore::Create
 		{
-			if (!device)
-				device = default_device;
+			SemaphorePtr operator()(DevicePtr device) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new SemaphorePrivate;
-			ret->device = device;
+				auto ret = new SemaphorePrivate;
+				ret->device = device;
 
-			VkSemaphoreCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-			chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
+				VkSemaphoreCreateInfo info = {};
+				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+				chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
 
-			return ret;
-		}
+				return ret;
+			}
+		}semaphore_create_private;
+		Semaphore::Create& Semaphore::create = semaphore_create_private;
 
 		FencePrivate::~FencePrivate()
 		{
@@ -614,24 +638,28 @@ namespace flame
 			}
 		}
 
-		FencePtr Fence::create(DevicePtr device, bool signaled)
+		struct FenceCreatePrivate : Fence::Create
 		{
-			if (!device)
-				device = default_device;
-
-			auto ret = new FencePrivate;
-			ret->device = device;
-
-			VkFenceCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			if (signaled)
+			FencePtr operator()(DevicePtr device, bool signaled) override
 			{
-				info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-				ret->value = 1;
-			}
-			chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
+				if (!device)
+					device = current_device;
 
-			return ret;
-		}
+				auto ret = new FencePrivate;
+				ret->device = device;
+
+				VkFenceCreateInfo info = {};
+				info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+				if (signaled)
+				{
+					info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+					ret->value = 1;
+				}
+				chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
+
+				return ret;
+			}
+		}fence_create_private;
+		Fence::Create& Fence::create = fence_create_private;
 	}
 }

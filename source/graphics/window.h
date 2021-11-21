@@ -20,7 +20,11 @@ namespace flame
 
 			virtual void update() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static WindowPtr create(DevicePtr device, NativeWindow* native);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static WindowPtr create(DevicePtr device, NativeWindow* native);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		FLAME_GRAPHICS_EXPORTS const std::vector<WindowPtr> get_windows();

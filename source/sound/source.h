@@ -15,7 +15,11 @@ namespace flame
 			virtual void play() = 0;
 			virtual void stop() = 0;
 
-			FLAME_SOUND_EXPORTS static SourcePtr create(BufferPtr buffer);
+			struct Create
+			{
+				virtual SourcePtr operator()(BufferPtr buffer) = 0;
+			};
+			FLAME_SOUND_EXPORTS static Create& create;
 		};
 	}
 }

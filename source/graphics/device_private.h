@@ -7,6 +7,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		extern DevicePtr current_device;
+
 		struct DevicePrivate : Device
 		{
 			VkInstance vk_instance;

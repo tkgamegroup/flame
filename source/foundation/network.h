@@ -22,7 +22,11 @@ namespace flame
 
 			virtual void send(std::string_view msg) = 0;
 
-			FLAME_FOUNDATION_EXPORTS static ClientPtr create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close);
+			struct Create
+			{
+				virtual ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
+			};
+			FLAME_FOUNDATION_EXPORTS static Create& create;
 		};
 
 		struct Server
@@ -32,7 +36,11 @@ namespace flame
 			virtual void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
 			virtual void send(void* id, std::string_view msg, bool dgram) = 0;
 
-			FLAME_FOUNDATION_EXPORTS static ServerPtr create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect);
+			struct Create
+			{
+				virtual ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) = 0;
+			};
+			FLAME_FOUNDATION_EXPORTS static Create& create;
 		};
 
 		struct FrameSyncServer
@@ -41,7 +49,11 @@ namespace flame
 
 			virtual bool send(uint idx, std::string_view msg) = 0;
 
-			FLAME_FOUNDATION_EXPORTS static FrameSyncServerPtr create(SocketType type, uint port, uint num_clients);
+			struct Create
+			{
+				virtual FrameSyncServerPtr operator()(SocketType type, uint port, uint num_clients) = 0;
+			};
+			FLAME_FOUNDATION_EXPORTS static Create& create;
 		};
 
 		// timeout: second

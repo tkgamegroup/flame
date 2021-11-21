@@ -12,10 +12,18 @@ namespace flame
 
 			virtual bool has_feature(Feature f) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DevicePtr create(bool debug);
-		};
+			struct Create
+			{
+				virtual DevicePtr operator()(bool debug) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 
-		FLAME_GRAPHICS_EXPORTS extern DevicePtr default_device;
+			struct Current
+			{
+				virtual DevicePtr& operator()() = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Current& current;
+		};
 	}
 }
 

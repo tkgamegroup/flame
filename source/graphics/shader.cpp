@@ -19,10 +19,18 @@ namespace flame
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
 		}
 
+		struct DescriptorPoolCreatePrivate : DescriptorPool::Create
+		{
+		};
+
+		struct DescriptorPoolGetPrivate : DescriptorPool::Get
+		{
+		};
+
 		DescriptorPoolPtr DescriptorPool::get_default(DevicePtr device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			return device->dsp.get();
 		}
@@ -30,7 +38,7 @@ namespace flame
 		DescriptorPoolPtr DescriptorPool::create(DevicePtr device)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new DescriptorPoolPrivate;
 			ret->device = device;
@@ -404,10 +412,18 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
+		struct DescriptorSetLayoutCreatePrivate : DescriptorSetLayout::Create
+		{
+		};
+
+		struct DescriptorSetLayoutGetPrivate : DescriptorSetLayout::Get
+		{
+		};
+
 		DescriptorSetLayoutPtr DescriptorSetLayout::create(DevicePtr device, std::span<DescriptorBinding> bindings)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new DescriptorSetLayoutPrivate;
 			ret->device = device;
@@ -441,7 +457,7 @@ namespace flame
 		DescriptorSetLayoutPtr DescriptorSetLayout::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"default_assets\\shaders"))
@@ -746,6 +762,10 @@ namespace flame
 			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 
+		struct DescriptorSetCreatePrivate : DescriptorSet::Create
+		{
+		};
+
 		DescriptorSetPtr DescriptorSet::create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout)
 		{
 			if (!pool)
@@ -776,10 +796,14 @@ namespace flame
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
+		struct PipelineLayoutCreatePrivate : PipelineLayout::Create
+		{
+		};
+
 		PipelineLayoutPtr PipelineLayout::create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new PipelineLayoutPrivate;
 			ret->device = device;
@@ -813,7 +837,7 @@ namespace flame
 		PipelineLayoutPtr PipelineLayout::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"default_assets\\shaders"))
@@ -1015,7 +1039,7 @@ namespace flame
 		ShaderPtr Shader::get(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"default_assets\\shaders"))
@@ -1183,7 +1207,7 @@ namespace flame
 		GraphicsPipelinePtr GraphicsPipeline::create(DevicePtr device, const GraphicsPipelineInfo& info)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new GraphicsPipelinePrivate;
 			ret->device = device;
@@ -1407,7 +1431,7 @@ namespace flame
 		GraphicsPipelinePtr GraphicsPipeline::get(DevicePtr device, const std::filesystem::path& _filename)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto filename = _filename;
 			if (!get_engine_path(filename, L"default_assets\\shaders"))
@@ -1518,7 +1542,7 @@ namespace flame
 		ComputePipelinePtr ComputePipeline::create(DevicePtr device, const ComputePipelineInfo& info)
 		{
 			if (!device)
-				device = default_device;
+				device = current_device;
 
 			auto ret = new ComputePipelinePrivate;
 			ret->device = device;

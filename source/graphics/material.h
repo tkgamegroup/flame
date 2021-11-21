@@ -21,8 +21,6 @@ namespace flame
 				bool auto_mipmap = false;
 			};
 
-			std::filesystem::path filename;
-
 			vec4 color = vec4(1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;
@@ -34,7 +32,13 @@ namespace flame
 
 			Texture textures[MaxMaterialTexturesCount] = {};
 
-			FLAME_GRAPHICS_EXPORTS static MaterialPtr get(const std::filesystem::path& filename);
+			std::filesystem::path filename;
+
+			struct Get
+			{
+				virtual MaterialPtr operator()(const std::filesystem::path& filename) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 	}
 }

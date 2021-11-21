@@ -10,8 +10,17 @@ namespace flame
 		{
 			virtual ~DescriptorPool() {}
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorPoolPtr get_default(DevicePtr device = nullptr);
-			FLAME_GRAPHICS_EXPORTS static DescriptorPoolPtr create(DevicePtr device);
+			struct Create
+			{
+				virtual DescriptorPoolPtr operator()(DevicePtr device) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Current
+			{
+				virtual DescriptorPoolPtr operator()(DevicePtr device = nullptr) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Current& current;
 		};
 
 		struct DescriptorBinding
@@ -41,8 +50,17 @@ namespace flame
 				return -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr create(DevicePtr device, std::span<DescriptorBinding> bindings);
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr create(DevicePtr device, std::span<DescriptorBinding> bindings);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct DescriptorSet
@@ -55,7 +73,11 @@ namespace flame
 			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 			virtual void update() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetPtr create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static DescriptorSetPtr create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct PipelineLayout
@@ -70,8 +92,17 @@ namespace flame
 
 			virtual ~PipelineLayout() {}
 
-			FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_layouts, uint push_constant_size);
-			FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_layouts, uint push_constant_size);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct Shader
@@ -114,7 +145,11 @@ namespace flame
 				return ret;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static ShaderPtr get(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
+			struct Get
+			{
+				FLAME_GRAPHICS_EXPORTS static ShaderPtr get(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct VertexAttributeInfo
@@ -185,8 +220,17 @@ namespace flame
 
 			virtual ~GraphicsPipeline() {}
 
-			FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr create(DevicePtr device, const GraphicsPipelineInfo& info);
-			FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr get(DevicePtr device, const std::filesystem::path& filename);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr create(DevicePtr device, const GraphicsPipelineInfo& info);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr get(DevicePtr device, const std::filesystem::path& filename);
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
 		struct ComputePipeline
@@ -197,7 +241,11 @@ namespace flame
 
 			virtual ~ComputePipeline() {}
 
-			FLAME_GRAPHICS_EXPORTS static ComputePipelinePtr create(DevicePtr device, const ComputePipelineInfo& info);
+			struct Create
+			{
+				FLAME_GRAPHICS_EXPORTS static ComputePipelinePtr create(DevicePtr device, const ComputePipelineInfo& info);
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 	}
 }

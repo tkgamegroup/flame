@@ -317,50 +317,54 @@ namespace flame
 			}
 		}
 
-		ClientPtr Client::create(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
+		struct ClientCreatePrivate : Client::Create
 		{
-			initialize();
-
-			int res;
-
-			auto fd = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd != INVALID_SOCKET);
-			sockaddr_in address = {};
-			address.sin_family = AF_INET;
-			address.sin_addr.S_un.S_addr = inet_addr(ip);
-			address.sin_port = htons(port);
-			res = connect(fd, (sockaddr*)&address, sizeof(address));
-			if (res == SOCKET_ERROR)
+			ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override
 			{
-				closesocket(fd);
-				return nullptr;
-			}
+				initialize();
 
-			auto c = new ClientPrivate;
-			c->type = type;
-			c->fd = fd;
-			c->ev_ended = create_native_event(false, true);
-			c->on_message = on_message;
-			c->on_close = on_close;
+				int res;
 
-			std::thread([=]() {
-				while (true)
+				auto fd = socket(AF_INET, SOCK_STREAM, 0);
+				assert(fd != INVALID_SOCKET);
+				sockaddr_in address = {};
+				address.sin_family = AF_INET;
+				address.sin_addr.S_un.S_addr = inet_addr(ip);
+				address.sin_port = htons(port);
+				res = connect(fd, (sockaddr*)&address, sizeof(address));
+				if (res == SOCKET_ERROR)
 				{
-					std::vector<std::string> res;
-					if (!native_recv(type, c->fd, res))
-					{
-						c->stop(true);
-						set_native_event(c->ev_ended);
-						return;
-					}
-					std::lock_guard lock(c->mtx);
-					for (auto& r : res)
-						c->on_message(r);
+					closesocket(fd);
+					return nullptr;
 				}
-			}).detach();
 
-			return c;
-		}
+				auto c = new ClientPrivate;
+				c->type = type;
+				c->fd = fd;
+				c->ev_ended = create_native_event(false, true);
+				c->on_message = on_message;
+				c->on_close = on_close;
+
+				std::thread([=]() {
+					while (true)
+					{
+						std::vector<std::string> res;
+						if (!native_recv(type, c->fd, res))
+						{
+							c->stop(true);
+							set_native_event(c->ev_ended);
+							return;
+						}
+						std::lock_guard lock(c->mtx);
+						for (auto& r : res)
+							c->on_message(r);
+					}
+					}).detach();
+
+					return c;
+			}
+		}client_create_private;
+		Client::Create& Client::create = client_create_private;
 
 		struct DgramAddress
 		{
@@ -431,111 +435,115 @@ namespace flame
 			}
 		}
 
-		ServerPtr Server::create(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect)
+		struct ServerCreatePrivate : Server::Create 
 		{
-			initialize();
+			ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) override
+			{
+				initialize();
 
-			int res;
-			sockaddr_in address;
+				int res;
+				sockaddr_in address;
 
-			auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
-			assert(fd_d != INVALID_SOCKET);
-			address = {};
-			address.sin_family = AF_INET;
-			address.sin_addr.S_un.S_addr = INADDR_ANY;
-			address.sin_port = htons(port);
-			res = bind(fd_d, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
+				auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
+				assert(fd_d != INVALID_SOCKET);
+				address = {};
+				address.sin_family = AF_INET;
+				address.sin_addr.S_un.S_addr = INADDR_ANY;
+				address.sin_port = htons(port);
+				res = bind(fd_d, (sockaddr*)&address, sizeof(address));
+				assert(res == 0);
 
-			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd_s != INVALID_SOCKET);
-			address = {};
-			address.sin_family = AF_INET;
-			address.sin_addr.S_un.S_addr = INADDR_ANY;
-			address.sin_port = htons(port);
-			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
-			res = listen(fd_s, 1);
-			assert(res == 0);
+				auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
+				assert(fd_s != INVALID_SOCKET);
+				address = {};
+				address.sin_family = AF_INET;
+				address.sin_addr.S_un.S_addr = INADDR_ANY;
+				address.sin_port = htons(port);
+				res = bind(fd_s, (sockaddr*)&address, sizeof(address));
+				assert(res == 0);
+				res = listen(fd_s, 1);
+				assert(res == 0);
 
-			auto s = new ServerPrivate;
-			s->type = type;
-			s->fd_d = fd_d;
-			s->fd_s = fd_s;
-			s->ev_ended_d = create_native_event(false, true);
-			s->ev_ended_s = create_native_event(false, true);
-			s->on_dgram = on_dgram;
-			s->on_connect = on_connect;
+				auto s = new ServerPrivate;
+				s->type = type;
+				s->fd_d = fd_d;
+				s->fd_s = fd_s;
+				s->ev_ended_d = create_native_event(false, true);
+				s->ev_ended_s = create_native_event(false, true);
+				s->on_dgram = on_dgram;
+				s->on_connect = on_connect;
 
-			std::thread([=]() {
-				while (true)
-				{
-					char buf[1024 * 64];
-					sockaddr_in address;
-					int address_size = sizeof(address);
-					auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
-					std::lock_guard lock(s->mtx);
-					if (res <= 0)
+				std::thread([=]() {
+					while (true)
 					{
-						if (s->fd_d)
+						char buf[1024 * 64];
+						sockaddr_in address;
+						int address_size = sizeof(address);
+						auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+						std::lock_guard lock(s->mtx);
+						if (res <= 0)
 						{
-							closesocket(s->fd_d);
-							s->fd_d = 0;
-						}
-						set_native_event(s->ev_ended_d);
-						return;
-					}
-					DgramAddress da;
-					da.fd = s->fd_d;
-					da.paddr = (sockaddr*)&address;
-					s->on_dgram(&da, { buf, (size_t)res });
-				}
-			}).detach();
-
-			std::thread([=]() {
-				while (true)
-				{
-					auto fd = accept(s->fd_s, nullptr, nullptr);
-					std::lock_guard lock(s->mtx);
-					if (fd == INVALID_SOCKET)
-					{
-						s->stop();
-						set_native_event(s->ev_ended_s);
-						return;
-					}
-					auto c = new ServerPrivate::Client;
-					c->fd = fd;
-					c->ev_ended = create_native_event(false, true);
-					s->on_connect(c);
-					if (c->on_message || c->on_close)
-						s->cs.emplace_back(c);
-					else
-					{
-						closesocket(fd);
-						delete c;
-						continue;
-					}
-
-					std::thread([=]() {
-						while (true)
-						{
-							std::vector<std::string> res;
-							if (!native_recv(type, c->fd, res))
+							if (s->fd_d)
 							{
-								c->stop(true);
-								set_native_event(c->ev_ended);
-								return;
+								closesocket(s->fd_d);
+								s->fd_d = 0;
 							}
-							std::lock_guard lock(c->mtx);
-							for (auto& r : res)
-								c->on_message(r);
+							set_native_event(s->ev_ended_d);
+							return;
 						}
-					}).detach();
-				}
-			}).detach();
+						DgramAddress da;
+						da.fd = s->fd_d;
+						da.paddr = (sockaddr*)&address;
+						s->on_dgram(&da, { buf, (size_t)res });
+					}
+				}).detach();
 
-			return s;
-		}
+				std::thread([=]() {
+					while (true)
+					{
+						auto fd = accept(s->fd_s, nullptr, nullptr);
+						std::lock_guard lock(s->mtx);
+						if (fd == INVALID_SOCKET)
+						{
+							s->stop();
+							set_native_event(s->ev_ended_s);
+							return;
+						}
+						auto c = new ServerPrivate::Client;
+						c->fd = fd;
+						c->ev_ended = create_native_event(false, true);
+						s->on_connect(c);
+						if (c->on_message || c->on_close)
+							s->cs.emplace_back(c);
+						else
+						{
+							closesocket(fd);
+							delete c;
+							continue;
+						}
+
+						std::thread([=]() {
+							while (true)
+							{
+								std::vector<std::string> res;
+								if (!native_recv(type, c->fd, res))
+								{
+									c->stop(true);
+									set_native_event(c->ev_ended);
+									return;
+								}
+								std::lock_guard lock(c->mtx);
+								for (auto& r : res)
+									c->on_message(r);
+							}
+							}).detach();
+					}
+				}).detach();
+
+				return s;
+			}
+		}server_create_private;
+		Server::Create& Server::create = server_create_private;
 
 		FrameSyncServerPrivate::~FrameSyncServerPrivate()
 		{
@@ -561,117 +569,121 @@ namespace flame
 			}
 		}
 
-		FrameSyncServerPtr FrameSyncServer::create(SocketType type, uint port, uint num_clients)
+		struct FrameSyncServerCreatePrivate : FrameSyncServer::Create
 		{
-			initialize();
-
-			int res;
-
-			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd_s != INVALID_SOCKET);
-			sockaddr_in address = {};
-			address.sin_family = AF_INET;
-			address.sin_addr.S_un.S_addr = INADDR_ANY;
-			address.sin_port = htons(port);
-			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
-			res = listen(fd_s, num_clients);
-			assert(res == 0);
-
-			std::vector<int> fd_cs;
-			while (fd_cs.size() < num_clients)
+			FrameSyncServerPtr operator()(SocketType type, uint port, uint num_clients) override
 			{
-				auto fd = accept(fd_s, nullptr, nullptr);
-				if (fd == INVALID_SOCKET)
-					return nullptr;
+				initialize();
 
-				if (!websocket_shakehand(type, fd))
-					continue;
+				int res;
 
-				fd_cs.push_back(fd);
-			}
+				auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
+				assert(fd_s != INVALID_SOCKET);
+				sockaddr_in address = {};
+				address.sin_family = AF_INET;
+				address.sin_addr.S_un.S_addr = INADDR_ANY;
+				address.sin_port = htons(port);
+				res = bind(fd_s, (sockaddr*)&address, sizeof(address));
+				assert(res == 0);
+				res = listen(fd_s, num_clients);
+				assert(res == 0);
 
-			closesocket(fd_s);
-
-			{
-				srand(time(0));
-				nlohmann::json json = {
-					{"action", "start"},
-					{"seed", rand()}
-				};
-				auto str = json.dump();
-				for (auto fd : fd_cs)
+				std::vector<int> fd_cs;
+				while (fd_cs.size() < num_clients)
 				{
-					if (!native_send(type, fd, str))
+					auto fd = accept(fd_s, nullptr, nullptr);
+					if (fd == INVALID_SOCKET)
 						return nullptr;
+
+					if (!websocket_shakehand(type, fd))
+						continue;
+
+					fd_cs.push_back(fd);
 				}
-			}
 
-			auto s = new FrameSyncServerPrivate;
-			s->type = type;
-			s->frame = 0;
-			s->semaphore = 0;
-			s->fd_cs = fd_cs;
-			s->ev_ended = create_native_event(false, true);
+				closesocket(fd_s);
 
-			std::thread([type, s]() {
-				while (true)
 				{
-					fd_set rfds;
-					FD_ZERO(&rfds);
-					for (auto fd : s->fd_cs)
-						FD_SET(fd, &rfds);
-					auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
-					if (res < 0)
+					srand(time(0));
+					nlohmann::json json = {
+						{"action", "start"},
+						{"seed", rand()}
+					};
+					auto str = json.dump();
+					for (auto fd : fd_cs)
 					{
-						s->stop();
-						set_native_event(s->ev_ended);
-						return;
+						if (!native_send(type, fd, str))
+							return nullptr;
 					}
-					for (auto i = 0; i < s->fd_cs.size(); i++)
+				}
+
+				auto s = new FrameSyncServerPrivate;
+				s->type = type;
+				s->frame = 0;
+				s->semaphore = 0;
+				s->fd_cs = fd_cs;
+				s->ev_ended = create_native_event(false, true);
+
+				std::thread([type, s]() {
+					while (true)
 					{
-						auto fd = s->fd_cs[i];
-						if (FD_ISSET(fd, &rfds))
+						fd_set rfds;
+						FD_ZERO(&rfds);
+						for (auto fd : s->fd_cs)
+							FD_SET(fd, &rfds);
+						auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
+						if (res < 0)
 						{
-							std::vector<std::string> reqs;
-							if (!native_recv(type, fd, reqs))
+							s->stop();
+							set_native_event(s->ev_ended);
+							return;
+						}
+						for (auto i = 0; i < s->fd_cs.size(); i++)
+						{
+							auto fd = s->fd_cs[i];
+							if (FD_ISSET(fd, &rfds))
 							{
-								s->stop();
-								set_native_event(s->ev_ended);
-								return;
-							}
-							auto req = nlohmann::json::parse(reqs[0]);
-							auto n_frame = req.find("frame");
-							if (n_frame != req.end())
-							{
-								auto frame = n_frame->get<int>();
-								if (frame == s->frame)
+								std::vector<std::string> reqs;
+								if (!native_recv(type, fd, reqs))
 								{
-									s->semaphore++;
-									auto dst = s->frame_data[std::to_string(i)];
-									for (auto& i : req["data"].items())
-										dst[i.key()] = i.value();
-
-									if (s->semaphore >= s->fd_cs.size())
+									s->stop();
+									set_native_event(s->ev_ended);
+									return;
+								}
+								auto req = nlohmann::json::parse(reqs[0]);
+								auto n_frame = req.find("frame");
+								if (n_frame != req.end())
+								{
+									auto frame = n_frame->get<int>();
+									if (frame == s->frame)
 									{
-										s->frame++;
-										s->semaphore = 0;
+										s->semaphore++;
+										auto dst = s->frame_data[std::to_string(i)];
+										for (auto& i : req["data"].items())
+											dst[i.key()] = i.value();
 
-										s->frame_data["action"] = "frame";
-										auto str = s->frame_data.dump();
-										for (auto i = 0; i < 2; i++)
-											s->send(i, str);
-										s->frame_data.clear();
+										if (s->semaphore >= s->fd_cs.size())
+										{
+											s->frame++;
+											s->semaphore = 0;
+
+											s->frame_data["action"] = "frame";
+											auto str = s->frame_data.dump();
+											for (auto i = 0; i < 2; i++)
+												s->send(i, str);
+											s->frame_data.clear();
+										}
 									}
 								}
 							}
 						}
 					}
-				}
-			}).detach();
+				}).detach();
 
-			return s;
-		}
+				return s;
+			}
+		}frame_sync_server_create;
+		FrameSyncServer::Create& FrameSyncServer::create = frame_sync_server_create;
 
 		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message)
 		{
