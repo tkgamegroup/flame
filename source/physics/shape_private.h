@@ -11,7 +11,7 @@ namespace flame
 		{
 			DevicePrivate* device;
 
-			UniPtr<PxTriangleMesh> px_triangle_mesh;
+			std::unique_ptr<PxTriangleMesh> px_triangle_mesh;
 
 			TriangleMeshPrivate(DevicePrivate* device, graphics::Mesh* mesh);
 
@@ -25,7 +25,7 @@ namespace flame
 			uvec2 blocks;
 			uint tess_levels;
 
-			UniPtr<PxHeightField> px_height_field;
+			std::unique_ptr<PxHeightField> px_height_field;
 
 			HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels);
 
@@ -39,7 +39,7 @@ namespace flame
 			ShapeType type;
 			RigidPrivate* rigid = nullptr; 
 
-			UniPtr<PxShape> px_shape;
+			std::unique_ptr<PxShape> px_shape;
 
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext);
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius);

@@ -244,7 +244,7 @@ namespace flame
 						type->destroy((char*)out.v + size * i, false);
 					for (auto i = 0; i < length; i++)
 						type->destroy(next_var(p, size), false);
-					f_free(out.v);
+					free(out.v);
 				}
 
 				void update()
@@ -256,8 +256,8 @@ namespace flame
 					{
 						out.s = length;
 						auto m_size = size * length;
-						f_free(out.v);
-						out.v = (int*)f_malloc(m_size);
+						free(out.v);
+						out.v = (int*)malloc(m_size);
 						memset(out.v, 0, m_size);
 					}
 					for (auto i = 0; i < length; i++)

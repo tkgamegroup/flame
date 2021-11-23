@@ -20,7 +20,7 @@ namespace flame
 		cElementPrivate* visualization_layer = nullptr;
 		Visualizer visualizer;
 
-		UniPtr<physics::Scene> physics_scene;
+		std::unique_ptr<physics::Scene> physics_scene;
 
 		void add_rigid(cRigidPrivate* r);
 		void remove_rigid(cRigidPrivate* r);

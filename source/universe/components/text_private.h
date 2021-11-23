@@ -8,7 +8,7 @@ namespace flame
 	struct cTextPrivate : cText, ElementDrawer, ElementMeasurer
 	{
 		std::wstring text;
-		std::wstring atlas_name = L"msyh.ttc;fa-regular-400.ttf;fa-solid-900.ttf";
+		std::wstring atlas_name = L"c:\\windows\\fonts\\msyh.ttc;fa-regular-400.ttf;fa-solid-900.ttf";
 		uint font_size = 16;
 		cvec4 font_color = cvec4(255);
 		Align text_align = AlignMin;

@@ -411,7 +411,7 @@ void cBPEditor::on_add_node(bpNode* n)
 			ui.next_element_color = cvec4(200, 200, 200, 255);
 			ui.e_element();
 			ui.c_receiver();
-			auto c_slot = f_new<cSlot>();
+			auto c_slot = new<cSlot>();
 			c_slot->s = input;
 			input->user_data = c_slot;
 			ui.current_entity->add_component(c_slot);
@@ -582,7 +582,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 	auto& ui = bp_editor.window->ui;
 
-	auto e_node = f_new<Entity>();
+	auto e_node = new<Entity>();
 	ui.current_entity = e_node;
 	n->user_data = e_node;
 	ui.next_element_pos = n->pos;
@@ -596,7 +596,7 @@ void cBPEditor::on_add_node(bpNode* n)
 	ui.c_receiver();
 	ui.c_layout(LayoutVertical, 4.f)->fence = -1;
 
-	auto c_node = f_new<cNode>();
+	auto c_node = new<cNode>();
 	c_node->n = n;
 	auto n_type = bp_break_node_type(n->type.str());
 	e_node->add_component(c_node);
@@ -637,7 +637,7 @@ void cBPEditor::on_add_node(bpNode* n)
 						ui.next_element_color = cvec4(200, 200, 200, 255);
 						ui.e_element();
 						ui.c_receiver();
-						auto c_slot = f_new<cSlot>();
+						auto c_slot = new<cSlot>();
 						c_slot->s = input;
 						c_slot->group = c_node;
 						input->user_data = c_slot;
@@ -716,7 +716,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								ui.e_combobox_item(s2w(item->name.str()).c_str());
 							ui.e_end_combobox();
 
-							e_name->add_component(f_new<cEnumSingleDataTracker>(input->data, info, [](Capture& c, int v) {
+							e_name->add_component(new<cEnumSingleDataTracker>(input->data, info, [](Capture& c, int v) {
 								bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 							}, Capture().set_thiz(input), combobox));
 						}
@@ -737,7 +737,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							}
 							ui.e_end_layout();
 
-							e_name->add_component(f_new<cEnumMultiDataTracker>(input->data, info, [](Capture& c, int v) {
+							e_name->add_component(new<cEnumMultiDataTracker>(input->data, info, [](Capture& c, int v) {
 								bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 							}, Capture().set_thiz(input), checkboxes));
 						}
@@ -752,7 +752,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								checkbox = ui.e_checkbox()->get_component(cCheckbox);
 								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
-								e_name->add_component(f_new<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
+								e_name->add_component(new<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
 									bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 								}, Capture().set_thiz(input), checkbox));
 							}
@@ -767,7 +767,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
-								e_name->add_component(f_new<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
+								e_name->add_component(new<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 									else
@@ -792,7 +792,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 								auto p = e_name;
 								p->get_component(cLayout)->type = LayoutHorizontal;
-								p->add_component(f_new<cDigitalVecDataTracker<2, int>>(input->data, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
+								p->add_component(new<cDigitalVecDataTracker<2, int>>(input->data, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -815,7 +815,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<3, int>>(input->data, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<3, int>>(input->data, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -838,7 +838,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<4, int>>(input->data, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<4, int>>(input->data, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -856,7 +856,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
-								e_name->add_component(f_new<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
+								e_name->add_component(new<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 									else
@@ -879,7 +879,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<2, uint>>(input->data, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<2, uint>>(input->data, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -902,7 +902,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<3, uint>>(input->data, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<3, uint>>(input->data, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -925,7 +925,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<4, uint>>(input->data, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<4, uint>>(input->data, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -943,7 +943,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
-								e_name->add_component(f_new<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
+								e_name->add_component(new<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 									else
@@ -966,7 +966,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<2, float>>(input->data, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<2, float>>(input->data, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -989,7 +989,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<3, float>>(input->data, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<3, float>>(input->data, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -1012,7 +1012,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<4, float>>(input->data, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<4, float>>(input->data, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -1030,7 +1030,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
-								e_name->add_component(f_new<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
+								e_name->add_component(new<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
 									else
@@ -1053,7 +1053,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<2, uchar>>(input->data, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<2, uchar>>(input->data, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -1076,7 +1076,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<3, uchar>>(input->data, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<3, uchar>>(input->data, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -1099,7 +1099,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(f_new<cDigitalVecDataTracker<4, uchar>>(input->data, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
+								e_name->add_component(new<cDigitalVecDataTracker<4, uchar>>(input->data, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<bpSlot>(), (void*)&v, true);
 									else
@@ -1114,7 +1114,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								text = ui.e_edit(50.f)->get_component(cText);
 								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
-								e_name->add_component(f_new<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
+								e_name->add_component(new<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
 									StringA d = v;
 									bp_editor.set_data(c.thiz<bpSlot>(), &d, true);
 								}, Capture().set_thiz(input), text));
@@ -1127,7 +1127,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								text = ui.e_edit(50.f)->get_component(cText);
 								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
-								e_name->add_component(f_new<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
+								e_name->add_component(new<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
 									StringW d = v;
 									bp_editor.set_data(c.thiz<bpSlot>(), &d, true);
 								}, Capture().set_thiz(input), text));
@@ -1156,7 +1156,7 @@ void cBPEditor::on_add_node(bpNode* n)
 					ui.next_element_color = cvec4(200, 200, 200, 255);
 					ui.e_element();
 					ui.c_receiver();
-					auto c_slot = f_new<cSlot>();
+					auto c_slot = new<cSlot>();
 					c_slot->s = output;
 					c_slot->group = c_node;
 					ui.current_entity->add_component(c_slot);

@@ -27,10 +27,10 @@ namespace flame
 		graphics::Renderpass* rp_bgra8c;
 
 		std::vector<graphics::Image*> img_tars;
-		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
+		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 		uvec2 tar_sz;
 
-		std::vector<UniPtr<graphics::Image>> render_tars;
+		std::vector<std::unique_ptr<graphics::Image>> render_tars;
 
 		RenderData* _rd;
 

@@ -41,13 +41,13 @@ namespace flame
 		graphics::Renderpass* rp_bgra8l;
 		graphics::Renderpass* rp_bgra8c;
 		std::vector<graphics::Image*> img_tars;
-		std::vector<UniPtr<graphics::Framebuffer>> fb_tars;
+		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 		uvec2 tar_sz;
 
-		UniPtr<graphics::Image> img_white;
-		UniPtr<graphics::Image> img_black;
-		UniPtr<graphics::Image> img_black_cube;
-		UniPtr<graphics::Image> img_dst;
+		std::unique_ptr<graphics::Image> img_white;
+		std::unique_ptr<graphics::Image> img_black;
+		std::unique_ptr<graphics::Image> img_black_cube;
+		std::unique_ptr<graphics::Image> img_dst;
 
 		cCameraPrivate* camera = nullptr;
 

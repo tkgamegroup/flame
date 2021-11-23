@@ -4,20 +4,21 @@
 
 namespace flame
 {
-	void* f_malloc(uint size)
-	{
-		return malloc(size);
-	}
+	std::map<std::wstring, std::filesystem::path> Path::map;
 
-	void* f_realloc(void* p, uint size)
+	struct _Initializer
 	{
-		return realloc(p, size);
-	}
-
-	void f_free(void* p)
-	{
-		free(p);
-	}
+		_Initializer()
+		{
+			auto p = getenv("FLAME_PATH");
+			assert(p);
+			std::filesystem::path engine_path = p;
+			engine_path.make_preferred();
+			engine_path /= L"default_assets";
+			Path::add_root(engine_path.filename(), engine_path);
+		}
+	};
+	static _Initializer _initializer;
 
 	uint frames = 0;
 	uint fps = 0;
@@ -70,10 +71,11 @@ namespace flame
 
 			for (auto it = windows.begin(); it != windows.end(); )
 			{
-				if ((*it)->dead)
+				auto w = *it;
+				if (w->dead)
 				{
 					it = windows.erase(it);
-					delete *it;
+					delete w;
 				}
 				else
 					it++;

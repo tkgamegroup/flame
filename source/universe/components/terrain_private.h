@@ -20,8 +20,8 @@ namespace flame
 		sRendererPrivate* s_renderer = nullptr;
 
 		graphics::Image* height_texture = nullptr;
-		UniPtr<graphics::Image> normal_texture;
-		UniPtr<graphics::Image> tangent_texture;
+		std::unique_ptr<graphics::Image> normal_texture;
+		std::unique_ptr<graphics::Image> tangent_texture;
 		graphics::Material* material = nullptr;
 		int height_map_id = -1;
 		int normal_map_id = -1;

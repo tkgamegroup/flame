@@ -42,8 +42,8 @@ struct WindowProject : Window
 	std::unique_ptr<FolderTreeNode> foler_tree;
 	FolderTreeNode* selected_folder = nullptr;
 
-	std::map<int, UniPtr<graphics::Image>> icons;
-	std::vector<UniPtr<graphics::Image>> thumbnails;
+	std::map<int, std::unique_ptr<graphics::Image>> icons;
+	std::vector<std::unique_ptr<graphics::Image>> thumbnails;
 	std::vector<std::unique_ptr<Item>> items;
 	bool _just_selected;
 

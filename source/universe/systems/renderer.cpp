@@ -98,7 +98,7 @@ namespace flame
 		std::filesystem::path mat;
 		std::vector<std::string> defines;
 		uint ref_count = 1;
-		UniPtr<Pipeline> pipeline;
+		std::unique_ptr<Pipeline> pipeline;
 	};
 
 	struct MaterialRes
@@ -138,7 +138,7 @@ namespace flame
 
 		SequentialBuffer<ElementVertex>	buf_vtx;
 		SequentialBuffer<uint>			buf_idx;
-		UniPtr<DescriptorSet>			ds_element;
+		std::unique_ptr<DescriptorSet>			ds_element;
 
 		Pipeline* pl_element;
 	};
@@ -194,34 +194,34 @@ namespace flame
 		SparseBuffer<uint>			buf_arm_mesh_idx;
 
 		StorageBuffer<DSL_render_data::RenderData>							buf_render_data;
-		UniPtr<DescriptorSet>												ds_render_data;
+		std::unique_ptr<DescriptorSet>												ds_render_data;
 		ArrayStorageBuffer<DSL_material::MaterialInfos>						buf_materials;
-		UniPtr<DescriptorSet>												ds_material;
+		std::unique_ptr<DescriptorSet>												ds_material;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Transforms>			buf_mesh_transforms;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Armatures>				buf_mesh_armatures;
-		UniPtr<DescriptorSet>												ds_mesh;
+		std::unique_ptr<DescriptorSet>												ds_mesh;
 		SequentialArrayStorageBuffer<terrain::DSL_terrain::TerrainInfos>	buf_terrain;
-		UniPtr<DescriptorSet>												ds_terrain;
+		std::unique_ptr<DescriptorSet>												ds_terrain;
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
-		UniPtr<DescriptorSet>												ds_water;
+		std::unique_ptr<DescriptorSet>												ds_water;
 
-		UniPtr<Image> img_dep;
-		UniPtr<Image> img_col_met;	// color, metallic
-		UniPtr<Image> img_nor_rou;	// normal, roughness
-		UniPtr<Image> img_ao;		// ambient occlusion
-		UniPtr<Image> img_ao_back;
-		UniPtr<Image> img_col_ms;
-		UniPtr<Image> img_dep_ms;
-		UniPtr<Image> img_dst_back;
-		UniPtr<Image> img_dep_back;
+		std::unique_ptr<Image> img_dep;
+		std::unique_ptr<Image> img_col_met;	// color, metallic
+		std::unique_ptr<Image> img_nor_rou;	// normal, roughness
+		std::unique_ptr<Image> img_ao;		// ambient occlusion
+		std::unique_ptr<Image> img_ao_back;
+		std::unique_ptr<Image> img_col_ms;
+		std::unique_ptr<Image> img_dep_ms;
+		std::unique_ptr<Image> img_dst_back;
+		std::unique_ptr<Image> img_dep_back;
 
 		SequentialArrayStorageBuffer<DSL_light::LightInfos>		buf_light_infos;
 		ArrayStorageBuffer<DSL_light::TileLightsMap>			buf_tile_lights;
 		SequentialArrayStorageBuffer<DSL_light::DirShadows>		buf_dir_shadows;
 		SequentialArrayStorageBuffer<DSL_light::PtShadows>		buf_pt_shadows;
-		std::vector<UniPtr<Image>>								img_dir_shadow_maps;
-		std::vector<UniPtr<Image>>								img_pt_shadow_maps;
-		UniPtr<DescriptorSet>									ds_light;
+		std::vector<std::unique_ptr<Image>>								img_dir_shadow_maps;
+		std::vector<std::unique_ptr<Image>>								img_pt_shadow_maps;
+		std::unique_ptr<DescriptorSet>									ds_light;
 
 		PipelineLayout* pll_mesh_fwd;
 		PipelineLayout* pll_mesh_gbuf;
@@ -230,9 +230,9 @@ namespace flame
 		PipelineLayout* pll_water;
 		PipelineLayout* pll_post;
 
-		UniPtr<Framebuffer> fb_gbuf;
-		std::vector<UniPtr<Framebuffer>> fb_tars_dep;
-		UniPtr<Framebuffer> fb_fwd_ms4;
+		std::unique_ptr<Framebuffer> fb_gbuf;
+		std::vector<std::unique_ptr<Framebuffer>> fb_tars_dep;
+		std::unique_ptr<Framebuffer> fb_fwd_ms4;
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
 
@@ -240,10 +240,10 @@ namespace flame
 		StorageBuffer<DSL_ssao::SampleNoises>		buf_ssao_noi;
 		Pipeline*									pl_ssao;
 		Pipeline*									pl_ssao_blur;
-		UniPtr<DescriptorSet>						ds_ssao;
+		std::unique_ptr<DescriptorSet>						ds_ssao;
 
 		Pipeline*				pl_def;
-		UniPtr<DescriptorSet>	ds_def;
+		std::unique_ptr<DescriptorSet>	ds_def;
 
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
 		Pipeline* pl_ptc;
@@ -262,7 +262,7 @@ namespace flame
 
 		StorageBuffer<DSL_luminance::Histogram>		buf_lum_htg;
 		StorageBuffer<DSL_luminance::AverageLum>	buf_lum_avg;
-		UniPtr<DescriptorSet>						ds_lum;
+		std::unique_ptr<DescriptorSet>						ds_lum;
 		PipelineLayout* pll_lum;
 		Pipeline* pl_lum_htg;
 		Pipeline* pl_lum_avg;
@@ -270,7 +270,7 @@ namespace flame
 		Pipeline* pl_bright;
 
 		Pipeline* pl_tone;
-		UniPtr<DescriptorSet>	ds_tone;
+		std::unique_ptr<DescriptorSet>	ds_tone;
 
 		SequentialBuffer<Line>	buf_lines;
 		Pipeline* pl_line;

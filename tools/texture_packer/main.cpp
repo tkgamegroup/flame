@@ -6,7 +6,7 @@ using namespace flame;
 struct BinPackTile
 {
 	std::string id;
-	UniPtr<Bitmap> bmp;
+	std::unique_ptr<Bitmap> bmp;
 	ivec2 pos;
 	uvec2 size;
 };

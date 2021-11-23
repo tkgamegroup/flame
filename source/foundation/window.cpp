@@ -339,10 +339,8 @@ namespace flame
 				wcex.cbWndExtra = sizeof(void*);
 				wcex.hInstance = (HINSTANCE)get_hinst();
 				wcex.hIcon = 0;
-				auto icon_fn = getenv("FLAME_PATH") / std::filesystem::path(L"default_assets\\ico.png");
-				if (std::filesystem::exists(icon_fn))
 				{
-					std::unique_ptr<Bitmap> icon_image(Bitmap::create(icon_fn));
+					std::unique_ptr<Bitmap> icon_image(Bitmap::create(Path::get(L"default_assets\\ico.png")));
 					icon_image->swap_channel(0, 2);
 					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1, icon_image->bpp, nullptr, icon_image->data);
 				}

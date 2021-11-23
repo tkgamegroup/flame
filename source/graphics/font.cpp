@@ -115,10 +115,7 @@ namespace flame
 				{
 					auto fn = std::filesystem::path(s);
 					if (!std::filesystem::exists(fn))
-					{
-						if (!get_engine_path(fn, L"default_assets"))
-							fn = L"c:\\windows\\fonts" / std::filesystem::path(s);
-					}
+						get_engine_path(fn, L"default_assets");
 
 					auto font = new Font;
 					font->file = get_file_content(fn);

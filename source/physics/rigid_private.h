@@ -13,7 +13,7 @@ namespace flame
 			
 			bool dynamic;
 
-			UniPtr<PxRigidActor> px_rigid;
+			std::unique_ptr<PxRigidActor> px_rigid;
 
 			RigidPrivate(DevicePrivate* device, bool dynamic);
 

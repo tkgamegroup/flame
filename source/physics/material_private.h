@@ -15,7 +15,7 @@ namespace flame
 			float dynamic_friction;
 			float restitution;
 
-			UniPtr<PxMaterial> px_material;
+			std::unique_ptr<PxMaterial> px_material;
 
 			MaterialPrivate(DevicePrivate* device, float static_friction, float dynamic_friction, float restitution);
 

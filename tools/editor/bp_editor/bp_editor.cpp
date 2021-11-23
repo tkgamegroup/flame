@@ -446,7 +446,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	ui.init(world);
 	ui.style_set_to_light();
 
-	bp_editor.e_test = f_new<Entity>();
+	bp_editor.e_test = new<Entity>();
 	{
 		auto ce = cElement::create();
 		ce->pos = 150.f;
@@ -674,7 +674,7 @@ BPEditorWindow::~BPEditorWindow()
 		if (p)
 			p->remove_child(bp_editor.e_test);
 		else
-			f_delete(bp_editor.e_test);
+			delete(bp_editor.e_test);
 		bp_editor.e_test = nullptr;
 	}
 

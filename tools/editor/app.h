@@ -123,7 +123,7 @@ struct _2DEditor
 			}
 			return true;
 		}, Capture().absorb(&capture, _capture).set_thiz(this));
-		f_free(_capture._data);
+		free(_capture._data);
 
 		base = ui.e_element()->get_component(cElement);
 		moved = false;

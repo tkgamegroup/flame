@@ -279,7 +279,7 @@ namespace flame
 	{
 		for (auto& c : components)
 			callback((Capture&)capture, c.get());
-		f_free(capture._data);
+		free(capture._data);
 	}
 
 	void EntityPrivate::add_component(Component* c)

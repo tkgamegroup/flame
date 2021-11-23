@@ -42,12 +42,12 @@ namespace flame
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
 
-		UniPtr<graphics::Swapchain> swapchain;
-		UniPtr<graphics::CommandBuffer> commandbuffer;
-		UniPtr<graphics::Fence> submit_fence;
-		UniPtr<graphics::Semaphore> render_finished;
+		std::unique_ptr<graphics::Swapchain> swapchain;
+		std::unique_ptr<graphics::CommandBuffer> commandbuffer;
+		std::unique_ptr<graphics::Fence> submit_fence;
+		std::unique_ptr<graphics::Semaphore> render_finished;
 
-		UniPtr<World> world;
+		std::unique_ptr<World> world;
 		sDispatcher* s_dispatcher = nullptr;
 		sPhysics* s_physics = nullptr;
 		sScene* s_scene = nullptr;

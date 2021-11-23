@@ -181,9 +181,9 @@ cResourceExplorer::cResourceExplorer() :
 						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
-								auto e = f_new<Entity>();
+								auto e = new<Entity>();
 								Entity::save_to_file(e, (scene_editor.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
-								f_delete(e);
+								delete(e);
 							}
 						}, Capture());
 					}, Capture());
@@ -387,7 +387,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				auto e_image = item->children[0];
 				e_image->get_component(cImage)->color = cvec4(100, 100, 100, 128);
 
-				auto c_thumbnail = f_new<cThumbnail>();
+				auto c_thumbnail = new<cThumbnail>();
 				c_thumbnail->filename = std::filesystem::canonical(p).wstring();
 				e_image->add_component(c_thumbnail);
 			}

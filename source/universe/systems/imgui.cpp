@@ -17,10 +17,10 @@ namespace flame
 
 	struct RenderData
 	{
-		UniPtr<Image>				img_font;
+		std::unique_ptr<Image>				img_font;
 		SequentialBuffer<Vertex>	buf_vtx;
 		SequentialBuffer<ushort>	buf_idx;
-		UniPtr<DescriptorSet>		ds;
+		std::unique_ptr<DescriptorSet>		ds;
 		Pipeline* pl;
 	};
 

@@ -190,7 +190,7 @@ namespace flame
 			GetObject(hbmp, sizeof(bmp), &bmp);
 			w = bmp.bmWidth;
 			h = bmp.bmHeight;
-			data.reset((uchar*)f_malloc(bmp.bmWidth * bmp.bmHeight * 4));
+			data.reset((uchar*)malloc(bmp.bmWidth * bmp.bmHeight * 4));
 			GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, data.get());
 			DeleteObject(hbmp);
 		}
@@ -233,7 +233,7 @@ namespace flame
 			{
 				w = ds.dsBm.bmWidth;
 				h = ds.dsBm.bmHeight;
-				data.reset((uchar*)f_malloc(byte_size));
+				data.reset((uchar*)malloc(byte_size));
 				GetBitmapBits(icon_info.hbmColor, byte_size, data.get());
 			}
 		}

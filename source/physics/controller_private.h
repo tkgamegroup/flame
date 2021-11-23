@@ -9,7 +9,7 @@ namespace flame
 	{
 		struct ControllerPrivate : Controller
 		{
-			UniPtr<PxController> px_controller;
+			std::unique_ptr<PxController> px_controller;
 
 			ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height);
 

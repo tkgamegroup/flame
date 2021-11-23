@@ -32,85 +32,61 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(Bitmap);
 	FLAME_FOUNDATION_TYPE(NativeWindow);
 
-	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
-	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
-	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
-
-	template <class T, class ...Args>
-	T* f_new(Args... args)
+	enum KeyboardKey
 	{
-		auto ret = (T*)f_malloc(sizeof(T));
-		new (ret) T(args...);
-		return ret;
-	}
+		Keyboard_Backspace,
+		Keyboard_Tab,
+		Keyboard_Enter,
+		Keyboard_Shift,
+		Keyboard_Ctrl,
+		Keyboard_Alt,
+		Keyboard_Pause,
+		Keyboard_CapsLock,
+		Keyboard_Esc,
+		Keyboard_Space,
+		Keyboard_PgUp, Keyboard_PgDn,
+		Keyboard_End,
+		Keyboard_Home,
+		Keyboard_Left, Keyboard_Up, Keyboard_Right, Keyboard_Down,
+		Keyboard_PrtSc,
+		Keyboard_Ins,
+		Keyboard_Del,
+		Keyboard_0, Keyboard_1, Keyboard_2, Keyboard_3, Keyboard_4, Keyboard_5, Keyboard_6, Keyboard_7, Keyboard_8, Keyboard_9,
+		Keyboard_A, Keyboard_B, Keyboard_C, Keyboard_D, Keyboard_E, Keyboard_F, Keyboard_G, Keyboard_H, Keyboard_I, Keyboard_J, Keyboard_K,
+		Keyboard_L, Keyboard_M, Keyboard_N, Keyboard_O, Keyboard_P, Keyboard_Q, Keyboard_R, Keyboard_S, Keyboard_T, Keyboard_U, Keyboard_V,
+		Keyboard_W, Keyboard_X, Keyboard_Y, Keyboard_Z,
+		Keyboard_Numpad0, Keyboard_Numpad1, Keyboard_Numpad2, Keyboard_Numpad3, Keyboard_Numpad4, Keyboard_Numpad5,
+		Keyboard_Numpad6, Keyboard_Numpad7, Keyboard_Numpad8, Keyboard_Numpad9,
+		Keyboard_Add, Keyboard_Subtract, Keyboard_Multiply, Keyboard_Divide,
+		Keyboard_Separator,
+		Keyboard_Decimal,
+		Keyboard_F1, Keyboard_F2, Keyboard_F3, Keyboard_F4, Keyboard_F5, Keyboard_F6, Keyboard_F7, Keyboard_F8, Keyboard_F9, Keyboard_F10, Keyboard_F11, Keyboard_F12,
+		Keyboard_NumLock,
+		Keyboard_ScrollLock,
 
-	template <class T>
-	void f_delete(T* p)
+		KeyboardKey_Count
+	};
+
+	enum MouseKey
 	{
-		p->~T();
-		f_free(p);
-	}
+		MouseNull = -1,
 
-	template <class T>
-	struct UniPtr
+		Mouse_Left,
+		Mouse_Right,
+		Mouse_Middle,
+
+		MouseKeyCount
+	};
+
+	enum DragAndDrop
 	{
-		T* p = nullptr;
-
-		UniPtr() {}
-
-		UniPtr(T* p) : 
-			p(p)
-		{
-		}
-
-		~UniPtr()
-		{
-			if (p)
-				p->release();
-		}
-
-		UniPtr(UniPtr&& oth)
-		{
-			oth.swap(*this);
-		}
-
-		UniPtr& operator=(UniPtr&& oth)
-		{
-			oth.swap(*this);
-			return *this;
-		}
-
-		T** operator&()
-		{
-			return &p;
-		}
-
-		UniPtr(UniPtr const&) = delete;
-		UniPtr& operator=(UniPtr const&) = delete; 
-
-		T* operator->() const { return p; }
-		T& operator*()  const { return *p; }
-		T* get() const { return p; }
-		explicit operator bool() const { return p; }
-
-		T* release()
-		{
-			auto temp = p;
-			p = nullptr;
-			return temp;
-		}
-
-		void swap(UniPtr& oth) noexcept
-		{
-			std::swap(p, oth.p);
-		}
-
-		void reset(T* _p = nullptr)
-		{
-			if (p)
-				p->release();
-			p = _p;
-		}
+		DragStart,
+		DragEnd,
+		DragOvering,
+		BeingOverStart,
+		BeingOvering,
+		BeingOverEnd,
+		BeenDropped
 	};
 
 	struct Guid
@@ -121,172 +97,32 @@ namespace flame
 		uchar d4[8];
 	};
 
-	struct Capture
+	struct Path
 	{
-		uint size = 0;
-		void* _data = nullptr;
-		void* _thiz = nullptr;
-		void* _current = nullptr;
+		FLAME_FOUNDATION_EXPORTS static std::map<std::wstring, std::filesystem::path> map;
 
-		Capture() {}
-
-		Capture& set_data(uint s, void* p)
+		inline static void add_root(const std::wstring& name, const std::filesystem::path& path)
 		{
-			assert(!_data);
-			size = s;
-			_data = f_malloc(size);
-			memcpy(_data, p, size);
-			return *this;
+			map[name] = path;
 		}
 
-		template <class T>
-		Capture& set_data(T* p)
+		inline static std::filesystem::path get(const std::filesystem::path& path)
 		{
-			return set_data(sizeof(T), p);
-		}
-
-		Capture& set_thiz(void* thiz)
-		{
-			assert(!_thiz);
-			_thiz = thiz;
-			return *this;
-		}
-
-		template <class T>
-		Capture& absorb(T* p, const Capture& original, bool kill_original = false)
-		{
-			assert(!_data);
-			size = sizeof(T) + original.size;
-			_data = f_malloc(size);
-			memcpy(_data, p, sizeof(T));
-			memcpy((char*)_data + sizeof(T), original._data, original.size);
-			_thiz = original._thiz;
-			if (kill_original)
-				f_free(original._data);
-			return *this;
-		}
-
-		template <class T>
-		Capture release()
-		{
-			auto ret = Capture();
-			ret.size = size - sizeof(T);
-			ret._data = (char*)_data + sizeof(T);
-			ret._thiz = _thiz;
-			ret._current = _current;
+			auto it = path.begin();
+			auto mit = map.find(*it);
+			if (mit == map.end())
+				return path;
+			auto ret = mit->second;
+			it++;
+			auto eit = path.end();
+			while (it != eit)
+			{
+				ret /= *it;
+				it++;
+			}
 			return ret;
 		}
-
-		template <class T>
-		T& data()
-		{
-			return *(T*)_data;
-		}
-
-		template <class T>
-		T* thiz()
-		{
-			return (T*)_thiz;
-		}
-
-		template <class T>
-		T* current()
-		{
-			return (T*)_current;
-		}
 	};
-
-	template <class Function>
-	struct Closure
-	{
-		Function* f;
-		Capture c;
-
-		Closure(Function* f, const Capture& c) :
-			f(f),
-			c(c)
-		{
-		}
-
-		~Closure()
-		{
-			f_free(c._data);
-		}
-
-		template <class FF = Function, class ...Args>
-		auto call(Args... args)
-		{
-			return ((FF*)f)(c, args...);
-		}
-	};
-
-	template <class Function>
-	struct ListenerManagement
-	{
-		std::vector<std::unique_ptr<Closure<Function>>> list;
-		bool staging = false;
-		std::vector<std::unique_ptr<Closure<Function>>> staging_adds;
-		std::vector<void*> staging_removes;
-
-		void* add(Function *f, const Capture& capture)
-		{
-			auto c = new Closure(f, capture);
-			if (staging)
-				staging_adds.emplace_back(c);
-			else
-				list.emplace_back(c);
-			return c;
-		}
-
-		void remove(void* c)
-		{
-			if (staging)
-				staging_removes.push_back(c);
-			else
-			{
-				std::erase_if(list, [&](const auto& i) {
-					return i.get() == (decltype(i.get()))c;
-				});
-			}
-		}
-
-		void begin_staging()
-		{
-			assert(!staging);
-
-			staging = true;
-		}
-
-		void end_staging()
-		{
-			assert(staging);
-
-			staging = false;
-			for (auto& c : staging_adds)
-				list.push_back(std::move(c));
-			staging_adds.clear();
-			for (auto c : staging_removes)
-			{
-				std::erase_if(list, [&](const auto& i) {
-					return i.get() == (decltype(i.get()))c;
-				});
-			}
-			staging_removes.clear();
-		}
-	};
-
-	inline bool get_engine_path(std::filesystem::path& path, const std::filesystem::path& subdir)
-	{
-		if (!std::filesystem::exists(path))
-		{
-			auto engine_path = getenv("FLAME_PATH");
-			if (engine_path)
-				path = std::filesystem::path(engine_path) / subdir / path;
-			if (!std::filesystem::exists(path))
-				return false;
-		}
-		return true;
-	}
 
 	inline std::vector<std::filesystem::path> get_make_dependencies(const std::filesystem::path& path)
 	{
@@ -366,63 +202,6 @@ namespace flame
 		}
 		return false;
 	}
-
-	enum KeyboardKey
-	{
-		Keyboard_Backspace,
-		Keyboard_Tab,
-		Keyboard_Enter,
-		Keyboard_Shift,
-		Keyboard_Ctrl,
-		Keyboard_Alt,
-		Keyboard_Pause,
-		Keyboard_CapsLock,
-		Keyboard_Esc,
-		Keyboard_Space,
-		Keyboard_PgUp, Keyboard_PgDn,
-		Keyboard_End,
-		Keyboard_Home,
-		Keyboard_Left, Keyboard_Up, Keyboard_Right, Keyboard_Down,
-		Keyboard_PrtSc,
-		Keyboard_Ins,
-		Keyboard_Del,
-		Keyboard_0, Keyboard_1, Keyboard_2, Keyboard_3, Keyboard_4, Keyboard_5, Keyboard_6, Keyboard_7, Keyboard_8, Keyboard_9,
-		Keyboard_A, Keyboard_B, Keyboard_C, Keyboard_D, Keyboard_E, Keyboard_F, Keyboard_G, Keyboard_H, Keyboard_I, Keyboard_J, Keyboard_K, 
-		Keyboard_L, Keyboard_M, Keyboard_N, Keyboard_O, Keyboard_P, Keyboard_Q, Keyboard_R, Keyboard_S, Keyboard_T, Keyboard_U, Keyboard_V, 
-		Keyboard_W, Keyboard_X, Keyboard_Y, Keyboard_Z,
-		Keyboard_Numpad0, Keyboard_Numpad1, Keyboard_Numpad2, Keyboard_Numpad3, Keyboard_Numpad4, Keyboard_Numpad5, 
-		Keyboard_Numpad6, Keyboard_Numpad7, Keyboard_Numpad8, Keyboard_Numpad9,
-		Keyboard_Add, Keyboard_Subtract, Keyboard_Multiply, Keyboard_Divide,
-		Keyboard_Separator,
-		Keyboard_Decimal,
-		Keyboard_F1, Keyboard_F2, Keyboard_F3, Keyboard_F4, Keyboard_F5, Keyboard_F6, Keyboard_F7, Keyboard_F8, Keyboard_F9, Keyboard_F10, Keyboard_F11, Keyboard_F12,
-		Keyboard_NumLock,
-		Keyboard_ScrollLock,
-
-		KeyboardKey_Count
-	};
-
-	enum MouseKey
-	{
-		MouseNull = -1,
-
-		Mouse_Left,
-		Mouse_Right,
-		Mouse_Middle,
-
-		MouseKeyCount
-	};
-
-	enum DragAndDrop
-	{
-		DragStart,
-		DragEnd,
-		DragOvering,
-		BeingOverStart,
-		BeingOvering,
-		BeingOverEnd,
-		BeenDropped
-	};
 
 	inline uint64 get_now_ns()
 	{
