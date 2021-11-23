@@ -36,7 +36,7 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
-		struct SourceCreatePrivate : Source::Create
+		struct SourceCreate : Source::Create
 		{
 			SourcePtr operator()(BufferPtr buffer) override
 			{
@@ -45,7 +45,7 @@ namespace flame
 				alSourcei(ret->al_src, AL_BUFFER, buffer->al_buf);
 				return ret;
 			}
-		}source_create_private;
-		Source::Create& Source::create = source_create_private;
+		}Source_create;
+		Source::Create& Source::create = Source_create;
 	}
 }

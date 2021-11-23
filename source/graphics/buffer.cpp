@@ -90,7 +90,7 @@ namespace flame
 			create();
 		}
 
-		struct BufferCreatePrivate : Buffer::Create
+		struct BufferCreate : Buffer::Create
 		{
 			BufferPtr operator()(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) override
 			{
@@ -106,8 +106,8 @@ namespace flame
 
 				return ret;
 			}
-		}buffer_create_private;
-		Buffer::Create& Buffer::create = buffer_create_private;
+		}Buffer_create;
+		Buffer::Create& Buffer::create = Buffer_create;
 	}
 }
 

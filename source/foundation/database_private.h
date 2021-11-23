@@ -15,6 +15,7 @@ namespace flame
 #if USE_MYSQL
 			MYSQL* mysql_connect;
 #endif
+			~ConnectionPrivate();
 
 			Error query(std::string_view sql, Result& result) override;
 		};

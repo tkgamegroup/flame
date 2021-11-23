@@ -12,7 +12,7 @@ namespace flame
 			alcCloseDevice(al_dev);
 		}
 
-		struct DeviceCreatePrivate : Device::Create
+		struct DeviceCreate : Device::Create
 		{
 			DevicePtr operator()() override
 			{
@@ -24,17 +24,17 @@ namespace flame
 					current_device = ret;
 				return ret;
 			}
-		}device_create_private;
-		Device::Create& Device::create = device_create_private;
+		}Device_create;
+		Device::Create& Device::create = Device_create;
 
-		struct DeviceCurrentPrivate : Device::Current
+		struct DeviceCurrent : Device::Current
 		{
 			DevicePtr& operator()() override
 			{
 				return current_device;
 			}
-		}device_current_private;
-		Device::Current& Device::current = device_current_private;
+		}Device_current;
+		Device::Current& Device::current = Device_current;
 
 		RecorderPrivate::~RecorderPrivate()
 		{
@@ -54,7 +54,7 @@ namespace flame
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		struct RecorderCreatePrivate : Recorder::Create
+		struct RecorderCreate : Recorder::Create
 		{
 			RecorderPtr operator()(uint frequency, bool stereo, bool _16bit, float duration) override
 			{
@@ -62,7 +62,7 @@ namespace flame
 				ret->al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
 				return ret;
 			}
-		}recorder_create_private;
-		Recorder::Create& Recorder::create = recorder_create_private;
+		}Recorder_create;
+		Recorder::Create& Recorder::create = Recorder_create;
 	}
 }

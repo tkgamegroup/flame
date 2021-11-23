@@ -10,17 +10,17 @@ namespace flame
 		{
 			virtual ~DescriptorPool() {}
 
-			struct Create
-			{
-				virtual DescriptorPoolPtr operator()(DevicePtr device) = 0;
-			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
-
 			struct Current
 			{
 				virtual DescriptorPoolPtr operator()(DevicePtr device = nullptr) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Current& current;
+
+			struct Create
+			{
+				virtual DescriptorPoolPtr operator()(DevicePtr device) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct DescriptorBinding
@@ -50,17 +50,17 @@ namespace flame
 				return -1;
 			}
 
-			struct Create
-			{
-				FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr create(DevicePtr device, std::span<DescriptorBinding> bindings);
-			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
-
 			struct Get
 			{
-				FLAME_GRAPHICS_EXPORTS static DescriptorSetLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
+
+			struct Create
+			{
+				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct DescriptorSet
@@ -75,7 +75,7 @@ namespace flame
 
 			struct Create
 			{
-				FLAME_GRAPHICS_EXPORTS static DescriptorSetPtr create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout);
+				virtual DescriptorSetPtr operator()(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
@@ -92,17 +92,17 @@ namespace flame
 
 			virtual ~PipelineLayout() {}
 
-			struct Create
-			{
-				FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_layouts, uint push_constant_size);
-			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
-
 			struct Get
 			{
-				FLAME_GRAPHICS_EXPORTS static PipelineLayoutPtr get(DevicePtr device, const std::filesystem::path& filename);
+				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
+
+			struct Create
+			{
+				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct Shader
@@ -147,7 +147,7 @@ namespace flame
 
 			struct Get
 			{
-				FLAME_GRAPHICS_EXPORTS static ShaderPtr get(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes);
+				virtual ShaderPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
@@ -165,7 +165,7 @@ namespace flame
 			VertexInputRate rate = VertexInputRateVertex;
 			uint stride = 0;
 		};
-		
+
 		/*
 			if (Enable)
 			{
@@ -222,13 +222,13 @@ namespace flame
 
 			struct Create
 			{
-				FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr create(DevicePtr device, const GraphicsPipelineInfo& info);
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
 			struct Get
 			{
-				FLAME_GRAPHICS_EXPORTS static GraphicsPipelinePtr get(DevicePtr device, const std::filesystem::path& filename);
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
@@ -243,7 +243,7 @@ namespace flame
 
 			struct Create
 			{
-				FLAME_GRAPHICS_EXPORTS static ComputePipelinePtr create(DevicePtr device, const ComputePipelineInfo& info);
+				virtual ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};

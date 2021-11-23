@@ -22,7 +22,7 @@ namespace flame
 
 			struct Create
 			{
-				FLAME_GRAPHICS_EXPORTS static WindowPtr create(DevicePtr device, NativeWindow* native);
+				virtual WindowPtr operator()(DevicePtr device, NativeWindow* native) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};

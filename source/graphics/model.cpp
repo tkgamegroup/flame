@@ -415,7 +415,7 @@ namespace flame
 
 		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ModelT>>> models;
 
-		struct ModelGetPrivate : Model::Get
+		struct ModelGet : Model::Get
 		{
 			ModelPtr operator()(const std::filesystem::path& filename) override
 			{
@@ -577,12 +577,12 @@ namespace flame
 
 				return ret;
 			}
-		}model_get_private;
-		Model::Get& Model::get = model_get_private;
+		}Model_get;
+		Model::Get& Model::get = Model_get;
 
 		static std::vector<std::unique_ptr<AnimationT>> animations;
 
-		struct AnimationGetPrivate : Animation::Get 
+		struct AnimationGet : Animation::Get 
 		{
 			AnimationPtr operator()(const std::filesystem::path& filename) override
 			{
@@ -632,7 +632,7 @@ namespace flame
 
 				return ret;
 			}
-		}animation_get_private;
-		Animation::Get& Animation::get = animation_get_private;
+		}Animation_get;
+		Animation::Get& Animation::get = Animation_get;
 	}
 }

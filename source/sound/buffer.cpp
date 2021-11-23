@@ -9,7 +9,7 @@ namespace flame
 			alDeleteBuffers(1, &al_buf);
 		}
 
-		struct BufferCreatePrivate : Buffer::Create
+		struct BufferCreate : Buffer::Create
 		{
 			BufferPtr operator()(void* data, uint frequency, bool stereo, bool _16bit, float duration) override
 			{
@@ -83,7 +83,7 @@ namespace flame
 
 				return ret;
 			}
-		}buffer_create_private;
-		Buffer::Create& Buffer::create = buffer_create_private;
+		}Buffer_create;
+		Buffer::Create& Buffer::create = Buffer_create;
 	}
 }

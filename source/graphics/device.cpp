@@ -90,7 +90,7 @@ namespace flame
 			return -1;
 		}
 
-		struct DeviceCreatePrivate : Device::Create
+		struct DeviceCreate : Device::Create
 		{
 			DevicePtr operator()(bool debug) override
 			{
@@ -215,17 +215,17 @@ namespace flame
 					current_device = ret;
 				return ret;
 			}
-		}device_create_private;
-		Device::Create& Device::create = device_create_private;
+		}Device_create;
+		Device::Create& Device::create = Device_create;
 
-		struct DeviceCurrentPrivate : Device::Current
+		struct DeviceCurrent : Device::Current
 		{
 			DevicePtr& operator()() override
 			{
 				return current_device;
 			}
-		}device_current_private;
-		Device::Current& Device::current = device_current_private;
+		}Device_current;
+		Device::Current& Device::current = Device_current;
 	}
 }
 

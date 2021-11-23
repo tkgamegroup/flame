@@ -48,37 +48,41 @@ namespace flame
 			dirty = false;
 		}
 
-		WindowPtr Window::create(DevicePtr device, NativeWindow* native)
-		{
-			if (!device)
-				device = current_device;
-
-			auto ret = new WindowPrivate;
-			ret->device = device;
-			ret->native = native;
-
-			ret->swapchain.reset(Swapchain::create(device, native));
-			ret->commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
-			ret->submit_fence.reset(Fence::create(device));
-			ret->render_finished.reset(Semaphore::create(device));
-
-			native->add_destroy_listener([ret]() {
-				for (auto it = windows.begin(); it != windows.end(); it++)
-				{
-					if (*it == ret)
-					{
-						windows.erase(it);
-						delete ret;
-						return;
-					}
-				}
-			});
-
-			windows.emplace_back(ret);
-			return ret;
-		}
-
 		std::vector<WindowPtr> windows;
+
+		struct WindowCreate : Window::Create
+		{
+			WindowPtr operator()(DevicePtr device, NativeWindow* native) override
+			{
+				if (!device)
+					device = current_device;
+
+				auto ret = new WindowPrivate;
+				ret->device = device;
+				ret->native = native;
+
+				ret->swapchain.reset(Swapchain::create(device, native));
+				ret->commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
+				ret->submit_fence.reset(Fence::create(device));
+				ret->render_finished.reset(Semaphore::create(device));
+
+				native->add_destroy_listener([ret]() {
+					for (auto it = windows.begin(); it != windows.end(); it++)
+					{
+						if (*it == ret)
+						{
+							windows.erase(it);
+							delete ret;
+							return;
+						}
+					}
+					});
+
+				windows.emplace_back(ret);
+				return ret;
+			}
+		}Window_create;
+		Window::Create& Window::create = Window_create;
 
 		const std::vector<WindowPtr> get_windows()
 		{

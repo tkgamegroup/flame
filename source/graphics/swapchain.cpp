@@ -128,25 +128,29 @@ namespace flame
 			}
 		}
 
-		SwapchainPtr Swapchain::create(DevicePtr device, NativeWindow* window)
+		struct SwapchainCreate : Swapchain::Create
 		{
-			if (!device)
-				device = current_device;
+			SwapchainPtr operator()(DevicePtr device, NativeWindow* window) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new SwapchainPrivate;
-			ret->device = device;
-			ret->window = window;
-			ret->build();
-			ret->image_avalible.reset(Semaphore::create(device));
-
-			ret->resize_listener = window->add_resize_listener([ret](const uvec2& size) {
+				auto ret = new SwapchainPrivate;
+				ret->device = device;
+				ret->window = window;
 				ret->build();
-			});
-			window->add_destroy_listener([ret]() {
-				ret->window = nullptr;
-			});
+				ret->image_avalible.reset(Semaphore::create(device));
 
-			return ret;
-		}
+				ret->resize_listener = window->add_resize_listener([ret](const uvec2& size) {
+					ret->build();
+					});
+				window->add_destroy_listener([ret]() {
+					ret->window = nullptr;
+					});
+
+				return ret;
+			}
+		}Swapchain_create;
+		Swapchain::Create& Swapchain::create = Swapchain_create;
 	}
 }

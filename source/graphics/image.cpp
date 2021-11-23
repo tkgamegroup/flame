@@ -19,7 +19,7 @@ namespace flame
 		{
 			pos.x = clamp(pos.x, 0, (int)size.x - 1);
 			pos.y = clamp(pos.y, 0, (int)size.y - 1);
-			 
+
 			auto pixel = p.get() + pitch * pos.y + pixel_size * pos.x;
 			switch (format)
 			{
@@ -292,7 +292,7 @@ namespace flame
 			auto coord = uv * vec2(sz) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);
-			
+
 			return mix(
 				mix(d.get_pixel(format, coordi + ivec2(0, 0)), d.get_pixel(format, coordi + ivec2(1, 0)), coordf.x),
 				mix(d.get_pixel(format, coordi + ivec2(0, 1)), d.get_pixel(format, coordi + ivec2(1, 1)), coordf.x),
@@ -317,7 +317,7 @@ namespace flame
 					break;
 				}
 				assert(gli_fmt != gli::FORMAT_UNDEFINED);
-				
+
 				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(sizes[0], 1), layers, 1, levels);
 
 				StagingBuffer sb(device, data_size, nullptr);
@@ -332,7 +332,7 @@ namespace flame
 						for (auto j = 0; j < levels; j++)
 						{
 							auto size = (uint)gli_texture.size(j);
-							
+
 							gli_cpies.emplace_back(gli_texture.data(i, 0, j), dst + offset, size);
 
 							BufferImageCopy cpy;
@@ -361,7 +361,7 @@ namespace flame
 			}
 		}
 
-		struct ImageCreatePrivate : Image::Create
+		struct ImageCreate : Image::Create
 		{
 			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) override
 			{
@@ -451,10 +451,10 @@ namespace flame
 				__images.push_back(ret);
 				return ret;
 			}
-		}image_create_private;
-		Image::Create& Image::create = image_create_private;
+		}Image_create;
+		Image::Create& Image::create = Image_create;
 
-		ImagePtr create_native_image(DevicePtr device, Format format, const uvec2& size, VkImage native)
+		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec2& size, VkImage native)
 		{
 			auto ret = new ImagePrivate;
 
@@ -586,7 +586,7 @@ namespace flame
 			}
 		}
 
-		struct ImageGetPrivate : Image::Get
+		struct ImageGet : Image::Get
 		{
 			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) override
 			{
@@ -696,7 +696,8 @@ namespace flame
 
 				return ret;
 			}
-		};
+		}Image_get;
+		Image::Get& Image::get = Image_get;
 
 		ImageViewPrivate::~ImageViewPrivate()
 		{
@@ -708,40 +709,44 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		SamplerPtr Sampler::get(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
+		struct SamplerGet : Sampler::Get
 		{
-			if (!device)
-				device = current_device;
-
-			for (auto& s : device->sps)
+			SamplerPtr operator()(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) override
 			{
-				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
-					return s.get();
+				if (!device)
+					device = current_device;
+
+				for (auto& s : device->sps)
+				{
+					if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
+						return s.get();
+				}
+
+				auto ret = new SamplerPrivate;
+				ret->device = device;
+				ret->mag_filter = mag_filter;
+				ret->min_filter = min_filter;
+				ret->linear_mipmap = linear_mipmap;
+				ret->address_mode = address_mode;
+
+				VkSamplerCreateInfo info = {};
+				info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+				info.magFilter = to_backend(mag_filter);
+				info.minFilter = to_backend(min_filter);
+				info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+				info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
+				info.maxAnisotropy = 1.f;
+				info.maxLod = VK_LOD_CLAMP_NONE;
+				info.compareOp = VK_COMPARE_OP_ALWAYS;
+				info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
+
+				device->sps.emplace_back(ret);
+				return ret;
 			}
-
-			auto ret = new SamplerPrivate;
-			ret->device = device;
-			ret->mag_filter = mag_filter;
-			ret->min_filter = min_filter;
-			ret->linear_mipmap = linear_mipmap;
-			ret->address_mode = address_mode;
-
-			VkSamplerCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-			info.magFilter = to_backend(mag_filter);
-			info.minFilter = to_backend(min_filter);
-			info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
-			info.maxAnisotropy = 1.f;
-			info.maxLod = VK_LOD_CLAMP_NONE;
-			info.compareOp = VK_COMPARE_OP_ALWAYS;
-			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
-
-			device->sps.emplace_back(ret);
-			return ret;
-		}
+		}Sampler_get;
+		Sampler::Get& Sampler::get = Sampler_get;
 
 		ImageAtlasPrivate::~ImageAtlasPrivate()
 		{
@@ -750,49 +755,53 @@ namespace flame
 
 		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ImageAtlasPrivate>>> loaded_atlas;
 
-		ImageAtlasPtr ImageAtlas::get(DevicePtr device, const std::filesystem::path& filename)
+		struct ImageAtlasGet : ImageAtlas::Get
 		{
-			for (auto& a : loaded_atlas)
+			ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) override
 			{
-				if (a.first == filename)
-					return a.second.get();
+				for (auto& a : loaded_atlas)
+				{
+					if (a.first == filename)
+						return a.second.get();
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find atlas: %s\n", filename);
+					return nullptr;
+				}
+
+				if (!device)
+					device = current_device;
+
+				auto ret = new ImageAtlasPrivate;
+
+				auto png_filename = filename;
+				png_filename.replace_extension(L".png");
+				ret->image = Image::get(device, png_filename, false);
+
+				auto size = (vec2)ret->image->sizes[0];
+
+				for (auto& e : parse_ini_file(filename).get_section_entries(""))
+				{
+					auto& tile = ret->tiles.emplace_back();
+					tile.index = ret->tiles.size();
+					auto sp = SUS::split(e.value);
+					tile.name = sp[0];
+					auto v = sto<4, uint>(sp[1]);
+					tile.pos = ivec2(v.x, v.y);
+					tile.size = ivec2(v.z, v.w);
+					tile.uv.x = tile.pos.x / size.x;
+					tile.uv.y = tile.pos.y / size.y;
+					tile.uv.z = (tile.pos.x + tile.size.x) / size.x;
+					tile.uv.w = (tile.pos.y + tile.size.y) / size.y;
+				}
+
+				loaded_atlas.emplace_back(filename, ret);
+				return ret;
 			}
-
-			if (!std::filesystem::exists(filename))
-			{
-				wprintf(L"cannot find atlas: %s\n", filename);
-				return nullptr;
-			}
-
-			if (!device)
-				device = current_device;
-
-			auto ret = new ImageAtlasPrivate;
-
-			auto png_filename = filename;
-			png_filename.replace_extension(L".png");
-			ret->image = Image::get(device, png_filename, false);
-
-			auto size = (vec2)ret->image->sizes[0];
-
-			for (auto& e : parse_ini_file(filename).get_section_entries(""))
-			{
-				auto& tile = ret->tiles.emplace_back();
-				tile.index = ret->tiles.size();
-				auto sp = SUS::split(e.value);
-				tile.name = sp[0];
-				auto v = sto<4, uint>(sp[1]);
-				tile.pos = ivec2(v.x, v.y);
-				tile.size = ivec2(v.z, v.w);
-				tile.uv.x = tile.pos.x / size.x;
-				tile.uv.y = tile.pos.y / size.y;
-				tile.uv.z = (tile.pos.x + tile.size.x) / size.x;
-				tile.uv.w = (tile.pos.y + tile.size.y) / size.y;
-			}
-
-			loaded_atlas.emplace_back(filename, ret);
-			return ret;
-		}
+		}ImageAtlas_get;
+		ImageAtlas::Get& ImageAtlas::get = ImageAtlas_get;
 	}
 }
 

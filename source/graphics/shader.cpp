@@ -19,7 +19,20 @@ namespace flame
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
 		}
 
-		struct DescriptorPoolCreatePrivate : DescriptorPool::Create
+		struct DescriptorPoolCurrent : DescriptorPool::Current
+		{
+			DescriptorPoolPtr operator()(DevicePtr device) override
+			{
+				if (!device)
+					device = current_device;
+
+				return device->dsp.get();
+			}
+		}DescriptorPool_current;
+		DescriptorPool::Current& DescriptorPool::current = DescriptorPool_current;
+
+
+		struct DescriptorPoolCreate : DescriptorPool::Create
 		{
 			DescriptorPoolPtr operator()(DevicePtr device) override
 			{
@@ -47,20 +60,8 @@ namespace flame
 
 				return ret;
 			}
-		}descriptor_pool_create;
-		DescriptorPool::Create& DescriptorPool::create = descriptor_pool_create;
-
-		struct DescriptorPoolCurrentPrivate : DescriptorPool::Current
-		{
-		};
-
-		DescriptorPoolPtr DescriptorPool::get_default(DevicePtr device)
-		{
-			if (!device)
-				device = current_device;
-
-			return device->dsp.get();
-		}
+		}DescriptorPool_create;
+		DescriptorPool::Create& DescriptorPool::create = DescriptorPool_create;
 
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase& db)
 		{
@@ -412,250 +413,250 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
-		struct DescriptorSetLayoutCreatePrivate : DescriptorSetLayout::Create
+		struct DescriptorSetLayoutGet : DescriptorSetLayout::Get
 		{
-		};
-
-		struct DescriptorSetLayoutGetPrivate : DescriptorSetLayout::Get
-		{
-		};
-
-		DescriptorSetLayoutPtr DescriptorSetLayout::create(DevicePtr device, std::span<DescriptorBinding> bindings)
-		{
-			if (!device)
-				device = current_device;
-
-			auto ret = new DescriptorSetLayoutPrivate;
-			ret->device = device;
-			ret->bindings.assign(bindings.begin(), bindings.end());
-
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
-			for (auto i = 0; i < bindings.size(); i++)
+			DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
 			{
-				auto& src = bindings[i];
-				auto& dst = vk_bindings[i];
+				if (!device)
+					device = current_device;
 
-				dst.binding = i;
-				dst.descriptorType = to_backend(src.type);
-				dst.descriptorCount = src.count;
-				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-				dst.pImmutableSamplers = nullptr;
-			}
-
-			VkDescriptorSetLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.bindingCount = vk_bindings.size();
-			info.pBindings = vk_bindings.data();
-
-			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
-
-			return ret;
-		}
-
-		DescriptorSetLayoutPtr DescriptorSetLayout::get(DevicePtr device, const std::filesystem::path& _filename)
-		{
-			if (!device)
-				device = current_device;
-
-			auto filename = _filename;
-			if (!get_engine_path(filename, L"default_assets\\shaders"))
-			{
-				wprintf(L"cannot find dsl: %s\n", _filename.c_str());
-				return nullptr;
-			}
-			filename.make_preferred();
-
-			if (device)
-			{
-				for (auto& d : device->dsls)
+				auto filename = _filename;
+				if (!get_engine_path(filename, L"default_assets\\shaders"))
 				{
-					if (d->filename.filename() == filename)
-						return d.get();
+					wprintf(L"cannot find dsl: %s\n", _filename.c_str());
+					return nullptr;
 				}
-			}
+				filename.make_preferred();
 
-			auto res_path = filename.parent_path() / L"build";
-			if (!std::filesystem::exists(res_path))
-				std::filesystem::create_directories(res_path);
-			res_path /= filename.filename();
-			res_path += L".res";
-
-			auto ti_path = res_path;
-			ti_path.replace_extension(L".typeinfo");
-
-			std::vector<DescriptorBinding> bindings;
-			TypeInfoDataBase db;
-
-			auto ti_desctype = TypeInfo::get(TypeEnumSingle, "flame::graphics::DescriptorType", tidb);
-
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
-				!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
-			{
-				auto vk_sdk_path = getenv("VK_SDK_PATH");
-				if (vk_sdk_path)
+				if (device)
 				{
-					auto temp = basic_glsl_prefix();
-					temp += "#define MAKE_DSL\n";
-					std::ifstream dsl(filename);
-					while (!dsl.eof())
+					for (auto& d : device->dsls)
 					{
-						std::string line;
-						std::getline(dsl, line);
-						temp += line + "\n";
+						if (d->filename.filename() == filename)
+							return d.get();
 					}
-					temp += "void main()\n{\n}\n";
-					dsl.close();
+				}
 
-					auto temp_fn = filename;
-					temp_fn.replace_filename(L"temp.frag");
-					std::ofstream temp_file(temp_fn);
-					temp_file << temp << std::endl;
-					temp_file.close();
+				auto res_path = filename.parent_path() / L"build";
+				if (!std::filesystem::exists(res_path))
+					std::filesystem::create_directories(res_path);
+				res_path /= filename.filename();
+				res_path += L".res";
 
-					if (std::filesystem::exists(L"a.spv"))
-						std::filesystem::remove(L"a.spv");
+				auto ti_path = res_path;
+				ti_path.replace_extension(L".typeinfo");
 
-					auto glslc_path = std::filesystem::path(vk_sdk_path);
-					glslc_path /= L"Bin/glslc.exe";
+				std::vector<DescriptorBinding> bindings;
+				TypeInfoDataBase db;
 
-					auto command_line = L" " + temp_fn.wstring();
+				auto ti_desctype = TypeInfo::get(TypeEnumSingle, "flame::graphics::DescriptorType", tidb);
 
-					printf("compiling dsl: %s", filename.string().c_str());
-
-					std::string output;
-					exec(glslc_path, command_line, &output);
-					if (!std::filesystem::exists(L"a.spv"))
+				if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
+					!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
+				{
+					auto vk_sdk_path = getenv("VK_SDK_PATH");
+					if (vk_sdk_path)
 					{
-						temp = add_lineno_to_temp(temp);
-						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+						auto temp = basic_glsl_prefix();
+						temp += "#define MAKE_DSL\n";
+						std::ifstream dsl(filename);
+						while (!dsl.eof())
+						{
+							std::string line;
+							std::getline(dsl, line);
+							temp += line + "\n";
+						}
+						temp += "void main()\n{\n}\n";
+						dsl.close();
+
+						auto temp_fn = filename;
+						temp_fn.replace_filename(L"temp.frag");
+						std::ofstream temp_file(temp_fn);
+						temp_file << temp << std::endl;
+						temp_file.close();
+
+						if (std::filesystem::exists(L"a.spv"))
+							std::filesystem::remove(L"a.spv");
+
+						auto glslc_path = std::filesystem::path(vk_sdk_path);
+						glslc_path /= L"Bin/glslc.exe";
+
+						auto command_line = L" " + temp_fn.wstring();
+
+						printf("compiling dsl: %s", filename.string().c_str());
+
+						std::string output;
+						exec(glslc_path, command_line, &output);
+						if (!std::filesystem::exists(L"a.spv"))
+						{
+							temp = add_lineno_to_temp(temp);
+							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+							return nullptr;
+						}
+
+						printf(" done\n");
+
+						std::filesystem::remove(temp_fn);
+
+						auto spv = get_file_content(L"a.spv");
+						std::filesystem::remove(L"a.spv");
+						auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
+						auto resources = glsl.get_shader_resources();
+
+						auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
+							get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
+
+							auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
+							if (bindings.size() <= binding)
+								bindings.resize(binding + 1);
+
+							auto& b = bindings[binding];
+							b.type = type;
+							b.count = glsl.get_type(r.type_id).array[0];
+							b.name = r.name;
+							if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+								b.ti = find_udt(glsl.get_name(r.base_type_id), db);
+						};
+
+						for (auto& r : resources.uniform_buffers)
+							get_binding(r, DescriptorUniformBuffer);
+						for (auto& r : resources.storage_buffers)
+							get_binding(r, DescriptorStorageBuffer);
+						for (auto& r : resources.sampled_images)
+							get_binding(r, DescriptorSampledImage);
+						for (auto& r : resources.storage_images)
+							get_binding(r, DescriptorStorageImage);
+
+						db.save_typeinfo(ti_path);
+
+						pugi::xml_document res;
+						auto root = res.append_child("res");
+
+						auto n_bindings = root.append_child("bindings");
+						for (auto i = 0; i < bindings.size(); i++)
+						{
+							auto& b = bindings[i];
+							if (b.type != Descriptor_Max)
+							{
+								auto n_binding = n_bindings.append_child("binding");
+								n_binding.append_attribute("type").set_value(ti_desctype->serialize(&b.type).c_str());
+								n_binding.append_attribute("binding").set_value(i);
+								n_binding.append_attribute("count").set_value(b.count);
+								n_binding.append_attribute("name").set_value(b.name.c_str());
+								if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+									n_binding.append_attribute("type_name").set_value(b.ti->name.c_str());
+							}
+						}
+
+						res.save_file(res_path.c_str());
+					}
+					else
+					{
+						printf("cannot find vk sdk\n");
 						return nullptr;
 					}
-
-					printf(" done\n");
-
-					std::filesystem::remove(temp_fn);
-
-					auto spv = get_file_content(L"a.spv");
-					std::filesystem::remove(L"a.spv");
-					auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
-					auto resources = glsl.get_shader_resources();
-
-					auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-						get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
-
-						auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
-						if (bindings.size() <= binding)
-							bindings.resize(binding + 1);
-
-						auto& b = bindings[binding];
-						b.type = type;
-						b.count = glsl.get_type(r.type_id).array[0];
-						b.name = r.name;
-						if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-							b.ti = find_udt(glsl.get_name(r.base_type_id), db);
-					};
-
-					for (auto& r : resources.uniform_buffers)
-						get_binding(r, DescriptorUniformBuffer);
-					for (auto& r : resources.storage_buffers)
-						get_binding(r, DescriptorStorageBuffer);
-					for (auto& r : resources.sampled_images)
-						get_binding(r, DescriptorSampledImage);
-					for (auto& r : resources.storage_images)
-						get_binding(r, DescriptorStorageImage);
-
-					db.save_typeinfo(ti_path);
-
-					pugi::xml_document res;
-					auto root = res.append_child("res");
-
-					auto n_bindings = root.append_child("bindings");
-					for (auto i = 0; i < bindings.size(); i++)
-					{
-						auto& b = bindings[i];
-						if (b.type != Descriptor_Max)
-						{
-							auto n_binding = n_bindings.append_child("binding");
-							n_binding.append_attribute("type").set_value(ti_desctype->serialize(&b.type).c_str());
-							n_binding.append_attribute("binding").set_value(i);
-							n_binding.append_attribute("count").set_value(b.count);
-							n_binding.append_attribute("name").set_value(b.name.c_str());
-							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-								n_binding.append_attribute("type_name").set_value(b.ti->name.c_str());
-						}
-					}
-
-					res.save_file(res_path.c_str());
 				}
 				else
 				{
-					printf("cannot find vk sdk\n");
-					return nullptr;
-				}
-			}
-			else
-			{
-				auto ti_path = res_path;
-				ti_path.replace_extension(L".typeinfo");
-				db.load_typeinfo(ti_path);
+					auto ti_path = res_path;
+					ti_path.replace_extension(L".typeinfo");
+					db.load_typeinfo(ti_path);
 
-				pugi::xml_document res;
-				pugi::xml_node root;
-				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
-				{
-					printf("res file wrong format\n");
-					return nullptr;
-				}
-
-				for (auto n_binding : root.child("bindings"))
-				{
-					auto binding = n_binding.attribute("binding").as_int();
-					if (binding != -1)
+					pugi::xml_document res;
+					pugi::xml_node root;
+					if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 					{
-						if (binding >= bindings.size())
-							bindings.resize(binding + 1);
-						auto& b = bindings[binding];
-						ti_desctype->unserialize(n_binding.attribute("type").value(), &b.type);
-						b.count = n_binding.attribute("count").as_uint();
-						b.name = n_binding.attribute("name").value();
-						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-							b.ti = find_udt(n_binding.attribute("type_name").value(), db);
+						printf("res file wrong format\n");
+						return nullptr;
+					}
+
+					for (auto n_binding : root.child("bindings"))
+					{
+						auto binding = n_binding.attribute("binding").as_int();
+						if (binding != -1)
+						{
+							if (binding >= bindings.size())
+								bindings.resize(binding + 1);
+							auto& b = bindings[binding];
+							ti_desctype->unserialize(n_binding.attribute("type").value(), &b.type);
+							b.count = n_binding.attribute("count").as_uint();
+							b.name = n_binding.attribute("name").value();
+							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+								b.ti = find_udt(n_binding.attribute("type_name").value(), db);
+						}
 					}
 				}
-			}
 
-			auto header_path = filename;
-			header_path += L".h";
-			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
-			{
-				std::string header;
-				header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
-				write_udts_to_header(header, db);
-				auto idx = 0;
-				for (auto& b : bindings)
+				auto header_path = filename;
+				header_path += L".h";
+				if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 				{
-					header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
-					header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
-					idx++;
+					std::string header;
+					header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
+					write_udts_to_header(header, db);
+					auto idx = 0;
+					for (auto& b : bindings)
+					{
+						header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
+						header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
+						idx++;
+					}
+					header += "}\n";
+					std::ofstream file(header_path);
+					file << header;
+					file.close();
 				}
-				header += "}\n";
-				std::ofstream file(header_path);
-				file << header;
-				file.close();
-			}
 
-			if (device)
+				if (device)
+				{
+					auto ret = DescriptorSetLayout::create(device, bindings);
+					ret->db = std::move(db);
+					ret->filename = filename;
+					device->dsls.emplace_back(ret);
+					return ret;
+				}
+				return nullptr;
+			}
+		}DescriptorSetLayout_get;
+		DescriptorSetLayout::Get& DescriptorSetLayout::get = DescriptorSetLayout_get;
+
+		struct DescriptorSetLayoutCreate : DescriptorSetLayout::Create
+		{
+			DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) override
 			{
-				auto ret = DescriptorSetLayout::create(device, bindings);
-				ret->db = std::move(db);
-				ret->filename = filename;
-				device->dsls.emplace_back(ret);
+				if (!device)
+					device = current_device;
+
+				auto ret = new DescriptorSetLayoutPrivate;
+				ret->device = device;
+				ret->bindings.assign(bindings.begin(), bindings.end());
+
+				std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
+				for (auto i = 0; i < bindings.size(); i++)
+				{
+					auto& src = bindings[i];
+					auto& dst = vk_bindings[i];
+
+					dst.binding = i;
+					dst.descriptorType = to_backend(src.type);
+					dst.descriptorCount = src.count;
+					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+					dst.pImmutableSamplers = nullptr;
+				}
+
+				VkDescriptorSetLayoutCreateInfo info;
+				info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+				info.flags = 0;
+				info.pNext = nullptr;
+				info.bindingCount = vk_bindings.size();
+				info.pBindings = vk_bindings.data();
+
+				chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
+
 				return ret;
 			}
-			return nullptr;
-		}
+		}DescriptorSetLayout_create;
+		DescriptorSetLayout::Create& DescriptorSetLayout::create = DescriptorSetLayout_create;
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
@@ -762,273 +763,278 @@ namespace flame
 			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 
-		struct DescriptorSetCreatePrivate : DescriptorSet::Create
+		struct DescriptorSetCreate : DescriptorSet::Create
 		{
-		};
+			DescriptorSetPtr operator()(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout) override
+			{
+				if (!pool)
+					pool = DescriptorPool::current();
 
-		DescriptorSetPtr DescriptorSet::create(DescriptorPoolPtr pool, DescriptorSetLayoutPtr layout)
-		{
-			if (!pool)
-				pool = DescriptorPool::get_default();
+				auto ret = new DescriptorSetPrivate;
+				ret->pool = pool;
+				ret->layout = layout;
 
-			auto ret = new DescriptorSetPrivate;
-			ret->pool = pool;
-			ret->layout = layout;
+				ret->reses.resize(layout->bindings.size());
+				for (auto i = 0; i < ret->reses.size(); i++)
+					ret->reses[i].resize(max(1U, layout->bindings[i].count));
 
-			ret->reses.resize(layout->bindings.size());
-			for (auto i = 0; i < ret->reses.size(); i++)
-				ret->reses[i].resize(max(1U, layout->bindings[i].count));
+				VkDescriptorSetAllocateInfo info;
+				info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+				info.pNext = nullptr;
+				info.descriptorPool = pool->vk_descriptor_pool;
+				info.descriptorSetCount = 1;
+				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
-			VkDescriptorSetAllocateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			info.pNext = nullptr;
-			info.descriptorPool = pool->vk_descriptor_pool;
-			info.descriptorSetCount = 1;
-			info.pSetLayouts = &layout->vk_descriptor_set_layout;
+				chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &ret->vk_descriptor_set));
 
-			chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &ret->vk_descriptor_set));
-
-			return ret;
-		}
+				return ret;
+			}
+		}DescriptorSet_create;
+		DescriptorSet::Create& DescriptorSet::create = DescriptorSet_create;
 
 		PipelineLayoutPrivate::~PipelineLayoutPrivate()
 		{
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
-		struct PipelineLayoutCreatePrivate : PipelineLayout::Create
+		struct PipelineLayoutGet : PipelineLayout::Get
 		{
-		};
-
-		PipelineLayoutPtr PipelineLayout::create(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size)
-		{
-			if (!device)
-				device = current_device;
-
-			auto ret = new PipelineLayoutPrivate;
-			ret->device = device;
-			ret->descriptor_set_layouts.assign(descriptor_set_layouts.begin(), descriptor_set_layouts.end());
-			ret->pc_sz = push_constant_size;
-
-			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
-			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
-
-			VkPushConstantRange vk_pushconstant_range;
-			vk_pushconstant_range.offset = 0;
-			vk_pushconstant_range.size = push_constant_size;
-			vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-
-			VkPipelineLayoutCreateInfo info;
-			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
-			info.setLayoutCount = vk_descriptor_set_layouts.size();
-			info.pSetLayouts = vk_descriptor_set_layouts.data();
-			info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
-			info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
-
-			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
-
-			return ret;
-		}
-
-		PipelineLayoutPtr PipelineLayout::get(DevicePtr device, const std::filesystem::path& _filename)
-		{
-			if (!device)
-				device = current_device;
-
-			auto filename = _filename;
-			if (!get_engine_path(filename, L"default_assets\\shaders"))
+			PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
 			{
-				wprintf(L"cannot find pll: %s\n", _filename.c_str());
-				return nullptr;
-			}
-			filename.make_preferred();
+				if (!device)
+					device = current_device;
 
-			if (device)
-			{
-				for (auto& p : device->plls)
+				auto filename = _filename;
+				if (!get_engine_path(filename, L"default_assets\\shaders"))
 				{
-					if (p->filename == filename)
-						return p.get();
+					wprintf(L"cannot find pll: %s\n", _filename.c_str());
+					return nullptr;
 				}
-			}
+				filename.make_preferred();
 
-			auto res_path = filename.parent_path() / L"build";
-			if (!std::filesystem::exists(res_path))
-				std::filesystem::create_directories(res_path);
-			res_path /= filename.filename();
-			res_path += L".res";
-
-			auto ti_path = res_path;
-			ti_path.replace_extension(L".typeinfo");
-
-			std::vector<DescriptorSetLayoutPrivate*> dsls;
-
-			auto ppath = filename.parent_path();
-			auto dependencies = get_make_dependencies(filename);
-			for (auto& d : dependencies)
-			{
-				if (d.extension() == L".dsl")
-					dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
-				else
-					d.clear();
-			}
-
-			TypeInfoDataBase db;
-			UdtInfo* pc_ti = nullptr;
-
-			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
-				!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
-			{
-				auto vk_sdk_path = getenv("VK_SDK_PATH");
-				if (vk_sdk_path)
+				if (device)
 				{
-					auto temp = basic_glsl_prefix();
-					temp += "#define MAKE_PLL\n";
-					std::ifstream pll(filename);
-					while (!pll.eof())
+					for (auto& p : device->plls)
 					{
-						std::string line;
-						std::getline(pll, line);
-						temp += line + "\n";
+						if (p->filename == filename)
+							return p.get();
 					}
-					temp += "void main()\n{\n}\n";
-					pll.close();
+				}
 
-					auto temp_fn = filename;
-					temp_fn.replace_filename(L"temp.frag");
-					std::ofstream temp_file(temp_fn);
-					temp_file << temp << std::endl;
-					temp_file.close();
+				auto res_path = filename.parent_path() / L"build";
+				if (!std::filesystem::exists(res_path))
+					std::filesystem::create_directories(res_path);
+				res_path /= filename.filename();
+				res_path += L".res";
 
-					if (std::filesystem::exists(L"a.spv"))
-						std::filesystem::remove(L"a.spv");
+				auto ti_path = res_path;
+				ti_path.replace_extension(L".typeinfo");
 
-					auto glslc_path = std::filesystem::path(vk_sdk_path);
-					glslc_path /= L"Bin/glslc.exe";
+				std::vector<DescriptorSetLayoutPrivate*> dsls;
 
-					auto command_line = L" " + temp_fn.wstring();
+				auto ppath = filename.parent_path();
+				auto dependencies = get_make_dependencies(filename);
+				for (auto& d : dependencies)
+				{
+					if (d.extension() == L".dsl")
+						dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
+					else
+						d.clear();
+				}
 
-					printf("compiling pll: %s", filename.string().c_str());
+				TypeInfoDataBase db;
+				UdtInfo* pc_ti = nullptr;
 
-					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-					std::filesystem::remove(temp_fn);
-					if (!std::filesystem::exists(L"a.spv"))
+				if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
+					!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
+				{
+					auto vk_sdk_path = getenv("VK_SDK_PATH");
+					if (vk_sdk_path)
 					{
-						temp = add_lineno_to_temp(temp);
-						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+						auto temp = basic_glsl_prefix();
+						temp += "#define MAKE_PLL\n";
+						std::ifstream pll(filename);
+						while (!pll.eof())
+						{
+							std::string line;
+							std::getline(pll, line);
+							temp += line + "\n";
+						}
+						temp += "void main()\n{\n}\n";
+						pll.close();
+
+						auto temp_fn = filename;
+						temp_fn.replace_filename(L"temp.frag");
+						std::ofstream temp_file(temp_fn);
+						temp_file << temp << std::endl;
+						temp_file.close();
+
+						if (std::filesystem::exists(L"a.spv"))
+							std::filesystem::remove(L"a.spv");
+
+						auto glslc_path = std::filesystem::path(vk_sdk_path);
+						glslc_path /= L"Bin/glslc.exe";
+
+						auto command_line = L" " + temp_fn.wstring();
+
+						printf("compiling pll: %s", filename.string().c_str());
+
+						std::string output;
+						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+						std::filesystem::remove(temp_fn);
+						if (!std::filesystem::exists(L"a.spv"))
+						{
+							temp = add_lineno_to_temp(temp);
+							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+							return nullptr;
+						}
+
+						printf(" done\n");
+
+						auto spv = get_file_content(L"a.spv");
+						std::filesystem::remove(L"a.spv");
+						auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
+						auto resources = glsl.get_shader_resources();
+
+						for (auto& r : resources.push_constant_buffers)
+						{
+							get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
+							pc_ti = find_udt(glsl.get_name(r.base_type_id).c_str(), db);
+							break;
+						}
+					}
+					else
+					{
+						printf("cannot find vk sdk\n");
 						return nullptr;
 					}
 
-					printf(" done\n");
+					db.save_typeinfo(ti_path);
 
-					auto spv = get_file_content(L"a.spv");
-					std::filesystem::remove(L"a.spv");
-					auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
-					auto resources = glsl.get_shader_resources();
+					pugi::xml_document res;
+					auto root = res.append_child("res");
 
-					for (auto& r : resources.push_constant_buffers)
-					{
-						get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
-						pc_ti = find_udt(glsl.get_name(r.base_type_id).c_str(), db);
-						break;
-					}
+					auto n_push_constant = root.append_child("push_constant");
+					n_push_constant.append_attribute("type_name").set_value(pc_ti ? pc_ti->name.c_str() : "");
+
+					res.save_file(res_path.c_str());
 				}
 				else
 				{
-					printf("cannot find vk sdk\n");
-					return nullptr;
+					auto ti_path = res_path;
+					ti_path.replace_extension(L".typeinfo");
+					db.load_typeinfo(ti_path);
+
+					pugi::xml_document res;
+					pugi::xml_node root;
+					if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
+					{
+						printf("res file wrong format\n");
+						return nullptr;
+					}
+
+					auto n_push_constant = root.child("push_constant");
+					pc_ti = find_udt(n_push_constant.attribute("type_name").value(), db);
 				}
 
-				db.save_typeinfo(ti_path);
-
-				pugi::xml_document res;
-				auto root = res.append_child("res");
-
-				auto n_push_constant = root.append_child("push_constant");
-				n_push_constant.append_attribute("type_name").set_value(pc_ti ? pc_ti->name.c_str() : "");
-
-				res.save_file(res_path.c_str());
-			}
-			else
-			{
-				auto ti_path = res_path;
-				ti_path.replace_extension(L".typeinfo");
-				db.load_typeinfo(ti_path);
-
-				pugi::xml_document res;
-				pugi::xml_node root;
-				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
+				auto header_path = filename;
+				header_path += L".h";
+				if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
 				{
-					printf("res file wrong format\n");
-					return nullptr;
+					std::string header;
+					header += "namespace PLL_" + filename.filename().stem().string() + "\n{\n";
+					header += "\tenum Binding\n\t{\n";
+					for (auto& d : dependencies)
+					{
+						if (!d.empty())
+							header += "\t\tBinding_" + d.filename().stem().string() + ",\n";
+					}
+					header += "\t\tBinding_Max\n";
+					header += "\t};\n\n";
+					write_udts_to_header(header, db);
+					header += "}\n";
+					std::ofstream file(header_path);
+					file << header;
+					file.close();
 				}
 
-				auto n_push_constant = root.child("push_constant");
-				pc_ti = find_udt(n_push_constant.attribute("type_name").value(), db);
-			}
-
-			auto header_path = filename;
-			header_path += L".h";
-			if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
-			{
-				std::string header;
-				header += "namespace PLL_" + filename.filename().stem().string() + "\n{\n";
-				header += "\tenum Binding\n\t{\n";
-				for (auto& d : dependencies)
+				if (device)
 				{
-					if (!d.empty())
-						header += "\t\tBinding_" + d.filename().stem().string() + ",\n";
-				}
-				header += "\t\tBinding_Max\n";
-				header += "\t};\n\n";
-				write_udts_to_header(header, db);
-				header += "}\n";
-				std::ofstream file(header_path);
-				file << header;
-				file.close();
-			}
+					auto ret = PipelineLayout::create(device, dsls, pc_ti ? pc_ti->size : 0);
+					ret->device = device;
+					ret->db = std::move(db);
+					ret->pc_ti = pc_ti;
+					ret->filename = filename;
 
-			if (device)
+					{
+						std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+						vk_descriptor_set_layouts.resize(dsls.size());
+						for (auto i = 0; i < dsls.size(); i++)
+							vk_descriptor_set_layouts[i] = dsls[i]->vk_descriptor_set_layout;
+
+						VkPushConstantRange vk_pushconstant_range;
+						vk_pushconstant_range.offset = 0;
+						vk_pushconstant_range.size = ret->pc_sz;
+						vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+
+						VkPipelineLayoutCreateInfo info;
+						info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+						info.flags = 0;
+						info.pNext = nullptr;
+						info.setLayoutCount = vk_descriptor_set_layouts.size();
+						info.pSetLayouts = vk_descriptor_set_layouts.data();
+						info.pushConstantRangeCount = ret->pc_sz > 0 ? 1 : 0;
+						info.pPushConstantRanges = ret->pc_sz > 0 ? &vk_pushconstant_range : nullptr;
+
+						chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
+					}
+
+					device->plls.emplace_back(ret);
+					return ret;
+				}
+				return nullptr;
+			}
+		}PipelineLayout_get;
+		PipelineLayout::Get& PipelineLayout::get = PipelineLayout_get;
+
+
+		struct PipelineLayoutCreate : PipelineLayout::Create
+		{
+			PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) override
 			{
-				auto ret = PipelineLayout::create(device, dsls, pc_ti ? pc_ti->size : 0);
+				if (!device)
+					device = current_device;
+
+				auto ret = new PipelineLayoutPrivate;
 				ret->device = device;
-				ret->db = std::move(db);
-				ret->pc_ti = pc_ti;
-				ret->filename = filename;
+				ret->descriptor_set_layouts.assign(descriptor_set_layouts.begin(), descriptor_set_layouts.end());
+				ret->pc_sz = push_constant_size;
 
-				{
-					std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-					vk_descriptor_set_layouts.resize(dsls.size());
-					for (auto i = 0; i < dsls.size(); i++)
-						vk_descriptor_set_layouts[i] = dsls[i]->vk_descriptor_set_layout;
+				std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+				vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
+				for (auto i = 0; i < descriptor_set_layouts.size(); i++)
+					vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
 
-					VkPushConstantRange vk_pushconstant_range;
-					vk_pushconstant_range.offset = 0;
-					vk_pushconstant_range.size = ret->pc_sz;
-					vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+				VkPushConstantRange vk_pushconstant_range;
+				vk_pushconstant_range.offset = 0;
+				vk_pushconstant_range.size = push_constant_size;
+				vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 
-					VkPipelineLayoutCreateInfo info;
-					info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-					info.flags = 0;
-					info.pNext = nullptr;
-					info.setLayoutCount = vk_descriptor_set_layouts.size();
-					info.pSetLayouts = vk_descriptor_set_layouts.data();
-					info.pushConstantRangeCount = ret->pc_sz > 0 ? 1 : 0;
-					info.pPushConstantRanges = ret->pc_sz > 0 ? &vk_pushconstant_range : nullptr;
+				VkPipelineLayoutCreateInfo info;
+				info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+				info.flags = 0;
+				info.pNext = nullptr;
+				info.setLayoutCount = vk_descriptor_set_layouts.size();
+				info.pSetLayouts = vk_descriptor_set_layouts.data();
+				info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
+				info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
-					chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
-				}
+				chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
 
-				device->plls.emplace_back(ret);
 				return ret;
 			}
-			return nullptr;
-		}
+		}PipelineLayout_create;
+		PipelineLayout::Create& PipelineLayout::create = PipelineLayout_create;
 
 		ShaderPrivate::~ShaderPrivate()
 		{
@@ -1036,538 +1042,554 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPtr Shader::get(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes)
+		struct ShaderGet : Shader::Get
 		{
-			if (!device)
-				device = current_device;
-
-			auto filename = _filename;
-			if (!get_engine_path(filename, L"default_assets\\shaders"))
+			ShaderPtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes) override
 			{
-				wprintf(L"cannot find shader: %s\n", _filename.c_str());
-				return nullptr;
-			}
-			filename.make_preferred();
+				if (!device)
+					device = current_device;
 
-			if (device)
-			{
-				for (auto& s : device->sds)
+				auto filename = _filename;
+				if (!get_engine_path(filename, L"default_assets\\shaders"))
 				{
-					if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
-						return s.get();
-				}
-			}
-
-			std::string defines_str;
-			std::string substitutes_str;
-			for (auto i = 0; i < defines.size(); i++)
-			{
-				defines_str += defines[i];
-				if (i < defines.size() - 1)
-					defines_str += " ";
-			}
-			for (auto i = 0; i < substitutes.size(); i++)
-			{
-				substitutes_str += substitutes[i].first + " " + substitutes[i].second;
-				if (i < substitutes.size() - 1)
-					substitutes_str += " ";
-			}
-
-			auto ppath = filename.parent_path();
-
-			auto hash = 0U;
-			for (auto& d : defines)
-				hash = hash ^ std::hash<std::string>()(d);
-			for (auto& s : substitutes)
-				hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
-			auto str_hash = to_hex_wstring(hash);
-
-			auto spv_path = ppath / L"build";
-			if (!std::filesystem::exists(spv_path))
-				std::filesystem::create_directories(spv_path);
-			spv_path /= filename.filename();
-			spv_path += L"." + str_hash + L".spv";
-
-			auto dependencies = get_make_dependencies(filename);
-
-			auto parsed_substitutes = substitutes;
-
-			for (auto& s : parsed_substitutes)
-			{
-				if (s.first.ends_with("_FILE"))
-				{
-					auto fn = std::filesystem::path(s.second);
-					if (!fn.is_absolute())
-						fn = ppath / fn;
-					s.second = get_file_content(fn);
-					assert(!s.second.empty());
-					SUS::remove_ch(s.second, '\r');
-					dependencies.push_back(fn);
-				}
-			}
-
-			if (should_remake(dependencies, spv_path))
-			{
-				auto vk_sdk_path = getenv("VK_SDK_PATH");
-				if (vk_sdk_path)
-				{
-					auto temp = basic_glsl_prefix();
-					std::ifstream glsl(filename);
-					while (!glsl.eof())
-					{
-						std::string line;
-						std::getline(glsl, line);
-						for (auto& s : parsed_substitutes)
-							SUS::replace_all(line, s.first, s.second);
-						temp += line + "\n";
-					}
-					glsl.close();
-
-					auto temp_fn = filename;
-					temp_fn.replace_filename(L"temp");
-					temp_fn.replace_extension(filename.extension());
-					std::ofstream temp_file(temp_fn);
-					temp_file << temp << std::endl;
-					temp_file.close();
-
-					if (std::filesystem::exists(spv_path))
-						std::filesystem::remove(spv_path);
-
-					auto glslc_path = std::filesystem::path(vk_sdk_path);
-					glslc_path /= L"Bin/glslc.exe";
-
-					auto command_line = L" " + temp_fn.wstring() + L" -o" + spv_path.wstring();
-					for (auto& d : defines)
-						command_line += L" -D" + s2w(d);
-
-					printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
-
-					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-					if (!std::filesystem::exists(spv_path))
-					{
-						temp = add_lineno_to_temp(temp);
-						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						return nullptr;
-					}
-
-					printf(" done\n");
-
-					std::filesystem::remove(temp_fn);
-				}
-				else
-				{
-					printf("cannot find vk sdk\n");
+					wprintf(L"cannot find shader: %s\n", _filename.c_str());
 					return nullptr;
 				}
+				filename.make_preferred();
+
+				if (device)
+				{
+					for (auto& s : device->sds)
+					{
+						if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
+							return s.get();
+					}
+				}
+
+				std::string defines_str;
+				std::string substitutes_str;
+				for (auto i = 0; i < defines.size(); i++)
+				{
+					defines_str += defines[i];
+					if (i < defines.size() - 1)
+						defines_str += " ";
+				}
+				for (auto i = 0; i < substitutes.size(); i++)
+				{
+					substitutes_str += substitutes[i].first + " " + substitutes[i].second;
+					if (i < substitutes.size() - 1)
+						substitutes_str += " ";
+				}
+
+				auto ppath = filename.parent_path();
+
+				auto hash = 0U;
+				for (auto& d : defines)
+					hash = hash ^ std::hash<std::string>()(d);
+				for (auto& s : substitutes)
+					hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
+				auto str_hash = to_hex_wstring(hash);
+
+				auto spv_path = ppath / L"build";
+				if (!std::filesystem::exists(spv_path))
+					std::filesystem::create_directories(spv_path);
+				spv_path /= filename.filename();
+				spv_path += L"." + str_hash + L".spv";
+
+				auto dependencies = get_make_dependencies(filename);
+
+				auto parsed_substitutes = substitutes;
+
+				for (auto& s : parsed_substitutes)
+				{
+					if (s.first.ends_with("_FILE"))
+					{
+						auto fn = std::filesystem::path(s.second);
+						if (!fn.is_absolute())
+							fn = ppath / fn;
+						s.second = get_file_content(fn);
+						assert(!s.second.empty());
+						SUS::remove_ch(s.second, '\r');
+						dependencies.push_back(fn);
+					}
+				}
+
+				if (should_remake(dependencies, spv_path))
+				{
+					auto vk_sdk_path = getenv("VK_SDK_PATH");
+					if (vk_sdk_path)
+					{
+						auto temp = basic_glsl_prefix();
+						std::ifstream glsl(filename);
+						while (!glsl.eof())
+						{
+							std::string line;
+							std::getline(glsl, line);
+							for (auto& s : parsed_substitutes)
+								SUS::replace_all(line, s.first, s.second);
+							temp += line + "\n";
+						}
+						glsl.close();
+
+						auto temp_fn = filename;
+						temp_fn.replace_filename(L"temp");
+						temp_fn.replace_extension(filename.extension());
+						std::ofstream temp_file(temp_fn);
+						temp_file << temp << std::endl;
+						temp_file.close();
+
+						if (std::filesystem::exists(spv_path))
+							std::filesystem::remove(spv_path);
+
+						auto glslc_path = std::filesystem::path(vk_sdk_path);
+						glslc_path /= L"Bin/glslc.exe";
+
+						auto command_line = L" " + temp_fn.wstring() + L" -o" + spv_path.wstring();
+						for (auto& d : defines)
+							command_line += L" -D" + s2w(d);
+
+						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
+
+						std::string output;
+						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+						if (!std::filesystem::exists(spv_path))
+						{
+							temp = add_lineno_to_temp(temp);
+							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+							return nullptr;
+						}
+
+						printf(" done\n");
+
+						std::filesystem::remove(temp_fn);
+					}
+					else
+					{
+						printf("cannot find vk sdk\n");
+						return nullptr;
+					}
+				}
+
+				if (device)
+				{
+					auto ret = new ShaderPrivate;
+					ret->device = device;
+					auto ext = filename.extension();
+					if (ext == L".vert")
+						ret->type = ShaderStageVert;
+					else if (ext == L".tesc")
+						ret->type = ShaderStageTesc;
+					else if (ext == L".tese")
+						ret->type = ShaderStageTese;
+					else if (ext == L".geom")
+						ret->type = ShaderStageGeom;
+					else if (ext == L".frag")
+						ret->type = ShaderStageFrag;
+					else if (ext == L".comp")
+						ret->type = ShaderStageComp;
+					ret->filename = filename;
+					ret->defines = defines;
+					ret->substitutes = substitutes;
+
+					auto spv_content = get_file_content(spv_path);
+					VkShaderModuleCreateInfo shader_info;
+					shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+					shader_info.flags = 0;
+					shader_info.pNext = nullptr;
+					shader_info.codeSize = spv_content.size();
+					shader_info.pCode = (uint*)spv_content.data();
+					chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
+
+					device->sds.emplace_back(ret);
+					return ret;
+				}
+
+				return nullptr;
 			}
-
-			if (device)
-			{
-				auto ret = new ShaderPrivate;
-				ret->device = device;
-				auto ext = filename.extension();
-				if (ext == L".vert")
-					ret->type = ShaderStageVert;
-				else if (ext == L".tesc")
-					ret->type = ShaderStageTesc;
-				else if (ext == L".tese")
-					ret->type = ShaderStageTese;
-				else if (ext == L".geom")
-					ret->type = ShaderStageGeom;
-				else if (ext == L".frag")
-					ret->type = ShaderStageFrag;
-				else if (ext == L".comp")
-					ret->type = ShaderStageComp;
-				ret->filename = filename;
-				ret->defines = defines;
-				ret->substitutes = substitutes;
-
-				auto spv_content = get_file_content(spv_path);
-				VkShaderModuleCreateInfo shader_info;
-				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-				shader_info.flags = 0;
-				shader_info.pNext = nullptr;
-				shader_info.codeSize = spv_content.size();
-				shader_info.pCode = (uint*)spv_content.data();
-				chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
-
-				device->sds.emplace_back(ret);
-				return ret;
-			}
-
-			return nullptr;
-		}
+		}Shader_get;
+		Shader::Get& Shader::get = Shader_get;
 
 		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
 		{
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		GraphicsPipelinePtr GraphicsPipeline::create(DevicePtr device, const GraphicsPipelineInfo& info)
+		struct GraphicsPipelineCreate : GraphicsPipeline::Create
 		{
-			if (!device)
-				device = current_device;
-
-			auto ret = new GraphicsPipelinePrivate;
-			ret->device = device;
-			ret->info = info;
-
-			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
-			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
-			std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
-			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
-			std::vector<VkDynamicState> vk_dynamic_states;
-
-			vk_stage_infos.resize(info.shaders.size());
-			for (auto i = 0; i < info.shaders.size(); i++)
+			GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) override
 			{
-				auto shader = info.shaders[i];
+				if (!device)
+					device = current_device;
 
-				auto& dst = vk_stage_infos[i];
-				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-				dst.flags = 0;
-				dst.pNext = nullptr;
-				dst.pSpecializationInfo = nullptr;
-				dst.pName = "main";
-				dst.stage = to_backend(shader->type);
-				dst.module = shader->vk_module;
-			}
+				auto ret = new GraphicsPipelinePrivate;
+				ret->device = device;
+				ret->info = info;
 
-			vk_vi_bindings.resize(info.vertex_buffers.size());
-			for (auto i = 0; i < vk_vi_bindings.size(); i++)
-			{
-				auto& src_buf = info.vertex_buffers[i];
-				auto& dst_buf = vk_vi_bindings[i];
-				dst_buf.binding = i;
-				auto offset = 0;
-				for (auto j = 0; j < src_buf.attributes.size(); j++)
+				std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
+				std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
+				std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
+				std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
+				std::vector<VkDynamicState> vk_dynamic_states;
+
+				vk_stage_infos.resize(info.shaders.size());
+				for (auto i = 0; i < info.shaders.size(); i++)
 				{
-					auto& src_att = src_buf.attributes[j];
-					VkVertexInputAttributeDescription dst_att;
-					dst_att.location = src_att.location;
-					dst_att.binding = i;
-					if (src_att.offset != -1)
-						offset = src_att.offset;
-					dst_att.offset = offset;
-					offset += format_size(src_att.format);
-					dst_att.format = to_backend(src_att.format);
-					vk_vi_attributes.push_back(dst_att);
+					auto shader = info.shaders[i];
+
+					auto& dst = vk_stage_infos[i];
+					dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+					dst.flags = 0;
+					dst.pNext = nullptr;
+					dst.pSpecializationInfo = nullptr;
+					dst.pName = "main";
+					dst.stage = to_backend(shader->type);
+					dst.module = shader->vk_module;
 				}
-				dst_buf.inputRate = to_backend(src_buf.rate);
-				dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
-			}
 
-			VkPipelineVertexInputStateCreateInfo vertex_input_state;
-			vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			vertex_input_state.pNext = nullptr;
-			vertex_input_state.flags = 0;
-			vertex_input_state.vertexBindingDescriptionCount = vk_vi_bindings.size();
-			vertex_input_state.pVertexBindingDescriptions = vk_vi_bindings.empty() ? nullptr : vk_vi_bindings.data();
-			vertex_input_state.vertexAttributeDescriptionCount = vk_vi_attributes.size();
-			vertex_input_state.pVertexAttributeDescriptions = vk_vi_attributes.empty() ? nullptr : vk_vi_attributes.data();
-
-			VkPipelineInputAssemblyStateCreateInfo assembly_state;
-			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-			assembly_state.flags = 0;
-			assembly_state.pNext = nullptr;
-			assembly_state.topology = to_backend(info.primitive_topology);
-			assembly_state.primitiveRestartEnable = VK_FALSE;
-
-			VkPipelineTessellationStateCreateInfo tess_state;
-			tess_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-			tess_state.pNext = nullptr;
-			tess_state.flags = 0;
-			tess_state.patchControlPoints = info.patch_control_points;
-
-			VkViewport viewport;
-			viewport.width = 1.f;
-			viewport.height = 1.f;
-			viewport.minDepth = 0.0f;
-			viewport.maxDepth = 1.0f;
-			viewport.x = 0;
-			viewport.y = 0;
-
-			VkRect2D scissor;
-			scissor.extent.width = 1;
-			scissor.extent.height = 1;
-			scissor.offset.x = 0;
-			scissor.offset.y = 0;
-
-			VkPipelineViewportStateCreateInfo viewport_state;
-			viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-			viewport_state.pNext = nullptr;
-			viewport_state.flags = 0;
-			viewport_state.viewportCount = 1;
-			viewport_state.scissorCount = 1;
-			viewport_state.pScissors = &scissor;
-			viewport_state.pViewports = &viewport;
-
-			VkPipelineRasterizationStateCreateInfo raster_state;
-			raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-			raster_state.pNext = nullptr;
-			raster_state.flags = 0;
-			raster_state.depthClampEnable = VK_FALSE;
-			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = to_backend(info.polygon_mode);
-			raster_state.cullMode = to_backend(info.cull_mode);
-			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-			raster_state.depthBiasEnable = VK_FALSE;
-			raster_state.depthBiasConstantFactor = 0.f;
-			raster_state.depthBiasClamp = 0.f;
-			raster_state.depthBiasSlopeFactor = 0.f;
-			raster_state.lineWidth = 1.f;
-
-			VkPipelineMultisampleStateCreateInfo multisample_state;
-			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-			multisample_state.flags = 0;
-			multisample_state.pNext = nullptr;
-			if (info.sample_count == SampleCount_1)
-			{
-				auto& res_atts = info.renderpass->subpasses[info.subpass_index].resolve_attachments;
-				multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
-			}
-			else
-				multisample_state.rasterizationSamples = to_backend(info.sample_count);
-			multisample_state.sampleShadingEnable = VK_FALSE;
-			multisample_state.minSampleShading = 0.f;
-			multisample_state.pSampleMask = nullptr;
-			multisample_state.alphaToCoverageEnable = info.alpha_to_coverage;
-			multisample_state.alphaToOneEnable = VK_FALSE;
-
-			VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
-			depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-			depth_stencil_state.flags = 0;
-			depth_stencil_state.pNext = nullptr;
-			depth_stencil_state.depthTestEnable = info.depth_test;
-			depth_stencil_state.depthWriteEnable = info.depth_write;
-			depth_stencil_state.depthCompareOp = to_backend(info.compare_op);
-			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
-			depth_stencil_state.minDepthBounds = 0;
-			depth_stencil_state.maxDepthBounds = 0;
-			depth_stencil_state.stencilTestEnable = VK_FALSE;
-			depth_stencil_state.front = {};
-			depth_stencil_state.back = {};
-
-			vk_blend_attachment_states.resize(info.renderpass->subpasses[info.subpass_index].color_attachments.size());
-			for (auto& a : vk_blend_attachment_states)
-			{
-				a.blendEnable = VK_FALSE;
-				a.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-				a.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-				a.colorBlendOp = VK_BLEND_OP_ADD;
-				a.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-				a.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-				a.alphaBlendOp = VK_BLEND_OP_ADD;
-				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-			}
-			for (auto i = 0; i < info.blend_options.size(); i++)
-			{
-				auto& src = info.blend_options[i];
-				auto& dst = vk_blend_attachment_states[i];
-				dst.blendEnable = src.enable;
-				dst.srcColorBlendFactor = to_backend(src.src_color);
-				dst.dstColorBlendFactor = to_backend(src.dst_color);
-				dst.colorBlendOp = VK_BLEND_OP_ADD;
-				dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
-				dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
-				dst.alphaBlendOp = VK_BLEND_OP_ADD;
-				dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-			}
-
-			VkPipelineColorBlendStateCreateInfo blend_state;
-			blend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-			blend_state.flags = 0;
-			blend_state.pNext = nullptr;
-			blend_state.blendConstants[0] = 0.f;
-			blend_state.blendConstants[1] = 0.f;
-			blend_state.blendConstants[2] = 0.f;
-			blend_state.blendConstants[3] = 0.f;
-			blend_state.logicOpEnable = VK_FALSE;
-			blend_state.logicOp = VK_LOGIC_OP_COPY;
-			blend_state.attachmentCount = vk_blend_attachment_states.size();
-			blend_state.pAttachments = vk_blend_attachment_states.data();
-
-			for (auto i = 0; i < info.dynamic_states.size(); i++)
-				vk_dynamic_states.push_back(to_backend((DynamicState)info.dynamic_states[i]));
-			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
-				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
-				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_SCISSOR);
-
-			VkPipelineDynamicStateCreateInfo dynamic_state;
-			dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-			dynamic_state.pNext = nullptr;
-			dynamic_state.flags = 0;
-			dynamic_state.dynamicStateCount = vk_dynamic_states.size();
-			dynamic_state.pDynamicStates = vk_dynamic_states.data();
-
-			VkGraphicsPipelineCreateInfo pipeline_info;
-			pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-			pipeline_info.pNext = nullptr;
-			pipeline_info.flags = 0;
-			pipeline_info.stageCount = vk_stage_infos.size();
-			pipeline_info.pStages = vk_stage_infos.data();
-			pipeline_info.pVertexInputState = &vertex_input_state;
-			pipeline_info.pInputAssemblyState = &assembly_state;
-			pipeline_info.pTessellationState = tess_state.patchControlPoints > 0 ? &tess_state : nullptr;
-			pipeline_info.pViewportState = &viewport_state;
-			pipeline_info.pRasterizationState = &raster_state;
-			pipeline_info.pMultisampleState = &multisample_state;
-			pipeline_info.pDepthStencilState = &depth_stencil_state;
-			pipeline_info.pColorBlendState = &blend_state;
-			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
-			pipeline_info.layout = info.layout->vk_pipeline_layout;
-			pipeline_info.renderPass = info.renderpass->vk_renderpass;
-			pipeline_info.subpass = info.subpass_index;
-			pipeline_info.basePipelineHandle = 0;
-			pipeline_info.basePipelineIndex = 0;
-
-			chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
-
-			return ret;
-		}
-
-		GraphicsPipelinePtr GraphicsPipeline::get(DevicePtr device, const std::filesystem::path& _filename)
-		{
-			if (!device)
-				device = current_device;
-
-			auto filename = _filename;
-			if (!get_engine_path(filename, L"default_assets\\shaders"))
-			{
-				wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
-				return nullptr;
-			}
-			filename.make_preferred();
-
-			if (device)
-			{
-				for (auto& pl : device->pls)
+				vk_vi_bindings.resize(info.vertex_buffers.size());
+				for (auto i = 0; i < vk_vi_bindings.size(); i++)
 				{
-					if (pl->filename == filename)
-						return pl.get();
+					auto& src_buf = info.vertex_buffers[i];
+					auto& dst_buf = vk_vi_bindings[i];
+					dst_buf.binding = i;
+					auto offset = 0;
+					for (auto j = 0; j < src_buf.attributes.size(); j++)
+					{
+						auto& src_att = src_buf.attributes[j];
+						VkVertexInputAttributeDescription dst_att;
+						dst_att.location = src_att.location;
+						dst_att.binding = i;
+						if (src_att.offset != -1)
+							offset = src_att.offset;
+						dst_att.offset = offset;
+						offset += format_size(src_att.format);
+						dst_att.format = to_backend(src_att.format);
+						vk_vi_attributes.push_back(dst_att);
+					}
+					dst_buf.inputRate = to_backend(src_buf.rate);
+					dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
 				}
-			}
 
-			pugi::xml_document doc;
-			pugi::xml_node doc_root;
+				VkPipelineVertexInputStateCreateInfo vertex_input_state;
+				vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+				vertex_input_state.pNext = nullptr;
+				vertex_input_state.flags = 0;
+				vertex_input_state.vertexBindingDescriptionCount = vk_vi_bindings.size();
+				vertex_input_state.pVertexBindingDescriptions = vk_vi_bindings.empty() ? nullptr : vk_vi_bindings.data();
+				vertex_input_state.vertexAttributeDescriptionCount = vk_vi_attributes.size();
+				vertex_input_state.pVertexAttributeDescriptions = vk_vi_attributes.empty() ? nullptr : vk_vi_attributes.data();
 
-			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("pipeline"))
-			{
-				printf("pipeline wrong format: %s\n", _filename.string().c_str());
-				return nullptr;
-			}
+				VkPipelineInputAssemblyStateCreateInfo assembly_state;
+				assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+				assembly_state.flags = 0;
+				assembly_state.pNext = nullptr;
+				assembly_state.topology = to_backend(info.primitive_topology);
+				assembly_state.primitiveRestartEnable = VK_FALSE;
 
-			GraphicsPipelineInfo info;
+				VkPipelineTessellationStateCreateInfo tess_state;
+				tess_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+				tess_state.pNext = nullptr;
+				tess_state.flags = 0;
+				tess_state.patchControlPoints = info.patch_control_points;
 
-			for (auto n_shdr : doc_root.child("shaders"))
-			{
-				auto shader = Shader::get(device, n_shdr.attribute("filename").value(), Shader::format_defines(n_shdr.attribute("defines").value()), {});
-				assert(shader);
-				info.shaders.push_back(shader);
-			}
+				VkViewport viewport;
+				viewport.width = 1.f;
+				viewport.height = 1.f;
+				viewport.minDepth = 0.0f;
+				viewport.maxDepth = 1.0f;
+				viewport.x = 0;
+				viewport.y = 0;
 
-			info.layout = PipelineLayout::get(device, doc_root.child("layout").attribute("filename").value());
-			assert(info.layout);
+				VkRect2D scissor;
+				scissor.extent.width = 1;
+				scissor.extent.height = 1;
+				scissor.offset.x = 0;
+				scissor.offset.y = 0;
 
-			auto n_rp = doc_root.child("renderpass");
-			info.renderpass = Renderpass::get(device, n_rp.attribute("filename").value());
-			assert(info.renderpass);
-			info.subpass_index = n_rp.attribute("index").as_uint();
+				VkPipelineViewportStateCreateInfo viewport_state;
+				viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+				viewport_state.pNext = nullptr;
+				viewport_state.flags = 0;
+				viewport_state.viewportCount = 1;
+				viewport_state.scissorCount = 1;
+				viewport_state.pScissors = &scissor;
+				viewport_state.pViewports = &viewport;
 
-			auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
-			for (auto n_buf : doc_root.child("vertex_buffers"))
-			{
-				auto& vbuf = info.vertex_buffers.emplace_back();
-				for (auto n_att : n_buf)
+				VkPipelineRasterizationStateCreateInfo raster_state;
+				raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+				raster_state.pNext = nullptr;
+				raster_state.flags = 0;
+				raster_state.depthClampEnable = VK_FALSE;
+				raster_state.rasterizerDiscardEnable = VK_FALSE;
+				raster_state.polygonMode = to_backend(info.polygon_mode);
+				raster_state.cullMode = to_backend(info.cull_mode);
+				raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+				raster_state.depthBiasEnable = VK_FALSE;
+				raster_state.depthBiasConstantFactor = 0.f;
+				raster_state.depthBiasClamp = 0.f;
+				raster_state.depthBiasSlopeFactor = 0.f;
+				raster_state.lineWidth = 1.f;
+
+				VkPipelineMultisampleStateCreateInfo multisample_state;
+				multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+				multisample_state.flags = 0;
+				multisample_state.pNext = nullptr;
+				if (info.sample_count == SampleCount_1)
 				{
-					auto& att = vbuf.attributes.emplace_back();
-					att.location = n_att.attribute("location").as_uint();
-					ti_format->unserialize(n_att.attribute("format").value(), &att.format);
+					auto& res_atts = info.renderpass->subpasses[info.subpass_index].resolve_attachments;
+					multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 				}
-			}
+				else
+					multisample_state.rasterizationSamples = to_backend(info.sample_count);
+				multisample_state.sampleShadingEnable = VK_FALSE;
+				multisample_state.minSampleShading = 0.f;
+				multisample_state.pSampleMask = nullptr;
+				multisample_state.alphaToCoverageEnable = info.alpha_to_coverage;
+				multisample_state.alphaToOneEnable = VK_FALSE;
 
-			auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology", tidb);
-			auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode", tidb);
-			auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
-			auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp", tidb);
-			if (auto n = doc_root.child("primitive_topology"); n)
-				ti_prim->unserialize(n.attribute("v").value(), &info.primitive_topology);
-			if (auto n = doc_root.child("cull_mode"); n)
-				ti_cullmode->unserialize(n.attribute("v").value(), &info.cull_mode);
-			if (auto n = doc_root.child("sample_count"); n)
-				ti_samplecount->unserialize(n.attribute("v").value(), &info.sample_count);
-			if (auto n = doc_root.child("alpha_to_coverage"); n)
-				info.alpha_to_coverage = n.attribute("v").as_bool();
-			if (auto n = doc_root.child("depth_test"); n)
-				info.depth_test = n.attribute("v").as_bool();
-			if (auto n = doc_root.child("depth_write"); n)
-				info.depth_write = n.attribute("v").as_bool();
-			if (auto n = doc_root.child("compare_op"); n)
-				ti_compare->unserialize(n.attribute("v").value(), &info.compare_op);
+				VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
+				depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+				depth_stencil_state.flags = 0;
+				depth_stencil_state.pNext = nullptr;
+				depth_stencil_state.depthTestEnable = info.depth_test;
+				depth_stencil_state.depthWriteEnable = info.depth_write;
+				depth_stencil_state.depthCompareOp = to_backend(info.compare_op);
+				depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
+				depth_stencil_state.minDepthBounds = 0;
+				depth_stencil_state.maxDepthBounds = 0;
+				depth_stencil_state.stencilTestEnable = VK_FALSE;
+				depth_stencil_state.front = {};
+				depth_stencil_state.back = {};
 
-			auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor", tidb);
-			std::vector<BlendOption> blend_options;
-			for (auto n_bo : doc_root.child("blend_options"))
-			{
-				auto& bo = info.blend_options.emplace_back();
-				bo.enable = n_bo.attribute("enable").as_bool();
-				if (auto a = n_bo.attribute("src_color"); a)
-					ti_blendfactor->unserialize(a.value(), &bo.src_color);
-				if (auto a = n_bo.attribute("dst_color"); a)
-					ti_blendfactor->unserialize(a.value(), &bo.dst_color);
-				if (auto a = n_bo.attribute("src_alpha"); a)
-					ti_blendfactor->unserialize(a.value(), &bo.src_alpha);
-				if (auto a = n_bo.attribute("dst_alpha"); a)
-					ti_blendfactor->unserialize(a.value(), &bo.dst_alpha);
-			}
+				vk_blend_attachment_states.resize(info.renderpass->subpasses[info.subpass_index].color_attachments.size());
+				for (auto& a : vk_blend_attachment_states)
+				{
+					a.blendEnable = VK_FALSE;
+					a.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+					a.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+					a.colorBlendOp = VK_BLEND_OP_ADD;
+					a.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+					a.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+					a.alphaBlendOp = VK_BLEND_OP_ADD;
+					a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				}
+				for (auto i = 0; i < info.blend_options.size(); i++)
+				{
+					auto& src = info.blend_options[i];
+					auto& dst = vk_blend_attachment_states[i];
+					dst.blendEnable = src.enable;
+					dst.srcColorBlendFactor = to_backend(src.src_color);
+					dst.dstColorBlendFactor = to_backend(src.dst_color);
+					dst.colorBlendOp = VK_BLEND_OP_ADD;
+					dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
+					dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
+					dst.alphaBlendOp = VK_BLEND_OP_ADD;
+					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				}
 
-			if (device)
-			{
-				auto ret = GraphicsPipeline::create(device, info);
-				ret->filename = filename;
-				device->pls.emplace_back(ret);
+				VkPipelineColorBlendStateCreateInfo blend_state;
+				blend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+				blend_state.flags = 0;
+				blend_state.pNext = nullptr;
+				blend_state.blendConstants[0] = 0.f;
+				blend_state.blendConstants[1] = 0.f;
+				blend_state.blendConstants[2] = 0.f;
+				blend_state.blendConstants[3] = 0.f;
+				blend_state.logicOpEnable = VK_FALSE;
+				blend_state.logicOp = VK_LOGIC_OP_COPY;
+				blend_state.attachmentCount = vk_blend_attachment_states.size();
+				blend_state.pAttachments = vk_blend_attachment_states.data();
+
+				for (auto i = 0; i < info.dynamic_states.size(); i++)
+					vk_dynamic_states.push_back(to_backend((DynamicState)info.dynamic_states[i]));
+				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
+					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
+					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_SCISSOR);
+
+				VkPipelineDynamicStateCreateInfo dynamic_state;
+				dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+				dynamic_state.pNext = nullptr;
+				dynamic_state.flags = 0;
+				dynamic_state.dynamicStateCount = vk_dynamic_states.size();
+				dynamic_state.pDynamicStates = vk_dynamic_states.data();
+
+				VkGraphicsPipelineCreateInfo pipeline_info;
+				pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+				pipeline_info.pNext = nullptr;
+				pipeline_info.flags = 0;
+				pipeline_info.stageCount = vk_stage_infos.size();
+				pipeline_info.pStages = vk_stage_infos.data();
+				pipeline_info.pVertexInputState = &vertex_input_state;
+				pipeline_info.pInputAssemblyState = &assembly_state;
+				pipeline_info.pTessellationState = tess_state.patchControlPoints > 0 ? &tess_state : nullptr;
+				pipeline_info.pViewportState = &viewport_state;
+				pipeline_info.pRasterizationState = &raster_state;
+				pipeline_info.pMultisampleState = &multisample_state;
+				pipeline_info.pDepthStencilState = &depth_stencil_state;
+				pipeline_info.pColorBlendState = &blend_state;
+				pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
+				pipeline_info.layout = info.layout->vk_pipeline_layout;
+				pipeline_info.renderPass = info.renderpass->vk_renderpass;
+				pipeline_info.subpass = info.subpass_index;
+				pipeline_info.basePipelineHandle = 0;
+				pipeline_info.basePipelineIndex = 0;
+
+				chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+
 				return ret;
 			}
+		}GraphicsPipeline_create;
+		GraphicsPipeline::Create& GraphicsPipeline::create = GraphicsPipeline_create;
 
-			return nullptr;
-		}
+		struct GraphicsPipelineGet : GraphicsPipeline::Get
+		{
+			GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
+			{
+				if (!device)
+					device = current_device;
+
+				auto filename = _filename;
+				if (!get_engine_path(filename, L"default_assets\\shaders"))
+				{
+					wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
+					return nullptr;
+				}
+				filename.make_preferred();
+
+				if (device)
+				{
+					for (auto& pl : device->pls)
+					{
+						if (pl->filename == filename)
+							return pl.get();
+					}
+				}
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+
+				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("pipeline"))
+				{
+					printf("pipeline wrong format: %s\n", _filename.string().c_str());
+					return nullptr;
+				}
+
+				GraphicsPipelineInfo info;
+
+				for (auto n_shdr : doc_root.child("shaders"))
+				{
+					auto shader = Shader::get(device, n_shdr.attribute("filename").value(), Shader::format_defines(n_shdr.attribute("defines").value()), {});
+					assert(shader);
+					info.shaders.push_back(shader);
+				}
+
+				info.layout = PipelineLayout::get(device, doc_root.child("layout").attribute("filename").value());
+				assert(info.layout);
+
+				auto n_rp = doc_root.child("renderpass");
+				info.renderpass = Renderpass::get(device, n_rp.attribute("filename").value());
+				assert(info.renderpass);
+				info.subpass_index = n_rp.attribute("index").as_uint();
+
+				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
+				for (auto n_buf : doc_root.child("vertex_buffers"))
+				{
+					auto& vbuf = info.vertex_buffers.emplace_back();
+					for (auto n_att : n_buf)
+					{
+						auto& att = vbuf.attributes.emplace_back();
+						att.location = n_att.attribute("location").as_uint();
+						ti_format->unserialize(n_att.attribute("format").value(), &att.format);
+					}
+				}
+
+				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology", tidb);
+				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode", tidb);
+				auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
+				auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp", tidb);
+				if (auto n = doc_root.child("primitive_topology"); n)
+					ti_prim->unserialize(n.attribute("v").value(), &info.primitive_topology);
+				if (auto n = doc_root.child("cull_mode"); n)
+					ti_cullmode->unserialize(n.attribute("v").value(), &info.cull_mode);
+				if (auto n = doc_root.child("sample_count"); n)
+					ti_samplecount->unserialize(n.attribute("v").value(), &info.sample_count);
+				if (auto n = doc_root.child("alpha_to_coverage"); n)
+					info.alpha_to_coverage = n.attribute("v").as_bool();
+				if (auto n = doc_root.child("depth_test"); n)
+					info.depth_test = n.attribute("v").as_bool();
+				if (auto n = doc_root.child("depth_write"); n)
+					info.depth_write = n.attribute("v").as_bool();
+				if (auto n = doc_root.child("compare_op"); n)
+					ti_compare->unserialize(n.attribute("v").value(), &info.compare_op);
+
+				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor", tidb);
+				std::vector<BlendOption> blend_options;
+				for (auto n_bo : doc_root.child("blend_options"))
+				{
+					auto& bo = info.blend_options.emplace_back();
+					bo.enable = n_bo.attribute("enable").as_bool();
+					if (auto a = n_bo.attribute("src_color"); a)
+						ti_blendfactor->unserialize(a.value(), &bo.src_color);
+					if (auto a = n_bo.attribute("dst_color"); a)
+						ti_blendfactor->unserialize(a.value(), &bo.dst_color);
+					if (auto a = n_bo.attribute("src_alpha"); a)
+						ti_blendfactor->unserialize(a.value(), &bo.src_alpha);
+					if (auto a = n_bo.attribute("dst_alpha"); a)
+						ti_blendfactor->unserialize(a.value(), &bo.dst_alpha);
+				}
+
+				if (device)
+				{
+					auto ret = GraphicsPipeline::create(device, info);
+					ret->filename = filename;
+					device->pls.emplace_back(ret);
+					return ret;
+				}
+
+				return nullptr;
+			}
+		}GraphicsPipeline_get;
+		GraphicsPipeline::Get& GraphicsPipeline::get = GraphicsPipeline_get;
 
 		ComputePipelinePrivate::~ComputePipelinePrivate()
 		{
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		ComputePipelinePtr ComputePipeline::create(DevicePtr device, const ComputePipelineInfo& info)
+		struct ComputePipelineCreate : ComputePipeline::Create
 		{
-			if (!device)
-				device = current_device;
+			ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) override
+			{
+				if (!device)
+					device = current_device;
 
-			auto ret = new ComputePipelinePrivate;
-			ret->device = device;
-			ret->info = info;
+				auto ret = new ComputePipelinePrivate;
+				ret->device = device;
+				ret->info = info;
 
-			VkComputePipelineCreateInfo pipeline_info;
-			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-			pipeline_info.pNext = nullptr;
-			pipeline_info.flags = 0;
+				VkComputePipelineCreateInfo pipeline_info;
+				pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+				pipeline_info.pNext = nullptr;
+				pipeline_info.flags = 0;
 
-			pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			pipeline_info.stage.flags = 0;
-			pipeline_info.stage.pNext = nullptr;
-			pipeline_info.stage.pSpecializationInfo = nullptr;
-			pipeline_info.stage.pName = "main";
-			pipeline_info.stage.stage = to_backend(ShaderStageComp);
-			pipeline_info.stage.module = info.shader->vk_module;
+				pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+				pipeline_info.stage.flags = 0;
+				pipeline_info.stage.pNext = nullptr;
+				pipeline_info.stage.pSpecializationInfo = nullptr;
+				pipeline_info.stage.pName = "main";
+				pipeline_info.stage.stage = to_backend(ShaderStageComp);
+				pipeline_info.stage.module = info.shader->vk_module;
 
-			pipeline_info.basePipelineHandle = 0;
-			pipeline_info.basePipelineIndex = 0;
-			pipeline_info.layout = info.layout->vk_pipeline_layout;
+				pipeline_info.basePipelineHandle = 0;
+				pipeline_info.basePipelineIndex = 0;
+				pipeline_info.layout = info.layout->vk_pipeline_layout;
 
-			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+				chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 
-			return ret;
-		}
+				return ret;
+			}
+		}ComputePipeline_create;
+		ComputePipeline::Create& ComputePipeline::create = ComputePipeline_create;
 	}
 }

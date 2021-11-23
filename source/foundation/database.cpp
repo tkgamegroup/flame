@@ -4,6 +4,10 @@ namespace flame
 {
 	namespace database
 	{
+		ConnectionPrivate::~ConnectionPrivate()
+		{
+		}
+
 		Error ConnectionPrivate::query(std::string_view sql, Result& result)
 		{
 #if USE_MYSQL
@@ -34,28 +38,32 @@ namespace flame
 				}
 				mysql_free_result(mysql_res);
 			}
+#endif
 			return NoError;
-#endif
 		}
 
-		ConnectionPtr Connection::create(std::string_view db_name)
+		struct ConnectionCreate : Connection::Create
 		{
-#if USE_MYSQL
-			auto connect = mysql_init(nullptr);
-			auto res = mysql_real_connect(connect, "localhost", "root", "123456", db_name.data(), 3306, nullptr, 0);
-			if (!res)
+			ConnectionPtr operator()(std::string_view db_name) override
 			{
-				mysql_close(connect);
-				return nullptr;
-			}
-			assert(mysql_query(connect, "SET NAMES UTF8;") == 0);
+#if USE_MYSQL
+				auto connect = mysql_init(nullptr);
+				auto res = mysql_real_connect(connect, "localhost", "root", "123456", db_name.data(), 3306, nullptr, 0);
+				if (!res)
+				{
+					mysql_close(connect);
+					return nullptr;
+				}
+				assert(mysql_query(connect, "SET NAMES UTF8;") == 0);
 
-			auto ret = new ConnectionPrivate;
-			ret->mysql_connect = connect;
-			return ret;
+				auto ret = new ConnectionPrivate;
+				ret->mysql_connect = connect;
+				return ret;
 #else
-			return nullptr;
+				return nullptr;
 #endif
-		}
+			}
+		}Connection_create;
+		Connection::Create& Connection::create = Connection_create;
 	}
 }

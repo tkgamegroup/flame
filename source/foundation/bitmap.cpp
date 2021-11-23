@@ -104,7 +104,7 @@ namespace flame
 			stbi_write_jpg(filename.string().c_str(), size.x, size.y, chs, data, 0);
 	}
 
-	struct BitmapCreatePrivate : Bitmap::Create
+	struct BitmapCreate : Bitmap::Create
 	{
 		BitmapPtr operator()(const uvec2& size, uint chs, uint bpp, uchar* data) override
 		{
@@ -136,6 +136,6 @@ namespace flame
 			stbi_image_free(data);
 			return ret;
 		}
-	}bitmap_create_private;
-	Bitmap::Create& Bitmap::create = bitmap_create_private;
+	}Bitmap_create;
+	Bitmap::Create& Bitmap::create = Bitmap_create;
 }

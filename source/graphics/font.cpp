@@ -95,7 +95,7 @@ namespace flame
 
 		static std::vector<std::pair<std::vector<std::wstring>, std::unique_ptr<FontAtlasT>>> loaded_atlas;
 
-		struct FontAtlasGetPrivate : FontAtlas::Get
+		struct FontAtlasGet : FontAtlas::Get
 		{
 			FontAtlasPtr operator()(DevicePtr device, const std::wstring& font_names) override
 			{
@@ -145,8 +145,8 @@ namespace flame
 				loaded_atlas.emplace_back(sp, ret);
 				return ret;
 			}
-		}font_atlas_get_private;
-		FontAtlas::Get& FontAtlas::get = font_atlas_get_private;
+		}FontAtlas_get;
+		FontAtlas::Get& FontAtlas::get = FontAtlas_get;
 	}
 }
 

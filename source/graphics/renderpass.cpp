@@ -21,7 +21,7 @@ namespace flame
 			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
 		}
 
-		struct RenderpassCreatePrivate : Renderpass::Create
+		struct RenderpassCreate : Renderpass::Create
 		{
 			RenderpassPtr operator()(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies) override
 			{
@@ -136,10 +136,10 @@ namespace flame
 				__renderpasses.push_back(ret);
 				return ret;
 			}
-		}renderpass_create_private;
-		Renderpass::Create& Renderpass::create = renderpass_create_private;
+		}Renderpass_create;
+		Renderpass::Create& Renderpass::create = Renderpass_create;
 
-		struct RenderpassGetPrivate : Renderpass::Get
+		struct RenderpassGet : Renderpass::Get
 		{
 			RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
 			{
@@ -251,15 +251,15 @@ namespace flame
 				device->rps.emplace_back(ret);
 				return ret;
 			}
-		}renderpass_get_private;
-		Renderpass::Get& Renderpass::get = renderpass_get_private;
+		}Renderpass_get;
+		Renderpass::Get& Renderpass::get = Renderpass_get;
 
 		FramebufferPrivate::~FramebufferPrivate()
 		{
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 		}
 
-		struct FramebufferCreatePrivate : Framebuffer::Create
+		struct FramebufferCreate : Framebuffer::Create
 		{
 			FramebufferPtr operator()(RenderpassPtr renderpass, std::span<ImageViewPtr> views) override
 			{
@@ -289,8 +289,8 @@ namespace flame
 				ret->views.assign(views.begin(), views.end());
 				return ret;
 			}
-		}framebuffer_create_private;
-		Framebuffer::Create& Framebuffer::create = framebuffer_create_private;
+		}Framebuffer_create;
+		Framebuffer::Create& Framebuffer::create = Framebuffer_create;
 	}
 }
 

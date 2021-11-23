@@ -317,7 +317,7 @@ namespace flame
 			}
 		}
 
-		struct ClientCreatePrivate : Client::Create
+		struct ClientCreate : Client::Create
 		{
 			ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override
 			{
@@ -363,8 +363,8 @@ namespace flame
 
 					return c;
 			}
-		}client_create_private;
-		Client::Create& Client::create = client_create_private;
+		}Client_create;
+		Client::Create& Client::create = Client_create;
 
 		struct DgramAddress
 		{
@@ -435,7 +435,7 @@ namespace flame
 			}
 		}
 
-		struct ServerCreatePrivate : Server::Create 
+		struct ServerCreate : Server::Create 
 		{
 			ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) override
 			{
@@ -542,8 +542,8 @@ namespace flame
 
 				return s;
 			}
-		}server_create_private;
-		Server::Create& Server::create = server_create_private;
+		}Server_create;
+		Server::Create& Server::create = Server_create;
 
 		FrameSyncServerPrivate::~FrameSyncServerPrivate()
 		{
@@ -569,7 +569,7 @@ namespace flame
 			}
 		}
 
-		struct FrameSyncServerCreatePrivate : FrameSyncServer::Create
+		struct FrameSyncServerCreate : FrameSyncServer::Create
 		{
 			FrameSyncServerPtr operator()(SocketType type, uint port, uint num_clients) override
 			{
@@ -682,8 +682,8 @@ namespace flame
 
 				return s;
 			}
-		}frame_sync_server_create;
-		FrameSyncServer::Create& FrameSyncServer::create = frame_sync_server_create;
+		}FrameSyncServer_create;
+		FrameSyncServer::Create& FrameSyncServer::create = FrameSyncServer_create;
 
 		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message)
 		{

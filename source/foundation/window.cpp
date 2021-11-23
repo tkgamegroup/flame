@@ -324,7 +324,7 @@ namespace flame
 		});
 	}
 
-	struct NativeWindowCreatePrivate : NativeWindow::Create
+	struct NativeWindowCreate : NativeWindow::Create
 	{
 		NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent) override
 		{
@@ -421,8 +421,8 @@ namespace flame
 			windows.emplace_back(ret);
 			return ret;
 		}
-	}native_window_create;
-	NativeWindow::Create& NativeWindow::create = native_window_create;
+	}NativeWindow_create;
+	NativeWindow::Create& NativeWindow::create = NativeWindow_create;
 
 	std::vector<NativeWindowPtr> windows;
 

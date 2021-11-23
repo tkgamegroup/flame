@@ -144,7 +144,9 @@ int main(int argc, char** args)
 		private_header_file << "#pragma once\n\n";
 		private_header_file << "#include \"" << name << ".h\"\n\n";
 		if (is_internal) private_header_file << "namespace flame\n{\n";
-		private_header_file << indent_str << "struct " << class_name << "Private : " << class_name << "\n\t{\n";
+		private_header_file << indent_str << "struct " << class_name << "Private : " << class_name << "\n";
+		private_header_file << indent_str << "{\n";
+		private_header_file << indent_str << "\t~" << class_name << "Private();\n";
 		private_header_file << indent_str << "};\n";
 		if (is_internal) private_header_file << "}\n";
 		private_header_file.close();
@@ -152,10 +154,10 @@ int main(int argc, char** args)
 		std::ofstream source_file(name + ".cpp");
 		source_file << "#include \"" << name << "_private.h\"\n\n";
 		if (is_internal) source_file << "namespace flame\n{\n";
-		source_file << indent_str << "\t" << class_name << "::~" << class_name << "()\n";
+		source_file << indent_str << "\t" << class_name << "Private::~" << class_name << "Private()\n";
 		source_file << indent_str << "\t{\n";
 		source_file << indent_str << "\t}\n";
-		source_file << indent_str << "struct " << class_name << "CreatePrivate : " << class_name << "::create\n";
+		source_file << indent_str << "struct " << class_name << "Create : " << class_name << "::create\n";
 		source_file << indent_str << "{\n";
 		source_file << indent_str << "\t" << class_name << "Ptr operator()() override\n";
 		source_file << indent_str << "\t{\n";
@@ -192,14 +194,15 @@ int main(int argc, char** args)
 
 			Block(const std::vector<std::string>& lines)
 			{
+				static std::regex scope_beg("^\\s*\\{\\s*$");
+				static std::regex scope_end("^\\s*\\}\\w*;?\\s*$");
+
 				std::function<int(Block&, int, int)> gather_block;
 				gather_block = [&](Block& b, int line_id, int bracket_level) {
 					for (auto i = line_id; i < lines.size(); i++)
 					{
 						auto& l = lines[i];
-						auto tl = l;
-						SUS::ltrim(tl);
-						if (tl == "{")
+						if (std::regex_search(l, scope_beg))
 						{
 							if (bracket_level == 0)
 							{
@@ -213,7 +216,7 @@ int main(int argc, char** args)
 								bracket_level++;
 							}
 						}
-						else if (tl == "}" || tl == "};")
+						else if (std::regex_search(l, scope_end))
 						{
 							if (bracket_level == 0)
 							{
@@ -326,7 +329,6 @@ int main(int argc, char** args)
 		printf("current directory: %s\n", ppath.string().c_str());
 		std::filesystem::current_path(ppath);
 
-		std::string stem;
 		std::string public_header_fn;
 		std::string private_header_fn;
 		std::string source_fn;
@@ -335,7 +337,7 @@ int main(int argc, char** args)
 		bool ok, ok2;
 
 		{
-			stem = path.stem().string();
+			auto stem = path.stem().string();
 			SUS::cut_tail_if(stem, "_private");
 
 			public_header_fn = stem + ".h";
@@ -409,7 +411,7 @@ int main(int argc, char** args)
 		auto class_found = false;
 
 		if (line == 0)
-			get_class_name(stem);
+			get_class_name(path.stem().string());
 		else
 		{
 			if (public_header_blocks.find_scope(std::regex("\\bstruct\\s+(\\w+)\\b"), match, line, it1))
@@ -431,682 +433,686 @@ int main(int argc, char** args)
 				class_found = true;
 		}
 
-		if (class_found)
+		if (!class_found)
 		{
-			class_name = match[1].str() + class_name;
-			printf("class: %s\n", class_name.c_str());
-
-			auto private_header_lines = get_file_lines(private_header_fn);
-			auto source_lines = get_file_lines(source_fn);
-
-			std::vector<std::string> anchor;
-			if (line != 0)
-			{
-				auto p = line - 1;
-				while (p >= 0)
-				{
-					auto& str = private_header_lines[p];
-					if (str.size() > 1)
-					{
-						if (std::regex_search(str, match, std::regex("([\\w:\\*\\&]+)\\s+(\\w+)\\s*=")))
-						{
-							anchor.resize(3);
-							anchor[0] = "A";
-							anchor[1] = match[1].str();
-							anchor[2] = match[2].str();
-						}
-						else if (std::regex_search(str, match, std::regex("([\\w:\\*\\&]+)\\s+(\\w+)\\(")))
-						{
-							anchor.resize(3);
-							anchor[0] = "F";
-							anchor[1] = match[1].str();
-							anchor[2] = match[2].str();
-						}
-						break;
-					}
-					p--;
-				}
-			}
-
-			Block private_header_blocks(private_header_lines);
-			Block source_blocks(source_lines);
-
-			if (cmd.empty())
-			{
-				const char* cmds[] = {
-					"new_attribute",
-					"new_function",
-					"alter_item",
-					"remove_item",
-					"new_virtual_static"
-				};
-				printf("what you want?\n");
-				for (auto i = 0; i < _countof(cmds); i++)
-					printf("%d %s\n", i, cmds[i]);
-				auto id = getch() - '0';
-				if (id >= 0 && id < _countof(cmds))
-				{
-					cmd = cmds[id];
-					printf("you choose %s\n", cmd.c_str());
-				}
-			}
-
-			if (cmd == "new_attribute")
-			{
-				if (name.empty())
-				{
-					std::cout << "name: ";
-					std::getline(std::cin, name);
-				}
-				if (name.empty())
-					return 0;
-				if (type.empty())
-				{
-					std::cout << "type: ";
-					std::getline(std::cin, type);
-				}
-				if (type.empty())
-					return 0;
-				if (value.empty())
-				{
-					std::cout << "value: ";
-					std::getline(std::cin, value);
-				}
-
-				auto type2 = get_type2(type);
-
-				if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-				{
-					auto& list = it1->children;
-					auto indent = get_indent(it1->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "A")
-					{
-						if (it1->find(std::regex("virtual void set_" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format(
-							"{0}virtual {1} get_{2}() const = 0;\n"
-							"{0}virtual void set_{2}({1} v) = 0;\n",
-							indent, type2, name));
-						ok2 = true;
-					}
-					if (ok2)
-						public_header_blocks.output_file(public_header_fn);
-				}
-
-				if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
-				{
-					auto& list = it1->children;
-					auto indent = get_indent(it1->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "A")
-					{
-						if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\s*="), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.begin();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format("{0}{1} {2}{3};\n", indent, type, name, !value.empty() ? " = " + value : ""));
-						ok2 = true;
-					}
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "A")
-					{
-						if (it1->find(std::regex("void set_" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						if (type == type2)
-						{
-							list.emplace(it2, std::format(
-								"{0}{1} get_{2}() const override {{ return {2}; }}\n"
-								"{0}void set_{2}({1} v) override;\n",
-								indent, type2, name));
-						}
-						else
-						{
-							list.emplace(it2, std::format(
-								"{0}{1} get_{2}() const override {{ return {2}.c_str(); }}\n"
-								"{0}void set_{2}({1} v) override {{ set_{2}({3}(v)); }}\n"
-								"{0}void set_{2}(const {3}& v);\n",
-								indent, type2, name, type));
-						}
-						ok2 = true;
-					}
-					if (ok2)
-						private_header_blocks.output_file(private_header_fn);
-				}
-
-				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
-				{
-					auto range = it1->parent;
-					auto& list = range->children;
-					auto indent = get_indent(range->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "A")
-					{
-						if (range->find(std::regex("void\\s+" + class_name + "Private::set_" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						if (type == type2)
-						{
-							list.emplace(it2, std::format(
-								"\n"
-								"{0}void {3}Private::set_{2}({1} v)\n"
-								"{0}{{\n"
-								"{0}\t{2} = v;\n"
-								"{0}}}\n",
-								indent, type2, name, class_name));
-						}
-						else
-						{
-							list.emplace(it2, std::format(
-								"\n"
-								"{0}void {3}Private::set_{2}(const {1}& v)\n"
-								"{0}{{\n"
-								"{0}\t{2} = v;\n"
-								"{0}}}\n",
-								indent, type, name, class_name));
-						}
-						ok2 = true;
-					}
-					if (ok2)
-						source_blocks.output_file(source_fn);
-				}
-			}
-			else if (cmd == "new_function")
-			{
-				if (name.empty())
-				{
-					std::cout << "name: ";
-					std::getline(std::cin, name);
-				}
-				if (name.empty())
-					return 0;
-				auto is_public = false;
-				auto is_static = false;
-				auto is_const = false;
-				auto is_override = false;
-				{
-					auto sp = SUS::split(name);
-					if (sp.size() >= 2)
-					{
-						name = sp[0];
-						for (auto i = 1; i < sp.size(); i++)
-						{
-							if (sp[i] == "public")
-							{
-								is_public = true;
-								is_override = true;
-							}
-							else if (sp[i] == "static")
-							{
-								is_public = true;
-								is_static = true;
-							}
-							else if (sp[i] == "const")
-								is_const = true;
-							else if (sp[i] == "override")
-								is_override = true;
-						}
-					}
-				}
-				if (type.empty())
-				{
-					std::cout << "type: ";
-					std::getline(std::cin, type);
-				}
-				if (type.empty())
-					return 0;
-				if (value.empty())
-				{
-					std::cout << "parameters: ";
-					std::getline(std::cin, value);
-				}
-				if (value.empty())
-					return 0;
-				auto [parms1, parms2] = get_parms(value);
-
-				if (is_public && public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-				{
-					auto& list = it1->children;
-					auto indent = get_indent(it1->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "F")
-					{
-						if (it1->find(std::regex("\\b" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format("{0}{4} {1} {2}({3}){5}{6};",
-							indent, type, name, parms1,
-							(is_static ? (export_str + " static") : "virtual"),
-							(is_const ? " const" : ""), (is_static ? "" : " = 0")));
-						ok2 = true;
-					}
-					if (ok2)
-						public_header_blocks.output_file(public_header_fn);
-				}
-
-				if (!is_static && private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
-				{
-					auto& list = it1->children;
-					auto indent = get_indent(it1->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "F")
-					{
-						if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format("{0}{1} {2}({3}){4}{5};",
-							indent, type, name, parms1, (is_const ? " const" : ""), (is_override ? " override" : "")));
-						ok2 = true;
-					}
-					if (ok2)
-						private_header_blocks.output_file(private_header_fn);
-				}
-
-				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
-				{
-					auto range = it1->parent;
-					auto& list = range->children;
-					auto indent = get_indent(range->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!anchor.empty() && anchor[0] == "F")
-					{
-						if (range->find(std::regex(anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
-						{
-							it2++;
-							ok = true;
-						}
-					}
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format(
-							"\n"
-							"{0}{1} {4}{2}({3}){5}\n"
-							"{0}{{\n\n"
-							"{0}}}\n",
-							indent, type, name, parms2,
-							class_name + (is_static ? "::" : "Private::"),
-							(is_const ? " const" : "")));
-						ok2 = true;
-					}
-					if (ok2)
-						source_blocks.output_file(source_fn);
-				}
-			}
-			else if (cmd == "alter_item")
-			{
-				if (name.empty())
-				{
-					std::cout << "original name: ";
-					std::getline(std::cin, name);
-				}
-				if (name.empty())
-					return 0;
-				if (name2.empty())
-				{
-					std::cout << "new name: ";
-					std::getline(std::cin, name2);
-				}
-				if (name2.empty())
-					name2 = name;
-				if (type.empty())
-				{
-					std::cout << "type: ";
-					std::getline(std::cin, type);
-				}
-				if (value.empty())
-				{
-					std::cout << "value: ";
-					std::getline(std::cin, value);
-				}
-
-				if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
-				{
-					std::regex reg_attr = std::regex("([\\w:\\*\\&]+)\\s+" + name + "\\s*=\\s*\\w+;");
-					if (it1->find(reg_attr, match, it2))
-					{
-						if (type.empty())
-							type = match[1].str();
-
-						it2->text = std::regex_replace(it2->text, reg_attr, type + " " + name2 + " = " + value + ";");
-						std::regex reg1 = std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\(");
-						if (it1->find(reg1, match, it2))
-							it2->text = std::regex_replace(it2->text, reg1, type + " get_" + name2 + "(");
-						std::regex reg2 = std::regex("void\\s+set_" + name + "\\([\\w:\\*\\&]+");
-						if (it1->find(reg2, match, it2))
-							it2->text = std::regex_replace(it2->text, reg2, "void set_" + name2 + "(" + type);
-
-						private_header_blocks.output_file(private_header_fn);
-
-						if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-						{
-							ok2 = false;
-							std::regex reg1 = std::regex("virtual\\s+[\\w:\\*\\&]+\\s+get_" + name + "\\(");
-							if (it1->find(reg1, match, it2))
-							{
-								it2->text = std::regex_replace(it2->text, reg1, "virtual " + type + " get_" + name2 + "(");
-								ok2 = true;
-							}
-							std::regex reg2 = std::regex("virtual\\s+void\\s+set_" + name + "\\([\\w:\\*\\&]+");
-							if (it1->find(reg2, match, it2))
-							{
-								it2->text = std::regex_replace(it2->text, reg2, "virtual void set_" + name2 + "(" + type);
-								ok2 = true;
-							}
-							if (ok2)
-								public_header_blocks.output_file(public_header_fn);
-						}
-
-						ok2 = false;
-						std::regex reg3 = std::regex("[\\w:\\*\\&]+\\s+" + class_name + "Private::get_" + name + "\\(");
-						if (source_blocks.find(reg3, match, it1))
-						{
-							it1->text = std::regex_replace(it1->text, reg3, type + " " + class_name + "Private::get_" + name2 + "(");
-							ok2 = true;
-						}
-						std::regex reg4 = std::regex("void\\s+" + class_name + "Private::set_" + name + "\\([\\w:\\*\\&]+");
-						if (source_blocks.find(reg4, match, it1))
-						{
-							it1->text = std::regex_replace(it1->text, reg4, "void " + class_name + "Private::set_" + name2 + "(" + type);
-							ok2 = true;
-						}
-						if (ok2)
-							source_blocks.output_file(source_fn);
-
-						return 0;
-					}
-					std::regex reg_func = std::regex("([\\w:\\*\\&]+)\\s+" + name + "\\(([\\w:\\*\\&,\\s]+)\\)");
-					if (it1->find(reg_func, match, it2))
-					{
-						if (type.empty())
-							type = match[1].str();
-						if (value.empty())
-							value = match[2].str();
-						auto [parms1, parms2] = get_parms(value);
-
-						it2->text = std::regex_replace(it2->text, reg_func, type + " " + name2 + "(" + parms1 + ")");
-
-						private_header_blocks.output_file(private_header_fn);
-
-						if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-						{
-							ok2 = false;
-							if (it1->find(reg_func, match, it2))
-							{
-								it2->text = std::regex_replace(it2->text, reg_func, type + " " + name2 + "(" + parms1 + ")");
-								ok2 = true;
-							}
-							if (ok2)
-								public_header_blocks.output_file(public_header_fn);
-						}
-
-						std::regex reg1 = std::regex("[\\w:\\*\\&]+\\s+" + class_name + "(Private)?::" + name + "\\([\\w:\\*\\&,\\s]+\\)");
-						if (source_blocks.find(reg1, match, it1))
-						{
-							it1->text = std::regex_replace(it1->text, reg1, type + " " + class_name + (match[1].matched ? "Private" : "::") + 
-								name2 + "(" + parms2 + ")");
-							ok2 = true;
-						}
-						if (ok2)
-							source_blocks.output_file(source_fn);
-
-						return 0;
-					}
-				}
-			}
-			else if (cmd == "remove_item")
-			{
-				if (name.empty())
-				{
-					std::cout << "name: ";
-					std::getline(std::cin, name);
-				}
-				if (name.empty())
-					return 0;
-
-				if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
-				{
-					if (it1->find(std::regex("[\\w:\\*\\&]+\\s+" + name + "\\s*=|;"), match, it2))
-					{
-						it2->parent->children.erase(it2);
-
-						if (it1->find(std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\("), match, it2))
-							it2->parent->children.erase(it2);
-						std::regex reg1 = std::regex("void\\s+set_" + name + "\\(");
-						for (auto i = 0; i < 2; i++)
-						{
-							if (it1->find(reg1, match, it2))
-								it2->parent->children.erase(it2);
-						}
-
-						private_header_blocks.output_file(private_header_fn);
-
-						if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-						{
-							ok2 = false;
-							if (it1->find(std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\("), match, it2))
-							{
-								it2->parent->children.erase(it2);
-								ok2 = true;
-							}
-							if (it1->find(std::regex("void\\s+set_" + name + "\\([\\w:\\*\\&]+"), match, it2))
-							{
-								it2->parent->children.erase(it2);
-								ok2 = true;
-							}
-							if (ok2)
-								public_header_blocks.output_file(public_header_fn);
-						}
-
-						ok2 = false;
-						if (source_blocks.find(std::regex("[\\w:\\*\\&]+\\s+" + class_name + "Private::get_" + name + "\\("), match, it1))
-						{
-							it1->parent->children.erase(it1);
-							ok2 = true;
-						}
-						if (source_blocks.find(std::regex("void\\s+" + class_name + "Private::set_" + name + "\\("), match, it1))
-						{
-							it1->parent->children.erase(it1);
-							ok2 = true;
-						}
-						if (ok2)
-							source_blocks.output_file(source_fn);
-
-						return 0;
-					}
-					if (it1->find(std::regex("[\\w:\\*\\&]+\\s+" + name + "\\("), match, it2))
-					{
-						it2->parent->children.erase(it2);
-
-						private_header_blocks.output_file(private_header_fn);
-
-						if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-						{
-							ok2 = false;
-							if (it1->find(std::regex("\\b" + name + "\\("), match, it2))
-							{
-								it2->parent->children.erase(it2);
-								ok2 = true;
-							}
-							if (ok2)
-								public_header_blocks.output_file(public_header_fn);
-						}
-
-						ok2 = false;
-						if (source_blocks.find(std::regex(class_name + "(Private)?::" + name + "\\("), match, it1))
-						{
-							it1->parent->children.erase(it1);
-							ok2 = true;
-						}
-						if (ok2)
-							source_blocks.output_file(source_fn);
-
-						return 0;
-					}
-				}
-			}
-			else if (cmd == "new_virtual_static")
-			{
-				if (name.empty())
-				{
-					std::cout << "name: ";
-					std::getline(std::cin, name);
-				}
-				if (name.empty())
-					return 0;
-				if (type.empty())
-				{
-					std::cout << "type: ";
-					std::getline(std::cin, type);
-				}
-				if (type.empty())
-					return 0;
-				if (value.empty())
-				{
-					std::cout << "parameters: ";
-					std::getline(std::cin, value);
-				}
-				if (value.empty())
-					return 0;
-
-				auto name2 = name;
-				name2[0] = std::toupper(name2[0]);
-
-				if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
-				{
-					auto& list = it1->children;
-					auto indent = get_indent(it1->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format(
-							"{0}struct {1}\n"
-							"{0}{{\n"
-							"{0}\tvirtual {2} operator()({3}) = 0\n"
-							"{0}}};\n"
-							"{0}{4} static {1}& {5};",
-							indent, name2, type, value, export_str, name));
-						ok2 = true;
-					}
-					if (ok2)
-						public_header_blocks.output_file(public_header_fn);
-				}
-
-				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
-				{
-					auto range = it1->parent;
-					auto& list = range->children;
-					auto indent = get_indent(range->b1) + '\t';
-					ok2 = false;
-					ok = false;
-					if (!ok)
-					{
-						it2 = list.end();
-						ok = true;
-					}
-					if (ok)
-					{
-						list.emplace(it2, std::format(
-							"\n"
-							"{0}struct {1}{2}Private : {1}::{2}\n"
-							"{0}{{\n"
-							"{0}\t{3} operator()({4}) override\n"
-							"{0}\t{{\n"
-							"{0}\t}}\n"
-							"{0}}}{6};\n"
-							"{0}{1}::{2}& {1}::{5} = {6};\n"
-							,
-							indent, class_name, name2, type, value, class_name + "_" + name));
-						ok2 = true;
-					}
-					if (ok2)
-						source_blocks.output_file(source_fn);
-				}
-			}
-
-			cmd.clear();
-		}
-		else
-		{
-			printf("cannot find class %s\n", stem.c_str());
+			printf("cannot find class %s\n", path.stem().string().c_str());
 			return 0;
+		}
+
+		printf("class: %s\n", class_name.c_str());
+
+		auto private_header_lines = get_file_lines(private_header_fn);
+		auto source_lines = get_file_lines(source_fn);
+
+		std::vector<std::string> anchor;
+		if (line != 0)
+		{
+			auto p = line - 1;
+			while (p >= 0)
+			{
+				std::string str;
+				auto fn = path.filename().string();
+				if (fn == public_header_fn)
+					str = public_header_lines[p];
+				else if (fn == private_header_fn)
+					str = private_header_lines[p];
+				else if (fn == source_fn)
+					str = source_lines[p];
+				if (str.size() > 1)
+				{
+					if (std::regex_search(str, match, std::regex("([\\w:\\*\\&]+)\\s+(\\w+)\\s*=")))
+					{
+						anchor.resize(3);
+						anchor[0] = "A";
+						anchor[1] = match[1].str();
+						anchor[2] = match[2].str();
+					}
+					else if (std::regex_search(str, match, std::regex("([\\w:\\*\\&]+)\\s+(\\w+)\\(")))
+					{
+						anchor.resize(3);
+						anchor[0] = "F";
+						anchor[1] = match[1].str();
+						anchor[2] = match[2].str();
+					}
+					break;
+				}
+				p--;
+			}
+		}
+
+		Block private_header_blocks(private_header_lines);
+		Block source_blocks(source_lines);
+
+		if (cmd.empty())
+		{
+			const char* cmds[] = {
+				"new_attribute",
+				"new_function",
+				"alter_item",
+				"remove_item",
+				"new_virtual_static"
+			};
+			printf("what you want?\n");
+			for (auto i = 0; i < _countof(cmds); i++)
+				printf("%d %s\n", i, cmds[i]);
+			auto id = getch() - '0';
+			if (id >= 0 && id < _countof(cmds))
+			{
+				cmd = cmds[id];
+				printf("you choose %s\n", cmd.c_str());
+			}
+		}
+
+		if (cmd == "new_attribute")
+		{
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+			if (type.empty())
+			{
+				std::cout << "type: ";
+				std::getline(std::cin, type);
+			}
+			if (type.empty())
+				return 0;
+			if (value.empty())
+			{
+				std::cout << "value: ";
+				std::getline(std::cin, value);
+			}
+
+			auto type2 = get_type2(type);
+
+			if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+			{
+				auto& list = it1->children;
+				auto indent = get_indent(it1->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "A")
+				{
+					if (it1->find(std::regex("virtual void set_" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = list.end();
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format(
+						"{0}virtual {1} get_{2}() const = 0;\n"
+						"{0}virtual void set_{2}({1} v) = 0;\n",
+						indent, type2, name));
+					ok2 = true;
+				}
+				if (ok2)
+					public_header_blocks.output_file(public_header_fn);
+			}
+
+			if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
+			{
+				auto& list = it1->children;
+				auto indent = get_indent(it1->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "A")
+				{
+					if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\s*="), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = list.begin();
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format("{0}{1} {2}{3};\n", indent, type, name, !value.empty() ? " = " + value : ""));
+					ok2 = true;
+				}
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "A")
+				{
+					if (it1->find(std::regex("void set_" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = list.end();
+					ok = true;
+				}
+				if (ok)
+				{
+					if (type == type2)
+					{
+						list.emplace(it2, std::format(
+							"{0}{1} get_{2}() const override {{ return {2}; }}\n"
+							"{0}void set_{2}({1} v) override;\n",
+							indent, type2, name));
+					}
+					else
+					{
+						list.emplace(it2, std::format(
+							"{0}{1} get_{2}() const override {{ return {2}.c_str(); }}\n"
+							"{0}void set_{2}({1} v) override {{ set_{2}({3}(v)); }}\n"
+							"{0}void set_{2}(const {3}& v);\n",
+							indent, type2, name, type));
+					}
+					ok2 = true;
+				}
+				if (ok2)
+					private_header_blocks.output_file(private_header_fn);
+			}
+
+			if (source_blocks.find(std::regex(class_name + "Private::\\~" + class_name + "Private\\(\\)"), match, it1))
+			{
+				auto range = it1->parent;
+				auto& list = range->children;
+				auto indent = get_indent(range->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "A")
+				{
+					if (range->find(std::regex("void\\s+" + class_name + "Private::set_" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = it1;
+					it2++;
+					ok = true;
+				}
+				if (ok)
+				{
+					if (type == type2)
+					{
+						list.emplace(it2, std::format(
+							"\n"
+							"{0}void {3}Private::set_{2}({1} v)\n"
+							"{0}{{\n"
+							"{0}\t{2} = v;\n"
+							"{0}}}\n",
+							indent, type2, name, class_name));
+					}
+					else
+					{
+						list.emplace(it2, std::format(
+							"\n"
+							"{0}void {3}Private::set_{2}(const {1}& v)\n"
+							"{0}{{\n"
+							"{0}\t{2} = v;\n"
+							"{0}}}\n",
+							indent, type, name, class_name));
+					}
+					ok2 = true;
+				}
+				if (ok2)
+					source_blocks.output_file(source_fn);
+			}
+		}
+		else if (cmd == "new_function")
+		{
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+			auto is_public = false;
+			auto is_static = false;
+			auto is_const = false;
+			auto is_override = false;
+			{
+				auto sp = SUS::split(name);
+				if (sp.size() >= 2)
+				{
+					name = sp[0];
+					for (auto i = 1; i < sp.size(); i++)
+					{
+						if (sp[i] == "public")
+						{
+							is_public = true;
+							is_override = true;
+						}
+						else if (sp[i] == "static")
+						{
+							is_public = true;
+							is_static = true;
+						}
+						else if (sp[i] == "const")
+							is_const = true;
+						else if (sp[i] == "override")
+							is_override = true;
+					}
+				}
+			}
+			if (type.empty())
+			{
+				std::cout << "type: ";
+				std::getline(std::cin, type);
+			}
+			if (type.empty())
+				return 0;
+			if (value.empty())
+			{
+				std::cout << "parameters: ";
+				std::getline(std::cin, value);
+			}
+			if (value.empty())
+				return 0;
+			auto [parms1, parms2] = get_parms(value);
+
+			if (is_public && public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+			{
+				auto& list = it1->children;
+				auto indent = get_indent(it1->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "F")
+				{
+					if (it1->find(std::regex("\\b" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = list.end();
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format("{0}{4} {1} {2}({3}){5}{6};",
+						indent, type, name, parms1,
+						(is_static ? (export_str + " static") : "virtual"),
+						(is_const ? " const" : ""), (is_static ? "" : " = 0")));
+					ok2 = true;
+				}
+				if (ok2)
+					public_header_blocks.output_file(public_header_fn);
+			}
+
+			if (!is_static && private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
+			{
+				auto& list = it1->children;
+				auto indent = get_indent(it1->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "F")
+				{
+					if (it1->find(std::regex("" + anchor[1] + "\\s+" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = list.end();
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format("{0}{1} {2}({3}){4}{5};",
+						indent, type, name, parms1, (is_const ? " const" : ""), (is_override ? " override" : "")));
+					ok2 = true;
+				}
+				if (ok2)
+					private_header_blocks.output_file(private_header_fn);
+			}
+
+			if (source_blocks.find(std::regex(class_name + "Private::\\~" + class_name + "Private\\(\\)"), match, it1))
+			{
+				auto range = it1->parent;
+				auto& list = range->children;
+				auto indent = get_indent(range->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!anchor.empty() && anchor[0] == "F")
+				{
+					if (range->find(std::regex(anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
+					{
+						it2++;
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					it2 = it1;
+					it2++;
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format(
+						"\n"
+						"{0}{1} {4}{2}({3}){5}\n"
+						"{0}{{\n\n"
+						"{0}}}\n",
+						indent, type, name, parms2,
+						class_name + (is_static ? "::" : "Private::"),
+						(is_const ? " const" : "")));
+					ok2 = true;
+				}
+				if (ok2)
+					source_blocks.output_file(source_fn);
+			}
+		}
+		else if (cmd == "alter_item")
+		{
+			if (name.empty())
+			{
+				std::cout << "original name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+			if (name2.empty())
+			{
+				std::cout << "new name: ";
+				std::getline(std::cin, name2);
+			}
+			if (name2.empty())
+				name2 = name;
+			if (type.empty())
+			{
+				std::cout << "type: ";
+				std::getline(std::cin, type);
+			}
+			if (value.empty())
+			{
+				std::cout << "value: ";
+				std::getline(std::cin, value);
+			}
+
+			if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
+			{
+				std::regex reg_attr = std::regex("([\\w:\\*\\&]+)\\s+" + name + "\\s*=\\s*\\w+;");
+				if (it1->find(reg_attr, match, it2))
+				{
+					if (type.empty())
+						type = match[1].str();
+
+					it2->text = std::regex_replace(it2->text, reg_attr, type + " " + name2 + " = " + value + ";");
+					std::regex reg1 = std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\(");
+					if (it1->find(reg1, match, it2))
+						it2->text = std::regex_replace(it2->text, reg1, type + " get_" + name2 + "(");
+					std::regex reg2 = std::regex("void\\s+set_" + name + "\\([\\w:\\*\\&]+");
+					if (it1->find(reg2, match, it2))
+						it2->text = std::regex_replace(it2->text, reg2, "void set_" + name2 + "(" + type);
+
+					private_header_blocks.output_file(private_header_fn);
+
+					if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+					{
+						ok2 = false;
+						std::regex reg1 = std::regex("virtual\\s+[\\w:\\*\\&]+\\s+get_" + name + "\\(");
+						if (it1->find(reg1, match, it2))
+						{
+							it2->text = std::regex_replace(it2->text, reg1, "virtual " + type + " get_" + name2 + "(");
+							ok2 = true;
+						}
+						std::regex reg2 = std::regex("virtual\\s+void\\s+set_" + name + "\\([\\w:\\*\\&]+");
+						if (it1->find(reg2, match, it2))
+						{
+							it2->text = std::regex_replace(it2->text, reg2, "virtual void set_" + name2 + "(" + type);
+							ok2 = true;
+						}
+						if (ok2)
+							public_header_blocks.output_file(public_header_fn);
+					}
+
+					ok2 = false;
+					std::regex reg3 = std::regex("[\\w:\\*\\&]+\\s+" + class_name + "Private::get_" + name + "\\(");
+					if (source_blocks.find(reg3, match, it1))
+					{
+						it1->text = std::regex_replace(it1->text, reg3, type + " " + class_name + "Private::get_" + name2 + "(");
+						ok2 = true;
+					}
+					std::regex reg4 = std::regex("void\\s+" + class_name + "Private::set_" + name + "\\([\\w:\\*\\&]+");
+					if (source_blocks.find(reg4, match, it1))
+					{
+						it1->text = std::regex_replace(it1->text, reg4, "void " + class_name + "Private::set_" + name2 + "(" + type);
+						ok2 = true;
+					}
+					if (ok2)
+						source_blocks.output_file(source_fn);
+
+					return 0;
+				}
+				std::regex reg_func = std::regex("([\\w:\\*\\&]+)\\s+" + name + "\\(([\\w:\\*\\&,\\s]+)\\)");
+				if (it1->find(reg_func, match, it2))
+				{
+					if (type.empty())
+						type = match[1].str();
+					if (value.empty())
+						value = match[2].str();
+					auto [parms1, parms2] = get_parms(value);
+
+					it2->text = std::regex_replace(it2->text, reg_func, type + " " + name2 + "(" + parms1 + ")");
+
+					private_header_blocks.output_file(private_header_fn);
+
+					if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+					{
+						ok2 = false;
+						if (it1->find(reg_func, match, it2))
+						{
+							it2->text = std::regex_replace(it2->text, reg_func, type + " " + name2 + "(" + parms1 + ")");
+							ok2 = true;
+						}
+						if (ok2)
+							public_header_blocks.output_file(public_header_fn);
+					}
+
+					std::regex reg1 = std::regex("[\\w:\\*\\&]+\\s+" + class_name + "(Private)?::" + name + "\\([\\w:\\*\\&,\\s]+\\)");
+					if (source_blocks.find(reg1, match, it1))
+					{
+						it1->text = std::regex_replace(it1->text, reg1, type + " " + class_name + (match[1].matched ? "Private" : "::") +
+							name2 + "(" + parms2 + ")");
+						ok2 = true;
+					}
+					if (ok2)
+						source_blocks.output_file(source_fn);
+
+					return 0;
+				}
+			}
+		}
+		else if (cmd == "remove_item")
+		{
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+
+			if (private_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "Private\\s*:\\s*" + class_name), match, it1))
+			{
+				if (it1->find(std::regex("[\\w:\\*\\&]+\\s+" + name + "\\s*=|;"), match, it2))
+				{
+					it2->parent->children.erase(it2);
+
+					if (it1->find(std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\("), match, it2))
+						it2->parent->children.erase(it2);
+					std::regex reg1 = std::regex("void\\s+set_" + name + "\\(");
+					for (auto i = 0; i < 2; i++)
+					{
+						if (it1->find(reg1, match, it2))
+							it2->parent->children.erase(it2);
+					}
+
+					private_header_blocks.output_file(private_header_fn);
+
+					if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+					{
+						ok2 = false;
+						if (it1->find(std::regex("[\\w:\\*\\&]+\\s+get_" + name + "\\("), match, it2))
+						{
+							it2->parent->children.erase(it2);
+							ok2 = true;
+						}
+						if (it1->find(std::regex("void\\s+set_" + name + "\\([\\w:\\*\\&]+"), match, it2))
+						{
+							it2->parent->children.erase(it2);
+							ok2 = true;
+						}
+						if (ok2)
+							public_header_blocks.output_file(public_header_fn);
+					}
+
+					ok2 = false;
+					if (source_blocks.find(std::regex("[\\w:\\*\\&]+\\s+" + class_name + "Private::get_" + name + "\\("), match, it1))
+					{
+						it1->parent->children.erase(it1);
+						ok2 = true;
+					}
+					if (source_blocks.find(std::regex("void\\s+" + class_name + "Private::set_" + name + "\\("), match, it1))
+					{
+						it1->parent->children.erase(it1);
+						ok2 = true;
+					}
+					if (ok2)
+						source_blocks.output_file(source_fn);
+
+					return 0;
+				}
+				if (it1->find(std::regex("[\\w:\\*\\&]+\\s+" + name + "\\("), match, it2))
+				{
+					it2->parent->children.erase(it2);
+
+					private_header_blocks.output_file(private_header_fn);
+
+					if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+					{
+						ok2 = false;
+						if (it1->find(std::regex("\\b" + name + "\\("), match, it2))
+						{
+							it2->parent->children.erase(it2);
+							ok2 = true;
+						}
+						if (ok2)
+							public_header_blocks.output_file(public_header_fn);
+					}
+
+					ok2 = false;
+					if (source_blocks.find(std::regex(class_name + "(Private)?::" + name + "\\("), match, it1))
+					{
+						it1->parent->children.erase(it1);
+						ok2 = true;
+					}
+					if (ok2)
+						source_blocks.output_file(source_fn);
+
+					return 0;
+				}
+			}
+		}
+		else if (cmd == "new_virtual_static")
+		{
+			if (name.empty())
+			{
+				std::cout << "name: ";
+				std::getline(std::cin, name);
+			}
+			if (name.empty())
+				return 0;
+			if (type.empty())
+			{
+				std::cout << "type: ";
+				std::getline(std::cin, type);
+			}
+			if (type.empty())
+				return 0;
+			if (value.empty())
+			{
+				std::cout << "parameters: ";
+				std::getline(std::cin, value);
+			}
+			if (value.empty())
+				return 0;
+
+			auto name2 = name;
+			name2[0] = std::toupper(name2[0]);
+
+			if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+			{
+				auto& list = it1->children;
+				auto indent = get_indent(it1->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!ok)
+				{
+					it2 = list.end();
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format(
+						"{0}struct {1}\n"
+						"{0}{{\n"
+						"{0}\tvirtual {2} operator()({3}) = 0;\n"
+						"{0}}};\n"
+						"{0}{4} static {1}& {5};",
+						indent, name2, type, value, export_str, name));
+					ok2 = true;
+				}
+				if (ok2)
+					public_header_blocks.output_file(public_header_fn);
+			}
+
+			if (source_blocks.find(std::regex(class_name + "Private::\\~" + class_name + "Private\\(\\)"), match, it1))
+			{
+				auto range = it1->parent;
+				auto& list = range->children;
+				auto indent = get_indent(range->b1) + '\t';
+				ok2 = false;
+				ok = false;
+				if (!ok)
+				{
+					it2 = it1;
+					it2++;
+					ok = true;
+				}
+				if (ok)
+				{
+					list.emplace(it2, std::format(
+						"\n"
+						"{0}struct {1}{2} : {1}::{2}\n"
+						"{0}{{\n"
+						"{0}\t{3} operator()({4}) override\n"
+						"{0}\t{{\n"
+						"{0}\t}}\n"
+						"{0}}}{6};\n"
+						"{0}{1}::{2}& {1}::{5} = {6};\n",
+						indent, class_name, name2, type, value, name, class_name + "_" + name));
+					ok2 = true;
+				}
+				if (ok2)
+					source_blocks.output_file(source_fn);
+			}
 		}
 	}
 	return 0;

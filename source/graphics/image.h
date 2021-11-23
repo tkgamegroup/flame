@@ -152,7 +152,6 @@ namespace flame
 			{
 				virtual ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
-
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 	}

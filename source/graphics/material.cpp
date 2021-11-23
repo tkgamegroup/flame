@@ -10,7 +10,7 @@ namespace flame
 		MaterialPtr default_material = new MaterialPrivate;
 		static std::vector<std::unique_ptr<MaterialPrivate>> materials;
 
-		struct MaterialGetPrivate : Material::Get
+		struct MaterialGet : Material::Get
 		{
 			MaterialPtr operator()(const std::filesystem::path& filename) override
 			{
@@ -71,7 +71,7 @@ namespace flame
 				materials.emplace_back(ret);
 				return ret;
 			}
-		}material_get_private;
-		Material::Get& Material::get = material_get_private;
+		}Material_get;
+		Material::Get& Material::get = Material_get;
 	}
 }
