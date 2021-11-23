@@ -21,9 +21,36 @@ namespace flame
 
 		struct DescriptorPoolCreatePrivate : DescriptorPool::Create
 		{
-		};
+			DescriptorPoolPtr operator()(DevicePtr device) override
+			{
+				if (!device)
+					device = current_device;
 
-		struct DescriptorPoolGetPrivate : DescriptorPool::Get
+				auto ret = new DescriptorPoolPrivate;
+				ret->device = device;
+
+				VkDescriptorPoolSize descriptorPoolSizes[] = {
+					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
+					{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
+				};
+
+				VkDescriptorPoolCreateInfo descriptorPoolInfo;
+				descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+				descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+				descriptorPoolInfo.pNext = nullptr;
+				descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
+				descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
+				descriptorPoolInfo.maxSets = 128;
+				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
+
+				return ret;
+			}
+		}descriptor_pool_create;
+		DescriptorPool::Create& DescriptorPool::create = descriptor_pool_create;
+
+		struct DescriptorPoolCurrentPrivate : DescriptorPool::Current
 		{
 		};
 
@@ -33,33 +60,6 @@ namespace flame
 				device = current_device;
 
 			return device->dsp.get();
-		}
-
-		DescriptorPoolPtr DescriptorPool::create(DevicePtr device)
-		{
-			if (!device)
-				device = current_device;
-
-			auto ret = new DescriptorPoolPrivate;
-			ret->device = device;
-
-			VkDescriptorPoolSize descriptorPoolSizes[] = {
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
-			};
-
-			VkDescriptorPoolCreateInfo descriptorPoolInfo;
-			descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			descriptorPoolInfo.pNext = nullptr;
-			descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
-			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 128;
-			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
-
-			return ret;
 		}
 
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase& db)

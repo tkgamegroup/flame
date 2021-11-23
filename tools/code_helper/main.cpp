@@ -23,7 +23,28 @@ int main(int argc, char** args)
 
 	auto flame_path = std::filesystem::path(getenv("FLAME_PATH"));
 	flame_path.make_preferred();
-	auto is_internal = ppath.string().starts_with(flame_path.string());
+	bool is_internal;
+	auto export_str = std::string("__declspec(dllexport)");
+	{
+		auto str_ppath = ppath.wstring();
+		auto str_flame_path = flame_path.wstring();
+		is_internal = str_ppath.starts_with(str_flame_path);
+		if (is_internal)
+		{
+			if (str_ppath.starts_with(str_flame_path + L"\\source\\foundation"))
+				export_str = "FLAME_FOUNDATION_EXPORTS";
+			else if (str_ppath.starts_with(str_flame_path + L"\\source\\blueprint"))
+				export_str = "FLAME_BLUEPRINT_EXPORTS";
+			else if (str_ppath.starts_with(str_flame_path + L"\\source\\graphics"))
+				export_str = "FLAME_GRAPHICS_EXPORTS";
+			else if (str_ppath.starts_with(str_flame_path + L"\\source\\sound"))
+				export_str = "FLAME_SOUND_EXPORTS";
+			else if (str_ppath.starts_with(str_flame_path + L"\\source\\physics"))
+				export_str = "FLAME_PHYSICS_EXPORTS";
+			else if (str_ppath.starts_with(str_flame_path + L"\\source\\universe"))
+				export_str = "FLAME_UNIVERSE_EXPORTS";
+		}
+	}
 
 	std::string class_name;
 	auto get_class_name = [&](std::string_view n) {
@@ -98,14 +119,23 @@ int main(int argc, char** args)
 			public_header_file << " : Component";
 		else if (cmd == "new_system_template")
 			public_header_file << " : System";
-		public_header_file << "\n\t{\n";
-		public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
-		public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
-		if (cmd == "new_component_template")
-			public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
-		else if (cmd == "new_system_template")
-			public_header_file << indent_str << "\t" << class_name << "() : System(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
-		public_header_file << indent_str << "\t" << (is_internal ? "FLAME_UNIVERSE_EXPORTS" : "__declspec(dllexport)") << " static " << class_name << "* create(void* parms = nullptr);\n";
+		public_header_file << "\n";
+		public_header_file << indent_str << "{\n";
+		public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n";
+		if (cmd != "new_general_template")
+		{
+			public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
+			public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
+			if (cmd == "new_component_template")
+				public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
+			else if (cmd == "new_system_template")
+				public_header_file << indent_str << "\t" << class_name << "() : System(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
+		}
+		public_header_file << indent_str << "\t" << "struct Create\n";
+		public_header_file << indent_str << "\t" << "{\n";
+		public_header_file << indent_str << "\t\t" << "virtual " << class_name << "Ptr operator()() = 0;\n";
+		public_header_file << indent_str << "\t" << "};\n";
+		public_header_file << indent_str << "\t" << export_str << " static Create& create;\n";
 		public_header_file << indent_str << "};\n";
 		if (is_internal) public_header_file << "}\n";
 		public_header_file.close();
@@ -122,9 +152,17 @@ int main(int argc, char** args)
 		std::ofstream source_file(name + ".cpp");
 		source_file << "#include \"" << name << "_private.h\"\n\n";
 		if (is_internal) source_file << "namespace flame\n{\n";
-		source_file << indent_str << class_name << "* " << class_name << "::create(void* parms)\n\t{\n";
-		source_file << indent_str << "\treturn new " << class_name << "Private();\n";
-		source_file << indent_str << "}\n";
+		source_file << indent_str << "\t" << class_name << "::~" << class_name << "()\n";
+		source_file << indent_str << "\t{\n";
+		source_file << indent_str << "\t}\n";
+		source_file << indent_str << "struct " << class_name << "CreatePrivate : " << class_name << "::create\n";
+		source_file << indent_str << "{\n";
+		source_file << indent_str << "\t" << class_name << "Ptr operator()() override\n";
+		source_file << indent_str << "\t{\n";
+		source_file << indent_str << "\t\treturn new " << class_name << "Private();\n";
+		source_file << indent_str << "\t}\n";
+		source_file << indent_str << "}" << class_name << "_create_private;\n";
+		source_file << indent_str << class_name << "::Create& " << class_name << ":create = " << class_name << "_create_private;\n";
 		if (is_internal) source_file << "}\n";
 		source_file.close();
 
@@ -134,15 +172,20 @@ int main(int argc, char** args)
 	{
 		struct Block
 		{
+			ivec2 lno = ivec2(-1);
 			std::string text = "`";
 			std::list<Block> children;
 			std::string b1;
 			std::string b2;
 			Block* parent = nullptr;
 
-			Block() {}
+			Block(const ivec2& lno) :
+				lno(lno)
+			{
+			}
 
-			Block(std::string_view line) :
+			Block(const std::string& line, const ivec2& lno = ivec2(-1)) :
+				lno(lno),
 				text(line)
 			{
 			}
@@ -160,13 +203,13 @@ int main(int argc, char** args)
 						{
 							if (bracket_level == 0)
 							{
-								auto& nb = b.children.emplace_back();
+								auto& nb = b.children.emplace_back(ivec2(i + 1, -1));
 								nb.b1 = l;
 								i = gather_block(nb, i + 1, bracket_level);
 							}
 							else
 							{
-								b.children.emplace_back(l);
+								b.children.emplace_back(l, ivec2(i + 1, -1));
 								bracket_level++;
 							}
 						}
@@ -174,12 +217,13 @@ int main(int argc, char** args)
 						{
 							if (bracket_level == 0)
 							{
+								b.lno.y = i + 1;
 								b.b2 = l;
 								return i;
 							}
 							else
 							{
-								b.children.emplace_back(l);
+								b.children.emplace_back(l, ivec2(i + 1, -1));
 								bracket_level--;
 							}
 						}
@@ -187,7 +231,7 @@ int main(int argc, char** args)
 						{
 							bracket_level += std::count(l.begin(), l.end(), '{');
 							bracket_level -= std::count(l.begin(), l.end(), '}');
-							b.children.emplace_back(l);
+							b.children.emplace_back(l, ivec2(i + 1, -1));
 						}
 					}
 					return (int)lines.size();
@@ -195,6 +239,7 @@ int main(int argc, char** args)
 
 				gather_block(*this, 0, 0);
 				init();
+				lno = ivec2(1, lines.size());
 			}
 
 			void init()
@@ -208,6 +253,7 @@ int main(int argc, char** args)
 						if (it2 != children.end() && !it2->b1.empty())
 						{
 							it->children = it2->children;
+							it->lno.y = it2->lno.y;
 							it->b1 = it2->b1;
 							it->b2 = it2->b2;
 							it = children.erase(it2);
@@ -235,6 +281,24 @@ int main(int argc, char** args)
 				return false;
 			}
 
+			bool find_scope(const std::regex& r, std::smatch& res, int i, std::list<Block>::iterator& out_it)
+			{
+				for (auto it = children.begin(); it != children.end(); it++)
+				{
+					if (!it->children.empty() && it->lno.x <= i && it->lno.y >= i)
+					{
+						if (std::regex_search(it->text, res, r))
+						{
+							out_it = it;
+							return true;
+						}
+						if (it->find_scope(r, res, i, out_it))
+							return true;
+					}
+				}
+				return false;
+			}
+
 			std::string output()
 			{
 				std::string ret;
@@ -249,7 +313,7 @@ int main(int argc, char** args)
 				return ret;
 			}
 
-			void output_file(std::string_view fn)
+			void output_file(const std::filesystem::path& fn)
 			{
 				auto text = output();
 				text.pop_back();
@@ -262,6 +326,7 @@ int main(int argc, char** args)
 		printf("current directory: %s\n", ppath.string().c_str());
 		std::filesystem::current_path(ppath);
 
+		std::string stem;
 		std::string public_header_fn;
 		std::string private_header_fn;
 		std::string source_fn;
@@ -270,14 +335,12 @@ int main(int argc, char** args)
 		bool ok, ok2;
 
 		{
-			auto fn = path.stem().string();
-			SUS::cut_tail_if(fn, "_private");
+			stem = path.stem().string();
+			SUS::cut_tail_if(stem, "_private");
 
-			get_class_name(fn);
-
-			public_header_fn = fn + ".h";
-			private_header_fn = fn + "_private.h";
-			source_fn = fn + ".cpp";
+			public_header_fn = stem + ".h";
+			private_header_fn = stem + "_private.h";
+			source_fn = stem + ".cpp";
 			if (!std::filesystem::exists(public_header_fn) || !std::filesystem::exists(private_header_fn) || !std::filesystem::exists(source_fn))
 			{
 				printf("cannot find %s or %s or %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
@@ -287,7 +350,7 @@ int main(int argc, char** args)
 			printf("public header: %s\nprivate header: %s\nsource: %s\n", public_header_fn.c_str(), private_header_fn.c_str(), source_fn.c_str());
 		}
 
-		auto get_indent = [](std::string_view str) {
+		auto get_indent = [](const std::string& str) {
 			std::string ret;
 			for (auto ch : str)
 			{
@@ -298,7 +361,7 @@ int main(int argc, char** args)
 			return ret;
 		};
 
-		auto get_file_lines = [](std::string_view fn) {
+		auto get_file_lines = [](const std::filesystem::path& fn) {
 			std::ifstream file(fn);
 			std::vector<std::string> lines;
 			while (!file.eof())
@@ -312,7 +375,7 @@ int main(int argc, char** args)
 			return lines;
 		};
 
-		auto get_parms = [](std::string_view value) {
+		auto get_parms = [](const std::string& value) {
 			std::pair<std::string, std::string> ret;
 			auto sp = SUS::split(value, ',');
 			for (auto& p : sp)
@@ -333,7 +396,7 @@ int main(int argc, char** args)
 			return ret;
 		};
 
-		auto get_type2 = [](std::string_view type)->std::string {
+		auto get_type2 = [](const std::string& type)->std::string {
 			if (type == "std::string")
 				return "const char*";
 			if (type == "std::wstring")
@@ -342,9 +405,33 @@ int main(int argc, char** args)
 		};
 
 		auto public_header_lines = get_file_lines(public_header_fn);
-
 		Block public_header_blocks(public_header_lines);
-		if (public_header_blocks.find(std::regex("\\bstruct\\s+(c|s)?" + class_name + "\\b"), match, it1))
+		auto class_found = false;
+
+		if (line == 0)
+			get_class_name(stem);
+		else
+		{
+			if (public_header_blocks.find_scope(std::regex("\\bstruct\\s+(\\w+)\\b"), match, line, it1))
+			{
+				class_name = match[1].str();
+				class_found = true;
+			}
+			else
+			{
+				printf("cannot find class on line %d\n", line);
+				system("pause");
+				return 0;
+			}
+		}
+
+		if (!class_found)
+		{
+			if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+				class_found = true;
+		}
+
+		if (class_found)
 		{
 			class_name = match[1].str() + class_name;
 			printf("class: %s\n", class_name.c_str());
@@ -390,7 +477,8 @@ int main(int argc, char** args)
 					"new_attribute",
 					"new_function",
 					"alter_item",
-					"remove_item"
+					"remove_item",
+					"new_virtual_static"
 				};
 				printf("what you want?\n");
 				for (auto i = 0; i < _countof(cmds); i++)
@@ -443,8 +531,8 @@ int main(int argc, char** args)
 					}
 					if (!ok)
 					{
-						if (it1->find(std::regex("\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
-							ok = true;
+						it2 = list.end();
+						ok = true;
 					}
 					if (ok)
 					{
@@ -519,7 +607,7 @@ int main(int argc, char** args)
 						private_header_blocks.output_file(private_header_fn);
 				}
 
-				if (source_blocks.find(std::regex(class_name + "\\s*\\*\\s+" + class_name + "::create\\("), match, it1))
+				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
 				{
 					auto range = it1->parent;
 					auto& list = range->children;
@@ -536,7 +624,7 @@ int main(int argc, char** args)
 					}
 					if (!ok)
 					{
-						it2 = it1;
+						it2 = list.end();
 						ok = true;
 					}
 					if (ok)
@@ -636,14 +724,14 @@ int main(int argc, char** args)
 					}
 					if (!ok)
 					{
-						if (it1->find(std::regex("\\w+\\s+static\\s+" + class_name + "\\s*\\*\\s+create\\("), match, it2))
-							ok = true;
+						it2 = list.end();
+						ok = true;
 					}
 					if (ok)
 					{
 						list.emplace(it2, std::format("{0}{4} {1} {2}({3}){5}{6};",
 							indent, type, name, parms1,
-							(is_static ? (is_internal ? "FLAME_UNIVERSE_EXPORTS static" : "__declspec(dllexport) static") : "virtual"),
+							(is_static ? (export_str + " static") : "virtual"),
 							(is_const ? " const" : ""), (is_static ? "" : " = 0")));
 						ok2 = true;
 					}
@@ -680,7 +768,7 @@ int main(int argc, char** args)
 						private_header_blocks.output_file(private_header_fn);
 				}
 
-				if (source_blocks.find(std::regex("" + class_name + "\\s*\\*\\s+" + class_name + "::create\\("), match, it1))
+				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
 				{
 					auto range = it1->parent;
 					auto& list = range->children;
@@ -689,7 +777,7 @@ int main(int argc, char** args)
 					ok = false;
 					if (!anchor.empty() && anchor[0] == "F")
 					{
-						if (range->find(std::regex("" + anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
+						if (range->find(std::regex(anchor[1] + "\\s+" + class_name + "Private::" + anchor[2] + "\\("), match, it2))
 						{
 							it2++;
 							ok = true;
@@ -697,7 +785,7 @@ int main(int argc, char** args)
 					}
 					if (!ok)
 					{
-						it2 = it1;
+						it2 = list.end();
 						ok = true;
 					}
 					if (ok)
@@ -928,12 +1016,96 @@ int main(int argc, char** args)
 					}
 				}
 			}
+			else if (cmd == "new_virtual_static")
+			{
+				if (name.empty())
+				{
+					std::cout << "name: ";
+					std::getline(std::cin, name);
+				}
+				if (name.empty())
+					return 0;
+				if (type.empty())
+				{
+					std::cout << "type: ";
+					std::getline(std::cin, type);
+				}
+				if (type.empty())
+					return 0;
+				if (value.empty())
+				{
+					std::cout << "parameters: ";
+					std::getline(std::cin, value);
+				}
+				if (value.empty())
+					return 0;
+
+				auto name2 = name;
+				name2[0] = std::toupper(name2[0]);
+
+				if (public_header_blocks.find(std::regex("\\bstruct\\s+" + class_name + "\\b"), match, it1))
+				{
+					auto& list = it1->children;
+					auto indent = get_indent(it1->b1) + '\t';
+					ok2 = false;
+					ok = false;
+					if (!ok)
+					{
+						it2 = list.end();
+						ok = true;
+					}
+					if (ok)
+					{
+						list.emplace(it2, std::format(
+							"{0}struct {1}\n"
+							"{0}{{\n"
+							"{0}\tvirtual {2} operator()({3}) = 0\n"
+							"{0}}};\n"
+							"{0}{4} static {1}& {5};",
+							indent, name2, type, value, export_str, name));
+						ok2 = true;
+					}
+					if (ok2)
+						public_header_blocks.output_file(public_header_fn);
+				}
+
+				if (source_blocks.find(std::regex(class_name + "::\\~" + class_name + "\\(\\)"), match, it1))
+				{
+					auto range = it1->parent;
+					auto& list = range->children;
+					auto indent = get_indent(range->b1) + '\t';
+					ok2 = false;
+					ok = false;
+					if (!ok)
+					{
+						it2 = list.end();
+						ok = true;
+					}
+					if (ok)
+					{
+						list.emplace(it2, std::format(
+							"\n"
+							"{0}struct {1}{2}Private : {1}::{2}\n"
+							"{0}{{\n"
+							"{0}\t{3} operator()({4}) override\n"
+							"{0}\t{{\n"
+							"{0}\t}}\n"
+							"{0}}}{6};\n"
+							"{0}{1}::{2}& {1}::{5} = {6};\n"
+							,
+							indent, class_name, name2, type, value, class_name + "_" + name));
+						ok2 = true;
+					}
+					if (ok2)
+						source_blocks.output_file(source_fn);
+				}
+			}
 
 			cmd.clear();
 		}
 		else
 		{
-			printf("cannot find class\n");
+			printf("cannot find class %s\n", stem.c_str());
 			return 0;
 		}
 	}
