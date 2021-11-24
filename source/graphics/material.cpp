@@ -54,13 +54,13 @@ namespace flame
 					if (auto n = n_texture.attribute("srgb"); n)
 						dst.srgb = n.as_bool();
 					if (auto n = n_texture.attribute("mag_filter"); n)
-						TypeInfo::unserialize_es(n.value(), &dst.mag_filter);
+						TypeInfo::unserialize_e(n.value(), &dst.mag_filter);
 					if (auto n = n_texture.attribute("min_filter"); n)
-						TypeInfo::unserialize_es(n.value(), &dst.min_filter);
+						TypeInfo::unserialize_e(n.value(), &dst.min_filter);
 					if (auto n = n_texture.attribute("linear_mipmap"); n)
 						dst.linear_mipmap = n.as_bool();
 					if (auto n = n_texture.attribute("address_mode"); n)
-						TypeInfo::unserialize_es(n.value(), &dst.address_mode);
+						TypeInfo::unserialize_e(n.value(), &dst.address_mode);
 					if (auto n = n_texture.attribute("auto_mipmap"); n)
 						dst.auto_mipmap = n.as_bool();
 					i++;

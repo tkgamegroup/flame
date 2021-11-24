@@ -80,17 +80,15 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
-		template <class T>
-		static TypeInfo* es()
-		{
-			static auto ret = get(TypeEnumSingle, format_name(typeid(T).name()), tidb);
-			return ret;
-		}
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
 
 		template <class T>
-		static TypeInfo* em()
+		static TypeInfo* e()
 		{
-			static auto ret = get(TypeEnumMulti, format_name(typeid(T).name()), tidb);
+			auto get_type = [](const std::string& name) {
+				return get(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name, tidb);
+			};
+			static auto ret = get_type(format_name(typeid(T).name()));
 			return ret;
 		}
 
@@ -102,30 +100,16 @@ namespace flame
 		}
 
 		template <class T>
-		static std::string serialize_es(T* v)
+		static std::string serialize_e(T* v)
 		{
-			return es<T>()->serialize(v);
+			return e<T>()->serialize(v);
 		}
 
 		template <class T>
-		static std::string serialize_em(T* v)
+		static void unserialize_e(const std::string& str, T* v)
 		{
-			return em<T>()->serialize(v);
+			return e<T>()->unserialize(str, v);
 		}
-
-		template <class T>
-		static void unserialize_es(const std::string& str, T* v)
-		{
-			return es<T>()->unserialize(str, v);
-		}
-
-		template <class T>
-		static void unserialize_em(const std::string& str, T* v)
-		{
-			return em<T>()->unserialize(str, v);
-		}
-
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
 	};
 
 	struct Metas
@@ -308,7 +292,7 @@ namespace flame
 		{
 			auto sp = SUS::split(i, ':');
 			auto& m = d.emplace_back();
-			TypeInfo::unserialize_es(sp[0], &m.first);
+			TypeInfo::unserialize_e(sp[0], &m.first);
 			m.second.u = std::stoul(sp[1], 0, 16);
 		}
 	}
@@ -317,7 +301,7 @@ namespace flame
 	{
 		std::string ret;
 		for (auto& i : d)
-			ret += TypeInfo::serialize_es(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+			ret += TypeInfo::serialize_e(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
 		return ret;
 	}
 }
