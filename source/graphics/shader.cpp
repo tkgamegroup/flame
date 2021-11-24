@@ -1067,21 +1067,6 @@ namespace flame
 					return nullptr;
 				}
 
-				std::string defines_str;
-				std::string substitutes_str;
-				for (auto i = 0; i < defines.size(); i++)
-				{
-					defines_str += defines[i];
-					if (i < defines.size() - 1)
-						defines_str += " ";
-				}
-				for (auto i = 0; i < substitutes.size(); i++)
-				{
-					substitutes_str += substitutes[i].first + " " + substitutes[i].second;
-					if (i < substitutes.size() - 1)
-						substitutes_str += " ";
-				}
-
 				auto ppath = filename.parent_path();
 
 				auto hash = 0U;
@@ -1099,9 +1084,8 @@ namespace flame
 
 				auto dependencies = get_make_dependencies(filename);
 
-				auto parsed_substitutes = substitutes;
-
-				for (auto& s : parsed_substitutes)
+				auto unfolded_substitutes = substitutes;
+				for (auto& s : unfolded_substitutes)
 				{
 					if (s.first.ends_with("_FILE"))
 					{
@@ -1126,7 +1110,7 @@ namespace flame
 						{
 							std::string line;
 							std::getline(glsl, line);
-							for (auto& s : parsed_substitutes)
+							for (auto& s : unfolded_substitutes)
 								SUS::replace_all(line, s.first, s.second);
 							temp += line + "\n";
 						}
@@ -1149,7 +1133,25 @@ namespace flame
 						for (auto& d : defines)
 							command_line += L" -D" + s2w(d);
 
-						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
+						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), [&]() {
+							std::string ret;
+							for (auto i = 0; i < defines.size(); i++)
+							{
+								ret += defines[i];
+								if (i < defines.size() - 1)
+									ret += " ";
+							}
+							return ret;
+						}().c_str(), [&]() {
+							std::string ret;
+							for (auto i = 0; i < substitutes.size(); i++)
+							{
+								ret += substitutes[i].first + " " + substitutes[i].second;
+								if (i < substitutes.size() - 1)
+									ret += " ";
+							}
+							return ret;
+						}().c_str());
 
 						std::string output;
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
