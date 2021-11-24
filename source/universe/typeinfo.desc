@@ -1,6 +1,6 @@
 <desc>
   <enums>
-    <rule name="^flame::StateFlags$" />
+	  <rule name="^flame::[\w:]+$" />
   </enums>
   <udts>
     <rule name="^flame::Component$">

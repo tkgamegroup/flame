@@ -32,6 +32,14 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(Bitmap);
 	FLAME_FOUNDATION_TYPE(NativeWindow);
 
+	struct TypeInfo;
+	struct VariableInfo;
+	struct EnumItemInfo;
+	struct EnumInfo;
+	struct FunctionInfo;
+	struct UdtInfo;
+	struct TypeInfoDataBase;
+
 	enum KeyboardKey
 	{
 		Keyboard_Backspace,
@@ -108,6 +116,8 @@ namespace flame
 
 		inline static std::filesystem::path get(const std::filesystem::path& path)
 		{
+			if (path.is_absolute())
+				return path;
 			auto it = path.begin();
 			auto mit = map.find(*it);
 			if (mit == map.end())
@@ -121,6 +131,17 @@ namespace flame
 				it++;
 			}
 			return ret;
+		}
+
+		inline static bool cat_if_in(const std::filesystem::path& dir, std::filesystem::path& t)
+		{
+			auto temp = dir / t;
+			if (std::filesystem::exists(temp))
+			{
+				t = temp;
+				return true;
+			}
+			return false;
 		}
 	};
 

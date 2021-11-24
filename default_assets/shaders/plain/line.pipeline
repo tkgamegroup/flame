@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <pipeline>
   <shaders>
-    <shader filename="plain/plain.vert" />
-    <shader filename="plain/plain.frag" />
+    <shader filename="plain.vert" />
+    <shader filename="plain.frag" />
   </shaders>
-  <layout filename="plain/plain.pll" />
-  <renderpass filename="bgra8l.rp" index="0" />
+  <layout filename="plain.pll" />
+  <renderpass filename="../bgra8l.rp" index="0" />
   <vertex_buffers>
     <vertex_buffer>
       <vertex_attribute location="0" format="R32G32B32_SFLOAT" />

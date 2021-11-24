@@ -67,6 +67,8 @@ namespace flame
 		{
 			DevicePrivate* device;
 
+			TypeInfoDataBase db;
+
 			VkPipelineLayout vk_pipeline_layout;
 
 			~PipelineLayoutPrivate();

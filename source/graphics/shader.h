@@ -84,7 +84,6 @@ namespace flame
 		{
 			std::vector<DescriptorSetLayoutPtr> descriptor_set_layouts;
 
-			TypeInfoDataBase db;
 			UdtInfo* pc_ti = nullptr;
 			uint pc_sz = 0;
 

@@ -115,16 +115,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::get(TypeData, "int", tidb);
+							ret = TypeInfo::u<int>();
 							break;
 						case 2:
-							ret = TypeInfo::get(TypeData, "glm::vec<2,int,0>", tidb);
+							ret = TypeInfo::u<ivec2>();
 							break;
 						case 3:
-							ret = TypeInfo::get(TypeData, "glm::vec<3,int,0>", tidb);
+							ret = TypeInfo::u<ivec3>();
 							break;
 						case 4:
-							ret = TypeInfo::get(TypeData, "glm::vec<4,int,0>", tidb);
+							ret = TypeInfo::u<ivec4>();
 							break;
 						default:
 							assert(0);
@@ -141,16 +141,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::get(TypeData, "uint", tidb);
+							ret = TypeInfo::u<uint>();
 							break;
 						case 2:
-							ret = TypeInfo::get(TypeData, "glm::vec<2,uint,0>", tidb);
+							ret = TypeInfo::u<uvec2>();
 							break;
 						case 3:
-							ret = TypeInfo::get(TypeData, "glm::vec<3,uint,0>", tidb);
+							ret = TypeInfo::u<uvec3>();
 							break;
 						case 4:
-							ret = TypeInfo::get(TypeData, "glm::vec<4,uint,0>", tidb);
+							ret = TypeInfo::u<uvec4>();
 							break;
 						default:
 							assert(0);
@@ -167,16 +167,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::get(TypeData, "float", tidb);
+							ret = TypeInfo::u<float>();
 							break;
 						case 2:
-							ret = TypeInfo::get(TypeData, "glm::vec<2,float,0>", tidb);
+							ret = TypeInfo::u<vec2>();
 							break;
 						case 3:
-							ret = TypeInfo::get(TypeData, "glm::vec<3,float,0>", tidb);
+							ret = TypeInfo::u<vec3>();
 							break;
 						case 4:
-							ret = TypeInfo::get(TypeData, "glm::vec<4,float,0>", tidb);
+							ret = TypeInfo::u<vec4>();
 							break;
 						default:
 							assert(0);
@@ -186,7 +186,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							ret = TypeInfo::get(TypeData, "glm::mat<2,2,float,0>", tidb);
+							ret = TypeInfo::u<mat2>();
 							break;
 						default:
 							assert(0);
@@ -196,7 +196,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							ret = TypeInfo::get(TypeData, "glm::mat<3,3,float,0>", tidb);
+							ret = TypeInfo::u<mat3>();
 							break;
 						default:
 							assert(0);
@@ -206,7 +206,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							ret = TypeInfo::get(TypeData, "glm::mat<4,4,float,0>", tidb);
+							ret = TypeInfo::u<mat4>();
 							break;
 						default:
 							assert(0);
@@ -420,12 +420,7 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = _filename;
-				if (!get_engine_path(filename, L"default_assets\\shaders"))
-				{
-					wprintf(L"cannot find dsl: %s\n", _filename.c_str());
-					return nullptr;
-				}
+				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
 				if (device)
@@ -435,6 +430,12 @@ namespace flame
 						if (d->filename.filename() == filename)
 							return d.get();
 					}
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find dsl: %s\n", _filename.c_str());
+					return nullptr;
 				}
 
 				auto res_path = filename.parent_path() / L"build";
@@ -448,8 +449,6 @@ namespace flame
 
 				std::vector<DescriptorBinding> bindings;
 				TypeInfoDataBase db;
-
-				auto ti_desctype = TypeInfo::get(TypeEnumSingle, "flame::graphics::DescriptorType", tidb);
 
 				if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
 					!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
@@ -539,7 +538,7 @@ namespace flame
 							if (b.type != Descriptor_Max)
 							{
 								auto n_binding = n_bindings.append_child("binding");
-								n_binding.append_attribute("type").set_value(ti_desctype->serialize(&b.type).c_str());
+								n_binding.append_attribute("type").set_value(TypeInfo::serialize_es(&b.type).c_str());
 								n_binding.append_attribute("binding").set_value(i);
 								n_binding.append_attribute("count").set_value(b.count);
 								n_binding.append_attribute("name").set_value(b.name.c_str());
@@ -578,7 +577,7 @@ namespace flame
 							if (binding >= bindings.size())
 								bindings.resize(binding + 1);
 							auto& b = bindings[binding];
-							ti_desctype->unserialize(n_binding.attribute("type").value(), &b.type);
+							TypeInfo::unserialize_es(n_binding.attribute("type").value(), &b.type);
 							b.count = n_binding.attribute("count").as_uint();
 							b.name = n_binding.attribute("name").value();
 							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
@@ -804,12 +803,7 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = _filename;
-				if (!get_engine_path(filename, L"default_assets\\shaders"))
-				{
-					wprintf(L"cannot find pll: %s\n", _filename.c_str());
-					return nullptr;
-				}
+				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
 				if (device)
@@ -819,6 +813,12 @@ namespace flame
 						if (p->filename == filename)
 							return p.get();
 					}
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find pll: %s\n", _filename.c_str());
+					return nullptr;
 				}
 
 				auto res_path = filename.parent_path() / L"build";
@@ -1049,12 +1049,7 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = _filename;
-				if (!get_engine_path(filename, L"default_assets\\shaders"))
-				{
-					wprintf(L"cannot find shader: %s\n", _filename.c_str());
-					return nullptr;
-				}
+				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
 				if (device)
@@ -1064,6 +1059,12 @@ namespace flame
 						if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
 							return s.get();
 					}
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find shader: %s\n", _filename.c_str());
+					return nullptr;
 				}
 
 				std::string defines_str;
@@ -1449,12 +1450,7 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = _filename;
-				if (!get_engine_path(filename, L"default_assets\\shaders"))
-				{
-					wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
-					return nullptr;
-				}
+				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
 				if (device)
@@ -1464,6 +1460,12 @@ namespace flame
 						if (pl->filename == filename)
 							return pl.get();
 					}
+				}
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
+					return nullptr;
 				}
 
 				pugi::xml_document doc;
@@ -1476,23 +1478,29 @@ namespace flame
 				}
 
 				GraphicsPipelineInfo info;
+				auto ppath = filename.parent_path();
 
 				for (auto n_shdr : doc_root.child("shaders"))
 				{
-					auto shader = Shader::get(device, n_shdr.attribute("filename").value(), Shader::format_defines(n_shdr.attribute("defines").value()), {});
+					std::filesystem::path fn = n_shdr.attribute("filename").value();
+					Path::cat_if_in(ppath, fn);
+					auto shader = Shader::get(device, fn, Shader::format_defines(n_shdr.attribute("defines").value()), {});
 					assert(shader);
 					info.shaders.push_back(shader);
 				}
 
-				info.layout = PipelineLayout::get(device, doc_root.child("layout").attribute("filename").value());
+				std::filesystem::path pll_fn = doc_root.child("layout").attribute("filename").value();
+				Path::cat_if_in(ppath, pll_fn);
+				info.layout = PipelineLayout::get(device, pll_fn);
 				assert(info.layout);
 
 				auto n_rp = doc_root.child("renderpass");
-				info.renderpass = Renderpass::get(device, n_rp.attribute("filename").value());
+				std::filesystem::path rp_fn = n_rp.attribute("filename").value();
+				Path::cat_if_in(ppath, rp_fn);
+				info.renderpass = Renderpass::get(device, rp_fn);
 				assert(info.renderpass);
 				info.subpass_index = n_rp.attribute("index").as_uint();
 
-				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
 				for (auto n_buf : doc_root.child("vertex_buffers"))
 				{
 					auto& vbuf = info.vertex_buffers.emplace_back();
@@ -1500,20 +1508,16 @@ namespace flame
 					{
 						auto& att = vbuf.attributes.emplace_back();
 						att.location = n_att.attribute("location").as_uint();
-						ti_format->unserialize(n_att.attribute("format").value(), &att.format);
+						TypeInfo::unserialize_es(n_att.attribute("format").value(), &att.format);
 					}
 				}
 
-				auto ti_prim = TypeInfo::get(TypeEnumSingle, "flame::graphics::PrimitiveTopology", tidb);
-				auto ti_cullmode = TypeInfo::get(TypeEnumSingle, "flame::graphics::CullMode", tidb);
-				auto ti_samplecount = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
-				auto ti_compare = TypeInfo::get(TypeEnumSingle, "flame::graphics::CompareOp", tidb);
 				if (auto n = doc_root.child("primitive_topology"); n)
-					ti_prim->unserialize(n.attribute("v").value(), &info.primitive_topology);
+					TypeInfo::unserialize_es(n.attribute("v").value(), &info.primitive_topology);
 				if (auto n = doc_root.child("cull_mode"); n)
-					ti_cullmode->unserialize(n.attribute("v").value(), &info.cull_mode);
+					TypeInfo::unserialize_es(n.attribute("v").value(), &info.cull_mode);
 				if (auto n = doc_root.child("sample_count"); n)
-					ti_samplecount->unserialize(n.attribute("v").value(), &info.sample_count);
+					TypeInfo::unserialize_es(n.attribute("v").value(), &info.sample_count);
 				if (auto n = doc_root.child("alpha_to_coverage"); n)
 					info.alpha_to_coverage = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_test"); n)
@@ -1521,22 +1525,21 @@ namespace flame
 				if (auto n = doc_root.child("depth_write"); n)
 					info.depth_write = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("compare_op"); n)
-					ti_compare->unserialize(n.attribute("v").value(), &info.compare_op);
+					TypeInfo::unserialize_es(n.attribute("v").value(), &info.compare_op);
 
-				auto ti_blendfactor = TypeInfo::get(TypeEnumSingle, "flame::graphics::BlendFactor", tidb);
 				std::vector<BlendOption> blend_options;
 				for (auto n_bo : doc_root.child("blend_options"))
 				{
 					auto& bo = info.blend_options.emplace_back();
 					bo.enable = n_bo.attribute("enable").as_bool();
 					if (auto a = n_bo.attribute("src_color"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.src_color);
+						TypeInfo::unserialize_es(a.value(), &bo.src_color);
 					if (auto a = n_bo.attribute("dst_color"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.dst_color);
+						TypeInfo::unserialize_es(a.value(), &bo.dst_color);
 					if (auto a = n_bo.attribute("src_alpha"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.src_alpha);
+						TypeInfo::unserialize_es(a.value(), &bo.src_alpha);
 					if (auto a = n_bo.attribute("dst_alpha"); a)
-						ti_blendfactor->unserialize(a.value(), &bo.dst_alpha);
+						TypeInfo::unserialize_es(a.value(), &bo.dst_alpha);
 				}
 
 				if (device)

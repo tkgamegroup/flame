@@ -279,7 +279,7 @@ namespace flame
 	struct TypeInfo_cvec2 : TypeInfo
 	{
 		TypeInfo_cvec2() :
-			TypeInfo(TypeData, "glm::vec<2,uchar,0>", sizeof(cvec2))
+			TypeInfo(TypeData, format_name(typeid(cvec2).name()), sizeof(cvec2))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -299,7 +299,7 @@ namespace flame
 	struct TypeInfo_cvec3 : TypeInfo
 	{
 		TypeInfo_cvec3() :
-			TypeInfo(TypeData, "glm::vec<3,uchar,0>", sizeof(cvec3))
+			TypeInfo(TypeData, format_name(typeid(cvec3).name()), sizeof(cvec3))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -319,7 +319,7 @@ namespace flame
 	struct TypeInfo_cvec4 : TypeInfo
 	{
 		TypeInfo_cvec4() :
-			TypeInfo(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec4))
+			TypeInfo(TypeData, format_name(typeid(cvec4).name()), sizeof(cvec4))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -339,7 +339,7 @@ namespace flame
 	struct TypeInfo_ivec2 : TypeInfo
 	{
 		TypeInfo_ivec2() :
-			TypeInfo(TypeData, "glm::vec<2,int,0>", sizeof(ivec2))
+			TypeInfo(TypeData, format_name(typeid(ivec2).name()), sizeof(ivec2))
 		{
 			basic_type = IntegerType;
 			vec_size = 2;
@@ -358,7 +358,7 @@ namespace flame
 	struct TypeInfo_ivec3 : TypeInfo
 	{
 		TypeInfo_ivec3() :
-			TypeInfo(TypeData, "glm::vec<3,int,0>", sizeof(ivec3))
+			TypeInfo(TypeData, format_name(typeid(ivec3).name()), sizeof(ivec3))
 		{
 			basic_type = IntegerType;
 			vec_size = 3;
@@ -377,7 +377,7 @@ namespace flame
 	struct TypeInfo_ivec4 : TypeInfo
 	{
 		TypeInfo_ivec4() :
-			TypeInfo(TypeData, "glm::vec<4,int,0>", sizeof(ivec4))
+			TypeInfo(TypeData, format_name(typeid(ivec4).name()), sizeof(ivec4))
 		{
 			basic_type = IntegerType;
 			vec_size = 4;
@@ -396,7 +396,7 @@ namespace flame
 	struct TypeInfo_uvec2 : TypeInfo
 	{
 		TypeInfo_uvec2() :
-			TypeInfo(TypeData, "glm::vec<2,uint,0>", sizeof(uvec2))
+			TypeInfo(TypeData, format_name(typeid(uvec2).name()), sizeof(uvec2))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -416,7 +416,7 @@ namespace flame
 	struct TypeInfo_uvec3 : TypeInfo
 	{
 		TypeInfo_uvec3() :
-			TypeInfo(TypeData, "glm::vec<3,uint,0>", sizeof(uvec3))
+			TypeInfo(TypeData, format_name(typeid(uvec3).name()), sizeof(uvec3))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -436,7 +436,7 @@ namespace flame
 	struct TypeInfo_uvec4 : TypeInfo
 	{
 		TypeInfo_uvec4() :
-			TypeInfo(TypeData, "glm::vec<4,uint,0>", sizeof(uvec4))
+			TypeInfo(TypeData, format_name(typeid(uvec4).name()), sizeof(uvec4))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -456,7 +456,7 @@ namespace flame
 	struct TypeInfo_vec2 : TypeInfo
 	{
 		TypeInfo_vec2() :
-			TypeInfo(TypeData, "glm::vec<2,float,0>", sizeof(vec2))
+			TypeInfo(TypeData, format_name(typeid(vec2).name()), sizeof(vec2))
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
@@ -475,7 +475,7 @@ namespace flame
 	struct TypeInfo_vec3 : TypeInfo
 	{
 		TypeInfo_vec3() :
-			TypeInfo(TypeData, "glm::vec<3,float,0>", sizeof(vec3))
+			TypeInfo(TypeData, format_name(typeid(vec3).name()), sizeof(vec3))
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
@@ -494,7 +494,7 @@ namespace flame
 	struct TypeInfo_vec4 : TypeInfo
 	{
 		TypeInfo_vec4() :
-			TypeInfo(TypeData, "glm::vec<4,float,0>", sizeof(vec4))
+			TypeInfo(TypeData, format_name(typeid(vec4).name()), sizeof(vec4))
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
@@ -513,7 +513,7 @@ namespace flame
 	struct TypeInfo_string : TypeInfo
 	{
 		TypeInfo_string() :
-			TypeInfo(TypeData, "std::basic_string<char,std::char_traits<char>,std::allocator<char>>", sizeof(std::string))
+			TypeInfo(TypeData, format_name(typeid(std::string).name()), sizeof(std::string))
 		{
 		}
 
@@ -546,7 +546,7 @@ namespace flame
 	struct TypeInfo_wstring : TypeInfo
 	{
 		TypeInfo_wstring() :
-			TypeInfo(TypeData, "std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>", sizeof(std::string))
+			TypeInfo(TypeData, format_name(typeid(std::wstring).name()), sizeof(std::string))
 		{
 		}
 
@@ -646,7 +646,7 @@ namespace flame
 	struct TypeInfo_mat2 : TypeInfo
 	{
 		TypeInfo_mat2() :
-			TypeInfo(TypeData, "glm::mat<2,2,float,0>", sizeof(mat2))
+			TypeInfo(TypeData, format_name(typeid(mat2).name()), sizeof(mat2))
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
@@ -657,7 +657,7 @@ namespace flame
 	struct TypeInfo_mat3 : TypeInfo
 	{
 		TypeInfo_mat3() :
-			TypeInfo(TypeData, "glm::mat<3,3,float,0>", sizeof(mat3))
+			TypeInfo(TypeData, format_name(typeid(mat3).name()), sizeof(mat3))
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
@@ -668,7 +668,7 @@ namespace flame
 	struct TypeInfo_mat4 : TypeInfo
 	{
 		TypeInfo_mat4() :
-			TypeInfo(TypeData, "glm::mat<4,4,float,0>", sizeof(mat4))
+			TypeInfo(TypeData, format_name(typeid(mat4).name()), sizeof(mat4))
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
@@ -679,7 +679,7 @@ namespace flame
 	struct TypeInfo_quat : TypeInfo
 	{
 		TypeInfo_quat() :
-			TypeInfo(TypeData, "glm::qua<float,0>", sizeof(quat))
+			TypeInfo(TypeData, format_name(typeid(quat).name()), sizeof(quat))
 		{
 		}
 

@@ -5,10 +5,6 @@
 
 namespace flame
 {
-	struct EnumInfo;
-	struct UdtInfo;
-	struct TypeInfoDataBase;
-
 	enum TypeTag
 	{
 		TypeEnumSingle,
@@ -38,10 +34,11 @@ namespace flame
 		MetaSecondaryAttribute
 	};
 
+	FLAME_FOUNDATION_EXPORTS extern TypeInfoDataBase& tidb;
+
 	struct TypeInfo
 	{
 		TypeTag tag;
-		// no space, 'unsigned ' will be replace to 'u'
 		std::string name;
 		uint hash;
 		uint size;
@@ -52,6 +49,19 @@ namespace flame
 		uint col_size = 1;
 		TypeInfo* pointed_type = nullptr;
 
+		inline static std::string format_name(const std::string& str)
+		{
+			auto ret = str;
+			SUS::replace_all(ret, "enum ", "");
+			SUS::replace_all(ret, "struct ", "");
+			SUS::replace_all(ret, "class ", "");
+			SUS::replace_all(ret, "unsigned ", "u");
+			SUS::replace_all(ret, "__int64 ", "int64");
+			SUS::replace_all(ret, "Private", "");
+			SUS::remove_ch(ret, ' ');
+			return ret;
+		}
+
 		TypeInfo(TypeTag tag, std::string_view _name, uint size) :
 			tag(tag),
 			name(_name),
@@ -61,6 +71,8 @@ namespace flame
 			hash ^= std::hash<int>()(tag);
 		}
 
+		virtual ~TypeInfo() {}
+
 		virtual void* create(bool create_pointing = true) const { return malloc(size); }
 		virtual void destroy(void* p, bool destroy_pointing = true) const { free(p); }
 		virtual void copy(void* dst, const void* src) const { memcpy(dst, src, size); }
@@ -68,15 +80,60 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db);
+		template <class T>
+		static TypeInfo* es()
+		{
+			static auto ret = get(TypeEnumSingle, format_name(typeid(T).name()), tidb);
+			return ret;
+		}
+
+		template <class T>
+		static TypeInfo* em()
+		{
+			static auto ret = get(TypeEnumMulti, format_name(typeid(T).name()), tidb);
+			return ret;
+		}
+
+		template <class T>
+		static TypeInfo* u()
+		{
+			static auto ret = get(TypeData, format_name(typeid(T).name()), tidb);
+			return ret;
+		}
+
+		template <class T>
+		static std::string serialize_es(T* v)
+		{
+			return es<T>()->serialize(v);
+		}
+
+		template <class T>
+		static std::string serialize_em(T* v)
+		{
+			return em<T>()->serialize(v);
+		}
+
+		template <class T>
+		static void unserialize_es(const std::string& str, T* v)
+		{
+			return es<T>()->unserialize(str, v);
+		}
+
+		template <class T>
+		static void unserialize_em(const std::string& str, T* v)
+		{
+			return em<T>()->unserialize(str, v);
+		}
+
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
 	};
 
 	struct Metas
 	{
 		std::vector<std::pair<TypeMeta, LightCommonValue>> d;
 
-		void from_string(const std::string& str);
-		std::string to_string() const;
+		void from_string(const std::string& str, TypeInfoDataBase& db = tidb);
+		std::string to_string(TypeInfoDataBase& db = tidb) const;
 
 		inline bool get(TypeMeta m, LightCommonValue* v) const
 		{
@@ -217,8 +274,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save_typeinfo(const std::filesystem::path& filename);
 	};
 
-	FLAME_FOUNDATION_EXPORTS extern TypeInfoDataBase tidb;
-
 	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db)
 	{
 		auto it = db.enums.find(name);
@@ -247,24 +302,22 @@ namespace flame
 		return nullptr;
 	}
 
-	inline void Metas::from_string(const std::string& str)
+	inline void Metas::from_string(const std::string& str, TypeInfoDataBase& db)
 	{
-		auto e_meta = TypeInfo::get(TypeEnumSingle, "flame::TypeMeta", tidb);
 		for (auto& i : SUS::split(str, ';'))
 		{
 			auto sp = SUS::split(i, ':');
 			auto& m = d.emplace_back();
-			e_meta->unserialize(sp[0], &m.first);
+			TypeInfo::unserialize_es(sp[0], &m.first);
 			m.second.u = std::stoul(sp[1], 0, 16);
 		}
 	}
 
-	inline std::string Metas::to_string() const
+	inline std::string Metas::to_string(TypeInfoDataBase& db) const
 	{
 		std::string ret;
-		auto e_meta = TypeInfo::get(TypeEnumSingle, "flame::TypeMeta", tidb);
 		for (auto& i : d)
-			ret += e_meta->serialize(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+			ret += TypeInfo::serialize_es(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
 		return ret;
 	}
 }

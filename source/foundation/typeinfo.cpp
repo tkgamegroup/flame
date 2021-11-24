@@ -4,7 +4,8 @@
 
 namespace flame
 {
-	TypeInfoDataBase tidb;
+	TypeInfoDataBase _tidb;
+	TypeInfoDataBase& tidb = _tidb;
 
 	static TypeInfo* void_type = nullptr;
 
@@ -18,10 +19,10 @@ namespace flame
 		auto it = db.typeinfos.find(key);
 		if (it != db.typeinfos.end())
 			return it->second.get();
-		if (&tidb != &db)
+		if (&_tidb != &db)
 		{
-			it = tidb.typeinfos.find(key);
-			if (it != tidb.typeinfos.end())
+			it = _tidb.typeinfos.find(key);
+			if (it != _tidb.typeinfos.end())
 				return it->second.get();
 		}
 
@@ -58,147 +59,147 @@ namespace flame
 
 		{
 			void_type = new TypeInfo_void;
-			tidb.typeinfos.emplace(void_type->hash, void_type);
+			_tidb.typeinfos.emplace(void_type->hash, void_type);
 		}
 		{
 			auto t = new TypeInfo_bool;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_char;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uchar;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_wchar;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_short;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_ushort;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_int;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uint;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_int64;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uint64;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_float;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_cvec2;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_cvec3;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_cvec4;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_ivec2;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_ivec3;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_ivec4;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uvec2;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uvec3;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_uvec4;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_vec2;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_vec3;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_vec4;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_string;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_wstring;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_Rect;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_AABB;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_Plane;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_Frustum;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_mat2;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_mat3;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_mat4;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
 			auto t = new TypeInfo_quat;
-			tidb.typeinfos.emplace(t->hash, t);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
-			auto t = new TypeInfo_charp(tidb);
-			tidb.typeinfos.emplace(t->hash, t);
+			auto t = new TypeInfo_charp(_tidb);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
-			auto t = new TypeInfo_wcharp(tidb);
-			tidb.typeinfos.emplace(t->hash, t);
+			auto t = new TypeInfo_wcharp(_tidb);
+			_tidb.typeinfos.emplace(t->hash, t);
 		}
 
 		auto app_name = get_app_path(true);
@@ -209,7 +210,7 @@ namespace flame
 				auto ti_path = path;
 				ti_path.replace_extension(".typeinfo");
 				if (std::filesystem::exists(ti_path))
-					tidb.load_typeinfo(path);
+					_tidb.load_typeinfo(path);
 			}
 		}
 	}

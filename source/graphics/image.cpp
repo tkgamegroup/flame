@@ -459,6 +459,7 @@ namespace flame
 			auto ret = new ImagePrivate;
 
 			ret->device = device;
+			ret->format = format;
 			ret->initialize(size);
 			ret->vk_image = native;
 

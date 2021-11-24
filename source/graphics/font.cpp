@@ -110,12 +110,15 @@ namespace flame
 						return a.second.get();
 				}
 
-				std::vector<Font*> fonts;
+				std::vector<std::unique_ptr<Font>> fonts;
 				for (auto& s : sp)
 				{
-					auto fn = std::filesystem::path(s);
+					auto fn = Path::get(s);
 					if (!std::filesystem::exists(fn))
-						get_engine_path(fn, L"default_assets");
+					{
+						wprintf(L"cannot find font: %s\n", s.c_str());
+						return nullptr;
+					}
 
 					auto font = new Font;
 					font->file = get_file_content(fn);
@@ -125,13 +128,12 @@ namespace flame
 						return nullptr;
 					}
 
-					fonts.push_back(font);
+					fonts.emplace_back(font);
 				}
 
 				auto ret = new FontAtlasPrivate;
 				ret->device = device;
-				for (auto& f : fonts)
-					ret->fonts.emplace_back(f);
+				ret->fonts = std::move(fonts);
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 

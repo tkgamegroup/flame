@@ -45,8 +45,6 @@ namespace flame
 				if (auto n = n_material.attribute("pipeline_defines"); n)
 					ret->pipeline_defines = n.value();
 
-				auto ti_Filter = TypeInfo::get(TypeEnumSingle, "flame::graphics::Filter", tidb);
-				auto ti_addrmod = TypeInfo::get(TypeEnumSingle, "flame::graphics::AddressMode", tidb);
 				auto i = 0;
 				for (auto n_texture : n_material)
 				{
@@ -56,13 +54,13 @@ namespace flame
 					if (auto n = n_texture.attribute("srgb"); n)
 						dst.srgb = n.as_bool();
 					if (auto n = n_texture.attribute("mag_filter"); n)
-						ti_Filter->unserialize(n.value(), &dst.mag_filter);
+						TypeInfo::unserialize_es(n.value(), &dst.mag_filter);
 					if (auto n = n_texture.attribute("min_filter"); n)
-						ti_Filter->unserialize(n.value(), &dst.min_filter);
+						TypeInfo::unserialize_es(n.value(), &dst.min_filter);
 					if (auto n = n_texture.attribute("linear_mipmap"); n)
 						dst.linear_mipmap = n.as_bool();
 					if (auto n = n_texture.attribute("address_mode"); n)
-						ti_addrmod->unserialize(n.value(), &dst.address_mode);
+						TypeInfo::unserialize_es(n.value(), &dst.address_mode);
 					if (auto n = n_texture.attribute("auto_mipmap"); n)
 						dst.auto_mipmap = n.as_bool();
 					i++;

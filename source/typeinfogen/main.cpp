@@ -11,21 +11,6 @@
 
 using namespace flame;
 
-std::string format_type(const wchar_t* in)
-{
-	auto str = w2s(in);
-
-	SUS::replace_all(str, "enum ", "");
-	SUS::replace_all(str, "unsigned ", "u");
-	SUS::replace_all(str, "__int64 ", "int64");
-
-	SUS::replace_all(str, "Private", "");
-
-	SUS::remove_ch(str, ' ');
-
-	return str;
-}
-
 struct TagAndName
 {
 	TypeTag tag;
@@ -100,7 +85,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagEnum:
 	{
 		s_type->get_name(&pwname);
-		auto name = format_type(pwname);
+		auto name = TypeInfo::format_name(w2s(pwname));
 		return TagAndName(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name);
 	}
 	case SymTagBaseType:
@@ -124,7 +109,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			break;
 		case SymTagUDT:
 			pointer_type->get_name(&pwname);
-			name = format_type(pwname);
+			name = TypeInfo::format_name(w2s(pwname));
 			break;
 		}
 		pointer_type->Release();
@@ -133,7 +118,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
-		auto name = format_type(pwname);
+		auto name = TypeInfo::format_name(w2s(pwname));
 		return TagAndName(TypeData, name);
 	}
 	case SymTagFunctionArgType:
@@ -482,11 +467,7 @@ process:
 					{
 						IDiaSymbol* s_type;
 						s_parameter->get_type(&s_type);
-
 						auto type_desc = typeinfo_from_symbol(s_parameter);
-						if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
-							new_enum(type_desc.name, s_type);
-
 						s_type->Release();
 
 						auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
@@ -537,8 +518,6 @@ process:
 				auto type_desc = typeinfo_from_symbol(s_type);
 				if (type_desc.name.starts_with("flame::"))
 					SUS::cut_tail_if(type_desc.name, "Private");
-				if (type_desc.tag == TypeEnumSingle || type_desc.tag == TypeEnumMulti)
-					new_enum(type_desc.name, s_type);
 
 				auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
 				assert(type);

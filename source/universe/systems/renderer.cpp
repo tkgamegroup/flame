@@ -194,16 +194,16 @@ namespace flame
 		SparseBuffer<uint>			buf_arm_mesh_idx;
 
 		StorageBuffer<DSL_render_data::RenderData>							buf_render_data;
-		std::unique_ptr<DescriptorSet>												ds_render_data;
+		std::unique_ptr<DescriptorSet>										ds_render_data;
 		ArrayStorageBuffer<DSL_material::MaterialInfos>						buf_materials;
-		std::unique_ptr<DescriptorSet>												ds_material;
+		std::unique_ptr<DescriptorSet>										ds_material;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Transforms>			buf_mesh_transforms;
 		SequentialArrayStorageBuffer<mesh::DSL_mesh::Armatures>				buf_mesh_armatures;
-		std::unique_ptr<DescriptorSet>												ds_mesh;
+		std::unique_ptr<DescriptorSet>										ds_mesh;
 		SequentialArrayStorageBuffer<terrain::DSL_terrain::TerrainInfos>	buf_terrain;
-		std::unique_ptr<DescriptorSet>												ds_terrain;
+		std::unique_ptr<DescriptorSet>										ds_terrain;
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
-		std::unique_ptr<DescriptorSet>												ds_water;
+		std::unique_ptr<DescriptorSet>										ds_water;
 
 		std::unique_ptr<Image> img_dep;
 		std::unique_ptr<Image> img_col_met;	// color, metallic
@@ -219,9 +219,9 @@ namespace flame
 		ArrayStorageBuffer<DSL_light::TileLightsMap>			buf_tile_lights;
 		SequentialArrayStorageBuffer<DSL_light::DirShadows>		buf_dir_shadows;
 		SequentialArrayStorageBuffer<DSL_light::PtShadows>		buf_pt_shadows;
-		std::vector<std::unique_ptr<Image>>								img_dir_shadow_maps;
-		std::vector<std::unique_ptr<Image>>								img_pt_shadow_maps;
-		std::unique_ptr<DescriptorSet>									ds_light;
+		std::vector<std::unique_ptr<Image>>						img_dir_shadow_maps;
+		std::vector<std::unique_ptr<Image>>						img_pt_shadow_maps;
+		std::unique_ptr<DescriptorSet>							ds_light;
 
 		PipelineLayout* pll_mesh_fwd;
 		PipelineLayout* pll_mesh_gbuf;

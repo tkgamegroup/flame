@@ -1,8 +1,6 @@
 <desc>
   <enums>
-    <rule name="^flame::TypeTag$" />
-    <rule name="^flame::BasicType$" />
-    <rule name="^flame::TypeMeta$" />
+	  <rule name="^flame::[\w:]+$" />
   </enums>
   <udts>
   </udts>

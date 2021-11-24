@@ -11,7 +11,7 @@ namespace flame
 	{
 		WindowPrivate::~WindowPrivate()
 		{
-			QueuePrivate::get(nullptr)->wait_idle();
+			Queue::get(nullptr)->wait_idle();
 		}
 
 		void* WindowPrivate::add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback)
@@ -76,7 +76,7 @@ namespace flame
 							return;
 						}
 					}
-					});
+				});
 
 				windows.emplace_back(ret);
 				return ret;

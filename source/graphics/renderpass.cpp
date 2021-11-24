@@ -146,7 +146,7 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = _filename;
+				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
 				for (auto& rp : device->rps)
@@ -155,9 +155,9 @@ namespace flame
 						return rp.get();
 				}
 
-				if (!get_engine_path(filename, L"default_assets\\shaders"))
+				if (!std::filesystem::exists(filename))
 				{
-					wprintf(L"cannot find rp: %s\n", _filename.c_str());
+					wprintf(L"cannot find renderpass: %s\n", _filename.c_str());
 					return nullptr;
 				}
 
@@ -170,26 +170,21 @@ namespace flame
 					return nullptr;
 				}
 
-				auto ti_format = TypeInfo::get(TypeEnumSingle, "flame::graphics::Format", tidb);
-				auto ti_loadop = TypeInfo::get(TypeEnumSingle, "flame::graphics::AttachmentLoadOp", tidb);
-				auto ti_sampcnt = TypeInfo::get(TypeEnumSingle, "flame::graphics::SampleCount", tidb);
-				auto ti_imglayout = TypeInfo::get(TypeEnumSingle, "flame::graphics::ImageLayout", tidb);
-
 				std::vector<Attachment> atts;
 				auto n_atts = doc_root.child("attachments");
 				for (auto n_att : n_atts.children())
 				{
 					auto& att = atts.emplace_back();
 					if (auto a = n_att.attribute("format"); a)
-						ti_format->unserialize(a.value(), &att.format);
+						TypeInfo::unserialize_es(a.value(), &att.format);
 					if (auto a = n_att.attribute("load_op"); a)
-						ti_loadop->unserialize(a.value(), &att.load_op);
+						TypeInfo::unserialize_es(a.value(), &att.load_op);
 					if (auto a = n_att.attribute("sample_count"); a)
-						ti_sampcnt->unserialize(a.value(), &att.sample_count);
+						TypeInfo::unserialize_es(a.value(), &att.sample_count);
 					if (auto a = n_att.attribute("initia_layout"); a)
-						ti_imglayout->unserialize(a.value(), &att.initia_layout);
+						TypeInfo::unserialize_es(a.value(), &att.initia_layout);
 					if (auto a = n_att.attribute("final_layout"); a)
-						ti_imglayout->unserialize(a.value(), &att.final_layout);
+						TypeInfo::unserialize_es(a.value(), &att.final_layout);
 				}
 
 				std::vector<std::vector<int>> v_col_refs;
