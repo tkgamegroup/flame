@@ -106,6 +106,12 @@ namespace flame
 		}
 
 		template <class T>
+		static std::string serialize_u(T* v)
+		{
+			return u<T>()->serialize(v);
+		}
+
+		template <class T>
 		static void unserialize_e(const std::string& str, T* v)
 		{
 			return e<T>()->unserialize(str, v);
@@ -258,7 +264,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save_typeinfo(const std::filesystem::path& filename);
 	};
 
-	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db)
+	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db = tidb)
 	{
 		auto it = db.enums.find(name);
 		if (it != db.enums.end())
@@ -272,7 +278,7 @@ namespace flame
 		return nullptr;
 	}
 
-	inline UdtInfo* find_udt(const std::string& name, TypeInfoDataBase& db)
+	inline UdtInfo* find_udt(const std::string& name, TypeInfoDataBase& db = tidb)
 	{
 		auto it = db.udts.find(name);
 		if (it != db.udts.end())

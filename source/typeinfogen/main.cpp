@@ -583,9 +583,6 @@ process:
 
 	db.save_typeinfo(typeinfo_path);
 
-	if (library)
-		FreeLibrary(library);
-
 	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
 
 	return 0;

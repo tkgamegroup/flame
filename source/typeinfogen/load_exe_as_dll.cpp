@@ -26,8 +26,8 @@ void* load_exe_as_dll(const std::filesystem::path& path)
 		if (!name) 
 			break;
 
-		auto dll = LoadLibraryA(name);
-		assert(dll);
+		auto lib = LoadLibraryA(name);
+		assert(lib);
 
 		auto thunk = (PIMAGE_THUNK_DATA)((uchar*)addr + import_desc->FirstThunk);
 		while (thunk->u1.Function)
@@ -44,10 +44,9 @@ void* load_exe_as_dll(const std::filesystem::path& path)
 
 				rva = (size_t)thunk;
 
-				// purpose??
-				char fe[100] = { 0 };
-				sprintf_s(fe, 100, "#%u", ord);
-				fn_new = GetProcAddress(dll, (char*)ord);
+				fn_new = GetProcAddress(lib, (char*)ord);
+				if (!fn_new)
+					break;
 			}
 			else
 			{
@@ -55,12 +54,15 @@ void* load_exe_as_dll(const std::filesystem::path& path)
 				assert(ppfn);
 
 				rva = (size_t)thunk;
-				auto fname = (char*)dll + thunk->u1.Function + 2;
+				auto fname = (char*)addr; 
+				fname += thunk->u1.Function; 
+				fname += 2;
 				if (!fname)
 					break;
 
-				fn_new = GetProcAddress(dll, fname);
-				assert(fn_new);
+				fn_new = GetProcAddress(lib, fname);
+				if (!fn_new)
+					break;
 			}
 
 			auto hp = GetCurrentProcess();
@@ -82,4 +84,13 @@ void* load_exe_as_dll(const std::filesystem::path& path)
 
 		import_desc++;
 	}
+
+	auto __init_crt = (void(__stdcall*)(void*)) GetProcAddress(addr, "__init_crt");
+	auto ev = CreateEvent(nullptr, false, false, nullptr);
+	std::thread([&]() {
+		__init_crt(ev);
+	}).detach();
+	WaitForSingleObject(ev, INFINITE);
+
+	return addr;
 }

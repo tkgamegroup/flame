@@ -10,6 +10,11 @@
 
 namespace flame
 {
+	void sleep(int time)
+	{
+		Sleep(time);
+	}
+
 	Guid generate_guid()
 	{
 		Guid ret;
@@ -139,6 +144,7 @@ namespace flame
 		for (auto& p : ret)
 			p = parent_path / p;
 		std::reverse(ret.begin(), ret.end());
+		ret.push_back(path);
 		return ret;
 	}
 

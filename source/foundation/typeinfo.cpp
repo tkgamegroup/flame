@@ -42,7 +42,7 @@ namespace flame
 		{
 			auto udt = find_udt(name, db);
 			if (udt)
-				t = new TypeInfo(TypeData, name, udt->size);
+				t = new TypeInfo_Udt(name, db);
 		}
 			break;
 		}
@@ -222,7 +222,7 @@ namespace flame
 			path = get_app_path() / path;
 
 		void* library = nullptr;
-		if (path.extension() == L".dll")
+		if (path.extension() != L".typeinfo")
 		{
 			library = LoadLibraryW(path.c_str());
 			path.replace_extension(L".typeinfo");

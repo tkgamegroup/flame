@@ -19,6 +19,7 @@ namespace flame
 		FileRenamed
 	};
 
+	FLAME_FOUNDATION_EXPORTS void sleep(int time);
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
 	FLAME_FOUNDATION_EXPORTS std::filesystem::path get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();

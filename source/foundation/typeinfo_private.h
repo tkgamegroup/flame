@@ -60,6 +60,28 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_Udt : TypeInfo
+	{
+		UdtInfo* ui = nullptr;
+
+		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TypeData, base_name, 0)
+		{
+			ui = find_udt(name, db);
+			size = ui->size;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			for (auto& vi : ui->variables)
+			{
+				ret += vi.name + ": " + vi.type->serialize((char*)p + vi.offset) + "\n";
+			}
+			return ret;
+		}
+	};
+
 	struct TypeInfo_void : TypeInfo
 	{
 		TypeInfo_void() :
