@@ -1,5 +1,6 @@
 file(GLOB_RECURSE source_files "*.c*")
 add_executable(basketball_shooting ${source_files})
 set_target_properties(basketball_shooting PROPERTIES FOLDER "games")
+target_link_options(basketball_shooting PRIVATE /FIXED:NO)
 target_link_libraries(basketball_shooting flame_universe)
 set_target_properties(basketball_shooting PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

@@ -132,6 +132,8 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	}
 }
 
+void* load_exe_as_dll(const std::filesystem::path& path);
+
 int main(int argc, char **args)
 {
 	auto ap = parse_args(argc, args);
@@ -143,11 +145,7 @@ int main(int argc, char **args)
 	goto process;
 
 show_usage:
-	printf("usage: typeinfogen -i filename -enum {rule1} {rule2}... -udt {rule1} {rule2}... [-d filename]\n"
-		"-i: specify the target executable\n"
-		"-enum specify enum rules\n"
-		"-udt specify udt rules\n"
-		"-d: specify the desc file, which contains the reflect rules\n");
+	printf("usage: typeinfogen -i <target> -enum <rule1> [<rule2>...] -udt <rule1> [<rule2>...] [-d <desc file>]\n");
 	return 0;
 
 process:
@@ -323,7 +321,9 @@ process:
 	wchar_t* pwname;
 
 	HMODULE library = nullptr;
-	if (input_path.extension() == L".dll")
+	if (input_path.extension() == L".exe")
+		library = (HMODULE)load_exe_as_dll(input_path.c_str());
+	else
 		library = LoadLibraryW(input_path.c_str());
 	TypeInfoDataBase db;
 
