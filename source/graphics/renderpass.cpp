@@ -176,72 +176,47 @@ namespace flame
 				{
 					auto& att = atts.emplace_back();
 					if (auto a = n_att.attribute("format"); a)
-						TypeInfo::unserialize_es(a.value(), &att.format);
+						TypeInfo::unserialize_e(a.value(), &att.format);
 					if (auto a = n_att.attribute("load_op"); a)
-						TypeInfo::unserialize_es(a.value(), &att.load_op);
+						TypeInfo::unserialize_e(a.value(), &att.load_op);
 					if (auto a = n_att.attribute("sample_count"); a)
-						TypeInfo::unserialize_es(a.value(), &att.sample_count);
+						TypeInfo::unserialize_e(a.value(), &att.sample_count);
 					if (auto a = n_att.attribute("initia_layout"); a)
-						TypeInfo::unserialize_es(a.value(), &att.initia_layout);
+						TypeInfo::unserialize_e(a.value(), &att.initia_layout);
 					if (auto a = n_att.attribute("final_layout"); a)
-						TypeInfo::unserialize_es(a.value(), &att.final_layout);
+						TypeInfo::unserialize_e(a.value(), &att.final_layout);
 				}
 
-				std::vector<std::vector<int>> v_col_refs;
-				std::vector<std::vector<int>> v_res_refs;
-				std::vector<int> v_dep_refs;
-				std::vector<std::vector<int>> v_depens;
+				std::vector<Subpass> sps;
+				std::vector<uvec2> deps;
 				auto n_sps = doc_root.child("subpasses");
 				for (auto n_sp : n_sps.children())
 				{
-					std::vector<int> col_refs;
+					auto& sp = sps.emplace_back();
+
 					if (auto a = n_sp.attribute("color_refs"); a)
 					{
-						auto sp = SUS::split(a.value(), ',');
-						col_refs.resize(sp.size());
-						for (auto i = 0; i < sp.size(); i++)
-							col_refs[i] = std::stoi(sp[i]);
+						for (auto& d : SUS::split(a.value(), ','))
+							sp.color_attachments.push_back(sto<int>(d));
 					}
-					v_col_refs.push_back(col_refs);
 
-					std::vector<int> res_refs;
 					if (auto a = n_sp.attribute("resolve_refs"); a)
 					{
-						auto sp = SUS::split(a.value(), ',');
-						res_refs.resize(sp.size());
-						for (auto i = 0; i < sp.size(); i++)
-							res_refs[i] = std::stoi(sp[i]);
+						for (auto& d : SUS::split(a.value(), ','))
+							sp.resolve_attachments.push_back(sto<int>(d));
 					}
-					v_res_refs.push_back(res_refs);
 
-					int dep_ref = -1;
 					if (auto a = n_sp.attribute("depth_ref"); a)
-						dep_ref = std::stoi(a.value());
-					v_dep_refs.push_back(dep_ref);
+						sp.depth_attachment = std::stoi(a.value());
 
-					std::vector<int> depens;
 					if (auto a = n_sp.attribute("dependencies"); a)
 					{
-						auto sp = SUS::split(a.value(), ',');
-						depens.resize(sp.size());
-						for (auto i = 0; i < sp.size(); i++)
-							depens[i] = std::stoi(sp[i]);
+						for (auto& d : SUS::split(a.value(), ','))
+							deps.push_back(uvec2(sto<int>(d), sps.size() - 1));
 					}
-					v_depens.push_back(depens);
-				}
-				std::vector<Subpass> sps(v_col_refs.size());
-				std::vector<uvec2> depens;
-				for (auto i = 0; i < sps.size(); i++)
-				{
-					auto& src = sps.emplace_back();
-					src.color_attachments = v_col_refs[i];
-					src.resolve_attachments = v_res_refs[i];
-					src.depth_attachment = v_dep_refs[i];
-					for (auto t : v_depens[i])
-						depens.push_back(uvec2(t, i));
 				}
 
-				auto ret = Renderpass::create(device, atts, sps, depens);
+				auto ret = Renderpass::create(device, atts, sps, deps);
 				ret->filename = filename;
 				device->rps.emplace_back(ret);
 				return ret;

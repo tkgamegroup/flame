@@ -538,7 +538,7 @@ namespace flame
 							if (b.type != Descriptor_Max)
 							{
 								auto n_binding = n_bindings.append_child("binding");
-								n_binding.append_attribute("type").set_value(TypeInfo::serialize_es(&b.type).c_str());
+								n_binding.append_attribute("type").set_value(TypeInfo::serialize_e(&b.type).c_str());
 								n_binding.append_attribute("binding").set_value(i);
 								n_binding.append_attribute("count").set_value(b.count);
 								n_binding.append_attribute("name").set_value(b.name.c_str());
@@ -577,7 +577,7 @@ namespace flame
 							if (binding >= bindings.size())
 								bindings.resize(binding + 1);
 							auto& b = bindings[binding];
-							TypeInfo::unserialize_es(n_binding.attribute("type").value(), &b.type);
+							TypeInfo::unserialize_e(n_binding.attribute("type").value(), &b.type);
 							b.count = n_binding.attribute("count").as_uint();
 							b.name = n_binding.attribute("name").value();
 							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
@@ -1067,21 +1067,6 @@ namespace flame
 					return nullptr;
 				}
 
-				std::string defines_str;
-				std::string substitutes_str;
-				for (auto i = 0; i < defines.size(); i++)
-				{
-					defines_str += defines[i];
-					if (i < defines.size() - 1)
-						defines_str += " ";
-				}
-				for (auto i = 0; i < substitutes.size(); i++)
-				{
-					substitutes_str += substitutes[i].first + " " + substitutes[i].second;
-					if (i < substitutes.size() - 1)
-						substitutes_str += " ";
-				}
-
 				auto ppath = filename.parent_path();
 
 				auto hash = 0U;
@@ -1099,9 +1084,8 @@ namespace flame
 
 				auto dependencies = get_make_dependencies(filename);
 
-				auto parsed_substitutes = substitutes;
-
-				for (auto& s : parsed_substitutes)
+				auto unfolded_substitutes = substitutes;
+				for (auto& s : unfolded_substitutes)
 				{
 					if (s.first.ends_with("_FILE"))
 					{
@@ -1126,7 +1110,7 @@ namespace flame
 						{
 							std::string line;
 							std::getline(glsl, line);
-							for (auto& s : parsed_substitutes)
+							for (auto& s : unfolded_substitutes)
 								SUS::replace_all(line, s.first, s.second);
 							temp += line + "\n";
 						}
@@ -1149,7 +1133,25 @@ namespace flame
 						for (auto& d : defines)
 							command_line += L" -D" + s2w(d);
 
-						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), defines_str.c_str(), substitutes_str.c_str());
+						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), [&]() {
+							std::string ret;
+							for (auto i = 0; i < defines.size(); i++)
+							{
+								ret += defines[i];
+								if (i < defines.size() - 1)
+									ret += " ";
+							}
+							return ret;
+						}().c_str(), [&]() {
+							std::string ret;
+							for (auto i = 0; i < substitutes.size(); i++)
+							{
+								ret += substitutes[i].first + " " + substitutes[i].second;
+								if (i < substitutes.size() - 1)
+									ret += " ";
+							}
+							return ret;
+						}().c_str());
 
 						std::string output;
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
@@ -1508,16 +1510,16 @@ namespace flame
 					{
 						auto& att = vbuf.attributes.emplace_back();
 						att.location = n_att.attribute("location").as_uint();
-						TypeInfo::unserialize_es(n_att.attribute("format").value(), &att.format);
+						TypeInfo::unserialize_e(n_att.attribute("format").value(), &att.format);
 					}
 				}
 
 				if (auto n = doc_root.child("primitive_topology"); n)
-					TypeInfo::unserialize_es(n.attribute("v").value(), &info.primitive_topology);
+					TypeInfo::unserialize_e(n.attribute("v").value(), &info.primitive_topology);
 				if (auto n = doc_root.child("cull_mode"); n)
-					TypeInfo::unserialize_es(n.attribute("v").value(), &info.cull_mode);
+					TypeInfo::unserialize_e(n.attribute("v").value(), &info.cull_mode);
 				if (auto n = doc_root.child("sample_count"); n)
-					TypeInfo::unserialize_es(n.attribute("v").value(), &info.sample_count);
+					TypeInfo::unserialize_e(n.attribute("v").value(), &info.sample_count);
 				if (auto n = doc_root.child("alpha_to_coverage"); n)
 					info.alpha_to_coverage = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_test"); n)
@@ -1525,7 +1527,7 @@ namespace flame
 				if (auto n = doc_root.child("depth_write"); n)
 					info.depth_write = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("compare_op"); n)
-					TypeInfo::unserialize_es(n.attribute("v").value(), &info.compare_op);
+					TypeInfo::unserialize_e(n.attribute("v").value(), &info.compare_op);
 
 				std::vector<BlendOption> blend_options;
 				for (auto n_bo : doc_root.child("blend_options"))
@@ -1533,13 +1535,13 @@ namespace flame
 					auto& bo = info.blend_options.emplace_back();
 					bo.enable = n_bo.attribute("enable").as_bool();
 					if (auto a = n_bo.attribute("src_color"); a)
-						TypeInfo::unserialize_es(a.value(), &bo.src_color);
+						TypeInfo::unserialize_e(a.value(), &bo.src_color);
 					if (auto a = n_bo.attribute("dst_color"); a)
-						TypeInfo::unserialize_es(a.value(), &bo.dst_color);
+						TypeInfo::unserialize_e(a.value(), &bo.dst_color);
 					if (auto a = n_bo.attribute("src_alpha"); a)
-						TypeInfo::unserialize_es(a.value(), &bo.src_alpha);
+						TypeInfo::unserialize_e(a.value(), &bo.src_alpha);
 					if (auto a = n_bo.attribute("dst_alpha"); a)
-						TypeInfo::unserialize_es(a.value(), &bo.dst_alpha);
+						TypeInfo::unserialize_e(a.value(), &bo.dst_alpha);
 				}
 
 				if (device)
