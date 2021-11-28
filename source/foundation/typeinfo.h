@@ -82,8 +82,8 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
 
-		template <class T>
-		static TypeInfo* e()
+		template<class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+		static TypeInfo* get()
 		{
 			auto get_type = [](const std::string& name) {
 				return get(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name, tidb);
@@ -92,29 +92,23 @@ namespace flame
 			return ret;
 		}
 
-		template <class T>
-		static TypeInfo* u()
+		template<class T, std::enable_if_t<!std::is_enum_v<T>, int> = 0>
+		static TypeInfo* get()
 		{
 			static auto ret = get(TypeData, format_name(typeid(T).name()), tidb);
 			return ret;
 		}
 
 		template <class T>
-		static std::string serialize_e(T* v)
+		static std::string serialize_t(T* v)
 		{
-			return e<T>()->serialize(v);
+			return get<T>()->serialize(v);
 		}
 
 		template <class T>
-		static std::string serialize_u(T* v)
+		static void unserialize_t(const std::string& str, T* v)
 		{
-			return u<T>()->serialize(v);
-		}
-
-		template <class T>
-		static void unserialize_e(const std::string& str, T* v)
-		{
-			return e<T>()->unserialize(str, v);
+			return get<T>()->unserialize(str, v);
 		}
 	};
 
@@ -298,7 +292,7 @@ namespace flame
 		{
 			auto sp = SUS::split(i, ':');
 			auto& m = d.emplace_back();
-			TypeInfo::unserialize_e(sp[0], &m.first);
+			TypeInfo::unserialize_t(sp[0], &m.first);
 			m.second.u = std::stoul(sp[1], 0, 16);
 		}
 	}
@@ -307,7 +301,7 @@ namespace flame
 	{
 		std::string ret;
 		for (auto& i : d)
-			ret += TypeInfo::serialize_e(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+			ret += TypeInfo::serialize_t(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
 		return ret;
 	}
 }

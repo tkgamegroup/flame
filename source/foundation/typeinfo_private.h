@@ -68,7 +68,8 @@ namespace flame
 			TypeInfo(TypeData, base_name, 0)
 		{
 			ui = find_udt(name, db);
-			size = ui->size;
+			if (ui)
+				size = ui->size;
 		}
 
 		std::string serialize(const void* p) const override

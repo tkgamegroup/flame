@@ -39,11 +39,7 @@ namespace flame
 			t = new TypeInfo_Pointer(name, db);
 			break;
 		case TypeData:
-		{
-			auto udt = find_udt(name, db);
-			if (udt)
-				t = new TypeInfo_Udt(name, db);
-		}
+			t = new TypeInfo_Udt(name, db);
 			break;
 		}
 

@@ -34,22 +34,7 @@ namespace flame
 	template <class T>
 	concept long_unsigned_integral = std::unsigned_integral<T> && sizeof(T) > sizeof(uint);
 
-#define FLAME_PTR(name) struct name; typedef name name##T; typedef name* name##Ptr;
-#define FLAME_PTR_P(name) struct name##Private; typedef name##Private name##T; typedef name##Private* name##Ptr;
-
-	template <class T>
-	void* var_end(T* p)
-	{
-		return (char*)p + sizeof(T);
-	}
-
 	template <auto V> inline constexpr auto S = V;
-
-	template <class T>
-	std::span<T> SP(const T& v)
-	{
-		return std::span(&(T&)v, 1);
-	}
 
 	constexpr uint ch(char const* str)
 	{

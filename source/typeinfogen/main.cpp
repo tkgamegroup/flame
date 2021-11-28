@@ -129,6 +129,8 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		s_arg_type->Release();
 		return ret;
 	}
+	default:
+		return TagAndName(TypeData, "__unsupported__symtag_" + std::to_string(dw));
 	}
 }
 
@@ -145,7 +147,7 @@ int main(int argc, char **args)
 	goto process;
 
 show_usage:
-	printf("usage: typeinfogen -i <target> -enum <rule1> [<rule2>...] -udt <rule1> [<rule2>...] [-d <desc file>]\n");
+	printf("usage: typeinfogen -i <target> -e <rule1> [<rule2>...] -u <rule1> [<rule2>...] -f <rule1> [<rule2>...] [-d <desc file>]\n");
 	return 0;
 
 process:
@@ -259,6 +261,50 @@ process:
 				item.name = n_i.attribute("name").value();
 				item.metas = n_i.attribute("metas").value();
 			}
+		}
+	}
+	if (auto vswhere_path = std::filesystem::path(getenv("FLAME_PATH")) / L"vswhere.exe"; std::filesystem::exists(vswhere_path))
+	{
+		std::string vs_location;
+		exec(vswhere_path, L"-latest -property installationPath", &vs_location);
+		SUS::cut_tail_if(vs_location, "\r\n");
+		// yes, we find symbols in the 'exception' tables, which works, kind of..
+		exec(L"", L"\"" + s2w(vs_location) + L"\\Common7\\Tools\\VsDevCmd.bat\" & dumpbin /pdata \"" + input_path.wstring() + L"\" > temp.txt");
+		auto symbols = get_file_content(L"temp.txt");
+		std::regex reg("flame::TypeInfo::get\\<([\\w\\s:]+),");
+		std::smatch res;
+		std::string::const_iterator beg(symbols.cbegin());
+		while (std::regex_search(beg, symbols.cend(), res, reg))
+		{
+			auto name = TypeInfo::format_name(res[1].str());
+			{
+				auto& r = udt_rules.emplace_back();
+				r.name = "^" + name + "$";
+				auto& dr = r.items.emplace_back();
+				dr.type = TypeData;
+				dr.name = "^[\\w:]+$";
+				auto& fr = r.items.emplace_back();
+				fr.type = TypeFunction;
+				fr.name = "^[\\w:~]+$";
+			}
+			beg = res.suffix().first;
+		}
+	}
+	if (enum_rules.empty() && udt_rules.empty())
+	{
+		{
+			auto& r = enum_rules.emplace_back();
+			r.name = "^[\\w:]+$";
+		}
+		{
+			auto& r = udt_rules.emplace_back();
+			r.name = "^[\\w:]+$";
+			auto& dr = r.items.emplace_back();
+			dr.type = TypeData;
+			dr.name = "^[\\w:]+$";
+			auto& fr = r.items.emplace_back();
+			fr.type = TypeFunction;
+			fr.name = "^[\\w:~]+$";
 		}
 	}
 
@@ -409,6 +455,17 @@ process:
 
 		DWORD ctor = 0;
 		DWORD dtor = 0;
+
+		IDiaEnumSymbols* s_all;
+		s_udt->findChildren(SymTagNull, NULL, nsNone, &s_all);
+		IDiaSymbol* s_obj;
+		while (SUCCEEDED(s_all->Next(1, &s_obj, &ul)) && (ul == 1))
+		{
+			s_obj->get_name(&pwname);
+			auto name = w2s(pwname);
+			s_obj->Release();
+		}
+		s_all->Release();
 
 		pugi::xml_node n_functions;
 

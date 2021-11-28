@@ -54,3 +54,21 @@ namespace flame
 	// return native event
 	FLAME_FOUNDATION_EXPORTS void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeType type, const std::filesystem::path& path)>& callback, bool all_changes = true, bool sync = true);
 }
+
+#define FLAME_EXE_MAIN(entry) void* __crt_ev = nullptr; \
+	extern "C" void mainCRTStartup(); \
+	extern "C" __declspec(dllexport) void __stdcall __init_crt(void* ev) \
+	{ \
+		__crt_ev = ev; \
+		mainCRTStartup(); \
+	} \
+	int main(int argc, char** args) \
+	{ \
+		if (__crt_ev) \
+		{ \
+			flame::set_native_event(__crt_ev); \
+			while (true) \
+				flame::sleep(60000); \
+		} \
+		return entry(argc, args); \
+	}

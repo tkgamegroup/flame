@@ -1,24 +1,21 @@
-#include <typeinfo>
+#include <flame/foundation/system.h>
+#include <flame/foundation/typeinfo.h>
 
-template <class T>
-void abc(T v)
+using namespace flame;
+
+struct SomeClass
 {
-    auto wtf = typeid(T).name();
-}
+    std::string a;
+    int b;
+};
 
-namespace Hello
+int entry(int argc, char** args)
 {
-    enum EEE
-    {
-        ABC
-    };
-}
-
-using namespace Hello;
-
-int main()
-{
-    EEE a = ABC;
-    abc(a);
+    SomeClass c;
+    c.a = "Hello World";
+    c.b = 5;
+    auto str = TypeInfo::serialize_t(&c);
     return 0;
 }
+
+FLAME_EXE_MAIN(entry)

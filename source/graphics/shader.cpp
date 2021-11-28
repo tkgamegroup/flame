@@ -115,16 +115,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::u<int>();
+							ret = TypeInfo::get<int>();
 							break;
 						case 2:
-							ret = TypeInfo::u<ivec2>();
+							ret = TypeInfo::get<ivec2>();
 							break;
 						case 3:
-							ret = TypeInfo::u<ivec3>();
+							ret = TypeInfo::get<ivec3>();
 							break;
 						case 4:
-							ret = TypeInfo::u<ivec4>();
+							ret = TypeInfo::get<ivec4>();
 							break;
 						default:
 							assert(0);
@@ -141,16 +141,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::u<uint>();
+							ret = TypeInfo::get<uint>();
 							break;
 						case 2:
-							ret = TypeInfo::u<uvec2>();
+							ret = TypeInfo::get<uvec2>();
 							break;
 						case 3:
-							ret = TypeInfo::u<uvec3>();
+							ret = TypeInfo::get<uvec3>();
 							break;
 						case 4:
-							ret = TypeInfo::u<uvec4>();
+							ret = TypeInfo::get<uvec4>();
 							break;
 						default:
 							assert(0);
@@ -167,16 +167,16 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							ret = TypeInfo::u<float>();
+							ret = TypeInfo::get<float>();
 							break;
 						case 2:
-							ret = TypeInfo::u<vec2>();
+							ret = TypeInfo::get<vec2>();
 							break;
 						case 3:
-							ret = TypeInfo::u<vec3>();
+							ret = TypeInfo::get<vec3>();
 							break;
 						case 4:
-							ret = TypeInfo::u<vec4>();
+							ret = TypeInfo::get<vec4>();
 							break;
 						default:
 							assert(0);
@@ -186,7 +186,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							ret = TypeInfo::u<mat2>();
+							ret = TypeInfo::get<mat2>();
 							break;
 						default:
 							assert(0);
@@ -196,7 +196,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							ret = TypeInfo::u<mat3>();
+							ret = TypeInfo::get<mat3>();
 							break;
 						default:
 							assert(0);
@@ -206,7 +206,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							ret = TypeInfo::u<mat4>();
+							ret = TypeInfo::get<mat4>();
 							break;
 						default:
 							assert(0);
@@ -538,7 +538,7 @@ namespace flame
 							if (b.type != Descriptor_Max)
 							{
 								auto n_binding = n_bindings.append_child("binding");
-								n_binding.append_attribute("type").set_value(TypeInfo::serialize_e(&b.type).c_str());
+								n_binding.append_attribute("type").set_value(TypeInfo::serialize_t(&b.type).c_str());
 								n_binding.append_attribute("binding").set_value(i);
 								n_binding.append_attribute("count").set_value(b.count);
 								n_binding.append_attribute("name").set_value(b.name.c_str());
@@ -577,7 +577,7 @@ namespace flame
 							if (binding >= bindings.size())
 								bindings.resize(binding + 1);
 							auto& b = bindings[binding];
-							TypeInfo::unserialize_e(n_binding.attribute("type").value(), &b.type);
+							TypeInfo::unserialize_t(n_binding.attribute("type").value(), &b.type);
 							b.count = n_binding.attribute("count").as_uint();
 							b.name = n_binding.attribute("name").value();
 							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
@@ -1510,16 +1510,16 @@ namespace flame
 					{
 						auto& att = vbuf.attributes.emplace_back();
 						att.location = n_att.attribute("location").as_uint();
-						TypeInfo::unserialize_e(n_att.attribute("format").value(), &att.format);
+						TypeInfo::unserialize_t(n_att.attribute("format").value(), &att.format);
 					}
 				}
 
 				if (auto n = doc_root.child("primitive_topology"); n)
-					TypeInfo::unserialize_e(n.attribute("v").value(), &info.primitive_topology);
+					TypeInfo::unserialize_t(n.attribute("v").value(), &info.primitive_topology);
 				if (auto n = doc_root.child("cull_mode"); n)
-					TypeInfo::unserialize_e(n.attribute("v").value(), &info.cull_mode);
+					TypeInfo::unserialize_t(n.attribute("v").value(), &info.cull_mode);
 				if (auto n = doc_root.child("sample_count"); n)
-					TypeInfo::unserialize_e(n.attribute("v").value(), &info.sample_count);
+					TypeInfo::unserialize_t(n.attribute("v").value(), &info.sample_count);
 				if (auto n = doc_root.child("alpha_to_coverage"); n)
 					info.alpha_to_coverage = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("depth_test"); n)
@@ -1527,7 +1527,7 @@ namespace flame
 				if (auto n = doc_root.child("depth_write"); n)
 					info.depth_write = n.attribute("v").as_bool();
 				if (auto n = doc_root.child("compare_op"); n)
-					TypeInfo::unserialize_e(n.attribute("v").value(), &info.compare_op);
+					TypeInfo::unserialize_t(n.attribute("v").value(), &info.compare_op);
 
 				std::vector<BlendOption> blend_options;
 				for (auto n_bo : doc_root.child("blend_options"))
@@ -1535,13 +1535,13 @@ namespace flame
 					auto& bo = info.blend_options.emplace_back();
 					bo.enable = n_bo.attribute("enable").as_bool();
 					if (auto a = n_bo.attribute("src_color"); a)
-						TypeInfo::unserialize_e(a.value(), &bo.src_color);
+						TypeInfo::unserialize_t(a.value(), &bo.src_color);
 					if (auto a = n_bo.attribute("dst_color"); a)
-						TypeInfo::unserialize_e(a.value(), &bo.dst_color);
+						TypeInfo::unserialize_t(a.value(), &bo.dst_color);
 					if (auto a = n_bo.attribute("src_alpha"); a)
-						TypeInfo::unserialize_e(a.value(), &bo.src_alpha);
+						TypeInfo::unserialize_t(a.value(), &bo.src_alpha);
 					if (auto a = n_bo.attribute("dst_alpha"); a)
-						TypeInfo::unserialize_e(a.value(), &bo.dst_alpha);
+						TypeInfo::unserialize_t(a.value(), &bo.dst_alpha);
 				}
 
 				if (device)

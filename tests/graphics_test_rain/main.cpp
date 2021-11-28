@@ -105,34 +105,8 @@ struct Drop
 };
 std::vector<Drop> drops;
 
-void* __sleep = nullptr;
-extern "C" void mainCRTStartup();
-extern "C" void __stdcall __init_crt(void* ev)
-#pragma comment(linker, "/EXPORT:__init_crt=__init_crt")
+int entry(int argc, char** args)
 {
-	__sleep = ev;
-	mainCRTStartup();
-}
-
-struct SomeClass
-{
-	std::string name = "xiaoming";
-	int age;
-};
-
-int main(int argc, char** args)
-{
-	if (__sleep)
-	{
-		set_native_event(__sleep);
-		while (true) 
-			sleep(60000);
-	}
-
-	SomeClass a;
-	a.age = 10;
-	auto str = TypeInfo::serialize_u(&a);
-
 	d = Device::create(true);
 	nw = NativeWindow::create("Graphics Test", uvec2(640, 360), WindowFrame);
 	w = Window::create(d, nw);
@@ -170,4 +144,8 @@ int main(int argc, char** args)
 		w->update();
 		return true;
 	});
+
+	return 0;
 }
+
+FLAME_EXE_MAIN(entry)

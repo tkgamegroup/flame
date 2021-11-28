@@ -176,15 +176,15 @@ namespace flame
 				{
 					auto& att = atts.emplace_back();
 					if (auto a = n_att.attribute("format"); a)
-						TypeInfo::unserialize_e(a.value(), &att.format);
+						TypeInfo::unserialize_t(a.value(), &att.format);
 					if (auto a = n_att.attribute("load_op"); a)
-						TypeInfo::unserialize_e(a.value(), &att.load_op);
+						TypeInfo::unserialize_t(a.value(), &att.load_op);
 					if (auto a = n_att.attribute("sample_count"); a)
-						TypeInfo::unserialize_e(a.value(), &att.sample_count);
+						TypeInfo::unserialize_t(a.value(), &att.sample_count);
 					if (auto a = n_att.attribute("initia_layout"); a)
-						TypeInfo::unserialize_e(a.value(), &att.initia_layout);
+						TypeInfo::unserialize_t(a.value(), &att.initia_layout);
 					if (auto a = n_att.attribute("final_layout"); a)
-						TypeInfo::unserialize_e(a.value(), &att.final_layout);
+						TypeInfo::unserialize_t(a.value(), &att.final_layout);
 				}
 
 				std::vector<Subpass> sps;
