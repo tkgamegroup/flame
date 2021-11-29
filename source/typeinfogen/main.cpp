@@ -86,10 +86,10 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	{
 		s_type->get_name(&pwname);
 		auto name = TypeInfo::format_name(w2s(pwname));
-		return TagAndName(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name);
+		return TagAndName(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name);
 	}
 	case SymTagBaseType:
-		return TagAndName(TypeData, base_type_name(s_type));
+		return TagAndName(TagData, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
@@ -113,13 +113,13 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			break;
 		}
 		pointer_type->Release();
-		return TagAndName(TypePointer, name);
+		return TagAndName(TagPointer, name);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
 		auto name = TypeInfo::format_name(w2s(pwname));
-		return TagAndName(TypeData, name);
+		return TagAndName(TagData, name);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -130,7 +130,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		return ret;
 	}
 	default:
-		return TagAndName(TypeData, "__unsupported__symtag_" + std::to_string(dw));
+		return TagAndName(TagData, "__unsupported__symtag_" + std::to_string(dw));
 	}
 }
 
@@ -229,10 +229,10 @@ process:
 		auto& r = udt_rules.emplace_back();
 		r.name = "^" + i + "$";
 		auto& dr = r.items.emplace_back();
-		dr.type = TypeData;
+		dr.type = TagData;
 		dr.name = "^[\\w:]+$";
 		auto& fr = r.items.emplace_back();
-		fr.type = TypeFunction;
+		fr.type = TagFunction;
 		fr.name = "^[\\w:~]+$";
 	}
 	if (!desc_path.empty())
@@ -257,7 +257,7 @@ process:
 			for (auto n_i : n_rule)
 			{
 				auto& item = ur.items.emplace_back();
-				item.type = std::string(n_i.attribute("type").value()) == "function" ? TypeFunction : TypeData;
+				item.type = std::string(n_i.attribute("type").value()) == "function" ? TagFunction : TagData;
 				item.name = n_i.attribute("name").value();
 				item.metas = n_i.attribute("metas").value();
 			}
@@ -270,21 +270,29 @@ process:
 		SUS::cut_tail_if(vs_location, "\r\n");
 		// yes, we find symbols in the 'exception' tables, which works, kind of..
 		exec(L"", L"\"" + s2w(vs_location) + L"\\Common7\\Tools\\VsDevCmd.bat\" & dumpbin /pdata \"" + input_path.wstring() + L"\" > temp.txt");
+
 		auto symbols = get_file_content(L"temp.txt");
+		std::filesystem::remove(L"temp.txt");
 		std::regex reg("flame::TypeInfo::get\\<([\\w\\s:]+),");
 		std::smatch res;
 		std::string::const_iterator beg(symbols.cbegin());
 		while (std::regex_search(beg, symbols.cend(), res, reg))
 		{
-			auto name = TypeInfo::format_name(res[1].str());
+			auto name = res[1].str();
+			if (name.starts_with("enum "))
+			{
+				auto& r = enum_rules.emplace_back();
+				r.name = "^" + TypeInfo::format_name(name) + "$";
+			}
+			else if (name.starts_with("struct ") || name.starts_with("class "))
 			{
 				auto& r = udt_rules.emplace_back();
-				r.name = "^" + name + "$";
+				r.name = "^" + TypeInfo::format_name(name) + "$";
 				auto& dr = r.items.emplace_back();
-				dr.type = TypeData;
+				dr.type = TagData;
 				dr.name = "^[\\w:]+$";
 				auto& fr = r.items.emplace_back();
-				fr.type = TypeFunction;
+				fr.type = TagFunction;
 				fr.name = "^[\\w:~]+$";
 			}
 			beg = res.suffix().first;
@@ -300,10 +308,10 @@ process:
 			auto& r = udt_rules.emplace_back();
 			r.name = "^[\\w:]+$";
 			auto& dr = r.items.emplace_back();
-			dr.type = TypeData;
+			dr.type = TagData;
 			dr.name = "^[\\w:]+$";
 			auto& fr = r.items.emplace_back();
-			fr.type = TypeFunction;
+			fr.type = TagFunction;
 			fr.name = "^[\\w:~]+$";
 		}
 	}
@@ -484,7 +492,7 @@ process:
 				continue;
 
 			std::string metas;
-			if (!ur || ur->pass_item(TypeFunction, name, &metas))
+			if (!ur || ur->pass_item(TagFunction, name, &metas))
 			{
 				auto rva = 0;
 				auto voff = -1;
@@ -564,7 +572,7 @@ process:
 			s_variable->get_name(&pwname);
 			auto name = w2s(pwname);
 			std::string metas;
-			if (!ur || ur->pass_item(TypeData, name, &metas))
+			if (!ur || ur->pass_item(TagData, name, &metas))
 			{
 				IDiaSymbol* s_type;
 				s_variable->get_type(&s_type);

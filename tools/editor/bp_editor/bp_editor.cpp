@@ -172,7 +172,7 @@ struct Action_RemoveNodes : Action
 				auto& src = s.inputs[i];
 				auto dst = n->inputs[i];
 				auto type = dst->type;
-				if (type->tag != TypePointer)
+				if (type->tag != TagPointer)
 				{
 					auto data = new char[dst->size];
 					type->unserialize(src.data, data);
@@ -786,7 +786,7 @@ void BPEditor::remove_nodes(const std::vector<bpNode*> nodes)
 			auto src = n->inputs[j];
 			auto& dst = s.inputs[j];
 			auto type = src->type;
-			if (type->tag != TypePointer)
+			if (type->tag != TagPointer)
 				dst.data = type->serialize(src->data);
 			auto slot = src->links[0];
 			if (slot)

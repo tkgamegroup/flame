@@ -11,7 +11,7 @@ namespace flame
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase& db)
 	{
-		if (tag == TypeData && name.empty())
+		if (tag == TagData && name.empty())
 			return void_type;
 
 		auto key = ch(name.data());
@@ -29,16 +29,16 @@ namespace flame
 		TypeInfo* t = nullptr;
 		switch (tag)
 		{
-		case TypeEnumSingle:
+		case TagEnumSingle:
 			t = new TypeInfo_EnumSingle(name, db);
 			break;
-		case TypeEnumMulti:
+		case TagEnumMulti:
 			t = new TypeInfo_EnumMulti(name, db);
 			break;
-		case TypePointer:
+		case TagPointer:
 			t = new TypeInfo_Pointer(name, db);
 			break;
-		case TypeData:
+		case TagData:
 			t = new TypeInfo_Udt(name, db);
 			break;
 		}
@@ -234,7 +234,7 @@ namespace flame
 
 		auto read_ti = [&](pugi::xml_node n) {
 			TypeTag tag;
-			TypeInfo::get(TypeEnumSingle, "flame::TypeTag", *this)->unserialize(n.attribute("type_tag").value(), &tag);
+			TypeInfo::get(TagEnumSingle, "flame::TypeTag", *this)->unserialize(n.attribute("type_tag").value(), &tag);
 			return TypeInfo::get(tag, n.attribute("type_name").value(), *this);
 		};
 
@@ -296,7 +296,7 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
 
-		auto e_tag = TypeInfo::get(TypeEnumSingle, "flame::TypeTag", *this);
+		auto e_tag = TypeInfo::get(TagEnumSingle, "flame::TypeTag", *this);
 		auto write_ti = [&](TypeInfo* ti, pugi::xml_node n) {
 			n.append_attribute("type_tag").set_value(e_tag->serialize(&ti->tag).c_str());
 			n.append_attribute("type_name").set_value(ti->name.c_str());

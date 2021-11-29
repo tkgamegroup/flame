@@ -697,14 +697,14 @@ void cBPEditor::on_add_node(bpNode* n)
 
 					auto type = input->type;
 					auto tag = type->tag;
-					if (!input->links[0] && tag != TypePointer)
+					if (!input->links[0] && tag != TagPointer)
 					{
 						auto base_name = type->base_name.str();
 						auto base_hash = type->base_hash;
 
 						switch (tag)
 						{
-						case TypeEnumSingle:
+						case TagEnumSingle:
 						{
 							cCombobox* combobox;
 
@@ -721,7 +721,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							}, Capture().set_thiz(input), combobox));
 						}
 							break;
-						case TypeEnumMulti:
+						case TagEnumMulti:
 						{
 							std::vector<cCheckbox*> checkboxes;
 
@@ -742,7 +742,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							}, Capture().set_thiz(input), checkboxes));
 						}
 							break;
-						case TypeData:
+						case TagData:
 							switch (base_hash)
 							{
 							case FLAME_CHASH("bool"):
@@ -1397,7 +1397,7 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 									auto& capture = c.data<_Capturing>();
 									NodeDesc d;
 									d.id = "";
-									d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
+									d.type = capture.t == TagEnumSingle ? "EnumSingle(" : "EnumMulti(";
 									d.type += capture.s;
 									d.type += ")";
 									d.node_type = bpNodeReal;
@@ -1416,14 +1416,14 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
-								capture.show_enums(TypeEnumSingle);
+								capture.show_enums(TagEnumSingle);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
 						ui.e_menu_item(L"Enum Multi", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
-								capture.show_enums(TypeEnumMulti);
+								capture.show_enums(TagEnumMulti);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
 						ui.e_menu_item(L"Variable", [](Capture& c) {
@@ -1491,7 +1491,7 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 					}
 					else
 					{
-						if (tag == TypeEnumSingle || tag == TypeEnumMulti)
+						if (tag == TagEnumSingle || tag == TagEnumMulti)
 						{
 							struct _Capturing
 							{
@@ -1502,11 +1502,11 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 							_capture.t = tag;
 							_capture.p = capture.p;
 							_capture.s = base_name;
-							ui.e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](Capture& c) {
+							ui.e_menu_item(((tag == TagEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](Capture& c) {
 								auto& capture = c.data<_Capturing>();
 								NodeDesc d;
 								d.id = "";
-								d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
+								d.type = capture.t == TagEnumSingle ? "EnumSingle(" : "EnumMulti(";
 								d.type += capture.s;
 								d.type += ")";
 								d.node_type = bpNodeReal;
@@ -1522,7 +1522,7 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 								}
 							}, Capture().set_data(&_capture));
 						}
-						else if (tag == TypeData && !is_array)
+						else if (tag == TagData && !is_array)
 						{
 							if (basic_type_size(base_hash))
 							{
@@ -1554,7 +1554,7 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 								}, Capture().set_data(&_capture));
 							}
 						}
-						else if (tag == TypePointer && is_array)
+						else if (tag == TagPointer && is_array)
 						{
 							struct _Capturing
 							{

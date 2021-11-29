@@ -250,8 +250,17 @@ namespace flame
 			ltrim(s);
 			rtrim(s);
 		}
+		
+		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
+		{
+			for (auto& ch : str)
+			{
+				if (ch == from)
+					ch = to;
+			}
+		}
 
-		static void remove_ch(std::basic_string<CH>& str, CH ch = ' ')
+		static void remove_char(std::basic_string<CH>& str, CH ch = ' ')
 		{
 			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
 		}

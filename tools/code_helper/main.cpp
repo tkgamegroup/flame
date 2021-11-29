@@ -55,7 +55,7 @@ int main(int argc, char** args)
 			if (class_name[i] == '_')
 				class_name[i + 1] = std::toupper(class_name[i + 1]);
 		}
-		SUS::remove_ch(class_name, '_');
+		SUS::remove_char(class_name, '_');
 	};
 
 	if (std::filesystem::is_directory(path))

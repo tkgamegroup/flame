@@ -9,13 +9,13 @@ inline const wchar_t* type_prefix(TypeTag t, bool is_array = false)
 {
 	switch (t)
 	{
-	case TypeEnumSingle:
+	case TagEnumSingle:
 		return L"Enum Single\n";
-	case TypeEnumMulti:
+	case TagEnumMulti:
 		return L"Enum Multi\n";
-	case TypeData:
+	case TagData:
 		return is_array ? L"Array\n" : L"Data\n";
-	case TypePointer:
+	case TagPointer:
 		return is_array ? L"Array Pointer\n" : L"Pointer\n";
 	}
 	return L"";
@@ -26,9 +26,9 @@ inline const wchar_t* node_type_prefix(char t)
 	switch (t)
 	{
 	case 'S':
-		return type_prefix(TypeEnumSingle);
+		return type_prefix(TagEnumSingle);
 	case 'M':
-		return type_prefix(TypeEnumMulti);
+		return type_prefix(TagEnumMulti);
 	case 'V':
 		return L"Variable\n";
 	case 'A':
@@ -41,13 +41,13 @@ inline cvec4 type_color(TypeTag t)
 {
 	switch (t)
 	{
-	case TypeEnumSingle:
+	case TagEnumSingle:
 		return cvec4(23, 160, 93, 255);
-	case TypeEnumMulti:
+	case TagEnumMulti:
 		return cvec4(23, 160, 93, 255);
-	case TypeData:
+	case TagData:
 		return cvec4(40, 58, 228, 255);
-	case TypePointer:
+	case TagPointer:
 		return cvec4(239, 94, 41, 255);
 	}
 	return cvec4(0);
@@ -58,9 +58,9 @@ inline cvec4 node_type_color(char t)
 	switch (t)
 	{
 	case 'S':
-		return type_color(TypeEnumSingle);
+		return type_color(TagEnumSingle);
 	case 'M':
-		return type_color(TypeEnumMulti);
+		return type_color(TagEnumMulti);
 	case 'V':
 		return cvec4(0, 128, 0, 255);
 	case 'A':

@@ -7,11 +7,11 @@ namespace flame
 {
 	enum TypeTag
 	{
-		TypeEnumSingle,
-		TypeEnumMulti,
-		TypeData,
-		TypePointer,
-		TypeFunction,
+		TagEnumSingle,
+		TagEnumMulti,
+		TagData,
+		TagPointer,
+		TagFunction,
 
 		TypeTagCount
 	};
@@ -58,7 +58,11 @@ namespace flame
 			SUS::replace_all(ret, "unsigned ", "u");
 			SUS::replace_all(ret, "__int64 ", "int64");
 			SUS::replace_all(ret, "Private", "");
-			SUS::remove_ch(ret, ' ');
+			SUS::remove_char(ret, ' ');
+			if (ret.starts_with("std::basic_string<char,"))
+				return "std::string";
+			if (ret.starts_with("std::basic_string<wchar_t,"))
+				return "std::wstring";
 			return ret;
 		}
 
@@ -86,7 +90,7 @@ namespace flame
 		static TypeInfo* get()
 		{
 			auto get_type = [](const std::string& name) {
-				return get(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name, tidb);
+				return get(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name, tidb);
 			};
 			static auto ret = get_type(format_name(typeid(T).name()));
 			return ret;
@@ -95,7 +99,7 @@ namespace flame
 		template<class T, std::enable_if_t<!std::is_enum_v<T>, int> = 0>
 		static TypeInfo* get()
 		{
-			static auto ret = get(TypeData, format_name(typeid(T).name()), tidb);
+			static auto ret = get(TagData, format_name(typeid(T).name()), tidb);
 			return ret;
 		}
 

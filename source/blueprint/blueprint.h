@@ -57,7 +57,7 @@ namespace flame
 	{
 		if (in_type == out_out)
 			return true;
-		if (in_type->get_tag() != TypePointer || in_type->get_tag() != TypeData)
+		if (in_type->get_tag() != TagPointer || in_type->get_tag() != TagData)
 			return false;
 		auto in_name = std::string(in_type->get_name());
 		return in_name == out_out->get_name() || in_name == "void";

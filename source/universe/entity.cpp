@@ -68,7 +68,7 @@ namespace flame
 	//		udt(udt)
 	//	{
 	//		auto fc = udt->find_function("create");
-	//		assert(fc && fc->check(TypeInfo::get(TypePointer, udt->name, tidb), { TypeInfo::get(TypePointer, "void", tidb) }));
+	//		assert(fc && fc->check(TypeInfo::get(TagPointer, udt->name, tidb), { TypeInfo::get(TagPointer, "void", tidb) }));
 	//		creator = fc;
 
 	//		dummy = create();
@@ -83,7 +83,7 @@ namespace flame
 	//					if (f.type->name != "void")
 	//						getters.emplace_back(f.name.substr(4), f.type, f);
 	//				}
-	//				else if (f.name.compare(0, 4, "set_") == 0 && f.parameters.size() == 1 && f.type == TypeInfo::get(TypeData, "", tidb))
+	//				else if (f.name.compare(0, 4, "set_") == 0 && f.parameters.size() == 1 && f.type == TypeInfo::get(TagData, "", tidb))
 	//				{
 	//					auto t = f.parameters[0];
 	//					if (t->name != "void")
@@ -165,7 +165,7 @@ namespace flame
 							if (name[i] == '_')
 								name[i + 1] = std::toupper(name[i + 1]);
 						}
-						SUS::remove_ch(name, '_');
+						SUS::remove_char(name, '_');
 						name = 'e' + name;
 						name_to_prefab_path[name] = it.path();
 					}
@@ -550,7 +550,7 @@ namespace flame
 		//		{
 		//			auto d = attr.get_type->create(false);
 		//			attr.getter->call(c.get(), d, nullptr);
-		//			if (attr.get_type->tag == TypeData && attr.set_type->tag == TypePointer)
+		//			if (attr.get_type->tag == TagData && attr.set_type->tag == TagPointer)
 		//			{
 		//				void* ps[] = { &d };
 		//				attr.setter->call(cc, nullptr, ps);

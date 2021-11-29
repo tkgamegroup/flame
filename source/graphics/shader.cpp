@@ -81,7 +81,7 @@ namespace flame
 				ui.name = name;
 				ui.size = size;
 
-				ret = TypeInfo::get(TypeData, name, db);
+				ret = TypeInfo::get(TagData, name, db);
 
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
@@ -103,7 +103,7 @@ namespace flame
 				}
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
-				ret = TypeInfo::get(TypePointer, "ShaderImage", db);
+				ret = TypeInfo::get(TagPointer, "ShaderImage", db);
 			else
 			{
 				switch (src.basetype)
@@ -114,20 +114,11 @@ namespace flame
 					case 1:
 						switch (src.vecsize)
 						{
-						case 1:
-							ret = TypeInfo::get<int>();
-							break;
-						case 2:
-							ret = TypeInfo::get<ivec2>();
-							break;
-						case 3:
-							ret = TypeInfo::get<ivec3>();
-							break;
-						case 4:
-							ret = TypeInfo::get<ivec4>();
-							break;
-						default:
-							assert(0);
+						case 1: ret = TypeInfo::get<int>();		break;
+						case 2: ret = TypeInfo::get<ivec2>();	break;
+						case 3: ret = TypeInfo::get<ivec3>();	break;
+						case 4: ret = TypeInfo::get<ivec4>();	break;
+						default: assert(0);
 						}
 						break;
 					default:
@@ -140,20 +131,11 @@ namespace flame
 					case 1:
 						switch (src.vecsize)
 						{
-						case 1:
-							ret = TypeInfo::get<uint>();
-							break;
-						case 2:
-							ret = TypeInfo::get<uvec2>();
-							break;
-						case 3:
-							ret = TypeInfo::get<uvec3>();
-							break;
-						case 4:
-							ret = TypeInfo::get<uvec4>();
-							break;
-						default:
-							assert(0);
+						case 1: ret = TypeInfo::get<uint>();	break;
+						case 2: ret = TypeInfo::get<uvec2>();	break;
+						case 3: ret = TypeInfo::get<uvec3>();	break;
+						case 4: ret = TypeInfo::get<uvec4>();	break;
+						default: assert(0);
 						}
 						break;
 					default:
@@ -166,50 +148,32 @@ namespace flame
 					case 1:
 						switch (src.vecsize)
 						{
-						case 1:
-							ret = TypeInfo::get<float>();
-							break;
-						case 2:
-							ret = TypeInfo::get<vec2>();
-							break;
-						case 3:
-							ret = TypeInfo::get<vec3>();
-							break;
-						case 4:
-							ret = TypeInfo::get<vec4>();
-							break;
-						default:
-							assert(0);
+						case 1: ret = TypeInfo::get<float>();	break;
+						case 2: ret = TypeInfo::get<vec2>();	break;
+						case 3: ret = TypeInfo::get<vec3>();	break;
+						case 4: ret = TypeInfo::get<vec4>();	break;
+						default: assert(0);
 						}
 						break;
 					case 2:
 						switch (src.vecsize)
 						{
-						case 2:
-							ret = TypeInfo::get<mat2>();
-							break;
-						default:
-							assert(0);
+						case 2: ret = TypeInfo::get<mat2>(); break;
+						default: assert(0);
 						}
 						break;
 					case 3:
 						switch (src.vecsize)
 						{
-						case 3:
-							ret = TypeInfo::get<mat3>();
-							break;
-						default:
-							assert(0);
+						case 3: ret = TypeInfo::get<mat3>(); break;
+						default: assert(0);
 						}
 						break;
 					case 4:
 						switch (src.vecsize)
 						{
-						case 4:
-							ret = TypeInfo::get<mat4>();
-							break;
-						default:
-							assert(0);
+						case 4: ret = TypeInfo::get<mat4>(); break;
+						default: assert(0);
 						}
 						break;
 					default:
@@ -269,10 +233,8 @@ namespace flame
 							switch (basic)
 							{
 							case IntegerType:
-								if (is_signed)
-									type_name = "int";
-								else
-									type_name = "uint";
+								if (is_signed)	type_name = "int";
+								else			type_name = "uint";
 								break;
 							case FloatingType:
 								type_name = "float";
@@ -286,10 +248,8 @@ namespace flame
 							switch (basic)
 							{
 							case IntegerType:
-								if (is_signed)
-									type_name = "ivec2";
-								else
-									type_name = "uvec2";
+								if (is_signed)	type_name = "ivec2";
+								else			type_name = "uvec2";
 								break;
 							case FloatingType:
 								type_name = "vec2";
@@ -300,10 +260,8 @@ namespace flame
 							switch (basic)
 							{
 							case IntegerType:
-								if (is_signed)
-									type_name = "ivec3";
-								else
-									type_name = "uvec3";
+								if (is_signed)	type_name = "ivec3";
+								else			type_name = "uvec3";
 								break;
 							case FloatingType:
 								type_name = "vec3";
@@ -314,10 +272,8 @@ namespace flame
 							switch (basic)
 							{
 							case IntegerType:
-								if (is_signed)
-									type_name = "ivec4";
-								else
-									type_name = "uvec4";
+								if (is_signed)	type_name = "ivec4";
+								else			type_name = "uvec4";
 								break;
 							case FloatingType:
 								type_name = "vec4";
@@ -394,7 +350,7 @@ namespace flame
 			return ret;
 		}
 
-		static std::string add_lineno_to_temp(const std::string& temp)
+		static std::string add_lineno_to_code(const std::string& temp)
 		{
 			auto lines = SUS::split(temp, '\n');
 			auto ret = std::string();
@@ -488,7 +444,7 @@ namespace flame
 						exec(glslc_path, command_line, &output);
 						if (!std::filesystem::exists(L"a.spv"))
 						{
-							temp = add_lineno_to_temp(temp);
+							temp = add_lineno_to_code(temp);
 							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 							return nullptr;
 						}
@@ -884,7 +840,7 @@ namespace flame
 						std::filesystem::remove(temp_fn);
 						if (!std::filesystem::exists(L"a.spv"))
 						{
-							temp = add_lineno_to_temp(temp);
+							temp = add_lineno_to_code(temp);
 							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 							return nullptr;
 						}
@@ -1094,7 +1050,7 @@ namespace flame
 							fn = ppath / fn;
 						s.second = get_file_content(fn);
 						assert(!s.second.empty());
-						SUS::remove_ch(s.second, '\r');
+						SUS::remove_char(s.second, '\r');
 						dependencies.push_back(fn);
 					}
 				}
@@ -1157,7 +1113,7 @@ namespace flame
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 						if (!std::filesystem::exists(spv_path))
 						{
-							temp = add_lineno_to_temp(temp);
+							temp = add_lineno_to_code(temp);
 							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 							return nullptr;
 						}

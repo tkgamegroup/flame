@@ -95,7 +95,7 @@ namespace flame
 			//}
 		}
 
-		if (!target && type->get_tag() == TypePointer)
+		if (!target && type->get_tag() == TagPointer)
 			memset(data, 0, sizeof(void*));
 
 		return true;
@@ -147,10 +147,10 @@ namespace flame
 			auto size = udt->get_size();
 			object = malloc(size);
 			memset(object, 0, size);
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumSingle, type_parameter), "in", offsetof(Dummy, in), nullptr));
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumSingle, type_parameter), "out", offsetof(Dummy, out), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TagEnumSingle, type_parameter), "in", offsetof(Dummy, in), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TagEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TagEnumSingle, type_parameter), "out", offsetof(Dummy, out), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TagData, "float"), "res", offsetof(Dummy, res), nullptr));
 			update_addr = f2a(&Dummy::update);
 		}
 			break;
@@ -176,10 +176,10 @@ namespace flame
 			auto size = sizeof(Dummy);
 			object = malloc(size);
 			memset(object, 0, size);
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumMulti, type_parameter), "in", offsetof(Dummy, in), nullptr));
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumMulti, type_parameter), "out", offsetof(Dummy, out), nullptr));
-			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TagEnumMulti, type_parameter), "in", offsetof(Dummy, in), nullptr));
+			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TagEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TagEnumMulti, type_parameter), "out", offsetof(Dummy, out), nullptr));
+			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TagData, "float"), "res", offsetof(Dummy, res), nullptr));
 			update_addr = f2a(&Dummy::update);
 		}
 			break;
@@ -211,7 +211,7 @@ namespace flame
 				}
 			};
 #pragma pack()
-			auto type = TypeInfo::get(TypeData, type_parameter);
+			auto type = TypeInfo::get(TagData, type_parameter);
 			auto type_size = type->get_size();
 
 			auto size = sizeof(Dummy) + type_size * 2;
@@ -267,13 +267,13 @@ namespace flame
 				}
 			};
 #pragma pack()
-			auto tag = TypeData;
+			auto tag = TagData;
 			auto type_name = sp[1];
 			auto base_name = type_name;
 			if (type_name.back() == '*')
 			{
 				base_name.erase(base_name.end() - 1);
-				tag = TypePointer;
+				tag = TagPointer;
 			}
 			auto type = TypeInfo::get(tag, base_name);
 			uint type_size = type->get_size();
@@ -303,7 +303,7 @@ namespace flame
 			auto size = sizeof(Dummy);
 			object = malloc(size);
 			memset(object, 0, size);
-			//inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), nullptr)); TODO
+			//inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TagPointer, "ListenerHub"), "signal", offsetof(Dummy, signal), nullptr)); TODO
 		}
 			break;
 		case bpNodeUdt:
@@ -326,19 +326,19 @@ namespace flame
 
 				{
 					auto f = udt->find_function("ctor");
-					if (f && f->check(TypeInfo::get(TypeData, ""), nullptr))
+					if (f && f->check(TypeInfo::get(TagData, ""), nullptr))
 						a2f<void(*)(void*)>(f->get_address())(object);
 				}
 
 				{
 					auto f = udt->find_function("dtor");
-					if (f && f->check(TypeInfo::get(TypeData, ""), nullptr))
+					if (f && f->check(TypeInfo::get(TagData, ""), nullptr))
 						dtor_addr = f->get_address();
 				}
 
 				{
 					auto f = udt->find_function("bp_update");
-					assert(f && f->check(TypeInfo::get(TypeData, ""), nullptr));
+					assert(f && f->check(TypeInfo::get(TagData, ""), nullptr));
 					update_addr = f->get_address();
 				}
 
@@ -376,7 +376,7 @@ namespace flame
 					{
 						auto v = udt->get_variable(i);
 						auto type = v->get_type();
-						if (type->get_tag() != TypeData)
+						if (type->get_tag() != TagData)
 							continue;
 						auto input = new bpSlotPrivate(this, bpSlotIn, inputs.size(), v);
 						auto f_set = udt->find_function((std::string("set_") + v->get_name()).c_str());
@@ -574,7 +574,7 @@ namespace flame
 			auto out = in->links[0];
 			if (out)
 			{
-				if (out->type->get_tag() == TypeData && in->type->get_tag() == TypePointer)
+				if (out->type->get_tag() == TagData && in->type->get_tag() == TagPointer)
 					memcpy(in->data, &out->data, sizeof(void*));
 				else
 				{
@@ -637,7 +637,7 @@ namespace flame
 					if (in->links[0])
 						continue;
 					auto type = in->type;
-					if (type->get_tag() != TypePointer)
+					if (type->get_tag() != TagPointer)
 					{
 						if (in->default_value && memcmp(in->default_value, in->data, in->type->get_size()) == 0)
 							continue;
@@ -710,7 +710,7 @@ namespace flame
 		//			if (!out)
 		//			{
 		//				auto type = in->type;
-		//				if ((*type)->tag() == TypePointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
+		//				if ((*type)->tag() == TagPointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
 		//					continue;
 		//				value = (*type)->serialize(in->data);
 		//			}
@@ -751,7 +751,7 @@ namespace flame
 		//				}
 		//				if (type->is_array)
 		//					name = "Array<" + name + ">";
-		//				if (type->tag == TypePointer)
+		//				if (type->tag == TagPointer)
 		//					name += "*";
 		//				pieces.push_back({ name, id, 0 });
 		//				std::regex reg("\\b" + out->name + "\\b");
@@ -924,7 +924,7 @@ namespace flame
 						auto input = n->find_input(n_data.attribute("name").value());
 						auto type = input->type;
 						auto tag = type->get_tag();
-						if (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData)
+						if (tag == TagEnumSingle || tag == TagEnumMulti || tag == TagData)
 							type->unserialize(input->data, n_data.attribute("value").value());
 					}
 				}

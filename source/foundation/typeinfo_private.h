@@ -9,7 +9,7 @@ namespace flame
 		EnumInfo* ei = nullptr;
 
 		TypeInfo_EnumSingle(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TypeEnumSingle, base_name, sizeof(int))
+			TypeInfo(TagEnumSingle, base_name, sizeof(int))
 		{
 			ei = find_enum(name, db);
 		}
@@ -29,7 +29,7 @@ namespace flame
 		EnumInfo* ei = nullptr;
 
 		TypeInfo_EnumMulti(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TypeEnumMulti, base_name, sizeof(int))
+			TypeInfo(TagEnumMulti, base_name, sizeof(int))
 		{
 			ei = find_enum(name, db);
 		}
@@ -65,7 +65,7 @@ namespace flame
 		UdtInfo* ui = nullptr;
 
 		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TypeData, base_name, 0)
+			TypeInfo(TagData, base_name, 0)
 		{
 			ui = find_udt(name, db);
 			if (ui)
@@ -86,7 +86,7 @@ namespace flame
 	struct TypeInfo_void : TypeInfo
 	{
 		TypeInfo_void() :
-			TypeInfo(TypeData, "void", 0)
+			TypeInfo(TagData, "void", 0)
 		{
 			basic_type = VoidType;
 		}
@@ -95,7 +95,7 @@ namespace flame
 	struct TypeInfo_bool : TypeInfo
 	{
 		TypeInfo_bool() :
-			TypeInfo(TypeData, "bool", sizeof(bool))
+			TypeInfo(TagData, "bool", sizeof(bool))
 		{
 			basic_type = BooleanType;
 		}
@@ -118,7 +118,7 @@ namespace flame
 	struct TypeInfo_char : TypeInfo
 	{
 		TypeInfo_char() :
-			TypeInfo(TypeData, "char", sizeof(char))
+			TypeInfo(TagData, "char", sizeof(char))
 		{
 			basic_type = CharType;
 		}
@@ -136,7 +136,7 @@ namespace flame
 	struct TypeInfo_uchar : TypeInfo
 	{
 		TypeInfo_uchar() :
-			TypeInfo(TypeData, "uchar", sizeof(uchar))
+			TypeInfo(TagData, "uchar", sizeof(uchar))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -155,7 +155,7 @@ namespace flame
 	struct TypeInfo_wchar : TypeInfo
 	{
 		TypeInfo_wchar() :
-			TypeInfo(TypeData, "wchar_t", sizeof(wchar_t))
+			TypeInfo(TagData, "wchar_t", sizeof(wchar_t))
 		{
 			basic_type = WideCharType;
 		}
@@ -173,7 +173,7 @@ namespace flame
 	struct TypeInfo_short : TypeInfo
 	{
 		TypeInfo_short() :
-			TypeInfo(TypeData, "short", sizeof(short))
+			TypeInfo(TagData, "short", sizeof(short))
 		{
 			basic_type = IntegerType;
 		}
@@ -191,7 +191,7 @@ namespace flame
 	struct TypeInfo_ushort : TypeInfo
 	{
 		TypeInfo_ushort() :
-			TypeInfo(TypeData, "ushort", sizeof(ushort))
+			TypeInfo(TagData, "ushort", sizeof(ushort))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -210,7 +210,7 @@ namespace flame
 	struct TypeInfo_int : TypeInfo
 	{
 		TypeInfo_int() :
-			TypeInfo(TypeData, "int", sizeof(int))
+			TypeInfo(TagData, "int", sizeof(int))
 		{
 			basic_type = IntegerType;
 		}
@@ -228,7 +228,7 @@ namespace flame
 	struct TypeInfo_uint : TypeInfo
 	{
 		TypeInfo_uint() :
-			TypeInfo(TypeData, "uint", sizeof(uint))
+			TypeInfo(TagData, "uint", sizeof(uint))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -247,7 +247,7 @@ namespace flame
 	struct TypeInfo_int64 : TypeInfo
 	{
 		TypeInfo_int64() :
-			TypeInfo(TypeData, "int64", sizeof(int64))
+			TypeInfo(TagData, "int64", sizeof(int64))
 		{
 			basic_type = IntegerType;
 		}
@@ -265,7 +265,7 @@ namespace flame
 	struct TypeInfo_uint64 : TypeInfo
 	{
 		TypeInfo_uint64() :
-			TypeInfo(TypeData, "uint64", sizeof(uint64))
+			TypeInfo(TagData, "uint64", sizeof(uint64))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -284,7 +284,7 @@ namespace flame
 	struct TypeInfo_float : TypeInfo
 	{
 		TypeInfo_float() :
-			TypeInfo(TypeData, "float", sizeof(float))
+			TypeInfo(TagData, "float", sizeof(float))
 		{
 			basic_type = FloatingType;
 		}
@@ -302,7 +302,7 @@ namespace flame
 	struct TypeInfo_cvec2 : TypeInfo
 	{
 		TypeInfo_cvec2() :
-			TypeInfo(TypeData, format_name(typeid(cvec2).name()), sizeof(cvec2))
+			TypeInfo(TagData, format_name(typeid(cvec2).name()), sizeof(cvec2))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -322,7 +322,7 @@ namespace flame
 	struct TypeInfo_cvec3 : TypeInfo
 	{
 		TypeInfo_cvec3() :
-			TypeInfo(TypeData, format_name(typeid(cvec3).name()), sizeof(cvec3))
+			TypeInfo(TagData, format_name(typeid(cvec3).name()), sizeof(cvec3))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -342,7 +342,7 @@ namespace flame
 	struct TypeInfo_cvec4 : TypeInfo
 	{
 		TypeInfo_cvec4() :
-			TypeInfo(TypeData, format_name(typeid(cvec4).name()), sizeof(cvec4))
+			TypeInfo(TagData, format_name(typeid(cvec4).name()), sizeof(cvec4))
 		{
 			basic_type = CharType;
 			is_signed = false;
@@ -362,7 +362,7 @@ namespace flame
 	struct TypeInfo_ivec2 : TypeInfo
 	{
 		TypeInfo_ivec2() :
-			TypeInfo(TypeData, format_name(typeid(ivec2).name()), sizeof(ivec2))
+			TypeInfo(TagData, format_name(typeid(ivec2).name()), sizeof(ivec2))
 		{
 			basic_type = IntegerType;
 			vec_size = 2;
@@ -381,7 +381,7 @@ namespace flame
 	struct TypeInfo_ivec3 : TypeInfo
 	{
 		TypeInfo_ivec3() :
-			TypeInfo(TypeData, format_name(typeid(ivec3).name()), sizeof(ivec3))
+			TypeInfo(TagData, format_name(typeid(ivec3).name()), sizeof(ivec3))
 		{
 			basic_type = IntegerType;
 			vec_size = 3;
@@ -400,7 +400,7 @@ namespace flame
 	struct TypeInfo_ivec4 : TypeInfo
 	{
 		TypeInfo_ivec4() :
-			TypeInfo(TypeData, format_name(typeid(ivec4).name()), sizeof(ivec4))
+			TypeInfo(TagData, format_name(typeid(ivec4).name()), sizeof(ivec4))
 		{
 			basic_type = IntegerType;
 			vec_size = 4;
@@ -419,7 +419,7 @@ namespace flame
 	struct TypeInfo_uvec2 : TypeInfo
 	{
 		TypeInfo_uvec2() :
-			TypeInfo(TypeData, format_name(typeid(uvec2).name()), sizeof(uvec2))
+			TypeInfo(TagData, format_name(typeid(uvec2).name()), sizeof(uvec2))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -439,7 +439,7 @@ namespace flame
 	struct TypeInfo_uvec3 : TypeInfo
 	{
 		TypeInfo_uvec3() :
-			TypeInfo(TypeData, format_name(typeid(uvec3).name()), sizeof(uvec3))
+			TypeInfo(TagData, format_name(typeid(uvec3).name()), sizeof(uvec3))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -459,7 +459,7 @@ namespace flame
 	struct TypeInfo_uvec4 : TypeInfo
 	{
 		TypeInfo_uvec4() :
-			TypeInfo(TypeData, format_name(typeid(uvec4).name()), sizeof(uvec4))
+			TypeInfo(TagData, format_name(typeid(uvec4).name()), sizeof(uvec4))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -479,7 +479,7 @@ namespace flame
 	struct TypeInfo_vec2 : TypeInfo
 	{
 		TypeInfo_vec2() :
-			TypeInfo(TypeData, format_name(typeid(vec2).name()), sizeof(vec2))
+			TypeInfo(TagData, format_name(typeid(vec2).name()), sizeof(vec2))
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
@@ -498,7 +498,7 @@ namespace flame
 	struct TypeInfo_vec3 : TypeInfo
 	{
 		TypeInfo_vec3() :
-			TypeInfo(TypeData, format_name(typeid(vec3).name()), sizeof(vec3))
+			TypeInfo(TagData, format_name(typeid(vec3).name()), sizeof(vec3))
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
@@ -517,7 +517,7 @@ namespace flame
 	struct TypeInfo_vec4 : TypeInfo
 	{
 		TypeInfo_vec4() :
-			TypeInfo(TypeData, format_name(typeid(vec4).name()), sizeof(vec4))
+			TypeInfo(TagData, format_name(typeid(vec4).name()), sizeof(vec4))
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
@@ -536,7 +536,7 @@ namespace flame
 	struct TypeInfo_string : TypeInfo
 	{
 		TypeInfo_string() :
-			TypeInfo(TypeData, format_name(typeid(std::string).name()), sizeof(std::string))
+			TypeInfo(TagData, format_name(typeid(std::string).name()), sizeof(std::string))
 		{
 		}
 
@@ -569,7 +569,7 @@ namespace flame
 	struct TypeInfo_wstring : TypeInfo
 	{
 		TypeInfo_wstring() :
-			TypeInfo(TypeData, format_name(typeid(std::wstring).name()), sizeof(std::string))
+			TypeInfo(TagData, format_name(typeid(std::wstring).name()), sizeof(std::string))
 		{
 		}
 
@@ -599,10 +599,15 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_vector : TypeInfo
+	{
+
+	};
+
 	struct TypeInfo_Rect : TypeInfo
 	{
 		TypeInfo_Rect() :
-			TypeInfo(TypeData, "flame::Rect", sizeof(Rect))
+			TypeInfo(TagData, "flame::Rect", sizeof(Rect))
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
@@ -622,7 +627,7 @@ namespace flame
 	struct TypeInfo_AABB : TypeInfo
 	{
 		TypeInfo_AABB() :
-			TypeInfo(TypeData, "flame::AABB", sizeof(AABB))
+			TypeInfo(TagData, "flame::AABB", sizeof(AABB))
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
@@ -642,7 +647,7 @@ namespace flame
 	struct TypeInfo_Plane : TypeInfo
 	{
 		TypeInfo_Plane() :
-			TypeInfo(TypeData, "flame::Plane", sizeof(Plane))
+			TypeInfo(TagData, "flame::Plane", sizeof(Plane))
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
@@ -661,7 +666,7 @@ namespace flame
 	struct TypeInfo_Frustum : TypeInfo
 	{
 		TypeInfo_Frustum() :
-			TypeInfo(TypeData, "flame::Frustum", sizeof(Plane))
+			TypeInfo(TagData, "flame::Frustum", sizeof(Plane))
 		{
 		}
 	};
@@ -669,7 +674,7 @@ namespace flame
 	struct TypeInfo_mat2 : TypeInfo
 	{
 		TypeInfo_mat2() :
-			TypeInfo(TypeData, format_name(typeid(mat2).name()), sizeof(mat2))
+			TypeInfo(TagData, format_name(typeid(mat2).name()), sizeof(mat2))
 		{
 			basic_type = FloatingType;
 			vec_size = 2;
@@ -680,7 +685,7 @@ namespace flame
 	struct TypeInfo_mat3 : TypeInfo
 	{
 		TypeInfo_mat3() :
-			TypeInfo(TypeData, format_name(typeid(mat3).name()), sizeof(mat3))
+			TypeInfo(TagData, format_name(typeid(mat3).name()), sizeof(mat3))
 		{
 			basic_type = FloatingType;
 			vec_size = 3;
@@ -691,7 +696,7 @@ namespace flame
 	struct TypeInfo_mat4 : TypeInfo
 	{
 		TypeInfo_mat4() :
-			TypeInfo(TypeData, format_name(typeid(mat4).name()), sizeof(mat4))
+			TypeInfo(TagData, format_name(typeid(mat4).name()), sizeof(mat4))
 		{
 			basic_type = FloatingType;
 			vec_size = 4;
@@ -702,7 +707,7 @@ namespace flame
 	struct TypeInfo_quat : TypeInfo
 	{
 		TypeInfo_quat() :
-			TypeInfo(TypeData, format_name(typeid(quat).name()), sizeof(quat))
+			TypeInfo(TagData, format_name(typeid(quat).name()), sizeof(quat))
 		{
 		}
 
@@ -719,9 +724,9 @@ namespace flame
 	struct TypeInfo_Pointer : TypeInfo
 	{
 		TypeInfo_Pointer(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TypePointer, base_name, sizeof(void*))
+			TypeInfo(TagPointer, base_name, sizeof(void*))
 		{
-			pointed_type = TypeInfo::get(TypeData, name, db);
+			pointed_type = TypeInfo::get(TagData, name, db);
 			if (pointed_type)
 			{
 				basic_type = pointed_type->basic_type;
