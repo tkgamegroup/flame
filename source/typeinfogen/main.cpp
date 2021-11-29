@@ -11,6 +11,8 @@
 
 using namespace flame;
 
+TypeInfoDataBase db;
+
 struct TagAndName
 {
 	TypeTag tag;
@@ -119,6 +121,15 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	{
 		s_type->get_name(&pwname);
 		auto name = TypeInfo::format_name(w2s(pwname));
+		if (name.starts_with("std::vector<"))
+		{
+			static std::regex reg("std::vector\\<([\\w:]+)\\b");
+			std::smatch res;
+			if (std::regex_search(name, res, reg))
+				return TagAndName(TagVector, res[1].str());
+		}
+		if (find_udt(name, db))
+			return TagAndName(TagUdt, name);
 		return TagAndName(TagData, name);
 	}
 	case SymTagFunctionArgType:
@@ -266,14 +277,14 @@ process:
 	if (auto vswhere_path = std::filesystem::path(getenv("FLAME_PATH")) / L"vswhere.exe"; std::filesystem::exists(vswhere_path))
 	{
 		std::string vs_location;
-		exec(vswhere_path, L"-latest -property installationPath", &vs_location);
+		exec(vswhere_path, L" -latest -property installationPath", &vs_location);
 		SUS::cut_tail_if(vs_location, "\r\n");
 		// yes, we find symbols in the 'exception' tables, which works, kind of..
 		exec(L"", L"\"" + s2w(vs_location) + L"\\Common7\\Tools\\VsDevCmd.bat\" & dumpbin /pdata \"" + input_path.wstring() + L"\" > temp.txt");
 
 		auto symbols = get_file_content(L"temp.txt");
 		std::filesystem::remove(L"temp.txt");
-		std::regex reg("flame::TypeInfo::get\\<([\\w\\s:]+),");
+		std::regex reg("flame::TypeInfo::get\\<([\\w\\s:]+)\\b");
 		std::smatch res;
 		std::string::const_iterator beg(symbols.cbegin());
 		while (std::regex_search(beg, symbols.cend(), res, reg))
@@ -379,7 +390,6 @@ process:
 		library = (HMODULE)load_exe_as_dll(input_path.c_str());
 	else
 		library = LoadLibraryW(input_path.c_str());
-	TypeInfoDataBase db;
 
 	auto new_enum = [&](const std::string& enum_name, IDiaSymbol* s_enum) {
 		if (find_enum(enum_name, db))

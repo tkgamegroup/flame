@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../serialize.h"
 #include "foundation.h"
 
 namespace flame
@@ -12,8 +11,10 @@ namespace flame
 		TagData,
 		TagPointer,
 		TagFunction,
+		TagUdt,
+		TagVector,
 
-		TypeTagCount
+		TagCount
 	};
 
 	enum BasicType
@@ -77,8 +78,8 @@ namespace flame
 
 		virtual ~TypeInfo() {}
 
-		virtual void* create(bool create_pointing = true) const { return malloc(size); }
-		virtual void destroy(void* p, bool destroy_pointing = true) const { free(p); }
+		virtual void* create() const { return malloc(size); }
+		virtual void destroy(void* p) const { free(p); }
 		virtual void copy(void* dst, const void* src) const { memcpy(dst, src, size); }
 		virtual bool compare(const void* d1, const void* d2) const { return memcmp(d1, d2, size) == 0; }
 		virtual std::string serialize(const void* p) const { return ""; }
@@ -86,7 +87,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
 
-		template<class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+		template<enum_type T>
 		static TypeInfo* get()
 		{
 			auto get_type = [](const std::string& name) {
@@ -96,7 +97,7 @@ namespace flame
 			return ret;
 		}
 
-		template<class T, std::enable_if_t<!std::is_enum_v<T>, int> = 0>
+		template<not_enum_type T>
 		static TypeInfo* get()
 		{
 			static auto ret = get(TagData, format_name(typeid(T).name()), tidb);
@@ -138,23 +139,9 @@ namespace flame
 		}
 	};
 
-	struct VariableInfo
-	{
-		UdtInfo* udt;
-		uint index;
-		TypeInfo* type;
-		std::string name;
-		uint offset;
-		uint array_size;
-		uint array_stride;
-		std::string default_value;
-		Metas metas;
-	};
-
 	struct EnumItemInfo
 	{
 		EnumInfo* ei;
-		uint index;
 		std::string name;
 		int value;
 	};
@@ -188,7 +175,6 @@ namespace flame
 	struct FunctionInfo
 	{
 		UdtInfo* udt;
-		uint index;
 		std::string name;
 		uint rva;
 		int voff;
@@ -217,11 +203,22 @@ namespace flame
 		}
 	};
 
+	struct VariableInfo
+	{
+		UdtInfo* udt;
+		TypeInfo* type;
+		std::string name;
+		uint offset;
+		uint array_size;
+		uint array_stride;
+		std::string default_value;
+		Metas metas;
+	};
+
 	struct UdtInfo
 	{
 		std::string name;
 		uint size;
-		// base class name
 		std::string base_class_name;
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;

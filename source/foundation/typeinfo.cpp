@@ -35,11 +35,17 @@ namespace flame
 		case TagEnumMulti:
 			t = new TypeInfo_EnumMulti(name, db);
 			break;
+		case TagData:
+			t = new TypeInfo_Udt(name, db);
+			break;
 		case TagPointer:
 			t = new TypeInfo_Pointer(name, db);
 			break;
-		case TagData:
+		case TagUdt:
 			t = new TypeInfo_Udt(name, db);
+			break;
+		case TagVector:
+			t = new TypeInfo_Vector(name, db);
 			break;
 		}
 
@@ -189,14 +195,6 @@ namespace flame
 			auto t = new TypeInfo_quat;
 			_tidb.typeinfos.emplace(t->hash, t);
 		}
-		{
-			auto t = new TypeInfo_charp(_tidb);
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_wcharp(_tidb);
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
 
 		auto app_name = get_app_path(true);
 		if (app_name.filename() != L"typeinfogen.exe")
@@ -247,7 +245,6 @@ namespace flame
 			{
 				auto& i = e.items.emplace_back();
 				i.ei = &e;
-				i.index = e.items.size() - 1;
 				i.name = n_item.attribute("name").value();
 				i.value = n_item.attribute("value").as_int();
 			}
@@ -264,7 +261,6 @@ namespace flame
 			{
 				auto& v = u.variables.emplace_back();
 				v.udt = &u;
-				v.index = u.variables.size() - 1;
 				v.type = read_ti(n_variable);
 				v.name = n_variable.attribute("name").value();
 				v.offset = n_variable.attribute("offset").as_uint();
@@ -277,7 +273,6 @@ namespace flame
 			{
 				auto& f = u.functions.emplace_back();
 				f.udt = &u;
-				f.index = u.functions.size() - 1;
 				f.name = n_function.attribute("name").value();
 				f.rva = n_function.attribute("rva").as_uint();
 				f.voff = n_function.attribute("voff").as_int();

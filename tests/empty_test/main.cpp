@@ -6,23 +6,29 @@ using namespace flame;
 struct SomeClass
 {
     std::string a;
-    int b;
-}; 
+    std::vector<int> b;
+    int c = 5;
+};
 
 template<unsigned N>
-struct FixedString {
-    char buf[N + 1]{};
-    constexpr FixedString(char const* s) {
-        for (unsigned i = 0; i != N; ++i) buf[i] = s[i];
+struct FixedString 
+{
+    char buf[N + 1] {};
+
+    constexpr FixedString(const char (&str)[N])
+    {
+        for (unsigned i = 0; i != N; i++) 
+            buf[i] = str[i];
     }
+
     constexpr operator char const* () const { return buf; }
 };
-template<unsigned N> FixedString(char const (&)[N])->FixedString<N - 1>;
 
 template<FixedString T>
-class Foo {
+struct Foo 
+{
     static constexpr char const* Name = T;
-public:
+
     void hello() const
     {
         printf(Name);
@@ -36,7 +42,9 @@ int entry(int argc, char** args)
 
     SomeClass c;
     c.a = "Hello World";
-    c.b = 5;
+    c.b.push_back(123);
+    c.b.push_back(456);
+    c.c = 5;
     auto str = TypeInfo::serialize_t(&c);
     return 0;
 }

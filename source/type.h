@@ -34,6 +34,12 @@ namespace flame
 	template <class T>
 	concept long_unsigned_integral = std::unsigned_integral<T> && sizeof(T) > sizeof(uint);
 
+	template <class T>
+	concept enum_type = std::is_enum_v<T>;
+
+	template <class T>
+	concept not_enum_type = !enum_type<T>;
+
 	template <auto V> inline constexpr auto S = V;
 
 	constexpr uint ch(char const* str)

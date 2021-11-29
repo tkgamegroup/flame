@@ -60,12 +60,21 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_Pointer : TypeInfo
+	{
+		TypeInfo_Pointer(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPointer, base_name, sizeof(void*))
+		{
+			pointed_type = TypeInfo::get(TagData, name, db);
+		}
+	};
+
 	struct TypeInfo_Udt : TypeInfo
 	{
 		UdtInfo* ui = nullptr;
 
 		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagData, base_name, 0)
+			TypeInfo(TagUdt, base_name, 0)
 		{
 			ui = find_udt(name, db);
 			if (ui)
@@ -77,7 +86,39 @@ namespace flame
 			std::string ret;
 			for (auto& vi : ui->variables)
 			{
-				ret += vi.name + ": " + vi.type->serialize((char*)p + vi.offset) + "\n";
+				auto str = vi.type->serialize((char*)p + vi.offset);
+				if (str.empty() || (vi.type->tag != TagVector && str == vi.default_value))
+					continue;
+				ret += vi.name + "\n";
+				for (auto& t : SUS::split(str, '\n'))
+					ret += "  " + t + "\n";
+			}
+			return ret;
+		}
+	};
+
+	struct TypeInfo_Vector : TypeInfo
+	{
+		TypeInfo* ti = nullptr;
+
+		TypeInfo_Vector(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVector, base_name, sizeof(std::vector<int>))
+		{
+			if (find_enum(name, db))
+				ti = TypeInfo::get(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name, db);
+			else
+				ti = TypeInfo::get(TagData, name, db);
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<int>*)p;
+			auto pb = (char*)vec.data();
+			for (auto i = 0; i < vec.size(); i++)
+			{
+				ret += ti->serialize(pb) + "\n";
+				pb += ti->size;
 			}
 			return ret;
 		}
@@ -540,11 +581,11 @@ namespace flame
 		{
 		}
 
-		void* create(bool create_pointing) const override 
+		void* create() const override 
 		{ 
 			return new std::string; 
 		}
-		void destroy(void* p, bool destroy_pointing) const override
+		void destroy(void* p) const override
 		{ 
 			delete (std::string*)p; 
 		}
@@ -573,11 +614,11 @@ namespace flame
 		{
 		}
 
-		void* create(bool create_pointing) const override
+		void* create() const override
 		{
 			return new std::wstring;
 		}
-		void destroy(void* p, bool destroy_pointing) const override
+		void destroy(void* p) const override
 		{
 			delete (std::wstring*)p;
 		}
@@ -597,11 +638,6 @@ namespace flame
 		{
 			*(std::wstring*)dst = s2w(str);
 		}
-	};
-
-	struct TypeInfo_vector : TypeInfo
-	{
-
 	};
 
 	struct TypeInfo_Rect : TypeInfo
@@ -720,142 +756,4 @@ namespace flame
 			*(vec4*)dst = sto<4, float>(str).yzwx();
 		}
 	};
-
-	struct TypeInfo_Pointer : TypeInfo
-	{
-		TypeInfo_Pointer(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagPointer, base_name, sizeof(void*))
-		{
-			pointed_type = TypeInfo::get(TagData, name, db);
-			if (pointed_type)
-			{
-				basic_type = pointed_type->basic_type;
-				vec_size = pointed_type->vec_size;
-				col_size = pointed_type->col_size;
-			}
-		}
-
-		void* create(bool create_pointing) const override
-		{
-			auto p = malloc(sizeof(void*));
-			if (create_pointing && pointed_type)
-				*(void**)p = pointed_type->create();
-			return p;
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing && pointed_type)
-				pointed_type->destroy(*(void**)p);
-			free(p);
-		}
-		std::string serialize(const void* p) const override
-		{
-			auto pp = *(void**)p;
-			if (pointed_type && pp)
-				return pointed_type->serialize(pp);
-			return "";
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			auto pp = *(void**)dst;
-			if (pointed_type && pp)
-				pointed_type->unserialize(str, pp);
-		}
-	};
-
-	struct TypeInfo_charp : TypeInfo_Pointer
-	{
-		TypeInfo_charp(TypeInfoDataBase& db) :
-			TypeInfo_Pointer("char", db)
-		{
-		}
-
-		void* create(bool create_pointing) const override
-		{
-			auto p = malloc(sizeof(void*));
-			if (create_pointing)
-			{
-				auto str = (char*)malloc(sizeof(char) * 256);
-				*(char**)p = str;
-				str[0] = 0;
-			}
-			return p;
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing)
-				free(*(char**)p);
-			free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto str = *(char**)src;
-			strcpy(*(char**)dst, str ? str : "");
-		}
-		bool compare(const void* a, const void* b) const override
-		{
-			return std::string(*(char**)a) == std::string(*(char**)b);
-		}
-		std::string serialize(const void* p) const override
-		{
-			auto str = *(char**)p;
-			return str ? str : "";
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			auto& p = *(char**)dst;
-			free(p);
-			p = (char*)malloc(str.size() + 1);
-			strcpy(p, str.c_str());
-		}
-	};
-
-	struct TypeInfo_wcharp : TypeInfo_Pointer
-	{
-		TypeInfo_wcharp(TypeInfoDataBase& db) :
-			TypeInfo_Pointer("wchar_t", db)
-		{
-		}
-
-		void* create(bool create_pointing) const override
-		{
-			auto p = malloc(sizeof(void*));
-			if (create_pointing)
-			{
-				auto str = (wchar_t*)malloc(sizeof(wchar_t) * 256);
-				*(wchar_t**)p = str;
-				str[0] = 0;
-			}
-			return p;
-		}
-		void destroy(void* p, bool destroy_pointing) const override
-		{
-			if (destroy_pointing)
-				free(*(wchar_t**)p);
-			free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto str = *(wchar_t**)src;
-			wcscpy(*(wchar_t**)dst, str ? str : L"");
-		}
-		bool compare(const void* a, const void* b) const override
-		{
-			return std::wstring(*(wchar_t**)a) == std::wstring(*(wchar_t**)b);
-		}
-		std::string serialize(const void* p) const override
-		{
-			auto str = *(wchar_t**)p;
-			return str ? w2s(str) : "";
-		}
-		void unserialize(const std::string& _str, void* dst) const override
-		{
-			auto str = s2w(_str);
-			auto& p = *(wchar_t**)dst;
-			free(p);
-			p = (wchar_t*)malloc(sizeof(wchar_t) * (str.size() + 1));
-			wcscpy(p, str.c_str());
-		}
-	};
-
 }
