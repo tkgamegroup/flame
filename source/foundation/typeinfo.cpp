@@ -1,6 +1,7 @@
 #include "../xml.h"
 #include "system_private.h"
 #include "typeinfo_private.h"
+#include "typeinfo_serialize.h"
 
 namespace flame
 {
@@ -56,7 +57,7 @@ namespace flame
 
 	TypeInfoDataBase::TypeInfoDataBase()
 	{
-		if (void_type)
+		if (!_tidb.typeinfos.empty())
 			return;
 
 		{
@@ -230,10 +231,11 @@ namespace flame
 			assert(0);
 		}
 
-		auto read_ti = [&](pugi::xml_node n) {
+		auto read_ti = [&](pugi::xml_attribute a) {
+			auto sp = SUS::split(a.value(), '@');
 			TypeTag tag;
-			TypeInfo::get(TagEnumSingle, "flame::TypeTag", *this)->unserialize(n.attribute("type_tag").value(), &tag);
-			return TypeInfo::get(tag, n.attribute("type_name").value(), *this);
+			TypeInfo::unserialize_t(sp[0], &tag, *this);
+			return TypeInfo::get(tag, sp[1], *this);
 		};
 
 		for (auto n_enum : file_root.child("enums"))
@@ -260,28 +262,34 @@ namespace flame
 			for (auto n_variable : n_udt.child("variables"))
 			{
 				auto& v = u.variables.emplace_back();
-				v.udt = &u;
-				v.type = read_ti(n_variable);
+				v.ui = &u;
+				v.type = read_ti(n_variable.attribute("type"));
 				v.name = n_variable.attribute("name").value();
 				v.offset = n_variable.attribute("offset").as_uint();
-				v.array_size = n_variable.attribute("array_size").as_uint();
-				v.array_stride = n_variable.attribute("array_stride").as_uint();
-				v.default_value = n_variable.attribute("default_value").value();
-				v.metas.from_string(n_variable.attribute("metas").value());
+				if (auto a = n_variable.attribute("array_size"); a)
+					v.array_size = a.as_uint();
+				if (auto a = n_variable.attribute("array_stride"); a)
+					v.array_stride = a.as_uint();
+				if (auto a = n_variable.attribute("default_value"); a)
+					v.default_value = a.value();
+				if (auto a = n_variable.attribute("metas"); a)
+					v.metas.from_string(a.value());
 			}
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto& f = u.functions.emplace_back();
-				f.udt = &u;
+				f.ui = &u;
 				f.name = n_function.attribute("name").value();
 				f.rva = n_function.attribute("rva").as_uint();
 				f.voff = n_function.attribute("voff").as_int();
-				f.is_static = n_function.attribute("is_static").as_bool();
-				f.type = read_ti(n_function);
-				f.metas.from_string(n_function.attribute("metas").value());
+				if (auto a = n_function.attribute("is_static"); a)
+					f.is_static = a.as_bool();
+				f.return_type = read_ti(n_function.attribute("return_type"));
+				if (auto a = n_function.attribute("metas"); a)
+					f.metas.from_string(a.value());
 				f.library = library;
 				for (auto n_parameter : n_function)
-					f.parameters.push_back(read_ti(n_parameter));
+					f.parameters.push_back(read_ti(n_parameter.attribute("v")));
 			}
 		}
 	}
@@ -291,10 +299,8 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
 
-		auto e_tag = TypeInfo::get(TagEnumSingle, "flame::TypeTag", *this);
-		auto write_ti = [&](TypeInfo* ti, pugi::xml_node n) {
-			n.append_attribute("type_tag").set_value(e_tag->serialize(&ti->tag).c_str());
-			n.append_attribute("type_name").set_value(ti->name.c_str());
+		auto write_ti = [&](TypeInfo* ti, pugi::xml_attribute a) {
+			a.set_value((TypeInfo::serialize_t(&ti->tag, *this) + '@' + ti->name).c_str());
 		};
 
 		auto n_enums = file_root.append_child("enums");
@@ -324,13 +330,17 @@ namespace flame
 				for (auto& vi : ui.second.variables)
 				{
 					auto n_variable = n_variables.append_child("variable");
-					write_ti(vi.type, n_variable);
+					write_ti(vi.type, n_variable.append_attribute("type"));
 					n_variable.append_attribute("name").set_value(vi.name.c_str());
 					n_variable.append_attribute("offset").set_value(vi.offset);
-					n_variable.append_attribute("array_size").set_value(vi.array_size);
-					n_variable.append_attribute("array_stride").set_value(vi.array_stride);
-					n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
-					n_variable.append_attribute("metas").set_value(vi.metas.to_string().c_str());
+					if (vi.array_size != 0)
+						n_variable.append_attribute("array_size").set_value(vi.array_size);
+					if (vi.array_stride != 0)
+						n_variable.append_attribute("array_stride").set_value(vi.array_stride);
+					if (!vi.default_value.empty())
+						n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
+					if (auto str = vi.metas.to_string(); !str.empty())
+						n_variable.append_attribute("metas").set_value(str.c_str());
 				}
 			}
 			if (!ui.second.functions.empty())
@@ -342,13 +352,15 @@ namespace flame
 					n_function.append_attribute("name").set_value(fi.name.c_str());
 					n_function.append_attribute("rva").set_value(fi.rva);
 					n_function.append_attribute("voff").set_value(fi.voff);
-					n_function.append_attribute("is_static").set_value(fi.is_static);
-					n_function.append_attribute("metas").set_value(fi.metas.to_string().c_str());
-					write_ti(fi.type, n_function);
+					if (fi.is_static)
+						n_function.append_attribute("is_static").set_value(fi.is_static);
+					write_ti(fi.return_type, n_function.append_attribute("return_type"));
+					if (auto str = fi.metas.to_string(); !str.empty())
+						n_function.append_attribute("metas").set_value(str.c_str());
 					if (!fi.parameters.empty())
 					{
 						for (auto p : fi.parameters)
-							write_ti(p, n_function.append_child("parameter"));
+							write_ti(p, n_function.append_child("parameter").append_attribute("v"));
 					}
 				}
 			}

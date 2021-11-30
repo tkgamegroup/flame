@@ -2,21 +2,5 @@
   <enums>
 	  <rule name="^flame::[\w:]+$" />
   </enums>
-  <udts>
-	  <rule name="^flame::EnumItemInfo$">
-		<item type="variable" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-	  </rule>
-	  <rule name="^flame::EnumInfo$">
-		  <item type="variable" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-	  </rule>
-	  <rule name="^flame::FunctionInfo$">
-		  <item type="variable" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-	  </rule>
-	  <rule name="^flame::VariableInfo$">
-		  <item type="variable" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-	  </rule>
-	  <rule name="^flame::UdtInfo$">
-		  <item type="variable" name="(?!^ctor$)(?!^dtor$)(^\w+$)" />
-	  </rule>
-  </udts>
+  <udts />
 </desc>

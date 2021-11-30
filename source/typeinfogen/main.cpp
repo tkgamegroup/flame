@@ -123,7 +123,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		auto name = TypeInfo::format_name(w2s(pwname));
 		if (name.starts_with("std::vector<"))
 		{
-			static std::regex reg("std::vector\\<([\\w:]+)\\b");
+			static std::regex reg("std::vector\\<([\\w:\\*]+)");
 			std::smatch res;
 			if (std::regex_search(name, res, reg))
 				return TagAndName(TagVector, res[1].str());
@@ -182,6 +182,19 @@ process:
 	{
 		printf("pdb does not exist: %s\n", pdb_path.string().c_str());
 		return 0;
+	}
+
+	auto typeinfo_path = input_path;
+	typeinfo_path.replace_extension(L".typeinfo");
+
+	if (std::filesystem::exists(typeinfo_path))
+	{
+		auto lwt = std::filesystem::last_write_time(typeinfo_path);
+		if (lwt > std::filesystem::last_write_time(pdb_path) && (!desc_path.empty() && lwt > std::filesystem::last_write_time(desc_path)))
+		{
+			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
+			return 0;
+		}
 	}
 
 	struct EnumRule
@@ -324,19 +337,6 @@ process:
 			auto& fr = r.items.emplace_back();
 			fr.type = TagFunction;
 			fr.name = "^[\\w:~]+$";
-		}
-	}
-
-	auto typeinfo_path = input_path;
-	typeinfo_path.replace_extension(L".typeinfo");
-
-	if (std::filesystem::exists(typeinfo_path))
-	{
-		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-		if (lwt > std::filesystem::last_write_time(pdb_path) && (!desc_path.empty() && lwt > std::filesystem::last_write_time(desc_path)))
-		{
-			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
-			return 0;
 		}
 	}
 
@@ -524,8 +524,8 @@ process:
 					IDiaSymbol* s_return_type;
 					s_function_type->get_type(&s_return_type);
 					auto type_desc = typeinfo_from_symbol(s_return_type);
-					fi.type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-					assert(fi.type);
+					fi.return_type = TypeInfo::get(type_desc.tag, type_desc.name, db);
+					assert(fi.return_type);
 					s_return_type->Release();
 
 					IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
