@@ -7,7 +7,7 @@ namespace flame
 {
 	void cDragEditPrivate::set_type(BasicType t)
 	{
-		assert(t == IntegerType || t == FloatingType);
+		assert(t == IntegerType || t == FloatType);
 		type = t;
 	}
 
@@ -22,7 +22,7 @@ namespace flame
 
 	void cDragEditPrivate::set_float(float _f)
 	{
-		assert(type == FloatingType);
+		assert(type == FloatType);
 		f = clamp(_f, min_v, max_v);
 		if (dragging)
 			drag_f = f;
@@ -83,7 +83,7 @@ namespace flame
 					}
 				}
 					break;
-				case FloatingType:
+				case FloatType:
 				{
 					auto c = (pos.x - thiz->drag_pos) * thiz->sp;
 					if (c != 0.f)
@@ -140,7 +140,7 @@ namespace flame
 					thiz->i = sto<int>(thiz->edit_text->text);
 					thiz->drag_text->set_text(to_wstring(thiz->i));
 					break;
-				case FloatingType:
+				case FloatType:
 					thiz->f = sto<float>(thiz->edit_text->text);
 					thiz->drag_text->set_text(to_wstring(thiz->f));
 					break;

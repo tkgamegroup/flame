@@ -218,113 +218,70 @@ namespace flame
 						off = off2;
 						dummy_id++;
 					}
-					auto type = vi.type;
+
 					std::string type_name;
-					auto basic = type->basic_type;
-					auto is_signed = type->is_signed;
-					auto col_size = type->col_size;
-					auto vec_size = type->vec_size;
-					switch (col_size)
+					if (vi.type->tag == TagData)
 					{
-					case 1:
-						switch (vec_size)
+						auto ti = (TypeInfo_Data*)vi.type;
+						switch (ti->basic_type)
 						{
-						case 1:
-							switch (basic)
+						case IntegerType:
+							switch (ti->col_size)
 							{
-							case IntegerType:
-								if (is_signed)	type_name = "int";
-								else			type_name = "uint";
-								break;
-							case FloatingType:
-								type_name = "float";
-								break;
-							default:
-								type_name = type->name;
+							case 1:
+								switch (ti->vec_size)
+								{
+								case 1: type_name = ti->is_signed ? "int" : "uint"; break;
+								case 2: type_name = ti->is_signed ? "ivec2" : "uvec2"; break;
+								case 3: type_name = ti->is_signed ? "ivec3" : "uvec3"; break;
+								case 4: type_name = ti->is_signed ? "ivec4" : "uvec4"; break;
+								}
 								break;
 							}
 							break;
-						case 2:
-							switch (basic)
+						case FloatType:
+							switch (ti->col_size)
 							{
-							case IntegerType:
-								if (is_signed)	type_name = "ivec2";
-								else			type_name = "uvec2";
+							case 1:
+								switch (ti->vec_size)
+								{
+								case 1: type_name = "float"; break;
+								case 2: type_name = "vec2"; break;
+								case 3: type_name = "vec3"; break;
+								case 4: type_name = "vec4"; break;
+								}
 								break;
-							case FloatingType:
-								type_name = "vec2";
+							case 2:
+								switch (ti->vec_size)
+								{
+								case 2: type_name = "mat2"; break;
+								default: assert(0);
+								}
 								break;
-							}
-							break;
-						case 3:
-							switch (basic)
-							{
-							case IntegerType:
-								if (is_signed)	type_name = "ivec3";
-								else			type_name = "uvec3";
+							case 3:
+								switch (ti->vec_size)
+								{
+								case 3: type_name = "mat3"; break;
+								default: assert(0);
+								}
 								break;
-							case FloatingType:
-								type_name = "vec3";
-								break;
-							}
-							break;
-						case 4:
-							switch (basic)
-							{
-							case IntegerType:
-								if (is_signed)	type_name = "ivec4";
-								else			type_name = "uvec4";
-								break;
-							case FloatingType:
-								type_name = "vec4";
+							case 4:
+								switch (ti->vec_size)
+								{
+								case 4: type_name = "mat4"; break;
+								default: assert(0);
+								}
 								break;
 							}
 							break;
 						}
-						break;
-					case 2:
-						switch (vec_size)
-						{
-						case 2:
-							switch (basic)
-							{
-							case FloatingType:
-								type_name = "mat2";
-								break;
-							}
-							break;
-						}
-						break;
-					case 3:
-						switch (vec_size)
-						{
-						case 3:
-							switch (basic)
-							{
-							case FloatingType:
-								type_name = "mat3";
-								break;
-							}
-							break;
-						}
-						break;
-					case 4:
-						switch (vec_size)
-						{
-						case 4:
-							switch (basic)
-							{
-							case FloatingType:
-								type_name = "mat4";
-								break;
-							}
-							break;
-						}
-						break;
 					}
+					else
+						type_name = vi.type->name;
+
 					assert(!type_name.empty());
 					header += "\t\t" + type_name + " " + vi.name;
-					auto size = type->size;
+					auto size = vi.type->size;
 					auto array_size = vi.array_size;
 					if (array_size > 1)
 					{

@@ -38,7 +38,7 @@ namespace flame
 				if (ti)
 				{
 					auto& vec = *(std::vector<int>*)p;
-					if (vec.size() > 0)
+					if (!vec.empty())
 					{
 						auto n = dst.append_child(vi.name.c_str());
 						p = (char*)vec.data();
@@ -108,6 +108,34 @@ namespace flame
 				auto ti = ((TypeInfo_Vector*)vi.type)->ti;
 				if (ti)
 				{
+					auto& vec = *(std::vector<int>*)p;
+					p = (char*)vec.data();
+					switch (ti->tag)
+					{
+					case TagEnumSingle:
+					case TagEnumMulti:
+					case TagData:
+						for (auto i = 0; i < vec.size(); i++)
+						{
+							dst << indent << "- " << ti->serialize(p) << std::endl;
+							p += ti->size;
+						}
+						break;
+					case TagUdt:
+					{
+						auto ui = ((TypeInfo_Udt*)ti)->ui;
+						if (ui)
+						{
+							for (auto i = 0; i < vec.size(); i++)
+							{
+								dst << indent << "-" << std::endl;
+								serialize_text(ui, p, dst, indent + "  ");
+								p += ti->size;
+							}
+						}
+					}
+						break;
+					}
 				}
 				dst << std::endl;
 				break;

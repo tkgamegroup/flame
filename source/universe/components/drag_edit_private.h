@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cDragEditPrivate : cDragEdit
 	{
-		BasicType type = FloatingType;
+		BasicType type = FloatType;
 		int i = 0;
 		float f = 0.f;
 		float min_v = -10000.f;

@@ -22,7 +22,7 @@ namespace flame
 		VoidType,
 		BooleanType,
 		IntegerType,
-		FloatingType,
+		FloatType,
 		CharType,
 		WideCharType
 	};
@@ -515,7 +515,7 @@ namespace flame
 		TypeInfo_float() :
 			TypeInfo_Data("float", sizeof(float))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 		}
 
 		std::string serialize(const void* p) const override
@@ -710,7 +710,7 @@ namespace flame
 		TypeInfo_vec2() :
 			TypeInfo_Data(format_name(typeid(vec2).name()), sizeof(vec2))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 2;
 		}
 
@@ -729,7 +729,7 @@ namespace flame
 		TypeInfo_vec3() :
 			TypeInfo_Data(format_name(typeid(vec3).name()), sizeof(vec3))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 3;
 		}
 
@@ -748,7 +748,7 @@ namespace flame
 		TypeInfo_vec4() :
 			TypeInfo_Data(format_name(typeid(vec4).name()), sizeof(vec4))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 4;
 		}
 
@@ -833,7 +833,7 @@ namespace flame
 		TypeInfo_Rect() :
 			TypeInfo_Data("flame::Rect", sizeof(Rect))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 2;
 			col_size = 2;
 		}
@@ -853,7 +853,7 @@ namespace flame
 		TypeInfo_AABB() :
 			TypeInfo_Data("flame::AABB", sizeof(AABB))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 3;
 			col_size = 2;
 		}
@@ -873,7 +873,7 @@ namespace flame
 		TypeInfo_Plane() :
 			TypeInfo_Data("flame::Plane", sizeof(Plane))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 4;
 		}
 
@@ -900,7 +900,7 @@ namespace flame
 		TypeInfo_mat2() :
 			TypeInfo_Data(format_name(typeid(mat2).name()), sizeof(mat2))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 2;
 			col_size = 2;
 		}
@@ -911,7 +911,7 @@ namespace flame
 		TypeInfo_mat3() :
 			TypeInfo_Data(format_name(typeid(mat3).name()), sizeof(mat3))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 3;
 			col_size = 3;
 		}
@@ -922,7 +922,7 @@ namespace flame
 		TypeInfo_mat4() :
 			TypeInfo_Data(format_name(typeid(mat4).name()), sizeof(mat4))
 		{
-			basic_type = FloatingType;
+			basic_type = FloatType;
 			vec_size = 4;
 			col_size = 4;
 		}
