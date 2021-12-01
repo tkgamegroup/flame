@@ -331,6 +331,10 @@ namespace flame
 					std::getline(src, line);
 					code << line << std::endl;
 				}
+				code << std::endl;
+				code << "void main() {}" << std::endl;
+				code << std::endl;
+
 				stage = L"frag";
 			}
 			else if (src_ext == L".pll")
@@ -344,6 +348,10 @@ namespace flame
 						continue;
 					code << line << std::endl;
 				}
+				code << std::endl;
+				code << "void main() {}" << std::endl;
+				code << std::endl;
+
 				stage = L"frag";
 			}
 			else
@@ -376,21 +384,29 @@ namespace flame
 					}
 					code << line << std::endl;
 				}
+
 				stage = src_ext.wstring().substr(1);
 			}
 			src.close();
 
 			code.close();
 
+			wprintf(L"compiling: %s\n", src_path.c_str());
+			wprintf(L"   with defines: \n");
+			wprintf(L"   with substitutes: \n");
 			std::filesystem::remove(L"temp.spv");
 			std::string errors;
-			exec(std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe", L" -fshader-stage=" + stage + L" temp.glsl", &errors);
+			exec(std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe", L" -fshader-stage=" + stage + L" temp.glsl -o temp.spv", &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
+				printf("%s\n", errors.c_str());
+				assert(0);
 				return false;
 			}
-
+			printf(" - done\n");
 			std::filesystem::remove(L"temp.glsl");
+
+			auto spv = get_file_content(L"temp.spv");
 
 			dst.close();
 			return true;

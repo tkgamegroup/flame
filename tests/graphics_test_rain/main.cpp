@@ -19,6 +19,7 @@ Window* w;
 Renderpass* rp;
 std::vector<std::unique_ptr<Framebuffer>> fbs;
 PipelineLayout* pll;
+GraphicsPipeline* pl;
 SequentialBuffer<vec2> vtx_buf;
 
 void build_fbs()
