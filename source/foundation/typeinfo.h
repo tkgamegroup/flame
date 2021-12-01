@@ -53,10 +53,6 @@ namespace flame
 			SUS::replace_all(ret, "__int64 ", "int64");
 			SUS::replace_all(ret, "Private", "");
 			SUS::remove_char(ret, ' ');
-			if (ret.starts_with("std::basic_string<char,"))
-				return "std::string";
-			if (ret.starts_with("std::basic_string<wchar_t,"))
-				return "std::wstring";
 			return ret;
 		}
 
@@ -528,70 +524,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_cvec2: TypeInfo_Data
-	{
-		TypeInfo_cvec2() :
-			TypeInfo_Data(format_name(typeid(cvec2).name()), sizeof(cvec2))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 2;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec2*)dst = sto<2, uchar>(str);
-		}
-	};
-
-	struct TypeInfo_cvec3: TypeInfo_Data
-	{
-		TypeInfo_cvec3() :
-			TypeInfo_Data(format_name(typeid(cvec3).name()), sizeof(cvec3))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 3;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec3*)dst = sto<3, uchar>(str);
-		}
-	};
-
-	struct TypeInfo_cvec4: TypeInfo_Data
-	{
-		TypeInfo_cvec4() :
-			TypeInfo_Data(format_name(typeid(cvec4).name()), sizeof(cvec4))
-		{
-			basic_type = CharType;
-			is_signed = false;
-			vec_size = 4;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(cvec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(cvec4*)dst = sto<4, uchar>(str);
-		}
-	};
-
 	struct TypeInfo_ivec2: TypeInfo_Data
 	{
 		TypeInfo_ivec2() :
-			TypeInfo_Data(format_name(typeid(ivec2).name()), sizeof(ivec2))
+			TypeInfo_Data("glm::ivec2", sizeof(ivec2))
 		{
 			basic_type = IntegerType;
 			vec_size = 2;
@@ -610,7 +546,7 @@ namespace flame
 	struct TypeInfo_ivec3: TypeInfo_Data
 	{
 		TypeInfo_ivec3() :
-			TypeInfo_Data(format_name(typeid(ivec3).name()), sizeof(ivec3))
+			TypeInfo_Data("glm::ivec3", sizeof(ivec3))
 		{
 			basic_type = IntegerType;
 			vec_size = 3;
@@ -629,7 +565,7 @@ namespace flame
 	struct TypeInfo_ivec4: TypeInfo_Data
 	{
 		TypeInfo_ivec4() :
-			TypeInfo_Data(format_name(typeid(ivec4).name()), sizeof(ivec4))
+			TypeInfo_Data("glm::ivec4", sizeof(ivec4))
 		{
 			basic_type = IntegerType;
 			vec_size = 4;
@@ -648,7 +584,7 @@ namespace flame
 	struct TypeInfo_uvec2: TypeInfo_Data
 	{
 		TypeInfo_uvec2() :
-			TypeInfo_Data(format_name(typeid(uvec2).name()), sizeof(uvec2))
+			TypeInfo_Data("glm::uvec2", sizeof(uvec2))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -668,7 +604,7 @@ namespace flame
 	struct TypeInfo_uvec3: TypeInfo_Data
 	{
 		TypeInfo_uvec3() :
-			TypeInfo_Data(format_name(typeid(uvec3).name()), sizeof(uvec3))
+			TypeInfo_Data("glm::uvec3", sizeof(uvec3))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -688,7 +624,7 @@ namespace flame
 	struct TypeInfo_uvec4: TypeInfo_Data
 	{
 		TypeInfo_uvec4() :
-			TypeInfo_Data(format_name(typeid(uvec4).name()), sizeof(uvec4))
+			TypeInfo_Data("glm::uvec4", sizeof(uvec4))
 		{
 			basic_type = IntegerType;
 			is_signed = false;
@@ -705,10 +641,70 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_cvec2 : TypeInfo_Data
+	{
+		TypeInfo_cvec2() :
+			TypeInfo_Data("glm::cvec2", sizeof(cvec2))
+		{
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 2;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(cvec2*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(cvec2*)dst = sto<2, uchar>(str);
+		}
+	};
+
+	struct TypeInfo_cvec3 : TypeInfo_Data
+	{
+		TypeInfo_cvec3() :
+			TypeInfo_Data("glm::cvec3", sizeof(cvec3))
+		{
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 3;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(cvec3*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(cvec3*)dst = sto<3, uchar>(str);
+		}
+	};
+
+	struct TypeInfo_cvec4 : TypeInfo_Data
+	{
+		TypeInfo_cvec4() :
+			TypeInfo_Data("glm::cvec4", sizeof(cvec4))
+		{
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 4;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(cvec4*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(cvec4*)dst = sto<4, uchar>(str);
+		}
+	};
+
 	struct TypeInfo_vec2: TypeInfo_Data
 	{
 		TypeInfo_vec2() :
-			TypeInfo_Data(format_name(typeid(vec2).name()), sizeof(vec2))
+			TypeInfo_Data("glm::vec2", sizeof(vec2))
 		{
 			basic_type = FloatType;
 			vec_size = 2;
@@ -727,7 +723,7 @@ namespace flame
 	struct TypeInfo_vec3: TypeInfo_Data
 	{
 		TypeInfo_vec3() :
-			TypeInfo_Data(format_name(typeid(vec3).name()), sizeof(vec3))
+			TypeInfo_Data("glm::vec3", sizeof(vec3))
 		{
 			basic_type = FloatType;
 			vec_size = 3;
@@ -746,7 +742,7 @@ namespace flame
 	struct TypeInfo_vec4: TypeInfo_Data
 	{
 		TypeInfo_vec4() :
-			TypeInfo_Data(format_name(typeid(vec4).name()), sizeof(vec4))
+			TypeInfo_Data("glm::vec4", sizeof(vec4))
 		{
 			basic_type = FloatType;
 			vec_size = 4;
@@ -762,10 +758,60 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_mat2 : TypeInfo_Data
+	{
+		TypeInfo_mat2() :
+			TypeInfo_Data("glm::mat2", sizeof(mat2))
+		{
+			basic_type = FloatType;
+			vec_size = 2;
+			col_size = 2;
+		}
+	};
+
+	struct TypeInfo_mat3 : TypeInfo_Data
+	{
+		TypeInfo_mat3() :
+			TypeInfo_Data("glm::mat3", sizeof(mat3))
+		{
+			basic_type = FloatType;
+			vec_size = 3;
+			col_size = 3;
+		}
+	};
+
+	struct TypeInfo_mat4 : TypeInfo_Data
+	{
+		TypeInfo_mat4() :
+			TypeInfo_Data("glm::mat4", sizeof(mat4))
+		{
+			basic_type = FloatType;
+			vec_size = 4;
+			col_size = 4;
+		}
+	};
+
+	struct TypeInfo_quat : TypeInfo_Data
+	{
+		TypeInfo_quat() :
+			TypeInfo_Data("glm::quat", sizeof(quat))
+		{
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(vec4*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(vec4*)dst = sto<4, float>(str).yzwx();
+		}
+	};
+
 	struct TypeInfo_string: TypeInfo_Data
 	{
 		TypeInfo_string() :
-			TypeInfo_Data(format_name(typeid(std::string).name()), sizeof(std::string))
+			TypeInfo_Data("std::string", sizeof(std::string))
 		{
 		}
 
@@ -798,7 +844,7 @@ namespace flame
 	struct TypeInfo_wstring: TypeInfo_Data
 	{
 		TypeInfo_wstring() :
-			TypeInfo_Data(format_name(typeid(std::wstring).name()), sizeof(std::string))
+			TypeInfo_Data("std::wstring", sizeof(std::string))
 		{
 		}
 
@@ -892,56 +938,6 @@ namespace flame
 		TypeInfo_Frustum() :
 			TypeInfo_Data("flame::Frustum", sizeof(Plane))
 		{
-		}
-	};
-
-	struct TypeInfo_mat2: TypeInfo_Data
-	{
-		TypeInfo_mat2() :
-			TypeInfo_Data(format_name(typeid(mat2).name()), sizeof(mat2))
-		{
-			basic_type = FloatType;
-			vec_size = 2;
-			col_size = 2;
-		}
-	};
-
-	struct TypeInfo_mat3: TypeInfo_Data
-	{
-		TypeInfo_mat3() :
-			TypeInfo_Data(format_name(typeid(mat3).name()), sizeof(mat3))
-		{
-			basic_type = FloatType;
-			vec_size = 3;
-			col_size = 3;
-		}
-	};
-
-	struct TypeInfo_mat4: TypeInfo_Data
-	{
-		TypeInfo_mat4() :
-			TypeInfo_Data(format_name(typeid(mat4).name()), sizeof(mat4))
-		{
-			basic_type = FloatType;
-			vec_size = 4;
-			col_size = 4;
-		}
-	};
-
-	struct TypeInfo_quat: TypeInfo_Data
-	{
-		TypeInfo_quat() :
-			TypeInfo_Data(format_name(typeid(quat).name()), sizeof(quat))
-		{
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(vec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(vec4*)dst = sto<4, float>(str).yzwx();
 		}
 	};
 

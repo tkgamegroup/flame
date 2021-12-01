@@ -22,6 +22,47 @@ struct TagAndName
 		tag(t),
 		name(n)
 	{
+		if (name.starts_with("glm::"))
+		{
+			if		(name == "glm::vec<2,int,0>")
+				name = "glm::ivec2";
+			else if (name == "glm::vec<3,int,0>")
+				name = "glm::ivec3";
+			else if (name == "glm::vec<4,int,0>")
+				name = "glm::ivec4";
+			else if (name == "glm::vec<2,uint,0>")
+				name = "glm::uvec2";
+			else if (name == "glm::vec<3,uint,0>")
+				name = "glm::uvec3";
+			else if (name == "glm::vec<4,uint,0>")
+				name = "glm::uvec4";
+			else if (name == "glm::vec<2,uchar,0>")
+				name = "glm::cvec2";
+			else if (name == "glm::vec<3,uchar,0>")
+				name = "glm::cvec3";
+			else if (name == "glm::vec<4,uchar,0>")
+				name = "glm::cvec4";
+			else if (name == "glm::vec<2,float,0>")
+				name = "glm::vec2";
+			else if (name == "glm::vec<3,float,0>")
+				name = "glm::vec3";
+			else if (name == "glm::vec<4,float,0>")
+				name = "glm::vec4";
+			else if (name == "glm::mat<2,2,float,0>")
+				name = "glm::mat2";
+			else if (name == "glm::mat<3,3,float,0>")
+				name = "glm::mat3";
+			else if (name == "glm::mat<4,4,float,0>")
+				name = "glm::mat4";
+			else if (name == "glm::qua<float,0>")
+				name = "glm::quat";
+			else
+				assert(0);
+		}
+		else if (name.starts_with("std::basic_string<char,"))
+			name = "std::string";
+		else if (name.starts_with("std::basic_string<wchar_t,"))
+			name = "std::wstring";
 	}
 };
 
@@ -123,7 +164,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		auto name = TypeInfo::format_name(w2s(pwname));
 		if (name.starts_with("std::vector<"))
 		{
-			static std::regex reg("std::vector\\<([\\w:\\*]+)");
+			static std::regex reg("std::vector\\<([\\w:\\*]+,)");
 			std::smatch res;
 			if (std::regex_search(name, res, reg))
 				return TagAndName(TagVector, res[1].str());
@@ -285,58 +326,6 @@ process:
 				item.name = n_i.attribute("name").value();
 				item.metas = n_i.attribute("metas").value();
 			}
-		}
-	}
-	if (auto vswhere_path = std::filesystem::path(getenv("FLAME_PATH")) / L"vswhere.exe"; std::filesystem::exists(vswhere_path))
-	{
-		std::string vs_location;
-		exec(vswhere_path, L" -latest -property installationPath", &vs_location);
-		SUS::cut_tail_if(vs_location, "\r\n");
-		// yes, we find symbols in the 'exception' tables, which works, kind of..
-		exec(L"", L"\"" + s2w(vs_location) + L"\\Common7\\Tools\\VsDevCmd.bat\" & dumpbin /pdata \"" + input_path.wstring() + L"\" > temp.txt");
-
-		auto symbols = get_file_content(L"temp.txt");
-		std::filesystem::remove(L"temp.txt");
-		std::regex reg("flame::TypeInfo::get\\<([\\w\\s:]+)\\b");
-		std::smatch res;
-		std::string::const_iterator beg(symbols.cbegin());
-		while (std::regex_search(beg, symbols.cend(), res, reg))
-		{
-			auto name = res[1].str();
-			if (name.starts_with("enum "))
-			{
-				auto& r = enum_rules.emplace_back();
-				r.name = "^" + TypeInfo::format_name(name) + "$";
-			}
-			else if (name.starts_with("struct ") || name.starts_with("class "))
-			{
-				auto& r = udt_rules.emplace_back();
-				r.name = "^" + TypeInfo::format_name(name) + "$";
-				auto& dr = r.items.emplace_back();
-				dr.type = TagData;
-				dr.name = "^[\\w:]+$";
-				auto& fr = r.items.emplace_back();
-				fr.type = TagFunction;
-				fr.name = "^[\\w:~]+$";
-			}
-			beg = res.suffix().first;
-		}
-	}
-	if (enum_rules.empty() && udt_rules.empty())
-	{
-		{
-			auto& r = enum_rules.emplace_back();
-			r.name = "^[\\w:]+$";
-		}
-		{
-			auto& r = udt_rules.emplace_back();
-			r.name = "^[\\w:]+$";
-			auto& dr = r.items.emplace_back();
-			dr.type = TagData;
-			dr.name = "^[\\w:]+$";
-			auto& fr = r.items.emplace_back();
-			fr.type = TagFunction;
-			fr.name = "^[\\w:~]+$";
 		}
 	}
 
@@ -618,6 +607,35 @@ process:
 			free(obj);
 		}
 	};
+
+	IDiaEnumSymbols* s_functions;
+	global->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+	IDiaSymbol* s_function;
+	while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
+	{
+		s_function->get_name(&pwname);
+		auto name = w2s(pwname);
+		static std::regex reg("flame::TypeInfo::get\\<([\\w:]+)\\>");
+		std::smatch res;
+		if (std::regex_search(name, res, reg))
+		{
+			{
+				auto& r = enum_rules.emplace_back();
+				r.name = "^" + res[1].str() + "$";
+			}
+			{
+				auto& r = udt_rules.emplace_back();
+				r.name = "^" + res[1].str() + "$";
+				auto& dr = r.items.emplace_back();
+				dr.type = TagData;
+				dr.name = "^[\\w:]+$";
+				auto& fr = r.items.emplace_back();
+				fr.type = TagFunction;
+				fr.name = "^[\\w:~]+$";
+			}
+		}
+	}
+	s_functions->Release();
 
 	IDiaEnumSymbols* s_enums;
 	global->findChildren(SymTagEnum, NULL, nsNone, &s_enums);

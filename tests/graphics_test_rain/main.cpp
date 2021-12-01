@@ -18,7 +18,7 @@ NativeWindow* nw;
 Window* w;
 Renderpass* rp;
 std::vector<std::unique_ptr<Framebuffer>> fbs;
-GraphicsPipeline* pl;
+PipelineLayout* pll;
 SequentialBuffer<vec2> vtx_buf;
 
 void build_fbs()
@@ -136,7 +136,7 @@ int entry(int argc, char** args)
 	srand(time(0));
 	projector.set(nw->size, 45.f, 1.f, 4.f);
 	drops.resize(3000);
-	pl = GraphicsPipeline::get(d, L"default_assets\\shaders\\plain\\line.pipeline");
+	pll = PipelineLayout::get(d, L"default_assets\\shaders\\mesh\\mesh.vert");
 	vtx_buf.create(BufferUsageVertex, drops.size() * 2);
 
 	run([]() {

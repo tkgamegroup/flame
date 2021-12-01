@@ -296,16 +296,24 @@ namespace flame
 			return ret;
 		}
 
-		static void cut_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
+		static bool cut_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
 			if (str.starts_with(head))
+			{
 				str = str.substr(head.size());
+				return true;
+			}
+			return false;
 		}
 
-		static void cut_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
+		static bool cut_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
 		{
 			if (str.ends_with(tail))
+			{
 				str = str.substr(0, str.size() - tail.size());
+				return true;
+			}
+			return false;
 		}
 
 		static void replace_all(std::basic_string<CH>& str, const std::basic_string<CH>& from, const std::basic_string<CH>& to)
