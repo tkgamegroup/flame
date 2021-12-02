@@ -1,7 +1,4 @@
-#ifndef MAKE_PLL
-#define ELEMENT_SET 0
 #include "element.dsl"
-#endif
 
 layout (push_constant) uniform PushConstant
 {

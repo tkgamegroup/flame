@@ -1,7 +1,3 @@
-#ifdef MAKE_DSL
-#define MATERIAL_SET 0
-#endif
-
 struct MaterialInfo
 {
 	vec4 color;
@@ -11,9 +7,9 @@ struct MaterialInfo
 	int map_indices[8];
 };
 
-layout (set = MATERIAL_SET, binding = 0) buffer readonly MaterialInfos
+layout (set = SET, binding = 0) buffer readonly MaterialInfos
 {
 	MaterialInfo material_infos[128];
 };
 
-layout (set = MATERIAL_SET, binding = 1) uniform sampler2D maps[128];
+layout (set = SET, binding = 1) uniform sampler2D maps[128];

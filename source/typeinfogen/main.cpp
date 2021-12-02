@@ -13,60 +13,7 @@ using namespace flame;
 
 TypeInfoDataBase db;
 
-struct TagAndName
-{
-	TypeTag tag;
-	std::string name;
-
-	TagAndName(TypeTag t, std::string_view n) :
-		tag(t),
-		name(n)
-	{
-		if (name.starts_with("glm::"))
-		{
-			if		(name == "glm::vec<2,int,0>")
-				name = "glm::ivec2";
-			else if (name == "glm::vec<3,int,0>")
-				name = "glm::ivec3";
-			else if (name == "glm::vec<4,int,0>")
-				name = "glm::ivec4";
-			else if (name == "glm::vec<2,uint,0>")
-				name = "glm::uvec2";
-			else if (name == "glm::vec<3,uint,0>")
-				name = "glm::uvec3";
-			else if (name == "glm::vec<4,uint,0>")
-				name = "glm::uvec4";
-			else if (name == "glm::vec<2,uchar,0>")
-				name = "glm::cvec2";
-			else if (name == "glm::vec<3,uchar,0>")
-				name = "glm::cvec3";
-			else if (name == "glm::vec<4,uchar,0>")
-				name = "glm::cvec4";
-			else if (name == "glm::vec<2,float,0>")
-				name = "glm::vec2";
-			else if (name == "glm::vec<3,float,0>")
-				name = "glm::vec3";
-			else if (name == "glm::vec<4,float,0>")
-				name = "glm::vec4";
-			else if (name == "glm::mat<2,2,float,0>")
-				name = "glm::mat2";
-			else if (name == "glm::mat<3,3,float,0>")
-				name = "glm::mat3";
-			else if (name == "glm::mat<4,4,float,0>")
-				name = "glm::mat4";
-			else if (name == "glm::qua<float,0>")
-				name = "glm::quat";
-			else
-				assert(0);
-		}
-		else if (name.starts_with("std::basic_string<char,"))
-			name = "std::string";
-		else if (name.starts_with("std::basic_string<wchar_t,"))
-			name = "std::wstring";
-	}
-};
-
-TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
+TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 {
 	DWORD dw;
 	wchar_t* pwname;
@@ -79,46 +26,30 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		std::string name;
 		switch (baseType)
 		{
-		case btVoid:
-			return "void";
-		case btChar:
-			return "char";
-		case btWChar:
-			return "wchar_t";
-		case btBool:
-			return "bool";
+		case btVoid: return "void";
+		case btChar: return "char";
+		case btWChar: return "wchar_t";
+		case btBool: return "bool";
 		case btUInt:
-		case btULong:
-			name = "u";
+		case btULong: name = "u";
 		case btInt:
 		case btLong:
 			switch (len)
 			{
-			case 1:
-				name += "char";
-				return name;
-			case 2:
-				name += "short";
-				return name;
-			case 4:
-				name += "int";
-				return name;
-			case 8:
-				name += "int64";
-				return name;
+			case 1: name += "char"; return name;
+			case 2: name += "short"; return name;
+			case 4: name += "int"; return name;
+			case 8: name += "int64"; return name;
 			}
 			break;
 		case btFloat:
 			switch (len)
 			{
-			case 4:
-				return "float";
-			case 8:
-				return "double";
+			case 4: return "float";
+			case 8: return "double";
 			}
 			break;
-		default:
-			assert(0);
+		default: assert(0);
 		}
 	};
 
@@ -128,11 +59,10 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagEnum:
 	{
 		s_type->get_name(&pwname);
-		auto name = TypeInfo::format_name(w2s(pwname));
-		return TagAndName(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name);
+		return TypeInfo::get(TypeInfo::format(TagEnum, w2s(pwname)), db);
 	}
 	case SymTagBaseType:
-		return TagAndName(TagData, base_type_name(s_type));
+		return TypeInfo::get(TagData, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
@@ -152,26 +82,16 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			break;
 		case SymTagUDT:
 			pointer_type->get_name(&pwname);
-			name = TypeInfo::format_name(w2s(pwname));
+			name = TypeInfo::format(TagData, w2s(pwname)).second;
 			break;
 		}
 		pointer_type->Release();
-		return TagAndName(TagPointer, name);
+		return TypeInfo::get(TagPointer, name);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
-		auto name = TypeInfo::format_name(w2s(pwname));
-		if (name.starts_with("std::vector<"))
-		{
-			static std::regex reg("std::vector\\<([\\w:\\*]+,)");
-			std::smatch res;
-			if (std::regex_search(name, res, reg))
-				return TagAndName(TagVector, res[1].str());
-		}
-		if (find_udt(name, db))
-			return TagAndName(TagUdt, name);
-		return TagAndName(TagData, name);
+		return TypeInfo::get(TypeInfo::format(TagData, w2s(pwname)), db);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -182,7 +102,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 		return ret;
 	}
 	default:
-		return TagAndName(TagData, "__unsupported__symtag_" + std::to_string(dw));
+		return TypeInfo::get(TagData, "__unsupported__symtag_" + std::to_string(dw));
 	}
 }
 
@@ -512,9 +432,7 @@ process:
 
 					IDiaSymbol* s_return_type;
 					s_function_type->get_type(&s_return_type);
-					auto type_desc = typeinfo_from_symbol(s_return_type);
-					fi.return_type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-					assert(fi.return_type);
+					fi.return_type = typeinfo_from_symbol(s_return_type);
 					s_return_type->Release();
 
 					IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
@@ -531,12 +449,8 @@ process:
 					{
 						IDiaSymbol* s_type;
 						s_parameter->get_type(&s_type);
-						auto type_desc = typeinfo_from_symbol(s_parameter);
+						fi.parameters.push_back(typeinfo_from_symbol(s_parameter));
 						s_type->Release();
-
-						auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-						assert(type);
-						fi.parameters.push_back(type);
 
 						s_parameter->Release();
 					}
@@ -579,19 +493,13 @@ process:
 				s_variable->get_offset(&l);
 				auto offset = l;
 
-				auto type_desc = typeinfo_from_symbol(s_type);
-				if (type_desc.name.starts_with("flame::"))
-					SUS::cut_tail_if(type_desc.name, "Private");
-
-				auto type = TypeInfo::get(type_desc.tag, type_desc.name, db);
-				assert(type);
 				auto& vi = u.variables.emplace_back();
-				vi.type = type;
+				vi.type = typeinfo_from_symbol(s_type);
 				vi.name = name;
 				vi.offset = offset;
 				vi.array_size = 0;
 				vi.array_stride = 0;
-				vi.default_value = obj ? type->serialize((char*)obj + offset) : "";
+				vi.default_value = obj ? vi.type->serialize((char*)obj + offset) : "";
 				vi.metas.from_string(metas);
 
 				s_type->Release();
@@ -615,23 +523,33 @@ process:
 	{
 		s_function->get_name(&pwname);
 		auto name = w2s(pwname);
-		static std::regex reg("flame::TypeInfo::get\\<([\\w:]+)\\>");
-		std::smatch res;
-		if (std::regex_search(name, res, reg))
+		if (name.starts_with("flame::TypeInfo::get"))
 		{
+			static std::regex reg("^flame::TypeInfo::get\\<([\\w\\s:\\<\\>,]+)\\>$");
+			std::smatch res;
+			if (std::regex_search(name, res, reg))
 			{
-				auto& r = enum_rules.emplace_back();
-				r.name = "^" + res[1].str() + "$";
-			}
-			{
-				auto& r = udt_rules.emplace_back();
-				r.name = "^" + res[1].str() + "$";
-				auto& dr = r.items.emplace_back();
-				dr.type = TagData;
-				dr.name = "^[\\w:]+$";
-				auto& fr = r.items.emplace_back();
-				fr.type = TagFunction;
-				fr.name = "^[\\w:~]+$";
+				auto str = res[1].str();
+				if (SUS::cut_head_if(str, "enum "))
+				{
+					auto& r = enum_rules.emplace_back();
+					r.name = "^" + str + "$";
+				}
+				else
+				{
+					auto tagname = TypeInfo::format(TagData, str);
+					if (tagname.first != TagData)
+					{
+						auto& r = udt_rules.emplace_back();
+						r.name = "^" + tagname.second + "$";
+						auto& dr = r.items.emplace_back();
+						dr.type = TagData;
+						dr.name = "^[\\w:]+$";
+						auto& fr = r.items.emplace_back();
+						fr.type = TagFunction;
+						fr.name = "^[\\w:~]+$";
+					}
+				}
 			}
 		}
 	}

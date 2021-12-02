@@ -290,7 +290,7 @@ namespace flame
 		info.lpVerb = L"open";
 		info.lpFile = filename.c_str();
 		info.nShow = show ? SW_SHOW : SW_HIDE;
-		info.lpParameters = parameters.c_str();
+		info.lpParameters = parameters.empty() ? nullptr : parameters.c_str();
 		ShellExecuteExW(&info);
 		if (wait)
 			WaitForSingleObject(info.hProcess, INFINITE);

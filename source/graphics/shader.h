@@ -25,7 +25,7 @@ namespace flame
 
 		struct DescriptorBinding
 		{
-			DescriptorType type = Descriptor_Max;
+			DescriptorType type = DescriptorNone;
 			uint count = 1;
 			std::string name;
 

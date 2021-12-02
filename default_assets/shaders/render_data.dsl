@@ -1,8 +1,4 @@
-#ifdef MAKE_DSL
-#define RENDER_DATA_SET 0
-#endif
-
-layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
+layout (set = SET, binding = 0) uniform RenderData
 {
 	vec3 fog_color;
 	float sky_intensity;

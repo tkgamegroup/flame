@@ -1,7 +1,4 @@
-#ifndef MAKE_PLL
-#define IMGUI_SET 0
 #include "imgui.dsl"
-#endif
 
 layout(push_constant) uniform PushConstant
 {

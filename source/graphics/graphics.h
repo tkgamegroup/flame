@@ -284,12 +284,11 @@ namespace flame
 
 		enum DescriptorType
 		{
+			DescriptorNone,
 			DescriptorUniformBuffer,
 			DescriptorStorageBuffer,
 			DescriptorSampledImage,
-			DescriptorStorageImage,
-
-			Descriptor_Max = 0xffffffff
+			DescriptorStorageImage
 		};
 
 		enum PipelineType

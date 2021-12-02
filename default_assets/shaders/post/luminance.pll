@@ -1,7 +1,4 @@
-#ifndef MAKE_PLL
-#define LUMINANCE_SET 0
 #include "luminance.dsl"
-#endif
 
 layout (push_constant) uniform PushConstant
 {

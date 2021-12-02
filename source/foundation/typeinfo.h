@@ -6,8 +6,8 @@ namespace flame
 {
 	enum TypeTag
 	{
-		TagEnumSingle,
-		TagEnumMulti,
+		TagEnum,
+		TagEnumFlags,
 		TagData,
 		TagPointer,
 		TagFunction,
@@ -43,18 +43,7 @@ namespace flame
 		uint hash;
 		uint size;
 
-		inline static std::string format_name(const std::string& str)
-		{
-			auto ret = str;
-			SUS::replace_all(ret, "enum ", "");
-			SUS::replace_all(ret, "struct ", "");
-			SUS::replace_all(ret, "class ", "");
-			SUS::replace_all(ret, "unsigned ", "u");
-			SUS::replace_all(ret, "__int64 ", "int64");
-			SUS::replace_all(ret, "Private", "");
-			SUS::remove_char(ret, ' ');
-			return ret;
-		}
+		inline static std::pair<TypeTag, std::string> format(TypeTag tag, std::string_view name);
 
 		TypeInfo(TypeTag tag, std::string_view _name, uint size) :
 			tag(tag),
@@ -74,22 +63,30 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
+		inline static uint get_hash(TypeTag tag, std::string_view name)
+		{
+			auto ret = ch(name.data());
+			ret ^= std::hash<uint>()(tag);
+			return ret;
+		}
+
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
+		inline static TypeInfo* get(const std::pair<TypeTag, std::string>& tagname, TypeInfoDataBase& db = tidb)
+		{
+			return get(tagname.first, tagname.second, db);
+		}
 
 		template<enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			auto get_type = [&](const std::string& name) {
-				return get(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name, db);
-			};
-			static auto ret = get_type(format_name(typeid(T).name()));
+			static auto ret = get(format(TagEnum, typeid(T).name()), db);
 			return ret;
 		}
 
 		template<not_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagData, format_name(typeid(T).name()), db);
+			static auto ret = get(format(TagData, typeid(T).name()), db);
 			return ret;
 		}
 
@@ -248,6 +245,25 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save_typeinfo(const std::filesystem::path& filename);
 	};
 
+	inline void Metas::from_string(const std::string& str, TypeInfoDataBase& db)
+	{
+		for (auto& i : SUS::split(str, ';'))
+		{
+			auto sp = SUS::split(i, ':');
+			auto& m = d.emplace_back();
+			TypeInfo::unserialize_t(sp[0], &m.first);
+			m.second.u = std::stoul(sp[1], 0, 16);
+		}
+	}
+
+	inline std::string Metas::to_string(TypeInfoDataBase& db) const
+	{
+		std::string ret;
+		for (auto& i : d)
+			ret += TypeInfo::serialize_t(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+		return ret;
+	}
+
 	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db = tidb)
 	{
 		auto it = db.enums.find(name);
@@ -276,22 +292,87 @@ namespace flame
 		return nullptr;
 	}
 
-	inline void Metas::from_string(const std::string& str, TypeInfoDataBase& db)
+	inline std::pair<TypeTag, std::string> TypeInfo::format(TypeTag tag, std::string_view name)
 	{
-		for (auto& i : SUS::split(str, ';'))
-		{
-			auto sp = SUS::split(i, ':');
-			auto& m = d.emplace_back();
-			TypeInfo::unserialize_t(sp[0], &m.first);
-			m.second.u = std::stoul(sp[1], 0, 16);
-		}
-	}
+		std::pair<TypeTag, std::string> ret;
+		ret.first = tag;
+		ret.second = name;
 
-	inline std::string Metas::to_string(TypeInfoDataBase& db) const
-	{
-		std::string ret;
-		for (auto& i : d)
-			ret += TypeInfo::serialize_t(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
+		SUS::replace_all(ret.second, "enum ", "");
+		SUS::replace_all(ret.second, "struct ", "");
+		SUS::replace_all(ret.second, "class ", "");
+		SUS::replace_all(ret.second, "unsigned ", "u");
+		SUS::replace_all(ret.second, "__int64 ", "int64");
+		SUS::replace_all(ret.second, "Private", "");
+		SUS::remove_char(ret.second, ' ');
+
+		if (tag == TagEnum)
+		{
+			if (ret.second.ends_with("Flags"))
+				ret.first = TagEnumFlags;
+		}
+		else if (tag != TagEnumFlags)
+		{
+			if (ret.second.starts_with("glm::"))
+			{
+				if (ret.second == "glm::vec<2,int,0>")
+					ret.second = "glm::ivec2";
+				else if (ret.second == "glm::vec<3,int,0>")
+					ret.second = "glm::ivec3";
+				else if (ret.second == "glm::vec<4,int,0>")
+					ret.second = "glm::ivec4";
+				else if (ret.second == "glm::vec<2,uint,0>")
+					ret.second = "glm::uvec2";
+				else if (ret.second == "glm::vec<3,uint,0>")
+					ret.second = "glm::uvec3";
+				else if (ret.second == "glm::vec<4,uint,0>")
+					ret.second = "glm::uvec4";
+				else if (ret.second == "glm::vec<2,uchar,0>")
+					ret.second = "glm::cvec2";
+				else if (ret.second == "glm::vec<3,uchar,0>")
+					ret.second = "glm::cvec3";
+				else if (ret.second == "glm::vec<4,uchar,0>")
+					ret.second = "glm::cvec4";
+				else if (ret.second == "glm::vec<2,float,0>")
+					ret.second = "glm::vec2";
+				else if (ret.second == "glm::vec<3,float,0>")
+					ret.second = "glm::vec3";
+				else if (ret.second == "glm::vec<4,float,0>")
+					ret.second = "glm::vec4";
+				else if (ret.second == "glm::mat<2,2,float,0>")
+					ret.second = "glm::mat2";
+				else if (ret.second == "glm::mat<3,3,float,0>")
+					ret.second = "glm::mat3";
+				else if (ret.second == "glm::mat<4,4,float,0>")
+					ret.second = "glm::mat4";
+				else if (ret.second == "glm::qua<float,0>")
+					ret.second = "glm::quat";
+				else
+					assert(0);
+			}
+			else if (ret.second.starts_with("std::basic_string<char,"))
+				ret.second = "std::string";
+			else if (ret.second.starts_with("std::basic_string<wchar_t,"))
+				ret.second = "std::wstring";
+			else if (ret.second.starts_with("std::vector<"))
+			{
+				static std::regex reg("std::vector\\<([\\w:\\*]+,)");
+				std::smatch res;
+				if (std::regex_search(ret.second, res, reg))
+				{
+					if (tag == TagData)
+					{
+						ret.first = TagVector;
+						ret.second = res[1].str();
+					}
+					else
+						ret.second = "std::vector<" + res[1].str() + ">";
+				}
+			}
+			else if (tag == TagData && tidb.typeinfos.find(get_hash(TagData, ret.second)) == tidb.typeinfos.end())
+				ret.first = TagUdt;
+		}
+
 		return ret;
 	}
 
@@ -941,12 +1022,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_EnumSingle : TypeInfo
+	struct TypeInfo_Enum : TypeInfo
 	{
 		EnumInfo* ei = nullptr;
 
-		TypeInfo_EnumSingle(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagEnumSingle, base_name, sizeof(int))
+		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagEnum, base_name, sizeof(int))
 		{
 			ei = find_enum(name, db);
 		}
@@ -961,12 +1042,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_EnumMulti : TypeInfo
+	struct TypeInfo_EnumFlags : TypeInfo
 	{
 		EnumInfo* ei = nullptr;
 
-		TypeInfo_EnumMulti(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagEnumMulti, base_name, sizeof(int))
+		TypeInfo_EnumFlags(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagEnumFlags, base_name, sizeof(int))
 		{
 			ei = find_enum(name, db);
 		}
@@ -1028,10 +1109,7 @@ namespace flame
 		TypeInfo_Vector(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagVector, base_name, sizeof(std::vector<int>))
 		{
-			if (find_enum(name, db))
-				ti = TypeInfo::get(name.ends_with("Flags") ? TagEnumMulti : TagEnumSingle, name, db);
-			else
-				ti = TypeInfo::get(TagData, name, db);
+			ti = TypeInfo::get(TagData, name, db);
 		}
 
 		std::string serialize(const void* p) const override

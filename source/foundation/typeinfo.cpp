@@ -15,8 +15,7 @@ namespace flame
 		if (tag == TagData && name.empty())
 			return void_type;
 
-		auto key = ch(name.data());
-		key ^= std::hash<int>()(tag);
+		auto key = get_hash(tag, name);
 		auto it = db.typeinfos.find(key);
 		if (it != db.typeinfos.end())
 			return it->second.get();
@@ -30,11 +29,11 @@ namespace flame
 		TypeInfo* t = nullptr;
 		switch (tag)
 		{
-		case TagEnumSingle:
-			t = new TypeInfo_EnumSingle(name, db);
+		case TagEnum:
+			t = new TypeInfo_Enum(name, db);
 			break;
-		case TagEnumMulti:
-			t = new TypeInfo_EnumMulti(name, db);
+		case TagEnumFlags:
+			t = new TypeInfo_EnumFlags(name, db);
 			break;
 		case TagData:
 			t = new TypeInfo_Udt(name, db);

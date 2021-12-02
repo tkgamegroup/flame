@@ -1,7 +1,3 @@
-#ifdef MAKE_DSL
-#define TERRAIN_SET 0
-#endif
-
 struct TerrainInfo
 {
 	vec3 coord;
@@ -16,7 +12,7 @@ struct TerrainInfo
 	uint material_id;
 };
 
-layout(set = TERRAIN_SET, binding = 0) buffer readonly TerrainInfos
+layout(set = SET, binding = 0) buffer readonly TerrainInfos
 {
 	TerrainInfo terrain_infos[9];
 };

@@ -16,8 +16,8 @@ namespace flame
 				continue;
 			switch (vi.type->tag)
 			{
-			case TagEnumSingle:
-			case TagEnumMulti:
+			case TagEnum:
+			case TagEnumFlags:
 			case TagData:
 			{
 				auto str = vi.type->serialize(p);
@@ -44,8 +44,8 @@ namespace flame
 						p = (char*)vec.data();
 						switch (ti->tag)
 						{
-						case TagEnumSingle:
-						case TagEnumMulti:
+						case TagEnum:
+						case TagEnumFlags:
 						case TagData:
 							for (auto i = 0; i < vec.size(); i++)
 							{
@@ -81,15 +81,15 @@ namespace flame
 		}
 	}
 
-	inline void serialize_text(UdtInfo* ui, void* src, std::ofstream& dst, const std::string& indent)
+	inline void serialize_text(UdtInfo* ui, void* src, std::ofstream& dst, const std::string& indent = "")
 	{
 		for (auto& vi : ui->variables)
 		{
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
-			case TagEnumSingle:
-			case TagEnumMulti:
+			case TagEnum:
+			case TagEnumFlags:
 			case TagData:
 				dst << indent << vi.name << std::endl;
 				dst << indent << "- " << vi.type->serialize(p) << std::endl;
@@ -112,8 +112,8 @@ namespace flame
 					p = (char*)vec.data();
 					switch (ti->tag)
 					{
-					case TagEnumSingle:
-					case TagEnumMulti:
+					case TagEnum:
+					case TagEnumFlags:
 					case TagData:
 						for (auto i = 0; i < vec.size(); i++)
 						{
@@ -142,5 +142,13 @@ namespace flame
 			}
 		}
 		dst << std::endl;
+	}
+
+	template <not_enum_type T>
+	inline void serialize_text(T* src, std::ofstream& dst)
+	{
+		static auto ti = (TypeInfo_Udt*)TypeInfo::get<T>();
+		assert(ti->ui);
+		serialize_text(ti->ui, src, dst);
 	}
 }

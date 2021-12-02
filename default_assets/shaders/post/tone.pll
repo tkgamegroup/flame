@@ -1,7 +1,4 @@
-#ifndef MAKE_PLL
-#define TONE_SET 0
 #include "tone.dsl"
-#endif
 
 layout (push_constant) uniform PushConstant
 {

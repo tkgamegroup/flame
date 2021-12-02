@@ -1,5 +1,6 @@
 #include "../xml.h"
 #include "../foundation/typeinfo.h"
+#include "../foundation/typeinfo_serialize.h"
 #include "../foundation/system.h"
 #include "device_private.h"
 #include "command_private.h"
@@ -260,8 +261,9 @@ namespace flame
 				}
 			}
 
-			if (up_to_date)
-				return false;
+			if (up_to_date) // TODO: FIX ME
+				//return false
+				;
 
 			auto dst_ppath = dst_path.parent_path();
 			if (!std::filesystem::exists(dst_ppath))
@@ -400,6 +402,7 @@ namespace flame
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
 				printf("%s\n", errors.c_str());
+				shell_exec(L"temp.glsl", L"", false, true);
 				assert(0);
 				return false;
 			}
@@ -407,6 +410,73 @@ namespace flame
 			std::filesystem::remove(L"temp.glsl");
 
 			auto spv = get_file_content(L"temp.spv");
+			auto spv_array = std::vector<uint>(spv.size() / 4);
+			memcpy(spv_array.data(), spv.data(), spv_array.size() * sizeof(uint));
+
+			TypeInfoDataBase db;
+			auto spvcross_compiler = spirv_cross::CompilerGLSL(spv_array.data(), spv_array.size());
+			auto spvcross_resources = spvcross_compiler.get_shader_resources();
+
+			if (src_ext == L".dsl")
+			{
+				std::vector<DescriptorBinding> bindings;
+
+				auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
+					get_shader_type(spvcross_compiler, spvcross_compiler.get_type(r.base_type_id), db);
+
+					auto binding = spvcross_compiler.get_decoration(r.id, spv::DecorationBinding);
+					if (bindings.size() <= binding)
+						bindings.resize(binding + 1);
+
+					auto& b = bindings[binding];
+					b.type = type;
+					b.count = spvcross_compiler.get_type(r.type_id).array[0];
+					b.name = r.name;
+					if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+						b.ti = find_udt(spvcross_compiler.get_name(r.base_type_id), db);
+				};
+
+				for (auto& r : spvcross_resources.uniform_buffers)
+					get_binding(r, DescriptorUniformBuffer);
+				for (auto& r : spvcross_resources.storage_buffers)
+					get_binding(r, DescriptorStorageBuffer);
+				for (auto& r : spvcross_resources.sampled_images)
+					get_binding(r, DescriptorSampledImage);
+				for (auto& r : spvcross_resources.storage_images)
+					get_binding(r, DescriptorStorageImage);
+
+				dst << "DSL:" << std::endl;
+				serialize_text(&bindings, dst);
+				dst << std::endl;
+			}
+
+			if (src_ext == L".pll")
+			{
+
+				//		for (auto& r : spvcross_resources.push_constant_buffers)
+				//		{
+				//			get_shader_type(spvcross_compiler, spvcross_compiler.get_type(r.base_type_id), db);
+				//			pc_ti = find_udt(spvcross_compiler.get_name(r.base_type_id).c_str(), db);
+				//			break;
+				//		}
+
+				dst << "PLL:" << std::endl;
+				dst << std::endl;
+			}
+
+			if (src_ext != L".dsl" && src_ext != L".pll")
+			{
+				dst << "Spv:" << std::endl;
+
+				for (auto i = 0; i < spv_array.size(); i++)
+				{
+					dst << spv_array[i] << " ";
+					if (i == 99)
+						dst << std::endl;
+				}
+
+				dst << std::endl;
+			}
 
 			dst.close();
 			return true;
@@ -491,172 +561,176 @@ namespace flame
 					return nullptr;
 				}
 
-				auto res_path = filename.parent_path() / L"build";
-				if (!std::filesystem::exists(res_path))
-					std::filesystem::create_directories(res_path);
-				res_path /= filename.filename();
-				res_path += L".res";
+				auto dst_path = filename;
+				dst_path += L".res";
+				compile_shader(filename, dst_path);
 
-				auto ti_path = res_path;
-				ti_path.replace_extension(L".typeinfo");
+				//auto res_path = filename.parent_path() / L"build";
+				//if (!std::filesystem::exists(res_path))
+				//	std::filesystem::create_directories(res_path);
+				//res_path /= filename.filename();
+				//res_path += L".res";
+
+				//auto ti_path = res_path;
+				//ti_path.replace_extension(L".typeinfo");
 
 				std::vector<DescriptorBinding> bindings;
 				TypeInfoDataBase db;
 
-				if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
-					!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
-				{
-					auto vk_sdk_path = getenv("VK_SDK_PATH");
-					if (vk_sdk_path)
-					{
-						auto temp = basic_glsl_prefix();
-						temp += "#define MAKE_DSL\n";
-						std::ifstream dsl(filename);
-						while (!dsl.eof())
-						{
-							std::string line;
-							std::getline(dsl, line);
-							temp += line + "\n";
-						}
-						temp += "void main()\n{\n}\n";
-						dsl.close();
+				//if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
+				//	!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
+				//{
+				//	auto vk_sdk_path = getenv("VK_SDK_PATH");
+				//	if (vk_sdk_path)
+				//	{
+				//		auto temp = basic_glsl_prefix();
+				//		temp += "#define MAKE_DSL\n";
+				//		std::ifstream dsl(filename);
+				//		while (!dsl.eof())
+				//		{
+				//			std::string line;
+				//			std::getline(dsl, line);
+				//			temp += line + "\n";
+				//		}
+				//		temp += "void main()\n{\n}\n";
+				//		dsl.close();
 
-						auto temp_fn = filename;
-						temp_fn.replace_filename(L"temp.frag");
-						std::ofstream temp_file(temp_fn);
-						temp_file << temp << std::endl;
-						temp_file.close();
+				//		auto temp_fn = filename;
+				//		temp_fn.replace_filename(L"temp.frag");
+				//		std::ofstream temp_file(temp_fn);
+				//		temp_file << temp << std::endl;
+				//		temp_file.close();
 
-						std::filesystem::remove(L"temp.spv");
+				//		std::filesystem::remove(L"temp.spv");
 
-						auto glslc_path = std::filesystem::path(vk_sdk_path);
-						glslc_path /= L"Bin/glslc.exe";
+				//		auto glslc_path = std::filesystem::path(vk_sdk_path);
+				//		glslc_path /= L"Bin/glslc.exe";
 
-						auto command_line = L" " + temp_fn.wstring();
+				//		auto command_line = L" " + temp_fn.wstring();
 
-						printf("compiling dsl: %s", filename.string().c_str());
+				//		printf("compiling dsl: %s", filename.string().c_str());
 
-						std::string output;
-						exec(glslc_path, command_line, &output);
-						if (!std::filesystem::exists(L"temp.spv"))
-						{
-							temp = add_lineno_to_code(temp);
-							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-							return nullptr;
-						}
+				//		std::string output;
+				//		exec(glslc_path, command_line, &output);
+				//		if (!std::filesystem::exists(L"temp.spv"))
+				//		{
+				//			temp = add_lineno_to_code(temp);
+				//			printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
+				//			return nullptr;
+				//		}
 
-						printf(" done\n");
+				//		printf(" done\n");
 
-						std::filesystem::remove(temp_fn);
+				//		std::filesystem::remove(temp_fn);
 
-						auto spv = get_file_content(L"temp.spv");
-						std::filesystem::remove(L"temp.spv");
-						auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
-						auto resources = glsl.get_shader_resources();
+				//		auto spv = get_file_content(L"temp.spv");
+				//		std::filesystem::remove(L"temp.spv");
+				//		auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
+				//		auto resources = glsl.get_shader_resources();
 
-						auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-							get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
+				//		auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
+				//			get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
 
-							auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
-							if (bindings.size() <= binding)
-								bindings.resize(binding + 1);
+				//			auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
+				//			if (bindings.size() <= binding)
+				//				bindings.resize(binding + 1);
 
-							auto& b = bindings[binding];
-							b.type = type;
-							b.count = glsl.get_type(r.type_id).array[0];
-							b.name = r.name;
-							if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-								b.ti = find_udt(glsl.get_name(r.base_type_id), db);
-						};
+				//			auto& b = bindings[binding];
+				//			b.type = type;
+				//			b.count = glsl.get_type(r.type_id).array[0];
+				//			b.name = r.name;
+				//			if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
+				//				b.ti = find_udt(glsl.get_name(r.base_type_id), db);
+				//		};
 
-						for (auto& r : resources.uniform_buffers)
-							get_binding(r, DescriptorUniformBuffer);
-						for (auto& r : resources.storage_buffers)
-							get_binding(r, DescriptorStorageBuffer);
-						for (auto& r : resources.sampled_images)
-							get_binding(r, DescriptorSampledImage);
-						for (auto& r : resources.storage_images)
-							get_binding(r, DescriptorStorageImage);
+				//		for (auto& r : resources.uniform_buffers)
+				//			get_binding(r, DescriptorUniformBuffer);
+				//		for (auto& r : resources.storage_buffers)
+				//			get_binding(r, DescriptorStorageBuffer);
+				//		for (auto& r : resources.sampled_images)
+				//			get_binding(r, DescriptorSampledImage);
+				//		for (auto& r : resources.storage_images)
+				//			get_binding(r, DescriptorStorageImage);
 
-						db.save_typeinfo(ti_path);
+				//		db.save_typeinfo(ti_path);
 
-						pugi::xml_document res;
-						auto root = res.append_child("res");
+				//		pugi::xml_document res;
+				//		auto root = res.append_child("res");
 
-						auto n_bindings = root.append_child("bindings");
-						for (auto i = 0; i < bindings.size(); i++)
-						{
-							auto& b = bindings[i];
-							if (b.type != Descriptor_Max)
-							{
-								auto n_binding = n_bindings.append_child("binding");
-								n_binding.append_attribute("type").set_value(TypeInfo::serialize_t(&b.type).c_str());
-								n_binding.append_attribute("binding").set_value(i);
-								n_binding.append_attribute("count").set_value(b.count);
-								n_binding.append_attribute("name").set_value(b.name.c_str());
-								if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-									n_binding.append_attribute("type_name").set_value(b.ti->name.c_str());
-							}
-						}
+				//		auto n_bindings = root.append_child("bindings");
+				//		for (auto i = 0; i < bindings.size(); i++)
+				//		{
+				//			auto& b = bindings[i];
+				//			if (b.type != Descriptor_Max)
+				//			{
+				//				auto n_binding = n_bindings.append_child("binding");
+				//				n_binding.append_attribute("type").set_value(TypeInfo::serialize_t(&b.type).c_str());
+				//				n_binding.append_attribute("binding").set_value(i);
+				//				n_binding.append_attribute("count").set_value(b.count);
+				//				n_binding.append_attribute("name").set_value(b.name.c_str());
+				//				if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+				//					n_binding.append_attribute("type_name").set_value(b.ti->name.c_str());
+				//			}
+				//		}
 
-						res.save_file(res_path.c_str());
-					}
-					else
-					{
-						printf("cannot find vk sdk\n");
-						return nullptr;
-					}
-				}
-				else
-				{
-					auto ti_path = res_path;
-					ti_path.replace_extension(L".typeinfo");
-					db.load_typeinfo(ti_path);
+				//		res.save_file(res_path.c_str());
+				//	}
+				//	else
+				//	{
+				//		printf("cannot find vk sdk\n");
+				//		return nullptr;
+				//	}
+				//}
+				//else
+				//{
+				//	auto ti_path = res_path;
+				//	ti_path.replace_extension(L".typeinfo");
+				//	db.load_typeinfo(ti_path);
 
-					pugi::xml_document res;
-					pugi::xml_node root;
-					if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
-					{
-						printf("res file wrong format\n");
-						return nullptr;
-					}
+				//	pugi::xml_document res;
+				//	pugi::xml_node root;
+				//	if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
+				//	{
+				//		printf("res file wrong format\n");
+				//		return nullptr;
+				//	}
 
-					for (auto n_binding : root.child("bindings"))
-					{
-						auto binding = n_binding.attribute("binding").as_int();
-						if (binding != -1)
-						{
-							if (binding >= bindings.size())
-								bindings.resize(binding + 1);
-							auto& b = bindings[binding];
-							TypeInfo::unserialize_t(n_binding.attribute("type").value(), &b.type);
-							b.count = n_binding.attribute("count").as_uint();
-							b.name = n_binding.attribute("name").value();
-							if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-								b.ti = find_udt(n_binding.attribute("type_name").value(), db);
-						}
-					}
-				}
+				//	for (auto n_binding : root.child("bindings"))
+				//	{
+				//		auto binding = n_binding.attribute("binding").as_int();
+				//		if (binding != -1)
+				//		{
+				//			if (binding >= bindings.size())
+				//				bindings.resize(binding + 1);
+				//			auto& b = bindings[binding];
+				//			TypeInfo::unserialize_t(n_binding.attribute("type").value(), &b.type);
+				//			b.count = n_binding.attribute("count").as_uint();
+				//			b.name = n_binding.attribute("name").value();
+				//			if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+				//				b.ti = find_udt(n_binding.attribute("type_name").value(), db);
+				//		}
+				//	}
+				//}
 
-				auto header_path = filename;
-				header_path += L".h";
-				if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
-				{
-					std::string header;
-					header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
-					write_udts_to_header(header, db);
-					auto idx = 0;
-					for (auto& b : bindings)
-					{
-						header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
-						header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
-						idx++;
-					}
-					header += "}\n";
-					std::ofstream file(header_path);
-					file << header;
-					file.close();
-				}
+				//auto header_path = filename;
+				//header_path += L".h";
+				//if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
+				//{
+				//	std::string header;
+				//	header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
+				//	write_udts_to_header(header, db);
+				//	auto idx = 0;
+				//	for (auto& b : bindings)
+				//	{
+				//		header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
+				//		header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
+				//		idx++;
+				//	}
+				//	header += "}\n";
+				//	std::ofstream file(header_path);
+				//	file << header;
+				//	file.close();
+				//}
 
 				if (device)
 				{
