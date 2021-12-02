@@ -525,7 +525,7 @@ process:
 		auto name = w2s(pwname);
 		if (name.starts_with("flame::TypeInfo::get"))
 		{
-			static std::regex reg("^flame::TypeInfo::get\\<([\\w\\s:\\<\\>,]+)\\>$");
+			static std::regex reg("^flame::TypeInfo::get<([\\w\\s:<>,]+)>$");
 			std::smatch res;
 			if (std::regex_search(name, res, reg))
 			{

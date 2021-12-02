@@ -261,9 +261,8 @@ namespace flame
 				}
 			}
 
-			if (up_to_date) // TODO: FIX ME
-				//return false
-				;
+			if (up_to_date)
+				return false;
 
 			auto dst_ppath = dst_path.parent_path();
 			if (!std::filesystem::exists(dst_ppath))

@@ -6,14 +6,11 @@
 
 namespace flame
 {
-	inline void serialize_xml(UdtInfo* ui, void* src, pugi::xml_node dst, 
-		const std::function<bool(VariableInfo* vi, TypeInfo* ti, void* src, pugi::xml_node dst)>& pre_callback = {})
+	inline void serialize_xml(UdtInfo* ui, void* src, pugi::xml_node dst)
 	{
 		for (auto& vi : ui->variables)
 		{
 			auto p = (char*)src + vi.offset;
-			if (pre_callback && pre_callback(&vi, nullptr, p, dst))
-				continue;
 			switch (vi.type->tag)
 			{
 			case TagEnum:
@@ -29,7 +26,7 @@ namespace flame
 			{
 				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
 				if (ui)
-					serialize_xml(ui, p, dst.append_child(vi.name.c_str()), pre_callback);
+					serialize_xml(ui, p, dst.append_child(vi.name.c_str()));
 			}
 				break;
 			case TagVector:
@@ -37,21 +34,20 @@ namespace flame
 				auto ti = ((TypeInfo_Vector*)vi.type)->ti;
 				if (ti)
 				{
-					auto& vec = *(std::vector<int>*)p;
+					auto& vec = *(std::vector<char>*)p;
 					if (!vec.empty())
 					{
 						auto n = dst.append_child(vi.name.c_str());
 						p = (char*)vec.data();
+						auto len = (vec.end() - vec.begin()) / ti->size;
 						switch (ti->tag)
 						{
 						case TagEnum:
 						case TagEnumFlags:
 						case TagData:
-							for (auto i = 0; i < vec.size(); i++)
+							for (auto i = 0; i < len; i++)
 							{
 								auto nn = n.append_child("item");
-								if (pre_callback && pre_callback(nullptr, ti, p, nn))
-									continue;
 								nn.append_attribute("v").set_value(ti->serialize(p).c_str());
 								p += ti->size;
 							}
@@ -61,12 +57,10 @@ namespace flame
 							auto ui = ((TypeInfo_Udt*)ti)->ui;
 							if (ui) 
 							{
-								for (auto i = 0; i < vec.size(); i++)
+								for (auto i = 0; i < len; i++)
 								{
 									auto nn = n.append_child("item");
-									if (pre_callback && pre_callback(nullptr, ti, p, nn))
-										continue;
-									serialize_xml(ui, p, nn, pre_callback);
+									serialize_xml(ui, p, nn);
 									p += ti->size;
 								}
 							}
@@ -92,7 +86,7 @@ namespace flame
 			case TagEnumFlags:
 			case TagData:
 				dst << indent << vi.name << std::endl;
-				dst << indent << "- " << vi.type->serialize(p) << std::endl;
+				dst << indent << " - " << vi.type->serialize(p) << std::endl;
 				break;
 			case TagUdt:
 			{
@@ -108,16 +102,17 @@ namespace flame
 				auto ti = ((TypeInfo_Vector*)vi.type)->ti;
 				if (ti)
 				{
-					auto& vec = *(std::vector<int>*)p;
+					auto& vec = *(std::vector<char>*)p;
 					p = (char*)vec.data();
+					auto len = (vec.end() - vec.begin()) / ti->size;
 					switch (ti->tag)
 					{
 					case TagEnum:
 					case TagEnumFlags:
 					case TagData:
-						for (auto i = 0; i < vec.size(); i++)
+						for (auto i = 0; i < len; i++)
 						{
-							dst << indent << "- " << ti->serialize(p) << std::endl;
+							dst << indent << " - " << ti->serialize(p) << std::endl;
 							p += ti->size;
 						}
 						break;
@@ -126,9 +121,9 @@ namespace flame
 						auto ui = ((TypeInfo_Udt*)ti)->ui;
 						if (ui)
 						{
-							for (auto i = 0; i < vec.size(); i++)
+							for (auto i = 0; i < len; i++)
 							{
-								dst << indent << "-" << std::endl;
+								dst << indent << " - " << std::endl;
 								serialize_text(ui, p, dst, indent + "  ");
 								p += ti->size;
 							}
@@ -144,11 +139,30 @@ namespace flame
 		dst << std::endl;
 	}
 
-	template <not_enum_type T>
+	template <class T>
 	inline void serialize_text(T* src, std::ofstream& dst)
 	{
-		static auto ti = (TypeInfo_Udt*)TypeInfo::get<T>();
-		assert(ti->ui);
-		serialize_text(ti->ui, src, dst);
+		auto ti = TypeInfo::get<T>();
+		switch (ti->tag)
+		{
+		case TagUdt:
+			serialize_text(((TypeInfo_Udt*)ti)->ui, src, dst);
+			break;
+		case TagVector:
+		{
+			UdtInfo ui;
+			auto& vi = ui.variables.emplace_back();
+			vi.type = ti;
+			vi.offset = 0;
+			serialize_text(&ui, src, dst);
+		}
+			break;
+		default: 
+			assert(0);
+		}
+	}
+
+	inline void unserialize_text(UdtInfo* ui, std::ifstream& src, void* dst)
+	{
 	}
 }

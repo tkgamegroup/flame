@@ -50,8 +50,7 @@ namespace flame
 			name(_name),
 			size(size)
 		{
-			hash = ch(name.c_str());
-			hash ^= std::hash<int>()(tag);
+			hash = get_hash(tag, name);
 		}
 
 		virtual ~TypeInfo() {}
@@ -91,13 +90,13 @@ namespace flame
 		}
 
 		template <class T>
-		static std::string serialize_t(T* v, TypeInfoDataBase& db = tidb)
+		inline static std::string serialize_t(T* v, TypeInfoDataBase& db = tidb)
 		{
 			return get<T>(db)->serialize(v);
 		}
 
 		template <class T>
-		static void unserialize_t(const std::string& str, T* v, TypeInfoDataBase& db = tidb)
+		inline static void unserialize_t(const std::string& str, T* v, TypeInfoDataBase& db = tidb)
 		{
 			return get<T>(db)->unserialize(str, v);
 		}
@@ -241,8 +240,8 @@ namespace flame
 		std::unordered_map<std::string, FunctionInfo> functions;
 		std::unordered_map<std::string, UdtInfo> udts;
 
-		FLAME_FOUNDATION_EXPORTS void load_typeinfo(const std::filesystem::path& filename);
-		FLAME_FOUNDATION_EXPORTS void save_typeinfo(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_EXPORTS void load(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_EXPORTS void save(const std::filesystem::path& filename);
 	};
 
 	inline void Metas::from_string(const std::string& str, TypeInfoDataBase& db)
@@ -350,23 +349,24 @@ namespace flame
 				else
 					assert(0);
 			}
-			else if (ret.second.starts_with("std::basic_string<char,"))
+			else if (ret.second.starts_with("std::basic_string<char"))
 				ret.second = "std::string";
-			else if (ret.second.starts_with("std::basic_string<wchar_t,"))
+			else if (ret.second.starts_with("std::basic_string<wchar_t"))
 				ret.second = "std::wstring";
 			else if (ret.second.starts_with("std::vector<"))
 			{
-				static std::regex reg("std::vector\\<([\\w:\\*]+,)");
+				static std::regex reg("std::vector<([\\w:\\*<>]+),");
 				std::smatch res;
 				if (std::regex_search(ret.second, res, reg))
 				{
+					auto str = format(TagData, res[1].str()).second;
 					if (tag == TagData)
 					{
 						ret.first = TagVector;
-						ret.second = res[1].str();
+						ret.second = str;
 					}
 					else
-						ret.second = "std::vector<" + res[1].str() + ">";
+						ret.second = "std::vector<" + str + ">";
 				}
 			}
 			else if (tag == TagData && tidb.typeinfos.find(get_hash(TagData, ret.second)) == tidb.typeinfos.end())
@@ -1085,7 +1085,7 @@ namespace flame
 		TypeInfo_Pointer(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagPointer, base_name, sizeof(void*))
 		{
-			ti = TypeInfo::get(TagData, name, db);
+			ti = get(TagData, name, db);
 		}
 	};
 
@@ -1109,7 +1109,7 @@ namespace flame
 		TypeInfo_Vector(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagVector, base_name, sizeof(std::vector<int>))
 		{
-			ti = TypeInfo::get(TagData, name, db);
+			ti = get(TagData, name, db);
 		}
 
 		std::string serialize(const void* p) const override

@@ -204,12 +204,12 @@ namespace flame
 				auto ti_path = path;
 				ti_path.replace_extension(".typeinfo");
 				if (std::filesystem::exists(ti_path))
-					_tidb.load_typeinfo(path);
+					_tidb.load(path);
 			}
 		}
 	}
 
-	void TypeInfoDataBase::load_typeinfo(const std::filesystem::path& filename)
+	void TypeInfoDataBase::load(const std::filesystem::path& filename)
 	{
 		std::filesystem::path path(filename);
 		if (!path.is_absolute())
@@ -293,7 +293,7 @@ namespace flame
 		}
 	}
 
-	void TypeInfoDataBase::save_typeinfo(const std::filesystem::path& filename)
+	void TypeInfoDataBase::save(const std::filesystem::path& filename)
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
