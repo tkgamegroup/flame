@@ -78,6 +78,8 @@ namespace flame
 		{
 			DevicePrivate* device;
 
+			TypeInfoDataBase db;
+
 			VkShaderModule vk_module = 0;
 
 			~ShaderPrivate();

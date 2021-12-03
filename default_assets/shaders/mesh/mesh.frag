@@ -25,10 +25,10 @@ layout(location = 1) out vec4 o_res_nor_rou;
 
 void main()
 {
-#ifdef MAT
+#ifdef MAT_FILE
 	MaterialInfo material = material_infos[i_mat];
 	
-	MAT_FILE
+	#include MAT_FILE
 #else
 	#ifndef SHADOW_PASS
 		#if defined(PICKUP)

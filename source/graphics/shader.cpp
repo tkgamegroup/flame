@@ -15,14 +15,15 @@ namespace flame
 {
 	namespace graphics
 	{
-		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& glsl, const spirv_cross::SPIRType& src, TypeInfoDataBase& db)
+		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& compiler, spirv_cross::TypeID tid, TypeInfoDataBase& db)
 		{
 			TypeInfo* ret = nullptr;
 
+			auto src = compiler.get_type(tid);
 			if (src.basetype == spirv_cross::SPIRType::Struct)
 			{
-				auto name = glsl.get_name(src.self);
-				auto size = glsl.get_declared_struct_size(src);
+				auto name = compiler.get_name(src.self);
+				auto size = compiler.get_declared_struct_size(src);
 				{
 					auto m = size % 16;
 					if (m != 0)
@@ -39,11 +40,11 @@ namespace flame
 				{
 					auto id = src.member_types[i];
 
-					auto type = get_shader_type(glsl, glsl.get_type(id), db);
-					auto name = glsl.get_member_name(src.self, i);
-					auto offset = glsl.type_struct_member_offset(src, i);
-					auto arr_size = glsl.get_type(id).array[0];
-					auto arr_stride = glsl.get_decoration(id, spv::DecorationArrayStride);
+					auto type = get_shader_type(compiler, id, db);
+					auto name = compiler.get_member_name(src.self, i);
+					auto offset = compiler.type_struct_member_offset(src, i);
+					auto arr_size = compiler.get_type(id).array[0];
+					auto arr_stride = compiler.get_decoration(id, spv::DecorationArrayStride);
 					if (arr_stride == 0)
 						arr_size = 1;
 					auto& vi = ui.variables.emplace_back();
@@ -138,94 +139,12 @@ namespace flame
 			return ret;
 		}
 
-		static void write_udts_to_header(std::string& header, TypeInfoDataBase& db)
-		{
-			for (auto& ui : db.udts)
-			{
-				header += "\tstruct " + ui.second.name + "\n\t{\n";
-				auto dummy_id = 0;
-				auto push_dummy = [&](int d) {
-					switch (d)
-					{
-					case 4:
-						header += "\t\tfloat dummy_" + std::to_string(dummy_id) + ";\n";
-						break;
-					case 8:
-						header += "\t\tvec2 dummy_" + std::to_string(dummy_id) + ";\n";
-						break;
-					case 12:
-						header += "\t\tvec3 dummy_" + std::to_string(dummy_id) + ";\n";
-						break;
-					default:
-						assert(0);
-					}
-				};
-				auto off = 0;
-				for (auto& vi : ui.second.variables)
-				{
-					auto off2 = (int)vi.offset;
-					if (off != off2)
-					{
-						push_dummy(off2 - off);
-						off = off2;
-						dummy_id++;
-					}
-
-					auto type_name = vi.type->name;
-					SUS::cut_head_if(type_name, "glm::");
-
-					header += "\t\t" + type_name + " " + vi.name;
-					auto size = vi.type->size;
-					auto array_size = vi.array_size;
-					if (array_size > 1)
-					{
-						assert(size == vi.array_stride);
-						header += "[" + std::to_string(array_size) + "]";
-					}
-					header += ";\n";
-					off += size * array_size;
-				}
-				auto size = (int)ui.second.size;
-				if (off != size)
-					push_dummy(size - off);
-				header += "\t};\n\n";
-			}
-		}
-
-		static std::string basic_glsl_prefix()
-		{
-			std::string ret;
-			ret += "#version 450 core\n";
-			ret += "#extension GL_ARB_shading_language_420pack : enable\n";
-			ret += "#extension GL_ARB_separate_shader_objects : enable\n\n";
-			return ret;
-		}
-
-		static std::string add_lineno_to_code(const std::string& temp)
-		{
-			auto lines = SUS::split(temp, '\n');
-			auto ret = std::string();
-			auto ndigits = (int)log10(lines.size()) + 1;
-			for (auto i = 0; i < lines.size(); i++)
-			{
-				char buf[32];
-				sprintf(buf, "%*d", ndigits, i + 1);
-				ret += std::string(buf) + "    " + lines[i] + "\n";
-			}
-			return ret;
-		}
-
 		bool compile_shader(const std::filesystem::path& src_path, const std::filesystem::path& dst_path)
 		{
-			auto up_to_date = true;
-			if (!std::filesystem::exists(dst_path))
-				up_to_date = false;
-			else
+			if (std::filesystem::exists(dst_path))
 			{
 				auto dst_date = std::filesystem::last_write_time(dst_path);
-				if (std::filesystem::last_write_time(src_path) > dst_date)
-					up_to_date = false;
-				else
+				if (dst_date > std::filesystem::last_write_time(src_path))
 				{
 					std::vector<std::filesystem::path> dependencies;
 
@@ -238,18 +157,13 @@ namespace flame
 							break;
 						if (line == "Dependencies:")
 						{
-							while (!dst.eof())
-							{
-								std::getline(dst, line);
-								if (line.empty())
-									break;
-								dependencies.push_back(line);
-							}
+							unserialize_text(dst, &dependencies);
 							break;
 						}
 					}
 					dst.close();
 
+					auto up_to_date = true;
 					for (auto& d : dependencies)
 					{
 						if (std::filesystem::last_write_time(d) > dst_date)
@@ -258,11 +172,10 @@ namespace flame
 							break;
 						}
 					}
+					if (up_to_date)
+						return false;
 				}
 			}
-
-			if (up_to_date)
-				return false;
 
 			auto dst_ppath = dst_path.parent_path();
 			if (!std::filesystem::exists(dst_ppath))
@@ -276,7 +189,8 @@ namespace flame
 				headers.push_back(src_path);
 				while (!headers.empty())
 				{
-					auto fn = headers.front();
+					auto fn = std::filesystem::canonical(headers.front());
+					fn.make_preferred();
 					headers.pop_front();
 
 					if (!std::filesystem::exists(fn))
@@ -300,9 +214,7 @@ namespace flame
 				}
 
 				dst << "Dependencies:" << std::endl;
-				for (auto& d : dependencies)
-					dst << d.string() << std::endl;
-				dst << std::endl;
+				serialize_text(&dependencies, dst);
 			}
 
 			auto vk_sdk_path = getenv("VK_SDK_PATH");
@@ -394,10 +306,9 @@ namespace flame
 
 			wprintf(L"compiling: %s\n", src_path.c_str());
 			wprintf(L"   with defines: \n");
-			wprintf(L"   with substitutes: \n");
 			std::filesystem::remove(L"temp.spv");
 			std::string errors;
-			exec(std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe", L" -fshader-stage=" + stage + L" temp.glsl -o temp.spv", &errors);
+			exec(std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe", L" -fshader-stage=" + stage + L" -I \"" + src_path.parent_path().wstring() + L"\" temp.glsl -o temp.spv", &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
 				printf("%s\n", errors.c_str());
@@ -413,69 +324,80 @@ namespace flame
 			memcpy(spv_array.data(), spv.data(), spv_array.size() * sizeof(uint));
 
 			TypeInfoDataBase db;
-			auto spvcross_compiler = spirv_cross::CompilerGLSL(spv_array.data(), spv_array.size());
-			auto spvcross_resources = spvcross_compiler.get_shader_resources();
+			auto spv_compiler = spirv_cross::CompilerGLSL(spv_array.data(), spv_array.size());
+			auto spv_resources = spv_compiler.get_shader_resources();
 
 			if (src_ext == L".dsl")
 			{
 				std::vector<DescriptorBinding> bindings;
 
 				auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-					get_shader_type(spvcross_compiler, spvcross_compiler.get_type(r.base_type_id), db);
+					get_shader_type(spv_compiler, r.base_type_id, db);
 
-					auto binding = spvcross_compiler.get_decoration(r.id, spv::DecorationBinding);
+					auto binding = spv_compiler.get_decoration(r.id, spv::DecorationBinding);
 					if (bindings.size() <= binding)
 						bindings.resize(binding + 1);
 
 					auto& b = bindings[binding];
 					b.type = type;
-					b.count = spvcross_compiler.get_type(r.type_id).array[0];
+					b.count = spv_compiler.get_type(r.type_id).array[0];
 					b.name = r.name;
 					if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-						b.ti = find_udt(spvcross_compiler.get_name(r.base_type_id), db);
+						b.ti = find_udt(spv_compiler.get_name(r.base_type_id), db);
 				};
 
-				for (auto& r : spvcross_resources.uniform_buffers)
+				for (auto& r : spv_resources.uniform_buffers)
 					get_binding(r, DescriptorUniformBuffer);
-				for (auto& r : spvcross_resources.storage_buffers)
+				for (auto& r : spv_resources.storage_buffers)
 					get_binding(r, DescriptorStorageBuffer);
-				for (auto& r : spvcross_resources.sampled_images)
+				for (auto& r : spv_resources.sampled_images)
 					get_binding(r, DescriptorSampledImage);
-				for (auto& r : spvcross_resources.storage_images)
+				for (auto& r : spv_resources.storage_images)
 					get_binding(r, DescriptorStorageImage);
 
 				dst << "DSL:" << std::endl;
 				serialize_text(&bindings, dst);
 				dst << std::endl;
 			}
-
-			if (src_ext == L".pll")
+			else if (src_ext == L".pll")
 			{
-
-				//		for (auto& r : spvcross_resources.push_constant_buffers)
-				//		{
-				//			get_shader_type(spvcross_compiler, spvcross_compiler.get_type(r.base_type_id), db);
-				//			pc_ti = find_udt(spvcross_compiler.get_name(r.base_type_id).c_str(), db);
-				//			break;
-				//		}
-
-				dst << "PLL:" << std::endl;
-				dst << std::endl;
+				if (!spv_resources.push_constant_buffers.empty())
+					get_shader_type(spv_compiler, spv_resources.push_constant_buffers[0].base_type_id, db);
 			}
-
-			if (src_ext != L".dsl" && src_ext != L".pll")
+			else
 			{
-				dst << "Spv:" << std::endl;
-
+				dst << "SPV:" << std::endl;
 				for (auto i = 0; i < spv_array.size(); i++)
 				{
-					dst << spv_array[i] << " ";
-					if (i == 99)
+					dst << to_hex_string(spv_array[i]) << " ";
+					if (i % 10 == 9)
 						dst << std::endl;
 				}
-
+				if (spv_array.size() % 10 != 0)
+					dst << std::endl;
 				dst << std::endl;
+
+				if (src_ext == L".vert")
+				{
+					UdtInfo ui;
+					ui.name = "Input";
+					auto offset = 0;
+					for (auto& r : spv_resources.stage_inputs)
+					{
+						auto& vi = ui.variables.emplace_back();
+						vi.name = r.name;
+						vi.type = get_shader_type(spv_compiler, r.base_type_id, db);
+						vi.offset = offset;
+						offset += vi.type->size;
+					}
+					ui.size = offset;
+					db.udts.emplace(ui.name, ui);
+				}
 			}
+
+			dst << "TypeInfo:" << std::endl;
+			db.save(dst);
+			dst << std::endl;
 
 			dst.close();
 			return true;
@@ -560,179 +482,28 @@ namespace flame
 					return nullptr;
 				}
 
-				auto dst_path = filename;
-				dst_path += L".res";
-				compile_shader(filename, dst_path);
-
-				//auto res_path = filename.parent_path() / L"build";
-				//if (!std::filesystem::exists(res_path))
-				//	std::filesystem::create_directories(res_path);
-				//res_path /= filename.filename();
-				//res_path += L".res";
-
-				//auto ti_path = res_path;
-				//ti_path.replace_extension(L".typeinfo");
-
-				std::vector<DescriptorBinding> bindings;
-				TypeInfoDataBase db;
-
-				//if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
-				//	!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
-				//{
-				//	auto vk_sdk_path = getenv("VK_SDK_PATH");
-				//	if (vk_sdk_path)
-				//	{
-				//		auto temp = basic_glsl_prefix();
-				//		temp += "#define MAKE_DSL\n";
-				//		std::ifstream dsl(filename);
-				//		while (!dsl.eof())
-				//		{
-				//			std::string line;
-				//			std::getline(dsl, line);
-				//			temp += line + "\n";
-				//		}
-				//		temp += "void main()\n{\n}\n";
-				//		dsl.close();
-
-				//		auto temp_fn = filename;
-				//		temp_fn.replace_filename(L"temp.frag");
-				//		std::ofstream temp_file(temp_fn);
-				//		temp_file << temp << std::endl;
-				//		temp_file.close();
-
-				//		std::filesystem::remove(L"temp.spv");
-
-				//		auto glslc_path = std::filesystem::path(vk_sdk_path);
-				//		glslc_path /= L"Bin/glslc.exe";
-
-				//		auto command_line = L" " + temp_fn.wstring();
-
-				//		printf("compiling dsl: %s", filename.string().c_str());
-
-				//		std::string output;
-				//		exec(glslc_path, command_line, &output);
-				//		if (!std::filesystem::exists(L"temp.spv"))
-				//		{
-				//			temp = add_lineno_to_code(temp);
-				//			printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-				//			return nullptr;
-				//		}
-
-				//		printf(" done\n");
-
-				//		std::filesystem::remove(temp_fn);
-
-				//		auto spv = get_file_content(L"temp.spv");
-				//		std::filesystem::remove(L"temp.spv");
-				//		auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
-				//		auto resources = glsl.get_shader_resources();
-
-				//		auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-				//			get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
-
-				//			auto binding = glsl.get_decoration(r.id, spv::DecorationBinding);
-				//			if (bindings.size() <= binding)
-				//				bindings.resize(binding + 1);
-
-				//			auto& b = bindings[binding];
-				//			b.type = type;
-				//			b.count = glsl.get_type(r.type_id).array[0];
-				//			b.name = r.name;
-				//			if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-				//				b.ti = find_udt(glsl.get_name(r.base_type_id), db);
-				//		};
-
-				//		for (auto& r : resources.uniform_buffers)
-				//			get_binding(r, DescriptorUniformBuffer);
-				//		for (auto& r : resources.storage_buffers)
-				//			get_binding(r, DescriptorStorageBuffer);
-				//		for (auto& r : resources.sampled_images)
-				//			get_binding(r, DescriptorSampledImage);
-				//		for (auto& r : resources.storage_images)
-				//			get_binding(r, DescriptorStorageImage);
-
-				//		db.save_typeinfo(ti_path);
-
-				//		pugi::xml_document res;
-				//		auto root = res.append_child("res");
-
-				//		auto n_bindings = root.append_child("bindings");
-				//		for (auto i = 0; i < bindings.size(); i++)
-				//		{
-				//			auto& b = bindings[i];
-				//			if (b.type != Descriptor_Max)
-				//			{
-				//				auto n_binding = n_bindings.append_child("binding");
-				//				n_binding.append_attribute("type").set_value(TypeInfo::serialize_t(&b.type).c_str());
-				//				n_binding.append_attribute("binding").set_value(i);
-				//				n_binding.append_attribute("count").set_value(b.count);
-				//				n_binding.append_attribute("name").set_value(b.name.c_str());
-				//				if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-				//					n_binding.append_attribute("type_name").set_value(b.ti->name.c_str());
-				//			}
-				//		}
-
-				//		res.save_file(res_path.c_str());
-				//	}
-				//	else
-				//	{
-				//		printf("cannot find vk sdk\n");
-				//		return nullptr;
-				//	}
-				//}
-				//else
-				//{
-				//	auto ti_path = res_path;
-				//	ti_path.replace_extension(L".typeinfo");
-				//	db.load_typeinfo(ti_path);
-
-				//	pugi::xml_document res;
-				//	pugi::xml_node root;
-				//	if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
-				//	{
-				//		printf("res file wrong format\n");
-				//		return nullptr;
-				//	}
-
-				//	for (auto n_binding : root.child("bindings"))
-				//	{
-				//		auto binding = n_binding.attribute("binding").as_int();
-				//		if (binding != -1)
-				//		{
-				//			if (binding >= bindings.size())
-				//				bindings.resize(binding + 1);
-				//			auto& b = bindings[binding];
-				//			TypeInfo::unserialize_t(n_binding.attribute("type").value(), &b.type);
-				//			b.count = n_binding.attribute("count").as_uint();
-				//			b.name = n_binding.attribute("name").value();
-				//			if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-				//				b.ti = find_udt(n_binding.attribute("type_name").value(), db);
-				//		}
-				//	}
-				//}
-
-				//auto header_path = filename;
-				//header_path += L".h";
-				//if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
-				//{
-				//	std::string header;
-				//	header += "namespace DSL_" + filename.filename().stem().string() + "\n{\n";
-				//	write_udts_to_header(header, db);
-				//	auto idx = 0;
-				//	for (auto& b : bindings)
-				//	{
-				//		header += "\tinline uint " + b.name + "_binding = " + std::to_string(idx) + ";\n";
-				//		header += "\tinline uint " + b.name + "_count = " + std::to_string(b.count) + ";\n";
-				//		idx++;
-				//	}
-				//	header += "}\n";
-				//	std::ofstream file(header_path);
-				//	file << header;
-				//	file.close();
-				//}
+				auto res_path = filename;
+				res_path += L".res";
+				compile_shader(filename, res_path);
 
 				if (device)
 				{
+					std::vector<DescriptorBinding> bindings;
+					TypeInfoDataBase db;
+
+					std::ifstream res(res_path);
+					while (!res.eof())
+					{
+						std::string line;
+						std::getline(res, line);
+
+						if (line == "DSL:")
+							unserialize_text(res, &bindings);
+						else if (line == "TypeInfo:")
+							db.load(res);
+					}
+					res.close();
+
 					auto ret = DescriptorSetLayout::create(device, bindings);
 					ret->db = std::move(db);
 					ret->filename = filename;
@@ -946,145 +717,38 @@ namespace flame
 					return nullptr;
 				}
 
-				auto dst_path = filename;
-				dst_path += L".res";
-				compile_shader(filename, dst_path);
-
-				//auto res_path = filename.parent_path() / L"build";
-				//if (!std::filesystem::exists(res_path))
-				//	std::filesystem::create_directories(res_path);
-				//res_path /= filename.filename();
-				//res_path += L".res";
-
-				//auto ti_path = res_path;
-				//ti_path.replace_extension(L".typeinfo");
-
-				std::vector<DescriptorSetLayoutPrivate*> dsls;
-
-				//auto ppath = filename.parent_path();
-				//auto dependencies = get_make_dependencies(filename);
-				//for (auto& d : dependencies)
-				//{
-				//	if (d.extension() == L".dsl")
-				//		dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
-				//	else
-				//		d.clear();
-				//}
-
-				TypeInfoDataBase db;
-				UdtInfo* pc_ti = nullptr;
-
-				//if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(filename) ||
-				//	!std::filesystem::exists(ti_path) || std::filesystem::last_write_time(ti_path) < std::filesystem::last_write_time(filename))
-				//{
-				//	auto vk_sdk_path = getenv("VK_SDK_PATH");
-				//	if (vk_sdk_path)
-				//	{
-				//		auto temp = basic_glsl_prefix();
-				//		temp += "#define MAKE_PLL\n";
-				//		std::ifstream pll(filename);
-				//		while (!pll.eof())
-				//		{
-				//			std::string line;
-				//			std::getline(pll, line);
-				//			temp += line + "\n";
-				//		}
-				//		temp += "void main()\n{\n}\n";
-				//		pll.close();
-
-				//		auto temp_fn = filename;
-				//		temp_fn.replace_filename(L"temp.frag");
-				//		std::ofstream temp_file(temp_fn);
-				//		temp_file << temp << std::endl;
-				//		temp_file.close();
-
-				//		std::filesystem::remove(L"temp.spv");
-
-				//		auto command_line = L" " + temp_fn.wstring();
-
-				//		printf("compiling pll: %s", filename.string().c_str());
-
-				//		std::string output;
-				//		exec((std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe").c_str(), command_line, &output);
-				//		std::filesystem::remove(temp_fn);
-				//		if (!std::filesystem::exists(L"temp.spv"))
-				//		{
-				//			temp = add_lineno_to_code(temp);
-				//			printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-				//			return nullptr;
-				//		}
-
-				//		printf(" done\n");
-
-				//		auto spv = get_file_content(L"temp.spv");
-				//		std::filesystem::remove(L"temp.spv");
-				//		auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
-				//		auto resources = glsl.get_shader_resources();
-
-				//		for (auto& r : resources.push_constant_buffers)
-				//		{
-				//			get_shader_type(glsl, glsl.get_type(r.base_type_id), db);
-				//			pc_ti = find_udt(glsl.get_name(r.base_type_id).c_str(), db);
-				//			break;
-				//		}
-				//	}
-				//	else
-				//	{
-				//		printf("cannot find vk sdk\n");
-				//		return nullptr;
-				//	}
-
-				//	db.save_typeinfo(ti_path);
-
-				//	pugi::xml_document res;
-				//	auto root = res.append_child("res");
-
-				//	auto n_push_constant = root.append_child("push_constant");
-				//	n_push_constant.append_attribute("type_name").set_value(pc_ti ? pc_ti->name.c_str() : "");
-
-				//	res.save_file(res_path.c_str());
-				//}
-				//else
-				//{
-				//	auto ti_path = res_path;
-				//	ti_path.replace_extension(L".typeinfo");
-				//	db.load_typeinfo(ti_path);
-
-				//	pugi::xml_document res;
-				//	pugi::xml_node root;
-				//	if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
-				//	{
-				//		printf("res file wrong format\n");
-				//		return nullptr;
-				//	}
-
-				//	auto n_push_constant = root.child("push_constant");
-				//	pc_ti = find_udt(n_push_constant.attribute("type_name").value(), db);
-				//}
-
-				//auto header_path = filename;
-				//header_path += L".h";
-				//if (!std::filesystem::exists(header_path) || std::filesystem::last_write_time(header_path) < std::filesystem::last_write_time(ti_path))
-				//{
-				//	std::string header;
-				//	header += "namespace PLL_" + filename.filename().stem().string() + "\n{\n";
-				//	header += "\tenum Binding\n\t{\n";
-				//	for (auto& d : dependencies)
-				//	{
-				//		if (!d.empty())
-				//			header += "\t\tBinding_" + d.filename().stem().string() + ",\n";
-				//	}
-				//	header += "\t\tBinding_Max\n";
-				//	header += "\t};\n\n";
-				//	write_udts_to_header(header, db);
-				//	header += "}\n";
-				//	std::ofstream file(header_path);
-				//	file << header;
-				//	file.close();
-				//}
+				auto res_path = filename;
+				res_path += L".res";
+				compile_shader(filename, res_path);
 
 				if (device)
 				{
+					std::vector<DescriptorSetLayoutPrivate*> dsls;
+					TypeInfoDataBase db;
+
+					std::ifstream res(res_path);
+					while (!res.eof())
+					{
+						std::string line;
+						std::getline(res, line);
+
+						if (line == "Dependencies:")
+						{
+							std::vector<std::filesystem::path> dependencies;
+							unserialize_text(res, &dependencies);
+							for (auto& d : dependencies)
+							{
+								if (d.extension() == L".dsl")
+									dsls.push_back(DescriptorSetLayout::get(device, d));
+							}
+						}
+						else if (line == "TypeInfo:")
+							db.load(res);
+					}
+					res.close();
+
+					auto pc_ti = find_udt("PushConstant", db);
+
 					auto ret = PipelineLayout::create(device, dsls, pc_ti ? pc_ti->size : 0);
 					ret->device = device;
 					ret->db = std::move(db);
@@ -1169,7 +833,7 @@ namespace flame
 
 		struct ShaderGet : Shader::Get
 		{
-			ShaderPtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes) override
+			ShaderPtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
 				if (!device)
 					device = current_device;
@@ -1181,7 +845,7 @@ namespace flame
 				{
 					for (auto& s : device->sds)
 					{
-						if (s->filename == filename && s->defines == defines && s->substitutes == substitutes)
+						if (s->filename == filename && s->defines == defines)
 							return s.get();
 					}
 				}
@@ -1192,113 +856,43 @@ namespace flame
 					return nullptr;
 				}
 
-				auto ppath = filename.parent_path();
-
 				auto hash = 0U;
 				for (auto& d : defines)
 					hash = hash ^ std::hash<std::string>()(d);
-				for (auto& s : substitutes)
-					hash = hash ^ std::hash<std::string>()(s.first) ^ std::hash<std::string>()(s.second);
 				auto str_hash = to_hex_wstring(hash);
 
-				auto spv_path = ppath / L"build";
-				if (!std::filesystem::exists(spv_path))
-					std::filesystem::create_directories(spv_path);
-				spv_path /= filename.filename();
-				spv_path += L"." + str_hash + L".spv";
-
-				auto dependencies = get_make_dependencies(filename);
-
-				auto unfolded_substitutes = substitutes;
-				for (auto& s : unfolded_substitutes)
-				{
-					if (s.first.ends_with("_FILE"))
-					{
-						auto fn = std::filesystem::path(s.second);
-						if (!fn.is_absolute())
-							fn = ppath / fn;
-						s.second = get_file_content(fn);
-						assert(!s.second.empty());
-						SUS::remove_char(s.second, '\r');
-						dependencies.push_back(fn);
-					}
-				}
-
-				if (should_remake(dependencies, spv_path))
-				{
-					auto vk_sdk_path = getenv("VK_SDK_PATH");
-					if (vk_sdk_path)
-					{
-						auto temp = basic_glsl_prefix();
-						std::ifstream glsl(filename);
-						while (!glsl.eof())
-						{
-							std::string line;
-							std::getline(glsl, line);
-							for (auto& s : unfolded_substitutes)
-								SUS::replace_all(line, s.first, s.second);
-							temp += line + "\n";
-						}
-						glsl.close();
-
-						auto temp_fn = filename;
-						temp_fn.replace_filename(L"temp");
-						temp_fn.replace_extension(filename.extension());
-						std::ofstream temp_file(temp_fn);
-						temp_file << temp << std::endl;
-						temp_file.close();
-
-						std::filesystem::remove(spv_path);
-
-						auto glslc_path = std::filesystem::path(vk_sdk_path);
-						glslc_path /= L"Bin/glslc.exe";
-
-						auto command_line = L" " + temp_fn.wstring() + L" -o" + spv_path.wstring();
-						for (auto& d : defines)
-							command_line += L" -D" + s2w(d);
-
-						printf("compiling shader: %s (%s) (%s)", filename.string().c_str(), [&]() {
-							std::string ret;
-							for (auto i = 0; i < defines.size(); i++)
-							{
-								ret += defines[i];
-								if (i < defines.size() - 1)
-									ret += " ";
-							}
-							return ret;
-						}().c_str(), [&]() {
-							std::string ret;
-							for (auto i = 0; i < substitutes.size(); i++)
-							{
-								ret += substitutes[i].first + " " + substitutes[i].second;
-								if (i < substitutes.size() - 1)
-									ret += " ";
-							}
-							return ret;
-						}().c_str());
-
-						std::string output;
-						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-						if (!std::filesystem::exists(spv_path))
-						{
-							temp = add_lineno_to_code(temp);
-							printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-							return nullptr;
-						}
-
-						printf(" done\n");
-
-						std::filesystem::remove(temp_fn);
-					}
-					else
-					{
-						printf("cannot find vk sdk\n");
-						return nullptr;
-					}
-				}
+				auto res_path = filename;
+				res_path += L"." + to_hex_wstring(hash);
+				res_path += L".res";
+				compile_shader(filename, res_path);
 
 				if (device)
 				{
+					std::vector<uint> spv;
+					TypeInfoDataBase db;
+
+					std::ifstream res(res_path);
+					while (!res.eof())
+					{
+						std::string line;
+						std::getline(res, line);
+
+						if (line == "SPV:")
+						{
+							while (!res.eof())
+							{
+								std::getline(res, line);
+								if (line.empty())
+									break;
+								for (auto& b : SUS::split(line))
+									spv.push_back(from_hex_string(b));
+							}
+						}
+						else if (line == "TypeInfo:")
+							db.load(res);
+					}
+					res.close();
+
 					auto ret = new ShaderPrivate;
 					ret->device = device;
 					auto ext = filename.extension();
@@ -1316,15 +910,16 @@ namespace flame
 						ret->type = ShaderStageComp;
 					ret->filename = filename;
 					ret->defines = defines;
-					ret->substitutes = substitutes;
+					ret->db = std::move(db);
+					ret->in_ti = find_udt("Input", db);
+					ret->out_ti = find_udt("Output", db);
 
-					auto spv_content = get_file_content(spv_path);
 					VkShaderModuleCreateInfo shader_info;
 					shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 					shader_info.flags = 0;
 					shader_info.pNext = nullptr;
-					shader_info.codeSize = spv_content.size();
-					shader_info.pCode = (uint*)spv_content.data();
+					shader_info.codeSize = spv.size() * sizeof(uint);
+					shader_info.pCode = spv.data();
 					chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 
 					device->sds.emplace_back(ret);
@@ -1610,7 +1205,7 @@ namespace flame
 				{
 					std::filesystem::path fn = n_shdr.attribute("filename").value();
 					Path::cat_if_in(ppath, fn);
-					auto shader = Shader::get(device, fn, Shader::format_defines(n_shdr.attribute("defines").value()), {});
+					auto shader = Shader::get(device, fn, Shader::format_defines(n_shdr.attribute("defines").value()));
 					assert(shader);
 					info.shaders.push_back(shader);
 				}

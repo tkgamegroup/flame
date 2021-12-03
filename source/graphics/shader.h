@@ -109,7 +109,9 @@ namespace flame
 			ShaderStageFlags type = ShaderStageNone;
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
-			std::vector<std::pair<std::string, std::string>> substitutes;
+
+			UdtInfo* in_ti = nullptr;
+			UdtInfo* out_ti = nullptr;
 
 			virtual ~Shader() {}
 
@@ -127,26 +129,9 @@ namespace flame
 				return ret;
 			}
 
-			inline static std::vector<std::pair<std::string, std::string>> format_substitutes(const std::string& str)
-			{
-				std::vector<std::pair<std::string, std::string>> ret;
-				auto sp = SUS::split(str);
-				for (auto i = 0; i < (int)sp.size() - 1; i += 2)
-				{
-					SUS::trim(sp[i]);
-					SUS::trim(sp[i + 1]);
-					if (!sp[i].empty() && !sp[i + 1].empty())
-						ret.emplace_back(sp[i], sp[i + 1]);
-				}
-				std::sort(ret.begin(), ret.end(), [](const auto& a, const auto& b) {
-					return a.first < b.first;
-				});
-				return ret;
-			}
-
 			struct Get
 			{
-				virtual ShaderPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines, const std::vector<std::pair<std::string, std::string>>& substitutes) = 0;
+				virtual ShaderPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};

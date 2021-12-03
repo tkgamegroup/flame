@@ -1,24 +1,6 @@
 file(GLOB_RECURSE source_files "*.h*" "*.c*")
-file(GLOB_RECURSE script_files "${ASSETS_DIR}/*.lua")
-file(GLOB_RECURSE prefab_files "${ASSETS_DIR}/*.prefab")
-file(GLOB_RECURSE shader_files 
-	"${SHADERS_DIR}/*.glsl"
-	"${SHADERS_DIR}/*.vert"
-	"${SHADERS_DIR}/*.tesc"
-	"${SHADERS_DIR}/*.tese"
-	"${SHADERS_DIR}/*.geom"
-	"${SHADERS_DIR}/*.frag"
-	"${SHADERS_DIR}/*.comp"
-	"${SHADERS_DIR}/*.dsl"
-	"${SHADERS_DIR}/*.pll"
-	"${SHADERS_DIR}/*.pipeline"
-	"${SHADERS_DIR}/*.rp"
-)
-add_library(flame_universe SHARED ${source_files} ${script_files} ${prefab_files} ${shader_files})
+add_library(flame_universe SHARED ${source_files})
 assign_source_group("${CMAKE_CURRENT_SOURCE_DIR}" "" ${source_files})
-assign_source_group("${ASSETS_DIR}" "scripts\\" ${script_files})
-assign_source_group("${ASSETS_DIR}" "prefabs\\" ${prefab_files})
-assign_source_group("${SHADERS_DIR}" "shaders\\" ${shader_files})
 set_target_properties(flame_universe PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_universe PRIVATE FLAME_UNIVERSE_MODULE)
 if (USE_IMGUI)
@@ -37,7 +19,6 @@ if (USE_PHYSICS_MODULE)
 	target_compile_definitions(flame_universe PUBLIC USE_PHYSICS_MODULE)
 	target_link_libraries(flame_universe flame_physics)
 endif()
-target_include_directories(flame_universe PRIVATE "${SHADERS_DIR}")
 add_dependencies(flame_universe typeinfogen_dep)
 add_custom_command(TARGET flame_universe POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:flame_universe> -d "${CMAKE_CURRENT_SOURCE_DIR}/typeinfo.desc")
 

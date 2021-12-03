@@ -240,7 +240,9 @@ namespace flame
 		std::unordered_map<std::string, FunctionInfo> functions;
 		std::unordered_map<std::string, UdtInfo> udts;
 
+		FLAME_FOUNDATION_EXPORTS bool load(std::ifstream& file, void* library = nullptr);
 		FLAME_FOUNDATION_EXPORTS void load(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_EXPORTS void save(std::ofstream& file);
 		FLAME_FOUNDATION_EXPORTS void save(const std::filesystem::path& filename);
 	};
 
@@ -952,6 +954,39 @@ namespace flame
 		void unserialize(const std::string& str, void* dst) const override
 		{
 			*(std::wstring*)dst = s2w(str);
+		}
+	};
+
+	struct TypeInfo_path : TypeInfo_Data
+	{
+		TypeInfo_path() :
+			TypeInfo_Data("std::filesystem::path", sizeof(std::filesystem::path))
+		{
+		}
+
+		void* create() const override
+		{
+			return new std::filesystem::path;
+		}
+		void destroy(void* p) const override
+		{
+			delete (std::filesystem::path*)p;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::filesystem::path*)dst = *(std::filesystem::path*)src;
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::filesystem::path*)d1 == *(std::filesystem::path*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			return (*(std::filesystem::path*)p).string();
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(std::filesystem::path*)dst = str;
 		}
 	};
 

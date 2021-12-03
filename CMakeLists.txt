@@ -154,9 +154,6 @@ else()
 	set(USE_MYSQL on)
 endif()
 
-set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/default_assets")
-set(SHADERS_DIR "${ASSETS_DIR}/shaders")
-
 add_subdirectory(source)
 add_subdirectory(tests)
 add_subdirectory(tools)

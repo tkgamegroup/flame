@@ -164,6 +164,10 @@ namespace flame
 			_tidb.typeinfos.emplace(t->hash, t);
 		}
 		{
+			auto t = new TypeInfo_path;
+			_tidb.typeinfos.emplace(t->hash, t);
+		}
+		{
 			auto t = new TypeInfo_Rect;
 			_tidb.typeinfos.emplace(t->hash, t);
 		}
@@ -209,26 +213,12 @@ namespace flame
 		}
 	}
 
-	void TypeInfoDataBase::load(const std::filesystem::path& filename)
+	bool TypeInfoDataBase::load(std::ifstream& file, void* library)
 	{
-		std::filesystem::path path(filename);
-		if (!path.is_absolute())
-			path = get_app_path() / path;
-
-		void* library = nullptr;
-		if (path.extension() != L".typeinfo")
-		{
-			library = LoadLibraryW(path.c_str());
-			path.replace_extension(L".typeinfo");
-		}
-
-		pugi::xml_document file;
-		pugi::xml_node file_root;
-		if (!file.load_file(path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
-		{
-			printf("cannot find typeinfo or wrong format: %s\n", path.string().c_str());
-			assert(0);
-		}
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+		if (!doc.load(file) || (doc_root = doc.first_child()).name() != std::string("typeinfo"))
+			return false;
 
 		auto read_ti = [&](pugi::xml_attribute a) {
 			auto sp = SUS::split(a.value(), '@');
@@ -237,7 +227,7 @@ namespace flame
 			return TypeInfo::get(tag, sp[1], *this);
 		};
 
-		for (auto n_enum : file_root.child("enums"))
+		for (auto n_enum : doc_root.child("enums"))
 		{
 			auto name = std::string(n_enum.attribute("name").value());
 			auto& e = enums.emplace(name, EnumInfo()).first->second;
@@ -250,13 +240,14 @@ namespace flame
 				i.value = n_item.attribute("value").as_int();
 			}
 		}
-		for (auto n_udt : file_root.child("udts"))
+		for (auto n_udt : doc_root.child("udts"))
 		{
 			auto name = std::string(n_udt.attribute("name").value());
 			auto& u = udts.emplace(name, UdtInfo()).first->second;
 			u.name = name;
 			u.size = n_udt.attribute("size").as_uint();
-			u.base_class_name = n_udt.attribute("base_class_name").as_uint();
+			if (auto a = n_udt.attribute("base_class_name"); a)
+				u.base_class_name = a.value();
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
@@ -291,80 +282,123 @@ namespace flame
 					f.parameters.push_back(read_ti(n_parameter.attribute("v")));
 			}
 		}
+
+		return true;
 	}
 
-	void TypeInfoDataBase::save(const std::filesystem::path& filename)
+	void TypeInfoDataBase::load(const std::filesystem::path& filename)
 	{
-		pugi::xml_document file;
-		auto file_root = file.append_child("typeinfo");
+		std::filesystem::path path(filename);
+		if (!path.is_absolute())
+			path = get_app_path() / path;
+
+		void* library = nullptr;
+		if (path.extension() != L".typeinfo")
+		{
+			library = LoadLibraryW(path.c_str());
+			path.replace_extension(L".typeinfo");
+		}
+
+		std::ifstream file(path);
+		if (!file.good())
+		{
+			wprintf(L"typeinfo do not exist: %s\n", path.c_str());
+			assert(0);
+			return;
+		}
+		if (!load(file, library))
+		{
+			wprintf(L"typeinfo wrong format: %s\n", path.c_str());
+			assert(0);
+		}
+		file.close();
+	}
+
+	void TypeInfoDataBase::save(std::ofstream& file)
+	{
+		pugi::xml_document doc;
+		auto doc_root = doc.append_child("typeinfo");
 
 		auto write_ti = [&](TypeInfo* ti, pugi::xml_attribute a) {
 			a.set_value((TypeInfo::serialize_t(&ti->tag, *this) + '@' + ti->name).c_str());
 		};
 
-		auto n_enums = file_root.append_child("enums");
-		for (auto& ei : enums)
+		if (!enums.empty())
 		{
-			auto n_enum = n_enums.append_child("enum");
-			n_enum.append_attribute("name").set_value(ei.second.name.c_str());
-			auto n_items = n_enum.append_child("items");
-			for (auto& i : ei.second.items)
+			auto n_enums = doc_root.append_child("enums");
+			for (auto& ei : enums)
 			{
-				auto n_item = n_items.append_child("item");
-				n_item.append_attribute("name").set_value(i.name.c_str());
-				n_item.append_attribute("value").set_value(i.value);
+				auto n_enum = n_enums.append_child("enum");
+				n_enum.append_attribute("name").set_value(ei.second.name.c_str());
+				auto n_items = n_enum.append_child("items");
+				for (auto& i : ei.second.items)
+				{
+					auto n_item = n_items.append_child("item");
+					n_item.append_attribute("name").set_value(i.name.c_str());
+					n_item.append_attribute("value").set_value(i.value);
+				}
 			}
 		}
 
-		auto n_udts = file_root.append_child("udts");
-		for (auto& ui : udts)
+		if (!udts.empty())
 		{
-			auto n_udt = n_udts.append_child("udt");
-			n_udt.append_attribute("name").set_value(ui.second.name.c_str());
-			n_udt.append_attribute("size").set_value(ui.second.size);
-			n_udt.append_attribute("base_class_name").set_value(ui.second.base_class_name.c_str());
-			if (!ui.second.variables.empty())
+			auto n_udts = doc_root.append_child("udts");
+			for (auto& ui : udts)
 			{
-				auto n_variables = n_udt.prepend_child("variables");
-				for (auto& vi : ui.second.variables)
+				auto n_udt = n_udts.append_child("udt");
+				n_udt.append_attribute("name").set_value(ui.second.name.c_str());
+				n_udt.append_attribute("size").set_value(ui.second.size);
+				if (!ui.second.base_class_name.empty())
+					n_udt.append_attribute("base_class_name").set_value(ui.second.base_class_name.c_str());
+				if (!ui.second.variables.empty())
 				{
-					auto n_variable = n_variables.append_child("variable");
-					write_ti(vi.type, n_variable.append_attribute("type"));
-					n_variable.append_attribute("name").set_value(vi.name.c_str());
-					n_variable.append_attribute("offset").set_value(vi.offset);
-					if (vi.array_size != 0)
-						n_variable.append_attribute("array_size").set_value(vi.array_size);
-					if (vi.array_stride != 0)
-						n_variable.append_attribute("array_stride").set_value(vi.array_stride);
-					if (!vi.default_value.empty())
-						n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
-					if (auto str = vi.metas.to_string(); !str.empty())
-						n_variable.append_attribute("metas").set_value(str.c_str());
-				}
-			}
-			if (!ui.second.functions.empty())
-			{
-				auto n_functions = n_udt.append_child("functions");
-				for (auto& fi : ui.second.functions)
-				{
-					auto n_function = n_functions.append_child("function");
-					n_function.append_attribute("name").set_value(fi.name.c_str());
-					n_function.append_attribute("rva").set_value(fi.rva);
-					n_function.append_attribute("voff").set_value(fi.voff);
-					if (fi.is_static)
-						n_function.append_attribute("is_static").set_value(fi.is_static);
-					write_ti(fi.return_type, n_function.append_attribute("return_type"));
-					if (auto str = fi.metas.to_string(); !str.empty())
-						n_function.append_attribute("metas").set_value(str.c_str());
-					if (!fi.parameters.empty())
+					auto n_variables = n_udt.prepend_child("variables");
+					for (auto& vi : ui.second.variables)
 					{
-						for (auto p : fi.parameters)
-							write_ti(p, n_function.append_child("parameter").append_attribute("v"));
+						auto n_variable = n_variables.append_child("variable");
+						write_ti(vi.type, n_variable.append_attribute("type"));
+						n_variable.append_attribute("name").set_value(vi.name.c_str());
+						n_variable.append_attribute("offset").set_value(vi.offset);
+						if (vi.array_size != 0)
+							n_variable.append_attribute("array_size").set_value(vi.array_size);
+						if (vi.array_stride != 0)
+							n_variable.append_attribute("array_stride").set_value(vi.array_stride);
+						if (!vi.default_value.empty())
+							n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
+						if (auto str = vi.metas.to_string(); !str.empty())
+							n_variable.append_attribute("metas").set_value(str.c_str());
+					}
+				}
+				if (!ui.second.functions.empty())
+				{
+					auto n_functions = n_udt.append_child("functions");
+					for (auto& fi : ui.second.functions)
+					{
+						auto n_function = n_functions.append_child("function");
+						n_function.append_attribute("name").set_value(fi.name.c_str());
+						n_function.append_attribute("rva").set_value(fi.rva);
+						n_function.append_attribute("voff").set_value(fi.voff);
+						if (fi.is_static)
+							n_function.append_attribute("is_static").set_value(fi.is_static);
+						write_ti(fi.return_type, n_function.append_attribute("return_type"));
+						if (auto str = fi.metas.to_string(); !str.empty())
+							n_function.append_attribute("metas").set_value(str.c_str());
+						if (!fi.parameters.empty())
+						{
+							for (auto p : fi.parameters)
+								write_ti(p, n_function.append_child("parameter").append_attribute("v"));
+						}
 					}
 				}
 			}
 		}
 
-		file.save_file(filename.c_str());
+		doc.save(file);
+	}
+
+	void TypeInfoDataBase::save(const std::filesystem::path& filename)
+	{
+		std::ofstream file(filename);
+		save(file);
 	}
 }

@@ -134,7 +134,7 @@ process:
 	if (input_path != foundation_path)
 	{
 		foundation_path.replace_extension(L".typeinfo");
-		tidb.load_typeinfo(foundation_path);
+		tidb.load(foundation_path);
 	}
 
 	auto pdb_path = input_path;
@@ -304,7 +304,7 @@ process:
 		if (find_enum(enum_name, db))
 			return;
 
-		auto& e = db.enums.emplace(enum_name, EnumInfo()).first->second;
+		EnumInfo e;
 		e.name = enum_name;
 		std::vector<std::pair<std::string, int>> items;
 
@@ -356,6 +356,8 @@ process:
 			ii.name = i.first;
 			ii.value = i.second;
 		}
+
+		db.enums.emplace(e.name, e);
 	};
 
 	auto new_udt = [&](const std::string& udt_name, IDiaSymbol* s_udt, UdtRule* ur) {
@@ -375,7 +377,7 @@ process:
 			base_class_name = w2s(pwname);
 		}
 
-		auto& u = db.udts.emplace(udt_name, UdtInfo()).first->second;
+		UdtInfo u;
 		u.name = udt_name;
 		u.size = udt_size;
 		u.base_class_name = base_class_name;
@@ -514,6 +516,8 @@ process:
 				a2f<void(*)(void*)>((char*)library + dtor)(obj);
 			free(obj);
 		}
+
+		db.udts.emplace(u.name, u);
 	};
 
 	IDiaEnumSymbols* s_functions;
@@ -592,7 +596,7 @@ process:
 	}
 	s_udts->Release();
 
-	db.save_typeinfo(typeinfo_path);
+	db.save(typeinfo_path);
 
 	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
 
