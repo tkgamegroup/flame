@@ -1189,6 +1189,12 @@ namespace flame
 					return nullptr;
 				}
 
+				GraphicsPipelineInfo info;
+
+				std::ifstream file(filename);
+				unserialize_text(file, &info);
+				file.close();
+
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
 
@@ -1198,7 +1204,6 @@ namespace flame
 					return nullptr;
 				}
 
-				GraphicsPipelineInfo info;
 				auto ppath = filename.parent_path();
 
 				for (auto n_shdr : doc_root.child("shaders"))

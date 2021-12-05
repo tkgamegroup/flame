@@ -30,10 +30,10 @@ namespace flame
 		switch (tag)
 		{
 		case TagEnum:
-			t = new TypeInfo_Enum(name, db);
-			break;
-		case TagEnumFlags:
-			t = new TypeInfo_EnumFlags(name, db);
+			if (name.ends_with("Flags"))
+				t = new TypeInfo_EnumFlags(name, db);
+			else
+				t = new TypeInfo_Enum(name, db);
 			break;
 		case TagData:
 			t = new TypeInfo_Udt(name, db);

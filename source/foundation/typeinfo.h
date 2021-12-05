@@ -4,30 +4,44 @@
 
 namespace flame
 {
+	/*
+	*	E - Enum
+	*	D - Data
+	*	F - Function
+	*	U - Udt
+	*	P - Pointer
+	*	V - Vector
+	*/
 	enum TypeTag
 	{
-		TagEnum,
-		TagEnumFlags,
-		TagData,
-		TagPointer,
-		TagFunction,
-		TagUdt,
-		TagVector,
+		TagE,
+		TagD,
+		TagF,
+		TagU,
+		TagPE,
+		TagPD,
+		TagPU,
+		TagVE,
+		TagVD,
+		TagVU,
+		TagVPE,
+		TagVPD,
+		TagVPU,
 
 		TagCount
 	};
 
-	enum BasicType
+	enum DataType
 	{
-		VoidType,
-		BooleanType,
-		IntegerType,
-		FloatType,
-		CharType,
-		WideCharType
+		DataVoid,
+		DataBoolean,
+		DataInteger,
+		DataFloat,
+		DataChar,
+		DataWideChar
 	};
 
-	enum TypeMeta
+	enum Meta
 	{
 		MetaBpInput,
 		MetaBpOutput,
@@ -43,7 +57,80 @@ namespace flame
 		uint hash;
 		uint size;
 
-		inline static std::pair<TypeTag, std::string> format(TypeTag tag, std::string_view name);
+		inline static std::string format_name(std::string_view name)
+		{
+			auto ret = std::string(name);
+
+			SUS::cut_head_if(ret, "enum ");
+			SUS::cut_head_if(ret, "struct ");
+			SUS::cut_head_if(ret, "class ");
+			SUS::replace_all(ret, "unsigned ", "u");
+			SUS::replace_all(ret, "__int64 ", "int64");
+			SUS::replace_all(ret, "Private", "");
+			SUS::remove_char(ret, ' ');
+
+			if (ret.starts_with("glm::"))
+			{
+				if (ret == "glm::vec<2,int,0>")
+					ret = "glm::ivec2";
+				else if (ret == "glm::vec<3,int,0>")
+					ret = "glm::ivec3";
+				else if (ret == "glm::vec<4,int,0>")
+					ret = "glm::ivec4";
+				else if (ret == "glm::vec<2,uint,0>")
+					ret = "glm::uvec2";
+				else if (ret == "glm::vec<3,uint,0>")
+					ret = "glm::uvec3";
+				else if (ret == "glm::vec<4,uint,0>")
+					ret = "glm::uvec4";
+				else if (ret == "glm::vec<2,uchar,0>")
+					ret = "glm::cvec2";
+				else if (ret == "glm::vec<3,uchar,0>")
+					ret = "glm::cvec3";
+				else if (ret == "glm::vec<4,uchar,0>")
+					ret = "glm::cvec4";
+				else if (ret == "glm::vec<2,float,0>")
+					ret = "glm::vec2";
+				else if (ret == "glm::vec<3,float,0>")
+					ret = "glm::vec3";
+				else if (ret == "glm::vec<4,float,0>")
+					ret = "glm::vec4";
+				else if (ret == "glm::mat<2,2,float,0>")
+					ret = "glm::mat2";
+				else if (ret == "glm::mat<3,3,float,0>")
+					ret = "glm::mat3";
+				else if (ret == "glm::mat<4,4,float,0>")
+					ret = "glm::mat4";
+				else if (ret == "glm::qua<float,0>")
+					ret = "glm::quat";
+				else
+					assert(0);
+			}
+			else if (ret.starts_with("std::basic_string<char"))
+				ret = "std::string";
+			else if (ret.starts_with("std::basic_string<wchar_t"))
+				ret = "std::wstring";
+			//else if (ret.starts_with("std::vector<"))
+			//{
+			//	static std::regex reg("std::vector<([\\w:\\*<>]+),");
+			//	std::smatch res;
+			//	if (std::regex_search(ret, res, reg))
+			//	{
+			//		auto str = format(TagD, res[1].str()).second;
+			//		if (tag == TagD)
+			//		{
+			//			ret.first = TagVector;
+			//			ret = str;
+			//		}
+			//		else
+			//			ret = "std::vector<" + str + ">";
+			//	}
+			//}
+
+			return ret;
+		}
+
+		inline static bool is_basic_type(std::string_view name);
 
 		TypeInfo(TypeTag tag, std::string_view _name, uint size) :
 			tag(tag),
@@ -70,22 +157,18 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
-		inline static TypeInfo* get(const std::pair<TypeTag, std::string>& tagname, TypeInfoDataBase& db = tidb)
-		{
-			return get(tagname.first, tagname.second, db);
-		}
 
 		template<enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(format(TagEnum, typeid(T).name()), db);
+			static auto ret = get(TagE, format_name(typeid(T).name()), db);
 			return ret;
 		}
 
 		template<not_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(format(TagData, typeid(T).name()), db);
+			static auto ret = get(format(TagD, typeid(T).name()), db);
 			return ret;
 		}
 
@@ -104,12 +187,12 @@ namespace flame
 
 	struct Metas
 	{
-		std::vector<std::pair<TypeMeta, LightCommonValue>> d;
+		std::vector<std::pair<Meta, LightCommonValue>> d;
 
 		void from_string(const std::string& str, TypeInfoDataBase& db = tidb);
 		std::string to_string(TypeInfoDataBase& db = tidb) const;
 
-		inline bool get(TypeMeta m, LightCommonValue* v) const
+		inline bool get(Meta m, LightCommonValue* v) const
 		{
 			for (auto& i : d)
 			{
@@ -293,100 +376,81 @@ namespace flame
 		return nullptr;
 	}
 
-	inline std::pair<TypeTag, std::string> TypeInfo::format(TypeTag tag, std::string_view name)
+	inline bool TypeInfo::is_basic_type(std::string_view name)
 	{
-		std::pair<TypeTag, std::string> ret;
-		ret.first = tag;
-		ret.second = name;
-
-		SUS::replace_all(ret.second, "enum ", "");
-		SUS::replace_all(ret.second, "struct ", "");
-		SUS::replace_all(ret.second, "class ", "");
-		SUS::replace_all(ret.second, "unsigned ", "u");
-		SUS::replace_all(ret.second, "__int64 ", "int64");
-		SUS::replace_all(ret.second, "Private", "");
-		SUS::remove_char(ret.second, ' ');
-
-		if (tag == TagEnum)
-		{
-			if (ret.second.ends_with("Flags"))
-				ret.first = TagEnumFlags;
-		}
-		else if (tag != TagEnumFlags)
-		{
-			if (ret.second.starts_with("glm::"))
-			{
-				if (ret.second == "glm::vec<2,int,0>")
-					ret.second = "glm::ivec2";
-				else if (ret.second == "glm::vec<3,int,0>")
-					ret.second = "glm::ivec3";
-				else if (ret.second == "glm::vec<4,int,0>")
-					ret.second = "glm::ivec4";
-				else if (ret.second == "glm::vec<2,uint,0>")
-					ret.second = "glm::uvec2";
-				else if (ret.second == "glm::vec<3,uint,0>")
-					ret.second = "glm::uvec3";
-				else if (ret.second == "glm::vec<4,uint,0>")
-					ret.second = "glm::uvec4";
-				else if (ret.second == "glm::vec<2,uchar,0>")
-					ret.second = "glm::cvec2";
-				else if (ret.second == "glm::vec<3,uchar,0>")
-					ret.second = "glm::cvec3";
-				else if (ret.second == "glm::vec<4,uchar,0>")
-					ret.second = "glm::cvec4";
-				else if (ret.second == "glm::vec<2,float,0>")
-					ret.second = "glm::vec2";
-				else if (ret.second == "glm::vec<3,float,0>")
-					ret.second = "glm::vec3";
-				else if (ret.second == "glm::vec<4,float,0>")
-					ret.second = "glm::vec4";
-				else if (ret.second == "glm::mat<2,2,float,0>")
-					ret.second = "glm::mat2";
-				else if (ret.second == "glm::mat<3,3,float,0>")
-					ret.second = "glm::mat3";
-				else if (ret.second == "glm::mat<4,4,float,0>")
-					ret.second = "glm::mat4";
-				else if (ret.second == "glm::qua<float,0>")
-					ret.second = "glm::quat";
-				else
-					assert(0);
-			}
-			else if (ret.second.starts_with("std::basic_string<char"))
-				ret.second = "std::string";
-			else if (ret.second.starts_with("std::basic_string<wchar_t"))
-				ret.second = "std::wstring";
-			else if (ret.second.starts_with("std::vector<"))
-			{
-				static std::regex reg("std::vector<([\\w:\\*<>]+),");
-				std::smatch res;
-				if (std::regex_search(ret.second, res, reg))
-				{
-					auto str = format(TagData, res[1].str()).second;
-					if (tag == TagData)
-					{
-						ret.first = TagVector;
-						ret.second = str;
-					}
-					else
-						ret.second = "std::vector<" + str + ">";
-				}
-			}
-			else if (tag == TagData && tidb.typeinfos.find(get_hash(TagData, ret.second)) == tidb.typeinfos.end())
-				ret.first = TagUdt;
-		}
-
-		return ret;
+		return tidb.typeinfos.find(get_hash(TagD, name)) != tidb.typeinfos.end();
 	}
+
+	struct TypeInfo_Enum : TypeInfo
+	{
+		EnumInfo* ei = nullptr;
+
+		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagE, base_name, sizeof(int))
+		{
+			ei = find_enum(name, db);
+		}
+	};
+
+	struct TypeInfo_EnumSingle : TypeInfo_Enum
+	{
+		TypeInfo_EnumSingle(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo_Enum(base_name, db)
+		{
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return ei->find_item(*(int*)p)->name;
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(int*)dst = ei->find_item(str)->value;
+		}
+	};
+
+	struct TypeInfo_EnumMulti : TypeInfo_Enum
+	{
+		TypeInfo_EnumMulti(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo_Enum(base_name, db)
+		{
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto v = *(int*)p;
+			for (auto i = 0; i < ei->items.size(); i++)
+			{
+				if ((v & 1) == 1)
+				{
+					if (i > 0)
+						ret += '|';
+					ret += ei->find_item(1 << i)->name;
+				}
+				v >>= 1;
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			auto v = 0;
+			auto sp = SUS::split(str, '|');
+			for (auto& t : sp)
+				v |= ei->find_item(t)->value;
+			*(int*)dst = v;
+		}
+	};
 
 	struct TypeInfo_Data : TypeInfo
 	{
-		BasicType basic_type = VoidType;
+		DataType data_type = DataVoid;
 		bool is_signed = true;
 		uint vec_size = 1;
 		uint col_size = 1;
 
 		TypeInfo_Data(std::string_view name, uint size) :
-			TypeInfo(TagData, name, size)
+			TypeInfo(TagD, name, size)
 		{
 		}
 	};
@@ -396,7 +460,7 @@ namespace flame
 		TypeInfo_void() :
 			TypeInfo_Data("void", 0)
 		{
-			basic_type = VoidType;
+			data_type = DataVoid;
 		}
 	};
 
@@ -405,7 +469,7 @@ namespace flame
 		TypeInfo_bool() :
 			TypeInfo_Data("bool", sizeof(bool))
 		{
-			basic_type = BooleanType;
+			data_type = DataBoolean;
 		}
 
 		std::string serialize(const void* p) const override
@@ -428,7 +492,7 @@ namespace flame
 		TypeInfo_char() :
 			TypeInfo_Data("char", sizeof(char))
 		{
-			basic_type = CharType;
+			data_type = DataChar;
 		}
 
 		std::string serialize(const void* p) const override
@@ -446,7 +510,7 @@ namespace flame
 		TypeInfo_uchar() :
 			TypeInfo_Data("uchar", sizeof(uchar))
 		{
-			basic_type = CharType;
+			data_type = DataChar;
 			is_signed = false;
 		}
 
@@ -465,7 +529,7 @@ namespace flame
 		TypeInfo_wchar() :
 			TypeInfo_Data("wchar_t", sizeof(wchar_t))
 		{
-			basic_type = WideCharType;
+			data_type = DataWideChar;
 		}
 
 		std::string serialize(const void* p) const override
@@ -483,7 +547,7 @@ namespace flame
 		TypeInfo_short() :
 			TypeInfo_Data("short", sizeof(short))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 		}
 
 		std::string serialize(const void* p) const override
@@ -501,7 +565,7 @@ namespace flame
 		TypeInfo_ushort() :
 			TypeInfo_Data("ushort", sizeof(ushort))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 		}
 
@@ -520,7 +584,7 @@ namespace flame
 		TypeInfo_int() :
 			TypeInfo_Data("int", sizeof(int))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 		}
 
 		std::string serialize(const void* p) const override
@@ -538,7 +602,7 @@ namespace flame
 		TypeInfo_uint() :
 			TypeInfo_Data("uint", sizeof(uint))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 		}
 
@@ -557,7 +621,7 @@ namespace flame
 		TypeInfo_int64() :
 			TypeInfo_Data("int64", sizeof(int64))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 		}
 
 		std::string serialize(const void* p) const override
@@ -575,7 +639,7 @@ namespace flame
 		TypeInfo_uint64() :
 			TypeInfo_Data("uint64", sizeof(uint64))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 		}
 
@@ -594,7 +658,7 @@ namespace flame
 		TypeInfo_float() :
 			TypeInfo_Data("float", sizeof(float))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 		}
 
 		std::string serialize(const void* p) const override
@@ -612,7 +676,7 @@ namespace flame
 		TypeInfo_ivec2() :
 			TypeInfo_Data("glm::ivec2", sizeof(ivec2))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			vec_size = 2;
 		}
 
@@ -631,7 +695,7 @@ namespace flame
 		TypeInfo_ivec3() :
 			TypeInfo_Data("glm::ivec3", sizeof(ivec3))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			vec_size = 3;
 		}
 
@@ -650,7 +714,7 @@ namespace flame
 		TypeInfo_ivec4() :
 			TypeInfo_Data("glm::ivec4", sizeof(ivec4))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			vec_size = 4;
 		}
 
@@ -669,7 +733,7 @@ namespace flame
 		TypeInfo_uvec2() :
 			TypeInfo_Data("glm::uvec2", sizeof(uvec2))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 			vec_size = 2;
 		}
@@ -689,7 +753,7 @@ namespace flame
 		TypeInfo_uvec3() :
 			TypeInfo_Data("glm::uvec3", sizeof(uvec3))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 			vec_size = 3;
 		}
@@ -709,7 +773,7 @@ namespace flame
 		TypeInfo_uvec4() :
 			TypeInfo_Data("glm::uvec4", sizeof(uvec4))
 		{
-			basic_type = IntegerType;
+			data_type = DataInteger;
 			is_signed = false;
 			vec_size = 4;
 		}
@@ -729,7 +793,7 @@ namespace flame
 		TypeInfo_cvec2() :
 			TypeInfo_Data("glm::cvec2", sizeof(cvec2))
 		{
-			basic_type = CharType;
+			data_type = DataChar;
 			is_signed = false;
 			vec_size = 2;
 		}
@@ -749,7 +813,7 @@ namespace flame
 		TypeInfo_cvec3() :
 			TypeInfo_Data("glm::cvec3", sizeof(cvec3))
 		{
-			basic_type = CharType;
+			data_type = DataChar;
 			is_signed = false;
 			vec_size = 3;
 		}
@@ -769,7 +833,7 @@ namespace flame
 		TypeInfo_cvec4() :
 			TypeInfo_Data("glm::cvec4", sizeof(cvec4))
 		{
-			basic_type = CharType;
+			data_type = DataChar;
 			is_signed = false;
 			vec_size = 4;
 		}
@@ -789,7 +853,7 @@ namespace flame
 		TypeInfo_vec2() :
 			TypeInfo_Data("glm::vec2", sizeof(vec2))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 2;
 		}
 
@@ -808,7 +872,7 @@ namespace flame
 		TypeInfo_vec3() :
 			TypeInfo_Data("glm::vec3", sizeof(vec3))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 3;
 		}
 
@@ -827,7 +891,7 @@ namespace flame
 		TypeInfo_vec4() :
 			TypeInfo_Data("glm::vec4", sizeof(vec4))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 4;
 		}
 
@@ -846,7 +910,7 @@ namespace flame
 		TypeInfo_mat2() :
 			TypeInfo_Data("glm::mat2", sizeof(mat2))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 2;
 			col_size = 2;
 		}
@@ -857,7 +921,7 @@ namespace flame
 		TypeInfo_mat3() :
 			TypeInfo_Data("glm::mat3", sizeof(mat3))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 3;
 			col_size = 3;
 		}
@@ -868,7 +932,7 @@ namespace flame
 		TypeInfo_mat4() :
 			TypeInfo_Data("glm::mat4", sizeof(mat4))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 4;
 			col_size = 4;
 		}
@@ -995,7 +1059,7 @@ namespace flame
 		TypeInfo_Rect() :
 			TypeInfo_Data("flame::Rect", sizeof(Rect))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 2;
 			col_size = 2;
 		}
@@ -1015,7 +1079,7 @@ namespace flame
 		TypeInfo_AABB() :
 			TypeInfo_Data("flame::AABB", sizeof(AABB))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 3;
 			col_size = 2;
 		}
@@ -1035,7 +1099,7 @@ namespace flame
 		TypeInfo_Plane() :
 			TypeInfo_Data("flame::Plane", sizeof(Plane))
 		{
-			basic_type = FloatType;
+			data_type = DataFloat;
 			vec_size = 4;
 		}
 
@@ -1057,79 +1121,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_Enum : TypeInfo
-	{
-		EnumInfo* ei = nullptr;
-
-		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagEnum, base_name, sizeof(int))
-		{
-			ei = find_enum(name, db);
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return ei->find_item(*(int*)p)->name;
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(int*)dst = ei->find_item(str)->value;
-		}
-	};
-
-	struct TypeInfo_EnumFlags : TypeInfo
-	{
-		EnumInfo* ei = nullptr;
-
-		TypeInfo_EnumFlags(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagEnumFlags, base_name, sizeof(int))
-		{
-			ei = find_enum(name, db);
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			std::string ret;
-			auto v = *(int*)p;
-			for (auto i = 0; i < ei->items.size(); i++)
-			{
-				if ((v & 1) == 1)
-				{
-					if (i > 0)
-						ret += '|';
-					ret += ei->find_item(1 << i)->name;
-				}
-				v >>= 1;
-			}
-			return ret;
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			auto v = 0;
-			auto sp = SUS::split(str, '|');
-			for (auto& t : sp)
-				v |= ei->find_item(t)->value;
-			*(int*)dst = v;
-		}
-	};
-
-	struct TypeInfo_Pointer : TypeInfo
-	{
-		TypeInfo* ti = nullptr;
-
-		TypeInfo_Pointer(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagPointer, base_name, sizeof(void*))
-		{
-			ti = get(TagData, name, db);
-		}
-	};
-
 	struct TypeInfo_Udt : TypeInfo
 	{
 		UdtInfo* ui = nullptr;
 
 		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagUdt, base_name, 0)
+			TypeInfo(TagU, base_name, 0)
 		{
 			ui = find_udt(name, db);
 			if (ui)
@@ -1137,14 +1134,25 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_Vector : TypeInfo
+	struct TypeInfo_PointerOfEnum : TypeInfo
 	{
-		TypeInfo* ti = nullptr;
+		TypeInfo_Enum* ti = nullptr;
 
-		TypeInfo_Vector(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVector, base_name, sizeof(std::vector<int>))
+		TypeInfo_PointerOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPE, base_name, sizeof(void*))
 		{
-			ti = get(TagData, name, db);
+			ti = (TypeInfo_Enum*)get(TagE, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfEnum : TypeInfo
+	{
+		TypeInfo_Enum* ti = nullptr;
+
+		TypeInfo_VectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVE, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
 
 		std::string serialize(const void* p) const override

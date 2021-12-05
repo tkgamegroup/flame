@@ -28,19 +28,42 @@ namespace flame
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
-	template <class T>
-	concept long_signed_integral = std::signed_integral<T> && sizeof(T) > sizeof(int);
+	template<class, template<typename...> class>
+	inline constexpr bool is_specialization = false;
 
-	template <class T>
-	concept long_unsigned_integral = std::unsigned_integral<T> && sizeof(T) > sizeof(uint);
+	template<template<typename...> typename T, typename... Args>
+	inline constexpr bool is_specialization<T<Args...>, T> = true;
 
-	template <class T>
+	template<typename T>
+	concept int64_type = std::same_as<T, int64>;
+
+	template<typename T>
+	concept uint64_type = std::same_as<T, uint64>;
+
+	template<typename T>
 	concept enum_type = std::is_enum_v<T>;
 
-	template <class T>
-	concept not_enum_type = !enum_type<T>;
+	template<typename... U>
+	struct type_list {};
 
-	template <auto V> inline constexpr auto S = V;
+	using basic_types = type_list<void, bool, char, uchar, wchar_t, short, ushort, int, uint, int64, uint64, float>;
+
+	template<typename T>
+	concept basic_type = std::same_as<T, int>;
+
+	template<typename T>
+	concept pointer_type = std::is_pointer_v<T>;
+
+	template<typename T>
+	concept vector_type = is_specialization<T, std::vector>;
+
+	template<typename T>
+	concept vector_of_enum_type = is_specialization<T, std::vector> && enum_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_pointer_type = is_specialization<T, std::vector> && pointer_type<typename T::value_type>;
+
+	template<auto V> inline constexpr auto S = V;
 
 	constexpr uint ch(char const* str)
 	{
@@ -59,7 +82,7 @@ namespace flame
 		return ch(str);
 	}
 
-	template <class F>
+	template<typename F>
 	void* f2a(F f) // function to address
 	{
 		union
@@ -71,7 +94,7 @@ namespace flame
 		return cvt.p;
 	}
 
-	template <class F>
+	template<typename F>
 	F a2f(void* p) // address to function
 	{
 		union

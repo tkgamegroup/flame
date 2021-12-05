@@ -146,7 +146,7 @@ namespace flame
 		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <long_signed_integral T, class CH>
+	template <int64_type T, class CH>
 	inline T sto(const std::basic_string<CH>& s)
 	{
 		T ret;
@@ -155,13 +155,13 @@ namespace flame
 		return ret;
 	}
 
-	template <long_signed_integral T, class CH>
+	template <int64_type T, class CH>
 	inline T sto(const CH* s)
 	{
 		return sto<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <long_unsigned_integral T, class CH>
+	template <uint64_type T, class CH>
 	inline T sto(const std::basic_string<CH>& s)
 	{
 		T ret;
@@ -170,7 +170,7 @@ namespace flame
 		return ret;
 	}
 
-	template <long_unsigned_integral T, class CH>
+	template <uint64_type T, class CH>
 	inline T sto(const CH* s)
 	{
 		return sto<T, CH>(std::basic_string<CH>(s));

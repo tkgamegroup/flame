@@ -235,9 +235,6 @@ process:
 		auto& dr = r.items.emplace_back();
 		dr.type = TagData;
 		dr.name = "^[\\w:]+$";
-		auto& fr = r.items.emplace_back();
-		fr.type = TagFunction;
-		fr.name = "^[\\w:~]+$";
 	}
 	if (!desc_path.empty())
 	{
@@ -348,9 +345,6 @@ process:
 						auto& dr = r.items.emplace_back();
 						dr.type = TagData;
 						dr.name = "^[\\w:]+$";
-						auto& fr = r.items.emplace_back();
-						fr.type = TagFunction;
-						fr.name = "^[\\w:~]+$";
 					}
 				}
 			}
@@ -362,6 +356,11 @@ process:
 	while (need_collect)
 	{
 		need_collect = false;
+		std::vector<TypeInfo*> referenced_types;
+		auto reference_type = [&](TypeInfo* ti) {
+			if (std::find(referenced_types.begin(), referenced_types.end(), ti) == referenced_types.end())
+				referenced_types.push_back(ti);
+		};
 
 		IDiaEnumSymbols* s_enums;
 		global->findChildren(SymTagEnum, NULL, nsNone, &s_enums);
@@ -370,7 +369,7 @@ process:
 		{
 			s_enum->get_name(&pwname);
 			auto enum_name = w2s(pwname);
-			if (pass_enum(enum_name) && !find_enum(enum_name, db))
+			if (!find_enum(enum_name, db) && pass_enum(enum_name))
 			{
 				EnumInfo e;
 				e.name = enum_name;
@@ -429,6 +428,7 @@ process:
 			}
 			s_enum->Release();
 		}
+		s_enums->Release();
 
 		IDiaEnumSymbols* s_udts;
 		global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
@@ -438,7 +438,7 @@ process:
 			s_udt->get_name(&pwname);
 			auto udt_name = w2s(pwname);
 			UdtRule* ur;
-			if (pass_udt(udt_name, ur) && !find_udt(udt_name, db))
+			if (!find_udt(udt_name, db) && pass_udt(udt_name, ur))
 			{
 				s_udt->get_length(&ull);
 				auto udt_size = ull;
@@ -511,6 +511,7 @@ process:
 							IDiaSymbol* s_return_type;
 							s_function_type->get_type(&s_return_type);
 							fi.return_type = typeinfo_from_symbol(s_return_type);
+							reference_type(fi.return_type);
 							s_return_type->Release();
 
 							IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
@@ -527,7 +528,9 @@ process:
 							{
 								IDiaSymbol* s_type;
 								s_parameter->get_type(&s_type);
-								fi.parameters.push_back(typeinfo_from_symbol(s_parameter));
+								auto ti = typeinfo_from_symbol(s_parameter);
+								fi.parameters.push_back(ti);
+								reference_type(ti);
 								s_type->Release();
 
 								s_parameter->Release();
@@ -573,6 +576,7 @@ process:
 
 						auto& vi = u.variables.emplace_back();
 						vi.type = typeinfo_from_symbol(s_type);
+						reference_type(vi.type);
 						vi.name = name;
 						vi.offset = offset;
 						vi.array_size = 0;
@@ -598,6 +602,34 @@ process:
 			s_udt->Release();
 		}
 		s_udts->Release();
+
+		for (auto t : referenced_types)
+		{
+			switch (t->tag)
+			{
+			case TagEnum:
+			case TagEnumFlags:
+				if (!find_enum(t->name, db))
+				{
+					auto& r = enum_rules.emplace_back();
+					r.name = "^" + t->name + "$";
+					need_collect = true;
+				}
+				break;
+			case TagUdt:
+			case TagVector:
+				if (!find_udt(t->name, db))
+				{
+					auto& r = udt_rules.emplace_back();
+					r.name = "^" + t->name + "$";
+					auto& dr = r.items.emplace_back();
+					dr.type = TagData;
+					dr.name = "^[\\w:]+$";
+					need_collect = true;
+				}
+				break;
+			}
+		}
 	}
 
 	db.save(typeinfo_path);
