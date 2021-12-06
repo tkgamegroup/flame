@@ -51,6 +51,12 @@ namespace flame
 	inline constexpr bool is_specialization<T<Args...>, T> = true;
 
 	template<typename T>
+	concept int_type = std::signed_integral<T> && !std::same_as<T, int64>;
+
+	template<typename T>
+	concept uint_type = std::unsigned_integral<T> && !std::same_as<T, uint64>;
+
+	template<typename T>
 	concept int64_type = std::same_as<T, int64>;
 
 	template<typename T>

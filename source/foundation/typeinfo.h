@@ -28,6 +28,11 @@ namespace flame
 		TagVPD,
 		TagVPU,
 
+		TagP_Beg = TagPE,
+		TagP_End = TagPU,
+		TagV_Beg = TagVE,
+		TagV_End = TagVPU,
+
 		TagCount
 	};
 
@@ -140,22 +145,6 @@ namespace flame
 				ret = "std::string";
 			else if (ret.starts_with("std::basic_string<wchar_t"))
 				ret = "std::wstring";
-			//else if (ret.starts_with("std::vector<"))
-			//{
-			//	static std::regex reg("std::vector<([\\w:\\*<>]+),");
-			//	std::smatch res;
-			//	if (std::regex_search(ret, res, reg))
-			//	{
-			//		auto str = format(TagD, res[1].str()).second;
-			//		if (tag == TagD)
-			//		{
-			//			ret.first = TagVector;
-			//			ret = str;
-			//		}
-			//		else
-			//			ret = "std::vector<" + str + ">";
-			//	}
-			//}
 
 			return ret;
 		}
@@ -199,6 +188,76 @@ namespace flame
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
 			static auto ret = get(TagD, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<typename T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagU, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<pointer_of_enum_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagPE, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<pointer_of_data_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagPD, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<pointer_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagPU, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_enum_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVE, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_data_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVD, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVU, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_pointer_of_enum_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVPE, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_pointer_of_data_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVPD, format_name(typeid(T).name()), db);
+			return ret;
+		}
+
+		template<vector_of_pointer_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVPU, format_name(typeid(T).name()), db);
 			return ret;
 		}
 
@@ -1175,6 +1234,28 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_PointerOfData : TypeInfo
+	{
+		TypeInfo_Data* ti = nullptr;
+
+		TypeInfo_PointerOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPD, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_Data*)get(TagD, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfUdt : TypeInfo
+	{
+		TypeInfo_Udt* ti = nullptr;
+
+		TypeInfo_PointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPD, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_Udt*)get(TagU, name, db);
+		}
+	};
+
 	struct TypeInfo_VectorOfEnum : TypeInfo
 	{
 		TypeInfo_Enum* ti = nullptr;
@@ -1184,18 +1265,60 @@ namespace flame
 		{
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
+	};
 
-		std::string serialize(const void* p) const override
+	struct TypeInfo_VectorOfData : TypeInfo
+	{
+		TypeInfo_Data* ti = nullptr;
+
+		TypeInfo_VectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
 		{
-			std::string ret;
-			auto& vec = *(std::vector<int>*)p;
-			p = vec.data();
-			for (auto i = 0; i < vec.size(); i++)
-			{
-				ret += ti->serialize(p) + "\n";
-				p = (char*)p + ti->size;
-			}
-			return ret;
+			ti = (TypeInfo_Data*)get(TagD, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfUdt : TypeInfo
+	{
+		TypeInfo_Udt* ti = nullptr;
+
+		TypeInfo_VectorOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Udt*)get(TagU, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfPointerOfEnum : TypeInfo
+	{
+		TypeInfo_PointerOfEnum* ti = nullptr;
+
+		TypeInfo_VectorOfPointerOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_PointerOfEnum*)get(TagPE, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfPointerOfData : TypeInfo
+	{
+		TypeInfo_PointerOfData* ti = nullptr;
+
+		TypeInfo_VectorOfPointerOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_PointerOfData*)get(TagPD, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
+	{
+		TypeInfo_PointerOfUdt* ti = nullptr;
+
+		TypeInfo_VectorOfPointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
 		}
 	};
 }

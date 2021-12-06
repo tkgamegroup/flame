@@ -12,7 +12,7 @@ namespace flame
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase& db)
 	{
-		if (tag == TagData && name.empty())
+		if (tag == TagD && name.empty())
 			return void_type;
 
 		auto key = get_hash(tag, name);
@@ -29,23 +29,41 @@ namespace flame
 		TypeInfo* t = nullptr;
 		switch (tag)
 		{
-		case TagEnum:
+		case TagE:
 			if (name.ends_with("Flags"))
-				t = new TypeInfo_EnumFlags(name, db);
+				t = new TypeInfo_EnumMulti(name, db);
 			else
-				t = new TypeInfo_Enum(name, db);
+				t = new TypeInfo_EnumSingle(name, db);
 			break;
-		case TagData:
+		case TagU:
 			t = new TypeInfo_Udt(name, db);
 			break;
-		case TagPointer:
-			t = new TypeInfo_Pointer(name, db);
+		case TagPE:
+			t = new TypeInfo_PointerOfEnum(name, db);
 			break;
-		case TagUdt:
-			t = new TypeInfo_Udt(name, db);
+		case TagPD:
+			t = new TypeInfo_PointerOfData(name, db);
 			break;
-		case TagVector:
-			t = new TypeInfo_Vector(name, db);
+		case TagPU:
+			t = new TypeInfo_PointerOfUdt(name, db);
+			break;
+		case TagVE:
+			t = new TypeInfo_VectorOfEnum(name, db);
+			break;
+		case TagVD:
+			t = new TypeInfo_VectorOfData(name, db);
+			break;
+		case TagVU:
+			t = new TypeInfo_VectorOfUdt(name, db);
+			break;
+		case TagVPE:
+			t = new TypeInfo_VectorOfPointerOfEnum(name, db);
+			break;
+		case TagVPD:
+			t = new TypeInfo_VectorOfPointerOfData(name, db);
+			break;
+		case TagVPU:
+			t = new TypeInfo_VectorOfPointerOfUdt(name, db);
 			break;
 		}
 

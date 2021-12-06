@@ -15,6 +15,23 @@ TypeInfoDataBase db;
 
 TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 {
+	//else if (ret.starts_with("std::vector<"))
+	//{
+	//	static std::regex reg("std::vector<([\\w:\\*<>]+),");
+	//	std::smatch res;
+	//	if (std::regex_search(ret, res, reg))
+	//	{
+	//		auto str = format(TagD, res[1].str()).second;
+	//		if (tag == TagD)
+	//		{
+	//			ret.first = TagVector;
+	//			ret = str;
+	//		}
+	//		else
+	//			ret = "std::vector<" + str + ">";
+	//	}
+	//}
+
 	DWORD dw;
 	wchar_t* pwname;
 
@@ -59,7 +76,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagEnum:
 	{
 		s_type->get_name(&pwname);
-		return TypeInfo::get(TypeInfo::format(TagEnum, w2s(pwname)), db);
+		return TypeInfo::get(TagE, TypeInfo::format_name(w2s(pwname)), db);
 	}
 	case SymTagBaseType:
 		return TypeInfo::get(TagData, base_type_name(s_type));
