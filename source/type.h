@@ -14,6 +14,7 @@
 #include <memory>
 #include <algorithm>
 #include <random>
+#include <filesystem>
 
 namespace flame
 {
@@ -27,6 +28,21 @@ namespace flame
 	typedef void*				voidptr;
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
+
+	template<typename...>
+	struct type_list {};
+
+	template<typename U, typename T, typename... Args>
+	constexpr bool is_one_of(type_list<T, Args...>)
+	{
+		return std::is_same_v<T, U> || is_one_of<U>(type_list<Args...>());
+	}
+
+	template<typename U, typename T>
+	constexpr bool is_one_of(type_list<T>)
+	{
+		return std::is_same_v<T, U>;
+	}
 
 	template<class, template<typename...> class>
 	inline constexpr bool is_specialization = false;
@@ -43,25 +59,16 @@ namespace flame
 	template<typename T>
 	concept enum_type = std::is_enum_v<T>;
 
-	template<typename... U>
-	struct type_list {};
-
-	using basic_types = type_list<void, bool, char, uchar, wchar_t, short, ushort, int, uint, int64, uint64, float>;
+	using basic_std_types = type_list<void, bool, char, uchar, wchar_t, short, ushort, int, uint, int64, uint64, float, std::string, std::wstring, std::filesystem::path>;
 
 	template<typename T>
-	concept basic_type = std::same_as<T, int>;
+	concept basic_std_type = is_one_of<T>(basic_std_types());
 
 	template<typename T>
 	concept pointer_type = std::is_pointer_v<T>;
 
 	template<typename T>
 	concept vector_type = is_specialization<T, std::vector>;
-
-	template<typename T>
-	concept vector_of_enum_type = is_specialization<T, std::vector> && enum_type<typename T::value_type>;
-
-	template<typename T>
-	concept vector_of_pointer_type = is_specialization<T, std::vector> && pointer_type<typename T::value_type>;
 
 	template<auto V> inline constexpr auto S = V;
 

@@ -354,5 +354,11 @@ namespace flame
 		}
 		return true;
 	}
+
+	using basic_math_types = type_list<ivec2, ivec3, ivec4, uvec2, uvec3, uvec4, cvec2, cvec3, cvec4, vec2, vec3, vec4, mat2, mat3, mat4, quat, 
+		Rect, AABB, Plane, Frustum>;
+
+	template<typename T>
+	concept basic_math_type = is_one_of<T>(basic_math_types());
 }
 

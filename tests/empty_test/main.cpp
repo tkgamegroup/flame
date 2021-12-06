@@ -54,58 +54,53 @@
 #include <iostream>
 #include <typeinfo>
 #include <vector>
+#include <string>
 
-struct Void {};
-
-template<typename...> struct concat;
-
-template<template<typename...> typename List, typename T>
-struct concat<List<Void>, T>
+template<typename...>
+struct type_list
 {
-    typedef List<T> type;
 };
 
-template<template<typename...> class List, typename...Types, typename T>
-struct concat<List<Types...>, T>
+template<typename U, typename T, typename... Args>
+constexpr bool is_one_of(type_list<T, Args...>)
 {
-    typedef List<Types..., T> type;
-};
-
-template<typename...> struct TypeList {};
-
-template<>
-struct TypeList<Void> {};
-typedef TypeList<Void> TypelistVoid;
-#define TYPE_LIST TypelistVoid
-
-class Foo { };
-
-typedef typename concat<TYPE_LIST, Foo>::type TypeListFoo;
-#undef TYPE_LIST
-#define TYPE_LIST TypeListFoo
-
-class Bar { };
-
-typedef typename concat<TYPE_LIST, Bar>::type TypeListBar;
-#undef TYPE_LIST
-#define TYPE_LIST TypeListBar
-
-struct list_of_types {
-    typedef TYPE_LIST type;
-};
-
-template<typename T, typename...Types>
-inline void info(TypeList<T, Types...>) {
-    std::cout << typeid(T).name() << std::endl;
-    info(TypeList<Types...>());
+    return std::is_same_v<T, U> || is_one_of<U>(type_list<Args...>());
 }
 
-//template<typename T>
-//inline void info(TypeList<T>) {
-//    std::cout << typeid(T).name() << std::endl;
-//}
+template<typename U, typename T>
+constexpr bool is_one_of(type_list<T>) 
+{
+    return std::is_same_v<T, U>;
+}
 
-int main() {
-    info(list_of_types::type());
+using basic_types = type_list<void, bool, char, wchar_t, short, int, float>;
+
+template<typename T>
+concept basic_type = is_one_of<T>(basic_types());
+
+template<typename T>
+concept not_basic_type = !is_one_of<T>(basic_types());
+
+template<basic_type T>
+void print(T v)
+{
+    std::cout << v << std::endl;
+}
+
+template<typename T>
+void print(T v)
+{
+    std::cout << "UDT type?: " << typeid(T).name() << std::endl;
+}
+
+struct A
+{
+
+};
+
+int main() 
+{
+    print(123);
+    print(A());
     return 0;
 }

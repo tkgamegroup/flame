@@ -48,6 +48,36 @@ namespace flame
 		MetaSecondaryAttribute
 	};
 
+	template<typename T>
+	concept basic_type = basic_std_type<T> && basic_math_type<T>;
+
+	template<typename T>
+	concept pointer_of_enum_type = pointer_type<T> && enum_type<std::remove_pointer_t<T>>;
+
+	template<typename T>
+	concept pointer_of_data_type = pointer_type<T> && basic_type<std::remove_pointer_t<T>>;
+
+	template<typename T>
+	concept pointer_of_udt_type = pointer_type<T>;
+
+	template<typename T>
+	concept vector_of_enum_type = vector_type<T> && enum_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_data_type = vector_type<T> && basic_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_udt_type = vector_type<T>;
+
+	template<typename T>
+	concept vector_of_pointer_of_enum_type = vector_type<T> && pointer_of_enum_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_pointer_of_data_type = vector_type<T> && pointer_of_data_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_pointer_of_udt_type = vector_type<T> && pointer_of_udt_type<typename T::value_type>;
+
 	FLAME_FOUNDATION_EXPORTS extern TypeInfoDataBase& tidb;
 
 	struct TypeInfo
@@ -165,10 +195,10 @@ namespace flame
 			return ret;
 		}
 
-		template<not_enum_type T>
+		template<basic_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(format(TagD, typeid(T).name()), db);
+			static auto ret = get(TagD, format_name(typeid(T).name()), db);
 			return ret;
 		}
 

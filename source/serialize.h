@@ -6,7 +6,6 @@
 #include <locale>
 #include <codecvt>
 
-#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
