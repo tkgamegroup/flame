@@ -6,7 +6,12 @@
 
 namespace flame
 {
-	inline void serialize_xml(UdtInfo* ui, void* src, pugi::xml_node dst)
+	struct SerializeXmlSpec
+	{
+
+	};
+
+	inline void serialize_xml(UdtInfo* ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
 		for (auto& vi : ui->variables)
 		{
@@ -26,10 +31,10 @@ namespace flame
 				break;
 			case TagVE:
 			{
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 				auto& vec = *(std::vector<int>*)p;
 				if (!vec.empty())
 				{
-					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					auto n = dst.append_child(vi.name.c_str());
 					for (auto i = 0; i < vec.size(); i++)
 					{
@@ -41,10 +46,10 @@ namespace flame
 				break;
 			case TagVD:
 			{
+				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
-					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto n = dst.append_child(vi.name.c_str());
 					p = (char*)vec.data();
 					auto len = (vec.end() - vec.begin()) / ti->size;
@@ -59,10 +64,10 @@ namespace flame
 				break;
 			case TagVU:
 			{
+				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
-					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
 					auto n = dst.append_child(vi.name.c_str());
 					p = (char*)vec.data();
 					auto len = (vec.end() - vec.begin()) / ti->size;
@@ -75,11 +80,18 @@ namespace flame
 				}
 			}
 				break;
+			case TagVPU:
+				break;
 			}
 		}
 	}
 
-	inline void serialize_text(UdtInfo* ui, void* src, std::ofstream& dst, const std::string& indent = "")
+	struct SerializeTextSpec
+	{
+		std::map<TypeInfo*, std::function<void(void* src, std::ofstream& dst, const std::string& indent)>> map;
+	};
+
+	inline void serialize_text(UdtInfo* ui, void* src, std::ofstream& dst, const std::string& indent = "", const SerializeTextSpec& spec = {})
 	{
 		for (auto& vi : ui->variables)
 		{
@@ -105,12 +117,12 @@ namespace flame
 				break;
 			case TagVE:
 			{
+				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 				auto& vec = *(std::vector<int>*)p;
 				if (!vec.empty())
 				{
 					if (!vi.name.empty())
 						dst << indent << vi.name << std::endl;
-					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					for (auto i = 0; i < vec.size(); i++)
 						dst << indent << " - " << ti->serialize(&vec[i]) << std::endl;
 					dst << std::endl;
@@ -119,12 +131,12 @@ namespace flame
 				break;
 			case TagVD:
 			{
+				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
 					if (!vi.name.empty())
 						dst << indent << vi.name << std::endl;
-					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto len = (vec.end() - vec.begin()) / ti->size;
 					p = (char*)vec.data();
 					for (auto i = 0; i < len; i++)
@@ -138,12 +150,12 @@ namespace flame
 				break;
 			case TagVU:
 			{
+				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
 					if (!vi.name.empty())
 						dst << indent << vi.name << std::endl;
-					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
 					auto len = (vec.end() - vec.begin()) / ti->size;
 					p = (char*)vec.data();
 					for (auto i = 0; i < len; i++)
@@ -156,13 +168,31 @@ namespace flame
 				}
 			}
 				break;
+			case TagVPU:
+			{
+				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+				if (auto it = spec.map.find(ti); it != spec.map.end())
+				{
+					auto& vec = *(std::vector<void*>*)p;
+					if (!vec.empty())
+					{
+						for (auto i = 0; i < vec.size(); i++)
+						{
+							dst << indent << " - " << std::endl;
+							it->second(&vec[i], dst, indent + "  ");
+						}
+						dst << std::endl;
+					}
+				}
+			}
+				break;
 			}
 		}
 		dst << std::endl;
 	}
 
 	template <class T>
-	inline void serialize_text(T* src, std::ofstream& dst)
+	inline void serialize_text(T* src, std::ofstream& dst, const SerializeTextSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
@@ -184,7 +214,12 @@ namespace flame
 		}
 	}
 
-	inline void unserialize_text(UdtInfo* ui, std::ifstream& src, void* dst)
+	struct UnserializeTextSpec
+	{
+
+	};
+
+	inline void unserialize_text(UdtInfo* ui, std::ifstream& src, void* dst, const UnserializeTextSpec& spec = {})
 	{
 		std::string line;
 		auto read_var = [&](VariableInfo& vi) {
@@ -206,8 +241,8 @@ namespace flame
 				break;
 			case TagVE:
 			{
-				auto& vec = *(std::vector<int>*)((char*)dst + vi.offset);
 				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+				auto& vec = *(std::vector<int>*)((char*)dst + vi.offset);
 				while (!src.eof())
 				{
 					std::getline(src, line);
@@ -222,8 +257,8 @@ namespace flame
 				break;
 			case TagVD:
 			{
-				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
 				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
 				auto len = 0;
 				while (!src.eof())
 				{
@@ -240,8 +275,8 @@ namespace flame
 				break;
 			case TagVU:
 			{
-				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
 				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
 				auto len = 0;
 				while (!src.eof())
 				{
@@ -254,6 +289,11 @@ namespace flame
 					vec.resize(len * ti->size);
 					unserialize_text(ui, src, (char*)vec.data() + (len - 1) * ti->size);
 				}
+			}
+				break;
+			case TagVPU:
+			{
+				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
 			}
 				break;
 			}

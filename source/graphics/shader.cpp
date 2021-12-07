@@ -1191,10 +1191,6 @@ namespace flame
 
 				GraphicsPipelineInfo info;
 
-				//std::ifstream file(filename);
-				//unserialize_text(file, &info);
-				//file.close();
-
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
 
@@ -1266,6 +1262,21 @@ namespace flame
 						TypeInfo::unserialize_t(a.value(), &bo.src_alpha);
 					if (auto a = n_bo.attribute("dst_alpha"); a)
 						TypeInfo::unserialize_t(a.value(), &bo.dst_alpha);
+				}
+
+				{
+					std::ofstream file(L"D:\\1.pipeline");
+					SerializeTextSpec spec;
+					spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+						auto s = *(Shader**)src;
+						dst << indent << s->filename.string() << std::endl;
+						dst << indent;
+						for (auto& d : s->defines)
+							dst << d << " ";
+						dst << std::endl;
+					};
+					serialize_text(&info, file, spec);
+					file.close();
 				}
 
 				if (device)

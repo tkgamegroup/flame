@@ -1,6 +1,5 @@
-**/build/
-bin/*
-!bin/kill_pdbs.bat
-include/
-temp.txt
 /.vs
+/build
+/include
+/bin
+temp.txt
