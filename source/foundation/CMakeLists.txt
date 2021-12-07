@@ -1,4 +1,4 @@
-file(GLOB source_files "*.h*" "*.c*")
+file(GLOB source_files "*.h*" "../*.h*" "*.c*")
 add_library(flame_foundation SHARED ${source_files})
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)

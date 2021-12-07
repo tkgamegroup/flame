@@ -13,7 +13,7 @@ inline const wchar_t* type_prefix(TypeTag t, bool is_array = false)
 		return L"Enum Single\n";
 	case TagEnumMulti:
 		return L"Enum Multi\n";
-	case TagData:
+	case TagD:
 		return is_array ? L"Array\n" : L"Data\n";
 	case TagPointer:
 		return is_array ? L"Array Pointer\n" : L"Pointer\n";
@@ -45,7 +45,7 @@ inline cvec4 type_color(TypeTag t)
 		return cvec4(23, 160, 93, 255);
 	case TagEnumMulti:
 		return cvec4(23, 160, 93, 255);
-	case TagData:
+	case TagD:
 		return cvec4(40, 58, 228, 255);
 	case TagPointer:
 		return cvec4(239, 94, 41, 255);

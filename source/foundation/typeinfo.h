@@ -54,7 +54,7 @@ namespace flame
 	};
 
 	template<typename T>
-	concept basic_type = basic_std_type<T> && basic_math_type<T>;
+	concept basic_type = basic_std_type<T> || basic_math_type<T>;
 
 	template<typename T>
 	concept pointer_of_enum_type = pointer_type<T> && enum_type<std::remove_pointer_t<T>>;
@@ -63,7 +63,7 @@ namespace flame
 	concept pointer_of_data_type = pointer_type<T> && basic_type<std::remove_pointer_t<T>>;
 
 	template<typename T>
-	concept pointer_of_udt_type = pointer_type<T>;
+	concept pointer_of_udt_type = pointer_type<T> && !basic_type<std::remove_pointer_t<T>>;
 
 	template<typename T>
 	concept vector_of_enum_type = vector_type<T> && enum_type<typename T::value_type>;
@@ -72,7 +72,7 @@ namespace flame
 	concept vector_of_data_type = vector_type<T> && basic_type<typename T::value_type>;
 
 	template<typename T>
-	concept vector_of_udt_type = vector_type<T>;
+	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type>;
 
 	template<typename T>
 	concept vector_of_pointer_of_enum_type = vector_type<T> && pointer_of_enum_type<typename T::value_type>;
@@ -201,63 +201,63 @@ namespace flame
 		template<pointer_of_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagPE, format_name(typeid(T).name()), db);
+			static auto ret = get(TagPE, format_name(typeid(std::remove_pointer_t<T>).name()), db);
 			return ret;
 		}
 
 		template<pointer_of_data_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagPD, format_name(typeid(T).name()), db);
+			static auto ret = get(TagPD, format_name(typeid(std::remove_pointer_t<T>).name()), db);
 			return ret;
 		}
 
 		template<pointer_of_udt_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagPU, format_name(typeid(T).name()), db);
+			static auto ret = get(TagPU, format_name(typeid(std::remove_pointer_t<T>).name()), db);
 			return ret;
 		}
 
 		template<vector_of_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVE, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVE, format_name(typeid(typename T::value_type).name()), db);
 			return ret;
 		}
 
 		template<vector_of_data_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVD, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVD, format_name(typeid(typename T::value_type).name()), db);
 			return ret;
 		}
 
 		template<vector_of_udt_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVU, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVU, format_name(typeid(typename T::value_type).name()), db);
 			return ret;
 		}
 
 		template<vector_of_pointer_of_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVPE, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVPE, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
 			return ret;
 		}
 
 		template<vector_of_pointer_of_data_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVPD, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVPD, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
 			return ret;
 		}
 
 		template<vector_of_pointer_of_udt_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
-			static auto ret = get(TagVPU, format_name(typeid(T).name()), db);
+			static auto ret = get(TagVPU, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
 			return ret;
 		}
 

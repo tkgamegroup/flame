@@ -83,7 +83,7 @@ namespace flame
 	//					if (f.type->name != "void")
 	//						getters.emplace_back(f.name.substr(4), f.type, f);
 	//				}
-	//				else if (f.name.compare(0, 4, "set_") == 0 && f.parameters.size() == 1 && f.type == TypeInfo::get(TagData, "", tidb))
+	//				else if (f.name.compare(0, 4, "set_") == 0 && f.parameters.size() == 1 && f.type == TypeInfo::get(TagD, "", tidb))
 	//				{
 	//					auto t = f.parameters[0];
 	//					if (t->name != "void")
@@ -550,7 +550,7 @@ namespace flame
 		//		{
 		//			auto d = attr.get_type->create(false);
 		//			attr.getter->call(c.get(), d, nullptr);
-		//			if (attr.get_type->tag == TagData && attr.set_type->tag == TagPointer)
+		//			if (attr.get_type->tag == TagD && attr.set_type->tag == TagPointer)
 		//			{
 		//				void* ps[] = { &d };
 		//				attr.setter->call(cc, nullptr, ps);

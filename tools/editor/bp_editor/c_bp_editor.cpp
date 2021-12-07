@@ -742,7 +742,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							}, Capture().set_thiz(input), checkboxes));
 						}
 							break;
-						case TagData:
+						case TagD:
 							switch (base_hash)
 							{
 							case FLAME_CHASH("bool"):
@@ -1522,7 +1522,7 @@ void cBPEditor::show_add_node_menu(const vec2& pos)
 								}
 							}, Capture().set_data(&_capture));
 						}
-						else if (tag == TagData && !is_array)
+						else if (tag == TagD && !is_array)
 						{
 							if (basic_type_size(base_hash))
 							{

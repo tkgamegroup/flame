@@ -22,54 +22,59 @@ namespace flame
 			}
 				break;
 			case TagU:
+				serialize_xml(((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()));
+				break;
+			case TagVE:
 			{
-				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
-				if (ui)
-					serialize_xml(ui, p, dst.append_child(vi.name.c_str()));
+				auto& vec = *(std::vector<int>*)p;
+				if (!vec.empty())
+				{
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+					auto n = dst.append_child(vi.name.c_str());
+					for (auto i = 0; i < vec.size(); i++)
+					{
+						auto nn = n.append_child("item");
+						nn.append_attribute("v").set_value(ti->serialize(&vec[i]).c_str());
+					}
+				}
 			}
 				break;
-			//default:
-			//	if (vi.type->tag >= TagV_Beg && vi.type->tag <= TagV_End)
-			//	{
-			//		auto& vec = *(std::vector<char>*)p;
-			//		if (!vec.empty())
-			//		{
-			//			auto n = dst.append_child(vi.name.c_str());
-			//			p = (char*)vec.data();
-			//			auto len = (vec.end() - vec.begin()) / vi.type->size;
-			//			switch (vi.type->tag)
-			//			{
-
-			//			}
-			//			switch (ti->tag)
-			//			{
-			//			case TagE:
-			//			case TagEnumFlags:
-			//			case TagData:
-			//				for (auto i = 0; i < len; i++)
-			//				{
-			//					auto nn = n.append_child("item");
-			//					nn.append_attribute("v").set_value(ti->serialize(p).c_str());
-			//					p += ti->size;
-			//				}
-			//				break;
-			//			case TagU:
-			//			{
-			//				auto ui = ((TypeInfo_Udt*)ti)->ui;
-			//				if (ui)
-			//				{
-			//					for (auto i = 0; i < len; i++)
-			//					{
-			//						auto nn = n.append_child("item");
-			//						serialize_xml(ui, p, nn);
-			//						p += ti->size;
-			//					}
-			//				}
-			//			}
-			//			break;
-			//			}
-			//		}
-			//	}
+			case TagVD:
+			{
+				auto& vec = *(std::vector<char>*)p;
+				if (!vec.empty())
+				{
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+					auto n = dst.append_child(vi.name.c_str());
+					p = (char*)vec.data();
+					auto len = (vec.end() - vec.begin()) / ti->size;
+					for (auto i = 0; i < len; i++)
+					{
+						auto nn = n.append_child("item");
+						nn.append_attribute("v").set_value(ti->serialize(p).c_str());
+						p += ti->size;
+					}
+				}
+			}
+				break;
+			case TagVU:
+			{
+				auto& vec = *(std::vector<char>*)p;
+				if (!vec.empty())
+				{
+					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
+					auto n = dst.append_child(vi.name.c_str());
+					p = (char*)vec.data();
+					auto len = (vec.end() - vec.begin()) / ti->size;
+					for (auto i = 0; i < len; i++)
+					{
+						auto nn = n.append_child("item");
+						serialize_xml(ti->ui, p, nn);
+						p += ti->size;
+					}
+				}
+			}
+				break;
 			}
 		}
 	}
@@ -94,53 +99,62 @@ namespace flame
 			}
 				break;
 			case TagU:
+				if (!vi.name.empty())
+					dst << indent << vi.name << std::endl;
+				serialize_text(((TypeInfo_Udt*)vi.type)->ui, p, dst, indent + "  ");
+				break;
+			case TagVE:
 			{
-				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
-				if (ui)
+				auto& vec = *(std::vector<int>*)p;
+				if (!vec.empty())
 				{
 					if (!vi.name.empty())
 						dst << indent << vi.name << std::endl;
-					serialize_text(ui, p, dst, indent + "  ");
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+					for (auto i = 0; i < vec.size(); i++)
+						dst << indent << " - " << ti->serialize(&vec[i]) << std::endl;
+					dst << std::endl;
 				}
 			}
 				break;
-			//case TagVector:
-			//	if (!vi.name.empty())
-			//		dst << indent << vi.name << std::endl;
-			//	auto ti = ((TypeInfo_Vector*)vi.type)->ti;
-			//	if (ti)
-			//	{
-			//		auto& vec = *(std::vector<char>*)p;
-			//		p = (char*)vec.data();
-			//		auto len = (vec.end() - vec.begin()) / ti->size;
-			//		switch (ti->tag)
-			//		{
-			//		case TagE:
-			//		case TagEnumFlags:
-			//		case TagData:
-			//			for (auto i = 0; i < len; i++)
-			//			{
-			//				dst << indent << " - " << ti->serialize(p) << std::endl;
-			//				p += ti->size;
-			//			}
-			//			break;
-			//		case TagU:
-			//		{
-			//			auto ui = ((TypeInfo_Udt*)ti)->ui;
-			//			if (ui)
-			//			{
-			//				for (auto i = 0; i < len; i++)
-			//				{
-			//					dst << indent << " - " << std::endl;
-			//					serialize_text(ui, p, dst, indent + "  ");
-			//					p += ti->size;
-			//				}
-			//			}
-			//		}
-			//			break;
-			//		}
-			//	}
-				dst << std::endl;
+			case TagVD:
+			{
+				auto& vec = *(std::vector<char>*)p;
+				if (!vec.empty())
+				{
+					if (!vi.name.empty())
+						dst << indent << vi.name << std::endl;
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+					auto len = (vec.end() - vec.begin()) / ti->size;
+					p = (char*)vec.data();
+					for (auto i = 0; i < len; i++)
+					{
+						dst << indent << " - " << ti->serialize(p) << std::endl;
+						p += ti->size;
+					}
+					dst << std::endl;
+				}
+			}
+				break;
+			case TagVU:
+			{
+				auto& vec = *(std::vector<char>*)p;
+				if (!vec.empty())
+				{
+					if (!vi.name.empty())
+						dst << indent << vi.name << std::endl;
+					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
+					auto len = (vec.end() - vec.begin()) / ti->size;
+					p = (char*)vec.data();
+					for (auto i = 0; i < len; i++)
+					{
+						dst << indent << " - " << std::endl;
+						serialize_text(ui, p, dst, indent + "  ");
+						p += ti->size;
+					}
+					dst << std::endl;
+				}
+			}
 				break;
 			}
 		}
@@ -165,9 +179,8 @@ namespace flame
 				vi.offset = 0;
 				serialize_text(&ui, src, dst);
 			}
-			break;
-		default: 
-			assert(0);
+			else 
+				assert(0);
 		}
 	}
 
@@ -191,45 +204,58 @@ namespace flame
 				unserialize_text(ui, src, (char*)dst + vi.offset);
 			}
 				break;
-			//case TagVector:
-			//{
-			//	auto ti = ((TypeInfo_Vector*)vi.type)->ti;
-			//	auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
-			//	vec.clear();
-			//	auto len = 0;
-			//	switch (ti->tag)
-			//	{
-			//	case TagE:
-			//	case TagEnumFlags:
-			//	case TagData:
-			//		while (!src.eof())
-			//		{
-			//			std::getline(src, line);
-			//			SUS::ltrim(line);
-			//			if (line.empty())
-			//				break;
+			case TagVE:
+			{
+				auto& vec = *(std::vector<int>*)((char*)dst + vi.offset);
+				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+				while (!src.eof())
+				{
+					std::getline(src, line);
+					SUS::ltrim(line);
+					if (line.empty())
+						break;
 
-			//			len++;
-			//			vec.resize(len * ti->size);
-			//			ti->unserialize(line.substr(2), (char*)vec.data() + (len - 1) * ti->size);
-			//		}
-			//		break;
-			//	case TagU:
-			//		while (!src.eof())
-			//		{
-			//			std::getline(src, line);
-			//			SUS::ltrim(line);
-			//			if (line.empty())
-			//				break;
+					vec.resize(vec.size() + 1);
+					ti->unserialize(line.substr(2), &vec[vec.size() - 1]);
+				}
+			}
+				break;
+			case TagVD:
+			{
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
+				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto len = 0;
+				while (!src.eof())
+				{
+					std::getline(src, line);
+					SUS::ltrim(line);
+					if (line.empty())
+						break;
 
-			//			len++;
-			//			vec.resize(len * ti->size);
-			//			unserialize_text(ui, src, (char*)vec.data() + (len - 1) * ti->size);
-			//		}
-			//		break;
-			//	}
-			//}
-			//	break;
+					len++;
+					vec.resize(len * ti->size);
+					ti->unserialize(line.substr(2), (char*)vec.data() + (len - 1) * ti->size);
+				}
+			}
+				break;
+			case TagVU:
+			{
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
+				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto len = 0;
+				while (!src.eof())
+				{
+					std::getline(src, line);
+					SUS::ltrim(line);
+					if (line.empty())
+						break;
+
+					len++;
+					vec.resize(len * ti->size);
+					unserialize_text(ui, src, (char*)vec.data() + (len - 1) * ti->size);
+				}
+			}
+				break;
 			}
 		};
 
@@ -268,9 +294,8 @@ namespace flame
 				vi.offset = 0;
 				unserialize_text(&ui, src, dst);
 			}
-			break;
-		default:
-			assert(0);
+			else
+				assert(0);
 		}
 	}
 }

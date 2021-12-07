@@ -34,7 +34,7 @@ namespace flame
 				ui.name = name;
 				ui.size = size;
 
-				ret = TypeInfo::get(TagData, name, db);
+				ret = TypeInfo::get(TagD, name, db);
 
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
@@ -56,7 +56,7 @@ namespace flame
 				}
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
-				ret = TypeInfo::get(TagPointer, "ShaderImage", db);
+				ret = TypeInfo::get(TagPU, "ShaderImage", db);
 			else
 			{
 				switch (src.basetype)
@@ -1191,9 +1191,9 @@ namespace flame
 
 				GraphicsPipelineInfo info;
 
-				std::ifstream file(filename);
-				unserialize_text(file, &info);
-				file.close();
+				//std::ifstream file(filename);
+				//unserialize_text(file, &info);
+				//file.close();
 
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;

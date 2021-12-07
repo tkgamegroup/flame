@@ -13,25 +13,29 @@ using namespace flame;
 
 TypeInfoDataBase db;
 
+TypeTag parse_vector(std::string& name)
+{
+	static std::regex reg("std::vector<([\\w\\s:\\*<>]+),");
+	std::smatch res;
+	if (std::regex_search(name, res, reg))
+	{
+		name = res[1].str();
+		auto is_enum = SUS::cut_head_if(name, "enum ");
+		name = TypeInfo::format_name(name);
+		if (is_enum)
+			return TagVE;
+		auto is_pointer = SUS::cut_tail_if(name, "*") || SUS::cut_tail_if(name, "*__ptr64");
+		if (TypeInfo::is_basic_type(name))
+			return TagVD;
+		else
+			return TagVU;
+	}
+	assert(0);
+	return TagCount;
+}
+
 TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 {
-	//else if (ret.starts_with("std::vector<"))
-	//{
-	//	static std::regex reg("std::vector<([\\w:\\*<>]+),");
-	//	std::smatch res;
-	//	if (std::regex_search(ret, res, reg))
-	//	{
-	//		auto str = format(TagD, res[1].str()).second;
-	//		if (tag == TagD)
-	//		{
-	//			ret.first = TagVector;
-	//			ret = str;
-	//		}
-	//		else
-	//			ret = "std::vector<" + str + ">";
-	//	}
-	//}
-
 	DWORD dw;
 	wchar_t* pwname;
 
@@ -79,36 +83,56 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		return TypeInfo::get(TagE, TypeInfo::format_name(w2s(pwname)), db);
 	}
 	case SymTagBaseType:
-		return TypeInfo::get(TagData, base_type_name(s_type));
+		return TypeInfo::get(TagD, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
+		TypeInfo* ret = nullptr;
 		IDiaSymbol* pointer_type;
 		s_type->get_type(&pointer_type);
 		pointer_type->get_symTag(&dw);
 		switch (dw)
 		{
 		case SymTagEnum:
-			name = "int";
+			pointer_type->get_name(&pwname);
+			ret = TypeInfo::get(TagPE, TypeInfo::format_name(w2s(pwname)), db);
 			break;
 		case SymTagBaseType:
-			name = base_type_name(pointer_type);
+			ret = TypeInfo::get(TagPD, TypeInfo::format_name(base_type_name(pointer_type)), db);
 			break;
 		case SymTagPointerType:
-			name = "complex_pointer";
 			break;
 		case SymTagUDT:
+		{
 			pointer_type->get_name(&pwname);
-			name = TypeInfo::format(TagData, w2s(pwname)).second;
+			auto name = TypeInfo::format_name(w2s(pwname));
+			if (TypeInfo::is_basic_type(name))
+				ret = TypeInfo::get(TagPD, name, db);
+			else
+				ret = TypeInfo::get(TagPU, name, db);
+		}
 			break;
 		}
+		assert(ret);
 		pointer_type->Release();
-		return TypeInfo::get(TagPointer, name);
+		return ret;
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
-		return TypeInfo::get(TypeInfo::format(TagData, w2s(pwname)), db);
+		auto name = TypeInfo::format_name(w2s(pwname));
+		if (TypeInfo::is_basic_type(name))
+			return TypeInfo::get(TagD, name, db);
+		else
+		{
+			if (name.starts_with("std::vector<"))
+			{
+				name = w2s(pwname);
+				auto tag = parse_vector(name);
+				return TypeInfo::get(tag, name, db);
+			}
+			return TypeInfo::get(TagU, name, db);
+		}
 	}
 	case SymTagFunctionArgType:
 	{
@@ -119,7 +143,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		return ret;
 	}
 	default:
-		return TypeInfo::get(TagData, "__unsupported__symtag_" + std::to_string(dw));
+		return TypeInfo::get(TagD, "__unsupported__symtag_" + std::to_string(dw));
 	}
 }
 
@@ -250,7 +274,7 @@ process:
 		auto& r = udt_rules.emplace_back();
 		r.name = "^" + i + "$";
 		auto& dr = r.items.emplace_back();
-		dr.type = TagData;
+		dr.type = TagD;
 		dr.name = "^[\\w:]+$";
 	}
 	if (!desc_path.empty())
@@ -259,7 +283,7 @@ process:
 		pugi::xml_node desc_root;
 		if (!desc_doc.load_file(desc_path.c_str()) || (desc_root = desc_doc.first_child()).name() != std::string("desc"))
 		{
-			printf("desc does not exist or wrong format: %s\n", desc_path.string().c_str());
+			printf("desc does not exist or wrong format_name: %s\n", desc_path.string().c_str());
 			return 0;
 		}
 
@@ -275,7 +299,7 @@ process:
 			for (auto n_i : n_rule)
 			{
 				auto& item = ur.items.emplace_back();
-				item.type = std::string(n_i.attribute("type").value()) == "function" ? TagFunction : TagData;
+				item.type = std::string(n_i.attribute("type").value()) == "function" ? TagF : TagD;
 				item.name = n_i.attribute("name").value();
 				item.metas = n_i.attribute("metas").value();
 			}
@@ -346,22 +370,43 @@ process:
 			std::smatch res;
 			if (std::regex_search(name, res, reg))
 			{
-				auto str = res[1].str();
-				if (SUS::cut_head_if(str, "enum "))
+				auto name = res[1].str();
+				if (SUS::cut_head_if(name, "enum "))
 				{
 					auto& r = enum_rules.emplace_back();
-					r.name = "^" + str + "$";
+					r.name = "^" + name + "$";
 				}
 				else
 				{
-					auto tagname = TypeInfo::format(TagData, str);
-					if (tagname.first != TagData)
+					name = TypeInfo::format_name(name);
+					if (!TypeInfo::is_basic_type(name))
 					{
-						auto& r = udt_rules.emplace_back();
-						r.name = "^" + tagname.second + "$";
-						auto& dr = r.items.emplace_back();
-						dr.type = TagData;
-						dr.name = "^[\\w:]+$";
+						if (name.starts_with("std::vector<"))
+						{
+							name = res[1].str();
+							auto tag = parse_vector(name);
+							if (tag == TagVE)
+							{
+								auto& r = enum_rules.emplace_back();
+								r.name = "^" + name + "$";
+							}
+							else if (tag == TagVU)
+							{
+								auto& r = udt_rules.emplace_back();
+								r.name = "^" + name + "$";
+								auto& dr = r.items.emplace_back();
+								dr.type = TagD;
+								dr.name = "^[\\w:]+$";
+							}
+						}
+						else
+						{
+							auto& r = udt_rules.emplace_back();
+							r.name = "^" + name + "$";
+							auto& dr = r.items.emplace_back();
+							dr.type = TagD;
+							dr.name = "^[\\w:]+$";
+						}
 					}
 				}
 			}
@@ -375,6 +420,8 @@ process:
 		need_collect = false;
 		std::vector<TypeInfo*> referenced_types;
 		auto reference_type = [&](TypeInfo* ti) {
+			if (ti->tag == TagD)
+				return;
 			if (std::find(referenced_types.begin(), referenced_types.end(), ti) == referenced_types.end())
 				referenced_types.push_back(ti);
 		};
@@ -506,7 +553,7 @@ process:
 						continue;
 
 					std::string metas;
-					if (ur->pass_item(TagFunction, name, &metas))
+					if (ur->pass_item(TagF, name, &metas))
 					{
 						auto rva = 0;
 						auto voff = -1;
@@ -583,7 +630,7 @@ process:
 					s_variable->get_name(&pwname);
 					auto name = w2s(pwname);
 					std::string metas;
-					if (ur->pass_item(TagData, name, &metas))
+					if (ur->pass_item(TagD, name, &metas))
 					{
 						IDiaSymbol* s_type;
 						s_variable->get_type(&s_type);
@@ -620,12 +667,14 @@ process:
 		}
 		s_udts->Release();
 
+		enum_rules.clear();
+		udt_rules.clear();
 		for (auto t : referenced_types)
 		{
 			switch (t->tag)
 			{
-			case TagEnum:
-			case TagEnumFlags:
+			case TagE:
+			case TagVE:
 				if (!find_enum(t->name, db))
 				{
 					auto& r = enum_rules.emplace_back();
@@ -633,14 +682,14 @@ process:
 					need_collect = true;
 				}
 				break;
-			case TagUdt:
-			case TagVector:
+			case TagU:
+			case TagVU:
 				if (!find_udt(t->name, db))
 				{
 					auto& r = udt_rules.emplace_back();
 					r.name = "^" + t->name + "$";
 					auto& dr = r.items.emplace_back();
-					dr.type = TagData;
+					dr.type = TagD;
 					dr.name = "^[\\w:]+$";
 					need_collect = true;
 				}

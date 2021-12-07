@@ -56,51 +56,24 @@
 #include <vector>
 #include <string>
 
-template<typename...>
-struct type_list
-{
-};
-
-template<typename U, typename T, typename... Args>
-constexpr bool is_one_of(type_list<T, Args...>)
-{
-    return std::is_same_v<T, U> || is_one_of<U>(type_list<Args...>());
-}
-
-template<typename U, typename T>
-constexpr bool is_one_of(type_list<T>) 
-{
-    return std::is_same_v<T, U>;
-}
-
-using basic_types = type_list<void, bool, char, wchar_t, short, int, float>;
-
-template<typename T>
-concept basic_type = is_one_of<T>(basic_types());
-
-template<typename T>
-concept not_basic_type = !is_one_of<T>(basic_types());
-
-template<basic_type T>
-void print(T v)
-{
-    std::cout << v << std::endl;
-}
-
-template<typename T>
-void print(T v)
-{
-    std::cout << "UDT type?: " << typeid(T).name() << std::endl;
-}
-
-struct A
+enum E
 {
 
 };
+
+struct ABC
+{
+
+};
+
+using VE = std::vector<E>;
+using VD = std::vector<std::string>;
+using VP = std::vector<ABC*>;
 
 int main() 
 {
-    print(123);
-    print(A());
+    std::cout << typeid(VE).name() << std::endl;
+    std::cout << typeid(VD).name() << std::endl;
+    std::cout << typeid(VP).name() << std::endl;
     return 0;
 }
