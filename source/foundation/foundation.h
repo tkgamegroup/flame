@@ -217,22 +217,6 @@ namespace flame
 		return ret;
 	}
 
-	struct LineReader
-	{
-		std::ifstream file;
-		std::vector<std::string> lines;
-
-		inline bool read_until_empty()
-		{
-
-		}
-
-		inline bool read_until_mark(std::string_view mark)
-		{
-
-		}
-	};
-
 	FLAME_FOUNDATION_EXPORTS extern uint frames;
 	FLAME_FOUNDATION_EXPORTS extern uint fps;
 	FLAME_FOUNDATION_EXPORTS extern float delta_time; // second

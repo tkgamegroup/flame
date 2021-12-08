@@ -237,6 +237,13 @@ namespace flame
 			}));
 		}
 
+		static std::string get_ltrimed(const std::basic_string<CH>& s)
+		{
+			auto ret = s;
+			ltrim(ret);
+			return s;
+		}
+
 		static void rtrim(std::basic_string<CH>& s)
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
@@ -244,10 +251,24 @@ namespace flame
 			}).base(), s.end());
 		}
 
+		static std::string get_rtrimed(const std::basic_string<CH>& s)
+		{
+			auto ret = s;
+			rtrim(ret);
+			return s;
+		}
+
 		static void trim(std::basic_string<CH>& s)
 		{
 			ltrim(s);
 			rtrim(s);
+		}
+
+		static std::string get_trimed(const std::basic_string<CH>& s)
+		{
+			auto ret = s;
+			trim(ret);
+			return s;
 		}
 		
 		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
@@ -524,6 +545,54 @@ namespace flame
 		write_u(f, v.size());
 		f.write((char*)v.data(), v.size() * sizeof(T));
 	}
+
+	struct LineReader
+	{
+		std::ifstream file;
+		std::vector<std::string> lines;
+		int anchor = 0;
+
+		inline std::string& line(int off = 0)
+		{
+			return lines[anchor + off];
+		}
+
+		inline bool next_line()
+		{
+			if (anchor >= lines.size())
+				return false;
+			anchor++;
+			return true;
+		}
+
+		inline bool read_until_empty()
+		{
+			std::string line;
+			while (true)
+			{
+				if (file.eof())
+					return false;
+				std::getline(file, line);
+				if (SUS::get_ltrimed(line).empty())
+					return true;
+				lines.push_back(line);
+			}
+		}
+
+		inline bool read_until_mark(std::string_view mark)
+		{
+			std::string line;
+			while (true)
+			{
+				if (file.eof())
+					return false;
+				std::getline(file, line);
+				if (SUS::get_ltrimed(line).starts_with(mark))
+					return true;
+				lines.push_back(line);
+			}
+		}
+	};
 
 	struct INI_Entry
 	{
