@@ -397,6 +397,9 @@ process:
 								auto& dr = r.items.emplace_back();
 								dr.type = TagD;
 								dr.name = "^[\\w:]+$";
+								auto& fr = r.items.emplace_back();
+								fr.type = TagF;
+								fr.name = "^ctor$";
 							}
 						}
 						else
@@ -406,6 +409,9 @@ process:
 							auto& dr = r.items.emplace_back();
 							dr.type = TagD;
 							dr.name = "^[\\w:]+$";
+							auto& fr = r.items.emplace_back();
+							fr.type = TagF;
+							fr.name = "^ctor$";
 						}
 					}
 				}
@@ -681,6 +687,7 @@ process:
 				{
 					auto& r = enum_rules.emplace_back();
 					r.name = "^" + t->name + "$";
+
 					need_collect = true;
 				}
 				break;
@@ -693,6 +700,10 @@ process:
 					auto& dr = r.items.emplace_back();
 					dr.type = TagD;
 					dr.name = "^[\\w:]+$";
+					auto& fr = r.items.emplace_back();
+					fr.type = TagF;
+					fr.name = "^ctor$";
+
 					need_collect = true;
 				}
 				break;

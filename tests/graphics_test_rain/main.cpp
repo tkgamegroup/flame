@@ -105,8 +105,207 @@ struct Drop
 };
 std::vector<Drop> drops;
 
+/*
+	std::ofstream file(L"D:\\1.pipeline");
+	SerializeTextSpec spec;
+	spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+		auto o = *(Shader**)src;
+		dst << indent << o->filename.string() << std::endl;
+		dst << indent;
+		for (auto& d : o->defines)
+			dst << d << " ";
+		dst << std::endl;
+	};
+	spec.map[TypeInfo::get<Renderpass*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+		auto o = *(Renderpass**)src;
+		dst << indent << o->filename.string() << std::endl;
+		dst << std::endl;
+	};
+	spec.map[TypeInfo::get<PipelineLayout*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+		auto o = *(PipelineLayout**)src;
+		dst << indent << o->filename.string() << std::endl;
+		dst << std::endl;
+	};
+	serialize_text(&info, file, spec);
+	file.close();
+*/
+
+namespace test
+{
+	struct LineReader
+	{
+		std::ifstream file;
+		std::vector<std::string> lines;
+		int anchor = -1;
+
+		LineReader(const std::filesystem::path& filename) :
+			file(filename)
+		{
+		}
+
+		inline std::string& line(int off = 0)
+		{
+			return lines[anchor + off];
+		}
+
+		inline bool next_line()
+		{
+			if (anchor + 1 >= (int)lines.size())
+				return false;
+			anchor++;
+			return !line().empty();
+		}
+
+		inline bool read_until_empty()
+		{
+			std::string line;
+			while (true)
+			{
+				if (file.eof())
+					return false;
+				std::getline(file, line);
+				if (SUS::get_ltrimed(line).empty())
+					return true;
+				lines.push_back(line);
+			}
+		}
+
+		inline bool read_until_mark(std::string_view mark)
+		{
+			std::string line;
+			while (true)
+			{
+				if (file.eof())
+					return false;
+				std::getline(file, line);
+				if (SUS::get_ltrimed(line).starts_with(mark))
+					return true;
+				lines.push_back(line);
+			}
+		}
+	};
+
+	inline void unserialize_text(UdtInfo* ui, test::LineReader& src, uint indent, void* dst)
+	{
+		while (true)
+		{
+			if (!src.next_line())
+				return;
+			auto ilen = SUS::indent_length(src.line());
+			if (ilen < indent)
+			{
+				src.anchor--;
+				return;
+			}
+			if (ilen > indent)
+				continue;
+
+			auto& vi = *ui->find_variable({ src.line().begin() + ilen, src.line().end() });
+			switch (vi.type->tag)
+			{
+			case TagE:
+			case TagD:
+			{
+				if (!src.next_line())
+					return;
+				auto ilen = SUS::indent_length(src.line());
+				if (ilen == indent + 2)
+					vi.type->unserialize(src.line().substr(ilen), (char*)dst + vi.offset);
+			}
+				break;
+			case TagU:
+			{
+				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
+				unserialize_text(ui, src, indent + 2, (char*)dst + vi.offset);
+			}
+				break;
+			case TagVE:
+			{
+				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+				auto& vec = *(std::vector<int>*)((char*)dst + vi.offset);
+				while (true)
+				{
+					if (!src.next_line())
+						return;
+					auto ilen = SUS::indent_length(src.line());
+					if (ilen == indent + 2)
+					{
+						vec.resize(vec.size() + 1);
+						ti->unserialize(src.line().substr(2), &vec[vec.size() - 1]);
+					}
+				}
+			}
+				break;
+			case TagVD:
+			{
+				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
+				auto len = 0;
+				while (true)
+				{
+					if (!src.next_line())
+						return;
+					auto ilen = SUS::indent_length(src.line());
+					if (ilen == indent + 2)
+					{
+						len++;
+						vec.resize(len * ti->size);
+						ti->unserialize(src.line().substr(2), (char*)vec.data() + (len - 1) * ti->size);
+					}
+				}
+			}
+				break;
+			case TagVU:
+			{
+				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
+				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
+				auto len = 0;
+				while (true)
+				{
+					if (!src.next_line())
+						return;
+					src.anchor--;
+					auto ilen = SUS::indent_length(src.line(1));
+					if (ilen == indent + 2)
+					{
+						len++;
+						vec.resize(len * ti->size);
+						unserialize_text(ti->ui, src, indent + 2, (char*)vec.data() + (len - 1) * ti->size);
+					}
+					else if (ilen > indent)
+						src.anchor++;
+					else
+					{
+						src.anchor--;
+						break;
+					}
+				}
+			}
+				break;
+			}
+		}
+	}
+
+	template <class T>
+	inline void unserialize_text(test::LineReader& src, T* dst)
+	{
+		auto ti = TypeInfo::get<T>();
+		switch (ti->tag)
+		{
+		case TagU:
+			unserialize_text(((TypeInfo_Udt*)ti)->ui, src, 0, dst);
+			break;
+		}
+	}
+}
+
 int entry(int argc, char** args)
 {
+	graphics::GraphicsPipelineInfo info;
+	test::LineReader file(L"D:\\1.pipeline");
+	file.read_until_empty();
+	test::unserialize_text(file, &info);
+
 	d = Device::create(true);
 	nw = NativeWindow::create("Graphics Test", uvec2(640, 360), WindowFrame);
 	w = Window::create(d, nw);

@@ -1268,7 +1268,7 @@ namespace flame
 				}
 
 				{
-					std::ofstream file(L"D:\\1.pipeline");
+					std::ofstream file(L"D:\\2.pipeline");
 					SerializeTextSpec spec;
 					spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
 						auto o = *(Shader**)src;
