@@ -1250,7 +1250,7 @@ namespace flame
 		TypeInfo_Udt* ti = nullptr;
 
 		TypeInfo_PointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagPD, base_name, sizeof(void*))
+			TypeInfo(TagPU, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
@@ -1283,7 +1283,7 @@ namespace flame
 		TypeInfo_Udt* ti = nullptr;
 
 		TypeInfo_VectorOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
+			TypeInfo(TagVU, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
@@ -1305,7 +1305,7 @@ namespace flame
 		TypeInfo_PointerOfData* ti = nullptr;
 
 		TypeInfo_VectorOfPointerOfData(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
+			TypeInfo(TagVPD, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_PointerOfData*)get(TagPD, name, db);
 		}
@@ -1316,7 +1316,7 @@ namespace flame
 		TypeInfo_PointerOfUdt* ti = nullptr;
 
 		TypeInfo_VectorOfPointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
+			TypeInfo(TagVPU, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
 		}

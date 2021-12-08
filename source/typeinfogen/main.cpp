@@ -26,9 +26,9 @@ TypeTag parse_vector(std::string& name)
 			return TagVE;
 		auto is_pointer = SUS::cut_tail_if(name, "*") || SUS::cut_tail_if(name, "*__ptr64");
 		if (TypeInfo::is_basic_type(name))
-			return TagVD;
+			return is_pointer ? TagVPD : TagVD;
 		else
-			return TagVU;
+			return is_pointer ? TagVPU : TagVU;
 	}
 	assert(0);
 	return TagCount;
@@ -421,6 +421,8 @@ process:
 		std::vector<TypeInfo*> referenced_types;
 		auto reference_type = [&](TypeInfo* ti) {
 			if (ti->tag == TagD)
+				return;
+			if (ti->tag >= TagP_Beg && ti->tag <= TagP_End)
 				return;
 			if (std::find(referenced_types.begin(), referenced_types.end(), ti) == referenced_types.end())
 				referenced_types.push_back(ti);

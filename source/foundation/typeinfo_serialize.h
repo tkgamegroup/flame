@@ -27,7 +27,7 @@ namespace flame
 			}
 				break;
 			case TagU:
-				serialize_xml(((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()));
+				serialize_xml(((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()), spec);
 				break;
 			case TagVE:
 			{
@@ -74,7 +74,7 @@ namespace flame
 					for (auto i = 0; i < len; i++)
 					{
 						auto nn = n.append_child("item");
-						serialize_xml(ti->ui, p, nn);
+						serialize_xml(ti->ui, p, nn, spec);
 						p += ti->size;
 					}
 				}
@@ -110,10 +110,21 @@ namespace flame
 				}
 			}
 				break;
+			case TagPU:
+			{
+				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
+				if (auto it = spec.map.find(ti); it != spec.map.end())
+				{
+					if (!vi.name.empty())
+						dst << indent << vi.name << std::endl;
+					it->second(p, dst, indent + "  ");
+				}
+			}
+				break;
 			case TagU:
 				if (!vi.name.empty())
 					dst << indent << vi.name << std::endl;
-				serialize_text(((TypeInfo_Udt*)vi.type)->ui, p, dst, indent + "  ");
+				serialize_text(((TypeInfo_Udt*)vi.type)->ui, p, dst, indent + "  ", spec);
 				break;
 			case TagVE:
 			{
@@ -161,7 +172,7 @@ namespace flame
 					for (auto i = 0; i < len; i++)
 					{
 						dst << indent << " - " << std::endl;
-						serialize_text(ui, p, dst, indent + "  ");
+						serialize_text(ti->ui, p, dst, indent + "  ", spec);
 						p += ti->size;
 					}
 					dst << std::endl;
@@ -176,6 +187,8 @@ namespace flame
 					auto& vec = *(std::vector<void*>*)p;
 					if (!vec.empty())
 					{
+						if (!vi.name.empty())
+							dst << indent << vi.name << std::endl;
 						for (auto i = 0; i < vec.size(); i++)
 						{
 							dst << indent << " - " << std::endl;
@@ -198,7 +211,7 @@ namespace flame
 		switch (ti->tag)
 		{
 		case TagU:
-			serialize_text(((TypeInfo_Udt*)ti)->ui, src, dst);
+			serialize_text(((TypeInfo_Udt*)ti)->ui, src, dst, "", spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -207,7 +220,7 @@ namespace flame
 				auto& vi = ui.variables.emplace_back();
 				vi.type = ti;
 				vi.offset = 0;
-				serialize_text(&ui, src, dst);
+				serialize_text(&ui, src, dst, "", spec);
 			}
 			else 
 				assert(0);
@@ -275,7 +288,7 @@ namespace flame
 				break;
 			case TagVU:
 			{
-				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
 				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
 				auto len = 0;
 				while (!src.eof())
@@ -287,7 +300,7 @@ namespace flame
 
 					len++;
 					vec.resize(len * ti->size);
-					unserialize_text(ui, src, (char*)vec.data() + (len - 1) * ti->size);
+					unserialize_text(ti->ui, src, (char*)vec.data() + (len - 1) * ti->size);
 				}
 			}
 				break;

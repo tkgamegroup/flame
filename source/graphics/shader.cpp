@@ -1205,20 +1205,23 @@ namespace flame
 				for (auto n_shdr : doc_root.child("shaders"))
 				{
 					std::filesystem::path fn = n_shdr.attribute("filename").value();
-					Path::cat_if_in(ppath, fn);
+					if (Path::cat_if_in(ppath, fn))
+						fn = std::filesystem::canonical(fn);
 					auto shader = Shader::get(device, fn, Shader::format_defines(n_shdr.attribute("defines").value()));
 					assert(shader);
 					info.shaders.push_back(shader);
 				}
 
 				std::filesystem::path pll_fn = doc_root.child("layout").attribute("filename").value();
-				Path::cat_if_in(ppath, pll_fn);
+				if (Path::cat_if_in(ppath, pll_fn))
+					pll_fn = std::filesystem::canonical(pll_fn);
 				info.layout = PipelineLayout::get(device, pll_fn);
 				assert(info.layout);
 
 				auto n_rp = doc_root.child("renderpass");
 				std::filesystem::path rp_fn = n_rp.attribute("filename").value();
-				Path::cat_if_in(ppath, rp_fn);
+				if (Path::cat_if_in(ppath, rp_fn))
+					rp_fn = std::filesystem::canonical(rp_fn);
 				info.renderpass = Renderpass::get(device, rp_fn);
 				assert(info.renderpass);
 				info.subpass_index = n_rp.attribute("index").as_uint();
@@ -1268,11 +1271,21 @@ namespace flame
 					std::ofstream file(L"D:\\1.pipeline");
 					SerializeTextSpec spec;
 					spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-						auto s = *(Shader**)src;
-						dst << indent << s->filename.string() << std::endl;
+						auto o = *(Shader**)src;
+						dst << indent << o->filename.string() << std::endl;
 						dst << indent;
-						for (auto& d : s->defines)
+						for (auto& d : o->defines)
 							dst << d << " ";
+						dst << std::endl;
+					};
+					spec.map[TypeInfo::get<Renderpass*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+						auto o = *(Renderpass**)src;
+						dst << indent << o->filename.string() << std::endl;
+						dst << std::endl;
+					};
+					spec.map[TypeInfo::get<PipelineLayout*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
+						auto o = *(PipelineLayout**)src;
+						dst << indent << o->filename.string() << std::endl;
 						dst << std::endl;
 					};
 					serialize_text(&info, file, spec);

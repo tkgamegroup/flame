@@ -343,13 +343,24 @@ namespace flame
 
 		if (!enums.empty())
 		{
-			auto n_enums = doc_root.append_child("enums");
+			std::vector<EnumInfo*> sorted_enums(enums.size());
+			auto i = 0;
 			for (auto& ei : enums)
 			{
+				sorted_enums[i] = &ei.second;
+				i++;
+			}
+			std::sort(sorted_enums.begin(), sorted_enums.end(), [](EnumInfo* a, EnumInfo* b) {
+				return a->name < b->name;
+			});
+
+			auto n_enums = doc_root.append_child("enums");
+			for (auto ei : sorted_enums)
+			{
 				auto n_enum = n_enums.append_child("enum");
-				n_enum.append_attribute("name").set_value(ei.second.name.c_str());
+				n_enum.append_attribute("name").set_value(ei->name.c_str());
 				auto n_items = n_enum.append_child("items");
-				for (auto& i : ei.second.items)
+				for (auto& i : ei->items)
 				{
 					auto n_item = n_items.append_child("item");
 					n_item.append_attribute("name").set_value(i.name.c_str());
@@ -360,18 +371,62 @@ namespace flame
 
 		if (!udts.empty())
 		{
+			std::vector<std::pair<int, UdtInfo*>> sorted_udts(udts.size());
+			{
+				auto i = 0;
+				for (auto& ui : udts)
+				{
+					sorted_udts[i].first = -1;
+					sorted_udts[i].second = &ui.second;
+					i++;
+				}
+			}
+			std::function<int(int)> get_rank;
+			get_rank = [&](int idx) {
+				auto& item = sorted_udts[idx];
+				if (item.first != -1)
+					return item.first;
+				item.first = 0;
+				for (auto& vi : item.second->variables)
+				{
+					switch (vi.type->tag)
+					{
+					case TagU:
+					case TagVU:
+						for (auto i = 0; i < sorted_udts.size(); i++)
+						{
+							if (sorted_udts[i].second->name == vi.type->name)
+							{
+								item.first = max(item.first, get_rank(i));
+								break;
+							}
+						}
+						break;
+					}
+				}
+				item.first++;
+				return item.first;
+			};
+			for (auto i = 0; i < sorted_udts.size(); i++)
+				get_rank(i);
+			std::sort(sorted_udts.begin(), sorted_udts.end(), [](const auto& a, const auto& b) {
+				if (a.first == b.first)
+					return a.second->name < b.second->name;
+				return a.first < b.first;
+			});
+
 			auto n_udts = doc_root.append_child("udts");
-			for (auto& ui : udts)
+			for (auto ui : sorted_udts)
 			{
 				auto n_udt = n_udts.append_child("udt");
-				n_udt.append_attribute("name").set_value(ui.second.name.c_str());
-				n_udt.append_attribute("size").set_value(ui.second.size);
-				if (!ui.second.base_class_name.empty())
-					n_udt.append_attribute("base_class_name").set_value(ui.second.base_class_name.c_str());
-				if (!ui.second.variables.empty())
+				n_udt.append_attribute("name").set_value(ui.second->name.c_str());
+				n_udt.append_attribute("size").set_value(ui.second->size);
+				if (!ui.second->base_class_name.empty())
+					n_udt.append_attribute("base_class_name").set_value(ui.second->base_class_name.c_str());
+				if (!ui.second->variables.empty())
 				{
 					auto n_variables = n_udt.prepend_child("variables");
-					for (auto& vi : ui.second.variables)
+					for (auto& vi : ui.second->variables)
 					{
 						auto n_variable = n_variables.append_child("variable");
 						write_ti(vi.type, n_variable.append_attribute("type"));
@@ -387,10 +442,10 @@ namespace flame
 							n_variable.append_attribute("metas").set_value(str.c_str());
 					}
 				}
-				if (!ui.second.functions.empty())
+				if (!ui.second->functions.empty())
 				{
 					auto n_functions = n_udt.append_child("functions");
-					for (auto& fi : ui.second.functions)
+					for (auto& fi : ui.second->functions)
 					{
 						auto n_function = n_functions.append_child("function");
 						n_function.append_attribute("name").set_value(fi.name.c_str());
