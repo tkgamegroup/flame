@@ -161,7 +161,7 @@ namespace flame
 
 		virtual ~TypeInfo() {}
 
-		virtual void* create() const { return malloc(size); }
+		virtual void* create(void* p = nullptr) const { if (!p) p = malloc(size); return p; }
 		virtual void destroy(void* p) const { free(p); }
 		virtual void copy(void* dst, const void* src) const { memcpy(dst, src, size); }
 		virtual bool compare(const void* d1, const void* d2) const { return memcmp(d1, d2, size) == 0; }
@@ -298,9 +298,9 @@ namespace flame
 
 	struct EnumItemInfo
 	{
-		EnumInfo* ei;
+		EnumInfo* ei = nullptr;
 		std::string name;
-		int value;
+		int value = -1;
 	};
 
 	struct EnumInfo
@@ -331,16 +331,16 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		UdtInfo* ui;
+		UdtInfo* ui = nullptr;
 		std::string name;
-		uint rva;
-		int voff;
+		uint rva = 0;
+		int voff = -1;
 		bool is_static = false;
-		TypeInfo* return_type;
+		TypeInfo* return_type = nullptr;
 		std::vector<TypeInfo*> parameters;
 		std::string code;
 		Metas metas;
-		void* library;
+		void* library = nullptr;
 
 		inline bool check(TypeInfo* ret, const std::vector<TypeInfo*> parms) const
 		{
@@ -362,10 +362,10 @@ namespace flame
 
 	struct VariableInfo
 	{
-		UdtInfo* ui;
-		TypeInfo* type;
+		UdtInfo* ui = nullptr;
+		TypeInfo* type = nullptr;
 		std::string name;
-		uint offset;
+		uint offset = 0;
 		uint array_size = 0;
 		uint array_stride = 0;
 		std::string default_value;
@@ -375,13 +375,13 @@ namespace flame
 	struct UdtInfo
 	{
 		std::string name;
-		uint size;
+		uint size = 0;
 		std::string base_class_name;
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;
-		void* library;
+		void* library = nullptr;
 
-		VariableInfo* find_variable(const std::string_view& name) const
+		VariableInfo* find_variable(std::string_view name) const
 		{
 			for (auto& v : variables)
 			{
@@ -391,7 +391,7 @@ namespace flame
 			return nullptr;
 		}
 
-		FunctionInfo* find_function(const std::string_view& name) const
+		FunctionInfo* find_function(std::string_view name) const
 		{
 			for (auto& f : functions)
 			{
@@ -1051,9 +1051,12 @@ namespace flame
 		{
 		}
 
-		void* create() const override
+		void* create(void* p = nullptr) const override
 		{
-			return new std::string;
+			if (!p)
+				return new std::string;
+			new(p) std::string;
+			return p;
 		}
 		void destroy(void* p) const override
 		{
@@ -1084,9 +1087,12 @@ namespace flame
 		{
 		}
 
-		void* create() const override
+		void* create(void* p = nullptr) const override
 		{
-			return new std::wstring;
+			if (!p)
+				return new std::wstring;
+			new(p) std::wstring;
+			return p;
 		}
 		void destroy(void* p) const override
 		{
@@ -1117,9 +1123,12 @@ namespace flame
 		{
 		}
 
-		void* create() const override
+		void* create(void* p = nullptr) const override
 		{
-			return new std::filesystem::path;
+			if (!p)
+				return new std::filesystem::path;
+			new(p) std::filesystem::path;
+			return p;
 		}
 		void destroy(void* p) const override
 		{
@@ -1220,6 +1229,21 @@ namespace flame
 			ui = find_udt(name, db);
 			if (ui)
 				size = ui->size;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			for (auto& fi : ui->functions)
+			{
+				if (fi.name == "ctor" && fi.parameters.empty())
+				{
+					((void(*)(void*))fi.get_address())(p);
+					break;
+				}
+			}
+			return p;
 		}
 	};
 

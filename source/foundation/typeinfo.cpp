@@ -420,7 +420,8 @@ namespace flame
 			{
 				auto n_udt = n_udts.append_child("udt");
 				n_udt.append_attribute("name").set_value(ui.second->name.c_str());
-				n_udt.append_attribute("size").set_value(ui.second->size);
+				if (ui.second->size != 0)
+					n_udt.append_attribute("size").set_value(ui.second->size);
 				if (!ui.second->base_class_name.empty())
 					n_udt.append_attribute("base_class_name").set_value(ui.second->base_class_name.c_str());
 				if (!ui.second->variables.empty())
@@ -431,7 +432,8 @@ namespace flame
 						auto n_variable = n_variables.append_child("variable");
 						write_ti(vi.type, n_variable.append_attribute("type"));
 						n_variable.append_attribute("name").set_value(vi.name.c_str());
-						n_variable.append_attribute("offset").set_value(vi.offset);
+						if (vi.offset != 0)
+							n_variable.append_attribute("offset").set_value(vi.offset);
 						if (vi.array_size != 0)
 							n_variable.append_attribute("array_size").set_value(vi.array_size);
 						if (vi.array_stride != 0)

@@ -29,7 +29,7 @@ namespace flame
 			uint count = 1;
 			std::string name;
 
-			UdtInfo* ti = nullptr;
+			UdtInfo* ui = nullptr;
 		};
 
 		struct DescriptorSetLayout
@@ -84,7 +84,7 @@ namespace flame
 		{
 			std::vector<DescriptorSetLayoutPtr> descriptor_set_layouts;
 
-			UdtInfo* pc_ti = nullptr;
+			UdtInfo* pc_ui = nullptr;
 			uint pc_sz = 0;
 
 			std::filesystem::path filename;
@@ -104,30 +104,30 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
+		inline std::vector<std::string> format_defines(const std::string& str)
+		{
+			std::vector<std::string> ret;
+			auto sp = SUS::split(str);
+			for (auto& s : sp)
+			{
+				SUS::trim(s);
+				if (!s.empty())
+					ret.push_back(s);
+			}
+			std::sort(ret.begin(), ret.end());
+			return ret;
+		}
+
 		struct Shader
 		{
 			ShaderStageFlags type = ShaderStageNone;
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 
-			UdtInfo* in_ti = nullptr;
-			UdtInfo* out_ti = nullptr;
+			UdtInfo* in_ui = nullptr;
+			UdtInfo* out_ui = nullptr;
 
 			virtual ~Shader() {}
-
-			inline static std::vector<std::string> format_defines(const std::string& str)
-			{
-				std::vector<std::string> ret;
-				auto sp = SUS::split(str);
-				for (auto& s : sp)
-				{
-					SUS::trim(s);
-					if (!s.empty())
-						ret.push_back(s);
-				}
-				std::sort(ret.begin(), ret.end());
-				return ret;
-			}
 
 			struct Get
 			{
@@ -138,7 +138,7 @@ namespace flame
 
 		struct VertexAttributeInfo
 		{
-			uint location;
+			int location = -1;
 			int offset = -1;
 			Format format;
 		};
@@ -173,8 +173,8 @@ namespace flame
 		struct GraphicsPipelineInfo
 		{
 			std::vector<ShaderPtr> shaders;
-			PipelineLayoutPtr layout;
-			RenderpassPtr renderpass;
+			PipelineLayoutPtr layout = nullptr;
+			RenderpassPtr renderpass = nullptr;
 			uint subpass_index = 0;
 			std::vector<VertexBufferInfo> vertex_buffers;
 			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
@@ -201,6 +201,7 @@ namespace flame
 			GraphicsPipelineInfo info;
 
 			std::filesystem::path filename;
+			std::vector<std::string> defines;
 
 			virtual ~GraphicsPipeline() {}
 
@@ -212,7 +213,7 @@ namespace flame
 
 			struct Get
 			{
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};

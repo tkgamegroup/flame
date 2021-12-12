@@ -149,7 +149,7 @@ namespace flame
 	inline T sto(const std::basic_string<CH>& s)
 	{
 		T ret;
-		try { ret = std::stoul(s); }
+		try { ret = std::stoll(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
@@ -164,7 +164,7 @@ namespace flame
 	inline T sto(const std::basic_string<CH>& s)
 	{
 		T ret;
-		try { ret = std::stoul(s); }
+		try { ret = std::stoull(s); }
 		catch (...) { ret = 0; }
 		return ret;
 	}
@@ -230,6 +230,13 @@ namespace flame
 	template <class CH>
 	struct StrUtils
 	{
+		static uint indent_length(const std::basic_string<CH>& s)
+		{
+			return std::find_if(s.begin(), s.end(), [](char ch) {
+				return !std::isspace(ch);
+			}) - s.begin();
+		}
+
 		static void ltrim(std::basic_string<CH>& s)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
@@ -550,7 +557,17 @@ namespace flame
 	{
 		std::ifstream file;
 		std::vector<std::string> lines;
-		int anchor = 0;
+		int anchor = -1;
+
+		LineReader(const std::filesystem::path& filename) :
+			file(filename)
+		{
+		}
+
+		inline void close()
+		{
+			file.close();
+		}
 
 		inline std::string& line(int off = 0)
 		{
@@ -559,37 +576,40 @@ namespace flame
 
 		inline bool next_line()
 		{
-			if (anchor >= lines.size())
+			if (anchor + 1 >= (int)lines.size())
 				return false;
 			anchor++;
-			return true;
+			return !line().empty();
 		}
 
-		inline bool read_until_empty()
+		inline bool read_mark(std::string_view mark, bool to_empty = true)
 		{
+			lines.clear();
+			anchor = -1;
+
 			std::string line;
-			while (true)
+			if (!mark.empty())
 			{
-				if (file.eof())
-					return false;
-				std::getline(file, line);
-				if (SUS::get_ltrimed(line).empty())
-					return true;
-				lines.push_back(line);
+				while (true)
+				{
+					if (file.eof())
+						return false;
+					std::getline(file, line);
+					if (SUS::get_ltrimed(line).starts_with(mark))
+						break;
+				}
 			}
-		}
-
-		inline bool read_until_mark(std::string_view mark)
-		{
-			std::string line;
-			while (true)
+			if (to_empty)
 			{
-				if (file.eof())
-					return false;
-				std::getline(file, line);
-				if (SUS::get_ltrimed(line).starts_with(mark))
-					return true;
-				lines.push_back(line);
+				while (true)
+				{
+					if (file.eof())
+						return false;
+					std::getline(file, line);
+					if (SUS::get_ltrimed(line).empty())
+						return true;
+					lines.push_back(line);
+				}
 			}
 		}
 	};

@@ -6,14 +6,52 @@
 
 namespace flame
 {
-	struct SerializeXmlSpec
+	struct SerializeNode
 	{
+		std::string name;
+		std::vector<SerializeNode> children;
 
+		std::string value() const
+		{
+			return children.empty() ? name : children[0].value();
+		}
+
+		std::string value(std::string_view n) const
+		{
+			for (auto& c : children)
+			{
+				if (c.name == n)
+					return c.value();
+			}
+			return "";
+		}
+
+		void set_value(const std::string& v)
+		{
+			children.emplace_back().name = v;
+		}
+
+		void add_value(const std::string& n, const std::string& v)
+		{
+			auto& c = children.emplace_back();
+			c.name = n;
+			c.set_value(v);
+		}
 	};
 
-	inline void serialize_xml(UdtInfo* ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
+	struct SerializeSpec
 	{
-		for (auto& vi : ui->variables)
+		std::map<TypeInfo*, std::function<SerializeNode(void* src)>> map;
+	};
+
+	struct UnserializeSpec
+	{
+		std::map<TypeInfo*, std::function<void*(const SerializeNode& src)>> map;
+	};
+
+	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeSpec& spec = {})
+	{
+		for (auto& vi : ui.variables)
 		{
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
@@ -27,7 +65,7 @@ namespace flame
 			}
 				break;
 			case TagU:
-				serialize_xml(((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()), spec);
+				serialize_xml(*((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()), spec);
 				break;
 			case TagVE:
 			{
@@ -65,17 +103,21 @@ namespace flame
 			case TagVU:
 			{
 				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
-				auto& vec = *(std::vector<char>*)p;
-				if (!vec.empty())
+				auto ui = ti->ui;
+				if (ui)
 				{
-					auto n = dst.append_child(vi.name.c_str());
-					p = (char*)vec.data();
-					auto len = (vec.end() - vec.begin()) / ti->size;
-					for (auto i = 0; i < len; i++)
+					auto& vec = *(std::vector<char>*)p;
+					if (!vec.empty())
 					{
-						auto nn = n.append_child("item");
-						serialize_xml(ti->ui, p, nn, spec);
-						p += ti->size;
+						auto n = dst.append_child(vi.name.c_str());
+						p = (char*)vec.data();
+						auto len = (vec.end() - vec.begin()) / ti->size;
+						for (auto i = 0; i < len; i++)
+						{
+							auto nn = n.append_child("item");
+							serialize_xml(*ui, p, nn, spec);
+							p += ti->size;
+						}
 					}
 				}
 			}
@@ -86,15 +128,28 @@ namespace flame
 		}
 	}
 
-	struct SerializeTextSpec
+	inline void serialize_text(const UdtInfo& ui, void* src, std::ofstream& dst, const std::string& indent, const SerializeSpec& spec = {})
 	{
-		std::map<TypeInfo*, std::function<void(void* src, std::ofstream& dst, const std::string& indent)>> map;
-	};
+		auto indent2 = indent;
+		if (ui.variables.size() > 1)
+			indent2 += "  ";
 
-	inline void serialize_text(UdtInfo* ui, void* src, std::ofstream& dst, const std::string& indent = "", const SerializeTextSpec& spec = {})
-	{
-		for (auto& vi : ui->variables)
+		for (auto& vi : ui.variables)
 		{
+			auto print_name = [&]() {
+				if (!vi.name.empty())
+					dst << indent << vi.name << std::endl;
+			};
+			std::function<void(const SerializeNode&, const std::string&)> print_value;
+			print_value = [&](const SerializeNode& src, const std::string& indent) {
+				for (auto& c : src.children)
+				{
+					if (!c.name.empty())
+						dst << indent << c.name << std::endl;
+					print_value(c, indent + "  ");
+				}
+			};
+
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -104,9 +159,18 @@ namespace flame
 				auto str = vi.type->serialize(p);
 				if (str != vi.default_value)
 				{
-					if (!vi.name.empty())
-						dst << indent << vi.name << std::endl;
-					dst << indent << " - " << str << std::endl;
+					print_name();
+					dst << indent2 << str << std::endl;
+				}
+			}
+				break;
+			case TagU:
+			{
+				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
+				if (ui)
+				{
+					print_name();
+					serialize_text(*ui, p, dst, indent2, spec);
 				}
 			}
 				break;
@@ -115,16 +179,10 @@ namespace flame
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
 				if (auto it = spec.map.find(ti); it != spec.map.end())
 				{
-					if (!vi.name.empty())
-						dst << indent << vi.name << std::endl;
-					it->second(p, dst, indent + "  ");
+					print_name();
+					print_value(it->second(*(void**)p), indent2);
 				}
 			}
-				break;
-			case TagU:
-				if (!vi.name.empty())
-					dst << indent << vi.name << std::endl;
-				serialize_text(((TypeInfo_Udt*)vi.type)->ui, p, dst, indent + "  ", spec);
 				break;
 			case TagVE:
 			{
@@ -132,11 +190,9 @@ namespace flame
 				auto& vec = *(std::vector<int>*)p;
 				if (!vec.empty())
 				{
-					if (!vi.name.empty())
-						dst << indent << vi.name << std::endl;
+					print_name();
 					for (auto i = 0; i < vec.size(); i++)
-						dst << indent << " - " << ti->serialize(&vec[i]) << std::endl;
-					dst << std::endl;
+						dst << indent2 << ti->serialize(&vec[i]) << std::endl;
 				}
 			}
 				break;
@@ -146,36 +202,38 @@ namespace flame
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
-					if (!vi.name.empty())
-						dst << indent << vi.name << std::endl;
+					print_name();
 					auto len = (vec.end() - vec.begin()) / ti->size;
 					p = (char*)vec.data();
 					for (auto i = 0; i < len; i++)
 					{
-						dst << indent << " - " << ti->serialize(p) << std::endl;
+						dst << indent2 << ti->serialize(p) << std::endl;
 						p += ti->size;
 					}
-					dst << std::endl;
 				}
 			}
 				break;
 			case TagVU:
 			{
 				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
-				auto& vec = *(std::vector<char>*)p;
-				if (!vec.empty())
+				auto ui = ti->ui;
+				if (ui)
 				{
-					if (!vi.name.empty())
-						dst << indent << vi.name << std::endl;
-					auto len = (vec.end() - vec.begin()) / ti->size;
-					p = (char*)vec.data();
-					for (auto i = 0; i < len; i++)
+					auto& vec = *(std::vector<char>*)p;
+					if (!vec.empty())
 					{
-						dst << indent << " - " << std::endl;
-						serialize_text(ti->ui, p, dst, indent + "  ", spec);
-						p += ti->size;
+						print_name();
+						auto print_bar = ui->variables.size() > 1;
+						auto len = (vec.end() - vec.begin()) / ti->size;
+						p = (char*)vec.data();
+						for (auto i = 0; i < len; i++)
+						{
+							if (i > 0 && print_bar)
+								dst << indent << " ---" << std::endl;
+							serialize_text(*ui, p, dst, indent2, spec);
+							p += ti->size;
+						}
 					}
-					dst << std::endl;
 				}
 			}
 				break;
@@ -187,31 +245,32 @@ namespace flame
 					auto& vec = *(std::vector<void*>*)p;
 					if (!vec.empty())
 					{
-						if (!vi.name.empty())
-							dst << indent << vi.name << std::endl;
+						print_name();
+						auto print_bar = false;
 						for (auto i = 0; i < vec.size(); i++)
 						{
-							dst << indent << " - " << std::endl;
-							it->second(&vec[i], dst, indent + "  ");
+							if (i > 0 && print_bar)
+								dst << indent << " ---" << std::endl;
+							auto value = it->second(vec[i]);
+							print_value(value, indent2);
+							print_bar = !(value.children.size() == 1 && value.children[0].children.empty());
 						}
-						dst << std::endl;
 					}
 				}
 			}
 				break;
 			}
 		}
-		dst << std::endl;
 	}
 
 	template <class T>
-	inline void serialize_text(T* src, std::ofstream& dst, const SerializeTextSpec& spec = {})
+	inline void serialize_text(T* src, std::ofstream& dst, const SerializeSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
 		{
 		case TagU:
-			serialize_text(((TypeInfo_Udt*)ti)->ui, src, dst, "", spec);
+			serialize_text(*((TypeInfo_Udt*)ti)->ui, src, dst, "", spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -220,123 +279,253 @@ namespace flame
 				auto& vi = ui.variables.emplace_back();
 				vi.type = ti;
 				vi.offset = 0;
-				serialize_text(&ui, src, dst, "", spec);
+				serialize_text(ui, src, dst, "", spec);
 			}
 			else 
 				assert(0);
 		}
 	}
 
-	struct UnserializeTextSpec
+	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeSpec& spec = {})
 	{
+		auto indent2 = indent;
+		if (ui.variables.size() > 1)
+			indent2 += 2;
 
-	};
+		auto read_var = [&](const VariableInfo& vi) {
+			std::function<SerializeNode(uint indent)> read_value;
+			read_value = [&](uint indent) {
+				SerializeNode ret;
+				while (true)
+				{
+					if (!src.next_line())
+						return ret;
+					auto ilen = SUS::indent_length(src.line());
+					if (ilen < indent)
+					{
+						src.anchor--;
+						return ret;
+					}
+					if (ilen > indent)
+						continue;
 
-	inline void unserialize_text(UdtInfo* ui, std::ifstream& src, void* dst, const UnserializeTextSpec& spec = {})
-	{
-		std::string line;
-		auto read_var = [&](VariableInfo& vi) {
+					auto name = src.line().substr(ilen);
+					auto c = read_value(indent + 2);
+					c.name = name;
+					ret.children.push_back(c);
+				}
+				return ret;
+			};
+
+			auto p = (char*)dst + vi.offset;
+
 			switch (vi.type->tag)
 			{
 			case TagE:
 			case TagD:
 			{
-				std::getline(src, line);
-				SUS::ltrim(line);
-				vi.type->unserialize(line.substr(2), (char*)dst + vi.offset);
+				if (!src.next_line())
+					return;
+				auto ilen = SUS::indent_length(src.line());
+				if (ilen == indent2)
+					vi.type->unserialize(src.line().substr(ilen), p);
 			}
 				break;
 			case TagU:
 			{
 				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
-				unserialize_text(ui, src, (char*)dst + vi.offset);
+				if (ui)
+					unserialize_text(*ui, src, indent2, p);
+			}
+				break;
+			case TagPU:
+			{
+				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
+				if (auto it = spec.map.find(ti); it != spec.map.end())
+					*(void**)p = it->second(read_value(indent2));
 			}
 				break;
 			case TagVE:
 			{
 				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
-				auto& vec = *(std::vector<int>*)((char*)dst + vi.offset);
-				while (!src.eof())
+				auto& vec = *(std::vector<int>*)p;
+				while (true)
 				{
-					std::getline(src, line);
-					SUS::ltrim(line);
-					if (line.empty())
-						break;
-
-					vec.resize(vec.size() + 1);
-					ti->unserialize(line.substr(2), &vec[vec.size() - 1]);
+					if (!src.next_line())
+						return;
+					auto ilen = SUS::indent_length(src.line());
+					if (ilen == indent2)
+					{
+						vec.resize(vec.size() + 1);
+						ti->unserialize(src.line().substr(ilen), &vec[vec.size() - 1]);
+					}
 				}
 			}
 				break;
 			case TagVD:
 			{
 				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
-				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
+				auto& vec = *(std::vector<char>*)p;
 				auto len = 0;
-				while (!src.eof())
+				while (true)
 				{
-					std::getline(src, line);
-					SUS::ltrim(line);
-					if (line.empty())
-						break;
-
-					len++;
-					vec.resize(len * ti->size);
-					ti->unserialize(line.substr(2), (char*)vec.data() + (len - 1) * ti->size);
+					if (!src.next_line())
+						return;
+					auto ilen = SUS::indent_length(src.line());
+					if (ilen == indent2)
+					{
+						len++;
+						vec.resize(len * ti->size);
+						auto pd = (char*)vec.data() + (len - 1) * ti->size;
+						ti->create(pd);
+						ti->unserialize(src.line().substr(ilen), pd);
+					}
 				}
 			}
 				break;
 			case TagVU:
 			{
 				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
-				auto& vec = *(std::vector<char>*)((char*)dst + vi.offset);
-				auto len = 0;
-				while (!src.eof())
+				auto ui = ti->ui;
+				if (ui)
 				{
-					std::getline(src, line);
-					SUS::ltrim(line);
-					if (line.empty())
-						break;
-
-					len++;
-					vec.resize(len * ti->size);
-					unserialize_text(ti->ui, src, (char*)vec.data() + (len - 1) * ti->size);
+					auto& vec = *(std::vector<char>*)p;
+					auto len = 0;
+					while (true)
+					{
+						if (!src.next_line())
+							return;
+						src.anchor--;
+						auto ilen = SUS::indent_length(src.line(1));
+						if (ilen == indent2)
+						{
+							len++;
+							vec.resize(len * ti->size);
+							auto pd = (char*)vec.data() + (len - 1) * ti->size;
+							ti->create(pd);
+							unserialize_text(*ui, src, indent2, pd);
+						}
+						else if (ilen > indent)
+							src.anchor++;
+						else
+						{
+							src.anchor--;
+							break;
+						}
+					}
 				}
 			}
 				break;
 			case TagVPU:
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+				if (auto it = spec.map.find(ti); it != spec.map.end())
+				{
+					auto& vec = *(std::vector<void*>*)p;
+					while (true)
+					{
+						if (!src.next_line())
+							return;
+						src.anchor--;
+						auto ilen = SUS::indent_length(src.line(1));
+						if (ilen == indent2)
+							vec.push_back(it->second(read_value(indent2)));
+						else if (ilen > indent)
+							src.anchor++;
+						else
+						{
+							src.anchor--;
+							break;
+						}
+					}
+				}
 			}
 				break;
 			}
 		};
 
-		if (ui->variables.size() == 1 && ui->variables[0].name.empty())
-			read_var(ui->variables[0]);
+		if (ui.variables.size() == 1)
+			read_var(ui.variables[0]);
 		else
 		{
-			while (!src.eof())
+			while (true)
 			{
-
-				std::getline(src, line);
-				SUS::ltrim(line);
-				if (line.empty())
+				if (!src.next_line())
 					return;
+				auto ilen = SUS::indent_length(src.line());
+				if (ilen < indent)
+				{
+					src.anchor--;
+					return;
+				}
+				if (ilen > indent)
+					continue;
 
-				read_var(*ui->find_variable(line));
+				auto vi = ui.find_variable({ src.line().begin() + ilen, src.line().end() });
+				if (vi)
+					read_var(*vi);
+				else
+					printf("cannot find variable: %s\n", src.line().c_str() + ilen);
 			}
 		}
 	}
 
 	template <class T>
-	inline void unserialize_text(std::ifstream& src, T* dst)
+	inline void unserialize_text(LineReader& src, T* dst, const UnserializeSpec& spec = {}, const std::vector<std::string>& _defines = {})
 	{
+		std::vector<std::pair<std::string, std::string>> defines;
+		while (true)
+		{
+			if (!src.next_line())
+				return;
+			auto ilen = SUS::indent_length(src.line());
+			if (ilen == 0 && src.line()[0] == '%')
+			{
+				auto sp = SUS::split(src.line().substr(1), '=');
+				if (sp.size() == 2)
+					defines.emplace_back(sp[0], sp[1]);
+			}
+			else
+			{
+				src.anchor--;
+				break;
+			}
+		}
+		for (auto& d : _defines)
+		{
+			auto sp = SUS::split(d, '=');
+			if (sp.size() == 2)
+			{
+				auto found = false;
+				for (auto& dd : defines)
+				{
+					if (dd.first == sp[0])
+					{
+						dd.second = sp[1];
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					defines.emplace_back(sp[0], sp[1]);
+			}
+		}
+		if (!defines.empty())
+		{
+			for (auto& d : defines)
+				d.first = "{" + d.first + "}";
+			for (auto& d : defines)
+			{
+				for (auto& l : src.lines)
+					SUS::replace_all(l, d.first, d.second);
+			}
+		}
+
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
 		{
 		case TagU:
-			unserialize_text(((TypeInfo_Udt*)ti)->ui, src, dst);
+			unserialize_text(*((TypeInfo_Udt*)ti)->ui, src, 0, dst, spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -345,7 +534,7 @@ namespace flame
 				auto& vi = ui.variables.emplace_back();
 				vi.type = ti;
 				vi.offset = 0;
-				unserialize_text(&ui, src, dst);
+				unserialize_text(ui, src, 0, dst, spec);
 			}
 			else
 				assert(0);

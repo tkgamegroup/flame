@@ -264,19 +264,27 @@ process:
 		}
 		return false;
 	};
-	for (auto& i : ap.get_items("-enum"))
-	{
+	auto add_named_enum_rule = [&](const std::string& n) {
 		auto& r = enum_rules.emplace_back();
-		r.name = "^" + i + "$";
-	}
-	for (auto& i : ap.get_items("-udt"))
-	{
+		r.name = "^" + n + "$";
+	};
+	auto add_named_udt_rule = [&](const std::string& n) {
 		auto& r = udt_rules.emplace_back();
-		r.name = "^" + i + "$";
+		r.name = "^" + n + "$";
 		auto& dr = r.items.emplace_back();
 		dr.type = TagD;
 		dr.name = "^[\\w:]+$";
-	}
+		auto& fr1 = r.items.emplace_back();
+		fr1.type = TagF;
+		fr1.name = "^ctor$";
+		auto& fr2 = r.items.emplace_back();
+		fr2.type = TagF;
+		fr2.name = "^dtor$";
+	};
+	for (auto& i : ap.get_items("-enum"))
+		add_named_enum_rule(i);
+	for (auto& i : ap.get_items("-udt"))
+		add_named_udt_rule(i);
 	if (!desc_path.empty())
 	{
 		pugi::xml_document desc_doc;
@@ -386,33 +394,12 @@ process:
 							name = res[1].str();
 							auto tag = parse_vector(name);
 							if (tag == TagVE)
-							{
-								auto& r = enum_rules.emplace_back();
-								r.name = "^" + name + "$";
-							}
+								add_named_udt_rule(name);
 							else if (tag == TagVU)
-							{
-								auto& r = udt_rules.emplace_back();
-								r.name = "^" + name + "$";
-								auto& dr = r.items.emplace_back();
-								dr.type = TagD;
-								dr.name = "^[\\w:]+$";
-								auto& fr = r.items.emplace_back();
-								fr.type = TagF;
-								fr.name = "^ctor$";
-							}
+								add_named_udt_rule(name);
 						}
 						else
-						{
-							auto& r = udt_rules.emplace_back();
-							r.name = "^" + name + "$";
-							auto& dr = r.items.emplace_back();
-							dr.type = TagD;
-							dr.name = "^[\\w:]+$";
-							auto& fr = r.items.emplace_back();
-							fr.type = TagF;
-							fr.name = "^ctor$";
-						}
+							add_named_udt_rule(name);
 					}
 				}
 			}
@@ -560,16 +547,19 @@ process:
 					if (name == "__local_vftable_ctor_closure" || name == "__vecDelDtor")
 						continue;
 
+					auto rva = 0;
+					auto voff = -1;
+					if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
+						rva = dw;
+					else if (s_function->get_virtualBaseOffset(&dw) == S_OK)
+						voff = dw;
+
+					if (!rva && voff == -1)
+						continue;
+
 					std::string metas;
 					if (ur->pass_item(TagF, name, &metas))
 					{
-						auto rva = 0;
-						auto voff = -1;
-						if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
-							rva = dw;
-						else if (s_function->get_virtualBaseOffset(&dw) == S_OK)
-							voff = dw;
-
 						if (rva || voff != -1)
 						{
 							auto& fi = u.functions.emplace_back();
@@ -608,6 +598,7 @@ process:
 								s_parameter->Release();
 							}
 							s_parameters->Release();
+
 							s_function_type->Release();
 
 							if (name == "ctor" && fi.parameters.empty())
@@ -616,6 +607,7 @@ process:
 								dtor = rva;
 						}
 					}
+
 					s_function->Release();
 				}
 				s_functions->Release();
@@ -685,8 +677,7 @@ process:
 			case TagVE:
 				if (!find_enum(t->name, db))
 				{
-					auto& r = enum_rules.emplace_back();
-					r.name = "^" + t->name + "$";
+					add_named_enum_rule(t->name);
 
 					need_collect = true;
 				}
@@ -695,14 +686,7 @@ process:
 			case TagVU:
 				if (!find_udt(t->name, db))
 				{
-					auto& r = udt_rules.emplace_back();
-					r.name = "^" + t->name + "$";
-					auto& dr = r.items.emplace_back();
-					dr.type = TagD;
-					dr.name = "^[\\w:]+$";
-					auto& fr = r.items.emplace_back();
-					fr.type = TagF;
-					fr.name = "^ctor$";
+					add_named_udt_rule(t->name);
 
 					need_collect = true;
 				}

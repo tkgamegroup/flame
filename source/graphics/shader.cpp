@@ -148,19 +148,9 @@ namespace flame
 				{
 					std::vector<std::filesystem::path> dependencies;
 
-					std::ifstream dst(dst_path);
-					while (!dst.eof())
-					{
-						std::string line;
-						std::getline(dst, line);
-						if (line.empty())
-							break;
-						if (line == "Dependencies:")
-						{
-							unserialize_text(dst, &dependencies);
-							break;
-						}
-					}
+					LineReader dst(dst_path);
+					dst.read_mark("Dependencies:");
+					unserialize_text(dst, &dependencies);
 					dst.close();
 
 					auto up_to_date = true;
@@ -215,6 +205,7 @@ namespace flame
 
 				dst << "Dependencies:" << std::endl;
 				serialize_text(&dependencies, dst);
+				dst << std::endl;
 			}
 
 			auto vk_sdk_path = getenv("VK_SDK_PATH");
@@ -341,9 +332,7 @@ namespace flame
 					auto& b = bindings[binding];
 					b.type = type;
 					b.count = spv_compiler.get_type(r.type_id).array[0];
-					b.name = r.name;
-					if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-						b.ti = find_udt(spv_compiler.get_name(r.base_type_id), db);
+					b.name = spv_compiler.get_name(r.base_type_id);
 				};
 
 				for (auto& r : spv_resources.uniform_buffers)
@@ -381,16 +370,13 @@ namespace flame
 				{
 					UdtInfo ui;
 					ui.name = "Input";
-					auto offset = 0;
 					for (auto& r : spv_resources.stage_inputs)
 					{
+						auto location = spv_compiler.get_decoration(r.id, spv::DecorationLocation);
 						auto& vi = ui.variables.emplace_back();
-						vi.name = r.name;
+						vi.name = r.name + ":" + to_string(location);
 						vi.type = get_shader_type(spv_compiler, r.base_type_id, db);
-						vi.offset = offset;
-						offset += vi.type->size;
 					}
-					ui.size = offset;
 					db.udts.emplace(ui.name, ui);
 				}
 			}
@@ -491,22 +477,21 @@ namespace flame
 					std::vector<DescriptorBinding> bindings;
 					TypeInfoDataBase db;
 
-					std::ifstream res(res_path);
-					while (!res.eof())
-					{
-						std::string line;
-						std::getline(res, line);
-
-						if (line == "DSL:")
-							unserialize_text(res, &bindings);
-						else if (line == "TypeInfo:")
-							db.load(res);
-					}
+					LineReader res(res_path);
+					res.read_mark("DSL:");
+					unserialize_text(res, &bindings);
+					res.read_mark("TypeInfo:", false);
+					db.load(res.file);
 					res.close();
 
 					auto ret = DescriptorSetLayout::create(device, bindings);
-					ret->db = std::move(db);
 					ret->filename = filename;
+					ret->db = std::move(db);
+					for (auto& b : ret->bindings)
+					{
+						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
+							b.ui = find_udt(b.name, db);
+					}
 					device->dsls.emplace_back(ret);
 					return ret;
 				}
@@ -723,36 +708,29 @@ namespace flame
 
 				if (device)
 				{
+					std::vector<std::filesystem::path> dependencies;
 					std::vector<DescriptorSetLayoutPrivate*> dsls;
 					TypeInfoDataBase db;
 
-					std::ifstream res(res_path);
-					while (!res.eof())
-					{
-						std::string line;
-						std::getline(res, line);
-
-						if (line == "Dependencies:")
-						{
-							std::vector<std::filesystem::path> dependencies;
-							unserialize_text(res, &dependencies);
-							for (auto& d : dependencies)
-							{
-								if (d.extension() == L".dsl")
-									dsls.push_back(DescriptorSetLayout::get(device, d));
-							}
-						}
-						else if (line == "TypeInfo:")
-							db.load(res);
-					}
+					LineReader res(res_path);
+					res.read_mark("Dependencies:");
+					unserialize_text(res, &dependencies);
+					res.read_mark("TypeInfo:", false);
+					db.load(res.file);
 					res.close();
 
-					auto pc_ti = find_udt("PushConstant", db);
+					for (auto& d : dependencies)
+					{
+						if (d.extension() == L".dsl")
+							dsls.push_back(DescriptorSetLayout::get(device, d));
+					}
 
-					auto ret = PipelineLayout::create(device, dsls, pc_ti ? pc_ti->size : 0);
+					auto pc_ui = find_udt("PushConstant", db);
+
+					auto ret = PipelineLayout::create(device, dsls, pc_ui ? pc_ui->size : 0);
 					ret->device = device;
 					ret->db = std::move(db);
-					ret->pc_ti = pc_ti;
+					ret->pc_ui = pc_ui;
 					ret->filename = filename;
 
 					{
@@ -871,26 +849,15 @@ namespace flame
 					std::vector<uint> spv;
 					TypeInfoDataBase db;
 
-					std::ifstream res(res_path);
-					while (!res.eof())
+					LineReader res(res_path);
+					res.read_mark("SPV:");
+					for (auto& l : res.lines)
 					{
-						std::string line;
-						std::getline(res, line);
-
-						if (line == "SPV:")
-						{
-							while (!res.eof())
-							{
-								std::getline(res, line);
-								if (line.empty())
-									break;
-								for (auto& b : SUS::split(line))
-									spv.push_back(from_hex_string(b));
-							}
-						}
-						else if (line == "TypeInfo:")
-							db.load(res);
+						for (auto& b : SUS::split(l))
+							spv.push_back(from_hex_string(b));
 					}
+					res.read_mark("TypeInfo:", false);
+					db.load(res.file);
 					res.close();
 
 					auto ret = new ShaderPrivate;
@@ -911,8 +878,8 @@ namespace flame
 					ret->filename = filename;
 					ret->defines = defines;
 					ret->db = std::move(db);
-					ret->in_ti = find_udt("Input", db);
-					ret->out_ti = find_udt("Output", db);
+					ret->in_ui = find_udt("Input", ret->db);
+					ret->out_ui = find_udt("Output", ret->db);
 
 					VkShaderModuleCreateInfo shader_info;
 					shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -1166,7 +1133,7 @@ namespace flame
 
 		struct GraphicsPipelineGet : GraphicsPipeline::Get
 		{
-			GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
+			GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
 				if (!device)
 					device = current_device;
@@ -1178,7 +1145,7 @@ namespace flame
 				{
 					for (auto& pl : device->pls)
 					{
-						if (pl->filename == filename)
+						if (pl->filename == filename&& pl->defines == defines)
 							return pl.get();
 					}
 				}
@@ -1189,107 +1156,75 @@ namespace flame
 					return nullptr;
 				}
 
-				GraphicsPipelineInfo info;
-
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
-
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("pipeline"))
-				{
-					printf("pipeline wrong format: %s\n", _filename.string().c_str());
-					return nullptr;
-				}
-
 				auto ppath = filename.parent_path();
 
-				for (auto n_shdr : doc_root.child("shaders"))
+				GraphicsPipelineInfo info;
+
 				{
-					std::filesystem::path fn = n_shdr.attribute("filename").value();
-					if (Path::cat_if_in(ppath, fn))
-						fn = std::filesystem::canonical(fn);
-					auto shader = Shader::get(device, fn, Shader::format_defines(n_shdr.attribute("defines").value()));
-					assert(shader);
-					info.shaders.push_back(shader);
+					UnserializeSpec spec;
+					spec.map[TypeInfo::get<Shader*>()] = [&](const SerializeNode& src) {
+						std::filesystem::path fn = src.value("filename");
+						if (Path::cat_if_in(ppath, fn))
+							fn = std::filesystem::canonical(fn);
+						return Shader::get(device, fn, format_defines(src.value("defines")));
+					};
+					spec.map[TypeInfo::get<Renderpass*>()] = [&](const SerializeNode& src)->void* {
+						auto value = src.value();
+						if (value.starts_with("0x"))
+							return (void*)sto<uint64>(value.substr(2));
+						std::filesystem::path fn = src.value();
+						if (Path::cat_if_in(ppath, fn))
+							fn = std::filesystem::canonical(fn);
+						return Renderpass::get(device, fn);
+					};
+					spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const SerializeNode& src)->void* {
+						auto value = src.value();
+						if (value.starts_with("0x"))
+							return (void*)sto<uint64>(value.substr(2));
+						std::filesystem::path fn = src.value();
+						if (Path::cat_if_in(ppath, fn))
+							fn = std::filesystem::canonical(fn);
+						return PipelineLayout::get(device, fn);
+					};
+					LineReader res(filename);
+					res.read_mark("");
+
+					unserialize_text(res, &info, spec, defines);
+					res.close();
 				}
 
-				std::filesystem::path pll_fn = doc_root.child("layout").attribute("filename").value();
-				if (Path::cat_if_in(ppath, pll_fn))
-					pll_fn = std::filesystem::canonical(pll_fn);
-				info.layout = PipelineLayout::get(device, pll_fn);
-				assert(info.layout);
-
-				auto n_rp = doc_root.child("renderpass");
-				std::filesystem::path rp_fn = n_rp.attribute("filename").value();
-				if (Path::cat_if_in(ppath, rp_fn))
-					rp_fn = std::filesystem::canonical(rp_fn);
-				info.renderpass = Renderpass::get(device, rp_fn);
-				assert(info.renderpass);
-				info.subpass_index = n_rp.attribute("index").as_uint();
-
-				for (auto n_buf : doc_root.child("vertex_buffers"))
+				if (info.vertex_buffers.empty())
 				{
-					auto& vbuf = info.vertex_buffers.emplace_back();
-					for (auto n_att : n_buf)
+					for (auto s : info.shaders)
 					{
-						auto& att = vbuf.attributes.emplace_back();
-						att.location = n_att.attribute("location").as_uint();
-						TypeInfo::unserialize_t(n_att.attribute("format").value(), &att.format);
+						if (s->type == ShaderStageVert)
+						{
+							if (s->in_ui && !s->in_ui->variables.empty())
+							{
+								auto& vb = info.vertex_buffers.emplace_back();
+								for (auto& vi : s->in_ui->variables)
+								{
+									auto& va = vb.attributes.emplace_back();
+									auto sp = SUS::split(vi.name, ':');
+									va.location = sto<int>(sp[1]);
+									if (vi.type == TypeInfo::get<float>())
+										va.format = Format_R32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec2>())
+										va.format = Format_R32G32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec3>())
+										va.format = Format_R32G32B32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec4>())
+									{
+										if (sp[0].ends_with("col") || sp[0].ends_with("color"))
+											va.format = Format_R8G8B8A8_UNORM;
+										else
+											va.format = Format_R32G32B32A32_SFLOAT;
+									}
+								}
+							}
+							break;
+						}
 					}
-				}
-
-				if (auto n = doc_root.child("primitive_topology"); n)
-					TypeInfo::unserialize_t(n.attribute("v").value(), &info.primitive_topology);
-				if (auto n = doc_root.child("cull_mode"); n)
-					TypeInfo::unserialize_t(n.attribute("v").value(), &info.cull_mode);
-				if (auto n = doc_root.child("sample_count"); n)
-					TypeInfo::unserialize_t(n.attribute("v").value(), &info.sample_count);
-				if (auto n = doc_root.child("alpha_to_coverage"); n)
-					info.alpha_to_coverage = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("depth_test"); n)
-					info.depth_test = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("depth_write"); n)
-					info.depth_write = n.attribute("v").as_bool();
-				if (auto n = doc_root.child("compare_op"); n)
-					TypeInfo::unserialize_t(n.attribute("v").value(), &info.compare_op);
-
-				std::vector<BlendOption> blend_options;
-				for (auto n_bo : doc_root.child("blend_options"))
-				{
-					auto& bo = info.blend_options.emplace_back();
-					bo.enable = n_bo.attribute("enable").as_bool();
-					if (auto a = n_bo.attribute("src_color"); a)
-						TypeInfo::unserialize_t(a.value(), &bo.src_color);
-					if (auto a = n_bo.attribute("dst_color"); a)
-						TypeInfo::unserialize_t(a.value(), &bo.dst_color);
-					if (auto a = n_bo.attribute("src_alpha"); a)
-						TypeInfo::unserialize_t(a.value(), &bo.src_alpha);
-					if (auto a = n_bo.attribute("dst_alpha"); a)
-						TypeInfo::unserialize_t(a.value(), &bo.dst_alpha);
-				}
-
-				{
-					std::ofstream file(L"D:\\2.pipeline");
-					SerializeTextSpec spec;
-					spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-						auto o = *(Shader**)src;
-						dst << indent << o->filename.string() << std::endl;
-						dst << indent;
-						for (auto& d : o->defines)
-							dst << d << " ";
-						dst << std::endl;
-					};
-					spec.map[TypeInfo::get<Renderpass*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-						auto o = *(Renderpass**)src;
-						dst << indent << o->filename.string() << std::endl;
-						dst << std::endl;
-					};
-					spec.map[TypeInfo::get<PipelineLayout*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-						auto o = *(PipelineLayout**)src;
-						dst << indent << o->filename.string() << std::endl;
-						dst << std::endl;
-					};
-					serialize_text(&info, file, spec);
-					file.close();
 				}
 
 				if (device)
