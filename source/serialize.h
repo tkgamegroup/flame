@@ -582,31 +582,35 @@ namespace flame
 			return !line().empty();
 		}
 
-		inline bool read_mark(std::string_view mark, bool to_empty = true)
+		inline bool read_block(const std::string& beg_mark, const std::string& end_mark = "[EMPTY_LINE]")
 		{
 			lines.clear();
 			anchor = -1;
 
 			std::string line;
-			if (!mark.empty())
+			if (!beg_mark.empty())
 			{
 				while (true)
 				{
 					if (file.eof())
 						return false;
 					std::getline(file, line);
-					if (SUS::get_ltrimed(line).starts_with(mark))
+					if (SUS::get_ltrimed(line).starts_with(beg_mark))
 						break;
 				}
 			}
-			if (to_empty)
+			if (!end_mark.empty())
 			{
+				auto exit_when_empty = end_mark == "[EMPTY_LINE]";
 				while (true)
 				{
 					if (file.eof())
 						return false;
 					std::getline(file, line);
-					if (SUS::get_ltrimed(line).empty())
+					auto str = SUS::get_ltrimed(line);
+					if (str.empty() && exit_when_empty)
+						return true;
+					if (str.starts_with(end_mark))
 						return true;
 					lines.push_back(line);
 				}

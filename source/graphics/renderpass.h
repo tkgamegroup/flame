@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Attachment
+		struct AttachmentInfo
 		{
 			Format format = Format_R8G8B8A8_UNORM;
 			AttachmentLoadOp load_op = AttachmentLoadClear;
@@ -16,31 +16,35 @@ namespace flame
 			ImageLayout final_layout = ImageLayoutAttachment;
 		};
 
-		struct Subpass
+		struct SubpassInfo
 		{
 			std::vector<int> color_attachments;
 			std::vector<int> resolve_attachments;
 			int depth_attachment = -1;
 		};
 
+		struct RenderpassInfo
+		{
+			std::vector<AttachmentInfo> attachments;
+			std::vector<SubpassInfo> subpasses;
+		};
+
 		struct Renderpass
 		{
-			std::vector<Attachment> attachments;
-			std::vector<Subpass> subpasses;
-
-			std::filesystem::path filename;
+			RenderpassInfo info;
 
 			virtual ~Renderpass() {}
 
 			struct Create
 			{
-				virtual RenderpassPtr operator()(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies = {}) = 0;
+				virtual RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info, std::span<uvec2> dependencies = {}) = 0;
+				virtual RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
 			struct Get
 			{
-				virtual RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+				virtual RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};

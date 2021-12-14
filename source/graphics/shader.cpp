@@ -149,7 +149,7 @@ namespace flame
 					std::vector<std::filesystem::path> dependencies;
 
 					LineReader dst(dst_path);
-					dst.read_mark("Dependencies:");
+					dst.read_block("Dependencies:");
 					unserialize_text(dst, &dependencies);
 					dst.close();
 
@@ -374,8 +374,16 @@ namespace flame
 					{
 						auto location = spv_compiler.get_decoration(r.id, spv::DecorationLocation);
 						auto& vi = ui.variables.emplace_back();
-						vi.name = r.name + ":" + to_string(location);
 						vi.type = get_shader_type(spv_compiler, r.base_type_id, db);
+						vi.name = r.name;
+						if (vi.type == TypeInfo::get<vec4>())
+						{
+							if (vi.name.ends_with("_col") || vi.name.ends_with("_color"))
+								vi.type = TypeInfo::get<cvec4>();
+						}
+						vi.name += ":" + to_string(location);
+						vi.offset = ui.size;
+						ui.size += vi.type->size;
 					}
 					db.udts.emplace(ui.name, ui);
 				}
@@ -478,9 +486,9 @@ namespace flame
 					TypeInfoDataBase db;
 
 					LineReader res(res_path);
-					res.read_mark("DSL:");
+					res.read_block("DSL:");
 					unserialize_text(res, &bindings);
-					res.read_mark("TypeInfo:", false);
+					res.read_block("TypeInfo:", "");
 					db.load(res.file);
 					res.close();
 
@@ -713,9 +721,9 @@ namespace flame
 					TypeInfoDataBase db;
 
 					LineReader res(res_path);
-					res.read_mark("Dependencies:");
+					res.read_block("Dependencies:");
 					unserialize_text(res, &dependencies);
-					res.read_mark("TypeInfo:", false);
+					res.read_block("TypeInfo:", "");
 					db.load(res.file);
 					res.close();
 
@@ -763,7 +771,6 @@ namespace flame
 			}
 		}PipelineLayout_get;
 		PipelineLayout::Get& PipelineLayout::get = PipelineLayout_get;
-
 
 		struct PipelineLayoutCreate : PipelineLayout::Create
 		{
@@ -850,13 +857,13 @@ namespace flame
 					TypeInfoDataBase db;
 
 					LineReader res(res_path);
-					res.read_mark("SPV:");
+					res.read_block("SPV:");
 					for (auto& l : res.lines)
 					{
 						for (auto& b : SUS::split(l))
 							spv.push_back(from_hex_string(b));
 					}
-					res.read_mark("TypeInfo:", false);
+					res.read_block("TypeInfo:", "");
 					db.load(res.file);
 					res.close();
 
@@ -900,6 +907,18 @@ namespace flame
 
 		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
 		{
+			if (!filename.empty())
+			{
+				for (auto s : info.shaders)
+				{
+					if (s->filename == filename)
+						delete s;
+				}
+				if (info.layout->filename == filename)
+					delete info.layout;
+				if (info.renderpass->filename == filename)
+					delete info.renderpass;
+			}
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
@@ -1187,7 +1206,7 @@ namespace flame
 						return PipelineLayout::get(device, fn);
 					};
 					LineReader res(filename);
-					res.read_mark("");
+					res.read_block("");
 
 					unserialize_text(res, &info, spec, defines);
 					res.close();
@@ -1214,12 +1233,9 @@ namespace flame
 									else if (vi.type == TypeInfo::get<vec3>())
 										va.format = Format_R32G32B32_SFLOAT;
 									else if (vi.type == TypeInfo::get<vec4>())
-									{
-										if (sp[0].ends_with("col") || sp[0].ends_with("color"))
-											va.format = Format_R8G8B8A8_UNORM;
-										else
-											va.format = Format_R32G32B32A32_SFLOAT;
-									}
+										va.format = Format_R32G32B32A32_SFLOAT;
+									else if (vi.type == TypeInfo::get<cvec4>())
+										va.format = Format_R8G8B8A8_UNORM;
 								}
 							}
 							break;

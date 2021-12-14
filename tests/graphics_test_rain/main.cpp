@@ -13,13 +13,90 @@
 using namespace flame;
 using namespace graphics;
 
+template<unsigned N>
+struct fixed_string 
+{
+    char buf[N + 1] {};
+
+    constexpr fixed_string(const char (&str)[N])
+    {
+        for (unsigned i = 0; i != N; i++) 
+            buf[i] = str[i];
+    }
+
+    constexpr operator char const* () const { return buf; }
+};
+
+struct MyVertexBuffer
+{
+	UdtInfo* ui = nullptr;
+
+	uint size = 0;
+	uint array_capacity = 0;
+	uint array_count = 0;
+
+	std::unique_ptr<BufferT> buf;
+	std::unique_ptr<BufferT> stagbuf;
+	char* data;
+};
+
+struct LineVB : MyVertexBuffer
+{
+	void create(UdtInfo* _ui, uint n)
+	{
+		ui = _ui;
+		size = ui->size;
+		array_capacity = n;
+		buf.reset(Buffer::create(nullptr,  array_capacity * size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+		stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+		stagbuf->map();
+		data = (char*)stagbuf->mapped;
+	}
+
+	inline void* add_vtx()
+	{
+		auto ret = data;
+		array_count++;
+		data += size;
+		return ret;
+	}
+
+	inline void upload(CommandBufferPtr cb)
+	{
+		BufferCopy cpy;
+		cpy.size = array_count * size;
+		array_count = 0;
+		data = (char*)stagbuf->mapped;
+		cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
+		cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead, PipelineStageTransfer, PipelineStageVertexInput);
+	}
+
+	template<fixed_string n, class T>
+	inline void set_var(void* p, const T& v)
+	{
+		auto get_offset = [&]()->int {
+			auto vi = ui->find_variable((char const*)n);
+			if (!vi)
+				return -1;
+			return vi->offset;
+		};
+		static int offset = get_offset();
+		if (offset == -1)
+		{
+			assert(0);
+			return;
+		}
+		*(T*)((char*)p + offset) = v;
+	}
+};
+
 Device* d;
 NativeWindow* nw;
 Window* w;
 Renderpass* rp;
 std::vector<std::unique_ptr<Framebuffer>> fbs;
 GraphicsPipeline* pl;
-SequentialBuffer<vec2> vtx_buf;
+LineVB vtx_buf;
 
 void build_fbs()
 {
@@ -105,31 +182,6 @@ struct Drop
 };
 std::vector<Drop> drops;
 
-/*
-	std::ofstream file(L"D:\\1.pipeline");
-	SerializeTextSpec spec;
-	spec.map[TypeInfo::get<Shader*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-		auto o = *(Shader**)src;
-		dst << indent << o->filename.string() << std::endl;
-		dst << indent;
-		for (auto& d : o->defines)
-			dst << d << " ";
-		dst << std::endl;
-	};
-	spec.map[TypeInfo::get<Renderpass*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-		auto o = *(Renderpass**)src;
-		dst << indent << o->filename.string() << std::endl;
-		dst << std::endl;
-	};
-	spec.map[TypeInfo::get<PipelineLayout*>()] = [](void* src, std::ofstream& dst, const std::string& indent) {
-		auto o = *(PipelineLayout**)src;
-		dst << indent << o->filename.string() << std::endl;
-		dst << std::endl;
-	};
-	serialize_text(&info, file, spec);
-	file.close();
-*/
-
 int entry(int argc, char** args)
 {
 	d = Device::create(true);
@@ -148,13 +200,31 @@ int entry(int argc, char** args)
 		build_fbs();
 	});
 	w->add_renderer([](uint idx, CommandBufferPtr cb) {
-		auto cv = vec4(0.9f, 0.9f, 0.98f, 1.f);
-		cb->begin_renderpass(nullptr, fbs[idx].get(), &cv);
 		for (auto& d : drops)
 		{
 			d.fall();
 			d.draw();
 		}
+		{
+			auto p = vtx_buf.add_vtx();
+			vtx_buf.set_var<"i_pos:0">(p, vec3(0, 0, 0));
+			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
+		}
+		{
+			auto p = vtx_buf.add_vtx();
+			vtx_buf.set_var<"i_pos:0">(p, vec3(1, 1, 0));
+			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
+		}
+		vtx_buf.upload(cb);
+		auto vp = Rect(vec2(0), w->native->size);
+		cb->set_viewport(vp);
+		cb->set_scissor(vp);
+		auto cv = vec4(0.9f, 0.9f, 0.98f, 1.f);
+		cb->begin_renderpass(nullptr, fbs[idx].get(), &cv);
+		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);
+		cb->bind_pipeline(pl);
+		cb->push_constant_t(mat4(1));
+		cb->draw(2, 1, 0, 0);
 		cb->end_renderpass();
 	});
 
@@ -164,7 +234,7 @@ int entry(int argc, char** args)
 
 	pl = GraphicsPipeline::get(d, L"default_assets\\shaders\\plain\\line.pipeline", format_defines(
 		"rp=0x" + to_string((uint64)rp)));
-	vtx_buf.create(BufferUsageVertex, drops.size() * 2);
+	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 2);
 
 	run([]() {
 		w->dirty = true;

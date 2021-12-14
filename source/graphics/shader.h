@@ -129,6 +129,12 @@ namespace flame
 
 			virtual ~Shader() {}
 
+			struct Create
+			{
+				virtual ShaderPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
 			struct Get
 			{
 				virtual ShaderPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
@@ -208,6 +214,7 @@ namespace flame
 			struct Create
 			{
 				virtual GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) = 0;
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -223,14 +230,22 @@ namespace flame
 			ComputePipelineInfo info;
 
 			std::filesystem::path filename;
+			std::vector<std::string> defines;
 
 			virtual ~ComputePipeline() {}
 
 			struct Create
 			{
 				virtual ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) = 0;
+				virtual ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
+
+			struct Get
+			{
+				virtual ComputePipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 	}
 }

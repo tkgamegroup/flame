@@ -11,20 +11,6 @@ using namespace flame;
 //    int c = 5;
 //};
 //
-//template<unsigned N>
-//struct FixedString 
-//{
-//    char buf[N + 1] {};
-//
-//    constexpr FixedString(const char (&str)[N])
-//    {
-//        for (unsigned i = 0; i != N; i++) 
-//            buf[i] = str[i];
-//    }
-//
-//    constexpr operator char const* () const { return buf; }
-//};
-//
 //template<FixedString T>
 //struct Foo 
 //{
