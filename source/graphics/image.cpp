@@ -234,7 +234,7 @@ namespace flame
 			RenderpassPrivate* rp = nullptr;
 			for (auto& r : simple_rps)
 			{
-				auto& att = r->attachments[0];
+				auto& att = r->info.attachments[0];
 				if (att.format == format && att.load_op == load_op && att.sample_count == sample_count)
 				{
 					rp = r;
@@ -243,7 +243,8 @@ namespace flame
 			}
 			if (!rp)
 			{
-				Attachment att;
+				RenderpassInfo info;
+				auto& att = info.attachments.emplace_back();
 				att.format = format;
 				att.load_op = load_op;
 				att.sample_count = sample_count;
@@ -253,12 +254,12 @@ namespace flame
 					att.initia_layout = ImageLayoutAttachment;
 					break;
 				}
-				Subpass sp;
+				auto& sp = info.subpasses.emplace_back();
 				if (format >= Format_Color_Begin && format <= Format_Color_End)
 					sp.color_attachments.push_back(0);
 				else
 					sp.depth_attachment = 0;
-				rp = Renderpass::create(device, { &att, 1 }, { &sp, 1 });
+				rp = Renderpass::create(device, info);
 				simple_rps.push_back(rp);
 			}
 

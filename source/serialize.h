@@ -555,18 +555,13 @@ namespace flame
 
 	struct LineReader
 	{
-		std::ifstream file;
+		std::istream& stream;
 		std::vector<std::string> lines;
 		int anchor = -1;
 
-		LineReader(const std::filesystem::path& filename) :
-			file(filename)
+		LineReader(std::istream& stream) :
+			stream(stream)
 		{
-		}
-
-		inline void close()
-		{
-			file.close();
 		}
 
 		inline std::string& line(int off = 0)
@@ -592,9 +587,9 @@ namespace flame
 			{
 				while (true)
 				{
-					if (file.eof())
+					if (stream.eof())
 						return false;
-					std::getline(file, line);
+					std::getline(stream, line);
 					if (SUS::get_ltrimed(line).starts_with(beg_mark))
 						break;
 				}
@@ -604,9 +599,9 @@ namespace flame
 				auto exit_when_empty = end_mark == "[EMPTY_LINE]";
 				while (true)
 				{
-					if (file.eof())
+					if (stream.eof())
 						return false;
-					std::getline(file, line);
+					std::getline(stream, line);
 					auto str = SUS::get_ltrimed(line);
 					if (str.empty() && exit_when_empty)
 						return true;

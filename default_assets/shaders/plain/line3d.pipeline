@@ -1,0 +1,18 @@
+%rp=../color.rp
+layout
+  plain3d.pll
+shaders
+  filename
+    plain3d.vert
+ ---
+  filename
+    plain3d.frag
+renderpass
+  filename
+    {rp}
+  defines
+    fmt=R8G8B8A8_UNORM
+primitive_topology
+  LineList
+cull_mode
+  None

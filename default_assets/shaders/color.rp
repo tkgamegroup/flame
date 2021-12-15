@@ -1,0 +1,19 @@
+%fmt=R8G8B8A8_UNORM
+%load_op=Clear
+%sample_count=1
+%initia_layout=Undefined
+%final_layout=Attachment
+attachments
+  format
+    {fmt}
+  load_op
+    {load_op}
+  sample_count
+    {sample_count}
+  initia_layout
+    {initia_layout}
+  final_layout
+    {final_layout}
+subpasses
+  color_refs
+    0

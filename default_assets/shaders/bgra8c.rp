@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<renderpass>
-  <attachments>
-    <attachment format="B8G8R8A8_UNORM" />
-  </attachments>
-  <subpasses>
-    <subpass color_refs="0" />
-  </subpasses>
-</renderpass>

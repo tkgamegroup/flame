@@ -342,7 +342,11 @@ namespace flame
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
 				if (auto it = spec.map.find(ti); it != spec.map.end())
-					*(void**)p = it->second(read_value(indent2));
+				{
+					auto v = it->second(read_value(indent2));
+					if (v != INVALID_POINTER)
+						*(void**)p = v;
+				}
 			}
 				break;
 			case TagVE:
@@ -429,7 +433,11 @@ namespace flame
 						src.anchor--;
 						auto ilen = SUS::indent_length(src.line(1));
 						if (ilen == indent2)
-							vec.push_back(it->second(read_value(indent2)));
+						{
+							auto v = it->second(read_value(indent2));
+							if (v != INVALID_POINTER)
+								vec.push_back(v);
+						}
 						else if (ilen > indent)
 							src.anchor++;
 						else

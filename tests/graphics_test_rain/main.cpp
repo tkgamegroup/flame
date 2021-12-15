@@ -13,19 +13,47 @@
 using namespace flame;
 using namespace graphics;
 
-template<unsigned N>
-struct fixed_string 
+auto pl_str = R"^^^(
+layout
+  @pll
+shaders
+  @vert
+  @frag
+renderpass
+  {rp}
+
+@pll
+layout(push_constant) uniform PushConstant
 {
-    char buf[N + 1] {};
+	vec2 scale;
+	vec2 translate;
+}pc;
+@
 
-    constexpr fixed_string(const char (&str)[N])
-    {
-        for (unsigned i = 0; i != N; i++) 
-            buf[i] = str[i];
-    }
+@vert
+layout (location = 0) in vec2 i_pos;
+layout (location = 1) in vec4 i_col;
 
-    constexpr operator char const* () const { return buf; }
-};
+layout (location = 0) out vec4 o_col;
+
+void main()
+{
+	o_col = i_col;
+	gl_Position = vec4(i_pos * pc.scale + pc.translate, 0, 1);
+}
+@
+
+@frag
+layout (location = 0) in vec4 i_col;
+
+layout (location = 0) out vec4 o_col;
+
+void main()
+{
+	o_col = i_col;
+}
+@
+)^^^";
 
 struct MyVertexBuffer
 {
@@ -77,15 +105,16 @@ struct LineVB : MyVertexBuffer
 		auto get_offset = [&]()->int {
 			auto vi = ui->find_variable((char const*)n);
 			if (!vi)
+			{
+				assert(0);
 				return -1;
+			}
+			assert(vi->type == TypeInfo::get<T>());
 			return vi->offset;
 		};
 		static int offset = get_offset();
 		if (offset == -1)
-		{
-			assert(0);
 			return;
-		}
 		*(T*)((char*)p + offset) = v;
 	}
 };
@@ -188,11 +217,12 @@ int entry(int argc, char** args)
 	nw = NativeWindow::create("Graphics Test", uvec2(640, 360), WindowFrame);
 	w = Window::create(d, nw);
 	{
-		Attachment att;
+		RenderpassInfo info;
+		auto& att = info.attachments.emplace_back();
 		att.format = Swapchain::format;
-		Subpass sp;
+		auto& sp = info.subpasses.emplace_back();
 		sp.color_attachments = { 0 };
-		rp = Renderpass::create(d, { &att, 1 }, { &sp, 1 });
+		rp = Renderpass::create(d, info);
 	}
 	build_fbs();
 	nw->add_resize_listener([](const uvec2&) {
@@ -207,12 +237,12 @@ int entry(int argc, char** args)
 		}
 		{
 			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec3(0, 0, 0));
+			vtx_buf.set_var<"i_pos:0">(p, vec2(0, 0));
 			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
 		}
 		{
 			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec3(1, 1, 0));
+			vtx_buf.set_var<"i_pos:0">(p, vec2(1, 1));
 			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
 		}
 		vtx_buf.upload(cb);
@@ -232,8 +262,7 @@ int entry(int argc, char** args)
 	projector.set(nw->size, 45.f, 1.f, 4.f);
 	drops.resize(3000);
 
-	pl = GraphicsPipeline::get(d, L"default_assets\\shaders\\plain\\line.pipeline", format_defines(
-		"rp=0x" + to_string((uint64)rp)));
+	pl = GraphicsPipeline::create(d, pl_str, { "rp=0x" + to_string((uint64)rp) });
 	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 2);
 
 	run([]() {

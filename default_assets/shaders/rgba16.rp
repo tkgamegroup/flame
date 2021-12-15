@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<renderpass>
-  <attachments>
-    <attachment format="R16G16B16A16_SFLOAT" load_op="DontCare" />
-  </attachments>
-  <subpasses>
-    <subpass color_refs="0" />
-  </subpasses>
-</renderpass>

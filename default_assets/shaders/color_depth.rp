@@ -1,0 +1,37 @@
+%col_fmt=R8G8B8A8_UNORM
+%col_load_op=Clear
+%col_sample_count=1
+%col_initia_layout=Undefined
+%col_final_layout=Attachment
+%dep_fmt=Depth16
+%dep_load_op=Clear
+%dep_sample_count=1
+%dep_initia_layout=Undefined
+%dep_final_layout=Attachment
+attachments
+  format
+    {col_fmt}
+  load_op
+    {col_load_op}
+  sample_count
+    {col_sample_count}
+  initia_layout
+    {col_initia_layout}
+  final_layout
+    {col_final_layout}
+ ---
+  format
+    {dep_col_fmt}
+  load_op
+    {dep_load_op}
+  sample_count
+    {dep_sample_count}
+  initia_layout
+    {dep_initia_layout}
+  final_layout
+    {dep_final_layout}
+subpasses
+  color_refs
+    0
+  depth_ref
+    0

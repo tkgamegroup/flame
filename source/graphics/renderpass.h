@@ -27,17 +27,21 @@ namespace flame
 		{
 			std::vector<AttachmentInfo> attachments;
 			std::vector<SubpassInfo> subpasses;
+			std::vector<uvec2> dependencies;
 		};
 
 		struct Renderpass
 		{
 			RenderpassInfo info;
 
+			std::filesystem::path filename;
+			std::vector<std::string> defines;
+
 			virtual ~Renderpass() {}
 
 			struct Create
 			{
-				virtual RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info, std::span<uvec2> dependencies = {}) = 0;
+				virtual RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info) = 0;
 				virtual RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;

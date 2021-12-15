@@ -15,7 +15,7 @@ TypeInfoDataBase db;
 
 TypeTag parse_vector(std::string& name)
 {
-	static std::regex reg("std::vector<([\\w\\s:\\*<>]+),");
+	static std::regex reg("std::vector<([\\w\\s:\\*<>,]+),std::allocator<");
 	std::smatch res;
 	if (std::regex_search(name, res, reg))
 	{

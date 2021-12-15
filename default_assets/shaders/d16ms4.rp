@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<renderpass>
-  <attachments>
-    <attachment format="Depth16" sample_count="4" />
-  </attachments>
-  <subpasses>
-    <subpass color_refs="" depth_ref="0" />
-  </subpasses>
-</renderpass>

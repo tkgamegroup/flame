@@ -1,0 +1,29 @@
+%sample_count=4
+attachments
+  format
+    R16G16B16A16_SFLOAT
+  load_op
+    Load
+  sample_count
+    {sample_count}
+  initia_layout
+    Attachment
+ ---
+  format
+    Depth16
+  load_op
+    Load
+  sample_count
+    {sample_count}
+  initia_layout
+    Attachment
+ ---
+  format
+    R16G16B16A16_SFLOAT
+  load_op
+    DontCare
+subpasses
+  color_refs
+    0
+  depth_ref
+    1

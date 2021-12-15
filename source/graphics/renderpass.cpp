@@ -1,5 +1,6 @@
 #include "../xml.h"
 #include "../foundation/typeinfo.h"
+#include "../foundation/typeinfo_serialize.h"
 #include "device_private.h"
 #include "renderpass_private.h"
 
@@ -23,18 +24,19 @@ namespace flame
 
 		struct RenderpassCreate : Renderpass::Create
 		{
-			RenderpassPtr operator()(DevicePtr device, std::span<Attachment> attachments, std::span<Subpass> subpasses, std::span<uvec2> dependencies) override
+			RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info) override
 			{
 				if (!device)
 					device = current_device;
 
 				auto ret = new RenderpassPrivate;
 				ret->device = device;
+				ret->info = info;
 
-				std::vector<VkAttachmentDescription> atts(attachments.size());
-				for (auto i = 0; i < attachments.size(); i++)
+				std::vector<VkAttachmentDescription> atts(info.attachments.size());
+				for (auto i = 0; i < info.attachments.size(); i++)
 				{
-					auto& src = attachments[i];
+					auto& src = info.attachments[i];
 					auto& dst = atts[i];
 
 					dst.flags = 0;
@@ -48,64 +50,60 @@ namespace flame
 					dst.finalLayout = to_backend(src.final_layout, src.format);
 				}
 
-				std::vector<std::vector<VkAttachmentReference>> v_col_refs(subpasses.size());
-				std::vector<std::vector<VkAttachmentReference>> v_res_refs(subpasses.size());
-				std::vector<VkAttachmentReference> v_dep_refs(subpasses.size());
-				std::vector<VkSubpassDescription> vk_sps(subpasses.size());
-				for (auto i = 0; i < subpasses.size(); i++)
+				struct vkSubpassInfo
 				{
-					auto& src = subpasses[i];
-					auto& dst = vk_sps[i];
+					std::vector<VkAttachmentReference> col_refs;
+					std::vector<VkAttachmentReference> res_refs;
+					VkAttachmentReference dep_ref;
+				};
+				std::vector<vkSubpassInfo> vk_sp_infos(info.subpasses.size());
+				std::vector<VkSubpassDescription> vk_sps(info.subpasses.size());
+				for (auto i = 0; i < info.subpasses.size(); i++)
+				{
+					auto& src = info.subpasses[i];
+					auto& dst = vk_sp_infos[i];
+					auto& sp = vk_sps[i];
 
-					dst.flags = 0;
-					dst.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-					dst.inputAttachmentCount = 0;
-					dst.pInputAttachments = nullptr;
-					dst.colorAttachmentCount = 0;
-					dst.pColorAttachments = nullptr;
-					dst.pResolveAttachments = nullptr;
-					dst.pDepthStencilAttachment = nullptr;
-					dst.preserveAttachmentCount = 0;
-					dst.pPreserveAttachments = nullptr;
+					sp = {};
+					sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
 					if (!src.color_attachments.empty())
 					{
-						auto& v = v_col_refs[i];
-						v.resize(src.color_attachments.size());
-						for (auto j = 0; j < v.size(); j++)
+						dst.col_refs.resize(src.color_attachments.size());
+						for (auto j = 0; j < src.color_attachments.size(); j++)
 						{
-							auto& r = v[j];
+							auto& r = dst.col_refs[j];
 							r.attachment = src.color_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
-						dst.colorAttachmentCount = src.color_attachments.size();
-						dst.pColorAttachments = v.data();
+						sp.colorAttachmentCount = src.color_attachments.size();
+						sp.pColorAttachments = dst.col_refs.data();
 					}
 					if (!src.resolve_attachments.empty())
 					{
-						auto& v = v_res_refs[i];
-						v.resize(src.resolve_attachments.size());
-						for (auto j = 0; j < v.size(); j++)
+						dst.res_refs.resize(src.resolve_attachments.size());
+						for (auto j = 0; j < src.resolve_attachments.size(); j++)
 						{
-							auto& r = v[j];
+							auto& r = dst.res_refs[j];
 							r.attachment = src.resolve_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 							atts[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
-						dst.pResolveAttachments = v.data();
+						sp.pResolveAttachments = dst.res_refs.data();
 					}
 					if (src.depth_attachment != -1)
 					{
-						auto& r = v_dep_refs[i];
+						auto& r = dst.dep_ref;
 						r.attachment = src.depth_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-						dst.pDepthStencilAttachment = &r;
+						sp.pDepthStencilAttachment = &r;
 					}
 				}
 
-				std::vector<VkSubpassDependency> vk_deps(dependencies.size());
-				for (auto i = 0; i < dependencies.size(); i++)
+				std::vector<VkSubpassDependency> vk_deps(info.dependencies.size());
+				for (auto i = 0; i < info.dependencies.size(); i++)
 				{
-					auto& src = dependencies[i];
+					auto& src = info.dependencies[i];
 					auto& dst = vk_deps[i];
 
 					dst.srcSubpass = src[0];
@@ -130,18 +128,20 @@ namespace flame
 
 				chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
 
-				ret->attachments.assign(attachments.begin(), attachments.end());
-				ret->subpasses.assign(subpasses.begin(), subpasses.end());
-
 				__renderpasses.push_back(ret);
 				return ret;
+			}
+
+			RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename) override
+			{
+				return nullptr;
 			}
 		}Renderpass_create;
 		Renderpass::Create& Renderpass::create = Renderpass_create;
 
 		struct RenderpassGet : Renderpass::Get
 		{
-			RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
+			RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
 				if (!device)
 					device = current_device;
@@ -151,7 +151,7 @@ namespace flame
 
 				for (auto& rp : device->rps)
 				{
-					if (rp->filename == filename)
+					if (rp->filename == filename && rp->defines == defines)
 						return rp.get();
 				}
 
@@ -161,63 +161,16 @@ namespace flame
 					return nullptr;
 				}
 
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
+				RenderpassInfo info;
 
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("renderpass"))
-				{
-					printf("renderpass wrong format: %s\n", _filename.string().c_str());
-					return nullptr;
-				}
+				LineReader res(filename);
+				res.read_block("");
+				unserialize_text(res, &info, {}, defines);
+				res.close();
 
-				std::vector<Attachment> atts;
-				auto n_atts = doc_root.child("attachments");
-				for (auto n_att : n_atts.children())
-				{
-					auto& att = atts.emplace_back();
-					if (auto a = n_att.attribute("format"); a)
-						TypeInfo::unserialize_t(a.value(), &att.format);
-					if (auto a = n_att.attribute("load_op"); a)
-						TypeInfo::unserialize_t(a.value(), &att.load_op);
-					if (auto a = n_att.attribute("sample_count"); a)
-						TypeInfo::unserialize_t(a.value(), &att.sample_count);
-					if (auto a = n_att.attribute("initia_layout"); a)
-						TypeInfo::unserialize_t(a.value(), &att.initia_layout);
-					if (auto a = n_att.attribute("final_layout"); a)
-						TypeInfo::unserialize_t(a.value(), &att.final_layout);
-				}
-
-				std::vector<Subpass> sps;
-				std::vector<uvec2> deps;
-				auto n_sps = doc_root.child("subpasses");
-				for (auto n_sp : n_sps.children())
-				{
-					auto& sp = sps.emplace_back();
-
-					if (auto a = n_sp.attribute("color_refs"); a)
-					{
-						for (auto& d : SUS::split(a.value(), ','))
-							sp.color_attachments.push_back(sto<int>(d));
-					}
-
-					if (auto a = n_sp.attribute("resolve_refs"); a)
-					{
-						for (auto& d : SUS::split(a.value(), ','))
-							sp.resolve_attachments.push_back(sto<int>(d));
-					}
-
-					if (auto a = n_sp.attribute("depth_ref"); a)
-						sp.depth_attachment = std::stoi(a.value());
-
-					if (auto a = n_sp.attribute("dependencies"); a)
-					{
-						for (auto& d : SUS::split(a.value(), ','))
-							deps.push_back(uvec2(sto<int>(d), sps.size() - 1));
-					}
-				}
-
-				auto ret = Renderpass::create(device, atts, sps, deps);
+				auto ret = Renderpass::create(device, info);
 				ret->filename = filename;
+				ret->defines = defines;
 				device->rps.emplace_back(ret);
 				return ret;
 			}

@@ -50,17 +50,18 @@ namespace flame
 				return -1;
 			}
 
+			struct Create
+			{
+				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
+				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& filename = "" /* as key */) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
 			struct Get
 			{
 				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
-
-			struct Create
-			{
-				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
-			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
 
 		struct DescriptorSet
@@ -91,32 +92,19 @@ namespace flame
 
 			virtual ~PipelineLayout() {}
 
+			struct Create
+			{
+				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) = 0;
+				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& filename = "" /* as key */) = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static Create& create;
+
 			struct Get
 			{
 				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
-
-			struct Create
-			{
-				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) = 0;
-			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
 		};
-
-		inline std::vector<std::string> format_defines(const std::string& str)
-		{
-			std::vector<std::string> ret;
-			auto sp = SUS::split(str);
-			for (auto& s : sp)
-			{
-				SUS::trim(s);
-				if (!s.empty())
-					ret.push_back(s);
-			}
-			std::sort(ret.begin(), ret.end());
-			return ret;
-		}
 
 		struct Shader
 		{
@@ -178,8 +166,8 @@ namespace flame
 
 		struct GraphicsPipelineInfo
 		{
-			std::vector<ShaderPtr> shaders;
 			PipelineLayoutPtr layout = nullptr;
+			std::vector<ShaderPtr> shaders;
 			RenderpassPtr renderpass = nullptr;
 			uint subpass_index = 0;
 			std::vector<VertexBufferInfo> vertex_buffers;

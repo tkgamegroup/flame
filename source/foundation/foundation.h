@@ -105,6 +105,20 @@ namespace flame
 		uchar d4[8];
 	};
 
+	inline std::vector<std::string> format_defines(const std::string& str)
+	{
+		std::vector<std::string> ret;
+		auto sp = SUS::split(str);
+		for (auto& s : sp)
+		{
+			SUS::trim(s);
+			if (!s.empty())
+				ret.push_back(s);
+		}
+		std::sort(ret.begin(), ret.end());
+		return ret;
+	}
+
 	struct Path
 	{
 		FLAME_FOUNDATION_EXPORTS static std::map<std::wstring, std::filesystem::path> map;
@@ -116,20 +130,23 @@ namespace flame
 
 		inline static std::filesystem::path get(const std::filesystem::path& path)
 		{
-			if (path.is_absolute())
-				return path;
-			auto it = path.begin();
+			auto ret = path;
+			ret.make_preferred();
+			if (ret.is_absolute())
+				return ret;
+			auto it = ret.begin();
 			auto mit = map.find(*it);
 			if (mit == map.end())
-				return path;
-			auto ret = mit->second;
+				return L"";
+			ret = mit->second;
 			it++;
-			auto eit = path.end();
+			auto eit = ret.end();
 			while (it != eit)
 			{
 				ret /= *it;
 				it++;
 			}
+			ret.make_preferred();
 			return ret;
 		}
 
