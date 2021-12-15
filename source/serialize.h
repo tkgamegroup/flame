@@ -577,6 +577,20 @@ namespace flame
 			return !line().empty();
 		}
 
+		inline void skip_empty()
+		{
+			std::string line;
+			while (true)
+			{
+				if (stream.eof())
+					break;
+				std::getline(stream, line);
+				SUS::ltrim(line);
+				if (!line.empty())
+					break;
+			}
+		}
+
 		inline bool read_block(const std::string& beg_mark, const std::string& end_mark = "[EMPTY_LINE]")
 		{
 			lines.clear();

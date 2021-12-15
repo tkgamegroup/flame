@@ -53,7 +53,7 @@ namespace flame
 			struct Create
 			{
 				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
-				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& filename = "" /* as key */) = 0;
+				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -95,7 +95,7 @@ namespace flame
 			struct Create
 			{
 				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) = 0;
-				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& filename = "" /* as key */) = 0;
+				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -119,7 +119,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual ShaderPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
+				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -202,7 +202,7 @@ namespace flame
 			struct Create
 			{
 				virtual GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) = 0;
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -225,7 +225,7 @@ namespace flame
 			struct Create
 			{
 				virtual ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) = 0;
-				virtual ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
+				virtual ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 

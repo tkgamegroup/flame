@@ -163,10 +163,11 @@ namespace flame
 
 				RenderpassInfo info;
 
-				LineReader res(filename);
+				std::ifstream file(filename);
+				LineReader res(file);
 				res.read_block("");
 				unserialize_text(res, &info, {}, defines);
-				res.close();
+				file.close();
 
 				auto ret = Renderpass::create(device, info);
 				ret->filename = filename;

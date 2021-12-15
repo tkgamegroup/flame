@@ -402,6 +402,17 @@ namespace flame
 			return true;
 		}
 
+		std::string get_key(const std::string& key)
+		{
+			static uint id = 0;
+			auto ret = key;
+			if (ret.empty())
+				ret = to_string(id++);
+			if (!ret.starts_with("#"))
+				ret = "#" + ret;
+			return ret;
+		}
+
 		DescriptorPoolPrivate::~DescriptorPoolPrivate()
 		{
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
@@ -492,7 +503,7 @@ namespace flame
 				return ret;
 			}
 
-			DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& filename) override
+			DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& key) override
 			{
 				return nullptr;
 			}
@@ -733,15 +744,18 @@ namespace flame
 				return ret;
 			}
 
-			PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& _filename) override
+			PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::string& key) override
 			{
-				auto filename = _filename;
-				if (filename.empty())
-					filename = std::to_string(rand());
-				if (!filename.starts_with("#"))
-					filename = "#" + filename;
+				auto fn = std::filesystem::path(get_key(key));
+				fn += L".pll";
 
-				return nullptr;
+				std::ofstream file(fn);
+				file << content;
+				file.close();
+
+				auto ret = PipelineLayout::get(device, fn);
+				std::filesystem::remove(fn);
+				return ret;
 			}
 		}PipelineLayout_create;
 		PipelineLayout::Create& PipelineLayout::create = PipelineLayout_create;
@@ -753,21 +767,25 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = Path::get(_filename);
-
-				if (device)
+				auto filename = _filename;
+				if (filename.c_str()[0] != L'#')
 				{
-					for (auto& p : device->plls)
+					filename = Path::get(_filename);
+
+					if (device)
 					{
-						if (p->filename == filename)
-							return p.get();
+						for (auto& p : device->plls)
+						{
+							if (p->filename == filename)
+								return p.get();
+						}
 					}
-				}
 
-				if (!std::filesystem::exists(filename))
-				{
-					wprintf(L"cannot find pll: %s\n", _filename.c_str());
-					return nullptr;
+					if (!std::filesystem::exists(filename))
+					{
+						wprintf(L"cannot find pll: %s\n", _filename.c_str());
+						return nullptr;
+					}
 				}
 
 				auto res_path = filename;
@@ -777,7 +795,6 @@ namespace flame
 				if (device)
 				{
 					std::vector<std::filesystem::path> dependencies;
-					std::vector<DescriptorSetLayoutPrivate*> dsls;
 					std::vector<DescriptorBinding> bindings;
 					TypeInfoDataBase db;
 
@@ -790,6 +807,8 @@ namespace flame
 					res.read_block("typeinfo:", "");
 					db.load(file);
 					file.close();
+
+					std::vector<DescriptorSetLayoutPrivate*> dsls;
 
 					for (auto& d : dependencies)
 					{
@@ -806,35 +825,11 @@ namespace flame
 					auto pc_ui = find_udt("PushConstant", db);
 
 					auto ret = PipelineLayout::create(device, dsls, pc_ui ? pc_ui->size : 0);
-					ret->device = device;
 					ret->db = std::move(db);
 					ret->pc_ui = pc_ui;
 					ret->filename = filename;
-
-					{
-						std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-						vk_descriptor_set_layouts.resize(dsls.size());
-						for (auto i = 0; i < dsls.size(); i++)
-							vk_descriptor_set_layouts[i] = dsls[i]->vk_descriptor_set_layout;
-
-						VkPushConstantRange vk_pushconstant_range;
-						vk_pushconstant_range.offset = 0;
-						vk_pushconstant_range.size = ret->pc_sz;
-						vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
-
-						VkPipelineLayoutCreateInfo info;
-						info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-						info.flags = 0;
-						info.pNext = nullptr;
-						info.setLayoutCount = vk_descriptor_set_layouts.size();
-						info.pSetLayouts = vk_descriptor_set_layouts.data();
-						info.pushConstantRangeCount = ret->pc_sz > 0 ? 1 : 0;
-						info.pPushConstantRanges = ret->pc_sz > 0 ? &vk_pushconstant_range : nullptr;
-
-						chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
-					}
-
-					device->plls.emplace_back(ret);
+					if (filename.c_str()[0] != L'#')
+						device->plls.emplace_back(ret);
 					return ret;
 				}
 				return nullptr;
@@ -850,15 +845,23 @@ namespace flame
 
 		struct ShaderCreate : Shader::Create
 		{
-			ShaderPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& _filename) override
+			ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::string& key) override
 			{
-				auto filename = _filename;
-				if (filename.empty())
-					filename = std::to_string(rand());
-				if (!filename.starts_with("#"))
-					filename = "#" + filename;
+				auto fn = std::filesystem::path(get_key(key));
+				switch (type)
+				{
+				case ShaderStageVert:
+					fn += L".vert";
+					break;
+				case ShaderStageFrag:
+					fn += L".frag";
+					break;
+				}
 
-				return nullptr;
+				std::ofstream file(content);
+				auto ret = Shader::get(device, fn, defines);
+				file.close();
+				return ret;
 			}
 		}Shader_create;
 		Shader::Create& Shader::create = Shader_create;
@@ -967,107 +970,6 @@ namespace flame
 					delete info.renderpass;
 			}
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
-		}
-
-		void parse_graphics_pipeline_info(DevicePtr device, LineReader& res, const std::vector<std::string>& defines, const std::filesystem::path& ppath, GraphicsPipelineInfo& info)
-		{
-			std::string					layout_segment;
-			std::vector<std::string>	shader_segments;
-
-			UnserializeSpec spec;
-			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const SerializeNode& src)->void* {
-				auto value = src.value();
-				if (value.starts_with("0x"))
-					return (void*)sto<uint64>(value.substr(2));
-				if (value.starts_with("@"))
-				{
-					layout_segment = value;
-					return INVALID_POINTER;
-				}
-				std::filesystem::path fn = src.value();
-				if (!ppath.empty() && ppath.c_str()[0] != L'#' && Path::cat_if_in(ppath, fn))
-					fn = std::filesystem::canonical(fn);
-				return PipelineLayout::get(device, fn);
-			};
-			spec.map[TypeInfo::get<Shader*>()] = [&](const SerializeNode& src)->void* {
-				auto value = src.value();
-				if (!value.empty())
-				{
-					if (value.starts_with("@"))
-					{
-						shader_segments.push_back(value);
-						return INVALID_POINTER;
-					}
-					return Shader::get(device, value, {});
-				}
-				std::filesystem::path fn = src.value("filename");
-				if (!ppath.empty() && ppath.c_str()[0] != L'#' && Path::cat_if_in(ppath, fn))
-					fn = std::filesystem::canonical(fn);
-				return Shader::get(device, fn, format_defines(src.value("defines")));
-			};
-			spec.map[TypeInfo::get<Renderpass*>()] = [&](const SerializeNode& src)->void* {
-				auto value = src.value();
-				if (value.starts_with("0x"))
-					return (void*)sto<uint64>(value.substr(2));
-				if (!value.empty())
-					return Renderpass::get(device, value, {});
-				std::filesystem::path fn = src.value("filename");
-				if (!ppath.empty() && ppath.c_str()[0] != L'#' && Path::cat_if_in(ppath, fn))
-					fn = std::filesystem::canonical(fn);
-				return Renderpass::get(device, fn, format_defines(src.value("defines")));
-			};
-			unserialize_text(res, &info, spec, defines);
-
-			if (!info.layout && !layout_segment.empty())
-			{
-				res.read_block(layout_segment, "@");
-				std::string content;
-				for (auto& l : res.lines)
-					content += l + "\n";
-				info.layout = PipelineLayout::create(device, content, ppath.string());
-			}
-			if (!info.shaders.empty() && !shader_segments.empty())
-			{
-				for (auto& s : shader_segments)
-				{
-					res.read_block(s, "@");
-					std::string content;
-					for (auto& l : res.lines)
-						content += l + "\n";
-					info.shaders.push_back(Shader::create(device, content, {}, ppath.string()));
-				}
-			}
-
-			if (info.vertex_buffers.empty())
-			{
-				for (auto s : info.shaders)
-				{
-					if (s->type == ShaderStageVert)
-					{
-						if (s->in_ui && !s->in_ui->variables.empty())
-						{
-							auto& vb = info.vertex_buffers.emplace_back();
-							for (auto& vi : s->in_ui->variables)
-							{
-								auto& va = vb.attributes.emplace_back();
-								auto sp = SUS::split(vi.name, ':');
-								va.location = sto<int>(sp[1]);
-								if (vi.type == TypeInfo::get<float>())
-									va.format = Format_R32_SFLOAT;
-								else if (vi.type == TypeInfo::get<vec2>())
-									va.format = Format_R32G32_SFLOAT;
-								else if (vi.type == TypeInfo::get<vec3>())
-									va.format = Format_R32G32B32_SFLOAT;
-								else if (vi.type == TypeInfo::get<vec4>())
-									va.format = Format_R32G32B32A32_SFLOAT;
-								else if (vi.type == TypeInfo::get<cvec4>())
-									va.format = Format_R8G8B8A8_UNORM;
-							}
-						}
-						break;
-					}
-				}
-			}
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create
@@ -1296,22 +1198,17 @@ namespace flame
 				return ret;
 			}
 
-			GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& _filename) override
+			GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key) override
 			{
-				auto filename = _filename;
-				if (filename.empty())
-					filename = std::to_string(rand());
-				if (!filename.starts_with("#"))
-					filename = "#" + filename;
-
-				GraphicsPipelineInfo info;
+				auto fn = std::filesystem::path(get_key(key));
+				fn += L".pipeline";
 				
-				std::stringstream ss(content);
-				LineReader res(ss);
-				parse_graphics_pipeline_info(device, res, defines, filename, info);
+				std::ofstream file(fn);
+				file << content;
+				file.close();
 
-				auto ret = GraphicsPipeline::create(device, info);
-				ret->filename = filename;
+				auto ret = GraphicsPipeline::get(device, fn, defines);
+				std::filesystem::remove(fn);
 				return ret;
 			}
 		}GraphicsPipeline_create;
@@ -1324,36 +1221,148 @@ namespace flame
 				if (!device)
 					device = current_device;
 
-				auto filename = Path::get(_filename);
-
-				if (device)
+				auto filename = _filename;
+				std::filesystem::path ppath;
+				if (filename.c_str()[0] != L'#')
 				{
-					for (auto& pl : device->gpls)
+					filename = Path::get(_filename);
+
+					if (device)
 					{
-						if (pl->filename == filename&& pl->defines == defines)
-							return pl.get();
+						for (auto& pl : device->gpls)
+						{
+							if (pl->filename == filename && pl->defines == defines)
+								return pl.get();
+						}
 					}
-				}
 
-				if (!std::filesystem::exists(filename))
-				{
-					wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
-					return nullptr;
+					if (!std::filesystem::exists(filename))
+					{
+						wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
+						return nullptr;
+					}
+
+					ppath = filename.parent_path();
 				}
 
 				GraphicsPipelineInfo info;
 
 				std::ifstream file(filename);
 				LineReader res(file);
+				res.skip_empty();
 				res.read_block("");
-				parse_graphics_pipeline_info(device, res, defines, filename.parent_path(), info);
+
+				std::string					layout_segment;
+				std::vector<std::string>	shader_segments;
+
+				UnserializeSpec spec;
+				spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const SerializeNode& src)->void* {
+					auto value = src.value();
+					if (value.starts_with("0x"))
+						return (void*)sto<uint64>(value.substr(2));
+					if (value.starts_with("@"))
+					{
+						layout_segment = value;
+						return INVALID_POINTER;
+					}
+					std::filesystem::path fn = src.value();
+					if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+						fn = std::filesystem::canonical(fn);
+					return PipelineLayout::get(device, fn);
+				};
+				spec.map[TypeInfo::get<Shader*>()] = [&](const SerializeNode& src)->void* {
+					auto value = src.value();
+					if (!value.empty())
+					{
+						if (value.starts_with("@"))
+						{
+							shader_segments.push_back(value);
+							return INVALID_POINTER;
+						}
+						return Shader::get(device, value, {});
+					}
+					std::filesystem::path fn = src.value("filename");
+					if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+						fn = std::filesystem::canonical(fn);
+					return Shader::get(device, fn, format_defines(src.value("defines")));
+				};
+				spec.map[TypeInfo::get<Renderpass*>()] = [&](const SerializeNode& src)->void* {
+					auto value = src.value();
+					if (value.starts_with("0x"))
+						return (void*)sto<uint64>(value.substr(2));
+					if (!value.empty())
+						return Renderpass::get(device, value, {});
+					std::filesystem::path fn = src.value("filename");
+					if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+						fn = std::filesystem::canonical(fn);
+					return Renderpass::get(device, fn, format_defines(src.value("defines")));
+				};
+				unserialize_text(res, &info, spec, defines);
+
+				if (!info.layout && !layout_segment.empty())
+				{
+					res.read_block(layout_segment, "@");
+					std::string content;
+					for (auto& l : res.lines)
+						content += l + "\n";
+					info.layout = PipelineLayout::create(device, content, ppath.string());
+				}
+				if (!info.shaders.empty() && !shader_segments.empty())
+				{
+					for (auto& s : shader_segments)
+					{
+						res.read_block(s, "@");
+						std::string content;
+						for (auto& l : res.lines)
+							content += l + "\n";
+						ShaderStageFlags type;
+						if (s == "vert")
+							type = ShaderStageVert;
+						else if (s == "frag")
+							type = ShaderStageFrag;
+						info.shaders.push_back(Shader::create(device, type, content, {}, ppath.string()));
+					}
+				}
+
+				if (info.vertex_buffers.empty())
+				{
+					for (auto s : info.shaders)
+					{
+						if (s->type == ShaderStageVert)
+						{
+							if (s->in_ui && !s->in_ui->variables.empty())
+							{
+								auto& vb = info.vertex_buffers.emplace_back();
+								for (auto& vi : s->in_ui->variables)
+								{
+									auto& va = vb.attributes.emplace_back();
+									auto sp = SUS::split(vi.name, ':');
+									va.location = sto<int>(sp[1]);
+									if (vi.type == TypeInfo::get<float>())
+										va.format = Format_R32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec2>())
+										va.format = Format_R32G32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec3>())
+										va.format = Format_R32G32B32_SFLOAT;
+									else if (vi.type == TypeInfo::get<vec4>())
+										va.format = Format_R32G32B32A32_SFLOAT;
+									else if (vi.type == TypeInfo::get<cvec4>())
+										va.format = Format_R8G8B8A8_UNORM;
+								}
+							}
+							break;
+						}
+					}
+				}
+				
 				file.close();
 
 				if (device)
 				{
 					auto ret = GraphicsPipeline::create(device, info);
 					ret->filename = filename;
-					device->gpls.emplace_back(ret);
+					if (filename.c_str()[0] != L'#')
+						device->gpls.emplace_back(ret);
 					return ret;
 				}
 
@@ -1400,7 +1409,7 @@ namespace flame
 				return ret;
 			}
 
-			ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename) override
+			ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key) override
 			{
 				return nullptr;
 			}

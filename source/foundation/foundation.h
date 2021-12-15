@@ -130,17 +130,15 @@ namespace flame
 
 		inline static std::filesystem::path get(const std::filesystem::path& path)
 		{
-			auto ret = path;
-			ret.make_preferred();
-			if (ret.is_absolute())
-				return ret;
-			auto it = ret.begin();
+			if (path.is_absolute())
+				return path;
+			auto it = path.begin();
 			auto mit = map.find(*it);
 			if (mit == map.end())
 				return L"";
-			ret = mit->second;
+			auto ret = mit->second;
 			it++;
-			auto eit = ret.end();
+			auto eit = path.end();
 			while (it != eit)
 			{
 				ret /= *it;
