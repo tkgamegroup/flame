@@ -360,7 +360,9 @@ namespace flame
 			ShaderStageGeom = 1 << 3,
 			ShaderStageFrag = 1 << 4,
 			ShaderStageComp = 1 << 5,
-			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag | ShaderStageComp,
+			ShaderStageDsl  = 1 << 6,
+			ShaderStagePll  = 1 << 7,
+			ShaderStageAll  = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag | ShaderStageComp,
 
 			ShaderStage_Max = 0xffffffff
 		};

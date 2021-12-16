@@ -248,7 +248,7 @@ namespace flame
 		{
 			auto ret = s;
 			ltrim(ret);
-			return s;
+			return ret;
 		}
 
 		static void rtrim(std::basic_string<CH>& s)
@@ -262,7 +262,7 @@ namespace flame
 		{
 			auto ret = s;
 			rtrim(ret);
-			return s;
+			return ret;
 		}
 
 		static void trim(std::basic_string<CH>& s)
@@ -275,7 +275,7 @@ namespace flame
 		{
 			auto ret = s;
 			trim(ret);
-			return s;
+			return ret;
 		}
 		
 		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
@@ -577,20 +577,6 @@ namespace flame
 			return !line().empty();
 		}
 
-		inline void skip_empty()
-		{
-			std::string line;
-			while (true)
-			{
-				if (stream.eof())
-					break;
-				std::getline(stream, line);
-				SUS::ltrim(line);
-				if (!line.empty())
-					break;
-			}
-		}
-
 		inline bool read_block(const std::string& beg_mark, const std::string& end_mark = "[EMPTY_LINE]")
 		{
 			lines.clear();
@@ -624,6 +610,14 @@ namespace flame
 					lines.push_back(line);
 				}
 			}
+		}
+
+		inline std::string form_content()
+		{
+			std::string ret;
+			for (auto& l : lines)
+				ret += l + "\n";
+			return ret;
 		}
 	};
 

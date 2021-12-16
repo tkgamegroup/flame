@@ -293,8 +293,8 @@ namespace flame
 			indent2 += 2;
 
 		auto read_var = [&](const VariableInfo& vi) {
-			std::function<SerializeNode(uint indent)> read_value;
-			read_value = [&](uint indent) {
+			std::function<SerializeNode(uint indent)> read_pudt;
+			read_pudt = [&](uint indent) {
 				SerializeNode ret;
 				while (true)
 				{
@@ -310,7 +310,7 @@ namespace flame
 						continue;
 
 					auto name = src.line().substr(ilen);
-					auto c = read_value(indent + 2);
+					auto c = read_pudt(indent + 2);
 					c.name = name;
 					ret.children.push_back(c);
 				}
@@ -343,7 +343,7 @@ namespace flame
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
 				if (auto it = spec.map.find(ti); it != spec.map.end())
 				{
-					auto v = it->second(read_value(indent2));
+					auto v = it->second(read_pudt(indent2));
 					if (v != INVALID_POINTER)
 						*(void**)p = v;
 				}
@@ -434,7 +434,7 @@ namespace flame
 						auto ilen = SUS::indent_length(src.line(1));
 						if (ilen == indent2)
 						{
-							auto v = it->second(read_value(indent2));
+							auto v = it->second(read_pudt(indent2));
 							if (v != INVALID_POINTER)
 								vec.push_back(v);
 						}

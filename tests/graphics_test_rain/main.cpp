@@ -18,6 +18,7 @@ layout
   @pll
 shaders
   @vert
+ ---
   @frag
 renderpass
   {rp}
@@ -242,7 +243,12 @@ int entry(int argc, char** args)
 		}
 		{
 			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec2(1, 1));
+			vtx_buf.set_var<"i_pos:0">(p, vec2(0, 1));
+			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
+		}
+		{
+			auto p = vtx_buf.add_vtx();
+			vtx_buf.set_var<"i_pos:0">(p, vec2(1, 0));
 			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
 		}
 		vtx_buf.upload(cb);
@@ -253,8 +259,8 @@ int entry(int argc, char** args)
 		cb->begin_renderpass(nullptr, fbs[idx].get(), &cv);
 		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		cb->bind_pipeline(pl);
-		cb->push_constant_t(mat4(1));
-		cb->draw(2, 1, 0, 0);
+		cb->push_constant_t(vec4(1, 1, 0, 0));
+		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 	});
 

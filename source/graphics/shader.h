@@ -125,7 +125,7 @@ namespace flame
 
 			struct Get
 			{
-				virtual ShaderPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
