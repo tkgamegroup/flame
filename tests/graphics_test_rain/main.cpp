@@ -56,77 +56,13 @@ void main()
 @
 )^^^";
 
-struct MyVertexBuffer
-{
-	UdtInfo* ui = nullptr;
-
-	uint size = 0;
-	uint array_capacity = 0;
-	uint array_count = 0;
-
-	std::unique_ptr<BufferT> buf;
-	std::unique_ptr<BufferT> stagbuf;
-	char* data;
-};
-
-struct LineVB : MyVertexBuffer
-{
-	void create(UdtInfo* _ui, uint n)
-	{
-		ui = _ui;
-		size = ui->size;
-		array_capacity = n;
-		buf.reset(Buffer::create(nullptr,  array_capacity * size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
-		stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-		stagbuf->map();
-		data = (char*)stagbuf->mapped;
-	}
-
-	inline void* add_vtx()
-	{
-		auto ret = data;
-		array_count++;
-		data += size;
-		return ret;
-	}
-
-	inline void upload(CommandBufferPtr cb)
-	{
-		BufferCopy cpy;
-		cpy.size = array_count * size;
-		array_count = 0;
-		data = (char*)stagbuf->mapped;
-		cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
-		cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead, PipelineStageTransfer, PipelineStageVertexInput);
-	}
-
-	template<fixed_string n, class T>
-	inline void set_var(void* p, const T& v)
-	{
-		auto get_offset = [&]()->int {
-			auto vi = ui->find_variable((char const*)n);
-			if (!vi)
-			{
-				assert(0);
-				return -1;
-			}
-			assert(vi->type == TypeInfo::get<T>());
-			return vi->offset;
-		};
-		static int offset = get_offset();
-		if (offset == -1)
-			return;
-		*(T*)((char*)p + offset) = v;
-	}
-};
-
 Device* d;
 NativeWindow* nw;
 Window* w;
 Renderpass* rp;
 std::vector<std::unique_ptr<Framebuffer>> fbs;
 GraphicsPipeline* pl;
-LineVB vtx_buf;
+StorageBuffer<BufferUsageVertex> vtx_buf;
 
 void build_fbs()
 {
@@ -185,8 +121,8 @@ struct Drop
 
 	void reset()
 	{
-		p.x = linearRand(-1.f, 1.f) * projector.aspect;
 		p.z = linearRand(projector.zNear, projector.zFar);
+		p.x = linearRand(-1.f, 1.f) * ((p.z + 1.f) / projector.tanfovy * 0.5f) * projector.aspect;
 		end = -p.z * projector.tanfovy;
 		p.y = -end + 0.1;
 		sp = linearRand(0.f, 1.f);
@@ -202,12 +138,33 @@ struct Drop
 
 	void draw()
 	{
-	//	canvas->begin_path();
-	//	auto c1 = projector.project(p);
-	//	auto c2 = projector.project(p - vec3(0.f, 0.1f, 0.f));
-	//	canvas->move_to(c1.x, c1.y);
-	//	canvas->line_to(c2.x, c2.y);
-	//	canvas->stroke(cvec4(83, 209, 227, 255), 4.f / p.z);
+		auto c1 = projector.proj(p + vec3(0.f, 0.05f, 0.f));
+		auto c2 = projector.proj(p - vec3(0.f, 0.05f, 0.f));
+		auto w = 2.f / p.z;
+
+		vtx_buf.set_var<"i_pos:0">(c1 - vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
+
+		vtx_buf.set_var<"i_pos:0">(c2 - vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
+
+		vtx_buf.set_var<"i_pos:0">(c1 + vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
+
+		vtx_buf.set_var<"i_pos:0">(c1 + vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
+
+		vtx_buf.set_var<"i_pos:0">(c2 - vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
+
+		vtx_buf.set_var<"i_pos:0">(c2 + vec2(w, 0));
+		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.next_item();
 	}
 };
 std::vector<Drop> drops;
@@ -236,21 +193,7 @@ int entry(int argc, char** args)
 			d.fall();
 			d.draw();
 		}
-		{
-			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec2(0, 0));
-			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
-		}
-		{
-			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec2(0, 1));
-			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
-		}
-		{
-			auto p = vtx_buf.add_vtx();
-			vtx_buf.set_var<"i_pos:0">(p, vec2(1, 0));
-			vtx_buf.set_var<"i_col:1">(p, cvec4(0, 0, 0, 255));
-		}
+
 		vtx_buf.upload(cb);
 		auto vp = Rect(vec2(0), w->native->size);
 		cb->set_viewport(vp);
@@ -259,8 +202,8 @@ int entry(int argc, char** args)
 		cb->begin_renderpass(nullptr, fbs[idx].get(), &cv);
 		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		cb->bind_pipeline(pl);
-		cb->push_constant_t(vec4(1, 1, 0, 0));
-		cb->draw(3, 1, 0, 0);
+		cb->push_constant_t(vec4(2.f / vec2(w->native->size), vec2(-1)));
+		cb->draw(drops.size() * 6, 1, 0, 0);
 		cb->end_renderpass();
 	});
 
@@ -269,7 +212,7 @@ int entry(int argc, char** args)
 	drops.resize(3000);
 
 	pl = GraphicsPipeline::create(d, pl_str, { "rp=0x" + to_string((uint64)rp) });
-	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 2);
+	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 6);
 
 	run([]() {
 		w->dirty = true;
