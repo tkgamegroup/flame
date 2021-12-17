@@ -3,9 +3,6 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/buffer_ext.h>
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/command.h>
 #include <flame/graphics/shader.h>
 
 using namespace flame;

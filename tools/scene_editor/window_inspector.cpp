@@ -12,7 +12,7 @@ void WindowInspector::on_draw()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		auto e = selection.entity;
+		//auto e = selection.entity;
 		//e->get_components();
 	}
 }

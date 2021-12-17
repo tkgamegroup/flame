@@ -129,9 +129,10 @@ void WindowProject::Item::draw()
 		{
 			// open folder will destroy all items, so staging path here
 			auto str = path.wstring();
-			add_event([](Capture& c) {
-				window_project.open_folder((wchar_t*)c._data);
-			}, Capture().set_data((str.size() + 1) * 2, (void*)str.c_str()));
+			add_event([str]() {
+				window_project.open_folder(str);
+				return false;
+			});
 
 			window_project.selected_folder = nullptr;
 			std::function<FolderTreeNode*(FolderTreeNode*)> select_node;

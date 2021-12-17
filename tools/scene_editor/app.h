@@ -1,6 +1,8 @@
 #pragma once
 
-#include <flame/universe/app.h>
+#include <flame/graphics/application.h>
+
+#include <ImFileDialog.h>
 
 using namespace flame;
 
@@ -8,7 +10,7 @@ struct Window
 {
 	std::string name;
 
-	Entity* e = nullptr;
+	void* lis = nullptr;
 
 	Window(std::string_view name);
 
@@ -19,7 +21,7 @@ struct Window
 	virtual void on_draw() = 0;
 };
 
-struct MyApp : App
+struct App : GraphicsApplication
 {
 	std::filesystem::path project_path;
 
@@ -30,4 +32,4 @@ struct MyApp : App
 	void open_project(const std::filesystem::path& path);
 };
 
-extern MyApp app;
+extern App app;

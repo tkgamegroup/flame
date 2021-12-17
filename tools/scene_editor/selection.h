@@ -13,13 +13,13 @@ struct Selection
 
 	Type type = tNothing;
 	std::filesystem::path path;
-	Entity* entity = nullptr;
+	//Entity* entity = nullptr;
 
 	void clear();
 	void select(const std::filesystem::path& path);
 	bool selecting(const std::filesystem::path& path);
-	void select(Entity* e);
-	bool selecting(Entity* e);
+	//void select(Entity* e);
+	//bool selecting(Entity* e);
 };
 
 extern Selection selection;

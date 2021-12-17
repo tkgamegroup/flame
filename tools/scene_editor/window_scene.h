@@ -6,7 +6,7 @@ struct WindowScene : Window
 {
 	graphics::Image* render_tar = nullptr;
 
-	Entity* e_prefab = nullptr;
+	//Entity* e_prefab = nullptr;
 
 	WindowScene();
 

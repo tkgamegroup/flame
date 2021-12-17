@@ -2,6 +2,9 @@
 
 #include "../foundation/application.h"
 #include "device.h"
+#include "image.h"
+#include "renderpass.h"
+#include "command.h"
 #include "window.h"
 
 struct GraphicsApplication : Application

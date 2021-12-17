@@ -3,8 +3,6 @@
 #include "window_scene.h"
 #include "window_project.h"
 
-#include <flame/serialize.h>
-
 std::list<Window*> windows;
 
 Window::Window(std::string_view name) :
@@ -15,29 +13,25 @@ Window::Window(std::string_view name) :
 
 void Window::open()
 {
-	if (e)
+	if (lis)
 		return;
 
-	e = Entity::create();
-	auto c = cImgui::create();
-	c->on_draw([](Capture& c) {
-		ImGui::SetCurrentContext((ImGuiContext*)c._current);
-		c.thiz<Window>()->draw();
-	}, Capture().set_thiz(this));
-	e->add_component(c);
-	app.imgui_root->add_child(e);
+	lis = app.main_window->add_imgui_callback([this](void* ctx) {
+		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+		draw();
+	});
 }
 
 void Window::close()
 {
-	if (!e)
+	if (!lis)
 		return;
 
-	add_event([](Capture& c) {
-		auto e = c.thiz<Entity>();
-		e->get_parent()->remove_child(e);
-	}, Capture().set_thiz(e));
-	e = nullptr;
+	add_event([this]() {
+		app.main_window->remove_imgui_callback(lis);
+		return false;
+	});
+	lis = nullptr;
 }
 
 void Window::draw()
@@ -51,17 +45,14 @@ void Window::draw()
 		close();
 }
 
-MyApp app;
+App app;
 
-void MyApp::init()
+void App::init()
 {
-	app.create();
-	app.set_main_window(graphics::Window::create(nullptr, NativeWindow::create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized)), true);
-	app.s_renderer->set_clear_color(vec4(0.2f, 0.4f, 0.7f, 1.f));
-	app.s_imgui->set_clear_color(vec4(0.2f, 0.2f, 0.2f, 1.f));
+	app.create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 
-	app.imgui_root->get_component_t<cImgui>()->on_draw([](Capture& c) {
-		ImGui::SetCurrentContext((ImGuiContext*)c._current);
+	app.main_window->add_imgui_callback([](void* ctx) {
+		ImGui::SetCurrentContext((ImGuiContext*)ctx);
 
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
@@ -74,7 +65,7 @@ void MyApp::init()
 		{
 			for (auto w : windows)
 			{
-				auto selected = (bool)w->e;
+				auto selected = (bool)w->lis;
 				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
 					w->open();
 			}
@@ -85,7 +76,7 @@ void MyApp::init()
 			if (ImGui::MenuItem("Always Update", nullptr, app.always_update))
 			{
 				app.always_update = !app.always_update;
-				app.s_renderer->set_always_update(app.always_update);
+				//app.s_renderer->set_always_update(app.always_update);
 			}
 			ImGui::EndMenu();
 		}
@@ -119,10 +110,10 @@ void MyApp::init()
 		ImGui::PopStyleVar(2);
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
-	}, Capture());
+	});
 }
 
-void MyApp::open_project(const std::filesystem::path& path)
+void App::open_project(const std::filesystem::path& path)
 {
 	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
 	{
@@ -158,16 +149,13 @@ int main(int argc, char** args)
 		break;
 	}
 
-	run([]() {
-		app.update();
-		return true;
-	});
+	app.run();
 
 	std::ofstream settings_o("settings.ini");
 	settings_o << "[opened_windows]\n";
 	for (auto w : windows)
 	{
-		if (w->e)
+		if (w->lis)
 			settings_o << w->name << "\n";
 	}
 	settings_o << "[project_path]\n";
