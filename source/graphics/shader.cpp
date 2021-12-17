@@ -229,9 +229,7 @@ namespace flame
 			std::ifstream src(src_path);
 			if (stage == ShaderStageDsl)
 			{
-				code << "#ifndef SET" << std::endl;
 				code << "#define SET 0" << std::endl;
-				code << "#endif" << std::endl;
 				while (!src.eof())
 				{
 					std::string line;
@@ -244,6 +242,7 @@ namespace flame
 			}
 			else if (stage == ShaderStagePll)
 			{
+				code << "#define SET 0" << std::endl;
 				while (!src.eof())
 				{
 					std::string line;
@@ -258,6 +257,8 @@ namespace flame
 			}
 			else
 			{
+				auto set = 0;
+				code << "#define SET " << std::to_string(set++) << std::endl;
 				while (!src.eof())
 				{
 					std::string line;
@@ -268,22 +269,19 @@ namespace flame
 					{
 						code << std::endl;
 
-						auto set = 0;
 						std::ifstream pll(src_path.parent_path() / res[1].str());
 						while (!pll.eof())
 						{
 							std::getline(pll, line);
 							static std::regex reg("#include\\s+.([\\w\\/\\.]+\\.dsl)");
+							code << line << std::endl;
 							if (std::regex_search(line, reg))
 							{
 								code << "#undef SET" << std::endl;
 								code << "#define SET " << std::to_string(set++) << std::endl;
 							}
-							code << line << std::endl;
 						}
 						pll.close();
-						code << "#undef SET" << std::endl;
-						code << "#define SET " << std::to_string(set++) << std::endl;
 
 						continue;
 					}
@@ -359,7 +357,7 @@ namespace flame
 
 					auto& b = bindings[binding];
 					b.type = type;
-					b.count = spv_compiler.get_type(r.type_id).array[0];
+					b.count = max(1U, spv_compiler.get_type(r.type_id).array[0]);
 					b.name = spv_compiler.get_name(r.base_type_id);
 				};
 
@@ -698,6 +696,7 @@ namespace flame
 					pool = DescriptorPool::current();
 
 				auto ret = new DescriptorSetPrivate;
+				ret->device = pool->device;
 				ret->pool = pool;
 				ret->layout = layout;
 

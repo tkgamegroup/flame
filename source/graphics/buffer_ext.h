@@ -58,10 +58,9 @@ namespace flame
 			char* pbeg;
 			char* pend;
 
-			void create(UdtInfo* _ui, uint _array_capacity = 1)
+			void create(uint _size, uint _array_capacity = 1)
 			{
-				ui = _ui;
-				size = ui->size;
+				size = _size;
 				array_capacity = _array_capacity;
 				buf.reset(Buffer::create(nullptr, array_capacity * size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -69,9 +68,28 @@ namespace flame
 				pbeg = pend = (char*)stagbuf->mapped;
 			}
 
+			void create(UdtInfo* _ui, uint _array_capacity = 1)
+			{
+				ui = _ui;
+				create(ui->size, _array_capacity);
+			}
+
 			inline void next_item()
 			{
 				pend += size;
+			}
+
+			inline void push(uint n, void* d)
+			{
+				auto s = n * size;
+				memcpy(pend, d, s);
+				pend += s;
+			}
+
+			template<typename T>
+			inline void set_item(const T& v)
+			{
+				*(T*)pend = v;
 			}
 
 			template<fixed_string n, typename T>

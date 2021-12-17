@@ -160,7 +160,11 @@ int entry(int argc, char** args)
 	nw->add_resize_listener([](const uvec2&) {
 		Queue::get(nullptr)->wait_idle();
 		build_fbs();
-		});
+	});
+	w->add_imgui_callback([](void* ctx) {
+		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+		ImGui::Button("Hello");
+	});
 	w->add_renderer([](uint idx, CommandBufferPtr cb) {
 		for (auto& s : stars)
 		{
@@ -191,6 +195,7 @@ int entry(int argc, char** args)
 
 	run([]() {
 		w->dirty = true;
+		w->imgui_new_frame();
 		w->update();
 		return true;
 	});

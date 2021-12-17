@@ -560,52 +560,49 @@ process:
 					std::string metas;
 					if (ur->pass_item(TagF, name, &metas))
 					{
-						if (rva || voff != -1)
+						auto& fi = u.functions.emplace_back();
+						fi.name = name;
+						fi.rva = rva;
+						fi.voff = voff;
+
+						IDiaSymbol* s_function_type;
+						s_function->get_type(&s_function_type);
+
+						IDiaSymbol* s_return_type;
+						s_function_type->get_type(&s_return_type);
+						fi.return_type = typeinfo_from_symbol(s_return_type);
+						reference_type(fi.return_type);
+						s_return_type->Release();
+
+						IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
+						fi.is_static = false;
+						if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
+							fi.is_static = b;
+
+						fi.metas.from_string(metas);
+
+						IDiaEnumSymbols* s_parameters;
+						s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+						IDiaSymbol* s_parameter;
+						while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 						{
-							auto& fi = u.functions.emplace_back();
-							fi.name = name;
-							fi.rva = rva;
-							fi.voff = voff;
+							IDiaSymbol* s_type;
+							s_parameter->get_type(&s_type);
+							auto ti = typeinfo_from_symbol(s_parameter);
+							fi.parameters.push_back(ti);
+							reference_type(ti);
+							s_type->Release();
 
-							IDiaSymbol* s_function_type;
-							s_function->get_type(&s_function_type);
-
-							IDiaSymbol* s_return_type;
-							s_function_type->get_type(&s_return_type);
-							fi.return_type = typeinfo_from_symbol(s_return_type);
-							reference_type(fi.return_type);
-							s_return_type->Release();
-
-							IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
-							fi.is_static = false;
-							if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
-								fi.is_static = b;
-
-							fi.metas.from_string(metas);
-
-							IDiaEnumSymbols* s_parameters;
-							s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-							IDiaSymbol* s_parameter;
-							while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
-							{
-								IDiaSymbol* s_type;
-								s_parameter->get_type(&s_type);
-								auto ti = typeinfo_from_symbol(s_parameter);
-								fi.parameters.push_back(ti);
-								reference_type(ti);
-								s_type->Release();
-
-								s_parameter->Release();
-							}
-							s_parameters->Release();
-
-							s_function_type->Release();
-
-							if (name == "ctor" && fi.parameters.empty())
-								ctor = rva;
-							else if (name == "dtor")
-								dtor = rva;
+							s_parameter->Release();
 						}
+						s_parameters->Release();
+
+						s_function_type->Release();
+
+						if (name == "ctor" && fi.parameters.empty() && rva)
+							ctor = rva;
+						else if (name == "dtor" && rva)
+							dtor = rva;
 					}
 
 					s_function->Release();

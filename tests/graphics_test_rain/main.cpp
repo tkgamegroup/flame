@@ -157,6 +157,10 @@ int entry(int argc, char** args)
 		Queue::get(nullptr)->wait_idle();
 		build_fbs();
 	});
+	w->add_imgui_callback([](void* ctx) {
+		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+		ImGui::Button("Hello");
+	});
 	w->add_renderer([](uint idx, CommandBufferPtr cb) {
 		for (auto& d : drops)
 		{
@@ -186,6 +190,7 @@ int entry(int argc, char** args)
 
 	run([]() {
 		w->dirty = true;
+		w->imgui_new_frame();
 		w->update();
 		return true;
 	});

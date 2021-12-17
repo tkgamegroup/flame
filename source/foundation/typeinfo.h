@@ -1235,14 +1235,22 @@ namespace flame
 		{
 			if (!p)
 				p = malloc(size);
+			auto initialized = false;
 			for (auto& fi : ui->functions)
 			{
 				if (fi.name == "ctor" && fi.parameters.empty())
 				{
-					((void(*)(void*))fi.get_address())(p);
+					auto addr = fi.get_address();
+					if (addr)
+					{
+						((void(*)(void*))addr)(p);
+						initialized = true;
+					}
 					break;
 				}
 			}
+			if (!initialized)
+				memset(p, 0, size);
 			return p;
 		}
 	};
