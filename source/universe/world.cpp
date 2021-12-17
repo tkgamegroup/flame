@@ -11,39 +11,6 @@ namespace flame
 		root->global_visibility = true;
 	}
 
-	System* WorldPrivate::get_system(uint type_hash) const
-	{
-		for (auto& s : systems)
-		{
-			if (s->type_hash == type_hash)
-				return s.get();
-		}
-		return nullptr;
-	}
-
-	System* WorldPrivate::find_system(std::string_view _name) const
-	{
-		System* ret = nullptr;
-		for (auto& s : systems)
-		{
-			if (s->type_name == _name)
-			{
-				ret = s.get();
-				break;
-			}
-		}
-		auto name = "flame::" + std::string(_name);
-		for (auto& s : systems)
-		{
-			if (s->type_name == name)
-			{
-				ret = s.get();
-				break;
-			}
-		}
-		return ret;
-	}
-
 	void WorldPrivate::add_system(System* s)
 	{
 		assert(!s->world);

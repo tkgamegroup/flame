@@ -244,49 +244,11 @@ namespace flame
 		return srcs_str.c_str();
 	}
 
-	Component* EntityPrivate::get_component(uint hash) const
-	{
-		auto it = components_map.find(hash);
-		if (it != components_map.end())
-			return it->second.first;
-		return nullptr;
-	}
-
-	Component* EntityPrivate::find_component(std::string_view _name) const
-	{
-		Component* ret = nullptr;
-		for (auto& c : components)
-		{
-			if (c->type_name == _name)
-			{
-				ret = c.get();
-				break;
-			}
-		}
-		auto name = "flame::" + std::string(_name);
-		for (auto& c : components)
-		{
-			if (c->type_name == name)
-			{
-				ret = c.get();
-				break;
-			}
-		}
-		return ret;
-	}
-
-	void EntityPrivate::get_components(void (*callback)(Capture& c, Component* cmp), const Capture& capture) const
-	{
-		for (auto& c : components)
-			callback((Capture&)capture, c.get());
-		free(capture._data);
-	}
-
 	void EntityPrivate::add_component(Component* c)
 	{
 		assert(!parent);
 		assert(!c->entity);
-		assert(components_map.find(c->type_hash) == components_map.end());
+		assert(components.find(c->type_hash) == components.end());
 
 		c->entity = this;
 
@@ -441,19 +403,6 @@ namespace flame
 				children[i].release();
 		}
 		children.clear();
-	}
-
-	EntityPrivate* EntityPrivate::find_child(std::string_view name) const
-	{
-		for (auto& c : children)
-		{
-			if (c->name == name)
-				return c.get();
-			auto res = c->find_child(name);
-			if (res)
-				return res;
-		}
-		return nullptr;
 	}
 
 	void EntityPrivate::on_entered_world(WorldPrivate* _world)
