@@ -1,18 +1,15 @@
-#include <flame/foundation/window.h>
-#include <flame/foundation/typeinfo.h>
+#include <flame/foundation/application.h>
 
-using namespace flame;
+Application app;
 
 int main(int argc, char** args)
 {
-	auto w = NativeWindow::create("Window Test", uvec2(1280, 720), WindowFrame);
-	w->add_mouse_left_down_listener([w](const ivec2& pos) {
-		w->close();
+	app.create("Window Test");
+	app.main_window->add_mouse_left_down_listener([](const ivec2& pos) {
+		app.main_window->close();
 	});
 
-	run([]() {
-		return true;
-	});
+	app.run();
 
 	return 0;
 }

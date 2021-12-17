@@ -16,10 +16,6 @@ namespace flame
 			std::unique_ptr<FencePrivate> submit_fence;
 			std::unique_ptr<SemaphorePrivate> render_finished;
 
-			std::unique_ptr<RenderpassPrivate> renderpass_clear;
-			std::unique_ptr<RenderpassPrivate> renderpass_load;
-			std::vector<std::unique_ptr<FramebufferPrivate>> framebuffers;
-
 			std::unique_ptr<ImagePrivate> imgui_img_font;
 			StorageBuffer<BufferUsageVertex> imgui_buf_vtx;
 			StorageBuffer<BufferUsageIndex> imgui_buf_idx;

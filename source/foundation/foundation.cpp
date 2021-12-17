@@ -1,6 +1,7 @@
 #include "foundation_private.h"
 #include "system_private.h"
 #include "window_private.h"
+#include "application.h"
 
 namespace flame
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics.h"
+#include "swapchain.h"
 
 #if USE_IMGUI
 #include <imgui.h>
@@ -14,6 +15,10 @@ namespace flame
 		{
 			NativeWindow* native;
 			std::unique_ptr<SwapchainT> swapchain;
+
+			std::unique_ptr<RenderpassT> renderpass_clear;
+			std::unique_ptr<RenderpassT> renderpass_load;
+			std::vector<std::unique_ptr<FramebufferT>> framebuffers;
 
 			bool dirty = false;
 

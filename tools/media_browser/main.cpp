@@ -11,7 +11,7 @@ using namespace graphics;
 App g_app;
 
 database::Connection* db;
-std::filesystem::path stored_path = "E:/ssss/__/";
+std::filesystem::path stored_path = "E:/";
 
 Entity* root = nullptr;
 Canvas* canvas = nullptr;

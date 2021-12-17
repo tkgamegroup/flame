@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graphics_private.h"
 #include "swapchain.h"
 
 namespace flame
