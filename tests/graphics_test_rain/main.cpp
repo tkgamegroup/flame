@@ -75,37 +75,7 @@ void build_fbs()
 	}
 }
 
-struct PerspectiveProjector
-{
-	vec2 screen_sz;
-	float aspect;
-	float fovy;
-	float zNear;
-	float zFar;
-	float tanfovy;
-
-	mat4 matp;
-
-	void set(const vec2& sz, float fov, float n, float f)
-	{
-		screen_sz = sz;
-		aspect = screen_sz.x / screen_sz.y;
-		fovy = fov;
-		zNear = n;
-		zFar = f;
-		tanfovy = tan(radians(fovy));
-
-		matp = perspective(fovy, aspect, zNear, zFar);
-	}
-
-	vec2 proj(const vec3& p)
-	{
-		auto pp = matp * vec4(p, 1.f);
-		pp /= pp.w;
-		return (pp.xy() * 0.5f + 0.5f) * screen_sz;
-	}
-
-}projector;
+PerspectiveProjector projector;
 
 struct Drop
 {
