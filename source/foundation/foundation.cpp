@@ -106,6 +106,9 @@ namespace flame
 			if (!callback())
 				return 0;
 
+			for (auto w : windows)
+				w->has_input = false;
+
 			frames++;
 			auto et = last_time;
 			last_time = get_now_ns();

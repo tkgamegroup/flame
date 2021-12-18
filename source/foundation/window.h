@@ -45,6 +45,22 @@ namespace flame
 
 		CursorType cursor = CursorArrow;
 
+		Listeners<void(KeyboardKey)> key_down_listeners;
+		Listeners<void(KeyboardKey)> key_up_listeners;
+		Listeners<void(wchar_t)> char_listeners;
+		Listeners<void(const ivec2&)> mouse_left_down_listeners;
+		Listeners<void(const ivec2&)> mouse_left_up_listeners;
+		Listeners<void(const ivec2&)> mouse_right_down_listeners;
+		Listeners<void(const ivec2&)> mouse_right_up_listeners;
+		Listeners<void(const ivec2&)> mouse_middle_down_listeners;
+		Listeners<void(const ivec2&)> mouse_middle_up_listeners;
+		Listeners<void(const ivec2&)> mouse_move_listeners;
+		Listeners<void(int)> mouse_scroll_listeners;
+		Listeners<void(const uvec2&)> resize_listeners;
+		Listeners<void()> destroy_listeners;
+		
+		bool has_input = false;
+
 		void* userdata = nullptr;
 
 		virtual void* get_hwnd() = 0;
@@ -56,33 +72,6 @@ namespace flame
 		virtual ivec2 global_to_local(const ivec2& p) = 0;
 		virtual void set_title(std::string_view title) = 0;
 		virtual void set_cursor(CursorType type) = 0;
-
-		virtual void* add_key_down_listener(const std::function<void(KeyboardKey)>& lis) = 0;
-		virtual void remove_key_down_listener(void* lis) = 0;
-		virtual void* add_key_up_listener(const std::function<void(KeyboardKey)>& lis) = 0;
-		virtual void remove_key_up_listener(void* lis) = 0;
-		virtual void* add_char_listener(const std::function<void(wchar_t)>& lis) = 0;
-		virtual void remove_char_listener(void* lis) = 0;
-		virtual void* add_mouse_left_down_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_left_down_listener(void* lis) = 0;
-		virtual void* add_mouse_left_up_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_left_up_listener(void* lis) = 0;
-		virtual void* add_mouse_right_down_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_right_down_listener(void* lis) = 0;
-		virtual void* add_mouse_right_up_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_right_up_listener(void* lis) = 0;
-		virtual void* add_mouse_middle_down_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_middle_down_listener(void* lis) = 0;
-		virtual void* add_mouse_middle_up_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_middle_up_listener(void* lis) = 0;
-		virtual void* add_mouse_move_listener(const std::function<void(const ivec2&)>& lis) = 0;
-		virtual void remove_mouse_move_listener(void* lis) = 0;
-		virtual void* add_mouse_scroll_listener(const std::function<void(int)>& lis) = 0;
-		virtual void remove_mouse_scroll_listener(void* lis) = 0;
-		virtual void* add_resize_listener(const std::function<void(const uvec2&)>& lis) = 0;
-		virtual void remove_resize_listener(void* lis) = 0;
-		virtual void* add_destroy_listener(const std::function<void()>& lis) = 0;
-		virtual void remove_destroy_listener(void* lis) = 0;
 
 		struct Create
 		{

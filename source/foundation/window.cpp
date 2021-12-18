@@ -16,93 +16,107 @@ namespace flame
 				auto v = vk_code_to_key(wParam);
 				if (v > 0)
 				{
-					for (auto& l : w->key_down_listeners)
+					w->has_input = true;
+					for (auto& l : w->key_down_listeners.list)
 						l(v);
 				}
 			}
-			return true;
+				return true;
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
 				if (v > 0)
 				{
-					for (auto& l : w->key_up_listeners)
+					w->has_input = true;
+					for (auto& l : w->key_up_listeners.list)
 						l(v);
 				}
 			}
-			return true;
+				return true;
 			case WM_CHAR:
-				for (auto& l : w->char_listeners)
+				w->has_input = true;
+				for (auto& l : w->char_listeners.list)
 					l(wParam);
 				return true;
 			case WM_LBUTTONDOWN:
 			{
 				SetCapture(hWnd);
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_left_down_listeners)
+				for (auto& l : w->mouse_left_down_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_LBUTTONUP:
 			{
 				ReleaseCapture();
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_left_up_listeners)
+				for (auto& l : w->mouse_left_up_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_RBUTTONDOWN:
 			{
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_right_down_listeners)
+				for (auto& l : w->mouse_right_down_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_RBUTTONUP:
 			{
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_right_up_listeners)
+				for (auto& l : w->mouse_right_up_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_MBUTTONDOWN:
 			{
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_middle_down_listeners)
+				for (auto& l : w->mouse_middle_down_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_MBUTTONUP:
 			{
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_middle_up_listeners)
+				for (auto& l : w->mouse_middle_up_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_MOUSEMOVE:
 			{
+				w->has_input = true;
 				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_move_listeners)
+				for (auto& l : w->mouse_move_listeners.list)
 					l(pos);
 			}
-			return true;
+				return true;
 			case WM_MOUSEWHEEL:
 			{
+				w->has_input = true;
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-				for (auto& l : w->mouse_scroll_listeners)
+				for (auto& l : w->mouse_scroll_listeners.list)
 					l(v);
 			}
-			return true;
+				return true;
 			case WM_DESTROY:
+				w->has_input = true;
 				w->dead = true;
 				return true;
 			case WM_SIZE:
+				w->has_input = true;
 				w->size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->resize_listeners)
+				for (auto& l : w->resize_listeners.list)
 					l(w->size);
 				return true;
 			case WM_MOVE:
+				w->has_input = true;
 				w->pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
 				return true;
 			case WM_SETCURSOR:
@@ -121,7 +135,7 @@ namespace flame
 
 	NativeWindowPrivate::~NativeWindowPrivate()
 	{
-		for (auto& l : destroy_listeners)
+		for (auto& l : destroy_listeners.list)
 			l();
 	}
 
@@ -166,162 +180,6 @@ namespace flame
 		cursor = type;
 		if (type == CursorNone)
 			ShowCursor(false);
-	}
-
-	void* NativeWindowPrivate::add_key_down_listener(const std::function<void(KeyboardKey)>& lis)
-	{
-		return &key_down_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_key_down_listener(void* lis)
-	{
-		std::erase_if(key_down_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_key_up_listener(const std::function<void(KeyboardKey)>& lis)
-	{
-		return &key_up_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_key_up_listener(void* lis)
-	{
-		std::erase_if(key_up_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_char_listener(const std::function<void(wchar_t)>& lis)
-	{
-		return &char_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_char_listener(void* lis)
-	{
-		std::erase_if(char_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_left_down_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_left_down_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_left_down_listener(void* lis)
-	{
-		std::erase_if(mouse_left_down_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_left_up_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_left_up_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_left_up_listener(void* lis)
-	{
-		std::erase_if(mouse_left_up_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_right_down_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_right_down_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_right_down_listener(void* lis)
-	{
-		std::erase_if(mouse_right_down_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_right_up_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_right_up_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_right_up_listener(void* lis)
-	{
-		std::erase_if(mouse_right_up_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_middle_down_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_middle_down_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_middle_down_listener(void* lis)
-	{
-		std::erase_if(mouse_middle_down_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_middle_up_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_middle_up_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_middle_up_listener(void* lis)
-	{
-		std::erase_if(mouse_middle_up_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_move_listener(const std::function<void(const ivec2&)>& lis)
-	{
-		return &mouse_move_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_move_listener(void* lis)
-	{
-		std::erase_if(mouse_move_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_mouse_scroll_listener(const std::function<void(int)>& lis)
-	{
-		return &mouse_scroll_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_mouse_scroll_listener(void* lis)
-	{
-		std::erase_if(mouse_scroll_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_resize_listener(const std::function<void(const uvec2&)>& lis)
-	{
-		return &resize_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_resize_listener(void* lis)
-	{
-		std::erase_if(resize_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
-	}
-
-	void* NativeWindowPrivate::add_destroy_listener(const std::function<void()>& lis)
-	{
-		return &destroy_listeners.emplace_back(lis);
-	}
-
-	void NativeWindowPrivate::remove_destroy_listener(void* lis)
-	{
-		std::erase_if(destroy_listeners, [&](const auto& i) {
-			return &i == lis;
-		});
 	}
 
 	struct NativeWindowCreate : NativeWindow::Create

@@ -11,9 +11,7 @@ namespace flame
 
 		EntityPtr entity = nullptr;
 
-		int src_id = -1;
-
-		bool load_finished = false;
+		Listeners<void(uint)> data_listeners;
 
 		Component(const char* name, uint hash) :
 			type_name(name),
@@ -22,6 +20,12 @@ namespace flame
 		}
 
 		virtual ~Component() {}
+
+		inline void data_changed(uint h)
+		{
+			for (auto& l : data_listeners.list)
+				l(h);
+		}
 
 		virtual void on_added() {}
 		virtual void on_removed() {}

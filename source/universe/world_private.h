@@ -11,7 +11,7 @@ namespace flame
 		WorldPrivate();
 
 		void add_system(System* s) override;
-		void remove_system(System* s) override;
+		void remove_system(System* s, bool destroy) override;
 
 		void update() override;
 	};

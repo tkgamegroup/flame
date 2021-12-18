@@ -21,18 +21,8 @@ namespace flame
 			StorageBuffer<BufferUsageIndex> imgui_buf_idx;
 			std::unique_ptr<DescriptorSetPrivate> imgui_ds;
 			std::unique_ptr<GraphicsPipelinePrivate> imgui_pl;
-			
-			std::list<std::function<void(void* ctx)>> imgui_callbacks;
-
-			std::list<std::function<void(uint, CommandBufferPtr)>> renders;
 
 			~WindowPrivate();
-
-			void* add_imgui_callback(const std::function<void(void* ctx)>& callback) override;
-			void remove_imgui_callback(void* lis) override;
-
-			void* add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback) override;
-			void remove_renderer(void* lis) override;
 
 			void imgui_new_frame() override;
 

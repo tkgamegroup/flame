@@ -5,6 +5,9 @@
 
 #if USE_IMGUI
 #include <imgui.h>
+#if USE_IM_FILE_DIALOG
+#include <ImFileDialog.h>
+#endif
 #endif
 
 namespace flame
@@ -20,15 +23,13 @@ namespace flame
 			std::unique_ptr<RenderpassT> renderpass_load;
 			std::vector<std::unique_ptr<FramebufferT>> framebuffers;
 
+			Listeners<void(void* ctx)> imgui_callbacks;
+
+			Listeners<void(uint, CommandBufferPtr)> renders;
+
 			bool dirty = false;
 
 			virtual ~Window() {}
-
-			virtual void* add_imgui_callback(const std::function<void(void* ctx)>& callback) = 0;
-			virtual void remove_imgui_callback(void* lis) = 0;
-
-			virtual void* add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback) = 0;
-			virtual void remove_renderer(void* lis) = 0;
 
 			virtual void imgui_new_frame() = 0;
 

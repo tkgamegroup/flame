@@ -6,7 +6,7 @@ namespace flame
 {
 	WorldPrivate::WorldPrivate()
 	{
-		root.reset(new EntityPrivate());
+		root.reset(new EntityPrivate);
 		root->world = this;
 		root->global_visibility = true;
 	}
@@ -14,26 +14,42 @@ namespace flame
 	void WorldPrivate::add_system(System* s)
 	{
 		assert(!s->world);
+
 		s->world = this;
-		systems.emplace_back(s);
+
+		systems.emplace(s->type_hash, s);
+		system_list.push_back(s);
+
 		s->on_added();
 	}
 
-	void WorldPrivate::remove_system(System* s)
+	void WorldPrivate::remove_system(System* s, bool destroy)
 	{
-		for (auto it = systems.begin(); it != systems.end(); it++)
+		assert(s->world == this);
+
+		auto it = systems.find(s->type_hash);
+		if (it == systems.end())
 		{
-			if ((*it)->type_hash == s->type_hash)
+			assert(0);
+			return;
+		}
+
+		it->second.release();
+		systems.erase(it);
+
+		for (auto it = system_list.begin(); it != system_list.end(); it++)
+		{
+			if (*it == s)
 			{
-				systems.erase(it);
-				return;
+				system_list.erase(it);
+				break;
 			}
 		}
 	}
 
 	void WorldPrivate::update()
 	{
-		for (auto& s : systems)
+		for (auto s : system_list)
 			s->update();
 	}
 

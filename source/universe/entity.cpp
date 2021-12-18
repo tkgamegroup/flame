@@ -178,14 +178,14 @@ namespace flame
 	EntityPrivate::EntityPrivate()
 	{
 		static auto id = 0;
-		created_frame = get_frames();
+		created_frame = frames;
 		created_id = id++;
 	}
 
 	EntityPrivate::~EntityPrivate()
 	{
-		for (auto& l : message_listeners)
-			l->call(S<"destroyed"_h>, nullptr, nullptr);
+		for (auto& l : message_listeners.list)
+			l(S<"destroyed"_h>, nullptr, nullptr);
 	}
 
 	void EntityPrivate::update_visibility()
@@ -202,9 +202,9 @@ namespace flame
 		}
 		if (global_visibility != prev_visibility)
 		{
-			for (auto& l : message_listeners)
-				l->call(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
-			for (auto& c : components)
+			for (auto& l : message_listeners.list)
+				l(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
+			for (auto c : component_list)
 				c->on_visibility_changed(global_visibility);
 		}
 
@@ -227,21 +227,10 @@ namespace flame
 		last_state = state;
 		state = s;
 
-		for (auto& l : message_listeners)
-			l->call(S<"state_changed"_h>, (void*)state, (void*)last_state);
-		for (auto& c : components)
+		for (auto& l : message_listeners.list)
+			l(S<"state_changed"_h>, (void*)state, (void*)last_state);
+		for (auto c : component_list)
 			c->on_state_changed(state);
-	}
-
-	void EntityPrivate::add_src(const std::filesystem::path& p)
-	{
-		srcs.insert(srcs.begin(), p);
-		srcs_str += p.wstring() + L";";
-	}
-
-	const wchar_t* EntityPrivate::get_srcs() const
-	{
-		return srcs_str.c_str();
 	}
 
 	void EntityPrivate::add_component(Component* c)
@@ -252,41 +241,47 @@ namespace flame
 
 		c->entity = this;
 
-		for (auto& _c : components)
+		for (auto& _c : component_list)
 			_c->on_component_added(c);
+
+		components.emplace(c->type_hash, c);
+		component_list.push_back(c);
+
 		c->on_added();
 		if (world)
 			c->on_entered_world();
-
-		components.emplace_back(c);
-		components_map.emplace(c->type_hash, std::make_pair(c, DataListeners()));
 	}
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		assert(!parent);
-
-		auto it = components_map.find(c->type_hash);
-		if (it == components_map.end())
+		auto it = components.find(c->type_hash);
+		if (it == components.end())
 		{
 			assert(0);
 			return;
 		}
-		components_map.erase(it);
 
-		for (auto it = components.begin(); it != components.end(); it++)
+		it->second.release();
+		components.erase(it);
+
+		for (auto it = component_list.begin(); it != component_list.end(); it++)
 		{
-			if (it->get() == c)
+			if (*it == c)
 			{
-				for (auto& _c : components)
-					_c->on_component_removed(c);
-				c->on_removed();
-				if (!destroy)
-					it->release();
-				components.erase(it);
+				component_list.erase(it);
 				break;
 			}
 		}
+
+		for (auto& _c : component_list)
+			_c->on_component_removed(c);
+
+		c->on_removed();
+		if (world)
+			c->on_left_world();
+
+		if (destroy)
+			delete c;
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
@@ -301,7 +296,7 @@ namespace flame
 
 		if (position == -1)
 		{
-			for (auto it = components.rbegin(); it != components.rend(); it++)
+			for (auto it = component_list.rbegin(); it != component_list.rend(); it++)
 			{
 				if ((*it)->on_before_adding_child(e))
 					return;
@@ -311,65 +306,45 @@ namespace flame
 		children.emplace(children.begin() + pos, e);
 
 		e->parent = this;
-		e->traversal([this](EntityPrivate* e) {
+		e->backward_traversal([this](EntityPrivate* e) {
 			e->depth = e->parent->depth + 1;
 		});
 		e->index = pos;
 		e->update_visibility();
 
-		for (auto& l : e->message_listeners)
-			l->call(S<"entity_added"_h>, nullptr, nullptr);
-		for (auto& c : e->components)
+		for (auto& l : e->message_listeners.list)
+			l(S<"entity_added"_h>, nullptr, nullptr);
+		for (auto c : e->component_list)
 			c->on_entity_added();
 
-		e->traversal([this](EntityPrivate* e) {
+		e->backward_traversal([this](EntityPrivate* e) {
 			if (!e->world && world)
 				e->on_entered_world(world);
 		});
 
-		for (auto& l : message_listeners)
-			l->call(S<"child_added"_h>, e, nullptr);
-		for (auto& c : components)
+		for (auto& l : message_listeners.list)
+			l(S<"child_added"_h>, e, nullptr);
+		for (auto c : component_list)
 			c->on_child_added(e);
-	}
-
-	void EntityPrivate::reposition_child(uint pos1, uint pos2)
-	{
-		if (pos1 == pos2)
-			return;
-		assert(pos1 < children.size() && pos2 < children.size());
-
-		auto a = children[pos1].get();
-		auto b = children[pos2].get();
-		a->index = pos2;
-		b->index = pos1;
-		std::swap(children[pos1], children[pos2]);
-
-		for (auto& l : message_listeners)
-			l->call(S<"reposition"_h>, (void*)pos1, (void*)pos1);
-		for (auto& c : a->components)
-			c->on_reposition(pos1, pos2);
-		for (auto& c : b->components)
-			c->on_reposition(pos2, pos1);
 	}
 
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
 	{
 		e->parent = nullptr;
 
-		for (auto& l : e->message_listeners)
-			l->call(S<"entity_removed"_h>, nullptr, nullptr);
-		for (auto& c : e->components)
+		for (auto& l : e->message_listeners.list)
+			l(S<"entity_removed"_h>, nullptr, nullptr);
+		for (auto c : e->component_list)
 			c->on_entity_removed();
 
-		e->traversal([](EntityPrivate* e) {
+		e->backward_traversal([](EntityPrivate* e) {
 			if (e->world)
 				e->on_left_world();
 		});
 
-		for (auto& l : message_listeners)
-			l->call(S<"child_removed"_h>, e, nullptr);
-		for (auto& c : components)
+		for (auto& l : message_listeners.list)
+			l(S<"child_removed"_h>, e, nullptr);
+		for (auto c : component_list)
 			c->on_child_removed(e);
 	}
 
@@ -408,73 +383,19 @@ namespace flame
 	void EntityPrivate::on_entered_world(WorldPrivate* _world)
 	{
 		world = _world;
-		for (auto& l : message_listeners)
-			l->call(S<"entered_world"_h>, nullptr, nullptr);
-		for (auto& c : components)
+		for (auto& l : message_listeners.list)
+			l(S<"entered_world"_h>, nullptr, nullptr);
+		for (auto c : component_list)
 			c->on_entered_world();
 	}
 
 	void EntityPrivate::on_left_world()
 	{
-		for (auto& l : message_listeners)
-			l->call(S<"left_world"_h>, nullptr, nullptr);
-		for (auto& c : components)
+		for (auto& l : message_listeners.list)
+			l(S<"left_world"_h>, nullptr, nullptr);
+		for (auto c : component_list)
 			c->on_left_world();
 		world = nullptr;
-	}
-
-	void EntityPrivate::traversal(const std::function<void(EntityPrivate*)>& callback)
-	{
-		for (auto& c : children)
-			c->traversal(callback);
-		callback(this);
-	}
-
-	void* EntityPrivate::add_message_listener(void (*callback)(Capture& c, uint msg, void* parm1, void* parm2), const Capture& capture)
-	{
-		auto c = new Closure(callback, capture);
-		message_listeners.emplace_back(c);
-		return c;
-	}
-
-	void EntityPrivate::remove_message_listener(void* lis)
-	{
-		std::erase_if(message_listeners, [&](const auto& i) {
-			return i == (decltype(i))lis;
-		});
-	}
-
-	void EntityPrivate::component_data_changed(Component* c, uint h)
-	{
-		auto it = components_map.find(c->type_hash);
-		if (it != components_map.end())
-		{
-			for (auto& l : it->second.second)
-				l->call(h);
-		}
-	}
-
-	void* EntityPrivate::add_component_data_listener(void (*callback)(Capture& c, uint h), const Capture& capture, Component* c)
-	{
-		auto it = components_map.find(c->type_hash);
-		if (it != components_map.end())
-		{
-			auto c = new Closure(callback, capture);
-			it->second.second.emplace_back(c);
-			return c;
-		}
-		return nullptr;
-	}
-
-	void EntityPrivate::remove_component_data_listener(void* lis, Component* c)
-	{
-		auto it = components_map.find(c->type_hash);
-		if (it != components_map.end())
-		{
-			std::erase_if(it->second.second, [&](const auto& i) {
-				return i == (decltype(i))lis;
-			});
-		}
 	}
 
 	EntityPtr EntityPrivate::copy()
@@ -484,7 +405,7 @@ namespace flame
 		//ret->visible = visible;
 		//ret->srcs = srcs;
 		//ret->srcs_str = srcs_str;
-		//for (auto& c : components)
+		//for (auto c : component_list)
 		//{
 		//	std::string type_name = c->type_name;
 		//	SUS::cut_head_if(type_name, "flame::");
@@ -600,7 +521,7 @@ namespace flame
 	//			{
 	//				if (!ok)
 	//				{
-	//					for (auto& c : e->components)
+	//					for (auto c : e->component_list)
 	//					{
 	//						auto ct = find_component_type(c->type_name);
 	//						if (ct && set_attribute(c.get(), ct, vname, value))

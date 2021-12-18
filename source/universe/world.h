@@ -1,6 +1,6 @@
 #pragma once
 
-#include "universe.h"
+#include "system.h"
 
 namespace flame
 {
@@ -8,7 +8,8 @@ namespace flame
 	{
 		virtual ~World() {}
 
-		std::vector<std::unique_ptr<System>> systems;
+		std::unordered_map<uint, std::unique_ptr<System>> systems;
+		std::vector<System*> system_list;
 
 		std::unique_ptr<EntityT> root;
 		EntityPtr first_element = nullptr;
@@ -16,11 +17,9 @@ namespace flame
 
 		inline System* get_system(uint type_hash) const
 		{
-			for (auto& s : systems)
-			{
-				if (s->type_hash == type_hash)
-					return s.get();
-			}
+			auto it = systems.find(type_hash);
+			if (it != systems.end())
+				return it->second.get();
 			return nullptr;
 		}
 
@@ -29,28 +28,22 @@ namespace flame
 		inline System* find_system(std::string_view _name) const
 		{
 			System* ret = nullptr;
-			for (auto& s : systems)
+			for (auto& s : system_list)
 			{
 				if (s->type_name == _name)
-				{
-					ret = s.get();
-					break;
-				}
+					return s;
 			}
 			auto name = "flame::" + std::string(_name);
-			for (auto& s : systems)
+			for (auto& s : system_list)
 			{
 				if (s->type_name == name)
-				{
-					ret = s.get();
-					break;
-				}
+					return s;
 			}
-			return ret;
+			return nullptr;
 		}
 
 		virtual void add_system(System* s) = 0;
-		virtual void remove_system(System* s) = 0;
+		virtual void remove_system(System* s, bool destroy = true) = 0;
 
 		virtual void update() = 0;
 

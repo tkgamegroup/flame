@@ -95,37 +95,13 @@ namespace flame
 			Queue::get(nullptr)->wait_idle();
 		}
 
-		void* WindowPrivate::add_imgui_callback(const std::function<void(void* ctx)>& callback)
-		{
-			return &imgui_callbacks.emplace_back(callback);
-		}
-
-		void WindowPrivate::remove_imgui_callback(void* lis)
-		{
-			std::erase_if(imgui_callbacks, [&](const auto& i) {
-				return &i == lis;
-			});
-		}
-
-		void* WindowPrivate::add_renderer(const std::function<void(uint, CommandBufferPtr)>& callback)
-		{
-			return &renders.emplace_back(callback);
-		}
-
-		void WindowPrivate::remove_renderer(void* lis)
-		{
-			std::erase_if(renders, [&](const auto& i) {
-				return &i == lis;
-			});
-		}
-
 		void WindowPrivate::imgui_new_frame()
 		{
 #if USE_IMGUI
 			ImGui::NewFrame();
 
 			auto ctx = ImGui::GetCurrentContext();
-			for (auto& cb : imgui_callbacks)
+			for (auto& cb : imgui_callbacks.list)
 				cb(ctx);
 
 			auto& io = ImGui::GetIO();
@@ -181,7 +157,7 @@ namespace flame
 
 			commandbuffer->begin();
 
-			for (auto& r : renders)
+			for (auto& r : renders.list)
 				r(img_idx, commandbuffer.get());
 
 #if USE_IMGUI
@@ -205,7 +181,7 @@ namespace flame
 						imgui_buf_idx.upload(commandbuffer.get());
 					}
 
-					if (renders.empty())
+					if (renders.list.empty())
 					{
 						auto cv = vec4(0.4f, 0.3f, 0.7f, 1);
 						commandbuffer->begin_renderpass(renderpass_clear.get(), framebuffers[img_idx].get(), &cv);
@@ -306,22 +282,22 @@ namespace flame
 				}
 
 #if USE_IMGUI
-				ret->native->add_mouse_left_down_listener([this](const ivec2& pos) {
+				ret->native->mouse_left_down_listeners.add([this](const ivec2& pos) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MouseDown[0] = true;
 				});
 
-				ret->native->add_mouse_left_up_listener([this](const ivec2& pos) {
+				ret->native->mouse_left_up_listeners.add([this](const ivec2& pos) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MouseDown[0] = false;
 				});
 
-				ret->native->add_mouse_move_listener([this](const ivec2& pos) {
+				ret->native->mouse_move_listeners.add([this](const ivec2& pos) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MousePos = ImVec2(pos.x, pos.y);
 				});
 
-				ret->native->add_mouse_scroll_listener([this](int scroll) {
+				ret->native->mouse_scroll_listeners.add([this](int scroll) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MouseWheel = scroll;
 				});
@@ -372,6 +348,23 @@ namespace flame
 
 				ret->imgui_ds->set_image(0, 0, ret->imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				ret->imgui_ds->update();
+
+#if USE_IM_FILE_DIALOG
+				ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
+				{
+					return graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
+				};
+
+				ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
+				{
+					add_event([tex]() {
+						graphics::Queue::get(nullptr)->wait_idle();
+						delete ((graphics::Image*)tex);
+						return false;
+					});
+				};
+#endif
+
 #endif
 
 				auto resize = [ret]() {
@@ -390,12 +383,12 @@ namespace flame
 
 				resize();
 
-				native->add_resize_listener([&, ret](const vec2&) {
+				native->resize_listeners.add([&, ret](const vec2&) {
 					ret->framebuffers.clear();
 					resize();
 				});
 
-				native->add_destroy_listener([ret]() {
+				native->destroy_listeners.add([ret]() {
 					for (auto it = windows.begin(); it != windows.end(); it++)
 					{
 						if (*it == ret)

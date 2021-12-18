@@ -232,6 +232,24 @@ namespace flame
 		return ret;
 	}
 
+	template<typename F>
+	struct Listeners
+	{
+		std::list<std::function<F>> list;
+
+		void* add(const std::function<F>& callback)
+		{
+			return &list.emplace_back(callback);
+		}
+
+		void remove(void* lis)
+		{
+			std::erase_if(list, [&](const auto& i) {
+				return &i == lis;
+			});
+		}
+	};
+
 	FLAME_FOUNDATION_EXPORTS extern uint frames;
 	FLAME_FOUNDATION_EXPORTS extern uint fps;
 	FLAME_FOUNDATION_EXPORTS extern float delta_time; // second
