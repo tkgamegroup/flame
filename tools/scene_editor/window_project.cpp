@@ -162,7 +162,7 @@ void WindowProject::Item::draw()
 }
 
 WindowProject::WindowProject() :
-	Window("Project")
+	View("Project")
 {
 }
 

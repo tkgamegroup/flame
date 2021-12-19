@@ -3,7 +3,7 @@
 WindowScene window_scene;
 
 WindowScene::WindowScene() :
-	Window("Scene")
+	View("Scene")
 {
 }
 

@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct WindowConsole : Window
+struct WindowConsole : View
 {
 	WindowConsole();
 

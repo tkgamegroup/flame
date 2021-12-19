@@ -4,7 +4,7 @@
 WindowInspector window_inspector;
 
 WindowInspector::WindowInspector() :
-	Window("Inspector")
+	View("Inspector")
 {
 }
 

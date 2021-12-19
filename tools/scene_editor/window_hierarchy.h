@@ -2,13 +2,13 @@
 
 #include "app.h"
 
-struct WindowHierarchy : Window
+struct View_Hierarchy : View
 {
-	WindowHierarchy();
+	View_Hierarchy();
 
 	bool _just_selected;
 
 	void on_draw() override;
 };
 
-extern WindowHierarchy window_hierarchy;
+extern View_Hierarchy view_hierarchy;

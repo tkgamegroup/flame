@@ -157,7 +157,7 @@ namespace flame
 
 			commandbuffer->begin();
 
-			for (auto& r : renders.list)
+			for (auto& r : renderers.list)
 				r(img_idx, commandbuffer.get());
 
 #if USE_IMGUI
@@ -181,7 +181,7 @@ namespace flame
 						imgui_buf_idx.upload(commandbuffer.get());
 					}
 
-					if (renders.list.empty())
+					if (renderers.list.empty())
 					{
 						auto cv = vec4(0.4f, 0.3f, 0.7f, 1);
 						commandbuffer->begin_renderpass(renderpass_clear.get(), framebuffers[img_idx].get(), &cv);

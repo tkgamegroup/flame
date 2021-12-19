@@ -3,7 +3,7 @@
 WindowConsole window_console;
 
 WindowConsole::WindowConsole() :
-	Window("Console")
+	View("Console")
 {
 }
 

@@ -24,7 +24,7 @@ struct GraphicsApplication : Application
 	void run()
 	{
 		::run([this]() {
-			if (main_window->has_input)
+			if (main_window->native->has_input)
 				render_frames = 3;
 			if (render_frames > 0 || always_render)
 			{

@@ -3,38 +3,38 @@
 #include "window_scene.h"
 #include "window_project.h"
 
-std::list<Window*> windows;
+std::list<View*> views;
 
-Window::Window(std::string_view name) :
+View::View(std::string_view name) :
 	name(name)
 {
-	windows.push_back(this);
+	views.push_back(this);
 }
 
-void Window::open()
+void View::open()
 {
 	if (lis)
 		return;
 
-	lis = app.main_window->add_imgui_callback([this](void* ctx) {
+	lis = app.main_window->imgui_callbacks.add([this](void* ctx) {
 		ImGui::SetCurrentContext((ImGuiContext*)ctx);
 		draw();
 	});
 }
 
-void Window::close()
+void View::close()
 {
 	if (!lis)
 		return;
 
 	add_event([this]() {
-		app.main_window->remove_imgui_callback(lis);
+		app.main_window->imgui_callbacks.remove(lis);
 		return false;
 	});
 	lis = nullptr;
 }
 
-void Window::draw()
+void View::draw()
 {
 	bool open = true;
 	ImGui::Begin(name.c_str(), &open);
@@ -49,9 +49,9 @@ App app;
 
 void App::init()
 {
-	app.create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 
-	app.main_window->add_imgui_callback([](void* ctx) {
+	app.main_window->imgui_callbacks.add([](void* ctx) {
 		ImGui::SetCurrentContext((ImGuiContext*)ctx);
 
 		ImGui::BeginMainMenuBar();
@@ -63,7 +63,7 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("View"))
 		{
-			for (auto w : windows)
+			for (auto w : views)
 			{
 				auto selected = (bool)w->lis;
 				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
@@ -73,7 +73,7 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Render"))
 		{
-			if (ImGui::MenuItem("Always Update", nullptr, app.always_update))
+			if (ImGui::MenuItem("Always Render", nullptr, app.always_update))
 			{
 				app.always_update = !app.always_update;
 				//app.s_renderer->set_always_update(app.always_update);
@@ -133,7 +133,7 @@ int main(int argc, char** args)
 	auto settings_i = parse_ini_file(L"settings.ini");
 	for (auto& e : settings_i.get_section_entries("opened_windows"))
 	{
-		for (auto w : windows)
+		for (auto w : views)
 		{
 			if (w->name == e.value)
 			{
@@ -153,7 +153,7 @@ int main(int argc, char** args)
 
 	std::ofstream settings_o("settings.ini");
 	settings_o << "[opened_windows]\n";
-	for (auto w : windows)
+	for (auto w : views)
 	{
 		if (w->lis)
 			settings_o << w->name << "\n";

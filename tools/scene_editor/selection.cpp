@@ -4,7 +4,7 @@ void Selection::clear()
 {
 	type = tNothing;
 	path.clear();
-	//entity = nullptr;
+	entity = nullptr;
 }
 
 void Selection::select(const std::filesystem::path& _path)
@@ -21,18 +21,18 @@ bool Selection::selecting(const std::filesystem::path& _path)
 	return type == tFile && _path == path;
 }
 
-//void Selection::select(Entity* e)
-//{
-//	if (selecting(e))
-//		return;
-//	clear();
-//	type = tEntity;
-//	entity = e;
-//}
-//
-//bool Selection::selecting(Entity* e)
-//{
-//	return type == tEntity && entity == e;
-//}
+void Selection::select(EntityPtr e)
+{
+	if (selecting(e))
+		return;
+	clear();
+	type = tEntity;
+	entity = e;
+}
+
+bool Selection::selecting(EntityPtr e)
+{
+	return type == tEntity && entity == e;
+}
 
 Selection selection;

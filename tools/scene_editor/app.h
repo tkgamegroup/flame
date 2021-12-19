@@ -1,18 +1,16 @@
 #pragma once
 
-#include <flame/graphics/application.h>
-
-#include <ImFileDialog.h>
+#include <flame/universe/application.h>
 
 using namespace flame;
 
-struct Window
+struct View
 {
 	std::string name;
 
 	void* lis = nullptr;
 
-	Window(std::string_view name);
+	View(std::string_view name);
 
 	void open();
 	void close();

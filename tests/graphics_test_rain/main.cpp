@@ -122,15 +122,15 @@ std::vector<Drop> drops;
 
 int entry(int argc, char** args)
 {
-	app.create("Graphics Test", uvec2(640, 360));
-	app.main_window->native->add_resize_listener([](const uvec2& size) {
+	app.create(true, "Graphics Test", uvec2(640, 360));
+	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});
-	app.main_window->add_imgui_callback([](void* ctx) {
+	app.main_window->imgui_callbacks.add([](void* ctx) {
 		ImGui::SetCurrentContext((ImGuiContext*)ctx);
 		ImGui::Button("Hello");
 	});
-	app.main_window->add_renderer([](uint idx, CommandBufferPtr cb) {
+	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
 		for (auto& d : drops)
 		{
 			d.fall();

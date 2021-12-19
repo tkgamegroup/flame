@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct WindowInspector : Window
+struct WindowInspector : View
 {
 	WindowInspector();
 

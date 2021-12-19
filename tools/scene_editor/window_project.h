@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct WindowProject : Window
+struct WindowProject : View
 {
 	struct FolderTreeNode
 	{

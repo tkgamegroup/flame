@@ -25,7 +25,7 @@ namespace flame
 
 			Listeners<void(void* ctx)> imgui_callbacks;
 
-			Listeners<void(uint, CommandBufferPtr)> renders;
+			Listeners<void(uint, CommandBufferPtr)> renderers;
 
 			bool dirty = false;
 

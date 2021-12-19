@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct WindowScene : Window
+struct WindowScene : View
 {
 	graphics::Image* render_tar = nullptr;
 

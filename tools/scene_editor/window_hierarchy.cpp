@@ -2,14 +2,14 @@
 #include "window_hierarchy.h"
 #include "window_scene.h"
 
-WindowHierarchy window_hierarchy;
+View_Hierarchy view_hierarchy;
 
-WindowHierarchy::WindowHierarchy() :
-	Window("Hierarchy")
+View_Hierarchy::View_Hierarchy() :
+	View("Hierarchy")
 {
 }
 
-void WindowHierarchy::on_draw()
+void View_Hierarchy::on_draw()
 {
 	//std::function<void(Entity*)> draw_entity;
 	//draw_entity = [&](Entity* e) {
