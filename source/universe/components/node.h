@@ -4,47 +4,36 @@
 
 namespace flame
 {
-	struct NodeDrawer
-	{
-		virtual void draw(sRendererPtr, bool, bool) = 0;
-	};
-
-	struct NodeMeasurer
-	{
-		virtual bool measure(AABB*) = 0;
-	};
-
 	struct cNode : Component
 	{
 		inline static auto type_name = "flame::cNode";
 		inline static auto type_hash = ch(type_name);
+
+		vec3 pos = vec3(0.f);
+		// yaw, pitch, roll, in angle
+		vec3 eul = vec3(0.f);
+		quat qut = quat(1.f, 0.f, 0.f, 0.f);
+		mat3 rot = mat3(1.f);
+		vec3 scl = vec3(1.f);
+		vec3 g_pos;
+		mat3 g_rot;
+		vec3 g_scl;
+		AABB bounds;
+
+		Listeners<uint(sRendererPtr, bool, bool)> drawers;
+		Listeners<uint(AABB*)> measurers;
 
 		cNode() :
 			Component(type_name, type_hash)
 		{
 		}
 
-		virtual vec3 get_pos() const = 0;
 		virtual void set_pos(const vec3& pos) = 0;
-		virtual void add_pos(const vec3& pos) = 0;
-		// yaw, pitch, roll, in angle
-		virtual vec3 get_euler() = 0;
 		virtual void set_euler(const vec3& e) = 0;
-		virtual void add_euler(const vec3& e) = 0;
-		virtual quat get_quat() = 0;
 		virtual void set_quat(const quat& quat) = 0;
-		virtual vec3 get_scale() const = 0;
 		virtual void set_scale(const vec3& scale) = 0;
 
 		virtual void look_at(const vec3& t) = 0;
-
-		virtual vec3 get_local_dir(uint idx) = 0;
-
-		virtual vec3 get_global_pos() = 0;
-		virtual vec3 get_global_dir(uint idx) = 0;
-		virtual vec3 get_global_scale() = 0;
-
-		virtual AABB get_bounds() = 0;
 
 		virtual bool get_assemble_sub() const = 0;
 		virtual void set_assemble_sub(bool v) = 0;
@@ -53,11 +42,6 @@ namespace flame
 		virtual void set_octree_length(float len) = 0;
 		virtual uint get_octree_lod() const = 0;
 		virtual void set_octree_lod(uint lod) = 0;
-
-		virtual void add_drawer(NodeDrawer* d) = 0;
-		virtual void remove_drawer(NodeDrawer* d) = 0;
-		virtual void add_measurer(NodeMeasurer* m) = 0;
-		virtual void remove_measurer(NodeMeasurer* m) = 0;
 
 		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) = 0;
 		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) = 0;

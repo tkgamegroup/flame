@@ -42,8 +42,7 @@ namespace flame
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"src"_h>);
+		data_changed(this, S<"src"_h>);
 	}
 
 	void cArmaturePrivate::play(uint id, float _speed, bool _loop)

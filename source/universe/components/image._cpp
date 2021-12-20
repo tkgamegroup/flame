@@ -12,8 +12,7 @@ namespace flame
 			return;
 		img_src = src;
 		apply_src();
-		if (entity)
-			entity->component_data_changed(this, S<"img"_h>);
+		data_changed(S<"img"_h>);
 	}
 
 	void cImagePrivate::set_tile(std::string_view name)
@@ -22,8 +21,7 @@ namespace flame
 			return;
 		tile_name = name;
 		apply_src();
-		if (entity)
-			entity->component_data_changed(this, S<"tile"_h>);
+		data_changed(S<"tile"_h>);
 	}
 
 	void cImagePrivate::set_uv(const vec4& _uvs)
@@ -33,8 +31,7 @@ namespace flame
 		uvs = _uvs;
 		if (element)
 			element->mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"uv"_h>);
+		data_changed(S<"uv"_h>);
 	}
 
 	void cImagePrivate::apply_src()

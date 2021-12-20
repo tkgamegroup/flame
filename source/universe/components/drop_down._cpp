@@ -25,7 +25,7 @@ namespace flame
 			text->set_text(e->get_component_t<cTextPrivate>()->text.c_str());
 			e->set_state((StateFlags)(e->state | StateSelected));
 		}
-		entity->component_data_changed(this, S<"index"_h>);
+		data_changed(S<"index"_h>);
 	}
 
 	void cDropDownPrivate::on_load_finished()

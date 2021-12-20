@@ -11,7 +11,7 @@ namespace flame
 		toggled = v;
 		entity->set_state(toggled ? (entity->state | StateSelected) :
 		(StateFlags)(entity->state & ~StateSelected));
-		entity->component_data_changed(this, S<"toggled"_h>);
+		data_changed(S<"toggled"_h>);
 	}
 	
 	void cTogglePrivate::on_load_finished()

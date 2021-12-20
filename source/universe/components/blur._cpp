@@ -11,8 +11,7 @@ namespace flame
 		blur_radius = r;
 		if (element)
 			element->mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"blur_radius"_h>);
+		data_changed(this, S<"blur_radius"_h>);
 	}
 
 	void cBlurPrivate::draw(sRenderer* s_renderer)

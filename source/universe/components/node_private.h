@@ -11,11 +11,6 @@ namespace flame
 
 	struct cNodePrivate : cNode
 	{
-		vec3 pos = vec3(0.f);
-		vec3 eul = vec3(0.f);
-		quat qut = quat(1.f, 0.f, 0.f, 0.f);
-		mat3 rot = mat3(1.f);
-		vec3 scl = vec3(1.f);
 		bool eul_dirty = false;
 		bool qut_dirty = false;
 		bool rot_dirty = false;
@@ -23,11 +18,7 @@ namespace flame
 		cNodePrivate* pnode = nullptr;
 		bool transform_dirty = true;
 		uint transform_updated_times = 0;
-		vec3 g_pos;
-		mat3 g_rot;
-		vec3 g_scl;
 		mat4 transform;
-		AABB bounds;
 		bool bounds_invalid = true;
 
 		bool assemble_sub = false;
@@ -37,34 +28,17 @@ namespace flame
 		std::unique_ptr<OctNode> octree;
 		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
-		std::vector<NodeDrawer*> drawers;
-		std::vector<NodeMeasurer*> measurers;
-
 		sScenePrivate* s_scene = nullptr;
 		bool pending_update_bounds = false;
 		sRendererPrivate* s_renderer = nullptr;
 		uint frame = 0;
 
-		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
-		void add_pos(const vec3& pos) override;
-		vec3 get_euler() override;
 		void set_euler(const vec3& e) override;
-		void add_euler(const vec3& e) override;
-		quat get_quat() override;
 		void set_quat(const quat& quat) override;
-		vec3 get_scale() const override { return scl; }
 		void set_scale(const vec3 & scale) override;
 
 		void look_at(const vec3& t) override;
-
-		vec3 get_local_dir(uint idx) override;
-
-		vec3 get_global_pos() override;
-		vec3 get_global_dir(uint idx) override;
-		vec3 get_global_scale() override;
-
-		AABB get_bounds() override { return bounds; }
 
 		bool get_assemble_sub() const override { return assemble_sub; }
 		void set_assemble_sub(bool v) override { assemble_sub = v; }
@@ -73,11 +47,6 @@ namespace flame
 		void set_octree_length(float len) override;
 		uint get_octree_lod() const override { return octree_lod; }
 		void set_octree_lod(uint lod) override;
-
-		void add_drawer(NodeDrawer* d) override;
-		void remove_drawer(NodeDrawer* d) override;
-		void add_measurer(NodeMeasurer* m) override;
-		void remove_measurer(NodeMeasurer* m) override;
 
 		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) override;
 		uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) override;

@@ -1,35 +1,11 @@
 #include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "element_private.h"
-#include "../systems/renderer_private.h"
-#include "../systems/scene_private.h"
+//#include "../systems/renderer_private.h"
+//#include "../systems/scene_private.h"
 
 namespace flame
 {
-	void cElementPrivate::set_x(float x)
-	{
-		if (pos.x == x)
-			return;
-		pos.x = x;
-		mark_transform_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"x"_h>);
-	}
-
-	void cElementPrivate::set_y(float y)
-	{
-		if (pos.y == y)
-			return;
-		pos.y = y;
-		mark_transform_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"y"_h>);
-	}
-
 	void cElementPrivate::set_pos(const vec2& p)
 	{
 		if (pos == p)
@@ -38,41 +14,7 @@ namespace flame
 		mark_transform_dirty();
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"pos"_h>);
-	}
-
-	void cElementPrivate::add_pos(const vec2& p)
-	{
-		set_pos(pos + p);
-	}
-
-	void cElementPrivate::set_width(float w)
-	{
-		if (size.x == w)
-			return;
-		size.x = w;
-		content_size.x = size.x - padding[0] - padding[2];
-		mark_transform_dirty();
-		mark_layout_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"width"_h>);
-	}
-
-	void cElementPrivate::set_height(float h)
-	{
-		if (size.y == h)
-			return;
-		size.y = h;
-		content_size.y = size.y - padding[1] - padding[3];
-		mark_transform_dirty();
-		mark_layout_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"height"_h>);
+		data_changed(S<"pos"_h>);
 	}
 
 	void cElementPrivate::set_size(const vec2& s)
@@ -86,13 +28,7 @@ namespace flame
 		mark_layout_dirty();
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"size"_h>);
-	}
-
-	void cElementPrivate::add_size(const vec2& s)
-	{
-		set_size(size + s);
+		data_changed(S<"size"_h>);
 	}
 
 	void cElementPrivate::set_padding(const vec4& p)
@@ -105,13 +41,7 @@ namespace flame
 		content_size = size - padding_size;
 		mark_transform_dirty();
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"padding"_h>);
-	}
-
-	void cElementPrivate::add_padding(const vec4& p)
-	{
-		set_padding(padding + p);
+		data_changed(S<"padding"_h>);
 	}
 
 	//	void cElement::set_roundness(const vec4& r, void* sender)
@@ -123,54 +53,13 @@ namespace flame
 	//		report_data_changed(FLAME_CHASH("roundness"), sender);
 	//	}
 
-	void cElementPrivate::set_pivotx(float p)
-	{
-		if (pivot.x == p)
-			return;
-		pivot.x = p;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"pivot"_h>);
-	}
-
-	void cElementPrivate::set_pivoty(float p)
-	{
-		if (pivot.y == p)
-			return;
-		pivot.y = p;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"pivot"_h>);
-	}
-
 	void cElementPrivate::set_pivot(const vec2& p)
 	{
 		if (pivot == p)
 			return;
 		pivot = p;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"pivot"_h>);
-	}
-
-	void cElementPrivate::set_scalex(float s)
-	{
-		if (scl.x == s)
-			return;
-		scl.x = s;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scalex"_h>);
-	}
-
-	void cElementPrivate::set_scaley(float s)
-	{
-		if (scl.y == s)
-			return;
-		scl.y = s;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scaley"_h>);
+		data_changed(S<"pivot"_h>);
 	}
 
 	void cElementPrivate::set_scale(const vec2& s)
@@ -179,8 +68,7 @@ namespace flame
 			return;
 		scl = s;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scale"_h>);
+		data_changed(S<"scale"_h>);
 	}
 
 	void cElementPrivate::set_angle(float a)
@@ -189,28 +77,16 @@ namespace flame
 			return;
 		angle = a;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"angle"_h>);
+		data_changed(S<"angle"_h>);
 	}
 
-	void cElementPrivate::set_skewx(float s)
+	void cElementPrivate::set_skew(const vec2& s)
 	{
-		if (skew.x == s)
+		if (skew == s)
 			return;
-		skew.x = s;
+		skew = s;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"skewx"_h>);
-	}
-
-	void cElementPrivate::set_skewy(float s)
-	{
-		if (skew.y == s)
-			return;
-		skew.y = s;
-		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"skewy"_h>);
+		data_changed(S<"skew"_h>);
 	}
 
 	void cElementPrivate::set_align_in_layout(bool v)
@@ -220,8 +96,7 @@ namespace flame
 		align_in_layout = v;
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"align_in_layout"_h>);
+		data_changed(S<"align_in_layout"_h>);
 	}
 
 	void cElementPrivate::set_align_absolute(bool a)
@@ -231,8 +106,7 @@ namespace flame
 		align_absolute = a;
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"align_absolute"_h>);
+		data_changed(S<"align_absolute"_h>);
 	}
 
 	void cElementPrivate::set_margin(const vec4& m)
@@ -244,8 +118,7 @@ namespace flame
 		margin_size[1] = m[1] + m[3];
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"margin"_h>);
+		data_changed(S<"margin"_h>);
 	}
 
 	void cElementPrivate::set_alignx(Align a)
@@ -259,8 +132,7 @@ namespace flame
 				pelement->need_layout = true;
 			pelement->mark_layout_dirty();
 		}
-		if (entity)
-			entity->component_data_changed(this, S<"alignx"_h>);
+		data_changed(S<"alignx"_h>);
 	}
 
 	void cElementPrivate::set_aligny(Align a)
@@ -274,8 +146,7 @@ namespace flame
 				pelement->need_layout = true;
 			pelement->mark_layout_dirty();
 		}
-		if (entity)
-			entity->component_data_changed(this, S<"aligny"_h>);
+		data_changed(S<"aligny"_h>);
 	}
 
 	void cElementPrivate::set_width_factor(float f)
@@ -285,8 +156,7 @@ namespace flame
 		width_factor = f;
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"width_factor"_h>);
+		data_changed(S<"width_factor"_h>);
 	}
 
 	void cElementPrivate::set_height_factor(float f)
@@ -296,8 +166,7 @@ namespace flame
 		height_factor = f;
 		if (pelement)
 			pelement->mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"height_factor"_h>);
+		data_changed(S<"height_factor"_h>);
 	}
 
 	void cElementPrivate::set_layout_type(LayoutType t)
@@ -307,8 +176,7 @@ namespace flame
 			return;
 		layout_type = t;
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"layout_type"_h>);
+		data_changed(S<"layout_type"_h>);
 	}
 
 	void cElementPrivate::set_layout_gap(float g)
@@ -317,8 +185,7 @@ namespace flame
 			return;
 		layout_gap = g;
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"layout_gap"_h>);
+		data_changed(S<"layout_gap"_h>);
 	}
 
 	//	void cElementPrivate::set_column(uint c)
@@ -338,8 +205,7 @@ namespace flame
 		auto_width = a;
 		mark_size_dirty();
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"auto_width"_h>);
+		data_changed(S<"auto_width"_h>);
 	}
 
 	void cElementPrivate::set_auto_height(bool a)
@@ -349,28 +215,16 @@ namespace flame
 		auto_height = a;
 		mark_size_dirty();
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"auto_height"_h>);
+		data_changed(S<"auto_height"_h>);
 	}
 
-	void cElementPrivate::set_scrollx(float s)
+	void cElementPrivate::set_scroll(const vec2& s)
 	{
-		if (scroll.x == s)
+		if (scroll == s)
 			return;
-		scroll.x = s;
+		scroll = s;
 		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scrollx"_h>);
-	}
-
-	void cElementPrivate::set_scrolly(float s)
-	{
-		if (scroll.y == s)
-			return;
-		scroll.y = s;
-		mark_layout_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scrolly"_h>);
+		data_changed(S<"scrollx"_h>);
 	}
 
 	void cElementPrivate::set_fill_color(const cvec4& c)
@@ -379,8 +233,7 @@ namespace flame
 			return;
 		fill_color = c;
 		mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"fill_color"_h>);
+		data_changed(S<"fill_color"_h>);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -389,8 +242,7 @@ namespace flame
 			return;
 		border = b;
 		mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"border"_h>);
+		data_changed(S<"border"_h>);
 	}
 
 	void cElementPrivate::set_border_color(const cvec4& c)
@@ -399,42 +251,16 @@ namespace flame
 			return;
 		border_color = c;
 		mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"border_color"_h>);
+		data_changed(S<"border_color"_h>);
 	}
 
-	void cElementPrivate::set_clipping(bool c)
+	void cElementPrivate::set_enable_clipping(bool c)
 	{
-		if (clipping == c)
+		if (enable_clipping == c)
 			return;
-		clipping = c;
+		enable_clipping = c;
 		mark_drawing_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"clipping"_h>);
-	}
-
-	void cElementPrivate::add_drawer(ElementDrawer* d)
-	{
-		drawers.push_back(d);
-	}
-
-	void cElementPrivate::remove_drawer(ElementDrawer* d)
-	{
-		std::erase_if(drawers, [&](const auto& i) {
-			return i == d;
-		});
-	}
-
-	void cElementPrivate::add_measurer(ElementMeasurer* m)
-	{
-		measurers.push_back(m);
-	}
-
-	void cElementPrivate::remove_measurer(ElementMeasurer* m)
-	{
-		std::erase_if(measurers, [&](const auto& i) {
-			return i == m;
-		});
+		data_changed(S<"enable_clipping"_h>);
 	}
 
 	void cElementPrivate::update_transform()

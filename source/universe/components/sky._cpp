@@ -46,8 +46,7 @@ namespace flame
 				s_renderer->set_sky(box_texture_view, irr_texture_view, rad_texture_view, lut_texture_view, fog_color, intensity, this);
 			s_renderer->mark_dirty();
 		}
-		if (entity)
-			entity->component_data_changed(this, S<"intensity"_h>);
+		data_changed(S<"intensity"_h>);
 	}
 
 	void cSkyPrivate::on_entered_world()

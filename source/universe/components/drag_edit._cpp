@@ -78,7 +78,7 @@ namespace flame
 							thiz->drag_pos = pos.x;
 							thiz->drag_i = v;
 							thiz->drag_text->set_text(to_wstring(v));
-							thiz->entity->component_data_changed(thiz, S<"value"_h>);
+							thiz->data_changed(thiz, S<"value"_h>);
 						}
 					}
 				}
@@ -95,7 +95,7 @@ namespace flame
 							thiz->drag_pos = pos.x;
 							thiz->drag_f = v;
 							thiz->drag_text->set_text(to_wstring(v));
-							thiz->entity->component_data_changed(thiz, S<"value"_h>);
+							thiz->data_changed(thiz, S<"value"_h>);
 						}
 					}
 				}
@@ -146,7 +146,7 @@ namespace flame
 					break;
 				}
 
-				thiz->entity->component_data_changed(thiz, S<"value"_h>);
+				thiz->data_changed(thiz, S<"value"_h>);
 			}
 		}, Capture().set_thiz(this), edit_text);
 	}

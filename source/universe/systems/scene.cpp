@@ -491,7 +491,7 @@ namespace flame
 				}
 			}
 
-			n->entity->component_data_changed(n, S<"bounds"_h>);
+			n->data_changed(S<"bounds"_h>);
 
 			if (n->octnode.first)
 			{

@@ -13,7 +13,7 @@ namespace flame
 		if (v)
 			v->set_state((StateFlags)(v->state | StateSelected));
 		selected = v;
-		entity->component_data_changed(this, S<"selected"_h>);
+		data_changed(S<"selected"_h>);
 	}
 
 	void cListPrivate::on_load_finished()

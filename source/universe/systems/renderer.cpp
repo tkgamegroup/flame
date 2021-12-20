@@ -311,7 +311,7 @@ namespace flame
 		if (element->culled != culled)
 		{
 			element->culled = culled;
-			e->component_data_changed(element, S<"culled"_h>);
+			element->data_changed(S<"culled"_h>);
 		}
 		if (culled)
 			return layer;

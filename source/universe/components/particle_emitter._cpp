@@ -28,8 +28,7 @@ namespace flame
 			return;
 		img_src = src;
 		apply_src();
-		if (entity)
-			entity->component_data_changed(this, S<"img"_h>);
+		data_changed(S<"img"_h>);
 	}
 
 	void cParticleEmitterPrivate::set_tile(std::string_view name)
@@ -38,8 +37,7 @@ namespace flame
 			return;
 		tile_name = name;
 		apply_src();
-		if (entity)
-			entity->component_data_changed(this, S<"tile"_h>);
+		data_changed(S<"tile"_h>);
 	}
 
 	void cParticleEmitterPrivate::set_bounds(const AABB& v)

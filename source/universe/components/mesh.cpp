@@ -42,8 +42,7 @@ namespace flame
 		if (cast_shadow == v)
 			return;
 		cast_shadow = v;
-		if (entity)
-			entity->component_data_changed(this, S<"cast_shadow"_h>);
+		data_changed(S<"cast_shadow"_h>);
 	}
 
 	void cMeshPrivate::set_shading_flags(ShadingFlags flags)

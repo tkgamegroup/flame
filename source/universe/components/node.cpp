@@ -12,8 +12,7 @@ namespace flame
 			return;
 		pos = p;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"pos"_h>);
+		data_changed(this, S<"pos"_h>);
 	}
 
 	void cNodePrivate::add_pos(const vec3& p)
@@ -37,8 +36,7 @@ namespace flame
 		qut_dirty = true;
 		eul_dirty = false;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"euler"_h>);
+		data_changed(S<"euler"_h>);
 	}
 
 	void cNodePrivate::add_euler(const vec3& e)
@@ -62,8 +60,7 @@ namespace flame
 		eul_dirty = true;
 		qut_dirty = false;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"quat"_h>);
+		data_changed(S<"quat"_h>);
 	}
 
 	void cNodePrivate::set_scale(const vec3& s)
@@ -72,8 +69,7 @@ namespace flame
 			return;
 		scl = s;
 		mark_transform_dirty();
-		if (entity)
-			entity->component_data_changed(this, S<"scale"_h>);
+		data_changed(S<"scale"_h>);
 	}
 
 	void cNodePrivate::look_at(const vec3& t)
@@ -119,8 +115,7 @@ namespace flame
 		if (octree_length == len)
 			return;
 		octree_length = len;
-		if (entity)
-			entity->component_data_changed(this, S<"octree_length"_h>);
+		data_changed(S<"octree_length"_h>);
 	}
 
 	void cNodePrivate::set_octree_lod(uint lod)
@@ -128,32 +123,7 @@ namespace flame
 		if (octree_lod == lod)
 			return;
 		octree_lod = lod;
-		if (entity)
-			entity->component_data_changed(this, S<"octree_lod"_h>);
-	}
-
-	void cNodePrivate::add_drawer(NodeDrawer* d)
-	{
-		drawers.push_back(d);
-	}
-
-	void cNodePrivate::remove_drawer(NodeDrawer* d)
-	{
-		std::erase_if(drawers, [&](const auto& i) {
-			return i == d;
-		});
-	}
-
-	void cNodePrivate::add_measurer(NodeMeasurer* m)
-	{
-		measurers.push_back(m);
-	}
-
-	void cNodePrivate::remove_measurer(NodeMeasurer* m)
-	{
-		std::erase_if(measurers, [&](const auto& i) {
-			return i == m;
-		});
+		data_changed(S<"octree_lod"_h>);
 	}
 
 	bool cNodePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)
@@ -261,8 +231,7 @@ namespace flame
 			transform = m;
 			g_pos = m[3];
 
-			if (entity)
-				entity->component_data_changed(this, S<"transform"_h>);
+			data_changed(S<"transform"_h>);
 		}
 	}
 
