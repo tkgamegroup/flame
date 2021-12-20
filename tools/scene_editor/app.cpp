@@ -50,6 +50,7 @@ App app;
 void App::init()
 {
 	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	app.always_render = false;
 
 	app.main_window->imgui_callbacks.add([](void* ctx) {
 		ImGui::SetCurrentContext((ImGuiContext*)ctx);

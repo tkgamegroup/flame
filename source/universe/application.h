@@ -10,8 +10,10 @@ struct UniverseApplication : GraphicsApplication
 {
 	std::unique_ptr<World> world;
 
-	void create(bool graphics_debug = true)
+	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), WindowStyleFlags styles = WindowFrame | WindowResizable)
 	{
+		GraphicsApplication::create(graphics_debug, title, size, styles);
+
 		world.reset(World::create());
 	}
 };

@@ -19,7 +19,7 @@ struct View
 	virtual void on_draw() = 0;
 };
 
-struct App : GraphicsApplication
+struct App : UniverseApplication
 {
 	std::filesystem::path project_path;
 

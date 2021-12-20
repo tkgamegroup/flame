@@ -14,11 +14,28 @@ struct GraphicsApplication : Application
 	int render_frames = 0;
 	bool always_render = true;
 
-	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), WindowStyleFlags style = WindowFrame | WindowResizable)
+	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), WindowStyleFlags styles = WindowFrame | WindowResizable)
 	{
+		Application::create(title, size, styles);
+
 		graphics_device = graphics::Device::create(graphics_debug);
-		Application::main_window = NativeWindow::create(title, size, style);
 		main_window = graphics::Window::create(graphics_device, Application::main_window);
+
+#if USE_IM_FILE_DIALOG
+		ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
+		{
+			return graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
+		};
+
+		ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
+		{
+			add_event([tex]() {
+				graphics::Queue::get(nullptr)->wait_idle();
+				delete ((graphics::Image*)tex);
+				return false;
+				});
+		};
+#endif
 	}
 
 	void run()
@@ -31,8 +48,8 @@ struct GraphicsApplication : Application
 				main_window->dirty = true;
 				main_window->imgui_new_frame();
 				main_window->update();
+				render_frames--;
 			}
-			render_frames--;
 			return true;
 		});
 	}

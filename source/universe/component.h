@@ -37,10 +37,8 @@ namespace flame
 		virtual void on_component_removed(Component* c) {}
 		virtual void on_entity_added() {}
 		virtual void on_entity_removed() {}
-		virtual bool on_before_adding_child(EntityPtr e) { return false; }
 		virtual void on_child_added(EntityPtr e) {}
 		virtual void on_child_removed(EntityPtr e) {}
 		virtual void on_reposition(uint from, uint to) {}
-		virtual void on_load_finished() {}
 	};
 }

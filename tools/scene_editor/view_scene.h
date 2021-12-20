@@ -6,7 +6,7 @@ struct View_Scene : View
 {
 	graphics::Image* render_tar = nullptr;
 
-	//Entity* e_prefab = nullptr;
+	EntityPtr e_prefab = nullptr;
 
 	View_Scene();
 

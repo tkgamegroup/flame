@@ -1,5 +1,5 @@
 if (USE_IMGUI)
-	set(source_files "${IMGUI_DIR}/imconfig.h;${IMGUI_DIR}/imgui.h;${IMGUI_DIR}/imgui.cpp;${IMGUI_DIR}/imgui_draw.cpp;${IMGUI_DIR}/imgui_widgets.cpp;${IMGUI_DIR}/imgui_tables.cpp")
+	set(source_files "${IMGUI_DIR}/imconfig.h;${IMGUI_DIR}/imgui.h;${IMGUI_DIR}/imgui.cpp;${IMGUI_DIR}/imgui_draw.cpp;${IMGUI_DIR}/imgui_widgets.cpp;${IMGUI_DIR}/imgui_tables.cpp;${IMGUI_DIR}/misc/cpp/imgui_stdlib.h;${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp")
 	if (USE_IM_FILE_DIALOG)
 		set(imfiledialog_files "${IM_FILE_DIALOG_DIR}/ImFileDialog.h;${IM_FILE_DIALOG_DIR}/ImFileDialog.cpp")
 	endif()

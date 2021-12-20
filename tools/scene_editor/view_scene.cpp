@@ -14,11 +14,11 @@ void View_Scene::open_scene(const std::filesystem::path& path)
 
 void View_Scene::open_prefab(const std::filesystem::path& path)
 {
-	//if (e_prefab)
-	//	e_prefab->get_parent()->remove_child(e_prefab);
-	//e_prefab = Entity::create();
-	//e_prefab->load(path.c_str());
-	//app.root->add_child(e_prefab);
+	if (e_prefab)
+		e_prefab->parent->remove_child(e_prefab);
+	e_prefab = Entity::create();
+	e_prefab->load(path);
+	app.world->root->add_child(e_prefab);
 }
 
 void View_Scene::on_draw()

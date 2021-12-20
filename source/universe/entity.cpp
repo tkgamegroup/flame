@@ -153,7 +153,7 @@ namespace flame
 			auto engine_path = getenv("FLAME_PATH");
 			if (engine_path)
 			{
-				auto path = std::filesystem::path(engine_path) / L"assets/prefabs";
+				auto path = std::filesystem::path(engine_path) / L"default_assets/prefabs";
 				for (auto& it : std::filesystem::directory_iterator(path))
 				{
 					if (it.path().extension() == L".prefab")
@@ -294,15 +294,6 @@ namespace flame
 		else
 			pos = position;
 
-		if (position == -1)
-		{
-			for (auto it = component_list.rbegin(); it != component_list.rend(); it++)
-			{
-				if ((*it)->on_before_adding_child(e))
-					return;
-			}
-		}
-
 		children.emplace(children.begin() + pos, e);
 
 		e->parent = this;
@@ -401,12 +392,13 @@ namespace flame
 	EntityPtr EntityPrivate::copy()
 	{
 		auto ret = new EntityPrivate();
-		//ret->name = name;
-		//ret->visible = visible;
-		//ret->srcs = srcs;
-		//ret->srcs_str = srcs_str;
-		//for (auto c : component_list)
-		//{
+		ret->name = name;
+		ret->tag = tag;
+		ret->visible = visible;
+		ret->sources = sources;
+		ret->state = state;
+		for (auto c : component_list)
+		{
 		//	std::string type_name = c->type_name;
 		//	SUS::cut_head_if(type_name, "flame::");
 		//	auto ct = find_component_type(type_name);
@@ -434,18 +426,14 @@ namespace flame
 		//		}
 		//	}
 		//	ret->add_component(cc);
-		//}
-		//for (auto& c : children)
-		//{
-		//	auto cc = c->copy();
-		//	ret->add_child(cc);
-		//}
+		}
+		for (auto& c : children)
+			ret->add_child(c->copy());
 		return ret;
 	}
 
-	//static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
-	//	const std::filesystem::path& fn, EntityPrivate* first_e, const std::vector<uint>& los)
-	//{
+	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src)
+	{
 	//	auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value) {
 	//		auto att = ot->find_attribute(vname);
 	//		if (!att)
@@ -460,41 +448,27 @@ namespace flame
 	//		type->destroy(d);
 	//		return true;
 	//	};
-	//	auto set_content = [&](Component* c, Type* ct, const std::string& value) {
-	//		auto att = ct->find_attribute("content");
-	//		if (att)
-	//		{
-	//			auto type = att->set_type;
-	//			auto fs = att->setter;
-	//			void* d = type->create();
-	//			type->unserialize(value, d);
-	//			void* ps[] = { d };
-	//			fs->call(c, nullptr, ps);
-	//			type->destroy(d);
-	//			return true;
-	//		}
-	//		return false;
-	//	};
-	//	auto ename = std::string(n_src.name());
-	//	if (ename != "entity")
-	//	{
+
+		auto ename = std::string(n_src.name());
+		if (ename != "entity")
+		{
 	//		auto it = name_to_prefab_path.find(ename);
 	//		if (it != name_to_prefab_path.end())
 	//			e_dst->load(it->second);
 	//		else
 	//			printf("cannot find prefab: %s\n", ename.c_str());
-	//	}
+		}
 
-	//	for (auto a : n_src.attributes())
-	//	{
-	//		auto name = std::string(a.name());
-	//		if (name == "name")
-	//			e_dst->name = a.value();
-	//		else if (name == "visible")
-	//			e_dst->visible = a.as_bool();
-	//		else if (name == "src")
-	//		{
-	//			std::filesystem::path path(a.value());
+		for (auto a : n_src.attributes())
+		{
+			auto name = std::string(a.name());
+			if (name == "name")
+				e_dst->name = a.value();
+			else if (name == "visible")
+				e_dst->visible = a.as_bool();
+			else if (name == "src")
+			{
+				std::filesystem::path fn(a.value());
 	//			path.replace_extension(L".prefab");
 	//			if (!path.is_absolute())
 	//			{
@@ -503,45 +477,14 @@ namespace flame
 	//					path = temp;
 	//			}
 	//			e_dst->load(path);
-	//		}
-	//		else
-	//		{
-	//			auto ok = false;
-	//			auto sp = SUS::split(std::string(a.name()), '.');
-	//			auto value = std::string(a.value());
-	//			auto vname = sp.back();
-	//			auto e = e_dst;
-	//			if (sp.size() > 1)
-	//			{
-	//				e = e_dst->find_child(sp[0]);
-	//				if (!e)
-	//					printf("cannot find child: %s\n", sp[0].c_str());
-	//			}
-	//			if (e)
-	//			{
-	//				if (!ok)
-	//				{
-	//					for (auto c : e->component_list)
-	//					{
-	//						auto ct = find_component_type(c->type_name);
-	//						if (ct && set_attribute(c.get(), ct, vname, value))
-	//						{
-	//							ok = true;
-	//							break;
-	//						}
-	//					}
-	//				}
-	//				if (!ok)
-	//					printf("cannot find attribute: %s\n", a.name());
-	//			}
-	//		}
-	//	}
+			}
+		}
 
-	//	for (auto n_c : n_src.children())
-	//	{
-	//		auto name = std::string(n_c.name());
-	//		if (name[0] == 'c')
-	//		{
+		for (auto n_c : n_src.children())
+		{
+			auto name = std::string(n_c.name());
+			if (name[0] == 'c')
+			{
 	//			Type* ct = find_component_type(name);
 	//			if (ct)
 	//			{
@@ -566,101 +509,41 @@ namespace flame
 	//					if (!set_attribute(c, ct, a.name(), a.value()))
 	//						printf("cannot find attribute: %s\n", a.name());
 	//				}
-	//				auto content = std::string(n_c.child_value());
-	//				if (!content.empty())
-	//				{
-	//					if (!set_content(c, ct, content))
-	//						printf("cannot find attribute: content\n");
-	//				}
 	//				if (isnew)
 	//					e_dst->add_component(c);
 	//			}
 	//			else
 	//				printf("cannot find component: %s\n", name.c_str());
-	//		}
-	//		else if (name[0] == 'e')
-	//		{
-	//			auto e = new EntityPrivate();
-	//			e->add_src(fn);
-	//			auto offset = n_c.offset_debug();
-	//			for (auto i = 0; i < los.size(); i++)
-	//			{
-	//				if (offset < los[i])
-	//				{
-	//					e->created_location = i + 1;
-	//					break;
-	//				}
-	//			}
-	//			load_prefab(e, n_c, fn, first_e, los);
-	//			e_dst->add_child(e);
-	//		}
-	//	}
+			}
+			else if (name[0] == 'e')
+			{
+				auto e = new EntityPrivate;
+				e->sources.push_back(e_dst->sources.back());
+				load_prefab(e, n_c);
+				e_dst->add_child(e);
+			}
+		}
 
-	//	if (first_e == e_dst)
-	//	{
-	//		for (auto it = e_dst->components.rbegin(); it != e_dst->components.rend(); it++)
-	//		{
-	//			auto c = (*it).get();
-	//			if (!c->load_finished)
-	//			{
-	//				c->load_finished = true;
-	//				c->on_load_finished();
-	//			}
-	//		}
-	//	}
-	//}
-
-	//static std::filesystem::path get_prefab_path(const std::filesystem::path& filename)
-	//{
-	//	auto fn = filename;
-
-	//	if (fn.extension().empty())
-	//		fn.replace_extension(L".prefab");
-	//	if (!std::filesystem::exists(fn))
-	//	{
-	//		auto engine_path = getenv("FLAME_PATH");
-	//		if (engine_path)
-	//			fn = std::filesystem::path(engine_path) / L"assets" / fn;
-	//	}
-
-	//	return fn;
-	//}
+	}
 
 	bool EntityPrivate::load(const std::filesystem::path& filename)
 	{
-		//pugi::xml_document doc;
-		//pugi::xml_node doc_root;
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
 
-		//auto fn = get_prefab_path(filename);
-		//if (!doc.load_file(fn.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
-		//{
-		//	printf("prefab do not exist or wrong format: %s\n", filename.string().c_str());
-		//	return false;
-		//}
+		if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
+		{
+			printf("prefab do not exist or wrong format: %s\n", filename.string().c_str());
+			return false;
+		}
 
-		//std::vector<uint> los;
-		//{
-		//	std::ifstream file(fn);
-		//	while (!file.eof())
-		//	{
-		//		std::string line;
-		//		std::getline(file, line);
-		//		los.push_back(file.tellg());
-		//	}
-		//	file.close();
-		//}
-
-		//if (!fn.is_absolute())
-		//	fn = std::filesystem::canonical(fn);
-		//fn.make_preferred();
-		//add_src(fn);
-		//load_prefab(this, doc_root.first_child(), fn, this, los);
+		sources.push_back(filename);
+		load_prefab(this, doc_root.first_child());
 
 		return true;
 	}
 
-	//static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src, const std::filesystem::path& fn, EntityPrivate* first_e, 
-	//	std::vector<std::pair<std::filesystem::path, std::unique_ptr<EntityPrivate>>>& references)
+	//static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src)
 	//{
 	//	auto& srcs = e_src->srcs;
 	//	if (srcs.empty() || srcs.back() != fn)
@@ -721,12 +604,7 @@ namespace flame
 	//				{
 	//					auto value = a.second.serialize(c.get(), ref);
 	//					if (!value.empty())
-	//					{
-	//						if (a.first == "content")
-	//							n.append_child(pugi::node_pcdata).set_value(value.c_str());
-	//						else
-	//							n.append_attribute(a.first.c_str()).set_value(value.c_str());
-	//					}
+	//						n.append_attribute(a.first.c_str()).set_value(value.c_str());
 	//				}
 	//			}
 	//		};
@@ -738,7 +616,7 @@ namespace flame
 	//	}
 
 	//	for (auto& c : e_src->children)
-	//		save_prefab(n_dst.append_child("entity"), c.get(), fn, first_e, references);
+	//		save_prefab(n_dst.append_child("entity"), c.get());
 	//}
 
 	bool EntityPrivate::save(const std::filesystem::path& filename)
@@ -746,8 +624,7 @@ namespace flame
 		//pugi::xml_document file;
 		//auto file_root = file.append_child("prefab");
 
-		//std::vector<std::pair<std::filesystem::path, std::unique_ptr<EntityPrivate>>> references;
-		//save_prefab(file_root.append_child("entity"), this, srcs.empty() ? L"" : srcs.back(), this, references);
+		//save_prefab(file_root.append_child("entity"), this);
 
 		//file.save_file(filename.c_str());
 

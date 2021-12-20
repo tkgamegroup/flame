@@ -349,22 +349,6 @@ namespace flame
 				ret->imgui_ds->set_image(0, 0, ret->imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				ret->imgui_ds->update();
 
-#if USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
-				{
-					return graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
-				};
-
-				ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
-				{
-					add_event([tex]() {
-						graphics::Queue::get(nullptr)->wait_idle();
-						delete ((graphics::Image*)tex);
-						return false;
-					});
-				};
-#endif
-
 #endif
 
 				auto resize = [ret]() {
