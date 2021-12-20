@@ -19,12 +19,7 @@ namespace flame
 		bool transform_dirty = true;
 		uint transform_updated_times = 0;
 		mat4 transform;
-		bool bounds_invalid = true;
 
-		bool assemble_sub = false;
-
-		float octree_length = 0.f;
-		uint octree_lod = 0;
 		std::unique_ptr<OctNode> octree;
 		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
@@ -33,6 +28,8 @@ namespace flame
 		sRendererPrivate* s_renderer = nullptr;
 		uint frame = 0;
 
+		cNodePrivate();
+
 		void set_pos(const vec3& pos) override;
 		void set_euler(const vec3& e) override;
 		void set_quat(const quat& quat) override;
@@ -40,12 +37,7 @@ namespace flame
 
 		void look_at(const vec3& t) override;
 
-		bool get_assemble_sub() const override { return assemble_sub; }
-		void set_assemble_sub(bool v) override { assemble_sub = v; }
-
-		float get_octree_length() const override { return octree_length; }
 		void set_octree_length(float len) override;
-		uint get_octree_lod() const override { return octree_lod; }
 		void set_octree_lod(uint lod) override;
 
 		bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) override;
@@ -137,7 +129,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
-				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
+				if (obj->bounds.intersects(check_bounds))
 					return true;
 			}
 
@@ -164,7 +156,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
-				if (!obj->bounds_invalid && obj->bounds.intersects(check_bounds))
+				if (obj->bounds.intersects(check_bounds))
 					res.push_back(obj);
 			}
 
@@ -186,7 +178,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
-				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
+				if (obj->bounds.intersects(check_center, check_radius))
 					return true;
 			}
 
@@ -213,7 +205,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
-				if (!obj->bounds_invalid && obj->bounds.intersects(check_center, check_radius))
+				if (obj->bounds.intersects(check_center, check_radius))
 					res.push_back(obj);
 			}
 
@@ -278,7 +270,7 @@ namespace flame
 				if (!e->global_visibility || (filter_tag & e->tag) == 0)
 					continue;
 
-				if (!obj->bounds_invalid && AABB_frustum_check(frustum, obj->bounds))
+				if (AABB_frustum_check(frustum, obj->bounds))
 					res.push_back(obj);
 			}
 

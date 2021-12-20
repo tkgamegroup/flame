@@ -208,31 +208,35 @@ namespace flame
 			v.second.pop_front();
 
 			auto size = vec2(-1.f);
-			for (auto m : e->measurers)
+			for (auto m : e->measurers.list)
 			{
 				vec2 s;
-				if (m->measure(&s))
+				if (m(&s))
 				{
 					size.x = max(size.x, s.x);
 					size.y = max(size.y, s.y);
 				}
 			}
 
-			auto w = 0.f, h = 0.f;
 			if (size.x >= 0.f)
 			{
-				w = size.x + e->padding_size[0];
-				if (e->auto_width)
-					e->set_width(w);
+				size.x += e->padding_size[0];
 			}
 			if (size.y >= 0.f)
 			{
-				h = size.y + e->padding_size[1];
+				size.y += e->padding_size[1];
+			}
+			if (any(greaterThan(size, vec2(0.f))))
+			{
+				auto s = e->size;
+				if (e->auto_width)
+					s.x = size.x;
 				if (e->auto_height)
-					e->set_height(h);
+					s.y = size.y;
+				e->set_size(s);
 			}
 
-			e->desired_size = vec2(w, h);
+			e->desired_size = size;
 			e->pending_sizing = false;
 		}
 
@@ -468,14 +472,12 @@ namespace flame
 			n->update_transform();
 
 			n->bounds.reset();
-			for (auto m : n->measurers)
+			for (auto m : n->measurers.list)
 			{
 				AABB b;
-				if (m->measure(&b))
-				{
+				b.reset();
+				if (m(&b) && !b.invalid())
 					n->bounds.expand(b);
-					n->bounds_invalid = false;
-				}
 			}
 
 			if (!n->assemble_sub)
@@ -483,11 +485,8 @@ namespace flame
 				for (auto& c : n->entity->children)
 				{
 					auto node = c->get_component_i<cNodePrivate>(0);
-					if (node && !node->bounds_invalid)
-					{
+					if (node && !n->bounds.invalid())
 						n->bounds.expand(node->bounds);
-						n->bounds_invalid = false;
-					}
 				}
 			}
 

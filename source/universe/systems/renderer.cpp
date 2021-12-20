@@ -1852,7 +1852,7 @@ namespace flame
 				auto e = node->entity;
 
 				node->update_transform();
-				if (!node->bounds_invalid && AABB_frustum_check(frustum, node->bounds))
+				if (AABB_frustum_check(frustum, node->bounds))
 					node->draw(frame, true);
 
 				if (node->octree)

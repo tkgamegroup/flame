@@ -20,6 +20,8 @@ namespace flame
 		vec3 g_scl;
 		AABB bounds;
 
+		bool merge_bounds = false;
+
 		Listeners<uint(sRendererPtr, bool, bool)> drawers;
 		Listeners<uint(AABB*)> measurers;
 
@@ -35,12 +37,7 @@ namespace flame
 
 		virtual void look_at(const vec3& t) = 0;
 
-		virtual bool get_assemble_sub() const = 0;
-		virtual void set_assemble_sub(bool v) = 0;
-
-		virtual float get_octree_length() const = 0;
 		virtual void set_octree_length(float len) = 0;
-		virtual uint get_octree_lod() const = 0;
 		virtual void set_octree_lod(uint lod) = 0;
 
 		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) = 0;

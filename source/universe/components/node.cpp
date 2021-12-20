@@ -6,13 +6,18 @@
 
 namespace flame
 {
+	cNodePrivate::cNodePrivate()
+	{
+		bounds.reset();
+	}
+
 	void cNodePrivate::set_pos(const vec3& p)
 	{
 		if (pos == p)
 			return;
 		pos = p;
 		mark_transform_dirty();
-		data_changed(this, S<"pos"_h>);
+		data_changed(S<"pos"_h>);
 	}
 
 	void cNodePrivate::add_pos(const vec3& p)
@@ -80,34 +85,6 @@ namespace flame
 		qut_dirty = true;
 		eul_dirty = true;
 		mark_transform_dirty();
-	}
-
-	vec3 cNodePrivate::get_local_dir(uint idx)
-	{
-		update_rot();
-
-		return rot[idx];
-	}
-
-	vec3 cNodePrivate::get_global_pos()
-	{
-		update_transform();
-
-		return g_pos;
-	}
-
-	vec3 cNodePrivate::get_global_dir(uint idx)
-	{
-		update_transform();
-
-		return g_rot[idx];
-	}
-
-	vec3 cNodePrivate::get_global_scale()
-	{
-		update_transform();
-
-		return g_scl;
 	}
 
 	void cNodePrivate::set_octree_length(float len)
@@ -254,7 +231,7 @@ namespace flame
 
 	void cNodePrivate::mark_bounds_dirty(bool child_caused)
 	{
-		if (!child_caused && measurers.empty())
+		if (!child_caused && measurers.list.empty())
 			return;
 
 		if (!pending_update_bounds)

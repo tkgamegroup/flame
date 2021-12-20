@@ -207,6 +207,11 @@ namespace flame
 			b = vec3(-10000.f);
 		}
 
+		bool invalid()
+		{
+			return any(greaterThan(a, b));
+		}
+
 		vec3 center() const
 		{
 			return (a + b) * 0.5f;
