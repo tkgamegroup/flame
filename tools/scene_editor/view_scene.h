@@ -2,13 +2,13 @@
 
 #include "app.h"
 
-struct WindowScene : View
+struct View_Scene : View
 {
 	graphics::Image* render_tar = nullptr;
 
 	//Entity* e_prefab = nullptr;
 
-	WindowScene();
+	View_Scene();
 
 	void open_scene(const std::filesystem::path& path);
 	void open_prefab(const std::filesystem::path& path);
@@ -16,4 +16,4 @@ struct WindowScene : View
 	void on_draw() override;
 };
 
-extern WindowScene window_scene;
+extern View_Scene view_scene;

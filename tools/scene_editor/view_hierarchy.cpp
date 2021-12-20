@@ -1,6 +1,6 @@
 #include "selection.h"
-#include "window_hierarchy.h"
-#include "window_scene.h"
+#include "view_hierarchy.h"
+#include "view_scene.h"
 
 View_Hierarchy view_hierarchy;
 

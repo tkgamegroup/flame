@@ -1,20 +1,20 @@
 #include "selection.h"
-#include "window_project.h"
-#include "window_scene.h"
+#include "view_project.h"
+#include "view_scene.h"
 
 #include <flame/foundation/system.h>
 
-WindowProject window_project;
+View_Project view_project;
 
-WindowProject::FolderTreeNode::FolderTreeNode(const std::filesystem::path& path) :
+View_Project::FolderTreeNode::FolderTreeNode(const std::filesystem::path& path) :
 	path(path)
 {
 	display_text = path.stem().string();
 }
 
-void WindowProject::FolderTreeNode::draw()
+void View_Project::FolderTreeNode::draw()
 {
-	auto flags = window_project.selected_folder == this ? ImGuiTreeNodeFlags_Selected : 0;
+	auto flags = view_project.selected_folder == this ? ImGuiTreeNodeFlags_Selected : 0;
 	if (read && children.empty())
 		flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	else
@@ -22,10 +22,10 @@ void WindowProject::FolderTreeNode::draw()
 	auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags);
 	if (ImGui::IsItemClicked())
 	{
-		if (window_project.selected_folder != this)
+		if (view_project.selected_folder != this)
 		{
-			window_project.selected_folder = this;
-			window_project.open_folder(path);
+			view_project.selected_folder = this;
+			view_project.open_folder(path);
 		}
 	}
 	if (opened)
@@ -45,15 +45,15 @@ void WindowProject::FolderTreeNode::draw()
 	}
 }
 
-WindowProject::Item::Metric WindowProject::Item::metric = {};
+View_Project::Item::Metric View_Project::Item::metric = {};
 
-WindowProject::Item::Item(const std::filesystem::path& path) :
+View_Project::Item::Item(const std::filesystem::path& path) :
 	path(path)
 {
 	set_size();
 }
 
-void WindowProject::Item::set_size()
+void View_Project::Item::set_size()
 {
 	display_text = path.filename().string();
 
@@ -81,26 +81,26 @@ void WindowProject::Item::set_size()
 		auto d = get_thumbnail(metric.size, path.c_str());
 		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 		thumbnail = img;
-		window_project.thumbnails.emplace_back(img);
+		view_project.thumbnails.emplace_back(img);
 	}
 	else
 	{
 		int icon_id;
 		get_icon(path.c_str(), &icon_id);
-		auto it = window_project.icons.find(icon_id);
-		if (it != window_project.icons.end())
+		auto it = view_project.icons.find(icon_id);
+		if (it != view_project.icons.end())
 			thumbnail = it->second.get();
 		else
 		{
 			auto d = get_icon(path.c_str(), nullptr);
 			auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 			thumbnail = img;
-			window_project.icons.emplace(icon_id, img);
+			view_project.icons.emplace(icon_id, img);
 		}
 	}
 }
 
-void WindowProject::Item::draw()
+void View_Project::Item::draw()
 {
 	ImGui::BeginGroup();
 	auto pressed = ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
@@ -121,7 +121,7 @@ void WindowProject::Item::draw()
 	if (pressed)
 	{
 		selection.select(path);
-		window_project._just_selected = true;
+		view_project._just_selected = true;
 	}
 	if (ImGui::IsMouseDoubleClicked(0) && active)
 	{
@@ -130,16 +130,16 @@ void WindowProject::Item::draw()
 			// open folder will destroy all items, so staging path here
 			auto str = path.wstring();
 			add_event([str]() {
-				window_project.open_folder(str);
+				view_project.open_folder(str);
 				return false;
 			});
 
-			window_project.selected_folder = nullptr;
+			view_project.selected_folder = nullptr;
 			std::function<FolderTreeNode*(FolderTreeNode*)> select_node;
 			select_node = [&](FolderTreeNode* n)->FolderTreeNode* {
 				if (n->path == path)
 				{
-					window_project.selected_folder = n;
+					view_project.selected_folder = n;
 					return n;
 				}
 				for (auto& c : n->children)
@@ -150,30 +150,30 @@ void WindowProject::Item::draw()
 				}
 				return nullptr;
 			};
-			select_node(window_project.foler_tree.get());
+			select_node(view_project.foler_tree.get());
 		}
 		else
 		{
 			auto ext = path.extension();
 			if (ext == L".prefab")
-				window_scene.open_prefab(path);
+				view_scene.open_prefab(path);
 		}
 	}
 }
 
-WindowProject::WindowProject() :
+View_Project::View_Project() :
 	View("Project")
 {
 }
 
-void WindowProject::reset()
+void View_Project::reset()
 {
 	items.clear();
 	selected_folder = nullptr;
-	foler_tree.reset(new WindowProject::FolderTreeNode(app.project_path));
+	foler_tree.reset(new View_Project::FolderTreeNode(app.project_path));
 }
 
-void WindowProject::set_items_size(float size)
+void View_Project::set_items_size(float size)
 {
 	Item::metric.size = size;
 	auto v = ImGui::GetStyle().FramePadding;
@@ -184,7 +184,7 @@ void WindowProject::set_items_size(float size)
 		i->set_size();
 }
 
-void WindowProject::open_folder(const std::filesystem::path& path)
+void View_Project::open_folder(const std::filesystem::path& path)
 {
 	if (Item::metric.size == 0)
 		set_items_size(64);
@@ -199,7 +199,7 @@ void WindowProject::open_folder(const std::filesystem::path& path)
 		items.emplace_back(new Item(it.path()));
 }
 
-void WindowProject::on_draw()
+void View_Project::on_draw()
 {
 	if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 	{

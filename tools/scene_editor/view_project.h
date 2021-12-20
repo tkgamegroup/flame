@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct WindowProject : View
+struct View_Project : View
 {
 	struct FolderTreeNode
 	{
@@ -47,7 +47,7 @@ struct WindowProject : View
 	std::vector<std::unique_ptr<Item>> items;
 	bool _just_selected;
 
-	WindowProject();
+	View_Project();
 	void reset();
 	void set_items_size(float size);
 
@@ -56,4 +56,4 @@ struct WindowProject : View
 	void on_draw() override;
 };
 
-extern WindowProject window_project;
+extern View_Project view_project;

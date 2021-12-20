@@ -1,14 +1,14 @@
 #include "selection.h"
-#include "window_inspector.h"
+#include "view_inspector.h"
 
-WindowInspector window_inspector;
+View_Inspector view_inspector;
 
-WindowInspector::WindowInspector() :
+View_Inspector::View_Inspector() :
 	View("Inspector")
 {
 }
 
-void WindowInspector::on_draw()
+void View_Inspector::on_draw()
 {
 	if (selection.type == Selection::tEntity)
 	{

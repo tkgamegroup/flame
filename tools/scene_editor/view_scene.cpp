@@ -1,18 +1,18 @@
-#include "window_scene.h"
+#include "view_scene.h"
 
-WindowScene window_scene;
+View_Scene view_scene;
 
-WindowScene::WindowScene() :
+View_Scene::View_Scene() :
 	View("Scene")
 {
 }
 
-void WindowScene::open_scene(const std::filesystem::path& path)
+void View_Scene::open_scene(const std::filesystem::path& path)
 {
 
 }
 
-void WindowScene::open_prefab(const std::filesystem::path& path)
+void View_Scene::open_prefab(const std::filesystem::path& path)
 {
 	//if (e_prefab)
 	//	e_prefab->get_parent()->remove_child(e_prefab);
@@ -21,7 +21,7 @@ void WindowScene::open_prefab(const std::filesystem::path& path)
 	//app.root->add_child(e_prefab);
 }
 
-void WindowScene::on_draw()
+void View_Scene::on_draw()
 {
 	auto size = ImGui::GetContentRegionAvail();
 	auto usize = uvec2(size.x, size.y);

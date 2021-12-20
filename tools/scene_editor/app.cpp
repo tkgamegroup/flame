@@ -1,7 +1,7 @@
 #include "app.h"
 #include "selection.h"
-#include "window_scene.h"
-#include "window_project.h"
+#include "view_scene.h"
+#include "view_project.h"
 
 std::list<View*> views;
 
@@ -120,7 +120,7 @@ void App::open_project(const std::filesystem::path& path)
 		project_path = path;
 		selection.clear();
 
-		window_project.reset();
+		view_project.reset();
 	}
 }
 
