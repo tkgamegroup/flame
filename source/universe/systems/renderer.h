@@ -4,10 +4,6 @@
 
 namespace flame
 {
-	struct sRendererParms
-	{
-	};
-
 	struct sRenderer : System
 	{
 		inline static auto type_name = "flame::sRenderer";

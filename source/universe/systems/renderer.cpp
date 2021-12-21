@@ -244,12 +244,8 @@ namespace flame
 		}
 	};
 
-	sRendererPrivate::sRendererPrivate(sRendererParms* _parms)
+	sRendererPrivate::sRendererPrivate()
 	{
-		sRendererParms parms;
-		if (_parms)
-			parms = *_parms;
-
 		_ed.reset(new ElemenetRenderData);
 		_nd.reset(new NodeRenderData);
 	}

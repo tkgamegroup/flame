@@ -59,7 +59,7 @@ namespace flame
 
 		bool dirty = true;
 
-		sRendererPrivate(sRendererParms* parms);
+		sRendererPrivate();
 		~sRendererPrivate();
 
 		void setup(graphics::Window* window, bool external_targets = false) override;

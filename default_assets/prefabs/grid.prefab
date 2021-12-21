@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <eElement alignx="MinMax" aligny="MinMax" fill_color="0,0,0,160" >
-    <cReceiver />
-    <cGrid/>
-    <eElement name="anchor" />
-  </eElement>
-</prefab>
