@@ -465,13 +465,6 @@ namespace flame
 			pelement->mark_layout_dirty();
 	}
 
-	void cElementPrivate::on_reposition(uint from, uint to)
-	{
-		mark_drawing_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-	}
-
 	bool cElementPrivate::contains(const vec2& p)
 	{
 		if (size.x == 0.f || size.y == 0.f)
@@ -505,7 +498,7 @@ namespace flame
 		return transparent;
 	}
 
-	cElement* cElement::create(void* parms)
+	cElement* cElement::create()
 	{
 		return new cElementPrivate();
 	}

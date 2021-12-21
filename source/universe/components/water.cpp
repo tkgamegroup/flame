@@ -69,7 +69,7 @@ namespace flame
 		s_renderer = nullptr;
 	}
 
-	cWater* cWater::create(void* parms)
+	cWater* cWater::create()
 	{
 		return new cWaterPrivate();
 	}

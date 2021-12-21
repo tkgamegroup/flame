@@ -27,6 +27,6 @@ namespace flame
 		virtual ShadingFlags get_shading_flags() const = 0;
 		virtual void set_shading_flags(ShadingFlags flags) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cMesh* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cMesh* create();
 	};
 }

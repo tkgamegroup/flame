@@ -25,6 +25,6 @@ namespace flame
 
 		virtual mat4 get_shadow_mat(uint idx) const = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cLight* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cLight* create();
 	};
 }

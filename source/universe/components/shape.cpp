@@ -193,7 +193,7 @@ namespace flame
 		rigid = nullptr;
 	}
 
-	cShape* cShape::create(void* parms)
+	cShape* cShape::create()
 	{
 		return new cShapePrivate();
 	}

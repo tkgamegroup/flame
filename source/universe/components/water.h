@@ -20,6 +20,6 @@ namespace flame
 		virtual const char* get_material_name() const = 0;
 		virtual void set_material_name(const char* name) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cWater* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cWater* create();
 	};
 }

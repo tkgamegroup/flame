@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct cMeshPrivate : cMesh, NodeDrawer, NodeMeasurer
+	struct cMeshPrivate : cMesh
 	{
 		std::filesystem::path src;
 		uint sub_index;
@@ -16,9 +16,10 @@ namespace flame
 		ShadingFlags shading_flags = ShadingMaterial;
 
 		cNodePrivate* node = nullptr;
-		cArmaturePrivate* parm = nullptr;
+		cArmaturePrivate* parmature = nullptr;
 		int transform_id = -1;
 		sRendererPrivate* s_renderer = nullptr;
+		uint frame = 0;
 
 		int mesh_id = -1;
 		graphics::Mesh* mesh = nullptr;
@@ -39,7 +40,7 @@ namespace flame
 
 		void apply_src();
 
-		void draw(sRendererPtr s_renderer, bool first, bool shadow_pass) override;
+		void draw(sRendererPtr s_renderer, bool shadow_pass) override;
 		bool measure(AABB* b) override;
 
 		void on_added() override;

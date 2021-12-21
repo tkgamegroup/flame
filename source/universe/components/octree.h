@@ -9,7 +9,18 @@ namespace flame
 		inline static auto type_name = "flame::cOctree";
 		inline static auto type_hash = ch(type_name);
 
-		float octree_length = 0.f;
-		uint octree_lod = 0;
+		float length = 0.f;
+		uint lod = 0;
+
+		cOctree() :
+			Component(type_name, type_hash)
+		{
+		}
+
+		virtual void set_length(float len) = 0;
+		virtual void set_lod(uint lod) = 0;
+
+		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) = 0;
+		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) = 0;
 	};
 }

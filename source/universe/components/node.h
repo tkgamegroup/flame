@@ -31,18 +31,12 @@ namespace flame
 		}
 
 		virtual void set_pos(const vec3& pos) = 0;
-		virtual void set_euler(const vec3& e) = 0;
-		virtual void set_quat(const quat& quat) = 0;
-		virtual void set_scale(const vec3& scale) = 0;
+		virtual void set_eul(const vec3& eul) = 0;
+		virtual void set_qut(const quat& qut) = 0;
+		virtual void set_scl(const vec3& scl) = 0;
 
 		virtual void look_at(const vec3& t) = 0;
 
-		virtual void set_octree_length(float len) = 0;
-		virtual void set_octree_lod(uint lod) = 0;
-
-		virtual bool is_any_within_circle(const vec2& c, float r, uint filter_tag = 0xffffffff) = 0;
-		virtual uint get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag = 0xffffffff) = 0;
-
-		FLAME_UNIVERSE_EXPORTS static cNode* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cNode* create();
 	};
 }

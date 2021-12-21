@@ -56,7 +56,7 @@ namespace flame
 		s_renderer = nullptr;
 	}
 
-	cLight* cLight::create(void* parms)
+	cLight* cLight::create()
 	{
 		return new cLightPrivate();
 	}

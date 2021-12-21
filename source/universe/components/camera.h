@@ -32,6 +32,6 @@ namespace flame
 		virtual vec3 screen_to_world(const uvec2& pos) = 0;
 		virtual ivec2 world_to_screen(const vec3& pos, const ivec4& border) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cCamera* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cCamera* create();
 	};
 }

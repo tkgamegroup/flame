@@ -31,7 +31,7 @@ namespace flame
 
 		virtual void move(const vec3& disp) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cCharacterController* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cCharacterController* create();
 	};
 }
 

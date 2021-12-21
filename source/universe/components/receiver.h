@@ -58,6 +58,6 @@ namespace flame
 		virtual const char* get_tooltip() const = 0;
 		virtual void set_tooltip(const char* str) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cReceiver* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cReceiver* create();
 	};
 }

@@ -118,7 +118,7 @@ namespace flame
 		s_renderer = nullptr;
 	}
 
-	cSky* cSky::create(void* parms)
+	cSky* cSky::create()
 	{
 		return new cSkyPrivate();
 	}

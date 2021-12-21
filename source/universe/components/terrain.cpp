@@ -182,7 +182,7 @@ namespace flame
 		s_renderer = nullptr;
 	}
 
-	cTerrain* cTerrain::create(void* parms)
+	cTerrain* cTerrain::create()
 	{
 		return new cTerrainPrivate();
 	}

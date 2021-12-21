@@ -96,6 +96,6 @@ namespace flame
 		virtual void mark_size_dirty() = 0;
 		virtual void mark_layout_dirty() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};
 }

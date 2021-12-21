@@ -103,7 +103,7 @@ namespace flame
 		}
 	}
 
-	cRigid* cRigid::create(void* parms)
+	cRigid* cRigid::create()
 	{
 		return new cRigidPrivate();
 	}

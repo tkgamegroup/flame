@@ -507,7 +507,7 @@ namespace flame
 		}
 	}
 
-	sScene* sScene::create(void* parms)
+	sScene* sScene::create()
 	{
 		return new sScenePrivate();
 	}

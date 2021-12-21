@@ -10,6 +10,7 @@ namespace flame
 		const uint type_hash;
 
 		EntityPtr entity = nullptr;
+		int source_id = -1;
 
 		Listeners<void(uint)> data_listeners;
 
@@ -39,6 +40,5 @@ namespace flame
 		virtual void on_entity_removed() {}
 		virtual void on_child_added(EntityPtr e) {}
 		virtual void on_child_removed(EntityPtr e) {}
-		virtual void on_reposition(uint from, uint to) {}
 	};
 }

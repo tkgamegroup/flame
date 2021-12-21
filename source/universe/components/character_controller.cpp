@@ -78,7 +78,7 @@ namespace flame
 		phy_scene = nullptr;
 	}
 
-	cCharacterController* cCharacterController::create(void* parms)
+	cCharacterController* cCharacterController::create()
 	{
 		return new cCharacterControllerPrivate();
 	}

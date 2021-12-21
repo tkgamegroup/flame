@@ -139,7 +139,7 @@ namespace flame
 		return layer;
 	}
 
-	cImage* cImage::create(void* parms)
+	cImage* cImage::create()
 	{
 		return new cImagePrivate();
 	}

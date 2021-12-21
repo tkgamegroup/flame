@@ -22,6 +22,6 @@ namespace flame
 		virtual vec4 get_uv() const = 0;
 		virtual void set_uv(const vec4& uv) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cImage* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cImage* create();
 	};
 }

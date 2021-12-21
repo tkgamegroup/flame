@@ -150,7 +150,7 @@ namespace flame
 		atlas = nullptr;
 	}
 
-	cText* cText::create(void* parms)
+	cText* cText::create()
 	{
 		return new cTextPrivate();
 	}

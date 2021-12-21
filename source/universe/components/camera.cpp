@@ -171,7 +171,7 @@ namespace flame
 		return ivec2(10000);
 	}
 
-	cCamera* cCamera::create(void* parms)
+	cCamera* cCamera::create()
 	{
 		return new cCameraPrivate();
 	}

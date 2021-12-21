@@ -136,8 +136,9 @@ namespace flame
 	enum ShadingFlags
 	{
 		ShadingMaterial = 1 << 0,
-		ShadingWireframe = 1 << 1,
-		ShadingOutline = 1 << 2
+		ShadingShadow = 1 << 1,
+		ShadingWireframe = 1 << 2,
+		ShadingOutline = 1 << 3
 	};
 
 	inline ShadingFlags operator| (ShadingFlags a, ShadingFlags b) { return (ShadingFlags)((int)a | (int)b); }

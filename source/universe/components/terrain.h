@@ -33,6 +33,6 @@ namespace flame
 		virtual graphics::Image* get_normal_texture() const = 0;
 		virtual graphics::Image* get_tangent_texture() const = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cTerrain* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cTerrain* create();
 	};
 }

@@ -27,6 +27,6 @@ namespace flame
 		virtual Align get_text_align() const = 0;
 		virtual void set_text_align(Align a) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cText* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cText* create();
 	};
 }

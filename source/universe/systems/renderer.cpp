@@ -15,43 +15,6 @@
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
-namespace element
-{
-#include <element/element.dsl.h>
-#include <element/element.pll.h>
-}
-#include <render_data.dsl.h>
-#include <material.dsl.h>
-#include <light.dsl.h>
-namespace mesh
-{
-#include <mesh/mesh.dsl.h>
-#include <mesh/forward.pll.h>
-#include <mesh/gbuffer.pll.h>
-}
-namespace terrain
-{
-#include <terrain/terrain.dsl.h>
-#include <terrain/forward.pll.h>
-#include <terrain/gbuffer.pll.h>
-}
-namespace water
-{
-#include <water/water.dsl.h>
-#include <water/water.pll.h>
-}
-#include <deferred/ssao.dsl.h>
-#include <deferred/ssao.pll.h>
-#include <deferred/deferred.dsl.h>
-#include <deferred/deferred.pll.h>
-#include <particle/particle.pll.h>
-#include <post/post.dsl.h>
-#include <post/post.pll.h>
-#include <post/luminance.dsl.h>
-#include <post/luminance.pll.h>
-#include <post/tone.dsl.h>
-#include <post/tone.pll.h>
-
 namespace flame
 {
 	using namespace graphics;
@@ -1550,26 +1513,28 @@ namespace flame
 
 		if (render_type != ShadingMaterial)
 			flags = (ShadingFlags)(flags & ~ShadingMaterial);
+		if (render_type == RenderWireframe)
+			flags = flags | ShadingWireframe;
 
 		auto& mesh = nd.mesh_reses[mesh_id];
-		auto usage = mesh.arm ? MaterialForMeshArmature : MaterialForMesh;
 
-		if (flags & ShadingMaterial)
+		if (flags & ShadingShadow)
+		{
+			auto usage = mesh.arm ? MaterialForMeshShadowArmature : MaterialForMeshShadow;
 			nd.meshes[usage][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
-		if (render_type == RenderWireframe || (flags & ShadingWireframe))
-			nd.meshes[usage][MaterialWireframe].emplace_back(idx, mesh_id);
-		if (flags & ShadingOutline)
-			nd.meshes[usage][MaterialOutline].emplace_back(idx, mesh_id);
-		if (render_type == RenderNormalData)
-			nd.meshes[usage][MaterialNormalData].emplace_back(idx, mesh_id);
-	}
-
-	void sRendererPrivate::draw_mesh_occluder(uint idx, uint mesh_id, uint skin)
-	{
-		auto& nd = *_nd;
-
-		auto& mesh = nd.mesh_reses[mesh_id];
-		nd.meshes[mesh.arm ? MaterialForMeshShadowArmature : MaterialForMeshShadow][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
+		}
+		else
+		{
+			auto usage = mesh.arm ? MaterialForMeshArmature : MaterialForMesh;
+			if (flags & ShadingMaterial)
+				nd.meshes[usage][mesh.mat_ids[skin]].emplace_back(idx, mesh_id);
+			if (flags & ShadingWireframe)
+				nd.meshes[usage][MaterialWireframe].emplace_back(idx, mesh_id);
+			if (flags & ShadingOutline)
+				nd.meshes[usage][MaterialOutline].emplace_back(idx, mesh_id);
+			if (render_type == RenderNormalData)
+				nd.meshes[usage][MaterialNormalData].emplace_back(idx, mesh_id);
+		}
 	}
 
 	void sRendererPrivate::draw_terrain(const vec3& coord, const vec3& extent, const uvec2& blocks, uint tess_levels, uint height_map_id, 
@@ -2827,7 +2792,7 @@ namespace flame
 			window->mark_dirty();
 	}
 
-	sRenderer* sRenderer::create(void* parms)
+	sRenderer* sRenderer::create()
 	{
 		return new sRendererPrivate((sRendererParms*)parms);
 	}

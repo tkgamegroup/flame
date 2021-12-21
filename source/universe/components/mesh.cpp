@@ -64,7 +64,7 @@ namespace flame
 		graphics::Model* model = nullptr;
 		auto fn = src;
 		if (fn.extension().empty())
-			model = graphics::Model::get_standard(fn.c_str());
+			model = graphics::Model::get(fn);
 		else
 		{
 			if (!fn.is_absolute())
@@ -74,7 +74,7 @@ namespace flame
 		}
 		assert(model);
 
-		if (sub_index >= model->get_meshes_count())
+		if (sub_index >= model->meshes.size())
 			return;
 		mesh = model->get_mesh(sub_index);
 
@@ -90,20 +90,31 @@ namespace flame
 		}
 
 		if (mesh->get_bone_ids())
-			parm = entity->parent->get_component_t<cArmaturePrivate>();
+			parmature = entity->parent->get_component_t<cArmaturePrivate>();
 	}
 
-	void cMeshPrivate::draw(sRendererPtr s_renderer, bool first, bool shadow_pass)
+	void cMeshPrivate::draw(sRendererPtr s_renderer, bool shadow_pass)
 	{
 		if (mesh_id != -1)
 		{
-			if (first && !parm)
-				transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
-			auto idx = parm ? parm->armature_id : transform_id;
-			if (!shadow_pass)
+			auto get_idx = [&]() {
+				if (parmature)
+					return parmature->armature_id;
+				if (frame < frames)
+				{
+					transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
+					frame = frames;
+				}
+				return transform_id;
+			};
+			auto idx = get_idx();
+			if (shadow_pass)
+			{
+				if (cast_shadow)
+					s_renderer->draw_mesh(idx, mesh_id, skin, ShadingShadow);
+			}
+			else
 				s_renderer->draw_mesh(idx, mesh_id, skin, shading_flags);
-			else if (cast_shadow)
-				s_renderer->draw_mesh_occluder(idx, mesh_id, skin);
 		}
 	}
 
@@ -111,11 +122,11 @@ namespace flame
 	{
 		if (!mesh)
 			return false;
-		auto b = mesh->get_bounds();
+		auto b = mesh->bounds;
 		vec3 ps[8];
 		b.get_points(ps);
 		b.reset();
-		auto& mat = parm ? node->pnode->transform : node->transform;
+		auto& mat = parmature ? parmature->node->transform : node->transform;
 		for (auto i = 0; i < 8; i++)
 			b.expand(mat * vec4(ps[i], 1.f));
 		*ret = b;
@@ -151,7 +162,7 @@ namespace flame
 		mesh = nullptr;
 	}
 
-	cMesh* cMesh::create(void* parms)
+	cMesh* cMesh::create()
 	{
 		return new cMeshPrivate();
 	}

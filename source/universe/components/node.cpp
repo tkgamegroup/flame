@@ -25,14 +25,14 @@ namespace flame
 		set_pos(pos + p);
 	}
 
-	vec3 cNodePrivate::get_euler()
+	vec3 cNodePrivate::get_eul()
 	{ 
 		if (eul_dirty)
 			update_eul();
 		return eul; 
 	}
 
-	void cNodePrivate::set_euler(const vec3& e)
+	void cNodePrivate::set_eul(const vec3& e)
 	{
 		if (eul == e)
 			return;
@@ -41,7 +41,7 @@ namespace flame
 		qut_dirty = true;
 		eul_dirty = false;
 		mark_transform_dirty();
-		data_changed(S<"euler"_h>);
+		data_changed(S<"eul"_h>);
 	}
 
 	void cNodePrivate::add_euler(const vec3& e)
@@ -49,14 +49,14 @@ namespace flame
 		set_euler(eul + e);
 	}
 
-	quat cNodePrivate::get_quat() 
+	quat cNodePrivate::get_qut() 
 	{ 
 		if (qut_dirty)
 			update_qut();
 		return qut; 
 	}
 
-	void cNodePrivate::set_quat(const quat& q)
+	void cNodePrivate::set_qut(const quat& q)
 	{
 		if (qut == q)
 			return;
@@ -65,16 +65,16 @@ namespace flame
 		eul_dirty = true;
 		qut_dirty = false;
 		mark_transform_dirty();
-		data_changed(S<"quat"_h>);
+		data_changed(S<"qut"_h>);
 	}
 
-	void cNodePrivate::set_scale(const vec3& s)
+	void cNodePrivate::set_scl(const vec3& s)
 	{
 		if (scl == s)
 			return;
 		scl = s;
 		mark_transform_dirty();
-		data_changed(S<"scale"_h>);
+		data_changed(S<"scl"_h>);
 	}
 
 	void cNodePrivate::look_at(const vec3& t)
@@ -243,7 +243,7 @@ namespace flame
 			}
 		}
 
-		if (assemble_sub && pnode)
+		if (pnode && pnode->merge_bounds)
 			pnode->mark_bounds_dirty(true);
 	}
 
@@ -263,14 +263,8 @@ namespace flame
 
 	void cNodePrivate::draw(uint _frame, bool shadow_pass)
 	{
-		auto first = false;
-		if (_frame > frame)
-		{
-			first = true;
-			frame = _frame;
-		}
 		for (auto d : drawers)
-			d->draw(s_renderer, first, shadow_pass);
+			d(s_renderer, shadow_pass);
 	}
 
 	void cNodePrivate::on_component_added(Component* c)
@@ -346,7 +340,7 @@ namespace flame
 		octnode = { nullptr, nullptr };
 	}
 
-	cNode* cNode::create(void* parms)
+	cNode* cNode::create()
 	{
 		return new cNodePrivate();
 	}

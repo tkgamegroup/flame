@@ -23,26 +23,27 @@ namespace flame
 		stop();
 	}
 
-	void cArmaturePrivate::set_model(const std::filesystem::path& name)
+	void cArmaturePrivate::set_model_path(const std::filesystem::path& path)
 	{
-		if (model_name == name)
+		if (model_path == path)
 			return;
 		bones.clear();
-		model_name = name;
+		model_path = path;
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
+		data_changed(S<"model_path"_h>);
 	}
 
-	void cArmaturePrivate::set_animations(std::wstring_view _animation_names)
+	void cArmaturePrivate::set_animation_paths(const std::wstring& paths)
 	{
-		if (animation_names == _animation_names)
+		if (animation_paths == paths)
 			return;
-		animation_names = _animation_names;
+		animation_paths = paths;
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
-		data_changed(this, S<"src"_h>);
+		data_changed(S<"animation_paths"_h>);
 	}
 
 	void cArmaturePrivate::play(uint id, float _speed, bool _loop)
@@ -50,9 +51,9 @@ namespace flame
 		speed = _speed;
 		loop = _loop;
 
-		if (anim == id)
+		if (animation_id == id)
 			return;
-		anim = id;
+		animation_id = id;
 		frame = 0;
 		frame_accumulate = 0.f;
 		if (!event)
@@ -70,7 +71,7 @@ namespace flame
 
 	void cArmaturePrivate::stop()
 	{
-		anim = -1;
+		animation_id = -1;
 		if (event)
 		{
 			remove_event(event);
@@ -88,52 +89,54 @@ namespace flame
 
 	void cArmaturePrivate::apply_src()
 	{
+		auto ppath = entity->sources[source_id].parent_path();
+
 		if (bones.empty() && entity)
 		{
 			graphics::Model* model = nullptr;
-			auto fn = model_name;
+			auto fn = model_path;
 			if (fn.extension().empty())
-				model = graphics::Model::get_standard(fn.c_str());
+				model = graphics::Model::get(fn);
 			else
 			{
-				if (!fn.is_absolute())
-					fn = entity->get_src(src_id).parent_path() / fn;
-				fn.make_preferred();
-				model = graphics::Model::get(fn.c_str());
+				if (!fn.is_absolute() && source_id != -1)
+				{
+					fn = ppath / fn;
+					fn.make_preferred();
+				}
+				else
+					fn = Path::get(fn);
+				model = graphics::Model::get(fn);
 			}
 			assert(model);
 
-			auto bones_count = model->get_bones_count();
-			assert(bones_count);
-
-			bones.resize(bones_count);
-			bone_mats.resize(bones_count);
-			for (auto i = 0; i < bones_count; i++)
+			bones.resize(model->bones.size());
+			bone_mats.resize(bones.size());
+			for (auto i = 0; i < bones.size(); i++)
 			{
-				auto src = model->get_bone(i);
+				auto& src = model->bones[i];
 				auto& dst = bones[i];
-				auto name = std::string(src->get_name());
+				auto name = src.name;
 				auto e = entity->find_child(name);
 				assert(e);
 				dst.name = name;
 				dst.node = e->get_component_i<cNodePrivate>(0);
 				assert(dst.node);
-				dst.offmat = src->get_offset_matrix();
+				dst.offmat = src.offset_matrix;
 			}
 		}
 
-		if (bones.empty() || animation_names.empty())
+		if (bones.empty() || animation_paths.empty())
 			return;
 
-		auto ppath = entity->get_src(src_id).parent_path();
-		auto sp = SUW::split(animation_names, ';');
+		auto sp = SUW::split(animation_paths, ';');
 		for (auto& s : sp)
 		{
 			auto fn = std::filesystem::path(s);
 			if (!fn.is_absolute())
 				fn = ppath / fn;
 
-			auto animation = graphics::Animation::get(fn.c_str());
+			auto animation = graphics::Animation::get(fn);
 			if (animation)
 			{
 				auto& a = actions.emplace_back();
@@ -172,8 +175,8 @@ namespace flame
 
 	void cArmaturePrivate::advance()
 	{
-		auto& a = actions[anim];
-		peeding_pose = { anim, frame };
+		auto& a = actions[animation_id];
+		peeding_pose = { animation_id, frame };
 
 		frame_accumulate += speed;
 		while (frame_accumulate > 1.f)
@@ -234,7 +237,7 @@ namespace flame
 		stop();
 	}
 
-	cArmature* cArmature::create(void* parms)
+	cArmature* cArmature::create()
 	{
 		return new cArmaturePrivate();
 	}

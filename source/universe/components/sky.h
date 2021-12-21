@@ -26,6 +26,6 @@ namespace flame
 		virtual float get_intensity() const = 0;
 		virtual void set_intensity(float i) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cSky* create(void* parms = nullptr);
+		FLAME_UNIVERSE_EXPORTS static cSky* create();
 	};
 }
