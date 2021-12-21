@@ -14,9 +14,5 @@ endif()
 
 add_subdirectory(foundation)
 add_subdirectory(typeinfogen)
-# blueprint is WIP
-#add_subdirectory(blueprint)
 add_subdirectory(graphics)
-add_subdirectory(physics)
-add_subdirectory(sound)
 add_subdirectory(universe)

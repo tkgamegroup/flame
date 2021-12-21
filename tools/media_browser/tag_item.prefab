@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="4" >
-    <eText name="name" alignx="MinMax" font_color="255,255,255,255" />
-    <eButton text="+" name="add" />
-    <eButton text="-" name="remove" />
-  </eElement>
-</prefab>

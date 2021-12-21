@@ -1,7 +1,0 @@
-generate_config()
-file(GLOB_RECURSE source_files "*.h" "*.c*")
-add_executable(media_browser ${source_files})
-set_target_properties(media_browser PROPERTIES FOLDER "tools")
-target_link_options(media_browser PRIVATE /FIXED:NO)
-target_link_libraries(media_browser flame_graphics)
-set_target_properties(media_browser PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

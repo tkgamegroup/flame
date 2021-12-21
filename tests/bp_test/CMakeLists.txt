@@ -1,6 +1,0 @@
-generate_config()
-file(GLOB_RECURSE source_files "*.c*")
-add_executable(bp_test ${source_files})
-set_target_properties(bp_test PROPERTIES FOLDER "tests")
-target_link_options(bp_test PRIVATE /FIXED:NO)
-target_link_libraries(bp_test flame_universe)

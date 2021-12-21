@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <eElement padding="4,4,4,4" fill_color="0,0,0,190" layout_type="Vertical">
-    <eText name="txt_attr" />
-    <eText name="txt_desc" visible="false" />
-  </eElement>
-</prefab>
