@@ -48,7 +48,7 @@ if (NOT EXISTS "${CPPCODEC_INCLUDE_DIR}")
 	message(SEND_ERROR "required cppcodec is invalid")
 endif()
 
-check_path("${parent_path}boost/regex/include" p)
+check_path("${parent_path}boost/include" p)
 set(BOOST_REGEX_INCLUDE_DIR "${p}" CACHE PATH "Boost Regex include directory")
 if (NOT EXISTS "${BOOST_REGEX_INCLUDE_DIR}")
 	message(SEND_ERROR "required Boost Regex is invalid")

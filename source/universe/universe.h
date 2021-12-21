@@ -22,8 +22,12 @@ struct FlameUniverseTypeSelector
 
 #include "../foundation/foundation.h"
 #include "../graphics/graphics.h"
+#ifdef USE_SOUND_MODULE
 #include "../sound/sound.h"
+#endif
+#ifdef USE_PHYSICS_MODULE
 #include "../physics/physics.h"
+#endif
 
 namespace flame
 {
