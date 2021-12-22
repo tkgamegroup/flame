@@ -5,36 +5,40 @@
 #include "node_private.h"
 #include "mesh_private.h"
 #include "armature_private.h"
-#include "camera_private.h"
-#include "../systems/renderer_private.h"
+#include "../systems/node_renderer_private.h"
 
 namespace flame
 {
-	void cMeshPrivate::set_src(const std::filesystem::path& _src)
+	void cMeshPrivate::set_model_name(const std::filesystem::path& _model_name)
 	{
-		if (src == _src)
+		if (model_name == _model_name)
 			return;
-		src = _src;
+		model_name = _model_name;
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
+		data_changed(S<"model_name"_h>);
 	}
 
-	void cMeshPrivate::set_sub_index(uint idx)
+	void cMeshPrivate::set_mesh_index(uint idx)
 	{
-		if (sub_index == idx)
+		if (mesh_index == idx)
 			return;
-		sub_index = idx;
+		mesh_index = idx;
 		apply_src();
 		if (node)
 			node->mark_transform_dirty();
+		data_changed(S<"mesh_index"_h>);
 	}
 
-	void cMeshPrivate::set_skin(uint _skin)
+	void cMeshPrivate::set_skin_index(uint idx)
 	{
-		if (skin == _skin)
+		if (skin_index == idx)
 			return;
-		skin = _skin;
+		skin_index = idx;
+		if (node)
+			node->mark_drawing_dirty();
+		data_changed(S<"skin_index"_h>);
 	}
 
 	void cMeshPrivate::set_cast_shadow(bool v)
@@ -51,32 +55,38 @@ namespace flame
 			return;
 		shading_flags = flags;
 		if (node)
-			node->mark_transform_dirty();
+			node->mark_drawing_dirty();
+		data_changed(S<"shading_flags"_h>);
 	}
 
 	void cMeshPrivate::apply_src()
 	{
 		mesh_id = -1;
 		mesh = nullptr;
-		if (!s_renderer || src.empty())
+		if (!s_renderer || model_name.empty())
 			return;
 
 		graphics::Model* model = nullptr;
-		auto fn = src;
+		auto fn = model_name;
 		if (fn.extension().empty())
 			model = graphics::Model::get(fn);
 		else
 		{
-			if (!fn.is_absolute())
-				fn = entity->get_src(src_id).parent_path() / fn;
-			fn.make_preferred();
-			model = graphics::Model::get(fn.c_str());
+			if (!fn.is_absolute() && source_id != -1)
+			{
+				fn = entity->sources[source_id].parent_path() / fn;
+				fn.make_preferred();
+			}
+			else
+				fn = Path::get(fn);
+			model = graphics::Model::get(fn);
 		}
-		assert(model);
-
-		if (sub_index >= model->meshes.size())
+		if (!model)
 			return;
-		mesh = model->get_mesh(sub_index);
+
+		if (mesh_index >= model->meshes.size())
+			return;
+		mesh = &model->meshes[mesh_index];
 
 		mesh_id = s_renderer->find_mesh_res(mesh);
 		if (mesh_id == -1)
@@ -89,70 +99,72 @@ namespace flame
 			}
 		}
 
-		if (mesh->get_bone_ids())
-			parmature = entity->parent->get_component_t<cArmaturePrivate>();
-	}
-
-	void cMeshPrivate::draw(sRendererPtr s_renderer, bool shadow_pass)
-	{
-		if (mesh_id != -1)
-		{
-			auto get_idx = [&]() {
-				if (parmature)
-					return parmature->armature_id;
-				if (frame < frames)
-				{
-					transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
-					frame = frames;
-				}
-				return transform_id;
-			};
-			auto idx = get_idx();
-			if (shadow_pass)
-			{
-				if (cast_shadow)
-					s_renderer->draw_mesh(idx, mesh_id, skin, ShadingShadow);
-			}
-			else
-				s_renderer->draw_mesh(idx, mesh_id, skin, shading_flags);
-		}
-	}
-
-	bool cMeshPrivate::measure(AABB* ret)
-	{
-		if (!mesh)
-			return false;
-		auto b = mesh->bounds;
-		vec3 ps[8];
-		b.get_points(ps);
-		b.reset();
-		auto& mat = parmature ? parmature->node->transform : node->transform;
-		for (auto i = 0; i < 8; i++)
-			b.expand(mat * vec4(ps[i], 1.f));
-		*ret = b;
-		return true;
+		parmature = entity->parent->get_component_t<cArmaturePrivate>();
 	}
 
 	void cMeshPrivate::on_added()
 	{
 		node = entity->get_component_i<cNodePrivate>(0);
-		assert(node);
+		if (!node)
+			return;
+
+		drawer_lis = node->drawers.add([this](sNodeRendererPtr s_renderer, bool shadow_pass) {
+			if (mesh_id != -1)
+			{
+				auto get_idx = [&]() {
+					if (parmature)
+						return parmature->armature_id;
+					if (frame < frames)
+					{
+						transform_id = s_renderer->add_mesh_transform(node->transform, node->g_rot);
+						frame = frames;
+					}
+					return transform_id;
+				};
+				auto idx = get_idx();
+				if (shadow_pass)
+				{
+					if (cast_shadow)
+						s_renderer->draw_mesh(idx, mesh_id, skin_index, ShadingShadow);
+				}
+				else
+					s_renderer->draw_mesh(idx, mesh_id, skin_index, shading_flags);
+			}
+		});
+		measurer_lis = node->measurers.add([this](AABB* ret) {
+			if (!mesh)
+				return false;
+			auto b = mesh->bounds;
+			vec3 ps[8];
+			b.get_points(ps);
+			b.reset();
+			auto& mat = parmature ? parmature->node->transform : node->transform;
+			for (auto i = 0; i < 8; i++)
+				b.expand(mat * vec4(ps[i], 1.f));
+			*ret = b;
+			return true;
+		});
 
 		node->mark_drawing_dirty();
 	}
 
 	void cMeshPrivate::on_removed()
 	{
-		node = nullptr;
+		if (node)
+		{
+			node->drawers.remove(drawer_lis);
+			node->measurers.remove(measurer_lis);
+			node = nullptr;
+		}
 	}
 
 	void cMeshPrivate::on_entered_world()
 	{
-		s_renderer = entity->world->get_system_t<sRendererPrivate>();
-		assert(s_renderer);
+		s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
 
 		apply_src();
-		node->mark_bounds_dirty(false);
+		if (node)
+			node->mark_bounds_dirty(false);
 	}
 
 	void cMeshPrivate::on_left_world()
@@ -162,8 +174,12 @@ namespace flame
 		mesh = nullptr;
 	}
 
-	cMesh* cMesh::create()
+	struct cMeshCreatePrivate : cMesh::Create
 	{
-		return new cMeshPrivate();
-	}
+		cMeshPtr operator()() override
+		{
+			return new cMeshPrivate();
+		}
+	}cMesh_create_private;
+	cMesh::Create& cMesh::create = cMesh_create_private;
 }

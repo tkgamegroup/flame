@@ -127,7 +127,7 @@ void View_Project::Item::draw()
 	{
 		if (std::filesystem::is_directory(path))
 		{
-			// open folder will destroy all items, so staging path here
+			// open folder will destroy all items, so stage path here
 			auto str = path.wstring();
 			add_event([str]() {
 				view_project.open_folder(str);
@@ -197,6 +197,9 @@ void View_Project::open_folder(const std::filesystem::path& path)
 
 	for (auto& it : std::filesystem::directory_iterator(path))
 		items.emplace_back(new Item(it.path()));
+	std::sort(items.begin(), items.end(), [](Item* a, Item* b) {
+		return a->path < b->path;
+	});
 }
 
 void View_Project::on_draw()

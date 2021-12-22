@@ -5,58 +5,59 @@
 
 namespace flame
 {
+	struct ComponentCache
+	{
+		struct Attribute
+		{
+			VariableInfo* vi = nullptr;
+			TypeInfo* get_type = nullptr;
+			TypeInfo* set_type = nullptr;
+			FunctionInfo* getter = nullptr;
+			FunctionInfo* setter = nullptr;
+
+			//Attribute(Type* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			//	name(name),
+			//	get_type(get_type),
+			//	set_type(set_type),
+			//	getter(getter),
+			//	setter(setter)
+			//{
+			//	hash = ch(name.c_str());
+
+			//	//if (getter)
+			//	//{
+			//	//	auto d = get_type->create(false);
+			//	//	getter->call(ct->dummy, default_value, nullptr);
+			//	//	get_type->destroy(d, false);
+			//	//}
+			//}
+
+			std::string serialize(void* c, void* ref = nullptr)
+			{
+				//auto same = false;
+				//void* d = get_type->create(false);
+				//getter->call(c, d, nullptr);
+				//if (ref)
+				//{
+				//	void* dd = get_type->create(false);
+				//	getter->call(ref, dd, nullptr);
+				//	if (get_type->compare(d, dd))
+				//		same = true;
+				//	get_type->destroy(dd, false);
+				//}
+				//else if (get_type->compare(d, default_value))
+				//	same = true;
+				std::string str;
+				//if (!same)
+				//	str = get_type->serialize(d);
+				//get_type->destroy(d, false);
+				return str;
+			}
+		};
+	};
+
 	//struct Type
 	//{
-	//	struct Attribute
-	//	{
-	//		std::string name;
-	//		uint hash = 0;
-	//		uint offset = 0;
-	//		TypeInfo* get_type = nullptr;
-	//		TypeInfo* set_type = nullptr;
-	//		FunctionInfo* getter = nullptr;
-	//		FunctionInfo* setter = nullptr;
-	//		std::string default_value;
-
-	//		Attribute(Type* ct, const std::string& name, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
-	//			name(name),
-	//			get_type(get_type),
-	//			set_type(set_type),
-	//			getter(getter),
-	//			setter(setter)
-	//		{
-	//			hash = ch(name.c_str());
-
-	//			//if (getter)
-	//			//{
-	//			//	auto d = get_type->create(false);
-	//			//	getter->call(ct->dummy, default_value, nullptr);
-	//			//	get_type->destroy(d, false);
-	//			//}
-	//		}
-
-	//		std::string serialize(void* c, void* ref = nullptr)
-	//		{
-	//			//auto same = false;
-	//			//void* d = get_type->create(false);
-	//			//getter->call(c, d, nullptr);
-	//			//if (ref)
-	//			//{
-	//			//	void* dd = get_type->create(false);
-	//			//	getter->call(ref, dd, nullptr);
-	//			//	if (get_type->compare(d, dd))
-	//			//		same = true;
-	//			//	get_type->destroy(dd, false);
-	//			//}
-	//			//else if (get_type->compare(d, default_value))
-	//			//	same = true;
-	//			std::string str;
-	//			//if (!same)
-	//			//	str = get_type->serialize(d);
-	//			//get_type->destroy(d, false);
-	//			return str;
-	//		}
-	//	};
 
 	//	UdtInfo* udt = nullptr;
 	//	FunctionInfo* creator = nullptr;
@@ -138,39 +139,42 @@ namespace flame
 	{
 		_Initializer()
 		{
-			for (auto& ui : tidb.udts)
-			{
-				//static auto reg_com = std::regex("^(flame::c\\w+)$");
-				//std::smatch res;
-				//if (std::regex_search(ui.second.name, res, reg_com))
-				//{
-				//	Type t(&ui.second);
-				//	if (t.dummy)
-				//		component_types.emplace(res[1].str(), std::move(t));
-				//}
-			}
+			//for (auto& ui : tidb.udts)
+			//{
+			//	static auto reg_com = std::regex("^(flame::c\\w+)$");
+			//	std::smatch res;
+			//	if (std::regex_search(ui.second.name, res, reg_com))
+			//	{
+			//		Type t(&ui.second);
+			//		if (t.dummy)
+			//			component_types.emplace(res[1].str(), std::move(t));
+			//	}
+			//}
 
-			auto engine_path = getenv("FLAME_PATH");
-			if (engine_path)
-			{
-				auto path = std::filesystem::path(engine_path) / L"default_assets/prefabs";
-				for (auto& it : std::filesystem::directory_iterator(path))
-				{
-					if (it.path().extension() == L".prefab")
-					{
-						auto name = it.path().stem().string();
-						name[0] = std::toupper(name[0]);
-						for (auto i = 0; i < name.size(); i++)
-						{
-							if (name[i] == '_')
-								name[i + 1] = std::toupper(name[i + 1]);
-						}
-						SUS::remove_char(name, '_');
-						name = 'e' + name;
-						name_to_prefab_path[name] = it.path();
-					}
-				}
-			}
+			//auto engine_path = getenv("FLAME_PATH");
+			//if (engine_path)
+			//{
+			//	auto path = std::filesystem::path(engine_path) / L"default_assets/prefabs";
+			//	if (std::filesystem::exists(path))
+			//	{
+			//		for (auto& it : std::filesystem::directory_iterator(path))
+			//		{
+			//			if (it.path().extension() == L".prefab")
+			//			{
+			//				auto name = it.path().stem().string();
+			//				name[0] = std::toupper(name[0]);
+			//				for (auto i = 0; i < name.size(); i++)
+			//				{
+			//					if (name[i] == '_')
+			//						name[i + 1] = std::toupper(name[i + 1]);
+			//				}
+			//				SUS::remove_char(name, '_');
+			//				name = 'e' + name;
+			//				name_to_prefab_path[name] = it.path();
+			//			}
+			//		}
+			//	}
+			//}
 		}
 	};
 	static _Initializer _initializer;

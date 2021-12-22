@@ -1,8 +1,8 @@
 #include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "../systems/scene_private.h"
-#include "../systems/renderer_private.h"
+//#include "../systems/scene_private.h" // TODO
+#include "../systems/node_renderer_private.h"
 
 namespace flame
 {
@@ -18,11 +18,6 @@ namespace flame
 		pos = p;
 		mark_transform_dirty();
 		data_changed(S<"pos"_h>);
-	}
-
-	void cNodePrivate::add_pos(const vec3& p)
-	{
-		set_pos(pos + p);
 	}
 
 	vec3 cNodePrivate::get_eul()
@@ -42,11 +37,6 @@ namespace flame
 		eul_dirty = false;
 		mark_transform_dirty();
 		data_changed(S<"eul"_h>);
-	}
-
-	void cNodePrivate::add_euler(const vec3& e)
-	{
-		set_euler(eul + e);
 	}
 
 	quat cNodePrivate::get_qut() 
@@ -85,58 +75,6 @@ namespace flame
 		qut_dirty = true;
 		eul_dirty = true;
 		mark_transform_dirty();
-	}
-
-	void cNodePrivate::set_octree_length(float len)
-	{
-		if (octree_length == len)
-			return;
-		octree_length = len;
-		data_changed(S<"octree_length"_h>);
-	}
-
-	void cNodePrivate::set_octree_lod(uint lod)
-	{
-		if (octree_lod == lod)
-			return;
-		octree_lod = lod;
-		data_changed(S<"octree_lod"_h>);
-	}
-
-	bool cNodePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)
-	{
-		assert(octree.get());
-
-		return octree->is_colliding(c, r, filter_tag);
-	}
-
-	uint cNodePrivate::get_within_circle(const vec2& c, float r, EntityPtr* dst, uint max_count, uint filter_tag)
-	{
-		assert(octree.get());
-
-		std::vector<cNodePrivate*> res;
-		octree->get_colliding(c, r, res, filter_tag);
-		if (res.empty())
-			return 0;
-
-		std::vector<std::pair<EntityPrivate*, float>> vec;
-		vec.resize(res.size());
-		for (auto i = 0; i < res.size(); i++)
-		{
-			vec[i].first = res[i]->entity;
-			vec[i].second = distance(c, res[i]->g_pos.xz());
-		}
-		std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
-			return a.second < b.second;
-		});
-		if (max_count > vec.size())
-			max_count = vec.size();
-		if (dst)
-		{
-			for (auto i = 0; i < max_count; i++)
-				dst[i] = vec[i].first;
-		}
-		return max_count;
 	}
 
 	void cNodePrivate::update_eul()
@@ -238,7 +176,7 @@ namespace flame
 		{
 			if (s_scene)
 			{
-				s_scene->add_to_update_bounds(this);
+				//s_scene->add_to_update_bounds(this); // TODO
 				pending_update_bounds = true;
 			}
 		}
@@ -257,34 +195,14 @@ namespace flame
 	{
 		if (!pending_update_bounds)
 			return;
-		s_scene->remove_from_update_bounds(this);
+		//s_scene->remove_from_update_bounds(this); // TODO
 		pending_update_bounds = false;
 	}
 
 	void cNodePrivate::draw(uint _frame, bool shadow_pass)
 	{
-		for (auto d : drawers)
+		for (auto& d : drawers.list)
 			d(s_renderer, shadow_pass);
-	}
-
-	void cNodePrivate::on_component_added(Component* c)
-	{
-		auto drawer = dynamic_cast<NodeDrawer*>(c);
-		if (drawer)
-			add_drawer(drawer);
-		auto measurer = dynamic_cast<NodeMeasurer*>(c);
-		if (measurer)
-			add_measurer(measurer);
-	}
-
-	void cNodePrivate::on_component_removed(Component* c)
-	{
-		auto drawer = dynamic_cast<NodeDrawer*>(c);
-		if (drawer)
-			remove_drawer(drawer);
-		auto measurer = dynamic_cast<NodeMeasurer*>(c);
-		if (measurer)
-			remove_measurer(measurer);
 	}
 
 	void cNodePrivate::on_entered_world()
@@ -293,30 +211,32 @@ namespace flame
 		if (!world->first_node)
 			world->first_node = entity;
 
-		s_scene = entity->world->get_system_t<sScenePrivate>();
-		assert(s_scene);
-		s_renderer = entity->world->get_system_t<sRendererPrivate>();
+		// TODO
+		//s_scene = entity->world->get_system_t<sScenePrivate>();
+		//assert(s_scene);
+		s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
 		assert(s_renderer);
 
 		pnode = entity->get_parent_component_t<cNodePrivate>();
 
-		if (octree_length > 0.f)
-		{
-			update_transform();
-			octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
-		}
-		else if (!assemble_sub)
-		{
-			std::function<OctNode* (cNodePrivate* n)> get_octree;
-			get_octree = [&](cNodePrivate* n)->OctNode* {
-				if (!n)
-					return nullptr;
-				if (n->octree)
-					return n->octree.get();
-				return get_octree(n->pnode);
-			};
-			octnode.first = get_octree(pnode);
-		}
+		// TOOD
+		//if (octree_length > 0.f)
+		//{
+		//	update_transform();
+		//	octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
+		//}
+		//else if (!assemble_sub)
+		//{
+		//	std::function<OctNode* (cNodePrivate* n)> get_octree;
+		//	get_octree = [&](cNodePrivate* n)->OctNode* {
+		//		if (!n)
+		//			return nullptr;
+		//		if (n->octree)
+		//			return n->octree.get();
+		//		return get_octree(n->pnode);
+		//	};
+		//	octnode.first = get_octree(pnode);
+		//}
 
 		mark_transform_dirty();
 	}
@@ -327,8 +247,9 @@ namespace flame
 		if (world->first_node == entity)
 			world->first_node = nullptr;
 
-		if (octnode.second)
-			octnode.second->remove(this);
+		// TODO
+		//if (octnode.second)
+		//	octnode.second->remove(this);
 
 		remove_from_bounds_list();
 		mark_drawing_dirty();
@@ -340,8 +261,12 @@ namespace flame
 		octnode = { nullptr, nullptr };
 	}
 
-	cNode* cNode::create()
+	struct cNodeCreatePrivate : cNode::Create
 	{
-		return new cNodePrivate();
-	}
+		cNodePtr operator()() override
+		{
+			return new cNodePrivate();
+		}
+	}cNode_create_private;
+	cNode::Create& cNode::create = cNode_create_private;
 }

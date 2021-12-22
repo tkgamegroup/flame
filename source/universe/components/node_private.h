@@ -18,17 +18,18 @@ namespace flame
 		uint transform_updated_times = 0;
 		mat4 transform;
 
-		std::unique_ptr<OctNode> octree;
 		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
 		sScenePrivate* s_scene = nullptr;
 		bool pending_update_bounds = false;
-		sRendererPrivate* s_renderer = nullptr;
+		sNodeRendererPrivate* s_renderer = nullptr;
 
 		cNodePrivate();
 
 		void set_pos(const vec3& pos) override;
+		vec3 get_eul() override;
 		void set_eul(const vec3& eul) override;
+		quat get_qut() override;
 		void set_qut(const quat& qut) override;
 		void set_scl(const vec3 & scl) override;
 
@@ -46,8 +47,6 @@ namespace flame
 
 		void draw(uint frame, bool shadow_pass);
 
-		void on_component_added(Component* c) override;
-		void on_component_removed(Component* c) override;
 		void on_entered_world() override;
 		void on_left_world() override;
 	};

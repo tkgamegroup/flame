@@ -121,7 +121,6 @@ int main(int argc, char** args)
 			public_header_file << " : System";
 		public_header_file << "\n";
 		public_header_file << indent_str << "{\n";
-		public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n";
 		if (cmd != "new_general_template")
 		{
 			public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
@@ -131,6 +130,7 @@ int main(int argc, char** args)
 			else if (cmd == "new_system_template")
 				public_header_file << indent_str << "\t" << class_name << "() : System(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
 		}
+		public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n\n";
 		public_header_file << indent_str << "\t" << "struct Create\n";
 		public_header_file << indent_str << "\t" << "{\n";
 		public_header_file << indent_str << "\t\t" << "virtual " << class_name << "Ptr operator()() = 0;\n";
@@ -146,7 +146,6 @@ int main(int argc, char** args)
 		if (is_internal) private_header_file << "namespace flame\n{\n";
 		private_header_file << indent_str << "struct " << class_name << "Private : " << class_name << "\n";
 		private_header_file << indent_str << "{\n";
-		private_header_file << indent_str << "\t~" << class_name << "Private();\n";
 		private_header_file << indent_str << "};\n";
 		if (is_internal) private_header_file << "}\n";
 		private_header_file.close();
@@ -154,17 +153,17 @@ int main(int argc, char** args)
 		std::ofstream source_file(name + ".cpp");
 		source_file << "#include \"" << name << "_private.h\"\n\n";
 		if (is_internal) source_file << "namespace flame\n{\n";
-		source_file << indent_str << "\t" << class_name << "Private::~" << class_name << "Private()\n";
-		source_file << indent_str << "\t{\n";
-		source_file << indent_str << "\t}\n";
-		source_file << indent_str << "struct " << class_name << "Create : " << class_name << "::create\n";
+		source_file << indent_str << class_name << "Private::~" << class_name << "Private()\n";
+		source_file << indent_str << "{\n";
+		source_file << indent_str << "}\n\n";
+		source_file << indent_str << "struct " << class_name << "Create : " << class_name << "::Create\n";
 		source_file << indent_str << "{\n";
 		source_file << indent_str << "\t" << class_name << "Ptr operator()() override\n";
 		source_file << indent_str << "\t{\n";
 		source_file << indent_str << "\t\treturn new " << class_name << "Private();\n";
 		source_file << indent_str << "\t}\n";
 		source_file << indent_str << "}" << class_name << "_create_private;\n";
-		source_file << indent_str << class_name << "::Create& " << class_name << ":create = " << class_name << "_create_private;\n";
+		source_file << indent_str << class_name << "::Create& " << class_name << "::create = " << class_name << "_create_private;\n";
 		if (is_internal) source_file << "}\n";
 		source_file.close();
 

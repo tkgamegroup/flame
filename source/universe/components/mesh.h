@@ -9,24 +9,29 @@ namespace flame
 		inline static auto type_name = "flame::cMesh";
 		inline static auto type_hash = ch(type_name);
 
+		std::filesystem::path model_name;
+		uint mesh_index = 0;
+		uint skin_index = 0;
+
+		bool cast_shadow = true;
+		ShadingFlags shading_flags = ShadingMaterial;
+
 		cMesh() :
 			Component(type_name, type_hash)
 		{
 		}
 
-		virtual const wchar_t* get_src() const = 0;
-		virtual void set_src(const wchar_t* src) = 0;
-		virtual uint get_sub_index() const = 0;
-		virtual void set_sub_index(uint idx) = 0;
-		virtual uint get_skin() const = 0;
-		virtual void set_skin(uint skin) = 0;
+		virtual void set_model_name(const std::filesystem::path& model_name) = 0;
+		virtual void set_mesh_index(uint idx) = 0;
+		virtual void set_skin_index(uint idx) = 0;
 
-		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;
-
-		virtual ShadingFlags get_shading_flags() const = 0;
 		virtual void set_shading_flags(ShadingFlags flags) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cMesh* create();
+		struct Create
+		{
+			virtual cMeshPtr operator()() = 0;
+		};
+		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

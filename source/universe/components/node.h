@@ -22,8 +22,8 @@ namespace flame
 
 		bool merge_bounds = false;
 
-		Listeners<uint(sRendererPtr, bool, bool)> drawers;
-		Listeners<uint(AABB*)> measurers;
+		Listeners<void(sNodeRendererPtr, bool)> drawers;
+		Listeners<bool(AABB*)> measurers;
 
 		cNode() :
 			Component(type_name, type_hash)
@@ -31,12 +31,26 @@ namespace flame
 		}
 
 		virtual void set_pos(const vec3& pos) = 0;
+		inline void add_pos(const vec3& p)
+		{
+			set_pos(pos + p);
+		}
+		virtual vec3 get_eul() = 0;
 		virtual void set_eul(const vec3& eul) = 0;
+		inline void add_eul(const vec3& e)
+		{
+			set_eul(eul + e);
+		}
+		virtual quat get_qut() = 0;
 		virtual void set_qut(const quat& qut) = 0;
 		virtual void set_scl(const vec3& scl) = 0;
 
 		virtual void look_at(const vec3& t) = 0;
-
-		FLAME_UNIVERSE_EXPORTS static cNode* create();
+		
+		struct Create
+		{
+			virtual cNodePtr operator()() = 0;
+		};
+		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

@@ -59,6 +59,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cInputDialog);
 	FLAME_UNIVERSE_TYPE(cFileSelector);
 	FLAME_UNIVERSE_TYPE(cNode);
+	FLAME_UNIVERSE_TYPE(cOctree);
 	FLAME_UNIVERSE_TYPE(cMesh);
 	FLAME_UNIVERSE_TYPE(cArmature);
 	FLAME_UNIVERSE_TYPE(cTerrain);
@@ -71,6 +72,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cImgui);
 
 	FLAME_UNIVERSE_TYPE(sRenderer);
+	FLAME_UNIVERSE_TYPE(sElementRenderer);
+	FLAME_UNIVERSE_TYPE(sNodeRenderer);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
 	FLAME_UNIVERSE_TYPE(sPhysics);
