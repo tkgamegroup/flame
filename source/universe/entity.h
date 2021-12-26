@@ -4,13 +4,17 @@
 
 namespace flame
 {
+	/// Reflect
 	struct Entity
 	{
 		virtual ~Entity() {}
 
+		/// Serialize
 		std::string name;
+		/// Serialize
 		uint tag = 0x80000000;
 
+		/// Serialize
 		bool visible = true;
 		bool global_visibility = false;
 
@@ -23,11 +27,13 @@ namespace flame
 		StateFlags state = StateNone;
 		StateFlags last_state = StateNone;
 
-		std::unordered_map<uint, std::unique_ptr<Component>> components;
-		std::vector<Component*> component_list;
+		std::unordered_map<uint, std::unique_ptr<Component>> component_map;
+		/// Serialize
+		std::vector<std::unique_ptr<Component>> components;
+		/// Serialize
 		std::vector<std::unique_ptr<EntityT>> children;
 
-		std::vector<std::filesystem::path> sources;
+		std::filesystem::path path;
 
 		Listeners<void(uint, void*, void*)> message_listeners;
 
@@ -39,8 +45,8 @@ namespace flame
 
 		inline Component* get_component(uint type_hash) const
 		{
-			auto it = components.find(type_hash);
-			if (it != components.end())
+			auto it = component_map.find(type_hash);
+			if (it != component_map.end())
 				return it->second.get();
 			return nullptr;
 		}
@@ -51,9 +57,9 @@ namespace flame
 		template<typename T> 
 		inline T* get_component_i(uint idx) const
 		{
-			if (idx >= components.size())
+			if (idx >= component_map.size())
 				return nullptr;
-			auto ret = component_list[idx];
+			auto ret = components[idx].get();
 			return ret->type_hash == T::type_hash ? (T*)ret : nullptr;
 		}
 
@@ -63,16 +69,16 @@ namespace flame
 		inline Component* find_component(std::string_view _name) const
 		{
 			Component* ret = nullptr;
-			for (auto c : component_list)
+			for (auto& c : components)
 			{
 				if (c->type_name == _name)
-					return c;
+					return c.get();
 			}
 			auto name = "flame::" + std::string(_name);
-			for (auto c : component_list)
+			for (auto& c : components)
 			{
 				if (c->type_name == name)
-					return c;
+					return c.get();
 			}
 			return nullptr;
 		}
@@ -122,6 +128,11 @@ namespace flame
 		virtual bool load(const std::filesystem::path& filename) = 0;
 		virtual bool save(const std::filesystem::path& filename) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
+		struct Create
+		{
+			virtual EntityPtr operator()() = 0;
+		};
+		/// Serialize
+		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

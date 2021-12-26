@@ -34,8 +34,8 @@ if (USE_IMGUI)
 else()
 	message(STATUS "graphics module: ImGui is required for ui")
 endif()
-add_dependencies(flame_graphics typeinfogen_dep)
-add_custom_command(TARGET flame_graphics POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:flame_graphics> -d "${CMAKE_CURRENT_SOURCE_DIR}/typeinfo.desc")
+
+add_typeinfo_support(flame_graphics "enum starts_with flame::graphics::")
 
 file(GLOB PUBLIC_HEADER "*.h*")
 list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")

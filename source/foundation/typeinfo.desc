@@ -1,6 +1,0 @@
-<desc>
-  <enums>
-	  <rule name="^flame::[\w:]+$" />
-  </enums>
-  <udts />
-</desc>

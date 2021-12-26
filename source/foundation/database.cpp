@@ -39,7 +39,7 @@ namespace flame
 				mysql_free_result(mysql_res);
 			}
 #endif
-			return NoError;
+			return ErrorNone;
 		}
 
 		struct ConnectionCreate : Connection::Create

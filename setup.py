@@ -84,18 +84,6 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 			
 	ok = True
-	address = "https://github.com/boostorg/regex.git"
-	lib_dir = parent_directory / "boost"
-	if op == 2:
-		print("Download Boost Regex from %s into %s ? y/n" % (address, str(lib_dir)))
-		ok = input() == "y"
-	if ok:
-		if not lib_dir.exists():
-			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
-		else:
-			print("%s exists, skip download" % str(lib_dir))
-			
-	ok = True
 	address = "https://github.com/nothings/stb.git"
 	lib_dir = parent_directory / "stb"
 	if op == 2:

@@ -10,7 +10,6 @@ namespace flame
 		const uint type_hash;
 
 		EntityPtr entity = nullptr;
-		int source_id = -1;
 
 		Listeners<void(uint)> data_listeners;
 

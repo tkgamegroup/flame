@@ -46,13 +46,6 @@ namespace flame
 		DataWideChar
 	};
 
-	enum Meta
-	{
-		MetaBpInput,
-		MetaBpOutput,
-		MetaSecondaryAttribute
-	};
-
 	template<typename T>
 	concept basic_type = basic_std_type<T> || basic_math_type<T>;
 
@@ -276,16 +269,56 @@ namespace flame
 
 	struct Metas
 	{
-		std::vector<std::pair<Meta, LightCommonValue>> d;
+		std::vector<std::pair<uint, LightCommonValue>> d;
 
-		void from_string(const std::string& str, TypeInfoDataBase& db = tidb);
-		std::string to_string(TypeInfoDataBase& db = tidb) const;
+		void from_string(const std::string& str)
+		{
+			for (auto& i : SUS::split(str, ';'))
+			{
+				auto sp = SUS::split(i, '=');
+				auto& m = d.emplace_back();
+				m.first = ch(sp[0].c_str());
+				switch (m.first)
+				{
+				case S<"Location"_h>:
+					m.second.u = std::stoi(sp[1]);
+					break;
+				case S<"MinValue"_h>:
+				case S<"MaxValue"_h>:
+					m.second.u = std::stof(sp[1]);
+					break;
+				}
+			}
+		}
 
-		inline bool get(Meta m, LightCommonValue* v) const
+		std::string to_string()
+		{
+			std::string ret;
+			for (auto& i : d)
+			{
+				if (!ret.empty())
+					ret += ';';
+				switch (i.first)
+				{
+				case S<"Location"_h>:
+					ret += "Location=" + std::to_string(i.second.i);
+					break;
+				case S<"MinValue"_h>:
+					ret += "MinValue=" + std::to_string(i.second.f);
+					break;
+				case S<"MaxValue"_h>:
+					ret += "MaxValue=" + std::to_string(i.second.f);
+					break;
+				}
+			}
+			return ret;
+		}
+
+		inline bool get(uint h, LightCommonValue* v = nullptr) const
 		{
 			for (auto& i : d)
 			{
-				if (i.first == m)
+				if (i.first == h)
 				{
 					if (v)
 						*v = i.second;
@@ -356,7 +389,14 @@ namespace flame
 
 		inline void* get_address(void* obj = nullptr /* for virtual fucntion */) const
 		{
-			return voff == -1 ? (char*)library + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
+			if (rva)
+			{
+				void* addr = (char*)library + rva;
+				if (voff == -1)
+					return addr;
+				obj = ((void**)(addr))[-1];
+			}
+			return obj ? ((void**)obj)[voff / 8] : nullptr;
 		}
 	};
 
@@ -417,25 +457,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save(std::ofstream& file);
 		FLAME_FOUNDATION_EXPORTS void save(const std::filesystem::path& filename);
 	};
-
-	inline void Metas::from_string(const std::string& str, TypeInfoDataBase& db)
-	{
-		for (auto& i : SUS::split(str, ';'))
-		{
-			auto sp = SUS::split(i, ':');
-			auto& m = d.emplace_back();
-			TypeInfo::unserialize_t(sp[0], &m.first);
-			m.second.u = std::stoul(sp[1], 0, 16);
-		}
-	}
-
-	inline std::string Metas::to_string(TypeInfoDataBase& db) const
-	{
-		std::string ret;
-		for (auto& i : d)
-			ret += TypeInfo::serialize_t(&i.first) + ":" + to_hex_string(i.second.u, false) + ";";
-		return ret;
-	}
 
 	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db = tidb)
 	{

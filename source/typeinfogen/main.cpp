@@ -7,24 +7,35 @@
 #include <atlbase.h>
 #include <chrono>
 
-#include <boost/regex.hpp>
-
 using namespace flame;
 
 TypeInfoDataBase db;
 
 TypeTag parse_vector(std::string& name)
 {
-	static std::regex reg("std::vector<([\\w\\s:\\*<>,]+),std::allocator<");
+	static std::regex reg1("std::vector<([\\w\\s:\\*<>,]+),std::allocator<");
+	static std::regex reg2("std::vector<std::unique_ptr<([\\w:]+)");
 	std::smatch res;
-	if (std::regex_search(name, res, reg))
+	auto ok = false;
+	auto is_pointer = false;
+	if (std::regex_search(name, res, reg2))
+	{
+		ok = true;
+		is_pointer = true;
+	}
+	else if (std::regex_search(name, res, reg1))
+		ok = true;
+	if (ok)
 	{
 		name = res[1].str();
 		auto is_enum = SUS::cut_head_if(name, "enum ");
+		SUS::cut_head_if(name, "struct ");
+		SUS::cut_head_if(name, "class ");
 		name = TypeInfo::format_name(name);
 		if (is_enum)
 			return TagVE;
-		auto is_pointer = SUS::cut_tail_if(name, "*") || SUS::cut_tail_if(name, "*__ptr64");
+		if (!is_pointer)
+			is_pointer = SUS::cut_tail_if(name, "*") || SUS::cut_tail_if(name, "*__ptr64");
 		if (TypeInfo::is_basic_type(name))
 			return is_pointer ? TagVPD : TagVD;
 		else
@@ -151,19 +162,18 @@ void* load_exe_as_dll(const std::filesystem::path& path);
 
 int main(int argc, char **args)
 {
-	auto ap = parse_args(argc, args);
-	auto input_path = std::filesystem::path(ap.get_item("-i"));
-	auto desc_path = std::filesystem::path(ap.get_item("-d"));
-	if (input_path.empty())
+	if (argc != 2)
 		goto show_usage;
 
 	goto process;
 
 show_usage:
-	printf("usage: typeinfogen -i <target> -e <rule1> [<rule2>...] -u <rule1> [<rule2>...] -f <rule1> [<rule2>...] [-d <desc file>]\n");
+	printf("usage: typeinfogen <target>\n");
 	return 0;
 
 process:
+	std::filesystem::path input_path = args[1];
+
 	printf("typeinfogen: %s\n", input_path.string().c_str());
 	if (!std::filesystem::exists(input_path))
 	{
@@ -171,11 +181,12 @@ process:
 		return 0;
 	}
 
-	auto foundation_path = get_app_path(false) / L"flame_foundation.dll";
-	if (input_path != foundation_path)
+	for (auto& path : get_module_dependencies(input_path))
 	{
-		foundation_path.replace_extension(L".typeinfo");
-		tidb.load(foundation_path);
+		auto ti_path = path;
+		ti_path.replace_extension(".typeinfo");
+		if (std::filesystem::exists(ti_path) && input_path != path)
+			tidb.load(ti_path);
 	}
 
 	auto pdb_path = input_path;
@@ -192,124 +203,201 @@ process:
 	if (std::filesystem::exists(typeinfo_path))
 	{
 		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-		if (lwt > std::filesystem::last_write_time(pdb_path) && (!desc_path.empty() && lwt > std::filesystem::last_write_time(desc_path)))
+		if (lwt > std::filesystem::last_write_time(pdb_path))
 		{
 			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
 			return 0;
 		}
 	}
 
-	struct EnumRule
+	struct Rule
 	{
-		boost::regex name;
-
-		bool pass(const std::string& str) const
+		enum Type
 		{
-			if (boost::regex_search(str, name))
-				return true;
-			return false;
-		}
-	};
-	struct UdtRule
-	{
-		struct Item
-		{
-			TypeTag type;
-			boost::regex name;
-			std::string metas;
+			Equal,
+			StartsWith,
+			EndsWith,
+			Contains,
+			Any,
+			Excepts
 		};
 
-		boost::regex name;
-		std::vector<Item> items;
+		Type type = Equal;
+		std::string name;
+		Type children_type = Any;
+		std::vector<std::pair<std::string, Metas>> children;
 
-		bool pass(const std::string& str) const
+		bool pass(const std::string& str)
 		{
-			if (boost::regex_search(str, name))
-				return true;
+			switch (type)
+			{
+			case Equal:
+				return name == str;
+			case StartsWith:
+				return str.starts_with(name);
+			case EndsWith:
+				return str.ends_with(name);
+			case Contains:
+				return str.contains(name);
+			}
 			return false;
 		}
 
-		bool pass_item(TypeTag type, const std::string& name, std::string* metas = nullptr) const
+		bool pass_child(const std::string& str, Metas* metas = nullptr)
 		{
-			for (auto& i : items)
+			switch (children_type)
 			{
-				if (i.type == type && boost::regex_search(name, i.name))
+			case Equal:
+				for (auto& s : children)
 				{
-					if (metas)
-						*metas = i.metas;
-					return true;
+					if (s.first == str)
+					{
+						if (metas)
+							*metas = s.second;
+						return true;
+					}
 				}
+				break;
+			case Any:
+				return true;
+			case Excepts:
+				for (auto& s : children)
+				{
+					if (s.first == str)
+						return false;
+				}
+				return true;
 			}
 			return false;
 		}
 	};
-	std::vector<EnumRule> enum_rules;
-	std::vector<UdtRule> udt_rules;
-	auto pass_enum = [&](const std::string& name) {
-		for (auto& r : enum_rules)
-		{
-			if (r.pass(name))
-				return true;
-		}
-		return false;
-	};
-	auto pass_udt = [&](const std::string& name, UdtRule*& out_r) {
-		for (auto& r : udt_rules)
+
+	std::vector<Rule> enum_rules;
+	std::vector<Rule> udt_rules;
+	auto need = [&](std::vector<Rule>& rules, const std::string& name, Rule** out_r) {
+		for (auto& r : rules)
 		{
 			if (r.pass(name))
 			{
-				out_r = &r;
+				if (out_r)
+					*out_r = &r;
 				return true;
 			}
 		}
 		return false;
 	};
-	auto add_named_enum_rule = [&](const std::string& n) {
+	auto need_enum = [&](const std::string& name, Rule** out_r = nullptr) {
+		return need(enum_rules, name, out_r);
+	};
+	auto need_udt = [&](const std::string& name, Rule** out_r = nullptr) {
+		return need(udt_rules, name, out_r);
+	};
+	auto add_enum_rule = [&](const std::string& n) {
 		auto& r = enum_rules.emplace_back();
-		r.name = "^" + n + "$";
+		r.name = n;
 	};
-	auto add_named_udt_rule = [&](const std::string& n) {
+	auto add_udt_rule = [&](const std::string& n) {
 		auto& r = udt_rules.emplace_back();
-		r.name = "^" + n + "$";
-		auto& dr = r.items.emplace_back();
-		dr.type = TagD;
-		dr.name = "^[\\w:]+$";
-		auto& fr1 = r.items.emplace_back();
-		fr1.type = TagF;
-		fr1.name = "^ctor$";
-		auto& fr2 = r.items.emplace_back();
-		fr2.type = TagF;
-		fr2.name = "^dtor$";
+		r.name = n;
 	};
-	for (auto& i : ap.get_items("-enum"))
-		add_named_enum_rule(i);
-	for (auto& i : ap.get_items("-udt"))
-		add_named_udt_rule(i);
-	if (!desc_path.empty())
-	{
-		pugi::xml_document desc_doc;
-		pugi::xml_node desc_root;
-		if (!desc_doc.load_file(desc_path.c_str()) || (desc_root = desc_doc.first_child()).name() != std::string("desc"))
-		{
-			printf("desc does not exist or wrong format_name: %s\n", desc_path.string().c_str());
-			return 0;
-		}
 
-		for (auto n_rule : desc_root.child("enums"))
+	auto desc_path = input_path;
+	desc_path.replace_extension(L".typedesc");
+	if (std::filesystem::exists(desc_path))
+	{
+		std::filesystem::path source_path;
+
+		std::ifstream desc(desc_path);
+		std::string line;
+		std::getline(desc, line);
+		source_path = line;
+		while (!desc.eof())
 		{
-			auto& er = enum_rules.emplace_back();
-			er.name = n_rule.attribute("name").value();
-		}
-		for (auto n_rule : desc_root.child("udts"))
-		{
-			auto& ur = udt_rules.emplace_back();
-			ur.name = n_rule.attribute("name").value();
-			for (auto n_i : n_rule)
+			std::getline(desc, line);
+			auto sp = SUS::split(line);
+			auto read_rule = [&](Rule& r) {
+				if (sp[1] == "equal")
+					r.type = Rule::Equal;
+				else if (sp[1] == "starts_with")
+					r.type = Rule::StartsWith;
+				else if (sp[1] == "ends_with")
+					r.type = Rule::EndsWith;
+				else if (sp[1] == "contains")
+					r.type = Rule::Contains;
+				r.name = sp[2];
+			};
+			if (sp[0] == "enum")
 			{
-				auto& item = ur.items.emplace_back();
-				item.type = std::string(n_i.attribute("type").value()) == "function" ? TagF : TagD;
-				item.name = n_i.attribute("name").value();
-				item.metas = n_i.attribute("metas").value();
+				auto& r = enum_rules.emplace_back();
+				read_rule(r);
+			}
+			else if (sp[0] == "udt")
+			{
+				auto& r = udt_rules.emplace_back();
+				read_rule(r);
+			}
+		}
+		desc.close();
+
+		if (std::filesystem::exists(source_path))
+		{
+			std::string line;
+			std::smatch res;
+			static std::regex reg("\\s+(\\w+)\\s*(=.*)?;");
+			for (auto& it : std::filesystem::recursive_directory_iterator(source_path))
+			{
+				if (it.path().extension() == L".h" && 
+					!it.path().filename().wstring().ends_with(L"_private"))
+				{
+					Rule* pr = nullptr;
+					std::ifstream file(it.path());
+					while (!file.eof())
+					{
+						std::getline(file, line);
+						SUS::ltrim(line);
+						if (line.starts_with("///"))
+						{
+							line = line.substr(3);
+							SUS::ltrim(line);
+							if (SUS::cut_head_if(line, "Reflect"))
+							{
+								std::getline(file, line);
+								SUS::ltrim(line);
+								if (SUS::cut_head_if(line, "enum "))
+								{
+									auto& r = enum_rules.emplace_back();
+									r.type = Rule::EndsWith;
+									r.name = line;
+									pr = &r;
+								}
+								else if (SUS::cut_head_if(line, "struct "))
+								{
+									auto& r = udt_rules.emplace_back();
+									r.type = Rule::EndsWith;
+									r.name = line;
+									r.children_type = Rule::Equal;
+									pr = &r;
+								}
+							}
+							else if (SUS::cut_head_if(line, "Serialize"))
+							{
+								if (pr)
+								{
+									auto metas = line;
+									std::getline(file, line);
+									SUS::ltrim(line);
+									if (std::regex_search(line, res, reg))
+									{
+										auto& c = pr->children.emplace_back();
+										c.first = res[1].str();
+										c.second.from_string(metas);
+									}
+								}
+							}
+						}
+					}
+					file.close();
+				}
 			}
 		}
 	}
@@ -394,16 +482,17 @@ process:
 							name = res[1].str();
 							auto tag = parse_vector(name);
 							if (tag == TagVE)
-								add_named_udt_rule(name);
+								add_udt_rule(name);
 							else if (tag == TagVU)
-								add_named_udt_rule(name);
+								add_udt_rule(name);
 						}
 						else
-							add_named_udt_rule(name);
+							add_udt_rule(name);
 					}
 				}
 			}
 		}
+		s_function->Release();
 	}
 	s_functions->Release();
 
@@ -428,7 +517,7 @@ process:
 		{
 			s_enum->get_name(&pwname);
 			auto enum_name = w2s(pwname);
-			if (!find_enum(enum_name, db) && pass_enum(enum_name))
+			if (!find_enum(enum_name, db) && need_enum(enum_name))
 			{
 				EnumInfo e;
 				e.name = enum_name;
@@ -496,8 +585,8 @@ process:
 		{
 			s_udt->get_name(&pwname);
 			auto udt_name = w2s(pwname);
-			UdtRule* ur;
-			if (!find_udt(udt_name, db) && pass_udt(udt_name, ur))
+			Rule* ur;
+			if (!find_udt(udt_name, db) && need_udt(udt_name, &ur))
 			{
 				s_udt->get_length(&ull);
 				auto udt_size = ull;
@@ -557,8 +646,8 @@ process:
 					if (!rva && voff == -1)
 						continue;
 
-					std::string metas;
-					if (ur->pass_item(TagF, name, &metas))
+					Metas metas;
+					if (ur->pass_child(name, &metas))
 					{
 						auto& fi = u.functions.emplace_back();
 						fi.name = name;
@@ -578,8 +667,6 @@ process:
 						fi.is_static = false;
 						if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
 							fi.is_static = b;
-
-						fi.metas.from_string(metas);
 
 						IDiaEnumSymbols* s_parameters;
 						s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
@@ -626,26 +713,75 @@ process:
 				{
 					s_variable->get_name(&pwname);
 					auto name = w2s(pwname);
-					std::string metas;
-					if (ur->pass_item(TagD, name, &metas))
+
+					Metas metas;
+					if (ur->pass_child(name, &metas))
 					{
+						uint offset;
+						s_variable->get_offset(&l);
+						offset = l;
+
 						IDiaSymbol* s_type;
 						s_variable->get_type(&s_type);
-
-						s_variable->get_offset(&l);
-						auto offset = l;
-
-						auto& vi = u.variables.emplace_back();
-						vi.type = typeinfo_from_symbol(s_type);
-						reference_type(vi.type);
-						vi.name = name;
-						vi.offset = offset;
-						vi.array_size = 0;
-						vi.array_stride = 0;
-						vi.default_value = obj ? vi.type->serialize((char*)obj + offset) : "";
-						vi.metas.from_string(metas);
-
+						auto type = typeinfo_from_symbol(s_type);
 						s_type->Release();
+
+						if (!u.variables.empty() && l == 0)
+						{
+							IDiaEnumSymbols* symbols;
+							IDiaSymbol* symbol;
+							auto voff = -1;
+							auto rva = 0U;
+
+							global->findChildren(SymTagUDT, s2w(type->name).c_str(), nsNone, &symbols);
+							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+							{
+								IDiaEnumSymbols* s_functions;
+								symbol->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+								IDiaSymbol* s_function;
+								while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
+								{
+									s_function->get_name(&pwname);
+									auto name = w2s(pwname);
+
+									if (name == "operator()" && s_function->get_virtualBaseOffset(&dw) == S_OK)
+										voff = dw;
+
+									s_function->Release();
+								}
+								s_functions->Release();
+							}
+
+							global->findChildren(SymTagData, s2w(udt_name + "::" + name).c_str(), nsNone, &symbols);
+							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+							{
+								if (symbol->get_relativeVirtualAddress(&dw) == S_OK)
+									rva = dw;
+
+								symbol->Release();
+							}
+							symbols->Release();
+
+							if (rva && voff != -1)
+							{
+								auto& fi = u.functions.emplace_back();
+								fi.name = name;
+								fi.rva = rva;
+								fi.voff = voff;
+								fi.return_type = TypeInfo::get(TagD, "");
+							}
+
+							continue;
+						}
+						else
+						{
+							auto& vi = u.variables.emplace_back();
+							vi.type = type;
+							reference_type(vi.type);
+							vi.name = name;
+							vi.offset = offset;
+							vi.default_value = obj ? type->serialize((char*)obj + offset) : "";
+						}
 					}
 					s_variable->Release();
 				}
@@ -674,7 +810,7 @@ process:
 			case TagVE:
 				if (!find_enum(t->name, db))
 				{
-					add_named_enum_rule(t->name);
+					add_enum_rule(t->name);
 
 					need_collect = true;
 				}
@@ -683,7 +819,7 @@ process:
 			case TagVU:
 				if (!find_udt(t->name, db))
 				{
-					add_named_udt_rule(t->name);
+					add_udt_rule(t->name);
 
 					need_collect = true;
 				}

@@ -48,12 +48,6 @@ if (NOT EXISTS "${CPPCODEC_INCLUDE_DIR}")
 	message(SEND_ERROR "required cppcodec is invalid")
 endif()
 
-check_path("${parent_path}boost/include" p)
-set(BOOST_REGEX_INCLUDE_DIR "${p}" CACHE PATH "Boost Regex include directory")
-if (NOT EXISTS "${BOOST_REGEX_INCLUDE_DIR}")
-	message(SEND_ERROR "required Boost Regex is invalid")
-endif()
-
 check_path("${parent_path}stb" p)
 set(STB_INCLUDE_DIR "${p}" CACHE PATH "STB include directory")
 if (NOT EXISTS "${STB_INCLUDE_DIR}")

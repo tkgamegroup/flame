@@ -72,13 +72,7 @@ namespace flame
 			model = graphics::Model::get(fn);
 		else
 		{
-			if (!fn.is_absolute() && source_id != -1)
-			{
-				fn = entity->sources[source_id].parent_path() / fn;
-				fn.make_preferred();
-			}
-			else
-				fn = Path::get(fn);
+			fn = Path::get(fn);
 			model = graphics::Model::get(fn);
 		}
 		if (!model)

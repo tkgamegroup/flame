@@ -19,6 +19,20 @@ function(assign_source_group parent_path folder_prefix)
     endforeach()
 endfunction()
 
+function(generate_typedesc tar desc)
+    file(GENERATE OUTPUT "$<TARGET_FILE_DIR:${tar}>/${tar}.typedesc" CONTENT "${CMAKE_CURRENT_SOURCE_DIR}\n${desc}" TARGET ${tar} )
+endfunction()
+
+function(gen_typeinfo tar1 tar2)
+    add_custom_command(TARGET ${tar1} POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> $<TARGET_FILE:${tar2}>)
+endfunction()
+
+function(add_typeinfo_support tar desc)
+    add_dependencies(${tar} typeinfogen_dep)
+    generate_typedesc(${tar} ${desc})
+    gen_typeinfo(${tar} ${tar})
+endfunction()
+
 function(generate_config)
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.ini 
 		"developing = 1\n"

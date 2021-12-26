@@ -12,8 +12,8 @@ if (USE_PHYSICS_MODULE)
 	target_compile_definitions(flame_universe PUBLIC USE_PHYSICS_MODULE)
 	target_link_libraries(flame_universe flame_physics)
 endif()
-add_dependencies(flame_universe typeinfogen_dep)
-add_custom_command(TARGET flame_universe POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:flame_universe> -d "${CMAKE_CURRENT_SOURCE_DIR}/typeinfo.desc")
+
+add_typeinfo_support(flame_universe "enum starts_with flame::")
 
 file(GLOB PUBLIC_HEADER_FILES "*.h*")
 list(FILTER PUBLIC_HEADER_FILES EXCLUDE REGEX ".*_private[.]h$")

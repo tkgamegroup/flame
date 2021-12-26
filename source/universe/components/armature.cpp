@@ -89,8 +89,6 @@ namespace flame
 
 	void cArmaturePrivate::apply_src()
 	{
-		auto ppath = source_id != -1 ? entity->sources[source_id].parent_path() : L"";
-
 		if (bones.empty())
 		{
 			graphics::Model* model = nullptr;
@@ -99,13 +97,7 @@ namespace flame
 				model = graphics::Model::get(fn);
 			else
 			{
-				if (!fn.is_absolute())
-				{
-					fn = ppath / fn;
-					fn.make_preferred();
-				}
-				else
-					fn = Path::get(fn);
+				fn = Path::get(fn);
 				model = graphics::Model::get(fn);
 			}
 
@@ -134,8 +126,7 @@ namespace flame
 		for (auto& s : sp)
 		{
 			auto fn = std::filesystem::path(s);
-			if (!fn.is_absolute())
-				fn = ppath / fn;
+			fn = Path::get(fn);
 
 			auto animation = graphics::Animation::get(fn);
 			if (animation)

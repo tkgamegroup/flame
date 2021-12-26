@@ -1,18 +1,21 @@
-template<typename T>
-struct Property
-{
-    T v;
-    T (*getter)();
+#include <vector>
+#include <memory>
 
-    operator T()
-    {
-        return getter();
-    }
+struct A
+{
+	struct Create
+	{
+		A* operator()()
+		{
+			__FUNCTION__;
+		}
+	};
+	static Create& create;
 };
 
 int main() 
 {
-    Property<int> a;
-    int b = a;
+    std::vector<A*> a;
+    auto wtf = typeid(a).name();
     return 0;
 }

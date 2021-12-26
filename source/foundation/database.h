@@ -10,7 +10,7 @@ namespace flame
 
 		enum Error
 		{
-			NoError,
+			ErrorNone,
 			ErrorDuplicated,
 			ErrorUnknow
 		};

@@ -208,7 +208,7 @@ namespace flame
 		{
 			for (auto& l : message_listeners.list)
 				l(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
-			for (auto c : component_list)
+			for (auto& c : components)
 				c->on_visibility_changed(global_visibility);
 		}
 
@@ -233,7 +233,7 @@ namespace flame
 
 		for (auto& l : message_listeners.list)
 			l(S<"state_changed"_h>, (void*)state, (void*)last_state);
-		for (auto c : component_list)
+		for (auto& c : components)
 			c->on_state_changed(state);
 	}
 
@@ -241,15 +241,15 @@ namespace flame
 	{
 		assert(!parent);
 		assert(!c->entity);
-		assert(components.find(c->type_hash) == components.end());
+		assert(component_map.find(c->type_hash) == component_map.end());
 
 		c->entity = this;
 
-		for (auto& _c : component_list)
+		for (auto& _c : components)
 			_c->on_component_added(c);
 
-		components.emplace(c->type_hash, c);
-		component_list.push_back(c);
+		component_map.emplace(c->type_hash, c);
+		components.emplace_back(c);
 
 		c->on_added();
 		if (world)
@@ -258,26 +258,26 @@ namespace flame
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		auto it = components.find(c->type_hash);
-		if (it == components.end())
+		auto it = component_map.find(c->type_hash);
+		if (it == component_map.end())
 		{
 			assert(0);
 			return;
 		}
 
-		it->second.release();
-		components.erase(it);
+		component_map.erase(it);
 
-		for (auto it = component_list.begin(); it != component_list.end(); it++)
+		for (auto it = components.begin(); it != components.end(); it++)
 		{
-			if (*it == c)
+			if (it->get() == c)
 			{
-				component_list.erase(it);
+				it->release();
+				components.erase(it);
 				break;
 			}
 		}
 
-		for (auto& _c : component_list)
+		for (auto& _c : components)
 			_c->on_component_removed(c);
 
 		c->on_removed();
@@ -309,7 +309,7 @@ namespace flame
 
 		for (auto& l : e->message_listeners.list)
 			l(S<"entity_added"_h>, nullptr, nullptr);
-		for (auto c : e->component_list)
+		for (auto& c : e->components)
 			c->on_entity_added();
 
 		e->backward_traversal([this](EntityPrivate* e) {
@@ -319,7 +319,7 @@ namespace flame
 
 		for (auto& l : message_listeners.list)
 			l(S<"child_added"_h>, e, nullptr);
-		for (auto c : component_list)
+		for (auto& c : components)
 			c->on_child_added(e);
 	}
 
@@ -329,7 +329,7 @@ namespace flame
 
 		for (auto& l : e->message_listeners.list)
 			l(S<"entity_removed"_h>, nullptr, nullptr);
-		for (auto c : e->component_list)
+		for (auto& c : e->components)
 			c->on_entity_removed();
 
 		e->backward_traversal([](EntityPrivate* e) {
@@ -339,7 +339,7 @@ namespace flame
 
 		for (auto& l : message_listeners.list)
 			l(S<"child_removed"_h>, e, nullptr);
-		for (auto c : component_list)
+		for (auto& c : components)
 			c->on_child_removed(e);
 	}
 
@@ -380,7 +380,7 @@ namespace flame
 		world = _world;
 		for (auto& l : message_listeners.list)
 			l(S<"entered_world"_h>, nullptr, nullptr);
-		for (auto c : component_list)
+		for (auto& c : components)
 			c->on_entered_world();
 	}
 
@@ -388,7 +388,7 @@ namespace flame
 	{
 		for (auto& l : message_listeners.list)
 			l(S<"left_world"_h>, nullptr, nullptr);
-		for (auto c : component_list)
+		for (auto& c : components)
 			c->on_left_world();
 		world = nullptr;
 	}
@@ -399,9 +399,9 @@ namespace flame
 		ret->name = name;
 		ret->tag = tag;
 		ret->visible = visible;
-		ret->sources = sources;
+		ret->path = path;
 		ret->state = state;
-		for (auto c : component_list)
+		for (auto& c : components)
 		{
 		//	std::string type_name = c->type_name;
 		//	SUS::cut_head_if(type_name, "flame::");
@@ -522,7 +522,6 @@ namespace flame
 			else if (name[0] == 'e')
 			{
 				auto e = new EntityPrivate;
-				e->sources.push_back(e_dst->sources.back());
 				load_prefab(e, n_c);
 				e_dst->add_child(e);
 			}
@@ -541,7 +540,6 @@ namespace flame
 			return false;
 		}
 
-		sources.push_back(filename);
 		load_prefab(this, doc_root.first_child());
 
 		return true;
@@ -635,8 +633,12 @@ namespace flame
 		return true;
 	}
 
-	Entity* Entity::create()
+	struct EntityCreatePrivate : Entity::Create
 	{
-		return new EntityPrivate();
-	}
+		EntityPtr operator()() override
+		{
+			return new EntityPrivate();
+		}
+	}Entity_create_private;
+	Entity::Create& Entity::create = Entity_create_private;
 }
