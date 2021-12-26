@@ -21,8 +21,8 @@ namespace flame
 
 		void set_state(StateFlags state) override;
 
-		void add_component(Component* c);
-		void remove_component(Component* c, bool destroy = true);
+		Component* add_component(uint hash) override;
+		void remove_component(uint hash, bool destroy = true) override;
 
 		void add_child(EntityPtr e, int position = -1) override;
 		void on_child_removed(EntityPrivate* e) const;

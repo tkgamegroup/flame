@@ -66,25 +66,8 @@ namespace flame
 		template<typename T>
 		inline T* get_parent_component_t() const { return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr; }
 
-		inline Component* find_component(std::string_view _name) const
-		{
-			Component* ret = nullptr;
-			for (auto& c : components)
-			{
-				if (c->type_name == _name)
-					return c.get();
-			}
-			auto name = "flame::" + std::string(_name);
-			for (auto& c : components)
-			{
-				if (c->type_name == name)
-					return c.get();
-			}
-			return nullptr;
-		}
-
-		virtual void add_component(Component* c) = 0;
-		virtual void remove_component(Component* c, bool destroy = true) = 0;
+		virtual Component* add_component(uint hash) = 0;
+		virtual void remove_component(uint hash, bool destroy = true) = 0;
 
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */ ) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;

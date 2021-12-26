@@ -237,11 +237,40 @@ namespace flame
 			c->on_state_changed(state);
 	}
 
-	void EntityPrivate::add_component(Component* c)
+	Component* EntityPrivate::add_component(uint hash)
 	{
-		assert(!parent);
-		assert(!c->entity);
-		assert(component_map.find(c->type_hash) == component_map.end());
+		if (component_map.find(hash) != component_map.end())
+		{
+			printf("cannot add component: already exist\n");
+			return nullptr;
+		}
+
+		auto ui = find_udt(hash);
+		if (!ui)
+		{
+			printf("cannot add component: cannot find udt of hash %d\n", hash);
+			return nullptr;
+		}
+
+		auto fi = ui->find_function("create");
+		if (!fi)
+		{
+			printf("cannot add component: cannot find create function of %s\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		if (fi->return_type != TypeInfo::get(TagPU, ui->name) || fi->parameters.size() != 1 || fi->parameters[0] != TypeInfo::get<Entity*>())
+		{
+			printf("cannot add component: %s's create function format does not match\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		auto c = fi->call<Component* (Entity*)>(this);
+		if (!c)
+		{
+			printf("cannot add component: %s\n", ui->name.c_str());
+			return nullptr;
+		}
 
 		c->entity = this;
 
@@ -251,20 +280,20 @@ namespace flame
 		component_map.emplace(c->type_hash, c);
 		components.emplace_back(c);
 
-		c->on_added();
 		if (world)
 			c->on_entered_world();
 	}
 
-	void EntityPrivate::remove_component(Component* c, bool destroy)
+	void EntityPrivate::remove_component(uint hash, bool destroy)
 	{
-		auto it = component_map.find(c->type_hash);
+		auto it = component_map.find(hash);
 		if (it == component_map.end())
 		{
 			assert(0);
 			return;
 		}
 
+		auto c = it->second.release();
 		component_map.erase(it);
 
 		for (auto it = components.begin(); it != components.end(); it++)
@@ -280,7 +309,6 @@ namespace flame
 		for (auto& _c : components)
 			_c->on_component_removed(c);
 
-		c->on_removed();
 		if (world)
 			c->on_left_world();
 

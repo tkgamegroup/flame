@@ -79,144 +79,42 @@ namespace flame
 
 		{
 			void_type = new TypeInfo_void;
-			_tidb.typeinfos.emplace(void_type->hash, void_type);
+			_tidb.add_ti(void_type);
 		}
-		{
-			auto t = new TypeInfo_bool;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_char;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uchar;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_wchar;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_short;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_ushort;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_int;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uint;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_int64;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uint64;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_float;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_cvec2;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_cvec3;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_cvec4;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_ivec2;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_ivec3;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_ivec4;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uvec2;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uvec3;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_uvec4;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_vec2;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_vec3;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_vec4;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_string;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_wstring;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_path;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_Rect;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_AABB;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_Plane;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_Frustum;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_mat2;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_mat3;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_mat4;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
-		{
-			auto t = new TypeInfo_quat;
-			_tidb.typeinfos.emplace(t->hash, t);
-		}
+		_tidb.add_ti(new TypeInfo_bool);
+		_tidb.add_ti(new TypeInfo_char);
+		_tidb.add_ti(new TypeInfo_uchar);
+		_tidb.add_ti(new TypeInfo_wchar);
+		_tidb.add_ti(new TypeInfo_short);
+		_tidb.add_ti(new TypeInfo_ushort);
+		_tidb.add_ti(new TypeInfo_int);
+		_tidb.add_ti(new TypeInfo_uint);
+		_tidb.add_ti(new TypeInfo_int64);
+		_tidb.add_ti(new TypeInfo_uint64);
+		_tidb.add_ti(new TypeInfo_float);
+		_tidb.add_ti(new TypeInfo_cvec2);
+		_tidb.add_ti(new TypeInfo_cvec3);
+		_tidb.add_ti(new TypeInfo_cvec4);
+		_tidb.add_ti(new TypeInfo_ivec2);
+		_tidb.add_ti(new TypeInfo_ivec3);
+		_tidb.add_ti(new TypeInfo_ivec4);
+		_tidb.add_ti(new TypeInfo_uvec2);
+		_tidb.add_ti(new TypeInfo_uvec3);
+		_tidb.add_ti(new TypeInfo_uvec4);
+		_tidb.add_ti(new TypeInfo_vec2);
+		_tidb.add_ti(new TypeInfo_vec3);
+		_tidb.add_ti(new TypeInfo_vec4);
+		_tidb.add_ti(new TypeInfo_mat2);
+		_tidb.add_ti(new TypeInfo_mat3);
+		_tidb.add_ti(new TypeInfo_mat4);
+		_tidb.add_ti(new TypeInfo_quat);
+		_tidb.add_ti(new TypeInfo_Rect);
+		_tidb.add_ti(new TypeInfo_AABB);
+		_tidb.add_ti(new TypeInfo_Plane);
+		_tidb.add_ti(new TypeInfo_Frustum);
+		_tidb.add_ti(new TypeInfo_string);
+		_tidb.add_ti(new TypeInfo_wstring);
+		_tidb.add_ti(new TypeInfo_path);
 
 		auto app_name = get_app_path(true);
 		if (app_name.filename() != L"typeinfogen.exe")
@@ -248,7 +146,7 @@ namespace flame
 		for (auto n_enum : doc_root.child("enums"))
 		{
 			auto name = std::string(n_enum.attribute("name").value());
-			auto& e = enums.emplace(name, EnumInfo()).first->second;
+			auto& e = enums.emplace(ch(name.c_str()), EnumInfo()).first->second;
 			e.name = name;
 			for (auto n_item : n_enum.child("items"))
 			{
@@ -261,7 +159,7 @@ namespace flame
 		for (auto n_udt : doc_root.child("udts"))
 		{
 			auto name = std::string(n_udt.attribute("name").value());
-			auto& u = udts.emplace(name, UdtInfo()).first->second;
+			auto& u = udts.emplace(ch(name.c_str()), UdtInfo()).first->second;
 			u.name = name;
 			u.size = n_udt.attribute("size").as_uint();
 			if (auto a = n_udt.attribute("base_class_name"); a)

@@ -82,7 +82,6 @@ namespace flame
 	{
 		TypeTag tag;
 		std::string name;
-		uint hash;
 		uint size;
 
 		inline static std::string format_name(std::string_view name)
@@ -149,7 +148,6 @@ namespace flame
 			name(_name),
 			size(size)
 		{
-			hash = get_hash(tag, name);
 		}
 
 		virtual ~TypeInfo() {}
@@ -375,28 +373,33 @@ namespace flame
 		Metas metas;
 		void* library = nullptr;
 
-		inline bool check(TypeInfo* ret, const std::vector<TypeInfo*> parms) const
+		inline bool check(TypeInfo* ret, const std::initializer_list<TypeInfo*>& parms) const
 		{
 			if (return_type != ret || parameters.size() != parms.size())
 				return false;
-			for (auto i = 0; i < parameters.size(); i++)
+			auto i = 0;
+			for (auto t : parms)
 			{
-				if (parameters[i] != parms[i])
+				if (parameters[i] != t)
 					return false;
+				i++;
 			}
 			return true;
 		}
 
-		inline void* get_address(void* obj = nullptr /* for virtual fucntion */) const
+		template<typename F, typename... Args>
+		auto call(void* obj, Args ...args) const
 		{
+			void* addr = nullptr;
 			if (rva)
 			{
-				void* addr = (char*)library + rva;
-				if (voff == -1)
-					return addr;
-				obj = ((void**)(addr))[-1];
+				addr = (char*)library + rva;
+				if (voff != -1)
+					obj = ((void**)(addr))[-1];
 			}
-			return obj ? ((void**)obj)[voff / 8] : nullptr;
+			if (voff != -1 && obj)
+				addr = ((void**)obj)[voff / 8];
+			return ((F*)addr)(obj, args...);
 		}
 	};
 
@@ -446,11 +449,16 @@ namespace flame
 	{
 		FLAME_FOUNDATION_EXPORTS TypeInfoDataBase();
 
-		std::unordered_map<uint, std::unique_ptr<TypeInfo>> typeinfos;
+		std::map<uint, std::unique_ptr<TypeInfo>> typeinfos;
 
-		std::unordered_map<std::string, EnumInfo> enums;
-		std::unordered_map<std::string, FunctionInfo> functions;
-		std::unordered_map<std::string, UdtInfo> udts;
+		std::map<uint, EnumInfo> enums;
+		std::map<uint, FunctionInfo> functions;
+		std::map<uint, UdtInfo> udts;
+
+		inline void add_ti(TypeInfo* ti)
+		{
+			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
+		}
 
 		FLAME_FOUNDATION_EXPORTS bool load(std::ifstream& file, void* library = nullptr);
 		FLAME_FOUNDATION_EXPORTS void load(const std::filesystem::path& filename);
@@ -458,28 +466,28 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void save(const std::filesystem::path& filename);
 	};
 
-	inline EnumInfo* find_enum(const std::string& name, TypeInfoDataBase& db = tidb)
+	inline EnumInfo* find_enum(uint hash, TypeInfoDataBase& db = tidb)
 	{
-		auto it = db.enums.find(name);
+		auto it = db.enums.find(hash);
 		if (it != db.enums.end())
 			return &it->second;
 		if (&db != &tidb)
 		{
-			it = tidb.enums.find(name);
+			it = tidb.enums.find(hash);
 			if (it != tidb.enums.end())
 				return &it->second;
 		}
 		return nullptr;
 	}
 
-	inline UdtInfo* find_udt(const std::string& name, TypeInfoDataBase& db = tidb)
+	inline UdtInfo* find_udt(uint hash, TypeInfoDataBase& db = tidb)
 	{
-		auto it = db.udts.find(name);
+		auto it = db.udts.find(hash);
 		if (it != db.udts.end())
 			return &it->second;
 		if (&db != &tidb)
 		{
-			it = tidb.udts.find(name);
+			it = tidb.udts.find(hash);
 			if (it != tidb.udts.end())
 				return &it->second;
 		}
@@ -498,7 +506,7 @@ namespace flame
 		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagE, base_name, sizeof(int))
 		{
-			ei = find_enum(name, db);
+			ei = find_enum(ch(name.c_str()), db);
 		}
 	};
 
@@ -1247,7 +1255,7 @@ namespace flame
 		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagU, base_name, 0)
 		{
-			ui = find_udt(name, db);
+			ui = find_udt(ch(name.c_str()), db);
 			if (ui)
 				size = ui->size;
 		}
@@ -1261,12 +1269,7 @@ namespace flame
 			{
 				if (fi.name == "ctor" && fi.parameters.empty())
 				{
-					auto addr = fi.get_address();
-					if (addr)
-					{
-						((void(*)(void*))addr)(p);
-						initialized = true;
-					}
+					fi.call<void(void*)>(p);
 					break;
 				}
 			}

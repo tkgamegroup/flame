@@ -6,18 +6,11 @@ namespace flame
 {
 	struct Component
 	{
-		const char* type_name;
 		const uint type_hash;
 
 		EntityPtr entity = nullptr;
 
 		Listeners<void(uint)> data_listeners;
-
-		Component(const char* name, uint hash) :
-			type_name(name),
-			type_hash(hash)
-		{
-		}
 
 		virtual ~Component() {}
 
@@ -27,8 +20,6 @@ namespace flame
 				l(h);
 		}
 
-		virtual void on_added() {}
-		virtual void on_removed() {}
 		virtual void on_visibility_changed(bool v) {}
 		virtual void on_state_changed(StateFlags state) {}
 		virtual void on_entered_world() {}
