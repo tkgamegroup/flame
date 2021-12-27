@@ -19,8 +19,6 @@ namespace flame
 
 		systems.emplace(s->type_hash, s);
 		system_list.push_back(s);
-
-		s->on_added();
 	}
 
 	void WorldPrivate::remove_system(System* s, bool destroy)

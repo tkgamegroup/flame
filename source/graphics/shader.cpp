@@ -30,7 +30,7 @@ namespace flame
 						size += (16 - m);
 				}
 
-				auto& ui = db.udts.emplace(name, UdtInfo()).first->second;
+				UdtInfo ui;
 				ui.name = name;
 				ui.size = size;
 
@@ -54,6 +54,8 @@ namespace flame
 					vi.array_size = arr_size;
 					vi.array_stride = arr_stride;
 				}
+
+				db.udts.emplace(ch(name.c_str()), ui);
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
 				ret = TypeInfo::get(TagPU, "ShaderImage", db);
@@ -409,7 +411,7 @@ namespace flame
 						vi.offset = ui.size;
 						ui.size += vi.type->size;
 					}
-					db.udts.emplace(ui.name, ui);
+					db.udts.emplace(ch(ui.name.c_str()), ui);
 				}
 			}
 
@@ -573,7 +575,7 @@ namespace flame
 					for (auto& b : ret->bindings)
 					{
 						if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-							b.ui = find_udt(b.name, db);
+							b.ui = find_udt(ch(b.name.c_str()), db);
 					}
 					device->dsls.emplace_back(ret);
 					return ret;
@@ -840,7 +842,7 @@ namespace flame
 						dsls.push_back(dsl);
 					}
 
-					auto pc_ui = find_udt("PushConstant", db);
+					auto pc_ui = find_udt(S<"PushConstant"_h>, db);
 
 					auto ret = PipelineLayout::create(device, dsls, pc_ui ? pc_ui->size : 0);
 					ret->db = std::move(db);
@@ -959,8 +961,8 @@ namespace flame
 					ret->filename = filename;
 					ret->defines = defines;
 					ret->db = std::move(db);
-					ret->in_ui = find_udt("Input", ret->db);
-					ret->out_ui = find_udt("Output", ret->db);
+					ret->in_ui = find_udt(S<"Input"_h>, ret->db);
+					ret->out_ui = find_udt(S<"Output"_h>, ret->db);
 
 					VkShaderModuleCreateInfo shader_info;
 					shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

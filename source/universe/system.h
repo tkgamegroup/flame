@@ -6,7 +6,7 @@ namespace flame
 {
 	struct System
 	{
-		const uint type_hash;
+		uint type_hash = 0;
 
 		WorldPtr world = nullptr;
 

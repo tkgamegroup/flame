@@ -517,7 +517,7 @@ process:
 		{
 			s_enum->get_name(&pwname);
 			auto enum_name = w2s(pwname);
-			if (!find_enum(enum_name, db) && need_enum(enum_name))
+			if (!find_enum(ch(enum_name.c_str()), db) && need_enum(enum_name))
 			{
 				EnumInfo e;
 				e.name = enum_name;
@@ -572,7 +572,7 @@ process:
 					ii.value = i.second;
 				}
 
-				db.enums.emplace(e.name, e);
+				db.enums.emplace(ch(e.name.c_str()), e);
 			}
 			s_enum->Release();
 		}
@@ -586,7 +586,7 @@ process:
 			s_udt->get_name(&pwname);
 			auto udt_name = w2s(pwname);
 			Rule* ur;
-			if (!find_udt(udt_name, db) && need_udt(udt_name, &ur))
+			if (!find_udt(ch(udt_name.c_str()), db) && need_udt(udt_name, &ur))
 			{
 				s_udt->get_length(&ull);
 				auto udt_size = ull;
@@ -794,7 +794,7 @@ process:
 					free(obj);
 				}
 
-				db.udts.emplace(u.name, u);
+				db.udts.emplace(ch(u.name.c_str()), u);
 			}
 			s_udt->Release();
 		}
@@ -808,7 +808,7 @@ process:
 			{
 			case TagE:
 			case TagVE:
-				if (!find_enum(t->name, db))
+				if (!find_enum(ch(t->name.c_str()), db))
 				{
 					add_enum_rule(t->name);
 
@@ -817,7 +817,7 @@ process:
 				break;
 			case TagU:
 			case TagVU:
-				if (!find_udt(t->name, db))
+				if (!find_udt(ch(t->name.c_str()), db))
 				{
 					add_udt_rule(t->name);
 
