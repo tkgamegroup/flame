@@ -6,7 +6,7 @@ namespace flame
 {
 	struct Component
 	{
-		const uint type_hash;
+		uint type_hash = 0;
 
 		EntityPtr entity = nullptr;
 

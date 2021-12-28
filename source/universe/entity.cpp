@@ -265,10 +265,10 @@ namespace flame
 			return nullptr;
 		}
 
-		auto c = fi->call<Component* (Entity*)>(this);
+		auto c = fi->call<Component* (void*, Entity*)>(nullptr, this);
 		if (!c)
 		{
-			printf("cannot add component: %s\n", ui->name.c_str());
+			printf("cannot add component: %s's create funcion returned nullptr\n", ui->name.c_str());
 			return nullptr;
 		}
 

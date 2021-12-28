@@ -6,14 +6,7 @@ namespace flame
 {
 	struct sNodeRenderer : System
 	{
-		inline static auto type_name = "flame::sNodeRenderer";
-		inline static auto type_hash = ch(type_name);
-
 		bool dirty = false;
-
-		sNodeRenderer() : System(type_name, type_hash)
-		{
-		}
 
 		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
 		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;

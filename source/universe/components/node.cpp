@@ -263,7 +263,7 @@ namespace flame
 
 	struct cNodeCreatePrivate : cNode::Create
 	{
-		cNodePtr operator()() override
+		cNodePtr operator()(EntityPtr) override
 		{
 			return new cNodePrivate();
 		}

@@ -25,23 +25,6 @@ namespace flame
 
 		template<typename T> inline T* get_system_t() const { return (T*)get_system(T::type_hash); }
 
-		inline System* find_system(std::string_view _name) const
-		{
-			System* ret = nullptr;
-			for (auto& s : system_list)
-			{
-				if (s->type_name == _name)
-					return s;
-			}
-			auto name = "flame::" + std::string(_name);
-			for (auto& s : system_list)
-			{
-				if (s->type_name == name)
-					return s;
-			}
-			return nullptr;
-		}
-
 		virtual void add_system(System* s) = 0;
 		virtual void remove_system(System* s, bool destroy = true) = 0;
 
