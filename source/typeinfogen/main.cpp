@@ -768,7 +768,7 @@ process:
 								fi.name = name;
 								fi.rva = rva;
 								fi.voff = voff;
-								fi.return_type = TypeInfo::get(TagD, "");
+								fi.return_type = TypeInfo::void_type;
 							}
 
 							continue;

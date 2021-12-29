@@ -167,6 +167,7 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* void_type;
 
 		template<enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
@@ -1267,7 +1268,7 @@ namespace flame
 			auto initialized = false;
 			for (auto& fi : ui->functions)
 			{
-				if (fi.name == "ctor" && fi.parameters.empty())
+				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
 				{
 					fi.call<void(void*)>(p);
 					break;

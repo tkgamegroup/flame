@@ -8,7 +8,7 @@ namespace flame
 	TypeInfoDataBase _tidb;
 	TypeInfoDataBase& tidb = _tidb;
 
-	static TypeInfo* void_type = nullptr;
+	TypeInfo* TypeInfo::void_type = nullptr;
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const std::string& name, TypeInfoDataBase& db)
 	{
@@ -78,8 +78,8 @@ namespace flame
 			return;
 
 		{
-			void_type = new TypeInfo_void;
-			_tidb.add_ti(void_type);
+			TypeInfo::void_type = new TypeInfo_void;
+			_tidb.add_ti(TypeInfo::void_type);
 		}
 		_tidb.add_ti(new TypeInfo_bool);
 		_tidb.add_ti(new TypeInfo_char);
