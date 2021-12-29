@@ -361,6 +361,15 @@ process:
 							SUS::ltrim(line);
 							if (SUS::cut_head_if(line, "Reflect"))
 							{
+								auto need_ctor = false;
+
+								auto sp = SUS::split(line);
+								for (auto& t : sp)
+								{
+									if (t == "ctor")
+										need_ctor = true;
+								}
+
 								std::getline(file, line);
 								SUS::ltrim(line);
 								if (SUS::cut_head_if(line, "enum "))
@@ -376,6 +385,11 @@ process:
 									r.type = Rule::EndsWith;
 									r.name = line;
 									r.children_type = Rule::Equal;
+									if (need_ctor)
+									{
+										auto& c = r.children.emplace_back();
+										c.first = "ctor";
+									}
 									pr = &r;
 								}
 							}

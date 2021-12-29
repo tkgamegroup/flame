@@ -259,7 +259,7 @@ namespace flame
 		keybd_event(key_to_vk_code(key), 0, down ? 0 : KEYEVENTF_KEYUP, 0);
 	}
 
-	void send_mouse_event(MouseKey key, bool down)
+	void send_mouse_event(MouseButton key, bool down)
 	{
 		auto flags = -1;
 		switch (key)

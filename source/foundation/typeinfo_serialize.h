@@ -128,6 +128,62 @@ namespace flame
 		}
 	}
 
+	template<typename T>
+	inline void serialize_xml(T* src, pugi::xml_node dst, const SerializeSpec& spec = {})
+	{
+		auto ti = TypeInfo::get<T>();
+		switch (ti->tag)
+		{
+		case TagU:
+			serialize_xml(*((TypeInfo_Udt*)ti)->ui, src, dst, spec);
+			break;
+		default:
+			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
+			{
+				UdtInfo ui;
+				auto& vi = ui.variables.emplace_back();
+				vi.type = ti;
+				vi.offset = 0;
+				serialize_xml(ui, src, dst, spec);
+			}
+			else
+				assert(0);
+		}
+	}
+
+	inline void unserialize_xml(const UdtInfo& ui, pugi::xml_node src, void* dst, const UnserializeSpec& spec = {})
+	{
+		for (auto a : src.attributes())
+		{
+			auto vi = ui.find_variable(a.name());
+			if (vi)
+				vi->type->unserialize(a.value(), (char*)dst + vi->offset);
+		}
+	}
+
+	template<typename T>
+	inline void unserialize_xml(pugi::xml_node src, T* dst, const UnserializeSpec& spec = {})
+	{
+		auto ti = TypeInfo::get<T>();
+		switch (ti->tag)
+		{
+		case TagU:
+			unserialize_xml(*((TypeInfo_Udt*)ti)->ui, src, dst, spec);
+			break;
+		default:
+			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
+			{
+				UdtInfo ui;
+				auto& vi = ui.variables.emplace_back();
+				vi.type = ti;
+				vi.offset = 0;
+				unserialize_xml(ui, src, dst, spec);
+			}
+			else
+				assert(0);
+		}
+	}
+
 	inline void serialize_text(const UdtInfo& ui, void* src, std::ofstream& dst, const std::string& indent, const SerializeSpec& spec = {})
 	{
 		auto indent2 = indent;
@@ -263,7 +319,7 @@ namespace flame
 		}
 	}
 
-	template <class T>
+	template<typename T>
 	inline void serialize_text(T* src, std::ofstream& dst, const SerializeSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
@@ -478,7 +534,7 @@ namespace flame
 		}
 	}
 
-	template <class T>
+	template<typename T>
 	inline void unserialize_text(LineReader& src, T* dst, const UnserializeSpec& spec = {}, const std::vector<std::string>& _defines = {})
 	{
 		std::vector<std::pair<std::string, std::string>> defines;

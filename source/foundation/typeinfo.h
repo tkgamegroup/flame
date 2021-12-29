@@ -39,11 +39,15 @@ namespace flame
 	enum DataType
 	{
 		DataVoid,
-		DataBoolean,
-		DataInteger,
-		DataFloat,
+		DataBool,
 		DataChar,
-		DataWideChar
+		DataInt,
+		DataShort,
+		DataLong, // long long in c++
+		DataFloat,
+		DataString,
+		DataWString,
+		DataPath
 	};
 
 	template<typename T>
@@ -588,12 +592,12 @@ namespace flame
 		TypeInfo_bool() :
 			TypeInfo_Data("bool", sizeof(bool))
 		{
-			data_type = DataBoolean;
+			data_type = DataBool;
 		}
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(bool*)p);
+			return *(bool*)p ? "true" : "false";
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
@@ -606,7 +610,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_char: TypeInfo_Data
+	struct TypeInfo_char : TypeInfo_Data
 	{
 		TypeInfo_char() :
 			TypeInfo_Data("char", sizeof(char))
@@ -624,7 +628,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uchar: TypeInfo_Data
+	struct TypeInfo_uchar : TypeInfo_Data
 	{
 		TypeInfo_uchar() :
 			TypeInfo_Data("uchar", sizeof(uchar))
@@ -643,67 +647,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_wchar: TypeInfo_Data
-	{
-		TypeInfo_wchar() :
-			TypeInfo_Data("wchar_t", sizeof(wchar_t))
-		{
-			data_type = DataWideChar;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(wchar_t*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(wchar_t*)dst = sto<wchar_t>(str);
-		}
-	};
-
-	struct TypeInfo_short: TypeInfo_Data
-	{
-		TypeInfo_short() :
-			TypeInfo_Data("short", sizeof(short))
-		{
-			data_type = DataInteger;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(short*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(short*)dst = sto<short>(str);
-		}
-	};
-
-	struct TypeInfo_ushort: TypeInfo_Data
-	{
-		TypeInfo_ushort() :
-			TypeInfo_Data("ushort", sizeof(ushort))
-		{
-			data_type = DataInteger;
-			is_signed = false;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return to_string(*(ushort*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ushort*)dst = sto<ushort>(str);
-		}
-	};
-
-	struct TypeInfo_int: TypeInfo_Data
+	struct TypeInfo_int : TypeInfo_Data
 	{
 		TypeInfo_int() :
 			TypeInfo_Data("int", sizeof(int))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 		}
 
 		std::string serialize(const void* p) const override
@@ -716,12 +665,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uint: TypeInfo_Data
+	struct TypeInfo_uint : TypeInfo_Data
 	{
 		TypeInfo_uint() :
 			TypeInfo_Data("uint", sizeof(uint))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			is_signed = false;
 		}
 
@@ -735,12 +684,49 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_int64: TypeInfo_Data
+	struct TypeInfo_short : TypeInfo_Data
+	{
+		TypeInfo_short() :
+			TypeInfo_Data("short", sizeof(short))
+		{
+			data_type = DataShort;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(short*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(short*)dst = sto<short>(str);
+		}
+	};
+
+	struct TypeInfo_ushort : TypeInfo_Data
+	{
+		TypeInfo_ushort() :
+			TypeInfo_Data("ushort", sizeof(ushort))
+		{
+			data_type = DataShort;
+			is_signed = false;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			return to_string(*(ushort*)p);
+		}
+		void unserialize(const std::string& str, void* dst) const override
+		{
+			*(ushort*)dst = sto<ushort>(str);
+		}
+	};
+
+	struct TypeInfo_int64 : TypeInfo_Data
 	{
 		TypeInfo_int64() :
 			TypeInfo_Data("int64", sizeof(int64))
 		{
-			data_type = DataInteger;
+			data_type = DataLong;
 		}
 
 		std::string serialize(const void* p) const override
@@ -753,12 +739,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uint64: TypeInfo_Data
+	struct TypeInfo_uint64 : TypeInfo_Data
 	{
 		TypeInfo_uint64() :
 			TypeInfo_Data("uint64", sizeof(uint64))
 		{
-			data_type = DataInteger;
+			data_type = DataLong;
 			is_signed = false;
 		}
 
@@ -772,7 +758,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_float: TypeInfo_Data
+	struct TypeInfo_float : TypeInfo_Data
 	{
 		TypeInfo_float() :
 			TypeInfo_Data("float", sizeof(float))
@@ -790,12 +776,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_ivec2: TypeInfo_Data
+	struct TypeInfo_ivec2 : TypeInfo_Data
 	{
 		TypeInfo_ivec2() :
 			TypeInfo_Data("glm::ivec2", sizeof(ivec2))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			vec_size = 2;
 		}
 
@@ -809,12 +795,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_ivec3: TypeInfo_Data
+	struct TypeInfo_ivec3 : TypeInfo_Data
 	{
 		TypeInfo_ivec3() :
 			TypeInfo_Data("glm::ivec3", sizeof(ivec3))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			vec_size = 3;
 		}
 
@@ -828,12 +814,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_ivec4: TypeInfo_Data
+	struct TypeInfo_ivec4 : TypeInfo_Data
 	{
 		TypeInfo_ivec4() :
 			TypeInfo_Data("glm::ivec4", sizeof(ivec4))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			vec_size = 4;
 		}
 
@@ -847,12 +833,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uvec2: TypeInfo_Data
+	struct TypeInfo_uvec2 : TypeInfo_Data
 	{
 		TypeInfo_uvec2() :
 			TypeInfo_Data("glm::uvec2", sizeof(uvec2))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			is_signed = false;
 			vec_size = 2;
 		}
@@ -867,12 +853,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uvec3: TypeInfo_Data
+	struct TypeInfo_uvec3 : TypeInfo_Data
 	{
 		TypeInfo_uvec3() :
 			TypeInfo_Data("glm::uvec3", sizeof(uvec3))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			is_signed = false;
 			vec_size = 3;
 		}
@@ -887,12 +873,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_uvec4: TypeInfo_Data
+	struct TypeInfo_uvec4 : TypeInfo_Data
 	{
 		TypeInfo_uvec4() :
 			TypeInfo_Data("glm::uvec4", sizeof(uvec4))
 		{
-			data_type = DataInteger;
+			data_type = DataInt;
 			is_signed = false;
 			vec_size = 4;
 		}
@@ -967,7 +953,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_vec2: TypeInfo_Data
+	struct TypeInfo_vec2 : TypeInfo_Data
 	{
 		TypeInfo_vec2() :
 			TypeInfo_Data("glm::vec2", sizeof(vec2))
@@ -986,7 +972,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_vec3: TypeInfo_Data
+	struct TypeInfo_vec3 : TypeInfo_Data
 	{
 		TypeInfo_vec3() :
 			TypeInfo_Data("glm::vec3", sizeof(vec3))
@@ -1005,7 +991,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_vec4: TypeInfo_Data
+	struct TypeInfo_vec4 : TypeInfo_Data
 	{
 		TypeInfo_vec4() :
 			TypeInfo_Data("glm::vec4", sizeof(vec4))
@@ -1074,11 +1060,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_string: TypeInfo_Data
+	struct TypeInfo_string : TypeInfo_Data
 	{
 		TypeInfo_string() :
 			TypeInfo_Data("std::string", sizeof(std::string))
 		{
+			data_type = DataString;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -1110,11 +1097,12 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_wstring: TypeInfo_Data
+	struct TypeInfo_wstring : TypeInfo_Data
 	{
 		TypeInfo_wstring() :
 			TypeInfo_Data("std::wstring", sizeof(std::string))
 		{
+			data_type = DataWString;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -1151,6 +1139,7 @@ namespace flame
 		TypeInfo_path() :
 			TypeInfo_Data("std::filesystem::path", sizeof(std::filesystem::path))
 		{
+			data_type = DataPath;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -1182,7 +1171,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_Rect: TypeInfo_Data
+	struct TypeInfo_Rect : TypeInfo_Data
 	{
 		TypeInfo_Rect() :
 			TypeInfo_Data("flame::Rect", sizeof(Rect))
@@ -1202,7 +1191,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_AABB: TypeInfo_Data
+	struct TypeInfo_AABB : TypeInfo_Data
 	{
 		TypeInfo_AABB() :
 			TypeInfo_Data("flame::AABB", sizeof(AABB))
@@ -1222,7 +1211,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_Plane: TypeInfo_Data
+	struct TypeInfo_Plane : TypeInfo_Data
 	{
 		TypeInfo_Plane() :
 			TypeInfo_Data("flame::Plane", sizeof(Plane))
@@ -1241,7 +1230,7 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_Frustum: TypeInfo_Data
+	struct TypeInfo_Frustum : TypeInfo_Data
 	{
 		TypeInfo_Frustum() :
 			TypeInfo_Data("flame::Frustum", sizeof(Plane))

@@ -84,7 +84,6 @@ namespace flame
 		_tidb.add_ti(new TypeInfo_bool);
 		_tidb.add_ti(new TypeInfo_char);
 		_tidb.add_ti(new TypeInfo_uchar);
-		_tidb.add_ti(new TypeInfo_wchar);
 		_tidb.add_ti(new TypeInfo_short);
 		_tidb.add_ti(new TypeInfo_ushort);
 		_tidb.add_ti(new TypeInfo_int);

@@ -40,6 +40,15 @@ namespace flame
 	struct UdtInfo;
 	struct TypeInfoDataBase;
 
+	enum MouseButton
+	{
+		Mouse_Left,
+		Mouse_Right,
+		Mouse_Middle,
+
+		MouseButton_Count
+	};
+
 	enum KeyboardKey
 	{
 		Keyboard_Backspace,
@@ -73,17 +82,6 @@ namespace flame
 		Keyboard_ScrollLock,
 
 		KeyboardKey_Count
-	};
-
-	enum MouseKey
-	{
-		MouseNull = -1,
-
-		Mouse_Left,
-		Mouse_Right,
-		Mouse_Middle,
-
-		MouseKeyCount
 	};
 
 	enum DragAndDrop

@@ -282,24 +282,35 @@ namespace flame
 				}
 
 #if USE_IMGUI
-				ret->native->mouse_left_down_listeners.add([this](const ivec2& pos) {
+				ret->native->mouse_listeners.add([this](MouseButton btn, bool down) {
 					ImGuiIO& io = ImGui::GetIO();
-					io.MouseDown[0] = true;
+					io.MouseDown[btn] = down;
 				});
 
-				ret->native->mouse_left_up_listeners.add([this](const ivec2& pos) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.MouseDown[0] = false;
-				});
-
-				ret->native->mouse_move_listeners.add([this](const ivec2& pos) {
+				ret->native->mousemove_listeners.add([this](const ivec2& pos) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MousePos = ImVec2(pos.x, pos.y);
 				});
 
-				ret->native->mouse_scroll_listeners.add([this](int scroll) {
+				ret->native->scroll_listeners.add([this](int scroll) {
 					ImGuiIO& io = ImGui::GetIO();
 					io.MouseWheel = scroll;
+				});
+
+				ret->native->key_listeners.add([this](KeyboardKey key, bool down) {
+					ImGuiIO& io = ImGui::GetIO();
+					io.KeysDown[key] = down;
+					if (key == Keyboard_Ctrl)
+						io.KeyCtrl = down;
+					if (key == Keyboard_Shift)
+						io.KeyShift = down;
+					if (key == Keyboard_Alt)
+						io.KeyAlt = down;
+				});
+
+				ret->native->char_listeners.add([this](wchar_t ch) {
+					ImGuiIO& io = ImGui::GetIO();
+					io.AddInputCharacter(ch);
 				});
 
 				ret->imgui_pl.reset(GraphicsPipeline::create(device, imgui_pl_str, { "rp=0x" + to_string((uint64)ret->renderpass_clear.get()) }));
@@ -328,7 +339,27 @@ namespace flame
 				io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 				io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 
+				io.KeyMap[ImGuiKey_Tab] = Keyboard_Tab;
+				io.KeyMap[ImGuiKey_LeftArrow] = Keyboard_Left;
+				io.KeyMap[ImGuiKey_RightArrow] = Keyboard_Right;
+				io.KeyMap[ImGuiKey_UpArrow] = Keyboard_Up;
+				io.KeyMap[ImGuiKey_DownArrow] = Keyboard_Down;
+				io.KeyMap[ImGuiKey_PageUp] = Keyboard_PgUp;
+				io.KeyMap[ImGuiKey_PageDown] = Keyboard_PgDn;
+				io.KeyMap[ImGuiKey_Home] = Keyboard_Home;
+				io.KeyMap[ImGuiKey_End] = Keyboard_End;
+				io.KeyMap[ImGuiKey_Insert] = Keyboard_Ins;
+				io.KeyMap[ImGuiKey_Delete] = Keyboard_Del;
+				io.KeyMap[ImGuiKey_Backspace] = Keyboard_Backspace;
 				io.KeyMap[ImGuiKey_Space] = Keyboard_Space;
+				io.KeyMap[ImGuiKey_Enter] = Keyboard_Enter;
+				io.KeyMap[ImGuiKey_Escape] = Keyboard_Esc;
+				io.KeyMap[ImGuiKey_A] = Keyboard_A;
+				io.KeyMap[ImGuiKey_C] = Keyboard_C;
+				io.KeyMap[ImGuiKey_V] = Keyboard_V;
+				io.KeyMap[ImGuiKey_X] = Keyboard_X;
+				io.KeyMap[ImGuiKey_Y] = Keyboard_Y;
+				io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
 
 				{
 					uchar* img_data;

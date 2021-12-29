@@ -37,7 +37,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS std::pair<uvec2, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id);
 	FLAME_FOUNDATION_EXPORTS bool is_keyboard_pressing(KeyboardKey key);
 	FLAME_FOUNDATION_EXPORTS void send_keyboard_event(KeyboardKey key, bool down = true);
-	FLAME_FOUNDATION_EXPORTS void send_mouse_event(MouseKey key, bool down = true);
+	FLAME_FOUNDATION_EXPORTS void send_mouse_event(MouseButton key, bool down = true);
 	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const ivec2& pos);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const std::filesystem::path& filename, const std::wstring& parameters, bool wait, bool show = false);
 	// if output==nullptr then the output will be redirect to std output

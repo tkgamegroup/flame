@@ -1,5 +1,7 @@
 #include "../xml.h"
 #include "../foundation/typeinfo.h"
+#include "../foundation/typeinfo_serialize.h"
+#include "../foundation/system.h"
 #include "entity_private.h"
 #include "world_private.h"
 
@@ -423,7 +425,7 @@ namespace flame
 
 	EntityPtr EntityPrivate::copy()
 	{
-		auto ret = new EntityPrivate();
+		auto ret = Entity::create();
 		ret->name = name;
 		ret->tag = tag;
 		ret->visible = visible;
@@ -480,16 +482,6 @@ namespace flame
 	//		type->destroy(d);
 	//		return true;
 	//	};
-
-		auto ename = std::string(n_src.name());
-		if (ename != "entity")
-		{
-	//		auto it = name_to_prefab_path.find(ename);
-	//		if (it != name_to_prefab_path.end())
-	//			e_dst->load(it->second);
-	//		else
-	//			printf("cannot find prefab: %s\n", ename.c_str());
-		}
 
 		for (auto a : n_src.attributes())
 		{
@@ -568,7 +560,11 @@ namespace flame
 			return false;
 		}
 
-		load_prefab(this, doc_root.first_child());
+		UnserializeSpec spec;
+		spec.map[TypeInfo::get<Component*>()] = [&](const SerializeNode& src)->void* {
+			return nullptr;
+		};
+		unserialize_xml(doc_root, this, spec);
 
 		return true;
 	}
@@ -651,12 +647,16 @@ namespace flame
 
 	bool EntityPrivate::save(const std::filesystem::path& filename)
 	{
-		//pugi::xml_document file;
-		//auto file_root = file.append_child("prefab");
+		pugi::xml_document file;
 
-		//save_prefab(file_root.append_child("entity"), this);
+		SerializeSpec spec;
+		spec.map[TypeInfo::get<Component*>()] = [&](void* src) {
+			SerializeNode ret;
+			return ret;
+		};
+		serialize_xml(this, file.append_child("prefab"), spec);
 
-		//file.save_file(filename.c_str());
+		file.save_file(filename.c_str());
 
 		return true;
 	}
@@ -665,7 +665,9 @@ namespace flame
 	{
 		EntityPtr operator()() override
 		{
-			return new EntityPrivate();
+			auto ret = new EntityPrivate();
+			ret->guid = generate_guid();
+			return ret;
 		}
 	}Entity_create_private;
 	Entity::Create& Entity::create = Entity_create_private;

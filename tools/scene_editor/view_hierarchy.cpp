@@ -20,7 +20,7 @@ void View_Hierarchy::on_draw()
 		else
 			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 		ImGui::PushID(e);
-		auto opened = ImGui::TreeNodeEx(("[] " + e->name).c_str(), flags);
+		auto opened = ImGui::TreeNodeEx(("[] " + e->name).c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
 		ImGui::PopID();
 		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
 		{
@@ -34,6 +34,7 @@ void View_Hierarchy::on_draw()
 				draw_entity(c.get());
 				ImGui::TreePop();
 			}
+			ImGui::TreePop();
 		}
 	};
 

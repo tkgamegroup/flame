@@ -6,6 +6,8 @@ namespace flame
 {
 	struct EntityPrivate : Entity
 	{
+		Guid guid;
+
 		int created_frame;
 		int created_id;
 #ifdef FLAME_UNIVERSE_DEBUG

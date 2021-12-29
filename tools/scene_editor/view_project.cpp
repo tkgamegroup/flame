@@ -19,7 +19,7 @@ void View_Project::FolderTreeNode::draw()
 		flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	else
 		flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-	auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags);
+	auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
 	if (ImGui::IsItemClicked())
 	{
 		if (view_project.selected_folder != this)

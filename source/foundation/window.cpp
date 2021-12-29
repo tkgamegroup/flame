@@ -14,11 +14,11 @@ namespace flame
 			case WM_SYSKEYDOWN:
 			{
 				auto v = vk_code_to_key(wParam);
-				if (v > 0)
+				if (v != KeyboardKey_Count)
 				{
 					w->has_input = true;
-					for (auto& l : w->key_down_listeners.list)
-						l(v);
+					for (auto& l : w->key_listeners.list)
+						l(v, true);
 				}
 			}
 				return true;
@@ -26,11 +26,11 @@ namespace flame
 			case WM_SYSKEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
-				if (v > 0)
+				if (v != KeyboardKey_Count)
 				{
 					w->has_input = true;
-					for (auto& l : w->key_up_listeners.list)
-						l(v);
+					for (auto& l : w->key_listeners.list)
+						l(v, false);
 				}
 			}
 				return true;
@@ -43,65 +43,65 @@ namespace flame
 			{
 				SetCapture(hWnd);
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_left_down_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Left, true);
 			}
 				return true;
 			case WM_LBUTTONUP:
 			{
 				ReleaseCapture();
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_left_up_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Left, false);
 			}
 				return true;
 			case WM_RBUTTONDOWN:
 			{
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_right_down_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Right, true);
 			}
 				return true;
 			case WM_RBUTTONUP:
 			{
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_right_up_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Right, false);
 			}
 				return true;
 			case WM_MBUTTONDOWN:
 			{
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_middle_down_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Middle, true);
 			}
 				return true;
 			case WM_MBUTTONUP:
 			{
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_middle_up_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mouse_listeners.list)
+					l(Mouse_Middle, false);
 			}
 				return true;
 			case WM_MOUSEMOVE:
 			{
 				w->has_input = true;
-				auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_move_listeners.list)
-					l(pos);
+				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				for (auto& l : w->mousemove_listeners.list)
+					l(w->mpos);
 			}
 				return true;
 			case WM_MOUSEWHEEL:
 			{
 				w->has_input = true;
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
-				for (auto& l : w->mouse_scroll_listeners.list)
+				for (auto& l : w->scroll_listeners.list)
 					l(v);
 			}
 				return true;

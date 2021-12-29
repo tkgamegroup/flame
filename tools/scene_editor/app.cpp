@@ -60,6 +60,18 @@ void App::init()
 		{
 			if (ImGui::MenuItem("Open Project"))
 				ifd::FileDialog::Instance().Open("OpenProjectDialog", "Open a project", "");
+			if (ImGui::MenuItem("Open Prefab"))
+				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}");
+			if (ImGui::MenuItem("New Prefab"))
+				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}");
+			if (ImGui::MenuItem("Close"))
+				;
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Scene"))
+		{
+			if (ImGui::MenuItem("Create"))
+				;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -83,18 +95,33 @@ void App::init()
 		}
 		ImGui::EndMainMenuBar();
 
+		auto fmt_path = []() {
+			auto& path = ifd::FileDialog::Instance().GetResult();
+			if (path.has_stem())
+				return path;
+			auto str = path.wstring();
+			str.pop_back();
+			return std::filesystem::path(str);
+		};
 		if (ifd::FileDialog::Instance().IsDone("OpenProjectDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
+				app.open_project(fmt_path());
+			ifd::FileDialog::Instance().Close();
+		}
+		if (ifd::FileDialog::Instance().IsDone("OpenPrefabDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+				view_scene.open_prefab(fmt_path());
+			ifd::FileDialog::Instance().Close();
+		}
+		if (ifd::FileDialog::Instance().IsDone("NewPrefabDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
 			{
-				auto res = ifd::FileDialog::Instance().GetResult();
-				if (!res.has_stem())
-				{
-					auto str = res.wstring();
-					str.pop_back();
-					res = str;
-				}
-				app.open_project(res);
+				auto e = Entity::create();
+				e->name = "Hello";
+				e->save(fmt_path());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
