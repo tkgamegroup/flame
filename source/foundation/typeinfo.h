@@ -1271,6 +1271,7 @@ namespace flame
 				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
 				{
 					fi.call<void(void*)>(p);
+					initialized = true;
 					break;
 				}
 			}

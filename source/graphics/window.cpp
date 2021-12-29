@@ -367,7 +367,7 @@ namespace flame
 
 				resize();
 
-				native->resize_listeners.add([&, ret](const vec2&) {
+				native->resize_listeners.add([=](const vec2&) {
 					ret->framebuffers.clear();
 					resize();
 				});
