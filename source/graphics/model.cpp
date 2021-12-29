@@ -93,10 +93,10 @@ namespace flame
 					material_name = std::to_string(i);
 				else
 				{
-					for (auto& ch : material_name)
+					for (auto& sh : material_name)
 					{
-						if (ch == ' ' || ch == ':')
-							ch = '_';
+						if (sh == ' ' || sh == ':')
+							sh = '_';
 					}
 				}
 				material_name = model_name + "_" + material_name + ".fmat";
@@ -364,10 +364,10 @@ namespace flame
 				auto ai_ani = scene->mAnimations[i];
 
 				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
-				for (auto& ch : animation_name)
+				for (auto& sh : animation_name)
 				{
-					if (ch == '|')
-						ch = '_';
+					if (sh == '|')
+						sh = '_';
 				}
 				auto animation_filename = ppath / animation_name;
 

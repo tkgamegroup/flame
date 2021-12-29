@@ -7,7 +7,7 @@
 //	struct cArmature : Component
 //	{
 //		inline static auto type_name = "flame::cArmature";
-//		inline static auto type_hash = ch(type_name);
+//		inline static auto type_hash = sh(type_name);
 //
 //		std::filesystem::path model_path;
 //		std::wstring animation_paths;

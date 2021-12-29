@@ -7,7 +7,7 @@
 //		if (length == len)
 //			return;
 //		length = len;
-//		data_changed(S<"length"_h>);
+//		data_changed("length"_h);
 //	}
 //
 //	void cOctreePrivate::set_lod(uint _lod)
@@ -15,7 +15,7 @@
 //		if (lod == _lod)
 //			return;
 //		lod = _lod;
-//		data_changed(S<"lod"_h>);
+//		data_changed("lod"_h);
 //	}
 //
 //	bool cOctreePrivate::is_any_within_circle(const vec2& c, float r, uint filter_tag)

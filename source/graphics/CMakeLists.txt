@@ -37,7 +37,8 @@ endif()
 
 add_typeinfo_support(flame_graphics "enum starts_with flame::graphics::")
 
-file(GLOB PUBLIC_HEADER "*.h*")
-list(FILTER PUBLIC_HEADER EXCLUDE REGEX ".*_private[.]h$")
+file(GLOB headers "*.h*")
+list(FILTER headers EXCLUDE REGEX ".*_private[.]h$")
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/graphics")
-add_custom_command(TARGET flame_graphics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PUBLIC_HEADER} "${CMAKE_SOURCE_DIR}/include/flame/graphics")
+add_custom_command(TARGET flame_graphics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/flame/graphics")
+add_custom_command(TARGET flame_graphics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${headers} "${CMAKE_SOURCE_DIR}/include/flame/graphics")

@@ -7,7 +7,7 @@
 //	struct cOctree : Component
 //	{
 //		inline static auto type_name = "flame::cOctree";
-//		inline static auto type_hash = ch(type_name);
+//		inline static auto type_hash = sh(type_name);
 //
 //		float length = 0.f;
 //		uint lod = 0;

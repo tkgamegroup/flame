@@ -52,7 +52,7 @@ namespace flame
 		}
 
 		template<typename T> 
-		inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
+		inline T* get_component_t() const { return (T*)get_component(th<T>()); }
 
 		template<typename T> 
 		inline T* get_component_i(uint idx) const
@@ -60,7 +60,7 @@ namespace flame
 			if (idx >= component_map.size())
 				return nullptr;
 			auto ret = components[idx].get();
-			return ret->type_hash == T::type_hash ? (T*)ret : nullptr;
+			return ret->type_hash == th<T>() ? (T*)ret : nullptr;
 		}
 
 		template<typename T>

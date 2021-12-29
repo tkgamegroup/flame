@@ -92,9 +92,7 @@ namespace flame
 	template<typename T>
 	concept vector_type = is_specialization<T, std::vector>;
 
-	template<auto V> inline constexpr auto S = V;
-
-	constexpr uint ch(char const* str)
+	constexpr uint sh(char const* str)
 	{
 		auto ret = std::_FNV_offset_basis;
 		while (*str)
@@ -106,9 +104,45 @@ namespace flame
 		return ret;
 	}
 
-	constexpr uint operator "" _h(char const* str, std::size_t len)
+	constexpr uint sh(const std::string_view& str)
 	{
-		return ch(str);
+		auto ret = std::_FNV_offset_basis;
+		for (auto sh : str)
+		{
+			ret ^= sh;
+			ret *= std::_FNV_prime;
+		}
+		return ret;
+	}
+
+	consteval uint operator "" _h(char const* str, std::size_t len)
+	{
+		return sh(str);
+	}
+
+	template<typename T>
+	consteval auto tn()
+	{
+		constexpr auto name = std::string_view{ __FUNCSIG__ };
+		constexpr auto prefix1 = std::string_view{ " type_name<" };
+		constexpr auto prefix2 = std::string_view{ "class " };
+		constexpr auto prefix3 = std::string_view{ "struct " };
+		constexpr auto suffix = std::string_view{ ">(void)" };
+
+		auto start = name.find(prefix1) + prefix1.size();
+		if (name.compare(start, prefix2.size(), prefix2) == 0)
+			start += prefix2.size();
+		else if (name.compare(start, prefix3.size(), prefix3) == 0)
+			start += prefix3.size();
+		auto end = name.rfind(suffix);
+
+		return name.substr(start, (end - start));
+	}
+
+	template<typename T>
+	consteval unsigned int th()
+	{
+		return sh(tn<T>());
 	}
 
 	template<typename F>

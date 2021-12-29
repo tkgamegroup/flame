@@ -17,7 +17,7 @@
 //		apply_src();
 //		if (node)
 //			node->mark_transform_dirty();
-//		data_changed(S<"model_name"_h>);
+//		data_changed("model_name"_h);
 //	}
 //
 //	void cMeshPrivate::set_mesh_index(uint idx)
@@ -28,7 +28,7 @@
 //		apply_src();
 //		if (node)
 //			node->mark_transform_dirty();
-//		data_changed(S<"mesh_index"_h>);
+//		data_changed("mesh_index"_h);
 //	}
 //
 //	void cMeshPrivate::set_skin_index(uint idx)
@@ -38,7 +38,7 @@
 //		skin_index = idx;
 //		if (node)
 //			node->mark_drawing_dirty();
-//		data_changed(S<"skin_index"_h>);
+//		data_changed("skin_index"_h);
 //	}
 //
 //	void cMeshPrivate::set_cast_shadow(bool v)
@@ -46,7 +46,7 @@
 //		if (cast_shadow == v)
 //			return;
 //		cast_shadow = v;
-//		data_changed(S<"cast_shadow"_h>);
+//		data_changed("cast_shadow"_h);
 //	}
 //
 //	void cMeshPrivate::set_shading_flags(ShadingFlags flags)
@@ -56,7 +56,7 @@
 //		shading_flags = flags;
 //		if (node)
 //			node->mark_drawing_dirty();
-//		data_changed(S<"shading_flags"_h>);
+//		data_changed("shading_flags"_h);
 //	}
 //
 //	void cMeshPrivate::apply_src()
