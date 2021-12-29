@@ -197,7 +197,7 @@ void View_Project::open_folder(const std::filesystem::path& path)
 
 	for (auto& it : std::filesystem::directory_iterator(path))
 		items.emplace_back(new Item(it.path()));
-	std::sort(items.begin(), items.end(), [](Item* a, Item* b) {
+	std::sort(items.begin(), items.end(), [](const auto& a, const auto& b) {
 		return a->path < b->path;
 	});
 }
