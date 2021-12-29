@@ -7,7 +7,7 @@
 //	struct cMesh : Component
 //	{
 //		inline static auto type_name = "flame::cMesh";
-//		inline static auto type_hash = ch(type_name);
+//		inline static auto type_hash = sh(type_name);
 //
 //		std::filesystem::path model_name;
 //		uint mesh_index = 0;

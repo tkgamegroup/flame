@@ -32,7 +32,7 @@
 //		apply_src();
 //		if (node)
 //			node->mark_transform_dirty();
-//		data_changed(S<"model_path"_h>);
+//		data_changed("model_path"_h);
 //	}
 //
 //	void cArmaturePrivate::set_animation_paths(const std::wstring& paths)
@@ -43,7 +43,7 @@
 //		apply_src();
 //		if (node)
 //			node->mark_transform_dirty();
-//		data_changed(S<"animation_paths"_h>);
+//		data_changed("animation_paths"_h);
 //	}
 //
 //	void cArmaturePrivate::play(uint id, float _speed, bool _loop)
@@ -134,7 +134,7 @@
 //				auto& a = actions.emplace_back();
 //				a.total_frame = 0;
 //
-//				for (auto& ch : animation->channels)
+//				for (auto& sh : animation->channels)
 //				{
 //					auto find_bone = [&](std::string_view name) {
 //						for (auto i = 0; i < bones.size(); i++)
@@ -144,17 +144,17 @@
 //						}
 //						return -1;
 //					};
-//					auto id = find_bone(ch.node_name);
+//					auto id = find_bone(sh.node_name);
 //					if (id != -1)
 //					{
-//						uint count = ch.keys.size();
+//						uint count = sh.keys.size();
 //						if (a.total_frame == 0)
 //							a.total_frame = max(a.total_frame, count);
 //
 //						auto& t = a.tracks.emplace_back();
 //						t.first = id;
 //						t.second.resize(count);
-//						memcpy(t.second.data(), ch.keys.data(), sizeof(graphics::Channel::Key) * count);
+//						memcpy(t.second.data(), sh.keys.data(), sizeof(graphics::Channel::Key) * count);
 //					}
 //				}
 //

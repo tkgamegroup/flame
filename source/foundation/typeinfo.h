@@ -161,7 +161,7 @@ namespace flame
 
 		inline static uint get_hash(TypeTag tag, std::string_view name)
 		{
-			auto ret = ch(name.data());
+			auto ret = sh(name.data());
 			ret ^= std::hash<uint>()(tag);
 			return ret;
 		}
@@ -275,14 +275,14 @@ namespace flame
 			{
 				auto sp = SUS::split(i, '=');
 				auto& m = d.emplace_back();
-				m.first = ch(sp[0].c_str());
+				m.first = sh(sp[0].c_str());
 				switch (m.first)
 				{
-				case S<"Location"_h>:
+				case "Location"_h:
 					m.second.u = std::stoi(sp[1]);
 					break;
-				case S<"MinValue"_h>:
-				case S<"MaxValue"_h>:
+				case "MinValue"_h:
+				case "MaxValue"_h:
 					m.second.u = std::stof(sp[1]);
 					break;
 				}
@@ -298,13 +298,13 @@ namespace flame
 					ret += ';';
 				switch (i.first)
 				{
-				case S<"Location"_h>:
+				case "Location"_h:
 					ret += "Location=" + std::to_string(i.second.i);
 					break;
-				case S<"MinValue"_h>:
+				case "MinValue"_h:
 					ret += "MinValue=" + std::to_string(i.second.f);
 					break;
-				case S<"MaxValue"_h>:
+				case "MaxValue"_h:
 					ret += "MaxValue=" + std::to_string(i.second.f);
 					break;
 				}
@@ -506,7 +506,7 @@ namespace flame
 		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagE, base_name, sizeof(int))
 		{
-			ei = find_enum(ch(name.c_str()), db);
+			ei = find_enum(sh(name.c_str()), db);
 		}
 	};
 
@@ -1255,7 +1255,7 @@ namespace flame
 		TypeInfo_Udt(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagU, base_name, 0)
 		{
-			ui = find_udt(ch(name.c_str()), db);
+			ui = find_udt(sh(name.c_str()), db);
 			if (ui)
 				size = ui->size;
 		}

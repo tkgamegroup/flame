@@ -146,7 +146,7 @@ namespace flame
 		for (auto n_enum : doc_root.child("enums"))
 		{
 			auto name = std::string(n_enum.attribute("name").value());
-			auto& e = enums.emplace(ch(name.c_str()), EnumInfo()).first->second;
+			auto& e = enums.emplace(sh(name.c_str()), EnumInfo()).first->second;
 			e.name = name;
 			for (auto n_item : n_enum.child("items"))
 			{
@@ -159,7 +159,7 @@ namespace flame
 		for (auto n_udt : doc_root.child("udts"))
 		{
 			auto name = std::string(n_udt.attribute("name").value());
-			auto& u = udts.emplace(ch(name.c_str()), UdtInfo()).first->second;
+			auto& u = udts.emplace(sh(name.c_str()), UdtInfo()).first->second;
 			u.name = name;
 			u.size = n_udt.attribute("size").as_uint();
 			if (auto a = n_udt.attribute("base_class_name"); a)

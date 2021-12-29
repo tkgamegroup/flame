@@ -22,7 +22,7 @@ namespace flame
 			//	getter(getter),
 			//	setter(setter)
 			//{
-			//	hash = ch(name.c_str());
+			//	hash = sh(name.c_str());
 
 			//	//if (getter)
 			//	//{
@@ -189,7 +189,7 @@ namespace flame
 	EntityPrivate::~EntityPrivate()
 	{
 		for (auto& l : message_listeners.list)
-			l(S<"destroyed"_h>, nullptr, nullptr);
+			l("destroyed"_h, nullptr, nullptr);
 	}
 
 	void EntityPrivate::update_visibility()
@@ -207,7 +207,7 @@ namespace flame
 		if (global_visibility != prev_visibility)
 		{
 			for (auto& l : message_listeners.list)
-				l(S<"visibility_changed"_h>, global_visibility ? (void*)1 : nullptr, nullptr);
+				l("visibility_changed"_h, global_visibility ? (void*)1 : nullptr, nullptr);
 			for (auto& c : components)
 				c->on_visibility_changed(global_visibility);
 		}
@@ -232,7 +232,7 @@ namespace flame
 		state = s;
 
 		for (auto& l : message_listeners.list)
-			l(S<"state_changed"_h>, (void*)state, (void*)last_state);
+			l("state_changed"_h, (void*)state, (void*)last_state);
 		for (auto& c : components)
 			c->on_state_changed(state);
 	}
@@ -336,7 +336,7 @@ namespace flame
 		e->update_visibility();
 
 		for (auto& l : e->message_listeners.list)
-			l(S<"entity_added"_h>, nullptr, nullptr);
+			l("entity_added"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_added();
 
@@ -346,7 +346,7 @@ namespace flame
 		});
 
 		for (auto& l : message_listeners.list)
-			l(S<"child_added"_h>, e, nullptr);
+			l("child_added"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_added(e);
 	}
@@ -356,7 +356,7 @@ namespace flame
 		e->parent = nullptr;
 
 		for (auto& l : e->message_listeners.list)
-			l(S<"entity_removed"_h>, nullptr, nullptr);
+			l("entity_removed"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
@@ -366,7 +366,7 @@ namespace flame
 		});
 
 		for (auto& l : message_listeners.list)
-			l(S<"child_removed"_h>, e, nullptr);
+			l("child_removed"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_removed(e);
 	}
@@ -407,7 +407,7 @@ namespace flame
 	{
 		world = _world;
 		for (auto& l : message_listeners.list)
-			l(S<"entered_world"_h>, nullptr, nullptr);
+			l("entered_world"_h, nullptr, nullptr);
 		for (auto& c : components)
 			c->on_entered_world();
 	}
@@ -415,7 +415,7 @@ namespace flame
 	void EntityPrivate::on_left_world()
 	{
 		for (auto& l : message_listeners.list)
-			l(S<"left_world"_h>, nullptr, nullptr);
+			l("left_world"_h, nullptr, nullptr);
 		for (auto& c : components)
 			c->on_left_world();
 		world = nullptr;

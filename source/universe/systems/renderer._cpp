@@ -270,7 +270,7 @@ namespace flame
 		if (element->culled != culled)
 		{
 			element->culled = culled;
-			element->data_changed(S<"culled"_h>);
+			element->data_changed("culled"_h);
 		}
 		if (culled)
 			return layer;

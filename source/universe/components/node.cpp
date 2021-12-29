@@ -17,7 +17,7 @@ namespace flame
 			return;
 		pos = p;
 		mark_transform_dirty();
-		data_changed(S<"pos"_h>);
+		data_changed("pos"_h);
 	}
 
 	vec3 cNodePrivate::get_eul()
@@ -36,7 +36,7 @@ namespace flame
 		qut_dirty = true;
 		eul_dirty = false;
 		mark_transform_dirty();
-		data_changed(S<"eul"_h>);
+		data_changed("eul"_h);
 	}
 
 	quat cNodePrivate::get_qut() 
@@ -55,7 +55,7 @@ namespace flame
 		eul_dirty = true;
 		qut_dirty = false;
 		mark_transform_dirty();
-		data_changed(S<"qut"_h>);
+		data_changed("qut"_h);
 	}
 
 	void cNodePrivate::set_scl(const vec3& s)
@@ -64,7 +64,7 @@ namespace flame
 			return;
 		scl = s;
 		mark_transform_dirty();
-		data_changed(S<"scl"_h>);
+		data_changed("scl"_h);
 	}
 
 	void cNodePrivate::look_at(const vec3& t)
@@ -146,7 +146,7 @@ namespace flame
 			transform = m;
 			g_pos = m[3];
 
-			data_changed(S<"transform"_h>);
+			data_changed("transform"_h);
 		}
 	}
 

@@ -9,9 +9,9 @@ static std::vector<std::wstring> extensions;
 static std::vector<std::wstring> general_excludes;
 static std::vector<std::wstring> special_excludes;
 
-bool is_slash_chr(wchar_t ch)
+bool is_slash_chr(wchar_t sh)
 {
-	return ch == L'/' || ch == L'\\';
+	return sh == L'/' || sh == L'\\';
 }
 
 void add_extension(const std::wstring &i)

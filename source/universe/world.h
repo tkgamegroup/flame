@@ -23,7 +23,7 @@ namespace flame
 			return nullptr;
 		}
 
-		template<typename T> inline T* get_system_t() const { return (T*)get_system(T::type_hash); }
+		template<typename T> inline T* get_system_t() const { return (T*)get_system(th<T>()); }
 
 		virtual void add_system(System* s) = 0;
 		virtual void remove_system(System* s, bool destroy = true) = 0;

@@ -18,18 +18,18 @@ namespace flame
 			{
 				auto off = uvec2(0);
 
-				for (auto ch : str)
+				for (auto sh : str)
 				{
-					if (ch == '\n')
+					if (sh == '\n')
 					{
 						off.x = 0.f;
 						off.y += font_size;
 					}
-					else if (ch != '\r')
+					else if (sh != '\r')
 					{
-						if (ch == '\t')
-							ch = ' ';
-						off.x += get_glyph(ch, font_size).advance;
+						if (sh == '\t')
+							sh = ' ';
+						off.x += get_glyph(sh, font_size).advance;
 					}
 				}
 				return off;
@@ -40,18 +40,18 @@ namespace flame
 				auto size = uvec2(0, font_size);
 				auto x = 0U;
 
-				for (auto ch : str)
+				for (auto sh : str)
 				{
-					if (ch == '\n')
+					if (sh == '\n')
 					{
 						size.y += font_size;
 						x = 0;
 					}
-					else if (ch != '\r')
+					else if (sh != '\r')
 					{
-						if (ch == '\t')
-							ch = ' ';
-						x += get_glyph(ch, font_size).advance;
+						if (sh == '\t')
+							sh = ' ';
+						x += get_glyph(sh, font_size).advance;
 						size.x = max(size.x, x);
 					}
 				}
@@ -69,9 +69,9 @@ namespace flame
 				auto ret = std::wstring();
 				auto w = 0U;
 
-				for (auto ch : str)
+				for (auto sh : str)
 				{
-					switch (ch)
+					switch (sh)
 					{
 					case '\n':
 						w = 0;
@@ -80,9 +80,9 @@ namespace flame
 					case '\r':
 						continue;
 					case '\t':
-						ch = ' ';
+						sh = ' ';
 					default:
-						auto adv = get_glyph(ch, font_size).advance;
+						auto adv = get_glyph(sh, font_size).advance;
 						if (w + adv >= width)
 						{
 							w = adv;
@@ -90,7 +90,7 @@ namespace flame
 						}
 						else
 							w += adv;
-						ret += ch;
+						ret += sh;
 					}
 				}
 
@@ -106,18 +106,18 @@ namespace flame
 				auto p = vec2(0.f);
 				for (i = 0; i < str.size(); i++)
 				{
-					auto ch = str[i];
-					if (ch == '\n')
+					auto sh = str[i];
+					if (sh == '\n')
 					{
 						p.y += size;
 						p.x = 0.f;
 					}
-					else if (ch != '\r')
+					else if (sh != '\r')
 					{
-						if (ch == '\t')
-							ch = ' ';
+						if (sh == '\t')
+							sh = ' ';
 
-						auto& g = get_glyph(ch, size);
+						auto& g = get_glyph(sh, size);
 						auto o = p + vec2(g.off);
 						auto s = vec2(g.size);
 

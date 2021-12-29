@@ -232,15 +232,15 @@ namespace flame
 	{
 		static uint indent_length(const std::basic_string<CH>& s)
 		{
-			return std::find_if(s.begin(), s.end(), [](char ch) {
-				return !std::isspace(ch);
+			return std::find_if(s.begin(), s.end(), [](char sh) {
+				return !std::isspace(sh);
 			}) - s.begin();
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
-			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
-				return !std::isspace(ch);
+			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char sh) {
+				return !std::isspace(sh);
 			}));
 		}
 
@@ -253,8 +253,8 @@ namespace flame
 
 		static void rtrim(std::basic_string<CH>& s)
 		{
-			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
-				return !std::isspace(ch);
+			s.erase(std::find_if(s.rbegin(), s.rend(), [](char sh) {
+				return !std::isspace(sh);
 			}).base(), s.end());
 		}
 
@@ -280,22 +280,22 @@ namespace flame
 		
 		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
 		{
-			for (auto& ch : str)
+			for (auto& sh : str)
 			{
-				if (ch == from)
-					ch = to;
+				if (sh == from)
+					sh = to;
 			}
 		}
 
-		static void remove_char(std::basic_string<CH>& str, CH ch = ' ')
+		static void remove_char(std::basic_string<CH>& str, CH sh = ' ')
 		{
-			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
+			str.erase(std::remove(str.begin(), str.end(), sh), str.end());
 		}
 
 		static void remove_spaces(std::basic_string<CH>& str)
 		{
-			str.erase(std::remove_if(str.begin(), str.end(), [](char ch) {
-				return std::isspace(ch);
+			str.erase(std::remove_if(str.begin(), str.end(), [](char sh) {
+				return std::isspace(sh);
 			}), str.end());
 		}
 
@@ -473,9 +473,9 @@ namespace flame
 
 	inline bool read_b(std::ifstream& f)
 	{
-		char ch;
-		f.read(&ch, sizeof(char));
-		return ch == 1;
+		char sh;
+		f.read(&sh, sizeof(char));
+		return sh == 1;
 	}
 
 	inline int read_i(std::ifstream& f)
@@ -520,8 +520,8 @@ namespace flame
 
 	inline void write_b(std::ofstream& f, bool b)
 	{
-		char ch = b ? 1 : 0;
-		f.write(&ch, sizeof(char));
+		char sh = b ? 1 : 0;
+		f.write(&sh, sizeof(char));
 	}
 
 	inline void write_i(std::ofstream& f, int v)

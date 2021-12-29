@@ -124,7 +124,7 @@ int main(int argc, char** args)
 		if (cmd != "new_general_template")
 		{
 			public_header_file << indent_str << "\tinline static auto type_name = \"" << (is_internal ? "flame::" : "") << class_name << "\";\n";
-			public_header_file << indent_str << "\tinline static auto type_hash = ch(type_name);\n\n";
+			public_header_file << indent_str << "\tinline static auto type_hash = sh(type_name);\n\n";
 			if (cmd == "new_component_template")
 				public_header_file << indent_str << "\t" << class_name << "() : Component(type_name, type_hash)\n\t\t{\n\t\t}\n\n";
 			else if (cmd == "new_system_template")
@@ -353,11 +353,11 @@ int main(int argc, char** args)
 
 		auto get_indent = [](const std::string& str) {
 			std::string ret;
-			for (auto ch : str)
+			for (auto sh : str)
 			{
-				if (!std::isspace(ch))
+				if (!std::isspace(sh))
 					break;
-				ret += ch;
+				ret += sh;
 			}
 			return ret;
 		};
