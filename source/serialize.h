@@ -323,6 +323,11 @@ namespace flame
 			return ret;
 		}
 
+		static std::basic_string<CH> get_tail(const std::basic_string<CH>& str, uint off, uint len)
+		{
+			return str.substr(str.size() - len - off, len);
+		}
+
 		static bool cut_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
 			if (str.starts_with(head))

@@ -184,7 +184,7 @@ namespace flame
 		}
 	}
 
-	inline void serialize_text(const UdtInfo& ui, void* src, std::ofstream& dst, const std::string& indent, const SerializeSpec& spec = {})
+	inline void serialize_text(const UdtInfo& ui, void* src, std::ostream& dst, const std::string& indent, const SerializeSpec& spec = {})
 	{
 		auto indent2 = indent;
 		if (ui.variables.size() > 1)
@@ -320,7 +320,7 @@ namespace flame
 	}
 
 	template<typename T>
-	inline void serialize_text(T* src, std::ofstream& dst, const SerializeSpec& spec = {})
+	inline void serialize_text(T* src, std::ostream& dst, const SerializeSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)

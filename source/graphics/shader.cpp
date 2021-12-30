@@ -141,6 +141,20 @@ namespace flame
 			return ret;
 		}
 
+		bool compile_shader(ShaderStageFlags stage, std::istream& src, std::ostream& dst)
+		{
+			auto vk_sdk_path = getenv("VK_SDK_PATH");
+			if (!vk_sdk_path)
+			{
+				printf("cannot find VulkanSDK\n");
+				return false;
+			}
+
+			auto get_includes = [](std::istream& src) {
+
+			};
+		}
+
 		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::filesystem::path& dst_path)
 		{
 			if (std::filesystem::exists(dst_path))
@@ -193,7 +207,7 @@ namespace flame
 					fn.make_preferred();
 					headers.pop_front();
 
-					if (dependencies.end() == std::find(dependencies.begin(), dependencies.end(), fn))
+					if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
 						dependencies.push_back(fn);
 
 					std::ifstream file(fn);
@@ -205,7 +219,12 @@ namespace flame
 						if (!line.empty() && line[0] != '#')
 							break;
 						if (SUS::cut_head_if(line, "#include "))
-							headers.push_back(ppath / line.substr(1, line.size() - 2));
+						{
+							std::filesystem::path p = line.substr(1, line.size() - 2);
+							if (!p.is_absolute())
+								p = ppath / p;
+							headers.push_back(p);
+						}
 					}
 					file.close();
 				}
@@ -213,13 +232,6 @@ namespace flame
 				dst << "dependencies:" << std::endl;
 				serialize_text(&dependencies, dst);
 				dst << std::endl;
-			}
-
-			auto vk_sdk_path = getenv("VK_SDK_PATH");
-			if (!vk_sdk_path)
-			{
-				printf("cannot find vk sdk\n");
-				return false;
 			}
 
 			std::ofstream code("temp.glsl");
@@ -249,7 +261,7 @@ namespace flame
 				{
 					std::string line;
 					std::getline(src, line);
-					if (line.starts_with("#include "))
+					if (line.starts_with("#include ") && SUS::get_tail(line, 1, 4) == ".dsl")
 						continue;
 					code << line << std::endl;
 				}
@@ -429,6 +441,24 @@ namespace flame
 			if (key.empty())
 				return "#" + to_string(id++);
 			return key;
+		}
+
+		std::filesystem::path get_res_path(const std::filesystem::path& filename, const std::vector<std::string>& defines)
+		{
+			auto ret = filename;
+			if (filename.c_str()[0] != L'#')
+			{
+				if (!defines.empty())
+				{
+					auto hash = 0U;
+					for (auto& d : defines)
+						hash = hash ^ std::hash<std::string>()(d);
+					auto str_hash = to_hex_wstring(hash);
+					ret += L"." + to_hex_wstring(hash);
+				}
+			}
+			ret += L".res";
+			return ret;
 		}
 
 		DescriptorPoolPrivate::~DescriptorPoolPrivate()
@@ -926,16 +956,7 @@ namespace flame
 						type = ShaderStageComp;
 				}
 
-				auto res_path = filename;
-				if (filename.c_str()[0] != L'#')
-				{
-					auto hash = 0U;
-					for (auto& d : defines)
-						hash = hash ^ std::hash<std::string>()(d);
-					auto str_hash = to_hex_wstring(hash);
-					res_path += L"." + to_hex_wstring(hash);
-				}
-				res_path += L".res";
+				auto res_path = get_res_path(filename, defines);
 				compile_shader(type, filename, res_path);
 
 				if (device)
@@ -1269,6 +1290,8 @@ namespace flame
 
 					ppath = filename.parent_path();
 				}
+
+				auto res_path = get_res_path(filename, defines);
 
 				GraphicsPipelineInfo info;
 

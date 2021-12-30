@@ -23,7 +23,9 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 			auto ti = (TypeInfo_Data*)vi.type;
 			switch (ti->data_type)
 			{
-
+			case DataBool:
+				ImGui::Checkbox(vi.name.c_str(), (bool*)p);
+				break;
 			case DataString:
 				ImGui::InputText(vi.name.c_str(), (std::string*)p);
 				break;
