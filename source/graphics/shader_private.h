@@ -61,6 +61,8 @@ namespace flame
 			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
 			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
 			void update() override;
+
+			static DescriptorSetPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct PipelineLayoutPrivate : PipelineLayout
@@ -72,6 +74,8 @@ namespace flame
 			VkPipelineLayout vk_pipeline_layout;
 
 			~PipelineLayoutPrivate();
+
+			static PipelineLayoutPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct ShaderPrivate : Shader
@@ -83,6 +87,8 @@ namespace flame
 			VkShaderModule vk_module = 0;
 
 			~ShaderPrivate();
+
+			static ShaderPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct GraphicsPipelinePrivate : GraphicsPipeline

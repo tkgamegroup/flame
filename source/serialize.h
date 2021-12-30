@@ -328,7 +328,7 @@ namespace flame
 			return str.substr(str.size() - len - off, len);
 		}
 
-		static bool cut_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
+		static bool remove_head(std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
 			if (str.starts_with(head))
 			{
@@ -338,11 +338,21 @@ namespace flame
 			return false;
 		}
 
-		static bool cut_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
+		static bool remove_tail(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
 		{
 			if (str.ends_with(tail))
 			{
-				str = str.substr(0, str.size() - tail.size());
+				str = get_tail(str, 0, tail.size());
+				return true;
+			}
+			return false;
+		}
+
+		static bool remove_both_ends(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		{
+			if (str.starts_with(head) && str.ends_with(tail))
+			{
+				str = str.substr(head.size(), str.size() - head.size() - tail.size());
 				return true;
 			}
 			return false;

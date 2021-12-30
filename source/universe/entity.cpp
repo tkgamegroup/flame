@@ -434,7 +434,7 @@ namespace flame
 		for (auto& c : components)
 		{
 		//	std::string type_name = c->type_name;
-		//	SUS::cut_head_if(type_name, "flame::");
+		//	SUS::remove_head(type_name, "flame::");
 		//	auto ct = find_component_type(type_name);
 		//	assert(ct);
 		//	auto cc = (Component*)ct->create();

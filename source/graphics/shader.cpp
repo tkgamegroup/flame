@@ -143,16 +143,6 @@ namespace flame
 
 		bool compile_shader(ShaderStageFlags stage, std::istream& src, std::ostream& dst)
 		{
-			auto vk_sdk_path = getenv("VK_SDK_PATH");
-			if (!vk_sdk_path)
-			{
-				printf("cannot find VulkanSDK\n");
-				return false;
-			}
-
-			auto get_includes = [](std::istream& src) {
-
-			};
 		}
 
 		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::filesystem::path& dst_path)
@@ -218,9 +208,9 @@ namespace flame
 						std::getline(file, line);
 						if (!line.empty() && line[0] != '#')
 							break;
-						if (SUS::cut_head_if(line, "#include "))
+						if (SUS::remove_both_ends(line, "#include \"", "\""))
 						{
-							std::filesystem::path p = line.substr(1, line.size() - 2);
+							std::filesystem::path p = line;
 							if (!p.is_absolute())
 								p = ppath / p;
 							headers.push_back(p);
@@ -261,7 +251,7 @@ namespace flame
 				{
 					std::string line;
 					std::getline(src, line);
-					if (line.starts_with("#include ") && SUS::get_tail(line, 1, 4) == ".dsl")
+					if (line.starts_with("#include \"") && line.ends_with(".dsl\""))
 						continue;
 					code << line << std::endl;
 				}
@@ -277,19 +267,17 @@ namespace flame
 				{
 					std::string line;
 					std::getline(src, line);
-					std::smatch res;
 					static std::regex reg("#include\\s+.([\\w\\/\\.]+\\.pll)");
-					if (std::regex_search(line, res, reg))
+					if (SUS::remove_both_ends(line, "#include \"", "\""))
 					{
 						code << std::endl;
 
-						std::ifstream pll(src_path.parent_path() / res[1].str());
+						std::ifstream pll(src_path.parent_path() / line);
 						while (!pll.eof())
 						{
 							std::getline(pll, line);
-							static std::regex reg("#include\\s+.([\\w\\/\\.]+\\.dsl)");
 							code << line << std::endl;
-							if (std::regex_search(line, reg))
+							if (line.starts_with("#include \"") && line.ends_with(".dsl\""))
 							{
 								code << "#undef SET" << std::endl;
 								code << "#define SET " << std::to_string(set++) << std::endl;
@@ -305,6 +293,13 @@ namespace flame
 			src.close();
 
 			code.close();
+
+			auto vk_sdk_path = getenv("VK_SDK_PATH");
+			if (!vk_sdk_path)
+			{
+				printf("cannot find VulkanSDK\n");
+				return false;
+			}
 
 			wprintf(L"compiling: %s\n", src_path.c_str());
 			wprintf(L"   with defines: \n");

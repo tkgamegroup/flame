@@ -28,14 +28,14 @@ TypeTag parse_vector(std::string& name)
 	if (ok)
 	{
 		name = res[1].str();
-		auto is_enum = SUS::cut_head_if(name, "enum ");
-		SUS::cut_head_if(name, "struct ");
-		SUS::cut_head_if(name, "class ");
+		auto is_enum = SUS::remove_head(name, "enum ");
+		SUS::remove_head(name, "struct ");
+		SUS::remove_head(name, "class ");
 		name = TypeInfo::format_name(name);
 		if (is_enum)
 			return TagVE;
 		if (!is_pointer)
-			is_pointer = SUS::cut_tail_if(name, "*") || SUS::cut_tail_if(name, "*__ptr64");
+			is_pointer = SUS::remove_tail(name, "*") || SUS::remove_tail(name, "*__ptr64");
 		if (TypeInfo::is_basic_type(name))
 			return is_pointer ? TagVPD : TagVD;
 		else
@@ -359,7 +359,7 @@ process:
 						{
 							line = line.substr(3);
 							SUS::ltrim(line);
-							if (SUS::cut_head_if(line, "Reflect"))
+							if (SUS::remove_head(line, "Reflect"))
 							{
 								auto need_ctor = false;
 
@@ -372,14 +372,14 @@ process:
 
 								std::getline(file, line);
 								SUS::ltrim(line);
-								if (SUS::cut_head_if(line, "enum "))
+								if (SUS::remove_head(line, "enum "))
 								{
 									auto& r = enum_rules.emplace_back();
 									r.type = Rule::EndsWith;
 									r.name = line;
 									pr = &r;
 								}
-								else if (SUS::cut_head_if(line, "struct "))
+								else if (SUS::remove_head(line, "struct "))
 								{
 									auto& r = udt_rules.emplace_back();
 									r.type = Rule::EndsWith;
@@ -393,7 +393,7 @@ process:
 									pr = &r;
 								}
 							}
-							else if (SUS::cut_head_if(line, "Serialize"))
+							else if (SUS::remove_head(line, "Serialize"))
 							{
 								if (pr)
 								{
@@ -481,7 +481,7 @@ process:
 			if (std::regex_search(name, res, reg))
 			{
 				auto name = res[1].str();
-				if (SUS::cut_head_if(name, "enum "))
+				if (SUS::remove_head(name, "enum "))
 				{
 					auto& r = enum_rules.emplace_back();
 					r.name = "^" + name + "$";

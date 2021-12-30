@@ -337,7 +337,7 @@ int main(int argc, char** args)
 
 		{
 			auto stem = path.stem().string();
-			SUS::cut_tail_if(stem, "_private");
+			SUS::remove_tail(stem, "_private");
 
 			public_header_fn = stem + ".h";
 			private_header_fn = stem + "_private.h";
