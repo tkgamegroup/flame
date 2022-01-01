@@ -53,6 +53,14 @@ namespace flame
 	{
 		for (auto& vi : ui.variables)
 		{
+			std::function<void(const SerializeNode&, pugi::xml_node)> print_value;
+			print_value = [&](const SerializeNode& src, pugi::xml_node dst) {
+				for (auto& c : src.children)
+				{
+
+				}
+			};
+
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -65,7 +73,14 @@ namespace flame
 			}
 				break;
 			case TagU:
-				serialize_xml(*((TypeInfo_Udt*)vi.type)->ui, p, dst.append_child(vi.name.c_str()), spec);
+				serialize_xml(*vi.type->retrive_ui(), p, dst.append_child(vi.name.c_str()), spec);
+				break;
+			case TagPU:
+			{
+				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
+				if (auto it = spec.map.find(ti); it != spec.map.end())
+					print_value(it->second(*(void**)p), dst.append_child(vi.name.c_str()));
+			}
 				break;
 			case TagVE:
 			{
@@ -93,8 +108,8 @@ namespace flame
 					auto len = (vec.end() - vec.begin()) / ti->size;
 					for (auto i = 0; i < len; i++)
 					{
-						auto nn = n.append_child("item");
-						nn.append_attribute("v").set_value(ti->serialize(p).c_str());
+						n.append_child("item").append_attribute("v").
+							set_value(ti->serialize(p).c_str());
 						p += ti->size;
 					}
 				}
@@ -114,8 +129,7 @@ namespace flame
 						auto len = (vec.end() - vec.begin()) / ti->size;
 						for (auto i = 0; i < len; i++)
 						{
-							auto nn = n.append_child("item");
-							serialize_xml(*ui, p, nn, spec);
+							serialize_xml(*ui, p, n.append_child("item"), spec);
 							p += ti->size;
 						}
 					}
@@ -123,6 +137,28 @@ namespace flame
 			}
 				break;
 			case TagVPU:
+			{
+				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+				if (ti)
+				{
+					auto& vec = *(std::vector<void*>*)p;
+					if (!vec.empty())
+					{
+						if (auto it = spec.map.find(ti); it != spec.map.end())
+						{
+							auto n = dst.append_child(vi.name.c_str());
+							for (auto v : vec)
+								print_value(it->second(v), n.append_child("item"));
+						}
+						else if (ti->ti->ui == &ui)
+						{
+							auto n = dst.append_child(vi.name.c_str());
+							for (auto v : vec)
+								serialize_xml(ui, v, n.append_child("item"), spec);
+						}
+					}
+				}
+			}
 				break;
 			}
 		}
@@ -135,7 +171,7 @@ namespace flame
 		switch (ti->tag)
 		{
 		case TagU:
-			serialize_xml(*((TypeInfo_Udt*)ti)->ui, src, dst, spec);
+			serialize_xml(*ti->retrive_ui(), src, dst, spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -168,7 +204,7 @@ namespace flame
 		switch (ti->tag)
 		{
 		case TagU:
-			unserialize_xml(*((TypeInfo_Udt*)ti)->ui, src, dst, spec);
+			unserialize_xml(*ti->retrive_ui(), src, dst, spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -222,7 +258,7 @@ namespace flame
 				break;
 			case TagU:
 			{
-				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
+				auto ui = vi.type->retrive_ui();
 				if (ui)
 				{
 					print_name();
@@ -326,7 +362,7 @@ namespace flame
 		switch (ti->tag)
 		{
 		case TagU:
-			serialize_text(*((TypeInfo_Udt*)ti)->ui, src, dst, "", spec);
+			serialize_text(*ti->retrive_ui(), src, dst, "", spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -389,7 +425,7 @@ namespace flame
 				break;
 			case TagU:
 			{
-				auto ui = ((TypeInfo_Udt*)vi.type)->ui;
+				auto ui = vi.type->retrive_ui();
 				if (ui)
 					unserialize_text(*ui, src, indent2, p);
 			}
@@ -589,7 +625,7 @@ namespace flame
 		switch (ti->tag)
 		{
 		case TagU:
-			unserialize_text(*((TypeInfo_Udt*)ti)->ui, src, 0, dst, spec);
+			unserialize_text(*ti->retrive_ui(), src, 0, dst, spec);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)

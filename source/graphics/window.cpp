@@ -8,84 +8,6 @@
 #include "command_ext.h"
 #include "window_private.h"
 
-auto imgui_pl_str = R"^^^(
-layout
-  @pll
-shaders
-  @vert
- ---
-  @frag
-renderpass
-  {rp}
-vertex_buffers
-  attributes
-    location
-      0
-    format
-      R32G32_SFLOAT
-   ---
-    location
-      1
-    format
-      R32G32_SFLOAT
-   ---
-    location
-      2
-    format
-      R8G8B8A8_UNORM
-cull_mode
-  None
-blend_options
-  enable
-    true
-  src_color
-    SrcAlpha
-  dst_color
-    OneMinusSrcAlpha
-  src_alpha
-    Zero
-  dst_alpha
-    Zero
-
-@pll
-layout (set = SET, binding = 0) uniform sampler2D image;
-
-layout(push_constant) uniform PushConstant
-{
-	vec2 scale;
-	vec2 translate;
-}pc;
-@
-
-@vert
-layout (location = 0) in vec2 i_pos;
-layout (location = 1) in vec2 i_uv;
-layout (location = 2) in vec4 i_col;
-
-layout (location = 0) out vec4 o_col;
-layout (location = 1) out vec2 o_uv;
-
-void main()
-{
-	o_col = i_col;
-	o_uv = i_uv;
-	gl_Position = vec4(i_pos * pc.scale + pc.translate, 0, 1);
-}
-@
-
-@frag
-layout (location = 0) in vec4 i_col;
-layout (location = 1) in vec2 i_uv;
-
-layout (location = 0) out vec4 o_col;
-
-void main()
-{
-	o_col = i_col * texture(image, i_uv);
-}
-@
-)^^^";
-
 namespace flame
 {
 	namespace graphics
@@ -313,7 +235,7 @@ namespace flame
 					io.AddInputCharacter(ch);
 				});
 
-				ret->imgui_pl.reset(GraphicsPipeline::create(device, imgui_pl_str, { "rp=0x" + to_string((uint64)ret->renderpass_clear.get()) }));
+				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", {"rp=0x" + to_string((uint64)ret->renderpass_clear.get())}));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
 				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->info.layout->descriptor_set_layouts[0]));

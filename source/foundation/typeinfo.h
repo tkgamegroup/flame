@@ -257,17 +257,20 @@ namespace flame
 			return ret;
 		}
 
-		template <class T>
+		template<typename T>
 		inline static std::string serialize_t(T* v, TypeInfoDataBase& db = tidb)
 		{
 			return get<T>(db)->serialize(v);
 		}
 
-		template <class T>
+		template<typename T>
 		inline static void unserialize_t(const std::string& str, T* v, TypeInfoDataBase& db = tidb)
 		{
 			return get<T>(db)->unserialize(str, v);
 		}
+
+		inline EnumInfo* retrive_ei();
+		inline UdtInfo* retrive_ui();
 	};
 
 	struct Metas
@@ -1368,4 +1371,36 @@ namespace flame
 			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
 		}
 	};
+
+	EnumInfo* TypeInfo::retrive_ei()
+	{
+		switch (tag)
+		{
+		case TagE:
+			return ((TypeInfo_Enum*)this)->ei;
+		case TagPE:
+			return ((TypeInfo_PointerOfEnum*)this)->ti->ei;
+		case TagVE:
+			return ((TypeInfo_VectorOfEnum*)this)->ti->ei;
+		case TagVPE:
+			return ((TypeInfo_VectorOfPointerOfEnum*)this)->ti->retrive_ei();
+		}
+		return nullptr;
+	}
+
+	UdtInfo* TypeInfo::retrive_ui()
+	{
+		switch (tag)
+		{
+		case TagU:
+			return ((TypeInfo_Udt*)this)->ui;
+		case TagPU:
+			return ((TypeInfo_PointerOfUdt*)this)->ti->ui;
+		case TagVU:
+			return ((TypeInfo_VectorOfUdt*)this)->ti->ui;
+		case TagVPU:
+			return ((TypeInfo_VectorOfPointerOfUdt*)this)->ti->retrive_ui();
+		}
+		return nullptr;
+	}
 }

@@ -342,7 +342,7 @@ namespace flame
 		{
 			if (str.ends_with(tail))
 			{
-				str = get_tail(str, 0, tail.size());
+				str = str.substr(0, str.size() - tail.size());
 				return true;
 			}
 			return false;

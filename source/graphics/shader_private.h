@@ -25,6 +25,8 @@ namespace flame
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
 			~DescriptorSetLayoutPrivate();
+
+			static DescriptorSetLayoutPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct DescriptorSetPrivate : DescriptorSet
@@ -61,8 +63,6 @@ namespace flame
 			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
 			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
 			void update() override;
-
-			static DescriptorSetPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct PipelineLayoutPrivate : PipelineLayout
@@ -75,7 +75,7 @@ namespace flame
 
 			~PipelineLayoutPrivate();
 
-			static PipelineLayoutPtr load_from_res(const std::filesystem::path& filename);
+			static PipelineLayoutPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct ShaderPrivate : Shader
@@ -88,7 +88,7 @@ namespace flame
 
 			~ShaderPrivate();
 
-			static ShaderPtr load_from_res(const std::filesystem::path& filename);
+			static ShaderPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
 		};
 
 		struct GraphicsPipelinePrivate : GraphicsPipeline
@@ -98,6 +98,8 @@ namespace flame
 			VkPipeline vk_pipeline;
 
 			~GraphicsPipelinePrivate();
+
+			static GraphicsPipelinePtr load(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines);
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline

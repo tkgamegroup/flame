@@ -39,8 +39,5 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 void View_Inspector::on_draw()
 {
 	if (selection.type == Selection::tEntity)
-	{
-		auto ui = ((TypeInfo_Udt*)TypeInfo::get<Entity>())->ui;
-		show_udt_attributes(*ui, selection.entity);
-	}
+		show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), selection.entity);
 }
