@@ -560,9 +560,15 @@ namespace flame
 			return false;
 		}
 
-		UnserializeSpec spec;
-		spec.map[TypeInfo::get<Component*>()] = [&](const SerializeNode& src)->void* {
-			return nullptr;
+		UnserializeXmlSpec spec;
+		spec.map[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+			return INVALID_POINTER;
+		};
+		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+			auto e = Entity::create();
+			unserialize_xml(src, e, spec);
+			((EntityPtr)dst_o)->add_child(e);
+			return INVALID_POINTER;
 		};
 		unserialize_xml(doc_root, this, spec);
 
@@ -649,10 +655,9 @@ namespace flame
 	{
 		pugi::xml_document file;
 
-		SerializeSpec spec;
-		spec.map[TypeInfo::get<Component*>()] = [&](void* src) {
-			SerializeNode ret;
-			return ret;
+		SerializeXmlSpec spec;
+		spec.map[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
+
 		};
 		serialize_xml(this, file.append_child("prefab"), spec);
 

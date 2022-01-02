@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <eTreeNode alignx="MinMax">
-    <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="4" >
-      <eElement name="names" layout_type="Vertical" layout_gap="2" />
-      <eElement name="values" alignx="MinMax" layout_type="Vertical" layout_gap="2" />
-    </eElement>
-  </eTreeNode>
-</prefab>

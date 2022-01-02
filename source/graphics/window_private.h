@@ -24,6 +24,7 @@ namespace flame
 
 			~WindowPrivate();
 
+			void* imgui_context() override;
 			void imgui_new_frame() override;
 
 			void update() override;

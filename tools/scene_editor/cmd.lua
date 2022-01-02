@@ -1,43 +1,3 @@
-function cmd_file_open()
-    local l = create_entity("prefabs/layer")
-
-    local d = create_entity("prefabs/file_selector")
-
-    d.find_component("cWindow").set_title("Open")
-    local file_selector = d.find_component("cFileSelector")
-    file_selector.add_callback(function(ok, text)
-        if ok then
-            if load_scene(text) then 
-                last_open = text
-            end
-        end
-        l.get_parent().remove_child(l)
-    end)
-
-    l.add_child(d)
-    ui.add_child(l)
-end
-
-function cmd_file_save_as()
-    local l = create_entity("prefabs/layer")
-    local d = create_entity("prefabs/input_dialog")
-              
-    d.find_component("cWindow").set_title("Save As")
-    local input_dialog = d.find_component("cInputDialog")
-    input_dialog.set_text(last_save)
-    input_dialog.add_callback(function(ok, text)
-        if ok then 
-            if save_scene(text) then
-            last_save = text
-            end
-        end
-        l.get_parent().remove_child(l)
-    end)
-
-    l.add_child(d)
-    ui.add_child(l)
-end
-
 local e_rendertype = find_enum("RenderType")
 local e_wireframe = e_rendertype["Wireframe"]
 local e_shaded = e_rendertype["Shaded"]
@@ -147,7 +107,3 @@ cmd_tools_ssao_debugger = {
         end
     end
 }
-
-function cmd_settings_alwawys_update(checked)
-
-end

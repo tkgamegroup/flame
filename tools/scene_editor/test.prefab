@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<prefab name="Hello">
+	<children>
+		<item name="Entity 0" />
+		<item name="Entity 1" />
+		<item name="Entity 2" />
+		<item name="Entity 3" />
+	</children>
+</prefab>

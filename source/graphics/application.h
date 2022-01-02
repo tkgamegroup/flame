@@ -21,6 +21,8 @@ struct GraphicsApplication : Application
 		graphics_device = graphics::Device::create(graphics_debug);
 		main_window = graphics::Window::create(graphics_device, Application::main_window);
 
+		ImGui::SetCurrentContext((ImGuiContext*)main_window->imgui_context());
+
 #if USE_IM_FILE_DIALOG
 		ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
 		{

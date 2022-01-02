@@ -39,7 +39,7 @@ struct View_Project : View
 		void draw();
 	};
 
-	std::unique_ptr<FolderTreeNode> foler_tree;
+	std::unique_ptr<FolderTreeNode> folder_tree;
 	FolderTreeNode* selected_folder = nullptr;
 
 	std::map<int, std::unique_ptr<graphics::Image>> icons;

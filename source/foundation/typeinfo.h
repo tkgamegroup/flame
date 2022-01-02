@@ -451,6 +451,25 @@ namespace flame
 			}
 			return nullptr;
 		}
+
+		void* create_object(void* p = nullptr) const
+		{
+			if (!p)
+				p = malloc(size);
+			auto initialized = false;
+			for (auto& fi : functions)
+			{
+				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
+				{
+					fi.call<void(void*)>(p);
+					initialized = true;
+					break;
+				}
+			}
+			if (!initialized)
+				memset(p, 0, size);
+			return p;
+		}
 	};
 
 	struct TypeInfoDataBase
@@ -1255,21 +1274,7 @@ namespace flame
 
 		void* create(void* p = nullptr) const override
 		{
-			if (!p)
-				p = malloc(size);
-			auto initialized = false;
-			for (auto& fi : ui->functions)
-			{
-				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
-				{
-					fi.call<void(void*)>(p);
-					initialized = true;
-					break;
-				}
-			}
-			if (!initialized)
-				memset(p, 0, size);
-			return p;
+			return ui->create_object(p);
 		}
 	};
 

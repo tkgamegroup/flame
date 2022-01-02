@@ -150,7 +150,7 @@ void View_Project::Item::draw()
 				}
 				return nullptr;
 			};
-			select_node(view_project.foler_tree.get());
+			select_node(view_project.folder_tree.get());
 		}
 		else
 		{
@@ -170,7 +170,7 @@ void View_Project::reset()
 {
 	items.clear();
 	selected_folder = nullptr;
-	foler_tree.reset(new View_Project::FolderTreeNode(app.project_path));
+	folder_tree.reset(new View_Project::FolderTreeNode(app.project_path));
 }
 
 void View_Project::set_items_size(float size)
@@ -204,6 +204,11 @@ void View_Project::open_folder(const std::filesystem::path& path)
 
 void View_Project::on_draw()
 {
+	if (!selected_folder && !app.project_path.empty())
+	{
+		open_folder(app.project_path);
+		selected_folder = folder_tree.get();
+	}
 	if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 	{
 		auto& style = ImGui::GetStyle();
@@ -212,8 +217,8 @@ void View_Project::on_draw()
 
 		ImGui::TableSetColumnIndex(0);
 		ImGui::BeginChild("folders", ImVec2(0, -2));
-		if (foler_tree)
-			foler_tree->draw();
+		if (folder_tree)
+			folder_tree->draw();
 		ImGui::EndChild();
 
 		ImGui::TableSetColumnIndex(1); 

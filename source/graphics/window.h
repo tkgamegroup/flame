@@ -24,7 +24,7 @@ namespace flame
 			std::unique_ptr<RenderpassT> renderpass_load;
 			std::vector<std::unique_ptr<FramebufferT>> framebuffers;
 
-			Listeners<void(void* ctx)> imgui_callbacks;
+			Listeners<void()> imgui_callbacks;
 
 			Listeners<void(uint, CommandBufferPtr)> renderers;
 
@@ -32,6 +32,7 @@ namespace flame
 
 			virtual ~Window() {}
 
+			virtual void* imgui_context() = 0;
 			virtual void imgui_new_frame() = 0;
 
 			virtual void update() = 0;

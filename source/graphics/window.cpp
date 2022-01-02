@@ -17,14 +17,21 @@ namespace flame
 			Queue::get(nullptr)->wait_idle();
 		}
 
+		void* WindowPrivate::imgui_context()
+		{
+			return ImGui::GetCurrentContext();
+		}
+
 		void WindowPrivate::imgui_new_frame()
 		{
+			if (swapchain->images.empty())
+				return;
+
 #if USE_IMGUI
 			ImGui::NewFrame();
 
-			auto ctx = ImGui::GetCurrentContext();
 			for (auto& cb : imgui_callbacks.list)
-				cb(ctx);
+				cb();
 
 			auto& io = ImGui::GetIO();
 			auto mouse_consumed = io.WantCaptureMouse;

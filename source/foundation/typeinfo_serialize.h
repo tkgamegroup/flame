@@ -6,10 +6,20 @@
 
 namespace flame
 {
-	struct SerializeNode
+	struct SerializeXmlSpec
+	{
+		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> map;
+	};
+
+	struct UnserializeXmlSpec
+	{
+		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>> map;
+	};
+
+	struct TextSerializeNode
 	{
 		std::string name;
-		std::vector<SerializeNode> children;
+		std::vector<TextSerializeNode> children;
 
 		std::string value() const
 		{
@@ -39,28 +49,20 @@ namespace flame
 		}
 	};
 
-	struct SerializeSpec
+	struct SerializeTextSpec
 	{
-		std::map<TypeInfo*, std::function<SerializeNode(void* src)>> map;
+		std::map<TypeInfo*, std::function<TextSerializeNode(void* src)>> map;
 	};
 
-	struct UnserializeSpec
+	struct UnserializeTextSpec
 	{
-		std::map<TypeInfo*, std::function<void*(const SerializeNode& src)>> map;
+		std::map<TypeInfo*, std::function<void*(const TextSerializeNode& src)>> map;
 	};
 
-	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeSpec& spec = {})
+	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
 		for (auto& vi : ui.variables)
 		{
-			std::function<void(const SerializeNode&, pugi::xml_node)> print_value;
-			print_value = [&](const SerializeNode& src, pugi::xml_node dst) {
-				for (auto& c : src.children)
-				{
-
-				}
-			};
-
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -79,7 +81,7 @@ namespace flame
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
 				if (auto it = spec.map.find(ti); it != spec.map.end())
-					print_value(it->second(*(void**)p), dst.append_child(vi.name.c_str()));
+					it->second(*(void**)p, dst.append_child(vi.name.c_str()));
 			}
 				break;
 			case TagVE:
@@ -148,9 +150,9 @@ namespace flame
 						{
 							auto n = dst.append_child(vi.name.c_str());
 							for (auto v : vec)
-								print_value(it->second(v), n.append_child("item"));
+								it->second(v, n.append_child("item"));
 						}
-						else if (ti->ti->ui == &ui)
+						else if (ti->retrive_ui() == &ui)
 						{
 							auto n = dst.append_child(vi.name.c_str());
 							for (auto v : vec)
@@ -165,7 +167,7 @@ namespace flame
 	}
 
 	template<typename T>
-	inline void serialize_xml(T* src, pugi::xml_node dst, const SerializeSpec& spec = {})
+	inline void serialize_xml(T* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
@@ -187,18 +189,98 @@ namespace flame
 		}
 	}
 
-	inline void unserialize_xml(const UdtInfo& ui, pugi::xml_node src, void* dst, const UnserializeSpec& spec = {})
+	inline void unserialize_xml(const UdtInfo& ui, pugi::xml_node src, void* dst, const UnserializeXmlSpec& spec = {})
 	{
 		for (auto a : src.attributes())
 		{
-			auto vi = ui.find_variable(a.name());
-			if (vi)
-				vi->type->unserialize(a.value(), (char*)dst + vi->offset);
+			if (auto pv = ui.find_variable(a.name()); pv)
+			{
+				auto& vi = *pv;
+
+				auto p = (char*)dst + vi.offset;
+				
+				switch (vi.type->tag)
+				{
+				case TagE:
+				case TagD:
+					vi.type->unserialize(a.value(), p);
+					break;
+				}
+			}
+		}
+
+		for (auto c : src.children())
+		{
+			if (auto pv = ui.find_variable(c.name()); pv)
+			{
+				auto& vi = *pv;
+
+				auto p = (char*)dst + vi.offset;
+
+				switch (vi.type->tag)
+				{
+				case TagU:
+				{
+					auto ui = vi.type->retrive_ui();
+					if (ui)
+						unserialize_xml(*ui, c, p, spec);
+				}
+					break;
+				case TagPU:
+				{
+					auto ti = (TypeInfo_PointerOfUdt*)vi.type;
+					if (auto it = spec.map.find(ti); it != spec.map.end())
+					{
+						auto v = it->second(c, dst);
+						if (v != INVALID_POINTER)
+							*(void**)p = v;
+					}
+					else if (ti->retrive_ui() == &ui)
+					{
+						auto obj = ui.create_object();
+						if (obj)
+						{
+							unserialize_xml(ui, c, obj, spec);
+							*(void**)p = obj;
+						}
+					}
+				}
+					break;
+				case TagVPU:
+				{
+					auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+					if (auto it = spec.map.find(ti); it != spec.map.end())
+					{
+						auto& vec = *(std::vector<void*>*)p;
+						for (auto cc : c.children())
+						{
+							auto v = it->second(cc, dst);
+							if (v != INVALID_POINTER)
+								vec.push_back(v);
+						}
+					}
+					else if (ti->retrive_ui() == &ui)
+					{
+						auto& vec = *(std::vector<void*>*)p;
+						for (auto cc : c.children())
+						{
+							auto obj = ui.create_object();
+							if (obj)
+							{
+								unserialize_xml(ui, c, obj, spec);
+								vec.push_back(obj);
+							}
+						}
+					}
+				}
+					break;
+				}
+			}
 		}
 	}
 
 	template<typename T>
-	inline void unserialize_xml(pugi::xml_node src, T* dst, const UnserializeSpec& spec = {})
+	inline void unserialize_xml(pugi::xml_node src, T* dst, const UnserializeXmlSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
@@ -220,7 +302,7 @@ namespace flame
 		}
 	}
 
-	inline void serialize_text(const UdtInfo& ui, void* src, std::ostream& dst, const std::string& indent, const SerializeSpec& spec = {})
+	inline void serialize_text(const UdtInfo& ui, void* src, std::ostream& dst, const std::string& indent, const SerializeTextSpec& spec = {})
 	{
 		auto indent2 = indent;
 		if (ui.variables.size() > 1)
@@ -232,8 +314,8 @@ namespace flame
 				if (!vi.name.empty())
 					dst << indent << vi.name << std::endl;
 			};
-			std::function<void(const SerializeNode&, const std::string&)> print_value;
-			print_value = [&](const SerializeNode& src, const std::string& indent) {
+			std::function<void(const TextSerializeNode&, const std::string&)> print_value;
+			print_value = [&](const TextSerializeNode& src, const std::string& indent) {
 				for (auto& c : src.children)
 				{
 					if (!c.name.empty())
@@ -356,7 +438,7 @@ namespace flame
 	}
 
 	template<typename T>
-	inline void serialize_text(T* src, std::ostream& dst, const SerializeSpec& spec = {})
+	inline void serialize_text(T* src, std::ostream& dst, const SerializeTextSpec& spec = {})
 	{
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
@@ -378,16 +460,16 @@ namespace flame
 		}
 	}
 
-	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeSpec& spec = {})
+	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeTextSpec& spec = {})
 	{
 		auto indent2 = indent;
 		if (ui.variables.size() > 1)
 			indent2 += 2;
 
 		auto read_var = [&](const VariableInfo& vi) {
-			std::function<SerializeNode(uint indent)> read_pudt;
+			std::function<TextSerializeNode(uint indent)> read_pudt;
 			read_pudt = [&](uint indent) {
-				SerializeNode ret;
+				TextSerializeNode ret;
 				while (true)
 				{
 					if (!src.next_line())
@@ -427,7 +509,7 @@ namespace flame
 			{
 				auto ui = vi.type->retrive_ui();
 				if (ui)
-					unserialize_text(*ui, src, indent2, p);
+					unserialize_text(*ui, src, indent2, p, spec);
 			}
 				break;
 			case TagPU:
@@ -571,7 +653,7 @@ namespace flame
 	}
 
 	template<typename T>
-	inline void unserialize_text(LineReader& src, T* dst, const UnserializeSpec& spec = {}, const std::vector<std::string>& _defines = {})
+	inline void unserialize_text(LineReader& src, T* dst, const UnserializeTextSpec& spec = {}, const std::vector<std::string>& _defines = {})
 	{
 		std::vector<std::pair<std::string, std::string>> defines;
 		while (true)

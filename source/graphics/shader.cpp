@@ -1095,8 +1095,8 @@ namespace flame
 			std::string												layout_segment;
 			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments;
 
-			UnserializeSpec spec;
-			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const SerializeNode& src)->void* {
+			UnserializeTextSpec spec;
+			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)sto<uint64>(value.substr(2));
@@ -1110,7 +1110,7 @@ namespace flame
 					fn = std::filesystem::canonical(fn);
 				return PipelineLayout::get(device, fn);
 			};
-			spec.map[TypeInfo::get<Shader*>()] = [&](const SerializeNode& src)->void* {
+			spec.map[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (!value.empty())
 				{
@@ -1137,7 +1137,7 @@ namespace flame
 					fn = std::filesystem::canonical(fn);
 				return Shader::get(device, ShaderStageNone, fn, format_defines(src.value("defines")));
 			};
-			spec.map[TypeInfo::get<Renderpass*>()] = [&](const SerializeNode& src)->void* {
+			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)sto<uint64>(value.substr(2));

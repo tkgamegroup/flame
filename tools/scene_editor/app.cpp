@@ -16,8 +16,7 @@ void View::open()
 	if (lis)
 		return;
 
-	lis = app.main_window->imgui_callbacks.add([this](void* ctx) {
-		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+	lis = app.main_window->imgui_callbacks.add([this]() {
 		draw();
 	});
 }
@@ -52,9 +51,7 @@ void App::init()
 	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	app.always_render = false;
 
-	app.main_window->imgui_callbacks.add([](void* ctx) {
-		ImGui::SetCurrentContext((ImGuiContext*)ctx);
-
+	app.main_window->imgui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
 		{
@@ -64,14 +61,32 @@ void App::init()
 				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}");
 			if (ImGui::MenuItem("New Prefab"))
 				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}");
+			if (ImGui::MenuItem("Save Prefab"))
+				ifd::FileDialog::Instance().Save("SavePrefabDialog", "Save prefab", "Prefab file (*.prefab){.prefab}");
 			if (ImGui::MenuItem("Close"))
 				;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Scene"))
 		{
-			if (ImGui::MenuItem("Create"))
-				;
+			if (ImGui::MenuItem("Create Entity"))
+			{
+				if (view_scene.e_prefab)
+				{
+					static int id = 0;
+					auto e = Entity::create();
+					e->name = "Entity " + std::to_string(id++);
+					view_scene.e_prefab->add_child(e);
+				}
+			}
+			if (ImGui::MenuItem("Remove Entity"))
+			{
+				if (selection.type == Selection::tEntity)
+				{
+					selection.entity->parent->remove_child(selection.entity);
+					selection.clear();
+				}
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -119,9 +134,20 @@ void App::init()
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
+				auto path = fmt_path();
 				auto e = Entity::create();
 				e->name = "Hello";
-				e->save(fmt_path());
+				e->save(path);
+				view_scene.open_prefab(path);
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+		if (ifd::FileDialog::Instance().IsDone("SavePrefabDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				if (view_scene.e_prefab)
+					view_scene.e_prefab->save(fmt_path());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
