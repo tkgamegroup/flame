@@ -12,7 +12,7 @@ attachments
     Attachment
  ---
   format
-    {Depth16}
+    {dep_fmt}
   load_op
     Load
   sample_count

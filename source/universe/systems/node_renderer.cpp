@@ -271,7 +271,7 @@ namespace flame
 			}
 
 			auto ret = new sNodeRendererPrivate;
-			auto fmt_str = "fmt=" + TypeInfo::serialize_t(&graphics::Swapchain::format);
+			auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&graphics::Swapchain::format);
 			ret->rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp", { fmt_str });
 			ret->buf_vtx.create(1, 1);
 			windows[0]->renderers.add([ret](uint, graphics::CommandBufferPtr) {

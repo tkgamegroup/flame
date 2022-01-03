@@ -279,7 +279,7 @@ namespace flame
 
 		void from_string(const std::string& str)
 		{
-			for (auto& i : SUS::split(str, ';'))
+			for (auto& i : SUS::split(SUS::get_trimed(str), ';'))
 			{
 				auto sp = SUS::split(i, '=');
 				auto& m = d.emplace_back();
@@ -403,10 +403,13 @@ namespace flame
 			{
 				addr = (char*)library + rva;
 				if (voff != -1)
-					obj = ((void**)(addr))[-1];
+					obj = *(void**)addr;
 			}
 			if (voff != -1 && obj)
-				addr = ((void**)obj)[voff / 8];
+			{
+				auto vtbl = *(void**)obj;
+				addr = ((void**)vtbl)[voff / 8];
+			}
 			return ((F*)addr)(obj, args...);
 		}
 	};

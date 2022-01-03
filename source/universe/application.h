@@ -17,7 +17,7 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(graphics_debug, title, size, styles);
 
 		world.reset(World::create());
-		//node_renderer = (sNodeRendererPtr)world->add_system(th<sNodeRenderer>());
+		node_renderer = (sNodeRendererPtr)world->add_system(th<sNodeRenderer>());
 	}
 
 	bool on_update() override
