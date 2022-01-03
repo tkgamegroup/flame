@@ -124,7 +124,7 @@ namespace flame
 	consteval auto tn()
 	{
 		constexpr auto name = std::string_view{ __FUNCSIG__ };
-		constexpr auto prefix1 = std::string_view{ " type_name<" };
+		constexpr auto prefix1 = std::string_view{ " flame::tn<" };
 		constexpr auto prefix2 = std::string_view{ "class " };
 		constexpr auto prefix3 = std::string_view{ "struct " };
 		constexpr auto suffix = std::string_view{ ">(void)" };

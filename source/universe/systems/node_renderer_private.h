@@ -2,10 +2,37 @@
 
 #include "node_renderer.h"
 
+#include "../../graphics/buffer_ext.h"
+
 namespace flame
 {
+	struct MeshRes
+	{
+		graphics::Mesh* mesh = nullptr;
+		bool arm;
+		uint vtx_off;
+		uint vtx_cnt;
+		uint idx_off;
+		uint idx_cnt;
+		std::vector<uint> mat_ids;
+	};
+
 	struct sNodeRendererPrivate : sNodeRenderer
 	{
+		std::vector<MeshRes> mesh_reses;
+
+		graphics::StorageBuffer<"flame::node_renderer::vtx", graphics::BufferUsageVertex, false> buf_vtx;
+		graphics::StorageBuffer<"flame::node_renderer::idx", graphics::BufferUsageIndex, false> buf_idx;
+
+		graphics::RenderpassPtr rp_fwd;
+		graphics::GraphicsPipelinePtr pl_fwd;
+		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
+
+		void set_targets(std::span<graphics::ImageViewPtr> targets) override;
+
+		int set_material_res(int idx, graphics::Material* mat) override;
+		int find_material_res(graphics::Material* mat) const override;
+
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
 

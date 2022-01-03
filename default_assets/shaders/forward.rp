@@ -1,7 +1,9 @@
 %sample_count=4
+%col_fmt=R16G16B16A16_SFLOAT
+%dep_fmt=Depth16
 attachments
   format
-    R16G16B16A16_SFLOAT
+    {col_fmt}
   load_op
     Load
   sample_count
@@ -10,7 +12,7 @@ attachments
     Attachment
  ---
   format
-    Depth16
+    {Depth16}
   load_op
     Load
   sample_count
@@ -23,7 +25,7 @@ attachments
   load_op
     DontCare
 subpasses
-  color_refs
+  color_attachments
     0
-  depth_ref
+  depth_attachment
     1

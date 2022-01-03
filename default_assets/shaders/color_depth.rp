@@ -21,7 +21,7 @@ attachments
     {col_final_layout}
  ---
   format
-    {dep_col_fmt}
+    {dep_fmt}
   load_op
     {dep_load_op}
   sample_count
@@ -31,7 +31,7 @@ attachments
   final_layout
     {dep_final_layout}
 subpasses
-  color_refs
+  color_attachments
     0
-  depth_ref
+  depth_attachment
     0

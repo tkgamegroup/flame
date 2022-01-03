@@ -8,8 +8,8 @@ attachments
   format
     Depth16
 subpasses
-  color_refs
+  color_attachments
     0
     1
-  depth_ref
+  depth_attachment
     2

@@ -241,16 +241,16 @@ namespace flame
 
 	Component* EntityPrivate::add_component(uint hash)
 	{
-		if (component_map.find(hash) != component_map.end())
-		{
-			printf("cannot add component: already exist\n");
-			return nullptr;
-		}
-
 		auto ui = find_udt(hash);
 		if (!ui)
 		{
-			printf("cannot add component: cannot find udt of hash %d\n", hash);
+			printf("cannot add component: cannot find udt of hash %u\n", hash);
+			return nullptr;
+		}
+
+		if (component_map.find(hash) != component_map.end())
+		{
+			printf("cannot add component: %s already exist\n", ui->name.c_str());
 			return nullptr;
 		}
 
@@ -274,6 +274,7 @@ namespace flame
 			return nullptr;
 		}
 
+		c->type_hash = hash;
 		c->entity = this;
 
 		for (auto& _c : components)
@@ -291,11 +292,11 @@ namespace flame
 		auto it = component_map.find(hash);
 		if (it == component_map.end())
 		{
-			assert(0);
+			printf("cannot remove component: component with hash %u does not exist", hash);
 			return;
 		}
 
-		auto c = it->second.release();
+		auto c = it->second;
 		component_map.erase(it);
 
 		for (auto it = components.begin(); it != components.end(); it++)

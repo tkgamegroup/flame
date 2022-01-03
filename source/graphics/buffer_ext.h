@@ -18,7 +18,7 @@ namespace flame
 			}
 		};
 
-		template<BufferUsageFlags usage, bool rewind = true>
+		template<fixed_string id, BufferUsageFlags usage, bool rewind = true>
 		struct StorageBuffer
 		{
 			constexpr inline AccessFlags u2a(BufferUsageFlags u)

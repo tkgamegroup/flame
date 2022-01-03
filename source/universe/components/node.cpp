@@ -83,7 +83,6 @@ namespace flame
 		{
 			eul_dirty = false;
 
-			assert(!qut_dirty);
 			auto res = eulerAngles(qut);
 			eul.x = glm::degrees(res.y);
 			eul.y = glm::degrees(res.x);
@@ -97,7 +96,6 @@ namespace flame
 		{
 			qut_dirty = false;
 
-			assert(!rot_dirty);
 			qut = quat(rot);
 		}
 	}
@@ -112,8 +110,6 @@ namespace flame
 				rot = mat3(qut);
 			else if (!eul_dirty)
 				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
-			else
-				assert(0);
 		}
 	}
 
@@ -169,20 +165,20 @@ namespace flame
 
 	void cNodePrivate::mark_bounds_dirty(bool child_caused)
 	{
-		if (!child_caused && measurers.list.empty())
-			return;
+		//if (!child_caused && measurers.list.empty())
+		//	return;
 
-		if (!pending_update_bounds)
-		{
-			if (s_scene)
-			{
-				//s_scene->add_to_update_bounds(this); // TODO
-				pending_update_bounds = true;
-			}
-		}
+		//if (!pending_update_bounds)
+		//{
+		//	if (s_scene)
+		//	{
+		//		s_scene->add_to_update_bounds(this); // TODO
+		//		pending_update_bounds = true;
+		//	}
+		//}
 
-		if (pnode && pnode->merge_bounds)
-			pnode->mark_bounds_dirty(true);
+		//if (pnode && pnode->merge_bounds)
+		//	pnode->mark_bounds_dirty(true);
 	}
 
 	void cNodePrivate::mark_drawing_dirty()
@@ -193,10 +189,10 @@ namespace flame
 
 	void cNodePrivate::remove_from_bounds_list()
 	{
-		if (!pending_update_bounds)
-			return;
+		//if (!pending_update_bounds)
+		//	return;
 		//s_scene->remove_from_update_bounds(this); // TODO
-		pending_update_bounds = false;
+		//pending_update_bounds = false;
 	}
 
 	void cNodePrivate::draw(uint _frame, bool shadow_pass)
@@ -213,9 +209,7 @@ namespace flame
 
 		// TODO
 		//s_scene = entity->world->get_system_t<sScenePrivate>();
-		//assert(s_scene);
-		s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
-		assert(s_renderer);
+		//s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
 
 		pnode = entity->get_parent_component_t<cNodePrivate>();
 
@@ -254,11 +248,11 @@ namespace flame
 		remove_from_bounds_list();
 		mark_drawing_dirty();
 
-		s_scene = nullptr;
+		//s_scene = nullptr;
 		s_renderer = nullptr;
 
 		pnode = nullptr;
-		octnode = { nullptr, nullptr };
+		//octnode = { nullptr, nullptr };
 	}
 
 	struct cNodeCreatePrivate : cNode::Create

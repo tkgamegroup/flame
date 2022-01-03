@@ -113,10 +113,10 @@ namespace flame
 					if (renderers.list.empty())
 					{
 						auto cv = vec4(0.4f, 0.3f, 0.7f, 1);
-						commandbuffer->begin_renderpass(renderpass_clear.get(), framebuffers[img_idx].get(), &cv);
+						commandbuffer->begin_renderpass(renderpass_clear, framebuffers[img_idx].get(), &cv);
 					}
 					else
-						commandbuffer->begin_renderpass(renderpass_load.get(), framebuffers[img_idx].get());
+						commandbuffer->begin_renderpass(renderpass_load, framebuffers[img_idx].get());
 					commandbuffer->set_viewport(Rect(0, 0, fb_width, fb_height));
 
 					commandbuffer->bind_pipeline(imgui_pl.get());
@@ -198,17 +198,9 @@ namespace flame
 				ret->submit_fence.reset(Fence::create(device));
 				ret->render_finished.reset(Semaphore::create(device));
 
-				{
-					RenderpassInfo info;
-					auto& att = info.attachments.emplace_back();
-					att.format = Swapchain::format;
-					auto& sp = info.subpasses.emplace_back();
-					sp.color_attachments.push_back(0);
-					ret->renderpass_clear.reset(Renderpass::create(device, info));
-					att.load_op = AttachmentLoadLoad;
-					att.initia_layout = ImageLayoutAttachment;
-					ret->renderpass_load.reset(Renderpass::create(device, info));
-				}
+				auto fmt_str = "fmt=" + TypeInfo::serialize_t(&Swapchain::format);
+				ret->renderpass_clear = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
+				ret->renderpass_load = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
 
 #if USE_IMGUI
 				ret->native->mouse_listeners.add([this](MouseButton btn, bool down) {
@@ -242,7 +234,7 @@ namespace flame
 					io.AddInputCharacter(ch);
 				});
 
-				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", {"rp=0x" + to_string((uint64)ret->renderpass_clear.get())}));
+				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", { "rp=0x" + to_string((uint64)ret->renderpass_clear) }));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
 				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->info.layout->descriptor_set_layouts[0]));
@@ -315,7 +307,7 @@ namespace flame
 					for (auto& img : ret->swapchain->images)
 					{
 						auto iv = img->get_view();
-						ret->framebuffers.emplace_back(Framebuffer::create(ret->renderpass_clear.get(), { &iv, 1 }));
+						ret->framebuffers.emplace_back(Framebuffer::create(ret->renderpass_clear, { &iv, 1 }));
 					}
 
 #if USE_IMGUI
@@ -350,9 +342,13 @@ namespace flame
 		}Window_create;
 		Window::Create& Window::create = Window_create;
 
-		const std::vector<WindowPtr> get_windows()
+		struct WindowGetList : Window::GetList
 		{
-			return windows;
-		}
+			const std::vector<WindowPtr>& operator()() override
+			{
+				return windows;
+			}
+		}Window_get_list;
+		Window::GetList& Window::get_list = Window_get_list;
 	}
 }

@@ -4,9 +4,15 @@
 
 namespace flame
 {
+	/// Reflect
 	struct sNodeRenderer : System
 	{
 		bool dirty = false;
+
+		virtual void set_targets(std::span<graphics::ImageViewPtr> targets) = 0;
+
+		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
+		virtual int find_material_res(graphics::Material* mat) const = 0;
 
 		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
 		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
@@ -20,8 +26,9 @@ namespace flame
 
 		struct Create
 		{
-			virtual sNodeRendererPtr operator()() = 0;
+			virtual sNodeRendererPtr operator()(WorldPtr) = 0;
 		};
+		/// Serialize static
 		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

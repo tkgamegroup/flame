@@ -11,43 +11,79 @@ namespace flame
 		root->global_visibility = true;
 	}
 
-	void WorldPrivate::add_system(System* s)
+	System* WorldPrivate::add_system(uint hash)
 	{
-		assert(!s->world);
+		auto ui = find_udt(hash);
+		if (!ui)
+		{
+			printf("cannot add system: cannot find udt of hash %u\n", hash);
+			return nullptr;
+		}
 
+		if (system_map.find(hash) != system_map.end())
+		{
+			printf("cannot add system: %s already exist\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		auto fi = ui->find_function("create");
+		if (!fi)
+		{
+			printf("cannot add system: cannot find create function of %s\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		if (fi->return_type != TypeInfo::get(TagPU, ui->name) || fi->parameters.size() != 1 || fi->parameters[0] != TypeInfo::get<World*>())
+		{
+			printf("cannot add system: %s's create function format does not match\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		auto s = fi->call<System* (void*, World*)>(nullptr, this);
+		if (!s)
+		{
+			printf("cannot add system: %s's create funcion returned nullptr\n", ui->name.c_str());
+			return nullptr;
+		}
+
+		s->type_hash = hash;
 		s->world = this;
 
-		systems.emplace(s->type_hash, s);
-		system_list.push_back(s);
+		system_map.emplace(s->type_hash, s);
+		systems.emplace_back(s);
+
+		return s;
 	}
 
-	void WorldPrivate::remove_system(System* s, bool destroy)
+	void WorldPrivate::remove_system(uint hash, bool destroy)
 	{
-		assert(s->world == this);
-
-		auto it = systems.find(s->type_hash);
-		if (it == systems.end())
+		auto it = system_map.find(hash);
+		if (it == system_map.end())
 		{
-			assert(0);
+			printf("cannot remove sytem: system with hash %u does not exist", hash);
 			return;
 		}
 
-		it->second.release();
-		systems.erase(it);
+		auto s = it->second;
+		system_map.erase(it);
 
-		for (auto it = system_list.begin(); it != system_list.end(); it++)
+		for (auto it = systems.begin(); it != systems.end(); it++)
 		{
-			if (*it == s)
+			if (it->get() == s)
 			{
-				system_list.erase(it);
+				it->release();
+				systems.erase(it);
 				break;
 			}
 		}
+
+		if (destroy)
+			delete s;
 	}
 
 	void WorldPrivate::update()
 	{
-		for (auto s : system_list)
+		for (auto& s : systems)
 			s->update();
 	}
 

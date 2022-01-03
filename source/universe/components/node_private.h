@@ -18,10 +18,10 @@ namespace flame
 		uint transform_updated_times = 0;
 		mat4 transform;
 
-		std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
+		//std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
-		sScenePrivate* s_scene = nullptr;
-		bool pending_update_bounds = false;
+		//sScenePrivate* s_scene = nullptr;
+		//bool pending_update_bounds = false;
 		sNodeRendererPrivate* s_renderer = nullptr;
 
 		cNodePrivate();

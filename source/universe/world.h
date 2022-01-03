@@ -8,8 +8,8 @@ namespace flame
 	{
 		virtual ~World() {}
 
-		std::unordered_map<uint, std::unique_ptr<System>> systems;
-		std::vector<System*> system_list;
+		std::unordered_map<uint, System*> system_map;
+		std::vector<std::unique_ptr<System>> systems;
 
 		std::unique_ptr<EntityT> root;
 		EntityPtr first_element = nullptr;
@@ -17,16 +17,20 @@ namespace flame
 
 		inline System* get_system(uint type_hash) const
 		{
-			auto it = systems.find(type_hash);
-			if (it != systems.end())
-				return it->second.get();
+			auto it = system_map.find(type_hash);
+			if (it != system_map.end())
+				return it->second;
 			return nullptr;
 		}
 
-		template<typename T> inline T* get_system_t() const { return (T*)get_system(th<T>()); }
+		template<typename T> 
+		inline T* get_system_t() const 
+		{ 
+			return (T*)get_system(th<T>()); 
+		}
 
-		virtual void add_system(System* s) = 0;
-		virtual void remove_system(System* s, bool destroy = true) = 0;
+		virtual System* add_system(uint hash) = 0;
+		virtual void remove_system(uint hash, bool destroy = true) = 0;
 
 		virtual void update() = 0;
 

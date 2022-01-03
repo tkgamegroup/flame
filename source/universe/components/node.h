@@ -24,7 +24,7 @@ namespace flame
 		bool merge_bounds = false;
 
 		Listeners<void(sNodeRendererPtr, bool)> drawers;
-		Listeners<bool(AABB*)> measurers;
+		//Listeners<bool(AABB*)> measurers;
 
 		/// Serialize
 		virtual void set_pos(const vec3& pos) = 0;
@@ -51,7 +51,7 @@ namespace flame
 		{
 			virtual cNodePtr operator()(EntityPtr) = 0;
 		};
-		/// Serialize
+		/// Serialize static
 		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

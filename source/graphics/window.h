@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics.h"
+#include "image.h"
 #include "swapchain.h"
 
 #if USE_IMGUI
@@ -20,8 +20,8 @@ namespace flame
 			NativeWindow* native;
 			std::unique_ptr<SwapchainT> swapchain;
 
-			std::unique_ptr<RenderpassT> renderpass_clear;
-			std::unique_ptr<RenderpassT> renderpass_load;
+			RenderpassPtr renderpass_clear;
+			RenderpassPtr renderpass_load;
 			std::vector<std::unique_ptr<FramebufferT>> framebuffers;
 
 			Listeners<void()> imgui_callbacks;
@@ -42,8 +42,12 @@ namespace flame
 				virtual WindowPtr operator()(DevicePtr device, NativeWindow* native) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
-		};
 
-		FLAME_GRAPHICS_EXPORTS const std::vector<WindowPtr> get_windows();
+			struct GetList
+			{
+				virtual const std::vector<WindowPtr>& operator()() = 0;
+			};
+			FLAME_GRAPHICS_EXPORTS static GetList& get_list;
+		};
 	}
 }

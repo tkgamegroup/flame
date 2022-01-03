@@ -40,19 +40,17 @@ struct GraphicsApplication : Application
 #endif
 	}
 
-	void run()
+	bool on_update() override
 	{
-		::run([this]() {
-			if (main_window->native->has_input)
-				render_frames = 3;
-			if (render_frames > 0 || always_render)
-			{
-				main_window->dirty = true;
-				main_window->imgui_new_frame();
-				main_window->update();
-				render_frames--;
-			}
-			return true;
-		});
+		if (main_window->native->has_input)
+			render_frames = 3;
+		if (render_frames > 0 || always_render)
+		{
+			main_window->dirty = true;
+			main_window->imgui_new_frame();
+			main_window->update();
+			render_frames--;
+		}
+		return true;
 	}
 };

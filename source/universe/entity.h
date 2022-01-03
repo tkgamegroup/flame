@@ -27,7 +27,7 @@ namespace flame
 		StateFlags state = StateNone;
 		StateFlags last_state = StateNone;
 
-		std::unordered_map<uint, std::unique_ptr<Component>> component_map;
+		std::unordered_map<uint, Component*> component_map;
 		/// Serialize
 		std::vector<std::unique_ptr<Component>> components;
 		/// Serialize
@@ -47,24 +47,30 @@ namespace flame
 		{
 			auto it = component_map.find(type_hash);
 			if (it != component_map.end())
-				return it->second.get();
+				return it->second;
 			return nullptr;
 		}
 
 		template<typename T> 
-		inline T* get_component_t() const { return (T*)get_component(th<T>()); }
+		inline T* get_component_t() const 
+		{ 
+			return (T*)get_component(th<T>()); 
+		}
 
 		template<typename T> 
 		inline T* get_component_i(uint idx) const
 		{
-			if (idx >= component_map.size())
+			if (idx >= components.size())
 				return nullptr;
 			auto ret = components[idx].get();
 			return ret->type_hash == th<T>() ? (T*)ret : nullptr;
 		}
 
 		template<typename T>
-		inline T* get_parent_component_t() const { return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr; }
+		inline T* get_parent_component_t() const 
+		{ 
+			return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr; 
+		}
 
 		virtual Component* add_component(uint hash) = 0;
 		virtual void remove_component(uint hash, bool destroy = true) = 0;

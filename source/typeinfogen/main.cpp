@@ -343,7 +343,6 @@ process:
 		{
 			std::string line;
 			std::smatch res;
-			static std::regex reg("\\s+(\\w+)\\s*(=.*)?;");
 			for (auto& it : std::filesystem::recursive_directory_iterator(source_path))
 			{
 				if (it.path().extension() == L".h" && 
@@ -381,6 +380,11 @@ process:
 								}
 								else if (SUS::remove_head(line, "struct "))
 								{
+									if (auto pos = line.find_last_of(':'); pos != std::string::npos)
+									{
+										line.erase(line.begin() + pos, line.end());
+										SUS::rtrim(line);
+									}
 									auto& r = udt_rules.emplace_back();
 									r.type = Rule::EndsWith;
 									r.name = line;
@@ -400,7 +404,14 @@ process:
 									auto metas = line;
 									std::getline(file, line);
 									SUS::ltrim(line);
-									if (std::regex_search(line, res, reg))
+									static std::regex reg_var("[\\w*&>]\\s+(\\w+)\\s*(=.*)?;");
+									static std::regex reg_fun("\\s+(\\w+)\\s*\\(");
+									std::string name;
+									if (std::regex_search(line, res, reg_var))
+										name = res[1].str();
+									else if (std::regex_search(line, res, reg_fun))
+										name = res[1].str();
+									if (!name.empty())
 									{
 										auto& c = pr->children.emplace_back();
 										c.first = res[1].str();
@@ -634,6 +645,38 @@ process:
 				}
 				s_all->Release();
 
+				auto get_return_type = [&](IDiaSymbol* s_function_type) {
+					TypeInfo* ret;
+					IDiaSymbol* s_return_type;
+					s_function_type->get_type(&s_return_type);
+					ret = typeinfo_from_symbol(s_return_type);
+					reference_type(ret);
+					s_return_type->Release();
+					return ret;
+				};
+
+				auto get_parameters = [&](IDiaSymbol* s_function_type) {
+					std::vector<TypeInfo*> ret;
+
+					IDiaEnumSymbols* s_parameters;
+					s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+					IDiaSymbol* s_parameter;
+					while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
+					{
+						IDiaSymbol* s_type;
+						s_parameter->get_type(&s_type);
+						auto ti = typeinfo_from_symbol(s_parameter);
+						ret.push_back(ti);
+						reference_type(ti);
+						s_type->Release();
+
+						s_parameter->Release();
+					}
+					s_parameters->Release();
+
+					return ret;
+				};
+
 				pugi::xml_node n_functions;
 
 				IDiaEnumSymbols* s_functions;
@@ -671,32 +714,14 @@ process:
 						IDiaSymbol* s_function_type;
 						s_function->get_type(&s_function_type);
 
-						IDiaSymbol* s_return_type;
-						s_function_type->get_type(&s_return_type);
-						fi.return_type = typeinfo_from_symbol(s_return_type);
-						reference_type(fi.return_type);
-						s_return_type->Release();
+						fi.return_type = get_return_type(s_function_type);
 
 						IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
 						fi.is_static = false;
 						if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
 							fi.is_static = b;
 
-						IDiaEnumSymbols* s_parameters;
-						s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-						IDiaSymbol* s_parameter;
-						while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
-						{
-							IDiaSymbol* s_type;
-							s_parameter->get_type(&s_type);
-							auto ti = typeinfo_from_symbol(s_parameter);
-							fi.parameters.push_back(ti);
-							reference_type(ti);
-							s_type->Release();
-
-							s_parameter->Release();
-						}
-						s_parameters->Release();
+						fi.parameters = get_parameters(s_function_type);
 
 						s_function_type->Release();
 
@@ -731,21 +756,19 @@ process:
 					Metas metas;
 					if (ur->pass_child(name, &metas))
 					{
-						uint offset;
-						s_variable->get_offset(&l);
-						offset = l;
-
 						IDiaSymbol* s_type;
 						s_variable->get_type(&s_type);
 						auto type = typeinfo_from_symbol(s_type);
 						s_type->Release();
 
-						if (!u.variables.empty() && l == 0)
+						if (metas.get("static"_h))
 						{
 							IDiaEnumSymbols* symbols;
 							IDiaSymbol* symbol;
 							auto voff = -1;
 							auto rva = 0U;
+							TypeInfo* return_type = nullptr;
+							std::vector<TypeInfo*> parameters;
 
 							global->findChildren(SymTagUDT, s2w(type->name).c_str(), nsNone, &symbols);
 							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
@@ -759,7 +782,17 @@ process:
 									auto name = w2s(pwname);
 
 									if (name == "operator()" && s_function->get_virtualBaseOffset(&dw) == S_OK)
+									{
 										voff = dw;
+
+										IDiaSymbol* s_function_type;
+										s_function->get_type(&s_function_type);
+
+										return_type = get_return_type(s_function_type);
+										parameters = get_parameters(s_function_type);
+
+										s_function_type->Release();
+									}
 
 									s_function->Release();
 								}
@@ -782,13 +815,18 @@ process:
 								fi.name = name;
 								fi.rva = rva;
 								fi.voff = voff;
-								fi.return_type = TypeInfo::void_type;
+								fi.return_type = return_type;
+								fi.parameters = parameters;
 							}
 
 							continue;
 						}
 						else
 						{
+							uint offset;
+							s_variable->get_offset(&l);
+							offset = l;
+
 							auto& vi = u.variables.emplace_back();
 							vi.type = type;
 							reference_type(vi.type);

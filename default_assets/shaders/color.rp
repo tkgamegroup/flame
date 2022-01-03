@@ -15,5 +15,5 @@ attachments
   final_layout
     {final_layout}
 subpasses
-  color_refs
+  color_attachments
     0
