@@ -9,7 +9,7 @@ namespace flame
 	{
 		bool dirty = false;
 
-		virtual void set_targets(std::span<graphics::ImageViewPtr> targets) = 0;
+		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout dst_layout = graphics::ImageLayoutPresent) = 0;
 
 		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
 		virtual int find_material_res(graphics::Material* mat) const = 0;

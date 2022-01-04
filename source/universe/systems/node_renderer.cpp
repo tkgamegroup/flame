@@ -11,13 +11,43 @@
 
 namespace flame
 {
-	void sNodeRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> targets)
+	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
+
+	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
 	{
+		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
+			img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
+			vec4 cvs[] = { vec4(1.f, 0.f, 0.f, 0.f), 
+				vec4(1.f, 0.f, 0.f, 0.f) };
+			cb->begin_renderpass(nullptr, fb_tars[img_idx].get(), cvs);
+			cb->end_renderpass();
+
+			auto iv = iv_tars[img_idx];
+			cb->image_barrier(iv->image, { iv->sub.base_level, 1, iv->sub.base_layer, 1 }, dst_layout);
+		});
+	}
+
+	void sNodeRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout _dst_layout)
+	{
+		auto img0 = targets.front()->image;
+		auto size = img0->size;
+
+		rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
+			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+
+		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment));
+		auto iv_dep = img_dep->get_view();
+
+		iv_tars.assign(targets.begin(), targets.end());
 		fb_tars.clear();
 		for (auto iv : targets)
 		{
-
+			graphics::ImageViewPtr ivs[] = { iv, iv_dep };
+			fb_tars.emplace_back(graphics::Framebuffer::create(rp_fwd, ivs));
 		}
+
+		dst_layout = _dst_layout;
 	}
 
 	int sNodeRendererPrivate::set_material_res(int idx, graphics::Material* mat)
@@ -270,14 +300,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto ret = new sNodeRendererPrivate;
-			auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&graphics::Swapchain::format);
-			ret->rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp", { fmt_str });
-			ret->buf_vtx.create(1, 1);
-			windows[0]->renderers.add([ret](uint, graphics::CommandBufferPtr cb) {
-
-			});
-			return ret;
+			return new sNodeRendererPrivate(windows[0]);
 		}
 	}sNodeRenderer_create_private;
 	sNodeRenderer::Create& sNodeRenderer::create = sNodeRenderer_create_private;

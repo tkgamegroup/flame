@@ -21,14 +21,18 @@ namespace flame
 	{
 		std::vector<MeshRes> mesh_reses;
 
+		std::unique_ptr<graphics::Image> img_dep;
 		graphics::StorageBuffer<"flame::node_renderer::vtx", graphics::BufferUsageVertex, false> buf_vtx;
 		graphics::StorageBuffer<"flame::node_renderer::idx", graphics::BufferUsageIndex, false> buf_idx;
 
 		graphics::RenderpassPtr rp_fwd;
 		graphics::GraphicsPipelinePtr pl_fwd;
+		std::vector<graphics::ImageViewPtr> iv_tars;
 		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
+		graphics::ImageLayout dst_layout;
+		sNodeRendererPrivate(graphics::WindowPtr w);
 
-		void set_targets(std::span<graphics::ImageViewPtr> targets) override;
+		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout dst_layout) override;
 
 		int set_material_res(int idx, graphics::Material* mat) override;
 		int find_material_res(graphics::Material* mat) const override;

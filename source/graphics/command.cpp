@@ -76,6 +76,8 @@ namespace flame
 
 		void CommandBufferPrivate::begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs)
 		{
+			if (!rp)
+				rp = fb->renderpass;
 			for (auto i = 0; i < fb->views.size(); i++)
 			{
 				auto& att = rp->info.attachments[i];
@@ -91,7 +93,7 @@ namespace flame
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			info.pNext = nullptr;
-			info.renderPass = rp ? rp->vk_renderpass : fb->renderpass->vk_renderpass;
+			info.renderPass = rp->vk_renderpass;
 			info.framebuffer = fb->vk_framebuffer;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
@@ -159,6 +161,33 @@ namespace flame
 
 		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss)
 		{
+			for (auto ds : dss)
+			{
+				auto i = 0;
+				for (auto& b : ds->layout->bindings)
+				{
+					if (b.type == DescriptorSampledImage)
+					{
+						for (auto& r : ds->reses[i])
+						{
+							auto iv = r.i.p;
+							if (iv)
+							{
+								for (auto ii = 0; ii < iv->sub.level_count; ii++)
+								{
+									for (auto jj = 0; jj < iv->sub.layer_count; jj++)
+									{
+										if (iv->image->levels[ii].layers[jj].layout != ImageLayoutShaderReadOnly)
+											printf("bind descriptor sets: image is not in shader read only layout\n");
+									}
+								}
+							}
+						}
+					}
+					i++;
+				}
+			}
+
 			std::vector<VkDescriptorSet> vk_sets(dss.size());
 			auto i = 0;
 			for (auto d : dss)
@@ -256,6 +285,8 @@ namespace flame
 					ly.layout = new_layout;
 				}
 			}
+			if (old_layout == new_layout)
+				return;
 
 			if (src_access == AccessNone)
 			{

@@ -154,7 +154,8 @@ int entry(int argc, char** args)
 	projector.set(app.main_window->native->size, 45.f, 1.f, 4.f);
 	drops.resize(3000);
 
-	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=0x" + to_string((uint64)app.main_window->renderpass_clear.get()) });
+	pl = GraphicsPipeline::create(app.graphics_device, pl_str, 
+		{ "rp=0x" + to_string((uint64)app.main_window->renderpass_clear.get()) });
 	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 6);
 
 	app.run();
