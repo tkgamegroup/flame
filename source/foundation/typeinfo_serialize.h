@@ -23,7 +23,7 @@ namespace flame
 
 		std::string value() const
 		{
-			return children.empty() ? name : children[0].value();
+			return children.empty() ? name : (children[0].children.empty() ? children[0].name : "");
 		}
 
 		std::string value(std::string_view n) const

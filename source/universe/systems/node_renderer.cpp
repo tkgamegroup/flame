@@ -6,6 +6,7 @@
 #include "../../foundation/typeinfo_serialize.h"
 #include "../../graphics/command_ext.h"
 #include "../../graphics/renderpass.h"
+#include "../../graphics/shader.h"
 #include "../../graphics/window.h"
 #include "../../graphics/model.h"
 
@@ -17,7 +18,8 @@ namespace flame
 	{
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
-			vec4 cvs[] = { vec4(1.f, 0.f, 0.f, 0.f), 
+
+			vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f), 
 				vec4(1.f, 0.f, 0.f, 0.f) };
 			cb->begin_renderpass(nullptr, fb_tars[img_idx].get(), cvs);
 			cb->end_renderpass();
@@ -35,6 +37,8 @@ namespace flame
 		rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+		pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\plain\\mesh3d.pipeline", 
+			{ "rp=0x" + to_string((uint64)rp_fwd) });
 
 		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment));
 		auto iv_dep = img_dep->get_view();

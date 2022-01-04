@@ -106,7 +106,7 @@ namespace flame
 	inline std::vector<std::string> format_defines(const std::string& str)
 	{
 		std::vector<std::string> ret;
-		auto sp = SUS::split(str);
+		auto sp = SUS::split(str, ';');
 		for (auto& s : sp)
 		{
 			SUS::trim(s);

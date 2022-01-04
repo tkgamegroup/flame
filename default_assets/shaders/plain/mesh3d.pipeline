@@ -1,0 +1,11 @@
+%rp=..\forward.rp
+layout
+  plain3d.pll
+shaders
+  filename
+    plain3d.vert
+ ---
+  filename
+    plain3d.frag
+renderpass
+  {rp}
