@@ -31,20 +31,6 @@ namespace flame
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
-	template<unsigned N>
-	struct fixed_string
-	{
-		char buf[N + 1]{};
-
-		constexpr fixed_string(const char(&str)[N])
-		{
-			for (unsigned i = 0; i != N; i++)
-				buf[i] = str[i];
-		}
-
-		constexpr operator char const* () const { return buf; }
-	};
-
 	template<typename...>
 	struct type_list {};
 

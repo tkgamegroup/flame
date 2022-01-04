@@ -18,7 +18,7 @@ namespace flame
 			}
 		};
 
-		template<fixed_string id, BufferUsageFlags usage, bool rewind = true>
+		template<uint id, BufferUsageFlags usage, bool rewind = true>
 		struct StorageBuffer
 		{
 			constexpr inline AccessFlags u2a(BufferUsageFlags u)
@@ -74,6 +74,11 @@ namespace flame
 				create(ui->size, _array_capacity);
 			}
 
+			inline uint n_offset()
+			{
+				return (pend - (char*)stagbuf->mapped) / size;
+			}
+
 			inline void next_item()
 			{
 				pend += size;
@@ -92,11 +97,11 @@ namespace flame
 				*(T*)pend = v;
 			}
 
-			template<fixed_string n, typename T>
+			template<uint nh, typename T>
 			inline void set_var(const T& v)
 			{
 				auto get_offset = [&]()->int {
-					auto vi = ui->find_variable((char const*)n);
+					auto vi = ui->find_variable(nh);
 					if (!vi)
 					{
 						assert(0);

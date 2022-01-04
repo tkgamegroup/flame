@@ -16,15 +16,32 @@ namespace flame
 
 	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
 	{
+		mesh_reses.resize(1024);
+		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
+			auto iv = iv_tars[img_idx];
+			auto sz = vec2(iv->image->size);
 
 			vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f), 
 				vec4(1.f, 0.f, 0.f, 0.f) };
 			cb->begin_renderpass(nullptr, fb_tars[img_idx].get(), cvs);
+			{
+				cb->set_viewport(Rect(vec2(0), sz));
+				cb->set_scissor(Rect(vec2(0), sz));
+
+				auto mat = perspective(45.f, sz.x / sz.y, 1.f, 1000.f) * lookAt(vec3(5.f), vec3(0.f), vec3(0.f, 1.f, 0.f));
+				mat[1][1] *= -1.f;
+
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_fwd);
+				cb->push_constant_t(mat);
+				auto& mr = mesh_reses[0];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, 0);
+			}
 			cb->end_renderpass();
 
-			auto iv = iv_tars[img_idx];
 			cb->image_barrier(iv->image, { iv->sub.base_level, 1, iv->sub.base_layer, 1 }, dst_layout);
 		});
 	}
@@ -34,11 +51,21 @@ namespace flame
 		auto img0 = targets.front()->image;
 		auto size = img0->size;
 
-		rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
-			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\plain\\mesh3d.pipeline", 
-			{ "rp=0x" + to_string((uint64)rp_fwd) });
+		if (!initialized)
+		{
+			rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
+				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
+				  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+			pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\plain\\mesh3d.pipeline",
+				{ "rp=0x" + to_string((uint64)rp_fwd) });
+
+			buf_vtx.create(pl_fwd->info.shaders[0]->in_ui, 524288);
+			buf_idx.create(sizeof(uint), 2097152);
+
+			set_mesh_res(0, &graphics::Model::get(L"standard:cube")->meshes[0]);
+
+			initialized = true;
+		}
 
 		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment));
 		auto iv_dep = img_dep->get_view();
@@ -217,21 +244,21 @@ namespace flame
 			dst.arm = !mesh->bone_ids.empty();
 			if (!dst.arm)
 			{
-				//dst.vtx_off = nd.buf_mesh_vtx.n1;
-				//auto pvtx = nd.buf_mesh_vtx.alloc(dst.vtx_cnt);
-				//for (auto i = 0; i < dst.vtx_cnt; i++)
-				//{
-				//	auto& vtx = pvtx[i];
-				//	vtx.pos = apos[i];
+				dst.vtx_off = buf_vtx.n_offset();
+				for (auto i = 0; i < dst.vtx_cnt; i++)
+				{
+					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
+					buf_vtx.set_var<"i_col"_h>(cvec4(255, 0, 128, 255));
+					buf_vtx.next_item();
+				}
 				//	vtx.uv = auv ? auv[i] : vec2(0.f);
 				//	vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
-				//}
 
-				//dst.idx_off = nd.buf_mesh_idx.n1;
-				//memcpy(nd.buf_mesh_idx.alloc(dst.idx_cnt), aidx, sizeof(uint) * dst.idx_cnt);
+				dst.idx_off = buf_idx.n_offset();
+				buf_idx.push(dst.idx_cnt, mesh->indices.data());
 
-				//nd.buf_mesh_vtx.upload(cb.get());
-				//nd.buf_mesh_idx.upload(cb.get());
+				buf_vtx.upload(cb.get());
+				buf_idx.upload(cb.get());
 			}
 			else
 			{

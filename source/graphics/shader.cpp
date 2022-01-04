@@ -403,8 +403,12 @@ namespace flame
 							if (vi.name.ends_with("_col") || vi.name.ends_with("_color"))
 								vi.type = TypeInfo::get<cvec4>();
 						}
-						vi.name += ":" + to_string(location);
 						vi.offset = ui.size;
+						{
+							auto& m = vi.metas.d.emplace_back();
+							m.first = "Location"_h;
+							m.second.i = location;
+						}
 						ui.size += vi.type->size;
 					}
 					db.udts.emplace(sh(ui.name.c_str()), ui);
@@ -1192,8 +1196,9 @@ namespace flame
 							for (auto& vi : s->in_ui->variables)
 							{
 								auto& va = vb.attributes.emplace_back();
-								auto sp = SUS::split(vi.name, ':');
-								va.location = sto<int>(sp[1]);
+								LightCommonValue cv;
+								vi.metas.get("Location"_h, &cv);
+								va.location = cv.i;
 								if (vi.type == TypeInfo::get<float>())
 									va.format = Format_R32_SFLOAT;
 								else if (vi.type == TypeInfo::get<vec2>())

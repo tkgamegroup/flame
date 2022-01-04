@@ -17,8 +17,8 @@ namespace flame
 			std::unique_ptr<SemaphorePrivate> render_finished;
 
 			std::unique_ptr<ImagePrivate> imgui_img_font;
-			StorageBuffer<"flame::imgui_vtx", BufferUsageVertex> imgui_buf_vtx;
-			StorageBuffer<"flame::imgui_idx", BufferUsageIndex> imgui_buf_idx;
+			StorageBuffer<"flame::imgui_vtx"_h, BufferUsageVertex> imgui_buf_vtx;
+			StorageBuffer<"flame::imgui_idx"_h, BufferUsageIndex> imgui_buf_idx;
 			std::unique_ptr<DescriptorSetPrivate> imgui_ds;
 			std::unique_ptr<GraphicsPipelinePrivate> imgui_pl;
 

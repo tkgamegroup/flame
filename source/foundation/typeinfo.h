@@ -445,6 +445,16 @@ namespace flame
 			return nullptr;
 		}
 
+		VariableInfo* find_variable(uint name_hash) const
+		{
+			for (auto& v : variables)
+			{
+				if (sh(v.name.c_str()) == name_hash)
+					return (VariableInfo*)&v;
+			}
+			return nullptr;
+		}
+
 		FunctionInfo* find_function(std::string_view name) const
 		{
 			for (auto& f : functions)
@@ -1411,4 +1421,10 @@ namespace flame
 		}
 		return nullptr;
 	}
+
+	template<uint id>
+	struct VirtualUdt
+	{
+		UdtInfo* ui;
+	};
 }
