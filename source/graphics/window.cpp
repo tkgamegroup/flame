@@ -83,6 +83,8 @@ namespace flame
 			submit_fence->wait();
 
 			auto img_idx = swapchain->acquire_image();
+			auto curr_img = swapchain->images[img_idx].get();
+			auto curr_fb = framebuffers[img_idx].get();
 
 			commandbuffer->begin();
 
@@ -110,13 +112,13 @@ namespace flame
 						imgui_buf_idx.upload(commandbuffer.get());
 					}
 
-					if (renderers.list.empty())
+					if (curr_img->levels[0].layers[0].layout != ImageLayoutAttachment)
 					{
 						auto cv = vec4(0.4f, 0.3f, 0.7f, 1);
-						commandbuffer->begin_renderpass(renderpass_clear, framebuffers[img_idx].get(), &cv);
+						commandbuffer->begin_renderpass(renderpass_clear, curr_fb, &cv);
 					}
 					else
-						commandbuffer->begin_renderpass(renderpass_load, framebuffers[img_idx].get());
+						commandbuffer->begin_renderpass(renderpass_load, curr_fb);
 					commandbuffer->set_viewport(Rect(0, 0, fb_width, fb_height));
 
 					commandbuffer->bind_pipeline(imgui_pl.get());
@@ -170,7 +172,7 @@ namespace flame
 			}
 #endif
 
-			commandbuffer->image_barrier(swapchain->images[img_idx].get(), {}, ImageLayoutAttachment, ImageLayoutPresent);
+			commandbuffer->image_barrier(curr_img, {}, ImageLayoutPresent);
 			commandbuffer->end();
 
 			auto queue = graphics::Queue::get(nullptr);
@@ -200,7 +202,7 @@ namespace flame
 
 				auto fmt_str = "fmt=" + TypeInfo::serialize_t(&Swapchain::format);
 				ret->renderpass_clear = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
-				ret->renderpass_load = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
+				ret->renderpass_load = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
 
 #if USE_IMGUI
 				ret->native->mouse_listeners.add([this](MouseButton btn, bool down) {
@@ -291,11 +293,11 @@ namespace flame
 					InstanceCB cb(nullptr);
 
 					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
-					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutTransferDst);
 					BufferImageCopy cpy;
 					cpy.img_ext = uvec2(img_w, img_h);
 					cb->copy_buffer_to_image(stag.get(), ret->imgui_img_font.get(), { &cpy, 1 });
-					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
 				}
 
 				ret->imgui_ds->set_image(0, 0, ret->imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));

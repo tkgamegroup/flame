@@ -558,6 +558,11 @@ namespace flame
 						ti->create(pd);
 						ti->unserialize(src.line().substr(ilen), pd);
 					}
+					else
+					{
+						src.anchor--;
+						break;
+					}
 				}
 			}
 				break;

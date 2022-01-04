@@ -61,11 +61,27 @@ namespace flame
 
 		struct Image
 		{
+			struct Layer
+			{
+				ImageLayout layout = ImageLayoutUndefined;
+				std::unique_ptr<uchar[]> data;
+			};
+
+			struct Level
+			{
+				uvec2 size = uvec2(0);
+				uint pitch = 0;
+				uint data_size = 0;
+				std::vector<Layer> layers;
+			};
+
 			Format format = Format_R8G8B8A8_UNORM;
-			std::vector<uvec2> sizes;
-			uint levels = 1;
-			uint layers = 1;
+			uvec2 size = uvec2(0);
+			uint pixel_size = 0;
+			uint n_levels = 1;
+			uint n_layers = 1;
 			SampleCount sample_count = SampleCount_1;
+			std::vector<Level> levels;
 
 			std::filesystem::path filename;
 
@@ -75,8 +91,8 @@ namespace flame
 			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) = 0;
 			virtual FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, AttachmentLoadOp load_op = AttachmentLoadDontCare) = 0;
 
-			virtual void change_layout(ImageLayout src_layout, ImageLayout dst_layout) = 0;
-			virtual void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) = 0;
+			virtual void change_layout(ImageLayout dst_layout) = 0;
+			virtual void clear(const vec4& color, ImageLayout dst_layout) = 0;
 
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
@@ -87,7 +103,7 @@ namespace flame
 			struct Create
 			{
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false) = 0;
-				virtual ImagePtr operator()(DevicePtr device, Bitmap* bmp) = 0;
+				virtual ImagePtr operator()(DevicePtr device, BitmapPtr bmp) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;

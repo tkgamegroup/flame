@@ -15,89 +15,41 @@ namespace flame
 {
 	namespace graphics
 	{
-		vec4 ImagePrivate::Data::get_pixel(Format format, ivec2 pos)
-		{
-			pos.x = clamp(pos.x, 0, (int)size.x - 1);
-			pos.y = clamp(pos.y, 0, (int)size.y - 1);
-
-			auto pixel = p.get() + pitch * pos.y + pixel_size * pos.x;
-			switch (format)
-			{
-			case Format_R8_UNORM:
-				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
-			case Format_R8G8B8A8_UNORM:
-				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
-			case Format_R16G16B16A16_SFLOAT:
-				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
-					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
-			default:
-				assert(0);
-			}
-		}
-
-		void ImagePrivate::Data::set_pixel(Format format, ivec2 pos, const vec4& v)
-		{
-			pos.x = clamp(pos.x, 0, (int)size.x - 1);
-			pos.y = clamp(pos.y, 0, (int)size.y - 1);
-
-			auto pixel = p.get() + pitch * pos.y + pixel_size * pos.x;
-			switch (format)
-			{
-			case Format_R8_UNORM:
-				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
-				break;
-			case Format_R8G8B8A8_UNORM:
-				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
-				pixel[1] = int(clamp(v[1], 0.f, 1.f) * 255.f);
-				pixel[2] = int(clamp(v[2], 0.f, 1.f) * 255.f);
-				pixel[3] = int(clamp(v[3], 0.f, 1.f) * 255.f);
-				break;
-			default:
-				assert(0);
-			}
-		}
-
 		std::vector<ImagePrivate*> __images; // for debug: get image ptr from vulkan handle
 
-		void ImagePrivate::initialize(const uvec2& size)
+		void ImagePrivate::initialize()
 		{
+			pixel_size = get_pixel_size(format);
+
 			auto auto_lvs = false;
-			if (levels == 0)
+			if (n_levels == 0)
 			{
 				auto_lvs = true;
-				levels = 16;
+				n_levels = 16;
 			}
+
+			data_size = 0;
 			auto s = size;
-			for (auto i = 0; i < levels; i++)
+			for (auto i = 0; i < n_levels; i++)
 			{
-				sizes.push_back(s);
+				auto& l = levels.emplace_back();
+				l.size = s;
+				l.pitch = image_pitch(pixel_size * s.x);
+				l.data_size = s.y * l.pitch;
+				data_size += l.data_size * n_layers;
+				l.layers.resize(n_layers);
+
 				s.x /= 2;
 				s.y /= 2;
 				if (auto_lvs && s.x == 0 && s.y == 0)
 				{
-					levels = i + 1;
+					n_levels = i + 1;
 					break;
 				}
 				if (s.x == 0)
 					s.x = 1;
 				if (s.y == 0)
 					s.y = 1;
-			}
-
-			auto pixel_size = get_pixel_size(format);
-			data_size = 0;
-			data.resize(levels);
-			for (auto lv = 0; lv < levels; lv++)
-			{
-				data[lv].resize(layers);
-				for (auto& d : data[lv])
-				{
-					d.size = sizes[lv];
-					d.pixel_size = pixel_size;
-					d.pitch = image_pitch(pixel_size * d.size.x);
-					d.data_size =  d.pitch * d.size.y;
-					data_size += d.data_size;
-				}
 			}
 		}
 
@@ -114,25 +66,67 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::Data& ImagePrivate::get_data(uint level, uint layer)
+		void ImagePrivate::get_data(uint level, uint layer)
 		{
-			auto& d = data[level][layer];
-			if (!d.p)
+			auto& lv = levels[level];
+			auto& ly = lv.layers [layer];
+			if (!ly.data)
 			{
-				StagingBuffer sb(device, d.data_size, nullptr, BufferUsageTransferDst);
+				StagingBuffer sb(device, lv.data_size, nullptr, BufferUsageTransferDst);
 				{
 					InstanceCB cb(device);
 					BufferImageCopy cpy;
-					cpy.img_ext = d.size;
+					cpy.img_ext = lv.size;
 					cpy.img_sub = { level, 1, layer, 1 };
-					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
 					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), { &cpy, 1 });
-					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
 				}
-				d.p.reset(new uchar[d.data_size]);
-				memcpy(d.p.get(), sb->mapped, d.data_size);
+				ly.data.reset(new uchar[lv.data_size]);
+				memcpy(ly.data.get(), sb->mapped, lv.data_size);
 			}
-			return d;
+		}
+
+		vec4 ImagePrivate::get_pixel(int x, int y, Level& lv, Layer& ly)
+		{
+			x = clamp(x, 0, (int)lv.size.x - 1);
+			y = clamp(y, 0, (int)lv.size.y - 1);
+
+			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
+			case Format_R8G8B8A8_UNORM:
+				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
+			case Format_R16G16B16A16_SFLOAT:
+				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
+					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
+			default:
+				assert(0);
+			}
+		}
+
+		void ImagePrivate::set_pixel(int x, int y, Level& lv, Layer& ly, const vec4& v)
+		{
+			x = clamp(x, 0, (int)lv.size.x - 1);
+			y = clamp(y, 0, (int)lv.size.y - 1);
+
+			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
+				break;
+			case Format_R8G8B8A8_UNORM:
+				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
+				pixel[1] = int(clamp(v[1], 0.f, 1.f) * 255.f);
+				pixel[2] = int(clamp(v[2], 0.f, 1.f) * 255.f);
+				pixel[3] = int(clamp(v[3], 0.f, 1.f) * 255.f);
+				break;
+			default:
+				assert(0);
+			}
 		}
 
 		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle)
@@ -269,34 +263,35 @@ namespace flame
 			return fb;
 		}
 
-		void ImagePrivate::change_layout(ImageLayout src_layout, ImageLayout dst_layout)
+		void ImagePrivate::change_layout(ImageLayout dst_layout)
 		{
 			InstanceCB cb(device);
 
-			cb->image_barrier(this, { 0, levels, 0, layers }, src_layout, dst_layout);
+			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 		}
 
-		void ImagePrivate::clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color)
+		void ImagePrivate::clear(const vec4& color, ImageLayout dst_layout)
 		{
 			InstanceCB cb(device);
 
-			cb->image_barrier(this, { 0, levels, 0, layers }, src_layout, ImageLayoutTransferDst);
-			cb->clear_color_image(this, { 0, levels, 0, layers }, color);
-			cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferDst, dst_layout);
+			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferDst);
+			cb->clear_color_image(this, { 0, n_levels, 0, n_layers }, color);
+			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 		}
 
 		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
 		{
-			auto sz = sizes[level];
-			auto& d = get_data(level, layer);
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+			get_data(level, layer);
 
-			auto coord = uv * vec2(sz) - 0.5f;
+			auto coord = uv * vec2(lv.size) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);
 
 			return mix(
-				mix(d.get_pixel(format, coordi + ivec2(0, 0)), d.get_pixel(format, coordi + ivec2(1, 0)), coordf.x),
-				mix(d.get_pixel(format, coordi + ivec2(0, 1)), d.get_pixel(format, coordi + ivec2(1, 1)), coordf.x),
+				mix(get_pixel(coordi.x, coordi.y, lv, ly), get_pixel(coordi.x + 1, coordi.y, lv, ly), coordf.x),
+				mix(get_pixel(coordi.x, coordi.y + 1, lv, ly), get_pixel(coordi.x + 1, coordi.y + 1, lv, ly), coordf.x),
 				coordf.y);
 		}
 
@@ -319,7 +314,7 @@ namespace flame
 				}
 				assert(gli_fmt != gli::FORMAT_UNDEFINED);
 
-				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(sizes[0], 1), layers, 1, levels);
+				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(size, 1), n_layers, 1, n_levels);
 
 				StagingBuffer sb(device, data_size, nullptr);
 				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
@@ -328,9 +323,9 @@ namespace flame
 					std::vector<BufferImageCopy> cpies;
 					auto dst = (char*)sb->mapped;
 					auto offset = 0;
-					for (auto i = 0; i < layers; i++)
+					for (auto i = 0; i < n_layers; i++)
 					{
-						for (auto j = 0; j < levels; j++)
+						for (auto j = 0; j < n_levels; j++)
 						{
 							auto size = (uint)gli_texture.size(j);
 
@@ -347,9 +342,9 @@ namespace flame
 							offset += size;
 						}
 					}
-					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferSrc);
+					cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferSrc);
 					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), cpies);
-					cb->image_barrier(this, { 0, levels, 0, layers }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+					cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
 					memcpy(std::get<0>(c), std::get<1>(c), std::get<2>(c));
@@ -372,12 +367,13 @@ namespace flame
 				auto ret = new ImagePrivate;
 				ret->device = device;
 				ret->format = format;
-				ret->levels = levels;
-				ret->layers = layers;
+				ret->n_levels = levels;
+				ret->n_layers = layers;
 				ret->sample_count = sample_count;
 				ret->usage = usage;
 				ret->is_cube = is_cube;
-				ret->initialize(size);
+				ret->size = size;
+				ret->initialize();
 
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -428,10 +424,10 @@ namespace flame
 				StagingBuffer sb(device, bmp->data_size, bmp->data);
 				InstanceCB cb(device);
 				BufferImageCopy cpy;
-				cpy.img_ext = ret->sizes[0];
-				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cpy.img_ext = ret->size;
+				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, { &cpy, 1 });
-				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
 				__images.push_back(ret);
 				return ret;
@@ -443,11 +439,11 @@ namespace flame
 
 				StagingBuffer stag(nullptr, image_pitch(get_pixel_size(format) * size.x) * size.y, data);
 				InstanceCB cb(nullptr);
-				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
 				cpy.img_ext = size;
 				cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, { &cpy, 1 });
-				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
 				__images.push_back(ret);
 				return ret;
@@ -461,7 +457,8 @@ namespace flame
 
 			ret->device = device;
 			ret->format = format;
-			ret->initialize(size);
+			ret->size = size;
+			ret->initialize();
 			ret->vk_image = native;
 
 			__images.push_back(ret);
@@ -470,45 +467,45 @@ namespace flame
 
 		void ImagePrivate::generate_mipmaps()
 		{
-			assert(levels == 1);
+			assert(n_levels == 1);
 
-			auto s = sizes[0];
+			auto s = size;
 			for (auto i = 0; ; i++)
 			{
 				s.x >>= 1;
 				s.y >>= 1;
 				if (s.x == 0 && s.y == 0)
 					break;
-				levels++;
+				n_levels++;
 			}
 
-			auto img = Image::create(device, format, sizes[0], levels, layers, sample_count, usage, is_cube);
+			auto img = Image::create(device, format, size, n_levels, n_layers, sample_count, usage, is_cube);
 
 			{
 				InstanceCB cb(device);
 
-				cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-				cb->image_barrier(img, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->image_barrier(this, {}, ImageLayoutTransferSrc);
+				cb->image_barrier(img, { 0, n_levels, 0, n_layers }, ImageLayoutTransferDst);
 				{
 					ImageCopy cpy;
-					cpy.size = sizes[0];
+					cpy.size = size;
 					cb->copy_image(this, img, { &cpy, 1 });
 				}
-				for (auto i = 1U; i < levels; i++)
+				for (auto i = 1U; i < n_levels; i++)
 				{
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutTransferSrc);
+					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
 					ImageBlit blit;
 					blit.src_sub.base_level = i - 1;
-					blit.src_range = ivec4(0, 0, img->sizes[i - 1]);
+					blit.src_range = ivec4(0, 0, img->levels[i - 1].size);
 					blit.dst_sub.base_level = i;
-					blit.dst_range = ivec4(0, 0, img->sizes[i]);
+					blit.dst_range = ivec4(0, 0, img->levels[i].size);
 					cb->blit_image(img, img, { &blit, 1 }, FilterLinear);
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 				}
-				cb->image_barrier(img, { img->levels - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(img, { img->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 			}
 
-			data = std::move(img->data);
+			levels = std::move(img->levels);
 			data_size = img->data_size;
 			std::swap(vk_image, img->vk_image);
 			std::swap(vk_memory, img->vk_memory);
@@ -519,20 +516,22 @@ namespace flame
 		{
 			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 
-			auto& d = img->get_data(level, 0);
+			auto& lv = img->levels[level];
+			auto& ly = lv.layers[0];
+			img->get_data(level, 0);
 
 			auto coverage = 0.f;
 
-			for (auto y = 0; y < d.size.y; y++)
+			for (auto y = 0; y < lv.size.y; y++)
 			{
-				for (auto x = 0; x < d.size.x; x++)
+				for (auto x = 0; x < lv.size.x; x++)
 				{
-					if (d.get_pixel(img->format, ivec2(x, y))[channel] * scale > ref)
+					if (img->get_pixel(x, y, lv, ly)[channel] * scale > ref)
 						coverage += 1.f;
 				}
 			}
 
-			return coverage / float(d.size.x * d.size.y);
+			return coverage / float(lv.size.x * lv.size.y);
 		}
 
 		void image_alpha_test_coverage(ImagePtr img, uint level, float desired, float ref, uint channel)
@@ -564,27 +563,29 @@ namespace flame
 				alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
 			}
 
-			auto& d = img->get_data(level, 0);
-			for (auto y = 0; y < d.size.y; y++)
+			auto& lv = img->levels[level];
+			auto& ly = lv.layers[0];
+			img->get_data(level, 0);
+			for (auto y = 0; y < lv.size.y; y++)
 			{
-				for (auto x = 0; x < d.size.x; x++)
+				for (auto x = 0; x < lv.size.x; x++)
 				{
 					auto pos = ivec2(x, y);
-					auto v = d.get_pixel(img->format, pos);
+					auto v = img->get_pixel(x, y, lv, ly);
 					v[channel] *= best_alpha_scale;
-					d.set_pixel(img->format, pos, v);
+					img->set_pixel(x, y, lv, ly, v);
 				}
 			}
 
 			{
-				StagingBuffer sb(img->device, d.data_size, d.p.get());
+				StagingBuffer sb(img->device, lv.data_size, ly.data.get());
 				InstanceCB cb(img->device);
 				BufferImageCopy cpy;
-				cpy.img_ext = d.size;
+				cpy.img_ext = lv.size;
 				cpy.img_sub.base_level = level;
-				cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
 				cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
-				cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly);
 			}
 		}
 
@@ -679,9 +680,9 @@ namespace flame
 							offset += size;
 						}
 					}
-					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutUndefined, ImageLayoutTransferDst);
+					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst);
 					cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, cpies);
-					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutShaderReadOnly);
 				}
 				else
 				{
@@ -782,7 +783,7 @@ namespace flame
 				png_filename.replace_extension(L".png");
 				ret->image = Image::get(device, png_filename, false);
 
-				auto size = (vec2)ret->image->sizes[0];
+				auto size = (vec2)ret->image->size;
 
 				for (auto& e : parse_ini_file(filename).get_section_entries(""))
 				{

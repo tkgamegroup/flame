@@ -123,7 +123,7 @@ namespace flame
 				for (auto i = 0; i < image_count; i++)
 				{
 					images[i].reset(ImagePrivate::create(device, format, size, native_images[i]));
-					cb->image_barrier(images[i].get(), {}, ImageLayoutUndefined, ImageLayoutPresent);
+					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
 				}
 			}
 		}

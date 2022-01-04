@@ -25,7 +25,7 @@ void View_Scene::on_draw()
 {
 	auto size = ImGui::GetContentRegionAvail();
 	auto usize = uvec2(size.x, size.y);
-	if (!render_tar || render_tar->sizes[0] != usize)
+	if (!render_tar || render_tar->size != usize)
 	{
 		//render_tar = app.s_imgui->set_render_target(render_tar, usize);
 		//if (render_tar)

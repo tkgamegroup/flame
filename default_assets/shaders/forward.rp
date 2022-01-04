@@ -19,11 +19,6 @@ attachments
     {sample_count}
   initia_layout
     Attachment
- ---
-  format
-    R16G16B16A16_SFLOAT
-  load_op
-    DontCare
 subpasses
   color_attachments
     0

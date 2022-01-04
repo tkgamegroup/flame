@@ -106,7 +106,7 @@ namespace flame
 			virtual void dispatch(const uvec3& v) = 0;
 			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, 
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
-			virtual void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
+			virtual void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout new_layout, 
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone,
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 
@@ -116,7 +116,7 @@ namespace flame
 			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies) = 0;
 			virtual void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) = 0;
 
-			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color) = 0;
+			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) = 0;
 			virtual void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) = 0;
 
 			virtual void end() = 0;

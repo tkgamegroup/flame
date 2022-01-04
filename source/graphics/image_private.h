@@ -9,18 +9,6 @@ namespace flame
 	{
 		struct ImagePrivate : Image
 		{
-			struct Data
-			{
-				uvec2 size;
-				uint pixel_size;
-				uint pitch;
-				uint data_size;
-				std::unique_ptr<uchar> p;
-
-				vec4 get_pixel(Format format, ivec2 pos);
-				void set_pixel(Format format, ivec2 pos, const vec4& v);
-			};
-
 			DevicePrivate* device;
 			
 			ImageUsageFlags usage;
@@ -32,20 +20,21 @@ namespace flame
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
-			std::vector<std::vector<Data>> data;
 			uint data_size;
 
-			void initialize(const uvec2& size);
+			void initialize();
 			~ImagePrivate();
 
-			Data& get_data(uint level, uint layer);
+			void get_data(uint level, uint layer);
+			vec4 get_pixel(int x, int y, Level& lv, Layer& ly);
+			void set_pixel(int x, int y, Level& lv, Layer& ly, const vec4& v);
 
 			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) override;
 			FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, AttachmentLoadOp load_op = AttachmentLoadDontCare) override;
 
-			void change_layout(ImageLayout src_layout, ImageLayout dst_layout) override;
-			void clear(ImageLayout src_layout, ImageLayout dst_layout, const cvec4& color) override;
+			void change_layout(ImageLayout dst_layout) override;
+			void clear(const vec4& color, ImageLayout dst_layout) override;
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 

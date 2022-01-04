@@ -66,12 +66,13 @@ namespace flame
 							StagingBuffer stag(device, image_pitch(g.size.x) * g.size.y, bitmap);
 							InstanceCB cb(device);
 
-							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+							auto old_layout = image->levels[0].layers[0].layout;
+							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
 							cpy.img_off = atlas_pos;
 							cpy.img_ext = g.size;
 							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
-							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+							cb->image_barrier(image.get(), {}, old_layout);
 
 							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
 								(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
@@ -138,7 +139,7 @@ namespace flame
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
 				ret->image.reset(Image::create(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
-				ret->image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
+				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
 				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 
 				loaded_atlas.emplace_back(sp, ret);

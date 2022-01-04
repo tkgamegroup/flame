@@ -8,6 +8,7 @@ namespace flame
 		struct CommandPoolPrivate : CommandPool
 		{
 			DevicePrivate* device;
+
 			VkCommandPool vk_command_buffer_pool;
 
 			~CommandPoolPrivate();
@@ -43,7 +44,7 @@ namespace flame
 			void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) override;
 			void dispatch(const uvec3& v) override;
 			void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage) override;
-			void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout,
+			void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout new_layout,
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone,
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) override;
 			void copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies) override;
@@ -51,7 +52,7 @@ namespace flame
 			void copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies) override;
 			void copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies) override;
 			void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) override;
-			void clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color) override;
+			void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) override;
 			void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) override;
 			void end() override;
 		};

@@ -76,6 +76,18 @@ namespace flame
 
 		void CommandBufferPrivate::begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs)
 		{
+			for (auto i = 0; i < fb->views.size(); i++)
+			{
+				auto& att = rp->info.attachments[i];
+				auto layout = att.initia_layout;
+				auto iv = fb->views[i];
+				auto& sub = iv->sub;
+				auto& ly = iv->image->levels[sub.base_level].layers[sub.base_layer];
+				if (layout != ImageLayoutUndefined && layout != ly.layout)
+					printf("begin renderpass: image layout mismatch, please review your commandbuffer\n");
+				ly.layout = att.final_layout;
+			}
+
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			info.pNext = nullptr;
@@ -84,7 +96,7 @@ namespace flame
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
 			auto first_view = fb->views[0];
-			auto size = first_view->image->sizes[first_view->sub.base_level];
+			auto size = first_view->image->levels[first_view->sub.base_level].size;
 			info.renderArea.extent.width = size.x;
 			info.renderArea.extent.height = size.y;
 			info.clearValueCount = cvs ? fb->views.size() : 0;
@@ -227,9 +239,24 @@ namespace flame
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout old_layout, ImageLayout new_layout, 
+		void CommandBufferPrivate::image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout new_layout, 
 			AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage)
 		{
+			ImageLayout old_layout = (ImageLayout)-1;
+			for (auto i = 0; i < sub.level_count; i++)
+			{
+				auto& lv = img->levels[sub.base_level + i];
+				for (auto j = 0; j < sub.layer_count; j++)
+				{
+					auto& ly = lv.layers[sub.base_layer + j];
+					if (old_layout == (ImageLayout)-1)
+						old_layout = ly.layout;
+					else if (ly.layout != old_layout)
+						printf("image barrier: image layout mismatch, please review your commandbuffer\n");
+					ly.layout = new_layout;
+				}
+			}
+
 			if (src_access == AccessNone)
 			{
 				switch (old_layout)
@@ -456,13 +483,13 @@ namespace flame
 				vk_blits.size(), vk_blits.data(), to_backend(filter));
 		}
 
-		void CommandBufferPrivate::clear_color_image(ImagePtr img, const ImageSub& sub, const cvec4& color)
+		void CommandBufferPrivate::clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color)
 		{
 			VkClearColorValue cv;
-			cv.float32[0] = color.x / 255.f;
-			cv.float32[1] = color.y / 255.f;
-			cv.float32[2] = color.z / 255.f;
-			cv.float32[3] = color.w / 255.f;
+			cv.float32[0] = color.x;
+			cv.float32[1] = color.y;
+			cv.float32[2] = color.z;
+			cv.float32[3] = color.w;
 			VkImageSubresourceRange range;
 			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			range.baseMipLevel = sub.base_level;
