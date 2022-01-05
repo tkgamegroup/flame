@@ -55,7 +55,7 @@ int main(int argc, char** args)
 			if (class_name[i] == '_')
 				class_name[i + 1] = std::toupper(class_name[i + 1]);
 		}
-		SUS::remove_char(class_name, '_');
+		SUS::strip_char(class_name, '_');
 	};
 
 	if (std::filesystem::is_directory(path))
@@ -337,7 +337,7 @@ int main(int argc, char** args)
 
 		{
 			auto stem = path.stem().string();
-			SUS::remove_tail(stem, "_private");
+			SUS::strip_tail_if(stem, "_private");
 
 			public_header_fn = stem + ".h";
 			private_header_fn = stem + "_private.h";

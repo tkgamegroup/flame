@@ -212,7 +212,68 @@ namespace flame
 			if (!dst_ppath.empty() && !std::filesystem::exists(dst_ppath))
 				std::filesystem::create_directories(dst_ppath);
 
+			std::vector<std::string> src_lines;
+			{
+				auto names = defines;
+				for (auto& d : names)
+					SUS::strip_after(d, '=');
+				auto found_name = [&](std::string_view name) {
+					for (auto& n : names)
+					{
+						if (n == name)
+							return true;
+					}
+					return false;
+				};
+
+				std::vector<bool> states;
+				auto ok = true;
+				auto eval_state = [&]() {
+					ok = true;
+					for (auto s : states)
+						ok = ok && s;
+				};
+
+				auto lines = get_file_lines(src_path);
+				for (auto& l : lines)
+				{
+					auto tl = SUS::get_trimed(l);
+					if (SUS::strip_head_if(tl, "#ifdef "))
+					{
+						states.push_back(found_name(tl));
+						eval_state();
+					}
+					if (SUS::strip_head_if(tl, "#ifndef "))
+					{
+						states.push_back(!found_name(tl));
+						eval_state();
+					}
+					else if (SUS::strip_head_if(tl, "#else"))
+					{
+						states.back() = !states.back();
+						eval_state();
+					}
+					else if (SUS::strip_head_if(tl, "#endif"))
+					{
+						states.pop_back();
+						eval_state();
+					}
+					else if (ok)
+						src_lines.push_back(l);
+				}
+			}
+
 			std::ofstream dst(dst_path);
+
+			std::filesystem::path temp_path = L"temp.glsl";
+			std::ofstream temp(temp_path);
+			temp << "#version 450 core" << std::endl;
+			temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
+			temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
+			temp << std::endl;
+			for (auto& d : defines)
+				temp << "#define " << d << std::endl;
+			temp << std::endl;
 
 			{
 				std::vector<std::filesystem::path> dependencies;
@@ -234,23 +295,18 @@ namespace flame
 					if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
 						dependencies.push_back(fn);
 
-					std::ifstream file(fn);
 					auto ppath = fn.parent_path();
-					while (!file.eof())
+					auto lines = get_file_lines(fn);
+					for (auto& l : lines)
 					{
-						std::string line;
-						std::getline(file, line);
-						if (!line.empty() && line[0] != '#')
-							break;
-						if (SUS::remove_both_ends(line, "#include \"", "\""))
+						if (SUS::strip_head_tail_if(l, "#include \"", "\""))
 						{
-							std::filesystem::path p = line;
+							std::filesystem::path p = l;
 							if (!p.is_absolute())
 								p = ppath / p;
 							headers.push_back(p);
 						}
 					}
-					file.close();
 				}
 
 				dst << "dependencies:" << std::endl;
@@ -258,26 +314,11 @@ namespace flame
 				dst << std::endl;
 			}
 
-			std::filesystem::path temp_path = L"temp.glsl";
-			std::ofstream temp(temp_path);
-			temp << "#version 450 core" << std::endl;
-			temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
-			temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
-			temp << std::endl;
-			for (auto& d : defines)
-				temp << "#define " << d << std::endl;
-			temp << std::endl;
-
-			std::ifstream src(src_path);
 			if (stage == ShaderStageDsl)
 			{
 				temp << "#define SET 0" << std::endl;
-				while (!src.eof())
-				{
-					std::string line;
-					std::getline(src, line);
-					temp << line << std::endl;
-				}
+				for (auto& l : src_lines)
+					temp << l << std::endl;
 				temp << std::endl;
 				temp << "void main() {}" << std::endl;
 				temp << std::endl;
@@ -285,13 +326,10 @@ namespace flame
 			else if (stage == ShaderStagePll)
 			{
 				temp << "#define SET 0" << std::endl;
-				while (!src.eof())
+				for (auto& l : src_lines)
 				{
-					std::string line;
-					std::getline(src, line);
-					if (line.starts_with("#include \"") && line.ends_with(".dsl\""))
-						continue;
-					temp << line << std::endl;
+					if (!SUS::match_head_tail(l, "#include \"", ".dsl\""))
+						temp << l << std::endl;
 				}
 				temp << std::endl;
 				temp << "void main() {}" << std::endl;
@@ -301,33 +339,27 @@ namespace flame
 			{
 				auto set = 0;
 				temp << "#define SET " << std::to_string(set++) << std::endl;
-				while (!src.eof())
+				for (auto& l : src_lines)
 				{
-					std::string line;
-					std::getline(src, line);
-					if (SUS::remove_both_ends(line, "#include \"", "\""))
+					if (SUS::strip_head_tail_if(l, "#include \"", "\""))
 					{
 						temp << std::endl;
 
-						std::ifstream pll(src_path.parent_path() / line);
-						while (!pll.eof())
+						auto lines = get_file_lines(src_path.parent_path() / l);
+						for (auto& l : lines)
 						{
-							std::getline(pll, line);
-							temp << line << std::endl;
-							if (line.starts_with("#include \"") && line.ends_with(".dsl\""))
+							temp << l << std::endl;
+							if (SUS::match_head_tail(l, "#include \"", ".dsl\""))
 							{
 								temp << "#undef SET" << std::endl;
 								temp << "#define SET " << std::to_string(set++) << std::endl;
 							}
 						}
-						pll.close();
-
-						continue;
 					}
-					temp << line << std::endl;
+					else
+						temp << l << std::endl;
 				}
 			}
-			src.close();
 
 			temp.close();
 

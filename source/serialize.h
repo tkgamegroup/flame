@@ -232,15 +232,15 @@ namespace flame
 	{
 		static uint indent_length(const std::basic_string<CH>& s)
 		{
-			return std::find_if(s.begin(), s.end(), [](char sh) {
-				return !std::isspace(sh);
+			return std::find_if(s.begin(), s.end(), [](char ch) {
+				return !std::isspace(ch);
 			}) - s.begin();
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
-			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char sh) {
-				return !std::isspace(sh);
+			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
+				return !std::isspace(ch);
 			}));
 		}
 
@@ -253,8 +253,8 @@ namespace flame
 
 		static void rtrim(std::basic_string<CH>& s)
 		{
-			s.erase(std::find_if(s.rbegin(), s.rend(), [](char sh) {
-				return !std::isspace(sh);
+			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
+				return !std::isspace(ch);
 			}).base(), s.end());
 		}
 
@@ -280,47 +280,22 @@ namespace flame
 		
 		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
 		{
-			for (auto& sh : str)
+			for (auto& ch : str)
 			{
-				if (sh == from)
-					sh = to;
+				if (ch == from)
+					ch = to;
 			}
 		}
 
-		static void remove_char(std::basic_string<CH>& str, CH sh = ' ')
+		static void strip_char(std::basic_string<CH>& str, CH ch = ' ')
 		{
-			str.erase(std::remove(str.begin(), str.end(), sh), str.end());
+			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
 		}
 
-		static void remove_spaces(std::basic_string<CH>& str)
+		static void strip_after(std::basic_string<CH>& str, CH ch)
 		{
-			str.erase(std::remove_if(str.begin(), str.end(), [](char sh) {
-				return std::isspace(sh);
-			}), str.end());
-		}
-
-		static std::vector<std::basic_string<CH>> split_with_spaces(const std::basic_string<CH>& str)
-		{
-			std::basic_istringstream<CH> iss(str);
-			std::vector<std::basic_string<CH>> ret;
-
-			std::basic_string<CH> s;
-			while (iss >> s)
-				ret.push_back(s);
-
-			return ret;
-		}
-
-		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
-		{
-			std::basic_istringstream<CH> iss(str);
-			std::vector<std::basic_string<CH>> ret;
-
-			std::basic_string<CH> s;
-			while (std::getline(iss, s, delimiter))
-				ret.push_back(s);
-
-			return ret;
+			if (auto pos = str.find(ch); pos != std::basic_string<CH>::npos)
+				str.erase(str.begin() + pos, str.end());
 		}
 
 		static std::basic_string<CH> get_tail(const std::basic_string<CH>& str, uint off, uint len)
@@ -328,7 +303,12 @@ namespace flame
 			return str.substr(str.size() - len - off, len);
 		}
 
-		static bool remove_head(std::basic_string<CH>& str, const std::basic_string<CH>& head)
+		static bool match_head_tail(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		{
+			return str.starts_with(head) && str.ends_with(tail);
+		}
+
+		static bool strip_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
 			if (str.starts_with(head))
 			{
@@ -338,7 +318,7 @@ namespace flame
 			return false;
 		}
 
-		static bool remove_tail(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
+		static bool strip_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
 		{
 			if (str.ends_with(tail))
 			{
@@ -348,7 +328,7 @@ namespace flame
 			return false;
 		}
 
-		static bool remove_both_ends(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		static bool strip_head_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
 		{
 			if (str.starts_with(head) && str.ends_with(tail))
 			{
@@ -368,6 +348,18 @@ namespace flame
 				str.replace(start_pos, from.length(), to);
 				start_pos += to.length();
 			}
+		}
+
+		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
+		{
+			std::basic_istringstream<CH> iss(str);
+			std::vector<std::basic_string<CH>> ret;
+
+			std::basic_string<CH> s;
+			while (std::getline(iss, s, delimiter))
+				ret.push_back(s);
+
+			return ret;
 		}
 	};
 
@@ -486,11 +478,25 @@ namespace flame
 		return ret;
 	}
 
+	inline std::vector<std::string> get_file_lines(const std::filesystem::path& filename)
+	{
+		std::vector<std::string> ret;
+		std::ifstream file(filename);
+		std::string line;
+		while (!file.eof())
+		{
+			std::getline(file, line);
+			ret.push_back(line);
+		}
+		file.close();
+		return ret;
+	}
+
 	inline bool read_b(std::ifstream& f)
 	{
-		char sh;
-		f.read(&sh, sizeof(char));
-		return sh == 1;
+		char ch;
+		f.read(&ch, sizeof(char));
+		return ch == 1;
 	}
 
 	inline int read_i(std::ifstream& f)
@@ -535,8 +541,8 @@ namespace flame
 
 	inline void write_b(std::ofstream& f, bool b)
 	{
-		char sh = b ? 1 : 0;
-		f.write(&sh, sizeof(char));
+		char ch = b ? 1 : 0;
+		f.write(&ch, sizeof(char));
 	}
 
 	inline void write_i(std::ofstream& f, int v)

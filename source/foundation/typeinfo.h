@@ -92,13 +92,13 @@ namespace flame
 		{
 			auto ret = std::string(name);
 
-			SUS::remove_head(ret, "enum ");
-			SUS::remove_head(ret, "struct ");
-			SUS::remove_head(ret, "class ");
+			SUS::strip_head_if(ret, "enum ");
+			SUS::strip_head_if(ret, "struct ");
+			SUS::strip_head_if(ret, "class ");
 			SUS::replace_all(ret, "unsigned ", "u");
 			SUS::replace_all(ret, "__int64 ", "int64");
 			SUS::replace_all(ret, "Private", "");
-			SUS::remove_char(ret, ' ');
+			SUS::strip_char(ret, ' ');
 
 			if (ret.starts_with("glm::"))
 			{

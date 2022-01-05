@@ -170,7 +170,7 @@ namespace flame
 			//					if (name[i] == '_')
 			//						name[i + 1] = std::toupper(name[i + 1]);
 			//				}
-			//				SUS::remove_char(name, '_');
+			//				SUS::strip_char(name, '_');
 			//				name = 'e' + name;
 			//				name_to_prefab_path[name] = it.path();
 			//			}
@@ -435,7 +435,7 @@ namespace flame
 		for (auto& c : components)
 		{
 		//	std::string type_name = c->type_name;
-		//	SUS::remove_head(type_name, "flame::");
+		//	SUS::strip_head_if(type_name, "flame::");
 		//	auto ct = find_component_type(type_name);
 		//	assert(ct);
 		//	auto cc = (Component*)ct->create();
