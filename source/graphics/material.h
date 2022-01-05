@@ -27,7 +27,7 @@ namespace flame
 			bool opaque = true;
 			bool sort = false;
 
-			std::filesystem::path pipeline_file = "standard_mat.glsl";
+			std::filesystem::path pipeline_file = "standard_mataterial.glsl";
 			std::string pipeline_defines;
 
 			Texture textures[MaxMaterialTexturesCount] = {};

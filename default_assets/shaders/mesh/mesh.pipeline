@@ -1,0 +1,12 @@
+%rp=..\forward.rp
+%pll=forward.pll
+layout
+  {pll}
+shaders
+  filename
+    mesh.vert
+ ---
+  filename
+    mesh.frag
+renderpass
+  {rp}

@@ -5,7 +5,7 @@
 #include "gbuffer.pll"
 #endif
 
-layout(location = 0) in flat uint i_mat;
+layout(location = 0) in flat uint i_matid;
 layout(location = 1) in vec2 i_uv;
 #ifndef SHADOW_PASS
 layout(location = 2) in vec3 i_normal;
@@ -26,14 +26,14 @@ layout(location = 1) out vec4 o_res_nor_rou;
 void main()
 {
 #ifdef MAT_FILE
-	MaterialInfo material = material_infos[i_mat];
+	MaterialInfo material = material_infos[i_matid];
 	
 	#include MAT_FILE
 #else
 	#ifndef SHADOW_PASS
-		#if defined(PICKUP)
+		#ifdef PICKUP
 			o_color = pack_uint_to_v4(pc.i[0]);
-		#elif defined(NORMAL_DATA)
+		#elifdef NORMAL_DATA
 			o_color = vec4(i_normal * 0.5 + vec3(0.5), 1.0);
 		#else
 			o_color = pc.f;

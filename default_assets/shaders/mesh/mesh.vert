@@ -14,7 +14,7 @@ layout(location = 4) in vec4 i_bwgts;
 //layout (location = 5) in vec3 i_tan;
 //layout (location = 6) in vec3 i_bit;
 
-layout(location = 0) out flat uint o_mat;
+layout(location = 0) out flat uint o_matid;
 layout(location = 1) out vec2 o_uv;
 #ifndef SHADOW_PASS
 	layout(location = 2) out vec3 o_normal; 
@@ -25,8 +25,8 @@ layout(location = 1) out vec2 o_uv;
 
 void main()
 {
-	uint idx = gl_InstanceIndex >> 16;
-	o_mat = gl_InstanceIndex & 0xffff;
+	uint idx = gl_InstanceIndex >> 24;
+	o_matid = gl_InstanceIndex & 0xff;
 	o_uv = i_uv;
 
 #ifdef ARMATURE

@@ -72,8 +72,6 @@ namespace flame
 				ui.name = name;
 				ui.size = size;
 
-				ret = TypeInfo::get(TagD, name, db);
-
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
 					auto id = src.member_types[i];
@@ -94,6 +92,8 @@ namespace flame
 				}
 
 				db.udts.emplace(sh(name.c_str()), ui);
+
+				ret = TypeInfo::get(TagU, name, db);
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
 				ret = TypeInfo::get(TagPU, "ShaderImage", db);
@@ -176,6 +176,7 @@ namespace flame
 				}
 			}
 
+			assert(ret);
 			return ret;
 		}
 
@@ -243,17 +244,22 @@ namespace flame
 						states.push_back(found_name(tl));
 						eval_state();
 					}
-					if (SUS::strip_head_if(tl, "#ifndef "))
+					else if (SUS::strip_head_if(tl, "#ifndef "))
 					{
 						states.push_back(!found_name(tl));
 						eval_state();
 					}
-					else if (SUS::strip_head_if(tl, "#else"))
+					else if (tl.starts_with("#else"))
 					{
 						states.back() = !states.back();
 						eval_state();
 					}
-					else if (SUS::strip_head_if(tl, "#endif"))
+					else if (SUS::strip_head_if(tl, "#elifdef "))
+					{
+						states.back() = !states.back() && found_name(tl);
+						eval_state();
+					}
+					else if (tl.starts_with("#endif"))
 					{
 						states.pop_back();
 						eval_state();
@@ -341,11 +347,11 @@ namespace flame
 				temp << "#define SET " << std::to_string(set++) << std::endl;
 				for (auto& l : src_lines)
 				{
-					if (SUS::strip_head_tail_if(l, "#include \"", "\""))
+					if (SUS::strip_head_tail_if(l, "#include \"", ".pll\""))
 					{
 						temp << std::endl;
 
-						auto lines = get_file_lines(src_path.parent_path() / l);
+						auto lines = get_file_lines(src_path.parent_path() / (l + ".pll"));
 						for (auto& l : lines)
 						{
 							temp << l << std::endl;

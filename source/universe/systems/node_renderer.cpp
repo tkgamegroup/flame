@@ -36,10 +36,10 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_fwd);
-				cb->push_constant_t(mat, vu_pc.var_off<"mvp"_h>());
-				cb->push_constant_t(vec4(1.f), vu_pc.var_off<"col"_h>());
-				auto& mr = mesh_reses[0];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, 0);
+				//cb->push_constant_t(mat, vu_pc.var_off<"mvp"_h>());
+				//cb->push_constant_t(vec4(1.f), vu_pc.var_off<"col"_h>());
+				//auto& mr = mesh_reses[0];
+				//cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, 0);
 			}
 			cb->end_renderpass();
 
@@ -57,12 +57,14 @@ namespace flame
 			rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
 				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
 				  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-			pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\plain\\mesh3d.pipeline",
+			pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=0x" + to_string((uint64)rp_fwd) });
 
 			buf_vtx.create(pl_fwd->info.shaders[0]->in_ui, 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			vu_pc.ui = pl_fwd->info.layout->pc_ui;
+			auto pll = pl_fwd->info.layout;
+
+			vu_pc.ui = pll->pc_ui;
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
 			set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);

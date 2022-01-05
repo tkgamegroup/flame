@@ -1442,5 +1442,14 @@ namespace flame
 			static int offset = get_offset();
 			return offset;
 		}
+
+		template<uint nh, typename T>
+		inline void set_var(char* p, const T& v)
+		{
+			auto offset = var_off<nh>();
+			if (offset == -1)
+				return;
+			*(T*)(p + offset) = v;
+		}
 	};
 }

@@ -466,15 +466,15 @@ namespace flame
 
 	inline std::string get_file_content(const std::filesystem::path& filename)
 	{
-		std::ifstream file(filename, std::ios::binary);
-		if (!file.good())
-			return "";
-
-		auto length = get_file_length(file);
 		std::string ret;
-		ret.resize(length);
-		file.read(ret.data(), length);
-		file.close();
+		std::ifstream file(filename, std::ios::binary);
+		if (file.good())
+		{
+			auto length = get_file_length(file);
+			ret.resize(length);
+			file.read(ret.data(), length);
+			file.close();
+		}
 		return ret;
 	}
 
@@ -482,13 +482,16 @@ namespace flame
 	{
 		std::vector<std::string> ret;
 		std::ifstream file(filename);
-		std::string line;
-		while (!file.eof())
+		if (file.good())
 		{
-			std::getline(file, line);
-			ret.push_back(line);
+			std::string line;
+			while (!file.eof())
+			{
+				std::getline(file, line);
+				ret.push_back(line);
+			}
+			file.close();
 		}
-		file.close();
 		return ret;
 	}
 

@@ -24,6 +24,7 @@ namespace flame
 		{
 			using VirtualUdt<id>::ui;
 			using VirtualUdt<id>::var_off;
+			using VirtualUdt<id>::set_var;
 
 			constexpr inline AccessFlags u2a(BufferUsageFlags u)
 			{
@@ -102,10 +103,7 @@ namespace flame
 			template<uint nh, typename T>
 			inline void set_var(const T& v)
 			{
-				auto offset = var_off<nh>();
-				if (offset == -1)
-					return;
-				*(T*)(pend + offset) = v;
+				VirtualUdt<id>::set_var<nh>(pend, v);
 			}
 
 			void upload(CommandBufferPtr cb)
