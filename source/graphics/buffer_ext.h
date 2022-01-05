@@ -2,6 +2,7 @@
 
 #include "buffer.h"
 #include "command.h"
+#include "../foundation/typeinfo.h"
 
 namespace flame
 {
@@ -19,8 +20,11 @@ namespace flame
 		};
 
 		template<uint id, BufferUsageFlags usage, bool rewind = true>
-		struct StorageBuffer
+		struct StorageBuffer : VirtualUdt<id>
 		{
+			using VirtualUdt<id>::ui;
+			using VirtualUdt<id>::var_off;
+
 			constexpr inline AccessFlags u2a(BufferUsageFlags u)
 			{
 				switch (u)
@@ -47,8 +51,6 @@ namespace flame
 				}
 				return PipelineStageAllCommand;
 			}
-
-			UdtInfo* ui = nullptr;
 
 			uint size = 0;
 			uint array_capacity = 0;
@@ -100,17 +102,7 @@ namespace flame
 			template<uint nh, typename T>
 			inline void set_var(const T& v)
 			{
-				auto get_offset = [&]()->int {
-					auto vi = ui->find_variable(nh);
-					if (!vi)
-					{
-						assert(0);
-						return -1;
-					}
-					assert(vi->type == TypeInfo::get<T>());
-					return vi->offset;
-				};
-				static int offset = get_offset();
+				auto offset = var_off<nh>();
 				if (offset == -1)
 					return;
 				*(T*)(pend + offset) = v;

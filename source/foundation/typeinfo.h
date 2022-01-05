@@ -1425,6 +1425,22 @@ namespace flame
 	template<uint id>
 	struct VirtualUdt
 	{
-		UdtInfo* ui;
+		UdtInfo* ui = nullptr;
+
+		template<uint nh>
+		inline int var_off()
+		{
+			auto get_offset = [&]()->int {
+				auto vi = ui->find_variable(nh);
+				if (!vi)
+				{
+					assert(0);
+					return -1;
+				}
+				return vi->offset;
+			};
+			static int offset = get_offset();
+			return offset;
+		}
 	};
 }

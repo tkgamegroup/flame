@@ -29,6 +29,7 @@ namespace flame
 		std::unique_ptr<graphics::Image> img_dep;
 		graphics::StorageBuffer<"flame::node_renderer::vtx"_h, graphics::BufferUsageVertex, false> buf_vtx;
 		graphics::StorageBuffer<"flame::node_renderer::idx"_h, graphics::BufferUsageIndex, false> buf_idx;
+		VirtualUdt<"flame::node_renderer::pc"_h> vu_pc;
 
 		graphics::ImageLayout dst_layout;
 

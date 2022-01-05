@@ -35,6 +35,24 @@ namespace flame
 			return L"";
 		};
 
+		ShaderStageFlags stage_from_ext(const std::filesystem::path& fn)
+		{
+			auto ext = fn.extension();
+			if (ext == L".vert")
+				return ShaderStageVert;
+			else if (ext == L".tesc")
+				return ShaderStageTesc;
+			else if (ext == L".tese")
+				return ShaderStageTese;
+			else if (ext == L".geom")
+				return ShaderStageGeom;
+			else if (ext == L".frag")
+				return ShaderStageFrag;
+			else if (ext == L".comp")
+				return ShaderStageComp;
+			return ShaderStageNone;
+		}
+
 		TypeInfo* get_shader_type(const spirv_cross::CompilerGLSL& compiler, spirv_cross::TypeID tid, TypeInfoDataBase& db)
 		{
 			TypeInfo* ret = nullptr;
@@ -161,7 +179,7 @@ namespace flame
 			return ret;
 		}
 
-		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::filesystem::path& dst_path)
+		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::vector<std::string>& defines, const std::filesystem::path& dst_path)
 		{
 			if (std::filesystem::exists(dst_path))
 			{
@@ -246,6 +264,9 @@ namespace flame
 			temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
 			temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
 			temp << std::endl;
+			for (auto& d : defines)
+				temp << "#define " << d << std::endl;
+			temp << std::endl;
 
 			std::ifstream src(src_path);
 			if (stage == ShaderStageDsl)
@@ -318,7 +339,13 @@ namespace flame
 			}
 
 			wprintf(L"compiling: %s\n", src_path.c_str());
-			wprintf(L"   with defines: \n");
+			if (!defines.empty())
+			{
+				printf("   with defines: ");
+				for (auto& d : defines)
+					printf("%s ", d.c_str());
+				printf("\n");
+			}
 			std::filesystem::remove(L"temp.spv");
 
 			auto stage_str = get_stage_str(stage);
@@ -337,6 +364,7 @@ namespace flame
 			auto spv = get_file_content(L"temp.spv");
 			auto spv_array = std::vector<uint>(spv.size() / 4);
 			memcpy(spv_array.data(), spv.data(), spv_array.size() * sizeof(uint));
+			std::filesystem::remove(L"temp.spv");
 
 			TypeInfoDataBase db;
 			auto spv_compiler = spirv_cross::CompilerGLSL(spv_array.data(), spv_array.size());
@@ -570,7 +598,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(ShaderStageDsl, temp_path, fn);
+				compile_shader(ShaderStageDsl, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = DescriptorSetLayoutPrivate::load_from_res(device, fn);
@@ -616,7 +644,7 @@ namespace flame
 
 				auto res_path = filename;
 				res_path += L".res";
-				compile_shader(ShaderStageDsl, filename, res_path);
+				compile_shader(ShaderStageDsl, filename, {}, res_path);
 
 				if (device)
 				{
@@ -868,7 +896,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(ShaderStagePll, temp_path, fn);
+				compile_shader(ShaderStagePll, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = PipelineLayoutPrivate::load_from_res(device, fn);
@@ -914,7 +942,7 @@ namespace flame
 
 				auto res_path = filename;
 				res_path += L".res";
-				compile_shader(ShaderStagePll, filename, res_path);
+				compile_shader(ShaderStagePll, filename, {}, res_path);
 
 				auto ret = PipelineLayoutPrivate::load_from_res(device, res_path);
 				if (ret)
@@ -989,7 +1017,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(type, temp_path, fn);
+				compile_shader(type, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = ShaderPrivate::load_from_res(device, fn);
@@ -1035,24 +1063,10 @@ namespace flame
 				}
 
 				if (type == ShaderStageNone)
-				{
-					auto ext = filename.extension();
-					if (ext == L".vert")
-						type = ShaderStageVert;
-					else if (ext == L".tesc")
-						type = ShaderStageTesc;
-					else if (ext == L".tese")
-						type = ShaderStageTese;
-					else if (ext == L".geom")
-						type = ShaderStageGeom;
-					else if (ext == L".frag")
-						type = ShaderStageFrag;
-					else if (ext == L".comp")
-						type = ShaderStageComp;
-				}
+					type = stage_from_ext(filename);
 
 				auto res_path = get_res_path(filename, defines);
-				compile_shader(type, filename, res_path);
+				compile_shader(type, filename, defines, res_path);
 
 				if (device)
 				{
@@ -1086,7 +1100,7 @@ namespace flame
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		GraphicsPipelinePtr GraphicsPipelinePrivate::load(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines)
+		GraphicsPipelinePtr GraphicsPipelinePrivate::load(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& _defines)
 		{
 			auto ppath = filename.parent_path();
 
@@ -1098,6 +1112,47 @@ namespace flame
 
 			std::string												layout_segment;
 			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments;
+
+			std::vector<std::string>								renderpass_defines;
+			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_defines;
+			std::vector<std::string>								pipeline_defines;
+			for (auto& d : _defines)
+			{
+				auto dst_and_value = SUS::split(d, '=');
+				auto scope_and_name = SUS::split(dst_and_value[0], ':');
+				if (scope_and_name.size() == 1)
+					pipeline_defines.push_back(d);
+				else
+				{
+					auto sp = SUS::split(scope_and_name[0], '|');
+					for (auto& s : sp)
+					{
+						auto form_define = [&]() {
+							auto ret = scope_and_name[1];
+							if (dst_and_value.size() > 1)
+							{
+								ret += '=';
+								ret += dst_and_value[1];
+							}
+							return ret;
+						};
+						if		(s == "rp")
+							renderpass_defines.push_back(form_define());
+						else if (s == "vert")
+							shader_defines.emplace_back(ShaderStageVert, form_define());
+						else if (s == "tesc")
+							shader_defines.emplace_back(ShaderStageTesc, form_define());
+						else if (s == "tese")
+							shader_defines.emplace_back(ShaderStageTese, form_define());
+						else if (s == "geom")
+							shader_defines.emplace_back(ShaderStageGeom, form_define());
+						else if (s == "frag")
+							shader_defines.emplace_back(ShaderStageFrag, form_define());
+						else if (s == "all_shader")
+							shader_defines.emplace_back(ShaderStageAll, form_define());
+					}
+				}
+			}
 
 			UnserializeTextSpec spec;
 			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
@@ -1131,27 +1186,61 @@ namespace flame
 							type = ShaderStageGeom;
 						else if (value ==	"@frag")
 							type = ShaderStageFrag;
-						shader_segments.emplace_back(type, value);
+						if (type != ShaderStageNone)
+							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
 					}
-					return Shader::get(device, ShaderStageNone, value, {});
+					std::filesystem::path fn = value;
+					auto stage = stage_from_ext(fn);
+					if (stage != ShaderStageNone)
+					{
+						std::vector<std::string> defines;
+						for (auto& d : shader_defines)
+						{
+							if (d.first == ShaderStageAll || d.first == stage)
+								defines.push_back(d.second);
+						}
+						std::sort(defines.begin(), defines.end());
+						return Shader::get(device, stage, value, defines);
+					}
 				}
 				std::filesystem::path fn = src.value("filename");
 				if (!ppath.empty() && Path::cat_if_in(ppath, fn))
 					fn = std::filesystem::canonical(fn);
-				return Shader::get(device, ShaderStageNone, fn, format_defines(src.value("defines")));
+				auto stage = stage_from_ext(fn);
+				if (stage != ShaderStageNone)
+				{
+					auto defines = format_defines(src.value("defines"));
+					for (auto& d : shader_defines)
+					{
+						if (d.first == ShaderStageAll || d.first == stage)
+							defines.push_back(d.second);
+					}
+					std::sort(defines.begin(), defines.end());
+					return Shader::get(device, stage, fn, defines);
+				}
+				return INVALID_POINTER;
 			};
 			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)sto<uint64>(value.substr(2));
 				if (!value.empty())
-					return Renderpass::get(device, value, {});
+				{
+					auto defines = renderpass_defines;
+					std::sort(defines.begin(), defines.end());
+					return Renderpass::get(device, value, defines);
+				}
 				std::filesystem::path fn = src.value("filename");
 				if (!ppath.empty() && Path::cat_if_in(ppath, fn))
 					fn = std::filesystem::canonical(fn);
-				return Renderpass::get(device, fn, format_defines(src.value("defines")));
+				auto defines = format_defines(src.value("defines"));
+				defines.insert(defines.end(), renderpass_defines.begin(), renderpass_defines.end());
+				std::sort(defines.begin(), defines.end());
+				return Renderpass::get(device, fn, defines);
 			};
+			auto defines = pipeline_defines;
+			std::sort(defines.begin(), defines.end());
 			unserialize_text(res, &info, spec, defines);
 
 			if (!layout_segment.empty())

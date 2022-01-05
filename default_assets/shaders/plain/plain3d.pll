@@ -1,4 +1,5 @@
 layout (push_constant) uniform PushConstant
 {
 	mat4 mvp;
+	vec4 col;
 }pc;
