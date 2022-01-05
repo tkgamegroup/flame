@@ -1,8 +1,7 @@
 #include "device_private.h"
 #include "buffer_private.h"
 #include "command_private.h"
-#include "buffer_ext.h"
-#include "command_ext.h"
+#include "extension.h"
 
 namespace flame
 {

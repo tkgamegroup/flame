@@ -1,11 +1,12 @@
 #include "../foundation/window.h"
 #include "../foundation/system.h"
 #include "device_private.h"
+#include "buffer_private.h"
 #include "image_private.h"
 #include "renderpass_private.h"
 #include "command_private.h"
 #include "swapchain_private.h"
-#include "command_ext.h"
+#include "extension.h"
 
 namespace flame
 {

@@ -2,10 +2,10 @@
 #include "renderpass_private.h"
 #include "swapchain_private.h"
 #include "command_private.h"
-#include "command_ext.h"
 #include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
+#include "extension.h"
 
 namespace flame
 {

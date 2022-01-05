@@ -2,7 +2,7 @@
 
 #include "window.h"
 #include "buffer_private.h"
-#include "buffer_ext.h"
+#include "extension.h"
 
 namespace flame
 {

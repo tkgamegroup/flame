@@ -2,7 +2,7 @@
 
 #include "node_renderer.h"
 
-#include "../../graphics/buffer_ext.h"
+#include "../../graphics/extension.h"
 
 namespace flame
 {

@@ -6,8 +6,7 @@
 #include "image_ext.h"
 #include "command_private.h"
 #include "shader_private.h"
-#include "buffer_ext.h"
-#include "command_ext.h"
+#include "extension.h"
 
 #include <gli/gli.hpp>
 

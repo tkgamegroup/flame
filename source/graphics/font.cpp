@@ -4,8 +4,7 @@
 #include "command_private.h"
 #include "image_private.h"
 #include "font_private.h"
-#include "buffer_ext.h"
-#include "command_ext.h"
+#include "extension.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>

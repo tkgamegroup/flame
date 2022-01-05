@@ -5,8 +5,8 @@
 #include "renderpass_private.h"
 #include "shader_private.h"
 #include "command_private.h"
-#include "command_ext.h"
 #include "window_private.h"
+#include "extension.h"
 
 namespace flame
 {
