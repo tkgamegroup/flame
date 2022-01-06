@@ -54,7 +54,7 @@ void main()
 GraphicsApplication app;
 
 GraphicsPipeline* pl;
-StorageBuffer<BufferUsageVertex> vtx_buf;
+StorageBuffer<""_h, BufferUsageVertex> vtx_buf;
 
 PerspectiveProjector projector;
 
@@ -91,33 +91,33 @@ struct Star
 		float rad;
 
 		rad = radians(a + 0.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 
 		rad = radians(a + 240.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 
 		rad = radians(a + 120.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 
 		rad = radians(a + 60.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 
 		rad = radians(a + 300.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 
 		rad = radians(a + 180.f);
-		vtx_buf.set_var<"i_pos:0">(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col:1">(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		vtx_buf.next_item();
 	}
 };
@@ -130,8 +130,7 @@ int entry(int argc, char** args)
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});
-	app.main_window->imgui_callbacks.add([](void* ctx) {
-		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+	app.main_window->imgui_callbacks.add([]() {
 		ImGui::Button("Hello");
 	});
 	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
@@ -159,8 +158,8 @@ int entry(int argc, char** args)
 	for (auto& s : stars)
 		s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=0x" + to_string((uint64)app.main_window->renderpass_clear.get()) });
-	vtx_buf.create(pl->info.shaders[0]->in_ui, stars.size() * 6);
+	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=0x" + to_string((uint64)app.main_window->renderpass_clear) });
+	vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();
 

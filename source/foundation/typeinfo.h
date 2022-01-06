@@ -347,22 +347,22 @@ namespace flame
 		std::string name;
 		std::vector<EnumItemInfo> items;
 
-		inline EnumItemInfo* find_item(std::string_view name) const
+		inline const EnumItemInfo* find_item(std::string_view name) const
 		{
 			for (auto& i : items)
 			{
 				if (i.name == name)
-					return (EnumItemInfo*)&i;
+					return &i;
 			}
 			return nullptr;
 		}
 
-		inline EnumItemInfo* find_item(int value) const
+		inline const EnumItemInfo* find_item(int value) const
 		{
 			for (auto& i : items)
 			{
 				if (i.value == value)
-					return (EnumItemInfo*)&i;
+					return &i;
 			}
 			return nullptr;
 		}
@@ -435,32 +435,32 @@ namespace flame
 		std::vector<FunctionInfo> functions;
 		void* library = nullptr;
 
-		VariableInfo* find_variable(std::string_view name) const
+		inline const VariableInfo* find_variable(std::string_view name) const
 		{
 			for (auto& v : variables)
 			{
 				if (v.name == name)
-					return (VariableInfo*)&v;
+					return &v;
 			}
 			return nullptr;
 		}
 
-		VariableInfo* find_variable(uint name_hash) const
+		inline const VariableInfo* find_variable(uint name_hash) const
 		{
 			for (auto& v : variables)
 			{
 				if (sh(v.name.c_str()) == name_hash)
-					return (VariableInfo*)&v;
+					return &v;
 			}
 			return nullptr;
 		}
 
-		FunctionInfo* find_function(std::string_view name) const
+		inline const FunctionInfo* find_function(std::string_view name) const
 		{
 			for (auto& f : functions)
 			{
 				if (f.name == name)
-					return (FunctionInfo*)&f;
+					return &f;
 			}
 			return nullptr;
 		}

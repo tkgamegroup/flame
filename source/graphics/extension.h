@@ -148,13 +148,85 @@ namespace flame
 			}
 		};
 
+		template<uint id>
 		struct PipelineResourceManager
 		{
-			PipelineLayoutPtr pll;
+			PipelineLayoutPtr pll = nullptr;
+			std::unordered_map<uint, int> dsl_map;
+			VirtualUdt<id> vu_pc;
+
+			DescriptorSetPtr temp_dss[8];
+			char temp_pc[256];
 
 			void init(PipelineLayoutPtr _pll)
 			{
 				pll = _pll;
+				for (auto i = 0; i < pll->dsls.size(); i++)
+				{
+					auto dsl = pll->dsls[i];
+
+					std::string name;
+					if (dsl->filename != pll->filename)
+						name = dsl->filename.stem().string();
+					else
+						name = "";
+					dsl_map.emplace(sh(name.c_str()), i);
+				}
+				vu_pc.ui = pll->pc_ui;
+			}
+
+			inline int dst_off(uint nh)
+			{
+				auto it = dsl_map.find(nh);
+				if (it == dsl_map.end())
+				{
+					assert(0);
+					return -1;
+				}
+				return it->second;
+			}
+
+			UdtInfo* get_buf_ui(uint dsl_nh, std::string_view name)
+			{
+				auto idx = dst_off(dsl_nh);
+				if (idx != -1)
+				{
+					auto dsl = pll->dsls[idx];
+					auto idx = dsl->find_binding(name);
+					if (idx == -1)
+						assert(0);
+					else
+					{
+						auto& binding = dsl->bindings[idx];
+						assert(binding.type == DescriptorUniformBuffer ||
+							binding.type == DescriptorStorageBuffer);
+						return binding.ui;
+					}
+				}
+				return nullptr;
+			}
+
+			inline void set_ds(uint nh, DescriptorSetPtr ds)
+			{
+				auto idx = dst_off(nh);
+				if (idx != -1)
+					temp_dss[idx] = ds;
+			}
+
+			inline void bind_dss(CommandBufferPtr cb, uint off = 0, uint count = 0xffffffff)
+			{
+				cb->bind_descriptor_sets(off, { temp_dss, min(count, (uint)dsl_map.size()) });
+			}
+
+			template<uint nh, typename T>
+			inline void set_pc_var(const T& v)
+			{
+				vu_pc.set_var<nh>(temp_pc, v);
+			}
+
+			inline void push_constant(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
+			{
+				cb->push_constant(0, min(size, pll->pc_sz), temp_pc);
 			}
 		};
 	}

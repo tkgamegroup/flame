@@ -27,11 +27,11 @@ namespace flame
 		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 
 		std::unique_ptr<graphics::Image> img_dep;
-		graphics::StorageBuffer	<"flame::node_renderer::vtx"_h,			graphics::BufferUsageVertex, false>		buf_vtx;
-		graphics::StorageBuffer	<"flame::node_renderer::idx"_h,			graphics::BufferUsageIndex, false>		buf_idx;
-		graphics::StorageBuffer	<"flame::node_renderer::render_data"_h, graphics::BufferUsageUniform, false>	buf_render_data;
-		graphics::StorageBuffer	<"flame::node_renderer::mesh"_h,		graphics::BufferUsageUniform, false>	buf_mesh;
-		VirtualUdt				<"flame::node_renderer::pc"_h>													vu_pc;
+		graphics::StorageBuffer<"flame::node_renderer::vtx"_h, graphics::BufferUsageVertex, false>		buf_vtx;
+		graphics::StorageBuffer<"flame::node_renderer::idx"_h, graphics::BufferUsageIndex, false>		buf_idx;
+		graphics::StorageBuffer<"flame::node_renderer::camera"_h, graphics::BufferUsageUniform, false>	buf_camera;
+		graphics::StorageBuffer<"flame::node_renderer::mesh"_h, graphics::BufferUsageUniform, false>	buf_mesh;
+		graphics::PipelineResourceManager<"flame::node_renderer::fwd"_h>								prm_fwd;
 
 		graphics::ImageLayout dst_layout;
 

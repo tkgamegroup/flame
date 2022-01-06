@@ -54,7 +54,7 @@ void main()
 GraphicsApplication app;
 
 GraphicsPipeline* pl;
-StorageBuffer<BufferUsageVertex> vtx_buf;
+StorageBuffer<""_h, BufferUsageVertex> vtx_buf;
 
 PerspectiveProjector projector;
 
@@ -93,28 +93,28 @@ struct Drop
 		auto c2 = projector.proj(p - vec3(0.f, 0.05f, 0.f));
 		auto w = 2.f / p.z;
 
-		vtx_buf.set_var<"i_pos:0">(c1 - vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c1 - vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 
-		vtx_buf.set_var<"i_pos:0">(c2 - vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c2 - vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 
-		vtx_buf.set_var<"i_pos:0">(c1 + vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c1 + vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 
-		vtx_buf.set_var<"i_pos:0">(c1 + vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c1 + vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 
-		vtx_buf.set_var<"i_pos:0">(c2 - vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c2 - vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 
-		vtx_buf.set_var<"i_pos:0">(c2 + vec2(w, 0));
-		vtx_buf.set_var<"i_col:1">(cvec4(159, 183, 227, 255));
+		vtx_buf.set_var<"i_pos"_h>(c2 + vec2(w, 0));
+		vtx_buf.set_var<"i_col"_h>(cvec4(159, 183, 227, 255));
 		vtx_buf.next_item();
 	}
 };
@@ -126,8 +126,7 @@ int entry(int argc, char** args)
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});
-	app.main_window->imgui_callbacks.add([](void* ctx) {
-		ImGui::SetCurrentContext((ImGuiContext*)ctx);
+	app.main_window->imgui_callbacks.add([]() {
 		ImGui::Button("Hello");
 	});
 	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
@@ -155,8 +154,8 @@ int entry(int argc, char** args)
 	drops.resize(3000);
 
 	pl = GraphicsPipeline::create(app.graphics_device, pl_str, 
-		{ "rp=0x" + to_string((uint64)app.main_window->renderpass_clear.get()) });
-	vtx_buf.create(pl->info.shaders[0]->in_ui, drops.size() * 6);
+		{ "rp=0x" + to_string((uint64)app.main_window->renderpass_clear) });
+	vtx_buf.create(pl->vi_ui(), drops.size() * 6);
 
 	app.run();
 

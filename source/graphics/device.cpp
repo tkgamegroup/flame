@@ -122,7 +122,6 @@ namespace flame
 				instInfo.enabledLayerCount = layers.size();
 				instInfo.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data();
 				chk_res(vkCreateInstance(&instInfo, nullptr, &ret->vk_instance));
-				printf("vulkan: instance created\n");
 
 				if (debug)
 				{
@@ -136,7 +135,6 @@ namespace flame
 					VkDebugReportCallbackEXT callback;
 					chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCreateDebugReportCallbackEXT"))
 						(ret->vk_instance, &info, nullptr, &callback));
-					printf("vulkan: debug report callback created\n");
 				}
 
 				uint32_t gpu_count = 0;
@@ -201,7 +199,6 @@ namespace flame
 				device_info.enabledExtensionCount = device_extensions.size();
 				device_info.ppEnabledExtensionNames = device_extensions.data();
 				device_info.pEnabledFeatures = &ret->vk_features;
-				printf("vulkan: creating device\n");
 				chk_res(vkCreateDevice(ret->vk_physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 

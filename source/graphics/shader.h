@@ -83,7 +83,7 @@ namespace flame
 
 		struct PipelineLayout
 		{
-			std::vector<DescriptorSetLayoutPtr> descriptor_set_layouts;
+			std::vector<DescriptorSetLayoutPtr> dsls;
 
 			UdtInfo* pc_ui = nullptr;
 			uint pc_sz = 0;
@@ -94,7 +94,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) = 0;
+				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) = 0;
 				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
@@ -119,7 +119,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
+				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 
@@ -199,10 +199,39 @@ namespace flame
 
 			virtual ~GraphicsPipeline() {}
 
+			inline ShaderPtr vert() const
+			{
+				for (auto s : info.shaders)
+				{
+					if (s->type == ShaderStageVert)
+						return s;
+				}
+				return nullptr;
+			}
+
+			inline ShaderPtr frag() const
+			{
+				for (auto s : info.shaders)
+				{
+					if (s->type == ShaderStageFrag)
+						return s;
+				}
+				return nullptr;
+			}
+
+			// vertex input udt info
+			inline UdtInfo* vi_ui() const
+			{
+				auto s = vert();
+				if (s)
+					return s->in_ui;
+				return nullptr;
+			}
+
 			struct Create
 			{
 				virtual GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) = 0;
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content) = 0;
+				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_EXPORTS static Create& create;
 

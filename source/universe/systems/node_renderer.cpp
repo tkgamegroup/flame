@@ -4,11 +4,11 @@
 
 #include "../../foundation/typeinfo.h"
 #include "../../foundation/typeinfo_serialize.h"
-#include "../../graphics/command_ext.h"
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
 #include "../../graphics/model.h"
+#include "../../graphics/extension.h"
 
 namespace flame
 {
@@ -60,11 +60,9 @@ namespace flame
 			pl_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=0x" + to_string((uint64)rp_fwd) });
 
-			buf_vtx.create(pl_fwd->info.shaders[0]->in_ui, 1024 * 128 * 4);
+			buf_vtx.create(pl_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			auto pll = pl_fwd->info.layout;
-
-			vu_pc.ui = pll->pc_ui;
+			prm_fwd.init(pl_fwd->info.layout);
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
 			set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);

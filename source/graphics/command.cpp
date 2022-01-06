@@ -1,4 +1,4 @@
- #include "device_private.h"
+#include "device_private.h"
 #include "renderpass_private.h"
 #include "swapchain_private.h"
 #include "command_private.h"
@@ -161,6 +161,7 @@ namespace flame
 
 		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss)
 		{
+			/*
 			for (auto ds : dss)
 			{
 				auto i = 0;
@@ -187,6 +188,7 @@ namespace flame
 					i++;
 				}
 			}
+			*/
 
 			std::vector<VkDescriptorSet> vk_sets(dss.size());
 			auto i = 0;

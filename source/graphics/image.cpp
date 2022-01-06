@@ -78,7 +78,7 @@ namespace flame
 					cpy.img_ext = lv.size;
 					cpy.img_sub = { level, 1, layer, 1 };
 					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), { &cpy, 1 });
+					cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
 					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
 				}
 				ly.data.reset(new uchar[lv.data_size]);
@@ -342,7 +342,7 @@ namespace flame
 						}
 					}
 					cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, (BufferPrivate*)sb.get(), cpies);
+					cb->copy_image_to_buffer(this, sb.get(), cpies);
 					cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutShaderReadOnly);
 				}
 				for (auto& c : gli_cpies)
@@ -425,7 +425,7 @@ namespace flame
 				BufferImageCopy cpy;
 				cpy.img_ext = ret->size;
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, { &cpy, 1 });
+				cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
 				__images.push_back(ret);
@@ -441,7 +441,7 @@ namespace flame
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
 				cpy.img_ext = size;
-				cb->copy_buffer_to_image((BufferPrivate*)stag.get(), ret, { &cpy, 1 });
+				cb->copy_buffer_to_image(stag.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
 				__images.push_back(ret);
@@ -680,7 +680,7 @@ namespace flame
 						}
 					}
 					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst);
-					cb->copy_buffer_to_image((BufferPrivate*)sb.get(), ret, cpies);
+					cb->copy_buffer_to_image(sb.get(), ret, cpies);
 					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutShaderReadOnly);
 				}
 				else

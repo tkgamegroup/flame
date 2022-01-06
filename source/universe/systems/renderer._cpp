@@ -2537,6 +2537,6 @@ namespace flame
 
 	sRenderer* sRenderer::create()
 	{
-		return new sRendererPrivate((sRendererParms*)parms);
+		return new sRendererPrivate(parms);
 	}
 }

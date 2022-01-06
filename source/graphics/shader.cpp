@@ -198,7 +198,7 @@ namespace flame
 					auto up_to_date = true;
 					for (auto& d : dependencies)
 					{
-						if (std::filesystem::last_write_time(d) > dst_date)
+						if (!std::filesystem::exists(d) || std::filesystem::last_write_time(d) > dst_date)
 						{
 							up_to_date = false;
 							break;
@@ -836,8 +836,8 @@ namespace flame
 
 		PipelineLayoutPrivate::~PipelineLayoutPrivate()
 		{
-			if (!descriptor_set_layouts.empty() && descriptor_set_layouts.back()->filename == filename)
-				delete descriptor_set_layouts.back();
+			if (!dsls.empty() && dsls.back()->filename == filename)
+				delete dsls.back();
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
@@ -884,20 +884,20 @@ namespace flame
 
 		struct PipelineLayoutCreate : PipelineLayout::Create
 		{
-			PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> descriptor_set_layouts, uint push_constant_size) override
+			PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) override
 			{
 				if (!device)
 					device = current_device;
 
 				auto ret = new PipelineLayoutPrivate;
 				ret->device = device;
-				ret->descriptor_set_layouts.assign(descriptor_set_layouts.begin(), descriptor_set_layouts.end());
+				ret->dsls.assign(dsls.begin(), dsls.end());
 				ret->pc_sz = push_constant_size;
 
 				std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-				vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
-				for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-					vk_descriptor_set_layouts[i] = descriptor_set_layouts[i]->vk_descriptor_set_layout;
+				vk_descriptor_set_layouts.resize(dsls.size());
+				for (auto i = 0; i < dsls.size(); i++)
+					vk_descriptor_set_layouts[i] = dsls[i]->vk_descriptor_set_layout;
 
 				VkPushConstantRange vk_pushconstant_range;
 				vk_pushconstant_range.offset = 0;
@@ -1039,7 +1039,7 @@ namespace flame
 
 		struct ShaderCreate : Shader::Create
 		{
-			ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::filesystem::path& dst, const std::filesystem::path& src) override
+			ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::filesystem::path& dst, const std::filesystem::path& src) override
 			{
 				if (!device)
 					device = current_device;
@@ -1055,7 +1055,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(type, temp_path, {}, fn);
+				compile_shader(type, temp_path, defines, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = ShaderPrivate::load_from_res(device, fn);
@@ -1307,7 +1307,14 @@ namespace flame
 			}
 			for (auto& s : shader_segments)
 			{
-				info.shaders.push_back(Shader::create(device, s.first, s.second,
+				std::vector<std::string> defines;
+				for (auto& d : shader_defines)
+				{
+					if (d.first == ShaderStageAll || d.first == s.first)
+						defines.push_back(d.second);
+				}
+				std::sort(defines.begin(), defines.end());
+				info.shaders.push_back(Shader::create(device, s.first, s.second, defines,
 					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + L".res") : L"#" + std::to_wstring(create_id), filename));
 			}
 
@@ -1572,7 +1579,7 @@ namespace flame
 				return ret;
 			}
 
-			GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content) override
+			GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines) override
 			{
 				if (!device)
 					device = current_device;
@@ -1583,7 +1590,7 @@ namespace flame
 				file << SUS::get_ltrimed(content);
 				file.close();
 
-				auto ret = GraphicsPipelinePrivate::load(device, fn, {});
+				auto ret = GraphicsPipelinePrivate::load(device, fn, defines);
 				std::filesystem::remove(fn);
 				return ret;
 			}
