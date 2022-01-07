@@ -196,6 +196,15 @@ namespace flame
 				for (auto n_parameter : n_function)
 					f.parameters.push_back(read_ti(n_parameter.attribute("v")));
 			}
+			for (auto n_attribute : n_udt.child("attributes"))
+			{
+				auto& a = u.attributes.emplace_back();
+				a.name = n_attribute.attribute("name").value();
+				a.type = read_ti(n_attribute.attribute("type"));
+				a.var_idx = n_attribute.attribute("var_idx").as_int();
+				a.getter_idx = n_attribute.attribute("getter_idx").as_int();
+				a.setter_idx = n_attribute.attribute("setter_idx").as_int();
+			}
 		}
 
 		return true;
@@ -360,6 +369,22 @@ namespace flame
 							for (auto p : fi.parameters)
 								write_ti(p, n_function.append_child("parameter").append_attribute("v"));
 						}
+					}
+				}
+				if (!ui.second->attributes.empty())
+				{
+					auto n_attributes = n_udt.append_child("attributes");
+					for (auto& a : ui.second->attributes)
+					{
+						auto n_attribute = n_attributes.append_child("attribute");
+						n_attribute.append_attribute("name").set_value(a.name.c_str());
+						write_ti(a.type, n_attribute.append_attribute("type"));
+						if (a.var_idx != -1)
+							n_attribute.append_attribute("var_idx").set_value(a.var_idx);
+						if (a.getter_idx != -1)
+							n_attribute.append_attribute("getter_idx").set_value(a.getter_idx);
+						if (a.setter_idx != -1)
+							n_attribute.append_attribute("setter_idx").set_value(a.setter_idx);
 					}
 				}
 			}

@@ -428,21 +428,37 @@ namespace flame
 
 	struct UdtInfo
 	{
+		struct Attribute
+		{
+			std::string name;
+			TypeInfo* type;
+			int var_idx = -1;
+			int getter_idx = -1;
+			int setter_idx = -1;
+		};
+
 		std::string name;
 		uint size = 0;
 		std::string base_class_name;
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;
+		std::vector<Attribute> attributes;
 		void* library = nullptr;
+
+		inline int find_variable_i(std::string_view name) const
+		{
+			for (auto i = 0; i < variables.size(); i++)
+			{
+				if (variables[i].name == name)
+					return i;
+			}
+			return -1;
+		}
 
 		inline const VariableInfo* find_variable(std::string_view name) const
 		{
-			for (auto& v : variables)
-			{
-				if (v.name == name)
-					return &v;
-			}
-			return nullptr;
+			auto idx = find_variable_i(name);
+			return idx == -1 ? nullptr : &variables[idx];
 		}
 
 		inline const VariableInfo* find_variable(uint name_hash) const
@@ -455,11 +471,27 @@ namespace flame
 			return nullptr;
 		}
 
+		inline int find_function_i(std::string_view name) const
+		{
+			for (auto i = 0; i < functions.size(); i++)
+			{
+				if (functions[i].name == name)
+					return i;
+			}
+			return -1;
+		}
+
 		inline const FunctionInfo* find_function(std::string_view name) const
+		{
+			auto idx = find_function_i(name);
+			return idx == -1 ? nullptr : &functions[idx];
+		}
+
+		inline const FunctionInfo* find_function(uint name_hash) const
 		{
 			for (auto& f : functions)
 			{
-				if (f.name == name)
+				if (sh(f.name.c_str()) == name_hash)
 					return &f;
 			}
 			return nullptr;

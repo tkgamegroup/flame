@@ -1,24 +1,22 @@
  #pragma once
 
 #ifdef FLAME_GRAPHICS_MODULE
+
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllexport)
-template<class T, class U>
-struct FlameGraphicsTypeSelector
-{
-	typedef U result;
-};
-#else
-#define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
-template<class T, class U>
-struct FlameGraphicsTypeSelector
-{
-	typedef T result;
-};
-#endif
 
 #define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
-	typedef FlameGraphicsTypeSelector<name, name##Private>::result name##T; \
-	typedef FlameGraphicsTypeSelector<name*, name##Private*>::result name##Ptr;
+	using name##T = name##Private; \
+	using name##Ptr = name##Private*;
+
+#else
+
+#define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
+
+#define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
+	using name##T = name; \
+	using name##Ptr = name*;
+
+#endif
 
 #include "../foundation/foundation.h"
 

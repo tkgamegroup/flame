@@ -9,12 +9,12 @@ namespace flame
 	{
 		virtual ~Entity() {}
 
-		/// Serialize
+		/// Reflect
 		std::string name;
-		/// Serialize
+		/// Reflect
 		uint tag = 0x80000000;
 
-		/// Serialize
+		/// Reflect
 		bool visible = true;
 		bool global_visibility = false;
 
@@ -28,9 +28,9 @@ namespace flame
 		StateFlags last_state = StateNone;
 
 		std::unordered_map<uint, Component*> component_map;
-		/// Serialize
+		/// Reflect
 		std::vector<std::unique_ptr<Component>> components;
-		/// Serialize
+		/// Reflect
 		std::vector<std::unique_ptr<EntityT>> children;
 
 		std::filesystem::path path;
@@ -121,7 +121,7 @@ namespace flame
 		{
 			virtual EntityPtr operator()() = 0;
 		};
-		/// Serialize
+		/// Reflect
 		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

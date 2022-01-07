@@ -28,7 +28,7 @@ namespace flame
 		{
 			virtual sNodeRendererPtr operator()(WorldPtr) = 0;
 		};
-		/// Serialize static
+		/// Reflect static
 		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

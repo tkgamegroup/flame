@@ -1,24 +1,22 @@
 #pragma once
 
 #ifdef FLAME_UNIVERSE_MODULE
+
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllexport)
-template<class T, class U>
-struct FlameUniverseTypeSelector
-{
-	typedef U result;
-};
-#else
-#define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
-template<class T, class U>
-struct FlameUniverseTypeSelector
-{
-	typedef T result;
-};
-#endif
 
 #define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
-	typedef FlameUniverseTypeSelector<name, name##Private>::result name##T; \
-	typedef FlameUniverseTypeSelector<name*, name##Private*>::result name##Ptr;
+	using name##T = name##Private; \
+	using name##Ptr = name##Private*;
+
+#else
+
+#define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
+
+#define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
+	using name##T = name##Private; \
+	using name##Ptr = name##Private*;
+
+#endif
 
 #include "../foundation/foundation.h"
 #include "../graphics/graphics.h"
@@ -40,26 +38,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cText);
 	FLAME_UNIVERSE_TYPE(cImage);
 	FLAME_UNIVERSE_TYPE(cReceiver);
-	FLAME_UNIVERSE_TYPE(cToggle);
-	FLAME_UNIVERSE_TYPE(cEdit);
-	FLAME_UNIVERSE_TYPE(cList);
-	FLAME_UNIVERSE_TYPE(cListItem);
-	FLAME_UNIVERSE_TYPE(cTree);
-	FLAME_UNIVERSE_TYPE(cTreeNode);
-	FLAME_UNIVERSE_TYPE(cTreeLeaf);
-	FLAME_UNIVERSE_TYPE(cMenu);
-	FLAME_UNIVERSE_TYPE(cMenuItem);
-	FLAME_UNIVERSE_TYPE(cMenuBar);
-	FLAME_UNIVERSE_TYPE(cDropDown);
-	FLAME_UNIVERSE_TYPE(cDragEdit);
-	FLAME_UNIVERSE_TYPE(cScroller);
-	FLAME_UNIVERSE_TYPE(cSplitter);
-	FLAME_UNIVERSE_TYPE(cGrid);
 	FLAME_UNIVERSE_TYPE(cWindow);
-	FLAME_UNIVERSE_TYPE(cInputDialog);
-	FLAME_UNIVERSE_TYPE(cFileSelector);
 	FLAME_UNIVERSE_TYPE(cNode);
-	FLAME_UNIVERSE_TYPE(cOctree);
 	FLAME_UNIVERSE_TYPE(cMesh);
 	FLAME_UNIVERSE_TYPE(cArmature);
 	FLAME_UNIVERSE_TYPE(cTerrain);
@@ -68,13 +48,11 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cCharacterController);
 	FLAME_UNIVERSE_TYPE(cLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
-	FLAME_UNIVERSE_TYPE(cSky);
 	FLAME_UNIVERSE_TYPE(cImgui);
 
-	FLAME_UNIVERSE_TYPE(sRenderer);
+	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sElementRenderer);
 	FLAME_UNIVERSE_TYPE(sNodeRenderer);
-	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
 	FLAME_UNIVERSE_TYPE(sPhysics);
 	FLAME_UNIVERSE_TYPE(sImgui);

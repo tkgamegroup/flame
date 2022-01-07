@@ -1,24 +1,22 @@
 #pragma once
 
 #ifdef FLAME_FOUNDATION_MODULE
+
 #define FLAME_FOUNDATION_EXPORTS __declspec(dllexport)
-template<class T, class U>
-struct FlameFoundationTypeSelector
-{
-	typedef U result;
-};
-#else
-#define FLAME_FOUNDATION_EXPORTS __declspec(dllimport)
-template<class T, class U>
-struct FlameFoundationTypeSelector
-{
-	typedef T result;
-};
-#endif
 
 #define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
-	typedef FlameFoundationTypeSelector<name, name##Private>::result name##T; \
-	typedef FlameFoundationTypeSelector<name*, name##Private*>::result name##Ptr;
+	using name##T = name##Private; \
+	using name##Ptr = name##Private*;
+
+#else
+
+#define FLAME_FOUNDATION_EXPORTS __declspec(dllimport)
+
+#define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
+	using name##T = name; \
+	using name##Ptr = name*;
+
+#endif
 
 #include "../serialize.h"
 

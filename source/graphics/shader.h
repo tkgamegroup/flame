@@ -203,7 +203,7 @@ namespace flame
 			{
 				for (auto s : info.shaders)
 				{
-					if (s->type == ShaderStageVert)
+					if (((Shader*)s)->type == ShaderStageVert)
 						return s;
 				}
 				return nullptr;
@@ -213,7 +213,7 @@ namespace flame
 			{
 				for (auto s : info.shaders)
 				{
-					if (s->type == ShaderStageFrag)
+					if (((Shader*)s)->type == ShaderStageFrag)
 						return s;
 				}
 				return nullptr;
@@ -224,7 +224,7 @@ namespace flame
 			{
 				auto s = vert();
 				if (s)
-					return s->in_ui;
+					return ((Shader*)s)->in_ui;
 				return nullptr;
 			}
 

@@ -360,6 +360,7 @@ process:
 							SUS::ltrim(line);
 							if (SUS::strip_head_if(line, "Reflect"))
 							{
+								auto metas = line;
 								auto need_ctor = false;
 
 								auto sp = SUS::split(line);
@@ -396,14 +397,8 @@ process:
 									}
 									pr = &r;
 								}
-							}
-							else if (SUS::strip_head_if(line, "Serialize"))
-							{
-								if (pr)
+								else if (pr)
 								{
-									auto metas = line;
-									std::getline(file, line);
-									SUS::ltrim(line);
 									static std::regex reg_var("[\\w*&>]\\s+(\\w+)\\s*(=.*)?;");
 									static std::regex reg_fun("\\s+(\\w+)\\s*\\(");
 									std::string name;
@@ -844,6 +839,44 @@ process:
 					if (dtor)
 						a2f<void(*)(void*)>((char*)library + dtor)(obj);
 					free(obj);
+				}
+
+				if (ur->children_type == Rule::Equal)
+				{
+					for (auto& c : ur->children)
+					{
+						if (c.first.starts_with("get_"))
+						{
+							auto getter_idx = u.find_function_i(c.first);
+							if (getter_idx != -1)
+							{
+								auto name = c.first;
+								SUS::strip_head_if(name, "get_");
+								auto setter_idx = u.find_function_i("set_" + name);
+								if (setter_idx != -1)
+								{
+									auto& a = u.attributes.emplace_back();
+									a.name = name;
+									a.type = u.functions[getter_idx].return_type;
+									a.getter_idx = getter_idx;
+									a.setter_idx = setter_idx;
+								}
+							}
+						}
+						else if (!c.first.starts_with("set_"))
+						{
+							auto var_idx = u.find_variable_i(c.first);
+							if (var_idx != -1)
+							{
+								auto& a = u.attributes.emplace_back();
+								a.name = c.first;
+								a.type = u.variables[var_idx].type;
+								a.var_idx = var_idx;
+								a.getter_idx = u.find_function_i("get_" + c.first);
+								a.setter_idx = u.find_function_i("set_" + c.first);
+							}
+						}
+					}
 				}
 
 				db.udts.emplace(sh(u.name.c_str()), u);
