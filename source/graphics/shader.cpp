@@ -579,7 +579,7 @@ namespace flame
 			for (auto& b : ret->bindings)
 			{
 				if (b.type == DescriptorUniformBuffer || b.type == DescriptorStorageBuffer)
-					b.ui = find_udt(sh(b.name.c_str()), db);
+					b.ui = find_udt(sh(b.name.c_str()), ret->db);
 			}
 			return ret;
 		}
@@ -1125,15 +1125,15 @@ namespace flame
 		{
 			if (!filename.empty())
 			{
-				for (auto s : info.shaders)
+				for (auto s : shaders)
 				{
 					if (s->filename == filename)
 						delete s;
 				}
-				if (info.layout->filename == filename)
-					delete info.layout;
-				if (info.renderpass->filename == filename)
-					delete info.renderpass;
+				if (layout->filename == filename)
+					delete layout;
+				if (renderpass->filename == filename)
+					delete renderpass;
 			}
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
@@ -1361,8 +1361,8 @@ namespace flame
 					device = current_device;
 
 				auto ret = new GraphicsPipelinePrivate;
+				*(GraphicsPipelineInfo*)ret = info;
 				ret->device = device;
-				ret->info = info;
 
 				std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 				std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
@@ -1475,8 +1475,8 @@ namespace flame
 				multisample_state.pNext = nullptr;
 				if (info.sample_count == SampleCount_1)
 				{
-					auto& res_atts = info.renderpass->info.subpasses[info.subpass_index].resolve_attachments;
-					multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->info.attachments[res_atts[0]].sample_count : SampleCount_1);
+					auto& res_atts = info.renderpass->subpasses[info.subpass_index].resolve_attachments;
+					multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 				}
 				else
 					multisample_state.rasterizationSamples = to_backend(info.sample_count);
@@ -1500,7 +1500,7 @@ namespace flame
 				depth_stencil_state.front = {};
 				depth_stencil_state.back = {};
 
-				vk_blend_attachment_states.resize(info.renderpass->info.subpasses[info.subpass_index].color_attachments.size());
+				vk_blend_attachment_states.resize(info.renderpass->subpasses[info.subpass_index].color_attachments.size());
 				for (auto& a : vk_blend_attachment_states)
 				{
 					a.blendEnable = VK_FALSE;
@@ -1648,8 +1648,8 @@ namespace flame
 					device = current_device;
 
 				auto ret = new ComputePipelinePrivate;
+				*(ComputePipelineInfo*)ret = info;
 				ret->device = device;
-				ret->info = info;
 
 				VkComputePipelineCreateInfo pipeline_info;
 				pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

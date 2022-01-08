@@ -56,16 +56,12 @@ void main()
 	#ifndef DEFERRED
 		o_coordw = coordw;
 	#endif
-	gl_Position = render_data.proj_view * vec4(coordw, 1.0);
+	gl_Position = scene.proj_view * vec4(coordw, 1.0);
 #else
-	switch (pc.i[0])
-	{
-	case 0:
+	#ifdef DIR_SHADOW
 		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
-		break;
-	case 1:
+	#elifdef PT_SHADOW
 		gl_Position = pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
-		break;
-	}
+	#endif
 #endif
 }

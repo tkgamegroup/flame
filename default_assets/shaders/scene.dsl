@@ -1,4 +1,4 @@
-layout (set = SET, binding = 0) uniform RenderData
+layout (set = SET, binding = 0) uniform Scene
 {
 	vec3 fog_color;
 	float sky_intensity;
@@ -21,4 +21,4 @@ layout (set = SET, binding = 0) uniform RenderData
 	vec4 frustum_planes[6];
 
 	uint time;
-}render_data;
+}scene;

@@ -44,5 +44,5 @@ void main()
 	o_coordw = coordw;
 #endif
 
-	gl_Position = render_data.proj_view * vec4(coordw, 1.0);
+	gl_Position = scene.proj_view * vec4(coordw, 1.0);
 }

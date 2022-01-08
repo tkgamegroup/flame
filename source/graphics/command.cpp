@@ -80,7 +80,7 @@ namespace flame
 				rp = fb->renderpass;
 			for (auto i = 0; i < fb->views.size(); i++)
 			{
-				auto& att = rp->info.attachments[i];
+				auto& att = rp->attachments[i];
 				auto layout = att.initia_layout;
 				auto iv = fb->views[i];
 				auto& sub = iv->sub;
@@ -147,14 +147,14 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(GraphicsPipelinePtr pl)
 		{
-			vk_pll = pl->info.layout->vk_pipeline_layout;
+			vk_pll = pl->layout->vk_pipeline_layout;
 			vk_plt = VK_PIPELINE_BIND_POINT_GRAPHICS;
 			vkCmdBindPipeline(vk_command_buffer, vk_plt, pl->vk_pipeline);
 		}
 
 		void CommandBufferPrivate::bind_pipeline(ComputePipelinePtr pl)
 		{
-			vk_pll = pl->info.layout->vk_pipeline_layout;
+			vk_pll = pl->layout->vk_pipeline_layout;
 			vk_plt = VK_PIPELINE_BIND_POINT_COMPUTE;
 			vkCmdBindPipeline(vk_command_buffer, vk_plt, pl->vk_pipeline);
 		}

@@ -50,6 +50,19 @@ namespace flame
 				return -1;
 			}
 
+			UdtInfo* get_buf_ui(std::string_view name) const
+			{
+				auto idx = find_binding(name);
+				if (idx != -1)
+				{
+					auto& binding = bindings[idx];
+					assert(binding.type == DescriptorUniformBuffer ||
+						binding.type == DescriptorStorageBuffer);
+					return binding.ui;
+				}
+				return nullptr;
+			}
+
 			struct Create
 			{
 				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
@@ -190,10 +203,8 @@ namespace flame
 			PipelineLayoutPtr layout;
 		};
 
-		struct GraphicsPipeline
+		struct GraphicsPipeline : GraphicsPipelineInfo
 		{
-			GraphicsPipelineInfo info;
-
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 
@@ -201,7 +212,7 @@ namespace flame
 
 			inline ShaderPtr vert() const
 			{
-				for (auto s : info.shaders)
+				for (auto s : shaders)
 				{
 					if (((Shader*)s)->type == ShaderStageVert)
 						return s;
@@ -211,7 +222,7 @@ namespace flame
 
 			inline ShaderPtr frag() const
 			{
-				for (auto s : info.shaders)
+				for (auto s : shaders)
 				{
 					if (((Shader*)s)->type == ShaderStageFrag)
 						return s;
@@ -242,10 +253,8 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Get& get;
 		};
 
-		struct ComputePipeline
+		struct ComputePipeline : ComputePipelineInfo
 		{
-			ComputePipelineInfo info;
-
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 

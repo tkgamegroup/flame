@@ -102,6 +102,12 @@ namespace flame
 				create(ui->size, _array_capacity);
 			}
 
+			void create_with_array_type(UdtInfo* _ui)
+			{
+				auto& vi = _ui->variables[0];
+				create(vi.type->retrive_ui(), vi.array_size);
+			}
+
 			inline uint n_offset()
 			{
 				return (pend - (char*)stagbuf->mapped) / size;
@@ -175,7 +181,7 @@ namespace flame
 				vu_pc.ui = pll->pc_ui;
 			}
 
-			inline int dst_off(uint nh)
+			inline int dsl_idx(uint nh)
 			{
 				auto it = dsl_map.find(nh);
 				if (it == dsl_map.end())
@@ -186,29 +192,15 @@ namespace flame
 				return it->second;
 			}
 
-			UdtInfo* get_buf_ui(uint dsl_nh, std::string_view name)
+			inline DescriptorSetLayoutPtr get_dsl(uint nh)
 			{
-				auto idx = dst_off(dsl_nh);
-				if (idx != -1)
-				{
-					auto dsl = pll->dsls[idx];
-					auto idx = dsl->find_binding(name);
-					if (idx == -1)
-						assert(0);
-					else
-					{
-						auto& binding = dsl->bindings[idx];
-						assert(binding.type == DescriptorUniformBuffer ||
-							binding.type == DescriptorStorageBuffer);
-						return binding.ui;
-					}
-				}
-				return nullptr;
+				auto idx = dsl_idx(nh);
+				return idx == -1 ? nullptr : pll->dsls[idx];
 			}
 
 			inline void set_ds(uint nh, DescriptorSetPtr ds)
 			{
-				auto idx = dst_off(nh);
+				auto idx = dsl_idx(nh);
 				if (idx != -1)
 					temp_dss[idx] = ds;
 			}

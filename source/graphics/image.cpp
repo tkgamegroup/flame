@@ -227,7 +227,7 @@ namespace flame
 			RenderpassPrivate* rp = nullptr;
 			for (auto& r : simple_rps)
 			{
-				auto& att = r->info.attachments[0];
+				auto& att = r->attachments[0];
 				if (att.format == format && att.load_op == load_op && att.sample_count == sample_count)
 				{
 					rp = r;

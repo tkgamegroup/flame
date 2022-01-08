@@ -1,7 +1,7 @@
-#include "../render_data.dsl"
+#include "mesh.dsl"
+#include "../scene.dsl"
 #include "../material.dsl"
 #include "../light.dsl"
-#include "mesh.dsl"
 
 layout (push_constant) uniform PushConstant
 {

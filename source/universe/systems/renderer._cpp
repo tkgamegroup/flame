@@ -2375,7 +2375,7 @@ namespace flame
 			data.sky_intensity = 0.2f;
 			data.sky_rad_levels = 0;
 		}
-		nd.ds_render_data.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"render_data.dsl")));
+		nd.ds_render_data.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"scene.dsl")));
 		nd.ds_render_data->set_buffer(DSL_render_data::RenderData_binding, 0, nd.buf_render_data.buf.get());
 		nd.ds_render_data->update();
 

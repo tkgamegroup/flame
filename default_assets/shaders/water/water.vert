@@ -24,5 +24,5 @@ void main()
 
 	vec2 ext = water_infos[idx].extent;
 	o_coordw = water_infos[idx].coord + vec3(ext.x * v.x, 0.0, ext.y * v.y);
-	gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
+	gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 }

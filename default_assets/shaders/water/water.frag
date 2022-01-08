@@ -14,13 +14,13 @@ void main()
 	
 	#inlcude MAT_FILE
 
-	float d1 = texture(img_depth, gl_FragCoord.xy / render_data.viewport).r;
+	float d1 = texture(img_depth, gl_FragCoord.xy / scene.viewport).r;
 	d1 = d1 * 0.5 + 0.5;
 	float d2 = gl_FragCoord.z;
 	d2 = d2 * 0.5 + 0.5;
-	d1 = linear_depth(render_data.zNear, render_data.zFar, d1);
-	d2 = linear_depth(render_data.zNear, render_data.zFar, d2);
-	float reduction = 1.0 - (d1 - d2) * 20.0 / render_data.zFar;
+	d1 = linear_depth(scene.zNear, scene.zFar, d1);
+	d2 = linear_depth(scene.zNear, scene.zFar, d2);
+	float reduction = 1.0 - (d1 - d2) * 20.0 / scene.zFar;
 	reduction = clamp(reduction * reduction, 0.0, 0.99);
 
 	float foam = d2 + 0.2 > d1 ? 1.0 - (d1 - d2) / 0.2 : 0.0;

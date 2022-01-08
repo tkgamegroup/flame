@@ -395,8 +395,8 @@ namespace flame
 			return true;
 		}
 
-		template<typename F, typename... Args>
-		auto call(void* obj, Args ...args) const
+		template<typename R, typename... Args>
+		R call(void* obj, Args ...args) const
 		{
 			void* addr = nullptr;
 			if (rva)
@@ -410,7 +410,12 @@ namespace flame
 				auto vtbl = *(void**)obj;
 				addr = ((void**)vtbl)[voff / 8];
 			}
-			return ((F*)addr)(obj, args...);
+			if (obj)
+			{
+				struct T {};
+				(*(T*)obj).*(a2f<R(T::*)(Args...)>(addr))(args...);
+			}
+			return ((R(*)(Args...))addr)(args...);
 		}
 	};
 
@@ -506,7 +511,7 @@ namespace flame
 			{
 				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
 				{
-					fi.call<void(void*)>(p);
+					fi.call<void>(p);
 					initialized = true;
 					break;
 				}

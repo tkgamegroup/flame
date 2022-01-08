@@ -1,2 +1,2 @@
-#include "../render_data.dsl"
+#include "../scene.dsl"
 #include "../material.dsl"

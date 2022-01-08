@@ -16,7 +16,7 @@ uint idx;
 
 float screen_space_tessellation_factor(vec4 p0, vec4 p1)
 {
-	float v = distance(render_data.camera_coord, (p0.xyz + p1.xyz) * 0.5) / render_data.zFar;
+	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
 	v = v * v;
 	v = 1.0 - v;
 	return max(v * terrain_infos[idx].tess_levels, 1.0);
@@ -30,7 +30,7 @@ bool frustum_check()
 
 	for (int i = 0; i < 6; i++) 
 	{
-		if (dot(render_data.frustum_planes[i], p) + r < 0.0)
+		if (dot(scene.frustum_planes[i], p) + r < 0.0)
 			return false;
 	}
 	return true;

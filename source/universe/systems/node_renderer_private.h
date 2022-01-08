@@ -22,16 +22,16 @@ namespace flame
 		std::vector<MeshRes> mesh_reses;
 
 		graphics::RenderpassPtr rp_fwd;
-		graphics::GraphicsPipelinePtr pl_fwd;
+		graphics::GraphicsPipelinePtr pl_mesh_fwd;
 		std::vector<graphics::ImageViewPtr> iv_tars;
 		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 
 		std::unique_ptr<graphics::Image> img_dep;
-		graphics::StorageBuffer<"flame::node_renderer::vtx"_h, graphics::BufferUsageVertex, false>		buf_vtx;
-		graphics::StorageBuffer<"flame::node_renderer::idx"_h, graphics::BufferUsageIndex, false>		buf_idx;
-		graphics::StorageBuffer<"flame::node_renderer::camera"_h, graphics::BufferUsageUniform, false>	buf_camera;
-		graphics::StorageBuffer<"flame::node_renderer::mesh"_h, graphics::BufferUsageUniform, false>	buf_mesh;
-		graphics::PipelineResourceManager<"flame::node_renderer::fwd"_h>								prm_fwd;
+		graphics::StorageBuffer<"flame::node_renderer::vtx"_h, graphics::BufferUsageVertex, false>			buf_vtx;
+		graphics::StorageBuffer<"flame::node_renderer::idx"_h, graphics::BufferUsageIndex, false>			buf_idx;
+		graphics::StorageBuffer<"flame::node_renderer::scene"_h, graphics::BufferUsageUniform, false>		buf_scene;
+		graphics::StorageBuffer<"flame::node_renderer::mesh_transforms"_h, graphics::BufferUsageStorage>	buf_mesh_transforms;
+		graphics::PipelineResourceManager<"flame::node_renderer::mesh_fwd"_h>								prm_mesh_fwd;
 
 		graphics::ImageLayout dst_layout;
 

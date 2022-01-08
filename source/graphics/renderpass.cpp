@@ -30,8 +30,8 @@ namespace flame
 					device = current_device;
 
 				auto ret = new RenderpassPrivate;
+				*(RenderpassInfo*)ret = info;
 				ret->device = device;
-				ret->info = info;
 
 				std::vector<VkAttachmentDescription> atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)

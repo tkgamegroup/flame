@@ -240,7 +240,7 @@ namespace flame
 					{ "rp=0x" + to_string((uint64)ret->renderpass_clear) }));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
-				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->info.layout->dsls[0]));
+				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->layout->dsls[0]));
 
 				IMGUI_CHECKVERSION();
 

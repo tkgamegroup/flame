@@ -30,10 +30,8 @@ namespace flame
 			std::vector<uvec2> dependencies;
 		};
 
-		struct Renderpass
+		struct Renderpass : RenderpassInfo
 		{
-			RenderpassInfo info;
-
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 

@@ -20,25 +20,25 @@ void main()
 	o_col = i_col[0];
 	o_uv = i_uv[0].xw;
 	o_id = i_id[0];
-	gl_Position = render_data.proj_view * vec4(pos - i_xext[0] - i_yext[0], 1.0);
+	gl_Position = scene.proj_view * vec4(pos - i_xext[0] - i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zw;
 	o_id = i_id[0];
-	gl_Position = render_data.proj_view * vec4(pos + i_xext[0] - i_yext[0], 1.0);
+	gl_Position = scene.proj_view * vec4(pos + i_xext[0] - i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].xy;
 	o_id = i_id[0];
-	gl_Position = render_data.proj_view * vec4(pos - i_xext[0] + i_yext[0], 1.0);
+	gl_Position = scene.proj_view * vec4(pos - i_xext[0] + i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zy;
 	o_id = i_id[0];
-	gl_Position = render_data.proj_view * vec4(pos + i_xext[0] + i_yext[0], 1.0);
+	gl_Position = scene.proj_view * vec4(pos + i_xext[0] + i_yext[0], 1.0);
 	EmitVertex();
 
 	EndPrimitive();

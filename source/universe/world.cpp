@@ -8,7 +8,7 @@ namespace flame
 	{
 		root.reset(new EntityPrivate);
 		root->world = this;
-		root->global_visibility = true;
+		root->global_enable = true;
 	}
 
 	System* WorldPrivate::add_system(uint hash)

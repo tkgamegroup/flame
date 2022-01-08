@@ -304,9 +304,7 @@ namespace flame
 
 	inline void serialize_text(const UdtInfo& ui, void* src, std::ostream& dst, const std::string& indent, const SerializeTextSpec& spec = {})
 	{
-		auto indent2 = indent;
-		if (ui.variables.size() > 1)
-			indent2 += "  ";
+		auto indent2 = indent + "  ";
 
 		for (auto& vi : ui.variables)
 		{
@@ -462,9 +460,7 @@ namespace flame
 
 	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeTextSpec& spec = {})
 	{
-		auto indent2 = indent;
-		if (ui.variables.size() > 1)
-			indent2 += 2;
+		auto indent2 = indent + 2;
 
 		auto read_var = [&](const VariableInfo& vi) {
 			std::function<TextSerializeNode(uint indent)> read_pudt;

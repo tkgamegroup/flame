@@ -152,22 +152,22 @@ vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 	vec3 diffuse = texture(sky_irr, cube_coord(N)).rgb * albedo;
 
 	vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
-	vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+	vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
-	return (kD * diffuse + specular) * render_data.sky_intensity;
+	return (kD * diffuse + specular) * scene.sky_intensity;
 }
 
 vec3 get_fog(vec3 color, float dist)
 {
-	return mix(color, render_data.fog_color * render_data.sky_intensity, dist / render_data.zFar);
+	return mix(color, scene.fog_color * scene.sky_intensity, dist / scene.zFar);
 }
 
 vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
 {
 	vec3 ret = vec3(0.0);
 
-	vec3 V = render_data.camera_coord - coordw;
-	float distv = dot(render_data.camera_dir, -V);
+	vec3 V = scene.camera_coord - coordw;
+	float distv = dot(scene.camera_dir, -V);
 	V = normalize(V);
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);

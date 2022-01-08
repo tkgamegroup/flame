@@ -8,9 +8,9 @@ layout (location = 0) out vec4 o_color;
 void main()
 {
 	float dep = texture(img_dep, i_uv).r;
-	vec4 p = render_data.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
+	vec4 p = scene.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
 	p /= p.w;
-	vec4 coordw = render_data.view_inv * p;
+	vec4 coordw = scene.view_inv * p;
 
 	if (dep < 1.0)
 	{
@@ -29,5 +29,5 @@ void main()
 		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness, ao), 1.0);
 	}
 	else
-		o_color = vec4(texture(sky_box, cube_coord(normalize(coordw.xyz))).rgb * render_data.sky_intensity, 1.0);
+		o_color = vec4(texture(sky_box, cube_coord(normalize(coordw.xyz))).rgb * scene.sky_intensity, 1.0);
 }
