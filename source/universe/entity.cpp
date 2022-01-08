@@ -194,36 +194,36 @@ namespace flame
 			l("destroyed"_h, nullptr, nullptr);
 	}
 
-	void EntityPrivate::update_visibility()
+	void EntityPrivate::update_enable()
 	{
-		auto prev_visibility = global_visibility;
+		auto prev_visibility = global_enable;
 		if (parent)
-			global_visibility = visible && parent->global_visibility;
+			global_enable = enable && parent->global_enable;
 		else
 		{
 			if (!world)
-				global_visibility = true;
+				global_enable = true;
 			else
-				global_visibility = false;
+				global_enable = false;
 		}
-		if (global_visibility != prev_visibility)
+		if (global_enable != prev_visibility)
 		{
 			for (auto& l : message_listeners.list)
-				l("visibility_changed"_h, global_visibility ? (void*)1 : nullptr, nullptr);
+				l("visibility_changed"_h, global_enable ? (void*)1 : nullptr, nullptr);
 			for (auto& c : components)
-				c->on_visibility_changed(global_visibility);
+				c->on_visibility_changed(global_enable);
 		}
 
 		for (auto& e : children)
-			e->update_visibility();
+			e->update_enable();
 	}
 
-	void EntityPrivate::set_visible(bool v)
+	void EntityPrivate::set_enable(bool v)
 	{
-		if (visible == v)
+		if (enable == v)
 			return;
-		visible = v;
-		update_visibility();
+		enable = v;
+		update_enable();
 	}
 
 	void EntityPrivate::set_state(StateFlags s)
@@ -336,7 +336,7 @@ namespace flame
 			e->depth = e->parent->depth + 1;
 		});
 		e->index = pos;
-		e->update_visibility();
+		e->update_enable();
 
 		for (auto& l : e->message_listeners.list)
 			l("entity_added"_h, nullptr, nullptr);
@@ -429,7 +429,7 @@ namespace flame
 		auto ret = Entity::create();
 		ret->name = name;
 		ret->tag = tag;
-		ret->visible = visible;
+		ret->enable = enable;
 		ret->path = path;
 		ret->state = state;
 		for (auto& c : components)
@@ -487,11 +487,7 @@ namespace flame
 		for (auto a : n_src.attributes())
 		{
 			auto name = std::string(a.name());
-			if (name == "name")
-				e_dst->name = a.value();
-			else if (name == "visible")
-				e_dst->visible = a.as_bool();
-			else if (name == "src")
+			if (name == "src")
 			{
 				std::filesystem::path fn(a.value());
 	//			path.replace_extension(L".prefab");
@@ -618,11 +614,6 @@ namespace flame
 	//		if (!found)
 	//			n_dst.append_attribute("src").set_value(src.string().c_str());
 	//	}
-
-	//	if (!e_src->name.empty())
-	//		n_dst.append_attribute("name").set_value(e_src->name.c_str());
-	//	if (!e_src->visible)
-	//		n_dst.append_attribute("visible").set_value("false");
 
 	//	for (auto& c : e_src->components)
 	//	{

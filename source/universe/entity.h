@@ -15,8 +15,8 @@ namespace flame
 		uint tag = 0x80000000;
 
 		/// Reflect
-		bool visible = true;
-		bool global_visibility = false;
+		bool enable = true;
+		bool global_enable = false;
 
 		WorldPtr world = nullptr;
 		EntityPtr parent = nullptr;
@@ -39,7 +39,7 @@ namespace flame
 
 		void* userdata = nullptr;
 
-		virtual void set_visible(bool v) = 0;
+		virtual void set_enable(bool v) = 0;
 
 		virtual void set_state(StateFlags state) = 0;
 

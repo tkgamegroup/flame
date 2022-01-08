@@ -18,8 +18,8 @@ namespace flame
 		EntityPrivate();
 		~EntityPrivate();
 
-		void update_visibility();
-		void set_visible(bool v) override;
+		void update_enable();
+		void set_enable(bool v) override;
 
 		void set_state(StateFlags state) override;
 
