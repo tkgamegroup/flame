@@ -12,9 +12,9 @@
 
 #define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
 
-#define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
-	using name##T = name##Private; \
-	using name##Ptr = name##Private*;
+#define FLAME_UNIVERSE_TYPE(name) struct name; \
+	using name##T = name; \
+	using name##Ptr = name*;
 
 #endif
 

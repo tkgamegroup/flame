@@ -201,9 +201,12 @@ namespace flame
 				auto& a = u.attributes.emplace_back();
 				a.name = n_attribute.attribute("name").value();
 				a.type = read_ti(n_attribute.attribute("type"));
-				a.var_idx = n_attribute.attribute("var_idx").as_int();
-				a.getter_idx = n_attribute.attribute("getter_idx").as_int();
-				a.setter_idx = n_attribute.attribute("setter_idx").as_int();
+				if (auto att = n_attribute.attribute("var_idx"); att)
+					a.var_idx = att.as_int();
+				if (auto att = n_attribute.attribute("getter_idx"); att)
+					a.getter_idx = att.as_int();
+				if (auto att = n_attribute.attribute("setter_idx"); att)
+					a.setter_idx = att.as_int();
 			}
 		}
 

@@ -12,7 +12,7 @@
 
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
 
-#define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
+#define FLAME_GRAPHICS_TYPE(name) struct name; \
 	using name##T = name; \
 	using name##Ptr = name*;
 
