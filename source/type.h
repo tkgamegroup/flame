@@ -16,7 +16,7 @@
 #include <random>
 #include <filesystem>
 
-#define FLAME_UNIQUE __FILE__, __LINE__
+#define FLAME_UID (flame::sh(__FILE__) + __LINE__)
 
 namespace flame
 {
