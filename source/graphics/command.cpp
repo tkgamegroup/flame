@@ -60,18 +60,41 @@ namespace flame
 
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
-			vkFreeCommandBuffers(pool->device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
+			auto vk_device = pool->device->vk_device;
+			vkFreeCommandBuffers(vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
+			if (vk_query_pool)
+				vkDestroyQueryPool(vk_device, vk_query_pool, nullptr);
 		}
 
 		void CommandBufferPrivate::begin(bool once)
 		{
 			VkCommandBufferBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			info.flags = once ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 			info.pNext = nullptr;
+			info.flags = once ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 			info.pInheritanceInfo = nullptr;
 
 			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
+
+			if (want_executed_time)
+			{
+				auto vk_device = pool->device->vk_device;
+
+				if (!vk_query_pool)
+				{
+					VkQueryPoolCreateInfo info;
+					info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+					info.pNext = nullptr;
+					info.flags = 0;
+					info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+					info.queryCount = 2;
+					info.pipelineStatistics = 0;
+					vkCreateQueryPool(vk_device, &info, nullptr, &vk_query_pool);
+				}
+
+				vkCmdResetQueryPool(vk_command_buffer, vk_query_pool, 0, 2);
+ 				vkCmdWriteTimestamp(vk_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vk_query_pool, 0);
+			}
 		}
 
 		void CommandBufferPrivate::begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs)
@@ -548,7 +571,20 @@ namespace flame
 
 		void CommandBufferPrivate::end()
 		{
+			if (want_executed_time)
+				vkCmdWriteTimestamp(vk_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vk_query_pool, 1);
+
 			chk_res(vkEndCommandBuffer(vk_command_buffer));
+		}
+
+		void CommandBufferPrivate::calc_executed_time()
+		{
+			if (vk_query_pool)
+			{
+				uint64 timestamps[2];
+				vkGetQueryPoolResults(pool->device->vk_device, vk_query_pool, 0, 2, sizeof(uint64) * 2, timestamps, sizeof(uint64), VK_QUERY_RESULT_64_BIT);
+				last_executed_time = timestamps[1] - timestamps[0];
+			}
 		}
 
 		struct CommandBufferCreate : CommandBuffer::Create

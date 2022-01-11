@@ -22,6 +22,20 @@ namespace flame
 		return ret;
 	}
 
+	uint64 performance_counter()
+	{
+		LARGE_INTEGER li = {};
+		QueryPerformanceCounter(&li);
+		return li.QuadPart;
+	}
+
+	uint64 performance_frequency()
+	{
+		LARGE_INTEGER li = {};
+		QueryPerformanceFrequency(&li);
+		return li.QuadPart;
+	}
+
 	std::filesystem::path get_app_path(bool has_name)
 	{
 		wchar_t buf[256];

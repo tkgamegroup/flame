@@ -40,6 +40,9 @@ namespace flame
 	static std::list<Event> events;
 	static std::recursive_mutex event_mtx;
 
+	static const uint64 counter_freq = performance_frequency();
+	static const auto limited_fps = 60;
+
 	int run(const std::function<bool()>& callback)
 	{
 		if (!callback)
@@ -58,7 +61,7 @@ namespace flame
 		if (windows.empty())
 			return 1;
 
-		last_time = get_now_ns();
+		last_time = performance_counter();
 		frames = 0;
 
 		for (;;)
@@ -111,9 +114,9 @@ namespace flame
 
 			frames++;
 			auto et = last_time;
-			last_time = get_now_ns();
+			last_time = performance_counter();
 			et = last_time - et;
-			delta_time = et / 1000000000.f;
+			delta_time = (double)et / (double)counter_freq;
 			total_time += delta_time;
 			fps_counting++;
 			fps_delta += delta_time;
@@ -123,6 +126,9 @@ namespace flame
 				fps_counting = 0;
 				fps_delta = 0.f;
 			}
+
+			if (delta_time < 1.f / limited_fps)
+				sleep((1.f / limited_fps - delta_time) * 1000);
 		}
 	}
 

@@ -156,12 +156,6 @@ namespace flame
 		}
 	};
 
-	inline uint64 get_now_ns()
-	{
-		return std::chrono::time_point_cast<std::chrono::nanoseconds>
-			(std::chrono::system_clock::now()).time_since_epoch().count();
-	}
-
 	struct ArgPack
 	{
 		std::string name;

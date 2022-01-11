@@ -21,6 +21,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void sleep(int time);
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
+	FLAME_FOUNDATION_EXPORTS uint64 performance_counter();
+	FLAME_FOUNDATION_EXPORTS uint64 performance_frequency();
 	FLAME_FOUNDATION_EXPORTS std::filesystem::path get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS uvec2 get_screen_size();

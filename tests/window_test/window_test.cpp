@@ -5,8 +5,9 @@ Application app;
 int main(int argc, char** args)
 {
 	app.create("Window Test");
-	app.main_window->add_mouse_left_down_listener([](const ivec2& pos) {
-		app.main_window->close();
+	app.main_window->mouse_listeners.add([](MouseButton btn, bool down) {
+		if (btn == Mouse_Left && down)
+			app.main_window->close();
 	});
 
 	app.run();

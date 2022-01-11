@@ -74,6 +74,9 @@ namespace flame
 
 		struct CommandBuffer
 		{
+			uint64 last_executed_time = 0;
+			bool want_executed_time = false;
+
 			virtual ~CommandBuffer() {}
 
 			virtual void begin(bool once = false) = 0;
@@ -120,6 +123,8 @@ namespace flame
 			virtual void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) = 0;
 
 			virtual void end() = 0;
+
+			virtual void calc_executed_time() = 0;
 
 			struct Create
 			{

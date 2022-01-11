@@ -20,14 +20,12 @@
 
 namespace flame
 {
-	typedef char*				charptr;
-	typedef wchar_t*			wcharptr;
-	typedef unsigned char		uchar;
-	typedef unsigned short		ushort;
-	typedef unsigned int		uint;
-	typedef long long			int64;
-	typedef unsigned long long  uint64;
-	typedef void*				voidptr;
+	using uchar = unsigned char;
+	using ushort = unsigned short;
+	using uint = unsigned int;
+	using int64 = long long;
+	using uint64 = unsigned long long;
+	using voidptr = void*;
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 

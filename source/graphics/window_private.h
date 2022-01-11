@@ -13,8 +13,8 @@ namespace flame
 			DevicePrivate* device;
 
 			std::unique_ptr<CommandBufferPrivate> commandbuffer;
-			std::unique_ptr<FencePrivate> submit_fence;
-			std::unique_ptr<SemaphorePrivate> render_finished;
+			std::unique_ptr<FencePrivate> finished_fence;
+			std::unique_ptr<SemaphorePrivate> finished_semaphore;
 
 			std::unique_ptr<ImagePrivate> imgui_img_font;
 			StorageBuffer<FLAME_UID, BufferUsageVertex> imgui_buf_vtx;

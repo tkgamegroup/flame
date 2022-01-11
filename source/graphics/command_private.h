@@ -22,6 +22,7 @@ namespace flame
 			VkPipelineBindPoint vk_plt = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 			VkCommandBuffer vk_command_buffer;
+			VkQueryPool vk_query_pool = nullptr;
 
 			~CommandBufferPrivate();
 
@@ -55,6 +56,8 @@ namespace flame
 			void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) override;
 			void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) override;
 			void end() override;
+
+			void calc_executed_time() override;
 		};
 
 		struct QueuePrivate : Queue

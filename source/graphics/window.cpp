@@ -80,7 +80,9 @@ namespace flame
 			if (!dirty || swapchain->images.empty())
 				return;
 
-			submit_fence->wait();
+			finished_fence->wait();
+			commandbuffer->calc_executed_time();
+			printf("%lfms\n", (double)commandbuffer->last_executed_time / (double)1000000);
 
 			auto img_idx = swapchain->acquire_image();
 			auto curr_img = swapchain->images[img_idx].get();
@@ -176,8 +178,8 @@ namespace flame
 			commandbuffer->end();
 
 			auto queue = graphics::Queue::get(nullptr);
-			queue->submit1(commandbuffer.get(), swapchain->image_avalible.get(), render_finished.get(), submit_fence.get());
-			queue->present(swapchain.get(), render_finished.get());
+			queue->submit1(commandbuffer.get(), swapchain->image_avalible.get(), finished_semaphore.get(), finished_fence.get());
+			queue->present(swapchain.get(), finished_semaphore.get());
 
 			dirty = false;
 		}
@@ -197,8 +199,9 @@ namespace flame
 
 				ret->swapchain.reset(Swapchain::create(device, native));
 				ret->commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
-				ret->submit_fence.reset(Fence::create(device));
-				ret->render_finished.reset(Semaphore::create(device));
+				ret->commandbuffer->want_executed_time = true;
+				ret->finished_fence.reset(Fence::create(device));
+				ret->finished_semaphore.reset(Semaphore::create(device));
 
 				auto fmt_str = "fmt=" + TypeInfo::serialize_t(&Swapchain::format);
 				ret->renderpass_clear = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
