@@ -39,7 +39,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto s = fi->call<System* (void*, World*)>(nullptr, this);
+		auto s = fi->call<System*, World*>(nullptr, this);
 		if (!s)
 		{
 			printf("cannot add system: %s's create funcion returned nullptr\n", ui->name.c_str());

@@ -413,7 +413,7 @@ namespace flame
 			if (obj)
 			{
 				struct T {};
-				(*(T*)obj).*(a2f<R(T::*)(Args...)>(addr))(args...);
+				return ((*(T*)obj).*(a2f<R(T::*)(Args...)>(addr)))(args...);
 			}
 			return ((R(*)(Args...))addr)(args...);
 		}
