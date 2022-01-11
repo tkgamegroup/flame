@@ -4,14 +4,14 @@
 
 namespace flame
 {
+	/// Reflect
 	struct sScene : System
 	{
-		virtual ~sScene() {}
-
 		struct Create
 		{
-			virtual sScenePtr operator()() = 0;
+			virtual sScenePtr operator()(WorldPtr) = 0;
 		};
+		/// Reflect static
 		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

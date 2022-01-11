@@ -112,7 +112,7 @@
 //				if (e)
 //				{
 //					dst.name = name;
-//					dst.node = e->get_component_i<cNodePrivate>(0);
+//					dst.node = e->get_component_i<cNodeT>(0);
 //					if (dst.node)
 //						dst.offmat = src.offset_matrix;
 //				}
@@ -185,7 +185,7 @@
 //
 //	void cArmaturePrivate::on_added()
 //	{
-//		node = entity->get_component_i<cNodePrivate>(0);
+//		node = entity->get_component_i<cNodeT>(0);
 //		if (node)
 //		{
 //			drawer_lis = node->drawers.add([this](sNodeRendererPtr s_renderer, bool shadow_pass) {
@@ -202,7 +202,6 @@
 //						for (auto i = 0; i < bones.size(); i++)
 //						{
 //							auto& b = bones[i];
-//							b.node->update_transform();
 //							bone_mats[i] = b.node->transform * b.offmat;
 //						}
 //						armature_id = s_renderer->add_mesh_armature(bone_mats.data(), bone_mats.size());

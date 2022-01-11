@@ -111,14 +111,17 @@ namespace flame
 		constexpr auto prefix1 = std::string_view{ " flame::tn<" };
 		constexpr auto prefix2 = std::string_view{ "class " };
 		constexpr auto prefix3 = std::string_view{ "struct " };
-		constexpr auto suffix = std::string_view{ ">(void)" };
+		constexpr auto suffix1 = std::string_view{ ">(void)" };
+		constexpr auto suffix2 = std::string_view{ "Private" };
 
 		auto start = name.find(prefix1) + prefix1.size();
 		if (name.compare(start, prefix2.size(), prefix2) == 0)
 			start += prefix2.size();
 		else if (name.compare(start, prefix3.size(), prefix3) == 0)
 			start += prefix3.size();
-		auto end = name.rfind(suffix);
+		auto end = name.rfind(suffix1);
+		if (name.compare(end - suffix2.size(), suffix2.size(), suffix2) == 0)
+			end -= suffix2.size();
 
 		return name.substr(start, (end - start));
 	}

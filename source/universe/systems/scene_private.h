@@ -6,5 +6,6 @@ namespace flame
 {
 	struct sScenePrivate : sScene
 	{
+		void update() override;
 	};
 }

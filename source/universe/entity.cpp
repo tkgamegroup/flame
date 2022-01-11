@@ -208,10 +208,10 @@ namespace flame
 		}
 		if (global_enable != prev_visibility)
 		{
-			for (auto& l : message_listeners.list)
-				l("visibility_changed"_h, global_enable ? (void*)1 : nullptr, nullptr);
 			for (auto& c : components)
-				c->on_visibility_changed(global_enable);
+				c->on_enable_changed(global_enable);
+			for (auto& l : message_listeners.list)
+				l("enable_changed"_h, global_enable ? (void*)1 : nullptr, nullptr);
 		}
 
 		for (auto& e : children)

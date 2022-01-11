@@ -115,84 +115,42 @@ namespace flame
 
 	void cNodePrivate::update_transform()
 	{
-		if (transform_dirty)
+		update_rot();
+
+		mat4 m;
+		if (auto pnode = entity->get_parent_component_i<cNodeT>(0); pnode)
 		{
-			transform_dirty = false;
-			transform_updated_times++;
-
-			update_rot();
-
-			mat4 m;
-			if (pnode)
-			{
-				pnode->update_transform();
-				g_rot = pnode->g_rot * rot;
-				g_scl = pnode->g_scl * scl;
-				m = pnode->transform;
-			}
-			else
-			{
-				g_rot = rot;
-				g_scl = scl;
-				m = mat4(1.f);
-			}
-			m = translate(m, pos);
-			m = scale(m, scl);
-			m = m * mat4(rot);
-			transform = m;
-			g_pos = m[3];
-
-			data_changed("transform"_h);
+			g_rot = pnode->g_rot * rot;
+			g_scl = pnode->g_scl * scl;
+			m = pnode->transform;
 		}
+		else
+		{
+			g_rot = rot;
+			g_scl = scl;
+			m = mat4(1.f);
+		}
+		m = translate(m, pos);
+		m = scale(m, scl);
+		m = m * mat4(rot);
+		transform = m;
+		g_pos = m[3];
+
+		data_changed("transform"_h);
+		transform_dirty = false;
 	}
 
 	void cNodePrivate::mark_transform_dirty()
 	{
 		if (!transform_dirty)
-		{
 			transform_dirty = true;
-
-			for (auto& c : entity->children)
-			{
-				auto n = c->get_component_i<cNodePrivate>(0);
-				if (n)
-					n->mark_transform_dirty();
-			}
-		}
-		mark_bounds_dirty(false);
 		mark_drawing_dirty();
-	}
-
-	void cNodePrivate::mark_bounds_dirty(bool child_caused)
-	{
-		//if (!child_caused && measurers.list.empty())
-		//	return;
-
-		//if (!pending_update_bounds)
-		//{
-		//	if (s_scene)
-		//	{
-		//		s_scene->add_to_update_bounds(this); // TODO
-		//		pending_update_bounds = true;
-		//	}
-		//}
-
-		//if (pnode && pnode->merge_bounds)
-		//	pnode->mark_bounds_dirty(true);
 	}
 
 	void cNodePrivate::mark_drawing_dirty()
 	{
 		if (s_renderer)
 			s_renderer->dirty = true;
-	}
-
-	void cNodePrivate::remove_from_bounds_list()
-	{
-		//if (!pending_update_bounds)
-		//	return;
-		//s_scene->remove_from_update_bounds(this); // TODO
-		//pending_update_bounds = false;
 	}
 
 	void cNodePrivate::draw(uint _frame, bool shadow_pass)
@@ -211,14 +169,9 @@ namespace flame
 		//s_scene = entity->world->get_system_t<sScenePrivate>();
 		//s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
 
-		pnode = entity->get_parent_component_t<cNodePrivate>();
-
 		// TOOD
 		//if (octree_length > 0.f)
-		//{
-		//	update_transform();
 		//	octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
-		//}
 		//else if (!assemble_sub)
 		//{
 		//	std::function<OctNode* (cNodePrivate* n)> get_octree;
@@ -245,14 +198,8 @@ namespace flame
 		//if (octnode.second)
 		//	octnode.second->remove(this);
 
-		remove_from_bounds_list();
-		mark_drawing_dirty();
-
-		//s_scene = nullptr;
-		s_renderer = nullptr;
-
-		pnode = nullptr;
-		//octnode = { nullptr, nullptr };
+		if (entity->global_enable)
+			mark_drawing_dirty();
 	}
 
 	struct cNodeCreatePrivate : cNode::Create

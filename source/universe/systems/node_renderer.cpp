@@ -30,7 +30,8 @@ namespace flame
 				cb->set_viewport(Rect(vec2(0), sz));
 				cb->set_scissor(Rect(vec2(0), sz));
 
-				auto mat = perspective(45.f, sz.x / sz.y, 1.f, 1000.f) * lookAt(vec3(5.f), vec3(0.f), vec3(0.f, 1.f, 0.f));
+				auto mat = perspective(45.f, sz.x / sz.y, 1.f, 1000.f) * 
+					lookAt(vec3(5.f), vec3(0.f), vec3(0.f, 1.f, 0.f));
 				mat[1][1] *= -1.f;
 
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);

@@ -121,7 +121,8 @@ int main(int argc, char** args)
 			public_header_file << " : System";
 		public_header_file << "\n";
 		public_header_file << indent_str << "{\n";
-		public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n\n";
+		if (cmd == "new_component_template")
+			public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n\n";
 		public_header_file << indent_str << "\t" << "struct Create\n";
 		public_header_file << indent_str << "\t" << "{\n";
 		public_header_file << indent_str << "\t\t" << "virtual " << class_name << "Ptr operator()() = 0;\n";

@@ -98,7 +98,7 @@
 //
 //	void cMeshPrivate::on_added()
 //	{
-//		node = entity->get_component_i<cNodePrivate>(0);
+//		node = entity->get_component_i<cNodeT>(0);
 //		if (!node)
 //			return;
 //

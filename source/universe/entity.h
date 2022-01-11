@@ -72,6 +72,12 @@ namespace flame
 			return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr; 
 		}
 
+		template<typename T>
+		inline T* get_parent_component_i(uint idx) const
+		{
+			return parent ? ((Entity*)parent)->get_component_i<T>(0) : nullptr;
+		}
+
 		virtual Component* add_component(uint hash) = 0;
 		virtual void remove_component(uint hash, bool destroy = true) = 0;
 

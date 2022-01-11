@@ -82,7 +82,7 @@ namespace flame
 
 			finished_fence->wait();
 			commandbuffer->calc_executed_time();
-			printf("%lfms\n", (double)commandbuffer->last_executed_time / (double)1000000);
+			//printf("%lfms\n", (double)commandbuffer->last_executed_time / (double)1000000);
 
 			auto img_idx = swapchain->acquire_image();
 			auto curr_img = swapchain->images[img_idx].get();

@@ -8,6 +8,9 @@ namespace flame
 	struct cNode : Component
 	{
 		/// Reflect
+		bool is_static = false;
+
+		/// Reflect
 		vec3 pos = vec3(0.f);
 		/// Reflect
 		virtual void set_pos(const vec3& pos) = 0;

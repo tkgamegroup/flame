@@ -20,7 +20,7 @@ namespace flame
 				l(h);
 		}
 
-		virtual void on_visibility_changed(bool v) {}
+		virtual void on_enable_changed(bool v) {}
 		virtual void on_state_changed(StateFlags state) {}
 		virtual void on_entered_world() {}
 		virtual void on_left_world() {}

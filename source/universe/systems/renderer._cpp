@@ -252,7 +252,6 @@ namespace flame
 			element->layer_policy = 0;
 
 		element->parent_scissor = ed.scissor;
-		element->update_transform();
 		auto culled = !ed.scissor.overlapping(element->bounds);
 		if (element->culled != culled)
 		{
@@ -297,7 +296,7 @@ namespace flame
 			if (!c->global_visibility)
 				continue;
 
-			auto celement = c->get_component_i<cElementPrivate>(0);
+			auto celement = c->get_component_i<cElementT>(0);
 			if (celement)
 			{
 				children_max_layer = max(children_max_layer, element_render(layer, celement));
@@ -324,7 +323,6 @@ namespace flame
 	{
 		auto e = node->entity;
 
-		node->update_transform();
 		node->draw(frame, false);
 
 		if (node->octree)
@@ -341,7 +339,7 @@ namespace flame
 				if (!c->global_visibility)
 					continue;
 
-				auto cnode = c->get_component_i<cNodePrivate>(0);
+				auto cnode = c->get_component_i<cNodeT>(0);
 				if (cnode)
 					node_render(cnode, lod_frustums);
 			}
@@ -1373,7 +1371,7 @@ namespace flame
 		{
 			ed.should_render = true;
 			ed.max_layer = 0;
-			element_render(0, world->first_element->get_component_i<cElementPrivate>(0));
+			element_render(0, world->first_element->get_component_i<cElementT>(0));
 		}
 		else
 			ed.should_render = false;
@@ -1394,7 +1392,7 @@ namespace flame
 				frustums[i] = camera->get_frustum(-1.f, dist);
 				dist /= 2.f;
 			}
-			node_render(world->first_node->get_component_i<cNodePrivate>(0), frustums);
+			node_render(world->first_node->get_component_i<cNodeT>(0), frustums);
 		}
 		else
 			nd.should_render = false;
@@ -1559,7 +1557,6 @@ namespace flame
 			collect_occluders = [&](cNodePrivate* node, const Frustum& frustum) {
 				auto e = node->entity;
 
-				node->update_transform();
 				if (AABB_frustum_check(frustum, node->bounds))
 					node->draw(frame, true);
 
@@ -1577,7 +1574,7 @@ namespace flame
 						if (!c->global_visibility)
 							continue;
 
-						auto cnode = c->get_component_i<cNodePrivate>(0);
+						auto cnode = c->get_component_i<cNodeT>(0);
 						if (cnode)
 							collect_occluders(cnode, frustum);
 					}
@@ -1627,7 +1624,7 @@ namespace flame
 							data.mats[i] = mat;
 							data.splits[i] = f;
 
-							collect_occluders(world->first_node->get_component_i<cNodePrivate>(0), Frustum(inverse(mat)));
+							collect_occluders(world->first_node->get_component_i<cNodeT>(0), Frustum(inverse(mat)));
 							mesh_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadow, true));
 							mesh_arm_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadowArmature, true));
 						}
@@ -1678,7 +1675,7 @@ namespace flame
 							break;
 						}
 
-						collect_occluders(world->first_node->get_component_i<cNodePrivate>(0), Frustum(inverse(matrix)));
+						collect_occluders(world->first_node->get_component_i<cNodeT>(0), Frustum(inverse(matrix)));
 						mesh_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadow, true));
 						mesh_arm_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadowArmature, true));
 

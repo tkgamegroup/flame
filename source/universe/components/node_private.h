@@ -13,15 +13,11 @@ namespace flame
 		bool qut_dirty = false;
 		bool rot_dirty = false;
 
-		cNodePrivate* pnode = nullptr;
 		bool transform_dirty = true;
-		uint transform_updated_times = 0;
 		mat4 transform;
 
 		//std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
 
-		//sScenePrivate* s_scene = nullptr;
-		//bool pending_update_bounds = false;
 		sNodeRendererPrivate* s_renderer = nullptr;
 
 		cNodePrivate();
@@ -41,9 +37,7 @@ namespace flame
 		void update_transform();
 
 		void mark_transform_dirty();
-		void mark_bounds_dirty(bool child_caused);
 		void mark_drawing_dirty();
-		void remove_from_bounds_list();
 
 		void draw(uint frame, bool shadow_pass);
 
