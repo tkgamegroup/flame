@@ -20,52 +20,7 @@ namespace flame
 		mesh_reses.resize(1024);
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
-			if (!initialized)
-				return;
-
-			img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
-			auto iv = iv_tars[img_idx];
-			auto sz = vec2(iv->image->size);
-
-			auto camera = cCamera::main();
-			if (!camera)
-				return;
-
-			camera->aspect = sz.x / sz.y;
-			camera->update();
-
-			buf_scene.set_var<"proj"_h>(camera->proj_mat);
-			buf_scene.set_var<"view"_h>(camera->view_mat);
-			buf_scene.set_var<"proj_view"_h>(camera->proj_mat * camera->view_mat);
-			buf_scene.upload(cb);
-
-			buf_mesh_transforms.upload(cb);
-
-			collect_draws(world->root.get());
-			auto n_mesh_idr = buf_idr_mesh.n_offset();
-			buf_idr_mesh.upload(cb);
-
-			vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f), 
-				vec4(1.f, 0.f, 0.f, 0.f) };
-			cb->begin_renderpass(nullptr, fb_tars[img_idx].get(), cvs);
-			{
-				cb->set_viewport(Rect(vec2(0), sz));
-				cb->set_scissor(Rect(vec2(0), sz));
-
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_fwd);
-				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
-				prm_mesh_fwd.push_constant(cb);
-				prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-				prm_mesh_fwd.set_ds("mesh"_h, ds_mesh.get());
-				prm_mesh_fwd.bind_dss(cb);
-				
-				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, n_mesh_idr);
-			}
-			cb->end_renderpass();
-
-			cb->image_barrier(iv->image, iv->sub, dst_layout);
+			render(img_idx, cb);
 		});
 	}
 
@@ -336,7 +291,11 @@ namespace flame
 
 	uint sNodeRendererPrivate::add_mesh_transform(const mat4& mat, const mat3& nor)
 	{
-		return 0;
+		auto id = buf_mesh_transforms.n_offset();
+		buf_mesh_transforms.set_var<"mat"_h>(mat);
+		buf_mesh_transforms.set_var<"nor"_h>(mat4(nor));
+		buf_mesh_transforms.next_item();
+		return id;
 	}
 
 	uint sNodeRendererPrivate::add_mesh_armature(const mat4* bones, uint count)
@@ -346,7 +305,8 @@ namespace flame
 
 	void sNodeRendererPrivate::draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags)
 	{
-
+		auto& mr = mesh_reses[mesh_id];
+		buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (id << 16) + 0/* mat id */);
 	}
 
 	void sNodeRendererPrivate::collect_draws(Entity* e)
@@ -355,18 +315,60 @@ namespace flame
 			return;
 
 		if (auto node = e->get_component_i<cNodeT>(0); node)
-		{
-			auto id = buf_mesh_transforms.n_offset();
-			buf_mesh_transforms.set_var<"mat"_h>(node->transform);
-			buf_mesh_transforms.set_var<"nor"_h>(mat4(node->g_rot));
-			buf_mesh_transforms.next_item();
-
-			auto& mr = mesh_reses[0];
-			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (id << 16) + 0/* mat id */);
-		}
+			node->draw(this, false);
 
 		for (auto& c : e->children)
 			collect_draws(c.get());
+	}
+
+	void sNodeRendererPrivate::render(uint img_idx, graphics::CommandBufferPtr cb)
+	{
+		if (!initialized)
+			return;
+
+		img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
+		auto iv = iv_tars[img_idx];
+		auto sz = vec2(iv->image->size);
+
+		auto camera = cCamera::main();
+		if (!camera)
+			return;
+
+		camera->aspect = sz.x / sz.y;
+		camera->update();
+
+		buf_scene.set_var<"proj"_h>(camera->proj_mat);
+		buf_scene.set_var<"view"_h>(camera->view_mat);
+		buf_scene.set_var<"proj_view"_h>(camera->proj_mat * camera->view_mat);
+		buf_scene.upload(cb);
+
+		buf_mesh_transforms.upload(cb);
+
+		collect_draws(world->root.get());
+		auto n_mesh_idr = buf_idr_mesh.n_offset();
+		buf_idr_mesh.upload(cb);
+
+		vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f),
+			vec4(1.f, 0.f, 0.f, 0.f) };
+		cb->begin_renderpass(nullptr, fb_tars[img_idx].get(), cvs);
+		{
+			cb->set_viewport(Rect(vec2(0), sz));
+			cb->set_scissor(Rect(vec2(0), sz));
+
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_fwd);
+			prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
+			prm_mesh_fwd.push_constant(cb);
+			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
+			prm_mesh_fwd.set_ds("mesh"_h, ds_mesh.get());
+			prm_mesh_fwd.bind_dss(cb);
+
+			cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, n_mesh_idr);
+		}
+		cb->end_renderpass();
+
+		cb->image_barrier(iv->image, iv->sub, dst_layout);
 	}
 
 	void sNodeRendererPrivate::update()

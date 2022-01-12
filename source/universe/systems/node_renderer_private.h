@@ -55,6 +55,7 @@ namespace flame
 		void draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags) override;
 
 		void collect_draws(Entity* e);
+		void render(uint img_idx, graphics::CommandBufferPtr cb);
 
 		void update() override;
 	};

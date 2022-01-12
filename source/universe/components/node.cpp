@@ -155,7 +155,7 @@ namespace flame
 			renderer->dirty = true;
 	}
 
-	void cNodePrivate::draw(sNodeRendererPtr renderer, uint _frame, bool shadow_pass)
+	void cNodePrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
 	{
 		for (auto& d : drawers.list)
 			d(renderer, shadow_pass);

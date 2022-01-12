@@ -49,7 +49,7 @@ namespace flame
 		bool merge_bounds = false;
 
 		Listeners<void(sNodeRendererPtr, bool)> drawers;
-		//Listeners<bool(AABB*)> measurers;
+		Listeners<bool(AABB*)> measurers;
 
 		virtual void look_at(const vec3& t) = 0;
 		
