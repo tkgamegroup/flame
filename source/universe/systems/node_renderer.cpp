@@ -1,6 +1,7 @@
 #include "node_renderer_private.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
+#include "../components/camera_private.h"
 
 #include "../../foundation/typeinfo.h"
 #include "../../foundation/typeinfo_serialize.h"
@@ -19,9 +20,30 @@ namespace flame
 		mesh_reses.resize(1024);
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
+			if (!initialized)
+				return;
+
 			img_idx = min((int)fb_tars.size() - 1, (int)img_idx);
 			auto iv = iv_tars[img_idx];
 			auto sz = vec2(iv->image->size);
+
+			auto camera = cCamera::main();
+			if (!camera)
+				return;
+
+			camera->aspect = sz.x / sz.y;
+			camera->update();
+
+			buf_scene.set_var<"proj"_h>(camera->proj_mat);
+			buf_scene.set_var<"view"_h>(camera->view_mat);
+			buf_scene.set_var<"proj_view"_h>(camera->proj_mat * camera->view_mat);
+			buf_scene.upload(cb);
+
+			buf_mesh_transforms.upload(cb);
+
+			collect_draws(world->root.get());
+			auto n_mesh_idr = buf_idr_mesh.n_offset();
+			buf_idr_mesh.upload(cb);
 
 			vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f), 
 				vec4(1.f, 0.f, 0.f, 0.f) };
@@ -30,21 +52,20 @@ namespace flame
 				cb->set_viewport(Rect(vec2(0), sz));
 				cb->set_scissor(Rect(vec2(0), sz));
 
-				auto mat = perspective(45.f, sz.x / sz.y, 1.f, 1000.f) * 
-					lookAt(vec3(5.f), vec3(0.f), vec3(0.f, 1.f, 0.f));
-				mat[1][1] *= -1.f;
-
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_mesh_fwd);
-				//cb->push_constant_t(mat, vu_pc.var_off<"mvp"_h>());
-				//cb->push_constant_t(vec4(1.f), vu_pc.var_off<"col"_h>());
-				//auto& mr = mesh_reses[0];
-				//cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, 0);
+				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
+				prm_mesh_fwd.push_constant(cb);
+				prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
+				prm_mesh_fwd.set_ds("mesh"_h, ds_mesh.get());
+				prm_mesh_fwd.bind_dss(cb);
+				
+				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, n_mesh_idr);
 			}
 			cb->end_renderpass();
 
-			cb->image_barrier(iv->image, { iv->sub.base_level, 1, iv->sub.base_layer, 1 }, dst_layout);
+			cb->image_barrier(iv->image, iv->sub, dst_layout);
 		});
 	}
 
@@ -63,10 +84,18 @@ namespace flame
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			buf_scene.create(graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl")->get_buf_ui("Scene"));
+			auto scene_dsl = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
+			buf_scene.create(scene_dsl->get_buf_ui("Scene"));
+			ds_scene.reset(graphics::DescriptorSet::create(nullptr, scene_dsl));
+			ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
+			ds_scene->update();
 			auto mesh_dsl = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.dsl");
 			buf_mesh_transforms.create_with_array_type(mesh_dsl->get_buf_ui("Transforms"));
+			ds_mesh.reset(graphics::DescriptorSet::create(nullptr, mesh_dsl));
+			ds_mesh->set_buffer("Transforms", 0, buf_mesh_transforms.buf.get());
+			ds_mesh->update();
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
+			buf_idr_mesh.create(0U, buf_mesh_transforms.array_capacity);
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
 			set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);
@@ -320,24 +349,58 @@ namespace flame
 
 	}
 
+	void sNodeRendererPrivate::collect_draws(Entity* e)
+	{
+		if (!e->global_enable)
+			return;
+
+		if (auto node = e->get_component_i<cNodeT>(0); node)
+		{
+			auto id = buf_mesh_transforms.n_offset();
+			buf_mesh_transforms.set_var<"mat"_h>(node->transform);
+			buf_mesh_transforms.set_var<"nor"_h>(mat4(node->g_rot));
+			buf_mesh_transforms.next_item();
+
+			auto& mr = mesh_reses[0];
+			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (id << 16) + 0/* mat id */);
+		}
+
+		for (auto& c : e->children)
+			collect_draws(c.get());
+	}
+
 	void sNodeRendererPrivate::update()
 	{
-		auto n = world->root->get_component_i<cNodeT>(0);
-		n->pos;
+		if (!initialized)
+			return;
 	}
+
+	static sNodeRendererPtr _instance = nullptr;
+
+	struct sNodeRendererInstance : sNodeRenderer::Instance
+	{
+		sNodeRendererPtr operator()() override
+		{
+			return _instance;
+		}
+	}sNodeRenderer_instance_private;
+	sNodeRenderer::Instance& sNodeRenderer::instance = sNodeRenderer_instance_private;
 
 	struct sNodeRendererCreatePrivate : sNodeRenderer::Create
 	{
 		sNodeRendererPtr operator()(WorldPtr) override
 		{
+			assert(!_instance);
+
 			auto& windows = graphics::Window::get_list();
 			if (windows.empty())
 			{
-				printf("node renderer system need graphics window\n");
+				printf("node renderer system needs graphics window\n");
 				return nullptr;
 			}
 
-			return new sNodeRendererPrivate(windows[0]);
+			_instance = new sNodeRendererPrivate(windows[0]);
+			return _instance;
 		}
 	}sNodeRenderer_create_private;
 	sNodeRenderer::Create& sNodeRenderer::create = sNodeRenderer_create_private;

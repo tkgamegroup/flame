@@ -30,8 +30,11 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>	buf_scene;
+		std::unique_ptr<graphics::DescriptorSet>								ds_scene;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>		buf_mesh_transforms;
+		std::unique_ptr<graphics::DescriptorSet>								ds_mesh;
 		graphics::PipelineResourceManager<FLAME_UID>							prm_mesh_fwd;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>		buf_idr_mesh;
 
 		graphics::ImageLayout dst_layout;
 
@@ -50,6 +53,8 @@ namespace flame
 		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
 		uint add_mesh_armature(const mat4* bones, uint count) override;
 		void draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags) override;
+
+		void collect_draws(Entity* e);
 
 		void update() override;
 	};

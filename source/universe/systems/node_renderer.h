@@ -24,6 +24,12 @@ namespace flame
 		// id: transform or armature id
 		virtual void draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags = ShadingMaterial) = 0;
 
+		struct Instance
+		{
+			virtual sNodeRendererPtr operator()() = 0;
+		};
+		FLAME_UNIVERSE_EXPORTS static Instance& instance;
+
 		struct Create
 		{
 			virtual sNodeRendererPtr operator()(WorldPtr) = 0;

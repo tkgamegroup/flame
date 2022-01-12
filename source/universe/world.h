@@ -12,8 +12,6 @@ namespace flame
 		std::vector<std::unique_ptr<System>> systems;
 
 		std::unique_ptr<EntityT> root;
-		EntityPtr first_element = nullptr;
-		EntityPtr first_node = nullptr;
 
 		inline System* get_system(uint type_hash) const
 		{
@@ -34,6 +32,16 @@ namespace flame
 
 		virtual void update() = 0;
 
-		FLAME_UNIVERSE_EXPORTS static World* create();
+		struct Instance
+		{
+			virtual WorldPtr operator()() = 0;
+		};
+		FLAME_UNIVERSE_EXPORTS static Instance& instance;
+
+		struct Create
+		{
+			virtual WorldPtr operator()() = 0;
+		};
+		FLAME_UNIVERSE_EXPORTS static Create& create;
 	};
 }

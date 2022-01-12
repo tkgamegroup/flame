@@ -88,7 +88,7 @@ namespace flame
 
 			void create(uint _size, uint _array_capacity = 1)
 			{
-				size = _size;
+				size = usage == BufferUsageIndirect ? sizeof(graphics::DrawIndexedIndirectCommand) : _size;
 				array_capacity = _array_capacity;
 				buf.reset(Buffer::create(nullptr, array_capacity * size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -137,19 +137,46 @@ namespace flame
 				VirtualUdt<id>::set_var<nh>(pend, v);
 			}
 
+			inline void add_draw_indirect(uint vertex_count, uint first_vertex = 0, uint instance_count = 1, uint first_instance = 0)
+			{
+				DrawIndirectCommand c;
+				c.vertex_count = vertex_count;
+				c.instance_count = instance_count;
+				c.first_vertex = first_vertex;
+				c.first_instance = first_instance;
+				set_item(c);
+				next_item();
+			}
+
+			inline void add_draw_indexed_indirect(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
+			{
+				DrawIndexedIndirectCommand c;
+				c.index_count = index_count;
+				c.instance_count = instance_count;
+				c.first_index = first_index;
+				c.vertex_offset = vertex_offset;
+				c.first_instance = first_instance;
+				set_item(c);
+				next_item();
+			}
+
 			void upload(CommandBufferPtr cb)
 			{
+				BufferCopy cpy;
 				if (array_capacity > 1)
 				{
-					BufferCopy cpy;
 					cpy.size = pend - pbeg;
-					cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 					if (rewind)
 						pend = pbeg;
 					else
 						pbeg = pend;
-					return;
+				}
+				else
+					cpy.size = size;
+				if (cpy.size > 0)
+				{
+					cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 				}
 			}
 		};
@@ -179,6 +206,9 @@ namespace flame
 					dsl_map.emplace(sh(name.c_str()), i);
 				}
 				vu_pc.ui = pll->pc_ui;
+
+				memset(temp_dss, 0, sizeof(temp_dss));
+				memset(temp_pc, 0, sizeof(temp_pc));
 			}
 
 			inline int dsl_idx(uint nh)
@@ -207,7 +237,16 @@ namespace flame
 
 			inline void bind_dss(CommandBufferPtr cb, uint off = 0, uint count = 0xffffffff)
 			{
-				cb->bind_descriptor_sets(off, { temp_dss, min(count, (uint)dsl_map.size()) });
+				for (auto i = 0U; i < count; i++)
+				{
+					auto ii = off + i;
+					if (ii >= dsl_map.size() || ii >= _countof(temp_dss) || !temp_dss[ii])
+					{
+						count = i;
+						break;
+					}
+				}
+				cb->bind_descriptor_sets(off, { temp_dss + off, count });
 			}
 
 			template<uint nh, typename T>

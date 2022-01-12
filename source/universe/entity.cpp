@@ -196,7 +196,7 @@ namespace flame
 
 	void EntityPrivate::update_enable()
 	{
-		auto prev_visibility = global_enable;
+		auto prev_enable = global_enable;
 		if (parent)
 			global_enable = enable && parent->global_enable;
 		else
@@ -206,16 +206,19 @@ namespace flame
 			else
 				global_enable = false;
 		}
-		if (global_enable != prev_visibility)
+		if (global_enable != prev_enable)
 		{
-			for (auto& c : components)
-				c->on_enable_changed(global_enable);
-			for (auto& l : message_listeners.list)
-				l("enable_changed"_h, global_enable ? (void*)1 : nullptr, nullptr);
-		}
+			if (world)
+			{
+				for (auto& c : components)
+					global_enable ? c->on_active() : c->on_inactive();
+				for (auto& l : message_listeners.list)
+					l(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
+			}
 
-		for (auto& e : children)
-			e->update_enable();
+			for (auto& e : children)
+				e->update_enable();
+		}
 	}
 
 	void EntityPrivate::set_enable(bool v)
@@ -224,19 +227,6 @@ namespace flame
 			return;
 		enable = v;
 		update_enable();
-	}
-
-	void EntityPrivate::set_state(StateFlags s)
-	{
-		if (state == s)
-			return;
-		last_state = state;
-		state = s;
-
-		for (auto& l : message_listeners.list)
-			l("state_changed"_h, (void*)state, (void*)last_state);
-		for (auto& c : components)
-			c->on_state_changed(state);
 	}
 
 	Component* EntityPrivate::add_component(uint hash)
@@ -284,7 +274,7 @@ namespace flame
 		components.emplace_back(c);
 
 		if (world)
-			c->on_entered_world();
+			c->on_active();
 	}
 
 	void EntityPrivate::remove_component(uint hash, bool destroy)
@@ -313,7 +303,7 @@ namespace flame
 			_c->on_component_removed(c);
 
 		if (world)
-			c->on_left_world();
+			c->on_active();
 
 		if (destroy)
 			delete c;
@@ -343,10 +333,19 @@ namespace flame
 		for (auto& c : e->components)
 			c->on_entity_added();
 
-		e->backward_traversal([this](EntityPrivate* e) {
-			if (!e->world && world)
-				e->on_entered_world(world);
-		});
+		if (world)
+		{
+			e->forward_traversal([this](EntityPrivate* e) {
+				e->world = world;
+				if (e->global_enable)
+				{
+					for (auto& l : e->message_listeners.list)
+						l("active"_h, nullptr, nullptr);
+					for (auto& c : e->components)
+						c->on_active();
+				}
+			});
+		}
 
 		for (auto& l : message_listeners.list)
 			l("child_added"_h, e, nullptr);
@@ -363,10 +362,20 @@ namespace flame
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
-		e->backward_traversal([](EntityPrivate* e) {
-			if (e->world)
-				e->on_left_world();
-		});
+		if (world)
+		{
+			e->backward_traversal([](EntityPrivate* e) {
+				e->world = nullptr;
+				if (e->global_enable)
+				{
+					for (auto& c : e->components)
+						c->on_inactive();
+					for (auto& l : e->message_listeners.list)
+						l("inactive"_h, nullptr, nullptr);
+					e->global_enable = false;
+				}
+			});
+		}
 
 		for (auto& l : message_listeners.list)
 			l("child_removed"_h, e, nullptr);
@@ -406,24 +415,6 @@ namespace flame
 		children.clear();
 	}
 
-	void EntityPrivate::on_entered_world(WorldPrivate* _world)
-	{
-		world = _world;
-		for (auto& l : message_listeners.list)
-			l("entered_world"_h, nullptr, nullptr);
-		for (auto& c : components)
-			c->on_entered_world();
-	}
-
-	void EntityPrivate::on_left_world()
-	{
-		for (auto& l : message_listeners.list)
-			l("left_world"_h, nullptr, nullptr);
-		for (auto& c : components)
-			c->on_left_world();
-		world = nullptr;
-	}
-
 	EntityPtr EntityPrivate::copy()
 	{
 		auto ret = Entity::create();
@@ -431,7 +422,6 @@ namespace flame
 		ret->tag = tag;
 		ret->enable = enable;
 		ret->path = path;
-		ret->state = state;
 		for (auto& c : components)
 		{
 		//	std::string type_name = c->type_name;

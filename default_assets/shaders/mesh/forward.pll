@@ -1,5 +1,5 @@
-#include "mesh.dsl"
 #include "../scene.dsl"
+#include "mesh.dsl"
 #include "../material.dsl"
 #include "../light.dsl"
 

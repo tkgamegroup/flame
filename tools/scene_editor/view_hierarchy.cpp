@@ -91,10 +91,10 @@ void View_Hierarchy::on_draw()
 
 	_just_selected = false;
 
-	if (view_scene.e_prefab)
+	if (app.e_prefab)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.f));
-		draw_entity(view_scene.e_prefab);
+		draw_entity(app.e_prefab);
 		ImGui::PopStyleVar(1);
 	}
 

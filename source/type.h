@@ -33,15 +33,21 @@ namespace flame
 	struct type_list {};
 
 	template<typename U, typename T, typename... Args>
-	constexpr bool is_one_of(type_list<T, Args...>)
+	consteval bool is_one_of_t(type_list<T, Args...>)
 	{
-		return std::is_same_v<T, U> || is_one_of<U>(type_list<Args...>());
+		return std::is_same_v<T, U> || is_one_of_t<U>(type_list<Args...>());
 	}
 
 	template<typename U, typename T>
-	constexpr bool is_one_of(type_list<T>)
+	consteval bool is_one_of_t(type_list<T>)
 	{
 		return std::is_same_v<T, U>;
+	}
+
+	template<typename T>
+	bool is_one_of(const T& v, std::initializer_list<T> lst)
+	{
+		return std::find(std::begin(lst), std::end(lst), v) != std::end(lst);
 	}
 
 	template<class, template<typename...> class>
@@ -68,7 +74,7 @@ namespace flame
 	using basic_std_types = type_list<void, bool, char, uchar, wchar_t, short, ushort, int, uint, int64, uint64, float, std::string, std::wstring, std::filesystem::path>;
 
 	template<typename T>
-	concept basic_std_type = is_one_of<T>(basic_std_types());
+	concept basic_std_type = is_one_of_t<T>(basic_std_types());
 
 	template<typename T>
 	concept pointer_type = std::is_pointer_v<T>;

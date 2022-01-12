@@ -121,7 +121,7 @@ int main(int argc, char** args)
 			public_header_file << " : System";
 		public_header_file << "\n";
 		public_header_file << indent_str << "{\n";
-		if (cmd == "new_component_template")
+		if (cmd == "new_general_template")
 			public_header_file << indent_str << "\tvirtual ~" << class_name << "() {}\n\n";
 		public_header_file << indent_str << "\t" << "struct Create\n";
 		public_header_file << indent_str << "\t" << "{\n";
@@ -145,9 +145,12 @@ int main(int argc, char** args)
 		std::ofstream source_file(name + ".cpp");
 		source_file << "#include \"" << name << "_private.h\"\n\n";
 		if (is_internal) source_file << "namespace flame\n{\n";
-		source_file << indent_str << class_name << "Private::~" << class_name << "Private()\n";
-		source_file << indent_str << "{\n";
-		source_file << indent_str << "}\n\n";
+		if (cmd == "new_general_template")
+		{
+			source_file << indent_str << class_name << "Private::~" << class_name << "Private()\n";
+			source_file << indent_str << "{\n";
+			source_file << indent_str << "}\n\n";
+		}
 		source_file << indent_str << "struct " << class_name << "Create : " << class_name << "::Create\n";
 		source_file << indent_str << "{\n";
 		source_file << indent_str << "\t" << class_name << "Ptr operator()() override\n";

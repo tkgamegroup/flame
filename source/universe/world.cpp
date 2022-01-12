@@ -87,8 +87,25 @@ namespace flame
 			s->update();
 	}
 
-	World* World::create()
+	static WorldPtr _instance = nullptr;
+
+	struct WorldInstance : World::Instance
 	{
-		return new WorldPrivate;
-	}
+		WorldPtr operator()() override
+		{
+			return _instance;
+		}
+	}World_instance_private;
+	World::Instance& World::instance = World_instance_private;
+
+	struct WorldCreate : World::Create
+	{
+		WorldPtr operator()() override
+		{
+			assert(!_instance);
+			_instance = new WorldPrivate();
+			return _instance;
+		}
+	}World_create_private;
+	World::Create& World::create = World_create_private;
 }

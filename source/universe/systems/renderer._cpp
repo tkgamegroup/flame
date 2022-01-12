@@ -1,52 +1,12 @@
-#include "../../foundation/window.h"
-#include "../../graphics/buffer.h"
-#include "../../graphics/buffer_ext.h"
-#include "../../graphics/image.h"
-#include "../../graphics/renderpass.h"
-#include "../../graphics/shader.h"
 #include "../../graphics/font.h"
 #include "../../graphics/material.h"
-#include "../../graphics/model.h"
-#include "../../graphics/swapchain.h"
-#include "../../graphics/window.h"
-#include "../world_private.h"
 #include "../components/element_private.h"
-#include "../components/node_private.h"
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
 namespace flame
 {
 	using namespace graphics;
-
-	struct ElementVertex
-	{
-		vec2 pos;
-		vec2 uv;
-		cvec4 col;
-	};
-
-	struct MeshVertex
-	{
-		vec3 pos;
-		vec2 uv;
-		vec3 normal;
-	};
-
-	struct ArmMeshVertex : MeshVertex
-	{
-		ivec4 ids;
-		vec4 weights;
-	};
-
-	struct ParticleVertex
-	{
-		vec3 pos;
-		vec3 xext;
-		vec3 yext;
-		vec4 uv;
-		vec4 col;
-	};
 
 	struct ElementDrawCmd
 	{

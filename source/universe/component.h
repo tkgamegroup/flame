@@ -20,10 +20,8 @@ namespace flame
 				l(h);
 		}
 
-		virtual void on_enable_changed(bool v) {}
-		virtual void on_state_changed(StateFlags state) {}
-		virtual void on_entered_world() {}
-		virtual void on_left_world() {}
+		virtual void on_active() {}
+		virtual void on_inactive() {}
 		virtual void on_component_added(Component* c) {}
 		virtual void on_component_removed(Component* c) {}
 		virtual void on_entity_added() {}

@@ -24,9 +24,6 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
-		StateFlags state = StateNone;
-		StateFlags last_state = StateNone;
-
 		std::unordered_map<uint, Component*> component_map;
 		/// Reflect
 		std::vector<std::unique_ptr<Component>> components;
@@ -40,8 +37,6 @@ namespace flame
 		void* userdata = nullptr;
 
 		virtual void set_enable(bool v) = 0;
-
-		virtual void set_state(StateFlags state) = 0;
 
 		inline Component* get_component(uint type_hash) const
 		{
@@ -97,6 +92,15 @@ namespace flame
 					return res;
 			}
 			return nullptr;
+		}
+
+		inline bool compare_depth(EntityPtr e)
+		{
+			if (depth < ((Entity*)e)->depth)
+				return true;
+			if (depth > ((Entity*)e)->depth)
+				return false;
+			return index < ((Entity*)e)->index;
 		}
 
 		inline void forward_traversal(const std::function<void(EntityPtr)>& callback)

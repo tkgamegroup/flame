@@ -23,11 +23,15 @@ struct App : UniverseApplication
 {
 	std::filesystem::path project_path;
 
+	std::filesystem::path prefab_path;
+	EntityPtr e_prefab = nullptr;
+
 	bool always_update = false;
 
 	void init();
 
 	void open_project(const std::filesystem::path& path);
+	void open_prefab(const std::filesystem::path& path);
 };
 
 extern App app;

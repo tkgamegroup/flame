@@ -5,37 +5,41 @@
 
 namespace flame
 {
-	void update_transform(EntityPtr e, bool dirty)
+	void update_transform(EntityPtr e)
 	{
 		if (!e->global_enable)
 			return;
 
-		auto node = e->get_component_i<cNodeT>(0);
-
-		if (!node)
-			return;
-
-		if (!dirty && !node->transform_dirty)
-			return;
-
-		node->update_transform();
+		if (auto node = e->get_component_i<cNodeT>(0); node)
+			node->update_transform();
 
 		for (auto& c : e->children)
-			update_transform(c.get(), true);
+			update_transform(c.get());
 	}
 
 	void sScenePrivate::update()
 	{
-		if (!world->first_node)
-			return;
-		update_transform(world->first_node, false);
+		update_transform(world->root.get());
 	}
+
+	static sScenePtr _instance = nullptr;
+
+	struct sSceneInstance : sScene::Instance
+	{
+		sScenePtr operator()() override
+		{
+			return _instance;
+		}
+	}sScene_instance_private;
+	sScene::Instance& sScene::instance = sScene_instance_private;
 
 	struct sSceneCreate : sScene::Create
 	{
 		sScenePtr operator()(WorldPtr) override
 		{
-			return new sScenePrivate();
+			assert(!_instance);
+			_instance = new sScenePrivate();
+			return _instance;
 		}
 	}sScene_create_private;
 	sScene::Create& sScene::create = sScene_create_private;

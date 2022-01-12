@@ -71,12 +71,12 @@ void App::init()
 		{
 			if (ImGui::MenuItem("Create Entity"))
 			{
-				if (view_scene.e_prefab)
+				if (e_prefab)
 				{
 					static int id = 0;
 					auto e = Entity::create();
 					e->name = "Entity " + std::to_string(id++);
-					view_scene.e_prefab->add_child(e);
+					e_prefab->add_child(e);
 				}
 			}
 			if (ImGui::MenuItem("Remove Entity"))
@@ -127,7 +127,7 @@ void App::init()
 		if (ifd::FileDialog::Instance().IsDone("OpenPrefabDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
-				view_scene.open_prefab(fmt_path());
+				open_prefab(fmt_path());
 			ifd::FileDialog::Instance().Close();
 		}
 		if (ifd::FileDialog::Instance().IsDone("NewPrefabDialog"))
@@ -138,7 +138,7 @@ void App::init()
 				auto e = Entity::create();
 				e->name = "Hello";
 				e->save(path);
-				view_scene.open_prefab(path);
+				open_prefab(path);
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -146,8 +146,15 @@ void App::init()
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
-				if (view_scene.e_prefab)
-					view_scene.e_prefab->save(fmt_path());
+				if (e_prefab)
+				{
+					auto editor_node = e_prefab->find_child("[Editor]");
+					if (editor_node)
+						editor_node->parent->remove_child(editor_node, false);
+					e_prefab->save(fmt_path());
+					if (editor_node)
+						e_prefab->add_child(editor_node, 0);
+				}
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -178,6 +185,22 @@ void App::open_project(const std::filesystem::path& path)
 	}
 }
 
+void App::open_prefab(const std::filesystem::path& path)
+{
+	prefab_path = path;
+
+	if (e_prefab)
+		e_prefab->parent->remove_child(e_prefab);
+	e_prefab = Entity::create();
+	e_prefab->load(path);
+	auto editor_node = Entity::create();
+	editor_node->name = "[Editor]";
+	editor_node->add_component(th<cNode>());
+	editor_node->add_component(th<cCamera>());
+	e_prefab->add_child(editor_node, 0);
+	app.world->root->add_child(e_prefab);
+}
+
 int main(int argc, char** args)
 {
 	auto ap = parse_args(argc, args);
@@ -198,8 +221,12 @@ int main(int argc, char** args)
 	}
 	for (auto& e : settings_i.get_section_entries("project_path"))
 	{
-		if (app.project_path.empty())
-			app.open_project(e.value);
+		app.open_project(e.value);
+		break;
+	}
+	for (auto& e : settings_i.get_section_entries("opened_prefab"))
+	{
+		app.open_prefab(e.value);
 		break;
 	}
 
@@ -212,8 +239,16 @@ int main(int argc, char** args)
 		if (w->lis)
 			settings_o << w->name << "\n";
 	}
-	settings_o << "[project_path]\n";
-	settings_o << app.project_path.string() << "\n";
+	if (!app.project_path.empty())
+	{
+		settings_o << "[project_path]\n";
+		settings_o << app.project_path.string() << "\n";
+	}
+	if (app.e_prefab)
+	{
+		settings_o << "[opened_prefab]\n";
+		settings_o << app.prefab_path.string() << "\n";
+	}
 	settings_o.close();
 
 	return 0;

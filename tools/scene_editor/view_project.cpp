@@ -156,7 +156,7 @@ void View_Project::Item::draw()
 		{
 			auto ext = path.extension();
 			if (ext == L".prefab")
-				view_scene.open_prefab(path);
+				app.open_prefab(path);
 		}
 	}
 }

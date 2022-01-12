@@ -16,10 +16,6 @@ namespace flame
 		bool transform_dirty = true;
 		mat4 transform;
 
-		//std::pair<OctNode*, OctNode*> octnode = { nullptr, nullptr };
-
-		sNodeRendererPrivate* s_renderer = nullptr;
-
 		cNodePrivate();
 
 		void set_pos(const vec3& pos) override;
@@ -39,9 +35,9 @@ namespace flame
 		void mark_transform_dirty();
 		void mark_drawing_dirty();
 
-		void draw(uint frame, bool shadow_pass);
+		void draw(sNodeRendererPtr renderer, uint frame, bool shadow_pass);
 
-		void on_entered_world() override;
-		void on_left_world() override;
+		void on_active() override;
+		void on_inactive() override;
 	};
 }

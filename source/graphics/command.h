@@ -58,18 +58,18 @@ namespace flame
 		struct DrawIndirectCommand
 		{
 			uint vertex_count;
-			uint instance_count;
-			uint first_vertex;
-			uint first_instance;
+			uint instance_count = 1;
+			uint first_vertex = 0;
+			uint first_instance = 0;
 		};
 
 		struct DrawIndexedIndirectCommand
 		{
 			uint index_count;
 			uint instance_count = 1;
-			uint first_index;
-			int  vertex_offset;
-			uint first_instance;
+			uint first_index = 0;
+			int  vertex_offset = 0;
+			uint first_instance = 0;
 		};
 
 		struct CommandBuffer

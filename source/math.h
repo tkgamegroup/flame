@@ -396,6 +396,6 @@ namespace flame
 		Rect, AABB, Plane, Frustum>;
 
 	template<typename T>
-	concept basic_math_type = is_one_of<T>(basic_math_types());
+	concept basic_math_type = is_one_of_t<T>(basic_math_types());
 }
 

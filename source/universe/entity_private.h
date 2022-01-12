@@ -21,8 +21,6 @@ namespace flame
 		void update_enable();
 		void set_enable(bool v) override;
 
-		void set_state(StateFlags state) override;
-
 		Component* add_component(uint hash) override;
 		void remove_component(uint hash, bool destroy = true) override;
 
@@ -30,9 +28,6 @@ namespace flame
 		void on_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPtr e, bool destroy = true) override;
 		void remove_all_children(bool destroy = true) override;
-
-		void on_entered_world(WorldPrivate* world);
-		void on_left_world();
 
 		EntityPtr copy() override;
 		bool load(const std::filesystem::path& filename) override;

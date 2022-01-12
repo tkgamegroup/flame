@@ -1,7 +1,6 @@
 #include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
-//#include "../systems/scene_private.h" // TODO
 #include "../systems/node_renderer_private.h"
 
 namespace flame
@@ -115,6 +114,9 @@ namespace flame
 
 	void cNodePrivate::update_transform()
 	{
+		if (!transform_dirty)
+			return;
+
 		update_rot();
 
 		mat4 m;
@@ -149,26 +151,18 @@ namespace flame
 
 	void cNodePrivate::mark_drawing_dirty()
 	{
-		if (s_renderer)
-			s_renderer->dirty = true;
+		if (auto renderer = sNodeRenderer::instance(); renderer && entity->world)
+			renderer->dirty = true;
 	}
 
-	void cNodePrivate::draw(uint _frame, bool shadow_pass)
+	void cNodePrivate::draw(sNodeRendererPtr renderer, uint _frame, bool shadow_pass)
 	{
 		for (auto& d : drawers.list)
-			d(s_renderer, shadow_pass);
+			d(renderer, shadow_pass);
 	}
 
-	void cNodePrivate::on_entered_world()
+	void cNodePrivate::on_active()
 	{
-		auto world = entity->world;
-		if (!world->first_node)
-			world->first_node = entity;
-
-		// TODO
-		//s_scene = entity->world->get_system_t<sScenePrivate>();
-		//s_renderer = entity->world->get_system_t<sNodeRendererPrivate>();
-
 		// TOOD
 		//if (octree_length > 0.f)
 		//	octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
@@ -188,18 +182,9 @@ namespace flame
 		mark_transform_dirty();
 	}
 
-	void cNodePrivate::on_left_world()
+	void cNodePrivate::on_inactive()
 	{
-		auto world = entity->world;
-		if (world->first_node == entity)
-			world->first_node = nullptr;
-
-		// TODO
-		//if (octnode.second)
-		//	octnode.second->remove(this);
-
-		if (entity->global_enable)
-			mark_drawing_dirty();
+		mark_drawing_dirty();
 	}
 
 	struct cNodeCreatePrivate : cNode::Create

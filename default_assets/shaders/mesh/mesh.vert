@@ -25,8 +25,8 @@ layout(location = 1) out vec2 o_uv;
 
 void main()
 {
-	uint idx = gl_InstanceIndex >> 24;
-	o_matid = gl_InstanceIndex & 0xff;
+	uint idx = gl_InstanceIndex >> 16;
+	o_matid = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
 
 #ifdef ARMATURE
