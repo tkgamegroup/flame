@@ -4,11 +4,11 @@
 
 namespace flame
 {
-	/// Reflect
+	/// Reflect ctor
 	struct cMesh : Component
 	{
 		/// Reflect
-		std::filesystem::path model_name;
+		std::filesystem::path model_name = L"standard:cube";
 		/// Reflect
 		virtual void set_model_name(const std::filesystem::path& model_name) = 0;
 

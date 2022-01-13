@@ -286,6 +286,11 @@ namespace flame
 
 	int sNodeRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
 	{
+		for (auto i = 0; i < mesh_reses.size(); i++)
+		{
+			if (mesh_reses[i].mesh == mesh)
+				return i;
+		}
 		return -1;
 	}
 

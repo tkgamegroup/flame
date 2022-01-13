@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	/// Reflect
+	/// Reflect ctor
 	struct cCamera : Component
 	{
 		/// Reflect

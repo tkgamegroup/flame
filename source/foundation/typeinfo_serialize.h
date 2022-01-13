@@ -61,6 +61,9 @@ namespace flame
 
 	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
+		auto write_var = [&]() {
+
+		};
 		for (auto& vi : ui.variables)
 		{
 			auto p = (char*)src + vi.offset;

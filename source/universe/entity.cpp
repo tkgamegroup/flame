@@ -418,10 +418,10 @@ namespace flame
 	EntityPtr EntityPrivate::copy()
 	{
 		auto ret = Entity::create();
-		ret->name = name;
-		ret->tag = tag;
-		ret->enable = enable;
-		ret->path = path;
+		//ret->name = name;
+		//ret->tag = tag;
+		//ret->enable = enable;
+		//ret->path = path;
 		for (auto& c : components)
 		{
 		//	std::string type_name = c->type_name;
@@ -639,7 +639,11 @@ namespace flame
 
 		SerializeXmlSpec spec;
 		spec.map[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
-
+			auto comp = (Component*)src;
+			dst.append_attribute("type_hash").set_value(comp->type_hash);
+			auto ui = find_udt(comp->type_hash);
+			if (ui)
+				serialize_xml(*ui, comp, dst);
 		};
 		serialize_xml(this, file.append_child("prefab"), spec);
 

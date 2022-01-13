@@ -440,6 +440,7 @@ namespace flame
 			int var_idx = -1;
 			int getter_idx = -1;
 			int setter_idx = -1;
+			std::string default_value;
 		};
 
 		std::string name;

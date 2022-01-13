@@ -9,6 +9,30 @@
 
 namespace flame
 {
+	cMeshPrivate::cMeshPrivate(cNodePtr node) :
+		node(node)
+	{
+		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+			draw(renderer, shadow_pass);
+		});
+
+		//measurer_lis = node->measurers.add([this](AABB* ret) {
+		//	if (!mesh)
+		//		return false;
+		//	auto b = mesh->bounds;
+		//	vec3 ps[8];
+		//	b.get_points(ps);
+		//	b.reset();
+		//	auto& mat = parmature ? parmature->node->transform : node->transform;
+		//	for (auto i = 0; i < 8; i++)
+		//		b.expand(mat * vec4(ps[i], 1.f));
+		//	*ret = b;
+		//	return true;
+		//});
+
+		node->mark_drawing_dirty();
+	}
+
 	cMeshPrivate::~cMeshPrivate()
 	{
 		auto node = entity->get_component_i<cNodeT>(0);
@@ -84,8 +108,6 @@ namespace flame
 		if (mesh_index >= model->meshes.size())
 			return;
 		mesh = &model->meshes[mesh_index];
-
-		parmature = entity->get_parent_component_t<cArmatureT>();
 	}
 
 	void cMeshPrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
@@ -109,13 +131,13 @@ namespace flame
 			return;
 		}
 		auto get_idx = [&]() {
-			if (parmature)
-				//return parmature->armature_id;
-				if (frame < frames)
-				{
-					transform_id = renderer->add_mesh_transform(node->transform, node->g_rot);
-					frame = frames;
-				}
+			//if (parmature)
+			//	return parmature->armature_id;
+			if (frame < frames)
+			{
+				transform_id = renderer->add_mesh_transform(node->transform, node->g_rot);
+				frame = frames;
+			}
 			return transform_id;
 		};
 		auto idx = get_idx();
@@ -130,6 +152,8 @@ namespace flame
 
 	void cMeshPrivate::on_active()
 	{
+		parmature = entity->get_parent_component_t<cArmatureT>();
+
 		apply_src();
 		node->mark_transform_dirty();
 	}
@@ -151,28 +175,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto ret = new cMeshPrivate;
-
-			ret->drawer_lis = node->drawers.add([ret](sNodeRendererPtr renderer, bool shadow_pass) {
-				ret->draw(renderer, shadow_pass);
-			});
-			//measurer_lis = node->measurers.add([this](AABB* ret) {
-			//	if (!mesh)
-			//		return false;
-			//	auto b = mesh->bounds;
-			//	vec3 ps[8];
-			//	b.get_points(ps);
-			//	b.reset();
-			//	auto& mat = parmature ? parmature->node->transform : node->transform;
-			//	for (auto i = 0; i < 8; i++)
-			//		b.expand(mat * vec4(ps[i], 1.f));
-			//	*ret = b;
-			//	return true;
-			//});
-
-			node->mark_drawing_dirty();
-
-			return ret;
+			return new cMeshPrivate(node);
 		}
 	}cMesh_create_private;
 	cMesh::Create& cMesh::create = cMesh_create_private;

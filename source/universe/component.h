@@ -12,7 +12,10 @@ namespace flame
 
 		Listeners<void(uint)> data_listeners;
 
-		virtual ~Component() {}
+		virtual ~Component() 
+		{
+			on_inactive();
+		}
 
 		inline void data_changed(uint h)
 		{

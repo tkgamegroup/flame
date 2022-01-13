@@ -13,11 +13,13 @@ namespace flame
 		void* measurer_lis = nullptr;
 
 		int mesh_id = -1;
-		graphics::Mesh* mesh = nullptr;
+		graphics::MeshPtr mesh = nullptr;
 
+		cNodePtr node = nullptr;
 		int transform_id = -1;
 		uint frame = 0;
 
+		cMeshPrivate(cNodePtr node);
 		~cMeshPrivate();
 
 		void set_model_name(const std::filesystem::path& model_name) override;

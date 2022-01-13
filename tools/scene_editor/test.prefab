@@ -1,7 +1,12 @@
 <?xml version="1.0"?>
 <prefab name="Hello">
 	<children>
-		<item name="Entity 0" />
+		<item name="Entity 0">
+			<components>
+				<item type_hash="920714677" />
+				<item type_hash="1530691652" />
+			</components>
+		</item>
 		<item name="Entity 1" />
 		<item name="Entity 2" />
 		<item name="Entity 3" />
