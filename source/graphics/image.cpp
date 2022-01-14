@@ -790,7 +790,7 @@ namespace flame
 					tile.index = ret->tiles.size();
 					auto sp = SUS::split(e.value);
 					tile.name = sp[0];
-					auto v = sto<4, uint>(sp[1]);
+					auto v = s2t<4, uint>(sp[1]);
 					tile.pos = ivec2(v.x, v.y);
 					tile.size = ivec2(v.z, v.w);
 					tile.uv.x = tile.pos.x / size.x;

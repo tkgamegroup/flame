@@ -69,7 +69,7 @@ int main(int argc, char **args)
 	output_path.replace_extension(L".atlas");
 	std::ofstream file(output_path);
 	for (auto& t : tiles)
-		file << t.id + " " + to_string(uvec4(uvec2(t.pos) + 1U, t.size)) + "\n";
+		file << t.id + " " + str(uvec4(uvec2(t.pos) + 1U, t.size)) + "\n";
 	file.close();
 
 	return 0;

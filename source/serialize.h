@@ -12,8 +12,8 @@
 
 namespace flame
 {
-	template <std::floating_point T>
-	std::string to_string(T v)
+	template<std::floating_point T>
+	std::string str(T v)
 	{
 		std::ostringstream ss;
 		ss.precision(6);
@@ -21,27 +21,27 @@ namespace flame
 		return ss.str();
 	}
 
-	template <class T>
-	std::string to_string(T v)
+	template<typename T>
+	std::string str(T v)
 	{
 		return std::to_string(v);
 	}
 
-	template <uint N, class T>
-	std::string to_string(const vec<N, T>& v)
+	template<uint N, class T>
+	std::string str(const vec<N, T>& v)
 	{
 		std::string ret;
-		ret += to_string(v[0]);
+		ret += str(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
 			ret += ",";
-			ret += to_string(v[i]);
+			ret += str(v[i]);
 		}
 		return ret;
 	}
 
-	template <uint C, uint R, class T>
-	std::string to_string(const mat<C, R, T>& v)
+	template<uint C, uint R, class T>
+	std::string str(const mat<C, R, T>& v)
 	{
 		std::string ret;
 		for (auto i = 0; i < C; i++)
@@ -50,14 +50,14 @@ namespace flame
 			{
 				if (i > 0 || j > 0)
 					ret += ",";
-				ret += to_string(v[i][j]);
+				ret += str(v[i][j]);
 			}
 		}
 		return ret;
 	}
 
-	template <std::integral T>
-	inline std::string to_hex_string(T v, bool zero_fill = true)
+	template<std::integral T>
+	inline std::string str_hex(T v, bool zero_fill = true)
 	{
 		std::ostringstream ss;
 		if (zero_fill)
@@ -67,8 +67,8 @@ namespace flame
 	}
 
 
-	template <std::floating_point T>
-	std::wstring to_wstring(T v)
+	template<std::floating_point T>
+	std::wstring wstr(T v)
 	{
 		std::wostringstream ss;
 		ss.precision(6);
@@ -76,27 +76,27 @@ namespace flame
 		return ss.str();
 	}
 
-	template <class T>
-	std::wstring to_wstring(T v)
+	template<typename T>
+	std::wstring wstr(T v)
 	{
 		return std::to_wstring(v);
 	}
 
-	template <uint N, class T>
-	std::wstring to_wstring(const vec<N, T>& v)
+	template<uint N, class T>
+	std::wstring wstr(const vec<N, T>& v)
 	{
 		std::wstring ret;
-		ret += to_wstring(v[0]);
+		ret += wstr(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
 			ret += L",";
-			ret += to_wstring(v[i]);
+			ret += wstr(v[i]);
 		}
 		return ret;
 	}
 
-	template <std::integral T>
-	inline std::wstring to_hex_wstring(T v, bool zero_fill = true)
+	template<std::integral T>
+	inline std::wstring wstr_hex(T v, bool zero_fill = true)
 	{
 		std::wostringstream ss;
 		if (zero_fill)
@@ -105,8 +105,8 @@ namespace flame
 		return ss.str();
 	}
 
-	template <class CH>
-	inline uint64 from_hex_string(const std::basic_string<CH>& str)
+	template<class CH>
+	inline uint64 s2u64_hex(const std::basic_string<CH>& str)
 	{
 		uint64 ret;
 		std::basic_stringstream<CH> ss;
@@ -115,8 +115,8 @@ namespace flame
 		return ret;
 	}
 
-	template <int_type T, class CH>
-	inline T sto(const std::basic_string<CH>& s)
+	template<int_type T, class CH>
+	inline T s2t(const std::basic_string<CH>& s)
 	{
 		T ret;
 		try { ret = std::stoi(s); }
@@ -124,14 +124,14 @@ namespace flame
 		return ret;
 	}
 
-	template <int_type T, class CH>
-	inline T sto(const CH* s)
+	template<int_type T, class CH>
+	inline T s2t(const CH* s)
 	{
-		return sto<T, CH>(std::basic_string<CH>(s));
+		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <uint_type T, class CH>
-	inline T sto(const std::basic_string<CH>& s)
+	template<uint_type T, class CH>
+	inline T s2t(const std::basic_string<CH>& s)
 	{
 		T ret;
 		try { ret = std::stoul(s); }
@@ -139,14 +139,14 @@ namespace flame
 		return ret;
 	}
 
-	template <uint_type T, class CH>
-	inline T sto(const CH* s)
+	template<uint_type T, class CH>
+	inline T s2t(const CH* s)
 	{
-		return sto<T, CH>(std::basic_string<CH>(s));
+		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <int64_type T, class CH>
-	inline T sto(const std::basic_string<CH>& s)
+	template<int64_type T, class CH>
+	inline T s2t(const std::basic_string<CH>& s)
 	{
 		T ret;
 		try { ret = std::stoll(s); }
@@ -154,14 +154,14 @@ namespace flame
 		return ret;
 	}
 
-	template <int64_type T, class CH>
-	inline T sto(const CH* s)
+	template<int64_type T, class CH>
+	inline T s2t(const CH* s)
 	{
-		return sto<T, CH>(std::basic_string<CH>(s));
+		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <uint64_type T, class CH>
-	inline T sto(const std::basic_string<CH>& s)
+	template<uint64_type T, class CH>
+	inline T s2t(const std::basic_string<CH>& s)
 	{
 		T ret;
 		try { ret = std::stoull(s); }
@@ -169,14 +169,14 @@ namespace flame
 		return ret;
 	}
 
-	template <uint64_type T, class CH>
-	inline T sto(const CH* s)
+	template<uint64_type T, class CH>
+	inline T s2t(const CH* s)
 	{
-		return sto<T, CH>(std::basic_string<CH>(s));
+		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <std::floating_point T, class CH>
-	inline T sto(const std::basic_string<CH>& s)
+	template<std::floating_point T, class CH>
+	inline T s2t(const std::basic_string<CH>& s)
 	{
 		T ret;
 		try { ret = std::stof(s); }
@@ -184,14 +184,14 @@ namespace flame
 		return ret;
 	}
 
-	template <std::floating_point T, class CH>
-	inline T sto(const CH* s)
+	template<std::floating_point T, class CH>
+	inline T s2t(const CH* s)
 	{
-		return sto<T, CH>(std::basic_string<CH>(s));
+		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <uint N, class T, class CH>
-	inline vec<N, T> sto(const std::basic_string<CH>& s)
+	template<uint N, class T, class CH>
+	inline vec<N, T> s2t(const std::basic_string<CH>& s)
 	{
 		vec<N, T> ret;
 		std::basic_istringstream ss(s);
@@ -199,13 +199,13 @@ namespace flame
 		for (auto i = 0; i < N; i++)
 		{
 			std::getline(ss, token, ',');
-			ret[i] = sto<T, CH>(token);
+			ret[i] = s2t<T, CH>(token);
 		}
 		return ret;
 	}
 
-	template <uint C, uint R, class T, class CH>
-	inline mat<C, R, T> sto(const std::basic_string<CH>& s)
+	template<uint C, uint R, class T, class CH>
+	inline mat<C, R, T> s2t(const std::basic_string<CH>& s)
 	{
 		mat<C, R, T> ret;
 		std::basic_istringstream ss(s);
@@ -215,19 +215,19 @@ namespace flame
 			for (auto j = 0; j < R; j++)
 			{
 				std::getline(ss, token, ',');
-				ret[i][j] = sto<T, CH>(token);
+				ret[i][j] = s2t<T, CH>(token);
 			}
 		}
 		return ret;
 	}
 
-	template <uint C, uint R, class T, class CH>
-	inline mat<C, R, T> sto(const CH* s)
+	template<uint C, uint R, class T, class CH>
+	inline mat<C, R, T> s2t(const CH* s)
 	{
-		return sto<C, R, T, CH>(std::basic_string<CH>(s));
+		return s2t<C, R, T, CH>(std::basic_string<CH>(s));
 	}
 
-	template <class CH>
+	template<class CH>
 	struct StrUtils
 	{
 		static uint indent_length(const std::basic_string<CH>& s)
@@ -529,13 +529,13 @@ namespace flame
 		fn = str;
 	}
 
-	template <class T>
+	template<typename T>
 	void read_t(std::ifstream& f, T& v)
 	{
 		f.read((char*)&v, sizeof(T));
 	}
 
-	template <class T>
+	template<typename T>
 	void read_v(std::ifstream& f, std::vector<T>& v)
 	{
 		v.resize(read_u(f));
@@ -564,13 +564,13 @@ namespace flame
 		f.write(v.data(), v.size());
 	}
 
-	template <class T>
+	template<typename T>
 	void write_t(std::ofstream& f, const T& v)
 	{
 		f.write((char*)&v, sizeof(T));
 	}
 
-	template <class T>
+	template<typename T>
 	void write_v(std::ofstream& f, const std::vector<T>& v)
 	{
 		write_u(f, v.size());

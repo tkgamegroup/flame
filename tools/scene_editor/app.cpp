@@ -75,7 +75,7 @@ void App::init()
 				{
 					static int id = 0;
 					auto e = Entity::create();
-					e->name = "Entity " + std::to_string(id++);
+					e->name = "Entity " + str(id++);
 					e_prefab->add_child(e);
 				}
 			}

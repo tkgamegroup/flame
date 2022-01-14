@@ -154,7 +154,7 @@ int entry(int argc, char** args)
 	drops.resize(3000);
 
 	pl = GraphicsPipeline::create(app.graphics_device, pl_str, 
-		{ "rp=0x" + to_string((uint64)app.main_window->renderpass_clear) });
+		{ "rp=0x" + str((uint64)app.main_window->renderpass_clear) });
 	vtx_buf.create(pl->vi_ui(), drops.size() * 6);
 
 	app.run();

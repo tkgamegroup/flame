@@ -31,7 +31,7 @@ namespace flame
 				auto ret = new MaterialPrivate;
 				ret->filename = filename;
 				if (auto n = n_material.attribute("color"); n)
-					ret->color = sto<4, float>(std::string(n.value()));
+					ret->color = s2t<4, float>(std::string(n.value()));
 				if (auto n = n_material.attribute("metallic"); n)
 					ret->metallic = n.as_float();
 				if (auto n = n_material.attribute("roughness"); n)

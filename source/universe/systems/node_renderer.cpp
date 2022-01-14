@@ -35,7 +35,7 @@ namespace flame
 				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
 				  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=0x" + to_string((uint64)rp_fwd) });
+				{ "rp=0x" + str((uint64)rp_fwd) });
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);

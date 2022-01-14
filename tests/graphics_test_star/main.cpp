@@ -158,7 +158,7 @@ int entry(int argc, char** args)
 	for (auto& s : stars)
 		s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=0x" + to_string((uint64)app.main_window->renderpass_clear) });
+	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=0x" + str((uint64)app.main_window->renderpass_clear) });
 	vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();

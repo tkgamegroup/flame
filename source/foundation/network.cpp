@@ -658,7 +658,7 @@ namespace flame
 									if (frame == s->frame)
 									{
 										s->semaphore++;
-										auto dst = s->frame_data[std::to_string(i)];
+										auto dst = s->frame_data[str(i)];
 										for (auto& i : req["data"].items())
 											dst[i.key()] = i.value();
 

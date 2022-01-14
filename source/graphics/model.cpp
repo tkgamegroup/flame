@@ -81,7 +81,7 @@ namespace flame
 						n_texture.append_attribute("filename").set_value(name.c_str());
 						pipeline_defines += "ALPHA_TEST ";
 						pipeline_defines += sfmt("ALPHA_MAP=%d ", map_id++);
-						n_material.append_attribute("alpha_test").set_value(to_string(0.5f).c_str());
+						n_material.append_attribute("alpha_test").set_value(str(0.5f).c_str());
 					}
 				}
 
@@ -90,7 +90,7 @@ namespace flame
 
 				auto material_name = std::string(ai_mat->GetName().C_Str());
 				if (material_name.empty())
-					material_name = std::to_string(i);
+					material_name = str(i);
 				else
 				{
 					for (auto& sh : material_name)
@@ -165,7 +165,7 @@ namespace flame
 					auto& p = ai_mesh->mVertices[j]; 
 					bounds.expand(vec3(p.x, p.y, p.z));
 				}
-				n_mesh.append_attribute("bounds").set_value(to_string((mat2x3&)bounds).c_str());
+				n_mesh.append_attribute("bounds").set_value(str((mat2x3&)bounds).c_str());
 
 				std::vector<ivec4> bone_ids;
 				std::vector<vec4> bone_weights;
@@ -304,13 +304,13 @@ namespace flame
 
 					auto pos = vec3(p.x, p.y, p.z);
 					if (pos != vec3(0.f))
-						n.append_attribute("pos").set_value(to_string(pos).c_str());
+						n.append_attribute("pos").set_value(str(pos).c_str());
 					auto qut = vec4(q.w, q.x, q.y, q.z);
 					if (qut != vec4(1.f, 0.f, 0.f, 0.f))
-						n.append_attribute("quat").set_value(to_string(qut).c_str());
+						n.append_attribute("quat").set_value(str(qut).c_str());
 					auto scl = vec3(s.x, s.y, s.z);
 					if (scl != vec3(1.f))
-						n.append_attribute("scale").set_value(to_string(scl).c_str());
+						n.append_attribute("scale").set_value(str(scl).c_str());
 				}
 
 				if (src == scene->mRootNode)
@@ -556,7 +556,7 @@ namespace flame
 						model_data_file.read((char*)m.indices.data(), size);
 					}
 
-					m.bounds = (AABB&)sto<2, 3, float>(n_mesh.attribute("bounds").value());
+					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
 				}
 
 				for (auto n_bone : doc_root.child("bones"))

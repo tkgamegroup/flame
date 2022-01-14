@@ -344,7 +344,7 @@ namespace flame
 			else
 			{
 				auto set = 0;
-				temp << "#define SET " << std::to_string(set++) << std::endl;
+				temp << "#define SET " << str(set++) << std::endl;
 				for (auto& l : src_lines)
 				{
 					if (SUS::strip_head_tail_if(l, "#include \"", ".pll\""))
@@ -358,7 +358,7 @@ namespace flame
 							if (SUS::match_head_tail(l, "#include \"", ".dsl\""))
 							{
 								temp << "#undef SET" << std::endl;
-								temp << "#define SET " << std::to_string(set++) << std::endl;
+								temp << "#define SET " << str(set++) << std::endl;
 							}
 						}
 					}
@@ -446,7 +446,7 @@ namespace flame
 				dst << "spv:" << std::endl;
 				for (auto i = 0; i < spv_array.size(); i++)
 				{
-					dst << to_hex_string(spv_array[i]) << " ";
+					dst << str_hex(spv_array[i]) << " ";
 					if (i % 10 == 9)
 						dst << std::endl;
 				}
@@ -497,8 +497,8 @@ namespace flame
 				auto hash = 0U;
 				for (auto& d : defines)
 					hash = hash ^ std::hash<std::string>()(d);
-				auto str_hash = to_hex_wstring(hash);
-				ret += L"." + to_hex_wstring(hash);
+				auto str_hash = wstr_hex(hash);
+				ret += L"." + wstr_hex(hash);
 			}
 			ret += L".res";
 			return ret;
@@ -1014,7 +1014,7 @@ namespace flame
 			for (auto& l : res.lines)
 			{
 				for (auto& b : SUS::split(l))
-					spv.push_back(from_hex_string(b));
+					spv.push_back(s2u64_hex(b));
 			}
 			res.read_block("typeinfo:", "");
 			db.load(file);
@@ -1196,7 +1196,7 @@ namespace flame
 			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)sto<uint64>(value.substr(2));
+					return (void*)s2t<uint64>(value.substr(2));
 				if (value.starts_with("@"))
 				{
 					layout_segment = value;
@@ -1262,7 +1262,7 @@ namespace flame
 			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)sto<uint64>(value.substr(2));
+					return (void*)s2t<uint64>(value.substr(2));
 				if (!value.empty())
 				{
 					auto defines = renderpass_defines;
@@ -1303,7 +1303,7 @@ namespace flame
 			if (!layout_segment.empty())
 			{
 				info.layout = PipelineLayout::create(device, layout_segment,
-					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + std::to_wstring(create_id), filename);
+					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + wstr(create_id), filename);
 			}
 			for (auto& s : shader_segments)
 			{
@@ -1315,7 +1315,7 @@ namespace flame
 				}
 				std::sort(defines.begin(), defines.end());
 				info.shaders.push_back(Shader::create(device, s.first, s.second, defines,
-					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + L".res") : L"#" + std::to_wstring(create_id), filename));
+					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + L".res") : L"#" + wstr(create_id), filename));
 			}
 
 			if (info.vertex_buffers.empty())

@@ -307,13 +307,13 @@ namespace flame
 				switch (i.first)
 				{
 				case "Location"_h:
-					ret += "Location=" + std::to_string(i.second.i);
+					ret += "Location=" + str(i.second.i);
 					break;
 				case "MinValue"_h:
-					ret += "MinValue=" + std::to_string(i.second.f);
+					ret += "MinValue=" + str(i.second.f);
 					break;
 				case "MaxValue"_h:
-					ret += "MaxValue=" + std::to_string(i.second.f);
+					ret += "MaxValue=" + str(i.second.f);
 					break;
 				}
 			}
@@ -436,7 +436,7 @@ namespace flame
 		struct Attribute
 		{
 			std::string name;
-			TypeInfo* type;
+			TypeInfo* type = nullptr;
 			int var_idx = -1;
 			int getter_idx = -1;
 			int setter_idx = -1;
@@ -679,7 +679,7 @@ namespace flame
 			else if (str == "true")
 				*(bool*)dst = true;
 			else
-				*(bool*)dst = sto<int>(str) != 0;
+				*(bool*)dst = s2t<int>(str) != 0;
 		}
 	};
 
@@ -693,11 +693,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(char*)p);
+			return str(*(char*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(char*)dst = sto<char>(str);
+			*(char*)dst = s2t<char>(str);
 		}
 	};
 
@@ -712,11 +712,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uchar*)p);
+			return str(*(uchar*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uchar*)dst = sto<uchar>(str);
+			*(uchar*)dst = s2t<uchar>(str);
 		}
 	};
 
@@ -730,11 +730,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(int*)p);
+			return str(*(int*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(int*)dst = sto<int>(str);
+			*(int*)dst = s2t<int>(str);
 		}
 	};
 
@@ -749,11 +749,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uint*)p);
+			return str(*(uint*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uint*)dst = sto<uint>(str);
+			*(uint*)dst = s2t<uint>(str);
 		}
 	};
 
@@ -767,11 +767,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(short*)p);
+			return str(*(short*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(short*)dst = sto<short>(str);
+			*(short*)dst = s2t<short>(str);
 		}
 	};
 
@@ -786,11 +786,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(ushort*)p);
+			return str(*(ushort*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ushort*)dst = sto<ushort>(str);
+			*(ushort*)dst = s2t<ushort>(str);
 		}
 	};
 
@@ -804,11 +804,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(int64*)p);
+			return str(*(int64*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(int64*)dst = sto<int64>(str);
+			*(int64*)dst = s2t<int64>(str);
 		}
 	};
 
@@ -823,11 +823,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uint64*)p);
+			return str(*(uint64*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uint64*)dst = sto<uint64>(str);
+			*(uint64*)dst = s2t<uint64>(str);
 		}
 	};
 
@@ -841,11 +841,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(float*)p);
+			return str(*(float*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(float*)dst = sto<float>(str);
+			*(float*)dst = s2t<float>(str);
 		}
 	};
 
@@ -860,11 +860,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(ivec2*)p);
+			return str(*(ivec2*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec2*)dst = sto<2, int>(str);
+			*(ivec2*)dst = s2t<2, int>(str);
 		}
 	};
 
@@ -879,11 +879,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(ivec3*)p);
+			return str(*(ivec3*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec3*)dst = sto<3, int>(str);
+			*(ivec3*)dst = s2t<3, int>(str);
 		}
 	};
 
@@ -898,11 +898,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(ivec4*)p);
+			return str(*(ivec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(ivec4*)dst = sto<4, int>(str);
+			*(ivec4*)dst = s2t<4, int>(str);
 		}
 	};
 
@@ -918,11 +918,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uvec2*)p);
+			return str(*(uvec2*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec2*)dst = sto<2, uint>(str);
+			*(uvec2*)dst = s2t<2, uint>(str);
 		}
 	};
 
@@ -938,11 +938,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uvec3*)p);
+			return str(*(uvec3*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec3*)dst = sto<3, uint>(str);
+			*(uvec3*)dst = s2t<3, uint>(str);
 		}
 	};
 
@@ -958,11 +958,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(uvec4*)p);
+			return str(*(uvec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(uvec4*)dst = sto<4, uint>(str);
+			*(uvec4*)dst = s2t<4, uint>(str);
 		}
 	};
 
@@ -978,11 +978,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(cvec2*)p);
+			return str(*(cvec2*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec2*)dst = sto<2, uchar>(str);
+			*(cvec2*)dst = s2t<2, uchar>(str);
 		}
 	};
 
@@ -998,11 +998,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(cvec3*)p);
+			return str(*(cvec3*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec3*)dst = sto<3, uchar>(str);
+			*(cvec3*)dst = s2t<3, uchar>(str);
 		}
 	};
 
@@ -1018,11 +1018,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(cvec4*)p);
+			return str(*(cvec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(cvec4*)dst = sto<4, uchar>(str);
+			*(cvec4*)dst = s2t<4, uchar>(str);
 		}
 	};
 
@@ -1037,11 +1037,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec2*)p);
+			return str(*(vec2*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec2*)dst = sto<2, float>(str);
+			*(vec2*)dst = s2t<2, float>(str);
 		}
 	};
 
@@ -1056,11 +1056,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec3*)p);
+			return str(*(vec3*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec3*)dst = sto<3, float>(str);
+			*(vec3*)dst = s2t<3, float>(str);
 		}
 	};
 
@@ -1075,11 +1075,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec4*)p);
+			return str(*(vec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(str);
+			*(vec4*)dst = s2t<4, float>(str);
 		}
 	};
 
@@ -1125,11 +1125,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec4*)p);
+			return str(*(vec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(str).yzwx();
+			*(vec4*)dst = s2t<4, float>(str).yzwx();
 		}
 	};
 
@@ -1256,11 +1256,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec4*)p);
+			return str(*(vec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(str);
+			*(vec4*)dst = s2t<4, float>(str);
 		}
 	};
 
@@ -1276,11 +1276,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(mat2x3*)p);
+			return str(*(mat2x3*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(mat2x3*)dst = sto<2, 3, float>(str);
+			*(mat2x3*)dst = s2t<2, 3, float>(str);
 		}
 	};
 
@@ -1295,11 +1295,11 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return to_string(*(vec4*)p);
+			return str(*(vec4*)p);
 		}
 		void unserialize(const std::string& str, void* dst) const override
 		{
-			*(vec4*)dst = sto<4, float>(str);
+			*(vec4*)dst = s2t<4, float>(str);
 		}
 	};
 

@@ -154,7 +154,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		return ret;
 	}
 	default:
-		return TypeInfo::get(TagD, "__unsupported__symtag_" + std::to_string(dw));
+		return TypeInfo::get(TagD, "__unsupported__symtag_" + str(dw));
 	}
 }
 

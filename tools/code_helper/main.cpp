@@ -19,7 +19,7 @@ int main(int argc, char** args)
 	auto name2 = ap.get_item("-name2");
 	auto type = ap.get_item("-type");
 	auto value = ap.get_item("-value");
-	auto line = sto<int>(ap.get_item("-line"));
+	auto line = s2t<int>(ap.get_item("-line"));
 
 	auto flame_path = std::filesystem::path(getenv("FLAME_PATH"));
 	flame_path.make_preferred();
