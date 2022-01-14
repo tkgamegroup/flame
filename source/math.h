@@ -375,10 +375,10 @@ namespace flame
 		{
 			screen_sz = sz;
 			aspect = screen_sz.x / screen_sz.y;
-			fovy = fov;
+			fovy = radians(fov);
 			zNear = n;
 			zFar = f;
-			tanfovy = tan(radians(fovy));
+			tanfovy = tan(fovy);
 
 			matp = perspective(fovy, aspect, zNear, zFar);
 		}

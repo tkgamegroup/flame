@@ -27,7 +27,7 @@ namespace flame
 		virtual void set_eul(const vec3& eul) = 0;
 		inline void add_eul(const vec3& e)
 		{
-			set_eul(eul + e);
+			set_eul(get_eul() + e);
 		}
 
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
