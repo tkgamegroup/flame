@@ -6,19 +6,11 @@
 //{
 //	struct cArmature : Component
 //	{
-//		inline static auto type_name = "flame::cArmature";
-//		inline static auto type_hash = sh(type_name);
-//
 //		std::filesystem::path model_path;
 //		std::wstring animation_paths;
 //
 //		int animation_id = -1;
 //		int frame = -1;
-//
-//		cArmature() :
-//			Component(type_name, type_hash)
-//		{
-//		}
 //
 //		virtual void set_model_path(const std::filesystem::path& path) = 0;
 //		virtual void set_animation_paths(const std::wstring& paths) = 0;

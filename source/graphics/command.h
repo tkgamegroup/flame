@@ -98,7 +98,7 @@ namespace flame
 			virtual void bind_vertex_buffer(BufferPtr buf, uint id) = 0;
 			virtual void bind_index_buffer(BufferPtr buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;
-			template <class T> inline void push_constant_t(const T& data, uint offset = 0)
+			template<typename T> inline void push_constant_t(const T& data, uint offset = 0)
 			{
 				push_constant(offset, sizeof(T), &data);
 			}

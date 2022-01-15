@@ -27,7 +27,7 @@ namespace flame
 		return std::to_string(v);
 	}
 
-	template<uint N, class T>
+	template<uint N, typename T>
 	std::string str(const vec<N, T>& v)
 	{
 		std::string ret;
@@ -40,7 +40,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint C, uint R, class T>
+	template<uint C, uint R, typename T>
 	std::string str(const mat<C, R, T>& v)
 	{
 		std::string ret;
@@ -82,7 +82,7 @@ namespace flame
 		return std::to_wstring(v);
 	}
 
-	template<uint N, class T>
+	template<uint N, typename T>
 	std::wstring wstr(const vec<N, T>& v)
 	{
 		std::wstring ret;
@@ -190,7 +190,7 @@ namespace flame
 		return s2t<T, CH>(std::basic_string<CH>(s));
 	}
 
-	template<uint N, class T, class CH>
+	template<uint N, typename T, class CH>
 	inline vec<N, T> s2t(const std::basic_string<CH>& s)
 	{
 		vec<N, T> ret;
@@ -204,7 +204,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint C, uint R, class T, class CH>
+	template<uint C, uint R, typename T, class CH>
 	inline mat<C, R, T> s2t(const std::basic_string<CH>& s)
 	{
 		mat<C, R, T> ret;
@@ -221,7 +221,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint C, uint R, class T, class CH>
+	template<uint C, uint R, typename T, class CH>
 	inline mat<C, R, T> s2t(const CH* s)
 	{
 		return s2t<C, R, T, CH>(std::basic_string<CH>(s));

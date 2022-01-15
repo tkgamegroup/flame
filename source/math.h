@@ -30,13 +30,13 @@ namespace flame
 		return v * v;
 	}
 
-	template <class T, class ...Args>
+	template<typename T, typename ...Args>
 	T minN(T a, T b, Args... args)
 	{
 		return minN(min(a, b), args...);
 	}
 
-	template <class T, class ...Args>
+	template<typename T, typename ...Args>
 	T maxN(T a, T b, Args... rest)
 	{
 		return maxN(max(a, b), rest...);

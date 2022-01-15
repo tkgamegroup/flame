@@ -38,7 +38,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cText);
 	FLAME_UNIVERSE_TYPE(cImage);
 	FLAME_UNIVERSE_TYPE(cReceiver);
-	FLAME_UNIVERSE_TYPE(cWindow);
 	FLAME_UNIVERSE_TYPE(cNode);
 	FLAME_UNIVERSE_TYPE(cMesh);
 	FLAME_UNIVERSE_TYPE(cArmature);
@@ -48,14 +47,14 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cCharacterController);
 	FLAME_UNIVERSE_TYPE(cLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
-	FLAME_UNIVERSE_TYPE(cImgui);
 
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sElementRenderer);
 	FLAME_UNIVERSE_TYPE(sNodeRenderer);
 	FLAME_UNIVERSE_TYPE(sDispatcher);
 	FLAME_UNIVERSE_TYPE(sPhysics);
-	FLAME_UNIVERSE_TYPE(sImgui);
+
+	struct OctNode;
 
 	enum StateFlags
 	{

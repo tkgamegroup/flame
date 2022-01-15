@@ -9,26 +9,26 @@
 
 namespace flame
 {
-	cMeshPrivate::cMeshPrivate(cNodePtr node) :
-		node(node)
+	cMeshPrivate::cMeshPrivate(cNodePtr _node) :
+		node(_node)
 	{
 		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
 			draw(renderer, shadow_pass);
 		});
 
-		//measurer_lis = node->measurers.add([this](AABB* ret) {
-		//	if (!mesh)
-		//		return false;
-		//	auto b = mesh->bounds;
-		//	vec3 ps[8];
-		//	b.get_points(ps);
-		//	b.reset();
-		//	auto& mat = parmature ? parmature->node->transform : node->transform;
-		//	for (auto i = 0; i < 8; i++)
-		//		b.expand(mat * vec4(ps[i], 1.f));
-		//	*ret = b;
-		//	return true;
-		//});
+		measurer_lis = node->measurers.add([this](AABB* ret) {
+			if (!mesh)
+				return false;
+			AABB b;
+			b.reset();
+			vec3 ps[8];
+			mesh->bounds.get_points(ps);
+			auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
+			for (auto i = 0; i < 8; i++)
+				b.expand(mat * vec4(ps[i], 1.f));
+			*ret = b;
+			return true;
+		});
 
 		node->mark_drawing_dirty();
 	}

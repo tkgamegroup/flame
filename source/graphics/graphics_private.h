@@ -19,7 +19,7 @@ namespace flame
 			}
 		}
 
-		template <class T>
+		template<typename T>
 		VkFlags to_backend_flags(uint);
 
 		inline VkFormat to_backend(Format f)
@@ -169,7 +169,7 @@ namespace flame
 			}
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<MemoryPropertyFlags>(uint p)
 		{
 			VkMemoryPropertyFlags ret = 0;
@@ -220,7 +220,7 @@ namespace flame
 			}
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<ShaderStageFlags>(uint t)
 		{
 			VkShaderStageFlags ret = 0;
@@ -267,7 +267,7 @@ namespace flame
 			}
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<BufferUsageFlags>(uint u)
 		{
 			VkBufferUsageFlags ret = 0;
@@ -338,7 +338,7 @@ namespace flame
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<ImageAspectFlags>(uint a)
 		{
 			VkImageAspectFlags ret = 0;
@@ -396,7 +396,7 @@ namespace flame
 			}
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<AccessFlags>(uint a)
 		{
 			VkAccessFlags ret = 0;
@@ -437,7 +437,7 @@ namespace flame
 			return ret;
 		}
 
-		template <>
+		template<>
 		inline VkFlags to_backend_flags<PipelineStageFlags>(uint s)
 		{
 			VkPipelineStageFlags ret = 0;

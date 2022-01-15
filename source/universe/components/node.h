@@ -46,7 +46,7 @@ namespace flame
 		vec3 g_scl;
 		AABB bounds;
 
-		bool merge_bounds = false;
+		OctNode* octnode = nullptr;
 
 		Listeners<void(sNodeRendererPtr, bool)> drawers;
 		Listeners<bool(AABB*)> measurers;
