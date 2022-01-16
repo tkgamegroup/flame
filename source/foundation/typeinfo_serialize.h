@@ -61,39 +61,36 @@ namespace flame
 
 	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
-		auto write_var = [&]() {
-
-		};
-		for (auto& vi : ui.variables)
-		{
-			auto p = (char*)src + vi.offset;
-			switch (vi.type->tag)
+		auto write_var = [&](uint offset, TypeInfo* type, const std::string& name, const std::string& default_value, int getter_idx) {
+			switch (type->tag)
 			{
 			case TagE:
 			case TagD:
 			{
-				auto str = vi.type->serialize(p);
-				if (str != vi.default_value)
-					dst.append_attribute(vi.name.c_str()).set_value(str.c_str());
+				if (getter_idx != -1)
+					type->call_getter(&ui.functions[getter_idx], src, nullptr);
+				auto str = type->serialize(getter_idx == -1 ? (char*)src + offset : nullptr);
+				if (str != default_value)
+					dst.append_attribute(name.c_str()).set_value(str.c_str());
 			}
 				break;
 			case TagU:
-				serialize_xml(*vi.type->retrive_ui(), p, dst.append_child(vi.name.c_str()), spec);
+				serialize_xml(*type->retrive_ui(), (char*)src + offset, dst.append_child(name.c_str()), spec);
 				break;
 			case TagPU:
 			{
-				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
+				auto ti = (TypeInfo_PointerOfUdt*)type;
 				if (auto it = spec.map.find(ti); it != spec.map.end())
-					it->second(*(void**)p, dst.append_child(vi.name.c_str()));
+					it->second(*(void**)((char*)src + offset), dst.append_child(name.c_str()));
 			}
 				break;
 			case TagVE:
 			{
-					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
-				auto& vec = *(std::vector<int>*)p;
+				auto ti = ((TypeInfo_VectorOfEnum*)type)->ti;
+				auto& vec = *(std::vector<int>*)((char*)src + offset);
 				if (!vec.empty())
 				{
-					auto n = dst.append_child(vi.name.c_str());
+					auto n = dst.append_child(name.c_str());
 					for (auto i = 0; i < vec.size(); i++)
 					{
 						auto nn = n.append_child("item");
@@ -104,11 +101,12 @@ namespace flame
 				break;
 			case TagVD:
 			{
-				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+				auto p = (char*)src + offset;
+				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 				auto& vec = *(std::vector<char>*)p;
 				if (!vec.empty())
 				{
-					auto n = dst.append_child(vi.name.c_str());
+					auto n = dst.append_child(name.c_str());
 					p = (char*)vec.data();
 					auto len = (vec.end() - vec.begin()) / ti->size;
 					for (auto i = 0; i < len; i++)
@@ -122,14 +120,15 @@ namespace flame
 				break;
 			case TagVU:
 			{
-				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
+				auto p = (char*)src + offset;
+				auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
 				auto ui = ti->ui;
 				if (ui)
 				{
 					auto& vec = *(std::vector<char>*)p;
 					if (!vec.empty())
 					{
-						auto n = dst.append_child(vi.name.c_str());
+						auto n = dst.append_child(name.c_str());
 						p = (char*)vec.data();
 						auto len = (vec.end() - vec.begin()) / ti->size;
 						for (auto i = 0; i < len; i++)
@@ -143,21 +142,21 @@ namespace flame
 				break;
 			case TagVPU:
 			{
-				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;
 				if (ti)
 				{
-					auto& vec = *(std::vector<void*>*)p;
+					auto& vec = *(std::vector<void*>*)((char*)src + offset);
 					if (!vec.empty())
 					{
 						if (auto it = spec.map.find(ti); it != spec.map.end())
 						{
-							auto n = dst.append_child(vi.name.c_str());
+							auto n = dst.append_child(name.c_str());
 							for (auto v : vec)
 								it->second(v, n.append_child("item"));
 						}
 						else if (ti->retrive_ui() == &ui)
 						{
-							auto n = dst.append_child(vi.name.c_str());
+							auto n = dst.append_child(name.c_str());
 							for (auto v : vec)
 								serialize_xml(ui, v, n.append_child("item"), spec);
 						}
@@ -166,6 +165,16 @@ namespace flame
 			}
 				break;
 			}
+		};
+		if (!ui.attributes.empty())
+		{
+			for (auto& a : ui.attributes)
+				write_var(a.var_idx == -1 ? 0 : ui.variables[a.var_idx].offset, a.type, a.name, a.default_value, a.getter_idx);
+		}
+		else
+		{
+			for (auto& vi : ui.variables)
+				write_var(vi.offset, vi.type, vi.name, vi.default_value, -1);
 		}
 	}
 
@@ -194,20 +203,45 @@ namespace flame
 
 	inline void unserialize_xml(const UdtInfo& ui, pugi::xml_node src, void* dst, const UnserializeXmlSpec& spec = {})
 	{
-		for (auto a : src.attributes())
+		if (!ui.attributes.empty())
 		{
-			if (auto pv = ui.find_variable(a.name()); pv)
+			for (auto att : src.attributes())
 			{
-				auto& vi = *pv;
-
-				auto p = (char*)dst + vi.offset;
-				
-				switch (vi.type->tag)
+				if (auto pa = ui.find_attribute(att.name()); pa)
 				{
-				case TagE:
-				case TagD:
-					vi.type->unserialize(a.value(), p);
-					break;
+					auto& a = *pa;
+
+					switch (a.type->tag)
+					{
+					case TagE:
+					case TagD:
+						if (a.setter_idx != -1)
+						{
+							a.type->unserialize(att.value(), nullptr);
+							a.type->call_setter(&ui.functions[a.setter_idx], dst, nullptr);
+						}
+						else if (a.var_idx != -1)
+							a.type->unserialize(att.value(), (char*)dst + ui.variables[a.var_idx].offset);
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			for (auto a : src.attributes())
+			{
+				if (auto pv = ui.find_variable(a.name()); pv)
+				{
+					auto& vi = *pv;
+
+					switch (vi.type->tag)
+					{
+					case TagE:
+					case TagD:
+						vi.type->unserialize(a.value(), (char*)dst + vi.offset);
+						break;
+					}
 				}
 			}
 		}

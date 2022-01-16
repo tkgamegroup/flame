@@ -160,7 +160,7 @@ namespace flame
 		{
 			int location = -1;
 			int offset = -1;
-			Format format;
+			Format format = Format_Undefined;
 		};
 
 		struct VertexBufferInfo

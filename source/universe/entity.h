@@ -131,7 +131,7 @@ namespace flame
 		{
 			virtual EntityPtr operator()() = 0;
 		};
-		/// Reflect
+		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

@@ -163,8 +163,8 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
-		virtual void call_getter(FunctionInfo* fi, void* obj, void* dst) {};
-		virtual void call_setter(FunctionInfo* fi, void* obj, void* src) {};
+		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
+		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};
 
 		inline static uint get_hash(TypeTag tag, std::string_view name)
 		{
@@ -506,6 +506,16 @@ namespace flame
 			return nullptr;
 		}
 
+		inline const Attribute* find_attribute(std::string_view name) const
+		{
+			for (auto& a : attributes)
+			{
+				if (a.name == name)
+					return &a;
+			}
+			return nullptr;
+		}
+
 		void* create_object(void* p = nullptr) const
 		{
 			if (!p)
@@ -603,15 +613,15 @@ namespace flame
 			ei = find_enum(sh(name.c_str()), db);
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type->tag == TagE);
 			if (!dst) dst = &v;
 			*(int*)dst = fi->call<int>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type->tag == TagE);
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagE);
 			if (!src) src = &v;
 			fi->call<void>(obj, *(int*)src);
 		}
@@ -718,15 +728,15 @@ namespace flame
 			else
 				*(bool*)p = s2t<int>(str) != 0;
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(bool*)dst = fi->call<bool>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<bool>(obj, *(bool*)src);
 		}
@@ -752,15 +762,15 @@ namespace flame
 			if (!p) p = &v;
 			*(char*)p = s2t<char>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(char*)dst = fi->call<char>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<char>(obj, *(char*)src);
 		}
@@ -787,15 +797,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uchar*)p = s2t<uchar>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uchar*)dst = fi->call<uchar>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<uchar>(obj, *(uchar*)src);
 		}
@@ -821,15 +831,15 @@ namespace flame
 			if (!p) p = &v;
 			*(short*)p = s2t<short>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(short*)dst = fi->call<short>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<short>(obj, *(short*)src);
 		}
@@ -856,15 +866,15 @@ namespace flame
 			if (!p) p = &v;
 			*(ushort*)p = s2t<ushort>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(ushort*)dst = fi->call<ushort>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<ushort>(obj, *(ushort*)src);
 		}
@@ -890,15 +900,15 @@ namespace flame
 			if (!p) p = &v;
 			*(int*)p = s2t<int>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(int*)dst = fi->call<int>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<int>(obj, *(int*)src);
 		}
@@ -925,15 +935,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uint*)p = s2t<uint>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uint*)dst = fi->call<uint>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<uint>(obj, *(uint*)src);
 		}
@@ -959,15 +969,15 @@ namespace flame
 			if (!p) p = &v;
 			*(int64*)p = s2t<int64>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(int64*)dst = fi->call<int64>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<int64>(obj, *(int64*)src);
 		}
@@ -994,15 +1004,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uint64*)p = s2t<uint64>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uint64*)dst = fi->call<uint64>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<uint64>(obj, *(uint64*)src);
 		}
@@ -1028,15 +1038,15 @@ namespace flame
 			if (!p) p = &v;
 			*(float*)p = s2t<float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(float*)dst = fi->call<float>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
 			fi->call<float>(obj, *(float*)src);
 		}
@@ -1064,15 +1074,15 @@ namespace flame
 			if (!p) p = &v;
 			*(cvec2*)p = s2t<2, uchar>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(cvec2*)dst = fi->call<cvec2>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec2*>() }));
 			if (!src) src = &v;
 			fi->call<cvec2, const cvec2&>(obj, *(cvec2*)src);
 		}
@@ -1100,15 +1110,15 @@ namespace flame
 			if (!p) p = &v;
 			*(cvec3*)p = s2t<3, uchar>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(cvec3*)dst = fi->call<cvec3>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec3*>() }));
 			if (!src) src = &v;
 			fi->call<cvec3, const cvec3&>(obj, *(cvec3*)src);
 		}
@@ -1136,15 +1146,15 @@ namespace flame
 			if (!p) p = &v;
 			*(cvec4*)p = s2t<4, uchar>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(cvec4*)dst = fi->call<cvec4>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec4*>() }));
 			if (!src) src = &v;
 			fi->call<cvec4, const cvec4&>(obj, *(cvec4*)src);
 		}
@@ -1171,15 +1181,15 @@ namespace flame
 			if (!p) p = &v;
 			*(ivec2*)p = s2t<2, int>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(ivec2*)dst = fi->call<ivec2>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec2*>() }));
 			if (!src) src = &v;
 			fi->call<ivec2, const ivec2&>(obj, *(ivec2*)src);
 		}
@@ -1206,15 +1216,15 @@ namespace flame
 			if (!p) p = &v;
 			*(ivec3*)p = s2t<3, int>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(ivec3*)dst = fi->call<ivec3>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec3*>() }));
 			if (!src) src = &v;
 			fi->call<ivec3, const ivec3&>(obj, *(ivec3*)src);
 		}
@@ -1241,15 +1251,15 @@ namespace flame
 			if (!p) p = &v;
 			*(ivec4*)p = s2t<4, int>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(ivec4*)dst = fi->call<ivec4>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec4*>() }));
 			if (!src) src = &v;
 			fi->call<ivec4, const ivec4&>(obj, *(ivec4*)src);
 		}
@@ -1277,15 +1287,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uvec2*)p = s2t<2, uint>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uvec2*)dst = fi->call<uvec2>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec2*>() }));
 			if (!src) src = &v;
 			fi->call<uvec2, const uvec2&>(obj, *(uvec2*)src);
 		}
@@ -1313,15 +1323,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uvec3*)p = s2t<3, uint>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uvec3*)dst = fi->call<uvec3>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec3*>() }));
 			if (!src) src = &v;
 			fi->call<uvec3, const uvec3&>(obj, *(uvec3*)src);
 		}
@@ -1349,15 +1359,15 @@ namespace flame
 			if (!p) p = &v;
 			*(uvec4*)p = s2t<4, uint>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(uvec4*)dst = fi->call<uvec4>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec4*>() }));
 			if (!src) src = &v;
 			fi->call<uvec4, const uvec4&>(obj, *(uvec4*)src);
 		}
@@ -1384,15 +1394,15 @@ namespace flame
 			if (!p) p = &v;
 			*(vec2*)p = s2t<2, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(vec2*)dst = fi->call<vec2>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec2*>() }));
 			if (!src) src = &v;
 			fi->call<vec2, const vec2&>(obj, *(vec2*)src);
 		}
@@ -1419,15 +1429,15 @@ namespace flame
 			if (!p) p = &v;
 			*(vec3*)p = s2t<3, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(vec3*)dst = fi->call<vec3>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec3*>() }));
 			if (!src) src = &v;
 			fi->call<vec3, const vec3&>(obj, *(vec3*)src);
 		}
@@ -1454,15 +1464,15 @@ namespace flame
 			if (!p) p = &v;
 			*(vec4*)p = s2t<4, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(vec4*)dst = fi->call<vec4>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec4*>() }));
 			if (!src) src = &v;
 			fi->call<vec4, const vec4&>(obj, *(vec4*)src);
 		}
@@ -1480,15 +1490,15 @@ namespace flame
 			col_size = 2;
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(mat2*)dst = fi->call<mat2>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat2*>() }));
 			if (!src) src = &v;
 			fi->call<mat2, const mat2&>(obj, *(mat2*)src);
 		}
@@ -1506,15 +1516,15 @@ namespace flame
 			col_size = 3;
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(mat3*)dst = fi->call<mat3>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat3*>() }));
 			if (!src) src = &v;
 			fi->call<mat3, const mat3&>(obj, *(mat3*)src);
 		}
@@ -1532,15 +1542,15 @@ namespace flame
 			col_size = 4;
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(mat4*)dst = fi->call<mat4>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat4*>() }));
 			if (!src) src = &v;
 			fi->call<mat4, const mat4&>(obj, *(mat4*)src);
 		}
@@ -1566,15 +1576,15 @@ namespace flame
 			*(vec4*)p = s2t<4, float>(str).yzwx();
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(quat*)dst = fi->call<quat>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<quat*>() }));
 			if (!src) src = &v;
 			fi->call<quat, const quat&>(obj, *(quat*)src);
 		}
@@ -1619,15 +1629,15 @@ namespace flame
 			if (!p) p = &v;
 			*(std::string*)p = str;
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(std::string*)dst = fi->call<std::string>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::string*>() }));
 			if (!src) src = &v;
 			fi->call<std::string, const std::string&>(obj, *(std::string*)src);
 		}
@@ -1672,15 +1682,15 @@ namespace flame
 			if (!p) p = &v;
 			*(std::wstring*)p = s2w(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(std::wstring*)dst = fi->call<std::wstring>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::wstring*>() }));
 			if (!src) src = &v;
 			fi->call<std::wstring, const std::wstring&>(obj, *(std::wstring*)src);
 		}
@@ -1725,15 +1735,15 @@ namespace flame
 			if (!p) p = &v;
 			*(std::filesystem::path*)p = str;
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(std::filesystem::path*)dst = fi->call<std::filesystem::path>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::filesystem::path*>() }));
 			if (!src) src = &v;
 			fi->call<std::filesystem::path, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
 		}
@@ -1761,15 +1771,15 @@ namespace flame
 			if (!p) p = &v;
 			*(vec4*)p = s2t<4, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(Rect*)dst = fi->call<Rect>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Rect*>() }));
 			if (!src) src = &v;
 			fi->call<Rect, const Rect&>(obj, *(Rect*)src);
 		}
@@ -1797,15 +1807,15 @@ namespace flame
 			if (!p) p = &v;
 			*(mat2x3*)p = s2t<2, 3, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(AABB*)dst = fi->call<AABB>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<AABB*>() }));
 			if (!src) src = &v;
 			fi->call<AABB, const AABB&>(obj, *(AABB*)src);
 		}
@@ -1832,15 +1842,15 @@ namespace flame
 			if (!p) p = &v;
 			*(vec4*)p = s2t<4, float>(str);
 		}
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(Plane*)dst = fi->call<Plane>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Plane*>() }));
 			if (!src) src = &v;
 			fi->call<Plane, const Plane&>(obj, *(Plane*)src);
 		}
@@ -1855,15 +1865,15 @@ namespace flame
 		{
 		}
 
-		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
 			if (!dst) dst = &v;
 			*(Frustum*)dst = fi->call<Frustum>(obj);
 		}
-		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
-			assert(fi->return_type == this);
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Frustum*>() }));
 			if (!src) src = &v;
 			fi->call<Frustum, const Frustum&>(obj, *(Frustum*)src);
 		}
