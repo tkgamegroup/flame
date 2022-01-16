@@ -38,7 +38,7 @@ namespace flame
 			{
 				virtual MaterialPtr operator()(const std::filesystem::path& filename) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 	}
 }

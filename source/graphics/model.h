@@ -75,14 +75,14 @@ namespace flame
 
 			virtual ~Model() {}
 
-			FLAME_GRAPHICS_EXPORTS static void convert(const std::filesystem::path& filename);
+			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename);
 
 			struct Get
 			{
 				// could be "standard:<name>" to get standard models ("cube", "sphere")
 				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 
 		struct Channel
@@ -109,7 +109,7 @@ namespace flame
 			{
 				virtual AnimationPtr operator()(const std::filesystem::path& filename) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 	}
 }

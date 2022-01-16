@@ -2,7 +2,7 @@
 
 #ifdef FLAME_GRAPHICS_MODULE
 
-#define FLAME_GRAPHICS_EXPORTS __declspec(dllexport)
+#define FLAME_GRAPHICS_API __declspec(dllexport)
 
 #define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
 	using name##T = name##Private; \
@@ -10,7 +10,7 @@
 
 #else
 
-#define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
+#define FLAME_GRAPHICS_API __declspec(dllimport)
 
 #define FLAME_GRAPHICS_TYPE(name) struct name; \
 	using name##T = name; \

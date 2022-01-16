@@ -2,7 +2,7 @@
 
 #ifdef FLAME_FOUNDATION_MODULE
 
-#define FLAME_FOUNDATION_EXPORTS __declspec(dllexport)
+#define FLAME_FOUNDATION_API __declspec(dllexport)
 
 #define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
 	using name##T = name##Private; \
@@ -10,7 +10,7 @@
 
 #else
 
-#define FLAME_FOUNDATION_EXPORTS __declspec(dllimport)
+#define FLAME_FOUNDATION_API __declspec(dllimport)
 
 #define FLAME_FOUNDATION_TYPE(name) struct name; \
 	using name##T = name; \
@@ -117,7 +117,7 @@ namespace flame
 
 	struct Path
 	{
-		FLAME_FOUNDATION_EXPORTS static std::map<std::wstring, std::filesystem::path> map;
+		FLAME_FOUNDATION_API static std::map<std::wstring, std::filesystem::path> map;
 
 		inline static void add_root(const std::wstring& name, const std::filesystem::path& path)
 		{
@@ -240,15 +240,15 @@ namespace flame
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS extern uint frames;
-	FLAME_FOUNDATION_EXPORTS extern uint fps;
-	FLAME_FOUNDATION_EXPORTS extern float delta_time; // second
-	FLAME_FOUNDATION_EXPORTS extern float total_time; // second
+	FLAME_FOUNDATION_API extern uint frames;
+	FLAME_FOUNDATION_API extern uint fps;
+	FLAME_FOUNDATION_API extern float delta_time; // second
+	FLAME_FOUNDATION_API extern float total_time; // second
 
-	FLAME_FOUNDATION_EXPORTS int run(const std::function<bool()>& callback);
+	FLAME_FOUNDATION_API int run(const std::function<bool()>& callback);
 
-	FLAME_FOUNDATION_EXPORTS void* add_event(const std::function<bool()>& callback, float time = 0.f);
-	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS void remove_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS void clear_events();
+	FLAME_FOUNDATION_API void* add_event(const std::function<bool()>& callback, float time = 0.f);
+	FLAME_FOUNDATION_API void reset_event(void* ev);
+	FLAME_FOUNDATION_API void remove_event(void* ev);
+	FLAME_FOUNDATION_API void clear_events();
 }

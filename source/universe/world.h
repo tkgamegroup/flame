@@ -36,12 +36,12 @@ namespace flame
 		{
 			virtual WorldPtr operator()() = 0;
 		};
-		FLAME_UNIVERSE_EXPORTS static Instance& instance;
+		FLAME_UNIVERSE_API static Instance& instance;
 
 		struct Create
 		{
 			virtual WorldPtr operator()() = 0;
 		};
-		FLAME_UNIVERSE_EXPORTS static Create& create;
+		FLAME_UNIVERSE_API static Create& create;
 	};
 }

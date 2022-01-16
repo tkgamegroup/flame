@@ -26,7 +26,7 @@ namespace flame
 			{
 				virtual ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
 			};
-			FLAME_FOUNDATION_EXPORTS static Create& create;
+			FLAME_FOUNDATION_API static Create& create;
 		};
 
 		struct Server
@@ -40,7 +40,7 @@ namespace flame
 			{
 				virtual ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) = 0;
 			};
-			FLAME_FOUNDATION_EXPORTS static Create& create;
+			FLAME_FOUNDATION_API static Create& create;
 		};
 
 		struct FrameSyncServer
@@ -53,10 +53,10 @@ namespace flame
 			{
 				virtual FrameSyncServerPtr operator()(SocketType type, uint port, uint num_clients) = 0;
 			};
-			FLAME_FOUNDATION_EXPORTS static Create& create;
+			FLAME_FOUNDATION_API static Create& create;
 		};
 
 		// timeout: second
-		FLAME_FOUNDATION_EXPORTS void board_cast(uint port, std::string_view msg, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message);
+		FLAME_FOUNDATION_API void board_cast(uint port, std::string_view msg, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message);
 	}
 }

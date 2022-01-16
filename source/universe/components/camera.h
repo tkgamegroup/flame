@@ -25,13 +25,13 @@ namespace flame
 		{
 			virtual cCameraPtr operator()() = 0;
 		};
-		FLAME_UNIVERSE_EXPORTS static Main& main;
+		FLAME_UNIVERSE_API static Main& main;
 
 		struct Create
 		{
 			virtual cCameraPtr operator()(EntityPtr e) = 0;
 		};
 		/// Reflect static
-		FLAME_UNIVERSE_EXPORTS static Create& create;
+		FLAME_UNIVERSE_API static Create& create;
 	};
 }

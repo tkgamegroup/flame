@@ -168,6 +168,9 @@ namespace flame
 	{
 		cMeshPtr operator()(EntityPtr e) override
 		{
+			if (!e)
+				return new cMeshPrivate;
+
 			auto node = e->get_component_i<cNodeT>(0);
 			if (!node)
 			{

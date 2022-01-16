@@ -2,7 +2,7 @@
 
 #ifdef FLAME_UNIVERSE_MODULE
 
-#define FLAME_UNIVERSE_EXPORTS __declspec(dllexport)
+#define FLAME_UNIVERSE_API __declspec(dllexport)
 
 #define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
 	using name##T = name##Private; \
@@ -10,7 +10,7 @@
 
 #else
 
-#define FLAME_UNIVERSE_EXPORTS __declspec(dllimport)
+#define FLAME_UNIVERSE_API __declspec(dllimport)
 
 #define FLAME_UNIVERSE_TYPE(name) struct name; \
 	using name##T = name; \

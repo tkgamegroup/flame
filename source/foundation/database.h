@@ -32,7 +32,7 @@ namespace flame
 			{
 				virtual ConnectionPtr operator()(std::string_view db_name) = 0;
 			};
-			FLAME_FOUNDATION_EXPORTS static Create& create;
+			FLAME_FOUNDATION_API static Create& create;
 		};
 	}
 }

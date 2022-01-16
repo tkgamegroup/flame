@@ -16,13 +16,13 @@ namespace flame
 			{
 				virtual DevicePtr operator()(bool debug) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct Current
 			{
 				virtual DevicePtr& operator()() = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Current& current;
+			FLAME_GRAPHICS_API static Current& current;
 		};
 	}
 }

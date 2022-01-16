@@ -14,13 +14,13 @@ namespace flame
 			{
 				virtual CommandPoolPtr operator()(DevicePtr device = nullptr, QueueFamily family = QueueGraphics) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 
 			struct Create
 			{
 				virtual CommandPoolPtr operator()(DevicePtr device, int queue_family_idx) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 
 		struct BufferCopy
@@ -130,7 +130,7 @@ namespace flame
 			{
 				virtual CommandBufferPtr operator()(CommandPoolPtr p, bool sub = false) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 
 		struct Queue
@@ -150,13 +150,13 @@ namespace flame
 			{
 				virtual QueuePtr operator()(DevicePtr device, QueueFamily family = QueueGraphics) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 
 			struct Create
 			{
 				virtual QueuePtr operator()(DevicePtr device, uint queue_family_idx) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 
 		struct Semaphore
@@ -167,7 +167,7 @@ namespace flame
 			{
 				virtual SemaphorePtr operator()(DevicePtr device) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 
 		struct Fence
@@ -180,7 +180,7 @@ namespace flame
 			{
 				virtual FencePtr operator()(DevicePtr device, bool signaled = true) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 	}
 }

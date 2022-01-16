@@ -19,6 +19,7 @@ namespace flame
 		int transform_id = -1;
 		uint frame = 0;
 
+		cMeshPrivate() {}
 		cMeshPrivate(cNodePtr node);
 		~cMeshPrivate();
 

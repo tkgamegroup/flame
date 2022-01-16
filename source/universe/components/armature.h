@@ -23,6 +23,6 @@
 //		{
 //			virtual cArmaturePtr operator()() = 0;
 //		};
-//		FLAME_UNIVERSE_EXPORTS static Create& create;
+//		FLAME_UNIVERSE_API static Create& create;
 //	};
 //}

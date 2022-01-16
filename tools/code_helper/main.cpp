@@ -32,17 +32,17 @@ int main(int argc, char** args)
 		if (is_internal)
 		{
 			if (str_ppath.starts_with(str_flame_path + L"\\source\\foundation"))
-				export_str = "FLAME_FOUNDATION_EXPORTS";
+				export_str = "FLAME_FOUNDATION_API";
 			else if (str_ppath.starts_with(str_flame_path + L"\\source\\blueprint"))
 				export_str = "FLAME_BLUEPRINT_EXPORTS";
 			else if (str_ppath.starts_with(str_flame_path + L"\\source\\graphics"))
-				export_str = "FLAME_GRAPHICS_EXPORTS";
+				export_str = "FLAME_GRAPHICS_API";
 			else if (str_ppath.starts_with(str_flame_path + L"\\source\\sound"))
 				export_str = "FLAME_SOUND_EXPORTS";
 			else if (str_ppath.starts_with(str_flame_path + L"\\source\\physics"))
 				export_str = "FLAME_PHYSICS_EXPORTS";
 			else if (str_ppath.starts_with(str_flame_path + L"\\source\\universe"))
-				export_str = "FLAME_UNIVERSE_EXPORTS";
+				export_str = "FLAME_UNIVERSE_API";
 		}
 	}
 

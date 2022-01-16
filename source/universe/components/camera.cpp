@@ -59,6 +59,9 @@ namespace flame
 	{
 		cCameraPtr operator()(EntityPtr e) override
 		{
+			if (!e)
+				return new cCameraPrivate;
+
 			if (!e->get_component_i<cNodeT>(0))
 			{
 				printf("camera component needs node component\n");

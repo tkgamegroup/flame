@@ -626,9 +626,6 @@ process:
 				u.size = udt_size;
 				u.base_class_name = base_class_name;
 
-				DWORD ctor = 0;
-				DWORD dtor = 0;
-
 				IDiaEnumSymbols* s_all;
 				s_udt->findChildren(SymTagNull, NULL, nsNone, &s_all);
 				IDiaSymbol* s_obj;
@@ -705,6 +702,7 @@ process:
 						fi.name = name;
 						fi.rva = rva;
 						fi.voff = voff;
+						fi.library = library;
 
 						IDiaSymbol* s_function_type;
 						s_function->get_type(&s_function_type);
@@ -721,22 +719,12 @@ process:
 						s_function_type->Release();
 
 						if (name == "ctor" && fi.parameters.empty() && rva)
-							ctor = rva;
-						else if (name == "dtor" && rva)
-							dtor = rva;
+							fi.name = "dctor";
 					}
 
 					s_function->Release();
 				}
 				s_functions->Release();
-
-				void* obj = nullptr;
-				if (ctor && library)
-				{
-					obj = malloc(udt_size);
-					memset(obj, 0, udt_size);
-					a2f<void(*)(void*)>((char*)library + ctor)(obj);
-				}
 
 				pugi::xml_node n_variables;
 
@@ -812,6 +800,7 @@ process:
 								fi.voff = voff;
 								fi.return_type = return_type;
 								fi.parameters = parameters;
+								fi.library = library;
 							}
 
 							continue;
@@ -827,18 +816,30 @@ process:
 							reference_type(vi.type);
 							vi.name = name;
 							vi.offset = offset;
-							vi.default_value = obj ? type->serialize((char*)obj + offset) : "";
 						}
 					}
 					s_variable->Release();
 				}
 				s_variables->Release();
 
-				if (obj)
+				void* obj = nullptr;
+				if (library)
 				{
-					if (dtor)
-						a2f<void(*)(void*)>((char*)library + dtor)(obj);
-					free(obj);
+					if (auto fi = u.find_function("create"); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
+					{
+						if (fi->parameters.empty())
+							obj = fi->call<void*>(nullptr);
+						else if (fi->parameters.size() == 1 && is_in(fi->parameters[0]->tag, TagP_Beg, TagP_End))
+							obj = fi->call<void*>(nullptr, nullptr);
+					}
+					else
+					{
+						obj = malloc(udt_size);
+						if (auto fi = u.find_function("dctor"); fi)
+							fi->call<void>(obj);
+						else
+							memset(obj, 0, udt_size);
+					}
 				}
 
 				if (ur->children_type == Rule::Equal)
@@ -877,6 +878,24 @@ process:
 							}
 						}
 					}
+				}
+
+				if (obj)
+				{
+					for (auto& vi : u.variables)
+						vi.default_value = vi.type->serialize((char*)obj + vi.offset);
+					for (auto i = 0; i < u.attributes.size(); i++)
+					{
+						auto& a = u.attributes[i];
+						if (a.var_idx != -1)
+							a.default_value = u.variables[a.var_idx].default_value;
+						else
+							a.default_value = u.serialize_attribute(i, obj);
+					}
+
+					if (auto fi = u.find_function("dtor"); fi)
+						fi->call<void>(obj);
+					free(obj);
 				}
 
 				db.udts.emplace(sh(u.name.c_str()), u);

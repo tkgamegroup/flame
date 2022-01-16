@@ -80,7 +80,7 @@ namespace flame
 	template<typename T>
 	concept vector_of_pointer_of_udt_type = vector_type<T> && pointer_of_udt_type<typename T::value_type>;
 
-	FLAME_FOUNDATION_EXPORTS extern TypeInfoDataBase& tidb;
+	FLAME_FOUNDATION_API extern TypeInfoDataBase& tidb;
 
 	struct TypeInfo
 	{
@@ -163,6 +163,9 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
+		virtual void call_getter(FunctionInfo* fi, void* obj, void* dst) {};
+		virtual void call_setter(FunctionInfo* fi, void* obj, void* src) {};
+
 		inline static uint get_hash(TypeTag tag, std::string_view name)
 		{
 			auto ret = sh(name.data());
@@ -170,8 +173,8 @@ namespace flame
 			return ret;
 		}
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* void_type;
+		FLAME_FOUNDATION_API static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
+		FLAME_FOUNDATION_API static TypeInfo* void_type;
 
 		template<enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
@@ -510,7 +513,7 @@ namespace flame
 			auto initialized = false;
 			for (auto& fi : functions)
 			{
-				if (fi.name == "ctor" && fi.rva && fi.check(TypeInfo::void_type, {}))
+				if (fi.name == "dctor")
 				{
 					fi.call<void>(p);
 					initialized = true;
@@ -521,11 +524,22 @@ namespace flame
 				memset(p, 0, size);
 			return p;
 		}
+
+		std::string serialize_attribute(uint idx, void* obj)
+		{
+			auto& a = attributes[idx];
+			if (a.getter_idx != -1)
+			{
+				a.type->call_getter(&functions[a.getter_idx], obj, nullptr);
+				return a.type->serialize(nullptr);
+			}
+			return a.type->serialize((char*)obj + variables[a.var_idx].offset);
+		}
 	};
 
 	struct TypeInfoDataBase
 	{
-		FLAME_FOUNDATION_EXPORTS TypeInfoDataBase();
+		FLAME_FOUNDATION_API TypeInfoDataBase();
 
 		std::map<uint, std::unique_ptr<TypeInfo>> typeinfos;
 
@@ -538,10 +552,10 @@ namespace flame
 			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
 		}
 
-		FLAME_FOUNDATION_EXPORTS bool load(std::ifstream& file, void* library = nullptr);
-		FLAME_FOUNDATION_EXPORTS void load(const std::filesystem::path& filename);
-		FLAME_FOUNDATION_EXPORTS void save(std::ofstream& file);
-		FLAME_FOUNDATION_EXPORTS void save(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_API bool load(std::ifstream& file, void* library = nullptr);
+		FLAME_FOUNDATION_API void load(const std::filesystem::path& filename);
+		FLAME_FOUNDATION_API void save(std::ofstream& file);
+		FLAME_FOUNDATION_API void save(const std::filesystem::path& filename);
 	};
 
 	inline EnumInfo* find_enum(uint hash, TypeInfoDataBase& db = tidb)
@@ -581,10 +595,25 @@ namespace flame
 	{
 		EnumInfo* ei = nullptr;
 
+		thread_local static int v;
+
 		TypeInfo_Enum(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagE, base_name, sizeof(int))
 		{
 			ei = find_enum(sh(name.c_str()), db);
+		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type->tag == TagE);
+			if (!dst) dst = &v;
+			*(int*)dst = fi->call<int>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type->tag == TagE);
+			if (!src) src = &v;
+			fi->call<void>(obj, *(int*)src);
 		}
 	};
 
@@ -597,11 +626,13 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return ei->find_item(*(int*)p)->name;
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(int*)dst = ei->find_item(str)->value;
+			if (!p) p = &v;
+			*(int*)p = ei->find_item(str)->value;
 		}
 	};
 
@@ -615,26 +646,28 @@ namespace flame
 		std::string serialize(const void* p) const override
 		{
 			std::string ret;
-			auto v = *(int*)p;
+			if (!p) p = &v;
+			auto vv = *(int*)p;
 			for (auto i = 0; i < ei->items.size(); i++)
 			{
-				if ((v & 1) == 1)
+				if ((vv & 1) == 1)
 				{
 					if (i > 0)
 						ret += '|';
 					ret += ei->find_item(1 << i)->name;
 				}
-				v >>= 1;
+				vv >>= 1;
 			}
 			return ret;
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			auto v = 0;
+			auto vv = 0;
 			auto sp = SUS::split(str, '|');
 			for (auto& t : sp)
-				v |= ei->find_item(t)->value;
-			*(int*)dst = v;
+				vv |= ei->find_item(t)->value;
+			if (!p) p = &v;
+			*(int*)p = vv;
 		}
 	};
 
@@ -662,6 +695,8 @@ namespace flame
 
 	struct TypeInfo_bool : TypeInfo_Data
 	{
+		thread_local static bool v;
+		
 		TypeInfo_bool() :
 			TypeInfo_Data("bool", sizeof(bool))
 		{
@@ -670,21 +705,37 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return *(bool*)p ? "true" : "false";
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
+			if (!p) p = &v;
 			if (str == "false")
-				*(bool*)dst = false;
+				*(bool*)p = false;
 			else if (str == "true")
-				*(bool*)dst = true;
+				*(bool*)p = true;
 			else
-				*(bool*)dst = s2t<int>(str) != 0;
+				*(bool*)p = s2t<int>(str) != 0;
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(bool*)dst = fi->call<bool>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<bool>(obj, *(bool*)src);
 		}
 	};
 
 	struct TypeInfo_char : TypeInfo_Data
 	{
+		thread_local static char v;
+
 		TypeInfo_char() :
 			TypeInfo_Data("char", sizeof(char))
 		{
@@ -693,16 +744,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(char*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(char*)dst = s2t<char>(str);
+			if (!p) p = &v;
+			*(char*)p = s2t<char>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(char*)dst = fi->call<char>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<char>(obj, *(char*)src);
 		}
 	};
 
 	struct TypeInfo_uchar : TypeInfo_Data
 	{
+		thread_local static uchar v;
+
 		TypeInfo_uchar() :
 			TypeInfo_Data("uchar", sizeof(uchar))
 		{
@@ -712,53 +779,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(uchar*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(uchar*)dst = s2t<uchar>(str);
+			if (!p) p = &v;
+			*(uchar*)p = s2t<uchar>(str);
 		}
-	};
-
-	struct TypeInfo_int : TypeInfo_Data
-	{
-		TypeInfo_int() :
-			TypeInfo_Data("int", sizeof(int))
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
 		{
-			data_type = DataInt;
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uchar*)dst = fi->call<uchar>(obj);
 		}
-
-		std::string serialize(const void* p) const override
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
 		{
-			return str(*(int*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(int*)dst = s2t<int>(str);
-		}
-	};
-
-	struct TypeInfo_uint : TypeInfo_Data
-	{
-		TypeInfo_uint() :
-			TypeInfo_Data("uint", sizeof(uint))
-		{
-			data_type = DataInt;
-			is_signed = false;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(uint*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uint*)dst = s2t<uint>(str);
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uchar>(obj, *(uchar*)src);
 		}
 	};
 
 	struct TypeInfo_short : TypeInfo_Data
 	{
+		thread_local static short v;
+
 		TypeInfo_short() :
 			TypeInfo_Data("short", sizeof(short))
 		{
@@ -767,16 +813,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(short*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(short*)dst = s2t<short>(str);
+			if (!p) p = &v;
+			*(short*)p = s2t<short>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(short*)dst = fi->call<short>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<short>(obj, *(short*)src);
 		}
 	};
 
 	struct TypeInfo_ushort : TypeInfo_Data
 	{
+		thread_local static ushort v;
+
 		TypeInfo_ushort() :
 			TypeInfo_Data("ushort", sizeof(ushort))
 		{
@@ -786,16 +848,101 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(ushort*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(ushort*)dst = s2t<ushort>(str);
+			if (!p) p = &v;
+			*(ushort*)p = s2t<ushort>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(ushort*)dst = fi->call<ushort>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<ushort>(obj, *(ushort*)src);
+		}
+	};
+
+	struct TypeInfo_int : TypeInfo_Data
+	{
+		thread_local static int v;
+
+		TypeInfo_int() :
+			TypeInfo_Data("int", sizeof(int))
+		{
+			data_type = DataInt;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(int*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(int*)p = s2t<int>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(int*)dst = fi->call<int>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<int>(obj, *(int*)src);
+		}
+	};
+
+	struct TypeInfo_uint : TypeInfo_Data
+	{
+		thread_local static uint v;
+
+		TypeInfo_uint() :
+			TypeInfo_Data("uint", sizeof(uint))
+		{
+			data_type = DataInt;
+			is_signed = false;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(uint*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(uint*)p = s2t<uint>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uint*)dst = fi->call<uint>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uint>(obj, *(uint*)src);
 		}
 	};
 
 	struct TypeInfo_int64 : TypeInfo_Data
 	{
+		thread_local static int64 v;
+
 		TypeInfo_int64() :
 			TypeInfo_Data("int64", sizeof(int64))
 		{
@@ -804,16 +951,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(int64*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(int64*)dst = s2t<int64>(str);
+			if (!p) p = &v;
+			*(int64*)p = s2t<int64>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(int64*)dst = fi->call<int64>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<int64>(obj, *(int64*)src);
 		}
 	};
 
 	struct TypeInfo_uint64 : TypeInfo_Data
 	{
+		thread_local static uint64 v;
+
 		TypeInfo_uint64() :
 			TypeInfo_Data("uint64", sizeof(uint64))
 		{
@@ -823,16 +986,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(uint64*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(uint64*)dst = s2t<uint64>(str);
+			if (!p) p = &v;
+			*(uint64*)p = s2t<uint64>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uint64*)dst = fi->call<uint64>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uint64>(obj, *(uint64*)src);
 		}
 	};
 
 	struct TypeInfo_float : TypeInfo_Data
 	{
+		thread_local static float v;
+
 		TypeInfo_float() :
 			TypeInfo_Data("float", sizeof(float))
 		{
@@ -841,133 +1020,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(float*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(float*)dst = s2t<float>(str);
+			if (!p) p = &v;
+			*(float*)p = s2t<float>(str);
 		}
-	};
-
-	struct TypeInfo_ivec2 : TypeInfo_Data
-	{
-		TypeInfo_ivec2() :
-			TypeInfo_Data("glm::ivec2", sizeof(ivec2))
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
 		{
-			data_type = DataInt;
-			vec_size = 2;
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(float*)dst = fi->call<float>(obj);
 		}
-
-		std::string serialize(const void* p) const override
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
 		{
-			return str(*(ivec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec2*)dst = s2t<2, int>(str);
-		}
-	};
-
-	struct TypeInfo_ivec3 : TypeInfo_Data
-	{
-		TypeInfo_ivec3() :
-			TypeInfo_Data("glm::ivec3", sizeof(ivec3))
-		{
-			data_type = DataInt;
-			vec_size = 3;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(ivec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec3*)dst = s2t<3, int>(str);
-		}
-	};
-
-	struct TypeInfo_ivec4 : TypeInfo_Data
-	{
-		TypeInfo_ivec4() :
-			TypeInfo_Data("glm::ivec4", sizeof(ivec4))
-		{
-			data_type = DataInt;
-			vec_size = 4;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(ivec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(ivec4*)dst = s2t<4, int>(str);
-		}
-	};
-
-	struct TypeInfo_uvec2 : TypeInfo_Data
-	{
-		TypeInfo_uvec2() :
-			TypeInfo_Data("glm::uvec2", sizeof(uvec2))
-		{
-			data_type = DataInt;
-			is_signed = false;
-			vec_size = 2;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(uvec2*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec2*)dst = s2t<2, uint>(str);
-		}
-	};
-
-	struct TypeInfo_uvec3 : TypeInfo_Data
-	{
-		TypeInfo_uvec3() :
-			TypeInfo_Data("glm::uvec3", sizeof(uvec3))
-		{
-			data_type = DataInt;
-			is_signed = false;
-			vec_size = 3;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(uvec3*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec3*)dst = s2t<3, uint>(str);
-		}
-	};
-
-	struct TypeInfo_uvec4 : TypeInfo_Data
-	{
-		TypeInfo_uvec4() :
-			TypeInfo_Data("glm::uvec4", sizeof(uvec4))
-		{
-			data_type = DataInt;
-			is_signed = false;
-			vec_size = 4;
-		}
-
-		std::string serialize(const void* p) const override
-		{
-			return str(*(uvec4*)p);
-		}
-		void unserialize(const std::string& str, void* dst) const override
-		{
-			*(uvec4*)dst = s2t<4, uint>(str);
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<float>(obj, *(float*)src);
 		}
 	};
 
 	struct TypeInfo_cvec2 : TypeInfo_Data
 	{
+		thread_local static cvec2 v;
+
 		TypeInfo_cvec2() :
 			TypeInfo_Data("glm::cvec2", sizeof(cvec2))
 		{
@@ -978,16 +1056,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(cvec2*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(cvec2*)dst = s2t<2, uchar>(str);
+			if (!p) p = &v;
+			*(cvec2*)p = s2t<2, uchar>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(cvec2*)dst = fi->call<cvec2>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<cvec2, const cvec2&>(obj, *(cvec2*)src);
 		}
 	};
 
 	struct TypeInfo_cvec3 : TypeInfo_Data
 	{
+		thread_local static cvec3 v;
+
 		TypeInfo_cvec3() :
 			TypeInfo_Data("glm::cvec3", sizeof(cvec3))
 		{
@@ -998,16 +1092,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(cvec3*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(cvec3*)dst = s2t<3, uchar>(str);
+			if (!p) p = &v;
+			*(cvec3*)p = s2t<3, uchar>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(cvec3*)dst = fi->call<cvec3>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<cvec3, const cvec3&>(obj, *(cvec3*)src);
 		}
 	};
 
 	struct TypeInfo_cvec4 : TypeInfo_Data
 	{
+		thread_local static cvec4 v;
+
 		TypeInfo_cvec4() :
 			TypeInfo_Data("glm::cvec4", sizeof(cvec4))
 		{
@@ -1018,16 +1128,245 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(cvec4*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(cvec4*)dst = s2t<4, uchar>(str);
+			if (!p) p = &v;
+			*(cvec4*)p = s2t<4, uchar>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(cvec4*)dst = fi->call<cvec4>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<cvec4, const cvec4&>(obj, *(cvec4*)src);
+		}
+	};
+
+	struct TypeInfo_ivec2 : TypeInfo_Data
+	{
+		thread_local static ivec2 v;
+
+		TypeInfo_ivec2() :
+			TypeInfo_Data("glm::ivec2", sizeof(ivec2))
+		{
+			data_type = DataInt;
+			vec_size = 2;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(ivec2*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(ivec2*)p = s2t<2, int>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(ivec2*)dst = fi->call<ivec2>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<ivec2, const ivec2&>(obj, *(ivec2*)src);
+		}
+	};
+
+	struct TypeInfo_ivec3 : TypeInfo_Data
+	{
+		thread_local static ivec3 v;
+
+		TypeInfo_ivec3() :
+			TypeInfo_Data("glm::ivec3", sizeof(ivec3))
+		{
+			data_type = DataInt;
+			vec_size = 3;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(ivec3*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(ivec3*)p = s2t<3, int>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(ivec3*)dst = fi->call<ivec3>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<ivec3, const ivec3&>(obj, *(ivec3*)src);
+		}
+	};
+
+	struct TypeInfo_ivec4 : TypeInfo_Data
+	{
+		thread_local static ivec4 v;
+
+		TypeInfo_ivec4() :
+			TypeInfo_Data("glm::ivec4", sizeof(ivec4))
+		{
+			data_type = DataInt;
+			vec_size = 4;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(ivec4*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(ivec4*)p = s2t<4, int>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(ivec4*)dst = fi->call<ivec4>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<ivec4, const ivec4&>(obj, *(ivec4*)src);
+		}
+	};
+
+	struct TypeInfo_uvec2 : TypeInfo_Data
+	{
+		thread_local static uvec2 v;
+
+		TypeInfo_uvec2() :
+			TypeInfo_Data("glm::uvec2", sizeof(uvec2))
+		{
+			data_type = DataInt;
+			is_signed = false;
+			vec_size = 2;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(uvec2*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(uvec2*)p = s2t<2, uint>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uvec2*)dst = fi->call<uvec2>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uvec2, const uvec2&>(obj, *(uvec2*)src);
+		}
+	};
+
+	struct TypeInfo_uvec3 : TypeInfo_Data
+	{
+		thread_local static uvec3 v;
+
+		TypeInfo_uvec3() :
+			TypeInfo_Data("glm::uvec3", sizeof(uvec3))
+		{
+			data_type = DataInt;
+			is_signed = false;
+			vec_size = 3;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(uvec3*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(uvec3*)p = s2t<3, uint>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uvec3*)dst = fi->call<uvec3>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uvec3, const uvec3&>(obj, *(uvec3*)src);
+		}
+	};
+
+	struct TypeInfo_uvec4 : TypeInfo_Data
+	{
+		thread_local static uvec4 v;
+
+		TypeInfo_uvec4() :
+			TypeInfo_Data("glm::uvec4", sizeof(uvec4))
+		{
+			data_type = DataInt;
+			is_signed = false;
+			vec_size = 4;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return str(*(uvec4*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(uvec4*)p = s2t<4, uint>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(uvec4*)dst = fi->call<uvec4>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<uvec4, const uvec4&>(obj, *(uvec4*)src);
 		}
 	};
 
 	struct TypeInfo_vec2 : TypeInfo_Data
 	{
+		thread_local static vec2 v;
+
 		TypeInfo_vec2() :
 			TypeInfo_Data("glm::vec2", sizeof(vec2))
 		{
@@ -1037,16 +1376,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec2*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec2*)dst = s2t<2, float>(str);
+			if (!p) p = &v;
+			*(vec2*)p = s2t<2, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(vec2*)dst = fi->call<vec2>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<vec2, const vec2&>(obj, *(vec2*)src);
 		}
 	};
 
 	struct TypeInfo_vec3 : TypeInfo_Data
 	{
+		thread_local static vec3 v;
+
 		TypeInfo_vec3() :
 			TypeInfo_Data("glm::vec3", sizeof(vec3))
 		{
@@ -1056,16 +1411,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec3*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec3*)dst = s2t<3, float>(str);
+			if (!p) p = &v;
+			*(vec3*)p = s2t<3, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(vec3*)dst = fi->call<vec3>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<vec3, const vec3&>(obj, *(vec3*)src);
 		}
 	};
 
 	struct TypeInfo_vec4 : TypeInfo_Data
 	{
+		thread_local static vec4 v;
+
 		TypeInfo_vec4() :
 			TypeInfo_Data("glm::vec4", sizeof(vec4))
 		{
@@ -1075,16 +1446,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec4*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec4*)dst = s2t<4, float>(str);
+			if (!p) p = &v;
+			*(vec4*)p = s2t<4, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(vec4*)dst = fi->call<vec4>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<vec4, const vec4&>(obj, *(vec4*)src);
 		}
 	};
 
 	struct TypeInfo_mat2 : TypeInfo_Data
 	{
+		thread_local static mat2 v;
+
 		TypeInfo_mat2() :
 			TypeInfo_Data("glm::mat2", sizeof(mat2))
 		{
@@ -1092,10 +1479,25 @@ namespace flame
 			vec_size = 2;
 			col_size = 2;
 		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(mat2*)dst = fi->call<mat2>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<mat2, const mat2&>(obj, *(mat2*)src);
+		}
 	};
 
 	struct TypeInfo_mat3 : TypeInfo_Data
 	{
+		thread_local static mat3 v;
+
 		TypeInfo_mat3() :
 			TypeInfo_Data("glm::mat3", sizeof(mat3))
 		{
@@ -1103,10 +1505,25 @@ namespace flame
 			vec_size = 3;
 			col_size = 3;
 		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(mat3*)dst = fi->call<mat3>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<mat3, const mat3&>(obj, *(mat3*)src);
+		}
 	};
 
 	struct TypeInfo_mat4 : TypeInfo_Data
 	{
+		thread_local static mat4 v;
+
 		TypeInfo_mat4() :
 			TypeInfo_Data("glm::mat4", sizeof(mat4))
 		{
@@ -1114,10 +1531,25 @@ namespace flame
 			vec_size = 4;
 			col_size = 4;
 		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(mat4*)dst = fi->call<mat4>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<mat4, const mat4&>(obj, *(mat4*)src);
+		}
 	};
 
 	struct TypeInfo_quat : TypeInfo_Data
 	{
+		thread_local static quat v;
+
 		TypeInfo_quat() :
 			TypeInfo_Data("glm::quat", sizeof(quat))
 		{
@@ -1125,16 +1557,33 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec4*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec4*)dst = s2t<4, float>(str).yzwx();
+			if (!p) p = &v;
+			*(vec4*)p = s2t<4, float>(str).yzwx();
+		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(quat*)dst = fi->call<quat>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<quat, const quat&>(obj, *(quat*)src);
 		}
 	};
 
 	struct TypeInfo_string : TypeInfo_Data
 	{
+		thread_local static std::string v;
+
 		TypeInfo_string() :
 			TypeInfo_Data("std::string", sizeof(std::string))
 		{
@@ -1162,16 +1611,32 @@ namespace flame
 		}
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return *(std::string*)p;
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(std::string*)dst = str;
+			if (!p) p = &v;
+			*(std::string*)p = str;
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::string*)dst = fi->call<std::string>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<std::string, const std::string&>(obj, *(std::string*)src);
 		}
 	};
 
 	struct TypeInfo_wstring : TypeInfo_Data
 	{
+		thread_local static std::wstring v;
+
 		TypeInfo_wstring() :
 			TypeInfo_Data("std::wstring", sizeof(std::string))
 		{
@@ -1199,16 +1664,32 @@ namespace flame
 		}
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return w2s(*(std::wstring*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(std::wstring*)dst = s2w(str);
+			if (!p) p = &v;
+			*(std::wstring*)p = s2w(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::wstring*)dst = fi->call<std::wstring>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<std::wstring, const std::wstring&>(obj, *(std::wstring*)src);
 		}
 	};
 
 	struct TypeInfo_path : TypeInfo_Data
 	{
+		thread_local static std::filesystem::path v;
+
 		TypeInfo_path() :
 			TypeInfo_Data("std::filesystem::path", sizeof(std::filesystem::path))
 		{
@@ -1236,16 +1717,32 @@ namespace flame
 		}
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return (*(std::filesystem::path*)p).string();
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(std::filesystem::path*)dst = str;
+			if (!p) p = &v;
+			*(std::filesystem::path*)p = str;
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::filesystem::path*)dst = fi->call<std::filesystem::path>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<std::filesystem::path, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
 		}
 	};
 
 	struct TypeInfo_Rect : TypeInfo_Data
 	{
+		thread_local static Rect v;
+
 		TypeInfo_Rect() :
 			TypeInfo_Data("flame::Rect", sizeof(Rect))
 		{
@@ -1256,16 +1753,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec4*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec4*)dst = s2t<4, float>(str);
+			if (!p) p = &v;
+			*(vec4*)p = s2t<4, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(Rect*)dst = fi->call<Rect>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<Rect, const Rect&>(obj, *(Rect*)src);
 		}
 	};
 
 	struct TypeInfo_AABB : TypeInfo_Data
 	{
+		thread_local static AABB v;
+
 		TypeInfo_AABB() :
 			TypeInfo_Data("flame::AABB", sizeof(AABB))
 		{
@@ -1276,16 +1789,32 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(mat2x3*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(mat2x3*)dst = s2t<2, 3, float>(str);
+			if (!p) p = &v;
+			*(mat2x3*)p = s2t<2, 3, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(AABB*)dst = fi->call<AABB>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<AABB, const AABB&>(obj, *(AABB*)src);
 		}
 	};
 
 	struct TypeInfo_Plane : TypeInfo_Data
 	{
+		thread_local static Plane v;
+
 		TypeInfo_Plane() :
 			TypeInfo_Data("flame::Plane", sizeof(Plane))
 		{
@@ -1295,19 +1824,48 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
+			if (!p) p = &v;
 			return str(*(vec4*)p);
 		}
-		void unserialize(const std::string& str, void* dst) const override
+		void unserialize(const std::string& str, void* p) const override
 		{
-			*(vec4*)dst = s2t<4, float>(str);
+			if (!p) p = &v;
+			*(vec4*)p = s2t<4, float>(str);
+		}
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(Plane*)dst = fi->call<Plane>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<Plane, const Plane&>(obj, *(Plane*)src);
 		}
 	};
 
 	struct TypeInfo_Frustum : TypeInfo_Data
 	{
+		thread_local static Frustum v;
+
 		TypeInfo_Frustum() :
 			TypeInfo_Data("flame::Frustum", sizeof(Plane))
 		{
+		}
+
+		void call_getter(FunctionInfo* fi, void* obj, void* dst) override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(Frustum*)dst = fi->call<Frustum>(obj);
+		}
+		void call_setter(FunctionInfo* fi, void* obj, void* src) override
+		{
+			assert(fi->return_type == this);
+			if (!src) src = &v;
+			fi->call<Frustum, const Frustum&>(obj, *(Frustum*)src);
 		}
 	};
 

@@ -141,7 +141,7 @@ namespace flame
 				// font_names is seperated by ';'
 				virtual FontAtlasPtr operator()(DevicePtr device, const std::wstring& font_names) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 	}
 

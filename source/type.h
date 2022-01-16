@@ -45,9 +45,15 @@ namespace flame
 	}
 
 	template<typename T>
-	bool is_one_of(const T& v, std::initializer_list<T> lst)
+	bool is_one_of(T v, std::initializer_list<T> lst)
 	{
 		return std::find(std::begin(lst), std::end(lst), v) != std::end(lst);
+	}
+
+	template<typename T>
+	bool is_in(T v, T left, T right)
+	{
+		return v >= left && v <= right;
 	}
 
 	template<class, template<typename...> class>

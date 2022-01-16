@@ -72,6 +72,41 @@ namespace flame
 		return t;
 	}
 
+	thread_local int TypeInfo_Enum::v;
+	thread_local bool TypeInfo_bool::v;
+	thread_local char TypeInfo_char::v;
+	thread_local uchar TypeInfo_uchar::v;
+	thread_local short TypeInfo_short::v;
+	thread_local ushort TypeInfo_ushort::v;
+	thread_local int TypeInfo_int::v;
+	thread_local uint TypeInfo_uint::v;
+	thread_local int64 TypeInfo_int64::v;
+	thread_local uint64 TypeInfo_uint64::v;
+	thread_local float TypeInfo_float::v;
+	thread_local cvec2 TypeInfo_cvec2::v;
+	thread_local cvec3 TypeInfo_cvec3::v;
+	thread_local cvec4 TypeInfo_cvec4::v;
+	thread_local ivec2 TypeInfo_ivec2::v;
+	thread_local ivec3 TypeInfo_ivec3::v;
+	thread_local ivec4 TypeInfo_ivec4::v;
+	thread_local uvec2 TypeInfo_uvec2::v;
+	thread_local uvec3 TypeInfo_uvec3::v;
+	thread_local uvec4 TypeInfo_uvec4::v;
+	thread_local vec2 TypeInfo_vec2::v;
+	thread_local vec3 TypeInfo_vec3::v;
+	thread_local vec4 TypeInfo_vec4::v;
+	thread_local mat2 TypeInfo_mat2::v;
+	thread_local mat3 TypeInfo_mat3::v;
+	thread_local mat4 TypeInfo_mat4::v;
+	thread_local quat TypeInfo_quat::v;
+	thread_local std::string TypeInfo_string::v;
+	thread_local std::wstring TypeInfo_wstring::v;
+	thread_local std::filesystem::path TypeInfo_path::v;
+	thread_local Rect TypeInfo_Rect::v;
+	thread_local AABB TypeInfo_AABB::v;
+	thread_local Plane TypeInfo_Plane::v;
+	thread_local Frustum TypeInfo_Frustum::v;
+
 	TypeInfoDataBase::TypeInfoDataBase()
 	{
 		if (!_tidb.typeinfos.empty())
@@ -107,13 +142,13 @@ namespace flame
 		_tidb.add_ti(new TypeInfo_mat3);
 		_tidb.add_ti(new TypeInfo_mat4);
 		_tidb.add_ti(new TypeInfo_quat);
+		_tidb.add_ti(new TypeInfo_string);
+		_tidb.add_ti(new TypeInfo_wstring);
+		_tidb.add_ti(new TypeInfo_path);
 		_tidb.add_ti(new TypeInfo_Rect);
 		_tidb.add_ti(new TypeInfo_AABB);
 		_tidb.add_ti(new TypeInfo_Plane);
 		_tidb.add_ti(new TypeInfo_Frustum);
-		_tidb.add_ti(new TypeInfo_string);
-		_tidb.add_ti(new TypeInfo_wstring);
-		_tidb.add_ti(new TypeInfo_path);
 
 		auto app_name = get_app_path(true);
 		if (app_name.filename() != L"typeinfogen.exe")
@@ -207,6 +242,8 @@ namespace flame
 					a.getter_idx = att.as_int();
 				if (auto att = n_attribute.attribute("setter_idx"); att)
 					a.setter_idx = att.as_int();
+				if (auto att = n_attribute.attribute("default_value"); att)
+					a.default_value = att.value();
 			}
 		}
 
@@ -388,6 +425,8 @@ namespace flame
 							n_attribute.append_attribute("getter_idx").set_value(a.getter_idx);
 						if (a.setter_idx != -1)
 							n_attribute.append_attribute("setter_idx").set_value(a.setter_idx);
+						if (!a.default_value.empty())
+							n_attribute.append_attribute("default_value").set_value(a.default_value.c_str());
 					}
 				}
 			}

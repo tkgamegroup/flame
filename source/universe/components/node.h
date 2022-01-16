@@ -58,6 +58,6 @@ namespace flame
 			virtual cNodePtr operator()(EntityPtr) = 0;
 		};
 		/// Reflect static
-		FLAME_UNIVERSE_EXPORTS static Create& create;
+		FLAME_UNIVERSE_API static Create& create;
 	};
 }

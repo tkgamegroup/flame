@@ -42,13 +42,13 @@ namespace flame
 				virtual RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info) = 0;
 				virtual RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
 				virtual RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 
 		struct Framebuffer
@@ -62,7 +62,7 @@ namespace flame
 			{
 				virtual FramebufferPtr operator()(RenderpassPtr renderpass, std::span<ImageViewPtr> views) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 		};
 	}
 }

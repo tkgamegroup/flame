@@ -106,13 +106,13 @@ namespace flame
 				virtual ImagePtr operator()(DevicePtr device, BitmapPtr bmp) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
 				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 
 		struct ImageView
@@ -135,7 +135,7 @@ namespace flame
 			{
 				virtual SamplerPtr operator()(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 
 		struct ImageAtlas
@@ -168,7 +168,7 @@ namespace flame
 			{
 				virtual ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Get& get;
+			FLAME_GRAPHICS_API static Get& get;
 		};
 	}
 }

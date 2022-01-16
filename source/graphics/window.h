@@ -41,13 +41,13 @@ namespace flame
 			{
 				virtual WindowPtr operator()(DevicePtr device, NativeWindow* native) = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static Create& create;
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct GetList
 			{
 				virtual const std::vector<WindowPtr>& operator()() = 0;
 			};
-			FLAME_GRAPHICS_EXPORTS static GetList& get_list;
+			FLAME_GRAPHICS_API static GetList& get_list;
 		};
 	}
 }
