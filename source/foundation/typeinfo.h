@@ -747,7 +747,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<bool>(obj, *(bool*)src);
+			fi->call<void>(obj, *(bool*)src);
 		}
 	};
 
@@ -781,7 +781,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<char>(obj, *(char*)src);
+			fi->call<void>(obj, *(char*)src);
 		}
 	};
 
@@ -816,7 +816,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<uchar>(obj, *(uchar*)src);
+			fi->call<void>(obj, *(uchar*)src);
 		}
 	};
 
@@ -850,7 +850,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<short>(obj, *(short*)src);
+			fi->call<void>(obj, *(short*)src);
 		}
 	};
 
@@ -885,7 +885,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<ushort>(obj, *(ushort*)src);
+			fi->call<void>(obj, *(ushort*)src);
 		}
 	};
 
@@ -919,7 +919,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<int>(obj, *(int*)src);
+			fi->call<void>(obj, *(int*)src);
 		}
 	};
 
@@ -954,7 +954,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<uint>(obj, *(uint*)src);
+			fi->call<void>(obj, *(uint*)src);
 		}
 	};
 
@@ -988,7 +988,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<int64>(obj, *(int64*)src);
+			fi->call<void>(obj, *(int64*)src);
 		}
 	};
 
@@ -1023,7 +1023,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<uint64>(obj, *(uint64*)src);
+			fi->call<void>(obj, *(uint64*)src);
 		}
 	};
 
@@ -1057,7 +1057,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { (TypeInfo* const)this }));
 			if (!src) src = &v;
-			fi->call<float>(obj, *(float*)src);
+			fi->call<void>(obj, *(float*)src);
 		}
 	};
 
@@ -1093,7 +1093,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec2*>() }));
 			if (!src) src = &v;
-			fi->call<cvec2, const cvec2&>(obj, *(cvec2*)src);
+			fi->call<void, const cvec2&>(obj, *(cvec2*)src);
 		}
 	};
 
@@ -1129,7 +1129,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec3*>() }));
 			if (!src) src = &v;
-			fi->call<cvec3, const cvec3&>(obj, *(cvec3*)src);
+			fi->call<void, const cvec3&>(obj, *(cvec3*)src);
 		}
 	};
 
@@ -1165,7 +1165,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<cvec4*>() }));
 			if (!src) src = &v;
-			fi->call<cvec4, const cvec4&>(obj, *(cvec4*)src);
+			fi->call<void, const cvec4&>(obj, *(cvec4*)src);
 		}
 	};
 
@@ -1200,7 +1200,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec2*>() }));
 			if (!src) src = &v;
-			fi->call<ivec2, const ivec2&>(obj, *(ivec2*)src);
+			fi->call<void, const ivec2&>(obj, *(ivec2*)src);
 		}
 	};
 
@@ -1235,7 +1235,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec3*>() }));
 			if (!src) src = &v;
-			fi->call<ivec3, const ivec3&>(obj, *(ivec3*)src);
+			fi->call<void, const ivec3&>(obj, *(ivec3*)src);
 		}
 	};
 
@@ -1270,7 +1270,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<ivec4*>() }));
 			if (!src) src = &v;
-			fi->call<ivec4, const ivec4&>(obj, *(ivec4*)src);
+			fi->call<void, const ivec4&>(obj, *(ivec4*)src);
 		}
 	};
 
@@ -1306,7 +1306,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec2*>() }));
 			if (!src) src = &v;
-			fi->call<uvec2, const uvec2&>(obj, *(uvec2*)src);
+			fi->call<void, const uvec2&>(obj, *(uvec2*)src);
 		}
 	};
 
@@ -1342,7 +1342,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec3*>() }));
 			if (!src) src = &v;
-			fi->call<uvec3, const uvec3&>(obj, *(uvec3*)src);
+			fi->call<void, const uvec3&>(obj, *(uvec3*)src);
 		}
 	};
 
@@ -1378,7 +1378,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<uvec4*>() }));
 			if (!src) src = &v;
-			fi->call<uvec4, const uvec4&>(obj, *(uvec4*)src);
+			fi->call<void, const uvec4&>(obj, *(uvec4*)src);
 		}
 	};
 
@@ -1413,7 +1413,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec2*>() }));
 			if (!src) src = &v;
-			fi->call<vec2, const vec2&>(obj, *(vec2*)src);
+			fi->call<void, const vec2&>(obj, *(vec2*)src);
 		}
 	};
 
@@ -1448,7 +1448,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec3*>() }));
 			if (!src) src = &v;
-			fi->call<vec3, const vec3&>(obj, *(vec3*)src);
+			fi->call<void, const vec3&>(obj, *(vec3*)src);
 		}
 	};
 
@@ -1483,7 +1483,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<vec4*>() }));
 			if (!src) src = &v;
-			fi->call<vec4, const vec4&>(obj, *(vec4*)src);
+			fi->call<void, const vec4&>(obj, *(vec4*)src);
 		}
 	};
 
@@ -1509,7 +1509,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat2*>() }));
 			if (!src) src = &v;
-			fi->call<mat2, const mat2&>(obj, *(mat2*)src);
+			fi->call<void, const mat2&>(obj, *(mat2*)src);
 		}
 	};
 
@@ -1535,7 +1535,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat3*>() }));
 			if (!src) src = &v;
-			fi->call<mat3, const mat3&>(obj, *(mat3*)src);
+			fi->call<void, const mat3&>(obj, *(mat3*)src);
 		}
 	};
 
@@ -1561,7 +1561,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<mat4*>() }));
 			if (!src) src = &v;
-			fi->call<mat4, const mat4&>(obj, *(mat4*)src);
+			fi->call<void, const mat4&>(obj, *(mat4*)src);
 		}
 	};
 
@@ -1595,7 +1595,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<quat*>() }));
 			if (!src) src = &v;
-			fi->call<quat, const quat&>(obj, *(quat*)src);
+			fi->call<void, const quat&>(obj, *(quat*)src);
 		}
 	};
 
@@ -1790,7 +1790,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Rect*>() }));
 			if (!src) src = &v;
-			fi->call<Rect, const Rect&>(obj, *(Rect*)src);
+			fi->call<void, const Rect&>(obj, *(Rect*)src);
 		}
 	};
 
@@ -1826,7 +1826,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<AABB*>() }));
 			if (!src) src = &v;
-			fi->call<AABB, const AABB&>(obj, *(AABB*)src);
+			fi->call<void, const AABB&>(obj, *(AABB*)src);
 		}
 	};
 
@@ -1861,7 +1861,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Plane*>() }));
 			if (!src) src = &v;
-			fi->call<Plane, const Plane&>(obj, *(Plane*)src);
+			fi->call<void, const Plane&>(obj, *(Plane*)src);
 		}
 	};
 
@@ -1884,7 +1884,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Frustum*>() }));
 			if (!src) src = &v;
-			fi->call<Frustum, const Frustum&>(obj, *(Frustum*)src);
+			fi->call<void, const Frustum&>(obj, *(Frustum*)src);
 		}
 	};
 
