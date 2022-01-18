@@ -6,6 +6,8 @@ namespace flame
 {
 	struct sElementRendererPrivate : sElementRenderer
 	{
+		sElementRendererPrivate() {}
+
 		void update() override;
 	};
 }

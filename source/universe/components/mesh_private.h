@@ -15,12 +15,10 @@ namespace flame
 		int mesh_id = -1;
 		graphics::MeshPtr mesh = nullptr;
 
-		cNodePtr node = nullptr;
 		int transform_id = -1;
 		uint frame = 0;
 
-		cMeshPrivate() {}
-		cMeshPrivate(cNodePtr node);
+		cMeshPrivate();
 		~cMeshPrivate();
 
 		void set_model_name(const std::filesystem::path& model_name) override;

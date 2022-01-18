@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Create
 		{
-			virtual sElementRendererPtr operator()() = 0;
+			virtual sElementRendererPtr operator()(WorldPtr w) = 0;
 		};
 		FLAME_UNIVERSE_API static Create& create;
 	};

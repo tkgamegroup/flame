@@ -74,7 +74,7 @@ namespace flame
 		}
 
 		virtual Component* add_component(uint hash) = 0;
-		virtual void remove_component(uint hash, bool destroy = true) = 0;
+		virtual bool remove_component(uint hash) = 0;
 
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */ ) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;

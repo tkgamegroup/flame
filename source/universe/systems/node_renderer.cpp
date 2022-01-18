@@ -395,8 +395,11 @@ namespace flame
 
 	struct sNodeRendererCreatePrivate : sNodeRenderer::Create
 	{
-		sNodeRendererPtr operator()(WorldPtr) override
+		sNodeRendererPtr operator()(WorldPtr w) override
 		{
+			if (!w)
+				return new sNodeRendererPrivate();
+
 			assert(!_instance);
 
 			auto& windows = graphics::Window::get_list();

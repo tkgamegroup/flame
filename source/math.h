@@ -71,7 +71,7 @@ namespace flame
 
 	union LightCommonValue
 	{
-		cvec4 b;
+		cvec4 c;
 		int i;
 		uint u;
 		float f;

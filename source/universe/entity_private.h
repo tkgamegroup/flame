@@ -22,7 +22,7 @@ namespace flame
 		void set_enable(bool v) override;
 
 		Component* add_component(uint hash) override;
-		void remove_component(uint hash, bool destroy = true) override;
+		bool remove_component(uint hash) override;
 
 		void add_child(EntityPtr e, int position = -1) override;
 		void on_child_removed(EntityPrivate* e) const;

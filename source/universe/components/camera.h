@@ -7,6 +7,9 @@ namespace flame
 	/// Reflect ctor
 	struct cCamera : Component
 	{
+		/// Reflect requires
+		cNodePtr node = nullptr;
+
 		/// Reflect
 		float fovy = 45.f;
 		/// Reflect

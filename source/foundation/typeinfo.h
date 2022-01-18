@@ -278,59 +278,68 @@ namespace flame
 
 	struct Metas
 	{
-		std::vector<std::pair<uint, LightCommonValue>> d;
+		struct Item
+		{
+			std::string name;
+			uint hash;
+			LightCommonValue value;
+		};
+
+		std::vector<Item> items;
+
+		Item* add_item(const std::string& name)
+		{
+			auto& i = items.emplace_back();
+			i.name = name;
+			i.hash = sh(name.c_str());
+			return &i;
+		}
 
 		void from_string(const std::string& str)
 		{
-			for (auto& i : SUS::split(SUS::get_trimed(str), ';'))
+			for (auto& t : SUS::split(SUS::get_trimed(str)))
 			{
-				auto sp = SUS::split(i, '=');
-				auto& m = d.emplace_back();
-				m.first = sh(sp[0].c_str());
-				switch (m.first)
-				{
-				case "Location"_h:
-					m.second.u = std::stoi(sp[1]);
-					break;
-				case "MinValue"_h:
-				case "MaxValue"_h:
-					m.second.u = std::stof(sp[1]);
-					break;
-				}
+				auto sp = SUS::split(t, '=');
+				auto& i = *add_item(sp[0]);
+				if (i.name.ends_with("_i"))
+					i.value.i = s2t<int>(sp[1]);
+				else if (i.name.ends_with("_u"))
+					i.value.u = s2t<uint>(sp[1]);
+				else if (i.name.ends_with("_f"))
+					i.value.f = s2t<float>(sp[1]);
+				else if (i.name.ends_with("_c"))
+					i.value.c = s2t<4, uchar>(sp[1]);
 			}
 		}
 
 		std::string to_string()
 		{
 			std::string ret;
-			for (auto& i : d)
+			for (auto& i : items)
 			{
 				if (!ret.empty())
-					ret += ';';
-				switch (i.first)
-				{
-				case "Location"_h:
-					ret += "Location=" + str(i.second.i);
-					break;
-				case "MinValue"_h:
-					ret += "MinValue=" + str(i.second.f);
-					break;
-				case "MaxValue"_h:
-					ret += "MaxValue=" + str(i.second.f);
-					break;
-				}
+					ret += ' ';
+				ret += i.name;
+				if (i.name.ends_with("_i"))
+					ret += "=" + str(i.value.i);
+				else if (i.name.ends_with("_u"))
+					ret += "=" + str(i.value.u);
+				else if (i.name.ends_with("_f"))
+					ret += "=" + str(i.value.f);
+				else if (i.name.ends_with("_c"))
+					ret += "=" + str(i.value.c);
 			}
 			return ret;
 		}
 
 		inline bool get(uint h, LightCommonValue* v = nullptr) const
 		{
-			for (auto& i : d)
+			for (auto& i : items)
 			{
-				if (i.first == h)
+				if (i.hash == h)
 				{
 					if (v)
-						*v = i.second;
+						*v = i.value;
 					return true;
 				}
 			}

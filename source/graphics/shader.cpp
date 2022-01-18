@@ -471,9 +471,8 @@ namespace flame
 						}
 						vi.offset = ui.size;
 						{
-							auto& m = vi.metas.d.emplace_back();
-							m.first = "Location"_h;
-							m.second.i = location;
+							auto& i = *vi.metas.add_item("Location_i");
+							i.value.i = location;
 						}
 						ui.size += vi.type->size;
 					}
@@ -1331,7 +1330,7 @@ namespace flame
 							{
 								auto& va = vb.attributes.emplace_back();
 								LightCommonValue cv;
-								vi.metas.get("Location"_h, &cv);
+								vi.metas.get("Location_i"_h, &cv);
 								va.location = cv.i;
 								if (vi.type == TypeInfo::get<float>())
 									va.format = Format_R32_SFLOAT;

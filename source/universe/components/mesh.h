@@ -7,6 +7,9 @@ namespace flame
 	/// Reflect ctor
 	struct cMesh : Component
 	{
+		/// Reflect requires
+		cNodePtr node = nullptr;
+
 		/// Reflect
 		std::filesystem::path model_name = L"standard:cube";
 		/// Reflect

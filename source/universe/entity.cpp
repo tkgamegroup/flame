@@ -29,6 +29,12 @@ namespace flame
 	{
 		for (auto& l : message_listeners.list)
 			l("destroyed"_h, nullptr, nullptr);
+
+		for (auto it = components.rbegin(); it != components.rend(); it++)
+		{
+			auto comp = it->release();
+			delete comp;
+		}
 	}
 
 	void EntityPrivate::update_enable()
@@ -81,6 +87,29 @@ namespace flame
 			return nullptr;
 		}
 
+		std::vector<std::pair<Component*, uint>> require_comps;
+		for (auto& vi : ui->variables)
+		{
+			if (vi.metas.get("requires"_h))
+			{
+				auto ok = false;
+				if (vi.type->tag == TagPU)
+				{
+					auto comp = get_component(sh(vi.type->name.c_str()));
+					if (comp)
+					{
+						require_comps.emplace_back(comp, vi.offset);
+						ok = true;
+					}
+				}
+				if (!ok)
+				{
+					printf("cannot add component: %s requires %s, which doesn't exist\n", ui->name.c_str(), vi.type->name.c_str());
+					return nullptr;
+				}
+			}
+		}
+
 		auto fi = ui->find_function("create");
 		if (!fi)
 		{
@@ -101,6 +130,12 @@ namespace flame
 			return nullptr;
 		}
 
+		for (auto _c : require_comps)
+		{
+			_c.first->n_strong_ref++;
+			*(void**)((char*)c + _c.second) = _c.first;
+		}
+
 		c->type_hash = hash;
 		c->entity = this;
 
@@ -116,16 +151,37 @@ namespace flame
 		return c;
 	}
 
-	void EntityPrivate::remove_component(uint hash, bool destroy)
+	bool EntityPrivate::remove_component(uint hash)
 	{
 		auto it = component_map.find(hash);
 		if (it == component_map.end())
 		{
-			printf("cannot remove component: component with hash %u does not exist", hash);
-			return;
+			printf("cannot remove component: component with hash %u does not exist\n", hash);
+			return false;
 		}
 
 		auto c = it->second;
+		if (c->n_strong_ref != 0)
+		{
+			printf("cannot remove component: component is strongly referenced by other compoent(s)\n", hash);
+			return false;
+		}
+
+		{
+			auto ui = find_udt(hash);
+			for (auto& vi : ui->variables)
+			{
+				if (vi.metas.get("requires"_h))
+				{
+					auto comp = get_component(sh(vi.type->name.c_str()));
+					if (comp)
+						comp->n_strong_ref--;
+					else
+						assert(0);
+				}
+			}
+		}
+
 		component_map.erase(it);
 
 		for (auto it = components.begin(); it != components.end(); it++)
@@ -144,8 +200,9 @@ namespace flame
 		if (world)
 			c->on_active();
 
-		if (destroy)
-			delete c;
+		delete c;
+
+		return true;
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)

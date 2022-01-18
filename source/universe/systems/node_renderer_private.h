@@ -2,6 +2,9 @@
 
 #include "node_renderer.h"
 
+#include "../../graphics/image.h"
+#include "../../graphics/renderpass.h"
+#include "../../graphics/shader.h"
 #include "../../graphics/extension.h"
 
 namespace flame
@@ -40,6 +43,7 @@ namespace flame
 
 		bool initialized = false;
 
+		sNodeRendererPrivate() {}
 		sNodeRendererPrivate(graphics::WindowPtr w);
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout dst_layout) override;

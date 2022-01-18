@@ -117,8 +117,11 @@ namespace flame
 
 	struct sSceneCreate : sScene::Create
 	{
-		sScenePtr operator()(WorldPtr) override
+		sScenePtr operator()(WorldPtr w) override
 		{
+			if (!w)
+				return nullptr;
+
 			assert(!_instance);
 			_instance = new sScenePrivate();
 			return _instance;

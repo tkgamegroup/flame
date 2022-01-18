@@ -361,6 +361,7 @@ process:
 							if (SUS::strip_head_if(line, "Reflect"))
 							{
 								auto metas = line;
+
 								auto need_ctor = false;
 
 								auto sp = SUS::split(line);
@@ -702,6 +703,7 @@ process:
 						fi.name = name;
 						fi.rva = rva;
 						fi.voff = voff;
+						fi.metas = metas;
 						fi.library = library;
 
 						IDiaSymbol* s_function_type;
@@ -816,6 +818,7 @@ process:
 							reference_type(vi.type);
 							vi.name = name;
 							vi.offset = offset;
+							vi.metas = metas;
 						}
 					}
 					s_variable->Release();

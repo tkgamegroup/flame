@@ -9,8 +9,11 @@ namespace flame
 
 	struct sElementRendererCreatePrivate : sElementRenderer::Create
 	{
-		sElementRendererPtr operator()() override
+		sElementRendererPtr operator()(WorldPtr w) override
 		{
+			if (!w)
+				return new sElementRendererPrivate();
+
 			return new sElementRendererPrivate();
 		}
 	}sElementRenderer_create_private;

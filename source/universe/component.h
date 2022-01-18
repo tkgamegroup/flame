@@ -12,6 +12,8 @@ namespace flame
 
 		Listeners<void(uint)> data_listeners;
 
+		uint n_strong_ref = 0;
+
 		virtual ~Component() 
 		{
 			on_inactive();

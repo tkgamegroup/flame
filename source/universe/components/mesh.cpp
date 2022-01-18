@@ -9,33 +9,34 @@
 
 namespace flame
 {
-	cMeshPrivate::cMeshPrivate(cNodePtr _node) :
-		node(_node)
+	cMeshPrivate::cMeshPrivate()
 	{
-		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-			draw(renderer, shadow_pass);
-		});
+		if (node)
+		{
+			drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+				draw(renderer, shadow_pass);
+				});
 
-		measurer_lis = node->measurers.add([this](AABB* ret) {
-			if (!mesh)
-				return false;
-			AABB b;
-			b.reset();
-			vec3 ps[8];
-			mesh->bounds.get_points(ps);
-			auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
-			for (auto i = 0; i < 8; i++)
-				b.expand(mat * vec4(ps[i], 1.f));
-			*ret = b;
-			return true;
-		});
+			measurer_lis = node->measurers.add([this](AABB* ret) {
+				if (!mesh)
+					return false;
+				AABB b;
+				b.reset();
+				vec3 ps[8];
+				mesh->bounds.get_points(ps);
+				auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
+				for (auto i = 0; i < 8; i++)
+					b.expand(mat * vec4(ps[i], 1.f));
+				*ret = b;
+				return true;
+				});
 
-		node->mark_drawing_dirty();
+			node->mark_drawing_dirty();
+		}
 	}
 
 	cMeshPrivate::~cMeshPrivate()
 	{
-		auto node = entity->get_component_i<cNodeT>(0);
 		node->drawers.remove(drawer_lis);
 		node->measurers.remove(measurer_lis);
 	}
@@ -168,17 +169,7 @@ namespace flame
 	{
 		cMeshPtr operator()(EntityPtr e) override
 		{
-			if (!e)
-				return new cMeshPrivate;
-
-			auto node = e->get_component_i<cNodeT>(0);
-			if (!node)
-			{
-				printf("mesh component needs node component\n");
-				return nullptr;
-			}
-
-			return new cMeshPrivate(node);
+			return new cMeshPrivate();
 		}
 	}cMesh_create_private;
 	cMesh::Create& cMesh::create = cMesh_create_private;
