@@ -18,8 +18,9 @@ namespace flame
 		int transform_id = -1;
 		uint frame = 0;
 
-		cMeshPrivate();
 		~cMeshPrivate();
+
+		void on_init() override;
 
 		void set_model_name(const std::filesystem::path& model_name) override;
 		void set_mesh_index(uint idx) override;

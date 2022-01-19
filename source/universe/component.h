@@ -25,6 +25,7 @@ namespace flame
 				l(h);
 		}
 
+		virtual void on_init() {}
 		virtual void on_active() {}
 		virtual void on_inactive() {}
 		virtual void on_component_added(Component* c) {}

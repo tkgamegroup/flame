@@ -130,14 +130,16 @@ namespace flame
 			return nullptr;
 		}
 
+		c->type_hash = hash;
+		c->entity = this;
+
 		for (auto _c : require_comps)
 		{
 			_c.first->n_strong_ref++;
 			*(void**)((char*)c + _c.second) = _c.first;
 		}
 
-		c->type_hash = hash;
-		c->entity = this;
+		c->on_init();
 
 		for (auto& _c : components)
 			_c->on_component_added(c);

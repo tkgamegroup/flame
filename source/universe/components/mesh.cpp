@@ -9,36 +9,33 @@
 
 namespace flame
 {
-	cMeshPrivate::cMeshPrivate()
-	{
-		if (node)
-		{
-			drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-				draw(renderer, shadow_pass);
-				});
-
-			measurer_lis = node->measurers.add([this](AABB* ret) {
-				if (!mesh)
-					return false;
-				AABB b;
-				b.reset();
-				vec3 ps[8];
-				mesh->bounds.get_points(ps);
-				auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
-				for (auto i = 0; i < 8; i++)
-					b.expand(mat * vec4(ps[i], 1.f));
-				*ret = b;
-				return true;
-				});
-
-			node->mark_drawing_dirty();
-		}
-	}
-
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove(drawer_lis);
 		node->measurers.remove(measurer_lis);
+	}
+
+	void cMeshPrivate::on_init()
+	{
+		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+			draw(renderer, shadow_pass);
+		});
+
+		measurer_lis = node->measurers.add([this](AABB* ret) {
+			if (!mesh)
+				return false;
+			AABB b;
+			b.reset();
+			vec3 ps[8];
+			mesh->bounds.get_points(ps);
+			auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
+			for (auto i = 0; i < 8; i++)
+				b.expand(mat * vec4(ps[i], 1.f));
+			*ret = b;
+			return true;
+		});
+
+		node->mark_drawing_dirty();
 	}
 
 	void cMeshPrivate::set_model_name(const std::filesystem::path& _model_name)
