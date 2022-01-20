@@ -22,7 +22,7 @@ namespace flame
 		// return: armature id
 		virtual uint add_mesh_armature(const mat4* bones, uint count) = 0;
 		// id: transform or armature id
-		virtual void draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags = ShadingMaterial) = 0;
+		virtual void draw_mesh(uint id, uint mesh_id, uint skin, DrawType type) = 0;
 
 		struct Instance
 		{

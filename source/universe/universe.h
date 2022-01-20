@@ -117,15 +117,13 @@ namespace flame
 		RenderNormalData
 	};
 
-	enum ShadingFlags
+	enum DrawType
 	{
-		ShadingMaterial = 1 << 0,
-		ShadingShadow = 1 << 1,
-		ShadingWireframe = 1 << 2,
-		ShadingOutline = 1 << 3
+		DrawShaded,
+		DrawOccluder,
+		DrawWireframe,
+		DrawOutline
 	};
-
-	inline ShadingFlags operator| (ShadingFlags a, ShadingFlags b) { return (ShadingFlags)((int)a | (int)b); }
 
 	inline constexpr uint MaxLod = 6;
 }
