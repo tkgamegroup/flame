@@ -16,6 +16,7 @@ namespace flame
 	{
 		data = stbi__convert_format(data, chs, _chs, size.x, size.y);
 		chs = _chs;
+		bpp = _chs * 8;
 		pitch = image_pitch(size.x * (bpp / 8));
 		data_size = pitch * size.y;
 	}
@@ -123,15 +124,16 @@ namespace flame
 			return ret;
 		}
 
-		BitmapPtr operator()(const std::filesystem::path& filename) override
+		BitmapPtr operator()(const std::filesystem::path& filename, int req_ch) override
 		{
 			if (!std::filesystem::exists(filename))
 				return nullptr;
 
 			int cx, cy, chs;
-			auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, 0);
+			auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, req_ch);
 			if (!data)
 				return nullptr;
+			if (req_ch) chs = req_ch;
 			auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
 			stbi_image_free(data);
 			return ret;

@@ -30,11 +30,6 @@ namespace flame
 		/// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
-		/// Reflect
-		ShadingFlags shading_flags = ShadingMaterial;
-		/// Reflect
-		virtual void set_shading_flags(ShadingFlags flags) = 0;
-
 		struct Create
 		{
 			virtual cMeshPtr operator()(EntityPtr e) = 0;

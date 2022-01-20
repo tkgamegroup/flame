@@ -205,10 +205,12 @@ int main(int argc, char** args)
 {
 	auto ap = parse_args(argc, args);
 
-	app.init(); 
+	app.init();
 
-	auto settings_i = parse_ini_file(L"settings.ini");
-	for (auto& e : settings_i.get_section_entries("opened_windows"))
+	std::filesystem::path preferences_path = L"preferences.ini";
+
+	auto preferences_i = parse_ini_file(preferences_path);
+	for (auto& e : preferences_i.get_section_entries("opened_windows"))
 	{
 		for (auto w : views)
 		{
@@ -219,12 +221,12 @@ int main(int argc, char** args)
 			}
 		}
 	}
-	for (auto& e : settings_i.get_section_entries("project_path"))
+	for (auto& e : preferences_i.get_section_entries("project_path"))
 	{
 		app.open_project(e.value);
 		break;
 	}
-	for (auto& e : settings_i.get_section_entries("opened_prefab"))
+	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
 	{
 		app.open_prefab(e.value);
 		break;
@@ -232,24 +234,24 @@ int main(int argc, char** args)
 
 	app.run();
 
-	std::ofstream settings_o("settings.ini");
-	settings_o << "[opened_windows]\n";
+	std::ofstream preferences_o(preferences_path);
+	preferences_o << "[opened_windows]\n";
 	for (auto w : views)
 	{
 		if (w->lis)
-			settings_o << w->name << "\n";
+			preferences_o << w->name << "\n";
 	}
 	if (!app.project_path.empty())
 	{
-		settings_o << "[project_path]\n";
-		settings_o << app.project_path.string() << "\n";
+		preferences_o << "[project_path]\n";
+		preferences_o << app.project_path.string() << "\n";
 	}
 	if (app.e_prefab)
 	{
-		settings_o << "[opened_prefab]\n";
-		settings_o << app.prefab_path.string() << "\n";
+		preferences_o << "[opened_prefab]\n";
+		preferences_o << app.prefab_path.string() << "\n";
 	}
-	settings_o.close();
+	preferences_o.close();
 
 	return 0;
 }

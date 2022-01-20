@@ -27,7 +27,6 @@ namespace flame
 		void set_skin_index(uint idx) override;
 
 		void set_cast_shadow(bool v) override;
-		void set_shading_flags(ShadingFlags flags) override;
 
 		void apply_src();
 

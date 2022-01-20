@@ -78,7 +78,7 @@ void View_Project::Item::set_size()
 
 	if (is_image_file(path.extension()))
 	{
-		auto d = get_thumbnail(metric.size, path.c_str());
+		auto d = get_thumbnail(metric.size, path);
 		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 		thumbnail = img;
 		view_project.thumbnails.emplace_back(img);
@@ -102,9 +102,7 @@ void View_Project::Item::set_size()
 
 void View_Project::Item::draw()
 {
-	ImGui::BeginGroup();
 	auto pressed = ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
-	auto draw_list = ImGui::GetWindowDrawList();
 	auto p0 = ImGui::GetItemRectMin();
 	auto p1 = ImGui::GetItemRectMax();
 	auto active = ImGui::IsItemActive();
@@ -113,10 +111,10 @@ void View_Project::Item::draw()
 	if		(active)								col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 	else if (hovered || selection.selecting(path))	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
 	else											col = ImColor(0, 0, 0, 0);
+	auto draw_list = ImGui::GetWindowDrawList();
 	draw_list->AddRectFilled(p0, p1, col);
 	draw_list->AddImage(thumbnail, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
 	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - display_text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), display_text.c_str(), display_text.c_str() + display_text.size());
-	ImGui::EndGroup();
 
 	if (pressed)
 	{

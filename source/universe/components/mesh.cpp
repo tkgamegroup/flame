@@ -75,15 +75,6 @@ namespace flame
 		data_changed("cast_shadow"_h);
 	}
 
-	void cMeshPrivate::set_shading_flags(ShadingFlags flags)
-	{
-		if (shading_flags == flags)
-			return;
-		shading_flags = flags;
-		node->mark_drawing_dirty();
-		data_changed("shading_flags"_h);
-	}
-
 	void cMeshPrivate::apply_src()
 	{
 		mesh = nullptr;
@@ -142,10 +133,10 @@ namespace flame
 		if (shadow_pass)
 		{
 			if (cast_shadow)
-				renderer->draw_mesh(idx, mesh_id, skin_index, ShadingShadow);
+				renderer->draw_mesh(idx, mesh_id, skin_index, DrawOccluder);
 		}
 		else
-			renderer->draw_mesh(idx, mesh_id, skin_index, shading_flags);
+			renderer->draw_mesh(idx, mesh_id, skin_index, DrawShaded);
 	}
 
 	void cMeshPrivate::on_active()

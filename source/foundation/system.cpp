@@ -10,6 +10,15 @@
 
 namespace flame
 {
+	uint64 get_file_size(const std::filesystem::path& path)
+	{
+		auto h = CreateFileA(path.string().c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+		LARGE_INTEGER len;
+		GetFileSizeEx(h, &len);
+		CloseHandle(h);
+		return len.QuadPart;
+	}
+
 	void sleep(int time)
 	{
 		Sleep(time);

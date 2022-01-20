@@ -56,7 +56,7 @@ namespace flame
 
 		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
 		uint add_mesh_armature(const mat4* bones, uint count) override;
-		void draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags) override;
+		void draw_mesh(uint id, uint mesh_id, uint skin, DrawType type) override;
 
 		void collect_draws(Entity* e);
 		void render(uint img_idx, graphics::CommandBufferPtr cb);

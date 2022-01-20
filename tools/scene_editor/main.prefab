@@ -5,14 +5,6 @@
       ui = entity
     </cScript>
     <eMenuBar fill_color="0,0,0,127">
-      <eMenu text="file">
-        <eMenuItem text="open..">
-          <cScript>on_menu(cmd_file_open)</cScript>
-        </eMenuItem>
-        <eMenuItem text="save as..">
-          <cScript>on_menu(cmd_file_save_as)</cScript>
-        </eMenuItem>
-      </eMenu>
       <eMenu text="shading">
 		    <eMenuItem checkable="true" text="wireframe">
           <cScript>on_radio_menu(cmd_shading_wireframe)</cScript>
@@ -37,14 +29,6 @@
         <eMenuItem checkable="true" text="bounds">
           <cScript>on_check_menu(cmd_view_bounds)</cScript>
         </eMenuItem>
-        <eMenu text="camera">
-          <eMenuItem checkable="true" text="fly">
-            <cScript>on_radio_menu(cmd_view_camera_fly)</cScript>
-          </eMenuItem>
-          <eMenuItem checkable="true" checked="true" text="arcball">
-            <cScript>on_radio_menu(cmd_view_camera_arcball)</cScript>
-          </eMenuItem>
-        </eMenu>
       </eMenu>
       <eMenu text="tools">
         <eMenuItem checkable="true" text="ui reflector">
@@ -63,52 +47,18 @@
         </eMenuItem>
       </eMenu>
     </eMenuBar>
-    <eElement name="toolbar" layout_type="Horizontal">
-      <eToolButton text=""/>
-      <eToolButton text=""/>
-    </eElement>
     <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax">
       <eSplitter type="Horizontal" alignx="MinMax" aligny="MinMax" width_factor="8">
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" width_factor="2" border="1" fill_color="0,0,0,150">
-          <eList name="prefab_list">
-            <cScript src="prefab_list.lua"/>
-          </eList>
-        </eScroller>
         <eElement name="scene" alignx="MinMax" aligny="MinMax" width_factor="8">
           <cReceiver/>
-          <cScript src="scene.lua"/>
           <eElement name="debug_layer"/>
           <eElement name="debug_bounds" visible="false">
-            <cScript src="debug_bounds.lua"/>
           </eElement>
           <eElement name="hud_global_axes" visible="false" width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,150">
-            <cScript src="hud_global_axes.lua"/>
           </eElement>
           <eElement name="hud_crosshair" visible="false" alignx="MinMax" aligny="MinMax">
-            <cScript src="hud_crosshair.lua"/>
           </eElement>
         </eElement>
-      </eSplitter>
-      <eSplitter type="Vertical" alignx="MinMax" aligny="MinMax" width_factor="2">
-        <eElement alignx="MinMax" aligny="MinMax" layout_type="Vertical">
-          <eButton text="Refresh">
-            <cScript>
-              entity.find_component("cReceiver").add_mouse_click_listener(function()
-                update_hierachy()
-              end)
-            </cScript>
-          </eButton>
-          <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150">
-            <eTree name="hierarchy" padding="4,4,4,4" alignx="MinMax">
-              <cScript src="hierarchy.lua"/>
-            </eTree>
-          </eScroller>
-        </eElement>
-        <eScroller type="Vertical" padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" fill_color="0,0,0,150">
-          <eTree name="inspector" padding="4,4,4,4" alignx="MinMax">
-            <cScript src="inspector.lua"/>
-          </eTree>
-        </eScroller>
       </eSplitter>
     </eSplitter>
   </eElement>

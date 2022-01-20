@@ -685,7 +685,7 @@ namespace flame
 				}
 				else
 				{
-					std::unique_ptr<Bitmap> bmp(Bitmap::create(filename));
+					std::unique_ptr<Bitmap> bmp(Bitmap::create(filename, 4));
 					if (srgb)
 						bmp->srgb_to_linear();
 

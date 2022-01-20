@@ -310,7 +310,7 @@ namespace flame
 		return 0;
 	}
 
-	void sNodeRendererPrivate::draw_mesh(uint id, uint mesh_id, uint skin, ShadingFlags flags)
+	void sNodeRendererPrivate::draw_mesh(uint id, uint mesh_id, uint skin, DrawType type)
 	{
 		auto& mr = mesh_reses[mesh_id];
 		buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (id << 16) + 0/* mat id */);
