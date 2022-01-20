@@ -35,7 +35,8 @@ namespace flame
 				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
 				  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=0x" + str((uint64)rp_fwd) });
+				{ "rp=0x" + str((uint64)rp_fwd),
+				  "frag:CAMERA_LIGHT" });
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
@@ -239,6 +240,7 @@ namespace flame
 				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
 					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
+					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
 					buf_vtx.next_item();
 				}
 				//	vtx.uv = auv ? auv[i] : vec2(0.f);
@@ -342,9 +344,15 @@ namespace flame
 		camera->aspect = sz.x / sz.y;
 		camera->update();
 
-		buf_scene.set_var<"proj"_h>(camera->proj_mat);
+		buf_scene.set_var<"camera_coord"_h>(camera->node->g_pos);
+		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
+
 		buf_scene.set_var<"view"_h>(camera->view_mat);
+		buf_scene.set_var<"view_inv"_h>(inverse(camera->view_mat));
+		buf_scene.set_var<"proj"_h>(camera->proj_mat);
+		buf_scene.set_var<"proj_inv"_h>(inverse(camera->proj_mat));
 		buf_scene.set_var<"proj_view"_h>(camera->proj_mat * camera->view_mat);
+		
 		buf_scene.upload(cb);
 
 		buf_mesh_transforms.upload(cb);

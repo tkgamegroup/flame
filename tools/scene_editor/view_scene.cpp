@@ -33,44 +33,62 @@ void View_Scene::on_draw()
 			}
 			if (camera_node)
 			{
-				if (ImGui::IsMouseDown(ImGuiMouseButton_Middle))
-				{
-					auto disp = (vec2)ImGui::GetIO().MouseDelta;
-					if (disp.x != 0.f || disp.y != 0.f)
-					{
-						if (ImGui::GetIO().KeyShift)
-						{
+				auto get_tar = [&]() {
+					return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+				};
 
-						}
-						else
-						{
-							disp /= vec2(render_tar->size);
-							disp *= -180.f;
+				auto& io = ImGui::GetIO();
+				if (io.KeyAlt)
+				{
+					if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+					{
+						disp /= vec2(render_tar->size);
+						disp *= -180.f;
+						if (io.MouseDown[ImGuiMouseButton_Left])
 							camera_node->add_eul(vec3(disp, 0.f));
+						else if (io.MouseDown[ImGuiMouseButton_Middle])
+						{
+							auto tar = get_tar();
+							camera_node->add_eul(vec3(disp, 0.f));
+							auto eul = camera_node->eul;
+							auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+							camera_node->set_pos(tar + rot[2] * camera_zoom);
 						}
 					}
 				}
-				if (ImGui::IsKeyDown(Keyboard_W))
+				if (io.KeyShift)
+				{
+					if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+					{
+						disp /= vec2(render_tar->size);
+						if (io.MouseDown[ImGuiMouseButton_Middle])
+						{
+							camera_node->add_pos((-camera_node->g_rot[0] * disp.x + 
+								camera_node->g_rot[1] * disp.y) * camera_zoom);
+						}
+					}
+				}
+				if (io.KeysDown[Keyboard_W])
 				{
 					camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
 					app.render_frames += 30;
 				}
-				if (ImGui::IsKeyDown(Keyboard_S))
+				if (io.KeysDown[Keyboard_S])
 				{
 					camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
 					app.render_frames += 30;
 				}
-				if (ImGui::IsKeyDown(Keyboard_A))
+				if (io.KeysDown[Keyboard_A])
 				{
 					camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
 					app.render_frames += 30;
 				}
-				if (ImGui::IsKeyDown(Keyboard_D))
+				if (io.KeysDown[Keyboard_D])
 				{
 					camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
 					app.render_frames += 30;
 				}
-				if (ImGui::IsKeyDown(Keyboard_F))
+				if (io.KeysDown[Keyboard_F])
 				{
 					if (selection.type == Selection::tEntity)
 					{
@@ -78,9 +96,14 @@ void View_Scene::on_draw()
 							camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
 					}
 				}
-				if (auto scroll = ImGui::GetIO().MouseWheel; scroll != 0.f)
+				if (auto scroll = io.MouseWheel; scroll != 0.f)
 				{
-
+					auto tar = get_tar();
+					if (scroll < 0.f)
+						camera_zoom = camera_zoom * 1.1f + 0.5f;
+					else
+						camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+					camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
 				}
 			}
 		}
