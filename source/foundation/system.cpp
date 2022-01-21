@@ -36,6 +36,33 @@ namespace flame
 		return li.QuadPart;
 	}
 
+	std::filesystem::path get_special_path(std::string_view type)
+	{
+		int csidl = -1;
+		if (type == "Desktop")
+			csidl = CSIDL_DESKTOP;
+		else if (type == "My Document")
+			csidl = CSIDL_MYDOCUMENTS;
+		if (csidl != -1)
+		{
+			wchar_t buf[256];
+			SHGetFolderPathW(NULL, csidl, NULL, 0, buf);
+			return buf;
+		}
+		return L"";
+	}
+
+	void move_file_to_recycle_bin(const std::filesystem::path& _path)
+	{
+		auto path = _path.wstring();
+		path.resize(path.size() + 1);
+		SHFILEOPSTRUCTW shfo = { NULL, FO_DELETE, path.c_str(), NULL,
+			FOF_ALLOWUNDO | FOF_SILENT | FOF_NOERRORUI | FOF_NOCONFIRMATION,
+			FALSE, NULL, NULL };
+
+		SHFileOperationW(&shfo);
+	}
+
 	std::filesystem::path get_app_path(bool has_name)
 	{
 		wchar_t buf[256];

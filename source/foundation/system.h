@@ -23,6 +23,10 @@ namespace flame
 	FLAME_FOUNDATION_API Guid generate_guid();
 	FLAME_FOUNDATION_API uint64 performance_counter();
 	FLAME_FOUNDATION_API uint64 performance_frequency();
+	// "Desktop"
+	// "My Document" - typical: C:\Documents and Settings\User\My Documents
+	FLAME_FOUNDATION_API std::filesystem::path get_special_path(std::string_view type);
+	FLAME_FOUNDATION_API void move_file_to_recycle_bin(const std::filesystem::path& path);
 	FLAME_FOUNDATION_API std::filesystem::path get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_API void* get_hinst();
 	FLAME_FOUNDATION_API uvec2 get_screen_size();

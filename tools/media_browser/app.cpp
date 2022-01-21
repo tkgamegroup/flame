@@ -127,13 +127,13 @@ void App::init()
 		{
 			auto& item = show_items[showing_item_idx];
 
+			auto& io = ImGui::GetIO();
 			auto draw_list = ImGui::GetWindowDrawList();
 			draw_list->AddImage(item.image.get(), showing_item_off, showing_item_off + (vec2)item.image->size * showing_item_scl);
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || io.KeysDown[Keyboard_Esc])
 				showing_item_idx = -1;
 			else
 			{
-				auto& io = ImGui::GetIO();
 				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 				{
 					if (io.MouseDown[ImGuiMouseButton_Left])
@@ -148,6 +148,27 @@ void App::init()
 					else
 						showing_item_scl = max(0.1f, showing_item_scl / 1.05f - 0.05f);
 					showing_item_off += p * (scl1 - showing_item_scl);
+				}
+				if (io.KeysDown[Keyboard_Left])
+				{
+					if (showing_item_idx > 0)
+						showing_item_idx--;
+				}
+				if (io.KeysDown[Keyboard_Right])
+				{
+					if (showing_item_idx < show_items.size() - 1)
+						showing_item_idx++;
+				}
+				if (io.KeysDown[Keyboard_Del])
+				{
+					add_event([&]() {
+						move_file_to_recycle_bin(item.file().path);
+						files.erase(files.begin() + item.idx);
+						show_items.erase(show_items.begin() + showing_item_idx);
+						if (showing_item_idx >= show_items.size())
+							showing_item_idx = (int)show_items.size() - 1;
+						return false;
+					});
 				}
 			}
 		}
@@ -186,10 +207,19 @@ void App::select_random()
 {
 	graphics::Queue::get(nullptr)->wait_idle();
 	show_items.clear();
+	auto find_idx = [&](int i) {
+		for (auto& item : show_items)
+		{
+			if (item.idx == i)
+				return true;
+		}
+		return false;
+	};
 	auto n = min((int)files.size(), 5);
 	for (auto i = 0; i < n; i++)
 	{
 		auto idx = linearRand(0, (int)files.size() - 1);
+		if (find_idx(idx)) continue;
 		auto& path = files[idx].path;
 		auto ext = path.extension();
 		if (ext == L".jpg" || ext == L".jpeg" || ext == L".png")
@@ -211,6 +241,8 @@ void App::select_random()
 
 int main(int argc, char** args)
 {
+	srand(time(0));
+
 	app.init();
 
 	std::filesystem::path preferences_path = L"preferences.ini";
