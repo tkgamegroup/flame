@@ -19,7 +19,6 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_API uint64 get_file_size(const std::filesystem::path& path);
 	FLAME_FOUNDATION_API void sleep(int time);
 	FLAME_FOUNDATION_API Guid generate_guid();
 	FLAME_FOUNDATION_API uint64 performance_counter();

@@ -412,7 +412,7 @@ namespace flame
 				return ret;
 			}
 
-			ImagePtr operator()(DevicePtr device, Bitmap* bmp) override
+			ImagePtr operator()(DevicePtr device, BitmapPtr bmp) override
 			{
 				if (bmp->chs == 3)
 					bmp->change_format(4);
@@ -428,7 +428,102 @@ namespace flame
 				cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
-				__images.push_back(ret);
+				return ret;
+			}
+
+			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) override
+			{
+				if (!device)
+					device = current_device;
+
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find image: %s\n", filename.c_str());
+					return nullptr;
+				}
+
+				ImagePtr ret = nullptr;
+
+				auto ext = filename.extension();
+				if (ext == L".ktx" || ext == L".dds")
+				{
+					auto is_cube = false;
+
+					auto gli_texture = gli::load(filename.string());
+
+					auto ext = gli_texture.extent();
+					auto levels = (uint)gli_texture.levels();
+					auto layers = (uint)gli_texture.layers();
+					auto faces = (uint)gli_texture.faces();
+					if (faces > 1)
+					{
+						assert(layers == 1);
+						layers = faces;
+					}
+					if (layers == 6)
+						is_cube = true;
+
+					Format format = Format_Undefined;
+					switch (gli_texture.format())
+					{
+					case gli::FORMAT_RGBA8_UNORM_PACK8:
+						format = Format_R8G8B8A8_UNORM;
+						break;
+					case gli::FORMAT_RGBA16_SFLOAT_PACK16:
+						format = Format_R16G16B16A16_SFLOAT;
+						break;
+					case gli::FORMAT_RGBA32_SFLOAT_PACK32:
+						format = Format_R32G32B32A32_SFLOAT;
+						break;
+					}
+					assert(format != Format_Undefined);
+
+					ret = Image::create(device, format, ext, levels, layers,
+						SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);
+
+					StagingBuffer sb(device, ret->data_size, nullptr);
+					InstanceCB cb(device);
+					std::vector<BufferImageCopy> cpies;
+					auto dst = (char*)sb->mapped;
+					auto offset = 0;
+					for (auto i = 0; i < layers; i++)
+					{
+						for (auto j = 0; j < levels; j++)
+						{
+							auto size = gli_texture.size(j);
+							auto ext = gli_texture.extent(j);
+							void* data;
+							if (faces > 1)
+								data = gli_texture.data(0, i, j);
+							else
+								data = gli_texture.data(i, 0, j);
+							memcpy(dst + offset, data, size);
+
+							BufferImageCopy cpy;
+							cpy.buf_off = offset;
+							cpy.img_ext = ext;
+							cpy.img_sub.base_level = j;
+							cpy.img_sub.base_layer = i;
+							cpies.push_back(cpy);
+
+							offset += size;
+						}
+					}
+					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst);
+					cb->copy_buffer_to_image(sb.get(), ret, cpies);
+					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutShaderReadOnly);
+				}
+				else
+				{
+					std::unique_ptr<Bitmap> bmp(Bitmap::create(filename, 4));
+					if (srgb)
+						bmp->srgb_to_linear();
+
+					ret = Image::create(device, bmp.get());
+					ret->filename = filename;
+					ret->srgb = srgb;
+				}
+
 				return ret;
 			}
 
@@ -444,7 +539,6 @@ namespace flame
 				cb->copy_buffer_to_image(stag.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
-				__images.push_back(ret);
 				return ret;
 			}
 		}Image_create;
@@ -606,96 +700,9 @@ namespace flame
 					}
 				}
 
-				if (!std::filesystem::exists(filename))
-				{
-					wprintf(L"cannot find image: %s\n", filename.c_str());
-					return nullptr;
-				}
-
-				ImagePtr ret = nullptr;
-
-				auto ext = filename.extension();
-				if (ext == L".ktx" || ext == L".dds")
-				{
-					auto is_cube = false;
-
-					auto gli_texture = gli::load(filename.string());
-
-					auto ext = gli_texture.extent();
-					auto levels = (uint)gli_texture.levels();
-					auto layers = (uint)gli_texture.layers();
-					auto faces = (uint)gli_texture.faces();
-					if (faces > 1)
-					{
-						assert(layers == 1);
-						layers = faces;
-					}
-					if (layers == 6)
-						is_cube = true;
-
-					Format format = Format_Undefined;
-					switch (gli_texture.format())
-					{
-					case gli::FORMAT_RGBA8_UNORM_PACK8:
-						format = Format_R8G8B8A8_UNORM;
-						break;
-					case gli::FORMAT_RGBA16_SFLOAT_PACK16:
-						format = Format_R16G16B16A16_SFLOAT;
-						break;
-					case gli::FORMAT_RGBA32_SFLOAT_PACK32:
-						format = Format_R32G32B32A32_SFLOAT;
-						break;
-					}
-					assert(format != Format_Undefined);
-
-					ret = Image::create(device, format, ext, levels, layers,
-						SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);
-
-					StagingBuffer sb(device, ret->data_size, nullptr);
-					InstanceCB cb(device);
-					std::vector<BufferImageCopy> cpies;
-					auto dst = (char*)sb->mapped;
-					auto offset = 0;
-					for (auto i = 0; i < layers; i++)
-					{
-						for (auto j = 0; j < levels; j++)
-						{
-							auto size = gli_texture.size(j);
-							auto ext = gli_texture.extent(j);
-							void* data;
-							if (faces > 1)
-								data = gli_texture.data(0, i, j);
-							else
-								data = gli_texture.data(i, 0, j);
-							memcpy(dst + offset, data, size);
-
-							BufferImageCopy cpy;
-							cpy.buf_off = offset;
-							cpy.img_ext = ext;
-							cpy.img_sub.base_level = j;
-							cpy.img_sub.base_layer = i;
-							cpies.push_back(cpy);
-
-							offset += size;
-						}
-					}
-					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst);
-					cb->copy_buffer_to_image(sb.get(), ret, cpies);
-					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutShaderReadOnly);
-				}
-				else
-				{
-					std::unique_ptr<Bitmap> bmp(Bitmap::create(filename, 4));
-					if (srgb)
-						bmp->srgb_to_linear();
-
-					ret = Image::create(device, bmp.get());
-					ret->filename = filename;
-					ret->srgb = srgb;
-				}
-
-				texs.emplace_back(1, ret);
-
+				auto ret = Image::create(device, filename, srgb);
+				if (ret)
+					texs.emplace_back(1, ret);
 				return ret;
 			}
 		}Image_get;

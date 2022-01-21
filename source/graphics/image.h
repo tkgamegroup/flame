@@ -104,6 +104,7 @@ namespace flame
 			{
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false) = 0;
 				virtual ImagePtr operator()(DevicePtr device, BitmapPtr bmp) = 0;
+				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;

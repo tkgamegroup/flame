@@ -456,21 +456,15 @@ namespace flame
 		return FileTypeUnknown;
 	}
 
-	inline int64 get_file_length(std::ifstream& f)
-	{
-		f.seekg(0, std::ios::end);
-		auto s = f.tellg();
-		f.seekg(0, std::ios::beg);
-		return s;
-	}
-
 	inline std::string get_file_content(const std::filesystem::path& filename)
 	{
 		std::string ret;
 		std::ifstream file(filename, std::ios::binary);
 		if (file.good())
 		{
-			auto length = get_file_length(file);
+			file.seekg(0, std::ios::end);
+			auto length = file.tellg();
+			file.seekg(0, std::ios::beg);
 			ret.resize(length);
 			file.read(ret.data(), length);
 			file.close();

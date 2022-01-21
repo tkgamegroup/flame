@@ -288,6 +288,12 @@ namespace flame
 				io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
 
 				{
+					{
+						std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
+						if (std::filesystem::exists(font_path))
+							io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+					}
+
 					uchar* img_data;
 					int img_w, img_h;
 					io.Fonts->GetTexDataAsAlpha8(&img_data, &img_w, &img_h);

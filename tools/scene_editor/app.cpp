@@ -110,31 +110,23 @@ void App::init()
 		}
 		ImGui::EndMainMenuBar();
 
-		auto fmt_path = []() {
-			auto& path = ifd::FileDialog::Instance().GetResult();
-			if (path.has_stem())
-				return path;
-			auto str = path.wstring();
-			str.pop_back();
-			return std::filesystem::path(str);
-		};
 		if (ifd::FileDialog::Instance().IsDone("OpenProjectDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
-				app.open_project(fmt_path());
+				app.open_project(ifd::FileDialog::Instance().GetResultFormated());
 			ifd::FileDialog::Instance().Close();
 		}
 		if (ifd::FileDialog::Instance().IsDone("OpenPrefabDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
-				open_prefab(fmt_path());
+				open_prefab(ifd::FileDialog::Instance().GetResultFormated());
 			ifd::FileDialog::Instance().Close();
 		}
 		if (ifd::FileDialog::Instance().IsDone("NewPrefabDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
-				auto path = fmt_path();
+				auto path = ifd::FileDialog::Instance().GetResultFormated();
 				auto e = Entity::create();
 				e->name = "Hello";
 				e->save(path);
@@ -151,7 +143,7 @@ void App::init()
 					auto editor_node = e_prefab->find_child("[Editor]");
 					if (editor_node)
 						editor_node->parent->remove_child(editor_node, false);
-					e_prefab->save(fmt_path());
+					e_prefab->save(ifd::FileDialog::Instance().GetResultFormated());
 					if (editor_node)
 						e_prefab->add_child(editor_node, 0);
 				}
