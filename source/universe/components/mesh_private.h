@@ -7,16 +7,15 @@ namespace flame
 {
 	struct cMeshPrivate : cMesh
 	{
-		cArmaturePtr parmature = nullptr;
-
 		void* drawer_lis = nullptr;
 		void* measurer_lis = nullptr;
 
 		int mesh_id = -1;
 		graphics::MeshPtr mesh = nullptr;
 
-		int transform_id = -1;
-		uint frame = 0;
+		cArmaturePtr parmature = nullptr;
+		int object_id = -1;
+		int frame = -1;
 
 		~cMeshPrivate();
 

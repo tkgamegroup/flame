@@ -17,6 +17,17 @@ namespace flame
 
 	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
 	{
+		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
+		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
+		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
+		ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
+		ds_scene->update();
+		auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\object.dsl");
+		buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
+		ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
+		ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
+		ds_object->update();
+
 		mesh_reses.resize(1024);
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
@@ -40,16 +51,6 @@ namespace flame
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
-			buf_scene.create(dsl_scene->get_buf_ui("Scene"));
-			ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
-			ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
-			ds_scene->update();
-			auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\object.dsl");
-			buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
-			ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
-			ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
-			ds_object->update();
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
 			buf_idr_mesh.create(0U, buf_objects.array_capacity);
 
@@ -296,24 +297,42 @@ namespace flame
 		return -1;
 	}
 
-	uint sNodeRendererPrivate::add_mesh_transform(const mat4& mat, const mat3& nor)
+	int sNodeRendererPrivate::register_object()
 	{
-		auto id = buf_objects.item_offset();
+		return buf_objects.get_free_item();
+	}
+
+	void sNodeRendererPrivate::unregister_object(uint id)
+	{
+		buf_objects.release_item(id);
+	}
+
+	void sNodeRendererPrivate::set_object_matrix(uint id, const mat4& mat, const mat3& nor)
+	{
+		buf_objects.select_item(id);
 		buf_objects.set_var<"mat"_h>(mat);
 		buf_objects.set_var<"nor"_h>(mat4(nor));
-		buf_objects.next_item();
-		return id;
 	}
 
-	uint sNodeRendererPrivate::add_mesh_armature(const mat4* bones, uint count)
+	int sNodeRendererPrivate::register_armature_object()
 	{
-		return 0;
+		return -1;
 	}
 
-	void sNodeRendererPrivate::draw_mesh(uint id, uint mesh_id, uint skin, DrawType type)
+	void sNodeRendererPrivate::unregister_armature_object(uint id)
+	{
+
+	}
+
+	void sNodeRendererPrivate::set_armature_object_matrices(uint id, const mat4* bones, uint count)
+	{
+
+	}
+
+	void sNodeRendererPrivate::draw_mesh(uint object_id, uint mesh_id, uint skin, DrawType type)
 	{
 		auto& mr = mesh_reses[mesh_id];
-		buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (id << 16) + 0/* mat id */);
+		buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (object_id << 16) + 0/* mat id */);
 	}
 
 	void sNodeRendererPrivate::collect_draws(Entity* e)
