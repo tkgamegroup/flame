@@ -129,10 +129,15 @@ namespace flame
 			if (!std::filesystem::exists(filename))
 				return nullptr;
 
+			auto file = _wfopen(filename.c_str(), L"rb");
+			if (!file)
+				return nullptr;
+
 			int cx, cy, chs;
-			auto data = stbi_load(filename.string().c_str(), &cx, &cy, &chs, req_ch);
+			auto data = stbi_load_from_file(file, &cx, &cy, &chs, req_ch);
 			if (!data)
 				return nullptr;
+			fclose(file);
 			if (req_ch) chs = req_ch;
 			auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
 			stbi_image_free(data);

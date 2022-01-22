@@ -35,6 +35,8 @@ struct App : UniverseApplication
 	void open_dir(const std::filesystem::path& path);
 	ShowItem& add_show_item(int idx, graphics::ImagePtr image);
 	void select_random();
+	void move_show_item_to_recycle_bin(int idx);
+	void reset_showing_item();
 };
 
 App app;
@@ -104,8 +106,7 @@ void App::init()
 					if (pressed)
 					{
 						showing_item_idx = i;
-						showing_item_scl = 1.f;
-						showing_item_off = vec2(0.f);
+						reset_showing_item();
 					}
 				}
 				ImGui::EndChild();
@@ -114,6 +115,9 @@ void App::init()
 				{
 					auto& item = show_items[hovered_idx];
 					ImGui::Text("%s %d %dx%d", item.file().path_u8.c_str(), (uint)item.file().size, item.image->size.x, item.image->size.y);
+
+					if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+						move_show_item_to_recycle_bin(hovered_idx);
 				}
 			}
 			if (ifd::FileDialog::Instance().IsDone("OpenDialog"))
@@ -130,7 +134,8 @@ void App::init()
 			auto& io = ImGui::GetIO();
 			auto draw_list = ImGui::GetWindowDrawList();
 			draw_list->AddImage(item.image.get(), showing_item_off, showing_item_off + (vec2)item.image->size * showing_item_scl);
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || io.KeysDown[Keyboard_Esc])
+			
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsKeyPressed(Keyboard_Esc))
 				showing_item_idx = -1;
 			else
 			{
@@ -149,27 +154,24 @@ void App::init()
 						showing_item_scl = max(0.1f, showing_item_scl / 1.05f - 0.05f);
 					showing_item_off += p * (scl1 - showing_item_scl);
 				}
-				if (io.KeysDown[Keyboard_Left])
+				if (ImGui::IsKeyPressed(Keyboard_Left))
 				{
 					if (showing_item_idx > 0)
+					{
 						showing_item_idx--;
+						reset_showing_item();
+					}
 				}
-				if (io.KeysDown[Keyboard_Right])
+				if (ImGui::IsKeyPressed(Keyboard_Right))
 				{
 					if (showing_item_idx < show_items.size() - 1)
+					{
 						showing_item_idx++;
+						reset_showing_item();
+					}
 				}
-				if (io.KeysDown[Keyboard_Del])
-				{
-					add_event([&]() {
-						move_file_to_recycle_bin(item.file().path);
-						files.erase(files.begin() + item.idx);
-						show_items.erase(show_items.begin() + showing_item_idx);
-						if (showing_item_idx >= show_items.size())
-							showing_item_idx = (int)show_items.size() - 1;
-						return false;
-					});
-				}
+				if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+					move_show_item_to_recycle_bin(showing_item_idx);
 			}
 		}
 
@@ -237,6 +239,27 @@ void App::select_random()
 			delete img;
 		}
 	}
+}
+
+void App::move_show_item_to_recycle_bin(int idx)
+{
+	add_event([idx, this]() {
+		auto& item = show_items[idx];
+		graphics::Queue::get(nullptr)->wait_idle();
+		move_file_to_recycle_bin(item.file().path);
+		files.erase(files.begin() + item.idx);
+		show_items.erase(show_items.begin() + idx);
+		if (showing_item_idx == idx && idx >= show_items.size())
+			showing_item_idx = (int)show_items.size() - 1;
+		reset_showing_item();
+		return false;
+	});
+}
+
+void App::reset_showing_item()
+{
+	showing_item_off = vec2(0.f);
+	showing_item_scl = 1.f;
 }
 
 int main(int argc, char** args)
