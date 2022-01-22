@@ -1,3 +1,3 @@
 #include "../scene.dsl"
-#include "mesh.dsl"
+#include "../object.dsl"
 #include "../material.dsl"

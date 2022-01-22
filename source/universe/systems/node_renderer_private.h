@@ -30,14 +30,14 @@ namespace flame
 		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 
 		std::unique_ptr<graphics::Image> img_dep;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>	buf_scene;
-		std::unique_ptr<graphics::DescriptorSet>								ds_scene;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>		buf_mesh_transforms;
-		std::unique_ptr<graphics::DescriptorSet>								ds_mesh;
-		graphics::PipelineResourceManager<FLAME_UID>							prm_mesh_fwd;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>		buf_idr_mesh;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_objects;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
+		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
+		std::unique_ptr<graphics::DescriptorSet>										ds_object;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_mesh_fwd;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 
 		graphics::ImageLayout dst_layout;
 
@@ -54,9 +54,15 @@ namespace flame
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
 
-		uint add_mesh_transform(const mat4& mat, const mat3& nor) override;
-		uint add_mesh_armature(const mat4* bones, uint count) override;
-		void draw_mesh(uint id, uint mesh_id, uint skin, DrawType type) override;
+		int register_object() override;
+		void unregister_object(uint id) override;
+		void set_object_matrix(uint id, const mat4& mat, const mat3& nor) override;
+
+		int register_armature_object() override;
+		void unregister_armature_object(uint id) override;
+		void set_armature_object_matrices(uint id, const mat4* bones, uint count) override;
+
+		void draw_mesh(uint object_id, uint mesh_id, uint skin, DrawType type) override;
 
 		void collect_draws(Entity* e);
 		void render(uint img_idx, graphics::CommandBufferPtr cb);

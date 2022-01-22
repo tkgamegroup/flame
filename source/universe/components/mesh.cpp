@@ -119,31 +119,32 @@ namespace flame
 			mesh = nullptr;
 			return;
 		}
-		auto get_idx = [&]() {
-			//if (parmature)
-			//	return parmature->armature_id;
-			if (frame < frames)
-			{
-				transform_id = renderer->add_mesh_transform(node->transform, node->g_rot);
-				frame = frames;
-			}
-			return transform_id;
-		};
-		auto idx = get_idx();
+		if (object_id == -1)
+			return;
+		if (frame < (int)frames)
+		{
+			renderer->set_object_matrix(object_id, node->transform, node->g_rot);
+			frame = frames;
+		}
 		if (shadow_pass)
 		{
 			if (cast_shadow)
-				renderer->draw_mesh(idx, mesh_id, skin_index, DrawOccluder);
+				renderer->draw_mesh(object_id, mesh_id, skin_index, DrawOccluder);
 		}
 		else
-			renderer->draw_mesh(idx, mesh_id, skin_index, DrawShaded);
+			renderer->draw_mesh(object_id, mesh_id, skin_index, DrawShaded);
 	}
 
 	void cMeshPrivate::on_active()
 	{
-		parmature = entity->get_parent_component_t<cArmatureT>();
-
 		apply_src();
+
+		parmature = entity->get_parent_component_t<cArmatureT>();
+		if (parmature)
+			;
+		else
+			object_id = sNodeRenderer::instance()->register_object();
+
 		node->mark_transform_dirty();
 	}
 
@@ -151,6 +152,8 @@ namespace flame
 	{
 		mesh = nullptr;
 		mesh_id = -1;
+
+		object_id = -1;
 	}
 
 	struct cMeshCreatePrivate : cMesh::Create

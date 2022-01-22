@@ -44,7 +44,7 @@ namespace flame
 			}
 		};
 
-		template<uint id, BufferUsageFlags usage, bool rewind = true>
+		template<uint id, BufferUsageFlags usage, bool rewind = true, bool sparse = false>
 		struct StorageBuffer : VirtualUdt<id>
 		{
 			using VirtualUdt<id>::ui;
@@ -83,6 +83,8 @@ namespace flame
 
 			std::unique_ptr<BufferT> buf;
 			std::unique_ptr<BufferT> stagbuf;
+			std::vector<BufferCopy> copies;
+			std::deque<uint> free_slots;
 			char* pbeg;
 			char* pend;
 
@@ -94,6 +96,12 @@ namespace flame
 				stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stagbuf->map();
 				pbeg = pend = (char*)stagbuf->mapped;
+
+				if (sparse)
+				{
+					free_slots.resize(_array_capacity);
+					std::iota(free_slots.begin(), free_slots.end(), 0);
+				}
 			}
 
 			void create(UdtInfo* _ui, uint _array_capacity = 1)
@@ -108,13 +116,15 @@ namespace flame
 				create(vi.type->retrive_ui(), vi.array_size);
 			}
 
-			inline uint n_offset()
+			inline uint item_offset()
 			{
+				assert(!sparse);
 				return (pend - (char*)stagbuf->mapped) / size;
 			}
 
 			inline void next_item()
 			{
+				assert(!sparse);
 				pend += size;
 			}
 
@@ -123,6 +133,35 @@ namespace flame
 				auto s = n * size;
 				memcpy(pend, d, s);
 				pend += s;
+			}
+
+			inline int get_free_item()
+			{
+				assert(sparse);
+				if (free_slots.empty())
+					return -1;
+				auto ret = free_slots.front();
+				free_slots.pop_front();
+				return ret;
+			}
+
+			inline void release_item(uint id)
+			{
+				assert(sparse);
+				free_slots.push_back(id);
+			}
+
+			inline void select_item(uint off, bool mark_dirty = true)
+			{
+				assert(sparse);
+				pend = (char*)stagbuf->mapped + off * size;
+				if (mark_dirty)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = pend - (char*)stagbuf->mapped;
+					cpy.size = size;
+					copies.push_back(cpy);
+				}
 			}
 
 			template<typename T>
@@ -139,6 +178,7 @@ namespace flame
 
 			inline void add_draw_indirect(uint vertex_count, uint first_vertex = 0, uint instance_count = 1, uint first_instance = 0)
 			{
+				assert(usage == BufferUsageIndirect);
 				DrawIndirectCommand c;
 				c.vertex_count = vertex_count;
 				c.instance_count = instance_count;
@@ -150,6 +190,7 @@ namespace flame
 
 			inline void add_draw_indexed_indirect(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
 			{
+				assert(usage == BufferUsageIndirect);
 				DrawIndexedIndirectCommand c;
 				c.index_count = index_count;
 				c.instance_count = instance_count;
@@ -162,22 +203,31 @@ namespace flame
 
 			void upload(CommandBufferPtr cb)
 			{
-				BufferCopy cpy;
-				if (array_capacity > 1)
+				if (sparse)
 				{
-					cpy.size = pend - pbeg;
-					if (rewind)
-						pend = pbeg;
-					else
-						pbeg = pend;
+					if (copies.empty())
+						return;
+					cb->copy_buffer(stagbuf.get(), buf.get(), copies);
+					copies.clear();
 				}
 				else
-					cpy.size = size;
-				if (cpy.size > 0)
 				{
+					BufferCopy cpy;
+					if (array_capacity > 1)
+					{
+						cpy.size = pend - pbeg;
+						if (rewind)
+							pend = pbeg;
+						else
+							pbeg = pend;
+					}
+					else
+						cpy.size = size;
+					if (cpy.size == 0)
+						return;
 					cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 				}
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
 		};
 

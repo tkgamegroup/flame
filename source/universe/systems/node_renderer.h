@@ -17,12 +17,15 @@ namespace flame
 		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
 		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
 
-		// return: transform id
-		virtual uint add_mesh_transform(const mat4& mat, const mat3& nor) = 0;
-		// return: armature id
-		virtual uint add_mesh_armature(const mat4* bones, uint count) = 0;
-		// id: transform or armature id
-		virtual void draw_mesh(uint id, uint mesh_id, uint skin, DrawType type) = 0;
+		virtual int register_object() = 0;
+		virtual void unregister_object(uint id) = 0;
+		virtual void set_object_matrix(uint id, const mat4& mat, const mat3& nor) = 0;
+
+		virtual int register_armature_object() = 0;
+		virtual void unregister_armature_object(uint id) = 0;
+		virtual void set_armature_object_matrices(uint id, const mat4* bones, uint count) = 0;
+
+		virtual void draw_mesh(uint object_id, uint mesh_id, uint skin, DrawType type) = 0;
 
 		struct Instance
 		{
