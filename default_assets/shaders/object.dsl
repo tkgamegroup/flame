@@ -1,12 +1,12 @@
-struct Transform
+struct Object
 {
 	mat4 mat;
 	mat4 nor;
 };
 
-layout(set = SET, binding = 0) buffer readonly Transforms
+layout(set = SET, binding = 0) buffer readonly Objects
 {
-	Transform transforms[65536];
+	Object objects[65536];
 };
 
 struct Armature

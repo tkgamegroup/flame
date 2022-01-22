@@ -40,18 +40,18 @@ namespace flame
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			auto scene_dsl = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
-			buf_scene.create(scene_dsl->get_buf_ui("Scene"));
-			ds_scene.reset(graphics::DescriptorSet::create(nullptr, scene_dsl));
+			auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
+			buf_scene.create(dsl_scene->get_buf_ui("Scene"));
+			ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
 			ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
 			ds_scene->update();
-			auto mesh_dsl = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.dsl");
-			buf_mesh_transforms.create_with_array_type(mesh_dsl->get_buf_ui("Transforms"));
-			ds_mesh.reset(graphics::DescriptorSet::create(nullptr, mesh_dsl));
-			ds_mesh->set_buffer("Transforms", 0, buf_mesh_transforms.buf.get());
-			ds_mesh->update();
+			auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\object.dsl");
+			buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
+			ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
+			ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
+			ds_object->update();
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
-			buf_idr_mesh.create(0U, buf_mesh_transforms.array_capacity);
+			buf_idr_mesh.create(0U, buf_objects.array_capacity);
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
 			set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);
@@ -236,7 +236,7 @@ namespace flame
 			dst.arm = !mesh->bone_ids.empty();
 			if (!dst.arm)
 			{
-				dst.vtx_off = buf_vtx.n_offset();
+				dst.vtx_off = buf_vtx.item_offset();
 				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
 					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
@@ -246,7 +246,7 @@ namespace flame
 				//	vtx.uv = auv ? auv[i] : vec2(0.f);
 				//	vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
 
-				dst.idx_off = buf_idx.n_offset();
+				dst.idx_off = buf_idx.item_offset();
 				buf_idx.push(dst.idx_cnt, mesh->indices.data());
 
 				buf_vtx.upload(cb.get());
@@ -298,10 +298,10 @@ namespace flame
 
 	uint sNodeRendererPrivate::add_mesh_transform(const mat4& mat, const mat3& nor)
 	{
-		auto id = buf_mesh_transforms.n_offset();
-		buf_mesh_transforms.set_var<"mat"_h>(mat);
-		buf_mesh_transforms.set_var<"nor"_h>(mat4(nor));
-		buf_mesh_transforms.next_item();
+		auto id = buf_objects.item_offset();
+		buf_objects.set_var<"mat"_h>(mat);
+		buf_objects.set_var<"nor"_h>(mat4(nor));
+		buf_objects.next_item();
 		return id;
 	}
 
@@ -344,6 +344,8 @@ namespace flame
 		camera->aspect = sz.x / sz.y;
 		camera->update();
 
+		collect_draws(world->root.get());
+
 		buf_scene.set_var<"camera_coord"_h>(camera->node->g_pos);
 		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
 
@@ -355,10 +357,8 @@ namespace flame
 		
 		buf_scene.upload(cb);
 
-		buf_mesh_transforms.upload(cb);
-
-		collect_draws(world->root.get());
-		auto n_mesh_idr = buf_idr_mesh.n_offset();
+		buf_objects.upload(cb);
+		auto n_mesh_idr = buf_idr_mesh.item_offset();
 		buf_idr_mesh.upload(cb);
 
 		vec4 cvs[] = { vec4(0.9f, 0.8f, 0.1f, 1.f),
@@ -374,7 +374,7 @@ namespace flame
 			prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
 			prm_mesh_fwd.push_constant(cb);
 			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_mesh_fwd.set_ds("mesh"_h, ds_mesh.get());
+			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			prm_mesh_fwd.bind_dss(cb);
 
 			cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, n_mesh_idr);
@@ -386,8 +386,6 @@ namespace flame
 
 	void sNodeRendererPrivate::update()
 	{
-		if (!initialized)
-			return;
 	}
 
 	static sNodeRendererPtr _instance = nullptr;

@@ -7,8 +7,6 @@ namespace flame
 {
 	struct sScenePrivate : sScene
 	{
-		OctNode* octree = nullptr;
-
 		sScenePrivate();
 
 		void update_transform(EntityPtr e);

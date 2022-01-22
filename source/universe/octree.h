@@ -75,13 +75,10 @@ namespace flame
 					return true;
 			}
 
-			if (!children.empty())
+			for (auto& c : children)
 			{
-				for (auto i = 0; i < 8; i++)
-				{
-					if (children[i]->is_colliding(check_bounds, filter_tag))
-						return true;
-				}
+				if (c->is_colliding(check_bounds, filter_tag))
+					return true;
 			}
 
 			return false;
@@ -102,11 +99,8 @@ namespace flame
 					res.push_back(obj);
 			}
 
-			if (!children.empty())
-			{
-				for (auto i = 0; i < 8; i++)
-					children[i]->get_colliding(check_bounds, res, filter_tag);
-			}
+			for (auto& c : children)
+				c->get_colliding(check_bounds, res, filter_tag);
 		}
 
 		bool is_colliding(const vec2& check_center, float check_radius, uint filter_tag = 0xffffffff)
@@ -124,13 +118,10 @@ namespace flame
 					return true;
 			}
 
-			if (!children.empty())
+			for (auto& c : children)
 			{
-				for (auto i = 0; i < 8; i++)
-				{
-					if (children[i]->is_colliding(check_center, check_radius, filter_tag))
-						return true;
-				}
+				if (c->is_colliding(check_center, check_radius, filter_tag))
+					return true;
 			}
 
 			return false;
@@ -151,11 +142,8 @@ namespace flame
 					res.push_back(obj);
 			}
 
-			if (!children.empty())
-			{
-				for (auto i = 0; i < 8; i++)
-					children[i]->get_colliding(check_center, check_radius, res, filter_tag);
-			}
+			for (auto& c : children)
+				c->get_colliding(check_center, check_radius, res, filter_tag);
 		}
 
 		//bool is_colliding(const Ray& checkRay, float maxDistance = float.PositiveInfinity)
@@ -170,13 +158,10 @@ namespace flame
 		//			return true;
 		//	}
 
-		//	if (!children.empty())
+		//	for (auto& c : children)
 		//	{
-		//		for (auto i = 0; i < 8; i++)
-		//		{
-		//			if (children[i].is_colliding(ref checkRay, maxDistance))
-		//				return true;
-		//		}
+		//		if (c->is_colliding(ref checkRay, maxDistance))
+		//			return true;
 		//	}
 
 		//	return false;
@@ -194,11 +179,8 @@ namespace flame
 		//			result.add(objects[i].Obj);
 		//	}
 
-		//	if (!children.empty())
-		//	{
-		//		for (auto i = 0; i < 8; i++)
-		//			children[i].get_colliding(ref checkRay, result, maxDistance);
-		//	}
+		//	for (auto& c : children)
+		//		c->get_colliding(ref checkRay, result, maxDistance);
 		//}
 
 		void get_within_frustum(const Frustum& frustum, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
@@ -216,11 +198,8 @@ namespace flame
 					res.push_back(obj);
 			}
 
-			if (!children.empty())
-			{
-				for (auto i = 0; i < 8; i++)
-					children[i]->get_within_frustum(frustum, res, filter_tag);
-			}
+			for (auto& c : children)
+				c->get_within_frustum(frustum, res, filter_tag);
 		}
 
 		OctNode* shrink_if_possible()
@@ -286,13 +265,10 @@ namespace flame
 			if (!objects.empty())
 				return true;
 
-			if (!children.empty())
+			for (auto& c : children)
 			{
-				for (auto i = 0; i < 8; i++)
-				{
-					if (children[i]->has_any_objects())
-						return true;
-				}
+				if (c->has_any_objects())
+					return true;
 			}
 
 			return false;
@@ -357,9 +333,8 @@ namespace flame
 
 		void merge()
 		{
-			for (auto i = 0; i < 8; i++)
+			for (auto& c : children)
 			{
-				auto c = children[i].get();
 				for (auto j = (int)c->objects.size() - 1; j >= 0; j--)
 				{
 					auto obj = c->objects[j];

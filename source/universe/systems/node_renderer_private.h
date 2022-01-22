@@ -30,12 +30,12 @@ namespace flame
 		std::vector<std::unique_ptr<graphics::Framebuffer>> fb_tars;
 
 		std::unique_ptr<graphics::Image> img_dep;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>		buf_objects;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>	buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>								ds_scene;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>		buf_mesh_transforms;
-		std::unique_ptr<graphics::DescriptorSet>								ds_mesh;
+		std::unique_ptr<graphics::DescriptorSet>								ds_object;
 		graphics::PipelineResourceManager<FLAME_UID>							prm_mesh_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>		buf_idr_mesh;
 

@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <memory>
 #include <algorithm>
+#include <numeric>
 #include <random>
 #include <filesystem>
 
