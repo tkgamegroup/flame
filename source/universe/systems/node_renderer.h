@@ -27,6 +27,8 @@ namespace flame
 
 		virtual void draw_mesh(uint object_id, uint mesh_id, uint skin, DrawType type) = 0;
 
+		virtual cNodePtr pick_up(const uvec2& pos) = 0;
+
 		struct Instance
 		{
 			virtual sNodeRendererPtr operator()() = 0;

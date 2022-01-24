@@ -227,12 +227,12 @@ namespace flame
 					return false;
 				};
 
-				std::vector<bool> states;
+				std::vector<std::pair<bool, bool>> states;
 				auto ok = true;
 				auto eval_state = [&]() {
 					ok = true;
-					for (auto s : states)
-						ok = ok && s;
+					for (auto& s : states)
+						ok = ok && s.first;
 				};
 
 				auto lines = get_file_lines(src_path);
@@ -241,22 +241,38 @@ namespace flame
 					auto tl = SUS::get_trimed(l);
 					if (SUS::strip_head_if(tl, "#ifdef "))
 					{
-						states.push_back(found_name(tl));
+						auto& s = states.emplace_back();
+						s.first = found_name(tl);
+						s.second = s.first;
 						eval_state();
 					}
 					else if (SUS::strip_head_if(tl, "#ifndef "))
 					{
-						states.push_back(!found_name(tl));
+						auto& s = states.emplace_back();
+						s.first = !found_name(tl);
+						s.second = s.first;
 						eval_state();
 					}
 					else if (tl.starts_with("#else"))
 					{
-						states.back() = !states.back();
+						auto& s = states.back();
+						if (!s.second) 
+							s.first = !states.back().first;
+						else
+							s.first = false;
+						s.second = true;
 						eval_state();
 					}
 					else if (SUS::strip_head_if(tl, "#elifdef "))
 					{
-						states.back() = !states.back() && found_name(tl);
+						auto& s = states.back();
+						if (!s.second)
+						{
+							s.first = found_name(tl);
+							if (s.first) s.second = true;
+						}
+						else
+							s.first = false;
 						eval_state();
 					}
 					else if (tl.starts_with("#endif"))

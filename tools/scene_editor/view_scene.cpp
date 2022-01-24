@@ -24,6 +24,8 @@ void View_Scene::on_draw()
 	if (render_tar)
 	{
 		ImGui::Image(render_tar.get(), size);
+		auto p0 = ImGui::GetItemRectMin();
+		auto p1 = ImGui::GetItemRectMax();
 		if (ImGui::IsItemHovered())
 		{
 			if (!camera_node)
@@ -104,6 +106,11 @@ void View_Scene::on_draw()
 					else
 						camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
 					camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
+				}
+
+				if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+				{
+					auto hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
 				}
 			}
 		}

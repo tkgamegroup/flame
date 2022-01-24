@@ -2,7 +2,7 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/buffer_ext.h>
+#include <flame/graphics/extension.h>
 #include <flame/graphics/shader.h>
 
 using namespace flame;

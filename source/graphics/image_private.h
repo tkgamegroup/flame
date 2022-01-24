@@ -26,8 +26,8 @@ namespace flame
 			~ImagePrivate();
 
 			void get_data(uint level, uint layer);
-			vec4 get_pixel(int x, int y, Level& lv, Layer& ly);
-			void set_pixel(int x, int y, Level& lv, Layer& ly, const vec4& v);
+			vec4 get_pixel(int x, int y, uint level, uint layer);
+			void set_pixel(int x, int y, uint level, uint layer, const vec4& v);
 
 			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) override;

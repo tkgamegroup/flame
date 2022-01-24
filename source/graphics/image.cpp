@@ -86,8 +86,11 @@ namespace flame
 			}
 		}
 
-		vec4 ImagePrivate::get_pixel(int x, int y, Level& lv, Layer& ly)
+		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
 		{
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+
 			x = clamp(x, 0, (int)lv.size.x - 1);
 			y = clamp(y, 0, (int)lv.size.y - 1);
 
@@ -106,8 +109,11 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::set_pixel(int x, int y, Level& lv, Layer& ly, const vec4& v)
+		void ImagePrivate::set_pixel(int x, int y, uint level, uint layer, const vec4& v)
 		{
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+
 			x = clamp(x, 0, (int)lv.size.x - 1);
 			y = clamp(y, 0, (int)lv.size.y - 1);
 
@@ -280,17 +286,15 @@ namespace flame
 
 		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
 		{
-			auto& lv = levels[level];
-			auto& ly = lv.layers[layer];
 			get_data(level, layer);
 
-			auto coord = uv * vec2(lv.size) - 0.5f;
+			auto coord = uv * vec2(levels[level].size) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);
 
 			return mix(
-				mix(get_pixel(coordi.x, coordi.y, lv, ly), get_pixel(coordi.x + 1, coordi.y, lv, ly), coordf.x),
-				mix(get_pixel(coordi.x, coordi.y + 1, lv, ly), get_pixel(coordi.x + 1, coordi.y + 1, lv, ly), coordf.x),
+				mix(get_pixel(coordi.x, coordi.y, level, layer), get_pixel(coordi.x + 1, coordi.y, level, layer), coordf.x),
+				mix(get_pixel(coordi.x, coordi.y + 1, level, layer), get_pixel(coordi.x + 1, coordi.y + 1, level, layer), coordf.x),
 				coordf.y);
 		}
 
@@ -609,22 +613,20 @@ namespace flame
 		{
 			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 
-			auto& lv = img->levels[level];
-			auto& ly = lv.layers[0];
 			img->get_data(level, 0);
 
 			auto coverage = 0.f;
-
-			for (auto y = 0; y < lv.size.y; y++)
+			auto size = img->levels[level].size;
+			for (auto y = 0; y < size.y; y++)
 			{
-				for (auto x = 0; x < lv.size.x; x++)
+				for (auto x = 0; x < size.x; x++)
 				{
-					if (img->get_pixel(x, y, lv, ly)[channel] * scale > ref)
+					if (img->get_pixel(x, y, level, 0)[channel] * scale > ref)
 						coverage += 1.f;
 				}
 			}
 
-			return coverage / float(lv.size.x * lv.size.y);
+			return coverage / float(size.x * size.y);
 		}
 
 		void image_alpha_test_coverage(ImagePtr img, uint level, float desired, float ref, uint channel)
@@ -664,9 +666,9 @@ namespace flame
 				for (auto x = 0; x < lv.size.x; x++)
 				{
 					auto pos = ivec2(x, y);
-					auto v = img->get_pixel(x, y, lv, ly);
+					auto v = img->get_pixel(x, y, level, 0);
 					v[channel] *= best_alpha_scale;
-					img->set_pixel(x, y, lv, ly, v);
+					img->set_pixel(x, y, level, 0, v);
 				}
 			}
 
