@@ -240,7 +240,7 @@ namespace flame
 				});
 
 				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", 
-					{ "rp=0x" + str((uint64)ret->renderpass_clear) }));
+					{ "rp=" + str(ret->renderpass_clear) }));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
 				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->layout->dsls[0]));

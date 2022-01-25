@@ -860,6 +860,7 @@ process:
 								if (setter_idx != -1)
 								{
 									auto& a = u.attributes.emplace_back();
+									a.ui = &u;
 									a.name = name;
 									a.type = u.functions[getter_idx].return_type;
 									a.getter_idx = getter_idx;
@@ -873,6 +874,7 @@ process:
 							if (var_idx != -1)
 							{
 								auto& a = u.attributes.emplace_back();
+								a.ui = &u;
 								a.name = c.first;
 								a.type = u.variables[var_idx].type;
 								a.var_idx = var_idx;
@@ -887,14 +889,8 @@ process:
 				{
 					for (auto& vi : u.variables)
 						vi.default_value = vi.type->serialize((char*)obj + vi.offset);
-					for (auto i = 0; i < u.attributes.size(); i++)
-					{
-						auto& a = u.attributes[i];
-						if (a.var_idx != -1)
-							a.default_value = u.variables[a.var_idx].default_value;
-						else
-							a.default_value = u.serialize_attribute(i, obj);
-					}
+					for (auto& a : u.attributes)
+						a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
 
 					if (auto fi = u.find_function("dtor"); fi)
 						fi->call<void>(obj);

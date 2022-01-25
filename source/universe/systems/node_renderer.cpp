@@ -54,10 +54,10 @@ namespace flame
 		{
 			std::filesystem::path mesh_pl_path = L"default_assets\\shaders\\mesh\\mesh.pipeline";
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, mesh_pl_path,
-				{ "rp=0x" + str((uint64)rp_fwd),
+				{ "rp=" + str(rp_fwd),
 				  "frag:CAMERA_LIGHT" });
 			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, mesh_pl_path,
-				{ "rp=0x" + str((uint64)rp_pickup),
+				{ "rp=" + str(rp_pickup),
 				  "frag:PICKUP" });
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
@@ -355,7 +355,10 @@ namespace flame
 		d.mesh_id = mesh_id;
 		d.skin = skin;
 		d.type = type;
-		draw_meshes.push_back(d);
+		if (type == DrawOutline)
+			draw_outline_meshes.push_back(d);
+		else
+			draw_meshes.push_back(d);
 	}
 
 	void sNodeRendererPrivate::render(uint img_idx, graphics::CommandBufferPtr cb)

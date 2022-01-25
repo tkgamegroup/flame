@@ -1029,7 +1029,7 @@ namespace flame
 			for (auto& l : res.lines)
 			{
 				for (auto& b : SUS::split(l))
-					spv.push_back(s2u64_hex(b));
+					spv.push_back(s2u_hex<uint>(b));
 			}
 			res.read_block("typeinfo:", "");
 			db.load(file);
@@ -1211,7 +1211,7 @@ namespace flame
 			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)s2t<uint64>(value.substr(2));
+					return (void*)s2u_hex<uint64>(value.substr(2));
 				if (value.starts_with("@"))
 				{
 					layout_segment = value;
@@ -1277,7 +1277,7 @@ namespace flame
 			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)s2t<uint64>(value.substr(2));
+					return (void*)s2u_hex<uint64>(value.substr(2));
 				if (!value.empty())
 				{
 					auto defines = renderpass_defines;

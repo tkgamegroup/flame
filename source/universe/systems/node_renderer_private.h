@@ -34,6 +34,7 @@ namespace flame
 		std::vector<MeshRes> mesh_reses;
 
 		std::vector<DrawMesh> draw_meshes;
+		std::vector<DrawMesh> draw_outline_meshes;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -49,6 +50,9 @@ namespace flame
 		graphics::PipelineResourceManager<FLAME_UID>									prm_mesh_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::GraphicsPipelinePtr													pl_mesh_fwd;
+
+		std::unique_ptr<graphics::Image>												img_back0;
+		std::unique_ptr<graphics::Image>												img_back1;
 
 		std::unique_ptr<graphics::Image>												img_pickup;
 		std::unique_ptr<graphics::Image>												img_dep_pickup;

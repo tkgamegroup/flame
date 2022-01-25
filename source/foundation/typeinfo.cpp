@@ -234,6 +234,7 @@ namespace flame
 			for (auto n_attribute : n_udt.child("attributes"))
 			{
 				auto& a = u.attributes.emplace_back();
+				a.ui = &u;
 				a.name = n_attribute.attribute("name").value();
 				a.type = read_ti(n_attribute.attribute("type"));
 				if (auto att = n_attribute.attribute("var_idx"); att)
