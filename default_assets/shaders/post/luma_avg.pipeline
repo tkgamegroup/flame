@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<pipeline>
+  <shaders>
+    <shader filename="post/luma_avg.comp" />
+  </shaders>
+  <layout filename="post/luma.pll" />
+</pipeline>

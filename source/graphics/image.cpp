@@ -362,7 +362,7 @@ namespace flame
 
 		struct ImageCreate : Image::Create
 		{
-			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) override
+			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
 			{
 				if (!device)
 					device = current_device;
@@ -421,8 +421,8 @@ namespace flame
 				if (bmp->chs == 3)
 					bmp->change_format(4);
 
-				auto ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size, 1, 1,
-					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | ImageUsageTransferSrc);
+				auto ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size, 
+					ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc);
 
 				StagingBuffer sb(device, bmp->data_size, bmp->data);
 				InstanceCB cb(device);
@@ -482,8 +482,8 @@ namespace flame
 					}
 					assert(format != Format_Undefined);
 
-					ret = Image::create(device, format, ext, levels, layers,
-						SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, is_cube);
+					ret = Image::create(device, format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, 
+						levels, layers, SampleCount_1, is_cube);
 
 					StagingBuffer sb(device, ret->data_size, nullptr);
 					InstanceCB cb(device);
@@ -533,7 +533,7 @@ namespace flame
 
 			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) override
 			{
-				auto ret = Image::create(device, format, size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+				auto ret = Image::create(device, format, size, ImageUsageSampled | ImageUsageTransferDst);
 
 				StagingBuffer stag(nullptr, image_pitch(get_pixel_size(format) * size.x) * size.y, data);
 				InstanceCB cb(nullptr);
@@ -576,7 +576,7 @@ namespace flame
 				n_levels++;
 			}
 
-			auto img = Image::create(device, format, size, n_levels, n_layers, sample_count, usage, is_cube);
+			auto img = Image::create(device, format, size, usage, n_levels, n_layers, sample_count, is_cube);
 
 			{
 				InstanceCB cb(device);

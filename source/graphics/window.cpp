@@ -301,7 +301,7 @@ namespace flame
 					StagingBuffer stag(nullptr, image_pitch(img_w) * img_h, img_data);
 					InstanceCB cb(nullptr);
 
-					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
 					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutTransferDst);
 					BufferImageCopy cpy;
 					cpy.img_ext = uvec2(img_w, img_h);

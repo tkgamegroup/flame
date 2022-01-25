@@ -16,6 +16,7 @@
 namespace flame
 {
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
+	const graphics::Format back_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
 	const graphics::Format pickup_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
 
 	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
@@ -75,7 +76,7 @@ namespace flame
 
 		iv_tars.assign(targets.begin(), targets.end());
 
-		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment));
+		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, size, graphics::ImageUsageAttachment));
 		auto iv_dep = img_dep->get_view();
 		fbs_fwd.clear();
 		for (auto iv : targets)
@@ -86,8 +87,10 @@ namespace flame
 
 		dst_layout = _dst_layout;
 
-		img_pickup.reset(graphics::Image::create(nullptr, pickup_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, size, 1, 1, graphics::SampleCount_1, graphics::ImageUsageAttachment));
+		img_back0.reset();
+
+		img_pickup.reset(graphics::Image::create(nullptr, pickup_fmt, size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, size, graphics::ImageUsageAttachment));
 		graphics::ImageViewPtr vs[] = { img_pickup->get_view(), img_dep_pickup->get_view() };
 		fb_pickup.reset(graphics::Framebuffer::create(rp_pickup, vs));
 	}

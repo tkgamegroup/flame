@@ -102,7 +102,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false) = 0;
+				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
 				virtual ImagePtr operator()(DevicePtr device, BitmapPtr bmp) = 0;
 				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;

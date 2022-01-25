@@ -54,6 +54,9 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
 
+		graphics::GraphicsPipelinePtr													pl_blur_h;
+		graphics::GraphicsPipelinePtr													pl_blur_v;
+
 		std::unique_ptr<graphics::Image>												img_pickup;
 		std::unique_ptr<graphics::Image>												img_dep_pickup;
 		std::unique_ptr<graphics::Framebuffer>											fb_pickup;

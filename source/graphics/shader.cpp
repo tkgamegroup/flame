@@ -1226,18 +1226,18 @@ namespace flame
 				auto value = src.value();
 				if (!value.empty())
 				{
-					if (value.starts_with("@"))
+					if (SUS::strip_head_if(value, "@"))
 					{
 						ShaderStageFlags type = ShaderStageNone;
-						if (value ==		"@vert")
+						if (value.starts_with("vert"))
 							type = ShaderStageVert;
-						else if (value ==	"@tesc")
+						else if (value.starts_with("tesc"))
 							type = ShaderStageTesc;
-						else if (value ==	"@tese")
+						else if (value.starts_with("tese"))
 							type = ShaderStageTese;
-						else if (value ==	"@geom")
+						else if (value.starts_with("geom"))
 							type = ShaderStageGeom;
-						else if (value ==	"@frag")
+						else if (value.starts_with("frag"))
 							type = ShaderStageFrag;
 						if (type != ShaderStageNone)
 							shader_segments.emplace_back(type, value);

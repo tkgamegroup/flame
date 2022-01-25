@@ -701,9 +701,12 @@ namespace flame
 			auto ilen = SUS::indent_length(src.line());
 			if (ilen == 0 && src.line()[0] == '%')
 			{
-				auto sp = SUS::split(src.line().substr(1), '=');
-				if (sp.size() == 2)
-					defines.emplace_back(sp[0], sp[1]);
+				if (src.line()[1] != '%')
+				{
+					auto sp = SUS::split(src.line().substr(1), '=');
+					if (sp.size() == 2)
+						defines.emplace_back(sp[0], sp[1]);
+				}
 			}
 			else
 			{
