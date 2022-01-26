@@ -1,5 +1,5 @@
 layout
-  @pll
+  post.pll
 shaders
   ../fullscreen.vert
  ---
@@ -9,19 +9,8 @@ renderpass
 cull_mode
   None
 
-@pll
-layout (set = SET, binding = 0) uniform sampler2D img_src;
-
-layout(push_constant) uniform PushConstant
-{
-	int off;
-	int len;
-	float weights[14];
-	vec2 pxsz;
-}pc;
-@
-
 @frag
+
 layout (location = 0) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_color;
@@ -29,15 +18,15 @@ layout (location = 0) out vec4 o_color;
 void main()
 {
 	vec4 res = vec4(0);
-
+	
+	for (int i = 0; i < pc.len; i++)
 	#ifdef HORIZONTAL
-		for (int i = 0; i < pc.len; i++)
-			res += texture(image, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0)) * pc.weights[i];
+		res += texture(image, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0)) * pc.weights[i];
 	#elifdef VERTICAL
-		for (int i = 0; i < pc.len; i++)
-			res += texture(image, i_uv + vec2(0£¬ (i + pc.off) * pc.pxsz.y)) * pc.weights[i];
+		res += texture(image, i_uv + vec2(0£¬ (i + pc.off) * pc.pxsz.y)) * pc.weights[i];
 	#endif
 
 	o_color = res;
 }
+
 @

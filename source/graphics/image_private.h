@@ -38,8 +38,6 @@ namespace flame
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
-			void generate_mipmaps() override;
-
 			void save(const std::filesystem::path& filename) override;
 
 			static ImagePtr create(DevicePtr device, Format format, const uvec2& size, VkImage native);

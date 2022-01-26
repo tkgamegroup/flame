@@ -305,6 +305,12 @@ namespace flame
 				vu_pc.set_var<nh>(temp_pc, v);
 			}
 
+			template<uint nh>
+			inline void set_pc_var(const void* d, uint size)
+			{
+				memcpy(temp_pc + vu_pc.var_off<nh>(), d, size);
+			}
+
 			inline void push_constant(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
 			{
 				cb->push_constant(0, min(size, pll->pc_sz), temp_pc);

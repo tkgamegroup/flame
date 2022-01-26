@@ -96,24 +96,15 @@ namespace flame
 
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
-			virtual void generate_mipmaps() = 0;
-
 			virtual void save(const std::filesystem::path& filename) = 0;
 
 			struct Create
 			{
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
-				virtual ImagePtr operator()(DevicePtr device, BitmapPtr bmp) = 0;
-				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
+				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb = false, bool gen_mipmap = false, float alpha_test = 0.f) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
-
-			struct Get
-			{
-				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) = 0;
-			};
-			FLAME_GRAPHICS_API static Get& get;
 		};
 
 		struct ImageView

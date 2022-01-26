@@ -61,6 +61,14 @@ namespace flame
 			struct Create
 			{
 				virtual FramebufferPtr operator()(RenderpassPtr renderpass, std::span<ImageViewPtr> views) = 0;
+				inline FramebufferPtr operator()(RenderpassPtr renderpass, ImageViewPtr view)
+				{
+					return (*this)(renderpass, { &view, 1 });
+				}
+				inline FramebufferPtr operator()(RenderpassPtr renderpass, std::initializer_list<ImageViewPtr> views)
+				{
+					return (*this)(renderpass, std::span<ImageViewPtr>((ImageViewPtr*)views.begin(), views.size()));
+				}
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

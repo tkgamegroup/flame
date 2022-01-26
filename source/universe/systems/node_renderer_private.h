@@ -26,7 +26,30 @@ namespace flame
 		uint object_id;
 		uint mesh_id;
 		uint skin;
-		DrawType type;
+	};
+
+	struct DrawMeshOccluder
+	{
+		cNodePtr node;
+		uint object_id;
+		uint mesh_id;
+		uint skin;
+	};
+
+	struct DrawMeshOutline
+	{
+		cNodePtr node;
+		uint object_id;
+		uint mesh_id;
+		cvec4 color;
+	};
+
+	struct DrawMeshWireframe
+	{
+		cNodePtr node;
+		uint object_id;
+		uint mesh_id;
+		cvec4 color;
 	};
 
 	struct sNodeRendererPrivate : sNodeRenderer
@@ -34,10 +57,15 @@ namespace flame
 		std::vector<MeshRes> mesh_reses;
 
 		std::vector<DrawMesh> draw_meshes;
-		std::vector<DrawMesh> draw_outline_meshes;
+		std::vector<DrawMeshOccluder> draw_occluder_meshes;
+		std::vector<DrawMeshOutline> draw_outline_meshes;
+		std::vector<DrawMeshWireframe> draw_wireframe_meshes;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
+
+		graphics::GraphicsPipelinePtr													pl_blit;
+		graphics::GraphicsPipelinePtr													pl_add;
 
 		std::unique_ptr<graphics::Image>												img_dep;
 		std::vector<std::unique_ptr<graphics::Framebuffer>>								fbs_fwd;
@@ -54,6 +82,9 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
 
+		graphics::GraphicsPipelinePtr													pl_mesh_plain;
+
+		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
 		graphics::GraphicsPipelinePtr													pl_blur_h;
 		graphics::GraphicsPipelinePtr													pl_blur_v;
 
@@ -86,7 +117,10 @@ namespace flame
 		void unregister_armature_object(uint id) override;
 		void set_armature_object_matrices(uint id, const mat4* bones, uint count) override;
 
-		void draw_mesh(uint object_id, uint mesh_id, uint skin, DrawType type) override;
+		void draw_mesh(uint object_id, uint mesh_id, uint skin) override;
+		void draw_mesh_occluder(uint object_id, uint mesh_id, uint skin) override;
+		void draw_mesh_outline(uint object_id, uint mesh_id, const cvec4& color) override;
+		void draw_mesh_wireframe(uint object_id, uint mesh_id, const cvec4& color) override;
 		void render(uint img_idx, graphics::CommandBufferPtr cb);
 
 		void update() override;

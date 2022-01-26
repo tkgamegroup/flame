@@ -117,13 +117,5 @@ namespace flame
 		RenderNormalData
 	};
 
-	enum DrawType
-	{
-		DrawShaded,
-		DrawOccluder,
-		DrawWireframe,
-		DrawOutline
-	};
-
 	inline constexpr uint MaxLod = 6;
 }

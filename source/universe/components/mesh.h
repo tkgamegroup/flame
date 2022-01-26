@@ -30,6 +30,9 @@ namespace flame
 		/// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
+		int mesh_id = -1;
+		int object_id = -1;
+
 		struct Create
 		{
 			virtual cMeshPtr operator()(EntityPtr e) = 0;

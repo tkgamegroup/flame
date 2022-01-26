@@ -10,11 +10,9 @@ namespace flame
 		void* drawer_lis = nullptr;
 		void* measurer_lis = nullptr;
 
-		int mesh_id = -1;
 		graphics::MeshPtr mesh = nullptr;
 
 		cArmaturePtr parmature = nullptr;
-		int object_id = -1;
 		int frame = -1;
 
 		~cMeshPrivate();

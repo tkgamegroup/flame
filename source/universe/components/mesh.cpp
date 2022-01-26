@@ -129,10 +129,10 @@ namespace flame
 		if (shadow_pass)
 		{
 			if (cast_shadow)
-				renderer->draw_mesh(object_id, mesh_id, skin_index, DrawOccluder);
+				renderer->draw_mesh_occluder(object_id, mesh_id, skin_index);
 		}
 		else
-			renderer->draw_mesh(object_id, mesh_id, skin_index, DrawShaded);
+			renderer->draw_mesh(object_id, mesh_id, skin_index);
 	}
 
 	void cMeshPrivate::on_active()

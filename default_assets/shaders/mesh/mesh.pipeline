@@ -3,10 +3,8 @@
 layout
   {pll}
 shaders
-  filename
-    mesh.vert
+  mesh.vert
  ---
-  filename
-    mesh.frag
+  mesh.frag
 renderpass
   {rp}

@@ -20,12 +20,8 @@ namespace flame
 		{
 			pixel_size = get_pixel_size(format);
 
-			auto auto_lvs = false;
 			if (n_levels == 0)
-			{
-				auto_lvs = true;
 				n_levels = 16;
-			}
 
 			data_size = 0;
 			auto s = size;
@@ -40,15 +36,13 @@ namespace flame
 
 				s.x /= 2;
 				s.y /= 2;
-				if (auto_lvs && s.x == 0 && s.y == 0)
+				if (n_levels == 0 && s.x == 0 && s.y == 0)
 				{
 					n_levels = i + 1;
 					break;
 				}
-				if (s.x == 0)
-					s.x = 1;
-				if (s.y == 0)
-					s.y = 1;
+				if (s.x == 0) s.x = 1;
+				if (s.y == 0) s.y = 1;
 			}
 		}
 
@@ -262,8 +256,7 @@ namespace flame
 				simple_rps.push_back(rp);
 			}
 
-			ImageViewPrivate* vs[] = { get_view({ base_level, 1, base_layer, 1 }) };
-			auto fb = Framebuffer::create(rp, vs);
+			auto fb = Framebuffer::create(rp, get_view({ base_level, 1, base_layer, 1 }));
 			write_fbs.emplace(key, fb);
 			return fb;
 		}
@@ -416,26 +409,86 @@ namespace flame
 				return ret;
 			}
 
-			ImagePtr operator()(DevicePtr device, BitmapPtr bmp) override
+			float get_image_atc(ImagePtr img, uint level, float ref, float scale)
 			{
-				if (bmp->chs == 3)
-					bmp->change_format(4);
+				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
+				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
 
-				auto ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size, 
-					ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc);
+				img->get_data(level, 0);
 
-				StagingBuffer sb(device, bmp->data_size, bmp->data);
-				InstanceCB cb(device);
-				BufferImageCopy cpy;
-				cpy.img_ext = ret->size;
-				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
-				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
+				auto coverage = 0.f;
+				auto size = img->levels[level].size;
+				for (auto y = 0; y < size.y; y++)
+				{
+					for (auto x = 0; x < size.x; x++)
+					{
+						if (img->get_pixel(x, y, level, 0)[ch] * scale > ref)
+							coverage += 1.f;
+					}
+				}
 
-				return ret;
+				return coverage / float(size.x * size.y);
 			}
 
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) override
+			void scale_image_atc(ImagePtr img, uint level, float desired, float ref)
+			{
+				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
+				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
+
+				auto min_alpha_scale = 0.f;
+				auto max_alpha_scale = 4.f;
+				auto alpha_scale = 1.f;
+				auto best_alpha_scale = 1.f;
+				auto best_error = std::numeric_limits<float>::max();
+
+				for (int i = 0; i < 10; i++)
+				{
+					auto current_coverage = get_image_atc(img, level, ref, alpha_scale);
+
+					auto error = abs(current_coverage - desired);
+					if (error < best_error)
+					{
+						best_error = error;
+						best_alpha_scale = alpha_scale;
+					}
+
+					if (current_coverage < desired)
+						min_alpha_scale = alpha_scale;
+					else if (current_coverage > desired)
+						max_alpha_scale = alpha_scale;
+					else
+						break;
+
+					alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
+				}
+
+				auto& lv = img->levels[level];
+				auto& ly = lv.layers[0];
+				img->get_data(level, 0);
+				for (auto y = 0; y < lv.size.y; y++)
+				{
+					for (auto x = 0; x < lv.size.x; x++)
+					{
+						auto pos = ivec2(x, y);
+						auto v = img->get_pixel(x, y, level, 0);
+						v[ch] *= best_alpha_scale;
+						img->set_pixel(x, y, level, 0, v);
+					}
+				}
+
+				{
+					StagingBuffer sb(img->device, lv.data_size, ly.data.get());
+					InstanceCB cb(img->device);
+					BufferImageCopy cpy;
+					cpy.img_ext = lv.size;
+					cpy.img_sub.base_level = level;
+					cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
+					cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
+					cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly);
+				}
+			}
+
+			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb, bool gen_mipmap, float alpha_test) override
 			{
 				if (!device)
 					device = current_device;
@@ -523,7 +576,42 @@ namespace flame
 					if (srgb)
 						bmp->srgb_to_linear();
 
-					ret = Image::create(device, bmp.get());
+					if (bmp->chs == 3)
+						bmp->change_format(4);
+
+					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, gen_mipmap ? 1 : 0);
+
+					{
+						StagingBuffer sb(device, bmp->data_size, bmp->data);
+						InstanceCB cb(device);
+						BufferImageCopy cpy;
+						cpy.img_ext = ret->size;
+						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
+						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
+						if (gen_mipmap)
+						{
+							for (auto i = 1U; i < ret->n_levels; i++)
+							{
+								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
+								ImageBlit blit;
+								blit.src_sub.base_level = i - 1;
+								blit.src_range = ivec4(0, 0, ret->levels[i - 1].size);
+								blit.dst_sub.base_level = i;
+								blit.dst_range = ivec4(0, 0, ret->levels[i].size);
+								cb->blit_image(ret, ret, { &blit, 1 }, FilterLinear);
+							}
+						}
+						cb->image_barrier(ret, { 0, ret->n_levels, 0, 1 }, ImageLayoutShaderReadOnly);
+					}
+
+					if (gen_mipmap && alpha_test > 0.f)
+					{
+						auto coverage = get_image_atc(ret, 0, alpha_test, 1.f);
+						for (auto i = 1; i < ret->n_levels; i++)
+							scale_image_atc(ret, i, coverage, alpha_test);
+					}
+
 					ret->filename = filename;
 					ret->srgb = srgb;
 				}
@@ -561,154 +649,6 @@ namespace flame
 			__images.push_back(ret);
 			return ret;
 		}
-
-		void ImagePrivate::generate_mipmaps()
-		{
-			assert(n_levels == 1);
-
-			auto s = size;
-			for (auto i = 0; ; i++)
-			{
-				s.x >>= 1;
-				s.y >>= 1;
-				if (s.x == 0 && s.y == 0)
-					break;
-				n_levels++;
-			}
-
-			auto img = Image::create(device, format, size, usage, n_levels, n_layers, sample_count, is_cube);
-
-			{
-				InstanceCB cb(device);
-
-				cb->image_barrier(this, {}, ImageLayoutTransferSrc);
-				cb->image_barrier(img, { 0, n_levels, 0, n_layers }, ImageLayoutTransferDst);
-				{
-					ImageCopy cpy;
-					cpy.size = size;
-					cb->copy_image(this, img, { &cpy, 1 });
-				}
-				for (auto i = 1U; i < n_levels; i++)
-				{
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
-					ImageBlit blit;
-					blit.src_sub.base_level = i - 1;
-					blit.src_range = ivec4(0, 0, img->levels[i - 1].size);
-					blit.dst_sub.base_level = i;
-					blit.dst_range = ivec4(0, 0, img->levels[i].size);
-					cb->blit_image(img, img, { &blit, 1 }, FilterLinear);
-					cb->image_barrier(img, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
-				}
-				cb->image_barrier(img, { img->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
-			}
-
-			levels = std::move(img->levels);
-			data_size = img->data_size;
-			std::swap(vk_image, img->vk_image);
-			std::swap(vk_memory, img->vk_memory);
-			delete img;
-		}
-
-		float image_alpha_test_coverage(ImagePtr img, uint level, float ref, uint channel, float scale)
-		{
-			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
-
-			img->get_data(level, 0);
-
-			auto coverage = 0.f;
-			auto size = img->levels[level].size;
-			for (auto y = 0; y < size.y; y++)
-			{
-				for (auto x = 0; x < size.x; x++)
-				{
-					if (img->get_pixel(x, y, level, 0)[channel] * scale > ref)
-						coverage += 1.f;
-				}
-			}
-
-			return coverage / float(size.x * size.y);
-		}
-
-		void image_alpha_test_coverage(ImagePtr img, uint level, float desired, float ref, uint channel)
-		{
-			auto min_alpha_scale = 0.f;
-			auto max_alpha_scale = 4.f;
-			auto alpha_scale = 1.f;
-			auto best_alpha_scale = 1.f;
-			auto best_error = std::numeric_limits<float>::max();
-
-			for (int i = 0; i < 10; i++)
-			{
-				auto current_coverage = image_alpha_test_coverage(img, level, ref, channel, alpha_scale);
-
-				auto error = abs(current_coverage - desired);
-				if (error < best_error)
-				{
-					best_error = error;
-					best_alpha_scale = alpha_scale;
-				}
-
-				if (current_coverage < desired)
-					min_alpha_scale = alpha_scale;
-				else if (current_coverage > desired)
-					max_alpha_scale = alpha_scale;
-				else
-					break;
-
-				alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
-			}
-
-			auto& lv = img->levels[level];
-			auto& ly = lv.layers[0];
-			img->get_data(level, 0);
-			for (auto y = 0; y < lv.size.y; y++)
-			{
-				for (auto x = 0; x < lv.size.x; x++)
-				{
-					auto pos = ivec2(x, y);
-					auto v = img->get_pixel(x, y, level, 0);
-					v[channel] *= best_alpha_scale;
-					img->set_pixel(x, y, level, 0, v);
-				}
-			}
-
-			{
-				StagingBuffer sb(img->device, lv.data_size, ly.data.get());
-				InstanceCB cb(img->device);
-				BufferImageCopy cpy;
-				cpy.img_ext = lv.size;
-				cpy.img_sub.base_level = level;
-				cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
-				cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
-				cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly);
-			}
-		}
-
-		struct ImageGet : Image::Get
-		{
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb) override
-			{
-				if (!device)
-					device = current_device;
-
-				auto& texs = device->texs[srgb ? 1 : 0];
-
-				for (auto& tex : texs)
-				{
-					if (tex.second->filename == filename)
-					{
-						tex.first++;
-						return tex.second.get();
-					}
-				}
-
-				auto ret = Image::create(device, filename, srgb);
-				if (ret)
-					texs.emplace_back(1, ret);
-				return ret;
-			}
-		}Image_get;
-		Image::Get& Image::get = Image_get;
 
 		ImageViewPrivate::~ImageViewPrivate()
 		{
@@ -789,7 +729,7 @@ namespace flame
 
 				auto png_filename = filename;
 				png_filename.replace_extension(L".png");
-				ret->image = Image::get(device, png_filename, false);
+				ret->image = Image::create(device, png_filename, false);
 
 				auto size = (vec2)ret->image->size;
 

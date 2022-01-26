@@ -1,0 +1,7 @@
+layout (set = SET, binding = 0) uniform sampler2D image;
+
+layout(push_constant) uniform PushConstant
+{
+	vec2 scale;
+	vec2 translate;
+}pc;

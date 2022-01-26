@@ -1,4 +1,5 @@
 #include <flame/universe/components/node.h>
+#include <flame/universe/components/mesh.h>
 #include "view_scene.h"
 #include "selection.h"
 
@@ -111,6 +112,12 @@ void View_Scene::on_draw()
 				if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 				{
 					auto hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
+					if (hovering_node)
+					{
+						auto mesh = hovering_node->entity->get_component_t<cMesh>();
+						if (mesh->object_id != -1 && mesh->mesh_id != -1)
+							sNodeRenderer::instance()->draw_mesh_outline(mesh->object_id, mesh->mesh_id, cvec4(128, 128, 64, 0));
+					}
 				}
 			}
 		}

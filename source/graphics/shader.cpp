@@ -205,7 +205,7 @@ namespace flame
 						}
 					}
 					if (up_to_date)
-						return false;
+						return true;
 				}
 			}
 
@@ -304,6 +304,7 @@ namespace flame
 				while (!headers.empty())
 				{
 					auto fn = headers.front();
+					headers.pop_front();
 					if (!std::filesystem::exists(fn))
 					{
 						printf("cannot find include file: %s\n", fn.string().c_str());
@@ -312,7 +313,6 @@ namespace flame
 
 					fn = std::filesystem::canonical(fn);
 					fn.make_preferred();
-					headers.pop_front();
 
 					if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
 						dependencies.push_back(fn);
@@ -1226,24 +1226,26 @@ namespace flame
 				auto value = src.value();
 				if (!value.empty())
 				{
-					if (SUS::strip_head_if(value, "@"))
+					if (value[0] == '@')
 					{
 						ShaderStageFlags type = ShaderStageNone;
-						if (value.starts_with("vert"))
+						if (value.starts_with("@vert"))
 							type = ShaderStageVert;
-						else if (value.starts_with("tesc"))
+						else if (value.starts_with("@tesc"))
 							type = ShaderStageTesc;
-						else if (value.starts_with("tese"))
+						else if (value.starts_with("@tese"))
 							type = ShaderStageTese;
-						else if (value.starts_with("geom"))
+						else if (value.starts_with("@geom"))
 							type = ShaderStageGeom;
-						else if (value.starts_with("frag"))
+						else if (value.starts_with("@frag"))
 							type = ShaderStageFrag;
 						if (type != ShaderStageNone)
 							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
 					}
 					std::filesystem::path fn = value;
+					if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+						fn = std::filesystem::canonical(fn);
 					auto stage = stage_from_ext(fn);
 					if (stage != ShaderStageNone)
 					{
@@ -1254,7 +1256,7 @@ namespace flame
 								defines.push_back(d.second);
 						}
 						std::sort(defines.begin(), defines.end());
-						return Shader::get(device, stage, value, defines);
+						return Shader::get(device, stage, fn, defines);
 					}
 				}
 				std::filesystem::path fn = src.value("filename");

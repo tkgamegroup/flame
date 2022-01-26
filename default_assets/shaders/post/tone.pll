@@ -1,7 +1,0 @@
-#include "tone.dsl"
-
-layout (push_constant) uniform PushConstant
-{
-	float white_point;
-	float one_over_gamma;
-}pc;

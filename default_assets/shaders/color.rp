@@ -1,11 +1,11 @@
-%fmt=R8G8B8A8_UNORM
+%col_fmt=R8G8B8A8_UNORM
 %load_op=Clear
 %sample_count=1
 %initia_layout=Undefined
 %final_layout=Attachment
 attachments
   format
-    {fmt}
+    {col_fmt}
   load_op
     {load_op}
   sample_count
