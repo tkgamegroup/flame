@@ -144,12 +144,14 @@ namespace flame
 			return ret;
 		}
 
-		inline static bool cat_if_in(const std::filesystem::path& dir, std::filesystem::path& t)
+		inline static bool cat_if_exists(const std::filesystem::path& dir, std::filesystem::path& t)
 		{
-			auto temp = dir / t;
-			if (std::filesystem::exists(temp))
+			if (t.is_absolute())
+				return false;
+			auto p = dir / t;
+			if (std::filesystem::exists(p))
 			{
-				t = temp;
+				t = p;
 				return true;
 			}
 			return false;
