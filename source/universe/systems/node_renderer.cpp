@@ -427,11 +427,11 @@ namespace flame
 
 		std::vector<cNodePtr> nodes;
 		sScene::instance()->octree->get_within_frustum(Frustum(proj_inv), nodes);
+		current_node = nullptr;
 		draw_meshes.clear();
 		draw_occluder_meshes.clear();
 		draw_outline_meshes.clear();
 		draw_wireframe_meshes.clear();
-		current_node = nullptr;
 		for (auto& n : nodes)
 		{
 			current_node = n;

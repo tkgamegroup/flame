@@ -95,10 +95,12 @@ namespace flame
 
 	struct Guid
 	{
-		uint d1;
-		ushort d2;
-		ushort d3;
-		uchar d4[8];
+		uchar d[16];
+
+		inline bool operator==(const Guid& oth)
+		{
+			return memcmp(d, oth.d, sizeof(d)) == 0;
+		}
 	};
 
 	inline std::vector<std::string> format_defines(const std::string& str)

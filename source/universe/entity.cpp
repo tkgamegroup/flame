@@ -348,6 +348,8 @@ namespace flame
 			return INVALID_POINTER;
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+			if (auto a = src.attribute("guid"); a)
+				;
 			auto e = Entity::create();
 			unserialize_xml(src, e, spec);
 			((EntityPtr)dst_o)->add_child(e);
@@ -379,10 +381,13 @@ namespace flame
 
 	struct EntityCreatePrivate : Entity::Create
 	{
-		EntityPtr operator()() override
+		EntityPtr operator()(Guid* guid) override
 		{
 			auto ret = new EntityPrivate();
-			ret->guid = generate_guid();
+			if (guid)
+				ret->guid = *guid;
+			else
+				ret->guid = generate_guid();
 			return ret;
 		}
 	}Entity_create_private;

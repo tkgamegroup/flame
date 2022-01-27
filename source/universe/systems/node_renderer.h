@@ -25,6 +25,8 @@ namespace flame
 		virtual void unregister_armature_object(uint id) = 0;
 		virtual void set_armature_object_matrices(uint id, const mat4* bones, uint count) = 0;
 
+		// you must call draw in a node's drawer
+
 		virtual void draw_mesh(uint object_id, uint mesh_id, uint skin) = 0;
 		virtual void draw_mesh_occluder(uint object_id, uint mesh_id, uint skin) = 0;
 		virtual void draw_mesh_outline(uint object_id, uint mesh_id, const cvec4& color) = 0;
