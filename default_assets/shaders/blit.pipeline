@@ -1,0 +1,31 @@
+layout
+  @pll
+shaders
+  fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+cull_mode
+  None
+
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_src;
+@
+
+@frag
+layout (location = 0) in vec2 i_uv;
+
+#ifndef DEPTH
+layout (location = 0) out vec4 o_color;
+#endif
+
+void main()
+{
+#ifndef DEPTH
+	o_color = texture(img_src, i_uv);
+#else
+	gl_FragDepth = texture(img_src, i_uv).r;
+#endif
+}
+@

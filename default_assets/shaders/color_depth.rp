@@ -1,6 +1,5 @@
 %col_fmt=R8G8B8A8_UNORM
 %col_load_op=Clear
-%col_sample_count=1
 %col_initia_layout=Undefined
 %col_final_layout=Attachment
 %dep_fmt=Depth16
@@ -13,8 +12,6 @@ attachments
     {col_fmt}
   load_op
     {col_load_op}
-  sample_count
-    {col_sample_count}
   initia_layout
     {col_initia_layout}
   final_layout
@@ -34,4 +31,4 @@ subpasses
   color_attachments
     0
   depth_attachment
-    0
+    1

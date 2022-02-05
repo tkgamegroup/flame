@@ -2,7 +2,7 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/buffer_ext.h>
+#include <flame/graphics/extension.h>
 #include <flame/graphics/shader.h>
 
 using namespace flame;
@@ -153,8 +153,7 @@ int entry(int argc, char** args)
 	projector.set(app.main_window->native->size, 45.f, 1.f, 4.f);
 	drops.resize(3000);
 
-	pl = GraphicsPipeline::create(app.graphics_device, pl_str, 
-		{ "rp=0x" + str((uint64)app.main_window->renderpass_clear) });
+	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=" + str(app.main_window->renderpass_clear) });
 	vtx_buf.create(pl->vi_ui(), drops.size() * 6);
 
 	app.run();

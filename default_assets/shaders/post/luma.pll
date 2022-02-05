@@ -1,4 +1,4 @@
-#include "luminance.dsl"
+#include "../dynamic_data.dsl"
 
 layout (push_constant) uniform PushConstant
 {

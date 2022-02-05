@@ -23,7 +23,7 @@ namespace flame
 				std::smatch res;
 				while (std::regex_search(str, res, reg))
 				{
-					auto ptr = s2u64_hex(res[1].str());
+					auto ptr = s2u_hex<uint64>(res[1].str());
 					for (auto& rp : __renderpasses)
 					{
 						if (rp->vk_renderpass == (VkRenderPass)ptr)
@@ -40,7 +40,7 @@ namespace flame
 				std::smatch res;
 				while (std::regex_search(str, res, reg))
 				{
-					auto ptr = s2u64_hex(res[1].str());
+					auto ptr = s2u_hex<uint64>(res[1].str());
 					for (auto& img : __images)
 					{
 						if (img->vk_image == (VkImage)ptr)

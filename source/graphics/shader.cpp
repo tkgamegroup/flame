@@ -205,7 +205,7 @@ namespace flame
 						}
 					}
 					if (up_to_date)
-						return false;
+						return true;
 				}
 			}
 
@@ -227,12 +227,12 @@ namespace flame
 					return false;
 				};
 
-				std::vector<bool> states;
+				std::vector<std::pair<bool, bool>> states;
 				auto ok = true;
 				auto eval_state = [&]() {
 					ok = true;
-					for (auto s : states)
-						ok = ok && s;
+					for (auto& s : states)
+						ok = ok && s.first;
 				};
 
 				auto lines = get_file_lines(src_path);
@@ -241,22 +241,38 @@ namespace flame
 					auto tl = SUS::get_trimed(l);
 					if (SUS::strip_head_if(tl, "#ifdef "))
 					{
-						states.push_back(found_name(tl));
+						auto& s = states.emplace_back();
+						s.first = found_name(tl);
+						s.second = s.first;
 						eval_state();
 					}
 					else if (SUS::strip_head_if(tl, "#ifndef "))
 					{
-						states.push_back(!found_name(tl));
+						auto& s = states.emplace_back();
+						s.first = !found_name(tl);
+						s.second = s.first;
 						eval_state();
 					}
 					else if (tl.starts_with("#else"))
 					{
-						states.back() = !states.back();
+						auto& s = states.back();
+						if (!s.second) 
+							s.first = !states.back().first;
+						else
+							s.first = false;
+						s.second = true;
 						eval_state();
 					}
 					else if (SUS::strip_head_if(tl, "#elifdef "))
 					{
-						states.back() = !states.back() && found_name(tl);
+						auto& s = states.back();
+						if (!s.second)
+						{
+							s.first = found_name(tl);
+							if (s.first) s.second = true;
+						}
+						else
+							s.first = false;
 						eval_state();
 					}
 					else if (tl.starts_with("#endif"))
@@ -288,6 +304,7 @@ namespace flame
 				while (!headers.empty())
 				{
 					auto fn = headers.front();
+					headers.pop_front();
 					if (!std::filesystem::exists(fn))
 					{
 						printf("cannot find include file: %s\n", fn.string().c_str());
@@ -296,7 +313,6 @@ namespace flame
 
 					fn = std::filesystem::canonical(fn);
 					fn.make_preferred();
-					headers.pop_front();
 
 					if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
 						dependencies.push_back(fn);
@@ -351,15 +367,19 @@ namespace flame
 					{
 						temp << std::endl;
 
-						auto lines = get_file_lines(src_path.parent_path() / (l + ".pll"));
+						auto pll_path = src_path.parent_path() / (l + ".pll");
+						auto pll_dir = pll_path.parent_path();
+						auto lines = get_file_lines(pll_path);
 						for (auto& l : lines)
 						{
-							temp << l << std::endl;
-							if (SUS::match_head_tail(l, "#include \"", ".dsl\""))
+							if (SUS::strip_head_tail_if(l, "#include \"", ".dsl\""))
 							{
+								temp << "#include \"" << (pll_dir / l).string() << ".dsl\"" << std::endl;
 								temp << "#undef SET" << std::endl;
 								temp << "#define SET " << str(set++) << std::endl;
 							}
+							else
+								temp << l << std::endl;
 						}
 					}
 					else
@@ -376,7 +396,7 @@ namespace flame
 				return false;
 			}
 
-			wprintf(L"compiling: %s\n", src_path.c_str());
+			wprintf(L"compiling shader: %s -> %s\n", src_path.c_str(), dst_path.c_str());
 			if (!defines.empty())
 			{
 				printf("   with defines: ");
@@ -393,6 +413,8 @@ namespace flame
 			{
 				printf("%s\n", errors.c_str());
 				shell_exec(temp_path.wstring(), L"", false, true);
+				dst.close();
+				std::filesystem::remove(dst_path);
 				assert(0);
 				return false;
 			}
@@ -1013,7 +1035,7 @@ namespace flame
 			for (auto& l : res.lines)
 			{
 				for (auto& b : SUS::split(l))
-					spv.push_back(s2u64_hex(b));
+					spv.push_back(s2u_hex<uint>(b));
 			}
 			res.read_block("typeinfo:", "");
 			db.load(file);
@@ -1147,7 +1169,7 @@ namespace flame
 			LineReader res(file);
 			res.read_block("");
 
-			std::string												layout_segment;
+			std::pair<std::string, std::filesystem::path>			layout_segment; // content or filename
 			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments;
 
 			std::vector<std::string>								renderpass_defines;
@@ -1195,39 +1217,42 @@ namespace flame
 			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)s2t<uint64>(value.substr(2));
+					return (void*)s2u_hex<uint64>(value.substr(2));
 				if (value.starts_with("@"))
 				{
-					layout_segment = value;
+					layout_segment.first = value;
 					return INVALID_POINTER;
 				}
 				std::filesystem::path fn = src.value();
-				if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+				if (Path::cat_if_exists(ppath, fn))
 					fn = std::filesystem::canonical(fn);
+				layout_segment.second = fn;
 				return PipelineLayout::get(device, fn);
 			};
 			spec.map[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (!value.empty())
 				{
-					if (value.starts_with("@"))
+					if (value[0] == '@')
 					{
 						ShaderStageFlags type = ShaderStageNone;
-						if (value ==		"@vert")
+						if (value.starts_with("@vert"))
 							type = ShaderStageVert;
-						else if (value ==	"@tesc")
+						else if (value.starts_with("@tesc"))
 							type = ShaderStageTesc;
-						else if (value ==	"@tese")
+						else if (value.starts_with("@tese"))
 							type = ShaderStageTese;
-						else if (value ==	"@geom")
+						else if (value.starts_with("@geom"))
 							type = ShaderStageGeom;
-						else if (value ==	"@frag")
+						else if (value.starts_with("@frag"))
 							type = ShaderStageFrag;
 						if (type != ShaderStageNone)
 							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
 					}
 					std::filesystem::path fn = value;
+					if (Path::cat_if_exists(ppath, fn))
+						fn = std::filesystem::canonical(fn);
 					auto stage = stage_from_ext(fn);
 					if (stage != ShaderStageNone)
 					{
@@ -1238,11 +1263,11 @@ namespace flame
 								defines.push_back(d.second);
 						}
 						std::sort(defines.begin(), defines.end());
-						return Shader::get(device, stage, value, defines);
+						return Shader::get(device, stage, fn, defines);
 					}
 				}
 				std::filesystem::path fn = src.value("filename");
-				if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+				if (Path::cat_if_exists(ppath, fn))
 					fn = std::filesystem::canonical(fn);
 				auto stage = stage_from_ext(fn);
 				if (stage != ShaderStageNone)
@@ -1261,7 +1286,7 @@ namespace flame
 			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
-					return (void*)s2t<uint64>(value.substr(2));
+					return (void*)s2u_hex<uint64>(value.substr(2));
 				if (!value.empty())
 				{
 					auto defines = renderpass_defines;
@@ -1269,7 +1294,7 @@ namespace flame
 					return Renderpass::get(device, value, defines);
 				}
 				std::filesystem::path fn = src.value("filename");
-				if (!ppath.empty() && Path::cat_if_in(ppath, fn))
+				if (Path::cat_if_exists(ppath, fn))
 					fn = std::filesystem::canonical(fn);
 				auto defines = format_defines(src.value("defines"));
 				defines.insert(defines.end(), renderpass_defines.begin(), renderpass_defines.end());
@@ -1280,17 +1305,19 @@ namespace flame
 			std::sort(defines.begin(), defines.end());
 			unserialize_text(res, &info, spec, defines);
 
-			if (!layout_segment.empty())
+			if (!layout_segment.first.empty())
 			{
-				res.read_block(layout_segment, "@");
-				layout_segment = res.form_content();
+				res.read_block(layout_segment.first, "@");
+				layout_segment.first = res.form_content();
 			}
 			for (auto& s : shader_segments)
 			{
 				res.read_block(s.second, "@");
 				s.second = res.form_content();
-				if (!layout_segment.empty())
-					s.second = layout_segment + "\n\n" + s.second;
+				if (!layout_segment.first.empty())
+					s.second = layout_segment.first + "\n\n" + s.second;
+				else if (!layout_segment.second.empty())
+					s.second = "#include \"" + layout_segment.second.string() + "\"\n\n" + s.second;
 			}
 
 			file.close();
@@ -1299,9 +1326,9 @@ namespace flame
 			if (filename.empty())
 				create_id++;
 
-			if (!layout_segment.empty())
+			if (!layout_segment.first.empty())
 			{
-				info.layout = PipelineLayout::create(device, layout_segment,
+				info.layout = PipelineLayout::create(device, layout_segment.first,
 					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + wstr(create_id), filename);
 			}
 			for (auto& s : shader_segments)

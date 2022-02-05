@@ -137,7 +137,7 @@ namespace flame
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				ret->image.reset(Image::create(device, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+				ret->image.reset(Image::create(device, Format_R8_UNORM, font_atlas_size, ImageUsageSampled | ImageUsageTransferDst));
 				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
 				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 

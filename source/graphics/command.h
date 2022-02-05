@@ -82,6 +82,10 @@ namespace flame
 			virtual void begin(bool once = false) = 0;
 
 			virtual void begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs = nullptr) = 0;
+			inline void begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, std::initializer_list<vec4> cvs)
+			{
+				begin_renderpass(rp, fb, (vec4*)cvs.begin());
+			}
 			virtual void next_pass() = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;

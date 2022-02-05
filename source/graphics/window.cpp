@@ -203,7 +203,7 @@ namespace flame
 				ret->finished_fence.reset(Fence::create(device));
 				ret->finished_semaphore.reset(Semaphore::create(device));
 
-				auto fmt_str = "fmt=" + TypeInfo::serialize_t(&Swapchain::format);
+				auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&Swapchain::format);
 				ret->renderpass_clear = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
 				ret->renderpass_load = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
 
@@ -240,7 +240,7 @@ namespace flame
 				});
 
 				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", 
-					{ "rp=0x" + str((uint64)ret->renderpass_clear) }));
+					{ "rp=" + str(ret->renderpass_clear) }));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
 				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->layout->dsls[0]));
@@ -301,7 +301,7 @@ namespace flame
 					StagingBuffer stag(nullptr, image_pitch(img_w) * img_h, img_data);
 					InstanceCB cb(nullptr);
 
-					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
 					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutTransferDst);
 					BufferImageCopy cpy;
 					cpy.img_ext = uvec2(img_w, img_h);
@@ -316,10 +316,7 @@ namespace flame
 
 				auto resize = [ret]() {
 					for (auto& img : ret->swapchain->images)
-					{
-						auto iv = img->get_view();
-						ret->framebuffers.emplace_back(Framebuffer::create(ret->renderpass_clear, { &iv, 1 }));
-					}
+						ret->framebuffers.emplace_back(Framebuffer::create(ret->renderpass_clear, img->get_view()));
 
 #if USE_IMGUI
 					ImGuiIO& io = ImGui::GetIO();

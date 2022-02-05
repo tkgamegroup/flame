@@ -129,7 +129,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual EntityPtr operator()() = 0;
+			virtual EntityPtr operator()(Guid* guid = nullptr) = 0;
 		};
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

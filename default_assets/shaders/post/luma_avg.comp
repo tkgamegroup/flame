@@ -1,4 +1,4 @@
-#include "luminance.pll"
+#include "luma.pll"
 
 #define GROUP_SIZE 256
 

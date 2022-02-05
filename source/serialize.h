@@ -12,6 +12,22 @@
 
 namespace flame
 {
+	template<typename T>
+	std::string str(T v)
+	{
+		return std::to_string(v);
+	}
+
+	template<std::integral T>
+	inline std::string str_hex(T v, bool zero_fill = true)
+	{
+		std::ostringstream ss;
+		if (zero_fill)
+			ss << std::setfill('0') << std::setw(sizeof(T) * 2);
+		ss << std::hex << v;
+		return ss.str();
+	}
+
 	template<std::floating_point T>
 	std::string str(T v)
 	{
@@ -21,10 +37,10 @@ namespace flame
 		return ss.str();
 	}
 
-	template<typename T>
+	template<pointer_type T>
 	std::string str(T v)
 	{
-		return std::to_string(v);
+		return "0x" + str_hex((uint64)v);
 	}
 
 	template<uint N, typename T>
@@ -56,16 +72,21 @@ namespace flame
 		return ret;
 	}
 
-	template<std::integral T>
-	inline std::string str_hex(T v, bool zero_fill = true)
+	template<typename T>
+	std::wstring wstr(T v)
 	{
-		std::ostringstream ss;
+		return std::to_wstring(v);
+	}
+
+	template<std::integral T>
+	inline std::wstring wstr_hex(T v, bool zero_fill = true)
+	{
+		std::wostringstream ss;
 		if (zero_fill)
-			ss << std::setfill('0') << std::setw(sizeof(T) * 2); 
+			ss << std::setfill(L'0') << std::setw(sizeof(T) * 2);
 		ss << std::hex << v;
 		return ss.str();
 	}
-
 
 	template<std::floating_point T>
 	std::wstring wstr(T v)
@@ -76,10 +97,10 @@ namespace flame
 		return ss.str();
 	}
 
-	template<typename T>
+	template<pointer_type T>
 	std::wstring wstr(T v)
 	{
-		return std::to_wstring(v);
+		return L"0x" + wstr_hex((uint64)v);
 	}
 
 	template<uint N, typename T>
@@ -95,20 +116,10 @@ namespace flame
 		return ret;
 	}
 
-	template<std::integral T>
-	inline std::wstring wstr_hex(T v, bool zero_fill = true)
+	template<std::unsigned_integral T, class CH>
+	inline uint64 s2u_hex(const std::basic_string<CH>& str)
 	{
-		std::wostringstream ss;
-		if (zero_fill)
-			ss << std::setfill(L'0') << std::setw(sizeof(T) * 2);
-		ss << std::hex << v;
-		return ss.str();
-	}
-
-	template<class CH>
-	inline uint64 s2u64_hex(const std::basic_string<CH>& str)
-	{
-		uint64 ret;
+		T ret;
 		std::basic_stringstream<CH> ss;
 		ss << std::hex << str;
 		ss >> ret;
