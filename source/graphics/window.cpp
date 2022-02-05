@@ -291,7 +291,7 @@ namespace flame
 					{
 						std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
 						if (std::filesystem::exists(font_path))
-							io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+							io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 					}
 
 					uchar* img_data;

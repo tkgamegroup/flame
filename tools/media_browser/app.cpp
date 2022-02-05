@@ -30,12 +30,12 @@ struct App : UniverseApplication
 	int showing_item_idx = -1;
 	float showing_item_scl = 1.f;
 	vec2 showing_item_off = vec2(0.f);
+	int peeding_delete_idx = -1;
 
 	void init();
 	void open_dir(const std::filesystem::path& path);
 	ShowItem& add_show_item(int idx, graphics::ImagePtr image);
 	void select_random();
-	void move_show_item_to_recycle_bin(int idx);
 	void reset_showing_item();
 };
 
@@ -62,6 +62,20 @@ void App::init()
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
+
+		if (peeding_delete_idx != -1)
+		{
+			graphics::Queue::get(nullptr)->wait_idle();
+			auto& item = show_items[peeding_delete_idx];
+			move_file_to_recycle_bin(item.file().path);
+			item.file().path.clear();
+			show_items.erase(show_items.begin() + peeding_delete_idx);
+			if (showing_item_idx == peeding_delete_idx && peeding_delete_idx >= show_items.size())
+				showing_item_idx = (int)show_items.size() - 1;
+			reset_showing_item();
+
+			peeding_delete_idx = -1;
+		}
 
 		if (showing_item_idx == -1)
 		{
@@ -117,7 +131,7 @@ void App::init()
 					ImGui::Text("%s %d %dx%d", item.file().path_u8.c_str(), (uint)item.file().size, item.image->size.x, item.image->size.y);
 
 					if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-						move_show_item_to_recycle_bin(hovered_idx);
+						peeding_delete_idx = hovered_idx;
 				}
 			}
 			if (ifd::FileDialog::Instance().IsDone("OpenDialog"))
@@ -170,8 +184,6 @@ void App::init()
 						reset_showing_item();
 					}
 				}
-				if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-					move_show_item_to_recycle_bin(showing_item_idx);
 			}
 		}
 
@@ -184,12 +196,17 @@ void App::open_dir(const std::filesystem::path& path)
 	main_window->native->set_title("Media Browser - " + path.string());
 
 	directory = path;
+	files.clear();
 	for (auto& it : std::filesystem::recursive_directory_iterator(path))
 	{
-		File item;
-		item.path = it.path();
-		item.path_u8 = item.path.u8string();
-		files.push_back(item);
+		auto ext = it.path().extension();
+		if (ext == L".jpg" || ext == L".jpeg" || ext == L".png")
+		{
+			File item;
+			item.path = it.path();
+			item.path_u8 = item.path.u8string();
+			files.push_back(item);
+		}
 	}
 }
 
@@ -209,51 +226,35 @@ void App::select_random()
 {
 	graphics::Queue::get(nullptr)->wait_idle();
 	show_items.clear();
-	auto find_idx = [&](int i) {
+	auto valid_idx = [&](int idx) {
+		if (files[idx].path.empty())
+			return false;
 		for (auto& item : show_items)
 		{
-			if (item.idx == i)
-				return true;
+			if (item.idx == idx)
+				return false;
 		}
-		return false;
+		return true;
 	};
 	auto n = min((int)files.size(), 5);
 	for (auto i = 0; i < n; i++)
 	{
 		auto idx = linearRand(0, (int)files.size() - 1);
-		if (find_idx(idx)) continue;
+		if (!valid_idx(idx)) continue;
 		auto& path = files[idx].path;
-		auto ext = path.extension();
-		if (ext == L".jpg" || ext == L".jpeg" || ext == L".png")
+		auto img = graphics::Image::create(nullptr, path, false);
+		if (!img) continue;
+		if (img->size.x > thumbnail_size && img->size.y > thumbnail_size)
 		{
-			auto img = graphics::Image::create(nullptr, path, false);
-			if (img->size.x > thumbnail_size && img->size.y > thumbnail_size)
+			auto aspect = (float)img->size.x / (float)img->size.y;
+			if (aspect < 4.f)
 			{
-				auto aspect = (float)img->size.x / (float)img->size.y;
-				if (aspect < 4.f)
-				{
-					add_show_item(idx, img);
-					continue;
-				}
+				add_show_item(idx, img);
+				continue;
 			}
-			delete img;
 		}
+		delete img;
 	}
-}
-
-void App::move_show_item_to_recycle_bin(int idx)
-{
-	add_event([idx, this]() {
-		auto& item = show_items[idx];
-		graphics::Queue::get(nullptr)->wait_idle();
-		move_file_to_recycle_bin(item.file().path);
-		files.erase(files.begin() + item.idx);
-		show_items.erase(show_items.begin() + idx);
-		if (showing_item_idx == idx && idx >= show_items.size())
-			showing_item_idx = (int)show_items.size() - 1;
-		reset_showing_item();
-		return false;
-	});
 }
 
 void App::reset_showing_item()
