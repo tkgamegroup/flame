@@ -6,8 +6,11 @@ struct View_Scene : View
 {
 	std::unique_ptr<graphics::Image> render_tar;
 
-	cNodePtr camera_node = nullptr;
+	cNodePtr editor_node = nullptr;
+	void* editor_drawer = nullptr;
+	
 	float camera_zoom = 5.f;
+	cNodePtr hovering_node = nullptr;
 
 	View_Scene();
 

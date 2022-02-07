@@ -32,8 +32,8 @@ namespace flame
 		void update_rot();
 		void update_transform();
 
-		void mark_transform_dirty();
-		void mark_drawing_dirty();
+		void mark_transform_dirty() override;
+		void mark_drawing_dirty() override;
 
 		void draw(sNodeRendererPtr renderer, bool shadow_pass);
 

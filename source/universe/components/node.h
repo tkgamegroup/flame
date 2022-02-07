@@ -48,7 +48,10 @@ namespace flame
 
 		OctNode* octnode = nullptr;
 
-		Listeners<void(sNodeRendererPtr, bool)> drawers;
+		virtual void mark_transform_dirty() = 0;
+		virtual void mark_drawing_dirty() = 0;
+
+		Listeners<void(sNodeRendererPtr renderer, bool shadow_pass)> drawers;
 		Listeners<bool(AABB*)> measurers;
 
 		virtual void look_at(const vec3& t) = 0;

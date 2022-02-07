@@ -296,7 +296,8 @@ namespace flame
 						break;
 					}
 				}
-				cb->bind_descriptor_sets(off, { temp_dss + off, count });
+				if (count > 0)
+					cb->bind_descriptor_sets(off, { temp_dss + off, count });
 			}
 
 			template<uint nh, typename T>

@@ -510,9 +510,9 @@ namespace flame
 			return true;
 		}
 
-		std::filesystem::path get_res_path(const std::filesystem::path& filename, const std::vector<std::string>& defines)
+		std::wstring defines_to_hash_str(const std::vector<std::string>& defines)
 		{
-			auto ret = filename;
+			std::wstring ret;
 			if (!defines.empty())
 			{
 				auto hash = 0U;
@@ -521,7 +521,6 @@ namespace flame
 				auto str_hash = wstr_hex(hash);
 				ret += L"." + wstr_hex(hash);
 			}
-			ret += L".res";
 			return ret;
 		}
 
@@ -892,6 +891,8 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayout::create(device, bindings);
 				dsl->filename = filename;
+				if (dsl->filename.extension() == L".res")
+					dsl->filename.replace_extension(L"");
 				dsls.push_back(dsl);
 			}
 
@@ -1124,7 +1125,9 @@ namespace flame
 				if (type == ShaderStageNone)
 					type = stage_from_ext(filename);
 
-				auto res_path = get_res_path(filename, defines);
+				auto res_path = filename;
+				res_path += defines_to_hash_str(defines);
+				res_path += L".res";
 				compile_shader(type, filename, defines, res_path);
 
 				if (device)
@@ -1341,7 +1344,7 @@ namespace flame
 				}
 				std::sort(defines.begin(), defines.end());
 				info.shaders.push_back(Shader::create(device, s.first, s.second, defines,
-					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + L".res") : L"#" + wstr(create_id), filename));
+					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + defines_to_hash_str(defines) + L".res") : L"#" + wstr(create_id), filename));
 			}
 
 			if (info.vertex_buffers.empty())

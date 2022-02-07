@@ -1,4 +1,4 @@
-#include "../dynamic_data.dsl"
+//#include "../dynamic_data.dsl"
 
 layout (set = SET, binding = 0) uniform sampler2D img_src;
 

@@ -23,7 +23,7 @@ void main()
 	#ifdef HORIZONTAL
 		res += texture(img_src, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0)) * pc.weights[i];
 	#elifdef VERTICAL
-		res += texture(img_src, i_uv + vec2(0£¬ (i + pc.off) * pc.pxsz.y)) * pc.weights[i];
+		res += texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.x)) * pc.weights[i];
 	#endif
 
 	o_color = res;

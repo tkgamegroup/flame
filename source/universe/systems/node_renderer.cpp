@@ -66,10 +66,12 @@ namespace flame
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
+			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
+			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			buf_idr_mesh.create(0U, buf_objects.array_capacity);
 
 			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_col_dep) });
+				{ "rp=" + str(rp_col) });
 
 			prm_post.init(graphics::PipelineLayout::get(nullptr, L"default_assets\\shaders\\post\\post.pll"));
 			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
@@ -100,8 +102,8 @@ namespace flame
 
 		dst_layout = _dst_layout;
 
-		img_back0.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment));
-		img_back1.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment));
+		img_back0.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back1.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 
 		img_pickup.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment));
@@ -394,7 +396,7 @@ namespace flame
 	static std::vector<std::vector<float>> gauss_blur_weights;
 	static std::vector<float>& get_gauss_blur_weights(int radius)
 	{
-		radius = radius - 1 / 2 - 1;
+		radius = (radius - 1) / 2;
 		if (gauss_blur_weights.empty())
 		{
 			gauss_blur_weights.push_back({                     0.047790, 0.904419, 0.047790 });
@@ -462,32 +464,31 @@ namespace flame
 		cb->set_scissor(Rect(vec2(0), sz));
 
 		cb->begin_renderpass(nullptr, fbs_fwd[img_idx].get(), 
-			{ vec4(0.9f, 0.8f, 0.1f, 1.f),
+			{ vec4(0.f, 0.f, 0.f, 1.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
 		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 		cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 
 		cb->bind_pipeline(pl_mesh_fwd);
-		prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-		prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 		prm_mesh_fwd.bind_dss(cb);
 		prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
 		prm_mesh_fwd.push_constant(cb);
 
 		cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
 
+		cb->end_renderpass();
+
 		if (!draw_outline_meshes.empty())
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			cb->bind_pipeline(pl_mesh_plain);
-			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			prm_mesh_fwd.bind_dss(cb);
 			for (auto& d : draw_outline_meshes)
 			{
@@ -499,8 +500,6 @@ namespace flame
 			cb->end_renderpass();
 
 			cb->bind_pipeline_layout(prm_post.pll);
-			prm_post.set_ds(""_h, img_back1->get_shader_read_src());
-			prm_post.bind_dss(cb);
 			auto& weights = get_gauss_blur_weights(5);
 			prm_post.set_pc_var<"off"_h>(-((int)weights.size() - 1) / 2);
 			prm_post.set_pc_var<"len"_h>((int)weights.size());
@@ -511,13 +510,27 @@ namespace flame
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
 			cb->bind_pipeline(pl_blur_h);
+			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
 			cb->bind_pipeline(pl_blur_v);
+			cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
+
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			cb->bind_pipeline(pl_mesh_plain);
+			prm_mesh_fwd.bind_dss(cb);
+			for (auto& d : draw_outline_meshes)
+			{
+				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(0.f));
+				prm_mesh_fwd.push_constant(cb);
+				auto& mr = mesh_reses[d.mesh_id];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+			}
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -528,8 +541,6 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}
-
-		cb->end_renderpass();
 
 		cb->image_barrier(img, iv->sub, dst_layout);
 	}
@@ -554,8 +565,6 @@ namespace flame
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 			cb->bind_pipeline(pl_mesh_pickup);
-			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			prm_mesh_fwd.bind_dss(cb.get());
 			for (auto i = 0; i < draw_meshes.size(); i++)
 			{
