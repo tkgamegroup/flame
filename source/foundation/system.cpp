@@ -52,7 +52,32 @@ namespace flame
 		return L"";
 	}
 
-	void move_file_to_recycle_bin(const std::filesystem::path& _path)
+	static std::vector<std::pair<std::filesystem::path, HANDLE>> directory_locks;
+	void directory_lock(const std::filesystem::path& path, bool lock)
+	{
+		if (lock)
+		{
+			if (!std::filesystem::exists(path))
+				return;
+			auto handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 
+				nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			directory_locks.emplace_back(path, handle);
+		}
+		else
+		{
+			for (auto it = directory_locks.begin(); it != directory_locks.end(); it++)
+			{
+				if (it->first == path)
+				{
+					CloseHandle(it->second);
+					directory_locks.erase(it);
+					return;
+				}
+			}
+		}
+	}
+
+	void move_to_recycle_bin(const std::filesystem::path& _path)
 	{
 		auto path = _path.wstring();
 		path.resize(path.size() + 1);
@@ -556,12 +581,13 @@ namespace flame
 				}
 
 				if (all_changes || type == FileModified)
-					callback(type, path / p->FileName);
+					callback(type, path / (WCHAR*)p->FileName);
 
 				if (p->NextEntryOffset <= 0)
 					break;
 				base += p->NextEntryOffset;
 				p = (FILE_NOTIFY_INFORMATION*)(notify_buf + base);
+				p->FileName[p->FileNameLength / 2] = 0;
 			}
 		}
 

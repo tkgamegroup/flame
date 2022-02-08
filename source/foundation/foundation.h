@@ -121,7 +121,7 @@ namespace flame
 	{
 		FLAME_FOUNDATION_API static std::map<std::wstring, std::filesystem::path> map;
 
-		inline static void add_root(const std::wstring& name, const std::filesystem::path& path)
+		inline static void set_root(const std::wstring& name, const std::filesystem::path& path)
 		{
 			map[name] = path;
 		}

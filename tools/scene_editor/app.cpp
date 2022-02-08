@@ -3,6 +3,8 @@
 #include "view_scene.h"
 #include "view_project.h"
 
+#include <flame/foundation/system.h>
+
 std::list<View*> views;
 
 View::View(std::string_view name) :
@@ -170,8 +172,14 @@ void App::open_project(const std::filesystem::path& path)
 {
 	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
 	{
-		project_path = path;
+		if (!project_path.empty())
+			directory_lock(project_path, false);
+
 		selection.clear();
+		project_path = path;
+		directory_lock(project_path, true);
+		if (auto p = path / L"assets"; std::filesystem::exists(p))
+			Path::set_root(L"assets", p);
 
 		view_project.reset();
 	}

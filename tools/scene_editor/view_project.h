@@ -8,13 +8,13 @@ struct View_Project : View
 	{
 		bool read = false;
 		std::filesystem::path path;
+		FolderTreeNode* parent = nullptr;
 		std::vector<std::unique_ptr<FolderTreeNode>> children;
 
 		std::string display_text;
 
 		FolderTreeNode(const std::filesystem::path& path);
-
-		void draw();
+		void read_children();
 	};
 
 	struct Item
@@ -41,16 +41,21 @@ struct View_Project : View
 
 	std::unique_ptr<FolderTreeNode> folder_tree;
 	FolderTreeNode* selected_folder = nullptr;
+	uint selected_folder_frame = 0;
 
 	std::map<int, std::unique_ptr<graphics::Image>> icons;
 	std::vector<std::unique_ptr<graphics::Image>> thumbnails;
 	std::vector<std::unique_ptr<Item>> items;
-	bool _just_selected;
+
+	void* ev_watcher = nullptr;
+	std::mutex mtx_changed_paths;
+	std::vector<std::filesystem::path> changed_paths;
 
 	View_Project();
 	void reset();
 	void set_items_size(float size);
 
+	void select_folder(FolderTreeNode* folder);
 	void open_folder(const std::filesystem::path& path);
 
 	void on_draw() override;

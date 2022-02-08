@@ -67,7 +67,7 @@ void App::init()
 		{
 			graphics::Queue::get(nullptr)->wait_idle();
 			auto& item = show_items[peeding_delete_idx];
-			move_file_to_recycle_bin(item.file().path);
+			move_to_recycle_bin(item.file().path);
 			item.file().path.clear();
 			show_items.erase(show_items.begin() + peeding_delete_idx);
 			if (showing_item_idx == peeding_delete_idx && peeding_delete_idx >= show_items.size())

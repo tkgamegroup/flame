@@ -11,8 +11,10 @@ View_Hierarchy::View_Hierarchy() :
 
 void View_Hierarchy::on_draw()
 {
+	auto just_select = selection.type == Selection::tEntity && selection.frame == (int)frames - 1;
+
 	std::vector<EntityPtr> open_nodes;
-	if (selection.type == Selection::tEntity && selection.frame == (int)frames - 1)
+	if (just_select)
 	{
 		auto e = selection.entity->parent;
 		while (e)
@@ -42,6 +44,8 @@ void View_Hierarchy::on_draw()
 		if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
 			ImGui::SetNextItemOpen(true);
 		auto opened = ImGui::TreeNodeEx(("[] " + e->name).c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
+		if (just_select && selection.selecting(e))
+			ImGui::SetScrollHereY();
 		ImGui::PopID();
 		if (ImGui::BeginDragDropSource())
 		{
