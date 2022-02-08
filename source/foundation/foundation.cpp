@@ -15,8 +15,8 @@ namespace flame
 			assert(p);
 			std::filesystem::path engine_path = p;
 			engine_path.make_preferred();
-			engine_path /= L"default_assets";
-			Path::add_root(engine_path.filename(), engine_path);
+			engine_path /= L"assets";
+			Path::add_root(L"flame", engine_path);
 		}
 	};
 	static _Initializer _initializer;

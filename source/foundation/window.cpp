@@ -198,7 +198,7 @@ namespace flame
 				wcex.hInstance = (HINSTANCE)get_hinst();
 				wcex.hIcon = 0;
 				{
-					std::unique_ptr<Bitmap> icon_image(Bitmap::create(Path::get(L"default_assets\\ico.png")));
+					std::unique_ptr<Bitmap> icon_image(Bitmap::create(Path::get(L"flame\\ico.png")));
 					icon_image->swap_channel(0, 2);
 					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x, icon_image->size.y, 1, icon_image->bpp, nullptr, icon_image->data);
 				}

@@ -20,12 +20,12 @@ namespace flame
 
 	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
 	{
-		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\scene.dsl");
+		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\scene.dsl");
 		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
 		ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
 		ds_scene->update();
-		auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"default_assets\\shaders\\object.dsl");
+		auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\object.dsl");
 		buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
 		ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
 		ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
@@ -43,23 +43,23 @@ namespace flame
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
 		
-		auto rp_fwd = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\forward.rp",
+		auto rp_fwd = graphics::Renderpass::get(nullptr, L"flame\\shaders\\forward.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		auto rp_col_dep = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\color_depth.rp",
+		auto rp_col_dep = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color_depth.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		auto rp_col = graphics::Renderpass::get(nullptr, L"default_assets\\shaders\\color.rp",
+		auto rp_col = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt) });
 
 		if (!initialized)
 		{
-			pl_blit = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\blit.pipeline",
+			pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
 				{ "rp=" + str(rp_col) });
-			pl_add = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\add.pipeline",
+			pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
 				{ "rp=" + str(rp_col) });
 
-			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
+			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_fwd),
 				  "frag:CAMERA_LIGHT" });
 
@@ -70,26 +70,26 @@ namespace flame
 			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			buf_idr_mesh.create(0U, buf_objects.array_capacity);
 
-			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
+			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col) });
 
-			prm_post.init(graphics::PipelineLayout::get(nullptr, L"default_assets\\shaders\\post\\post.pll"));
-			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+			prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
+			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
 				"frag:HORIZONTAL" });
-			pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+			pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
 				"frag:VERTICAL" });
-			pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+			pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
 				"frag:LOCAL_MAX",
 				"frag:HORIZONTAL" });
-			pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+			pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
 				"frag:LOCAL_MAX",
 				"frag:VERTICAL" });
 
-			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
+			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
 				  "frag:PICKUP" });
 			fence_pickup.reset(graphics::Fence::create(nullptr, false));

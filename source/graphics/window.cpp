@@ -204,8 +204,8 @@ namespace flame
 				ret->finished_semaphore.reset(Semaphore::create(device));
 
 				auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&Swapchain::format);
-				ret->renderpass_clear = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str });
-				ret->renderpass_load = Renderpass::get(device, L"default_assets\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
+				ret->renderpass_clear = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str });
+				ret->renderpass_load = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
 
 #if USE_IMGUI
 				ret->native->mouse_listeners.add([this](MouseButton btn, bool down) {
@@ -239,7 +239,7 @@ namespace flame
 					io.AddInputCharacter(ch);
 				});
 
-				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"default_assets\\shaders\\imgui.pipeline", 
+				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"flame\\shaders\\imgui.pipeline", 
 					{ "rp=" + str(ret->renderpass_clear) }));
 				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
