@@ -87,6 +87,8 @@ namespace flame
 		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
 		graphics::GraphicsPipelinePtr													pl_blur_h;
 		graphics::GraphicsPipelinePtr													pl_blur_v;
+		graphics::GraphicsPipelinePtr													pl_localmax_h;
+		graphics::GraphicsPipelinePtr													pl_localmax_v;
 
 		std::unique_ptr<graphics::Image>												img_pickup;
 		std::unique_ptr<graphics::Image>												img_dep_pickup;

@@ -20,11 +20,18 @@ void main()
 	vec4 res = vec4(0);
 	
 	for (int i = 0; i < pc.len; i++)
+	{
 	#ifdef HORIZONTAL
-		res += texture(img_src, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0)) * pc.weights[i];
+		vec4 sam = texture(img_src, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0));
 	#elifdef VERTICAL
-		res += texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.x)) * pc.weights[i];
+		vec4 sam = texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.y));
 	#endif
+	#ifdef LOCAL_MAX
+		res = max(res, sam);
+	#else
+		res += sam * pc.weights[i];
+	#endif
+	}
 
 	o_color = res;
 }

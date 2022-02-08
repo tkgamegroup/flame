@@ -80,6 +80,14 @@ namespace flame
 			pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
 				"frag:VERTICAL" });
+			pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+				{ "rp=" + str(rp_col),
+				"frag:LOCAL_MAX",
+				"frag:HORIZONTAL" });
+			pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\post\\blur.pipeline",
+				{ "rp=" + str(rp_col),
+				"frag:LOCAL_MAX",
+				"frag:VERTICAL" });
 
 			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"default_assets\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
@@ -500,23 +508,21 @@ namespace flame
 			cb->end_renderpass();
 
 			cb->bind_pipeline_layout(prm_post.pll);
-			auto& weights = get_gauss_blur_weights(5);
-			prm_post.set_pc_var<"off"_h>(-((int)weights.size() - 1) / 2);
-			prm_post.set_pc_var<"len"_h>((int)weights.size());
-			prm_post.set_pc_var<"weights"_h>(weights.data(), sizeof(float) * weights.size());
+			prm_post.set_pc_var<"off"_h>(-3);
+			prm_post.set_pc_var<"len"_h>(7);
 			prm_post.set_pc_var<"pxsz"_h>(1.f / (vec2)img_back0->size);
 			prm_post.push_constant(cb);
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-			cb->bind_pipeline(pl_blur_h);
+			cb->bind_pipeline(pl_localmax_h);
 			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_blur_v);
+			cb->bind_pipeline(pl_localmax_v);
 			cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
