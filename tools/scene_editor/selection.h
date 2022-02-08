@@ -15,6 +15,8 @@ struct Selection
 	std::filesystem::path path;
 	EntityPtr entity = nullptr;
 
+	uint frame = 0;
+
 	void clear();
 	void select(const std::filesystem::path& path);
 	bool selecting(const std::filesystem::path& path);

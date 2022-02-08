@@ -1793,7 +1793,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::string*>() }));
 			if (!src) src = &v;
-			fi->call<std::string, const std::string&>(obj, *(std::string*)src);
+			fi->call<void, const std::string&>(obj, *(std::string*)src);
 		}
 	};
 
@@ -1850,7 +1850,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::wstring*>() }));
 			if (!src) src = &v;
-			fi->call<std::wstring, const std::wstring&>(obj, *(std::wstring*)src);
+			fi->call<void, const std::wstring&>(obj, *(std::wstring*)src);
 		}
 	};
 
@@ -1907,7 +1907,7 @@ namespace flame
 		{
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::filesystem::path*>() }));
 			if (!src) src = &v;
-			fi->call<std::filesystem::path, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
+			fi->call<void, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
 		}
 	};
 

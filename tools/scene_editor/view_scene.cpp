@@ -40,11 +40,19 @@ void View_Scene::on_draw()
 					{
 						editor_node = e->get_component_i<cNodeT>(0);
 						editor_drawer = editor_node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-							if (hovering_node)
+							auto outline_node = [&](EntityPtr e, const cvec4& col) {
+								auto mesh = e->get_component_t<cMesh>();
+								if (mesh && mesh->object_id != -1 && mesh->mesh_id != -1)
+									renderer->draw_mesh_outline(mesh->object_id, mesh->mesh_id, col);
+							};
+							if (hovering_node && selection.selecting(hovering_node->entity))
+								outline_node(hovering_node->entity, cvec4(178, 178, 96, 0));
+							else
 							{
-								auto mesh = hovering_node->entity->get_component_t<cMesh>();
-								if (mesh->object_id != -1 && mesh->mesh_id != -1)
-									renderer->draw_mesh_outline(mesh->object_id, mesh->mesh_id, cvec4(128, 128, 64, 0));
+								if (hovering_node)
+									outline_node(hovering_node->entity, cvec4(128, 128, 64, 0));
+								if (selection.type == Selection::tEntity)
+									outline_node(selection.entity, cvec4(255, 255, 128, 0));
 							}
 						});
 						editor_node->measurers.add([](AABB* ret) {
@@ -130,7 +138,16 @@ void View_Scene::on_draw()
 					}
 
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+					{
 						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
+						if (io.MouseDown[0])
+						{
+							if (hovering_node)
+								selection.select(hovering_node->entity);
+							else
+								selection.clear();
+						}
+					}
 				}
 			}
 		}

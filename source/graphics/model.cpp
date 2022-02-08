@@ -321,8 +321,6 @@ namespace flame
 						na.append_attribute("model").set_value((model_name + ".fmod").c_str());
 					}
 				}
-				else
-					n.append_attribute("assemble_sub").set_value(true);
 
 				if (src->mNumMeshes > 0)
 				{

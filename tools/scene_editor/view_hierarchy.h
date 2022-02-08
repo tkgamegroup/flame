@@ -6,8 +6,6 @@ struct View_Hierarchy : View
 {
 	View_Hierarchy();
 
-	bool _just_selected;
-
 	void on_draw() override;
 };
 

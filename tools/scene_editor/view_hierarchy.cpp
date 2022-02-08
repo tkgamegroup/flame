@@ -11,6 +11,17 @@ View_Hierarchy::View_Hierarchy() :
 
 void View_Hierarchy::on_draw()
 {
+	std::vector<EntityPtr> open_nodes;
+	if (selection.type == Selection::tEntity && selection.frame == (int)frames - 1)
+	{
+		auto e = selection.entity->parent;
+		while (e)
+		{
+			open_nodes.push_back(e);
+			e = e->parent;
+		}
+	}
+
 	std::function<void(EntityPtr)> draw_entity;
 	draw_entity = [&](EntityPtr e) {
 		std::function<bool(EntityPtr, EntityPtr)> is_ancestor;
@@ -28,6 +39,8 @@ void View_Hierarchy::on_draw()
 		else
 			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 		ImGui::PushID(e);
+		if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
+			ImGui::SetNextItemOpen(true);
 		auto opened = ImGui::TreeNodeEx(("[] " + e->name).c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
 		ImGui::PopID();
 		if (ImGui::BeginDragDropSource())
@@ -51,10 +64,7 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
-		{
 			selection.select(e);
-			_just_selected = true;
-		}
 		if (opened)
 		{
 			auto gap_item = [&](int i) {
@@ -89,8 +99,6 @@ void View_Hierarchy::on_draw()
 		}
 	};
 
-	_just_selected = false;
-
 	if (app.e_prefab)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.f));
@@ -98,6 +106,6 @@ void View_Hierarchy::on_draw()
 		ImGui::PopStyleVar(1);
 	}
 
-	if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && !_just_selected)
+	if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && selection.frame != frames)
 		selection.clear();
 }

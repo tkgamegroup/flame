@@ -26,6 +26,15 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 				if (ImGui::Checkbox(a.name.c_str(), (bool*)a.get_value(src, !normal_io)) && !normal_io)
 					a.set_value(src);
 				break;
+			case DataInt:
+				switch (ti->vec_size)
+				{
+				case 1:
+					if (ImGui::DragInt(a.name.c_str(), (int*)a.get_value(src, !normal_io)) && !normal_io)
+						a.set_value(src);
+					break;
+				}
+				break;
 			case DataFloat:
 				switch (ti->vec_size)
 				{
@@ -50,6 +59,23 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 			case DataString:
 				if (ImGui::InputText(a.name.c_str(), (std::string*)a.get_value(src, !normal_io)) && !normal_io)
 					a.set_value(src);
+				break;
+			case DataWString:
+				break;
+			case DataPath:
+			{
+				auto str = ((std::filesystem::path*)a.get_value(src, !normal_io))->string();
+				if (ImGui::InputText(a.name.c_str(), &str) && !normal_io)
+				{
+					auto path = std::filesystem::path(str);
+					a.set_value(src, &path);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(".."))
+				{
+
+				}
+			}
 				break;
 			}
 		}
