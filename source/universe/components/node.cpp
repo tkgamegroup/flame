@@ -2,6 +2,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "../systems/node_renderer_private.h"
+#include "../octree.h"
 
 namespace flame
 {
@@ -163,27 +164,14 @@ namespace flame
 
 	void cNodePrivate::on_active()
 	{
-		// TOOD
-		//if (octree_length > 0.f)
-		//	octree.reset(new OctNode(octree_length, g_pos + vec3(octree_length * 0.5f)));
-		//else if (!assemble_sub)
-		//{
-		//	std::function<OctNode* (cNodePrivate* n)> get_octree;
-		//	get_octree = [&](cNodePrivate* n)->OctNode* {
-		//		if (!n)
-		//			return nullptr;
-		//		if (n->octree)
-		//			return n->octree.get();
-		//		return get_octree(n->pnode);
-		//	};
-		//	octnode.first = get_octree(pnode);
-		//}
-
 		mark_transform_dirty();
 	}
 
 	void cNodePrivate::on_inactive()
 	{
+		if (octnode)
+			octnode->remove(this);
+		
 		mark_drawing_dirty();
 	}
 

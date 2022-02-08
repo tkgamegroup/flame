@@ -27,8 +27,10 @@ namespace flame
 		ds_scene->update();
 		auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\object.dsl");
 		buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
+		buf_armatures.create_with_array_type(dsl_object->get_buf_ui("Armatures"));
 		ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
 		ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
+		ds_object->set_buffer("Armatures", 0, buf_armatures.buf.get());
 		ds_object->update();
 
 		mesh_reses.resize(1024);
@@ -65,6 +67,8 @@ namespace flame
 
 			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
+			buf_vtx_arm.create(pl_mesh_fwd->vi_ui(), 1024 * 32 * 4);
+			buf_idx_arm.create(sizeof(uint), 1024 * 32 * 6);
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
 			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
 			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
@@ -92,6 +96,10 @@ namespace flame
 			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
 				  "frag:PICKUP" });
+			pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+				{ "rp=" + str(rp_col_dep),
+				"vert:ARMATURE",
+				"frag:PICKUP" });
 			fence_pickup.reset(graphics::Fence::create(nullptr, false));
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
@@ -274,10 +282,9 @@ namespace flame
 				{
 					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
 					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
+					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
 					buf_vtx.next_item();
 				}
-				//	vtx.uv = auv ? auv[i] : vec2(0.f);
-				//	vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
 
 				dst.idx_off = buf_idx.item_offset();
 				buf_idx.push(dst.idx_cnt, mesh->indices.data());
@@ -287,24 +294,22 @@ namespace flame
 			}
 			else
 			{
-				//dst.vtx_off = nd.buf_arm_mesh_vtx.n1;
-				//auto pvtx = nd.buf_arm_mesh_vtx.alloc(dst.vtx_cnt);
+				dst.vtx_off = buf_vtx_arm.item_offset();
+				for (auto i = 0; i < dst.vtx_cnt; i++)
+				{
+					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
+					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
+					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
+					buf_vtx.set_var<"i_bids"_h>(mesh->bone_ids[i]);
+					buf_vtx.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
+					buf_vtx.next_item();
+				}
 
-				//for (auto i = 0; i < dst.vtx_cnt; i++)
-				//{
-				//	auto& vtx = pvtx[i];
-				//	vtx.pos = apos[i];
-				//	vtx.uv = auv ? auv[i] : vec2(0.f);
-				//	vtx.normal = anormal ? anormal[i] : vec3(1.f, 0.f, 0.f);
-				//	vtx.ids = abids ? abids[i] : ivec4(-1);
-				//	vtx.weights = abwgts ? abwgts[i] : vec4(0.f);
-				//}
+				dst.idx_off = buf_idx_arm.item_offset();
+				buf_idx_arm.push(dst.idx_cnt, mesh->indices.data());
 
-				//dst.idx_off = nd.buf_arm_mesh_idx.n1;
-				//memcpy(nd.buf_arm_mesh_idx.alloc(dst.idx_cnt), aidx, sizeof(uint) * dst.idx_cnt);
-
-				//nd.buf_arm_mesh_vtx.upload(cb.get());
-				//nd.buf_arm_mesh_idx.upload(cb.get());
+				buf_vtx_arm.upload(cb.get());
+				buf_idx_arm.upload(cb.get());
 			}
 
 			for (auto m : mesh->materials)
@@ -568,17 +573,38 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
 				vec4(1.f, 0.f, 0.f, 0.f) });
 
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_pickup);
-			prm_mesh_fwd.bind_dss(cb.get());
-			for (auto i = 0; i < draw_meshes.size(); i++)
+			auto off = 0;
+			if (!draw_meshes.empty())
 			{
-				auto& d = draw_meshes[i];
-				prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
-				prm_mesh_fwd.push_constant(cb.get());
-				auto& mr = mesh_reses[d.mesh_id];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_pickup);
+				prm_mesh_fwd.bind_dss(cb.get());
+				for (auto i = 0; i < draw_meshes.size(); i++)
+				{
+					auto& d = draw_meshes[i];
+					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + 1 + off, 0, 0, 0));
+					prm_mesh_fwd.push_constant(cb.get());
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+					off++;
+				}
+			}
+			if (!draw_arm_meshes.empty())
+			{
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_arm_pickup);
+				prm_mesh_fwd.bind_dss(cb.get());
+				for (auto i = 0; i < draw_arm_meshes.size(); i++)
+				{
+					auto& d = draw_arm_meshes[i];
+					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + 1 + off, 0, 0, 0));
+					prm_mesh_fwd.push_constant(cb.get());
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+					off++;
+				}
 			}
 
 			cb->end_renderpass();
@@ -600,6 +626,7 @@ namespace flame
 			index -= 1;
 			if (index == -1)
 				return nullptr;
+
 			return draw_meshes[index].node;
 		}
 	}

@@ -56,10 +56,11 @@ namespace flame
 	{
 		std::vector<MeshRes> mesh_reses;
 
-		std::vector<DrawMesh> draw_meshes;
-		std::vector<DrawMeshOccluder> draw_occluder_meshes;
-		std::vector<DrawMeshOutline> draw_outline_meshes;
-		std::vector<DrawMeshWireframe> draw_wireframe_meshes;
+		std::vector<DrawMesh>			draw_meshes;
+		std::vector<DrawMesh>			draw_arm_meshes;
+		std::vector<DrawMeshOccluder>	draw_occluder_meshes;
+		std::vector<DrawMeshOutline>	draw_outline_meshes;
+		std::vector<DrawMeshWireframe>	draw_wireframe_meshes;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -70,8 +71,11 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_dep;
 		std::vector<std::unique_ptr<graphics::Framebuffer>>								fbs_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_objects;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armatures;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_object;
@@ -94,6 +98,7 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_dep_pickup;
 		std::unique_ptr<graphics::Framebuffer>											fb_pickup;
 		graphics::GraphicsPipelinePtr													pl_mesh_pickup;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_pickup;
 		std::unique_ptr<graphics::Fence>												fence_pickup;
 
 		graphics::ImageLayout dst_layout;

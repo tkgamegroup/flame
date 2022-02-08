@@ -82,15 +82,7 @@ namespace flame
 		if (model_name.empty())
 			return;
 
-		graphics::Model* model = nullptr;
-		auto fn = model_name;
-		if (fn.extension().empty())
-			model = graphics::Model::get(fn);
-		else
-		{
-			fn = Path::get(fn);
-			model = graphics::Model::get(fn);
-		}
+		auto model = graphics::Model::get(model_name);
 		if (!model)
 			return;
 

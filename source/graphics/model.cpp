@@ -288,15 +288,14 @@ namespace flame
 
 			std::function<void(pugi::xml_node, aiNode*)> print_node;
 			print_node = [&](pugi::xml_node dst, aiNode* src) {
-				auto n = dst.append_child("item");
-
 				auto name = std::string(src->mName.C_Str());
-				n.append_attribute("name").set_value(name.c_str());
+				dst.append_attribute("name").set_value(name.c_str());
 
 				auto n_components = dst.append_child("components");
 
 				{
-					auto n_node = n_components.append_child("cNode");
+					auto n_node = n_components.append_child("item");
+					n_node.append_attribute("type_hash").set_value("flame::cNode"_h);
 
 					aiVector3D s;
 					aiVector3D r;
@@ -342,7 +341,8 @@ namespace flame
 					}
 					else
 					{
-						auto n_mesh = n_components.append_child("cMesh");
+						auto n_mesh = n_components.append_child("item");
+						n_mesh.append_attribute("type_hash").set_value("flame::cMesh"_h);
 						n_mesh.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
 						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
@@ -357,9 +357,9 @@ namespace flame
 					}
 				}
 
-				auto n_children = n.append_child("children");
+				auto n_children = dst.append_child("children");
 				for (auto i = 0; i < src->mNumChildren; i++)
-					print_node(n_children, src->mChildren[i]);
+					print_node(n_children.append_child("item"), src->mChildren[i]);
 			};
 			print_node(doc_prefab.append_child("prefab"), scene->mRootNode);
 
@@ -425,11 +425,11 @@ namespace flame
 
 		struct ModelGet : Model::Get
 		{
-			ModelPtr operator()(const std::filesystem::path& filename) override
+			ModelPtr operator()(const std::filesystem::path& _filename) override
 			{
-				if (filename.wstring().starts_with(L"standard:"))
+				if (_filename.wstring().starts_with(L"standard:"))
 				{
-					auto name = filename.wstring().substr(9);
+					auto name = _filename.wstring().substr(9);
 					if (name == L"cube")
 					{
 						if (!standard_cube)
@@ -463,6 +463,8 @@ namespace flame
 					return nullptr;
 				}
 
+				auto filename = Path::get(_filename);
+
 				for (auto& m : models)
 				{
 					if (m.first == filename)
@@ -471,7 +473,7 @@ namespace flame
 
 				if (!std::filesystem::exists(filename))
 				{
-					wprintf(L"cannot find model: %s\n", filename.c_str());
+					wprintf(L"cannot find model: %s\n", _filename.c_str());
 					return nullptr;
 				}
 

@@ -50,7 +50,7 @@ void View_Hierarchy::on_draw()
 		if (ImGui::BeginDragDropSource())
 		{
 			ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
-			ImGui::Text("Entity");
+			ImGui::TextUnformatted("Entity");
 			ImGui::EndDragDropSource();
 		}
 		if (ImGui::BeginDragDropTarget())

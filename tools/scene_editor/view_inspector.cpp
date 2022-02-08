@@ -124,7 +124,7 @@ void View_Inspector::on_draw()
 		break;
 	case Selection::tFile:
 	{
-		ImGui::Text("%s", selection.path.string().c_str());
+		ImGui::TextUnformatted(selection.path.string().c_str());
 		auto ext = selection.path.extension();
 		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 		{

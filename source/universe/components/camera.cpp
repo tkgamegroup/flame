@@ -37,7 +37,8 @@ namespace flame
 			{
 				auto e = es.front();
 				es.pop_front();
-				_main = e->get_component_t<cCameraT>();
+				if (e != entity)
+					_main = e->get_component_t<cCameraT>();
 				if (_main)
 					break;
 				for (auto& c : e->children)

@@ -275,7 +275,7 @@ void View_Project::on_draw()
 	auto just_select = selected_folder_frame == (int)frames - 1;
 
 	std::vector<FolderTreeNode*> open_nodes;
-	if (just_select)
+	if (just_select && selected_folder)
 	{
 		auto f = selected_folder->parent;
 		while (f)
@@ -331,7 +331,7 @@ void View_Project::on_draw()
 		auto open_rename = false;
 
 		ImGui::TableSetColumnIndex(1); 
-		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
+		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 3));
 		if (!items.empty())
 		{
 			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
@@ -353,6 +353,14 @@ void View_Project::on_draw()
 						rename_str = item->path.filename().string();
 						open_rename = true;
 					}
+					if (ImGui::MenuItem("Delete"))
+					{
+
+					}
+					if (ImGui::MenuItem("Copy"))
+					{
+
+					}
 					ImGui::EndPopup();
 				}
 
@@ -364,9 +372,9 @@ void View_Project::on_draw()
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
 			selection.clear();
 		ImGui::EndChild();
-
+		
 		if (selection.type == Selection::tFile)
-			ImGui::TextUnformatted(selection.path.string().c_str());
+			ImGui::TextUnformatted(selection.path.filename().string().c_str());
 
 		ImGui::EndTable();
 
