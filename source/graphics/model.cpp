@@ -288,12 +288,16 @@ namespace flame
 
 			std::function<void(pugi::xml_node, aiNode*)> print_node;
 			print_node = [&](pugi::xml_node dst, aiNode* src) {
-				auto n = dst.append_child("eNode");
+				auto n = dst.append_child("item");
 
 				auto name = std::string(src->mName.C_Str());
 				n.append_attribute("name").set_value(name.c_str());
 
+				auto n_components = dst.append_child("components");
+
 				{
+					auto n_node = n_components.append_child("cNode");
+
 					aiVector3D s;
 					aiVector3D r;
 					ai_real a;
@@ -304,21 +308,22 @@ namespace flame
 
 					auto pos = vec3(p.x, p.y, p.z);
 					if (pos != vec3(0.f))
-						n.append_attribute("pos").set_value(str(pos).c_str());
+						n_node.append_attribute("pos").set_value(str(pos).c_str());
 					auto qut = vec4(q.w, q.x, q.y, q.z);
 					if (qut != vec4(1.f, 0.f, 0.f, 0.f))
-						n.append_attribute("quat").set_value(str(qut).c_str());
+						n_node.append_attribute("quat").set_value(str(qut).c_str());
 					auto scl = vec3(s.x, s.y, s.z);
 					if (scl != vec3(1.f))
-						n.append_attribute("scale").set_value(str(scl).c_str());
+						n_node.append_attribute("scale").set_value(str(scl).c_str());
 				}
 
 				if (src == scene->mRootNode)
 				{
 					if (!bones.empty())
 					{
-						auto na = n.append_child("cArmature");
-						na.append_attribute("model").set_value((model_name + ".fmod").c_str());
+						auto n_armature = n_components.append_child("item");
+						n_armature.append_attribute("type_hash").set_value("flame::cArmature"_h);
+						n_armature.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
 					}
 				}
 
@@ -326,30 +331,35 @@ namespace flame
 				{
 					if (name == "trigger")
 					{
-						auto nr = n.append_child("cRigid");
-						nr.append_attribute("dynamic").set_value(false);
-						auto ns = n.append_child("cShape");
-						ns.append_attribute("type").set_value("Cube");
-						ns.append_attribute("size").set_value("2,2,0.01");
-						ns.append_attribute("trigger").set_value(true);
+						auto n_rigid = n_components.append_child("item");
+						n_rigid.append_attribute("type_hash").set_value("flame::cRigid"_h);
+						n_rigid.append_attribute("dynamic").set_value(false);
+						auto n_shape = n_components.append_child("item");
+						n_shape.append_attribute("type_hash").set_value("flame::cShape"_h);
+						n_shape.append_attribute("type").set_value("Cube");
+						n_shape.append_attribute("size").set_value("2,2,0.01");
+						n_shape.append_attribute("trigger").set_value(true);
 					}
 					else
 					{
-						auto nm = n.append_child("cMesh");
-						nm.append_attribute("src").set_value((model_name + ".fmod").c_str());
-						nm.append_attribute("sub_index").set_value(src->mMeshes[0]);
+						auto n_mesh = n_components.append_child("cMesh");
+						n_mesh.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
-							auto nr = n.append_child("cRigid");
-							nr.append_attribute("dynamic").set_value(false);
-							auto ns = n.append_child("cShape");
-							ns.append_attribute("type").set_value("Mesh");
+							auto n_rigid = n_components.append_child("item");
+							n_rigid.append_attribute("type_hash").set_value("flame::cRigid"_h);
+							n_rigid.append_attribute("dynamic").set_value(false);
+							auto n_shape = n_components.append_child("item");
+							n_shape.append_attribute("type_hash").set_value("flame::cShape"_h);
+							n_shape.append_attribute("type").set_value("Mesh");
 						}
 					}
 				}
 
+				auto n_children = n.append_child("children");
 				for (auto i = 0; i < src->mNumChildren; i++)
-					print_node(n, src->mChildren[i]);
+					print_node(n_children, src->mChildren[i]);
 			};
 			print_node(doc_prefab.append_child("prefab"), scene->mRootNode);
 

@@ -2,6 +2,7 @@
 #include "view_inspector.h"
 
 #include <flame/foundation/typeinfo.h>
+#include <flame/graphics/model.h>
 
 View_Inspector view_inspector;
 
@@ -97,8 +98,9 @@ void View_Inspector::on_draw()
 	};
 	static std::unordered_map<uint, UdtInfo*> com_udts = get_com_udts();
 
-	if (selection.type == Selection::tEntity)
+	switch (selection.type)
 	{
+	case Selection::tEntity:
 		show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), selection.entity);
 
 		for (auto& c : selection.entity->components)
@@ -119,5 +121,17 @@ void View_Inspector::on_draw()
 			}
 			ImGui::EndPopup();
 		}
+		break;
+	case Selection::tFile:
+	{
+		ImGui::Text("%s", selection.path.string().c_str());
+		auto ext = selection.path.extension();
+		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
+		{
+			if (ImGui::Button("Convert"))
+				graphics::Model::convert(selection.path);
+		}
+	}
+		break;
 	}
 }

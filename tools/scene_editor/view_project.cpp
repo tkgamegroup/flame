@@ -256,6 +256,8 @@ void View_Project::on_draw()
 		auto node = find(folder_tree.get());
 		if (!node && !selected_path.empty())
 			select_folder(nullptr);
+		else if (node != selected_folder)
+			select_folder(node);
 
 		if (std::find(changed_paths.begin(), changed_paths.end(), selected_path) != changed_paths.end())
 			open_folder(selected_path);
@@ -359,15 +361,14 @@ void View_Project::on_draw()
 					ImGui::SameLine();
 			}
 		}
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
+			selection.clear();
 		ImGui::EndChild();
 
 		if (selection.type == Selection::tFile)
 			ImGui::TextUnformatted(selection.path.string().c_str());
 
 		ImGui::EndTable();
-
-		if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && selection.frame != frames)
-			selection.clear();
 
 		if (open_rename)
 			ImGui::OpenPopup("rename");
