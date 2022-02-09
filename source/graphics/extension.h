@@ -219,7 +219,10 @@ namespace flame
 						if (rewind)
 							pend = pbeg;
 						else
+						{
+							cpy.src_off = cpy.dst_off = pbeg - (char*)stagbuf->mapped;
 							pbeg = pend;
+						}
 					}
 					else
 						cpy.size = size;
@@ -297,7 +300,10 @@ namespace flame
 					}
 				}
 				if (count > 0)
+				{
+					cb->bind_pipeline_layout(pll);
 					cb->bind_descriptor_sets(off, { temp_dss + off, count });
+				}
 			}
 
 			template<uint nh, typename T>
@@ -314,6 +320,7 @@ namespace flame
 
 			inline void push_constant(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
 			{
+				cb->bind_pipeline_layout(pll);
 				cb->push_constant(0, min(size, pll->pc_sz), temp_pc);
 			}
 		};

@@ -64,42 +64,50 @@ namespace flame
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_fwd),
 				  "frag:CAMERA_LIGHT" });
+			pl_mesh_arm_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+				{ "rp=" + str(rp_fwd),
+				  "vert:ARMATURE",
+				  "frag:CAMERA_LIGHT" });
 
-			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 128 * 4);
-			buf_idx.create(sizeof(uint), 1024 * 128 * 6);
-			buf_vtx_arm.create(pl_mesh_fwd->vi_ui(), 1024 * 32 * 4);
-			buf_idx_arm.create(sizeof(uint), 1024 * 32 * 6);
+			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 256 * 4);
+			buf_idx.create(sizeof(uint), 1024 * 256 * 6);
+			buf_vtx_arm.create(pl_mesh_arm_fwd->vi_ui(), 1024 * 128 * 4);
+			buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
 			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
 			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
 			buf_idr_mesh.create(0U, buf_objects.array_capacity);
+			buf_idr_mesh_arm.create(0U, buf_armatures.array_capacity);
 
 			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col) });
+			pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+				{ "rp=" + str(rp_col),
+				  "vert:ARMATURE" });
 
 			prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
 			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
-				"frag:HORIZONTAL" });
+				  "frag:HORIZONTAL" });
 			pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
-				"frag:VERTICAL" });
+				  "frag:VERTICAL" });
 			pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
-				"frag:LOCAL_MAX",
-				"frag:HORIZONTAL" });
+				  "frag:LOCAL_MAX",
+				  "frag:HORIZONTAL" });
 			pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
 				{ "rp=" + str(rp_col),
-				"frag:LOCAL_MAX",
-				"frag:VERTICAL" });
+				  "frag:LOCAL_MAX",
+				  "frag:VERTICAL" });
 
 			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
 				  "frag:PICKUP" });
 			pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
-				"vert:ARMATURE",
-				"frag:PICKUP" });
+				  "vert:ARMATURE",
+				  "frag:PICKUP" });
 			fence_pickup.reset(graphics::Fence::create(nullptr, false));
 
 			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
@@ -281,8 +289,10 @@ namespace flame
 				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
 					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
-					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
-					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
+					if (!mesh->normals.empty())
+						buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
+					if (!mesh->uvs.empty())
+						buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
 					buf_vtx.next_item();
 				}
 
@@ -297,12 +307,16 @@ namespace flame
 				dst.vtx_off = buf_vtx_arm.item_offset();
 				for (auto i = 0; i < dst.vtx_cnt; i++)
 				{
-					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
-					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
-					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
-					buf_vtx.set_var<"i_bids"_h>(mesh->bone_ids[i]);
-					buf_vtx.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
-					buf_vtx.next_item();
+					buf_vtx_arm.set_var<"i_pos"_h>(mesh->positions[i]);
+					if (!mesh->normals.empty())
+						buf_vtx_arm.set_var<"i_nor"_h>(mesh->normals[i]);
+					if (!mesh->uvs.empty())
+						buf_vtx_arm.set_var<"i_uv"_h>(mesh->uvs[i]);
+					if (!mesh->bone_ids.empty())
+						buf_vtx_arm.set_var<"i_bids"_h>(mesh->bone_ids[i]);
+					if (!mesh->bone_weights.empty())
+						buf_vtx_arm.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
+					buf_vtx_arm.next_item();
 				}
 
 				dst.idx_off = buf_idx_arm.item_offset();
@@ -336,7 +350,10 @@ namespace flame
 
 	int sNodeRendererPrivate::register_object()
 	{
-		return buf_objects.get_free_item();
+		auto id = buf_objects.get_free_item();
+		if (id != -1)
+			set_object_matrix(id, mat4(1.f), mat3(1.f));
+		return id;
 	}
 
 	void sNodeRendererPrivate::unregister_object(uint id)
@@ -353,17 +370,26 @@ namespace flame
 
 	int sNodeRendererPrivate::register_armature_object()
 	{
-		return -1;
+		auto id = buf_armatures.get_free_item();
+		if (id != -1)
+		{
+			auto dst = set_armature_object_matrices(id);
+			auto size = buf_armatures.ui->variables[0].array_size;
+			for (auto i = 0; i < size; i++)
+				dst[i] = mat4(1.f);
+		}
+		return id;
 	}
 
 	void sNodeRendererPrivate::unregister_armature_object(uint id)
 	{
-
+		buf_armatures.release_item(id);
 	}
 
-	void sNodeRendererPrivate::set_armature_object_matrices(uint id, const mat4* bones, uint count)
+	mat4* sNodeRendererPrivate::set_armature_object_matrices(uint id)
 	{
-
+		buf_armatures.select_item(id);
+		return (mat4*)buf_armatures.pend;
 	}
 
 	void sNodeRendererPrivate::draw_mesh(uint object_id, uint mesh_id, uint skin)
@@ -373,7 +399,10 @@ namespace flame
 		d.object_id = object_id;
 		d.mesh_id = mesh_id;
 		d.skin = skin;
-		draw_meshes.push_back(d);
+		if (!mesh_reses[mesh_id].arm)
+			draw_meshes.push_back(d);
+		else
+			draw_arm_meshes.push_back(d);
 	}
 
 	void sNodeRendererPrivate::draw_mesh_occluder(uint object_id, uint mesh_id, uint skin)
@@ -383,7 +412,10 @@ namespace flame
 		d.object_id = object_id;
 		d.mesh_id = mesh_id;
 		d.skin = skin;
-		draw_occluder_meshes.push_back(d);
+		if (!mesh_reses[mesh_id].arm)
+			draw_occluder_meshes.push_back(d);
+		else
+			draw_occluder_arm_meshes.push_back(d);
 	}
 
 	void sNodeRendererPrivate::draw_mesh_outline(uint object_id, uint mesh_id, const cvec4& color)
@@ -393,7 +425,10 @@ namespace flame
 		d.object_id = object_id;
 		d.mesh_id = mesh_id;
 		d.color = color;
-		draw_outline_meshes.push_back(d);
+		if (!mesh_reses[mesh_id].arm)
+			draw_outline_meshes.push_back(d);
+		else
+			draw_outline_arm_meshes.push_back(d);
 	}
 
 	void sNodeRendererPrivate::draw_mesh_wireframe(uint object_id, uint mesh_id, const cvec4& color)
@@ -403,7 +438,10 @@ namespace flame
 		d.object_id = object_id;
 		d.mesh_id = mesh_id;
 		d.color = color;
-		draw_wireframe_meshes.push_back(d);
+		if (!mesh_reses[mesh_id].arm)
+			draw_wireframe_meshes.push_back(d);
+		else
+			draw_wireframe_arm_meshes.push_back(d);
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -444,9 +482,13 @@ namespace flame
 		sScene::instance()->octree->get_within_frustum(Frustum(proj_inv), nodes);
 		current_node = nullptr;
 		draw_meshes.clear();
+		draw_arm_meshes.clear();
 		draw_occluder_meshes.clear();
+		draw_occluder_arm_meshes.clear();
 		draw_outline_meshes.clear();
+		draw_outline_arm_meshes.clear();
 		draw_wireframe_meshes.clear();
+		draw_wireframe_arm_meshes.clear();
 		for (auto& n : nodes)
 		{
 			current_node = n;
@@ -469,9 +511,16 @@ namespace flame
 			auto& mr = mesh_reses[d.mesh_id];
 			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.object_id << 16) + 0/* mat id */);
 		}
+		for (auto& d : draw_arm_meshes)
+		{
+			auto& mr = mesh_reses[d.mesh_id];
+			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.object_id << 16) + 0/* mat id */);
+		}
 
 		buf_objects.upload(cb);
+		buf_armatures.upload(cb);
 		buf_idr_mesh.upload(cb);
+		buf_idr_mesh_arm.upload(cb);
 
 		cb->set_viewport(Rect(vec2(0), sz));
 		cb->set_scissor(Rect(vec2(0), sz));
@@ -480,30 +529,43 @@ namespace flame
 			{ vec4(0.f, 0.f, 0.f, 1.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
-		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-		cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-
-		cb->bind_pipeline(pl_mesh_fwd);
 		prm_mesh_fwd.bind_dss(cb);
 		prm_mesh_fwd.set_pc_var<"f"_h>(vec4(1.f));
 		prm_mesh_fwd.push_constant(cb);
 
+		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+		cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+		cb->bind_pipeline(pl_mesh_fwd);
 		cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
+
+		cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+		cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+		cb->bind_pipeline(pl_mesh_arm_fwd);
+		cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
 
 		cb->end_renderpass();
 
-		if (!draw_outline_meshes.empty())
+		if (!draw_outline_meshes.empty() || !draw_outline_arm_meshes.empty())
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+			prm_mesh_fwd.bind_dss(cb);
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			cb->bind_pipeline(pl_mesh_plain);
-			prm_mesh_fwd.bind_dss(cb);
 			for (auto& d : draw_outline_meshes)
+			{
+				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
+				prm_mesh_fwd.push_constant(cb);
+				auto& mr = mesh_reses[d.mesh_id];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+			}
+			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_arm_plain);
+			for (auto& d : draw_outline_arm_meshes)
 			{
 				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 				prm_mesh_fwd.push_constant(cb);
@@ -533,9 +595,21 @@ namespace flame
 			cb->end_renderpass();
 
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-			cb->bind_pipeline(pl_mesh_plain);
 			prm_mesh_fwd.bind_dss(cb);
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_plain);
 			for (auto& d : draw_outline_meshes)
+			{
+				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(0.f));
+				prm_mesh_fwd.push_constant(cb);
+				auto& mr = mesh_reses[d.mesh_id];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
+			}
+			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_arm_plain);
+			for (auto& d : draw_outline_arm_meshes)
 			{
 				prm_mesh_fwd.set_pc_var<"f"_h>(vec4(0.f));
 				prm_mesh_fwd.push_constant(cb);
@@ -573,7 +647,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
 				vec4(1.f, 0.f, 0.f, 0.f) });
 
-			auto off = 0;
+			auto off = 1;
 			if (!draw_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
@@ -583,12 +657,12 @@ namespace flame
 				for (auto i = 0; i < draw_meshes.size(); i++)
 				{
 					auto& d = draw_meshes[i];
-					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + 1 + off, 0, 0, 0));
+					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_mesh_fwd.push_constant(cb.get());
 					auto& mr = mesh_reses[d.mesh_id];
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
-					off++;
 				}
+				off += draw_meshes.size();
 			}
 			if (!draw_arm_meshes.empty())
 			{
@@ -599,12 +673,12 @@ namespace flame
 				for (auto i = 0; i < draw_arm_meshes.size(); i++)
 				{
 					auto& d = draw_arm_meshes[i];
-					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + 1 + off, 0, 0, 0));
+					prm_mesh_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_mesh_fwd.push_constant(cb.get());
 					auto& mr = mesh_reses[d.mesh_id];
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.object_id << 16);
-					off++;
 				}
+				off += draw_arm_meshes.size();
 			}
 
 			cb->end_renderpass();
@@ -626,8 +700,12 @@ namespace flame
 			index -= 1;
 			if (index == -1)
 				return nullptr;
-
-			return draw_meshes[index].node;
+			if (index < draw_meshes.size())
+				return draw_meshes[index].node;
+			index -= draw_meshes.size();
+			if (index < draw_arm_meshes.size())
+				return draw_arm_meshes[index].node;
+			return nullptr;
 		}
 	}
 

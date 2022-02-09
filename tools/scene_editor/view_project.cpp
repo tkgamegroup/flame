@@ -331,7 +331,7 @@ void View_Project::on_draw()
 		auto open_rename = false;
 
 		ImGui::TableSetColumnIndex(1); 
-		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 3));
+		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
 		if (!items.empty())
 		{
 			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;

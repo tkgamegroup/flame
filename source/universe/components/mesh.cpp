@@ -28,14 +28,14 @@ namespace flame
 			b.reset();
 			vec3 ps[8];
 			mesh->bounds.get_points(ps);
-			auto& mat = /* parmature ? parmature->node->transform : */ node->transform;
+			auto& mat = parmature ? parmature->node->transform : node->transform;
 			for (auto i = 0; i < 8; i++)
 				b.expand(mat * vec4(ps[i], 1.f));
 			*ret = b;
 			return true;
 		});
 
-		node->mark_drawing_dirty();
+		node->mark_transform_dirty();
 	}
 
 	void cMeshPrivate::set_model_name(const std::filesystem::path& _model_name)
@@ -113,7 +113,7 @@ namespace flame
 		}
 		if (object_id == -1)
 			return;
-		if (frame < (int)frames)
+		if (!parmature && frame < (int)frames)
 		{
 			renderer->set_object_matrix(object_id, node->transform, node->g_rot);
 			frame = frames;
@@ -133,7 +133,7 @@ namespace flame
 
 		parmature = entity->get_parent_component_t<cArmatureT>();
 		if (parmature)
-			;
+			object_id = parmature->object_id;
 		else
 			object_id = sNodeRenderer::instance()->register_object();
 
@@ -145,6 +145,8 @@ namespace flame
 		mesh = nullptr;
 		mesh_id = -1;
 
+		if (!parmature)
+			sNodeRenderer::instance()->unregister_object(object_id);
 		object_id = -1;
 	}
 

@@ -59,8 +59,11 @@ namespace flame
 		std::vector<DrawMesh>			draw_meshes;
 		std::vector<DrawMesh>			draw_arm_meshes;
 		std::vector<DrawMeshOccluder>	draw_occluder_meshes;
+		std::vector<DrawMeshOccluder>	draw_occluder_arm_meshes;
 		std::vector<DrawMeshOutline>	draw_outline_meshes;
+		std::vector<DrawMeshOutline>	draw_outline_arm_meshes;
 		std::vector<DrawMeshWireframe>	draw_wireframe_meshes;
+		std::vector<DrawMeshWireframe>	draw_wireframe_arm_meshes;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -81,12 +84,15 @@ namespace flame
 		std::unique_ptr<graphics::DescriptorSet>										ds_object;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_mesh_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
 		graphics::GraphicsPipelinePtr													pl_mesh_fwd;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_fwd;
 
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
 
 		graphics::GraphicsPipelinePtr													pl_mesh_plain;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain;
 
 		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
 		graphics::GraphicsPipelinePtr													pl_blur_h;
@@ -122,7 +128,7 @@ namespace flame
 
 		int register_armature_object() override;
 		void unregister_armature_object(uint id) override;
-		void set_armature_object_matrices(uint id, const mat4* bones, uint count) override;
+		mat4* set_armature_object_matrices(uint id) override;
 
 		void draw_mesh(uint object_id, uint mesh_id, uint skin) override;
 		void draw_mesh_occluder(uint object_id, uint mesh_id, uint skin) override;

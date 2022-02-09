@@ -594,8 +594,10 @@ namespace flame
 
 		struct AnimationGet : Animation::Get 
 		{
-			AnimationPtr operator()(const std::filesystem::path& filename) override
+			AnimationPtr operator()(const std::filesystem::path& _filename) override
 			{
+				auto filename = Path::get(_filename);
+
 				for (auto& a : animations)
 				{
 					if (a->filename == filename)
@@ -606,7 +608,7 @@ namespace flame
 				pugi::xml_node doc_root;
 				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("animation"))
 				{
-					printf("animation does not exist: %s\n", filename.string().c_str());
+					wprintf(L"animation does not exist: %s\n", _filename.c_str());
 					return nullptr;
 				}
 
@@ -615,7 +617,7 @@ namespace flame
 				std::ifstream data_file(data_filename, std::ios::binary);
 				if (!data_file.good())
 				{
-					printf("missing .dat file for: %s\n", filename.string().c_str());
+					wprintf(L"missing .dat file for: %s\n", _filename.c_str());
 					return nullptr;
 				}
 

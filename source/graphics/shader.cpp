@@ -1372,6 +1372,10 @@ namespace flame
 									va.format = Format_R32G32B32A32_SFLOAT;
 								else if (vi.type == TypeInfo::get<cvec4>())
 									va.format = Format_R8G8B8A8_UNORM;
+								else if (vi.type == TypeInfo::get<int>() || vi.type == TypeInfo::get<uint>())
+									va.format = Format_R32_UINT;
+								else if (vi.type == TypeInfo::get<ivec4>() || vi.type == TypeInfo::get<uvec4>())
+									va.format = Format_R32G32B32A32_INT;
 							}
 						}
 						break;

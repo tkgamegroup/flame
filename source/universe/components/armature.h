@@ -1,28 +1,40 @@
-//#pragma once
-//
-//#include "../component.h"
-//
-//namespace flame
-//{
-//	struct cArmature : Component
-//	{
-//		std::filesystem::path model_path;
-//		std::wstring animation_paths;
-//
-//		int animation_id = -1;
-//		int frame = -1;
-//
-//		virtual void set_model_path(const std::filesystem::path& path) = 0;
-//		virtual void set_animation_paths(const std::wstring& paths) = 0;
-//
-//		virtual void play(uint id, float speed, bool loop) = 0;
-//		virtual void stop() = 0;
-//		virtual void stop_at(uint id, int frame) = 0;
-//
-//		struct Create
-//		{
-//			virtual cArmaturePtr operator()() = 0;
-//		};
-//		FLAME_UNIVERSE_API static Create& create;
-//	};
-//}
+#pragma once
+
+#include "../component.h"
+
+namespace flame
+{
+	/// Reflect ctor
+	struct cArmature : Component
+	{
+		/// Reflect requires
+		cNodePtr node = nullptr;
+
+		/// Reflect
+		std::filesystem::path model_name;
+		/// Reflect
+		virtual void set_model_name(const std::filesystem::path& path) = 0;
+
+		/// Reflect
+		std::wstring animation_names;
+		/// Reflect
+		virtual void set_animation_names(const std::wstring& paths) = 0;
+
+		int playing_id = -1;
+		int playing_frame = -1;
+		float playing_speed = 1.f;
+		bool loop = true;
+
+		virtual void play(uint id) = 0;
+		virtual void stop() = 0;
+
+		int object_id = -1;
+
+		struct Create
+		{
+			virtual cArmaturePtr operator()(EntityPtr e) = 0;
+		};
+		/// Reflect static
+		FLAME_UNIVERSE_API static Create& create;
+	};
+}

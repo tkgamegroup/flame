@@ -140,7 +140,7 @@ void View_Scene::on_draw()
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 					{
 						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
-						if (io.MouseDown[0])
+						if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !io.KeyAlt && !io.KeyShift)
 						{
 							if (hovering_node)
 								selection.select(hovering_node->entity);

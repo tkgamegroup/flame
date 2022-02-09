@@ -23,7 +23,7 @@ namespace flame
 
 		virtual int register_armature_object() = 0;
 		virtual void unregister_armature_object(uint id) = 0;
-		virtual void set_armature_object_matrices(uint id, const mat4* bones, uint count) = 0;
+		virtual mat4* set_armature_object_matrices(uint id) = 0;
 
 		// you must call draw in a node's drawer
 

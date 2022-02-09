@@ -343,7 +343,8 @@ namespace flame
 			if (ui)
 			{
 				auto c = ((EntityPtr)dst_o)->add_component(hash);
-				unserialize_xml(*ui, src, c, {});
+				if (c)
+					unserialize_xml(*ui, src, c, {});
 			}
 			return INVALID_POINTER;
 		};
