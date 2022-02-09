@@ -18,7 +18,7 @@ namespace flame
 				{
 					w->has_input = true;
 					for (auto& l : w->key_listeners.list)
-						l(v, true);
+						l.first(v, true);
 				}
 			}
 				return true;
@@ -30,14 +30,14 @@ namespace flame
 				{
 					w->has_input = true;
 					for (auto& l : w->key_listeners.list)
-						l(v, false);
+						l.first(v, false);
 				}
 			}
 				return true;
 			case WM_CHAR:
 				w->has_input = true;
 				for (auto& l : w->char_listeners.list)
-					l(wParam);
+					l.first(wParam);
 				return true;
 			case WM_LBUTTONDOWN:
 			{
@@ -45,7 +45,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Left, true);
+					l.first(Mouse_Left, true);
 			}
 				return true;
 			case WM_LBUTTONUP:
@@ -54,7 +54,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Left, false);
+					l.first(Mouse_Left, false);
 			}
 				return true;
 			case WM_RBUTTONDOWN:
@@ -62,7 +62,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Right, true);
+					l.first(Mouse_Right, true);
 			}
 				return true;
 			case WM_RBUTTONUP:
@@ -70,7 +70,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Right, false);
+					l.first(Mouse_Right, false);
 			}
 				return true;
 			case WM_MBUTTONDOWN:
@@ -78,7 +78,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Middle, true);
+					l.first(Mouse_Middle, true);
 			}
 				return true;
 			case WM_MBUTTONUP:
@@ -86,7 +86,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
-					l(Mouse_Middle, false);
+					l.first(Mouse_Middle, false);
 			}
 				return true;
 			case WM_MOUSEMOVE:
@@ -94,7 +94,7 @@ namespace flame
 				w->has_input = true;
 				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mousemove_listeners.list)
-					l(w->mpos);
+					l.first(w->mpos);
 			}
 				return true;
 			case WM_MOUSEWHEEL:
@@ -102,7 +102,7 @@ namespace flame
 				w->has_input = true;
 				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
 				for (auto& l : w->scroll_listeners.list)
-					l(v);
+					l.first(v);
 			}
 				return true;
 			case WM_DESTROY:
@@ -113,7 +113,7 @@ namespace flame
 				w->has_input = true;
 				w->size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->resize_listeners.list)
-					l(w->size);
+					l.first(w->size);
 				return true;
 			case WM_MOVE:
 				w->has_input = true;
@@ -136,7 +136,7 @@ namespace flame
 	NativeWindowPrivate::~NativeWindowPrivate()
 	{
 		for (auto& l : destroy_listeners.list)
-			l();
+			l.first();
 	}
 
 	void NativeWindowPrivate::close()

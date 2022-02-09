@@ -6,9 +6,12 @@
 #if USE_IMGUI
 #include <imgui.h>
 #include <misc/cpp/imgui_stdlib.h>
-#if USE_IM_FILE_DIALOG
-#include <ImFileDialog.h>
-#endif
+	#if USE_IM_FILE_DIALOG
+	#include <ImFileDialog.h>
+	#endif
+	#if USE_IM_GUIZMO
+	#include <ImGuizmo.h>
+	#endif
 #endif
 
 namespace flame

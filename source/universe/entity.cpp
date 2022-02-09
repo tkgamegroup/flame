@@ -28,7 +28,7 @@ namespace flame
 	EntityPrivate::~EntityPrivate()
 	{
 		for (auto& l : message_listeners.list)
-			l("destroyed"_h, nullptr, nullptr);
+			l.first("destroyed"_h, nullptr, nullptr);
 
 		for (auto it = components.rbegin(); it != components.rend(); it++)
 		{
@@ -56,7 +56,7 @@ namespace flame
 				for (auto& c : components)
 					global_enable ? c->on_active() : c->on_inactive();
 				for (auto& l : message_listeners.list)
-					l(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
+					l.first(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
 			}
 
 			for (auto& e : children)
@@ -227,7 +227,7 @@ namespace flame
 		e->update_enable();
 
 		for (auto& l : e->message_listeners.list)
-			l("entity_added"_h, nullptr, nullptr);
+			l.first("entity_added"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_added();
 
@@ -238,7 +238,7 @@ namespace flame
 				if (e->global_enable)
 				{
 					for (auto& l : e->message_listeners.list)
-						l("active"_h, nullptr, nullptr);
+						l.first("active"_h, nullptr, nullptr);
 					for (auto& c : e->components)
 						c->on_active();
 				}
@@ -246,7 +246,7 @@ namespace flame
 		}
 
 		for (auto& l : message_listeners.list)
-			l("child_added"_h, e, nullptr);
+			l.first("child_added"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_added(e);
 	}
@@ -256,7 +256,7 @@ namespace flame
 		e->parent = nullptr;
 
 		for (auto& l : e->message_listeners.list)
-			l("entity_removed"_h, nullptr, nullptr);
+			l.first("entity_removed"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
@@ -269,14 +269,14 @@ namespace flame
 					for (auto& c : e->components)
 						c->on_inactive();
 					for (auto& l : e->message_listeners.list)
-						l("inactive"_h, nullptr, nullptr);
+						l.first("inactive"_h, nullptr, nullptr);
 					e->global_enable = false;
 				}
 			});
 		}
 
 		for (auto& l : message_listeners.list)
-			l("child_removed"_h, e, nullptr);
+			l.first("child_removed"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_removed(e);
 	}

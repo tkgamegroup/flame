@@ -58,13 +58,33 @@ void App::init()
 		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem("Open Project"))
+			{
+				#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Open("OpenProjectDialog", "Open a project", "");
+				#endif
+				;
+			}
 			if (ImGui::MenuItem("Open Prefab"))
+			{
+				#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}");
+				#endif
+				;
+			}
 			if (ImGui::MenuItem("New Prefab"))
+			{
+				#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}");
+				#endif
+				;
+			}
 			if (ImGui::MenuItem("Save Prefab"))
+			{
+				#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Save("SavePrefabDialog", "Save prefab", "Prefab file (*.prefab){.prefab}");
+				#endif
+				;
+			}
 			if (ImGui::MenuItem("Close"))
 				;
 			ImGui::EndMenu();
@@ -112,6 +132,7 @@ void App::init()
 		}
 		ImGui::EndMainMenuBar();
 
+#ifdef USE_IM_FILE_DIALOG
 		if (ifd::FileDialog::Instance().IsDone("OpenProjectDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -142,16 +163,16 @@ void App::init()
 			{
 				if (e_prefab)
 				{
-					auto editor_node = e_prefab->find_child("[Editor]");
-					if (editor_node)
-						editor_node->parent->remove_child(editor_node, false);
+					if (e_editor)
+						e_editor->parent->remove_child(e_editor, false);
 					e_prefab->save(ifd::FileDialog::Instance().GetResultFormated());
-					if (editor_node)
-						e_prefab->add_child(editor_node, 0);
+					if (e_editor)
+						e_prefab->add_child(e_editor, 0);
 				}
 			}
 			ifd::FileDialog::Instance().Close();
 		}
+#endif
 
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -193,11 +214,11 @@ void App::open_prefab(const std::filesystem::path& path)
 		e_prefab->parent->remove_child(e_prefab);
 	e_prefab = Entity::create();
 	e_prefab->load(path);
-	auto editor_node = Entity::create();
-	editor_node->name = "[Editor]";
-	editor_node->add_component(th<cNode>());
-	editor_node->add_component(th<cCamera>());
-	e_prefab->add_child(editor_node, 0);
+	e_editor = Entity::create();
+	e_editor->name = "[Editor]";
+	e_editor->add_component(th<cNode>());
+	e_editor->add_component(th<cCamera>());
+	e_prefab->add_child(e_editor, 0);
 	app.world->root->add_child(e_prefab);
 }
 

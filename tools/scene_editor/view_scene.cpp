@@ -1,7 +1,9 @@
-#include <flame/universe/components/node.h>
-#include <flame/universe/components/mesh.h>
 #include "view_scene.h"
 #include "selection.h"
+
+#include <flame/universe/components/node.h>
+#include <flame/universe/components/mesh.h>
+#include <flame/universe/components/camera.h>
 
 View_Scene view_scene;
 
@@ -30,37 +32,60 @@ void View_Scene::on_draw()
 		ImGui::Image(render_tar.get(), size);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
+
+#if USE_IM_GUIZMO
+		if (app.e_editor && selection.type == Selection::tEntity)
+		{
+			auto tar = selection.entity->get_component_i<cNode>(0);
+			if (tar)
+			{
+				auto camera = app.e_editor->get_component_t<cCamera>();
+
+				ImGuizmo::BeginFrame();
+				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
+				auto mat = tar->transform;
+				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], ImGuizmo::TRANSLATE, ImGuizmo::LOCAL, &mat[0][0]))
+				{
+					vec3 p, r, s;
+					ImGuizmo::DecomposeMatrixToComponents(&mat[0][0], &p[0], &r[0], &s[0]);
+					tar->set_pos(p);
+					//tar->set_eul(r);
+					tar->set_scl(s);
+				}
+			}
+		}
+#endif
+
 		if (ImGui::IsItemHovered())
 		{
-			if (app.e_prefab)
+			if (app.e_editor)
 			{
-				if (!editor_node)
+				auto editor_node = app.e_editor->get_component_i<cNode>(0);
+				if (!editor_node->drawers.exist("scene"_h))
 				{
-					if (auto e = app.e_prefab->find_child("[Editor]"); e)
-					{
-						editor_node = e->get_component_i<cNodeT>(0);
-						editor_drawer = editor_node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-							auto outline_node = [&](EntityPtr e, const cvec4& col) {
-								auto mesh = e->get_component_t<cMesh>();
-								if (mesh && mesh->object_id != -1 && mesh->mesh_id != -1)
-									renderer->draw_mesh_outline(mesh->object_id, mesh->mesh_id, col);
-							};
-							if (hovering_node && selection.selecting(hovering_node->entity))
-								outline_node(hovering_node->entity, cvec4(178, 178, 96, 0));
-							else
-							{
-								if (hovering_node)
-									outline_node(hovering_node->entity, cvec4(128, 128, 64, 0));
-								if (selection.type == Selection::tEntity)
-									outline_node(selection.entity, cvec4(255, 255, 128, 0));
-							}
-						});
-						editor_node->measurers.add([](AABB* ret) {
-							*ret = AABB(vec3(0.f), 10000.f);
-							return true;
-						});
-						editor_node->mark_transform_dirty();
-					}
+					editor_node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+						auto outline_node = [&](EntityPtr e, const cvec4& col) {
+							auto mesh = e->get_component_t<cMesh>();
+							if (mesh && mesh->object_id != -1 && mesh->mesh_id != -1)
+								renderer->draw_mesh_outline(mesh->object_id, mesh->mesh_id, col);
+						};
+						if (hovering_node && selection.selecting(hovering_node->entity))
+							outline_node(hovering_node->entity, cvec4(178, 178, 96, 0));
+						else
+						{
+							if (hovering_node)
+								outline_node(hovering_node->entity, cvec4(128, 128, 64, 0));
+							if (selection.type == Selection::tEntity)
+								outline_node(selection.entity, cvec4(255, 255, 128, 0));
+						}
+					}, "scene"_h);
+					editor_node->measurers.add([](AABB* ret) {
+						*ret = AABB(vec3(0.f), 10000.f);
+						return true;
+					});
+					editor_node->mark_transform_dirty();
 				}
 				if (editor_node)
 				{

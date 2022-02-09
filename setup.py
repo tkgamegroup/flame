@@ -20,6 +20,7 @@ print("Download or build required libraries?\n 1 - Automaticly\n 2 - Manually\n 
 op = int(input())
 
 if op != 3:
+	print("== library glm ==")
 	ok = True
 	address = "https://github.com/g-truc/glm.git"
 	lib_dir = parent_directory / "glm"
@@ -31,7 +32,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library PugiXML ==")
 	ok = True
 	address = "https://github.com/zeux/pugixml.git"
 	lib_dir = parent_directory / "pugixml"
@@ -58,19 +61,23 @@ if op != 3:
 			os.chdir(current_directory)
 		else:
 			print("%s exists, skip build" % str(bud_dir))
+	print("====\n")
 			
+	print("== library nlohmann json ==")
 	ok = True
 	address = "https://github.com/nlohmann/json.git"
 	lib_dir = parent_directory / "njson"
 	if op == 2:
-		print("Download Nlohmann Json from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("Download nlohmann json from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library cppcodec ==")
 	ok = True
 	address = "https://github.com/tplgy/cppcodec.git"
 	lib_dir = parent_directory / "cppcodec"
@@ -82,7 +89,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library stb ==")
 	ok = True
 	address = "https://github.com/nothings/stb.git"
 	lib_dir = parent_directory / "stb"
@@ -94,7 +103,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library sha1 ==")
 	ok = True
 	address = "https://github.com/vog/sha1.git"
 	lib_dir = parent_directory / "sha1"
@@ -106,7 +117,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library gli ==")
 	ok = True
 	address = "https://github.com/g-truc/gli.git"
 	lib_dir = parent_directory / "gli"
@@ -118,7 +131,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library SPIRV-Cross ==")
 	ok = True
 	address = "https://github.com/KhronosGroup/SPIRV-Cross.git"
 	lib_dir = parent_directory / "SPIRV-Cross"
@@ -145,7 +160,9 @@ if op != 3:
 			os.chdir(current_directory)
 		else:
 			print("%s exists, skip build" % str(bud_dir))
+	print("====\n")
 			
+	print("== library lua ==")
 	ok = True
 	address = "https://github.com/lua/lua.git"
 	lib_dir = parent_directory / "lua"
@@ -168,7 +185,9 @@ if op != 3:
 			os.system("\"\"%s/VC/Auxiliary/Build/vcvars64.bat\" && nmake -f \"%s\"\"" % (str(vs_path), str(bud_dir) + "/makefile"))
 		else:
 			print("%s exists, skip build" % str(bud_dir))
+	print("====\n")
 		
+	print("== library assimp ==")
 	ok = True
 	address = "https://github.com/assimp/assimp.git"
 	lib_dir = parent_directory / "assimp"
@@ -195,7 +214,9 @@ if op != 3:
 			os.chdir(current_directory)
 		else:
 			print("%s exists, skip build" % str(bud_dir))
+	print("====\n")
 			
+	print("== library PhysX ==")
 	ok = True
 	address = "https://github.com/NVIDIAGameWorks/PhysX.git"
 	lib_dir = parent_directory / "PhysX"
@@ -207,7 +228,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library imgui ==")
 	ok = True
 	address = "https://github.com/ocornut/imgui.git"
 	lib_dir = parent_directory / "imgui"
@@ -219,7 +242,9 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && git checkout docking && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
+	print("== library ImFileDialog ==")
 	ok = True
 	address = "https://github.com/tkgamegroup/ImFileDialog.git"
 	lib_dir = parent_directory / "ImFileDialog"
@@ -231,6 +256,21 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
+			
+	print("== library ImGuizmo ==")
+	ok = True
+	address = "https://github.com/CedricGuillemet/ImGuizmo.git"
+	lib_dir = parent_directory / "ImGuizmo"
+	if op == 2:
+		print("Download ImGuizmo from %s into %s ? y/n" % (address, str(lib_dir)))
+		ok = input() == "y"
+	if ok:
+		if not lib_dir.exists():
+			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 
 os.system("setx FLAME_PATH \"%s\"" % str(current_directory))
 

@@ -14,7 +14,6 @@ namespace flame
 		bool rot_dirty = false;
 
 		bool transform_dirty = true;
-		mat4 transform;
 
 		cNodePrivate();
 

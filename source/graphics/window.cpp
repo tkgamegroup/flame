@@ -30,8 +30,8 @@ namespace flame
 #if USE_IMGUI
 			ImGui::NewFrame();
 
-			for (auto& cb : imgui_callbacks.list)
-				cb();
+			for (auto& l : imgui_callbacks.list)
+				l.first();
 
 			auto& io = ImGui::GetIO();
 			auto mouse_consumed = io.WantCaptureMouse;
@@ -90,8 +90,8 @@ namespace flame
 
 			commandbuffer->begin();
 
-			for (auto& r : renderers.list)
-				r(img_idx, commandbuffer.get());
+			for (auto& l : renderers.list)
+				l.first(img_idx, commandbuffer.get());
 
 #if USE_IMGUI
 			ImGui::Render();

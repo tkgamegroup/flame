@@ -25,6 +25,7 @@ struct App : UniverseApplication
 
 	std::filesystem::path prefab_path;
 	EntityPtr e_prefab = nullptr;
+	EntityPtr e_editor = nullptr;
 
 	bool always_update = false;
 

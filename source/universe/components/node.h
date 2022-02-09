@@ -44,6 +44,7 @@ namespace flame
 		vec3 g_pos;
 		mat3 g_rot;
 		vec3 g_scl;
+		mat4 transform;
 		AABB bounds;
 
 		OctNode* octnode = nullptr;

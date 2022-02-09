@@ -34,7 +34,7 @@ namespace flame
 						for (auto m : node->measurers.list)
 						{
 							AABB b;
-							if (m(&b))
+							if (m.first(&b))
 								node->bounds.expand(b);
 						}
 					}

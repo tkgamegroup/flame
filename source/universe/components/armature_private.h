@@ -11,7 +11,7 @@ namespace flame
 		struct Bone
 		{
 			std::string name;
-			cNodePrivate* node = nullptr;
+			cNodePtr node = nullptr;
 			mat4 offmat;
 		};
 

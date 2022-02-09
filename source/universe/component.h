@@ -22,7 +22,7 @@ namespace flame
 		inline void data_changed(uint h)
 		{
 			for (auto& l : data_listeners.list)
-				l(h);
+				l.first(h);
 		}
 
 		virtual void on_init() {}
