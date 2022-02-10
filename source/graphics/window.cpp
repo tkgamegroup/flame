@@ -28,12 +28,14 @@ namespace flame
 				return;
 
 #if USE_IMGUI
+			auto& io = ImGui::GetIO();
+			io.DeltaTime = delta_time;
+
 			ImGui::NewFrame();
 
 			for (auto& l : imgui_callbacks.list)
 				l.first();
 
-			auto& io = ImGui::GetIO();
 			auto mouse_consumed = io.WantCaptureMouse;
 			auto keyboard_consumed = io.WantCaptureKeyboard;
 

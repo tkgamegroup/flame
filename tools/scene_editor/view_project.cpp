@@ -93,9 +93,10 @@ static std::string				rename_str;
 
 void View_Project::Item::draw()
 {
-	auto pressed = ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
+	ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
 	auto p0 = ImGui::GetItemRectMin();
 	auto p1 = ImGui::GetItemRectMax();
+	auto pressed = ImGui::IsItemClicked();
 	auto active = ImGui::IsItemActive();
 	auto hovered = ImGui::IsItemHovered();
 	ImU32 col;
@@ -119,6 +120,8 @@ void View_Project::Item::draw()
 				view_project.open_folder(p);
 				return false;
 			});
+
+			selection.clear();
 
 			view_project.select_folder(nullptr);
 			std::function<FolderTreeNode* (FolderTreeNode*)> select_node;
@@ -369,7 +372,7 @@ void View_Project::on_draw()
 					ImGui::SameLine();
 			}
 		}
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
 			selection.clear();
 		ImGui::EndChild();
 		
