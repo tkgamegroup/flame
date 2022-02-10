@@ -479,7 +479,7 @@ namespace flame
 		auto proj_inv = inverse(camera->proj_mat);
 
 		std::vector<cNodePtr> nodes;
-		sScene::instance()->octree->get_within_frustum(Frustum(proj_inv), nodes);
+		sScene::instance()->octree->get_within_frustum(Frustum(view_inv * proj_inv), nodes);
 		current_node = nullptr;
 		draw_meshes.clear();
 		draw_arm_meshes.clear();
