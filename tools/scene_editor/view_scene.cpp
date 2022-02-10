@@ -33,6 +33,7 @@ void View_Scene::on_draw()
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
 
+		bool using_gizmo = false;
 #if USE_IM_GUIZMO
 		if (app.e_editor && selection.type == Selection::tEntity)
 		{
@@ -54,6 +55,8 @@ void View_Scene::on_draw()
 					//tar->set_eul(r);
 					tar->set_scl(s);
 				}
+
+				using_gizmo = ImGuizmo::IsUsing();
 			}
 		}
 #endif
@@ -81,10 +84,6 @@ void View_Scene::on_draw()
 								outline_node(selection.entity, cvec4(255, 255, 128, 0));
 						}
 					}, "scene"_h);
-					editor_node->measurers.add([](AABB* ret) {
-						*ret = AABB(vec3(0.f), 10000.f);
-						return true;
-					});
 					editor_node->mark_transform_dirty();
 				}
 				if (editor_node)
@@ -167,7 +166,7 @@ void View_Scene::on_draw()
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 					{
 						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
-						if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !io.KeyAlt && !io.KeyShift)
+						if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt && !io.KeyShift)
 						{
 							if (hovering_node)
 								selection.select(hovering_node->entity);

@@ -13,10 +13,10 @@ namespace flame
 		graphics::MeshPtr mesh = nullptr;
 
 		cArmaturePtr parmature = nullptr;
+
 		int frame = -1;
 
 		~cMeshPrivate();
-
 		void on_init() override;
 
 		void set_model_name(const std::filesystem::path& model_name) override;

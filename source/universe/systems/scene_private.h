@@ -9,7 +9,7 @@ namespace flame
 	{
 		sScenePrivate();
 
-		void update_transform(EntityPtr e);
+		void update_transform(EntityPtr e, bool mark_dirty);
 		void update() override;
 	};
 }

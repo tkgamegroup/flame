@@ -6,11 +6,6 @@
 
 namespace flame
 {
-	cNodePrivate::cNodePrivate()
-	{
-		bounds.reset();
-	}
-
 	void cNodePrivate::set_pos(const vec3& p)
 	{
 		if (pos == p)
@@ -113,10 +108,10 @@ namespace flame
 		}
 	}
 
-	void cNodePrivate::update_transform()
+	bool cNodePrivate::update_transform()
 	{
 		if (!transform_dirty)
-			return;
+			return false;
 
 		update_rot();
 
@@ -141,19 +136,20 @@ namespace flame
 
 		data_changed("transform"_h);
 		transform_dirty = false;
+
+		return true;
 	}
 
 	void cNodePrivate::mark_transform_dirty()
 	{
-		if (!transform_dirty)
-			transform_dirty = true;
+		transform_dirty = true;
 		mark_drawing_dirty();
 	}
 
 	void cNodePrivate::mark_drawing_dirty()
 	{
-		if (auto renderer = sNodeRenderer::instance(); renderer && entity->world)
-			renderer->dirty = true;
+		if (entity->world)
+			sNodeRenderer::instance()->dirty = true;
 	}
 
 	void cNodePrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)

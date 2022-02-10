@@ -118,7 +118,10 @@ namespace flame
 		vec2 a;
 		vec2 b;
 
-		Rect() = default;
+		Rect()
+		{
+			reset();
+		}
 
 		Rect(float LT_x, float LT_y, float RB_x, float RB_y)
 		{
@@ -186,9 +189,12 @@ namespace flame
 		vec3 a;
 		vec3 b;
 
-		AABB() = default;
+		AABB()
+		{
+			reset();
+		}
 
-		AABB(const vec3 & a, const vec3& b) :
+		AABB(const vec3& a, const vec3& b) :
 			a(a),
 			b(b)
 		{
@@ -201,9 +207,21 @@ namespace flame
 			b = center + hf_size;
 		}
 
+		AABB(uint count, const vec3* points)
+		{
+			reset();
+			for (auto i = 0; i < count; i++)
+				expand(points[i]);
+		}
+
+		AABB(const std::vector<vec3>& points) :
+			AABB(points.size(), points.data())
+		{
+		}
+
 		void reset()
 		{
-			a = vec3(10000.f);
+			a = vec3(+10000.f);
 			b = vec3(-10000.f);
 		}
 
@@ -217,16 +235,24 @@ namespace flame
 			return (a + b) * 0.5f;
 		}
 
-		void get_points(vec3* dst) const
+		void get_points(vec3* dst, const mat4& m = mat4(1.f)) const
 		{
-			dst[0] = vec3(a.x, a.y, a.z);
-			dst[1] = vec3(b.x, a.y, a.z);
-			dst[2] = vec3(a.x, a.y, b.z);
-			dst[3] = vec3(a.x, b.y, a.z);
-			dst[4] = vec3(a.x, b.y, b.z);
-			dst[5] = vec3(b.x, b.y, a.z);
-			dst[6] = vec3(b.x, a.y, b.z);
-			dst[7] = vec3(b.x, b.y, b.z);
+			dst[0] = m * vec4(a.x, a.y, a.z, 1.f);
+			dst[1] = m * vec4(b.x, a.y, a.z, 1.f);
+			dst[2] = m * vec4(a.x, a.y, b.z, 1.f);
+			dst[3] = m * vec4(a.x, b.y, a.z, 1.f);
+			dst[4] = m * vec4(a.x, b.y, b.z, 1.f);
+			dst[5] = m * vec4(b.x, b.y, a.z, 1.f);
+			dst[6] = m * vec4(b.x, a.y, b.z, 1.f);
+			dst[7] = m * vec4(b.x, b.y, b.z, 1.f);
+		}
+
+		std::vector<vec3> get_points(const mat4& m = mat4(1.f)) const
+		{
+			std::vector<vec3> ret;
+			ret.resize(8);
+			get_points(ret.data(), m);
+			return ret;
 		}
 
 		void expand(const vec3& p)

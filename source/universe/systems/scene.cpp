@@ -11,7 +11,7 @@ namespace flame
 		octree = new OctNode(999999999.f, vec3(0.f));
 	}
 
-	void sScenePrivate::update_transform(EntityPtr e)
+	void sScenePrivate::update_transform(EntityPtr e, bool mark_dirty)
 	{
 		if (!e->global_enable)
 			return;
@@ -22,15 +22,15 @@ namespace flame
 			is_static = (int)node->is_static == 2;
 			if (!is_static)
 			{
-				auto dirty = node->transform_dirty;
-				node->update_transform();
 				if (node->is_static)
 					node->is_static = 2;
-				if (dirty)
+				if (mark_dirty)
+					node->mark_transform_dirty();
+				if (node->update_transform())
 				{
-					node->bounds.reset();
 					if (!node->measurers.list.empty())
 					{
+						node->bounds.reset();
 						for (auto m : node->measurers.list)
 						{
 							AABB b;
@@ -38,6 +38,8 @@ namespace flame
 								node->bounds.expand(b);
 						}
 					}
+					else if (!node->drawers.list.empty())
+						node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));
 					if (node->bounds.invalid())
 					{
 						if (node->octnode)
@@ -50,6 +52,8 @@ namespace flame
 						else
 							octree->add(node);
 					}
+
+					mark_dirty = true;
 				}
 			}
 		}
@@ -57,13 +61,13 @@ namespace flame
 		if (!is_static)
 		{
 			for (auto& c : e->children)
-				update_transform(c.get());
+				update_transform(c.get(), mark_dirty);
 		}
 	}
 
 	void sScenePrivate::update()
 	{
-		update_transform(world->root.get());
+		update_transform(world->root.get(), false);
 	}
 
 	static sScenePtr _instance = nullptr;

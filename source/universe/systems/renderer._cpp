@@ -1567,7 +1567,7 @@ namespace flame
 							auto f = (i + 1) / (float)nd.dir_shadow_levels;
 							f = f * f * nd.dir_shadow_dist;
 
-							AABB b; b.reset();
+							AABB b;
 							vec3 ps[8];
 							camera->get_points(ps, n, f);
 							for (auto k = 0; k < 8; k++)

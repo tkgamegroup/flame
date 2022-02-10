@@ -15,8 +15,6 @@ namespace flame
 
 		bool transform_dirty = true;
 
-		cNodePrivate();
-
 		void set_pos(const vec3& pos) override;
 		vec3 get_eul() override;
 		void set_eul(const vec3& eul) override;
@@ -29,7 +27,7 @@ namespace flame
 		void update_eul();
 		void update_qut();
 		void update_rot();
-		void update_transform();
+		bool update_transform();
 
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;

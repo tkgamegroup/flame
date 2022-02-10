@@ -7,6 +7,11 @@
 
 namespace flame
 {
+	mat4 cArmaturePrivate::Bone::calc_mat()
+	{
+		return node->transform * offmat;
+	}
+
 	void cArmaturePrivate::Animation::apply(Bone* bones, uint playing_frame)
 	{
 		for (auto& t : tracks)
@@ -18,6 +23,12 @@ namespace flame
 		}
 	}
 
+	cArmaturePrivate::~cArmaturePrivate()
+	{
+		node->drawers.remove(drawer_lis);
+		node->measurers.remove(measurer_lis);
+	}
+
 	void cArmaturePrivate::on_init()
 	{
 		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
@@ -27,15 +38,9 @@ namespace flame
 		measurer_lis = node->measurers.add([this](AABB* ret) {
 			*ret = AABB(vec3(0.f), 10000.f);
 			return true;
-		});
+			});
 
 		node->mark_transform_dirty();
-	}
-
-	cArmaturePrivate::~cArmaturePrivate()
-	{
-		node->drawers.remove(drawer_lis);
-		node->measurers.remove(measurer_lis);
 	}
 
 	void cArmaturePrivate::set_model_name(const std::filesystem::path& path)
@@ -146,33 +151,35 @@ namespace flame
 		if (object_id == -1)
 			return;
 
-		if (playing_id != -1)
+		if (frame < (int)frames)
 		{
-			auto& a = animations[playing_id];
-			a.apply(bones.data(), playing_frame);
+			if (playing_id != -1)
+			{
+				auto& a = animations[playing_id];
+				a.apply(bones.data(), playing_frame);
+
+				time += playing_speed;
+				while (time > 1.f)
+				{
+					time -= 1.f;
+
+					playing_frame++;
+					if (playing_frame == a.total_frame)
+						playing_frame = loop ? 0 : -1;
+
+					if (playing_frame == -1)
+					{
+						stop();
+						break;
+					}
+				}
+			}
 
 			auto dst = renderer->set_armature_object_matrices(object_id);
 			for (auto i = 0; i < bones.size(); i++)
-			{
-				auto& b = bones[i];
-				dst[i] = b.node->transform * b.offmat;
-			}
+				dst[i] = bones[i].calc_mat();
 
-			time += playing_speed;
-			while (time > 1.f)
-			{
-				time -= 1.f;
-
-				playing_frame++;
-				if (playing_frame == a.total_frame)
-					playing_frame = loop ? 0 : -1;
-
-				if (playing_frame == -1)
-				{
-					stop();
-					break;
-				}
-			}
+			frame = frames;
 		}
 	}
 

@@ -24,14 +24,7 @@ namespace flame
 		measurer_lis = node->measurers.add([this](AABB* ret) {
 			if (!mesh)
 				return false;
-			AABB b;
-			b.reset();
-			vec3 ps[8];
-			mesh->bounds.get_points(ps);
-			auto& mat = parmature ? parmature->node->transform : node->transform;
-			for (auto i = 0; i < 8; i++)
-				b.expand(mat * vec4(ps[i], 1.f));
-			*ret = b;
+			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
 		});
 

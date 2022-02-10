@@ -13,6 +13,8 @@ namespace flame
 			std::string name;
 			cNodePtr node = nullptr;
 			mat4 offmat;
+
+			inline mat4 calc_mat();
 		};
 
 		struct Animation
@@ -30,8 +32,10 @@ namespace flame
 		std::vector<Animation> animations;
 		float time = 0.f;
 
-		void on_init() override;
+		int frame = -1;
+
 		~cArmaturePrivate();
+		void on_init() override;
 
 		void set_model_name(const std::filesystem::path& src) override;
 		void set_animation_names(const std::wstring& paths) override;

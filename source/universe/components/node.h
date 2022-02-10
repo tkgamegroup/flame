@@ -56,7 +56,7 @@ namespace flame
 		Listeners<bool(AABB*)> measurers;
 
 		virtual void look_at(const vec3& t) = 0;
-		
+
 		struct Create
 		{
 			virtual cNodePtr operator()(EntityPtr) = 0;
