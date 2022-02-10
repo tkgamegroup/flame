@@ -110,6 +110,11 @@ void View_Hierarchy::on_draw()
 		ImGui::PopStyleVar(1);
 	}
 
-	if (ImGui::IsMouseReleased(0) && ImGui::IsWindowFocused() && selection.frame != frames)
-		selection.clear();
+	if (ImGui::IsWindowFocused())
+	{
+		if (ImGui::IsKeyPressed(Keyboard_Del))
+			app.cmd_delete_selected_entity();
+		if (ImGui::IsMouseReleased(0) && selection.frame != frames)
+			selection.clear();
+	}
 }

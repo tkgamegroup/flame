@@ -152,6 +152,8 @@ void View_Scene::on_draw()
 								editor_node->set_pos(node->g_pos + editor_node->g_rot[2] * camera_zoom);
 						}
 					}
+					if (ImGui::IsKeyPressed(Keyboard_Del))
+						app.cmd_delete_selected_entity();
 					if (auto scroll = io.MouseWheel; scroll != 0.f)
 					{
 						auto tar = get_tar();

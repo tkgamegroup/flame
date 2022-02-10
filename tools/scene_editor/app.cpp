@@ -92,23 +92,9 @@ void App::init()
 		if (ImGui::BeginMenu("Scene"))
 		{
 			if (ImGui::MenuItem("Create Entity"))
-			{
-				if (e_prefab)
-				{
-					static int id = 0;
-					auto e = Entity::create();
-					e->name = "Entity " + str(id++);
-					e_prefab->add_child(e);
-				}
-			}
-			if (ImGui::MenuItem("Remove Entity"))
-			{
-				if (selection.type == Selection::tEntity)
-				{
-					selection.entity->parent->remove_child(selection.entity);
-					selection.clear();
-				}
-			}
+				cmd_create_entity();
+			if (ImGui::MenuItem("Delete Entity"))
+				cmd_delete_selected_entity();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -220,6 +206,36 @@ void App::open_prefab(const std::filesystem::path& path)
 	e_editor->add_component(th<cCamera>());
 	e_prefab->add_child(e_editor, 0);
 	app.world->root->add_child(e_prefab);
+}
+
+void App::cmd_create_entity()
+{
+	if (e_prefab)
+	{
+		static int id = 0;
+		auto e = Entity::create();
+		e->name = "Entity " + str(id++);
+		e_prefab->add_child(e);
+	}
+}
+
+void App::cmd_delete_selected_entity()
+{
+	if (selection.type == Selection::tEntity)
+	{
+		auto e = selection.entity;
+		if (e == e_prefab)
+			return;
+		auto p = e;
+		while (p)
+		{
+			if (p->name == "[Editor]")
+				return;
+			p = p->parent;
+		}
+		e->parent->remove_child(e);
+		selection.clear();
+	}
 }
 
 int main(int argc, char** args)

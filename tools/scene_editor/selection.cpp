@@ -2,22 +2,22 @@
 
 void Selection::clear()
 {
+	frame = frames;
+
 	type = tNothing;
 	path.clear();
 	entity = nullptr;
-
-	frame = frames;
 }
 
 void Selection::select(const std::filesystem::path& _path)
 {
+	frame = frames;
+
 	if (selecting(_path))
 		return;
 	clear();
 	type = tFile;
 	path = _path;
-
-	frame = frames;
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
@@ -27,13 +27,13 @@ bool Selection::selecting(const std::filesystem::path& _path)
 
 void Selection::select(EntityPtr e)
 {
+	frame = frames;
+
 	if (selecting(e))
 		return;
 	clear();
 	type = tEntity;
 	entity = e;
-
-	frame = frames;
 }
 
 bool Selection::selecting(EntityPtr e)

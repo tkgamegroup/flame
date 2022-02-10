@@ -33,6 +33,9 @@ struct App : UniverseApplication
 
 	void open_project(const std::filesystem::path& path);
 	void open_prefab(const std::filesystem::path& path);
+
+	void cmd_create_entity();
+	void cmd_delete_selected_entity();
 };
 
 extern App app;
