@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mesh.h"
-#include "node_private.h"
 
 namespace flame
 {

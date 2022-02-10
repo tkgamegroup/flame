@@ -322,7 +322,7 @@ namespace flame
 					{
 						auto n_armature = n_components.append_child("item");
 						n_armature.append_attribute("type_hash").set_value("flame::cArmature"_h);
-						n_armature.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+						n_armature.append_attribute("model_name").set_value(("assets/" + model_name + ".fmod").c_str());
 					}
 				}
 
@@ -343,7 +343,7 @@ namespace flame
 					{
 						auto n_mesh = n_components.append_child("item");
 						n_mesh.append_attribute("type_hash").set_value("flame::cMesh"_h);
-						n_mesh.append_attribute("model_name").set_value((model_name + ".fmod").c_str());
+						n_mesh.append_attribute("model_name").set_value(("assets/" + model_name + ".fmod").c_str());
 						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
