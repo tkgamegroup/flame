@@ -93,16 +93,28 @@ void View_Scene::on_draw()
 					};
 
 					auto& io = ImGui::GetIO();
-					if (io.KeyAlt)
+
+					if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 					{
-						if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+						disp /= vec2(render_tar->size);
+						if (!io.KeyAlt)
 						{
-							disp /= vec2(render_tar->size);
-							disp *= -180.f;
-							if (io.MouseDown[ImGuiMouseButton_Left])
-								editor_node->add_eul(vec3(disp, 0.f));
-							else if (io.MouseDown[ImGuiMouseButton_Middle])
+							if (io.MouseDown[ImGuiMouseButton_Middle])
 							{
+								editor_node->add_pos((-editor_node->g_rot[0] * disp.x +
+									editor_node->g_rot[1] * disp.y) * camera_zoom);
+							}
+							else if (io.MouseDown[ImGuiMouseButton_Right])
+							{
+								disp *= -180.f;
+								editor_node->add_eul(vec3(disp, 0.f));
+							}
+						}
+						else
+						{
+							if (io.MouseDown[ImGuiMouseButton_Left])
+							{
+								disp *= -180.f;
 								auto tar = get_tar();
 								editor_node->add_eul(vec3(disp, 0.f));
 								auto eul = editor_node->eul;
@@ -111,17 +123,14 @@ void View_Scene::on_draw()
 							}
 						}
 					}
-					if (io.KeyShift)
+					if (auto scroll = io.MouseWheel; scroll != 0.f)
 					{
-						if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
-						{
-							disp /= vec2(render_tar->size);
-							if (io.MouseDown[ImGuiMouseButton_Middle])
-							{
-								editor_node->add_pos((-editor_node->g_rot[0] * disp.x +
-									editor_node->g_rot[1] * disp.y) * camera_zoom);
-							}
-						}
+						auto tar = get_tar();
+						if (scroll < 0.f)
+							camera_zoom = camera_zoom * 1.1f + 0.5f;
+						else
+							camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+						editor_node->set_pos(tar + editor_node->g_rot[2] * camera_zoom);
 					}
 					if (io.KeysDown[Keyboard_W])
 					{
@@ -153,20 +162,11 @@ void View_Scene::on_draw()
 					}
 					if (ImGui::IsKeyPressed(Keyboard_Del))
 						app.cmd_delete_selected_entity();
-					if (auto scroll = io.MouseWheel; scroll != 0.f)
-					{
-						auto tar = get_tar();
-						if (scroll < 0.f)
-							camera_zoom = camera_zoom * 1.1f + 0.5f;
-						else
-							camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
-						editor_node->set_pos(tar + editor_node->g_rot[2] * camera_zoom);
-					}
 
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 					{
 						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
-						if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt && !io.KeyShift)
+						if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 						{
 							if (hovering_node)
 								selection.select(hovering_node->entity);
