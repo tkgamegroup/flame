@@ -581,6 +581,9 @@ namespace flame
 					}
 				}
 
+				for (auto& m : ret->meshes)
+					ret->bounds.expand(m.bounds);
+
 				model_data_file.close();
 
 				models.emplace_back(filename, ret);

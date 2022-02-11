@@ -73,15 +73,16 @@ namespace flame
 
 		std::unique_ptr<graphics::Image>												img_dep;
 		std::vector<std::unique_ptr<graphics::Framebuffer>>								fbs_fwd;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_objects;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armatures;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
-		std::unique_ptr<graphics::DescriptorSet>										ds_object;
+		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_mesh_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
@@ -122,18 +123,22 @@ namespace flame
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
 
-		int register_object() override;
-		void unregister_object(uint id) override;
-		void set_object_matrix(uint id, const mat4& mat, const mat3& nor) override;
+		int register_mesh_instance(int id) override;
+		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
 
-		int register_armature_object() override;
-		void unregister_armature_object(uint id) override;
-		mat4* set_armature_object_matrices(uint id) override;
+		int register_armature_instance(int id) override;
+		mat4* set_armature_instance(uint id) override;
+
+		int register_terrain_instance(int id) override;
+		void set_terrain_instance(uint id, const mat4& mat) override;
 
 		void draw_mesh(uint object_id, uint mesh_id, uint skin) override;
 		void draw_mesh_occluder(uint object_id, uint mesh_id, uint skin) override;
 		void draw_mesh_outline(uint object_id, uint mesh_id, const cvec4& color) override;
 		void draw_mesh_wireframe(uint object_id, uint mesh_id, const cvec4& color) override;
+		void draw_terrain() override;
+		void draw_terrain_outline() override;
+		void draw_terrain_wireframe() override;
 		void render(uint img_idx, graphics::CommandBufferPtr cb);
 
 		void update() override;

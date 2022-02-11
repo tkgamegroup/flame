@@ -1,5 +1,5 @@
 #include "../scene.dsl"
-#include "../object.dsl"
+#include "../instance.dsl"
 #include "../material.dsl"
 #include "../light.dsl"
 

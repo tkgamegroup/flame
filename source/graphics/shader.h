@@ -87,15 +87,33 @@ namespace flame
 			inline void set_buffer(std::string_view name, uint index, BufferPtr buf, uint offset = 0, uint range = 0)
 			{
 				auto idx = ((DescriptorSetLayout*)layout)->find_binding(name);
-				if (idx != -1 && is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
-					set_buffer(idx, index, buf, offset, range);
+				if (idx == -1)
+				{
+					printf("descriptor set bind resource failed: cannot find %s\n", name.data());
+					return;
+				}
+				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
+				{
+					printf("descriptor set bind resource failed: type mismatch with %s\n", name.data());
+					return;
+				}
+				set_buffer(idx, index, buf, offset, range);
 			}
 			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 			inline void set_image(std::string_view name, uint index, ImageViewPtr iv, SamplerPtr sp)
 			{
 				auto idx = ((DescriptorSetLayout*)layout)->find_binding(name);
-				if (idx != -1 && is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorSampledImage, DescriptorStorageImage }))
-					set_image(idx, index, iv, sp);
+				if (idx == -1)
+				{
+					printf("descriptor set bind resource failed: cannot find %s\n", name.data());
+					return;
+				}
+				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorSampledImage, DescriptorStorageImage }))
+				{
+					printf("descriptor set bind resource failed: type mismatch with %s\n", name.data());
+					return;
+				}
+				set_image(idx, index, iv, sp);
 			}
 
 			virtual void update() = 0;

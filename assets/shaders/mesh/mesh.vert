@@ -36,7 +36,7 @@ void main()
 		int bid = i_bids[i];
 		if (bid == -1)
 			break;
-		deform += armatures[idx].bones[bid] * i_bwgts[i];
+		deform += armature_instances[idx].bones[bid] * i_bwgts[i];
 	}
 
 	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
@@ -45,10 +45,10 @@ void main()
 		o_normal = normalize(mat3(deform) * i_nor);
 	#endif
 #else
-	vec3 coordw = vec3(objects[idx].mat * vec4(i_pos, 1.0));
+	vec3 coordw = vec3(mesh_instances[idx].mat * vec4(i_pos, 1.0));
 
 	#ifndef SHADOW_PASS
-		o_normal = normalize(mat3(objects[idx].nor) * i_nor);
+		o_normal = normalize(mat3(mesh_instances[idx].nor) * i_nor);
 	#endif
 #endif
 

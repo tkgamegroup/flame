@@ -25,13 +25,13 @@ namespace flame
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
 		ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
 		ds_scene->update();
-		auto dsl_object = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\object.dsl");
-		buf_objects.create_with_array_type(dsl_object->get_buf_ui("Objects"));
-		buf_armatures.create_with_array_type(dsl_object->get_buf_ui("Armatures"));
-		ds_object.reset(graphics::DescriptorSet::create(nullptr, dsl_object));
-		ds_object->set_buffer("Objects", 0, buf_objects.buf.get());
-		ds_object->set_buffer("Armatures", 0, buf_armatures.buf.get());
-		ds_object->update();
+		auto dsl_instance = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\instance.dsl");
+		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"));
+		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"));
+		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
+		ds_instance->set_buffer("MeshInstances", 0, buf_mesh_ins.buf.get());
+		ds_instance->set_buffer("ArmatureInstances", 0, buf_armature_ins.buf.get());
+		ds_instance->update();
 
 		mesh_reses.resize(1024);
 		
@@ -75,9 +75,9 @@ namespace flame
 			buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 			prm_mesh_fwd.init(pl_mesh_fwd->layout);
 			prm_mesh_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_mesh_fwd.set_ds("object"_h, ds_object.get());
-			buf_idr_mesh.create(0U, buf_objects.array_capacity);
-			buf_idr_mesh_arm.create(0U, buf_armatures.array_capacity);
+			prm_mesh_fwd.set_ds("instance"_h, ds_instance.get());
+			buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
+			buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
 
 			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col) });
@@ -348,48 +348,68 @@ namespace flame
 		return -1;
 	}
 
-	int sNodeRendererPrivate::register_object()
+	int sNodeRendererPrivate::register_mesh_instance(int id)
 	{
-		auto id = buf_objects.get_free_item();
-		if (id != -1)
-			set_object_matrix(id, mat4(1.f), mat3(1.f));
-		return id;
-	}
-
-	void sNodeRendererPrivate::unregister_object(uint id)
-	{
-		buf_objects.release_item(id);
-	}
-
-	void sNodeRendererPrivate::set_object_matrix(uint id, const mat4& mat, const mat3& nor)
-	{
-		buf_objects.select_item(id);
-		buf_objects.set_var<"mat"_h>(mat);
-		buf_objects.set_var<"nor"_h>(mat4(nor));
-	}
-
-	int sNodeRendererPrivate::register_armature_object()
-	{
-		auto id = buf_armatures.get_free_item();
-		if (id != -1)
+		if (id == -1)
 		{
-			auto dst = set_armature_object_matrices(id);
-			auto size = buf_armatures.ui->variables[0].array_size;
-			for (auto i = 0; i < size; i++)
-				dst[i] = mat4(1.f);
+			id = buf_mesh_ins.get_free_item();
+			if (id != -1)
+				set_mesh_instance(id, mat4(1.f), mat3(1.f));
 		}
+		else
+			buf_mesh_ins.release_item(id);
 		return id;
 	}
 
-	void sNodeRendererPrivate::unregister_armature_object(uint id)
+	void sNodeRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
 	{
-		buf_armatures.release_item(id);
+		buf_mesh_ins.select_item(id);
+		buf_mesh_ins.set_var<"mat"_h>(mat);
+		buf_mesh_ins.set_var<"nor"_h>(mat4(nor));
 	}
 
-	mat4* sNodeRendererPrivate::set_armature_object_matrices(uint id)
+	int sNodeRendererPrivate::register_armature_instance(int id)
 	{
-		buf_armatures.select_item(id);
-		return (mat4*)buf_armatures.pend;
+		if (id == -1)
+		{
+			id = buf_armature_ins.get_free_item();
+			if (id != -1)
+			{
+				auto dst = set_armature_instance(id);
+				auto size = buf_armature_ins.ui->variables[0].array_size;
+				for (auto i = 0; i < size; i++)
+					dst[i] = mat4(1.f);
+			}
+		}
+		else
+			buf_armature_ins.release_item(id);
+		return id;
+	}
+
+	mat4* sNodeRendererPrivate::set_armature_instance(uint id)
+	{
+		buf_armature_ins.select_item(id);
+		return (mat4*)buf_armature_ins.pend;
+	}
+
+	int sNodeRendererPrivate::register_terrain_instance(int id)
+	{
+		if (id == -1)
+		{
+			id = buf_terrain_ins.get_free_item();
+			if (id != -1)
+			{
+
+			}
+		}
+		else
+			buf_terrain_ins.release_item(id);
+		return id;
+	}
+
+	void sNodeRendererPrivate::set_terrain_instance(uint id, const mat4& mat)
+	{
+
 	}
 
 	void sNodeRendererPrivate::draw_mesh(uint object_id, uint mesh_id, uint skin)
@@ -442,6 +462,21 @@ namespace flame
 			draw_wireframe_meshes.push_back(d);
 		else
 			draw_wireframe_arm_meshes.push_back(d);
+	}
+
+	void sNodeRendererPrivate::draw_terrain()
+	{
+
+	}
+
+	void sNodeRendererPrivate::draw_terrain_outline()
+	{
+
+	}
+
+	void sNodeRendererPrivate::draw_terrain_wireframe()
+	{
+
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -517,8 +552,8 @@ namespace flame
 			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.object_id << 16) + 0/* mat id */);
 		}
 
-		buf_objects.upload(cb);
-		buf_armatures.upload(cb);
+		buf_mesh_ins.upload(cb);
+		buf_armature_ins.upload(cb);
 		buf_idr_mesh.upload(cb);
 		buf_idr_mesh_arm.upload(cb);
 

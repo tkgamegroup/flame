@@ -33,12 +33,14 @@ namespace flame
 	{
 		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
 			draw(renderer);
-			});
+		});
 
 		measurer_lis = node->measurers.add([this](AABB* ret) {
-			*ret = AABB(vec3(0.f), 10000.f);
+			if (!model)
+				return false;
+			*ret = AABB(model->bounds.get_points(node->transform));
 			return true;
-			});
+		});
 
 		node->mark_transform_dirty();
 	}
@@ -84,7 +86,7 @@ namespace flame
 
 	void cArmaturePrivate::apply_src()
 	{
-		auto model = graphics::Model::get(model_name);
+		model = graphics::Model::get(model_name);
 		if (!model)
 			return;
 
@@ -148,7 +150,7 @@ namespace flame
 
 	void cArmaturePrivate::draw(sNodeRendererPtr renderer)
 	{
-		if (object_id == -1)
+		if (instance_id == -1)
 			return;
 
 		if (frame < (int)frames)
@@ -175,7 +177,7 @@ namespace flame
 				}
 			}
 
-			auto dst = renderer->set_armature_object_matrices(object_id);
+			auto dst = renderer->set_armature_instance(instance_id);
 			for (auto i = 0; i < bones.size(); i++)
 				dst[i] = bones[i].calc_mat();
 
@@ -187,19 +189,21 @@ namespace flame
 	{
 		apply_src();
 
-		object_id = sNodeRenderer::instance()->register_armature_object();
+		instance_id = sNodeRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();
 	}
 
 	void cArmaturePrivate::on_inactive()
 	{
+		model = nullptr;
+
 		stop();
 		bones.clear();
 		animations.clear();
 
-		sNodeRenderer::instance()->unregister_armature_object(object_id);
-		object_id = -1;
+		sNodeRenderer::instance()->register_armature_instance(instance_id);
+		instance_id = -1;
 	}
 
 	struct cArmatureCreatePrivate : cArmature::Create

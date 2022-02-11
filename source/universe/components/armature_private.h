@@ -25,6 +25,8 @@ namespace flame
 			void apply(Bone* bones, uint frame);
 		};
 
+		graphics::ModelPtr model = nullptr;
+
 		void* drawer_lis = nullptr;
 		void* measurer_lis = nullptr;
 

@@ -71,8 +71,8 @@ void View_Scene::on_draw()
 					editor_node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
 						auto outline_node = [&](EntityPtr e, const cvec4& col) {
 							auto mesh = e->get_component_t<cMesh>();
-							if (mesh && mesh->object_id != -1 && mesh->mesh_id != -1)
-								renderer->draw_mesh_outline(mesh->object_id, mesh->mesh_id, col);
+							if (mesh && mesh->instance_id != -1 && mesh->mesh_id != -1)
+								renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_id, col);
 						};
 						if (hovering_node && selection.selecting(hovering_node->entity))
 							outline_node(hovering_node->entity, cvec4(178, 178, 96, 0));

@@ -71,6 +71,8 @@ namespace flame
 			std::vector<Mesh> meshes;
 			std::vector<Bone> bones;
 
+			AABB bounds;
+
 			std::filesystem::path filename;
 
 			virtual ~Model() {}

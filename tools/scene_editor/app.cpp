@@ -53,6 +53,14 @@ void App::init()
 	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	app.always_render = false;
 
+	auto root = app.world->root.get();
+	root->add_component(th<cNode>());
+	e_editor = Entity::create();
+	e_editor->name = "[Editor]";
+	e_editor->add_component(th<cNode>());
+	e_editor->add_component(th<cCamera>());
+	root->add_child(e_editor);
+
 	app.main_window->imgui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
@@ -200,11 +208,6 @@ void App::open_prefab(const std::filesystem::path& path)
 		e_prefab->parent->remove_child(e_prefab);
 	e_prefab = Entity::create();
 	e_prefab->load(path);
-	e_editor = Entity::create();
-	e_editor->name = "[Editor]";
-	e_editor->add_component(th<cNode>());
-	e_editor->add_component(th<cCamera>());
-	e_prefab->add_child(e_editor, 0);
 	app.world->root->add_child(e_prefab);
 }
 
@@ -226,13 +229,6 @@ void App::cmd_delete_selected_entity()
 		auto e = selection.entity;
 		if (e == e_prefab)
 			return;
-		auto p = e;
-		while (p)
-		{
-			if (p->name == "[Editor]")
-				return;
-			p = p->parent;
-		}
 		e->parent->remove_child(e);
 		selection.clear();
 	}

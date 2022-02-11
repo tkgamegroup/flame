@@ -28,7 +28,7 @@ namespace flame
 		virtual void play(uint id) = 0;
 		virtual void stop() = 0;
 
-		int object_id = -1;
+		int instance_id = -1;
 
 		struct Create
 		{

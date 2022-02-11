@@ -104,20 +104,20 @@ namespace flame
 			mesh = nullptr;
 			return;
 		}
-		if (object_id == -1)
+		if (instance_id == -1)
 			return;
 		if (!parmature && frame < (int)frames)
 		{
-			renderer->set_object_matrix(object_id, node->transform, node->g_rot);
+			renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
 			frame = frames;
 		}
 		if (shadow_pass)
 		{
 			if (cast_shadow)
-				renderer->draw_mesh_occluder(object_id, mesh_id, skin_index);
+				renderer->draw_mesh_occluder(instance_id, mesh_id, skin_index);
 		}
 		else
-			renderer->draw_mesh(object_id, mesh_id, skin_index);
+			renderer->draw_mesh(instance_id, mesh_id, skin_index);
 	}
 
 	void cMeshPrivate::on_active()
@@ -126,9 +126,9 @@ namespace flame
 
 		parmature = entity->get_parent_component_t<cArmatureT>();
 		if (parmature)
-			object_id = parmature->object_id;
+			instance_id = parmature->instance_id;
 		else
-			object_id = sNodeRenderer::instance()->register_object();
+			instance_id = sNodeRenderer::instance()->register_mesh_instance(-1);
 
 		node->mark_transform_dirty();
 	}
@@ -139,8 +139,8 @@ namespace flame
 		mesh_id = -1;
 
 		if (!parmature)
-			sNodeRenderer::instance()->unregister_object(object_id);
-		object_id = -1;
+			sNodeRenderer::instance()->register_mesh_instance(instance_id);
+		instance_id = -1;
 	}
 
 	struct cMeshCreatePrivate : cMesh::Create

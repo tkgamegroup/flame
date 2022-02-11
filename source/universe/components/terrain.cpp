@@ -6,6 +6,29 @@
 
 namespace flame
 {
+	cTerrainPrivate::~cTerrainPrivate()
+	{
+
+	}
+
+	void cTerrainPrivate::on_init()
+	{
+
+	}
+
+	void cTerrainPrivate::on_active()
+	{
+		instance_id = sNodeRenderer::instance()->register_terrain_instance(-1);
+
+		node->mark_transform_dirty();
+	}
+
+	void cTerrainPrivate::on_inactive()
+	{
+		sNodeRenderer::instance()->register_terrain_instance(instance_id);
+		instance_id = -1;
+	}
+
 	struct cTerrainCreatePrivate : cTerrain::Create
 	{
 		cTerrainPtr operator()(EntityPtr e) override
