@@ -1,8 +1,8 @@
 #ifndef DEFERRED
-#include "forward.pll"
-#include "../shading.glsl"
+#include "..\forward.pll"
+#include "..\shading.glsl"
 #else
-#include "gbuffer.pll"
+#include "..\gbuffer.pll"
 #endif
 
 layout(location = 0) in flat uint i_matid;

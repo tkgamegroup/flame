@@ -6,9 +6,6 @@ namespace flame
 {
 	struct cMeshPrivate : cMesh
 	{
-		void* drawer_lis = nullptr;
-		void* measurer_lis = nullptr;
-
 		graphics::MeshPtr mesh = nullptr;
 
 		cArmaturePtr parmature = nullptr;

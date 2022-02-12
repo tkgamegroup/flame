@@ -23,7 +23,7 @@ namespace flame
 	struct DrawMesh
 	{
 		cNodePtr node;
-		uint object_id;
+		uint instance_id;
 		uint mesh_id;
 		uint skin;
 	};
@@ -31,7 +31,7 @@ namespace flame
 	struct DrawMeshOccluder
 	{
 		cNodePtr node;
-		uint object_id;
+		uint instance_id;
 		uint mesh_id;
 		uint skin;
 	};
@@ -39,7 +39,7 @@ namespace flame
 	struct DrawMeshOutline
 	{
 		cNodePtr node;
-		uint object_id;
+		uint instance_id;
 		uint mesh_id;
 		cvec4 color;
 	};
@@ -47,23 +47,48 @@ namespace flame
 	struct DrawMeshWireframe
 	{
 		cNodePtr node;
-		uint object_id;
+		uint instance_id;
 		uint mesh_id;
 		cvec4 color;
+	};
+
+	struct DrawTerrain
+	{
+		cNodePtr node;
+		uint instance_id;
+		uint blocks;
+		uint material_id;
+	};
+
+	struct DrawTerrainOutline
+	{
+		cNodePtr node;
+		uint instance_id;
+		uint blocks;
+	};
+
+	struct DrawTerrainWireframe
+	{
+		cNodePtr node;
+		uint instance_id;
+		uint blocks;
 	};
 
 	struct sNodeRendererPrivate : sNodeRenderer
 	{
 		std::vector<MeshRes> mesh_reses;
 
-		std::vector<DrawMesh>			draw_meshes;
-		std::vector<DrawMesh>			draw_arm_meshes;
-		std::vector<DrawMeshOccluder>	draw_occluder_meshes;
-		std::vector<DrawMeshOccluder>	draw_occluder_arm_meshes;
-		std::vector<DrawMeshOutline>	draw_outline_meshes;
-		std::vector<DrawMeshOutline>	draw_outline_arm_meshes;
-		std::vector<DrawMeshWireframe>	draw_wireframe_meshes;
-		std::vector<DrawMeshWireframe>	draw_wireframe_arm_meshes;
+		std::vector<DrawMesh>				draw_meshes;
+		std::vector<DrawMesh>				draw_arm_meshes;
+		std::vector<DrawMeshOccluder>		draw_occluder_meshes;
+		std::vector<DrawMeshOccluder>		draw_occluder_arm_meshes;
+		std::vector<DrawMeshOutline>		draw_outline_meshes;
+		std::vector<DrawMeshOutline>		draw_outline_arm_meshes;
+		std::vector<DrawMeshWireframe>		draw_wireframe_meshes;
+		std::vector<DrawMeshWireframe>		draw_wireframe_arm_meshes;
+		std::vector<DrawTerrain>			draw_terrains;
+		std::vector<DrawTerrainOutline>		draw_outline_terrains;
+		std::vector<DrawTerrainWireframe>	draw_wireframe_terrains;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -83,17 +108,19 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
-		graphics::PipelineResourceManager<FLAME_UID>									prm_mesh_fwd;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
 		graphics::GraphicsPipelinePtr													pl_mesh_fwd;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_fwd;
+		graphics::GraphicsPipelinePtr													pl_terrain_fwd;
 
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
 
 		graphics::GraphicsPipelinePtr													pl_mesh_plain;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain;
+		graphics::GraphicsPipelinePtr													pl_terrain_plain;
 
 		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
 		graphics::GraphicsPipelinePtr													pl_blur_h;
@@ -130,15 +157,15 @@ namespace flame
 		mat4* set_armature_instance(uint id) override;
 
 		int register_terrain_instance(int id) override;
-		void set_terrain_instance(uint id, const mat4& mat) override;
+		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) override;
 
-		void draw_mesh(uint object_id, uint mesh_id, uint skin) override;
-		void draw_mesh_occluder(uint object_id, uint mesh_id, uint skin) override;
-		void draw_mesh_outline(uint object_id, uint mesh_id, const cvec4& color) override;
-		void draw_mesh_wireframe(uint object_id, uint mesh_id, const cvec4& color) override;
-		void draw_terrain() override;
-		void draw_terrain_outline() override;
-		void draw_terrain_wireframe() override;
+		void draw_mesh(uint instance_id, uint mesh_id, uint skin) override;
+		void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) override;
+		void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) override;
+		void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) override;
+		void draw_terrain(uint instance_id, uint blocks, uint material_id) override;
+		void draw_terrain_outline(uint instance_id, uint blocks) override;
+		void draw_terrain_wireframe(uint instance_id, uint blocks) override;
 		void render(uint img_idx, graphics::CommandBufferPtr cb);
 
 		void update() override;

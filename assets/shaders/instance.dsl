@@ -22,10 +22,15 @@ layout(set = SET, binding = 1) buffer readonly ArmatureInstances
 struct TerrainInstance
 {
 	mat4 mat;
-	uint height_map;
+	vec3 extent;
+	uvec2 blocks;
+	uint tess_level;
 };
 
 layout(set = SET, binding = 2) buffer readonly TerrainInstances
 {
 	TerrainInstance terrain_instances[8];
 };
+
+// height, normal, tangent
+layout (set = SET, binding = 3) uniform sampler2DArray terrain_textures[1];

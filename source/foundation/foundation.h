@@ -240,14 +240,14 @@ namespace flame
 		{
 			std::erase_if(list, [&](const auto& i) {
 				return &i == lis;
-				});
+			});
 		}
 
 		void remove(uint h)
 		{
 			std::erase_if(list, [&](const auto& i) {
 				return i.second == h;
-				});
+			});
 		}
 
 		bool exist(uint h)

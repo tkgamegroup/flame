@@ -1,3 +1,0 @@
-#include "../scene.dsl"
-#include "../instance.dsl"
-#include "../material.dsl"

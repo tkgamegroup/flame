@@ -176,6 +176,12 @@ namespace flame
 				VirtualUdt<id>::set_var<nh>(pend, v);
 			}
 
+			template<uint nh>
+			inline char* var_addr()
+			{
+				return pend + var_off<nh>();
+			}
+
 			inline void add_draw_indirect(uint vertex_count, uint first_vertex = 0, uint instance_count = 1, uint first_instance = 0)
 			{
 				assert(usage == BufferUsageIndirect);

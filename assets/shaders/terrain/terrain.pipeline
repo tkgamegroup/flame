@@ -1,0 +1,18 @@
+%rp=..\forward.rp
+%pll=..\forward.pll
+layout
+  {pll}
+shaders
+  terrain.vert
+ ---
+  terrain.tesc
+ ---
+  terrain.tese
+ ---
+  terrain.frag
+renderpass
+  {rp}
+primitive_topology
+  PatchList
+patch_control_points
+  4

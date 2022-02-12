@@ -1,5 +1,5 @@
 %rp=..\forward.rp
-%pll=forward.pll
+%pll=..\forward.pll
 layout
   {pll}
 shaders

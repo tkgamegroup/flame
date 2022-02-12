@@ -27,9 +27,6 @@ namespace flame
 
 		graphics::ModelPtr model = nullptr;
 
-		void* drawer_lis = nullptr;
-		void* measurer_lis = nullptr;
-
 		std::vector<Bone> bones;
 		std::vector<Animation> animations;
 		float time = 0.f;

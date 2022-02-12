@@ -65,7 +65,7 @@ namespace flame
 			auto& ly = lv.layers [layer];
 			if (!ly.data)
 			{
-				StagingBuffer sb(device, lv.data_size, nullptr, BufferUsageTransferDst);
+				StagingBuffer sb(device, lv.data_size);
 				{
 					InstanceCB cb(device);
 					BufferImageCopy cpy;
@@ -488,14 +488,16 @@ namespace flame
 				}
 			}
 
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb, bool gen_mipmap, float alpha_test) override
+			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, bool gen_mipmap, float alpha_test) override
 			{
 				if (!device)
 					device = current_device;
 
+				auto filename = Path::get(_filename);
+
 				if (!std::filesystem::exists(filename))
 				{
-					wprintf(L"cannot find image: %s\n", filename.c_str());
+					wprintf(L"cannot find image: %s\n", _filename.c_str());
 					return nullptr;
 				}
 
@@ -580,7 +582,7 @@ namespace flame
 						bmp->change_format(4);
 
 					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, gen_mipmap ? 1 : 0);
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, gen_mipmap ? 0 : 1);
 
 					{
 						StagingBuffer sb(device, bmp->data_size, bmp->data);

@@ -444,7 +444,10 @@ namespace flame
 					auto& b = bindings[binding];
 					b.type = type;
 					b.count = max(1U, spv_compiler.get_type(r.type_id).array[0]);
-					b.name = spv_compiler.get_name(r.base_type_id);
+					if (is_one_of(type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
+						b.name = spv_compiler.get_name(r.base_type_id);
+					else
+						b.name = r.name;
 				};
 
 				for (auto& r : spv_resources.uniform_buffers)
@@ -744,6 +747,9 @@ namespace flame
 		{
 			if (binding >= reses.size() || index >= reses[binding].size())
 				return;
+
+			if (!sp)
+				sp = Sampler::get(device, FilterLinear, FilterLinear, true, AddressClampToEdge);
 
 			auto& res = reses[binding][index].i;
 			if (res.p == iv && res.sp == sp)

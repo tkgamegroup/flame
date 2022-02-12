@@ -11,22 +11,22 @@ namespace flame
 {
 	cMeshPrivate::~cMeshPrivate()
 	{
-		node->drawers.remove(drawer_lis);
-		node->measurers.remove(measurer_lis);
+		node->drawers.remove("mesh"_h);
+		node->measurers.remove("mesh"_h);
 	}
 
 	void cMeshPrivate::on_init()
 	{
-		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+		node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
 			draw(renderer, shadow_pass);
-		});
+		}, "mesh"_h);
 
-		measurer_lis = node->measurers.add([this](AABB* ret) {
+		node->measurers.add([this](AABB* ret) {
 			if (!mesh)
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
-		});
+		}, "mesh"_h);
 
 		node->mark_transform_dirty();
 	}

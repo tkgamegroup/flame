@@ -25,22 +25,22 @@ namespace flame
 
 	cArmaturePrivate::~cArmaturePrivate()
 	{
-		node->drawers.remove(drawer_lis);
-		node->measurers.remove(measurer_lis);
+		node->drawers.remove("armature"_h);
+		node->measurers.remove("armature"_h);
 	}
 
 	void cArmaturePrivate::on_init()
 	{
-		drawer_lis = node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+		node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
 			draw(renderer);
-		});
+		}, "armature"_h);
 
-		measurer_lis = node->measurers.add([this](AABB* ret) {
+		node->measurers.add([this](AABB* ret) {
 			if (!model)
 				return false;
 			*ret = AABB(model->bounds.get_points(node->transform));
 			return true;
-		});
+		}, "armature"_h);
 
 		node->mark_transform_dirty();
 	}

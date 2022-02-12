@@ -12,4 +12,4 @@ layout (set = SET, binding = 0) buffer readonly MaterialInfos
 	MaterialInfo material_infos[128];
 };
 
-layout (set = SET, binding = 1) uniform sampler2D maps[128];
+layout (set = SET, binding = 1) uniform sampler2D material_maps[128];

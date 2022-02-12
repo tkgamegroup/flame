@@ -1,7 +1,7 @@
 #ifndef DEFERRED
-#include "forward.pll"
+#include "..\forward.pll"
 #else
-#include "gbuffer.pll"
+#include "..\gbuffer.pll"
 #endif
 
 layout(location = 0) in vec3 i_pos;
@@ -25,8 +25,8 @@ layout(location = 1) out vec2 o_uv;
 
 void main()
 {
-	uint idx = gl_InstanceIndex >> 16;
-	o_matid = gl_InstanceIndex & 0xffff;
+	uint id = gl_InstanceIndex >> 8;
+	o_matid = gl_InstanceIndex & 0xff;
 	o_uv = i_uv;
 
 #ifdef ARMATURE
@@ -36,7 +36,7 @@ void main()
 		int bid = i_bids[i];
 		if (bid == -1)
 			break;
-		deform += armature_instances[idx].bones[bid] * i_bwgts[i];
+		deform += armature_instances[id].bones[bid] * i_bwgts[i];
 	}
 
 	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
@@ -45,10 +45,10 @@ void main()
 		o_normal = normalize(mat3(deform) * i_nor);
 	#endif
 #else
-	vec3 coordw = vec3(mesh_instances[idx].mat * vec4(i_pos, 1.0));
+	vec3 coordw = vec3(mesh_instances[id].mat * vec4(i_pos, 1.0));
 
 	#ifndef SHADOW_PASS
-		o_normal = normalize(mat3(mesh_instances[idx].nor) * i_nor);
+		o_normal = normalize(mat3(mesh_instances[id].nor) * i_nor);
 	#endif
 #endif
 
