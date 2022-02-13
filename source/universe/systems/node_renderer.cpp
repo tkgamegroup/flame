@@ -89,6 +89,8 @@ namespace flame
 			pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col),
 				  "vert:ARMATURE" });
+			pl_terrain_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+				{ "rp=" + str(rp_col) });
 
 			prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
 			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
@@ -112,6 +114,9 @@ namespace flame
 			pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_col_dep),
 				  "vert:ARMATURE",
+				  "frag:PICKUP" });
+			pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+				{ "rp=" + str(rp_col_dep),
 				  "frag:PICKUP" });
 			fence_pickup.reset(graphics::Fence::create(nullptr, false));
 
@@ -438,7 +443,7 @@ namespace flame
 
 	void sNodeRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin)
 	{
-		DrawMeshOccluder d;
+		DrawMesh d;
 		d.node = current_node;
 		d.instance_id = instance_id;
 		d.mesh_id = mesh_id;
@@ -451,7 +456,7 @@ namespace flame
 
 	void sNodeRendererPrivate::draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color)
 	{
-		DrawMeshOutline d;
+		DrawMesh d;
 		d.node = current_node;
 		d.instance_id = instance_id;
 		d.mesh_id = mesh_id;
@@ -464,7 +469,7 @@ namespace flame
 
 	void sNodeRendererPrivate::draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color)
 	{
-		DrawMeshWireframe d;
+		DrawMesh d;
 		d.node = current_node;
 		d.instance_id = instance_id;
 		d.mesh_id = mesh_id;
@@ -478,20 +483,31 @@ namespace flame
 	void sNodeRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint material_id)
 	{
 		DrawTerrain d;
+		d.node = current_node;
 		d.instance_id = instance_id;
 		d.material_id = material_id;
 		d.blocks = blocks;
 		draw_terrains.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks)
+	void sNodeRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color)
 	{
-
+		DrawTerrain d;
+		d.node = current_node;
+		d.instance_id = instance_id;
+		d.blocks = blocks;
+		d.color = color;
+		draw_outline_terrains.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_terrain_wireframe(uint instance_id, uint blocks)
+	void sNodeRendererPrivate::draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color)
 	{
-
+		DrawTerrain d;
+		d.node = current_node;
+		d.instance_id = instance_id;
+		d.blocks = blocks;
+		d.color = color;
+		draw_wireframe_terrains.push_back(d);
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -592,16 +608,20 @@ namespace flame
 		prm_fwd.set_pc_var<"f"_h>(vec4(1.f));
 		prm_fwd.push_constant(cb);
 
-		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-		cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_pipeline(pl_mesh_fwd);
-		cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
-
-		cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-		cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_pipeline(pl_mesh_arm_fwd);
-		cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
-
+		if (!draw_meshes.empty())
+		{
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_fwd);
+			cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
+		}
+		if (!draw_arm_meshes.empty())
+		{
+			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_arm_fwd);
+			cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
+		}
 		if (!draw_terrains.empty())
 		{
 			cb->bind_pipeline(pl_terrain_fwd);
@@ -614,32 +634,49 @@ namespace flame
 
 		cb->end_renderpass();
 
-		if (!draw_outline_meshes.empty() || !draw_outline_arm_meshes.empty())
+		if (!draw_outline_meshes.empty() || !draw_outline_arm_meshes.empty() || !draw_terrains.empty())
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			prm_fwd.bind_dss(cb);
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_plain);
-			for (auto& d : draw_outline_meshes)
+			if (!draw_outline_meshes.empty())
 			{
-				prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
-				prm_fwd.push_constant(cb);
-				auto& mr = mesh_reses[d.mesh_id];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_plain);
+				for (auto& d : draw_outline_meshes)
+				{
+					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
+					prm_fwd.push_constant(cb);
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				}
 			}
-			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_arm_plain);
-			for (auto& d : draw_outline_arm_meshes)
+			if (!draw_outline_arm_meshes.empty())
 			{
-				prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
-				prm_fwd.push_constant(cb);
-				auto& mr = mesh_reses[d.mesh_id];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_arm_plain);
+				for (auto& d : draw_outline_arm_meshes)
+				{
+					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
+					prm_fwd.push_constant(cb);
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				}
+			}
+			if (!draw_outline_terrains.empty())
+			{
+				cb->bind_pipeline(pl_terrain_plain);
+				for (auto i = 0; i < draw_outline_terrains.size(); i++)
+				{
+					auto& d = draw_outline_terrains[i];
+					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
+					prm_fwd.push_constant(cb);
+					cb->draw(4, d.blocks, 0, i << 24);
+				}
 			}
 			cb->end_renderpass();
 
@@ -665,25 +702,38 @@ namespace flame
 
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			prm_fwd.bind_dss(cb);
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_plain);
-			for (auto& d : draw_outline_meshes)
+			prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+			prm_fwd.push_constant(cb);
+			if (!draw_outline_meshes.empty())
 			{
-				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
-				prm_fwd.push_constant(cb);
-				auto& mr = mesh_reses[d.mesh_id];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_plain);
+				for (auto& d : draw_outline_meshes)
+				{
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				}
 			}
-			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_arm_plain);
-			for (auto& d : draw_outline_arm_meshes)
+			if (!draw_outline_arm_meshes.empty())
 			{
-				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
-				prm_fwd.push_constant(cb);
-				auto& mr = mesh_reses[d.mesh_id];
-				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_arm_plain);
+				for (auto& d : draw_outline_arm_meshes)
+				{
+					auto& mr = mesh_reses[d.mesh_id];
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+				}
+			}
+			if (!draw_outline_terrains.empty())
+			{
+				cb->bind_pipeline(pl_terrain_plain);
+				for (auto i = 0; i < draw_outline_terrains.size(); i++)
+				{
+					auto& d = draw_outline_terrains[i];
+					cb->draw(4, d.blocks, 0, i << 24);
+				}
 			}
 			cb->end_renderpass();
 
@@ -717,12 +767,12 @@ namespace flame
 				vec4(1.f, 0.f, 0.f, 0.f) });
 
 			auto off = 1;
+			prm_fwd.bind_dss(cb.get());
 			if (!draw_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_mesh_pickup);
-				prm_fwd.bind_dss(cb.get());
 				for (auto i = 0; i < draw_meshes.size(); i++)
 				{
 					auto& d = draw_meshes[i];
@@ -738,7 +788,6 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_mesh_arm_pickup);
-				prm_fwd.bind_dss(cb.get());
 				for (auto i = 0; i < draw_arm_meshes.size(); i++)
 				{
 					auto& d = draw_arm_meshes[i];
@@ -748,6 +797,18 @@ namespace flame
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
 				}
 				off += draw_arm_meshes.size();
+			}
+			if (!draw_terrains.empty())
+			{
+				cb->bind_pipeline(pl_terrain_pickup);
+				for (auto i = 0; i < draw_terrains.size(); i++)
+				{
+					auto& d = draw_terrains[i];
+					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
+					prm_fwd.push_constant(cb.get());
+					cb->draw(4, d.blocks, 0, i << 24);
+				}
+				off += draw_terrains.size();
 			}
 
 			cb->end_renderpass();
@@ -774,6 +835,9 @@ namespace flame
 			index -= draw_meshes.size();
 			if (index < draw_arm_meshes.size())
 				return draw_arm_meshes[index].node;
+			index -= draw_arm_meshes.size();
+			if (index < draw_terrains.size())
+				return draw_terrains[index].node;
 			return nullptr;
 		}
 	}

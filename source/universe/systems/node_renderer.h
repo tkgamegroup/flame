@@ -36,8 +36,8 @@ namespace flame
 		virtual void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) = 0;
 		virtual void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) = 0;
 		virtual void draw_terrain(uint instance_id, uint blocks, uint material_id) = 0;
-		virtual void draw_terrain_outline(uint instance_id, uint blocks) = 0;
-		virtual void draw_terrain_wireframe(uint instance_id, uint blocks) = 0;
+		virtual void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) = 0;
+		virtual void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) = 0;
 
 		virtual cNodePtr pick_up(const uvec2& pos) = 0;
 

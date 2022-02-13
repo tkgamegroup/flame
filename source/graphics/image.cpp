@@ -509,6 +509,11 @@ namespace flame
 					auto is_cube = false;
 
 					auto gli_texture = gli::load(filename.string());
+					if (gli_texture.empty())
+					{
+						wprintf(L"cannot load image: %s\n", _filename.c_str());
+						return nullptr;
+					}
 
 					auto ext = gli_texture.extent();
 					auto levels = (uint)gli_texture.levels();
@@ -575,11 +580,14 @@ namespace flame
 				else
 				{
 					std::unique_ptr<Bitmap> bmp(Bitmap::create(filename, 4));
-					if (srgb)
-						bmp->srgb_to_linear();
+					if (!bmp)
+					{
+						wprintf(L"cannot load image: %s\n", _filename.c_str());
+						return nullptr;
+					}
 
-					if (bmp->chs == 3)
-						bmp->change_format(4);
+					if (srgb)			bmp->srgb_to_linear();
+					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
 						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, gen_mipmap ? 0 : 1);

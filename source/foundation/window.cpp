@@ -3,6 +3,9 @@
 
 namespace flame
 {
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+
 	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0);
@@ -43,7 +46,7 @@ namespace flame
 			{
 				SetCapture(hWnd);
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2((int)GET_X_LPARAM(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Left, true);
 			}
@@ -52,7 +55,7 @@ namespace flame
 			{
 				ReleaseCapture();
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Left, false);
 			}
@@ -60,7 +63,7 @@ namespace flame
 			case WM_RBUTTONDOWN:
 			{
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Right, true);
 			}
@@ -68,7 +71,7 @@ namespace flame
 			case WM_RBUTTONUP:
 			{
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Right, false);
 			}
@@ -76,7 +79,7 @@ namespace flame
 			case WM_MBUTTONDOWN:
 			{
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Middle, true);
 			}
@@ -84,7 +87,7 @@ namespace flame
 			case WM_MBUTTONUP:
 			{
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Middle, false);
 			}
@@ -92,7 +95,7 @@ namespace flame
 			case WM_MOUSEMOVE:
 			{
 				w->has_input = true;
-				w->mpos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mousemove_listeners.list)
 					l.first(w->mpos);
 			}
@@ -100,7 +103,7 @@ namespace flame
 			case WM_MOUSEWHEEL:
 			{
 				w->has_input = true;
-				auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
+				auto v = GET_Y_LPARAM(wParam) > 0 ? 1 : -1;
 				for (auto& l : w->scroll_listeners.list)
 					l.first(v);
 			}
@@ -111,13 +114,13 @@ namespace flame
 				return true;
 			case WM_SIZE:
 				w->has_input = true;
-				w->size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
+				w->size = uvec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->resize_listeners.list)
 					l.first(w->size);
 				return true;
 			case WM_MOVE:
 				w->has_input = true;
-				w->pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
+				w->pos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				return true;
 			case WM_SETCURSOR:
 				if (LOWORD(lParam) == HTCLIENT)

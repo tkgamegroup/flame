@@ -7,9 +7,6 @@ namespace flame
 {
 	struct cTerrainPrivate : cTerrain
 	{
-		// { height, normal, tangent } as array
-		std::unique_ptr<graphics::Image> textures = nullptr;
-
 		int frame = -1;
 
 		~cTerrainPrivate();

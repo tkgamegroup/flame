@@ -26,29 +26,6 @@ namespace flame
 		uint instance_id;
 		uint mesh_id;
 		uint skin;
-	};
-
-	struct DrawMeshOccluder
-	{
-		cNodePtr node;
-		uint instance_id;
-		uint mesh_id;
-		uint skin;
-	};
-
-	struct DrawMeshOutline
-	{
-		cNodePtr node;
-		uint instance_id;
-		uint mesh_id;
-		cvec4 color;
-	};
-
-	struct DrawMeshWireframe
-	{
-		cNodePtr node;
-		uint instance_id;
-		uint mesh_id;
 		cvec4 color;
 	};
 
@@ -58,37 +35,24 @@ namespace flame
 		uint instance_id;
 		uint blocks;
 		uint material_id;
-	};
-
-	struct DrawTerrainOutline
-	{
-		cNodePtr node;
-		uint instance_id;
-		uint blocks;
-	};
-
-	struct DrawTerrainWireframe
-	{
-		cNodePtr node;
-		uint instance_id;
-		uint blocks;
+		cvec4 color;
 	};
 
 	struct sNodeRendererPrivate : sNodeRenderer
 	{
 		std::vector<MeshRes> mesh_reses;
 
-		std::vector<DrawMesh>				draw_meshes;
-		std::vector<DrawMesh>				draw_arm_meshes;
-		std::vector<DrawMeshOccluder>		draw_occluder_meshes;
-		std::vector<DrawMeshOccluder>		draw_occluder_arm_meshes;
-		std::vector<DrawMeshOutline>		draw_outline_meshes;
-		std::vector<DrawMeshOutline>		draw_outline_arm_meshes;
-		std::vector<DrawMeshWireframe>		draw_wireframe_meshes;
-		std::vector<DrawMeshWireframe>		draw_wireframe_arm_meshes;
-		std::vector<DrawTerrain>			draw_terrains;
-		std::vector<DrawTerrainOutline>		draw_outline_terrains;
-		std::vector<DrawTerrainWireframe>	draw_wireframe_terrains;
+		std::vector<DrawMesh>		draw_meshes;
+		std::vector<DrawMesh>		draw_arm_meshes;
+		std::vector<DrawMesh>		draw_occluder_meshes;
+		std::vector<DrawMesh>		draw_occluder_arm_meshes;
+		std::vector<DrawMesh>		draw_outline_meshes;
+		std::vector<DrawMesh>		draw_outline_arm_meshes;
+		std::vector<DrawMesh>		draw_wireframe_meshes;
+		std::vector<DrawMesh>		draw_wireframe_arm_meshes;
+		std::vector<DrawTerrain>	draw_terrains;
+		std::vector<DrawTerrain>	draw_outline_terrains;
+		std::vector<DrawTerrain>	draw_wireframe_terrains;
 		cNodePtr current_node = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -133,6 +97,7 @@ namespace flame
 		std::unique_ptr<graphics::Framebuffer>											fb_pickup;
 		graphics::GraphicsPipelinePtr													pl_mesh_pickup;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_pickup;
+		graphics::GraphicsPipelinePtr													pl_terrain_pickup;
 		std::unique_ptr<graphics::Fence>												fence_pickup;
 
 		graphics::ImageLayout dst_layout;
@@ -164,8 +129,8 @@ namespace flame
 		void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) override;
 		void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) override;
 		void draw_terrain(uint instance_id, uint blocks, uint material_id) override;
-		void draw_terrain_outline(uint instance_id, uint blocks) override;
-		void draw_terrain_wireframe(uint instance_id, uint blocks) override;
+		void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) override;
+		void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) override;
 		void render(uint img_idx, graphics::CommandBufferPtr cb);
 
 		void update() override;
