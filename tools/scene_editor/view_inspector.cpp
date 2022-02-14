@@ -11,11 +11,14 @@ View_Inspector::View_Inspector() :
 {
 }
 
-void show_udt_attributes(const UdtInfo& ui, void* src)
+const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 {
+	const Attribute* changed_attribute = nullptr;
+
 	for (auto& a : ui.attributes)
 	{
-		auto normal_io = a.normal_io();
+		auto direct_io = a.getter_idx == -1 && a.setter_idx == -1;
+
 		switch (a.type->tag)
 		{
 		case TagD:
@@ -24,15 +27,23 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 			switch (ti->data_type)
 			{
 			case DataBool:
-				if (ImGui::Checkbox(a.name.c_str(), (bool*)a.get_value(src, !normal_io)) && !normal_io)
-					a.set_value(src);
+				if (ImGui::Checkbox(a.name.c_str(), (bool*)a.get_value(src, !direct_io)))
+				{
+					if (!direct_io)
+						a.set_value(src);
+					changed_attribute = &a;
+				}
 				break;
 			case DataInt:
 				switch (ti->vec_size)
 				{
 				case 1:
-					if (ImGui::DragInt(a.name.c_str(), (int*)a.get_value(src, !normal_io)) && !normal_io)
-						a.set_value(src);
+					if (ImGui::DragInt(a.name.c_str(), (int*)a.get_value(src, !direct_io)))
+					{
+						if (!direct_io)
+							a.set_value(src);
+						changed_attribute = &a;
+					}
 					break;
 				}
 				break;
@@ -40,36 +51,60 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 				switch (ti->vec_size)
 				{
 				case 1:
-					if (ImGui::DragFloat(a.name.c_str(), (float*)a.get_value(src, !normal_io)) && !normal_io)
-						a.set_value(src);
+					if (ImGui::DragFloat(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
+					{
+						if (!direct_io)
+							a.set_value(src);
+						changed_attribute = &a;
+					}
 					break;
 				case 2:
-					if (ImGui::DragFloat2(a.name.c_str(), (float*)a.get_value(src, !normal_io)) && !normal_io)
-						a.set_value(src);
+					if (ImGui::DragFloat2(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
+					{
+						if (!direct_io)
+							a.set_value(src);
+						changed_attribute = &a;
+					}
 					break;
 				case 3:
-					if (ImGui::DragFloat3(a.name.c_str(), (float*)a.get_value(src, !normal_io)) && !normal_io)
-						a.set_value(src);
+					if (ImGui::DragFloat3(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
+					{
+						if (!direct_io)
+							a.set_value(src);
+						changed_attribute = &a;
+					}
 					break;
 				case 4:
-					if (ImGui::DragFloat4(a.name.c_str(), (float*)a.get_value(src, !normal_io)) && !normal_io)
-						a.set_value(src);
+					if (ImGui::DragFloat4(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
+					{
+						if (!direct_io)
+							a.set_value(src);
+						changed_attribute = &a;
+					}
 					break;
 				}
 				break;
 			case DataString:
-				if (ImGui::InputText(a.name.c_str(), (std::string*)a.get_value(src, !normal_io)) && !normal_io)
-					a.set_value(src);
+				if (ImGui::InputText(a.name.c_str(), (std::string*)a.get_value(src, !direct_io)))
+				{
+					if (!direct_io)
+						a.set_value(src);
+					changed_attribute = &a;
+				}
 				break;
 			case DataWString:
 				break;
 			case DataPath:
 			{
-				auto str = ((std::filesystem::path*)a.get_value(src, !normal_io))->string();
-				if (ImGui::InputText(a.name.c_str(), &str) && !normal_io)
+				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
+				if (ImGui::InputText(a.name.c_str(), &str))
 				{
-					auto path = std::filesystem::path(str);
-					a.set_value(src, &path);
+					if (!direct_io)
+					{
+						auto path = std::filesystem::path(str);
+						a.set_value(src, &path);
+					}
+					changed_attribute = &a;
 				}
 				ImGui::SameLine();
 				if (ImGui::Button(".."))
@@ -83,6 +118,8 @@ void show_udt_attributes(const UdtInfo& ui, void* src)
 			break;
 		}
 	}
+
+	return changed_attribute;
 }
 
 void View_Inspector::on_draw()
@@ -101,7 +138,12 @@ void View_Inspector::on_draw()
 	switch (selection.type)
 	{
 	case Selection::tEntity:
-		show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), selection.entity);
+	{
+		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), selection.entity);
+		if (changed_attribute)
+		{
+
+		}
 
 		for (auto& c : selection.entity->components)
 		{
@@ -121,6 +163,7 @@ void View_Inspector::on_draw()
 			}
 			ImGui::EndPopup();
 		}
+	}
 		break;
 	case Selection::tFile:
 	{

@@ -108,6 +108,8 @@ void View_Project::Item::draw()
 	draw_list->AddImage(thumbnail, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
 	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - display_text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), display_text.c_str(), display_text.c_str() + display_text.size());
 
+	auto ext = path.extension();
+
 	if (pressed)
 		selection.select(path);
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
@@ -143,10 +145,17 @@ void View_Project::Item::draw()
 		}
 		else
 		{
-			auto ext = path.extension();
 			if (ext == L".prefab")
 				app.open_prefab(path);
 		}
+	}
+
+	if (ImGui::BeginDragDropSource())
+	{
+		auto str = path.wstring();
+		ImGui::SetDragDropPayload("File", str.c_str(), sizeof(wchar_t) * (str.size() + 1));
+		ImGui::TextUnformatted("File");
+		ImGui::EndDragDropSource();
 	}
 }
 

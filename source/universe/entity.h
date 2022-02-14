@@ -4,6 +4,20 @@
 
 namespace flame
 {
+	struct PrefabInstance
+	{
+		struct Modifier
+		{
+			Guid		entity;
+			uint		component;
+			std::string name;
+			std::string value;
+		};
+
+		std::filesystem::path filename;
+		std::vector<Modifier> modifiers;
+	};
+
 	/// Reflect ctor
 	struct Entity
 	{
@@ -24,15 +38,17 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
-		std::unordered_map<uint, Component*> component_map;
+		Guid guid;
+
 		/// Reflect
 		std::vector<std::unique_ptr<Component>> components;
+		std::unordered_map<uint, Component*> component_map;
 		/// Reflect
 		std::vector<std::unique_ptr<EntityT>> children;
 
-		std::filesystem::path path;
-
 		Listeners<void(uint, void*, void*)> message_listeners;
+
+		std::unique_ptr<PrefabInstance> instance;
 
 		void* userdata = nullptr;
 

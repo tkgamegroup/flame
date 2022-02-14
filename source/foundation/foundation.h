@@ -101,6 +101,20 @@ namespace flame
 		{
 			return memcmp(d, oth.d, sizeof(d)) == 0;
 		}
+
+		inline std::string to_string()
+		{
+			std::string ret;
+			for (auto i = 0; i < sizeof(d); i += sizeof(uint))
+				ret += str_hex(*(uint*)&d[i]);
+			return ret;
+		}
+
+		inline void from_string(const std::string& str)
+		{
+			for (auto i = 0; i < sizeof(d); i += sizeof(uint))
+				*(uint*)&d[i] = s2u_hex<uint>(str.substr(i, sizeof(uint)));
+		}
 	};
 
 	inline std::vector<std::string> format_defines(const std::string& str)

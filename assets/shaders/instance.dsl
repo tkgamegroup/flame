@@ -33,4 +33,4 @@ layout(set = SET, binding = 2) buffer readonly TerrainInstances
 };
 
 // height, normal, tangent
-layout (set = SET, binding = 3) uniform sampler2DArray terrain_textures[1];
+layout (set = SET, binding = 3) uniform sampler2DArray terrain_textures[8];

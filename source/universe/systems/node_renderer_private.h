@@ -57,6 +57,9 @@ namespace flame
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
 
+		std::unique_ptr<graphics::Image>												img_black;
+		std::unique_ptr<graphics::Image>												img_white;
+
 		graphics::GraphicsPipelinePtr													pl_blit;
 		graphics::GraphicsPipelinePtr													pl_add;
 

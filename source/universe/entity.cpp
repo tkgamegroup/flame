@@ -351,9 +351,12 @@ namespace flame
 			return INVALID_POINTER;
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+			Guid guid;
 			if (auto a = src.attribute("guid"); a)
-				;
-			auto e = Entity::create();
+				guid.from_string(a.value());
+			else
+				guid = generate_guid();
+			auto e = Entity::create(&guid);
 			unserialize_xml(src, e, spec);
 			((EntityPtr)dst_o)->add_child(e);
 			return INVALID_POINTER;
@@ -374,6 +377,11 @@ namespace flame
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
 				serialize_xml(*ui, comp, dst);
+		};
+		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+			auto e = (Entity*)src;
+			dst.append_attribute("guid").set_value(e->guid.to_string().c_str());
+			serialize_xml(e, dst, spec);
 		};
 		serialize_xml(this, file.append_child("prefab"), spec);
 

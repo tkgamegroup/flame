@@ -24,8 +24,8 @@ void View_Hierarchy::on_draw()
 		}
 	}
 
-	std::function<void(EntityPtr)> draw_entity;
-	draw_entity = [&](EntityPtr e) {
+	std::function<void(EntityPtr, uint)> draw_entity;
+	draw_entity = [&](EntityPtr e, uint pack_level) {
 		std::function<bool(EntityPtr, EntityPtr)> is_ancestor;
 		is_ancestor = [&](EntityPtr t, EntityPtr e) {
 			if (!e->parent)
@@ -43,28 +43,67 @@ void View_Hierarchy::on_draw()
 		ImGui::PushID(e);
 		if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
 			ImGui::SetNextItemOpen(true);
-		auto opened = ImGui::TreeNodeEx(("[] " + e->name).c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
+
+		if (e->instance)
+			pack_level += 1;
+		auto name = e->name;
+		if (pack_level == 0)
+			name = "[] " + name;
+		else if (pack_level == 1)
+			name = "[-] " + name;
+		else
+			name = "[=] " + name;
+		if (pack_level != 0)
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
+		auto opened = ImGui::TreeNodeEx(name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
 		if (just_select && selection.selecting(e))
 			ImGui::SetScrollHereY();
+		if (pack_level != 0)
+			ImGui::PopStyleColor();
 		ImGui::PopID();
+
 		if (ImGui::BeginDragDropSource())
 		{
 			ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
 			ImGui::TextUnformatted("Entity");
 			ImGui::EndDragDropSource();
 		}
-		if (ImGui::BeginDragDropTarget())
-		{
-			auto payload = ImGui::AcceptDragDropPayload("Entity");
-			if (payload)
+
+		auto read_drop_entity = [&]()->EntityPtr {
+			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
 				auto e_src = *(EntityPtr*)payload->Data;
 				if (!is_ancestor(e_src, e))
+					return e_src;
+			}
+			return nullptr;
+		};
+		auto read_drop_file = [&]()->EntityPtr {
+			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+			{
+				auto str = std::wstring((wchar_t*)payload->Data);
+				auto path = std::filesystem::path(str);
+				if (path.extension() == L".prefab")
 				{
-					e_src->parent->remove_child(e_src, false);
-					e->add_child(e_src);
+					auto e_src = Entity::create();
+					e_src->load(path);
+					e_src->instance.reset(new PrefabInstance);
+					e_src->instance->filename = path;
+					return e_src;
 				}
 			}
+			return nullptr;
+		};
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (auto e_src = read_drop_entity(); e_src)
+			{
+				e_src->parent->remove_child(e_src, false);
+				e->add_child(e_src);
+			}
+			if (auto e_src = read_drop_file(); e_src)
+				e->add_child(e_src);
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
@@ -77,18 +116,15 @@ void View_Hierarchy::on_draw()
 				ImGui::PopID(); ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{
-					auto payload = ImGui::AcceptDragDropPayload("Entity");
-					if (payload)
+					if (auto e_src = read_drop_entity(); e_src)
 					{
-						auto e_src = *(EntityPtr*)payload->Data;
-						if (!is_ancestor(e_src, e))
-						{
-							auto idx = i;
-							if (e_src->parent == e && e_src->index < i) idx--;
-							e_src->parent->remove_child(e_src, false);
-							e->add_child(e_src, idx);
-						}
+						auto idx = i;
+						if (e_src->parent == e && e_src->index < i) idx--;
+						e_src->parent->remove_child(e_src, false);
+						e->add_child(e_src, idx);
 					}
+					if (auto e_src = read_drop_file(); e_src)
+						e->add_child(e_src, i);
 					ImGui::EndDragDropTarget();
 				}
 			};
@@ -96,7 +132,7 @@ void View_Hierarchy::on_draw()
 			for (; i < e->children.size(); i++)
 			{
 				gap_item(i);
-				draw_entity(e->children[i].get());
+				draw_entity(e->children[i].get(), pack_level);
 			}
 			gap_item(i);
 			ImGui::TreePop();
@@ -106,7 +142,7 @@ void View_Hierarchy::on_draw()
 	if (app.e_prefab)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.f));
-		draw_entity(app.e_prefab);
+		draw_entity(app.e_prefab, 0);
 		ImGui::PopStyleVar(1);
 	}
 

@@ -454,8 +454,6 @@ namespace flame
 		int setter_idx = -1;
 		std::string default_value;
 
-		inline bool normal_io() const { return getter_idx == -1 && setter_idx == -1; }
-
 		inline VariableInfo* var() const;
 		inline void* get_value(void* obj, bool use_internal = false) const;
 		inline void set_value(void* obj, void* src = nullptr) const;

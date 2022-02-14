@@ -20,6 +20,11 @@ namespace flame
 
 	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
 	{
+		img_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		img_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+
 		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\scene.dsl");
 		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
@@ -33,6 +38,8 @@ namespace flame
 		ds_instance->set_buffer("MeshInstances", 0, buf_mesh_ins.buf.get());
 		ds_instance->set_buffer("ArmatureInstances", 0, buf_armature_ins.buf.get());
 		ds_instance->set_buffer("TerrainInstances", 0, buf_terrain_ins.buf.get());
+		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
+			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), nullptr);
 		ds_instance->update();
 
 		mesh_reses.resize(1024);

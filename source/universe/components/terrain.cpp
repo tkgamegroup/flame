@@ -10,6 +10,9 @@ namespace flame
 	{
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
+
+		if (textures)
+			graphics::Queue::get(nullptr)->wait_idle();
 	}
 
 	void cTerrainPrivate::on_init()

@@ -117,13 +117,19 @@ namespace flame
 	}
 
 	template<std::unsigned_integral T, class CH>
-	inline uint64 s2u_hex(const std::basic_string<CH>& str)
+	inline T s2u_hex(const std::basic_string<CH>& s)
 	{
 		T ret;
 		std::basic_stringstream<CH> ss;
-		ss << std::hex << str;
+		ss << std::hex << s;
 		ss >> ret;
 		return ret;
+	}
+
+	template<std::unsigned_integral T, class CH>
+	inline T s2u_hex(const CH* s)
+	{
+		return s2u_hex<T, CH>(std::basic_string<CH>(s));
 	}
 
 	template<int_type T, class CH>
