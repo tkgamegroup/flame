@@ -1,3 +1,4 @@
+#include "app.h"
 #include "selection.h"
 #include "view_inspector.h"
 
@@ -139,27 +140,36 @@ void View_Inspector::on_draw()
 	{
 	case Selection::tEntity:
 	{
-		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), selection.entity);
+		auto e = selection.entity;
+
+		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		if (changed_attribute)
 		{
-
+			if (auto ins = get_prefab_instance(e); ins)
+				ins->set_modifier(e->guid, 0, sh(changed_attribute->name.c_str()), changed_attribute->serialize(e));
 		}
 
-		for (auto& c : selection.entity->components)
+		for (auto& c : e->components)
 		{
 			auto& ui = *com_udts[c->type_hash];
 			if (ImGui::CollapsingHeader(ui.name.c_str()))
 				show_udt_attributes(ui, c.get());
 		}
 
-		if (ImGui::Button("Add Component"))
-			ImGui::OpenPopup("Add Component");
-		if (ImGui::BeginPopup("Add Component"))
+		auto str_add_component = "Add Component";
+		if (ImGui::Button(str_add_component))
+		{
+			if (get_prefab_instance(e))
+				app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
+			else
+				ImGui::OpenPopup(str_add_component);
+		}
+		if (ImGui::BeginPopup(str_add_component))
 		{
 			for (auto ui : com_udts)
 			{
 				if (ImGui::Selectable(ui.second->name.c_str()))
-					selection.entity->add_component(ui.first);
+					e->add_component(ui.first);
 			}
 			ImGui::EndPopup();
 		}

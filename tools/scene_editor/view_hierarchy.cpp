@@ -24,8 +24,8 @@ void View_Hierarchy::on_draw()
 		}
 	}
 
-	std::function<void(EntityPtr, uint)> draw_entity;
-	draw_entity = [&](EntityPtr e, uint pack_level) {
+	std::function<void(EntityPtr, bool)> draw_entity;
+	draw_entity = [&](EntityPtr e, bool in_prefab) {
 		std::function<bool(EntityPtr, EntityPtr)> is_ancestor;
 		is_ancestor = [&](EntityPtr t, EntityPtr e) {
 			if (!e->parent)
@@ -45,20 +45,18 @@ void View_Hierarchy::on_draw()
 			ImGui::SetNextItemOpen(true);
 
 		if (e->instance)
-			pack_level += 1;
+			in_prefab = true;
 		auto name = e->name;
-		if (pack_level == 0)
+		if (!in_prefab)
 			name = "[] " + name;
-		else if (pack_level == 1)
-			name = "[-] " + name;
 		else
-			name = "[=] " + name;
-		if (pack_level != 0)
+			name = "[-] " + name;
+		if (in_prefab)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
 		auto opened = ImGui::TreeNodeEx(name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
 		if (just_select && selection.selecting(e))
 			ImGui::SetScrollHereY();
-		if (pack_level != 0)
+		if (in_prefab)
 			ImGui::PopStyleColor();
 		ImGui::PopID();
 
@@ -72,24 +70,45 @@ void View_Hierarchy::on_draw()
 		auto read_drop_entity = [&]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
-				auto e_src = *(EntityPtr*)payload->Data;
-				if (!is_ancestor(e_src, e))
-					return e_src;
+				if (get_prefab_instance(e))
+				{
+					app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
+					return nullptr;
+				}
+				else
+				{
+					auto e_src = *(EntityPtr*)payload->Data;
+					if (!e_src->instance && get_prefab_instance(e_src))
+					{
+						app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
+						return nullptr;
+					}
+					if (!is_ancestor(e_src, e))
+						return e_src;
+				}
 			}
 			return nullptr;
 		};
 		auto read_drop_file = [&]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
-				auto str = std::wstring((wchar_t*)payload->Data);
-				auto path = std::filesystem::path(str);
-				if (path.extension() == L".prefab")
+				if (get_prefab_instance(e))
 				{
-					auto e_src = Entity::create();
-					e_src->load(path);
-					e_src->instance.reset(new PrefabInstance);
-					e_src->instance->filename = path;
-					return e_src;
+					app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
+					return nullptr;
+				}
+				else
+				{
+					auto str = std::wstring((wchar_t*)payload->Data);
+					auto path = std::filesystem::path(str);
+					if (path.extension() == L".prefab")
+					{
+						auto e_src = Entity::create();
+						e_src->load(path);
+						e_src->instance.reset(new PrefabInstance);
+						e_src->instance->filename = path;
+						return e_src;
+					}
 				}
 			}
 			return nullptr;
@@ -132,7 +151,7 @@ void View_Hierarchy::on_draw()
 			for (; i < e->children.size(); i++)
 			{
 				gap_item(i);
-				draw_entity(e->children[i].get(), pack_level);
+				draw_entity(e->children[i].get(), in_prefab);
 			}
 			gap_item(i);
 			ImGui::TreePop();

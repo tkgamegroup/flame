@@ -89,7 +89,7 @@ void App::init()
 			if (ImGui::MenuItem("Save Prefab"))
 			{
 				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Save("SavePrefabDialog", "Save prefab", "Prefab file (*.prefab){.prefab}");
+				ifd::FileDialog::Instance().Save("SavePrefabDialog", "Save prefab", "Prefab file (*.prefab){.prefab}", prefab_path.empty() ? "" : prefab_path.parent_path().string());
 				#endif
 				;
 			}
@@ -160,13 +160,7 @@ void App::init()
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				if (e_prefab)
-				{
-					if (e_editor)
-						e_editor->parent->remove_child(e_editor, false);
 					e_prefab->save(ifd::FileDialog::Instance().GetResultFormated());
-					if (e_editor)
-						e_prefab->add_child(e_editor, 0);
-				}
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -184,6 +178,23 @@ void App::init()
 		ImGui::PopStyleVar(2);
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
+
+		if (open_message_dialog)
+		{
+			ImGui::OpenPopup(message_dialog_title.c_str());
+			open_message_dialog = false;
+		}
+		if (ImGui::BeginPopupModal(message_dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted(message_dialog_text.c_str());
+			if (ImGui::Button("OK"))
+			{
+				message_dialog_title.clear();
+				message_dialog_text.clear();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 	});
 }
 
@@ -215,27 +226,56 @@ void App::open_prefab(const std::filesystem::path& path)
 	app.world->root->add_child(e_prefab);
 }
 
-void App::cmd_create_entity()
+bool App::cmd_create_entity()
 {
-	if (e_prefab)
+	if (!e_prefab)
+		return false;
+	static int id = 0;
+	auto e = Entity::create();
+	e->name = "Entity " + str(id++);
+	e_prefab->add_child(e);
+	return true;
+}
+
+bool App::cmd_delete_selected_entity()
+{
+	if (selection.type != Selection::tEntity)
+		return false;
+	auto e = selection.entity;
+	if (e == e_prefab)
+		return false;
+	if (!e->instance && get_prefab_instance(e))
 	{
-		static int id = 0;
-		auto e = Entity::create();
-		e->name = "Entity " + str(id++);
-		e_prefab->add_child(e);
+		show_message_dialog("[RestructurePrefabInstanceWarnning]");
+		return false;
+	}
+	e->parent->remove_child(e);
+	selection.clear();
+	return true;
+}
+
+void App::show_message_dialog(const std::string& title, const std::string& content)
+{
+	open_message_dialog = true;
+	message_dialog_title = title;
+	message_dialog_text = content;
+	if (title == "[RestructurePrefabInstanceWarnning]")
+	{
+		message_dialog_title = "Cannot restructure Prefab Instance";
+		message_dialog_text = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
+			"Edit it in that prefab";
 	}
 }
 
-void App::cmd_delete_selected_entity()
+PrefabInstance* get_prefab_instance(EntityPtr e)
 {
-	if (selection.type == Selection::tEntity)
+	while (e)
 	{
-		auto e = selection.entity;
-		if (e == e_prefab)
-			return;
-		e->parent->remove_child(e);
-		selection.clear();
+		if (e->instance)
+			return e->instance.get();
+		e = e->parent;
 	}
+	return nullptr;
 }
 
 int main(int argc, char** args)

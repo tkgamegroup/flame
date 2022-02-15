@@ -325,7 +325,7 @@ namespace flame
 		return ret;
 	}
 
-	bool EntityPrivate::load(const std::filesystem::path& filename)
+	bool EntityPrivate::load(const std::filesystem::path& filename, bool preserve_prefab_instance)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
@@ -357,6 +357,10 @@ namespace flame
 			else
 				guid = generate_guid();
 			auto e = Entity::create(&guid);
+			if (auto n_ins = src.child("instance"); n_ins)
+			{
+
+			}
 			unserialize_xml(src, e, spec);
 			((EntityPtr)dst_o)->add_child(e);
 			return INVALID_POINTER;
@@ -381,6 +385,20 @@ namespace flame
 		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (Entity*)src;
 			dst.append_attribute("guid").set_value(e->guid.to_string().c_str());
+			if (e->instance)
+			{
+				auto n_ins = dst.append_child("instance");
+				n_ins.append_attribute("filename").set_value(e->instance->filename.string().c_str());
+				auto n_mod = n_ins.append_child("modifiers");
+				for (auto& m : e->instance->modifiers)
+				{
+					auto n = n_mod.append_child("item");
+					n.append_attribute("entity").set_value(m.entity.to_string().c_str());
+					n.append_attribute("component").set_value(m.component);
+					n.append_attribute("name").set_value(m.name);
+					n.append_attribute("value").set_value(m.value.c_str());
+				}
+			}
 			serialize_xml(e, dst, spec);
 		};
 		serialize_xml(this, file.append_child("prefab"), spec);

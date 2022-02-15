@@ -8,14 +8,32 @@ namespace flame
 	{
 		struct Modifier
 		{
-			Guid		entity;
-			uint		component;
-			std::string name;
+			Guid entity;
+			uint component;
+			uint name;
 			std::string value;
 		};
 
+		EntityPtr e;
 		std::filesystem::path filename;
 		std::vector<Modifier> modifiers;
+
+		void set_modifier(const Guid& entity, uint component, uint name, const std::string& value)
+		{
+			for (auto& m : modifiers)
+			{
+				if (m.entity == entity && m.component == component && m.name == name)
+				{
+					m.value = value;
+					return;
+				}
+			}
+			auto& m = modifiers.emplace_back();
+			m.entity = entity;
+			m.component = component;
+			m.name = name;
+			m.value = value;
+		}
 	};
 
 	/// Reflect ctor
@@ -31,6 +49,8 @@ namespace flame
 		/// Reflect
 		bool enable = true;
 		bool global_enable = false;
+		/// Reflect
+		virtual void set_enable(bool v) = 0;
 
 		WorldPtr world = nullptr;
 		EntityPtr parent = nullptr;
@@ -51,8 +71,6 @@ namespace flame
 		std::unique_ptr<PrefabInstance> instance;
 
 		void* userdata = nullptr;
-
-		virtual void set_enable(bool v) = 0;
 
 		inline Component* get_component(uint type_hash) const
 		{
@@ -140,7 +158,7 @@ namespace flame
 		}
 
 		virtual EntityPtr copy() = 0;
-		virtual bool load(const std::filesystem::path& filename) = 0;
+		virtual bool load(const std::filesystem::path& filename, bool preserve_prefab_instance = false) = 0;
 		virtual bool save(const std::filesystem::path& filename) = 0;
 
 		struct Create

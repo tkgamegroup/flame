@@ -29,13 +29,21 @@ struct App : UniverseApplication
 
 	bool always_update = false;
 
+	bool open_message_dialog = false;
+	std::string message_dialog_title;
+	std::string message_dialog_text;
+
 	void init();
 
 	void open_project(const std::filesystem::path& path);
 	void open_prefab(const std::filesystem::path& path);
 
-	void cmd_create_entity();
-	void cmd_delete_selected_entity();
+	bool cmd_create_entity();
+	bool cmd_delete_selected_entity();
+
+	void show_message_dialog(const std::string& title, const std::string& content = "");
 };
 
 extern App app;
+
+PrefabInstance* get_prefab_instance(EntityPtr e);
