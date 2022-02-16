@@ -327,7 +327,7 @@ namespace flame
 		return ret;
 	}
 
-	static EntityPtr find_with_file_id(EntityPtr e, const Guid& id)
+	static EntityPtr find_with_file_id(EntityPtr e, const std::string& id)
 	{
 		if (e->file_id == id)
 			return e;
@@ -377,9 +377,7 @@ namespace flame
 				auto n_mod = src.child("modifications");
 				for (auto n : n_mod)
 				{
-					Guid file_id;
-					file_id.from_string(n.attribute("file_id").value());
-					auto te = find_with_file_id(e, file_id);
+					auto te = find_with_file_id(e, n.attribute("entity").value());
 					assert(te);
 
 					void* obj = nullptr;
@@ -408,7 +406,7 @@ namespace flame
 				unserialize_xml(src, e, spec);
 
 			if (auto a = src.attribute("file_id"); a)
-				e->file_id.from_string(a.value());
+				e->file_id = a.value();
 			else
 				e->file_id = e->instance_id;
 
@@ -418,7 +416,7 @@ namespace flame
 		};
 
 		if (auto a = doc_root.attribute("file_id"); a)
-			file_id.from_string(a.value());
+			file_id = a.value();
 		else
 			file_id = instance_id;
 
@@ -441,7 +439,7 @@ namespace flame
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (Entity*)src;
-			dst.append_attribute("file_id").set_value(e->file_id.to_string().c_str());
+			dst.append_attribute("file_id").set_value(e->file_id.c_str());
 			if (e->prefab)
 			{
 				dst.append_attribute("filename").set_value(e->prefab->filename.string().c_str());
@@ -449,7 +447,7 @@ namespace flame
 				for (auto& m : e->prefab->modifications)
 				{
 					auto n = n_mod.append_child("item");
-					n.append_attribute("entity").set_value(m.entity.to_string().c_str());
+					n.append_attribute("entity").set_value(m.entity.c_str());
 					n.append_attribute("component").set_value(m.component);
 					n.append_attribute("name").set_value(m.name);
 					n.append_attribute("value").set_value(m.value.c_str());
@@ -460,7 +458,7 @@ namespace flame
 		};
 
 		auto doc_root = file.append_child("prefab");
-		doc_root.append_attribute("file_id").set_value(file_id.to_string().c_str());
+		doc_root.append_attribute("file_id").set_value(file_id.c_str());
 		serialize_xml(this, doc_root, spec);
 
 		file.save_file(filename.c_str());
@@ -470,11 +468,11 @@ namespace flame
 
 	struct EntityCreatePrivate : Entity::Create
 	{
-		EntityPtr operator()(Guid* file_id) override
+		EntityPtr operator()(std::string* file_id) override
 		{
 			auto ret = new EntityPrivate();
 			if (file_id)
-				memcpy(ret->file_id.d, file_id->d, sizeof(Guid));
+				ret->file_id = *file_id;
 			else
 				ret->file_id = ret->instance_id;
 			return ret;

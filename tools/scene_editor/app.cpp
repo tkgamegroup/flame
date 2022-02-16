@@ -75,14 +75,16 @@ void App::init()
 			if (ImGui::MenuItem("Open Prefab"))
 			{
 				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}");
+				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}", false, 
+					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
 				#endif
 				;
 			}
 			if (ImGui::MenuItem("New Prefab"))
 			{
 				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}");
+				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}",
+					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
 				#endif
 				;
 			}
@@ -143,7 +145,6 @@ void App::init()
 			{
 				auto path = ifd::FileDialog::Instance().GetResultFormated();
 				auto e = Entity::create();
-				e->name = "Hello";
 				e->save(path);
 				open_prefab(path);
 			}

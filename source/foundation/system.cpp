@@ -15,10 +15,14 @@ namespace flame
 		Sleep(time);
 	}
 
-	Guid generate_guid()
+	std::string generate_guid()
 	{
-		Guid ret;
-		CoCreateGuid((GUID*)&ret);
+		GUID guid;
+		CoCreateGuid(&guid);
+
+		std::string ret;
+		for (auto i = 0; i < sizeof(GUID); i += sizeof(uint))
+			ret += str_hex(*(uint*)((char*)&guid + i));
 		return ret;
 	}
 

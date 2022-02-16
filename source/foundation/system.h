@@ -20,7 +20,7 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_API void sleep(int time);
-	FLAME_FOUNDATION_API Guid generate_guid();
+	FLAME_FOUNDATION_API std::string generate_guid();
 	FLAME_FOUNDATION_API uint64 performance_counter();
 	FLAME_FOUNDATION_API uint64 performance_frequency();
 	// "Desktop"

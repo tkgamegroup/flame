@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Modification
 		{
-			Guid entity;
+			std::string entity;
 			uint component;
 			uint name;
 			std::string value;
@@ -20,7 +20,7 @@ namespace flame
 
 		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
 
-		void set_modifier(const Guid& entity, uint component, uint name, const std::string& value)
+		void set_modifier(const std::string& entity, uint component, uint name, const std::string& value)
 		{
 			for (auto& m : modifications)
 			{
@@ -60,8 +60,8 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
-		Guid instance_id;
-		Guid file_id;
+		std::string instance_id;
+		std::string file_id;
 
 		/// Reflect
 		std::vector<std::unique_ptr<Component>> components;
@@ -167,7 +167,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual EntityPtr operator()(Guid* file_id = nullptr) = 0;
+			virtual EntityPtr operator()(std::string* file_id = nullptr) = 0;
 		};
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
