@@ -193,8 +193,32 @@ void App::open_project(const std::filesystem::path& path)
 		selection.clear();
 		project_path = path;
 		directory_lock(project_path, true);
-		if (auto p = path / L"assets"; std::filesystem::exists(p))
-			Path::set_root(L"assets", p);
+
+		auto assets_path = path / L"assets";
+		if (!std::filesystem::exists(assets_path))
+			std::filesystem::create_directories(assets_path);
+		Path::set_root(L"assets", assets_path);
+
+		auto cmake_path = path / L"CMakeLists.txt";
+		if (!std::filesystem::exists(cmake_path))
+		{
+			auto project_name = path.filename().string();
+			std::ofstream cmake_lists(cmake_path);
+			cmake_lists << "cmake_minimum_required(VERSION 3.16.4)" << std::endl;
+			cmake_lists << "set_property(GLOBAL PROPERTY USE_FOLDERS ON)" << std::endl;
+			cmake_lists << "add_definitions(-W0 -std:c++latest)" << std::endl;
+			cmake_lists << std::format("project({})", project_name) << std::endl;
+			cmake_lists << "file(GLOB_RECURSE source_files \"*.h*\" \"*.c*\")" << std::endl;
+			cmake_lists << std::format("add_executable({} ${{source_files}})", project_name) << std::endl;
+			cmake_lists.close();
+		}
+
+		auto build_path = path / L"build";
+		if (!std::filesystem::exists(build_path))
+		{
+			std::filesystem::create_directories(build_path);
+			exec(L"", std::format(L"cmake -S {} -B {}", path.c_str(), build_path.c_str()));
+		}
 
 		view_project.reset();
 	}
@@ -229,7 +253,7 @@ bool App::cmd_delete_selected_entity()
 	auto e = selection.entity;
 	if (e == e_prefab)
 		return false;
-	if (!e->instance && get_prefab_instance(e))
+	if (!e->prefab && get_prefab_instance(e))
 	{
 		show_message_dialog("[RestructurePrefabInstanceWarnning]");
 		return false;
@@ -256,8 +280,8 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 {
 	while (e)
 	{
-		if (e->instance)
-			return e->instance.get();
+		if (e->prefab)
+			return e->prefab.get();
 		e = e->parent;
 	}
 	return nullptr;

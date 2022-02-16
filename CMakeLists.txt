@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16.4)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-project(flame)
-
 add_definitions(-W0 -std:c++latest)
+
+project(flame)
 
 include("utils.cmake")
 

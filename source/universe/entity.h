@@ -18,6 +18,8 @@ namespace flame
 		std::filesystem::path filename;
 		std::vector<Modification> modifications;
 
+		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
+
 		void set_modifier(const Guid& entity, uint component, uint name, const std::string& value)
 		{
 			for (auto& m : modifications)
@@ -69,7 +71,7 @@ namespace flame
 
 		Listeners<void(uint, void*, void*)> message_listeners;
 
-		std::unique_ptr<PrefabInstance> instance;
+		std::unique_ptr<PrefabInstance> prefab;
 
 		void* userdata = nullptr;
 
@@ -170,4 +172,12 @@ namespace flame
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
+
+	PrefabInstance::PrefabInstance(EntityPtr e, const std::filesystem::path& filename) :
+		e(e),
+		filename(filename)
+	{
+		assert(!((Entity*)e)->prefab);
+		((Entity*)e)->prefab.reset(this);
+	}
 }

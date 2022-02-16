@@ -372,6 +372,8 @@ namespace flame
 			if (auto a = src.attribute("filename"); a)
 			{
 				e->load(a.value());
+				new PrefabInstance(e, a.value());
+
 				auto n_mod = src.child("modifications");
 				for (auto n : n_mod)
 				{
@@ -440,11 +442,11 @@ namespace flame
 		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (Entity*)src;
 			dst.append_attribute("file_id").set_value(e->file_id.to_string().c_str());
-			if (e->instance)
+			if (e->prefab)
 			{
-				dst.append_attribute("filename").set_value(e->instance->filename.string().c_str());
+				dst.append_attribute("filename").set_value(e->prefab->filename.string().c_str());
 				auto n_mod = dst.append_child("modifications");
-				for (auto& m : e->instance->modifications)
+				for (auto& m : e->prefab->modifications)
 				{
 					auto n = n_mod.append_child("item");
 					n.append_attribute("entity").set_value(m.entity.to_string().c_str());

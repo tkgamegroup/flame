@@ -354,7 +354,7 @@ namespace flame
 		info.cbSize = sizeof(SHELLEXECUTEINFOW);
 		info.fMask = SEE_MASK_NOCLOSEPROCESS;
 		info.lpVerb = L"open";
-		info.lpFile = filename.c_str();
+		info.lpFile = filename.empty() ? nullptr : filename.c_str();
 		info.nShow = show ? SW_SHOW : SW_HIDE;
 		info.lpParameters = parameters.empty() ? nullptr : parameters.c_str();
 		ShellExecuteExW(&info);

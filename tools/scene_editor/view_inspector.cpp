@@ -123,18 +123,20 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 	return changed_attribute;
 }
 
+static std::unordered_map<uint, UdtInfo*> com_udts;
+void get_com_udts()
+{
+	for (auto& ui : tidb.udts)
+	{
+		if (ui.second.base_class_name == "flame::Component")
+			com_udts.emplace(ui.first, &ui.second);
+	}
+}
+
 void View_Inspector::on_draw()
 {
-	auto get_com_udts = []() {
-		std::unordered_map<uint, UdtInfo*> ret;
-		for (auto& ui : tidb.udts)
-		{
-			if (ui.second.base_class_name == "flame::Component")
-				ret.emplace(ui.first, &ui.second);
-		}
-		return ret;
-	};
-	static std::unordered_map<uint, UdtInfo*> com_udts = get_com_udts();
+	if (com_udts.empty())
+		get_com_udts();
 
 	switch (selection.type)
 	{
