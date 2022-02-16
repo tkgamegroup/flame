@@ -146,14 +146,21 @@ void View_Inspector::on_draw()
 		if (changed_attribute)
 		{
 			if (auto ins = get_prefab_instance(e); ins)
-				ins->set_modifier(e->guid, 0, sh(changed_attribute->name.c_str()), changed_attribute->serialize(e));
+				ins->set_modifier(e->file_id, 0, sh(changed_attribute->name.c_str()), changed_attribute->serialize(e));
 		}
 
 		for (auto& c : e->components)
 		{
 			auto& ui = *com_udts[c->type_hash];
 			if (ImGui::CollapsingHeader(ui.name.c_str()))
-				show_udt_attributes(ui, c.get());
+			{
+				auto changed_attribute = show_udt_attributes(ui, c.get());
+				if (changed_attribute)
+				{
+					if (auto ins = get_prefab_instance(e); ins)
+						ins->set_modifier(e->file_id, c->type_hash, sh(changed_attribute->name.c_str()), changed_attribute->serialize(e));
+				}
+			}
 		}
 
 		auto str_add_component = "Add Component";

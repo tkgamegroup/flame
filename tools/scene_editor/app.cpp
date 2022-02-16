@@ -88,14 +88,8 @@ void App::init()
 			}
 			if (ImGui::MenuItem("Save Prefab"))
 			{
-				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Save("SavePrefabDialog", "Save prefab", "Prefab file (*.prefab){.prefab}", prefab_path.empty() ? "" : prefab_path.parent_path().string());
-				#endif
-				;
-			}
-			if (ImGui::MenuItem("Save Prefab As"))
-			{
-
+				if (e_prefab)
+					e_prefab->save(prefab_path);
 			}
 			if (ImGui::MenuItem("Close"))
 				;
@@ -152,15 +146,6 @@ void App::init()
 				e->name = "Hello";
 				e->save(path);
 				open_prefab(path);
-			}
-			ifd::FileDialog::Instance().Close();
-		}
-		if (ifd::FileDialog::Instance().IsDone("SavePrefabDialog"))
-		{
-			if (ifd::FileDialog::Instance().HasResult())
-			{
-				if (e_prefab)
-					e_prefab->save(ifd::FileDialog::Instance().GetResultFormated());
 			}
 			ifd::FileDialog::Instance().Close();
 		}

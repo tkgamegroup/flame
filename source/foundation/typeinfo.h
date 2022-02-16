@@ -532,6 +532,16 @@ namespace flame
 			return nullptr;
 		}
 
+		inline const Attribute* find_attribute(uint name_hash) const
+		{
+			for (auto& a : attributes)
+			{
+				if (sh(a.name.c_str()) == name_hash)
+					return &a;
+			}
+			return nullptr;
+		}
+
 		void* create_object(void* p = nullptr) const
 		{
 			if (!p)

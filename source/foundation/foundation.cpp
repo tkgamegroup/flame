@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	std::map<std::wstring, std::filesystem::path> Path::map;
+	std::map<std::wstring, std::filesystem::path> Path::roots;
 
 	struct _Initializer
 	{

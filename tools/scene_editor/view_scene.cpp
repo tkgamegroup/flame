@@ -1,6 +1,7 @@
 #include "view_scene.h"
 #include "selection.h"
 
+#include <flame/foundation/typeinfo.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -38,7 +39,8 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (app.e_editor && selection.type == Selection::tEntity)
 		{
-			auto tar = selection.entity->get_component_i<cNode>(0);
+			auto e = selection.entity;
+			auto tar = e->get_component_i<cNode>(0);
 			if (tar)
 			{
 				auto camera = app.e_editor->get_component_t<cCamera>();
@@ -52,9 +54,26 @@ void View_Scene::on_draw()
 				{
 					vec3 p, r, s;
 					ImGuizmo::DecomposeMatrixToComponents(&mat[0][0], &p[0], &r[0], &s[0]);
-					tar->set_pos(p);
+					r = vec3(r.y, r.x, r.z);
+					if (p != tar->pos)
+					{
+						tar->set_pos(p);
+						if (auto ins = get_prefab_instance(e); ins)
+							ins->set_modifier(e->file_id, tar->type_hash, "pos"_h, TypeInfo::serialize_t(&tar->pos));
+					}
+					if (r != tar->eul)
+					{
+						tar->set_eul(r);
+						if (auto ins = get_prefab_instance(e); ins)
+							ins->set_modifier(e->file_id, tar->type_hash, "eul"_h, TypeInfo::serialize_t(&tar->eul));
+					}
 					//tar->set_eul(r);
-					tar->set_scl(s);
+					if (s != tar->scl)
+					{
+						tar->set_scl(s);
+						if (auto ins = get_prefab_instance(e); ins)
+							ins->set_modifier(e->file_id, tar->type_hash, "scl"_h, TypeInfo::serialize_t(&tar->scl));
+					}
 				}
 
 				using_gizmo = ImGuizmo::IsUsing();

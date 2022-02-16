@@ -133,11 +133,11 @@ namespace flame
 
 	struct Path
 	{
-		FLAME_FOUNDATION_API static std::map<std::wstring, std::filesystem::path> map;
+		FLAME_FOUNDATION_API static std::map<std::wstring, std::filesystem::path> roots;
 
 		inline static void set_root(const std::wstring& name, const std::filesystem::path& path)
 		{
-			map[name] = path;
+			roots[name] = path;
 		}
 
 		inline static std::filesystem::path get(const std::filesystem::path& path)
@@ -145,10 +145,10 @@ namespace flame
 			if (path.is_absolute())
 				return path;
 			auto it = path.begin();
-			auto mit = map.find(*it);
-			if (mit == map.end())
+			auto it2 = roots.find(*it);
+			if (it2 == roots.end())
 				return L"";
-			auto ret = mit->second;
+			auto ret = it2->second;
 			it++;
 			auto eit = path.end();
 			while (it != eit)
@@ -158,6 +158,22 @@ namespace flame
 			}
 			ret.make_preferred();
 			return ret;
+		}
+
+		inline static std::filesystem::path reverse(const std::filesystem::path& _path)
+		{
+			auto path = _path;
+			path.make_preferred();
+			if (!path.is_absolute())
+				return path;
+			auto str1 = path.wstring();
+			for (auto& r : roots)
+			{
+				auto str2 = r.second.wstring();
+				if (str1.compare(0, str2.size(), str2) == 0)
+					return r.first / std::filesystem::path(str1.substr(str2.size() + 1));
+			}
+			return path;
 		}
 
 		inline static bool cat_if_exists(const std::filesystem::path& dir, std::filesystem::path& t)

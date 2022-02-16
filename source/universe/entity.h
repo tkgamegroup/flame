@@ -6,7 +6,7 @@ namespace flame
 {
 	struct PrefabInstance
 	{
-		struct Modifier
+		struct Modification
 		{
 			Guid entity;
 			uint component;
@@ -16,11 +16,11 @@ namespace flame
 
 		EntityPtr e;
 		std::filesystem::path filename;
-		std::vector<Modifier> modifiers;
+		std::vector<Modification> modifications;
 
 		void set_modifier(const Guid& entity, uint component, uint name, const std::string& value)
 		{
-			for (auto& m : modifiers)
+			for (auto& m : modifications)
 			{
 				if (m.entity == entity && m.component == component && m.name == name)
 				{
@@ -28,7 +28,7 @@ namespace flame
 					return;
 				}
 			}
-			auto& m = modifiers.emplace_back();
+			auto& m = modifications.emplace_back();
 			m.entity = entity;
 			m.component = component;
 			m.name = name;
@@ -58,7 +58,8 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
-		Guid guid;
+		Guid instance_id;
+		Guid file_id;
 
 		/// Reflect
 		std::vector<std::unique_ptr<Component>> components;
@@ -158,12 +159,13 @@ namespace flame
 		}
 
 		virtual EntityPtr copy() = 0;
-		virtual bool load(const std::filesystem::path& filename, bool preserve_prefab_instance = false) = 0;
+
+		virtual bool load(const std::filesystem::path& filename) = 0;
 		virtual bool save(const std::filesystem::path& filename) = 0;
 
 		struct Create
 		{
-			virtual EntityPtr operator()(Guid* guid = nullptr) = 0;
+			virtual EntityPtr operator()(Guid* file_id = nullptr) = 0;
 		};
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

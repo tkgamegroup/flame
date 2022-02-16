@@ -100,7 +100,7 @@ void View_Hierarchy::on_draw()
 				else
 				{
 					auto str = std::wstring((wchar_t*)payload->Data);
-					auto path = std::filesystem::path(str);
+					auto path = Path::reverse(str);
 					if (path.extension() == L".prefab")
 					{
 						auto e_src = Entity::create();

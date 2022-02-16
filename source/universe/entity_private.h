@@ -28,7 +28,8 @@ namespace flame
 		void remove_all_children(bool destroy = true) override;
 
 		EntityPtr copy() override;
-		bool load(const std::filesystem::path& filename, bool preserve_prefab_instance) override;
+
+		bool load(const std::filesystem::path& filename) override;
 		bool save(const std::filesystem::path& filename) override;
 	};
 }

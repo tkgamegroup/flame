@@ -21,6 +21,7 @@ namespace flame
 			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto model_filename = filename;
+			model_filename = Path::reverse(model_filename);
 			model_filename.replace_extension(L".fmod");
 
 			Assimp::Importer importer;
@@ -322,7 +323,7 @@ namespace flame
 					{
 						auto n_armature = n_components.append_child("item");
 						n_armature.append_attribute("type_hash").set_value("flame::cArmature"_h);
-						n_armature.append_attribute("model_name").set_value(("assets/" + model_name + ".fmod").c_str());
+						n_armature.append_attribute("model_name").set_value(model_filename.string().c_str());
 					}
 				}
 
@@ -343,7 +344,7 @@ namespace flame
 					{
 						auto n_mesh = n_components.append_child("item");
 						n_mesh.append_attribute("type_hash").set_value("flame::cMesh"_h);
-						n_mesh.append_attribute("model_name").set_value(("assets/" + model_name + ".fmod").c_str());
+						n_mesh.append_attribute("model_name").set_value(model_filename.string().c_str());
 						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
