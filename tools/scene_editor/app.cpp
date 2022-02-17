@@ -103,6 +103,9 @@ void App::init()
 				cmd_create_entity();
 			if (ImGui::MenuItem("Delete Entity"))
 				cmd_delete_selected_entity();
+			ImGui::Separator();
+			if (ImGui::MenuItem("Generate NavMesh"))
+				sScene::instance()->generate_navmesh(L"");
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))

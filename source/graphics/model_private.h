@@ -8,6 +8,7 @@ namespace flame
 	{
 		struct ModelPrivate : Model
 		{
+			void save(const std::filesystem::path& filename) override;
 		};
 
 		struct AnimationPrivate : Animation

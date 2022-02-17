@@ -77,7 +77,15 @@ namespace flame
 
 			virtual ~Model() {}
 
+			virtual void save(const std::filesystem::path& filename) = 0;
+
 			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename);
+
+			struct Create
+			{
+				virtual ModelPtr operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{

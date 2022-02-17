@@ -35,7 +35,6 @@ namespace flame
 		// { height, normal, tangent } as array
 		std::unique_ptr<graphics::Image> textures = nullptr;
 
-
 		struct Create
 		{
 			virtual cTerrainPtr operator()(EntityPtr e) = 0;

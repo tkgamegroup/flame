@@ -171,12 +171,12 @@ namespace flame
 		mark_drawing_dirty();
 	}
 
-	struct cNodeCreatePrivate : cNode::Create
+	struct cNodeCreate : cNode::Create
 	{
 		cNodePtr operator()(EntityPtr) override
 		{
 			return new cNodePrivate();
 		}
-	}cNode_create_private;
-	cNode::Create& cNode::create = cNode_create_private;
+	}cNode_create;
+	cNode::Create& cNode::create = cNode_create;
 }

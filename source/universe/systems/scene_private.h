@@ -10,6 +10,8 @@ namespace flame
 		sScenePrivate();
 
 		void update_transform(EntityPtr e, bool mark_dirty);
+
+		void generate_navmesh(const std::filesystem::path& output) override;
 		void update() override;
 	};
 }

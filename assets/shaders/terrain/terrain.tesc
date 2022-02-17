@@ -16,7 +16,7 @@ layout (location = 2) out		vec2 o_uvs[4];
 
 TerrainInstance terrain;
 
-float screen_space_tess_factor(vec4 p0, vec4 p1)
+float tess_factor(vec4 p0, vec4 p1)
 {
 	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
 	v = v * v;
@@ -56,10 +56,10 @@ void main()
 		}
 		else
 		{
-			gl_TessLevelOuter[0] = screen_space_tess_factor(gl_in[3].gl_Position, gl_in[0].gl_Position);
-			gl_TessLevelOuter[1] = screen_space_tess_factor(gl_in[0].gl_Position, gl_in[1].gl_Position);
-			gl_TessLevelOuter[2] = screen_space_tess_factor(gl_in[1].gl_Position, gl_in[2].gl_Position);
-			gl_TessLevelOuter[3] = screen_space_tess_factor(gl_in[2].gl_Position, gl_in[3].gl_Position);
+			gl_TessLevelOuter[0] = tess_factor(gl_in[3].gl_Position, gl_in[0].gl_Position);
+			gl_TessLevelOuter[1] = tess_factor(gl_in[0].gl_Position, gl_in[1].gl_Position);
+			gl_TessLevelOuter[2] = tess_factor(gl_in[1].gl_Position, gl_in[2].gl_Position);
+			gl_TessLevelOuter[3] = tess_factor(gl_in[2].gl_Position, gl_in[3].gl_Position);
 
 			gl_TessLevelInner[0] = mix(gl_TessLevelOuter[1], gl_TessLevelOuter[3], 0.5);
 			gl_TessLevelInner[1] = mix(gl_TessLevelOuter[0], gl_TessLevelOuter[2], 0.5);

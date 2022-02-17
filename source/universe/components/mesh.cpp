@@ -143,12 +143,12 @@ namespace flame
 		instance_id = -1;
 	}
 
-	struct cMeshCreatePrivate : cMesh::Create
+	struct cMeshCreate : cMesh::Create
 	{
 		cMeshPtr operator()(EntityPtr e) override
 		{
 			return new cMeshPrivate();
 		}
-	}cMesh_create_private;
-	cMesh::Create& cMesh::create = cMesh_create_private;
+	}cMesh_create;
+	cMesh::Create& cMesh::create = cMesh_create;
 }

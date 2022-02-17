@@ -9,6 +9,8 @@ namespace flame
 	{
 		OctNode* octree = nullptr;
 
+		virtual void generate_navmesh(const std::filesystem::path& output) = 0;
+
 		struct Instance
 		{
 			virtual sScenePtr operator()() = 0;

@@ -466,7 +466,7 @@ namespace flame
 		return true;
 	}
 
-	struct EntityCreatePrivate : Entity::Create
+	struct EntityCreate : Entity::Create
 	{
 		EntityPtr operator()(std::string* file_id) override
 		{
@@ -477,6 +477,6 @@ namespace flame
 				ret->file_id = ret->instance_id;
 			return ret;
 		}
-	}Entity_create_private;
-	Entity::Create& Entity::create = Entity_create_private;
+	}Entity_create;
+	Entity::Create& Entity::create = Entity_create;
 }

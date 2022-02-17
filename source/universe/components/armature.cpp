@@ -118,7 +118,7 @@ namespace flame
 				auto& a = animations.emplace_back();
 				a.total_frame = 0;
 
-				for (auto& sh : animation->channels)
+				for (auto& ch : animation->channels)
 				{
 					auto find_bone = [&](std::string_view name) {
 						for (auto i = 0; i < bones.size(); i++)
@@ -128,17 +128,17 @@ namespace flame
 						}
 						return -1;
 					};
-					auto id = find_bone(sh.node_name);
+					auto id = find_bone(ch.node_name);
 					if (id != -1)
 					{
-						uint count = sh.keys.size();
+						uint count = ch.keys.size();
 						if (a.total_frame == 0)
 							a.total_frame = max(a.total_frame, count);
 
 						auto& t = a.tracks.emplace_back();
 						t.first = id;
 						t.second.resize(count);
-						memcpy(t.second.data(), sh.keys.data(), sizeof(graphics::Channel::Key) * count);
+						memcpy(t.second.data(), ch.keys.data(), sizeof(graphics::Channel::Key) * count);
 					}
 				}
 
@@ -206,12 +206,12 @@ namespace flame
 		instance_id = -1;
 	}
 
-	struct cArmatureCreatePrivate : cArmature::Create
+	struct cArmatureCreate : cArmature::Create
 	{
 		cArmaturePtr operator()(EntityPtr e) override
 		{
 			return new cArmaturePrivate();
 		}
-	}cArmature_create_private;
-	cArmature::Create& cArmature::create = cArmature_create_private;
+	}cArmature_create;
+	cArmature::Create& cArmature::create = cArmature_create;
 }

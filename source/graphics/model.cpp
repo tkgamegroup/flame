@@ -15,13 +15,68 @@ namespace flame
 {
 	namespace graphics
 	{
+		void ModelPrivate::save(const std::filesystem::path& filename)
+		{
+			pugi::xml_document doc;
+			auto n_model = doc.append_child("model");
+
+			auto data_filename = filename;
+			data_filename += L".dat";
+			std::ofstream data_file(data_filename, std::ios::binary);
+
+			auto append_data = [&](void* data, uint size, pugi::xml_node n) {
+				n.append_attribute("offset").set_value(data_file.tellp());
+				n.append_attribute("size").set_value(size);
+				data_file.write((char*)data, size);
+			};
+
+			auto n_meshes = n_model.append_child("meshes");
+			for (auto& m : meshes)
+			{
+				auto n_mesh = n_meshes.append_child("mesh");
+				std::string material_names;
+				for (auto& mat : m.materials)
+				{
+					if (!material_names.empty())
+						material_names += ';';
+					material_names += mat->filename.string();
+				}
+				n_mesh.append_attribute("materials").set_value(material_names.c_str());
+
+				if (!m.positions.empty())
+					append_data(m.positions.data(), m.positions.size() * sizeof(vec3), n_mesh.append_child("positions"));
+				if (!m.uvs.empty())
+					append_data(m.uvs.data(), m.uvs.size() * sizeof(vec2), n_mesh.append_child("uvs"));
+				if (!m.normals.empty())
+					append_data(m.normals.data(), m.normals.size() * sizeof(vec3), n_mesh.append_child("normals"));
+				if (!m.bone_ids.empty())
+					append_data(m.bone_ids.data(), m.bone_ids.size() * sizeof(ivec4), n_mesh.append_child("bone_ids"));
+				if (!m.bone_weights.empty())
+					append_data(m.bone_weights.data(), m.bone_weights.size() * sizeof(vec4), n_mesh.append_child("bone_weights"));
+				if (!m.indices.empty())
+					append_data(m.indices.data(), m.indices.size() * sizeof(uint), n_mesh.append_child("indices"));
+
+				n_mesh.append_attribute("bounds").set_value(str((mat2x3&)m.bounds).c_str());
+			}
+
+			auto n_bones = n_model.append_child("bones");
+			for (auto& b : bones)
+			{
+				auto n_bone = n_bones.append_child("bone");
+				n_bone.append_attribute("name").set_value(b.name.c_str());
+				append_data(&b.offset_matrix, sizeof(mat4), n_bone.append_child("offset_matrix"));
+			}
+
+			data_file.close();
+			doc.save_file(filename.c_str());
+		}
+
 		void Model::convert(const std::filesystem::path& filename)
 		{
 #ifdef USE_ASSIMP
 			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto model_filename = filename;
-			model_filename = Path::reverse(model_filename);
 			model_filename.replace_extension(L".fmod");
 
 			Assimp::Importer importer;
@@ -94,196 +149,126 @@ namespace flame
 					material_name = str(i);
 				else
 				{
-					for (auto& sh : material_name)
-					{
-						if (sh == ' ' || sh == ':')
-							sh = '_';
-					}
+					for (auto& ch : material_name)
+						if (ch == ' ' || ch == ':') ch = '_';
 				}
 				material_name = model_name + "_" + material_name + ".fmat";
 				material_names.push_back(material_name);
 				doc.save_file((ppath / material_name).c_str());
 			}
 
-			pugi::xml_document doc;
-			auto n_model = doc.append_child("model");
+			ModelPtr model = Model::create();
 
-			auto model_data_filename = model_filename;
-			model_data_filename += L".dat";
-			std::ofstream model_data_file(model_data_filename, std::ios::binary);
-
-			std::vector<std::pair<std::string, mat4>> bones;
-
-			auto n_meshes = n_model.append_child("meshes");
 			for (auto i = 0; i < scene->mNumMeshes; i++)
 			{
 				auto ai_mesh = scene->mMeshes[i];
+				auto& mesh = model->meshes.emplace_back();
+				mesh.model = model;
 
-				auto n_mesh = n_meshes.append_child("mesh");
-
-				n_mesh.append_attribute("material").set_value(material_names[ai_mesh->mMaterialIndex].c_str());
+				auto mat = Material::get(material_names[ai_mesh->mMaterialIndex]);
+				if (mat)
+					mesh.materials.push_back(mat);
 
 				auto vertex_count = ai_mesh->mNumVertices;
 
+				if (ai_mesh->mVertices)
 				{
-					auto size = vertex_count * sizeof(vec3);
-					auto n_positions = n_mesh.append_child("positions");
-					n_positions.append_attribute("offset").set_value(model_data_file.tellp());
-					n_positions.append_attribute("size").set_value(size);
-					model_data_file.write((char*)ai_mesh->mVertices, size);
+					mesh.positions.resize(vertex_count);
+					memcpy(mesh.positions.data(), ai_mesh->mVertices, sizeof(vec3) * vertex_count);
 				}
 
-				auto puv = ai_mesh->mTextureCoords[0];
-				if (puv)
+				if (auto puv = ai_mesh->mTextureCoords[0]; puv)
 				{
-					std::vector<vec2> uvs;
-					uvs.resize(vertex_count);
+					mesh.uvs.resize(vertex_count);
 					for (auto j = 0; j < vertex_count; j++)
 					{
 						auto& uv = puv[j];
-						uvs[j] = vec2(uv.x, uv.y);
+						mesh.uvs[j] = vec2(uv.x, uv.y);
 					}
-					auto size = vertex_count * sizeof(vec2);
-					auto n_uvs = n_mesh.append_child("uvs");
-					n_uvs.append_attribute("offset").set_value(model_data_file.tellp());
-					n_uvs.append_attribute("size").set_value(size);
-					model_data_file.write((char*)uvs.data(), size);
 				}
 
 				if (ai_mesh->mNormals)
 				{
-					auto size = vertex_count * sizeof(vec3);
-					auto n_normals = n_mesh.append_child("normals");
-					n_normals.append_attribute("offset").set_value(model_data_file.tellp());
-					n_normals.append_attribute("size").set_value(size);
-					model_data_file.write((char*)ai_mesh->mNormals, size);
+					mesh.normals.resize(vertex_count);
+					memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
 				}
 
-				AABB bounds;
-				bounds.reset();
-				for (auto j = 0; j < vertex_count; j++)
-				{
-					auto& p = ai_mesh->mVertices[j]; 
-					bounds.expand(vec3(p.x, p.y, p.z));
-				}
-				n_mesh.append_attribute("bounds").set_value(str((mat2x3&)bounds).c_str());
-
-				std::vector<ivec4> bone_ids;
-				std::vector<vec4> bone_weights;
 				if (ai_mesh->mNumBones > 0)
 				{
-					bone_ids.resize(vertex_count);
-					bone_weights.resize(vertex_count);
+					mesh.bone_ids.resize(vertex_count);
+					mesh.bone_weights.resize(vertex_count);
 					for (auto j = 0; j < vertex_count; j++)
 					{
-						bone_ids[j] = ivec4(-1);
-						bone_weights[j] = vec4(0.f);
-					}
-				}
-
-				for (auto j = 0; j < ai_mesh->mNumBones; j++)
-				{
-					auto ai_bone = ai_mesh->mBones[j];
-
-					auto name = std::string(ai_bone->mName.C_Str());
-					auto find_bone = [&](std::string_view name) {
-						for (auto i = 0; i < bones.size(); i++)
-						{
-							if (bones[i].first == name)
-								return i;
-						}
-						return -1;
-					};
-					auto bid = find_bone(name);
-					if (bid == -1)
-					{
-						bid = bones.size();
-						auto& m = ai_bone->mOffsetMatrix;
-						auto offset_matrix = mat4(
-							vec4(m.a1, m.b1, m.c1, m.d1),
-							vec4(m.a2, m.b2, m.c2, m.d2),
-							vec4(m.a3, m.b3, m.c3, m.d3),
-							vec4(m.a4, m.b4, m.c4, m.d4)
-						);
-						bones.emplace_back(name, offset_matrix);
+						mesh.bone_ids[j] = ivec4(-1);
+						mesh.bone_weights[j] = vec4(0.f);
 					}
 
-					auto weights_count = ai_bone->mNumWeights;
-					if (weights_count > 0)
+					for (auto j = 0; j < ai_mesh->mNumBones; j++)
 					{
-						auto get_idx = [&](uint vi) {
-							auto& ids = bone_ids[vi];
-							for (auto i = 0; i < 4; i++)
+						auto ai_bone = ai_mesh->mBones[j];
+
+						std::string name = ai_bone->mName.C_Str();
+						auto find_bone = [&](std::string_view name) {
+							for (auto i = 0; i < model->bones.size(); i++)
 							{
-								if (ids[i] == -1)
+								if (model->bones[i].name == name)
 									return i;
 							}
 							return -1;
 						};
-						for (auto j = 0; j < weights_count; j++)
+						auto bid = find_bone(name);
+						if (bid == -1)
 						{
-							auto w = ai_bone->mWeights[j];
-							auto idx = get_idx(w.mVertexId);
-							if (idx == -1)
-								continue;
-							bone_ids[w.mVertexId][idx] = bid;
-							bone_weights[w.mVertexId][idx] = w.mWeight;
+							bid = model->bones.size();
+							auto& m = ai_bone->mOffsetMatrix;
+							auto& b = model->bones.emplace_back();
+							b.name = name;
+							b.offset_matrix = mat4(
+								vec4(m.a1, m.b1, m.c1, m.d1),
+								vec4(m.a2, m.b2, m.c2, m.d2),
+								vec4(m.a3, m.b3, m.c3, m.d3),
+								vec4(m.a4, m.b4, m.c4, m.d4)
+							);
+						}
+
+						auto weights_count = ai_bone->mNumWeights;
+						if (weights_count > 0)
+						{
+							auto get_idx = [&](uint vi) {
+								auto& ids = mesh.bone_ids[vi];
+								for (auto i = 0; i < 4; i++)
+								{
+									if (ids[i] == -1)
+										return i;
+								}
+								return -1;
+							};
+							for (auto j = 0; j < weights_count; j++)
+							{
+								auto w = ai_bone->mWeights[j];
+								auto idx = get_idx(w.mVertexId);
+								if (idx == -1)
+									continue;
+								mesh.bone_ids[w.mVertexId][idx] = bid;
+								mesh.bone_weights[w.mVertexId][idx] = w.mWeight;
+							}
 						}
 					}
 				}
 
-				if (!bone_ids.empty())
+				mesh.indices.resize(ai_mesh->mNumFaces * 3);
+				for (auto j = 0; j < ai_mesh->mNumFaces; j++)
 				{
-					auto size = vertex_count * sizeof(ivec4);
-					auto n_bids = n_mesh.append_child("bone_ids");
-					n_bids.append_attribute("offset").set_value(model_data_file.tellp());
-					n_bids.append_attribute("size").set_value(size);
-					model_data_file.write((char*)bone_ids.data() , size);
+					mesh.indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
+					mesh.indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
+					mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
 				}
 
-				if (!bone_weights.empty())
-				{
-					auto size = vertex_count * sizeof(vec4);
-					auto n_wgts = n_mesh.append_child("bone_weights");
-					n_wgts.append_attribute("offset").set_value(model_data_file.tellp());
-					n_wgts.append_attribute("size").set_value(size);
-					model_data_file.write((char*)bone_weights.data(), size);
-				}
-
-				{
-					std::vector<uint> indices(ai_mesh->mNumFaces * 3);
-					for (auto j = 0; j < ai_mesh->mNumFaces; j++)
-					{
-						indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
-						indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
-						indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
-					}
-					auto size = indices.size() * sizeof(uint);
-					auto n_indices = n_mesh.append_child("indices");
-					n_indices.append_attribute("offset").set_value(model_data_file.tellp());
-					n_indices.append_attribute("size").set_value(size);
-					model_data_file.write((char*)indices.data(), size);
-				}
+				mesh.calc_bounds();
 			}
 
-			auto n_bones = n_model.append_child("bones");
-			for (auto& b : bones)
-			{
-				auto n_bone = n_bones.append_child("bone");
-				n_bone.append_attribute("name").set_value(b.first.c_str());
-
-				{
-					auto size = sizeof(mat4);
-					auto n_matrix = n_bone.append_child("offset_matrix");
-					n_matrix.append_attribute("offset").set_value(model_data_file.tellp());
-					n_matrix.append_attribute("size").set_value(size);
-					model_data_file.write((char*)&b.second, size);
-				}
-			}
-
-			model_data_file.close();
-
-			doc.save_file(model_filename.c_str());
+			model->save(model_filename);
+			model_filename = Path::reverse(model_filename);
 
 			pugi::xml_document doc_prefab;
 
@@ -319,7 +304,7 @@ namespace flame
 
 				if (src == scene->mRootNode)
 				{
-					if (!bones.empty())
+					if (!model->bones.empty())
 					{
 						auto n_armature = n_components.append_child("item");
 						n_armature.append_attribute("type_hash").set_value("flame::cArmature"_h);
@@ -368,16 +353,15 @@ namespace flame
 			prefab_path.replace_extension(L".prefab");
 			doc_prefab.save_file(prefab_path.c_str());
 
+			delete model;
+
 			for (auto i = 0; i < scene->mNumAnimations; i++)
 			{
 				auto ai_ani = scene->mAnimations[i];
 
 				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
-				for (auto& sh : animation_name)
-				{
-					if (sh == '|')
-						sh = '_';
-				}
+				for (auto& ch : animation_name)
+					if (ch == '|') ch = '_';
 				auto animation_filename = ppath / animation_name;
 
 				pugi::xml_document doc_animation;
@@ -418,6 +402,15 @@ namespace flame
 			}
 #endif
 		}
+
+		struct ModelCreate : Model::Create
+		{
+			ModelPtr operator()() override
+			{
+				return new ModelPrivate;
+			}
+		}Model_create;
+		Model::Create& Model::create = Model_create;
 
 		static ModelPtr standard_cube = nullptr;
 		static ModelPtr standard_sphere = nullptr;
@@ -506,7 +499,7 @@ namespace flame
 				{
 					auto& m = ret->meshes.emplace_back();
 					m.model = ret;
-					for (auto& sp : SUS::split(n_mesh.attribute("material").value()))
+					for (auto& sp : SUS::split(n_mesh.attribute("materials").value(), ';'))
 					{
 						auto material_filename = std::filesystem::path(sp);
 						auto fn = ppath / material_filename;

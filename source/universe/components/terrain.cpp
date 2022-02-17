@@ -156,7 +156,6 @@ namespace flame
 		}
 
 		/*
-
 		if (!material_name.empty())
 		{
 			auto fn = std::filesystem::path(material_name);
@@ -197,12 +196,12 @@ namespace flame
 		instance_id = -1;
 	}
 
-	struct cTerrainCreatePrivate : cTerrain::Create
+	struct cTerrainCreate : cTerrain::Create
 	{
 		cTerrainPtr operator()(EntityPtr e) override
 		{
 			return new cTerrainPrivate();
 		}
-	}cTerrain_create_private;
-	cTerrain::Create& cTerrain::create = cTerrain_create_private;
+	}cTerrain_create;
+	cTerrain::Create& cTerrain::create = cTerrain_create;
 }
