@@ -21,7 +21,7 @@ namespace flame
 		virtual void set_blocks(const uvec2& blocks) = 0;
 
 		/// Reflect
-		uint tess_level = 32.f;
+		uint tess_level = 8.f;
 		/// Reflect
 		virtual void set_tess_level(uint tess_level) = 0;
 

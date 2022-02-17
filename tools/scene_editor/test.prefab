@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<prefab name="Hello">
+<prefab file_id="1b320db34efc44c602960f802255f058" name="Hello">
 	<children>
-		<item name="Entity 0">
+		<item file_id="e80f87094ce83a5b2d05278886c15d6d" name="Entity 0">
 			<components>
 				<item type_hash="920714677" pos="0,-2,-13" eul="-25,0,0" />
 				<item type_hash="1530691652" />
 			</components>
 		</item>
-		<item name="Entity 1" />
-		<item name="Entity 2" />
-		<item name="Entity 3" />
+		<item file_id="bf3cb1f143f4fd33b5de16b48abb3772" name="Entity 1" />
+		<item file_id="81805072410ba4741e709d997c3a4739" name="Entity 2" />
+		<item file_id="d2c5e1fb4e86b71dcd16ba8f01405118" name="Entity 3" />
 	</children>
 </prefab>

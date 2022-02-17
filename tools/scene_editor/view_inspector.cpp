@@ -108,10 +108,25 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 					changed_attribute = &a;
 				}
 				ImGui::SameLine();
-				if (ImGui::Button(".."))
-				{
 
+				#ifdef USE_IM_FILE_DIALOG
+				static const Attribute* dialog_tar = nullptr;
+				if (ImGui::Button(("..##" + ::str(src)).c_str()))
+				{
+					dialog_tar = &a;
+					ifd::FileDialog::Instance().Open("PathAttribute", a.name, "*.*");
 				}
+				if (dialog_tar == &a && ifd::FileDialog::Instance().IsDone("PathAttribute"))
+				{
+					if (ifd::FileDialog::Instance().HasResult())
+					{
+						auto path = ifd::FileDialog::Instance().GetResultFormated();
+						a.set_value(src, &path);
+						changed_attribute = &a;
+					}
+					ifd::FileDialog::Instance().Close();
+				}
+				#endif
 			}
 				break;
 			}

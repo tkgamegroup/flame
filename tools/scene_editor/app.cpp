@@ -67,26 +67,23 @@ void App::init()
 		{
 			if (ImGui::MenuItem("Open Project"))
 			{
-				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("OpenProjectDialog", "Open a project", "");
-				#endif
-				;
+			#ifdef USE_IM_FILE_DIALOG
+				ifd::FileDialog::Instance().Open("OpenProject", "Open a project", "");
+			#endif
 			}
 			if (ImGui::MenuItem("Open Prefab"))
 			{
-				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("OpenPrefabDialog", "Open a prefab", "Prefab file (*.prefab){.prefab}", false, 
+			#ifdef USE_IM_FILE_DIALOG
+				ifd::FileDialog::Instance().Open("OpenPrefab", "Open a prefab", "Prefab file (*.prefab){.prefab}", false, 
 					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
-				#endif
-				;
+			#endif
 			}
 			if (ImGui::MenuItem("New Prefab"))
 			{
-				#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Save("NewPrefabDialog", "New prefab", "Prefab file (*.prefab){.prefab}",
+			#ifdef USE_IM_FILE_DIALOG
+				ifd::FileDialog::Instance().Save("NewPrefab", "New prefab", "Prefab file (*.prefab){.prefab}",
 					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
-				#endif
-				;
+			#endif
 			}
 			if (ImGui::MenuItem("Save Prefab"))
 			{
@@ -130,19 +127,19 @@ void App::init()
 		ImGui::EndMainMenuBar();
 
 #ifdef USE_IM_FILE_DIALOG
-		if (ifd::FileDialog::Instance().IsDone("OpenProjectDialog"))
+		if (ifd::FileDialog::Instance().IsDone("OpenProject"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 				app.open_project(ifd::FileDialog::Instance().GetResultFormated());
 			ifd::FileDialog::Instance().Close();
 		}
-		if (ifd::FileDialog::Instance().IsDone("OpenPrefabDialog"))
+		if (ifd::FileDialog::Instance().IsDone("OpenPrefab"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 				open_prefab(ifd::FileDialog::Instance().GetResultFormated());
 			ifd::FileDialog::Instance().Close();
 		}
-		if (ifd::FileDialog::Instance().IsDone("NewPrefabDialog"))
+		if (ifd::FileDialog::Instance().IsDone("NewPrefab"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
