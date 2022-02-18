@@ -31,6 +31,8 @@ namespace flame
 
 		// you must call draw in a node's drawer
 
+		virtual void draw_lines(const vec3* points, uint count, const cvec4& color) = 0;
+
 		virtual void draw_mesh(uint instance_id, uint mesh_id, uint skin) = 0;
 		virtual void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) = 0;
 		virtual void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) = 0;

@@ -70,6 +70,9 @@ namespace flame
 			pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
 				{ "rp=" + str(rp_col) });
 
+			pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
+				{ "rp=" + str(rp_col) });
+
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_fwd),
 				  "frag:CAMERA_LIGHT" });

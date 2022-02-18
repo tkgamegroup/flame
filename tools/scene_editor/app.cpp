@@ -4,6 +4,7 @@
 #include "view_project.h"
 
 #include <flame/foundation/system.h>
+#include <flame/universe/components/node.h>
 
 std::list<View*> views;
 
@@ -47,6 +48,16 @@ void View::draw()
 }
 
 App app;
+
+struct NavMeshTest
+{
+	inline static auto name = "NavMesh Test";
+	inline static auto hash = sh(name);
+
+	bool open = false;
+
+
+}nav_mesh_test;
 
 void App::init()
 {
@@ -103,6 +114,22 @@ void App::init()
 			ImGui::Separator();
 			if (ImGui::MenuItem("Generate NavMesh"))
 				sScene::instance()->generate_navmesh(L"");
+			if (ImGui::MenuItem(NavMeshTest::name))
+			{
+				auto node = e_editor->get_component_i<cNode>(0);
+				if (nav_mesh_test.open)
+					node->drawers.remove(NavMeshTest::hash);
+				else
+				{
+					node->drawers.add([&](sNodeRendererPtr renderer, bool shadow_pass) {
+						if (!shadow_pass)
+						{
+
+						}
+					}, NavMeshTest::hash);
+				}
+				nav_mesh_test.open = !nav_mesh_test.open;
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -151,6 +178,12 @@ void App::init()
 			ifd::FileDialog::Instance().Close();
 		}
 #endif
+		if (nav_mesh_test.open)
+		{
+			ImGui::Begin(NavMeshTest::name);
+			ImGui::Button("Calc Path");
+			ImGui::End();
+		}
 
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->WorkPos);

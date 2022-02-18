@@ -20,6 +20,13 @@ namespace flame
 		std::vector<uint> mat_ids;
 	};
 
+	struct DrawLines
+	{
+		uint offset;
+		uint count;
+		cvec4 color;
+	};
+
 	struct DrawMesh
 	{
 		cNodePtr node;
@@ -62,6 +69,9 @@ namespace flame
 
 		graphics::GraphicsPipelinePtr													pl_blit;
 		graphics::GraphicsPipelinePtr													pl_add;
+
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
+		graphics::GraphicsPipelinePtr													pl_line3d;
 
 		std::unique_ptr<graphics::Image>												img_dep;
 		std::vector<std::unique_ptr<graphics::Framebuffer>>								fbs_fwd;
@@ -126,6 +136,8 @@ namespace flame
 
 		int register_terrain_instance(int id) override;
 		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) override;
+
+		void draw_lines(const vec3* points, uint count, const cvec4& color) override;
 
 		void draw_mesh(uint instance_id, uint mesh_id, uint skin) override;
 		void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) override;
