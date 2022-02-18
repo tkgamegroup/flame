@@ -1,4 +1,5 @@
 add_subdirectory(imgui)
+add_subdirectory(recastnav)
 add_subdirectory(foundation)
 add_subdirectory(typeinfogen)
 add_subdirectory(graphics)

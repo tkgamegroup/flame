@@ -230,6 +230,20 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 	print("====\n")
 			
+	print("== library recastnavigation ==")
+	ok = True
+	address = "https://github.com/recastnavigation/recastnavigation.git"
+	lib_dir = parent_directory / "recastnavigation"
+	if op == 2:
+		print("Download recastnavigation from %s into %s ? y/n" % (address, str(lib_dir)))
+		ok = input() == "y"
+	if ok:
+		if not lib_dir.exists():
+			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
+			
 	print("== library imgui ==")
 	ok = True
 	address = "https://github.com/ocornut/imgui.git"

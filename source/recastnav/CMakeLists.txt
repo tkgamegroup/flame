@@ -1,0 +1,23 @@
+if (USE_RECASTNAV)
+	file(GLOB source_files "${RECASTNAV_DIR}/Detour/Include/*.h" "${RECASTNAV_DIR}/Detour/Source/*.cpp")
+	add_library(detour ${source_files})
+	set_target_properties(detour PROPERTIES FOLDER "flame")
+	target_include_directories(detour PUBLIC "${RECASTNAV_DIR}/Detour/Include")
+
+	file(GLOB source_files "${RECASTNAV_DIR}/DetourCrowd/Include/*.h" "${RECASTNAV_DIR}/DetourCrowd/Source/*.cpp")
+	add_library(detour_crowd ${source_files})
+	set_target_properties(detour_crowd PROPERTIES FOLDER "flame")
+	target_include_directories(detour_crowd PUBLIC "${RECASTNAV_DIR}/DetourCrowd/Include")
+	target_link_libraries(detour_crowd PUBLIC detour)
+
+	file(GLOB source_files "${RECASTNAV_DIR}/DetourTileCache/Include/*.h" "${RECASTNAV_DIR}/DetourTileCache/Source/*.cpp")
+	add_library(detour_tile_cache ${source_files})
+	set_target_properties(detour_tile_cache PROPERTIES FOLDER "flame")
+	target_include_directories(detour_tile_cache PUBLIC "${RECASTNAV_DIR}/DetourTileCache/Include")
+	target_link_libraries(detour_tile_cache PUBLIC detour)
+
+	file(GLOB source_files "${RECASTNAV_DIR}/Recast/Include/*.h" "${RECASTNAV_DIR}/Recast/Source/*.cpp")
+	add_library(recast ${source_files})
+	set_target_properties(recast PROPERTIES FOLDER "flame")
+	target_include_directories(recast PUBLIC "${RECASTNAV_DIR}/Recast/Include")
+endif()

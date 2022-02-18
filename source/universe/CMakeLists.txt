@@ -12,6 +12,13 @@ if (USE_PHYSICS_MODULE)
 	target_compile_definitions(flame_universe PUBLIC USE_PHYSICS_MODULE)
 	target_link_libraries(flame_universe flame_physics)
 endif()
+if (USE_RECASTNAV)
+	target_compile_definitions(flame_universe PUBLIC USE_RECASTNAV)
+	target_link_libraries(flame_universe detour)
+	target_link_libraries(flame_universe detour_crowd)
+	target_link_libraries(flame_universe detour_tile_cache)
+	target_link_libraries(flame_universe recast)
+endif()
 
 add_typeinfo_support(flame_universe "enum starts_with flame::")
 

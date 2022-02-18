@@ -29,6 +29,8 @@ An ECS 3D-Game-Engine.
 
 - PhysX https://github.com/NVIDIAGameWorks/PhysX
 
+- recastnavigation https://github.com/recastnavigation/recastnavigation
+
 - imgui https://github.com/ocornut/imgui
 
 - ImFileDialog https://github.com/dfranx/ImFileDialog
