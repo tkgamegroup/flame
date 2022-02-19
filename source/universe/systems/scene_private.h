@@ -36,6 +36,8 @@ namespace flame
 		void update_transform(EntityPtr e, bool mark_dirty);
 
 		void generate_navmesh(const std::filesystem::path& output) override;
+		std::vector<vec3> navmesh_calc_path(const vec3& start, const vec3& end) override;
+
 		void update() override;
 	};
 }

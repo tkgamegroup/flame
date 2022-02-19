@@ -154,8 +154,16 @@ namespace flame
 
 	void cNodePrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
 	{
-		for (auto& d : drawers.list)
-			d.first(renderer, shadow_pass);
+		if (shadow_pass)
+		{
+			for (auto& d : shadow_drawers.list)
+				d.first(renderer);
+		}
+		else
+		{
+			for (auto& d : drawers.list)
+				d.first(renderer);
+		}
 	}
 
 	void cNodePrivate::on_active()

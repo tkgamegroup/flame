@@ -88,7 +88,7 @@ void View_Scene::on_draw()
 				auto editor_node = app.e_editor->get_component_i<cNode>(0);
 				if (!editor_node->drawers.exist("scene"_h))
 				{
-					editor_node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+					editor_node->drawers.add([this](sNodeRendererPtr renderer) {
 						auto outline_node = [&](EntityPtr e, const cvec4& col) {
 							if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_id != -1)
 								renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_id, col);
@@ -186,7 +186,7 @@ void View_Scene::on_draw()
 
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 					{
-						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0);
+						hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
 						if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 						{
 							if (hovering_node)
@@ -194,6 +194,8 @@ void View_Scene::on_draw()
 							else
 								selection.clear();
 						}
+						if (hovering_node)
+							ImGui::GetWindowDrawList()->AddText(p0, ImColor(1.f, 1.f, 1.f), str(hovering_pos).c_str());
 					}
 				}
 			}

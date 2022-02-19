@@ -20,7 +20,12 @@ namespace flame
 		float zFar = 1000.f;
 
 		mat4 view_mat;
+		mat4 view_mat_inv;
 		mat4 proj_mat;
+		mat4 proj_mat_inv;
+		mat4 proj_view_mat;
+		mat4 proj_view_mat_inv;
+		Frustum frustum;
 
 		virtual void update() = 0;
 

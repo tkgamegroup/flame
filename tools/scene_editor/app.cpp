@@ -56,8 +56,10 @@ struct NavMeshTest
 
 	bool open = false;
 
-
-}nav_mesh_test;
+	vec3 start = vec3(0.f);
+	vec3 end = vec3(0.f);
+	std::vector<vec3> points;
+}navmesh_test;
 
 void App::init()
 {
@@ -117,18 +119,32 @@ void App::init()
 			if (ImGui::MenuItem(NavMeshTest::name))
 			{
 				auto node = e_editor->get_component_i<cNode>(0);
-				if (nav_mesh_test.open)
+				if (navmesh_test.open)
 					node->drawers.remove(NavMeshTest::hash);
 				else
 				{
-					node->drawers.add([&](sNodeRendererPtr renderer, bool shadow_pass) {
-						if (!shadow_pass)
+					node->drawers.add([&](sNodeRendererPtr renderer) {
 						{
-
+							std::vector<vec3> points;
+							points.push_back(navmesh_test.start - vec3(1, 0, 0));
+							points.push_back(navmesh_test.start + vec3(1, 0, 0));
+							points.push_back(navmesh_test.start - vec3(0, 0, 1));
+							points.push_back(navmesh_test.start + vec3(0, 0, 1));
+							renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
 						}
+						{
+							std::vector<vec3> points;
+							points.push_back(navmesh_test.end - vec3(1, 0, 0));
+							points.push_back(navmesh_test.end + vec3(1, 0, 0));
+							points.push_back(navmesh_test.end - vec3(0, 0, 1));
+							points.push_back(navmesh_test.end + vec3(0, 0, 1));
+							renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
+						}
+						if (!navmesh_test.points.empty())
+							renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
 					}, NavMeshTest::hash);
 				}
-				nav_mesh_test.open = !nav_mesh_test.open;
+				navmesh_test.open = !navmesh_test.open;
 			}
 			ImGui::EndMenu();
 		}
@@ -178,10 +194,24 @@ void App::init()
 			ifd::FileDialog::Instance().Close();
 		}
 #endif
-		if (nav_mesh_test.open)
+		if (navmesh_test.open)
 		{
 			ImGui::Begin(NavMeshTest::name);
-			ImGui::Button("Calc Path");
+			static int v = 0;
+			ImGui::TextUnformatted("use ctrl+click to set start/end");
+			ImGui::RadioButton("Start", &v, 0);
+			ImGui::TextUnformatted(("    " + str(navmesh_test.start)).c_str());
+			ImGui::RadioButton("End", &v, 1);
+			ImGui::TextUnformatted(("    " + str(navmesh_test.end)).c_str());
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
+			{
+				if (v == 0)
+					navmesh_test.start = view_scene.hovering_pos + vec3(0.f, 0.01f, 0.f);
+				else
+					navmesh_test.end = view_scene.hovering_pos + vec3(0.f, 0.01f, 0.f);
+				if (distance(navmesh_test.start, navmesh_test.end) > 0.f)
+					navmesh_test.points = sScene::instance()->navmesh_calc_path(navmesh_test.start, navmesh_test.end);
+			}
 			ImGui::End();
 		}
 

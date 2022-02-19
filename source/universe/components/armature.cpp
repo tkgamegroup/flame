@@ -31,7 +31,7 @@ namespace flame
 
 	void cArmaturePrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
+		node->drawers.add([this](sNodeRendererPtr renderer) {
 			draw(renderer);
 		}, "armature"_h);
 

@@ -17,8 +17,8 @@ namespace flame
 
 	void cTerrainPrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-			draw(renderer, shadow_pass);
+		node->drawers.add([this](sNodeRendererPtr renderer) {
+			draw(renderer);
 		}, "mesh"_h);
 
 		node->measurers.add([this](AABB* ret) {
@@ -169,7 +169,7 @@ namespace flame
 		*/
 	}
 
-	void cTerrainPrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
+	void cTerrainPrivate::draw(sNodeRendererPtr renderer)
 	{
 		if (instance_id == -1 || !textures)
 			return;
@@ -179,8 +179,8 @@ namespace flame
 			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, textures->get_view({ 0, 1, 0, 3 }));
 			frame = frames;
 		}
-		if (!shadow_pass)
-			renderer->draw_terrain(instance_id, blocks.x * blocks.y, 0);
+
+		renderer->draw_terrain(instance_id, blocks.x * blocks.y, 0);
 	}
 
 	void cTerrainPrivate::on_active()

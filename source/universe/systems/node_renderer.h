@@ -31,7 +31,7 @@ namespace flame
 
 		// you must call draw in a node's drawer
 
-		virtual void draw_lines(const vec3* points, uint count, const cvec4& color) = 0;
+		virtual void draw_line(const vec3* points, uint count, const cvec4& color) = 0;
 
 		virtual void draw_mesh(uint instance_id, uint mesh_id, uint skin) = 0;
 		virtual void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) = 0;
@@ -41,7 +41,7 @@ namespace flame
 		virtual void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) = 0;
 		virtual void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) = 0;
 
-		virtual cNodePtr pick_up(const uvec2& pos) = 0;
+		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr) = 0;
 
 		struct Instance
 		{

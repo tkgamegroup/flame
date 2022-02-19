@@ -70,9 +70,15 @@ namespace flame
 			pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
 				{ "rp=" + str(rp_col) });
 
+			prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
 			pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
 				{ "rp=" + str(rp_col) });
 
+			buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
+
+			prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
+			prm_fwd.set_ds("scene"_h, ds_scene.get());
+			prm_fwd.set_ds("instance"_h, ds_instance.get());
 			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 				{ "rp=" + str(rp_fwd),
 				  "frag:CAMERA_LIGHT" });
@@ -88,9 +94,6 @@ namespace flame
 			buf_idx.create(sizeof(uint), 1024 * 256 * 6);
 			buf_vtx_arm.create(pl_mesh_arm_fwd->vi_ui(), 1024 * 128 * 4);
 			buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
-			prm_fwd.init(pl_mesh_fwd->layout);
-			prm_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_fwd.set_ds("instance"_h, ds_instance.get());
 			buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
 			buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
 
@@ -150,7 +153,7 @@ namespace flame
 		img_back1.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 
 		img_pickup.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment));
+		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 	}
 
@@ -438,6 +441,22 @@ namespace flame
 		ds_instance->update();
 	}
 
+	void sNodeRendererPrivate::draw_line(const vec3* points, uint count, const cvec4& color)
+	{
+		DrawLine d;
+		d.node = current_node;
+		d.offset = buf_lines.item_offset();
+		d.count = count;
+		d.color = color;
+		draw_lines.push_back(d);
+
+		for (auto i = 0; i < count; i++)
+		{
+			buf_lines.set_var<"i_pos"_h>(points[i]);
+			buf_lines.next_item();
+		}
+	}
+
 	void sNodeRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint skin)
 	{
 		DrawMesh d;
@@ -551,13 +570,11 @@ namespace flame
 
 		camera->aspect = sz.x / sz.y;
 		camera->update();
-		auto view_inv = inverse(camera->view_mat);
-		auto proj_inv = inverse(camera->proj_mat);
-		auto frustum = Frustum(view_inv * proj_inv);
 
 		std::vector<cNodePtr> nodes;
-		sScene::instance()->octree->get_within_frustum(frustum, nodes);
+		sScene::instance()->octree->get_within_frustum(camera->frustum, nodes);
 		current_node = nullptr;
+		draw_lines.clear();
 		draw_meshes.clear();
 		draw_arm_meshes.clear();
 		draw_occluder_meshes.clear();
@@ -582,11 +599,11 @@ namespace flame
 		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
 
 		buf_scene.set_var<"view"_h>(camera->view_mat);
-		buf_scene.set_var<"view_inv"_h>(view_inv);
+		buf_scene.set_var<"view_inv"_h>(camera->view_mat_inv);
 		buf_scene.set_var<"proj"_h>(camera->proj_mat);
-		buf_scene.set_var<"proj_inv"_h>(proj_inv);
-		buf_scene.set_var<"proj_view"_h>(camera->proj_mat * camera->view_mat);
-		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), frustum.planes, sizeof(vec4) * 6);
+		buf_scene.set_var<"proj_inv"_h>(camera->proj_mat_inv);
+		buf_scene.set_var<"proj_view"_h>(camera->proj_view_mat);
+		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
 		
 		buf_scene.upload(cb);
 
@@ -601,6 +618,7 @@ namespace flame
 			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.instance_id << 8) + 0/* mat id */);
 		}
 
+		buf_lines.upload(cb);
 		buf_mesh_ins.upload(cb);
 		buf_armature_ins.upload(cb);
 		buf_terrain_ins.upload(cb);
@@ -756,6 +774,24 @@ namespace flame
 			cb->end_renderpass();
 		}
 
+		if (!draw_lines.empty())
+		{
+			cb->set_viewport(Rect(vec2(0), sz));
+			cb->set_scissor(Rect(vec2(0), sz));
+
+			cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			cb->bind_vertex_buffer(buf_lines.buf.get(), 0);
+			cb->bind_pipeline(pl_line3d);
+			prm_plain3d.set_pc_var<"mvp"_h>(camera->proj_view_mat);
+			for (auto& d : draw_lines)
+			{
+				prm_plain3d.set_pc_var<"col"_h>(vec4(d.color) / 255.f);
+				prm_plain3d.push_constant(cb);
+				cb->draw(d.count, 1, d.offset, 0);
+			}
+			cb->end_renderpass();
+		}
+
 		cb->image_barrier(img, iv->sub, dst_layout);
 	}
 
@@ -763,15 +799,15 @@ namespace flame
 	{
 	}
 
-	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& pos)
+	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
 	{
-		{
-			auto sz = vec2(img_pickup->size);
+		auto sz = vec2(img_pickup->size);
 
+		{
 			graphics::InstanceCB cb(nullptr, fence_pickup.get());
 
 			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(pos), vec2(pos + 1U)));
+			cb->set_scissor(Rect(vec2(screen_pos), vec2(screen_pos + 1U)));
 
 			cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
 				vec4(1.f, 0.f, 0.f, 0.f) });
@@ -825,18 +861,36 @@ namespace flame
 		}
 
 		{
-			int index;
-			graphics::StagingBuffer sb(nullptr, sizeof(index), nullptr, graphics::BufferUsageTransferDst);
+			int index; ushort depth;
+			graphics::StagingBuffer sb(nullptr, sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
 			{
 				graphics::InstanceCB cb(nullptr);
 				graphics::BufferImageCopy cpy;
-				cpy.img_off = pos;
+				cpy.img_off = screen_pos;
 				cpy.img_ext = uvec2(1U);
 				cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
 				cb->copy_image_to_buffer(img_pickup.get(), sb.get(), { &cpy, 1 });
 				cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
+				if (out_pos)
+				{
+					cpy.buf_off = sizeof(uint);
+					cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
+					cb->copy_image_to_buffer(img_dep_pickup.get(), sb.get(), { &cpy, 1 });
+					cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
+				}
 			}
 			memcpy(&index, sb->mapped, sizeof(index));
+			if (out_pos)
+			{
+				memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
+				auto depth_f = depth / 65535.f;
+				auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
+				auto camera = cCamera::main();
+				p = camera->proj_mat_inv * p;
+				p /= p.w;
+				p = camera->view_mat_inv * p;
+				*out_pos = p;
+			}
 			index -= 1;
 			if (index == -1)
 				return nullptr;

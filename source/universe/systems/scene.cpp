@@ -270,9 +270,9 @@ namespace flame
 			unsigned char* navData = 0;
 			int navDataSize = 0;
 
-			// Update poly flags from areas. TODO
-			//for (int i = 0; i < rc_poly_mesh->npolys; ++i)
-			//{
+			for (int i = 0; i < rc_poly_mesh->npolys; ++i)
+			{
+				rc_poly_mesh->flags[i] = 1;
 			//	if (rc_poly_mesh->areas[i] == RC_WALKABLE_AREA)
 			//		rc_poly_mesh->areas[i] = POLYAREA_GROUND;
 
@@ -290,7 +290,7 @@ namespace flame
 			//	{
 			//		rc_poly_mesh->flags[i] = POLYFLAGS_WALK | POLYFLAGS_DOOR;
 			//	}
-			//}
+			}
 
 			dtNavMeshCreateParams params;
 			memset(&params, 0, sizeof(params));
@@ -346,6 +346,251 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	inline bool in_range(const vec3& v1, const vec3& v2, const float r, const float h)
+	{
+		auto d = v2 - v1;
+		return (d.x * d.x + d.z * d.z) < r * r && fabsf(d.y) < h;
+	}
+
+	static int fixup_corridor(dtPolyRef* path, int npath, int max_path,
+		const dtPolyRef* visited, int nvisited)
+	{
+		auto furthest_path = -1;
+		auto furthest_visited = -1;
+
+		for (auto i = npath - 1; i >= 0; --i)
+		{
+			auto found = false;
+			for (auto j = nvisited - 1; j >= 0; --j)
+			{
+				if (path[i] == visited[j])
+				{
+					furthest_path = i;
+					furthest_visited = j;
+					found = true;
+				}
+			}
+			if (found)
+				break;
+		}
+
+		if (furthest_path == -1 || furthest_visited == -1)
+			return npath;
+
+		auto req = nvisited - furthest_visited;
+		auto orig = rcMin(furthest_path + 1, npath);
+		auto size = rcMax(0, npath - orig);
+		if (req + size > max_path)
+			size = max_path - req;
+		if (size)
+			memmove(path + req, path + orig, size * sizeof(dtPolyRef));
+
+		for (auto i = 0; i < req; ++i)
+			path[i] = visited[(nvisited - 1) - i];
+
+		return req + size;
+	}
+
+	static int fixup_shortcuts(dtPolyRef* path, int npath, dtNavMesh* nav_mesh)
+	{
+		if (npath < 3)
+			return npath;
+
+		const auto MaxNeis = 16;
+		dtPolyRef neis[MaxNeis];
+		auto nneis = 0;
+
+		const dtMeshTile* tile = 0;
+		const dtPoly* poly = 0;
+		if (dtStatusFailed(nav_mesh->getTileAndPolyByRef(path[0], &tile, &poly)))
+			return npath;
+
+		for (auto k = poly->firstLink; k != DT_NULL_LINK; k = tile->links[k].next)
+		{
+			const dtLink* link = &tile->links[k];
+			if (link->ref != 0)
+			{
+				if (nneis < MaxNeis)
+					neis[nneis++] = link->ref;
+			}
+		}
+
+		const auto MaxLookAhead = 6;
+		auto cut = 0;
+		for (auto i = min(MaxLookAhead, npath) - 1; i > 1 && cut == 0; i--) {
+			for (auto j = 0; j < nneis; j++)
+			{
+				if (path[i] == neis[j]) {
+					cut = i;
+					break;
+				}
+			}
+		}
+		if (cut > 1)
+		{
+			auto offset = cut - 1;
+			npath -= offset;
+			for (auto i = 1; i < npath; i++)
+				path[i] = path[i + offset];
+		}
+
+		return npath;
+	}
+
+	static bool get_steer_target(dtNavMeshQuery* nav_query, const vec3& start_pos, const vec3& end_pos,
+		float min_target_dist, const dtPolyRef* path, int path_size,
+		vec3& steer_pos, uchar& steer_pos_flag, dtPolyRef& steer_pos_ref, std::vector<vec3>* out_points = nullptr)
+	{
+		const auto MAX_STEER_POINTS = 3;
+		vec3 steer_path[MAX_STEER_POINTS];
+		uchar steer_path_flags[MAX_STEER_POINTS];
+		dtPolyRef steer_path_polys[MAX_STEER_POINTS];
+		int n_steer_ath = 0;
+		nav_query->findStraightPath(&start_pos[0], &end_pos[0], path, path_size, 
+			&steer_path[0][0], steer_path_flags, steer_path_polys, &n_steer_ath, MAX_STEER_POINTS);
+		if (!n_steer_ath)
+			return false;
+
+		if (out_points)
+		{
+			out_points->resize(n_steer_ath);
+			for (int i = 0; i < n_steer_ath; ++i)
+				(*out_points)[i] = steer_path[i];
+		}
+
+		int ns = 0;
+		while (ns < n_steer_ath)
+		{
+			// Stop at Off-Mesh link or when point is further than slop away.
+			if ((steer_path_flags[ns] & DT_STRAIGHTPATH_OFFMESH_CONNECTION) ||
+				!in_range(steer_path[ns], start_pos, min_target_dist, 1000.0f))
+				break;
+			ns++;
+		}
+		if (ns >= n_steer_ath)
+			return false;
+
+		steer_pos = steer_path[ns];
+		steer_pos.y = start_pos.y;
+		steer_pos_flag = steer_path_flags[ns];
+		steer_pos_ref = steer_path_polys[ns];
+
+		return true;
+	}
+
+	std::vector<vec3> sScenePrivate::navmesh_calc_path(const vec3& start, const vec3& end)
+	{
+		std::vector<vec3> ret;
+
+		dtQueryFilter filter;
+
+		dtPolyRef start_ref = 0;
+		dtPolyRef end_ref = 0;
+
+		auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
+		dt_nav_query->findNearestPoly(&start[0], &poly_pick_ext[0], &filter, &start_ref, nullptr);
+		dt_nav_query->findNearestPoly(&end[0], &poly_pick_ext[0], &filter, &end_ref, nullptr);
+		if (!start_ref || !end_ref)
+			return ret;
+
+		const auto MaxPolys = 256;
+		dtPolyRef polys[MaxPolys];
+		int n_polys = 0;
+		dt_nav_query->findPath(start_ref, end_ref, &start[0], &end[0], &filter, polys, &n_polys, MaxPolys);
+		if (!n_polys)
+			return ret;
+
+		vec3 iter_pos, target_pos;
+		dt_nav_query->closestPointOnPoly(start_ref, &start[0], &iter_pos[0], 0);
+		dt_nav_query->closestPointOnPoly(polys[n_polys - 1], &end[0], &target_pos[0], 0);
+
+		const auto StepSize = 0.5f;
+		const auto Slop = 0.01f;
+
+		ret.push_back(iter_pos);
+
+		const auto MaxSmooth = 2048;
+		while (n_polys && ret.size() < MaxSmooth)
+		{
+			vec3 steer_pos;
+			uchar steer_pos_flag;
+			dtPolyRef steer_pos_ref;
+
+			if (!get_steer_target(dt_nav_query, iter_pos, target_pos, Slop,
+				polys, n_polys, steer_pos, steer_pos_flag, steer_pos_ref))
+				break;
+
+			bool end_of_path = (steer_pos_flag & DT_STRAIGHTPATH_END) ? true : false;
+			bool off_mesh_connection = (steer_pos_flag & DT_STRAIGHTPATH_OFFMESH_CONNECTION) ? true : false;
+
+			auto delta = steer_pos - iter_pos;
+			auto len = sqrtf(dot(delta, delta));
+			if ((end_of_path || off_mesh_connection) && len < StepSize)
+				len = 1;
+			else
+				len = StepSize / len;
+			auto moveTgt = iter_pos + delta * len;
+
+			vec3 result;
+			dtPolyRef visited[16];
+			int nvisited = 0;
+			dt_nav_query->moveAlongSurface(polys[0], &iter_pos[0], &moveTgt[0], &filter,
+				&result[0], visited, &nvisited, 16);
+
+			n_polys = fixup_corridor(polys, n_polys, MaxPolys, visited, nvisited);
+			n_polys = fixup_shortcuts(polys, n_polys, dt_nav_mesh);
+
+			float h = 0;
+			dt_nav_query->getPolyHeight(polys[0], &result[0], &h);
+			result[1] = h;
+			iter_pos = result;
+
+			if (end_of_path && in_range(iter_pos, steer_pos, Slop, 1.0f))
+			{
+				iter_pos = target_pos;
+				if (ret.size() < MaxSmooth)
+					ret.push_back(iter_pos);
+				break;
+			}
+			else if (off_mesh_connection && in_range(iter_pos, steer_pos, Slop, 1.0f))
+			{
+				vec3 startPos, endPos;
+
+				dtPolyRef prevRef = 0, polyRef = polys[0];
+				int npos = 0;
+				while (npos < n_polys && polyRef != steer_pos_ref)
+				{
+					prevRef = polyRef;
+					polyRef = polys[npos];
+					npos++;
+				}
+				for (int i = npos; i < n_polys; ++i)
+					polys[i - npos] = polys[i];
+				n_polys -= npos;
+
+				auto status = dt_nav_mesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, &startPos[0], &endPos[0]);
+				if (dtStatusSucceed(status))
+				{
+					if (ret.size() < MaxSmooth)
+					{
+						ret.push_back(startPos);
+						if (ret.size() % 2 == 1)
+							ret.push_back(startPos);
+					}
+					iter_pos = endPos;
+					float eh = 0.0f;
+					dt_nav_query->getPolyHeight(polys[0], &iter_pos[0], &eh);
+					iter_pos[1] = eh;
+				}
+			}
+
+			if (ret.size() < MaxSmooth)
+				ret.push_back(iter_pos);
+		}
+
+		return ret;
 	}
 
 	void sScenePrivate::update()

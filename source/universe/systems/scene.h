@@ -10,6 +10,7 @@ namespace flame
 		OctNode* octree = nullptr;
 
 		virtual void generate_navmesh(const std::filesystem::path& output) = 0;
+		virtual std::vector<vec3> navmesh_calc_path(const vec3& start, const vec3& end) = 0;
 
 		struct Instance
 		{

@@ -8,6 +8,7 @@ struct View_Scene : View
 
 	float camera_zoom = 5.f;
 	cNodePtr hovering_node = nullptr;
+	vec3 hovering_pos;
 
 	View_Scene();
 

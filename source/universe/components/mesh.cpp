@@ -12,13 +12,17 @@ namespace flame
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
+		node->shadow_drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
 	}
 
 	void cMeshPrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer, bool shadow_pass) {
-			draw(renderer, shadow_pass);
+		node->drawers.add([this](sNodeRendererPtr renderer) {
+			draw(renderer, false);
+		}, "mesh"_h);
+		node->shadow_drawers.add([this](sNodeRendererPtr renderer) {
+			draw(renderer, true);
 		}, "mesh"_h);
 
 		node->measurers.add([this](AABB* ret) {
@@ -111,6 +115,7 @@ namespace flame
 			renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
 			frame = frames;
 		}
+
 		if (shadow_pass)
 		{
 			if (cast_shadow)
