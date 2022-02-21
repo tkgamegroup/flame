@@ -64,6 +64,7 @@ struct NavMeshTest
 void App::init()
 {
 	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	app.world->update_components = false;
 	app.always_render = false;
 
 	auto root = app.world->root.get();

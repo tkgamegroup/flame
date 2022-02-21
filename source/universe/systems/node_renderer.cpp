@@ -554,19 +554,15 @@ namespace flame
 		return gauss_blur_weights[radius];
 	}
 
-	void sNodeRendererPrivate::render(uint img_idx, graphics::CommandBufferPtr cb)
+	void sNodeRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
-		if (!initialized)
+		if (!initialized || !camera)
 			return;
 
-		img_idx = min(max(0, (int)fbs_fwd.size() - 1), (int)img_idx);
-		auto iv = iv_tars[img_idx];
+		tar_idx = min(max(0, (int)iv_tars.size() - 1), (int)tar_idx);
+		auto iv = iv_tars[tar_idx];
 		auto img = iv->image;
 		auto sz = vec2(img->size);
-
-		auto camera = cCamera::main();
-		if (!camera)
-			return;
 
 		camera->aspect = sz.x / sz.y;
 		camera->update();
@@ -628,7 +624,7 @@ namespace flame
 		cb->set_viewport(Rect(vec2(0), sz));
 		cb->set_scissor(Rect(vec2(0), sz));
 
-		cb->begin_renderpass(nullptr, fbs_fwd[img_idx].get(), 
+		cb->begin_renderpass(nullptr, fbs_fwd[tar_idx].get(), 
 			{ vec4(0.f, 0.f, 0.f, 1.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
@@ -801,6 +797,9 @@ namespace flame
 
 	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
 	{
+		if (!initialized || !camera)
+			return;
+
 		auto sz = vec2(img_pickup->size);
 
 		{
@@ -885,7 +884,6 @@ namespace flame
 				memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
 				auto depth_f = depth / 65535.f;
 				auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
-				auto camera = cCamera::main();
 				p = camera->proj_mat_inv * p;
 				p /= p.w;
 				p = camera->view_mat_inv * p;

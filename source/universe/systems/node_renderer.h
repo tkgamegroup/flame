@@ -7,6 +7,8 @@ namespace flame
 	/// Reflect
 	struct sNodeRenderer : System
 	{
+		cCameraPtr camera = nullptr;
+
 		bool dirty = false;
 
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout dst_layout = graphics::ImageLayoutPresent) = 0;
@@ -40,6 +42,7 @@ namespace flame
 		virtual void draw_terrain(uint instance_id, uint blocks, uint material_id) = 0;
 		virtual void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) = 0;
 		virtual void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) = 0;
+		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr) = 0;
 

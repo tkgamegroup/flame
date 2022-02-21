@@ -6,6 +6,9 @@ namespace flame
 {
 	struct World
 	{
+		bool update_components = true;
+		bool update_systems = true;
+
 		virtual ~World() {}
 
 		std::unordered_map<uint, System*> system_map;

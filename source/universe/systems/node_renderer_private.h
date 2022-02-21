@@ -149,7 +149,7 @@ namespace flame
 		void draw_terrain(uint instance_id, uint blocks, uint material_id) override;
 		void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) override;
 		void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) override;
-		void render(uint img_idx, graphics::CommandBufferPtr cb);
+		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 
 		void update() override;
 

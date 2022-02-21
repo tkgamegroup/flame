@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	std::vector<cCameraPtr> cameras;
+
 	void cCameraPrivate::update()
 	{
 		auto node = entity->get_component_i<cNodeT>(0);
@@ -22,44 +24,25 @@ namespace flame
 		frustum = Frustum(proj_view_mat_inv);
 	}
 
-	static cCameraPtr _main = nullptr;
-
 	void cCameraPrivate::on_active()
 	{
-		if (!_main || entity->compare_depth(_main->entity))
-			_main = this;
+		for (auto it = cameras.begin(); it != cameras.end(); it++)
+		{
+			if (entity->compare_depth((*it)->entity))
+			{
+				cameras.insert(it, this);
+				return;
+			}
+		}
+		cameras.push_back(this);
 	}
 
 	void cCameraPrivate::on_inactive()
 	{
-		if (_main == this)
-		{
-			_main = nullptr;
-
-			std::deque<EntityPtr> es;
-			es.push_back(World::instance()->root.get());
-			while (!es.empty())
-			{
-				auto e = es.front();
-				es.pop_front();
-				if (e != entity)
-					_main = e->get_component_t<cCameraT>();
-				if (_main)
-					break;
-				for (auto& c : e->children)
-					es.push_back(c.get());
-			}
-		}
+		std::erase_if(cameras, [&](auto c) {
+			return c == this;
+		});
 	}
-
-	struct cCameraMain : cCamera::Main
-	{
-		cCameraPtr operator()() override
-		{
-			return _main;
-		}
-	}cCamera_main_private;
-	cCamera::Main& cCamera::main = cCamera_main_private;
 
 	struct cCameraCreate : cCamera::Create
 	{
@@ -67,6 +50,15 @@ namespace flame
 		{
 			return new cCameraPrivate;
 		}
-	}cCamera_create_private;
-	cCamera::Create& cCamera::create = cCamera_create_private;
+	}cCamera_create;
+	cCamera::Create& cCamera::create = cCamera_create;
+
+	struct cCameraList : cCamera::List
+	{
+		const std::vector<cCameraPtr>& operator()() override
+		{
+			return cameras;
+		}
+	}cCamera_list;
+	cCamera::List& cCamera::list = cCamera_list;
 }

@@ -29,17 +29,17 @@ namespace flame
 
 		virtual void update() = 0;
 
-		struct Main
-		{
-			virtual cCameraPtr operator()() = 0;
-		};
-		FLAME_UNIVERSE_API static Main& main;
-
 		struct Create
 		{
 			virtual cCameraPtr operator()(EntityPtr e) = 0;
 		};
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
+
+		struct List
+		{
+			virtual const std::vector<cCameraPtr>& operator()() = 0;
+		};
+		FLAME_UNIVERSE_API static List& list;
 	};
 }

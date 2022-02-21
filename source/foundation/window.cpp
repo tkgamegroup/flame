@@ -136,10 +136,15 @@ namespace flame
 		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 
+	static std::vector<NativeWindowPtr> windows;
+
 	NativeWindowPrivate::~NativeWindowPrivate()
 	{
 		for (auto& l : destroy_listeners.list)
 			l.first();
+		std::erase_if(windows, [&](auto w) {
+			return w == this;
+		});
 	}
 
 	void NativeWindowPrivate::close()
@@ -283,10 +288,12 @@ namespace flame
 	}NativeWindow_create;
 	NativeWindow::Create& NativeWindow::create = NativeWindow_create;
 
-	std::vector<NativeWindowPtr> windows;
-
-	const std::vector<NativeWindowPtr>& get_windows()
+	struct NativeWindowList : NativeWindow::List
 	{
-		return windows;
-	}
+		const std::vector<NativeWindowPtr>& operator()() override
+		{
+			return windows;
+		}
+	}NativeWindow_list;
+	NativeWindow::List& NativeWindow::list = NativeWindow_list;
 }

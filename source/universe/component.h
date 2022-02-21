@@ -7,12 +7,11 @@ namespace flame
 	struct Component
 	{
 		uint type_hash = 0;
-
 		EntityPtr entity = nullptr;
-
 		Listeners<void(uint)> data_listeners;
 
 		uint n_strong_ref = 0;
+		uint update_times = 0;
 
 		virtual ~Component() 
 		{
@@ -34,5 +33,8 @@ namespace flame
 		virtual void on_entity_removed() {}
 		virtual void on_child_added(EntityPtr e) {}
 		virtual void on_child_removed(EntityPtr e) {}
+
+		virtual void start() {}
+		virtual void update() {}
 	};
 }

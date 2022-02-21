@@ -83,8 +83,38 @@ namespace flame
 
 	void WorldPrivate::update()
 	{
-		for (auto& s : systems)
-			s->update();
+		if (update_components)
+		{
+			std::deque<EntityPtr> es;
+			es.push_back(root.get());
+			while (!es.empty())
+			{
+				auto e = es.front();
+				es.pop_front();
+				if (e->global_enable)
+				{
+					for (auto& c : e->components)
+					{
+						if (c->update_times == 0)
+							c->start();
+						c->update();
+						c->update_times++;
+					}
+					for (auto& c : e->children)
+						es.push_back(c.get());
+				}
+			}
+		}
+		if (update_systems)
+		{
+			for (auto& s : systems)
+			{
+				if (s->update_times == 0)
+					s->start();
+				s->update();
+				s->update_times++;
+			}
+		}
 	}
 
 	static WorldPtr _instance = nullptr;

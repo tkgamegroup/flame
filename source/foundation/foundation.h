@@ -260,7 +260,7 @@ namespace flame
 		{
 			return std::find_if(list.begin(), list.end(), [&](const auto& i) {
 				return i.second == h;
-				}) != list.end();
+			}) != list.end();
 		}
 	};
 
