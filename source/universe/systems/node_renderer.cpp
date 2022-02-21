@@ -556,8 +556,15 @@ namespace flame
 
 	void sNodeRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
-		if (!initialized || !camera)
+		if (!initialized || camera == INVALID_POINTER)
 			return;
+		if (!camera)
+		{
+			auto& list = cCamera::list();
+			if (list.empty())
+				return;
+			camera = list.front();
+		}
 
 		tar_idx = min(max(0, (int)iv_tars.size() - 1), (int)tar_idx);
 		auto iv = iv_tars[tar_idx];
@@ -797,8 +804,15 @@ namespace flame
 
 	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
 	{
-		if (!initialized || !camera)
-			return;
+		if (!initialized || camera == INVALID_POINTER)
+			return nullptr;
+		if (!camera)
+		{
+			auto& list = cCamera::list();
+			if (list.empty())
+				return nullptr;
+			camera = list.front();
+		}
 
 		auto sz = vec2(img_pickup->size);
 

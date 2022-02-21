@@ -25,6 +25,4 @@ namespace flame
 		void set_title(std::string_view _title) override;
 		void set_cursor(CursorType type) override;
 	};
-
-	extern std::vector<NativeWindowPtr> windows;
 }

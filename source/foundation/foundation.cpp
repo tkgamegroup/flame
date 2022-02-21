@@ -58,6 +58,7 @@ namespace flame
 			}
 		}
 
+		auto windows = NativeWindow::list();
 		if (windows.empty())
 			return 1;
 
