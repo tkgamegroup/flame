@@ -37,6 +37,8 @@ An ECS 3D-Game-Engine.
 
     (should use my forked version: https://github.com/tkgamegroup/ImFileDialog)
 
+- ImGuizmo https://github.com/CedricGuillemet/ImGuizmo
+
 - OpenAL
 
 # Build:
