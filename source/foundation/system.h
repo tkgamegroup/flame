@@ -31,6 +31,7 @@ namespace flame
 	FLAME_FOUNDATION_API std::filesystem::path get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_API void* get_hinst();
 	FLAME_FOUNDATION_API uvec2 get_screen_size();
+	FLAME_FOUNDATION_API void* load_library(const std::filesystem::path& path);
 	FLAME_FOUNDATION_API void* create_native_event(bool signaled, bool manual = false);
 	FLAME_FOUNDATION_API void set_native_event(void* ev);
 	FLAME_FOUNDATION_API void reset_native_event(void* ev);

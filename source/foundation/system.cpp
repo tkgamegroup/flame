@@ -115,6 +115,11 @@ namespace flame
 		return ret;
 	}
 
+	void* load_library(const std::filesystem::path& path)
+	{
+
+	}
+
 	void* create_native_event(bool signaled, bool manual)
 	{
 		return CreateEvent(NULL, manual, signaled, NULL);

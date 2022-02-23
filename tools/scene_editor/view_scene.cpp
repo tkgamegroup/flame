@@ -153,36 +153,39 @@ void View_Scene::on_draw()
 							camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
 						editor_node->set_pos(tar + editor_node->g_rot[2] * camera_zoom);
 					}
-					if (io.KeysDown[Keyboard_W])
+					if (!io.WantCaptureKeyboard)
 					{
-						editor_node->add_pos(-editor_node->g_rot[2] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_S])
-					{
-						editor_node->add_pos(+editor_node->g_rot[2] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_A])
-					{
-						editor_node->add_pos(-editor_node->g_rot[0] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_D])
-					{
-						editor_node->add_pos(+editor_node->g_rot[0] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_F])
-					{
-						if (selection.type == Selection::tEntity)
+						if (io.KeysDown[Keyboard_W])
 						{
-							if (auto node = selection.entity->get_component_i<cNodeT>(0); node)
-								editor_node->set_pos(node->g_pos + editor_node->g_rot[2] * camera_zoom);
+							editor_node->add_pos(-editor_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
 						}
+						if (io.KeysDown[Keyboard_S])
+						{
+							editor_node->add_pos(+editor_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_A])
+						{
+							editor_node->add_pos(-editor_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_D])
+						{
+							editor_node->add_pos(+editor_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_F])
+						{
+							if (selection.type == Selection::tEntity)
+							{
+								if (auto node = selection.entity->get_component_i<cNodeT>(0); node)
+									editor_node->set_pos(node->g_pos + editor_node->g_rot[2] * camera_zoom);
+							}
+						}
+						if (ImGui::IsKeyPressed(Keyboard_Del))
+							app.cmd_delete_selected_entity();
 					}
-					if (ImGui::IsKeyPressed(Keyboard_Del))
-						app.cmd_delete_selected_entity();
 
 					if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 					{

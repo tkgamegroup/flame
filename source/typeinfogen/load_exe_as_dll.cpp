@@ -16,7 +16,8 @@ void* load_exe_as_dll(const std::filesystem::path& path)
 	auto addr = LoadLibraryW(path.c_str());
 
 	dw = 0;
-	auto import_desc = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(addr, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &dw);
+	auto import_desc = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(addr, TRUE, 
+		IMAGE_DIRECTORY_ENTRY_IMPORT, &dw);
 	if (!import_desc)
 		return nullptr;
 

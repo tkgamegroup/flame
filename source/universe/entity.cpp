@@ -348,7 +348,7 @@ namespace flame
 		auto filename = Path::get(_filename);
 		if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
-			printf("prefab do not exist or wrong format: %s\n", _filename.string().c_str());
+			printf("prefab does not exist or wrong format: %s\n", _filename.string().c_str());
 			return false;
 		}
 

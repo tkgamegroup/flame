@@ -10,7 +10,8 @@ struct Application
 
 	virtual ~Application() {}
 
-	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), WindowStyleFlags styles = WindowFrame | WindowResizable)
+	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), 
+		WindowStyleFlags styles = WindowFrame | WindowResizable)
 	{
 		main_window = NativeWindow::create(title, size, styles);
 	}
