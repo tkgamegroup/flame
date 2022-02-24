@@ -1,18 +1,11 @@
 cmake_minimum_required(VERSION 3.16.4)
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+include("utils.cmake")
 add_definitions(-W0 -std:c++latest)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project(flame)
 
-include("utils.cmake")
-
-foreach(t ${CMAKE_CONFIGURATION_TYPES})
-	string(TOUPPER ${t} tu)
-	string(TOLOWER ${t} tl)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${tu} "${CMAKE_SOURCE_DIR}/bin/${tl}")
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${tu} "${CMAKE_SOURCE_DIR}/bin/${tl}")
-	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${tu} "${CMAKE_SOURCE_DIR}/bin/${tl}")
-endforeach()
+set_output_dir("${CMAKE_SOURCE_DIR}/bin")
 
 string(FIND "${CMAKE_LINKER}" "/VC/" pos)
 string(SUBSTRING  "${CMAKE_LINKER}" 0 ${pos} VS_LOCATION)
