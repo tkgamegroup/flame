@@ -19,13 +19,39 @@ rcContext rc_ctx;
 
 namespace flame
 {
+#ifdef USE_RECASTNAV
+	static void init_dt_crowd(sScenePrivate* scene)
+	{
+		scene->dt_crowd->init(128, 2.f/*max agent radius*/, scene->dt_nav_mesh);
+	}
+#endif
+
 	sScenePrivate::sScenePrivate()
 	{
 		octree = new OctNode(999999999.f, vec3(0.f));
 
 #ifdef USE_RECASTNAV
+		dt_nav_mesh = dtAllocNavMesh();
+		dtNavMeshParams parms;
+		memset(&parms, 0, sizeof(dtNavMeshParams));
+		parms.maxPolys = 1;
+		parms.maxTiles = 1;
+		parms.tileWidth = 0.1f;
+		parms.tileHeight = 0.1f;
+		dt_nav_mesh->init(&parms);
 		dt_nav_query = dtAllocNavMeshQuery();
+		dt_filter = new dtQueryFilter;
 		dt_crowd = dtAllocCrowd();
+		init_dt_crowd(this);
+#endif
+	}
+
+	sScenePrivate::~sScenePrivate()
+	{
+#ifdef USE_RECASTNAV
+		dtFreeNavMesh(dt_nav_mesh);
+		dtFreeNavMeshQuery(dt_nav_query);
+		dtFreeCrowd(dt_crowd);
 #endif
 	}
 
@@ -83,7 +109,7 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::generate_navmesh(const std::filesystem::path& output)
+	void sScenePrivate::generate_navmesh()
 	{
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
@@ -168,7 +194,6 @@ namespace flame
 		rcFreeContourSet(rc_contour_set); rc_contour_set = nullptr;
 		rcFreePolyMesh(rc_poly_mesh); rc_poly_mesh = nullptr;
 		rcFreePolyMeshDetail(rc_poly_mesh_d); rc_poly_mesh_d = nullptr;
-		dtFreeNavMesh(dt_nav_mesh); dt_nav_mesh = nullptr;
 
 		get_meshes(world->root.get());
 		for (auto& p : positions) bounds.expand(p);
@@ -267,10 +292,7 @@ namespace flame
 
 		if (rc_cfg.maxVertsPerPoly <= DT_VERTS_PER_POLYGON)
 		{
-			unsigned char* navData = 0;
-			int navDataSize = 0;
-
-			for (int i = 0; i < rc_poly_mesh->npolys; ++i)
+			for (auto i = 0; i < rc_poly_mesh->npolys; ++i)
 			{
 				rc_poly_mesh->flags[i] = 1;
 			//	if (rc_poly_mesh->areas[i] == RC_WALKABLE_AREA)
@@ -292,42 +314,40 @@ namespace flame
 			//	}
 			}
 
-			dtNavMeshCreateParams params;
-			memset(&params, 0, sizeof(params));
-			params.verts = rc_poly_mesh->verts;
-			params.vertCount = rc_poly_mesh->nverts;
-			params.polys = rc_poly_mesh->polys;
-			params.polyAreas = rc_poly_mesh->areas;
-			params.polyFlags = rc_poly_mesh->flags;
-			params.polyCount = rc_poly_mesh->npolys;
-			params.nvp = rc_poly_mesh->nvp;
-			params.detailMeshes = rc_poly_mesh_d->meshes;
-			params.detailVerts = rc_poly_mesh_d->verts;
-			params.detailVertsCount = rc_poly_mesh_d->nverts;
-			params.detailTris = rc_poly_mesh_d->tris;
-			params.detailTriCount = rc_poly_mesh_d->ntris;
-			params.walkableHeight = agnent_height;
-			params.walkableRadius = agnet_riadius;
-			params.walkableClimb = agnet_max_climb;
-			memcpy(params.bmin, rc_poly_mesh->bmin, sizeof(vec3));
-			memcpy(params.bmax, rc_poly_mesh->bmax, sizeof(vec3));
-			params.cs = rc_cfg.cs;
-			params.ch = rc_cfg.ch;
-			params.buildBvTree = true;
+			dtNavMeshCreateParams parms;
+			memset(&parms, 0, sizeof(parms));
+			parms.verts = rc_poly_mesh->verts;
+			parms.vertCount = rc_poly_mesh->nverts;
+			parms.polys = rc_poly_mesh->polys;
+			parms.polyAreas = rc_poly_mesh->areas;
+			parms.polyFlags = rc_poly_mesh->flags;
+			parms.polyCount = rc_poly_mesh->npolys;
+			parms.nvp = rc_poly_mesh->nvp;
+			parms.detailMeshes = rc_poly_mesh_d->meshes;
+			parms.detailVerts = rc_poly_mesh_d->verts;
+			parms.detailVertsCount = rc_poly_mesh_d->nverts;
+			parms.detailTris = rc_poly_mesh_d->tris;
+			parms.detailTriCount = rc_poly_mesh_d->ntris;
+			parms.walkableHeight = agnent_height;
+			parms.walkableRadius = agnet_riadius;
+			parms.walkableClimb = agnet_max_climb;
+			memcpy(parms.bmin, rc_poly_mesh->bmin, sizeof(vec3));
+			memcpy(parms.bmax, rc_poly_mesh->bmax, sizeof(vec3));
+			parms.cs = rc_cfg.cs;
+			parms.ch = rc_cfg.ch;
+			parms.buildBvTree = true;
 
-			if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
+			uchar* navData = nullptr;
+			auto navDataSize = 0;
+			if (!dtCreateNavMeshData(&parms, &navData, &navDataSize))
 			{
-				printf("generate navmesh: Could not build Detour navmesh.\n");
+				printf("generate navmesh: Could not build Detour navmesh data.\n");
 				return;
 			}
 
+			dtFreeNavMesh(dt_nav_mesh);
 			dt_nav_mesh = dtAllocNavMesh();
-			if (!dt_nav_mesh)
-			{
-				dtFree(navData);
-				printf("generate navmesh: Could not create Detour navmesh.\n");
-				return;
-			}
+			init_dt_crowd(this);
 
 			dtStatus status;
 
@@ -447,7 +467,7 @@ namespace flame
 		vec3 steer_path[MAX_STEER_POINTS];
 		uchar steer_path_flags[MAX_STEER_POINTS];
 		dtPolyRef steer_path_polys[MAX_STEER_POINTS];
-		int n_steer_ath = 0;
+		auto n_steer_ath = 0;
 		nav_query->findStraightPath(&start_pos[0], &end_pos[0], path, path_size, 
 			&steer_path[0][0], steer_path_flags, steer_path_polys, &n_steer_ath, MAX_STEER_POINTS);
 		if (!n_steer_ath)
@@ -456,11 +476,11 @@ namespace flame
 		if (out_points)
 		{
 			out_points->resize(n_steer_ath);
-			for (int i = 0; i < n_steer_ath; ++i)
+			for (auto i = 0; i < n_steer_ath; ++i)
 				(*out_points)[i] = steer_path[i];
 		}
 
-		int ns = 0;
+		auto ns = 0;
 		while (ns < n_steer_ath)
 		{
 			// Stop at Off-Mesh link or when point is further than slop away.
@@ -480,25 +500,28 @@ namespace flame
 		return true;
 	}
 
+	uint sScenePrivate::navmesh_find_nearest_poly(const vec3& pos)
+	{
+		dtPolyRef ret = 0;
+		const auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
+		dt_nav_query->findNearestPoly(&pos[0], &poly_pick_ext[0], dt_filter, &ret, nullptr);
+		return ret;
+	}
+
 	std::vector<vec3> sScenePrivate::navmesh_calc_path(const vec3& start, const vec3& end)
 	{
 		std::vector<vec3> ret;
 
-		dtQueryFilter filter;
+		dtPolyRef start_ref = navmesh_find_nearest_poly(start);
+		dtPolyRef end_ref = navmesh_find_nearest_poly(end);
 
-		dtPolyRef start_ref = 0;
-		dtPolyRef end_ref = 0;
-
-		auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
-		dt_nav_query->findNearestPoly(&start[0], &poly_pick_ext[0], &filter, &start_ref, nullptr);
-		dt_nav_query->findNearestPoly(&end[0], &poly_pick_ext[0], &filter, &end_ref, nullptr);
 		if (!start_ref || !end_ref)
 			return ret;
 
 		const auto MaxPolys = 256;
 		dtPolyRef polys[MaxPolys];
-		int n_polys = 0;
-		dt_nav_query->findPath(start_ref, end_ref, &start[0], &end[0], &filter, polys, &n_polys, MaxPolys);
+		auto n_polys = 0;
+		dt_nav_query->findPath(start_ref, end_ref, &start[0], &end[0], dt_filter, polys, &n_polys, MaxPolys);
 		if (!n_polys)
 			return ret;
 
@@ -535,8 +558,8 @@ namespace flame
 
 			vec3 result;
 			dtPolyRef visited[16];
-			int nvisited = 0;
-			dt_nav_query->moveAlongSurface(polys[0], &iter_pos[0], &moveTgt[0], &filter,
+			auto nvisited = 0;
+			dt_nav_query->moveAlongSurface(polys[0], &iter_pos[0], &moveTgt[0], dt_filter,
 				&result[0], visited, &nvisited, 16);
 
 			n_polys = fixup_corridor(polys, n_polys, MaxPolys, visited, nvisited);
@@ -559,14 +582,14 @@ namespace flame
 				vec3 startPos, endPos;
 
 				dtPolyRef prevRef = 0, polyRef = polys[0];
-				int npos = 0;
+				auto npos = 0;
 				while (npos < n_polys && polyRef != steer_pos_ref)
 				{
 					prevRef = polyRef;
 					polyRef = polys[npos];
 					npos++;
 				}
-				for (int i = npos; i < n_polys; ++i)
+				for (auto i = npos; i < n_polys; ++i)
 					polys[i - npos] = polys[i];
 				n_polys -= npos;
 
@@ -596,6 +619,11 @@ namespace flame
 	void sScenePrivate::update()
 	{
 		update_transform(world->root.get(), false);
+
+#ifdef USE_RECASTNAV
+		if (dt_nav_mesh)
+			dt_crowd->update(delta_time, nullptr);
+#endif
 	}
 
 	static sScenePtr _instance = nullptr;

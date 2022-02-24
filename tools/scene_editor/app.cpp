@@ -122,7 +122,7 @@ void App::init()
 				cmd_delete_selected_entity();
 			ImGui::Separator();
 			if (ImGui::MenuItem("Generate NavMesh"))
-				sScene::instance()->generate_navmesh(L"");
+				sScene::instance()->generate_navmesh();
 			if (ImGui::MenuItem(NavMeshTest::name, nullptr, &navmesh_test.open))
 			{
 				auto node = e_editor->get_component_i<cNode>(0);
