@@ -468,11 +468,7 @@ process:
 	DWORD dw;
 	wchar_t* pwname;
 
-	HMODULE library = nullptr;
-	if (input_path.extension() == L".exe")
-		library = (HMODULE)load_exe_as_dll(input_path.c_str());
-	else
-		library = LoadLibraryW(input_path.c_str());
+	auto library = load_library(input_path);
 
 	IDiaEnumSymbols* s_functions;
 	global->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
