@@ -1,23 +1,5 @@
 #pragma once
 
-#ifdef FLAME_UNIVERSE_MODULE
-
-#define FLAME_UNIVERSE_API __declspec(dllexport)
-
-#define FLAME_UNIVERSE_TYPE(name) struct name; struct name##Private; \
-	using name##T = name##Private; \
-	using name##Ptr = name##Private*;
-
-#else
-
-#define FLAME_UNIVERSE_API __declspec(dllimport)
-
-#define FLAME_UNIVERSE_TYPE(name) struct name; \
-	using name##T = name; \
-	using name##Ptr = name*;
-
-#endif
-
 #include "../foundation/foundation.h"
 #include "../graphics/graphics.h"
 #ifdef USE_SOUND_MODULE
@@ -25,6 +7,20 @@
 #endif
 #ifdef USE_PHYSICS_MODULE
 #include "../physics/physics.h"
+#endif
+
+#ifdef FLAME_UNIVERSE_MODULE
+
+#define FLAME_UNIVERSE_API __declspec(dllexport)
+
+#define FLAME_UNIVERSE_TYPE(name) FLAME_TYPE_PRIVATE(name)
+
+#else
+
+#define FLAME_UNIVERSE_API __declspec(dllimport)
+
+#define FLAME_UNIVERSE_TYPE(name) FLAME_TYPE(name)
+
 #endif
 
 namespace flame

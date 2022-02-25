@@ -19,6 +19,14 @@
 
 #define FLAME_UID (flame::sh(__FILE__) + __LINE__)
 
+#define FLAME_TYPE(name) struct name; \
+	using name##T = name; \
+	using name##Ptr = name*;
+
+#define FLAME_TYPE_PRIVATE(name) struct name; struct name##Private; \
+	using name##T = name##Private; \
+	using name##Ptr = name##Private*;
+
 namespace flame
 {
 	using uchar = unsigned char;

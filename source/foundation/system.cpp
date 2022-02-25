@@ -267,7 +267,7 @@ namespace flame
 	{
 		auto parent_path = path.parent_path();
 		std::deque<std::filesystem::path> remains;
-		std::vector<std::filesystem::path> ret;
+		std::vector<std::pair<std::filesystem::path, uint>> ret;
 		remains.push_back(path.filename());
 		while (!remains.empty())
 		{

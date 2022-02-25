@@ -1,29 +1,25 @@
 #pragma once
 
-#ifdef FLAME_FOUNDATION_MODULE
-
-#define FLAME_FOUNDATION_API __declspec(dllexport)
-
-#define FLAME_FOUNDATION_TYPE(name) struct name; struct name##Private; \
-	using name##T = name##Private; \
-	using name##Ptr = name##Private*;
-
-#else
-
-#define FLAME_FOUNDATION_API __declspec(dllimport)
-
-#define FLAME_FOUNDATION_TYPE(name) struct name; \
-	using name##T = name; \
-	using name##Ptr = name*;
-
-#endif
-
 #include "../serialize.h"
 
 #include <functional>
 #include <chrono>
 #include <thread>
 #include <mutex>
+
+#ifdef FLAME_FOUNDATION_MODULE
+
+#define FLAME_FOUNDATION_API __declspec(dllexport)
+
+#define FLAME_FOUNDATION_TYPE(name) FLAME_TYPE_PRIVATE(name)
+
+#else
+
+#define FLAME_FOUNDATION_API __declspec(dllimport)
+
+#define FLAME_FOUNDATION_TYPE(name) FLAME_TYPE(name)
+
+#endif
 
 namespace flame
 {

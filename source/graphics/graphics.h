@@ -1,24 +1,20 @@
  #pragma once
 
+#include "../foundation/foundation.h"
+
 #ifdef FLAME_GRAPHICS_MODULE
 
 #define FLAME_GRAPHICS_API __declspec(dllexport)
 
-#define FLAME_GRAPHICS_TYPE(name) struct name; struct name##Private; \
-	using name##T = name##Private; \
-	using name##Ptr = name##Private*;
+#define FLAME_GRAPHICS_TYPE(name) FLAME_TYPE_PRIVATE(name)
 
 #else
 
 #define FLAME_GRAPHICS_API __declspec(dllimport)
 
-#define FLAME_GRAPHICS_TYPE(name) struct name; \
-	using name##T = name; \
-	using name##Ptr = name*;
+#define FLAME_GRAPHICS_TYPE(name) FLAME_TYPE(name)
 
 #endif
-
-#include "../foundation/foundation.h"
 
 namespace flame
 {
