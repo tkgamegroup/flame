@@ -612,6 +612,7 @@ namespace flame
 			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
 		}
 
+		FLAME_FOUNDATION_API void init_basic_types();
 		FLAME_FOUNDATION_API bool load(std::ifstream& file, void* library = nullptr);
 		FLAME_FOUNDATION_API void load(const std::filesystem::path& filename);
 		FLAME_FOUNDATION_API void save(std::ofstream& file);

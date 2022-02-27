@@ -158,8 +158,6 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 	}
 }
 
-void* load_exe_as_dll(const std::filesystem::path& path);
-
 int main(int argc, char **args)
 {
 	if (argc != 2)
@@ -181,14 +179,6 @@ process:
 		return 0;
 	}
 
-	for (auto& path : get_module_dependencies(input_path))
-	{
-		auto ti_path = path;
-		ti_path.replace_extension(".typeinfo");
-		if (std::filesystem::exists(ti_path) && input_path != path)
-			tidb.load(ti_path);
-	}
-
 	auto pdb_path = input_path;
 	pdb_path.replace_extension(L".pdb");
 	if (!std::filesystem::exists(pdb_path))
@@ -207,6 +197,26 @@ process:
 		{
 			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
 			return 0;
+		}
+		std::filesystem::remove(typeinfo_path);
+	}
+
+	if (input_path.filename() == L"flame_foundation.dll")
+	{
+		tidb.typeinfos.clear();
+		tidb.enums.clear();
+		tidb.functions.clear();
+		tidb.udts.clear();
+		tidb.init_basic_types();
+	}
+	else
+	{
+		for (auto& path : get_module_dependencies(input_path))
+		{
+			auto ti_path = path;
+			ti_path.replace_extension(".typeinfo");
+			if (path.filename() != L"flame_foundation.dll" && std::filesystem::exists(ti_path))
+				tidb.load(ti_path);
 		}
 	}
 
@@ -314,6 +324,7 @@ process:
 		while (!desc.eof())
 		{
 			std::getline(desc, line);
+			if (line.empty()) continue;
 			auto sp = SUS::split(line);
 			auto read_rule = [&](Rule& r) {
 				if (sp[1] == "equal")
@@ -345,7 +356,7 @@ process:
 			std::smatch res;
 			for (auto& it : std::filesystem::recursive_directory_iterator(source_path))
 			{
-				if (it.path().extension() == L".h" && 
+				if ((it.path().extension() == L".h") &&
 					!it.path().filename().wstring().ends_with(L"_private"))
 				{
 					Rule* pr = nullptr;

@@ -115,4 +115,6 @@ namespace flame
 	};
 
 	inline constexpr uint MaxLod = 6;
+
+	FLAME_UNIVERSE_API void* universe_info();
 }

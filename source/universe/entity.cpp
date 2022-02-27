@@ -363,7 +363,7 @@ namespace flame
 					unserialize_xml(*ui, src, c, {});
 			}
 			else
-				wprintf(L"cannot find component with hash %d\n", hash);
+				wprintf(L"cannot find component with hash %u\n", hash);
 			return INVALID_POINTER;
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {

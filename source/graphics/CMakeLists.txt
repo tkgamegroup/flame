@@ -32,7 +32,7 @@ else()
 	message(STATUS "graphics module: ImGui is required for ui")
 endif()
 
-add_typeinfo_support(flame_graphics "enum starts_with flame::graphics::")
+generate_typeinfo(flame_graphics "enum starts_with flame::graphics::")
 
 file(GLOB headers "*.h*")
 list(FILTER headers EXCLUDE REGEX ".*_private[.]h$")

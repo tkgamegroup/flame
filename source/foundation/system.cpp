@@ -266,16 +266,10 @@ namespace flame
 	std::vector<std::filesystem::path> get_module_dependencies(const std::filesystem::path& path)
 	{
 		auto parent_path = path.parent_path();
-		std::deque<std::filesystem::path> remains;
-		std::vector<std::pair<std::filesystem::path, uint>> ret;
-		remains.push_back(path.filename());
-		while (!remains.empty())
-		{
-			auto lib_name = remains.front();
-			remains.pop_front();
-			if (!std::filesystem::exists(parent_path / lib_name))
-				continue;
-			auto image = ImageLoad(lib_name.string().c_str(), parent_path.string().c_str());
+		std::vector<std::filesystem::path> ret;
+		std::function<void(const std::filesystem::path& path)> get_deps;
+		get_deps = [&](const std::filesystem::path& path) {
+			auto image = ImageLoad(path.string().c_str(), parent_path.string().c_str());
 			if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
 			{
 				auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
@@ -287,29 +281,32 @@ namespace flame
 						break;
 
 					auto pstr = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
-					auto found = false;
-					for (auto& s : ret)
+					if (pstr != path)
 					{
-						if (s == pstr)
+						auto found = false;
+						for (auto& s : ret)
 						{
-							found = true;
-							break;
+							if (s == pstr)
+							{
+								found = true;
+								break;
+							}
 						}
-					}
-					if (!found)
-					{
-						remains.push_back(pstr);
-						ret.push_back(pstr);
+						if (!found && std::filesystem::exists(parent_path / pstr))
+						{
+							get_deps(pstr);
+							ret.push_back(pstr);
+						}
 					}
 
 					importDesc++;
 				}
 			}
 			ImageUnload(image);
-		}
+		};
+		get_deps(path.filename());
 		for (auto& p : ret)
 			p = parent_path / p;
-		std::reverse(ret.begin(), ret.end());
 		ret.push_back(path);
 		return ret;
 	}

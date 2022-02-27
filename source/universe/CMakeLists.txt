@@ -20,7 +20,7 @@ if (USE_RECASTNAV)
 	target_link_libraries(flame_universe recast)
 endif()
 
-add_typeinfo_support(flame_universe "enum starts_with flame::")
+generate_typeinfo(flame_universe "enum starts_with flame::")
 
 file(GLOB headers "*.h*")
 list(FILTER headers EXCLUDE REGEX ".*_private[.]h$")

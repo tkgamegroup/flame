@@ -112,10 +112,21 @@ namespace flame
 		if (!_tidb.typeinfos.empty())
 			return;
 
+		init_basic_types();
+
+		for (auto& path : get_module_dependencies(get_app_path(true)))
 		{
-			TypeInfo::void_type = new TypeInfo_void;
-			_tidb.add_ti(TypeInfo::void_type);
+			auto ti_path = path;
+			ti_path.replace_extension(".typeinfo");
+			if (std::filesystem::exists(ti_path))
+				_tidb.load(path);
 		}
+	}
+	
+	void TypeInfoDataBase::init_basic_types()
+	{
+		TypeInfo::void_type = new TypeInfo_void;
+		_tidb.add_ti(TypeInfo::void_type);
 		_tidb.add_ti(new TypeInfo_bool);
 		_tidb.add_ti(new TypeInfo_char);
 		_tidb.add_ti(new TypeInfo_uchar);
@@ -149,18 +160,6 @@ namespace flame
 		_tidb.add_ti(new TypeInfo_AABB);
 		_tidb.add_ti(new TypeInfo_Plane);
 		_tidb.add_ti(new TypeInfo_Frustum);
-
-		auto app_name = get_app_path(true);
-		if (app_name.filename() != L"typeinfogen.exe")
-		{
-			for (auto& path : get_module_dependencies(app_name))
-			{
-				auto ti_path = path;
-				ti_path.replace_extension(".typeinfo");
-				if (std::filesystem::exists(ti_path))
-					_tidb.load(path);
-			}
-		}
 	}
 
 	bool TypeInfoDataBase::load(std::ifstream& file, void* library)

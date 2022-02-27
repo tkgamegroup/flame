@@ -9,5 +9,4 @@ target_link_libraries(typeinfogen "${VS_LOCATION}/DIA SDK/lib/amd64/diaguids.lib
 add_custom_target(typeinfogen_dep)
 set_target_properties(typeinfogen_dep PROPERTIES FOLDER "flame")
 add_dependencies(typeinfogen_dep typeinfogen)
-generate_typedesc(flame_foundation "enum starts_with flame::")
-gen_typeinfo(typeinfogen_dep flame_foundation)
+generate_typeinfo(flame_foundation "enum starts_with flame::")
