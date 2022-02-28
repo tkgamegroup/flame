@@ -11,7 +11,7 @@ namespace flame
 	{
 		auto node = entity->get_component_i<cNodeT>(0);
 
-		view_mat_inv = mat4(node->rot);
+		view_mat_inv = mat4(node->g_rot);
 		view_mat_inv[3] = vec4(node->g_pos, 1.f);
 		view_mat = inverse(view_mat_inv);
 

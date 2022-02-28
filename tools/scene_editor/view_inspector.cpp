@@ -175,7 +175,7 @@ void View_Inspector::on_draw()
 				if (changed_attribute)
 				{
 					if (auto ins = get_prefab_instance(e); ins)
-						ins->set_modifier(e->file_id, c->type_hash, sh(changed_attribute->name.c_str()), changed_attribute->serialize(e));
+						ins->set_modifier(e->file_id, c->type_hash, sh(changed_attribute->name.c_str()), changed_attribute->serialize(c.get()));
 				}
 			}
 		}

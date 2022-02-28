@@ -7,6 +7,7 @@
 
 #include "../../foundation/typeinfo.h"
 #include "../../foundation/typeinfo_serialize.h"
+#include "../../foundation/window.h"
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
@@ -18,7 +19,8 @@ namespace flame
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const graphics::Format col_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
 
-	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w)
+	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w) :
+		window(w)
 	{
 		img_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
@@ -43,111 +45,113 @@ namespace flame
 		ds_instance->update();
 
 		mesh_reses.resize(1024);
+
+		rp_col = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt) });
+		rp_col_dep = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color_depth.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+		rp_fwd = graphics::Renderpass::get(nullptr, L"flame\\shaders\\forward.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+
+		pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
+			{ "rp=" + str(rp_col) });
+		pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
+			{ "rp=" + str(rp_col) });
+
+		prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
+		pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
+			{ "rp=" + str(rp_col) });
+
+		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
+
+		prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
+		prm_fwd.set_ds("scene"_h, ds_scene.get());
+		prm_fwd.set_ds("instance"_h, ds_instance.get());
+		pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "frag:CAMERA_LIGHT" });
+		pl_mesh_arm_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "vert:ARMATURE",
+			  "frag:CAMERA_LIGHT" });
+		pl_terrain_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "frag:CAMERA_LIGHT" });
+
+		buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 256 * 4);
+		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
+		buf_vtx_arm.create(pl_mesh_arm_fwd->vi_ui(), 1024 * 128 * 4);
+		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
+		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
+		buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
+
+		set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
+		set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);
+
+		pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col) });
+		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col),
+			  "vert:ARMATURE" });
+		pl_terrain_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_col) });
+
+		prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
+		pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+			{ "rp=" + str(rp_col),
+			  "frag:HORIZONTAL" });
+		pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+			{ "rp=" + str(rp_col),
+			  "frag:VERTICAL" });
+		pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+			{ "rp=" + str(rp_col),
+			  "frag:LOCAL_MAX",
+			  "frag:HORIZONTAL" });
+		pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+			{ "rp=" + str(rp_col),
+			  "frag:LOCAL_MAX",
+			  "frag:VERTICAL" });
+
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "vert:ARMATURE",
+			  "frag:PICKUP" });
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		fence_pickup.reset(graphics::Fence::create(nullptr, false));
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
 		});
 	}
 
-	void sNodeRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _dst_layout)
+	void sNodeRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
 		
-		auto rp_fwd = graphics::Renderpass::get(nullptr, L"flame\\shaders\\forward.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format),
-			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		auto rp_col_dep = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		auto rp_col = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt) });
+		auto rp_tar = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format) });
 
-		if (!initialized)
+		if (!pl_blit_tar)
 		{
-			pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
-				{ "rp=" + str(rp_col) });
-			pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
-				{ "rp=" + str(rp_col) });
-
-			prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
-			pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
-				{ "rp=" + str(rp_col) });
-
-			buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
-
-			prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
-			prm_fwd.set_ds("scene"_h, ds_scene.get());
-			prm_fwd.set_ds("instance"_h, ds_instance.get());
-			pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_fwd),
-				  "frag:CAMERA_LIGHT" });
-			pl_mesh_arm_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_fwd),
-				  "vert:ARMATURE",
-				  "frag:CAMERA_LIGHT" });
-			pl_terrain_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-				{ "rp=" + str(rp_fwd),
-				  "frag:CAMERA_LIGHT" });
-
-			buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 256 * 4);
-			buf_idx.create(sizeof(uint), 1024 * 256 * 6);
-			buf_vtx_arm.create(pl_mesh_arm_fwd->vi_ui(), 1024 * 128 * 4);
-			buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
-			buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
-			buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
-
-			pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_col) });
-			pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_col),
-				  "vert:ARMATURE" });
-			pl_terrain_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-				{ "rp=" + str(rp_col) });
-
-			prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
-			pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
-				{ "rp=" + str(rp_col),
-				  "frag:HORIZONTAL" });
-			pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
-				{ "rp=" + str(rp_col),
-				  "frag:VERTICAL" });
-			pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
-				{ "rp=" + str(rp_col),
-				  "frag:LOCAL_MAX",
-				  "frag:HORIZONTAL" });
-			pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
-				{ "rp=" + str(rp_col),
-				  "frag:LOCAL_MAX",
-				  "frag:VERTICAL" });
-
-			pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_col_dep),
-				  "frag:PICKUP" });
-			pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_col_dep),
-				  "vert:ARMATURE",
-				  "frag:PICKUP" });
-			pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-				{ "rp=" + str(rp_col_dep),
-				  "frag:PICKUP" });
-			fence_pickup.reset(graphics::Fence::create(nullptr, false));
-
-			set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
-			set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);
-
-			initialized = true;
+			pl_blit_tar = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
+				{ "rp=" + str(rp_tar) });
 		}
 
 		iv_tars.assign(_targets.begin(), _targets.end());
 
+		img_dst.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment));
-		auto iv_dep = img_dep->get_view();
-		fbs_fwd.clear();
-		for (auto iv : _targets)
-			fbs_fwd.emplace_back(graphics::Framebuffer::create(rp_fwd, { iv, iv_dep }));
+		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst->get_view(), img_dep->get_view() }));
 
-		dst_layout = _dst_layout;
+		final_layout = _final_layout;
 
 		img_back0.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -155,6 +159,21 @@ namespace flame
 		img_pickup.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+	}
+
+	void sNodeRendererPrivate::bind_window_targets()
+	{
+		window->native->resize_listeners.add([this](const uvec2& sz) {
+			graphics::Queue::get(nullptr)->wait_idle();
+			std::vector<graphics::ImageViewPtr> views;
+			for (auto& i : window->swapchain->images)
+				views.push_back(i->get_view());
+			set_targets(views, graphics::ImageLayoutAttachment);
+		});
+		std::vector<graphics::ImageViewPtr> views;
+		for (auto& i : window->swapchain->images) 
+			views.push_back(i->get_view());
+		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
 	int sNodeRendererPrivate::set_material_res(int idx, graphics::Material* mat)
@@ -556,7 +575,7 @@ namespace flame
 
 	void sNodeRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
-		if (!initialized || camera == INVALID_POINTER)
+		if (camera == INVALID_POINTER)
 			return;
 		if (!camera)
 		{
@@ -631,7 +650,7 @@ namespace flame
 		cb->set_viewport(Rect(vec2(0), sz));
 		cb->set_scissor(Rect(vec2(0), sz));
 
-		cb->begin_renderpass(nullptr, fbs_fwd[tar_idx].get(), 
+		cb->begin_renderpass(nullptr, fb_fwd.get(), 
 			{ vec4(0.f, 0.f, 0.f, 1.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
@@ -769,7 +788,7 @@ namespace flame
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			cb->bind_pipeline(pl_add);
 			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 			cb->push_constant_t(1.f / (vec2)img_back0->size);
@@ -782,7 +801,7 @@ namespace flame
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
-			cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			cb->bind_vertex_buffer(buf_lines.buf.get(), 0);
 			cb->bind_pipeline(pl_line3d);
 			prm_plain3d.set_pc_var<"mvp"_h>(camera->proj_view_mat);
@@ -795,7 +814,14 @@ namespace flame
 			cb->end_renderpass();
 		}
 
-		cb->image_barrier(img, iv->sub, dst_layout);
+		cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+		cb->bind_pipeline(pl_blit_tar);
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+		cb->image_barrier(img, iv->sub, final_layout);
 	}
 
 	void sNodeRendererPrivate::update()
@@ -804,7 +830,7 @@ namespace flame
 
 	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
 	{
-		if (!initialized || camera == INVALID_POINTER)
+		if (camera == INVALID_POINTER)
 			return nullptr;
 		if (!camera)
 		{

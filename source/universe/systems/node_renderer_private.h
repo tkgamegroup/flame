@@ -48,6 +48,8 @@ namespace flame
 
 	struct sNodeRendererPrivate : sNodeRenderer
 	{
+		graphics::WindowPtr window;
+
 		std::vector<MeshRes> mesh_reses;
 
 		std::vector<DrawLine>		draw_lines;
@@ -69,15 +71,20 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_black;
 		std::unique_ptr<graphics::Image>												img_white;
 
-		graphics::GraphicsPipelinePtr													pl_blit;
-		graphics::GraphicsPipelinePtr													pl_add;
+		graphics::RenderpassPtr															rp_col = nullptr;
+		graphics::RenderpassPtr															rp_col_dep = nullptr;
+		graphics::RenderpassPtr															rp_fwd = nullptr;
+		graphics::GraphicsPipelinePtr													pl_blit = nullptr;
+		graphics::GraphicsPipelinePtr													pl_blit_tar = nullptr;
+		graphics::GraphicsPipelinePtr													pl_add = nullptr;
 
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_plain3d;
-		graphics::GraphicsPipelinePtr													pl_line3d;
+		graphics::GraphicsPipelinePtr													pl_line3d = nullptr;
 
+		std::unique_ptr<graphics::Image>												img_dst;
 		std::unique_ptr<graphics::Image>												img_dep;
-		std::vector<std::unique_ptr<graphics::Framebuffer>>								fbs_fwd;
+		std::unique_ptr<graphics::Framebuffer>											fb_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
@@ -91,39 +98,38 @@ namespace flame
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
-		graphics::GraphicsPipelinePtr													pl_mesh_fwd;
-		graphics::GraphicsPipelinePtr													pl_mesh_arm_fwd;
-		graphics::GraphicsPipelinePtr													pl_terrain_fwd;
+		graphics::GraphicsPipelinePtr													pl_mesh_fwd = nullptr;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_fwd = nullptr;
+		graphics::GraphicsPipelinePtr													pl_terrain_fwd = nullptr;
 
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
 
-		graphics::GraphicsPipelinePtr													pl_mesh_plain;
-		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain;
-		graphics::GraphicsPipelinePtr													pl_terrain_plain;
+		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain = nullptr;
+		graphics::GraphicsPipelinePtr													pl_terrain_plain = nullptr;
 
 		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
-		graphics::GraphicsPipelinePtr													pl_blur_h;
-		graphics::GraphicsPipelinePtr													pl_blur_v;
-		graphics::GraphicsPipelinePtr													pl_localmax_h;
-		graphics::GraphicsPipelinePtr													pl_localmax_v;
+		graphics::GraphicsPipelinePtr													pl_blur_h = nullptr;
+		graphics::GraphicsPipelinePtr													pl_blur_v = nullptr;
+		graphics::GraphicsPipelinePtr													pl_localmax_h = nullptr;
+		graphics::GraphicsPipelinePtr													pl_localmax_v = nullptr;
 
 		std::unique_ptr<graphics::Image>												img_pickup;
 		std::unique_ptr<graphics::Image>												img_dep_pickup;
 		std::unique_ptr<graphics::Framebuffer>											fb_pickup;
-		graphics::GraphicsPipelinePtr													pl_mesh_pickup;
-		graphics::GraphicsPipelinePtr													pl_mesh_arm_pickup;
-		graphics::GraphicsPipelinePtr													pl_terrain_pickup;
+		graphics::GraphicsPipelinePtr													pl_mesh_pickup = nullptr;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_pickup = nullptr;
+		graphics::GraphicsPipelinePtr													pl_terrain_pickup = nullptr;
 		std::unique_ptr<graphics::Fence>												fence_pickup;
 
-		graphics::ImageLayout dst_layout;
-
-		bool initialized = false;
+		graphics::ImageLayout final_layout;
 
 		sNodeRendererPrivate() {}
 		sNodeRendererPrivate(graphics::WindowPtr w);
 
-		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout dst_layout) override;
+		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
+		void bind_window_targets() override;
 
 		int set_material_res(int idx, graphics::Material* mat) override;
 		int find_material_res(graphics::Material* mat) const override;

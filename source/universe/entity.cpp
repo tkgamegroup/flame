@@ -369,46 +369,58 @@ namespace flame
 		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			auto e = new EntityPrivate();
 
+			std::string file_id;
+			if (auto a = src.attribute("file_id"); a)
+				file_id = a.value();
+			else
+				file_id = e->instance_id;
+
 			if (auto a = src.attribute("filename"); a)
 			{
 				e->load(a.value());
+				e->file_id = file_id;
 				new PrefabInstance(e, a.value());
 
 				auto n_mod = src.child("modifications");
 				for (auto n : n_mod)
 				{
-					auto te = find_with_file_id(e, n.attribute("entity").value());
+					PrefabInstance::Modification mod;
+					mod.entity = n.attribute("entity").value();
+					mod.component = n.attribute("component").as_uint();
+					mod.name = n.attribute("name").as_uint();
+					mod.value = n.attribute("value").value();
+
+					auto te = find_with_file_id(e, mod.entity);
 					assert(te);
 
 					void* obj = nullptr;
 					UdtInfo* ui = nullptr;
 
-					auto tc = n.attribute("component").as_uint();
-					if (tc == 0)
+					if (mod.component == 0)
 					{
 						obj = te;
 						ui = TypeInfo::get<Entity>()->retrive_ui();
 					}
 					else
 					{
-						obj = te->get_component(tc);
-						ui = find_udt(tc);
+						obj = te->get_component(mod.component);
+						ui = find_udt(mod.component);
 					}
 
 					assert(ui);
-					auto attr = ui->find_attribute(n.attribute("name").as_uint());
+					auto attr = ui->find_attribute(mod.name);
 					assert(attr);
-					attr->type->unserialize(n.attribute("value").value(), nullptr);
+					attr->type->unserialize(mod.value.c_str(), nullptr);
 					attr->set_value(obj);
+
+					e->prefab->modifications.push_back(mod);
 				}
 			}
 			else
+			{
 				unserialize_xml(src, e, spec);
-
-			if (auto a = src.attribute("file_id"); a)
-				e->file_id = a.value();
-			else
-				e->file_id = e->instance_id;
+				e->file_id = file_id;
+			}
 
 			((EntityPtr)dst_o)->add_child(e);
 
