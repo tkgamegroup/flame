@@ -259,7 +259,7 @@ namespace flame
 		void* library = nullptr;
 		if (path.extension() != L".typeinfo")
 		{
-			library = LoadLibraryW(path.c_str());
+			library = load_library(path.c_str());
 			path.replace_extension(L".typeinfo");
 		}
 

@@ -5,6 +5,7 @@
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
+#include <flame/foundation/typeinfo.h>
 #include <flame/universe/components/node.h>
 
 std::list<View*> views;
@@ -123,7 +124,7 @@ void App::init()
 				cmd_delete_selected_entity();
 			ImGui::Separator();
 			if (ImGui::MenuItem("Generate NavMesh"))
-				sScene::instance()->generate_navmesh();
+				sScene::instance()->generate_nav_mesh();
 			if (ImGui::MenuItem(NavMeshTest::name, nullptr, &navmesh_test.open))
 			{
 				auto node = e_editor->get_component_i<cNode>(0);
@@ -172,11 +173,6 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Render"))
 		{
-			if (ImGui::MenuItem("Always Render", nullptr, app.always_update))
-			{
-				app.always_update = !app.always_update;
-				//app.s_renderer->set_always_update(app.always_update);
-			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -228,7 +224,7 @@ void App::init()
 				else
 					navmesh_test.end = view_scene.hovering_pos;
 				if (distance(navmesh_test.start, navmesh_test.end) > 0.f)
-					navmesh_test.points = sScene::instance()->navmesh_calc_path(navmesh_test.start, navmesh_test.end);
+					navmesh_test.points = sScene::instance()->calc_nav_path(navmesh_test.start, navmesh_test.end);
 			}
 			ImGui::End();
 			if (!navmesh_test.open)
@@ -245,6 +241,22 @@ void App::init()
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
+		if (!playing)
+		{
+			if (ImGui::Button("Play"))
+			{
+				world->update_components = true;
+				playing = true;
+			}
+		}
+		else
+		{
+			if (ImGui::Button("Stop"))
+			{
+				world->update_components = false;
+				playing = false;
+			}
+		}
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
 
@@ -480,6 +492,10 @@ void App::open_project(const std::filesystem::path& path)
 		selection.clear();
 		project_path = path;
 		directory_lock(project_path, true);
+
+		auto cpp_path = path / L"bin/debug/cpp.dll";
+		if (std::filesystem::exists(cpp_path))
+			tidb.load(cpp_path);
 
 		view_project.reset();
 	}

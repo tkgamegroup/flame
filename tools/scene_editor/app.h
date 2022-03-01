@@ -27,7 +27,7 @@ struct App : UniverseApplication
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_editor = nullptr;
 
-	bool always_update = false;
+	bool playing = false;
 
 	bool open_message_dialog = false;
 	std::string message_dialog_title;

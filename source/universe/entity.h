@@ -8,9 +8,7 @@ namespace flame
 	{
 		struct Modification
 		{
-			std::string entity;
-			uint component;
-			uint name;
+			std::string target;
 			std::string value;
 		};
 
@@ -20,20 +18,23 @@ namespace flame
 
 		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
 
-		void set_modifier(const std::string& entity, uint component, uint name, const std::string& value)
+		void set_modifier(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name, const std::string& value)
 		{
+			std::string target;
+			target = tar_id;
+			if (!tar_comp.empty())
+				target = target + "|" + tar_comp;
+			target = target + "|" + attr_name;
 			for (auto& m : modifications)
 			{
-				if (m.entity == entity && m.component == component && m.name == name)
+				if (m.target == target)
 				{
 					m.value = value;
 					return;
 				}
 			}
 			auto& m = modifications.emplace_back();
-			m.entity = entity;
-			m.component = component;
-			m.name = name;
+			m.target = target;
 			m.value = value;
 		}
 	};

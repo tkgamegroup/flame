@@ -13,11 +13,11 @@ namespace flame
 		/// Reflect
 		float fovy = 45.f;
 		/// Reflect
-		float aspect = 1.f;
-		/// Reflect
 		float zNear = 1.f;
 		/// Reflect
 		float zFar = 1000.f;
+
+		float aspect = 1.f;
 
 		mat4 view_mat;
 		mat4 view_mat_inv;

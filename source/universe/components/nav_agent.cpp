@@ -6,8 +6,6 @@
 #include <DetourCrowd.h>
 #endif
 
-const auto MinSpeed = 0.01f;
-
 namespace flame
 {
 	void cNavAgentPrivate::set_target(const vec3& pos)
@@ -28,24 +26,13 @@ namespace flame
 	void cNavAgentPrivate::on_active()
 	{
 #ifdef USE_RECASTNAV
-		auto dt_crowd = sScene::instance()->dt_crowd;
-		dtCrowdAgentParams parms;
-		memset(&parms, 0, sizeof(dtCrowdAgentParams));
-		parms.radius = radius;
-		parms.height = height;
-		parms.maxAcceleration = 8.f;
-		parms.maxSpeed = MinSpeed;
-		parms.collisionQueryRange = parms.radius * 12.0f;
-		parms.pathOptimizationRange = parms.radius * 30.0f;
-		parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO | 
-			DT_CROWD_OBSTACLE_AVOIDANCE;
-		parms.userData = this;
-		dt_id = dt_crowd->addAgent(&node->g_pos[0], &parms);
-		if (dt_id == -1)
+		auto scene = sScene::instance();
+		for (auto ag : scene->peeding_nav_agents)
 		{
-			printf("dt crowd add agent failed: -1 is returned\n");
-			return;
+			if (ag == this)
+				return;
 		}
+		scene->peeding_nav_agents.push_back(this);
 #endif
 	}
 
@@ -57,6 +44,12 @@ namespace flame
 			auto dt_crowd = sScene::instance()->dt_crowd;
 			dt_crowd->removeAgent(dt_id);
 			dt_id = -1;
+		}
+		else
+		{
+			std::erase_if(sScene::instance()->peeding_nav_agents, [&](const auto& ag) {
+				return ag == this;
+			});
 		}
 #endif
 	}

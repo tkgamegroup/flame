@@ -70,20 +70,20 @@ void View_Scene::on_draw()
 					{
 						tar->set_pos(p);
 						if (auto ins = get_prefab_instance(e); ins)
-							ins->set_modifier(e->file_id, tar->type_hash, "pos"_h, TypeInfo::serialize_t(&tar->pos));
+							ins->set_modifier(e->file_id, "flame::cNode", "pos", TypeInfo::serialize_t(&tar->pos));
 					}
 					if (r != tar->eul)
 					{
 						tar->set_eul(r);
 						if (auto ins = get_prefab_instance(e); ins)
-							ins->set_modifier(e->file_id, tar->type_hash, "eul"_h, TypeInfo::serialize_t(&tar->eul));
+							ins->set_modifier(e->file_id, "flame::cNode", "eul", TypeInfo::serialize_t(&tar->eul));
 					}
 					//tar->set_eul(r);
 					if (s != tar->scl)
 					{
 						tar->set_scl(s);
 						if (auto ins = get_prefab_instance(e); ins)
-							ins->set_modifier(e->file_id, tar->type_hash, "scl"_h, TypeInfo::serialize_t(&tar->scl));
+							ins->set_modifier(e->file_id, "flame::cNode", "scl", TypeInfo::serialize_t(&tar->scl));
 					}
 				}
 

@@ -5,6 +5,7 @@
 #include "../components/node_private.h"
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
+#include "../components/nav_agent_private.h"
 #include "../octree.h"
 #include "scene_private.h"
 
@@ -22,6 +23,13 @@ namespace flame
 #ifdef USE_RECASTNAV
 	static void init_dt_crowd(sScenePrivate* scene)
 	{
+		auto crowd = scene->dt_crowd;
+		for (auto i = 0; i < crowd->getAgentCount(); i++)
+		{
+			auto ag = crowd->getAgent(i);
+			if (ag->active)
+				scene->peeding_nav_agents.push_back((cNavAgentPtr)ag->params.userData);
+		}
 		scene->dt_crowd->init(128, 2.f/*max agent radius*/, scene->dt_nav_mesh);
 	}
 #endif
@@ -625,6 +633,25 @@ namespace flame
 		update_transform(world->root.get(), false);
 
 #ifdef USE_RECASTNAV
+		for (auto ag : peeding_nav_agents)
+		{
+			dtCrowdAgentParams parms;
+			memset(&parms, 0, sizeof(dtCrowdAgentParams));
+			parms.radius = ag->radius;
+			parms.height = ag->height;
+			parms.maxAcceleration = 8.f;
+			parms.maxSpeed = MinSpeed;
+			parms.collisionQueryRange = parms.radius * 12.0f;
+			parms.pathOptimizationRange = parms.radius * 30.0f;
+			parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
+				DT_CROWD_OBSTACLE_AVOIDANCE;
+			parms.userData = ag;
+			ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
+			if (ag->dt_id == -1)
+				printf("dt crowd add agent failed: -1 is returned\n");
+		}
+		peeding_nav_agents.clear();
+
 		if (dt_nav_mesh)
 			dt_crowd->update(delta_time, nullptr);
 #endif

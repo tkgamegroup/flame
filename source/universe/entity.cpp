@@ -354,7 +354,7 @@ namespace flame
 
 		UnserializeXmlSpec spec;
 		spec.map[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
-			auto hash = src.attribute("type_hash").as_uint();
+			auto hash = sh(src.attribute("type_name").value());
 			auto ui = find_udt(hash);
 			if (ui)
 			{
@@ -385,30 +385,31 @@ namespace flame
 				for (auto n : n_mod)
 				{
 					PrefabInstance::Modification mod;
-					mod.entity = n.attribute("entity").value();
-					mod.component = n.attribute("component").as_uint();
-					mod.name = n.attribute("name").as_uint();
+					mod.target = n.attribute("target").value();
 					mod.value = n.attribute("value").value();
 
-					auto te = find_with_file_id(e, mod.entity);
+					auto sp = SUS::split(mod.target, '|');
+
+					auto te = find_with_file_id(e, sp.front());
 					assert(te);
 
 					void* obj = nullptr;
 					UdtInfo* ui = nullptr;
 
-					if (mod.component == 0)
+					if (sp.size() == 2)
 					{
 						obj = te;
 						ui = TypeInfo::get<Entity>()->retrive_ui();
 					}
 					else
 					{
-						obj = te->get_component(mod.component);
-						ui = find_udt(mod.component);
+						auto hash = sh(sp[1].c_str());
+						obj = te->get_component(hash);
+						ui = find_udt(hash);
 					}
 
 					assert(ui);
-					auto attr = ui->find_attribute(mod.name);
+					auto attr = ui->find_attribute(sp.back());
 					assert(attr);
 					attr->type->unserialize(mod.value.c_str(), nullptr);
 					attr->set_value(obj);
@@ -444,10 +445,12 @@ namespace flame
 		SerializeXmlSpec spec;
 		spec.map[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
-			dst.append_attribute("type_hash").set_value(comp->type_hash);
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
+			{
+				dst.append_attribute("type_name").set_value(ui->name.c_str());
 				serialize_xml(*ui, comp, dst);
+			}
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (Entity*)src;
@@ -459,9 +462,7 @@ namespace flame
 				for (auto& m : e->prefab->modifications)
 				{
 					auto n = n_mod.append_child("item");
-					n.append_attribute("entity").set_value(m.entity.c_str());
-					n.append_attribute("component").set_value(m.component);
-					n.append_attribute("name").set_value(m.name);
+					n.append_attribute("target").set_value(m.target.c_str());
 					n.append_attribute("value").set_value(m.value.c_str());
 				}
 			}

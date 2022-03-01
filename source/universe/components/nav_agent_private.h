@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	const auto MinSpeed = 0.01f;
+
 	struct cNavAgentPrivate : cNavAgent
 	{
 		int dt_id = -1;

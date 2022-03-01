@@ -281,7 +281,7 @@ namespace flame
 
 				{
 					auto n_node = n_components.append_child("item");
-					n_node.append_attribute("type_hash").set_value("flame::cNode"_h);
+					n_node.append_attribute("type_name").set_value("flame::cNode"_h);
 
 					aiVector3D s;
 					aiVector3D r;
@@ -307,7 +307,7 @@ namespace flame
 					if (!model->bones.empty())
 					{
 						auto n_armature = n_components.append_child("item");
-						n_armature.append_attribute("type_hash").set_value("flame::cArmature"_h);
+						n_armature.append_attribute("type_name").set_value("flame::cArmature");
 						n_armature.append_attribute("model_name").set_value(model_filename.string().c_str());
 					}
 				}
@@ -317,10 +317,10 @@ namespace flame
 					if (name == "trigger")
 					{
 						auto n_rigid = n_components.append_child("item");
-						n_rigid.append_attribute("type_hash").set_value("flame::cRigid"_h);
+						n_rigid.append_attribute("type_name").set_value("flame::cRigid");
 						n_rigid.append_attribute("dynamic").set_value(false);
 						auto n_shape = n_components.append_child("item");
-						n_shape.append_attribute("type_hash").set_value("flame::cShape"_h);
+						n_shape.append_attribute("type_name").set_value("flame::cShape");
 						n_shape.append_attribute("type").set_value("Cube");
 						n_shape.append_attribute("size").set_value("2,2,0.01");
 						n_shape.append_attribute("trigger").set_value(true);
@@ -328,16 +328,16 @@ namespace flame
 					else
 					{
 						auto n_mesh = n_components.append_child("item");
-						n_mesh.append_attribute("type_hash").set_value("flame::cMesh"_h);
+						n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 						n_mesh.append_attribute("model_name").set_value(model_filename.string().c_str());
 						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
 							auto n_rigid = n_components.append_child("item");
-							n_rigid.append_attribute("type_hash").set_value("flame::cRigid"_h);
+							n_rigid.append_attribute("type_name").set_value("flame::cRigid");
 							n_rigid.append_attribute("dynamic").set_value(false);
 							auto n_shape = n_components.append_child("item");
-							n_shape.append_attribute("type_hash").set_value("flame::cShape"_h);
+							n_shape.append_attribute("type_name").set_value("flame::cShape");
 							n_shape.append_attribute("type").set_value("Mesh");
 						}
 					}
