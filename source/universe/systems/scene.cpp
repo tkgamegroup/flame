@@ -109,7 +109,7 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::generate_navmesh()
+	void sScenePrivate::generate_nav_mesh()
 	{
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
@@ -128,6 +128,10 @@ namespace flame
 				}
 				if (auto terrain = e->get_component_t<cTerrain>(); terrain)
 				{
+					auto node = terrain->node;
+					auto g_pos = node->g_pos;
+					auto g_scl = node->g_scl;
+
 					auto& textures = terrain->textures;
 					if (textures)
 					{
@@ -145,9 +149,9 @@ namespace flame
 						{
 							for (auto x = 0; x < cx + 1; x++)
 							{
-								positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x,
-									textures->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y,
-									z * extent.z);
+								positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x * g_scl.x,
+									textures->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * g_scl.y,
+									z * extent.z * g_scl.z) + g_pos;
 							}
 						}
 						auto n1 = indices.size();
@@ -500,7 +504,7 @@ namespace flame
 		return true;
 	}
 
-	uint sScenePrivate::navmesh_find_nearest_poly(const vec3& pos)
+	uint sScenePrivate::nav_mesh_nearest_poly(const vec3& pos)
 	{
 		dtPolyRef ret = 0;
 		const auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
@@ -508,12 +512,12 @@ namespace flame
 		return ret;
 	}
 
-	std::vector<vec3> sScenePrivate::navmesh_calc_path(const vec3& start, const vec3& end)
+	std::vector<vec3> sScenePrivate::calc_nav_path(const vec3& start, const vec3& end)
 	{
 		std::vector<vec3> ret;
 
-		dtPolyRef start_ref = navmesh_find_nearest_poly(start);
-		dtPolyRef end_ref = navmesh_find_nearest_poly(end);
+		dtPolyRef start_ref = nav_mesh_nearest_poly(start);
+		dtPolyRef end_ref = nav_mesh_nearest_poly(end);
 
 		if (!start_ref || !end_ref)
 			return ret;

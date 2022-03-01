@@ -245,8 +245,29 @@ void View_Scene::on_draw()
 						selection.clear();
 				}
 				if (hovering_node)
-					ImGui::GetWindowDrawList()->AddText(p0, ImColor(1.f, 1.f, 1.f), str(hovering_pos).c_str());
+					ImGui::GetWindowDrawList()->AddText(p0, ImColor(0.f, 0.f, 0.f), str(hovering_pos).c_str());
 			}
+		}
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+			{
+				if (app.e_prefab)
+				{
+					auto str = std::wstring((wchar_t*)payload->Data);
+					auto path = Path::reverse(str);
+					if (path.extension() == L".prefab")
+					{
+						auto e = Entity::create();
+						e->load(path);
+						new PrefabInstance(e, path);
+						if (auto node = e->get_component_i<cNode>(0); node)
+							node->set_pos(hovering_pos);
+						app.e_prefab->add_child(e);
+					}
+				}
+			}
+			ImGui::EndDragDropTarget();
 		}
 	}
 }

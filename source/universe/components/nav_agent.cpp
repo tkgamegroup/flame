@@ -16,7 +16,7 @@ namespace flame
 		if (dt_id != -1)
 		{
 			auto scene = sScene::instance();
-			dtPolyRef poly_ref = scene->navmesh_find_nearest_poly(pos);
+			dtPolyRef poly_ref = scene->nav_mesh_nearest_poly(pos);
 			auto dt_crowd = scene->dt_crowd;
 			auto agent = dt_crowd->getEditableAgent(dt_id);
 			agent->params.maxSpeed = MinSpeed;

@@ -303,6 +303,7 @@ namespace flame
 					auto best_fit = children[best_fit_child(obj->bounds.center())].get();
 					if (best_fit->bounds.contains(obj->bounds))
 					{
+						obj->octnode = nullptr;
 						best_fit->sub_add(obj);
 						it = objects.erase(it);
 					}

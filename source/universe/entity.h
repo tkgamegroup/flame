@@ -173,11 +173,12 @@ namespace flame
 		FLAME_UNIVERSE_API static Create& create;
 	};
 
-	PrefabInstance::PrefabInstance(EntityPtr e, const std::filesystem::path& filename) :
+	PrefabInstance::PrefabInstance(EntityPtr _e, const std::filesystem::path& filename) :
 		e(e),
 		filename(filename)
 	{
-		assert(!((Entity*)e)->prefab);
-		((Entity*)e)->prefab.reset(this);
+		auto e = (Entity*)_e;
+		assert(!e->prefab);
+		e->prefab.reset(this);
 	}
 }

@@ -31,6 +31,8 @@ namespace flame
 		dtNavMeshQuery* dt_nav_query = nullptr;
 		dtQueryFilter* dt_filter = nullptr;
 		dtCrowd* dt_crowd = nullptr;
+
+		std::vector<cNavAgentPtr> peeding_nav_agents;
 	#endif
 
 		sScenePrivate();
@@ -38,9 +40,9 @@ namespace flame
 
 		void update_transform(EntityPtr e, bool mark_dirty);
 
-		void generate_navmesh() override;
-		uint navmesh_find_nearest_poly(const vec3& pos);
-		std::vector<vec3> navmesh_calc_path(const vec3& start, const vec3& end) override;
+		void generate_nav_mesh() override;
+		uint nav_mesh_nearest_poly(const vec3& pos);
+		std::vector<vec3> calc_nav_path(const vec3& start, const vec3& end) override;
 
 		void update() override;
 	};
