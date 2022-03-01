@@ -155,6 +155,11 @@ void App::init()
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Show"))
+		{
+			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("View"))
 		{
 			for (auto w : views)

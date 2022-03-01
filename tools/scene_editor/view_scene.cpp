@@ -113,7 +113,37 @@ void View_Scene::on_draw()
 						if (selection.type == Selection::tEntity)
 							outline_node(selection.entity, cvec4(255, 255, 128, 0));
 					}
-					}, "scene"_h);
+					if (show_AABB)
+					{
+						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+							if (!e->global_enable)
+								return false;
+							if (auto node = e->get_component_i<cNode>(0); node)
+							{
+								if (!node->bounds.invalid())
+								{
+									auto points = node->bounds.get_points();
+									vec3 line_pts[24];
+									auto p = line_pts;
+									*p++ = points[0]; *p++ = points[1];
+									*p++ = points[1]; *p++ = points[2];
+									*p++ = points[2]; *p++ = points[3];
+									*p++ = points[3]; *p++ = points[0];
+									*p++ = points[0]; *p++ = points[4];
+									*p++ = points[1]; *p++ = points[5];
+									*p++ = points[2]; *p++ = points[6];
+									*p++ = points[3]; *p++ = points[7];
+									*p++ = points[4]; *p++ = points[5];
+									*p++ = points[5]; *p++ = points[6];
+									*p++ = points[6]; *p++ = points[7];
+									*p++ = points[7]; *p++ = points[4];
+									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
+								}
+							}
+							return true;
+						});
+					}
+				}, "scene"_h);
 				editor_node->mark_transform_dirty();
 			}
 

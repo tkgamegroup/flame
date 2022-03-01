@@ -24,7 +24,7 @@ namespace flame
 		node->measurers.add([this](AABB* ret) {
 			if (!textures)
 				return false;
-			*ret = AABB(AABB(node->g_pos, node->g_pos + extent * node->g_scl).get_points(node->transform));
+			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
 		}, "mesh"_h);
 

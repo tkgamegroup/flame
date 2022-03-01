@@ -6,6 +6,8 @@ struct View_Scene : View
 {
 	std::unique_ptr<graphics::Image> render_tar;
 
+	bool show_AABB = false;
+
 	float camera_zoom = 5.f;
 	cNodePtr hovering_node = nullptr;
 	vec3 hovering_pos;
