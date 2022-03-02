@@ -1,7 +1,7 @@
 #pragma once
 
-#include "image.h"
 #include "swapchain.h"
+#include "renderpass.h"
 
 #if USE_IMGUI
 #include <imgui.h>

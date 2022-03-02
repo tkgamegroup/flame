@@ -1,6 +1,7 @@
 #pragma once
 
-#include "graphics.h"
+#include "image.h"
+#include "command.h"
 
 namespace flame
 {
