@@ -298,6 +298,9 @@ namespace flame
 			temp << std::endl;
 
 			{
+				auto full_src_path = std::filesystem::canonical(std::filesystem::current_path() / src_path);
+				full_src_path.make_preferred();
+
 				std::vector<std::filesystem::path> dependencies;
 				std::list<std::filesystem::path> headers;
 				headers.push_back(src_path);
@@ -314,8 +317,11 @@ namespace flame
 					fn = std::filesystem::canonical(fn);
 					fn.make_preferred();
 
-					if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
-						dependencies.push_back(fn);
+					if (fn != full_src_path)
+					{
+						if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
+							dependencies.push_back(fn);
+					}
 
 					auto ppath = fn.parent_path();
 					auto lines = get_file_lines(fn);

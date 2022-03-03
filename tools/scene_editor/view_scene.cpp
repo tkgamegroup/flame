@@ -92,6 +92,9 @@ void View_Scene::on_draw()
 		}
 #endif
 
+		auto& io = ImGui::GetIO();
+		auto& style = ImGui::GetStyle();
+
 		if (ImGui::IsItemHovered())
 		{
 			auto editor_node = app.e_editor->get_component_i<cNode>(0);
@@ -152,8 +155,6 @@ void View_Scene::on_draw()
 			auto get_tar = [&]() {
 				return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
 			};
-
-			auto& io = ImGui::GetIO();
 
 			if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 			{
@@ -233,19 +234,22 @@ void View_Scene::on_draw()
 				if (ImGui::IsKeyPressed(Keyboard_Del))
 					app.cmd_delete_selected_entity();
 			}
-
-			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+		}
+		if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+		{
+			hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
+			if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 			{
-				hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
-				if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
-				{
-					if (hovering_node)
-						selection.select(hovering_node->entity);
-					else
-						selection.clear();
-				}
 				if (hovering_node)
-					ImGui::GetWindowDrawList()->AddText(p0, ImColor(0.f, 0.f, 0.f), str(hovering_pos).c_str());
+					selection.select(hovering_node->entity);
+				else
+					selection.clear();
+			}
+			{
+				auto s = str(hovering_pos);
+				auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+				ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+				ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
 			}
 		}
 		if (ImGui::BeginDragDropTarget())
