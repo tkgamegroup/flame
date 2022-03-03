@@ -22,7 +22,7 @@ namespace flame
 
 		if (system_map.find(hash) != system_map.end())
 		{
-			printf("cannot add system: %s already exist\n", ui->name.c_str());
+			printf("cannot add system: %s already existed\n", ui->name.c_str());
 			return nullptr;
 		}
 

@@ -85,7 +85,7 @@ namespace flame
 
 		if (component_map.find(hash) != component_map.end())
 		{
-			printf("cannot add component: %s already exist\n", ui->name.c_str());
+			printf("cannot add component: %s already existed\n", ui->name.c_str());
 			return nullptr;
 		}
 
