@@ -348,13 +348,14 @@ namespace flame
 		auto filename = Path::get(_filename);
 		if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
-			printf("prefab does not exist or wrong format: %s\n", _filename.string().c_str());
+			wprintf(L"prefab does not exist or wrong format: %s\n", _filename.c_str());
 			return false;
 		}
 
 		UnserializeXmlSpec spec;
 		spec.map[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
-			auto hash = sh(src.attribute("type_name").value());
+			std::string name = src.attribute("type_name").value();
+			auto hash = sh(name.c_str());
 			auto ui = find_udt(hash);
 			if (ui)
 			{
@@ -363,7 +364,7 @@ namespace flame
 					unserialize_xml(*ui, src, c, {});
 			}
 			else
-				wprintf(L"cannot find component with hash %u\n", hash);
+				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
 		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {

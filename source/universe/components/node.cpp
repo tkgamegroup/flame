@@ -1,7 +1,7 @@
 #include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "../systems/node_renderer_private.h"
+#include "../systems/renderer_private.h"
 #include "../octree.h"
 
 namespace flame
@@ -149,10 +149,10 @@ namespace flame
 	void cNodePrivate::mark_drawing_dirty()
 	{
 		if (entity->world)
-			sNodeRenderer::instance()->dirty = true;
+			sRenderer::instance()->dirty = true;
 	}
 
-	void cNodePrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
+	void cNodePrivate::draw(sRendererPtr renderer, bool shadow_pass)
 	{
 		if (shadow_pass)
 		{

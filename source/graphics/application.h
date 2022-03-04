@@ -35,7 +35,7 @@ struct GraphicsApplication : Application
 				graphics::Queue::get(nullptr)->wait_idle();
 				delete ((graphics::Image*)tex);
 				return false;
-				});
+			});
 		};
 #endif
 	}

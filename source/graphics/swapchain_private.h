@@ -14,7 +14,8 @@ namespace flame
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
 
-			void* resize_listener;
+			void* resize_lis = nullptr;
+			void* destroy_lis = nullptr;
 
 			~SwapchainPrivate();
 

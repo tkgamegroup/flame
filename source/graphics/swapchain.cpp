@@ -17,7 +17,10 @@ namespace flame
 		SwapchainPrivate::~SwapchainPrivate()
 		{
 			if (window)
-				window->resize_listeners.remove(resize_listener);
+			{
+				window->resize_listeners.remove(resize_lis);
+				window->destroy_listeners.remove(destroy_lis);
+			}
 
 			if (vk_swapchain)
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
@@ -142,12 +145,12 @@ namespace flame
 				ret->build();
 				ret->image_avalible.reset(Semaphore::create(device));
 
-				ret->resize_listener = window->resize_listeners.add([ret](const uvec2& size) {
+				ret->resize_lis = window->resize_listeners.add([ret](const uvec2& size) {
 					ret->build();
-					});
-				window->destroy_listeners.add([ret]() {
+				});
+				ret->destroy_lis = window->destroy_listeners.add([ret]() {
 					ret->window = nullptr;
-					});
+				});
 
 				return ret;
 			}

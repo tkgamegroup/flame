@@ -23,7 +23,7 @@ namespace flame
 
 		void apply_src();
 
-		void draw(sNodeRendererPtr renderer, bool shadow_pass);
+		void draw(sRendererPtr renderer, bool shadow_pass);
 
 		void on_active() override;
 		void on_inactive() override;

@@ -2,7 +2,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "terrain_private.h"
-#include "../systems/node_renderer_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -17,7 +17,7 @@ namespace flame
 
 	void cTerrainPrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer) {
+		node->drawers.add([this](sRendererPtr renderer) {
 			draw(renderer);
 		}, "mesh"_h);
 
@@ -169,7 +169,7 @@ namespace flame
 		*/
 	}
 
-	void cTerrainPrivate::draw(sNodeRendererPtr renderer)
+	void cTerrainPrivate::draw(sRendererPtr renderer)
 	{
 		if (instance_id == -1 || !textures)
 			return;
@@ -185,14 +185,14 @@ namespace flame
 
 	void cTerrainPrivate::on_active()
 	{
-		instance_id = sNodeRenderer::instance()->register_terrain_instance(-1);
+		instance_id = sRenderer::instance()->register_terrain_instance(-1);
 
 		node->mark_transform_dirty();
 	}
 
 	void cTerrainPrivate::on_inactive()
 	{
-		sNodeRenderer::instance()->register_terrain_instance(instance_id);
+		sRenderer::instance()->register_terrain_instance(instance_id);
 		instance_id = -1;
 	}
 

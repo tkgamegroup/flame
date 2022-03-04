@@ -20,7 +20,7 @@ namespace flame
 	{
 		struct Window
 		{
-			NativeWindow* native;
+			NativeWindowPtr native;
 			std::unique_ptr<SwapchainT> swapchain;
 
 			RenderpassPtr renderpass_clear;
@@ -42,7 +42,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual WindowPtr operator()(DevicePtr device, NativeWindow* native) = 0;
+				virtual WindowPtr operator()(DevicePtr device, NativeWindowPtr native) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 

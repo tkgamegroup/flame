@@ -65,14 +65,15 @@ namespace flame
 			if (length(dir) > MinSpeed * 0.5f)
 			{
 				auto ang0 = fmodf(node->get_eul().x, 360.f);
-				auto ang1 = fmodf(atan2(dir.z, dir.x) - 90.f, 360.f);
+				auto ang1 = fmodf(degrees(atan2(dir.z, dir.x)), 360.f);
+				printf("ang1: %f\n", ang1);
 				auto dist1 = ang0 - ang1; if (dist1 < 0.f) dist1 += 360.f;
 				auto dist2 = ang1 - ang0; if (dist2 < 0.f) dist2 += 360.f;
 				auto tsp = turn_speed * delta_time;
 				if (dist1 < dist2)
-					node->add_eul(vec3(min(tsp, dist1), 0.f, 0.f));
+					node->add_eul(vec3(-min(tsp, dist1), 0.f, 0.f));
 				else
-					node->add_eul(vec3(-min(tsp, dist2), 0.f, 0.f));
+					node->add_eul(vec3(+min(tsp, dist2), 0.f, 0.f));
 				if (min(dist1, dist2) < 15.f)
 				{
 					agent->params.maxSpeed = speed;

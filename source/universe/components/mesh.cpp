@@ -5,7 +5,7 @@
 #include "node_private.h"
 #include "mesh_private.h"
 #include "armature_private.h"
-#include "../systems/node_renderer_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -18,10 +18,10 @@ namespace flame
 
 	void cMeshPrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer) {
+		node->drawers.add([this](sRendererPtr renderer) {
 			draw(renderer, false);
 		}, "mesh"_h);
-		node->shadow_drawers.add([this](sNodeRendererPtr renderer) {
+		node->shadow_drawers.add([this](sRendererPtr renderer) {
 			draw(renderer, true);
 		}, "mesh"_h);
 
@@ -88,7 +88,7 @@ namespace flame
 		mesh = &model->meshes[mesh_index];
 	}
 
-	void cMeshPrivate::draw(sNodeRendererPtr renderer, bool shadow_pass)
+	void cMeshPrivate::draw(sRendererPtr renderer, bool shadow_pass)
 	{
 		if (mesh_id == -1 && mesh)
 		{
@@ -133,7 +133,7 @@ namespace flame
 		if (parmature)
 			instance_id = parmature->instance_id;
 		else
-			instance_id = sNodeRenderer::instance()->register_mesh_instance(-1);
+			instance_id = sRenderer::instance()->register_mesh_instance(-1);
 
 		node->mark_transform_dirty();
 	}
@@ -144,7 +144,7 @@ namespace flame
 		mesh_id = -1;
 
 		if (!parmature)
-			sNodeRenderer::instance()->register_mesh_instance(instance_id);
+			sRenderer::instance()->register_mesh_instance(instance_id);
 		instance_id = -1;
 	}
 

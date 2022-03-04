@@ -665,8 +665,8 @@ namespace flame
 		{
 			return _instance;
 		}
-	}sScene_instance_private;
-	sScene::Instance& sScene::instance = sScene_instance_private;
+	}sScene_instance;
+	sScene::Instance& sScene::instance = sScene_instance;
 
 	struct sSceneCreate : sScene::Create
 	{
@@ -679,6 +679,6 @@ namespace flame
 			_instance = new sScenePrivate();
 			return _instance;
 		}
-	}sScene_create_private;
-	sScene::Create& sScene::create = sScene_create_private;
+	}sScene_create;
+	sScene::Create& sScene::create = sScene_create;
 }

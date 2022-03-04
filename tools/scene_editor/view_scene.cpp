@@ -26,7 +26,7 @@ void View_Scene::on_draw()
 		ImGui::Combo("Camera", &camera_idx, names, n);
 	}
 	auto camera = camera_list[camera_idx];
-	app.node_renderer->camera = camera;
+	app.renderer->camera = camera;
 
 	auto size = vec2(ImGui::GetContentRegionAvail());
 	if (!render_tar || vec2(render_tar->size) != size)
@@ -36,7 +36,7 @@ void View_Scene::on_draw()
 			graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
 		auto iv = render_tar->get_view();
-		app.node_renderer->set_targets( { &iv, 1 }, graphics::ImageLayoutShaderReadOnly );
+		app.renderer->set_targets( { &iv, 1 }, graphics::ImageLayoutShaderReadOnly );
 	}
 
 	hovering_node = nullptr;
@@ -46,6 +46,7 @@ void View_Scene::on_draw()
 		ImGui::Image(render_tar.get(), size);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
+		app.input->offset = p0;
 
 		bool using_gizmo = false;
 #if USE_IM_GUIZMO
@@ -100,7 +101,7 @@ void View_Scene::on_draw()
 			auto editor_node = app.e_editor->get_component_i<cNode>(0);
 			if (!editor_node->drawers.exist("scene"_h))
 			{
-				editor_node->drawers.add([this](sNodeRendererPtr renderer) {
+				editor_node->drawers.add([this](sRendererPtr renderer) {
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_id != -1)
 							renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_id, col);
@@ -141,6 +142,27 @@ void View_Scene::on_draw()
 									*p++ = points[6]; *p++ = points[7];
 									*p++ = points[7]; *p++ = points[4];
 									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
+								}
+							}
+							return true;
+						});
+					}
+					if (show_axis)
+					{
+						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+							if (!e->global_enable)
+								return false;
+							if (auto node = e->get_component_i<cNode>(0); node)
+							{
+								if (!node->bounds.invalid())
+								{
+									vec3 line_pts[2];
+									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
+									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 0, 0, 255));
+									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
+									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 255, 0, 255));
+									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
+									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 0, 255, 255));
 								}
 							}
 							return true;
@@ -237,7 +259,7 @@ void View_Scene::on_draw()
 		}
 		if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 		{
-			hovering_node = sNodeRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
+			hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
 			if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 			{
 				if (hovering_node)

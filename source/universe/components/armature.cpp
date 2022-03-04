@@ -3,7 +3,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "armature_private.h"
-#include "../systems/node_renderer_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -31,7 +31,7 @@ namespace flame
 
 	void cArmaturePrivate::on_init()
 	{
-		node->drawers.add([this](sNodeRendererPtr renderer) {
+		node->drawers.add([this](sRendererPtr renderer) {
 			draw(renderer);
 		}, "armature"_h);
 
@@ -148,7 +148,7 @@ namespace flame
 		}
 	}
 
-	void cArmaturePrivate::draw(sNodeRendererPtr renderer)
+	void cArmaturePrivate::draw(sRendererPtr renderer)
 	{
 		if (instance_id == -1)
 			return;
@@ -189,7 +189,7 @@ namespace flame
 	{
 		apply_src();
 
-		instance_id = sNodeRenderer::instance()->register_armature_instance(-1);
+		instance_id = sRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();
 	}
@@ -202,7 +202,7 @@ namespace flame
 		bones.clear();
 		animations.clear();
 
-		sNodeRenderer::instance()->register_armature_instance(instance_id);
+		sRenderer::instance()->register_armature_instance(instance_id);
 		instance_id = -1;
 	}
 

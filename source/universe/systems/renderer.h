@@ -5,7 +5,7 @@
 namespace flame
 {
 	/// Reflect
-	struct sNodeRenderer : System
+	struct sRenderer : System
 	{
 		cCameraPtr camera = nullptr;
 
@@ -49,13 +49,13 @@ namespace flame
 
 		struct Instance
 		{
-			virtual sNodeRendererPtr operator()() = 0;
+			virtual sRendererPtr operator()() = 0;
 		};
 		FLAME_UNIVERSE_API static Instance& instance;
 
 		struct Create
 		{
-			virtual sNodeRendererPtr operator()(WorldPtr) = 0;
+			virtual sRendererPtr operator()(WorldPtr) = 0;
 		};
 		/// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

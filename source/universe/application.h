@@ -5,14 +5,16 @@
 #include "../graphics/font.h"
 #include "entity.h"
 #include "world.h"
+#include "systems/input.h"
 #include "systems/scene.h"
-#include "systems/node_renderer.h"
+#include "systems/renderer.h"
 
 struct UniverseApplication : GraphicsApplication
 {
 	std::unique_ptr<World> world;
-	sScenePtr			scene;
-	sNodeRendererPtr	node_renderer;
+	sInputPtr		input;
+	sScenePtr		scene;
+	sRendererPtr	renderer;
 
 	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), 
 		WindowStyleFlags styles = WindowFrame | WindowResizable)
@@ -20,8 +22,9 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(graphics_debug, title, size, styles);
 
 		world.reset(World::create());
-		scene			= (sScenePtr)world->add_system(th<sScene>());
-		node_renderer	= (sNodeRendererPtr)world->add_system(th<sNodeRenderer>());
+		input	 = (sInputPtr)world->add_system(th<sInput>());
+		scene	 = (sScenePtr)world->add_system(th<sScene>());
+		renderer = (sRendererPtr)world->add_system(th<sRenderer>());
 	}
 
 	bool on_update() override

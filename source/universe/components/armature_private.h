@@ -44,7 +44,7 @@ namespace flame
 
 		void apply_src();
 
-		void draw(sNodeRendererPtr renderer);
+		void draw(sRendererPtr renderer);
 
 		void on_active() override;
 		void on_inactive() override;

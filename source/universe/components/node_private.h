@@ -32,7 +32,7 @@ namespace flame
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
 
-		void draw(sNodeRendererPtr renderer, bool shadow_pass);
+		void draw(sRendererPtr renderer, bool shadow_pass);
 
 		void on_active() override;
 		void on_inactive() override;

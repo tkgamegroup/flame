@@ -12,8 +12,164 @@ namespace flame
 {
 	namespace graphics
 	{
+		WindowPrivate::WindowPrivate(DevicePtr device, NativeWindowPtr _native) :
+			device(device)
+		{
+			native = _native;
+
+			swapchain.reset(Swapchain::create(device, native));
+			commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
+			commandbuffer->want_executed_time = true;
+			finished_fence.reset(Fence::create(device));
+			finished_semaphore.reset(Semaphore::create(device));
+
+			auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&Swapchain::format);
+			renderpass_clear = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str });
+			renderpass_load = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
+
+#if USE_IMGUI
+			mouse_lis = native->mouse_listeners.add([this](MouseButton btn, bool down) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.MouseDown[btn] = down;
+			});
+			mousemove_lis = native->mousemove_listeners.add([this](const ivec2& pos) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.MousePos = ImVec2(pos.x, pos.y);
+			});
+			scroll_lis = native->scroll_listeners.add([this](int scroll) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.MouseWheel = scroll;
+			});
+			key_lis = native->key_listeners.add([this](KeyboardKey key, bool down) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.KeysDown[key] = down;
+				if (key == Keyboard_Ctrl)
+					io.KeyCtrl = down;
+				if (key == Keyboard_Shift)
+					io.KeyShift = down;
+				if (key == Keyboard_Alt)
+					io.KeyAlt = down;
+			});
+			char_lis = native->char_listeners.add([this](wchar_t ch) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.AddInputCharacter(ch);
+			});
+
+			imgui_pl = GraphicsPipeline::get(device, L"flame\\shaders\\imgui.pipeline",
+				{ "rp=" + str(renderpass_clear) });
+			imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
+			imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
+			imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), imgui_pl->layout->dsls[0]));
+
+			IMGUI_CHECKVERSION();
+
+			ImGui::CreateContext();
+			ImGuiIO& io = ImGui::GetIO();
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+			ImGui::StyleColorsDark();
+
+			ImGuiStyle& style = ImGui::GetStyle();
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+
+			assert(!io.BackendPlatformUserData);
+
+			io.BackendPlatformName = "imgui_impl_flame";
+			io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+			io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+			io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+
+			io.KeyMap[ImGuiKey_Tab] = Keyboard_Tab;
+			io.KeyMap[ImGuiKey_LeftArrow] = Keyboard_Left;
+			io.KeyMap[ImGuiKey_RightArrow] = Keyboard_Right;
+			io.KeyMap[ImGuiKey_UpArrow] = Keyboard_Up;
+			io.KeyMap[ImGuiKey_DownArrow] = Keyboard_Down;
+			io.KeyMap[ImGuiKey_PageUp] = Keyboard_PgUp;
+			io.KeyMap[ImGuiKey_PageDown] = Keyboard_PgDn;
+			io.KeyMap[ImGuiKey_Home] = Keyboard_Home;
+			io.KeyMap[ImGuiKey_End] = Keyboard_End;
+			io.KeyMap[ImGuiKey_Insert] = Keyboard_Ins;
+			io.KeyMap[ImGuiKey_Delete] = Keyboard_Del;
+			io.KeyMap[ImGuiKey_Backspace] = Keyboard_Backspace;
+			io.KeyMap[ImGuiKey_Space] = Keyboard_Space;
+			io.KeyMap[ImGuiKey_Enter] = Keyboard_Enter;
+			io.KeyMap[ImGuiKey_Escape] = Keyboard_Esc;
+			io.KeyMap[ImGuiKey_A] = Keyboard_A;
+			io.KeyMap[ImGuiKey_C] = Keyboard_C;
+			io.KeyMap[ImGuiKey_V] = Keyboard_V;
+			io.KeyMap[ImGuiKey_X] = Keyboard_X;
+			io.KeyMap[ImGuiKey_Y] = Keyboard_Y;
+			io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
+
+			{
+				std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
+				if (std::filesystem::exists(font_path))
+					io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+
+				uchar* img_data;
+				int img_w, img_h;
+				io.Fonts->GetTexDataAsAlpha8(&img_data, &img_w, &img_h);
+
+				StagingBuffer stag(nullptr, image_pitch(img_w) * img_h, img_data);
+				InstanceCB cb(nullptr);
+
+				imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
+				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutTransferDst);
+				BufferImageCopy cpy;
+				cpy.img_ext = uvec2(img_w, img_h);
+				cb->copy_buffer_to_image(stag.get(), imgui_img_font.get(), { &cpy, 1 });
+				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
+			}
+
+			imgui_ds->set_image(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
+			imgui_ds->update();
+
+#endif
+			auto resize = [this]() {
+				for (auto& img : swapchain->images)
+					framebuffers.emplace_back(Framebuffer::create(renderpass_clear, img->get_view()));
+
+#if USE_IMGUI
+				ImGuiIO& io = ImGui::GetIO();
+				auto sz = framebuffers.empty() ? vec2(-1) : vec2(native->size);
+				io.DisplaySize = ImVec2(sz.x, sz.y);
+#endif
+			};
+			resize_lis = native->resize_listeners.add([=](const vec2&) {
+				framebuffers.clear();
+				resize();
+			});
+			resize();
+
+			destroy_lis = native->destroy_listeners.add([this]() {
+				for (auto it = windows.begin(); it != windows.end(); it++)
+				{
+					if (*it == this)
+					{
+						windows.erase(it);
+						native = nullptr;
+						delete this;
+						return;
+					}
+				}
+			});
+		}
+
 		WindowPrivate::~WindowPrivate()
 		{
+			if (native)
+			{
+				native->mouse_listeners.remove(mouse_lis);
+				native->mousemove_listeners.remove(mousemove_lis);
+				native->scroll_listeners.remove(scroll_lis);
+				native->key_listeners.remove(key_lis);
+				native->char_listeners.remove(char_lis);
+				native->resize_listeners.remove(resize_lis);
+				native->destroy_listeners.remove(destroy_lis);
+			}
+
 			Queue::get(nullptr)->wait_idle();
 		}
 
@@ -125,7 +281,7 @@ namespace flame
 						commandbuffer->begin_renderpass(renderpass_load, curr_fb);
 					commandbuffer->set_viewport(Rect(0, 0, fb_width, fb_height));
 
-					commandbuffer->bind_pipeline(imgui_pl.get());
+					commandbuffer->bind_pipeline(imgui_pl);
 					commandbuffer->bind_vertex_buffer(imgui_buf_vtx.buf.get(), 0);
 					commandbuffer->bind_index_buffer(imgui_buf_idx.buf.get(), sizeof(ImDrawIdx) == 2 ? IndiceTypeUshort : IndiceTypeUint);
 					commandbuffer->bind_descriptor_set(0, imgui_ds.get());
@@ -190,162 +346,12 @@ namespace flame
 
 		struct WindowCreate : Window::Create
 		{
-			WindowPtr operator()(DevicePtr device, NativeWindow* native) override
+			WindowPtr operator()(DevicePtr device, NativeWindowPtr native) override
 			{
 				if (!device)
 					device = current_device;
 
-				auto ret = new WindowPrivate;
-				ret->device = device;
-				ret->native = native;
-
-				ret->swapchain.reset(Swapchain::create(device, native));
-				ret->commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
-				ret->commandbuffer->want_executed_time = true;
-				ret->finished_fence.reset(Fence::create(device));
-				ret->finished_semaphore.reset(Semaphore::create(device));
-
-				auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&Swapchain::format);
-				ret->renderpass_clear = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str });
-				ret->renderpass_load = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
-
-#if USE_IMGUI
-				ret->native->mouse_listeners.add([this](MouseButton btn, bool down) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.MouseDown[btn] = down;
-				});
-
-				ret->native->mousemove_listeners.add([this](const ivec2& pos) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.MousePos = ImVec2(pos.x, pos.y);
-				});
-
-				ret->native->scroll_listeners.add([this](int scroll) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.MouseWheel = scroll;
-				});
-
-				ret->native->key_listeners.add([this](KeyboardKey key, bool down) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.KeysDown[key] = down;
-					if (key == Keyboard_Ctrl)
-						io.KeyCtrl = down;
-					if (key == Keyboard_Shift)
-						io.KeyShift = down;
-					if (key == Keyboard_Alt)
-						io.KeyAlt = down;
-				});
-
-				ret->native->char_listeners.add([this](wchar_t ch) {
-					ImGuiIO& io = ImGui::GetIO();
-					io.AddInputCharacter(ch);
-				});
-
-				ret->imgui_pl.reset(GraphicsPipeline::get(device, L"flame\\shaders\\imgui.pipeline", 
-					{ "rp=" + str(ret->renderpass_clear) }));
-				ret->imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
-				ret->imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
-				ret->imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), ret->imgui_pl->layout->dsls[0]));
-
-				IMGUI_CHECKVERSION();
-
-				ImGui::CreateContext();
-				ImGuiIO& io = ImGui::GetIO();
-				io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-				io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-				ImGui::StyleColorsDark();
-
-				ImGuiStyle& style = ImGui::GetStyle();
-				style.WindowRounding = 0.0f;
-				style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-
-				assert(!io.BackendPlatformUserData);
-
-				io.BackendPlatformName = "imgui_impl_flame";
-				io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
-				io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
-				io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
-
-				io.KeyMap[ImGuiKey_Tab] = Keyboard_Tab;
-				io.KeyMap[ImGuiKey_LeftArrow] = Keyboard_Left;
-				io.KeyMap[ImGuiKey_RightArrow] = Keyboard_Right;
-				io.KeyMap[ImGuiKey_UpArrow] = Keyboard_Up;
-				io.KeyMap[ImGuiKey_DownArrow] = Keyboard_Down;
-				io.KeyMap[ImGuiKey_PageUp] = Keyboard_PgUp;
-				io.KeyMap[ImGuiKey_PageDown] = Keyboard_PgDn;
-				io.KeyMap[ImGuiKey_Home] = Keyboard_Home;
-				io.KeyMap[ImGuiKey_End] = Keyboard_End;
-				io.KeyMap[ImGuiKey_Insert] = Keyboard_Ins;
-				io.KeyMap[ImGuiKey_Delete] = Keyboard_Del;
-				io.KeyMap[ImGuiKey_Backspace] = Keyboard_Backspace;
-				io.KeyMap[ImGuiKey_Space] = Keyboard_Space;
-				io.KeyMap[ImGuiKey_Enter] = Keyboard_Enter;
-				io.KeyMap[ImGuiKey_Escape] = Keyboard_Esc;
-				io.KeyMap[ImGuiKey_A] = Keyboard_A;
-				io.KeyMap[ImGuiKey_C] = Keyboard_C;
-				io.KeyMap[ImGuiKey_V] = Keyboard_V;
-				io.KeyMap[ImGuiKey_X] = Keyboard_X;
-				io.KeyMap[ImGuiKey_Y] = Keyboard_Y;
-				io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
-
-				{
-					{
-						std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
-						if (std::filesystem::exists(font_path))
-							io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
-					}
-
-					uchar* img_data;
-					int img_w, img_h;
-					io.Fonts->GetTexDataAsAlpha8(&img_data, &img_w, &img_h);
-
-					StagingBuffer stag(nullptr, image_pitch(img_w) * img_h, img_data);
-					InstanceCB cb(nullptr);
-
-					ret->imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
-					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutTransferDst);
-					BufferImageCopy cpy;
-					cpy.img_ext = uvec2(img_w, img_h);
-					cb->copy_buffer_to_image(stag.get(), ret->imgui_img_font.get(), { &cpy, 1 });
-					cb->image_barrier(ret->imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
-				}
-
-				ret->imgui_ds->set_image(0, 0, ret->imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
-				ret->imgui_ds->update();
-
-#endif
-
-				auto resize = [ret]() {
-					for (auto& img : ret->swapchain->images)
-						ret->framebuffers.emplace_back(Framebuffer::create(ret->renderpass_clear, img->get_view()));
-
-#if USE_IMGUI
-					ImGuiIO& io = ImGui::GetIO();
-					auto sz = ret->framebuffers.empty() ? vec2(-1) : vec2(ret->native->size);
-					io.DisplaySize = ImVec2(sz.x, sz.y);
-#endif
-				};
-
-				resize();
-
-				native->resize_listeners.add([=](const vec2&) {
-					ret->framebuffers.clear();
-					resize();
-				});
-
-				native->destroy_listeners.add([ret]() {
-					for (auto it = windows.begin(); it != windows.end(); it++)
-					{
-						if (*it == ret)
-						{
-							windows.erase(it);
-							delete ret;
-							return;
-						}
-					}
-				});
-
+				auto ret = new WindowPrivate(device, native);
 				windows.emplace_back(ret);
 				return ret;
 			}

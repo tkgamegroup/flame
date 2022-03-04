@@ -1,6 +1,6 @@
 #pragma once
 
-#include "node_renderer.h"
+#include "renderer.h"
 
 #include "../../graphics/image.h"
 #include "../../graphics/renderpass.h"
@@ -46,7 +46,7 @@ namespace flame
 		cvec4 color;
 	};
 
-	struct sNodeRendererPrivate : sNodeRenderer
+	struct sRendererPrivate : sRenderer
 	{
 		graphics::WindowPtr window;
 
@@ -125,8 +125,8 @@ namespace flame
 
 		graphics::ImageLayout final_layout;
 
-		sNodeRendererPrivate() {}
-		sNodeRendererPrivate(graphics::WindowPtr w);
+		sRendererPrivate() {}
+		sRendererPrivate(graphics::WindowPtr w);
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;

@@ -132,7 +132,7 @@ void App::init()
 					node->drawers.remove(NavMeshTest::hash);
 				else
 				{
-					node->drawers.add([&](sNodeRendererPtr renderer) {
+					node->drawers.add([&](sRendererPtr renderer) {
 						{
 							std::vector<vec3> points;
 							points.push_back(navmesh_test.start - vec3(1, 0, 0));
@@ -159,6 +159,7 @@ void App::init()
 		if (ImGui::BeginMenu("Show"))
 		{
 			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
+			ImGui::MenuItem("Axis", nullptr, &view_scene.show_axis);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -246,6 +247,7 @@ void App::init()
 			if (ImGui::Button("Play"))
 			{
 				world->update_components = true;
+				always_render = true;
 				playing = true;
 			}
 		}
@@ -254,6 +256,7 @@ void App::init()
 			if (ImGui::Button("Stop"))
 			{
 				world->update_components = false;
+				always_render = false;
 				playing = false;
 			}
 		}

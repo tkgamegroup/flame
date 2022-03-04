@@ -1,4 +1,4 @@
-#include "node_renderer_private.h"
+#include "renderer_private.h"
 #include "scene_private.h"
 #include "../octree.h"
 #include "../world_private.h"
@@ -19,7 +19,7 @@ namespace flame
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const graphics::Format col_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
 
-	sNodeRendererPrivate::sNodeRendererPrivate(graphics::WindowPtr w) :
+	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
 		img_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
@@ -131,7 +131,7 @@ namespace flame
 		});
 	}
 
-	void sNodeRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
+	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
@@ -161,7 +161,7 @@ namespace flame
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 	}
 
-	void sNodeRendererPrivate::bind_window_targets()
+	void sRendererPrivate::bind_window_targets()
 	{
 		window->native->resize_listeners.add([this](const uvec2& sz) {
 			graphics::Queue::get(nullptr)->wait_idle();
@@ -176,7 +176,7 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	int sNodeRendererPrivate::set_material_res(int idx, graphics::Material* mat)
+	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
 	{
 		//auto opaque = mat->get_opaque();
 
@@ -285,7 +285,7 @@ namespace flame
 		return idx;
 	}
 
-	int sNodeRendererPrivate::find_material_res(graphics::Material* mat) const
+	int sRendererPrivate::find_material_res(graphics::Material* mat) const
 	{
 		//for (auto i = 0; i < mat_reses.size(); i++)
 		//{
@@ -295,7 +295,7 @@ namespace flame
 		return -1;
 	}
 
-	int sNodeRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
+	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
 	{
 		if (idx == -1)
 		{
@@ -380,7 +380,7 @@ namespace flame
 		return idx;
 	}
 
-	int sNodeRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
+	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
 	{
 		for (auto i = 0; i < mesh_reses.size(); i++)
 		{
@@ -390,7 +390,7 @@ namespace flame
 		return -1;
 	}
 
-	int sNodeRendererPrivate::register_mesh_instance(int id)
+	int sRendererPrivate::register_mesh_instance(int id)
 	{
 		if (id == -1)
 		{
@@ -403,14 +403,14 @@ namespace flame
 		return id;
 	}
 
-	void sNodeRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
+	void sRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
 	{
 		buf_mesh_ins.select_item(id);
 		buf_mesh_ins.set_var<"mat"_h>(mat);
 		buf_mesh_ins.set_var<"nor"_h>(mat4(nor));
 	}
 
-	int sNodeRendererPrivate::register_armature_instance(int id)
+	int sRendererPrivate::register_armature_instance(int id)
 	{
 		if (id == -1)
 		{
@@ -428,13 +428,13 @@ namespace flame
 		return id;
 	}
 
-	mat4* sNodeRendererPrivate::set_armature_instance(uint id)
+	mat4* sRendererPrivate::set_armature_instance(uint id)
 	{
 		buf_armature_ins.select_item(id);
 		return (mat4*)buf_armature_ins.pend;
 	}
 
-	int sNodeRendererPrivate::register_terrain_instance(int id)
+	int sRendererPrivate::register_terrain_instance(int id)
 	{
 		if (id == -1)
 		{
@@ -449,7 +449,7 @@ namespace flame
 		return id;
 	}
 
-	void sNodeRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures)
+	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures)
 	{
 		buf_terrain_ins.select_item(id);
 		buf_terrain_ins.set_var<"mat"_h>(mat);
@@ -460,7 +460,7 @@ namespace flame
 		ds_instance->update();
 	}
 
-	void sNodeRendererPrivate::draw_line(const vec3* points, uint count, const cvec4& color)
+	void sRendererPrivate::draw_line(const vec3* points, uint count, const cvec4& color)
 	{
 		DrawLine d;
 		d.node = current_node;
@@ -476,7 +476,7 @@ namespace flame
 		}
 	}
 
-	void sNodeRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint skin)
+	void sRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint skin)
 	{
 		DrawMesh d;
 		d.node = current_node;
@@ -489,7 +489,7 @@ namespace flame
 			draw_arm_meshes.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin)
+	void sRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin)
 	{
 		DrawMesh d;
 		d.node = current_node;
@@ -502,7 +502,7 @@ namespace flame
 			draw_occluder_arm_meshes.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color)
+	void sRendererPrivate::draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color)
 	{
 		DrawMesh d;
 		d.node = current_node;
@@ -515,7 +515,7 @@ namespace flame
 			draw_outline_arm_meshes.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color)
+	void sRendererPrivate::draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color)
 	{
 		DrawMesh d;
 		d.node = current_node;
@@ -528,7 +528,7 @@ namespace flame
 			draw_wireframe_arm_meshes.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint material_id)
+	void sRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint material_id)
 	{
 		DrawTerrain d;
 		d.node = current_node;
@@ -538,7 +538,7 @@ namespace flame
 		draw_terrains.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color)
+	void sRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color)
 	{
 		DrawTerrain d;
 		d.node = current_node;
@@ -548,7 +548,7 @@ namespace flame
 		draw_outline_terrains.push_back(d);
 	}
 
-	void sNodeRendererPrivate::draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color)
+	void sRendererPrivate::draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color)
 	{
 		DrawTerrain d;
 		d.node = current_node;
@@ -573,7 +573,7 @@ namespace flame
 		return gauss_blur_weights[radius];
 	}
 
-	void sNodeRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
+	void sRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
 		if (camera == INVALID_POINTER)
 			return;
@@ -824,11 +824,11 @@ namespace flame
 		cb->image_barrier(img, iv->sub, final_layout);
 	}
 
-	void sNodeRendererPrivate::update()
+	void sRendererPrivate::update()
 	{
 	}
 
-	cNodePtr sNodeRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
+	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
 	{
 		if (camera == INVALID_POINTER)
 			return nullptr;
@@ -841,6 +841,8 @@ namespace flame
 		}
 
 		auto sz = vec2(img_pickup->size);
+		if (screen_pos.x >= sz.x || screen_pos.y >= sz.y)
+			return nullptr;
 
 		{
 			graphics::InstanceCB cb(nullptr, fence_pickup.get());
@@ -944,23 +946,23 @@ namespace flame
 		}
 	}
 
-	static sNodeRendererPtr _instance = nullptr;
+	static sRendererPtr _instance = nullptr;
 
-	struct sNodeRendererInstance : sNodeRenderer::Instance
+	struct sRendererInstance : sRenderer::Instance
 	{
-		sNodeRendererPtr operator()() override
+		sRendererPtr operator()() override
 		{
 			return _instance;
 		}
-	}sNodeRenderer_instance_private;
-	sNodeRenderer::Instance& sNodeRenderer::instance = sNodeRenderer_instance_private;
+	}sRenderer_instance;
+	sRenderer::Instance& sRenderer::instance = sRenderer_instance;
 
-	struct sNodeRendererCreatePrivate : sNodeRenderer::Create
+	struct sRendererCreatePrivate : sRenderer::Create
 	{
-		sNodeRendererPtr operator()(WorldPtr w) override
+		sRendererPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return new sNodeRendererPrivate();
+				return new sRendererPrivate();
 
 			assert(!_instance);
 
@@ -971,9 +973,9 @@ namespace flame
 				return nullptr;
 			}
 
-			_instance = new sNodeRendererPrivate(windows[0]);
+			_instance = new sRendererPrivate(windows[0]);
 			return _instance;
 		}
-	}sNodeRenderer_create_private;
-	sNodeRenderer::Create& sNodeRenderer::create = sNodeRenderer_create_private;
+	}sRenderer_create;
+	sRenderer::Create& sRenderer::create = sRenderer_create;
 }
