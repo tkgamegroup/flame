@@ -16,14 +16,13 @@ View_Scene::View_Scene() :
 
 void View_Scene::on_draw()
 {
-	static int camera_idx = 0;
 	auto& camera_list = cCamera::list();
 	{
 		static const char* names[8];
 		auto n = min(countof(names), camera_list.size());
 		for (auto i = 0; i < n; i++)
 			names[i] = camera_list[i]->entity->name.c_str();
-		ImGui::Combo("Camera", &camera_idx, names, n);
+		ImGui::Combo("Camera", (int*)&camera_idx, names, n);
 	}
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;

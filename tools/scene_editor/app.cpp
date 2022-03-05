@@ -7,6 +7,7 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/components/node.h>
+#include <flame/universe/components/camera.h>
 
 std::list<View*> views;
 
@@ -178,6 +179,53 @@ void App::init()
 		}
 		ImGui::EndMainMenuBar();
 
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
+		ImGui::PopStyleVar(2);
+		if (!e_playing)
+		{
+			if (ImGui::Button("Play"))
+				cmd_play();
+		}
+		else
+		{
+			if (ImGui::Button("Stop"))
+				cmd_stop();
+		}
+		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+		ImGui::End();
+
+		if (ImGui::IsKeyPressed(Keyboard_F5))
+		{
+			if (!e_playing)
+				cmd_play();
+			else
+				cmd_stop();
+		}
+
+		if (open_message_dialog)
+		{
+			ImGui::OpenPopup(message_dialog_title.c_str());
+			open_message_dialog = false;
+		}
+		if (ImGui::BeginPopupModal(message_dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::TextUnformatted(message_dialog_text.c_str());
+			if (ImGui::Button("OK"))
+			{
+				message_dialog_title.clear();
+				message_dialog_text.clear();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
 #ifdef USE_IM_FILE_DIALOG
 		if (ifd::FileDialog::Instance().IsDone("NewProject"))
 		{
@@ -230,54 +278,6 @@ void App::init()
 			ImGui::End();
 			if (!navmesh_test.open)
 				e_editor->get_component_i<cNode>(0)->drawers.remove(NavMeshTest::hash);
-		}
-
-		const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->WorkPos);
-		ImGui::SetNextWindowSize(viewport->WorkSize);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
-		ImGui::PopStyleVar(2);
-		if (!playing)
-		{
-			if (ImGui::Button("Play"))
-			{
-				world->update_components = true;
-				always_render = true;
-				playing = true;
-			}
-		}
-		else
-		{
-			if (ImGui::Button("Stop"))
-			{
-				world->update_components = false;
-				always_render = false;
-				playing = false;
-			}
-		}
-		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-		ImGui::End();
-
-		if (open_message_dialog)
-		{
-			ImGui::OpenPopup(message_dialog_title.c_str());
-			open_message_dialog = false;
-		}
-		if (ImGui::BeginPopupModal(message_dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::TextUnformatted(message_dialog_text.c_str());
-			if (ImGui::Button("OK"))
-			{
-				message_dialog_title.clear();
-				message_dialog_text.clear();
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
 		}
 	});
 }
@@ -541,6 +541,37 @@ bool App::cmd_delete_selected_entity()
 	e->parent->remove_child(e);
 	selection.clear();
 	return true;
+}
+
+bool App::cmd_play()
+{
+	if (e_playing || !e_prefab)
+		return false;
+	e_playing = e_prefab->copy();
+	e_prefab->parent->remove_child(e_prefab, false);
+	app.world->root->add_child(e_playing);
+	world->update_components = true;
+	always_render = true;
+	auto& camera_list = cCamera::list();
+	if (camera_list.size() > 1)
+		view_scene.camera_idx = 1;
+}
+
+bool App::cmd_stop()
+{
+	if (!e_playing)
+		return false;
+	add_event([this]() {
+		e_playing->parent->remove_child(e_playing);
+		e_playing = nullptr;
+		app.world->root->add_child(e_prefab);
+		return false;
+	});
+	world->update_components = false;
+	always_render = false;
+	auto& camera_list = cCamera::list();
+	if (camera_list.size() > 0)
+		view_scene.camera_idx = 0;
 }
 
 void App::show_message_dialog(const std::string& title, const std::string& content)

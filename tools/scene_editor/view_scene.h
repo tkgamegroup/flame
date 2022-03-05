@@ -9,6 +9,7 @@ struct View_Scene : View
 	bool show_AABB = false;
 	bool show_axis = true;
 
+	uint camera_idx = 0;
 	float camera_zoom = 5.f;
 	cNodePtr hovering_node = nullptr;
 	vec3 hovering_pos;

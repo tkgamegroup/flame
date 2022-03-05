@@ -22,12 +22,10 @@ struct View
 struct App : UniverseApplication
 {
 	std::filesystem::path project_path;
-
 	std::filesystem::path prefab_path;
-	EntityPtr e_prefab = nullptr;
 	EntityPtr e_editor = nullptr;
-
-	bool playing = false;
+	EntityPtr e_prefab = nullptr;
+	EntityPtr e_playing = nullptr;
 
 	bool open_message_dialog = false;
 	std::string message_dialog_title;
@@ -41,6 +39,8 @@ struct App : UniverseApplication
 
 	bool cmd_create_entity();
 	bool cmd_delete_selected_entity();
+	bool cmd_play();
+	bool cmd_stop();
 
 	void show_message_dialog(const std::string& title, const std::string& content = "");
 };

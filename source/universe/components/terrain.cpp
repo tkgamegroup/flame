@@ -194,6 +194,8 @@ namespace flame
 	{
 		sRenderer::instance()->register_terrain_instance(instance_id);
 		instance_id = -1;
+
+		node->mark_transform_dirty();
 	}
 
 	struct cTerrainCreate : cTerrain::Create

@@ -318,9 +318,18 @@ namespace flame
 	EntityPtr EntityPrivate::copy()
 	{
 		auto ret = Entity::create();
+		ret->name = name;
+		ret->tag = tag;
+		ret->set_enable(enable);
 		for (auto& c : components)
 		{
-
+			auto cc = ret->add_component(c->type_hash);
+			auto& ui = *find_udt(c->type_hash);
+			for (auto& a : ui.attributes)
+			{
+				auto v = a.get_value(c.get());
+				a.set_value(cc, v);
+			}
 		}
 		for (auto& c : children)
 			ret->add_child(c->copy());

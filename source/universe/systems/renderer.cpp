@@ -445,7 +445,11 @@ namespace flame
 			}
 		}
 		else
+		{
 			buf_terrain_ins.release_item(id);
+			ds_instance->set_image("terrain_textures", id, img_black->get_view({ 0, 1, 0, 3 }), nullptr);
+			ds_instance->update();
+		}
 		return id;
 	}
 
@@ -675,11 +679,8 @@ namespace flame
 		if (!draw_terrains.empty())
 		{
 			cb->bind_pipeline(pl_terrain_fwd);
-			for (auto i = 0; i < draw_terrains.size(); i++)
-			{
-				auto& d = draw_terrains[i];
-				cb->draw(4, d.blocks, 0, i << 24);
-			}
+			for (auto& d : draw_terrains)
+				cb->draw(4, d.blocks, 0, d.instance_id << 24);
 		}
 
 		cb->end_renderpass();
@@ -689,111 +690,121 @@ namespace flame
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-			prm_fwd.bind_dss(cb);
+			auto blur_pass = [&]() {
+				cb->bind_pipeline_layout(prm_post.pll);
+				prm_post.set_pc_var<"off"_h>(-3);
+				prm_post.set_pc_var<"len"_h>(7);
+				prm_post.set_pc_var<"pxsz"_h>(1.f / (vec2)img_back0->size);
+				prm_post.push_constant(cb);
+
+				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
+				cb->bind_pipeline(pl_localmax_h);
+				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+
+				cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+				cb->bind_pipeline(pl_localmax_v);
+				cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			};
+
+			auto add_pass = [&]() {
+				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+				cb->bind_pipeline(pl_add);
+				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+				cb->push_constant_t(1.f / (vec2)img_back0->size);
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			};
+
 			if (!draw_outline_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_plain);
 				for (auto& d : draw_outline_meshes)
 				{
+					auto& mr = mesh_reses[d.mesh_id];
+
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+					prm_fwd.bind_dss(cb);
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
-					auto& mr = mesh_reses[d.mesh_id];
+					cb->bind_pipeline(pl_mesh_plain);
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->end_renderpass();
+
+					blur_pass();
+
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+					prm_fwd.bind_dss(cb);
+					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+					prm_fwd.push_constant(cb);
+					cb->bind_pipeline(pl_mesh_plain);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->end_renderpass();
+
+					add_pass();
 				}
 			}
 			if (!draw_outline_arm_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_arm_plain);
 				for (auto& d : draw_outline_arm_meshes)
 				{
+					auto& mr = mesh_reses[d.mesh_id];
+
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+					prm_fwd.bind_dss(cb);
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
-					auto& mr = mesh_reses[d.mesh_id];
+					cb->bind_pipeline(pl_mesh_arm_plain);
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->end_renderpass();
+
+					blur_pass();
+
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+					prm_fwd.bind_dss(cb);
+					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+					prm_fwd.push_constant(cb);
+					cb->bind_pipeline(pl_mesh_arm_plain);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->end_renderpass();
+
+					add_pass();
 				}
 			}
 			if (!draw_outline_terrains.empty())
 			{
-				cb->bind_pipeline(pl_terrain_plain);
-				for (auto i = 0; i < draw_outline_terrains.size(); i++)
+				for (auto& d : draw_outline_terrains)
 				{
-					auto& d = draw_outline_terrains[i];
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+					prm_fwd.bind_dss(cb);
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
-					cb->draw(4, d.blocks, 0, i << 24);
+					cb->bind_pipeline(pl_terrain_plain);
+					cb->draw(4, d.blocks, 0, d.instance_id << 24);
+					cb->end_renderpass();
+
+					blur_pass();
+
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+					prm_fwd.bind_dss(cb);
+					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+					prm_fwd.push_constant(cb);
+					cb->bind_pipeline(pl_terrain_plain);
+					cb->draw(4, d.blocks, 0, d.instance_id << 24);
+					cb->end_renderpass();
+
+					add_pass();
 				}
 			}
-			cb->end_renderpass();
-
-			cb->bind_pipeline_layout(prm_post.pll);
-			prm_post.set_pc_var<"off"_h>(-3);
-			prm_post.set_pc_var<"len"_h>(7);
-			prm_post.set_pc_var<"pxsz"_h>(1.f / (vec2)img_back0->size);
-			prm_post.push_constant(cb);
-
-			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-			cb->bind_pipeline(pl_localmax_h);
-			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
-			cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_localmax_v);
-			cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-			prm_fwd.bind_dss(cb);
-			prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
-			prm_fwd.push_constant(cb);
-			if (!draw_outline_meshes.empty())
-			{
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_plain);
-				for (auto& d : draw_outline_meshes)
-				{
-					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
-				}
-			}
-			if (!draw_outline_arm_meshes.empty())
-			{
-				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_arm_plain);
-				for (auto& d : draw_outline_arm_meshes)
-				{
-					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
-				}
-			}
-			if (!draw_outline_terrains.empty())
-			{
-				cb->bind_pipeline(pl_terrain_plain);
-				for (auto i = 0; i < draw_outline_terrains.size(); i++)
-				{
-					auto& d = draw_outline_terrains[i];
-					cb->draw(4, d.blocks, 0, i << 24);
-				}
-			}
-			cb->end_renderpass();
-
-			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-			cb->bind_pipeline(pl_add);
-			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
-			cb->push_constant_t(1.f / (vec2)img_back0->size);
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
 		}
 
 		if (!draw_lines.empty())
@@ -893,7 +904,7 @@ namespace flame
 					auto& d = draw_terrains[i];
 					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_fwd.push_constant(cb.get());
-					cb->draw(4, d.blocks, 0, i << 24);
+					cb->draw(4, d.blocks, 0, d.instance_id << 24);
 				}
 				off += draw_terrains.size();
 			}

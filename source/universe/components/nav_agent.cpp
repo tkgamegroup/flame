@@ -66,9 +66,9 @@ namespace flame
 			{
 				auto ang0 = fmodf(node->get_eul().x, 360.f);
 				auto ang1 = fmodf(degrees(atan2(dir.z, dir.x)), 360.f);
-				printf("ang1: %f\n", ang1);
 				auto dist1 = ang0 - ang1; if (dist1 < 0.f) dist1 += 360.f;
 				auto dist2 = ang1 - ang0; if (dist2 < 0.f) dist2 += 360.f;
+				printf("ang0: %f, ang1: %f, dist1: %f, dist2: %f\n", ang0, ang1, dist1, dist2);
 				auto tsp = turn_speed * delta_time;
 				if (dist1 < dist2)
 					node->add_eul(vec3(-min(tsp, dist1), 0.f, 0.f));
