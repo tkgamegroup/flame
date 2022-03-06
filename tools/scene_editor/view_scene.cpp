@@ -108,13 +108,13 @@ void View_Scene::on_draw()
 							renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
 					};
 					if (hovering_node && selection.selecting(hovering_node->entity))
-						outline_node(hovering_node->entity, cvec4(178, 178, 96, 0));
+						outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));
 					else
 					{
 						if (hovering_node)
-							outline_node(hovering_node->entity, cvec4(128, 128, 64, 0));
+							outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
 						if (selection.type == Selection::tEntity)
-							outline_node(selection.entity, cvec4(255, 255, 128, 0));
+							outline_node(selection.entity, cvec4(255, 255, 128, 255));
 					}
 					if (show_AABB)
 					{

@@ -12,11 +12,11 @@ blend_options
   enable
     true
   src_color
-    One
+    SrcAlpha
   dst_color
-    One
+    OneMinusSrcAlpha
   src_alpha
-    One
+    Zero
   dst_alpha
     One
 

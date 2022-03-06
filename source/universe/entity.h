@@ -47,7 +47,7 @@ namespace flame
 		/// Reflect
 		std::string name;
 		/// Reflect
-		uint tag = 0x80000000;
+		uint tag = 1;
 
 		/// Reflect
 		bool enable = true;

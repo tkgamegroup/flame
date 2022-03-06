@@ -157,10 +157,13 @@ void View_Hierarchy::on_draw()
 		}
 	};
 
-	if (app.e_prefab)
+	auto e = app.e_playing;
+	if (!e)
+		e = app.e_prefab;
+	if (e)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.f));
-		draw_entity(app.e_prefab, 0);
+		draw_entity(e, 0);
 		ImGui::PopStyleVar(1);
 	}
 

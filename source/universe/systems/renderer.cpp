@@ -59,6 +59,8 @@ namespace flame
 			{ "rp=" + str(rp_col) });
 		pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
 			{ "rp=" + str(rp_col) });
+		pl_blend = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blend.pipeline",
+			{ "rp=" + str(rp_col) });
 
 		prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
 		pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
@@ -712,12 +714,11 @@ namespace flame
 				cb->end_renderpass();
 			};
 
-			auto add_pass = [&]() {
+			auto blend_pass = [&]() {
 				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				cb->bind_pipeline(pl_add);
+				cb->bind_pipeline(pl_blend);
 				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
-				cb->push_constant_t(1.f / (vec2)img_back0->size);
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			};
@@ -748,7 +749,7 @@ namespace flame
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
 					cb->end_renderpass();
 
-					add_pass();
+					blend_pass();
 				}
 			}
 			if (!draw_outline_arm_meshes.empty())
@@ -777,7 +778,7 @@ namespace flame
 					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
 					cb->end_renderpass();
 
-					add_pass();
+					blend_pass();
 				}
 			}
 			if (!draw_outline_terrains.empty())
@@ -802,7 +803,7 @@ namespace flame
 					cb->draw(4, d.blocks, 0, d.instance_id << 24);
 					cb->end_renderpass();
 
-					add_pass();
+					blend_pass();
 				}
 			}
 		}

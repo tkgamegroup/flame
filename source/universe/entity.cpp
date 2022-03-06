@@ -327,6 +327,11 @@ namespace flame
 			auto& ui = *find_udt(c->type_hash);
 			for (auto& a : ui.attributes)
 			{
+				if (a.var_idx != -1)
+				{
+					if (a.var()->metas.get("requires"_h))
+						continue;
+				}
 				auto v = a.get_value(c.get());
 				a.set_value(cc, v);
 			}

@@ -77,6 +77,7 @@ namespace flame
 		graphics::GraphicsPipelinePtr													pl_blit = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit_tar = nullptr;
 		graphics::GraphicsPipelinePtr													pl_add = nullptr;
+		graphics::GraphicsPipelinePtr													pl_blend = nullptr;
 
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_plain3d;
