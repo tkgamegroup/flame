@@ -211,7 +211,7 @@ namespace flame
 		for (auto& p : positions) bounds.expand(p);
 
 		auto agnent_height = 2.f;
-		auto agnet_riadius = 0.6f;
+		auto agnet_radius = 0.6f;
 		auto agnet_max_climb = 0.9f;
 
 		rcConfig rc_cfg;
@@ -221,7 +221,7 @@ namespace flame
 		rc_cfg.walkableSlopeAngle = 45.f;
  		rc_cfg.walkableHeight = (int)ceil(agnent_height / rc_cfg.ch);
 		rc_cfg.walkableClimb = (int)ceil(agnet_max_climb / rc_cfg.ch);
-		rc_cfg.walkableRadius = (int)ceil(agnet_riadius / rc_cfg.cs);
+		rc_cfg.walkableRadius = (int)ceil(agnet_radius / rc_cfg.cs);
 		rc_cfg.maxEdgeLen = (int)(/*edge max len*/12.f / rc_cfg.cs);
 		rc_cfg.maxSimplificationError = /*edge max error*/1.3f;
 		rc_cfg.minRegionArea = (int)square(/*region min size*/8.f);
@@ -341,7 +341,7 @@ namespace flame
 			parms.detailTris = rc_poly_mesh_d->tris;
 			parms.detailTriCount = rc_poly_mesh_d->ntris;
 			parms.walkableHeight = agnent_height;
-			parms.walkableRadius = agnet_riadius;
+			parms.walkableRadius = agnet_radius;
 			parms.walkableClimb = agnet_max_climb;
 			memcpy(parms.bmin, rc_poly_mesh->bmin, sizeof(vec3));
 			memcpy(parms.bmax, rc_poly_mesh->bmax, sizeof(vec3));
@@ -639,13 +639,14 @@ namespace flame
 			memset(&parms, 0, sizeof(dtCrowdAgentParams));
 			parms.radius = ag->radius;
 			parms.height = ag->height;
-			parms.maxAcceleration = 8.f;
-			parms.maxSpeed = MinSpeed;
+			parms.maxAcceleration = 600.f;
+			parms.maxSpeed = ag->speed;
 			parms.collisionQueryRange = parms.radius * 12.0f;
 			parms.pathOptimizationRange = parms.radius * 30.0f;
 			parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
 				DT_CROWD_OBSTACLE_AVOIDANCE;
 			parms.userData = ag;
+			ag->prev_pos = ag->node->g_pos;
 			ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
 			if (ag->dt_id == -1)
 				printf("dt crowd add agent failed: -1 is returned\n");

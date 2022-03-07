@@ -16,10 +16,20 @@ namespace flame
 			auto scene = sScene::instance();
 			dtPolyRef poly_ref = scene->nav_mesh_nearest_poly(pos);
 			auto dt_crowd = scene->dt_crowd;
-			auto agent = dt_crowd->getEditableAgent(dt_id);
-			agent->params.maxSpeed = MinSpeed;
 			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
 			//printf("%s -> %s\n", str(node->g_pos).c_str(), str(pos).c_str());
+		}
+#endif
+	}
+
+	void cNavAgentPrivate::stop()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_id != -1)
+		{
+			auto scene = sScene::instance();
+			auto dt_crowd = scene->dt_crowd;
+			dt_crowd->resetMoveTarget(dt_id);
 		}
 #endif
 	}
@@ -63,10 +73,10 @@ namespace flame
 			auto dt_crowd = sScene::instance()->dt_crowd;
 			auto agent = dt_crowd->getEditableAgent(dt_id);
 			auto dir = *(vec3*)agent->dvel;
-			if (length(dir) > MinSpeed * 0.5f)
+			if (length(dir) > 0.f)
 			{
-				auto ang0 = fmodf(node->get_eul().x, 360.f);
-				auto ang1 = fmodf(degrees(atan2(-dir.z, dir.x)), 360.f);
+				auto ang0 = node->get_eul().x;
+				auto ang1 = mod(degrees(atan2(dir.x, dir.z)), 360.f); if (ang1 < 0.f) ang1 += 360.f;
 				auto dist1 = ang0 - ang1; if (dist1 < 0.f) dist1 += 360.f;
 				auto dist2 = ang1 - ang0; if (dist2 < 0.f) dist2 += 360.f;
 				//printf("ang0: %f, ang1: %f, dist1: %f, dist2: %f\n", ang0, ang1, dist1, dist2);
@@ -75,13 +85,14 @@ namespace flame
 					node->add_eul(vec3(-min(tsp, dist1), 0.f, 0.f));
 				else
 					node->add_eul(vec3(+min(tsp, dist2), 0.f, 0.f));
+				*(vec3*)agent->npos -= *(vec3*)agent->disp;
 				if (min(dist1, dist2) < 15.f)
 				{
-					agent->params.maxSpeed = speed;
-					node->set_pos(*(vec3*)agent->npos);
+					prev_pos = *(vec3*)agent->npos;
+					node->set_pos(prev_pos);
 				}
 				else
-					agent->params.maxSpeed = MinSpeed;
+					*(vec3*)agent->npos = prev_pos;
 			}
 		}
 #endif

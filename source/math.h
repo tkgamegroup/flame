@@ -282,12 +282,24 @@ namespace flame
 			return any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a));
 		}
 
-		bool intersects(const vec2 center, float radius)
+		bool intersects(const vec3& center, float radius)
 		{
 			auto d = 0.f;
-			if (center.x < a.x) d += square(center.x - a.x);
+			if		(center.x < a.x) d += square(center.x - a.x);
 			else if (center.x > b.x) d += square(center.x - b.x);
-			if (center.y < a.z) d += square(center.y - a.z);
+			if		(center.y < a.y) d += square(center.y - a.y);
+			else if (center.y > b.y) d += square(center.y - b.y);
+			if		(center.z < a.z) d += square(center.z - a.z);
+			else if (center.z > b.z) d += square(center.z - b.z);
+			return square(radius) > d;
+		}
+
+		bool intersects(const vec2& center, float radius)
+		{
+			auto d = 0.f;
+			if		(center.x < a.x) d += square(center.x - a.x);
+			else if (center.x > b.x) d += square(center.x - b.x);
+			if		(center.y < a.z) d += square(center.y - a.z);
 			else if (center.y > b.z) d += square(center.y - b.z);
 			return square(radius) > d;
 		}

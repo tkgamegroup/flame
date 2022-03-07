@@ -20,6 +20,7 @@ namespace flame
 		float turn_speed = 360.f;
 
 		virtual void set_target(const vec3& pos) = 0;
+		virtual void stop() = 0;
 
 		struct Create
 		{

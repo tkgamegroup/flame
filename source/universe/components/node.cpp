@@ -22,8 +22,12 @@ namespace flame
 		return eul; 
 	}
 
-	void cNodePrivate::set_eul(const vec3& e)
+	void cNodePrivate::set_eul(const vec3& _e)
 	{
+		auto e = mod(_e, 360.f);
+		if (e.x < 0.f) e.x += 360.f;
+		if (e.y < 0.f) e.y += 360.f;
+		if (e.z < 0.f) e.z += 360.f;
 		if (eul == e)
 			return;
 		eul = e;

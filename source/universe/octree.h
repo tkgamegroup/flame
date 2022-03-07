@@ -1,4 +1,5 @@
-#include "universe.h"
+#include "entity.h"
+#include "components/node.h"
 
 namespace flame
 {
@@ -128,6 +129,49 @@ namespace flame
 		}
 
 		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
+		{
+			if (!bounds.intersects(check_center, check_radius))
+				return;
+
+			for (auto obj : objects)
+			{
+				auto e = obj->entity;
+				if (!e->global_enable || (filter_tag & e->tag) == 0)
+					continue;
+
+				if (obj->bounds.intersects(check_center, check_radius))
+					res.push_back(obj);
+			}
+
+			for (auto& c : children)
+				c->get_colliding(check_center, check_radius, res, filter_tag);
+		}
+
+		bool is_colliding(const vec3& check_center, float check_radius, uint filter_tag = 0xffffffff)
+		{
+			if (!bounds.intersects(check_center, check_radius))
+				return false;
+
+			for (auto obj : objects)
+			{
+				auto e = obj->entity;
+				if (!e->global_enable || (filter_tag & e->tag) == 0)
+					continue;
+
+				if (obj->bounds.intersects(check_center, check_radius))
+					return true;
+			}
+
+			for (auto& c : children)
+			{
+				if (c->is_colliding(check_center, check_radius, filter_tag))
+					return true;
+			}
+
+			return false;
+		}
+
+		void get_colliding(const vec3& check_center, float check_radius, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
