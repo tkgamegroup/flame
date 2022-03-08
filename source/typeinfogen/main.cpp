@@ -13,36 +13,51 @@ TypeInfoDataBase db;
 
 TypeTag parse_vector(std::string& name)
 {
-	static std::regex reg1("std::vector<([\\w\\s:\\*<>,]+),std::allocator<");
-	static std::regex reg2("std::vector<std::unique_ptr<([\\w:]+)");
-	std::smatch res;
-	auto ok = false;
+	auto get_first_template_argument = [&]() {
+		auto p = 0, lv = 0;
+		while (p < name.size())
+		{
+			auto ch = name[p];
+			if (ch == ',' && lv == 0)
+			{
+				name = name.substr(0, p);
+				break;
+			}
+			else if (ch == '<')
+				lv++;
+			else if (ch == '>')
+				lv--;
+			p++;
+		}
+	};
+
+	SUS::strip_head_if(name, "std::vector<");
+	get_first_template_argument();
+
 	auto is_pointer = false;
-	if (std::regex_search(name, res, reg2))
+	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
-		ok = true;
 		is_pointer = true;
+		get_first_template_argument();
 	}
-	else if (std::regex_search(name, res, reg1))
-		ok = true;
-	if (ok)
+
+	auto is_enum = SUS::strip_head_if(name, "enum ");
+	SUS::strip_head_if(name, "struct ");
+	SUS::strip_head_if(name, "class ");
+	name = TypeInfo::format_name(name);
+	if (is_enum)
+		return TagVE;
+	if (!is_pointer)
+		is_pointer = SUS::strip_tail_if(name, "*") || SUS::strip_tail_if(name, "*__ptr64");
+	if (TypeInfo::is_basic_type(name))
 	{
-		name = res[1].str();
-		auto is_enum = SUS::strip_head_if(name, "enum ");
-		SUS::strip_head_if(name, "struct ");
-		SUS::strip_head_if(name, "class ");
-		name = TypeInfo::format_name(name);
-		if (is_enum)
-			return TagVE;
-		if (!is_pointer)
-			is_pointer = SUS::strip_tail_if(name, "*") || SUS::strip_tail_if(name, "*__ptr64");
-		if (TypeInfo::is_basic_type(name))
-			return is_pointer ? TagVPD : TagVD;
+		if (is_pointer)
+			assert(0);
 		else
-			return is_pointer ? TagVPU : TagVU;
+			return TagVD;
 	}
-	assert(0);
-	return TagCount;
+	else
+		return is_pointer ? TagVPU : TagVU;
 }
 
 TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
@@ -112,6 +127,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 			ret = TypeInfo::get(TagPD, TypeInfo::format_name(base_type_name(pointer_type)), db);
 			break;
 		case SymTagPointerType:
+			assert(0);
 			break;
 		case SymTagUDT:
 		{
@@ -153,8 +169,36 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		s_arg_type->Release();
 		return ret;
 	}
+	case SymTagArrayType:
+	{
+		TypeInfo* ret = nullptr;
+		IDiaSymbol* array_type;
+		s_type->get_type(&array_type);
+		array_type->get_symTag(&dw);
+		switch (dw)
+		{
+		case SymTagEnum:
+			array_type->get_name(&pwname);
+			ret = TypeInfo::get(TagAE, TypeInfo::format_name(w2s(pwname)), db);
+			break;
+		case SymTagBaseType:
+			ret = TypeInfo::get(TagAD, TypeInfo::format_name(base_type_name(array_type)), db);
+			break;
+		case SymTagUDT:
+			array_type->get_name(&pwname);
+			auto name = TypeInfo::format_name(w2s(pwname));
+			if (TypeInfo::is_basic_type(name))
+				ret = TypeInfo::get(TagAD, name, db);
+			else
+				ret = TypeInfo::get(TagAU, name, db);
+			break;
+		}
+		assert(ret);
+		array_type->Release();
+		return ret;
+	}
 	default:
-		return TypeInfo::get(TagD, "__unsupported__symtag_" + str(dw));
+		assert(0);
 	}
 }
 
@@ -490,7 +534,7 @@ process:
 		auto name = w2s(pwname);
 		if (name.starts_with("flame::TypeInfo::get"))
 		{
-			static std::regex reg("^flame::TypeInfo::get<([\\w\\s:<>,]+)>$");
+			static std::regex reg("^flame::TypeInfo::get<(.+)>$");
 			std::smatch res;
 			if (std::regex_search(name, res, reg))
 			{
@@ -510,7 +554,7 @@ process:
 							name = res[1].str();
 							auto tag = parse_vector(name);
 							if (tag == TagVE)
-								add_udt_rule(name);
+								add_enum_rule(name);
 							else if (tag == TagVU)
 								add_udt_rule(name);
 						}

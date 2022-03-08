@@ -6,8 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline const auto MaxMaterialTexturesCount = 8U;
-
 		struct Material
 		{
 			struct Texture
@@ -27,12 +25,20 @@ namespace flame
 			bool opaque = true;
 			bool sort = false;
 
-			std::filesystem::path pipeline_file = "standard_mataterial.glsl";
-			std::string pipeline_defines;
+			std::filesystem::path shader_file = L"flame/assets/shaders/std_mat.glsl";
+			std::vector<std::string> shader_defines;
 
-			Texture textures[MaxMaterialTexturesCount] = {};
+			Texture textures[8] = {};
 
 			std::filesystem::path filename;
+
+			virtual void save(const std::filesystem::path& filename) = 0;
+
+			struct Create
+			{
+				virtual MaterialPtr operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{

@@ -20,6 +20,12 @@ namespace flame
 		std::vector<uint> mat_ids;
 	};
 
+	struct MatRes
+	{
+		graphics::Material* mat = nullptr;
+		std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
+	};
+
 	struct DrawLine
 	{
 		cNodePtr node;
@@ -51,6 +57,7 @@ namespace flame
 		graphics::WindowPtr window;
 
 		std::vector<MeshRes> mesh_reses;
+		std::vector<MatRes> mat_reses;
 
 		std::vector<DrawLine>		draw_lines;
 		std::vector<DrawMesh>		draw_meshes;
@@ -89,6 +96,7 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
@@ -96,6 +104,7 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
+		std::unique_ptr<graphics::DescriptorSet>										ds_material;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
@@ -132,11 +141,11 @@ namespace flame
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
 
-		int set_material_res(int idx, graphics::Material* mat) override;
-		int find_material_res(graphics::Material* mat) const override;
-
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
+
+		int set_material_res(int idx, graphics::Material* mat) override;
+		int find_material_res(graphics::Material* mat) const override;
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;

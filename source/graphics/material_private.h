@@ -8,6 +8,7 @@ namespace flame
 	{
 		struct MaterialPrivate : Material
 		{
+			void save(const std::filesystem::path& filename) override;
 		};
 
 		extern MaterialPtr default_material;

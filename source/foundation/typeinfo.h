@@ -9,6 +9,7 @@ namespace flame
 	*	D - Data
 	*	F - Function
 	*	U - Udt
+	*	A - Array
 	*	P - Pointer
 	*	V - Vector
 	*/
@@ -21,15 +22,18 @@ namespace flame
 		TagPE,
 		TagPD,
 		TagPU,
+		TagAE,
+		TagAD,
+		TagAU,
 		TagVE,
 		TagVD,
 		TagVU,
-		TagVPE,
-		TagVPD,
 		TagVPU,
 
 		TagP_Beg = TagPE,
 		TagP_End = TagPU,
+		TagA_Beg = TagAE,
+		TagA_End = TagAU,
 		TagV_Beg = TagVE,
 		TagV_End = TagVPU,
 
@@ -63,6 +67,15 @@ namespace flame
 	concept pointer_of_udt_type = pointer_type<T> && !basic_type<std::remove_pointer_t<T>>;
 
 	template<typename T>
+	concept array_of_enum_type = array_type<T> && enum_type<std::remove_extent_t<T>>;
+
+	template<typename T>
+	concept array_of_data_type = array_type<T> && basic_type<std::remove_extent_t<T>>;
+
+	template<typename T>
+	concept array_of_udt_type = array_type<T> && !basic_type<std::remove_extent_t<T>>;
+
+	template<typename T>
 	concept vector_of_enum_type = vector_type<T> && enum_type<typename T::value_type>;
 
 	template<typename T>
@@ -70,12 +83,6 @@ namespace flame
 
 	template<typename T>
 	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type>;
-
-	template<typename T>
-	concept vector_of_pointer_of_enum_type = vector_type<T> && pointer_of_enum_type<typename T::value_type>;
-
-	template<typename T>
-	concept vector_of_pointer_of_data_type = vector_type<T> && pointer_of_data_type<typename T::value_type>;
 
 	template<typename T>
 	concept vector_of_pointer_of_udt_type = vector_type<T> && pointer_of_udt_type<typename T::value_type>;
@@ -100,47 +107,42 @@ namespace flame
 			SUS::replace_all(ret, "Private", "");
 			SUS::strip_char(ret, ' ');
 
-			if (ret.starts_with("glm::"))
-			{
-				if (ret == "glm::vec<2,int,0>")
-					ret = "glm::ivec2";
-				else if (ret == "glm::vec<3,int,0>")
-					ret = "glm::ivec3";
-				else if (ret == "glm::vec<4,int,0>")
-					ret = "glm::ivec4";
-				else if (ret == "glm::vec<2,uint,0>")
-					ret = "glm::uvec2";
-				else if (ret == "glm::vec<3,uint,0>")
-					ret = "glm::uvec3";
-				else if (ret == "glm::vec<4,uint,0>")
-					ret = "glm::uvec4";
-				else if (ret == "glm::vec<2,uchar,0>")
-					ret = "glm::cvec2";
-				else if (ret == "glm::vec<3,uchar,0>")
-					ret = "glm::cvec3";
-				else if (ret == "glm::vec<4,uchar,0>")
-					ret = "glm::cvec4";
-				else if (ret == "glm::vec<2,float,0>")
-					ret = "glm::vec2";
-				else if (ret == "glm::vec<3,float,0>")
-					ret = "glm::vec3";
-				else if (ret == "glm::vec<4,float,0>")
-					ret = "glm::vec4";
-				else if (ret == "glm::mat<2,2,float,0>")
-					ret = "glm::mat2";
-				else if (ret == "glm::mat<3,3,float,0>")
-					ret = "glm::mat3";
-				else if (ret == "glm::mat<4,4,float,0>")
-					ret = "glm::mat4";
-				else if (ret == "glm::qua<float,0>")
-					ret = "glm::quat";
-				else
-					assert(0);
-			}
-			else if (ret.starts_with("std::basic_string<char"))
-				ret = "std::string";
-			else if (ret.starts_with("std::basic_string<wchar_t"))
-				ret = "std::wstring";
+			if (SUS::strip_head_if(ret, "glm::vec<2,int,0>"))
+				ret = "glm::ivec2" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<3,int,0>"))
+				ret = "glm::ivec3" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<4,int,0>"))
+				ret = "glm::ivec4" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<2,uint,0>"))
+				ret = "glm::uvec2" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<3,uint,0>"))
+				ret = "glm::uvec3" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<4,uint,0>"))
+				ret = "glm::uvec4" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<2,uchar,0>"))
+				ret = "glm::cvec2" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<3,uchar,0>"))
+				ret = "glm::cvec3" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<4,uchar,0>"))
+				ret = "glm::cvec4" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<2,float,0>"))
+				ret = "glm::vec2" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<3,float,0>"))
+				ret = "glm::vec3" + ret;
+			else if (SUS::strip_head_if(ret, "glm::vec<4,float,0>"))
+				ret = "glm::vec4" + ret;
+			else if (SUS::strip_head_if(ret, "glm::mat<2,2,float,0>"))
+				ret = "glm::mat2" + ret;
+			else if (SUS::strip_head_if(ret, "glm::mat<3,3,float,0>"))
+				ret = "glm::mat3" + ret;
+			else if (SUS::strip_head_if(ret, "glm::mat<4,4,float,0>"))
+				ret = "glm::mat4" + ret;
+			else if (SUS::strip_head_if(ret, "glm::qua<float,0>"))
+				ret = "glm::quat" + ret;
+			else if (SUS::strip_head_if(ret, "std::basic_string<char,std::char_traits<char>,std::allocator<char>>"))
+				ret = "std::string" + ret;
+			else if (SUS::strip_head_if(ret, "std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>"))
+				ret = "std::wstring" + ret;
 
 			return ret;
 		}
@@ -219,6 +221,30 @@ namespace flame
 			return ret;
 		}
 
+		template<array_of_enum_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagAE, format_name(typeid(std::remove_extent_t<T>).name()) +
+				std::format("[{}]", std::extent_v<T>), db);
+			return ret;
+		}
+
+		template<array_of_data_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagAD, format_name(typeid(std::remove_extent_t<T>).name()) +
+				std::format("[{}]", std::extent_v<T>), db);
+			return ret;
+		}
+
+		template<array_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagAU, format_name(typeid(std::remove_extent_t<T>).name()) +
+				std::format("[{}]", std::extent_v<T>), db);
+			return ret;
+		}
+
 		template<vector_of_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
@@ -237,20 +263,6 @@ namespace flame
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
 			static auto ret = get(TagVU, format_name(typeid(typename T::value_type).name()), db);
-			return ret;
-		}
-
-		template<vector_of_pointer_of_enum_type T>
-		static TypeInfo* get(TypeInfoDataBase& db = tidb)
-		{
-			static auto ret = get(TagVPE, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
-			return ret;
-		}
-
-		template<vector_of_pointer_of_data_type T>
-		static TypeInfo* get(TypeInfoDataBase& db = tidb)
-		{
-			static auto ret = get(TagVPD, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
 			return ret;
 		}
 
@@ -2117,6 +2129,64 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_Array : TypeInfo
+	{
+		uint extent = 0;
+
+		TypeInfo_Array(TypeTag tag, std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(tag, "", 0)
+		{
+			static std::regex reg(R"((.*)\[(\d+)\]$)");
+			std::smatch res;
+			auto str = std::string(base_name);
+			std::regex_search(str, res, reg);
+			if (res.size() > 2)
+			{
+				name = res[1].str();
+				extent = stoi(res[2].str());
+			}
+		}
+	};
+
+	struct TypeInfo_ArrayOfEnum : TypeInfo_Array
+	{
+		TypeInfo_Enum* ti = nullptr;
+
+		TypeInfo_ArrayOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo_Array(TagAE, base_name, db)
+		{
+			ti = (TypeInfo_Enum*)get(TagE, name, db);
+			name = base_name;
+			size = ti->size * extent;
+		}
+	};
+
+	struct TypeInfo_ArrayOfData : TypeInfo_Array
+	{
+		TypeInfo_Data* ti = nullptr;
+
+		TypeInfo_ArrayOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo_Array(TagAD, base_name, db)
+		{
+			ti = (TypeInfo_Data*)get(TagD, name, db);
+			name = base_name;
+			size = ti->size * extent;
+		}
+	};
+
+	struct TypeInfo_ArrayOfUdt : TypeInfo_Array
+	{
+		TypeInfo_Udt* ti = nullptr;
+
+		TypeInfo_ArrayOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo_Array(TagAU, base_name, db)
+		{
+			ti = (TypeInfo_Udt*)get(TagU, name, db);
+			name = base_name;
+			size = ti->size * extent;
+		}
+	};
+
 	struct TypeInfo_VectorOfEnum : TypeInfo
 	{
 		TypeInfo_Enum* ti = nullptr;
@@ -2150,28 +2220,6 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_VectorOfPointerOfEnum : TypeInfo
-	{
-		TypeInfo_PointerOfEnum* ti = nullptr;
-
-		TypeInfo_VectorOfPointerOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVPE, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_PointerOfEnum*)get(TagPE, name, db);
-		}
-	};
-
-	struct TypeInfo_VectorOfPointerOfData : TypeInfo
-	{
-		TypeInfo_PointerOfData* ti = nullptr;
-
-		TypeInfo_VectorOfPointerOfData(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVPD, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_PointerOfData*)get(TagPD, name, db);
-		}
-	};
-
 	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
 	{
 		TypeInfo_PointerOfUdt* ti = nullptr;
@@ -2193,8 +2241,6 @@ namespace flame
 			return ((TypeInfo_PointerOfEnum*)this)->ti->ei;
 		case TagVE:
 			return ((TypeInfo_VectorOfEnum*)this)->ti->ei;
-		case TagVPE:
-			return ((TypeInfo_VectorOfPointerOfEnum*)this)->ti->retrive_ei();
 		}
 		return nullptr;
 	}

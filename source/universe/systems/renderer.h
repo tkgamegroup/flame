@@ -14,11 +14,11 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
-		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
-		virtual int find_material_res(graphics::Material* mat) const = 0;
-
 		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
 		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
+
+		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
+		virtual int find_material_res(graphics::Material* mat) const = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;

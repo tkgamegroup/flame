@@ -163,7 +163,8 @@ namespace flame
 
 			struct Create
 			{
-				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
+				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, 
+					const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 

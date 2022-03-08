@@ -95,6 +95,9 @@ namespace flame
 	concept pointer_type = std::is_pointer_v<T>;
 
 	template<typename T>
+	concept array_type = std::is_array_v<T>;
+
+	template<typename T>
 	concept vector_type = is_specialization<T, std::vector>;
 
 	constexpr uint sh(char const* str)

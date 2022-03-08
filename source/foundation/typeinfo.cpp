@@ -47,6 +47,15 @@ namespace flame
 		case TagPU:
 			t = new TypeInfo_PointerOfUdt(name, db);
 			break;
+		case TagAE:
+			t = new TypeInfo_ArrayOfEnum(name, db);
+			break;
+		case TagAD:
+			t = new TypeInfo_ArrayOfData(name, db);
+			break;
+		case TagAU:
+			t = new TypeInfo_ArrayOfUdt(name, db);
+			break;
 		case TagVE:
 			t = new TypeInfo_VectorOfEnum(name, db);
 			break;
@@ -55,12 +64,6 @@ namespace flame
 			break;
 		case TagVU:
 			t = new TypeInfo_VectorOfUdt(name, db);
-			break;
-		case TagVPE:
-			t = new TypeInfo_VectorOfPointerOfEnum(name, db);
-			break;
-		case TagVPD:
-			t = new TypeInfo_VectorOfPointerOfData(name, db);
 			break;
 		case TagVPU:
 			t = new TypeInfo_VectorOfPointerOfUdt(name, db);

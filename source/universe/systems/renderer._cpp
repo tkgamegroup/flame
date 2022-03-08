@@ -1709,25 +1709,25 @@ namespace flame
 		{
 			auto& dst = nd.mat_reses[MaterialWireframe];
 			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"standard_mataterial.glsl";
+			dst.pipeline_file = L"flame/assets/shaders/std_mat.glsl";
 			dst.pipeline_defines.push_back("WIREFRAME");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialOutline];
 			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"standard_mataterial.glsl";
+			dst.pipeline_file = L"flame/assets/shaders/std_mat.glsl";
 			dst.pipeline_defines.push_back("OUTLINE");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialPickup];
 			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"standard_mataterial.glsl";
+			dst.pipeline_file = L"flame/assets/shaders/std_mat.glsl";
 			dst.pipeline_defines.push_back("PICKUP");
 		}
 		{
 			auto& dst = nd.mat_reses[MaterialNormalData];
 			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"standard_mataterial.glsl";
+			dst.pipeline_file = L"flame/assets/shaders/std_mat.glsl";
 			dst.pipeline_defines.push_back("NORMAL_DATA");
 		}
 
