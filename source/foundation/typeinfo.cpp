@@ -338,13 +338,16 @@ namespace flame
 				item.first = 0;
 				for (auto& vi : item.second->variables)
 				{
+					auto name = vi.type->name;
 					switch (vi.type->tag)
 					{
+					case TagAU:
+						name = ((TypeInfo_ArrayOfUdt*)vi.type)->ti->name;
 					case TagU:
 					case TagVU:
 						for (auto i = 0; i < sorted_udts.size(); i++)
 						{
-							if (sorted_udts[i].second->name == vi.type->name)
+							if (sorted_udts[i].second->name == name)
 							{
 								item.first = max(item.first, get_rank(i));
 								break;

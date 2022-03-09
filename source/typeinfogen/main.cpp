@@ -63,7 +63,9 @@ TypeTag parse_vector(std::string& name)
 TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 {
 	DWORD dw;
+	ULONG ul;
 	wchar_t* pwname;
+	VARIANT var;
 
 	auto base_type_name = [](IDiaSymbol* s)->std::string {
 		DWORD baseType;
@@ -172,6 +174,11 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 	case SymTagArrayType:
 	{
 		TypeInfo* ret = nullptr;
+
+		std::string extent_str;
+		if (s_type->get_count(&dw) == S_OK)
+			extent_str = std::format("[{}]", dw);
+
 		IDiaSymbol* array_type;
 		s_type->get_type(&array_type);
 		array_type->get_symTag(&dw);
@@ -179,18 +186,18 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		{
 		case SymTagEnum:
 			array_type->get_name(&pwname);
-			ret = TypeInfo::get(TagAE, TypeInfo::format_name(w2s(pwname)), db);
+			ret = TypeInfo::get(TagAE, TypeInfo::format_name(w2s(pwname)) + extent_str, db);
 			break;
 		case SymTagBaseType:
-			ret = TypeInfo::get(TagAD, TypeInfo::format_name(base_type_name(array_type)), db);
+			ret = TypeInfo::get(TagAD, TypeInfo::format_name(base_type_name(array_type)) + extent_str, db);
 			break;
 		case SymTagUDT:
 			array_type->get_name(&pwname);
 			auto name = TypeInfo::format_name(w2s(pwname));
 			if (TypeInfo::is_basic_type(name))
-				ret = TypeInfo::get(TagAD, name, db);
+				ret = TypeInfo::get(TagAD, name + extent_str, db);
 			else
-				ret = TypeInfo::get(TagAU, name, db);
+				ret = TypeInfo::get(TagAU, name + extent_str, db);
 			break;
 		}
 		assert(ret);
@@ -525,18 +532,55 @@ process:
 
 	auto library = load_library(input_path);
 
-	IDiaEnumSymbols* s_functions;
-	global->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
-	IDiaSymbol* s_function;
-	while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
+	std::map<std::string, IDiaSymbol*> dia_enums;
+	std::map<std::string, IDiaSymbol*> dia_funcs;
+	std::map<std::string, IDiaSymbol*> dia_udts;
+
+	IDiaEnumSymbols* s_enum;
+	IDiaSymbol* s_obj;
+
+	global->findChildren(SymTagEnum, NULL, nsNone, &s_enum);
+	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
-		s_function->get_name(&pwname);
+		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
-		if (name.starts_with("flame::TypeInfo::get"))
+		if (!name.starts_with("std::") && !name.starts_with("__"))
+			dia_enums[name] = s_obj;
+		else
+			s_obj->Release();
+	}
+	s_enum->Release();
+
+	global->findChildren(SymTagUDT, NULL, nsNone, &s_enum);
+	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!name.starts_with("std::") && !name.starts_with("__"))
+			dia_udts[name] = s_obj;
+		else
+			s_obj->Release();
+	}
+	s_enum->Release();
+
+	global->findChildren(SymTagFunction, NULL, nsNone, &s_enum);
+	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!name.starts_with("std::") && !name.starts_with("__"))
+			dia_funcs[name] = s_obj;
+		else
+			s_obj->Release();
+	}
+
+	for (auto& sym : dia_funcs)
+	{
+		if (sym.first.starts_with("flame::TypeInfo::get"))
 		{
 			static std::regex reg("^flame::TypeInfo::get<(.+)>$");
 			std::smatch res;
-			if (std::regex_search(name, res, reg))
+			if (std::regex_search(sym.first, res, reg))
 			{
 				auto name = res[1].str();
 				if (SUS::strip_head_if(name, "enum "))
@@ -564,9 +608,7 @@ process:
 				}
 			}
 		}
-		s_function->Release();
 	}
-	s_functions->Release();
 
 	auto need_collect = true;
 	while (need_collect)
@@ -582,21 +624,16 @@ process:
 				referenced_types.push_back(ti);
 		};
 
-		IDiaEnumSymbols* s_enums;
-		global->findChildren(SymTagEnum, NULL, nsNone, &s_enums);
-		IDiaSymbol* s_enum;
-		while (SUCCEEDED(s_enums->Next(1, &s_enum, &ul)) && (ul == 1))
+		for (auto& sym : dia_enums)
 		{
-			s_enum->get_name(&pwname);
-			auto enum_name = w2s(pwname);
-			if (!find_enum(sh(enum_name.c_str()), db) && need_enum(enum_name))
+			if (!find_enum(sh(sym.first.c_str()), db) && need_enum(sym.first))
 			{
 				EnumInfo e;
-				e.name = enum_name;
+				e.name = sym.first;
 				std::vector<std::pair<std::string, int>> items;
 
 				IDiaEnumSymbols* s_items;
-				s_enum->findChildren(SymTagNull, NULL, nsNone, &s_items);
+				sym.second->findChildren(SymTagNull, NULL, nsNone, &s_items);
 				IDiaSymbol* s_item;
 				while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
 				{
@@ -646,27 +683,20 @@ process:
 
 				db.enums.emplace(sh(e.name.c_str()), e);
 			}
-			s_enum->Release();
 		}
-		s_enums->Release();
 
-		IDiaEnumSymbols* s_udts;
-		global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
-		IDiaSymbol* s_udt;
-		while (SUCCEEDED(s_udts->Next(1, &s_udt, &ul)) && (ul == 1))
+		for (auto& sym : dia_udts)
 		{
-			s_udt->get_name(&pwname);
-			auto udt_name = w2s(pwname);
 			Rule* ur;
-			if (!find_udt(sh(udt_name.c_str()), db) && need_udt(udt_name, &ur))
+			if (!find_udt(sh(sym.first.c_str()), db) && need_udt(sym.first, &ur))
 			{
-				s_udt->get_length(&ull);
+				sym.second->get_length(&ull);
 				auto udt_size = ull;
 				std::string base_class_name;
 
 				IDiaEnumSymbols* s_base_classes;
 				IDiaSymbol* s_base_class;
-				s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
+				sym.second->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
 				if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
 				{
 					s_base_class->get_name(&pwname);
@@ -674,20 +704,9 @@ process:
 				}
 
 				UdtInfo u;
-				u.name = udt_name;
+				u.name = sym.first;
 				u.size = udt_size;
 				u.base_class_name = base_class_name;
-
-				IDiaEnumSymbols* s_all;
-				s_udt->findChildren(SymTagNull, NULL, nsNone, &s_all);
-				IDiaSymbol* s_obj;
-				while (SUCCEEDED(s_all->Next(1, &s_obj, &ul)) && (ul == 1))
-				{
-					s_obj->get_name(&pwname);
-					auto name = w2s(pwname);
-					s_obj->Release();
-				}
-				s_all->Release();
 
 				auto get_return_type = [&](IDiaSymbol* s_function_type) {
 					TypeInfo* ret;
@@ -724,13 +743,13 @@ process:
 				pugi::xml_node n_functions;
 
 				IDiaEnumSymbols* s_functions;
-				s_udt->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+				sym.second->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
 				IDiaSymbol* s_function;
 				while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
 				{
 					s_function->get_name(&pwname);
 					auto name = w2s(pwname);
-					if (udt_name.ends_with(name))
+					if (sym.first.ends_with(name))
 						name = "ctor";
 					else if (name[0] == '~')
 						name = "dtor";
@@ -782,7 +801,7 @@ process:
 				pugi::xml_node n_variables;
 
 				IDiaEnumSymbols* s_variables;
-				s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
+				sym.second->findChildren(SymTagData, NULL, nsNone, &s_variables);
 				IDiaSymbol* s_variable;
 				while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
 				{
@@ -806,11 +825,10 @@ process:
 							TypeInfo* return_type = nullptr;
 							std::vector<TypeInfo*> parameters;
 
-							global->findChildren(SymTagUDT, s2w(type->name).c_str(), nsNone, &symbols);
-							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+							if (auto it = dia_udts.find(type->name); it != dia_udts.end())
 							{
 								IDiaEnumSymbols* s_functions;
-								symbol->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+								it->second->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
 								IDiaSymbol* s_function;
 								while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
 								{
@@ -835,7 +853,7 @@ process:
 								s_functions->Release();
 							}
 
-							global->findChildren(SymTagData, s2w(udt_name + "::" + name).c_str(), nsNone, &symbols);
+							global->findChildren(SymTagData, s2w(sym.first + "::" + name).c_str(), nsNone, &symbols);
 							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
 							{
 								if (symbol->get_relativeVirtualAddress(&dw) == S_OK)
@@ -950,31 +968,32 @@ process:
 
 				db.udts.emplace(sh(u.name.c_str()), u);
 			}
-			s_udt->Release();
 		}
-		s_udts->Release();
 
 		enum_rules.clear();
 		udt_rules.clear();
 		for (auto t : referenced_types)
 		{
+			auto name = t->name;
 			switch (t->tag)
 			{
+			case TagAE:
+				name = ((TypeInfo_ArrayOfEnum*)t)->ti->name;
 			case TagE:
 			case TagVE:
-				if (!find_enum(sh(t->name.c_str()), db))
+				if (!find_enum(sh(name.c_str()), db))
 				{
-					add_enum_rule(t->name);
-
+					add_enum_rule(name);
 					need_collect = true;
 				}
 				break;
+			case TagAU:
+				name = ((TypeInfo_ArrayOfUdt*)t)->ti->name;
 			case TagU:
 			case TagVU:
-				if (!find_udt(sh(t->name.c_str()), db))
+				if (!find_udt(sh(name.c_str()), db))
 				{
-					add_udt_rule(t->name);
-
+					add_udt_rule(name);
 					need_collect = true;
 				}
 				break;
