@@ -24,6 +24,9 @@ namespace flame
 			float roughness = 1.f;
 			bool opaque = true;
 			bool sort = false;
+			int color_map = -1;
+			int alpha_map = -1;
+			float alpha_test = 0.f;
 
 			std::filesystem::path shader_file = L"flame/assets/shaders/std_mat.glsl";
 			std::vector<std::string> shader_defines;

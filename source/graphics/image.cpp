@@ -409,7 +409,7 @@ namespace flame
 				return ret;
 			}
 
-			float get_image_atc(ImagePtr img, uint level, float ref, float scale)
+			float get_image_alphatest_coverage(ImagePtr img, uint level, float ref, float scale)
 			{
 				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
@@ -430,7 +430,7 @@ namespace flame
 				return coverage / float(size.x * size.y);
 			}
 
-			void scale_image_atc(ImagePtr img, uint level, float desired, float ref)
+			void scale_image_alphatest_coverage(ImagePtr img, uint level, float desired, float ref)
 			{
 				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
@@ -443,7 +443,7 @@ namespace flame
 
 				for (int i = 0; i < 10; i++)
 				{
-					auto current_coverage = get_image_atc(img, level, ref, alpha_scale);
+					auto current_coverage = get_image_alphatest_coverage(img, level, ref, alpha_scale);
 
 					auto error = abs(current_coverage - desired);
 					if (error < best_error)
@@ -488,7 +488,7 @@ namespace flame
 				}
 			}
 
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, bool gen_mipmap, float alpha_test) override
+			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, const Image::MipmapOption& mipmap_option) override
 			{
 				if (!device)
 					device = current_device;
@@ -590,7 +590,7 @@ namespace flame
 					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, gen_mipmap ? 0 : 1);
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, mipmap_option.generate ? 0 : 1);
 
 					{
 						StagingBuffer sb(device, bmp->data_size, bmp->data);
@@ -599,7 +599,7 @@ namespace flame
 						cpy.img_ext = ret->size;
 						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
-						if (gen_mipmap)
+						if (mipmap_option.generate)
 						{
 							for (auto i = 1U; i < ret->n_levels; i++)
 							{
@@ -615,11 +615,11 @@ namespace flame
 						cb->image_barrier(ret, { 0, ret->n_levels, 0, 1 }, ImageLayoutShaderReadOnly);
 					}
 
-					if (gen_mipmap && alpha_test > 0.f)
+					if (mipmap_option.generate && mipmap_option.alpha_test_for_reserve_coverage > 0.f)
 					{
-						auto coverage = get_image_atc(ret, 0, alpha_test, 1.f);
+						auto coverage = get_image_alphatest_coverage(ret, 0, mipmap_option.alpha_test_for_reserve_coverage, 1.f);
 						for (auto i = 1; i < ret->n_levels; i++)
-							scale_image_atc(ret, i, coverage, alpha_test);
+							scale_image_alphatest_coverage(ret, i, coverage, mipmap_option.alpha_test_for_reserve_coverage);
 					}
 
 					ret->filename = filename;

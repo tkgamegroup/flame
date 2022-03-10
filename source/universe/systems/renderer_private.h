@@ -20,9 +20,19 @@ namespace flame
 		std::vector<uint> mat_ids;
 	};
 
+	struct TexRes
+	{
+		std::filesystem::path filename;
+		uint hash = 0;
+		std::unique_ptr<graphics::Image> img;
+		graphics::SamplerPtr sp = nullptr;
+		uint ref = 0;
+	};
+
 	struct MatRes
 	{
 		graphics::Material* mat = nullptr;
+		std::vector<int> texs;
 		std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
 	};
 
@@ -57,6 +67,7 @@ namespace flame
 		graphics::WindowPtr window;
 
 		std::vector<MeshRes> mesh_reses;
+		std::vector<TexRes> tex_reses;
 		std::vector<MatRes> mat_reses;
 
 		std::vector<DrawLine>		draw_lines;
@@ -143,6 +154,9 @@ namespace flame
 
 		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
 		int find_mesh_res(graphics::Mesh* mesh) const override;
+
+		int get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option) override;
+		void release_texture_res(uint id) override;
 
 		int set_material_res(int idx, graphics::Material* mat) override;
 		int find_material_res(graphics::Material* mat) const override;

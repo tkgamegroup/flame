@@ -71,13 +71,10 @@ namespace flame
 			doc.save_file(filename.c_str());
 		}
 
-		void Model::convert(const std::filesystem::path& filename)
+		void Model::convert(const std::filesystem::path& _filename)
 		{
 #ifdef USE_ASSIMP
-			auto ppath = filename.parent_path();
-			auto model_name = filename.filename().stem().string();
-			auto model_filename = filename;
-			model_filename.replace_extension(L".fmod");
+			auto filename = _filename;
 
 			Assimp::Importer importer;
 			importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger");
@@ -97,18 +94,18 @@ namespace flame
 				return;
 			}
 
-			std::vector<std::string> material_names;
+			filename = Path::reverse(filename);
+			auto ppath = filename.parent_path();
+			auto model_name = filename.filename().stem().string();
+			filename.replace_extension(L".fmod");
+
+			std::vector<std::unique_ptr<MaterialT>> materials;
 
 			for (auto i = 0; i < scene->mNumMaterials; i++)
 			{
 				aiString ai_name;
 				auto ai_mat = scene->mMaterials[i];
-
-				pugi::xml_document doc;
-				auto n_material = doc.append_child("material");
-				
-				std::string pipeline_defines;
-
+				auto material = Material::create();
 				auto map_id = 0;
 
 				{
@@ -117,11 +114,8 @@ namespace flame
 					auto name = std::string(ai_name.C_Str());
 					if (!name.empty())
 					{
-						if (name[0] == '/')
-							name.erase(name.begin());
-						auto n_texture = n_material.append_child("texture");
-						n_texture.append_attribute("filename").set_value(name.c_str());
-						pipeline_defines += sfmt("COLOR_MAP=%d ", map_id++);
+						material->textures[map_id].filename = Path::get(ppath / name);
+						material->color_map = map_id++;
 					}
 				}
 
@@ -131,18 +125,10 @@ namespace flame
 					auto name = std::string(ai_name.C_Str());
 					if (!name.empty())
 					{
-						if (name[0] == '/')
-							name.erase(name.begin());
-						auto n_texture = n_material.append_child("texture");
-						n_texture.append_attribute("filename").set_value(name.c_str());
-						pipeline_defines += "ALPHA_TEST ";
-						pipeline_defines += sfmt("ALPHA_MAP=%d ", map_id++);
-						n_material.append_attribute("alpha_test").set_value(str(0.5f).c_str());
+						material->textures[map_id].filename = Path::get(ppath / name);
+						material->alpha_map = map_id++;
 					}
 				}
-
-				if (!pipeline_defines.empty())
-					n_material.append_attribute("pipeline_defines").set_value(pipeline_defines.c_str());
 
 				auto material_name = std::string(ai_mat->GetName().C_Str());
 				if (material_name.empty())
@@ -152,12 +138,13 @@ namespace flame
 					for (auto& ch : material_name)
 						if (ch == ' ' || ch == ':') ch = '_';
 				}
-				material_name = model_name + "_" + material_name + ".fmat";
-				material_names.push_back(material_name);
-				doc.save_file((ppath / material_name).c_str());
+				material_name = std::format("{}_{}.fmat", model_name, material_name);
+				material->save(Path::get(ppath / material_name));
+
+				materials.emplace_back(material);
 			}
 
-			ModelPtr model = Model::create();
+			auto model = Model::create();
 
 			for (auto i = 0; i < scene->mNumMeshes; i++)
 			{
@@ -165,9 +152,7 @@ namespace flame
 				auto& mesh = model->meshes.emplace_back();
 				mesh.model = model;
 
-				auto mat = Material::get(material_names[ai_mesh->mMaterialIndex]);
-				if (mat)
-					mesh.materials.push_back(mat);
+				mesh.materials.push_back(materials[ai_mesh->mMaterialIndex].get());
 
 				auto vertex_count = ai_mesh->mNumVertices;
 
@@ -267,8 +252,7 @@ namespace flame
 				mesh.calc_bounds();
 			}
 
-			model->save(model_filename);
-			model_filename = Path::reverse(model_filename);
+			model->save(Path::get(filename));
 
 			pugi::xml_document doc_prefab;
 
@@ -308,7 +292,7 @@ namespace flame
 					{
 						auto n_armature = n_components.append_child("item");
 						n_armature.append_attribute("type_name").set_value("flame::cArmature");
-						n_armature.append_attribute("model_name").set_value(model_filename.string().c_str());
+						n_armature.append_attribute("model_name").set_value(filename.string().c_str());
 					}
 				}
 
@@ -329,7 +313,7 @@ namespace flame
 					{
 						auto n_mesh = n_components.append_child("item");
 						n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-						n_mesh.append_attribute("model_name").set_value(model_filename.string().c_str());
+						n_mesh.append_attribute("model_name").set_value(filename.string().c_str());
 						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
 						if (name == "mesh_collider")
 						{
@@ -351,7 +335,7 @@ namespace flame
 
 			auto prefab_path = filename;
 			prefab_path.replace_extension(L".prefab");
-			doc_prefab.save_file(prefab_path.c_str());
+			doc_prefab.save_file(Path::get(prefab_path).c_str());
 
 			delete model;
 
@@ -359,10 +343,10 @@ namespace flame
 			{
 				auto ai_ani = scene->mAnimations[i];
 
-				auto animation_name = model_name + "_" + std::string(ai_ani->mName.C_Str()) + ".fani";
+				auto animation_name = std::format("{}_{}.fani", model_name, ai_ani->mName.C_Str());
 				for (auto& ch : animation_name)
 					if (ch == '|') ch = '_';
-				auto animation_filename = ppath / animation_name;
+				auto animation_filename = Path::get(ppath / animation_name);
 
 				pugi::xml_document doc_animation;
 				auto n_animation = doc_animation.append_child("animation");

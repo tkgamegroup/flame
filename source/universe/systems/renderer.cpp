@@ -11,6 +11,7 @@
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
+#include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/extension.h"
 
@@ -273,6 +274,26 @@ namespace flame
 		return -1;
 	}
 
+	int sRendererPrivate::get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option)
+	{
+
+	}
+
+	void sRendererPrivate::release_texture_res(uint id)
+	{
+		auto& res = tex_reses[id];
+		if (res.ref == 1)
+		{
+			res.filename.clear();
+			res.hash = 0;
+			res.img.reset();
+			res.sp = nullptr;
+			res.ref = 0;
+		}
+		else
+			res.ref--;
+	}
+
 	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
 	{
 		if (idx == -1)
@@ -290,85 +311,43 @@ namespace flame
 			return -1;
 
 		auto& dst = mat_reses[idx];
-		//if (dst.mat)
-		//{
-		//	for (auto i = 0; i < MaxMaterialTexturesCount; i++)
-		//	{
-		//		if (dst.texs[i] != -1)
-		//			set_texture_res(dst.texs[i], nullptr, nullptr);
-		//	}
-		//}
-		//dst.mat = mat;
-		//dst.opaque = mat->get_opaque();
-		//dst.sort = mat->get_sort();
-		//{
-		//	wchar_t buf[260];
-		//	mat->get_pipeline_file(buf);
-		//	dst.pipeline_file = buf;
-		//}
-		//dst.pipeline_defines = Shader::format_defines(mat->get_pipeline_defines());
-		//if (!opaque)
-		//	dst.pipeline_defines.push_back("TRANSPARENT");
-		//if (mat)
-		//{
-		//	InstanceCB cb(nullptr);
+		if (dst.mat)
+		{
+			for (auto id : dst.texs)
+			{
+				if (id != -1)
+					release_texture_res(id);
+			}
+		}
+		dst.mat = mat;
+		if (mat)
+		{
+			graphics::InstanceCB cb(nullptr);
+			
+			buf_material.select_item(idx);
+			buf_material.set_var<"color"_h>(mat->color);
+			buf_material.set_var<"metallic"_h>(mat->metallic);
+			buf_material.set_var<"roughness"_h>(mat->roughness);
 
-		//	auto& data = buf_materials.item(idx);
-		//	data.color = mat->get_color();
-		//	data.metallic = mat->get_metallic();
-		//	data.roughness = mat->get_roughness();
-		//	auto alpha_map_id = -1;
-		//	auto alpha_test = 0.f;
-		//	std::string str;
-		//	if (parse_define(dst.pipeline_defines, "ALPHA_TEST", str))
-		//		alpha_test = std::stof(str);
-		//	if (parse_define(dst.pipeline_defines, "ALPHA_MAP", str))
-		//		alpha_map_id = { std::stoi(str) };
-		//	else if (parse_define(dst.pipeline_defines, "COLOR_MAP", str))
-		//		alpha_map_id = { std::stoi(str) };
-		//	for (auto i = 0; i < MaxMaterialTexturesCount; i++)
-		//	{
-		//		wchar_t buf[260]; buf[0] = 0;
-		//		mat->get_texture_file(i, buf);
-		//		auto fn = std::filesystem::path(buf);
-		//		if (fn.empty() || !std::filesystem::exists(fn))
-		//		{
-		//			dst.texs[i] = -1;
-		//			data.map_indices[i] = -1;
-		//		}
-		//		else
-		//		{
-		//			auto srgb = mat->get_texture_srgb(i);
-		//			if (mat->get_texture_auto_mipmap(i))
-		//			{
-		//				auto ext = fn.extension();
-		//				if (ext != L".dds" && ext != L".ktx")
-		//				{
-		//					auto dds_fn = fn;
-		//					dds_fn += L".dds";
-		//					if (!std::filesystem::exists(dds_fn))
-		//					{
-		//						auto img = Image::create(nullptr, fn.c_str(), srgb, true, alpha_map_id == i ? alpha_test : 0.f);
-		//						img->save(dds_fn.c_str());
-		//						delete img;
-		//					}
-		//					fn = dds_fn;
-		//					srgb = false;
-		//				}
-		//			}
+			dst.texs.resize(countof(mat->textures));
+			for (auto i = 0; i < dst.texs.size(); i++)
+			{
+				auto& src = mat->textures[i];
+				if (src.filename.empty())
+					dst.texs[i] = -1;
+				else
+				{
+					dst.texs[i] = get_texture_res(src.filename, src.srgb, 
+						graphics::Sampler::get(nullptr, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), 
+						{ src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
+				}
+			}
+			auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
+			for (auto i = 0; i < dst.texs.size(); i++)
+				ids[i] = dst.texs[i];
 
-		//			auto img = Image::get(nullptr, fn.c_str(), srgb);
-		//			auto iv = img->get_view({ 0, img->get_levels(), 0, 1 });
-		//			auto id = find_texture_res(iv);
-		//			if (id == -1)
-		//				id = set_texture_res(-1, iv, mat->get_texture_sampler(nullptr, i));
-		//			dst.texs[i] = id;
-		//			data.map_indices[i] = id;
-		//		}
-		//	}
-
-		//	buf_materials.upload(cb.get());
-		//}
+			buf_material.upload(cb.get());
+		}
 
 		return idx;
 	}

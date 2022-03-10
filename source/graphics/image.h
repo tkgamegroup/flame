@@ -75,6 +75,12 @@ namespace flame
 				std::vector<Layer> layers;
 			};
 
+			struct MipmapOption
+			{
+				bool generate = false;
+				float alpha_test_for_reserve_coverage = 0.f;
+			};
+
 			Format format = Format_R8G8B8A8_UNORM;
 			uvec2 size = uvec2(0);
 			uint pixel_size = 0;
@@ -101,7 +107,7 @@ namespace flame
 			struct Create
 			{
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
-				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb = false, bool gen_mipmap = false, float alpha_test = 0.f) = 0;
+				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb = false, const MipmapOption& mipmap_option = {}) = 0;
 				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;

@@ -13,6 +13,11 @@ namespace flame
 
 		void MaterialPrivate::save(const std::filesystem::path& filename)
 		{
+			pugi::xml_document doc;
+			auto doc_root = doc.append_child("material");
+
+			serialize_xml(this, doc_root);
+			doc.save_file(filename.c_str());
 		}
 
 		struct MaterialCreate : Material::Create
@@ -46,47 +51,7 @@ namespace flame
 				}
 
 				auto ret = new MaterialPrivate;
-
-				UnserializeXmlSpec spec;
-				unserialize_xml(doc_root, ret, spec);
-
-				//ret->filename = filename;
-				//if (auto n = doc_root.attribute("color"); n)
-				//	ret->color = s2t<4, float>(std::string(n.value()));
-				//if (auto n = doc_root.attribute("metallic"); n)
-				//	ret->metallic = n.as_float();
-				//if (auto n = doc_root.attribute("roughness"); n)
-				//	ret->roughness = n.as_float();
-				//if (auto n = doc_root.attribute("opaque"); n)
-				//	ret->opaque = n.as_bool();
-				//if (auto n = doc_root.attribute("sort"); n)
-				//	ret->sort = n.as_bool();
-				//if (auto n = doc_root.attribute("shader_file"); n)
-				//	ret->shader_file = n.value();
-				//if (auto n = n_material.attribute("shader_defines"); n)
-				//	ret->shader_defines = n.value();
-
-				//auto i = 0;
-				//for (auto n_texture : doc_root)
-				//{
-				//	auto& dst = ret->textures[i];
-				//	if (auto n = n_texture.attribute("filename"); n)
-				//		dst.filename = n.value();
-				//	if (auto n = n_texture.attribute("srgb"); n)
-				//		dst.srgb = n.as_bool();
-				//	if (auto n = n_texture.attribute("mag_filter"); n)
-				//		TypeInfo::unserialize_t(n.value(), &dst.mag_filter);
-				//	if (auto n = n_texture.attribute("min_filter"); n)
-				//		TypeInfo::unserialize_t(n.value(), &dst.min_filter);
-				//	if (auto n = n_texture.attribute("linear_mipmap"); n)
-				//		dst.linear_mipmap = n.as_bool();
-				//	if (auto n = n_texture.attribute("address_mode"); n)
-				//		TypeInfo::unserialize_t(n.value(), &dst.address_mode);
-				//	if (auto n = n_texture.attribute("auto_mipmap"); n)
-				//		dst.auto_mipmap = n.as_bool();
-				//	i++;
-				//}
-
+				unserialize_xml(doc_root, ret);
 				materials.emplace_back(ret);
 				return ret;
 			}
