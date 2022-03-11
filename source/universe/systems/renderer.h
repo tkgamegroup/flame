@@ -14,14 +14,15 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
-		virtual int get_texture_res(const std::filesystem::path& filename, bool srgb = false, graphics::SamplerPtr sp = nullptr, const graphics::Image::MipmapOption& mipmap_option = {}) = 0;
+		virtual int get_texture_res(const std::filesystem::path& filename, bool srgb = false, 
+			graphics::SamplerPtr sp = nullptr, const graphics::Image::MipmapOption& mipmap_option = {}) = 0;
 		virtual void release_texture_res(uint id) = 0;
 
-		virtual int set_mesh_res(int idx, graphics::Mesh* mesh) = 0;
-		virtual int find_mesh_res(graphics::Mesh* mesh) const = 0;
+		virtual int get_mesh_res(graphics::Mesh* mesh) = 0;
+		virtual void release_mesh_res(uint id) = 0;
 
-		virtual int set_material_res(int idx, graphics::Material* mat) = 0;
-		virtual int find_material_res(graphics::Material* mat) const = 0;
+		virtual int get_material_res(graphics::Material* mat) = 0;
+		virtual void release_material_res(uint id) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;
@@ -39,11 +40,11 @@ namespace flame
 
 		virtual void draw_line(const vec3* points, uint count, const cvec4& color) = 0;
 
-		virtual void draw_mesh(uint instance_id, uint mesh_id, uint skin) = 0;
-		virtual void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) = 0;
+		virtual void draw_mesh(uint instance_id, uint mesh_id, uint mat_id) = 0;
+		virtual void draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id) = 0;
 		virtual void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) = 0;
 		virtual void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) = 0;
-		virtual void draw_terrain(uint instance_id, uint blocks, uint material_id) = 0;
+		virtual void draw_terrain(uint instance_id, uint blocks, uint mat_id) = 0;
 		virtual void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) = 0;
 		virtual void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) = 0;
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;

@@ -90,9 +90,6 @@ namespace flame
 		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
 		buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
 
-		set_mesh_res(-1, &graphics::Model::get(L"standard:cube")->meshes[0]);
-		set_mesh_res(-1, &graphics::Model::get(L"standard:sphere")->meshes[0]);
-
 		pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col) });
 		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
@@ -179,101 +176,6 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	int sRendererPrivate::set_mesh_res(int idx, graphics::Mesh* mesh)
-	{
-		if (idx == -1)
-		{
-			for (auto i = 0; i < mesh_reses.size(); i++)
-			{
-				if (!mesh_reses[i].mesh)
-				{
-					idx = i;
-					break;
-				}
-			}
-		}
-		if (idx == -1)
-			return -1;
-
-		auto& dst = mesh_reses[idx];
-		if (dst.mesh)
-		{
-			// TODO: mark uploaded vertexs invalid
-		}
-		dst.mesh = mesh;
-
-		if (mesh)
-		{
-			graphics::InstanceCB cb(nullptr);
-
-			dst.vtx_cnt = mesh->positions.size();
-			dst.idx_cnt = mesh->indices.size();
-			dst.arm = !mesh->bone_ids.empty();
-			if (!dst.arm)
-			{
-				dst.vtx_off = buf_vtx.item_offset();
-				for (auto i = 0; i < dst.vtx_cnt; i++)
-				{
-					buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
-					if (!mesh->normals.empty())
-						buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
-					if (!mesh->uvs.empty())
-						buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
-					buf_vtx.next_item();
-				}
-
-				dst.idx_off = buf_idx.item_offset();
-				buf_idx.push(dst.idx_cnt, mesh->indices.data());
-
-				buf_vtx.upload(cb.get());
-				buf_idx.upload(cb.get());
-			}
-			else
-			{
-				dst.vtx_off = buf_vtx_arm.item_offset();
-				for (auto i = 0; i < dst.vtx_cnt; i++)
-				{
-					buf_vtx_arm.set_var<"i_pos"_h>(mesh->positions[i]);
-					if (!mesh->normals.empty())
-						buf_vtx_arm.set_var<"i_nor"_h>(mesh->normals[i]);
-					if (!mesh->uvs.empty())
-						buf_vtx_arm.set_var<"i_uv"_h>(mesh->uvs[i]);
-					if (!mesh->bone_ids.empty())
-						buf_vtx_arm.set_var<"i_bids"_h>(mesh->bone_ids[i]);
-					if (!mesh->bone_weights.empty())
-						buf_vtx_arm.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
-					buf_vtx_arm.next_item();
-				}
-
-				dst.idx_off = buf_idx_arm.item_offset();
-				buf_idx_arm.push(dst.idx_cnt, mesh->indices.data());
-
-				buf_vtx_arm.upload(cb.get());
-				buf_idx_arm.upload(cb.get());
-			}
-
-			for (auto m : mesh->materials)
-			{
-				auto id = find_material_res(m);
-				if (id == -1)
-					id = set_material_res(id, m);
-				dst.mat_ids.push_back(id);
-			}
-		}
-
-		return idx;
-	}
-
-	int sRendererPrivate::find_mesh_res(graphics::Mesh* mesh) const
-	{
-		for (auto i = 0; i < mesh_reses.size(); i++)
-		{
-			if (mesh_reses[i].mesh == mesh)
-				return i;
-		}
-		return -1;
-	}
-
 	int sRendererPrivate::get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option)
 	{
 
@@ -284,82 +186,176 @@ namespace flame
 		auto& res = tex_reses[id];
 		if (res.ref == 1)
 		{
-			res.filename.clear();
-			res.hash = 0;
 			res.img.reset();
-			res.sp = nullptr;
 			res.ref = 0;
 		}
 		else
 			res.ref--;
 	}
 
-	int sRendererPrivate::set_material_res(int idx, graphics::Material* mat)
+	int sRendererPrivate::get_mesh_res(graphics::Mesh* mesh)
 	{
-		if (idx == -1)
+		auto id = -1;
+		for (auto i = 0; i < mesh_reses.size(); i++)
+		{
+			auto& res = mesh_reses[i];
+			if (res.mesh == mesh)
+			{
+				res.ref++;
+				id = i;
+				break;
+			}
+		}
+		if (id == -1)
+		{
+			for (auto i = 0; i < mesh_reses.size(); i++)
+			{
+				if (!mesh_reses[i].mesh)
+				{
+					id = i;
+					break;
+				}
+			}
+		}
+		if (id == -1)
+			return -1;
+
+		auto& res = mesh_reses[id];
+		res.mesh = mesh;
+		res.ref = 1;
+
+		graphics::InstanceCB cb(nullptr);
+
+		res.vtx_cnt = mesh->positions.size();
+		res.idx_cnt = mesh->indices.size();
+		res.arm = !mesh->bone_ids.empty();
+		if (!res.arm)
+		{
+			res.vtx_off = buf_vtx.item_offset();
+			for (auto i = 0; i < res.vtx_cnt; i++)
+			{
+				buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
+				if (!mesh->normals.empty())
+					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
+				if (!mesh->uvs.empty())
+					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
+				buf_vtx.next_item();
+			}
+
+			res.idx_off = buf_idx.item_offset();
+			buf_idx.push(res.idx_cnt, mesh->indices.data());
+
+			buf_vtx.upload(cb.get());
+			buf_idx.upload(cb.get());
+		}
+		else
+		{
+			res.vtx_off = buf_vtx_arm.item_offset();
+			for (auto i = 0; i < res.vtx_cnt; i++)
+			{
+				buf_vtx_arm.set_var<"i_pos"_h>(mesh->positions[i]);
+				if (!mesh->normals.empty())
+					buf_vtx_arm.set_var<"i_nor"_h>(mesh->normals[i]);
+				if (!mesh->uvs.empty())
+					buf_vtx_arm.set_var<"i_uv"_h>(mesh->uvs[i]);
+				if (!mesh->bone_ids.empty())
+					buf_vtx_arm.set_var<"i_bids"_h>(mesh->bone_ids[i]);
+				if (!mesh->bone_weights.empty())
+					buf_vtx_arm.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
+				buf_vtx_arm.next_item();
+			}
+
+			res.idx_off = buf_idx_arm.item_offset();
+			buf_idx_arm.push(res.idx_cnt, mesh->indices.data());
+
+			buf_vtx_arm.upload(cb.get());
+			buf_idx_arm.upload(cb.get());
+		}
+
+		return id;
+	}
+
+	void sRendererPrivate::release_mesh_res(uint id)
+	{
+		auto& res = mesh_reses[id];
+		if (res.ref == 1)
+		{
+			res.mesh = nullptr;
+			res.ref = 0;
+		}
+		else
+			res.ref--;
+	}
+
+	int sRendererPrivate::get_material_res(graphics::Material* mat)
+	{
+		auto id = -1;
+		for (auto i = 0; i < mat_reses.size(); i++)
+		{
+			auto& res = mat_reses[i];
+			if (res.mat == mat)
+			{
+				res.ref++;
+				id = i;
+				break;
+			}
+		}
+		if (id == -1)
 		{
 			for (auto i = 0; i < mat_reses.size(); i++)
 			{
 				if (!mat_reses[i].mat)
 				{
-					idx = i;
+					id = i;
 					break;
 				}
 			}
 		}
-		if (idx == -1)
+		if (id == -1)
 			return -1;
 
-		auto& dst = mat_reses[idx];
-		if (dst.mat)
+		auto& res = mat_reses[id];
+		res.mat = mat;
+		res.ref = 1;
+
+		graphics::InstanceCB cb(nullptr);
+
+		buf_material.select_item(id);
+		buf_material.set_var<"color"_h>(mat->color);
+		buf_material.set_var<"metallic"_h>(mat->metallic);
+		buf_material.set_var<"roughness"_h>(mat->roughness);
+
+		res.texs.resize(countof(mat->textures));
+		for (auto i = 0; i < res.texs.size(); i++)
 		{
-			for (auto id : dst.texs)
+			auto& src = mat->textures[i];
+			if (src.filename.empty())
+				res.texs[i] = -1;
+			else
 			{
-				if (id != -1)
-					release_texture_res(id);
+				res.texs[i] = get_texture_res(src.filename, src.srgb,
+					graphics::Sampler::get(nullptr, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode),
+					{ src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
 			}
 		}
-		dst.mat = mat;
-		if (mat)
-		{
-			graphics::InstanceCB cb(nullptr);
-			
-			buf_material.select_item(idx);
-			buf_material.set_var<"color"_h>(mat->color);
-			buf_material.set_var<"metallic"_h>(mat->metallic);
-			buf_material.set_var<"roughness"_h>(mat->roughness);
+		auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
+		for (auto i = 0; i < res.texs.size(); i++)
+			ids[i] = res.texs[i];
 
-			dst.texs.resize(countof(mat->textures));
-			for (auto i = 0; i < dst.texs.size(); i++)
-			{
-				auto& src = mat->textures[i];
-				if (src.filename.empty())
-					dst.texs[i] = -1;
-				else
-				{
-					dst.texs[i] = get_texture_res(src.filename, src.srgb, 
-						graphics::Sampler::get(nullptr, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), 
-						{ src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
-				}
-			}
-			auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
-			for (auto i = 0; i < dst.texs.size(); i++)
-				ids[i] = dst.texs[i];
+		buf_material.upload(cb.get());
 
-			buf_material.upload(cb.get());
-		}
-
-		return idx;
+		return id;
 	}
 
-	int sRendererPrivate::find_material_res(graphics::Material* mat) const
+	void sRendererPrivate::release_material_res(uint id)
 	{
-		for (auto i = 0; i < mat_reses.size(); i++)
+		auto& res = mat_reses[id];
+		if (res.ref == 1)
 		{
-			if (mat_reses[i].mat == mat)
-				return i;
+
 		}
-		return -1;
+		else
+			res.ref--;
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)
@@ -452,26 +448,26 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint skin)
+	void sRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint mat_id)
 	{
 		DrawMesh d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
-		d.skin = skin;
+		d.skin = mat_id;
 		if (!mesh_reses[mesh_id].arm)
 			draw_meshes.push_back(d);
 		else
 			draw_arm_meshes.push_back(d);
 	}
 
-	void sRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin)
+	void sRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id)
 	{
 		DrawMesh d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
-		d.skin = skin;
+		d.skin = mat_id;
 		if (!mesh_reses[mesh_id].arm)
 			draw_occluder_meshes.push_back(d);
 		else
@@ -482,7 +478,7 @@ namespace flame
 	{
 		DrawMesh d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
 		d.color = color;
 		if (!mesh_reses[mesh_id].arm)
@@ -495,7 +491,7 @@ namespace flame
 	{
 		DrawMesh d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
 		d.color = color;
 		if (!mesh_reses[mesh_id].arm)
@@ -504,12 +500,12 @@ namespace flame
 			draw_wireframe_arm_meshes.push_back(d);
 	}
 
-	void sRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint material_id)
+	void sRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint mat_id)
 	{
 		DrawTerrain d;
 		d.node = current_node;
-		d.instance_id = instance_id;
-		d.material_id = material_id;
+		d.ins_id = instance_id;
+		d.mat_id = mat_id;
 		d.blocks = blocks;
 		draw_terrains.push_back(d);
 	}
@@ -518,7 +514,7 @@ namespace flame
 	{
 		DrawTerrain d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.blocks = blocks;
 		d.color = color;
 		draw_outline_terrains.push_back(d);
@@ -528,7 +524,7 @@ namespace flame
 	{
 		DrawTerrain d;
 		d.node = current_node;
-		d.instance_id = instance_id;
+		d.ins_id = instance_id;
 		d.blocks = blocks;
 		d.color = color;
 		draw_wireframe_terrains.push_back(d);
@@ -608,12 +604,12 @@ namespace flame
 		for (auto& d : draw_meshes)
 		{
 			auto& mr = mesh_reses[d.mesh_id];
-			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.instance_id << 8) + 0/* mat id */);
+			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
 		}
 		for (auto& d : draw_arm_meshes)
 		{
 			auto& mr = mesh_reses[d.mesh_id];
-			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.instance_id << 8) + 0/* mat id */);
+			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
 		}
 
 		buf_lines.upload(cb);
@@ -652,7 +648,7 @@ namespace flame
 		{
 			cb->bind_pipeline(pl_terrain_fwd);
 			for (auto& d : draw_terrains)
-				cb->draw(4, d.blocks, 0, d.instance_id << 24);
+				cb->draw(4, d.blocks, 0, d.ins_id << 24);
 		}
 
 		cb->end_renderpass();
@@ -706,7 +702,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_mesh_plain);
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 					cb->end_renderpass();
 
 					blur_pass();
@@ -716,7 +712,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_mesh_plain);
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 					cb->end_renderpass();
 
 					blend_pass();
@@ -735,7 +731,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_mesh_arm_plain);
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 					cb->end_renderpass();
 
 					blur_pass();
@@ -745,7 +741,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_mesh_arm_plain);
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 					cb->end_renderpass();
 
 					blend_pass();
@@ -760,7 +756,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(d.color) / 255.f);
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_terrain_plain);
-					cb->draw(4, d.blocks, 0, d.instance_id << 24);
+					cb->draw(4, d.blocks, 0, d.ins_id << 24);
 					cb->end_renderpass();
 
 					blur_pass();
@@ -770,7 +766,7 @@ namespace flame
 					prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
 					prm_fwd.push_constant(cb);
 					cb->bind_pipeline(pl_terrain_plain);
-					cb->draw(4, d.blocks, 0, d.instance_id << 24);
+					cb->draw(4, d.blocks, 0, d.ins_id << 24);
 					cb->end_renderpass();
 
 					blend_pass();
@@ -848,7 +844,7 @@ namespace flame
 					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_fwd.push_constant(cb.get());
 					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 				}
 				off += draw_meshes.size();
 			}
@@ -863,7 +859,7 @@ namespace flame
 					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_fwd.push_constant(cb.get());
 					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.instance_id << 8);
+					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 				}
 				off += draw_arm_meshes.size();
 			}
@@ -875,7 +871,7 @@ namespace flame
 					auto& d = draw_terrains[i];
 					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
 					prm_fwd.push_constant(cb.get());
-					cb->draw(4, d.blocks, 0, d.instance_id << 24);
+					cb->draw(4, d.blocks, 0, d.ins_id << 24);
 				}
 				off += draw_terrains.size();
 			}

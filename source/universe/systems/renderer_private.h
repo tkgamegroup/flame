@@ -17,7 +17,7 @@ namespace flame
 		uint vtx_cnt;
 		uint idx_off;
 		uint idx_cnt;
-		std::vector<uint> mat_ids;
+		uint ref = 0;
 	};
 
 	struct TexRes
@@ -34,6 +34,7 @@ namespace flame
 		graphics::Material* mat = nullptr;
 		std::vector<int> texs;
 		std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
+		uint ref = 0;
 	};
 
 	struct DrawLine
@@ -47,7 +48,7 @@ namespace flame
 	struct DrawMesh
 	{
 		cNodePtr node;
-		uint instance_id;
+		uint ins_id;
 		uint mesh_id;
 		uint skin;
 		cvec4 color;
@@ -56,9 +57,9 @@ namespace flame
 	struct DrawTerrain
 	{
 		cNodePtr node;
-		uint instance_id;
+		uint ins_id;
 		uint blocks;
-		uint material_id;
+		uint mat_id;
 		cvec4 color;
 	};
 
@@ -152,14 +153,15 @@ namespace flame
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
 
-		int set_mesh_res(int idx, graphics::Mesh* mesh) override;
-		int find_mesh_res(graphics::Mesh* mesh) const override;
-
-		int get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option) override;
+		int get_texture_res(const std::filesystem::path& filename, bool srgb, 
+			graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option) override;
 		void release_texture_res(uint id) override;
 
-		int set_material_res(int idx, graphics::Material* mat) override;
-		int find_material_res(graphics::Material* mat) const override;
+		int get_mesh_res(graphics::Mesh* mesh) override;
+		void release_mesh_res(uint id) override;
+
+		int get_material_res(graphics::Material* mat) override;
+		void release_material_res(uint id) override;
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
@@ -172,11 +174,11 @@ namespace flame
 
 		void draw_line(const vec3* points, uint count, const cvec4& color) override;
 
-		void draw_mesh(uint instance_id, uint mesh_id, uint skin) override;
-		void draw_mesh_occluder(uint instance_id, uint mesh_id, uint skin) override;
+		void draw_mesh(uint instance_id, uint mesh_id, uint mat_id) override;
+		void draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id) override;
 		void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) override;
 		void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) override;
-		void draw_terrain(uint instance_id, uint blocks, uint material_id) override;
+		void draw_terrain(uint instance_id, uint blocks, uint mat_id) override;
 		void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) override;
 		void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) override;
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
