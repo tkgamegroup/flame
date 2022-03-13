@@ -499,7 +499,7 @@ namespace flame
 						auto fn = ppath / material_filename;
 						if (!std::filesystem::exists(fn))
 							fn = material_filename;
-						m.materials.push_back(MaterialPrivate::get(fn.c_str()));
+						m.materials.push_back(Material::get(fn.c_str()));
 					}
 
 					auto n_positions = n_mesh.child("positions");

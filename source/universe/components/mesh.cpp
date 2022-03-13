@@ -15,9 +15,9 @@ namespace flame
 		node->shadow_drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
 
-		if (mesh_res_id)
+		if (mesh_res_id != -1)
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
-		if (material_res_id)
+		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
 		if (model)
 			graphics::Model::release(model);
@@ -64,6 +64,8 @@ namespace flame
 				graphics::Model::release(model);
 			model = _model;
 		}
+		else
+			graphics::Model::release(_model);
 		if (mesh != _mesh)
 		{
 			if (mesh_res_id != -1)

@@ -1,3 +1,4 @@
+%dep_fmt=Depth16
 attachments
   format
     R8G8B8A8_UNORM
@@ -6,7 +7,7 @@ attachments
     R8G8B8A8_UNORM
  ---
   format
-    Depth16
+    {dep_fmt}
 subpasses
   color_attachments
     0

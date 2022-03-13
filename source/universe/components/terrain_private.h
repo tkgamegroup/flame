@@ -16,8 +16,9 @@ namespace flame
 		void set_blocks(const uvec2& blocks) override;
 		void set_tess_level(uint tess_level) override;
 		void set_height_map_name(const std::filesystem::path& name) override;
-		void build_textures();
+		void set_material_name(const std::filesystem::path& name) override;
 
+		void build_textures();
 		void draw(sRendererPtr renderer);
 
 		void on_active() override;

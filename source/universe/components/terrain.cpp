@@ -1,3 +1,4 @@
+#include "../../graphics/material.h"
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
@@ -39,7 +40,7 @@ namespace flame
 
 		build_textures();
 
-		node->mark_drawing_dirty();
+		node->mark_transform_dirty();
 		data_changed("extent"_h);
 	}
 
@@ -51,7 +52,7 @@ namespace flame
 
 		build_textures();
 
-		node->mark_drawing_dirty();
+		node->mark_transform_dirty();
 		data_changed("blocks"_h);
 	}
 
@@ -63,7 +64,7 @@ namespace flame
 
 		build_textures();
 
-		node->mark_drawing_dirty();
+		node->mark_transform_dirty();
 		data_changed("tess_level"_h);
 	}
 
@@ -76,8 +77,29 @@ namespace flame
 		height_map.reset(!height_map_name.empty() ? graphics::Image::create(nullptr, height_map_name) : nullptr);
 		build_textures();
 
-		node->mark_drawing_dirty();
+		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
+	}
+
+	void cTerrainPrivate::set_material_name(const std::filesystem::path& name)
+	{
+		if (material_name == name)
+			return;
+		material_name = name;
+
+		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
+		if (material != _material)
+		{
+			if (material_res_id != -1)
+				sRenderer::instance()->release_material_res(material_res_id);
+			material = _material;
+			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
+		}
+		else
+			graphics::Material::release(_material);
+
+		node->mark_drawing_dirty();
+		data_changed("material_name"_h);
 	}
 
 	void cTerrainPrivate::build_textures()

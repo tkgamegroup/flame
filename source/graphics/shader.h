@@ -40,7 +40,7 @@ namespace flame
 
 			virtual ~DescriptorSetLayout() {}
 
-			inline int find_binding(std::string_view name) const
+			inline int find_binding_i(std::string_view name) const
 			{
 				for (auto i = 0; i < bindings.size(); i++)
 				{
@@ -50,9 +50,17 @@ namespace flame
 				return -1;
 			}
 
+			inline const DescriptorBinding* find_binding(std::string_view name) const
+			{
+				auto idx = find_binding_i(name);
+				if (idx != -1)
+					return &bindings[idx];
+				return nullptr;
+			}
+
 			UdtInfo* get_buf_ui(std::string_view name) const
 			{
-				auto idx = find_binding(name);
+				auto idx = find_binding_i(name);
 				if (idx != -1)
 				{
 					auto& binding = bindings[idx];
@@ -86,7 +94,7 @@ namespace flame
 			virtual void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
 			inline void set_buffer(std::string_view name, uint index, BufferPtr buf, uint offset = 0, uint range = 0)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding(name);
+				auto idx = ((DescriptorSetLayout*)layout)->find_binding_i(name);
 				if (idx == -1)
 				{
 					printf("descriptor set bind resource failed: cannot find %s\n", name.data());
@@ -102,7 +110,7 @@ namespace flame
 			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 			inline void set_image(std::string_view name, uint index, ImageViewPtr iv, SamplerPtr sp)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding(name);
+				auto idx = ((DescriptorSetLayout*)layout)->find_binding_i(name);
 				if (idx == -1)
 				{
 					printf("descriptor set bind resource failed: cannot find %s\n", name.data());

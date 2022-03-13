@@ -1,13 +1,5 @@
-#include "../../graphics/font.h"
-#include "../../graphics/material.h"
-#include "../components/element_private.h"
-#include "../components/camera_private.h"
-#include "renderer_private.h"
-
 namespace flame
 {
-	using namespace graphics;
-
 	struct ElementDrawCmd
 	{
 		uint res;
@@ -102,10 +94,6 @@ namespace flame
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
 		std::unique_ptr<DescriptorSet>										ds_water;
 
-		std::unique_ptr<Image> img_dep;
-		std::unique_ptr<Image> img_col_met;	// color, metallic
-		std::unique_ptr<Image> img_nor_rou;	// normal, roughness
-		std::unique_ptr<Image> img_ao;		// ambient occlusion
 		std::unique_ptr<Image> img_ao_back;
 		std::unique_ptr<Image> img_col_ms;
 		std::unique_ptr<Image> img_dep_ms;
@@ -156,7 +144,7 @@ namespace flame
 
 		StorageBuffer<DSL_luminance::Histogram>		buf_lum_htg;
 		StorageBuffer<DSL_luminance::AverageLum>	buf_lum_avg;
-		std::unique_ptr<DescriptorSet>						ds_lum;
+		std::unique_ptr<DescriptorSet>				ds_lum;
 		PipelineLayout* pll_lum;
 		Pipeline* pl_lum_htg;
 		Pipeline* pl_lum_avg;
@@ -254,10 +242,6 @@ namespace flame
 
 	void sRendererPrivate::set_targets(const std::vector<ImageView*>& views)
 	{
-		nd.img_col_met.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_nor_rou.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 		nd.img_ao.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 		nd.img_col_ms.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,

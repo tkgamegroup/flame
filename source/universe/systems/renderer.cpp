@@ -44,6 +44,15 @@ namespace flame
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), nullptr);
 		ds_instance->update();
+		auto dsl_material = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\material.dsl");
+		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
+		mat_reses.resize(buf_material.array_capacity);
+		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
+		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
+		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
+		for (auto i = 0; i < tex_reses.size(); i++)
+			ds_instance->set_image("material_maps", i, img_black->get_view(), nullptr);
+		ds_material->update();
 
 		mesh_reses.resize(1024);
 
@@ -55,6 +64,8 @@ namespace flame
 		rp_fwd = graphics::Renderpass::get(nullptr, L"flame\\shaders\\forward.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
+		rp_gbuf = graphics::Renderpass::get(nullptr, L"flame\\shaders\\gbuffer.rp",
+			{ "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 
 		pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
 			{ "rp=" + str(rp_col) });
@@ -72,23 +83,12 @@ namespace flame
 		prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
 		prm_fwd.set_ds("scene"_h, ds_scene.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
-		pl_mesh_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "frag:CAMERA_LIGHT" });
-		pl_mesh_arm_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "vert:ARMATURE",
-			  "frag:CAMERA_LIGHT" });
-		pl_terrain_fwd = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "frag:CAMERA_LIGHT" });
+		prm_fwd.set_ds("material"_h, ds_material.get());
 
-		buf_vtx.create(pl_mesh_fwd->vi_ui(), 1024 * 256 * 4);
-		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
-		buf_vtx_arm.create(pl_mesh_arm_fwd->vi_ui(), 1024 * 128 * 4);
-		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
-		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
-		buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
+		prm_gbuf.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\gbuffer.pll"));
+		prm_gbuf.set_ds("scene"_h, ds_scene.get());
+		prm_gbuf.set_ds("instance"_h, ds_instance.get());
+		prm_gbuf.set_ds("material"_h, ds_material.get());
 
 		pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col) });
@@ -97,6 +97,34 @@ namespace flame
 			  "vert:ARMATURE" });
 		pl_terrain_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
 			{ "rp=" + str(rp_col) });
+		pl_mesh_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "frag:CAMERA_LIGHT" });
+		pl_mesh_arm_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "vert:ARMATURE",
+			  "frag:CAMERA_LIGHT" });
+		pl_terrain_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_fwd),
+			  "frag:CAMERA_LIGHT" });
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "vert:ARMATURE",
+			  "frag:PICKUP" });
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		fence_pickup.reset(graphics::Fence::create(nullptr, false));
+
+		buf_vtx.create(pl_mesh_camlit->vi_ui(), 1024 * 256 * 4);
+		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
+		buf_vtx_arm.create(pl_mesh_arm_camlit->vi_ui(), 1024 * 128 * 4);
+		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
+		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
+		buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
 
 		prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
 		pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
@@ -113,18 +141,6 @@ namespace flame
 			{ "rp=" + str(rp_col),
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
-
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
-		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "vert:ARMATURE",
-			  "frag:PICKUP" });
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
-		fence_pickup.reset(graphics::Fence::create(nullptr, false));
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -149,7 +165,10 @@ namespace flame
 
 		img_dst.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment));
+		img_col_met.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_nor_rou.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst->get_view(), img_dep->get_view() }));
+		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
 
 		final_layout = _final_layout;
 
@@ -358,6 +377,11 @@ namespace flame
 			res.ref--;
 	}
 
+	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint hash)
+	{
+
+	}
+
 	int sRendererPrivate::register_mesh_instance(int id)
 	{
 		if (id == -1)
@@ -454,7 +478,7 @@ namespace flame
 		d.node = current_node;
 		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
-		d.skin = mat_id;
+		d.mat_id = mat_id;
 		if (!mesh_reses[mesh_id].arm)
 			draw_meshes.push_back(d);
 		else
@@ -467,7 +491,7 @@ namespace flame
 		d.node = current_node;
 		d.ins_id = instance_id;
 		d.mesh_id = mesh_id;
-		d.skin = mat_id;
+		d.mat_id = mat_id;
 		if (!mesh_reses[mesh_id].arm)
 			draw_occluder_meshes.push_back(d);
 		else
@@ -601,15 +625,22 @@ namespace flame
 		
 		buf_scene.upload(cb);
 
-		for (auto& d : draw_meshes)
+		switch (type)
 		{
-			auto& mr = mesh_reses[d.mesh_id];
-			buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
-		}
-		for (auto& d : draw_arm_meshes)
-		{
-			auto& mr = mesh_reses[d.mesh_id];
-			buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+		case Shaded:
+			break;
+		case CameraLight:
+			for (auto& d : draw_meshes)
+			{
+				auto& mr = mesh_reses[d.mesh_id];
+				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+			}
+			for (auto& d : draw_arm_meshes)
+			{
+				auto& mr = mesh_reses[d.mesh_id];
+				buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+			}
+			break;
 		}
 
 		buf_lines.upload(cb);
@@ -619,39 +650,81 @@ namespace flame
 		buf_idr_mesh.upload(cb);
 		buf_idr_mesh_arm.upload(cb);
 
-		cb->set_viewport(Rect(vec2(0), sz));
-		cb->set_scissor(Rect(vec2(0), sz));
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 
-		cb->begin_renderpass(nullptr, fb_fwd.get(), 
-			{ vec4(0.f, 0.f, 0.f, 1.f),
-			vec4(1.f, 0.f, 0.f, 0.f) });
-
-		prm_fwd.bind_dss(cb);
-		prm_fwd.set_pc_var<"f"_h>(vec4(1.f));
-		prm_fwd.push_constant(cb);
-
-		if (!draw_meshes.empty())
+		switch (type)
 		{
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_fwd);
-			cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
-		}
-		if (!draw_arm_meshes.empty())
-		{
-			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-			cb->bind_pipeline(pl_mesh_arm_fwd);
-			cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
-		}
-		if (!draw_terrains.empty())
-		{
-			cb->bind_pipeline(pl_terrain_fwd);
-			for (auto& d : draw_terrains)
-				cb->draw(4, d.blocks, 0, d.ins_id << 24);
-		}
+		case Shaded:
+			cb->set_viewport(Rect(vec2(0), sz));
+			cb->set_scissor(Rect(vec2(0), sz));
 
-		cb->end_renderpass();
+			cb->begin_renderpass(nullptr, fb_gbuf.get(),
+				{ vec4(0.f, 0.f, 0.f, 1.f),
+				vec4(0.f, 0.f, 0.f, 1.f),
+				vec4(1.f, 0.f, 0.f, 0.f) });
+
+			prm_gbuf.bind_dss(cb);
+
+			if (!draw_meshes.empty())
+			{
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				auto idr_off = 0;
+				for (auto mid : opaque_draw_meshes)
+				{
+					auto& mr = mat_reses[mid];
+					auto num = mr.draw_ids.size();
+					mr.draw_ids.clear();
+					idr_off += num;
+					cb->bind_pipeline(mr.pls[0]);
+					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
+				}
+			}
+			if (!draw_arm_meshes.empty())
+			{
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			}
+
+			cb->end_renderpass();
+
+			break;
+		case CameraLight:
+			cb->set_viewport(Rect(vec2(0), sz));
+			cb->set_scissor(Rect(vec2(0), sz));
+
+			cb->begin_renderpass(nullptr, fb_fwd.get(),
+				{ vec4(0.f, 0.f, 0.f, 1.f),
+				vec4(1.f, 0.f, 0.f, 0.f) });
+
+			prm_fwd.bind_dss(cb);
+			prm_fwd.set_pc_var<"f"_h>(vec4(1.f));
+			prm_fwd.push_constant(cb);
+
+			if (!draw_meshes.empty())
+			{
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_camlit);
+				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
+			}
+			if (!draw_arm_meshes.empty())
+			{
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+				cb->bind_pipeline(pl_mesh_arm_camlit);
+				cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
+			}
+			if (!draw_terrains.empty())
+			{
+				cb->bind_pipeline(pl_terrain_camlit);
+				for (auto& d : draw_terrains)
+					cb->draw(4, d.blocks, 0, d.ins_id << 24);
+			}
+
+			cb->end_renderpass();
+			break;
+		}
 
 		if (!draw_outline_meshes.empty() || !draw_outline_arm_meshes.empty() || !draw_terrains.empty())
 		{

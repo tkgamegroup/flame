@@ -7,6 +7,13 @@ namespace flame
 	/// Reflect
 	struct sRenderer : System
 	{
+		enum Type
+		{
+			Shaded,
+			CameraLight
+		};
+
+		Type type = Shaded;
 		cCameraPtr camera = nullptr;
 
 		bool dirty = false;

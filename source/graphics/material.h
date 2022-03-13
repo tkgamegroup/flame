@@ -25,6 +25,9 @@ namespace flame
 			bool opaque = true;
 			bool sort = false;
 			int color_map = -1;
+			int normal_map = -1;
+			int metallic_map = -1;
+			int roughness_map = -1;
 			int alpha_map = -1;
 			float alpha_test = 0.f;
 

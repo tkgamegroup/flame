@@ -8,6 +8,7 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
+#include <flame/universe/systems/renderer.h>
 
 std::list<View*> views;
 
@@ -175,6 +176,10 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Render"))
 		{
+			if (ImGui::MenuItem("Shaded", nullptr, renderer->type == sRenderer::Shaded))
+				renderer->type = sRenderer::Shaded;
+			if (ImGui::MenuItem("Camera Light", nullptr, renderer->type == sRenderer::CameraLight))
+				renderer->type = sRenderer::CameraLight;
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();

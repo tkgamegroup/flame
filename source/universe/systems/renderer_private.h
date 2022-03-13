@@ -34,6 +34,7 @@ namespace flame
 		graphics::Material* mat = nullptr;
 		std::vector<int> texs;
 		std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
+		std::vector<uint> draw_ids;
 		uint ref = 0;
 	};
 
@@ -50,7 +51,7 @@ namespace flame
 		cNodePtr node;
 		uint ins_id;
 		uint mesh_id;
-		uint skin;
+		uint mat_id;
 		cvec4 color;
 	};
 
@@ -68,9 +69,10 @@ namespace flame
 		graphics::WindowPtr window;
 
 		std::vector<MeshRes> mesh_reses;
-		std::vector<TexRes> tex_reses;
+		std::vector<TexRes>	tex_reses;
 		std::vector<MatRes> mat_reses;
 
+		cNodePtr current_node = nullptr;
 		std::vector<DrawLine>		draw_lines;
 		std::vector<DrawMesh>		draw_meshes;
 		std::vector<DrawMesh>		draw_arm_meshes;
@@ -83,7 +85,10 @@ namespace flame
 		std::vector<DrawTerrain>	draw_terrains;
 		std::vector<DrawTerrain>	draw_outline_terrains;
 		std::vector<DrawTerrain>	draw_wireframe_terrains;
-		cNodePtr current_node = nullptr;
+		std::vector<uint> opaque_draw_meshes;
+		std::vector<uint> opaque_draw_arm_meshes;
+		std::vector<uint> transparent_draw_meshes;
+		std::vector<uint> transparent_draw_arm_meshes;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
 
@@ -93,6 +98,7 @@ namespace flame
 		graphics::RenderpassPtr															rp_col = nullptr;
 		graphics::RenderpassPtr															rp_col_dep = nullptr;
 		graphics::RenderpassPtr															rp_fwd = nullptr;
+		graphics::RenderpassPtr															rp_gbuf = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit_tar = nullptr;
 		graphics::GraphicsPipelinePtr													pl_add = nullptr;
@@ -104,7 +110,11 @@ namespace flame
 
 		std::unique_ptr<graphics::Image>												img_dst;
 		std::unique_ptr<graphics::Image>												img_dep;
+		std::unique_ptr<graphics::Image>												img_col_met;	// color, metallic
+		std::unique_ptr<graphics::Image>												img_nor_rou;	// normal, roughness
+		std::unique_ptr<graphics::Image>												img_ao;		// ambient occlusion
 		std::unique_ptr<graphics::Framebuffer>											fb_fwd;
+		std::unique_ptr<graphics::Framebuffer>											fb_gbuf;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
@@ -118,18 +128,19 @@ namespace flame
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_gbuf;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
-		graphics::GraphicsPipelinePtr													pl_mesh_fwd = nullptr;
-		graphics::GraphicsPipelinePtr													pl_mesh_arm_fwd = nullptr;
-		graphics::GraphicsPipelinePtr													pl_terrain_fwd = nullptr;
-
-		std::unique_ptr<graphics::Image>												img_back0;
-		std::unique_ptr<graphics::Image>												img_back1;
-
 		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain = nullptr;
 		graphics::GraphicsPipelinePtr													pl_terrain_plain = nullptr;
+		graphics::GraphicsPipelinePtr													pl_mesh_camlit = nullptr;
+		graphics::GraphicsPipelinePtr													pl_mesh_arm_camlit = nullptr;
+		graphics::GraphicsPipelinePtr													pl_terrain_camlit = nullptr;
+		graphics::GraphicsPipelinePtr													pl_def_shade = nullptr;
+
+		std::unique_ptr<graphics::Image>												img_back0;
+		std::unique_ptr<graphics::Image>												img_back1;
 
 		graphics::PipelineResourceManager<FLAME_UID>									prm_post;
 		graphics::GraphicsPipelinePtr													pl_blur_h = nullptr;
@@ -162,6 +173,7 @@ namespace flame
 
 		int get_material_res(graphics::Material* mat) override;
 		void release_material_res(uint id) override;
+		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint hash);
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
