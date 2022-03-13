@@ -4,6 +4,7 @@
 #include "material_private.h"
 #include "model_private.h"
 #include "model_ext.h"
+#include "animation_private.h"
 
 #ifdef USE_ASSIMP
 #include <assimp/Importer.hpp>
@@ -15,6 +16,15 @@ namespace flame
 {
 	namespace graphics
 	{
+		ModelPrivate::~ModelPrivate()
+		{
+			for (auto& m : meshes)
+			{
+				for (auto mat : m.materials)
+					Material::release(mat);
+			}
+		}
+
 		void ModelPrivate::save(const std::filesystem::path& filename)
 		{
 			pugi::xml_document doc;
@@ -399,7 +409,7 @@ namespace flame
 		static ModelPtr standard_cube = nullptr;
 		static ModelPtr standard_sphere = nullptr;
 
-		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ModelT>>> models;
+		static std::vector<std::unique_ptr<ModelT>> models;
 
 		struct ModelGet : Model::Get
 		{
@@ -445,8 +455,8 @@ namespace flame
 
 				for (auto& m : models)
 				{
-					if (m.first == filename)
-						return m.second.get();
+					if (m->filename == filename)
+						return m.get();
 				}
 
 				if (!std::filesystem::exists(filename))
@@ -564,68 +574,27 @@ namespace flame
 
 				model_data_file.close();
 
-				models.emplace_back(filename, ret);
-
+				ret->ref = 1;
+				models.emplace_back(ret);
 				return ret;
 			}
 		}Model_get;
 		Model::Get& Model::get = Model_get;
 
-		static std::vector<std::unique_ptr<AnimationT>> animations;
-
-		struct AnimationGet : Animation::Get 
+		struct ModelRelease : Model::Release
 		{
-			AnimationPtr operator()(const std::filesystem::path& _filename) override
+			void operator()(ModelPtr model) override
 			{
-				auto filename = Path::get(_filename);
-
-				for (auto& a : animations)
+				if (model->ref == 1)
 				{
-					if (a->filename == filename)
-						return a.get();
+					std::erase_if(models, [&](const auto& i) {
+						return i.get() == model;
+					});
 				}
-
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("animation"))
-				{
-					wprintf(L"animation does not exist: %s\n", _filename.c_str());
-					return nullptr;
-				}
-
-				auto data_filename = filename;
-				data_filename += L".dat";
-				std::ifstream data_file(data_filename, std::ios::binary);
-				if (!data_file.good())
-				{
-					wprintf(L"missing .dat file for: %s\n", _filename.c_str());
-					return nullptr;
-				}
-
-				auto ret = new AnimationPrivate;
-				ret->filename = filename;
-
-				for (auto n_channel : doc_root.child("channels"))
-				{
-					auto& c = ret->channels.emplace_back();
-					c.node_name = n_channel.attribute("node_name").value();
-					{
-						auto n_keys = n_channel.child("keys");
-						auto offset = n_keys.attribute("offset").as_uint();
-						auto size = n_keys.attribute("size").as_uint();
-						c.keys.resize(size / sizeof(Channel::Key));
-						data_file.read((char*)c.keys.data(), size);
-					}
-					ret->channels.emplace_back(c);
-				}
-
-				data_file.close();
-
-				animations.emplace_back(ret);
-
-				return ret;
+				else
+					model->ref--;
 			}
-		}Animation_get;
-		Animation::Get& Animation::get = Animation_get;
+		}Model_release;
+		Model::Release& Model::release = Model_release;
 	}
 }

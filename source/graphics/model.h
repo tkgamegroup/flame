@@ -93,33 +93,12 @@ namespace flame
 				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
-		};
 
-		struct Channel
-		{
-			struct Key
+			struct Release
 			{
-				vec3 p;
-				quat q;
+				virtual void operator()(ModelPtr model) = 0;
 			};
-
-			std::string node_name;
-			std::vector<Key> keys;
-		};
-
-		struct Animation
-		{
-			std::vector<Channel> channels;
-
-			std::filesystem::path filename;
-
-			virtual ~Animation() {}
-
-			struct Get
-			{
-				virtual AnimationPtr operator()(const std::filesystem::path& filename) = 0;
-			};
-			FLAME_GRAPHICS_API static Get& get;
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 }

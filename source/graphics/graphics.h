@@ -399,6 +399,12 @@ namespace flame
 			DynamicStateStencilReference
 		};
 
+		struct MipmapOption
+		{
+			bool auto_gen = false;
+			float alpha_test = 0.f; /*for reserve coverage*/
+		};
+
 		struct Glyph
 		{
 			ushort code = 0;

@@ -48,6 +48,12 @@ namespace flame
 				virtual MaterialPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(MaterialPtr material) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 }

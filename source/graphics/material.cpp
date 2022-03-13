@@ -43,7 +43,6 @@ namespace flame
 
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
-
 				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("material"))
 				{
 					printf("material does not exist: %s\n", filename.string().c_str());
@@ -52,10 +51,28 @@ namespace flame
 
 				auto ret = new MaterialPrivate;
 				unserialize_xml(doc_root, ret);
+
+				ret->ref = 1;
 				materials.emplace_back(ret);
 				return ret;
 			}
 		}Material_get;
 		Material::Get& Material::get = Material_get;
+
+		struct MaterialRelease : Material::Release
+		{
+			void operator()(MaterialPtr material) override
+			{
+				if (material->ref == 1)
+				{
+					std::erase_if(materials, [&](const auto& i) {
+						return i.get() == material;
+					});
+				}
+				else
+					material->ref--;
+			}
+		}Material_release;
+		Material::Release& Material::release = Material_release;
 	}
 }

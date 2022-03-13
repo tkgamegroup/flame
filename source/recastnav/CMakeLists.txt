@@ -1,4 +1,4 @@
-if (USE_RECASTNAV)
+if(USE_RECASTNAV)
 	file(GLOB source_files "${RECASTNAV_DIR}/Detour/Include/*.h" "${RECASTNAV_DIR}/Detour/Source/*.cpp")
 	add_library(detour ${source_files})
 	set_target_properties(detour PROPERTIES FOLDER "flame")

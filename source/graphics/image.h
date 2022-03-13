@@ -75,12 +75,6 @@ namespace flame
 				std::vector<Layer> layers;
 			};
 
-			struct MipmapOption
-			{
-				bool generate = false;
-				float alpha_test_for_reserve_coverage = 0.f;
-			};
-
 			Format format = Format_R8G8B8A8_UNORM;
 			uvec2 size = uvec2(0);
 			uint pixel_size = 0;

@@ -154,7 +154,7 @@ namespace flame
 		void bind_window_targets() override;
 
 		int get_texture_res(const std::filesystem::path& filename, bool srgb, 
-			graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option) override;
+			graphics::SamplerPtr sp, const graphics::MipmapOption& mipmap_option) override;
 		void release_texture_res(uint id) override;
 
 		int get_mesh_res(graphics::Mesh* mesh) override;

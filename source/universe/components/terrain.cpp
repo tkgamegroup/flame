@@ -36,7 +36,9 @@ namespace flame
 		if (extent == _extent)
 			return;
 		extent = _extent;
-		apply_src();
+
+		build_textures();
+
 		node->mark_drawing_dirty();
 		data_changed("extent"_h);
 	}
@@ -46,6 +48,9 @@ namespace flame
 		if (blocks == _blocks)
 			return;
 		blocks = _blocks;
+
+		build_textures();
+
 		node->mark_drawing_dirty();
 		data_changed("blocks"_h);
 	}
@@ -55,21 +60,27 @@ namespace flame
 		if (tess_level == _tess_level)
 			return;
 		tess_level = _tess_level;
+
+		build_textures();
+
 		node->mark_drawing_dirty();
 		data_changed("tess_level"_h);
 	}
 
-	void cTerrainPrivate::set_texture_name(const std::filesystem::path& _texture_name)
+	void cTerrainPrivate::set_height_map_name(const std::filesystem::path& name)
 	{
-		if (texture_name == _texture_name)
+		if (height_map_name == name)
 			return;
-		texture_name = _texture_name;
-		apply_src();
+		height_map_name = name;
+
+		height_map.reset(!height_map_name.empty() ? graphics::Image::create(nullptr, height_map_name) : nullptr);
+		build_textures();
+
 		node->mark_drawing_dirty();
-		data_changed("texture_name"_h);
+		data_changed("height_map_name"_h);
 	}
 
-	void cTerrainPrivate::apply_src()
+	void cTerrainPrivate::build_textures()
 	{
 		if (textures)
 		{
@@ -77,24 +88,20 @@ namespace flame
 			textures.reset();
 		}
 
-		if (texture_name.empty())
+		if (!height_map)
 			return;
 
-		auto height_texture = std::unique_ptr<graphics::Image>(graphics::Image::create(nullptr, texture_name));
-		if (!height_texture)
-			return;
-
-		auto sz0 = (ivec2)height_texture->size;
-		textures.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 3));
-
+		auto sz0 = (ivec2)height_map->size;
 		auto sz1 = sz0 + 1;
+
+		textures.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 3));
 
 		std::vector<float> heights;
 		heights.resize(sz1.x * sz1.y);
 		for (auto y = 0; y < sz1.y; y++)
 		{
 			for (auto x = 0; x < sz1.x; x++)
-				heights[y * sz1.x + x] = height_texture->linear_sample(vec2((float)x / sz0.x, (float)y / sz0.y)).x;
+				heights[y * sz1.x + x] = height_map->linear_sample(vec2((float)x / sz0.x, (float)y / sz0.y)).x;
 		}
 
 		{
@@ -135,12 +142,12 @@ namespace flame
 			graphics::InstanceCB cb(nullptr);
 			graphics::BufferImageCopy cpy;
 			cpy.img_ext = sz0;
-			cb->image_barrier(height_texture.get(), {}, graphics::ImageLayoutTransferSrc);
+			cb->image_barrier(height_map.get(), {}, graphics::ImageLayoutTransferSrc);
 			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutTransferDst);
 			{
 				graphics::ImageCopy cpy;
 				cpy.size = sz0;
-				cb->copy_image(height_texture.get(), textures.get(), { &cpy, 1 });
+				cb->copy_image(height_map.get(), textures.get(), { &cpy, 1 });
 			}
 			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutShaderReadOnly);
 
@@ -154,20 +161,20 @@ namespace flame
 			cb->copy_buffer_to_image(tan_stag.get(), textures.get(), { &cpy, 1 });
 			cb->image_barrier(textures.get(), cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 		}
-
-		/*
-		if (!material_name.empty())
-		{
-			auto fn = std::filesystem::path(material_name);
-			if (!fn.extension().empty() && !fn.is_absolute())
-				fn = ppath / fn;
-			material = graphics::Material::get(fn.c_str());
-			material_id = s_renderer->find_material_res(material);
-			if (material_id == -1)
-				material_id = s_renderer->set_material_res(-1, material);
-		}
-		*/
 	}
+
+	/*
+	if (!material_name.empty())
+	{
+		auto fn = std::filesystem::path(material_name);
+		if (!fn.extension().empty() && !fn.is_absolute())
+			fn = ppath / fn;
+		material = graphics::Material::get(fn.c_str());
+		material_id = s_renderer->find_material_res(material);
+		if (material_id == -1)
+			material_id = s_renderer->set_material_res(-1, material);
+	}
+	*/
 
 	void cTerrainPrivate::draw(sRendererPtr renderer)
 	{

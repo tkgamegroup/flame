@@ -51,7 +51,35 @@ namespace flame
 			return;
 		bones.clear();
 		model_name = path;
-		apply_src();
+
+		graphics::ModelPtr _model = nullptr;
+		_model = graphics::Model::get(model_name);
+		if (model != _model)
+		{
+			if (model)
+				graphics::Model::release(model);
+			model = _model;
+		}
+		if (model)
+		{
+			bones.resize(model->bones.size());
+			for (auto i = 0; i < bones.size(); i++)
+			{
+				auto& src = model->bones[i];
+				auto& dst = bones[i];
+				auto name = src.name;
+				auto e = entity->find_child(name);
+				if (e)
+				{
+					dst.name = name;
+					dst.node = e->get_component_i<cNodeT>(0);
+					if (dst.node)
+						dst.offmat = src.offset_matrix;
+				}
+			}
+		}
+		apply_animations();
+
 		if (node)
 			node->mark_transform_dirty();
 		data_changed("model_name"_h);
@@ -62,7 +90,9 @@ namespace flame
 		if (animation_names == paths)
 			return;
 		animation_names = paths;
-		apply_src();
+
+		apply_animations();
+
 		if (node)
 			node->mark_transform_dirty();
 		data_changed("animation_names"_h);
@@ -84,27 +114,9 @@ namespace flame
 		playing_id = -1;
 	}
 
-	void cArmaturePrivate::apply_src()
+	void cArmaturePrivate::apply_animations()
 	{
-		model = graphics::Model::get(model_name);
-		if (!model)
-			return;
-
-		bones.resize(model->bones.size());
-		for (auto i = 0; i < bones.size(); i++)
-		{
-			auto& src = model->bones[i];
-			auto& dst = bones[i];
-			auto name = src.name;
-			auto e = entity->find_child(name);
-			if (e)
-			{
-				dst.name = name;
-				dst.node = e->get_component_i<cNodeT>(0);
-				if (dst.node)
-					dst.offmat = src.offset_matrix;
-			}
-		}
+		animations.clear();
 
 		if (bones.empty() || animation_names.empty())
 			return;
@@ -187,8 +199,6 @@ namespace flame
 
 	void cArmaturePrivate::on_active()
 	{
-		apply_src();
-
 		instance_id = sRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();
@@ -196,8 +206,6 @@ namespace flame
 
 	void cArmaturePrivate::on_inactive()
 	{
-		model = nullptr;
-
 		stop();
 		bones.clear();
 		animations.clear();

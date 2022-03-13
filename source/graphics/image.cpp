@@ -3,7 +3,6 @@
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
-#include "image_ext.h"
 #include "command_private.h"
 #include "shader_private.h"
 #include "extension.h"
@@ -488,7 +487,7 @@ namespace flame
 				}
 			}
 
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, const Image::MipmapOption& mipmap_option) override
+			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, const MipmapOption& mipmap_option) override
 			{
 				if (!device)
 					device = current_device;
@@ -590,7 +589,7 @@ namespace flame
 					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, mipmap_option.generate ? 0 : 1);
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, mipmap_option.auto_gen ? 0 : 1);
 
 					{
 						StagingBuffer sb(device, bmp->data_size, bmp->data);
@@ -599,7 +598,7 @@ namespace flame
 						cpy.img_ext = ret->size;
 						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
-						if (mipmap_option.generate)
+						if (mipmap_option.auto_gen)
 						{
 							for (auto i = 1U; i < ret->n_levels; i++)
 							{
@@ -615,11 +614,11 @@ namespace flame
 						cb->image_barrier(ret, { 0, ret->n_levels, 0, 1 }, ImageLayoutShaderReadOnly);
 					}
 
-					if (mipmap_option.generate && mipmap_option.alpha_test_for_reserve_coverage > 0.f)
+					if (mipmap_option.auto_gen && mipmap_option.alpha_test > 0.f)
 					{
-						auto coverage = get_image_alphatest_coverage(ret, 0, mipmap_option.alpha_test_for_reserve_coverage, 1.f);
+						auto coverage = get_image_alphatest_coverage(ret, 0, mipmap_option.alpha_test, 1.f);
 						for (auto i = 1; i < ret->n_levels; i++)
-							scale_image_alphatest_coverage(ret, i, coverage, mipmap_option.alpha_test_for_reserve_coverage);
+							scale_image_alphatest_coverage(ret, i, coverage, mipmap_option.alpha_test);
 					}
 
 					ret->filename = filename;

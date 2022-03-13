@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../graphics/model.h"
+#include "../../graphics/animation.h"
 #include "armature.h"
 #include "node_private.h"
 
@@ -38,11 +39,10 @@ namespace flame
 
 		void set_model_name(const std::filesystem::path& src) override;
 		void set_animation_names(const std::wstring& paths) override;
+		void apply_animations();
 
 		void play(uint id) override;
 		void stop() override;
-
-		void apply_src();
 
 		void draw(sRendererPtr renderer);
 

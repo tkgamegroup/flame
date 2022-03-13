@@ -21,8 +21,6 @@ namespace flame
 
 		void set_cast_shadow(bool v) override;
 
-		void apply_src();
-
 		void draw(sRendererPtr renderer, bool shadow_pass);
 
 		void on_active() override;

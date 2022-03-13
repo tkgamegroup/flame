@@ -26,14 +26,17 @@ namespace flame
 		virtual void set_tess_level(uint tess_level) = 0;
 
 		/// Reflect
-		std::filesystem::path texture_name;
+		std::filesystem::path height_map_name;
 		/// Reflect
-		virtual void set_texture_name(const std::filesystem::path& texture_name) = 0;
+		virtual void set_height_map_name(const std::filesystem::path& name) = 0;
 
+		std::unique_ptr<graphics::Image> height_map;
+		graphics::MaterialPtr material = nullptr;
+		int material_res_id = -1;
 		int instance_id = -1;
 
 		// { height, normal, tangent } as array
-		std::unique_ptr<graphics::Image> textures = nullptr;
+		std::unique_ptr<graphics::Image> textures;
 
 		struct Create
 		{

@@ -30,7 +30,11 @@ namespace flame
 		/// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
-		int mesh_id = -1;
+		graphics::ModelPtr model = nullptr;
+		graphics::MeshPtr mesh = nullptr;
+		graphics::MaterialPtr material = nullptr;
+		int mesh_res_id = -1;
+		int material_res_id = -1;
 		int instance_id = -1;
 
 		struct Create

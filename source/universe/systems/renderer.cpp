@@ -176,9 +176,9 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	int sRendererPrivate::get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::Image::MipmapOption& mipmap_option)
+	int sRendererPrivate::get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::MipmapOption& mipmap_option)
 	{
-
+		return -1;
 	}
 
 	void sRendererPrivate::release_texture_res(uint id)
