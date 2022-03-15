@@ -12,7 +12,7 @@ string(SUBSTRING  "${CMAKE_LINKER}" 0 ${pos} VS_LOCATION)
 
 get_filename_component(parent_dir "${CMAKE_SOURCE_DIR}" DIRECTORY)
 
-check_path("${parent_dir}glm" p)
+check_path("${parent_dir}/glm" p)
 set(GLM_INCLUDE_DIR "${p}" CACHE PATH "GLM include directory")
 if(NOT EXISTS "${GLM_INCLUDE_DIR}")
 	message(SEND_ERROR "required GLM is invalid")
