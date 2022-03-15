@@ -200,6 +200,7 @@ if op != 3:
 		if not bud_dir.exists():
 			bud_dir.mkdir()
 			os.system("cmake -S \"%s\" -B \"%s\"" % (lib_dir, bud_dir))
+			os.system("xcopy %s %s" % (lib_dir / "build/include/assimp/config.h", lib_dir / "include/assimp/config.h"))
 			os.chdir("%s/MSBuild/Current/Bin" % str(vs_path));
 			os.system("msbuild \"%s\"" % glob.glob("%s/*.sln" % str(bud_dir))[0])
 			os.chdir(current_directory)
@@ -244,7 +245,7 @@ if op != 3:
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
-			os.system("git clone --depth 1 %s %s && git checkout docking && echo ok" % (address, str(lib_dir)))
+			os.system("git clone --depth 1 --branch docking %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 	print("====\n")
