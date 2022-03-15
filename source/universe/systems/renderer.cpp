@@ -48,10 +48,10 @@ namespace flame
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
 		mat_reses.resize(buf_material.array_capacity);
 		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
-		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
+		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
 		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
-			ds_instance->set_image("material_maps", i, img_black->get_view(), nullptr);
+			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
 		ds_material->update();
 
 		mesh_reses.resize(1024);
@@ -379,6 +379,11 @@ namespace flame
 
 	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint hash)
 	{
+		return nullptr;
+	}
+
+	void sRendererPrivate::release_material_pipeline(MatRes& mr, graphics::GraphicsPipelinePtr pipeline)
+	{
 
 	}
 
@@ -676,8 +681,7 @@ namespace flame
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
 					idr_off += num;
-					get_material_pipeline();
-					cb->bind_pipeline(mr.pls[0]);
+					cb->bind_pipeline(get_material_pipeline(mr, 0));
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 				}
 			}
