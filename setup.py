@@ -16,6 +16,10 @@ if not vs_path.exists():
 	print("Cannot find visual studio, abort")
 	exit(0)
 
+if os.system("cmake --version") != 0:
+	print("Cannot find CMake, abort")
+	exit(0)
+
 print("Download or build required libraries?\n 1 - Automaticly\n 2 - Manually\n 3 - Skip")
 op = int(input())
 
@@ -161,19 +165,6 @@ if op != 3:
 		else:
 			print("%s exists, skip build" % str(bud_dir))
 	print("====\n")
-			
-	print("== library lua ==")
-	ok = True
-	address = "https://github.com/lua/lua.git"
-	lib_dir = parent_directory / "lua"
-	if op == 2:
-		print("Download LUA from %s into %s ? y/n" % (address, str(lib_dir)))
-		ok = input() == "y"
-	if ok:
-		if not lib_dir.exists():
-			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
-		else:
-			print("%s exists, skip download" % str(lib_dir))
 
 	ok = True
 	bud_dir = lib_dir / "build"

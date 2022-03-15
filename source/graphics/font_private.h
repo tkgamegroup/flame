@@ -53,7 +53,7 @@ namespace flame
 			DevicePtr device;
 			std::unique_ptr<ImagePrivate> image;
 
-			Glyph empty_glyph;
+			uint ref = 0;
 
 			const Glyph& get_glyph(wchar_t code, uint size) override;
 		};

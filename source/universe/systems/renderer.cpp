@@ -676,6 +676,7 @@ namespace flame
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
 					idr_off += num;
+					get_material_pipeline();
 					cb->bind_pipeline(mr.pls[0]);
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 				}

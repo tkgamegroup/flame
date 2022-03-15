@@ -27,6 +27,8 @@ namespace flame
 
 		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)
 		{
+			static Glyph empty_glyph;
+
 			if (size == 0)
 				return empty_glyph;
 

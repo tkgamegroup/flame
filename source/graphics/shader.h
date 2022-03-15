@@ -83,6 +83,12 @@ namespace flame
 				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(DescriptorSetLayoutPtr layout) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
 		struct DescriptorSet
@@ -156,6 +162,12 @@ namespace flame
 				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(PipelineLayoutPtr layout) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
 		struct Shader
@@ -181,6 +193,12 @@ namespace flame
 				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(ShaderPtr shader) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
 		struct VertexAttributeInfo
@@ -291,6 +309,12 @@ namespace flame
 				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(GraphicsPipelinePtr pipeline) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
 		struct ComputePipeline : ComputePipelineInfo
@@ -312,6 +336,12 @@ namespace flame
 				virtual ComputePipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(ComputePipelinePtr pipeline) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 }

@@ -142,6 +142,12 @@ namespace flame
 				virtual FontAtlasPtr operator()(DevicePtr device, const std::wstring& font_names) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(FontAtlasPtr atlas) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 

@@ -23,8 +23,6 @@ An ECS 3D-Game-Engine.
 
 - SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
 
-- LUA https://github.com/lua/lua
-
 - Assimp https://github.com/assimp/assimp
 
 - PhysX https://github.com/NVIDIAGameWorks/PhysX

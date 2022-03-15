@@ -174,6 +174,7 @@ namespace flame
 		int get_material_res(graphics::Material* mat) override;
 		void release_material_res(uint id) override;
 		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint hash);
+		void release_material_pipeline(MatRes& mr, graphics::GraphicsPipelinePtr pipeline);
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
