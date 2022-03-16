@@ -29,7 +29,8 @@ void main()
 	
 	#include MAT_FILE
 #else
-	#ifndef SHADOW_PASS
+	#ifndef DEFERRED
+	#ifndef DEPTH_PASS
 		#ifdef PICKUP
 			o_color = pack_uint_to_v4(pc.i[0]);
 		#elifdef NORMAL_DATA
@@ -39,6 +40,7 @@ void main()
 		#else
 			o_color = pc.f;
 		#endif
+	#endif
 	#endif
 #endif
 }

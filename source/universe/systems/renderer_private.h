@@ -99,6 +99,8 @@ namespace flame
 		graphics::RenderpassPtr															rp_col_dep = nullptr;
 		graphics::RenderpassPtr															rp_fwd = nullptr;
 		graphics::RenderpassPtr															rp_gbuf = nullptr;
+		graphics::PipelineLayoutPtr														pll_fwd = nullptr;
+		graphics::PipelineLayoutPtr														pll_gbuf = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit_tar = nullptr;
 		graphics::GraphicsPipelinePtr													pl_add = nullptr;
@@ -119,25 +121,27 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
+		std::unique_ptr<graphics::DescriptorSet>										ds_light;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_gbuf;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh_arm;
 		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_plain = nullptr;
 		graphics::GraphicsPipelinePtr													pl_terrain_plain = nullptr;
 		graphics::GraphicsPipelinePtr													pl_mesh_camlit = nullptr;
 		graphics::GraphicsPipelinePtr													pl_mesh_arm_camlit = nullptr;
 		graphics::GraphicsPipelinePtr													pl_terrain_camlit = nullptr;
-		graphics::GraphicsPipelinePtr													pl_def_shade = nullptr;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_deferred;
+		std::unique_ptr<graphics::DescriptorSet>										ds_deferred;
+		graphics::GraphicsPipelinePtr													pl_deferred = nullptr;
 
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;
@@ -174,7 +178,6 @@ namespace flame
 		int get_material_res(graphics::Material* mat) override;
 		void release_material_res(uint id) override;
 		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint hash);
-		void release_material_pipeline(MatRes& mr, graphics::GraphicsPipelinePtr pipeline);
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;

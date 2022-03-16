@@ -54,7 +54,7 @@ namespace flame
 		_model = graphics::Model::get(model_name);
 		if (_model && !_model->meshes.empty())
 		{
-			_mesh = &model->meshes[0];
+			_mesh = &_model->meshes[0];
 			if (!_mesh->materials.empty())
 				_material = _mesh->materials[0];
 		}

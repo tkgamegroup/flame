@@ -13,14 +13,27 @@ namespace flame
 {
 	namespace graphics
 	{
-		Font::Font()
-		{
-			stbtt_info = new stbtt_fontinfo;
-		}
+		static std::vector<std::unique_ptr<Font>> fonts;
+		static std::vector<std::unique_ptr<FontAtlasT>> atlases;
 
 		Font::~Font()
 		{
 			delete stbtt_info;
+		}
+
+		FontAtlasPrivate::~FontAtlasPrivate()
+		{
+			for (auto ft : myfonts)
+			{
+				if (ft->ref == 1)
+				{
+					std::erase_if(fonts, [&](const auto& i) {
+						return i.get() == ft;
+					});
+				}
+				else
+					ft->ref--;
+			}
 		}
 
 		const auto font_atlas_size = uvec2(1024);
@@ -95,47 +108,73 @@ namespace flame
 			return empty_glyph;
 		}
 
-		static std::vector<std::pair<std::vector<std::wstring>, std::unique_ptr<FontAtlasT>>> loaded_atlas;
-
 		struct FontAtlasGet : FontAtlas::Get
 		{
-			FontAtlasPtr operator()(DevicePtr device, const std::wstring& font_names) override
+			FontAtlasPtr operator()(DevicePtr device, const std::vector<std::filesystem::path>& _font_names) override
 			{
 				if (!device)
 					device = current_device;
 
-				auto sp = SUW::split(font_names, L';');
-				std::sort(sp.begin(), sp.end());
-				for (auto& a : loaded_atlas)
+				std::vector<std::filesystem::path> font_names;
+				for (auto& _fn : _font_names)
 				{
-					if (a.first == sp)
-						return a.second.get();
+					auto fn = Path::get(_fn);
+					if (std::filesystem::exists(_fn))
+						font_names.push_back(fn);
+					else
+						wprintf(L"cannot find font: %s\n", fn.c_str());
+				}
+				std::sort(font_names.begin(), font_names.end());
+
+				for (auto& a : atlases)
+				{
+					if (a->font_names == font_names)
+					{
+						a->ref++;
+						return a.get();
+					}
 				}
 
-				std::vector<std::unique_ptr<Font>> fonts;
-				for (auto& s : sp)
+				std::vector<Font*> myfonts;
+
+				for (auto& fn : font_names)
 				{
-					auto fn = Path::get(s);
-					if (!std::filesystem::exists(fn))
+					Font* font = nullptr;
+					for (auto& ft : fonts)
 					{
-						wprintf(L"cannot find font: %s\n", s.c_str());
-						return nullptr;
+						if (ft->filename == fn)
+						{
+							font = ft.get();
+							ft->ref++;
+							break;
+						}
 					}
 
-					auto font = new Font;
-					font->file = get_file_content(fn);
-					if (font->file.empty() || !stbtt_InitFont(font->stbtt_info, (uchar*)font->file.data(), stbtt_GetFontOffsetForIndex((uchar*)font->file.data(), 0)))
+					if (!font)
 					{
-						wprintf(L"cannot load font: %s\n", s.c_str());
-						return nullptr;
+						auto stbtt_info = new stbtt_fontinfo;
+						auto content = get_file_content(fn);
+						if (stbtt_InitFont(stbtt_info, (uchar*)content.data(), stbtt_GetFontOffsetForIndex((uchar*)content.data(), 0)))
+						{
+							font = new Font;
+							font->filename = fn;
+							font->content = content;
+
+							font->ref = 1;
+							fonts.emplace_back(font);
+						}
+						else
+							wprintf(L"cannot load font: %s\n", fn.c_str());
 					}
 
-					fonts.emplace_back(font);
+					if (font)
+						myfonts.push_back(font);
 				}
 
 				auto ret = new FontAtlasPrivate;
 				ret->device = device;
-				ret->fonts = std::move(fonts);
+				ret->font_names = font_names;
+				ret->myfonts = myfonts;
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
@@ -143,11 +182,28 @@ namespace flame
 				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
 				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 
-				loaded_atlas.emplace_back(sp, ret);
+				ret->ref = 1;
+				atlases.emplace_back(ret);
 				return ret;
 			}
 		}FontAtlas_get;
 		FontAtlas::Get& FontAtlas::get = FontAtlas_get;
+
+		struct FontAtlasRelease : FontAtlas::Release
+		{
+			void operator()(FontAtlasPtr atlas) override
+			{
+				if (atlas->ref == 1)
+				{
+					std::erase_if(atlases, [&](const auto& i) {
+						return i.get() == atlas;
+					});
+				}
+				else
+					atlas->ref--;
+			}
+		}FontAtlas_release;
+		FontAtlas::Release& FontAtlas::release = FontAtlas_release;
 	}
 }
 

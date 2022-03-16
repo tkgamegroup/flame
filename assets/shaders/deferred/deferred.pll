@@ -1,3 +1,0 @@
-#include "deferred.dsl"
-#include "../scene.dsl"
-#include "../light.dsl"

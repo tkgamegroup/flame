@@ -298,9 +298,6 @@ namespace flame
 			temp << std::endl;
 
 			{
-				auto full_src_path = std::filesystem::canonical(std::filesystem::current_path() / src_path);
-				full_src_path.make_preferred();
-
 				std::vector<std::filesystem::path> dependencies;
 				std::list<std::filesystem::path> headers;
 				headers.push_back(src_path);
@@ -308,16 +305,16 @@ namespace flame
 				{
 					auto fn = headers.front();
 					headers.pop_front();
+
 					if (!std::filesystem::exists(fn))
 					{
 						printf("cannot find include file: %s\n", fn.string().c_str());
 						continue;
 					}
-
 					fn = std::filesystem::canonical(fn);
 					fn.make_preferred();
 
-					if (fn != full_src_path)
+					if (fn != src_path)
 					{
 						if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
 							dependencies.push_back(fn);
@@ -367,26 +364,29 @@ namespace flame
 			{
 				auto set = 0;
 				temp << "#define SET " << str(set++) << std::endl;
-				for (auto& l : src_lines)
+				std::filesystem::path pll_path;
+				std::filesystem::path pll_dir;
+				for (auto it = src_lines.begin(); it != src_lines.end(); it++)
 				{
+					auto l = *it;
 					if (SUS::strip_head_tail_if(l, "#include \"", ".pll\""))
 					{
-						temp << std::endl;
-
-						auto pll_path = src_path.parent_path() / (l + ".pll");
-						auto pll_dir = pll_path.parent_path();
-						auto lines = get_file_lines(pll_path);
-						for (auto& l : lines)
-						{
-							if (SUS::strip_head_tail_if(l, "#include \"", ".dsl\""))
-							{
-								temp << "#include \"" << (pll_dir / l).string() << ".dsl\"" << std::endl;
-								temp << "#undef SET" << std::endl;
-								temp << "#define SET " << str(set++) << std::endl;
-							}
-							else
-								temp << l << std::endl;
-						}
+						src_lines.emplace(it, "");
+						pll_path = src_path.parent_path() / (l + ".pll");
+						pll_dir = pll_path.parent_path();
+						for (auto& l : get_file_lines(pll_path))
+							src_lines.emplace(it, l);
+						src_lines.emplace(it, "");
+						break;
+					}
+				}
+				for (auto& l : src_lines)
+				{
+					if (SUS::strip_head_tail_if(l, "#include \"", ".dsl\""))
+					{
+						temp << "#include \"" << (pll_dir / l).string() << ".dsl\"" << std::endl;
+						temp << "#undef SET" << std::endl;
+						temp << "#define SET " << str(set++) << std::endl;
 					}
 					else
 						temp << l << std::endl;
@@ -412,9 +412,8 @@ namespace flame
 			}
 			std::filesystem::remove(L"temp.spv");
 
-			auto stage_str = get_stage_str(stage);
 			std::string errors;
-			exec(std::filesystem::path(vk_sdk_path) / L"Bin/glslc.exe", L" -fshader-stage=" + stage_str + L" -I \"" + src_path.parent_path().wstring() + L"\" " + temp_path.wstring() + L" -o temp.spv", &errors);
+			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" -fshader-stage={} -I \"{}\" {} -o temp.spv", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
 				printf("%s\n", errors.c_str());
@@ -658,7 +657,9 @@ namespace flame
 				if (dst.empty())
 					fn = L"#temp.res";
 
-				std::filesystem::path temp_path = L"temp.dsl";
+				std::filesystem::path temp_path = L"temp";
+				if (!src.empty())
+					temp_path = src.parent_path() / temp_path;
 				std::ofstream file(temp_path);
 				file << content;
 				file.close();
@@ -699,7 +700,10 @@ namespace flame
 					for (auto& d : device->dsls)
 					{
 						if (d->filename.filename() == filename)
+						{
+							d->ref++;
 							return d.get();
+						}
 					}
 				}
 
@@ -719,6 +723,7 @@ namespace flame
 					if (ret)
 					{
 						ret->filename = filename;
+						ret->ref = 1;
 						device->dsls.emplace_back(ret);
 						return ret;
 					}
@@ -727,6 +732,22 @@ namespace flame
 			}
 		}DescriptorSetLayout_get;
 		DescriptorSetLayout::Get& DescriptorSetLayout::get = DescriptorSetLayout_get;
+
+		struct DescriptorSetLayoutRelease : DescriptorSetLayout::Release
+		{
+			void operator()(DescriptorSetLayoutPtr dsl) override
+			{
+				if (dsl->ref == 1)
+				{
+					std::erase_if(dsl->device->dsls, [&](const auto& i) {
+						return i.get() == dsl;
+					});
+				}
+				else
+					dsl->ref--;
+			}
+		}DescriptorSetLayout_release;
+		DescriptorSetLayout::Release& DescriptorSetLayout::release = DescriptorSetLayout_release;
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
@@ -961,7 +982,9 @@ namespace flame
 				if (dst.empty())
 					fn = L"#temp.res";
 
-				std::filesystem::path temp_path = L"temp.pll";
+				std::filesystem::path temp_path = L"temp";
+				if (!src.empty())
+					temp_path = src.parent_path() / temp_path;
 				std::ofstream file(temp_path);
 				file << content;
 				file.close();
@@ -1028,6 +1051,22 @@ namespace flame
 		}PipelineLayout_get;
 		PipelineLayout::Get& PipelineLayout::get = PipelineLayout_get;
 
+		struct PipelineLayoutRelease : PipelineLayout::Release
+		{
+			void operator()(PipelineLayoutPtr pll) override
+			{
+				if (pll->ref == 1)
+				{
+					std::erase_if(pll->device->plls, [&](const auto& i) {
+						return i.get() == pll;
+						});
+				}
+				else
+					pll->ref--;
+			}
+		}PipelineLayout_release;
+		PipelineLayout::Release& PipelineLayout::release = PipelineLayout_release;
+
 		ShaderPrivate::~ShaderPrivate()
 		{
 			if (vk_module)
@@ -1079,10 +1118,12 @@ namespace flame
 					device = current_device;
 
 				auto fn = dst;
-				if (dst.empty())
+				if (fn.empty())
 					fn = L"#temp.res";
 
-				std::filesystem::path temp_path = L"temp." + get_stage_str(type);
+				std::filesystem::path temp_path = L"temp";
+				if (!src.empty())
+					temp_path = src.parent_path() / temp_path;
 				std::ofstream file(temp_path);
 				file << content;
 				file.close();
@@ -1109,6 +1150,22 @@ namespace flame
 			}
 		}Shader_create;
 		Shader::Create& Shader::create = Shader_create;
+
+		struct ShaderRelease : Shader::Release
+		{
+			void operator()(ShaderPtr sd) override
+			{
+				if (sd->ref == 1)
+				{
+					std::erase_if(sd->device->sds, [&](const auto& i) {
+						return i.get() == sd;
+					});
+				}
+				else
+					sd->ref--;
+			}
+		}Shader_release;
+		Shader::Release& Shader::release = Shader_release;
 
 		struct ShaderGet : Shader::Get
 		{
@@ -1680,6 +1737,22 @@ namespace flame
 		}GraphicsPipeline_get;
 		GraphicsPipeline::Get& GraphicsPipeline::get = GraphicsPipeline_get;
 
+		struct GraphicsPipelineRelease : GraphicsPipeline::Release
+		{
+			void operator()(GraphicsPipelinePtr pl) override
+			{
+				if (pl->ref == 1)
+				{
+					std::erase_if(pl->device->gpls, [&](const auto& i) {
+						return i.get() == pl;
+					});
+				}
+				else
+					pl->ref--;
+			}
+		}GraphicsPipeline_release;
+		GraphicsPipeline::Release& GraphicsPipeline::release = GraphicsPipeline_release;
+
 		ComputePipelinePrivate::~ComputePipelinePrivate()
 		{
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
@@ -1733,5 +1806,21 @@ namespace flame
 			}
 		}ComputePipeline_get;
 		ComputePipeline::Get& ComputePipeline::get = ComputePipeline_get;
+
+		struct ComputePipelineRelease : ComputePipeline::Release
+		{
+			void operator()(ComputePipelinePtr pl) override
+			{
+				if (pl->ref == 1)
+				{
+					std::erase_if(pl->device->cpls, [&](const auto& i) {
+						return i.get() == pl;
+					});
+				}
+				else
+					pl->ref--;
+			}
+		}ComputePipeline_release;
+		ComputePipeline::Release& ComputePipeline::release = ComputePipeline_release;
 	}
 }

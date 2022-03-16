@@ -11,7 +11,7 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		std::filesystem::path model_name = L"standard:cube";
+		std::filesystem::path model_name;
 		/// Reflect
 		virtual void set_model_name(const std::filesystem::path& model_name) = 0;
 

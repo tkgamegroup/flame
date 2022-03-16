@@ -138,8 +138,7 @@ namespace flame
 
 			struct Get
 			{
-				// font_names is seperated by ';'
-				virtual FontAtlasPtr operator()(DevicePtr device, const std::wstring& font_names) = 0;
+				virtual FontAtlasPtr operator()(DevicePtr device, const std::vector<std::filesystem::path>& font_names) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

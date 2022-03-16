@@ -11,10 +11,12 @@ namespace flame
 	{
 		struct Font
 		{
-			std::string file;
+			std::filesystem::path filename;
+			std::string content;
 			stbtt_fontinfo* stbtt_info;
 
-			Font();
+			uint ref = 0;
+
 			~Font();
 		};
 
@@ -45,7 +47,8 @@ namespace flame
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			std::vector<std::unique_ptr<Font>> fonts;
+			std::vector<std::filesystem::path> font_names;
+			std::vector<Font*> myfonts;
 
 			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
@@ -55,6 +58,7 @@ namespace flame
 
 			uint ref = 0;
 
+			~FontAtlasPrivate();
 			const Glyph& get_glyph(wchar_t code, uint size) override;
 		};
 	}

@@ -19,10 +19,10 @@ namespace flame
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
-
 			TypeInfoDataBase db;
-
 			VkDescriptorSetLayout vk_descriptor_set_layout;
+
+			uint ref = 0;
 
 			~DescriptorSetLayoutPrivate();
 
@@ -68,10 +68,10 @@ namespace flame
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
 			DevicePrivate* device;
-
 			TypeInfoDataBase db;
-
 			VkPipelineLayout vk_pipeline_layout;
+
+			uint ref = 0;
 
 			~PipelineLayoutPrivate();
 
@@ -81,10 +81,10 @@ namespace flame
 		struct ShaderPrivate : Shader
 		{
 			DevicePrivate* device;
-
 			TypeInfoDataBase db;
-
 			VkShaderModule vk_module = 0;
+
+			uint ref = 0;
 
 			~ShaderPrivate();
 
@@ -94,8 +94,9 @@ namespace flame
 		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
 			DevicePrivate* device;
-
 			VkPipeline vk_pipeline;
+
+			uint ref = 0;
 
 			~GraphicsPipelinePrivate();
 
@@ -105,8 +106,9 @@ namespace flame
 		struct ComputePipelinePrivate : ComputePipeline
 		{
 			DevicePrivate* device;
-
 			VkPipeline vk_pipeline;
+
+			uint ref = 0;
 
 			~ComputePipelinePrivate();
 		};

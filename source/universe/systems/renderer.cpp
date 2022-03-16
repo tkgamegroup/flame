@@ -53,6 +53,10 @@ namespace flame
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
 		ds_material->update();
+		auto dsl_light = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\light.dsl");
+		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
+
+		ds_light->update();
 
 		mesh_reses.resize(1024);
 
@@ -67,18 +71,20 @@ namespace flame
 		rp_gbuf = graphics::Renderpass::get(nullptr, L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 
+		prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
+		pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
+			{ "rp=" + str(rp_col) });
+		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
+
+		pll_fwd = graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll");
+		pll_gbuf = graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\gbuffer.pll");
+
 		pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
 			{ "rp=" + str(rp_col) });
 		pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
 			{ "rp=" + str(rp_col) });
 		pl_blend = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blend.pipeline",
 			{ "rp=" + str(rp_col) });
-
-		prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
-		pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
-			{ "rp=" + str(rp_col) });
-
-		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
 
 		prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
 		prm_fwd.set_ds("scene"_h, ds_scene.get());
@@ -107,24 +113,16 @@ namespace flame
 		pl_terrain_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
 			{ "rp=" + str(rp_fwd),
 			  "frag:CAMERA_LIGHT" });
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
-		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "vert:ARMATURE",
-			  "frag:PICKUP" });
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
-		fence_pickup.reset(graphics::Fence::create(nullptr, false));
 
-		buf_vtx.create(pl_mesh_camlit->vi_ui(), 1024 * 256 * 4);
+		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
 		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
-		buf_vtx_arm.create(pl_mesh_arm_camlit->vi_ui(), 1024 * 128 * 4);
+		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
-		buf_idr_mesh_arm.create(0U, buf_armature_ins.array_capacity);
+
+		pl_deferred = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\deferred.pipeline",
+			{ "rp=" + str(rp_col) });
+		prm_deferred.init(pl_deferred->layout);
 
 		prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
 		pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
@@ -141,6 +139,18 @@ namespace flame
 			{ "rp=" + str(rp_col),
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
+
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "vert:ARMATURE",
+			  "frag:PICKUP" });
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+			{ "rp=" + str(rp_col_dep),
+			  "frag:PICKUP" });
+		fence_pickup.reset(graphics::Fence::create(nullptr, false));
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -205,6 +215,10 @@ namespace flame
 		auto& res = tex_reses[id];
 		if (res.ref == 1)
 		{
+			graphics::Queue::get(nullptr)->wait_idle();
+			ds_material->set_image("material_maps", id, img_black->get_view(), nullptr);
+			ds_material->update();
+
 			res.img.reset();
 			res.ref = 0;
 		}
@@ -371,7 +385,13 @@ namespace flame
 		auto& res = mat_reses[id];
 		if (res.ref == 1)
 		{
-
+			for (auto& tex : res.texs)
+			{
+				if (tex != -1)
+					release_texture_res(tex);
+			}
+			for (auto& pl : res.pls)
+				graphics::GraphicsPipeline::release(pl.second);
 		}
 		else
 			res.ref--;
@@ -379,12 +399,23 @@ namespace flame
 
 	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint hash)
 	{
-		return nullptr;
-	}
+		auto it = mr.pls.find(hash);
+		if (it != mr.pls.end())
+			return it->second;
 
-	void sRendererPrivate::release_material_pipeline(MatRes& mr, graphics::GraphicsPipelinePtr pipeline)
-	{
-
+		graphics::GraphicsPipelinePtr ret = nullptr;
+		switch (hash)
+		{
+		case "Mesh"_h:
+			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+				{ "rp=" + str(rp_gbuf),
+				  "pll=" + str(pll_gbuf),
+				  "all_shader:DEFERRED" });
+			break;
+		}
+		if (ret)
+			mr.pls[hash] = ret;
+		return ret;
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)
@@ -633,6 +664,34 @@ namespace flame
 		switch (type)
 		{
 		case Shaded:
+			for (auto i = 0; i < draw_meshes.size(); i++)
+			{
+				auto& d = draw_meshes[i];
+				auto& mesh_r = mesh_reses[d.mesh_id];
+				auto& mat_r = mat_reses[d.mat_id];
+				if (mat_r.draw_ids.empty())
+				{
+					if (mat_r.mat->opaque)
+						opaque_draw_meshes.push_back(d.mat_id);
+					else
+						transparent_draw_meshes.push_back(d.mat_id);
+				}
+				mat_r.draw_ids.push_back(i);
+			}
+			for (auto& d : draw_arm_meshes)
+			{
+
+			}
+			for (auto mid : opaque_draw_meshes)
+			{
+				auto& mat_r = mat_reses[mid];
+				for (auto i : mat_r.draw_ids)
+				{
+					auto& d = draw_meshes[i];
+					auto& mesh_r = mesh_reses[d.mesh_id];
+					buf_idr_mesh.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (d.ins_id << 8) + mid);
+				}
+			}
 			break;
 		case CameraLight:
 			for (auto& d : draw_meshes)
@@ -643,23 +702,23 @@ namespace flame
 			for (auto& d : draw_arm_meshes)
 			{
 				auto& mr = mesh_reses[d.mesh_id];
-				buf_idr_mesh_arm.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
 			}
 			break;
 		}
 
-		buf_lines.upload(cb);
 		buf_mesh_ins.upload(cb);
 		buf_armature_ins.upload(cb);
 		buf_terrain_ins.upload(cb);
 		buf_idr_mesh.upload(cb);
-		buf_idr_mesh_arm.upload(cb);
+		buf_lines.upload(cb);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 
 		switch (type)
 		{
 		case Shaded:
+		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
@@ -681,9 +740,10 @@ namespace flame
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
 					idr_off += num;
-					cb->bind_pipeline(get_material_pipeline(mr, 0));
+					cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h));
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 				}
+				opaque_draw_meshes.clear();
 			}
 			if (!draw_arm_meshes.empty())
 			{
@@ -692,9 +752,10 @@ namespace flame
 			}
 
 			cb->end_renderpass();
-
+		}
 			break;
 		case CameraLight:
+		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
@@ -706,19 +767,22 @@ namespace flame
 			prm_fwd.set_pc_var<"f"_h>(vec4(1.f));
 			prm_fwd.push_constant(cb);
 
+			auto idr_off = 0;
 			if (!draw_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_mesh_camlit);
-				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), 0, draw_meshes.size());
+				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, draw_meshes.size());
+				idr_off += draw_meshes.size();
 			}
 			if (!draw_arm_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 				cb->bind_pipeline(pl_mesh_arm_camlit);
-				cb->draw_indexed_indirect(buf_idr_mesh_arm.buf.get(), 0, draw_arm_meshes.size());
+				cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, draw_arm_meshes.size());
+				idr_off += draw_arm_meshes.size();
 			}
 			if (!draw_terrains.empty())
 			{
@@ -728,6 +792,7 @@ namespace flame
 			}
 
 			cb->end_renderpass();
+		}
 			break;
 		}
 
