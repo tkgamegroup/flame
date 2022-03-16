@@ -122,6 +122,11 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
@@ -140,8 +145,8 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_deferred;
-		std::unique_ptr<graphics::DescriptorSet>										ds_deferred;
 		graphics::GraphicsPipelinePtr													pl_deferred = nullptr;
+		std::unique_ptr<graphics::DescriptorSet>										ds_deferred;
 
 		std::unique_ptr<graphics::Image>												img_back0;
 		std::unique_ptr<graphics::Image>												img_back1;

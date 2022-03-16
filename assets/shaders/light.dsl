@@ -1,7 +1,7 @@
 struct LightGrid
 {
 	uint offset;
-	uint count; // high 4 - dir, rest - pt
+	uint count;
 };
 
 struct LightInfo
@@ -27,9 +27,9 @@ struct PtShadow
 	float far;
 };
 
-layout (set = SET, binding = 0) buffer readonly LightIndexLists
+layout (set = SET, binding = 0) buffer readonly LightIndexs
 {
-	uint light_index_lists[324000];
+	uint light_indexs[32400 * 16];
 };
 
 layout (set = SET, binding = 1) buffer readonly LightGrids

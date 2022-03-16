@@ -55,7 +55,11 @@ namespace flame
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
-
+		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"));
+		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"));
+		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"));
+		buf_dir_shadow.create_with_array_type(dsl_light->get_buf_ui("DirShadows"));
+		buf_pt_shadow.create_with_array_type(dsl_light->get_buf_ui("PtShadows"));
 		ds_light->update();
 
 		mesh_reses.resize(1024);
