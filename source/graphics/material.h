@@ -31,7 +31,7 @@ namespace flame
 			int alpha_map = -1;
 			float alpha_test = 0.f;
 
-			std::filesystem::path shader_file = L"flame/assets/shaders/std_mat.glsl";
+			std::filesystem::path shader_file = L"flame/shaders/std_mat.glsl";
 			std::vector<std::string> shader_defines;
 
 			Texture textures[8] = {};

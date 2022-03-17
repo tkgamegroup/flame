@@ -20,6 +20,7 @@ layout (set = SET, binding = 3) uniform sampler2D img_dep;
 @
 
 @frag
+#include "math.glsl"
 #include "shading.glsl"
 
 layout (location = 0) in vec2 i_uv;

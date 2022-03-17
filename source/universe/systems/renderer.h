@@ -43,6 +43,10 @@ namespace flame
 		virtual int register_terrain_instance(int id) = 0;
 		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) = 0;
 
+		// id == -1 to register or to unregister id
+		virtual int register_light_instance(int id) = 0;
+		virtual void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) = 0;
+
 		// you must call draw in a node's drawer
 
 		virtual void draw_line(const vec3* points, uint count, const cvec4& color) = 0;

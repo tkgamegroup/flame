@@ -1,7 +1,7 @@
 #ifndef DEFERRED
-#include "..\forward.pll"
+#include "../forward.pll"
 #else
-#include "..\gbuffer.pll"
+#include "../gbuffer.pll"
 #endif
 
 layout (vertices = 4) out;

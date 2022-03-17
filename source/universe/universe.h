@@ -47,7 +47,6 @@ namespace flame
 
 	FLAME_UNIVERSE_TYPE(sInput);
 	FLAME_UNIVERSE_TYPE(sScene);
-	FLAME_UNIVERSE_TYPE(sElementRenderer);
 	FLAME_UNIVERSE_TYPE(sRenderer);
 
 	struct OctNode;

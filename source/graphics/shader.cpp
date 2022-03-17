@@ -180,7 +180,7 @@ namespace flame
 			return ret;
 		}
 
-		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::vector<std::string>& defines, const std::filesystem::path& dst_path)
+		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::vector<std::string>& _defines, const std::filesystem::path& dst_path)
 		{
 			if (std::filesystem::exists(dst_path))
 			{
@@ -213,15 +213,18 @@ namespace flame
 			if (!dst_ppath.empty() && !std::filesystem::exists(dst_ppath))
 				std::filesystem::create_directories(dst_ppath);
 
+			std::vector<std::pair<std::string, std::string>> defines;
+			for (auto& d : _defines)
+			{
+				auto sp = SUS::split(d, '=');
+				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
+			}
 			std::vector<std::string> src_lines;
 			{
-				auto names = defines;
-				for (auto& d : names)
-					SUS::strip_after(d, '=');
 				auto found_name = [&](std::string_view name) {
-					for (auto& n : names)
+					for (auto& d : defines)
 					{
-						if (n == name)
+						if (d.first == name)
 							return true;
 					}
 					return false;
@@ -263,18 +266,6 @@ namespace flame
 						s.second = true;
 						eval_state();
 					}
-					else if (SUS::strip_head_if(tl, "#elifdef "))
-					{
-						auto& s = states.back();
-						if (!s.second)
-						{
-							s.first = found_name(tl);
-							if (s.first) s.second = true;
-						}
-						else
-							s.first = false;
-						eval_state();
-					}
 					else if (tl.starts_with("#endif"))
 					{
 						states.pop_back();
@@ -294,7 +285,12 @@ namespace flame
 			temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
 			temp << std::endl;
 			for (auto& d : defines)
-				temp << "#define " << d << std::endl;
+			{
+				temp << "#define " << d.first;
+				if (!d.second.empty())
+					temp << " " << d.second;
+				temp << std::endl;
+			}
 			temp << std::endl;
 
 			{
@@ -371,12 +367,15 @@ namespace flame
 					auto l = *it;
 					if (SUS::strip_head_tail_if(l, "#include \"", ".pll\""))
 					{
-						src_lines.emplace(it, "");
-						pll_path = src_path.parent_path() / (l + ".pll");
+						it = src_lines.erase(it);
+						it = src_lines.emplace(it, "");
+						pll_path = std::filesystem::canonical(src_path.parent_path() / (l + ".pll"));
 						pll_dir = pll_path.parent_path();
-						for (auto& l : get_file_lines(pll_path))
-							src_lines.emplace(it, l);
-						src_lines.emplace(it, "");
+						auto pll_lines = get_file_lines(pll_path);
+						std::reverse(pll_lines.begin(), pll_lines.end());
+						for (auto& l : pll_lines)
+							it = src_lines.emplace(it, l);
+						it = src_lines.emplace(it, "");
 						break;
 					}
 				}
@@ -407,7 +406,12 @@ namespace flame
 			{
 				printf("   with defines: ");
 				for (auto& d : defines)
-					printf("%s ", d.c_str());
+				{
+					if (d.second.empty())
+						printf("%s ", d.first.c_str());
+					else
+						printf("%s=%s ", d.first.c_str(), d.second.c_str());
+				}
 				printf("\n");
 			}
 			std::filesystem::remove(L"temp.spv");
@@ -924,8 +928,9 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayout::create(device, bindings);
 				dsl->filename = filename;
-				if (dsl->filename.extension() == L".res")
-					dsl->filename.replace_extension(L"");
+				auto str = filename.wstring();
+				if (auto p = str.find('#'); p != std::wstring::npos)
+					dsl->filename = str.substr(0, p);
 				dsls.push_back(dsl);
 			}
 

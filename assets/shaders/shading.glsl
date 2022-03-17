@@ -1,5 +1,3 @@
-#include "math.glsl"
-
 const float esm_c = 3.0;
 
 float distribution_GGX(vec3 N, vec3 H, float roughness)
@@ -74,10 +72,10 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 {
 	vec3 ret = vec3(0.0);
 
-	uint dir_num = tile_lights[0].dir_count;
+	uint dir_num =  light_grids[0].count;
 	for (int i = 0; i < dir_num; i++)
 	{
-		LightInfo light = light_infos[tile_lights[0].dir_indices[i]];
+		LightInfo light = light_infos[light_indexs[i]];
 		vec3 L = light.pos;
 		
 		float f_shadow = 1.0;
@@ -108,10 +106,13 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		}
 	}
 	
-	uint pt_num = tile_lights[0].pt_count;
+	LightGrid grid = light_grids[1];
+	uint idx_off = grid.offset;
+	uint pt_num = grid.count;
+	pt_num = 0;
 	for (int i = 0; i < pt_num; i++)
 	{
-		LightInfo light = light_infos[tile_lights[0].pt_indices[i]];
+		LightInfo light = light_infos[light_indexs[idx_off + i]];
 		vec3 L = light.pos - coordw;
 		float dist = length(L);
 		L = L / dist;

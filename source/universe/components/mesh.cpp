@@ -12,7 +12,7 @@ namespace flame
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
-		node->shadow_drawers.remove("mesh"_h);
+		node->occluder_drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
 
 		if (mesh_res_id != -1)
@@ -28,7 +28,7 @@ namespace flame
 		node->drawers.add([this](sRendererPtr renderer) {
 			draw(renderer, false);
 		}, "mesh"_h);
-		node->shadow_drawers.add([this](sRendererPtr renderer) {
+		node->occluder_drawers.add([this](sRendererPtr renderer) {
 			draw(renderer, true);
 		}, "mesh"_h);
 

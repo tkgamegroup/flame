@@ -113,7 +113,11 @@ namespace flame
 			void create_with_array_type(UdtInfo* _ui)
 			{
 				auto& vi = _ui->variables[0];
-				create(vi.type->retrive_ui(), vi.array_size);
+				auto vui = vi.type->retrive_ui();
+				if (vui)
+					create(vi.type->retrive_ui(), vi.array_size);
+				else
+					create(vi.type->size, vi.array_size);
 			}
 
 			inline uint item_offset()

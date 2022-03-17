@@ -17,16 +17,21 @@
 
 namespace flame
 {
-	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const graphics::Format col_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
+	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
+	const uvec2 shadow_map_size = uvec2(2048);
 
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
 		img_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		img_cube_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_cube_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 
 		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\scene.dsl");
 		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
@@ -60,6 +65,31 @@ namespace flame
 		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"));
 		buf_dir_shadow.create_with_array_type(dsl_light->get_buf_ui("DirShadows"));
 		buf_pt_shadow.create_with_array_type(dsl_light->get_buf_ui("PtShadows"));
+		imgs_dir_shadow.resize(dsl_light->find_binding("dir_shadow_maps")->count);
+		for (auto& i : imgs_dir_shadow)
+		{
+			i.reset(graphics::Image::create(nullptr, dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 4));
+			i->change_layout(graphics::ImageLayoutShaderReadOnly);
+		}
+		imgs_pt_shadow.resize(dsl_light->find_binding("pt_shadow_maps")->count);
+		for (auto& i : imgs_pt_shadow)
+		{
+			i.reset(graphics::Image::create(nullptr, dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+			i->change_layout(graphics::ImageLayoutShaderReadOnly);
+		}
+		ds_light->set_buffer("LightIndexs", 0, buf_light_index.buf.get());
+		ds_light->set_buffer("LightGrids", 0, buf_light_grid.buf.get());
+		ds_light->set_buffer("LightInfos", 0, buf_light_info.buf.get());
+		ds_light->set_buffer("DirShadows", 0, buf_dir_shadow.buf.get());
+		ds_light->set_buffer("PtShadows", 0, buf_pt_shadow.buf.get());
+		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
+			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, 4 }), nullptr);
+		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
+			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_box", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_irr", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_rad", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_lut", 0, img_black->get_view(), nullptr);
 		ds_light->update();
 
 		mesh_reses.resize(1024);
@@ -127,6 +157,11 @@ namespace flame
 		pl_deferred = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\deferred.pipeline",
 			{ "rp=" + str(rp_col) });
 		prm_deferred.init(pl_deferred->layout);
+		prm_deferred.set_ds("scene"_h, ds_scene.get());
+		prm_deferred.set_ds("light"_h, ds_light.get());
+		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
+		ds_deferred->update();
+		prm_deferred.set_ds(""_h, ds_deferred.get());
 
 		prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
 		pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
@@ -178,11 +213,17 @@ namespace flame
 		iv_tars.assign(_targets.begin(), _targets.end());
 
 		img_dst.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment));
+		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_col_met.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_nor_rou.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_ao.reset(graphics::Image::create(nullptr, graphics::Format_R16_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
+		ds_deferred->set_image("img_col_met", 0, img_col_met->get_view(), nullptr);
+		ds_deferred->set_image("img_nor_rou", 0, img_nor_rou->get_view(), nullptr);
+		ds_deferred->set_image("img_ao", 0, img_ao->get_view(), nullptr);
+		ds_deferred->set_image("img_dep", 0, img_dep->get_view(), nullptr);
+		ds_deferred->update();
 
 		final_layout = _final_layout;
 
@@ -407,14 +448,27 @@ namespace flame
 		if (it != mr.pls.end())
 			return it->second;
 
+		std::vector<std::string> defines;
+		defines.push_back("rp=" + str(rp_gbuf));
+		defines.push_back("pll=" + str(pll_gbuf));
+		defines.push_back("all_shader:DEFERRED");
+		auto mat_file = Path::get(mr.mat->shader_file).string();
+		for (auto& ch : mat_file)
+		{
+			if (ch == '\\')
+				ch = '/';
+		}
+		defines.push_back(std::format("frag:MAT_FILE=\"{}\"", mat_file));
+		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
+
 		graphics::GraphicsPipelinePtr ret = nullptr;
 		switch (hash)
 		{
 		case "Mesh"_h:
-			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
-				{ "rp=" + str(rp_gbuf),
-				  "pll=" + str(pll_gbuf),
-				  "all_shader:DEFERRED" });
+			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline", defines);
+			break;
+		case "Terrain"_h:
+			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline", defines);
 			break;
 		}
 		if (ret)
@@ -494,6 +548,48 @@ namespace flame
 		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
 		ds_instance->set_image("terrain_textures", id, textures, nullptr);
 		ds_instance->update();
+	}
+
+	int sRendererPrivate::register_light_instance(int id)
+	{
+		if (id == -1)
+		{
+			id = buf_light_info.get_free_item();
+			if (id != -1)
+			{
+
+			}
+		}
+		else
+		{
+			buf_light_info.release_item(id);
+
+		}
+		return id;
+	}
+
+	void sRendererPrivate::add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow)
+	{
+		buf_light_info.select_item(instance_id);
+		buf_light_info.set_var<"type"_h>((int)type);
+		buf_light_info.set_var<"pos"_h>(pos);
+		buf_light_info.set_var<"color"_h>(color);
+		buf_light_info.set_var<"shadow_index"_h>(-1);
+
+		switch (type)
+		{
+		case LightDirectional:
+		{
+			DirectionalLight l;
+			l.node = current_node;
+			l.ins_id = instance_id;
+			l.dir = pos;
+			l.color = color;
+			l.range = range;
+			dir_lights.push_back(l);
+		}
+			break;
+		}
 	}
 
 	void sRendererPrivate::draw_line(const vec3* points, uint count, const cvec4& color)
@@ -629,10 +725,6 @@ namespace flame
 		camera->aspect = sz.x / sz.y;
 		camera->update();
 
-		std::vector<cNodePtr> nodes;
-		sScene::instance()->octree->get_within_frustum(camera->frustum, nodes);
-		current_node = nullptr;
-		draw_lines.clear();
 		draw_meshes.clear();
 		draw_arm_meshes.clear();
 		draw_occluder_meshes.clear();
@@ -644,10 +736,21 @@ namespace flame
 		draw_terrains.clear();
 		draw_outline_terrains.clear();
 		draw_wireframe_terrains.clear();
+		draw_lines.clear();
+		dir_lights.clear();
+		std::vector<cNodePtr> nodes;
+		sScene::instance()->octree->get_within_frustum(camera->frustum, nodes);
+		current_node = nullptr;
 		for (auto& n : nodes)
 		{
 			current_node = n;
-			n->draw(this, false);
+			n->draw(this, "Mesh"_h);
+		}
+		current_node = nullptr;
+		for (auto& n : nodes)
+		{
+			current_node = n;
+			n->draw(this, "Light"_h);
 		}
 
 		buf_scene.set_var<"zNear"_h>(camera->zNear);
@@ -668,6 +771,7 @@ namespace flame
 		switch (type)
 		{
 		case Shaded:
+		{
 			for (auto i = 0; i < draw_meshes.size(); i++)
 			{
 				auto& d = draw_meshes[i];
@@ -696,6 +800,26 @@ namespace flame
 					buf_idr_mesh.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (d.ins_id << 8) + mid);
 				}
 			}
+
+			auto lit_idx_off = 0;
+			for (auto& l : dir_lights)
+			{
+				buf_light_index.push(1, &l.ins_id);
+				lit_idx_off++;
+			}
+			buf_light_grid.set_var<"offset"_h>(0);
+			buf_light_grid.set_var<"count"_h>(dir_lights.size());
+			buf_light_grid.next_item();
+			auto cx = max(1U, uint(sz.x / 16.f));
+			auto cy = max(1U, uint(sz.y / 16.f));
+			for (auto y = 0; y < cy; y++)
+			{
+				for (auto x = 0; x < cx; x++)
+				{
+
+				}
+			}
+		}
 			break;
 		case CameraLight:
 			for (auto& d : draw_meshes)
@@ -716,6 +840,9 @@ namespace flame
 		buf_terrain_ins.upload(cb);
 		buf_idr_mesh.upload(cb);
 		buf_lines.upload(cb);
+		buf_light_index.upload(cb);
+		buf_light_grid.upload(cb);
+		buf_light_info.upload(cb);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 
@@ -743,9 +870,9 @@ namespace flame
 					auto& mr = mat_reses[mid];
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
-					idr_off += num;
 					cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h));
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
+					idr_off += num;
 				}
 				opaque_draw_meshes.clear();
 			}
@@ -754,7 +881,26 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 			}
+			if (!draw_terrains.empty())
+			{
+				for (auto& d : draw_terrains)
+				{
+					auto& mr = mat_reses[d.mat_id];
+					cb->bind_pipeline(get_material_pipeline(mr, "Terrain"_h));
+					cb->draw(4, d.blocks, 0, d.ins_id << 24);
+				}
+			}
 
+			cb->end_renderpass();
+
+			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			prm_deferred.bind_dss(cb);
+			cb->bind_pipeline(pl_deferred);
+			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}
 			break;

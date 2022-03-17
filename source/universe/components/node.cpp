@@ -156,17 +156,22 @@ namespace flame
 			sRenderer::instance()->dirty = true;
 	}
 
-	void cNodePrivate::draw(sRendererPtr renderer, bool shadow_pass)
+	void cNodePrivate::draw(sRendererPtr renderer, uint pass)
 	{
-		if (shadow_pass)
+		switch (pass)
 		{
-			for (auto& d : shadow_drawers.list)
-				d.first(renderer);
-		}
-		else
-		{
+		case "Mesh"_h:
 			for (auto& d : drawers.list)
 				d.first(renderer);
+			break;
+		case "Occluder"_h:
+			for (auto& d : occluder_drawers.list)
+				d.first(renderer);
+			break;
+		case "Light"_h:
+			for (auto& d : light_drawers.list)
+				d.first(renderer);
+			break;
 		}
 	}
 

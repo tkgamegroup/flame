@@ -64,6 +64,15 @@ namespace flame
 		cvec4 color;
 	};
 
+	struct DirectionalLight
+	{
+		cNodePtr node;
+		uint ins_id;
+		vec3 dir;
+		vec3 color;
+		float range;
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		graphics::WindowPtr window;
@@ -73,18 +82,19 @@ namespace flame
 		std::vector<MatRes> mat_reses;
 
 		cNodePtr current_node = nullptr;
-		std::vector<DrawLine>		draw_lines;
-		std::vector<DrawMesh>		draw_meshes;
-		std::vector<DrawMesh>		draw_arm_meshes;
-		std::vector<DrawMesh>		draw_occluder_meshes;
-		std::vector<DrawMesh>		draw_occluder_arm_meshes;
-		std::vector<DrawMesh>		draw_outline_meshes;
-		std::vector<DrawMesh>		draw_outline_arm_meshes;
-		std::vector<DrawMesh>		draw_wireframe_meshes;
-		std::vector<DrawMesh>		draw_wireframe_arm_meshes;
-		std::vector<DrawTerrain>	draw_terrains;
-		std::vector<DrawTerrain>	draw_outline_terrains;
-		std::vector<DrawTerrain>	draw_wireframe_terrains;
+		std::vector<DrawLine>			draw_lines;
+		std::vector<DrawMesh>			draw_meshes;
+		std::vector<DrawMesh>			draw_arm_meshes;
+		std::vector<DrawMesh>			draw_occluder_meshes;
+		std::vector<DrawMesh>			draw_occluder_arm_meshes;
+		std::vector<DrawMesh>			draw_outline_meshes;
+		std::vector<DrawMesh>			draw_outline_arm_meshes;
+		std::vector<DrawMesh>			draw_wireframe_meshes;
+		std::vector<DrawMesh>			draw_wireframe_arm_meshes;
+		std::vector<DrawTerrain>		draw_terrains;
+		std::vector<DrawTerrain>		draw_outline_terrains;
+		std::vector<DrawTerrain>		draw_wireframe_terrains;
+		std::vector<DirectionalLight>	dir_lights;
 		std::vector<uint> opaque_draw_meshes;
 		std::vector<uint> opaque_draw_arm_meshes;
 		std::vector<uint> transparent_draw_meshes;
@@ -94,6 +104,8 @@ namespace flame
 
 		std::unique_ptr<graphics::Image>												img_black;
 		std::unique_ptr<graphics::Image>												img_white;
+		std::unique_ptr<graphics::Image>												img_cube_black;
+		std::unique_ptr<graphics::Image>												img_cube_white;
 
 		graphics::RenderpassPtr															rp_col = nullptr;
 		graphics::RenderpassPtr															rp_col_dep = nullptr;
@@ -127,6 +139,8 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
+		std::vector<std::unique_ptr<graphics::Image>>									imgs_dir_shadow;
+		std::vector<std::unique_ptr<graphics::Image>>									imgs_pt_shadow;
 		std::unique_ptr<graphics::DescriptorSet>										ds_scene;
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
@@ -192,6 +206,9 @@ namespace flame
 
 		int register_terrain_instance(int id) override;
 		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) override;
+
+		int register_light_instance(int id) override;
+		void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) override;
 
 		void draw_line(const vec3* points, uint count, const cvec4& color) override;
 
