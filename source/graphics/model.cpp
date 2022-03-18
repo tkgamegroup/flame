@@ -423,6 +423,7 @@ namespace flame
 						if (!standard_cube)
 						{
 							auto m = new ModelPrivate;
+							m->filename = L"standard:cube";
 							auto& mesh = m->meshes.emplace_back();
 							mesh.model = m;
 							mesh.materials.push_back(default_material);
@@ -438,6 +439,7 @@ namespace flame
 						if (!standard_sphere)
 						{
 							auto m = new ModelPrivate;
+							m->filename = L"standard:sphere";
 							auto& mesh = m->meshes.emplace_back();
 							mesh.model = m;
 							mesh.materials.push_back(default_material);
@@ -585,6 +587,8 @@ namespace flame
 		{
 			void operator()(ModelPtr model) override
 			{
+				if (model->filename.wstring().starts_with(L"standard:"))
+					return;
 				if (model->ref == 1)
 				{
 					std::erase_if(models, [&](const auto& i) {

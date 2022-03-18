@@ -458,7 +458,7 @@ namespace flame
 			if (ch == '\\')
 				ch = '/';
 		}
-		defines.push_back(std::format("frag:MAT_FILE=\"{}\"", mat_file));
+		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
 		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
 
 		graphics::GraphicsPipelinePtr ret = nullptr;
@@ -825,12 +825,12 @@ namespace flame
 			for (auto& d : draw_meshes)
 			{
 				auto& mr = mesh_reses[d.mesh_id];
-				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 			}
 			for (auto& d : draw_arm_meshes)
 			{
 				auto& mr = mesh_reses[d.mesh_id];
-				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (d.ins_id << 8) + 0/* mat id */);
+				buf_idr_mesh.add_draw_indexed_indirect(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 			}
 			break;
 		}
@@ -887,7 +887,7 @@ namespace flame
 				{
 					auto& mr = mat_reses[d.mat_id];
 					cb->bind_pipeline(get_material_pipeline(mr, "Terrain"_h));
-					cb->draw(4, d.blocks, 0, d.ins_id << 24);
+					cb->draw(4, d.blocks, 0, (d.ins_id << 24) + (d.mat_id << 16));
 				}
 			}
 

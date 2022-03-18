@@ -10,10 +10,9 @@ layout(location = 2) out	  vec2 o_uv;
 
 void main(void)
 {
-	o_id = gl_InstanceIndex >> 16;
+	o_id = gl_InstanceIndex >> 24;
 	uint tile = gl_InstanceIndex & 0xffff;
-	o_id = o_id >> 8;
-	o_matid = o_id & 0xff;
+	o_matid = (gl_InstanceIndex >> 16) & 0xff;
 
 	TerrainInstance terrain = terrain_instances[o_id];
 

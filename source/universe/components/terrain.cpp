@@ -95,7 +95,7 @@ namespace flame
 			material = _material;
 			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
 		}
-		else
+		else if (_material)
 			graphics::Material::release(_material);
 
 		node->mark_drawing_dirty();
@@ -200,7 +200,7 @@ namespace flame
 
 	void cTerrainPrivate::draw(sRendererPtr renderer)
 	{
-		if (instance_id == -1 || !textures)
+		if (instance_id == -1 || !textures || material_res_id == -1)
 			return;
 
 		if (frame < (int)frames)
@@ -209,7 +209,7 @@ namespace flame
 			frame = frames;
 		}
 
-		renderer->draw_terrain(instance_id, blocks.x * blocks.y, 0);
+		renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
 	}
 
 	void cTerrainPrivate::on_active()

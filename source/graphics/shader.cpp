@@ -219,8 +219,25 @@ namespace flame
 				auto sp = SUS::split(d, '=');
 				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
 			}
-			std::vector<std::string> src_lines;
+
+			std::string temp_content;
+			temp_content += "#version 450 core\n";
+			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
+			temp_content += "#extension GL_ARB_separate_shader_objects : enable\n\n";
+			temp_content += "#define SET 0\n\n";
+			for (auto& d : defines)
 			{
+				temp_content += "#define " + d.first;
+				if (!d.second.empty())
+					temp_content += " " + d.second;
+				temp_content += "\n";
+			}
+
+			std::vector<std::filesystem::path> dependencies;
+
+			auto dsl_id = 0;
+			std::function<std::string(const std::filesystem::path& path)> preprocess;
+			preprocess = [&](const std::filesystem::path& path) {
 				auto found_name = [&](std::string_view name) {
 					for (auto& d : defines)
 					{
@@ -238,8 +255,8 @@ namespace flame
 						ok = ok && s.first;
 				};
 
-				auto lines = get_file_lines(src_path);
-				for (auto& l : lines)
+				std::string ret;
+				for (auto& l : get_file_lines(path))
 				{
 					auto tl = SUS::get_trimed(l);
 					if (SUS::strip_head_if(tl, "#ifdef "))
@@ -259,11 +276,23 @@ namespace flame
 					else if (tl.starts_with("#else"))
 					{
 						auto& s = states.back();
-						if (!s.second) 
+						if (!s.second)
 							s.first = !states.back().first;
 						else
 							s.first = false;
 						s.second = true;
+						eval_state();
+					}
+					else if (SUS::strip_head_if(tl, "#elifdef "))
+					{
+						auto& s = states.back();
+						if (!s.second)
+						{
+							s.first = found_name(tl);
+							if (s.first) s.second = true;
+						}
+						else
+							s.first = false;
 						eval_state();
 					}
 					else if (tl.starts_with("#endif"))
@@ -272,126 +301,68 @@ namespace flame
 						eval_state();
 					}
 					else if (ok)
-						src_lines.push_back(l);
-				}
-			}
-
-			std::ofstream dst(dst_path);
-
-			std::filesystem::path temp_path = L"temp.glsl";
-			std::ofstream temp(temp_path);
-			temp << "#version 450 core" << std::endl;
-			temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
-			temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
-			temp << std::endl;
-			for (auto& d : defines)
-			{
-				temp << "#define " << d.first;
-				if (!d.second.empty())
-					temp << " " << d.second;
-				temp << std::endl;
-			}
-			temp << std::endl;
-
-			{
-				std::vector<std::filesystem::path> dependencies;
-				std::list<std::filesystem::path> headers;
-				headers.push_back(src_path);
-				while (!headers.empty())
-				{
-					auto fn = headers.front();
-					headers.pop_front();
-
-					if (!std::filesystem::exists(fn))
 					{
-						printf("cannot find include file: %s\n", fn.string().c_str());
-						continue;
-					}
-					fn = std::filesystem::canonical(fn);
-					fn.make_preferred();
-
-					if (fn != src_path)
-					{
-						if (std::find(dependencies.begin(), dependencies.end(), fn) == dependencies.end())
-							dependencies.push_back(fn);
-					}
-
-					auto ppath = fn.parent_path();
-					auto lines = get_file_lines(fn);
-					for (auto& l : lines)
-					{
-						if (SUS::strip_head_tail_if(l, "#include \"", "\""))
+						if (SUS::strip_head_if(tl, "#include "))
 						{
-							std::filesystem::path p = l;
-							if (!p.is_absolute())
-								p = ppath / p;
-							headers.push_back(p);
+							std::filesystem::path header_path;
+							if (SUS::strip_head_tail_if(tl, "\"", "\""))
+								header_path = tl;
+							else
+							{
+								for (auto& d : defines)
+								{
+									if (d.first == tl)
+										header_path = d.second;
+								}
+							}
+							if (!header_path.is_absolute())
+							{
+								header_path = path.parent_path() / header_path;
+								header_path = std::filesystem::canonical(header_path);
+							}
+							header_path.make_preferred();
+							if (std::filesystem::exists(header_path))
+							{
+								if (std::find(dependencies.begin(), dependencies.end(), header_path) == dependencies.end())
+									dependencies.push_back(header_path);
+								auto is_dsl = header_path.extension() == L".dsl";
+								if (!(is_dsl && stage == ShaderStagePll))
+								{
+									ret += preprocess(header_path);
+									ret += "\n";
+									if (is_dsl && stage != ShaderStageDsl)
+									{
+										ret += "#undef SET\n";
+										dsl_id++;
+										ret += std::format("#define SET {}\n\n", dsl_id);
+									}
+								}
+							}
+							else
+								wprintf(L"shader compile: cannot find header file: %s\n", header_path.c_str());
+						}
+						else
+						{
+							ret += l;
+							ret += "\n";
 						}
 					}
 				}
+				return ret;
+			};
 
-				dst << "dependencies:" << std::endl;
-				serialize_text(&dependencies, dst);
-				dst << std::endl;
-			}
+			temp_content += preprocess(src_path);
+			if (stage == ShaderStageDsl || stage == ShaderStagePll)
+				temp_content += "void main() {}\n";
+			std::ofstream dst(dst_path);
+			dst << "dependencies:" << std::endl;
+			serialize_text(&dependencies, dst);
+			dst << std::endl;
 
-			if (stage == ShaderStageDsl)
-			{
-				temp << "#define SET 0" << std::endl;
-				for (auto& l : src_lines)
-					temp << l << std::endl;
-				temp << std::endl;
-				temp << "void main() {}" << std::endl;
-				temp << std::endl;
-			}
-			else if (stage == ShaderStagePll)
-			{
-				temp << "#define SET 0" << std::endl;
-				for (auto& l : src_lines)
-				{
-					if (!SUS::match_head_tail(l, "#include \"", ".dsl\""))
-						temp << l << std::endl;
-				}
-				temp << std::endl;
-				temp << "void main() {}" << std::endl;
-				temp << std::endl;
-			}
-			else
-			{
-				auto set = 0;
-				temp << "#define SET " << str(set++) << std::endl;
-				std::filesystem::path pll_path;
-				std::filesystem::path pll_dir;
-				for (auto it = src_lines.begin(); it != src_lines.end(); it++)
-				{
-					auto l = *it;
-					if (SUS::strip_head_tail_if(l, "#include \"", ".pll\""))
-					{
-						it = src_lines.erase(it);
-						it = src_lines.emplace(it, "");
-						pll_path = std::filesystem::canonical(src_path.parent_path() / (l + ".pll"));
-						pll_dir = pll_path.parent_path();
-						auto pll_lines = get_file_lines(pll_path);
-						std::reverse(pll_lines.begin(), pll_lines.end());
-						for (auto& l : pll_lines)
-							it = src_lines.emplace(it, l);
-						it = src_lines.emplace(it, "");
-						break;
-					}
-				}
-				for (auto& l : src_lines)
-				{
-					if (SUS::strip_head_tail_if(l, "#include \"", ".dsl\""))
-					{
-						temp << "#include \"" << (pll_dir / l).string() << ".dsl\"" << std::endl;
-						temp << "#undef SET" << std::endl;
-						temp << "#define SET " << str(set++) << std::endl;
-					}
-					else
-						temp << l << std::endl;
-				}
-			}
-
+			std::filesystem::path temp_path = L"temp.glsl";
+			std::ofstream temp(temp_path);
+			temp << temp_content;
+			temp << std::endl;
 			temp.close();
 
 			auto vk_sdk_path = getenv("VK_SDK_PATH");

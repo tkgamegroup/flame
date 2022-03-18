@@ -33,6 +33,9 @@ namespace flame
 		{
 			MaterialPtr operator()(const std::filesystem::path& _filename) override
 			{
+				if (_filename == L"default")
+					return default_material;
+
 				auto filename = Path::get(_filename);
 
 				for (auto& m : materials)
@@ -63,6 +66,8 @@ namespace flame
 		{
 			void operator()(MaterialPtr material) override
 			{
+				if (material == default_material)
+					return;
 				if (material->ref == 1)
 				{
 					std::erase_if(materials, [&](const auto& i) {

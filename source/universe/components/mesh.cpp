@@ -64,7 +64,7 @@ namespace flame
 				graphics::Model::release(model);
 			model = _model;
 		}
-		else
+		else if (_model)
 			graphics::Model::release(_model);
 		if (mesh != _mesh)
 		{

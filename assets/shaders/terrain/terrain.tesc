@@ -69,6 +69,6 @@ void main()
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 
 	o_ids[gl_InvocationID] = i_ids[gl_InvocationID];
-	o_matids[gl_InvocationID] = o_matids[gl_InvocationID];
+	o_matids[gl_InvocationID] = i_matids[gl_InvocationID];
 	o_uvs[gl_InvocationID] = i_uvs[gl_InvocationID];
 } 
