@@ -8,31 +8,8 @@ namespace flame
 		Rect scissor;
 	};
 
-	struct MaterialPipeline
-	{
-		std::filesystem::path mat;
-		std::vector<std::string> defines;
-		uint ref_count = 1;
-		std::unique_ptr<Pipeline> pipeline;
-	};
-
-	struct MaterialRes
-	{
-		Material* mat;
-		bool opaque;
-		bool sort;
-		std::filesystem::path pipeline_file;
-		std::vector<std::string> pipeline_defines;
-		int texs[MaxMaterialTexturesCount];
-		Pipeline* pls[MaterialUsageCount] = {};
-
-		Pipeline* get_pl(sRendererPrivate* thiz, MaterialUsage u);
-	};
-
 	struct ElemenetRenderData
 	{
-		bool should_render;
-
 		std::vector<ImageView*> reses;
 
 		Rect						scissor;
@@ -46,25 +23,8 @@ namespace flame
 		Pipeline* pl_element;
 	};
 
-	enum MaterialType
-	{
-		MaterialWireframe,
-		MaterialOutline,
-		MaterialPickup,
-		MaterialNormalData,
-		MaterialCustom,
-		MaterialTypeCount
-	};
-
-	const inline auto MsaaSampleCount = SampleCount_4;
-	const inline uint MaxMatCount = _countof(DSL_material::MaterialInfos::material_infos);
-	const inline uint MaxTrnMatCount = 16;
-	const inline uint TrnMatBase = MaxMatCount - MaxTrnMatCount;
-
 	struct NodeRenderData
 	{
-		bool should_render;
-
 		float min_log_lum = -5.f;
 		float max_log_lum = +5.f;
 		float white_point = 4.f;
@@ -76,21 +36,11 @@ namespace flame
 		float ssao_radius = 0.5f;
 		float ssao_bias = 0.025f;
 
-		std::vector<ImageView*> tex_reses;
-		std::vector<MaterialRes> mat_reses;
-		uint max_opq_mat_id = 0;
-		uint max_trn_mat_id = 0;
-
 		std::vector<std::pair<uint, mat3>>				dir_shadows;
 		std::vector<std::pair<uint, vec3>>				pt_shadows;
-		std::vector<std::vector<std::pair<uint, uint>>>	meshes[MaterialMeshUsageCount];
 		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
 		std::vector<std::pair<uint, uint>>				particles;
 
-		SequentialBuffer<DrawIndexedIndirectCommand> buf_mesh_indirs[MaterialMeshUsageCount];
-
-		ArrayStorageBuffer<DSL_material::MaterialInfos>						buf_materials;
-		std::unique_ptr<DescriptorSet>										ds_material;
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
 		std::unique_ptr<DescriptorSet>										ds_water;
 
@@ -100,20 +50,6 @@ namespace flame
 		std::unique_ptr<Image> img_dst_back;
 		std::unique_ptr<Image> img_dep_back;
 
-		SequentialArrayStorageBuffer<DSL_light::LightInfos>		buf_light_infos;
-		ArrayStorageBuffer<DSL_light::TileLightsMap>			buf_tile_lights;
-		SequentialArrayStorageBuffer<DSL_light::DirShadows>		buf_dir_shadows;
-		SequentialArrayStorageBuffer<DSL_light::PtShadows>		buf_pt_shadows;
-		std::vector<std::unique_ptr<Image>>						img_dir_shadow_maps;
-		std::vector<std::unique_ptr<Image>>						img_pt_shadow_maps;
-		std::unique_ptr<DescriptorSet>							ds_light;
-
-		PipelineLayout* pll_mesh_gbuf;
-		PipelineLayout* pll_terrain_gbuf;
-		PipelineLayout* pll_water;
-
-		std::unique_ptr<Framebuffer> fb_gbuf;
-		std::vector<std::unique_ptr<Framebuffer>> fb_tars_dep;
 		std::unique_ptr<Framebuffer> fb_fwd_ms4;
 
 		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
@@ -124,23 +60,10 @@ namespace flame
 		Pipeline*									pl_ssao_blur;
 		std::unique_ptr<DescriptorSet>				ds_ssao;
 
-		Pipeline*						pl_def;
-		std::unique_ptr<DescriptorSet>	ds_def;
-
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
 		Pipeline* pl_ptc;
 
-		Pipeline* pl_blit_rgba8;
-		Pipeline* pl_blit_rgba16;
-		Pipeline* pl_blit_rgba16ms4;
-		Pipeline* pl_blit_d16;
-		Pipeline* pl_blit_d16ms4;
-		Pipeline* pl_add_bgra8;
-		Pipeline* pl_add_rgba8;
-		Pipeline* pl_add_rgba16;
 		Pipeline* pl_fxaa;
-		Pipeline* pl_downsample;
-		Pipeline* pl_upsample;
 
 		StorageBuffer<DSL_luminance::Histogram>		buf_lum_htg;
 		StorageBuffer<DSL_luminance::AverageLum>	buf_lum_avg;
@@ -153,9 +76,6 @@ namespace flame
 
 		Pipeline* pl_tone;
 		std::unique_ptr<DescriptorSet>	ds_tone;
-
-		SequentialBuffer<Line>	buf_lines;
-		Pipeline* pl_line;
 
 		NodeRenderData()
 		{
@@ -277,12 +197,6 @@ namespace flame
 		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
 		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
 		nd.ds_ssao->update();
-
-		nd.ds_def->set_image(DSL_deferred::img_col_met_binding, 0, nd.img_col_met->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_ao_binding, 0, nd.img_ao->get_view(), sp_nearest);
-		nd.ds_def->set_image(DSL_deferred::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
-		nd.ds_def->update();
 
 		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
 		nd.ds_water->update();
@@ -549,224 +463,6 @@ namespace flame
 		info.indices[5] = 2;
 	}
 
-	int sRendererPrivate::set_texture_res(int idx, ImageView* tex, Sampler* sp)
-	{
-		auto& nd = *_nd;
-
-		if (idx == -1)
-		{
-			for (auto i = 0; i < nd.tex_reses.size(); i++)
-			{
-				if (!nd.tex_reses[i])
-				{
-					idx = i;
-					break;
-				}
-			}
-		}
-		if (idx == -1)
-			return -1;
-
-		nd.tex_reses[idx] = tex;
-		nd.ds_material->set_image(DSL_material::maps_binding, idx, tex ? tex : img_white->get_view(), sp ? sp : sp_linear);
-		nd.ds_material->update();
-
-		return idx;
-	}
-
-	int sRendererPrivate::find_texture_res(ImageView* tex) const
-	{
-		auto& nd = *_nd;
-		for (auto i = 0; i < nd.tex_reses.size(); i++)
-		{
-			if (nd.tex_reses[i] == tex)
-				return i;
-		}
-		return -1;
-	}
-
-	Pipeline* MaterialRes::get_pl(sRendererPrivate* thiz, MaterialUsage u)
-	{
-		if (pls[u])
-			return pls[u];
-		pls[u] = thiz->get_material_pipeline(u, pipeline_file, pipeline_defines);
-		return pls[u];
-	}
-
-	bool parse_define(const std::vector<std::string>& defines, std::string_view n, std::string& v)
-	{
-		for (auto& d : defines)
-		{
-			if (d.compare(0, n.size(), n) == 0)
-			{
-				if (d.size() == n.size())
-					return true;
-				if (d[n.size()] == '=')
-				{
-					v = d.substr(n.size() + 1);
-					return true;
-				}
-			}
-		}
-		return false;
-	};
-
-	Pipeline* sRendererPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, std::vector<std::string> defines)
-	{
-		auto& nd = *_nd;
-
-		for (auto& p : nd.pl_mats[usage])
-		{
-			if (p.mat == mat && p.defines == defines)
-			{
-				p.ref_count++;
-				return p.pipeline.get();
-			}
-		}
-
-		Pipeline* ret = nullptr;
-
-		std::vector<std::pair<std::string, std::string>> substitutes;
-		auto polygon_mode = PolygonModeFill;
-		auto cull_mode = CullModeBack;
-		auto a2c = false;
-		auto depth_test = true;
-		auto depth_write = true;
-		auto use_mat = true;
-		auto deferred = true;
-		auto alpha_blend = false;
-
-		Renderpass* rp = nullptr;
-
-		std::string str;
-		if (parse_define(defines, "WIREFRAME", str))
-		{
-			use_mat = false;
-			polygon_mode = PolygonModeLine;
-			depth_test = false;
-			depth_write = false;
-			deferred = false;
-			rp = Renderpass::get(nullptr, L"bgra8l.rp");
-		}
-		else if (parse_define(defines, "PICKUP", str))
-		{
-			use_mat = false;
-			deferred = false;
-			rp = Renderpass::get(nullptr, L"rgba16.rp");
-		}
-		else if (parse_define(defines, "OUTLINE", str))
-		{
-			use_mat = false;
-			depth_test = false;
-			depth_write = false;
-			deferred = false;
-			rp = Renderpass::get(nullptr, L"rgba16.rp");
-		}
-		else if (parse_define(defines, "NORMAL_DATA", str))
-		{
-			use_mat = false;
-			deferred = false;
-			rp = Renderpass::get(nullptr, L"bgra8d16c.rp");
-		}
-		if (parse_define(defines, "TRANSPARENT", str))
-		{
-			deferred = false;
-			if (parse_define(defines, "ALPHA_TEST", str))
-				a2c = true;
-			else
-				alpha_blend = true;
-		}
-		if (use_mat && !mat.empty())
-		{
-			defines.push_back("MAT");
-			substitutes.emplace_back("MAT_FILE", mat.string());
-		}
-
-		auto get_defines_str = [&]() {
-			std::string ret;
-			for (auto& t : defines)
-			{
-				ret += t;
-				ret += ' ';
-			}
-			return ret;
-		};
-
-		auto get_substitutes_str = [&]() {
-			std::string ret;
-			for (auto& t : substitutes)
-			{
-				ret += t.first;
-				ret += ' ';
-				ret += t.second;
-				ret += ' ';
-			}
-			return ret;
-		};
-
-		switch (usage)
-		{
-		case MaterialForWater:
-		{
-			auto defines_str = get_defines_str();
-			auto substitutes_str = get_substitutes_str();
-			GraphicsPipelineInfo info;
-			Shader* shaders[] = {
-				Shader::get(nullptr, L"water/water.vert", defines_str.c_str(), substitutes_str.c_str()),
-				Shader::get(nullptr, L"water/water.frag", defines_str.c_str(), substitutes_str.c_str())
-			};
-			info.shaders_count = countof(shaders);
-			info.shaders = shaders;
-			info.layout = PipelineLayout::get(nullptr, L"water/water.pll");
-			if (!rp)
-			{
-				rp = Renderpass::get(nullptr, L"forward_ms4.rp");
-				info.sample_count = MsaaSampleCount;
-			}
-			info.renderpass = rp;
-			info.subpass_index = 0;
-			info.primitive_topology = PrimitiveTopologyTriangleList;
-			info.polygon_mode = polygon_mode;
-			info.cull_mode = cull_mode;
-			info.depth_test = depth_test;
-			info.depth_write = false;
-			info.blend_options_count = 1;
-			BlendOption bo = { true, BlendFactorOne, BlendFactorSrcAlpha, BlendFactorOne, BlendFactorZero };
-			info.blend_options = &bo;
-			ret = Pipeline::create(nullptr, info);
-		}
-			break;
-		}
-
-		MaterialPipeline mp;
-		mp.mat = mat;
-		mp.defines = defines;
-		mp.pipeline.reset(ret);
-		nd.pl_mats[usage].push_back(std::move(mp));
-		return ret;
-	}
-
-	void sRendererPrivate::release_material_pipeline(MaterialUsage usage, Pipeline* pl)
-	{
-		assert(0);
-
-		auto& nd = *_nd;
-		for (auto it = nd.pl_mats[usage].begin(); it != nd.pl_mats[usage].end(); it++)
-		{
-			// TODO: fix this (requires that all kinds of graphics resources are able to destroy when ref_count==0)
-			//if (it->pipeline.get() == pl)
-			//{
-			//	for (auto s : p->shaders)
-			//		s->release();
-			//	if (it->ref_count == 1)
-			//		material_pipelines[usage].erase(it);
-			//	else
-			//		it->ref_count--;
-			//	break;
-			//}
-		}
-	}
-
 	void sRendererPrivate::set_sky(ImageView* box, ImageView* irr,
 		ImageView* rad, ImageView* lut, const vec3& fog_color, float intensity, void* id)
 	{
@@ -797,22 +493,13 @@ namespace flame
 		// TODO
 		{
 			auto& data = nd.buf_light_infos.add_item();
-			data.color = color;
-			data.type = type;
 			data.shadow_index = -1;
 
-			auto& tile = nd.buf_tile_lights.item(0, false);
 			switch (type)
 			{
 			case LightDirectional:
 			{
 				auto rot = mat3(mat);
-				data.pos = -rot[2];
-				if (tile.dir_count < countof(tile.dir_indices))
-				{
-					tile.dir_indices[tile.dir_count] = idx;
-					tile.dir_count++;
-				}
 				if (cast_shadow)
 				{
 					if (nd.dir_shadows.size() < 4)
@@ -826,12 +513,6 @@ namespace flame
 			case LightPoint:
 			{
 				auto pos = vec3(mat[3]);
-				data.pos = pos;
-				if (tile.pt_count < countof(tile.pt_indices))
-				{
-					tile.pt_indices[tile.pt_count] = idx;
-					tile.pt_count++;
-				}
 				if (cast_shadow)
 				{
 					if (nd.pt_shadows.size() < 4)
@@ -907,15 +588,6 @@ namespace flame
 		nd.particles.back().second += count;
 	}
 
-	void sRendererPrivate::draw_lines(uint count, Line* lines)
-	{
-		auto& nd = *_nd;
-
-		memcpy(nd.buf_lines.stag(count), lines, count * sizeof(Line));
-	}
-
-	const auto shadow_map_size = uvec2(1024);
-
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
 	{
 		tar_idx = min((uint)img_tars.size() - 1, tar_idx);
@@ -929,22 +601,13 @@ namespace flame
 		ed.scissor = Rect(vec2(0.f), tar_sz);
 		if (world->first_element && world->first_element->global_visibility)
 		{
-			ed.should_render = true;
 			ed.max_layer = 0;
 			element_render(0, world->first_element->get_component_i<cElementT>(0));
 		}
-		else
-			ed.should_render = false;
 
 		auto& nd = *_nd;
-		{ // TODO
-			auto& data = nd.buf_tile_lights.item(0);
-			data.dir_count = 0;
-			data.pt_count = 0;
-		}
 		if (world->first_node && world->first_node->global_visibility && camera)
 		{
-			nd.should_render = true;
 			Frustum frustums[MaxLod + 1];
 			auto dist = camera->far;
 			for (auto i = 0; i <= MaxLod; i++)
@@ -954,10 +617,7 @@ namespace flame
 			}
 			node_render(world->first_node->get_component_i<cNodeT>(0), frustums);
 		}
-		else
-			nd.should_render = false;
 
-		if (nd.should_render)
 		{
 			{
 				camera->set_screen_size(tar_sz);
@@ -965,67 +625,9 @@ namespace flame
 				camera->update_proj();
 
 				auto& data = *(nd.buf_render_data.pstag);
-				data.zNear = camera->near;
-				data.zFar = camera->far;
 				data.viewport = tar_sz;
-				data.camera_coord = camera->node->g_pos;
-				data.camera_dir = -camera->node->g_rot[2];
-				*(Frustum*)data.frustum_planes = camera->get_frustum();
 				data.time = frame;
 			}
-
-			typedef std::vector<std::pair<uint, uint>> DrawIndirs;
-
-			auto pack_mesh_indirs = [&](MaterialUsage u, bool opaque) {
-				DrawIndirs ret;
-				auto beg = opaque ? (uint)MaterialCustom : TrnMatBase;
-				auto end = opaque ? nd.max_opq_mat_id : nd.max_trn_mat_id;
-				for (auto mat_id = beg; mat_id <= end; mat_id++)
-				{
-					auto& vec = nd.meshes[u][mat_id];
-					if (!vec.empty())
-					{
-						auto indirs = nd.buf_mesh_indirs[u].stag(vec.size());
-						auto fill_indirs = [&](const std::vector<std::pair<uint, uint>>& vec) {
-							for (auto i = 0; i < vec.size(); i++)
-							{
-								auto& src = vec[i];
-								auto& mr = nd.mesh_reses[src.second];
-								auto& dst = indirs[i];
-								dst.vertex_offset = mr.vtx_off;
-								dst.first_index = mr.idx_off;
-								dst.index_count = mr.idx_cnt;
-								dst.first_instance = (src.first << 16) + mat_id;
-								dst.instance_count = 1;
-							}
-						};
-
-						if (nd.mat_reses[mat_id].sort)
-						{
-							auto& trans = nd.buf_mesh_transforms.pstag->transforms;
-							auto cam_coord = camera->node->g_pos;
-							auto cam_dir = -camera->node->g_rot[2];
-
-							auto _vec = vec;
-							std::sort(_vec.begin(), _vec.end(), [&](const auto& a, const auto& b) {
-								auto p1 = vec3(trans[a.first].mat[3]);
-								auto p2 = vec3(trans[b.first].mat[3]);
-								p1 -= cam_coord;
-								p2 -= cam_coord;
-								auto d1 = dot(p1, cam_dir);
-								auto d2 = dot(p2, cam_dir);
-								return d1 > d2;
-							});
-							fill_indirs(_vec);
-						}
-						else
-							fill_indirs(vec);
-						ret.emplace_back(mat_id, (uint)vec.size());
-						vec.clear();
-					}
-				}
-				return ret;
-			};
 
 			auto bind_water_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_water);
@@ -1256,37 +858,9 @@ namespace flame
 
 			if (render_type == RenderShaded)
 			{
-				// stag here cause can not update buffer while in render pass
-				auto opq_mesh_indirs = pack_mesh_indirs(MaterialForMesh, true);
-				auto opq_mesh_arm_indirs = pack_mesh_indirs(MaterialForMeshArmature, true);
-				auto trn_mesh_indirs = pack_mesh_indirs(MaterialForMesh, false);
-				auto trn_mesh_arm_indirs = pack_mesh_indirs(MaterialForMeshArmature, false);
-				nd.buf_mesh_indirs[MaterialForMesh].upload(cb);
-				nd.buf_mesh_indirs[MaterialForMeshArmature].upload(cb);
-				auto mesh_indirs_off = 0;
-				auto mesh_arm_indirs_off = 0;
-
-				vec4 cvs[] = {
-					vec4(0.f, 0.f, 0.f, 0.f),
-					vec4(0.f, 0.f, 0.f, 0.f),
-					vec4(1.f, 0.f, 0.f, 0.f),
-					vec4(0.f, 0.f, 0.f, 0.f)
-				};
-				cb->begin_renderpass(nullptr, nd.fb_gbuf.get(), cvs);
-				bind_mesh_def_res();
-				cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-				mesh_indirs_off = draw_meshes(MaterialForMesh, opq_mesh_indirs, mesh_indirs_off);
-				cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-				cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-				mesh_arm_indirs_off = draw_meshes(MaterialForMeshArmature, opq_mesh_arm_indirs, mesh_arm_indirs_off);
 				bind_terrain_def_res();
 				draw_terrains();
 				cb->end_renderpass();
-
-				cb->image_barrier(nd.img_col_met.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->image_barrier(nd.img_nor_rou.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->image_barrier(nd.img_dep.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
 				cb->set_viewport(vec4(vp) * 0.5f);
 				cb->begin_renderpass(nullptr, nd.img_ao_back->get_shader_write_dst());
@@ -1444,133 +1018,8 @@ namespace flame
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
-			else
-			{
-				vec4 cvs[] = {
-					vec4(0.f, 0.f, 0.f, 0.f),
-					vec4(1.f, 0.f, 0.f, 0.f)
-				};
-				cb->begin_renderpass(nullptr, nd.fb_tars_dep[tar_idx].get(), cvs);
-
-				switch (render_type)
-				{
-				case RenderNormalData:
-				{
-					auto& meshes = nd.meshes[MaterialForMesh][MaterialNormalData];
-					auto& arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialNormalData];
-					auto& terrains = nd.terrains[MaterialNormalData];
-					if (!meshes.empty() || !arm_meshes.empty() || !terrains.empty())
-					{
-						if (!meshes.empty())
-						{
-							cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-							bind_mesh_fwd_res();
-							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMesh));
-							for (auto& m : meshes)
-							{
-								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-							}
-							meshes.clear();
-						}
-						if (!arm_meshes.empty())
-						{
-							cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-							cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-							bind_mesh_fwd_res();
-							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-							cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForMeshArmature));
-							for (auto& m : arm_meshes)
-							{
-								auto& mr = nd.mesh_reses[m.second];
-								cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-							}
-							arm_meshes.clear();
-						}
-						if (!terrains.empty())
-						{
-							bind_terrain_fwd_res();
-							cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-							for (auto i = 0; i < terrains.size(); i++)
-							{
-								cb->bind_pipeline(nd.mat_reses[MaterialNormalData].get_pl(this, MaterialForTerrain));
-								cb->draw(4, terrains[i].first, 0, i << 16);
-							}
-							terrains.clear();
-						}
-					}
-				}
-					break;
-				}
-
-				cb->end_renderpass();
-			}
-
-			auto& wireframe_meshes = nd.meshes[MaterialForMesh][MaterialWireframe];
-			auto& wireframe_arm_meshes = nd.meshes[MaterialForMeshArmature][MaterialWireframe];
-			auto& wireframe_terrains = nd.terrains[MaterialWireframe];
-			if (!wireframe_meshes.empty() || !wireframe_arm_meshes.empty() || !wireframe_terrains.empty())
-			{
-				cb->begin_renderpass(rp_bgra8l, fb_tar);
-				if (!wireframe_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMesh));
-					for (auto& m : wireframe_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					wireframe_meshes.clear();
-				}
-				if (!wireframe_arm_meshes.empty())
-				{
-					cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-					cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-					bind_mesh_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForMeshArmature));
-					for (auto& m : wireframe_arm_meshes)
-					{
-						auto& mr = nd.mesh_reses[m.second];
-						cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, (m.first << 16) + mr.mat_ids[0]);
-					}
-					wireframe_arm_meshes.clear();
-				}
-				if (!wireframe_terrains.empty())
-				{
-					bind_terrain_fwd_res();
-					cb->push_constant_t(vec4(0.f, 1.f, 0.f, 1.f));
-					for (auto i = 0; i < wireframe_terrains.size(); i++)
-					{
-						cb->bind_pipeline(nd.mat_reses[MaterialWireframe].get_pl(this, MaterialForTerrain));
-						cb->draw(4, wireframe_terrains[i].first, 0, i << 16);
-					}
-					wireframe_terrains.clear();
-				}
-				cb->end_renderpass();
-			}
-
-			if (nd.buf_lines.stag_num > 0)
-			{
-				auto count = nd.buf_lines.stag_num;
-				nd.buf_lines.upload(cb);
-
-				cb->begin_renderpass(rp_bgra8l, fb_tar);
-				cb->bind_vertex_buffer(nd.buf_lines.buf.get(), 0);
-				cb->bind_pipeline(nd.pl_line);
-				auto& data = *(nd.buf_render_data.pstag);
-				cb->push_constant_t(data.proj_view);
-				cb->draw(count * 2, 1, 0, 0);
-				cb->end_renderpass();
-			}
 		}
 
-		if (ed.should_render)
 		{
 			auto scissor = Rect(vec2(0.f), tar_sz);
 			cb->set_viewport(scissor);
@@ -1643,29 +1092,10 @@ namespace flame
 
 			cb->end_renderpass();
 		}
-
-		nd.should_render = false;
-		ed.should_render = false;
 	}
 
 	void sRendererPrivate::on_added()
 	{
-		img_white.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
-			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
-		img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(255));
-		img_black.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 1,
-			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
-		img_black->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-		img_black_cube.reset(Image::create(nullptr, Format_R8G8B8A8_UNORM, uvec2(1), 1, 6,
-			SampleCount_1, ImageUsageTransferDst | ImageUsageSampled, true));
-		img_black_cube->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(0, 0, 0, 255));
-
-		auto iv_white = img_white->get_view();
-		auto iv_black = img_black->get_view();
-		auto iv_black_cube = img_black_cube->get_view({ 0, 1, 0, 6 });
-
-		auto& ed = *_ed;
-
 		ed.pl_element = Pipeline::get(nullptr, L"element/element.pipeline");
 
 		ed.buf_vtx.create(BufferUsageVertex, 360000);
@@ -1679,102 +1109,12 @@ namespace flame
 		}
 		ed.ds_element->update();
 
-		auto& nd = *_nd;
-
-		nd.tex_reses.resize(DSL_material::maps_count);
-		nd.mat_reses.resize(MaxMatCount);
-
-		for (auto& v : nd.meshes)
-			v.resize(MaxMatCount);
-
-		for (auto& b : nd.buf_mesh_indirs)
-			b.create(BufferUsageIndirect, 65536);
-
-		{
-			auto& dst = nd.mat_reses[MaterialWireframe];
-			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"flame/shaders/std_mat.glsl";
-			dst.pipeline_defines.push_back("WIREFRAME");
-		}
-		{
-			auto& dst = nd.mat_reses[MaterialOutline];
-			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"flame/shaders/std_mat.glsl";
-			dst.pipeline_defines.push_back("OUTLINE");
-		}
-		{
-			auto& dst = nd.mat_reses[MaterialPickup];
-			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"flame/shaders/std_mat.glsl";
-			dst.pipeline_defines.push_back("PICKUP");
-		}
-		{
-			auto& dst = nd.mat_reses[MaterialNormalData];
-			dst.mat = (Material*)INVALID_POINTER;
-			dst.pipeline_file = L"flame/shaders/std_mat.glsl";
-			dst.pipeline_defines.push_back("NORMAL_DATA");
-		}
-
-		nd.buf_ptc_vtx.create(BufferUsageVertex, 10000);
-
-		nd.buf_lines.create(BufferUsageVertex, 2000000);
-
-		nd.buf_materials.create(BufferUsageStorage);
-		nd.ds_material.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"material.dsl")));
-		nd.ds_material->set_buffer(DSL_material::MaterialInfos_binding, 0, nd.buf_materials.buf.get());
-		for (auto i = 0; i < nd.tex_reses.size(); i++)
-			nd.ds_material->set_image(DSL_material::maps_binding, i, iv_white, sp_linear);
-		nd.ds_material->update();
-
 		nd.buf_water.create(BufferUsageStorage);
 		nd.ds_water.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"water/water.dsl")));
 		nd.ds_water->set_buffer(water::DSL_water::WaterInfos_binding, 0, nd.buf_water.buf.get());
 		nd.ds_water->update();
 
-		nd.buf_light_infos.create(BufferUsageStorage);
-		nd.buf_tile_lights.create(BufferUsageStorage);
-		nd.buf_dir_shadows.create(BufferUsageStorage);
-		nd.buf_pt_shadows.create(BufferUsageStorage);
-		nd.img_dir_shadow_maps.resize(DSL_light::dir_shadow_maps_count);
-		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
-		{
-			nd.img_dir_shadow_maps[i].reset(Image::create(nullptr, Format_Depth16, shadow_map_size, 1, 4,
-				SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-			nd.img_dir_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-		}
-		nd.img_pt_shadow_maps.resize(DSL_light::pt_shadow_maps_count);
-		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
-		{
-			nd.img_pt_shadow_maps[i].reset(Image::create(nullptr, Format_Depth16, vec2(shadow_map_size) * 0.5f, 1, 6,
-				SampleCount_1, ImageUsageSampled | ImageUsageAttachment, true));
-			nd.img_pt_shadow_maps[i]->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-		}
-		nd.ds_light.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"light.dsl")));
-		nd.ds_light->set_buffer(DSL_light::LightInfos_binding, 0, nd.buf_light_infos.buf.get());
-		nd.ds_light->set_buffer(DSL_light::TileLightsMap_binding, 0, nd.buf_tile_lights.buf.get());
-		nd.ds_light->set_buffer(DSL_light::DirShadows_binding, 0, nd.buf_dir_shadows.buf.get());
-		nd.ds_light->set_buffer(DSL_light::PtShadows_binding, 0, nd.buf_pt_shadows.buf.get());
-		auto sp_shadow = Sampler::get(nullptr, FilterLinear, FilterLinear, false, AddressClampToBorder);
-		for (auto i = 0; i < nd.img_dir_shadow_maps.size(); i++)
-		{
-			auto iv = nd.img_dir_shadow_maps[i]->get_view({ 0, 1, 0, 4 });
-			nd.ds_light->set_image(DSL_light::dir_shadow_maps_binding, i, iv, sp_shadow);
-		}
-		for (auto i = 0; i < nd.img_pt_shadow_maps.size(); i++)
-		{
-			auto iv = nd.img_pt_shadow_maps[i]->get_view({ 0, 1, 0, 6 });
-			nd.ds_light->set_image(DSL_light::pt_shadow_maps_binding, i, iv, sp_shadow);
-		}
-		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, iv_black, sp_linear);
-		nd.ds_light->update();
-
-		nd.pll_mesh_gbuf = PipelineLayout::get(nullptr, L"mesh/gbuffer.pll");
-		nd.pll_terrain_gbuf = PipelineLayout::get(nullptr, L"terrain/gbuffer.pll");
 		nd.pll_water = PipelineLayout::get(nullptr, L"water/water.pll");
-		nd.pll_post = PipelineLayout::get(nullptr, L"post/post.pll");
 
 		std::uniform_real_distribution<float> r(0.f, 1.f);
 		std::default_random_engine rd;
@@ -1819,17 +1159,7 @@ namespace flame
 
 		nd.pl_line = Pipeline::get(nullptr, L"plain/line.pipeline");
 
-		nd.pl_blit_rgba8 = Pipeline::get(nullptr, L"post/blit_rgba8.pipeline");
-		nd.pl_blit_rgba16 = Pipeline::get(nullptr, L"post/blit_rgba16.pipeline");
-		nd.pl_blit_rgba16ms4 = Pipeline::get(nullptr, L"post/blit_rgba16ms4.pipeline");
-		nd.pl_blit_d16 = Pipeline::get(nullptr, L"post/blit_d16.pipeline");
-		nd.pl_blit_d16ms4 = Pipeline::get(nullptr, L"post/blit_d16ms4.pipeline");
-		nd.pl_add_bgra8 = Pipeline::get(nullptr, L"post/add_bgra8.pipeline");
-		nd.pl_add_rgba8 = Pipeline::get(nullptr, L"post/add_rgba8.pipeline");
-		nd.pl_add_rgba16 = Pipeline::get(nullptr, L"post/add_rgba16.pipeline");
 		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pipeline");
-		nd.pl_downsample = Pipeline::get(nullptr, L"post/downsample.pipeline");
-		nd.pl_upsample = Pipeline::get(nullptr, L"post/upsample.pipeline");
 
 		nd.buf_lum_htg.create(BufferUsageStorage);
 		nd.buf_lum_avg.create(BufferUsageStorage);

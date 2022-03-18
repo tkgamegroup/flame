@@ -1,12 +1,12 @@
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
 		vec4 color;
-		color.a = texture(maps[material.map_indices[ALPHA_MAP]], i_uv).r;
+		color.a = texture(material_maps[material.map_indices[ALPHA_MAP]], i_uv).r;
 		if (color.a < ALPHA_TEST)
 			discard;
 		#ifndef DEPTH_PASS
 			#ifdef COLOR_MAP
-				color.rgb = texture(maps[material.map_indices[COLOR_MAP]], i_uv).rgb;
+				color.rgb = texture(material_maps[material.map_indices[COLOR_MAP]], i_uv).rgb;
 				#ifdef TINT_COLOR
 					color *= material.color;
 				#endif
@@ -16,7 +16,7 @@
 		#endif
 	#else
 		#ifdef COLOR_MAP
-			vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+			vec4 color = texture(material_maps[material.map_indices[COLOR_MAP]], i_uv);
 			#ifdef TINT_COLOR
 				color *= material.color;
 			#endif
@@ -29,7 +29,7 @@
 #else
 	#ifdef COLOR_MAP
 		#ifndef DEPTH_PASS
-			vec4 color = texture(maps[material.map_indices[COLOR_MAP]], i_uv);
+			vec4 color = texture(material_maps[material.map_indices[COLOR_MAP]], i_uv);
 			#ifdef TINT_COLOR
 				color *= material.color;
 			#endif

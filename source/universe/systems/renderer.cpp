@@ -33,6 +33,9 @@ namespace flame
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 
+		auto sp_bilinear = graphics::Sampler::get(nullptr, graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressRepeat);
+		auto sp_shadow = graphics::Sampler::get(nullptr, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+
 		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\scene.dsl");
 		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
@@ -47,7 +50,7 @@ namespace flame
 		ds_instance->set_buffer("ArmatureInstances", 0, buf_armature_ins.buf.get());
 		ds_instance->set_buffer("TerrainInstances", 0, buf_terrain_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
-			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), nullptr);
+			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), sp_bilinear);
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\material.dsl");
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
@@ -83,12 +86,12 @@ namespace flame
 		ds_light->set_buffer("DirShadows", 0, buf_dir_shadow.buf.get());
 		ds_light->set_buffer("PtShadows", 0, buf_pt_shadow.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, 4 }), nullptr);
+			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, 4 }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_box", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_irr", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_rad", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
+		ds_light->set_image("sky_box", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
+		ds_light->set_image("sky_irr", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
+		ds_light->set_image("sky_rad", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
 		ds_light->set_image("sky_lut", 0, img_black->get_view(), nullptr);
 		ds_light->update();
 

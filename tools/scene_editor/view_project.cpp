@@ -271,7 +271,7 @@ void View_Project::on_draw()
 		else if (node != selected_folder)
 			select_folder(node);
 
-		if (std::find(changed_paths.begin(), changed_paths.end(), selected_path) != changed_paths.end())
+		if (!selected_path.empty() && std::find(changed_paths.begin(), changed_paths.end(), selected_path) != changed_paths.end())
 			open_folder(selected_path);
 
 		changed_paths.clear();
