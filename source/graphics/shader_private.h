@@ -10,7 +10,6 @@ namespace flame
 	{
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
-			DevicePrivate* device;
 			VkDescriptorPool vk_descriptor_pool;
 
 			~DescriptorPoolPrivate();
@@ -18,7 +17,6 @@ namespace flame
 
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
-			DevicePrivate* device;
 			TypeInfoDataBase db;
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
@@ -26,7 +24,7 @@ namespace flame
 
 			~DescriptorSetLayoutPrivate();
 
-			static DescriptorSetLayoutPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
+			static DescriptorSetLayoutPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct DescriptorSetPrivate : DescriptorSet
@@ -40,8 +38,8 @@ namespace flame
 
 			struct ImgRes
 			{
-				ImageViewPrivate* p;
-				SamplerPrivate* sp;
+				ImageViewPtr p;
+				SamplerPtr sp;
 			};
 
 			union Res
@@ -50,8 +48,7 @@ namespace flame
 				ImgRes i;
 			};
 
-			DevicePrivate* device;
-			DescriptorPoolPrivate* pool;
+			DescriptorPoolPtr pool;
 			VkDescriptorSet vk_descriptor_set;
 
 			std::vector<std::vector<Res>> reses;
@@ -67,7 +64,6 @@ namespace flame
 
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
-			DevicePrivate* device;
 			TypeInfoDataBase db;
 			VkPipelineLayout vk_pipeline_layout;
 
@@ -75,12 +71,11 @@ namespace flame
 
 			~PipelineLayoutPrivate();
 
-			static PipelineLayoutPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
+			static PipelineLayoutPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct ShaderPrivate : Shader
 		{
-			DevicePrivate* device;
 			TypeInfoDataBase db;
 			VkShaderModule vk_module = 0;
 
@@ -88,29 +83,29 @@ namespace flame
 
 			~ShaderPrivate();
 
-			static ShaderPtr load_from_res(DevicePtr device, const std::filesystem::path& filename);
+			static ShaderPtr load_from_res(const std::filesystem::path& filename);
 		};
 
 		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
-			DevicePrivate* device;
 			VkPipeline vk_pipeline;
 
 			uint ref = 0;
 
 			~GraphicsPipelinePrivate();
 
-			static GraphicsPipelinePtr load(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines);
+			static GraphicsPipelinePtr load(const std::filesystem::path& filename, const std::vector<std::string>& defines);
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline
 		{
-			DevicePrivate* device;
 			VkPipeline vk_pipeline;
 
 			uint ref = 0;
 
 			~ComputePipelinePrivate();
 		};
+
+		extern std::unique_ptr<DescriptorPoolT> descriptorset_pool;
 	}
 }

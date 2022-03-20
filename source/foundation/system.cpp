@@ -611,7 +611,7 @@ namespace flame
 		}
 	}
 
-	void do_file_watch(void* event_end, bool all_changes, const std::filesystem::path& path, const std::function<void(FileChangeType type, const std::filesystem::path& path)>& callback)
+	void do_file_watch(void* event_end, bool all_changes, const std::filesystem::path& path, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
@@ -657,7 +657,7 @@ namespace flame
 			p->FileName[p->FileNameLength / 2] = 0;
 			while (true)
 			{
-				FileChangeType type;
+				FileChangeFlags type = (FileChangeFlags)0;
 				switch (p->Action)
 				{
 				case 0x1:
@@ -695,7 +695,7 @@ namespace flame
 			destroy_native_event(event_end);
 	}
 
-	void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeType type, const std::filesystem::path& path)>& callback, bool all_changes, bool sync)
+	void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback, bool all_changes, bool sync)
 	{
 		if (!sync)
 		{

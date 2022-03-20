@@ -8,10 +8,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		int graphics_queue_index = -1;
-		int transfer_queue_index = -1;
-
-		DevicePtr current_device = nullptr;
+		DevicePtr device = nullptr;
 
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
@@ -59,8 +56,7 @@ namespace flame
 
 		DevicePrivate::~DevicePrivate()
 		{
-			if (current_device == this)
-				current_device = nullptr;
+			device = nullptr;
 		}
 
 		bool DevicePrivate::has_feature(Feature feature) const
@@ -156,7 +152,9 @@ namespace flame
 				float queue_porities[1] = { 0.f };
 				std::vector<VkDeviceQueueCreateInfo> queue_infos;
 
-				graphics_queue_index = -1;
+				auto graphics_queue_index = -1;
+				auto transfer_queue_index = -1;
+
 				for (auto i = 0; i < queue_family_properties.size(); i++)
 				{
 					if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -172,7 +170,6 @@ namespace flame
 					}
 				}
 
-				transfer_queue_index = -1;
 				//for (auto i = 0; i < queue_family_properties.size(); i++)
 				//{
 				//	if (!(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
@@ -202,14 +199,13 @@ namespace flame
 				chk_res(vkCreateDevice(ret->vk_physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 
-				ret->dsp.reset(DescriptorPool::create(ret));
-				ret->gcp.reset(graphics_queue_index != -1 ? CommandPool::create(ret, graphics_queue_index) : nullptr);
-				ret->tcp.reset(transfer_queue_index != -1 ? CommandPool::create(ret, transfer_queue_index) : nullptr);
-				ret->gq.reset(graphics_queue_index != -1 ? QueuePrivate::create(ret, graphics_queue_index) : nullptr);
-				ret->tq.reset(transfer_queue_index != -1 ? QueuePrivate::create(ret, transfer_queue_index) : nullptr);
+				descriptorset_pool.reset(DescriptorPool::create());
+				graphics_command_pool.reset(graphics_queue_index != -1 ? CommandPool::create(graphics_queue_index) : nullptr);
+				transfer_command_pool.reset(transfer_queue_index != -1 ? CommandPool::create(transfer_queue_index) : nullptr);
+				graphics_queue.reset(graphics_queue_index != -1 ? QueuePrivate::create(graphics_queue_index) : nullptr);
+				transfer_queue.reset(transfer_queue_index != -1 ? QueuePrivate::create(transfer_queue_index) : nullptr);
 
-				if (!current_device)
-					current_device = ret;
+				device = ret;
 				return ret;
 			}
 		}Device_create;
@@ -219,7 +215,7 @@ namespace flame
 		{
 			DevicePtr& operator()() override
 			{
-				return current_device;
+				return device;
 			}
 		}Device_current;
 		Device::Current& Device::current = Device_current;

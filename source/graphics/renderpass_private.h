@@ -10,7 +10,6 @@ namespace flame
 	{
 		struct RenderpassPrivate : Renderpass
 		{
-			DevicePrivate* device;
 			VkRenderPass vk_renderpass;
 
 			~RenderpassPrivate();
@@ -20,7 +19,6 @@ namespace flame
 
 		struct FramebufferPrivate : Framebuffer
 		{
-			DevicePrivate* device;
 			VkFramebuffer vk_framebuffer;
 
 			~FramebufferPrivate();

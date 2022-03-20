@@ -15,6 +15,14 @@ namespace flame
 {
 	namespace graphics
 	{
+		std::unique_ptr<DescriptorPoolT> descriptorset_pool;
+
+		std::vector<std::unique_ptr<DescriptorSetLayoutT>> loaded_descriptorsetlayouts;
+		std::vector<std::unique_ptr<PipelineLayoutT>> loaded_pipelinelayouts;
+		std::vector<std::unique_ptr<ShaderT>> loaded_shaders;
+		std::vector<std::unique_ptr<GraphicsPipelineT>> loaded_graphics_pipelines;
+		std::vector<std::unique_ptr<ComputePipelineT>> loaded_compute_pipelines;
+
 		std::wstring get_stage_str(ShaderStageFlags stage)
 		{
 			switch (stage)
@@ -514,12 +522,9 @@ namespace flame
 
 		struct DescriptorPoolCurrent : DescriptorPool::Current
 		{
-			DescriptorPoolPtr operator()(DevicePtr device) override
+			DescriptorPoolPtr operator()() override
 			{
-				if (!device)
-					device = current_device;
-
-				return device->dsp.get();
+				return descriptorset_pool.get();
 			}
 		}DescriptorPool_current;
 		DescriptorPool::Current& DescriptorPool::current = DescriptorPool_current;
@@ -527,13 +532,9 @@ namespace flame
 
 		struct DescriptorPoolCreate : DescriptorPool::Create
 		{
-			DescriptorPoolPtr operator()(DevicePtr device) override
+			DescriptorPoolPtr operator()() override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new DescriptorPoolPrivate;
-				ret->device = device;
 
 				VkDescriptorPoolSize descriptorPoolSizes[] = {
 					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
@@ -561,7 +562,7 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
-		DescriptorSetLayoutPtr DescriptorSetLayoutPrivate::load_from_res(DevicePtr device, const std::filesystem::path& filename)
+		DescriptorSetLayoutPtr DescriptorSetLayoutPrivate::load_from_res(const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
 				return nullptr;
@@ -577,7 +578,7 @@ namespace flame
 			db.load(file);
 			file.close();
 
-			auto ret = DescriptorSetLayout::create(device, bindings);
+			auto ret = DescriptorSetLayout::create(bindings);
 			ret->db = std::move(db);
 			for (auto& b : ret->bindings)
 			{
@@ -589,13 +590,9 @@ namespace flame
 
 		struct DescriptorSetLayoutCreate : DescriptorSetLayout::Create
 		{
-			DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) override
+			DescriptorSetLayoutPtr operator()(std::span<DescriptorBinding> bindings) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new DescriptorSetLayoutPrivate;
-				ret->device = device;
 				ret->bindings.assign(bindings.begin(), bindings.end());
 
 				std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
@@ -623,11 +620,8 @@ namespace flame
 				return ret;
 			}
 
-			DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::filesystem::path& dst, const std::filesystem::path& src) override
+			DescriptorSetLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst, const std::filesystem::path& src) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto fn = dst;
 				if (dst.empty())
 					fn = L"#temp.res";
@@ -644,7 +638,7 @@ namespace flame
 				compile_shader(ShaderStageDsl, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
-				auto ret = DescriptorSetLayoutPrivate::load_from_res(device, fn);
+				auto ret = DescriptorSetLayoutPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
 				if (fn.c_str()[0] == L'#')
@@ -663,16 +657,13 @@ namespace flame
 
 		struct DescriptorSetLayoutGet : DescriptorSetLayout::Get
 		{
-			DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
+			DescriptorSetLayoutPtr operator()(const std::filesystem::path& _filename) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 
 				if (device)
 				{
-					for (auto& d : device->dsls)
+					for (auto& d : loaded_descriptorsetlayouts)
 					{
 						if (d->filename.filename() == filename)
 						{
@@ -694,12 +685,12 @@ namespace flame
 
 				if (device)
 				{
-					auto ret = DescriptorSetLayoutPrivate::load_from_res(device, res_path);
+					auto ret = DescriptorSetLayoutPrivate::load_from_res(res_path);
 					if (ret)
 					{
 						ret->filename = filename;
 						ret->ref = 1;
-						device->dsls.emplace_back(ret);
+						loaded_descriptorsetlayouts.emplace_back(ret);
 						return ret;
 					}
 				}
@@ -714,7 +705,7 @@ namespace flame
 			{
 				if (dsl->ref == 1)
 				{
-					std::erase_if(dsl->device->dsls, [&](const auto& i) {
+					std::erase_if(loaded_descriptorsetlayouts, [&](const auto& i) {
 						return i.get() == dsl;
 					});
 				}
@@ -751,7 +742,7 @@ namespace flame
 				return;
 
 			if (!sp)
-				sp = Sampler::get(device, FilterLinear, FilterLinear, true, AddressClampToEdge);
+				sp = Sampler::get(FilterLinear, FilterLinear, true, AddressClampToEdge);
 
 			auto& res = reses[binding][index].i;
 			if (res.p == iv && res.sp == sp)
@@ -768,7 +759,7 @@ namespace flame
 			if (buf_updates.empty() && img_updates.empty())
 				return;
 
-			Queue::get(device)->wait_idle();
+			Queue::get()->wait_idle();
 			std::vector<VkDescriptorBufferInfo> vk_buf_infos;
 			std::vector<VkDescriptorImageInfo> vk_img_infos;
 			std::vector<VkWriteDescriptorSet> vk_writes;
@@ -840,7 +831,6 @@ namespace flame
 					pool = DescriptorPool::current();
 
 				auto ret = new DescriptorSetPrivate;
-				ret->device = pool->device;
 				ret->pool = pool;
 				ret->layout = layout;
 
@@ -855,7 +845,7 @@ namespace flame
 				info.descriptorSetCount = 1;
 				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
-				chk_res(vkAllocateDescriptorSets(pool->device->vk_device, &info, &ret->vk_descriptor_set));
+				chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
 
 				return ret;
 			}
@@ -869,7 +859,7 @@ namespace flame
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
-		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(DevicePtr device, const std::filesystem::path& filename)
+		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
 				return nullptr;
@@ -893,11 +883,11 @@ namespace flame
 			for (auto& d : dependencies)
 			{
 				if (d.extension() == L".dsl")
-					dsls.push_back(DescriptorSetLayout::get(device, d));
+					dsls.push_back(DescriptorSetLayout::get(d));
 			}
 			if (!bindings.empty())
 			{
-				auto dsl = DescriptorSetLayout::create(device, bindings);
+				auto dsl = DescriptorSetLayout::create(bindings);
 				dsl->filename = filename;
 				auto str = filename.wstring();
 				if (auto p = str.find('#'); p != std::wstring::npos)
@@ -907,7 +897,7 @@ namespace flame
 
 			auto pc_ui = find_udt("PushConstant"_h, db);
 
-			auto ret = PipelineLayout::create(device, dsls, pc_ui ? pc_ui->size : 0);
+			auto ret = PipelineLayout::create(dsls, pc_ui ? pc_ui->size : 0);
 			ret->db = std::move(db);
 			ret->pc_ui = pc_ui;
 			return ret;
@@ -915,13 +905,9 @@ namespace flame
 
 		struct PipelineLayoutCreate : PipelineLayout::Create
 		{
-			PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) override
+			PipelineLayoutPtr operator()(std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new PipelineLayoutPrivate;
-				ret->device = device;
 				ret->dsls.assign(dsls.begin(), dsls.end());
 				ret->pc_sz = push_constant_size;
 
@@ -949,11 +935,8 @@ namespace flame
 				return ret;
 			}
 
-			PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::filesystem::path& dst, const std::filesystem::path& src) override
+			PipelineLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst, const std::filesystem::path& src) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto fn = dst;
 				if (dst.empty())
 					fn = L"#temp.res";
@@ -970,7 +953,7 @@ namespace flame
 				compile_shader(ShaderStagePll, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
-				auto ret = PipelineLayoutPrivate::load_from_res(device, fn);
+				auto ret = PipelineLayoutPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
 				if (fn.c_str()[0] == L'#')
@@ -989,16 +972,13 @@ namespace flame
 
 		struct PipelineLayoutGet : PipelineLayout::Get
 		{
-			PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& _filename) override
+			PipelineLayoutPtr operator()(const std::filesystem::path& _filename) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 
 				if (device)
 				{
-					for (auto& p : device->plls)
+					for (auto& p : loaded_pipelinelayouts)
 					{
 						if (p->filename == filename)
 							return p.get();
@@ -1015,11 +995,11 @@ namespace flame
 				res_path += L".res";
 				compile_shader(ShaderStagePll, filename, {}, res_path);
 
-				auto ret = PipelineLayoutPrivate::load_from_res(device, res_path);
+				auto ret = PipelineLayoutPrivate::load_from_res(res_path);
 				if (ret)
 				{
 					ret->filename = filename;
-					device->plls.emplace_back(ret);
+					loaded_pipelinelayouts.emplace_back(ret);
 					return ret;
 				}
 				return nullptr;
@@ -1033,9 +1013,9 @@ namespace flame
 			{
 				if (pll->ref == 1)
 				{
-					std::erase_if(pll->device->plls, [&](const auto& i) {
+					std::erase_if(loaded_pipelinelayouts, [&](const auto& i) {
 						return i.get() == pll;
-						});
+					});
 				}
 				else
 					pll->ref--;
@@ -1049,7 +1029,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPtr ShaderPrivate::load_from_res(DevicePtr device, const std::filesystem::path& filename)
+		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
 				return nullptr;
@@ -1070,7 +1050,6 @@ namespace flame
 			file.close();
 
 			auto ret = new ShaderPrivate;
-			ret->device = device;
 			ret->db = std::move(db);
 			ret->in_ui = find_udt("Input"_h, ret->db);
 			ret->out_ui = find_udt("Output"_h, ret->db);
@@ -1088,11 +1067,8 @@ namespace flame
 
 		struct ShaderCreate : Shader::Create
 		{
-			ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::filesystem::path& dst, const std::filesystem::path& src) override
+			ShaderPtr operator()(ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, const std::filesystem::path& dst, const std::filesystem::path& src) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto fn = dst;
 				if (fn.empty())
 					fn = L"#temp.res";
@@ -1109,7 +1085,7 @@ namespace flame
 				compile_shader(type, temp_path, defines, fn);
 				std::filesystem::remove(temp_path);
 
-				auto ret = ShaderPrivate::load_from_res(device, fn);
+				auto ret = ShaderPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
 				if (fn.c_str()[0] == L'#')
@@ -1127,34 +1103,15 @@ namespace flame
 		}Shader_create;
 		Shader::Create& Shader::create = Shader_create;
 
-		struct ShaderRelease : Shader::Release
-		{
-			void operator()(ShaderPtr sd) override
-			{
-				if (sd->ref == 1)
-				{
-					std::erase_if(sd->device->sds, [&](const auto& i) {
-						return i.get() == sd;
-					});
-				}
-				else
-					sd->ref--;
-			}
-		}Shader_release;
-		Shader::Release& Shader::release = Shader_release;
-
 		struct ShaderGet : Shader::Get
 		{
-			ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
+			ShaderPtr operator()(ShaderStageFlags type, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 
 				if (device)
 				{
-					for (auto& s : device->sds)
+					for (auto& s : loaded_shaders)
 					{
 						if (s->filename == filename && s->defines == defines)
 							return s.get();
@@ -1177,11 +1134,11 @@ namespace flame
 
 				if (device)
 				{
-					auto ret = ShaderPrivate::load_from_res(device, res_path);
+					auto ret = ShaderPrivate::load_from_res(res_path);
 					ret->type = type;
 					ret->filename = filename;
 					ret->defines = defines;
-					device->sds.emplace_back(ret);
+					loaded_shaders.emplace_back(ret);
 					return ret;
 				}
 
@@ -1189,6 +1146,22 @@ namespace flame
 			}
 		}Shader_get;
 		Shader::Get& Shader::get = Shader_get;
+
+		struct ShaderRelease : Shader::Release
+		{
+			void operator()(ShaderPtr sd) override
+			{
+				if (sd->ref == 1)
+				{
+					std::erase_if(loaded_shaders, [&](const auto& i) {
+						return i.get() == sd;
+						});
+				}
+				else
+					sd->ref--;
+			}
+		}Shader_release;
+		Shader::Release& Shader::release = Shader_release;
 
 		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
 		{
@@ -1207,7 +1180,7 @@ namespace flame
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		GraphicsPipelinePtr GraphicsPipelinePrivate::load(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& _defines)
+		GraphicsPipelinePtr GraphicsPipelinePrivate::load(const std::filesystem::path& filename, const std::vector<std::string>& _defines)
 		{
 			auto ppath = filename.parent_path();
 
@@ -1275,7 +1248,7 @@ namespace flame
 				if (Path::cat_if_exists(ppath, fn))
 					fn = std::filesystem::canonical(fn);
 				layout_segment.second = fn;
-				return PipelineLayout::get(device, fn);
+				return PipelineLayout::get(fn);
 			};
 			spec.map[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
@@ -1311,7 +1284,7 @@ namespace flame
 								defines.push_back(d.second);
 						}
 						std::sort(defines.begin(), defines.end());
-						return Shader::get(device, stage, fn, defines);
+						return Shader::get(stage, fn, defines);
 					}
 				}
 				std::filesystem::path fn = src.value("filename");
@@ -1327,7 +1300,7 @@ namespace flame
 							defines.push_back(d.second);
 					}
 					std::sort(defines.begin(), defines.end());
-					return Shader::get(device, stage, fn, defines);
+					return Shader::get(stage, fn, defines);
 				}
 				return INVALID_POINTER;
 			};
@@ -1339,7 +1312,7 @@ namespace flame
 				{
 					auto defines = renderpass_defines;
 					std::sort(defines.begin(), defines.end());
-					return Renderpass::get(device, value, defines);
+					return Renderpass::get(value, defines);
 				}
 				std::filesystem::path fn = src.value("filename");
 				if (Path::cat_if_exists(ppath, fn))
@@ -1347,7 +1320,7 @@ namespace flame
 				auto defines = format_defines(src.value("defines"));
 				defines.insert(defines.end(), renderpass_defines.begin(), renderpass_defines.end());
 				std::sort(defines.begin(), defines.end());
-				return Renderpass::get(device, fn, defines);
+				return Renderpass::get(fn, defines);
 			};
 			auto defines = pipeline_defines;
 			std::sort(defines.begin(), defines.end());
@@ -1376,7 +1349,7 @@ namespace flame
 
 			if (!layout_segment.first.empty())
 			{
-				info.layout = PipelineLayout::create(device, layout_segment.first,
+				info.layout = PipelineLayout::create(layout_segment.first,
 					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + wstr(create_id), filename);
 			}
 			for (auto& s : shader_segments)
@@ -1388,7 +1361,7 @@ namespace flame
 						defines.push_back(d.second);
 				}
 				std::sort(defines.begin(), defines.end());
-				info.shaders.push_back(Shader::create(device, s.first, s.second, defines,
+				info.shaders.push_back(Shader::create(s.first, s.second, defines,
 					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + defines_to_hash_str(defines) + L".res") : L"#" + wstr(create_id), filename));
 			}
 
@@ -1428,19 +1401,15 @@ namespace flame
 				}
 			}
 
-			return GraphicsPipeline::create(device, info);
+			return GraphicsPipeline::create(info);
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create
 		{
-			GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) override
+			GraphicsPipelinePtr operator()(const GraphicsPipelineInfo& info) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new GraphicsPipelinePrivate;
 				*(GraphicsPipelineInfo*)ret = info;
-				ret->device = device;
 
 				std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 				std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
@@ -1657,18 +1626,15 @@ namespace flame
 				return ret;
 			}
 
-			GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines) override
+			GraphicsPipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines) override
 			{
-				if (!device)
-					device = current_device;
-
 				std::filesystem::path fn = L"#temp.pipeline";
 
 				std::ofstream file(fn);
 				file << SUS::get_ltrimed(content);
 				file.close();
 
-				auto ret = GraphicsPipelinePrivate::load(device, fn, defines);
+				auto ret = GraphicsPipelinePrivate::load(fn, defines);
 				std::filesystem::remove(fn);
 				return ret;
 			}
@@ -1677,16 +1643,13 @@ namespace flame
 
 		struct GraphicsPipelineGet : GraphicsPipeline::Get
 		{
-			GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
+			GraphicsPipelinePtr operator()(const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 
 				if (device)
 				{
-					for (auto& pl : device->gpls)
+					for (auto& pl : loaded_graphics_pipelines)
 					{
 						if (pl->filename == filename && pl->defines == defines)
 							return pl.get();
@@ -1701,10 +1664,10 @@ namespace flame
 
 				if (device)
 				{
-					auto ret = GraphicsPipelinePrivate::load(device, filename, defines);
+					auto ret = GraphicsPipelinePrivate::load(filename, defines);
 					ret->filename = filename;
 					ret->defines = defines;
-					device->gpls.emplace_back(ret);
+					loaded_graphics_pipelines.emplace_back(ret);
 					return ret;
 				}
 
@@ -1719,7 +1682,7 @@ namespace flame
 			{
 				if (pl->ref == 1)
 				{
-					std::erase_if(pl->device->gpls, [&](const auto& i) {
+					std::erase_if(loaded_graphics_pipelines, [&](const auto& i) {
 						return i.get() == pl;
 					});
 				}
@@ -1736,14 +1699,10 @@ namespace flame
 
 		struct ComputePipelineCreate : ComputePipeline::Create
 		{
-			ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) override
+			ComputePipelinePtr operator()(const ComputePipelineInfo& info) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new ComputePipelinePrivate;
 				*(ComputePipelineInfo*)ret = info;
-				ret->device = device;
 
 				VkComputePipelineCreateInfo pipeline_info;
 				pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -1767,7 +1726,7 @@ namespace flame
 				return ret;
 			}
 
-			ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key) override
+			ComputePipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines, const std::string& key) override
 			{
 				return nullptr;
 			}
@@ -1776,7 +1735,7 @@ namespace flame
 
 		struct ComputePipelineGet : ComputePipeline::Get
 		{
-			ComputePipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) override
+			ComputePipelinePtr operator()(const std::filesystem::path& filename, const std::vector<std::string>& defines) override
 			{
 				return nullptr;
 			}
@@ -1789,7 +1748,7 @@ namespace flame
 			{
 				if (pl->ref == 1)
 				{
-					std::erase_if(pl->device->cpls, [&](const auto& i) {
+					std::erase_if(loaded_compute_pipelines, [&](const auto& i) {
 						return i.get() == pl;
 					});
 				}

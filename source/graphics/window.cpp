@@ -12,20 +12,19 @@ namespace flame
 {
 	namespace graphics
 	{
-		WindowPrivate::WindowPrivate(DevicePtr device, NativeWindowPtr _native) :
-			device(device)
+		WindowPrivate::WindowPrivate(NativeWindowPtr _native)
 		{
 			native = _native;
 
-			swapchain.reset(Swapchain::create(device, native));
-			commandbuffer.reset(CommandBuffer::create(CommandPool::get(device)));
+			swapchain.reset(Swapchain::create(native));
+			commandbuffer.reset(CommandBuffer::create(CommandPool::get()));
 			commandbuffer->want_executed_time = true;
 			finished_fence.reset(Fence::create(device));
-			finished_semaphore.reset(Semaphore::create(device));
+			finished_semaphore.reset(Semaphore::create());
 
 			auto fmt_str = "col_fmt=" + TypeInfo::serialize_t(&Swapchain::format);
-			renderpass_clear = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str });
-			renderpass_load = Renderpass::get(device, L"flame\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
+			renderpass_clear = Renderpass::get(L"flame\\shaders\\color.rp", { fmt_str });
+			renderpass_load = Renderpass::get(L"flame\\shaders\\color.rp", { fmt_str, "load_op=Load", "initia_layout=Attachment" });
 
 #if USE_IMGUI
 			mouse_lis = native->mouse_listeners.add([this](MouseButton btn, bool down) {
@@ -55,11 +54,11 @@ namespace flame
 				io.AddInputCharacter(ch);
 			});
 
-			imgui_pl = GraphicsPipeline::get(device, L"flame\\shaders\\imgui.pipeline",
+			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
 				{ "rp=" + str(renderpass_clear) });
 			imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 			imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
-			imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(device), imgui_pl->layout->dsls[0]));
+			imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(), imgui_pl->layout->dsls[0]));
 
 			IMGUI_CHECKVERSION();
 
@@ -112,10 +111,10 @@ namespace flame
 				int img_w, img_h;
 				io.Fonts->GetTexDataAsAlpha8(&img_data, &img_w, &img_h);
 
-				StagingBuffer stag(nullptr, image_pitch(img_w) * img_h, img_data);
-				InstanceCB cb(nullptr);
+				StagingBuffer stag(image_pitch(img_w) * img_h, img_data);
+				InstanceCB cb;
 
-				imgui_img_font.reset(Image::create(nullptr, Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
+				imgui_img_font.reset(Image::create(Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
 				cpy.img_ext = uvec2(img_w, img_h);
@@ -123,7 +122,7 @@ namespace flame
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
 			}
 
-			imgui_ds->set_image(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(nullptr, FilterNearest, FilterNearest, false, AddressClampToEdge));
+			imgui_ds->set_image(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			imgui_ds->update();
 
 #endif
@@ -170,7 +169,7 @@ namespace flame
 				native->destroy_listeners.remove(destroy_lis);
 			}
 
-			Queue::get(nullptr)->wait_idle();
+			Queue::get()->wait_idle();
 		}
 
 		void* WindowPrivate::imgui_context()
@@ -335,7 +334,7 @@ namespace flame
 			commandbuffer->image_barrier(curr_img, {}, ImageLayoutPresent);
 			commandbuffer->end();
 
-			auto queue = graphics::Queue::get(nullptr);
+			auto queue = graphics::Queue::get();
 			queue->submit1(commandbuffer.get(), swapchain->image_avalible.get(), finished_semaphore.get(), finished_fence.get());
 			queue->present(swapchain.get(), finished_semaphore.get());
 
@@ -346,12 +345,9 @@ namespace flame
 
 		struct WindowCreate : Window::Create
 		{
-			WindowPtr operator()(DevicePtr device, NativeWindowPtr native) override
+			WindowPtr operator()(NativeWindowPtr native) override
 			{
-				if (!device)
-					device = current_device;
-
-				auto ret = new WindowPrivate(device, native);
+				auto ret = new WindowPrivate(native);
 				windows.emplace_back(ret);
 				return ret;
 			}

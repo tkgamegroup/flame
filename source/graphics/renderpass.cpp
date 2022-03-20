@@ -9,6 +9,7 @@ namespace flame
 	namespace graphics
 	{
 		std::vector<RenderpassPrivate*> __renderpasses;
+		std::vector<std::unique_ptr<RenderpassT>> loaded_renderpasses;
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
@@ -24,14 +25,10 @@ namespace flame
 
 		struct RenderpassCreate : Renderpass::Create
 		{
-			RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info) override
+			RenderpassPtr operator()(const RenderpassInfo& info) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new RenderpassPrivate;
 				*(RenderpassInfo*)ret = info;
-				ret->device = device;
 
 				std::vector<VkAttachmentDescription> atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)
@@ -132,7 +129,7 @@ namespace flame
 				return ret;
 			}
 
-			RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename) override
+			RenderpassPtr operator()(const std::string& content, const std::vector<std::string>& defines, const std::string& filename) override
 			{
 				return nullptr;
 			}
@@ -141,15 +138,12 @@ namespace flame
 
 		struct RenderpassGet : Renderpass::Get
 		{
-			RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
+			RenderpassPtr operator()(const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 				filename.make_preferred();
 
-				for (auto& rp : device->rps)
+				for (auto& rp : loaded_renderpasses)
 				{
 					if (rp->filename == filename && rp->defines == defines)
 						return rp.get();
@@ -169,10 +163,10 @@ namespace flame
 				unserialize_text(res, &info, {}, defines);
 				file.close();
 
-				auto ret = Renderpass::create(device, info);
+				auto ret = Renderpass::create(info);
 				ret->filename = filename;
 				ret->defines = defines;
-				device->rps.emplace_back(ret);
+				loaded_renderpasses.emplace_back(ret);
 				return ret;
 			}
 		}Renderpass_get;
@@ -188,7 +182,6 @@ namespace flame
 			FramebufferPtr operator()(RenderpassPtr renderpass, std::span<ImageViewPtr> views) override
 			{
 				auto ret = new FramebufferPrivate;
-				ret->device = renderpass->device;
 				ret->renderpass = renderpass;
 
 				std::vector<VkImageView> vk_views(views.size());
@@ -208,7 +201,7 @@ namespace flame
 				create_info.attachmentCount = vk_views.size();
 				create_info.pAttachments = vk_views.data();
 
-				chk_res(vkCreateFramebuffer(ret->device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
+				chk_res(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
 
 				ret->views.assign(views.begin(), views.end());
 				return ret;

@@ -11,12 +11,12 @@ namespace flame
 		std::string function;
 	};
 
-	enum FileChangeType
+	enum FileChangeFlags
 	{
-		FileAdded,
-		FileRemoved,
-		FileModified,
-		FileRenamed
+		FileAdded = 1 << 0,
+		FileRemoved = 1 << 1,
+		FileModified = 1 << 2,
+		FileRenamed = 1 << 3
 	};
 
 	FLAME_FOUNDATION_API void sleep(int time);
@@ -61,7 +61,7 @@ namespace flame
 
 	// set_event to the returned ev to end the file watching
 	// return native event
-	FLAME_FOUNDATION_API void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeType type, const std::filesystem::path& path)>& callback, bool all_changes = true, bool sync = true);
+	FLAME_FOUNDATION_API void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback, bool all_changes = true, bool sync = true);
 }
 
 #define FLAME_EXE_MAIN(entry) void* __crt_ev = nullptr; \

@@ -38,7 +38,7 @@ namespace flame
 
 		void SwapchainPrivate::build()
 		{
-			device->gq.get()->wait_idle();
+			Queue::get()->wait_idle();
 
 			images.clear();
 
@@ -122,7 +122,7 @@ namespace flame
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				InstanceCB cb(device);
+				InstanceCB cb;
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
@@ -134,16 +134,12 @@ namespace flame
 
 		struct SwapchainCreate : Swapchain::Create
 		{
-			SwapchainPtr operator()(DevicePtr device, NativeWindow* window) override
+			SwapchainPtr operator()(NativeWindow* window) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new SwapchainPrivate;
-				ret->device = device;
 				ret->window = window;
 				ret->build();
-				ret->image_avalible.reset(Semaphore::create(device));
+				ret->image_avalible.reset(Semaphore::create());
 
 				ret->resize_lis = window->resize_listeners.add([ret](const uvec2& size) {
 					ret->build();

@@ -9,8 +9,6 @@ namespace flame
 	{
 		struct SwapchainPrivate : Swapchain
 		{
-			DevicePrivate* device;
-
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
 

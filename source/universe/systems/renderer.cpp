@@ -24,24 +24,24 @@ namespace flame
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
-		img_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
-		img_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
-		img_cube_black.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
-		img_cube_white.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 
-		auto sp_bilinear = graphics::Sampler::get(nullptr, graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressRepeat);
-		auto sp_shadow = graphics::Sampler::get(nullptr, graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+		auto sp_bilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressRepeat);
+		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
-		auto dsl_scene = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\scene.dsl");
+		auto dsl_scene = graphics::DescriptorSetLayout::get(L"flame\\shaders\\scene.dsl");
 		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
 		ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
 		ds_scene->update();
-		auto dsl_instance = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\instance.dsl");
+		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"));
 		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"));
 		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"));
@@ -52,7 +52,7 @@ namespace flame
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), sp_bilinear);
 		ds_instance->update();
-		auto dsl_material = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\material.dsl");
+		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
 		mat_reses.resize(buf_material.array_capacity);
 		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
@@ -61,7 +61,7 @@ namespace flame
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
 		ds_material->update();
-		auto dsl_light = graphics::DescriptorSetLayout::get(nullptr, L"flame\\shaders\\light.dsl");
+		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
 		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"));
 		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"));
@@ -71,13 +71,13 @@ namespace flame
 		imgs_dir_shadow.resize(dsl_light->find_binding("dir_shadow_maps")->count);
 		for (auto& i : imgs_dir_shadow)
 		{
-			i.reset(graphics::Image::create(nullptr, dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 4));
+			i.reset(graphics::Image::create(dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 4));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		imgs_pt_shadow.resize(dsl_light->find_binding("pt_shadow_maps")->count);
 		for (auto& i : imgs_pt_shadow)
 		{
-			i.reset(graphics::Image::create(nullptr, dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+			i.reset(graphics::Image::create(dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		ds_light->set_buffer("LightIndexs", 0, buf_light_index.buf.get());
@@ -97,57 +97,57 @@ namespace flame
 
 		mesh_reses.resize(1024);
 
-		rp_col = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
+		rp_col = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt) });
-		rp_col_dep = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color_depth.rp",
+		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		rp_fwd = graphics::Renderpass::get(nullptr, L"flame\\shaders\\forward.rp",
+		rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		rp_gbuf = graphics::Renderpass::get(nullptr, L"flame\\shaders\\gbuffer.rp",
+		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 
-		prm_plain3d.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\plain\\plain3d.pll"));
-		pl_line3d = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\plain\\line3d.pipeline",
+		prm_plain3d.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain3d.pll"));
+		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline",
 			{ "rp=" + str(rp_col) });
 		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
 
-		pll_fwd = graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll");
-		pll_gbuf = graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\gbuffer.pll");
+		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
+		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
 
-		pl_blit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
+		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
 			{ "rp=" + str(rp_col) });
-		pl_add = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\add.pipeline",
+		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline",
 			{ "rp=" + str(rp_col) });
-		pl_blend = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blend.pipeline",
+		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline",
 			{ "rp=" + str(rp_col) });
 
-		prm_fwd.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\forward.pll"));
+		prm_fwd.init(graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll"));
 		prm_fwd.set_ds("scene"_h, ds_scene.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
 
-		prm_gbuf.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\gbuffer.pll"));
+		prm_gbuf.init(graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll"));
 		prm_gbuf.set_ds("scene"_h, ds_scene.get());
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
 
-		pl_mesh_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col) });
-		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col),
 			  "vert:ARMATURE" });
-		pl_terrain_plain = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
 			{ "rp=" + str(rp_col) });
-		pl_mesh_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_fwd),
 			  "frag:CAMERA_LIGHT" });
-		pl_mesh_arm_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_arm_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_fwd),
 			  "vert:ARMATURE",
 			  "frag:CAMERA_LIGHT" });
-		pl_terrain_camlit = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+		pl_terrain_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
 			{ "rp=" + str(rp_fwd),
 			  "frag:CAMERA_LIGHT" });
 
@@ -157,7 +157,7 @@ namespace flame
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
 
-		pl_deferred = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\deferred.pipeline",
+		pl_deferred = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline",
 			{ "rp=" + str(rp_col) });
 		prm_deferred.init(pl_deferred->layout);
 		prm_deferred.set_ds("scene"_h, ds_scene.get());
@@ -166,33 +166,33 @@ namespace flame
 		ds_deferred->update();
 		prm_deferred.set_ds(""_h, ds_deferred.get());
 
-		prm_post.init(graphics::PipelineLayout::get(nullptr, L"flame\\shaders\\post\\post.pll"));
-		pl_blur_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"));
+		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "rp=" + str(rp_col),
 			  "frag:HORIZONTAL" });
-		pl_blur_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "rp=" + str(rp_col),
 			  "frag:VERTICAL" });
-		pl_localmax_h = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+		pl_localmax_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "rp=" + str(rp_col),
 			  "frag:LOCAL_MAX",
 			  "frag:HORIZONTAL" });
-		pl_localmax_v = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\post\\blur.pipeline",
+		pl_localmax_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "rp=" + str(rp_col),
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
 
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col_dep),
 			  "frag:PICKUP" });
-		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline",
+		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col_dep),
 			  "vert:ARMATURE",
 			  "frag:PICKUP" });
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline",
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
 			{ "rp=" + str(rp_col_dep),
 			  "frag:PICKUP" });
-		fence_pickup.reset(graphics::Fence::create(nullptr, false));
+		fence_pickup.reset(graphics::Fence::create(false));
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -204,22 +204,22 @@ namespace flame
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
 		
-		auto rp_tar = graphics::Renderpass::get(nullptr, L"flame\\shaders\\color.rp",
+		auto rp_tar = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format) });
 
 		if (!pl_blit_tar)
 		{
-			pl_blit_tar = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\blit.pipeline",
+			pl_blit_tar = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
 				{ "rp=" + str(rp_tar) });
 		}
 
 		iv_tars.assign(_targets.begin(), _targets.end());
 
-		img_dst.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_dep.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_col_met.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_nor_rou.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_ao.reset(graphics::Image::create(nullptr, graphics::Format_R16_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dst.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dep.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_col_met.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_nor_rou.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
 		ds_deferred->set_image("img_col_met", 0, img_col_met->get_view(), nullptr);
@@ -230,18 +230,18 @@ namespace flame
 
 		final_layout = _final_layout;
 
-		img_back0.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_back1.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back0.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back1.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 
-		img_pickup.reset(graphics::Image::create(nullptr, col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		img_dep_pickup.reset(graphics::Image::create(nullptr, dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		img_pickup.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 	}
 
 	void sRendererPrivate::bind_window_targets()
 	{
 		window->native->resize_listeners.add([this](const uvec2& sz) {
-			graphics::Queue::get(nullptr)->wait_idle();
+			graphics::Queue::get()->wait_idle();
 			std::vector<graphics::ImageViewPtr> views;
 			for (auto& i : window->swapchain->images)
 				views.push_back(i->get_view());
@@ -253,21 +253,56 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	int sRendererPrivate::get_texture_res(const std::filesystem::path& filename, bool srgb, graphics::SamplerPtr sp, const graphics::MipmapOption& mipmap_option)
+	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp)
 	{
-		return -1;
+		auto id = -1;
+		for (auto i = 0; i < tex_reses.size(); i++)
+		{
+			auto& res = tex_reses[i];
+			if (res.iv == iv && res.sp == sp)
+			{
+				res.ref++;
+				id = i;
+				break;
+			}
+		}
+		if (id == -1)
+		{
+			for (auto i = 0; i < tex_reses.size(); i++)
+			{
+				if (!tex_reses[i].iv)
+				{
+					id = i;
+					break;
+				}
+			}
+		}
+		if (id == -1)
+			return -1;
+
+		auto& res = tex_reses[id];
+		res.iv = iv;
+		res.sp = sp;
+		res.ref = 1;
+
+		ds_material->set_image("material_maps", id, iv, nullptr);
+		ds_material->update();
+
+		return id;
 	}
 
 	void sRendererPrivate::release_texture_res(uint id)
 	{
+		graphics::Queue::get()->wait_idle();
+
 		auto& res = tex_reses[id];
 		if (res.ref == 1)
 		{
-			graphics::Queue::get(nullptr)->wait_idle();
+			graphics::Queue::get()->wait_idle();
 			ds_material->set_image("material_maps", id, img_black->get_view(), nullptr);
 			ds_material->update();
-
-			res.img.reset();
+			
+			res.iv = nullptr;
 			res.ref = 0;
 		}
 		else
@@ -411,17 +446,18 @@ namespace flame
 		{
 			auto& src = mat->textures[i];
 			if (src.filename.empty())
-				res.texs[i] = -1;
+				res.texs[i].first = -1;
 			else
 			{
-				res.texs[i] = get_texture_res(src.filename, src.srgb,
-					graphics::Sampler::get(nullptr, src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode),
-					{ src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
+				auto image = graphics::Image::get(src.filename, src.srgb, { src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
+				res.texs[i].second = image;
+				res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
+					graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode));
 			}
 		}
 		auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
 		for (auto i = 0; i < res.texs.size(); i++)
-			ids[i] = res.texs[i];
+			ids[i] = res.texs[i].first;
 
 		buf_material.upload(cb.get());
 
@@ -435,8 +471,12 @@ namespace flame
 		{
 			for (auto& tex : res.texs)
 			{
-				if (tex != -1)
-					release_texture_res(tex);
+				if (tex.first != -1)
+				{
+					release_texture_res(tex.first);
+					graphics::Image::release(tex.second);
+					tex.second = nullptr;
+				}
 			}
 			for (auto& pl : res.pls)
 				graphics::GraphicsPipeline::release(pl.second);
@@ -468,10 +508,10 @@ namespace flame
 		switch (hash)
 		{
 		case "Mesh"_h:
-			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\mesh\\mesh.pipeline", defines);
+			ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", defines);
 			break;
 		case "Terrain"_h:
-			ret = graphics::GraphicsPipeline::get(nullptr, L"flame\\shaders\\terrain\\terrain.pipeline", defines);
+			ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", defines);
 			break;
 		}
 		if (ret)
@@ -1119,7 +1159,7 @@ namespace flame
 			return nullptr;
 
 		{
-			graphics::InstanceCB cb(nullptr, fence_pickup.get());
+			graphics::InstanceCB cb(fence_pickup.get());
 
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(screen_pos), vec2(screen_pos + 1U)));
@@ -1177,7 +1217,7 @@ namespace flame
 
 		{
 			int index; ushort depth;
-			graphics::StagingBuffer sb(nullptr, sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
+			graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
 			{
 				graphics::InstanceCB cb(nullptr);
 				graphics::BufferImageCopy cpy;

@@ -39,14 +39,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual RenderpassPtr operator()(DevicePtr device, const RenderpassInfo& info) = 0;
-				virtual RenderpassPtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
+				virtual RenderpassPtr operator()(const RenderpassInfo& info) = 0;
+				virtual RenderpassPtr operator()(const std::string& content, const std::vector<std::string>& defines, const std::string& filename = "" /* as key */) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual RenderpassPtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+				virtual RenderpassPtr operator()(const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};

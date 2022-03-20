@@ -6,6 +6,7 @@
 namespace flame
 {
 	std::map<std::wstring, std::filesystem::path> Path::roots;
+	std::map<std::filesystem::path, AssetManagemant::Asset> AssetManagemant::assets;
 
 	struct _Initializer
 	{
@@ -20,6 +21,25 @@ namespace flame
 		}
 	};
 	static _Initializer _initializer;
+
+	AssetManagemant::Asset& AssetManagemant::regiser_asset(const std::filesystem::path& path, uint type, void* obj)
+	{
+		auto it = assets.find(path);
+		if (it == assets.end())
+		{
+			it = assets.emplace().first;
+			it->second.type = type;
+			it->second.obj = obj;
+		}
+		return it->second;
+	}
+
+	void AssetManagemant::unregiser_asset(const std::filesystem::path& path)
+	{
+		auto it = assets.find(path);
+		if (it != assets.end())
+			assets.erase(it);
+	}
 
 	uint frames = 0;
 	uint fps = 0;

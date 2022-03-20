@@ -260,6 +260,28 @@ namespace flame
 		}
 	};
 
+	struct AssetManagemant
+	{
+		struct Asset
+		{
+			uint type;
+			void* obj;
+		};
+
+		FLAME_FOUNDATION_API static std::map<std::filesystem::path, Asset> assets;
+
+		inline Asset* find(const std::filesystem::path& path)
+		{
+			auto it = assets.find(path);
+			if (it == assets.end())
+				return nullptr;
+			return &it->second;
+		}
+
+		FLAME_FOUNDATION_API static Asset& regiser_asset(const std::filesystem::path& path, uint type, void* obj);
+		FLAME_FOUNDATION_API static void unregiser_asset(const std::filesystem::path& path);
+	};
+
 	FLAME_FOUNDATION_API extern uint frames;
 	FLAME_FOUNDATION_API extern uint fps;
 	FLAME_FOUNDATION_API extern float delta_time; // second

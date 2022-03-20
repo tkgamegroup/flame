@@ -175,11 +175,17 @@ void View_Project::reset()
 		set_native_event(ev_watcher);
 		ev_watcher = nullptr;
 	}
-	ev_watcher = add_file_watcher(app.project_path, [this](FileChangeType type, const std::filesystem::path& path) {
+	ev_watcher = add_file_watcher(app.project_path, [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
-		auto p = path.parent_path();
-		if (std::find(changed_paths.begin(), changed_paths.end(), p) == changed_paths.end())
-			changed_paths.push_back(p);
+		auto add_path = [&](const std::filesystem::path& path, FileChangeFlags flags) {
+			auto it = changed_paths.find(path);
+			if (it == changed_paths.end())
+				changed_paths[path] = flags;
+			else
+				it->second = (FileChangeFlags)(it->second | flags);
+		};
+		add_path(path.parent_path(), FileModified);
+		add_path(path, flags);
 		mtx_changed_paths.unlock();
 	}, true, false);
 }
@@ -226,16 +232,28 @@ void View_Project::on_draw()
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())
 	{
-		std::sort(changed_paths.begin(), changed_paths.end(), [](const auto& a, const auto& b) {
-			return a.wstring().size() < b.wstring().size();
+		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_directories;
+		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_files;
+		for (auto& p : changed_paths)
+		{
+			if (std::filesystem::is_directory(p.first))
+				changed_directories.emplace_back(p.first, p.second);
+			else
+				changed_files.emplace_back(p.first, p.second);
+		}
+		std::sort(changed_directories.begin(), changed_directories.end(), [](const auto& a, const auto& b) {
+			return a.first.wstring().size() < b.first.wstring().size();
+		});
+		std::sort(changed_files.begin(), changed_files.end(), [](const auto& a, const auto& b) {
+			return a.first.wstring().size() < b.first.wstring().size();
 		});
 
 		auto selected_path = selected_folder ? selected_folder->path : L"";
-		for (auto& p : changed_paths)
+		for (auto& p : changed_directories)
 		{
 			std::function<bool(FolderTreeNode* node)> find_and_mark;
 			find_and_mark = [&](FolderTreeNode* node) {
-				if (node->path == p)
+				if (node->path == p.first)
 				{
 					if (node->read)
 					{
@@ -271,8 +289,29 @@ void View_Project::on_draw()
 		else if (node != selected_folder)
 			select_folder(node);
 
-		if (!selected_path.empty() && std::find(changed_paths.begin(), changed_paths.end(), selected_path) != changed_paths.end())
-			open_folder(selected_path);
+		if (!selected_path.empty())
+		{
+			for (auto& p : changed_directories)
+			{
+				if (p.first == selected_path)
+				{
+					open_folder(selected_path);
+					break;
+				}
+			}
+		}
+
+		for (auto& p : changed_files)
+		{
+			if (p.second & FileModified)
+			{
+				auto asset = AssetManagemant::find(p.first);
+				if (asset)
+				{
+
+				}
+			}
+		}
 
 		changed_paths.clear();
 	}

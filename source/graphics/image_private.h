@@ -9,8 +9,6 @@ namespace flame
 	{
 		struct ImagePrivate : Image
 		{
-			DevicePrivate* device;
-			
 			ImageUsageFlags usage;
 			bool is_cube = false;
 			bool srgb = false;
@@ -21,6 +19,8 @@ namespace flame
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
 			uint data_size;
+
+			uint ref = 0;
 
 			void initialize();
 			~ImagePrivate();
@@ -47,8 +47,6 @@ namespace flame
 
 		struct ImageViewPrivate : ImageView
 		{
-			DevicePtr device;
-
 			VkImageView vk_image_view;
 
 			~ImageViewPrivate();
@@ -70,8 +68,6 @@ namespace flame
 
 		struct SamplerPrivate : Sampler
 		{
-			DevicePrivate* device;
-
 			VkSampler vk_sampler;
 
 			~SamplerPrivate();

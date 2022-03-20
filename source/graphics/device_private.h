@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		extern DevicePtr current_device;
+		extern DevicePtr device;
 
 		struct DevicePrivate : Device
 		{
@@ -17,19 +17,6 @@ namespace flame
 			VkPhysicalDeviceFeatures vk_features; 
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
-
-			std::vector<std::unique_ptr<SamplerPrivate>> sps;
-			std::unique_ptr<DescriptorPoolPrivate> dsp;
-			std::vector<std::unique_ptr<RenderpassPrivate>> rps;
-			std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> dsls;
-			std::vector<std::unique_ptr<PipelineLayoutPrivate>> plls;
-			std::vector<std::unique_ptr<ShaderPrivate>> sds;
-			std::vector<std::unique_ptr<GraphicsPipelinePrivate>> gpls;
-			std::vector<std::unique_ptr<ComputePipelinePrivate>> cpls;
-			std::unique_ptr<CommandPoolPrivate> gcp;
-			std::unique_ptr<CommandPoolPrivate> tcp;
-			std::unique_ptr<QueuePrivate> gq;
-			std::unique_ptr<QueuePrivate> tq;
 
 			~DevicePrivate();
 

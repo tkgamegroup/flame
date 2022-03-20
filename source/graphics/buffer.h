@@ -24,7 +24,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual BufferPtr operator()(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) = 0;
+				virtual BufferPtr operator()(uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

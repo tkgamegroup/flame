@@ -21,8 +21,7 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
-		virtual int get_texture_res(const std::filesystem::path& filename, bool srgb = false, 
-			graphics::SamplerPtr sp = nullptr, const graphics::MipmapOption& mipmap_option = {}) = 0;
+		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr) = 0;
 		virtual void release_texture_res(uint id) = 0;
 
 		virtual int get_mesh_res(graphics::Mesh* mesh) = 0;

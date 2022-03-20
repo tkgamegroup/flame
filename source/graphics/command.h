@@ -12,13 +12,13 @@ namespace flame
 
 			struct Get
 			{
-				virtual CommandPoolPtr operator()(DevicePtr device = nullptr, QueueFamily family = QueueGraphics) = 0;
+				virtual CommandPoolPtr operator()(QueueFamily family = QueueGraphics) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
 			struct Create
 			{
-				virtual CommandPoolPtr operator()(DevicePtr device, int queue_family_idx) = 0;
+				virtual CommandPoolPtr operator()(int queue_family_idx) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};
@@ -152,13 +152,13 @@ namespace flame
 
 			struct Get
 			{
-				virtual QueuePtr operator()(DevicePtr device, QueueFamily family = QueueGraphics) = 0;
+				virtual QueuePtr operator()(QueueFamily family = QueueGraphics) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
 			struct Create
 			{
-				virtual QueuePtr operator()(DevicePtr device, uint queue_family_idx) = 0;
+				virtual QueuePtr operator()(uint queue_family_idx) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};
@@ -169,7 +169,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual SemaphorePtr operator()(DevicePtr device) = 0;
+				virtual SemaphorePtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};
@@ -182,7 +182,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual FencePtr operator()(DevicePtr device, bool signaled = true) = 0;
+				virtual FencePtr operator()(bool signaled = true) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

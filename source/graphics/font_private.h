@@ -53,7 +53,6 @@ namespace flame
 			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
-			DevicePtr device;
 			std::unique_ptr<ImagePrivate> image;
 
 			uint ref = 0;

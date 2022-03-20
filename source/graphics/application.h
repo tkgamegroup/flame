@@ -9,7 +9,6 @@
 
 struct GraphicsApplication : Application
 {
-	graphics::DevicePtr graphics_device = nullptr;
 	graphics::WindowPtr main_window = nullptr;
 	int render_frames = 0;
 	bool always_render = true;
@@ -18,21 +17,21 @@ struct GraphicsApplication : Application
 	{
 		Application::create(title, size, styles);
 
-		graphics_device = graphics::Device::create(graphics_debug);
-		main_window = graphics::Window::create(graphics_device, Application::main_window);
+		graphics::Device::create(graphics_debug);
+		main_window = graphics::Window::create(Application::main_window);
 
 		ImGui::SetCurrentContext((ImGuiContext*)main_window->imgui_context());
 
 #if USE_IM_FILE_DIALOG
 		ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
 		{
-			return graphics::Image::create(nullptr, fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
+			return graphics::Image::create(fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
 		};
 
 		ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
 		{
 			add_event([tex]() {
-				graphics::Queue::get(nullptr)->wait_idle();
+				graphics::Queue::get()->wait_idle();
 				delete ((graphics::Image*)tex);
 				return false;
 			});

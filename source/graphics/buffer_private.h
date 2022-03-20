@@ -7,8 +7,6 @@ namespace flame
 	{
 		struct BufferPrivate : Buffer
 		{
-			DevicePrivate* device;
-
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
 

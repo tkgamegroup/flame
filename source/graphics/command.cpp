@@ -11,6 +11,11 @@ namespace flame
 {
 	namespace graphics
 	{
+		std::unique_ptr<QueueT> graphics_queue;
+		std::unique_ptr<QueueT> transfer_queue;
+		std::unique_ptr<CommandPoolT> graphics_command_pool;
+		std::unique_ptr<CommandPoolT> transfer_command_pool;
+
 		CommandPoolPrivate::~CommandPoolPrivate()
 		{
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
@@ -18,17 +23,14 @@ namespace flame
 
 		struct CommandPoolGet : CommandPool::Get
 		{
-			CommandPoolPtr operator()(DevicePtr device, QueueFamily family) override
+			CommandPoolPtr operator()(QueueFamily family) override
 			{
-				if (!device)
-					device = current_device;
-
 				switch (family)
 				{
 				case QueueGraphics:
-					return device->gcp.get();
+					return graphics_command_pool.get();
 				case QueueTransfer:
-					return device->tcp.get();
+					return transfer_command_pool.get();
 				}
 				return nullptr;
 			}
@@ -37,13 +39,9 @@ namespace flame
 
 		struct CommandPoolCreate : CommandPool::Create
 		{
-			CommandPoolPtr operator()(DevicePtr device, int queue_family_idx) override
+			CommandPoolPtr operator()(int queue_family_idx) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new CommandPoolPrivate;
-				ret->device = device;
 
 				VkCommandPoolCreateInfo info;
 				info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -60,10 +58,9 @@ namespace flame
 
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
-			auto vk_device = pool->device->vk_device;
-			vkFreeCommandBuffers(vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
+			vkFreeCommandBuffers(device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
 			if (vk_query_pool)
-				vkDestroyQueryPool(vk_device, vk_query_pool, nullptr);
+				vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
 		}
 
 		void CommandBufferPrivate::begin(bool once)
@@ -78,8 +75,6 @@ namespace flame
 
 			if (want_executed_time)
 			{
-				auto vk_device = pool->device->vk_device;
-
 				if (!vk_query_pool)
 				{
 					VkQueryPoolCreateInfo info;
@@ -89,7 +84,7 @@ namespace flame
 					info.queryType = VK_QUERY_TYPE_TIMESTAMP;
 					info.queryCount = 2;
 					info.pipelineStatistics = 0;
-					vkCreateQueryPool(vk_device, &info, nullptr, &vk_query_pool);
+					vkCreateQueryPool(device->vk_device, &info, nullptr, &vk_query_pool);
 				}
 
 				vkCmdResetQueryPool(vk_command_buffer, vk_query_pool, 0, 2);
@@ -582,7 +577,7 @@ namespace flame
 			if (vk_query_pool)
 			{
 				uint64 timestamps[2];
-				vkGetQueryPoolResults(pool->device->vk_device, vk_query_pool, 0, 2, sizeof(uint64) * 2, timestamps, sizeof(uint64), VK_QUERY_RESULT_64_BIT);
+				vkGetQueryPoolResults(device->vk_device, vk_query_pool, 0, 2, sizeof(uint64) * 2, timestamps, sizeof(uint64), VK_QUERY_RESULT_64_BIT);
 				last_executed_time = timestamps[1] - timestamps[0];
 			}
 		}
@@ -604,7 +599,7 @@ namespace flame
 				info.commandPool = pool->vk_command_buffer_pool;
 				info.commandBufferCount = 1;
 
-				chk_res(vkAllocateCommandBuffers(pool->device->vk_device, &info, &ret->vk_command_buffer));
+				chk_res(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));
 
 				ret->begin();
 				ret->end();
@@ -658,17 +653,14 @@ namespace flame
 
 		struct QueueGet : Queue::Get
 		{
-			QueuePtr operator()(DevicePtr device, QueueFamily family) override
+			QueuePtr operator()(QueueFamily family) override
 			{
-				if (!device)
-					device = current_device;
-
 				switch (family)
 				{
 				case QueueGraphics:
-					return device->gq.get();
+					return graphics_queue.get();
 				case QueueTransfer:
-					return device->tq.get();
+					return transfer_queue.get();
 				}
 				return nullptr;
 			}
@@ -677,13 +669,9 @@ namespace flame
 
 		struct QueueCreate : Queue::Create
 		{
-			QueuePtr operator()(DevicePtr device, uint queue_family_idx) override
+			QueuePtr operator()(uint queue_family_idx) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new QueuePrivate;
-				ret->device = device;
 
 				vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
 
@@ -699,13 +687,9 @@ namespace flame
 
 		struct SemaphoreCreate : Semaphore::Create
 		{
-			SemaphorePtr operator()(DevicePtr device) override
+			SemaphorePtr operator()() override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new SemaphorePrivate;
-				ret->device = device;
 
 				VkSemaphoreCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -736,13 +720,9 @@ namespace flame
 
 		struct FenceCreate : Fence::Create
 		{
-			FencePtr operator()(DevicePtr device, bool signaled) override
+			FencePtr operator()(bool signaled) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new FencePrivate;
-				ret->device = device;
 
 				VkFenceCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;

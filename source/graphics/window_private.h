@@ -10,8 +10,6 @@ namespace flame
 	{
 		struct WindowPrivate : Window
 		{
-			DevicePrivate* device;
-
 			std::unique_ptr<CommandBufferPrivate> commandbuffer;
 			std::unique_ptr<FencePrivate> finished_fence;
 			std::unique_ptr<SemaphorePrivate> finished_semaphore;
@@ -30,7 +28,7 @@ namespace flame
 			std::unique_ptr<DescriptorSetPrivate> imgui_ds;
 			GraphicsPipelinePtr imgui_pl;
 
-			WindowPrivate(DevicePtr device, NativeWindowPtr native);
+			WindowPrivate(NativeWindowPtr native);
 			~WindowPrivate();
 
 			void* imgui_context() override;

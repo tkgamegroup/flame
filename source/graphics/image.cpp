@@ -13,7 +13,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::vector<ImagePrivate*> __images; // for debug: get image ptr from vulkan handle
+		std::vector<ImagePtr> __images; // for debug: get image ptr from vulkan handle
+		std::vector<std::unique_ptr<ImageT>> loaded_images;
+		std::vector<std::unique_ptr<SamplerT>> samplers;
 
 		void ImagePrivate::initialize()
 		{
@@ -64,9 +66,9 @@ namespace flame
 			auto& ly = lv.layers [layer];
 			if (!ly.data)
 			{
-				StagingBuffer sb(device, lv.data_size);
+				StagingBuffer sb(lv.data_size);
 				{
-					InstanceCB cb(device);
+					InstanceCB cb;
 					BufferImageCopy cpy;
 					cpy.img_ext = lv.size;
 					cpy.img_sub = { level, 1, layer, 1 };
@@ -150,7 +152,6 @@ namespace flame
 
 			auto iv = new ImageViewPrivate;
 			iv->image = this;
-			iv->device = device;
 			iv->sub = sub;
 			iv->swizzle = swizzle;
 
@@ -187,7 +188,7 @@ namespace flame
 		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp)
 		{
 			if (!sp)
-				sp = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
+				sp = SamplerPrivate::get(FilterLinear, FilterLinear, false, AddressClampToEdge);
 
 			auto key = (base_level & 0xff) << 24;
 			key |= (base_layer & 0xff) << 16;
@@ -201,10 +202,10 @@ namespace flame
 			{
 				DescriptorBinding b;
 				b.type = DescriptorSampledImage;
-				simple_dsl = DescriptorSetLayout::create(device, { &b, 1 });
+				simple_dsl = DescriptorSetLayout::create({ &b, 1 });
 			}
 
-			auto ds = DescriptorSet::create(device->dsp.get(), simple_dsl);
+			auto ds = DescriptorSet::create(nullptr, simple_dsl);
 			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }), sp);
 			ds->update();
 			read_dss.emplace(key, ds);
@@ -251,7 +252,7 @@ namespace flame
 					sp.color_attachments.push_back(0);
 				else
 					sp.depth_attachment = 0;
-				rp = Renderpass::create(device, info);
+				rp = Renderpass::create(info);
 				simple_rps.push_back(rp);
 			}
 
@@ -262,14 +263,14 @@ namespace flame
 
 		void ImagePrivate::change_layout(ImageLayout dst_layout)
 		{
-			InstanceCB cb(device);
+			InstanceCB cb;
 
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 		}
 
 		void ImagePrivate::clear(const vec4& color, ImageLayout dst_layout)
 		{
-			InstanceCB cb(device);
+			InstanceCB cb;
 
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferDst);
 			cb->clear_color_image(this, { 0, n_levels, 0, n_layers }, color);
@@ -311,10 +312,10 @@ namespace flame
 
 				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(size, 1), n_layers, 1, n_levels);
 
-				StagingBuffer sb(device, data_size, nullptr);
+				StagingBuffer sb(data_size, nullptr);
 				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
 				{
-					InstanceCB cb(device);
+					InstanceCB cb;
 					std::vector<BufferImageCopy> cpies;
 					auto dst = (char*)sb->mapped;
 					auto offset = 0;
@@ -352,15 +353,90 @@ namespace flame
 			}
 		}
 
+		float get_image_alphatest_coverage(ImagePtr img, uint level, float ref, float scale)
+		{
+			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
+			auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
+
+			img->get_data(level, 0);
+
+			auto coverage = 0.f;
+			auto size = img->levels[level].size;
+			for (auto y = 0; y < size.y; y++)
+			{
+				for (auto x = 0; x < size.x; x++)
+				{
+					if (img->get_pixel(x, y, level, 0)[ch] * scale > ref)
+						coverage += 1.f;
+				}
+			}
+
+			return coverage / float(size.x * size.y);
+		}
+
+		void scale_image_alphatest_coverage(ImagePtr img, uint level, float desired, float ref)
+		{
+			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
+			auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
+
+			auto min_alpha_scale = 0.f;
+			auto max_alpha_scale = 4.f;
+			auto alpha_scale = 1.f;
+			auto best_alpha_scale = 1.f;
+			auto best_error = std::numeric_limits<float>::max();
+
+			for (int i = 0; i < 10; i++)
+			{
+				auto current_coverage = get_image_alphatest_coverage(img, level, ref, alpha_scale);
+
+				auto error = abs(current_coverage - desired);
+				if (error < best_error)
+				{
+					best_error = error;
+					best_alpha_scale = alpha_scale;
+				}
+
+				if (current_coverage < desired)
+					min_alpha_scale = alpha_scale;
+				else if (current_coverage > desired)
+					max_alpha_scale = alpha_scale;
+				else
+					break;
+
+				alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
+			}
+
+			auto& lv = img->levels[level];
+			auto& ly = lv.layers[0];
+			img->get_data(level, 0);
+			for (auto y = 0; y < lv.size.y; y++)
+			{
+				for (auto x = 0; x < lv.size.x; x++)
+				{
+					auto pos = ivec2(x, y);
+					auto v = img->get_pixel(x, y, level, 0);
+					v[ch] *= best_alpha_scale;
+					img->set_pixel(x, y, level, 0, v);
+				}
+			}
+
+			{
+				StagingBuffer sb(lv.data_size, ly.data.get());
+				InstanceCB cb;
+				BufferImageCopy cpy;
+				cpy.img_ext = lv.size;
+				cpy.img_sub.base_level = level;
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
+				cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly);
+			}
+		}
+
 		struct ImageCreate : Image::Create
 		{
-			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
+			ImagePtr operator()(Format format, const uvec2& size, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new ImagePrivate;
-				ret->device = device;
 				ret->format = format;
 				ret->n_levels = levels;
 				ret->n_layers = layers;
@@ -408,90 +484,27 @@ namespace flame
 				return ret;
 			}
 
-			float get_image_alphatest_coverage(ImagePtr img, uint level, float ref, float scale)
+			ImagePtr operator()(Format format, const uvec2& size, void* data) override
 			{
-				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
-				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
+				auto ret = Image::create(format, size, ImageUsageSampled | ImageUsageTransferDst);
 
-				img->get_data(level, 0);
+				StagingBuffer stag(image_pitch(get_pixel_size(format) * size.x) * size.y, data);
+				InstanceCB cb;
+				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
+				BufferImageCopy cpy;
+				cpy.img_ext = size;
+				cb->copy_buffer_to_image(stag.get(), ret, { &cpy, 1 });
+				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 
-				auto coverage = 0.f;
-				auto size = img->levels[level].size;
-				for (auto y = 0; y < size.y; y++)
-				{
-					for (auto x = 0; x < size.x; x++)
-					{
-						if (img->get_pixel(x, y, level, 0)[ch] * scale > ref)
-							coverage += 1.f;
-					}
-				}
-
-				return coverage / float(size.x * size.y);
+				return ret;
 			}
+		}Image_create;
+		Image::Create& Image::create = Image_create;
 
-			void scale_image_alphatest_coverage(ImagePtr img, uint level, float desired, float ref)
+		struct ImageGet : Image::Get
+		{
+			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, const MipmapOption& mipmap_option) override
 			{
-				assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
-				auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
-
-				auto min_alpha_scale = 0.f;
-				auto max_alpha_scale = 4.f;
-				auto alpha_scale = 1.f;
-				auto best_alpha_scale = 1.f;
-				auto best_error = std::numeric_limits<float>::max();
-
-				for (int i = 0; i < 10; i++)
-				{
-					auto current_coverage = get_image_alphatest_coverage(img, level, ref, alpha_scale);
-
-					auto error = abs(current_coverage - desired);
-					if (error < best_error)
-					{
-						best_error = error;
-						best_alpha_scale = alpha_scale;
-					}
-
-					if (current_coverage < desired)
-						min_alpha_scale = alpha_scale;
-					else if (current_coverage > desired)
-						max_alpha_scale = alpha_scale;
-					else
-						break;
-
-					alpha_scale = (min_alpha_scale + max_alpha_scale) * 0.5f;
-				}
-
-				auto& lv = img->levels[level];
-				auto& ly = lv.layers[0];
-				img->get_data(level, 0);
-				for (auto y = 0; y < lv.size.y; y++)
-				{
-					for (auto x = 0; x < lv.size.x; x++)
-					{
-						auto pos = ivec2(x, y);
-						auto v = img->get_pixel(x, y, level, 0);
-						v[ch] *= best_alpha_scale;
-						img->set_pixel(x, y, level, 0, v);
-					}
-				}
-
-				{
-					StagingBuffer sb(img->device, lv.data_size, ly.data.get());
-					InstanceCB cb(img->device);
-					BufferImageCopy cpy;
-					cpy.img_ext = lv.size;
-					cpy.img_sub.base_level = level;
-					cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
-					cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
-					cb->image_barrier(img, cpy.img_sub, ImageLayoutShaderReadOnly);
-				}
-			}
-
-			ImagePtr operator()(DevicePtr device, const std::filesystem::path& _filename, bool srgb, const MipmapOption& mipmap_option) override
-			{
-				if (!device)
-					device = current_device;
-
 				auto filename = Path::get(_filename);
 
 				if (!std::filesystem::exists(filename))
@@ -541,11 +554,11 @@ namespace flame
 					}
 					assert(format != Format_Undefined);
 
-					ret = Image::create(device, format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, 
+					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc,
 						levels, layers, SampleCount_1, is_cube);
 
-					StagingBuffer sb(device, ret->data_size, nullptr);
-					InstanceCB cb(device);
+					StagingBuffer sb(ret->data_size, nullptr);
+					InstanceCB cb;
 					std::vector<BufferImageCopy> cpies;
 					auto dst = (char*)sb->mapped;
 					auto offset = 0;
@@ -588,12 +601,12 @@ namespace flame
 					if (srgb)			bmp->srgb_to_linear();
 					if (bmp->chs == 3)	bmp->change_format(4);
 
-					ret = Image::create(device, get_image_format(bmp->chs, bmp->bpp), bmp->size,
+					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), bmp->size,
 						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, mipmap_option.auto_gen ? 0 : 1);
 
 					{
-						StagingBuffer sb(device, bmp->data_size, bmp->data);
-						InstanceCB cb(device);
+						StagingBuffer sb(bmp->data_size, bmp->data);
+						InstanceCB cb;
 						BufferImageCopy cpy;
 						cpy.img_ext = ret->size;
 						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
@@ -625,31 +638,35 @@ namespace flame
 					ret->srgb = srgb;
 				}
 
+				ret->ref = 1;
+				loaded_images.emplace_back(ret);
+				AssetManagemant::regiser_asset(filename, th<Image>(), ret);
 				return ret;
 			}
+		}Image_get;
+		Image::Get& Image::get = Image_get;
 
-			ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) override
+		struct ImageRelease : Image::Release
+		{
+			void operator()(ImagePtr image) override
 			{
-				auto ret = Image::create(device, format, size, ImageUsageSampled | ImageUsageTransferDst);
-
-				StagingBuffer stag(nullptr, image_pitch(get_pixel_size(format) * size.x) * size.y, data);
-				InstanceCB cb(nullptr);
-				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
-				BufferImageCopy cpy;
-				cpy.img_ext = size;
-				cb->copy_buffer_to_image(stag.get(), ret, { &cpy, 1 });
-				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
-
-				return ret;
+				if (image->ref == 1)
+				{
+					AssetManagemant::unregiser_asset(image->filename);
+					std::erase_if(loaded_images, [&](const auto& i) {
+						return i.get() == image;
+					});
+				}
+				else
+					image->ref--;
 			}
-		}Image_create;
-		Image::Create& Image::create = Image_create;
+		}Image_release;
+		Image::Release& Image::release = Image_release;
 
 		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec2& size, VkImage native)
 		{
 			auto ret = new ImagePrivate;
 
-			ret->device = device;
 			ret->format = format;
 			ret->size = size;
 			ret->initialize();
@@ -671,19 +688,15 @@ namespace flame
 
 		struct SamplerGet : Sampler::Get
 		{
-			SamplerPtr operator()(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) override
+			SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) override
 			{
-				if (!device)
-					device = current_device;
-
-				for (auto& s : device->sps)
+				for (auto& s : samplers)
 				{
 					if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
 						return s.get();
 				}
 
 				auto ret = new SamplerPrivate;
-				ret->device = device;
 				ret->mag_filter = mag_filter;
 				ret->min_filter = min_filter;
 				ret->linear_mipmap = linear_mipmap;
@@ -702,7 +715,7 @@ namespace flame
 
 				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
 
-				device->sps.emplace_back(ret);
+				samplers.emplace_back(ret);
 				return ret;
 			}
 		}Sampler_get;
@@ -710,14 +723,14 @@ namespace flame
 
 		ImageAtlasPrivate::~ImageAtlasPrivate()
 		{
-			delete image;
+			Image::release(image);
 		}
 
 		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ImageAtlasPrivate>>> loaded_atlas;
 
 		struct ImageAtlasGet : ImageAtlas::Get
 		{
-			ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) override
+			ImageAtlasPtr operator()(const std::filesystem::path& filename) override
 			{
 				for (auto& a : loaded_atlas)
 				{
@@ -731,14 +744,11 @@ namespace flame
 					return nullptr;
 				}
 
-				if (!device)
-					device = current_device;
-
 				auto ret = new ImageAtlasPrivate;
 
 				auto png_filename = filename;
 				png_filename.replace_extension(L".png");
-				ret->image = Image::create(device, png_filename, false);
+				ret->image = Image::get(png_filename, false);
 
 				auto size = (vec2)ret->image->size;
 

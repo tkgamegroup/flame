@@ -2,6 +2,8 @@
 
 #include "app.h"
 
+#include <flame/foundation/system.h>
+
 struct View_Project : View
 {
 	struct FolderTreeNode
@@ -49,7 +51,7 @@ struct View_Project : View
 
 	void* ev_watcher = nullptr;
 	std::mutex mtx_changed_paths;
-	std::vector<std::filesystem::path> changed_paths;
+	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 
 	View_Project();
 	void reset();

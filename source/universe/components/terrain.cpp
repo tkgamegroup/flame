@@ -13,7 +13,7 @@ namespace flame
 		node->measurers.remove("terrain"_h);
 
 		if (textures)
-			graphics::Queue::get(nullptr)->wait_idle();
+			graphics::Queue::get()->wait_idle();
 	}
 
 	void cTerrainPrivate::on_init()
@@ -74,7 +74,7 @@ namespace flame
 			return;
 		height_map_name = name;
 
-		height_map.reset(!height_map_name.empty() ? graphics::Image::create(nullptr, height_map_name) : nullptr);
+		height_map.reset(!height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr);
 		build_textures();
 
 		node->mark_transform_dirty();
@@ -106,7 +106,7 @@ namespace flame
 	{
 		if (textures)
 		{
-			graphics::Queue::get(nullptr)->wait_idle();
+			graphics::Queue::get()->wait_idle();
 			textures.reset();
 		}
 
@@ -116,7 +116,7 @@ namespace flame
 		auto sz0 = (ivec2)height_map->size;
 		auto sz1 = sz0 + 1;
 
-		textures.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 3));
+		textures.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 3));
 
 		std::vector<float> heights;
 		heights.resize(sz1.x * sz1.y);
@@ -127,8 +127,8 @@ namespace flame
 		}
 
 		{
-			graphics::StagingBuffer nor_stag(nullptr, sizeof(vec4) * sz0.x * sz0.y);
-			graphics::StagingBuffer tan_stag(nullptr, sizeof(vec4) * sz0.x * sz0.y);
+			graphics::StagingBuffer nor_stag(sizeof(vec4) * sz0.x * sz0.y);
+			graphics::StagingBuffer tan_stag(sizeof(vec4) * sz0.x * sz0.y);
 
 			auto nor_dat = (cvec4*)nor_stag->mapped;
 			auto tan_dat = (cvec4*)tan_stag->mapped;

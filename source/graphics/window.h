@@ -42,7 +42,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual WindowPtr operator()(DevicePtr device, NativeWindowPtr native) = 0;
+				virtual WindowPtr operator()(NativeWindowPtr native) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 

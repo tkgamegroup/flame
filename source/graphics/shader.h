@@ -12,13 +12,13 @@ namespace flame
 
 			struct Current
 			{
-				virtual DescriptorPoolPtr operator()(DevicePtr device = nullptr) = 0;
+				virtual DescriptorPoolPtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Current& current;
 
 			struct Create
 			{
-				virtual DescriptorPoolPtr operator()(DevicePtr device) = 0;
+				virtual DescriptorPoolPtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};
@@ -73,14 +73,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, std::span<DescriptorBinding> bindings) = 0;
-				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
+				virtual DescriptorSetLayoutPtr operator()(std::span<DescriptorBinding> bindings) = 0;
+				virtual DescriptorSetLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual DescriptorSetLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+				virtual DescriptorSetLayoutPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
@@ -152,14 +152,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual PipelineLayoutPtr operator()(DevicePtr device, std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) = 0;
-				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
+				virtual PipelineLayoutPtr operator()(std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) = 0;
+				virtual PipelineLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual PipelineLayoutPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+				virtual PipelineLayoutPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
@@ -183,14 +183,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, 
+				virtual ShaderPtr operator()(ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, 
 					const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual ShaderPtr operator()(DevicePtr device, ShaderStageFlags type, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+				virtual ShaderPtr operator()(ShaderStageFlags type, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
@@ -299,14 +299,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const GraphicsPipelineInfo& info) = 0;
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines) = 0;
+				virtual GraphicsPipelinePtr operator()(const GraphicsPipelineInfo& info) = 0;
+				virtual GraphicsPipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual GraphicsPipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+				virtual GraphicsPipelinePtr operator()(const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
@@ -326,14 +326,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual ComputePipelinePtr operator()(DevicePtr device, const ComputePipelineInfo& info) = 0;
-				virtual ComputePipelinePtr operator()(DevicePtr device, const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
+				virtual ComputePipelinePtr operator()(const ComputePipelineInfo& info) = 0;
+				virtual ComputePipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				virtual ComputePipelinePtr operator()(DevicePtr device, const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
+				virtual ComputePipelinePtr operator()(const std::filesystem::path& filename, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

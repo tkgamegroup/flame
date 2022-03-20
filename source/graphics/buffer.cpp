@@ -91,13 +91,9 @@ namespace flame
 
 		struct BufferCreate : Buffer::Create
 		{
-			BufferPtr operator()(DevicePtr device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) override
+			BufferPtr operator()(uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) override
 			{
-				if (!device)
-					device = current_device;
-
 				auto ret = new BufferPrivate;
-				ret->device = device;
 				ret->size = size;
 				ret->usage = usage;
 				ret->mem_prop = mem_prop;

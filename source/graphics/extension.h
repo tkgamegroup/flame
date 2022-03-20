@@ -10,21 +10,19 @@ namespace flame
 	{
 		struct InstanceCB : std::unique_ptr<CommandBufferT>
 		{
-			DevicePtr device;
 			FencePtr fence;
 
-			InstanceCB(DevicePtr device, FencePtr fence = nullptr) :
-				device(device),
+			InstanceCB(FencePtr fence = nullptr) :
 				fence(fence)
 			{
-				reset(CommandBuffer::create(CommandPool::get(device)));
+				reset(CommandBuffer::create(CommandPool::get()));
 				get()->begin(true);
 			}
 
 			~InstanceCB()
 			{
 				get()->end();
-				auto q = Queue::get(device);
+				auto q = Queue::get();
 				q->submit1(get(), nullptr, nullptr, fence);
 				if (!fence)
 					q->wait_idle();
@@ -35,9 +33,9 @@ namespace flame
 
 		struct StagingBuffer : std::unique_ptr<BufferT>
 		{
-			StagingBuffer(DevicePtr device, uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
+			StagingBuffer(uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
 			{
-				reset(Buffer::create(device, size, BufferUsageTransferSrc | BufferUsageTransferDst | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				reset(Buffer::create(size, BufferUsageTransferSrc | BufferUsageTransferDst | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				get()->map();
 				if (data)
 					memcpy(get()->mapped, data, size);
@@ -92,8 +90,8 @@ namespace flame
 			{
 				size = usage == BufferUsageIndirect ? sizeof(graphics::DrawIndexedIndirectCommand) : _size;
 				array_capacity = _array_capacity;
-				buf.reset(Buffer::create(nullptr, array_capacity * size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-				stagbuf.reset(Buffer::create(nullptr, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				buf.reset(Buffer::create(array_capacity * size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				stagbuf.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stagbuf->map();
 				pbeg = pend = (char*)stagbuf->mapped;
 

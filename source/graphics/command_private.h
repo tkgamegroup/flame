@@ -7,8 +7,6 @@ namespace flame
 	{
 		struct CommandPoolPrivate : CommandPool
 		{
-			DevicePrivate* device;
-
 			VkCommandPool vk_command_buffer_pool;
 
 			~CommandPoolPrivate();
@@ -62,7 +60,6 @@ namespace flame
 
 		struct QueuePrivate : Queue
 		{
-			DevicePrivate* device;
 			VkQueue vk_queue;
 
 			void wait_idle() override;
@@ -72,7 +69,6 @@ namespace flame
 
 		struct SemaphorePrivate : Semaphore
 		{
-			DevicePrivate* device;
 			VkSemaphore vk_semaphore;
 
 			~SemaphorePrivate();
@@ -80,7 +76,6 @@ namespace flame
 
 		struct FencePrivate : Fence
 		{
-			DevicePrivate* device;
 			uint value = 0;
 			VkFence vk_fence;
 
@@ -88,5 +83,10 @@ namespace flame
 
 			void wait(bool auto_reset = true) override;
 		};
+
+		extern std::unique_ptr<CommandPoolT> graphics_command_pool;
+		extern std::unique_ptr<CommandPoolT> transfer_command_pool;
+		extern std::unique_ptr<QueueT> graphics_queue;
+		extern std::unique_ptr<QueueT> transfer_queue;
 	}
 }

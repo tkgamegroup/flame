@@ -100,11 +100,22 @@ namespace flame
 
 			struct Create
 			{
-				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
-				virtual ImagePtr operator()(DevicePtr device, const std::filesystem::path& filename, bool srgb = false, const MipmapOption& mipmap_option = {}) = 0;
-				virtual ImagePtr operator()(DevicePtr device, Format format, const uvec2& size, void* data) = 0;
+				virtual ImagePtr operator()(Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
+				virtual ImagePtr operator()(Format format, const uvec2& size, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
+
+			struct Get
+			{
+				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, const MipmapOption& mipmap_option = {}) = 0;
+			};
+			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(ImagePtr image) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
 		struct ImageView
@@ -125,7 +136,7 @@ namespace flame
 
 			struct Get
 			{
-				virtual SamplerPtr operator()(DevicePtr device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) = 0;
+				virtual SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};
@@ -158,9 +169,15 @@ namespace flame
 
 			struct Get
 			{
-				virtual ImageAtlasPtr operator()(DevicePtr device, const std::filesystem::path& filename) = 0;
+				virtual ImageAtlasPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(ImageAtlasPtr atlas) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 }
