@@ -15,13 +15,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::unique_ptr<DescriptorPoolT> descriptorset_pool;
-
-		std::vector<std::unique_ptr<DescriptorSetLayoutT>> loaded_descriptorsetlayouts;
-		std::vector<std::unique_ptr<PipelineLayoutT>> loaded_pipelinelayouts;
-		std::vector<std::unique_ptr<ShaderT>> loaded_shaders;
-		std::vector<std::unique_ptr<GraphicsPipelineT>> loaded_graphics_pipelines;
-		std::vector<std::unique_ptr<ComputePipelineT>> loaded_compute_pipelines;
+		std::unique_ptr<DescriptorPoolT>					descriptorset_pool;
+		std::vector<std::unique_ptr<DescriptorSetLayoutT>>	loaded_descriptorsetlayouts;
+		std::vector<std::unique_ptr<PipelineLayoutT>>		loaded_pipelinelayouts;
+		std::vector<std::unique_ptr<ShaderT>>				loaded_shaders;
+		std::vector<std::unique_ptr<GraphicsPipelineT>>		loaded_graphics_pipelines;
+		std::vector<std::unique_ptr<ComputePipelineT>>		loaded_compute_pipelines;
 
 		std::wstring get_stage_str(ShaderStageFlags stage)
 		{

@@ -938,10 +938,13 @@ namespace flame
 
 			cb->end_renderpass();
 
+			cb->begin_renderpass(nullptr, img_ao->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f)});
+			cb->end_renderpass();
+
 			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			prm_deferred.bind_dss(cb);
 			cb->bind_pipeline(pl_deferred);

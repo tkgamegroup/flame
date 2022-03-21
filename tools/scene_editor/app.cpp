@@ -606,8 +606,6 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 
 int main(int argc, char** args)
 {
-	auto ap = parse_args(argc, args);
-
 	app.init();
 
 	std::filesystem::path preferences_path = L"preferences.ini";
