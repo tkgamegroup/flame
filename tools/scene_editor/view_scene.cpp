@@ -30,8 +30,8 @@ void View_Scene::on_draw()
 	auto size = vec2(ImGui::GetContentRegionAvail());
 	if (!render_tar || vec2(render_tar->size) != size)
 	{
-		graphics::Queue::get(nullptr)->wait_idle();
-		render_tar.reset(graphics::Image::create(nullptr, graphics::Format_R8G8B8A8_UNORM, uvec2(size), 
+		graphics::Queue::get()->wait_idle();
+		render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(size), 
 			graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
 		auto iv = render_tar->get_view();

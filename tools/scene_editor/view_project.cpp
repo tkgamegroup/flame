@@ -3,6 +3,7 @@
 #include "view_scene.h"
 
 #include <flame/foundation/system.h>
+#include <flame/foundation/typeinfo.h>
 
 View_Project view_project;
 
@@ -64,7 +65,7 @@ void View_Project::Item::set_size()
 	if (is_image_file(path.extension()))
 	{
 		auto d = get_thumbnail(metric.size, path);
-		auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+		auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 		thumbnail = img;
 		view_project.thumbnails.emplace_back(img);
 	}
@@ -80,7 +81,7 @@ void View_Project::Item::set_size()
 			auto d = get_icon(path.c_str(), nullptr);
 			if (d.second)
 			{
-				auto img = graphics::Image::create(nullptr, graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+				auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 				thumbnail = img;
 				view_project.icons.emplace(icon_id, img);
 			}
@@ -214,7 +215,7 @@ void View_Project::open_folder(const std::filesystem::path& path)
 	if (Item::metric.size == 0)
 		set_items_size(64);
 
-	graphics::Queue::get(nullptr)->wait_idle();
+	graphics::Queue::get()->wait_idle();
 
 	items.clear();
 	icons.clear();
@@ -301,15 +302,34 @@ void View_Project::on_draw()
 			}
 		}
 
+		std::vector<std::pair<AssetManagemant::Asset*, FileChangeFlags>> changed_assets;
 		for (auto& p : changed_files)
 		{
-			if (p.second & FileModified)
+			if (p.second & FileModified || p.second & FileRemoved)
 			{
 				auto asset = AssetManagemant::find(p.first);
 				if (asset)
-				{
-
-				}
+					changed_assets.emplace_back(asset, p.second);
+			}
+		}
+		if (!changed_assets.empty())
+		{
+			if (app.e_prefab)
+			{
+				std::vector<std::tuple<void*, Attribute*, std::filesystem::path>>;
+				app.e_prefab->forward_traversal([&](EntityPtr e) {
+					for (auto& c : e->components)
+					{
+						auto& ui = *find_udt(c->type_hash);
+						for (auto& a : ui.attributes)
+						{
+							if (a.type == TypeInfo::get<std::filesystem::path>())
+							{
+								int a = 1;
+							}
+						}
+					}
+				});
 			}
 		}
 

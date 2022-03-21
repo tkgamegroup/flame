@@ -59,8 +59,7 @@ namespace flame
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
 			vkFreeCommandBuffers(device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
-			if (vk_query_pool)
-				vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
+			vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
 		}
 
 		void CommandBufferPrivate::begin(bool once)

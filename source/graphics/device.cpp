@@ -54,11 +54,6 @@ namespace flame
 			return VK_FALSE;
 		}
 
-		DevicePrivate::~DevicePrivate()
-		{
-			device = nullptr;
-		}
-
 		bool DevicePrivate::has_feature(Feature feature) const
 		{
 			switch (feature)
@@ -199,13 +194,13 @@ namespace flame
 				chk_res(vkCreateDevice(ret->vk_physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 
+				device = ret;
+
 				descriptorset_pool.reset(DescriptorPool::create());
 				graphics_command_pool.reset(graphics_queue_index != -1 ? CommandPool::create(graphics_queue_index) : nullptr);
 				transfer_command_pool.reset(transfer_queue_index != -1 ? CommandPool::create(transfer_queue_index) : nullptr);
 				graphics_queue.reset(graphics_queue_index != -1 ? QueuePrivate::create(graphics_queue_index) : nullptr);
 				transfer_queue.reset(transfer_queue_index != -1 ? QueuePrivate::create(transfer_queue_index) : nullptr);
-
-				device = ret;
 				return ret;
 			}
 		}Device_create;

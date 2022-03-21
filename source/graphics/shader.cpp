@@ -1025,8 +1025,7 @@ namespace flame
 
 		ShaderPrivate::~ShaderPrivate()
 		{
-			if (vk_module)
-				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+			vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
 		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)

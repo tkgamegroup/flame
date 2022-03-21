@@ -270,7 +270,7 @@ namespace flame
 
 		FLAME_FOUNDATION_API static std::map<std::filesystem::path, Asset> assets;
 
-		inline Asset* find(const std::filesystem::path& path)
+		inline static Asset* find(const std::filesystem::path& path)
 		{
 			auto it = assets.find(path);
 			if (it == assets.end())

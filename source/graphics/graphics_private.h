@@ -12,7 +12,7 @@ namespace flame
 	{
 		inline void chk_res(VkResult res)
 		{
-			if (res != VK_SUCCESS && res != VK_ERROR_OUT_OF_DATE_KHR)
+			if (res != VK_SUCCESS)
 			{
 				printf("graphics error: %d\n", res);
 				assert(0);

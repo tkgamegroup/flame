@@ -18,8 +18,6 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
-			~DevicePrivate();
-
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 
 			bool has_feature(Feature feature) const override;

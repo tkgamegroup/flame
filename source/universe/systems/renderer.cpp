@@ -201,6 +201,8 @@ namespace flame
 
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
+		graphics::Queue::get()->wait_idle();
+
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
 		
