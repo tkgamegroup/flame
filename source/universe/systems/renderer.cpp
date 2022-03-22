@@ -507,8 +507,21 @@ namespace flame
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
 		if (mr.mat->color_map != -1)
-			defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
+		{
+			auto found = false;
+			for (auto& d : mr.mat->shader_defines)
+			{
+				if (d.find(":COLOR_MAP") != std::string::npos)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
+		}
 		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
+		std::sort(defines.begin(), defines.end());
 
 		graphics::GraphicsPipelinePtr ret = nullptr;
 		switch (hash)

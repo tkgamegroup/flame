@@ -71,3 +71,7 @@ vec3 Yxy2rgb(vec3 _Yxy)
 {
 	return xyz2rgb(Yxy2xyz(_Yxy) );
 }
+
+float transition_interpolate()
+{
+}
