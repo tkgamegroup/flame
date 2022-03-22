@@ -99,6 +99,26 @@ namespace flame
 				}
 			}
 				break;
+			case TagAU:
+			{
+				auto p = (char*)src + offset;
+				auto ati = (TypeInfo_ArrayOfUdt*)type;
+				auto ti = ati->ti;
+				auto ui = ti->ui;
+				if (ui)
+				{
+					if (ati->extent > 0)
+					{
+						auto n = dst.append_child(name.c_str());
+						for (auto i = 0; i < ati->extent; i++)
+						{
+							serialize_xml(*ui, p, n.append_child("item"), spec);
+							p += ti->size;
+						}
+					}
+				}
+			}
+				break;
 			case TagVD:
 			{
 				auto p = (char*)src + offset;
@@ -261,6 +281,43 @@ namespace flame
 					auto ui = vi.type->retrive_ui();
 					if (ui)
 						unserialize_xml(*ui, c, p, spec);
+				}
+					break;
+				case TagAU:
+				{
+					auto& ui = *vi.type->retrive_ui();
+					auto pp = p;
+					for (auto cc : c.children())
+					{
+						unserialize_xml(ui, cc, pp, spec);
+						pp += ui.size;
+					}
+				}
+					break;
+				case TagVE:
+				{
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+					auto& vec = *(std::vector<int>*)p;
+					for (auto cc : c.children())
+					{
+						vec.resize(vec.size() + 1);
+						ti->unserialize(cc.attribute("v").value(), &vec[vec.size() - 1]);
+					}
+				}
+					break;
+				case TagVD:
+				{
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+					auto& vec = *(std::vector<char>*)p;
+					auto len = 0;
+					for (auto cc : c.children())
+					{
+						len++;
+						vec.resize(len * ti->size);
+						auto pd = (char*)vec.data() + (len - 1) * ti->size;
+						ti->create(pd);
+						ti->unserialize(cc.attribute("v").value(), pd);
+					}
 				}
 					break;
 				case TagPU:

@@ -15,7 +15,7 @@ namespace flame
 				Filter mag_filter = FilterLinear;
 				Filter min_filter = FilterLinear;
 				bool linear_mipmap = true;
-				AddressMode address_mode = AddressClampToEdge;
+				AddressMode address_mode = AddressRepeat;
 				bool auto_mipmap = false;
 			};
 
@@ -30,6 +30,9 @@ namespace flame
 			int roughness_map = -1;
 			int alpha_map = -1;
 			float alpha_test = 0.f;
+
+			vec4 float_values = vec4(0.f);
+			ivec4 int_values = ivec4(0);
 
 			std::filesystem::path shader_file = L"flame/shaders/default_mat.glsl";
 			std::vector<std::string> shader_defines;

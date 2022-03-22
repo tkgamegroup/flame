@@ -76,10 +76,22 @@ namespace flame
 	{
 		if (height_map_name == name)
 			return;
+		if (!height_map_name.empty())
+			AssetManagemant::release_asset(Path::get(height_map_name));
 		height_map_name = name;
+		if (!height_map_name.empty())
+			AssetManagemant::get_asset(Path::get(height_map_name));
 
-		height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
-		build_textures();
+		auto _height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
+		if (height_map != _height_map)
+		{
+			if (height_map)
+				graphics::Image::release(height_map);
+			height_map = _height_map;
+			build_textures();
+		}
+		else if (_height_map)
+			graphics::Image::release(_height_map);
 
 		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
@@ -96,6 +108,8 @@ namespace flame
 		{
 			if (material_res_id != -1)
 				sRenderer::instance()->release_material_res(material_res_id);
+			if (material)
+				graphics::Material::release(material);
 			material = _material;
 			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
 		}

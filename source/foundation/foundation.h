@@ -266,6 +266,8 @@ namespace flame
 		{
 			uint type;
 			void* obj;
+
+			uint ref = 0;
 		};
 
 		FLAME_FOUNDATION_API static std::map<std::filesystem::path, Asset> assets;
@@ -278,8 +280,8 @@ namespace flame
 			return &it->second;
 		}
 
-		FLAME_FOUNDATION_API static Asset& regiser_asset(const std::filesystem::path& path, uint type, void* obj);
-		FLAME_FOUNDATION_API static void unregiser_asset(const std::filesystem::path& path);
+		FLAME_FOUNDATION_API static Asset& get_asset(const std::filesystem::path& path);
+		FLAME_FOUNDATION_API static void release_asset(const std::filesystem::path& path);
 	};
 
 	FLAME_FOUNDATION_API extern uint frames;

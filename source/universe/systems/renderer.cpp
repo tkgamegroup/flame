@@ -287,7 +287,7 @@ namespace flame
 		res.sp = sp;
 		res.ref = 1;
 
-		ds_material->set_image("material_maps", id, iv, nullptr);
+		ds_material->set_image("material_maps", id, iv, sp);
 		ds_material->update();
 
 		return id;
@@ -439,22 +439,29 @@ namespace flame
 		graphics::InstanceCB cb(nullptr);
 
 		buf_material.select_item(id);
+		buf_material.set_var<"opaque"_h>((int)mat->opaque);
 		buf_material.set_var<"color"_h>(mat->color);
 		buf_material.set_var<"metallic"_h>(mat->metallic);
 		buf_material.set_var<"roughness"_h>(mat->roughness);
+		buf_material.set_var<"alpha_test"_h>(mat->alpha_test);
+		buf_material.set_var<"f"_h>(mat->float_values);
+		buf_material.set_var<"i"_h>(mat->int_values);
 
 		res.texs.resize(countof(mat->textures));
 		for (auto i = 0; i < res.texs.size(); i++)
 		{
+			res.texs[i].first = -1;
+			res.texs[i].second = nullptr;
 			auto& src = mat->textures[i];
-			if (src.filename.empty())
-				res.texs[i].first = -1;
-			else
+			if (!src.filename.empty())
 			{
 				auto image = graphics::Image::get(src.filename, src.srgb, { src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
-				res.texs[i].second = image;
-				res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
-					graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode));
+				if (image)
+				{
+					res.texs[i].second = image;
+					res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
+						graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode));
+				}
 			}
 		}
 		auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
@@ -498,12 +505,9 @@ namespace flame
 		defines.push_back("pll=" + str(pll_gbuf));
 		defines.push_back("all_shader:DEFERRED");
 		auto mat_file = Path::get(mr.mat->shader_file).string();
-		for (auto& ch : mat_file)
-		{
-			if (ch == '\\')
-				ch = '/';
-		}
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
+		if (mr.mat->color_map != -1)
+			defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
 		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
 
 		graphics::GraphicsPipelinePtr ret = nullptr;

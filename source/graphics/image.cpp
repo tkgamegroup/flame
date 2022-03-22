@@ -638,7 +638,6 @@ namespace flame
 
 				ret->ref = 1;
 				loaded_images.emplace_back(ret);
-				AssetManagemant::regiser_asset(filename, th<Image>(), ret);
 				return ret;
 			}
 		}Image_get;
@@ -650,7 +649,7 @@ namespace flame
 			{
 				if (image->ref == 1)
 				{
-					AssetManagemant::unregiser_asset(image->filename);
+					graphics::Queue::get()->wait_idle();
 					std::erase_if(loaded_images, [&](const auto& i) {
 						return i.get() == image;
 					});

@@ -302,21 +302,21 @@ void View_Project::on_draw()
 			}
 		}
 
-		std::vector<std::pair<AssetManagemant::Asset*, FileChangeFlags>> changed_assets;
+		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
 		for (auto& p : changed_files)
 		{
-			if (p.second & FileModified || p.second & FileRemoved)
+			if (p.second & FileModified || p.second & FileRemoved || p.second & FileRenamed)
 			{
 				auto asset = AssetManagemant::find(p.first);
 				if (asset)
-					changed_assets.emplace_back(asset, p.second);
+					changed_assets.emplace_back(asset, p.first);
 			}
 		}
 		if (!changed_assets.empty())
 		{
 			if (app.e_prefab)
 			{
-				std::vector<std::tuple<void*, Attribute*, std::filesystem::path>>;
+				std::vector<std::tuple<void*, Attribute*, std::filesystem::path>> affected_attributes;
 				app.e_prefab->forward_traversal([&](EntityPtr e) {
 					for (auto& c : e->components)
 					{
@@ -325,11 +325,24 @@ void View_Project::on_draw()
 						{
 							if (a.type == TypeInfo::get<std::filesystem::path>())
 							{
-								int a = 1;
+								auto value = std::filesystem::path(a.serialize(c.get()));
+								auto abs_value = Path::get(value);
+								for (auto& asset : changed_assets)
+								{
+									if (abs_value == asset.second)
+									{
+										std::filesystem::path p;
+										a.set_value(c.get(), &p);
+										affected_attributes.emplace_back(c.get(), &a, value);
+										break;
+									}
+								}
 							}
 						}
 					}
 				});
+				for (auto& a : affected_attributes)
+					std::get<1>(a)->set_value(std::get<0>(a), &std::get<2>(a));
 			}
 		}
 

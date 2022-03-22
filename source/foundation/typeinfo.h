@@ -2253,6 +2253,8 @@ namespace flame
 			return ((TypeInfo_Udt*)this)->ui;
 		case TagPU:
 			return ((TypeInfo_PointerOfUdt*)this)->ti->ui;
+		case TagAU:
+			return ((TypeInfo_ArrayOfUdt*)this)->ti->ui;
 		case TagVU:
 			return ((TypeInfo_VectorOfUdt*)this)->ti->ui;
 		case TagVPU:

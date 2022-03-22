@@ -22,23 +22,25 @@ namespace flame
 	};
 	static _Initializer _initializer;
 
-	AssetManagemant::Asset& AssetManagemant::regiser_asset(const std::filesystem::path& path, uint type, void* obj)
+	AssetManagemant::Asset& AssetManagemant::get_asset(const std::filesystem::path& path)
 	{
 		auto it = assets.find(path);
 		if (it == assets.end())
-		{
-			it = assets.emplace().first;
-			it->second.type = type;
-			it->second.obj = obj;
-		}
+			it = assets.emplace(std::make_pair(path, Asset())).first;
+		it->second.ref++;
 		return it->second;
 	}
 
-	void AssetManagemant::unregiser_asset(const std::filesystem::path& path)
+	void AssetManagemant::release_asset(const std::filesystem::path& path)
 	{
 		auto it = assets.find(path);
 		if (it != assets.end())
-			assets.erase(it);
+		{
+			if (it->second.ref == 1)
+				assets.erase(it);
+			else
+				it->second.ref--;
+		}
 	}
 
 	uint frames = 0;

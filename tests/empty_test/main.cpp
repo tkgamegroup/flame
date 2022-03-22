@@ -1,36 +1,34 @@
-namespace tkTest
+#include <map>
+#include <memory>
+#include <vector>
+
+struct A
 {
-	struct ABC
-	{
-		int a;
-		char c;
-	};
+	int v;
+
+	A(int v);
+	~A();
+};
+
+std::map<int, int> m;
+std::vector<std::unique_ptr<A>> aa;
+
+A::A(int v) :
+	v(v)
+{
+	m[v] = v;
 }
 
-int entry()
+A::~A()
 {
-	return 0;
+	if (auto it = m.find(v); it != m.end())
+		m.erase(it);
 }
-
-#include <Windows.h>
-
-void* __crt_ev = nullptr; 
-extern "C" void mainCRTStartup(); 
-extern "C" __declspec(dllexport) void __stdcall __init_crt(void* ev) 
-{
-	new tkTest::ABC;
-	__crt_ev = ev; 
-	mainCRTStartup(); 
-} 
 
 int main(int argc, char** args) 
 { 
-	if (__crt_ev) 
-	{ 
-		SetEvent(__crt_ev); 
-		while (true) 
-		Sleep(60000); 
-	}
-	return entry(); 
+	for (auto i = 0; i < 100; i++)
+		aa.emplace_back(new A(i));
+	return 0;
 }
 
