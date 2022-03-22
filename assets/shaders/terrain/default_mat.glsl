@@ -9,20 +9,19 @@ vec2 uv = i_uv;
 vec4 color = vec4(0);
 float ndoty = dot(i_normal, vec3(0, 1, 0));
 float transition = material.f[3];
-flaot off = 0;
+float off = 0;
+float value;
 #ifdef COLOR_MAP0
+	value = transition_interpolate(ndoty, off, material.f[0], transition);
+	if (value > 0)
+		color += texture(material_maps[material.map_indices[COLOR_MAP0]], uv) * value;
 	off += material.f[0];
-	if (ndoty <= off - transition * 0.5)
-		color += texture(material_maps[material.map_indices[COLOR_MAP0]], uv);
-	else if (ndoty <= off + transition * 0.5)
-		color += texture(material_maps[material.map_indices[COLOR_MAP0]], uv) * (1.0 - (off + transition * 0.5 - ndoty) / transition);
 #endif
 #ifdef COLOR_MAP1
+	value = transition_interpolate(ndoty, off, material.f[1], transition);
+	if (value > 0)
+		color += texture(material_maps[material.map_indices[COLOR_MAP1]], uv) * value;
 	off += material.f[1];
-	if (ndoty <= off - transition * 0.5)
-		color += texture(material_maps[material.map_indices[COLOR_MAP1]], uv);
-	else if (ndoty <= off + transition * 0.5)
-		color += texture(material_maps[material.map_indices[COLOR_MAP1]], uv) * (1.0 - (off + transition * 0.5 - ndoty) / transition);
 #endif
 #ifdef TINT_COLOR
 	color *= material.color;
