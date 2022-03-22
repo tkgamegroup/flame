@@ -45,6 +45,7 @@ namespace flame
 	uint fps = 0;
 	float delta_time = 0.f;
 	float total_time = 0.f;
+	bool app_exiting = false;
 
 	static uint64 last_time = 0;
 	static float fps_delta = 0.f;
@@ -107,7 +108,10 @@ namespace flame
 			}
 
 			if (windows.empty())
+			{
+				app_exiting = true;
 				return 0;
+			}
 
 			{
 				std::lock_guard<std::recursive_mutex> lock(event_mtx);
@@ -128,7 +132,10 @@ namespace flame
 			}
 
 			if (!callback())
+			{
+				app_exiting = true;
 				return 0;
+			}
 
 			for (auto w : windows)
 				w->has_input = false;

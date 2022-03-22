@@ -43,8 +43,6 @@ namespace flame
 			static ImagePtr create(DevicePtr device, Format format, const uvec2& size, VkImage native);
 		};
 
-		extern std::vector<ImagePrivate*> __images;
-
 		struct ImageViewPrivate : ImageView
 		{
 			VkImageView vk_image_view;
@@ -77,6 +75,9 @@ namespace flame
 		{
 			~ImageAtlasPrivate();
 		};
+
+		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
+		extern std::vector<std::unique_ptr<SamplerT>> samplers;
 	}
 }
 

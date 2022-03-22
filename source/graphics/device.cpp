@@ -14,40 +14,6 @@ namespace flame
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
 			auto message = std::string(pMessage);
-			{
-				auto str = message;
-				static std::regex reg(R"(VkRenderPass 0x([\d\w]+)\[\])");
-				std::smatch res;
-				while (std::regex_search(str, res, reg))
-				{
-					auto ptr = s2u_hex<uint64>(res[1].str());
-					for (auto& rp : __renderpasses)
-					{
-						if (rp->vk_renderpass == (VkRenderPass)ptr)
-						{
-							break;
-						}
-					}
-					str = res.suffix();
-				}
-			}
-			{
-				auto str = message;
-				static std::regex reg(R"(VkImage 0x([\d\w]+)\[\])");
-				std::smatch res;
-				while (std::regex_search(str, res, reg))
-				{
-					auto ptr = s2u_hex<uint64>(res[1].str());
-					for (auto& img : __images)
-					{
-						if (img->vk_image == (VkImage)ptr)
-						{
-							break;
-						}
-					}
-					str = res.suffix();
-				}
-			}
 			printf("\n%s\n\n", pMessage);
 			//assert(0);
 

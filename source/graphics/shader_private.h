@@ -106,6 +106,11 @@ namespace flame
 			~ComputePipelinePrivate();
 		};
 
-		extern std::unique_ptr<DescriptorPoolT> descriptorset_pool;
+		extern std::unique_ptr<DescriptorPoolT>						descriptorset_pool;
+		extern std::vector<std::unique_ptr<DescriptorSetLayoutT>>	loaded_descriptorsetlayouts;
+		extern std::vector<std::unique_ptr<PipelineLayoutT>>		loaded_pipelinelayouts;
+		extern std::vector<std::unique_ptr<ShaderT>>				loaded_shaders;
+		extern std::vector<std::unique_ptr<GraphicsPipelineT>>		loaded_graphics_pipelines;
+		extern std::vector<std::unique_ptr<ComputePipelineT>>		loaded_compute_pipelines;
 	}
 }

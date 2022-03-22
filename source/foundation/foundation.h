@@ -286,6 +286,7 @@ namespace flame
 	FLAME_FOUNDATION_API extern uint fps;
 	FLAME_FOUNDATION_API extern float delta_time; // second
 	FLAME_FOUNDATION_API extern float total_time; // second
+	FLAME_FOUNDATION_API extern bool app_exiting;
 
 	FLAME_FOUNDATION_API int run(const std::function<bool()>& callback);
 

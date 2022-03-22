@@ -35,7 +35,7 @@ namespace flame
 		/// Reflect
 		virtual void set_material_name(const std::filesystem::path& name) = 0;
 
-		std::unique_ptr<graphics::Image> height_map;
+		graphics::ImagePtr height_map = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
 		int instance_id = -1;

@@ -13,7 +13,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::vector<ImagePtr> __images; // for debug: get image ptr from vulkan handle
 		std::vector<std::unique_ptr<ImageT>> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> samplers;
 
@@ -49,14 +48,13 @@ namespace flame
 
 		ImagePrivate::~ImagePrivate()
 		{
-			std::erase_if(__images, [&](const auto& i) {
-				return i == this;
-			});
+			if (app_exiting) return;
 
 			if (vk_memory != 0)
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
+				unregister_backend_object(vk_image);
 			}
 		}
 
@@ -178,6 +176,7 @@ namespace flame
 			info.subresourceRange.layerCount = sub.layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
+			register_backend_object(iv->vk_image_view, th<decltype(*iv)>(), iv);
 
 			views.emplace(key, iv);
 			return iv;
@@ -477,10 +476,9 @@ namespace flame
 				allocInfo.memoryTypeIndex = device->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
 
 				chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
-
 				chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
+				register_backend_object(ret->vk_image, th<decltype(*ret)>(), ret);
 
-				__images.push_back(ret);
 				return ret;
 			}
 
@@ -671,19 +669,25 @@ namespace flame
 			ret->size = size;
 			ret->initialize();
 			ret->vk_image = native;
+			register_backend_object(ret->vk_image, th<decltype(*ret)>(), ret);
 
-			__images.push_back(ret);
 			return ret;
 		}
 
 		ImageViewPrivate::~ImageViewPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
+			unregister_backend_object(vk_image_view);
 		}
 
 		SamplerPrivate::~SamplerPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
+			unregister_backend_object(vk_sampler);
 		}
 
 		struct SamplerGet : Sampler::Get
@@ -714,6 +718,7 @@ namespace flame
 				info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
+				register_backend_object(ret->vk_sampler, th<decltype(*ret)>(), ret);
 
 				samplers.emplace_back(ret);
 				return ret;

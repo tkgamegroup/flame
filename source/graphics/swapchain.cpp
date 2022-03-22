@@ -16,6 +16,8 @@ namespace flame
 
 		SwapchainPrivate::~SwapchainPrivate()
 		{
+			if (app_exiting) return;
+
 			if (window)
 			{
 				window->resize_listeners.remove(resize_lis);
@@ -23,7 +25,10 @@ namespace flame
 			}
 
 			if (vk_swapchain)
+			{
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
+				unregister_backend_object(vk_swapchain);
+			}
 			if (vk_surface)
 				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
 		}
@@ -45,6 +50,7 @@ namespace flame
 			if (vk_swapchain)
 			{
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
+				unregister_backend_object(vk_swapchain);
 				vk_swapchain = nullptr;
 			}
 			if (vk_surface)
@@ -116,6 +122,7 @@ namespace flame
 				swapchain_info.clipped = true;
 				swapchain_info.oldSwapchain = 0;
 				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
+				register_backend_object(vk_swapchain, th<decltype(*this)>(), this);
 
 				std::vector<VkImage> native_images;
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);

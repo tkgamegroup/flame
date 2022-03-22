@@ -15,8 +15,6 @@ namespace flame
 			~RenderpassPrivate();
 		};
 
-		extern std::vector<RenderpassPrivate*> __renderpasses;
-
 		struct FramebufferPrivate : Framebuffer
 		{
 			VkFramebuffer vk_framebuffer;

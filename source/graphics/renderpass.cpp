@@ -8,19 +8,14 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::vector<RenderpassPrivate*> __renderpasses;
 		std::vector<std::unique_ptr<RenderpassT>> loaded_renderpasses;
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
-			if (!__renderpasses.empty())
-			{
-				std::erase_if(__renderpasses, [&](const auto& rp) {
-					return rp == this;
-					});
-			}
+			if (app_exiting) return;
 
 			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
+			unregister_backend_object(vk_renderpass);
 		}
 
 		struct RenderpassCreate : Renderpass::Create
@@ -124,8 +119,8 @@ namespace flame
 				create_info.pDependencies = vk_deps.data();
 
 				chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
+				register_backend_object(ret->vk_renderpass, th<decltype(*ret)>(), ret);
 
-				__renderpasses.push_back(ret);
 				return ret;
 			}
 

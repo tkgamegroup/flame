@@ -12,8 +12,12 @@ namespace flame
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
 
-		if (textures)
+		if (textures || height_map)
+		{
 			graphics::Queue::get()->wait_idle();
+			if (height_map)
+				graphics::Image::release(height_map);
+		}
 	}
 
 	void cTerrainPrivate::on_init()
@@ -74,7 +78,7 @@ namespace flame
 			return;
 		height_map_name = name;
 
-		height_map.reset(!height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr);
+		height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
 		build_textures();
 
 		node->mark_transform_dirty();
@@ -164,12 +168,12 @@ namespace flame
 			graphics::InstanceCB cb(nullptr);
 			graphics::BufferImageCopy cpy;
 			cpy.img_ext = sz0;
-			cb->image_barrier(height_map.get(), {}, graphics::ImageLayoutTransferSrc);
+			cb->image_barrier(height_map, {}, graphics::ImageLayoutTransferSrc);
 			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutTransferDst);
 			{
 				graphics::ImageCopy cpy;
 				cpy.size = sz0;
-				cb->copy_image(height_map.get(), textures.get(), { &cpy, 1 });
+				cb->copy_image(height_map, textures.get(), { &cpy, 1 });
 			}
 			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutShaderReadOnly);
 

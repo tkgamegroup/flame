@@ -153,7 +153,7 @@ int entry(int argc, char** args)
 	projector.set(app.main_window->native->size, 45.f, 1.f, 4.f);
 	drops.resize(3000);
 
-	pl = GraphicsPipeline::create(app.graphics_device, pl_str, { "rp=" + str(app.main_window->renderpass_clear) });
+	pl = GraphicsPipeline::create(pl_str, { "rp=" + str(app.main_window->renderpass_clear) });
 	vtx_buf.create(pl->vi_ui(), drops.size() * 6);
 
 	app.run();

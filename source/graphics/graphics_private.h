@@ -660,5 +660,9 @@ namespace flame
 				return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 			}
 		}
+
+		extern std::map<void*, std::pair<uint, void*>> backend_objects;
+		void register_backend_object(void* backend_obj, uint hash, void* obj);
+		void unregister_backend_object(void* backend_obj);
 	}
 }

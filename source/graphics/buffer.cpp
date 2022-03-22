@@ -9,6 +9,8 @@ namespace flame
 	{
 		BufferPrivate::~BufferPrivate()
 		{
+			if (app_exiting) return;
+
 			destroy();
 		}
 
@@ -24,8 +26,7 @@ namespace flame
 			buffer_info.queueFamilyIndexCount = 0;
 			buffer_info.pQueueFamilyIndices = nullptr;
 
-			auto res = vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer);
-			assert(res == VK_SUCCESS);
+			chk_res(vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer));
 
 			VkMemoryRequirements mem_requirements;
 			vkGetBufferMemoryRequirements(device->vk_device, vk_buffer, &mem_requirements);
@@ -39,8 +40,8 @@ namespace flame
 			alloc_info.memoryTypeIndex = device->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
 			chk_res(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
-
 			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
+			register_backend_object(vk_buffer, th<decltype(*this)>(), this);
 		}
 
 		void BufferPrivate::destroy()
@@ -50,6 +51,7 @@ namespace flame
 
 			vkFreeMemory(device->vk_device, vk_memory, nullptr);
 			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
+			unregister_backend_object(vk_buffer);
 		}
 
 		void BufferPrivate::map(uint offset, uint _size)

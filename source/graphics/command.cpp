@@ -18,7 +18,10 @@ namespace flame
 
 		CommandPoolPrivate::~CommandPoolPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
+			unregister_backend_object(vk_command_buffer_pool);
 		}
 
 		struct CommandPoolGet : CommandPool::Get
@@ -50,6 +53,7 @@ namespace flame
 				info.queueFamilyIndex = queue_family_idx;
 
 				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
+				register_backend_object(ret->vk_command_buffer_pool, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -58,8 +62,11 @@ namespace flame
 
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
+			if (app_exiting) return;
+
 			vkFreeCommandBuffers(device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
 			vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
+			unregister_backend_object(vk_command_buffer);
 		}
 
 		void CommandBufferPrivate::begin(bool once)
@@ -599,6 +606,7 @@ namespace flame
 				info.commandBufferCount = 1;
 
 				chk_res(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));
+				register_backend_object(ret->vk_command_buffer, th<decltype(*ret)>(), ret);
 
 				ret->begin();
 				ret->end();
@@ -681,7 +689,10 @@ namespace flame
 
 		SemaphorePrivate::~SemaphorePrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroySemaphore(device->vk_device, vk_semaphore, nullptr);
+			unregister_backend_object(vk_semaphore);
 		}
 
 		struct SemaphoreCreate : Semaphore::Create
@@ -693,6 +704,7 @@ namespace flame
 				VkSemaphoreCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 				chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
+				register_backend_object(ret->vk_semaphore, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -701,7 +713,10 @@ namespace flame
 
 		FencePrivate::~FencePrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyFence(device->vk_device, vk_fence, nullptr);
+			unregister_backend_object(vk_fence);
 		}
 
 		void FencePrivate::wait(bool auto_reset)
@@ -731,6 +746,7 @@ namespace flame
 					ret->value = 1;
 				}
 				chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
+				register_backend_object(ret->vk_fence, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}

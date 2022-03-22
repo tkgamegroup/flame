@@ -516,7 +516,10 @@ namespace flame
 
 		DescriptorPoolPrivate::~DescriptorPoolPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
+			unregister_backend_object(vk_descriptor_pool);
 		}
 
 		struct DescriptorPoolCurrent : DescriptorPool::Current
@@ -550,6 +553,7 @@ namespace flame
 				descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 				descriptorPoolInfo.maxSets = 128;
 				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
+				register_backend_object(ret->vk_descriptor_pool, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -558,7 +562,10 @@ namespace flame
 
 		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
+			unregister_backend_object(vk_descriptor_set_layout);
 		}
 
 		DescriptorSetLayoutPtr DescriptorSetLayoutPrivate::load_from_res(const std::filesystem::path& filename)
@@ -615,6 +622,7 @@ namespace flame
 				info.pBindings = vk_bindings.data();
 
 				chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
+				register_backend_object(ret->vk_descriptor_set_layout, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -716,7 +724,10 @@ namespace flame
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
+			if (app_exiting) return;
+
 			chk_res(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
+			unregister_backend_object(vk_descriptor_set);
 		}
 
 		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr buf, uint offset, uint range)
@@ -845,6 +856,7 @@ namespace flame
 				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
 				chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
+				register_backend_object(ret->vk_descriptor_set, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -853,9 +865,13 @@ namespace flame
 
 		PipelineLayoutPrivate::~PipelineLayoutPrivate()
 		{
+			if (app_exiting) return;
+
 			if (!dsls.empty() && dsls.back()->filename == filename)
 				delete dsls.back();
+
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
+			unregister_backend_object(vk_pipeline_layout);
 		}
 
 		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(const std::filesystem::path& filename)
@@ -930,6 +946,7 @@ namespace flame
 				info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
 				chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
+				register_backend_object(ret->vk_pipeline_layout, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -1024,7 +1041,10 @@ namespace flame
 
 		ShaderPrivate::~ShaderPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+			unregister_backend_object(vk_module);
 		}
 
 		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)
@@ -1059,6 +1079,7 @@ namespace flame
 			shader_info.codeSize = spv.size() * sizeof(uint);
 			shader_info.pCode = spv.data();
 			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
+			register_backend_object(ret->vk_module, th<decltype(*ret)>(), ret);
 
 			return ret;
 		}
@@ -1153,7 +1174,7 @@ namespace flame
 				{
 					std::erase_if(loaded_shaders, [&](const auto& i) {
 						return i.get() == sd;
-						});
+					});
 				}
 				else
 					sd->ref--;
@@ -1163,6 +1184,8 @@ namespace flame
 
 		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
 		{
+			if (app_exiting) return;
+
 			if (!filename.empty())
 			{
 				for (auto s : shaders)
@@ -1175,7 +1198,9 @@ namespace flame
 				if (renderpass->filename == filename)
 					delete renderpass;
 			}
+
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+			unregister_backend_object(vk_pipeline);
 		}
 
 		GraphicsPipelinePtr GraphicsPipelinePrivate::load(const std::filesystem::path& filename, const std::vector<std::string>& _defines)
@@ -1620,6 +1645,7 @@ namespace flame
 				pipeline_info.basePipelineIndex = 0;
 
 				chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+				register_backend_object(ret->vk_pipeline, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -1692,7 +1718,10 @@ namespace flame
 
 		ComputePipelinePrivate::~ComputePipelinePrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+			unregister_backend_object(vk_pipeline);
 		}
 
 		struct ComputePipelineCreate : ComputePipeline::Create
@@ -1720,6 +1749,7 @@ namespace flame
 				pipeline_info.layout = info.layout->vk_pipeline_layout;
 
 				chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+				register_backend_object(ret->vk_pipeline, th<decltype(*ret)>(), ret);
 
 				return ret;
 			}
