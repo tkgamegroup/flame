@@ -8,18 +8,26 @@ namespace flame
 	{
 		struct Channel
 		{
-			struct Key
+			struct PositionKey
 			{
+				float t;
 				vec3 p;
+			};
+
+			struct RotationKey
+			{
+				float t;
 				quat q;
 			};
 
 			std::string node_name;
-			std::vector<Key> keys;
+			std::vector<PositionKey> position_keys;
+			std::vector<RotationKey> rotation_keys;
 		};
 
 		struct Animation
 		{
+			float duration;
 			std::vector<Channel> channels;
 
 			std::filesystem::path filename;

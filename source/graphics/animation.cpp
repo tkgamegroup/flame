@@ -37,6 +37,7 @@ namespace flame
 				}
 
 				auto ret = new AnimationPrivate;
+				ret->duration = doc_root.attribute("duration").as_float();
 				ret->filename = filename;
 
 				for (auto n_channel : doc_root.child("channels"))
@@ -44,11 +45,18 @@ namespace flame
 					auto& c = ret->channels.emplace_back();
 					c.node_name = n_channel.attribute("node_name").value();
 					{
-						auto n_keys = n_channel.child("keys");
+						auto n_keys = n_channel.child("position_keys");
 						auto offset = n_keys.attribute("offset").as_uint();
 						auto size = n_keys.attribute("size").as_uint();
-						c.keys.resize(size / sizeof(Channel::Key));
-						data_file.read((char*)c.keys.data(), size);
+						c.position_keys.resize(size / sizeof(Channel::PositionKey));
+						data_file.read((char*)c.position_keys.data(), size);
+					}
+					{
+						auto n_keys = n_channel.child("rotation_keys");
+						auto offset = n_keys.attribute("offset").as_uint();
+						auto size = n_keys.attribute("size").as_uint();
+						c.rotation_keys.resize(size / sizeof(Channel::RotationKey));
+						data_file.read((char*)c.rotation_keys.data(), size);
 					}
 					ret->channels.emplace_back(c);
 				}

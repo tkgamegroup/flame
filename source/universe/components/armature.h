@@ -21,7 +21,7 @@ namespace flame
 		virtual void set_animation_names(const std::wstring& paths) = 0;
 
 		int playing_id = -1;
-		int playing_frame = -1;
+		float playing_time = 0;
 		float playing_speed = 1.f;
 		bool loop = true;
 

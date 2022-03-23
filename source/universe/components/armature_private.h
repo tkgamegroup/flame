@@ -9,28 +9,40 @@ namespace flame
 {
 	struct cArmaturePrivate : cArmature
 	{
+		struct Pose
+		{
+			vec3 p = vec3(0);
+			quat q = quat(1, 0, 0, 0);
+		};
+
 		struct Bone
 		{
 			std::string name;
 			cNodePtr node = nullptr;
 			mat4 offmat;
+			Pose pose;
 
 			inline mat4 calc_mat();
 		};
 
+		struct Track
+		{
+			uint bone_idx;
+			std::vector<std::pair<float, vec3>> positions;
+			std::vector<std::pair<float, quat>> rotations;
+		};
+
 		struct Animation
 		{
-			uint total_frame;
-			std::vector<std::pair<uint, std::vector<graphics::Channel::Key>>> tracks;
-
-			void apply(Bone* bones, uint frame);
+			float duration;
+			std::vector<Track> tracks;
 		};
 
 		graphics::ModelPtr model = nullptr;
 
 		std::vector<Bone> bones;
 		std::vector<Animation> animations;
-		float time = 0.f;
+		float transition_time = -1.f;
 
 		int frame = -1;
 
@@ -39,7 +51,7 @@ namespace flame
 
 		void set_model_name(const std::filesystem::path& src) override;
 		void set_animation_names(const std::wstring& paths) override;
-		void apply_animations();
+		void setup_animations();
 
 		void play(uint id) override;
 		void stop() override;

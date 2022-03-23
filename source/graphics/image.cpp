@@ -36,7 +36,7 @@ namespace flame
 
 				s.x /= 2;
 				s.y /= 2;
-				if (n_levels == 0 && s.x == 0 && s.y == 0)
+				if (s.x == 0 && s.y == 0)
 				{
 					n_levels = i + 1;
 					break;
@@ -454,8 +454,8 @@ namespace flame
 				imageInfo.extent.width = size.x;
 				imageInfo.extent.height = size.y;
 				imageInfo.extent.depth = 1;
-				imageInfo.mipLevels = levels;
-				imageInfo.arrayLayers = layers;
+				imageInfo.mipLevels = ret->n_levels;
+				imageInfo.arrayLayers = ret->n_layers;
 				imageInfo.samples = to_backend(sample_count);
 				imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 				imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
@@ -609,20 +609,22 @@ namespace flame
 						cpy.img_ext = ret->size;
 						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
-						if (mipmap_option.auto_gen)
+						for (auto i = 1U; i < ret->n_levels; i++)
 						{
-							for (auto i = 1U; i < ret->n_levels; i++)
+							if (mipmap_option.auto_gen)
 							{
 								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
+								cb->image_barrier(ret, { i, 1, 0, 1 }, ImageLayoutTransferDst);
 								ImageBlit blit;
 								blit.src_sub.base_level = i - 1;
 								blit.src_range = ivec4(0, 0, ret->levels[i - 1].size);
 								blit.dst_sub.base_level = i;
 								blit.dst_range = ivec4(0, 0, ret->levels[i].size);
 								cb->blit_image(ret, ret, { &blit, 1 }, FilterLinear);
+								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 							}
 						}
-						cb->image_barrier(ret, { 0, ret->n_levels, 0, 1 }, ImageLayoutShaderReadOnly);
+						cb->image_barrier(ret, { ret->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 					}
 
 					if (mipmap_option.auto_gen && mipmap_option.alpha_test > 0.f)

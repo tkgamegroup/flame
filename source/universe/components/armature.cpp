@@ -7,20 +7,11 @@
 
 namespace flame
 {
+	const auto TransitionDuration = 0.3f;
+
 	mat4 cArmaturePrivate::Bone::calc_mat()
 	{
 		return node->transform * offmat;
-	}
-
-	void cArmaturePrivate::Animation::apply(Bone* bones, uint playing_frame)
-	{
-		for (auto& t : tracks)
-		{
-			auto& b = bones[t.first];
-			auto& k = t.second[playing_frame];
-			b.node->set_pos(k.p);
-			b.node->set_qut(k.q);
-		}
 	}
 
 	cArmaturePrivate::~cArmaturePrivate()
@@ -45,12 +36,16 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
-	void cArmaturePrivate::set_model_name(const std::filesystem::path& path)
+	void cArmaturePrivate::set_model_name(const std::filesystem::path& _model_name)
 	{
-		if (model_name == path)
+		if (model_name == _model_name)
 			return;
+		if (!model_name.empty())
+			AssetManagemant::release_asset(Path::get(model_name));
+		model_name = _model_name;
+		if (!model_name.empty())
+			AssetManagemant::get_asset(Path::get(model_name));
 		bones.clear();
-		model_name = path;
 
 		graphics::ModelPtr _model = nullptr;
 		_model = graphics::Model::get(model_name);
@@ -78,7 +73,7 @@ namespace flame
 				}
 			}
 		}
-		apply_animations();
+		setup_animations();
 
 		if (node)
 			node->mark_transform_dirty();
@@ -91,7 +86,7 @@ namespace flame
 			return;
 		animation_names = paths;
 
-		apply_animations();
+		setup_animations();
 
 		if (node)
 			node->mark_transform_dirty();
@@ -109,12 +104,11 @@ namespace flame
 	void cArmaturePrivate::stop()
 	{
 		playing_id = -1;
-		playing_frame = 0;
-		time = 0.f;
-		playing_id = -1;
+		playing_time = 0;
+		transition_time = -1.f;
 	}
 
-	void cArmaturePrivate::apply_animations()
+	void cArmaturePrivate::setup_animations()
 	{
 		animations.clear();
 
@@ -128,7 +122,7 @@ namespace flame
 			if (animation)
 			{
 				auto& a = animations.emplace_back();
-				a.total_frame = 0;
+				a.duration = animation->duration;
 
 				for (auto& ch : animation->channels)
 				{
@@ -143,19 +137,28 @@ namespace flame
 					auto id = find_bone(ch.node_name);
 					if (id != -1)
 					{
-						uint count = ch.keys.size();
-						if (a.total_frame == 0)
-							a.total_frame = max(a.total_frame, count);
-
 						auto& t = a.tracks.emplace_back();
-						t.first = id;
-						t.second.resize(count);
-						memcpy(t.second.data(), ch.keys.data(), sizeof(graphics::Channel::Key) * count);
+						t.bone_idx = id;
+						t.positions.resize(ch.position_keys.size());
+						for (auto i = 0; i < t.positions.size(); i++)
+						{
+							t.positions[i].first = ch.position_keys[i].t;
+							t.positions[i].second = ch.position_keys[i].p;
+						}
+						std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
+							return a.first < b.first;
+						});
+						t.rotations.resize(ch.rotation_keys.size());
+						for (auto i = 0; i < t.rotations.size(); i++)
+						{
+							t.rotations[i].first = ch.rotation_keys[i].t;
+							t.rotations[i].second = ch.rotation_keys[i].q;
+						}
+						std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
+							return a.first < b.first;
+						});
 					}
 				}
-
-				for (auto& t : a.tracks)
-					t.second.resize(a.total_frame);
 			}
 		}
 	}
@@ -170,21 +173,71 @@ namespace flame
 			if (playing_id != -1)
 			{
 				auto& a = animations[playing_id];
-				a.apply(bones.data(), playing_frame);
-
-				time += playing_speed;
-				while (time > 1.f)
+				if (transition_time > 0.f)
 				{
-					time -= 1.f;
-
-					playing_frame++;
-					if (playing_frame == a.total_frame)
-						playing_frame = loop ? 0 : -1;
-
-					if (playing_frame == -1)
+					for (auto& t : a.tracks)
 					{
-						stop();
-						break;
+						auto& b = bones[t.bone_idx];
+						if (!t.positions.empty())
+						{
+							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / (t.positions.front().first + TransitionDuration));
+							b.node->set_pos(b.pose.p);
+						}
+						if (!t.rotations.empty())
+						{
+							b.pose.q = mix(b.pose.q, t.rotations.front().second, transition_time / (t.rotations.front().first + TransitionDuration));
+							b.node->set_qut(b.pose.q);
+						}
+					}
+
+					transition_time += delta_time * playing_speed;
+					if (transition_time >= TransitionDuration)
+						transition_time = -1.f;
+				}
+				else
+				{
+					for (auto& t : a.tracks)
+					{
+						auto& b = bones[t.bone_idx];
+						if (!t.positions.empty())
+						{
+							auto lit = std::upper_bound(t.positions.begin(), t.positions.end(), playing_time, [](auto v, const auto& e) {
+								return v < e.first;
+							});
+							if (lit == t.positions.end())
+								lit--;
+							auto rit = lit + 1;
+							if (rit == t.positions.end())
+								rit--;
+							if (lit == rit)
+								b.pose.p = lit->second;
+							b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.node->set_pos(b.pose.p);
+						}
+						if (!t.rotations.empty())
+						{
+							auto lit = std::upper_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](auto v, const auto& e) {
+								return v < e.first;
+							});
+							if (lit == t.rotations.end())
+								lit--;
+							auto rit = lit + 1;
+							if (rit == t.rotations.end())
+								rit--;
+							if (lit == rit)
+								b.pose.q = lit->second;
+							b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.node->set_qut(b.pose.q);
+						}
+					}
+
+					playing_time += delta_time * playing_speed;
+					if (playing_time >= a.duration)
+					{
+						if (!loop)
+							stop();
+						else
+							playing_time = fmod(playing_time, a.duration);
 					}
 				}
 			}

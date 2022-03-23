@@ -46,7 +46,11 @@ namespace flame
 	{
 		if (model_name == _model_name)
 			return;
+		if (!model_name.empty())
+			AssetManagemant::release_asset(Path::get(model_name));
 		model_name = _model_name;
+		if (!model_name.empty())
+			AssetManagemant::get_asset(Path::get(model_name));
 
 		graphics::ModelPtr _model = nullptr;
 		graphics::MeshPtr _mesh = nullptr;

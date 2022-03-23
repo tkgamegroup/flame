@@ -360,6 +360,7 @@ namespace flame
 
 				pugi::xml_document doc_animation;
 				auto n_animation = doc_animation.append_child("animation");
+				n_animation.append_attribute("duration").set_value((float)ai_ani->mDuration);
 				auto n_channels = n_animation.append_child("channels");
 
 				auto data_filename = animation_filename;
@@ -374,20 +375,35 @@ namespace flame
 					assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
 						ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
 
-					std::vector<Channel::Key> keys;
-					keys.resize(ai_ch->mNumPositionKeys);
-					for (auto k = 0; k < keys.size(); k++)
 					{
-						auto& p = ai_ch->mPositionKeys[k].mValue;
-						auto& q = ai_ch->mRotationKeys[k].mValue;
-						keys[k].p = vec3(p.x, p.y, p.z);
-						keys[k].q = quat(q.w, q.x, q.y, q.z);
+						std::vector<Channel::PositionKey> keys;
+						keys.resize(ai_ch->mNumPositionKeys);
+						for (auto k = 0; k < keys.size(); k++)
+						{
+							auto& p = ai_ch->mPositionKeys[k].mValue;
+							keys[k].p = vec3(p.x, p.y, p.z);
+						}
+						auto n_keys = n_channel.append_child("position_keys");
+						n_keys.append_attribute("offset").set_value(data_file.tellp());
+						auto size = sizeof(Channel::PositionKey) * keys.size();
+						n_keys.append_attribute("size").set_value(size);
+						data_file.write((char*)keys.data(), size);
 					}
-					auto n_keys = n_channel.append_child("keys");
-					n_keys.append_attribute("offset").set_value(data_file.tellp());
-					auto size = sizeof(Channel::Key) * keys.size();
-					n_keys.append_attribute("size").set_value(size);
-					data_file.write((char*)keys.data(), size);
+
+					{
+						std::vector<Channel::RotationKey> keys;
+						keys.resize(ai_ch->mNumRotationKeys);
+						for (auto k = 0; k < keys.size(); k++)
+						{
+							auto& q = ai_ch->mRotationKeys[k].mValue;
+							keys[k].q = quat(q.w, q.x, q.y, q.z);
+						}
+						auto n_keys = n_channel.append_child("rotation_keys");
+						n_keys.append_attribute("offset").set_value(data_file.tellp());
+						auto size = sizeof(Channel::RotationKey) * keys.size();
+						n_keys.append_attribute("size").set_value(size);
+						data_file.write((char*)keys.data(), size);
+					}
 				}
 
 				data_file.close();
