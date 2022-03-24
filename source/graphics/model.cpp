@@ -12,6 +12,10 @@
 #include <assimp/postprocess.h>
 #endif
 
+#ifdef USE_FBXSDK
+#include <fbxsdk.h>
+#endif
+
 namespace flame
 {
 	namespace graphics
@@ -83,334 +87,500 @@ namespace flame
 
 		void Model::convert(const std::filesystem::path& _filename)
 		{
-#ifdef USE_ASSIMP
-			auto filename = _filename;
-
-			Assimp::Importer importer;
-			importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger");
-			auto load_flags =
-				aiProcess_RemoveRedundantMaterials |
-				aiProcess_Triangulate |
-				aiProcess_JoinIdenticalVertices |
-				aiProcess_SortByPType |
-				aiProcess_FlipUVs |
-				aiProcess_LimitBoneWeights |
-				aiProcess_OptimizeMeshes |
-				aiProcess_OptimizeGraph;
-			auto scene = importer.ReadFile(filename.string(), load_flags);
-			if (!scene)
-			{
-				printf("cannot import model %s: %s\n", filename.string().c_str(), importer.GetErrorString());
-				return;
-			}
-
-			filename = Path::reverse(filename);
+			auto filename = Path::reverse(_filename);
 			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
-			filename.replace_extension(L".fmod");
+			auto ext = filename.extension();
 
-			std::vector<std::unique_ptr<MaterialT>> materials;
-
-			for (auto i = 0; i < scene->mNumMaterials; i++)
-			{
-				aiString ai_name;
-				auto ai_mat = scene->mMaterials[i];
-				auto material = Material::create();
-				auto map_id = 0;
-
-				{
-					ai_name.Clear();
-					ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
-					auto name = std::string(ai_name.C_Str());
-					if (!name.empty())
-					{
-						material->textures[map_id].filename = Path::get(ppath / name);
-						material->color_map = map_id++;
-					}
-				}
-
-				{
-					ai_name.Clear();
-					ai_mat->GetTexture(aiTextureType_OPACITY, 0, &ai_name);
-					auto name = std::string(ai_name.C_Str());
-					if (!name.empty())
-					{
-						material->textures[map_id].filename = Path::get(ppath / name);
-						material->alpha_map = map_id++;
-					}
-				}
-
-				auto material_name = std::string(ai_mat->GetName().C_Str());
-				if (material_name.empty())
-					material_name = str(i);
+			auto format_mat_name = [](const std::string& name, int i) {
+				auto ret = name;
+				if (ret.empty())
+					ret = str(i);
 				else
 				{
-					for (auto& ch : material_name)
+					for (auto& ch : ret)
 						if (ch == ' ' || ch == ':') ch = '_';
 				}
-				material_name = std::format("{}_{}.fmat", model_name, material_name);
-				material->save(Path::get(ppath / material_name));
+				return ret;
+			};
 
-				materials.emplace_back(material);
-			}
-
-			auto model = Model::create();
-
-			for (auto i = 0; i < scene->mNumMeshes; i++)
+			if (ext == L".fbx")
 			{
-				auto ai_mesh = scene->mMeshes[i];
-				auto& mesh = model->meshes.emplace_back();
-				mesh.model = model;
+#ifdef USE_FBXSDK
+				using namespace fbxsdk;
 
-				mesh.materials.push_back(materials[ai_mesh->mMaterialIndex].get());
-
-				auto vertex_count = ai_mesh->mNumVertices;
-
-				if (ai_mesh->mVertices)
+				static FbxManager* sdk_manager = nullptr;
+				if (!sdk_manager)
 				{
-					mesh.positions.resize(vertex_count);
-					memcpy(mesh.positions.data(), ai_mesh->mVertices, sizeof(vec3) * vertex_count);
-				}
-
-				if (auto puv = ai_mesh->mTextureCoords[0]; puv)
-				{
-					mesh.uvs.resize(vertex_count);
-					for (auto j = 0; j < vertex_count; j++)
+					sdk_manager = FbxManager::Create();
+					if (!sdk_manager)
 					{
-						auto& uv = puv[j];
-						mesh.uvs[j] = vec2(uv.x, uv.y);
-					}
-				}
-
-				if (ai_mesh->mNormals)
-				{
-					mesh.normals.resize(vertex_count);
-					memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
-				}
-
-				if (ai_mesh->mNumBones > 0)
-				{
-					mesh.bone_ids.resize(vertex_count);
-					mesh.bone_weights.resize(vertex_count);
-					for (auto j = 0; j < vertex_count; j++)
-					{
-						mesh.bone_ids[j] = ivec4(-1);
-						mesh.bone_weights[j] = vec4(0.f);
+						printf("FBX SDK: Unable to create FBX Manager!\n");
+						return;
 					}
 
-					for (auto j = 0; j < ai_mesh->mNumBones; j++)
-					{
-						auto ai_bone = ai_mesh->mBones[j];
+					auto ios = FbxIOSettings::Create(sdk_manager, IOSROOT);
+					sdk_manager->SetIOSettings(ios);
+				}
 
-						std::string name = ai_bone->mName.C_Str();
-						auto find_bone = [&](std::string_view name) {
-							for (auto i = 0; i < model->bones.size(); i++)
-							{
-								if (model->bones[i].name == name)
-									return i;
-							}
-							return -1;
-						};
-						auto bid = find_bone(name);
-						if (bid == -1)
+				auto scene = FbxScene::Create(sdk_manager, "Scene");
+				if (!scene)
+				{
+					printf("FBX SDK: Unable to create FBX scene!\n");
+					return;
+				}
+
+				auto importer = FbxImporter::Create(sdk_manager, "");
+				if (!importer->Initialize(_filename.string().c_str(), -1, sdk_manager->GetIOSettings()))
+				{
+					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer->GetStatus().GetErrorString());
+					return;
+				}
+
+				if (!importer->Import(scene))
+				{
+					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer->GetStatus().GetErrorString());
+					return;
+				}
+
+				importer->Destroy();
+
+				FbxAxisSystem our_axis_system(FbxAxisSystem::eYAxis, FbxAxisSystem::eParityOdd, FbxAxisSystem::eRightHanded);
+				if (scene->GetGlobalSettings().GetAxisSystem() != our_axis_system)
+					our_axis_system.ConvertScene(scene);
+
+				FbxGeometryConverter geom_converter(sdk_manager);
+				try 
+				{
+					geom_converter.Triangulate(scene, /*replace*/true);
+				}
+				catch (std::runtime_error) 
+				{
+					printf("FBX SDK: cannot triangulate %s\n", _filename.string().c_str());
+					return;
+				}
+
+				std::vector<std::unique_ptr<MaterialT>> materials;
+				std::vector<Mesh> meshes;
+				pugi::xml_document doc_prefab;
+
+				std::function<void(pugi::xml_node, FbxNode*)> process_node;
+				process_node = [&](pugi::xml_node dst, FbxNode* src) {
+					dst.append_attribute("name").set_value(src->GetName());
+
+					auto n_components = dst.append_child("components");
+
+					{
+						auto n_node = n_components.append_child("item");
+						n_node.append_attribute("type_name").set_value("flame::cNode"_h);
+
+						auto p = src->LclTranslation.Get();
+						auto r = src->LclRotation.Get();
+						auto ro = src->RotationOrder.Get();
+						auto s = src->LclScaling.Get();
+
+						auto pos = vec3(p[0], p[1], p[2]);
+						if (pos != vec3(0.f))
+							n_node.append_attribute("pos").set_value(str(pos).c_str());
+						auto eul = vec3(r[0], r[1], r[2]);
+						switch (ro)
 						{
-							bid = model->bones.size();
-							auto& m = ai_bone->mOffsetMatrix;
-							auto& b = model->bones.emplace_back();
-							b.name = name;
-							b.offset_matrix = mat4(
-								vec4(m.a1, m.b1, m.c1, m.d1),
-								vec4(m.a2, m.b2, m.c2, m.d2),
-								vec4(m.a3, m.b3, m.c3, m.d3),
-								vec4(m.a4, m.b4, m.c4, m.d4)
-							);
+						case FbxEuler::eOrderXYZ: eul = vec3(eul.y, eul.x, eul.z);	break;
+						case FbxEuler::eOrderXZY: eul = vec3(eul.y, eul.z, eul.x);	break;
+						case FbxEuler::eOrderYZX: eul = vec3(eul.x, eul.z, eul.y);	break;
+						case FbxEuler::eOrderYXZ:									break;
+						case FbxEuler::eOrderZXY: eul = vec3(eul.z, eul.y, eul.x);	break;
+						case FbxEuler::eOrderZYX: eul = vec3(eul.z, eul.x, eul.y);	break;
+						}
+						if (eul != vec3(0.f))
+							n_node.append_attribute("eul").set_value(str(eul).c_str());
+						auto scl = vec3(s[0], s[1], s[2]);
+						if (scl != vec3(1.f))
+							n_node.append_attribute("scl").set_value(str(scl).c_str());
+					}
+
+					auto material_count = src->GetMaterialCount();
+					for (auto i = 0; i < material_count; i++)
+					{
+						auto fbx_mat = src->GetMaterial(i);
+						if (!fbx_mat->GetUserDataPtr())
+						{
+							auto material = Material::create();
+							auto map_id = 0;
+							{
+								auto prop = fbx_mat->FindProperty(FbxSurfaceMaterial::sDiffuse);
+								if (prop.IsValid())
+								{
+									auto res = prop.Get<FbxDouble3>();
+									material->color[0] = res[0];
+									material->color[1] = res[1];
+									material->color[2] = res[2];
+									if (prop.GetSrcObjectCount<FbxFileTexture>()) 
+									{
+										if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
+										{
+											 material->textures[map_id].filename = Path::get(ppath / tex->GetFileName());
+											 material->color_map = map_id++;
+										}
+									}
+								}
+							}
+							fbx_mat->SetUserDataPtr(material);
+						}
+					}
+
+					if (auto node_attr = src->GetNodeAttribute(); node_attr)
+					{
+						if (node_attr->GetAttributeType() == FbxNodeAttribute::eMesh)
+						{
+							auto fbx_mesh = src->GetMesh();
+							if (!fbx_mesh->GetUserDataPtr())
+							{
+								auto polygon_count = fbx_mesh->GetPolygonCount();
+								if (auto element_mat = fbx_mesh->GetElementMaterial(); element_mat)
+								{
+									if (element_mat->GetMappingMode() == FbxGeometryElement::eByPolygon)
+									{
+										auto& mat_indices = element_mat->GetIndexArray();
+										for (auto i = 0; i < polygon_count; i++)
+										{
+											auto mat_idx = mat_indices.GetAt(i);
+										}
+									}
+								}
+
+								fbx_mesh->SetUserDataPtr((void*)meshes.size());
+							}
+						}
+					}
+
+					auto child_count = src->GetChildCount();
+					if (child_count > 0)
+					{
+						auto n_children = dst.append_child("children");
+						for (auto i = 0; i < child_count; i++)
+							process_node(n_children.append_child("item"), src->GetChild(i));
+					}
+				};
+				process_node(doc_prefab.append_child("prefab"), scene->GetRootNode());
+#endif
+			}
+			else
+			{
+#ifdef USE_ASSIMP
+				Assimp::Importer importer;
+				importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger");
+				auto load_flags =
+					aiProcess_RemoveRedundantMaterials |
+					aiProcess_Triangulate |
+					aiProcess_JoinIdenticalVertices |
+					aiProcess_SortByPType |
+					aiProcess_FlipUVs |
+					aiProcess_LimitBoneWeights |
+					aiProcess_OptimizeMeshes |
+					aiProcess_OptimizeGraph;
+				auto scene = importer.ReadFile(_filename.string(), load_flags);
+				if (!scene)
+				{
+					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer.GetErrorString());
+					return;
+				}
+
+				std::vector<std::unique_ptr<MaterialT>> materials;
+
+				for (auto i = 0; i < scene->mNumMaterials; i++)
+				{
+					aiString ai_name;
+					auto ai_mat = scene->mMaterials[i];
+					auto material = Material::create();
+					auto map_id = 0;
+
+					{
+						ai_name.Clear();
+						ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
+						auto name = std::string(ai_name.C_Str());
+						if (!name.empty())
+						{
+							material->textures[map_id].filename = Path::get(ppath / name);
+							material->color_map = map_id++;
+						}
+					}
+
+					{
+						ai_name.Clear();
+						ai_mat->GetTexture(aiTextureType_OPACITY, 0, &ai_name);
+						auto name = std::string(ai_name.C_Str());
+						if (!name.empty())
+						{
+							material->textures[map_id].filename = Path::get(ppath / name);
+							material->alpha_map = map_id++;
+						}
+					}
+
+					auto material_name = format_mat_name(ai_mat->GetName().C_Str(), i);
+					material_name = std::format("{}_{}.fmat", model_name, material_name);
+					material->save(Path::get(ppath / material_name));
+
+					materials.emplace_back(material);
+				}
+
+				auto model = Model::create();
+
+				for (auto i = 0; i < scene->mNumMeshes; i++)
+				{
+					auto ai_mesh = scene->mMeshes[i];
+					auto& mesh = model->meshes.emplace_back();
+					mesh.model = model;
+
+					mesh.materials.push_back(materials[ai_mesh->mMaterialIndex].get());
+
+					auto vertex_count = ai_mesh->mNumVertices;
+
+					if (ai_mesh->mVertices)
+					{
+						mesh.positions.resize(vertex_count);
+						memcpy(mesh.positions.data(), ai_mesh->mVertices, sizeof(vec3) * vertex_count);
+					}
+
+					if (auto puv = ai_mesh->mTextureCoords[0]; puv)
+					{
+						mesh.uvs.resize(vertex_count);
+						for (auto j = 0; j < vertex_count; j++)
+						{
+							auto& uv = puv[j];
+							mesh.uvs[j] = vec2(uv.x, uv.y);
+						}
+					}
+
+					if (ai_mesh->mNormals)
+					{
+						mesh.normals.resize(vertex_count);
+						memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
+					}
+
+					if (ai_mesh->mNumBones > 0)
+					{
+						mesh.bone_ids.resize(vertex_count);
+						mesh.bone_weights.resize(vertex_count);
+						for (auto j = 0; j < vertex_count; j++)
+						{
+							mesh.bone_ids[j] = ivec4(-1);
+							mesh.bone_weights[j] = vec4(0.f);
 						}
 
-						auto weights_count = ai_bone->mNumWeights;
-						if (weights_count > 0)
+						for (auto j = 0; j < ai_mesh->mNumBones; j++)
 						{
-							auto get_idx = [&](uint vi) {
-								auto& ids = mesh.bone_ids[vi];
-								for (auto i = 0; i < 4; i++)
+							auto ai_bone = ai_mesh->mBones[j];
+
+							std::string name = ai_bone->mName.C_Str();
+							auto find_bone = [&](std::string_view name) {
+								for (auto i = 0; i < model->bones.size(); i++)
 								{
-									if (ids[i] == -1)
+									if (model->bones[i].name == name)
 										return i;
 								}
 								return -1;
 							};
-							for (auto j = 0; j < weights_count; j++)
+							auto bid = find_bone(name);
+							if (bid == -1)
 							{
-								auto w = ai_bone->mWeights[j];
-								auto idx = get_idx(w.mVertexId);
-								if (idx == -1)
-									continue;
-								mesh.bone_ids[w.mVertexId][idx] = bid;
-								mesh.bone_weights[w.mVertexId][idx] = w.mWeight;
+								bid = model->bones.size();
+								auto& m = ai_bone->mOffsetMatrix;
+								auto& b = model->bones.emplace_back();
+								b.name = name;
+								b.offset_matrix = mat4(
+									vec4(m.a1, m.b1, m.c1, m.d1),
+									vec4(m.a2, m.b2, m.c2, m.d2),
+									vec4(m.a3, m.b3, m.c3, m.d3),
+									vec4(m.a4, m.b4, m.c4, m.d4)
+								);
+							}
+
+							auto weights_count = ai_bone->mNumWeights;
+							if (weights_count > 0)
+							{
+								auto get_idx = [&](uint vi) {
+									auto& ids = mesh.bone_ids[vi];
+									for (auto i = 0; i < 4; i++)
+									{
+										if (ids[i] == -1)
+											return i;
+									}
+									return -1;
+								};
+								for (auto j = 0; j < weights_count; j++)
+								{
+									auto w = ai_bone->mWeights[j];
+									auto idx = get_idx(w.mVertexId);
+									if (idx == -1)
+										continue;
+									mesh.bone_ids[w.mVertexId][idx] = bid;
+									mesh.bone_weights[w.mVertexId][idx] = w.mWeight;
+								}
 							}
 						}
 					}
-				}
 
-				mesh.indices.resize(ai_mesh->mNumFaces * 3);
-				for (auto j = 0; j < ai_mesh->mNumFaces; j++)
-				{
-					mesh.indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
-					mesh.indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
-					mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
-				}
-
-				mesh.calc_bounds();
-			}
-
-			model->save(Path::get(filename));
-
-			pugi::xml_document doc_prefab;
-
-			std::function<void(pugi::xml_node, aiNode*)> print_node;
-			print_node = [&](pugi::xml_node dst, aiNode* src) {
-				auto name = std::string(src->mName.C_Str());
-				dst.append_attribute("name").set_value(name.c_str());
-
-				auto n_components = dst.append_child("components");
-
-				{
-					auto n_node = n_components.append_child("item");
-					n_node.append_attribute("type_name").set_value("flame::cNode"_h);
-
-					aiVector3D s;
-					aiVector3D r;
-					ai_real a;
-					aiVector3D p;
-					src->mTransformation.Decompose(s, r, a, p);
-					a *= 0.5f;
-					auto q = normalize(vec4(sin(a) * vec3(r.x, r.y, r.z), cos(a)));
-
-					auto pos = vec3(p.x, p.y, p.z);
-					if (pos != vec3(0.f))
-						n_node.append_attribute("pos").set_value(str(pos).c_str());
-					auto qut = vec4(q.w, q.x, q.y, q.z);
-					if (qut != vec4(1.f, 0.f, 0.f, 0.f))
-						n_node.append_attribute("quat").set_value(str(qut).c_str());
-					auto scl = vec3(s.x, s.y, s.z);
-					if (scl != vec3(1.f))
-						n_node.append_attribute("scale").set_value(str(scl).c_str());
-				}
-
-				if (src == scene->mRootNode)
-				{
-					if (!model->bones.empty())
+					mesh.indices.resize(ai_mesh->mNumFaces * 3);
+					for (auto j = 0; j < ai_mesh->mNumFaces; j++)
 					{
-						auto n_armature = n_components.append_child("item");
-						n_armature.append_attribute("type_name").set_value("flame::cArmature");
-						n_armature.append_attribute("model_name").set_value(filename.string().c_str());
+						mesh.indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
+						mesh.indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
+						mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
 					}
+
+					mesh.calc_bounds();
 				}
 
-				if (src->mNumMeshes > 0)
-				{
-					if (name == "trigger")
+				model->save(replace_ext(_filename, L".fmod"));
+
+				pugi::xml_document doc_prefab;
+
+				std::function<void(pugi::xml_node, aiNode*)> print_node;
+				print_node = [&](pugi::xml_node dst, aiNode* src) {
+					auto name = std::string(src->mName.C_Str());
+					dst.append_attribute("name").set_value(name.c_str());
+
+					auto n_components = dst.append_child("components");
+
 					{
-						auto n_rigid = n_components.append_child("item");
-						n_rigid.append_attribute("type_name").set_value("flame::cRigid");
-						n_rigid.append_attribute("dynamic").set_value(false);
-						auto n_shape = n_components.append_child("item");
-						n_shape.append_attribute("type_name").set_value("flame::cShape");
-						n_shape.append_attribute("type").set_value("Cube");
-						n_shape.append_attribute("size").set_value("2,2,0.01");
-						n_shape.append_attribute("trigger").set_value(true);
+						auto n_node = n_components.append_child("item");
+						n_node.append_attribute("type_name").set_value("flame::cNode"_h);
+
+						aiVector3D s;
+						aiVector3D r;
+						ai_real a;
+						aiVector3D p;
+						src->mTransformation.Decompose(s, r, a, p);
+						a *= 0.5f;
+						auto q = normalize(vec4(sin(a) * vec3(r.x, r.y, r.z), cos(a)));
+
+						auto pos = vec3(p.x, p.y, p.z);
+						if (pos != vec3(0.f))
+							n_node.append_attribute("pos").set_value(str(pos).c_str());
+						auto qut = vec4(q.w, q.x, q.y, q.z);
+						if (qut != vec4(1.f, 0.f, 0.f, 0.f))
+							n_node.append_attribute("qut").set_value(str(qut).c_str());
+						auto scl = vec3(s.x, s.y, s.z);
+						if (scl != vec3(1.f))
+							n_node.append_attribute("scl").set_value(str(scl).c_str());
 					}
-					else
+
+					if (src->mNumMeshes > 0)
 					{
-						auto n_mesh = n_components.append_child("item");
-						n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-						n_mesh.append_attribute("model_name").set_value(filename.string().c_str());
-						n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
-						if (name == "mesh_collider")
+						if (name == "trigger")
 						{
 							auto n_rigid = n_components.append_child("item");
 							n_rigid.append_attribute("type_name").set_value("flame::cRigid");
 							n_rigid.append_attribute("dynamic").set_value(false);
 							auto n_shape = n_components.append_child("item");
 							n_shape.append_attribute("type_name").set_value("flame::cShape");
-							n_shape.append_attribute("type").set_value("Mesh");
+							n_shape.append_attribute("type").set_value("Cube");
+							n_shape.append_attribute("size").set_value("2,2,0.01");
+							n_shape.append_attribute("trigger").set_value(true);
+						}
+						else
+						{
+							auto n_mesh = n_components.append_child("item");
+							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
+							n_mesh.append_attribute("model_name").set_value(filename.string().c_str());
+							n_mesh.append_attribute("mesh_index").set_value(src->mMeshes[0]);
+							if (name == "mesh_collider")
+							{
+								auto n_rigid = n_components.append_child("item");
+								n_rigid.append_attribute("type_name").set_value("flame::cRigid");
+								n_rigid.append_attribute("dynamic").set_value(false);
+								auto n_shape = n_components.append_child("item");
+								n_shape.append_attribute("type_name").set_value("flame::cShape");
+								n_shape.append_attribute("type").set_value("Mesh");
+							}
 						}
 					}
-				}
 
-				auto n_children = dst.append_child("children");
-				for (auto i = 0; i < src->mNumChildren; i++)
-					print_node(n_children.append_child("item"), src->mChildren[i]);
-			};
-			print_node(doc_prefab.append_child("prefab"), scene->mRootNode);
-
-			auto prefab_path = filename;
-			prefab_path.replace_extension(L".prefab");
-			doc_prefab.save_file(Path::get(prefab_path).c_str());
-
-			delete model;
-
-			for (auto i = 0; i < scene->mNumAnimations; i++)
-			{
-				auto ai_ani = scene->mAnimations[i];
-
-				auto animation_name = std::format("{}_{}.fani", model_name, ai_ani->mName.C_Str());
-				for (auto& ch : animation_name)
-					if (ch == '|') ch = '_';
-				auto animation_filename = Path::get(ppath / animation_name);
-
-				pugi::xml_document doc_animation;
-				auto n_animation = doc_animation.append_child("animation");
-				n_animation.append_attribute("duration").set_value((float)ai_ani->mDuration);
-				auto n_channels = n_animation.append_child("channels");
-
-				auto data_filename = animation_filename;
-				data_filename += L".dat";
-				std::ofstream data_file(data_filename, std::ios::binary);
-
-				for (auto j = 0; j < ai_ani->mNumChannels; j++)
+					if (src->mNumChildren > 0)
+					{
+						auto n_children = dst.append_child("children");
+						for (auto i = 0; i < src->mNumChildren; i++)
+							print_node(n_children.append_child("item"), src->mChildren[i]);
+					}
+				};
+				print_node(doc_prefab.append_child("prefab"), scene->mRootNode);
+				if (!model->bones.empty())
 				{
-					auto ai_ch = ai_ani->mChannels[j];
-					auto n_channel = n_channels.append_child("channel");
-					n_channel.append_attribute("node_name").set_value(ai_ch->mNodeName.C_Str());
-					assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
-						ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
-
-					{
-						std::vector<Channel::PositionKey> keys;
-						keys.resize(ai_ch->mNumPositionKeys);
-						for (auto k = 0; k < keys.size(); k++)
-						{
-							auto& p = ai_ch->mPositionKeys[k].mValue;
-							keys[k].p = vec3(p.x, p.y, p.z);
-						}
-						auto n_keys = n_channel.append_child("position_keys");
-						n_keys.append_attribute("offset").set_value(data_file.tellp());
-						auto size = sizeof(Channel::PositionKey) * keys.size();
-						n_keys.append_attribute("size").set_value(size);
-						data_file.write((char*)keys.data(), size);
-					}
-
-					{
-						std::vector<Channel::RotationKey> keys;
-						keys.resize(ai_ch->mNumRotationKeys);
-						for (auto k = 0; k < keys.size(); k++)
-						{
-							auto& q = ai_ch->mRotationKeys[k].mValue;
-							keys[k].q = quat(q.w, q.x, q.y, q.z);
-						}
-						auto n_keys = n_channel.append_child("rotation_keys");
-						n_keys.append_attribute("offset").set_value(data_file.tellp());
-						auto size = sizeof(Channel::RotationKey) * keys.size();
-						n_keys.append_attribute("size").set_value(size);
-						data_file.write((char*)keys.data(), size);
-					}
+					auto n_armature = doc_prefab.first_child().child("components").append_child("item");
+					n_armature.append_attribute("type_name").set_value("flame::cArmature");
+					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
 				}
 
-				data_file.close();
+				auto prefab_path = filename;
+				prefab_path.replace_extension(L".prefab");
+				doc_prefab.save_file(Path::get(prefab_path).c_str());
 
-				doc_animation.save_file(animation_filename.c_str());
-			}
+				delete model;
+
+				for (auto i = 0; i < scene->mNumAnimations; i++)
+				{
+					auto ai_ani = scene->mAnimations[i];
+
+					auto animation_name = std::format("{}_{}.fani", model_name, ai_ani->mName.C_Str());
+					for (auto& ch : animation_name)
+						if (ch == '|') ch = '_';
+					auto animation_filename = Path::get(ppath / animation_name);
+
+					pugi::xml_document doc_animation;
+					auto n_animation = doc_animation.append_child("animation");
+					n_animation.append_attribute("duration").set_value((float)ai_ani->mDuration);
+					auto n_channels = n_animation.append_child("channels");
+
+					auto data_filename = animation_filename;
+					data_filename += L".dat";
+					std::ofstream data_file(data_filename, std::ios::binary);
+
+					for (auto j = 0; j < ai_ani->mNumChannels; j++)
+					{
+						auto ai_ch = ai_ani->mChannels[j];
+						auto n_channel = n_channels.append_child("channel");
+						n_channel.append_attribute("node_name").set_value(ai_ch->mNodeName.C_Str());
+						assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
+							ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
+
+						{
+							std::vector<Channel::PositionKey> keys;
+							keys.resize(ai_ch->mNumPositionKeys);
+							for (auto k = 0; k < keys.size(); k++)
+							{
+								auto& p = ai_ch->mPositionKeys[k].mValue;
+								keys[k].p = vec3(p.x, p.y, p.z);
+							}
+							auto n_keys = n_channel.append_child("position_keys");
+							n_keys.append_attribute("offset").set_value(data_file.tellp());
+							auto size = sizeof(Channel::PositionKey) * keys.size();
+							n_keys.append_attribute("size").set_value(size);
+							data_file.write((char*)keys.data(), size);
+						}
+
+						{
+							std::vector<Channel::RotationKey> keys;
+							keys.resize(ai_ch->mNumRotationKeys);
+							for (auto k = 0; k < keys.size(); k++)
+							{
+								auto& q = ai_ch->mRotationKeys[k].mValue;
+								keys[k].q = quat(q.w, q.x, q.y, q.z);
+							}
+							auto n_keys = n_channel.append_child("rotation_keys");
+							n_keys.append_attribute("offset").set_value(data_file.tellp());
+							auto size = sizeof(Channel::RotationKey) * keys.size();
+							n_keys.append_attribute("size").set_value(size);
+							data_file.write((char*)keys.data(), size);
+						}
+					}
+
+					data_file.close();
+
+					doc_animation.save_file(animation_filename.c_str());
+				}
 #endif
+			}
 		}
 
 		struct ModelCreate : Model::Create

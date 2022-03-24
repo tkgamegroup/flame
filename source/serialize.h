@@ -426,6 +426,13 @@ namespace flame
 		return converter.to_bytes(wstr);
 	}
 
+	inline std::filesystem::path replace_ext(const std::filesystem::path& path, const std::filesystem::path& ext)
+	{
+		auto ret = path;
+		ret.replace_extension(ext);
+		return ret;
+	}
+
 	enum FileType
 	{
 		FileTypeUnknown,

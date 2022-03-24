@@ -25,6 +25,8 @@ An ECS 3D-Game-Engine.
 
 - Assimp https://github.com/assimp/assimp
 
+- FBX SDK https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-2-1
+
 - PhysX https://github.com/NVIDIAGameWorks/PhysX
 
 - recastnavigation https://github.com/recastnavigation/recastnavigation
