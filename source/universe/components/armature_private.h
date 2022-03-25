@@ -42,6 +42,8 @@ namespace flame
 
 		std::vector<Bone> bones;
 		std::vector<Animation> animations;
+		bool bones_dirty = false;
+		bool animations_dirty = false;
 		float transition_time = -1.f;
 
 		int frame = -1;
@@ -51,7 +53,6 @@ namespace flame
 
 		void set_model_name(const std::filesystem::path& src) override;
 		void set_animation_names(const std::wstring& paths) override;
-		void setup_animations();
 
 		void play(uint id) override;
 		void stop() override;

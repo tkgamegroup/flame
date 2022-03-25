@@ -11,6 +11,8 @@ namespace flame
 
 	mat4 cArmaturePrivate::Bone::calc_mat()
 	{
+		if (!node)
+			return mat4(1.f);
 		return node->transform * offmat;
 	}
 
@@ -55,25 +57,7 @@ namespace flame
 				graphics::Model::release(model);
 			model = _model;
 		}
-		if (model)
-		{
-			bones.resize(model->bones.size());
-			for (auto i = 0; i < bones.size(); i++)
-			{
-				auto& src = model->bones[i];
-				auto& dst = bones[i];
-				auto name = src.name;
-				auto e = entity->find_child(name);
-				if (e)
-				{
-					dst.name = name;
-					dst.node = e->get_component_i<cNodeT>(0);
-					if (dst.node)
-						dst.offmat = src.offset_matrix;
-				}
-			}
-		}
-		setup_animations();
+		bones_dirty = true;
 
 		if (node)
 			node->mark_transform_dirty();
@@ -86,7 +70,7 @@ namespace flame
 			return;
 		animation_names = paths;
 
-		setup_animations();
+		animations_dirty = true;
 
 		if (node)
 			node->mark_transform_dirty();
@@ -108,65 +92,91 @@ namespace flame
 		transition_time = -1.f;
 	}
 
-	void cArmaturePrivate::setup_animations()
-	{
-		animations.clear();
-
-		if (bones.empty() || animation_names.empty())
-			return;
-
-		auto sp = SUW::split(animation_names, ';');
-		for (auto& s : sp)
-		{
-			auto animation = graphics::Animation::get(s);
-			if (animation)
-			{
-				auto& a = animations.emplace_back();
-				a.duration = animation->duration;
-
-				for (auto& ch : animation->channels)
-				{
-					auto find_bone = [&](std::string_view name) {
-						for (auto i = 0; i < bones.size(); i++)
-						{
-							if (bones[i].name == name)
-								return i;
-						}
-						return -1;
-					};
-					auto id = find_bone(ch.node_name);
-					if (id != -1)
-					{
-						auto& t = a.tracks.emplace_back();
-						t.bone_idx = id;
-						t.positions.resize(ch.position_keys.size());
-						for (auto i = 0; i < t.positions.size(); i++)
-						{
-							t.positions[i].first = ch.position_keys[i].t;
-							t.positions[i].second = ch.position_keys[i].p;
-						}
-						std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
-							return a.first < b.first;
-						});
-						t.rotations.resize(ch.rotation_keys.size());
-						for (auto i = 0; i < t.rotations.size(); i++)
-						{
-							t.rotations[i].first = ch.rotation_keys[i].t;
-							t.rotations[i].second = ch.rotation_keys[i].q;
-						}
-						std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
-							return a.first < b.first;
-						});
-					}
-				}
-			}
-		}
-	}
-
 	void cArmaturePrivate::draw(sRendererPtr renderer)
 	{
 		if (instance_id == -1)
 			return;
+
+		if (bones_dirty)
+		{
+			bones.clear();
+
+			if (model)
+			{
+				bones.resize(model->bones.size());
+				for (auto i = 0; i < bones.size(); i++)
+				{
+					auto& src = model->bones[i];
+					auto& dst = bones[i];
+					auto name = src.name;
+					auto e = entity->find_child(name);
+					if (e)
+					{
+						dst.name = name;
+						dst.node = e->get_component_i<cNodeT>(0);
+						if (dst.node)
+							dst.offmat = src.offset_matrix;
+					}
+				}
+			}
+
+			bones_dirty = false;
+			animations_dirty = true;
+		}
+		if (animations_dirty)
+		{
+			animations.clear();
+
+			if (bones.empty() || animation_names.empty())
+				return;
+
+			auto sp = SUW::split(animation_names, ';');
+			for (auto& s : sp)
+			{
+				auto animation = graphics::Animation::get(s);
+				if (animation)
+				{
+					auto& a = animations.emplace_back();
+					a.duration = animation->duration;
+
+					for (auto& ch : animation->channels)
+					{
+						auto find_bone = [&](std::string_view name) {
+							for (auto i = 0; i < bones.size(); i++)
+							{
+								if (bones[i].name == name)
+									return i;
+							}
+							return -1;
+						};
+						auto id = find_bone(ch.node_name);
+						if (id != -1)
+						{
+							auto& t = a.tracks.emplace_back();
+							t.bone_idx = id;
+							t.positions.resize(ch.position_keys.size());
+							for (auto i = 0; i < t.positions.size(); i++)
+							{
+								t.positions[i].first = ch.position_keys[i].t;
+								t.positions[i].second = ch.position_keys[i].p;
+							}
+							std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
+								return a.first < b.first;
+								});
+							t.rotations.resize(ch.rotation_keys.size());
+							for (auto i = 0; i < t.rotations.size(); i++)
+							{
+								t.rotations[i].first = ch.rotation_keys[i].t;
+								t.rotations[i].second = ch.rotation_keys[i].q;
+							}
+							std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
+								return a.first < b.first;
+								});
+						}
+					}
+				}
+			}
+		}
 
 		if (frame < (int)frames)
 		{

@@ -521,18 +521,24 @@ namespace flame
 				defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
 		}
 		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
+
+		std::filesystem::path pipeline_name;
+		switch (hash)
+		{
+		case "ArmMesh"_h:
+			defines.push_back("vert:ARMATURE");
+		case "Mesh"_h:
+			pipeline_name = L"flame\\shaders\\mesh\\mesh.pipeline";
+			break;
+		case "Terrain"_h:
+			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
+			break;
+		}
 		std::sort(defines.begin(), defines.end());
 
 		graphics::GraphicsPipelinePtr ret = nullptr;
-		switch (hash)
-		{
-		case "Mesh"_h:
-			ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", defines);
-			break;
-		case "Terrain"_h:
-			ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", defines);
-			break;
-		}
+		if (!pipeline_name.empty())
+			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
 		if (ret)
 			mr.pls[hash] = ret;
 		return ret;
@@ -848,9 +854,19 @@ namespace flame
 				}
 				mat_r.draw_ids.push_back(i);
 			}
-			for (auto& d : draw_arm_meshes)
+			for (auto i = 0; i < draw_arm_meshes.size(); i++)
 			{
-
+				auto& d = draw_arm_meshes[i];
+				auto& mesh_r = mesh_reses[d.mesh_id];
+				auto& mat_r = mat_reses[d.mat_id];
+				if (mat_r.draw_ids.empty())
+				{
+					if (mat_r.mat->opaque)
+						opaque_draw_arm_meshes.push_back(d.mat_id);
+					else
+						transparent_draw_arm_meshes.push_back(d.mat_id);
+				}
+				mat_r.draw_ids.push_back(i);
 			}
 			for (auto mid : opaque_draw_meshes)
 			{
@@ -858,6 +874,16 @@ namespace flame
 				for (auto i : mat_r.draw_ids)
 				{
 					auto& d = draw_meshes[i];
+					auto& mesh_r = mesh_reses[d.mesh_id];
+					buf_idr_mesh.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (d.ins_id << 8) + mid);
+				}
+			}
+			for (auto mid : opaque_draw_arm_meshes)
+			{
+				auto& mat_r = mat_reses[mid];
+				for (auto i : mat_r.draw_ids)
+				{
+					auto& d = draw_arm_meshes[i];
 					auto& mesh_r = mesh_reses[d.mesh_id];
 					buf_idr_mesh.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (d.ins_id << 8) + mid);
 				}
@@ -922,11 +948,11 @@ namespace flame
 
 			prm_gbuf.bind_dss(cb);
 
+			auto idr_off = 0;
 			if (!draw_meshes.empty())
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				auto idr_off = 0;
 				for (auto mid : opaque_draw_meshes)
 				{
 					auto& mr = mat_reses[mid];
@@ -942,6 +968,16 @@ namespace flame
 			{
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+				for (auto mid : opaque_draw_arm_meshes)
+				{
+					auto& mr = mat_reses[mid];
+					auto num = mr.draw_ids.size();
+					mr.draw_ids.clear();
+					cb->bind_pipeline(get_material_pipeline(mr, "ArmMesh"_h));
+					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
+					idr_off += num;
+				}
+				opaque_draw_arm_meshes.clear();
 			}
 			if (!draw_terrains.empty())
 			{

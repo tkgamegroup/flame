@@ -77,6 +77,16 @@ namespace flame
 
 			virtual ~Model() {}
 
+			inline int find_bone(std::string_view name) 
+			{
+				for (auto i = 0; i < bones.size(); i++)
+				{
+					if (bones[i].name == name)
+						return i;
+				}
+				return -1;
+			};
+
 			virtual void save(const std::filesystem::path& filename) = 0;
 
 			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename);

@@ -91,6 +91,7 @@ namespace flame
 			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto ext = filename.extension();
+			filename.replace_extension(L".fmod");
 
 			auto format_mat_name = [](const std::string& name, int i) {
 				auto ret = name;
@@ -102,6 +103,14 @@ namespace flame
 						if (ch == ' ' || ch == ':') ch = '_';
 				}
 				return ret;
+			};
+			auto get_empty_bone_ids_idx = [](const ivec4& ids) {
+				for (auto i = 0; i < 4; i++)
+				{
+					if (ids[i] == -1)
+						return i;
+				}
+				return -1;
 			};
 
 			if (ext == L".fbx")
@@ -161,7 +170,8 @@ namespace flame
 				}
 
 				std::vector<std::unique_ptr<MaterialT>> materials;
-				std::vector<Mesh> meshes;
+				auto model = Model::create();
+
 				pugi::xml_document doc_prefab;
 
 				std::function<void(pugi::xml_node, FbxNode*)> process_node;
@@ -169,10 +179,11 @@ namespace flame
 					dst.append_attribute("name").set_value(src->GetName());
 
 					auto n_components = dst.append_child("components");
+					pugi::xml_node n_children;
 
 					{
 						auto n_node = n_components.append_child("item");
-						n_node.append_attribute("type_name").set_value("flame::cNode"_h);
+						n_node.append_attribute("type_name").set_value("flame::cNode");
 
 						auto p = src->LclTranslation.Get();
 						auto r = src->LclRotation.Get();
@@ -225,6 +236,12 @@ namespace flame
 									}
 								}
 							}
+
+							auto material_name = format_mat_name(fbx_mat->GetName(), i);
+							material_name = std::format("{}_{}.fmat", model_name, material_name);
+							material->filename = ppath / material_name;
+							material->save(Path::get(material->filename));
+
 							fbx_mat->SetUserDataPtr(material);
 						}
 					}
@@ -236,20 +253,193 @@ namespace flame
 							auto fbx_mesh = src->GetMesh();
 							if (!fbx_mesh->GetUserDataPtr())
 							{
+								auto base_mesh_idx = model->meshes.size();
+
 								auto polygon_count = fbx_mesh->GetPolygonCount();
-								if (auto element_mat = fbx_mesh->GetElementMaterial(); element_mat)
+								auto element_mat = fbx_mesh->GetElementMaterial();
+								FbxLayerElementArrayTemplate<int>* mat_indices = NULL;
+								auto material_mapping_polygon = false;
+								if (element_mat)
 								{
-									if (element_mat->GetMappingMode() == FbxGeometryElement::eByPolygon)
+									mat_indices = &element_mat->GetIndexArray();
+									material_mapping_polygon = element_mat->GetMappingMode() == FbxGeometryElement::eByPolygon;
+								}
+
+								auto has_uv = fbx_mesh->GetElementUVCount() > 0;
+								auto has_normal = fbx_mesh->GetElementNormalCount() > 0;
+								auto uv_mapping_mode = FbxGeometryElement::eNone;
+								auto normal_mapping_mode = FbxGeometryElement::eNone;
+								if (has_uv)
+								{
+									uv_mapping_mode = fbx_mesh->GetElementUV(0)->GetMappingMode();
+									if (uv_mapping_mode == FbxGeometryElement::eNone)
+										has_uv = false;
+								}
+								if (has_normal)
+								{
+									normal_mapping_mode = fbx_mesh->GetElementNormal(0)->GetMappingMode();
+									if (normal_mapping_mode == FbxGeometryElement::eNone)
+										has_normal = false;
+								}
+
+								std::string uv_name;
+								if (has_uv)
+								{
+									FbxStringList names;
+									fbx_mesh->GetUVSetNames(names);
+									uv_name = names[0].Buffer();
+								}
+
+								auto control_points = fbx_mesh->GetControlPoints();
+								auto control_points_count = fbx_mesh->GetControlPointsCount();
+								std::vector<ivec4> control_point_bone_ids;
+								std::vector<vec4> control_point_bone_weights;
+								auto skin_count = fbx_mesh->GetDeformerCount(FbxDeformer::eSkin);
+								if (skin_count)
+								{
+									control_point_bone_ids.resize(control_points_count);
+									control_point_bone_weights.resize(control_points_count);
+									for (auto i = 0; i < control_points_count; i++)
 									{
-										auto& mat_indices = element_mat->GetIndexArray();
-										for (auto i = 0; i < polygon_count; i++)
+										control_point_bone_ids[i] = ivec4(-1);
+										control_point_bone_weights[i] = vec4(0.f);
+									}
+									for (auto i = 0; i < skin_count; i++)
+									{
+										auto skin_deformer = (FbxSkin*)fbx_mesh->GetDeformer(i, FbxDeformer::eSkin);
+										int cluster_count = skin_deformer->GetClusterCount();
+										for (int j = 0; j < cluster_count; j++)
 										{
-											auto mat_idx = mat_indices.GetAt(i);
+											auto cluster = skin_deformer->GetCluster(j);
+											auto node = cluster->GetLink();
+											if (!node)
+												continue;
+
+											std::string name = node->GetName();
+											auto bid = model->find_bone(name);
+											if (bid == -1)
+											{
+												bid = model->bones.size();
+												auto& b = model->bones.emplace_back();
+												b.name = name;
+												FbxAMatrix mat;
+												cluster->GetTransformLinkMatrix(mat);
+												b.offset_matrix = mat4(
+													vec4(mat.Get(0, 0), mat.Get(1, 0), mat.Get(2, 0), mat.Get(3, 0)),
+													vec4(mat.Get(0, 1), mat.Get(1, 1), mat.Get(2, 1), mat.Get(3, 1)),
+													vec4(mat.Get(0, 2), mat.Get(1, 2), mat.Get(2, 2), mat.Get(3, 2)),
+													vec4(mat.Get(0, 3), mat.Get(1, 3), mat.Get(2, 3), mat.Get(3, 3))
+												);
+												b.offset_matrix = inverse(b.offset_matrix);
+											}
+
+											int vertex_idx_count = cluster->GetControlPointIndicesCount();
+											for (int k = 0; k < vertex_idx_count; k++)
+											{
+												auto vi = cluster->GetControlPointIndices()[k];
+												if (vi >= control_points_count)
+													continue;
+
+												auto weight = (float)cluster->GetControlPointWeights()[k];
+												if (weight <= 0.f)
+													continue;
+
+												auto idx = get_empty_bone_ids_idx(control_point_bone_ids[vi]);
+												if (idx == -1)
+													continue;
+												control_point_bone_ids[vi][idx] = bid;
+												control_point_bone_weights[vi][idx] = weight;
+											}
+										}
+									}
+								}
+								for (auto i = 0; i < polygon_count; i++)
+								{
+									auto sub_mesh_idx = 0;
+									if (mat_indices && material_mapping_polygon)
+										sub_mesh_idx = mat_indices->GetAt(i);
+
+									if (base_mesh_idx + sub_mesh_idx + 1 > model->meshes.size())
+									{
+										model->meshes.resize(base_mesh_idx + sub_mesh_idx + 1);
+										for (auto i = 0; i <= sub_mesh_idx; i++)
+											model->meshes[base_mesh_idx + i].materials.push_back((MaterialPtr)src->GetMaterial(i)->GetUserDataPtr());
+									}
+
+									auto& m = model->meshes[base_mesh_idx + sub_mesh_idx];
+									for (auto j = 0; j < 3; j++)
+									{
+										auto control_point_idx = fbx_mesh->GetPolygonVertex(i, j);
+										if (control_point_idx >= 0)
+										{
+											m.indices.push_back(m.positions.size());
+
+											auto vtx = control_points[control_point_idx];
+											m.positions.push_back(vec3(vtx[0], vtx[1], vtx[2]));
+											if (has_uv)
+											{
+												FbxVector2 uv;
+												bool unmapped;
+												fbx_mesh->GetPolygonVertexUV(i, j, uv_name.c_str(), uv, unmapped);
+												m.uvs.push_back(vec2(uv[0], 1.f - uv[1]));
+											}
+											if (has_normal)
+											{
+												FbxVector4 nor;
+												fbx_mesh->GetPolygonVertexNormal(i, j, nor);
+												m.normals.push_back(vec3(nor[0], nor[1], nor[2]));
+											}
+											if (skin_count)
+											{
+												m.bone_ids.push_back(control_point_bone_ids[control_point_idx]);
+												m.bone_weights.push_back(control_point_bone_weights[control_point_idx]);
+											}
 										}
 									}
 								}
 
-								fbx_mesh->SetUserDataPtr((void*)meshes.size());
+								for (auto it = model->meshes.begin(); it != model->meshes.end();)
+								{
+									if (it->indices.empty())
+										it = model->meshes.erase(it);
+									else
+									{
+										it->calc_bounds();
+										it++;
+									}
+								}
+								fbx_mesh->SetUserDataPtr((void*)((base_mesh_idx << 16) + (int)model->meshes.size() - base_mesh_idx));
+							}
+
+							auto user_data = (int)fbx_mesh->GetUserDataPtr();
+							auto base_mesh_idx = user_data >> 16;
+							auto mesh_count = user_data & 0x0000ffff;
+							if (mesh_count > 0)
+							{
+								if (mesh_count == 1)
+								{
+									auto n_mesh = n_components.append_child("item");
+									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
+									n_mesh.append_attribute("model_name").set_value(filename.string().c_str());
+									n_mesh.append_attribute("mesh_index").set_value(base_mesh_idx);
+								}
+								else
+								{
+									if (!n_children)
+										n_children = dst.append_child("children");
+									for (auto i = 0; i < mesh_count; i++)
+									{
+										auto n_sub = n_children.append_child("item");
+										n_sub.append_attribute("name").set_value(i);
+										auto n_components = n_sub.append_child("components");
+										auto n_node = n_components.append_child("item");
+										n_node.append_attribute("type_name").set_value("flame::cNode");
+										auto n_mesh = n_components.append_child("item");
+										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
+										n_mesh.append_attribute("model_name").set_value(filename.string().c_str());
+										n_mesh.append_attribute("mesh_index").set_value(base_mesh_idx + i);
+									}
+								}
 							}
 						}
 					}
@@ -257,12 +447,25 @@ namespace flame
 					auto child_count = src->GetChildCount();
 					if (child_count > 0)
 					{
-						auto n_children = dst.append_child("children");
+						if (!n_children)
+							n_children = dst.append_child("children");
 						for (auto i = 0; i < child_count; i++)
 							process_node(n_children.append_child("item"), src->GetChild(i));
 					}
 				};
 				process_node(doc_prefab.append_child("prefab"), scene->GetRootNode());
+				if (!model->bones.empty())
+				{
+					auto n_armature = doc_prefab.first_child().child("components").append_child("item");
+					n_armature.append_attribute("type_name").set_value("flame::cArmature");
+					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
+				}
+
+				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
+
+				model->save(replace_ext(_filename, L".fmod"));
+
+				delete model;
 #endif
 			}
 			else
@@ -319,7 +522,8 @@ namespace flame
 
 					auto material_name = format_mat_name(ai_mat->GetName().C_Str(), i);
 					material_name = std::format("{}_{}.fmat", model_name, material_name);
-					material->save(Path::get(ppath / material_name));
+					material->filename = ppath / material_name;
+					material->save(Path::get(material->filename));
 
 					materials.emplace_back(material);
 				}
@@ -373,15 +577,7 @@ namespace flame
 							auto ai_bone = ai_mesh->mBones[j];
 
 							std::string name = ai_bone->mName.C_Str();
-							auto find_bone = [&](std::string_view name) {
-								for (auto i = 0; i < model->bones.size(); i++)
-								{
-									if (model->bones[i].name == name)
-										return i;
-								}
-								return -1;
-							};
-							auto bid = find_bone(name);
+							auto bid = model->find_bone(name);
 							if (bid == -1)
 							{
 								bid = model->bones.size();
@@ -399,19 +595,10 @@ namespace flame
 							auto weights_count = ai_bone->mNumWeights;
 							if (weights_count > 0)
 							{
-								auto get_idx = [&](uint vi) {
-									auto& ids = mesh.bone_ids[vi];
-									for (auto i = 0; i < 4; i++)
-									{
-										if (ids[i] == -1)
-											return i;
-									}
-									return -1;
-								};
 								for (auto j = 0; j < weights_count; j++)
 								{
 									auto w = ai_bone->mWeights[j];
-									auto idx = get_idx(w.mVertexId);
+									auto idx = get_empty_bone_ids_idx(mesh.bone_ids[w.mVertexId]);
 									if (idx == -1)
 										continue;
 									mesh.bone_ids[w.mVertexId][idx] = bid;
@@ -445,7 +632,7 @@ namespace flame
 
 					{
 						auto n_node = n_components.append_child("item");
-						n_node.append_attribute("type_name").set_value("flame::cNode"_h);
+						n_node.append_attribute("type_name").set_value("flame::cNode");
 
 						aiVector3D s;
 						aiVector3D r;
@@ -644,7 +831,10 @@ namespace flame
 				for (auto& m : models)
 				{
 					if (m->filename == filename)
+					{
+						m->ref++;
 						return m.get();
+					}
 				}
 
 				if (!std::filesystem::exists(filename))
