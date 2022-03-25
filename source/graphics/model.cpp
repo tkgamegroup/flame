@@ -14,6 +14,14 @@
 
 #ifdef USE_FBXSDK
 #include <fbxsdk.h>
+FbxAMatrix FbxGetGeometry(FbxNode* pNode)
+{
+	const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
+	const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
+	const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+
+	return FbxAMatrix(lT, lR, lS);
+}
 #endif
 
 namespace flame
@@ -322,15 +330,20 @@ namespace flame
 												bid = model->bones.size();
 												auto& b = model->bones.emplace_back();
 												b.name = name;
-												FbxAMatrix mat;
-												cluster->GetTransformLinkMatrix(mat);
+
+												FbxAMatrix reference_init;
+												FbxAMatrix cluster_init;
+												cluster->GetTransformMatrix(reference_init);
+												reference_init *= FbxGetGeometry(src);
+												cluster->GetTransformLinkMatrix(cluster_init);
+												auto off_mat = cluster_init.Inverse() * reference_init;
+
 												b.offset_matrix = mat4(
-													vec4(mat.Get(0, 0), mat.Get(1, 0), mat.Get(2, 0), mat.Get(3, 0)),
-													vec4(mat.Get(0, 1), mat.Get(1, 1), mat.Get(2, 1), mat.Get(3, 1)),
-													vec4(mat.Get(0, 2), mat.Get(1, 2), mat.Get(2, 2), mat.Get(3, 2)),
-													vec4(mat.Get(0, 3), mat.Get(1, 3), mat.Get(2, 3), mat.Get(3, 3))
+													vec4(off_mat.Get(0, 0), off_mat.Get(0, 1), off_mat.Get(0, 2), off_mat.Get(0, 3)),
+													vec4(off_mat.Get(1, 0), off_mat.Get(1, 1), off_mat.Get(1, 2), off_mat.Get(1, 3)),
+													vec4(off_mat.Get(2, 0), off_mat.Get(2, 1), off_mat.Get(2, 2), off_mat.Get(2, 3)),
+													vec4(off_mat.Get(3, 0), off_mat.Get(3, 1), off_mat.Get(3, 2), off_mat.Get(3, 3))
 												);
-												b.offset_matrix = inverse(b.offset_matrix);
 											}
 
 											int vertex_idx_count = cluster->GetControlPointIndicesCount();

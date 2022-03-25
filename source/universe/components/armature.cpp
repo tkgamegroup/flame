@@ -125,57 +125,60 @@ namespace flame
 		}
 		if (animations_dirty)
 		{
+			stop();
 			animations.clear();
 
-			if (bones.empty() || animation_names.empty())
-				return;
-
-			auto sp = SUW::split(animation_names, ';');
-			for (auto& s : sp)
+			if (!bones.empty() && !animation_names.empty())
 			{
-				auto animation = graphics::Animation::get(s);
-				if (animation)
+				auto sp = SUW::split(animation_names, ';');
+				for (auto& s : sp)
 				{
-					auto& a = animations.emplace_back();
-					a.duration = animation->duration;
-
-					for (auto& ch : animation->channels)
+					auto animation = graphics::Animation::get(s);
+					if (animation)
 					{
-						auto find_bone = [&](std::string_view name) {
-							for (auto i = 0; i < bones.size(); i++)
-							{
-								if (bones[i].name == name)
-									return i;
-							}
-							return -1;
-						};
-						auto id = find_bone(ch.node_name);
-						if (id != -1)
+						auto& a = animations.emplace_back();
+						a.duration = animation->duration;
+
+						for (auto& ch : animation->channels)
 						{
-							auto& t = a.tracks.emplace_back();
-							t.bone_idx = id;
-							t.positions.resize(ch.position_keys.size());
-							for (auto i = 0; i < t.positions.size(); i++)
+							auto find_bone = [&](std::string_view name) {
+								for (auto i = 0; i < bones.size(); i++)
+								{
+									if (bones[i].name == name)
+										return i;
+								}
+								return -1;
+							};
+							auto id = find_bone(ch.node_name);
+							if (id != -1)
 							{
-								t.positions[i].first = ch.position_keys[i].t;
-								t.positions[i].second = ch.position_keys[i].p;
+								auto& t = a.tracks.emplace_back();
+								t.bone_idx = id;
+								t.positions.resize(ch.position_keys.size());
+								for (auto i = 0; i < t.positions.size(); i++)
+								{
+									t.positions[i].first = ch.position_keys[i].t;
+									t.positions[i].second = ch.position_keys[i].p;
+								}
+								std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
+									return a.first < b.first;
+									});
+								t.rotations.resize(ch.rotation_keys.size());
+								for (auto i = 0; i < t.rotations.size(); i++)
+								{
+									t.rotations[i].first = ch.rotation_keys[i].t;
+									t.rotations[i].second = ch.rotation_keys[i].q;
+								}
+								std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
+									return a.first < b.first;
+									});
 							}
-							std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
-								return a.first < b.first;
-								});
-							t.rotations.resize(ch.rotation_keys.size());
-							for (auto i = 0; i < t.rotations.size(); i++)
-							{
-								t.rotations[i].first = ch.rotation_keys[i].t;
-								t.rotations[i].second = ch.rotation_keys[i].q;
-							}
-							std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
-								return a.first < b.first;
-								});
 						}
 					}
 				}
 			}
+
+			animations_dirty = false;
 		}
 
 		if (frame < (int)frames)
