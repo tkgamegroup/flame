@@ -553,7 +553,7 @@ namespace flame
 				descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 				descriptorPoolInfo.maxSets = 128;
 				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
-				register_backend_object(ret->vk_descriptor_pool, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_pool, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -622,7 +622,7 @@ namespace flame
 				info.pBindings = vk_bindings.data();
 
 				chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
-				register_backend_object(ret->vk_descriptor_set_layout, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_set_layout, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -736,12 +736,12 @@ namespace flame
 				return;
 
 			auto& res = reses[binding][index].b;
-			if (res.p == buf && res.offset == offset && res.range == range)
+			if (res.vk_buf == buf->vk_buffer && res.offset == offset && res.range == range)
 				return;
 
-			res.p = buf;
+			res.vk_buf = buf->vk_buffer;
 			res.offset = offset;
-			res.range = range;
+			res.range = range == 0 ? buf->size : range;
 
 			buf_updates.emplace_back(binding, index);
 		}
@@ -755,11 +755,11 @@ namespace flame
 				sp = Sampler::get(FilterLinear, FilterLinear, true, AddressClampToEdge);
 
 			auto& res = reses[binding][index].i;
-			if (res.p == iv && res.sp == sp)
+			if (res.vk_iv == iv->vk_image_view && res.vk_sp == sp->vk_sampler)
 				return;
 
-			res.p = iv;
-			res.sp = sp;
+			res.vk_iv = iv->vk_image_view;
+			res.vk_sp = sp->vk_sampler;
 
 			img_updates.emplace_back(binding, index);
 		}
@@ -783,9 +783,9 @@ namespace flame
 				auto& res = reses[u.first][u.second];
 
 				auto& info = vk_buf_infos[i];
-				info.buffer = res.b.p->vk_buffer;
+				info.buffer = (VkBuffer)res.b.vk_buf;
 				info.offset = res.b.offset;
-				info.range = res.b.range == 0 ? res.b.p->size : res.b.range;
+				info.range = res.b.range;
 
 				auto& wrt = vk_writes[idx];
 				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -807,10 +807,10 @@ namespace flame
 				auto& res = reses[u.first][u.second];
 
 				auto& info = vk_img_infos[i];
-				info.imageView = res.i.p->vk_image_view;
+				info.imageView = (VkImageView)res.i.vk_iv;
 				info.imageLayout = layout->bindings[u.first].type == DescriptorSampledImage ?
 					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-				info.sampler = res.i.sp ? res.i.sp->vk_sampler : nullptr;
+				info.sampler = (VkSampler)res.i.vk_sp;
 
 				auto& wrt = vk_writes[idx];
 				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -856,7 +856,7 @@ namespace flame
 				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
 				chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
-				register_backend_object(ret->vk_descriptor_set, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_set, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -946,7 +946,7 @@ namespace flame
 				info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
 				chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
-				register_backend_object(ret->vk_pipeline_layout, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline_layout, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -1079,7 +1079,7 @@ namespace flame
 			shader_info.codeSize = spv.size() * sizeof(uint);
 			shader_info.pCode = spv.data();
 			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
-			register_backend_object(ret->vk_module, th<decltype(*ret)>(), ret);
+			register_backend_object(ret->vk_module, tn<decltype(*ret)>(), ret);
 
 			return ret;
 		}
@@ -1258,7 +1258,7 @@ namespace flame
 			}
 
 			UnserializeTextSpec spec;
-			spec.map[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.delegates[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)s2u_hex<uint64>(value.substr(2));
@@ -1273,7 +1273,7 @@ namespace flame
 				layout_segment.second = fn;
 				return PipelineLayout::get(fn);
 			};
-			spec.map[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.delegates[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (!value.empty())
 				{
@@ -1327,7 +1327,7 @@ namespace flame
 				}
 				return INVALID_POINTER;
 			};
-			spec.map[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.delegates[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)s2u_hex<uint64>(value.substr(2));
@@ -1645,7 +1645,7 @@ namespace flame
 				pipeline_info.basePipelineIndex = 0;
 
 				chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
-				register_backend_object(ret->vk_pipeline, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -1749,7 +1749,7 @@ namespace flame
 				pipeline_info.layout = info.layout->vk_pipeline_layout;
 
 				chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
-				register_backend_object(ret->vk_pipeline, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}

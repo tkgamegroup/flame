@@ -6,19 +6,19 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Texture
+		{
+			std::filesystem::path filename;
+			bool srgb = false;
+			Filter mag_filter = FilterLinear;
+			Filter min_filter = FilterLinear;
+			bool linear_mipmap = true;
+			AddressMode address_mode = AddressRepeat;
+			bool auto_mipmap = false;
+		};
+
 		struct Material
 		{
-			struct Texture
-			{
-				std::filesystem::path filename;
-				bool srgb = false;
-				Filter mag_filter = FilterLinear;
-				Filter min_filter = FilterLinear;
-				bool linear_mipmap = true;
-				AddressMode address_mode = AddressRepeat;
-				bool auto_mipmap = false;
-			};
-
 			vec4 color = vec4(1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;

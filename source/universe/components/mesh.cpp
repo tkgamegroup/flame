@@ -55,12 +55,28 @@ namespace flame
 		graphics::ModelPtr _model = nullptr;
 		graphics::MeshPtr _mesh = nullptr;
 		graphics::MaterialPtr _material = nullptr;
-		_model = graphics::Model::get(model_name);
+		auto prev_mesh_index = mesh_index;
+		auto prev_skin_index = skin_index;
+		if (!model_name.empty())
+			_model = graphics::Model::get(model_name);
 		if (_model && !_model->meshes.empty())
 		{
-			_mesh = &_model->meshes[0];
+			if (mesh_index >= _model->meshes.size())
+				mesh_index = 0;
+			_mesh = &_model->meshes[mesh_index];
 			if (!_mesh->materials.empty())
-				_material = _mesh->materials[0];
+			{
+				if (skin_index >= _mesh->materials.size())
+					skin_index = 0;
+				_material = _mesh->materials[skin_index];
+			}
+			else
+				skin_index = 0;
+		}
+		else
+		{
+			mesh_index = 0;
+			skin_index = 0;
 		}
 		if (model != _model)
 		{
@@ -88,16 +104,10 @@ namespace flame
 		node->mark_transform_dirty();
 
 		data_changed("model_name"_h);
-		if (mesh_index != 0)
-		{
-			mesh_index = 0;
+		if (mesh_index != prev_mesh_index)
 			data_changed("mesh_index"_h);
-		}
-		if (skin_index != 0)
-		{
-			skin_index = 0;
+		if (skin_index != prev_skin_index)
 			data_changed("skin_index"_h);
-		}
 	}
 
 	void cMeshPrivate::set_mesh_index(uint idx)
@@ -107,9 +117,16 @@ namespace flame
 		mesh_index = idx;
 
 		graphics::MaterialPtr _material = nullptr;
+		auto prev_skin_index = skin_index;
 		auto _mesh = &model->meshes[mesh_index];
 		if (!_mesh->materials.empty())
-			_material = _mesh->materials[0];
+		{
+			if (skin_index >= _mesh->materials.size())
+				skin_index = 0;
+			_material = _mesh->materials[skin_index];
+		}
+		else
+			skin_index = 0;
 		if (mesh != _mesh)
 		{
 			if (mesh_res_id != -1)
@@ -128,11 +145,8 @@ namespace flame
 		node->mark_transform_dirty();
 
 		data_changed("mesh_index"_h);
-		if (skin_index != 0)
-		{
-			skin_index = 0;
+		if (skin_index != prev_skin_index)
 			data_changed("skin_index"_h);
-		}
 	}
 
 	void cMeshPrivate::set_skin_index(uint idx)

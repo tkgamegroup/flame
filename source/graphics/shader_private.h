@@ -31,15 +31,15 @@ namespace flame
 		{
 			struct BufRes
 			{
-				BufferPrivate* p;
+				void* vk_buf;
 				uint offset;
 				uint range;
 			};
 
 			struct ImgRes
 			{
-				ImageViewPtr p;
-				SamplerPtr sp;
+				void* vk_iv;
+				void* vk_sp;
 			};
 
 			union Res

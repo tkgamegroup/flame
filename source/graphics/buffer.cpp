@@ -41,7 +41,7 @@ namespace flame
 
 			chk_res(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
 			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
-			register_backend_object(vk_buffer, th<decltype(*this)>(), this);
+			register_backend_object(vk_buffer, tn<decltype(*this)>(), this);
 		}
 
 		void BufferPrivate::destroy()

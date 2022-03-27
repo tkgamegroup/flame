@@ -27,22 +27,30 @@ void View_Scene::on_draw()
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
 
-	auto size = vec2(ImGui::GetContentRegionAvail());
-	if (!render_tar || vec2(render_tar->size) != size)
+	auto scene_size = vec2(ImGui::GetContentRegionAvail());
+	if (!render_tar || vec2(render_tar->size) != scene_size)
 	{
 		graphics::Queue::get()->wait_idle();
-		render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(size), 
-			graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
-		auto iv = render_tar->get_view();
-		app.renderer->set_targets( { &iv, 1 }, graphics::ImageLayoutShaderReadOnly );
+		if (scene_size.x > 1 && scene_size.y > 1)
+		{
+			render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(scene_size),
+				graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
+			auto iv = render_tar->get_view();
+			app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+		}
+		else
+		{
+			render_tar.reset();
+			app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+		}
 	}
 
 	hovering_node = nullptr;
 
 	if (render_tar)
 	{
-		ImGui::Image(render_tar.get(), size);
+		ImGui::Image(render_tar.get(), scene_size);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
 		app.input->offset = p0;

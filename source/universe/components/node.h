@@ -31,7 +31,9 @@ namespace flame
 		}
 
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
+		/// Reflect
 		virtual quat get_qut() = 0;
+		/// Reflect
 		virtual void set_qut(const quat& qut) = 0;
 
 		mat3 rot = mat3(1.f);

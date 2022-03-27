@@ -120,29 +120,11 @@ void View_Project::Item::draw()
 			// open folder will destroy all items, so stage path here
 			auto p = path;
 			add_event([p]() {
-				view_project.open_folder(p);
+				view_project.open_folder(view_project.find_folder(p));
 				return false;
 			});
 
 			selection.clear();
-
-			view_project.select_folder(nullptr);
-			std::function<FolderTreeNode* (FolderTreeNode*)> select_node;
-			select_node = [&](FolderTreeNode* n)->FolderTreeNode* {
-				if (n->path == p)
-				{
-					view_project.select_folder(n);
-					return n;
-				}
-				for (auto& c : n->children)
-				{
-					auto ret = select_node(c.get());
-					if (ret)
-						return ret;
-				}
-				return nullptr;
-			};
-			select_node(view_project.folder_tree.get());
 		}
 		else
 		{
@@ -168,7 +150,7 @@ View_Project::View_Project() :
 void View_Project::reset()
 {
 	items.clear();
-	select_folder(nullptr);
+	opened_folder = nullptr;
 	folder_tree.reset(new View_Project::FolderTreeNode(app.project_path));
 
 	if (ev_watcher)
@@ -202,16 +184,34 @@ void View_Project::set_items_size(float size)
 		i->set_size();
 }
 
-void View_Project::select_folder(FolderTreeNode* folder)
+View_Project::FolderTreeNode* View_Project::find_folder(const std::filesystem::path& path, bool force_read)
 {
-	selected_folder = folder;
-	selected_folder_frame = frames;
-	if (folder)
-		folder->read_children();
+	std::function<FolderTreeNode*(FolderTreeNode*)> sub_find;
+	sub_find = [&](FolderTreeNode* n)->FolderTreeNode* {
+		if (n->path == path)
+			return n;
+		if (force_read)
+			n->read_children();
+		for (auto& c : n->children)
+		{
+			auto ret = sub_find(c.get());
+			if (ret)
+				return ret;
+		}
+		return nullptr;
+	};
+	return sub_find(folder_tree.get());
 }
 
-void View_Project::open_folder(const std::filesystem::path& path)
+void View_Project::open_folder(FolderTreeNode* folder)
 {
+	opened_folder = folder;
+	open_folder_frame = frames;
+	if (!folder)
+		return;
+
+	folder->read_children();
+
 	if (Item::metric.size == 0)
 		set_items_size(64);
 
@@ -221,11 +221,25 @@ void View_Project::open_folder(const std::filesystem::path& path)
 	icons.clear();
 	thumbnails.clear();
 
-	for (auto& it : std::filesystem::directory_iterator(path))
-		items.emplace_back(new Item(it.path()));
-	std::sort(items.begin(), items.end(), [](const auto& a, const auto& b) {
+	std::vector<Item*> dirs;
+	std::vector<Item*> files;
+	for (auto& it : std::filesystem::directory_iterator(folder->path))
+	{
+		if (std::filesystem::is_directory(it.status()))
+			dirs.push_back(new Item(it.path()));
+		else
+			files.push_back(new Item(it.path()));
+	}
+	std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 		return a->path < b->path;
 	});
+	std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
+		return a->path < b->path;
+	});
+	for (auto i : dirs)
+		items.emplace_back(i);
+	for (auto i : files)
+		items.emplace_back(i);
 }
 
 void View_Project::on_draw()
@@ -249,7 +263,6 @@ void View_Project::on_draw()
 			return a.first.wstring().size() < b.first.wstring().size();
 		});
 
-		auto selected_path = selected_folder ? selected_folder->path : L"";
 		for (auto& p : changed_directories)
 		{
 			std::function<bool(FolderTreeNode* node)> find_and_mark;
@@ -272,35 +285,7 @@ void View_Project::on_draw()
 			find_and_mark(folder_tree.get());
 		}
 
-		std::function<FolderTreeNode*(FolderTreeNode* node)> find;
-		find = [&](FolderTreeNode* node)->FolderTreeNode* {
-			if (node->path == selected_path)
-				return node;
-			for (auto& c : node->children)
-			{
-				auto ret = find(c.get());
-				if (ret)
-					return ret;
-			}
-			return nullptr;
-		};
-		auto node = find(folder_tree.get());
-		if (!node && !selected_path.empty())
-			select_folder(nullptr);
-		else if (node != selected_folder)
-			select_folder(node);
-
-		if (!selected_path.empty())
-		{
-			for (auto& p : changed_directories)
-			{
-				if (p.first == selected_path)
-				{
-					open_folder(selected_path);
-					break;
-				}
-			}
-		}
+		open_folder(opened_folder ? find_folder(opened_folder->path) : nullptr);
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
 		for (auto& p : changed_files)
@@ -350,18 +335,18 @@ void View_Project::on_draw()
 	}
 	mtx_changed_paths.unlock();
 
-	if (!selected_folder && !app.project_path.empty())
+	if (!peeding_open_path.empty())
 	{
-		select_folder(folder_tree.get());
-		open_folder(app.project_path);
+		open_folder(find_folder(peeding_open_path, true));
+		peeding_open_path.clear();
 	}
 
-	auto just_select = selected_folder_frame == (int)frames - 1;
+	auto just_select = open_folder_frame == (int)frames - 1;
 
 	std::vector<FolderTreeNode*> open_nodes;
-	if (just_select && selected_folder)
+	if (just_select && opened_folder)
 	{
-		auto f = selected_folder->parent;
+		auto f = opened_folder->parent;
 		while (f)
 		{
 			open_nodes.push_back(f);
@@ -381,7 +366,7 @@ void View_Project::on_draw()
 		{
 			std::function<void(FolderTreeNode* node)> draw_node;
 			draw_node = [&](FolderTreeNode* node) {
-				auto flags = view_project.selected_folder == node ? ImGuiTreeNodeFlags_Selected : 0;
+				auto flags = view_project.opened_folder == node ? ImGuiTreeNodeFlags_Selected : 0;
 				if (node->read && node->children.empty())
 					flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 				else
@@ -389,15 +374,12 @@ void View_Project::on_draw()
 				if (std::find(open_nodes.begin(), open_nodes.end(), node) != open_nodes.end())
 					ImGui::SetNextItemOpen(true);
 				auto opened = ImGui::TreeNodeEx(node->display_text.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
-				if (just_select && view_project.selected_folder == node)
+				if (just_select && view_project.opened_folder == node)
 					ImGui::SetScrollHereY();
 				if (ImGui::IsItemClicked())
 				{
-					if (view_project.selected_folder != node)
-					{
-						view_project.select_folder(node);
-						view_project.open_folder(node->path);
-					}
+					if (view_project.opened_folder != node)
+						view_project.open_folder(node);
 				}
 				if (opened)
 				{

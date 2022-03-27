@@ -89,7 +89,7 @@ namespace flame
 
 			virtual void save(const std::filesystem::path& filename) = 0;
 
-			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename);
+			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename, const vec3& rotation = vec3(0.f), const vec3& scaling = vec3(1.f));
 
 			struct Create
 			{

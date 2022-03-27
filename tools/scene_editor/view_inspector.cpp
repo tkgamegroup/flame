@@ -205,8 +205,10 @@ void View_Inspector::on_draw()
 		auto ext = selection.path.extension();
 		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 		{
+			static vec3 rotation = vec3(0, 270, 0);
+			static vec3 scaling = vec3(0.1f, 0.1f, 0.1f);
 			if (ImGui::Button("Convert"))
-				graphics::Model::convert(selection.path);
+				graphics::Model::convert(selection.path, rotation, scaling);
 		}
 	}
 		break;

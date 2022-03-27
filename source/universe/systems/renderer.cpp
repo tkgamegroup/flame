@@ -163,7 +163,6 @@ namespace flame
 		prm_deferred.set_ds("scene"_h, ds_scene.get());
 		prm_deferred.set_ds("light"_h, ds_light.get());
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
-		ds_deferred->update();
 		prm_deferred.set_ds(""_h, ds_deferred.get());
 
 		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"));
@@ -775,7 +774,7 @@ namespace flame
 
 	void sRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
-		if (camera == INVALID_POINTER)
+		if (camera == INVALID_POINTER || iv_tars.empty())
 			return;
 		if (!camera)
 		{

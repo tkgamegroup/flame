@@ -233,9 +233,11 @@ namespace flame
 	{
 		std::list<std::pair<std::function<F>, uint>> list;
 
-		void* add(const std::function<F>& callback, uint h = 0)
+		void* add(const std::function<F>& callback, uint h = 0, bool back = true)
 		{
-			return &list.emplace_back(callback, h);
+			if (back)
+				return &list.emplace_back(callback, h);
+			return &list.emplace_front(callback, h);
 		}
 
 		void remove(void* lis)

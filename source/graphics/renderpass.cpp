@@ -119,7 +119,7 @@ namespace flame
 				create_info.pDependencies = vk_deps.data();
 
 				chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
-				register_backend_object(ret->vk_renderpass, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_renderpass, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}

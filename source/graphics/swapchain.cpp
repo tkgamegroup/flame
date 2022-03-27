@@ -122,7 +122,7 @@ namespace flame
 				swapchain_info.clipped = true;
 				swapchain_info.oldSwapchain = 0;
 				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
-				register_backend_object(vk_swapchain, th<decltype(*this)>(), this);
+				register_backend_object(vk_swapchain, tn<decltype(*this)>(), this);
 
 				std::vector<VkImage> native_images;
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);

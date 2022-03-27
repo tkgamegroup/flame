@@ -6,16 +6,6 @@
 
 namespace flame
 {
-	struct SerializeXmlSpec
-	{
-		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> map;
-	};
-
-	struct UnserializeXmlSpec
-	{
-		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>> map;
-	};
-
 	struct TextSerializeNode
 	{
 		std::string name;
@@ -49,14 +39,26 @@ namespace flame
 		}
 	};
 
+	struct SerializeXmlSpec
+	{
+		std::vector<std::pair<uint, uint>> excludes;
+		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> delegates;
+	};
+
+	struct UnserializeXmlSpec
+	{
+		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>> delegates;
+	};
+
 	struct SerializeTextSpec
 	{
-		std::map<TypeInfo*, std::function<TextSerializeNode(void* src)>> map;
+		std::vector<std::pair<uint, uint>> excludes;
+		std::map<TypeInfo*, std::function<TextSerializeNode(void* src)>> delegates;
 	};
 
 	struct UnserializeTextSpec
 	{
-		std::map<TypeInfo*, std::function<void*(const TextSerializeNode& src)>> map;
+		std::map<TypeInfo*, std::function<void* (const TextSerializeNode& src)>> delegates;
 	};
 
 	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
@@ -80,7 +82,7 @@ namespace flame
 			case TagPU:
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)type;
-				if (auto it = spec.map.find(ti); it != spec.map.end())
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 					it->second(*(void**)((char*)src + offset), dst.append_child(name.c_str()));
 			}
 				break;
@@ -168,7 +170,7 @@ namespace flame
 					auto& vec = *(std::vector<void*>*)((char*)src + offset);
 					if (!vec.empty())
 					{
-						if (auto it = spec.map.find(ti); it != spec.map.end())
+						if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 						{
 							auto n = dst.append_child(name.c_str());
 							for (auto v : vec)
@@ -189,12 +191,42 @@ namespace flame
 		if (!ui.attributes.empty())
 		{
 			for (auto& a : ui.attributes)
+			{
+				if (!spec.excludes.empty())
+				{
+					auto skip = false;
+					for (auto& e : spec.excludes)
+					{
+						if (e.first == ui.name_hash && e.second == a.name_hash)
+						{
+							skip = true;
+							break;
+						}
+					}
+					if (skip) continue;
+				}
 				write_var(a.var_idx == -1 ? 0 : ui.variables[a.var_idx].offset, a.type, a.name, a.default_value, a.getter_idx);
+			}
 		}
 		else
 		{
 			for (auto& vi : ui.variables)
+			{
+				if (!spec.excludes.empty())
+				{
+					auto skip = false;
+					for (auto& e : spec.excludes)
+					{
+						if (e.first == ui.name_hash && e.second == vi.name_hash)
+						{
+							skip = true;
+							break;
+						}
+					}
+					if (skip) continue;
+				}
 				write_var(vi.offset, vi.type, vi.name, vi.default_value, -1);
+			}
 		}
 	}
 
@@ -323,7 +355,7 @@ namespace flame
 				case TagPU:
 				{
 					auto ti = (TypeInfo_PointerOfUdt*)vi.type;
-					if (auto it = spec.map.find(ti); it != spec.map.end())
+					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 					{
 						auto v = it->second(c, dst);
 						if (v != INVALID_POINTER)
@@ -343,7 +375,7 @@ namespace flame
 				case TagVPU:
 				{
 					auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
-					if (auto it = spec.map.find(ti); it != spec.map.end())
+					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 					{
 						auto& vec = *(std::vector<void*>*)p;
 						for (auto cc : c.children())
@@ -416,6 +448,20 @@ namespace flame
 				}
 			};
 
+			if (!spec.excludes.empty())
+			{
+				auto skip = false;
+				for (auto& e : spec.excludes)
+				{
+					if (e.first == ui.name_hash && e.second == vi.name_hash)
+					{
+						skip = true;
+						break;
+					}
+				}
+				if (skip) continue;
+			}
+
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -443,7 +489,7 @@ namespace flame
 			case TagPU:
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
-				if (auto it = spec.map.find(ti); it != spec.map.end())
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
 					print_name();
 					print_value(it->second(*(void**)p), indent2);
@@ -506,7 +552,7 @@ namespace flame
 			case TagVPU:
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
-				if (auto it = spec.map.find(ti); it != spec.map.end())
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
 					auto& vec = *(std::vector<void*>*)p;
 					if (!vec.empty())
@@ -605,7 +651,7 @@ namespace flame
 			case TagPU:
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)vi.type;
-				if (auto it = spec.map.find(ti); it != spec.map.end())
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
 					auto v = it->second(read_pudt(indent2));
 					if (v != INVALID_POINTER)
@@ -692,7 +738,7 @@ namespace flame
 			case TagVPU:
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
-				if (auto it = spec.map.find(ti); it != spec.map.end())
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
 					auto& vec = *(std::vector<void*>*)p;
 					while (true)

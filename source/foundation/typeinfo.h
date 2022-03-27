@@ -294,7 +294,7 @@ namespace flame
 		struct Item
 		{
 			std::string name;
-			uint hash;
+			uint name_hash;
 			LightCommonValue value;
 		};
 
@@ -304,7 +304,7 @@ namespace flame
 		{
 			auto& i = items.emplace_back();
 			i.name = name;
-			i.hash = sh(name.c_str());
+			i.name_hash = sh(name.c_str());
 			return &i;
 		}
 
@@ -349,7 +349,7 @@ namespace flame
 		{
 			for (auto& i : items)
 			{
-				if (i.hash == h)
+				if (i.name_hash == h)
 				{
 					if (v)
 						*v = i.value;
@@ -364,12 +364,14 @@ namespace flame
 	{
 		EnumInfo* ei = nullptr;
 		std::string name;
+		uint name_hash;
 		int value = -1;
 	};
 
 	struct EnumInfo
 	{
 		std::string name;
+		uint name_hash;
 		std::vector<EnumItemInfo> items;
 
 		inline const EnumItemInfo* find_item(std::string_view name) const
@@ -397,6 +399,7 @@ namespace flame
 	{
 		UdtInfo* ui = nullptr;
 		std::string name;
+		uint name_hash;
 		uint rva = 0;
 		int voff = -1;
 		bool is_static = false;
@@ -449,6 +452,7 @@ namespace flame
 		UdtInfo* ui = nullptr;
 		TypeInfo* type = nullptr;
 		std::string name;
+		uint name_hash;
 		uint offset = 0;
 		uint array_size = 0;
 		uint array_stride = 0;
@@ -460,6 +464,7 @@ namespace flame
 	{
 		UdtInfo* ui;
 		std::string name;
+		uint name_hash;
 		TypeInfo* type = nullptr;
 		int var_idx = -1;
 		int getter_idx = -1;
@@ -475,6 +480,7 @@ namespace flame
 	struct UdtInfo
 	{
 		std::string name;
+		uint name_hash;
 		uint size = 0;
 		std::string base_class_name;
 		std::vector<VariableInfo> variables;
@@ -502,7 +508,7 @@ namespace flame
 		{
 			for (auto& v : variables)
 			{
-				if (sh(v.name.c_str()) == name_hash)
+				if (v.name_hash == name_hash)
 					return &v;
 			}
 			return nullptr;
@@ -528,7 +534,7 @@ namespace flame
 		{
 			for (auto& f : functions)
 			{
-				if (sh(f.name.c_str()) == name_hash)
+				if (f.name_hash == name_hash)
 					return &f;
 			}
 			return nullptr;
@@ -548,7 +554,7 @@ namespace flame
 		{
 			for (auto& a : attributes)
 			{
-				if (sh(a.name.c_str()) == name_hash)
+				if (a.name_hash == name_hash)
 					return &a;
 			}
 			return nullptr;
@@ -1740,7 +1746,7 @@ namespace flame
 		void unserialize(const std::string& str, void* p) const override
 		{
 			if (!p) p = &v;
-			*(vec4*)p = s2t<4, float>(str).yzwx();
+			*(vec4*)p = s2t<4, float>(str);
 		}
 
 		void* get_v() const override

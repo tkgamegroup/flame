@@ -67,11 +67,12 @@ struct NavMeshTest
 
 void App::init()
 {
-	app.create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
-	app.world->update_components = false;
-	app.always_render = false;
+	create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	world->update_components = false;
+	always_render = false;
+	renderer->type = sRenderer::CameraLight;
 
-	auto root = app.world->root.get();
+	auto root = world->root.get();
 	root->add_component(th<cNode>());
 	e_editor = Entity::create();
 	e_editor->name = "[Editor]";
@@ -79,7 +80,7 @@ void App::init()
 	e_editor->add_component(th<cCamera>());
 	root->add_child(e_editor);
 
-	app.main_window->imgui_callbacks.add([this]() {
+	main_window->imgui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
 		{
@@ -99,14 +100,14 @@ void App::init()
 			{
 			#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Save("NewPrefab", "New prefab", "Prefab file (*.prefab){.prefab}",
-					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
+					prefab_path.empty() ? "" : (project_path / L"assets").string());
 			#endif
 			}
 			if (ImGui::MenuItem("Open Prefab"))
 			{
 			#ifdef USE_IM_FILE_DIALOG
 				ifd::FileDialog::Instance().Open("OpenPrefab", "Open a prefab", "Prefab file (*.prefab){.prefab}", false, 
-					app.prefab_path.empty() ? "" : (app.project_path / L"assets").string());
+					prefab_path.empty() ? "" : (project_path / L"assets").string());
 			#endif
 			}
 			if (ImGui::MenuItem("Save Prefab"))
@@ -517,7 +518,7 @@ void App::open_prefab(const std::filesystem::path& path)
 		e_prefab->parent->remove_child(e_prefab);
 	e_prefab = Entity::create();
 	e_prefab->load(path);
-	app.world->root->add_child(e_prefab);
+	world->root->add_child(e_prefab);
 }
 
 bool App::cmd_create_entity()
@@ -554,7 +555,7 @@ bool App::cmd_play()
 		return false;
 	e_playing = e_prefab->copy();
 	e_prefab->parent->remove_child(e_prefab, false);
-	app.world->root->add_child(e_playing);
+	world->root->add_child(e_playing);
 	world->update_components = true;
 	always_render = true;
 	auto& camera_list = cCamera::list();
@@ -569,7 +570,7 @@ bool App::cmd_stop()
 	add_event([this]() {
 		e_playing->parent->remove_child(e_playing);
 		e_playing = nullptr;
-		app.world->root->add_child(e_prefab);
+		world->root->add_child(e_prefab);
 		return false;
 	});
 	world->update_components = false;
@@ -627,6 +628,11 @@ int main(int argc, char** args)
 		app.open_project(e.value);
 		break;
 	}
+	for (auto& e : preferences_i.get_section_entries("opened_folder"))
+	{
+		view_project.peeding_open_path = e.value;
+		break;
+	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
 	{
 		app.open_prefab(e.value);
@@ -646,6 +652,11 @@ int main(int argc, char** args)
 	{
 		preferences_o << "[project_path]\n";
 		preferences_o << app.project_path.string() << "\n";
+	}
+	if (view_project.opened_folder)
+	{
+		preferences_o << "[opened_folder]\n";
+		preferences_o << view_project.opened_folder->path.string() << "\n";
 	}
 	if (app.e_prefab)
 	{

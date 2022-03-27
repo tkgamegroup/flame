@@ -367,7 +367,7 @@ namespace flame
 		}
 
 		UnserializeXmlSpec spec;
-		spec.map[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			std::string name = src.attribute("type_name").value();
 			auto hash = sh(name.c_str());
 			auto ui = find_udt(hash);
@@ -381,7 +381,7 @@ namespace flame
 				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
-		spec.map[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			auto e = new EntityPrivate();
 
 			std::string file_id;
@@ -458,7 +458,7 @@ namespace flame
 		pugi::xml_document file;
 
 		SerializeXmlSpec spec;
-		spec.map[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
@@ -467,7 +467,7 @@ namespace flame
 				serialize_xml(*ui, comp, dst);
 			}
 		};
-		spec.map[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (Entity*)src;
 			dst.append_attribute("file_id").set_value(e->file_id.c_str());
 			if (e->prefab)

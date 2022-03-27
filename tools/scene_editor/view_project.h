@@ -41,9 +41,10 @@ struct View_Project : View
 		void draw();
 	};
 
+	std::filesystem::path peeding_open_path;
 	std::unique_ptr<FolderTreeNode> folder_tree;
-	FolderTreeNode* selected_folder = nullptr;
-	uint selected_folder_frame = 0;
+	FolderTreeNode* opened_folder = nullptr;
+	uint open_folder_frame = 0;
 
 	std::map<int, std::unique_ptr<graphics::Image>> icons;
 	std::vector<std::unique_ptr<graphics::Image>> thumbnails;
@@ -57,8 +58,8 @@ struct View_Project : View
 	void reset();
 	void set_items_size(float size);
 
-	void select_folder(FolderTreeNode* folder);
-	void open_folder(const std::filesystem::path& path);
+	FolderTreeNode* find_folder(const std::filesystem::path& path, bool force_read = false);
+	void open_folder(FolderTreeNode* folder);
 
 	void on_draw() override;
 };

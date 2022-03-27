@@ -50,13 +50,16 @@ namespace flame
 		bones.clear();
 
 		graphics::ModelPtr _model = nullptr;
-		_model = graphics::Model::get(model_name);
+		if (!model_name.empty())
+			_model = graphics::Model::get(model_name);
 		if (model != _model)
 		{
 			if (model)
 				graphics::Model::release(model);
 			model = _model;
 		}
+		else if (_model)
+			graphics::Model::release(_model);
 		bones_dirty = true;
 
 		if (node)

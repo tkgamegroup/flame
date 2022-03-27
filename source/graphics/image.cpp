@@ -176,7 +176,7 @@ namespace flame
 			info.subresourceRange.layerCount = sub.layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
-			register_backend_object(iv->vk_image_view, th<decltype(*iv)>(), iv);
+			register_backend_object(iv->vk_image_view, tn<decltype(*iv)>(), iv);
 
 			views.emplace(key, iv);
 			return iv;
@@ -477,7 +477,7 @@ namespace flame
 
 				chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
 				chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
-				register_backend_object(ret->vk_image, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_image, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}
@@ -670,7 +670,7 @@ namespace flame
 			ret->size = size;
 			ret->initialize();
 			ret->vk_image = native;
-			register_backend_object(ret->vk_image, th<decltype(*ret)>(), ret);
+			register_backend_object(ret->vk_image, tn<decltype(*ret)>(), ret);
 
 			return ret;
 		}
@@ -719,7 +719,7 @@ namespace flame
 				info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
-				register_backend_object(ret->vk_sampler, th<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_sampler, tn<decltype(*ret)>(), ret);
 
 				samplers.emplace_back(ret);
 				return ret;

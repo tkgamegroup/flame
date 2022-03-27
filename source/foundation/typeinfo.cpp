@@ -184,11 +184,13 @@ namespace flame
 			auto name = std::string(n_enum.attribute("name").value());
 			auto& e = enums.emplace(sh(name.c_str()), EnumInfo()).first->second;
 			e.name = name;
+			e.name_hash = sh(name.c_str());
 			for (auto n_item : n_enum.child("items"))
 			{
 				auto& i = e.items.emplace_back();
 				i.ei = &e;
 				i.name = n_item.attribute("name").value();
+				i.name_hash = sh(i.name.c_str());
 				i.value = n_item.attribute("value").as_int();
 			}
 		}
@@ -197,6 +199,7 @@ namespace flame
 			auto name = std::string(n_udt.attribute("name").value());
 			auto& u = udts.emplace(sh(name.c_str()), UdtInfo()).first->second;
 			u.name = name;
+			u.name_hash = sh(name.c_str());
 			u.size = n_udt.attribute("size").as_uint();
 			if (auto a = n_udt.attribute("base_class_name"); a)
 				u.base_class_name = a.value();
@@ -207,6 +210,7 @@ namespace flame
 				v.ui = &u;
 				v.type = read_ti(n_variable.attribute("type"));
 				v.name = n_variable.attribute("name").value();
+				v.name_hash = sh(v.name.c_str());
 				v.offset = n_variable.attribute("offset").as_uint();
 				if (auto a = n_variable.attribute("array_size"); a)
 					v.array_size = a.as_uint();
@@ -222,6 +226,7 @@ namespace flame
 				auto& f = u.functions.emplace_back();
 				f.ui = &u;
 				f.name = n_function.attribute("name").value();
+				f.name_hash = sh(f.name.c_str());
 				f.rva = n_function.attribute("rva").as_uint();
 				f.voff = n_function.attribute("voff").as_int();
 				if (auto a = n_function.attribute("is_static"); a)
@@ -238,6 +243,7 @@ namespace flame
 				auto& a = u.attributes.emplace_back();
 				a.ui = &u;
 				a.name = n_attribute.attribute("name").value();
+				a.name_hash = sh(a.name.c_str());
 				a.type = read_ti(n_attribute.attribute("type"));
 				if (auto att = n_attribute.attribute("var_idx"); att)
 					a.var_idx = att.as_int();

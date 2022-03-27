@@ -14,14 +14,6 @@
 
 #ifdef USE_FBXSDK
 #include <fbxsdk.h>
-FbxAMatrix FbxGetGeometry(FbxNode* pNode)
-{
-	const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
-	const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
-	const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
-
-	return FbxAMatrix(lT, lR, lS);
-}
 #endif
 
 namespace flame
@@ -93,10 +85,30 @@ namespace flame
 			doc.save_file(filename.c_str());
 		}
 
-		void Model::convert(const std::filesystem::path& _filename)
+		std::filesystem::path find_file(const std::filesystem::path& dir, const std::filesystem::path& name)
 		{
+			if (std::filesystem::exists(name))
+				return name;
+			auto fn = name.filename();
+			auto ret = dir / fn;
+			if (std::filesystem::exists(ret))
+				return ret;
+			for (auto& it : std::filesystem::directory_iterator(dir))
+			{
+				if (std::filesystem::is_directory(it.status()))
+				{
+					ret = it.path() / fn;
+					if (std::filesystem::exists(ret))
+						return ret;
+				}
+			}
+			return name;
+		}
+
+		void Model::convert(const std::filesystem::path& _filename, const vec3& rotation, const vec3& scaling)
+		{
+			auto ppath = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
-			auto ppath = filename.parent_path();
 			auto model_name = filename.filename().stem().string();
 			auto ext = filename.extension();
 			filename.replace_extension(L".fmod");
@@ -112,6 +124,7 @@ namespace flame
 				}
 				return ret;
 			};
+
 			auto get_empty_bone_ids_idx = [](const ivec4& ids) {
 				for (auto i = 0; i < 4; i++)
 				{
@@ -121,10 +134,69 @@ namespace flame
 				return -1;
 			};
 
+			auto wrap_root = rotation != vec3(0.f) || scaling != vec3(1.f);
+			auto preprocess_prefab = [&](pugi::xml_node first_node)->pugi::xml_node {
+				if (wrap_root)
+				{
+					auto n_node = first_node.append_child("components").append_child("item");
+					n_node.append_attribute("type_name").set_value("flame::cNode");
+					if (rotation != vec3(0.f))
+						n_node.append_attribute("eul").set_value(str(rotation).c_str());
+					if (scaling != vec3(1.f))
+						n_node.append_attribute("scl").set_value(str(scaling).c_str());
+					return first_node.append_child("children").append_child("item");
+				}
+				return first_node;
+			};
+			auto postprocess_prefab = [&](ModelPtr model, pugi::xml_node first_node) {
+				if (!model->bones.empty())
+				{
+					auto dst = first_node;
+					if (wrap_root)
+						dst = dst.child("children").first_child();
+					auto n_armature = dst.child("components").append_child("item");
+					n_armature.append_attribute("type_name").set_value("flame::cArmature");
+					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
+				}
+			};
+
 			if (ext == L".fbx")
 			{
 #ifdef USE_FBXSDK
 				using namespace fbxsdk;
+
+				auto get_matrix = [](FbxNode* pNode) {
+					const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
+					const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
+					const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+
+					return FbxAMatrix(lT, lR, lS);
+				};
+
+				auto get_quat = [](FbxEuler::EOrder ro, const FbxDouble3& e)->quat {
+					auto make_quat = [&](int _1, int _2, int _3) {
+						vec3 axis[3] = {
+							vec3(1.f, 0.f, 0.f),
+							vec3(0.f, 1.f, 0.f),
+							vec3(0.f, 0.f, 1.f)
+						};
+
+						return
+							angleAxis(radians((float)e[_3]), axis[_3])
+							* angleAxis(radians((float)e[_2]), axis[_2])
+							* angleAxis(radians((float)e[_1]), axis[_1]);
+					};
+
+					switch (ro)
+					{
+					case FbxEuler::eOrderXYZ: { return make_quat(0, 1, 2); } break;
+					case FbxEuler::eOrderXZY: { return make_quat(0, 2, 1); } break;
+					case FbxEuler::eOrderYZX: { return make_quat(1, 2, 0); } break;
+					case FbxEuler::eOrderYXZ: { return make_quat(1, 0, 2); } break;
+					case FbxEuler::eOrderZXY: { return make_quat(2, 0, 1); } break;
+					case FbxEuler::eOrderZYX: { return make_quat(2, 1, 0); } break;
+					}
+				};
 
 				static FbxManager* sdk_manager = nullptr;
 				if (!sdk_manager)
@@ -169,7 +241,7 @@ namespace flame
 				FbxGeometryConverter geom_converter(sdk_manager);
 				try 
 				{
-					geom_converter.Triangulate(scene, /*replace*/true);
+					geom_converter.Triangulate(scene, true);
 				}
 				catch (std::runtime_error) 
 				{
@@ -201,18 +273,9 @@ namespace flame
 						auto pos = vec3(p[0], p[1], p[2]);
 						if (pos != vec3(0.f))
 							n_node.append_attribute("pos").set_value(str(pos).c_str());
-						auto eul = vec3(r[0], r[1], r[2]);
-						switch (ro)
-						{
-						case FbxEuler::eOrderXYZ: eul = vec3(eul.y, eul.x, eul.z);	break;
-						case FbxEuler::eOrderXZY: eul = vec3(eul.y, eul.z, eul.x);	break;
-						case FbxEuler::eOrderYZX: eul = vec3(eul.x, eul.z, eul.y);	break;
-						case FbxEuler::eOrderYXZ:									break;
-						case FbxEuler::eOrderZXY: eul = vec3(eul.z, eul.y, eul.x);	break;
-						case FbxEuler::eOrderZYX: eul = vec3(eul.z, eul.x, eul.y);	break;
-						}
-						if (eul != vec3(0.f))
-							n_node.append_attribute("eul").set_value(str(eul).c_str());
+						auto qut = get_quat(ro, r);
+						if (qut != quat(1.f, 0.f, 0.f, 0.f))
+							n_node.append_attribute("qut").set_value(str(*(vec4*)&qut).c_str());
 						auto scl = vec3(s[0], s[1], s[2]);
 						if (scl != vec3(1.f))
 							n_node.append_attribute("scl").set_value(str(scl).c_str());
@@ -238,7 +301,7 @@ namespace flame
 									{
 										if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 										{
-											 material->textures[map_id].filename = Path::get(ppath / tex->GetFileName());
+											 material->textures[map_id].filename = Path::reverse(find_file(ppath, tex->GetFileName()));
 											 material->color_map = map_id++;
 										}
 									}
@@ -334,7 +397,7 @@ namespace flame
 												FbxAMatrix reference_init;
 												FbxAMatrix cluster_init;
 												cluster->GetTransformMatrix(reference_init);
-												reference_init *= FbxGetGeometry(src);
+												reference_init *= get_matrix(src);
 												cluster->GetTransformLinkMatrix(cluster_init);
 												auto off_mat = cluster_init.Inverse() * reference_init;
 
@@ -466,13 +529,8 @@ namespace flame
 							process_node(n_children.append_child("item"), src->GetChild(i));
 					}
 				};
-				process_node(doc_prefab.append_child("prefab"), scene->GetRootNode());
-				if (!model->bones.empty())
-				{
-					auto n_armature = doc_prefab.first_child().child("components").append_child("item");
-					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
-				}
+				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->GetRootNode());
+				postprocess_prefab(model, doc_prefab.first_child());
 
 				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
 
@@ -636,8 +694,8 @@ namespace flame
 
 				pugi::xml_document doc_prefab;
 
-				std::function<void(pugi::xml_node, aiNode*)> print_node;
-				print_node = [&](pugi::xml_node dst, aiNode* src) {
+				std::function<void(pugi::xml_node, aiNode*)> process_node;
+				process_node = [&](pugi::xml_node dst, aiNode* src) {
 					auto name = std::string(src->mName.C_Str());
 					dst.append_attribute("name").set_value(name.c_str());
 
@@ -701,16 +759,11 @@ namespace flame
 					{
 						auto n_children = dst.append_child("children");
 						for (auto i = 0; i < src->mNumChildren; i++)
-							print_node(n_children.append_child("item"), src->mChildren[i]);
+							process_node(n_children.append_child("item"), src->mChildren[i]);
 					}
 				};
-				print_node(doc_prefab.append_child("prefab"), scene->mRootNode);
-				if (!model->bones.empty())
-				{
-					auto n_armature = doc_prefab.first_child().child("components").append_child("item");
-					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
-				}
+				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->mRootNode);
+				postprocess_prefab(model, doc_prefab.first_child());
 
 				auto prefab_path = filename;
 				prefab_path.replace_extension(L".prefab");
