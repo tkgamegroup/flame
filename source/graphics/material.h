@@ -37,7 +37,7 @@ namespace flame
 			std::filesystem::path shader_file = L"flame/shaders/default_mat.glsl";
 			std::vector<std::string> shader_defines;
 
-			Texture textures[8] = {};
+			std::vector<Texture> textures;
 
 			std::filesystem::path filename;
 

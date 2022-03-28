@@ -317,12 +317,15 @@ namespace flame
 					break;
 				case TagAU:
 				{
-					auto& ui = *vi.type->retrive_ui();
-					auto pp = p;
-					for (auto cc : c.children())
+					auto ui = vi.type->retrive_ui();
+					if (ui)
 					{
-						unserialize_xml(ui, cc, pp, spec);
-						pp += ui.size;
+						auto pp = p;
+						for (auto cc : c.children())
+						{
+							unserialize_xml(*ui, cc, pp, spec);
+							pp += ui->size;
+						}
 					}
 				}
 					break;
@@ -349,6 +352,21 @@ namespace flame
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
 						ti->unserialize(cc.attribute("v").value(), pd);
+					}
+				}
+					break;
+				case TagVU:
+				{
+					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
+					auto& vec = *(std::vector<char>*)p;
+					auto len = 0;
+					for (auto cc : c.children())
+					{
+						len++;
+						vec.resize(len * ti->size);
+						auto pd = (char*)vec.data() + (len - 1) * ti->size;
+						ti->create(pd);
+						unserialize_xml(*ti->ui, cc, pd, spec);
 					}
 				}
 					break;
