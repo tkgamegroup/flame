@@ -536,6 +536,8 @@ namespace flame
 
 				model->save(replace_ext(_filename, L".fmod"));
 
+				delete model;
+
 				FbxArray<FbxString*> anim_names;
 				scene->FillAnimStackNameArray(anim_names);
 				auto anim_count = anim_names.GetCount();
@@ -544,18 +546,59 @@ namespace flame
 					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
 
+					auto animation_name = std::format("{}_{}.fani", model_name, anim_stack->GetName());
+					for (auto& ch : animation_name)
+						if (ch == '|') ch = '_';
+					auto animation_filename = Path::get(ppath / animation_name);
+
 					std::function<void(FbxNode*)> get_node_curves;
 					get_node_curves = [&](FbxNode* node) {
-						FbxAnimCurve* curve = NULL;
-						curve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
-						if (curve)
-						{
+						FbxAnimCurve* curve = nullptr;
+						std::vector<std::pair<uint, vec3>> position_keys;
+						std::vector<std::pair<uint, vec3>> rotation_keys;
+						auto set_key = [](std::vector<std::pair<uint, vec3>>& dst, uint t, int idx, float v) {
+							if (dst.empty() && v == 0.f)
+								return;
+							auto it = std::lower_bound(dst.begin(), dst.end(), t, [](const auto& i, auto v) {
+								return v < i.first;
+							});
+							if (it == dst.end() || it->first != t)
+								it = dst.emplace(it, std::make_pair(t, vec3(0.f)));
+							it->second[idx] = v;
+						};
+						auto read_curve = [&](const char* name, int type, int idx) {
+							curve = type == 0 ? node->LclTranslation.GetCurve(layer, name) :
+								node->LclRotation.GetCurve(layer, name);
+							auto& dst = type == 0 ? position_keys : rotation_keys;
+							if (curve)
+							{
+								auto keys_count = curve->KeyGetCount();
+								for (auto i = 0; i < keys_count; i++)
+								{
+									auto t = (uint)curve->KeyGetTime(i).GetMilliSeconds();
+									auto v = curve->KeyGetValue(i);
+									set_key(dst, t, idx, v);
+								}
+							}
+						};
+						read_curve(FBXSDK_CURVENODE_COMPONENT_X, 0, 0);
+						read_curve(FBXSDK_CURVENODE_COMPONENT_Y, 0, 1);
+						read_curve(FBXSDK_CURVENODE_COMPONENT_Z, 0, 2);
+						read_curve(FBXSDK_CURVENODE_COMPONENT_X, 1, 0);
+						read_curve(FBXSDK_CURVENODE_COMPONENT_Y, 1, 1);
+						read_curve(FBXSDK_CURVENODE_COMPONENT_Z, 1, 2);
+						std::reverse(position_keys.begin(), position_keys.end());
+						std::reverse(rotation_keys.begin(), rotation_keys.end());
 
-						}
+						auto children_count = node->GetChildCount();
+						for (auto i = 0; i < children_count; i++)
+							get_node_curves(node->GetChild(i));
 					};
+
+					get_node_curves(scene->GetRootNode());
 				}
 
-				delete model;
+				scene->Destroy(true);
 #endif
 			}
 			else

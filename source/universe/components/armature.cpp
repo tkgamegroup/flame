@@ -211,8 +211,8 @@ namespace flame
 						auto& b = bones[t.bone_idx];
 						if (!t.positions.empty())
 						{
-							auto lit = std::upper_bound(t.positions.begin(), t.positions.end(), playing_time, [](auto v, const auto& e) {
-								return v < e.first;
+							auto lit = std::upper_bound(t.positions.begin(), t.positions.end(), playing_time, [](auto v, const auto& i) {
+								return v < i.first;
 							});
 							if (lit == t.positions.end())
 								lit--;
@@ -226,8 +226,8 @@ namespace flame
 						}
 						if (!t.rotations.empty())
 						{
-							auto lit = std::upper_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](auto v, const auto& e) {
-								return v < e.first;
+							auto lit = std::upper_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](auto v, const auto& i) {
+								return v < i.first;
 							});
 							if (lit == t.rotations.end())
 								lit--;

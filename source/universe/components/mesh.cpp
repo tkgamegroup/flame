@@ -55,28 +55,14 @@ namespace flame
 		graphics::ModelPtr _model = nullptr;
 		graphics::MeshPtr _mesh = nullptr;
 		graphics::MaterialPtr _material = nullptr;
-		auto prev_mesh_index = mesh_index;
-		auto prev_skin_index = skin_index;
 		if (!model_name.empty())
 			_model = graphics::Model::get(model_name);
 		if (_model && !_model->meshes.empty())
 		{
-			if (mesh_index >= _model->meshes.size())
-				mesh_index = 0;
-			_mesh = &_model->meshes[mesh_index];
-			if (!_mesh->materials.empty())
-			{
-				if (skin_index >= _mesh->materials.size())
-					skin_index = 0;
+			if (mesh_index < _model->meshes.size())
+				_mesh = &_model->meshes[mesh_index];
+			if (_mesh && skin_index < _mesh->materials.size())
 				_material = _mesh->materials[skin_index];
-			}
-			else
-				skin_index = 0;
-		}
-		else
-		{
-			mesh_index = 0;
-			skin_index = 0;
 		}
 		if (model != _model)
 		{
@@ -102,31 +88,20 @@ namespace flame
 		}
 
 		node->mark_transform_dirty();
-
-		data_changed("model_name"_h);
-		if (mesh_index != prev_mesh_index)
-			data_changed("mesh_index"_h);
-		if (skin_index != prev_skin_index)
-			data_changed("skin_index"_h);
 	}
 
 	void cMeshPrivate::set_mesh_index(uint idx)
 	{
-		if (!model || idx >= model->meshes.size() || mesh_index == idx)
+		if (mesh_index == idx)
 			return;
 		mesh_index = idx;
 
 		graphics::MaterialPtr _material = nullptr;
-		auto prev_skin_index = skin_index;
-		auto _mesh = &model->meshes[mesh_index];
-		if (!_mesh->materials.empty())
-		{
-			if (skin_index >= _mesh->materials.size())
-				skin_index = 0;
+		graphics::MeshPtr _mesh = nullptr;
+		if (model && mesh_index < model->meshes.size())
+			_mesh = &model->meshes[mesh_index];
+		if (_mesh && skin_index < _mesh->materials.size())
 			_material = _mesh->materials[skin_index];
-		}
-		else
-			skin_index = 0;
 		if (mesh != _mesh)
 		{
 			if (mesh_res_id != -1)
@@ -145,17 +120,17 @@ namespace flame
 		node->mark_transform_dirty();
 
 		data_changed("mesh_index"_h);
-		if (skin_index != prev_skin_index)
-			data_changed("skin_index"_h);
 	}
 
 	void cMeshPrivate::set_skin_index(uint idx)
 	{
-		if (!mesh || skin_index >= mesh->materials.size() || skin_index == idx)
+		if (skin_index == idx)
 			return;
 		skin_index = idx;
 
-		auto _material = mesh->materials[skin_index];
+		graphics::MaterialPtr _material = nullptr;
+		if (mesh && skin_index < mesh->materials.size())
+			_material = mesh->materials[skin_index];
 		if (material != _material)
 		{
 			if (material_res_id != -1)
