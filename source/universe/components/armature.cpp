@@ -163,18 +163,12 @@ namespace flame
 									t.positions[i].first = ch.position_keys[i].t;
 									t.positions[i].second = ch.position_keys[i].p;
 								}
-								std::sort(t.positions.begin(), t.positions.end(), [](const auto& a, const auto& b) {
-									return a.first < b.first;
-									});
 								t.rotations.resize(ch.rotation_keys.size());
 								for (auto i = 0; i < t.rotations.size(); i++)
 								{
 									t.rotations[i].first = ch.rotation_keys[i].t;
 									t.rotations[i].second = ch.rotation_keys[i].q;
 								}
-								std::sort(t.rotations.begin(), t.rotations.end(), [](const auto& a, const auto& b) {
-									return a.first < b.first;
-									});
 							}
 						}
 					}

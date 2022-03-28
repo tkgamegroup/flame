@@ -446,7 +446,7 @@ namespace flame
 		buf_material.set_var<"f"_h>(mat->float_values);
 		buf_material.set_var<"i"_h>(mat->int_values);
 
-		res.texs.resize(countof(mat->textures));
+		res.texs.resize(mat->textures.size());
 		for (auto i = 0; i < res.texs.size(); i++)
 		{
 			res.texs[i].first = -1;

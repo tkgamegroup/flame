@@ -690,9 +690,11 @@ process:
 			Rule* ur;
 			if (!find_udt(sh(sym.first.c_str()), db) && need_udt(sym.first, &ur))
 			{
+				UdtInfo u;
+				u.name = sym.first;
+
 				sym.second->get_length(&ull);
-				auto udt_size = ull;
-				std::string base_class_name;
+				u.size = ull;
 
 				IDiaEnumSymbols* s_base_classes;
 				IDiaSymbol* s_base_class;
@@ -700,13 +702,8 @@ process:
 				if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
 				{
 					s_base_class->get_name(&pwname);
-					base_class_name = w2s(pwname);
+					u.base_class_name = w2s(pwname);
 				}
-
-				UdtInfo u;
-				u.name = sym.first;
-				u.size = udt_size;
-				u.base_class_name = base_class_name;
 
 				auto get_return_type = [&](IDiaSymbol* s_function_type) {
 					TypeInfo* ret;
@@ -740,8 +737,6 @@ process:
 					return ret;
 				};
 
-				pugi::xml_node n_functions;
-
 				IDiaEnumSymbols* s_functions;
 				sym.second->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
 				IDiaSymbol* s_function;
@@ -749,7 +744,7 @@ process:
 				{
 					s_function->get_name(&pwname);
 					auto name = w2s(pwname);
-					if (sym.first.ends_with(name))
+					if (u.name.ends_with(name))
 						name = "ctor";
 					else if (name[0] == '~')
 						name = "dtor";
@@ -766,6 +761,11 @@ process:
 					if (!rva && voff == -1)
 						continue;
 
+					IDiaSymbol* s_function_type;
+					s_function->get_type(&s_function_type);
+					auto return_type = get_return_type(s_function_type);
+					auto parameters = get_parameters(s_function_type);
+
 					Metas metas;
 					if (ur->pass_child(name, &metas))
 					{
@@ -776,29 +776,19 @@ process:
 						fi.metas = metas;
 						fi.library = library;
 
-						IDiaSymbol* s_function_type;
-						s_function->get_type(&s_function_type);
-
-						fi.return_type = get_return_type(s_function_type);
-
 						IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
 						fi.is_static = false;
 						if (s6_function->get_isStaticMemberFunc(&b) == S_OK)
 							fi.is_static = b;
 
-						fi.parameters = get_parameters(s_function_type);
-
-						s_function_type->Release();
-
-						if (name == "ctor" && fi.parameters.empty() && rva)
-							fi.name = "dctor";
+						fi.return_type = return_type;
+						fi.parameters = parameters;
 					}
 
+					s_function_type->Release();
 					s_function->Release();
 				}
 				s_functions->Release();
-
-				pugi::xml_node n_variables;
 
 				IDiaEnumSymbols* s_variables;
 				sym.second->findChildren(SymTagData, NULL, nsNone, &s_variables);
@@ -853,7 +843,7 @@ process:
 								s_functions->Release();
 							}
 
-							global->findChildren(SymTagData, s2w(sym.first + "::" + name).c_str(), nsNone, &symbols);
+							global->findChildren(SymTagData, s2w(u.name + "::" + name).c_str(), nsNone, &symbols);
 							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
 							{
 								if (symbol->get_relativeVirtualAddress(&dw) == S_OK)
@@ -894,6 +884,12 @@ process:
 				}
 				s_variables->Release();
 
+				for (auto& fi : u.functions)
+				{
+					if (fi.name == "ctor" && fi.parameters.empty() && fi.rva)
+						fi.name = "dctor";
+				}
+
 				void* obj = nullptr;
 				if (library)
 				{
@@ -906,11 +902,11 @@ process:
 					}
 					else
 					{
-						obj = malloc(udt_size);
+						obj = malloc(u.size);
 						if (auto fi = u.find_function("dctor"); fi)
 							fi->call<void>(obj);
 						else
-							memset(obj, 0, udt_size);
+							memset(obj, 0, u.size);
 					}
 				}
 

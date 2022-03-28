@@ -310,7 +310,7 @@ namespace flame
 
 							auto material_name = format_mat_name(fbx_mat->GetName(), i);
 							material_name = std::format("{}_{}.fmat", model_name, material_name);
-							material->filename = ppath / material_name;
+							material->filename = Path::reverse(ppath / material_name);
 							material->save(Path::get(material->filename));
 
 							fbx_mat->SetUserDataPtr(material);
@@ -536,6 +536,25 @@ namespace flame
 
 				model->save(replace_ext(_filename, L".fmod"));
 
+				FbxArray<FbxString*> anim_names;
+				scene->FillAnimStackNameArray(anim_names);
+				auto anim_count = anim_names.GetCount();
+				for (auto i = 0; i < anim_count; i++)
+				{
+					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
+					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
+
+					std::function<void(FbxNode*)> get_node_curves;
+					get_node_curves = [&](FbxNode* node) {
+						FbxAnimCurve* curve = NULL;
+						curve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+						if (curve)
+						{
+
+						}
+					};
+				}
+
 				delete model;
 #endif
 			}
@@ -575,7 +594,7 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
-							material->textures[map_id].filename = Path::get(ppath / name);
+							material->textures[map_id].filename = Path::reverse(find_file(ppath, name));
 							material->color_map = map_id++;
 						}
 					}
@@ -586,14 +605,14 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
-							material->textures[map_id].filename = Path::get(ppath / name);
+							material->textures[map_id].filename = Path::reverse(find_file(ppath, name));
 							material->alpha_map = map_id++;
 						}
 					}
 
 					auto material_name = format_mat_name(ai_mat->GetName().C_Str(), i);
 					material_name = std::format("{}_{}.fmat", model_name, material_name);
-					material->filename = ppath / material_name;
+					material->filename = Path::reverse(ppath / material_name);
 					material->save(Path::get(material->filename));
 
 					materials.emplace_back(material);
