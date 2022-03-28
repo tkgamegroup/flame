@@ -543,17 +543,16 @@ namespace flame
 				{
 					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
-					auto curve_nodes_count = layer->GetMemberCount();
-					for (auto j = 0; j < curve_nodes_count; j++)
-					{
-						auto curve_node = layer->GetMember<FbxAnimCurveNode>(j);
-						auto channels_count = curve_node->GetChannelsCount();
-						for (auto ch = 0; ch < channels_count; ch++)
+
+					std::function<void(FbxNode*)> get_node_curves;
+					get_node_curves = [&](FbxNode* node) {
+						FbxAnimCurve* curve = NULL;
+						curve = node->LclTranslation.GetCurve(layer, FBXSDK_CURVENODE_COMPONENT_X);
+						if (curve)
 						{
-							auto channel_name = curve_node->GetChannelName(ch);
 
 						}
-					}
+					};
 				}
 
 				delete model;
