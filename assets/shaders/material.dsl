@@ -1,10 +1,10 @@
 struct MaterialInfo
 {
 	vec4 color;
-	int opaque;
 	float metallic;
 	float roughness;
 	float alpha_test;
+	int opaque;
 
 	vec4 f;
 	ivec4 i;
