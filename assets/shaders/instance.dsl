@@ -16,7 +16,7 @@ struct ArmatureInstance
 
 layout(set = SET, binding = 1) buffer readonly ArmatureInstances
 {
-	ArmatureInstance armature_instances[128];
+	ArmatureInstance armature_instances[256];
 };
 
 struct TerrainInstance

@@ -99,9 +99,9 @@ namespace flame
 		{
 			auto ret = std::string(name);
 
-			SUS::strip_head_if(ret, "enum ");
-			SUS::strip_head_if(ret, "struct ");
-			SUS::strip_head_if(ret, "class ");
+			SUS::replace_all(ret, "enum ", "");
+			SUS::replace_all(ret, "struct ", "");
+			SUS::replace_all(ret, "class ", "");
 			SUS::replace_all(ret, "unsigned ", "u");
 			SUS::replace_all(ret, "__int64 ", "int64");
 			SUS::replace_all(ret, "Private", "");

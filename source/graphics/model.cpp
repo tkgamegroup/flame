@@ -134,9 +134,9 @@ namespace flame
 				return -1;
 			};
 
-			auto wrap_root = rotation != vec3(0.f) || scaling != vec3(1.f);
+			auto need_wrap_root = rotation != vec3(0.f) || scaling != vec3(1.f);
 			auto preprocess_prefab = [&](pugi::xml_node first_node)->pugi::xml_node {
-				if (wrap_root)
+				if (need_wrap_root)
 				{
 					auto n_node = first_node.append_child("components").append_child("item");
 					n_node.append_attribute("type_name").set_value("flame::cNode");
@@ -152,7 +152,7 @@ namespace flame
 				if (!model->bones.empty())
 				{
 					auto dst = first_node;
-					if (wrap_root)
+					if (need_wrap_root)
 						dst = dst.child("children").first_child();
 					auto n_armature = dst.child("components").append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
@@ -173,7 +173,7 @@ namespace flame
 					return FbxAMatrix(lT, lR, lS);
 				};
 
-				auto get_quat = [](FbxEuler::EOrder ro, const FbxDouble3& e)->quat {
+				auto get_quat = [](FbxEuler::EOrder ro, const vec3& e)->quat {
 					auto make_quat = [&](int _1, int _2, int _3) {
 						vec3 axis[3] = {
 							vec3(1.f, 0.f, 0.f),
@@ -250,7 +250,7 @@ namespace flame
 				}
 
 				std::vector<std::unique_ptr<MaterialT>> materials;
-				auto model = Model::create();
+				std::unique_ptr<ModelT> model(new ModelT);
 
 				pugi::xml_document doc_prefab;
 
@@ -273,7 +273,7 @@ namespace flame
 						auto pos = vec3(p[0], p[1], p[2]);
 						if (pos != vec3(0.f))
 							n_node.append_attribute("pos").set_value(str(pos).c_str());
-						auto qut = get_quat(ro, r);
+						auto qut = get_quat(ro, vec3(r[0], r[1], r[2]));
 						if (qut != quat(1.f, 0.f, 0.f, 0.f))
 							n_node.append_attribute("qut").set_value(str(*(vec4*)&qut).c_str());
 						auto scl = vec3(s[0], s[1], s[2]);
@@ -319,7 +319,8 @@ namespace flame
 
 					if (auto node_attr = src->GetNodeAttribute(); node_attr)
 					{
-						if (node_attr->GetAttributeType() == FbxNodeAttribute::eMesh)
+						auto node_type = node_attr->GetAttributeType();
+						if (node_type == FbxNodeAttribute::eMesh)
 						{
 							auto fbx_mesh = src->GetMesh();
 							if (!fbx_mesh->GetUserDataPtr())
@@ -518,6 +519,17 @@ namespace flame
 								}
 							}
 						}
+						else if (node_type == FbxNodeAttribute::eSkeleton)
+						{
+							std::string name = src->GetName();
+							auto bid = model->find_bone(name);
+							if (bid == -1)
+							{
+								bid = model->bones.size();
+								auto& b = model->bones.emplace_back();
+								b.name = name;
+							}
+						}
 					}
 
 					auto child_count = src->GetChildCount();
@@ -530,13 +542,11 @@ namespace flame
 					}
 				};
 				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->GetRootNode());
-				postprocess_prefab(model, doc_prefab.first_child());
+				postprocess_prefab(model.get(), doc_prefab.first_child());
 
 				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
 
 				model->save(replace_ext(_filename, L".fmod"));
-
-				delete model;
 
 				FbxArray<FbxString*> anim_names;
 				scene->FillAnimStackNameArray(anim_names);
@@ -550,6 +560,9 @@ namespace flame
 					for (auto& ch : animation_name)
 						if (ch == '|') ch = '_';
 					auto animation_filename = Path::get(ppath / animation_name);
+
+					std::unique_ptr<AnimationT> animation(new AnimationT);
+					animation->duration = 0.f;
 
 					std::function<void(FbxNode*)> get_node_curves;
 					get_node_curves = [&](FbxNode* node) {
@@ -566,7 +579,13 @@ namespace flame
 								it = dst.emplace(it, std::make_pair(t, vec3(0.f)));
 							it->second[idx] = v;
 						};
-						auto read_curve = [&](const char* name, int type, int idx) {
+						auto read_curve = [&](int type, int idx) {
+							const char* names[] = {
+								FBXSDK_CURVENODE_COMPONENT_X,
+								FBXSDK_CURVENODE_COMPONENT_Y,
+								FBXSDK_CURVENODE_COMPONENT_Z
+							};
+							auto name = names[idx];
 							curve = type == 0 ? node->LclTranslation.GetCurve(layer, name) :
 								node->LclRotation.GetCurve(layer, name);
 							auto& dst = type == 0 ? position_keys : rotation_keys;
@@ -576,19 +595,39 @@ namespace flame
 								for (auto i = 0; i < keys_count; i++)
 								{
 									auto t = (uint)curve->KeyGetTime(i).GetMilliSeconds();
-									auto v = curve->KeyGetValue(i);
+									auto v = (float)curve->KeyGetValue(i);
 									set_key(dst, t, idx, v);
 								}
 							}
 						};
-						read_curve(FBXSDK_CURVENODE_COMPONENT_X, 0, 0);
-						read_curve(FBXSDK_CURVENODE_COMPONENT_Y, 0, 1);
-						read_curve(FBXSDK_CURVENODE_COMPONENT_Z, 0, 2);
-						read_curve(FBXSDK_CURVENODE_COMPONENT_X, 1, 0);
-						read_curve(FBXSDK_CURVENODE_COMPONENT_Y, 1, 1);
-						read_curve(FBXSDK_CURVENODE_COMPONENT_Z, 1, 2);
-						std::reverse(position_keys.begin(), position_keys.end());
-						std::reverse(rotation_keys.begin(), rotation_keys.end());
+						read_curve(0, 0); read_curve(0, 1); read_curve(0, 2);
+						read_curve(1, 0); read_curve(1, 1); read_curve(1, 2);
+
+						if (!position_keys.empty() || !rotation_keys.empty())
+						{
+							std::reverse(position_keys.begin(), position_keys.end());
+							std::reverse(rotation_keys.begin(), rotation_keys.end());
+							auto& ch = animation->channels.emplace_back();
+							ch.node_name = node->GetName();
+							ch.position_keys.resize(position_keys.size());
+							for (auto i = 0; i < position_keys.size(); i++)
+							{
+								ch.position_keys[i].t = (float)position_keys[i].first / 1000.f;
+								ch.position_keys[i].p = position_keys[i].second;
+							}
+							ch.rotation_keys.resize(rotation_keys.size());
+							auto ro = node->RotationOrder.Get();
+							for (auto i = 0; i < rotation_keys.size(); i++)
+							{
+								ch.rotation_keys[i].t = (float)rotation_keys[i].first / 1000.f;
+								ch.rotation_keys[i].q = get_quat(ro, rotation_keys[i].second);
+							}
+
+							if (!ch.position_keys.empty())
+								animation->duration = max(animation->duration, ch.position_keys.back().t + (1.f / 24.f));
+							if (!ch.rotation_keys.empty())
+								animation->duration = max(animation->duration, ch.rotation_keys.back().t + (1.f / 24.f));
+						}
 
 						auto children_count = node->GetChildCount();
 						for (auto i = 0; i < children_count; i++)
@@ -596,6 +635,8 @@ namespace flame
 					};
 
 					get_node_curves(scene->GetRootNode());
+
+					animation->save(animation_filename);
 				}
 
 				scene->Destroy(true);
@@ -661,13 +702,13 @@ namespace flame
 					materials.emplace_back(material);
 				}
 
-				auto model = Model::create();
+				std::unique_ptr<ModelT> model(new ModelT);
 
 				for (auto i = 0; i < scene->mNumMeshes; i++)
 				{
 					auto ai_mesh = scene->mMeshes[i];
 					auto& mesh = model->meshes.emplace_back();
-					mesh.model = model;
+					mesh.model = model.get();
 
 					mesh.materials.push_back(materials[ai_mesh->mMaterialIndex].get());
 
@@ -825,13 +866,11 @@ namespace flame
 					}
 				};
 				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->mRootNode);
-				postprocess_prefab(model, doc_prefab.first_child());
+				postprocess_prefab(model.get(), doc_prefab.first_child());
 
 				auto prefab_path = filename;
 				prefab_path.replace_extension(L".prefab");
 				doc_prefab.save_file(Path::get(prefab_path).c_str());
-
-				delete model;
 
 				for (auto i = 0; i < scene->mNumAnimations; i++)
 				{
@@ -842,57 +881,33 @@ namespace flame
 						if (ch == '|') ch = '_';
 					auto animation_filename = Path::get(ppath / animation_name);
 
-					pugi::xml_document doc_animation;
-					auto n_animation = doc_animation.append_child("animation");
-					n_animation.append_attribute("duration").set_value((float)ai_ani->mDuration);
-					auto n_channels = n_animation.append_child("channels");
-
-					auto data_filename = animation_filename;
-					data_filename += L".dat";
-					std::ofstream data_file(data_filename, std::ios::binary);
+					std::unique_ptr<AnimationT> animation(new AnimationT);
+					animation->duration = (float)ai_ani->mDuration;
 
 					for (auto j = 0; j < ai_ani->mNumChannels; j++)
 					{
 						auto ai_ch = ai_ani->mChannels[j];
-						auto n_channel = n_channels.append_child("channel");
-						n_channel.append_attribute("node_name").set_value(ai_ch->mNodeName.C_Str());
-						assert(ai_ch->mNumPositionKeys > 0 && ai_ch->mNumRotationKeys > 0 &&
-							ai_ch->mNumPositionKeys == ai_ch->mNumRotationKeys);
 
+						auto& ch = animation->channels.emplace_back();
+						ch.node_name = ai_ch->mNodeName.C_Str();
+
+						ch.position_keys.resize(ai_ch->mNumPositionKeys);
+						for (auto k = 0; k < ch.position_keys.size(); k++)
 						{
-							std::vector<Channel::PositionKey> keys;
-							keys.resize(ai_ch->mNumPositionKeys);
-							for (auto k = 0; k < keys.size(); k++)
-							{
-								auto& p = ai_ch->mPositionKeys[k].mValue;
-								keys[k].p = vec3(p.x, p.y, p.z);
-							}
-							auto n_keys = n_channel.append_child("position_keys");
-							n_keys.append_attribute("offset").set_value(data_file.tellp());
-							auto size = sizeof(Channel::PositionKey) * keys.size();
-							n_keys.append_attribute("size").set_value(size);
-							data_file.write((char*)keys.data(), size);
+							ch.position_keys[k].t = ai_ch->mPositionKeys[k].mTime;
+							auto & p = ai_ch->mPositionKeys[k].mValue;
+							ch.position_keys[k].p = vec3(p.x, p.y, p.z);
 						}
-
+						ch.rotation_keys.resize(ai_ch->mNumRotationKeys);
+						for (auto k = 0; k < ch.rotation_keys.size(); k++)
 						{
-							std::vector<Channel::RotationKey> keys;
-							keys.resize(ai_ch->mNumRotationKeys);
-							for (auto k = 0; k < keys.size(); k++)
-							{
-								auto& q = ai_ch->mRotationKeys[k].mValue;
-								keys[k].q = quat(q.w, q.x, q.y, q.z);
-							}
-							auto n_keys = n_channel.append_child("rotation_keys");
-							n_keys.append_attribute("offset").set_value(data_file.tellp());
-							auto size = sizeof(Channel::RotationKey) * keys.size();
-							n_keys.append_attribute("size").set_value(size);
-							data_file.write((char*)keys.data(), size);
+							ch.rotation_keys[k].t = ai_ch->mRotationKeys[k].mTime;
+							auto& q = ai_ch->mRotationKeys[k].mValue;
+							ch.rotation_keys[k].q = quat(q.w, q.x, q.y, q.z);
 						}
 					}
 
-					data_file.close();
-
-					doc_animation.save_file(animation_filename.c_str());
+					animation->save(animation_filename);
 				}
 #endif
 			}

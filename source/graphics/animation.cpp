@@ -7,6 +7,42 @@ namespace flame
 	{
 		static std::vector<std::unique_ptr<AnimationT>> animations;
 
+		void AnimationPrivate::save(const std::filesystem::path& filename)
+		{
+			pugi::xml_document doc;
+			auto n_animation = doc.append_child("animation");
+			n_animation.append_attribute("duration").set_value(duration);
+
+			auto data_filename = filename;
+			data_filename += L".dat";
+			std::ofstream data_file(data_filename, std::ios::binary);
+
+			auto n_channels = n_animation.append_child("channels");
+			for (auto& ch : channels)
+			{
+				auto n_channel = n_channels.append_child("channel");
+				n_channel.append_attribute("node_name").set_value(ch.node_name.c_str());
+				{
+					auto n_keys = n_channel.append_child("position_keys");
+					n_keys.append_attribute("offset").set_value(data_file.tellp());
+					auto size = sizeof(Channel::PositionKey) * ch.position_keys.size();
+					n_keys.append_attribute("size").set_value(size);
+					data_file.write((char*)ch.position_keys.data(), size);
+				}
+				{
+					auto n_keys = n_channel.append_child("rotation_keys");
+					n_keys.append_attribute("offset").set_value(data_file.tellp());
+					auto size = sizeof(Channel::RotationKey) * ch.rotation_keys.size();
+					n_keys.append_attribute("size").set_value(size);
+					data_file.write((char*)ch.rotation_keys.data(), size);
+				}
+			}
+
+			data_file.close();
+
+			doc.save_file(filename.c_str());
+		}
+
 		struct AnimationGet : Animation::Get
 		{
 			AnimationPtr operator()(const std::filesystem::path& _filename) override
@@ -58,7 +94,6 @@ namespace flame
 						c.rotation_keys.resize(size / sizeof(Channel::RotationKey));
 						data_file.read((char*)c.rotation_keys.data(), size);
 					}
-					ret->channels.emplace_back(c);
 				}
 
 				data_file.close();

@@ -4,6 +4,7 @@
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/model.h>
+#include <flame/universe/components/armature.h>
 
 View_Inspector view_inspector;
 
@@ -176,6 +177,15 @@ void View_Inspector::on_draw()
 				{
 					if (auto ins = get_prefab_instance(e); ins)
 						ins->set_modifier(e->file_id, ui.name, changed_attribute->name, changed_attribute->serialize(c.get()));
+				}
+
+				if (ui.name == "flame::cArmature")
+				{
+					auto armature = (cArmaturePtr)c.get();
+					if (ImGui::Button("Play"))
+						armature->play(0);
+					if (ImGui::Button("Stop"))
+						armature->stop();
 				}
 			}
 		}

@@ -20,10 +20,12 @@ namespace flame
 		/// Reflect
 		virtual void set_animation_names(const std::wstring& paths) = 0;
 
+		/// Reflect
+		bool loop = true;
+
 		int playing_id = -1;
 		float playing_time = 0;
 		float playing_speed = 1.f;
-		bool loop = true;
 
 		virtual void play(uint id) = 0;
 		virtual void stop() = 0;

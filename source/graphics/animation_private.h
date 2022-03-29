@@ -9,6 +9,8 @@ namespace flame
 		struct AnimationPrivate : Animation
 		{
 			uint ref = 0;
+
+			void save(const std::filesystem::path& filename) override;
 		};
 	}
 }

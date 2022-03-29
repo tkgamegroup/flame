@@ -41,6 +41,8 @@ namespace flame
 
 			std::filesystem::path filename;
 
+			virtual ~Material() {}
+
 			virtual void save(const std::filesystem::path& filename) = 0;
 
 			struct Create

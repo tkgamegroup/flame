@@ -34,6 +34,8 @@ namespace flame
 
 			virtual ~Animation() {}
 
+			virtual void save(const std::filesystem::path& filename) = 0;
+
 			struct Get
 			{
 				virtual AnimationPtr operator()(const std::filesystem::path& filename) = 0;

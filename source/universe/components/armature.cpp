@@ -180,7 +180,7 @@ namespace flame
 
 		if (frame < (int)frames)
 		{
-			if (playing_id != -1)
+			if (playing_id != -1 && playing_id < animations.size())
 			{
 				auto& a = animations[playing_id];
 				if (transition_time > 0.f)
