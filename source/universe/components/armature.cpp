@@ -218,10 +218,16 @@ namespace flame
 								lit--;
 							auto rit = lit + 1;
 							if (rit == t.positions.end())
-								rit--;
+							{
+								if (loop)
+									rit = t.positions.begin();
+								else
+									rit = lit;
+							}
 							if (lit == rit)
 								b.pose.p = lit->second;
-							b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							else
+								b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
 							b.node->set_pos(b.pose.p);
 						}
 						if (!t.rotations.empty())
@@ -233,10 +239,16 @@ namespace flame
 								lit--;
 							auto rit = lit + 1;
 							if (rit == t.rotations.end())
-								rit--;
+							{
+								if (loop)
+									rit = t.rotations.begin();
+								else
+									rit = lit;
+							}
 							if (lit == rit)
 								b.pose.q = lit->second;
-							b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							else
+								b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
 							b.node->set_qut(b.pose.q);
 						}
 					}
