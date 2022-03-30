@@ -160,9 +160,9 @@ namespace flame
 				}
 			};
 
+#ifdef USE_FBXSDK
 			if (ext == L".fbx")
 			{
-#ifdef USE_FBXSDK
 				using namespace fbxsdk;
 
 				auto get_matrix = [](FbxNode* pNode) {
@@ -640,9 +640,9 @@ namespace flame
 				}
 
 				scene->Destroy(true);
-#endif
 			}
 			else
+#endif
 			{
 #ifdef USE_ASSIMP
 				Assimp::Importer importer;

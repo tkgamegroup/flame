@@ -121,10 +121,16 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Scene"))
 		{
-			if (ImGui::MenuItem("Create Entity"))
+			if (ImGui::MenuItem("Create Empty"))
 				cmd_create_entity();
-			if (ImGui::MenuItem("Delete Entity"))
-				cmd_delete_selected_entity();
+			if (ImGui::MenuItem("Create Node"))
+				cmd_create_entity();
+			if (ImGui::MenuItem("Create Cube"))
+				cmd_create_entity();
+			if (ImGui::MenuItem("Create Sphere"))
+				cmd_create_entity();
+			if (ImGui::MenuItem("Delete"))
+				cmd_delete_entity();
 			ImGui::Separator();
 			if (ImGui::MenuItem("Generate NavMesh"))
 				sScene::instance()->generate_nav_mesh();
@@ -521,22 +527,29 @@ void App::open_prefab(const std::filesystem::path& path)
 	world->root->add_child(e_prefab);
 }
 
-bool App::cmd_create_entity()
+bool App::cmd_create_entity(EntityPtr dst, uint type)
 {
-	if (!e_prefab)
+	if (!dst)
+		dst = e_prefab;
+	if (!dst)
 		return false;
 	static int id = 0;
 	auto e = Entity::create();
 	e->name = "Entity " + str(id++);
-	e_prefab->add_child(e);
+	switch (type)
+	{
+
+	}
+	dst->add_child(e);
 	return true;
 }
 
-bool App::cmd_delete_selected_entity()
+bool App::cmd_delete_entity(EntityPtr e)
 {
-	if (selection.type != Selection::tEntity)
+	if (!e && selection.type == Selection::tEntity)
+		e = selection.entity;
+	if (!e)
 		return false;
-	auto e = selection.entity;
 	if (e == e_prefab)
 		return false;
 	if (!e->prefab && get_prefab_instance(e))

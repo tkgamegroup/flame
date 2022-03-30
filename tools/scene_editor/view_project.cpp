@@ -397,7 +397,7 @@ void View_Project::on_draw()
 		auto open_rename = false;
 
 		ImGui::TableSetColumnIndex(1); 
-		ImGui::BeginChild("files", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
+		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
 		if (!items.empty())
 		{
 			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
@@ -413,6 +413,17 @@ void View_Project::on_draw()
 
 				if (ImGui::BeginPopupContextItem())
 				{
+					if (ImGui::MenuItem("Show In Explorer"))
+					{
+
+					}
+					if (ImGui::BeginMenu("Copy Path"))
+					{
+						ImGui::MenuItem("Path");
+						ImGui::MenuItem("Full Path");
+						ImGui::MenuItem("Absolute Path");
+						ImGui::EndMenu();
+					}
 					if (ImGui::MenuItem("Rename"))
 					{
 						rename_tar = item->path;
@@ -420,10 +431,6 @@ void View_Project::on_draw()
 						open_rename = true;
 					}
 					if (ImGui::MenuItem("Delete"))
-					{
-
-					}
-					if (ImGui::MenuItem("Copy"))
 					{
 
 					}

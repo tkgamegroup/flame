@@ -5,7 +5,6 @@
 #include <Windows.h>
 #include <dia2.h>
 #include <atlbase.h>
-#include <chrono>
 
 using namespace flame;
 
@@ -488,7 +487,6 @@ process:
 	if (FAILED(CoInitialize(NULL)))
 	{
 		printf("typeinfogen: com initial failed, exit\n");
-		assert(0);
 		return 1;
 	}
 
@@ -496,30 +494,26 @@ process:
 	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 	{
 		printf("typeinfogen: dia not found, exit\n");
-		assert(0);
 		return 1;
 	}
 
 	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
 	{
 		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
-		assert(0);
 		return 1;
 	}
 
-	CComPtr<IDiaSession> session;
-	if (FAILED(dia_source->openSession(&session)))
+	CComPtr<IDiaSession> dia_session;
+	if (FAILED(dia_source->openSession(&dia_session)))
 	{
 		printf("session failed to open\n");
-		assert(0);
 		return 1;
 	}
 
-	CComPtr<IDiaSymbol> global;
-	if (FAILED(session->get_globalScope(&global)))
+	CComPtr<IDiaSymbol> dia_global;
+	if (FAILED(dia_session->get_globalScope(&dia_global)))
 	{
 		printf("failed to get global\n");
-		assert(0);
 		return 1;
 	}
 
@@ -529,6 +523,7 @@ process:
 	ULONGLONG ull;
 	DWORD dw;
 	wchar_t* pwname;
+	VARIANT variant;
 
 	auto library = load_library(input_path);
 
@@ -536,11 +531,11 @@ process:
 	std::map<std::string, IDiaSymbol*> dia_funcs;
 	std::map<std::string, IDiaSymbol*> dia_udts;
 
-	IDiaEnumSymbols* s_enum;
+	IDiaEnumSymbols* symbols;
 	IDiaSymbol* s_obj;
 
-	global->findChildren(SymTagEnum, NULL, nsNone, &s_enum);
-	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
+	dia_global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
@@ -549,10 +544,10 @@ process:
 		else
 			s_obj->Release();
 	}
-	s_enum->Release();
+	symbols->Release();
 
-	global->findChildren(SymTagUDT, NULL, nsNone, &s_enum);
-	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
+	dia_global->findChildren(SymTagUDT, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
@@ -561,10 +556,10 @@ process:
 		else
 			s_obj->Release();
 	}
-	s_enum->Release();
+	symbols->Release();
 
-	global->findChildren(SymTagFunction, NULL, nsNone, &s_enum);
-	while (SUCCEEDED(s_enum->Next(1, &s_obj, &ul)) && (ul == 1))
+	dia_global->findChildren(SymTagFunction, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
@@ -624,21 +619,19 @@ process:
 				referenced_types.push_back(ti);
 		};
 
-		for (auto& sym : dia_enums)
+		for (auto& s_enum : dia_enums)
 		{
-			if (!find_enum(sh(sym.first.c_str()), db) && need_enum(sym.first))
+			if (!find_enum(sh(s_enum.first.c_str()), db) && need_enum(s_enum.first))
 			{
 				EnumInfo e;
-				e.name = sym.first;
+				e.name = s_enum.first;
 				std::vector<std::pair<std::string, int>> items;
 
-				IDiaEnumSymbols* s_items;
-				sym.second->findChildren(SymTagNull, NULL, nsNone, &s_items);
+				IDiaEnumSymbols* symbols;
+				s_enum.second->findChildren(SymTagNull, NULL, nsNone, &symbols);
 				IDiaSymbol* s_item;
-				while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
+				while (SUCCEEDED(symbols->Next(1, &s_item, &ul)) && (ul == 1))
 				{
-					VARIANT variant;
-					ZeroMemory(&variant, sizeof(variant));
 					s_item->get_name(&pwname);
 					s_item->get_value(&variant);
 
@@ -648,7 +641,7 @@ process:
 
 					s_item->Release();
 				}
-				s_items->Release();
+				symbols->Release();
 
 				if (items.size() >= 2)
 				{
@@ -685,20 +678,20 @@ process:
 			}
 		}
 
-		for (auto& sym : dia_udts)
+		for (auto& s_udt : dia_udts)
 		{
 			Rule* ur;
-			if (!find_udt(sh(sym.first.c_str()), db) && need_udt(sym.first, &ur))
+			if (!find_udt(sh(s_udt.first.c_str()), db) && need_udt(s_udt.first, &ur))
 			{
 				UdtInfo u;
-				u.name = sym.first;
+				u.name = s_udt.first;
 
-				sym.second->get_length(&ull);
+				s_udt.second->get_length(&ull);
 				u.size = ull;
 
 				IDiaEnumSymbols* s_base_classes;
 				IDiaSymbol* s_base_class;
-				sym.second->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
+				s_udt.second->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
 				if (SUCCEEDED(s_base_classes->Next(1, &s_base_class, &ul)) && (ul == 1))
 				{
 					s_base_class->get_name(&pwname);
@@ -738,7 +731,7 @@ process:
 				};
 
 				IDiaEnumSymbols* s_functions;
-				sym.second->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+				s_udt.second->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
 				IDiaSymbol* s_function;
 				while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
 				{
@@ -791,7 +784,7 @@ process:
 				s_functions->Release();
 
 				IDiaEnumSymbols* s_variables;
-				sym.second->findChildren(SymTagData, NULL, nsNone, &s_variables);
+				s_udt.second->findChildren(SymTagData, NULL, nsNone, &s_variables);
 				IDiaSymbol* s_variable;
 				while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
 				{
@@ -843,7 +836,7 @@ process:
 								s_functions->Release();
 							}
 
-							global->findChildren(SymTagData, s2w(u.name + "::" + name).c_str(), nsNone, &symbols);
+							dia_global->findChildren(SymTagData, s2w(u.name + "::" + name).c_str(), nsNone, &symbols);
 							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
 							{
 								if (symbol->get_relativeVirtualAddress(&dw) == S_OK)
