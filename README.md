@@ -3,7 +3,7 @@ An ECS 3D-Game-Engine.
 
 # Requirements:
 
-- VulkanSDK
+- VulkanSDK https://vulkan.lunarg.com/sdk/home#windows
 
 - GLM https://github.com/g-truc/glm
 
