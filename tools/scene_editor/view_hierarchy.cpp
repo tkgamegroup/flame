@@ -170,7 +170,7 @@ void View_Hierarchy::on_draw()
 	if (ImGui::IsWindowFocused())
 	{
 		if (ImGui::IsKeyPressed(Keyboard_Del))
-			app.cmd_delete_selected_entity();
+			app.cmd_delete_entity();
 		if (ImGui::IsMouseReleased(0) && selection.frame != frames)
 			selection.clear();
 	}

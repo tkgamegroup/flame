@@ -396,8 +396,10 @@ void View_Project::on_draw()
 
 		auto open_rename = false;
 
-		ImGui::TableSetColumnIndex(1); 
-		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() - style.ItemSpacing.y * 2));
+		ImGui::TableSetColumnIndex(1);
+		if (opened_folder)
+			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
+		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() * 2 - style.ItemSpacing.y * 3));
 		if (!items.empty())
 		{
 			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;

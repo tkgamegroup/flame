@@ -261,7 +261,7 @@ void View_Scene::on_draw()
 					}
 				}
 				if (ImGui::IsKeyPressed(Keyboard_Del))
-					app.cmd_delete_selected_entity();
+					app.cmd_delete_entity();
 			}
 		}
 		if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))

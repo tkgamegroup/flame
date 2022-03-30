@@ -493,9 +493,10 @@ namespace flame
 			res.ref--;
 	}
 
-	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint hash)
+	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint type, uint modifier1, uint modifier2)
 	{
-		auto it = mr.pls.find(hash);
+		auto key = type + modifier1 + modifier2;
+		auto it = mr.pls.find(key);
 		if (it != mr.pls.end())
 			return it->second;
 
@@ -539,7 +540,7 @@ namespace flame
 		if (!pipeline_name.empty())
 			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
 		if (ret)
-			mr.pls[hash] = ret;
+			mr.pls[key] = ret;
 		return ret;
 	}
 

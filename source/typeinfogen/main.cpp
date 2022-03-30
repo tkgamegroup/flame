@@ -569,13 +569,13 @@ process:
 			s_obj->Release();
 	}
 
-	for (auto& sym : dia_funcs)
+	for (auto& s_func : dia_funcs)
 	{
-		if (sym.first.starts_with("flame::TypeInfo::get"))
+		if (s_func.first.starts_with("flame::TypeInfo::get"))
 		{
 			static std::regex reg("^flame::TypeInfo::get<(.+)>$");
 			std::smatch res;
-			if (std::regex_search(sym.first, res, reg))
+			if (std::regex_search(s_func.first, res, reg))
 			{
 				auto name = res[1].str();
 				if (SUS::strip_head_if(name, "enum "))

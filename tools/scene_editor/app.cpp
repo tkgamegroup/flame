@@ -8,6 +8,7 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
+#include <flame/universe/components/mesh.h>
 #include <flame/universe/systems/renderer.h>
 
 std::list<View*> views;
@@ -124,11 +125,15 @@ void App::init()
 			if (ImGui::MenuItem("Create Empty"))
 				cmd_create_entity();
 			if (ImGui::MenuItem("Create Node"))
-				cmd_create_entity();
+				cmd_create_entity(nullptr, "node"_h);
 			if (ImGui::MenuItem("Create Cube"))
-				cmd_create_entity();
+				cmd_create_entity(nullptr, "cube"_h);
 			if (ImGui::MenuItem("Create Sphere"))
-				cmd_create_entity();
+				cmd_create_entity(nullptr, "sphere"_h);
+			if (ImGui::MenuItem("Create Light"))
+				cmd_create_entity(nullptr, "light"_h);
+			if (ImGui::MenuItem("Create Camera"))
+				cmd_create_entity(nullptr, "camera"_h);
 			if (ImGui::MenuItem("Delete"))
 				cmd_delete_entity();
 			ImGui::Separator();
@@ -538,7 +543,26 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	e->name = "Entity " + str(id++);
 	switch (type)
 	{
-
+	case "empty"_h: break;
+	case "node"_h:
+		e->add_component(th<cNode>());
+		break;
+	case "cube"_h:
+		e->add_component(th<cNode>());
+		((cMeshPtr)e->add_component(th<cMesh>()))->set_model_name("standard:cube");
+		break;
+	case "sphere"_h:
+		e->add_component(th<cNode>());
+		((cMeshPtr)e->add_component(th<cMesh>()))->set_model_name("standard:sphere");
+		break;
+	case "light"_h:
+		e->add_component(th<cNode>());
+		e->add_component(th<cLight>());
+		break;
+	case "camera"_h:
+		e->add_component(th<cNode>());
+		e->add_component(th<cCamera>());
+		break;
 	}
 	dst->add_child(e);
 	return true;
