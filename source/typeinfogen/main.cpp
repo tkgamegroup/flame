@@ -633,6 +633,7 @@ process:
 				while (SUCCEEDED(symbols->Next(1, &s_item, &ul)) && (ul == 1))
 				{
 					s_item->get_name(&pwname);
+					ZeroMemory(&variant, sizeof(variant));
 					s_item->get_value(&variant);
 
 					auto item_name = w2s(pwname);
@@ -671,6 +672,7 @@ process:
 				{
 					auto& ii = e.items.emplace_back();
 					ii.name = i.first;
+					ii.name_hash = sh(ii.name.c_str());
 					ii.value = i.second;
 				}
 

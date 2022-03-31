@@ -171,11 +171,13 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 	float distv = dot(scene.camera_dir, -V);
 	V = normalize(V);
 
+#ifndef CAMERA_LIGHT
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
-
 	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * ao;
-
 	ret = get_fog(ret, distv);
+#else
+	ret += brdf(N, V, -scene.camera_dir, vec3(3.14), metallic, albedo, f0, roughness);
+#endif
 	
 	return ret;
 }

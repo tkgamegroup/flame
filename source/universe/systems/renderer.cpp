@@ -157,9 +157,7 @@ namespace flame
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 		buf_idr_mesh.create(0U, buf_mesh_ins.array_capacity);
 
-		pl_deferred = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline",
-			{ "rp=" + str(rp_col) });
-		prm_deferred.init(pl_deferred->layout);
+		prm_deferred.init(get_deferred_pipeline()->layout);
 		prm_deferred.set_ds("scene"_h, ds_scene.get());
 		prm_deferred.set_ds("light"_h, ds_light.get());
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
@@ -523,15 +521,25 @@ namespace flame
 		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
 
 		std::filesystem::path pipeline_name;
-		switch (hash)
+		switch (type)
 		{
-		case "ArmMesh"_h:
-			defines.push_back("vert:ARMATURE");
 		case "Mesh"_h:
 			pipeline_name = L"flame\\shaders\\mesh\\mesh.pipeline";
 			break;
 		case "Terrain"_h:
 			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
+			break;
+		}
+		switch (modifier1)
+		{
+		case "Armature"_h:
+			defines.push_back("vert:ARMATURE");
+			break;
+		}
+		switch (modifier2)
+		{
+		case "CameraLight"_h:
+			defines.push_back("frag:CAMERA_LIGHT");
 			break;
 		}
 		std::sort(defines.begin(), defines.end());
@@ -541,6 +549,27 @@ namespace flame
 			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
 		if (ret)
 			mr.pls[key] = ret;
+		return ret;
+	}
+
+	graphics::GraphicsPipelinePtr sRendererPrivate::get_deferred_pipeline(uint modifier)
+	{
+		auto it = pls_deferred.find(modifier);
+		if (it != pls_deferred.end())
+			return it->second;
+
+		std::vector<std::string> defines;
+		defines.push_back("rp=" + str(rp_col));
+		switch (modifier)
+		{
+		case "CameraLight"_h:
+			defines.push_back("frag:CAMERA_LIGHT");
+			break;
+		}
+		std::sort(defines.begin(), defines.end());
+
+		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
+		pls_deferred[modifier] = ret;
 		return ret;
 	}
 
@@ -839,6 +868,7 @@ namespace flame
 		switch (type)
 		{
 		case Shaded:
+		case CameraLight:
 		{
 			for (auto i = 0; i < draw_meshes.size(); i++)
 			{
@@ -909,7 +939,7 @@ namespace flame
 			}
 		}
 			break;
-		case CameraLight:
+		default:
 			for (auto& d : draw_meshes)
 			{
 				auto& mr = mesh_reses[d.mesh_id];
@@ -937,10 +967,12 @@ namespace flame
 		switch (type)
 		{
 		case Shaded:
+		case CameraLight:
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));
 
+			// opaque
 			cb->begin_renderpass(nullptr, fb_gbuf.get(),
 				{ vec4(0.f, 0.f, 0.f, 1.f),
 				vec4(0.f, 0.f, 0.f, 1.f),
@@ -948,6 +980,7 @@ namespace flame
 
 			prm_gbuf.bind_dss(cb);
 
+			auto pl_mod = 0;
 			auto idr_off = 0;
 			if (!draw_meshes.empty())
 			{
@@ -958,7 +991,7 @@ namespace flame
 					auto& mr = mat_reses[mid];
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
-					cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h));
+					cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h, 0, pl_mod));
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 					idr_off += num;
 				}
@@ -973,7 +1006,7 @@ namespace flame
 					auto& mr = mat_reses[mid];
 					auto num = mr.draw_ids.size();
 					mr.draw_ids.clear();
-					cb->bind_pipeline(get_material_pipeline(mr, "ArmMesh"_h));
+					cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h, "Armature"_h, pl_mod));
 					cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 					idr_off += num;
 				}
@@ -984,7 +1017,7 @@ namespace flame
 				for (auto& d : draw_terrains)
 				{
 					auto& mr = mat_reses[d.mat_id];
-					cb->bind_pipeline(get_material_pipeline(mr, "Terrain"_h));
+					cb->bind_pipeline(get_material_pipeline(mr, "Terrain"_h, 0, pl_mod));
 					cb->draw(4, d.blocks, 0, (d.ins_id << 24) + (d.mat_id << 16));
 				}
 			}
@@ -994,18 +1027,24 @@ namespace flame
 			cb->begin_renderpass(nullptr, img_ao->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f)});
 			cb->end_renderpass();
 
+			// CameraLight modifier is use in deferred pipeline of opaque rendering
+			if (type == CameraLight)
+				pl_mod = "CameraLight"_h;
+
 			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			prm_deferred.bind_dss(cb);
-			cb->bind_pipeline(pl_deferred);
+			cb->bind_pipeline(get_deferred_pipeline(pl_mod));
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
+
+			// transparent
 		}
 			break;
-		case CameraLight:
+		default:
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
 			cb->set_scissor(Rect(vec2(0), sz));

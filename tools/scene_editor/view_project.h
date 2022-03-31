@@ -45,6 +45,8 @@ struct View_Project : View
 	std::unique_ptr<FolderTreeNode> folder_tree;
 	FolderTreeNode* opened_folder = nullptr;
 	uint open_folder_frame = 0;
+	std::vector<FolderTreeNode*> folder_history;
+	int folder_history_idx = -1;
 
 	std::map<int, std::unique_ptr<graphics::Image>> icons;
 	std::vector<std::unique_ptr<graphics::Image>> thumbnails;
@@ -55,11 +57,11 @@ struct View_Project : View
 	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 
 	View_Project();
-	void reset();
+	void reset(const std::filesystem::path& assets_path);
 	void set_items_size(float size);
 
 	FolderTreeNode* find_folder(const std::filesystem::path& path, bool force_read = false);
-	void open_folder(FolderTreeNode* folder);
+	void open_folder(FolderTreeNode* folder, bool from_histroy = false);
 
 	void on_draw() override;
 };

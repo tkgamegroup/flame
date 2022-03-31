@@ -13,8 +13,6 @@ An ECS 3D-Game-Engine.
 
 - cppcodec https://github.com/tplgy/cppcodec
 
-- boost/regex https://github.com/boostorg/regex
-
 - stb https://github.com/nothings/stb
 
 - SHA1 https://github.com/vog/sha1
@@ -30,6 +28,8 @@ An ECS 3D-Game-Engine.
 - PhysX https://github.com/NVIDIAGameWorks/PhysX
 
 - recastnavigation https://github.com/recastnavigation/recastnavigation
+
+- Font-Awesome https://github.com/FortAwesome/Font-Awesome
 
 - imgui https://github.com/ocornut/imgui
 

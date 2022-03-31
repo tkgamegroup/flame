@@ -156,8 +156,8 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
+		std::unordered_map<uint, graphics::GraphicsPipelinePtr>							pls_deferred;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_deferred;
-		graphics::GraphicsPipelinePtr													pl_deferred = nullptr;
 		std::unique_ptr<graphics::DescriptorSet>										ds_deferred;
 
 		std::unique_ptr<graphics::Image>												img_back0;
@@ -194,6 +194,7 @@ namespace flame
 		int get_material_res(graphics::Material* mat) override;
 		void release_material_res(uint id) override;
 		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0);
+		graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0);
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;

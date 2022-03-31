@@ -503,21 +503,24 @@ void App::open_project(const std::filesystem::path& path)
 {
 	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
 	{
-		if (!project_path.empty())
-			directory_lock(project_path, false);
-
 		auto assets_path = path / L"assets";
-		Path::set_root(L"assets", assets_path);
+		if (std::filesystem::exists(assets_path))
+		{
+			if (!project_path.empty())
+				directory_lock(project_path, false);
 
-		selection.clear();
-		project_path = path;
-		directory_lock(project_path, true);
+			Path::set_root(L"assets", assets_path);
 
-		auto cpp_path = path / L"bin/debug/cpp.dll";
-		if (std::filesystem::exists(cpp_path))
-			tidb.load(cpp_path);
+			selection.clear();
+			project_path = path;
+			directory_lock(project_path, true);
 
-		view_project.reset();
+			auto cpp_path = path / L"bin/debug/cpp.dll";
+			if (std::filesystem::exists(cpp_path))
+				tidb.load(cpp_path);
+
+			view_project.reset(assets_path);
+		}
 	}
 }
 

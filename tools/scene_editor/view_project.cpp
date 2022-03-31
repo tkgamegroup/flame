@@ -147,18 +147,18 @@ View_Project::View_Project() :
 {
 }
 
-void View_Project::reset()
+void View_Project::reset(const std::filesystem::path& assets_path)
 {
 	items.clear();
 	opened_folder = nullptr;
-	folder_tree.reset(new View_Project::FolderTreeNode(app.project_path));
+	folder_tree.reset(new View_Project::FolderTreeNode(assets_path));
 
 	if (ev_watcher)
 	{
 		set_native_event(ev_watcher);
 		ev_watcher = nullptr;
 	}
-	ev_watcher = add_file_watcher(app.project_path, [this](FileChangeFlags flags, const std::filesystem::path& path) {
+	ev_watcher = add_file_watcher(assets_path, [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
 		auto add_path = [&](const std::filesystem::path& path, FileChangeFlags flags) {
 			auto it = changed_paths.find(path);
@@ -203,12 +203,23 @@ View_Project::FolderTreeNode* View_Project::find_folder(const std::filesystem::p
 	return sub_find(folder_tree.get());
 }
 
-void View_Project::open_folder(FolderTreeNode* folder)
+void View_Project::open_folder(FolderTreeNode* folder, bool from_histroy)
 {
+	if (!folder)
+		folder = folder_tree.get();
 	opened_folder = folder;
 	open_folder_frame = frames;
-	if (!folder)
-		return;
+
+	if (!from_histroy)
+	{
+		auto it = folder_history.begin() + folder_history_idx + 1;
+		folder_history.erase(it, folder_history.end());
+		folder_history.insert(it, folder);
+		if (folder_history.size() > 20)
+			folder_history.erase(folder_history.begin());
+		else
+			folder_history_idx++;
+	}
 
 	folder->read_children();
 
