@@ -36,6 +36,25 @@ namespace flame
 			}
 		}
 
+		static ivec2 _icons_range = ivec2(0);
+		static std::unordered_map<uint, wchar_t> _icons;
+
+		ivec2 FontAtlas::icons_range()
+		{
+#ifdef USE_FONT_AWESOME
+			if (_icons.empty())
+			{
+
+			}
+#endif
+			return _icons_range;
+		}
+
+		wchar_t FontAtlas::icon(uint hash)
+		{
+			return _icons[hash];
+		}
+
 		const auto font_atlas_size = uvec2(1024);
 
 		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)

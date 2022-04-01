@@ -136,6 +136,9 @@ namespace flame
 				return ret;
 			}
 
+			static ivec2 icons_range();
+			static wchar_t icon(uint hash);
+
 			struct Get
 			{
 				virtual FontAtlasPtr operator()(const std::vector<std::filesystem::path>& font_names) = 0;
