@@ -5,6 +5,7 @@
 #include "renderpass_private.h"
 #include "shader_private.h"
 #include "command_private.h"
+#include "font_private.h"
 #include "window_private.h"
 #include "extension.h"
 
@@ -106,6 +107,29 @@ namespace flame
 				std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
 				if (std::filesystem::exists(font_path))
 					io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+#ifdef USE_FONT_AWESOME
+				const wchar_t* font_awesome_fonts[] = {
+					L"otfs/Font Awesome 6 Brands-Regular-400.otf",
+					L"otfs/Font Awesome 6 Free-Regular-400.otf",
+					L"otfs/Font Awesome 6 Free-Solid-900.otf"
+				};
+				auto icons_range = FontAtlas::icons_range();
+				for (auto i = 0; i < countof(font_awesome_fonts); i++)
+				{
+					font_path = std::filesystem::path(FONT_AWESOME_DIR) / font_awesome_fonts[i];
+					if (std::filesystem::exists(font_path))
+					{
+						ImWchar ranges[] =
+						{
+							icons_range[0], icons_range[1],
+							0,
+						};
+						ImFontConfig config;
+						config.MergeMode = true;
+						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, &config, &ranges[0]);
+					}
+				}
+#endif
 
 				uchar* img_data;
 				int img_w, img_h;

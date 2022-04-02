@@ -136,8 +136,12 @@ namespace flame
 				return ret;
 			}
 
-			static ivec2 icons_range();
-			static wchar_t icon(uint hash);
+			FLAME_GRAPHICS_API static ivec2 icons_range();
+			FLAME_GRAPHICS_API static wchar_t icon(uint hash);
+			static inline std::string icon_s(uint hash)
+			{
+				return w2s(std::wstring(1, icon(hash)));
+			}
 
 			struct Get
 			{

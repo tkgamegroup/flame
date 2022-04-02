@@ -1,3 +1,4 @@
+#include "../json.h"
 #include "../foundation/bitmap.h"
 #include "device_private.h"
 #include "buffer_private.h"
@@ -44,7 +45,55 @@ namespace flame
 #ifdef USE_FONT_AWESOME
 			if (_icons.empty())
 			{
+				_icons_range[0] = 0xffff;
+				_icons_range[1] = 0;
 
+				auto icons_txt_path = std::filesystem::path(FONT_AWESOME_DIR) / L"metadata/icons.txt";
+				if (std::filesystem::exists(icons_txt_path))
+				{
+					std::ifstream icons_file(icons_txt_path);
+					while (!icons_file.eof())
+					{
+						std::string hash_s, code_s;
+						std::getline(icons_file, hash_s);
+						std::getline(icons_file, code_s);
+						if (!hash_s.empty() && !code_s.empty())
+						{
+							auto code = s2t<uint>(code_s);
+							_icons[s2t<uint>(hash_s)] = code;
+							_icons_range[0] = min(_icons_range[0], (int)code);
+							_icons_range[1] = max(_icons_range[1], (int)code);
+						}
+					}
+					icons_file.close();
+				}
+				else
+				{
+					auto icons_json_path = std::filesystem::path(FONT_AWESOME_DIR) / L"metadata/icons.json";
+					nlohmann::json icons_json;
+					std::ifstream icons_json_file(icons_json_path);
+					icons_json_file >> icons_json;
+					icons_json_file.close();
+					for (auto it = icons_json.begin(); it != icons_json.end(); it++)
+					{
+						auto name = it.key();
+						auto code = s2u_hex<uint>(it.value()["unicode"].get<std::string>());
+						if (code > 255)
+						{
+							_icons[sh(name.c_str())] = code;
+							_icons_range[0] = min(_icons_range[0], (int)code);
+							_icons_range[1] = max(_icons_range[1], (int)code);
+						}
+					}
+
+					std::ofstream icons_file(icons_txt_path);
+					for (auto it : _icons)
+					{
+						icons_file << it.first << std::endl;
+						icons_file << (uint)it.second << std::endl;
+					}
+					icons_file.close();
+				}
 			}
 #endif
 			return _icons_range;
@@ -52,7 +101,10 @@ namespace flame
 
 		wchar_t FontAtlas::icon(uint hash)
 		{
-			return _icons[hash];
+			auto it = _icons.find(hash);
+			if (it != _icons.end())
+				return it->second;
+			return 0;
 		}
 
 		const auto font_atlas_size = uvec2(1024);

@@ -212,7 +212,7 @@ void View_Project::open_folder(FolderTreeNode* folder, bool from_histroy)
 
 	if (!from_histroy)
 	{
-		auto it = folder_history.begin() + folder_history_idx + 1;
+		auto it = folder_history.begin() + (folder_history_idx + 1);
 		folder_history.erase(it, folder_history.end());
 		folder_history.insert(it, folder);
 		if (folder_history.size() > 20)
@@ -408,8 +408,16 @@ void View_Project::on_draw()
 		auto open_rename = false;
 
 		ImGui::TableSetColumnIndex(1);
+		ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str());
+		ImGui::SameLine();
+		ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str());
+		ImGui::SameLine();
+		ImGui::Button(graphics::FontAtlas::icon_s("arrow-up"_h).c_str());
 		if (opened_folder)
+		{
+			ImGui::SameLine();
 			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
+		}
 		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() * 2 - style.ItemSpacing.y * 3));
 		if (!items.empty())
 		{
