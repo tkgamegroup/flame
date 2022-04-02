@@ -142,8 +142,12 @@ namespace flame
 			for (auto& r : roots)
 			{
 				auto str2 = r.second.wstring();
-				if (str1.compare(0, str2.size(), str2) == 0)
+				if (str1.starts_with(str2))
+				{
+					if (str1.size() == str2.size())
+						return r.first;
 					return r.first / std::filesystem::path(str1.substr(str2.size() + 1));
+				}
 			}
 			return path;
 		}

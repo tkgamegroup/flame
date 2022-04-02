@@ -487,6 +487,7 @@ namespace flame
 		if (!CreateProcessW(filename.empty() ? nullptr : filename.c_str(), (wchar_t*)parameters.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
+			printf("%d\n", e);
 			assert(0);
 		}
 

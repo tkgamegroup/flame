@@ -574,7 +574,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 bool App::cmd_delete_entity(EntityPtr e)
 {
 	if (!e && selection.type == Selection::tEntity)
-		e = selection.entity;
+		e = selection.entity();
 	if (!e)
 		return false;
 	if (e == e_prefab)

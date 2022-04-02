@@ -59,7 +59,7 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (app.e_editor && selection.type == Selection::tEntity)
 		{
-			auto e = selection.entity;
+			auto e = selection.entity();
 			auto tar = e->get_component_i<cNode>(0);
 			if (tar)
 			{
@@ -122,7 +122,7 @@ void View_Scene::on_draw()
 						if (hovering_node)
 							outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
 						if (selection.type == Selection::tEntity)
-							outline_node(selection.entity, cvec4(255, 255, 128, 255));
+							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
 					}
 					if (show_AABB)
 					{
@@ -256,7 +256,7 @@ void View_Scene::on_draw()
 				{
 					if (selection.type == Selection::tEntity)
 					{
-						if (auto node = selection.entity->get_component_i<cNodeT>(0); node)
+						if (auto node = selection.entity()->get_component_i<cNodeT>(0); node)
 							camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
 					}
 				}

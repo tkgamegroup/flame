@@ -4,9 +4,17 @@ void Selection::clear()
 {
 	frame = frames;
 
+	switch (type)
+	{
+	case tPath:
+		delete (std::filesystem::path*)content;
+		break;
+	case tEntity:
+		((EntityPtr)content)->message_listeners.remove("editor_selection"_h);
+		break;
+	}
 	type = tNothing;
-	path.clear();
-	entity = nullptr;
+	content = nullptr;
 }
 
 void Selection::select(const std::filesystem::path& _path)
@@ -16,13 +24,13 @@ void Selection::select(const std::filesystem::path& _path)
 	if (selecting(_path))
 		return;
 	clear();
-	type = tFile;
-	path = _path;
+	type = tPath;
+	content = new std::filesystem::path(_path);
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
 {
-	return type == tFile && _path == path;
+	return type == tPath && _path == *(std::filesystem::path*)content;
 }
 
 void Selection::select(EntityPtr e)
@@ -33,12 +41,17 @@ void Selection::select(EntityPtr e)
 		return;
 	clear();
 	type = tEntity;
-	entity = e;
+	content = e;
+
+	e->message_listeners.add([](uint hash, void*, void*) {
+		if (hash == "destroyed"_h)
+			selection.clear();
+	}, "editor_selection"_h);
 }
 
 bool Selection::selecting(EntityPtr e)
 {
-	return type == tEntity && entity == e;
+	return type == tEntity && content == e;
 }
 
 Selection selection;

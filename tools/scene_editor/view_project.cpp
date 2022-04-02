@@ -89,9 +89,6 @@ void View_Project::Item::set_size()
 	}
 }
 
-static std::filesystem::path	rename_tar;
-static std::string				rename_str;
-
 void View_Project::Item::draw()
 {
 	ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
@@ -207,19 +204,20 @@ void View_Project::open_folder(FolderTreeNode* folder, bool from_histroy)
 {
 	if (!folder)
 		folder = folder_tree.get();
-	opened_folder = folder;
-	open_folder_frame = frames;
 
-	if (!from_histroy)
+	if (!from_histroy && opened_folder != folder)
 	{
 		auto it = folder_history.begin() + (folder_history_idx + 1);
-		folder_history.erase(it, folder_history.end());
+		it = folder_history.erase(it, folder_history.end());
 		folder_history.insert(it, folder);
 		if (folder_history.size() > 20)
 			folder_history.erase(folder_history.begin());
 		else
 			folder_history_idx++;
 	}
+
+	opened_folder = folder;
+	open_folder_frame = frames;
 
 	folder->read_children();
 
@@ -405,19 +403,50 @@ void View_Project::on_draw()
 		}
 		ImGui::EndChild();
 
-		auto open_rename = false;
-
 		ImGui::TableSetColumnIndex(1);
-		ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str());
+		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
+		{
+			add_event([this]() {
+				if (folder_history_idx > 0)
+				{
+					folder_history_idx--;
+					open_folder(folder_history[folder_history_idx], true);
+				}
+				return false;
+			});
+		}
 		ImGui::SameLine();
-		ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str());
+		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
+		{
+			add_event([this]() {
+				if (folder_history_idx + 1 < folder_history.size())
+				{
+					folder_history_idx++;
+					open_folder(folder_history[folder_history_idx], true);
+				}
+				return false;
+			});
+		}
 		ImGui::SameLine();
-		ImGui::Button(graphics::FontAtlas::icon_s("arrow-up"_h).c_str());
+		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
+		{
+			add_event([this]() {
+				if (opened_folder && opened_folder->parent)
+					open_folder(opened_folder->parent);
+				return false;
+			});
+		}
 		if (opened_folder)
 		{
 			ImGui::SameLine();
 			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 		}
+
+		static std::filesystem::path action_tar;
+		static std::string action_str;
+		auto open_rename = false;
+		auto open_delete_confirm = false;
+
 		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() * 2 - style.ItemSpacing.y * 3));
 		if (!items.empty())
 		{
@@ -435,25 +464,27 @@ void View_Project::on_draw()
 				if (ImGui::BeginPopupContextItem())
 				{
 					if (ImGui::MenuItem("Show In Explorer"))
-					{
-
-					}
+						exec(L"", std::format(L"explorer /select,\"{}\"", item->path.wstring()));
 					if (ImGui::BeginMenu("Copy Path"))
 					{
-						ImGui::MenuItem("Path");
-						ImGui::MenuItem("Full Path");
-						ImGui::MenuItem("Absolute Path");
+						if (ImGui::MenuItem("Name"))
+							set_clipboard(item->path.filename().wstring());
+						if (ImGui::MenuItem("Path"))
+							set_clipboard(Path::reverse(item->path).wstring());
+						if (ImGui::MenuItem("Absolute Path"))
+							set_clipboard(item->path.wstring());
 						ImGui::EndMenu();
 					}
 					if (ImGui::MenuItem("Rename"))
 					{
-						rename_tar = item->path;
-						rename_str = item->path.filename().string();
+						action_tar = item->path;
+						action_str = item->path.filename().string();
 						open_rename = true;
 					}
 					if (ImGui::MenuItem("Delete"))
 					{
-
+						action_tar = item->path;
+						open_delete_confirm = true;
 					}
 					ImGui::EndPopup();
 				}
@@ -467,8 +498,8 @@ void View_Project::on_draw()
 			selection.clear();
 		ImGui::EndChild();
 		
-		if (selection.type == Selection::tFile)
-			ImGui::TextUnformatted(selection.path.filename().string().c_str());
+		if (selection.type == Selection::tPath)
+			ImGui::TextUnformatted(selection.path().filename().string().c_str());
 
 		ImGui::EndTable();
 
@@ -476,17 +507,32 @@ void View_Project::on_draw()
 			ImGui::OpenPopup("rename");
 		if (ImGui::BeginPopupModal("rename"))
 		{
-			ImGui::InputText("name", &rename_str);
+			ImGui::InputText("name", &action_str);
 			if (ImGui::Button("OK"))
 			{
-				auto new_name = rename_tar;
-				new_name.replace_filename(rename_str);
+				auto new_name = action_tar;
+				new_name.replace_filename(action_str);
 				std::error_code ec;
-				std::filesystem::rename(rename_tar, new_name, ec);
+				std::filesystem::rename(action_tar, new_name, ec);
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
+		if (open_delete_confirm)
+			ImGui::OpenPopup("delete_confirm");
+		if (ImGui::BeginPopupModal("delete_confirm"))
+		{
+			ImGui::Text("Are you sure to delete \"%s\" ?", action_str.c_str());
+			if (ImGui::Button("Yes"))
+			{
+				std::error_code ec;
+				std::filesystem::remove(action_tar, ec);
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::Button("No"))
 				ImGui::CloseCurrentPopup();
 			ImGui::EndPopup();
 		}

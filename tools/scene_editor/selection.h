@@ -7,13 +7,12 @@ struct Selection
 	enum Type
 	{
 		tNothing,
-		tFile,
+		tPath,
 		tEntity
 	};
 
 	Type type = tNothing;
-	std::filesystem::path path;
-	EntityPtr entity = nullptr;
+	void* content = nullptr;
 
 	uint frame = 0;
 
@@ -22,6 +21,9 @@ struct Selection
 	bool selecting(const std::filesystem::path& path);
 	void select(EntityPtr e);
 	bool selecting(EntityPtr e);
+
+	inline std::filesystem::path& path() { return *(std::filesystem::path*)content; }
+	inline EntityPtr entity() { return (EntityPtr)content; }
 };
 
 extern Selection selection;

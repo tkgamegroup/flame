@@ -154,11 +154,26 @@ void View_Inspector::on_draw()
 	if (com_udts.empty())
 		get_com_udts();
 
+	if (histroy_idx != -1)
+	{
+
+	}
+
+	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
+	{
+
+	}
+	ImGui::SameLine();
+	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
+	{
+
+	}
+
 	switch (selection.type)
 	{
 	case Selection::tEntity:
 	{
-		auto e = selection.entity;
+		auto e = selection.entity();
 
 		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		if (changed_attribute)
@@ -209,16 +224,17 @@ void View_Inspector::on_draw()
 		}
 	}
 		break;
-	case Selection::tFile:
+	case Selection::tPath:
 	{
-		ImGui::TextUnformatted(selection.path.string().c_str());
-		auto ext = selection.path.extension();
+		auto& path = selection.path();
+		ImGui::TextUnformatted(path.string().c_str());
+		auto ext = path.extension();
 		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 		{
 			static vec3 rotation = vec3(0, 270, 0);
 			static vec3 scaling = vec3(0.1f, 0.1f, 0.1f);
 			if (ImGui::Button("Convert"))
-				graphics::Model::convert(selection.path, rotation, scaling);
+				graphics::Model::convert(path, rotation, scaling);
 		}
 	}
 		break;

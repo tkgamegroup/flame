@@ -16,7 +16,7 @@ void View_Hierarchy::on_draw()
 	std::vector<EntityPtr> open_nodes;
 	if (just_select)
 	{
-		auto e = selection.entity->parent;
+		auto e = selection.entity()->parent;
 		while (e)
 		{
 			open_nodes.push_back(e);
