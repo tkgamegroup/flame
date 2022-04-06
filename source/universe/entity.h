@@ -132,6 +132,20 @@ namespace flame
 			return nullptr;
 		}
 
+		inline EntityPtr find_child_with_instance_id(std::string_view instance_id) const
+		{
+			for (auto& cc : children)
+			{
+				auto c = (Entity*)cc.get();
+				if (c->instance_id == instance_id)
+					return (EntityPtr)c;
+				auto res = c->find_child_with_instance_id(instance_id);
+				if (res)
+					return res;
+			}
+			return nullptr;
+		}
+
 		inline bool compare_depth(EntityPtr e)
 		{
 			if (depth < ((Entity*)e)->depth)

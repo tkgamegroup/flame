@@ -154,20 +154,11 @@ void View_Inspector::on_draw()
 	if (com_udts.empty())
 		get_com_udts();
 
-	if (histroy_idx != -1)
-	{
-
-	}
-
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
-	{
-
-	}
+		selection.backward();
 	ImGui::SameLine();
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
-	{
-
-	}
+		selection.forward();
 
 	switch (selection.type)
 	{

@@ -157,15 +157,11 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 	}
 	ev_watcher = add_file_watcher(assets_path, [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
-		auto add_path = [&](const std::filesystem::path& path, FileChangeFlags flags) {
-			auto it = changed_paths.find(path);
-			if (it == changed_paths.end())
-				changed_paths[path] = flags;
-			else
-				it->second = (FileChangeFlags)(it->second | flags);
-		};
-		add_path(path.parent_path(), FileModified);
-		add_path(path, flags);
+		auto it = changed_paths.find(path);
+		if (it == changed_paths.end())
+			changed_paths[path] = flags;
+		else
+			it->second = (FileChangeFlags)(it->second | flags);
 		mtx_changed_paths.unlock();
 	}, true, false);
 }
@@ -260,7 +256,7 @@ void View_Project::on_draw()
 		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_files;
 		for (auto& p : changed_paths)
 		{
-			if (std::filesystem::is_directory(p.first))
+			if (std::filesystem::is_directory(p.first) && p.second == FileModified)
 				changed_directories.emplace_back(p.first, p.second);
 			else
 				changed_files.emplace_back(p.first, p.second);
@@ -274,24 +270,17 @@ void View_Project::on_draw()
 
 		for (auto& p : changed_directories)
 		{
-			std::function<bool(FolderTreeNode* node)> find_and_mark;
-			find_and_mark = [&](FolderTreeNode* node) {
-				if (node->path == p.first)
+			std::function<void(FolderTreeNode* node)> redo_read_children;
+			redo_read_children = [&](FolderTreeNode* node) {
+				if (node->read && node->path == p.first)
 				{
-					if (node->read)
-					{
-						node->read = false;
-						node->read_children();
-					}
-					return true;
+					node->read = false;
+					node->read_children();
 				}
 				for (auto& c : node->children)
-				{
-					if (find_and_mark(c.get()))
-						return true;
-				}
+					redo_read_children(c.get());
 			};
-			find_and_mark(folder_tree.get());
+			redo_read_children(folder_tree.get());
 		}
 
 		open_folder(opened_folder ? find_folder(opened_folder->path) : nullptr);
@@ -496,6 +485,29 @@ void View_Project::on_draw()
 		}
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
 			selection.clear();
+		if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+		{
+			if (ImGui::MenuItem("Show In Explorer"))
+			{
+				if (opened_folder)
+					exec(L"", std::format(L"explorer /select,\"{}\"", opened_folder->path.wstring()));
+			}
+			if (ImGui::MenuItem("New Folder"))
+			{
+				if (opened_folder)
+				{
+					auto i = 0;
+					auto path = opened_folder->path / (L"new_foler_" + wstr(i));
+					while (std::filesystem::exists(path))
+					{
+						i++;
+						path = opened_folder->path / (L"new_foler_" + wstr(i));
+					}
+					std::filesystem::create_directory(path);
+				}
+			}
+			ImGui::EndPopup();
+		}
 		ImGui::EndChild();
 		
 		if (selection.type == Selection::tPath)

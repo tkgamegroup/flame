@@ -1,5 +1,40 @@
 #include "selection.h"
 
+bool Selection::Histroy::select()
+{
+	switch (type)
+	{
+	case Selection::tPath:
+	{
+		auto& path = ((PathHistroy*)this)->path;
+		if (std::filesystem::exists(path))
+		{
+			selection.select(path, true);
+			return true;
+		}
+		else
+			path.clear();
+	}
+		break;
+	case Selection::tEntity:
+	{
+		auto& his = (EntityHistroy&)*this;
+		EntityPtr e = nullptr;
+		if (app.e_prefab)
+			e = app.e_prefab->find_child_with_instance_id(his.ins_id);
+		if (e)
+		{
+			selection.select(e, true);
+			return true;
+		}
+		else
+			his.ins_id.clear();
+	}
+		break;
+	}
+	return false;
+}
+
 void Selection::clear()
 {
 	frame = frames;
@@ -7,33 +42,44 @@ void Selection::clear()
 	switch (type)
 	{
 	case tPath:
-		delete (std::filesystem::path*)content;
+		delete (std::filesystem::path*)object;
 		break;
 	case tEntity:
-		((EntityPtr)content)->message_listeners.remove("editor_selection"_h);
+		((EntityPtr)object)->message_listeners.remove("editor_selection"_h);
 		break;
 	}
 	type = tNothing;
-	content = nullptr;
+	object = nullptr;
 }
 
-void Selection::select(const std::filesystem::path& _path)
+void Selection::select(const std::filesystem::path& path, bool from_histroy)
 {
 	frame = frames;
 
-	if (selecting(_path))
+	if (selecting(path))
 		return;
 	clear();
 	type = tPath;
-	content = new std::filesystem::path(_path);
+	object = new std::filesystem::path(path);
+
+	if (!from_histroy)
+	{
+		auto it = history.begin() + (histroy_idx + 1);
+		it = history.erase(it, history.end());
+		history.emplace(it, new PathHistroy(path));
+		if (history.size() > 20)
+			history.erase(history.begin());
+		else
+			histroy_idx++;
+	}
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
 {
-	return type == tPath && _path == *(std::filesystem::path*)content;
+	return type == tPath && _path == *(std::filesystem::path*)object;
 }
 
-void Selection::select(EntityPtr e)
+void Selection::select(EntityPtr e, bool from_histroy)
 {
 	frame = frames;
 
@@ -41,17 +87,58 @@ void Selection::select(EntityPtr e)
 		return;
 	clear();
 	type = tEntity;
-	content = e;
+	object = e;
 
-	e->message_listeners.add([](uint hash, void*, void*) {
+	e->message_listeners.add([e](uint hash, void*, void*) {
 		if (hash == "destroyed"_h)
-			selection.clear();
+		{
+			if (selection.selecting(e))
+				selection.clear();
+		}
 	}, "editor_selection"_h);
+
+	if (!from_histroy)
+	{
+		auto it = history.begin() + (histroy_idx + 1);
+		it = history.erase(it, history.end());
+		history.emplace(it, new EntityHistroy(e));
+		if (history.size() > 20)
+			history.erase(history.begin());
+		else
+			histroy_idx++;
+	}
 }
 
 bool Selection::selecting(EntityPtr e)
 {
-	return type == tEntity && content == e;
+	return type == tEntity && object == e;
+}
+
+void Selection::forward()
+{
+	if (histroy_idx + 1 < history.size())
+	{
+		histroy_idx++;
+		if (!history[histroy_idx]->select())
+		{
+			history.erase(history.begin() + histroy_idx);
+			histroy_idx--;
+			forward();
+		}
+	}
+}
+
+void Selection::backward()
+{
+	if (histroy_idx > 0)
+	{
+		histroy_idx--;
+		if (!history[histroy_idx]->select())
+		{
+			history.erase(history.begin() + histroy_idx);
+			backward();
+		}
+	}
 }
 
 Selection selection;
