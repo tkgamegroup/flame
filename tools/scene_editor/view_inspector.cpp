@@ -99,20 +99,17 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 			case DataPath:
 			{
 				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
-				if (ImGui::InputText(a.name.c_str(), &str))
-				{
-					if (!direct_io)
-					{
-						auto path = std::filesystem::path(str);
-						a.set_value(src, &path);
-					}
-					changed_attribute = &a;
-				}
+				ImGui::InputText(a.name.c_str(), &str, ImGuiInputTextFlags_ReadOnly);
 				ImGui::SameLine();
+
+				if (ImGui::Button(("ping##" + ::str(src)).c_str()))
+				{
+
+				}
 
 				#ifdef USE_IM_FILE_DIALOG
 				static const Attribute* dialog_tar = nullptr;
-				if (ImGui::Button(("..##" + ::str(src)).c_str()))
+				if (ImGui::Button(("sel##" + ::str(src)).c_str()))
 				{
 					dialog_tar = &a;
 					ifd::FileDialog::Instance().Open("PathAttribute", a.name, "*.*");

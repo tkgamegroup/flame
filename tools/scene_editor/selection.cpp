@@ -45,7 +45,8 @@ void Selection::clear()
 		delete (std::filesystem::path*)object;
 		break;
 	case tEntity:
-		((EntityPtr)object)->message_listeners.remove("editor_selection"_h);
+		if (object)
+			((EntityPtr)object)->message_listeners.remove("editor_selection"_h);
 		break;
 	}
 	type = tNothing;
@@ -93,7 +94,10 @@ void Selection::select(EntityPtr e, bool from_histroy)
 		if (hash == "destroyed"_h)
 		{
 			if (selection.selecting(e))
+			{
+				selection.object = nullptr;
 				selection.clear();
+			}
 		}
 	}, "editor_selection"_h);
 

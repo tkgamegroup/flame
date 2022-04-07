@@ -1,5 +1,4 @@
-#include "../base64.h"
-#include "../xml.h"
+#include "../serialize_extension.h"
 #include "../foundation/typeinfo.h"
 #include "material_private.h"
 #include "model_private.h"
@@ -31,18 +30,13 @@ namespace flame
 
 		void ModelPrivate::save(const std::filesystem::path& filename)
 		{
+			std::ofstream dst(filename);
+			dst << "model:" << std::endl;
+
 			pugi::xml_document doc;
 			auto n_model = doc.append_child("model");
 
-			auto data_filename = filename;
-			data_filename += L".dat";
-			std::ofstream data_file(data_filename, std::ios::binary);
-
-			auto append_data = [&](void* data, uint size, pugi::xml_node n) {
-				n.append_attribute("offset").set_value(data_file.tellp());
-				n.append_attribute("size").set_value(size);
-				data_file.write((char*)data, size);
-			};
+			DataSoup data_soup;
 
 			auto n_meshes = n_model.append_child("meshes");
 			for (auto& m : meshes)
@@ -58,17 +52,17 @@ namespace flame
 				n_mesh.append_attribute("materials").set_value(material_names.c_str());
 
 				if (!m.positions.empty())
-					append_data(m.positions.data(), m.positions.size() * sizeof(vec3), n_mesh.append_child("positions"));
+					data_soup.xml_append_v(m.positions, n_mesh.append_child("positions"));
 				if (!m.uvs.empty())
-					append_data(m.uvs.data(), m.uvs.size() * sizeof(vec2), n_mesh.append_child("uvs"));
+					data_soup.xml_append_v(m.uvs, n_mesh.append_child("uvs"));
 				if (!m.normals.empty())
-					append_data(m.normals.data(), m.normals.size() * sizeof(vec3), n_mesh.append_child("normals"));
+					data_soup.xml_append_v(m.normals, n_mesh.append_child("normals"));
 				if (!m.bone_ids.empty())
-					append_data(m.bone_ids.data(), m.bone_ids.size() * sizeof(ivec4), n_mesh.append_child("bone_ids"));
+					data_soup.xml_append_v(m.bone_ids, n_mesh.append_child("bone_ids"));
 				if (!m.bone_weights.empty())
-					append_data(m.bone_weights.data(), m.bone_weights.size() * sizeof(vec4), n_mesh.append_child("bone_weights"));
+					data_soup.xml_append_v(m.bone_weights, n_mesh.append_child("bone_weights"));
 				if (!m.indices.empty())
-					append_data(m.indices.data(), m.indices.size() * sizeof(uint), n_mesh.append_child("indices"));
+					data_soup.xml_append_v(m.indices, n_mesh.append_child("indices"));
 
 				n_mesh.append_attribute("bounds").set_value(str((mat2x3&)m.bounds).c_str());
 			}
@@ -78,11 +72,13 @@ namespace flame
 			{
 				auto n_bone = n_bones.append_child("bone");
 				n_bone.append_attribute("name").set_value(b.name.c_str());
-				append_data(&b.offset_matrix, sizeof(mat4), n_bone.append_child("offset_matrix"));
+				data_soup.xml_append((uint*)&b.offset_matrix, 16, n_bone.append_child("offset_matrix"));
 			}
 
-			data_file.close();
-			doc.save_file(filename.c_str());
+			doc.save(dst);
+
+			dst << "data:" << std::endl;
+			data_soup.save(dst);
 		}
 
 		std::filesystem::path find_file(const std::filesystem::path& dir, const std::filesystem::path& name)
@@ -113,15 +109,13 @@ namespace flame
 			auto ext = filename.extension();
 			filename.replace_extension(L".fmod");
 
-			auto format_mat_name = [](const std::string& name, int i) {
+			auto format_res_name = [&](const std::string& name, const std::string& ext, int i) {
 				auto ret = name;
 				if (ret.empty())
 					ret = str(i);
 				else
-				{
-					for (auto& ch : ret)
-						if (ch == ' ' || ch == ':') ch = '_';
-				}
+					for (auto& ch : ret) if (ch == ' ' || ch == ':') ch = '_';
+				ret = std::format("{}_{}.{}", model_name, ret, ext);
 				return ret;
 			};
 
@@ -308,8 +302,7 @@ namespace flame
 								}
 							}
 
-							auto material_name = format_mat_name(fbx_mat->GetName(), i);
-							material_name = std::format("{}_{}.fmat", model_name, material_name);
+							auto material_name = format_res_name(fbx_mat->GetName(), "fmat", i);
 							material->filename = Path::reverse(ppath / material_name);
 							material->save(Path::get(material->filename));
 
@@ -556,11 +549,6 @@ namespace flame
 					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
 
-					auto animation_name = std::format("{}_{}.fani", model_name, anim_stack->GetName());
-					for (auto& ch : animation_name)
-						if (ch == '|') ch = '_';
-					auto animation_filename = Path::get(ppath / animation_name);
-
 					std::unique_ptr<AnimationT> animation(new AnimationT);
 					animation->duration = 0.f;
 
@@ -636,7 +624,8 @@ namespace flame
 
 					get_node_curves(scene->GetRootNode());
 
-					animation->save(animation_filename);
+					auto animation_name = format_res_name(anim_stack->GetName(), "fani", i);
+					animation->save(Path::get(ppath / animation_name));
 				}
 
 				scene->Destroy(true);
@@ -694,8 +683,7 @@ namespace flame
 						}
 					}
 
-					auto material_name = format_mat_name(ai_mat->GetName().C_Str(), i);
-					material_name = std::format("{}_{}.fmat", model_name, material_name);
+					auto material_name = format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
 					material->filename = Path::reverse(ppath / material_name);
 					material->save(Path::get(material->filename));
 
@@ -876,11 +864,6 @@ namespace flame
 				{
 					auto ai_ani = scene->mAnimations[i];
 
-					auto animation_name = std::format("{}_{}.fani", model_name, ai_ani->mName.C_Str());
-					for (auto& ch : animation_name)
-						if (ch == '|') ch = '_';
-					auto animation_filename = Path::get(ppath / animation_name);
-
 					std::unique_ptr<AnimationT> animation(new AnimationT);
 					animation->duration = (float)ai_ani->mDuration;
 
@@ -907,7 +890,8 @@ namespace flame
 						}
 					}
 
-					animation->save(animation_filename);
+					auto animation_name = format_res_name(ai_ani->mName.C_Str(), "fani", i);
+					animation->save(ppath / animation_name);
 				}
 #endif
 			}
@@ -986,94 +970,48 @@ namespace flame
 					return nullptr;
 				}
 
-				if (filename.extension() != L".fmod")
-					return nullptr;
+				std::ifstream file(filename);
+				LineReader src(file);
+				src.read_block("model:", "");
 
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
+				if (!doc.load(file) || (doc_root = doc.first_child()).name() != std::string("model"))
 				{
-					printf("model does not exist: %s\n", filename.string().c_str());
+					printf("model format is incorrect: %s\n", filename.string().c_str());
 					return nullptr;
 				}
 
-				auto model_data_filename = filename;
-				model_data_filename += L".dat";
-				std::ifstream model_data_file(model_data_filename, std::ios::binary);
-				if (!model_data_file.good())
-				{
-					printf("missing .dat file for: %s\n", filename.string().c_str());
-					return nullptr;
-				}
+				DataSoup data_soup;
+				src.read_block("data:");
+				data_soup.load(src);
 
 				auto ret = new ModelPrivate();
 				ret->filename = filename;
-				auto ppath = filename.parent_path();
 
 				for (auto& n_mesh : doc_root.child("meshes"))
 				{
 					auto& m = ret->meshes.emplace_back();
 					m.model = ret;
 					for (auto& sp : SUS::split(n_mesh.attribute("materials").value(), ';'))
-					{
-						auto material_filename = std::filesystem::path(sp);
-						auto fn = ppath / material_filename;
-						if (!std::filesystem::exists(fn))
-							fn = material_filename;
-						m.materials.push_back(Material::get(fn.c_str()));
-					}
+						m.materials.push_back(Material::get(sp));
 
-					auto n_positions = n_mesh.child("positions");
-					{
-						auto offset = n_positions.attribute("offset").as_uint();
-						auto size = n_positions.attribute("size").as_uint();
-						m.positions.resize(size / sizeof(vec3));
-						model_data_file.read((char*)m.positions.data(), size);
-					}
-
+					data_soup.xml_read_v(m.positions, n_mesh.child("positions"));
 					auto n_uvs = n_mesh.child("uvs");
 					if (n_uvs)
-					{
-						auto offset = n_uvs.attribute("offset").as_uint();
-						auto size = n_uvs.attribute("size").as_uint();
-						m.uvs.resize(size / sizeof(vec2));
-						model_data_file.read((char*)m.uvs.data(), size);
-					}
-
+						data_soup.xml_read_v(m.uvs, n_uvs);
 					auto n_normals = n_mesh.child("normals");
 					if (n_normals)
-					{
-						auto offset = n_normals.attribute("offset").as_uint();
-						auto size = n_normals.attribute("size").as_uint();
-						m.normals.resize(size / sizeof(vec3));
-						model_data_file.read((char*)m.normals.data(), size);
-					}
-
+						data_soup.xml_read_v(m.normals, n_normals);
 					auto n_bids = n_mesh.child("bone_ids");
 					if (n_bids)
-					{
-						auto offset = n_bids.attribute("offset").as_uint();
-						auto size = n_bids.attribute("size").as_uint();
-						m.bone_ids.resize(size / sizeof(ivec4));
-						model_data_file.read((char*)m.bone_ids.data(), size);
-					}
-
+						data_soup.xml_read_v(m.bone_ids, n_bids);
 					auto n_wgts = n_mesh.child("bone_weights");
 					if (n_wgts)
-					{
-						auto offset = n_wgts.attribute("offset").as_uint();
-						auto size = n_wgts.attribute("size").as_uint();
-						m.bone_weights.resize(size / sizeof(vec4));
-						model_data_file.read((char*)m.bone_weights.data(), size);
-					}
+						data_soup.xml_read_v(m.bone_weights, n_wgts);
 
 					auto n_indices = n_mesh.child("indices");
-					{
-						auto offset = n_indices.attribute("offset").as_uint();
-						auto size = n_indices.attribute("size").as_uint();
-						m.indices.resize(size / sizeof(uint));
-						model_data_file.read((char*)m.indices.data(), size);
-					}
+						data_soup.xml_read_v(m.indices, n_indices);
 
 					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
 				}
@@ -1082,18 +1020,11 @@ namespace flame
 				{
 					auto& b = ret->bones.emplace_back();
 					b.name = n_bone.attribute("name").value();
-					{
-						auto n_matrix = n_bone.child("offset_matrix");
-						auto offset = n_matrix.attribute("offset").as_uint();
-						auto size = n_matrix.attribute("size").as_uint();
-						model_data_file.read((char*)&b.offset_matrix, size);
-					}
+					data_soup.xml_read(&b.offset_matrix, n_bone.child("offset_matrix"));
 				}
 
 				for (auto& m : ret->meshes)
 					ret->bounds.expand(m.bounds);
-
-				model_data_file.close();
 
 				ret->ref = 1;
 				models.emplace_back(ret);
