@@ -654,7 +654,7 @@ namespace flame
 			}
 		}
 
-		inline std::string form_content()
+		inline std::string to_string()
 		{
 			std::string ret;
 			for (auto& l : lines)

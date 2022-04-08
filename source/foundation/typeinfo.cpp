@@ -165,11 +165,11 @@ namespace flame
 		_tidb.add_ti(new TypeInfo_Frustum);
 	}
 
-	bool TypeInfoDataBase::load(std::ifstream& file, void* library)
+	bool TypeInfoDataBase::load_from_string(const std::string& content, void* library)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
-		if (!doc.load(file) || (doc_root = doc.first_child()).name() != std::string("typeinfo"))
+		if (!doc.load_string(content.c_str()) || (doc_root = doc.first_child()).name() != std::string("typeinfo"))
 			return false;
 
 		auto read_ti = [&](pugi::xml_attribute a) {
@@ -272,22 +272,21 @@ namespace flame
 			path.replace_extension(L".typeinfo");
 		}
 
-		std::ifstream file(path);
-		if (!file.good())
+		auto content = get_file_content(path);
+		if (content.empty())
 		{
 			wprintf(L"typeinfo do not exist: %s\n", path.c_str());
 			assert(0);
 			return;
 		}
-		if (!load(file, library))
+		if (!load_from_string(content, library))
 		{
 			wprintf(L"typeinfo wrong format: %s\n", path.c_str());
 			assert(0);
 		}
-		file.close();
 	}
 
-	void TypeInfoDataBase::save(std::ofstream& file)
+	std::string TypeInfoDataBase::save_to_string()
 	{
 		pugi::xml_document doc;
 		auto doc_root = doc.append_child("typeinfo");
@@ -444,12 +443,16 @@ namespace flame
 			}
 		}
 
-		doc.save(file);
+		std::stringstream ss;
+		doc.save(ss);
+		return ss.str();
 	}
 
 	void TypeInfoDataBase::save(const std::filesystem::path& filename)
 	{
+		auto content = save_to_string();
 		std::ofstream file(filename);
-		save(file);
+		file << content;
+		file.close();
 	}
 }

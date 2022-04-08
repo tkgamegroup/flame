@@ -100,31 +100,22 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 			{
 				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
 				ImGui::InputText(a.name.c_str(), &str, ImGuiInputTextFlags_ReadOnly);
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+					{
+						auto str = std::wstring((wchar_t*)payload->Data);
+						auto path = Path::reverse(str);
+						a.set_value(src, &path);
+					}
+					ImGui::EndDragDropTarget();
+				}
 				ImGui::SameLine();
 
-				if (ImGui::Button(("ping##" + ::str(src)).c_str()))
+				if (ImGui::Button(("P##" + ::str(src)).c_str()))
 				{
 
 				}
-
-				#ifdef USE_IM_FILE_DIALOG
-				static const Attribute* dialog_tar = nullptr;
-				if (ImGui::Button(("sel##" + ::str(src)).c_str()))
-				{
-					dialog_tar = &a;
-					ifd::FileDialog::Instance().Open("PathAttribute", a.name, "*.*");
-				}
-				if (dialog_tar == &a && ifd::FileDialog::Instance().IsDone("PathAttribute"))
-				{
-					if (ifd::FileDialog::Instance().HasResult())
-					{
-						auto path = ifd::FileDialog::Instance().GetResultFormated();
-						a.set_value(src, &path);
-						changed_attribute = &a;
-					}
-					ifd::FileDialog::Instance().Close();
-				}
-				#endif
 			}
 				break;
 			}
@@ -215,7 +206,7 @@ void View_Inspector::on_draw()
 	case Selection::tPath:
 	{
 		auto& path = selection.path();
-		ImGui::TextUnformatted(path.string().c_str());
+		ImGui::TextUnformatted(Path::reverse(path).string().c_str());
 		auto ext = path.extension();
 		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 		{

@@ -72,10 +72,11 @@ namespace flame
 			{
 				auto n_bone = n_bones.append_child("bone");
 				n_bone.append_attribute("name").set_value(b.name.c_str());
-				data_soup.xml_append((uint*)&b.offset_matrix, 16, n_bone.append_child("offset_matrix"));
+				data_soup.xml_append((uint*)&b.offset_matrix, sizeof(b.offset_matrix), n_bone.append_child("offset_matrix"));
 			}
 
 			doc.save(dst);
+			dst << std::endl;
 
 			dst << "data:" << std::endl;
 			data_soup.save(dst);
@@ -129,6 +130,7 @@ namespace flame
 			};
 
 			auto need_wrap_root = rotation != vec3(0.f) || scaling != vec3(1.f);
+			std::vector<std::filesystem::path> animation_names;
 			auto preprocess_prefab = [&](pugi::xml_node first_node)->pugi::xml_node {
 				if (need_wrap_root)
 				{
@@ -151,6 +153,17 @@ namespace flame
 					auto n_armature = dst.child("components").append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
 					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
+					if (!animation_names.empty())
+					{
+						std::string str;
+						for (auto& n : animation_names)
+						{
+							if (!str.empty())
+								str += ";";
+							str += n.string();
+						}
+						n_armature.append_attribute("animation_names").set_value(str.c_str());
+					}
 				}
 			};
 
@@ -302,9 +315,9 @@ namespace flame
 								}
 							}
 
-							auto material_name = format_res_name(fbx_mat->GetName(), "fmat", i);
-							material->filename = Path::reverse(ppath / material_name);
-							material->save(Path::get(material->filename));
+							auto material_name = ppath / format_res_name(fbx_mat->GetName(), "fmat", i);
+							material->filename = Path::reverse(material_name);
+							material->save(material_name);
 
 							fbx_mat->SetUserDataPtr(material);
 						}
@@ -535,9 +548,6 @@ namespace flame
 					}
 				};
 				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->GetRootNode());
-				postprocess_prefab(model.get(), doc_prefab.first_child());
-
-				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
 
 				model->save(replace_ext(_filename, L".fmod"));
 
@@ -624,9 +634,13 @@ namespace flame
 
 					get_node_curves(scene->GetRootNode());
 
-					auto animation_name = format_res_name(anim_stack->GetName(), "fani", i);
-					animation->save(Path::get(ppath / animation_name));
+					auto animation_name = ppath / format_res_name(anim_stack->GetName(), "fani", i);
+					animation_names.push_back(Path::reverse(animation_name));
+					animation->save(animation_name);
 				}
+
+				postprocess_prefab(model.get(), doc_prefab.first_child());
+				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
 
 				scene->Destroy(true);
 			}
@@ -683,9 +697,9 @@ namespace flame
 						}
 					}
 
-					auto material_name = format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
-					material->filename = Path::reverse(ppath / material_name);
-					material->save(Path::get(material->filename));
+					auto material_name = ppath / format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
+					material->filename = Path::reverse(material_name);
+					material->save(material_name);
 
 					materials.emplace_back(material);
 				}
@@ -854,11 +868,6 @@ namespace flame
 					}
 				};
 				process_node(preprocess_prefab(doc_prefab.append_child("prefab")), scene->mRootNode);
-				postprocess_prefab(model.get(), doc_prefab.first_child());
-
-				auto prefab_path = filename;
-				prefab_path.replace_extension(L".prefab");
-				doc_prefab.save_file(Path::get(prefab_path).c_str());
 
 				for (auto i = 0; i < scene->mNumAnimations; i++)
 				{
@@ -890,9 +899,13 @@ namespace flame
 						}
 					}
 
-					auto animation_name = format_res_name(ai_ani->mName.C_Str(), "fani", i);
-					animation->save(ppath / animation_name);
+					auto animation_name = ppath / format_res_name(ai_ani->mName.C_Str(), "fani", i);
+					animation_names.push_back(Path::reverse(animation_name));
+					animation->save(animation_name);
 				}
+
+				postprocess_prefab(model.get(), doc_prefab.first_child());
+				doc_prefab.save_file(Path::get(replace_ext(filename, L".prefab")).c_str());
 #endif
 			}
 		}
@@ -972,11 +985,11 @@ namespace flame
 
 				std::ifstream file(filename);
 				LineReader src(file);
-				src.read_block("model:", "");
+				src.read_block("model:");
 
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
-				if (!doc.load(file) || (doc_root = doc.first_child()).name() != std::string("model"))
+				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
 				{
 					printf("model format is incorrect: %s\n", filename.string().c_str());
 					return nullptr;
@@ -997,21 +1010,15 @@ namespace flame
 						m.materials.push_back(Material::get(sp));
 
 					data_soup.xml_read_v(m.positions, n_mesh.child("positions"));
-					auto n_uvs = n_mesh.child("uvs");
-					if (n_uvs)
+					if (auto n_uvs = n_mesh.child("uvs"); n_uvs)
 						data_soup.xml_read_v(m.uvs, n_uvs);
-					auto n_normals = n_mesh.child("normals");
-					if (n_normals)
+					if (auto n_normals = n_mesh.child("normals"); n_normals)
 						data_soup.xml_read_v(m.normals, n_normals);
-					auto n_bids = n_mesh.child("bone_ids");
-					if (n_bids)
+					if (auto n_bids = n_mesh.child("bone_ids"); n_bids)
 						data_soup.xml_read_v(m.bone_ids, n_bids);
-					auto n_wgts = n_mesh.child("bone_weights");
-					if (n_wgts)
+					if (auto n_wgts = n_mesh.child("bone_weights"); n_wgts)
 						data_soup.xml_read_v(m.bone_weights, n_wgts);
-
-					auto n_indices = n_mesh.child("indices");
-						data_soup.xml_read_v(m.indices, n_indices);
+					data_soup.xml_read_v(m.indices, n_mesh.child("indices"));
 
 					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
 				}

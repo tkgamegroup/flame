@@ -94,9 +94,8 @@ void View_Project::Item::draw()
 	ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
 	auto p0 = ImGui::GetItemRectMin();
 	auto p1 = ImGui::GetItemRectMax();
-	auto pressed = ImGui::IsItemClicked();
-	auto active = ImGui::IsItemActive();
 	auto hovered = ImGui::IsItemHovered();
+	auto active = ImGui::IsItemActive();
 	ImU32 col;
 	if		(active)								col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 	else if (hovered || selection.selecting(path))	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
@@ -108,7 +107,7 @@ void View_Project::Item::draw()
 
 	auto ext = path.extension();
 
-	if (pressed)
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && hovered && ImGui::IsItemDeactivated())
 		selection.select(path);
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
 	{
@@ -137,6 +136,9 @@ void View_Project::Item::draw()
 		ImGui::TextUnformatted("File");
 		ImGui::EndDragDropSource();
 	}
+
+	if (hovered) 
+		ImGui::SetTooltip("%s", path.filename().string().c_str());
 }
 
 View_Project::View_Project() :
@@ -483,7 +485,7 @@ void View_Project::on_draw()
 					ImGui::SameLine();
 			}
 		}
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowFocused() && selection.frame != frames)
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && selection.frame != frames)
 			selection.clear();
 		if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
 		{

@@ -28,6 +28,7 @@ namespace flame
 			}
 
 			doc.save(dst);
+			dst << std::endl;
 
 			dst << "data:" << std::endl;
 			data_soup.save(dst);
@@ -47,11 +48,11 @@ namespace flame
 
 				std::ifstream file(filename);
 				LineReader src(file);
-				src.read_block("animation:", "");
+				src.read_block("animation:");
 
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
-				if (!doc.load(file) || (doc_root = doc.first_child()).name() != std::string("animation"))
+				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("animation"))
 				{
 					wprintf(L"animation format is incorrect: %s\n", _filename.c_str());
 					return nullptr;

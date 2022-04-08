@@ -1,4 +1,4 @@
-#include "../xml.h"
+#include "../serialize_extension.h"
 #include "../foundation/typeinfo.h"
 #include "../foundation/typeinfo_serialize.h"
 #include "../foundation/system.h"
@@ -408,13 +408,12 @@ namespace flame
 			printf(" - done\n");
 			std::filesystem::remove(L"temp.glsl");
 
-			auto spv = get_file_content(L"temp.spv");
-			auto spv_array = std::vector<uint>(spv.size() / 4);
-			memcpy(spv_array.data(), spv.data(), spv_array.size() * sizeof(uint));
+			DataSoup spv;
+			spv.load(L"temp.spv");
 			std::filesystem::remove(L"temp.spv");
 
 			TypeInfoDataBase db;
-			auto spv_compiler = spirv_cross::CompilerGLSL(spv_array.data(), spv_array.size());
+			auto spv_compiler = spirv_cross::CompilerGLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
 			auto spv_resources = spv_compiler.get_shader_resources();
 
 			if (stage == ShaderStageDsl || stage == ShaderStagePll)
@@ -456,15 +455,7 @@ namespace flame
 			else
 			{
 				dst << "spv:" << std::endl;
-				for (auto i = 0; i < spv_array.size(); i++)
-				{
-					dst << str_hex(spv_array[i]) << " ";
-					if (i % 10 == 9)
-						dst << std::endl;
-				}
-				if (spv_array.size() % 10 != 0)
-					dst << std::endl;
-				dst << std::endl;
+				spv.save(dst);
 
 				if (stage == ShaderStageVert)
 				{
@@ -493,7 +484,7 @@ namespace flame
 			}
 
 			dst << "typeinfo:" << std::endl;
-			db.save(dst);
+			dst << db.save_to_string();
 			dst << std::endl;
 
 			dst.close();
@@ -580,8 +571,8 @@ namespace flame
 			LineReader res(file);
 			res.read_block("dsl:");
 			unserialize_text(res, &bindings);
-			res.read_block("typeinfo:", "");
-			db.load(file);
+			res.read_block("typeinfo:");
+			db.load_from_string(res.to_string());
 			file.close();
 
 			auto ret = DescriptorSetLayout::create(bindings);
@@ -889,8 +880,8 @@ namespace flame
 			unserialize_text(res, &dependencies);
 			res.read_block("dsl:");
 			unserialize_text(res, &bindings);
-			res.read_block("typeinfo:", "");
-			db.load(file);
+			res.read_block("typeinfo:");
+			db.load_from_string(res.to_string());
 			file.close();
 
 			std::vector<DescriptorSetLayoutPrivate*> dsls;
@@ -1052,19 +1043,15 @@ namespace flame
 			if (!std::filesystem::exists(filename))
 				return nullptr;
 
-			std::vector<uint> spv;
 			TypeInfoDataBase db;
 
 			std::ifstream file(filename);
 			LineReader res(file);
+			DataSoup data_soup;
 			res.read_block("spv:");
-			for (auto& l : res.lines)
-			{
-				for (auto& b : SUS::split(l))
-					spv.push_back(s2u_hex<uint>(b));
-			}
-			res.read_block("typeinfo:", "");
-			db.load(file);
+			data_soup.load(res);
+			res.read_block("typeinfo:");
+			db.load_from_string(res.to_string());
 			file.close();
 
 			auto ret = new ShaderPrivate;
@@ -1076,8 +1063,8 @@ namespace flame
 			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shader_info.flags = 0;
 			shader_info.pNext = nullptr;
-			shader_info.codeSize = spv.size() * sizeof(uint);
-			shader_info.pCode = spv.data();
+			shader_info.codeSize = data_soup.soup.size();
+			shader_info.pCode = (uint*)data_soup.soup.data();
 			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 			register_backend_object(ret->vk_module, tn<decltype(*ret)>(), ret);
 
@@ -1352,12 +1339,12 @@ namespace flame
 			if (!layout_segment.first.empty())
 			{
 				res.read_block(layout_segment.first, "@");
-				layout_segment.first = res.form_content();
+				layout_segment.first = res.to_string();
 			}
 			for (auto& s : shader_segments)
 			{
 				res.read_block(s.second, "@");
-				s.second = res.form_content();
+				s.second = res.to_string();
 				if (!layout_segment.first.empty())
 					s.second = layout_segment.first + "\n\n" + s.second;
 				else if (!layout_segment.second.empty())

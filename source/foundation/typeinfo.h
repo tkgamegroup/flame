@@ -631,9 +631,9 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_API void init_basic_types();
-		FLAME_FOUNDATION_API bool load(std::ifstream& file, void* library = nullptr);
+		FLAME_FOUNDATION_API bool load_from_string(const std::string& content, void* library = nullptr);
 		FLAME_FOUNDATION_API void load(const std::filesystem::path& filename);
-		FLAME_FOUNDATION_API void save(std::ofstream& file);
+		FLAME_FOUNDATION_API std::string save_to_string();
 		FLAME_FOUNDATION_API void save(const std::filesystem::path& filename);
 	};
 
