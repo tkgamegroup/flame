@@ -47,6 +47,11 @@ namespace flame
 				}
 
 				std::ifstream file(filename);
+				if (!file.good())
+				{
+					wprintf(L"cannot find animation: %s\n", _filename.c_str());
+					return nullptr;
+				}
 				LineReader src(file);
 				src.read_block("animation:");
 

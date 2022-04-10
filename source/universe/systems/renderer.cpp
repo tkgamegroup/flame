@@ -55,6 +55,7 @@ namespace flame
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
 		mat_reses.resize(buf_material.array_capacity);
+		get_material_res(graphics::Material::get(L"default"));
 		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
 		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
@@ -198,16 +199,18 @@ namespace flame
 
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
+		if (_targets.empty())
+			return;
+
 		graphics::Queue::get()->wait_idle();
 
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
-		
-		auto rp_tar = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&img0->format) });
 
 		if (!pl_blit_tar)
 		{
+			auto rp_tar = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
+				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format) });
 			pl_blit_tar = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
 				{ "rp=" + str(rp_tar) });
 		}
@@ -227,14 +230,14 @@ namespace flame
 		ds_deferred->set_image("img_dep", 0, img_dep->get_view(), nullptr);
 		ds_deferred->update();
 
-		final_layout = _final_layout;
-
 		img_back0.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 
 		img_pickup.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+
+		final_layout = _final_layout;
 	}
 
 	void sRendererPrivate::bind_window_targets()
@@ -411,8 +414,7 @@ namespace flame
 			if (res.mat == mat)
 			{
 				res.ref++;
-				id = i;
-				break;
+				return i;
 			}
 		}
 		if (id == -1)
@@ -486,6 +488,8 @@ namespace flame
 			}
 			for (auto& pl : res.pls)
 				graphics::GraphicsPipeline::release(pl.second);
+
+			res.mat = nullptr;
 		}
 		else
 			res.ref--;

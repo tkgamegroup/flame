@@ -5,6 +5,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
+#include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
 
 View_Scene view_scene;
@@ -103,82 +104,109 @@ void View_Scene::on_draw()
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
 
+		auto editor_node = app.e_editor->get_component_i<cNode>(0);
+		if (!editor_node->drawers.exist("scene"_h))
+		{
+			editor_node->drawers.add([this](sRendererPtr renderer) {
+				auto outline_node = [&](EntityPtr e, const cvec4& col) {
+					if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+						renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_res_id, col);
+					if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->textures)
+						renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
+				};
+				if (hovering_node && selection.selecting(hovering_node->entity))
+					outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));
+				else
+				{
+					if (hovering_node)
+						outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
+					if (selection.type == Selection::tEntity)
+						outline_node(selection.entity(), cvec4(255, 255, 128, 255));
+				}
+				if (show_AABB)
+				{
+					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						if (!e->global_enable)
+							return false;
+						if (auto node = e->get_component_i<cNode>(0); node)
+						{
+							if (!node->bounds.invalid())
+							{
+								auto points = node->bounds.get_points();
+								vec3 line_pts[24];
+								auto p = line_pts;
+								*p++ = points[0]; *p++ = points[1];
+								*p++ = points[1]; *p++ = points[2];
+								*p++ = points[2]; *p++ = points[3];
+								*p++ = points[3]; *p++ = points[0];
+								*p++ = points[0]; *p++ = points[4];
+								*p++ = points[1]; *p++ = points[5];
+								*p++ = points[2]; *p++ = points[6];
+								*p++ = points[3]; *p++ = points[7];
+								*p++ = points[4]; *p++ = points[5];
+								*p++ = points[5]; *p++ = points[6];
+								*p++ = points[6]; *p++ = points[7];
+								*p++ = points[7]; *p++ = points[4];
+								renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
+							}
+						}
+						return true;
+						});
+				}
+				if (show_axis)
+				{
+					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						if (!e->global_enable)
+							return false;
+						if (auto node = e->get_component_i<cNode>(0); node)
+						{
+							if (!node->bounds.invalid())
+							{
+								vec3 line_pts[2];
+								line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
+								renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 0, 0, 255));
+								line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
+								renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 255, 0, 255));
+								line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
+								renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 0, 255, 255));
+							}
+						}
+						return true;
+						});
+				}
+				if (show_bones)
+				{
+					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						if (!e->global_enable)
+							return false;
+						if (auto arm = e->get_component_t<cArmature>(); arm)
+						{
+							std::function<void(cNodePtr)> draw_node;
+							draw_node = [&, renderer](cNodePtr n) {
+								vec3 line_pts[2];
+								line_pts[0] = n->g_pos;
+								for (auto& c : n->entity->children)
+								{
+									auto nn = c->get_component_t<cNode>();
+									if (nn)
+									{
+										line_pts[1] = nn->g_pos;
+										renderer->draw_line(line_pts, countof(line_pts), cvec4(255));
+										draw_node(nn);
+									}
+								}
+							};
+							draw_node(arm->node);
+						}
+						return true;
+						});
+				}
+				}, "scene"_h);
+			editor_node->mark_transform_dirty();
+		}
+
 		if (ImGui::IsItemHovered())
 		{
-			auto editor_node = app.e_editor->get_component_i<cNode>(0);
-			if (!editor_node->drawers.exist("scene"_h))
-			{
-				editor_node->drawers.add([this](sRendererPtr renderer) {
-					auto outline_node = [&](EntityPtr e, const cvec4& col) {
-						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-							renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_res_id, col);
-						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->textures)
-							renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
-					};
-					if (hovering_node && selection.selecting(hovering_node->entity))
-						outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));
-					else
-					{
-						if (hovering_node)
-							outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
-						if (selection.type == Selection::tEntity)
-							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
-					}
-					if (show_AABB)
-					{
-						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
-							if (!e->global_enable)
-								return false;
-							if (auto node = e->get_component_i<cNode>(0); node)
-							{
-								if (!node->bounds.invalid())
-								{
-									auto points = node->bounds.get_points();
-									vec3 line_pts[24];
-									auto p = line_pts;
-									*p++ = points[0]; *p++ = points[1];
-									*p++ = points[1]; *p++ = points[2];
-									*p++ = points[2]; *p++ = points[3];
-									*p++ = points[3]; *p++ = points[0];
-									*p++ = points[0]; *p++ = points[4];
-									*p++ = points[1]; *p++ = points[5];
-									*p++ = points[2]; *p++ = points[6];
-									*p++ = points[3]; *p++ = points[7];
-									*p++ = points[4]; *p++ = points[5];
-									*p++ = points[5]; *p++ = points[6];
-									*p++ = points[6]; *p++ = points[7];
-									*p++ = points[7]; *p++ = points[4];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
-								}
-							}
-							return true;
-						});
-					}
-					if (show_axis)
-					{
-						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
-							if (!e->global_enable)
-								return false;
-							if (auto node = e->get_component_i<cNode>(0); node)
-							{
-								if (!node->bounds.invalid())
-								{
-									vec3 line_pts[2];
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 0, 0, 255));
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 255, 0, 255));
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 0, 255, 255));
-								}
-							}
-							return true;
-						});
-					}
-				}, "scene"_h);
-				editor_node->mark_transform_dirty();
-			}
-
 			auto camera_node = camera->node;
 
 			auto get_tar = [&]() {
@@ -263,22 +291,23 @@ void View_Scene::on_draw()
 				if (ImGui::IsKeyPressed(Keyboard_Del))
 					app.cmd_delete_entity();
 			}
-		}
-		if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
-		{
-			hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
-			if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+
+			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 			{
-				if (hovering_node)
-					selection.select(hovering_node->entity);
-				else
-					selection.clear();
-			}
-			{
-				auto s = str(hovering_pos);
-				auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
-				ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
-				ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
+				if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+				{
+					if (hovering_node)
+						selection.select(hovering_node->entity);
+					else
+						selection.clear();
+				}
+				{
+					auto s = str(hovering_pos);
+					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+				}
 			}
 		}
 		if (ImGui::BeginDragDropTarget())

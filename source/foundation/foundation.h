@@ -114,6 +114,8 @@ namespace flame
 
 		inline static std::filesystem::path get(const std::filesystem::path& path)
 		{
+			if (path.empty())
+				return L"";
 			if (path.is_absolute())
 				return path;
 			auto it = path.begin();

@@ -174,6 +174,7 @@ void App::init()
 		{
 			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
 			ImGui::MenuItem("Axis", nullptr, &view_scene.show_axis);
+			ImGui::MenuItem("Bones", nullptr, &view_scene.show_bones);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -552,11 +553,11 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		break;
 	case "cube"_h:
 		e->add_component(th<cNode>());
-		((cMeshPtr)e->add_component(th<cMesh>()))->set_model_name("standard:cube");
+		((cMeshPtr)e->add_component(th<cMesh>()))->set_mesh_name("standard_cube");
 		break;
 	case "sphere"_h:
 		e->add_component(th<cNode>());
-		((cMeshPtr)e->add_component(th<cMesh>()))->set_model_name("standard:sphere");
+		((cMeshPtr)e->add_component(th<cMesh>()))->set_mesh_name("standard_sphere");
 		break;
 	case "light"_h:
 		e->add_component(th<cNode>());
@@ -647,6 +648,20 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 
 int main(int argc, char** args)
 {
+	auto vp = mat4(
+		vec4(1.2956, 1.30337, -0.59566, -0.59507),
+		vec4(-3.24285e-8, -1.78802, -0.6726, -0.67192),
+		vec4(-1.74855, 0.96574, -0.44136, -0.44092),
+		vec4(133.42, 26.94816, -36.73843, -35.7017)
+	);
+	auto p = vp * mat4(
+		vec4(0.01, 0, 0, 0),
+		vec4(0, 0.01, 0, 0),
+		vec4(0, 0, 0.01, 0),
+		vec4(-66.7455, -19.0814, 26.8476, 1)
+	) * 
+		vec4(17.16035, 127.75878, -0.67164, 1);
+
 	app.init();
 
 	std::filesystem::path preferences_path = L"preferences.ini";

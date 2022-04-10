@@ -16,8 +16,6 @@ namespace flame
 		{
 			ModelPtr model;
 
-			std::vector<MaterialPtr> materials;
-
 			std::vector<vec3> positions;
 			std::vector<vec2> uvs;
 			std::vector<vec3> normals;
@@ -89,7 +87,7 @@ namespace flame
 
 			virtual void save(const std::filesystem::path& filename) = 0;
 
-			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename, const vec3& rotation = vec3(0.f), const vec3& scaling = vec3(1.f));
+			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename, const vec3& rotation = vec3(0.f), const vec3& scaling = vec3(1.f), bool only_animation = false);
 
 			struct Create
 			{

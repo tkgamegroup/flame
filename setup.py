@@ -209,7 +209,7 @@ if op != 3:
 	print("====\n")
 			
 	print("== library PhysX ==")
-	ok = True
+	ok = False
 	address = "https://github.com/NVIDIAGameWorks/PhysX.git"
 	lib_dir = parent_directory / "PhysX"
 	if op == 2:
@@ -306,7 +306,13 @@ if op != 3:
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 	print("====\n")
-
+	
+print("\nSet environment variable of Flame Engine:")
 os.system("setx FLAME_PATH \"%s\"" % str(current_directory))
 
-os.system("regsvr32 \"%s/DIA SDK/bin/amd64/msdia140.dll\"" % str(vs_path))
+print("\nRegister DIA dll ? y/n")
+if input() == "y":
+	os.system("regsvr32 \"%s/DIA SDK/bin/amd64/msdia140.dll\"" % str(vs_path))
+	
+print("\nDone.")
+os.system("pause")

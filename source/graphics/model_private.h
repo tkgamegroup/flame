@@ -10,8 +10,6 @@ namespace flame
 		{
 			uint ref = 0;
 
-			~ModelPrivate();
-
 			void save(const std::filesystem::path& filename) override;
 		};
 	}

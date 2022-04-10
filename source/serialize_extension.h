@@ -53,7 +53,8 @@ namespace flame
 
 		inline void load(LineReader& src)
 		{
-			soup = base64::decode(src.lines[0]);
+			if (!src.lines.empty())
+				soup = base64::decode(src.lines[0]);
 		}
 
 		inline void load(const std::filesystem::path& filename)

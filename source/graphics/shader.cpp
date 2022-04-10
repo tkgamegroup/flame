@@ -561,14 +561,14 @@ namespace flame
 
 		DescriptorSetLayoutPtr DescriptorSetLayoutPrivate::load_from_res(const std::filesystem::path& filename)
 		{
-			if (!std::filesystem::exists(filename))
+			std::ifstream file(filename);
+			if (!file.good())
 				return nullptr;
+			LineReader res(file);
 
 			std::vector<DescriptorBinding> bindings;
 			TypeInfoDataBase db;
 
-			std::ifstream file(filename);
-			LineReader res(file);
 			res.read_block("dsl:");
 			unserialize_text(res, &bindings);
 			res.read_block("typeinfo:");
@@ -867,15 +867,15 @@ namespace flame
 
 		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(const std::filesystem::path& filename)
 		{
-			if (!std::filesystem::exists(filename))
+			std::ifstream file(filename);
+			if (!file.good())
 				return nullptr;
+			LineReader res(file);
 
 			std::vector<std::filesystem::path> dependencies;
 			std::vector<DescriptorBinding> bindings;
 			TypeInfoDataBase db;
 
-			std::ifstream file(filename);
-			LineReader res(file);
 			res.read_block("dependencies:");
 			unserialize_text(res, &dependencies);
 			res.read_block("dsl:");
@@ -1040,14 +1040,14 @@ namespace flame
 
 		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)
 		{
-			if (!std::filesystem::exists(filename))
+			std::ifstream file(filename);
+			if (!file.good())
 				return nullptr;
+			LineReader res(file);
 
 			TypeInfoDataBase db;
-
-			std::ifstream file(filename);
-			LineReader res(file);
 			DataSoup data_soup;
+
 			res.read_block("spv:");
 			data_soup.load(res);
 			res.read_block("typeinfo:");
@@ -1194,10 +1194,16 @@ namespace flame
 		{
 			auto ppath = filename.parent_path();
 
+			std::ifstream file(filename);
+			if (!file.good())
+			{
+				wprintf(L"cannot find pipeline: %s\n", filename.c_str());
+				return nullptr;
+			}
+			LineReader res(file);
+
 			GraphicsPipelineInfo info;
 
-			std::ifstream file(filename);
-			LineReader res(file);
 			res.read_block("");
 
 			std::pair<std::string, std::filesystem::path>			layout_segment; // content or filename

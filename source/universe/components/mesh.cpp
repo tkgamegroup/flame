@@ -1,4 +1,5 @@
 #include "../../graphics/device.h"
+#include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../entity_private.h"
 #include "../world_private.h"
@@ -42,27 +43,43 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
-	void cMeshPrivate::set_model_name(const std::filesystem::path& _model_name)
+	void cMeshPrivate::set_mesh_name(const std::filesystem::path& name)
 	{
-		if (model_name == _model_name)
+		if (mesh_name == name)
 			return;
-		if (!model_name.empty())
-			AssetManagemant::release_asset(Path::get(model_name));
-		model_name = _model_name;
-		if (!model_name.empty())
-			AssetManagemant::get_asset(Path::get(model_name));
+
+		auto parse_name = [](const std::filesystem::path& src)->std::pair<std::filesystem::path, uint> {
+			auto sp = SUW::split(src.wstring(), ':');
+			if (sp.empty())
+				return std::make_pair(L"", 0);
+			auto name = sp.front();
+			if (!name.starts_with(L"standard_"))
+				name = Path::get(name);
+			if (sp.size() == 1)
+				return std::make_pair(name, 0);
+			return std::make_pair(name, s2t<uint>(sp[1]));
+		};
+
+		auto model_and_index = parse_name(mesh_name);
+		auto _model_and_index = parse_name(name);
+		mesh_name = name;
+
+		if (model_and_index.first != _model_and_index.first)
+		{
+			if (!model_and_index.first.empty())
+				AssetManagemant::release_asset(Path::get(model_and_index.first));
+			if (!_model_and_index.first.empty())
+				AssetManagemant::get_asset(Path::get(_model_and_index.first));
+		}
 
 		graphics::ModelPtr _model = nullptr;
 		graphics::MeshPtr _mesh = nullptr;
-		graphics::MaterialPtr _material = nullptr;
-		if (!model_name.empty())
-			_model = graphics::Model::get(model_name);
+		if (!_model_and_index.first.empty())
+			_model = graphics::Model::get(_model_and_index.first);
 		if (_model && !_model->meshes.empty())
 		{
-			if (mesh_index < _model->meshes.size())
-				_mesh = &_model->meshes[mesh_index];
-			if (_mesh && skin_index < _mesh->materials.size())
-				_material = _mesh->materials[skin_index];
+			if (_model_and_index.second < _model->meshes.size())
+				_mesh = &_model->meshes[_model_and_index.second];
 		}
 		if (model != _model)
 		{
@@ -79,69 +96,32 @@ namespace flame
 			mesh = _mesh;
 			mesh_res_id = mesh ? sRenderer::instance()->get_mesh_res(mesh) : -1;
 		}
-		if (material != _material)
-		{
-			if (material_res_id != -1)
-				sRenderer::instance()->release_material_res(material_res_id);
-			material = _material;
-			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
-		}
 
 		node->mark_transform_dirty();
+		data_changed("mesh_name"_h);
 	}
 
-	void cMeshPrivate::set_mesh_index(uint idx)
+	void cMeshPrivate::set_material_name(const std::filesystem::path& name)
 	{
-		if (mesh_index == idx)
+		if (material_name == name)
 			return;
-		mesh_index = idx;
+		material_name = name;
 
-		graphics::MaterialPtr _material = nullptr;
-		graphics::MeshPtr _mesh = nullptr;
-		if (model && mesh_index < model->meshes.size())
-			_mesh = &model->meshes[mesh_index];
-		if (_mesh && skin_index < _mesh->materials.size())
-			_material = _mesh->materials[skin_index];
-		if (mesh != _mesh)
-		{
-			if (mesh_res_id != -1)
-				sRenderer::instance()->release_mesh_res(mesh_res_id);
-			mesh = _mesh;
-			mesh_res_id = mesh ? sRenderer::instance()->get_mesh_res(mesh) : -1;
-		}
+		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)
 		{
 			if (material_res_id != -1)
 				sRenderer::instance()->release_material_res(material_res_id);
+			if (material)
+				graphics::Material::release(material);
 			material = _material;
 			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
 		}
-
-		node->mark_transform_dirty();
-
-		data_changed("mesh_index"_h);
-	}
-
-	void cMeshPrivate::set_skin_index(uint idx)
-	{
-		if (skin_index == idx)
-			return;
-		skin_index = idx;
-
-		graphics::MaterialPtr _material = nullptr;
-		if (mesh && skin_index < mesh->materials.size())
-			_material = mesh->materials[skin_index];
-		if (material != _material)
-		{
-			if (material_res_id != -1)
-				sRenderer::instance()->release_material_res(material_res_id);
-			material = _material;
-			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
-		}
+		else if (_material)
+			graphics::Material::release(_material);
 
 		node->mark_drawing_dirty();
-
-		data_changed("skin_index"_h);
+		data_changed("material_name"_h);
 	}
 
 	void cMeshPrivate::set_cast_shadow(bool v)
@@ -154,7 +134,7 @@ namespace flame
 
 	void cMeshPrivate::draw(sRendererPtr renderer, bool shadow_pass)
 	{
-		if (mesh_res_id == -1 || material_res_id == -1 || instance_id == -1)
+		if (mesh_res_id == -1 || instance_id == -1)
 			return;
 		if (!parmature && frame < (int)frames)
 		{
@@ -162,13 +142,14 @@ namespace flame
 			frame = frames;
 		}
 
+		auto mat_id = material_res_id == -1 ? 0 : material_res_id;
 		if (shadow_pass)
 		{
 			if (cast_shadow)
-				renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
+				renderer->draw_mesh_occluder(instance_id, mesh_res_id, mat_id);
 		}
 		else
-			renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
+			renderer->draw_mesh(instance_id, mesh_res_id, mat_id);
 	}
 
 	void cMeshPrivate::on_active()
