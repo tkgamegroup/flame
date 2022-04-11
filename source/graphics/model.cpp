@@ -187,10 +187,10 @@ namespace flame
 							auto& w = m.bone_weights[i];
 							switch (n)
 							{
-							case 1: w = vec4(1.f, 0.f, 0.f, 0.f); break;
-							case 2: w = vec4(normalize(w.xy()), 0.f, 0.f); break;
-							case 3: w = vec4(normalize(w.xyz()), 0.f); break;
-							case 4: w = normalize(w); break;
+							case 1: w = vec4(1.f, 0.f, 0.f, 0.f);				break;
+							case 2: w = vec4(w.xy() / (w.x + w.y), 0.f, 0.f);	break;
+							case 3: w = vec4(w.xyz() / (w.x + w.y + w.z), 0.f);	break;
+							case 4: w = w /= (w.x + w.y + w.z + w.w);			break;
 							}
 						}
 					}
