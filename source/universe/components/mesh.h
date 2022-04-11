@@ -11,19 +11,14 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		std::filesystem::path model_name;
+		std::filesystem::path mesh_name;
 		/// Reflect
-		virtual void set_model_name(const std::filesystem::path& model_name) = 0;
+		virtual void set_mesh_name(const std::filesystem::path& mesh_name) = 0;
 
 		/// Reflect
-		uint mesh_index = 0;
+		std::filesystem::path material_name;
 		/// Reflect
-		virtual void set_mesh_index(uint idx) = 0;
-
-		/// Reflect
-		uint skin_index = 0;
-		/// Reflect
-		virtual void set_skin_index(uint idx) = 0;
+		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
 
 		/// Reflect
 		bool cast_shadow = true;

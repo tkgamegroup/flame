@@ -47,13 +47,24 @@ namespace flame
 
 		inline void save(std::ofstream& dst)
 		{
-			dst << base64::encode(soup.data(), soup.size()) << std::endl;
+			auto str = base64::encode(soup.data(), soup.size());
+			auto len = str.size(); auto p = str.c_str();
+			while (len > 256)
+			{
+				dst << std::string_view(p, p + 256) << std::endl;
+				len -= 256;
+				p += 256;
+			}
+			dst << p << std::endl;
 			dst << std::endl;
 		}
 
 		inline void load(LineReader& src)
 		{
-			soup = base64::decode(src.lines[0]);
+			std::string str;
+			for (auto& l : src.lines)
+				str += l;
+			soup = base64::decode(str);
 		}
 
 		inline void load(const std::filesystem::path& filename)

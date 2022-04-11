@@ -210,10 +210,14 @@ void View_Inspector::on_draw()
 		auto ext = path.extension();
 		if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 		{
-			static vec3 rotation = vec3(0, 270, 0);
-			static vec3 scaling = vec3(0.1f, 0.1f, 0.1f);
+			static vec3 rotation = vec3(0, 0, 0);
+			static vec3 scaling = vec3(0.01f, 0.01f, 0.01f);
+			static bool only_animation = false;
+			ImGui::DragFloat3("rotation", (float*)&rotation);
+			ImGui::DragFloat3("scaling", (float*)&scaling);
+			ImGui::Checkbox("only animation", &only_animation);
 			if (ImGui::Button("Convert"))
-				graphics::Model::convert(path, rotation, scaling);
+				graphics::Model::convert(path, rotation, scaling, only_animation);
 		}
 	}
 		break;

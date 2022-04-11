@@ -144,17 +144,16 @@ namespace flame
 						return rp.get();
 				}
 
-				if (!std::filesystem::exists(filename))
+				std::ifstream file(filename);
+				if (!file.good())
 				{
 					wprintf(L"cannot find renderpass: %s\n", _filename.c_str());
 					return nullptr;
 				}
-
-				RenderpassInfo info;
-
-				std::ifstream file(filename);
 				LineReader res(file);
 				res.read_block("");
+
+				RenderpassInfo info;
 				unserialize_text(res, &info, {}, defines);
 				file.close();
 

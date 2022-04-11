@@ -6,8 +6,6 @@ namespace flame
 {
 	struct cMeshPrivate : cMesh
 	{
-		graphics::MeshPtr mesh = nullptr;
-
 		cArmaturePtr parmature = nullptr;
 
 		int frame = -1;
@@ -15,9 +13,8 @@ namespace flame
 		~cMeshPrivate();
 		void on_init() override;
 
-		void set_model_name(const std::filesystem::path& model_name) override;
-		void set_mesh_index(uint idx) override;
-		void set_skin_index(uint idx) override;
+		void set_mesh_name(const std::filesystem::path& mesh_name) override;
+		void set_material_name(const std::filesystem::path& material_name) override;
 
 		void set_cast_shadow(bool v) override;
 

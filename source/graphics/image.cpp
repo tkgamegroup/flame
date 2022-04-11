@@ -505,6 +505,15 @@ namespace flame
 			{
 				auto filename = Path::get(_filename);
 
+				for (auto& i : loaded_images)
+				{
+					if (i->filename == filename)
+					{
+						i->ref++;
+						return i.get();
+					}
+				}
+
 				if (!std::filesystem::exists(filename))
 				{
 					wprintf(L"cannot find image: %s\n", _filename.c_str());

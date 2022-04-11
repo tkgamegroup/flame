@@ -119,7 +119,11 @@ namespace flame
 						dst.node = e->get_component_i<cNodeT>(0);
 						if (dst.node)
 							dst.offmat = src.offset_matrix;
+						else
+							dst.offmat = mat4(1.f);
 					}
+					else
+						printf("cArmature: cannot find node of bone's name: %s\n", name.c_str());
 				}
 			}
 
