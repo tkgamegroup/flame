@@ -16,18 +16,14 @@ namespace flame
 		virtual void set_model_name(const std::filesystem::path& path) = 0;
 
 		/// Reflect
-		std::wstring animation_names;
-		/// Reflect
-		virtual void set_animation_names(const std::wstring& paths) = 0;
-
-		/// Reflect
 		bool loop = true;
 
-		int playing_id = -1;
+		uint playing_name = 0;
 		float playing_time = 0;
 		float playing_speed = 1.f;
 
-		virtual void play(uint id) = 0;
+		virtual void bind_animation(uint name_hash, graphics::AnimationPtr anim) = 0;
+		virtual void play(uint name) = 0;
 		virtual void stop() = 0;
 
 		int instance_id = -1;

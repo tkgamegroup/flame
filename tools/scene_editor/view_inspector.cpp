@@ -111,11 +111,6 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 					ImGui::EndDragDropTarget();
 				}
 				ImGui::SameLine();
-
-				if (ImGui::Button(("P##" + ::str(src)).c_str()))
-				{
-
-				}
 			}
 				break;
 			}
@@ -154,17 +149,25 @@ void View_Inspector::on_draw()
 	{
 		auto e = selection.entity();
 
+		ImGui::PushID(e);
 		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), e);
+		ImGui::PopID();
 		if (changed_attribute)
 		{
 			if (auto ins = get_prefab_instance(e); ins)
 				ins->set_modifier(e->file_id, "", changed_attribute->name, changed_attribute->serialize(e));
 		}
 
+		ComponentPtr com_menu_tar = nullptr;
 		for (auto& c : e->components)
 		{
+			ImGui::PushID(c.get());
 			auto& ui = *com_udts[c->type_hash];
-			if (ImGui::CollapsingHeader(ui.name.c_str()))
+			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+			if (ImGui::Button("..."))
+				com_menu_tar = c.get();
+			if (open)
 			{
 				auto changed_attribute = show_udt_attributes(ui, c.get());
 				if (changed_attribute)
@@ -182,17 +185,26 @@ void View_Inspector::on_draw()
 						armature->stop();
 				}
 			}
+			ImGui::PopID();
 		}
 
-		auto str_add_component = "Add Component";
-		if (ImGui::Button(str_add_component))
+		if (ImGui::Button("Add Component"))
 		{
 			if (get_prefab_instance(e))
 				app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
 			else
-				ImGui::OpenPopup(str_add_component);
+				ImGui::OpenPopup("add_component");
 		}
-		if (ImGui::BeginPopup(str_add_component))
+
+		if (com_menu_tar)
+			ImGui::OpenPopup("component_menu");
+		if (ImGui::BeginPopup("component_menu"))
+		{
+			if (ImGui::Selectable("Remove"))
+				e->remove_component(com_menu_tar->type_hash);
+			ImGui::EndPopup();
+		}
+		if (ImGui::BeginPopup("add_component"))
 		{
 			for (auto ui : com_udts)
 			{

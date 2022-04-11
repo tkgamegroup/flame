@@ -406,7 +406,11 @@ namespace flame
 					auto sp = SUS::split(mod.target, '|');
 
 					auto te = find_with_file_id(e, sp.front());
-					assert(te);
+					if (!te)
+					{
+						printf("prefab modification: cannot find target: %s\n", sp.front().c_str());
+						continue;
+					}
 
 					void* obj = nullptr;
 					UdtInfo* ui = nullptr;
@@ -421,11 +425,28 @@ namespace flame
 						auto hash = sh(sp[1].c_str());
 						obj = te->get_component(hash);
 						ui = find_udt(hash);
+						if (!obj)
+						{
+							printf("prefab modification: cannot find component %s of target %s\n", sp[1].c_str(), sp.front().c_str());
+							continue;
+						}
+						if (!ui)
+						{
+							printf("prefab modification: cannot find UdtInfo of %s\n", sp[1].c_str());
+							continue;
+						}
 					}
 
-					assert(ui);
 					auto attr = ui->find_attribute(sp.back());
-					assert(attr);
+					if (!attr)
+					{
+						if (obj == te)
+							printf("prefab modification: cannot find attribute %s of target %s\n", sp.back().c_str(), sp.front().c_str());
+						else
+							printf("prefab modification: cannot find attribute %s of component %s of target %s\n", sp.back().c_str(), sp[1].c_str(), sp.front().c_str());
+						continue;
+					}
+
 					attr->type->unserialize(mod.value.c_str(), nullptr);
 					attr->set_value(obj);
 

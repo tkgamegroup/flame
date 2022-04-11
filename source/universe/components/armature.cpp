@@ -60,37 +60,68 @@ namespace flame
 		}
 		else if (_model)
 			graphics::Model::release(_model);
-		bones_dirty = true;
+
+		if (instance_id != -1)
+		{
+			on_inactive();
+			on_active();
+		}
 
 		if (node)
 			node->mark_transform_dirty();
 		data_changed("model_name"_h);
 	}
 
-	void cArmaturePrivate::set_animation_names(const std::wstring& paths)
+	void cArmaturePrivate::bind_animation(uint name_hash, graphics::AnimationPtr src)
 	{
-		if (animation_names == paths)
+		if (bones.empty())
 			return;
-		animation_names = paths;
 
-		animations_dirty = true;
+		auto& a = animations.emplace(name_hash, Animation()).first->second;
+		a.duration = src->duration;
 
-		if (node)
-			node->mark_transform_dirty();
-		data_changed("animation_names"_h);
+		for (auto& ch : src->channels)
+		{
+			auto find_bone = [&](std::string_view name) {
+				for (auto i = 0; i < bones.size(); i++)
+				{
+					if (bones[i].name == name)
+						return i;
+				}
+				return -1;
+			};
+			auto id = find_bone(ch.node_name);
+			if (id != -1)
+			{
+				auto& t = a.tracks.emplace_back();
+				t.bone_idx = id;
+				t.positions.resize(ch.position_keys.size());
+				for (auto i = 0; i < t.positions.size(); i++)
+				{
+					t.positions[i].first = ch.position_keys[i].t;
+					t.positions[i].second = ch.position_keys[i].p;
+				}
+				t.rotations.resize(ch.rotation_keys.size());
+				for (auto i = 0; i < t.rotations.size(); i++)
+				{
+					t.rotations[i].first = ch.rotation_keys[i].t;
+					t.rotations[i].second = ch.rotation_keys[i].q;
+				}
+			}
+		}
 	}
 
-	void cArmaturePrivate::play(uint id)
+	void cArmaturePrivate::play(uint name)
 	{
-		if (playing_id == id)
+		if (playing_name == name)
 			return;
 		stop();
-		playing_id = id;
+		playing_name = name;
 	}
 
 	void cArmaturePrivate::stop()
 	{
-		playing_id = -1;
+		playing_name = 0;
 		playing_time = 0;
 		transition_time = -1.f;
 	}
@@ -100,93 +131,11 @@ namespace flame
 		if (instance_id == -1)
 			return;
 
-		if (bones_dirty)
-		{
-			bones.clear();
-
-			if (model)
-			{
-				bones.resize(model->bones.size());
-				for (auto i = 0; i < bones.size(); i++)
-				{
-					auto& src = model->bones[i];
-					auto& dst = bones[i];
-					auto name = src.name;
-					auto e = entity->find_child(name);
-					if (e)
-					{
-						dst.name = name;
-						dst.node = e->get_component_i<cNodeT>(0);
-						if (dst.node)
-							dst.offmat = src.offset_matrix;
-						else
-							dst.offmat = mat4(1.f);
-					}
-					else
-						printf("cArmature: cannot find node of bone's name: %s\n", name.c_str());
-				}
-			}
-
-			bones_dirty = false;
-			animations_dirty = true;
-		}
-		if (animations_dirty)
-		{
-			stop();
-			animations.clear();
-
-			if (!bones.empty() && !animation_names.empty())
-			{
-				auto sp = SUW::split(animation_names, ';');
-				for (auto& s : sp)
-				{
-					auto animation = graphics::Animation::get(s);
-					if (animation)
-					{
-						auto& a = animations.emplace_back();
-						a.duration = animation->duration;
-
-						for (auto& ch : animation->channels)
-						{
-							auto find_bone = [&](std::string_view name) {
-								for (auto i = 0; i < bones.size(); i++)
-								{
-									if (bones[i].name == name)
-										return i;
-								}
-								return -1;
-							};
-							auto id = find_bone(ch.node_name);
-							if (id != -1)
-							{
-								auto& t = a.tracks.emplace_back();
-								t.bone_idx = id;
-								t.positions.resize(ch.position_keys.size());
-								for (auto i = 0; i < t.positions.size(); i++)
-								{
-									t.positions[i].first = ch.position_keys[i].t;
-									t.positions[i].second = ch.position_keys[i].p;
-								}
-								t.rotations.resize(ch.rotation_keys.size());
-								for (auto i = 0; i < t.rotations.size(); i++)
-								{
-									t.rotations[i].first = ch.rotation_keys[i].t;
-									t.rotations[i].second = ch.rotation_keys[i].q;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			animations_dirty = false;
-		}
-
 		if (frame < (int)frames)
 		{
-			if (playing_id != -1 && playing_id < animations.size())
+			if (playing_name != 0)
 			{
-				auto& a = animations[playing_id];
+				auto& a = animations[playing_name];
 				if (transition_time > 0.f)
 				{
 					for (auto& t : a.tracks)
@@ -278,6 +227,29 @@ namespace flame
 
 	void cArmaturePrivate::on_active()
 	{
+		if (model)
+		{
+			bones.resize(model->bones.size());
+			for (auto i = 0; i < bones.size(); i++)
+			{
+				auto& src = model->bones[i];
+				auto& dst = bones[i];
+				auto name = src.name;
+				auto e = entity->find_child(name);
+				if (e)
+				{
+					dst.name = name;
+					dst.node = e->get_component_i<cNodeT>(0);
+					if (dst.node)
+						dst.offmat = src.offset_matrix;
+					else
+						dst.offmat = mat4(1.f);
+				}
+				else
+					printf("cArmature: cannot find node of bone's name: %s\n", name.c_str());
+			}
+		}
+
 		instance_id = sRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();

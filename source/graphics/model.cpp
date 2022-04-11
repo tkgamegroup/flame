@@ -144,10 +144,6 @@ namespace flame
 				{
 					auto n_node = first_node.append_child("components").append_child("item");
 					n_node.append_attribute("type_name").set_value("flame::cNode");
-					if (rotation != vec3(0.f))
-						n_node.append_attribute("eul").set_value(str(rotation).c_str());
-					if (scaling != vec3(1.f))
-						n_node.append_attribute("scl").set_value(str(scaling).c_str());
 					return first_node.append_child("children").append_child("item");
 				}
 				return first_node;
@@ -158,20 +154,15 @@ namespace flame
 					auto dst = first_node;
 					if (need_wrap_root)
 						dst = dst.child("children").first_child();
-					auto n_armature = dst.child("components").append_child("item");
+					auto n_components = dst.child("components");
+					auto n_node = n_components.first_child();
+					if (rotation != vec3(0.f))
+						n_node.append_attribute("eul").set_value(str(rotation).c_str());
+					if (scaling != vec3(1.f))
+						n_node.append_attribute("scl").set_value(str(scaling).c_str());
+					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
 					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
-					if (!animations.empty())
-					{
-						std::string str;
-						for (auto& a : animations)
-						{
-							if (!str.empty())
-								str += ";";
-							str += a->filename.string();
-						}
-						n_armature.append_attribute("animation_names").set_value(str.c_str());
-					}
 					for (auto& m : model->meshes)
 					{
 						for (auto i = 0; i < m.bone_ids.size(); i++)

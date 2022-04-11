@@ -41,9 +41,7 @@ namespace flame
 		graphics::ModelPtr model = nullptr;
 
 		std::vector<Bone> bones;
-		std::vector<Animation> animations;
-		bool bones_dirty = false;
-		bool animations_dirty = false;
+		std::unordered_map<uint, Animation> animations;
 		float transition_time = -1.f;
 
 		int frame = -1;
@@ -52,9 +50,9 @@ namespace flame
 		void on_init() override;
 
 		void set_model_name(const std::filesystem::path& src) override;
-		void set_animation_names(const std::wstring& paths) override;
 
-		void play(uint id) override;
+		void bind_animation(uint name_hash, graphics::AnimationPtr anim) override;
+		void play(uint name) override;
 		void stop() override;
 
 		void draw(sRendererPtr renderer);
