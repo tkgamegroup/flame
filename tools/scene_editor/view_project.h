@@ -36,7 +36,6 @@ struct View_Project : View
 		float display_text_width;
 
 		Item(const std::filesystem::path& path);
-		void set_size();
 
 		void draw();
 	};
@@ -44,6 +43,8 @@ struct View_Project : View
 	std::filesystem::path peeding_open_path;
 	std::unique_ptr<FolderTreeNode> folder_tree;
 	FolderTreeNode* opened_folder = nullptr;
+	std::unique_ptr<FolderTreeNode> dialog_folder_tree;
+	FolderTreeNode* dialog_opened_folder = nullptr;
 	uint open_folder_frame = 0;
 	std::vector<FolderTreeNode*> folder_history;
 	int folder_history_idx = -1;
@@ -57,8 +58,8 @@ struct View_Project : View
 	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 
 	View_Project();
+	void init() override;
 	void reset(const std::filesystem::path& assets_path);
-	void set_items_size(float size);
 
 	FolderTreeNode* find_folder(const std::filesystem::path& path, bool force_read = false);
 	void open_folder(FolderTreeNode* folder, bool from_histroy = false);

@@ -36,11 +36,6 @@ View_Project::Item::Metric View_Project::Item::metric = {};
 View_Project::Item::Item(const std::filesystem::path& path) :
 	path(path)
 {
-	set_size();
-}
-
-void View_Project::Item::set_size()
-{
 	display_text = path.filename().string();
 
 	auto font = ImGui::GetFont();
@@ -168,15 +163,11 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 	}, true, false);
 }
 
-void View_Project::set_items_size(float size)
+void View_Project::init()
 {
-	Item::metric.size = size;
-	auto v = ImGui::GetStyle().FramePadding;
-	Item::metric.padding = vec2(v.x, v.y);
+	Item::metric.size = 64;
+	Item::metric.padding = ImGui::GetStyle().FramePadding;
 	Item::metric.line_height = ImGui::GetTextLineHeight();
-
-	for (auto& i : items)
-		i->set_size();
 }
 
 View_Project::FolderTreeNode* View_Project::find_folder(const std::filesystem::path& path, bool force_read)
@@ -218,9 +209,6 @@ void View_Project::open_folder(FolderTreeNode* folder, bool from_histroy)
 	open_folder_frame = frames;
 
 	folder->read_children();
-
-	if (Item::metric.size == 0)
-		set_items_size(64);
 
 	graphics::Queue::get()->wait_idle();
 

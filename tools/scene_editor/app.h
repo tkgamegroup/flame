@@ -16,6 +16,7 @@ struct View
 	void close();
 	void draw();
 
+	virtual void init() {}
 	virtual void on_draw() = 0;
 };
 
@@ -27,9 +28,9 @@ struct App : UniverseApplication
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
 
-	bool open_message_dialog = false;
-	std::string message_dialog_title;
-	std::string message_dialog_text;
+	bool open_dialog = false;
+	std::string dialog_title;
+	std::string dialog_text;
 
 	void init();
 
@@ -42,7 +43,8 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_stop();
 
-	void show_message_dialog(const std::string& title, const std::string& content = "");
+	void open_message_dialog(const std::string& title, const std::string& content = "");
+	void open_input_dialog(const std::string& title, const std::function<void(bool, const std::string&)>& callback);
 };
 
 extern App app;

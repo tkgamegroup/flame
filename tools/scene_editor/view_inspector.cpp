@@ -98,19 +98,28 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 				break;
 			case DataPath:
 			{
-				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
-				ImGui::InputText(a.name.c_str(), &str, ImGuiInputTextFlags_ReadOnly);
+				auto sp = SUS::split(((std::filesystem::path*)a.get_value(src, !direct_io))->string(), ':');
+				sp.resize(2);
+				ImGui::InputText(a.name.c_str(), sp[0].data(), ImGuiInputTextFlags_ReadOnly);
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 					{
 						auto str = std::wstring((wchar_t*)payload->Data);
 						auto path = Path::reverse(str);
+						if (!sp[1].empty())
+							path += L":" + s2w(sp[1]);
 						a.set_value(src, &path);
 					}
 					ImGui::EndDragDropTarget();
 				}
-				ImGui::SameLine();
+				if (ImGui::InputText(("[sub]##" + a.name).c_str(), &sp[1]))
+				{
+					std::filesystem::path path(sp[0]);
+					if (!sp[1].empty())
+						path += L":" + s2w(sp[1]);
+					a.set_value(src, &path);
+				}
 			}
 				break;
 			}
@@ -179,8 +188,11 @@ void View_Inspector::on_draw()
 				if (ui.name == "flame::cArmature")
 				{
 					auto armature = (cArmaturePtr)c.get();
+					if (ImGui::Button("Bind Animation"))
+						;
 					if (ImGui::Button("Play"))
 						armature->play(0);
+					ImGui::SameLine();
 					if (ImGui::Button("Stop"))
 						armature->stop();
 				}
@@ -188,10 +200,14 @@ void View_Inspector::on_draw()
 			ImGui::PopID();
 		}
 
+		ImGui::Dummy(vec2(0.f, 10.f));
+		const float ButtonWidth = 100.f;
+		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ButtonWidth) * 0.5f);
+		ImGui::SetNextItemWidth(ButtonWidth);
 		if (ImGui::Button("Add Component"))
 		{
 			if (get_prefab_instance(e))
-				app.show_message_dialog("[RestructurePrefabInstanceWarnning]");
+				app.open_message_dialog("[RestructurePrefabInstanceWarnning]");
 			else
 				ImGui::OpenPopup("add_component");
 		}

@@ -81,6 +81,9 @@ void App::init()
 	e_editor->add_component(th<cCamera>());
 	root->add_child(e_editor);
 
+	for (auto& v : views)
+		v->init();
+
 	main_window->imgui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
@@ -228,18 +231,18 @@ void App::init()
 				cmd_stop();
 		}
 
-		if (open_message_dialog)
+		if (open_dialog)
 		{
-			ImGui::OpenPopup(message_dialog_title.c_str());
-			open_message_dialog = false;
+			ImGui::OpenPopup(dialog_title.c_str());
+			open_dialog = false;
 		}
-		if (ImGui::BeginPopupModal(message_dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::TextUnformatted(message_dialog_text.c_str());
+			ImGui::TextUnformatted(dialog_text.c_str());
 			if (ImGui::Button("OK"))
 			{
-				message_dialog_title.clear();
-				message_dialog_text.clear();
+				dialog_title.clear();
+				dialog_text.clear();
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -582,7 +585,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	if (!e->prefab && get_prefab_instance(e))
 	{
-		show_message_dialog("[RestructurePrefabInstanceWarnning]");
+		open_message_dialog("[RestructurePrefabInstanceWarnning]");
 		return false;
 	}
 	e->parent->remove_child(e);
@@ -621,15 +624,16 @@ bool App::cmd_stop()
 		view_scene.camera_idx = 0;
 }
 
-void App::show_message_dialog(const std::string& title, const std::string& content)
+void App::open_message_dialog(const std::string& title, const std::string& content)
 {
-	open_message_dialog = true;
-	message_dialog_title = title;
-	message_dialog_text = content;
+	assert(dialog_title.empty());
+	open_dialog = true;
+	dialog_title = title;
+	dialog_text = content;
 	if (title == "[RestructurePrefabInstanceWarnning]")
 	{
-		message_dialog_title = "Cannot restructure Prefab Instance";
-		message_dialog_text = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
+		dialog_title = "Cannot restructure Prefab Instance";
+		dialog_text = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
 			"Edit it in that prefab";
 	}
 }

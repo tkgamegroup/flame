@@ -1,12 +1,15 @@
 #include "selection.h"
 
-bool Selection::Histroy::select()
+bool Selection::History::select()
 {
 	switch (type)
 	{
+	case Selection::tNothing:
+		selection.clear(true);
+		return true;
 	case Selection::tPath:
 	{
-		auto& path = ((PathHistroy*)this)->path;
+		auto& path = ((PathHistory*)this)->path;
 		if (std::filesystem::exists(path))
 		{
 			selection.select(path, true);
@@ -18,7 +21,7 @@ bool Selection::Histroy::select()
 		break;
 	case Selection::tEntity:
 	{
-		auto& his = (EntityHistroy&)*this;
+		auto& his = (EntityHistory&)*this;
 		EntityPtr e = nullptr;
 		if (app.e_prefab)
 			e = app.e_prefab->find_child_with_instance_id(his.ins_id);
@@ -35,9 +38,12 @@ bool Selection::Histroy::select()
 	return false;
 }
 
-void Selection::clear()
+void Selection::clear(bool from_histroy)
 {
 	frame = frames;
+
+	if (type == tNothing)
+		return;
 
 	switch (type)
 	{
@@ -51,6 +57,9 @@ void Selection::clear()
 	}
 	type = tNothing;
 	object = nullptr;
+
+	if (!from_histroy)
+		add_history(new EmptyHistory);
 }
 
 void Selection::select(const std::filesystem::path& path, bool from_histroy)
@@ -64,15 +73,7 @@ void Selection::select(const std::filesystem::path& path, bool from_histroy)
 	object = new std::filesystem::path(path);
 
 	if (!from_histroy)
-	{
-		auto it = history.begin() + (histroy_idx + 1);
-		it = history.erase(it, history.end());
-		history.emplace(it, new PathHistroy(path));
-		if (history.size() > 20)
-			history.erase(history.begin());
-		else
-			histroy_idx++;
-	}
+		add_history(new PathHistory(path));
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
@@ -96,26 +97,29 @@ void Selection::select(EntityPtr e, bool from_histroy)
 			if (selection.selecting(e))
 			{
 				selection.object = nullptr;
-				selection.clear();
+				selection.clear(app_exiting);
 			}
 		}
 	}, "editor_selection"_h);
 
 	if (!from_histroy)
-	{
-		auto it = history.begin() + (histroy_idx + 1);
-		it = history.erase(it, history.end());
-		history.emplace(it, new EntityHistroy(e));
-		if (history.size() > 20)
-			history.erase(history.begin());
-		else
-			histroy_idx++;
-	}
+		add_history(new EntityHistory(e));
 }
 
 bool Selection::selecting(EntityPtr e)
 {
 	return type == tEntity && object == e;
+}
+
+void Selection::add_history(History* his)
+{
+	auto it = history.begin() + (histroy_idx + 1);
+	it = history.erase(it, history.end());
+	history.emplace(it, his);
+	if (history.size() > 20)
+		history.erase(history.begin());
+	else
+		histroy_idx++;
 }
 
 void Selection::forward()
