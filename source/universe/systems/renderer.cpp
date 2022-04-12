@@ -264,8 +264,7 @@ namespace flame
 			if (res.iv == iv && res.sp == sp)
 			{
 				res.ref++;
-				id = i;
-				break;
+				return i;
 			}
 		}
 		if (id == -1)
@@ -311,7 +310,7 @@ namespace flame
 			res.ref--;
 	}
 
-	int sRendererPrivate::get_mesh_res(graphics::Mesh* mesh)
+	int sRendererPrivate::get_mesh_res(graphics::MeshPtr mesh)
 	{
 		auto id = -1;
 		for (auto i = 0; i < mesh_reses.size(); i++)
@@ -320,8 +319,7 @@ namespace flame
 			if (res.mesh == mesh)
 			{
 				res.ref++;
-				id = i;
-				break;
+				return i;
 			}
 		}
 		if (id == -1)

@@ -99,8 +99,9 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 				break;
 			case DataPath:
 			{
-				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
-				ImGui::InputText(a.name.c_str(), str.data(), ImGuiInputTextFlags_ReadOnly);
+				auto& path = *(std::filesystem::path*)a.get_value(src, !direct_io);
+				auto s = path.string();
+				ImGui::InputText(a.name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
@@ -111,6 +112,9 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 					}
 					ImGui::EndDragDropTarget();
 				}
+				ImGui::SameLine();
+				if (ImGui::Button(("P##" + str(&a)).c_str()))
+					selection.select(Path::get(path));
 			}
 				break;
 			}

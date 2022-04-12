@@ -4,6 +4,23 @@
 
 using namespace flame;
 
+enum Icon
+{
+	Icon_Model,
+	Icon_Armature,
+	Icon_Mesh,
+
+	IconCount
+};
+
+enum DialogType
+{
+	DialogNone,
+	DialogMessage,
+	DialogInput
+};
+
+
 struct View
 {
 	std::string name;
@@ -22,18 +39,14 @@ struct View
 
 struct App : UniverseApplication
 {
-	enum DialogType
-	{
-		DialogNone,
-		DialogMessage,
-		DialogInput
-	};
-
 	std::filesystem::path project_path;
 	std::filesystem::path prefab_path;
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
+
+	graphics::ImagePtr icons[IconCount];
+	std::map<int, std::unique_ptr<graphics::Image>> sys_icons;
 
 	bool open_dialog = false;
 	DialogType dialog_type = DialogNone;

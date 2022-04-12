@@ -339,7 +339,7 @@ namespace flame
 	{
 		HRESULT hr;
 
-		IShellFolder* desktop_folder, * shell_folder;
+		IShellFolder* desktop_folder, *shell_folder;
 		SHGetDesktopFolder(&desktop_folder);
 
 		LPITEMIDLIST pidl;
@@ -347,24 +347,27 @@ namespace flame
 		SHBindToParent(pidl, IID_PPV_ARGS(&shell_folder), NULL);
 		auto pidl_child = ILFindLastID(pidl);
 
-		IThumbnailProvider* thumbnail_provider;
-		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)&thumbnail_provider);
-		HBITMAP hbmp;
-		WTS_ALPHATYPE alpha_type;
 		uint w = 0, h = 0;
 		std::unique_ptr<uchar> data;
-		if (SUCCEEDED(thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type)))
-		{
-			BITMAP bmp;
-			GetObject(hbmp, sizeof(bmp), &bmp);
-			w = bmp.bmWidth;
-			h = bmp.bmHeight;
-			data.reset((uchar*)malloc(bmp.bmWidth * bmp.bmHeight * 4));
-			GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, data.get());
-			DeleteObject(hbmp);
-		}
 
-		thumbnail_provider->Release();
+		IThumbnailProvider* thumbnail_provider;
+		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)&thumbnail_provider);
+		if (thumbnail_provider)
+		{
+			HBITMAP hbmp;
+			WTS_ALPHATYPE alpha_type;
+			if (SUCCEEDED(thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type)))
+			{
+				BITMAP bmp;
+				GetObject(hbmp, sizeof(bmp), &bmp);
+				w = bmp.bmWidth;
+				h = bmp.bmHeight;
+				data.reset((uchar*)malloc(bmp.bmWidth * bmp.bmHeight * 4));
+				GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, data.get());
+				DeleteObject(hbmp);
+			}
+			thumbnail_provider->Release();
+		}
 
 		desktop_folder->Release();
 		shell_folder->Release();

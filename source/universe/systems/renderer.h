@@ -24,7 +24,7 @@ namespace flame
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr) = 0;
 		virtual void release_texture_res(uint id) = 0;
 
-		virtual int get_mesh_res(graphics::Mesh* mesh) = 0;
+		virtual int get_mesh_res(graphics::MeshPtr mesh) = 0;
 		virtual void release_mesh_res(uint id) = 0;
 
 		virtual int get_material_res(graphics::Material* mat) = 0;

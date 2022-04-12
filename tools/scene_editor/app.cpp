@@ -81,6 +81,11 @@ void App::init()
 	e_editor->add_component(th<cCamera>());
 	root->add_child(e_editor);
 
+	auto curr_path = std::filesystem::current_path();
+	icons[Icon_Model] = graphics::Image::get(curr_path / L"icon_model.png");
+	icons[Icon_Armature] = graphics::Image::get(curr_path / L"icon_armature.png");
+	icons[Icon_Mesh] = graphics::Image::get(curr_path / L"icon_mesh.png");
+
 	for (auto& v : views)
 		v->init();
 
@@ -743,10 +748,10 @@ int main(int argc, char** args)
 		preferences_o << "[project_path]\n";
 		preferences_o << app.project_path.string() << "\n";
 	}
-	if (view_project.opened_folder)
+	if (view_project.resource_panel.opened_folder)
 	{
 		preferences_o << "[opened_folder]\n";
-		preferences_o << view_project.opened_folder->path.string() << "\n";
+		preferences_o << view_project.resource_panel.opened_folder->path.string() << "\n";
 	}
 	if (app.e_prefab)
 	{

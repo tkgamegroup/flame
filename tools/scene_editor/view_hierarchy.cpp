@@ -125,7 +125,10 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
+		{
 			selection.select(e);
+			selection.frame--;
+		}
 		if (opened)
 		{
 			auto gap_item = [&](int i) {

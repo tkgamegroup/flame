@@ -188,7 +188,7 @@ namespace flame
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp) override;
 		void release_texture_res(uint id) override;
 
-		int get_mesh_res(graphics::Mesh* mesh) override;
+		int get_mesh_res(graphics::MeshPtr mesh) override;
 		void release_mesh_res(uint id) override;
 
 		int get_material_res(graphics::Material* mat) override;

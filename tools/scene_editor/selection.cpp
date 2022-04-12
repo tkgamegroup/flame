@@ -24,7 +24,12 @@ bool Selection::History::select()
 		auto& his = (EntityHistory&)*this;
 		EntityPtr e = nullptr;
 		if (app.e_prefab)
-			e = app.e_prefab->find_child_with_instance_id(his.ins_id);
+		{
+			if (app.e_prefab->instance_id == his.ins_id)
+				e = app.e_prefab;
+			else
+				e = app.e_prefab->find_child_with_instance_id(his.ins_id);
+		}
 		if (e)
 		{
 			selection.select(e, true);
