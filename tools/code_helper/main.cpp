@@ -14,7 +14,7 @@ int main(int argc, char** args)
 	path.make_preferred();
 	if (path.empty())
 		path = std::filesystem::current_path();
-	auto ppath = path.parent_path();
+	auto parent_path = path.parent_path();
 	auto name = ap.get_item("-name");
 	auto name2 = ap.get_item("-name2");
 	auto type = ap.get_item("-type");
@@ -26,7 +26,7 @@ int main(int argc, char** args)
 	bool is_internal;
 	auto export_str = std::string("__declspec(dllexport)");
 	{
-		auto str_ppath = ppath.wstring();
+		auto str_ppath = parent_path.wstring();
 		auto str_flame_path = flame_path.wstring();
 		is_internal = str_ppath.starts_with(str_flame_path);
 		if (is_internal)
@@ -320,8 +320,8 @@ int main(int argc, char** args)
 			}
 		};
 
-		printf("current directory: %s\n", ppath.string().c_str());
-		std::filesystem::current_path(ppath);
+		printf("current directory: %s\n", parent_path.string().c_str());
+		std::filesystem::current_path(parent_path);
 
 		std::string public_header_fn;
 		std::string private_header_fn;

@@ -22,6 +22,13 @@ struct View
 
 struct App : UniverseApplication
 {
+	enum DialogType
+	{
+		DialogNone,
+		DialogMessage,
+		DialogInput
+	};
+
 	std::filesystem::path project_path;
 	std::filesystem::path prefab_path;
 	EntityPtr e_editor = nullptr;
@@ -29,8 +36,10 @@ struct App : UniverseApplication
 	EntityPtr e_playing = nullptr;
 
 	bool open_dialog = false;
+	DialogType dialog_type = DialogNone;
 	std::string dialog_title;
 	std::string dialog_text;
+	std::function<void(bool, const std::string&)> dialog_callback;
 
 	void init();
 
@@ -43,6 +52,7 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_stop();
 
+	void close_dialog();
 	void open_message_dialog(const std::string& title, const std::string& content = "");
 	void open_input_dialog(const std::string& title, const std::function<void(bool, const std::string&)>& callback);
 };

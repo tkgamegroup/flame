@@ -6,6 +6,15 @@
 
 struct View_Project : View
 {
+	enum Icon
+	{
+		Icon_Model,
+		Icon_Armature,
+		Icon_Mesh,
+
+		IconCount
+	};
+
 	struct FolderTreeNode
 	{
 		bool read = false;
@@ -30,12 +39,15 @@ struct View_Project : View
 		static Metric metric;
 
 		std::filesystem::path path;
-		graphics::Image* thumbnail = nullptr;
+		std::string text;
+		float text_width;
+		graphics::ImagePtr image = nullptr;
 
-		std::string display_text;
-		float display_text_width;
+		bool has_children = false;
 
+		Item(const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image);
 		Item(const std::filesystem::path& path);
+		void prune_text();
 
 		void draw();
 	};
@@ -43,14 +55,13 @@ struct View_Project : View
 	std::filesystem::path peeding_open_path;
 	std::unique_ptr<FolderTreeNode> folder_tree;
 	FolderTreeNode* opened_folder = nullptr;
-	std::unique_ptr<FolderTreeNode> dialog_folder_tree;
-	FolderTreeNode* dialog_opened_folder = nullptr;
 	uint open_folder_frame = 0;
 	std::vector<FolderTreeNode*> folder_history;
 	int folder_history_idx = -1;
 
-	std::map<int, std::unique_ptr<graphics::Image>> icons;
 	std::vector<std::unique_ptr<graphics::Image>> thumbnails;
+	graphics::ImagePtr icons[IconCount];
+	std::map<int, std::unique_ptr<graphics::Image>> sys_icons;
 	std::vector<std::unique_ptr<Item>> items;
 
 	void* ev_watcher = nullptr;

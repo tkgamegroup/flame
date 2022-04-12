@@ -1192,7 +1192,7 @@ namespace flame
 
 		GraphicsPipelinePtr GraphicsPipelinePrivate::load(const std::filesystem::path& filename, const std::vector<std::string>& _defines)
 		{
-			auto ppath = filename.parent_path();
+			auto parent_path = filename.parent_path();
 
 			std::ifstream file(filename);
 			if (!file.good())
@@ -1261,7 +1261,7 @@ namespace flame
 					return INVALID_POINTER;
 				}
 				std::filesystem::path fn = src.value();
-				if (Path::cat_if_exists(ppath, fn))
+				if (Path::cat_if_exists(parent_path, fn))
 					fn = std::filesystem::canonical(fn);
 				layout_segment.second = fn;
 				return PipelineLayout::get(fn);
@@ -1288,7 +1288,7 @@ namespace flame
 						return INVALID_POINTER;
 					}
 					std::filesystem::path fn = value;
-					if (Path::cat_if_exists(ppath, fn))
+					if (Path::cat_if_exists(parent_path, fn))
 						fn = std::filesystem::canonical(fn);
 					auto stage = stage_from_ext(fn);
 					if (stage != ShaderStageNone)
@@ -1304,7 +1304,7 @@ namespace flame
 					}
 				}
 				std::filesystem::path fn = src.value("filename");
-				if (Path::cat_if_exists(ppath, fn))
+				if (Path::cat_if_exists(parent_path, fn))
 					fn = std::filesystem::canonical(fn);
 				auto stage = stage_from_ext(fn);
 				if (stage != ShaderStageNone)
@@ -1331,7 +1331,7 @@ namespace flame
 					return Renderpass::get(value, defines);
 				}
 				std::filesystem::path fn = src.value("filename");
-				if (Path::cat_if_exists(ppath, fn))
+				if (Path::cat_if_exists(parent_path, fn))
 					fn = std::filesystem::canonical(fn);
 				auto defines = format_defines(src.value("defines"));
 				defines.insert(defines.end(), renderpass_defines.begin(), renderpass_defines.end());

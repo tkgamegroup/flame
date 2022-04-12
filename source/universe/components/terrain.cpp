@@ -208,7 +208,7 @@ namespace flame
 	{
 		auto fn = std::filesystem::path(material_name);
 		if (!fn.extension().empty() && !fn.is_absolute())
-			fn = ppath / fn;
+			fn = parent_path / fn;
 		material = graphics::Material::get(fn.c_str());
 		material_id = s_renderer->find_material_res(material);
 		if (material_id == -1)

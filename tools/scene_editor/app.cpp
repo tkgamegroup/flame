@@ -236,16 +236,41 @@ void App::init()
 			ImGui::OpenPopup(dialog_title.c_str());
 			open_dialog = false;
 		}
-		if (ImGui::BeginPopupModal(dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (dialog_type != DialogNone)
 		{
-			ImGui::TextUnformatted(dialog_text.c_str());
-			if (ImGui::Button("OK"))
+			if (ImGui::BeginPopupModal(dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				dialog_title.clear();
-				dialog_text.clear();
-				ImGui::CloseCurrentPopup();
+				switch (dialog_type)
+				{
+				case DialogMessage:
+					ImGui::TextUnformatted(dialog_text.c_str());
+					if (ImGui::Button("OK"))
+					{
+						close_dialog();
+						ImGui::CloseCurrentPopup();
+					}
+					break;
+				case DialogInput:
+					ImGui::InputText("##text", &dialog_text);
+					if (ImGui::Button("OK"))
+					{
+						if (dialog_callback)
+							dialog_callback(true, dialog_text);
+						close_dialog();
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel"))
+					{
+						if (dialog_callback)
+							dialog_callback(false, "");
+						close_dialog();
+						ImGui::CloseCurrentPopup();
+					}
+					break;
+				}
+				ImGui::EndPopup();
 			}
-			ImGui::EndPopup();
 		}
 #ifdef USE_IM_FILE_DIALOG
 		if (ifd::FileDialog::Instance().IsDone("NewProject"))
@@ -624,18 +649,38 @@ bool App::cmd_stop()
 		view_scene.camera_idx = 0;
 }
 
+void App::close_dialog()
+{
+	dialog_type = DialogNone;
+	dialog_title.clear();
+	dialog_text.clear();
+	dialog_callback = nullptr;
+}
+
 void App::open_message_dialog(const std::string& title, const std::string& content)
 {
-	assert(dialog_title.empty());
+	assert(dialog_type == DialogNone);
 	open_dialog = true;
-	dialog_title = title;
-	dialog_text = content;
+	dialog_type = DialogMessage;
 	if (title == "[RestructurePrefabInstanceWarnning]")
 	{
 		dialog_title = "Cannot restructure Prefab Instance";
 		dialog_text = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
 			"Edit it in that prefab";
 	}
+	else
+	{
+		dialog_title = title;
+		dialog_text = content;
+	}
+}
+
+void App::open_input_dialog(const std::string& title, const std::function<void(bool, const std::string&)>& callback)
+{
+	assert(dialog_type == DialogNone);
+	open_dialog = true;
+	dialog_type = DialogInput;
+	dialog_title = title;
 }
 
 PrefabInstance* get_prefab_instance(EntityPtr e)
@@ -652,20 +697,6 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 
 int main(int argc, char** args)
 {
-	auto vp = mat4(
-		vec4(1.2956, 1.30337, -0.59566, -0.59507),
-		vec4(-3.24285e-8, -1.78802, -0.6726, -0.67192),
-		vec4(-1.74855, 0.96574, -0.44136, -0.44092),
-		vec4(133.42, 26.94816, -36.73843, -35.7017)
-	);
-	auto p = vp * mat4(
-		vec4(0.01, 0, 0, 0),
-		vec4(0, 0.01, 0, 0),
-		vec4(0, 0, 0.01, 0),
-		vec4(-66.7455, -19.0814, 26.8476, 1)
-	) * 
-		vec4(17.16035, 127.75878, -0.67164, 1);
-
 	app.init();
 
 	std::filesystem::path preferences_path = L"preferences.ini";

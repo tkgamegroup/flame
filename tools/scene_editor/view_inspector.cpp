@@ -4,6 +4,7 @@
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/animation.h>
 #include <flame/universe/components/armature.h>
 
 View_Inspector view_inspector;
@@ -98,27 +99,17 @@ const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
 				break;
 			case DataPath:
 			{
-				auto sp = SUS::split(((std::filesystem::path*)a.get_value(src, !direct_io))->string(), ':');
-				sp.resize(2);
-				ImGui::InputText(a.name.c_str(), sp[0].data(), ImGuiInputTextFlags_ReadOnly);
+				auto str = ((std::filesystem::path*)a.get_value(src, !direct_io))->string();
+				ImGui::InputText(a.name.c_str(), str.data(), ImGuiInputTextFlags_ReadOnly);
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 					{
 						auto str = std::wstring((wchar_t*)payload->Data);
 						auto path = Path::reverse(str);
-						if (!sp[1].empty())
-							path += L":" + s2w(sp[1]);
 						a.set_value(src, &path);
 					}
 					ImGui::EndDragDropTarget();
-				}
-				if (ImGui::InputText(("[sub]##" + a.name).c_str(), &sp[1]))
-				{
-					std::filesystem::path path(sp[0]);
-					if (!sp[1].empty())
-						path += L":" + s2w(sp[1]);
-					a.set_value(src, &path);
 				}
 			}
 				break;
@@ -189,9 +180,19 @@ void View_Inspector::on_draw()
 				{
 					auto armature = (cArmaturePtr)c.get();
 					if (ImGui::Button("Bind Animation"))
-						;
+					{
+						app.open_input_dialog("Name to bind", [armature](bool ok, const std::string& text) {
+							if (ok)
+							{
+
+							}
+						});
+					}
+					static char name[100];
+					ImGui::InputText("name", name, countof(name));
+					ImGui::SameLine();
 					if (ImGui::Button("Play"))
-						armature->play(0);
+						armature->play(sh(name));
 					ImGui::SameLine();
 					if (ImGui::Button("Stop"))
 						armature->stop();

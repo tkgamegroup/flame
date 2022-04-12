@@ -87,7 +87,7 @@ namespace flame
 
 		void Model::convert(const std::filesystem::path& _filename, const vec3& rotation, const vec3& scaling, bool only_animation)
 		{
-			auto ppath = _filename.parent_path();
+			auto parent_path = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
 			auto model_name = filename.filename().stem().string();
 			auto ext = filename.extension();
@@ -349,7 +349,7 @@ namespace flame
 
 					get_node_curves(scene->GetRootNode());
 
-					auto fn = ppath / format_res_name(anim_stack->GetName(), "fani", i);
+					auto fn = parent_path / format_res_name(anim_stack->GetName(), "fani", i);
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);
@@ -421,14 +421,14 @@ namespace flame
 									{
 										if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 										{
-											 material->textures[map_id].filename = Path::reverse(find_file(ppath, tex->GetFileName()));
+											 material->textures[map_id].filename = Path::reverse(find_file(parent_path, tex->GetFileName()));
 											 material->color_map = map_id++;
 										}
 									}
 								}
 							}
 
-							auto fn = ppath / format_res_name(fbx_mat->GetName(), "fmat", i);
+							auto fn = parent_path / format_res_name(fbx_mat->GetName(), "fmat", i);
 							material->save(fn);
 							material->filename = Path::reverse(fn);
 							materials.emplace_back(material);
@@ -713,7 +713,7 @@ namespace flame
 						}
 					}
 
-					auto fn = ppath / format_res_name(ai_ani->mName.C_Str(), "fani", i);
+					auto fn = parent_path / format_res_name(ai_ani->mName.C_Str(), "fani", i);
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);
@@ -735,7 +735,7 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
-							material->textures[map_id].filename = Path::reverse(find_file(ppath, name));
+							material->textures[map_id].filename = Path::reverse(find_file(parent_path, name));
 							material->color_map = map_id++;
 						}
 					}
@@ -746,12 +746,12 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
-							material->textures[map_id].filename = Path::reverse(find_file(ppath, name));
+							material->textures[map_id].filename = Path::reverse(find_file(parent_path, name));
 							material->alpha_map = map_id++;
 						}
 					}
 
-					auto fn = ppath / format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
+					auto fn = parent_path / format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
 					material->save(fn);
 					material->filename = Path::reverse(fn);
 
@@ -1044,6 +1044,54 @@ namespace flame
 			}
 		}Model_get;
 		Model::Get& Model::get = Model_get;
+
+		struct ModelGetStat : Model::GetStat
+		{
+			ModelPtr operator()(const std::filesystem::path& _filename) override
+			{
+				auto filename = Path::get(_filename);
+
+				std::ifstream file(filename);
+				if (!file.good())
+				{
+					wprintf(L"cannot find model: %s\n", _filename.c_str());
+					return nullptr;
+				}
+				LineReader src(file);
+				src.read_block("model:");
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
+				{
+					printf("model format is incorrect: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				auto ret = new ModelPrivate();
+				ret->filename = filename;
+
+				for (auto& n_mesh : doc_root.child("meshes"))
+				{
+					auto& m = ret->meshes.emplace_back();
+					m.model = ret;
+
+					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
+				}
+
+				for (auto n_bone : doc_root.child("bones"))
+				{
+					auto& b = ret->bones.emplace_back();
+					b.name = n_bone.attribute("name").value();
+				}
+
+				for (auto& m : ret->meshes)
+					ret->bounds.expand(m.bounds);
+
+				return ret;
+			}
+		}Model_get_stat;
+		Model::GetStat& Model::get_stat = Model_get_stat;
 
 		struct ModelRelease : Model::Release
 		{

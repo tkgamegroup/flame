@@ -4,13 +4,14 @@
 
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
+#include <flame/graphics/model.h>
 
 View_Project view_project;
 
 View_Project::FolderTreeNode::FolderTreeNode(const std::filesystem::path& path) :
 	path(path)
 {
-	display_text = path.stem().string();
+	display_text = path.filename().string();
 }
 
 void View_Project::FolderTreeNode::read_children()
@@ -19,13 +20,16 @@ void View_Project::FolderTreeNode::read_children()
 		return;
 
 	children.clear();
-	for (auto& it : std::filesystem::directory_iterator(path))
+	if (std::filesystem::is_directory(path))
 	{
-		if (std::filesystem::is_directory(it.status()))
+		for (auto& it : std::filesystem::directory_iterator(path))
 		{
-			auto c = new FolderTreeNode(it.path());
-			c->parent = this;
-			children.emplace_back(c);
+			if (std::filesystem::is_directory(it.status()) || it.path().extension() == L".fmod")
+			{
+				auto c = new FolderTreeNode(it.path());
+				c->parent = this;
+				children.emplace_back(c);
+			}
 		}
 	}
 	read = true;
@@ -33,18 +37,59 @@ void View_Project::FolderTreeNode::read_children()
 
 View_Project::Item::Metric View_Project::Item::metric = {};
 
+View_Project::Item::Item(const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image) :
+	path(path),
+	text(text),
+	image(image)
+{
+	prune_text();
+}
+
 View_Project::Item::Item(const std::filesystem::path& path) :
 	path(path)
 {
-	display_text = path.filename().string();
+	text = path.filename().string();
+	prune_text();
 
+	auto ext = path.extension();
+	if (ext == L".fmod")
+		image = view_project.icons[Icon_Model];
+	else if (is_image_file(ext))
+	{
+		auto d = get_thumbnail(metric.size, path);
+		auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+		image = img;
+		view_project.thumbnails.emplace_back(img);
+	}
+	else
+	{
+		int id;
+		get_icon(path.c_str(), &id);
+		auto it = view_project.sys_icons.find(id);
+		if (it != view_project.sys_icons.end())
+			image = it->second.get();
+		else
+		{
+			auto d = get_icon(path.c_str(), nullptr);
+			if (d.second)
+			{
+				auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+				image = img;
+				view_project.sys_icons.emplace(id, img);
+			}
+		}
+	}
+}
+
+void View_Project::Item::prune_text()
+{
 	auto font = ImGui::GetFont();
 	auto font_size = ImGui::GetFontSize();
 	const char* clipped_end;
-	display_text_width = font->CalcTextSizeA(font_size, metric.size, 0.f, &*display_text.begin(), display_text.c_str() + display_text.size(), &clipped_end).x;
-	if (clipped_end != display_text.c_str() + display_text.size())
+	text_width = font->CalcTextSizeA(font_size, metric.size, 0.f, &*text.begin(), text.c_str() + text.size(), &clipped_end).x;
+	if (clipped_end != text.c_str() + text.size())
 	{
-		auto str = display_text.substr(0, clipped_end - display_text.c_str());
+		auto str = text.substr(0, clipped_end - text.c_str());
 		float w;
 		do
 		{
@@ -53,34 +98,8 @@ View_Project::Item::Item(const std::filesystem::path& path) :
 			str.pop_back();
 			w = font->CalcTextSizeA(font_size, 9999.f, 0.f, (str + "...").c_str()).x;
 		} while (w > metric.size);
-		display_text = str + "...";
-		display_text_width = w;
-	}
-
-	if (is_image_file(path.extension()))
-	{
-		auto d = get_thumbnail(metric.size, path);
-		auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
-		thumbnail = img;
-		view_project.thumbnails.emplace_back(img);
-	}
-	else
-	{
-		int icon_id;
-		get_icon(path.c_str(), &icon_id);
-		auto it = view_project.icons.find(icon_id);
-		if (it != view_project.icons.end())
-			thumbnail = it->second.get();
-		else
-		{
-			auto d = get_icon(path.c_str(), nullptr);
-			if (d.second)
-			{
-				auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
-				thumbnail = img;
-				view_project.icons.emplace(icon_id, img);
-			}
-		}
+		text = str + "...";
+		text_width = w;
 	}
 }
 
@@ -97,8 +116,8 @@ void View_Project::Item::draw()
 	else											col = ImColor(0, 0, 0, 0);
 	auto draw_list = ImGui::GetWindowDrawList();
 	draw_list->AddRectFilled(p0, p1, col);
-	draw_list->AddImage(thumbnail, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
-	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - display_text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), display_text.c_str(), display_text.c_str() + display_text.size());
+	draw_list->AddImage(image, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
+	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), text.c_str(), text.c_str() + text.size());
 
 	auto ext = path.extension();
 
@@ -106,7 +125,7 @@ void View_Project::Item::draw()
 		selection.select(path);
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
 	{
-		if (std::filesystem::is_directory(path))
+		if (has_children)
 		{
 			// open folder will destroy all items, so stage path here
 			auto p = path;
@@ -168,6 +187,11 @@ void View_Project::init()
 	Item::metric.size = 64;
 	Item::metric.padding = ImGui::GetStyle().FramePadding;
 	Item::metric.line_height = ImGui::GetTextLineHeight();
+
+	auto curr_path = std::filesystem::current_path();
+	icons[Icon_Model] = graphics::Image::get(curr_path / L"icon_model.png");
+	icons[Icon_Armature] = graphics::Image::get(curr_path / L"icon_armature.png");
+	icons[Icon_Mesh] = graphics::Image::get(curr_path / L"icon_mesh.png");
 }
 
 View_Project::FolderTreeNode* View_Project::find_folder(const std::filesystem::path& path, bool force_read)
@@ -210,31 +234,63 @@ void View_Project::open_folder(FolderTreeNode* folder, bool from_histroy)
 
 	folder->read_children();
 
-	graphics::Queue::get()->wait_idle();
-
 	items.clear();
-	icons.clear();
+
+	graphics::Queue::get()->wait_idle();
 	thumbnails.clear();
 
-	std::vector<Item*> dirs;
-	std::vector<Item*> files;
-	for (auto& it : std::filesystem::directory_iterator(folder->path))
+	if (std::filesystem::is_directory(folder->path))
 	{
-		if (std::filesystem::is_directory(it.status()))
-			dirs.push_back(new Item(it.path()));
-		else
-			files.push_back(new Item(it.path()));
+		std::vector<Item*> dirs;
+		std::vector<Item*> files;
+		for (auto& it : std::filesystem::directory_iterator(folder->path))
+		{
+			if (std::filesystem::is_directory(it.status()))
+				dirs.push_back(new Item(it.path()));
+			else
+				files.push_back(new Item(it.path()));
+		}
+		std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
+			return a->path < b->path;
+		});
+		std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
+			return a->path < b->path;
+		});
+		for (auto i : dirs)
+		{
+			i->has_children = true;
+			items.emplace_back(i);
+		}
+		for (auto i : files)
+		{
+			if (i->path.extension() == L".fmod")
+				i->has_children = true;
+			items.emplace_back(i);
+		}
 	}
-	std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
-		return a->path < b->path;
-	});
-	std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
-		return a->path < b->path;
-	});
-	for (auto i : dirs)
-		items.emplace_back(i);
-	for (auto i : files)
-		items.emplace_back(i);
+	else
+	{
+		auto ext = folder->path.extension();
+		if (ext == L".fmod")
+		{
+			auto model = graphics::Model::get_stat(folder->path);
+			if (model)
+			{
+				if (!model->bones.empty())
+				{
+					auto path = folder->path;
+					path += L":armature";
+					items.emplace_back(new Item(path, "armature", icons[Icon_Armature]));
+				}
+				for (auto i = 0; i < model->meshes.size(); i++)
+				{
+					auto path = folder->path;
+					path += L":" + wstr(i);
+					items.emplace_back(new Item(path, str(i), icons[Icon_Mesh]));
+				}
+			}
+		}
+	}
 }
 
 void View_Project::on_draw()
@@ -242,17 +298,30 @@ void View_Project::on_draw()
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())
 	{
-		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_directories;
+		std::vector<std::filesystem::path> changed_directories;
 		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_files;
 		for (auto& p : changed_paths)
 		{
 			if (std::filesystem::is_directory(p.first) && p.second == FileModified)
-				changed_directories.emplace_back(p.first, p.second);
+				changed_directories.push_back(p.first);
 			else
 				changed_files.emplace_back(p.first, p.second);
+
+			auto parent_path = p.first.parent_path();
+			auto found = false;
+			for (auto& pp : changed_directories)
+			{
+				if (pp == parent_path)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				changed_directories.push_back(parent_path);
 		}
 		std::sort(changed_directories.begin(), changed_directories.end(), [](const auto& a, const auto& b) {
-			return a.first.wstring().size() < b.first.wstring().size();
+			return a.wstring().size() < b.wstring().size();
 		});
 		std::sort(changed_files.begin(), changed_files.end(), [](const auto& a, const auto& b) {
 			return a.first.wstring().size() < b.first.wstring().size();
@@ -260,17 +329,11 @@ void View_Project::on_draw()
 
 		for (auto& p : changed_directories)
 		{
-			std::function<void(FolderTreeNode* node)> redo_read_children;
-			redo_read_children = [&](FolderTreeNode* node) {
-				if (node->read && node->path == p.first)
-				{
-					node->read = false;
-					node->read_children();
-				}
-				for (auto& c : node->children)
-					redo_read_children(c.get());
-			};
-			redo_read_children(folder_tree.get());
+			if (auto node = find_folder(p); node && node->read)
+			{
+				node->read = false;
+				node->read_children();
+			}
 		}
 
 		open_folder(opened_folder ? find_folder(opened_folder->path) : nullptr);

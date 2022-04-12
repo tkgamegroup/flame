@@ -97,10 +97,16 @@ namespace flame
 
 			struct Get
 			{
-				// could be "standard:<name>" to get standard models ("cube", "sphere")
+				// could be "standard_<name>" to get standard models ("cube", "sphere")
 				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct GetStat
+			{
+				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
+			};
+			FLAME_GRAPHICS_API static GetStat& get_stat;
 
 			struct Release
 			{
