@@ -2,6 +2,7 @@
 #include "selection.h"
 #include "view_scene.h"
 #include "view_project.h"
+#include "dialog.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -236,47 +237,8 @@ void App::init()
 				cmd_stop();
 		}
 
-		if (open_dialog)
-		{
-			ImGui::OpenPopup(dialog_title.c_str());
-			open_dialog = false;
-		}
-		if (dialog_type != DialogNone)
-		{
-			if (ImGui::BeginPopupModal(dialog_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				switch (dialog_type)
-				{
-				case DialogMessage:
-					ImGui::TextUnformatted(dialog_text.c_str());
-					if (ImGui::Button("OK"))
-					{
-						close_dialog();
-						ImGui::CloseCurrentPopup();
-					}
-					break;
-				case DialogInput:
-					ImGui::InputText("##text", &dialog_text);
-					if (ImGui::Button("OK"))
-					{
-						if (dialog_callback)
-							dialog_callback(true, dialog_text);
-						close_dialog();
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel"))
-					{
-						if (dialog_callback)
-							dialog_callback(false, "");
-						close_dialog();
-						ImGui::CloseCurrentPopup();
-					}
-					break;
-				}
-				ImGui::EndPopup();
-			}
-		}
+		dialog_manager.update();
+
 #ifdef USE_IM_FILE_DIALOG
 		if (ifd::FileDialog::Instance().IsDone("NewProject"))
 		{
@@ -615,7 +577,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	if (!e->prefab && get_prefab_instance(e))
 	{
-		open_message_dialog("[RestructurePrefabInstanceWarnning]");
+		MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
 		return false;
 	}
 	e->parent->remove_child(e);
@@ -652,40 +614,6 @@ bool App::cmd_stop()
 	auto& camera_list = cCamera::list();
 	if (camera_list.size() > 0)
 		view_scene.camera_idx = 0;
-}
-
-void App::close_dialog()
-{
-	dialog_type = DialogNone;
-	dialog_title.clear();
-	dialog_text.clear();
-	dialog_callback = nullptr;
-}
-
-void App::open_message_dialog(const std::string& title, const std::string& content)
-{
-	assert(dialog_type == DialogNone);
-	open_dialog = true;
-	dialog_type = DialogMessage;
-	if (title == "[RestructurePrefabInstanceWarnning]")
-	{
-		dialog_title = "Cannot restructure Prefab Instance";
-		dialog_text = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
-			"Edit it in that prefab";
-	}
-	else
-	{
-		dialog_title = title;
-		dialog_text = content;
-	}
-}
-
-void App::open_input_dialog(const std::string& title, const std::function<void(bool, const std::string&)>& callback)
-{
-	assert(dialog_type == DialogNone);
-	open_dialog = true;
-	dialog_type = DialogInput;
-	dialog_title = title;
 }
 
 PrefabInstance* get_prefab_instance(EntityPtr e)
@@ -725,7 +653,7 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{
-		view_project.peeding_open_path = e.value;
+		view_project.resource_panel.peeding_open_path = e.value;
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))

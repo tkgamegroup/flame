@@ -1,6 +1,7 @@
 #include "app.h"
 #include "selection.h"
 #include "view_inspector.h"
+#include "dialog.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/model.h>
@@ -185,10 +186,13 @@ void View_Inspector::on_draw()
 					auto armature = (cArmaturePtr)c.get();
 					if (ImGui::Button("Bind Animation"))
 					{
-						app.open_input_dialog("Name to bind", [armature](bool ok, const std::string& text) {
-							if (ok)
+						SelectResourceDialog::open("Select animation", [armature](bool ok, const std::filesystem::path& path) {
+							if (ok && !path.empty())
 							{
-
+								InputDialog::open("Name to bind", [armature, path](bool ok, const std::string& text) {
+									if (ok && !text.empty())
+										armature->bind_animation(sh(text.c_str()), path);
+								});
 							}
 						});
 					}
@@ -212,7 +216,7 @@ void View_Inspector::on_draw()
 		if (ImGui::Button("Add Component"))
 		{
 			if (get_prefab_instance(e))
-				app.open_message_dialog("[RestructurePrefabInstanceWarnning]");
+				MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
 			else
 				ImGui::OpenPopup("add_component");
 		}

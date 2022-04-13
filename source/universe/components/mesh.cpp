@@ -10,6 +10,15 @@
 
 namespace flame
 {
+	std::pair<std::filesystem::path, uint> parse_name(const std::filesystem::path& src)
+	{
+		auto sp = SUW::split(src.wstring(), '#');
+		auto name = sp.empty() ? L"" : sp.front();
+		if (!name.starts_with(L"standard_"))
+			name = Path::get(name);
+		return std::make_pair(name, sp.size() < 2 ? 0 : s2t<uint>(sp[1]));
+	}
+
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
@@ -20,6 +29,8 @@ namespace flame
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
+		if (auto model_and_index = parse_name(mesh_name); !model_and_index.first.empty())
+			AssetManagemant::release_asset(Path::get(model_and_index.first));
 		if (model)
 			graphics::Model::release(model);
 	}
@@ -47,18 +58,6 @@ namespace flame
 	{
 		if (mesh_name == name)
 			return;
-
-		auto parse_name = [](const std::filesystem::path& src)->std::pair<std::filesystem::path, uint> {
-			auto sp = SUW::split(src.wstring(), ':');
-			if (sp.empty())
-				return std::make_pair(L"", 0);
-			auto name = sp.front();
-			if (!name.starts_with(L"standard_"))
-				name = Path::get(name);
-			if (sp.size() == 1)
-				return std::make_pair(name, 0);
-			return std::make_pair(name, s2t<uint>(sp[1]));
-		};
 
 		auto model_and_index = parse_name(mesh_name);
 		auto _model_and_index = parse_name(name);

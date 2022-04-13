@@ -1,6 +1,7 @@
 #include "selection.h"
 #include "view_hierarchy.h"
 #include "view_scene.h"
+#include "dialog.h"
 
 View_Hierarchy view_hierarchy;
 
@@ -72,7 +73,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]");
+					MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else
@@ -80,7 +81,7 @@ void View_Hierarchy::on_draw()
 					auto e_src = *(EntityPtr*)payload->Data;
 					if (!e_src->prefab && get_prefab_instance(e_src))
 					{
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]");
+						MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
 						return nullptr;
 					}
 					if (!is_ancestor(e_src, e))
@@ -94,7 +95,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]");
+					MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else
@@ -124,11 +125,8 @@ void View_Hierarchy::on_draw()
 				e->add_child(e_src);
 			ImGui::EndDragDropTarget();
 		}
-		if (ImGui::IsMouseReleased(0) && ImGui::IsItemHovered())
-		{
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
 			selection.select(e);
-			selection.frame--;
-		}
 		if (opened)
 		{
 			auto gap_item = [&](int i) {
@@ -170,11 +168,11 @@ void View_Hierarchy::on_draw()
 		ImGui::PopStyleVar(1);
 	}
 
-	if (ImGui::IsWindowFocused())
+	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 	{
 		if (ImGui::IsKeyPressed(Keyboard_Del))
 			app.cmd_delete_entity();
-		if (ImGui::IsMouseReleased(0) && selection.frame != frames)
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && selection.frame != frames)
 			selection.clear();
 	}
 }

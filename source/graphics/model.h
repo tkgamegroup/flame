@@ -102,12 +102,6 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
-			struct GetStat
-			{
-				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
-			};
-			FLAME_GRAPHICS_API static GetStat& get_stat;
-
 			struct Release
 			{
 				virtual void operator()(ModelPtr model) = 0;

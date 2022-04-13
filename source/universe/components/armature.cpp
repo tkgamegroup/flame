@@ -16,10 +16,28 @@ namespace flame
 		return node->transform * offmat;
 	}
 
+	std::filesystem::path parse_name(const std::filesystem::path& src)
+	{
+		auto sp = SUW::split(src.wstring(), '#');
+		return Path::get(sp.empty() ? L"" : sp.front());
+	}
+
 	cArmaturePrivate::~cArmaturePrivate()
 	{
 		node->drawers.remove("armature"_h);
 		node->measurers.remove("armature"_h);
+
+		if (auto name = parse_name(armature_name); !name.empty())
+			AssetManagemant::release_asset(Path::get(name));
+		if (model)
+			graphics::Model::release(model);
+		for (auto& a : animations)
+		{
+			if (!a.second.path.empty())
+				AssetManagemant::release_asset(Path::get(a.second.path));
+			if (a.second.animation)
+				graphics::Animation::release(a.second.animation);
+		}
 	}
 
 	void cArmaturePrivate::on_init()
@@ -38,20 +56,26 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
-	void cArmaturePrivate::set_model_name(const std::filesystem::path& _model_name)
+	void cArmaturePrivate::set_armature_name(const std::filesystem::path& _armature_name)
 	{
-		if (model_name == _model_name)
+		if (armature_name == _armature_name)
 			return;
-		if (!model_name.empty())
-			AssetManagemant::release_asset(Path::get(model_name));
-		model_name = _model_name;
-		if (!model_name.empty())
-			AssetManagemant::get_asset(Path::get(model_name));
-		bones.clear();
+
+		auto name = parse_name(armature_name);
+		auto _name = parse_name(_armature_name);
+		armature_name = _armature_name;
+
+		if (name != _name)
+		{
+			if (!name.empty())
+				AssetManagemant::release_asset(Path::get(name));
+			if (!_name.empty())
+				AssetManagemant::get_asset(Path::get(_name));
+		}
 
 		graphics::ModelPtr _model = nullptr;
-		if (!model_name.empty())
-			_model = graphics::Model::get(model_name);
+		if (!armature_name.empty())
+			_model = graphics::Model::get(armature_name);
 		if (model != _model)
 		{
 			if (model)
@@ -61,54 +85,88 @@ namespace flame
 		else if (_model)
 			graphics::Model::release(_model);
 
+		bones.clear();
+
 		if (instance_id != -1)
 		{
 			on_inactive();
 			on_active();
 		}
 
-		if (node)
-			node->mark_transform_dirty();
-		data_changed("model_name"_h);
+		node->mark_transform_dirty();
+		data_changed("armature_name"_h);
 	}
 
-	void cArmaturePrivate::bind_animation(uint name_hash, graphics::AnimationPtr src)
+	void cArmaturePrivate::bind_animation(uint name_hash, const std::filesystem::path& animation_path)
 	{
 		if (bones.empty())
 			return;
 
-		auto& a = animations.emplace(name_hash, Animation()).first->second;
-		a.duration = src->duration;
-
-		for (auto& ch : src->channels)
+		auto& a = animations[name_hash];
+		if (a.path != animation_path)
 		{
-			auto find_bone = [&](std::string_view name) {
-				for (auto i = 0; i < bones.size(); i++)
-				{
-					if (bones[i].name == name)
-						return i;
-				}
-				return -1;
-			};
-			auto id = find_bone(ch.node_name);
-			if (id != -1)
+			if (!a.path.empty())
+				AssetManagemant::release_asset(Path::get(a.path));
+			a.path = animation_path;
+			if (!a.path.empty())
+				AssetManagemant::get_asset(Path::get(a.path));
+		}
+		auto _animation = graphics::Animation::get(animation_path);
+		if (a.animation != _animation)
+		{
+			if (a.animation)
+				graphics::Animation::release(a.animation);
+			a.animation = _animation;
+		}
+		else if (_animation)
+			graphics::Animation::release(_animation);
+		if (a.animation)
+		{
+			a.duration = a.animation->duration;
+
+			for (auto& ch : a.animation->channels)
 			{
-				auto& t = a.tracks.emplace_back();
-				t.bone_idx = id;
-				t.positions.resize(ch.position_keys.size());
-				for (auto i = 0; i < t.positions.size(); i++)
+				auto find_bone = [&](std::string_view name) {
+					for (auto i = 0; i < bones.size(); i++)
+					{
+						if (bones[i].name == name)
+							return i;
+					}
+					return -1;
+				};
+				auto id = find_bone(ch.node_name);
+				if (id != -1)
 				{
-					t.positions[i].first = ch.position_keys[i].t;
-					t.positions[i].second = ch.position_keys[i].p;
-				}
-				t.rotations.resize(ch.rotation_keys.size());
-				for (auto i = 0; i < t.rotations.size(); i++)
-				{
-					t.rotations[i].first = ch.rotation_keys[i].t;
-					t.rotations[i].second = ch.rotation_keys[i].q;
+					auto& t = a.tracks.emplace_back();
+					t.bone_idx = id;
+					t.positions.resize(ch.position_keys.size());
+					for (auto i = 0; i < t.positions.size(); i++)
+					{
+						t.positions[i].first = ch.position_keys[i].t;
+						t.positions[i].second = ch.position_keys[i].p;
+					}
+					t.rotations.resize(ch.rotation_keys.size());
+					for (auto i = 0; i < t.rotations.size(); i++)
+					{
+						t.rotations[i].first = ch.rotation_keys[i].t;
+						t.rotations[i].second = ch.rotation_keys[i].q;
+					}
 				}
 			}
 		}
+	}
+
+	void cArmaturePrivate::unbind_animation(uint name_hash)
+	{
+		auto it = animations.find(name_hash);
+		if (it == animations.end())
+			return;
+
+		if (!it->second.path.empty())
+			AssetManagemant::release_asset(Path::get(it->second.path));
+		if (it->second.animation)
+			graphics::Animation::release(it->second.animation);
+		animations.erase(it);
 	}
 
 	void cArmaturePrivate::play(uint name)

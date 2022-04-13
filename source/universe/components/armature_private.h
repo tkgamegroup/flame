@@ -32,8 +32,10 @@ namespace flame
 			std::vector<std::pair<float, quat>> rotations;
 		};
 
-		struct Animation
+		struct BoundAnimation
 		{
+			std::filesystem::path path;
+			graphics::AnimationPtr animation = nullptr;
 			float duration;
 			std::vector<Track> tracks;
 		};
@@ -41,7 +43,7 @@ namespace flame
 		graphics::ModelPtr model = nullptr;
 
 		std::vector<Bone> bones;
-		std::unordered_map<uint, Animation> animations;
+		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;
 
 		int frame = -1;
@@ -49,9 +51,10 @@ namespace flame
 		~cArmaturePrivate();
 		void on_init() override;
 
-		void set_model_name(const std::filesystem::path& src) override;
+		void set_armature_name(const std::filesystem::path& name) override;
 
-		void bind_animation(uint name_hash, graphics::AnimationPtr anim) override;
+		void bind_animation(uint name_hash, const std::filesystem::path& animation_path) override;
+		void unbind_animation(uint name_hash) override;
 		void play(uint name) override;
 		void stop() override;
 

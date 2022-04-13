@@ -73,6 +73,15 @@ void ResourcePanel::FolderTreeNode::draw()
 }
 
 ResourcePanel::Item::Metric ResourcePanel::Item::metric = {};
+void ResourcePanel::Item::Metric::init()
+{
+	if (size == 0)
+	{
+		size = 64;
+		padding = ImGui::GetStyle().FramePadding;
+		line_height = ImGui::GetTextLineHeight();
+	}
+}
 
 ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image) :
 	panel(panel),
@@ -80,6 +89,8 @@ ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& pat
 	text(text),
 	image(image)
 {
+	Item::metric.init();
+
 	prune_text();
 }
 
@@ -87,6 +98,8 @@ ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& pat
 	panel(panel),
 	path(path)
 {
+	Item::metric.init();
+
 	text = path.filename().string();
 	prune_text();
 
@@ -155,7 +168,7 @@ bool ResourcePanel::Item::draw()
 	auto active = ImGui::IsItemActive();
 	ImU32 col;
 	if (active)											col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
-	else if (hovered || panel->selecting_path == path)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+	else if (hovered || panel->selected_path == path)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
 	else												col = ImColor(0, 0, 0, 0);
 	auto draw_list = ImGui::GetWindowDrawList();
 	draw_list->AddRectFilled(p0, p1, col);
@@ -171,8 +184,13 @@ bool ResourcePanel::Item::draw()
 	}
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
 	{
-		if (panel->dbclick_callback)
-			panel->dbclick_callback(path, has_children);
+		if (has_children)
+			panel->peeding_open_path = path;
+		else
+		{
+			if (panel->dbclick_callback)
+				panel->dbclick_callback(path);
+		}
 	}
 
 	if (ImGui::BeginDragDropSource())
@@ -187,13 +205,6 @@ bool ResourcePanel::Item::draw()
 		ImGui::SetTooltip("%s", path.filename().string().c_str());
 
 	return selected;
-}
-
-void ResourcePanel::init()
-{
-	Item::metric.size = 64;
-	Item::metric.padding = ImGui::GetStyle().FramePadding;
-	Item::metric.line_height = ImGui::GetTextLineHeight();
 }
 
 void ResourcePanel::reset(const std::filesystem::path& path)
@@ -285,21 +296,22 @@ void ResourcePanel::open_folder(FolderTreeNode* folder, bool from_histroy)
 			auto ext = folder->path.extension();
 			if (ext == L".fmod")
 			{
-				auto model = graphics::Model::get_stat(folder->path);
+				auto model = graphics::Model::get(folder->path);
 				if (model)
 				{
 					if (!model->bones.empty())
 					{
 						auto path = folder->path;
-						path += L":armature";
+						path += L"#armature";
 						items.emplace_back(new Item(this, path, "armature", app.icons[Icon_Armature]));
 					}
 					for (auto i = 0; i < model->meshes.size(); i++)
 					{
 						auto path = folder->path;
-						path += L":" + wstr(i);
+						path += L"#" + wstr(i);
 						items.emplace_back(new Item(this, path, str(i), app.icons[Icon_Mesh]));
 					}
+					graphics::Model::release(model);
 				}
 			}
 		}
@@ -323,6 +335,17 @@ void ResourcePanel::ping(const std::filesystem::path& path)
 
 void ResourcePanel::draw()
 {
+	if (!peeding_open_path.empty())
+	{
+		open_folder(find_folder(peeding_open_path, true));
+		peeding_open_path.clear();
+	}
+	if (peeding_open_node.first)
+	{
+		open_folder(peeding_open_node.first, true);
+		peeding_open_node = { nullptr, false };
+	}
+
 	if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 	{
 		auto& style = ImGui::GetStyle();
@@ -338,35 +361,26 @@ void ResourcePanel::draw()
 		ImGui::TableSetColumnIndex(1);
 		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
 		{
-			add_event([this]() {
-				if (folder_history_idx > 0)
-				{
-					folder_history_idx--;
-					open_folder(folder_history[folder_history_idx], true);
-				}
-				return false;
-				});
+			if (folder_history_idx > 0)
+			{
+				folder_history_idx--;
+				peeding_open_node = { folder_history[folder_history_idx], true };
+			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		{
-			add_event([this]() {
-				if (folder_history_idx + 1 < folder_history.size())
-				{
-					folder_history_idx++;
-					open_folder(folder_history[folder_history_idx], true);
-				}
-				return false;
-				});
+			if (folder_history_idx + 1 < folder_history.size())
+			{
+				folder_history_idx++;
+				peeding_open_node = { folder_history[folder_history_idx], true };
+			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
 		{
-			add_event([this]() {
-				if (opened_folder && opened_folder->parent)
-					open_folder(opened_folder->parent);
-				return false;
-				});
+			if (opened_folder && opened_folder->parent)
+				peeding_open_node = { opened_folder->parent, false };
 		}
 		if (opened_folder)
 		{
@@ -374,12 +388,7 @@ void ResourcePanel::draw()
 			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 		}
 
-		static std::filesystem::path action_tar;
-		static std::string action_str;
-		auto open_rename = false;
-		auto open_delete_confirm = false;
-
-		ImGui::BeginChild("contents", ImVec2(0, -ImGui::GetFontSize() * 2 - style.ItemSpacing.y * 3));
+		ImGui::BeginChild("contents", ImVec2(0, -style.ItemSpacing.y));
 		auto just_selected = false;
 		if (!items.empty())
 		{
@@ -391,35 +400,17 @@ void ResourcePanel::draw()
 				auto& item = items[i];
 
 				ImGui::PushID(i);
-				just_selected |= item->draw();
+				if (item->draw())
+					just_selected = true;
 				ImGui::PopID();
 
-				if (ImGui::BeginPopupContextItem())
+				if (item_context_menu_callback)
 				{
-					if (ImGui::MenuItem("Show In Explorer"))
-						exec(L"", std::format(L"explorer /select,\"{}\"", item->path.wstring()));
-					if (ImGui::BeginMenu("Copy Path"))
+					if (ImGui::BeginPopupContextItem())
 					{
-						if (ImGui::MenuItem("Name"))
-							set_clipboard(item->path.filename().wstring());
-						if (ImGui::MenuItem("Path"))
-							set_clipboard(Path::reverse(item->path).wstring());
-						if (ImGui::MenuItem("Absolute Path"))
-							set_clipboard(item->path.wstring());
-						ImGui::EndMenu();
+						item_context_menu_callback(item->path);
+						ImGui::EndPopup();
 					}
-					if (ImGui::MenuItem("Rename"))
-					{
-						action_tar = item->path;
-						action_str = item->path.filename().string();
-						open_rename = true;
-					}
-					if (ImGui::MenuItem("Delete"))
-					{
-						action_tar = item->path;
-						open_delete_confirm = true;
-					}
-					ImGui::EndPopup();
 				}
 
 				float next_x2 = ImGui::GetItemRectMax().x + spacing + item_size;
@@ -432,65 +423,16 @@ void ResourcePanel::draw()
 			if (select_callback)
 				select_callback(L"");
 		}
-		if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+		if (opened_folder && folder_context_menu_callback)
 		{
-			if (ImGui::MenuItem("Show In Explorer"))
+			if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
 			{
-				if (opened_folder)
-					exec(L"", std::format(L"explorer /select,\"{}\"", opened_folder->path.wstring()));
+				folder_context_menu_callback(opened_folder->path);
+				ImGui::EndPopup();
 			}
-			if (ImGui::MenuItem("New Folder"))
-			{
-				if (opened_folder)
-				{
-					auto i = 0;
-					auto path = opened_folder->path / (L"new_foler_" + wstr(i));
-					while (std::filesystem::exists(path))
-					{
-						i++;
-						path = opened_folder->path / (L"new_foler_" + wstr(i));
-					}
-					std::filesystem::create_directory(path);
-				}
-			}
-			ImGui::EndPopup();
 		}
 		ImGui::EndChild();
 
 		ImGui::EndTable();
-
-		if (open_rename)
-			ImGui::OpenPopup("rename");
-		if (ImGui::BeginPopupModal("rename"))
-		{
-			ImGui::InputText("name", &action_str);
-			if (ImGui::Button("OK"))
-			{
-				auto new_name = action_tar;
-				new_name.replace_filename(action_str);
-				std::error_code ec;
-				std::filesystem::rename(action_tar, new_name, ec);
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
-				ImGui::CloseCurrentPopup();
-			ImGui::EndPopup();
-		}
-		if (open_delete_confirm)
-			ImGui::OpenPopup("delete_confirm");
-		if (ImGui::BeginPopupModal("delete_confirm"))
-		{
-			ImGui::Text("Are you sure to delete \"%s\" ?", action_str.c_str());
-			if (ImGui::Button("Yes"))
-			{
-				std::error_code ec;
-				std::filesystem::remove(action_tar, ec);
-				ImGui::CloseCurrentPopup();
-			}
-			if (ImGui::Button("No"))
-				ImGui::CloseCurrentPopup();
-			ImGui::EndPopup();
-		}
 	}
 }

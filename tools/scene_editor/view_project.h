@@ -8,7 +8,6 @@
 struct View_Project : View
 {
 	ResourcePanel resource_panel;
-	std::filesystem::path peeding_open_path;
 
 	void* ev_watcher = nullptr;
 	std::mutex mtx_changed_paths;

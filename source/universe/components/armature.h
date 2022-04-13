@@ -11,9 +11,9 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		std::filesystem::path model_name;
+		std::filesystem::path armature_name;
 		/// Reflect
-		virtual void set_model_name(const std::filesystem::path& path) = 0;
+		virtual void set_armature_name(const std::filesystem::path& name) = 0;
 
 		/// Reflect
 		bool loop = true;
@@ -22,7 +22,8 @@ namespace flame
 		float playing_time = 0;
 		float playing_speed = 1.f;
 
-		virtual void bind_animation(uint name_hash, graphics::AnimationPtr anim) = 0;
+		virtual void bind_animation(uint name_hash, const std::filesystem::path& animation_path) = 0;
+		virtual void unbind_animation(uint name_hash) = 0;
 		virtual void play(uint name) = 0;
 		virtual void stop() = 0;
 

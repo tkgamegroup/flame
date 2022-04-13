@@ -13,14 +13,6 @@ enum Icon
 	IconCount
 };
 
-enum DialogType
-{
-	DialogNone,
-	DialogMessage,
-	DialogInput
-};
-
-
 struct View
 {
 	std::string name;
@@ -48,12 +40,6 @@ struct App : UniverseApplication
 	graphics::ImagePtr icons[IconCount];
 	std::map<int, std::unique_ptr<graphics::Image>> sys_icons;
 
-	bool open_dialog = false;
-	DialogType dialog_type = DialogNone;
-	std::string dialog_title;
-	std::string dialog_text;
-	std::function<void(bool, const std::string&)> dialog_callback;
-
 	void init();
 
 	void new_project(const std::filesystem::path& path);
@@ -64,10 +50,6 @@ struct App : UniverseApplication
 	bool cmd_delete_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);
 	bool cmd_play();
 	bool cmd_stop();
-
-	void close_dialog();
-	void open_message_dialog(const std::string& title, const std::string& content = "");
-	void open_input_dialog(const std::string& title, const std::function<void(bool, const std::string&)>& callback);
 };
 
 extern App app;

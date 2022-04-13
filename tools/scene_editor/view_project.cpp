@@ -1,6 +1,7 @@
 #include "selection.h"
 #include "view_project.h"
 #include "view_scene.h"
+#include "dialog.h"
 
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
@@ -35,22 +36,66 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 
 void View_Project::init()
 {
-	resource_panel.init();
 	resource_panel.select_callback = [this](const std::filesystem::path& path) {
 		if (path.empty())
 			selection.clear();
 		else
 			selection.select(path);
-		selection.frame--;
 	};
-	resource_panel.dbclick_callback = [this](const std::filesystem::path& path, bool has_children) {
-		if (has_children)
-			peeding_open_path = path;
-		else
+	resource_panel.dbclick_callback = [this](const std::filesystem::path& path) {
+		auto ext = path.extension();
+		if (ext == L".prefab")
+			app.open_prefab(path);
+	};
+	resource_panel.item_context_menu_callback = [this](const std::filesystem::path& path) {
+		if (ImGui::MenuItem("Show In Explorer"))
+			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
+		if (ImGui::BeginMenu("Copy Path"))
 		{
-			auto ext = path.extension();
-			if (ext == L".prefab")
-				app.open_prefab(path);
+			if (ImGui::MenuItem("Name"))
+				set_clipboard(path.filename().wstring());
+			if (ImGui::MenuItem("Path"))
+				set_clipboard(Path::reverse(path).wstring());
+			if (ImGui::MenuItem("Absolute Path"))
+				set_clipboard(path.wstring());
+			ImGui::EndMenu();
+		}
+		if (ImGui::MenuItem("Rename"))
+		{
+			InputDialog::open("New name", [path](bool ok, const std::string& text) {
+				if (ok)
+				{
+					auto new_name = path;
+					new_name.replace_filename(text);
+					std::error_code ec;
+					std::filesystem::rename(path, new_name, ec);
+				}
+			});
+		}
+		if (ImGui::MenuItem("Delete"))
+		{
+			YesNoDialog::open(std::format("Are you sure to delete \"{}\" ?", path.string()), [path](bool yes) {
+				if (yes)
+				{
+					std::error_code ec;
+					std::filesystem::remove(path, ec);
+				}
+			});
+		}
+	};
+	resource_panel.folder_context_menu_callback = [this](const std::filesystem::path& path) {
+		if (ImGui::MenuItem("Show In Explorer"))
+			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
+		if (ImGui::MenuItem("New Folder"))
+		{
+			auto i = 0;
+			auto p = path / (L"new_foler_" + wstr(i));
+			while (std::filesystem::exists(p))
+			{
+				i++;
+				p = path / (L"new_foler_" + wstr(i));
+			}
+			std::filesystem::create_directory(p);
 		}
 	};
 }
@@ -149,18 +194,14 @@ void View_Project::on_draw()
 	}
 	mtx_changed_paths.unlock();
 
-	if (!peeding_open_path.empty())
-	{
-		resource_panel.open_folder(resource_panel.find_folder(peeding_open_path, true));
-		peeding_open_path.clear();
-	}
 	if (selection.type == Selection::tPath)
 	{
 		if (selection.frame == (int)frames - 1)
 			resource_panel.ping(selection.path());
-		resource_panel.selecting_path = selection.path();
+		resource_panel.selected_path = selection.path();
 	}
 	else
-		resource_panel.selecting_path.clear();
+		resource_panel.selected_path.clear();
+
 	resource_panel.draw();
 }

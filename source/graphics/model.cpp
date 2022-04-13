@@ -162,7 +162,7 @@ namespace flame
 						n_node.append_attribute("scl").set_value(str(scaling).c_str());
 					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("model_name").set_value(filename.string().c_str());
+					n_armature.append_attribute("armature_name").set_value(filename.string().c_str());
 					for (auto& m : model->meshes)
 					{
 						for (auto i = 0; i < m.bone_ids.size(); i++)
@@ -609,7 +609,7 @@ namespace flame
 								{
 									auto n_mesh = n_components.append_child("item");
 									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-									n_mesh.append_attribute("mesh_name").set_value((filename.string() + ":" + str(base_mesh_idx)).c_str());
+									n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(base_mesh_idx)).c_str());
 									n_mesh.append_attribute("material_name").set_value(((MaterialPtr)src->GetMaterial(0)->GetUserDataPtr())->filename.string().c_str());
 								}
 								else
@@ -625,7 +625,7 @@ namespace flame
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 										auto n_mesh = n_components.append_child("item");
 										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-										n_mesh.append_attribute("mesh_name").set_value((filename.string() + ":" + str(base_mesh_idx + i)).c_str());
+										n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(base_mesh_idx + i)).c_str());
 										n_mesh.append_attribute("material_name").set_value(((MaterialPtr)src->GetMaterial(i)->GetUserDataPtr())->filename.string().c_str());
 									}
 								}
@@ -891,7 +891,7 @@ namespace flame
 							auto n_mesh = n_components.append_child("item");
 							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 							auto mesh_idx = src->mMeshes[0];
-							n_mesh.append_attribute("mesh_name").set_value((filename.string() + ":" + str(mesh_idx)).c_str());
+							n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(mesh_idx)).c_str());
 							n_mesh.append_attribute("material_name").set_value(materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename.string().c_str());
 							if (name == "mesh_collider")
 							{
@@ -1044,54 +1044,6 @@ namespace flame
 			}
 		}Model_get;
 		Model::Get& Model::get = Model_get;
-
-		struct ModelGetStat : Model::GetStat
-		{
-			ModelPtr operator()(const std::filesystem::path& _filename) override
-			{
-				auto filename = Path::get(_filename);
-
-				std::ifstream file(filename);
-				if (!file.good())
-				{
-					wprintf(L"cannot find model: %s\n", _filename.c_str());
-					return nullptr;
-				}
-				LineReader src(file);
-				src.read_block("model:");
-
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
-				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
-				{
-					printf("model format is incorrect: %s\n", filename.string().c_str());
-					return nullptr;
-				}
-
-				auto ret = new ModelPrivate();
-				ret->filename = filename;
-
-				for (auto& n_mesh : doc_root.child("meshes"))
-				{
-					auto& m = ret->meshes.emplace_back();
-					m.model = ret;
-
-					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
-				}
-
-				for (auto n_bone : doc_root.child("bones"))
-				{
-					auto& b = ret->bones.emplace_back();
-					b.name = n_bone.attribute("name").value();
-				}
-
-				for (auto& m : ret->meshes)
-					ret->bounds.expand(m.bounds);
-
-				return ret;
-			}
-		}Model_get_stat;
-		Model::GetStat& Model::get_stat = Model_get_stat;
 
 		struct ModelRelease : Model::Release
 		{
