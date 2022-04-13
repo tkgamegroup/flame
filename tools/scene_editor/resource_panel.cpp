@@ -320,11 +320,10 @@ void ResourcePanel::open_folder(FolderTreeNode* folder, bool from_histroy)
 
 void ResourcePanel::ping(const std::filesystem::path& path)
 {
-	assert(path.is_absolute());
 	std::filesystem::path p;
-	auto sp = SUW::split(path.wstring(), ':');
-	if (sp.size() == 3)
-		p = sp[0] + L":\\" + sp[1];
+	auto sp = SUW::split(path.wstring(), '#');
+	if (sp.size() > 1)
+		p = sp.front();
 	else
 		p = path.parent_path();
 	auto folder = find_folder(p, true);
