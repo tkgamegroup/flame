@@ -387,17 +387,17 @@ void ResourcePanel::draw()
 			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 		}
 
-		ImGui::BeginChild("contents", ImVec2(0, -style.ItemSpacing.y));
+		auto content_size = ImGui::GetContentRegionAvail();
+		content_size.y -= 4;
+		ImGui::BeginTable("contents", content_size.x / (Item::metric.size + Item::metric.padding.x * 2 + style.ItemSpacing.x), ImGuiTableFlags_ScrollY, content_size);
 		auto just_selected = false;
 		if (!items.empty())
 		{
-			auto window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-			auto spacing = style.ItemSpacing.x;
-			auto item_size = Item::metric.size + Item::metric.padding.x * 2;
 			for (auto i = 0; i < items.size(); i++)
 			{
 				auto& item = items[i];
 
+				ImGui::TableNextColumn();
 				ImGui::PushID(i);
 				if (item->draw())
 					just_selected = true;
@@ -411,10 +411,6 @@ void ResourcePanel::draw()
 						ImGui::EndPopup();
 					}
 				}
-
-				float next_x2 = ImGui::GetItemRectMax().x + spacing + item_size;
-				if (i + 1 < items.size() && next_x2 < window_visible_x2)
-					ImGui::SameLine();
 			}
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !just_selected)
@@ -430,7 +426,7 @@ void ResourcePanel::draw()
 				ImGui::EndPopup();
 			}
 		}
-		ImGui::EndChild();
+		ImGui::EndTable();
 
 		ImGui::EndTable();
 	}

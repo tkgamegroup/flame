@@ -216,16 +216,35 @@ void App::init()
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
+		// toolbar begin
+		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str()))
+			;
+		ImGui::SameLine();
+		if (ImGui::Button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str()))
+			;
+		ImGui::SameLine();
+		if (ImGui::Button(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
+			;
+		ImGui::SameLine();
+		if (ImGui::Button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str()))
+			;
+		ImGui::SameLine();
+		ImGui::Dummy(vec2(0.f, 20.f));
+		ImGui::SameLine();
 		if (!e_playing)
 		{
-			if (ImGui::Button("Play"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("play"_h).c_str()))
 				cmd_play();
 		}
 		else
 		{
-			if (ImGui::Button("Stop"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("pause"_h).c_str()))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("stop"_h).c_str()))
 				cmd_stop();
 		}
+		// toolbar end
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
 
@@ -462,6 +481,7 @@ add_library(cpp SHARED ${{source_files}})
 target_compile_definitions(cpp PUBLIC USE_IMGUI)
 target_compile_definitions(cpp PUBLIC "IMPORT=__declspec(dllimport)")
 target_compile_definitions(cpp PUBLIC "EXPORT=__declspec(dllexport)")
+target_compile_definitions(cpp PUBLIC IMGUI_USER_CONFIG="${config_file}")
 target_include_directories(cpp PUBLIC "${{GLM_INCLUDE_DIR}}")
 target_include_directories(cpp PUBLIC "${{IMGUI_DIR}}")
 target_include_directories(cpp PUBLIC "${{flame_path}}/include")
