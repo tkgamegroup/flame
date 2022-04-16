@@ -233,16 +233,22 @@ void App::init()
 		ImGui::SameLine();
 		if (!e_playing)
 		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 			if (ImGui::Button(graphics::FontAtlas::icon_s("play"_h).c_str()))
 				cmd_play();
+			ImGui::PopStyleColor();
 		}
 		else
 		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
 			if (ImGui::Button(graphics::FontAtlas::icon_s("pause"_h).c_str()))
 				;
+			ImGui::PopStyleColor();
 			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 			if (ImGui::Button(graphics::FontAtlas::icon_s("stop"_h).c_str()))
 				cmd_stop();
+			ImGui::PopStyleColor();
 		}
 		// toolbar end
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);

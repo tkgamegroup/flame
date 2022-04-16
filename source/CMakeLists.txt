@@ -1,7 +1,7 @@
-# build imgui by ourselves because we need imgui to include glm
+# build imgui by ourselves because we need imgui to include glm and we need to add some extensions imgui
 if(USE_IMGUI)
 	set(config_file "${CMAKE_CURRENT_SOURCE_DIR}/imgui_config.h")
-	set(source_files "${config_file};${IMGUI_DIR}/imgui.h;${IMGUI_DIR}/imgui.cpp;${IMGUI_DIR}/imgui_draw.cpp;${IMGUI_DIR}/imgui_widgets.cpp;${IMGUI_DIR}/imgui_tables.cpp;${IMGUI_DIR}/misc/cpp/imgui_stdlib.h;${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp")
+	set(source_files "${config_file};${CMAKE_CURRENT_SOURCE_DIR}/imgui_extension.h;${CMAKE_CURRENT_SOURCE_DIR}/imgui_extension.cpp;${IMGUI_DIR}/imgui.h;${IMGUI_DIR}/imgui.cpp;${IMGUI_DIR}/imgui_draw.cpp;${IMGUI_DIR}/imgui_widgets.cpp;${IMGUI_DIR}/imgui_tables.cpp;${IMGUI_DIR}/misc/cpp/imgui_stdlib.h;${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp")
 	if(USE_IM_FILE_DIALOG)
 		set(imfiledialog_files "${IM_FILE_DIALOG_DIR}/ImFileDialog.h;${IM_FILE_DIALOG_DIR}/ImFileDialog.cpp")
 	endif()

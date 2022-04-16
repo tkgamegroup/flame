@@ -6,6 +6,7 @@ vec2 uv = i_uv;
 #endif
 
 #ifdef BLEND_BY_NORMAL
+
 vec4 color = vec4(0);
 float ndoty = dot(i_normal, vec3(0, 1, 0));
 float transition = material.f[3];
@@ -27,7 +28,7 @@ float value;
 	color *= material.color;
 #endif
 
-#else
+#else // BLEND_BY_NORMAL
 
 #ifdef COLOR_MAP
 	vec4 color = texture(material_maps[material.map_indices[COLOR_MAP]], uv);
@@ -37,7 +38,8 @@ float value;
 #else
 	vec4 color = material.color;
 #endif
-#endif
+
+#endif // BLEND_BY_NORMAL
 
 float metallic = material.metallic;
 float roughness = material.roughness;
@@ -51,4 +53,4 @@ float roughness = material.roughness;
 	o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, roughness);
 #endif
 
-#endif
+#endif // DEPTH_PASS

@@ -5,6 +5,7 @@
 
 #if USE_IMGUI
 #include <imgui.h>
+#include "../imgui_extension.h"
 #include <misc/cpp/imgui_stdlib.h>
 	#if USE_IM_FILE_DIALOG
 	#include <ImFileDialog.h>
