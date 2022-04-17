@@ -339,7 +339,10 @@ namespace flame
 							if (last_tex != pcmd->TextureId)
 							{
 								auto tex = (Image*)pcmd->TextureId;
-								commandbuffer->bind_descriptor_set(0, tex ? tex->get_shader_read_src() : imgui_ds.get());
+								commandbuffer->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, nullptr, 
+									is_in(tex->format, Format_ColorOneChannel_Begin, Format_ColorOneChannel_End) ? 
+									ImageSwizzle{ SwizzleR, SwizzleR, SwizzleR, SwizzleOne } :
+									ImageSwizzle{}) : imgui_ds.get());
 								last_tex = tex;
 							}
 

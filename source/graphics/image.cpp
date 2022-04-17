@@ -78,10 +78,10 @@ namespace flame
 				hi |= (sub.level_count & 0xff) << 16;
 				hi |= (sub.base_layer & 0xff) << 8;
 				hi |= sub.layer_count & 0xff;
-				lo = (swizzle.r & 0xff) << 24;
-				lo |= (swizzle.g & 0xff) << 16;
-				lo |= (swizzle.b & 0xff) << 8;
-				lo |= swizzle.a & 0xff;
+				lo = swizzle.r << 24;
+				lo |= swizzle.g << 16;
+				lo |= swizzle.b << 8;
+				lo |= swizzle.a;
 				key = (((uint64)hi) << 32) | ((uint64)lo);
 			}
 
@@ -125,14 +125,25 @@ namespace flame
 
 		static DescriptorSetLayoutPrivate* simple_dsl = nullptr;
 
-		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp)
+		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp, const ImageSwizzle& swizzle)
 		{
 			if (!sp)
 				sp = SamplerPrivate::get(FilterLinear, FilterLinear, false, AddressClampToEdge);
 
-			auto key = (base_level & 0xff) << 24;
-			key |= (base_layer & 0xff) << 16;
-			key |= (uint)sp & 0xffff;
+			uint64 key;
+			{
+				uint hi;
+				uint lo;
+				hi = (base_level & 0xff) << 24;
+				hi |= (base_layer & 0xff) << 16;
+				hi |= swizzle.r << 12;
+				hi |= swizzle.g << 8;
+				hi |= swizzle.b << 4;
+				hi |= swizzle.a;
+
+				lo = (uint)sp;
+				key = (((uint64)hi) << 32) | ((uint64)lo);
+			}
 
 			auto it = read_dss.find(key);
 			if (it != read_dss.end())
@@ -146,7 +157,7 @@ namespace flame
 			}
 
 			auto ds = DescriptorSet::create(nullptr, simple_dsl);
-			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }), sp);
+			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }, swizzle), sp);
 			ds->update();
 			read_dss.emplace(key, ds);
 			return ds;

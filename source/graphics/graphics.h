@@ -82,12 +82,15 @@ namespace flame
 			Format_R32G32B32A32_INT,
 			Format_RGBA_BC3,
 			Format_RGBA_ETC2,
-			Format_Color_Begin = Format_R8_UNORM,
-			Format_Color_End = Format_RGBA_ETC2,
 
 			Format_Depth16,
 			Format_Depth32,
 			Format_Depth24Stencil8,
+
+			Format_Color_Begin = Format_R8_UNORM,
+			Format_Color_End = Format_RGBA_ETC2,
+			Format_ColorOneChannel_Begin = Format_R8_UNORM,
+			Format_ColorOneChannel_End = Format_R32_SFLOAT,
 			Format_DepthStencil_Begin = Format_Depth24Stencil8,
 			Format_DepthStencil_End = Format_Depth24Stencil8,
 			Format_Depth_Begin = Format_Depth16,
