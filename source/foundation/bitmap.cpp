@@ -107,13 +107,13 @@ namespace flame
 
 	struct BitmapCreate : Bitmap::Create
 	{
-		BitmapPtr operator()(const uvec2& size, uint chs, uint bpp, uchar* data) override
+		BitmapPtr operator()(const uvec2& size, uint chs, uint bits_per_ch, uchar* data) override
 		{
 			auto ret = new BitmapPrivate;
 			ret->size = size;
 			ret->chs = chs;
-			ret->bpp = bpp;
-			ret->pitch = image_pitch(size.x * (bpp / 8));
+			ret->bpp = bits_per_ch * chs;
+			ret->pitch = image_pitch(size.x * (ret->bpp / 8));
 			ret->data_size = ret->pitch * size.y;
 			ret->data = new uchar[ret->data_size];
 			if (!data)
@@ -139,7 +139,7 @@ namespace flame
 				return nullptr;
 			fclose(file);
 			if (req_ch) chs = req_ch;
-			auto ret = Bitmap::create(uvec2(cx, cy), chs, chs * 8, data);
+			auto ret = Bitmap::create(uvec2(cx, cy), chs, 8, data);
 			stbi_image_free(data);
 			return ret;
 		}

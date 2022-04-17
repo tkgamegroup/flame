@@ -140,8 +140,8 @@ namespace flame
 					auto g_pos = node->g_pos;
 					auto g_scl = node->g_scl;
 
-					auto& textures = terrain->textures;
-					if (textures)
+					auto height_map = terrain->height_map;
+					if (height_map)
 					{
 						auto blocks = terrain->blocks;
 						auto tess_level = terrain->tess_level;
@@ -158,7 +158,7 @@ namespace flame
 							for (auto x = 0; x < cx + 1; x++)
 							{
 								positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x * g_scl.x,
-									textures->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * g_scl.y,
+									height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * g_scl.y,
 									z * extent.z * g_scl.z) + g_pos;
 							}
 						}

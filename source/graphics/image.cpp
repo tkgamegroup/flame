@@ -13,8 +13,30 @@ namespace flame
 {
 	namespace graphics
 	{
+		std::vector<ImagePtr> all_images;
 		std::vector<std::unique_ptr<ImageT>> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> samplers;
+
+		ImagePrivate::ImagePrivate()
+		{
+			all_images.push_back(this);
+		}
+
+		ImagePrivate::~ImagePrivate()
+		{
+			if (app_exiting) return;
+
+			std::erase_if(all_images, [&](const auto& i) {
+				return i == this;
+			});
+
+			if (vk_memory != 0)
+			{
+				vkFreeMemory(device->vk_device, vk_memory, nullptr);
+				vkDestroyImage(device->vk_device, vk_image, nullptr);
+				unregister_backend_object(vk_image);
+			}
+		}
 
 		void ImagePrivate::initialize()
 		{
@@ -43,87 +65,6 @@ namespace flame
 				}
 				if (s.x == 0) s.x = 1;
 				if (s.y == 0) s.y = 1;
-			}
-		}
-
-		ImagePrivate::~ImagePrivate()
-		{
-			if (app_exiting) return;
-
-			if (vk_memory != 0)
-			{
-				vkFreeMemory(device->vk_device, vk_memory, nullptr);
-				vkDestroyImage(device->vk_device, vk_image, nullptr);
-				unregister_backend_object(vk_image);
-			}
-		}
-
-		void ImagePrivate::get_data(uint level, uint layer)
-		{
-			auto& lv = levels[level];
-			auto& ly = lv.layers [layer];
-			if (!ly.data)
-			{
-				StagingBuffer sb(lv.data_size);
-				{
-					InstanceCB cb;
-					BufferImageCopy cpy;
-					cpy.img_ext = lv.size;
-					cpy.img_sub = { level, 1, layer, 1 };
-					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
-					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
-				}
-				ly.data.reset(new uchar[lv.data_size]);
-				memcpy(ly.data.get(), sb->mapped, lv.data_size);
-			}
-		}
-
-		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
-		{
-			auto& lv = levels[level];
-			auto& ly = lv.layers[layer];
-
-			x = clamp(x, 0, (int)lv.size.x - 1);
-			y = clamp(y, 0, (int)lv.size.y - 1);
-
-			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
-			switch (format)
-			{
-			case Format_R8_UNORM:
-				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
-			case Format_R8G8B8A8_UNORM:
-				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
-			case Format_R16G16B16A16_SFLOAT:
-				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
-					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
-			default:
-				assert(0);
-			}
-		}
-
-		void ImagePrivate::set_pixel(int x, int y, uint level, uint layer, const vec4& v)
-		{
-			auto& lv = levels[level];
-			auto& ly = lv.layers[layer];
-
-			x = clamp(x, 0, (int)lv.size.x - 1);
-			y = clamp(y, 0, (int)lv.size.y - 1);
-
-			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
-			switch (format)
-			{
-			case Format_R8_UNORM:
-				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
-				break;
-			case Format_R8G8B8A8_UNORM:
-				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
-				pixel[1] = int(clamp(v[1], 0.f, 1.f) * 255.f);
-				pixel[2] = int(clamp(v[2], 0.f, 1.f) * 255.f);
-				pixel[3] = int(clamp(v[3], 0.f, 1.f) * 255.f);
-				break;
-			default:
-				assert(0);
 			}
 		}
 
@@ -276,10 +217,79 @@ namespace flame
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 		}
 
-		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
+		void ImagePrivate::get_data(uint level, uint layer)
+		{
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+			if (!ly.data)
+			{
+				StagingBuffer sb(lv.data_size);
+				{
+					InstanceCB cb;
+					BufferImageCopy cpy;
+					cpy.img_ext = lv.size;
+					cpy.img_sub = { level, 1, layer, 1 };
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
+					cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
+					cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
+				}
+				ly.data.reset(new uchar[lv.data_size]);
+				memcpy(ly.data.get(), sb->mapped, lv.data_size);
+			}
+		}
+
+		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
 		{
 			get_data(level, layer);
 
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+
+			x = clamp(x, 0, (int)lv.size.x - 1);
+			y = clamp(y, 0, (int)lv.size.y - 1);
+
+			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
+			case Format_R8G8B8A8_UNORM:
+				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
+			case Format_R16G16B16A16_SFLOAT:
+				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
+					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
+			default:
+				assert(0);
+			}
+		}
+
+		void ImagePrivate::set_pixel(int x, int y, uint level, uint layer, const vec4& v)
+		{
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+
+			x = clamp(x, 0, (int)lv.size.x - 1);
+			y = clamp(y, 0, (int)lv.size.y - 1);
+
+			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
+				break;
+			case Format_R8G8B8A8_UNORM:
+				pixel[0] = int(clamp(v[0], 0.f, 1.f) * 255.f);
+				pixel[1] = int(clamp(v[1], 0.f, 1.f) * 255.f);
+				pixel[2] = int(clamp(v[2], 0.f, 1.f) * 255.f);
+				pixel[3] = int(clamp(v[3], 0.f, 1.f) * 255.f);
+				break;
+			default:
+				assert(0);
+			}
+		}
+
+		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
+		{
 			auto coord = uv * vec2(levels[level].size) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);

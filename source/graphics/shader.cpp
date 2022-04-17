@@ -253,8 +253,27 @@ namespace flame
 					}
 					return false;
 				};
+				auto get_value = [&](const std::string& name)->std::string {
+					for (auto& d : defines)
+					{
+						if (d.first == name)
+							return d.second;
+					}
+					return name;
+				};
+				auto pass_condition = [&](const std::string& line) {
+					static std::regex reg_exp(R"((\w+)\s*([<=>]+)\s*(\w+))");
+					std::smatch res;
+					if (std::regex_search(line, res, reg_exp))
+					{
+						auto op = res[2].str();
+						if (op == "==")
+							return get_value(res[1].str()) == get_value(res[3].str());
+					}
+					return false;
+				};
 
-				std::vector<std::pair<bool, bool>> states;
+				std::vector<std::pair<bool, bool>> states; // first: current, second: the 'if' branch has taken
 				auto ok = true;
 				auto eval_state = [&]() {
 					ok = true;
@@ -266,7 +285,14 @@ namespace flame
 				for (auto& l : get_file_lines(path))
 				{
 					auto tl = SUS::get_trimed(l);
-					if (SUS::strip_head_if(tl, "#ifdef "))
+					if (SUS::strip_head_if(tl, "#if "))
+					{
+						auto& s = states.emplace_back();
+						s.first = pass_condition(tl);
+						s.second = s.first;
+						eval_state();
+					}
+					else if (SUS::strip_head_if(tl, "#ifdef "))
 					{
 						auto& s = states.emplace_back();
 						s.first = found_name(tl);
@@ -288,6 +314,18 @@ namespace flame
 						else
 							s.first = false;
 						s.second = true;
+						eval_state();
+					}
+					else if (SUS::strip_head_if(tl, "#elif "))
+					{
+						auto& s = states.back();
+						if (!s.second)
+						{
+							s.first = pass_condition(tl);
+							if (s.first) s.second = true;
+						}
+						else
+							s.first = false;
 						eval_state();
 					}
 					else if (SUS::strip_head_if(tl, "#elifdef "))

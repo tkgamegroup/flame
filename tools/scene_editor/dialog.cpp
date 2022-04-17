@@ -38,7 +38,6 @@ void DialogManager::update()
 void MessageDialog::open(const std::string& title, const std::string& message)
 {
 	auto dialog = new MessageDialog;
-	dialog->type = DialogMessage;
 	if (title == "[RestructurePrefabInstanceWarnning]")
 	{
 		dialog->title = "Cannot restructure Prefab Instance";
@@ -70,7 +69,6 @@ void MessageDialog::draw()
 void YesNoDialog::open(const std::string& title, const std::function<void(bool)>& callback)
 {
 	auto dialog = new YesNoDialog;
-	dialog->type = DialogYesNo;
 	dialog->title = title;
 	dialog->callback = callback;
 	Dialog::open(dialog);
@@ -102,7 +100,6 @@ void YesNoDialog::draw()
 void InputDialog::open(const std::string& title, const std::function<void(bool, const std::string&)>& callback)
 {
 	auto dialog = new InputDialog;
-	dialog->type = DialogInput;
 	dialog->title = title;
 	dialog->callback = callback;
 	Dialog::open(dialog);
@@ -135,7 +132,6 @@ void InputDialog::draw()
 void SelectResourceDialog::open(const std::string& title, const std::function<void(bool, const std::filesystem::path&)>& callback)
 {
 	auto dialog = new SelectResourceDialog;
-	dialog->type = DialogSelectResource;
 	dialog->title = title;
 	dialog->callback = callback;
 	dialog->resource_panel.reset(app.project_path / L"assets");

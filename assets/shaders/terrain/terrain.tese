@@ -21,10 +21,12 @@ layout(location = 5) out vec3 o_coordw;
 
 void main()
 {
-	uint id = i_ids[0];
-	TerrainInstance terrain = terrain_instances[id];
+	o_id = i_ids[0];
+	o_matid = i_matids[0];
 
-	vec2 uv = mix(
+	TerrainInstance terrain = terrain_instances[o_id];
+
+	o_uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x),
 		mix(i_uvs[3], i_uvs[2], gl_TessCoord.x),
 		gl_TessCoord.y
@@ -35,14 +37,10 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(terrain_textures[id], vec3(uv, 0)).r * terrain.extent.y;
+	coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain.extent.y;
 
-	o_id = id;
-	o_matid = i_matids[0];
-	o_uv = uv;
-
-	o_normal = normalize(texture(terrain_textures[id], vec3(uv, 1)).xyz * 2.0 - 1.0);
-	o_tangent = normalize(texture(terrain_textures[id], vec3(uv, 2)).xyz * 2.0 - 1.0);
+	o_normal = normalize(texture(terrain_normal_maps[o_id], o_uv).xyz * 2.0 - 1.0);
+	o_tangent = normalize(texture(terrain_tangent_maps[o_id], o_uv).xyz * 2.0 - 1.0);
 
 #ifndef DEFERRED
 	o_coordw = coordw;

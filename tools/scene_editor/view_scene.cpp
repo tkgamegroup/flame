@@ -111,7 +111,7 @@ void View_Scene::on_draw()
 				auto outline_node = [&](EntityPtr e, const cvec4& col) {
 					if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 						renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_res_id, col);
-					if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->textures)
+					if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 						renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
 				};
 				if (hovering_node && selection.selecting(hovering_node->entity))

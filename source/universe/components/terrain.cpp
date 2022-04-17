@@ -12,12 +12,13 @@ namespace flame
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
 
-		if (textures || height_map)
-		{
-			graphics::Queue::get()->wait_idle();
-			if (height_map)
-				graphics::Image::release(height_map);
-		}
+		graphics::Queue::get()->wait_idle();
+		if (height_map)
+			graphics::Image::release(height_map);
+		if (normal_map)
+			delete normal_map;
+		if (tangent_map)
+			delete tangent_map;
 	}
 
 	void cTerrainPrivate::on_init()
@@ -27,7 +28,7 @@ namespace flame
 		}, "mesh"_h);
 
 		node->measurers.add([this](AABB* ret) {
-			if (!textures)
+			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
@@ -122,19 +123,21 @@ namespace flame
 
 	void cTerrainPrivate::build_textures()
 	{
-		if (textures)
-		{
-			graphics::Queue::get()->wait_idle();
-			textures.reset();
-		}
-
 		if (!height_map)
 			return;
 
-		auto sz0 = (ivec2)height_map->size;
+		graphics::Queue::get()->wait_idle();
+
+		if (normal_map)
+			delete normal_map;
+		if (tangent_map)
+			delete tangent_map;
+
+		auto sz0 = (ivec2)(blocks * tess_level);
 		auto sz1 = sz0 + 1;
 
-		textures.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 3));
+		normal_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
+		tangent_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
 
 		std::vector<float> heights;
 		heights.resize(sz1.x * sz1.y);
@@ -145,13 +148,13 @@ namespace flame
 		}
 
 		{
-			graphics::StagingBuffer nor_stag(sizeof(vec4) * sz0.x * sz0.y);
-			graphics::StagingBuffer tan_stag(sizeof(vec4) * sz0.x * sz0.y);
+			graphics::StagingBuffer nor_stag(sizeof(cvec4) * sz0.x * sz0.y);
+			graphics::StagingBuffer tan_stag(sizeof(cvec4) * sz0.x * sz0.y);
 
 			auto nor_dat = (cvec4*)nor_stag->mapped;
 			auto tan_dat = (cvec4*)tan_stag->mapped;
 
-			auto h = extent.y * (extent.x / sz0.x);
+			auto h = extent.y / (extent.x / sz0.x);
 			for (auto y = 0; y < sz0.y; y++)
 			{
 				for (auto x = 0; x < sz0.x; x++)
@@ -168,13 +171,12 @@ namespace flame
 
 					auto n = vec3(hL - hR, 2.f, hU - hD);
 					n = normalize(n);
-					n += 1.f;
-					n *= 0.5f;
+					n = (n + 1.f) * 0.5f;
 					*nor_dat++ = cvec4(n * 255.f, 255);
 
 					auto t = normalize(vec3(+1.f, hR, 0.f) - vec3(-1.f, hL, 0.f));
-					t += 1.f;
-					t *= 0.5f;
+					t = normalize(t);
+					t = (t + 1.f) * 0.5f;
 					*tan_dat++ = cvec4(t * 255.f, 255);
 				}
 			}
@@ -182,48 +184,26 @@ namespace flame
 			graphics::InstanceCB cb(nullptr);
 			graphics::BufferImageCopy cpy;
 			cpy.img_ext = sz0;
-			cb->image_barrier(height_map, {}, graphics::ImageLayoutTransferSrc);
-			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutTransferDst);
-			{
-				graphics::ImageCopy cpy;
-				cpy.size = sz0;
-				cb->copy_image(height_map, textures.get(), { &cpy, 1 });
-			}
-			cb->image_barrier(textures.get(), {}, graphics::ImageLayoutShaderReadOnly);
 
-			cpy.img_sub = { 0, 1, 1, 1 };
-			cb->image_barrier(textures.get(), cpy.img_sub, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(nor_stag.get(), textures.get(), { &cpy, 1 } );
-			cb->image_barrier(textures.get(), cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 } );
+			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 
-			cpy.img_sub = { 0, 1, 2, 1 };
-			cb->image_barrier(textures.get(), cpy.img_sub, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(tan_stag.get(), textures.get(), { &cpy, 1 });
-			cb->image_barrier(textures.get(), cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(tan_stag.get(), tangent_map, { &cpy, 1 });
+			cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 		}
 	}
 
-	/*
-	if (!material_name.empty())
-	{
-		auto fn = std::filesystem::path(material_name);
-		if (!fn.extension().empty() && !fn.is_absolute())
-			fn = parent_path / fn;
-		material = graphics::Material::get(fn.c_str());
-		material_id = s_renderer->find_material_res(material);
-		if (material_id == -1)
-			material_id = s_renderer->set_material_res(-1, material);
-	}
-	*/
-
 	void cTerrainPrivate::draw(sRendererPtr renderer)
 	{
-		if (instance_id == -1 || !textures || material_res_id == -1)
+		if (instance_id == -1 || !height_map || material_res_id == -1)
 			return;
 
 		if (frame < (int)frames)
 		{
-			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, textures->get_view({ 0, 1, 0, 3 }));
+			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, 
+				height_map->get_view(), normal_map->get_view(), tangent_map->get_view());
 			frame = frames;
 		}
 

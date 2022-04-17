@@ -71,28 +71,3 @@ vec3 Yxy2rgb(vec3 _Yxy)
 {
 	return xyz2rgb(Yxy2xyz(_Yxy) );
 }
-
-float transition_interpolate(float v, float off, float len, float transition)
-{
-	float a0 = off - transition * 0.5;
-	float a1 = off + transition * 0.5;
-	float b0 = off + len - transition * 0.5;
-	float b1 = off + len + transition * 0.5;
-	if (v <= a0 || v >= b1)
-		return 0;
-	if (v >= a1 && v <= b0 )
-		return 1;
-	if (v < a1)
-	{
-		if (a0 < 0)
-			return 1;
-		return 1.0 - (a1 - v) / transition;
-	}
-	else if (v > b0)
-	{
-		if (b1 > 1)
-			return 1;
-		return 1.0 - (v - b0) / transition;
-	}
-	return 0;
-}

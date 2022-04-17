@@ -24,7 +24,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual BitmapPtr operator()(const uvec2& size, uint chs = 4, uint bpp = 32, uchar* data = nullptr) = 0;
+			virtual BitmapPtr operator()(const uvec2& size, uint chs = 4, uint bits_per_ch = 8, uchar* data = nullptr) = 0;
 			virtual BitmapPtr operator()(const std::filesystem::path& filename, int req_ch = 0) = 0;
 		};
 		FLAME_FOUNDATION_API static Create& create;

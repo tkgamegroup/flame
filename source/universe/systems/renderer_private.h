@@ -9,33 +9,6 @@
 
 namespace flame
 {
-	struct MeshRes
-	{
-		graphics::Mesh* mesh = nullptr;
-		bool arm;
-		uint vtx_off;
-		uint vtx_cnt;
-		uint idx_off;
-		uint idx_cnt;
-		uint ref = 0;
-	};
-
-	struct TexRes
-	{
-		graphics::ImageViewPtr iv;
-		graphics::SamplerPtr sp = nullptr;
-		uint ref = 0;
-	};
-
-	struct MatRes
-	{
-		graphics::Material* mat = nullptr;
-		std::vector<std::pair<int, graphics::ImagePtr>> texs;
-		std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
-		std::vector<uint> draw_ids;
-		uint ref = 0;
-	};
-
 	struct DrawLine
 	{
 		cNodePtr node;
@@ -187,12 +160,15 @@ namespace flame
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp) override;
 		void release_texture_res(uint id) override;
+		const TexRes& get_texture_res_info(uint id) override { return tex_reses[id]; }
 
 		int get_mesh_res(graphics::MeshPtr mesh) override;
 		void release_mesh_res(uint id) override;
+		const MeshRes& get_mesh_res_info(uint id) override { return mesh_reses[id]; }
 
 		int get_material_res(graphics::Material* mat) override;
 		void release_material_res(uint id) override;
+		const MatRes& get_material_res_info(uint id) override { return mat_reses[id]; }
 		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0);
 		graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0);
 
@@ -203,7 +179,8 @@ namespace flame
 		mat4* set_armature_instance(uint id) override;
 
 		int register_terrain_instance(int id) override;
-		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) override;
+		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
+			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map) override;
 
 		int register_light_instance(int id) override;
 		void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) override;

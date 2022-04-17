@@ -4,9 +4,12 @@
 #include "dialog.h"
 
 #include <flame/foundation/typeinfo.h>
+#include <flame/graphics/extension.h>
+#include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
 #include <flame/universe/components/armature.h>
+#include <flame/universe/components/terrain.h>
 
 View_Inspector view_inspector;
 
@@ -204,6 +207,146 @@ void View_Inspector::on_draw()
 					ImGui::SameLine();
 					if (ImGui::Button("Stop"))
 						armature->stop();
+				}
+				else if (ui.name == "flame::cTerrain")
+				{
+					auto terrain = (cTerrainPtr)c.get();
+					if (ImGui::Button("Splash By Normal"))
+					{
+						struct SplashDialog : Dialog
+						{
+							cTerrainPtr terrain;
+							uint layers = 0;
+							float bar1 = 1.f; 
+							float bar2 = 1.f;
+							float bar3 = 1.f;
+							float transition = 0.05f;
+
+							static void open(cTerrainPtr terrain)
+							{
+								auto material = terrain->material;
+								if (material)
+								{
+									auto dialog = new SplashDialog;
+									dialog->title = "Splash";
+									dialog->terrain = terrain;
+									for (auto& d : material->shader_defines)
+									{
+										auto sp = SUS::split(d, '=');
+										auto _sp = SUS::split(sp.front(), ':');
+										if (_sp.back() == "LAYERS")
+										{
+											if (sp.size() > 1)
+												dialog->layers = s2t<uint>(sp[1]);
+											break;
+										}
+									}
+									Dialog::open(dialog);
+								}
+							}
+
+							void draw() override
+							{
+								if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+								{
+									switch (layers)
+									{
+									case 2:
+										ImGui::DragFloat("Bar1", &bar1, 0.05f, 0.f, 1.f);
+										break;
+									}
+									ImGui::DragFloat("Transition", &transition, 0.01f, 0.f, 0.5f);
+									if (ImGui::Button("OK"))
+									{
+										graphics::Queue::get()->wait_idle();
+										auto& mat_res = app.renderer->get_material_res_info(terrain->material_res_id);
+										auto splash_map = mat_res.texs[0].second;
+										auto normal_map = terrain->normal_map;
+
+										{
+											auto splash_map_sz = splash_map->size;
+											auto normal_map_sz = normal_map->size;
+											graphics::StagingBuffer stag(sizeof(cvec4) * splash_map_sz.x * splash_map_sz.y);
+
+											auto data = (cvec4*)stag->mapped;
+
+											for (auto y = 0; y < splash_map_sz.y; y++)
+											{
+												for (auto x = 0; x < splash_map_sz.x; x++)
+												{
+													auto nor = vec3(normal_map->linear_sample(vec2((float)x / splash_map_sz.x, (float)y / splash_map_sz.y)));
+													nor = nor * 2.f - 1.f;
+													float ndoty = dot(nor, vec3(0, 1, 0));
+
+													auto interpolate = [](float v, float off, float len, float transition)
+													{
+														float a0 = off - transition * 0.5;
+														float a1 = off + transition * 0.5;
+														float b0 = off + len - transition * 0.5;
+														float b1 = off + len + transition * 0.5;
+														if (v <= a0 || v >= b1)
+															return 0.f;
+														if (v >= a1 && v <= b0)
+															return 1.f;
+														if (v < a1)
+														{
+															if (a0 < 0)
+																return 1.f;
+															return 1.f - (a1 - v) / transition;
+														}
+														else if (v > b0)
+														{
+															if (b1 > 1)
+																return 1.f;
+															return 1.f - (v - b0) / transition;
+														}
+														return 0.f;
+													};
+
+													switch (layers)
+													{
+													case 2:
+													{
+														vec2 weight;
+														weight[0] = interpolate(ndoty, 0.f, bar1, transition);
+														weight[1] = interpolate(ndoty, bar1, 1.f - bar1, transition);
+														weight /= weight[0] + weight[1];
+														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, 0.f, 0.f);
+													}
+													break;
+													default:
+														*data = cvec4(0);
+													}
+													data++;
+												}
+											}
+
+											graphics::InstanceCB cb(nullptr);
+											graphics::BufferImageCopy cpy;
+											cpy.img_ext = splash_map_sz;
+
+											cb->image_barrier(splash_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
+											cb->copy_buffer_to_image(stag.get(), splash_map, { &cpy, 1 });
+											cb->image_barrier(splash_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+										}
+
+										close();
+										ImGui::CloseCurrentPopup();
+									}
+									ImGui::SameLine();
+									if (ImGui::Button("Cancel"))
+									{
+										close();
+										ImGui::CloseCurrentPopup();
+									}
+
+									ImGui::EndPopup();
+								}
+							}
+						};
+
+						SplashDialog::open(terrain);
+					}
 				}
 			}
 			ImGui::PopID();

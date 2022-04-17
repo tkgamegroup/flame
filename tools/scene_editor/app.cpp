@@ -35,8 +35,9 @@ void View::close()
 	if (!lis)
 		return;
 
-	add_event([this]() {
-		app.main_window->imgui_callbacks.remove(lis);
+	auto _lis = lis;
+	add_event([_lis]() {
+		app.main_window->imgui_callbacks.remove(_lis);
 		return false;
 	});
 	lis = nullptr;

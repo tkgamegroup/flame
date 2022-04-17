@@ -3,18 +3,8 @@
 #include "app.h"
 #include "resource_panel.h"
 
-enum DialogType
-{
-	DialogNone,
-	DialogMessage,
-	DialogYesNo,
-	DialogInput,
-	DialogSelectResource
-};
-
 struct Dialog
 {
-	DialogType type;
 	std::string title;
 
 	virtual ~Dialog() {}

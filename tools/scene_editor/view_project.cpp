@@ -3,9 +3,12 @@
 #include "view_scene.h"
 #include "dialog.h"
 
+#include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
+#include <flame/graphics/extension.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/shader.h>
 
 View_Project view_project;
 
@@ -96,6 +99,146 @@ void View_Project::init()
 				p = path / (L"new_foler_" + wstr(i));
 			}
 			std::filesystem::create_directory(p);
+		}
+		if (ImGui::MenuItem("New Image"))
+		{
+			struct NewImageDialog : Dialog
+			{
+				std::filesystem::path dir;
+				std::string name = "new_image";
+				int format = 0;
+				ivec2 size = ivec2(256);
+				int type = 0;
+
+				std::unique_ptr<graphics::Image> image;
+
+				static void open(const std::filesystem::path& dir)
+				{
+					auto dialog = new NewImageDialog;
+					dialog->title = "New Image";
+					dialog->dir = dir;
+					Dialog::open(dialog);
+				}
+
+				void generate_image()
+				{
+					if (size.x > 0 && size.y > 0)
+					{
+						graphics::Format fmt;
+						switch (format)
+						{
+						case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
+						case 1: fmt = graphics::Format_R8_UNORM; break;
+						}
+						image.reset(graphics::Image::create(fmt, (uvec2)size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+
+						{
+							graphics::InstanceCB cb;
+							cb->image_barrier(image.get(), {}, graphics::ImageLayoutAttachment);
+							cb->set_viewport(Rect(vec2(0), vec2(size)));
+							cb->set_scissor(Rect(vec2(0), vec2(size)));
+							switch (type)
+							{
+							case 0:
+								cb->begin_renderpass(nullptr, image->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+								cb->end_renderpass();
+								break;
+							case 1:
+								cb->begin_renderpass(nullptr, image->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
+								cb->end_renderpass();
+								break;
+							case 2:
+							{
+								auto fb = image->get_shader_write_dst();
+								cb->begin_renderpass(nullptr, fb);
+								auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+									{ "rp=" + str(fb->renderpass) });
+								cb->bind_pipeline(pl);
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+							}
+								break;
+							}
+							cb->image_barrier(image.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						}
+					}
+				}
+
+				void draw() override
+				{
+					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						ImGui::InputText("name", &name);
+						static const char* formats[] = {
+							"RGBA8",
+							"R8"
+						};
+						ImGui::Combo("format", &format, formats, countof(formats));
+						ImGui::InputInt2("size", &size[0]);
+						static const char* types[] = {
+							"Black",
+							"White",
+							"FBM Noise"
+						};
+						ImGui::Combo("type", &type, types, countof(types));
+						switch (type)
+						{
+						case 2:
+							break;
+						}
+						if (ImGui::Button("Preview"))
+							generate_image();
+						if (image)
+							ImGui::Image(image.get(), (vec2)size);
+						if (ImGui::Button("OK"))
+						{
+							if (!name.empty())
+							{
+								generate_image();
+
+								int chs = 0;
+								switch (format)
+								{
+								case 0: chs = 4;
+								case 1: chs = 1;
+								}
+								if (chs > 0)
+								{
+									graphics::StagingBuffer stag(image_pitch(chs * size.x) * size.y);
+									{
+										graphics::InstanceCB cb;
+
+										cb->image_barrier(image.get(), {}, graphics::ImageLayoutTransferSrc);
+										graphics::BufferImageCopy cpy;
+										cpy.img_ext = size;
+										cb->copy_image_to_buffer(image.get(), stag.get(), { &cpy, 1 });
+										cb->image_barrier(image.get(), {}, graphics::ImageLayoutShaderReadOnly);
+									}
+
+									auto bmp = Bitmap::create(size, chs);
+									memcpy(bmp->data, stag->mapped, stag->size);
+									auto fn = dir / name;
+									fn.replace_extension(L".png");
+									bmp->save(fn);
+								}
+
+								close();
+								ImGui::CloseCurrentPopup();
+							}
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
+						{
+							close();
+							ImGui::CloseCurrentPopup();
+						}
+
+						ImGui::EndPopup();
+					}
+				}
+			};
+
+			NewImageDialog::open(path);
 		}
 	};
 }

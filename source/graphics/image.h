@@ -94,6 +94,9 @@ namespace flame
 			virtual void change_layout(ImageLayout dst_layout) = 0;
 			virtual void clear(const vec4& color, ImageLayout dst_layout) = 0;
 
+			virtual vec4 get_pixel(int x, int y, uint level, uint layer) = 0;
+			virtual void set_pixel(int x, int y, uint level, uint layer, const vec4& v) = 0;
+
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 
 			virtual void save(const std::filesystem::path& filename) = 0;

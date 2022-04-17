@@ -13,6 +13,33 @@ namespace flame
 			CameraLight
 		};
 
+		struct TexRes
+		{
+			graphics::ImageViewPtr iv;
+			graphics::SamplerPtr sp = nullptr;
+			uint ref = 0;
+		};
+
+		struct MeshRes
+		{
+			graphics::MeshPtr mesh = nullptr;
+			bool arm;
+			uint vtx_off;
+			uint vtx_cnt;
+			uint idx_off;
+			uint idx_cnt;
+			uint ref = 0;
+		};
+
+		struct MatRes
+		{
+			graphics::MaterialPtr mat = nullptr;
+			std::vector<std::pair<int, graphics::ImagePtr>> texs;
+			std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
+			std::vector<uint> draw_ids;
+			uint ref = 0;
+		};
+
 		Type type = Shaded;
 		cCameraPtr camera = nullptr;
 
@@ -23,12 +50,15 @@ namespace flame
 
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr) = 0;
 		virtual void release_texture_res(uint id) = 0;
+		virtual const TexRes& get_texture_res_info(uint id) = 0;
 
 		virtual int get_mesh_res(graphics::MeshPtr mesh) = 0;
 		virtual void release_mesh_res(uint id) = 0;
+		virtual const MeshRes& get_mesh_res_info(uint id) = 0;
 
 		virtual int get_material_res(graphics::Material* mat) = 0;
 		virtual void release_material_res(uint id) = 0;
+		virtual const MatRes& get_material_res_info(uint id) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;
@@ -40,7 +70,8 @@ namespace flame
 
 		// id == -1 to register or to unregister id
 		virtual int register_terrain_instance(int id) = 0;
-		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures) = 0;
+		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
+			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_light_instance(int id) = 0;

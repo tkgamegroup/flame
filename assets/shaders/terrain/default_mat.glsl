@@ -5,41 +5,40 @@ vec2 uv = i_uv;
 	uv *= float(material.i[0]);
 #endif
 
-#ifdef BLEND_BY_NORMAL
-
 vec4 color = vec4(0);
-float ndoty = dot(i_normal, vec3(0, 1, 0));
-float transition = material.f[3];
-float off = 0;
-float value;
-#ifdef COLOR_MAP0
-	value = transition_interpolate(ndoty, off, material.f[0], transition);
-	if (value > 0)
-		color += texture(material_maps[material.map_indices[COLOR_MAP0]], uv) * value;
-	off += material.f[0];
+#if LAYERS == 1
+	vec4 weights = texture(material_maps[material.map_indices[0]], i_uv);
+	if (weights[0] > 0.0)
+		color += texture(material_maps[material.map_indices[1]], uv) * weights[0];
+#elif LAYERS == 2
+	vec4 weights = texture(material_maps[material.map_indices[0]], i_uv);
+	if (weights[0] > 0.0)
+		color += texture(material_maps[material.map_indices[1]], uv) * weights[0];
+	if (weights[1] > 0.0)
+		color += texture(material_maps[material.map_indices[2]], uv) * weights[1];
+#elif LAYERS == 3
+	vec4 weights = texture(material_maps[material.map_indices[0]], i_uv);
+	if (weights[0] > 0.0)
+		color += texture(material_maps[material.map_indices[1]], uv) * weights[0];
+	if (weights[1] > 0.0)
+		color += texture(material_maps[material.map_indices[2]], uv) * weights[1];
+	if (weights[2] > 0.0)
+		color += texture(material_maps[material.map_indices[3]], uv) * weights[2];
+#elif LAYERS == 4
+	vec4 weights = texture(material_maps[material.map_indices[0]], i_uv);
+	if (weights[0] > 0.0)
+		color += texture(material_maps[material.map_indices[1]], uv) * weights[0];
+	if (weights[1] > 0.0)
+		color += texture(material_maps[material.map_indices[2]], uv) * weights[1];
+	if (weights[2] > 0.0)
+		color += texture(material_maps[material.map_indices[3]], uv) * weights[2];
+	if (weights[3] > 0.0)
+		color += texture(material_maps[material.map_indices[4]], uv) * weights[3];
 #endif
-#ifdef COLOR_MAP1
-	value = transition_interpolate(ndoty, off, material.f[1], transition);
-	if (value > 0)
-		color += texture(material_maps[material.map_indices[COLOR_MAP1]], uv) * value;
-	off += material.f[1];
-#endif
+
 #ifdef TINT_COLOR
 	color *= material.color;
 #endif
-
-#else // BLEND_BY_NORMAL
-
-#ifdef COLOR_MAP
-	vec4 color = texture(material_maps[material.map_indices[COLOR_MAP]], uv);
-#ifdef TINT_COLOR
-	color *= material.color;
-#endif
-#else
-	vec4 color = material.color;
-#endif
-
-#endif // BLEND_BY_NORMAL
 
 float metallic = material.metallic;
 float roughness = material.roughness;

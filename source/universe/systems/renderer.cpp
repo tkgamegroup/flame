@@ -50,7 +50,11 @@ namespace flame
 		ds_instance->set_buffer("ArmatureInstances", 0, buf_armature_ins.buf.get());
 		ds_instance->set_buffer("TerrainInstances", 0, buf_terrain_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
-			ds_instance->set_image("terrain_textures", i, img_black->get_view({ 0, 1, 0, 3 }), sp_bilinear);
+		{
+			ds_instance->set_image("terrain_height_maps", i, img_black->get_view(), sp_bilinear);
+			ds_instance->set_image("terrain_normal_maps", i, img_black->get_view(), sp_bilinear);
+			ds_instance->set_image("terrain_tangent_maps", i, img_black->get_view(), sp_bilinear);
+		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
@@ -632,20 +636,25 @@ namespace flame
 		else
 		{
 			buf_terrain_ins.release_item(id);
-			ds_instance->set_image("terrain_textures", id, img_black->get_view({ 0, 1, 0, 3 }), nullptr);
+			ds_instance->set_image("terrain_height_maps", id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_normal_maps", id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_tangent_maps", id, img_black->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;
 	}
 
-	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, graphics::ImageViewPtr textures)
+	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
+		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map)
 	{
 		buf_terrain_ins.select_item(id);
 		buf_terrain_ins.set_var<"mat"_h>(mat);
 		buf_terrain_ins.set_var<"extent"_h>(extent);
 		buf_terrain_ins.set_var<"blocks"_h>(blocks);
 		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
-		ds_instance->set_image("terrain_textures", id, textures, nullptr);
+		ds_instance->set_image("terrain_height_maps", id, height_map, nullptr);
+		ds_instance->set_image("terrain_normal_maps", id, normal_map, nullptr);
+		ds_instance->set_image("terrain_tangent_maps", id, tangent_map, nullptr);
 		ds_instance->update();
 	}
 

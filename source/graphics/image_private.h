@@ -22,12 +22,9 @@ namespace flame
 
 			uint ref = 0;
 
-			void initialize();
+			ImagePrivate();
 			~ImagePrivate();
-
-			void get_data(uint level, uint layer);
-			vec4 get_pixel(int x, int y, uint level, uint layer);
-			void set_pixel(int x, int y, uint level, uint layer, const vec4& v);
+			void initialize();
 
 			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr) override;
@@ -35,6 +32,10 @@ namespace flame
 
 			void change_layout(ImageLayout dst_layout) override;
 			void clear(const vec4& color, ImageLayout dst_layout) override;
+
+			void get_data(uint level, uint layer);
+			vec4 get_pixel(int x, int y, uint level, uint layer) override;
+			void set_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
@@ -76,6 +77,7 @@ namespace flame
 			~ImageAtlasPrivate();
 		};
 
+		extern std::vector<ImagePtr> all_images;
 		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
 		extern std::vector<std::unique_ptr<SamplerT>> samplers;
 	}
