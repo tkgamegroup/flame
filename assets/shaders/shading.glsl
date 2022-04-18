@@ -1,5 +1,3 @@
-const float esm_c = 3.0;
-
 float distribution_GGX(vec3 N, vec3 H, float roughness)
 {
 	float a      = roughness * roughness;
@@ -67,6 +65,8 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, ve
 	               
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
+
+const float esm_c = 3.0;
 
 vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {

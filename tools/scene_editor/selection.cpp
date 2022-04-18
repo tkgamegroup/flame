@@ -45,10 +45,10 @@ bool Selection::History::select()
 
 void Selection::clear(bool from_histroy)
 {
-	frame = frames;
-
 	if (type == tNothing)
 		return;
+
+	frame = frames;
 
 	switch (type)
 	{
@@ -69,10 +69,11 @@ void Selection::clear(bool from_histroy)
 
 void Selection::select(const std::filesystem::path& path, bool from_histroy)
 {
-	frame = frames;
-
 	if (selecting(path))
 		return;
+
+	frame = frames;
+
 	clear();
 	type = tPath;
 	object = new std::filesystem::path(path);
@@ -88,10 +89,11 @@ bool Selection::selecting(const std::filesystem::path& _path)
 
 void Selection::select(EntityPtr e, bool from_histroy)
 {
-	frame = frames;
-
 	if (selecting(e))
 		return;
+
+	frame = frames;
+
 	clear();
 	type = tEntity;
 	object = e;

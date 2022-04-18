@@ -275,6 +275,8 @@ namespace flame
 			uint type;
 			void* obj;
 
+			bool active = true;
+
 			uint ref = 0;
 		};
 

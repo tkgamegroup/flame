@@ -1,6 +1,11 @@
 const float PI = 3.14159265359;
 const float PI_INV = 1.0 / PI;
 
+float sum(vec3 v) 
+{ 
+	return v.x + v.y + v.z;
+}
+
 vec2 panorama(vec3 v)
 {
 	return vec2(0.5 + 0.5 * atan(v.x, v.z) * PI_INV, acos(v.y) * PI_INV);

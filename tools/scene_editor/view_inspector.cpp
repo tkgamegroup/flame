@@ -151,6 +151,22 @@ void View_Inspector::on_draw()
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		selection.forward();
 
+	static uint last_sel_frame = 0;
+	static uint last_sel_ref_type = 0;
+	static void* last_sel_ref_obj = nullptr;
+	if (selection.frame != last_sel_frame)
+	{
+		switch (last_sel_ref_type)
+		{
+		case th<graphics::Material>():
+			graphics::Material::release((graphics::MaterialPtr)last_sel_ref_obj);
+			break;
+		}
+		last_sel_frame = selection.frame;
+		last_sel_ref_type = 0;
+		last_sel_ref_obj = nullptr;
+	}
+
 	switch (selection.type)
 	{
 	case Selection::tEntity:
@@ -398,6 +414,17 @@ void View_Inspector::on_draw()
 			ImGui::Checkbox("only animation", &only_animation);
 			if (ImGui::Button("Convert"))
 				graphics::Model::convert(path, rotation, scaling, only_animation);
+		}
+		else if (ext == L".fmat")
+		{
+			auto material = graphics::Material::get(path);
+			if (material)
+			{
+				show_udt_attributes(*TypeInfo::get<graphics::Material>()->retrive_ui(), material);
+
+				last_sel_ref_type = th<graphics::Material>();
+				last_sel_ref_obj = material;
+			}
 		}
 	}
 		break;

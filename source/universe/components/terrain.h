@@ -11,7 +11,7 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		vec3 extent = vec3(200.f, 50.f, 200.f);
+		vec3 extent = vec3(256.f, 64.f, 256.f);
 		/// Reflect
 		virtual void set_extent(const vec3& extent) = 0;
 

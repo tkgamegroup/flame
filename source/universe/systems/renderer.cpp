@@ -24,6 +24,8 @@ namespace flame
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
+		graphics::InstanceCB cb;
+
 		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
@@ -33,7 +35,7 @@ namespace flame
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 
-		auto sp_bilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressRepeat);
+		auto sp_bilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
 		auto dsl_scene = graphics::DescriptorSetLayout::get(L"flame\\shaders\\scene.dsl");
@@ -57,14 +59,24 @@ namespace flame
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
+		buf_material_misc.create(dsl_material->get_buf_ui("MaterialMisc"));
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
 		mat_reses.resize(buf_material.array_capacity);
 		get_material_res(graphics::Material::get(L"default"));
 		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
+		ds_material->set_buffer("MaterialMisc", 0, buf_material_misc.buf.get());
 		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
+		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), sp_bilinear));
+		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), sp_bilinear));
+		{
+			auto img = graphics::Image::get(L"flame\\random.png");
+			buf_material_misc.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
+				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat)) : -1);
+		}
+		buf_material_misc.upload(cb.get());
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
@@ -437,7 +449,7 @@ namespace flame
 		res.mat = mat;
 		res.ref = 1;
 
-		graphics::InstanceCB cb(nullptr);
+		graphics::InstanceCB cb;
 
 		buf_material.select_item(id);
 		buf_material.set_var<"opaque"_h>((int)mat->opaque);
