@@ -18,112 +18,125 @@ View_Inspector::View_Inspector() :
 {
 }
 
-const Attribute* show_udt_attributes(const UdtInfo& ui, void* src)
+const Attribute* show_udt(const UdtInfo& ui, void* src);
+
+bool show_variable(TypeInfo* type, const std::string& name, void* data, const void* id)
 {
-	const Attribute* changed_attribute = nullptr;
+	auto changed = false;
 
-	for (auto& a : ui.attributes)
+	ImGui::PushID(id);
+	switch (type->tag)
 	{
-		auto direct_io = a.getter_idx == -1 && a.setter_idx == -1;
-
-		switch (a.type->tag)
+	case TagD:
+	{
+		auto ti = (TypeInfo_Data*)type;
+		switch (ti->data_type)
 		{
-		case TagD:
-		{
-			auto ti = (TypeInfo_Data*)a.type;
-			switch (ti->data_type)
+		case DataBool:
+			changed = ImGui::Checkbox(name.c_str(), (bool*)data);
+			break;
+		case DataInt:
+			switch (ti->vec_size)
 			{
-			case DataBool:
-				if (ImGui::Checkbox(a.name.c_str(), (bool*)a.get_value(src, !direct_io)))
-				{
-					if (!direct_io)
-						a.set_value(src);
-					changed_attribute = &a;
-				}
+			case 1:
+				changed = ImGui::DragInt(name.c_str(), (int*)data);
 				break;
-			case DataInt:
-				switch (ti->vec_size)
-				{
-				case 1:
-					if (ImGui::DragInt(a.name.c_str(), (int*)a.get_value(src, !direct_io)))
-					{
-						if (!direct_io)
-							a.set_value(src);
-						changed_attribute = &a;
-					}
-					break;
-				}
-				break;
-			case DataFloat:
-				switch (ti->vec_size)
-				{
-				case 1:
-					if (ImGui::DragFloat(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
-					{
-						if (!direct_io)
-							a.set_value(src);
-						changed_attribute = &a;
-					}
-					break;
-				case 2:
-					if (ImGui::DragFloat2(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
-					{
-						if (!direct_io)
-							a.set_value(src);
-						changed_attribute = &a;
-					}
-					break;
-				case 3:
-					if (ImGui::DragFloat3(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
-					{
-						if (!direct_io)
-							a.set_value(src);
-						changed_attribute = &a;
-					}
-					break;
-				case 4:
-					if (ImGui::DragFloat4(a.name.c_str(), (float*)a.get_value(src, !direct_io)))
-					{
-						if (!direct_io)
-							a.set_value(src);
-						changed_attribute = &a;
-					}
-					break;
-				}
-				break;
-			case DataString:
-				if (ImGui::InputText(a.name.c_str(), (std::string*)a.get_value(src, !direct_io)))
-				{
-					if (!direct_io)
-						a.set_value(src);
-					changed_attribute = &a;
-				}
-				break;
-			case DataWString:
-				break;
-			case DataPath:
-			{
-				auto& path = *(std::filesystem::path*)a.get_value(src, !direct_io);
-				auto s = path.string();
-				ImGui::InputText(a.name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
-				if (ImGui::BeginDragDropTarget())
-				{
-					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-					{
-						auto str = std::wstring((wchar_t*)payload->Data);
-						auto path = Path::reverse(str);
-						a.set_value(src, &path);
-					}
-					ImGui::EndDragDropTarget();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button(("P##" + str(&a)).c_str()))
-					selection.select(Path::get(path));
 			}
+			break;
+		case DataFloat:
+			switch (ti->vec_size)
+			{
+			case 1:
+				changed = ImGui::DragFloat(name.c_str(), (float*)data);
 				break;
+			case 2:
+				changed = ImGui::DragFloat2(name.c_str(), (float*)data);
+				break;
+			case 3:
+				changed = ImGui::DragFloat3(name.c_str(), (float*)data);
+				break;
+			case 4:
+				changed = ImGui::DragFloat4(name.c_str(), (float*)data);
+				break;
+			}
+			break;
+		case DataString:
+			changed = ImGui::InputText(name.c_str(), (std::string*)data);
+			break;
+		case DataWString:
+			break;
+		case DataPath:
+		{
+			auto& path = *(std::filesystem::path*)data;
+			auto s = path.string();
+			ImGui::InputText(name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+				{
+					path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+					changed = true;
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("P"))
+			{
+				auto p = path;
+				selection.select(Path::get(p));
 			}
 		}
 			break;
+		}
+	}
+		break;
+	case TagVD:
+		break;
+	case TagVU:
+		if (ImGui::TreeNode(name.c_str()))
+		{
+			auto ti = (TypeInfo_VectorOfUdt*)type;
+			auto& ui = *ti->retrive_ui();
+			auto& vec = *(std::vector<uchar>*)data;
+			auto size = (int)vec.size() / (int)ui.size;
+			ImGui::InputInt("size", &size, 1, 1);
+			for (auto i = 0; i < size; i++)
+			{
+				if (ImGui::TreeNode(str(i).c_str()))
+				{
+					show_udt(ui, vec.data() + ui.size * i);
+					ImGui::TreePop();
+				}
+			}
+			ImGui::TreePop();
+		}
+		break;
+	}
+	ImGui::PopID();
+
+	return changed;
+}
+
+const Attribute* show_udt(const UdtInfo& ui, void* src)
+{
+	const Attribute* changed_attribute = nullptr;
+
+	if (ui.attributes.empty())
+	{
+		for (auto& v : ui.variables)
+			show_variable(v.type, v.name, (char*)src + v.offset, &v);
+	}
+	else
+	{
+		for (auto& a : ui.attributes)
+		{
+			auto direct_io = a.getter_idx == -1 && a.setter_idx == -1;
+			if (show_variable(a.type, a.name, a.get_value(src, !direct_io), &a))
+			{
+				if (!direct_io)
+					a.set_value(src);
+				changed_attribute = &a;
+			}
 		}
 	}
 
@@ -151,10 +164,10 @@ void View_Inspector::on_draw()
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		selection.forward();
 
-	static uint last_sel_frame = 0;
+	static uint last_sel_ref_frame = 0;
 	static uint last_sel_ref_type = 0;
 	static void* last_sel_ref_obj = nullptr;
-	if (selection.frame != last_sel_frame)
+	if (selection.frame != last_sel_ref_frame)
 	{
 		switch (last_sel_ref_type)
 		{
@@ -162,7 +175,6 @@ void View_Inspector::on_draw()
 			graphics::Material::release((graphics::MaterialPtr)last_sel_ref_obj);
 			break;
 		}
-		last_sel_frame = selection.frame;
 		last_sel_ref_type = 0;
 		last_sel_ref_obj = nullptr;
 	}
@@ -174,7 +186,7 @@ void View_Inspector::on_draw()
 		auto e = selection.entity();
 
 		ImGui::PushID(e);
-		auto changed_attribute = show_udt_attributes(*TypeInfo::get<Entity>()->retrive_ui(), e);
+		auto changed_attribute = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		ImGui::PopID();
 		if (changed_attribute)
 		{
@@ -193,7 +205,7 @@ void View_Inspector::on_draw()
 				com_menu_tar = c.get();
 			if (open)
 			{
-				auto changed_attribute = show_udt_attributes(ui, c.get());
+				auto changed_attribute = show_udt(ui, c.get());
 				if (changed_attribute)
 				{
 					if (auto ins = get_prefab_instance(e); ins)
@@ -417,14 +429,19 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmat")
 		{
-			auto material = graphics::Material::get(path);
-			if (material)
+			if (selection.frame != last_sel_ref_frame)
 			{
-				show_udt_attributes(*TypeInfo::get<graphics::Material>()->retrive_ui(), material);
-
-				last_sel_ref_type = th<graphics::Material>();
-				last_sel_ref_obj = material;
+				auto material = graphics::Material::get(path);
+				if (material)
+				{
+					last_sel_ref_frame = selection.frame;
+					last_sel_ref_type = th<graphics::Material>();
+					last_sel_ref_obj = material;
+				}
 			}
+
+			if (last_sel_ref_obj)
+				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), last_sel_ref_obj);
 		}
 	}
 		break;

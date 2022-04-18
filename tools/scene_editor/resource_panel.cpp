@@ -327,9 +327,12 @@ void ResourcePanel::ping(const std::filesystem::path& path)
 	else
 		p = path.parent_path();
 	auto folder = find_folder(p, true);
-	folder->mark_upstream_open();
-	peeding_scroll_here_folder = folder;
-	open_folder(folder);
+	if (folder)
+	{
+		folder->mark_upstream_open();
+		peeding_scroll_here_folder = folder;
+		open_folder(folder);
+	}
 }
 
 void ResourcePanel::draw()
