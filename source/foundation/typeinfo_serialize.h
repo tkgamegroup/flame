@@ -188,23 +188,20 @@ namespace flame
 				break;
 			}
 		};
+		auto skip = [&](uint nh) {
+			for (auto& e : spec.excludes)
+			{
+				if (e.first == ui.name_hash && e.second == nh)
+					return true;
+			}
+			return false;
+		};
 		if (!ui.attributes.empty())
 		{
 			for (auto& a : ui.attributes)
 			{
-				if (!spec.excludes.empty())
-				{
-					auto skip = false;
-					for (auto& e : spec.excludes)
-					{
-						if (e.first == ui.name_hash && e.second == a.name_hash)
-						{
-							skip = true;
-							break;
-						}
-					}
-					if (skip) continue;
-				}
+				if (skip(a.name_hash))
+					continue;
 				write_var(a.var_idx == -1 ? 0 : ui.variables[a.var_idx].offset, a.type, a.name, a.default_value, a.getter_idx);
 			}
 		}
@@ -212,19 +209,8 @@ namespace flame
 		{
 			for (auto& vi : ui.variables)
 			{
-				if (!spec.excludes.empty())
-				{
-					auto skip = false;
-					for (auto& e : spec.excludes)
-					{
-						if (e.first == ui.name_hash && e.second == vi.name_hash)
-						{
-							skip = true;
-							break;
-						}
-					}
-					if (skip) continue;
-				}
+				if (skip(vi.name_hash))
+					continue;
 				write_var(vi.offset, vi.type, vi.name, vi.default_value, -1);
 			}
 		}
@@ -255,170 +241,192 @@ namespace flame
 
 	inline void unserialize_xml(const UdtInfo& ui, pugi::xml_node src, void* dst, const UnserializeXmlSpec& spec = {})
 	{
-		if (!ui.attributes.empty())
-		{
-			for (auto att : src.attributes())
+		auto read_var1 = [&](uint offset, TypeInfo* type, const std::string& value, int setter_idx) {
+			switch (type->tag)
 			{
-				if (auto pa = ui.find_attribute(att.name()); pa)
+			case TagE:
+			case TagD:
+				if (setter_idx != -1)
 				{
-					auto& a = *pa;
-
-					switch (a.type->tag)
-					{
-					case TagE:
-					case TagD:
-						if (a.setter_idx != -1)
-						{
-							a.type->unserialize(att.value(), nullptr);
-							a.type->call_setter(&ui.functions[a.setter_idx], dst, nullptr);
-						}
-						else if (a.var_idx != -1)
-							a.type->unserialize(att.value(), (char*)dst + ui.variables[a.var_idx].offset);
-						break;
-					}
+					type->unserialize(value, nullptr);
+					type->call_setter(&ui.functions[setter_idx], dst, nullptr);
+				}
+				else
+					type->unserialize(value, (char*)dst + offset);
+			}
+		};
+		auto read_var2 = [&](uint offset, TypeInfo* type, pugi::xml_node n_src, int setter_idx) {
+			switch (type->tag)
+			{
+			case TagU:
+			{
+				if (auto ui = type->retrive_ui(); ui)
+				{
+					if (setter_idx == -1)
+						unserialize_xml(*ui, n_src, (char*)dst + offset, spec);
 				}
 			}
-		}
-		else
-		{
-			for (auto a : src.attributes())
+				break;
+			case TagAU:
 			{
-				if (auto pv = ui.find_variable(a.name()); pv)
+				if (auto ui = type->retrive_ui(); ui)
 				{
-					auto& vi = *pv;
-
-					switch (vi.type->tag)
+					if (setter_idx == -1)
 					{
-					case TagE:
-					case TagD:
-						vi.type->unserialize(a.value(), (char*)dst + vi.offset);
-						break;
-					}
-				}
-			}
-		}
-
-		for (auto c : src.children())
-		{
-			if (auto pv = ui.find_variable(c.name()); pv)
-			{
-				auto& vi = *pv;
-
-				auto p = (char*)dst + vi.offset;
-
-				switch (vi.type->tag)
-				{
-				case TagU:
-				{
-					auto ui = vi.type->retrive_ui();
-					if (ui)
-						unserialize_xml(*ui, c, p, spec);
-				}
-					break;
-				case TagAU:
-				{
-					auto ui = vi.type->retrive_ui();
-					if (ui)
-					{
-						auto pp = p;
-						for (auto cc : c.children())
+						auto p = (char*)dst + offset;
+						for (auto c : n_src.children())
 						{
-							unserialize_xml(*ui, cc, pp, spec);
-							pp += ui->size;
+							unserialize_xml(*ui, c, p, spec);
+							p += ui->size;
 						}
 					}
 				}
-					break;
-				case TagVE:
+			}
+				break;
+			case TagVE:
+			{
+				auto ti = ((TypeInfo_VectorOfEnum*)type)->ti;
+				if (setter_idx == -1)
 				{
-					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
-					auto& vec = *(std::vector<int>*)p;
-					for (auto cc : c.children())
+					auto& vec = *(std::vector<int>*)((char*)dst + offset);
+					for (auto c : n_src.children())
 					{
 						vec.resize(vec.size() + 1);
-						ti->unserialize(cc.attribute("v").value(), &vec[vec.size() - 1]);
+						ti->unserialize(c.attribute("v").value(), &vec[vec.size() - 1]);
 					}
 				}
-					break;
-				case TagVD:
-				{
-					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
-					auto& vec = *(std::vector<char>*)p;
+			}
+				break;
+			case TagVD:
+			{
+				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
+				auto read = [&](std::vector<char>& vec) {
 					auto len = 0;
-					for (auto cc : c.children())
+					for (auto c : n_src.children())
 					{
 						len++;
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						ti->unserialize(cc.attribute("v").value(), pd);
+						ti->unserialize(c.attribute("v").value(), pd);
 					}
-				}
-					break;
-				case TagVU:
+					return len;
+				};
+				if (setter_idx == -1)
+					read(*(std::vector<char>*)((char*)dst + offset));
+				else
 				{
-					auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
-					auto& vec = *(std::vector<char>*)p;
+					std::vector<char> vec;
+					auto len = read(vec);
+					type->call_setter(&ui.functions[setter_idx], dst, &vec);
+					for (auto i = 0; i < len; i++)
+						ti->destroy((char*)vec.data() + i * ti->size);
+				}
+			}
+				break;
+			case TagVU:
+			{
+				auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
+				auto read = [&](std::vector<char>& vec) {
 					auto len = 0;
-					for (auto cc : c.children())
+					for (auto c : n_src.children())
 					{
 						len++;
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						unserialize_xml(*ti->ui, cc, pd, spec);
+						unserialize_xml(*ti->ui, c, pd, spec);
+					}
+					return len;
+				};
+				if (setter_idx == -1)
+					read(*(std::vector<char>*)((char*)dst + offset));
+				else
+				{
+					std::vector<char> vec;
+					auto len = read(vec);
+					type->call_setter(&ui.functions[setter_idx], dst, &vec);
+					for (auto i = 0; i < len; i++)
+						ti->destroy((char*)vec.data() + i * ti->size);
+				}
+			}
+				break;
+			case TagPU:
+			{
+				auto ti = (TypeInfo_PointerOfUdt*)type;
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+				{
+					auto v = it->second(n_src, dst);
+					if (v != INVALID_POINTER)
+						*(void**)((char*)dst + offset) = v;
+				}
+				else if (ti->retrive_ui() == &ui)
+				{
+					auto obj = ui.create_object();
+					if (obj)
+					{
+						unserialize_xml(ui, n_src, obj, spec);
+						*(void**)((char*)dst + offset) = obj;
 					}
 				}
-					break;
-				case TagPU:
+			}
+				break;
+			case TagVPU:
+			{
+				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
-					auto ti = (TypeInfo_PointerOfUdt*)vi.type;
-					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+					auto& vec = *(std::vector<void*>*)((char*)dst + offset);
+					for (auto c : n_src.children())
 					{
 						auto v = it->second(c, dst);
 						if (v != INVALID_POINTER)
-							*(void**)p = v;
+							vec.push_back(v);
 					}
-					else if (ti->retrive_ui() == &ui)
+				}
+				else if (ti->retrive_ui() == &ui)
+				{
+					auto& vec = *(std::vector<void*>*)((char*)dst + offset);
+					for (auto c : n_src.children())
 					{
 						auto obj = ui.create_object();
 						if (obj)
 						{
 							unserialize_xml(ui, c, obj, spec);
-							*(void**)p = obj;
+							vec.push_back(obj);
 						}
 					}
 				}
-					break;
-				case TagVPU:
-				{
-					auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
-					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
-					{
-						auto& vec = *(std::vector<void*>*)p;
-						for (auto cc : c.children())
-						{
-							auto v = it->second(cc, dst);
-							if (v != INVALID_POINTER)
-								vec.push_back(v);
-						}
-					}
-					else if (ti->retrive_ui() == &ui)
-					{
-						auto& vec = *(std::vector<void*>*)p;
-						for (auto cc : c.children())
-						{
-							auto obj = ui.create_object();
-							if (obj)
-							{
-								unserialize_xml(ui, c, obj, spec);
-								vec.push_back(obj);
-							}
-						}
-					}
-				}
-					break;
-				}
+			}
+				break;
+			}
+		};
+
+		for (auto a : src.attributes())
+		{
+			if (auto ai = ui.find_attribute(a.name()); ai)
+			{
+				read_var1(ai->var_idx != -1 ? ui.variables[ai->var_idx].offset : -1, ai->type, a.value(), ai->setter_idx);
+				continue;
+			}
+			if (auto vi = ui.find_variable(a.name()); vi)
+			{
+				read_var1(vi->offset, vi->type, a.value(), -1);
+				continue;
+			}
+		}
+
+		for (auto c : src.children())
+		{
+			if (auto ai = ui.find_attribute(c.name()); ai)
+			{
+				read_var2(ai->var_idx != -1 ? ui.variables[ai->var_idx].offset : -1, ai->type, c, ai->setter_idx);
+				continue;
+			}
+			if (auto vi = ui.find_variable(c.name()); vi)
+			{
+				read_var2(vi->offset, vi->type, c, -1);
+				continue;
 			}
 		}
 	}

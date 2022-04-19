@@ -19,19 +19,25 @@ namespace flame
 		TagD,
 		TagF,
 		TagU,
+		TagUP, // the std::pair udt
 		TagPE,
 		TagPD,
 		TagPU,
+		TagPVE,
+		TagPVD,
+		TagPVU,
+		TagPVUP,
 		TagAE,
 		TagAD,
 		TagAU,
 		TagVE,
 		TagVD,
 		TagVU,
+		TagVUP,
 		TagVPU,
 
 		TagP_Beg = TagPE,
-		TagP_End = TagPU,
+		TagP_End = TagPVUP,
 		TagA_Beg = TagAE,
 		TagA_End = TagAU,
 		TagV_Beg = TagVE,
@@ -450,9 +456,9 @@ namespace flame
 	struct VariableInfo
 	{
 		UdtInfo* ui = nullptr;
-		TypeInfo* type = nullptr;
 		std::string name;
 		uint name_hash;
+		TypeInfo* type = nullptr;
 		uint offset = 0;
 		uint array_size = 0;
 		uint array_stride = 0;
@@ -483,6 +489,7 @@ namespace flame
 		uint name_hash;
 		uint size = 0;
 		std::string base_class_name;
+		bool is_pod = true;
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;
 		std::vector<Attribute> attributes;
@@ -563,20 +570,37 @@ namespace flame
 		void* create_object(void* p = nullptr) const
 		{
 			if (!p)
-				p = malloc(size);
-			auto initialized = false;
-			for (auto& fi : functions)
 			{
-				if (fi.name == "dctor")
+				if (auto fi = find_function("create"); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
 				{
-					fi.call<void>(p);
-					initialized = true;
-					break;
+					if (fi->parameters.empty())
+						p = fi->call<void*>(nullptr);
+					else if (fi->parameters.size() == 1 && is_in(fi->parameters[0]->tag, TagP_Beg, TagP_End))
+						p = fi->call<void*>(nullptr, nullptr);
+					return p;
+				}
+				p = malloc(size);
+			}
+			if (auto fi = find_function("dctor"); fi)
+				fi->call<void>(p);
+			else
+			{
+				if (is_pod)
+					memset(p, 0, size);
+				else
+				{
+					for (auto& v : variables)
+						v.type->create((char*)p + v.offset);
 				}
 			}
-			if (!initialized)
-				memset(p, 0, size);
 			return p;
+		}
+
+		void destroy_object(void* p) const
+		{
+			if (auto fi = find_function("dtor"); fi)
+				fi->call<void>(p);
+			free(p);
 		}
 	};
 
@@ -2100,6 +2124,27 @@ namespace flame
 		{
 			return ui->create_object(p);
 		}
+
+		void destroy(void* p) const override
+		{
+			ui->destroy_object(p);
+		}
+	};
+
+	struct TypeInfo_Pair : TypeInfo
+	{
+		TypeInfo_Data* ti1 = nullptr;
+		TypeInfo_Data* ti2 = nullptr;
+
+		TypeInfo_Pair(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagUP, base_name, 0)
+		{
+			auto sp = SUS::split(name, ';');
+			assert(sp.size() == 2);
+			ti1 = (TypeInfo_Data*)get(TagD, sp[0], db);
+			ti2 = (TypeInfo_Data*)get(TagD, sp[1], db);
+			size = ti1->size + ti2->size;
+		}
 	};
 
 	struct TypeInfo_PointerOfEnum : TypeInfo
@@ -2132,6 +2177,105 @@ namespace flame
 			TypeInfo(TagPU, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfEnum : TypeInfo
+	{
+		TypeInfo_Enum* ti = nullptr;
+
+		TypeInfo_VectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVE, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Enum*)get(TagE, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfData : TypeInfo
+	{
+		TypeInfo_Data* ti = nullptr;
+
+		TypeInfo_VectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Data*)get(TagD, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfUdt : TypeInfo
+	{
+		TypeInfo_Udt* ti = nullptr;
+
+		TypeInfo_VectorOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVU, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Udt*)get(TagU, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfPair : TypeInfo
+	{
+		TypeInfo_Pair* ti = nullptr;
+
+		TypeInfo_VectorOfPair(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVUP, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Pair*)get(TagUP, name, db);
+		}
+	};
+
+	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
+	{
+		TypeInfo_PointerOfUdt* ti = nullptr;
+
+		TypeInfo_VectorOfPointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVPU, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfVectorOfEnum : TypeInfo
+	{
+		TypeInfo_VectorOfEnum* ti = nullptr;
+
+		TypeInfo_PointerOfVectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPVE, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_VectorOfEnum*)get(TagVE, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfVectorOfData : TypeInfo
+	{
+		TypeInfo_VectorOfData* ti = nullptr;
+
+		TypeInfo_PointerOfVectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPVD, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_VectorOfData*)get(TagVD, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfVectorOfUdt : TypeInfo
+	{
+		TypeInfo_VectorOfUdt* ti = nullptr;
+
+		TypeInfo_PointerOfVectorOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPVU, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_VectorOfUdt*)get(TagVU, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfVectorOfPair : TypeInfo
+	{
+		TypeInfo_VectorOfPair* ti = nullptr;
+
+		TypeInfo_PointerOfVectorOfPair(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPVUP, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_VectorOfPair*)get(TagVUP, name, db);
 		}
 	};
 
@@ -2190,50 +2334,6 @@ namespace flame
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 			name = base_name;
 			size = ti->size * extent;
-		}
-	};
-
-	struct TypeInfo_VectorOfEnum : TypeInfo
-	{
-		TypeInfo_Enum* ti = nullptr;
-
-		TypeInfo_VectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVE, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_Enum*)get(TagE, name, db);
-		}
-	};
-
-	struct TypeInfo_VectorOfData : TypeInfo
-	{
-		TypeInfo_Data* ti = nullptr;
-
-		TypeInfo_VectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_Data*)get(TagD, name, db);
-		}
-	};
-
-	struct TypeInfo_VectorOfUdt : TypeInfo
-	{
-		TypeInfo_Udt* ti = nullptr;
-
-		TypeInfo_VectorOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVU, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_Udt*)get(TagU, name, db);
-		}
-	};
-
-	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
-	{
-		TypeInfo_PointerOfUdt* ti = nullptr;
-
-		TypeInfo_VectorOfPointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVPU, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
 		}
 	};
 

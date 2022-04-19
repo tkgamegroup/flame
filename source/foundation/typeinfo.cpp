@@ -38,6 +38,9 @@ namespace flame
 		case TagU:
 			t = new TypeInfo_Udt(name, db);
 			break;
+		case TagUP:
+			t = new TypeInfo_Pair(name, db);
+			break;
 		case TagPE:
 			t = new TypeInfo_PointerOfEnum(name, db);
 			break;
@@ -46,6 +49,18 @@ namespace flame
 			break;
 		case TagPU:
 			t = new TypeInfo_PointerOfUdt(name, db);
+			break;
+		case TagPVE:
+			t = new TypeInfo_PointerOfVectorOfEnum(name, db);
+			break;
+		case TagPVD:
+			t = new TypeInfo_PointerOfVectorOfData(name, db);
+			break;
+		case TagPVU:
+			t = new TypeInfo_PointerOfVectorOfUdt(name, db);
+			break;
+		case TagPVUP:
+			t = new TypeInfo_PointerOfVectorOfPair(name, db);
 			break;
 		case TagAE:
 			t = new TypeInfo_ArrayOfEnum(name, db);
@@ -64,6 +79,9 @@ namespace flame
 			break;
 		case TagVU:
 			t = new TypeInfo_VectorOfUdt(name, db);
+			break;
+		case TagVUP:
+			t = new TypeInfo_VectorOfPair(name, db);
 			break;
 		case TagVPU:
 			t = new TypeInfo_VectorOfPointerOfUdt(name, db);
@@ -203,6 +221,7 @@ namespace flame
 			u.size = n_udt.attribute("size").as_uint();
 			if (auto a = n_udt.attribute("base_class_name"); a)
 				u.base_class_name = a.value();
+			u.is_pod = n_udt.attribute("is_pod").as_bool();
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
@@ -381,6 +400,7 @@ namespace flame
 					n_udt.append_attribute("size").set_value(ui.second->size);
 				if (!ui.second->base_class_name.empty())
 					n_udt.append_attribute("base_class_name").set_value(ui.second->base_class_name.c_str());
+				n_udt.append_attribute("is_pod").set_value(ui.second->is_pod);
 				if (!ui.second->variables.empty())
 				{
 					auto n_variables = n_udt.prepend_child("variables");

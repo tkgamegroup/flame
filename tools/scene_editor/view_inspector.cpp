@@ -171,6 +171,9 @@ void View_Inspector::on_draw()
 	{
 		switch (last_sel_ref_type)
 		{
+		case th<graphics::Image>():
+			graphics::Image::release((graphics::ImagePtr)last_sel_ref_obj);
+			break;
 		case th<graphics::Material>():
 			graphics::Material::release((graphics::MaterialPtr)last_sel_ref_obj);
 			break;
@@ -427,6 +430,43 @@ void View_Inspector::on_draw()
 			if (ImGui::Button("Convert"))
 				graphics::Model::convert(path, rotation, scaling, only_animation);
 		}
+		else if (is_image_file(ext))
+		{
+			if (selection.frame != last_sel_ref_frame)
+			{
+				auto image = graphics::Image::get(path);
+				if (image)
+				{
+					last_sel_ref_frame = selection.frame;
+					last_sel_ref_type = th<graphics::Image>();
+					last_sel_ref_obj = image;
+				}
+			}
+
+			if (last_sel_ref_obj)
+			{
+				auto image = (graphics::ImagePtr)last_sel_ref_obj;
+				ImGui::Text("format: %s", TypeInfo::serialize_t(&image->format).c_str());
+				ImGui::Text("size: %s", str(image->size).c_str());
+				static int view_type = ImGui::ImageViewRGBA;
+				static const char* types[] = {
+					"RGBA",
+					"R",
+					"G",
+					"B",
+					"A",
+					"RGB",
+				};
+				ImGui::Combo("view", &view_type, types, countof(types));
+				if (view_type != 0)
+					ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
+				ImGui::Image(last_sel_ref_obj, (vec2)image->size);
+				if (view_type != 0)
+					ImGui::PopImageViewType();
+				if (ImGui::Button("Save"))
+					image->save(path);
+			}
+		}
 		else if (ext == L".fmat")
 		{
 			if (selection.frame != last_sel_ref_frame)
@@ -441,7 +481,12 @@ void View_Inspector::on_draw()
 			}
 
 			if (last_sel_ref_obj)
-				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), last_sel_ref_obj);
+			{
+				auto material = (graphics::MaterialPtr)last_sel_ref_obj;
+				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material);
+				if (ImGui::Button("Save"))
+					material->save(path);
+			}
 		}
 	}
 		break;

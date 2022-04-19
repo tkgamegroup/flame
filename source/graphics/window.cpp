@@ -318,7 +318,8 @@ namespace flame
 
 					int global_vtx_offset = 0;
 					int global_idx_offset = 0;
-					Image* last_tex = nullptr;
+					ImagePtr last_tex = nullptr;
+					auto last_view_type = ImGui::ImageViewRGBA;
 					for (int n = 0; n < draw_data->CmdListsCount; n++)
 					{
 						const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -336,14 +337,22 @@ namespace flame
 							if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 								continue;
 
-							if (last_tex != pcmd->TextureId)
+							auto view_type = (ImGui::ImageViewType)(uint)pcmd->UserCallbackData;
+							if (last_tex != pcmd->TextureId || last_view_type != view_type)
 							{
-								auto tex = (Image*)pcmd->TextureId;
-								commandbuffer->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, nullptr, 
-									is_in(tex->format, Format_ColorOneChannel_Begin, Format_ColorOneChannel_End) ? 
-									ImageSwizzle{ SwizzleR, SwizzleR, SwizzleR, SwizzleOne } :
-									ImageSwizzle{}) : imgui_ds.get());
+								auto tex = (ImagePtr)pcmd->TextureId;
+								ImageSwizzle swizzle;
+								switch (view_type)
+								{
+								case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
+								case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
+								case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
+								case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
+								case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
+								}
+								commandbuffer->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, nullptr, swizzle) : imgui_ds.get());
 								last_tex = tex;
+								last_view_type = view_type;
 							}
 
 							commandbuffer->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));

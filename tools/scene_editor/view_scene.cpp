@@ -58,7 +58,7 @@ void View_Scene::on_draw()
 
 		bool using_gizmo = false;
 #if USE_IM_GUIZMO
-		if (app.e_editor && selection.type == Selection::tEntity)
+		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
 			auto e = selection.entity();
 			auto tar = e->get_component_i<cNode>(0);
@@ -70,7 +70,14 @@ void View_Scene::on_draw()
 				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
 				auto mat = tar->transform;
 				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], ImGuizmo::TRANSLATE, ImGuizmo::LOCAL, &mat[0][0]))
+				auto op = ImGuizmo::TRANSLATE;
+				switch (app.tool)
+				{
+				case ToolMove: op = ImGuizmo::TRANSLATE; break;
+				case ToolRotate: op = ImGuizmo::ROTATE; break;
+				case ToolScale: op = ImGuizmo::SCALE; break;
+				}
+				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, ImGuizmo::LOCAL, &mat[0][0]))
 				{
 					vec3 p, r, s;
 					ImGuizmo::DecomposeMatrixToComponents(&mat[0][0], &p[0], &r[0], &s[0]);
@@ -87,7 +94,6 @@ void View_Scene::on_draw()
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->set_modifier(e->file_id, "flame::cNode", "eul", TypeInfo::serialize_t(&tar->eul));
 					}
-					//tar->set_eul(r);
 					if (s != tar->scl)
 					{
 						tar->set_scl(s);

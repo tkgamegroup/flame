@@ -11,6 +11,12 @@ namespace flame
 		MaterialPtr default_material = new MaterialPrivate;
 		static std::vector<std::unique_ptr<MaterialPrivate>> materials;
 
+		MaterialPrivate::MaterialPrivate()
+		{
+			// reference the Texture, or else the typeinfo will be lost
+			textures.resize(8);
+		}
+
 		void MaterialPrivate::save(const std::filesystem::path& filename)
 		{
 			pugi::xml_document doc;

@@ -13,6 +13,18 @@ enum Icon
 	IconCount
 };
 
+enum Tool
+{
+	ToolNone,
+	ToolSelect,
+	ToolMove,
+	ToolRotate,
+	ToolScale,
+	ToolTerrainUp,
+	ToolTerrainDown,
+	ToolTerrainPaint
+};
+
 struct View
 {
 	std::string name;
@@ -39,6 +51,8 @@ struct App : UniverseApplication
 
 	graphics::ImagePtr icons[IconCount];
 	std::map<int, std::unique_ptr<graphics::Image>> sys_icons;
+
+	Tool tool = ToolSelect;
 
 	void init();
 

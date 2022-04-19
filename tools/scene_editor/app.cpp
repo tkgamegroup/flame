@@ -217,41 +217,79 @@ void App::init()
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
+
+		auto add_tool_button = [](Tool tool, uint icon, const std::string& id = "", float rotate = 0.f) {
+			ImGui::SameLine();
+			auto name = graphics::FontAtlas::icon_s(icon);
+			if (!id.empty())
+				name += "##" + id;
+			if (tool == app.tool)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
+			}
+			if (rotate != 0.f)
+				ImGui::BeginRotation(rotate);
+			auto clicked = ImGui::Button(name.c_str());
+			if (tool == app.tool)
+			{
+				ImGui::PopStyleColor();
+				ImGui::PopStyleVar();
+			}
+			if (rotate != 0.f)
+				ImGui::EndRotation();
+			return clicked;
+		};
+
 		// toolbar begin
-		if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str()))
-			;
-		ImGui::SameLine();
-		if (ImGui::Button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str()))
-			;
-		ImGui::SameLine();
-		if (ImGui::Button(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
-			;
-		ImGui::SameLine();
-		if (ImGui::Button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str()))
-			;
+		ImGui::Dummy(vec2(0.f, 20.f));
+		if (add_tool_button(ToolSelect, "arrow-pointer"_h))
+			tool = ToolSelect;
+		if (add_tool_button(ToolMove, "arrows-up-down-left-right"_h))
+			tool = ToolMove;
+		if (add_tool_button(ToolRotate, "rotate"_h))
+			tool = ToolRotate;
+		if (add_tool_button(ToolScale, "down-left-and-up-right-to-center"_h))
+			tool = ToolScale;
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
+
+		static cTerrainPtr terrain_tool_target = nullptr;
+		if (add_tool_button(ToolTerrainUp, "mound"_h, "up"))
+			tool = ToolTerrainUp;
+		if (add_tool_button(ToolTerrainDown, "mound"_h, "down", 180.f))
+			tool = ToolTerrainDown;
+		if (add_tool_button(ToolTerrainPaint, "paintbrush"_h))
+			tool = ToolTerrainPaint;
+
 		ImGui::SameLine();
+		ImGui::Dummy(vec2(0.f, 50.f));
 		if (!e_playing)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-			if (ImGui::Button(graphics::FontAtlas::icon_s("play"_h).c_str()))
+			if (add_tool_button(ToolNone, "play"_h))
 				cmd_play();
 			ImGui::PopStyleColor();
 		}
 		else
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
-			if (ImGui::Button(graphics::FontAtlas::icon_s("pause"_h).c_str()))
+			if (add_tool_button(ToolNone, "pause"_h))
 				;
 			ImGui::PopStyleColor();
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-			if (ImGui::Button(graphics::FontAtlas::icon_s("stop"_h).c_str()))
+			if (add_tool_button(ToolNone, "stop"_h))
 				cmd_stop();
 			ImGui::PopStyleColor();
 		}
 		// toolbar end
+
+		switch (tool)
+		{
+
+		}
+
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();
 
@@ -657,6 +695,8 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 
 int main(int argc, char** args)
 {
+	std::pair<int, float> abc;
+
 	app.init();
 
 	std::filesystem::path preferences_path = L"preferences.ini";

@@ -10,34 +10,42 @@ using namespace flame;
 
 TypeInfoDataBase db;
 
+std::string get_first_template_argument(const std::string& name)
+{
+	auto p = 0, lv = 0;
+	while (p < name.size())
+	{
+		auto ch = name[p];
+		if (ch == ',' && lv == 0)
+			return name.substr(0, p);
+		else if (ch == '<')
+			lv++;
+		else if (ch == '>')
+			lv--;
+		p++;
+	}
+	return "";
+}
+
 TypeTag parse_vector(std::string& name)
 {
-	auto get_first_template_argument = [&]() {
-		auto p = 0, lv = 0;
-		while (p < name.size())
-		{
-			auto ch = name[p];
-			if (ch == ',' && lv == 0)
-			{
-				name = name.substr(0, p);
-				break;
-			}
-			else if (ch == '<')
-				lv++;
-			else if (ch == '>')
-				lv--;
-			p++;
-		}
-	};
-
 	SUS::strip_head_if(name, "std::vector<");
-	get_first_template_argument();
+	name = get_first_template_argument(name);
 
 	auto is_pointer = false;
+	auto is_pair = false;
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
-		get_first_template_argument();
+		name = get_first_template_argument(name);
+	}
+	else if (SUS::strip_head_if(name, "std::pair<"))
+	{
+		is_pair = true;
+		name.pop_back();
+		auto t1 = get_first_template_argument(name);
+		auto t2 = name.substr(t1.size() + 1);
+		name = TypeInfo::format_name(t1) + ";" + TypeInfo::format_name(t2);
 	}
 
 	auto is_enum = SUS::strip_head_if(name, "enum ");
@@ -48,15 +56,22 @@ TypeTag parse_vector(std::string& name)
 		return TagVE;
 	if (!is_pointer)
 		is_pointer = SUS::strip_tail_if(name, "*") || SUS::strip_tail_if(name, "*__ptr64");
-	if (TypeInfo::is_basic_type(name))
-	{
-		if (is_pointer)
-			assert(0);
-		else
-			return TagVD;
-	}
+
+	if (is_pair)
+		return TagVUP;
 	else
-		return is_pointer ? TagVPU : TagVU;
+	{
+		if (TypeInfo::is_basic_type(name))
+		{
+			if (is_pointer)
+				assert(0);
+			else
+				return TagVD;
+		}
+		else
+			return is_pointer ? TagVPU : TagVU;
+	}
+	return TagCount;
 }
 
 TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
@@ -137,7 +152,24 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 			if (TypeInfo::is_basic_type(name))
 				ret = TypeInfo::get(TagPD, name, db);
 			else
-				ret = TypeInfo::get(TagPU, name, db);
+			{
+				if (name.starts_with("std::vector<"))
+				{
+					name = w2s(pwname);
+					auto tag = parse_vector(name);
+					switch (tag)
+					{
+					case TagVE: tag = TagPVE; break;
+					case TagVD: tag = TagPVD; break;
+					case TagVU: tag = TagPVU; break;
+					case TagVUP: tag = TagPVUP; break;
+					case TagVPU: assert(0); break;
+					}
+					ret = TypeInfo::get(tag, name, db);
+				}
+				else
+					ret = TypeInfo::get(TagPU, name, db);
+			}
 		}
 			break;
 		}
@@ -156,8 +188,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 			if (name.starts_with("std::vector<"))
 			{
 				name = w2s(pwname);
-				auto tag = parse_vector(name);
-				return TypeInfo::get(tag, name, db);
+				return TypeInfo::get(parse_vector(name), name, db);
 			}
 			return TypeInfo::get(TagU, name, db);
 		}
@@ -883,6 +914,22 @@ process:
 				{
 					if (fi.name == "ctor" && fi.parameters.empty() && fi.rva)
 						fi.name = "dctor";
+				}
+
+				for (auto& v : u.variables)
+				{
+					if (!is_in(v.type->tag, TagE, TagD))
+					{
+						u.is_pod = false;
+						break;
+					}
+					if (v.type == TypeInfo::get<std::string>() ||
+						v.type == TypeInfo::get<std::wstring>() ||
+						v.type == TypeInfo::get<std::filesystem::path>())
+					{
+						u.is_pod = false;
+						break;
+					}
 				}
 
 				void* obj = nullptr;

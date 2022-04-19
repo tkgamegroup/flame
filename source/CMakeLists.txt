@@ -21,6 +21,10 @@ if(USE_IMGUI)
 		target_compile_definitions(imgui PUBLIC USE_IM_GUIZMO)
 		target_include_directories(imgui PUBLIC "${IM_GUIZMO_DIR}")
 	endif()
+
+	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame")
+	add_custom_command(TARGET imgui PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/flame")
+	add_custom_command(TARGET imgui PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui_extension.h" "${CMAKE_SOURCE_DIR}/include/flame")
 endif()
 
 add_subdirectory(foundation)

@@ -97,76 +97,65 @@ namespace flame
 		data_changed("armature_name"_h);
 	}
 
-	void cArmaturePrivate::bind_animation(uint name_hash, const std::filesystem::path& animation_path)
+	void cArmaturePrivate::set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names)
 	{
 		if (bones.empty())
 			return;
 
-		auto& a = animations[name_hash];
-		if (a.path != animation_path)
-		{
-			if (!a.path.empty())
-				AssetManagemant::release_asset(Path::get(a.path));
-			a.path = animation_path;
-			if (!a.path.empty())
-				AssetManagemant::get_asset(Path::get(a.path));
-		}
-		auto _animation = graphics::Animation::get(animation_path);
-		if (a.animation != _animation)
-		{
-			if (a.animation)
-				graphics::Animation::release(a.animation);
-			a.animation = _animation;
-		}
-		else if (_animation)
-			graphics::Animation::release(_animation);
-		if (a.animation)
-		{
-			a.duration = a.animation->duration;
+		animation_names = names;
 
-			for (auto& ch : a.animation->channels)
+		for (auto& a : animations)
+		{
+			if (!a.second.path.empty())
+				AssetManagemant::release_asset(Path::get(a.second.path));
+			if (a.second.animation)
+				graphics::Animation::release(a.second.animation);
+		}
+		animations.clear();
+		for (auto& n : animation_names)
+		{
+			if (!n.first.empty() && !n.second.empty())
 			{
-				auto find_bone = [&](std::string_view name) {
-					for (auto i = 0; i < bones.size(); i++)
-					{
-						if (bones[i].name == name)
-							return i;
-					}
-					return -1;
-				};
-				auto id = find_bone(ch.node_name);
-				if (id != -1)
+				AssetManagemant::get_asset(Path::get(n.first));
+
+				auto& a = animations[sh(n.second.c_str())];
+				a.animation = graphics::Animation::get(n.first);
+				if (a.animation)
 				{
-					auto& t = a.tracks.emplace_back();
-					t.bone_idx = id;
-					t.positions.resize(ch.position_keys.size());
-					for (auto i = 0; i < t.positions.size(); i++)
+					a.duration = a.animation->duration;
+
+					for (auto& ch : a.animation->channels)
 					{
-						t.positions[i].first = ch.position_keys[i].t;
-						t.positions[i].second = ch.position_keys[i].p;
-					}
-					t.rotations.resize(ch.rotation_keys.size());
-					for (auto i = 0; i < t.rotations.size(); i++)
-					{
-						t.rotations[i].first = ch.rotation_keys[i].t;
-						t.rotations[i].second = ch.rotation_keys[i].q;
+						auto find_bone = [&](std::string_view name) {
+							for (auto i = 0; i < bones.size(); i++)
+							{
+								if (bones[i].name == name)
+									return i;
+							}
+							return -1;
+						};
+						auto id = find_bone(ch.node_name);
+						if (id != -1)
+						{
+							auto& t = a.tracks.emplace_back();
+							t.bone_idx = id;
+							t.positions.resize(ch.position_keys.size());
+							for (auto i = 0; i < t.positions.size(); i++)
+							{
+								t.positions[i].first = ch.position_keys[i].t;
+								t.positions[i].second = ch.position_keys[i].p;
+							}
+							t.rotations.resize(ch.rotation_keys.size());
+							for (auto i = 0; i < t.rotations.size(); i++)
+							{
+								t.rotations[i].first = ch.rotation_keys[i].t;
+								t.rotations[i].second = ch.rotation_keys[i].q;
+							}
+						}
 					}
 				}
 			}
 		}
-	}
-
-	void cArmaturePrivate::unbind_animation(uint name_hash)
-	{
-		auto it = animations.find(name_hash);
-		if (it == animations.end())
-			return;
-
-		if (!it->second.path.empty())
-			AssetManagemant::release_asset(Path::get(it->second.path));
-		if (it->second.animation)
-			graphics::Animation::release(it->second.animation);
-		animations.erase(it);
 	}
 
 	void cArmaturePrivate::play(uint name)
