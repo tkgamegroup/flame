@@ -18,17 +18,54 @@ View_Inspector::View_Inspector() :
 {
 }
 
+struct EditingVector
+{
+	const void* id;
+	std::vector<char> v;
+	TypeInfo* type = nullptr;
+
+	void clear()
+	{
+		id = nullptr;
+		if (type)
+		{
+			auto count = v.size() / type->size;
+			for (auto i = 0; i < count; i++)
+				type->destroy(v.data() + i * type->size, false);
+			v.clear();
+			type = nullptr;
+		}
+	}
+
+	void set(const void* _id, TypeInfo* _type, void* _vec)
+	{
+		id = _id;
+		type = _type;
+		auto& src = *(std::vector<char>*)_vec;
+		v.resize(src.size());
+		auto count = v.size() / type->size;
+		for (auto i = 0; i < count; i++)
+		{
+			auto dst = v.data() + i * type->size;
+			type->create(dst);
+			type->copy(dst, src.data() + i * type->size);
+		}
+	}
+}editing_vector;
+
 const Attribute* show_udt(const UdtInfo& ui, void* src);
 
-bool show_variable(TypeInfo* type, const std::string& name, void* data, const void* id)
+bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, int offset, int getter_idx, int setter_idx, void* src, const void* id) 
 {
 	auto changed = false;
+	auto direct_io = getter_idx == -1 && setter_idx == -1;
 
 	ImGui::PushID(id);
 	switch (type->tag)
 	{
 	case TagD:
 	{
+		auto data = ui.get_value(type, src, offset, getter_idx, !direct_io);
 		auto ti = (TypeInfo_Data*)type;
 		switch (ti->data_type)
 		{
@@ -88,17 +125,56 @@ bool show_variable(TypeInfo* type, const std::string& name, void* data, const vo
 		}
 			break;
 		}
+		if (changed && !direct_io)
+			ui.set_value(type, src, offset, setter_idx, nullptr);
 	}
 		break;
 	case TagVD:
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
-			auto& vec = *(std::vector<char>*)data;
-			auto size = (int)vec.size() / (int)ti->size;
-			for (auto i = 0; i < size; i++)
+			if (editing_vector.id == id)
 			{
+				if (ImGui::Button("Save"))
+				{
+					if (setter_idx == -1)
+					{
+						auto& dst = *(std::vector<char>*)((char*)src + offset);
+						auto count = dst.size() / ti->size;
+						for (auto i = 0; i < count; i++)
+							ti->destroy(dst.data() + i * ti->size, false);
+						dst.resize(editing_vector.v.size());
+						count = editing_vector.v.size() / ti->size;
+						for (auto i = 0; i < count; i++)
+						{
+							auto p = dst.data() + i * ti->size;
+							ti->create(p);
+							ti->copy(p, editing_vector.v.data() + i * ti->size);
+						}
+					}
+					else
+					{
 
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+					editing_vector.clear();
+				if (editing_vector.id)
+				{
+					auto size = (int)editing_vector.v.size() / (int)ti->size;
+					ImGui::InputInt("size", &size, 1, 1);
+					for (auto i = 0; i < size; i++)
+					{
+						if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, editing_vector.v.data(), id))
+							changed = true;
+					}
+				}
+			}
+			else
+			{
+				if (ImGui::Button("Edit"))
+					editing_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -106,18 +182,33 @@ bool show_variable(TypeInfo* type, const std::string& name, void* data, const vo
 	case TagVU:
 		if (ImGui::TreeNode(name.c_str()))
 		{
-			auto ti = (TypeInfo_VectorOfUdt*)type;
-			auto& ui = *ti->retrive_ui();
-			auto& vec = *(std::vector<char>*)data;
-			auto size = (int)vec.size() / (int)ui.size;
-			ImGui::InputInt("size", &size, 1, 1);
-			for (auto i = 0; i < size; i++)
+			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
+			if (editing_vector.id == id)
 			{
-				if (ImGui::TreeNode(str(i).c_str()))
+				if (ImGui::Button("Save"))
+					;
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+					editing_vector.clear();
+				if (editing_vector.id)
 				{
-					show_udt(ui, vec.data() + ui.size * i);
-					ImGui::TreePop();
+					auto& ui = *ti->retrive_ui();
+					auto size = (int)editing_vector.v.size() / (int)ui.size;
+					ImGui::InputInt("size", &size, 1, 1);
+					for (auto i = 0; i < size; i++)
+					{
+						if (ImGui::TreeNode(str(i).c_str()))
+						{
+							show_udt(ui, editing_vector.v.data() + ui.size * i);
+							ImGui::TreePop();
+						}
+					}
 				}
+			}
+			else
+			{
+				if (ImGui::Button("Edit"))
+					editing_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -135,19 +226,14 @@ const Attribute* show_udt(const UdtInfo& ui, void* src)
 	if (ui.attributes.empty())
 	{
 		for (auto& v : ui.variables)
-			show_variable(v.type, v.name, (char*)src + v.offset, &v);
+			show_variable(ui, v.type, v.name, v.offset, -1, -1, src, &v);
 	}
 	else
 	{
 		for (auto& a : ui.attributes)
 		{
-			auto direct_io = a.getter_idx == -1 && a.setter_idx == -1;
-			if (show_variable(a.type, a.name, a.get_value(src, !direct_io), &a))
-			{
-				if (!direct_io)
-					a.set_value(src);
+			if (show_variable(ui, a.type, a.name, a.var_off(), a.getter_idx, a.setter_idx, src, &a))
 				changed_attribute = &a;
-			}
 		}
 	}
 
@@ -180,6 +266,8 @@ void View_Inspector::on_draw()
 	static void* last_sel_ref_obj = nullptr;
 	if (selection.frame != last_sel_ref_frame)
 	{
+		editing_vector.clear();
+
 		switch (last_sel_ref_type)
 		{
 		case th<graphics::Image>():

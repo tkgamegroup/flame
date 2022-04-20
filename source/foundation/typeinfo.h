@@ -479,7 +479,7 @@ namespace flame
 
 		inline VariableInfo* var() const;
 		inline int var_off() const;
-		inline void* get_value(void* obj, bool use_internal = false) const;
+		inline void* get_value(void* obj, bool use_copy = false) const;
 		inline void set_value(void* obj, void* src = nullptr) const;
 		inline std::string serialize(void* obj) const;
 	};
@@ -612,6 +612,31 @@ namespace flame
 			if (free_memory)
 				free(p);
 		}
+
+		void* get_value(TypeInfo* type, void* obj, int offset, int getter_idx, bool use_copy = false) const
+		{
+			if (getter_idx != -1)
+			{
+				type->call_getter(&functions[getter_idx], obj, nullptr);
+				return type->get_v();
+			}
+			auto p = (char*)obj + offset;
+			if (use_copy)
+			{
+				auto v = type->get_v();
+				type->copy(v, p);
+				return v;
+			}
+			return p;
+		}
+
+		void set_value(TypeInfo* type, void* obj, int offset, int setter_idx, void* src) const
+		{
+			if (setter_idx != -1)
+				type->call_setter(&functions[setter_idx], obj, src);
+			else
+				type->copy((char*)obj + offset, src);
+		}
 	};
 
 	VariableInfo* Attribute::var() const
@@ -625,29 +650,14 @@ namespace flame
 		return vi ? vi->offset : -1;
 	}
 
-	void* Attribute::get_value(void* obj, bool use_internal) const
+	void* Attribute::get_value(void* obj, bool use_copy) const
 	{
-		if (getter_idx != -1)
-		{
-			type->call_getter(&ui->functions[getter_idx], obj, nullptr);
-			return type->get_v();
-		}
-		auto p = (char*)obj + var()->offset;
-		if (use_internal)
-		{
-			auto v = type->get_v();
-			type->copy(v, p);
-			return v;
-		}
-		return p;
+		return ui->get_value(type, obj, var_off(), getter_idx, use_copy);
 	}
 
 	void Attribute::set_value(void* obj, void* src) const
 	{
-		if (setter_idx != -1)
-			type->call_setter(&ui->functions[setter_idx], obj, src);
-		else
-			type->copy((char*)obj + var()->offset, src);
+		ui->set_value(type, obj, var_off(), setter_idx, src);
 	}
 
 	std::string Attribute::serialize(void* obj) const
