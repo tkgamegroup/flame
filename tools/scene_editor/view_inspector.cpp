@@ -205,7 +205,7 @@ void View_Inspector::on_draw()
 		if (changed_attribute)
 		{
 			if (auto ins = get_prefab_instance(e); ins)
-				ins->set_modifier(e->file_id, "", changed_attribute->name, changed_attribute->serialize(e));
+				ins->mark_modifier(e->file_id, "", changed_attribute->name);
 		}
 
 		ComponentPtr com_menu_tar = nullptr;
@@ -223,7 +223,7 @@ void View_Inspector::on_draw()
 				if (changed_attribute)
 				{
 					if (auto ins = get_prefab_instance(e); ins)
-						ins->set_modifier(e->file_id, ui.name, changed_attribute->name, changed_attribute->serialize(c.get()));
+						ins->mark_modifier(e->file_id, ui.name, changed_attribute->name);
 				}
 
 				if (ui.name == "flame::cArmature")

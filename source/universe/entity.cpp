@@ -354,6 +354,55 @@ namespace flame
 		return nullptr;
 	}
 
+	bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)
+	{
+		auto sp = SUS::split(target, '|');
+
+		auto te = find_with_file_id(e, sp.front());
+		if (!te)
+		{
+			printf("prefab modification: cannot find target: %s\n", sp.front().c_str());
+			return false;
+		}
+
+		obj = nullptr;
+		UdtInfo* ui = nullptr;
+
+		if (sp.size() == 2)
+		{
+			obj = te;
+			ui = TypeInfo::get<Entity>()->retrive_ui();
+		}
+		else
+		{
+			auto hash = sh(sp[1].c_str());
+			obj = te->get_component(hash);
+			ui = find_udt(hash);
+			if (!obj)
+			{
+				printf("prefab modification: cannot find component %s of target %s\n", sp[1].c_str(), sp.front().c_str());
+				return false;
+			}
+			if (!ui)
+			{
+				printf("prefab modification: cannot find UdtInfo of %s\n", sp[1].c_str());
+				return false;
+			}
+		}
+
+		attr = ui->find_attribute(sp.back());
+		if (!attr)
+		{
+			if (obj == te)
+				printf("prefab modification: cannot find attribute %s of target %s\n", sp.back().c_str(), sp.front().c_str());
+			else
+				printf("prefab modification: cannot find attribute %s of component %s of target %s\n", sp.back().c_str(), sp[1].c_str(), sp.front().c_str());
+			return false;
+		}
+
+		return true;
+	}
+
 	bool EntityPrivate::load(const std::filesystem::path& _filename)
 	{
 		pugi::xml_document doc;
@@ -399,58 +448,15 @@ namespace flame
 				auto n_mod = src.child("modifications");
 				for (auto n : n_mod)
 				{
-					PrefabInstance::Modification mod;
-					mod.target = n.attribute("target").value();
-					mod.value = n.attribute("value").value();
+					std::string target = n.attribute("target").value();
 
-					auto sp = SUS::split(mod.target, '|');
-
-					auto te = find_with_file_id(e, sp.front());
-					if (!te)
-					{
-						printf("prefab modification: cannot find target: %s\n", sp.front().c_str());
+					void* obj;
+					const Attribute* attr;
+					if (!get_modification_target(target, e, obj, attr))
 						continue;
-					}
 
-					void* obj = nullptr;
-					UdtInfo* ui = nullptr;
-
-					if (sp.size() == 2)
-					{
-						obj = te;
-						ui = TypeInfo::get<Entity>()->retrive_ui();
-					}
-					else
-					{
-						auto hash = sh(sp[1].c_str());
-						obj = te->get_component(hash);
-						ui = find_udt(hash);
-						if (!obj)
-						{
-							printf("prefab modification: cannot find component %s of target %s\n", sp[1].c_str(), sp.front().c_str());
-							continue;
-						}
-						if (!ui)
-						{
-							printf("prefab modification: cannot find UdtInfo of %s\n", sp[1].c_str());
-							continue;
-						}
-					}
-
-					auto attr = ui->find_attribute(sp.back());
-					if (!attr)
-					{
-						if (obj == te)
-							printf("prefab modification: cannot find attribute %s of target %s\n", sp.back().c_str(), sp.front().c_str());
-						else
-							printf("prefab modification: cannot find attribute %s of component %s of target %s\n", sp.back().c_str(), sp[1].c_str(), sp.front().c_str());
-						continue;
-					}
-
-					attr->type->unserialize(mod.value.c_str(), nullptr);
-					attr->set_value(obj);
-
-					e->prefab->modifications.push_back(mod);
+					unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", attr->setter_idx, n, obj);
+					e->prefab->modifications.push_back(target);
 				}
 			}
 			else
@@ -489,17 +495,22 @@ namespace flame
 			}
 		};
 		spec.delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
-			auto e = (Entity*)src;
+			auto e = (EntityPtr)src;
 			dst.append_attribute("file_id").set_value(e->file_id.c_str());
 			if (e->prefab)
 			{
 				dst.append_attribute("filename").set_value(e->prefab->filename.string().c_str());
 				auto n_mod = dst.append_child("modifications");
-				for (auto& m : e->prefab->modifications)
+				for (auto& target : e->prefab->modifications)
 				{
+					void* obj;
+					const Attribute* attr;
+					if (!get_modification_target(target, e, obj, attr))
+						continue;
+
 					auto n = n_mod.append_child("item");
-					n.append_attribute("target").set_value(m.target.c_str());
-					n.append_attribute("value").set_value(m.value.c_str());
+					n.append_attribute("target").set_value(target.c_str());
+					serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", "", attr->getter_idx, obj, n);
 				}
 			}
 			else

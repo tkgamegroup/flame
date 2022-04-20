@@ -6,19 +6,13 @@ namespace flame
 {
 	struct PrefabInstance
 	{
-		struct Modification
-		{
-			std::string target;
-			std::string value;
-		};
-
 		EntityPtr e;
 		std::filesystem::path filename;
-		std::vector<Modification> modifications;
+		std::vector<std::string> modifications;
 
 		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
 
-		void set_modifier(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name, const std::string& value)
+		void mark_modifier(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
 		{
 			std::string target;
 			target = tar_id;
@@ -27,15 +21,10 @@ namespace flame
 			target = target + "|" + attr_name;
 			for (auto& m : modifications)
 			{
-				if (m.target == target)
-				{
-					m.value = value;
+				if (m == target)
 					return;
-				}
 			}
-			auto& m = modifications.emplace_back();
-			m.target = target;
-			m.value = value;
+			modifications.push_back(target);
 		}
 	};
 

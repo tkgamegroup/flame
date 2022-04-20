@@ -38,7 +38,7 @@ namespace flame
 		case TagU:
 			t = new TypeInfo_Udt(name, db);
 			break;
-		case TagUP:
+		case TagR:
 			t = new TypeInfo_Pair(name, db);
 			break;
 		case TagPE:
@@ -59,7 +59,7 @@ namespace flame
 		case TagPVU:
 			t = new TypeInfo_PointerOfVectorOfUdt(name, db);
 			break;
-		case TagPVUP:
+		case TagPVR:
 			t = new TypeInfo_PointerOfVectorOfPair(name, db);
 			break;
 		case TagAE:
@@ -80,7 +80,7 @@ namespace flame
 		case TagVU:
 			t = new TypeInfo_VectorOfUdt(name, db);
 			break;
-		case TagVUP:
+		case TagVR:
 			t = new TypeInfo_VectorOfPair(name, db);
 			break;
 		case TagVPU:

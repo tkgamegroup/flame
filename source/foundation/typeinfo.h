@@ -19,25 +19,25 @@ namespace flame
 		TagD,
 		TagF,
 		TagU,
-		TagUP, // the std::pair udt
+		TagR, // the std::pair
 		TagPE,
 		TagPD,
 		TagPU,
 		TagPVE,
 		TagPVD,
 		TagPVU,
-		TagPVUP,
+		TagPVR,
 		TagAE,
 		TagAD,
 		TagAU,
 		TagVE,
 		TagVD,
 		TagVU,
-		TagVUP,
+		TagVR,
 		TagVPU,
 
 		TagP_Beg = TagPE,
-		TagP_End = TagPVUP,
+		TagP_End = TagPVR,
 		TagA_Beg = TagAE,
 		TagA_End = TagAU,
 		TagV_Beg = TagVE,
@@ -468,7 +468,7 @@ namespace flame
 
 	struct Attribute
 	{
-		UdtInfo* ui;
+		UdtInfo* ui = nullptr;
 		std::string name;
 		uint name_hash;
 		TypeInfo* type = nullptr;
@@ -478,6 +478,7 @@ namespace flame
 		std::string default_value;
 
 		inline VariableInfo* var() const;
+		inline int var_off() const;
 		inline void* get_value(void* obj, bool use_internal = false) const;
 		inline void set_value(void* obj, void* src = nullptr) const;
 		inline std::string serialize(void* obj) const;
@@ -615,7 +616,13 @@ namespace flame
 
 	VariableInfo* Attribute::var() const
 	{
-		return &ui->variables[var_idx];
+		return var_idx == -1 ? nullptr : &ui->variables[var_idx];
+	}
+
+	int Attribute::var_off() const
+	{
+		auto vi = var();
+		return vi ? vi->offset : -1;
 	}
 
 	void* Attribute::get_value(void* obj, bool use_internal) const
@@ -2152,7 +2159,7 @@ namespace flame
 		TypeInfo_Data* ti2 = nullptr;
 
 		TypeInfo_Pair(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagUP, base_name, 0)
+			TypeInfo(TagR, base_name, 0)
 		{
 			auto sp = SUS::split(name, ';');
 			assert(sp.size() == 2);
@@ -2233,9 +2240,9 @@ namespace flame
 		TypeInfo_Pair* ti = nullptr;
 
 		TypeInfo_VectorOfPair(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVUP, base_name, sizeof(std::vector<int>))
+			TypeInfo(TagVR, base_name, sizeof(std::vector<int>))
 		{
-			ti = (TypeInfo_Pair*)get(TagUP, name, db);
+			ti = (TypeInfo_Pair*)get(TagR, name, db);
 		}
 	};
 
@@ -2288,9 +2295,9 @@ namespace flame
 		TypeInfo_VectorOfPair* ti = nullptr;
 
 		TypeInfo_PointerOfVectorOfPair(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagPVUP, base_name, sizeof(void*))
+			TypeInfo(TagPVR, base_name, sizeof(void*))
 		{
-			ti = (TypeInfo_VectorOfPair*)get(TagVUP, name, db);
+			ti = (TypeInfo_VectorOfPair*)get(TagVR, name, db);
 		}
 	};
 

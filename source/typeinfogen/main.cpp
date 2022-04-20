@@ -58,7 +58,7 @@ TypeTag parse_vector(std::string& name)
 		is_pointer = SUS::strip_tail_if(name, "*") || SUS::strip_tail_if(name, "*__ptr64");
 
 	if (is_pair)
-		return TagVUP;
+		return TagVR;
 	else
 	{
 		if (TypeInfo::is_basic_type(name))
@@ -162,7 +162,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 					case TagVE: tag = TagPVE; break;
 					case TagVD: tag = TagPVD; break;
 					case TagVU: tag = TagPVU; break;
-					case TagVUP: tag = TagPVUP; break;
+					case TagVR: tag = TagPVR; break;
 					case TagVPU: assert(0); break;
 					}
 					ret = TypeInfo::get(tag, name, db);
