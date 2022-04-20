@@ -320,7 +320,7 @@ namespace flame
 					auto len = read(vec);
 					type->call_setter(&ui.functions[setter_idx], dst, &vec);
 					for (auto i = 0; i < len; i++)
-						ti->destroy((char*)vec.data() + i * ti->size);
+						ti->destroy((char*)vec.data() + i * ti->size, false);
 				}
 			}
 				break;
@@ -347,7 +347,7 @@ namespace flame
 					auto len = read(vec);
 					type->call_setter(&ui.functions[setter_idx], dst, &vec);
 					for (auto i = 0; i < len; i++)
-						ti->destroy((char*)vec.data() + i * ti->size);
+						ti->destroy((char*)vec.data() + i * ti->size, false);
 				}
 			}
 				break;

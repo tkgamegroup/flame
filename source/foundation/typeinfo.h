@@ -165,7 +165,7 @@ namespace flame
 		virtual ~TypeInfo() {}
 
 		virtual void* create(void* p = nullptr) const { if (!p) p = malloc(size); return p; }
-		virtual void destroy(void* p) const { free(p); }
+		virtual void destroy(void* p, bool free_memory = true) const { if (free_memory) free(p); }
 		virtual void copy(void* dst, const void* src) const { memcpy(dst, src ? src : get_v(), size); }
 		virtual bool compare(const void* d1, const void* d2) const { return memcmp(d1, d2, size) == 0; }
 		virtual std::string serialize(const void* p) const { return ""; }
@@ -596,11 +596,20 @@ namespace flame
 			return p;
 		}
 
-		void destroy_object(void* p) const
+		void destroy_object(void* p, bool free_memory = true) const
 		{
 			if (auto fi = find_function("dtor"); fi)
 				fi->call<void>(p);
-			free(p);
+			else
+			{
+				if (!is_pod)
+				{
+					for (auto& v : variables)
+						v.type->destroy((char*)p + v.offset, false);
+				}
+			}
+			if (free_memory)
+				free(p);
 		}
 	};
 
@@ -1808,9 +1817,11 @@ namespace flame
 			new(p) std::string;
 			return p;
 		}
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory = true) const override
 		{
-			delete (std::string*)p;
+			((std::string*)p)->~basic_string();
+			if (free_memory)
+				free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -1865,9 +1876,11 @@ namespace flame
 			new(p) std::wstring;
 			return p;
 		}
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory = true) const override
 		{
-			delete (std::wstring*)p;
+			((std::wstring*)p)->~basic_string();
+			if (free_memory)
+				free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -1922,9 +1935,11 @@ namespace flame
 			new(p) std::filesystem::path;
 			return p;
 		}
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory = true) const override
 		{
-			delete (std::filesystem::path*)p;
+			((std::filesystem::path*)p)->~path();
+			if (free_memory)
+				free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -2125,9 +2140,9 @@ namespace flame
 			return ui->create_object(p);
 		}
 
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory = true) const override
 		{
-			ui->destroy_object(p);
+			ui->destroy_object(p, free_memory);
 		}
 	};
 

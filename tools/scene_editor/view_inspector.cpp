@@ -91,13 +91,24 @@ bool show_variable(TypeInfo* type, const std::string& name, void* data, const vo
 	}
 		break;
 	case TagVD:
+		if (ImGui::TreeNode(name.c_str()))
+		{
+			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
+			auto& vec = *(std::vector<char>*)data;
+			auto size = (int)vec.size() / (int)ti->size;
+			for (auto i = 0; i < size; i++)
+			{
+
+			}
+			ImGui::TreePop();
+		}
 		break;
 	case TagVU:
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = (TypeInfo_VectorOfUdt*)type;
 			auto& ui = *ti->retrive_ui();
-			auto& vec = *(std::vector<uchar>*)data;
+			auto& vec = *(std::vector<char>*)data;
 			auto size = (int)vec.size() / (int)ui.size;
 			ImGui::InputInt("size", &size, 1, 1);
 			for (auto i = 0; i < size; i++)
@@ -218,18 +229,6 @@ void View_Inspector::on_draw()
 				if (ui.name == "flame::cArmature")
 				{
 					auto armature = (cArmaturePtr)c.get();
-					if (ImGui::Button("Bind Animation"))
-					{
-						SelectResourceDialog::open("Select animation", [armature](bool ok, const std::filesystem::path& path) {
-							if (ok && !path.empty())
-							{
-								InputDialog::open("Name to bind", [armature, path](bool ok, const std::string& text) {
-									if (ok && !text.empty())
-										armature->bind_animation(sh(text.c_str()), path);
-								});
-							}
-						});
-					}
 					static char name[100];
 					ImGui::InputText("name", name, countof(name));
 					ImGui::SameLine();
