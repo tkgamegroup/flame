@@ -90,6 +90,14 @@ namespace flame
 		case TagU:
 			serialize_xml(*type->retrive_ui(), (char*)src + offset, dst.append_child(name.c_str()), spec);
 			break;
+		case TagR:
+			if (auto ti = (TypeInfo_Pair*)type; ti)
+			{
+				dst = dst.append_child(name.c_str());
+				dst.append_attribute("first").set_value(ti->ti1->serialize(ti->first((char*)src + offset)).c_str());
+				dst.append_attribute("second").set_value(ti->ti2->serialize(ti->second((char*)src + offset)).c_str());
+			}
+			break;
 		case TagPU:
 			if (auto it = spec.delegates.find(type); it != spec.delegates.end())
 				it->second(*(void**)((char*)src + offset), dst.append_child(name.c_str()));
@@ -132,8 +140,7 @@ namespace flame
 				auto len = (vec.end() - vec.begin()) / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
-					n.append_child("item").append_attribute("v").
-						set_value(ti->serialize(p).c_str());
+					n.append_child("item").append_attribute("v").set_value(ti->serialize(p).c_str());
 					p += ti->size;
 				}
 			}
@@ -153,6 +160,20 @@ namespace flame
 						serialize_xml(*ui, p, n.append_child("item"), spec);
 						p += ti->size;
 					}
+				}
+			}
+			break;
+		case TagVR:
+			if (auto& vec = *(std::vector<char>*)((char*)src + offset); !vec.empty())
+			{
+				auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
+				auto n = dst.append_child(name.c_str());
+				auto p = (char*)vec.data();
+				auto len = (vec.end() - vec.begin()) / ti->size;
+				for (auto i = 0; i < len; i++)
+				{
+					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n);
+					p += ti->size;
 				}
 			}
 			break;
@@ -188,7 +209,7 @@ namespace flame
 			{
 				if (spec.skip(ui.name_hash, a.name_hash))
 					continue;
-				serialize_xml(ui, a.var_off(), a.type, a.name, a.default_value, a.getter_idx, src, dst);
+				serialize_xml(ui, a.var_off(), a.type, a.name, a.default_value, a.getter_idx, src, dst, spec);
 			}
 		}
 		else
@@ -197,7 +218,7 @@ namespace flame
 			{
 				if (spec.skip(ui.name_hash, vi.name_hash))
 					continue;
-				serialize_xml(ui, vi.offset, vi.type, vi.name, vi.default_value, -1, src, dst);
+				serialize_xml(ui, vi.offset, vi.type, vi.name, vi.default_value, -1, src, dst, spec);
 			}
 		}
 	}
@@ -251,6 +272,35 @@ namespace flame
 				{
 					if (setter_idx == -1)
 						unserialize_xml(*ui, c, (char*)dst + offset, spec);
+				}
+			}
+			break;
+		case TagR:
+			if (auto c = src.child(name.c_str()); c)
+			{
+				auto ti = (TypeInfo_Pair*)type;
+				ti->ti1->unserialize(c.attribute("first").value(), ti->first((char*)dst + offset));
+				ti->ti2->unserialize(c.attribute("second").value(), ti->second((char*)dst + offset));
+			}
+			break;
+		case TagPU:
+			if (auto c = src.child(name.c_str()); c)
+			{
+				auto ti = (TypeInfo_PointerOfUdt*)type;
+				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+				{
+					auto v = it->second(c, dst);
+					if (v != INVALID_POINTER)
+						*(void**)((char*)dst + offset) = v;
+				}
+				else if (ti->retrive_ui() == &ui)
+				{
+					auto obj = ui.create_object();
+					if (obj)
+					{
+						unserialize_xml(ui, c, obj, spec);
+						*(void**)((char*)dst + offset) = obj;
+					}
 				}
 			}
 			break;
@@ -342,24 +392,31 @@ namespace flame
 				}
 			}
 			break;
-		case TagPU:
+		case TagVR:
 			if (auto c = src.child(name.c_str()); c)
 			{
-				auto ti = (TypeInfo_PointerOfUdt*)type;
-				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
-				{
-					auto v = it->second(c, dst);
-					if (v != INVALID_POINTER)
-						*(void**)((char*)dst + offset) = v;
-				}
-				else if (ti->retrive_ui() == &ui)
-				{
-					auto obj = ui.create_object();
-					if (obj)
+				auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
+				auto read = [&](std::vector<char>& vec) {
+					auto len = 0;
+					for (auto c : c.children())
 					{
-						unserialize_xml(ui, c, obj, spec);
-						*(void**)((char*)dst + offset) = obj;
+						len++;
+						vec.resize(len * ti->size);
+						auto pd = (char*)vec.data() + (len - 1) * ti->size;
+						ti->create(pd);
+						unserialize_xml(*(UdtInfo*)0, 0, ti, "item", -1, c, pd);
 					}
+					return len;
+				};
+				if (setter_idx == -1)
+					read(*(std::vector<char>*)((char*)dst + offset));
+				else
+				{
+					std::vector<char> vec;
+					auto len = read(vec);
+					type->call_setter(&ui.functions[setter_idx], dst, &vec);
+					for (auto i = 0; i < len; i++)
+						ti->destroy((char*)vec.data() + i * ti->size, false);
 				}
 			}
 			break;
@@ -400,12 +457,12 @@ namespace flame
 		if (!ui.attributes.empty())
 		{
 			for (auto& a : ui.attributes)
-				unserialize_xml(ui, a.var_off(), a.type, a.name, a.setter_idx, src, dst);
+				unserialize_xml(ui, a.var_off(), a.type, a.name, a.setter_idx, src, dst, spec);
 		}
 		else
 		{
 			for (auto& vi : ui.variables)
-				unserialize_xml(ui, vi.offset, vi.type, vi.name, -1, src, dst);
+				unserialize_xml(ui, vi.offset, vi.type, vi.name, -1, src, dst, spec);
 		}
 	}
 

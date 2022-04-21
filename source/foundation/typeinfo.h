@@ -613,6 +613,22 @@ namespace flame
 				free(p);
 		}
 
+		void copy_object(void* dst, const void* src) const
+		{
+			if (auto fi = find_function("operator="); fi)
+				fi->call<void*>(dst, src);
+			else
+			{
+				if (!is_pod)
+				{
+					for (auto& v : variables)
+						v.type->copy((char*)dst + v.offset, (char*)src + v.offset);
+				}
+				else
+					memcpy(dst, src, size);
+			}
+		}
+
 		void* get_value(TypeInfo* type, void* obj, int offset, int getter_idx, bool use_copy = false) const
 		{
 			if (getter_idx != -1)
@@ -2156,10 +2172,13 @@ namespace flame
 		{
 			return ui->create_object(p);
 		}
-
 		void destroy(void* p, bool free_memory = true) const override
 		{
 			ui->destroy_object(p, free_memory);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			ui->copy_object(dst, src);
 		}
 	};
 
@@ -2176,6 +2195,36 @@ namespace flame
 			ti1 = (TypeInfo_Data*)get(TagD, sp[0], db);
 			ti2 = (TypeInfo_Data*)get(TagD, sp[1], db);
 			size = ti1->size + ti2->size;
+		}
+
+		void* first(const void* p) const
+		{
+			return (char*)p + 0;
+		}
+		void* second(const void* p) const
+		{
+			return (char*)p + ti1->size;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			ti1->create(first(p));
+			ti2->create(second(p));
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			ti1->destroy(first(p), false);
+			ti2->destroy(second(p), false);
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			ti1->copy(first(dst), first(src));
+			ti2->copy(second(dst), second(src));
 		}
 	};
 
@@ -2221,6 +2270,12 @@ namespace flame
 		{
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
+
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
 	};
 
 	struct TypeInfo_VectorOfData : TypeInfo
@@ -2231,6 +2286,12 @@ namespace flame
 			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Data*)get(TagD, name, db);
+		}
+
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVD);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
 	};
 
@@ -2243,6 +2304,12 @@ namespace flame
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
+
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVU);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
 	};
 
 	struct TypeInfo_VectorOfPair : TypeInfo
@@ -2253,6 +2320,12 @@ namespace flame
 			TypeInfo(TagVR, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Pair*)get(TagR, name, db);
+		}
+
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVR);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
 	};
 

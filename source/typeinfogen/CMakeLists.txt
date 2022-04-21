@@ -6,7 +6,7 @@ target_include_directories(typeinfogen PRIVATE "${VS_LOCATION}/DIA SDK/include")
 target_link_libraries(typeinfogen flame_foundation)
 target_link_libraries(typeinfogen "${VS_LOCATION}/DIA SDK/lib/amd64/diaguids.lib")
 
-add_custom_target(typeinfogen_dep)
+add_custom_target(typeinfogen_dep ALL DEPENDS "$<TARGET_FILE_DIR:flame_foundation>/flame_foundation.typeinfo")
 set_target_properties(typeinfogen_dep PROPERTIES FOLDER "flame")
 add_dependencies(typeinfogen_dep typeinfogen)
 generate_typeinfo(flame_foundation "enum starts_with flame::")

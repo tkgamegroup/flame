@@ -23,17 +23,19 @@ struct EditingVector
 	const void* id;
 	std::vector<char> v;
 	TypeInfo* type = nullptr;
+	uint item_size = 0;
 
 	void clear()
 	{
 		id = nullptr;
 		if (type)
 		{
-			auto count = v.size() / type->size;
-			for (auto i = 0; i < count; i++)
-				type->destroy(v.data() + i * type->size, false);
+			auto n = count();
+			for (auto i = 0; i < n; i++)
+				type->destroy(v.data() + i * item_size, false);
 			v.clear();
 			type = nullptr;
+			item_size = 0;
 		}
 	}
 
@@ -41,14 +43,43 @@ struct EditingVector
 	{
 		id = _id;
 		type = _type;
-		auto& src = *(std::vector<char>*)_vec;
-		v.resize(src.size());
-		auto count = v.size() / type->size;
+		item_size = type->size;
+		assign(nullptr, _vec);
+	}
+
+	uint count()
+	{
+		return v.size() / item_size;
+	}
+
+	void resize(void* _vec, uint size)
+	{
+		if (!_vec)
+			_vec = &v;
+		auto& vec = *(std::vector<char>*)_vec;
+		auto old_size = vec.size() / item_size;
+		for (auto i = size; i < old_size; i++)
+			type->destroy(vec.data() + i * item_size, false);
+		editing_vector.v.resize(size * item_size);
+		for (auto i = old_size; i < size; i++)
+			type->create(vec.data() + i * item_size);
+	}
+
+	void assign(void* _dst, void* _src)
+	{
+		if (!_dst)
+			_dst = &v;
+		if (!_src)
+			_src = &v;
+		auto& dst = *(std::vector<char>*)_dst;
+		auto& src = *(std::vector<char>*)_src;
+		dst.resize(src.size());
+		auto count = src.size() / item_size;
 		for (auto i = 0; i < count; i++)
 		{
-			auto dst = v.data() + i * type->size;
-			type->create(dst);
-			type->copy(dst, src.data() + i * type->size);
+			auto p = dst.data() + i * item_size;
+			type->create(p);
+			type->copy(p, src.data() + i * item_size);
 		}
 	}
 }editing_vector;
@@ -138,33 +169,22 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 				if (ImGui::Button("Save"))
 				{
 					if (setter_idx == -1)
-					{
-						auto& dst = *(std::vector<char>*)((char*)src + offset);
-						auto count = dst.size() / ti->size;
-						for (auto i = 0; i < count; i++)
-							ti->destroy(dst.data() + i * ti->size, false);
-						dst.resize(editing_vector.v.size());
-						count = editing_vector.v.size() / ti->size;
-						for (auto i = 0; i < count; i++)
-						{
-							auto p = dst.data() + i * ti->size;
-							ti->create(p);
-							ti->copy(p, editing_vector.v.data() + i * ti->size);
-						}
-					}
+						editing_vector.assign((char*)src + offset, nullptr);
 					else
-					{
-
-					}
+						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
 					editing_vector.clear();
 				if (editing_vector.id)
 				{
-					auto size = (int)editing_vector.v.size() / (int)ti->size;
-					ImGui::InputInt("size", &size, 1, 1);
-					for (auto i = 0; i < size; i++)
+					int n = editing_vector.count();
+					if (ImGui::InputInt("size", &n, 1, 1))
+					{
+						n = clamp(n, 0, 16);
+						editing_vector.resize(nullptr, n);
+					}
+					for (auto i = 0; i < n; i++)
 					{
 						if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, editing_vector.v.data(), id))
 							changed = true;
@@ -186,20 +206,73 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			if (editing_vector.id == id)
 			{
 				if (ImGui::Button("Save"))
-					;
+				{
+					if (setter_idx == -1)
+						editing_vector.assign((char*)src + offset, nullptr);
+					else
+						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
 					editing_vector.clear();
 				if (editing_vector.id)
 				{
 					auto& ui = *ti->retrive_ui();
-					auto size = (int)editing_vector.v.size() / (int)ui.size;
-					ImGui::InputInt("size", &size, 1, 1);
-					for (auto i = 0; i < size; i++)
+					int n = editing_vector.count();
+					if (ImGui::InputInt("size", &n, 1, 1))
+					{
+						n = clamp(n, 0, 16);
+						editing_vector.resize(nullptr, n);
+					}
+					for (auto i = 0; i < n; i++)
 					{
 						if (ImGui::TreeNode(str(i).c_str()))
 						{
 							show_udt(ui, editing_vector.v.data() + ui.size * i);
+							ImGui::TreePop();
+						}
+					}
+				}
+			}
+			else
+			{
+				if (ImGui::Button("Edit"))
+					editing_vector.set(id, ti, (char*)src + offset);
+			}
+			ImGui::TreePop();
+		}
+		break;
+	case TagVR:
+		if (ImGui::TreeNode(name.c_str()))
+		{
+			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
+			if (editing_vector.id == id)
+			{
+				if (ImGui::Button("Save"))
+				{
+					if (setter_idx == -1)
+						editing_vector.assign((char*)src + offset, nullptr);
+					else
+						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+					editing_vector.clear();
+				if (editing_vector.id)
+				{
+					int n = editing_vector.count();
+					if (ImGui::InputInt("size", &n, 1, 1))
+					{
+						n = clamp(n, 0, 16);
+						editing_vector.resize(nullptr, n);
+					}
+					for (auto i = 0; i < n; i++)
+					{
+						if (ImGui::TreeNode(str(i).c_str()))
+						{
+							auto p = editing_vector.v.data() + ui.size * i;
+							show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
+							show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
 							ImGui::TreePop();
 						}
 					}
@@ -524,7 +597,6 @@ void View_Inspector::on_draw()
 				auto image = graphics::Image::get(path);
 				if (image)
 				{
-					last_sel_ref_frame = selection.frame;
 					last_sel_ref_type = th<graphics::Image>();
 					last_sel_ref_obj = image;
 				}
@@ -561,7 +633,6 @@ void View_Inspector::on_draw()
 				auto material = graphics::Material::get(path);
 				if (material)
 				{
-					last_sel_ref_frame = selection.frame;
 					last_sel_ref_type = th<graphics::Material>();
 					last_sel_ref_obj = material;
 				}
@@ -578,4 +649,6 @@ void View_Inspector::on_draw()
 	}
 		break;
 	}
+
+	last_sel_ref_frame = selection.frame;
 }
