@@ -84,7 +84,7 @@ struct EditingVector
 	}
 }editing_vector;
 
-const Attribute* show_udt(const UdtInfo& ui, void* src);
+std::string show_udt(const UdtInfo& ui, void* src);
 
 bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, int offset, int getter_idx, int setter_idx, void* src, const void* id) 
 {
@@ -292,25 +292,28 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 	return changed;
 }
 
-const Attribute* show_udt(const UdtInfo& ui, void* src)
+std::string show_udt(const UdtInfo& ui, void* src)
 {
-	const Attribute* changed_attribute = nullptr;
+	std::string changed_name;
 
 	if (ui.attributes.empty())
 	{
 		for (auto& v : ui.variables)
-			show_variable(ui, v.type, v.name, v.offset, -1, -1, src, &v);
+		{
+			if (show_variable(ui, v.type, v.name, v.offset, -1, -1, src, &v))
+				changed_name = v.name;
+		}
 	}
 	else
 	{
 		for (auto& a : ui.attributes)
 		{
 			if (show_variable(ui, a.type, a.name, a.var_off(), a.getter_idx, a.setter_idx, src, &a))
-				changed_attribute = &a;
+				changed_name = a.name;
 		}
 	}
 
-	return changed_attribute;
+	return changed_name;
 }
 
 static std::unordered_map<uint, UdtInfo*> com_udts;
@@ -361,12 +364,12 @@ void View_Inspector::on_draw()
 		auto e = selection.entity();
 
 		ImGui::PushID(e);
-		auto changed_attribute = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
+		auto changed_name = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		ImGui::PopID();
-		if (changed_attribute)
+		if (!changed_name.empty())
 		{
 			if (auto ins = get_prefab_instance(e); ins)
-				ins->mark_modifier(e->file_id, "", changed_attribute->name);
+				ins->mark_modifier(e->file_id, "", changed_name);
 		}
 
 		ComponentPtr com_menu_tar = nullptr;
@@ -380,11 +383,11 @@ void View_Inspector::on_draw()
 				com_menu_tar = c.get();
 			if (open)
 			{
-				auto changed_attribute = show_udt(ui, c.get());
-				if (changed_attribute)
+				auto changed_name = show_udt(ui, c.get());
+				if (!changed_name.empty())
 				{
 					if (auto ins = get_prefab_instance(e); ins)
-						ins->mark_modifier(e->file_id, ui.name, changed_attribute->name);
+						ins->mark_modifier(e->file_id, ui.name, changed_name);
 				}
 
 				if (ui.name == "flame::cArmature")
@@ -600,6 +603,8 @@ void View_Inspector::on_draw()
 					last_sel_ref_type = th<graphics::Image>();
 					last_sel_ref_obj = image;
 				}
+
+				last_sel_ref_frame = selection.frame;
 			}
 
 			if (last_sel_ref_obj)
@@ -623,7 +628,14 @@ void View_Inspector::on_draw()
 				if (view_type != 0)
 					ImGui::PopImageViewType();
 				if (ImGui::Button("Save"))
+				{
+					auto asset = AssetManagemant::find(path);
+					if (asset)
+						asset->active = false;
 					image->save(path);
+					if (asset)
+						asset->active = true;
+				}
 			}
 		}
 		else if (ext == L".fmat")
@@ -636,19 +648,38 @@ void View_Inspector::on_draw()
 					last_sel_ref_type = th<graphics::Material>();
 					last_sel_ref_obj = material;
 				}
+
+				last_sel_ref_frame = selection.frame;
 			}
 
 			if (last_sel_ref_obj)
 			{
 				auto material = (graphics::MaterialPtr)last_sel_ref_obj;
-				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material);
+				if (!show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty())
+				{
+					auto id = app.renderer->get_material_res(material, -2);
+					if (id > 0)
+					{
+						auto& ref = (uint&)app.renderer->get_material_res_info(id).ref;
+						auto ori_ref = ref;
+						ref = 1;
+						app.renderer->release_material_res(id);
+						app.renderer->get_material_res(material, id);
+						ref = ori_ref;
+					}
+				}
 				if (ImGui::Button("Save"))
+				{
+					auto asset = AssetManagemant::find(path);
+					if (asset)
+						asset->active = false;
 					material->save(path);
+					if (asset)
+						asset->active = true;
+				}
 			}
 		}
 	}
 		break;
 	}
-
-	last_sel_ref_frame = selection.frame;
 }

@@ -62,19 +62,19 @@ namespace flame
 		buf_material_misc.create(dsl_material->get_buf_ui("MaterialMisc"));
 		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
 		mat_reses.resize(buf_material.array_capacity);
-		get_material_res(graphics::Material::get(L"default"));
+		get_material_res(graphics::Material::get(L"default"), -1);
 		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
 		ds_material->set_buffer("MaterialMisc", 0, buf_material_misc.buf.get());
 		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
-		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), sp_bilinear));
-		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), sp_bilinear));
+		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), sp_bilinear, -1));
+		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), sp_bilinear, -1));
 		{
 			auto img = graphics::Image::get(L"flame\\random.png");
 			buf_material_misc.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
-				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat)) : -1);
+				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
 		}
 		buf_material_misc.upload(cb.get());
 		ds_material->update();
@@ -271,31 +271,36 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp)
+	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
 	{
-		auto id = -1;
-		for (auto i = 0; i < tex_reses.size(); i++)
-		{
-			auto& res = tex_reses[i];
-			if (res.iv == iv && res.sp == sp)
-			{
-				res.ref++;
-				return i;
-			}
-		}
-		if (id == -1)
+		if (id < 0)
 		{
 			for (auto i = 0; i < tex_reses.size(); i++)
 			{
-				if (!tex_reses[i].iv)
+				auto& res = tex_reses[i];
+				if (res.iv == iv && res.sp == sp)
 				{
-					id = i;
-					break;
+					if (id != -2)
+						res.ref++;
+					return i;
 				}
 			}
+			if (id == -2)
+				return -1;
+			else
+			{
+				for (auto i = 0; i < tex_reses.size(); i++)
+				{
+					if (!tex_reses[i].iv)
+					{
+						id = i;
+						break;
+					}
+				}
+			}
+			if (id < 0)
+				return -1;
 		}
-		if (id == -1)
-			return -1;
 
 		auto& res = tex_reses[id];
 		res.iv = iv;
@@ -326,31 +331,36 @@ namespace flame
 			res.ref--;
 	}
 
-	int sRendererPrivate::get_mesh_res(graphics::MeshPtr mesh)
+	int sRendererPrivate::get_mesh_res(graphics::MeshPtr mesh, int id)
 	{
-		auto id = -1;
-		for (auto i = 0; i < mesh_reses.size(); i++)
-		{
-			auto& res = mesh_reses[i];
-			if (res.mesh == mesh)
-			{
-				res.ref++;
-				return i;
-			}
-		}
-		if (id == -1)
+		if (id < 0)
 		{
 			for (auto i = 0; i < mesh_reses.size(); i++)
 			{
-				if (!mesh_reses[i].mesh)
+				auto& res = mesh_reses[i];
+				if (res.mesh == mesh)
 				{
-					id = i;
-					break;
+					if (id != -2)
+						res.ref++;
+					return i;
 				}
 			}
+			if (id == -2)
+				return -1;
+			else
+			{
+				for (auto i = 0; i < mesh_reses.size(); i++)
+				{
+					if (!mesh_reses[i].mesh)
+					{
+						id = i;
+						break;
+					}
+				}
+			}
+			if (id < 0)
+				return -1;
 		}
-		if (id == -1)
-			return -1;
 
 		auto& res = mesh_reses[id];
 		res.mesh = mesh;
@@ -419,31 +429,36 @@ namespace flame
 			res.ref--;
 	}
 
-	int sRendererPrivate::get_material_res(graphics::Material* mat)
+	int sRendererPrivate::get_material_res(graphics::Material* mat, int id)
 	{
-		auto id = -1;
-		for (auto i = 0; i < mat_reses.size(); i++)
-		{
-			auto& res = mat_reses[i];
-			if (res.mat == mat)
-			{
-				res.ref++;
-				return i;
-			}
-		}
-		if (id == -1)
+		if (id < 0)
 		{
 			for (auto i = 0; i < mat_reses.size(); i++)
 			{
-				if (!mat_reses[i].mat)
+				auto& res = mat_reses[i];
+				if (res.mat == mat)
 				{
-					id = i;
-					break;
+					if (id != -2)
+						res.ref++;
+					return i;
 				}
 			}
+			if (id == -2)
+				return -1;
+			else
+			{
+				for (auto i = 0; i < mat_reses.size(); i++)
+				{
+					if (!mat_reses[i].mat)
+					{
+						id = i;
+						break;
+					}
+				}
+			}
+			if (id < 0)
+				return -1;
 		}
-		if (id == -1)
-			return -1;
 
 		auto& res = mat_reses[id];
 		res.mat = mat;
@@ -473,7 +488,7 @@ namespace flame
 				{
 					res.texs[i].second = image;
 					res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
-						graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode));
+						graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
 				}
 			}
 		}
@@ -589,6 +604,11 @@ namespace flame
 		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
 		pls_deferred[modifier] = ret;
 		return ret;
+	}
+
+	void sRendererPrivate::update_res(uint id, uint type_hash, uint name_hash)
+	{
+
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)

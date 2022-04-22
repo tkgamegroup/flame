@@ -93,7 +93,7 @@ namespace flame
 			if (mesh_res_id != -1)
 				sRenderer::instance()->release_mesh_res(mesh_res_id);
 			mesh = _mesh;
-			mesh_res_id = mesh ? sRenderer::instance()->get_mesh_res(mesh) : -1;
+			mesh_res_id = mesh ? sRenderer::instance()->get_mesh_res(mesh, -1) : -1;
 		}
 
 		node->mark_transform_dirty();
@@ -114,7 +114,7 @@ namespace flame
 			if (material)
 				graphics::Material::release(material);
 			material = _material;
-			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
+			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
 		}
 		else if (_material)
 			graphics::Material::release(_material);

@@ -159,19 +159,21 @@ namespace flame
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
 
-		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp) override;
+		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;
 		const TexRes& get_texture_res_info(uint id) override { return tex_reses[id]; }
 
-		int get_mesh_res(graphics::MeshPtr mesh) override;
+		int get_mesh_res(graphics::MeshPtr mesh, int id) override;
 		void release_mesh_res(uint id) override;
 		const MeshRes& get_mesh_res_info(uint id) override { return mesh_reses[id]; }
 
-		int get_material_res(graphics::Material* mat) override;
+		int get_material_res(graphics::Material* mat, int id) override;
 		void release_material_res(uint id) override;
 		const MatRes& get_material_res_info(uint id) override { return mat_reses[id]; }
 		graphics::GraphicsPipelinePtr get_material_pipeline(MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0);
 		graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0);
+
+		void update_res(uint id, uint type_hash, uint name_hash) override;
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;

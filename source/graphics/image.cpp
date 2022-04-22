@@ -663,11 +663,10 @@ namespace flame
 						for (auto i = 1; i < ret->n_levels; i++)
 							scale_image_alphatest_coverage(ret, i, coverage, mipmap_option.alpha_test);
 					}
-
-					ret->filename = filename;
-					ret->srgb = srgb;
 				}
 
+				ret->filename = filename;
+				ret->srgb = srgb;
 				ret->ref = 1;
 				loaded_images.emplace_back(ret);
 				return ret;

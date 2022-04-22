@@ -112,7 +112,7 @@ namespace flame
 			if (material)
 				graphics::Material::release(material);
 			material = _material;
-			material_res_id = material ? sRenderer::instance()->get_material_res(material) : -1;
+			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
 		}
 		else if (_material)
 			graphics::Material::release(_material);

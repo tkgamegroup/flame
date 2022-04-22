@@ -48,21 +48,35 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
-		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr) = 0;
+		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
+		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;
 		virtual void release_texture_res(uint id) = 0;
 		virtual const TexRes& get_texture_res_info(uint id) = 0;
 
-		virtual int get_mesh_res(graphics::MeshPtr mesh) = 0;
+		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
+		virtual int get_mesh_res(graphics::MeshPtr mesh, int id = -1) = 0;
 		virtual void release_mesh_res(uint id) = 0;
 		virtual const MeshRes& get_mesh_res_info(uint id) = 0;
 
-		virtual int get_material_res(graphics::Material* mat) = 0;
+		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
+		virtual int get_material_res(graphics::Material* mat, int id = -1) = 0;
 		virtual void release_material_res(uint id) = 0;
 		virtual const MatRes& get_material_res_info(uint id) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;
 		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) = 0;
+
+		// id: res id
+		// type_hash: texture, mesh or material
+		// name_hash: name or genre, to decide which part to update, set to 0 means ALL, (see below)
+		// Type      | Name                     | Description
+		//  texture  |  *currently not support  |  -
+		//  mesh     |  *currently not support  |  -
+		//  material |  parameters              |  all data except textures and pipelines
+		//  material |  textures                |  the textures
+		//  material |  pipelines               |  the pipelines
+		virtual void update_res(uint id, uint type_hash, uint name_hash) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_armature_instance(int id) = 0;

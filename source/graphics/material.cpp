@@ -47,7 +47,10 @@ namespace flame
 				for (auto& m : materials)
 				{
 					if (m->filename == filename)
+					{
+						m->ref++;
 						return m.get();
+					}
 				}
 
 				pugi::xml_document doc;
@@ -61,6 +64,7 @@ namespace flame
 				auto ret = new MaterialPrivate;
 				unserialize_xml(doc_root, ret);
 
+				ret->filename = filename;
 				ret->ref = 1;
 				materials.emplace_back(ret);
 				return ret;

@@ -292,10 +292,10 @@ void View_Project::on_draw()
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
 		for (auto& p : changed_files)
 		{
-			if (p.second & FileModified || p.second & FileRemoved || p.second & FileRenamed)
+			if ((p.second & FileModified) || (p.second & FileRemoved) || (p.second & FileRenamed))
 			{
 				auto asset = AssetManagemant::find(p.first);
-				if (asset)
+				if (asset && asset->active)
 					changed_assets.emplace_back(asset, p.first);
 			}
 		}
