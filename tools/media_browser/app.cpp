@@ -14,8 +14,13 @@ struct File
 struct ShowItem
 {
 	uint idx;
-	std::unique_ptr<graphics::Image> image;
+	graphics::ImagePtr image = nullptr;
 	float thumbnail_scale;
+
+	~ShowItem()
+	{
+		graphics::Image::release(image);
+	}
 
 	File& file() const;
 };
@@ -26,7 +31,7 @@ struct App : UniverseApplication
 {
 	std::filesystem::path directory;
 	std::vector<File> files;
-	std::vector<ShowItem> show_items;
+	std::vector<std::unique_ptr<ShowItem>> show_items;
 	int showing_item_idx = -1;
 	float showing_item_scl = 1.f;
 	vec2 showing_item_off = vec2(0.f);
@@ -34,7 +39,7 @@ struct App : UniverseApplication
 
 	void init();
 	void open_dir(const std::filesystem::path& path);
-	ShowItem& add_show_item(int idx, graphics::ImagePtr image);
+	ShowItem* add_show_item(int idx, graphics::ImagePtr image);
 	void select_random();
 	void reset_showing_item();
 };
@@ -65,10 +70,10 @@ void App::init()
 
 		if (peeding_delete_idx != -1)
 		{
-			graphics::Queue::get(nullptr)->wait_idle();
+			graphics::Queue::get()->wait_idle();
 			auto& item = show_items[peeding_delete_idx];
-			move_to_recycle_bin(item.file().path);
-			item.file().path.clear();
+			move_to_recycle_bin(item->file().path);
+			item->file().path.clear();
 			show_items.erase(show_items.begin() + peeding_delete_idx);
 			if (showing_item_idx == peeding_delete_idx && peeding_delete_idx >= show_items.size())
 				showing_item_idx = (int)show_items.size() - 1;
@@ -80,7 +85,7 @@ void App::init()
 		if (showing_item_idx == -1)
 		{
 			if (ImGui::Button("Select Dir"))
-				ifd::FileDialog::Instance().Open("OpenDialog", "Select a directory", "");
+				ifd::FileDialog::Instance().Open("OpenDialog", "Select a directory", directory.string());
 			ImGui::SameLine();
 			ImGui::Text("items: %d", files.size());
 			if (ImGui::Button("Random"))
@@ -97,7 +102,7 @@ void App::init()
 					auto& item = show_items[i];
 					ImGui::PushID(i);
 
-					auto pressed = ImGui::InvisibleButton("", (vec2)item.image->size * item.thumbnail_scale + vec2(4));
+					auto pressed = ImGui::InvisibleButton("", (vec2)item->image->size * item->thumbnail_scale + vec2(4));
 					auto p0 = (vec2)ImGui::GetItemRectMin();
 					auto p1 = (vec2)ImGui::GetItemRectMax();
 					auto active = ImGui::IsItemActive();
@@ -110,7 +115,7 @@ void App::init()
 					else				col = ImColor(0, 0, 0, 0);
 					auto draw_list = ImGui::GetWindowDrawList();
 					draw_list->AddRectFilled(p0, p1, col);
-					draw_list->AddImage(item.image.get(), p0 + vec2(2), p1 - vec2(2));
+					draw_list->AddImage(item->image, p0 + vec2(2), p1 - vec2(2));
 
 					ImGui::PopID();
 					float next_x2 = ImGui::GetItemRectMax().x + spacing + thumbnail_size;
@@ -128,7 +133,8 @@ void App::init()
 				if (hovered_idx != -1)
 				{
 					auto& item = show_items[hovered_idx];
-					ImGui::Text("%s %d %dx%d", item.file().path_u8.c_str(), (uint)item.file().size, item.image->size.x, item.image->size.y);
+					auto& file = item->file();
+					ImGui::Text("%s %d %dx%d", file.path_u8.c_str(), (uint)file.size, item->image->size.x, item->image->size.y);
 
 					if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
 						peeding_delete_idx = hovered_idx;
@@ -147,7 +153,7 @@ void App::init()
 
 			auto& io = ImGui::GetIO();
 			auto draw_list = ImGui::GetWindowDrawList();
-			draw_list->AddImage(item.image.get(), showing_item_off, showing_item_off + (vec2)item.image->size * showing_item_scl);
+			draw_list->AddImage(item->image, showing_item_off, showing_item_off + (vec2)item->image->size * showing_item_scl);
 			
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsKeyPressed(Keyboard_Esc))
 				showing_item_idx = -1;
@@ -210,28 +216,29 @@ void App::open_dir(const std::filesystem::path& path)
 	}
 }
 
-ShowItem& App::add_show_item(int idx, graphics::ImagePtr image)
+ShowItem* App::add_show_item(int idx, graphics::ImagePtr image)
 {
 	auto& file = files[idx];
 	if (!file.size)
 		file.size = std::filesystem::file_size(file.path);
-	auto& ret = show_items.emplace_back();
-	ret.idx = idx;
-	ret.image.reset(image);
-	ret.thumbnail_scale = (float)thumbnail_size / (float)image->size.y;
+	auto ret = new ShowItem;
+	ret->idx = idx;
+	ret->image = image;
+	ret->thumbnail_scale = (float)thumbnail_size / (float)image->size.y;
+	show_items.emplace_back(ret);
 	return ret;
 }
 
 void App::select_random()
 {
-	graphics::Queue::get(nullptr)->wait_idle();
+	graphics::Queue::get()->wait_idle();
 	show_items.clear();
 	auto valid_idx = [&](int idx) {
 		if (files[idx].path.empty())
 			return false;
 		for (auto& item : show_items)
 		{
-			if (item.idx == idx)
+			if (item->idx == idx)
 				return false;
 		}
 		return true;
@@ -242,8 +249,9 @@ void App::select_random()
 		auto idx = linearRand(0, (int)files.size() - 1);
 		if (!valid_idx(idx)) continue;
 		auto& path = files[idx].path;
-		auto img = graphics::Image::create(nullptr, path, false);
-		if (!img) continue;
+		auto img = graphics::Image::get(path, false);
+		if (!img) 
+			continue;
 		if (img->size.x > thumbnail_size && img->size.y > thumbnail_size)
 		{
 			auto aspect = (float)img->size.x / (float)img->size.y;
@@ -253,7 +261,7 @@ void App::select_random()
 				continue;
 			}
 		}
-		delete img;
+		graphics::Image::release(img);
 	}
 }
 
