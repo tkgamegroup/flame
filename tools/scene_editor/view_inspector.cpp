@@ -115,16 +115,16 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			switch (ti->vec_size)
 			{
 			case 1:
-				changed = ImGui::DragFloat(name.c_str(), (float*)data);
+				changed = ImGui::DragFloat(name.c_str(), (float*)data, 0.01f);
 				break;
 			case 2:
-				changed = ImGui::DragFloat2(name.c_str(), (float*)data);
+				changed = ImGui::DragFloat2(name.c_str(), (float*)data, 0.01f);
 				break;
 			case 3:
-				changed = ImGui::DragFloat3(name.c_str(), (float*)data);
+				changed = ImGui::DragFloat3(name.c_str(), (float*)data, 0.01f);
 				break;
 			case 4:
-				changed = ImGui::DragFloat4(name.c_str(), (float*)data);
+				changed = ImGui::DragFloat4(name.c_str(), (float*)data, 0.01f);
 				break;
 			}
 			break;
@@ -405,9 +405,9 @@ void View_Inspector::on_draw()
 				else if (ui.name == "flame::cTerrain")
 				{
 					auto terrain = (cTerrainPtr)c.get();
-					if (ImGui::Button("Splash By Normal"))
+					if (ImGui::Button("Auto Splash"))
 					{
-						struct SplashDialog : Dialog
+						struct AutoSplashDialog : Dialog
 						{
 							cTerrainPtr terrain;
 							uint layers = 0;
@@ -421,7 +421,7 @@ void View_Inspector::on_draw()
 								auto material = terrain->material;
 								if (material)
 								{
-									auto dialog = new SplashDialog;
+									auto dialog = new AutoSplashDialog;
 									dialog->title = "Splash";
 									dialog->terrain = terrain;
 									for (auto& d : material->shader_defines)
@@ -539,7 +539,11 @@ void View_Inspector::on_draw()
 							}
 						};
 
-						SplashDialog::open(terrain);
+						AutoSplashDialog::open(terrain);
+					}
+					if (ImGui::Button("Auto Spawn"))
+					{
+
 					}
 				}
 			}
@@ -659,14 +663,7 @@ void View_Inspector::on_draw()
 				{
 					auto id = app.renderer->get_material_res(material, -2);
 					if (id > 0)
-					{
-						auto& ref = (uint&)app.renderer->get_material_res_info(id).ref;
-						auto ori_ref = ref;
-						ref = 1;
-						app.renderer->release_material_res(id);
-						app.renderer->get_material_res(material, id);
-						ref = ori_ref;
-					}
+						app.renderer->update_res(id, "material"_h, "parameters"_h);
 				}
 				if (ImGui::Button("Save"))
 				{

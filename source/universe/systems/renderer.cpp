@@ -429,6 +429,69 @@ namespace flame
 			res.ref--;
 	}
 
+	void sRendererPrivate::update_mat_res(uint id, bool dying, bool update_parameters, bool update_textures, bool update_pipelines)
+	{
+		auto& res = mat_reses[id];
+
+		if (update_textures)
+		{
+			if (dying)
+			{
+				for (auto& tex : res.texs)
+				{
+					if (tex.first != -1)
+						release_texture_res(tex.first);
+					if (tex.second)
+						graphics::Image::release(tex.second);
+					tex.first = -1;
+					tex.second = nullptr;
+				}
+				res.texs.clear();
+			}
+			else
+			{
+				res.texs.resize(res.mat->textures.size());
+				for (auto i = 0; i < res.texs.size(); i++)
+				{
+					res.texs[i].first = -1;
+					res.texs[i].second = nullptr;
+					auto& src = res.mat->textures[i];
+					if (!src.filename.empty())
+					{
+						if (auto image = graphics::Image::get(src.filename, src.srgb, { src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f }); image)
+						{
+							res.texs[i].second = image;
+							res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
+								graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
+						}
+					}
+				}
+			}
+		}
+		if (update_pipelines)
+		{
+			for (auto& pl : res.pls)
+				graphics::GraphicsPipeline::release(pl.second);
+			res.pls.clear();
+		}
+		if (update_parameters || update_textures)
+		{
+			graphics::InstanceCB cb;
+			buf_material.select_item(id);
+			buf_material.set_var<"opaque"_h>((int)res.mat->opaque);
+			buf_material.set_var<"color"_h>(res.mat->color);
+			buf_material.set_var<"metallic"_h>(res.mat->metallic);
+			buf_material.set_var<"roughness"_h>(res.mat->roughness);
+			buf_material.set_var<"alpha_test"_h>(res.mat->alpha_test);
+			buf_material.set_var<"f"_h>(res.mat->float_values);
+			buf_material.set_var<"i"_h>(res.mat->int_values);
+			auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
+			for (auto i = 0; i < res.texs.size(); i++)
+				ids[i] = res.texs[i].first;
+			buf_material.upload(cb.get());
+		}
+	}
+
 	int sRendererPrivate::get_material_res(graphics::Material* mat, int id)
 	{
 		if (id < 0)
@@ -463,41 +526,7 @@ namespace flame
 		auto& res = mat_reses[id];
 		res.mat = mat;
 		res.ref = 1;
-
-		graphics::InstanceCB cb;
-
-		buf_material.select_item(id);
-		buf_material.set_var<"opaque"_h>((int)mat->opaque);
-		buf_material.set_var<"color"_h>(mat->color);
-		buf_material.set_var<"metallic"_h>(mat->metallic);
-		buf_material.set_var<"roughness"_h>(mat->roughness);
-		buf_material.set_var<"alpha_test"_h>(mat->alpha_test);
-		buf_material.set_var<"f"_h>(mat->float_values);
-		buf_material.set_var<"i"_h>(mat->int_values);
-
-		res.texs.resize(mat->textures.size());
-		for (auto i = 0; i < res.texs.size(); i++)
-		{
-			res.texs[i].first = -1;
-			res.texs[i].second = nullptr;
-			auto& src = mat->textures[i];
-			if (!src.filename.empty())
-			{
-				auto image = graphics::Image::get(src.filename, src.srgb, { src.auto_mipmap, i == mat->alpha_map ? mat->alpha_test : 0.f });
-				if (image)
-				{
-					res.texs[i].second = image;
-					res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
-						graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
-				}
-			}
-		}
-		auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
-		for (auto i = 0; i < res.texs.size(); i++)
-			ids[i] = res.texs[i].first;
-
-		buf_material.upload(cb.get());
-
+		update_mat_res(id, false);
 		return id;
 	}
 
@@ -506,18 +535,7 @@ namespace flame
 		auto& res = mat_reses[id];
 		if (res.ref == 1)
 		{
-			for (auto& tex : res.texs)
-			{
-				if (tex.first != -1)
-				{
-					release_texture_res(tex.first);
-					graphics::Image::release(tex.second);
-					tex.second = nullptr;
-				}
-			}
-			for (auto& pl : res.pls)
-				graphics::GraphicsPipeline::release(pl.second);
-
+			update_mat_res(id, true);
 			res.mat = nullptr;
 		}
 		else
@@ -608,7 +626,18 @@ namespace flame
 
 	void sRendererPrivate::update_res(uint id, uint type_hash, uint name_hash)
 	{
-
+		switch (type_hash)
+		{
+		case "material"_h:
+			if (auto& res = mat_reses[id]; res.mat)
+			{
+				update_mat_res(id, false, 
+					name_hash == "parameters"_h || name_hash == 0,
+					name_hash == "textures"_h || name_hash == 0, 
+					name_hash == "pipelines"_h || name_hash == 0);
+			}
+			break;
+		}
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)

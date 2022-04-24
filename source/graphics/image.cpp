@@ -369,7 +369,27 @@ namespace flame
 			}
 			else
 			{
+				StagingBuffer sb(data_size, nullptr);
+				{
+					InstanceCB cb;
+					cb->image_barrier(this, {}, graphics::ImageLayoutTransferSrc);
+					graphics::BufferImageCopy cpy;
+					cpy.img_ext = size;
+					cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
+					cb->image_barrier(this, {}, graphics::ImageLayoutShaderReadOnly);
+				}
 
+				int chs = 0;
+				switch (format)
+				{
+				case Format_R8_UNORM: chs = 1; break;
+				case Format_R8G8B8A8_UNORM: chs = 4; break;
+				}
+
+				auto bmp = Bitmap::create(size, chs);
+				memcpy(bmp->data, sb->mapped, sb->size);
+				bmp->save(replace_ext(filename, L".png"));
+				delete bmp;
 			}
 		}
 

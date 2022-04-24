@@ -13,6 +13,9 @@ cull_mode
 layout(push_constant) uniform PushConstant
 {
     vec2 offset;
+    float scale;
+    float falloff;
+    float power;
 }pc;
 @
 
@@ -21,20 +24,20 @@ layout (location = 0) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_col;
 
-float random(vec2 st) 
+float random(ivec2 st) 
 {
-    return fract(sin(dot(st, vec2(12.9898,78.233))) * 43758.5453123);
+    return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
 float noise(vec2 st)
 {
-    vec2 i = floor(st);
+    ivec2 i = ivec2(floor(st));
     vec2 f = fract(st);
 
     float a = random(i);
-    float b = random(i + vec2(1.0, 0.0));
-    float c = random(i + vec2(0.0, 1.0));
-    float d = random(i + vec2(1.0, 1.0));
+    float b = random(i + ivec2(1, 0));
+    float c = random(i + ivec2(0, 1));
+    float d = random(i + ivec2(1, 1));
 
     vec2 u = f * f * (3.0 - 2.0 * f);
 
@@ -48,7 +51,6 @@ float fbm(vec2 st)
 {
     float value = 0.0;
     float amplitude = 0.5;
-    float frequency = 0.0;
 
     for (int i = 0; i < OCTAVES; i++) 
     {
@@ -61,6 +63,13 @@ float fbm(vec2 st)
 
 void main()
 {
-    o_col = vec4(vec3(fbm(i_uv)), 1.0);
+    float value = pow(fbm(i_uv * pc.scale + pc.offset), pc.power);
+    float to_edge = min(min(i_uv.x, 1.0 - i_uv.x), min(i_uv.y, 1.0 - i_uv.y));
+    if (to_edge < pc.falloff)
+    {
+       float d = (pc.falloff - to_edge) / pc.falloff;
+       value *= 1.0 - d * d;
+    }
+    o_col = vec4(vec3(value), 1.0);
 }
 @

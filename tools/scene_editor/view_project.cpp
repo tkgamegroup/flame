@@ -109,8 +109,12 @@ void View_Project::init()
 				int format = 0;
 				ivec2 size = ivec2(256);
 				int type = 0;
+				vec2 noise_offset = vec2(3.8f, 7.5f);
+				float noise_scale = 4.f;
+				float noise_falloff = 10.f;
+				float noise_power = 3.f;
 
-				std::unique_ptr<graphics::Image> image;
+				std::unique_ptr<graphics::Image> preview;
 
 				static void open(const std::filesystem::path& dir)
 				{
@@ -120,48 +124,59 @@ void View_Project::init()
 					Dialog::open(dialog);
 				}
 
-				void generate_image()
+				graphics::ImagePtr generate_image()
 				{
-					if (size.x > 0 && size.y > 0)
-					{
-						graphics::Format fmt;
-						switch (format)
-						{
-						case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
-						case 1: fmt = graphics::Format_R8_UNORM; break;
-						}
-						image.reset(graphics::Image::create(fmt, (uvec2)size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+					if (size.x <= 0 || size.y <= 0)
+						return nullptr;
 
-						{
-							graphics::InstanceCB cb;
-							cb->image_barrier(image.get(), {}, graphics::ImageLayoutAttachment);
-							cb->set_viewport(Rect(vec2(0), vec2(size)));
-							cb->set_scissor(Rect(vec2(0), vec2(size)));
-							switch (type)
-							{
-							case 0:
-								cb->begin_renderpass(nullptr, image->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-								cb->end_renderpass();
-								break;
-							case 1:
-								cb->begin_renderpass(nullptr, image->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
-								cb->end_renderpass();
-								break;
-							case 2:
-							{
-								auto fb = image->get_shader_write_dst();
-								cb->begin_renderpass(nullptr, fb);
-								auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
-									{ "rp=" + str(fb->renderpass) });
-								cb->bind_pipeline(pl);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
-							}
-								break;
-							}
-							cb->image_barrier(image.get(), {}, graphics::ImageLayoutShaderReadOnly);
-						}
+					graphics::Format fmt;
+					switch (format)
+					{
+					case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
+					case 1: fmt = graphics::Format_R8_UNORM; break;
 					}
+
+					auto ret = graphics::Image::create(fmt, (uvec2)size, graphics::ImageUsageTransferSrc | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
+
+					{
+						graphics::InstanceCB cb;
+						cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
+						cb->set_viewport(Rect(vec2(0), vec2(size)));
+						cb->set_scissor(Rect(vec2(0), vec2(size)));
+						switch (type)
+						{
+						case 0:
+							cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+							cb->end_renderpass();
+							break;
+						case 1:
+							cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
+							cb->end_renderpass();
+							break;
+						case 2:
+						{
+							auto fb = ret->get_shader_write_dst();
+							graphics::PipelineResourceManager<FLAME_UID> prm;
+							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\perlin_fbm.pipeline",
+								{ "rp=" + str(fb->renderpass) });
+							prm.init(pl->layout);
+
+							cb->begin_renderpass(nullptr, fb);
+							cb->bind_pipeline(pl);
+							prm.set_pc_var<"offset"_h>(noise_offset);
+							prm.set_pc_var<"scale"_h>(noise_scale);
+							prm.set_pc_var<"falloff"_h>(1.f / clamp(noise_falloff, 2.f, 100.f));
+							prm.set_pc_var<"power"_h>(noise_power);
+							prm.push_constant(cb.get());
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+							break;
+						}
+						cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+					}
+
+					return ret;
 				}
 
 				void draw() override
@@ -178,49 +193,32 @@ void View_Project::init()
 						static const char* types[] = {
 							"Black",
 							"White",
-							"FBM Noise"
+							"Perlin noise fbm"
 						};
 						ImGui::Combo("type", &type, types, countof(types));
 						switch (type)
 						{
 						case 2:
+							ImGui::DragFloat2("offset", (float*)&noise_offset, 0.1f, 0.f, 100.f);
+							ImGui::DragFloat("scale", &noise_scale, 0.1f, 0.f, 10.f);
+							ImGui::DragFloat("falloff", &noise_falloff, 1.f, 2.f, 100.f);
+							ImGui::DragFloat("power", &noise_power, 0.01f, 1.f, 10.f);
 							break;
 						}
 						if (ImGui::Button("Preview"))
-							generate_image();
-						if (image)
-							ImGui::Image(image.get(), (vec2)size);
+						{
+							graphics::Queue::get()->wait_idle();
+							preview.reset(generate_image());
+						}
+						if (preview)
+							ImGui::Image(preview.get(), (vec2)size);
 						if (ImGui::Button("OK"))
 						{
 							if (!name.empty())
 							{
-								generate_image();
-
-								int chs = 0;
-								switch (format)
-								{
-								case 0: chs = 4;
-								case 1: chs = 1;
-								}
-								if (chs > 0)
-								{
-									graphics::StagingBuffer stag(image_pitch(chs * size.x) * size.y);
-									{
-										graphics::InstanceCB cb;
-
-										cb->image_barrier(image.get(), {}, graphics::ImageLayoutTransferSrc);
-										graphics::BufferImageCopy cpy;
-										cpy.img_ext = size;
-										cb->copy_image_to_buffer(image.get(), stag.get(), { &cpy, 1 });
-										cb->image_barrier(image.get(), {}, graphics::ImageLayoutShaderReadOnly);
-									}
-
-									auto bmp = Bitmap::create(size, chs);
-									memcpy(bmp->data, stag->mapped, stag->size);
-									auto fn = dir / name;
-									fn.replace_extension(L".png");
-									bmp->save(fn);
-								}
+								auto image = generate_image();
+								image->save(dir / name);
+								delete image;
 
 								close();
 								ImGui::CloseCurrentPopup();
