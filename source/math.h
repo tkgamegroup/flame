@@ -239,12 +239,12 @@ namespace flame
 		{
 			dst[0] = m * vec4(a.x, a.y, a.z, 1.f);
 			dst[1] = m * vec4(b.x, a.y, a.z, 1.f);
-			dst[2] = m * vec4(a.x, a.y, b.z, 1.f);
-			dst[3] = m * vec4(a.x, b.y, a.z, 1.f);
-			dst[4] = m * vec4(a.x, b.y, b.z, 1.f);
+			dst[2] = m * vec4(b.x, a.y, b.z, 1.f);
+			dst[3] = m * vec4(a.x, a.y, b.z, 1.f);
+			dst[4] = m * vec4(a.x, b.y, a.z, 1.f);
 			dst[5] = m * vec4(b.x, b.y, a.z, 1.f);
-			dst[6] = m * vec4(b.x, a.y, b.z, 1.f);
-			dst[7] = m * vec4(b.x, b.y, b.z, 1.f);
+			dst[6] = m * vec4(b.x, b.y, b.z, 1.f);
+			dst[7] = m * vec4(a.x, b.y, b.z, 1.f);
 		}
 
 		std::vector<vec3> get_points(const mat4& m = mat4(1.f)) const
