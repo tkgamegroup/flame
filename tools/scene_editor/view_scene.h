@@ -17,6 +17,9 @@ struct View_Scene : View
 
 	View_Scene();
 
+	cCameraPtr curr_camera();
+	void focus_to_selected();
+	void selected_to_focus();
 	void on_draw() override;
 };
 

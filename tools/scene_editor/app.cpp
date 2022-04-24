@@ -58,7 +58,7 @@ App app;
 
 struct NavMeshTest
 {
-	inline static auto name = "NavMesh Test";
+	inline static auto name = "Test";
 	inline static auto hash = sh(name);
 
 	bool open = false;
@@ -130,7 +130,7 @@ void App::init()
 				;
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Scene"))
+		if (ImGui::BeginMenu("Edit"))
 		{
 			if (ImGui::MenuItem("Create Empty"))
 				cmd_create_entity();
@@ -146,36 +146,43 @@ void App::init()
 				cmd_create_entity(nullptr, "camera"_h);
 			if (ImGui::MenuItem("Delete"))
 				cmd_delete_entity();
+			if (ImGui::MenuItem("Focus To Selected (F)"))
+				view_scene.focus_to_selected();
+			if (ImGui::MenuItem("Selected To Focus (G)"))
+				view_scene.selected_to_focus();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Generate NavMesh"))
-				sScene::instance()->generate_nav_mesh();
-			if (ImGui::MenuItem(NavMeshTest::name, nullptr, &navmesh_test.open))
+			if (ImGui::BeginMenu("NavMesh"))
 			{
-				auto node = e_editor->get_component_i<cNode>(0);
-				if (!navmesh_test.open)
-					node->drawers.remove(NavMeshTest::hash);
-				else
+				if (ImGui::MenuItem("Generate"))
+					sScene::instance()->generate_nav_mesh();
+				if (ImGui::MenuItem("Test", nullptr, &navmesh_test.open))
 				{
-					node->drawers.add([&](sRendererPtr renderer) {
-						{
-							std::vector<vec3> points;
-							points.push_back(navmesh_test.start - vec3(1, 0, 0));
-							points.push_back(navmesh_test.start + vec3(1, 0, 0));
-							points.push_back(navmesh_test.start - vec3(0, 0, 1));
-							points.push_back(navmesh_test.start + vec3(0, 0, 1));
-							renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
-						}
-						{
-							std::vector<vec3> points;
-							points.push_back(navmesh_test.end - vec3(1, 0, 0));
-							points.push_back(navmesh_test.end + vec3(1, 0, 0));
-							points.push_back(navmesh_test.end - vec3(0, 0, 1));
-							points.push_back(navmesh_test.end + vec3(0, 0, 1));
-							renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
-						}
-						if (!navmesh_test.points.empty())
-							renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
-					}, NavMeshTest::hash);
+					auto node = e_editor->get_component_i<cNode>(0);
+					if (!navmesh_test.open)
+						node->drawers.remove(NavMeshTest::hash);
+					else
+					{
+						node->drawers.add([&](sRendererPtr renderer) {
+							{
+								std::vector<vec3> points;
+								points.push_back(navmesh_test.start - vec3(1, 0, 0));
+								points.push_back(navmesh_test.start + vec3(1, 0, 0));
+								points.push_back(navmesh_test.start - vec3(0, 0, 1));
+								points.push_back(navmesh_test.start + vec3(0, 0, 1));
+								renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
+							}
+							{
+								std::vector<vec3> points;
+								points.push_back(navmesh_test.end - vec3(1, 0, 0));
+								points.push_back(navmesh_test.end + vec3(1, 0, 0));
+								points.push_back(navmesh_test.end - vec3(0, 0, 1));
+								points.push_back(navmesh_test.end + vec3(0, 0, 1));
+								renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
+							}
+							if (!navmesh_test.points.empty())
+								renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
+							}, NavMeshTest::hash);
+					}
 				}
 			}
 			ImGui::EndMenu();

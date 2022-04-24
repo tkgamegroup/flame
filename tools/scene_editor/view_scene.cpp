@@ -15,6 +15,35 @@ View_Scene::View_Scene() :
 {
 }
 
+cCameraPtr View_Scene::curr_camera()
+{
+	return cCamera::list()[camera_idx];
+}
+
+void View_Scene::focus_to_selected()
+{
+	if (selection.type == Selection::tEntity)
+	{
+		if (auto node = selection.entity()->get_component_i<cNodeT>(0); node)
+		{
+			auto camera_node = curr_camera()->node;
+			camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
+		}
+	}
+}
+
+void View_Scene::selected_to_focus()
+{
+	if (selection.type == Selection::tEntity)
+	{
+		if (auto node = selection.entity()->get_component_i<cNode>(0); node)
+		{
+			auto camera_node = curr_camera()->node;
+			node->set_pos(camera_node->g_pos - camera_node->g_rot[2] * camera_zoom);
+		}
+	}
+}
+
 void View_Scene::on_draw()
 {
 	auto& camera_list = cCamera::list();
@@ -287,13 +316,9 @@ void View_Scene::on_draw()
 					app.render_frames += 30;
 				}
 				if (io.KeysDown[Keyboard_F])
-				{
-					if (selection.type == Selection::tEntity)
-					{
-						if (auto node = selection.entity()->get_component_i<cNodeT>(0); node)
-							camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
-					}
-				}
+					focus_to_selected();
+				if (io.KeysDown[Keyboard_G])
+					selected_to_focus();
 				if (ImGui::IsKeyPressed(Keyboard_Del))
 					app.cmd_delete_entity();
 			}

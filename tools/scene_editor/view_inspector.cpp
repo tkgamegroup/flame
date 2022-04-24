@@ -579,6 +579,8 @@ void View_Inspector::on_draw()
 			}
 			ImGui::EndPopup();
 		}
+
+		last_sel_ref_frame = selection.frame;
 	}
 		break;
 	case Selection::tPath:
