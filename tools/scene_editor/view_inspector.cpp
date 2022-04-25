@@ -58,10 +58,10 @@ struct EditingVector
 			_vec = &v;
 		auto& vec = *(std::vector<char>*)_vec;
 		auto old_size = vec.size() / item_size;
-		for (auto i = size; i < old_size; i++)
+		for (auto i = 0; i < old_size; i++)
 			type->destroy(vec.data() + i * item_size, false);
 		editing_vector.v.resize(size * item_size);
-		for (auto i = old_size; i < size; i++)
+		for (auto i = 0; i < size; i++)
 			type->create(vec.data() + i * item_size);
 	}
 
@@ -270,7 +270,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 					{
 						if (ImGui::TreeNode(str(i).c_str()))
 						{
-							auto p = editing_vector.v.data() + ui.size * i;
+							auto p = editing_vector.v.data() + ti->size * i;
 							show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
 							show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
 							ImGui::TreePop();
@@ -372,7 +372,8 @@ void View_Inspector::on_draw()
 				ins->mark_modifier(e->file_id, "", changed_name);
 		}
 
-		ComponentPtr com_menu_tar = nullptr;
+		static ComponentPtr target_component = nullptr;
+		auto open_component_menu = false;
 		for (auto& c : e->components)
 		{
 			ImGui::PushID(c.get());
@@ -380,7 +381,10 @@ void View_Inspector::on_draw()
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
 			if (ImGui::Button("..."))
-				com_menu_tar = c.get();
+			{
+				target_component = c.get();
+				open_component_menu = true;
+			}
 			if (open)
 			{
 				auto changed_name = show_udt(ui, c.get());
@@ -562,12 +566,15 @@ void View_Inspector::on_draw()
 				ImGui::OpenPopup("add_component");
 		}
 
-		if (com_menu_tar)
+		if (open_component_menu)
+		{
 			ImGui::OpenPopup("component_menu");
+			open_component_menu = false;
+		}
 		if (ImGui::BeginPopup("component_menu"))
 		{
 			if (ImGui::Selectable("Remove"))
-				e->remove_component(com_menu_tar->type_hash);
+				e->remove_component(target_component->type_hash);
 			ImGui::EndPopup();
 		}
 		if (ImGui::BeginPopup("add_component"))

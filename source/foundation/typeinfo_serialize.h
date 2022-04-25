@@ -312,9 +312,9 @@ namespace flame
 					if (setter_idx == -1)
 					{
 						auto p = (char*)dst + offset;
-						for (auto c : c.children())
+						for (auto cc : c.children())
 						{
-							unserialize_xml(*ui, c, p, spec);
+							unserialize_xml(*ui, cc, p, spec);
 							p += ui->size;
 						}
 					}
@@ -328,10 +328,10 @@ namespace flame
 				if (setter_idx == -1)
 				{
 					auto& vec = *(std::vector<int>*)((char*)dst + offset);
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
 						vec.resize(vec.size() + 1);
-						ti->unserialize(c.attribute("v").value(), &vec[vec.size() - 1]);
+						ti->unserialize(cc.attribute("v").value(), &vec[vec.size() - 1]);
 					}
 				}
 			}
@@ -342,13 +342,13 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 				auto read = [&](std::vector<char>& vec) {
 					auto len = 0;
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
 						len++;
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						ti->unserialize(c.attribute("v").value(), pd);
+						ti->unserialize(cc.attribute("v").value(), pd);
 					}
 					return len;
 				};
@@ -370,13 +370,13 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
 				auto read = [&](std::vector<char>& vec) {
 					auto len = 0;
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
 						len++;
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						unserialize_xml(*ti->ui, c, pd, spec);
+						unserialize_xml(*ti->ui, cc, pd, spec);
 					}
 					return len;
 				};
@@ -398,13 +398,13 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
 				auto read = [&](std::vector<char>& vec) {
 					auto len = 0;
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
 						len++;
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						unserialize_xml(*(UdtInfo*)0, 0, ti, "item", -1, c, pd);
+						unserialize_xml(*(UdtInfo*)0, 0, ti, "item", -1, cc, pd);
 					}
 					return len;
 				};
@@ -427,9 +427,9 @@ namespace flame
 				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 				{
 					auto& vec = *(std::vector<void*>*)((char*)dst + offset);
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
-						auto v = it->second(c, dst);
+						auto v = it->second(cc, dst);
 						if (v != INVALID_POINTER)
 							vec.push_back(v);
 					}
@@ -437,12 +437,12 @@ namespace flame
 				else if (ti->retrive_ui() == &ui)
 				{
 					auto& vec = *(std::vector<void*>*)((char*)dst + offset);
-					for (auto c : c.children())
+					for (auto cc : c.children())
 					{
 						auto obj = ui.create_object();
 						if (obj)
 						{
-							unserialize_xml(ui, c, obj, spec);
+							unserialize_xml(ui, cc, obj, spec);
 							vec.push_back(obj);
 						}
 					}

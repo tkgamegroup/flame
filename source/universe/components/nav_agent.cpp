@@ -92,7 +92,10 @@ namespace flame
 					node->set_pos(prev_pos);
 				}
 				else
+				{
 					*(vec3*)agent->npos = prev_pos;
+					*(vec3*)agent->vel = vec3(0.f);
+				}
 			}
 		}
 #endif
