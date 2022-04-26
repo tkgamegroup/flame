@@ -58,11 +58,17 @@ struct EditingVector
 			_vec = &v;
 		auto& vec = *(std::vector<char>*)_vec;
 		auto old_size = vec.size() / item_size;
-		for (auto i = 0; i < old_size; i++)
-			type->destroy(vec.data() + i * item_size, false);
 		editing_vector.v.resize(size * item_size);
-		for (auto i = 0; i < size; i++)
-			type->create(vec.data() + i * item_size);
+		if (old_size < size)
+		{
+			for (auto i = old_size; i < size; i++)
+				type->create(vec.data() + i * item_size);
+		}
+		else if (old_size > size)
+		{
+			for (auto i = size; i < old_size; i++)
+				type->destroy(vec.data() + i * item_size, false);
+		}
 	}
 
 	void assign(void* _dst, void* _src)

@@ -275,14 +275,6 @@ namespace flame
 				}
 			}
 			break;
-		case TagR:
-			if (auto c = src.child(name.c_str()); c)
-			{
-				auto ti = (TypeInfo_Pair*)type;
-				ti->ti1->unserialize(c.attribute("first").value(), ti->first((char*)dst + offset));
-				ti->ti2->unserialize(c.attribute("second").value(), ti->second((char*)dst + offset));
-			}
-			break;
 		case TagPU:
 			if (auto c = src.child(name.c_str()); c)
 			{
@@ -404,7 +396,8 @@ namespace flame
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						unserialize_xml(*(UdtInfo*)0, 0, ti, "item", -1, cc, pd);
+						ti->ti1->unserialize(cc.attribute("first").value(), ti->first(pd));
+						ti->ti2->unserialize(cc.attribute("second").value(), ti->second(pd));
 					}
 					return len;
 				};
