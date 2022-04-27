@@ -293,6 +293,15 @@ namespace flame
 										t.rotations[i].first = ch.rotation_keys[i].t;
 										t.rotations[i].second = ch.rotation_keys[i].q;
 									}
+									if (id == 0)
+									{
+										if (!t.positions.empty())
+										{
+											auto first_xz = t.positions.front().second.xz();
+											for (auto i = 1; i < t.positions.size(); i++)
+												t.positions[i].second.xz = first_xz;
+										}
+									}
 								}
 							}
 						}

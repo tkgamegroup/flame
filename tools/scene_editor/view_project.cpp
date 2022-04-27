@@ -181,7 +181,7 @@ void View_Project::init()
 
 				void draw() override
 				{
-					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+					if (ImGui::BeginPopup(title.c_str(), ImGuiWindowFlags_AlwaysAutoResize))
 					{
 						ImGui::InputText("name", &name);
 						static const char* formats[] = {
@@ -212,20 +212,17 @@ void View_Project::init()
 						}
 						if (preview)
 							ImGui::Image(preview.get(), (vec2)size);
-						if (ImGui::Button("OK"))
+						if (ImGui::Button("Save"))
 						{
 							if (!name.empty())
 							{
 								auto image = generate_image();
 								image->save(dir / name);
 								delete image;
-
-								close();
-								ImGui::CloseCurrentPopup();
 							}
 						}
 						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
+						if (ImGui::Button("Close"))
 						{
 							close();
 							ImGui::CloseCurrentPopup();

@@ -11,6 +11,7 @@ namespace flame
 
 		void set_target(const vec3& pos) override;
 		void stop() override;
+		vec3 current_velocity() override;
 
 		void on_active() override;
 		void on_inactive() override;

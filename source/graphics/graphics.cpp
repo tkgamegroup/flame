@@ -19,6 +19,8 @@ namespace flame
 
 		void unregister_backend_object(void* backend_obj)
 		{
+			if (app_exiting)
+				return;
 			auto it = backend_objects.find(backend_obj);
 			if (it != backend_objects.end())
 				backend_objects.erase(it);

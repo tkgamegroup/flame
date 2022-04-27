@@ -27,11 +27,23 @@ namespace flame
 #ifdef USE_RECASTNAV
 		if (dt_id != -1)
 		{
-			auto scene = sScene::instance();
-			auto dt_crowd = scene->dt_crowd;
+			auto dt_crowd = sScene::instance()->dt_crowd;
 			dt_crowd->resetMoveTarget(dt_id);
 		}
 #endif
+	}
+
+	vec3 cNavAgentPrivate::current_velocity()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_id != -1)
+		{
+			auto dt_crowd = sScene::instance()->dt_crowd;
+			auto agent = dt_crowd->getAgent(dt_id);
+			return *(vec3*)agent->vel;
+		}
+#endif
+		return vec3(0.f);
 	}
 
 	void cNavAgentPrivate::on_active()

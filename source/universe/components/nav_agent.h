@@ -15,12 +15,13 @@ namespace flame
 		/// Reflect
 		float height = 2.f;
 		/// Reflect
-		float speed = 3.5f;
+		float speed = 7.5f;
 		/// Reflect
 		float turn_speed = 360.f;
 
 		virtual void set_target(const vec3& pos) = 0;
 		virtual void stop() = 0;
+		virtual vec3 current_velocity() = 0;
 
 		struct Create
 		{
