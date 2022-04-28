@@ -180,6 +180,8 @@ bool ResourcePanel::Item::draw()
 	{
 		if (panel->select_callback)
 			panel->select_callback(path);
+		else
+			panel->selected_path = path;
 		selected = true;
 	}
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
@@ -420,6 +422,8 @@ void ResourcePanel::draw()
 		{
 			if (select_callback)
 				select_callback(L"");
+			else
+				selected_path = L"";
 		}
 		if (opened_folder && folder_context_menu_callback)
 		{

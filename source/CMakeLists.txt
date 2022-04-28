@@ -1,3 +1,6 @@
+add_subdirectory(foundation)
+add_subdirectory(typeinfogen)
+
 # build imgui by ourselves because we need imgui to include glm and we need to add some extensions imgui
 if(USE_IMGUI)
 	set(config_file "${CMAKE_CURRENT_SOURCE_DIR}/imgui_config.h")
@@ -27,7 +30,7 @@ if(USE_IMGUI)
 	add_custom_command(TARGET imgui PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui_extension.h" "${CMAKE_SOURCE_DIR}/include/flame")
 endif()
 
-add_subdirectory(foundation)
-add_subdirectory(typeinfogen)
+target_link_libraries(imgui flame_foundation)
+
 add_subdirectory(graphics)
 add_subdirectory(universe)

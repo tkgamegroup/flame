@@ -1,5 +1,6 @@
 #pragma once
 
+#include "foundation/foundation.h"
 #include <imgui.h>
 
 namespace ImGui

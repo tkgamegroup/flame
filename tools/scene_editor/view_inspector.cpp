@@ -415,16 +415,20 @@ void View_Inspector::on_draw()
 				else if (ui.name == "flame::cTerrain")
 				{
 					auto terrain = (cTerrainPtr)c.get();
+					if (ImGui::Button("Auto Height"))
+					{
+
+					}
 					if (ImGui::Button("Auto Splash"))
 					{
 						struct AutoSplashDialog : Dialog
 						{
 							cTerrainPtr terrain;
 							uint layers = 0;
-							float bar1 = 1.f; 
-							float bar2 = 1.f;
-							float bar3 = 1.f;
-							float transition = 0.05f;
+							float bar1 = 90.f; 
+							float bar2 = 90.f;
+							float bar3 = 90.f;
+							float transition = 4.f;
 
 							static void open(cTerrainPtr terrain)
 							{
@@ -456,10 +460,19 @@ void View_Inspector::on_draw()
 									switch (layers)
 									{
 									case 2:
-										ImGui::DragFloat("Bar1", &bar1, 0.05f, 0.f, 1.f);
+										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
+										break;
+									case 3:
+										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
+										ImGui::DragFloat("Bar2", &bar2, 1.f, bar1, 90.f);
+										break;
+									case 4:
+										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
+										ImGui::DragFloat("Bar2", &bar2, 1.f, bar1, bar3);
+										ImGui::DragFloat("Bar3", &bar3, 1.f, bar2, 90.f);
 										break;
 									}
-									ImGui::DragFloat("Transition", &transition, 0.01f, 0.f, 0.5f);
+									ImGui::DragFloat("Transition", &transition, 1.f, 0.f, 90.f);
 									if (ImGui::Button("OK"))
 									{
 										graphics::Queue::get()->wait_idle();
@@ -480,7 +493,7 @@ void View_Inspector::on_draw()
 												{
 													auto nor = vec3(normal_map->linear_sample(vec2((float)x / splash_map_sz.x, (float)y / splash_map_sz.y)));
 													nor = nor * 2.f - 1.f;
-													float ndoty = dot(nor, vec3(0, 1, 0));
+													auto angle = degrees(asin(nor.y));
 
 													auto interpolate = [](float v, float off, float len, float transition)
 													{
@@ -512,12 +525,33 @@ void View_Inspector::on_draw()
 													case 2:
 													{
 														vec2 weight;
-														weight[0] = interpolate(ndoty, 0.f, bar1, transition);
-														weight[1] = interpolate(ndoty, bar1, 1.f - bar1, transition);
+														weight[0] = interpolate(angle, 0.f, bar1, transition);
+														weight[1] = interpolate(angle, bar1, 90.f - bar1, transition);
 														weight /= weight[0] + weight[1];
 														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, 0.f, 0.f);
 													}
-													break;
+														break;
+													case 3:
+													{
+														vec3 weight;
+														weight[0] = interpolate(angle, 0.f, bar1, transition);
+														weight[1] = interpolate(angle, bar1, bar2 - bar1, transition);
+														weight[2] = interpolate(angle, bar2, 90.f, transition);
+														weight /= weight[0] + weight[1] + weight[2];
+														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, weight[2] * 255.f, 0.f);
+													}
+														break;
+													case 4:
+													{
+														vec4 weight;
+														weight[0] = interpolate(angle, 0.f, bar1, transition);
+														weight[1] = interpolate(angle, bar1, bar2 - bar1, transition);
+														weight[2] = interpolate(angle, bar2, bar3 - bar2, transition);
+														weight[3] = interpolate(angle, bar3, 90.f, transition);
+														weight /= weight[0] + weight[1] + weight[2] + weight[3];
+														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, weight[2] * 255.f, weight[3] * 255.f);
+													}
+														break;
 													default:
 														*data = cvec4(0);
 													}
@@ -634,10 +668,7 @@ void View_Inspector::on_draw()
 				static int view_type = ImGui::ImageViewRGBA;
 				static const char* types[] = {
 					"RGBA",
-					"R",
-					"G",
-					"B",
-					"A",
+					"R", "G", "B", "A",
 					"RGB",
 				};
 				ImGui::Combo("view", &view_type, types, countof(types));
