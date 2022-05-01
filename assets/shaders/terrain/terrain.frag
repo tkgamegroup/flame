@@ -15,9 +15,7 @@ layout(location = 2) in		 vec2 i_uv;
 #ifndef DEPTH_PASS
 layout(location = 3) in		 vec3 i_normal;
 layout(location = 4) in		 vec3 i_tangent;
-#ifndef DEFERRED
 layout(location = 5) in		 vec3 i_coordw;
-#endif
 #endif
 
 #ifndef DEPTH_PASS
@@ -27,12 +25,12 @@ layout(location = 0) out vec4 o_color;
 layout(location = 0) out vec4 o_res_col_met;
 layout(location = 1) out vec4 o_res_nor_rou;
 #endif
-vec3 textureVariationTiling(int map_id, vec2 uv)
+vec3 textureVariant(int map_id, vec2 uv)
 {
 	float k = 0;
 	if (material_misc.random_map_id != -1)
 		k = texture(material_maps[material_misc.random_map_id], 0.005 * uv).r;
-    
+
     vec2 duvdx = dFdx(uv);
     vec2 duvdy = dFdy(uv);
     
@@ -47,8 +45,25 @@ vec3 textureVariationTiling(int map_id, vec2 uv)
 
     vec3 cola = textureGrad(material_maps[map_id], uv + offa, duvdx, duvdy).rgb;
     vec3 colb = textureGrad(material_maps[map_id], uv + offb, duvdx, duvdy).rgb;
-    
     return mix(cola, colb, smoothstep(0.2, 0.8, f - 0.1 * sum(cola - colb)));
+}
+vec3 textureTerrain(int map_id, float tiling)
+{
+    vec3 ret = vec3(0.0);
+    #ifdef TRI_PLANAR
+        vec3 blending = abs(i_normal);
+        blending = normalize(max(blending, 0.00001));
+        blending /= blending.x + blending.y + blending.z;
+        if (blending.x > 0)
+            ret += textureVariant(map_id, i_coordw.yz * tiling) * blending.x;
+        if (blending.y > 0)
+            ret += textureVariant(map_id, i_coordw.xz * tiling) * blending.y;
+        if (blending.z > 0)
+            ret += textureVariant(map_id, i_coordw.xy * tiling) * blending.z;
+    #else
+        ret += textureVariant(map_id, i_uv * tiling);
+    #endif
+    return ret;
 }
 #endif
 

@@ -13,9 +13,7 @@ layout(location = 0) in flat uint i_matid;
 layout(location = 1) in	     vec2 i_uv;
 #ifndef DEPTH_PASS
 layout(location = 2) in      vec3 i_normal;
-#ifndef DEFERRED
 layout(location = 3) in      vec3 i_coordw;
-#endif
 #endif
 
 #ifndef DEPTH_PASS

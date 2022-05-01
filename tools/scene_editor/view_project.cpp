@@ -114,7 +114,7 @@ void View_Project::init()
 				float noise_falloff = 10.f;
 				float noise_power = 3.f;
 
-				std::unique_ptr<graphics::Image> preview;
+				std::unique_ptr<graphics::Image> image;
 
 				static void open(const std::filesystem::path& dir)
 				{
@@ -172,6 +172,11 @@ void View_Project::init()
 							cb->end_renderpass();
 						}
 							break;
+						case 3:
+						{
+
+						}
+							break;
 						}
 						cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
 					}
@@ -193,7 +198,8 @@ void View_Project::init()
 						static const char* types[] = {
 							"Black",
 							"White",
-							"Perlin noise fbm"
+							"Fbm Perlin",
+							"Voronoi"
 						};
 						ImGui::Combo("type", &type, types, countof(types));
 						switch (type)
@@ -205,21 +211,17 @@ void View_Project::init()
 							ImGui::DragFloat("power", &noise_power, 0.01f, 1.f, 10.f);
 							break;
 						}
-						if (ImGui::Button("Preview"))
+						if (ImGui::Button("Generate"))
 						{
 							graphics::Queue::get()->wait_idle();
-							preview.reset(generate_image());
+							image.reset(generate_image());
 						}
-						if (preview)
-							ImGui::Image(preview.get(), (vec2)size);
+						if (image)
+							ImGui::Image(image.get(), (vec2)size);
 						if (ImGui::Button("Save"))
 						{
-							if (!name.empty())
-							{
-								auto image = generate_image();
+							if (image && !name.empty())
 								image->save(dir / name);
-								delete image;
-							}
 						}
 						ImGui::SameLine();
 						if (ImGui::Button("Close"))

@@ -15,9 +15,7 @@ layout(location = 1) out flat uint o_matid;
 layout(location = 2) out vec2 o_uv;
 layout(location = 3) out vec3 o_normal;
 layout(location = 4) out vec3 o_tangent;
-#ifndef DEFERRED
 layout(location = 5) out vec3 o_coordw;
-#endif
 
 void main()
 {
@@ -32,19 +30,15 @@ void main()
 		gl_TessCoord.y
 	);
 
-	vec3 coordw = vec3(mix(
+	o_coordw = vec3(mix(
 		mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x),
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain.extent.y;
+	o_coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain.extent.y;
 
 	o_normal = normalize(texture(terrain_normal_maps[o_id], o_uv).xyz * 2.0 - 1.0);
 	o_tangent = normalize(texture(terrain_tangent_maps[o_id], o_uv).xyz * 2.0 - 1.0);
 
-#ifndef DEFERRED
-	o_coordw = coordw;
-#endif
-
-	gl_Position = scene.proj_view * vec4(coordw, 1.0);
+	gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 }

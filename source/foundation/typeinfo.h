@@ -1807,12 +1807,14 @@ namespace flame
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
-			return str(*(vec4*)p);
+			quat q = *(quat*)p;
+			return str(vec4(q.x, q.y, q.z, q.w));
 		}
 		void unserialize(const std::string& str, void* p) const override
 		{
 			if (!p) p = &v;
-			*(vec4*)p = s2t<4, float>(str);
+			auto t = s2t<4, float>(str);
+			*(quat*)p = quat(t[3], t[0], t[1], t[2]);
 		}
 
 		void* get_v() const override
