@@ -71,7 +71,6 @@ if(NOT EXISTS "${SPIRV_CROSS_INCLUDE_DIR}" OR (NOT EXISTS "${SPIRV_CROSS_DEBUG_L
 	message(SEND_ERROR "required SPIRV-Cross is invalid")
 endif()
 
-
 check_path("${parent_dir}/assimp/include" p)
 set(ASSIMP_INCLUDE_DIR "${p}" CACHE PATH "Assimp include directory")
 check_path("${parent_dir}/assimp/build/lib/Debug/assimp-vc143-mtd.lib" p)
@@ -184,6 +183,15 @@ if(NOT EXISTS "${IM_GUIZMO_DIR}")
 	set(USE_IM_GUIZMO off)
 else()
 	set(USE_IM_GUIZMO on)
+endif()
+
+check_path("${parent_dir}/FortuneAlgorithm" p)
+set(FORTUNE_ALGORITHM_DIR "${p}" CACHE PATH "FortuneAlgorithm directory")
+if(NOT EXISTS "${FORTUNE_ALGORITHM_DIR}")
+	message(STATUS "optional FortuneAlgorithm is invalid, turn off USE_FORTUNE_ALGORITHM")
+	set(USE_FORTUNE_ALGORITHM off)
+else()
+	set(USE_FORTUNE_ALGORITHM on)
 endif()
 
 check_path("$ENV{ProgramFiles} (x86)/OpenAL 1.1 SDK/include" p)

@@ -85,7 +85,7 @@ namespace flame
 		// id == -1 to register or to unregister id
 		virtual int register_terrain_instance(int id) = 0;
 		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
-			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map) = 0;
+			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_light_instance(int id) = 0;

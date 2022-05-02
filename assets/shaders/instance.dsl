@@ -35,3 +35,4 @@ layout(set = SET, binding = 2) buffer readonly TerrainInstances
 layout (set = SET, binding = 3) uniform sampler2D terrain_height_maps[8];
 layout (set = SET, binding = 4) uniform sampler2D terrain_normal_maps[8];
 layout (set = SET, binding = 5) uniform sampler2D terrain_tangent_maps[8];
+layout (set = SET, binding = 6) uniform sampler2D terrain_splash_maps[8];

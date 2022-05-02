@@ -39,6 +39,10 @@ An ECS 3D-Game-Engine.
 
 - ImGuizmo https://github.com/CedricGuillemet/ImGuizmo
 
+- FortuneAlgorithm https://github.com/pvigier/FortuneAlgorithm
+
+    (should use my forked version: https://github.com/tkgamegroup/FortuneAlgorithm)
+
 - OpenAL
 
 # Build:

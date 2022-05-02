@@ -168,6 +168,8 @@ namespace flame
 
 		FramebufferPrivate::~FramebufferPrivate()
 		{
+			if (app_exiting) return;
+
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 		}
 

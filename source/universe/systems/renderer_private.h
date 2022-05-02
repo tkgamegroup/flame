@@ -90,7 +90,7 @@ namespace flame
 		graphics::GraphicsPipelinePtr													pl_blend = nullptr;
 
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
-		graphics::PipelineResourceManager<FLAME_UID>									prm_plain3d;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_plain;
 		graphics::GraphicsPipelinePtr													pl_line3d = nullptr;
 
 		std::unique_ptr<graphics::Image>												img_dst;
@@ -184,7 +184,7 @@ namespace flame
 
 		int register_terrain_instance(int id) override;
 		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
-			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map) override;
+			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) override;
 
 		int register_light_instance(int id) override;
 		void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) override;

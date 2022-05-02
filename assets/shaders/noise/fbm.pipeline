@@ -1,19 +1,25 @@
+%vs=../fullscreen.vert
+%pt=TriangleList
 layout
   @pll
 shaders
-  ../fullscreen.vert
+  {vs}
  ---
   @frag
 renderpass
   {rp}
+primitive_topology
+  {pt}
 cull_mode
   None
 
 @pll
 layout(push_constant) uniform PushConstant
 {
-    vec2 offset;
-    float scale;
+    vec2 uv_off;
+    float uv_scl;
+    float val_base;
+    float val_scl;
     float falloff;
     float power;
 }pc;
@@ -24,7 +30,7 @@ layout (location = 0) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_col;
 
-float random(ivec2 st) 
+float random(ivec2 st)
 {
     return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
 }
@@ -63,13 +69,13 @@ float fbm(vec2 st)
 
 void main()
 {
-    float value = pow(fbm(i_uv * pc.scale + pc.offset), pc.power);
+    float value = pow(fbm(i_uv * pc.uv_scl + pc.uv_off), pc.power);
     float to_edge = min(min(i_uv.x, 1.0 - i_uv.x), min(i_uv.y, 1.0 - i_uv.y));
     if (to_edge < pc.falloff)
     {
        float d = (pc.falloff - to_edge) / pc.falloff;
        value *= 1.0 - d * d;
     }
-    o_col = vec4(vec3(value), 1.0);
+    o_col = vec4(vec3(pc.val_base + value * pc.val_scl), 1.0);
 }
 @

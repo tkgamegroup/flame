@@ -141,8 +141,7 @@ void View_Project::init()
 					{
 						graphics::InstanceCB cb;
 						cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
-						cb->set_viewport(Rect(vec2(0), vec2(size)));
-						cb->set_scissor(Rect(vec2(0), vec2(size)));
+						cb->set_viewport_and_scissor(Rect(vec2(0), vec2(size)));
 						switch (type)
 						{
 						case 0:
@@ -156,25 +155,22 @@ void View_Project::init()
 						case 2:
 						{
 							auto fb = ret->get_shader_write_dst();
-							graphics::PipelineResourceManager<FLAME_UID> prm;
-							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\perlin_fbm.pipeline",
+							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
 								{ "rp=" + str(fb->renderpass) });
+							graphics::PipelineResourceManager<FLAME_UID> prm;
 							prm.init(pl->layout);
 
 							cb->begin_renderpass(nullptr, fb);
 							cb->bind_pipeline(pl);
-							prm.set_pc_var<"offset"_h>(noise_offset);
-							prm.set_pc_var<"scale"_h>(noise_scale);
+							prm.set_pc_var<"uv_off"_h>(noise_offset);
+							prm.set_pc_var<"uv_scl"_h>(noise_scale);
+							prm.set_pc_var<"val_base"_h>(0.f);
+							prm.set_pc_var<"val_scl"_h>(1.f);
 							prm.set_pc_var<"falloff"_h>(1.f / clamp(noise_falloff, 2.f, 100.f));
 							prm.set_pc_var<"power"_h>(noise_power);
 							prm.push_constant(cb.get());
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
-						}
-							break;
-						case 3:
-						{
-
 						}
 							break;
 						}
@@ -186,7 +182,8 @@ void View_Project::init()
 
 				void draw() override
 				{
-					if (ImGui::BeginPopup(title.c_str(), ImGuiWindowFlags_AlwaysAutoResize))
+					bool open = true;
+					if (ImGui::Begin(title.c_str(), &open))
 					{
 						ImGui::InputText("name", &name);
 						static const char* formats[] = {
@@ -198,8 +195,7 @@ void View_Project::init()
 						static const char* types[] = {
 							"Black",
 							"White",
-							"Fbm Perlin",
-							"Voronoi"
+							"Fbm"
 						};
 						ImGui::Combo("type", &type, types, countof(types));
 						switch (type)
@@ -225,13 +221,12 @@ void View_Project::init()
 						}
 						ImGui::SameLine();
 						if (ImGui::Button("Close"))
-						{
 							close();
-							ImGui::CloseCurrentPopup();
-						}
 
-						ImGui::EndPopup();
+						ImGui::End();
 					}
+					if (!open)
+						close();
 				}
 			};
 

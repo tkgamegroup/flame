@@ -96,8 +96,8 @@ namespace flame
 
 			virtual vec4 get_pixel(int x, int y, uint level, uint layer) = 0;
 			virtual void set_pixel(int x, int y, uint level, uint layer, const vec4& v) = 0;
-
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
+			virtual void clear_staging_data() = 0;
 
 			virtual void save(const std::filesystem::path& filename) = 0;
 
@@ -110,7 +110,8 @@ namespace flame
 
 			struct Get
 			{
-				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, const MipmapOption& mipmap_option = {}) = 0;
+				// alpha_coverage: when above 0, then the coverage of alpha test will be reserved in auto mipmaping
+				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, bool auto_mipmapping = false, float alpha_coverage = 0.f, ImageUsageFlags additional_usage = ImageUsageNone) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

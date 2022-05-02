@@ -33,9 +33,10 @@ namespace flame
 			void change_layout(ImageLayout dst_layout) override;
 			void clear(const vec4& color, ImageLayout dst_layout) override;
 
-			void get_data(uint level, uint layer);
+			void get_staging_data(uint level, uint layer);
 			vec4 get_pixel(int x, int y, uint level, uint layer) override;
 			void set_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
+			void clear_staging_data() override;
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
@@ -77,8 +78,17 @@ namespace flame
 			~ImageAtlasPrivate();
 		};
 
+		struct LoadedImage
+		{
+			std::unique_ptr<ImageT> v;
+			bool srgb;
+			bool auto_mipmapping;
+			float alpha_coverage;
+			ImageUsageFlags additional_usage;
+		};
+
 		extern std::vector<ImagePtr> all_images;
-		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
+		extern std::vector<LoadedImage> loaded_images;
 		extern std::vector<std::unique_ptr<SamplerT>> samplers;
 	}
 }

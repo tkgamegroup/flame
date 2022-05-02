@@ -56,6 +56,7 @@ namespace flame
 			ds_instance->set_image("terrain_height_maps", i, img_black->get_view(), sp_bilinear);
 			ds_instance->set_image("terrain_normal_maps", i, img_black->get_view(), sp_bilinear);
 			ds_instance->set_image("terrain_tangent_maps", i, img_black->get_view(), sp_bilinear);
+			ds_instance->set_image("terrain_splash_maps", i, img_black->get_view(), sp_bilinear);
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
@@ -125,7 +126,7 @@ namespace flame
 		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
 
-		prm_plain3d.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain3d.pll"));
+		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline",
 			{ "rp=" + str(rp_col) });
 		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
@@ -458,7 +459,7 @@ namespace flame
 					auto& src = res.mat->textures[i];
 					if (!src.filename.empty())
 					{
-						if (auto image = graphics::Image::get(src.filename, src.srgb, { src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f }); image)
+						if (auto image = graphics::Image::get(src.filename, src.srgb, src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f); image)
 						{
 							res.texs[i].second = image;
 							res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
@@ -706,7 +707,7 @@ namespace flame
 	}
 
 	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
-		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map)
+		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
 	{
 		buf_terrain_ins.select_item(id);
 		buf_terrain_ins.set_var<"mat"_h>(mat);
@@ -716,6 +717,7 @@ namespace flame
 		ds_instance->set_image("terrain_height_maps", id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps", id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps", id, tangent_map, nullptr);
+		ds_instance->set_image("terrain_splash_maps", id, splash_map, nullptr);
 		ds_instance->update();
 	}
 
@@ -1041,8 +1043,7 @@ namespace flame
 		case Shaded:
 		case CameraLight:
 		{
-			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(0), sz));
+			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
 			// opaque
 			cb->begin_renderpass(nullptr, fb_gbuf.get(),
@@ -1118,8 +1119,7 @@ namespace flame
 			break;
 		default:
 		{
-			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(0), sz));
+			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
 			cb->begin_renderpass(nullptr, fb_fwd.get(),
 				{ vec4(0.f, 0.f, 0.f, 1.f),
@@ -1160,8 +1160,7 @@ namespace flame
 
 		if (!draw_outline_meshes.empty() || !draw_outline_arm_meshes.empty() || !draw_terrains.empty())
 		{
-			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(0), sz));
+			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
 			auto blur_pass = [&]() {
 				cb->bind_pipeline_layout(prm_post.pll);
@@ -1281,17 +1280,16 @@ namespace flame
 
 		if (!draw_lines.empty())
 		{
-			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(0), sz));
+			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			cb->bind_vertex_buffer(buf_lines.buf.get(), 0);
 			cb->bind_pipeline(pl_line3d);
-			prm_plain3d.set_pc_var<"mvp"_h>(camera->proj_view_mat);
+			prm_plain.set_pc_var<"mvp"_h>(camera->proj_view_mat);
 			for (auto& d : draw_lines)
 			{
-				prm_plain3d.set_pc_var<"col"_h>(vec4(d.color) / 255.f);
-				prm_plain3d.push_constant(cb);
+				prm_plain.set_pc_var<"col"_h>(vec4(d.color) / 255.f);
+				prm_plain.push_constant(cb);
 				cb->draw(d.count, 1, d.offset, 0);
 			}
 			cb->end_renderpass();

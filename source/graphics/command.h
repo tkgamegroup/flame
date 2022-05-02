@@ -90,6 +90,7 @@ namespace flame
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
+			inline void set_viewport_and_scissor(const Rect& rect) { set_viewport(rect); set_scissor(rect); }
 			virtual void bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt = PipelineGraphics) = 0;
 			virtual void bind_pipeline(GraphicsPipelinePtr pl) = 0;
 			virtual void bind_pipeline(ComputePipelinePtr pl) = 0;

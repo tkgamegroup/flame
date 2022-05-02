@@ -14,7 +14,7 @@ namespace flame
 	namespace graphics
 	{
 		std::vector<ImagePtr> all_images;
-		std::vector<std::unique_ptr<ImageT>> loaded_images;
+		std::vector<LoadedImage> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> samplers;
 
 		ImagePrivate::ImagePrivate()
@@ -228,7 +228,7 @@ namespace flame
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 		}
 
-		void ImagePrivate::get_data(uint level, uint layer)
+		void ImagePrivate::get_staging_data(uint level, uint layer)
 		{
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
@@ -251,7 +251,7 @@ namespace flame
 
 		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
 		{
-			get_data(level, layer);
+			get_staging_data(level, layer);
 
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
@@ -296,6 +296,19 @@ namespace flame
 				break;
 			default:
 				assert(0);
+			}
+		}
+
+		void ImagePrivate::clear_staging_data()
+		{
+			for (auto level = 0; level < n_levels; level++)
+			{
+				auto& lv = levels[level];
+				for (auto layer = 0; layer < n_layers; layer++)
+				{
+					auto& ly = lv.layers[layer];
+					ly.data.reset();
+				}
 			}
 		}
 
@@ -398,7 +411,7 @@ namespace flame
 			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 			auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
 
-			img->get_data(level, 0);
+			img->get_staging_data(level, 0);
 
 			auto coverage = 0.f;
 			auto size = img->levels[level].size;
@@ -448,7 +461,7 @@ namespace flame
 
 			auto& lv = img->levels[level];
 			auto& ly = lv.layers[0];
-			img->get_data(level, 0);
+			img->get_staging_data(level, 0);
 			for (auto y = 0; y < lv.size.y; y++)
 			{
 				for (auto x = 0; x < lv.size.x; x++)
@@ -542,16 +555,16 @@ namespace flame
 
 		struct ImageGet : Image::Get
 		{
-			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, const MipmapOption& mipmap_option) override
+			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, bool auto_mipmapping, float alpha_coverage, ImageUsageFlags additional_usage) override
 			{
 				auto filename = Path::get(_filename);
 
 				for (auto& i : loaded_images)
 				{
-					if (i->filename == filename)
+					if (i.v->filename == filename && i.srgb == srgb && i.auto_mipmapping == auto_mipmapping && i.alpha_coverage == alpha_coverage && i.additional_usage == additional_usage)
 					{
-						i->ref++;
-						return i.get();
+						i.v->ref++;
+						return i.v.get();
 					}
 				}
 
@@ -602,7 +615,7 @@ namespace flame
 					}
 					assert(format != Format_Undefined);
 
-					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc,
+					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage,
 						levels, layers, SampleCount_1, is_cube);
 
 					StagingBuffer sb(ret->data_size, nullptr);
@@ -650,7 +663,7 @@ namespace flame
 					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), bmp->size,
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc, mipmap_option.auto_gen ? 0 : 1);
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, auto_mipmapping ? 0 : 1);
 
 					{
 						StagingBuffer sb(bmp->data_size, bmp->data);
@@ -661,7 +674,7 @@ namespace flame
 						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
 						for (auto i = 1U; i < ret->n_levels; i++)
 						{
-							if (mipmap_option.auto_gen)
+							if (auto_mipmapping)
 							{
 								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
 								cb->image_barrier(ret, { i, 1, 0, 1 }, ImageLayoutTransferDst);
@@ -677,18 +690,22 @@ namespace flame
 						cb->image_barrier(ret, { ret->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 					}
 
-					if (mipmap_option.auto_gen && mipmap_option.alpha_test > 0.f)
+					if (auto_mipmapping && alpha_coverage > 0.f)
 					{
-						auto coverage = get_image_alphatest_coverage(ret, 0, mipmap_option.alpha_test, 1.f);
+						auto alpha_test = alpha_coverage;
+						auto coverage = get_image_alphatest_coverage(ret, 0, alpha_test, 1.f);
 						for (auto i = 1; i < ret->n_levels; i++)
-							scale_image_alphatest_coverage(ret, i, coverage, mipmap_option.alpha_test);
+							scale_image_alphatest_coverage(ret, i, coverage, alpha_test);
 					}
 				}
 
 				ret->filename = filename;
 				ret->srgb = srgb;
 				ret->ref = 1;
-				loaded_images.emplace_back(ret);
+				LoadedImage i;
+				i.v.reset(ret);
+				i.srgb = srgb;
+				loaded_images.push_back(std::move(i));
 				return ret;
 			}
 		}Image_get;
@@ -702,7 +719,7 @@ namespace flame
 				{
 					graphics::Queue::get()->wait_idle();
 					std::erase_if(loaded_images, [&](const auto& i) {
-						return i.get() == image;
+						return i.v.get() == image;
 					});
 				}
 				else

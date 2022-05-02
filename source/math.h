@@ -86,12 +86,26 @@ namespace flame
 		void* p;
 	};
 
-	inline float segment_intersect(const vec2& a, const vec2& b, const vec2& c, const vec2& d)
+	inline float triangle_area(const vec2& a, const vec2& b, const vec2& c)
 	{
-		auto ab = b - a;
-		auto dc = c - d;
-		return cross2(ab, c - a) * cross2(ab, d - a) <= 0.f &&
-			cross2(dc, a - d) * cross2(dc, b - d) <= 0.f;
+		return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / 2.f;
+	}
+
+	inline vec2 convex_centroid(std::span<vec2> points)
+	{
+		vec2 ret(0.f); float area = 0.f;
+		if (points.size() < 3)
+			return ret;
+
+		for (auto i = 1; i < points.size() - 1; i++)
+		{
+			auto m = (points[0] + points[i] + points[i + 1]) / 3.f;
+			auto a = triangle_area(points[0], points[1], points[2]);
+			ret = (ret * area + m * a) / (area + a);
+			area += a;
+		}
+
+		return ret;
 	}
 
 	inline bool convex_contains(const vec2& p, std::span<vec2> points)
@@ -111,6 +125,14 @@ namespace flame
 		}
 
 		return true;
+	}
+
+	inline float segment_intersect(const vec2& a, const vec2& b, const vec2& c, const vec2& d)
+	{
+		auto ab = b - a;
+		auto dc = c - d;
+		return cross2(ab, c - a) * cross2(ab, d - a) <= 0.f &&
+			cross2(dc, a - d) * cross2(dc, b - d) <= 0.f;
 	}
 
 	struct Rect

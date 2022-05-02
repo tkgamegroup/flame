@@ -306,6 +306,20 @@ if op != 3:
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 	print("====\n")
+			
+	print("== library FortuneAlgorithm ==")
+	ok = True
+	address = "https://github.com/tkgamegroup/FortuneAlgorithm.git"
+	lib_dir = parent_directory / "FortuneAlgorithm"
+	if op == 2:
+		print("Download FortuneAlgorithm from %s into %s ? y/n" % (address, str(lib_dir)))
+		ok = input() == "y"
+	if ok:
+		if not lib_dir.exists():
+			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 	
 print("\nSet environment variable of Flame Engine:")
 os.system("setx FLAME_PATH \"%s\"" % str(current_directory))

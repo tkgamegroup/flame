@@ -31,6 +31,11 @@ namespace flame
 		virtual void set_height_map_name(const std::filesystem::path& name) = 0;
 
 		/// Reflect
+		std::filesystem::path splash_map_name;
+		/// Reflect
+		virtual void set_splash_map_name(const std::filesystem::path& name) = 0;
+
+		/// Reflect
 		std::filesystem::path material_name;
 		/// Reflect
 		virtual void set_material_name(const std::filesystem::path& name) = 0;
@@ -38,9 +43,12 @@ namespace flame
 		graphics::ImagePtr height_map = nullptr;
 		graphics::ImagePtr normal_map = nullptr;
 		graphics::ImagePtr tangent_map = nullptr;
+		graphics::ImagePtr splash_map = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
 		int instance_id = -1;
+
+		virtual void update_normal_map() = 0;
 
 		struct Create
 		{

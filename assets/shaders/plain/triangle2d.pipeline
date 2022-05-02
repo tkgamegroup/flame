@@ -1,10 +1,10 @@
 %rp=../color.rp
-%pt=LineList
+%pt=TriangleList
 layout
   plain.pll
 shaders
   filename
-    plain3d.vert
+    plain2d.vert
  ---
   filename
     plain.frag

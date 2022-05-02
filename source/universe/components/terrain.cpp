@@ -43,7 +43,7 @@ namespace flame
 			return;
 		extent = _extent;
 
-		build_textures();
+		update_normal_map();
 
 		node->mark_transform_dirty();
 		data_changed("extent"_h);
@@ -55,7 +55,7 @@ namespace flame
 			return;
 		blocks = _blocks;
 
-		build_textures();
+		update_normal_map();
 
 		node->mark_transform_dirty();
 		data_changed("blocks"_h);
@@ -67,7 +67,7 @@ namespace flame
 			return;
 		tess_level = _tess_level;
 
-		build_textures();
+		update_normal_map();
 
 		node->mark_transform_dirty();
 		data_changed("tess_level"_h);
@@ -83,19 +83,44 @@ namespace flame
 		if (!height_map_name.empty())
 			AssetManagemant::get_asset(Path::get(height_map_name));
 
-		auto _height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
+		auto _height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
 		if (height_map != _height_map)
 		{
 			if (height_map)
 				graphics::Image::release(height_map);
 			height_map = _height_map;
-			build_textures();
+			update_normal_map();
 		}
 		else if (_height_map)
 			graphics::Image::release(_height_map);
 
 		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
+	}
+
+	void cTerrainPrivate::set_splash_map_name(const std::filesystem::path& name)
+	{
+		if (splash_map_name == name)
+			return;
+		if (!splash_map_name.empty())
+			AssetManagemant::release_asset(Path::get(splash_map_name));
+		splash_map_name = name;
+		if (!splash_map_name.empty())
+			AssetManagemant::get_asset(Path::get(splash_map_name));
+
+		auto _splash_map = !splash_map_name.empty() ? graphics::Image::get(splash_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
+		if (splash_map != _splash_map)
+		{
+			if (splash_map)
+				graphics::Image::release(splash_map);
+			splash_map = _splash_map;
+			update_normal_map();
+		}
+		else if (_splash_map)
+			graphics::Image::release(_splash_map);
+
+		node->mark_transform_dirty();
+		data_changed("splash_map_name"_h);
 	}
 
 	void cTerrainPrivate::set_material_name(const std::filesystem::path& name)
@@ -121,7 +146,7 @@ namespace flame
 		data_changed("material_name"_h);
 	}
 
-	void cTerrainPrivate::build_textures()
+	void cTerrainPrivate::update_normal_map()
 	{
 		if (!height_map)
 			return;
@@ -186,7 +211,7 @@ namespace flame
 			cpy.img_ext = sz0;
 
 			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 } );
+			cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 });
 			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 
 			cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
@@ -203,7 +228,7 @@ namespace flame
 		if (frame < (int)frames)
 		{
 			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, 
-				height_map->get_view(), normal_map->get_view(), tangent_map->get_view());
+				height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 			frame = frames;
 		}
 

@@ -4,12 +4,16 @@
 #include "dialog.h"
 
 #include <flame/foundation/typeinfo.h>
+#include <flame/foundation/typeinfo_serialize.h>
 #include <flame/graphics/extension.h>
+#include <flame/graphics/shader.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
+
+#include <FortuneAlgorithm/FortuneAlgorithm.h>
 
 View_Inspector view_inspector;
 
@@ -415,27 +419,29 @@ void View_Inspector::on_draw()
 				else if (ui.name == "flame::cTerrain")
 				{
 					auto terrain = (cTerrainPtr)c.get();
-					if (ImGui::Button("Auto Height"))
+					if (ImGui::Button("Procedure Terrain"))
 					{
-
-					}
-					if (ImGui::Button("Auto Splash"))
-					{
-						struct AutoSplashDialog : Dialog
+						struct ProcedureTerrainDialog : Dialog
 						{
 							cTerrainPtr terrain;
-							uint layers = 0;
-							float bar1 = 90.f; 
-							float bar2 = 90.f;
-							float bar3 = 90.f;
-							float transition = 4.f;
+							bool update_height = true;
+							int voronoi_sites_count = 10;
+							int voronoi_layer1_precentage = 50;
+							int voronoi_layer2_precentage = 50;
+							int voronoi_layer3_precentage = 50;
+							bool update_splash = true;
+							uint splash_layers = 0;
+							float splash_bar1 = 45.f;
+							float splash_bar2 = 70.f;
+							float splash_bar3 = 90.f;
+							float splash_transition = 4.f;
 
 							static void open(cTerrainPtr terrain)
 							{
 								auto material = terrain->material;
 								if (material)
 								{
-									auto dialog = new AutoSplashDialog;
+									auto dialog = new ProcedureTerrainDialog;
 									dialog->title = "Splash";
 									dialog->terrain = terrain;
 									for (auto& d : material->shader_defines)
@@ -445,7 +451,7 @@ void View_Inspector::on_draw()
 										if (_sp.back() == "LAYERS")
 										{
 											if (sp.size() > 1)
-												dialog->layers = s2t<uint>(sp[1]);
+												dialog->splash_layers = s2t<uint>(sp[1]);
 											break;
 										}
 									}
@@ -455,139 +461,229 @@ void View_Inspector::on_draw()
 
 							void draw() override
 							{
-								if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+								auto open = true;
+								if (ImGui::Begin(title.c_str(), &open))
 								{
-									switch (layers)
+									if (ImGui::CollapsingHeader("Height"))
 									{
-									case 2:
-										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
-										break;
-									case 3:
-										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
-										ImGui::DragFloat("Bar2", &bar2, 1.f, bar1, 90.f);
-										break;
-									case 4:
-										ImGui::DragFloat("Bar1", &bar1, 1.f, 0.f, 90.f);
-										ImGui::DragFloat("Bar2", &bar2, 1.f, bar1, bar3);
-										ImGui::DragFloat("Bar3", &bar3, 1.f, bar2, 90.f);
-										break;
+										ImGui::Checkbox("Update##height", &update_height);
+										ImGui::InputInt("Sites Count", &voronoi_sites_count);
+										ImGui::InputInt("Layer1 Precentage", &voronoi_layer1_precentage);
 									}
-									ImGui::DragFloat("Transition", &transition, 1.f, 0.f, 90.f);
-									if (ImGui::Button("OK"))
+									if (ImGui::CollapsingHeader("Splash"))
 									{
-										graphics::Queue::get()->wait_idle();
-										auto& mat_res = app.renderer->get_material_res_info(terrain->material_res_id);
-										auto splash_map = mat_res.texs[0].second;
-										auto normal_map = terrain->normal_map;
-
+										ImGui::Checkbox("Update##splash", &update_splash);
+										switch (splash_layers)
 										{
-											auto splash_map_sz = splash_map->size;
-											auto normal_map_sz = normal_map->size;
-											graphics::StagingBuffer stag(sizeof(cvec4) * splash_map_sz.x * splash_map_sz.y);
+										case 2:
+											ImGui::DragFloat("Bar1", &splash_bar1, 1.f, 0.f, 90.f);
+											break;
+										case 3:
+											ImGui::DragFloat("Bar1", &splash_bar1, 1.f, 0.f, 90.f);
+											ImGui::DragFloat("Bar2", &splash_bar2, 1.f, splash_bar1, 90.f);
+											break;
+										case 4:
+											ImGui::DragFloat("Bar1", &splash_bar1, 1.f, 0.f, 90.f);
+											ImGui::DragFloat("Bar2", &splash_bar2, 1.f, splash_bar1, splash_bar3);
+											ImGui::DragFloat("Bar3", &splash_bar3, 1.f, splash_bar2, 90.f);
+											break;
+										}
+										ImGui::DragFloat("Transition", &splash_transition, 1.f, 0.f, 90.f);
+									}
+									if (ImGui::Button("Generate"))
+									{
+										auto height_map = terrain->height_map;
+										auto splash_map = terrain->splash_map;
 
-											auto data = (cvec4*)stag->mapped;
+										if (update_height)
+										{
+											graphics::Queue::get()->wait_idle();
 
-											for (auto y = 0; y < splash_map_sz.y; y++)
-											{
-												for (auto x = 0; x < splash_map_sz.x; x++)
+											auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+											std::default_random_engine generator(seed);
+											std::uniform_real_distribution<double> distribution_d(0.0, 1.0);
+
+											std::vector<Vector2> points;
+											for (int i = 0; i < voronoi_sites_count; ++i)
+												points.push_back(Vector2{ distribution_d(generator), distribution_d(generator) });
+
+											auto get_diagram = [](const std::vector<Vector2>& points) {
+												FortuneAlgorithm fortune_algorithm(points);
+												fortune_algorithm.construct();
+												fortune_algorithm.bound(Box{ -0.05, -0.05, 1.05, 1.05 });
+												auto diagram = fortune_algorithm.getDiagram(); 
+												diagram.intersect(Box{ 0.0, 0.0, 1.0, 1.0 });
+												return diagram;
+											};
+
+											auto get_site_vertices = [](VoronoiDiagram::Site* site) {
+												std::vector<vec2> ret;
+												auto face = site->face;
+												auto half_edge = face->outerComponent;
+												if (half_edge)
 												{
-													auto nor = vec3(normal_map->linear_sample(vec2((float)x / splash_map_sz.x, (float)y / splash_map_sz.y)));
-													nor = nor * 2.f - 1.f;
-													auto angle = degrees(asin(nor.y));
+													while (half_edge->prev != nullptr)
+													{
+														half_edge = half_edge->prev;
+														if (half_edge == face->outerComponent)
+															break;
+													}
 
-													auto interpolate = [](float v, float off, float len, float transition)
+													auto start_edge = half_edge;
+													while (half_edge != nullptr)
 													{
-														float a0 = off - transition * 0.5;
-														float a1 = off + transition * 0.5;
-														float b0 = off + len - transition * 0.5;
-														float b1 = off + len + transition * 0.5;
-														if (v <= a0 || v >= b1)
-															return 0.f;
-														if (v >= a1 && v <= b0)
-															return 1.f;
-														if (v < a1)
+														if (half_edge->origin != nullptr && half_edge->destination != nullptr)
 														{
-															if (a0 < 0)
-																return 1.f;
-															return 1.f - (a1 - v) / transition;
+															if (ret.empty())
+															{
+																auto origin = half_edge->origin->point;
+																ret.push_back(vec2(origin.x, origin.y));
+															}
+															auto destination = half_edge->destination->point;
+															ret.push_back(vec2(destination.x, destination.y));
 														}
-														else if (v > b0)
-														{
-															if (b1 > 1)
-																return 1.f;
-															return 1.f - (v - b0) / transition;
-														}
-														return 0.f;
-													};
+														half_edge = half_edge->next;
+														if (half_edge == start_edge)
+															break;
+													}
+												}
+												return ret;
+											};
 
-													switch (layers)
-													{
-													case 2:
-													{
-														vec2 weight;
-														weight[0] = interpolate(angle, 0.f, bar1, transition);
-														weight[1] = interpolate(angle, bar1, 90.f - bar1, transition);
-														weight /= weight[0] + weight[1];
-														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, 0.f, 0.f);
-													}
-														break;
-													case 3:
-													{
-														vec3 weight;
-														weight[0] = interpolate(angle, 0.f, bar1, transition);
-														weight[1] = interpolate(angle, bar1, bar2 - bar1, transition);
-														weight[2] = interpolate(angle, bar2, 90.f, transition);
-														weight /= weight[0] + weight[1] + weight[2];
-														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, weight[2] * 255.f, 0.f);
-													}
-														break;
-													case 4:
-													{
-														vec4 weight;
-														weight[0] = interpolate(angle, 0.f, bar1, transition);
-														weight[1] = interpolate(angle, bar1, bar2 - bar1, transition);
-														weight[2] = interpolate(angle, bar2, bar3 - bar2, transition);
-														weight[3] = interpolate(angle, bar3, 90.f, transition);
-														weight /= weight[0] + weight[1] + weight[2] + weight[3];
-														*data = cvec4(weight[0] * 255.f, weight[1] * 255.f, weight[2] * 255.f, weight[3] * 255.f);
-													}
-														break;
-													default:
-														*data = cvec4(0);
-													}
-													data++;
+											for (auto t = 0; t < 3; t++)
+											{
+												auto diagram = get_diagram(points);
+												for (auto i = 0; i < diagram.getNbSites(); i++)
+												{
+													auto vertices = get_site_vertices(diagram.getSite(i));
+													auto centroid = convex_centroid(vertices);
+													points[i] = Vector2(centroid.x, centroid.y);
 												}
 											}
 
-											graphics::InstanceCB cb(nullptr);
-											graphics::BufferImageCopy cpy;
-											cpy.img_ext = splash_map_sz;
+											std::vector<float> site_height;
+											site_height.resize(points.size());
+											for (auto i = 0; i < points.size(); i++)
+											{
+												auto value = 0.f;
+												if (distribution_d(generator) * 100.f > voronoi_layer1_precentage)
+												{
+													value += 0.25f;
+													if (distribution_d(generator) * 100.f > voronoi_layer2_precentage)
+													{
+														value += 0.25f;
+														if (distribution_d(generator) * 100.f > voronoi_layer3_precentage)
+															value += 0.25f;
+													}
+												}
+												site_height[i] = value;
+											}
 
-											cb->image_barrier(splash_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
-											cb->copy_buffer_to_image(stag.get(), splash_map, { &cpy, 1 });
-											cb->image_barrier(splash_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+											auto diagram = get_diagram(points);
+											{
+												const auto MaxVertices = 10000;
+												graphics::StagingBuffer vtx_buf(sizeof(vec2) * MaxVertices, nullptr, graphics::BufferUsageVertex);
+												graphics::InstanceCB cb(nullptr);
+
+												auto fb = height_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
+												auto pt = graphics::PrimitiveTopologyTriangleFan;
+												auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+													{ "vs=uv_as_pos.vert",
+													  "rp=" + str(fb->renderpass),
+													  "pt=" + TypeInfo::serialize_t(&pt) });
+												graphics::PipelineResourceManager<FLAME_UID> prm;
+												prm.init(pl->layout);
+
+												cb->image_barrier(height_map, {}, graphics::ImageLayoutAttachment);
+												cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
+												cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
+												cb->bind_pipeline(pl);
+												prm.set_pc_var<"falloff"_h>(0.f);
+												prm.set_pc_var<"power"_h>(1.f);
+												prm.push_constant(cb.get());
+												cb->bind_vertex_buffer(vtx_buf.get(), 0);
+
+												auto pvtx = (vec2*)vtx_buf->mapped;
+												auto vtx_cnt = 0;
+												for (auto i = 0; i < diagram.getNbSites(); i++)
+												{
+													auto vertices = get_site_vertices(diagram.getSite(i));
+													if (!vertices.empty() && vtx_cnt + vertices.size() <= MaxVertices)
+													{
+														for (auto j = 0; j < vertices.size(); j++)
+															pvtx[vtx_cnt + j] = vertices[j];
+														auto base = site_height[i];
+														prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f) * base);
+														prm.set_pc_var<"uv_scl"_h>(16.f);
+														prm.set_pc_var<"val_base"_h>(base);
+														prm.set_pc_var<"val_scl"_h>(0.5f);
+														prm.push_constant(cb.get(), prm.vu_pc.var_off<"uv_off"_h>(), sizeof(float) * 5);
+														cb->draw(vertices.size(), 1, vtx_cnt, 0);
+														vtx_cnt += vertices.size();
+													}
+												}
+
+												cb->end_renderpass();
+												cb->image_barrier(height_map, {}, graphics::ImageLayoutShaderReadOnly);
+											}
+
+											height_map->clear_staging_data();
+											terrain->update_normal_map();
+
+											auto asset = AssetManagemant::find(height_map->filename);
+											if (asset)
+												asset->active = false;
+											height_map->save(height_map->filename);
+											if (asset)
+												asset->active = true;
 										}
+										if (update_splash)
+										{
+											graphics::Queue::get()->wait_idle();
 
-										close();
-										ImGui::CloseCurrentPopup();
+											{
+												graphics::InstanceCB cb(nullptr);
+
+												auto fb = splash_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
+												auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\auto_splash.pipeline",
+													{ "rp=" + str(fb->renderpass),
+													  "frag:LAYERS=" + str(splash_layers) });
+												graphics::PipelineResourceManager<FLAME_UID> prm;
+												prm.init(pl->layout);
+
+												cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
+												cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
+												cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
+												cb->bind_pipeline(pl);
+												prm.set_pc_var<"bar"_h>(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
+												prm.set_pc_var<"transition"_h>(splash_transition);
+												prm.push_constant(cb.get());
+												cb->bind_descriptor_set(0, terrain->normal_map->get_shader_read_src());
+												cb->draw(3, 1, 0, 0);
+												cb->end_renderpass();
+												cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
+											}
+
+											auto asset = AssetManagemant::find(splash_map->filename);
+											if (asset)
+												asset->active = false;
+											splash_map->save(splash_map->filename);
+											if (asset)
+												asset->active = true;
+										}
 									}
 									ImGui::SameLine();
-									if (ImGui::Button("Cancel"))
-									{
+									if (ImGui::Button("Close"))
 										close();
-										ImGui::CloseCurrentPopup();
-									}
 
-									ImGui::EndPopup();
+									ImGui::End();
 								}
+								if (!open)
+									close();
 							}
 						};
 
-						AutoSplashDialog::open(terrain);
-					}
-					if (ImGui::Button("Auto Spawn"))
-					{
-
+						ProcedureTerrainDialog::open(terrain);
 					}
 				}
 			}

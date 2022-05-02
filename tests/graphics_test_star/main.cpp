@@ -142,8 +142,7 @@ int entry(int argc, char** args)
 
 		vtx_buf.upload(cb);
 		auto vp = Rect(vec2(0), app.main_window->native->size);
-		cb->set_viewport(vp);
-		cb->set_scissor(vp);
+		cb->set_viewport_and_scissor(vp);
 		auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
 		cb->begin_renderpass(nullptr, app.main_window->framebuffers[idx].get(), &cv);
 		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);

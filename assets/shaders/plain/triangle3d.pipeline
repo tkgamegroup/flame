@@ -1,5 +1,5 @@
-%rp=../color.rp
-%pt=LineList
+%rp=../forward.rp
+%pt=TriangleList
 layout
   plain.pll
 shaders
@@ -12,5 +12,3 @@ renderpass
   {rp}
 primitive_topology
   {pt}
-cull_mode
-  None
