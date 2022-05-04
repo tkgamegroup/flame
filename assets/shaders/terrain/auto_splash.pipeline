@@ -67,7 +67,7 @@ void main()
 	weight[1] = interpolate(angle, pc.bar[0], pc.bar[1], pc.transition);
 	weight[2] = interpolate(angle, pc.bar[1], 90.0, pc.transition);
 	weight /= weight[0] + weight[1] + weight[2];
-	o_color = vec4(weight 0.0);
+	o_color = vec4(weight, 0.0);
 #elif LAYERS == 4
 	vec4 weight;
 	weight[0] = interpolate(angle, 0.0, pc.bar[0], pc.transition);

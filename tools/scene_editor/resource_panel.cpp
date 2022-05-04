@@ -392,48 +392,51 @@ void ResourcePanel::draw()
 			ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 		}
 
+		Item::metric.init();
 		auto content_size = ImGui::GetContentRegionAvail();
 		content_size.y -= 4;
-		ImGui::BeginTable("contents", content_size.x / (Item::metric.size + Item::metric.padding.x * 2 + style.ItemSpacing.x), ImGuiTableFlags_ScrollY, content_size);
-		auto just_selected = false;
-		if (!items.empty())
+		if (ImGui::BeginTable("contents", content_size.x / (Item::metric.size + Item::metric.padding.x * 2 + style.ItemSpacing.x), ImGuiTableFlags_ScrollY, content_size))
 		{
-			for (auto i = 0; i < items.size(); i++)
+			auto just_selected = false;
+			if (!items.empty())
 			{
-				auto& item = items[i];
-
-				ImGui::TableNextColumn();
-				ImGui::PushID(i);
-				if (item->draw())
-					just_selected = true;
-				ImGui::PopID();
-
-				if (item_context_menu_callback)
+				for (auto i = 0; i < items.size(); i++)
 				{
-					if (ImGui::BeginPopupContextItem())
+					auto& item = items[i];
+
+					ImGui::TableNextColumn();
+					ImGui::PushID(i);
+					if (item->draw())
+						just_selected = true;
+					ImGui::PopID();
+
+					if (item_context_menu_callback)
 					{
-						item_context_menu_callback(item->path);
-						ImGui::EndPopup();
+						if (ImGui::BeginPopupContextItem())
+						{
+							item_context_menu_callback(item->path);
+							ImGui::EndPopup();
+						}
 					}
 				}
 			}
-		}
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !just_selected)
-		{
-			if (select_callback)
-				select_callback(L"");
-			else
-				selected_path = L"";
-		}
-		if (opened_folder && folder_context_menu_callback)
-		{
-			if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !just_selected)
 			{
-				folder_context_menu_callback(opened_folder->path);
-				ImGui::EndPopup();
+				if (select_callback)
+					select_callback(L"");
+				else
+					selected_path = L"";
 			}
+			if (opened_folder && folder_context_menu_callback)
+			{
+				if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+				{
+					folder_context_menu_callback(opened_folder->path);
+					ImGui::EndPopup();
+				}
+			}
+			ImGui::EndTable();
 		}
-		ImGui::EndTable();
 
 		ImGui::EndTable();
 	}

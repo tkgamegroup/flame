@@ -10,6 +10,7 @@
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
+#include <flame/universe/components/node.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
 
@@ -425,14 +426,17 @@ void View_Inspector::on_draw()
 						{
 							cTerrainPtr terrain;
 							bool update_height = true;
-							int voronoi_sites_count = 10;
+							int voronoi_sites_count = 20;
 							int voronoi_layer1_precentage = 50;
 							int voronoi_layer2_precentage = 50;
 							int voronoi_layer3_precentage = 50;
+							bool update_cliff = true;
+							std::vector<std::filesystem::path> cliff_models;
+
 							bool update_splash = true;
 							uint splash_layers = 0;
 							float splash_bar1 = 45.f;
-							float splash_bar2 = 70.f;
+							float splash_bar2 = 80.f;
 							float splash_bar3 = 90.f;
 							float splash_transition = 4.f;
 
@@ -442,7 +446,7 @@ void View_Inspector::on_draw()
 								if (material)
 								{
 									auto dialog = new ProcedureTerrainDialog;
-									dialog->title = "Splash";
+									dialog->title = "Procedure Terrain";
 									dialog->terrain = terrain;
 									for (auto& d : material->shader_defines)
 									{
@@ -469,6 +473,10 @@ void View_Inspector::on_draw()
 										ImGui::Checkbox("Update##height", &update_height);
 										ImGui::InputInt("Sites Count", &voronoi_sites_count);
 										ImGui::InputInt("Layer1 Precentage", &voronoi_layer1_precentage);
+										if (ImGui::CollapsingHeader("Cliff"))
+										{
+											ImGui::Checkbox("Update##cliff", &update_cliff);
+										}
 									}
 									if (ImGui::CollapsingHeader("Splash"))
 									{
@@ -489,6 +497,10 @@ void View_Inspector::on_draw()
 											break;
 										}
 										ImGui::DragFloat("Transition", &splash_transition, 1.f, 0.f, 90.f);
+									}
+									if (ImGui::CollapsingHeader("Spawn"))
+									{
+
 									}
 									if (ImGui::Button("Generate"))
 									{
@@ -516,8 +528,8 @@ void View_Inspector::on_draw()
 												return diagram;
 											};
 
-											auto get_site_vertices = [](VoronoiDiagram::Site* site) {
-												std::vector<vec2> ret;
+											auto get_site_edges = [](VoronoiDiagram::Site* site) {
+												std::vector<VoronoiDiagram::HalfEdge*> ret;
 												auto face = site->face;
 												auto half_edge = face->outerComponent;
 												if (half_edge)
@@ -532,19 +544,29 @@ void View_Inspector::on_draw()
 													auto start_edge = half_edge;
 													while (half_edge != nullptr)
 													{
-														if (half_edge->origin != nullptr && half_edge->destination != nullptr)
-														{
-															if (ret.empty())
-															{
-																auto origin = half_edge->origin->point;
-																ret.push_back(vec2(origin.x, origin.y));
-															}
-															auto destination = half_edge->destination->point;
-															ret.push_back(vec2(destination.x, destination.y));
-														}
+														ret.push_back(half_edge);
 														half_edge = half_edge->next;
 														if (half_edge == start_edge)
 															break;
+													}
+												}
+												return ret;
+											};
+
+											auto to_vec2 = [](const Vector2& src) {
+												return vec2(src.x, src.y);
+											};
+
+											auto get_site_vertices = [&](VoronoiDiagram::Site* site) {
+												std::vector<vec2> ret;
+												auto edges = get_site_edges(site);
+												for (auto edge : edges)
+												{
+													if (edge->origin != nullptr && edge->destination != nullptr)
+													{
+														if (ret.empty())
+															ret.push_back(to_vec2(edge->origin->point));
+														ret.push_back(to_vec2(edge->destination->point));
 													}
 												}
 												return ret;
@@ -600,12 +622,14 @@ void View_Inspector::on_draw()
 												cb->bind_pipeline(pl);
 												prm.set_pc_var<"falloff"_h>(0.f);
 												prm.set_pc_var<"power"_h>(1.f);
+												prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f));
+												prm.set_pc_var<"uv_scl"_h>(32.f);
 												prm.push_constant(cb.get());
 												cb->bind_vertex_buffer(vtx_buf.get(), 0);
 
 												auto pvtx = (vec2*)vtx_buf->mapped;
 												auto vtx_cnt = 0;
-												for (auto i = 0; i < diagram.getNbSites(); i++)
+												for (auto i = 0; i < points.size(); i++)
 												{
 													auto vertices = get_site_vertices(diagram.getSite(i));
 													if (!vertices.empty() && vtx_cnt + vertices.size() <= MaxVertices)
@@ -613,10 +637,8 @@ void View_Inspector::on_draw()
 														for (auto j = 0; j < vertices.size(); j++)
 															pvtx[vtx_cnt + j] = vertices[j];
 														auto base = site_height[i];
-														prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f) * base);
-														prm.set_pc_var<"uv_scl"_h>(16.f);
 														prm.set_pc_var<"val_base"_h>(base);
-														prm.set_pc_var<"val_scl"_h>(0.5f);
+														prm.set_pc_var<"val_scl"_h>(0.25f);
 														prm.push_constant(cb.get(), prm.vu_pc.var_off<"uv_off"_h>(), sizeof(float) * 5);
 														cb->draw(vertices.size(), 1, vtx_cnt, 0);
 														vtx_cnt += vertices.size();
@@ -636,6 +658,60 @@ void View_Inspector::on_draw()
 											height_map->save(height_map->filename);
 											if (asset)
 												asset->active = true;
+
+											if (update_cliff)
+											{
+												auto e_cliff = terrain->entity->find_child("cliff");
+												if (!e_cliff)
+												{
+													e_cliff = Entity::create();
+													e_cliff->name = "cliff";
+													e_cliff->add_component(th<cNode>());
+													terrain->entity->add_child(e_cliff);
+												}
+												e_cliff->remove_all_children();
+												auto ext = terrain->extent;
+												for (auto i = 0; i < points.size(); i++)
+												{
+													auto self_height = site_height[i];
+													if (self_height > 0.f)
+													{
+														auto site = diagram.getSite(i);
+														auto edges = get_site_edges(site);
+														for (auto edge : edges)
+														{
+															auto oth_edge = edge->twin;
+															if (oth_edge)
+															{
+																auto oth_height = site_height[oth_edge->incidentFace->site->index];
+																if (oth_height < self_height)
+																{
+																	auto pa = to_vec2(edge->origin->point);
+																	auto pb = to_vec2(edge->destination->point);
+																	auto try_num = 20;
+																	auto spawn_area_length = distance(pa, pb);
+																	auto spawn_area_height = ext.y * (self_height - oth_height);
+																	for (auto t = 0; t < try_num; t++)
+																	{
+
+																	}
+																	auto e_rock = Entity::create();
+																	e_rock->load(L"assets/rocks/1.prefab");
+																	auto node = e_rock->get_component_i<cNode>(0);
+																	auto quat = angleAxis(atan2(spawn_area_height, ext.x * 2.f / height_map->size.x),
+																		normalize(vec3(pa.x, 0.f, pa.y) - vec3(pb.x, 0.f, pb.y)));
+																	auto axis = mat3(quat);
+																	node->set_pos((vec3(pa.x + pb.x, self_height + oth_height, pa.y + pb.y) * 0.5f) * ext + 
+																		axis[1] * 0.5f);
+																	node->set_qut(quat);
+																	node->set_scl(vec3(4.f));
+																	e_cliff->add_child(e_rock);
+																}
+															}
+														}
+													}
+												}
+											}
 										}
 										if (update_splash)
 										{

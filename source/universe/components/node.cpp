@@ -80,12 +80,12 @@ namespace flame
 	{
 		if (eul_dirty)
 		{
-			eul_dirty = false;
-
+			update_rot();
 			auto res = eulerAngles(qut);
 			eul.x = glm::degrees(res.y);
 			eul.y = glm::degrees(res.x);
 			eul.z = glm::degrees(res.z);
+			eul_dirty = false;
 		}
 	}
 
@@ -93,9 +93,9 @@ namespace flame
 	{
 		if (qut_dirty)
 		{
-			qut_dirty = false;
-
+			update_rot();
 			qut = quat(rot);
+			qut_dirty = false;
 		}
 	}
 
