@@ -61,6 +61,11 @@ namespace flame
 
 		virtual void look_at(const vec3& t) = 0;
 
+		virtual void update_eul() = 0;
+		virtual void update_qut() = 0;
+		virtual void update_rot() = 0;
+		virtual bool update_transform() = 0;
+
 		struct Create
 		{
 			virtual cNodePtr operator()(EntityPtr) = 0;

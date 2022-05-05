@@ -11,6 +11,7 @@
 #include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
 #include <flame/universe/components/node.h>
+#include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
 
@@ -513,11 +514,11 @@ void View_Inspector::on_draw()
 
 											auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 											std::default_random_engine generator(seed);
-											std::uniform_real_distribution<double> distribution_d(0.0, 1.0);
+											std::uniform_real_distribution<float> distribution(0.0, 1.0);
 
 											std::vector<Vector2> points;
 											for (int i = 0; i < voronoi_sites_count; ++i)
-												points.push_back(Vector2{ distribution_d(generator), distribution_d(generator) });
+												points.push_back(Vector2{ distribution(generator), distribution(generator) });
 
 											auto get_diagram = [](const std::vector<Vector2>& points) {
 												FortuneAlgorithm fortune_algorithm(points);
@@ -588,13 +589,13 @@ void View_Inspector::on_draw()
 											for (auto i = 0; i < points.size(); i++)
 											{
 												auto value = 0.f;
-												if (distribution_d(generator) * 100.f > voronoi_layer1_precentage)
+												if (distribution(generator) * 100.f > voronoi_layer1_precentage)
 												{
 													value += 0.25f;
-													if (distribution_d(generator) * 100.f > voronoi_layer2_precentage)
+													if (distribution(generator) * 100.f > voronoi_layer2_precentage)
 													{
 														value += 0.25f;
-														if (distribution_d(generator) * 100.f > voronoi_layer3_precentage)
+														if (distribution(generator) * 100.f > voronoi_layer3_precentage)
 															value += 0.25f;
 													}
 												}
@@ -661,6 +662,27 @@ void View_Inspector::on_draw()
 
 											if (update_cliff)
 											{
+												std::vector<std::pair<std::unique_ptr<Entity>, AABB>> e_rocks;
+												for (auto it : std::filesystem::directory_iterator(Path::get(L"assets/rocks")))
+												{
+													if (it.path().extension() == L".prefab")
+													{
+														auto e = Entity::create();
+														e->load(Path::reverse(it.path()));
+														AABB bounds;
+														e->forward_traversal([&](EntityPtr e) {
+															auto mesh = e->get_component_t<cMesh>();
+															if (mesh && mesh->model)
+															{
+																auto node = mesh->node;
+																node->update_rot();
+																bounds.expand(AABB(mesh->mesh->bounds.get_points(mesh->node->rot)));
+															}
+														});
+														e_rocks.emplace_back(e, bounds);
+													}
+												}
+
 												auto e_cliff = terrain->entity->find_child("cliff");
 												if (!e_cliff)
 												{
@@ -688,24 +710,59 @@ void View_Inspector::on_draw()
 																{
 																	auto pa = to_vec2(edge->origin->point);
 																	auto pb = to_vec2(edge->destination->point);
-																	auto try_num = 20;
-																	auto spawn_area_length = distance(pa, pb);
-																	auto spawn_area_height = ext.y * (self_height - oth_height);
+																	auto spawn_area_height = self_height - oth_height;
+																	auto spawn_area_width = 2.f / height_map->size.x;
+																	auto spawn_area_slope = atan2(spawn_area_height, spawn_area_width);
+																	auto spawn_area_cx = distance(pa, pb);
+																	auto spawn_area_cy = spawn_area_height / sin(spawn_area_slope);
+																	auto try_num = int(spawn_area_cx * ext.x * spawn_area_cy * ext.y) / 10;
+																	std::vector<AABB> local_rocks;
 																	for (auto t = 0; t < try_num; t++)
 																	{
+																		auto idx = int(distribution(generator) * e_rocks.size());
+																		auto coord = vec2(distribution(generator), distribution(generator));
+																		auto scl = distribution(generator) * 0.2f + 0.9f;
+																		auto quat = angleAxis(radians(distribution(generator) * 90.f), vec3(0.f, 1.f, 0.f));
+																		auto axis = mat3(quat);
+																		auto bounds = e_rocks[idx].second;
+																		bounds.a *= scl / ext; bounds.b *= scl / ext;
+																		bounds = AABB(bounds.get_points(axis));
+																		bounds.a.x += coord.x * spawn_area_cx;
+																		bounds.a.z += coord.y * spawn_area_cy;
+																		bounds.b.x += coord.x * spawn_area_cx;
+																		bounds.b.z += coord.y * spawn_area_cy;
+																		if (bounds.a.x > 0.f && bounds.b.x < spawn_area_cx &&
+																			bounds.a.z > 0.f && bounds.b.z < spawn_area_cy)
+																		{
+																			auto ok = true;
+																			for (auto& oth : local_rocks)
+																			{
+																				if (oth.intersects(bounds))
+																				{
+																					ok = false;
+																					break;
+																				}
+																			}
+																			if (!ok)
+																				continue;
 
+																			auto dir = normalize(pa - pb);
+																			auto pos = vec3(mix(pa.x, pb.x, coord.x),
+																				mix(self_height, oth_height, coord.y),
+																				mix(pa.y, pb.y, coord.x)) + vec3(-dir.y, 0.f, dir.x) * coord.y * spawn_area_width;
+																			pos *= ext;
+																			quat = angleAxis(spawn_area_slope, normalize(vec3(pa.x, 0.f, pa.y) - vec3(pb.x, 0.f, pb.y))) * quat;
+
+																			auto e_rock = e_rocks[idx].first->copy();
+																			auto node = e_rock->get_component_i<cNode>(0);
+																			node->set_pos(pos);
+																			node->set_qut(quat);
+																			node->set_scl(vec3(scl));
+																			e_cliff->add_child(e_rock);
+
+																			local_rocks.push_back(bounds);
+																		}
 																	}
-																	auto e_rock = Entity::create();
-																	e_rock->load(L"assets/rocks/1.prefab");
-																	auto node = e_rock->get_component_i<cNode>(0);
-																	auto quat = angleAxis(atan2(spawn_area_height, ext.x * 2.f / height_map->size.x),
-																		normalize(vec3(pa.x, 0.f, pa.y) - vec3(pb.x, 0.f, pb.y)));
-																	auto axis = mat3(quat);
-																	node->set_pos((vec3(pa.x + pb.x, self_height + oth_height, pa.y + pb.y) * 0.5f) * ext + 
-																		axis[1] * 0.5f);
-																	node->set_qut(quat);
-																	node->set_scl(vec3(4.f));
-																	e_cliff->add_child(e_rock);
 																}
 															}
 														}

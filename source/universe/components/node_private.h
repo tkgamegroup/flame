@@ -24,10 +24,10 @@ namespace flame
 
 		void look_at(const vec3& t) override;
 
-		void update_eul();
-		void update_qut();
-		void update_rot();
-		bool update_transform();
+		void update_eul() override;
+		void update_qut() override;
+		void update_rot() override;
+		bool update_transform() override;
 
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;

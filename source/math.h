@@ -301,7 +301,7 @@ namespace flame
 
 		bool intersects(const AABB& oth)
 		{
-			return any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a));
+			return !(any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a)));
 		}
 
 		bool intersects(const vec3& center, float radius)
