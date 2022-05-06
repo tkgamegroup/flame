@@ -573,15 +573,16 @@ void View_Inspector::on_draw()
 												return ret;
 											};
 
+											auto diagram = get_diagram(points);
 											for (auto t = 0; t < 3; t++)
 											{
-												auto diagram = get_diagram(points);
 												for (auto i = 0; i < diagram.getNbSites(); i++)
 												{
 													auto vertices = get_site_vertices(diagram.getSite(i));
 													auto centroid = convex_centroid(vertices);
 													points[i] = Vector2(centroid.x, centroid.y);
 												}
+												diagram = get_diagram(points);
 											}
 
 											std::vector<float> site_height;
@@ -602,7 +603,26 @@ void View_Inspector::on_draw()
 												site_height[i] = value;
 											}
 
-											auto diagram = get_diagram(points);
+											std::vector<VoronoiDiagram::HalfEdge*> slopes;
+											std::vector<std::vector<>> regions;
+											for (auto i = 0; i < points.size(); i++)
+											{
+												auto self_height = site_height[i];
+												if (self_height > 0.f)
+												{
+													std::vector<VoronoiDiagram::HalfEdge*> potential_slopes;
+													auto edges = get_site_edges(diagram.getSite(i));
+													for (auto edge : edges)
+													{
+														auto oth_edge = edge->twin;
+														if (oth_edge)
+														{
+															auto oth_height = site_height[oth_edge->incidentFace->site->index];
+														}
+													}
+												}
+											}
+
 											{
 												const auto MaxVertices = 10000;
 												graphics::StagingBuffer vtx_buf(sizeof(vec2) * MaxVertices, nullptr, graphics::BufferUsageVertex);
@@ -662,7 +682,7 @@ void View_Inspector::on_draw()
 
 											if (update_cliff)
 											{
-												std::vector<std::pair<std::unique_ptr<Entity>, AABB>> e_rocks;
+												std::vector<std::pair<std::unique_ptr<Entity>, AABB>> e_objs;
 												for (auto it : std::filesystem::directory_iterator(Path::get(L"assets/rocks")))
 												{
 													if (it.path().extension() == L".prefab")
@@ -679,7 +699,7 @@ void View_Inspector::on_draw()
 																bounds.expand(AABB(mesh->mesh->bounds.get_points(mesh->node->rot)));
 															}
 														});
-														e_rocks.emplace_back(e, bounds);
+														e_objs.emplace_back(e, bounds);
 													}
 												}
 
@@ -718,20 +738,23 @@ void View_Inspector::on_draw()
 																	auto spawn_area_cy = spawn_area_height / sin(spawn_area_slope);
 																	for (auto x = 0.f; x < 1.f; )
 																	{
-																		auto idx = int(distribution(generator) * e_rocks.size());
-																		auto scl = distribution(generator) * 0.2f + 1.3f;
-																		scl *= (self_height - oth_height) * 4.f;
-																		auto quat = angleAxis(radians(distribution(generator) * 90.f), vec3(0.f, 1.f, 0.f));
-																		auto pos = vec3(mix(pa.x, pb.x, x), mix(self_height, oth_height, 0.5f), mix(pa.y, pb.y, x)) * ext;
-																		x += e_rocks[idx].second.b.x * 1.5f * scl / ext.x / spawn_area_cx;
+																		auto& obj = e_objs[int(distribution(generator) * e_objs.size())];
+																		auto scl = distribution(generator) * 0.4f + 1.8f;
+																		auto quat = angleAxis(radians(distribution(generator) * 360.f), vec3(0.f, 1.f, 0.f));
+																		auto pos = vec3(mix(pa.x, pb.x, x), 0.f, mix(pa.y, pb.y, x)) * ext;
+																		pos.y = self_height * ext.y - obj.second.b.y;
+																		x += obj.second.b.x * 1.5f * scl * (distribution(generator) * 2.f + 1.f) / ext.x / spawn_area_cx;
 
-																		auto e_rock = e_rocks[idx].first->copy();
-																		auto node = e_rock->get_component_i<cNode>(0);
+																		auto e_obj = obj.first->copy();
+																		auto node = e_obj->get_component_i<cNode>(0);
 																		node->set_pos(pos);
+																		if (distribution(generator) > 0.5f)
+																			quat = quat * angleAxis(radians(180.f), vec3(1.f, 0.f, 0.f));
 																		node->set_qut(quat);
 																		node->set_scl(vec3(scl));
-																		e_cliff->add_child(e_rock);
+																		e_cliff->add_child(e_obj);
 																	}
+
 																	//auto try_num = int(spawn_area_cx * ext.x * spawn_area_cy * ext.y) / 10;
 																	//std::vector<AABB> local_objs;
 																	//for (auto t = 0; t < try_num; t++)
