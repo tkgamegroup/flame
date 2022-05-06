@@ -516,9 +516,9 @@ void View_Inspector::on_draw()
 											std::default_random_engine generator(seed);
 											std::uniform_real_distribution<float> distribution(0.0, 1.0);
 
-											std::vector<Vector2> points;
+											std::vector<Vector2> site_postions;
 											for (int i = 0; i < voronoi_sites_count; ++i)
-												points.push_back(Vector2{ distribution(generator), distribution(generator) });
+												site_postions.push_back(Vector2{ distribution(generator), distribution(generator) });
 
 											auto get_diagram = [](const std::vector<Vector2>& points) {
 												FortuneAlgorithm fortune_algorithm(points);
@@ -573,21 +573,21 @@ void View_Inspector::on_draw()
 												return ret;
 											};
 
-											auto diagram = get_diagram(points);
+											auto diagram = get_diagram(site_postions);
 											for (auto t = 0; t < 3; t++)
 											{
 												for (auto i = 0; i < diagram.getNbSites(); i++)
 												{
 													auto vertices = get_site_vertices(diagram.getSite(i));
 													auto centroid = convex_centroid(vertices);
-													points[i] = Vector2(centroid.x, centroid.y);
+													site_postions[i] = Vector2(centroid.x, centroid.y);
 												}
-												diagram = get_diagram(points);
+												diagram = get_diagram(site_postions);
 											}
 
 											std::vector<float> site_height;
-											site_height.resize(points.size());
-											for (auto i = 0; i < points.size(); i++)
+											site_height.resize(site_postions.size());
+											for (auto i = 0; i < site_postions.size(); i++)
 											{
 												auto value = 0.f;
 												if (distribution(generator) * 100.f > voronoi_layer1_precentage)
@@ -604,20 +604,50 @@ void View_Inspector::on_draw()
 											}
 
 											std::vector<VoronoiDiagram::HalfEdge*> slopes;
-											std::vector<std::vector<>> regions;
-											for (auto i = 0; i < points.size(); i++)
+											std::vector<std::pair<float, std::vector<int>>> regions;
 											{
-												auto self_height = site_height[i];
-												if (self_height > 0.f)
-												{
-													std::vector<VoronoiDiagram::HalfEdge*> potential_slopes;
-													auto edges = get_site_edges(diagram.getSite(i));
-													for (auto edge : edges)
+												std::vector<bool> touched;
+												touched.resize(site_postions.size());
+												std::function<void(int, float, std::vector<int>&)> collect_region;
+												collect_region = [&](int i, float height, std::vector<int>& region) {
+													if (touched[i])
+														return;
+													touched[i] = true;
+													region.push_back(i);
+													for (auto edge : get_site_edges(diagram.getSite(i)))
 													{
-														auto oth_edge = edge->twin;
-														if (oth_edge)
+														if (auto oth_edge = edge->twin; oth_edge)
 														{
-															auto oth_height = site_height[oth_edge->incidentFace->site->index];
+															auto oth_idx = oth_edge->incidentFace->site->index;
+															auto oth_height = site_height[oth_idx];
+															if (abs(oth_height - height) < 0.0001f)
+																collect_region(oth_idx, height, region);
+														}
+													}
+												};
+												for (auto i = 0; i < site_postions.size(); i++)
+												{
+													auto height = site_height[i];
+													if (height > 0.f)
+													{
+														std::vector<int> region;
+														collect_region(i, height, region);
+														regions.emplace_back(height, region);
+													}
+												}
+
+												for (auto& r : regions)
+												{
+													std::vector<VoronoiDiagram::HalfEdge*> candidates;
+													for (auto i : r.second)
+													{
+														for (auto edge : get_site_edges(diagram.getSite(i)))
+														{
+															if (auto oth_edge = edge->twin; oth_edge)
+															{
+																auto oth_idx = oth_edge->incidentFace->site->index;
+																auto oth_height = site_height[oth_idx];
+															}
 														}
 													}
 												}
@@ -650,7 +680,7 @@ void View_Inspector::on_draw()
 
 												auto pvtx = (vec2*)vtx_buf->mapped;
 												auto vtx_cnt = 0;
-												for (auto i = 0; i < points.size(); i++)
+												for (auto i = 0; i < site_postions.size(); i++)
 												{
 													auto vertices = get_site_vertices(diagram.getSite(i));
 													if (!vertices.empty() && vtx_cnt + vertices.size() <= MaxVertices)
@@ -713,96 +743,98 @@ void View_Inspector::on_draw()
 												}
 												e_cliff->remove_all_children();
 
-												auto ext = terrain->extent;
-												for (auto i = 0; i < points.size(); i++)
+												if (false) // TODO: find a good way to generate cliff
 												{
-													auto self_height = site_height[i];
-													if (self_height > 0.f)
+													auto ext = terrain->extent;
+													for (auto i = 0; i < site_postions.size(); i++)
 													{
-														auto site = diagram.getSite(i);
-														auto edges = get_site_edges(site);
-														for (auto edge : edges)
+														auto self_height = site_height[i];
+														if (self_height > 0.f)
 														{
-															auto oth_edge = edge->twin;
-															if (oth_edge)
+															auto site = diagram.getSite(i);
+															auto edges = get_site_edges(site);
+															for (auto edge : edges)
 															{
-																auto oth_height = site_height[oth_edge->incidentFace->site->index];
-																if (oth_height < self_height)
+																if (auto oth_edge = edge->twin; oth_edge)
 																{
-																	auto pa = to_vec2(edge->origin->point);
-																	auto pb = to_vec2(edge->destination->point);
-																	auto spawn_area_height = self_height - oth_height;
-																	auto spawn_area_width = 2.f / height_map->size.x;
-																	auto spawn_area_slope = atan2(spawn_area_height, spawn_area_width);
-																	auto spawn_area_cx = distance(pa, pb);
-																	auto spawn_area_cy = spawn_area_height / sin(spawn_area_slope);
-																	for (auto x = 0.f; x < 1.f; )
+																	auto oth_height = site_height[oth_edge->incidentFace->site->index];
+																	if (self_height > oth_height + 0.0001f)
 																	{
-																		auto& obj = e_objs[int(distribution(generator) * e_objs.size())];
-																		auto scl = distribution(generator) * 0.4f + 1.8f;
-																		auto quat = angleAxis(radians(distribution(generator) * 360.f), vec3(0.f, 1.f, 0.f));
-																		auto pos = vec3(mix(pa.x, pb.x, x), 0.f, mix(pa.y, pb.y, x)) * ext;
-																		pos.y = self_height * ext.y - obj.second.b.y;
-																		x += obj.second.b.x * 1.5f * scl * (distribution(generator) * 2.f + 1.f) / ext.x / spawn_area_cx;
+																		auto pa = to_vec2(edge->origin->point);
+																		auto pb = to_vec2(edge->destination->point);
+																		auto spawn_area_height = self_height - oth_height;
+																		auto spawn_area_width = 2.f / height_map->size.x;
+																		auto spawn_area_slope = atan2(spawn_area_height, spawn_area_width);
+																		auto spawn_area_cx = distance(pa, pb);
+																		auto spawn_area_cy = spawn_area_height / sin(spawn_area_slope);
+																		for (auto x = 0.f; x < 1.f; )
+																		{
+																			auto& obj = e_objs[int(distribution(generator) * e_objs.size())];
+																			auto scl = distribution(generator) * 0.4f + 1.8f;
+																			auto quat = angleAxis(radians(distribution(generator) * 360.f), vec3(0.f, 1.f, 0.f));
+																			auto pos = vec3(mix(pa.x, pb.x, x), 0.f, mix(pa.y, pb.y, x)) * ext;
+																			pos.y = self_height * ext.y - obj.second.b.y;
+																			x += obj.second.b.x * 1.5f * scl * (distribution(generator) * 2.f + 1.f) / ext.x / spawn_area_cx;
 
-																		auto e_obj = obj.first->copy();
-																		auto node = e_obj->get_component_i<cNode>(0);
-																		node->set_pos(pos);
-																		if (distribution(generator) > 0.5f)
-																			quat = quat * angleAxis(radians(180.f), vec3(1.f, 0.f, 0.f));
-																		node->set_qut(quat);
-																		node->set_scl(vec3(scl));
-																		e_cliff->add_child(e_obj);
+																			auto e_obj = obj.first->copy();
+																			auto node = e_obj->get_component_i<cNode>(0);
+																			node->set_pos(pos);
+																			if (distribution(generator) > 0.5f)
+																				quat = quat * angleAxis(radians(180.f), vec3(1.f, 0.f, 0.f));
+																			node->set_qut(quat);
+																			node->set_scl(vec3(scl));
+																			e_cliff->add_child(e_obj);
+																		}
+
+																		//auto try_num = int(spawn_area_cx * ext.x * spawn_area_cy * ext.y) / 10;
+																		//std::vector<AABB> local_objs;
+																		//for (auto t = 0; t < try_num; t++)
+																		//{
+																		//	auto idx = int(distribution(generator) * e_rocks.size());
+																		//	auto coord = vec2(distribution(generator), distribution(generator));
+																		//	auto scl = distribution(generator) * 0.2f + 0.9f;
+																		//	auto quat = angleAxis(radians(distribution(generator) * 90.f), vec3(0.f, 1.f, 0.f));
+																		//	auto bounds = e_rocks[idx].second;
+																		//	bounds.a *= scl / ext; bounds.b *= scl / ext;
+																		//	bounds = AABB(bounds.get_points(mat3(quat)));
+																		//	bounds.a.x += coord.x * spawn_area_cx;
+																		//	bounds.a.z += coord.y * spawn_area_cy;
+																		//	bounds.b.x += coord.x * spawn_area_cx;
+																		//	bounds.b.z += coord.y * spawn_area_cy;
+																		//	if (bounds.a.x > 0.f && bounds.b.x < spawn_area_cx &&
+																		//		bounds.a.z > 0.f && bounds.b.z < spawn_area_cy)
+																		//	{
+																		//		auto ok = true;
+																		//		for (auto& oth : local_objs)
+																		//		{
+																		//			if (oth.intersects(bounds))
+																		//			{
+																		//				ok = false;
+																		//				break;
+																		//			}
+																		//		}
+																		//		if (!ok)
+																		//			continue;
+
+																		//		auto dir = normalize(pa - pb);
+																		//		auto pos = vec3(mix(pa.x, pb.x, coord.x),
+																		//			mix(self_height, oth_height, coord.y),
+																		//			mix(pa.y, pb.y, coord.x)) + vec3(-dir.y, 0.f, dir.x) * coord.y * spawn_area_width;
+																		//		pos *= ext;
+																		//		quat = angleAxis(spawn_area_slope, normalize(vec3(pa.x, 0.f, pa.y) - vec3(pb.x, 0.f, pb.y))) * quat;
+
+																		//		auto e_rock = e_rocks[idx].first->copy();
+																		//		auto node = e_rock->get_component_i<cNode>(0);
+																		//		node->set_pos(pos);
+																		//		node->set_qut(quat);
+																		//		node->set_scl(vec3(scl));
+																		//		e_cliff->add_child(e_rock);
+
+																		//		local_objs.push_back(bounds);
+																		//	}
+																		//}
+
 																	}
-
-																	//auto try_num = int(spawn_area_cx * ext.x * spawn_area_cy * ext.y) / 10;
-																	//std::vector<AABB> local_objs;
-																	//for (auto t = 0; t < try_num; t++)
-																	//{
-																	//	auto idx = int(distribution(generator) * e_rocks.size());
-																	//	auto coord = vec2(distribution(generator), distribution(generator));
-																	//	auto scl = distribution(generator) * 0.2f + 0.9f;
-																	//	auto quat = angleAxis(radians(distribution(generator) * 90.f), vec3(0.f, 1.f, 0.f));
-																	//	auto bounds = e_rocks[idx].second;
-																	//	bounds.a *= scl / ext; bounds.b *= scl / ext;
-																	//	bounds = AABB(bounds.get_points(mat3(quat)));
-																	//	bounds.a.x += coord.x * spawn_area_cx;
-																	//	bounds.a.z += coord.y * spawn_area_cy;
-																	//	bounds.b.x += coord.x * spawn_area_cx;
-																	//	bounds.b.z += coord.y * spawn_area_cy;
-																	//	if (bounds.a.x > 0.f && bounds.b.x < spawn_area_cx &&
-																	//		bounds.a.z > 0.f && bounds.b.z < spawn_area_cy)
-																	//	{
-																	//		auto ok = true;
-																	//		for (auto& oth : local_objs)
-																	//		{
-																	//			if (oth.intersects(bounds))
-																	//			{
-																	//				ok = false;
-																	//				break;
-																	//			}
-																	//		}
-																	//		if (!ok)
-																	//			continue;
-
-																	//		auto dir = normalize(pa - pb);
-																	//		auto pos = vec3(mix(pa.x, pb.x, coord.x),
-																	//			mix(self_height, oth_height, coord.y),
-																	//			mix(pa.y, pb.y, coord.x)) + vec3(-dir.y, 0.f, dir.x) * coord.y * spawn_area_width;
-																	//		pos *= ext;
-																	//		quat = angleAxis(spawn_area_slope, normalize(vec3(pa.x, 0.f, pa.y) - vec3(pb.x, 0.f, pb.y))) * quat;
-
-																	//		auto e_rock = e_rocks[idx].first->copy();
-																	//		auto node = e_rock->get_component_i<cNode>(0);
-																	//		node->set_pos(pos);
-																	//		node->set_qut(quat);
-																	//		node->set_scl(vec3(scl));
-																	//		e_cliff->add_child(e_rock);
-
-																	//		local_objs.push_back(bounds);
-																	//	}
-																	//}
-
 																}
 															}
 														}
