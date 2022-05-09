@@ -21,6 +21,7 @@ namespace flame
 
 		virtual void set_target(const vec3& pos) = 0;
 		virtual void stop() = 0;
+		virtual vec3 desire_velocity() = 0;
 		virtual vec3 current_velocity() = 0;
 
 		struct Create

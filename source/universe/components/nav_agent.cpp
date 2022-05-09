@@ -33,6 +33,19 @@ namespace flame
 #endif
 	}
 
+	vec3 cNavAgentPrivate::desire_velocity()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_id != -1)
+		{
+			auto dt_crowd = sScene::instance()->dt_crowd;
+			auto agent = dt_crowd->getAgent(dt_id);
+			return *(vec3*)agent->dvel;
+		}
+#endif
+		return vec3(0.f);
+	}
+
 	vec3 cNavAgentPrivate::current_velocity()
 	{
 #ifdef USE_RECASTNAV
