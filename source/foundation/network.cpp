@@ -286,7 +286,7 @@ namespace flame
 		static bool initialized = false;
 		void initialize()
 		{
-			if (!initialized)
+			if (initialized)
 				return;
 			WSADATA wsad = {};
 			WSAStartup(MAKEWORD(1, 1), &wsad);
@@ -444,14 +444,18 @@ namespace flame
 				int res;
 				sockaddr_in address;
 
-				auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
-				assert(fd_d != INVALID_SOCKET);
-				address = {};
-				address.sin_family = AF_INET;
-				address.sin_addr.S_un.S_addr = INADDR_ANY;
-				address.sin_port = htons(port);
-				res = bind(fd_d, (sockaddr*)&address, sizeof(address));
-				assert(res == 0);
+				SOCKET fd_d = 0;
+				if (on_dgram)
+				{
+					fd_d = socket(AF_INET, SOCK_DGRAM, 0);
+					assert(fd_d != INVALID_SOCKET);
+					address = {};
+					address.sin_family = AF_INET;
+					address.sin_addr.S_un.S_addr = INADDR_ANY;
+					address.sin_port = htons(port);
+					res = bind(fd_d, (sockaddr*)&address, sizeof(address));
+					assert(res == 0);
+				}
 
 				auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
 				assert(fd_s != INVALID_SOCKET);
@@ -473,30 +477,33 @@ namespace flame
 				s->on_dgram = on_dgram;
 				s->on_connect = on_connect;
 
-				std::thread([=]() {
-					while (true)
-					{
-						char buf[1024 * 64];
-						sockaddr_in address;
-						int address_size = sizeof(address);
-						auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
-						std::lock_guard lock(s->mtx);
-						if (res <= 0)
+				if (on_dgram)
+				{
+					std::thread([=]() {
+						while (true)
 						{
-							if (s->fd_d)
+							char buf[1024 * 64];
+							sockaddr_in address;
+							int address_size = sizeof(address);
+							auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+							std::lock_guard lock(s->mtx);
+							if (res <= 0)
 							{
-								closesocket(s->fd_d);
-								s->fd_d = 0;
+								if (s->fd_d)
+								{
+									closesocket(s->fd_d);
+									s->fd_d = 0;
+								}
+								set_native_event(s->ev_ended_d);
+								return;
 							}
-							set_native_event(s->ev_ended_d);
-							return;
+							DgramAddress da;
+							da.fd = s->fd_d;
+							da.paddr = (sockaddr*)&address;
+							s->on_dgram(&da, { buf, (size_t)res });
 						}
-						DgramAddress da;
-						da.fd = s->fd_d;
-						da.paddr = (sockaddr*)&address;
-						s->on_dgram(&da, { buf, (size_t)res });
-					}
-				}).detach();
+						}).detach();
+				}
 
 				std::thread([=]() {
 					while (true)
