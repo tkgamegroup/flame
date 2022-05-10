@@ -34,7 +34,7 @@ namespace flame
 			virtual ~Server() {}
 
 			virtual void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
-			virtual void send(void* id, std::string_view msg, bool dgram) = 0;
+			virtual void send(void* id, std::string_view msg, bool dgram = false) = 0;
 
 			struct Create
 			{
