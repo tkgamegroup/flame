@@ -491,6 +491,7 @@ namespace flame
 			file.seekg(0, std::ios::beg);
 			ret.resize(length);
 			file.read(ret.data(), length);
+			ret[length] = 0;
 			file.close();
 		}
 		return ret;
