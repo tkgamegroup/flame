@@ -13,6 +13,7 @@ int main(int argc, char **args)
 		src_port = s2t<int>(str);
 	if (auto str = ap.get_item("-dst_port"); !str.empty())
 		dst_port = s2t<int>(str);
+	auto printable_mode = ap.has("-printable");
 	std::string res;
 	if (!input.empty())
 	{
@@ -37,7 +38,23 @@ int main(int argc, char **args)
 			}
 			auto& data = tcp["tcp.payload"];
 			if (data.is_string())
-				res += data.get<std::string>();
+			{
+				auto str = data.get<std::string>();
+				if (printable_mode)
+				{
+					auto sp = SUS::split(str, ':');
+					str.clear();
+					for (auto& t : sp)
+					{
+						auto ch = s2u_hex<uint>(t);
+						if (isprint(ch))
+							str += char(ch);
+						else
+							str += '.';
+					}
+				}
+				res += str;
+			}
 		}
 	}
 	std::ofstream file(input + ".data");

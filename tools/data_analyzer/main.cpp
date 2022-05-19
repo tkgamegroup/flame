@@ -49,7 +49,7 @@ int main(int argc, char **args)
 					offsets[i] = s2t<int>(offset_items[i]);
 				std::sort(offsets.begin(), offsets.end());
 				auto min_dist = 0xffffffff;
-				for (auto i = offsets.size() - 1; i > 0; i++)
+				for (auto i = (int)offsets.size() - 1; i > 0; i--)
 				{
 					auto dist = offsets[i] - offsets[i - 1];
 					if (dist < min_dist)
