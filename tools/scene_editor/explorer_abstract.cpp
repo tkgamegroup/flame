@@ -1,16 +1,16 @@
-#include "resource_panel.h"
+#include "explorer_abstract.h"
 
 #include <flame/foundation/system.h>
 #include <flame/graphics/model.h>
 
-ResourcePanel::FolderTreeNode::FolderTreeNode(ResourcePanel* panel, const std::filesystem::path& path) :
-	panel(panel),
+ExplorerAbstract::FolderTreeNode::FolderTreeNode(ExplorerAbstract* explorer, const std::filesystem::path& path) :
+	explorer(explorer),
 	path(path)
 {
 	display_text = path.filename().string();
 }
 
-void ResourcePanel::FolderTreeNode::read_children()
+void ExplorerAbstract::FolderTreeNode::read_children()
 {
 	if (read)
 		return;
@@ -22,7 +22,7 @@ void ResourcePanel::FolderTreeNode::read_children()
 		{
 			if (std::filesystem::is_directory(it.status()) || it.path().extension() == L".fmod")
 			{
-				auto c = new FolderTreeNode(panel, it.path());
+				auto c = new FolderTreeNode(explorer, it.path());
 				c->parent = this;
 				children.emplace_back(c);
 			}
@@ -31,7 +31,7 @@ void ResourcePanel::FolderTreeNode::read_children()
 	read = true;
 }
 
-void ResourcePanel::FolderTreeNode::mark_upstream_open()
+void ExplorerAbstract::FolderTreeNode::mark_upstream_open()
 {
 	if (parent)
 	{
@@ -40,9 +40,9 @@ void ResourcePanel::FolderTreeNode::mark_upstream_open()
 	}
 }
 
-void ResourcePanel::FolderTreeNode::draw()
+void ExplorerAbstract::FolderTreeNode::draw()
 {
-	auto flags = panel->opened_folder == this ? ImGuiTreeNodeFlags_Selected : 0;
+	auto flags = explorer->opened_folder == this ? ImGuiTreeNodeFlags_Selected : 0;
 	if (read && children.empty())
 		flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	else
@@ -53,15 +53,15 @@ void ResourcePanel::FolderTreeNode::draw()
 		peeding_open = false;
 	}
 	auto opened = ImGui::TreeNodeEx(display_text.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
-	if (panel->peeding_scroll_here_folder == this)
+	if (explorer->peeding_scroll_here_folder == this)
 	{
 		ImGui::SetScrollHereY();
-		panel->peeding_scroll_here_folder = nullptr;
+		explorer->peeding_scroll_here_folder = nullptr;
 	}
 	if (ImGui::IsItemClicked())
 	{
-		if (panel->opened_folder != this)
-			panel->open_folder(this);
+		if (explorer->opened_folder != this)
+			explorer->open_folder(this);
 	}
 	if (opened)
 	{
@@ -72,8 +72,8 @@ void ResourcePanel::FolderTreeNode::draw()
 	}
 }
 
-ResourcePanel::Item::Metric ResourcePanel::Item::metric = {};
-void ResourcePanel::Item::Metric::init()
+ExplorerAbstract::Item::Metric ExplorerAbstract::Item::metric = {};
+void ExplorerAbstract::Item::Metric::init()
 {
 	if (size == 0)
 	{
@@ -83,8 +83,8 @@ void ResourcePanel::Item::Metric::init()
 	}
 }
 
-ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image) :
-	panel(panel),
+ExplorerAbstract::Item::Item(ExplorerAbstract* explorer, const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image) :
+	explorer(explorer),
 	path(path),
 	text(text),
 	image(image)
@@ -94,8 +94,8 @@ ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& pat
 	prune_text();
 }
 
-ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& path) :
-	panel(panel),
+ExplorerAbstract::Item::Item(ExplorerAbstract* explorer, const std::filesystem::path& path) :
+	explorer(explorer),
 	path(path)
 {
 	Item::metric.init();
@@ -113,7 +113,7 @@ ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& pat
 		{
 			auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
 			image = img;
-			panel->thumbnails.emplace_back(img);
+			explorer->thumbnails.emplace_back(img);
 		}
 	}
 	else
@@ -136,7 +136,7 @@ ResourcePanel::Item::Item(ResourcePanel* panel, const std::filesystem::path& pat
 	}
 }
 
-void ResourcePanel::Item::prune_text()
+void ExplorerAbstract::Item::prune_text()
 {
 	auto font = ImGui::GetFont();
 	auto font_size = ImGui::GetFontSize();
@@ -158,7 +158,7 @@ void ResourcePanel::Item::prune_text()
 	}
 }
 
-bool ResourcePanel::Item::draw()
+bool ExplorerAbstract::Item::draw()
 {
 	auto selected = false;
 	ImGui::InvisibleButton("", ImVec2(metric.size + metric.padding.x * 2, metric.size + metric.line_height + metric.padding.y * 3));
@@ -168,7 +168,7 @@ bool ResourcePanel::Item::draw()
 	auto active = ImGui::IsItemActive();
 	ImU32 col;
 	if (active)											col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
-	else if (hovered || panel->selected_path == path)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+	else if (hovered || explorer->selected_path == path)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
 	else												col = ImColor(0, 0, 0, 0);
 	auto draw_list = ImGui::GetWindowDrawList();
 	draw_list->AddRectFilled(p0, p1, col);
@@ -176,22 +176,22 @@ bool ResourcePanel::Item::draw()
 		draw_list->AddImage(image, ImVec2(p0.x + metric.padding.x, p0.y + metric.padding.y), ImVec2(p1.x - metric.padding.x, p1.y - metric.line_height - metric.padding.y * 2));
 	draw_list->AddText(ImVec2(p0.x + metric.padding.x + (metric.size - text_width) / 2, p0.y + metric.size + metric.padding.y * 2), ImColor(255, 255, 255), text.c_str(), text.c_str() + text.size());
 
-	if (frames > panel->open_folder_frame + 3 && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && hovered && ImGui::IsItemDeactivated())
+	if (frames > explorer->open_folder_frame + 3 && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && hovered && ImGui::IsItemDeactivated())
 	{
-		if (panel->select_callback)
-			panel->select_callback(path);
+		if (explorer->select_callback)
+			explorer->select_callback(path);
 		else
-			panel->selected_path = path;
+			explorer->selected_path = path;
 		selected = true;
 	}
 	if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
 	{
 		if (has_children)
-			panel->peeding_open_path = path;
+			explorer->peeding_open_path = path;
 		else
 		{
-			if (panel->dbclick_callback)
-				panel->dbclick_callback(path);
+			if (explorer->dbclick_callback)
+				explorer->dbclick_callback(path);
 		}
 	}
 
@@ -209,14 +209,14 @@ bool ResourcePanel::Item::draw()
 	return selected;
 }
 
-void ResourcePanel::reset(const std::filesystem::path& path)
+void ExplorerAbstract::reset(const std::filesystem::path& path)
 {
 	items.clear();
 	opened_folder = nullptr;
 	folder_tree.reset(new FolderTreeNode(this, path));
 }
 
-ResourcePanel::FolderTreeNode* ResourcePanel::find_folder(const std::filesystem::path& path, bool force_read)
+ExplorerAbstract::FolderTreeNode* ExplorerAbstract::find_folder(const std::filesystem::path& path, bool force_read)
 {
 	std::function<FolderTreeNode* (FolderTreeNode*)> sub_find;
 	sub_find = [&](FolderTreeNode* n)->FolderTreeNode* {
@@ -235,7 +235,7 @@ ResourcePanel::FolderTreeNode* ResourcePanel::find_folder(const std::filesystem:
 	return sub_find(folder_tree.get());
 }
 
-void ResourcePanel::open_folder(FolderTreeNode* folder, bool from_histroy)
+void ExplorerAbstract::open_folder(FolderTreeNode* folder, bool from_histroy)
 {
 	if (!folder)
 		folder = folder_tree.get();
@@ -320,7 +320,7 @@ void ResourcePanel::open_folder(FolderTreeNode* folder, bool from_histroy)
 	}
 }
 
-void ResourcePanel::ping(const std::filesystem::path& path)
+void ExplorerAbstract::ping(const std::filesystem::path& path)
 {
 	std::filesystem::path p;
 	auto sp = SUW::split(path.wstring(), '#');
@@ -337,7 +337,7 @@ void ResourcePanel::ping(const std::filesystem::path& path)
 	}
 }
 
-void ResourcePanel::draw()
+void ExplorerAbstract::draw()
 {
 	if (!peeding_open_path.empty())
 	{

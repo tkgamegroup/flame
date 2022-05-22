@@ -2,11 +2,11 @@
 
 #include "app.h"
 
-struct ResourcePanel
+struct ExplorerAbstract
 {
 	struct FolderTreeNode
 	{
-		ResourcePanel* panel;
+		ExplorerAbstract* explorer;
 
 		bool read = false;
 		std::filesystem::path path;
@@ -17,7 +17,7 @@ struct ResourcePanel
 
 		bool peeding_open = false;
 
-		FolderTreeNode(ResourcePanel* panel, const std::filesystem::path& path);
+		FolderTreeNode(ExplorerAbstract* panel, const std::filesystem::path& path);
 		void read_children();
 		void mark_upstream_open();
 		void draw();
@@ -34,7 +34,7 @@ struct ResourcePanel
 		};
 		static Metric metric;
 
-		ResourcePanel* panel;
+		ExplorerAbstract* explorer;
 
 		std::filesystem::path path;
 		std::string text;
@@ -43,8 +43,8 @@ struct ResourcePanel
 
 		bool has_children = false;
 
-		Item(ResourcePanel* panel, const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image);
-		Item(ResourcePanel* panel, const std::filesystem::path& path);
+		Item(ExplorerAbstract* explorer, const std::filesystem::path& path, const std::string& text, graphics::ImagePtr image);
+		Item(ExplorerAbstract* explorer, const std::filesystem::path& path);
 		void prune_text();
 
 		bool draw();

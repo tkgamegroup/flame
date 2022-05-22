@@ -1,7 +1,7 @@
 #pragma once
 
 #include "app.h"
-#include "resource_panel.h"
+#include "explorer_abstract.h"
 
 struct Dialog
 {
@@ -50,7 +50,7 @@ struct InputDialog : Dialog
 
 struct SelectResourceDialog : Dialog
 {
-	ResourcePanel resource_panel;
+	ExplorerAbstract explorer;
 	std::filesystem::path path;
 	std::function<void(bool, const std::filesystem::path&)> callback;
 
