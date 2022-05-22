@@ -249,18 +249,21 @@ void View_Project::on_draw()
 			else
 				changed_files.emplace_back(p.first, p.second);
 
-			auto parent_path = p.first.parent_path();
-			auto found = false;
-			for (auto& pp : changed_directories)
+			if (p.second != FileModified)
 			{
-				if (pp == parent_path)
+				auto parent_path = p.first.parent_path();
+				auto found = false;
+				for (auto& pp : changed_directories)
 				{
-					found = true;
-					break;
+					if (pp == parent_path)
+					{
+						found = true;
+						break;
+					}
 				}
+				if (!found)
+					changed_directories.push_back(parent_path);
 			}
-			if (!found)
-				changed_directories.push_back(parent_path);
 		}
 		std::sort(changed_directories.begin(), changed_directories.end(), [](const auto& a, const auto& b) {
 			return a.wstring().size() < b.wstring().size();
@@ -268,6 +271,8 @@ void View_Project::on_draw()
 		std::sort(changed_files.begin(), changed_files.end(), [](const auto& a, const auto& b) {
 			return a.first.wstring().size() < b.first.wstring().size();
 		});
+
+		auto current_path = resource_panel.opened_folder ? resource_panel.opened_folder->path : L"";
 
 		for (auto& p : changed_directories)
 		{
@@ -278,8 +283,7 @@ void View_Project::on_draw()
 			}
 		}
 
-		resource_panel.open_folder(resource_panel.opened_folder ? 
-			resource_panel.find_folder(resource_panel.opened_folder->path) : nullptr);
+		resource_panel.open_folder(current_path.empty() ? nullptr : resource_panel.find_folder(current_path));
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
 		for (auto& p : changed_files)
