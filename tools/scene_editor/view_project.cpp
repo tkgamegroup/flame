@@ -19,7 +19,7 @@ View_Project::View_Project() :
 
 void View_Project::reset(const std::filesystem::path& assets_path)
 {
-	resource_panel.reset(assets_path);
+	explorer.reset(assets_path);
 
 	if (ev_watcher)
 	{
@@ -39,18 +39,18 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 
 void View_Project::init()
 {
-	resource_panel.select_callback = [this](const std::filesystem::path& path) {
+	explorer.select_callback = [this](const std::filesystem::path& path) {
 		if (path.empty())
 			selection.clear();
 		else
 			selection.select(path);
 	};
-	resource_panel.dbclick_callback = [this](const std::filesystem::path& path) {
+	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
 		if (ext == L".prefab")
 			app.open_prefab(path);
 	};
-	resource_panel.item_context_menu_callback = [this](const std::filesystem::path& path) {
+	explorer.item_context_menu_callback = [this](const std::filesystem::path& path) {
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
 		if (ImGui::BeginMenu("Copy Path"))
@@ -86,7 +86,7 @@ void View_Project::init()
 			});
 		}
 	};
-	resource_panel.folder_context_menu_callback = [this](const std::filesystem::path& path) {
+	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
 		if (ImGui::MenuItem("New Folder"))
@@ -272,18 +272,18 @@ void View_Project::on_draw()
 			return a.first.wstring().size() < b.first.wstring().size();
 		});
 
-		auto current_path = resource_panel.opened_folder ? resource_panel.opened_folder->path : L"";
+		auto current_path = explorer.opened_folder ? explorer.opened_folder->path : L"";
 
 		for (auto& p : changed_directories)
 		{
-			if (auto node = resource_panel.find_folder(p); node && node->read)
+			if (auto node = explorer.find_folder(p); node && node->read)
 			{
 				node->read = false;
 				node->read_children();
 			}
 		}
 
-		resource_panel.open_folder(current_path.empty() ? nullptr : resource_panel.find_folder(current_path));
+		explorer.open_folder(current_path.empty() ? nullptr : explorer.find_folder(current_path));
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
 		for (auto& p : changed_files)
@@ -336,11 +336,11 @@ void View_Project::on_draw()
 	if (selection.type == Selection::tPath)
 	{
 		if (selection.frame == (int)frames - 1)
-			resource_panel.ping(selection.path());
-		resource_panel.selected_path = selection.path();
+			explorer.ping(selection.path());
+		explorer.selected_path = selection.path();
 	}
 	else
-		resource_panel.selected_path.clear();
+		explorer.selected_path.clear();
 
-	resource_panel.draw();
+	explorer.draw();
 }

@@ -33,10 +33,6 @@ An ECS 3D-Game-Engine.
 
 - imgui https://github.com/ocornut/imgui
 
-- ImFileDialog https://github.com/dfranx/ImFileDialog
-
-    (should use my forked version: https://github.com/tkgamegroup/ImFileDialog)
-
 - ImGuizmo https://github.com/CedricGuillemet/ImGuizmo
 
 - FortuneAlgorithm https://github.com/pvigier/FortuneAlgorithm

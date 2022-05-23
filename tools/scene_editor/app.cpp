@@ -25,7 +25,7 @@ void View::open()
 	if (lis)
 		return;
 
-	lis = app.main_window->imgui_callbacks.add([this]() {
+	lis = graphics::gui_callbacks.add([this]() {
 		draw();
 	});
 }
@@ -37,7 +37,7 @@ void View::close()
 
 	auto _lis = lis;
 	add_event([_lis]() {
-		app.main_window->imgui_callbacks.remove(_lis);
+		graphics::gui_callbacks.remove(_lis);
 		return false;
 	});
 	lis = nullptr;
@@ -91,7 +91,7 @@ void App::init()
 	for (auto& v : views)
 		v->init();
 
-	main_window->imgui_callbacks.add([this]() {
+	graphics::gui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
 		{
@@ -727,7 +727,7 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{
-		view_project.resource_panel.peeding_open_path = e.value;
+		view_project.explorer.peeding_open_path = e.value;
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
@@ -750,10 +750,10 @@ int main(int argc, char** args)
 		preferences_o << "[project_path]\n";
 		preferences_o << app.project_path.string() << "\n";
 	}
-	if (view_project.resource_panel.opened_folder)
+	if (view_project.explorer.opened_folder)
 	{
 		preferences_o << "[opened_folder]\n";
-		preferences_o << view_project.resource_panel.opened_folder->path.string() << "\n";
+		preferences_o << view_project.explorer.opened_folder->path.string() << "\n";
 	}
 	if (app.e_prefab)
 	{

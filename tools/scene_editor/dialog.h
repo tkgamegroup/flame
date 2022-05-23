@@ -15,7 +15,6 @@ struct Dialog
 
 struct DialogManager
 {
-	bool open_new = true;
 	std::vector<std::unique_ptr<Dialog>> dialogs;
 
 	void update();

@@ -16,7 +16,13 @@ namespace flame
 		auto name = sp.empty() ? L"" : sp.front();
 		if (!name.starts_with(L"standard_"))
 			name = Path::get(name);
-		return std::make_pair(name, sp.size() < 2 ? 0 : s2t<uint>(sp[1]));
+		auto idx = 0;
+		if (sp.size() > 1)
+		{
+			sp[1] = SUW::strip_head_if(sp[1], L"mesh");
+			idx = s2t<uint>(sp[1]);
+		}
+		return std::make_pair(name, idx);
 	}
 
 	cMeshPrivate::~cMeshPrivate()

@@ -631,7 +631,7 @@ namespace flame
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 										auto n_mesh = n_components.append_child("item");
 										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-										n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(base_mesh_idx + i)).c_str());
+										n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(base_mesh_idx + i)).c_str());
 										n_mesh.append_attribute("material_name").set_value(((MaterialPtr)src->GetMaterial(i)->GetUserDataPtr())->filename.string().c_str());
 									}
 								}
@@ -1015,7 +1015,7 @@ namespace flame
 				auto ret = new ModelPrivate();
 				ret->filename = filename;
 
-				for (auto& n_mesh : doc_root.child("meshes"))
+				for (auto n_mesh : doc_root.child("meshes"))
 				{
 					auto& m = ret->meshes.emplace_back();
 					m.model = ret;

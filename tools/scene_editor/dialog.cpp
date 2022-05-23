@@ -5,13 +5,13 @@ DialogManager dialog_manager;
 void Dialog::open(Dialog* dialog)
 {
 	dialog_manager.dialogs.emplace_back(dialog);
+	ImGui::OpenPopup(dialog->title.c_str());
 }
 
 void Dialog::close()
 {
 	assert(!dialog_manager.dialogs.empty());
-	if (dialog_manager.dialogs.front().get() == this)
-		dialog_manager.open_new = true;
+	ImGui::CloseCurrentPopup();
 	add_event([this]() {
 		graphics::Queue::get()->wait_idle();
 		std::erase_if(dialog_manager.dialogs, [&](const auto& i) {
@@ -23,16 +23,8 @@ void Dialog::close()
 
 void DialogManager::update()
 {
-	if (open_new)
-	{
-		if (!dialogs.empty())
-		{
-			ImGui::OpenPopup(dialogs.front()->title.c_str());
-			open_new = false;
-		}
-	}
-	if (!dialogs.empty())
-		dialogs.front()->draw();
+	for (auto& d : dialogs)
+		d->draw();
 }
 
 void MessageDialog::open(const std::string& title, const std::string& message)
@@ -58,10 +50,7 @@ void MessageDialog::draw()
 	{
 		ImGui::TextUnformatted(message.c_str());
 		if (ImGui::Button("OK"))
-		{
 			close();
-			ImGui::CloseCurrentPopup();
-		}
 		ImGui::EndPopup();
 	}
 }
@@ -83,7 +72,6 @@ void YesNoDialog::draw()
 			if (callback)
 				callback(true);
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("No"))
@@ -91,7 +79,6 @@ void YesNoDialog::draw()
 			if (callback)
 				callback(false);
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
@@ -115,7 +102,6 @@ void InputDialog::draw()
 			if (callback)
 				callback(true, text);
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel"))
@@ -123,7 +109,6 @@ void InputDialog::draw()
 			if (callback)
 				callback(false, "");
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
@@ -134,16 +119,15 @@ void SelectResourceDialog::open(const std::string& title, const std::function<vo
 	auto dialog = new SelectResourceDialog;
 	dialog->title = title;
 	dialog->callback = callback;
-	dialog->resource_panel.reset(app.project_path / L"assets");
-	dialog->resource_panel.peeding_open_node = { dialog->resource_panel.folder_tree.get(), false };
-	dialog->resource_panel.select_callback = [dialog](const std::filesystem::path& path) {
+	dialog->explorer.reset(app.project_path / L"assets");
+	dialog->explorer.peeding_open_node = { dialog->explorer.folder_tree.get(), false };
+	dialog->explorer.select_callback = [dialog](const std::filesystem::path& path) {
 		dialog->path = path;
 	};
-	dialog->resource_panel.dbclick_callback = [dialog](const std::filesystem::path& path) {
+	dialog->explorer.dbclick_callback = [dialog](const std::filesystem::path& path) {
 		if (dialog->callback)
 			dialog->callback(true, path);
 		dialog->close();
-		ImGui::CloseCurrentPopup();
 	};
 	Dialog::open(dialog);
 }
@@ -152,16 +136,15 @@ void SelectResourceDialog::draw()
 {
 	if (ImGui::BeginPopupModal(title.c_str()))
 	{
-		ImGui::BeginChild("resource_panel", ImVec2(0, -ImGui::GetFontSize() - ImGui::GetStyle().ItemSpacing.y * 3));
-		resource_panel.selected_path = path;
-		resource_panel.draw();
+		ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() - ImGui::GetStyle().ItemSpacing.y * 3));
+		explorer.selected_path = path;
+		explorer.draw();
 		ImGui::EndChild();
 		if (ImGui::Button("OK"))
 		{
 			if (callback)
 				callback(true, path);
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel"))
@@ -169,7 +152,6 @@ void SelectResourceDialog::draw()
 			if (callback)
 				callback(false, L"");
 			close();
-			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}

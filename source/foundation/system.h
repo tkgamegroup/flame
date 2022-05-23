@@ -43,7 +43,7 @@ namespace flame
 	FLAME_FOUNDATION_API void set_clipboard(std::wstring_view str);
 	FLAME_FOUNDATION_API std::pair<uvec2, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path);
 	// if out_id!=nullptr icon id will be assigned, and no icon data will be returned
-	FLAME_FOUNDATION_API std::pair<uvec2, std::unique_ptr<uchar>> get_icon(const std::filesystem::path& path, int* out_id);
+	FLAME_FOUNDATION_API std::pair<uvec2, std::unique_ptr<uchar>> get_sys_icon(const std::filesystem::path& path, int* out_id);
 	FLAME_FOUNDATION_API bool is_keyboard_pressing(KeyboardKey key);
 	FLAME_FOUNDATION_API void send_keyboard_event(KeyboardKey key, bool down = true);
 	FLAME_FOUNDATION_API void send_mouse_event(MouseButton key, bool down = true);

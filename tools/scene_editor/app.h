@@ -4,15 +4,6 @@
 
 using namespace flame;
 
-enum Icon
-{
-	Icon_Model,
-	Icon_Armature,
-	Icon_Mesh,
-
-	IconCount
-};
-
 enum Tool
 {
 	ToolNone,

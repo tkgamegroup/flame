@@ -1,5 +1,7 @@
 #include "../foundation/window.h"
+#include "../foundation/system.h"
 #include "gui.h"
+#include "explorer_abstract.h"
 #include "window_private.h"
 #include "renderpass_private.h"
 #include "font_private.h"
@@ -24,6 +26,10 @@ namespace flame
 		GraphicsPipelinePtr imgui_pl;
 
 		Listeners<void()> gui_callbacks;
+
+		std::map<std::filesystem::path, std::unique_ptr<ImageT>> icons;
+		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> sys_icons;
+		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> thumbnails;
 
 		void create_fbs()
 		{
@@ -322,6 +328,8 @@ namespace flame
 
 			main_window->renderers.add(render);
 #endif
+
+
 		}
 
 		void* gui_native_handle()
@@ -330,6 +338,67 @@ namespace flame
 			return ImGui::GetCurrentContext();
 #endif
 			return nullptr;
+		}
+
+		ImagePtr get_icon(const std::filesystem::path& _path, uint desired_size)
+		{
+			auto path = _path;
+			auto ext = path.extension();
+			auto sp = SUW::split(path, '#');
+			if (sp.size() < 2)
+			{
+				if (ext == L".fmod")
+					path = L"#model";
+			}
+			else
+			{
+				if (sp[1].starts_with(L"#armature"))
+					path = L"#armature";
+				else if (sp[1].starts_with(L"#mesh"))
+					path = L"#mesh";
+			}
+
+			auto it = icons.find(path);
+			if (it != icons.end())
+			{
+				if (it->second.ref >= 0)
+					it->second.ref++;
+				return it->second.image.get();
+			}
+
+			if (is_image_file(ext))
+			{
+				auto d = get_thumbnail(desired_size, path);
+				if (d.second)
+				{
+					auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+					image = img;
+					thumbnails.emplace_back(img);
+				}
+			}
+			else
+			{
+				int id;
+				get_sys_icon(path, &id);
+				auto it = app.sys_icons.find(id);
+				if (it != app.sys_icons.end())
+					image = it->second.get();
+				else
+				{
+					auto d = get_sys_icon(path.c_str(), nullptr);
+					if (d.second)
+					{
+						auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+						image = img;
+						app.sys_icons.emplace(id, img);
+					}
+				}
+			}
+		}
+
+		void release_icon(const std::filesystem::path& path)
+		{
+
 		}
 	}
 }

@@ -279,20 +279,6 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 	print("====\n")
 			
-	print("== library ImFileDialog ==")
-	ok = True
-	address = "https://github.com/tkgamegroup/ImFileDialog.git"
-	lib_dir = parent_directory / "ImFileDialog"
-	if op == 2:
-		print("Download ImFileDialog from %s into %s ? y/n" % (address, str(lib_dir)))
-		ok = input() == "y"
-	if ok:
-		if not lib_dir.exists():
-			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
-		else:
-			print("%s exists, skip download" % str(lib_dir))
-	print("====\n")
-			
 	print("== library ImGuizmo ==")
 	ok = True
 	address = "https://github.com/CedricGuillemet/ImGuizmo.git"

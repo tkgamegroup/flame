@@ -56,7 +56,7 @@ void App::init()
 	app.create(true, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	app.always_render = false;
 
-	app.main_window->imgui_callbacks.add([this]() {
+	graphics::gui_callbacks.add([this]() {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
