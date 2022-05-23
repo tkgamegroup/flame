@@ -59,9 +59,9 @@ int main(int argc, char **args)
 				for (auto i = 0; i < min_dist; i += step)
 				{
 					str.clear();
+					auto ok = true;
 					for (auto offset : offsets)
 					{
-						auto ok = true;
 						auto s = content.substr(offset - i - length, length);
 						if (str.empty())
 							str = s;
@@ -73,9 +73,9 @@ int main(int argc, char **args)
 								break;
 							}
 						}
-						if (ok)
-							break;
 					}
+					if (ok)
+						int cut = 1;
 				}
 			}
 		}
