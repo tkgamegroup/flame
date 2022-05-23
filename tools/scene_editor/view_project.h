@@ -1,13 +1,13 @@
 #pragma once
 
 #include "app.h"
-#include "explorer_abstract.h"
 
 #include <flame/foundation/system.h>
+#include <flame/graphics/explorer_abstract.h>
 
 struct View_Project : View
 {
-	ExplorerAbstract explorer;
+	graphics::ExplorerAbstract explorer;
 
 	void* ev_watcher = nullptr;
 	std::mutex mtx_changed_paths;

@@ -95,6 +95,12 @@ namespace flame
 					image = get_icon(path);
 
 				}
+
+				inline ~Item()
+				{
+					if (image)
+						release_icon(path);
+				}
 			};
 
 			std::unique_ptr<FolderTreeNode> folder_tree;
@@ -204,11 +210,12 @@ namespace flame
 							pugi::xml_node doc_root;
 							if (doc.load(folder->path.string().c_str()) && (doc_root = doc.first_child()).name() != std::string("model"))
 							{
-								if (!doc_root.child("bones").children().empty())
+								for (auto n_bone : doc_root.child("bones"))
 								{
 									auto path = folder->path;
 									path += L"#armature";
 									items.emplace_back(new Item(path, "armature"));
+									break;
 								}
 								auto idx = 0;
 								for (auto n_mesh : doc_root.child("meshes"))

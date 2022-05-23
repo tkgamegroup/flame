@@ -27,9 +27,7 @@ namespace flame
 
 		Listeners<void()> gui_callbacks;
 
-		std::map<std::filesystem::path, std::unique_ptr<ImageT>> icons;
-		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> sys_icons;
-		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> thumbnails;
+		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> icons;
 
 		void create_fbs()
 		{
@@ -329,7 +327,12 @@ namespace flame
 			main_window->renderers.add(render);
 #endif
 
-
+			if (auto image = Image::get(L"flame/icon_model"); image)
+				icons.emplace(L"model", std::make_pair(-1, image));
+			if (auto image = Image::get(L"flame/icon_armature"); image)
+				icons.emplace(L"armature", std::make_pair(-1, image));
+			if (auto image = Image::get(L"flame/icon_mesh"); image)
+				icons.emplace(L"mesh", std::make_pair(-1, image));
 		}
 
 		void* gui_native_handle()
@@ -340,65 +343,88 @@ namespace flame
 			return nullptr;
 		}
 
-		ImagePtr get_icon(const std::filesystem::path& _path, uint desired_size)
+		std::filesystem::path parse_icon_path(const std::filesystem::path& path)
 		{
-			auto path = _path;
 			auto ext = path.extension();
-			auto sp = SUW::split(path, '#');
-			if (sp.size() < 2)
-			{
-				if (ext == L".fmod")
-					path = L"#model";
-			}
+			if (is_image_file(ext))
+				return path;
 			else
 			{
-				if (sp[1].starts_with(L"#armature"))
-					path = L"#armature";
-				else if (sp[1].starts_with(L"#mesh"))
-					path = L"#mesh";
+				auto sp = SUW::split(path, '#');
+				if (sp.size() < 2)
+				{
+					if (ext == L".fmod")
+						return L"model";
+				}
+				else
+				{
+					if (sp[1].starts_with(L"#armature"))
+						return L"armature";
+					else if (sp[1].starts_with(L"#mesh"))
+						return L"mesh";
+				}
+				if (path.empty())
+				{
+					int id;
+					get_sys_icon(path, &id);
+					return wstr(id);
+				}
 			}
+			return L"";
+		}
+
+		ImagePtr get_icon(const std::filesystem::path& _path, uint desired_size)
+		{
+			auto path = parse_icon_path(_path);
 
 			auto it = icons.find(path);
 			if (it != icons.end())
 			{
-				if (it->second.ref >= 0)
-					it->second.ref++;
-				return it->second.image.get();
+				if (it->second.first >= 0)
+					it->second.first++;
+				return it->second.second.get();
 			}
 
-			if (is_image_file(ext))
+			if (path == _path)
 			{
 				auto d = get_thumbnail(desired_size, path);
 				if (d.second)
 				{
-					auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
-					image = img;
-					thumbnails.emplace_back(img);
+					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+					icons.emplace(path, std::make_pair(1, image));
+					return image;
 				}
 			}
 			else
 			{
-				int id;
-				get_sys_icon(path, &id);
-				auto it = app.sys_icons.find(id);
-				if (it != app.sys_icons.end())
-					image = it->second.get();
-				else
+				auto d = get_sys_icon(path.c_str(), nullptr);
+				if (d.second)
 				{
-					auto d = get_sys_icon(path.c_str(), nullptr);
-					if (d.second)
+					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+					icons.emplace(path, std::make_pair(-1, image));
+					return image;
+				}
+			}
+
+			return nullptr;
+		}
+
+		void release_icon(const std::filesystem::path& _path)
+		{
+			auto path = parse_icon_path(_path);
+			if (path == _path)
+			{
+				auto it = icons.find(path);
+				if (it != icons.end())
+				{
+					if (it->second.first >= 0)
 					{
-						auto img = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
-						image = img;
-						app.sys_icons.emplace(id, img);
+						it->second.first--;
+						if (it->second.first == 0)
+							icons.erase(it);
 					}
 				}
 			}
-		}
-
-		void release_icon(const std::filesystem::path& path)
-		{
-
 		}
 	}
 }
