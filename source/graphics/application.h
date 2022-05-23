@@ -6,6 +6,7 @@
 #include "renderpass.h"
 #include "command.h"
 #include "window.h"
+#include "gui.h"
 
 struct GraphicsApplication : Application
 {
@@ -20,23 +21,7 @@ struct GraphicsApplication : Application
 		graphics::Device::create(graphics_debug);
 		main_window = graphics::Window::create(Application::main_window);
 
-		ImGui::SetCurrentContext((ImGuiContext*)main_window->imgui_context());
-
-#if USE_IM_FILE_DIALOG
-		ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void*
-		{
-			return graphics::Image::create(fmt == 1 ? graphics::Format_R8G8B8A8_UNORM : graphics::Format_B8G8R8A8_UNORM, uvec2(w, h), data);
-		};
-
-		ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
-		{
-			add_event([tex]() {
-				graphics::Queue::get()->wait_idle();
-				delete ((graphics::Image*)tex);
-				return false;
-			});
-		};
-#endif
+		graphics::gui_set_current();
 	}
 
 	bool on_update() override
@@ -46,8 +31,7 @@ struct GraphicsApplication : Application
 		if (render_frames > 0 || always_render)
 		{
 			main_window->dirty = true;
-			main_window->imgui_new_frame();
-			main_window->update();
+			main_window->render();
 			render_frames--;
 		}
 		return true;

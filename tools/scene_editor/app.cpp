@@ -409,7 +409,7 @@ void App::new_project(const std::filesystem::path& path)
 	std::filesystem::create_directories(cpp_path);
 
 	std::ofstream main_h(cpp_path / L"main.h");
-	auto main_h_content =
+	const auto main_h_content =
 R"^^^(
 #pragma once
 
@@ -437,7 +437,7 @@ struct cMain : Component
 	main_h.close();
 
 	std::ofstream main_cpp(cpp_path / L"main.cpp");
-	auto main_cpp_content =
+	const auto main_cpp_content =
 R"^^^(
 #include <flame/universe/entity.h>
 
@@ -471,7 +471,7 @@ EXPORT void* cpp_info()
 	main_cpp.close();
 
 	std::ofstream app_cpp(path / L"app.cpp");
-	auto app_cpp_content =
+	const auto app_cpp_content =
 R"^^^(
 #include <flame/universe/application.h>
 
@@ -498,7 +498,7 @@ int main()
 
 	auto cmake_path = path / L"CMakeLists.txt";
 	std::ofstream cmake_lists(cmake_path);
-	auto cmake_content = 
+	const auto cmake_content =
 R"^^^(
 cmake_minimum_required(VERSION 3.16.4)
 set(flame_path "$ENV{{FLAME_PATH}}")

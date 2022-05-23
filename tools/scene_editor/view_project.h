@@ -1,13 +1,13 @@
 #pragma once
 
 #include "app.h"
-#include "resource_panel.h"
+#include "explorer_abstract.h"
 
 #include <flame/foundation/system.h>
 
 struct View_Project : View
 {
-	ResourcePanel resource_panel;
+	ExplorerAbstract explorer;
 
 	void* ev_watcher = nullptr;
 	std::mutex mtx_changed_paths;

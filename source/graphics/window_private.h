@@ -2,7 +2,6 @@
 
 #include "window.h"
 #include "buffer_private.h"
-#include "extension.h"
 
 namespace flame
 {
@@ -22,19 +21,10 @@ namespace flame
 			void* resize_lis = nullptr;
 			void* destroy_lis = nullptr;
 
-			std::unique_ptr<ImagePrivate> imgui_img_font;
-			StorageBuffer<FLAME_UID, BufferUsageVertex> imgui_buf_vtx;
-			StorageBuffer<FLAME_UID, BufferUsageIndex> imgui_buf_idx;
-			std::unique_ptr<DescriptorSetPrivate> imgui_ds;
-			GraphicsPipelinePtr imgui_pl;
-
 			WindowPrivate(NativeWindowPtr native);
 			~WindowPrivate();
 
-			void* imgui_context() override;
-			void imgui_new_frame() override;
-
-			void update() override;
+			void render() override;
 		};
 
 		extern std::vector<WindowPtr> windows;
