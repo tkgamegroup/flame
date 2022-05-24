@@ -206,24 +206,30 @@ namespace flame
 						auto ext = folder->path.extension();
 						if (ext == L".fmod")
 						{
-							pugi::xml_document doc;
-							pugi::xml_node doc_root;
-							if (doc.load(folder->path.string().c_str()) && (doc_root = doc.first_child()).name() != std::string("model"))
+							std::ifstream file(folder->path);
+							if (file.good())
 							{
-								for (auto n_bone : doc_root.child("bones"))
+								LineReader src(file);
+								src.read_block("model:");
+								pugi::xml_document doc;
+								pugi::xml_node doc_root;
+								if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
 								{
-									auto path = folder->path;
-									path += L"#armature";
-									items.emplace_back(new Item(path, "armature"));
-									break;
-								}
-								auto idx = 0;
-								for (auto n_mesh : doc_root.child("meshes"))
-								{
-									auto path = folder->path;
-									path += L"#mesh" + wstr(idx);
-									items.emplace_back(new Item(path, "mesh " + str(idx)));
-									idx++;
+									for (auto n_bone : doc_root.child("bones"))
+									{
+										auto path = folder->path;
+										path += L"#armature";
+										items.emplace_back(new Item(path, "armature"));
+										break;
+									}
+									auto idx = 0;
+									for (auto n_mesh : doc_root.child("meshes"))
+									{
+										auto path = folder->path;
+										path += L"#mesh" + wstr(idx);
+										items.emplace_back(new Item(path, "mesh " + str(idx)));
+										idx++;
+									}
 								}
 							}
 						}

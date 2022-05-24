@@ -538,17 +538,15 @@ namespace flame
 				}
 				else
 				{
-					if (sp[1].starts_with(L"#armature"))
+					if (sp[1].starts_with(L"armature"))
 						return L"armature";
-					else if (sp[1].starts_with(L"#mesh"))
+					else if (sp[1].starts_with(L"mesh"))
 						return L"mesh";
 				}
-				if (path.empty())
-				{
-					int id;
-					get_sys_icon(path, &id);
-					return wstr(id);
-				}
+
+				int id;
+				get_sys_icon(path, &id);
+				return wstr(id);
 			}
 			return L"";
 		}
@@ -577,7 +575,7 @@ namespace flame
 			}
 			else
 			{
-				auto d = get_sys_icon(path.c_str(), nullptr);
+				auto d = get_sys_icon(_path.c_str(), nullptr);
 				if (d.second)
 				{
 					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
