@@ -19,7 +19,7 @@ namespace flame
 		auto idx = 0;
 		if (sp.size() > 1)
 		{
-			sp[1] = SUW::strip_head_if(sp[1], L"mesh");
+			SUW::strip_head_if(sp[1], L"mesh");
 			idx = s2t<uint>(sp[1]);
 		}
 		return std::make_pair(name, idx);

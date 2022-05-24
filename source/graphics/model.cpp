@@ -609,7 +609,7 @@ namespace flame
 								{
 									auto n_mesh = n_components.append_child("item");
 									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-									n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(base_mesh_idx)).c_str());
+									n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(base_mesh_idx)).c_str());
 									auto fbx_mat = src->GetMaterial(0);
 									if (fbx_mat)
 									{
