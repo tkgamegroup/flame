@@ -1,7 +1,6 @@
 #include "selection.h"
 #include "view_project.h"
 #include "view_scene.h"
-#include "dialog.h"
 
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
@@ -65,7 +64,7 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Rename"))
 		{
-			InputDialog::open("New name", [path](bool ok, const std::string& text) {
+			ImGui::OpenInputDialog("New name", [path](bool ok, const std::string& text) {
 				if (ok)
 				{
 					auto new_name = path;
@@ -77,7 +76,7 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Delete"))
 		{
-			YesNoDialog::open(std::format("Are you sure to delete \"{}\" ?", path.string()), [path](bool yes) {
+			ImGui::OpenYesNoDialog(std::format("Are you sure to delete \"{}\" ?", path.string()), [path](bool yes) {
 				if (yes)
 				{
 					std::error_code ec;
@@ -102,7 +101,7 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("New Image"))
 		{
-			struct NewImageDialog : Dialog
+			struct NewImageDialog : ImGui::Dialog
 			{
 				std::filesystem::path dir;
 				std::string name = "new_image";

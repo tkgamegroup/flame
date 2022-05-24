@@ -11,25 +11,202 @@
 #include "window_private.h"
 #include "extension.h"
 
+namespace ImGui
+{
+	std::vector<std::unique_ptr<Dialog>> dialogs;
+
+	void Dialog::open(Dialog* dialog)
+	{
+		dialogs.emplace_back(dialog);
+		ImGui::OpenPopup(dialog->title.c_str());
+	}
+
+	void Dialog::close()
+	{
+		assert(!dialogs.empty());
+		ImGui::CloseCurrentPopup();
+		flame::add_event([this]() {
+			flame::graphics::Queue::get()->wait_idle();
+			std::erase_if(dialogs, [&](const auto& i) {
+				return i.get() == this;
+			});
+			return false;
+		});
+	}
+
+	struct MessageDialog : Dialog
+	{
+		std::string message;
+
+		void draw() override
+		{
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted(message.c_str());
+				if (ImGui::Button("OK"))
+					close();
+				ImGui::EndPopup();
+			}
+		}
+	};
+
+	struct YesNoDialog : Dialog
+	{
+		std::function<void(bool)> callback;
+
+		void draw() override
+		{
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				if (ImGui::Button("Yes"))
+				{
+					if (callback)
+						callback(true);
+					close();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("No"))
+				{
+					if (callback)
+						callback(false);
+					close();
+				}
+				ImGui::EndPopup();
+			}
+		}
+	};
+
+	struct InputDialog : Dialog
+	{
+		std::string text;
+		std::function<void(bool, const std::string&)> callback;
+
+		void draw() override
+		{
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::InputText("##text", &text);
+				if (ImGui::Button("OK"))
+				{
+					if (callback)
+						callback(true, text);
+					close();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					if (callback)
+						callback(false, "");
+					close();
+				}
+				ImGui::EndPopup();
+			}
+		}
+	};
+
+	struct FileDialog : Dialog
+	{
+		flame::graphics::ExplorerAbstract explorer;
+		std::filesystem::path path;
+		std::function<void(bool, const std::filesystem::path&)> callback;
+
+		void draw() override
+		{
+			if (ImGui::BeginPopupModal(title.c_str()))
+			{
+				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() - ImGui::GetStyle().ItemSpacing.y * 3));
+				explorer.selected_path = path;
+				explorer.draw();
+				ImGui::EndChild();
+				if (ImGui::Button("OK"))
+				{
+					if (callback)
+						callback(true, path);
+					close();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					if (callback)
+						callback(false, L"");
+					close();
+				}
+				ImGui::EndPopup();
+			}
+		}
+	};
+
+	void OpenMessageDialog(const std::string title, const std::string& message)
+	{
+		auto dialog = new MessageDialog;
+		if (title == "[RestructurePrefabInstanceWarnning]")
+		{
+			dialog->title = "Cannot restructure Prefab Instance";
+			dialog->message = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
+				"Edit it in that prefab";
+		}
+		else
+		{
+			dialog->title = title;
+			dialog->message = message;
+		}
+		Dialog::open(dialog);
+	}
+
+	void OpenYesNoDialog(const std::string title, const std::function<void(bool)>& callback)
+	{
+		auto dialog = new YesNoDialog;
+		dialog->title = title;
+		dialog->callback = callback;
+		Dialog::open(dialog);
+	}
+
+	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback)
+	{
+		auto dialog = new InputDialog;
+		dialog->title = title;
+		dialog->callback = callback;
+		Dialog::open(dialog);
+	}
+
+	void OpenFileDialog(const std::string title, const std::function<void(bool, const std::filesystem::path&)>& callback, const std::filesystem::path& start_dir)
+	{
+		auto dialog = new FileDialog;
+		dialog->title = title;
+		dialog->callback = callback;
+		dialog->explorer.reset(start_dir);
+		dialog->explorer.peeding_open_node = { dialog->explorer.folder_tree.get(), false };
+		dialog->explorer.select_callback = [dialog](const std::filesystem::path& path) {
+			dialog->path = path;
+		};
+		dialog->explorer.dbclick_callback = [dialog](const std::filesystem::path& path) {
+			if (dialog->callback)
+				dialog->callback(true, path);
+			dialog->close();
+		};
+		Dialog::open(dialog);
+	}
+}
+
 namespace flame
 {
 	namespace graphics
 	{
-		WindowPtr main_window = nullptr;
-		RenderpassPtr imgui_rp = nullptr;
-		RenderpassPtr imgui_rp_load = nullptr;
-		std::vector<std::unique_ptr<FramebufferT>> imgui_fbs;
-		std::unique_ptr<ImageT> imgui_img_font;
-		StorageBuffer<FLAME_UID, BufferUsageVertex> imgui_buf_vtx;
-		StorageBuffer<FLAME_UID, BufferUsageIndex> imgui_buf_idx;
-		std::unique_ptr<DescriptorSetT> imgui_ds;
-		GraphicsPipelinePtr imgui_pl;
+		static WindowPtr main_window = nullptr;
+		static RenderpassPtr imgui_rp = nullptr;
+		static RenderpassPtr imgui_rp_load = nullptr;
+		static std::vector<std::unique_ptr<FramebufferT>> imgui_fbs;
+		static std::unique_ptr<ImageT> imgui_img_font;
+		static StorageBuffer<FLAME_UID, BufferUsageVertex> imgui_buf_vtx;
+		static StorageBuffer<FLAME_UID, BufferUsageIndex> imgui_buf_idx;
+		static std::unique_ptr<DescriptorSetT> imgui_ds;
+		static GraphicsPipelinePtr imgui_pl;
 
-		Listeners<void()> gui_callbacks;
+		static Listeners<void()> gui_callbacks;
 
-		std::map<std::filesystem::path, std::pair<int, std::unique_ptr<ImageT>>> icons;
+		static std::map<std::filesystem::path, std::pair<int, ImagePtr>> icons;
 
-		void create_fbs()
+		static void gui_create_fbs()
 		{
 			if (!imgui_rp)
 			{
@@ -45,7 +222,7 @@ namespace flame
 				imgui_fbs.emplace_back(Framebuffer::create(imgui_rp, img->get_view()));
 		}
 
-		void render(uint img_idx, CommandBufferPtr cb)
+		static void gui_render(uint img_idx, CommandBufferPtr cb)
 		{
 #if USE_IMGUI
 			auto native = main_window->native;
@@ -60,6 +237,9 @@ namespace flame
 
 			for (auto& l : gui_callbacks.list)
 				l.first();
+
+			for (auto& d : ImGui::dialogs)
+				d->draw();
 
 			auto mouse_consumed = io.WantCaptureMouse;
 			auto keyboard_consumed = io.WantCaptureKeyboard;
@@ -197,7 +377,7 @@ namespace flame
 			assert(!windows.empty());
 			main_window = windows.front();
 
-			create_fbs();
+			gui_create_fbs();
 
 			auto native = main_window->native;
 			native->mouse_listeners.add([](MouseButton btn, bool down) {
@@ -227,7 +407,7 @@ namespace flame
 				io.AddInputCharacter(ch);
 			});
 			native->resize_listeners.add([](const vec2&) {
-				create_fbs();
+				gui_create_fbs();
 			});
 
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
@@ -324,14 +504,14 @@ namespace flame
 			imgui_ds->set_image(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			imgui_ds->update();
 
-			main_window->renderers.add(render);
+			main_window->renderers.add(gui_render);
 #endif
 
-			if (auto image = Image::get(L"flame/icon_model"); image)
+			if (auto image = Image::get(L"flame/icon_model.png"); image)
 				icons.emplace(L"model", std::make_pair(-1, image));
-			if (auto image = Image::get(L"flame/icon_armature"); image)
+			if (auto image = Image::get(L"flame/icon_armature.png"); image)
 				icons.emplace(L"armature", std::make_pair(-1, image));
-			if (auto image = Image::get(L"flame/icon_mesh"); image)
+			if (auto image = Image::get(L"flame/icon_mesh.png"); image)
 				icons.emplace(L"mesh", std::make_pair(-1, image));
 		}
 
@@ -373,7 +553,7 @@ namespace flame
 			return L"";
 		}
 
-		ImagePtr get_icon(const std::filesystem::path& _path, uint desired_size)
+		Image* get_icon(const std::filesystem::path& _path, uint desired_size)
 		{
 			auto path = parse_icon_path(_path);
 
@@ -382,7 +562,7 @@ namespace flame
 			{
 				if (it->second.first >= 0)
 					it->second.first++;
-				return it->second.second.get();
+				return it->second.second;
 			}
 
 			if (path == _path)
@@ -421,7 +601,10 @@ namespace flame
 					{
 						it->second.first--;
 						if (it->second.first == 0)
+						{
+							delete it->second.second;
 							icons.erase(it);
+						}
 					}
 				}
 			}

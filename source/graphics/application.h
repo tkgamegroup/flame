@@ -21,6 +21,7 @@ struct GraphicsApplication : Application
 		graphics::Device::create(graphics_debug);
 		main_window = graphics::Window::create(Application::main_window);
 
+		graphics::gui_initialize();
 		graphics::gui_set_current();
 	}
 

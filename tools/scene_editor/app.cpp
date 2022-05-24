@@ -2,7 +2,6 @@
 #include "selection.h"
 #include "view_scene.h"
 #include "view_project.h"
-#include "dialog.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -83,11 +82,6 @@ void App::init()
 	e_editor->add_component(th<cCamera>());
 	root->add_child(e_editor);
 
-	auto curr_path = std::filesystem::current_path();
-	icons[Icon_Model] = graphics::Image::get(curr_path / L"icon_model.png");
-	icons[Icon_Armature] = graphics::Image::get(curr_path / L"icon_armature.png");
-	icons[Icon_Mesh] = graphics::Image::get(curr_path / L"icon_mesh.png");
-
 	for (auto& v : views)
 		v->init();
 
@@ -97,29 +91,35 @@ void App::init()
 		{
 			if (ImGui::MenuItem("New Project"))
 			{
-			#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("NewProject", "New a project", "");
-			#endif
+				ImGui::OpenFileDialog("New Project", [this](bool ok, const std::filesystem::path& path) {
+					if (ok)
+						new_project(path);
+				});
 			}
 			if (ImGui::MenuItem("Open Project"))
 			{
-			#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("OpenProject", "Open a project", "");
-			#endif
+				ImGui::OpenFileDialog("Open Project", [this](bool ok, const std::filesystem::path& path) {
+					if (ok)
+						open_project(path);
+				});
 			}
 			if (ImGui::MenuItem("New Prefab"))
 			{
-			#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Save("NewPrefab", "New prefab", "Prefab file (*.prefab){.prefab}",
-					prefab_path.empty() ? "" : (project_path / L"assets").string());
-			#endif
+				ImGui::OpenFileDialog("New Prefab", [this](bool ok, const std::filesystem::path& path) {
+					if (ok)
+					{
+						auto e = Entity::create();
+						e->save(path);
+						open_prefab(path);
+					}
+				});
 			}
 			if (ImGui::MenuItem("Open Prefab"))
 			{
-			#ifdef USE_IM_FILE_DIALOG
-				ifd::FileDialog::Instance().Open("OpenPrefab", "Open a prefab", "Prefab file (*.prefab){.prefab}", false, 
-					prefab_path.empty() ? "" : (project_path / L"assets").string());
-			#endif
+				ImGui::OpenFileDialog("Open Prefab", [this](bool ok, const std::filesystem::path& path) {
+					if (ok)
+						open_prefab(path);
+				});
 			}
 			if (ImGui::MenuItem("Save Prefab"))
 			{
@@ -270,7 +270,7 @@ void App::init()
 			tool = ToolTerrainPaint;
 
 		ImGui::SameLine();
-		ImGui::Dummy(vec2(0.f, 50.f));
+		ImGui::Dummy(vec2(50.f, 20.f));
 		if (!e_playing)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
@@ -308,39 +308,6 @@ void App::init()
 				cmd_stop();
 		}
 
-		dialog_manager.update();
-
-#ifdef USE_IM_FILE_DIALOG
-		if (ifd::FileDialog::Instance().IsDone("NewProject"))
-		{
-			if (ifd::FileDialog::Instance().HasResult())
-				new_project(ifd::FileDialog::Instance().GetResultFormated());
-			ifd::FileDialog::Instance().Close();
-		}
-		if (ifd::FileDialog::Instance().IsDone("OpenProject"))
-		{
-			if (ifd::FileDialog::Instance().HasResult())
-				open_project(ifd::FileDialog::Instance().GetResultFormated());
-			ifd::FileDialog::Instance().Close();
-		}
-		if (ifd::FileDialog::Instance().IsDone("NewPrefab"))
-		{
-			if (ifd::FileDialog::Instance().HasResult())
-			{
-				auto path = ifd::FileDialog::Instance().GetResultFormated();
-				auto e = Entity::create();
-				e->save(path);
-				open_prefab(path);
-			}
-			ifd::FileDialog::Instance().Close();
-		}
-		if (ifd::FileDialog::Instance().IsDone("OpenPrefab"))
-		{
-			if (ifd::FileDialog::Instance().HasResult())
-				open_prefab(ifd::FileDialog::Instance().GetResultFormated());
-			ifd::FileDialog::Instance().Close();
-		}
-#endif
 		if (navmesh_test.open)
 		{
 			ImGui::Begin(NavMeshTest::name, &navmesh_test.open);
@@ -649,7 +616,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	if (!e->prefab && get_prefab_instance(e))
 	{
-		MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
+		ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
 	}
 	e->parent->remove_child(e);

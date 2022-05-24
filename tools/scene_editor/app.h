@@ -40,9 +40,6 @@ struct App : UniverseApplication
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
 
-	graphics::ImagePtr icons[IconCount];
-	std::map<int, std::unique_ptr<graphics::Image>> sys_icons;
-
 	Tool tool = ToolSelect;
 
 	void init();

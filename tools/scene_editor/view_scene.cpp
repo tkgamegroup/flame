@@ -60,20 +60,23 @@ void View_Scene::on_draw()
 	auto scene_size = vec2(ImGui::GetContentRegionAvail());
 	if (!render_tar || vec2(render_tar->size) != scene_size)
 	{
-		graphics::Queue::get()->wait_idle();
-		if (scene_size.x > 1 && scene_size.y > 1)
-		{
-			render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(scene_size),
-				graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
-			auto iv = render_tar->get_view();
-			app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
-		}
-		else
-		{
-			render_tar.reset();
-			app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
-		}
+		add_event([this, scene_size]() {
+			graphics::Queue::get()->wait_idle();
+			if (scene_size.x > 1 && scene_size.y > 1)
+			{
+				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(scene_size),
+					graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
+				auto iv = render_tar->get_view();
+				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+			}
+			else
+			{
+				render_tar.reset();
+				app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+			}
+			return false;
+		});
 	}
 
 	hovering_node = nullptr;
@@ -186,7 +189,7 @@ void View_Scene::on_draw()
 							}
 						}
 						return true;
-						});
+					});
 				}
 				if (show_axis)
 				{
@@ -207,7 +210,7 @@ void View_Scene::on_draw()
 							}
 						}
 						return true;
-						});
+					});
 				}
 				if (show_bones)
 				{
@@ -234,7 +237,7 @@ void View_Scene::on_draw()
 							draw_node(arm->node);
 						}
 						return true;
-						});
+					});
 				}
 				}, "scene"_h);
 			editor_node->mark_transform_dirty();

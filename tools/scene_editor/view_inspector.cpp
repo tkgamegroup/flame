@@ -1,7 +1,6 @@
 #include "app.h"
 #include "selection.h"
 #include "view_inspector.h"
-#include "dialog.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
@@ -423,7 +422,7 @@ void View_Inspector::on_draw()
 					auto terrain = (cTerrainPtr)c.get();
 					if (ImGui::Button("Procedure Terrain"))
 					{
-						struct ProcedureTerrainDialog : Dialog
+						struct ProcedureTerrainDialog : ImGui::Dialog
 						{
 							cTerrainPtr terrain;
 							bool update_height = true;
@@ -902,7 +901,7 @@ void View_Inspector::on_draw()
 		if (ImGui::Button("Add Component"))
 		{
 			if (get_prefab_instance(e))
-				MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
+				ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
 			else
 				ImGui::OpenPopup("add_component");
 		}

@@ -1,7 +1,6 @@
 #include "selection.h"
 #include "view_hierarchy.h"
 #include "view_scene.h"
-#include "dialog.h"
 
 View_Hierarchy view_hierarchy;
 
@@ -73,7 +72,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
+					ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else
@@ -81,7 +80,7 @@ void View_Hierarchy::on_draw()
 					auto e_src = *(EntityPtr*)payload->Data;
 					if (!e_src->prefab && get_prefab_instance(e_src))
 					{
-						MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
+						ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
 						return nullptr;
 					}
 					if (!is_ancestor(e_src, e))
@@ -95,7 +94,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					MessageDialog::open("[RestructurePrefabInstanceWarnning]", "");
+					ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else

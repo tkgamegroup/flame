@@ -211,7 +211,7 @@ namespace flame
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
-		});
+		}, 0, false);
 	}
 
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)

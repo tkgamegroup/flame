@@ -35,6 +35,7 @@ namespace flame
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
 				unregister_backend_object(vk_image);
+				unregister_backend_object(vk_memory);
 			}
 		}
 
@@ -532,6 +533,7 @@ namespace flame
 				chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
 				chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
 				register_backend_object(ret->vk_image, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_memory, tn<decltype(*ret)>(), ret);
 
 				return ret;
 			}

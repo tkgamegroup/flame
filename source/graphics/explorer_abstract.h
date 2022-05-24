@@ -92,7 +92,7 @@ namespace flame
 						text_width = w;
 					}
 
-					image = get_icon(path);
+					image = (ImagePtr)get_icon(path);
 
 				}
 
