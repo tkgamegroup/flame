@@ -49,7 +49,6 @@ namespace flame
 		node->occluder_drawers.add([this](sRendererPtr renderer) {
 			draw(renderer, true);
 		}, "mesh"_h);
-
 		node->measurers.add([this](AABB* ret) {
 			if (!mesh)
 				return false;
