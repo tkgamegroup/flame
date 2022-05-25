@@ -7,6 +7,7 @@ namespace flame
 	struct cNavAgentPrivate : cNavAgent
 	{
 		int dt_id = -1;
+		vec3 target;
 		vec3 prev_pos;
 
 		void set_target(const vec3& pos) override;

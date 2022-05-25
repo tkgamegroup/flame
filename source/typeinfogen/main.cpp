@@ -163,7 +163,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 					case TagVD: tag = TagPVD; break;
 					case TagVU: tag = TagPVU; break;
 					case TagVR: tag = TagPVR; break;
-					case TagVPU: assert(0); break;
+					case TagVPU: tag = TagD; name.clear(); break;
 					}
 					ret = TypeInfo::get(tag, name, db);
 				}

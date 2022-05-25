@@ -10,6 +10,7 @@ namespace flame
 {
 	void cNavAgentPrivate::set_target(const vec3& pos)
 	{
+		target = pos;
 #ifdef USE_RECASTNAV
 		if (dt_id != -1)
 		{
@@ -102,18 +103,10 @@ namespace flame
 			auto dir = *(vec3*)agent->dvel;
 			if (length(dir) > 0.f)
 			{
-				auto ang0 = node->get_eul().x;
-				auto ang1 = mod(degrees(atan2(dir.x, dir.z)), 360.f); if (ang1 < 0.f) ang1 += 360.f;
-				auto dist1 = ang0 - ang1; if (dist1 < 0.f) dist1 += 360.f;
-				auto dist2 = ang1 - ang0; if (dist2 < 0.f) dist2 += 360.f;
-				//printf("ang0: %f, ang1: %f, dist1: %f, dist2: %f\n", ang0, ang1, dist1, dist2);
-				auto tsp = turn_speed * delta_time;
-				if (dist1 < dist2)
-					node->add_eul(vec3(-min(tsp, dist1), 0.f, 0.f));
-				else
-					node->add_eul(vec3(+min(tsp, dist2), 0.f, 0.f));
+				auto dist = angle_dist(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
+				node->add_eul(vec3(sign_min(dist, turn_speed * delta_time), 0.f, 0.f));
 				*(vec3*)agent->npos -= *(vec3*)agent->disp;
-				if (min(dist1, dist2) < 15.f)
+				if (abs(dist) < 15.f)
 				{
 					prev_pos = *(vec3*)agent->npos;
 					node->set_pos(prev_pos);

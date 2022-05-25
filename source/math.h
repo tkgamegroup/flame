@@ -52,6 +52,22 @@ namespace flame
 		return (uint)ceil((b / 4.f)) * 4U;
 	}
 
+	inline float angle_dist(float ang0, float ang1)
+	{
+		ang0 = mod(ang0, 360.f); if (ang0 < 0.f) ang0 += 360.f;
+		ang1 = mod(ang1, 360.f); if (ang1 < 0.f) ang1 += 360.f;
+		auto dist1 = ang0 - ang1; if (dist1 < 0.f) dist1 += 360.f;
+		auto dist2 = ang1 - ang0; if (dist2 < 0.f) dist2 += 360.f;
+		if (dist1 < dist2)
+			return -dist1;
+		return dist2;
+	}
+
+	inline float sign_min(float a, float b)
+	{
+		return sign(a) * min(abs(a), abs(b));
+	}
+
 	enum SideFlags
 	{
 		Outside = 0,
