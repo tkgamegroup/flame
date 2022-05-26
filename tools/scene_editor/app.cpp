@@ -628,14 +628,17 @@ bool App::cmd_play()
 {
 	if (e_playing || !e_prefab)
 		return false;
-	e_playing = e_prefab->copy();
-	e_prefab->parent->remove_child(e_prefab, false);
-	world->root->add_child(e_playing);
-	world->update_components = true;
-	always_render = true;
-	auto& camera_list = cCamera::list();
-	if (camera_list.size() > 1)
-		view_scene.camera_idx = 1;
+	add_event([this]() {
+		e_playing = e_prefab->copy();
+		e_prefab->parent->remove_child(e_prefab, false);
+		world->root->add_child(e_playing);
+		world->update_components = true;
+		always_render = true;
+		auto& camera_list = cCamera::list();
+		if (camera_list.size() > 1)
+			view_scene.camera_idx = 1;
+		return false;
+	});
 }
 
 bool App::cmd_stop()
@@ -646,13 +649,13 @@ bool App::cmd_stop()
 		e_playing->parent->remove_child(e_playing);
 		e_playing = nullptr;
 		world->root->add_child(e_prefab);
+		world->update_components = false;
+		always_render = false;
+		auto& camera_list = cCamera::list();
+		if (camera_list.size() > 0)
+			view_scene.camera_idx = 0;
 		return false;
 	});
-	world->update_components = false;
-	always_render = false;
-	auto& camera_list = cCamera::list();
-	if (camera_list.size() > 0)
-		view_scene.camera_idx = 0;
 }
 
 PrefabInstance* get_prefab_instance(EntityPtr e)

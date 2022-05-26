@@ -43,6 +43,8 @@ namespace flame
 		Type type = Shaded;
 		cCameraPtr camera = nullptr;
 
+		std::vector<graphics::ImageViewPtr> iv_tars;
+
 		bool dirty = false;
 
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;

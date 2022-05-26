@@ -11,7 +11,7 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		float radius = 0.6f;
+		float radius = 0.3f;
 		/// Reflect
 		float height = 1.8f;
 		/// Reflect

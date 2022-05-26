@@ -92,18 +92,10 @@ namespace flame
 					}
 					else if (!node->drawers.list.empty())
 						node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));
-					if (node->bounds.invalid())
-					{
-						if (node->octnode)
-							node->octnode->remove(node);
-					}
-					else
-					{
-						if (node->octnode)
-							node->octnode->add(node);
-						else
-							octree->add(node);
-					}
+					if (node->octnode)
+						node->octnode->remove(node);
+					if (!node->bounds.invalid())
+						octree->add(node);
 
 					mark_dirty = true;
 				}
@@ -211,7 +203,7 @@ namespace flame
 		for (auto& p : positions) bounds.expand(p);
 
 		auto agnent_height = 1.8f;
-		auto agnet_radius = 0.6f;
+		auto agnet_radius = 0.3f;
 		auto agnet_max_climb = 0.9f;
 
 		rcConfig rc_cfg;

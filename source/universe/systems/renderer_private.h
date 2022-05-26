@@ -71,8 +71,6 @@ namespace flame
 		std::vector<uint> transparent_draw_meshes;
 		std::vector<uint> transparent_draw_arm_meshes;
 
-		std::vector<graphics::ImageViewPtr> iv_tars;
-
 		std::unique_ptr<graphics::Image>												img_black;
 		std::unique_ptr<graphics::Image>												img_white;
 		std::unique_ptr<graphics::Image>												img_cube_black;

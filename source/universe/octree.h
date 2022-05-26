@@ -33,13 +33,9 @@ namespace flame
 
 		void add(cNodePtr n)
 		{
+			assert(!n->octnode);
 			if (bounds.contains(n->bounds))
 				sub_add(n);
-			else
-			{
-				if (parent)
-					parent->add(n);
-			}
 		}
 
 		void remove(cNodePtr n)
@@ -320,21 +316,12 @@ namespace flame
 
 		void sub_add(cNodePtr n)
 		{
-			auto set_node = [&]() {
-				if (n->octnode != this)
-				{
-					if (n->octnode)
-						n->octnode->remove(n);
-					n->octnode = this;
-					objects.push_back(n);
-				}
-			};
-			
 			if (children.empty())
 			{
 				if (objects.size() < OCTREE_MAX_OBJECTS || (length / 2.f) < 1.f)
 				{
-					set_node();
+					n->octnode = this;
+					objects.push_back(n);
 					return;
 				}
 
@@ -358,7 +345,10 @@ namespace flame
 			if (best_fit->bounds.contains(n->bounds))
 				best_fit->sub_add(n);
 			else
-				set_node();
+			{
+				n->octnode = this;
+				objects.push_back(n);
+			}
 		}
 
 		void split()
@@ -380,9 +370,8 @@ namespace flame
 		{
 			for (auto& c : children)
 			{
-				for (auto j = (int)c->objects.size() - 1; j >= 0; j--)
+				for (auto obj : c->objects)
 				{
-					auto obj = c->objects[j];
 					objects.push_back(obj);
 					obj->octnode = this;
 				}
