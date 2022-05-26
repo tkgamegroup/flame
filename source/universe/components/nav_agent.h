@@ -19,7 +19,7 @@ namespace flame
 		/// Reflect
 		float turn_speed = 360.f;
 
-		virtual void set_target(const vec3& pos) = 0;
+		virtual void set_target(const vec3& pos, bool face_mode = false) = 0;
 		virtual void stop() = 0;
 		virtual vec3 desire_velocity() = 0;
 		virtual vec3 current_velocity() = 0;

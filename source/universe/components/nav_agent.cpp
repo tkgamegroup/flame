@@ -8,21 +8,30 @@
 
 namespace flame
 {
-	void cNavAgentPrivate::set_target(const vec3& pos)
+	void cNavAgentPrivate::set_target(const vec3& pos, bool _face_mode)
 	{
-		target = pos;
-#ifdef USE_RECASTNAV
-		if (dt_id != -1)
+		target_pos = pos;
+		if (face_mode != _face_mode)
 		{
-			auto scene = sScene::instance();
-			dtPolyRef poly_ref = scene->nav_mesh_nearest_poly(pos);
-			auto dt_crowd = scene->dt_crowd;
-			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
-			//printf("%s -> %s\n", str(node->g_pos).c_str(), str(pos).c_str());
-			auto agent = dt_crowd->getEditableAgent(dt_id);
-			*(vec3*)agent->dvel = node->rot[2];
+			if (!face_mode)
+				stop();
+			face_mode = _face_mode;
 		}
+		if (!face_mode)
+		{
+#ifdef USE_RECASTNAV
+			if (dt_id != -1)
+			{
+				auto scene = sScene::instance();
+				dtPolyRef poly_ref = scene->nav_mesh_nearest_poly(pos);
+				auto dt_crowd = scene->dt_crowd;
+				dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
+				//printf("%s -> %s\n", str(node->g_pos).c_str(), str(pos).c_str());
+				auto agent = dt_crowd->getEditableAgent(dt_id);
+				*(vec3*)agent->dvel = node->rot[2];
+			}
 #endif
+		}
 	}
 
 	void cNavAgentPrivate::stop()
@@ -95,30 +104,40 @@ namespace flame
 
 	void cNavAgentPrivate::update()
 	{
-#ifdef USE_RECASTNAV
-		if (dt_id != -1)
+		if (face_mode)
 		{
-			auto dt_crowd = sScene::instance()->dt_crowd;
-			auto agent = dt_crowd->getEditableAgent(dt_id);
-			auto dir = *(vec3*)agent->dvel;
-			if (length(dir) > 0.f)
+			auto dir = node->g_pos - target_pos;
+			dir = normalize(dir);
+			auto diff = angle_diff(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
+			node->add_eul(vec3(sign_min(diff, turn_speed * delta_time), 0.f, 0.f));
+		}
+		else
+		{
+#ifdef USE_RECASTNAV
+			if (dt_id != -1)
 			{
-				auto dist = angle_dist(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
-				node->add_eul(vec3(sign_min(dist, turn_speed * delta_time), 0.f, 0.f));
-				*(vec3*)agent->npos -= *(vec3*)agent->disp;
-				if (abs(dist) < 15.f)
+				auto dt_crowd = sScene::instance()->dt_crowd;
+				auto agent = dt_crowd->getEditableAgent(dt_id);
+				auto dir = *(vec3*)agent->dvel;
+				if (length(dir) > 0.f)
 				{
-					prev_pos = *(vec3*)agent->npos;
-					node->set_pos(prev_pos);
-				}
-				else
-				{
-					*(vec3*)agent->npos = prev_pos;
-					*(vec3*)agent->vel = vec3(0.f);
+					auto diff = angle_diff(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
+					node->add_eul(vec3(sign_min(diff, turn_speed * delta_time), 0.f, 0.f));
+					*(vec3*)agent->npos -= *(vec3*)agent->disp;
+					if (abs(diff) < 15.f)
+					{
+						prev_pos = *(vec3*)agent->npos;
+						node->set_pos(prev_pos);
+					}
+					else
+					{
+						*(vec3*)agent->npos = prev_pos;
+						*(vec3*)agent->vel = vec3(0.f);
+					}
 				}
 			}
-		}
 #endif
+		}
 	}
 
 	struct cNavAgentCreate : cNavAgent::Create
