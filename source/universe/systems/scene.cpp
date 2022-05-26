@@ -210,7 +210,7 @@ namespace flame
 		get_meshes(world->root.get());
 		for (auto& p : positions) bounds.expand(p);
 
-		auto agnent_height = 2.f;
+		auto agnent_height = 1.8f;
 		auto agnet_radius = 0.6f;
 		auto agnet_max_climb = 0.9f;
 
