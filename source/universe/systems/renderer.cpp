@@ -197,6 +197,10 @@ namespace flame
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
 
+		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline",
+			{ "rp=" + str(rp_col) });
+		prm_tone.init(pl_tone->layout);
+
 		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col_dep),
 			  "frag:PICKUP" });
@@ -270,6 +274,11 @@ namespace flame
 		for (auto& i : window->swapchain->images) 
 			views.push_back(i->get_view());
 		set_targets(views, graphics::ImageLayoutAttachment);
+	}
+
+	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky)
+	{
+
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -1115,6 +1124,25 @@ namespace flame
 			cb->end_renderpass();
 
 			// transparent
+
+			// post
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+			cb->bind_pipeline(pl_tone);
+			prm_tone.set_pc_var<"average_lum"_h>(1.f);
+			prm_tone.set_pc_var<"white_point"_h>(4.f);
+			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / 2.2f);
+			prm_tone.push_constant(cb);
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
+
+			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+			cb->bind_pipeline(pl_blit);
+			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
 		}
 			break;
 		default:

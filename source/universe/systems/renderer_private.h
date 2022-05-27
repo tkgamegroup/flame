@@ -140,6 +140,8 @@ namespace flame
 		graphics::GraphicsPipelinePtr													pl_blur_v = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_h = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_v = nullptr;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_tone;
+		graphics::GraphicsPipelinePtr													pl_tone = nullptr;
 
 		std::unique_ptr<graphics::Image>												img_pickup;
 		std::unique_ptr<graphics::Image>												img_dep_pickup;
@@ -156,6 +158,8 @@ namespace flame
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
+
+		void set_sky(graphics::ImageViewPtr sky) override;
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;

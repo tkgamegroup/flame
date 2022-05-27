@@ -50,6 +50,8 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
+		virtual void set_sky(graphics::ImageViewPtr sky) = 0;
+
 		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;
 		virtual void release_texture_res(uint id) = 0;

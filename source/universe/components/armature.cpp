@@ -292,6 +292,8 @@ namespace flame
 									{
 										t.rotations[i].first = ch.rotation_keys[i].t;
 										t.rotations[i].second = ch.rotation_keys[i].q;
+										auto& q = ch.rotation_keys[i].q;
+										t.rotations[i].second = quat(q.z, q.w, q.x, q.y);
 									}
 									if (id == 0)
 									{

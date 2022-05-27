@@ -157,8 +157,8 @@ int main(int argc, char** args)
 		source_file << indent_str << "\t{\n";
 		source_file << indent_str << "\t\treturn new " << class_name << "Private();\n";
 		source_file << indent_str << "\t}\n";
-		source_file << indent_str << "}" << class_name << "_create_private;\n";
-		source_file << indent_str << class_name << "::Create& " << class_name << "::create = " << class_name << "_create_private;\n";
+		source_file << indent_str << "}" << class_name << "_create;\n";
+		source_file << indent_str << class_name << "::Create& " << class_name << "::create = " << class_name << "_create;\n";
 		if (is_internal) source_file << "}\n";
 		source_file.close();
 

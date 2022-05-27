@@ -1,9 +1,42 @@
-<?xml version="1.0"?>
-<pipeline>
-  <shaders>
-    <shader filename="fullscreen.vert" />
-    <shader filename="post/tone.frag" />
-  </shaders>
-  <layout filename="post/tone.pll" />
-  <renderpass filename="bgra8.rp" index="0" />
-</pipeline>
+layout
+  @pll
+shaders
+  ../fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+  
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_src;
+
+layout(push_constant) uniform PushConstant
+{
+	float average_lum;
+	float white_point;
+	float one_over_gamma;
+}pc;
+@
+  
+@frag
+#include "../math.glsl"
+
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_color;
+
+float reinhard2(float x, float L_white) 
+{
+    return (x * (1.0 + x / (L_white * L_white))) / (1.0 + x);
+}
+
+void main()
+{
+	vec3 rgb = texture(img_src, i_uv).rgb;
+	vec3 Yxy = rgb2Yxy(rgb);
+	float lp = Yxy.x / (9.6 * pc.average_lum + 0.0001);
+	Yxy.x = reinhard2(lp, pc.white_point);
+	rgb = Yxy2rgb(Yxy);
+	o_color = vec4(pow(rgb, vec3(pc.one_over_gamma)), 1.0);
+}
+@
