@@ -277,6 +277,12 @@ namespace flame
 									return -1;
 								};
 								auto id = find_bone(ch.node_name);
+								if (id == -1)
+								{
+									auto sp = SUS::split(ch.node_name, ':');
+									if (sp.size() == 2)
+										id = find_bone(sp[1]);
+								}
 								if (id != -1)
 								{
 									auto& t = a.tracks.emplace_back();
@@ -292,8 +298,6 @@ namespace flame
 									{
 										t.rotations[i].first = ch.rotation_keys[i].t;
 										t.rotations[i].second = ch.rotation_keys[i].q;
-										auto& q = ch.rotation_keys[i].q;
-										t.rotations[i].second = quat(q.z, q.w, q.x, q.y);
 									}
 									if (id == 0)
 									{

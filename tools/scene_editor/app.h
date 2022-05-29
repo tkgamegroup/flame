@@ -39,6 +39,7 @@ struct App : UniverseApplication
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
+	bool paused = false;
 
 	Tool tool = ToolSelect;
 
@@ -51,6 +52,7 @@ struct App : UniverseApplication
 	bool cmd_create_entity(EntityPtr dst = nullptr/* entity or nullptr to use e_prefab */, uint type = "empty"_h);
 	bool cmd_delete_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);
 	bool cmd_play();
+	bool cmd_pause();
 	bool cmd_stop();
 };
 

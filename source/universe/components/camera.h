@@ -13,7 +13,7 @@ namespace flame
 		/// Reflect
 		float fovy = 45.f;
 		/// Reflect
-		float zNear = 1.f;
+		float zNear = 0.1f;
 		/// Reflect
 		float zFar = 1000.f;
 

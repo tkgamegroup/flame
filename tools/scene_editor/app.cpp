@@ -280,10 +280,20 @@ void App::init()
 		}
 		else
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
-			if (add_tool_button(ToolNone, "pause"_h))
-				;
-			ImGui::PopStyleColor();
+			if (!paused)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
+				if (add_tool_button(ToolNone, "pause"_h))
+					cmd_pause();
+				ImGui::PopStyleColor();
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+				if (add_tool_button(ToolNone, "play"_h))
+					cmd_play();
+				ImGui::PopStyleColor();
+			}
 			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 			if (add_tool_button(ToolNone, "stop"_h))
@@ -626,19 +636,38 @@ bool App::cmd_delete_entity(EntityPtr e)
 
 bool App::cmd_play()
 {
-	if (e_playing || !e_prefab)
-		return false;
-	add_event([this]() {
-		e_playing = e_prefab->copy();
-		e_prefab->parent->remove_child(e_prefab, false);
-		world->root->add_child(e_playing);
+	if (!e_playing && e_prefab)
+	{
+		add_event([this]() {
+			e_playing = e_prefab->copy();
+			e_prefab->parent->remove_child(e_prefab, false);
+			world->root->add_child(e_playing);
+			world->update_components = true;
+			always_render = true;
+			paused = false;
+			auto& camera_list = cCamera::list();
+			if (camera_list.size() > 1)
+				view_scene.camera_idx = 1;
+			return false;
+		});
+		return true;
+	}
+	else if (paused)
+	{
+		paused = false;
 		world->update_components = true;
-		always_render = true;
-		auto& camera_list = cCamera::list();
-		if (camera_list.size() > 1)
-			view_scene.camera_idx = 1;
+		return true;
+	}
+	return false;
+}
+
+bool App::cmd_pause()
+{
+	if (!e_playing || paused)
 		return false;
-	});
+	paused = true;
+	world->update_components = false;
+	return true;
 }
 
 bool App::cmd_stop()
@@ -656,6 +685,7 @@ bool App::cmd_stop()
 			view_scene.camera_idx = 0;
 		return false;
 	});
+	return true;
 }
 
 PrefabInstance* get_prefab_instance(EntityPtr e)

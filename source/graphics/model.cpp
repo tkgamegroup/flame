@@ -287,7 +287,7 @@ namespace flame
 								return;
 							auto it = std::lower_bound(dst.begin(), dst.end(), t, [](const auto& i, auto v) {
 								return v < i.first;
-								});
+							});
 							if (it == dst.end() || it->first != t)
 								it = dst.emplace(it, std::make_pair(t, vec3(0.f)));
 							it->second[idx] = v;
@@ -679,9 +679,7 @@ namespace flame
 					aiProcess_JoinIdenticalVertices |
 					aiProcess_SortByPType |
 					aiProcess_FlipUVs |
-					aiProcess_LimitBoneWeights |
-					aiProcess_OptimizeMeshes |
-					aiProcess_OptimizeGraph;
+					aiProcess_LimitBoneWeights;
 				auto scene = importer.ReadFile(_filename.string(), load_flags);
 				if (!scene)
 				{
@@ -897,7 +895,7 @@ namespace flame
 							auto n_mesh = n_components.append_child("item");
 							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 							auto mesh_idx = src->mMeshes[0];
-							n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#" + str(mesh_idx)).c_str());
+							n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(mesh_idx)).c_str());
 							n_mesh.append_attribute("material_name").set_value(materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename.string().c_str());
 							if (name == "mesh_collider")
 							{
