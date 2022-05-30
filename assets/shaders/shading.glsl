@@ -1,36 +1,36 @@
 float distribution_GGX(vec3 N, vec3 H, float roughness)
 {
 	float a      = roughness * roughness;
-    float a2     = a*a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
+	float a2     = a*a;
+	float NdotH  = max(dot(N, H), 0.0);
+	float NdotH2 = NdotH * NdotH;
 	
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
+	float num   = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = PI * denom * denom;
 	
-    return min(4.0, num / denom);
+	return min(4.0, num / denom);
 }
 
 float geometry_schlick_GGX(float NdotV, float roughness)
 {
 	float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
+	float k = (r*r) / 8.0;
 
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+	float num   = NdotV;
+	float denom = NdotV * (1.0 - k) + k;
 	
-    return num / denom;
+	return num / denom;
 }
 
 float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
 {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = geometry_schlick_GGX(NdotV, roughness);
-    float ggx1  = geometry_schlick_GGX(NdotL, roughness);
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+	float ggx2  = geometry_schlick_GGX(NdotV, roughness);
+	float ggx1  = geometry_schlick_GGX(NdotL, roughness);
 	
-    return ggx1 * ggx2;
+	return ggx1 * ggx2;
 }
 
 vec3 fresnel_schlick(float cos_theta, vec3 f0)
@@ -40,7 +40,7 @@ vec3 fresnel_schlick(float cos_theta, vec3 f0)
 
 vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness)
 {
-    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - cos_theta, 5.0);
+	return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - cos_theta, 5.0);
 }   
 
 vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
@@ -53,17 +53,17 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, ve
 		return vec3(0.0);
 	
 	float NDF = distribution_GGX(N, H, roughness);        
-    float G   = geometry_smith(N, V, L, roughness);      
-    vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), f0);
+	float G   = geometry_smith(N, V, L, roughness);      
+	vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), f0);
 	
-    vec3 kD = vec3(1.0) - F;
-    kD *= 1.0 - metallic;	  
-        
-    vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * NdotV * NdotL;
-    vec3 specular     = numerator / max(denominator, 0.001);
-	               
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+	vec3 kD = vec3(1.0) - F;
+	kD *= 1.0 - metallic;	  
+		
+	vec3 numerator    = NDF * G * F;
+	float denominator = 4.0 * NdotV * NdotL;
+	vec3 specular     = numerator / max(denominator, 0.001);
+				   
+	return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
 const float esm_c = 3.0;

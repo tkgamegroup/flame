@@ -433,6 +433,16 @@ namespace flame
 		return ret;
 	}
 
+	inline std::filesystem::path replace_fn(const std::filesystem::path& path, const std::wstring& fmt)
+	{
+		auto ret = path;
+		auto fn = ret.filename().stem().wstring();
+		fn = std::format(fmt, fn);
+		fn += ret.extension().wstring();
+		ret.replace_filename(fn);
+		return ret;
+	}
+
 	enum FileType
 	{
 		FileTypeUnknown,

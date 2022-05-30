@@ -276,7 +276,7 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky)
+	void sRendererPrivate::set_sky(int sky_map_res_id)
 	{
 
 	}

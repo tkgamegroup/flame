@@ -50,7 +50,8 @@ namespace flame
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
 
-		virtual void set_sky(graphics::ImageViewPtr sky) = 0;
+		// sky will reset to null at the start of rendering, so you need to call this function every frame (in node's drawer) if you want to keep sky rendering
+		virtual void set_sky(int sky_map_res_id) = 0;
 
 		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;
