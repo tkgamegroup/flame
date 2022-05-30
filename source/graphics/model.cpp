@@ -372,6 +372,15 @@ namespace flame
 					return;
 				}
 
+				auto to_glm = [](const FbxAMatrix& src) {
+					return mat4(
+						vec4(src.Get(0, 0), src.Get(0, 1), src.Get(0, 2), src.Get(0, 3)),
+						vec4(src.Get(1, 0), src.Get(1, 1), src.Get(1, 2), src.Get(1, 3)),
+						vec4(src.Get(2, 0), src.Get(2, 1), src.Get(2, 2), src.Get(2, 3)),
+						vec4(src.Get(3, 0), src.Get(3, 1), src.Get(3, 2), src.Get(3, 3))
+					);
+				};
+
 				pugi::xml_document doc_prefab;
 
 				std::function<void(pugi::xml_node, FbxNode*)> process_node;
@@ -385,18 +394,20 @@ namespace flame
 						auto n_node = n_components.append_child("item");
 						n_node.append_attribute("type_name").set_value("flame::cNode");
 
-						auto p = src->LclTranslation.Get();
-						auto r = src->LclRotation.Get();
-						auto ro = src->RotationOrder.Get();
-						auto s = src->LclScaling.Get();
+						auto mat = to_glm(src->EvaluateGlobalTransform());
+						if (auto parent = src->GetParent(); parent)
+							mat = inverse(to_glm(parent->EvaluateGlobalTransform())) * mat;
+						vec3 pos;
+						quat qut;
+						vec3 scl;
+						vec3 skew;
+						vec4 perspective;
+						decompose(mat, scl, qut, pos, skew, perspective);
 
-						auto pos = vec3(p[0], p[1], p[2]);
 						if (pos != vec3(0.f))
 							n_node.append_attribute("pos").set_value(str(pos).c_str());
-						auto qut = get_quat(ro, vec3(r[0], r[1], r[2]));
 						if (qut != quat(1.f, 0.f, 0.f, 0.f))
 							n_node.append_attribute("qut").set_value(str(*(vec4*)&qut).c_str());
-						auto scl = vec3(s[0], s[1], s[2]);
 						if (scl != vec3(1.f))
 							n_node.append_attribute("scl").set_value(str(scl).c_str());
 					}
@@ -520,15 +531,7 @@ namespace flame
 											cluster->GetTransformMatrix(reference_init);
 											reference_init *= get_matrix(src);
 											cluster->GetTransformLinkMatrix(cluster_init);
-											auto off_mat = cluster_init.Inverse() * reference_init;
-
-											bone.offset_matrix = mat4(
-												vec4(off_mat.Get(0, 0), off_mat.Get(0, 1), off_mat.Get(0, 2), off_mat.Get(0, 3)),
-												vec4(off_mat.Get(1, 0), off_mat.Get(1, 1), off_mat.Get(1, 2), off_mat.Get(1, 3)),
-												vec4(off_mat.Get(2, 0), off_mat.Get(2, 1), off_mat.Get(2, 2), off_mat.Get(2, 3)),
-												vec4(off_mat.Get(3, 0), off_mat.Get(3, 1), off_mat.Get(3, 2), off_mat.Get(3, 3))
-											);
-
+											bone.offset_matrix = to_glm(cluster_init.Inverse() * reference_init);
 
 											int vertex_idx_count = cluster->GetControlPointIndicesCount();
 											for (int k = 0; k < vertex_idx_count; k++)

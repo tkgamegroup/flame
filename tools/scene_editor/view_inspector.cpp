@@ -660,7 +660,8 @@ void View_Inspector::on_draw()
 												auto fb = height_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
 												auto pt = graphics::PrimitiveTopologyTriangleFan;
 												auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
-													{ "vs=uv_as_pos.vert",
+													{ "vs=fbm.vert",
+													  "all_shader:USE_VERTEX_VAL_BASE",
 													  "rp=" + str(fb->renderpass),
 													  "pt=" + TypeInfo::serialize_t(&pt) });
 												graphics::PipelineResourceManager<FLAME_UID> prm;
