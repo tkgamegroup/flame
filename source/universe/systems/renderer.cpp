@@ -1123,6 +1123,13 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
+			if (sky_map_res_id != -1)
+			{
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+				cb->end_renderpass();
+				sky_map_res_id = -1;
+			}
+
 			// transparent
 
 			// post

@@ -4,8 +4,12 @@
 
 namespace flame
 {
+	/// Reflect ctor
 	struct cEnvironment : Component
 	{
+		/// Reflect requires
+		cNodePtr node = nullptr;
+
 		/// Reflect
 		std::filesystem::path sky_map_name; // will also load belonging _irr and _rad map
 		/// Reflect

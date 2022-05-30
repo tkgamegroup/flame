@@ -1,9 +1,22 @@
 #include "../../graphics/image.h"
+#include "node_private.h"
 #include "environment_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
+	cEnvironmentPrivate::~cEnvironmentPrivate()
+	{
+		node->drawers.remove("environment"_h);
+	}
+
+	void cEnvironmentPrivate::on_init()
+	{
+		node->drawers.add([this](sRendererPtr renderer) {
+			draw(renderer);
+		}, "environment"_h);
+	}
+
 	void cEnvironmentPrivate::set_sky_map_name(const std::filesystem::path& name)
 	{
 		if (sky_map_name == name)
@@ -35,8 +48,14 @@ namespace flame
 		else if (_sky_map)
 			graphics::Image::release(_sky_map);
 
-		sRenderer::instance()->dirty = true;
+		node->mark_drawing_dirty();
 		data_changed("sky_map_name"_h);
+	}
+
+	void cEnvironmentPrivate::draw(sRendererPtr renderer)
+	{
+		if (sky_map_res_id != -1)
+			sRenderer::instance()->set_sky(sky_map_res_id);
 	}
 
 	struct cEnvironmentCreate : cEnvironment::Create

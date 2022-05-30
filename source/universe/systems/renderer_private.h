@@ -53,6 +53,9 @@ namespace flame
 		std::vector<MatRes> mat_reses;
 
 		cNodePtr current_node = nullptr;
+		int sky_map_res_id = -1;
+		int sky_irr_map_res_id = -1;
+		int sky_rad_map_res_id = -1;
 		std::vector<DrawLine>			draw_lines;
 		std::vector<DrawMesh>			draw_meshes;
 		std::vector<DrawMesh>			draw_arm_meshes;
@@ -115,6 +118,8 @@ namespace flame
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
 		std::unique_ptr<graphics::DescriptorSet>										ds_light;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_sky;
+		graphics::GraphicsPipelinePtr													pl_sky = nullptr;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_gbuf;
 		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;
