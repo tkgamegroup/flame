@@ -35,7 +35,7 @@ namespace flame
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 
-		auto sp_bilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
+		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
 		auto dsl_scene = graphics::DescriptorSetLayout::get(L"flame\\shaders\\scene.dsl");
@@ -53,10 +53,10 @@ namespace flame
 		ds_instance->set_buffer("TerrainInstances", 0, buf_terrain_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 		{
-			ds_instance->set_image("terrain_height_maps", i, img_black->get_view(), sp_bilinear);
-			ds_instance->set_image("terrain_normal_maps", i, img_black->get_view(), sp_bilinear);
-			ds_instance->set_image("terrain_tangent_maps", i, img_black->get_view(), sp_bilinear);
-			ds_instance->set_image("terrain_splash_maps", i, img_black->get_view(), sp_bilinear);
+			ds_instance->set_image("terrain_height_maps", i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_normal_maps", i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_tangent_maps", i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_splash_maps", i, img_black->get_view(), sp_trilinear);
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
@@ -70,8 +70,8 @@ namespace flame
 		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
-		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), sp_bilinear, -1));
-		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), sp_bilinear, -1));
+		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
+		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
 		{
 			auto img = graphics::Image::get(L"flame\\random.png");
 			buf_material_misc.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
@@ -107,10 +107,10 @@ namespace flame
 			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, 4 }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
 			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
-		ds_light->set_image("sky_box", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
-		ds_light->set_image("sky_irr", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
-		ds_light->set_image("sky_rad", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), sp_bilinear);
-		ds_light->set_image("sky_lut", 0, img_black->get_view(), nullptr);
+		ds_light->set_image("sky_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_irr_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_rad_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("brdf_map", 0, img_black->get_view(), nullptr);
 		ds_light->update();
 
 		mesh_reses.resize(1024);
@@ -197,6 +197,18 @@ namespace flame
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
 
+		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
+		auto dsl_luma = prm_luma.pll->dsls.back();
+		buf_luma_hist.create(dsl_luma->get_buf_ui("LumaHist"));
+		buf_luma_avg.create(dsl_luma->get_buf_ui("LumaAvg"));
+		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
+		ds_luma->set_buffer("LumaHist", 0, buf_luma_hist.buf.get());
+		ds_luma->set_buffer("LumaAvg", 0, buf_luma_avg.buf.get());
+		ds_luma->update();
+		prm_luma.set_ds(""_h, ds_luma.get());
+		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_hist.pipeline", {});
+		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_avg.pipeline", {});
+
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline",
 			{ "rp=" + str(rp_col) });
 		prm_tone.init(pl_tone->layout);
@@ -238,6 +250,8 @@ namespace flame
 
 		iv_tars.assign(_targets.begin(), _targets.end());
 
+		auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+
 		img_dst.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_col_met.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -250,6 +264,8 @@ namespace flame
 		ds_deferred->set_image("img_ao", 0, img_ao->get_view(), nullptr);
 		ds_deferred->set_image("img_dep", 0, img_dep->get_view(), nullptr);
 		ds_deferred->update();
+		ds_luma->set_image("img_col", 0, img_dst->get_view(), nullptr);
+		ds_luma->update();
 
 		img_back0.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -276,9 +292,12 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
-	void sRendererPrivate::set_sky(int sky_map_res_id)
+	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
 	{
-
+		ds_light->set_image("sky_map", 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_irr_map", 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_rad_map", 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->update();
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -933,6 +952,10 @@ namespace flame
 			n->draw(this, "Light"_h);
 		}
 
+		buf_scene.set_var<"sky_intensity"_h>(1.f);
+		buf_scene.set_var<"sky_rad_levels"_h>(1.f);
+		buf_scene.set_var<"fog_color"_h>(vec3(1.f));
+
 		buf_scene.set_var<"zNear"_h>(camera->zNear);
 		buf_scene.set_var<"zFar"_h>(camera->zFar);
 
@@ -944,6 +967,7 @@ namespace flame
 		buf_scene.set_var<"proj"_h>(camera->proj_mat);
 		buf_scene.set_var<"proj_inv"_h>(camera->proj_mat_inv);
 		buf_scene.set_var<"proj_view"_h>(camera->proj_view_mat);
+		buf_scene.set_var<"proj_view_inv"_h>(camera->proj_view_mat_inv);
 		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
 		
 		buf_scene.upload(cb);
@@ -1133,20 +1157,39 @@ namespace flame
 			// transparent
 
 			// post
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
+			prm_luma.bind_dss(cb);
+			const auto min_log_luma = -5.f;
+			const auto max_log_luma = +5.f;
+			prm_luma.set_pc_var<"min_log_luma"_h>(min_log_luma);
+			prm_luma.set_pc_var<"log_luma_range"_h>(max_log_luma - min_log_luma);
+			prm_luma.set_pc_var<"time_coeff"_h>(1.1f);
+			prm_luma.set_pc_var<"num_pixels"_h>(int(sz.x * sz.y));
+			cb->bind_pipeline(pl_luma_hist);
+			cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
+			cb->buffer_barrier(buf_luma_hist.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite, 
+				graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
+			cb->bind_pipeline(pl_luma_avg);
+			cb->dispatch(uvec3(256, 1, 1));
+			cb->buffer_barrier(buf_luma_avg.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::AccessShaderRead,
+				graphics::PipelineStageCompShader, graphics::PipelineStageAllGraphics);
+
 			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_tone);
-			prm_tone.set_pc_var<"average_lum"_h>(1.f);
-			prm_tone.set_pc_var<"white_point"_h>(4.f);
-			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / 2.2f);
-			prm_tone.push_constant(cb);
+			cb->bind_pipeline(pl_blit);
 			cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			cb->bind_pipeline(pl_blit);
+			cb->bind_pipeline(pl_tone);
+			prm_tone.set_pc_var<"average_lum"_h>(0.5f);
+			prm_tone.set_pc_var<"white_point"_h>(4.f);
+			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / 2.2f);
+			prm_tone.push_constant(cb);
 			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();

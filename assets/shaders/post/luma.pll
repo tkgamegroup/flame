@@ -1,9 +1,19 @@
-#include "../dynamic_data.dsl"
+layout (set = SET, binding = 0) uniform sampler2D img_col;
+
+layout (set = SET, binding = 1) buffer LumaHist
+{
+    uint data[256];
+}luma_hist;
+
+layout (set = SET, binding = 2) buffer LumaAvg
+{
+    float data;
+}luma_avg;
 
 layout (push_constant) uniform PushConstant
 {
-	float min_log_lum;
-	float log_lum_range;
+	float min_log_luma;
+	float log_luma_range;
 	float time_coeff;
-	float num_pixels;
+	int num_pixels;
 }pc;

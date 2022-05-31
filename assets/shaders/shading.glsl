@@ -150,10 +150,10 @@ vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 	vec3 kD = vec3(1.0) - F;
 	kD *= 1.0 - metallic;
 
-	vec3 diffuse = texture(sky_irr, cube_coord(N)).rgb * albedo;
+	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo;
 
-	vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rg;
-	vec3 specular = textureLod(sky_rad, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+	vec2 envBRDF = texture(brdf_map, vec2(NdotV, roughness)).rg;
+	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
 	return (kD * diffuse + specular) * scene.sky_intensity;
 }

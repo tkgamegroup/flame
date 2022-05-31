@@ -98,7 +98,7 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_dep;
 		std::unique_ptr<graphics::Image>												img_col_met;	// color, metallic
 		std::unique_ptr<graphics::Image>												img_nor_rou;	// normal, roughness
-		std::unique_ptr<graphics::Image>												img_ao;		// ambient occlusion
+		std::unique_ptr<graphics::Image>												img_ao;			// ambient occlusion
 		std::unique_ptr<graphics::Framebuffer>											fb_fwd;
 		std::unique_ptr<graphics::Framebuffer>											fb_gbuf;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
@@ -145,6 +145,12 @@ namespace flame
 		graphics::GraphicsPipelinePtr													pl_blur_v = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_h = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_v = nullptr;
+		graphics::PipelineResourceManager<FLAME_UID>									prm_luma;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
+		std::unique_ptr<graphics::DescriptorSet>										ds_luma;
+		graphics::ComputePipelinePtr													pl_luma_hist = nullptr;
+		graphics::ComputePipelinePtr													pl_luma_avg = nullptr;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_tone;
 		graphics::GraphicsPipelinePtr													pl_tone = nullptr;
 
@@ -164,7 +170,7 @@ namespace flame
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
 
-		void set_sky(int sky_map_res_id) override;
+		void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;

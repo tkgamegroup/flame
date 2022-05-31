@@ -6,6 +6,4 @@ layout (push_constant) uniform PushConstant
 	int len;
 	float weights[14];
 	vec2 pxsz;
-	float white_point;
-	float one_over_gamma;
 }pc;

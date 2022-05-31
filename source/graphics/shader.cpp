@@ -932,10 +932,16 @@ namespace flame
 			if (!bindings.empty())
 			{
 				auto dsl = DescriptorSetLayout::create(bindings);
-				dsl->filename = filename;
 				auto str = filename.wstring();
+				SUW::strip_tail_if(str, L".res");
 				if (auto p = str.find('#'); p != std::wstring::npos)
-					dsl->filename = str.substr(0, p);
+					str = str.substr(0, p);
+				dsl->filename = str;
+				for (auto& binding : dsl->bindings)
+				{
+					if (binding.type == DescriptorUniformBuffer || binding.type == DescriptorStorageBuffer)
+						binding.ui = find_udt(sh(binding.name.c_str()), db);
+				}
 				dsls.push_back(dsl);
 			}
 

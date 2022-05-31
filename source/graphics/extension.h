@@ -246,15 +246,17 @@ namespace flame
 		struct PipelineResourceManager
 		{
 			PipelineLayoutPtr pll = nullptr;
+			PipelineType plt = PipelineGraphics;
 			std::unordered_map<uint, int> dsl_map;
 			VirtualUdt<id> vu_pc;
 
 			DescriptorSetPtr temp_dss[8];
 			char temp_pc[256];
 
-			void init(PipelineLayoutPtr _pll)
+			void init(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
 			{
 				pll = _pll;
+				plt = _plt;
 				for (auto i = 0; i < pll->dsls.size(); i++)
 				{
 					auto dsl = pll->dsls[i];
@@ -309,7 +311,7 @@ namespace flame
 				}
 				if (count > 0)
 				{
-					cb->bind_pipeline_layout(pll);
+					cb->bind_pipeline_layout(pll, plt);
 					cb->bind_descriptor_sets(off, { temp_dss + off, count });
 				}
 			}

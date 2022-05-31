@@ -25,8 +25,6 @@ namespace flame
 
 	struct NodeRenderData
 	{
-		float min_log_lum = -5.f;
-		float max_log_lum = +5.f;
 		float white_point = 4.f;
 		float gamma = 2.2f;
 		uint dir_shadow_levels = 3U;
@@ -466,18 +464,6 @@ namespace flame
 	void sRendererPrivate::set_sky(ImageView* box, ImageView* irr,
 		ImageView* rad, ImageView* lut, const vec3& fog_color, float intensity, void* id)
 	{
-		sky_id = id;
-
-		auto& nd = *_nd;
-
-		auto iv_black = img_black->get_view();
-		auto iv_black_cube = img_black_cube->get_view({ 0, 1, 0, 6 });
-		nd.ds_light->set_image(DSL_light::sky_box_binding, 0, box ? box : iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_irr_binding, 0, irr ? irr : iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_rad_binding, 0, rad ? rad : iv_black_cube, sp_linear);
-		nd.ds_light->set_image(DSL_light::sky_lut_binding, 0, lut ? lut : iv_black, sp_linear);
-		nd.ds_light->update();
-
 		auto& data = *nd.buf_render_data.pstag;
 		data.fog_color = fog_color;
 		data.sky_intensity = intensity;
@@ -1156,8 +1142,6 @@ namespace flame
 		nd.ds_def.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/deferred.dsl")));
 
 		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pipeline");
-
-		nd.pl_line = Pipeline::get(nullptr, L"plain/line.pipeline");
 
 		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pipeline");
 

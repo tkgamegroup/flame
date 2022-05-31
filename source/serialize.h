@@ -437,7 +437,7 @@ namespace flame
 	{
 		auto ret = path;
 		auto fn = ret.filename().stem().wstring();
-		fn = std::format(fmt, fn);
+		fn = std::vformat(fmt, std::make_wformat_args(fn));
 		fn += ret.extension().wstring();
 		ret.replace_filename(fn);
 		return ret;

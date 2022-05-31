@@ -55,7 +55,7 @@ layout(set = SET, binding = 4) buffer readonly PtShadows
 layout (set = SET, binding = 5) uniform sampler2DArray	dir_shadow_maps[4];
 layout (set = SET, binding = 6) uniform samplerCube		pt_shadow_maps[4];
 
-layout(set = SET, binding = 7) uniform samplerCube sky_box;
-layout(set = SET, binding = 8) uniform samplerCube sky_irr;
-layout(set = SET, binding = 9) uniform samplerCube sky_rad;
-layout(set = SET, binding = 10) uniform sampler2D sky_lut;
+layout(set = SET, binding = 7) uniform samplerCube sky_map;
+layout(set = SET, binding = 8) uniform samplerCube sky_irr_map;
+layout(set = SET, binding = 9) uniform samplerCube sky_rad_map;
+layout(set = SET, binding = 10) uniform sampler2D brdf_map;

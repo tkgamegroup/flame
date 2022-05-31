@@ -1,8 +1,8 @@
 layout (set = SET, binding = 0) uniform Scene
 {
-	vec3 fog_color;
 	float sky_intensity;
 	float sky_rad_levels;
+	vec3 fog_color;
 
 	float zNear;
 	float zFar;
@@ -17,6 +17,7 @@ layout (set = SET, binding = 0) uniform Scene
 	mat4 proj;
 	mat4 proj_inv;
 	mat4 proj_view;
+	mat4 proj_view_inv;
 	
 	vec4 frustum_planes[6];
 

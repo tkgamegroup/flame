@@ -6,11 +6,10 @@ namespace flame
 {
 	struct cEnvironmentPrivate : cEnvironment
 	{
-		~cEnvironmentPrivate();
-		void on_init() override;
-
 		void set_sky_map_name(const std::filesystem::path& name) override;
 
-		void draw(sRendererPtr renderer);
+		void apply();
+		void on_active() override;
+		void on_inactive() override;
 	};
 }
