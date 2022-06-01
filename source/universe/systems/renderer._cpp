@@ -63,17 +63,7 @@ namespace flame
 
 		Pipeline* pl_fxaa;
 
-		StorageBuffer<DSL_luminance::Histogram>		buf_lum_htg;
-		StorageBuffer<DSL_luminance::AverageLum>	buf_lum_avg;
-		std::unique_ptr<DescriptorSet>				ds_lum;
-		PipelineLayout* pll_lum;
-		Pipeline* pl_lum_htg;
-		Pipeline* pl_lum_avg;
-
 		Pipeline* pl_bright;
-
-		Pipeline* pl_tone;
-		std::unique_ptr<DescriptorSet>	ds_tone;
 
 		NodeRenderData()
 		{
@@ -870,20 +860,6 @@ namespace flame
 				cb->end_renderpass();
 				cb->image_barrier(nd.img_ao.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
-				cb->set_viewport(vp);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_def);
-				{
-					DescriptorSet* sets[PLL_deferred::Binding_Max];
-					sets[PLL_deferred::Binding_deferred] = nd.ds_def.get();
-					sets[PLL_deferred::Binding_render_data] = nd.ds_render_data.get();
-					sets[PLL_deferred::Binding_light] = nd.ds_light.get();
-					cb->bind_descriptor_sets(0, countof(sets), sets);
-				}
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-
 				cb->begin_renderpass(nullptr, nd.img_dep_back->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_blit_d16);
 				cb->bind_descriptor_set(0, nd.img_dep->get_shader_read_src(0, 0, sp_nearest));
@@ -941,19 +917,6 @@ namespace flame
 				}
 				cb->end_renderpass();
 
-				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutGeneral);
-				cb->bind_pipeline_layout(nd.pll_lum, PipelineCompute);
-				cb->bind_descriptor_set(0, nd.ds_lum.get());
-				cb->push_constant_t(PLL_luminance::PushConstant{ nd.min_log_lum, nd.max_log_lum - nd.min_log_lum, 1.1f, float(tar_sz.x * tar_sz.y) });
-				cb->bind_pipeline(nd.pl_lum_htg);
-				cb->dispatch(uvec3(ceil(tar_sz.x / 16), ceil(tar_sz.y / 16), 1));
-				cb->buffer_barrier(nd.buf_lum_htg.buf.get(), AccessShaderRead | AccessShaderWrite, AccessShaderRead | AccessShaderWrite,
-					PipelineStageCompShader, PipelineStageCompShader);
-				cb->bind_pipeline(nd.pl_lum_avg);
-				cb->dispatch(uvec3(256, 1, 1));
-				cb->buffer_barrier(nd.buf_lum_avg.buf.get(), AccessShaderRead | AccessShaderWrite, AccessShaderRead,
-					PipelineStageCompShader, PipelineStageAllGraphics);
-
 				cb->image_barrier(img_dst.get(), {}, ImageLayoutGeneral, ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_bright);
@@ -993,14 +956,6 @@ namespace flame
 				cb->bind_pipeline(nd.pl_upsample);
 				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));
 				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(1)));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				cb->image_barrier(img_dst.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, fb_tar);
-				cb->bind_pipeline(nd.pl_tone);
-				cb->bind_descriptor_set(0, nd.ds_tone.get());
-				cb->push_constant_t(PLL_tone::PushConstant{ nd.white_point, 1.f / nd.gamma });
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
@@ -1138,28 +1093,10 @@ namespace flame
 		nd.ds_ssao->set_buffer(DSL_ssao::SampleNoises_binding, 0, nd.buf_ssao_noi.buf.get());
 		nd.ds_ssao->update();
 
-		nd.pl_def = Pipeline::get(nullptr, L"deferred/deferred.pipeline");
-		nd.ds_def.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/deferred.dsl")));
-
 		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pipeline");
 
 		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pipeline");
 
-		nd.buf_lum_htg.create(BufferUsageStorage);
-		nd.buf_lum_avg.create(BufferUsageStorage);
-		nd.ds_lum.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"post/luminance.dsl")));
-		nd.ds_lum->set_buffer(DSL_luminance::Histogram_binding, 0, nd.buf_lum_htg.buf.get());
-		nd.ds_lum->set_buffer(DSL_luminance::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
-		nd.ds_lum->update();
-		nd.pll_lum = PipelineLayout::get(nullptr, L"post/luminance.pll");
-		nd.pl_lum_htg = Pipeline::get(nullptr, L"post/luminance_histogram.pipeline");
-		nd.pl_lum_avg = Pipeline::get(nullptr, L"post/luminance_average.pipeline");
-
 		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pipeline");
-
-		nd.ds_tone.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"post/tone.dsl")));
-		nd.ds_tone->set_buffer(DSL_tone::AverageLum_binding, 0, nd.buf_lum_avg.buf.get());
-		nd.ds_tone->update();
-		nd.pl_tone = Pipeline::get(nullptr, L"post/tone.pipeline");
 	}
 }

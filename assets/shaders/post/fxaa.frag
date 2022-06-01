@@ -132,7 +132,6 @@ void main()
 	// If both sides have not been reached, continue to explore.
 	if (!reachedBoth)
 	{
-
 		for (int i = 2; i < ITERATIONS; i++)
 		{
 			// If needed, read luma in 1st direction, compute delta.
@@ -161,7 +160,6 @@ void main()
 			// If both sides have been reached, stop the exploration.
 			if (reachedBoth) { break; }
 		}
-
 	}
 
 	// Compute the distances to each side edge of the edge (!).
@@ -213,5 +211,4 @@ void main()
 	// Read the color at the new UV coordinates, and use it.
 	vec3 finalColor = textureLod(image, finalUv, 0.0).rgb;
 	o_color = vec4(finalColor, 1.0);
-
 }
