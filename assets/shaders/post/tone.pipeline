@@ -8,11 +8,12 @@ renderpass
   {rp}
   
 @pll
+#include "luma_avg.dsl"
+
 layout (set = SET, binding = 0) uniform sampler2D img_src;
 
 layout(push_constant) uniform PushConstant
 {
-	float average_lum;
 	float white_point;
 	float one_over_gamma;
 }pc;
@@ -34,7 +35,7 @@ void main()
 {
 	vec3 rgb = texture(img_src, i_uv).rgb;
 	vec3 Yxy = rgb2Yxy(rgb);
-	float lp = Yxy.x / (9.6 * pc.average_lum + 0.0001);
+	float lp = Yxy.x / (9.6 * luma_avg.data + 0.0001);
 	Yxy.x = reinhard2(lp, pc.white_point);
 	rgb = Yxy2rgb(Yxy);
 	o_color = vec4(pow(rgb, vec3(pc.one_over_gamma)), 1.0);

@@ -145,9 +145,10 @@ namespace flame
 		graphics::GraphicsPipelinePtr													pl_blur_v = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_h = nullptr;
 		graphics::GraphicsPipelinePtr													pl_localmax_v = nullptr;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
+		std::unique_ptr<graphics::DescriptorSet>										ds_luma_avg;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_luma;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
 		std::unique_ptr<graphics::DescriptorSet>										ds_luma;
 		graphics::ComputePipelinePtr													pl_luma_hist = nullptr;
 		graphics::ComputePipelinePtr													pl_luma_avg = nullptr;

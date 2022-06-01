@@ -58,6 +58,8 @@ void View_Scene::on_draw()
 	app.renderer->camera = camera;
 
 	auto scene_size = vec2(ImGui::GetContentRegionAvail());
+	if (fixed_render_target_size)
+		scene_size = vec2(1280, 720);
 	if (!render_tar || vec2(render_tar->size) != scene_size)
 	{
 		add_event([this, scene_size]() {

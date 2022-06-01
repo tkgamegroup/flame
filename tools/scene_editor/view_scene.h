@@ -5,6 +5,7 @@
 struct View_Scene : View
 {
 	std::unique_ptr<graphics::Image> render_tar;
+	bool fixed_render_target_size = false;
 
 	bool show_AABB = false;
 	bool show_axis = true;

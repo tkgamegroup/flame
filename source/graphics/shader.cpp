@@ -38,6 +38,8 @@ namespace flame
 			case ShaderStageDsl:
 			case ShaderStagePll:
 				return L"frag";
+			case ShaderStageComp:
+				return L"comp";
 			}
 			return L"";
 		};
@@ -230,8 +232,9 @@ namespace flame
 			std::string temp_content;
 			temp_content += "#version 450 core\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
-			temp_content += "#extension GL_ARB_separate_shader_objects : enable\n\n";
-			temp_content += "#define SET 0\n\n";
+			if (stage != ShaderStageComp)
+				temp_content += "#extension GL_ARB_separate_shader_objects : enable\n";
+			temp_content += "\n#define SET 0\n\n";
 			for (auto& d : defines)
 			{
 				temp_content += "#define " + d.first;
@@ -697,15 +700,12 @@ namespace flame
 			{
 				auto filename = Path::get(_filename);
 
-				if (device)
+				for (auto& d : loaded_descriptorsetlayouts)
 				{
-					for (auto& d : loaded_descriptorsetlayouts)
+					if (d->filename.filename() == filename)
 					{
-						if (d->filename.filename() == filename)
-						{
-							d->ref++;
-							return d.get();
-						}
+						d->ref++;
+						return d.get();
 					}
 				}
 
@@ -719,18 +719,14 @@ namespace flame
 				res_path += L".res";
 				compile_shader(ShaderStageDsl, filename, {}, res_path);
 
-				if (device)
+				auto ret = DescriptorSetLayoutPrivate::load_from_res(res_path);
+				if (ret)
 				{
-					auto ret = DescriptorSetLayoutPrivate::load_from_res(res_path);
-					if (ret)
-					{
-						ret->filename = filename;
-						ret->ref = 1;
-						loaded_descriptorsetlayouts.emplace_back(ret);
-						return ret;
-					}
+					ret->filename = filename;
+					ret->ref = 1;
+					loaded_descriptorsetlayouts.emplace_back(ret);
 				}
-				return nullptr;
+				return ret;
 			}
 		}DescriptorSetLayout_get;
 		DescriptorSetLayout::Get& DescriptorSetLayout::get = DescriptorSetLayout_get;
@@ -834,12 +830,13 @@ namespace flame
 			{
 				auto& u = img_updates[i];
 				auto& res = reses[u.first][u.second];
+				auto type = layout->bindings[u.first].type;
 
 				auto& info = vk_img_infos[i];
 				info.imageView = (VkImageView)res.i.vk_iv;
-				info.imageLayout = layout->bindings[u.first].type == DescriptorSampledImage ?
+				info.imageLayout = type == DescriptorSampledImage ?
 					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-				info.sampler = (VkSampler)res.i.vk_sp;
+				info.sampler = type == DescriptorSampledImage ? (VkSampler)res.i.vk_sp : nullptr;
 
 				auto& wrt = vk_writes[idx];
 				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -847,7 +844,7 @@ namespace flame
 				wrt.dstSet = vk_descriptor_set;
 				wrt.dstBinding = u.first;
 				wrt.dstArrayElement = u.second;
-				wrt.descriptorType = to_backend(layout->bindings[u.first].type);
+				wrt.descriptorType = to_backend(type);
 				wrt.descriptorCount = 1;
 				wrt.pBufferInfo = nullptr;
 				wrt.pImageInfo = &info;
@@ -1027,13 +1024,10 @@ namespace flame
 			{
 				auto filename = Path::get(_filename);
 
-				if (device)
+				for (auto& p : loaded_pipelinelayouts)
 				{
-					for (auto& p : loaded_pipelinelayouts)
-					{
-						if (p->filename == filename)
-							return p.get();
-					}
+					if (p->filename == filename)
+						return p.get();
 				}
 
 				if (!std::filesystem::exists(filename))
@@ -1051,9 +1045,8 @@ namespace flame
 				{
 					ret->filename = filename;
 					loaded_pipelinelayouts.emplace_back(ret);
-					return ret;
 				}
-				return nullptr;
+				return ret;
 			}
 		}PipelineLayout_get;
 		PipelineLayout::Get& PipelineLayout::get = PipelineLayout_get;
@@ -1159,13 +1152,10 @@ namespace flame
 			{
 				auto filename = Path::get(_filename);
 
-				if (device)
+				for (auto& s : loaded_shaders)
 				{
-					for (auto& s : loaded_shaders)
-					{
-						if (s->filename == filename && s->defines == defines)
-							return s.get();
-					}
+					if (s->filename == filename && s->defines == defines)
+						return s.get();
 				}
 
 				if (!std::filesystem::exists(filename))
@@ -1182,17 +1172,15 @@ namespace flame
 				res_path += L".res";
 				compile_shader(type, filename, defines, res_path);
 
-				if (device)
+				auto ret = ShaderPrivate::load_from_res(res_path);
+				if (ret)
 				{
-					auto ret = ShaderPrivate::load_from_res(res_path);
 					ret->type = type;
 					ret->filename = filename;
 					ret->defines = defines;
 					loaded_shaders.emplace_back(ret);
-					return ret;
 				}
-
-				return nullptr;
+				return ret;
 			}
 		}Shader_get;
 		Shader::Get& Shader::get = Shader_get;
@@ -1213,28 +1201,7 @@ namespace flame
 		}Shader_release;
 		Shader::Release& Shader::release = Shader_release;
 
-		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
-		{
-			if (app_exiting) return;
-
-			if (!filename.empty())
-			{
-				for (auto s : shaders)
-				{
-					if (s->filename == filename)
-						delete s;
-				}
-				if (layout->filename == filename)
-					delete layout;
-				if (renderpass->filename == filename)
-					delete renderpass;
-			}
-
-			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
-			unregister_backend_object(vk_pipeline);
-		}
-
-		GraphicsPipelinePtr GraphicsPipelinePrivate::load(const std::filesystem::path& filename, const std::vector<std::string>& _defines)
+		void load_pipeline(PipelineType pipeline_type, const std::filesystem::path& filename, const std::vector<std::string>& _defines, void** ret)
 		{
 			auto parent_path = filename.parent_path();
 
@@ -1242,7 +1209,8 @@ namespace flame
 			if (!file.good())
 			{
 				wprintf(L"cannot find pipeline: %s\n", filename.c_str());
-				return nullptr;
+				*ret = nullptr;
+				return;
 			}
 			LineReader res(file);
 
@@ -1251,7 +1219,7 @@ namespace flame
 			res.read_block("");
 
 			std::pair<std::string, std::filesystem::path>			layout_segment; // content or filename
-			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments;
+			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments; // content or filename
 
 			std::vector<std::string>								renderpass_defines;
 			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_defines;
@@ -1276,7 +1244,7 @@ namespace flame
 							}
 							return ret;
 						};
-						if		(s == "rp")
+						if (s == "rp")
 							renderpass_defines.push_back(form_define());
 						else if (s == "vert")
 							shader_defines.emplace_back(ShaderStageVert, form_define());
@@ -1288,6 +1256,8 @@ namespace flame
 							shader_defines.emplace_back(ShaderStageGeom, form_define());
 						else if (s == "frag")
 							shader_defines.emplace_back(ShaderStageFrag, form_define());
+						else if (s == "comp")
+							shader_defines.emplace_back(ShaderStageComp, form_define());
 						else if (s == "all_shader")
 							shader_defines.emplace_back(ShaderStageAll, form_define());
 					}
@@ -1317,7 +1287,7 @@ namespace flame
 					if (value[0] == '@')
 					{
 						ShaderStageFlags type = ShaderStageNone;
-						if (value.starts_with("@vert"))
+						if		(value.starts_with("@vert"))
 							type = ShaderStageVert;
 						else if (value.starts_with("@tesc"))
 							type = ShaderStageTesc;
@@ -1327,6 +1297,8 @@ namespace flame
 							type = ShaderStageGeom;
 						else if (value.starts_with("@frag"))
 							type = ShaderStageFrag;
+						else if (value.starts_with("@comp"))
+							type = ShaderStageComp;
 						if (type != ShaderStageNone)
 							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
@@ -1382,9 +1354,8 @@ namespace flame
 				std::sort(defines.begin(), defines.end());
 				return Renderpass::get(fn, defines);
 			};
-			auto defines = pipeline_defines;
-			std::sort(defines.begin(), defines.end());
-			unserialize_text(res, &info, spec, defines);
+			std::sort(pipeline_defines.begin(), pipeline_defines.end());
+			unserialize_text(res, &info, spec, pipeline_defines);
 
 			if (!layout_segment.first.empty())
 			{
@@ -1461,7 +1432,41 @@ namespace flame
 				}
 			}
 
-			return GraphicsPipeline::create(info);
+			if (pipeline_type == PipelineGraphics)
+			{
+				*ret = GraphicsPipeline::create(info);
+				return;
+			}
+			else if (!info.shaders.empty())
+			{
+				ComputePipelineInfo compute_info;
+				compute_info.layout = info.layout;
+				compute_info.shader = info.shaders[0];
+				*ret = ComputePipeline::create(compute_info);
+				return;
+			}
+			*ret = nullptr;
+		}
+
+		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
+		{
+			if (app_exiting) return;
+
+			if (!filename.empty())
+			{
+				for (auto s : shaders)
+				{
+					if (s->filename == filename)
+						delete s;
+				}
+				if (layout->filename == filename)
+					delete layout;
+				if (renderpass->filename == filename)
+					delete renderpass;
+			}
+
+			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+			unregister_backend_object(vk_pipeline);
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create
@@ -1695,7 +1700,8 @@ namespace flame
 				file << SUS::get_ltrimed(content);
 				file.close();
 
-				auto ret = GraphicsPipelinePrivate::load(fn, defines);
+				GraphicsPipelinePtr ret;
+				load_pipeline(PipelineGraphics, fn, defines, (void**)&ret);
 				std::filesystem::remove(fn);
 				return ret;
 			}
@@ -1708,31 +1714,21 @@ namespace flame
 			{
 				auto filename = Path::get(_filename);
 
-				if (device)
+				for (auto& pl : loaded_graphics_pipelines)
 				{
-					for (auto& pl : loaded_graphics_pipelines)
-					{
-						if (pl->filename == filename && pl->defines == defines)
-							return pl.get();
-					}
+					if (pl->filename == filename && pl->defines == defines)
+						return pl.get();
 				}
 
-				if (!std::filesystem::exists(filename))
+				GraphicsPipelinePtr ret;
+				load_pipeline(PipelineGraphics, filename, defines, (void**)&ret);
+				if (ret)
 				{
-					wprintf(L"cannot find pipeline: %s\n", _filename.c_str());
-					return nullptr;
-				}
-
-				if (device)
-				{
-					auto ret = GraphicsPipelinePrivate::load(filename, defines);
 					ret->filename = filename;
 					ret->defines = defines;
 					loaded_graphics_pipelines.emplace_back(ret);
-					return ret;
 				}
-
-				return nullptr;
+				return ret;
 			}
 		}GraphicsPipeline_get;
 		GraphicsPipeline::Get& GraphicsPipeline::get = GraphicsPipeline_get;
@@ -1800,9 +1796,25 @@ namespace flame
 
 		struct ComputePipelineGet : ComputePipeline::Get
 		{
-			ComputePipelinePtr operator()(const std::filesystem::path& filename, const std::vector<std::string>& defines) override
+			ComputePipelinePtr operator()(const std::filesystem::path& _filename, const std::vector<std::string>& defines) override
 			{
-				return nullptr;
+				auto filename = Path::get(_filename);
+
+				for (auto& pl : loaded_compute_pipelines)
+				{
+					if (pl->filename == filename && pl->defines == defines)
+						return pl.get();
+				}
+
+				ComputePipelinePtr ret;
+				load_pipeline(PipelineCompute, filename, defines, (void**)&ret);
+				if (ret)
+				{
+					ret->filename = filename;
+					ret->defines = defines;
+					loaded_compute_pipelines.emplace_back(ret);
+				}
+				return ret;
 			}
 		}ComputePipeline_get;
 		ComputePipeline::Get& ComputePipeline::get = ComputePipeline_get;

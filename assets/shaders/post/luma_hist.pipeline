@@ -31,7 +31,7 @@ void main()
     histogram_local[gl_LocalInvocationIndex] = 0;
     barrier();
 
-    uvec2 dim = imageSize(img_col).xy;
+    ivec2 dim = imageSize(img_col).xy;
     if (gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y) 
     {
         vec3 hdr_color = imageLoad(img_col, ivec2(gl_GlobalInvocationID.xy)).rgb;

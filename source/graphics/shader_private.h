@@ -86,6 +86,8 @@ namespace flame
 			static ShaderPtr load_from_res(const std::filesystem::path& filename);
 		};
 
+		void load_pipeline(PipelineType pipeline_type, const std::filesystem::path& filename, const std::vector<std::string>& defines, void** ret);
+
 		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
 			VkPipeline vk_pipeline;
@@ -93,8 +95,6 @@ namespace flame
 			uint ref = 0;
 
 			~GraphicsPipelinePrivate();
-
-			static GraphicsPipelinePtr load(const std::filesystem::path& filename, const std::vector<std::string>& defines);
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline

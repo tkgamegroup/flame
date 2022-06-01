@@ -32,8 +32,8 @@ void main()
         float weighted_log_average = (histogram_local[0] / max(pc.num_pixels - float(count_for_this_bin), 1.0)) - 1.0;
         float weighted_avg_lum = exp2(((weighted_log_average / 254.0) * pc.log_luma_range) + pc.min_log_luma);
 
-        float lum_last_frame = scene_rw.average_lum;
-        scene_rw.average_lum = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
+        float lum_last_frame = luma_avg.data;
+        luma_avg.data = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
     }
 }
 @

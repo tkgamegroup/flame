@@ -197,14 +197,18 @@ namespace flame
 			  "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
 
+		auto dsl_luma_avg = graphics::DescriptorSetLayout::get(L"flame\\shaders\\post\\luma_avg.dsl");
+		buf_luma_avg.create(dsl_luma_avg->get_buf_ui("LumaAvg"));
+		ds_luma_avg.reset(graphics::DescriptorSet::create(nullptr, dsl_luma_avg));
+		ds_luma_avg->set_buffer("LumaAvg", 0, buf_luma_avg.buf.get());
+		ds_luma_avg->update();
 		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
 		auto dsl_luma = prm_luma.pll->dsls.back();
 		buf_luma_hist.create(dsl_luma->get_buf_ui("LumaHist"));
-		buf_luma_avg.create(dsl_luma->get_buf_ui("LumaAvg"));
 		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
 		ds_luma->set_buffer("LumaHist", 0, buf_luma_hist.buf.get());
-		ds_luma->set_buffer("LumaAvg", 0, buf_luma_avg.buf.get());
 		ds_luma->update();
+		prm_luma.set_ds("luma_avg"_h, ds_luma_avg.get());
 		prm_luma.set_ds(""_h, ds_luma.get());
 		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_hist.pipeline", {});
 		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_avg.pipeline", {});
@@ -212,6 +216,7 @@ namespace flame
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline",
 			{ "rp=" + str(rp_col) });
 		prm_tone.init(pl_tone->layout);
+		prm_tone.set_ds("luma_avg"_h, ds_luma_avg.get());
 
 		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col_dep),
@@ -252,7 +257,7 @@ namespace flame
 
 		auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
-		img_dst.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dst.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_col_met.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_nor_rou.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -1163,8 +1168,9 @@ namespace flame
 			const auto max_log_luma = +5.f;
 			prm_luma.set_pc_var<"min_log_luma"_h>(min_log_luma);
 			prm_luma.set_pc_var<"log_luma_range"_h>(max_log_luma - min_log_luma);
-			prm_luma.set_pc_var<"time_coeff"_h>(1.1f);
+			prm_luma.set_pc_var<"time_coeff"_h>(1.0f);
 			prm_luma.set_pc_var<"num_pixels"_h>(int(sz.x * sz.y));
+			prm_luma.push_constant(cb);
 			cb->bind_pipeline(pl_luma_hist);
 			cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
 			cb->buffer_barrier(buf_luma_hist.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite, 
@@ -1186,11 +1192,11 @@ namespace flame
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 			cb->bind_pipeline(pl_tone);
-			prm_tone.set_pc_var<"average_lum"_h>(0.5f);
+			prm_tone.bind_dss(cb);
 			prm_tone.set_pc_var<"white_point"_h>(4.f);
 			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / 2.2f);
 			prm_tone.push_constant(cb);
-			cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+			cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		}
