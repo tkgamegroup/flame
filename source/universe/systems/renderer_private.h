@@ -86,7 +86,6 @@ namespace flame
 		graphics::PipelineLayoutPtr														pll_fwd = nullptr;
 		graphics::PipelineLayoutPtr														pll_gbuf = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blit = nullptr;
-		graphics::GraphicsPipelinePtr													pl_blit_tar = nullptr;
 		graphics::GraphicsPipelinePtr													pl_add = nullptr;
 		graphics::GraphicsPipelinePtr													pl_blend = nullptr;
 
@@ -118,8 +117,6 @@ namespace flame
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
 		std::unique_ptr<graphics::DescriptorSet>										ds_light;
-		graphics::PipelineResourceManager<FLAME_UID>									prm_sky;
-		graphics::GraphicsPipelinePtr													pl_sky = nullptr;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_gbuf;
 		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;

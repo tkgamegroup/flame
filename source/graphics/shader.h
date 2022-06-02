@@ -265,6 +265,7 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
+			bool dynamic_renderpass = false;
 
 			virtual ~GraphicsPipeline() {}
 

@@ -18,8 +18,13 @@ namespace flame
 		{
 			CommandPoolPrivate* pool;
 
-			VkPipelineLayout vk_pll = nullptr;
-			VkPipelineBindPoint vk_plt = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			PipelineType curr_plt = PipelineGraphics;
+			PipelineLayoutPtr curr_pll = nullptr;
+			GraphicsPipelinePtr curr_gpl = nullptr;
+			ComputePipelinePtr curr_cpl = nullptr;
+			FramebufferPtr curr_fb = nullptr;
+			RenderpassPtr curr_rp = nullptr;
+			int curr_sp = -1;
 
 			VkCommandBuffer vk_command_buffer;
 			VkQueryPool vk_query_pool = nullptr;

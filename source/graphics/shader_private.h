@@ -92,9 +92,12 @@ namespace flame
 		{
 			VkPipeline vk_pipeline;
 
+			std::unordered_map<RenderpassPtr, VkPipeline> renderpass_variants;
+
 			uint ref = 0;
 
 			~GraphicsPipelinePrivate();
+			VkPipeline get_dynamic_pipeline(RenderpassPtr rp, uint sp);
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline

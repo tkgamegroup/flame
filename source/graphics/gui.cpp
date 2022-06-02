@@ -7,7 +7,6 @@
 #include "font_private.h"
 #include "shader_private.h"
 #include "command_private.h"
-#include "swapchain_private.h"
 #include "window_private.h"
 #include "extension.h"
 

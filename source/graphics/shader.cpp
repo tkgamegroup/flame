@@ -1465,8 +1465,31 @@ namespace flame
 					delete renderpass;
 			}
 
-			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
-			unregister_backend_object(vk_pipeline);
+			if (vk_pipeline)
+			{
+				vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+				unregister_backend_object(vk_pipeline);
+			}
+			for (auto& v : renderpass_variants)
+			{
+				vkDestroyPipeline(device->vk_device, v.second, nullptr);
+				unregister_backend_object(v.second);
+			}
+		}
+
+		VkPipeline GraphicsPipelinePrivate::get_dynamic_pipeline(RenderpassPtr rp, uint sp)
+		{
+			auto it = renderpass_variants.find(rp);
+			if (it != renderpass_variants.end())
+				return it->second;
+			GraphicsPipelineInfo info = *this;
+			info.renderpass = rp;
+			info.subpass_index = sp;
+			auto new_pl = create(info);
+			auto ret = new_pl->vk_pipeline;
+			new_pl->vk_pipeline = nullptr;
+			renderpass_variants.emplace(rp, ret);
+			return ret;
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create

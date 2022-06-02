@@ -136,6 +136,7 @@ namespace flame
 
 		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
 			{ "rp=" + str(rp_col) });
+		pl_blit->dynamic_renderpass = true;
 		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline",
 			{ "rp=" + str(rp_col) });
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline",
@@ -244,14 +245,6 @@ namespace flame
 
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
-
-		if (!pl_blit_tar)
-		{
-			auto rp_tar = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
-				{ "col_fmt=" + TypeInfo::serialize_t(&img0->format) });
-			pl_blit_tar = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
-				{ "rp=" + str(rp_tar) });
-		}
 
 		iv_tars.assign(_targets.begin(), _targets.end());
 
@@ -1382,7 +1375,7 @@ namespace flame
 		cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-		cb->bind_pipeline(pl_blit_tar);
+		cb->bind_pipeline(pl_blit);
 		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
