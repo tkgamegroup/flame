@@ -36,6 +36,8 @@ namespace flame
 		FLAME_GRAPHICS_API extern Listeners<void()> gui_callbacks;
 		FLAME_GRAPHICS_API void gui_initialize();
 		FLAME_GRAPHICS_API void* gui_native_handle();
+		// lod: 0 - 16 pts, 1 - 32 pts, 2 - 64 pts, 3 - 128 pts
+		FLAME_GRAPHICS_API std::vector<vec2> get_circle_points(uint lod);
 
 		inline void gui_set_current()
 		{

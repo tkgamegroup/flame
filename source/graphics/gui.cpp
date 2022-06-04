@@ -522,6 +522,42 @@ namespace flame
 			return nullptr;
 		}
 
+		static std::vector<vec2> circle_pts0;
+		static std::vector<vec2> circle_pts1;
+		static std::vector<vec2> circle_pts2;
+		static std::vector<vec2> circle_pts3;
+		std::vector<vec2> get_circle_points(uint lod)
+		{
+			auto get_points = [](uint divides) {
+				std::vector<vec2> ret;
+				ret.resize(divides);
+				auto step = radians(360.f / divides);
+				for (auto i = 0; i < divides; i++)
+					ret[i] = vec2(cos(step * i), sin(step * i));
+				return ret;
+			};
+			switch (lod)
+			{
+			case 0:
+				if (circle_pts0.empty())
+					circle_pts0 = get_points(16);
+				return circle_pts0;
+			case 1:
+				if (circle_pts1.empty())
+					circle_pts1 = get_points(32);
+				return circle_pts1;
+			case 2:
+				if (circle_pts2.empty())
+					circle_pts2 = get_points(64);
+				return circle_pts2;
+			case 3:
+				if (circle_pts3.empty())
+					circle_pts3 = get_points(128);
+				return circle_pts3;
+			}
+			return std::vector<vec2>();
+		}
+
 		std::filesystem::path parse_icon_path(const std::filesystem::path& path)
 		{
 			auto ext = path.extension();

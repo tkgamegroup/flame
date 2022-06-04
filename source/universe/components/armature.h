@@ -27,7 +27,7 @@ namespace flame
 		float playing_time = 0;
 		float playing_speed = 1.f;
 
-		virtual void play(uint name) = 0;
+		virtual void play(uint name, float transition = 0.f) = 0;
 		virtual void stop() = 0;
 
 		int instance_id = -1;

@@ -10,6 +10,7 @@ struct View_Scene : View
 	bool show_AABB = false;
 	bool show_axis = true;
 	bool show_bones = false;
+	bool show_nav_agents = false;
 
 	uint camera_idx = 0;
 	float camera_zoom = 5.f;

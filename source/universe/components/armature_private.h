@@ -45,6 +45,7 @@ namespace flame
 		std::vector<Bone> bones;
 		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;
+		float transition_duration = 0.f;
 
 		int frame = -1;
 
@@ -54,7 +55,7 @@ namespace flame
 		void set_armature_name(const std::filesystem::path& name) override;
 		void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) override;
 
-		void play(uint name) override;
+		void play(uint name, float transition) override;
 		void stop() override;
 
 		void draw(sRendererPtr renderer);

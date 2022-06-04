@@ -106,7 +106,7 @@ namespace flame
 	{
 		if (face_mode)
 		{
-			auto dir = node->g_pos - target_pos;
+			auto dir = target_pos - node->g_pos;
 			dir = normalize(dir);
 			auto diff = angle_diff(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
 			node->add_eul(vec3(sign_min(diff, turn_speed * delta_time), 0.f, 0.f));

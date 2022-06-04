@@ -192,6 +192,7 @@ void App::init()
 			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
 			ImGui::MenuItem("Axis", nullptr, &view_scene.show_axis);
 			ImGui::MenuItem("Bones", nullptr, &view_scene.show_bones);
+			ImGui::MenuItem("Nav Agents", nullptr, &view_scene.show_nav_agents);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
@@ -301,11 +302,6 @@ void App::init()
 			ImGui::PopStyleColor();
 		}
 		// toolbar end
-
-		switch (tool)
-		{
-
-		}
 
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		ImGui::End();

@@ -7,6 +7,7 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
+#include <flame/universe/components/nav_agent.h>
 
 View_Scene view_scene;
 
@@ -240,7 +241,42 @@ void View_Scene::on_draw()
 						return true;
 					});
 				}
-				}, "scene"_h);
+				if (show_nav_agents)
+				{
+					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						if (!e->global_enable)
+							return false;
+						if (auto nav = e->get_component_t<cNavAgent>(); nav)
+						{
+							auto r = nav->radius;
+							auto c = pi<float>() * r * 2.f;
+							auto lod = 0;
+							if (c > 8.f)
+							{
+								lod++;
+								if (c > 16.f)
+								{
+									lod++;
+									if (c > 32.f)
+										lod++;
+								}
+							}
+							auto circle = graphics::get_circle_points(lod);
+							auto n = (int)circle.size();
+							circle.push_back(circle[0]);
+							std::vector<vec3> pts(n * 2);
+							auto center = nav->node->g_pos;
+							for (auto i = 0; i < n; i++)
+							{
+								pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
+								pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
+							}
+							renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+						}
+						return true;
+					});
+				}
+			}, "scene"_h);
 			editor_node->mark_transform_dirty();
 		}
 
@@ -325,6 +361,14 @@ void View_Scene::on_draw()
 					selected_to_focus();
 				if (ImGui::IsKeyPressed(Keyboard_Del))
 					app.cmd_delete_entity();
+				if (ImGui::IsKeyPressed(Keyboard_1))
+					app.tool = ToolSelect;
+				if (ImGui::IsKeyPressed(Keyboard_2))
+					app.tool = ToolMove;
+				if (ImGui::IsKeyPressed(Keyboard_3))
+					app.tool = ToolRotate;
+				if (ImGui::IsKeyPressed(Keyboard_4))
+					app.tool = ToolScale;
 			}
 
 			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))

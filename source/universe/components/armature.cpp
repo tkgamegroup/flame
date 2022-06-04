@@ -7,8 +7,6 @@
 
 namespace flame
 {
-	const auto TransitionDuration = 0.3f;
-
 	mat4 cArmaturePrivate::Bone::calc_mat()
 	{
 		if (!node)
@@ -106,13 +104,17 @@ namespace flame
 		}
 	}
 
-	void cArmaturePrivate::play(uint name)
+	void cArmaturePrivate::play(uint name, float transition)
 	{
 		if (playing_name == name)
 			return;
 		stop();
 		playing_name = name;
-		//transition_time = 0.f;
+		if (transition > 0.f)
+		{
+			transition_time = 0.f;
+			transition_duration = transition;
+		}
 	}
 
 	void cArmaturePrivate::stop()
@@ -139,18 +141,18 @@ namespace flame
 						auto& b = bones[t.bone_idx];
 						if (!t.positions.empty())
 						{
-							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / TransitionDuration);
+							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / transition_duration);
 							b.node->set_pos(b.pose.p);
 						}
 						if (!t.rotations.empty())
 						{
-							b.pose.q = mix(b.pose.q, t.rotations.front().second, transition_time / TransitionDuration);
+							b.pose.q = slerp(b.pose.q, t.rotations.front().second, transition_time / transition_duration);
 							b.node->set_qut(b.pose.q);
 						}
 					}
 
 					transition_time += delta_time * playing_speed;
-					if (transition_time >= TransitionDuration)
+					if (transition_time >= transition_duration)
 						transition_time = -1.f;
 				}
 				else
