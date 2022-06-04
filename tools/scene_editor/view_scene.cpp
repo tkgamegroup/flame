@@ -195,12 +195,12 @@ void View_Scene::on_draw()
 				}
 				if (show_axis)
 				{
-					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
-						if (!e->global_enable)
-							return false;
-						if (auto node = e->get_component_i<cNode>(0); node)
+					if (selection.type == Selection::tEntity)
+					{
+						auto e = selection.entity();
+						if (e->global_enable)
 						{
-							if (!node->bounds.invalid())
+							if (auto node = e->get_component_i<cNode>(0); node)
 							{
 								vec3 line_pts[2];
 								line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
@@ -211,8 +211,7 @@ void View_Scene::on_draw()
 								renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 0, 255, 255));
 							}
 						}
-						return true;
-					});
+					}
 				}
 				if (show_bones)
 				{

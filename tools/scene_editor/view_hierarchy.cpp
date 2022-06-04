@@ -9,9 +9,13 @@ View_Hierarchy::View_Hierarchy() :
 {
 }
 
+uint hierarchy_select_frame = 0;
+
 void View_Hierarchy::on_draw()
 {
-	auto just_select = selection.type == Selection::tEntity && selection.frame == (int)frames - 1;
+	auto just_select = selection.frame == (int)frames - 1 && selection.type == Selection::tEntity;
+	if (hierarchy_select_frame == selection.frame)
+		just_select = false;
 
 	std::vector<EntityPtr> open_nodes;
 	if (just_select)
@@ -125,7 +129,10 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
+		{
 			selection.select(e);
+			hierarchy_select_frame = frames;
+		}
 		if (opened)
 		{
 			auto gap_item = [&](int i) {

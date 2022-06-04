@@ -398,6 +398,7 @@ void View_Inspector::on_draw()
 			}
 			if (open)
 			{
+				ImGui::Checkbox("enable", &c->enable);
 				auto changed_name = show_udt(ui, c.get());
 				if (!changed_name.empty())
 				{
@@ -405,7 +406,17 @@ void View_Inspector::on_draw()
 						ins->mark_modifier(e->file_id, ui.name, changed_name);
 				}
 
-				if (ui.name == "flame::cArmature")
+				if (ui.name == "flame::cNode")
+				{
+					auto node = (cNodePtr)c.get();
+					ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("g_pos", (float*)&node->g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("g_rot.x", (float*)&node->g_rot[0], "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("g_rot.y", (float*)&node->g_rot[1], "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("g_rot.z", (float*)&node->g_rot[2], "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("g_scl", (float*)&node->g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
+				}
+				else if (ui.name == "flame::cArmature")
 				{
 					auto armature = (cArmaturePtr)c.get();
 					static char name[100];
@@ -416,6 +427,8 @@ void View_Inspector::on_draw()
 					ImGui::SameLine();
 					if (ImGui::Button("Stop"))
 						armature->stop();
+					ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
 				}
 				else if (ui.name == "flame::cTerrain")
 				{
@@ -1020,6 +1033,45 @@ void View_Inspector::on_draw()
 					material->save(path);
 					if (asset)
 						asset->active = true;
+				}
+			}
+		}
+		else if (ext == L".fani")
+		{
+			if (selection.frame != last_sel_ref_frame)
+			{
+				auto animation = graphics::Animation::get(path);
+				if (animation)
+				{
+					last_sel_ref_type = th<graphics::Animation>();
+					last_sel_ref_obj = animation;
+				}
+
+				last_sel_ref_frame = selection.frame;
+			}
+
+			if (last_sel_ref_obj)
+			{
+				auto animation = (graphics::AnimationPtr)last_sel_ref_obj;
+				ImGui::Text("Duration: %f", animation->duration);
+				if (ImGui::TreeNode(std::format("Channels ({})", (int)animation->channels.size()).c_str()))
+				{
+					ImGui::BeginChild("channels", ImVec2(0, 0), true);
+					for (auto& ch : animation->channels)
+					{
+						if (ImGui::TreeNode(ch.node_name.c_str()))
+						{
+							ImGui::TextUnformatted("  pos:");
+							for (auto& k : ch.position_keys)
+								ImGui::Text("    %f: %s", k.t, str(k.p).c_str());
+							ImGui::TextUnformatted("  qut:");
+							for (auto& k : ch.rotation_keys)
+								ImGui::Text("    %f: %s", k.t, str((vec4&)k.q).c_str());
+							ImGui::TreePop();
+						}
+					}
+					ImGui::EndChild();
+					ImGui::TreePop();
 				}
 			}
 		}

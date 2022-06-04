@@ -8,6 +8,7 @@ namespace flame
 	{
 		uint type_hash = 0;
 		EntityPtr entity = nullptr;
+		bool enable = true;
 		Listeners<void(uint)> data_listeners;
 
 		uint n_strong_ref = 0;

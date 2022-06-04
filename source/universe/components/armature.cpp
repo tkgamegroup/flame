@@ -112,6 +112,7 @@ namespace flame
 			return;
 		stop();
 		playing_name = name;
+		//transition_time = 0.f;
 	}
 
 	void cArmaturePrivate::stop()
@@ -126,24 +127,24 @@ namespace flame
 		if (instance_id == -1)
 			return;
 
-		if (frame < (int)frames)
+		if (enable && frame < (int)frames)
 		{
 			if (playing_name != 0)
 			{
 				auto& a = animations[playing_name];
-				if (transition_time > 0.f)
+				if (transition_time >= 0.f)
 				{
 					for (auto& t : a.tracks)
 					{
 						auto& b = bones[t.bone_idx];
 						if (!t.positions.empty())
 						{
-							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / (t.positions.front().first + TransitionDuration));
+							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / TransitionDuration);
 							b.node->set_pos(b.pose.p);
 						}
 						if (!t.rotations.empty())
 						{
-							b.pose.q = mix(b.pose.q, t.rotations.front().second, transition_time / (t.rotations.front().first + TransitionDuration));
+							b.pose.q = mix(b.pose.q, t.rotations.front().second, transition_time / TransitionDuration);
 							b.node->set_qut(b.pose.q);
 						}
 					}
@@ -159,19 +160,12 @@ namespace flame
 						auto& b = bones[t.bone_idx];
 						if (!t.positions.empty())
 						{
-							auto lit = std::upper_bound(t.positions.begin(), t.positions.end(), playing_time, [](auto v, const auto& i) {
-								return v < i.first;
+							auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
+								return i.first < v;
 							});
-							if (lit == t.positions.end())
+							auto lit = rit;
+							if (lit != t.positions.begin())
 								lit--;
-							auto rit = lit + 1;
-							if (rit == t.positions.end())
-							{
-								if (loop)
-									rit = t.positions.begin();
-								else
-									rit = lit;
-							}
 							if (lit == rit)
 								b.pose.p = lit->second;
 							else
@@ -180,35 +174,25 @@ namespace flame
 						}
 						if (!t.rotations.empty())
 						{
-							auto lit = std::upper_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](auto v, const auto& i) {
-								return v < i.first;
+							auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
+								return i.first < v;
 							});
-							if (lit == t.rotations.end())
+							auto lit = rit;
+							if (lit != t.rotations.begin())
 								lit--;
-							auto rit = lit + 1;
-							if (rit == t.rotations.end())
-							{
-								if (loop)
-									rit = t.rotations.begin();
-								else
-									rit = lit;
-							}
 							if (lit == rit)
 								b.pose.q = lit->second;
 							else
-								b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+								b.pose.q = slerp(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
 							b.node->set_qut(b.pose.q);
 						}
 					}
 
 					playing_time += delta_time * playing_speed;
-					if (playing_time >= a.duration)
-					{
-						if (!loop)
-							stop();
-						else
-							playing_time = fmod(playing_time, a.duration);
-					}
+					if (playing_time >= a.duration && !loop)
+						stop();
+					else
+						playing_time = fmod(playing_time, a.duration);
 				}
 			}
 
@@ -293,11 +277,23 @@ namespace flame
 										t.positions[i].first = ch.position_keys[i].t;
 										t.positions[i].second = ch.position_keys[i].p;
 									}
+									if (!t.positions.empty() && t.positions.back().first < a.duration)
+									{
+										auto k = t.positions.front();
+										k.first = a.duration;
+										t.positions.push_back(k);
+									}
 									t.rotations.resize(ch.rotation_keys.size());
 									for (auto i = 0; i < t.rotations.size(); i++)
 									{
 										t.rotations[i].first = ch.rotation_keys[i].t;
 										t.rotations[i].second = ch.rotation_keys[i].q;
+									}
+									if (!t.rotations.empty() && t.rotations.back().first < a.duration)
+									{
+										auto k = t.rotations.front();
+										k.first = a.duration;
+										t.rotations.push_back(k);
 									}
 									if (id == 0)
 									{

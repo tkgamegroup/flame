@@ -95,6 +95,8 @@ namespace flame
 				{
 					for (auto& c : e->components)
 					{
+						if (!c->enable)
+							continue;
 						if (c->update_times == 0)
 							c->start();
 						c->update();

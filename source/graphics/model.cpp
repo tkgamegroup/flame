@@ -226,6 +226,15 @@ namespace flame
 					}
 				};
 
+				auto to_glm = [](const FbxAMatrix& src) {
+					return mat4(
+						vec4(src.Get(0, 0), src.Get(0, 1), src.Get(0, 2), src.Get(0, 3)),
+						vec4(src.Get(1, 0), src.Get(1, 1), src.Get(1, 2), src.Get(1, 3)),
+						vec4(src.Get(2, 0), src.Get(2, 1), src.Get(2, 2), src.Get(2, 3)),
+						vec4(src.Get(3, 0), src.Get(3, 1), src.Get(3, 2), src.Get(3, 3))
+					);
+				};
+
 				static FbxManager* sdk_manager = nullptr;
 				if (!sdk_manager)
 				{
@@ -273,6 +282,7 @@ namespace flame
 				{
 					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
+					scene->SetCurrentAnimationStack(anim_stack);
 
 					auto animation = new AnimationT;
 					animation->duration = 0.f;
@@ -320,26 +330,42 @@ namespace flame
 						{
 							std::reverse(position_keys.begin(), position_keys.end());
 							std::reverse(rotation_keys.begin(), rotation_keys.end());
+
 							auto& ch = animation->channels.emplace_back();
 							ch.node_name = node->GetName();
 							ch.position_keys.resize(position_keys.size());
 							for (auto i = 0; i < position_keys.size(); i++)
 							{
+								FbxTime time;
+								time.SetMilliSeconds(position_keys[i].first);
+								auto mat = to_glm(node->EvaluateGlobalTransform(time));
+								if (auto parent = node->GetParent(); parent)
+									mat = inverse(to_glm(parent->EvaluateGlobalTransform(time))) * mat;
+								vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
+								decompose(mat, scl, qut, pos, skew, perspective);
+
 								ch.position_keys[i].t = (float)position_keys[i].first / 1000.f;
-								ch.position_keys[i].p = position_keys[i].second;
+								ch.position_keys[i].p = pos;
 							}
 							ch.rotation_keys.resize(rotation_keys.size());
-							auto ro = node->RotationOrder.Get();
 							for (auto i = 0; i < rotation_keys.size(); i++)
 							{
+								FbxTime time;
+								time.SetMilliSeconds(rotation_keys[i].first);
+								auto mat = to_glm(node->EvaluateGlobalTransform(time));
+								if (auto parent = node->GetParent(); parent)
+									mat = inverse(to_glm(parent->EvaluateGlobalTransform(time))) * mat;
+								vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
+								decompose(mat, scl, qut, pos, skew, perspective);
+
 								ch.rotation_keys[i].t = (float)rotation_keys[i].first / 1000.f;
-								ch.rotation_keys[i].q = get_quat(ro, rotation_keys[i].second);
+								ch.rotation_keys[i].q = qut;
 							}
 
 							if (!ch.position_keys.empty())
-								animation->duration = max(animation->duration, ch.position_keys.back().t + (1.f / 24.f));
+								animation->duration = max(animation->duration, ch.position_keys.back().t);
 							if (!ch.rotation_keys.empty())
-								animation->duration = max(animation->duration, ch.rotation_keys.back().t + (1.f / 24.f));
+								animation->duration = max(animation->duration, ch.rotation_keys.back().t);
 						}
 
 						auto children_count = node->GetChildCount();
@@ -354,6 +380,7 @@ namespace flame
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);
 				}
+				scene->SetCurrentAnimationStack(nullptr);
 
 				if (only_animation)
 				{
@@ -372,15 +399,6 @@ namespace flame
 					return;
 				}
 
-				auto to_glm = [](const FbxAMatrix& src) {
-					return mat4(
-						vec4(src.Get(0, 0), src.Get(0, 1), src.Get(0, 2), src.Get(0, 3)),
-						vec4(src.Get(1, 0), src.Get(1, 1), src.Get(1, 2), src.Get(1, 3)),
-						vec4(src.Get(2, 0), src.Get(2, 1), src.Get(2, 2), src.Get(2, 3)),
-						vec4(src.Get(3, 0), src.Get(3, 1), src.Get(3, 2), src.Get(3, 3))
-					);
-				};
-
 				pugi::xml_document doc_prefab;
 
 				std::function<void(pugi::xml_node, FbxNode*)> process_node;
@@ -397,11 +415,7 @@ namespace flame
 						auto mat = to_glm(src->EvaluateGlobalTransform());
 						if (auto parent = src->GetParent(); parent)
 							mat = inverse(to_glm(parent->EvaluateGlobalTransform())) * mat;
-						vec3 pos;
-						quat qut;
-						vec3 scl;
-						vec3 skew;
-						vec4 perspective;
+						vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 						decompose(mat, scl, qut, pos, skew, perspective);
 
 						if (pos != vec3(0.f))

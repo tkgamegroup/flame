@@ -106,7 +106,11 @@ namespace flame
 			rot_dirty = false;
 
 			if (!qut_dirty)
+			{
+				if (entity->name == "mixamorig:LeftUpLeg")
+					int cut = 1;
 				rot = mat3(qut);
+			}
 			else if (!eul_dirty)
 				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
 		}

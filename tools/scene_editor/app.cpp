@@ -682,7 +682,15 @@ bool App::cmd_stop()
 		always_render = false;
 		auto& camera_list = cCamera::list();
 		if (camera_list.size() > 0)
+		{
 			view_scene.camera_idx = 0;
+			sRenderer::instance()->camera = camera_list.front();
+		}
+		else
+		{
+			view_scene.camera_idx = -1;
+			sRenderer::instance()->camera = nullptr;
+		}
 		return false;
 	});
 	return true;
