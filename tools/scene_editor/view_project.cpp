@@ -232,6 +232,30 @@ void View_Project::init()
 			NewImageDialog::open(path);
 		}
 	};
+	explorer.folder_drop_callback = [this](const std::filesystem::path& path) {
+		if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
+		{
+			auto e_src = *(EntityPtr*)payload->Data;
+			if (e_src->prefab)
+				app.open_message_dialog("Error", "Entity is already an entity instance");
+			else
+			{
+				auto fn = std::filesystem::path(e_src->name);
+				if (fn.empty())
+					fn = L"entity";
+				fn += L".prefab";
+				fn = path / fn;
+				while (true)
+				{
+					if (!std::filesystem::exists(fn))
+						break;
+					replace_fn(fn, L"{}_");
+				}
+				new PrefabInstance(e_src, fn);
+				e_src->save(fn);
+			}
+		}
+	};
 }
 
 void View_Project::on_draw()

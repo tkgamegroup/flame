@@ -119,6 +119,7 @@ namespace flame
 			std::function<void(const std::filesystem::path&)> dbclick_callback;
 			std::function<void(const std::filesystem::path&)> item_context_menu_callback;
 			std::function<void(const std::filesystem::path&)> folder_context_menu_callback;
+			std::function<void(const std::filesystem::path&)> folder_drop_callback;
 
 			inline void reset(const std::filesystem::path& path)
 			{
@@ -342,8 +343,19 @@ namespace flame
 						ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 					}
 
+					auto content_pos = ImGui::GetCursorPos();
 					auto content_size = ImGui::GetContentRegionAvail();
 					content_size.y -= 4;
+					ImGui::InvisibleButton("background", content_size);
+					if (opened_folder && folder_drop_callback)
+					{
+						if (ImGui::BeginDragDropTarget())
+						{
+							folder_drop_callback(opened_folder->path);
+							ImGui::EndDragDropTarget();
+						}
+					}
+					ImGui::SetCursorPos(content_pos);
 					auto padding = style.FramePadding;
 					auto line_height = ImGui::GetTextLineHeight();
 					if (ImGui::BeginTable("contents", content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x), ImGuiTableFlags_ScrollY, content_size))

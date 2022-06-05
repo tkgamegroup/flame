@@ -978,7 +978,6 @@ namespace flame
 			for (auto i = 0; i < draw_meshes.size(); i++)
 			{
 				auto& d = draw_meshes[i];
-				auto& mesh_r = mesh_reses[d.mesh_id];
 				auto& mat_r = mat_reses[d.mat_id];
 				if (mat_r.draw_ids.empty())
 				{
@@ -992,7 +991,6 @@ namespace flame
 			for (auto i = 0; i < draw_arm_meshes.size(); i++)
 			{
 				auto& d = draw_arm_meshes[i];
-				auto& mesh_r = mesh_reses[d.mesh_id];
 				auto& mat_r = mat_reses[d.mat_id];
 				if (mat_r.draw_ids.empty())
 				{

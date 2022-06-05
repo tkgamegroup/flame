@@ -622,7 +622,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	if (!e->prefab && get_prefab_instance(e))
 	{
-		ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
+		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
 	}
 	e->parent->remove_child(e);
@@ -690,6 +690,18 @@ bool App::cmd_stop()
 		return false;
 	});
 	return true;
+}
+
+void App::open_message_dialog(const std::string& title, const std::string& message)
+{
+	if (title == "[RestructurePrefabInstanceWarnning]")
+	{
+		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance", 
+			"You cannot add/remove/reorder entity or component in Prefab Instance\n"
+			"Edit it in that prefab");
+	}
+	else
+		ImGui::OpenMessageDialog(title, message);
 }
 
 PrefabInstance* get_prefab_instance(EntityPtr e)

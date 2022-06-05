@@ -54,6 +54,8 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_pause();
 	bool cmd_stop();
+
+	void open_message_dialog(const std::string& title, const std::string& message);
 };
 
 extern App app;

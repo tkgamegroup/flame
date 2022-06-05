@@ -149,17 +149,17 @@ namespace flame
 				return first_node;
 			};
 			auto postprocess = [&](pugi::xml_node first_node) {
+				auto dst = first_node;
+				if (need_wrap_root)
+					dst = dst.child("children").first_child();
+				auto n_components = dst.child("components");
+				auto n_node = n_components.first_child();
+				if (rotation != vec3(0.f))
+					n_node.append_attribute("eul").set_value(str(rotation).c_str());
+				if (scaling != vec3(1.f))
+					n_node.append_attribute("scl").set_value(str(scaling).c_str());
 				if (!model->bones.empty())
 				{
-					auto dst = first_node;
-					if (need_wrap_root)
-						dst = dst.child("children").first_child();
-					auto n_components = dst.child("components");
-					auto n_node = n_components.first_child();
-					if (rotation != vec3(0.f))
-						n_node.append_attribute("eul").set_value(str(rotation).c_str());
-					if (scaling != vec3(1.f))
-						n_node.append_attribute("scl").set_value(str(scaling).c_str());
 					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
 					n_armature.append_attribute("armature_name").set_value(filename.string().c_str());
@@ -695,6 +695,7 @@ namespace flame
 					aiProcess_Triangulate |
 					aiProcess_JoinIdenticalVertices |
 					aiProcess_SortByPType |
+					aiProcess_GenNormals |
 					aiProcess_FlipUVs |
 					aiProcess_LimitBoneWeights;
 				auto scene = importer.ReadFile(_filename.string(), load_flags);

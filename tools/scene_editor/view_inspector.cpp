@@ -160,10 +160,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
-			{
-				auto p = path;
-				selection.select(Path::get(p));
-			}
+				selection.select(Path::get(path));
 		}
 			break;
 		}
@@ -375,6 +372,15 @@ void View_Inspector::on_draw()
 		auto e = selection.entity();
 
 		ImGui::PushID(e);
+		if (e->prefab)
+		{
+			auto& path = e->prefab->filename;
+			auto str = path.string();
+			ImGui::InputText("prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
+			ImGui::SameLine();
+			if (ImGui::Button("P"))
+				selection.select(Path::get(path));
+		}
 		auto changed_name = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		ImGui::PopID();
 		if (!changed_name.empty())
@@ -915,7 +921,7 @@ void View_Inspector::on_draw()
 		if (ImGui::Button("Add Component"))
 		{
 			if (get_prefab_instance(e))
-				ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
+				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			else
 				ImGui::OpenPopup("add_component");
 		}

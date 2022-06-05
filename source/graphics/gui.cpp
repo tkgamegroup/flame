@@ -138,17 +138,8 @@ namespace ImGui
 	void OpenMessageDialog(const std::string title, const std::string& message)
 	{
 		auto dialog = new MessageDialog;
-		if (title == "[RestructurePrefabInstanceWarnning]")
-		{
-			dialog->title = "Cannot restructure Prefab Instance";
-			dialog->message = "You cannot add/remove/reorder entity or component in Prefab Instance\n"
-				"Edit it in that prefab";
-		}
-		else
-		{
-			dialog->title = title;
-			dialog->message = message;
-		}
+		dialog->title = title;
+		dialog->message = message;
 		Dialog::open(dialog);
 	}
 

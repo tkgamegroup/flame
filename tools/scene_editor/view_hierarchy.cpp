@@ -76,7 +76,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else
@@ -84,7 +84,7 @@ void View_Hierarchy::on_draw()
 					auto e_src = *(EntityPtr*)payload->Data;
 					if (!e_src->prefab && get_prefab_instance(e_src))
 					{
-						ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
+						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 						return nullptr;
 					}
 					if (!is_ancestor(e_src, e))
@@ -98,7 +98,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_prefab_instance(e))
 				{
-					ImGui::OpenMessageDialog("[RestructurePrefabInstanceWarnning]", "");
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
 				}
 				else

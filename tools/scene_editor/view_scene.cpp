@@ -399,12 +399,15 @@ void View_Scene::on_draw()
 					auto path = Path::reverse(str);
 					if (path.extension() == L".prefab")
 					{
-						auto e = Entity::create();
-						e->load(path);
-						new PrefabInstance(e, path);
-						if (auto node = e->get_component_i<cNode>(0); node)
-							node->set_pos(hovering_pos);
-						app.e_prefab->add_child(e);
+						add_event([this, path]() {
+							auto e = Entity::create();
+							e->load(path);
+							new PrefabInstance(e, path);
+							if (auto node = e->get_component_i<cNode>(0); node)
+								node->set_pos(hovering_pos);
+							app.e_prefab->add_child(e);
+							return false;
+						});
 					}
 				}
 			}
