@@ -34,9 +34,9 @@ namespace flame
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
-				unregister_backend_object(vk_image);
-				unregister_backend_object(vk_memory);
 			}
+			unregister_backend_object(vk_image);
+			unregister_backend_object(vk_memory);
 		}
 
 		void ImagePrivate::initialize()

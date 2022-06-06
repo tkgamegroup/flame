@@ -79,6 +79,12 @@ void main()
        float d = (pc.falloff - to_edge) / pc.falloff;
        value *= 1.0 - d * d;
     }
+    float val_base = 0.0;
+    #ifndef USE_VERTEX_VAL_BASE
+        val_base = pc.val_base;
+    #else
+        val_base = i_val_base;
+    #endif
     o_col = vec4(vec3(pc.val_base + value * pc.val_scl), 1.0);
 }
 @

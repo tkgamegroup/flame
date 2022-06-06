@@ -15,5 +15,5 @@ void main()
 #ifdef USE_VERTEX_VAL_BASE
 	o_val_base = i_val_base;
 #endif
-	gl_Position = vec4(i_pos, 1.0);
+	gl_Position = vec4(i_pos, 0.0, 1.0);
 }
