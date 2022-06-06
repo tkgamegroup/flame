@@ -718,6 +718,8 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 
 int main(int argc, char** args)
 {
+	srand(time(0));
+
 	auto ap = parse_args(argc, args);
 	if (ap.has("-fixed_render_target_size"))
 		view_scene.fixed_render_target_size = true;

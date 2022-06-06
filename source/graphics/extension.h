@@ -331,7 +331,7 @@ namespace flame
 			inline void push_constant(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
 			{
 				cb->bind_pipeline_layout(pll);
-				cb->push_constant(off, min(size, pll->pc_sz), temp_pc + off);
+				cb->push_constant(off, min(size, pll->pc_sz - off), temp_pc + off);
 			}
 		};
 	}

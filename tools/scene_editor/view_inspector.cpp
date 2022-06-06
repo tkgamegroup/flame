@@ -534,6 +534,10 @@ void View_Inspector::on_draw()
 											std::default_random_engine generator(seed);
 											std::uniform_real_distribution<float> distribution(0.0, 1.0);
 
+											auto to_glm = [](const Vector2& v) {
+												return vec2(v.x, v.y);
+											};
+
 											std::vector<Vector2> site_postions;
 											for (int i = 0; i < voronoi_sites_count; ++i)
 												site_postions.push_back(Vector2{ distribution(generator), distribution(generator) });
@@ -653,27 +657,11 @@ void View_Inspector::on_draw()
 														regions.emplace_back(height, region);
 													}
 												}
-
-												for (auto& r : regions)
-												{
-													std::vector<VoronoiDiagram::HalfEdge*> candidates;
-													for (auto i : r.second)
-													{
-														for (auto edge : get_site_edges(diagram.getSite(i)))
-														{
-															if (auto oth_edge = edge->twin; oth_edge)
-															{
-																auto oth_idx = oth_edge->incidentFace->site->index;
-																auto oth_height = site_height[oth_idx];
-															}
-														}
-													}
-												}
 											}
 
 											{
 												const auto MaxVertices = 10000;
-												graphics::StagingBuffer vtx_buf(sizeof(vec2) * MaxVertices, nullptr, graphics::BufferUsageVertex);
+
 												graphics::InstanceCB cb(nullptr);
 
 												auto fb = height_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
@@ -686,32 +674,129 @@ void View_Inspector::on_draw()
 												graphics::PipelineResourceManager<FLAME_UID> prm;
 												prm.init(pl->layout);
 
+												graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx;
+												buf_vtx.create(pl->vi_ui(), MaxVertices);
+
 												cb->image_barrier(height_map, {}, graphics::ImageLayoutAttachment);
 												cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
 												cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 												cb->bind_pipeline(pl);
-												prm.set_pc_var<"falloff"_h>(0.f);
-												prm.set_pc_var<"power"_h>(1.f);
 												prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f));
 												prm.set_pc_var<"uv_scl"_h>(32.f);
+												prm.set_pc_var<"val_base"_h>(0.f);
+												prm.set_pc_var<"val_scl"_h>(0.25f);
+												prm.set_pc_var<"falloff"_h>(0.f);
+												prm.set_pc_var<"power"_h>(1.f);
 												prm.push_constant(cb.get());
-												cb->bind_vertex_buffer(vtx_buf.get(), 0);
+												cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 
-												auto pvtx = (vec2*)vtx_buf->mapped;
-												auto vtx_cnt = 0;
 												for (auto i = 0; i < site_postions.size(); i++)
 												{
 													auto vertices = get_site_vertices(diagram.getSite(i));
-													if (!vertices.empty() && vtx_cnt + vertices.size() <= MaxVertices)
+													auto vtx_off = buf_vtx.item_offset();
+													if (!vertices.empty() && vtx_off + vertices.size() <= MaxVertices)
 													{
 														for (auto j = 0; j < vertices.size(); j++)
-															pvtx[vtx_cnt + j] = vertices[j];
-														auto base = site_height[i];
-														prm.set_pc_var<"val_base"_h>(base);
-														prm.set_pc_var<"val_scl"_h>(0.25f);
-														prm.push_constant(cb.get(), prm.vu_pc.var_off<"uv_off"_h>(), sizeof(float) * 5);
-														cb->draw(vertices.size(), 1, vtx_cnt, 0);
-														vtx_cnt += vertices.size();
+														{
+															buf_vtx.set_var<"i_pos"_h>(vertices[j] * 2.f - 1.f);
+															buf_vtx.set_var<"i_uv"_h>(vertices[j]);
+															buf_vtx.set_var<"i_val_base"_h>(site_height[i]);
+															buf_vtx.next_item();
+														}
+
+														cb->draw(vertices.size(), 1, vtx_off, 0);
+													}
+												}
+
+												// slopes
+												{
+													auto slope_width = 4.f / terrain->extent.x;
+													auto slope_length = 5.f / terrain->extent.x;
+
+													std::vector<bool> site_seen(site_postions.size(), false);
+													std::vector<std::vector<VoronoiDiagram::HalfEdge*>> regions;
+													std::function<void(int, int, float)> form_region;
+													form_region = [&](int site_idx, int region_idx, float height) {
+														if (site_seen[site_idx])
+															return;
+														site_seen[site_idx] = true;
+														auto& region = regions[region_idx];
+														for (auto edge : get_site_edges(diagram.getSite(site_idx)))
+														{
+															if (auto oth_edge = edge->twin; oth_edge)
+															{
+																auto oth_idx = oth_edge->incidentFace->site->index;
+																auto oth_height = site_height[oth_idx];
+																if (oth_height < height && height - oth_height < 0.3f)
+																	region.push_back(edge);
+																else if (oth_height == height)
+																	form_region(oth_idx, region_idx, height);
+															}
+														}
+													};
+													for (auto i = 0; i < site_postions.size(); i++)
+													{
+														if (!site_seen[i])
+														{
+															regions.emplace_back();
+															form_region(i, regions.size() - 1, site_height[i]);
+														}
+													}
+													for (auto& r : regions)
+													{
+														if (!r.empty())
+														{
+															int n = rand() % r.size();
+															if (n > 0)
+																n = rand() % n;
+															n += 1;
+															int off = rand() % r.size();
+															while (n > 0)
+															{
+																auto idx = off % r.size();
+																auto edge = r[idx];
+																auto pa = to_glm(edge->origin->point);
+																auto pb = to_glm(edge->destination->point);
+																if (auto w = distance(pa, pb); w > slope_width)
+																{
+																	auto dir = normalize(pb - pa);
+																	auto perbi = vec2(dir.y, -dir.x) * slope_length;
+																	pa = pa + dir * (w - slope_width) * 0.5f;
+																	pb = pa + dir * slope_width;
+																	auto pc = pb + perbi * slope_length;
+																	auto pd = pa + perbi * slope_length;
+
+																	auto hi_height = site_height[edge->incidentFace->site->index];
+																	auto lo_height = site_height[edge->twin->incidentFace->site->index];
+
+																	auto vtx_off = buf_vtx.item_offset();
+																	if (vtx_off + 4 <= MaxVertices)
+																	{
+																		buf_vtx.set_var<"i_pos"_h>(pa * 2.f - 1.f);
+																		buf_vtx.set_var<"i_uv"_h>(pa);
+																		buf_vtx.set_var<"i_val_base"_h>(hi_height);
+																		buf_vtx.next_item();
+																		buf_vtx.set_var<"i_pos"_h>(pb * 2.f - 1.f);
+																		buf_vtx.set_var<"i_uv"_h>(pb);
+																		buf_vtx.set_var<"i_val_base"_h>(hi_height);
+																		buf_vtx.next_item();
+																		buf_vtx.set_var<"i_pos"_h>(pc * 2.f - 1.f);
+																		buf_vtx.set_var<"i_uv"_h>(pc);
+																		buf_vtx.set_var<"i_val_base"_h>(lo_height);
+																		buf_vtx.next_item();
+																		buf_vtx.set_var<"i_pos"_h>(pd * 2.f - 1.f);
+																		buf_vtx.set_var<"i_uv"_h>(pd);
+																		buf_vtx.set_var<"i_val_base"_h>(lo_height);
+																		buf_vtx.next_item();
+
+																		cb->draw(4, 1, vtx_off, 0);
+																	}
+																}
+																r.erase(r.begin() + idx);
+																off += rand() % max(1, (int)r.size() / n) + 1;
+																n--;
+															}
+														}
 													}
 												}
 
