@@ -85,6 +85,6 @@ void main()
     #else
         val_base = i_val_base;
     #endif
-    o_col = vec4(vec3(pc.val_base + value * pc.val_scl), 1.0);
+    o_col = vec4(vec3(val_base + value * pc.val_scl), 1.0);
 }
 @

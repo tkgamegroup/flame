@@ -594,10 +594,6 @@ void View_Inspector::on_draw()
 										return ret;
 									};
 
-									auto to_vec2 = [](const Vector2& src) {
-										return vec2(src.x, src.y);
-									};
-
 									auto get_site_vertices = [&](VoronoiDiagram::Site* site) {
 										std::vector<vec2> ret;
 										auto edges = get_site_edges(site);
@@ -606,8 +602,8 @@ void View_Inspector::on_draw()
 											if (edge->origin != nullptr && edge->destination != nullptr)
 											{
 												if (ret.empty())
-													ret.push_back(to_vec2(edge->origin->point));
-												ret.push_back(to_vec2(edge->destination->point));
+													ret.push_back(to_glm(edge->origin->point));
+												ret.push_back(to_glm(edge->destination->point));
 											}
 										}
 										return ret;
@@ -642,9 +638,24 @@ void View_Inspector::on_draw()
 										}
 										site_height[i] = value;
 									}
+									for (auto i = 0; i < site_postions.size(); i++)
+									{
+										auto self_height = site_height[i];
+										auto max_height = 0.f;
+										for (auto edge : get_site_edges(diagram.getSite(i)))
+										{
+											if (auto oth_edge = edge->twin; oth_edge)
+											{
+												auto oth_idx = oth_edge->incidentFace->site->index;
+												auto height = site_height[oth_idx];
+												if (height < self_height)
+													max_height = max(max_height, height);
+											}
+										}
+										site_height[i] = min(site_height[i] + 0.25f, site_height[i]);
+									}
 
 									const auto MaxVertices = 10000;
-
 
 									graphics::InstanceCommandBuffer cb;
 									auto fb = height_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
@@ -669,7 +680,7 @@ void View_Inspector::on_draw()
 									prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f));
 									prm.set_pc_var<"uv_scl"_h>(32.f);
 									prm.set_pc_var<"val_base"_h>(0.f);
-									prm.set_pc_var<"val_scl"_h>(0.25f);
+									prm.set_pc_var<"val_scl"_h>(0.125f);
 									prm.set_pc_var<"falloff"_h>(0.f);
 									prm.set_pc_var<"power"_h>(1.f);
 									prm.push_constant(cb.get());
@@ -695,8 +706,8 @@ void View_Inspector::on_draw()
 
 									// slopes
 									{
-										auto slope_width = 4.f / terrain->extent.x;
-										auto slope_length = 5.f / terrain->extent.x;
+										auto slope_width = 8.f / terrain->extent.x;
+										auto slope_length = 6.f / terrain->extent.x;
 
 										std::vector<bool> site_seen(site_postions.size(), false);
 										std::vector<std::vector<VoronoiDiagram::HalfEdge*>> regions;
@@ -745,7 +756,7 @@ void View_Inspector::on_draw()
 													if (auto w = distance(pa, pb); w > slope_width)
 													{
 														auto dir = normalize(pb - pa);
-														auto perbi = vec2(dir.y, -dir.x) * slope_length;
+														auto perbi = vec2(dir.y, -dir.x);
 														pa = pa + dir * (w - slope_width) * 0.5f;
 														pb = pa + dir * slope_width;
 														auto pc = pb + perbi * slope_length;
@@ -849,8 +860,8 @@ void View_Inspector::on_draw()
 															auto oth_height = site_height[oth_edge->incidentFace->site->index];
 															if (self_height > oth_height + 0.0001f)
 															{
-																auto pa = to_vec2(edge->origin->point);
-																auto pb = to_vec2(edge->destination->point);
+																auto pa = to_glm(edge->origin->point);
+																auto pb = to_glm(edge->destination->point);
 																auto spawn_area_height = self_height - oth_height;
 																auto spawn_area_width = 2.f / height_map->size.x;
 																auto spawn_area_slope = atan2(spawn_area_height, spawn_area_width);
