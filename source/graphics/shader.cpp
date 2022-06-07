@@ -585,7 +585,7 @@ namespace flame
 				descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 				descriptorPoolInfo.maxSets = 128;
 				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
-				register_backend_object(ret->vk_descriptor_pool, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_pool, "Descriptor Pool", ret);
 
 				return ret;
 			}
@@ -654,7 +654,7 @@ namespace flame
 				info.pBindings = vk_bindings.data();
 
 				chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
-				register_backend_object(ret->vk_descriptor_set_layout, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_set_layout, "Descriptor Set Layout", ret);
 
 				return ret;
 			}
@@ -882,7 +882,7 @@ namespace flame
 				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
 				chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
-				register_backend_object(ret->vk_descriptor_set, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_descriptor_set, "Descriptor Set", ret);
 
 				return ret;
 			}
@@ -978,7 +978,7 @@ namespace flame
 				info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
 				chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
-				register_backend_object(ret->vk_pipeline_layout, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline_layout, "Pipeline Layout", ret);
 
 				return ret;
 			}
@@ -1103,7 +1103,7 @@ namespace flame
 			shader_info.codeSize = data_soup.soup.size();
 			shader_info.pCode = (uint*)data_soup.soup.data();
 			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
-			register_backend_object(ret->vk_module, tn<decltype(*ret)>(), ret);
+			register_backend_object(ret->vk_module, "Shader", ret);
 
 			return ret;
 		}
@@ -1710,7 +1710,7 @@ namespace flame
 				pipeline_info.basePipelineIndex = 0;
 
 				chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
-				register_backend_object(ret->vk_pipeline, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline, "Pipeline", ret);
 
 				return ret;
 			}
@@ -1805,7 +1805,7 @@ namespace flame
 				pipeline_info.layout = info.layout->vk_pipeline_layout;
 
 				chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
-				register_backend_object(ret->vk_pipeline, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_pipeline, "Pipeline", ret);
 
 				return ret;
 			}

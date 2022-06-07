@@ -13,35 +13,8 @@ namespace flame
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
-			static std::regex reg(R"(\b0x(\w+)\b)");
 			auto message = std::string(pMessage);
 			printf("\n%s\n", message.c_str());
-			std::vector<void*> printed_objs;
-			std::smatch res;
-			auto beg = message.cbegin();
-			while (std::regex_search(beg, message.cend(), res, reg))
-			{
-				auto obj = (void*)s2u_hex<uint64>(res[1].str());
-				for (auto _obj : printed_objs)
-				{
-					if (_obj == obj)
-					{
-						obj = nullptr;
-						break;
-					}
-				}
-				if (obj)
-				{
-					auto it = backend_objects.find(obj);
-					if (it != backend_objects.end())
-					{
-						printf("%s %s (vk:%s)\n", it->second.first.c_str(), str(it->second.second).c_str(), str(it->first).c_str());
-						printed_objs.push_back(obj);
-					}
-				}
-				beg = res.suffix().first;
-			}
-			//assert(0);
 
 			return VK_FALSE;
 		}

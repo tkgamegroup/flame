@@ -7,10 +7,16 @@
 
 namespace flame
 {
+	cTerrainPrivate::cTerrainPrivate()
+	{
+		changed_frame = frames;
+	}
+
 	cTerrainPrivate::~cTerrainPrivate()
 	{
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
+		node->data_listeners.remove("mesh"_h);
 
 		graphics::Queue::get()->wait_idle();
 		if (height_map)
@@ -26,16 +32,20 @@ namespace flame
 		node->drawers.add([this](sRendererPtr renderer) {
 			draw(renderer);
 		}, "mesh"_h);
-
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
 		}, "mesh"_h);
+		node->data_listeners.add([this](uint h) {
+			if (h == "transform"_h)
+				changed_frame = frames;
+		}, "mesh"_h);
 
 		node->mark_transform_dirty();
 	}
+
 
 	void cTerrainPrivate::set_extent(const vec3& _extent)
 	{
@@ -45,6 +55,7 @@ namespace flame
 
 		update_normal_map();
 
+		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("extent"_h);
 	}
@@ -57,6 +68,7 @@ namespace flame
 
 		update_normal_map();
 
+		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("blocks"_h);
 	}
@@ -69,6 +81,7 @@ namespace flame
 
 		update_normal_map();
 
+		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("tess_level"_h);
 	}
@@ -94,6 +107,7 @@ namespace flame
 		else if (_height_map)
 			graphics::Image::release(_height_map);
 
+		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
 	}
@@ -119,6 +133,7 @@ namespace flame
 		else if (_splash_map)
 			graphics::Image::release(_splash_map);
 
+		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("splash_map_name"_h);
 	}
@@ -172,52 +187,51 @@ namespace flame
 				heights[y * sz1.x + x] = height_map->linear_sample(vec2((float)x / sz0.x, (float)y / sz0.y)).x;
 		}
 
+		graphics::StagingBuffer nor_stag(sizeof(cvec4) * sz0.x * sz0.y);
+		graphics::StagingBuffer tan_stag(sizeof(cvec4) * sz0.x * sz0.y);
+
+		auto nor_dat = (cvec4*)nor_stag->mapped;
+		auto tan_dat = (cvec4*)tan_stag->mapped;
+
+		auto h = extent.y / (extent.x / sz0.x);
+		for (auto y = 0; y < sz0.y; y++)
 		{
-			graphics::StagingBuffer nor_stag(sizeof(cvec4) * sz0.x * sz0.y);
-			graphics::StagingBuffer tan_stag(sizeof(cvec4) * sz0.x * sz0.y);
-
-			auto nor_dat = (cvec4*)nor_stag->mapped;
-			auto tan_dat = (cvec4*)tan_stag->mapped;
-
-			auto h = extent.y / (extent.x / sz0.x);
-			for (auto y = 0; y < sz0.y; y++)
+			for (auto x = 0; x < sz0.x; x++)
 			{
-				for (auto x = 0; x < sz0.x; x++)
-				{
-					auto LT = heights[y * sz1.x + x];
-					auto RT = heights[y * sz1.x + x + 1];
-					auto LB = heights[(y + 1) * sz1.x + x];
-					auto RB = heights[(y + 1) * sz1.x + x + 1];
+				auto LT = heights[y * sz1.x + x];
+				auto RT = heights[y * sz1.x + x + 1];
+				auto LB = heights[(y + 1) * sz1.x + x];
+				auto RB = heights[(y + 1) * sz1.x + x + 1];
 
-					float hL = (LT + LB) * 0.5f * h;
-					float hR = (RT + RB) * 0.5f * h;
-					float hU = (LT + RT) * 0.5f * h;
-					float hD = (LB + RB) * 0.5f * h;
+				float hL = (LT + LB) * 0.5f * h;
+				float hR = (RT + RB) * 0.5f * h;
+				float hU = (LT + RT) * 0.5f * h;
+				float hD = (LB + RB) * 0.5f * h;
 
-					auto n = vec3(hL - hR, 2.f, hU - hD);
-					n = normalize(n);
-					n = (n + 1.f) * 0.5f;
-					*nor_dat++ = cvec4(n * 255.f, 255);
+				auto n = vec3(hL - hR, 2.f, hU - hD);
+				n = normalize(n);
+				n = (n + 1.f) * 0.5f;
+				*nor_dat++ = cvec4(n * 255.f, 255);
 
-					auto t = normalize(vec3(+1.f, hR, 0.f) - vec3(-1.f, hL, 0.f));
-					t = normalize(t);
-					t = (t + 1.f) * 0.5f;
-					*tan_dat++ = cvec4(t * 255.f, 255);
-				}
+				auto t = normalize(vec3(+1.f, hR, 0.f) - vec3(-1.f, hL, 0.f));
+				t = normalize(t);
+				t = (t + 1.f) * 0.5f;
+				*tan_dat++ = cvec4(t * 255.f, 255);
 			}
-
-			graphics::InstanceCB cb(nullptr);
-			graphics::BufferImageCopy cpy;
-			cpy.img_ext = sz0;
-
-			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 });
-			cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
-
-			cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(tan_stag.get(), tangent_map, { &cpy, 1 });
-			cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 		}
+
+		graphics::InstanceCommandBuffer cb(nullptr);
+		graphics::BufferImageCopy cpy;
+		cpy.img_ext = sz0;
+		cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
+		cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 });
+		cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
+		cb->copy_buffer_to_image(tan_stag.get(), tangent_map, { &cpy, 1 });
+		cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
+		cb.excute();
+
+		changed_frame = frames;
 	}
 
 	void cTerrainPrivate::draw(sRendererPtr renderer)
@@ -225,11 +239,11 @@ namespace flame
 		if (instance_id == -1 || !height_map || material_res_id == -1)
 			return;
 
-		if (frame < (int)frames)
+		if (updated_frame < changed_frame)
 		{
 			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, 
 				height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-			frame = frames;
+			updated_frame = frames;
 		}
 
 		renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);

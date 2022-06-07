@@ -25,11 +25,17 @@ namespace flame
 		return std::make_pair(name, idx);
 	}
 
+	cMeshPrivate::cMeshPrivate()
+	{
+		changed_frame = frames;
+	}
+
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
 		node->occluder_drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
+		node->data_listeners.remove("mesh"_h);
 
 		if (mesh_res_id != -1)
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
@@ -54,6 +60,10 @@ namespace flame
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
+		}, "mesh"_h);
+		node->data_listeners.add([this](uint h) {
+			if (h == "transform"_h)
+				changed_frame = frames;
 		}, "mesh"_h);
 
 		node->mark_transform_dirty();
@@ -140,10 +150,11 @@ namespace flame
 	{
 		if (mesh_res_id == -1 || instance_id == -1)
 			return;
-		if (!parmature && frame < (int)frames)
+
+		if (!parmature && updated_frame < changed_frame)
 		{
 			renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
-			frame = frames;
+			updated_frame = frames;
 		}
 
 		auto mat_id = material_res_id == -1 ? 0 : material_res_id;

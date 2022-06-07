@@ -53,7 +53,7 @@ namespace flame
 				info.queueFamilyIndex = queue_family_idx;
 
 				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
-				register_backend_object(ret->vk_command_buffer_pool, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_command_buffer_pool, "Command Buffer Pool", ret);
 
 				return ret;
 			}
@@ -621,7 +621,7 @@ namespace flame
 				info.commandBufferCount = 1;
 
 				chk_res(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));
-				register_backend_object(ret->vk_command_buffer, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_command_buffer, "Command Buffer", ret);
 
 				ret->begin();
 				ret->end();
@@ -719,7 +719,7 @@ namespace flame
 				VkSemaphoreCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 				chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
-				register_backend_object(ret->vk_semaphore, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_semaphore, "Semaphore", ret);
 
 				return ret;
 			}
@@ -761,7 +761,7 @@ namespace flame
 					ret->value = 1;
 				}
 				chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
-				register_backend_object(ret->vk_fence, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_fence, "Fence", ret);
 
 				return ret;
 			}

@@ -120,20 +120,21 @@ namespace flame
 				swapchain_info.clipped = true;
 				swapchain_info.oldSwapchain = 0;
 				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
-				register_backend_object(vk_swapchain, tn<decltype(*this)>(), this);
+				register_backend_object(vk_swapchain, "Swapchain", this);
 
 				std::vector<VkImage> native_images;
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				InstanceCB cb;
+				InstanceCommandBuffer cb;
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
 					images[i].reset(ImagePrivate::create(device, format, size, native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
 				}
+				cb.excute();
 			}
 		}
 

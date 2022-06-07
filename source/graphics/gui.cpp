@@ -481,14 +481,15 @@ namespace flame
 				io.Fonts->GetTexDataAsAlpha8(&img_data, &img_w, &img_h);
 
 				StagingBuffer stag(image_pitch(img_w) * img_h, img_data);
-				InstanceCB cb;
 
+				InstanceCommandBuffer cb;
 				imgui_img_font.reset(Image::create(Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
 				cpy.img_ext = uvec2(img_w, img_h);
 				cb->copy_buffer_to_image(stag.get(), imgui_img_font.get(), { &cpy, 1 });
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
+				cb.excute();
 			}
 
 			imgui_ds->set_image(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));

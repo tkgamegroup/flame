@@ -8,8 +8,10 @@ namespace flame
 	{
 		cArmaturePtr parmature = nullptr;
 
-		int frame = -1;
+		int changed_frame = -1;
+		int updated_frame = -1;
 
+		cMeshPrivate();
 		~cMeshPrivate();
 		void on_init() override;
 

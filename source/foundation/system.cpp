@@ -519,8 +519,7 @@ namespace flame
 	{
 		void* buf[64];
 		auto n = CaptureStackBackTrace(0, _countof(buf), buf, nullptr);
-		std::vector<void*> ret;
-		ret.resize(n);
+		std::vector<void*> ret(n);
 		memcpy(ret.data(), buf, sizeof(void*) * n);
 		return ret;
 	}

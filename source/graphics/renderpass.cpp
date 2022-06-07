@@ -119,7 +119,7 @@ namespace flame
 				create_info.pDependencies = vk_deps.data();
 
 				chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
-				register_backend_object(ret->vk_renderpass, tn<decltype(*ret)>(), ret);
+				register_backend_object(ret->vk_renderpass, "Renderpass", ret);
 
 				return ret;
 			}
@@ -171,6 +171,7 @@ namespace flame
 			if (app_exiting) return;
 
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
+			unregister_backend_object(vk_framebuffer);
 		}
 
 		struct FramebufferCreate : Framebuffer::Create
@@ -198,6 +199,7 @@ namespace flame
 				create_info.pAttachments = vk_views.data();
 
 				chk_res(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
+				register_backend_object(ret->vk_framebuffer, "Framebuffer", ret);
 
 				ret->views.assign(views.begin(), views.end());
 				return ret;

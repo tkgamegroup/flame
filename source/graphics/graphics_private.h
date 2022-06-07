@@ -83,32 +83,6 @@ namespace flame
 			}
 		}
 
-		inline std::string to_glsl_typename(uint hash)
-		{
-			//switch (hash)
-			//{
-			//case FLAME_CHASH("int"):
-			//	return "int";
-			//case FLAME_CHASH("Vec(2+int)"):
-			//	return "ivec2";
-			//case FLAME_CHASH("Vec(3+int)"):
-			//	return"ivec3";
-			//case FLAME_CHASH("Vec(4+int)"):
-			//	return"ivec4";
-			//case FLAME_CHASH("float"):
-			//	return"float";
-			//case FLAME_CHASH("Vec(2+float)"):
-			//	return"vec2";
-			//case FLAME_CHASH("Vec(3+float)"):
-			//	return"vec3";
-			//case FLAME_CHASH("Vec(4+float)"):
-			//	return"vec4";
-			//default:
-			//	assert(0);
-			//}
-			return "";
-		}
-
 		inline uint format_size(Format f)
 		{
 			switch (f)
@@ -126,44 +100,6 @@ namespace flame
 			case Format_R32G32B32A32_SFLOAT:
 			case Format_R32G32B32A32_INT:
 				return 16;
-			default:
-				assert(0);
-			}
-		}
-
-		inline std::string to_cpp_typename(Format f)
-		{
-			switch (f)
-			{
-			case Format_R32_UINT:
-				return "uint";
-			case Format_R8_UNORM: case Format_R32_SFLOAT:
-				return "float";
-			case Format_R32G32_SFLOAT:
-				return "Vec(2+float)";
-			case Format_R32G32B32_SFLOAT:
-				return "Vec(3+float)";
-			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
-				return "Vec(4+float)";
-			default:
-				assert(0);
-			}
-		}
-
-		inline std::string to_glsl_typename(Format f)
-		{
-			switch (f)
-			{
-			case Format_R32_UINT:
-				return "flat uint";
-			case Format_R8_UNORM: case Format_R32_SFLOAT:
-				return "float";
-			case Format_R32G32_SFLOAT:
-				return "vec2";
-			case Format_R32G32B32_SFLOAT:
-				return "vec3";
-			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
-				return "vec4";
 			default:
 				assert(0);
 			}

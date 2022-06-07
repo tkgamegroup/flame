@@ -137,44 +137,43 @@ void View_Project::init()
 
 					auto ret = graphics::Image::create(fmt, (uvec2)size, graphics::ImageUsageTransferSrc | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
 
+					graphics::InstanceCommandBuffer cb;
+					cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
+					cb->set_viewport_and_scissor(Rect(vec2(0), vec2(size)));
+					switch (type)
 					{
-						graphics::InstanceCB cb;
-						cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
-						cb->set_viewport_and_scissor(Rect(vec2(0), vec2(size)));
-						switch (type)
-						{
-						case 0:
-							cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-							cb->end_renderpass();
-							break;
-						case 1:
-							cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
-							cb->end_renderpass();
-							break;
-						case 2:
-						{
-							auto fb = ret->get_shader_write_dst();
-							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
-								{ "rp=" + str(fb->renderpass) });
-							graphics::PipelineResourceManager<FLAME_UID> prm;
-							prm.init(pl->layout);
+					case 0:
+						cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+						cb->end_renderpass();
+						break;
+					case 1:
+						cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
+						cb->end_renderpass();
+						break;
+					case 2:
+					{
+						auto fb = ret->get_shader_write_dst();
+						auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+							{ "rp=" + str(fb->renderpass) });
+						graphics::PipelineResourceManager<FLAME_UID> prm;
+						prm.init(pl->layout);
 
-							cb->begin_renderpass(nullptr, fb);
-							cb->bind_pipeline(pl);
-							prm.set_pc_var<"uv_off"_h>(noise_offset);
-							prm.set_pc_var<"uv_scl"_h>(noise_scale);
-							prm.set_pc_var<"val_base"_h>(0.f);
-							prm.set_pc_var<"val_scl"_h>(1.f);
-							prm.set_pc_var<"falloff"_h>(1.f / clamp(noise_falloff, 2.f, 100.f));
-							prm.set_pc_var<"power"_h>(noise_power);
-							prm.push_constant(cb.get());
-							cb->draw(3, 1, 0, 0);
-							cb->end_renderpass();
-						}
-							break;
-						}
-						cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, fb);
+						cb->bind_pipeline(pl);
+						prm.set_pc_var<"uv_off"_h>(noise_offset);
+						prm.set_pc_var<"uv_scl"_h>(noise_scale);
+						prm.set_pc_var<"val_base"_h>(0.f);
+						prm.set_pc_var<"val_scl"_h>(1.f);
+						prm.set_pc_var<"falloff"_h>(1.f / clamp(noise_falloff, 2.f, 100.f));
+						prm.set_pc_var<"power"_h>(noise_power);
+						prm.push_constant(cb.get());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
 					}
+					break;
+					}
+					cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+					cb.excute();
 
 					return ret;
 				}
@@ -314,8 +313,13 @@ void View_Project::on_draw()
 			if ((p.second & FileModified) || (p.second & FileRemoved) || (p.second & FileRenamed))
 			{
 				auto asset = AssetManagemant::find(p.first);
-				if (asset && asset->active)
-					changed_assets.emplace_back(asset, p.first);
+				if (asset)
+				{
+					if (asset->active)
+						changed_assets.emplace_back(asset, p.first);
+					else
+						asset->active = true;
+				}
 			}
 		}
 		if (!changed_assets.empty())

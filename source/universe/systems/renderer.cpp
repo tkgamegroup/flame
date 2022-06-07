@@ -24,8 +24,6 @@ namespace flame
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
-		graphics::InstanceCB cb;
-
 		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
@@ -77,7 +75,11 @@ namespace flame
 			buf_material_misc.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
 				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
 		}
-		buf_material_misc.upload(cb.get());
+		{
+			graphics::InstanceCommandBuffer cb;
+			buf_material_misc.upload(cb.get());
+			cb.excute();
+		}
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
@@ -393,7 +395,7 @@ namespace flame
 		res.mesh = mesh;
 		res.ref = 1;
 
-		graphics::InstanceCB cb(nullptr);
+		graphics::InstanceCommandBuffer cb;
 
 		res.vtx_cnt = mesh->positions.size();
 		res.idx_cnt = mesh->indices.size();
@@ -440,6 +442,8 @@ namespace flame
 			buf_vtx_arm.upload(cb.get());
 			buf_idx_arm.upload(cb.get());
 		}
+
+		cb.excute();
 
 		return id;
 	}
@@ -503,7 +507,7 @@ namespace flame
 		}
 		if (update_parameters || update_textures)
 		{
-			graphics::InstanceCB cb;
+			graphics::InstanceCommandBuffer cb;
 			buf_material.select_item(id);
 			buf_material.set_var<"opaque"_h>((int)res.mat->opaque);
 			buf_material.set_var<"color"_h>(res.mat->color);
@@ -516,6 +520,7 @@ namespace flame
 			for (auto i = 0; i < res.texs.size(); i++)
 				ids[i] = res.texs[i].first;
 			buf_material.upload(cb.get());
+			cb.excute();
 		}
 	}
 
@@ -1400,106 +1405,104 @@ namespace flame
 		if (screen_pos.x >= sz.x || screen_pos.y >= sz.y)
 			return nullptr;
 
+		graphics::InstanceCommandBuffer cb(fence_pickup.get());
+
+		cb->set_viewport(Rect(vec2(0), sz));
+		cb->set_scissor(Rect(vec2(screen_pos), vec2(screen_pos + 1U)));
+
+		cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
+			vec4(1.f, 0.f, 0.f, 0.f) });
+
+		auto off = 1;
+		prm_fwd.bind_dss(cb.get());
+		if (!draw_meshes.empty())
 		{
-			graphics::InstanceCB cb(fence_pickup.get());
-
-			cb->set_viewport(Rect(vec2(0), sz));
-			cb->set_scissor(Rect(vec2(screen_pos), vec2(screen_pos + 1U)));
-
-			cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
-				vec4(1.f, 0.f, 0.f, 0.f) });
-
-			auto off = 1;
-			prm_fwd.bind_dss(cb.get());
-			if (!draw_meshes.empty())
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_pickup);
+			for (auto i = 0; i < draw_meshes.size(); i++)
 			{
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_pickup);
-				for (auto i = 0; i < draw_meshes.size(); i++)
-				{
-					auto& d = draw_meshes[i];
-					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
-					prm_fwd.push_constant(cb.get());
-					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
-				}
-				off += draw_meshes.size();
+				auto& d = draw_meshes[i];
+				prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
+				prm_fwd.push_constant(cb.get());
+				auto& mr = mesh_reses[d.mesh_id];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 			}
-			if (!draw_arm_meshes.empty())
+			off += draw_meshes.size();
+		}
+		if (!draw_arm_meshes.empty())
+		{
+			cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			cb->bind_pipeline(pl_mesh_arm_pickup);
+			for (auto i = 0; i < draw_arm_meshes.size(); i++)
 			{
-				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-				cb->bind_pipeline(pl_mesh_arm_pickup);
-				for (auto i = 0; i < draw_arm_meshes.size(); i++)
-				{
-					auto& d = draw_arm_meshes[i];
-					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
-					prm_fwd.push_constant(cb.get());
-					auto& mr = mesh_reses[d.mesh_id];
-					cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
-				}
-				off += draw_arm_meshes.size();
+				auto& d = draw_arm_meshes[i];
+				prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
+				prm_fwd.push_constant(cb.get());
+				auto& mr = mesh_reses[d.mesh_id];
+				cb->draw_indexed(mr.idx_cnt, mr.idx_off, mr.vtx_off, 1, d.ins_id << 8);
 			}
-			if (!draw_terrains.empty())
+			off += draw_arm_meshes.size();
+		}
+		if (!draw_terrains.empty())
+		{
+			cb->bind_pipeline(pl_terrain_pickup);
+			for (auto i = 0; i < draw_terrains.size(); i++)
 			{
-				cb->bind_pipeline(pl_terrain_pickup);
-				for (auto i = 0; i < draw_terrains.size(); i++)
-				{
-					auto& d = draw_terrains[i];
-					prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
-					prm_fwd.push_constant(cb.get());
-					cb->draw(4, d.blocks, 0, d.ins_id << 24);
-				}
-				off += draw_terrains.size();
+				auto& d = draw_terrains[i];
+				prm_fwd.set_pc_var<"i"_h>(ivec4(i + off, 0, 0, 0));
+				prm_fwd.push_constant(cb.get());
+				cb->draw(4, d.blocks, 0, d.ins_id << 24);
 			}
-
-			cb->end_renderpass();
+			off += draw_terrains.size();
 		}
 
+		cb->end_renderpass();
+		cb.excute();
+
+		int index; ushort depth;
+		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
 		{
-			int index; ushort depth;
-			graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
-			{
-				graphics::InstanceCB cb(nullptr);
-				graphics::BufferImageCopy cpy;
-				cpy.img_off = screen_pos;
-				cpy.img_ext = uvec2(1U);
-				cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
-				cb->copy_image_to_buffer(img_pickup.get(), sb.get(), { &cpy, 1 });
-				cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
-				if (out_pos)
-				{
-					cpy.buf_off = sizeof(uint);
-					cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
-					cb->copy_image_to_buffer(img_dep_pickup.get(), sb.get(), { &cpy, 1 });
-					cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
-				}
-			}
-			memcpy(&index, sb->mapped, sizeof(index));
+			graphics::InstanceCommandBuffer cb(nullptr);
+			graphics::BufferImageCopy cpy;
+			cpy.img_off = screen_pos;
+			cpy.img_ext = uvec2(1U);
+			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
+			cb->copy_image_to_buffer(img_pickup.get(), sb.get(), { &cpy, 1 });
+			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
 			if (out_pos)
 			{
-				memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
-				auto depth_f = depth / 65535.f;
-				auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
-				p = camera->proj_mat_inv * p;
-				p /= p.w;
-				p = camera->view_mat_inv * p;
-				*out_pos = p;
+				cpy.buf_off = sizeof(uint);
+				cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
+				cb->copy_image_to_buffer(img_dep_pickup.get(), sb.get(), { &cpy, 1 });
+				cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
 			}
-			index -= 1;
-			if (index == -1)
-				return nullptr;
-			if (index < draw_meshes.size())
-				return draw_meshes[index].node;
-			index -= draw_meshes.size();
-			if (index < draw_arm_meshes.size())
-				return draw_arm_meshes[index].node;
-			index -= draw_arm_meshes.size();
-			if (index < draw_terrains.size())
-				return draw_terrains[index].node;
-			return nullptr;
+			cb.excute();
 		}
+		memcpy(&index, sb->mapped, sizeof(index));
+		if (out_pos)
+		{
+			memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
+			auto depth_f = depth / 65535.f;
+			auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
+			p = camera->proj_mat_inv * p;
+			p /= p.w;
+			p = camera->view_mat_inv * p;
+			*out_pos = p;
+		}
+		index -= 1;
+		if (index == -1)
+			return nullptr;
+		if (index < draw_meshes.size())
+			return draw_meshes[index].node;
+		index -= draw_meshes.size();
+		if (index < draw_arm_meshes.size())
+			return draw_arm_meshes[index].node;
+		index -= draw_arm_meshes.size();
+		if (index < draw_terrains.size())
+			return draw_terrains[index].node;
+		return nullptr;
 	}
 
 	static sRendererPtr _instance = nullptr;

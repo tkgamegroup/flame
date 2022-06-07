@@ -8,18 +8,18 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct InstanceCB : std::unique_ptr<CommandBufferT>
+		struct InstanceCommandBuffer : std::unique_ptr<CommandBufferT>
 		{
 			FencePtr fence;
 
-			InstanceCB(FencePtr fence = nullptr) :
+			InstanceCommandBuffer(FencePtr fence = nullptr) :
 				fence(fence)
 			{
 				reset(CommandBuffer::create(CommandPool::get()));
 				get()->begin(true);
 			}
 
-			~InstanceCB()
+			void excute()
 			{
 				get()->end();
 				auto q = Queue::get();
@@ -238,6 +238,14 @@ namespace flame
 						return;
 					cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
 				}
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
+			}
+
+			void upload_whole(CommandBufferPtr cb)
+			{
+				BufferCopy cpy;
+				cpy.size = size * array_capacity;
+				cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
 		};

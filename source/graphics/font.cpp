@@ -149,15 +149,16 @@ namespace flame
 							auto& atlas_pos = n->pos;
 
 							StagingBuffer stag(image_pitch(g.size.x) * g.size.y, bitmap);
-							InstanceCB cb;
 
-							auto old_layout = image->levels[0].layers[0].layout;
+							InstanceCommandBuffer cb;
+							auto old_layout = image->get_layout();
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
 							cpy.img_off = atlas_pos;
 							cpy.img_ext = g.size;
 							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, old_layout);
+							cb.excute();
 
 							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
 								(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);

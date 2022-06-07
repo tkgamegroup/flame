@@ -20,6 +20,17 @@ namespace flame
 		return Path::get(sp.empty() ? L"" : sp.front());
 	}
 
+	cArmaturePrivate::cArmaturePrivate()
+	{
+		changed_frame = frames;
+
+		for (auto& b : bones)
+		{
+			if (b.node)
+				b.node->data_listeners.remove("armature"_h);
+		}
+	}
+
 	cArmaturePrivate::~cArmaturePrivate()
 	{
 		node->drawers.remove("armature"_h);
@@ -129,7 +140,7 @@ namespace flame
 		if (instance_id == -1)
 			return;
 
-		if (enable && frame < (int)frames)
+		if (enable)
 		{
 			if (playing_name != 0)
 			{
@@ -164,7 +175,7 @@ namespace flame
 						{
 							auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
 								return i.first < v;
-							});
+								});
 							auto lit = rit;
 							if (lit != t.positions.begin())
 								lit--;
@@ -178,7 +189,7 @@ namespace flame
 						{
 							auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
 								return i.first < v;
-							});
+								});
 							auto lit = rit;
 							if (lit != t.rotations.begin())
 								lit--;
@@ -196,13 +207,18 @@ namespace flame
 					else
 						playing_time = fmod(playing_time, a.duration);
 				}
-			}
 
+				changed_frame = frames;
+			}
+		}
+
+		if (enable && updated_frame < changed_frame)
+		{
 			auto dst = renderer->set_armature_instance(instance_id);
 			for (auto i = 0; i < bones.size(); i++)
 				dst[i] = bones[i].calc_mat();
 
-			frame = frames;
+			updated_frame = frames;
 		}
 	}
 
@@ -222,7 +238,13 @@ namespace flame
 					dst.name = name;
 					dst.node = e->get_component_i<cNodeT>(0);
 					if (dst.node)
+					{
 						dst.offmat = src.offset_matrix;
+						dst.node->data_listeners.add([this](uint h) {
+							if (h == "transform"_h)
+								changed_frame = frames;
+						}, "armature"_h);
+					}
 					else
 						dst.offmat = mat4(1.f);
 				}

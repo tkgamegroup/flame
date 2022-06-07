@@ -44,6 +44,10 @@ if(USE_IMGUI)
 else()
 	message(STATUS "graphics module: ImGui is required for ui")
 endif()
+if(HAS_RENDERDOC)
+	target_compile_definitions(flame_graphics PUBLIC HAS_RENDERDOC)
+	target_compile_definitions(flame_graphics PRIVATE RENDERDOC_HEADER="${RENDERDOC_DIR}/renderdoc_app.h")
+endif()
 
 generate_typeinfo(flame_graphics "enum starts_with flame::graphics::")
 

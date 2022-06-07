@@ -7,8 +7,10 @@ namespace flame
 {
 	struct cTerrainPrivate : cTerrain
 	{
-		int frame = -1;
+		int changed_frame = -1;
+		int updated_frame = -1;
 
+		cTerrainPrivate();
 		~cTerrainPrivate();
 		void on_init() override;
 
