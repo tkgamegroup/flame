@@ -23,7 +23,6 @@ namespace flame
 				auto scene = sScene::instance();
 				if (dt_crowd)
 				{
-					dtPolyRef poly_ref;
 					dtPolyRef poly_ref = dt_nearest_poly(pos);
 					dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
 					//printf("%s -> %s\n", str(node->g_pos).c_str(), str(pos).c_str());

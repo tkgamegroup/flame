@@ -15,7 +15,6 @@
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourCrowd.h>
-#include <Recast.h>
 rcContext rc_ctx;
 rcHeightfield* rc_height_field = nullptr;
 rcCompactHeightfield* rc_c_height_field = nullptr;
@@ -24,18 +23,18 @@ rcPolyMesh* rc_poly_mesh = nullptr;
 rcPolyMeshDetail* rc_poly_mesh_d = nullptr;
 dtNavMesh* dt_nav_mesh = nullptr;
 dtNavMeshQuery* dt_nav_query = nullptr;
-dtQueryFilter* dt_filter = nullptr;
+dtQueryFilter dt_filter;
 dtCrowd* dt_crowd = nullptr;
 
 dtPolyRef dt_nearest_poly(const vec3& pos)
 {
 	dtPolyRef ret = 0;
 	const auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
-	dt_nav_query->findNearestPoly(&pos[0], &poly_pick_ext[0], dt_filter, &ret, nullptr);
+	dt_nav_query->findNearestPoly(&pos[0], &poly_pick_ext[0], &dt_filter, &ret, nullptr);
 	return ret;
 }
 
-int dt_add_agent(flame::cNavAgentPtr ag)
+void dt_add_agent(flame::cNavAgentPtr ag)
 {
 	dtCrowdAgentParams parms;
 	memset(&parms, 0, sizeof(dtCrowdAgentParams));
@@ -61,16 +60,11 @@ namespace flame
 	sScenePrivate::sScenePrivate()
 	{
 		octree = new OctNode(999999999.f, vec3(0.f));
-
-#ifdef USE_RECASTNAV
-		dt_filter = new dtQueryFilter;
-#endif
 	}
 
 	sScenePrivate::~sScenePrivate()
 	{
 #ifdef USE_RECASTNAV
-		delete dt_filter;
 		if (dt_nav_mesh)
 			dtFreeNavMesh(dt_nav_mesh);
 		if (dt_nav_query)
@@ -432,8 +426,8 @@ namespace flame
 			return npath;
 
 		auto req = nvisited - furthest_visited;
-		auto orig = rcMin(furthest_path + 1, npath);
-		auto size = rcMax(0, npath - orig);
+		auto orig = min(furthest_path + 1, npath);
+		auto size = max(0, npath - orig);
 		if (req + size > max_path)
 			size = max_path - req;
 		if (size)
@@ -547,7 +541,7 @@ namespace flame
 		const auto MaxPolys = 256;
 		dtPolyRef polys[MaxPolys];
 		auto n_polys = 0;
-		dt_nav_query->findPath(start_ref, end_ref, &start[0], &end[0], dt_filter, polys, &n_polys, MaxPolys);
+		dt_nav_query->findPath(start_ref, end_ref, &start[0], &end[0], &dt_filter, polys, &n_polys, MaxPolys);
 		if (!n_polys)
 			return ret;
 
@@ -585,7 +579,7 @@ namespace flame
 			vec3 result;
 			dtPolyRef visited[16];
 			auto nvisited = 0;
-			dt_nav_query->moveAlongSurface(polys[0], &iter_pos[0], &moveTgt[0], dt_filter,
+			dt_nav_query->moveAlongSurface(polys[0], &iter_pos[0], &moveTgt[0], &dt_filter,
 				&result[0], visited, &nvisited, 16);
 
 			n_polys = fixup_corridor(polys, n_polys, MaxPolys, visited, nvisited);
