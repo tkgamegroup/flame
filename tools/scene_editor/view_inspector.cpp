@@ -556,9 +556,10 @@ void View_Inspector::on_draw()
 										return vec2(v.x, v.y);
 									};
 
-									std::vector<Vector2> site_postions;
+									std::vector<Vector2> site_postions_fa;
+									std::vector<vec2> site_postions;
 									for (int i = 0; i < voronoi_sites_count; ++i)
-										site_postions.push_back(Vector2{ distribution(generator), distribution(generator) });
+										site_postions_fa.push_back(Vector2{ distribution(generator), distribution(generator) });
 
 									auto get_diagram = [](const std::vector<Vector2>& points) {
 										FortuneAlgorithm fortune_algorithm(points);
@@ -609,17 +610,21 @@ void View_Inspector::on_draw()
 										return ret;
 									};
 
-									auto diagram = get_diagram(site_postions);
+									auto diagram = get_diagram(site_postions_fa);
 									for (auto t = 0; t < 3; t++)
 									{
 										for (auto i = 0; i < diagram.getNbSites(); i++)
 										{
 											auto vertices = get_site_vertices(diagram.getSite(i));
 											auto centroid = convex_centroid(vertices);
-											site_postions[i] = Vector2(centroid.x, centroid.y);
+											site_postions_fa[i] = Vector2(centroid.x, centroid.y);
 										}
-										diagram = get_diagram(site_postions);
+										diagram = get_diagram(site_postions_fa);
 									}
+
+									site_postions.resize(site_postions_fa.size());
+									for (auto i = 0; i < site_postions.size(); i++)
+										site_postions[i] = to_glm(site_postions_fa[i]);
 
 									std::vector<float> site_height;
 									site_height.resize(site_postions.size());
@@ -809,6 +814,13 @@ void View_Inspector::on_draw()
 									auto asset = AssetManagemant::find(Path::get(height_map->filename));
 									if (asset)
 										asset->active = false;
+
+									auto height_map_info_fn = height_map->filename;
+									height_map_info_fn += L".info";
+									std::ofstream height_map_info(Path::get(height_map_info_fn));
+									height_map_info << "sites:" << std::endl;
+									serialize_text(&site_postions, height_map_info);
+									height_map_info.close();
 
 									if (update_cliff)
 									{

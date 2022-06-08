@@ -10,56 +10,73 @@
 #include "scene_private.h"
 
 #ifdef USE_RECASTNAV
+
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourCrowd.h>
 #include <Recast.h>
 rcContext rc_ctx;
+rcHeightfield* rc_height_field = nullptr;
+rcCompactHeightfield* rc_c_height_field = nullptr;
+rcContourSet* rc_contour_set = nullptr;
+rcPolyMesh* rc_poly_mesh = nullptr;
+rcPolyMeshDetail* rc_poly_mesh_d = nullptr;
+dtNavMesh* dt_nav_mesh = nullptr;
+dtNavMeshQuery* dt_nav_query = nullptr;
+dtQueryFilter* dt_filter = nullptr;
+dtCrowd* dt_crowd = nullptr;
+
+dtPolyRef dt_nearest_poly(const vec3& pos)
+{
+	dtPolyRef ret = 0;
+	const auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
+	dt_nav_query->findNearestPoly(&pos[0], &poly_pick_ext[0], dt_filter, &ret, nullptr);
+	return ret;
+}
+
+int dt_add_agent(flame::cNavAgentPtr ag)
+{
+	dtCrowdAgentParams parms;
+	memset(&parms, 0, sizeof(dtCrowdAgentParams));
+	parms.radius = ag->radius;
+	parms.height = ag->height;
+	parms.maxAcceleration = 600.f;
+	parms.maxSpeed = ag->speed;
+	parms.collisionQueryRange = parms.radius * 12.0f;
+	parms.pathOptimizationRange = parms.radius * 30.0f;
+	parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
+		DT_CROWD_OBSTACLE_AVOIDANCE;
+	parms.userData = ag;
+	ag->prev_pos = ag->node->g_pos;
+	ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
+	if (ag->dt_id == -1)
+		printf("dt crowd add agent failed: -1 is returned\n");
+}
+
 #endif
 
 namespace flame
 {
-#ifdef USE_RECASTNAV
-	static void init_dt_crowd(sScenePrivate* scene)
-	{
-		auto crowd = scene->dt_crowd;
-		for (auto i = 0; i < crowd->getAgentCount(); i++)
-		{
-			auto ag = crowd->getAgent(i);
-			if (ag->active)
-				scene->peeding_nav_agents.push_back((cNavAgentPtr)ag->params.userData);
-		}
-		scene->dt_crowd->init(128, 2.f/*max agent radius*/, scene->dt_nav_mesh);
-	}
-#endif
-
 	sScenePrivate::sScenePrivate()
 	{
 		octree = new OctNode(999999999.f, vec3(0.f));
 
 #ifdef USE_RECASTNAV
-		dt_nav_mesh = dtAllocNavMesh();
-		dtNavMeshParams parms;
-		memset(&parms, 0, sizeof(dtNavMeshParams));
-		parms.maxPolys = 1;
-		parms.maxTiles = 1;
-		parms.tileWidth = 0.1f;
-		parms.tileHeight = 0.1f;
-		dt_nav_mesh->init(&parms);
-		dt_nav_query = dtAllocNavMeshQuery();
 		dt_filter = new dtQueryFilter;
-		dt_crowd = dtAllocCrowd();
-		init_dt_crowd(this);
 #endif
 	}
 
 	sScenePrivate::~sScenePrivate()
 	{
 #ifdef USE_RECASTNAV
-		dtFreeNavMesh(dt_nav_mesh);
-		dtFreeNavMeshQuery(dt_nav_query);
-		dtFreeCrowd(dt_crowd);
+		delete dt_filter;
+		if (dt_nav_mesh)
+			dtFreeNavMesh(dt_nav_mesh);
+		if (dt_nav_query)
+			dtFreeNavMeshQuery(dt_nav_query);
+		if (dt_crowd)
+			dtFreeCrowd(dt_crowd);
 #endif
 	}
 
@@ -111,6 +128,7 @@ namespace flame
 
 	void sScenePrivate::generate_nav_mesh()
 	{
+#ifdef USE_RECASTNAV
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
 		AABB bounds;
@@ -349,9 +367,9 @@ namespace flame
 				return;
 			}
 
-			dtFreeNavMesh(dt_nav_mesh);
+			if (dt_nav_mesh)
+				dtFreeNavMesh(dt_nav_mesh);
 			dt_nav_mesh = dtAllocNavMesh();
-			init_dt_crowd(this);
 
 			dtStatus status;
 
@@ -363,13 +381,23 @@ namespace flame
 				return;
 			}
 
+			if (!dt_nav_query)
+				dt_nav_query = dtAllocNavMeshQuery();
 			status = dt_nav_query->init(dt_nav_mesh, 2048);
 			if (dtStatusFailed(status))
 			{
 				printf("generate navmesh: Could not init Detour navmesh query.\n");
 				return;
 			}
+
+			if (!dt_crowd)
+				dt_crowd = dtAllocCrowd();
+			dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
+
+			for (auto ag : nav_agents)
+				dt_add_agent(ag);
 		}
+#endif
 	}
 
 	inline bool in_range(const vec3& v1, const vec3& v2, const float r, const float h)
@@ -504,20 +532,14 @@ namespace flame
 		return true;
 	}
 
-	uint sScenePrivate::nav_mesh_nearest_poly(const vec3& pos)
-	{
-		dtPolyRef ret = 0;
-		const auto poly_pick_ext = vec3(2.f, 4.f, 2.f);
-		dt_nav_query->findNearestPoly(&pos[0], &poly_pick_ext[0], dt_filter, &ret, nullptr);
-		return ret;
-	}
-
 	std::vector<vec3> sScenePrivate::calc_nav_path(const vec3& start, const vec3& end)
 	{
 		std::vector<vec3> ret;
+		if (!dt_nav_query)
+			return ret;
 
-		dtPolyRef start_ref = nav_mesh_nearest_poly(start);
-		dtPolyRef end_ref = nav_mesh_nearest_poly(end);
+		dtPolyRef start_ref = dt_nearest_poly(start);
+		dtPolyRef end_ref = dt_nearest_poly(end);
 
 		if (!start_ref || !end_ref)
 			return ret;
@@ -625,27 +647,7 @@ namespace flame
 		update_transform(world->root.get(), false);
 
 #ifdef USE_RECASTNAV
-		for (auto ag : peeding_nav_agents)
-		{
-			dtCrowdAgentParams parms;
-			memset(&parms, 0, sizeof(dtCrowdAgentParams));
-			parms.radius = ag->radius;
-			parms.height = ag->height;
-			parms.maxAcceleration = 600.f;
-			parms.maxSpeed = ag->speed;
-			parms.collisionQueryRange = parms.radius * 12.0f;
-			parms.pathOptimizationRange = parms.radius * 30.0f;
-			parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
-				DT_CROWD_OBSTACLE_AVOIDANCE;
-			parms.userData = ag;
-			ag->prev_pos = ag->node->g_pos;
-			ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
-			if (ag->dt_id == -1)
-				printf("dt crowd add agent failed: -1 is returned\n");
-		}
-		peeding_nav_agents.clear();
-
-		if (dt_nav_mesh)
+		if (dt_crowd)
 			dt_crowd->update(delta_time, nullptr);
 #endif
 	}

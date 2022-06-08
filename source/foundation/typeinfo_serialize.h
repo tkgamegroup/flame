@@ -54,6 +54,7 @@ namespace flame
 		}
 	};
 
+#ifndef FLAME_NO_XML
 	struct SerializeXmlSpec : ExcludeSpec
 	{
 		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> delegates;
@@ -63,6 +64,7 @@ namespace flame
 	{
 		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>> delegates;
 	};
+#endif
 
 	struct SerializeTextSpec : ExcludeSpec
 	{
@@ -74,6 +76,7 @@ namespace flame
 		std::map<TypeInfo*, std::function<void* (const TextSerializeNode& src)>> delegates;
 	};
 
+#ifndef FLAME_NO_XML
 	inline void serialize_xml(const UdtInfo& ui, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {});
 
 	inline void serialize_xml(const UdtInfo& ui, uint offset, TypeInfo* type, const std::string& name, const std::string& default_value, int getter_idx, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
@@ -481,6 +484,7 @@ namespace flame
 				assert(0);
 		}
 	}
+#endif
 
 	inline void serialize_text(const UdtInfo& ui, void* src, std::ostream& dst, const std::string& indent, const SerializeTextSpec& spec = {})
 	{

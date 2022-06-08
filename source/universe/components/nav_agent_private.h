@@ -2,6 +2,10 @@
 
 #include "nav_agent.h"
 
+#ifdef USE_RECASTNAV
+#include <DetourCrowd.h>
+#endif
+
 namespace flame
 {
 	struct cNavAgentPrivate : cNavAgent
@@ -20,4 +24,6 @@ namespace flame
 		void on_inactive() override;
 		void update() override;
 	};
+
+	extern std::vector<cNavAgentPtr> nav_agents;
 }

@@ -14,6 +14,19 @@ struct dtNavMesh;
 struct dtNavMeshQuery;
 struct dtQueryFilter;
 struct dtCrowd;
+
+extern rcHeightfield* rc_height_field;
+extern rcCompactHeightfield* rc_c_height_field;
+extern rcContourSet* rc_contour_set;
+extern rcPolyMesh* rc_poly_mesh;
+extern rcPolyMeshDetail* rc_poly_mesh_d;
+extern dtNavMesh* dt_nav_mesh;
+extern dtNavMeshQuery* dt_nav_query;
+extern dtQueryFilter* dt_filter;
+extern dtCrowd* dt_crowd;
+
+dtPolyRef dt_nearest_poly(const vec3& pos);
+int dt_add_agent(flame::cNavAgentPtr ag);
 #endif
 
 namespace flame
@@ -21,18 +34,6 @@ namespace flame
 	struct sScenePrivate : sScene
 	{
 	#ifdef USE_RECASTNAV
-		rcHeightfield* rc_height_field = nullptr;
-		rcCompactHeightfield* rc_c_height_field = nullptr;
-		rcContourSet* rc_contour_set = nullptr;
-		rcPolyMesh* rc_poly_mesh = nullptr;
-		rcPolyMeshDetail* rc_poly_mesh_d = nullptr;
-
-		dtNavMesh* dt_nav_mesh = nullptr;
-		dtNavMeshQuery* dt_nav_query = nullptr;
-		dtQueryFilter* dt_filter = nullptr;
-		dtCrowd* dt_crowd = nullptr;
-
-		std::vector<cNavAgentPtr> peeding_nav_agents;
 	#endif
 
 		sScenePrivate();
@@ -41,7 +42,6 @@ namespace flame
 		void update_transform(EntityPtr e, bool mark_dirty);
 
 		void generate_nav_mesh() override;
-		uint nav_mesh_nearest_poly(const vec3& pos);
 		std::vector<vec3> calc_nav_path(const vec3& start, const vec3& end) override;
 
 		void update() override;

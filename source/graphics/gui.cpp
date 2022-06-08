@@ -12,20 +12,23 @@
 
 namespace ImGui
 {
+	using namespace flame;
+
+	std::vector<std::string> peeding_dialogs;
 	std::vector<std::unique_ptr<Dialog>> dialogs;
 
 	void Dialog::open(Dialog* dialog)
 	{
 		dialogs.emplace_back(dialog);
-		ImGui::OpenPopup(dialog->title.c_str());
+		peeding_dialogs.push_back(dialog->title);
 	}
 
 	void Dialog::close()
 	{
 		assert(!dialogs.empty());
 		ImGui::CloseCurrentPopup();
-		flame::add_event([this]() {
-			flame::graphics::Queue::get()->wait_idle();
+		add_event([this]() {
+			graphics::Queue::get()->wait_idle();
 			std::erase_if(dialogs, [&](const auto& i) {
 				return i.get() == this;
 			});
@@ -105,7 +108,7 @@ namespace ImGui
 
 	struct FileDialog : Dialog
 	{
-		flame::graphics::ExplorerAbstract explorer;
+		graphics::ExplorerAbstract explorer;
 		std::filesystem::path path;
 		std::function<void(bool, const std::filesystem::path&)> callback;
 
@@ -228,6 +231,12 @@ namespace flame
 			for (auto& l : gui_callbacks.list)
 				l.first();
 
+			if (!ImGui::peeding_dialogs.empty())
+			{
+				for (auto& name : ImGui::peeding_dialogs)
+					ImGui::OpenPopup(name.c_str());
+				ImGui::peeding_dialogs.clear();
+			}
 			for (auto& d : ImGui::dialogs)
 				d->draw();
 
