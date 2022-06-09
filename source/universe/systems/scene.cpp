@@ -34,25 +34,6 @@ dtPolyRef dt_nearest_poly(const vec3& pos)
 	return ret;
 }
 
-void dt_add_agent(flame::cNavAgentPtr ag)
-{
-	dtCrowdAgentParams parms;
-	memset(&parms, 0, sizeof(dtCrowdAgentParams));
-	parms.radius = ag->radius;
-	parms.height = ag->height;
-	parms.maxAcceleration = 600.f;
-	parms.maxSpeed = ag->speed;
-	parms.collisionQueryRange = parms.radius * 12.0f;
-	parms.pathOptimizationRange = parms.radius * 30.0f;
-	parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
-		DT_CROWD_OBSTACLE_AVOIDANCE;
-	parms.userData = ag;
-	ag->prev_pos = ag->node->g_pos;
-	ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
-	if (ag->dt_id == -1)
-		printf("dt crowd add agent failed: -1 is returned\n");
-}
-
 #endif
 
 namespace flame
@@ -387,9 +368,6 @@ namespace flame
 			if (!dt_crowd)
 				dt_crowd = dtAllocCrowd();
 			dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
-
-			for (auto ag : nav_agents)
-				dt_add_agent(ag);
 		}
 #endif
 	}
@@ -642,7 +620,31 @@ namespace flame
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)
+		{
+			for (auto i = (int)nav_agents.size() - 1; i >= 0; i--)
+			{
+				auto ag = nav_agents[i];
+				if (ag->dt_id != -1)
+					break;
+				dtCrowdAgentParams parms;
+				memset(&parms, 0, sizeof(dtCrowdAgentParams));
+				parms.radius = ag->radius;
+				parms.height = ag->height;
+				parms.maxAcceleration = 600.f;
+				parms.maxSpeed = ag->speed;
+				parms.collisionQueryRange = parms.radius * 12.0f;
+				parms.pathOptimizationRange = parms.radius * 30.0f;
+				parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
+					DT_CROWD_OBSTACLE_AVOIDANCE;
+				parms.userData = ag;
+				ag->prev_pos = ag->node->g_pos;
+				ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
+				if (ag->dt_id == -1)
+					printf("dt crowd add agent failed: -1 is returned\n");
+			}
+
 			dt_crowd->update(delta_time, nullptr);
+		}
 #endif
 	}
 

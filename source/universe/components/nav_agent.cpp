@@ -78,13 +78,6 @@ namespace flame
 	void cNavAgentPrivate::on_active()
 	{
 		nav_agents.push_back(this);
-#ifdef USE_RECASTNAV
-		if (dt_id == -1)
-		{
-			if (dt_crowd)
-				dt_add_agent(this);
-		}
-#endif
 	}
 
 	void cNavAgentPrivate::on_inactive()

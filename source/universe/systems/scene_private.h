@@ -17,7 +17,6 @@ extern dtQueryFilter dt_filter;
 extern dtCrowd* dt_crowd;
 
 dtPolyRef dt_nearest_poly(const vec3& pos);
-void dt_add_agent(flame::cNavAgentPtr ag);
 #endif
 
 namespace flame
