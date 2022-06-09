@@ -433,16 +433,9 @@ namespace flame
 		spec.delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			auto e = new EntityPrivate();
 
-			std::string file_id;
-			if (auto a = src.attribute("file_id"); a)
-				file_id = a.value();
-			else
-				file_id = e->instance_id;
-
 			if (auto a = src.attribute("filename"); a)
 			{
 				e->load(a.value());
-				e->file_id = file_id;
 				new PrefabInstance(e, a.value());
 
 				auto n_mod = src.child("modifications");
@@ -461,8 +454,11 @@ namespace flame
 			}
 			else
 			{
+				if (auto a = src.attribute("file_id"); a)
+					e->file_id = a.value();
+				else
+					e->file_id = e->instance_id;
 				unserialize_xml(src, e, spec);
-				e->file_id = file_id;
 			}
 
 			((EntityPtr)dst_o)->add_child(e);
@@ -496,7 +492,6 @@ namespace flame
 		};
 		spec.delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (EntityPtr)src;
-			dst.append_attribute("file_id").set_value(e->file_id.c_str());
 			if (e->prefab)
 			{
 				dst.append_attribute("filename").set_value(e->prefab->filename.string().c_str());
@@ -514,7 +509,10 @@ namespace flame
 				}
 			}
 			else
+			{
+				dst.append_attribute("file_id").set_value(e->file_id.c_str());
 				serialize_xml(e, dst, spec);
+			}
 		};
 
 		auto doc_root = file.append_child("prefab");

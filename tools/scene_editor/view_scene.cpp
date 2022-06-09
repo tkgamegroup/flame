@@ -37,10 +37,13 @@ void View_Scene::selected_to_focus()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		if (auto node = selection.entity()->get_component_i<cNode>(0); node)
+		auto e = selection.entity();
+		if (auto node = e->get_component_i<cNode>(0); node)
 		{
 			auto camera_node = curr_camera()->node;
 			node->set_pos(camera_node->g_pos - camera_node->g_rot[2] * camera_zoom);
+			if (auto ins = get_prefab_instance(e); ins)
+				ins->mark_modifier(e->file_id, "flame::cNode", "pos");
 		}
 	}
 }
