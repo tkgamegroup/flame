@@ -193,7 +193,7 @@ namespace flame
 		auto read_ti = [&](pugi::xml_attribute a) {
 			auto sp = SUS::split(a.value(), '@');
 			TypeTag tag;
-			TypeInfo::unserialize_t(sp[0], &tag, *this);
+			TypeInfo::unserialize_t(sp[0], tag, *this);
 			return TypeInfo::get(tag, sp[1], *this);
 		};
 
@@ -311,7 +311,7 @@ namespace flame
 		auto doc_root = doc.append_child("typeinfo");
 
 		auto write_ti = [&](TypeInfo* ti, pugi::xml_attribute a) {
-			a.set_value((TypeInfo::serialize_t(&ti->tag, *this) + '@' + ti->name).c_str());
+			a.set_value((TypeInfo::serialize_t(ti->tag, *this) + '@' + ti->name).c_str());
 		};
 
 		if (!enums.empty())

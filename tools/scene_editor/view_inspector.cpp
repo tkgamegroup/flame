@@ -669,7 +669,7 @@ void View_Inspector::on_draw()
 										{ "vs=fbm.vert",
 										  "all_shader:USE_VERTEX_VAL_BASE",
 										  "rp=" + str(fb->renderpass),
-										  "pt=" + TypeInfo::serialize_t(&pt) });
+										  "pt=" + TypeInfo::serialize_t(pt) });
 
 									graphics::PipelineResourceManager<FLAME_UID> prm;
 									prm.init(pl->layout);
@@ -1061,7 +1061,7 @@ void View_Inspector::on_draw()
 			if (last_sel_ref_obj)
 			{
 				auto image = (graphics::ImagePtr)last_sel_ref_obj;
-				ImGui::Text("format: %s", TypeInfo::serialize_t(&image->format).c_str());
+				ImGui::Text("format: %s", TypeInfo::serialize_t(image->format).c_str());
 				ImGui::Text("size: %s", str(image->size).c_str());
 				static int view_type = ImGui::ImageViewRGBA;
 				static const char* types[] = {

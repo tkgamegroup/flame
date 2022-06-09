@@ -18,7 +18,7 @@ void View_Debugger::on_draw()
 		auto all_images = graphics::Debug::get_all_images();
 		for (auto i : all_images)
 		{
-			if (ImGui::TreeNode(std::format("{} {} {}", str(i), TypeInfo::serialize_t(&i->format), str(i->size)).c_str()))
+			if (ImGui::TreeNode(std::format("{} {} {}", str(i), TypeInfo::serialize_t(i->format), str(i->size)).c_str()))
 			{
 				ImGui::Image(i, (vec2)i->size);
 				ImGui::TreePop();

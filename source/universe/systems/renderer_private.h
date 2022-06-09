@@ -79,8 +79,6 @@ namespace flame
 		std::unique_ptr<graphics::Image>												img_cube_black;
 		std::unique_ptr<graphics::Image>												img_cube_white;
 
-		graphics::RenderpassPtr															rp_col = nullptr;
-		graphics::RenderpassPtr															rp_col_dep = nullptr;
 		graphics::RenderpassPtr															rp_fwd = nullptr;
 		graphics::RenderpassPtr															rp_gbuf = nullptr;
 		graphics::PipelineLayoutPtr														pll_fwd = nullptr;

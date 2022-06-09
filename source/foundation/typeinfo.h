@@ -280,15 +280,15 @@ namespace flame
 		}
 
 		template<typename T>
-		inline static std::string serialize_t(T* v, TypeInfoDataBase& db = tidb)
+		inline static std::string serialize_t(const T& v, TypeInfoDataBase& db = tidb)
 		{
-			return get<T>(db)->serialize(v);
+			return get<T>(db)->serialize(&v);
 		}
 
 		template<typename T>
-		inline static void unserialize_t(const std::string& str, T* v, TypeInfoDataBase& db = tidb)
+		inline static void unserialize_t(const std::string& str, T& v, TypeInfoDataBase& db = tidb)
 		{
-			return get<T>(db)->unserialize(str, v);
+			return get<T>(db)->unserialize(str, &v);
 		}
 
 		inline EnumInfo* retrive_ei();

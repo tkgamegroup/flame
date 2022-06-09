@@ -1344,7 +1344,10 @@ namespace flame
 				{
 					auto defines = renderpass_defines;
 					std::sort(defines.begin(), defines.end());
-					return Renderpass::get(value, defines);
+					std::filesystem::path fn = value;
+					if (Path::cat_if_exists(parent_path, fn))
+						fn = std::filesystem::canonical(fn);
+					return Renderpass::get(fn, defines);
 				}
 				std::filesystem::path fn = src.value("filename");
 				if (Path::cat_if_exists(parent_path, fn))

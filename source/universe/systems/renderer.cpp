@@ -17,7 +17,7 @@
 
 namespace flame
 {
-	const graphics::Format col_fmt = graphics::Format::Format_R8G8B8A8_UNORM;
+	const graphics::Format col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const uvec2 shadow_map_size = uvec2(2048);
 
@@ -32,6 +32,12 @@ namespace flame
 		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+
+		rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
+			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 
 		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
@@ -117,32 +123,20 @@ namespace flame
 
 		mesh_reses.resize(1024);
 
-		rp_col = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt) });
-		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(&col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
-			{ "dep_fmt=" + TypeInfo::serialize_t(&dep_fmt) });
-
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
-		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline",
-			{ "rp=" + str(rp_col) });
+		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
+		pl_line3d->dynamic_renderpass = true;
 		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
 
-		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline",
-			{ "rp=" + str(rp_col) });
+		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
 		pl_blit->dynamic_renderpass = true;
-		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline",
-			{ "rp=" + str(rp_col) });
-		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline",
-			{ "rp=" + str(rp_col) });
+		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
+		pl_add->dynamic_renderpass = true;
+		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
+		pl_blend->dynamic_renderpass = true;
 
 		prm_fwd.init(graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll"));
 		prm_fwd.set_ds("scene"_h, ds_scene.get());
@@ -154,23 +148,20 @@ namespace flame
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
 
-		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col) });
-		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col),
-			  "vert:ARMATURE" });
-		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_col) });
-		pl_mesh_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "frag:CAMERA_LIGHT" });
+		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", {});
+		pl_mesh_plain->dynamic_renderpass = true;
+		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "vert:ARMATURE" });
+		pl_mesh_arm_plain->dynamic_renderpass = true;
+		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", {});
+		pl_terrain_plain->dynamic_renderpass = true;
+		pl_mesh_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "frag:CAMERA_LIGHT" });
+		pl_mesh_camlit->dynamic_renderpass = true;
 		pl_mesh_arm_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "vert:ARMATURE",
+			{ "vert:ARMATURE",
 			  "frag:CAMERA_LIGHT" });
-		pl_terrain_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_fwd),
-			  "frag:CAMERA_LIGHT" });
+		pl_mesh_arm_camlit->dynamic_renderpass = true;
+		pl_terrain_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "frag:CAMERA_LIGHT" });
+		pl_terrain_camlit->dynamic_renderpass = true;
 
 		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
 		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
@@ -185,20 +176,18 @@ namespace flame
 		prm_deferred.set_ds(""_h, ds_deferred.get());
 
 		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"));
-		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
-			{ "rp=" + str(rp_col),
-			  "frag:HORIZONTAL" });
-		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
-			{ "rp=" + str(rp_col),
-			  "frag:VERTICAL" });
+		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:HORIZONTAL" });
+		pl_blur_h->dynamic_renderpass = true;
+		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:VERTICAL" });
+		pl_blur_v->dynamic_renderpass = true;
 		pl_localmax_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
-			{ "rp=" + str(rp_col),
-			  "frag:LOCAL_MAX",
+			{ "frag:LOCAL_MAX",
 			  "frag:HORIZONTAL" });
+		pl_localmax_h->dynamic_renderpass = true;
 		pl_localmax_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
-			{ "rp=" + str(rp_col),
-			  "frag:LOCAL_MAX",
+			{ "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
+		pl_localmax_v->dynamic_renderpass = true;
 
 		auto dsl_luma_avg = graphics::DescriptorSetLayout::get(L"flame\\shaders\\post\\luma_avg.dsl");
 		buf_luma_avg.create(dsl_luma_avg->get_buf_ui("LumaAvg"));
@@ -216,21 +205,19 @@ namespace flame
 		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_hist.pipeline", {});
 		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_avg.pipeline", {});
 
-		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline",
-			{ "rp=" + str(rp_col) });
+		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline", {});
+		pl_tone->dynamic_renderpass = true;
 		prm_tone.init(pl_tone->layout);
 		prm_tone.set_ds("luma_avg"_h, ds_luma_avg.get());
 
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "frag:PICKUP" });
+		pl_mesh_pickup->dynamic_renderpass = true;
 		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "vert:ARMATURE",
+			{ "vert:ARMATURE",
 			  "frag:PICKUP" });
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "frag:PICKUP" });
+		pl_mesh_arm_pickup->dynamic_renderpass = true;
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "frag:PICKUP" });
+		pl_terrain_pickup->dynamic_renderpass = true;
 		fence_pickup.reset(graphics::Fence::create(false));
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
@@ -272,7 +259,10 @@ namespace flame
 
 		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+		auto rp_pickup = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(img_pickup->format),
+			  "dep_fmt=" + TypeInfo::serialize_t(img_dep->format) });
+		fb_pickup.reset(graphics::Framebuffer::create(rp_pickup, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 
 		final_layout = _final_layout;
 	}
@@ -582,9 +572,12 @@ namespace flame
 			return it->second;
 
 		std::vector<std::string> defines;
-		defines.push_back("rp=" + str(rp_gbuf));
-		defines.push_back("pll=" + str(pll_gbuf));
-		defines.push_back("all_shader:DEFERRED");
+		if (true /*opaque*/)
+		{
+			defines.push_back("rp=" + str(rp_gbuf));
+			defines.push_back("pll=" + str(pll_gbuf));
+			defines.push_back("all_shader:DEFERRED");
+		}
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
 		if (mr.mat->color_map != -1)
@@ -631,7 +624,10 @@ namespace flame
 		if (!pipeline_name.empty())
 			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
 		if (ret)
+		{
+			ret->dynamic_renderpass = true;
 			mr.pls[key] = ret;
+		}
 		return ret;
 	}
 
@@ -642,7 +638,6 @@ namespace flame
 			return it->second;
 
 		std::vector<std::string> defines;
-		defines.push_back("rp=" + str(rp_col));
 		switch (modifier)
 		{
 		case "CameraLight"_h:
@@ -652,7 +647,11 @@ namespace flame
 		std::sort(defines.begin(), defines.end());
 
 		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
-		pls_deferred[modifier] = ret;
+		if (ret)
+		{
+			ret->dynamic_renderpass = true;
+			pls_deferred[modifier] = ret;
+		}
 		return ret;
 	}
 

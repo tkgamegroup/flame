@@ -204,7 +204,7 @@ namespace flame
 			if (!imgui_rp)
 			{
 				std::vector<std::string> defines;
-				defines.push_back("col_fmt=" + TypeInfo::serialize_t(&Swapchain::format));
+				defines.push_back("col_fmt=" + TypeInfo::serialize_t(Swapchain::format));
 				imgui_rp = Renderpass::get(L"flame\\shaders\\color.rp", defines);
 				defines.push_back("load_op=Load");
 				defines.push_back("initia_layout=Attachment");

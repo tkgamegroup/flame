@@ -1,3 +1,4 @@
+%rp=../color.rp
 layout
   post.pll
 shaders
