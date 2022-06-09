@@ -264,6 +264,7 @@ void App::init()
 			"Local",
 			"World"
 		};
+		ImGui::SetNextItemWidth(100.f);
 		ImGui::Combo("Mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
