@@ -260,6 +260,12 @@ void App::init()
 		if (add_tool_button(ToolScale, "down-left-and-up-right-to-center"_h))
 			tool = ToolScale;
 		ImGui::SameLine();
+		const char* tool_mode_names[] = {
+			"Local",
+			"World"
+		};
+		ImGui::Combo("Mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
+		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
 
 		static cTerrainPtr terrain_tool_target = nullptr;

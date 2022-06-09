@@ -112,8 +112,10 @@ void View_Scene::on_draw()
 				case ToolRotate: op = ImGuizmo::ROTATE; break;
 				case ToolScale: op = ImGuizmo::SCALE; break;
 				}
-				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, ImGuizmo::LOCAL, &mat[0][0]))
+				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0]))
 				{
+					if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
+						mat = inverse(pnode->transform) * mat;
 					vec3 p, r, s;
 					ImGuizmo::DecomposeMatrixToComponents(&mat[0][0], &p[0], &r[0], &s[0]);
 					r = vec3(r.y, r.x, r.z);

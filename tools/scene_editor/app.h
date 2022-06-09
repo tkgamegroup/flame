@@ -16,6 +16,12 @@ enum Tool
 	ToolTerrainPaint
 };
 
+enum ToolMode
+{
+	ToolLocal,
+	ToolWorld
+};
+
 struct View
 {
 	std::string name;
@@ -42,6 +48,7 @@ struct App : UniverseApplication
 	bool paused = false;
 
 	Tool tool = ToolSelect;
+	ToolMode tool_mode = ToolLocal;
 
 	void init();
 
