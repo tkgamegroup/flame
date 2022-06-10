@@ -246,7 +246,7 @@ void View_Scene::on_draw()
 						return true;
 					});
 				}
-				if (show_nav_agents)
+				if (show_navigation)
 				{
 					World::instance()->root->forward_traversal([renderer](EntityPtr e) {
 						if (!e->global_enable)
@@ -277,6 +277,21 @@ void View_Scene::on_draw()
 								pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 							}
 							renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+							center.y += nav->height;
+							for (auto i = 0; i < n; i++)
+							{
+								pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
+								pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
+							}
+							renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+							center = nav->node->g_pos;
+							auto cam_x = app.renderer->camera->node->g_rot[0];
+							pts[0] = center - r * cam_x; 
+							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+							pts[0] = center + r * cam_x;
+							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
 						}
 						return true;
 					});

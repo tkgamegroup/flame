@@ -192,7 +192,7 @@ void App::init()
 			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
 			ImGui::MenuItem("Axis", nullptr, &view_scene.show_axis);
 			ImGui::MenuItem("Bones", nullptr, &view_scene.show_bones);
-			ImGui::MenuItem("Nav Agents", nullptr, &view_scene.show_nav_agents);
+			ImGui::MenuItem("Navigation", nullptr, &view_scene.show_navigation);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))
