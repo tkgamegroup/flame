@@ -151,6 +151,77 @@ namespace flame
 			cross2(dc, a - d) * cross2(dc, b - d) <= 0.f;
 	}
 
+	inline vec3 smooth_damp(const vec3& current, const vec3& _target, vec3& current_velocity, float smooth_time, float max_speed, float delta_time)
+	{
+		auto target = _target;
+
+		float output_x = 0.f;
+		float output_y = 0.f;
+		float output_z = 0.f;
+
+		// Based on Game Programming Gems 4 Chapter 1.10
+		smooth_time = max(0.0001f, smooth_time);
+		float omega = 2.f / smooth_time;
+
+		float x = omega * delta_time;
+		float exp = 1.f / (1.f + x + 0.48f * x * x + 0.235f * x * x * x);
+
+		float change_x = current.x - target.x;
+		float change_y = current.y - target.y;
+		float change_z = current.z - target.z;
+		auto original_to = target;
+
+		// Clamp maximum speed
+		float max_change = max_speed * smooth_time;
+
+		float max_change_sq = max_change * max_change;
+		float sqrmag = change_x * change_x + change_y * change_y + change_z * change_z;
+		if (sqrmag > max_change_sq)
+		{
+			auto mag = sqrt(sqrmag);
+			change_x = change_x / mag * max_change;
+			change_y = change_y / mag * max_change;
+			change_z = change_z / mag * max_change;
+		}
+
+		target.x = current.x - change_x;
+		target.y = current.y - change_y;
+		target.z = current.z - change_z;
+
+		float temp_x = (current_velocity.x + omega * change_x) * delta_time;
+		float temp_y = (current_velocity.y + omega * change_y) * delta_time;
+		float temp_z = (current_velocity.z + omega * change_z) * delta_time;
+
+		current_velocity.x = (current_velocity.x - omega * temp_x) * exp;
+		current_velocity.y = (current_velocity.y - omega * temp_y) * exp;
+		current_velocity.z = (current_velocity.z - omega * temp_z) * exp;
+
+		output_x = target.x + (change_x + temp_x) * exp;
+		output_y = target.y + (change_y + temp_y) * exp;
+		output_z = target.z + (change_z + temp_z) * exp;
+
+		// Prevent overshooting
+		float origMinusCurrent_x = original_to.x - current.x;
+		float origMinusCurrent_y = original_to.y - current.y;
+		float origMinusCurrent_z = original_to.z - current.z;
+		float outMinusOrig_x = output_x - original_to.x;
+		float outMinusOrig_y = output_y - original_to.y;
+		float outMinusOrig_z = output_z - original_to.z;
+
+		if (origMinusCurrent_x * outMinusOrig_x + origMinusCurrent_y * outMinusOrig_y + origMinusCurrent_z * outMinusOrig_z > 0)
+		{
+			output_x = original_to.x;
+			output_y = original_to.y;
+			output_z = original_to.z;
+
+			current_velocity.x = (output_x - original_to.x) / delta_time;
+			current_velocity.y = (output_y - original_to.y) / delta_time;
+			current_velocity.z = (output_z - original_to.z) / delta_time;
+		}
+
+		return vec3(output_x, output_y, output_z);
+	}
+
 	struct Rect
 	{
 		vec2 a;

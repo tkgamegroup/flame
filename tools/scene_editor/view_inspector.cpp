@@ -556,10 +556,10 @@ void View_Inspector::on_draw()
 										return vec2(v.x, v.y);
 									};
 
-									std::vector<Vector2> site_postions_fa;
-									std::vector<vec2> site_postions;
+									std::vector<Vector2> site_postions_xz;
+									std::vector<vec3> site_postions;
 									for (int i = 0; i < voronoi_sites_count; ++i)
-										site_postions_fa.push_back(Vector2{ distribution(generator), distribution(generator) });
+										site_postions_xz.push_back(Vector2{ distribution(generator), distribution(generator) });
 
 									auto get_diagram = [](const std::vector<Vector2>& points) {
 										FortuneAlgorithm fortune_algorithm(points);
@@ -610,24 +610,25 @@ void View_Inspector::on_draw()
 										return ret;
 									};
 
-									auto diagram = get_diagram(site_postions_fa);
+									auto diagram = get_diagram(site_postions_xz);
 									for (auto t = 0; t < 3; t++)
 									{
 										for (auto i = 0; i < diagram.getNbSites(); i++)
 										{
 											auto vertices = get_site_vertices(diagram.getSite(i));
 											auto centroid = convex_centroid(vertices);
-											site_postions_fa[i] = Vector2(centroid.x, centroid.y);
+											site_postions_xz[i] = Vector2(centroid.x, centroid.y);
 										}
-										diagram = get_diagram(site_postions_fa);
+										diagram = get_diagram(site_postions_xz);
 									}
 
-									site_postions.resize(site_postions_fa.size());
+									site_postions.resize(site_postions_xz.size());
 									for (auto i = 0; i < site_postions.size(); i++)
-										site_postions[i] = to_glm(site_postions_fa[i]);
+									{
+										auto& p = site_postions_xz[i];
+										site_postions[i] = vec3(p.x, 0.f, p.y);
+									}
 
-									std::vector<float> site_height;
-									site_height.resize(site_postions.size());
 									for (auto i = 0; i < site_postions.size(); i++)
 									{
 										auto value = 0.f;
@@ -641,23 +642,23 @@ void View_Inspector::on_draw()
 													value += 0.25f;
 											}
 										}
-										site_height[i] = value;
+										site_postions[i].y = value;
 									}
 									for (auto i = 0; i < site_postions.size(); i++)
 									{
-										auto self_height = site_height[i];
+										auto self_height = site_postions[i].y;
 										auto max_height = 0.f;
 										for (auto edge : get_site_edges(diagram.getSite(i)))
 										{
 											if (auto oth_edge = edge->twin; oth_edge)
 											{
 												auto oth_idx = oth_edge->incidentFace->site->index;
-												auto height = site_height[oth_idx];
+												auto height = site_postions[oth_idx].y;
 												if (height < self_height)
 													max_height = max(max_height, height);
 											}
 										}
-										site_height[i] = min(site_height[i] + 0.25f, site_height[i]);
+										site_postions[i].y = min(site_postions[i].y + 0.25f, site_postions[i].y);
 									}
 
 									const auto MaxVertices = 10000;
@@ -701,7 +702,7 @@ void View_Inspector::on_draw()
 											{
 												buf_vtx.set_var<"i_pos"_h>(vertices[j] * 2.f - 1.f);
 												buf_vtx.set_var<"i_uv"_h>(vertices[j]);
-												buf_vtx.set_var<"i_val_base"_h>(site_height[i]);
+												buf_vtx.set_var<"i_val_base"_h>(site_postions[i].y);
 												buf_vtx.next_item();
 											}
 
@@ -727,7 +728,7 @@ void View_Inspector::on_draw()
 												if (auto oth_edge = edge->twin; oth_edge)
 												{
 													auto oth_idx = oth_edge->incidentFace->site->index;
-													auto oth_height = site_height[oth_idx];
+													auto oth_height = site_postions[oth_idx].y;
 													if (oth_height < height && height - oth_height < 0.3f)
 														region.push_back(edge);
 													else if (oth_height == height)
@@ -740,7 +741,7 @@ void View_Inspector::on_draw()
 											if (!site_seen[i])
 											{
 												regions.emplace_back();
-												form_region(i, regions.size() - 1, site_height[i]);
+												form_region(i, regions.size() - 1, site_postions[i].y);
 											}
 										}
 										for (auto& r : regions)
@@ -767,8 +768,8 @@ void View_Inspector::on_draw()
 														auto pc = pb + perbi * slope_length;
 														auto pd = pa + perbi * slope_length;
 
-														auto hi_height = site_height[edge->incidentFace->site->index];
-														auto lo_height = site_height[edge->twin->incidentFace->site->index];
+														auto hi_height = site_postions[edge->incidentFace->site->index].y;
+														auto lo_height = site_postions[edge->twin->incidentFace->site->index].y;
 
 														auto vtx_off = buf_vtx.item_offset();
 														if (vtx_off + 4 <= MaxVertices)
@@ -860,7 +861,7 @@ void View_Inspector::on_draw()
 											auto ext = terrain->extent;
 											for (auto i = 0; i < site_postions.size(); i++)
 											{
-												auto self_height = site_height[i];
+												auto self_height = site_postions[i].y;
 												if (self_height > 0.f)
 												{
 													auto site = diagram.getSite(i);
@@ -869,7 +870,7 @@ void View_Inspector::on_draw()
 													{
 														if (auto oth_edge = edge->twin; oth_edge)
 														{
-															auto oth_height = site_height[oth_edge->incidentFace->site->index];
+															auto oth_height = site_postions[oth_edge->incidentFace->site->index].y;
 															if (self_height > oth_height + 0.0001f)
 															{
 																auto pa = to_glm(edge->origin->point);

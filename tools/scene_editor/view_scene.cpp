@@ -285,11 +285,16 @@ void View_Scene::on_draw()
 							}
 							renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 							center = nav->node->g_pos;
-							auto cam_x = app.renderer->camera->node->g_rot[0];
-							pts[0] = center - r * cam_x; 
+							pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
 							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
 							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
-							pts[0] = center + r * cam_x;
+							pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
+							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+							pts[0] = center + r * vec3(0.f, 0.f, +1.f);
+							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+							pts[0] = center + r * vec3(0.f, 0.f, -1.f);
 							pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
 							renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
 						}
