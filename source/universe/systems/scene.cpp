@@ -21,6 +21,7 @@ rcCompactHeightfield* rc_c_height_field = nullptr;
 rcContourSet* rc_contour_set = nullptr;
 rcPolyMesh* rc_poly_mesh = nullptr;
 rcPolyMeshDetail* rc_poly_mesh_d = nullptr;
+dtTileCache* dt_tile_cache = nullptr;
 dtNavMesh* dt_nav_mesh = nullptr;
 dtNavMeshQuery* dt_nav_query = nullptr;
 dtQueryFilter dt_filter;

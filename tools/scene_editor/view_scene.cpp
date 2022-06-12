@@ -430,7 +430,10 @@ void View_Scene::on_draw()
 							new PrefabInstance(e, path);
 							if (auto node = e->get_component_i<cNode>(0); node)
 								node->set_pos(hovering_pos);
-							app.e_prefab->add_child(e);
+							if (app.e_playing)
+								app.e_playing->add_child(e);
+							else
+								app.e_prefab->add_child(e);
 							return false;
 						});
 					}

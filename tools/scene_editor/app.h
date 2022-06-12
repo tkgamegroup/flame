@@ -25,8 +25,7 @@ enum ToolMode
 struct View
 {
 	std::string name;
-
-	void* lis = nullptr;
+	bool opened = false;
 
 	View(std::string_view name);
 

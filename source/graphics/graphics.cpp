@@ -13,6 +13,8 @@ namespace flame
 
 		void register_backend_object(void* backend_obj, std::string_view type, void* obj)
 		{
+			if ((uint64)backend_obj == 0x2894590000000072)
+				auto cut = 1;
 			backend_objects[backend_obj] = std::make_pair(std::string(type), obj);
 		}
 

@@ -21,25 +21,25 @@ View::View(std::string_view name) :
 
 void View::open()
 {
-	if (lis)
+	if (opened)
 		return;
+	opened = true;
 
-	lis = graphics::gui_callbacks.add([this]() {
+	graphics::gui_callbacks.add([this]() {
 		draw();
-	});
+	}, (uint)this);
 }
 
 void View::close()
 {
-	if (!lis)
+	if (!opened)
 		return;
+	opened = false;
 
-	auto _lis = lis;
-	add_event([_lis]() {
-		graphics::gui_callbacks.remove(_lis);
+	add_event([this]() {
+		graphics::gui_callbacks.remove((uint)this);
 		return false;
 	});
-	lis = nullptr;
 }
 
 void View::draw()
@@ -57,9 +57,6 @@ App app;
 
 struct NavMeshTest
 {
-	inline static auto name = "Test";
-	inline static auto hash = sh(name);
-
 	bool open = false;
 
 	vec3 start = vec3(0.f);
@@ -159,7 +156,7 @@ void App::init()
 				{
 					auto node = e_editor->get_component_i<cNode>(0);
 					if (!navmesh_test.open)
-						node->drawers.remove(NavMeshTest::hash);
+						node->drawers.remove("navmesh_test"_h);
 					else
 					{
 						node->drawers.add([&](sRendererPtr renderer) {
@@ -181,7 +178,7 @@ void App::init()
 							}
 							if (!navmesh_test.points.empty())
 								renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
-							}, NavMeshTest::hash);
+							}, "navmesh_test"_h);
 					}
 				}
 			}
@@ -199,7 +196,7 @@ void App::init()
 		{
 			for (auto w : views)
 			{
-				auto selected = (bool)w->lis;
+				auto selected = (bool)w->opened;
 				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
 					w->open();
 			}
@@ -323,7 +320,7 @@ void App::init()
 
 		if (navmesh_test.open)
 		{
-			ImGui::Begin(NavMeshTest::name, &navmesh_test.open);
+			ImGui::Begin("NavMesh Test", &navmesh_test.open);
 			static int v = 0;
 			ImGui::TextUnformatted("use ctrl+click to set start/end");
 			ImGui::RadioButton("Start", &v, 0);
@@ -341,7 +338,7 @@ void App::init()
 			}
 			ImGui::End();
 			if (!navmesh_test.open)
-				e_editor->get_component_i<cNode>(0)->drawers.remove(NavMeshTest::hash);
+				e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
 		}
 	});
 }
@@ -632,7 +629,10 @@ bool App::cmd_delete_entity(EntityPtr e)
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
 	}
-	e->parent->remove_child(e);
+	add_event([e]() {
+		e->parent->remove_child(e);
+		return false;
+	});
 	selection.clear();
 	return true;
 }
@@ -769,7 +769,7 @@ int main(int argc, char** args)
 	preferences_o << "[opened_windows]\n";
 	for (auto w : views)
 	{
-		if (w->lis)
+		if (w->opened)
 			preferences_o << w->name << "\n";
 	}
 	if (!app.project_path.empty())

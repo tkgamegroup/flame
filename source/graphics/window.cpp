@@ -18,8 +18,8 @@ namespace flame
 
 			if (window)
 			{
-				window->resize_listeners.remove(resize_lis);
-				window->destroy_listeners.remove(destroy_lis);
+				window->resize_listeners.remove("swapchain"_h);
+				window->destroy_listeners.remove("swapchain"_h);
 			}
 
 			if (vk_swapchain)
@@ -147,12 +147,12 @@ namespace flame
 				ret->build();
 				ret->image_avalible.reset(Semaphore::create());
 
-				ret->resize_lis = window->resize_listeners.add([ret](const uvec2& size) {
+				window->resize_listeners.add([ret](const uvec2& size) {
 					ret->build();
-					});
-				ret->destroy_lis = window->destroy_listeners.add([ret]() {
+				}, "swapchain"_h);
+				window->destroy_listeners.add([ret]() {
 					ret->window = nullptr;
-					});
+				}, "swapchain"_h);
 
 				return ret;
 			}
@@ -169,7 +169,7 @@ namespace flame
 			finished_fence.reset(Fence::create(device));
 			finished_semaphore.reset(Semaphore::create());
 
-			destroy_lis = native->destroy_listeners.add([this]() {
+			native->destroy_listeners.add([this]() {
 				for (auto it = windows.begin(); it != windows.end(); it++)
 				{
 					if (*it == this)
@@ -180,21 +180,13 @@ namespace flame
 						return;
 					}
 				}
-			});
+			}, "graphics_window"_h);
 		}
 
 		WindowPrivate::~WindowPrivate()
 		{
 			if (native)
-			{
-				native->mouse_listeners.remove(mouse_lis);
-				native->mousemove_listeners.remove(mousemove_lis);
-				native->scroll_listeners.remove(scroll_lis);
-				native->key_listeners.remove(key_lis);
-				native->char_listeners.remove(char_lis);
-				native->resize_listeners.remove(resize_lis);
-				native->destroy_listeners.remove(destroy_lis);
-			}
+				native->destroy_listeners.remove("graphics_window"_h);
 
 			Queue::get()->wait_idle();
 		}

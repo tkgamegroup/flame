@@ -6,6 +6,15 @@
 
 namespace flame
 {
+	cNodePrivate::~cNodePrivate()
+	{
+		if (!drawers.list.empty() || !measurers.list.empty() || !occluder_drawers.list.empty() || !light_drawers.list.empty())
+		{
+			if (entity->name.starts_with("mix"))
+				auto cut = 1;
+		}
+	}
+
 	void cNodePrivate::set_pos(const vec3& p)
 	{
 		if (pos == p)

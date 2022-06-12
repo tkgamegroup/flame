@@ -237,20 +237,13 @@ namespace flame
 	template<typename F>
 	struct Listeners
 	{
-		std::list<std::pair<std::function<F>, uint>> list;
+		std::vector<std::pair<std::function<F>, uint>> list;
 
-		void* add(const std::function<F>& callback, uint h = 0, bool back = true)
+		void add(const std::function<F>& callback, uint h = 0, int pos = -1)
 		{
-			if (back)
-				return &list.emplace_back(callback, h);
-			return &list.emplace_front(callback, h);
-		}
-
-		void remove(void* lis)
-		{
-			std::erase_if(list, [&](const auto& i) {
-				return &i == lis;
-			});
+			if (pos == -1)
+				pos = list.size();
+			list.emplace(list.begin() + pos, std::make_pair(callback, h));
 		}
 
 		void remove(uint h)
