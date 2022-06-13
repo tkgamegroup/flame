@@ -60,7 +60,7 @@ namespace flame
 		std::function<bool()> callback;
 	};
 
-	static std::list<Event> events;
+	static std::vector<Event> events;
 	static std::recursive_mutex event_mtx;
 
 	static const uint64 counter_freq = performance_frequency();
