@@ -19,6 +19,8 @@ An ECS 3D-Game-Engine.
 
 - GLI https://github.com/g-truc/gli
 
+    (should use my forked version: https://github.com/tkgamegroup/gli)
+
 - SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
 
 - Assimp https://github.com/assimp/assimp

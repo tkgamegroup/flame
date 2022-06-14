@@ -125,7 +125,7 @@ if op != 3:
 			
 	print("== library gli ==")
 	ok = True
-	address = "https://github.com/g-truc/gli.git"
+	address = "https://github.com/tkgamegroup/gli"
 	lib_dir = parent_directory / "gli"
 	if op == 2:
 		print("Download GLI from %s into %s ? y/n" % (address, str(lib_dir)))

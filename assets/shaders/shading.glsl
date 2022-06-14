@@ -36,21 +36,15 @@ float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
 vec3 fresnel_schlick(float cos_theta, vec3 f0)
 {
 	return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);
-}
-
-vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness)
-{
-	return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - cos_theta, 5.0);
 }   
 
 vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
-	vec3 H = normalize(V + L);
-	
-	float NdotV = max(dot(N, V), 0.0);
 	float NdotL = dot(N, L);
 	if (NdotL <= 0.0)
 		return vec3(0.0);
+	vec3 H = normalize(V + L);
+	float NdotV = max(dot(N, V), 0.0);
 	
 	float NDF = distribution_GGX(N, H, roughness);        
 	float G   = geometry_smith(N, V, L, roughness);      
@@ -146,16 +140,12 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotV = max(dot(N, V), 0.0);
-	vec3 F = fresnel_schlick_roughness(NdotV, f0, roughness);
-	vec3 kD = vec3(1.0) - F;
-	kD *= 1.0 - metallic;
+	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb / PI * albedo * (1.0 - metallic);
 
-	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo;
+	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
+	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (f0 * envBRDF.x + envBRDF.y);
 
-	vec2 envBRDF = texture(brdf_map, vec2(NdotV, roughness)).rg;
-	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
-
-	return (kD * diffuse + specular) * scene.sky_intensity;
+	return (diffuse + specular) * scene.sky_intensity;
 }
 
 vec3 get_fog(vec3 color, float dist)

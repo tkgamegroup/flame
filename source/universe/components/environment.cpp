@@ -27,6 +27,26 @@ namespace flame
 		else if (_sky_map)
 			graphics::Image::release(_sky_map);
 
+		auto _sky_irr_map = !sky_map_name.empty() ? graphics::Image::get(replace_fn(sky_map_name, L"{}_irr")) : nullptr;
+		if (sky_irr_map != _sky_irr_map)
+		{
+			if (sky_irr_map)
+				graphics::Image::release(sky_irr_map);
+			sky_irr_map = _sky_irr_map;
+		}
+		else if (_sky_irr_map)
+			graphics::Image::release(_sky_irr_map);
+
+		auto _sky_rad_map = !sky_map_name.empty() ? graphics::Image::get(replace_fn(sky_map_name, L"{}_rad")) : nullptr;
+		if (sky_rad_map != _sky_rad_map)
+		{
+			if (sky_rad_map)
+				graphics::Image::release(sky_rad_map);
+			sky_rad_map = _sky_rad_map;
+		}
+		else if (_sky_rad_map)
+			graphics::Image::release(_sky_rad_map);
+
 		apply();
 		data_changed("sky_map_name"_h);
 	}
@@ -36,7 +56,9 @@ namespace flame
 		if (!environments.empty() && environments.front() == this)
 		{
 			sRenderer::instance()->dirty = true;
-			sRenderer::instance()->set_sky(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr, nullptr, nullptr);
+			sRenderer::instance()->set_sky(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr, 
+				sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
+				sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
 		}
 	}
 

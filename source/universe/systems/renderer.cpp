@@ -118,7 +118,10 @@ namespace flame
 		ds_light->set_image("sky_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->set_image("sky_irr_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->set_image("sky_rad_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("brdf_map", 0, img_black->get_view(), nullptr);
+		{
+			auto img = graphics::Image::get(L"flame\\brdf.dds");
+			ds_light->set_image("brdf_map", 0, img ? img->get_view() : img_black->get_view(), nullptr);
+		}
 		ds_light->update();
 
 		mesh_reses.resize(1024);
@@ -288,6 +291,8 @@ namespace flame
 		ds_light->set_image("sky_irr_map", 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->set_image("sky_rad_map", 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->update();
+
+		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -955,7 +960,7 @@ namespace flame
 		}
 
 		buf_scene.set_var<"sky_intensity"_h>(1.f);
-		buf_scene.set_var<"sky_rad_levels"_h>(1.f);
+		buf_scene.set_var<"sky_rad_levels"_h>(sky_rad_levels);
 		buf_scene.set_var<"fog_color"_h>(vec3(1.f));
 
 		buf_scene.set_var<"zNear"_h>(camera->zNear);

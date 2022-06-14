@@ -115,6 +115,7 @@ namespace flame
 		std::unique_ptr<graphics::DescriptorSet>										ds_instance;
 		std::unique_ptr<graphics::DescriptorSet>										ds_material;
 		std::unique_ptr<graphics::DescriptorSet>										ds_light;
+		float																			sky_rad_levels = 1.f;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_fwd;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_gbuf;
 		graphics::GraphicsPipelinePtr													pl_mesh_plain = nullptr;
