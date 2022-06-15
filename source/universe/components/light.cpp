@@ -8,14 +8,15 @@ namespace flame
 {
 	cLightPrivate::~cLightPrivate()
 	{
-		node->light_drawers.remove("light"_h);
+		node->drawers.remove("light"_h);
 		node->measurers.remove("light"_h);
 	}
 
 	void cLightPrivate::on_init()
 	{
-		node->light_drawers.add([this](sRendererPtr renderer) {
-			draw(renderer);
+		node->drawers.add([this](sRendererPtr renderer, uint pass) {
+			if (pass == "light"_h)
+				draw(renderer);
 		}, "light"_h);
 
 		node->measurers.add([this](AABB* ret) {
@@ -28,7 +29,7 @@ namespace flame
 				*ret = AABB(node->g_pos - range, node->g_pos + range);
 				return true;
 			case LightSpot:
-				*ret = AABB(node->g_pos - 10000.f, node->g_pos + range);
+				*ret = AABB(node->g_pos - range, node->g_pos + range);
 				return true;
 			}
 			return false;

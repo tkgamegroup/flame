@@ -54,9 +54,7 @@ namespace flame
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;
 
-		Listeners<void(sRendererPtr renderer)> drawers;
-		Listeners<void(sRendererPtr renderer)> occluder_drawers;
-		Listeners<void(sRendererPtr renderer)> light_drawers;
+		Listeners<void(sRendererPtr renderer, uint pass)> drawers;
 		Listeners<bool(AABB*)> measurers;
 
 		virtual void look_at(const vec3& t) = 0;

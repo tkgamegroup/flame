@@ -36,7 +36,6 @@ namespace flame
 			graphics::MaterialPtr mat = nullptr;
 			std::vector<std::pair<int, graphics::ImagePtr>> texs;
 			std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
-			std::vector<uint> draw_ids;
 			uint ref = 0;
 		};
 

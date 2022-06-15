@@ -51,8 +51,9 @@ namespace flame
 
 	void cArmaturePrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer) {
-			draw(renderer);
+		node->drawers.add([this](sRendererPtr renderer, uint pass) {
+			if (pass == "armature"_h)
+				draw(renderer);
 		}, "armature"_h);
 
 		node->measurers.add([this](AABB* ret) {

@@ -33,7 +33,6 @@ namespace flame
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
-		node->occluder_drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
 		node->data_listeners.remove("mesh"_h);
 
