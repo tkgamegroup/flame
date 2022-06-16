@@ -47,9 +47,6 @@ namespace flame
 		float transition_time = -1.f;
 		float transition_duration = 0.f;
 
-		int changed_frame = -1;
-		int updated_frame = -1;
-
 		cArmaturePrivate();
 		~cArmaturePrivate();
 		void on_init() override;
@@ -64,5 +61,6 @@ namespace flame
 
 		void on_active() override;
 		void on_inactive() override;
+		void update() override;
 	};
 }
