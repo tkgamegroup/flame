@@ -8,10 +8,6 @@ namespace flame
 	{
 		cArmaturePtr parmature = nullptr;
 
-		int changed_frame = -1;
-		int updated_frame = -1;
-
-		cMeshPrivate();
 		~cMeshPrivate();
 		void on_init() override;
 
@@ -20,7 +16,7 @@ namespace flame
 
 		void set_cast_shadow(bool v) override;
 
-		void draw(sRendererPtr renderer, bool shadow_pass);
+		void draw(sRendererPtr renderer, uint pass);
 
 		void on_active() override;
 		void on_inactive() override;

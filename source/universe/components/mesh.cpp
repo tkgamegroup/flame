@@ -25,16 +25,10 @@ namespace flame
 		return std::make_pair(name, idx);
 	}
 
-	cMeshPrivate::cMeshPrivate()
-	{
-		changed_frame = frames;
-	}
-
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
-		node->data_listeners.remove("mesh"_h);
 
 		if (mesh_res_id != -1)
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
@@ -48,21 +42,14 @@ namespace flame
 
 	void cMeshPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer) {
-			draw(renderer, false);
-		}, "mesh"_h);
-		node->occluder_drawers.add([this](sRendererPtr renderer) {
-			draw(renderer, true);
+		node->drawers.add([this](sRendererPtr renderer, uint pass) {
+			draw(renderer, pass);
 		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!mesh)
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
-		}, "mesh"_h);
-		node->data_listeners.add([this](uint h) {
-			if (h == "transform"_h)
-				changed_frame = frames;
 		}, "mesh"_h);
 
 		node->mark_transform_dirty();
@@ -145,25 +132,34 @@ namespace flame
 		data_changed("cast_shadow"_h);
 	}
 
-	void cMeshPrivate::draw(sRendererPtr renderer, bool shadow_pass)
+	void cMeshPrivate::draw(sRendererPtr renderer, uint pass)
 	{
 		if (mesh_res_id == -1 || instance_id == -1)
 			return;
 
-		if (!parmature && updated_frame < changed_frame)
+		switch (pass)
 		{
-			renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
-			updated_frame = frames;
+		case "instance"_h:
+			if (!parmature)
+				renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
+			break;
+		case "mesh"_h:
+			if (!parmature)
+				renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
+			break;
+		case "armature_mesh"_h:
+			if (parmature)
+				renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
+			break;
+		case "mesh_occulder"_h:
+			if (!parmature && cast_shadow)
+				renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
+			break;
+		case "armature_mesh_occulder"_h:
+			if (parmature && cast_shadow)
+				renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
+			break;
 		}
-
-		auto mat_id = material_res_id == -1 ? 0 : material_res_id;
-		if (shadow_pass)
-		{
-			if (cast_shadow)
-				renderer->draw_mesh_occluder(instance_id, mesh_res_id, mat_id);
-		}
-		else
-			renderer->draw_mesh(instance_id, mesh_res_id, mat_id);
 	}
 
 	void cMeshPrivate::on_active()

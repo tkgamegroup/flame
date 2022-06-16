@@ -63,22 +63,11 @@ namespace flame
 		std::vector<TexRes>	tex_reses;
 		std::vector<MatRes> mat_reses;
 
-		cNodePtr current_node = nullptr;
+		cNodePtr current_node = nullptr; 
+		graphics::CommandBufferPtr current_cb = nullptr;
 		int sky_map_res_id = -1;
 		int sky_irr_map_res_id = -1;
 		int sky_rad_map_res_id = -1;
-		//std::vector<DrawLine>										draw_lines;
-		//std::vector<DrawMesh>										draw_meshes;
-		//std::vector<DrawMesh>										draw_arm_meshes;
-		//std::vector<DrawMesh>										draw_occluder_meshes;
-		//std::vector<DrawMesh>										draw_occluder_arm_meshes;
-		//std::vector<DrawMesh>										draw_outline_meshes;
-		//std::vector<DrawMesh>										draw_outline_arm_meshes;
-		//std::vector<DrawMesh>										draw_wireframe_meshes;
-		//std::vector<DrawMesh>										draw_wireframe_arm_meshes;
-		//std::vector<DrawTerrain>									draw_terrains;
-		//std::vector<DrawTerrain>									draw_outline_terrains;
-		//std::vector<DrawTerrain>									draw_wireframe_terrains;
 		std::vector<DirectionalLight>								dir_lights;
 		std::vector<PointLight>										pt_lights;
 		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		opaque_mesh_draws;
@@ -175,7 +164,7 @@ namespace flame
 
 		graphics::ImageLayout final_layout;
 
-		sRendererPrivate() {}
+		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;

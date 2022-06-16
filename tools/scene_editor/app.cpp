@@ -159,26 +159,29 @@ void App::init()
 						node->drawers.remove("navmesh_test"_h);
 					else
 					{
-						node->drawers.add([&](sRendererPtr renderer) {
+						node->drawers.add([&](sRendererPtr renderer, uint pass) {
+							if (pass == "lines"_h)
 							{
-								std::vector<vec3> points;
-								points.push_back(navmesh_test.start - vec3(1, 0, 0));
-								points.push_back(navmesh_test.start + vec3(1, 0, 0));
-								points.push_back(navmesh_test.start - vec3(0, 0, 1));
-								points.push_back(navmesh_test.start + vec3(0, 0, 1));
-								renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
+								{
+									std::vector<vec3> points;
+									points.push_back(navmesh_test.start - vec3(1, 0, 0));
+									points.push_back(navmesh_test.start + vec3(1, 0, 0));
+									points.push_back(navmesh_test.start - vec3(0, 0, 1));
+									points.push_back(navmesh_test.start + vec3(0, 0, 1));
+									renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
+								}
+								{
+									std::vector<vec3> points;
+									points.push_back(navmesh_test.end - vec3(1, 0, 0));
+									points.push_back(navmesh_test.end + vec3(1, 0, 0));
+									points.push_back(navmesh_test.end - vec3(0, 0, 1));
+									points.push_back(navmesh_test.end + vec3(0, 0, 1));
+									renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
+								}
+								if (!navmesh_test.points.empty())
+									renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
 							}
-							{
-								std::vector<vec3> points;
-								points.push_back(navmesh_test.end - vec3(1, 0, 0));
-								points.push_back(navmesh_test.end + vec3(1, 0, 0));
-								points.push_back(navmesh_test.end - vec3(0, 0, 1));
-								points.push_back(navmesh_test.end + vec3(0, 0, 1));
-								renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
-							}
-							if (!navmesh_test.points.empty())
-								renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
-							}, "navmesh_test"_h);
+						}, "navmesh_test"_h);
 					}
 				}
 			}

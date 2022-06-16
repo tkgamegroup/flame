@@ -41,8 +41,7 @@ namespace flame
 	void cArmaturePrivate::on_init()
 	{
 		node->drawers.add([this](sRendererPtr renderer, uint pass) {
-			if (pass == "armature"_h)
-				draw(renderer);
+			draw(renderer, pass);
 		}, "armature"_h);
 
 		node->measurers.add([this](AABB* ret) {
@@ -125,70 +124,74 @@ namespace flame
 		transition_time = -1.f;
 	}
 
-	void cArmaturePrivate::draw(sRendererPtr renderer)
+	void cArmaturePrivate::draw(sRendererPtr renderer, uint pass)
 	{
 		if (instance_id == -1)
 			return;
-		if (playing_name != 0)
-		{
-			auto& a = animations[playing_name];
-			if (transition_time >= 0.f)
-			{
-				for (auto& t : a.tracks)
-				{
-					auto& b = bones[t.bone_idx];
-					if (!t.positions.empty())
-					{
-						b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / transition_duration);
-						b.node->set_pos(b.pose.p);
-					}
-					if (!t.rotations.empty())
-					{
-						b.pose.q = slerp(b.pose.q, t.rotations.front().second, transition_time / transition_duration);
-						b.node->set_qut(b.pose.q);
-					}
-				}
-			}
-			else
-			{
-				for (auto& t : a.tracks)
-				{
-					auto& b = bones[t.bone_idx];
-					if (!t.positions.empty())
-					{
-						auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
-							return i.first < v;
-						});
-						auto lit = rit;
-						if (lit != t.positions.begin())
-							lit--;
-						if (lit == rit)
-							b.pose.p = lit->second;
-						else
-							b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
-						b.node->set_pos(b.pose.p);
-					}
-					if (!t.rotations.empty())
-					{
-						auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
-							return i.first < v;
-						});
-						auto lit = rit;
-						if (lit != t.rotations.begin())
-							lit--;
-						if (lit == rit)
-							b.pose.q = lit->second;
-						else
-							b.pose.q = slerp(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
-						b.node->set_qut(b.pose.q);
-					}
-				}
-			}
-		}
 
-		auto dst = renderer->set_armature_instance(instance_id);
-		for (auto i = 0; i < bones.size(); i++)
-			dst[i] = bones[i].calc_mat();
+		if (pass == "instance"_h)
+		{
+			if (playing_name != 0)
+			{
+				auto& a = animations[playing_name];
+				if (transition_time >= 0.f)
+				{
+					for (auto& t : a.tracks)
+					{
+						auto& b = bones[t.bone_idx];
+						if (!t.positions.empty())
+						{
+							b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / transition_duration);
+							b.node->set_pos(b.pose.p);
+						}
+						if (!t.rotations.empty())
+						{
+							b.pose.q = slerp(b.pose.q, t.rotations.front().second, transition_time / transition_duration);
+							b.node->set_qut(b.pose.q);
+						}
+					}
+				}
+				else
+				{
+					for (auto& t : a.tracks)
+					{
+						auto& b = bones[t.bone_idx];
+						if (!t.positions.empty())
+						{
+							auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
+								return i.first < v;
+								});
+							auto lit = rit;
+							if (lit != t.positions.begin())
+								lit--;
+							if (lit == rit)
+								b.pose.p = lit->second;
+							else
+								b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.node->set_pos(b.pose.p);
+						}
+						if (!t.rotations.empty())
+						{
+							auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
+								return i.first < v;
+								});
+							auto lit = rit;
+							if (lit != t.rotations.begin())
+								lit--;
+							if (lit == rit)
+								b.pose.q = lit->second;
+							else
+								b.pose.q = slerp(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.node->set_qut(b.pose.q);
+						}
+					}
+				}
+			}
+
+			auto dst = renderer->set_armature_instance(instance_id);
+			for (auto i = 0; i < bones.size(); i++)
+				dst[i] = bones[i].calc_mat();
+		}
 	}
 
 	void cArmaturePrivate::on_active()

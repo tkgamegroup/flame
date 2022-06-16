@@ -7,16 +7,10 @@
 
 namespace flame
 {
-	cTerrainPrivate::cTerrainPrivate()
-	{
-		changed_frame = frames;
-	}
-
 	cTerrainPrivate::~cTerrainPrivate()
 	{
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
-		node->data_listeners.remove("mesh"_h);
 
 		graphics::Queue::get()->wait_idle();
 		if (height_map)
@@ -29,19 +23,15 @@ namespace flame
 
 	void cTerrainPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer) {
-			draw(renderer);
-		}, "mesh"_h);
+		node->drawers.add([this](sRendererPtr renderer, uint pass) {
+			draw(renderer, pass);
+		}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
-		}, "mesh"_h);
-		node->data_listeners.add([this](uint h) {
-			if (h == "transform"_h)
-				changed_frame = frames;
-		}, "mesh"_h);
+		}, "terrain"_h);
 
 		node->mark_transform_dirty();
 	}
@@ -55,7 +45,6 @@ namespace flame
 
 		update_normal_map();
 
-		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("extent"_h);
 	}
@@ -68,7 +57,6 @@ namespace flame
 
 		update_normal_map();
 
-		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("blocks"_h);
 	}
@@ -81,7 +69,6 @@ namespace flame
 
 		update_normal_map();
 
-		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("tess_level"_h);
 	}
@@ -107,7 +94,6 @@ namespace flame
 		else if (_height_map)
 			graphics::Image::release(_height_map);
 
-		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
 	}
@@ -133,7 +119,6 @@ namespace flame
 		else if (_splash_map)
 			graphics::Image::release(_splash_map);
 
-		changed_frame = frames;
 		node->mark_transform_dirty();
 		data_changed("splash_map_name"_h);
 	}
@@ -230,23 +215,23 @@ namespace flame
 		cb->copy_buffer_to_image(tan_stag.get(), tangent_map, { &cpy, 1 });
 		cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 		cb.excute();
-
-		changed_frame = frames;
 	}
 
-	void cTerrainPrivate::draw(sRendererPtr renderer)
+	void cTerrainPrivate::draw(sRendererPtr renderer, uint pass)
 	{
 		if (instance_id == -1 || !height_map || material_res_id == -1)
 			return;
 
-		if (updated_frame < changed_frame)
+		switch (pass)
 		{
-			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, 
+		case "instance"_h:
+			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
 				height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-			updated_frame = frames;
+			break;
+		case "terrain"_h:
+			renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
+			break;
 		}
-
-		renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
 	}
 
 	void cTerrainPrivate::on_active()

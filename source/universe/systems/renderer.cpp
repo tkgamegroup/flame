@@ -21,6 +21,10 @@ namespace flame
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const uvec2 shadow_map_size = uvec2(2048);
 
+	sRendererPrivate::sRendererPrivate() 
+	{
+	}
+
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
@@ -604,22 +608,22 @@ namespace flame
 		std::filesystem::path pipeline_name;
 		switch (type)
 		{
-		case "Mesh"_h:
+		case "mesh"_h:
 			pipeline_name = L"flame\\shaders\\mesh\\mesh.pipeline";
 			break;
-		case "Terrain"_h:
+		case "terrain"_h:
 			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
 			break;
 		}
 		switch (modifier1)
 		{
-		case "Armature"_h:
+		case "armature"_h:
 			defines.push_back("vert:ARMATURE");
 			break;
 		}
 		switch (modifier2)
 		{
-		case "CameraLight"_h:
+		case "CAMERA_LIGHT"_h:
 			defines.push_back("frag:CAMERA_LIGHT");
 			break;
 		}
@@ -645,7 +649,7 @@ namespace flame
 		std::vector<std::string> defines;
 		switch (modifier)
 		{
-		case "CameraLight"_h:
+		case "CAMERA_LIGHT"_h:
 			defines.push_back("frag:CAMERA_LIGHT");
 			break;
 		}
@@ -868,12 +872,8 @@ namespace flame
 
 	void sRendererPrivate::draw_terrain(uint instance_id, uint blocks, uint mat_id)
 	{
-		//DrawTerrain d;
-		//d.node = current_node;
-		//d.ins_id = instance_id;
-		//d.mat_id = mat_id;
-		//d.blocks = blocks;
-		//draw_terrains.push_back(d);
+		current_cb->bind_pipeline(get_material_pipeline(mat_reses[mat_id], "terrain"_h, 0, 0));
+		current_cb->draw(4, blocks, 0, (instance_id << 24) + (mat_id << 16));
 	}
 
 	void sRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color)
@@ -923,6 +923,7 @@ namespace flame
 			camera = list.front();
 		}
 
+		current_cb = cb;
 		tar_idx = min(max(0, (int)iv_tars.size() - 1), (int)tar_idx);
 		auto iv = iv_tars[tar_idx];
 		auto img = iv->image;
@@ -936,16 +937,16 @@ namespace flame
 		std::vector<cNodePtr> camera_culled_nodes;
 		sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 		current_node = nullptr;
-		for (auto& n : camera_culled_nodes)
+		for (auto n : camera_culled_nodes)
 		{
 			current_node = n;
-			n->draw(this, "Mesh"_h);
+			n->draw(this, "instance"_h);
 		}
 		current_node = nullptr;
-		for (auto& n : camera_culled_nodes)
+		for (auto n : camera_culled_nodes)
 		{
 			current_node = n;
-			n->draw(this, "Light"_h);
+			n->draw(this, "light"_h);
 		}
 
 		buf_scene.set_var<"sky_intensity"_h>(1.f);
@@ -1080,7 +1081,6 @@ namespace flame
 
 			prm_gbuf.bind_dss(cb);
 
-			auto pl_mod = 0;
 			auto idr_off = 0;
 			//if (!draw_meshes.empty())
 			//{
@@ -1091,7 +1091,7 @@ namespace flame
 			//		auto& mr = mat_reses[mid];
 			//		auto num = mr.draw_ids.size();
 			//		mr.draw_ids.clear();
-			//		cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h, 0, pl_mod));
+			//		cb->bind_pipeline(get_material_pipeline(mr, "mesh"_h, 0, 0));
 			//		cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 			//		idr_off += num;
 			//	}
@@ -1106,21 +1106,14 @@ namespace flame
 			//		auto& mr = mat_reses[mid];
 			//		auto num = mr.draw_ids.size();
 			//		mr.draw_ids.clear();
-			//		cb->bind_pipeline(get_material_pipeline(mr, "Mesh"_h, "Armature"_h, pl_mod));
+			//		cb->bind_pipeline(get_material_pipeline(mr, "mesh"_h, "armature"_h, 0));
 			//		cb->draw_indexed_indirect(buf_idr_mesh.buf.get(), idr_off, num);
 			//		idr_off += num;
 			//	}
 			//	opaque_arm_mesh_draws.clear();
 			//}
-			//if (!draw_terrains.empty())
-			//{
-			//	for (auto& d : draw_terrains)
-			//	{
-			//		auto& mr = mat_reses[d.mat_id];
-			//		cb->bind_pipeline(get_material_pipeline(mr, "Terrain"_h, 0, pl_mod));
-			//		cb->draw(4, d.blocks, 0, (d.ins_id << 24) + (d.mat_id << 16));
-			//	}
-			//}
+			for (auto n : camera_culled_nodes)
+				n->draw(this, "terrain"_h);
 
 			cb->end_renderpass();
 
@@ -1142,9 +1135,10 @@ namespace flame
 			cb->begin_renderpass(nullptr, img_ao->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f)});
 			cb->end_renderpass();
 
+			auto pl_mod = 0;
 			// CameraLight modifier is use in deferred pipeline of opaque rendering
 			if (type == CameraLight)
-				pl_mod = "CameraLight"_h;
+				pl_mod = "CAMERA_LIGHT"_h;
 
 			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -1502,14 +1496,14 @@ namespace flame
 		index -= 1;
 		if (index == -1)
 			return nullptr;
-		if (index < draw_meshes.size())
-			return draw_meshes[index].node;
-		index -= draw_meshes.size();
-		if (index < draw_arm_meshes.size())
-			return draw_arm_meshes[index].node;
-		index -= draw_arm_meshes.size();
-		if (index < draw_terrains.size())
-			return draw_terrains[index].node;
+		//if (index < draw_meshes.size())
+		//	return draw_meshes[index].node;
+		//index -= draw_meshes.size();
+		//if (index < draw_arm_meshes.size())
+		//	return draw_arm_meshes[index].node;
+		//index -= draw_arm_meshes.size();
+		//if (index < draw_terrains.size())
+		//	return draw_terrains[index].node;
 		return nullptr;
 	}
 

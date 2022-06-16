@@ -6,15 +6,6 @@
 
 namespace flame
 {
-	cNodePrivate::~cNodePrivate()
-	{
-		if (!drawers.list.empty() || !measurers.list.empty() || !occluder_drawers.list.empty() || !light_drawers.list.empty())
-		{
-			if (entity->name.starts_with("mix"))
-				auto cut = 1;
-		}
-	}
-
 	void cNodePrivate::set_pos(const vec3& p)
 	{
 		if (pos == p)
@@ -171,21 +162,8 @@ namespace flame
 
 	void cNodePrivate::draw(sRendererPtr renderer, uint pass)
 	{
-		switch (pass)
-		{
-		case "Mesh"_h:
-			for (auto& d : drawers.list)
-				d.first(renderer);
-			break;
-		case "Occluder"_h:
-			for (auto& d : occluder_drawers.list)
-				d.first(renderer);
-			break;
-		case "Light"_h:
-			for (auto& d : light_drawers.list)
-				d.first(renderer);
-			break;
-		}
+		for (auto& d : drawers.list)
+			d.first(renderer, pass);
 	}
 
 	void cNodePrivate::on_active()

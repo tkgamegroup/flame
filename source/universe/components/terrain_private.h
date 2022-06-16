@@ -7,10 +7,6 @@ namespace flame
 {
 	struct cTerrainPrivate : cTerrain
 	{
-		int changed_frame = -1;
-		int updated_frame = -1;
-
-		cTerrainPrivate();
 		~cTerrainPrivate();
 		void on_init() override;
 
@@ -23,7 +19,7 @@ namespace flame
 
 		void update_normal_map() override;
 
-		void draw(sRendererPtr renderer);
+		void draw(sRendererPtr renderer, uint pass);
 
 		void on_active() override;
 		void on_inactive() override;

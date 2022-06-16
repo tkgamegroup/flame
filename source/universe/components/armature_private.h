@@ -47,7 +47,6 @@ namespace flame
 		float transition_time = -1.f;
 		float transition_duration = 0.f;
 
-		cArmaturePrivate();
 		~cArmaturePrivate();
 		void on_init() override;
 
@@ -57,7 +56,7 @@ namespace flame
 		void play(uint name, float transition) override;
 		void stop() override;
 
-		void draw(sRendererPtr renderer);
+		void draw(sRendererPtr renderer, uint pass);
 
 		void on_active() override;
 		void on_inactive() override;
