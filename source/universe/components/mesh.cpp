@@ -42,8 +42,28 @@ namespace flame
 
 	void cMeshPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass) {
-			draw(renderer, pass);
+		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+			if (mesh_res_id == -1 || instance_id == -1)
+				return;
+
+			switch (pass)
+			{
+			case "instance"_h:
+				if (!parmature)
+					renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
+				break;
+			case 0:
+				if (cat == "mesh"_h && !parmature || cat == "armature_mesh"_h && !parmature)
+					renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
+				break;
+			case "occulder"_h:
+				if (cast_shadow)
+				{
+					if (cat == "mesh"_h && !parmature || cat == "armature_mesh"_h && !parmature)
+						renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
+				}
+				break;
+			}
 		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!mesh)
@@ -130,36 +150,6 @@ namespace flame
 			return;
 		cast_shadow = v;
 		data_changed("cast_shadow"_h);
-	}
-
-	void cMeshPrivate::draw(sRendererPtr renderer, uint pass)
-	{
-		if (mesh_res_id == -1 || instance_id == -1)
-			return;
-
-		switch (pass)
-		{
-		case "instance"_h:
-			if (!parmature)
-				renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
-			break;
-		case "mesh"_h:
-			if (!parmature)
-				renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
-			break;
-		case "armature_mesh"_h:
-			if (parmature)
-				renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
-			break;
-		case "mesh_occulder"_h:
-			if (!parmature && cast_shadow)
-				renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
-			break;
-		case "armature_mesh_occulder"_h:
-			if (parmature && cast_shadow)
-				renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
-			break;
-		}
 	}
 
 	void cMeshPrivate::on_active()

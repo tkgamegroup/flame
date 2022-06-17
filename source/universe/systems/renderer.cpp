@@ -785,27 +785,11 @@ namespace flame
 		buf_light_info.set_var<"pos"_h>(pos);
 		buf_light_info.set_var<"color"_h>(color);
 		buf_light_info.set_var<"shadow_index"_h>(-1);
-
-		switch (type)
-		{
-		case LightDirectional:
-		{
-			DirectionalLight l;
-			l.node = current_node;
-			l.ins_id = instance_id;
-			l.dir = pos;
-			l.color = color;
-			l.range = range;
-			dir_lights.push_back(l);
-		}
-			break;
-		}
 	}
 
 	void sRendererPrivate::draw_line(const vec3* points, uint count, const cvec4& color)
 	{
 		//DrawLine d;
-		//d.node = current_node;
 		//d.offset = buf_lines.item_offset();
 		//d.count = count;
 		//d.color = color;
@@ -821,7 +805,6 @@ namespace flame
 	void sRendererPrivate::draw_mesh(uint instance_id, uint mesh_id, uint mat_id)
 	{
 		//DrawMesh d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.mesh_id = mesh_id;
 		//d.mat_id = mat_id;
@@ -834,7 +817,6 @@ namespace flame
 	void sRendererPrivate::draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id)
 	{
 		//DrawMesh d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.mesh_id = mesh_id;
 		//d.mat_id = mat_id;
@@ -847,7 +829,6 @@ namespace flame
 	void sRendererPrivate::draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color)
 	{
 		//DrawMesh d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.mesh_id = mesh_id;
 		//d.color = color;
@@ -860,7 +841,6 @@ namespace flame
 	void sRendererPrivate::draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color)
 	{
 		//DrawMesh d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.mesh_id = mesh_id;
 		//d.color = color;
@@ -879,7 +859,6 @@ namespace flame
 	void sRendererPrivate::draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color)
 	{
 		//DrawTerrain d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.blocks = blocks;
 		//d.color = color;
@@ -889,7 +868,6 @@ namespace flame
 	void sRendererPrivate::draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color)
 	{
 		//DrawTerrain d;
-		//d.node = current_node;
 		//d.ins_id = instance_id;
 		//d.blocks = blocks;
 		//d.color = color;
@@ -932,22 +910,12 @@ namespace flame
 		camera->aspect = sz.x / sz.y;
 		camera->update();
 
-		dir_lights.clear();
-
 		std::vector<cNodePtr> camera_culled_nodes;
 		sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
-		current_node = nullptr;
 		for (auto n : camera_culled_nodes)
-		{
-			current_node = n;
-			n->draw(this, "instance"_h);
-		}
-		current_node = nullptr;
+			n->draw(this, "instance"_h, 0);
 		for (auto n : camera_culled_nodes)
-		{
-			current_node = n;
-			n->draw(this, "light"_h);
-		}
+			n->draw(this, "light"_h, 0);
 
 		buf_scene.set_var<"sky_intensity"_h>(1.f);
 		buf_scene.set_var<"sky_rad_levels"_h>(sky_rad_levels);
@@ -969,7 +937,7 @@ namespace flame
 		
 		buf_scene.upload(cb);
 
-		switch (type)
+		switch (mode)
 		{
 		case Shaded:
 		case CameraLight:
@@ -1024,7 +992,7 @@ namespace flame
 			auto lit_idx_off = 0;
 			for (auto& l : dir_lights)
 			{
-				buf_light_index.push(1, &l.ins_id);
+				buf_light_index.push(1, &l.instance_id);
 				lit_idx_off++;
 			}
 			buf_light_grid.set_var<"offset"_h>(0);
@@ -1066,7 +1034,7 @@ namespace flame
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 
-		switch (type)
+		switch (mode)
 		{
 		case Shaded:
 		case CameraLight:
@@ -1113,11 +1081,11 @@ namespace flame
 			//	opaque_arm_mesh_draws.clear();
 			//}
 			for (auto n : camera_culled_nodes)
-				n->draw(this, "terrain"_h);
+				n->draw(this, 0, "terrain"_h);
 
 			cb->end_renderpass();
 
-			if (type != CameraLight)
+			if (mode != CameraLight)
 			{
 				//if (!draw_occluder_meshes.empty())
 				//{
@@ -1137,7 +1105,7 @@ namespace flame
 
 			auto pl_mod = 0;
 			// CameraLight modifier is use in deferred pipeline of opaque rendering
-			if (type == CameraLight)
+			if (mode == CameraLight)
 				pl_mod = "CAMERA_LIGHT"_h;
 
 			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);

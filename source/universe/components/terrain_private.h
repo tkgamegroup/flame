@@ -19,8 +19,6 @@ namespace flame
 
 		void update_normal_map() override;
 
-		void draw(sRendererPtr renderer, uint pass);
-
 		void on_active() override;
 		void on_inactive() override;
 	};

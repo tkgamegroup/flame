@@ -14,8 +14,6 @@ namespace flame
 		void set_range(float range) override;
 		void set_cast_shadow(bool cast_shadow) override;
 
-		void draw(sRendererPtr renderer);
-
 		void on_active() override;
 		void on_inactive() override;
 	};

@@ -7,7 +7,7 @@ namespace flame
 	/// Reflect
 	struct sRenderer : System
 	{
-		enum Type
+		enum Mode
 		{
 			Shaded,
 			CameraLight
@@ -39,7 +39,7 @@ namespace flame
 			uint ref = 0;
 		};
 
-		Type type = Shaded;
+		Mode mode = Shaded;
 		cCameraPtr camera = nullptr;
 
 		std::vector<graphics::ImageViewPtr> iv_tars;
@@ -92,19 +92,7 @@ namespace flame
 
 		// id == -1 to register or to unregister id
 		virtual int register_light_instance(int id) = 0;
-		virtual void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) = 0;
 
-		// you must call draw in a node's drawer
-
-		virtual void draw_line(const vec3* points, uint count, const cvec4& color) = 0;
-
-		virtual void draw_mesh(uint instance_id, uint mesh_id, uint mat_id) = 0;
-		virtual void draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id) = 0;
-		virtual void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) = 0;
-		virtual void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) = 0;
-		virtual void draw_terrain(uint instance_id, uint blocks, uint mat_id) = 0;
-		virtual void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) = 0;
-		virtual void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) = 0;
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr) = 0;

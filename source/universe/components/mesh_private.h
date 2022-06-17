@@ -16,8 +16,6 @@ namespace flame
 
 		void set_cast_shadow(bool v) override;
 
-		void draw(sRendererPtr renderer, uint pass);
-
 		void on_active() override;
 		void on_inactive() override;
 	};

@@ -160,10 +160,10 @@ namespace flame
 			sRenderer::instance()->dirty = true;
 	}
 
-	void cNodePrivate::draw(sRendererPtr renderer, uint pass)
+	void cNodePrivate::draw(sRendererPtr renderer, uint pass, uint cat)
 	{
 		for (auto& d : drawers.list)
-			d.first(renderer, pass);
+			d.first(renderer, pass, cat);
 	}
 
 	void cNodePrivate::on_active()

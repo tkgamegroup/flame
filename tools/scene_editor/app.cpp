@@ -159,7 +159,7 @@ void App::init()
 						node->drawers.remove("navmesh_test"_h);
 					else
 					{
-						node->drawers.add([&](sRendererPtr renderer, uint pass) {
+						node->drawers.add([&](sRendererPtr renderer, uint pass, uint cat) {
 							if (pass == "lines"_h)
 							{
 								{

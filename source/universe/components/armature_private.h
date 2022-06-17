@@ -56,8 +56,6 @@ namespace flame
 		void play(uint name, float transition) override;
 		void stop() override;
 
-		void draw(sRendererPtr renderer, uint pass);
-
 		void on_active() override;
 		void on_inactive() override;
 		void update() override;

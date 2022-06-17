@@ -9,46 +9,6 @@
 
 namespace flame
 {
-	struct DrawLine
-	{
-		cNodePtr node;
-		uint offset;
-		uint count;
-		cvec4 color;
-	};
-
-	struct DrawMesh
-	{
-		cNodePtr node;
-		uint ins_id;
-		uint mesh_id;
-		uint mat_id;
-		cvec4 color;
-	};
-
-	struct DrawTerrain
-	{
-		cNodePtr node;
-		uint ins_id;
-		uint blocks;
-		uint mat_id;
-		cvec4 color;
-	};
-
-	struct DirectionalLight
-	{
-		cNodePtr node;
-		uint ins_id;
-		vec3 dir;
-		vec3 color;
-		float range;
-	};
-
-	struct PointLight
-	{
-		cNodePtr node;
-	};
-
 	struct IndexedDraws
 	{
 		uint mat_id;
@@ -63,17 +23,12 @@ namespace flame
 		std::vector<TexRes>	tex_reses;
 		std::vector<MatRes> mat_reses;
 
-		cNodePtr current_node = nullptr; 
-		graphics::CommandBufferPtr current_cb = nullptr;
 		int sky_map_res_id = -1;
 		int sky_irr_map_res_id = -1;
 		int sky_rad_map_res_id = -1;
-		std::vector<DirectionalLight>								dir_lights;
-		std::vector<PointLight>										pt_lights;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		opaque_mesh_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		opaque_arm_mesh_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		transparent_mesh_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		transparent_arm_mesh_draws;
+		graphics::CommandBufferPtr									current_cb = nullptr;
+		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		mesh_draws;
+		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		arm_mesh_draws;
 		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		mesh_occulder_draws;
 		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		arm_mesh_occulder_draws;
 
@@ -200,17 +155,7 @@ namespace flame
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) override;
 
 		int register_light_instance(int id) override;
-		void add_light(uint instance_id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) override;
 
-		void draw_line(const vec3* points, uint count, const cvec4& color) override;
-
-		void draw_mesh(uint instance_id, uint mesh_id, uint mat_id) override;
-		void draw_mesh_occluder(uint instance_id, uint mesh_id, uint mat_id) override;
-		void draw_mesh_outline(uint instance_id, uint mesh_id, const cvec4& color) override;
-		void draw_mesh_wireframe(uint instance_id, uint mesh_id, const cvec4& color) override;
-		void draw_terrain(uint instance_id, uint blocks, uint mat_id) override;
-		void draw_terrain_outline(uint instance_id, uint blocks, const cvec4& color) override;
-		void draw_terrain_wireframe(uint instance_id, uint blocks, const cvec4& color) override;
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 
 		void update() override;

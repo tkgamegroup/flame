@@ -153,17 +153,17 @@ void View_Scene::on_draw()
 		auto editor_node = app.e_editor->get_component_i<cNode>(0);
 		if (!editor_node->drawers.exist("scene"_h))
 		{
-			editor_node->drawers.add([this](sRendererPtr renderer, uint pass) {
-				if (pass == "outline_mesh"_h || pass == "outline_terrain"_h)
+			editor_node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+				if (pass == "outline"_h)
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
-						switch (pass)
+						switch (cat)
 						{
-						case "outline_mesh"_h:
+						case "mesh"_h:
 							if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 								renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_res_id, col);
 							break;
-						case "outline_terrain"_h:
+						case "terrain"_h:
 							if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 								renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
 							break;

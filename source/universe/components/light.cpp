@@ -14,9 +14,12 @@ namespace flame
 
 	void cLightPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass) {
+		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
 			if (pass == "light"_h)
-				draw(renderer);
+			{
+				renderer->add_light(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos,
+					color.rgb() * color.a, range, cast_shadow);
+			}
 		}, "light"_h);
 
 		node->measurers.add([this](AABB* ret) {
@@ -80,12 +83,6 @@ namespace flame
 		node->mark_drawing_dirty();
 
 		data_changed("cast_shadow"_h);
-	}
-
-	void cLightPrivate::draw(sRendererPtr renderer)
-	{
-		renderer->add_light(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos, 
-			color.rgb() * color.a, range, cast_shadow);
 	}
 
 	void cLightPrivate::on_active()

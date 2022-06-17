@@ -23,8 +23,20 @@ namespace flame
 
 	void cTerrainPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass) {
-			draw(renderer, pass);
+		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+			if (instance_id == -1 || !height_map)
+				return;
+
+			switch (pass)
+			{
+			case "instance"_h:
+				renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
+					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+				break;
+			case 0:
+				renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
+				break;
+			}
 		}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
@@ -215,23 +227,6 @@ namespace flame
 		cb->copy_buffer_to_image(tan_stag.get(), tangent_map, { &cpy, 1 });
 		cb->image_barrier(tangent_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);
 		cb.excute();
-	}
-
-	void cTerrainPrivate::draw(sRendererPtr renderer, uint pass)
-	{
-		if (instance_id == -1 || !height_map || material_res_id == -1)
-			return;
-
-		switch (pass)
-		{
-		case "instance"_h:
-			renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
-				height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-			break;
-		case "terrain"_h:
-			renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
-			break;
-		}
 	}
 
 	void cTerrainPrivate::on_active()
