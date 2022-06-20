@@ -34,6 +34,7 @@ namespace flame
 		struct MatRes
 		{
 			graphics::MaterialPtr mat = nullptr;
+			bool opa;
 			std::vector<std::pair<int, graphics::ImagePtr>> texs;
 			std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
 			uint ref = 0;

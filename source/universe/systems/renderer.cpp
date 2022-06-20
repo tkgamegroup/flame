@@ -1,7 +1,6 @@
 #include "renderer_private.h"
 #include "scene_private.h"
 #include "../octree.h"
-#include "../draw_data.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
 #include "../components/camera_private.h"
@@ -571,6 +570,7 @@ namespace flame
 		auto& res = mat_reses[id];
 		res.mat = mat;
 		res.ref = 1;
+		res.opa = mat->opaque;
 		update_mat_res(id, false);
 		return id;
 	}
@@ -854,9 +854,11 @@ namespace flame
 		
 		buf_scene.upload(cb);
 
-		std::vector<mat3> dir_shadows;
 		draw_data.reset("light"_h, 0);
 		auto n_lights = 0;
+		auto n_dir_shadows = 0;
+		for (auto& s : dir_shadows)
+			s.culled_nodes.clear();
 		for (auto n : camera_culled_nodes)
 		{
 			n->draw(draw_data);
@@ -872,10 +874,13 @@ namespace flame
 				{
 					if (l.type == LightDirectional)
 					{
-						if (dir_shadows.size() < 4)
+						if (n_dir_shadows < countof(dir_shadows))
 						{
-							shadow_idx = dir_shadows.size();
-							dir_shadows.push_back(n->g_rot);
+							shadow_idx = n_dir_shadows;
+							auto& rot = dir_shadows[shadow_idx].rot;
+							rot = n->g_rot;
+							rot[2] *= -1.f;
+							n_dir_shadows++;
 						}
 					}
 				}
@@ -921,12 +926,12 @@ namespace flame
 			auto type = OpaqueMesh;
 			if (!mesh_r.arm)
 			{
-				if (!mat_r.mat->opaque)
+				if (!mat_r.opa)
 					type = TransparentMesh;
 			}
 			else
 			{
-				if (mat_r.mat->opaque)
+				if (mat_r.opa)
 					type = OpaqueArmatureMesh;
 				else
 					type = TransparentArmatureMesh;
@@ -948,6 +953,7 @@ namespace flame
 			}
 			buf_idr.upload(cb);
 		};
+
 		collect_idrs(OpaqueMesh);
 		collect_idrs(OpaqueArmatureMesh);
 
@@ -998,7 +1004,62 @@ namespace flame
 			{
 				for (auto& s : dir_shadows)
 				{
+					auto far = shadow_distance * camera->zFar;
+					auto splits = vec4(0.f);
+					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
+					for (auto i = 0; i < csm_levels; i++)
+					{
+						auto n = i / (float)csm_levels;
+						n = n * n * far;
+						auto f = (i + 1) / (float)csm_levels;
+						f = f * f * far;
+						splits[i] = f;
 
+						auto b = AABB(Frustum::get_points(camera->proj_view_mat_inv), inverse(s.rot));
+						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+						auto c = s.rot * b.center();
+
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
+						proj[1][1] *= -1.f;
+						auto view = lookAt(c + s.rot[2] * 10000.f, c, s.rot[1]);
+						sScene::instance()->octree->get_within_frustum(proj * view, s.culled_nodes);
+						auto z_min = +10000.f;
+						auto z_max = -10000.f;
+						draw_data.reset("occulder"_h, "mesh"_h);
+						auto n_draws = 0;
+						for (auto n : s.culled_nodes)
+						{
+							n->draw(draw_data);
+							if (draw_data.draw_meshes.size() > n_draws)
+							{
+								auto r = n->bounds.radius();
+								auto d = dot(n->g_pos, s.rot[2]);
+								z_min = min(d - r, z_min);
+								z_max = max(d + r, z_max);
+								for (auto i = n_draws; i < draw_data.draw_meshes.size(); i++)
+								{
+									auto& m = draw_data.draw_meshes[i];
+									auto& mesh_r = mesh_reses[m.mesh_id];
+									auto& mat_r = mat_reses[m.mat_id];
+									auto type = MeshOcculder;
+									if (mesh_r.arm)
+										type = ArmatureMeshOcculder;
+									mesh_buckets[type][get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, 0)].push_back(i);
+								}
+
+								n_draws = draw_data.draw_meshes.size();
+							}
+						}
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
+						proj[1][1] *= -1.f;
+						view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
+						mats[i] = proj * view;
+					}
+
+					buf_dir_shadow.set_var<"splits"_h>(splits);
+					buf_dir_shadow.set_var<"far"_h>(far);
+					buf_dir_shadow.next_item();
 				}
 			}
 
@@ -1061,8 +1122,8 @@ namespace flame
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 			cb->bind_pipeline(pl_tone);
 			prm_tone.bind_dss(cb);
-			prm_tone.set_pc_var<"white_point"_h>(4.f);
-			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / 2.2f);
+			prm_tone.set_pc_var<"white_point"_h>(white_point);
+			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / gamma);
 			prm_tone.push_constant(cb);
 			cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);

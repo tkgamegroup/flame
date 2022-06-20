@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer.h"
+#include "../draw_data.h"
 
 #include "../../graphics/image.h"
 #include "../../graphics/renderpass.h"
@@ -29,7 +30,8 @@ namespace flame
 
 	struct DirShadow
 	{
-
+		mat3 rot;
+		std::vector<cNodePtr> culled_nodes;
 	};
 
 	struct sRendererPrivate : sRenderer
@@ -43,7 +45,14 @@ namespace flame
 		int sky_map_res_id = -1;
 		int sky_irr_map_res_id = -1;
 		int sky_rad_map_res_id = -1;
-		std::unordered_map<graphics::GraphicsPipelinePtr, std::vector<uint>>			mesh_buckets[MeshTypeCount];
+		float sky_intensity = 1.f;
+		vec3 fog_color = vec3(1.f);
+		float white_point = 4.f;
+		float gamma = 2.2f;
+		uint csm_levels = 2;
+		float shadow_distance = 0.3f; // (0-1) of camera's far
+		float ssao_radius = 0.5f;
+		float ssao_bias = 0.025f;
 
 		std::unique_ptr<graphics::Image>												img_black;
 		std::unique_ptr<graphics::Image>												img_white;
@@ -132,9 +141,10 @@ namespace flame
 
 		graphics::ImageLayout final_layout;
 
-		std::vector<cNodePtr>	camera_culled_nodes;
-		DrawData				draw_data;
-
+		std::vector<cNodePtr>													camera_culled_nodes;
+		DrawData																draw_data;
+		std::unordered_map<graphics::GraphicsPipelinePtr, std::vector<uint>>	mesh_buckets[MeshTypeCount];
+		DirShadow																dir_shadows[4];
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);

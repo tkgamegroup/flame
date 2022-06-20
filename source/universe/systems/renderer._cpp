@@ -25,15 +25,6 @@ namespace flame
 
 	struct NodeRenderData
 	{
-		float white_point = 4.f;
-		float gamma = 2.2f;
-		uint dir_shadow_levels = 3U;
-		float dir_shadow_dist = 100.f;
-		float pt_shadow_dist = 20.f;
-		float pt_shadow_near = 0.1f;
-		float ssao_radius = 0.5f;
-		float ssao_bias = 0.025f;
-
 		std::vector<std::pair<uint, mat3>>				dir_shadows;
 		std::vector<std::pair<uint, vec3>>				pt_shadows;
 		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
@@ -64,11 +55,6 @@ namespace flame
 		Pipeline* pl_fxaa;
 
 		Pipeline* pl_bright;
-
-		NodeRenderData()
-		{
-			particles.emplace_back(0xffff, 0);
-		}
 	};
 
 	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
@@ -194,23 +180,6 @@ namespace flame
 
 		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
 		nd.ds_tone->update();
-	}
-
-	void sRendererPrivate::set_shadow_props(uint dir_levels, float dir_dist, float pt_dist)
-	{
-		auto& nd = *_nd;
-
-		nd.dir_shadow_levels = dir_levels;
-		nd.dir_shadow_dist = dir_dist;
-		nd.pt_shadow_dist = pt_dist;
-	}
-
-	void sRendererPrivate::set_ssao_props(float radius, float bias)
-	{
-		auto& nd = *_nd;
-
-		nd.ssao_radius = radius;
-		nd.ssao_bias = bias;
 	}
 
 	int sRendererPrivate::set_element_res(int idx, ImageView* iv, Sampler* sp)
@@ -451,15 +420,6 @@ namespace flame
 		info.indices[5] = 2;
 	}
 
-	void sRendererPrivate::set_sky(ImageView* box, ImageView* irr,
-		ImageView* rad, ImageView* lut, const vec3& fog_color, float intensity, void* id)
-	{
-		auto& data = *nd.buf_render_data.pstag;
-		data.fog_color = fog_color;
-		data.sky_intensity = intensity;
-		data.sky_rad_levels = rad->get_sub().level_count - 1;
-	}
-
 	uint sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
 	{
 		auto& nd = *_nd;
@@ -662,8 +622,6 @@ namespace flame
 				for (auto& s : nd.dir_shadows)
 				{
 					auto rot = s.second;
-					rot[2] *= -1.f;
-					auto inv = inverse(rot);
 
 					auto& data = nd.buf_dir_shadows.add_item();
 					data.far = camera->far;

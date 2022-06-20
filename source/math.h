@@ -316,15 +316,15 @@ namespace flame
 			b = center + hf_size;
 		}
 
-		AABB(uint count, const vec3* points)
+		AABB(uint count, const vec3* points, const mat3& mat = mat3(1.f))
 		{
 			reset();
 			for (auto i = 0; i < count; i++)
-				expand(points[i]);
+				expand(mat * points[i]);
 		}
 
-		AABB(const std::vector<vec3>& points) :
-			AABB(points.size(), points.data())
+		AABB(const std::vector<vec3>& points, const mat3& mat = mat3(1.f)) :
+			AABB(points.size(), points.data(), mat)
 		{
 		}
 
@@ -342,6 +342,11 @@ namespace flame
 		vec3 center() const
 		{
 			return (a + b) * 0.5f;
+		}
+
+		float radius() const
+		{
+			return distance(a, b) * 0.5f;
 		}
 
 		void get_points(vec3* dst, const mat4& m = mat4(1.f)) const
@@ -461,6 +466,26 @@ namespace flame
 			planes[5] = Plane(points[2], points[6], points[7]); // bottom
 		}
 
+		static std::vector<vec3> get_points(const mat4& inv, float n = 0.f, float f = 1.f)
+		{
+			std::vector<vec3> ret;
+			ret.resize(8);
+			auto trans_point = [&](const vec3& p) {
+				auto ret = inv * vec4(p, 1.f);
+				ret /= ret.w;
+				return ret;
+			};
+			ret[0] = trans_point(vec3(-1.f, -1.f, n));
+			ret[1] = trans_point(vec3(+1.f, -1.f, n));
+			ret[2] = trans_point(vec3(+1.f, +1.f, n));
+			ret[3] = trans_point(vec3(-1.f, +1.f, n));
+			ret[4] = trans_point(vec3(-1.f, -1.f, f));
+			ret[5] = trans_point(vec3(+1.f, -1.f, f));
+			ret[6] = trans_point(vec3(+1.f, +1.f, f));
+			ret[7] = trans_point(vec3(-1.f, +1.f, f));
+			return ret;
+		}
+
 		Frustum(const vec3* points)
 		{
 			set(points);
@@ -468,21 +493,7 @@ namespace flame
 
 		Frustum(const mat4& inv)
 		{
-			vec3 points[8];
-			auto trans_point = [&](const vec3& p) {
-				auto ret = inv * vec4(p, 1.f);
-				ret /= ret.w;
-				return ret;
-			};
-			points[0] = trans_point(vec3(-1.f, -1.f, 0.f));
-			points[1] = trans_point(vec3(+1.f, -1.f, 0.f));
-			points[2] = trans_point(vec3(+1.f, +1.f, 0.f));
-			points[3] = trans_point(vec3(-1.f, +1.f, 0.f));
-			points[4] = trans_point(vec3(-1.f, -1.f, 1.f));
-			points[5] = trans_point(vec3(+1.f, -1.f, 1.f));
-			points[6] = trans_point(vec3(+1.f, +1.f, 1.f));
-			points[7] = trans_point(vec3(-1.f, +1.f, 1.f));
-			set(points);
+			set(get_points(inv).data());
 		}
 	};
 
