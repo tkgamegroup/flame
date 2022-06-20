@@ -15,6 +15,23 @@ namespace flame
 		std::vector<uint> draw_ids;
 	};
 
+	enum MeshType
+	{
+		OpaqueMesh,
+		OpaqueArmatureMesh,
+		TransparentMesh,
+		TransparentArmatureMesh,
+		MeshOcculder,
+		ArmatureMeshOcculder,
+
+		MeshTypeCount
+	};
+
+	struct DirShadow
+	{
+
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		graphics::WindowPtr window;
@@ -26,11 +43,7 @@ namespace flame
 		int sky_map_res_id = -1;
 		int sky_irr_map_res_id = -1;
 		int sky_rad_map_res_id = -1;
-		graphics::CommandBufferPtr									current_cb = nullptr;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		mesh_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		arm_mesh_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		mesh_occulder_draws;
-		std::unordered_map<graphics::GraphicsPipelinePtr, uint>		arm_mesh_occulder_draws;
+		std::unordered_map<graphics::GraphicsPipelinePtr, std::vector<uint>>			mesh_buckets[MeshTypeCount];
 
 		std::unique_ptr<graphics::Image>												img_black;
 		std::unique_ptr<graphics::Image>												img_white;
@@ -86,7 +99,7 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>			buf_vtx_arm;
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>			buf_idx_arm;
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				buf_idr_mesh;
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect>				bufs_idr_mesh[MeshTypeCount];
 		std::unordered_map<uint, graphics::GraphicsPipelinePtr>							pls_deferred;
 		graphics::PipelineResourceManager<FLAME_UID>									prm_deferred;
 		std::unique_ptr<graphics::DescriptorSet>										ds_deferred;
@@ -118,6 +131,10 @@ namespace flame
 		std::unique_ptr<graphics::Fence>												fence_pickup;
 
 		graphics::ImageLayout final_layout;
+
+		std::vector<cNodePtr>	camera_culled_nodes;
+		DrawData				draw_data;
+
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);

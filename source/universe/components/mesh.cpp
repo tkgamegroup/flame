@@ -6,6 +6,7 @@
 #include "node_private.h"
 #include "mesh_private.h"
 #include "armature_private.h"
+#include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -42,25 +43,25 @@ namespace flame
 
 	void cMeshPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+		node->drawers.add([this](DrawData& draw_data) {
 			if (mesh_res_id == -1 || instance_id == -1)
 				return;
 
-			switch (pass)
+			switch (draw_data.pass)
 			{
 			case "instance"_h:
 				if (!parmature)
-					renderer->set_mesh_instance(instance_id, node->transform, node->g_rot);
+					sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
 				break;
-			case 0:
-				if (cat == "mesh"_h && !parmature || cat == "armature_mesh"_h && !parmature)
-					renderer->draw_mesh(instance_id, mesh_res_id, material_res_id);
+			case "draw"_h:
+				if (draw_data.category == "mesh"_h)
+					draw_data.draw_meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case "occulder"_h:
 				if (cast_shadow)
 				{
-					if (cat == "mesh"_h && !parmature || cat == "armature_mesh"_h && !parmature)
-						renderer->draw_mesh_occluder(instance_id, mesh_res_id, material_res_id);
+					if (draw_data.category == "mesh"_h)
+						draw_data.draw_meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				}
 				break;
 			}

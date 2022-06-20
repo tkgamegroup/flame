@@ -32,7 +32,7 @@ namespace flame
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
 
-		void draw(sRendererPtr renderer, uint pass, uint cat);
+		void draw(DrawData& draw_data);
 
 		void on_active() override;
 		void on_inactive() override;

@@ -3,6 +3,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "terrain_private.h"
+#include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -23,18 +24,18 @@ namespace flame
 
 	void cTerrainPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+		node->drawers.add([this](DrawData& draw_data) {
 			if (instance_id == -1 || !height_map)
 				return;
 
-			switch (pass)
+			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				renderer->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
+				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				break;
-			case 0:
-				renderer->draw_terrain(instance_id, blocks.x * blocks.y, material_res_id);
+			case "draw"_h:
+				draw_data.draw_terrains.emplace_back(instance_id, blocks.x * blocks.y, material_res_id);
 				break;
 			}
 		}, "terrain"_h);

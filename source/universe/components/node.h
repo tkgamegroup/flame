@@ -1,10 +1,11 @@
 #pragma once
 
 #include "../component.h"
-#include "../draw_data.h"
 
 namespace flame
 {
+	struct DrawData;
+
 	/// Reflect ctor
 	struct cNode : Component
 	{

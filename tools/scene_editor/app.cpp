@@ -6,6 +6,7 @@
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
+#include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -69,7 +70,7 @@ void App::init()
 	create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	world->update_components = false;
 	always_render = false;
-	renderer->type = sRenderer::CameraLight;
+	renderer->mode = sRenderer::CameraLight;
 
 	auto root = world->root.get();
 	root->add_component(th<cNode>());
@@ -159,8 +160,8 @@ void App::init()
 						node->drawers.remove("navmesh_test"_h);
 					else
 					{
-						node->drawers.add([&](sRendererPtr renderer, uint pass, uint cat) {
-							if (pass == "lines"_h)
+						node->drawers.add([&](DrawData& draw_data) {
+							if (draw_data.pass == "lines"_h)
 							{
 								{
 									std::vector<vec3> points;
@@ -168,7 +169,7 @@ void App::init()
 									points.push_back(navmesh_test.start + vec3(1, 0, 0));
 									points.push_back(navmesh_test.start - vec3(0, 0, 1));
 									points.push_back(navmesh_test.start + vec3(0, 0, 1));
-									renderer->draw_line(points.data(), points.size(), cvec4(0, 255, 0, 255));
+									draw_data.draw_lines.emplace_back(std::move(points), cvec4(0, 255, 0, 255));
 								}
 								{
 									std::vector<vec3> points;
@@ -176,10 +177,10 @@ void App::init()
 									points.push_back(navmesh_test.end + vec3(1, 0, 0));
 									points.push_back(navmesh_test.end - vec3(0, 0, 1));
 									points.push_back(navmesh_test.end + vec3(0, 0, 1));
-									renderer->draw_line(points.data(), points.size(), cvec4(0, 0, 255, 255));
+									draw_data.draw_lines.emplace_back(std::move(points), cvec4(0, 0, 255, 255));
 								}
 								if (!navmesh_test.points.empty())
-									renderer->draw_line(navmesh_test.points.data(), navmesh_test.points.size(), cvec4(255, 0, 0, 255));
+									draw_data.draw_lines.emplace_back(std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
 							}
 						}, "navmesh_test"_h);
 					}
@@ -207,10 +208,10 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Render"))
 		{
-			if (ImGui::MenuItem("Shaded", nullptr, renderer->type == sRenderer::Shaded))
-				renderer->type = sRenderer::Shaded;
-			if (ImGui::MenuItem("Camera Light", nullptr, renderer->type == sRenderer::CameraLight))
-				renderer->type = sRenderer::CameraLight;
+			if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == sRenderer::Shaded))
+				renderer->mode = sRenderer::Shaded;
+			if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == sRenderer::CameraLight))
+				renderer->mode = sRenderer::CameraLight;
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();

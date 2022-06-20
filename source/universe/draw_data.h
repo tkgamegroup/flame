@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../math.h"
+
 namespace flame
 {
 	struct MeshDraw
@@ -8,28 +10,70 @@ namespace flame
 		uint mesh_id;
 		uint mat_id;
 		cvec4 color;
+
+		MeshDraw(uint instance_id, uint mesh_id, uint mat_id, const cvec4& color = cvec4()) :
+			instance_id(instance_id),
+			mesh_id(mesh_id),
+			mat_id(mat_id),
+			color(color)
+		{
+		}
 	};
 
 	struct TerrainDraw
 	{
 		uint instance_id;
 		uint blocks;
+		uint mat_id;
 		cvec4 color;
+
+		TerrainDraw(uint instance_id, uint blocks, uint mat_id, const cvec4& color = cvec4()) :
+			instance_id(instance_id),
+			blocks(blocks),
+			mat_id(mat_id),
+			color(color)
+		{
+		}
 	};
 
 	struct LinesDraw
 	{
-		const vec3* points;
-		uint count;
+		std::vector<vec3> points;
 		cvec4 color;
+
+		LinesDraw(std::vector<vec3>&& points, const cvec4& color) :
+			points(points),
+			color(color)
+		{
+		}
+
+		LinesDraw(const vec3* _points, uint count, const cvec4& color) :
+			color(color)
+		{
+			points.resize(count);
+			for (auto i = 0; i < count; i++)
+				points[i] = _points[i];
+		}
 	};
 
-	struct DirectionalLight
+	struct Light
 	{
 		uint instance_id;
-		vec3 dir;
+		int type;
+		vec3 pos;
 		vec3 color;
 		float range;
+		bool cast_shadow;
+
+		Light(uint instance_id, int type, const vec3& pos, const vec3& color, float range, bool cast_shadow) :
+			instance_id(instance_id),
+			type(type),
+			pos(pos),
+			color(color),
+			range(range),
+			cast_shadow(cast_shadow)
+		{
+		}
 	};
 
 	struct DrawData
@@ -37,9 +81,20 @@ namespace flame
 		uint pass;
 		uint category;
 
+		std::vector<Light> lights;
 		std::vector<MeshDraw> draw_meshes;
 		std::vector<TerrainDraw> draw_terrains;
 		std::vector<LinesDraw> draw_lines;
-		std::vector<DirectionalLight> directional_lights;
+
+		void reset(uint _pass, uint _category)
+		{
+			pass = _pass;
+			category = _category;
+
+			lights.clear();
+			draw_meshes.clear();
+			draw_terrains.clear();
+			draw_lines.clear();
+		}
 	};
 }

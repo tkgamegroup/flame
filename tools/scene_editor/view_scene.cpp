@@ -2,6 +2,7 @@
 #include "selection.h"
 
 #include <flame/foundation/typeinfo.h>
+#include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -153,21 +154,14 @@ void View_Scene::on_draw()
 		auto editor_node = app.e_editor->get_component_i<cNode>(0);
 		if (!editor_node->drawers.exist("scene"_h))
 		{
-			editor_node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
-				if (pass == "outline"_h)
+			editor_node->drawers.add([this](DrawData& draw_data) {
+				if (draw_data.pass == "outline"_h)
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
-						switch (cat)
-						{
-						case "mesh"_h:
-							if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-								renderer->draw_mesh_outline(mesh->instance_id, mesh->mesh_res_id, col);
-							break;
-						case "terrain"_h:
-							if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
-								renderer->draw_terrain_outline(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, col);
-							break;
-						}
+						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+							draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
+						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
+							draw_data.draw_terrains.emplace_back(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, 0, col);
 					};
 					if (hovering_node && selection.selecting(hovering_node->entity))
 						outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));
@@ -179,11 +173,11 @@ void View_Scene::on_draw()
 							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
 					}
 				}
-				else if (pass == "lines"_h)
+				else if (draw_data.pass == "lines"_h)
 				{
 					if (show_AABB)
 					{
-						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
 							if (!e->global_enable)
 								return false;
 							if (auto node = e->get_component_i<cNode>(0); node)
@@ -205,11 +199,11 @@ void View_Scene::on_draw()
 									*p++ = points[5]; *p++ = points[6];
 									*p++ = points[6]; *p++ = points[7];
 									*p++ = points[7]; *p++ = points[4];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
+									draw_data.draw_lines.emplace_back(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
 								}
 							}
 							return true;
-							});
+						});
 					}
 					if (show_axis)
 					{
@@ -222,24 +216,24 @@ void View_Scene::on_draw()
 								{
 									vec3 line_pts[2];
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(255, 0, 0, 255));
+									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(255, 0, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 255, 0, 255));
+									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(0, 255, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
-									renderer->draw_line(line_pts, countof(line_pts), cvec4(0, 0, 255, 255));
+									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(0, 0, 255, 255));
 								}
 							}
 						}
 					}
 					if (show_bones)
 					{
-						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
 							if (!e->global_enable)
 								return false;
 							if (auto arm = e->get_component_t<cArmature>(); arm)
 							{
 								std::function<void(cNodePtr)> draw_node;
-								draw_node = [&, renderer](cNodePtr n) {
+								draw_node = [&](cNodePtr n) {
 									vec3 line_pts[2];
 									line_pts[0] = n->g_pos;
 									for (auto& c : n->entity->children)
@@ -248,7 +242,7 @@ void View_Scene::on_draw()
 										if (nn)
 										{
 											line_pts[1] = nn->g_pos;
-											renderer->draw_line(line_pts, countof(line_pts), cvec4(255));
+											draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(255));
 											draw_node(nn);
 										}
 									}
@@ -260,7 +254,7 @@ void View_Scene::on_draw()
 					}
 					if (show_navigation)
 					{
-						World::instance()->root->forward_traversal([renderer](EntityPtr e) {
+						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
 							if (!e->global_enable)
 								return false;
 							if (auto nav = e->get_component_t<cNavAgent>(); nav)
@@ -288,27 +282,27 @@ void View_Scene::on_draw()
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center.y += nav->height;
 								for (auto i = 0; i < n; i++)
 								{
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								renderer->draw_line(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center = nav->node->g_pos;
 								pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, +1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, -1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								renderer->draw_line(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
 							}
 							return true;
 						});

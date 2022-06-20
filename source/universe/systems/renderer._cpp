@@ -18,7 +18,7 @@ namespace flame
 
 		SequentialBuffer<ElementVertex>	buf_vtx;
 		SequentialBuffer<uint>			buf_idx;
-		std::unique_ptr<DescriptorSet>			ds_element;
+		std::unique_ptr<DescriptorSet>	ds_element;
 
 		Pipeline* pl_element;
 	};

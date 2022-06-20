@@ -2,6 +2,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "light_private.h"
+#include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -14,10 +15,10 @@ namespace flame
 
 	void cLightPrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
-			if (pass == "light"_h)
+		node->drawers.add([this](DrawData& draw_data) {
+			if (draw_data.pass == "light"_h)
 			{
-				renderer->add_light(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos,
+				draw_data.lights.emplace_back(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos,
 					color.rgb() * color.a, range, cast_shadow);
 			}
 		}, "light"_h);

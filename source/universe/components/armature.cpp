@@ -3,6 +3,7 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "armature_private.h"
+#include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -40,11 +41,11 @@ namespace flame
 
 	void cArmaturePrivate::on_init()
 	{
-		node->drawers.add([this](sRendererPtr renderer, uint pass, uint cat) {
+		node->drawers.add([this](DrawData& draw_data) {
 			if (instance_id == -1)
 				return;
 
-			if (pass == "instance"_h)
+			if (draw_data.pass == "instance"_h)
 			{
 				if (playing_name != 0)
 				{
@@ -103,7 +104,7 @@ namespace flame
 					}
 				}
 
-				auto dst = renderer->set_armature_instance(instance_id);
+				auto dst = sRenderer::instance()->set_armature_instance(instance_id);
 				for (auto i = 0; i < bones.size(); i++)
 					dst[i] = bones[i].calc_mat();
 			}
