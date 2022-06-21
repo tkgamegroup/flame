@@ -214,6 +214,17 @@ void App::init()
 				renderer->mode = sRenderer::CameraLight;
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Debug"))
+		{
+			if (ImGui::MenuItem("Send Debug Cmd"))
+			{
+				ImGui::OpenInputDialog("Debug Cmd", [](bool ok, const std::string& str) {
+					if (ok)
+						sRenderer::instance()->send_debug_string(str);
+				});
+			}
+			ImGui::EndMenu();
+		}
 		ImGui::EndMainMenuBar();
 
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();

@@ -422,30 +422,9 @@ namespace flame
 
 	uint sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
 	{
-		auto& nd = *_nd;
-
-		auto idx = nd.buf_light_infos.n;
-
-		// TODO
 		{
-			auto& data = nd.buf_light_infos.add_item();
-			data.shadow_index = -1;
-
 			switch (type)
 			{
-			case LightDirectional:
-			{
-				auto rot = mat3(mat);
-				if (cast_shadow)
-				{
-					if (nd.dir_shadows.size() < 4)
-					{
-						data.shadow_index = nd.dir_shadows.size();
-						nd.dir_shadows.emplace_back(idx, rot);
-					}
-				}
-			}
-			break;
 			case LightPoint:
 			{
 				auto pos = vec3(mat[3]);
@@ -526,13 +505,6 @@ namespace flame
 
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
 	{
-		tar_idx = min((uint)img_tars.size() - 1, tar_idx);
-		if (img_tars.empty() || (!dirty && img_tars.size() == 1)) // window targets count should bigger than 1
-			return;
-		dirty = false;
-
-		frame = get_frames();
-
 		auto& ed = *_ed;
 		ed.scissor = Rect(vec2(0.f), tar_sz);
 		if (world->first_element && world->first_element->global_visibility)
@@ -541,30 +513,7 @@ namespace flame
 			element_render(0, world->first_element->get_component_i<cElementT>(0));
 		}
 
-		auto& nd = *_nd;
-		if (world->first_node && world->first_node->global_visibility && camera)
 		{
-			Frustum frustums[MaxLod + 1];
-			auto dist = camera->far;
-			for (auto i = 0; i <= MaxLod; i++)
-			{
-				frustums[i] = camera->get_frustum(-1.f, dist);
-				dist /= 2.f;
-			}
-			node_render(world->first_node->get_component_i<cNodeT>(0), frustums);
-		}
-
-		{
-			{
-				camera->set_screen_size(tar_sz);
-				camera->update_view();
-				camera->update_proj();
-
-				auto& data = *(nd.buf_render_data.pstag);
-				data.viewport = tar_sz;
-				data.time = frame;
-			}
-
 			auto bind_water_res = [&]() {
 				cb->bind_pipeline_layout(nd.pll_water);
 				DescriptorSet* sets[water::PLL_water::Binding_Max];
@@ -585,84 +534,8 @@ namespace flame
 				vec.clear();
 			};
 
-			std::function<void(cNodePrivate*, const Frustum&)> collect_occluders;
-			collect_occluders = [&](cNodePrivate* node, const Frustum& frustum) {
-				auto e = node->entity;
-
-				if (AABB_frustum_check(frustum, node->bounds))
-					node->draw(frame, true);
-
-				if (node->octree)
-				{
-					std::vector<cNodePrivate*> objs;
-					node->octree->get_within_frustum(frustum, objs);
-					for (auto obj : objs)
-						collect_occluders(obj, frustum);
-				}
-				else
-				{
-					for (auto& c : e->children)
-					{
-						if (!c->global_visibility)
-							continue;
-
-						auto cnode = c->get_component_i<cNodeT>(0);
-						if (cnode)
-							collect_occluders(cnode, frustum);
-					}
-				}
-			};
-
-			std::vector<std::vector<DrawIndirs>> dir_shadow_mesh_indirs;
-			std::vector<std::vector<DrawIndirs>> dir_shadow_mesh_arm_indirs;
-			std::vector<std::vector<DrawIndirs>> pt_shadow_mesh_indirs;
-			std::vector<std::vector<DrawIndirs>> pt_shadow_mesh_arm_indirs;
 			if (render_type == RenderShaded)
 			{
-				for (auto& s : nd.dir_shadows)
-				{
-					auto rot = s.second;
-
-					auto& data = nd.buf_dir_shadows.add_item();
-					data.far = camera->far;
-
-					auto& mesh_indirs_vec = dir_shadow_mesh_indirs.emplace_back();
-					auto& mesh_arm_indirs_vec = dir_shadow_mesh_arm_indirs.emplace_back();
-					for (auto i = 0; i < 4; i++)
-					{
-						if (i < nd.dir_shadow_levels)
-						{
-							auto n = i / (float)nd.dir_shadow_levels;
-							n = n * n * nd.dir_shadow_dist;
-							auto f = (i + 1) / (float)nd.dir_shadow_levels;
-							f = f * f * nd.dir_shadow_dist;
-
-							AABB b;
-							vec3 ps[8];
-							camera->get_points(ps, n, f);
-							for (auto k = 0; k < 8; k++)
-								b.expand(inv * ps[k]);
-							auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
-							auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
-							auto c = rot * b.center();
-
-							auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, data.far);
-							proj[1][1] *= -1.f;
-							auto view = lookAt(c + rot[2] * (data.far - (b.b.z - b.a.z)), c, rot[1]);
-
-							auto mat = proj * view;
-							data.mats[i] = mat;
-							data.splits[i] = f;
-
-							collect_occluders(world->first_node->get_component_i<cNodeT>(0), Frustum(inverse(mat)));
-							mesh_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadow, true));
-							mesh_arm_indirs_vec.push_back(pack_mesh_indirs(MaterialForMeshShadowArmature, true));
-						}
-						else
-							data.splits[i] = 0.f;
-					}
-				}
-
 				for (auto& s : nd.pt_shadows)
 				{
 					auto near = 0.1f;
@@ -717,43 +590,9 @@ namespace flame
 
 			nd.buf_water.upload(cb);
 			nd.buf_ptc_vtx.upload(cb);
-			nd.buf_light_infos.upload(cb);
-			nd.buf_tile_lights.upload(cb);
-			nd.buf_dir_shadows.upload(cb);
-			nd.buf_pt_shadows.upload(cb);
 
 			if (render_type == RenderShaded)
 			{
-				nd.buf_mesh_indirs[MaterialForMeshShadow].upload(cb);
-				nd.buf_mesh_indirs[MaterialForMeshShadowArmature].upload(cb);
-
-				cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
-				cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
-
-				auto dir_mesh_indirs_off = 0;
-				auto dir_mesh_arm_indirs_off = 0;
-				for (auto i = 0; i < nd.dir_shadows.size(); i++)
-				{
-					auto& mesh_indirs_vec = dir_shadow_mesh_indirs[i];
-					auto& mesh_arm_indirs_vec = dir_shadow_mesh_arm_indirs[i];
-					for (auto lv = 0; lv < nd.dir_shadow_levels; lv++)
-					{
-						auto cv = vec4(1.f, 0.f, 0.f, 0.f);
-						cb->begin_renderpass(nullptr, nd.img_dir_shadow_maps[i]->get_shader_write_dst(0, lv, AttachmentLoadClear), &cv);
-						bind_mesh_fwd_res();
-						cb->push_constant_t(mesh::PLL_forward::PushConstant{ .i = ivec4(0, i, lv, 0) });
-						cb->bind_vertex_buffer(nd.buf_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_mesh_idx.buf.get(), IndiceTypeUint);
-						dir_mesh_indirs_off = draw_meshes(MaterialForMeshShadow, mesh_indirs_vec[lv], dir_mesh_indirs_off);
-						cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
-						cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
-						dir_mesh_arm_indirs_off = draw_meshes(MaterialForMeshShadowArmature, mesh_arm_indirs_vec[lv], dir_mesh_arm_indirs_off);
-						cb->end_renderpass();
-					}
-
-					cb->image_barrier(nd.img_dir_shadow_maps[i].get(), { 0U, 1U, 0U, nd.dir_shadow_levels }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				}
-
 				cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x * 0.5f, shadow_map_size.y * 0.5f));
 				cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x * 0.5f, shadow_map_size.y * 0.5f));
 

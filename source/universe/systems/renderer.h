@@ -98,6 +98,8 @@ namespace flame
 
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr) = 0;
 
+		virtual void send_debug_string(const std::string& str) = 0;
+
 		struct Instance
 		{
 			virtual sRendererPtr operator()() = 0;

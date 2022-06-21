@@ -21,6 +21,272 @@ namespace flame
 	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
 	const uvec2 shadow_map_size = uvec2(2048);
 
+	int sky_map_res_id = -1;
+	int sky_irr_map_res_id = -1;
+	int sky_rad_map_res_id = -1;
+	float sky_rad_levels = 1.f;
+	float sky_intensity = 1.f;
+	vec3 fog_color = vec3(1.f);
+	float white_point = 4.f;
+	float gamma = 2.2f;
+	uint csm_levels = 2;
+	float shadow_distance = 0.3f; // (0-1) of camera's far
+	float ssao_radius = 0.5f;
+	float ssao_bias = 0.025f;
+
+	std::vector<sRenderer::MeshRes> mesh_reses;
+	std::vector<sRenderer::TexRes> tex_reses;
+	std::vector<sRenderer::MatRes> mat_reses;
+
+	std::unique_ptr<graphics::Image> img_black;
+	std::unique_ptr<graphics::Image> img_white;
+	std::unique_ptr<graphics::Image> img_cube_black;
+	std::unique_ptr<graphics::Image> img_cube_white;
+	std::unique_ptr<graphics::Image> img_back0;
+	std::unique_ptr<graphics::Image> img_back1;
+	std::unique_ptr<graphics::Image> img_dst;
+	std::unique_ptr<graphics::Image> img_dep;
+	std::unique_ptr<graphics::Image> img_col_met;	// color, metallic
+	std::unique_ptr<graphics::Image> img_nor_rou;	// normal, roughness
+	std::unique_ptr<graphics::Image> img_ao;		// ambient occlusion
+	std::unique_ptr<graphics::Image> img_pickup;
+	std::unique_ptr<graphics::Image> img_dep_pickup;
+	std::vector<std::unique_ptr<graphics::Image>> imgs_dir_shadow;
+	std::vector<std::unique_ptr<graphics::Image>> imgs_pt_shadow;
+
+	graphics::RenderpassPtr rp_fwd = nullptr;
+	graphics::RenderpassPtr rp_gbuf = nullptr;
+	std::unique_ptr<graphics::Framebuffer> fb_fwd;
+	std::unique_ptr<graphics::Framebuffer> fb_gbuf;
+	std::unique_ptr<graphics::Framebuffer> fb_pickup;
+	graphics::PipelineLayoutPtr pll_fwd = nullptr;
+	graphics::PipelineLayoutPtr pll_gbuf = nullptr;
+	graphics::PipelineResourceManager<FLAME_UID> prm_fwd;
+	graphics::PipelineResourceManager<FLAME_UID> prm_gbuf;
+	graphics::PipelineResourceManager<FLAME_UID> prm_deferred;
+	graphics::PipelineResourceManager<FLAME_UID> prm_plain;
+	graphics::PipelineResourceManager<FLAME_UID> prm_post;
+	graphics::PipelineResourceManager<FLAME_UID> prm_luma;
+	graphics::PipelineResourceManager<FLAME_UID> prm_tone;
+
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false> buf_idx;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx_arm;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false> buf_idx_arm;
+
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_misc;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
+
+	std::unique_ptr<graphics::DescriptorSet> ds_scene;
+	std::unique_ptr<graphics::DescriptorSet> ds_instance;
+	std::unique_ptr<graphics::DescriptorSet> ds_material;
+	std::unique_ptr<graphics::DescriptorSet> ds_light;
+	std::unique_ptr<graphics::DescriptorSet> ds_deferred;
+	std::unique_ptr<graphics::DescriptorSet> ds_luma_avg;
+	std::unique_ptr<graphics::DescriptorSet> ds_luma;
+
+	graphics::GraphicsPipelinePtr pl_blit = nullptr;
+	graphics::GraphicsPipelinePtr pl_add = nullptr;
+	graphics::GraphicsPipelinePtr pl_blend = nullptr;
+	graphics::GraphicsPipelinePtr pl_blur_h = nullptr;
+	graphics::GraphicsPipelinePtr pl_blur_v = nullptr;
+	graphics::GraphicsPipelinePtr pl_localmax_h = nullptr;
+	graphics::GraphicsPipelinePtr pl_localmax_v = nullptr;
+	graphics::ComputePipelinePtr pl_luma_hist = nullptr;
+	graphics::ComputePipelinePtr pl_luma_avg = nullptr;
+	graphics::GraphicsPipelinePtr pl_tone = nullptr;
+
+	graphics::GraphicsPipelinePtr pl_mesh_plain = nullptr;
+	graphics::GraphicsPipelinePtr pl_mesh_arm_plain = nullptr;
+	graphics::GraphicsPipelinePtr pl_terrain_plain = nullptr;
+	graphics::GraphicsPipelinePtr pl_mesh_camlit = nullptr;
+	graphics::GraphicsPipelinePtr pl_mesh_arm_camlit = nullptr;
+	graphics::GraphicsPipelinePtr pl_terrain_camlit = nullptr;
+	graphics::GraphicsPipelinePtr pl_mesh_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_mesh_arm_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_terrain_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
+
+	std::unique_ptr<graphics::Fence> fence_pickup;
+
+	struct MeshBuckets
+	{
+		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect> buf_idr;
+		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> draw_idxs;
+
+		void collect_idrs(graphics::CommandBufferPtr cb, uint mod2 = 0);
+		void draw(graphics::CommandBufferPtr cb);
+	};
+
+	struct DirShadow
+	{
+		mat3 rot;
+		std::vector<cNodePtr> culled_nodes;
+		MeshBuckets mesh_buckets[4];
+	};
+
+	std::vector<cNodePtr> camera_culled_nodes;
+	DrawData draw_data;
+	MeshBuckets mesh_buckets;
+	DirShadow dir_shadows[4];
+
+	std::vector<LinesDraw> debug_lines;
+	bool csm_debug_sig = false;
+
+	graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0)
+	{
+		auto key = type + modifier1 + modifier2;
+		auto it = mr.pls.find(key);
+		if (it != mr.pls.end())
+			return it->second;
+
+		std::vector<std::string> defines;
+		if (true /*opaque*/)
+		{
+			defines.push_back("rp=" + str(rp_gbuf));
+			defines.push_back("pll=" + str(pll_gbuf));
+			defines.push_back("all_shader:DEFERRED");
+		}
+		auto mat_file = Path::get(mr.mat->shader_file).string();
+		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
+		if (mr.mat->color_map != -1)
+		{
+			auto found = false;
+			for (auto& d : mr.mat->shader_defines)
+			{
+				if (d.find(":COLOR_MAP") != std::string::npos)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
+		}
+		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
+
+		std::filesystem::path pipeline_name;
+		switch (type)
+		{
+		case "mesh"_h:
+			pipeline_name = L"flame\\shaders\\mesh\\mesh.pipeline";
+			break;
+		case "terrain"_h:
+			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
+			break;
+		}
+		switch (modifier1)
+		{
+		case "ARMATURE"_h:
+			defines.push_back("vert:ARMATURE");
+			break;
+		}
+		switch (modifier2)
+		{
+		case "CAMERA_LIGHT"_h:
+			defines.push_back("frag:CAMERA_LIGHT");
+			break;
+		case "DEPTH_PASS"_h:
+			defines.push_back("all_shader:DEPTH_PASS");
+			break;
+		}
+		std::sort(defines.begin(), defines.end());
+
+		graphics::GraphicsPipelinePtr ret = nullptr;
+		if (!pipeline_name.empty())
+			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
+		if (ret)
+		{
+			ret->dynamic_renderpass = true;
+			mr.pls[key] = ret;
+		}
+		return ret;
+	}
+
+	std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls_deferred;
+	graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0)
+	{
+		auto it = pls_deferred.find(modifier);
+		if (it != pls_deferred.end())
+			return it->second;
+
+		std::vector<std::string> defines;
+		switch (modifier)
+		{
+		case "CAMERA_LIGHT"_h:
+			defines.push_back("frag:CAMERA_LIGHT");
+			break;
+		}
+		std::sort(defines.begin(), defines.end());
+
+		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
+		if (ret)
+		{
+			ret->dynamic_renderpass = true;
+			pls_deferred[modifier] = ret;
+		}
+		return ret;
+	}
+
+	void MeshBuckets::collect_idrs(graphics::CommandBufferPtr cb, uint mod2)
+	{
+		for (auto i = 0; i < draw_data.draw_meshes.size(); i++)
+		{
+			auto& m = draw_data.draw_meshes[i];
+			auto& mesh_r = mesh_reses[m.mesh_id];
+			auto& mat_r = mat_reses[m.mat_id];
+			auto pl = get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, mod2);
+			auto it = draw_idxs.find(pl);
+			if (it == draw_idxs.end())
+				it = draw_idxs.emplace(pl, std::make_pair(mesh_r.arm, std::vector<uint>())).first;
+			it->second.second.push_back(i);
+		}
+
+		for (auto& d : draw_idxs)
+		{
+			for (auto i : d.second.second)
+			{
+				auto& m = draw_data.draw_meshes[i];
+				auto& mesh_r = mesh_reses[m.mesh_id];
+				buf_idr.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.instance_id << 8) + m.mat_id);
+			}
+		}
+		buf_idr.upload(cb);
+	}
+
+	void MeshBuckets::draw(graphics::CommandBufferPtr cb)
+	{
+		auto off = 0;
+		for (auto& d : draw_idxs)
+		{
+			if (!d.second.first)
+			{
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+			}
+			else
+			{
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+			}
+			cb->bind_pipeline(d.first);
+			cb->draw_indexed_indirect(buf_idr.buf.get(), off, d.second.second.size());
+			off += d.second.second.size();
+		}
+	}
+
 	sRendererPrivate::sRendererPrivate() 
 	{
 	}
@@ -174,19 +440,11 @@ namespace flame
 		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
-		for (auto i = 0; i < MeshTypeCount; i++)
+		mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
+		for (auto& s : dir_shadows)
 		{
-			int n = 0;
-			switch (i)
-			{
-			case OpaqueMesh: n = buf_mesh_ins.array_capacity; break;
-			case OpaqueArmatureMesh: n = min(1024U, buf_mesh_ins.array_capacity); break;
-			case TransparentMesh: n = min(1024U, buf_mesh_ins.array_capacity); break;
-			case TransparentArmatureMesh: n = min(1024U, buf_mesh_ins.array_capacity); break;
-			case MeshOcculder: n = min(1024U, buf_mesh_ins.array_capacity); break;
-			case ArmatureMeshOcculder: n = min(1024U, buf_mesh_ins.array_capacity); break;
-			}
-			bufs_idr_mesh[i].create(0U, buf_mesh_ins.array_capacity);
+			for (auto i = 0; i < 4; i++)
+				s.mesh_buckets[4].buf_idr.create(0U, min(1024U, buf_mesh_ins.array_capacity));
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
@@ -372,6 +630,11 @@ namespace flame
 			res.ref--;
 	}
 
+	const sRenderer::TexRes& sRendererPrivate::get_texture_res_info(uint id)
+	{ 
+		return tex_reses[id]; 
+	}
+
 	int sRendererPrivate::get_mesh_res(graphics::MeshPtr mesh, int id)
 	{
 		if (id < 0)
@@ -470,6 +733,11 @@ namespace flame
 		}
 		else
 			res.ref--;
+	}
+
+	const sRenderer::MeshRes& sRendererPrivate::get_mesh_res_info(uint id)
+	{ 
+		return mesh_reses[id]; 
 	}
 
 	void sRendererPrivate::update_mat_res(uint id, bool dying, bool update_parameters, bool update_textures, bool update_pipelines)
@@ -587,95 +855,9 @@ namespace flame
 			res.ref--;
 	}
 
-	graphics::GraphicsPipelinePtr sRendererPrivate::get_material_pipeline(MatRes& mr, uint type, uint modifier1, uint modifier2)
-	{
-		auto key = type + modifier1 + modifier2;
-		auto it = mr.pls.find(key);
-		if (it != mr.pls.end())
-			return it->second;
-
-		std::vector<std::string> defines;
-		if (true /*opaque*/)
-		{
-			defines.push_back("rp=" + str(rp_gbuf));
-			defines.push_back("pll=" + str(pll_gbuf));
-			defines.push_back("all_shader:DEFERRED");
-		}
-		auto mat_file = Path::get(mr.mat->shader_file).string();
-		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
-		if (mr.mat->color_map != -1)
-		{
-			auto found = false;
-			for (auto& d : mr.mat->shader_defines)
-			{
-				if (d.find(":COLOR_MAP") != std::string::npos)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
-		}
-		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
-
-		std::filesystem::path pipeline_name;
-		switch (type)
-		{
-		case "mesh"_h:
-			pipeline_name = L"flame\\shaders\\mesh\\mesh.pipeline";
-			break;
-		case "terrain"_h:
-			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
-			break;
-		}
-		switch (modifier1)
-		{
-		case "ARMATURE"_h:
-			defines.push_back("vert:ARMATURE");
-			break;
-		}
-		switch (modifier2)
-		{
-		case "CAMERA_LIGHT"_h:
-			defines.push_back("frag:CAMERA_LIGHT");
-			break;
-		}
-		std::sort(defines.begin(), defines.end());
-
-		graphics::GraphicsPipelinePtr ret = nullptr;
-		if (!pipeline_name.empty())
-			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
-		if (ret)
-		{
-			ret->dynamic_renderpass = true;
-			mr.pls[key] = ret;
-		}
-		return ret;
-	}
-
-	graphics::GraphicsPipelinePtr sRendererPrivate::get_deferred_pipeline(uint modifier)
-	{
-		auto it = pls_deferred.find(modifier);
-		if (it != pls_deferred.end())
-			return it->second;
-
-		std::vector<std::string> defines;
-		switch (modifier)
-		{
-		case "CAMERA_LIGHT"_h:
-			defines.push_back("frag:CAMERA_LIGHT");
-			break;
-		}
-		std::sort(defines.begin(), defines.end());
-
-		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
-		if (ret)
-		{
-			ret->dynamic_renderpass = true;
-			pls_deferred[modifier] = ret;
-		}
-		return ret;
+	const sRenderer::MatRes& sRendererPrivate::get_material_res_info(uint id)
+	{ 
+		return mat_reses[id]; 
 	}
 
 	void sRendererPrivate::update_res(uint id, uint type_hash, uint name_hash)
@@ -910,52 +1092,12 @@ namespace flame
 		buf_light_grid.upload(cb);
 		buf_light_info.upload(cb);
 
-		for (auto& b : mesh_buckets)
-		{
-			for (auto& n : b)
-				n.second.clear();
-		}
+		for (auto& d : mesh_buckets.draw_idxs)
+			d.second.second.clear();
 		draw_data.reset("draw"_h, "mesh"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		for (auto i = 0; i < draw_data.draw_meshes.size(); i++)
-		{
-			auto& m = draw_data.draw_meshes[i];
-			auto& mesh_r = mesh_reses[m.mesh_id];
-			auto& mat_r = mat_reses[m.mat_id];
-			auto type = OpaqueMesh;
-			if (!mesh_r.arm)
-			{
-				if (!mat_r.opa)
-					type = TransparentMesh;
-			}
-			else
-			{
-				if (mat_r.opa)
-					type = OpaqueArmatureMesh;
-				else
-					type = TransparentArmatureMesh;
-			}
-			mesh_buckets[type][get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, 0)].push_back(i);
-		}
-
-		auto collect_idrs = [&](MeshType type) {
-			auto& pl_bucket = mesh_buckets[type];
-			auto& buf_idr = bufs_idr_mesh[type];
-			for (auto& pl : pl_bucket)
-			{
-				for (auto i : pl.second)
-				{
-					auto& m = draw_data.draw_meshes[i];
-					auto& mesh_r = mesh_reses[m.mesh_id];
-					buf_idr.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.instance_id << 8) + m.mat_id);
-				}
-			}
-			buf_idr.upload(cb);
-		};
-
-		collect_idrs(OpaqueMesh);
-		collect_idrs(OpaqueArmatureMesh);
+		mesh_buckets.collect_idrs(cb);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
@@ -973,21 +1115,7 @@ namespace flame
 
 			prm_gbuf.bind_dss(cb);
 
-			auto draw_bucket = [&](MeshType type) {
-				auto& buf_idr = bufs_idr_mesh[type];
-				auto& pl_bucket = mesh_buckets[type];
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-				auto off = 0;
-				for (auto& pl : pl_bucket)
-				{
-					cb->bind_pipeline(pl.first);
-					cb->draw_indexed_indirect(buf_idr.buf.get(), off, pl.second.size());
-					off += pl.second.size();
-				}
-			};
-			draw_bucket(OpaqueMesh);
-			draw_bucket(OpaqueArmatureMesh);
+			mesh_buckets.draw(cb);
 
 			draw_data.reset("draw"_h, "terrain"_h);
 			for (auto n : camera_culled_nodes)
@@ -1002,20 +1130,32 @@ namespace flame
 
 			if (mode == Shaded)
 			{
-				for (auto& s : dir_shadows)
+				auto zn = camera->zNear; auto zf = camera->zFar;
+				for (auto i = 0; i < n_dir_shadows; i++)
 				{
-					auto far = shadow_distance * camera->zFar;
+					auto& s = dir_shadows[i];
 					auto splits = vec4(0.f);
 					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
 					for (auto i = 0; i < csm_levels; i++)
 					{
 						auto n = i / (float)csm_levels;
-						n = n * n * far;
 						auto f = (i + 1) / (float)csm_levels;
-						f = f * f * far;
+						n = mix(zn, zf, n * n * shadow_distance);
+						f = mix(zn, zf, f * f * shadow_distance);
 						splits[i] = f;
-
-						auto b = AABB(Frustum::get_points(camera->proj_view_mat_inv), inverse(s.rot));
+						
+						{
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
+							n = p.z / p.w;
+						}
+						{
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
+							f = p.z / p.w;
+						}
+						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
+						if (csm_debug_sig)
+							debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+						auto b = AABB(frustum_slice, inverse(s.rot));
 						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
 						auto c = s.rot * b.center();
@@ -1023,7 +1163,8 @@ namespace flame
 						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
 						proj[1][1] *= -1.f;
 						auto view = lookAt(c + s.rot[2] * 10000.f, c, s.rot[1]);
-						sScene::instance()->octree->get_within_frustum(proj * view, s.culled_nodes);
+						auto proj_view = proj * view;
+						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 						auto z_min = +10000.f;
 						auto z_max = -10000.f;
 						draw_data.reset("occulder"_h, "mesh"_h);
@@ -1037,34 +1178,47 @@ namespace flame
 								auto d = dot(n->g_pos, s.rot[2]);
 								z_min = min(d - r, z_min);
 								z_max = max(d + r, z_max);
-								for (auto i = n_draws; i < draw_data.draw_meshes.size(); i++)
-								{
-									auto& m = draw_data.draw_meshes[i];
-									auto& mesh_r = mesh_reses[m.mesh_id];
-									auto& mat_r = mat_reses[m.mat_id];
-									auto type = MeshOcculder;
-									if (mesh_r.arm)
-										type = ArmatureMeshOcculder;
-									mesh_buckets[type][get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, 0)].push_back(i);
-								}
 
 								n_draws = draw_data.draw_meshes.size();
 							}
 						}
-						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, max(0.f, z_max - z_min));
 						proj[1][1] *= -1.f;
 						view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
-						mats[i] = proj * view;
+						proj_view = proj * view;
+						mats[i] = proj_view;
+						if (csm_debug_sig)
+							debug_lines.emplace_back(Frustum::points_to_lines(Frustum::get_points(inverse(proj_view)).data()), cvec4(156, 127, 0, 255));
+
+						s.mesh_buckets[i].collect_idrs(cb, "DEPTH_PASS"_h);
 					}
 
 					buf_dir_shadow.set_var<"splits"_h>(splits);
-					buf_dir_shadow.set_var<"far"_h>(far);
+					buf_dir_shadow.set_var<"far"_h>(shadow_distance * camera->zFar);
 					buf_dir_shadow.next_item();
+				}
+
+				csm_debug_sig = false;
+
+				buf_dir_shadow.upload(cb);
+				buf_pt_shadow.upload(cb);
+
+				cb->set_viewport_and_scissor(Rect(vec2(0), shadow_map_size));
+				for (auto i = 0; i < n_dir_shadows; i++)
+				{
+					auto& s = dir_shadows[i];
+					for (auto lv = 0; lv < csm_levels; lv++)
+					{
+						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
+						prm_fwd.bind_dss(cb);
+						s.mesh_buckets[lv].draw(cb);
+						cb->end_renderpass();
+					}
+					cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
 				}
 			}
 
-			cb->begin_renderpass(nullptr, img_ao->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f)});
-			cb->end_renderpass();
+			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
 			auto pl_mod = 0;
 			// CameraLight modifier is use in deferred pipeline of opaque rendering
@@ -1163,8 +1317,6 @@ namespace flame
 			cb->end_renderpass();
 		};
 
-		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
-
 		draw_data.reset("outline"_h, 0);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
@@ -1248,6 +1400,8 @@ namespace flame
 		draw_data.reset("lines"_h, 0);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
+		if (!debug_lines.empty())
+			draw_data.draw_lines.insert(draw_data.draw_lines.end(), debug_lines.begin(), debug_lines.end());
 		for (auto& l : draw_data.draw_lines)
 		{
 			for (auto& p : l.points)
@@ -1309,13 +1463,13 @@ namespace flame
 		cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
+		prm_fwd.bind_dss(cb.get());
+
 		std::vector<cNodePtr> nodes;
 
 		auto off = 0;
 		auto n_draws = 0;
 		draw_data.reset("draw"_h, "mesh"_h);
-		std::vector<uint> meshes;
-		std::vector<uint> armature_meshes;
 		for (auto n : camera_culled_nodes)
 		{
 			n->draw(draw_data);
@@ -1325,37 +1479,25 @@ namespace flame
 				auto& m = draw_data.draw_meshes[i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
 				if (!mesh_r.arm)
-					meshes.push_back(i + off);
+				{
+					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_pickup);
+					prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
+					prm_fwd.push_constant(cb.get());
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+				}
 				else
-					armature_meshes.push_back(i + off);
+				{
+					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_arm_pickup);
+					prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
+					prm_fwd.push_constant(cb.get());
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+				}
 			}
 			n_draws = draw_data.draw_meshes.size();
-		}
-
-		prm_fwd.bind_dss(cb.get());
-
-		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-		cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_pipeline(pl_mesh_pickup);
-		for (auto i : meshes)
-		{
-			auto& m = draw_data.draw_meshes[i];
-			prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
-			prm_fwd.push_constant(cb.get());
-			auto& mesh_r = mesh_reses[m.mesh_id];
-			cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
-		}
-
-		cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-		cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-		cb->bind_pipeline(pl_mesh_arm_pickup);
-		for (auto i : armature_meshes)
-		{
-			auto& m = draw_data.draw_meshes[i];
-			prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
-			prm_fwd.push_constant(cb.get());
-			auto& mesh_r = mesh_reses[m.mesh_id];
-			cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
 		}
 
 		off = nodes.size();
@@ -1414,6 +1556,14 @@ namespace flame
 		if (index == -1)
 			return nullptr;
 		return nodes[index];
+	}
+
+	void sRendererPrivate::send_debug_string(const std::string& str)
+	{
+		if (str == "clear_debug")
+			debug_lines.clear();
+		else if (str == "sig_csm_debug")
+			csm_debug_sig = true;
 	}
 
 	static sRendererPtr _instance = nullptr;

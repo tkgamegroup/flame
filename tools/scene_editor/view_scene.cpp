@@ -185,21 +185,8 @@ void View_Scene::on_draw()
 								if (!node->bounds.invalid())
 								{
 									auto points = node->bounds.get_points();
-									vec3 line_pts[24];
-									auto p = line_pts;
-									*p++ = points[0]; *p++ = points[1];
-									*p++ = points[1]; *p++ = points[2];
-									*p++ = points[2]; *p++ = points[3];
-									*p++ = points[3]; *p++ = points[0];
-									*p++ = points[0]; *p++ = points[4];
-									*p++ = points[1]; *p++ = points[5];
-									*p++ = points[2]; *p++ = points[6];
-									*p++ = points[3]; *p++ = points[7];
-									*p++ = points[4]; *p++ = points[5];
-									*p++ = points[5]; *p++ = points[6];
-									*p++ = points[6]; *p++ = points[7];
-									*p++ = points[7]; *p++ = points[4];
-									draw_data.draw_lines.emplace_back(line_pts, countof(line_pts), cvec4(255, 127, 127, 255));
+									auto line_pts = Frustum::points_to_lines(points.data());
+									draw_data.draw_lines.emplace_back(std::move(line_pts), cvec4(255, 127, 127, 255));
 								}
 							}
 							return true;
