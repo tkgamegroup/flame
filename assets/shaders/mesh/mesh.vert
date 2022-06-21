@@ -16,7 +16,7 @@ layout(location = 4) in vec4 i_bwgts;
 
 layout(location = 0) out flat uint o_matid;
 layout(location = 1) out vec2 o_uv;
-#ifndef DEPTH_PASS
+#ifndef OCCLUDER_PASS
 layout(location = 2) out vec3 o_normal; 
 layout(location = 3) out vec3 o_coordw;
 #endif
@@ -37,23 +37,24 @@ void main()
 		deform += armature_instances[id].bones[bid] * i_bwgts[i];
 	}
 
-	o_coordw = vec3(deform * vec4(i_pos, 1.0));
-	#ifndef DEPTH_PASS
+	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
+	#ifndef OCCLUDER_PASS
 	o_normal = normalize(transpose(inverse(mat3(deform))) * i_nor);
 	#endif
 #else
-	o_coordw = vec3(mesh_instances[id].mat * vec4(i_pos, 1.0));
-	#ifndef DEPTH_PASS
+	vec3 coordw = vec3(mesh_instances[id].mat * vec4(i_pos, 1.0));
+	#ifndef OCCLUDER_PASS
 	o_normal = normalize(mat3(mesh_instances[id].nor) * i_nor);
 	#endif
 #endif
 
-#ifndef DEPTH_PASS
+#ifndef OCCLUDER_PASS
+	o_coordw = coordw;
 	gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 #else
 	if (pc.i[0] == 0)
-		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(o_coordw, 1.0);
+		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 	else
-		gl_Position = pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(o_coordw, 1.0);
+		gl_Position = pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 #endif
 }

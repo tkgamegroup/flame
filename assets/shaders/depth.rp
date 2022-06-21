@@ -15,5 +15,5 @@ attachments
   final_layout
     {final_layout}
 subpasses
-  depth_ref
+  depth_attachment
     0

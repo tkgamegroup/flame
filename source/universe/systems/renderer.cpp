@@ -56,6 +56,7 @@ namespace flame
 
 	graphics::RenderpassPtr rp_fwd = nullptr;
 	graphics::RenderpassPtr rp_gbuf = nullptr;
+	graphics::RenderpassPtr rp_dep = nullptr;
 	std::unique_ptr<graphics::Framebuffer> fb_fwd;
 	std::unique_ptr<graphics::Framebuffer> fb_gbuf;
 	std::unique_ptr<graphics::Framebuffer> fb_pickup;
@@ -153,11 +154,16 @@ namespace flame
 			return it->second;
 
 		std::vector<std::string> defines;
-		if (true /*opaque*/)
+		if (/*!forward*/modifier2 != "OCCLUDER_PASS"_h)
 		{
 			defines.push_back("rp=" + str(rp_gbuf));
 			defines.push_back("pll=" + str(pll_gbuf));
 			defines.push_back("all_shader:DEFERRED");
+		}
+		else
+		{
+			defines.push_back("rp=" + str(rp_dep));
+			defines.push_back("pll=" + str(pll_fwd));
 		}
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
@@ -198,8 +204,8 @@ namespace flame
 		case "CAMERA_LIGHT"_h:
 			defines.push_back("frag:CAMERA_LIGHT");
 			break;
-		case "DEPTH_PASS"_h:
-			defines.push_back("all_shader:DEPTH_PASS");
+		case "OCCLUDER_PASS"_h:
+			defines.push_back("all_shader:OCCLUDER_PASS");
 			break;
 		}
 		std::sort(defines.begin(), defines.end());
@@ -308,6 +314,8 @@ namespace flame
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
+			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 
 		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
@@ -411,12 +419,13 @@ namespace flame
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
 		pl_blend->dynamic_renderpass = true;
 
-		prm_fwd.init(graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll"));
+		prm_fwd.init(pll_fwd);
 		prm_fwd.set_ds("scene"_h, ds_scene.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
+		prm_fwd.set_ds("light"_h, ds_light.get());
 
-		prm_gbuf.init(graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll"));
+		prm_gbuf.init(pll_gbuf);
 		prm_gbuf.set_ds("scene"_h, ds_scene.get());
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
@@ -444,7 +453,7 @@ namespace flame
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < 4; i++)
-				s.mesh_buckets[4].buf_idr.create(0U, min(1024U, buf_mesh_ins.array_capacity));
+				s.mesh_buckets[i].buf_idr.create(0U, min(1024U, buf_mesh_ins.array_capacity));
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
@@ -1130,19 +1139,28 @@ namespace flame
 
 			if (mode == Shaded)
 			{
+				for (auto i = 0; i < 4; i++)
+				{
+					for (auto j = 0; j < 4; j++)
+					{
+						for (auto& d : dir_shadows[i].mesh_buckets[j].draw_idxs)
+							d.second.second.clear();
+					}
+				}
+
 				auto zn = camera->zNear; auto zf = camera->zFar;
 				for (auto i = 0; i < n_dir_shadows; i++)
 				{
 					auto& s = dir_shadows[i];
 					auto splits = vec4(0.f);
 					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
-					for (auto i = 0; i < csm_levels; i++)
+					for (auto lv = 0; lv < csm_levels; lv++)
 					{
-						auto n = i / (float)csm_levels;
-						auto f = (i + 1) / (float)csm_levels;
+						auto n = lv / (float)csm_levels;
+						auto f = (lv + 1) / (float)csm_levels;
 						n = mix(zn, zf, n * n * shadow_distance);
 						f = mix(zn, zf, f * f * shadow_distance);
-						splits[i] = f;
+						splits[lv] = f;
 						
 						{
 							auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
@@ -1160,10 +1178,13 @@ namespace flame
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
 						auto c = s.rot * b.center();
 
-						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, b.b.z - b.a.z);
 						proj[1][1] *= -1.f;
-						auto view = lookAt(c + s.rot[2] * 10000.f, c, s.rot[1]);
+						auto view = lookAt(c + s.rot[2] * (b.b.y - b.a.y) * 0.5f, c, s.rot[1]);
 						auto proj_view = proj * view;
+						if (csm_debug_sig)
+							debug_lines.emplace_back(Frustum::points_to_lines(Frustum::get_points(inverse(proj_view)).data()), cvec4(255, 127, 0, 255));
+						s.culled_nodes.clear();
 						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 						auto z_min = +10000.f;
 						auto z_max = -10000.f;
@@ -1186,11 +1207,9 @@ namespace flame
 						proj[1][1] *= -1.f;
 						view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
 						proj_view = proj * view;
-						mats[i] = proj_view;
-						if (csm_debug_sig)
-							debug_lines.emplace_back(Frustum::points_to_lines(Frustum::get_points(inverse(proj_view)).data()), cvec4(156, 127, 0, 255));
+						mats[lv] = proj_view;
 
-						s.mesh_buckets[i].collect_idrs(cb, "DEPTH_PASS"_h);
+						s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
 					}
 
 					buf_dir_shadow.set_var<"splits"_h>(splits);
@@ -1211,6 +1230,8 @@ namespace flame
 					{
 						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
 						prm_fwd.bind_dss(cb);
+						prm_fwd.set_pc_var<"i"_h>(ivec4(0, i, lv, 0));
+						prm_fwd.push_constant(cb);
 						s.mesh_buckets[lv].draw(cb);
 						cb->end_renderpass();
 					}

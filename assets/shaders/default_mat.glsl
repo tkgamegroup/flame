@@ -4,7 +4,7 @@
 		color.a = texture(material_maps[material.map_indices[ALPHA_MAP]], i_uv).r;
 		if (color.a < ALPHA_TEST)
 			discard;
-		#ifndef DEPTH_PASS
+		#ifndef OCCLUDER_PASS
 			#ifdef COLOR_MAP
 				color.rgb = texture(material_maps[material.map_indices[COLOR_MAP]], i_uv).rgb;
 				#ifdef TINT_COLOR
@@ -28,7 +28,7 @@
 	#endif
 #else
 	#ifdef COLOR_MAP
-		#ifndef DEPTH_PASS
+		#ifndef OCCLUDER_PASS
 			vec4 color = texture(material_maps[material.map_indices[COLOR_MAP]], i_uv);
 			#ifdef TINT_COLOR
 				color *= material.color;
@@ -39,7 +39,7 @@
 	#endif
 #endif
 		
-#ifndef DEPTH_PASS
+#ifndef OCCLUDER_PASS
 	float metallic = material.metallic;
 	float roughness = material.roughness;
 	

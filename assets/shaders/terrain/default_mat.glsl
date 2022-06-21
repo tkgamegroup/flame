@@ -1,4 +1,4 @@
-#ifndef DEPTH_PASS
+#ifndef OCCLUDER_PASS
 
 #ifdef TRI_PLANAR
 vec3 blend = abs(i_normal);
@@ -55,4 +55,4 @@ float roughness = material.roughness;
 	o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, roughness);
 #endif
 
-#endif // DEPTH_PASS
+#endif // OCCLUDER_PASS

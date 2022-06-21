@@ -75,18 +75,17 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		float f_shadow = 1.0;
 		if (light.shadow_index != -1)
 		{
-			DirShadow shadow = dir_shadows[light.shadow_index];
-
 			for (uint lv = 0; lv < 4; lv++)
 			{
-				float split = shadow.splits[lv];
-				if (distv >= split)
-					continue;
-				vec4 coordl = shadow.mats[lv] * vec4(coordw, 1.0);
-				coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-				float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-				f_shadow = clamp(exp(-esm_c * (coordl.z - ref) * shadow.far), 0.0, 1.0);
-				break;
+				float split = dir_shadows[light.shadow_index].splits[lv];
+				if (distv < split)
+				{
+					vec4 coordl = dir_shadows[light.shadow_index].mats[lv] * vec4(coordw, 1.0);
+					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
+					float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
+					f_shadow = clamp(exp(-esm_c * (coordl.z - ref) * dir_shadows[light.shadow_index].far), 0.0, 1.0);
+					break;
+				}
 			}
 		}
 		
@@ -114,12 +113,10 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		float f_shadow = 1.0;
 		if (light.shadow_index != -1)
 		{
-			PtShadow shadow = pt_shadows[light.shadow_index];
-
-			if (dist < shadow.far)
+			if (dist < pt_shadows[light.shadow_index].far)
 			{
 				float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
-				ref = linear_depth(shadow.near, shadow.far, ref);
+				ref = linear_depth(pt_shadows[light.shadow_index].near, pt_shadows[light.shadow_index].far, ref);
 				f_shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 			}
 		}
@@ -164,7 +161,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 #ifndef CAMERA_LIGHT
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
 	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * ao;
-	ret = get_fog(ret, distv);
+	//ret = get_fog(ret, distv);
 #else
 	ret += brdf(N, V, -scene.camera_dir, vec3(3.14), metallic, albedo, f0, roughness);
 #endif
