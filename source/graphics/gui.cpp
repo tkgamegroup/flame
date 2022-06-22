@@ -82,14 +82,49 @@ namespace ImGui
 	{
 		std::string text;
 		std::function<void(bool, const std::string&)> callback;
+		std::vector<std::string> history;
+		bool archive = false;
+
+		~InputDialog() override
+		{
+			if (archive)
+			{
+				std::ofstream file(L"input_dialog:" + wstr(sh(title.c_str())) + L".txt");
+				for (auto& i : history)
+					file << i << std::endl;
+				file.close();
+			}
+		}
 
 		void draw() override
 		{
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				ImGui::InputText("##text", &text);
-				if (ImGui::Button("OK"))
+				auto ok = false;
+				if (ImGui::InputText("##text", &text, ImGuiInputTextFlags_EnterReturnsTrue))
+					ok = true;
+				if (archive)
 				{
+					ImGui::SameLine();
+					if (ImGui::BeginCombo("##combo", nullptr, ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft))
+					{
+						for (auto& i : history)
+						{
+							if (ImGui::Selectable(i.c_str()))
+								text = i;
+						}
+						ImGui::EndCombo();
+					}
+				}
+				if (ImGui::Button("OK"))
+					ok = true;
+				if (ok);
+				{
+					if (archive)
+					{
+						if (std::find(history.begin(), history.end(), text) == history.end())
+							history.push_back(text);
+					}
 					if (callback)
 						callback(true, text);
 					close();
@@ -154,11 +189,27 @@ namespace ImGui
 		Dialog::open(dialog);
 	}
 
-	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback)
+	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback, bool archive)
 	{
 		auto dialog = new InputDialog;
 		dialog->title = title;
 		dialog->callback = callback;
+		dialog->archive = archive;
+		if (archive)
+		{
+			std::ifstream file(L"input_dialog:" + wstr(sh(title.c_str())) + L".txt");
+			if (file.good())
+			{
+				std::string line;
+				while (!file.eof())
+				{
+					std::getline(file, line);
+					if (!line.empty())
+						dialog->history.push_back(line);
+				}
+				file.close();
+			}
+		}
 		Dialog::open(dialog);
 	}
 

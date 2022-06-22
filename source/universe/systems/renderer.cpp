@@ -1176,14 +1176,26 @@ namespace flame
 						auto b = AABB(frustum_slice, inverse(s.rot));
 						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+						auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
 						auto c = s.rot * b.center();
 
-						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, b.b.z - b.a.z);
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
 						proj[1][1] *= -1.f;
-						auto view = lookAt(c + s.rot[2] * (b.b.y - b.a.y) * 0.5f, c, s.rot[1]);
+						auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
 						auto proj_view = proj * view;
 						if (csm_debug_sig)
-							debug_lines.emplace_back(Frustum::points_to_lines(Frustum::get_points(inverse(proj_view)).data()), cvec4(255, 127, 0, 255));
+						{
+							auto frustum_points = Frustum::get_points(inverse(proj_view));
+							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+							vec3 pts[2]; 
+							pts[0] = c; pts[1] = s.rot[0] * hf_xlen;
+							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
+							pts[0] = c; pts[1] = s.rot[1] * hf_ylen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
+							pts[0] = c; pts[1] = s.rot[2] * hf_zlen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+						}
 						s.culled_nodes.clear();
 						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 						auto z_min = +10000.f;

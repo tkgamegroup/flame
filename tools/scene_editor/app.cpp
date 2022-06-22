@@ -221,7 +221,7 @@ void App::init()
 				ImGui::OpenInputDialog("Debug Cmd", [](bool ok, const std::string& str) {
 					if (ok)
 						sRenderer::instance()->send_debug_string(str);
-				});
+				}, true);
 			}
 			ImGui::EndMenu();
 		}
