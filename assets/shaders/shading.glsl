@@ -77,8 +77,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		{
 			for (uint lv = 0; lv < 4; lv++)
 			{
-				float split = dir_shadows[light.shadow_index].splits[lv];
-				if (distv < split)
+				if (distv < dir_shadows[light.shadow_index].splits[lv])
 				{
 					vec4 coordl = dir_shadows[light.shadow_index].mats[lv] * vec4(coordw, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);

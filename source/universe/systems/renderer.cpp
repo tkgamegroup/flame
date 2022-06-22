@@ -29,8 +29,8 @@ namespace flame
 	vec3 fog_color = vec3(1.f);
 	float white_point = 4.f;
 	float gamma = 2.2f;
-	uint csm_levels = 2;
-	float shadow_distance = 0.3f; // (0-1) of camera's far
+	uint csm_levels = 3;
+	float shadow_distance = 0.1f; // (0-1) of camera's far
 	float ssao_radius = 0.5f;
 	float ssao_bias = 0.025f;
 
@@ -1152,7 +1152,7 @@ namespace flame
 				for (auto i = 0; i < n_dir_shadows; i++)
 				{
 					auto& s = dir_shadows[i];
-					auto splits = vec4(0.f);
+					auto splits = vec4(camera->zFar);
 					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
 					for (auto lv = 0; lv < csm_levels; lv++)
 					{
@@ -1183,19 +1183,6 @@ namespace flame
 						proj[1][1] *= -1.f;
 						auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
 						auto proj_view = proj * view;
-						if (csm_debug_sig)
-						{
-							auto frustum_points = Frustum::get_points(inverse(proj_view));
-							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
-							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
-							vec3 pts[2]; 
-							pts[0] = c; pts[1] = s.rot[0] * hf_xlen;
-							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
-							pts[0] = c; pts[1] = s.rot[1] * hf_ylen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
-							pts[0] = c; pts[1] = s.rot[2] * hf_zlen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
-						}
 						s.culled_nodes.clear();
 						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 						auto z_min = +10000.f;
@@ -1215,11 +1202,25 @@ namespace flame
 								n_draws = draw_data.draw_meshes.size();
 							}
 						}
-						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, max(0.f, z_max - z_min));
+						auto len = max(hf_zlen * 2.f, z_max - z_min);
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, len);
 						proj[1][1] *= -1.f;
-						view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
+						view = lookAt(c - s.rot[2] * (len - hf_zlen), c, s.rot[1]);
 						proj_view = proj * view;
 						mats[lv] = proj_view;
+						if (csm_debug_sig)
+						{
+							auto frustum_points = Frustum::get_points(inverse(proj_view));
+							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+							vec3 pts[2];
+							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
+							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+						}
 
 						s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
 					}
