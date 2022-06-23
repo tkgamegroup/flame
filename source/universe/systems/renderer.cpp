@@ -29,8 +29,8 @@ namespace flame
 	vec3 fog_color = vec3(1.f);
 	float white_point = 4.f;
 	float gamma = 2.2f;
-	uint csm_levels = 2;
-	float shadow_distance = 0.3f; // (0-1) of camera's far
+	uint csm_levels = 3;
+	float shadow_distance = 0.1f; // (0-1) of camera's far
 	float ssao_radius = 0.5f;
 	float ssao_bias = 0.025f;
 
@@ -1172,78 +1172,79 @@ namespace flame
 				}
 			}
 
-			auto zn = camera->zNear; auto zf = camera->zFar;
-			for (auto i = 0; i < n_dir_shadows; i++)
-			{
-				auto& s = dir_shadows[i];
-				auto splits = vec4(0.f);
-				auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
-				for (auto lv = 0; lv < csm_levels; lv++)
+				auto zn = camera->zNear; auto zf = camera->zFar;
+				for (auto i = 0; i < n_dir_shadows; i++)
 				{
-					auto n = lv / (float)csm_levels;
-					auto f = (lv + 1) / (float)csm_levels;
-					n = mix(zn, zf, n * n * shadow_distance);
-					f = mix(zn, zf, f * f * shadow_distance);
-					splits[lv] = f;
-
+					auto& s = dir_shadows[i];
+					auto splits = vec4(camera->zFar);
+					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
+					for (auto lv = 0; lv < csm_levels; lv++)
 					{
-						auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
-						n = p.z / p.w;
-					}
-					{
-						auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
-						f = p.z / p.w;
-					}
-					auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-					if (csm_debug_sig)
-						debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
-					auto b = AABB(frustum_slice, inverse(s.rot));
-					auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
-					auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
-					auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
-					auto c = s.rot * b.center();
-
-					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
-					proj[1][1] *= -1.f;
-					auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
-					auto proj_view = proj * view;
-					if (csm_debug_sig)
-					{
-						auto frustum_points = Frustum::get_points(inverse(proj_view));
-						debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
-						auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
-						vec3 pts[2];
-						pts[0] = c; pts[1] = s.rot[0] * hf_xlen;
-						debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
-						pts[0] = c; pts[1] = s.rot[1] * hf_ylen;
-						debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
-						pts[0] = c; pts[1] = s.rot[2] * hf_zlen;
-						debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
-					}
-					s.culled_nodes.clear();
-					sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
-					auto z_min = +10000.f;
-					auto z_max = -10000.f;
-					draw_data.reset("occulder"_h, "mesh"_h);
-					auto n_draws = 0;
-					for (auto n : s.culled_nodes)
-					{
-						n->draw(draw_data);
-						if (draw_data.draw_meshes.size() > n_draws)
+						auto n = lv / (float)csm_levels;
+						auto f = (lv + 1) / (float)csm_levels;
+						n = mix(zn, zf, n * n * shadow_distance);
+						f = mix(zn, zf, f * f * shadow_distance);
+						splits[lv] = f;
+						
 						{
-							auto r = n->bounds.radius();
-							auto d = dot(n->g_pos, s.rot[2]);
-							z_min = min(d - r, z_min);
-							z_max = max(d + r, z_max);
-
-							n_draws = draw_data.draw_meshes.size();
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
+							n = p.z / p.w;
 						}
-					}
-					proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, max(0.f, z_max - z_min));
-					proj[1][1] *= -1.f;
-					view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
-					proj_view = proj * view;
-					mats[lv] = proj_view;
+						{
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
+							f = p.z / p.w;
+						}
+						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
+						if (csm_debug_sig)
+							debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+						auto b = AABB(frustum_slice, inverse(s.rot));
+						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+						auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
+						auto c = s.rot * b.center();
+
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
+						proj[1][1] *= -1.f;
+						auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
+						auto proj_view = proj * view;
+						s.culled_nodes.clear();
+						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
+						auto z_min = +10000.f;
+						auto z_max = -10000.f;
+						draw_data.reset("occulder"_h, "mesh"_h);
+						auto n_draws = 0;
+						for (auto n : s.culled_nodes)
+						{
+							n->draw(draw_data);
+							if (draw_data.draw_meshes.size() > n_draws)
+							{
+								auto r = n->bounds.radius();
+								auto d = dot(n->g_pos, s.rot[2]);
+								z_min = min(d - r, z_min);
+								z_max = max(d + r, z_max);
+
+								n_draws = draw_data.draw_meshes.size();
+							}
+						}
+						auto len = max(hf_zlen * 2.f, z_max - z_min);
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, len);
+						proj[1][1] *= -1.f;
+						view = lookAt(c - s.rot[2] * (len - hf_zlen), c, s.rot[1]);
+						proj_view = proj * view;
+						mats[lv] = proj_view;
+						if (csm_debug_sig)
+						{
+							auto frustum_points = Frustum::get_points(inverse(proj_view));
+							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+							vec3 pts[2];
+							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
+							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
+							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+						}
 
 					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
 				}

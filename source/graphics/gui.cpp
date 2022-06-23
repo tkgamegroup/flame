@@ -89,7 +89,7 @@ namespace ImGui
 		{
 			if (archive)
 			{
-				std::ofstream file(L"input_dialog:" + wstr(sh(title.c_str())) + L".txt");
+				std::ofstream file(L"input_dialog_" + wstr(sh(title.c_str())) + L".txt");
 				for (auto& i : history)
 					file << i << std::endl;
 				file.close();
@@ -118,7 +118,7 @@ namespace ImGui
 				}
 				if (ImGui::Button("OK"))
 					ok = true;
-				if (ok);
+				if (ok)
 				{
 					if (archive)
 					{
@@ -197,7 +197,7 @@ namespace ImGui
 		dialog->archive = archive;
 		if (archive)
 		{
-			std::ifstream file(L"input_dialog:" + wstr(sh(title.c_str())) + L".txt");
+			std::ifstream file(L"input_dialog_" + wstr(sh(title.c_str())) + L".txt");
 			if (file.good())
 			{
 				std::string line;
