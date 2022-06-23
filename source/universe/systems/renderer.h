@@ -10,7 +10,13 @@ namespace flame
 		enum Mode
 		{
 			Shaded,
-			CameraLight
+			CameraLight,
+			AlbedoData,
+			NormalData,
+			MetallicData,
+			RoughnessData,
+			IBLValue,
+			FogValue
 		};
 
 		struct TexRes

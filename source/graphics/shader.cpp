@@ -222,19 +222,18 @@ namespace flame
 			if (!dst_ppath.empty() && !std::filesystem::exists(dst_ppath))
 				std::filesystem::create_directories(dst_ppath);
 
-			std::vector<std::pair<std::string, std::string>> defines;
-			for (auto& d : _defines)
-			{
-				auto sp = SUS::split(d, '=');
-				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
-			}
-
 			std::string temp_content;
 			temp_content += "#version 450 core\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
 			if (stage != ShaderStageComp)
 				temp_content += "#extension GL_ARB_separate_shader_objects : enable\n";
 			temp_content += "\n#define SET 0\n\n";
+			std::vector<std::pair<std::string, std::string>> defines;
+			for (auto& d : _defines)
+			{
+				auto sp = SUS::split(d, '=');
+				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
+			}
 			for (auto& d : defines)
 			{
 				temp_content += "#define " + d.first;

@@ -1,0 +1,20 @@
+%rp=..\forward.rp
+%pll=..\forward.pll
+layout
+  {pll}
+shaders
+  grass_field.vert
+ ---
+  grass_field.tesc
+ ---
+  grass_field.tese
+ ---
+  grass_field.geom
+ ---
+  grass_field.frag
+renderpass
+  {rp}
+primitive_topology
+  PatchList
+patch_control_points
+  4

@@ -112,15 +112,14 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_mesh_plain = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_arm_plain = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_plain = nullptr;
-	graphics::GraphicsPipelinePtr pl_mesh_camlit = nullptr;
-	graphics::GraphicsPipelinePtr pl_mesh_arm_camlit = nullptr;
-	graphics::GraphicsPipelinePtr pl_terrain_camlit = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_arm_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
+
+	int camera_light_id = -1;
 
 	struct MeshBuckets
 	{
@@ -201,9 +200,6 @@ namespace flame
 		}
 		switch (modifier2)
 		{
-		case "CAMERA_LIGHT"_h:
-			defines.push_back("frag:CAMERA_LIGHT");
-			break;
 		case "OCCLUDER_PASS"_h:
 			defines.push_back("all_shader:OCCLUDER_PASS");
 			break;
@@ -231,8 +227,23 @@ namespace flame
 		std::vector<std::string> defines;
 		switch (modifier)
 		{
-		case "CAMERA_LIGHT"_h:
-			defines.push_back("frag:CAMERA_LIGHT");
+		case "ALBEDO_DATA"_h:
+			defines.push_back("frag:ALBEDO_DATA");
+			break;
+		case "NORMAL_DATA"_h:
+			defines.push_back("frag:NORMAL_DATA");
+			break;
+		case "METALLIC_DATA"_h:
+			defines.push_back("frag:METALLIC_DATA");
+			break;
+		case "ROUGHNESS_DATA"_h:
+			defines.push_back("frag:ROUGHNESS_DATA");
+			break;
+		case "IBL_VALUE"_h:
+			defines.push_back("frag:IBL_VALUE");
+			break;
+		case "FOG_VALUE"_h:
+			defines.push_back("frag:FOG_VALUE");
 			break;
 		}
 		std::sort(defines.begin(), defines.end());
@@ -436,14 +447,6 @@ namespace flame
 		pl_mesh_arm_plain->dynamic_renderpass = true;
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", {});
 		pl_terrain_plain->dynamic_renderpass = true;
-		pl_mesh_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "frag:CAMERA_LIGHT" });
-		pl_mesh_camlit->dynamic_renderpass = true;
-		pl_mesh_arm_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "vert:ARMATURE",
-			  "frag:CAMERA_LIGHT" });
-		pl_mesh_arm_camlit->dynamic_renderpass = true;
-		pl_terrain_camlit = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "frag:CAMERA_LIGHT" });
-		pl_terrain_camlit->dynamic_renderpass = true;
 
 		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
 		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
@@ -552,6 +555,8 @@ namespace flame
 		fb_pickup.reset(graphics::Framebuffer::create(rp_pickup, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 
 		final_layout = _final_layout;
+
+		camera_light_id = register_light_instance(-1);
 	}
 
 	void sRendererPrivate::bind_window_targets()
@@ -1045,53 +1050,75 @@ namespace flame
 		
 		buf_scene.upload(cb);
 
-		draw_data.reset("light"_h, 0);
 		auto n_lights = 0;
+		auto n_dir_lights = 0;
 		auto n_dir_shadows = 0;
-		for (auto& s : dir_shadows)
-			s.culled_nodes.clear();
-		for (auto n : camera_culled_nodes)
+		if (mode == Shaded)
 		{
-			n->draw(draw_data);
-			for (auto i = n_lights; i < draw_data.lights.size(); i++)
+			draw_data.reset("light"_h, 0);
+			for (auto n : camera_culled_nodes)
 			{
-				auto& l = draw_data.lights[i];
-				buf_light_info.select_item(l.instance_id);
-				buf_light_info.set_var<"type"_h>(l.type);
-				buf_light_info.set_var<"pos"_h>(l.pos);
-				buf_light_info.set_var<"color"_h>(l.color);
-				auto shadow_idx = -1;
-				if (l.cast_shadow)
+				n->draw(draw_data);
+				if (n_lights < draw_data.lights.size())
 				{
-					if (l.type == LightDirectional)
+					for (auto i = n_lights; i < draw_data.lights.size(); i++)
 					{
-						if (n_dir_shadows < countof(dir_shadows))
+						auto& l = draw_data.lights[i];
+						buf_light_info.select_item(l.instance_id);
+						buf_light_info.set_var<"type"_h>(l.type);
+						buf_light_info.set_var<"pos"_h>(l.pos);
+						buf_light_info.set_var<"color"_h>(l.color);
+						auto shadow_idx = -1;
+						if (l.cast_shadow)
 						{
-							shadow_idx = n_dir_shadows;
-							auto& rot = dir_shadows[shadow_idx].rot;
-							rot = n->g_rot;
-							rot[2] *= -1.f;
-							n_dir_shadows++;
+							if (l.type == LightDirectional)
+							{
+								if (n_dir_shadows < countof(dir_shadows))
+								{
+									shadow_idx = n_dir_shadows;
+									auto& rot = dir_shadows[shadow_idx].rot;
+									rot = n->g_rot;
+									rot[2] *= -1.f;
+									n_dir_shadows++;
+								}
+							}
 						}
+						buf_light_info.set_var<"shadow_index"_h>(shadow_idx);
+						if (l.type == LightDirectional) // push dir light index here
+							buf_light_index.push(1, &l.instance_id);
 					}
+					n_lights = draw_data.lights.size();
 				}
-				buf_light_info.set_var<"shadow_index"_h>(shadow_idx);
-				buf_light_index.push(1, &l.instance_id);
 			}
-			n_lights = draw_data.lights.size();
-		}
 
-		buf_light_grid.set_var<"offset"_h>(0);
-		buf_light_grid.set_var<"count"_h>(draw_data.lights.size());
-		buf_light_grid.next_item();
-		auto cx = max(1U, uint(sz.x / 16.f));
-		auto cy = max(1U, uint(sz.y / 16.f));
-		for (auto y = 0; y < cy; y++)
-		{
-			for (auto x = 0; x < cx; x++)
+			// pack dir lights
+			buf_light_grid.set_var<"offset"_h>(0);
+			buf_light_grid.set_var<"count"_h>(draw_data.lights.size());
+			buf_light_grid.next_item();
+			// pack pt lights
+			auto cx = max(1U, uint(sz.x / 16.f));
+			auto cy = max(1U, uint(sz.y / 16.f));
+			for (auto y = 0; y < cy; y++)
 			{
+				for (auto x = 0; x < cx; x++)
+				{
 
+				}
 			}
+		}
+		else if (mode == CameraLight)
+		{
+			buf_light_info.select_item(camera_light_id);
+			buf_light_info.set_var<"type"_h>(LightDirectional);
+			buf_light_info.set_var<"pos"_h>(camera->node->g_rot[2]);
+			buf_light_info.set_var<"color"_h>(vec3(3.14f));
+			buf_light_info.set_var<"shadow_index"_h>(-1);
+
+			buf_light_index.push(1, &camera_light_id);
+
+			buf_light_grid.set_var<"offset"_h>(0);
+			buf_light_grid.set_var<"count"_h>(1);
+			buf_light_grid.next_item();
 		}
 
 		buf_mesh_ins.upload(cb);
@@ -1111,213 +1138,213 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
+		// opaque
+		cb->begin_renderpass(nullptr, fb_gbuf.get(),
+			{ vec4(0.f, 0.f, 0.f, 1.f),
+			vec4(0.f, 0.f, 0.f, 1.f),
+			vec4(1.f, 0.f, 0.f, 0.f) });
+
+		prm_gbuf.bind_dss(cb);
+
+		mesh_buckets.draw(cb);
+
+		draw_data.reset("draw"_h, "terrain"_h);
+		for (auto n : camera_culled_nodes)
+			n->draw(draw_data);
+		for (auto& t : draw_data.draw_terrains)
+		{
+			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
+			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
+		}
+
+		cb->end_renderpass();
+
+		if (mode == Shaded)
+		{
+			for (auto i = 0; i < 4; i++)
+			{
+				auto& s = dir_shadows[i];
+				s.culled_nodes.clear();
+				for (auto j = 0; j < 4; j++)
+				{
+					for (auto& d : s.mesh_buckets[j].draw_idxs)
+						d.second.second.clear();
+				}
+			}
+
+			auto zn = camera->zNear; auto zf = camera->zFar;
+			for (auto i = 0; i < n_dir_shadows; i++)
+			{
+				auto& s = dir_shadows[i];
+				auto splits = vec4(0.f);
+				auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
+				for (auto lv = 0; lv < csm_levels; lv++)
+				{
+					auto n = lv / (float)csm_levels;
+					auto f = (lv + 1) / (float)csm_levels;
+					n = mix(zn, zf, n * n * shadow_distance);
+					f = mix(zn, zf, f * f * shadow_distance);
+					splits[lv] = f;
+
+					{
+						auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
+						n = p.z / p.w;
+					}
+					{
+						auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
+						f = p.z / p.w;
+					}
+					auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
+					if (csm_debug_sig)
+						debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+					auto b = AABB(frustum_slice, inverse(s.rot));
+					auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+					auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+					auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
+					auto c = s.rot * b.center();
+
+					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
+					proj[1][1] *= -1.f;
+					auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
+					auto proj_view = proj * view;
+					if (csm_debug_sig)
+					{
+						auto frustum_points = Frustum::get_points(inverse(proj_view));
+						debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+						auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+						vec3 pts[2];
+						pts[0] = c; pts[1] = s.rot[0] * hf_xlen;
+						debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
+						pts[0] = c; pts[1] = s.rot[1] * hf_ylen;
+						debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
+						pts[0] = c; pts[1] = s.rot[2] * hf_zlen;
+						debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+					}
+					s.culled_nodes.clear();
+					sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
+					auto z_min = +10000.f;
+					auto z_max = -10000.f;
+					draw_data.reset("occulder"_h, "mesh"_h);
+					auto n_draws = 0;
+					for (auto n : s.culled_nodes)
+					{
+						n->draw(draw_data);
+						if (draw_data.draw_meshes.size() > n_draws)
+						{
+							auto r = n->bounds.radius();
+							auto d = dot(n->g_pos, s.rot[2]);
+							z_min = min(d - r, z_min);
+							z_max = max(d + r, z_max);
+
+							n_draws = draw_data.draw_meshes.size();
+						}
+					}
+					proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, max(0.f, z_max - z_min));
+					proj[1][1] *= -1.f;
+					view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
+					proj_view = proj * view;
+					mats[lv] = proj_view;
+
+					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
+				}
+
+				buf_dir_shadow.set_var<"splits"_h>(splits);
+				buf_dir_shadow.set_var<"far"_h>(shadow_distance * camera->zFar);
+				buf_dir_shadow.next_item();
+			}
+
+			csm_debug_sig = false;
+
+			buf_dir_shadow.upload(cb);
+			buf_pt_shadow.upload(cb);
+
+			cb->set_viewport_and_scissor(Rect(vec2(0), shadow_map_size));
+			for (auto i = 0; i < n_dir_shadows; i++)
+			{
+				auto& s = dir_shadows[i];
+				for (auto lv = 0; lv < csm_levels; lv++)
+				{
+					cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
+					prm_fwd.bind_dss(cb);
+					prm_fwd.set_pc_var<"i"_h>(ivec4(0, i, lv, 0));
+					prm_fwd.push_constant(cb);
+					s.mesh_buckets[lv].draw(cb);
+					cb->end_renderpass();
+				}
+				cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
+			}
+		}
+
+		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
+
+		auto pl_mod = 0;
 		switch (mode)
 		{
-		case Shaded:
-		case CameraLight:
+		case AlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
+		case NormalData: pl_mod = "NORMAL_DATA"_h; break;
+		case MetallicData: pl_mod = "METALLIC_DATA"_h; break;
+		case RoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
+		case IBLValue: pl_mod = "IBL_VALUE"_h; break;
+		case FogValue: pl_mod = "FOG_VALUE"_h; break;
+		}
+
+		cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+		prm_deferred.bind_dss(cb);
+		cb->bind_pipeline(get_deferred_pipeline(pl_mod));
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
+		if (sky_map_res_id != -1)
 		{
-			// opaque
-			cb->begin_renderpass(nullptr, fb_gbuf.get(),
-				{ vec4(0.f, 0.f, 0.f, 1.f),
-				vec4(0.f, 0.f, 0.f, 1.f),
-				vec4(1.f, 0.f, 0.f, 0.f) });
-
-			prm_gbuf.bind_dss(cb);
-
-			mesh_buckets.draw(cb);
-
-			draw_data.reset("draw"_h, "terrain"_h);
-			for (auto n : camera_culled_nodes)
-				n->draw(draw_data);
-			for (auto& t : draw_data.draw_terrains)
-			{
-				cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-				cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
-			}
-
-			cb->end_renderpass();
-
-			if (mode == Shaded)
-			{
-				for (auto i = 0; i < 4; i++)
-				{
-					for (auto j = 0; j < 4; j++)
-					{
-						for (auto& d : dir_shadows[i].mesh_buckets[j].draw_idxs)
-							d.second.second.clear();
-					}
-				}
-
-				auto zn = camera->zNear; auto zf = camera->zFar;
-				for (auto i = 0; i < n_dir_shadows; i++)
-				{
-					auto& s = dir_shadows[i];
-					auto splits = vec4(0.f);
-					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
-					for (auto lv = 0; lv < csm_levels; lv++)
-					{
-						auto n = lv / (float)csm_levels;
-						auto f = (lv + 1) / (float)csm_levels;
-						n = mix(zn, zf, n * n * shadow_distance);
-						f = mix(zn, zf, f * f * shadow_distance);
-						splits[lv] = f;
-						
-						{
-							auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
-							n = p.z / p.w;
-						}
-						{
-							auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
-							f = p.z / p.w;
-						}
-						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-						if (csm_debug_sig)
-							debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
-						auto b = AABB(frustum_slice, inverse(s.rot));
-						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
-						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
-						auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
-						auto c = s.rot * b.center();
-
-						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
-						proj[1][1] *= -1.f;
-						auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
-						auto proj_view = proj * view;
-						if (csm_debug_sig)
-						{
-							auto frustum_points = Frustum::get_points(inverse(proj_view));
-							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
-							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
-							vec3 pts[2]; 
-							pts[0] = c; pts[1] = s.rot[0] * hf_xlen;
-							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
-							pts[0] = c; pts[1] = s.rot[1] * hf_ylen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
-							pts[0] = c; pts[1] = s.rot[2] * hf_zlen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
-						}
-						s.culled_nodes.clear();
-						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
-						auto z_min = +10000.f;
-						auto z_max = -10000.f;
-						draw_data.reset("occulder"_h, "mesh"_h);
-						auto n_draws = 0;
-						for (auto n : s.culled_nodes)
-						{
-							n->draw(draw_data);
-							if (draw_data.draw_meshes.size() > n_draws)
-							{
-								auto r = n->bounds.radius();
-								auto d = dot(n->g_pos, s.rot[2]);
-								z_min = min(d - r, z_min);
-								z_max = max(d + r, z_max);
-
-								n_draws = draw_data.draw_meshes.size();
-							}
-						}
-						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, max(0.f, z_max - z_min));
-						proj[1][1] *= -1.f;
-						view = lookAt(c + s.rot[2] * z_max, c, s.rot[1]);
-						proj_view = proj * view;
-						mats[lv] = proj_view;
-
-						s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
-					}
-
-					buf_dir_shadow.set_var<"splits"_h>(splits);
-					buf_dir_shadow.set_var<"far"_h>(shadow_distance * camera->zFar);
-					buf_dir_shadow.next_item();
-				}
-
-				csm_debug_sig = false;
-
-				buf_dir_shadow.upload(cb);
-				buf_pt_shadow.upload(cb);
-
-				cb->set_viewport_and_scissor(Rect(vec2(0), shadow_map_size));
-				for (auto i = 0; i < n_dir_shadows; i++)
-				{
-					auto& s = dir_shadows[i];
-					for (auto lv = 0; lv < csm_levels; lv++)
-					{
-						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
-						prm_fwd.bind_dss(cb);
-						prm_fwd.set_pc_var<"i"_h>(ivec4(0, i, lv, 0));
-						prm_fwd.push_constant(cb);
-						s.mesh_buckets[lv].draw(cb);
-						cb->end_renderpass();
-					}
-					cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
-				}
-			}
-
-			cb->set_viewport_and_scissor(Rect(vec2(0), sz));
-
-			auto pl_mod = 0;
-			// CameraLight modifier is use in deferred pipeline of opaque rendering
-			if (mode == CameraLight)
-				pl_mod = "CAMERA_LIGHT"_h;
-
-			cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-			prm_deferred.bind_dss(cb);
-			cb->bind_pipeline(get_deferred_pipeline(pl_mod));
-			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
-
-			if (sky_map_res_id != -1)
-			{
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				cb->end_renderpass();
-				sky_map_res_id = -1;
-			}
-
-			// transparent
-
-			// post
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
-			prm_luma.bind_dss(cb);
-			const auto min_log_luma = -5.f;
-			const auto max_log_luma = +5.f;
-			prm_luma.set_pc_var<"min_log_luma"_h>(min_log_luma);
-			prm_luma.set_pc_var<"log_luma_range"_h>(max_log_luma - min_log_luma);
-			prm_luma.set_pc_var<"time_coeff"_h>(1.0f);
-			prm_luma.set_pc_var<"num_pixels"_h>(int(sz.x * sz.y));
-			prm_luma.push_constant(cb);
-			cb->bind_pipeline(pl_luma_hist);
-			cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
-			cb->buffer_barrier(buf_luma_hist.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite, 
-				graphics::AccessShaderRead | graphics::AccessShaderWrite,
-				graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
-			cb->bind_pipeline(pl_luma_avg);
-			cb->dispatch(uvec3(256, 1, 1));
-			cb->buffer_barrier(buf_luma_avg.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
-				graphics::AccessShaderRead,
-				graphics::PipelineStageCompShader, graphics::PipelineStageAllGraphics);
-
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_blit);
-			cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
-			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-			cb->bind_pipeline(pl_tone);
-			prm_tone.bind_dss(cb);
-			prm_tone.set_pc_var<"white_point"_h>(white_point);
-			prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / gamma);
-			prm_tone.push_constant(cb);
-			cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
+			sky_map_res_id = -1;
 		}
-			break;
-		}
+
+		// transparent
+
+		// post
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
+		prm_luma.bind_dss(cb);
+		const auto min_log_luma = -5.f;
+		const auto max_log_luma = +5.f;
+		prm_luma.set_pc_var<"min_log_luma"_h>(min_log_luma);
+		prm_luma.set_pc_var<"log_luma_range"_h>(max_log_luma - min_log_luma);
+		prm_luma.set_pc_var<"time_coeff"_h>(1.0f);
+		prm_luma.set_pc_var<"num_pixels"_h>(int(sz.x * sz.y));
+		prm_luma.push_constant(cb);
+		cb->bind_pipeline(pl_luma_hist);
+		cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
+		cb->buffer_barrier(buf_luma_hist.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+			graphics::AccessShaderRead | graphics::AccessShaderWrite,
+			graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
+		cb->bind_pipeline(pl_luma_avg);
+		cb->dispatch(uvec3(256, 1, 1));
+		cb->buffer_barrier(buf_luma_avg.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+			graphics::AccessShaderRead,
+			graphics::PipelineStageCompShader, graphics::PipelineStageAllGraphics);
+
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+		cb->bind_pipeline(pl_blit);
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
+		cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+		cb->bind_pipeline(pl_tone);
+		prm_tone.bind_dss(cb);
+		prm_tone.set_pc_var<"white_point"_h>(white_point);
+		prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / gamma);
+		prm_tone.push_constant(cb);
+		cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
 
 		auto blur_pass = [&]() {
 			cb->bind_pipeline_layout(prm_post.pll);

@@ -212,6 +212,18 @@ void App::init()
 				renderer->mode = sRenderer::Shaded;
 			if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == sRenderer::CameraLight))
 				renderer->mode = sRenderer::CameraLight;
+			if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == sRenderer::AlbedoData))
+				renderer->mode = sRenderer::AlbedoData;
+			if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == sRenderer::NormalData))
+				renderer->mode = sRenderer::NormalData;
+			if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == sRenderer::MetallicData))
+				renderer->mode = sRenderer::MetallicData;
+			if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == sRenderer::RoughnessData))
+				renderer->mode = sRenderer::RoughnessData;
+			if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == sRenderer::IBLValue))
+				renderer->mode = sRenderer::IBLValue;
+			if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == sRenderer::FogValue))
+				renderer->mode = sRenderer::FogValue;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Debug"))

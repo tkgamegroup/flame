@@ -66,7 +66,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 {
 	vec3 ret = vec3(0.0);
 
-	uint dir_num =  light_grids[0].count;
+	uint dir_num = light_grids[0].count;
 	for (int i = 0; i < dir_num; i++)
 	{
 		LightInfo light = light_infos[light_indexs[i]];
@@ -152,19 +152,28 @@ vec3 get_fog(vec3 color, float dist)
 
 vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
 {
+#ifdef ALBEDO_DATA
+	return albedo;
+#endif
+#ifdef NORMAL_DATA
+	return N;
+#endif
+#ifdef METALLIC_DATA
+	return vec3(metallic);
+#endif
+#ifdef ROUGHNESS_DATA
+	return vec3(roughness);
+#endif
+
 	vec3 ret = vec3(0.0);
 
 	vec3 V = scene.camera_coord - coordw;
 	float distv = dot(scene.camera_dir, -V);
 	V = normalize(V);
 
-#ifndef CAMERA_LIGHT
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
-	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * ao;
+	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * /*ao*/1.0; // TODO: use ao when ssao is ok
 	//ret = get_fog(ret, distv);
-#else
-	ret += brdf(N, V, -scene.camera_dir, vec3(3.14), metallic, albedo, f0, roughness);
-#endif
 	
 	return ret;
 }
