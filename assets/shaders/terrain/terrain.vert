@@ -1,9 +1,3 @@
-#ifndef DEFERRED
-#include "../forward.pll"
-#else
-#include "../gbuffer.pll"
-#endif
-
 layout(location = 0) out flat uint o_id;
 layout(location = 1) out flat uint o_matid;
 layout(location = 2) out	  vec2 o_uv;

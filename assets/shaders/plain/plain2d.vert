@@ -1,5 +1,3 @@
-#include "plain.pll"
-
 layout (location = 0) in vec2 i_pos;
 
 #ifdef USE_VERTEX_COLOR

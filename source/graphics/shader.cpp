@@ -232,6 +232,12 @@ namespace flame
 			for (auto& d : _defines)
 			{
 				auto sp = SUS::split(d, '=');
+				if (sp.front() == "__add_line__")
+				{
+					if (sp.size() > 1)
+						temp_content += sp.back() + "\n\n";
+					continue;
+				}
 				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
 			}
 			for (auto& d : defines)
@@ -1314,6 +1320,8 @@ namespace flame
 							if (d.first == ShaderStageAll || d.first == stage)
 								defines.push_back(d.second);
 						}
+						if (info.layout && !info.layout->filename.empty())
+							defines.push_back("__add_line__=#include \"" + info.layout->filename.string() + "\"");
 						std::sort(defines.begin(), defines.end());
 						return Shader::get(stage, fn, defines);
 					}
@@ -1330,6 +1338,8 @@ namespace flame
 						if (d.first == ShaderStageAll || d.first == stage)
 							defines.push_back(d.second);
 					}
+					if (info.layout && !info.layout->filename.empty())
+						defines.push_back("__add_line__=#include \"" + info.layout->filename.string() + "\"");
 					std::sort(defines.begin(), defines.end());
 					return Shader::get(stage, fn, defines);
 				}

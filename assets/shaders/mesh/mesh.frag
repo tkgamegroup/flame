@@ -1,12 +1,9 @@
 #include "../math.glsl"
 
 #ifndef DEFERRED
-#include "../forward.pll"
 #ifdef MAT_FILE
 #include "../shading.glsl"
 #endif
-#else
-#include "../gbuffer.pll"
 #endif
 
 layout(location = 0) in flat uint i_matid;

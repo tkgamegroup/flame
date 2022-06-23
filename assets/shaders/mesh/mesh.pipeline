@@ -1,5 +1,6 @@
 %rp=..\forward.rp
 %pll=..\forward.pll
+%cull_mode=None
 layout
   {pll}
 shaders
@@ -8,3 +9,5 @@ shaders
   mesh.frag
 renderpass
   {rp}
+cull_mode
+  {cull_mode}

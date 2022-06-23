@@ -1,5 +1,3 @@
-#include "particle.pll"
-
 layout(location = 0) in vec4 i_col;
 layout(location = 1) in vec2 i_uv;
 layout(location = 2) in flat uint i_id;

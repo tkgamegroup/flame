@@ -1,9 +1,3 @@
-#ifndef DEFERRED
-#include "../forward.pll"
-#else
-#include "../gbuffer.pll"
-#endif
-
 layout(quads, equal_spacing, ccw) in;
 
 layout(location = 0) in flat uint i_ids[];

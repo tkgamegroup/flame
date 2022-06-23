@@ -1,5 +1,3 @@
-#include "../post/post.pll"
-
 layout (location = 0) in vec2 i_uv;
 
 layout (location = 0) out float o_result;

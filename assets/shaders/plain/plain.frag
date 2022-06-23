@@ -1,5 +1,3 @@
-#include "plain.pll"
-
 #ifdef USE_VERTEX_COLOR
 layout (location = 0) in vec4 i_col;
 #endif

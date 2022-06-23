@@ -153,16 +153,17 @@ namespace flame
 			return it->second;
 
 		std::vector<std::string> defines;
-		if (/*!forward*/modifier2 != "OCCLUDER_PASS"_h)
+		if (modifier2 == "OCCLUDER_PASS"_h)
+		{
+			defines.push_back("rp=" + str(rp_dep));
+			defines.push_back("pll=" + str(pll_fwd));
+			defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
+		}
+		else if (true/*!forward*/)
 		{
 			defines.push_back("rp=" + str(rp_gbuf));
 			defines.push_back("pll=" + str(pll_gbuf));
 			defines.push_back("all_shader:DEFERRED");
-		}
-		else
-		{
-			defines.push_back("rp=" + str(rp_dep));
-			defines.push_back("pll=" + str(pll_fwd));
 		}
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));

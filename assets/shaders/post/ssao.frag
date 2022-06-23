@@ -1,4 +1,3 @@
-#include "ssao.pll"
 #include "../math.glsl"
 
 layout (location = 0) in vec2 i_uv;
