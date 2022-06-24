@@ -16,8 +16,6 @@ void main()
 	o_id = i_ids[0];
 	o_matid = i_matids[0];
 
-	TerrainInstance terrain = terrain_instances[o_id];
-
 	o_uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x),
 		mix(i_uvs[3], i_uvs[2], gl_TessCoord.x),
@@ -29,7 +27,7 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	o_coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain.extent.y;
+	o_coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain_instances[o_id].extent.y;
 
 	o_normal = normalize(texture(terrain_normal_maps[o_id], o_uv).xyz * 2.0 - 1.0);
 	o_tangent = normalize(texture(terrain_tangent_maps[o_id], o_uv).xyz * 2.0 - 1.0);

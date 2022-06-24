@@ -22,6 +22,7 @@ layout(location = 0) out vec4 o_color;
 layout(location = 0) out vec4 o_res_col_met;
 layout(location = 1) out vec4 o_res_nor_rou;
 #endif
+
 vec3 textureVariant(int map_id, vec2 uv)
 {
 	float k = 0;
@@ -44,6 +45,7 @@ vec3 textureVariant(int map_id, vec2 uv)
     vec3 colb = textureGrad(material_maps[map_id], uv + offb, duvdx, duvdy).rgb;
     return mix(cola, colb, smoothstep(0.2, 0.8, f - 0.1 * sum(cola - colb)));
 }
+
 vec3 textureTerrain(int map_id, float tiling)
 {
     vec3 ret = vec3(0.0);

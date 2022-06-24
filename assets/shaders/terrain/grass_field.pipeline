@@ -3,11 +3,11 @@
 layout
   {pll}
 shaders
-  grass_field.vert
+  terrain.vert
  ---
-  grass_field.tesc
+  terrain.tesc
  ---
-  grass_field.tese
+  terrain.tese
  ---
   grass_field.geom
  ---

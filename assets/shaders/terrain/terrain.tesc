@@ -8,6 +8,7 @@ layout (location = 0) out flat	uint o_ids[4];
 layout (location = 1) out flat	uint o_matids[4];
 layout (location = 2) out		vec2 o_uvs[4];
 
+uint id;
 TerrainInstance terrain;
 
 float tess_factor(vec4 p0, vec4 p1)
@@ -15,12 +16,12 @@ float tess_factor(vec4 p0, vec4 p1)
 	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
 	v = v * v;
 	v = 1.0 - v;
-	return max(v * terrain.tess_level, 1.0);
+	return max(v * terrain_instances[id].tess_level, 1.0);
 }
 
 bool frustum_check()
 {
-	vec3 ext = terrain.extent;
+	vec3 ext = terrain_instances[id].extent;
 	float r = max(max(ext.x, ext.z), ext.y);
 	vec4 p = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position + gl_in[3].gl_Position) * 0.25;
 
@@ -34,7 +35,7 @@ bool frustum_check()
 
 void main()
 {
-	terrain = terrain_instances[i_ids[gl_InvocationID]];
+	id = i_ids[0];
 
 	if (gl_InvocationID == 0)
 	{

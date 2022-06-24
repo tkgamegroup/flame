@@ -192,6 +192,9 @@ namespace flame
 		case "terrain"_h:
 			pipeline_name = L"flame\\shaders\\terrain\\terrain.pipeline";
 			break;
+		case "grass_field"_h:
+			pipeline_name = L"flame\\shaders\\terrain\\grass_field.pipeline";
+			break;
 		}
 		switch (modifier1)
 		{
@@ -1157,6 +1160,14 @@ namespace flame
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
 			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
 		}
+		draw_data.reset("draw"_h, "grass_field"_h);
+		for (auto n : camera_culled_nodes)
+			n->draw(draw_data);
+		for (auto& t : draw_data.draw_terrains)
+		{
+			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
+			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
+		}
 
 		cb->end_renderpass();
 
@@ -1177,7 +1188,7 @@ namespace flame
 				for (auto i = 0; i < n_dir_shadows; i++)
 				{
 					auto& s = dir_shadows[i];
-					auto splits = vec4(camera->zFar);
+					auto splits = vec4(zf);
 					auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
 					for (auto lv = 0; lv < csm_levels; lv++)
 					{
@@ -1245,13 +1256,48 @@ namespace flame
 							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
 							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+							{
+								auto p = proj_view * vec4(c, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c + s.rot[0] * hf_xlen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c - s.rot[0] * hf_xlen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c + s.rot[0] * hf_ylen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c - s.rot[0] * hf_ylen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c + s.rot[0] * hf_zlen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
+							{
+								auto p = proj_view * vec4(c - s.rot[0] * hf_zlen, 1.f);
+								p /= p.w;
+								int cut = 1;
+							}
 						}
 
 					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
 				}
 
 				buf_dir_shadow.set_var<"splits"_h>(splits);
-				buf_dir_shadow.set_var<"far"_h>(shadow_distance * camera->zFar);
+				buf_dir_shadow.set_var<"far"_h>(shadow_distance * zf);
 				buf_dir_shadow.next_item();
 			}
 

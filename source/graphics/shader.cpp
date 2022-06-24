@@ -223,6 +223,7 @@ namespace flame
 				std::filesystem::create_directories(dst_ppath);
 
 			std::string temp_content;
+			std::vector<std::string> additional_lines;
 			temp_content += "#version 450 core\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
 			if (stage != ShaderStageComp)
@@ -235,7 +236,7 @@ namespace flame
 				if (sp.front() == "__add_line__")
 				{
 					if (sp.size() > 1)
-						temp_content += sp.back() + "\n\n";
+						additional_lines.push_back(sp.back());
 					continue;
 				}
 				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
@@ -251,8 +252,8 @@ namespace flame
 			std::vector<std::filesystem::path> dependencies;
 
 			auto dsl_id = 0;
-			std::function<std::string(const std::filesystem::path& path)> preprocess;
-			preprocess = [&](const std::filesystem::path& path) {
+			std::function<std::string(const std::filesystem::path& path, const std::vector<std::string>& additional_lines)> preprocess;
+			preprocess = [&](const std::filesystem::path& path, const std::vector<std::string>& additional_lines) {
 				auto found_name = [&](std::string_view name) {
 					for (auto& d : defines)
 					{
@@ -290,7 +291,10 @@ namespace flame
 				};
 
 				std::string ret;
-				for (auto& l : get_file_lines(path))
+				auto lines = get_file_lines(path);
+				if (!additional_lines.empty())
+					lines.insert(lines.begin(), additional_lines.begin(), additional_lines.end());
+				for (auto& l : lines)
 				{
 					auto tl = SUS::get_trimed(l);
 					if (SUS::strip_head_if(tl, "#if "))
@@ -381,7 +385,7 @@ namespace flame
 								auto is_dsl = header_path.extension() == L".dsl";
 								if (!(is_dsl && stage == ShaderStagePll))
 								{
-									ret += preprocess(header_path);
+									ret += preprocess(header_path, {});
 									ret += "\n";
 									if (is_dsl && stage != ShaderStageDsl)
 									{
@@ -404,7 +408,7 @@ namespace flame
 				return ret;
 			};
 
-			temp_content += preprocess(src_path);
+			temp_content += preprocess(src_path, additional_lines);
 			if (stage == ShaderStageDsl || stage == ShaderStagePll)
 				temp_content += "void main() {}\n";
 			std::ofstream dst(dst_path);
