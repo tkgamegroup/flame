@@ -31,6 +31,9 @@ void main()
 
 	o_normal = normalize(texture(terrain_normal_maps[o_id], o_uv).xyz * 2.0 - 1.0);
 	o_tangent = normalize(texture(terrain_tangent_maps[o_id], o_uv).xyz * 2.0 - 1.0);
-
+#ifndef HAS_GEOM
 	gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+#else
+	gl_Position = vec4(o_coordw, 1.0);
+#endif
 }

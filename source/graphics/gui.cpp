@@ -246,7 +246,7 @@ namespace flame
 		static std::unique_ptr<DescriptorSetT> imgui_ds;
 		static GraphicsPipelinePtr imgui_pl;
 
-		static Listeners<void()> gui_callbacks;
+		Listeners<void()> gui_callbacks;
 
 		static std::map<std::filesystem::path, std::pair<int, ImagePtr>> icons;
 
@@ -266,12 +266,18 @@ namespace flame
 				imgui_fbs.emplace_back(Framebuffer::create(imgui_rp, img->get_view()));
 		}
 
-		static void gui_render(uint img_idx, CommandBufferPtr cb)
+		void* gui_native_handle()
+		{
+#if USE_IMGUI
+			return ImGui::GetCurrentContext();
+#endif
+			return nullptr;
+		}
+
+		void gui_frame()
 		{
 #if USE_IMGUI
 			auto native = main_window->native;
-			auto curr_img = main_window->swapchain->images[img_idx].get();
-			auto curr_fb = imgui_fbs[img_idx].get();
 
 			auto& io = ImGui::GetIO();
 			io.DeltaTime = delta_time;
@@ -329,6 +335,15 @@ namespace flame
 			}
 
 			ImGui::EndFrame();
+#endif
+		}
+
+		static void gui_render(uint img_idx, CommandBufferPtr cb)
+		{
+#if USE_IMGUI
+			auto curr_img = main_window->swapchain->images[img_idx].get();
+			auto curr_fb = imgui_fbs[img_idx].get();
+
 			ImGui::Render();
 
 			auto draw_data = ImGui::GetDrawData();
@@ -433,15 +448,15 @@ namespace flame
 			native->mouse_listeners.add([](MouseButton btn, bool down) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseDown[btn] = down;
-			});
+				});
 			native->mousemove_listeners.add([](const ivec2& pos) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MousePos = ImVec2(pos.x, pos.y);
-			});
+				});
 			native->scroll_listeners.add([](int scroll) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseWheel = scroll;
-			});
+				});
 			native->key_listeners.add([](KeyboardKey key, bool down) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.KeysDown[key] = down;
@@ -451,14 +466,14 @@ namespace flame
 					io.KeyShift = down;
 				if (key == Keyboard_Alt)
 					io.KeyAlt = down;
-			});
+				});
 			native->char_listeners.add([](wchar_t ch) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.AddInputCharacter(ch);
-			});
+				});
 			native->resize_listeners.add([](const vec2&) {
 				gui_create_fbs();
-			});
+				});
 
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
 				{ "rp=" + str(imgui_rp) });
@@ -564,14 +579,6 @@ namespace flame
 				icons.emplace(L"armature", std::make_pair(-1, image));
 			if (auto image = Image::get(L"flame/icon_mesh.png"); image)
 				icons.emplace(L"mesh", std::make_pair(-1, image));
-		}
-
-		void* gui_native_handle()
-		{
-#if USE_IMGUI
-			return ImGui::GetCurrentContext();
-#endif
-			return nullptr;
 		}
 
 		static std::vector<vec2> circle_pts0;

@@ -23,6 +23,7 @@ namespace flame
 		/// Reflect
 		bool loop = true;
 
+		graphics::ModelPtr model = nullptr;
 		uint playing_name = 0;
 		float playing_time = 0;
 		float playing_speed = 1.f;

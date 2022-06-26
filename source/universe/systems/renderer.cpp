@@ -17,9 +17,12 @@
 
 namespace flame
 {
-	const graphics::Format col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
-	const graphics::Format dep_fmt = graphics::Format::Format_Depth16;
-	const uvec2 shadow_map_size = uvec2(2048);
+	const auto col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
+	const auto dep_fmt = graphics::Format::Format_Depth16;
+	const auto ShadowMapSize = uvec2(2048);
+	const auto DirShadowMaxCount = 4U;
+	const auto DirShadowMaxLevels = 4U;
+	const auto PtShadowMaxCount = 4U;
 
 	int sky_map_res_id = -1;
 	int sky_irr_map_res_id = -1;
@@ -134,13 +137,13 @@ namespace flame
 	{
 		mat3 rot;
 		std::vector<cNodePtr> culled_nodes;
-		MeshBuckets mesh_buckets[4];
+		MeshBuckets mesh_buckets[DirShadowMaxLevels];
 	};
 
 	std::vector<cNodePtr> camera_culled_nodes;
 	DrawData draw_data;
 	MeshBuckets mesh_buckets;
-	DirShadow dir_shadows[4];
+	DirShadow dir_shadows[DirShadowMaxCount];
 
 	std::vector<LinesDraw> debug_lines;
 	bool csm_debug_sig = false;
@@ -151,6 +154,8 @@ namespace flame
 		auto it = mr.pls.find(key);
 		if (it != mr.pls.end())
 			return it->second;
+
+		rotate(mat4(1.f), 90.f, vec3(1.f));
 
 		std::vector<std::string> defines;
 		if (modifier2 == "OCCLUDER_PASS"_h)
@@ -194,6 +199,8 @@ namespace flame
 			break;
 		case "grass_field"_h:
 			pipeline_name = L"flame\\shaders\\terrain\\grass_field.pipeline";
+			defines.push_back("tese:HAS_GEOM");
+			defines.push_back("all_shader:GRASS_FIELD");
 			break;
 		}
 		switch (modifier1)
@@ -390,13 +397,13 @@ namespace flame
 		imgs_dir_shadow.resize(dsl_light->find_binding("dir_shadow_maps")->count);
 		for (auto& i : imgs_dir_shadow)
 		{
-			i.reset(graphics::Image::create(dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 4));
+			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		imgs_pt_shadow.resize(dsl_light->find_binding("pt_shadow_maps")->count);
 		for (auto& i : imgs_pt_shadow)
 		{
-			i.reset(graphics::Image::create(dep_fmt, shadow_map_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		ds_light->set_buffer("LightIndexs", 0, buf_light_index.buf.get());
@@ -405,7 +412,7 @@ namespace flame
 		ds_light->set_buffer("DirShadows", 0, buf_dir_shadow.buf.get());
 		ds_light->set_buffer("PtShadows", 0, buf_pt_shadow.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, 4 }), sp_shadow);
+			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
 			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
 		ds_light->set_image("sky_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
@@ -459,7 +466,7 @@ namespace flame
 		mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
 		for (auto& s : dir_shadows)
 		{
-			for (auto i = 0; i < 4; i++)
+			for (auto i = 0; i < DirShadowMaxLevels; i++)
 				s.mesh_buckets[i].buf_idr.create(0U, min(1024U, buf_mesh_ins.array_capacity));
 		}
 
@@ -1173,11 +1180,11 @@ namespace flame
 
 		if (mode == Shaded)
 		{
-			for (auto i = 0; i < 4; i++)
+			for (auto i = 0; i < DirShadowMaxCount; i++)
 			{
 				auto& s = dir_shadows[i];
 				s.culled_nodes.clear();
-				for (auto j = 0; j < 4; j++)
+				for (auto j = 0; j < DirShadowMaxLevels; j++)
 				{
 					for (auto& d : s.mesh_buckets[j].draw_idxs)
 						d.second.second.clear();
@@ -1215,14 +1222,14 @@ namespace flame
 						auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
 						auto c = s.rot * b.center();
 
-						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, hf_zlen * 2.f);
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
 						proj[1][1] *= -1.f;
-						auto view = lookAt(c + s.rot[2] * hf_zlen, c, s.rot[1]);
+						auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
 						auto proj_view = proj * view;
 						s.culled_nodes.clear();
 						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
-						auto z_min = +10000.f;
-						auto z_max = -10000.f;
+						auto z_min = -hf_zlen;
+						auto z_max = +hf_zlen;
 						draw_data.reset("occulder"_h, "mesh"_h);
 						auto n_draws = 0;
 						for (auto n : s.culled_nodes)
@@ -1231,17 +1238,16 @@ namespace flame
 							if (draw_data.draw_meshes.size() > n_draws)
 							{
 								auto r = n->bounds.radius();
-								auto d = dot(n->g_pos, s.rot[2]);
+								auto d = dot(n->g_pos - c, s.rot[2]);
 								z_min = min(d - r, z_min);
 								z_max = max(d + r, z_max);
 
 								n_draws = draw_data.draw_meshes.size();
 							}
 						}
-						auto len = max(hf_zlen * 2.f, z_max - z_min);
-						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, len);
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
 						proj[1][1] *= -1.f;
-						view = lookAt(c - s.rot[2] * (len - hf_zlen), c, s.rot[1]);
+						view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
 						proj_view = proj * view;
 						mats[lv] = proj_view;
 						if (csm_debug_sig)
@@ -1256,41 +1262,6 @@ namespace flame
 							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
 							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
-							{
-								auto p = proj_view * vec4(c, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c + s.rot[0] * hf_xlen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c - s.rot[0] * hf_xlen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c + s.rot[0] * hf_ylen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c - s.rot[0] * hf_ylen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c + s.rot[0] * hf_zlen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
-							{
-								auto p = proj_view * vec4(c - s.rot[0] * hf_zlen, 1.f);
-								p /= p.w;
-								int cut = 1;
-							}
 						}
 
 					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
@@ -1306,7 +1277,7 @@ namespace flame
 			buf_dir_shadow.upload(cb);
 			buf_pt_shadow.upload(cb);
 
-			cb->set_viewport_and_scissor(Rect(vec2(0), shadow_map_size));
+			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize));
 			for (auto i = 0; i < n_dir_shadows; i++)
 			{
 				auto& s = dir_shadows[i];
@@ -1428,59 +1399,79 @@ namespace flame
 		draw_data.reset("outline"_h, 0);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
+		auto outline_idx = 0;
+		std::vector<uint> outline_groups;
+		outline_groups.push_back(0);
+		for (auto i = 0; i < draw_data.draw_meshes.size(); i++)
+		{
+			outline_groups.back()++;
+			if (draw_data.draw_meshes[i].mat_id == 0)
+				outline_groups.push_back(0);
+		}
+		for (auto n : outline_groups)
+		{
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+			for (auto i = 0; i < n; i++)
+			{
+				auto& m = draw_data.draw_meshes[i];
+				auto& mesh_r = mesh_reses[m.mesh_id];
+
+				prm_fwd.bind_dss(cb);
+				prm_fwd.set_pc_var<"f"_h>(vec4(m.color) / 255.f);
+				prm_fwd.push_constant(cb);
+
+				if (!mesh_r.arm)
+				{
+					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+				}
+				else
+				{
+					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_arm_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+				}
+			}
+			cb->end_renderpass();
+
+			blur_pass();
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			for (auto i = 0; i < n; i++)
+			{
+				auto& m = draw_data.draw_meshes[i];
+				auto& mesh_r = mesh_reses[m.mesh_id];
+
+				prm_fwd.bind_dss(cb);
+				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+				prm_fwd.push_constant(cb);
+
+				if (!mesh_r.arm)
+				{
+					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+				}
+				else
+				{
+					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_arm_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
+
+				}
+			}
+			cb->end_renderpass();
+			blend_pass();
+
+			outline_idx += n;
+		}
 		for (auto& m : draw_data.draw_meshes)
 		{
 			auto& mesh_r = mesh_reses[m.mesh_id];
-			if (!mesh_r.arm)
-			{
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(m.color) / 255.f);
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_mesh_plain);
-				cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
-				cb->end_renderpass();
-
-				blur_pass();
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_mesh_plain);
-				cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
-				cb->end_renderpass();
-
-				blend_pass();
-			}
-			else
-			{
-				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(m.color) / 255.f);
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_mesh_arm_plain);
-				cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
-				cb->end_renderpass();
-
-				blur_pass();
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_mesh_arm_plain);
-				cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.instance_id << 8);
-				cb->end_renderpass();
-
-				blend_pass();
-			}
 		}
 		for (auto& t : draw_data.draw_terrains)
 		{

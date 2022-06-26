@@ -14,6 +14,8 @@ shaders
   grass_field.frag
 renderpass
   {rp}
+cull_mode
+  None
 primitive_topology
   PatchList
 patch_control_points

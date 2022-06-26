@@ -27,8 +27,13 @@ struct UniverseApplication : GraphicsApplication
 		renderer = (sRendererPtr)world->add_system(th<sRenderer>());
 	}
 
+	void on_render() override
+	{
+	}
+
 	bool on_update() override
 	{
+		graphics::gui_frame();
 		world->update();
 		GraphicsApplication::on_update();
 		return true;

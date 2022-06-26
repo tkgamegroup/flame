@@ -1,6 +1,6 @@
 %rp=..\forward.rp
 %pll=..\forward.pll
-%cull_mode=None
+%cull_mode=Back
 layout
   {pll}
 shaders

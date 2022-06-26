@@ -6,6 +6,16 @@ float sum(vec3 v)
 	return v.x + v.y + v.z;
 }
 
+float rand(vec2 co)
+{
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float rand(vec3 co)
+{
+    return fract(sin(dot(co, vec3(12.9898, 78.233, 53.539))) * 43758.5453);
+}
+
 vec2 panorama(vec3 v)
 {
 	return vec2(0.5 + 0.5 * atan(v.x, v.z) * PI_INV, acos(v.y) * PI_INV);
@@ -32,6 +42,28 @@ float linear_depth(float near, float far, float d /* -1, +1 */)
 vec3 cube_coord(vec3 v)
 {
 	return vec3(v.x, v.y, v.z);
+}
+
+mat3 rotation(vec3 axis, float angle)
+{
+	float c = cos(angle);
+	float s = sin(angle);
+
+	vec3 temp = (1.0 - c) * axis;
+
+	mat3 ret;
+	ret[0][0] = c + temp[0] * axis[0];
+	ret[0][1] = temp[0] * axis[1] + s * axis[2];
+	ret[0][2] = temp[0] * axis[2] - s * axis[1];
+
+	ret[1][0] = temp[1] * axis[0] - s * axis[2];
+	ret[1][1] = c + temp[1] * axis[1];
+	ret[1][2] = temp[1] * axis[2] + s * axis[0];
+
+	ret[2][0] = temp[2] * axis[0] + s * axis[1];
+	ret[2][1] = temp[2] * axis[1] - s * axis[0];
+	ret[2][2] = c + temp[2] * axis[2];
+	return ret;
 }
 
 vec3 rgb2xyz(vec3 _rgb)

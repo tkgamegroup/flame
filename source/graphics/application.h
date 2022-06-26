@@ -14,7 +14,10 @@ struct GraphicsApplication : Application
 	int render_frames = 0;
 	bool always_render = true;
 
-	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), WindowStyleFlags styles = WindowFrame | WindowResizable)
+	void create(bool graphics_debug, std::string_view title, 
+		const uvec2& size = uvec2(1280, 720), 
+		WindowStyleFlags styles = WindowFrame | WindowResizable,
+		bool = false)
 	{
 		Application::create(title, size, styles);
 
@@ -25,12 +28,18 @@ struct GraphicsApplication : Application
 		graphics::gui_set_current();
 	}
 
+	virtual void on_render()
+	{
+		graphics::gui_frame();
+	}
+
 	bool on_update() override
 	{
 		if (main_window->native->has_input)
 			render_frames = 3;
 		if (render_frames > 0 || always_render)
 		{
+			on_render();
 			main_window->dirty = true;
 			main_window->render();
 			render_frames--;

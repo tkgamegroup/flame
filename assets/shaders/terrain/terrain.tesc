@@ -9,14 +9,18 @@ layout (location = 1) out flat	uint o_matids[4];
 layout (location = 2) out		vec2 o_uvs[4];
 
 uint id;
-TerrainInstance terrain;
 
 float tess_factor(vec4 p0, vec4 p1)
 {
 	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
 	v = v * v;
 	v = 1.0 - v;
-	return max(v * terrain_instances[id].tess_level, 1.0);
+#ifndef GRASS_FIELD
+	uint tess_level = terrain_instances[id].tess_level;
+#else
+	uint tess_level = 64;
+#endif
+	return max(v * tess_level, 1.0);
 }
 
 bool frustum_check()

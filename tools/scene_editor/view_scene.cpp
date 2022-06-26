@@ -162,6 +162,17 @@ void View_Scene::on_draw()
 							draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
 						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 							draw_data.draw_terrains.emplace_back(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, 0, col);
+						if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
+						{
+							auto idx = (int)draw_data.draw_meshes.size();
+							for (auto& c : e->children)
+							{
+								if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+									draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, -1, col);
+							}
+							if (draw_data.draw_meshes.size() > idx)
+								draw_data.draw_meshes.back().mat_id = 0;
+						}
 					};
 					if (hovering_node && selection.selecting(hovering_node->entity))
 						outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));

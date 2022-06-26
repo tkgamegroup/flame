@@ -40,8 +40,6 @@ namespace flame
 			std::vector<Track> tracks;
 		};
 
-		graphics::ModelPtr model = nullptr;
-
 		std::vector<Bone> bones;
 		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;

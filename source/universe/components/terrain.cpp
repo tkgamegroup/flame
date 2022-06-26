@@ -35,7 +35,9 @@ namespace flame
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				break;
 			case "draw"_h:
-				draw_data.draw_terrains.emplace_back(instance_id, blocks.x * blocks.y, material_res_id);
+				if (draw_data.category == "terrain"_h || 
+					draw_data.category == "grass_field"_h)
+					draw_data.draw_terrains.emplace_back(instance_id, blocks.x * blocks.y, material_res_id);
 				break;
 			}
 		}, "terrain"_h);
