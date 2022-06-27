@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer.h"
-#include "../draw_data.h"
 
 #include "../../graphics/image.h"
 #include "../../graphics/renderpass.h"
@@ -55,7 +54,7 @@ namespace flame
 
 		void update() override;
 
-		cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos) override;
+		cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback) override;
 
 		void send_debug_string(const std::string& str) override;
 	};

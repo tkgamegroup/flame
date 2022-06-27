@@ -1,6 +1,7 @@
 #include "renderer_private.h"
 #include "scene_private.h"
 #include "../octree.h"
+#include "../draw_data.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
 #include "../components/camera_private.h"
@@ -31,7 +32,7 @@ namespace flame
 	float sky_intensity = 1.f;
 	vec3 fog_color = vec3(1.f);
 	float white_point = 4.f;
-	float gamma = 2.2f;
+	float gamma = 1.5f;
 	uint csm_levels = 3;
 	float shadow_distance = 0.1f; // (0-1) of camera's far
 	float ssao_radius = 0.5f;
@@ -1538,7 +1539,7 @@ namespace flame
 	{
 	}
 
-	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos)
+	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)
 	{
 		if (camera == INVALID_POINTER)
 			return nullptr;
@@ -1571,10 +1572,15 @@ namespace flame
 		draw_data.reset("draw"_h, "mesh"_h);
 		for (auto n : camera_culled_nodes)
 		{
-			n->draw(draw_data);
+			if (draw_callback)
+				draw_callback(n, draw_data);
+			else
+				n->draw(draw_data);
+
 			for (auto i = n_draws; i < draw_data.draw_meshes.size(); i++)
 			{
 				nodes.push_back(n);
+
 				auto& m = draw_data.draw_meshes[i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
 				if (!mesh_r.arm)
@@ -1605,7 +1611,11 @@ namespace flame
 		cb->bind_pipeline(pl_terrain_pickup);
 		for (auto n : camera_culled_nodes)
 		{
-			n->draw(draw_data);
+			if (draw_callback)
+				draw_callback(n, draw_data);
+			else
+				n->draw(draw_data);
+
 			for (auto i = n_draws; i < draw_data.draw_terrains.size(); i++)
 			{
 				nodes.push_back(n);

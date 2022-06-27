@@ -403,7 +403,34 @@ void View_Scene::on_draw()
 
 			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 			{
-				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos);
+				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+					switch (draw_data.category)
+					{
+					case "mesh"_h:
+						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
+						{
+							for (auto& c : n->entity->children) 
+							{
+								if (auto mesh = c->get_component_t<cMesh>(); mesh)
+									draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+							}
+						}
+						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
+						{
+							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
+							{
+
+							}
+							else
+								draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+						}
+						break;
+					case "terrain"_h:
+						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+							draw_data.draw_terrains.emplace_back(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, terrain->material_res_id);
+						break;
+					}
+				});
 				if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 				{
 					if (hovering_node)

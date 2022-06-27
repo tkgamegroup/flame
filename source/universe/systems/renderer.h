@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	struct DrawData;
+
 	/// Reflect
 	struct sRenderer : System
 	{
@@ -102,7 +104,7 @@ namespace flame
 
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 
-		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr) = 0;
+		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;
 
 		virtual void send_debug_string(const std::string& str) = 0;
 
