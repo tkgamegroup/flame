@@ -155,13 +155,15 @@ void View_Scene::on_draw()
 		if (!editor_node->drawers.exist("scene"_h))
 		{
 			editor_node->drawers.add([this](DrawData& draw_data) {
+				if (app.e_playing)
+					return;
 				if (draw_data.pass == "outline"_h)
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
 						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
-							draw_data.draw_terrains.emplace_back(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, 0, col);
+							draw_data.draw_terrains.emplace_back(terrain->instance_id, product(terrain->blocks), 0, col);
 						if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
 						{
 							auto idx = (int)draw_data.draw_meshes.size();
@@ -310,168 +312,172 @@ void View_Scene::on_draw()
 			editor_node->mark_transform_dirty();
 		}
 
-		if (ImGui::IsItemHovered())
+		if (!app.e_playing)
 		{
-			auto camera_node = camera->node;
+			if (ImGui::IsItemHovered())
+			{
+				auto camera_node = camera->node;
 
-			auto get_tar = [&]() {
-				return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
-			};
+				auto get_tar = [&]() {
+					return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+				};
 
-			if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
-			{
-				disp /= vec2(render_tar->size);
-				if (!io.KeyAlt)
+				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 				{
-					if (io.MouseDown[ImGuiMouseButton_Middle])
+					disp /= vec2(render_tar->size);
+					if (!io.KeyAlt)
 					{
-						camera_node->add_pos((-camera_node->g_rot[0] * disp.x +
-							camera_node->g_rot[1] * disp.y) * camera_zoom);
-					}
-					else if (io.MouseDown[ImGuiMouseButton_Right])
-					{
-						disp *= -180.f;
-						camera_node->add_eul(vec3(disp, 0.f));
-					}
-				}
-				else
-				{
-					if (io.MouseDown[ImGuiMouseButton_Left])
-					{
-						disp *= -180.f;
-						auto tar = get_tar();
-						camera_node->add_eul(vec3(disp, 0.f));
-						auto eul = camera_node->eul;
-						auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
-						camera_node->set_pos(tar + rot[2] * camera_zoom);
-					}
-				}
-			}
-			{
-				static vec2 last_mpos = vec2(0.f);
-				if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-					last_mpos = io.MousePos;
-				if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
-					camera_node->set_pos(hovering_pos + camera_node->g_rot[2] * camera_zoom);
-			}
-			if (auto scroll = io.MouseWheel; scroll != 0.f)
-			{
-				auto tar = get_tar();
-				if (scroll < 0.f)
-					camera_zoom = camera_zoom * 1.1f + 0.5f;
-				else
-					camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
-				camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
-			}
-			if (!io.WantCaptureKeyboard)
-			{
-				if (io.KeysDown[Keyboard_W])
-				{
-					camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
-					app.render_frames += 30;
-				}
-				if (io.KeysDown[Keyboard_S])
-				{
-					camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
-					app.render_frames += 30;
-				}
-				if (io.KeysDown[Keyboard_A])
-				{
-					camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
-					app.render_frames += 30;
-				}
-				if (io.KeysDown[Keyboard_D])
-				{
-					camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
-					app.render_frames += 30;
-				}
-				if (io.KeysDown[Keyboard_F])
-					focus_to_selected();
-				if (io.KeysDown[Keyboard_G])
-					selected_to_focus();
-				if (ImGui::IsKeyPressed(Keyboard_Del))
-					app.cmd_delete_entity();
-				if (ImGui::IsKeyPressed(Keyboard_1))
-					app.tool = ToolSelect;
-				if (ImGui::IsKeyPressed(Keyboard_2))
-					app.tool = ToolMove;
-				if (ImGui::IsKeyPressed(Keyboard_3))
-					app.tool = ToolRotate;
-				if (ImGui::IsKeyPressed(Keyboard_4))
-					app.tool = ToolScale;
-			}
-
-			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
-			{
-				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
-					switch (draw_data.category)
-					{
-					case "mesh"_h:
-						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
+						if (io.MouseDown[ImGuiMouseButton_Middle])
 						{
-							for (auto& c : n->entity->children) 
+							camera_node->add_pos((-camera_node->g_rot[0] * disp.x +
+								camera_node->g_rot[1] * disp.y) * camera_zoom);
+						}
+						else if (io.MouseDown[ImGuiMouseButton_Right])
+						{
+							disp *= -180.f;
+							camera_node->add_eul(vec3(disp, 0.f));
+						}
+					}
+					else
+					{
+						if (io.MouseDown[ImGuiMouseButton_Left])
+						{
+							disp *= -180.f;
+							auto tar = get_tar();
+							camera_node->add_eul(vec3(disp, 0.f));
+							auto eul = camera_node->eul;
+							auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+							camera_node->set_pos(tar + rot[2] * camera_zoom);
+						}
+					}
+				}
+				{
+					static vec2 last_mpos = vec2(0.f);
+					if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+						last_mpos = io.MousePos;
+					if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
+						camera_node->set_pos(hovering_pos + camera_node->g_rot[2] * camera_zoom);
+				}
+				if (auto scroll = io.MouseWheel; scroll != 0.f)
+				{
+					auto tar = get_tar();
+					if (scroll < 0.f)
+						camera_zoom = camera_zoom * 1.1f + 0.5f;
+					else
+						camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+					camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
+				}
+				if (!io.WantCaptureKeyboard)
+				{
+					if (io.KeysDown[Keyboard_W])
+					{
+						camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
+						app.render_frames += 30;
+					}
+					if (io.KeysDown[Keyboard_S])
+					{
+						camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
+						app.render_frames += 30;
+					}
+					if (io.KeysDown[Keyboard_A])
+					{
+						camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
+						app.render_frames += 30;
+					}
+					if (io.KeysDown[Keyboard_D])
+					{
+						camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
+						app.render_frames += 30;
+					}
+					if (io.KeysDown[Keyboard_F])
+						focus_to_selected();
+					if (io.KeysDown[Keyboard_G])
+						selected_to_focus();
+					if (ImGui::IsKeyPressed(Keyboard_Del))
+						app.cmd_delete_entity();
+					if (ImGui::IsKeyPressed(Keyboard_1))
+						app.tool = ToolSelect;
+					if (ImGui::IsKeyPressed(Keyboard_2))
+						app.tool = ToolMove;
+					if (ImGui::IsKeyPressed(Keyboard_3))
+						app.tool = ToolRotate;
+					if (ImGui::IsKeyPressed(Keyboard_4))
+						app.tool = ToolScale;
+				}
+
+				if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+				{
+					hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+						switch (draw_data.category)
+						{
+						case "mesh"_h:
+							if (auto armature = n->entity->get_component_t<cArmature>(); armature)
 							{
-								if (auto mesh = c->get_component_t<cMesh>(); mesh)
+								for (auto& c : n->entity->children)
+								{
+									if (auto mesh = c->get_component_t<cMesh>(); mesh)
+										draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+								}
+							}
+							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
+							{
+								if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
+								{
+
+								}
+								else
 									draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 							}
+							break;
+						case "terrain"_h:
+							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+								draw_data.draw_terrains.emplace_back(terrain->instance_id, product(terrain->blocks), terrain->material_res_id);
+							break;
 						}
-						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
-						{
-							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-							{
-
-							}
-							else
-								draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-						}
-						break;
-					case "terrain"_h:
-						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-							draw_data.draw_terrains.emplace_back(terrain->instance_id, terrain->blocks.x * terrain->blocks.y, terrain->material_res_id);
-						break;
-					}
-				});
-				if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
-				{
-					if (hovering_node)
-						selection.select(hovering_node->entity);
-					else
-						selection.clear();
-				}
-				{
-					auto s = str(hovering_pos);
-					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
-					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
-					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
-				}
-			}
-		}
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-			{
-				if (app.e_prefab)
-				{
-					auto str = std::wstring((wchar_t*)payload->Data);
-					auto path = Path::reverse(str);
-					if (path.extension() == L".prefab")
-					{
-						add_event([this, path]() {
-							auto e = Entity::create();
-							e->load(path);
-							new PrefabInstance(e, path);
-							if (auto node = e->get_component_i<cNode>(0); node)
-								node->set_pos(hovering_pos);
-							if (app.e_playing)
-								app.e_playing->add_child(e);
-							else
-								app.e_prefab->add_child(e);
-							return false;
 						});
+					if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+					{
+						if (hovering_node)
+							selection.select(hovering_node->entity);
+						else
+							selection.clear();
+					}
+					{
+						auto s = str(hovering_pos);
+						auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+						ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+						ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
 					}
 				}
 			}
-			ImGui::EndDragDropTarget();
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+				{
+					if (app.e_prefab)
+					{
+						auto str = std::wstring((wchar_t*)payload->Data);
+						auto path = Path::reverse(str);
+						if (path.extension() == L".prefab")
+						{
+							add_event([this, path]() {
+								auto e = Entity::create();
+								e->load(path);
+								new PrefabInstance(e, path);
+								if (auto node = e->get_component_i<cNode>(0); node)
+									node->set_pos(hovering_pos);
+								if (app.e_playing)
+									app.e_playing->add_child(e);
+								else
+									app.e_prefab->add_child(e);
+								return false;
+								});
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
 		}
 	}
 }

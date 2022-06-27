@@ -25,6 +25,24 @@ namespace flame
 	typedef vec<3, uchar> cvec3;
 	typedef vec<4, uchar> cvec4;
 
+	template<uint N, typename T>
+	inline T sum(const vec<N, T>& v)
+	{
+		T ret = 0;
+		for (auto i = 0; i < N; i++)
+			ret += v[i];
+		return ret;
+	}
+
+	template<uint N, typename T>
+	inline T product(const vec<N, T>& v)
+	{
+		T ret = v[0];
+		for (auto i = 1; i < N; i++)
+			ret *= v[i];
+		return ret;
+	}
+
 	inline float square(float v)
 	{
 		return v * v;

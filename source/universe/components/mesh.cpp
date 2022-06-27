@@ -44,7 +44,7 @@ namespace flame
 	void cMeshPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (mesh_res_id == -1 || instance_id == -1)
+			if (mesh_res_id == -1 || instance_id == -1 || material_res_id == -1)
 				return;
 
 			switch (draw_data.pass)
