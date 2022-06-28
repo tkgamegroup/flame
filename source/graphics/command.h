@@ -97,8 +97,7 @@ namespace flame
 			virtual void bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> descriptor_sets) = 0;
 			inline void bind_descriptor_set(uint idx, DescriptorSetPtr descriptor_set)
 			{
-				DescriptorSetPtr dss[] = { descriptor_set };
-				bind_descriptor_sets(idx, { dss, 1 });
+				bind_descriptor_sets(idx, { &descriptor_set, 1 });
 			}
 			virtual void bind_vertex_buffer(BufferPtr buf, uint id) = 0;
 			virtual void bind_index_buffer(BufferPtr buf, IndiceType t) = 0;
@@ -119,9 +118,25 @@ namespace flame
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 
 			virtual void copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies) = 0;
+			inline void copy_buffer(BufferPtr src, BufferPtr dst, const BufferCopy& cpy)
+			{
+				copy_buffer(src, dst, { (BufferCopy*)&cpy, 1});
+			}
 			virtual void copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies) = 0;
+			inline void copy_image(ImagePtr src, ImagePtr dst, const ImageCopy& cpy)
+			{
+				copy_image(src, dst, { (ImageCopy*)&cpy, 1 });
+			}
 			virtual void copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies) = 0;
+			inline void copy_buffer_to_image(BufferPtr src, ImagePtr dst, const BufferImageCopy& cpy)
+			{
+				copy_buffer_to_image(src, dst, { (BufferImageCopy*)&cpy, 1 });
+			}
 			virtual void copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies) = 0;
+			inline void copy_image_to_buffer(ImagePtr src, BufferPtr dst, const BufferImageCopy& cpy)
+			{
+				copy_image_to_buffer(src, dst, { (BufferImageCopy*)&cpy, 1 });
+			}
 			virtual void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) = 0;
 
 			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) = 0;

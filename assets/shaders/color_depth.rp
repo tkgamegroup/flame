@@ -4,7 +4,6 @@
 %col_final_layout=Attachment
 %dep_fmt=Depth16
 %dep_load_op=Clear
-%dep_sample_count=1
 %dep_initia_layout=Undefined
 %dep_final_layout=Attachment
 attachments
@@ -21,8 +20,6 @@ attachments
     {dep_fmt}
   load_op
     {dep_load_op}
-  sample_count
-    {dep_sample_count}
   initia_layout
     {dep_initia_layout}
   final_layout

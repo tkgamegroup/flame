@@ -1,4 +1,4 @@
-%rp=../forward.rp
+%rp=../color_depth.rp
 %pt=TriangleList
 layout
   plain.pll

@@ -1450,6 +1450,14 @@ namespace flame
 
 			if (pipeline_type == PipelineGraphics)
 			{
+				for (auto& att : info.renderpass->attachments)
+				{
+					if (att.sample_count != SampleCount_1)
+					{
+						info.sample_count = att.sample_count;
+						break;
+					}
+				}
 				*ret = GraphicsPipeline::create(info);
 				return;
 			}

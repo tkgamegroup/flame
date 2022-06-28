@@ -1,5 +1,6 @@
 %col_fmt=R8G8B8A8_UNORM
 %dep_fmt=Depth16
+%sample_count=1
 attachments
   format
     {col_fmt}

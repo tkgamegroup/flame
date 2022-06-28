@@ -52,8 +52,6 @@ namespace flame
 		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
 		Pipeline* pl_ptc;
 
-		Pipeline* pl_fxaa;
-
 		Pipeline* pl_bright;
 	};
 
@@ -891,8 +889,6 @@ namespace flame
 		nd.ds_ssao->update();
 
 		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pipeline");
-
-		nd.pl_fxaa = Pipeline::get(nullptr, L"post/fxaa.pipeline");
 
 		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pipeline");
 	}
