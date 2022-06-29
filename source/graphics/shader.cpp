@@ -1634,7 +1634,7 @@ namespace flame
 				multisample_state.pNext = nullptr;
 				if (info.sample_count == SampleCount_1)
 				{
-					auto& res_atts = info.renderpass->subpasses[info.subpass_index].resolve_attachments;
+					auto& res_atts = info.renderpass->subpasses[info.subpass_index].color_resolve_attachments;
 					multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 				}
 				else

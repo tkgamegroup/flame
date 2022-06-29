@@ -36,18 +36,18 @@ namespace flame
 		}
 	};
 
-	struct LinesDraw
+	struct PrimitiveDraw
 	{
 		std::vector<vec3> points;
 		cvec4 color;
 
-		LinesDraw(std::vector<vec3>&& points, const cvec4& color) :
+		PrimitiveDraw(std::vector<vec3>&& points, const cvec4& color) :
 			points(points),
 			color(color)
 		{
 		}
 
-		LinesDraw(const vec3* _points, uint count, const cvec4& color) :
+		PrimitiveDraw(const vec3* _points, uint count, const cvec4& color) :
 			color(color)
 		{
 			points.resize(count);
@@ -84,7 +84,8 @@ namespace flame
 		std::vector<Light> lights;
 		std::vector<MeshDraw> draw_meshes;
 		std::vector<TerrainDraw> draw_terrains;
-		std::vector<LinesDraw> draw_lines;
+		std::vector<PrimitiveDraw> draw_lines;
+		std::vector<PrimitiveDraw> draw_triangles;
 
 		void reset(uint _pass, uint _category)
 		{
