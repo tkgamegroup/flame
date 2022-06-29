@@ -15,17 +15,17 @@
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourCrowd.h>
+#include <DetourTileCache.h>
+#include <DetourTileCacheBuilder.h>
 rcContext rc_ctx;
-rcHeightfield* rc_height_field = nullptr;
-rcCompactHeightfield* rc_c_height_field = nullptr;
-rcContourSet* rc_contour_set = nullptr;
-rcPolyMesh* rc_poly_mesh = nullptr;
-rcPolyMeshDetail* rc_poly_mesh_d = nullptr;
 dtTileCache* dt_tile_cache = nullptr;
 dtNavMesh* dt_nav_mesh = nullptr;
 dtNavMeshQuery* dt_nav_query = nullptr;
 dtQueryFilter dt_filter;
 dtCrowd* dt_crowd = nullptr;
+
+#define EXPECTED_LAYERS_PER_TILE 4
+#define MAX_LAYERS 32
 
 dtPolyRef dt_nearest_poly(const vec3& pos)
 {
@@ -102,6 +102,313 @@ namespace flame
 		}
 	}
 
+	struct MyTileCacheAllocator : dtTileCacheAlloc
+	{
+		uchar* buffer = nullptr;
+		size_t capacity = 0;
+		size_t top = 0;
+		size_t high = 0;
+
+		MyTileCacheAllocator(uint cap)
+		{
+			resize(cap);
+		}
+
+		~MyTileCacheAllocator()
+		{
+			dtFree(buffer);
+		}
+
+		void resize(uint cap)
+		{
+			if (buffer) dtFree(buffer);
+			buffer = (uchar*)dtAlloc(cap, DT_ALLOC_PERM);
+			capacity = cap;
+		}
+
+		void reset() override
+		{
+			high = max(high, top);
+			top = 0;
+		}
+
+		void* alloc(const size_t size) override
+		{
+			if (!buffer)
+				return nullptr;
+			if (top + size > capacity)
+				return nullptr;
+			uchar* mem = &buffer[top];
+			top += size;
+			return mem;
+		}
+
+		void free(void*) override
+		{
+		}
+	};
+
+	auto my_title_cache_allocator = new MyTileCacheAllocator(32000);
+
+	struct MyTileCacheCompressor : public dtTileCacheCompressor
+	{
+		int maxCompressedSize(const int bufferSize) override
+		{
+			return bufferSize;
+		}
+
+		dtStatus compress(const uchar* buffer, const int bufferSize,
+			uchar* compressed, const int /*maxCompressedSize*/, int* compressedSize) override
+		{
+			memcpy(compressed, buffer, bufferSize);
+			*compressedSize = bufferSize;
+			return DT_SUCCESS;
+		}
+
+		dtStatus decompress(const uchar* compressed, const int compressedSize,
+			uchar* buffer, const int maxBufferSize, int* bufferSize) override
+		{
+			memcpy(buffer, compressed, compressedSize);
+			*bufferSize = compressedSize;
+			return DT_SUCCESS;
+		}
+	};
+
+	auto my_tile_cache_compressor = new MyTileCacheCompressor;
+
+	struct MyTileCacheMeshProcess : public dtTileCacheMeshProcess
+	{
+		void process(struct dtNavMeshCreateParams* params, uchar* polyAreas, ushort* polyFlags) override
+		{
+			for (int i = 0; i < params->polyCount; ++i)
+			{
+				if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
+					polyAreas[i] = 0;
+
+				polyFlags[i] = 0;
+			}
+		}
+	};
+
+	auto my_tile_cache_mesh_process = new MyTileCacheMeshProcess;
+
+	struct ChunkyTriMeshNode
+	{
+		float bmin[2];
+		float bmax[2];
+		int i;
+		int n;
+	};
+
+	struct ChunkyTriMesh
+	{
+		ChunkyTriMeshNode* nodes = nullptr;
+		int nnodes = 0;
+		int* tris = nullptr;
+		int ntris = 0;
+		int max_tris_per_chunk = 0;
+
+		~ChunkyTriMesh()
+		{
+			delete[] nodes;
+			delete[] tris;
+		}
+	};
+
+	bool create_chunky_tri_mesh(const float* verts, const int* tris, int ntris, int tris_per_chunk, ChunkyTriMesh* cm)
+	{
+		struct BoundsItem
+		{
+			float bmin[2];
+			float bmax[2];
+			int i;
+		};
+
+		auto compareItemX = [](const void* va, const void* vb) {
+			const BoundsItem* a = (const BoundsItem*)va;
+			const BoundsItem* b = (const BoundsItem*)vb;
+			if (a->bmin[0] < b->bmin[0])
+				return -1;
+			if (a->bmin[0] > b->bmin[0])
+				return 1;
+			return 0;
+		};
+
+		auto compareItemY = [](const void* va, const void* vb) {
+			const BoundsItem* a = (const BoundsItem*)va;
+			const BoundsItem* b = (const BoundsItem*)vb;
+			if (a->bmin[1] < b->bmin[1])
+				return -1;
+			if (a->bmin[1] > b->bmin[1])
+				return 1;
+			return 0;
+		};
+
+		auto calcExtends = [](const BoundsItem* items, const int, const int imin, const int imax, float* bmin, float* bmax) {
+			bmin[0] = items[imin].bmin[0];
+			bmin[1] = items[imin].bmin[1];
+
+			bmax[0] = items[imin].bmax[0];
+			bmax[1] = items[imin].bmax[1];
+
+			for (int i = imin + 1; i < imax; ++i)
+			{
+				const BoundsItem& it = items[i];
+				if (it.bmin[0] < bmin[0]) bmin[0] = it.bmin[0];
+				if (it.bmin[1] < bmin[1]) bmin[1] = it.bmin[1];
+
+				if (it.bmax[0] > bmax[0]) bmax[0] = it.bmax[0];
+				if (it.bmax[1] > bmax[1]) bmax[1] = it.bmax[1];
+			}
+		};
+
+		auto longestAxis = [](float x, float y) {
+			return y > x ? 1 : 0;
+		};
+
+		std::function<void(BoundsItem*, int, int, int, int, int&, ChunkyTriMeshNode*, const int, int&, int*, const int*)> subdivide;
+		subdivide = [&](BoundsItem* items, int nitems, int imin, int imax, int trisPerChunk,
+			int& curNode, ChunkyTriMeshNode* nodes, const int maxNodes, int& curTri, int* outTris, const int* inTris) {
+			int inum = imax - imin;
+			int icur = curNode;
+
+			if (curNode >= maxNodes)
+				return;
+
+			ChunkyTriMeshNode& node = nodes[curNode++];
+
+			if (inum <= trisPerChunk)
+			{
+				calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
+
+				node.i = curTri;
+				node.n = inum;
+
+				for (int i = imin; i < imax; ++i)
+				{
+					const int* src = &inTris[items[i].i * 3];
+					int* dst = &outTris[curTri * 3];
+					curTri++;
+					dst[0] = src[0];
+					dst[1] = src[1];
+					dst[2] = src[2];
+				}
+			}
+			else
+			{
+				calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
+
+				int	axis = longestAxis(node.bmax[0] - node.bmin[0],
+					node.bmax[1] - node.bmin[1]);
+
+				if (axis == 0)
+					qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemX);
+				else if (axis == 1)
+					qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemY);
+
+				int isplit = imin + inum / 2;
+
+				subdivide(items, nitems, imin, isplit, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
+				subdivide(items, nitems, isplit, imax, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
+
+				int iescape = curNode - icur;
+				node.i = -iescape;
+			}
+		};
+
+		int nchunks = (ntris + tris_per_chunk - 1) / tris_per_chunk;
+
+		cm->nodes = new ChunkyTriMeshNode[nchunks * 4];
+		if (!cm->nodes)
+			return false;
+
+		cm->tris = new int[ntris * 3];
+		if (!cm->tris)
+			return false;
+
+		cm->ntris = ntris;
+
+		auto items = new BoundsItem[ntris];
+		if (!items)
+			return false;
+
+		for (int i = 0; i < ntris; i++)
+		{
+			const int* t = &tris[i * 3];
+			BoundsItem& it = items[i];
+			it.i = i;
+			it.bmin[0] = it.bmax[0] = verts[t[0] * 3 + 0];
+			it.bmin[1] = it.bmax[1] = verts[t[0] * 3 + 2];
+			for (int j = 1; j < 3; ++j)
+			{
+				const float* v = &verts[t[j] * 3];
+				if (v[0] < it.bmin[0]) it.bmin[0] = v[0];
+				if (v[2] < it.bmin[1]) it.bmin[1] = v[2];
+
+				if (v[0] > it.bmax[0]) it.bmax[0] = v[0];
+				if (v[2] > it.bmax[1]) it.bmax[1] = v[2];
+			}
+		}
+
+		int curTri = 0;
+		int curNode = 0;
+		subdivide(items, ntris, 0, ntris, tris_per_chunk, curNode, cm->nodes, nchunks * 4, curTri, cm->tris, tris);
+
+		delete[] items;
+
+		cm->nnodes = curNode;
+
+		cm->max_tris_per_chunk = 0;
+		for (int i = 0; i < cm->nnodes; ++i)
+		{
+			ChunkyTriMeshNode& node = cm->nodes[i];
+			const bool isLeaf = node.i >= 0;
+			if (!isLeaf) continue;
+			if (node.n > cm->max_tris_per_chunk)
+				cm->max_tris_per_chunk = node.n;
+		}
+
+		return true;
+	}
+
+	int get_chunks_overlapping_rect(const ChunkyTriMesh* cm, float bmin[2], float bmax[2], int* ids, const int max_ids)
+	{
+		int i = 0;
+		int n = 0;
+		while (i < cm->nnodes)
+		{
+			auto check_overlap_rect = [](const float amin[2], const float amax[2], const float bmin[2], const float bmax[2]) {
+				bool overlap = true;
+				overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
+				overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
+				return overlap;
+			};
+
+			auto node = &cm->nodes[i];
+			auto overlap = check_overlap_rect(bmin, bmax, node->bmin, node->bmax);
+			auto is_leaf = node->i >= 0;
+
+			if (is_leaf && overlap)
+			{
+				if (n < max_ids)
+				{
+					ids[n] = i;
+					n++;
+				}
+			}
+
+			if (overlap || is_leaf)
+				i++;
+			else
+			{
+				const int escapeIndex = -node->i;
+				i += escapeIndex;
+			}
+		}
+
+		return n;
+	}
+
 	void sScenePrivate::generate_nav_mesh()
 	{
 #ifdef USE_RECASTNAV
@@ -109,8 +416,8 @@ namespace flame
 		std::vector<uint> indices;
 		AABB bounds;
 
-		std::function<void(EntityPtr e)> get_meshes;
-		get_meshes = [&](EntityPtr e) {
+		std::function<void(EntityPtr e)> form_mesh;
+		form_mesh = [&](EntityPtr e) {
 			if (!e->global_enable)
 				return;
 
@@ -183,193 +490,242 @@ namespace flame
 				}
 
 				for (auto& c : e->children)
-					get_meshes(c.get());
+					form_mesh(c.get());
 			}
 		};
 
-		rcFreeHeightField(rc_height_field); rc_height_field = nullptr;
-		rcFreeCompactHeightfield(rc_c_height_field); rc_c_height_field = nullptr;
-		rcFreeContourSet(rc_contour_set); rc_contour_set = nullptr;
-		rcFreePolyMesh(rc_poly_mesh); rc_poly_mesh = nullptr;
-		rcFreePolyMeshDetail(rc_poly_mesh_d); rc_poly_mesh_d = nullptr;
+		form_mesh(world->root.get());
+		for (auto& p : positions)
+			bounds.expand(p);
 
-		get_meshes(world->root.get());
-		for (auto& p : positions) bounds.expand(p);
+		auto cell_size = 0.3f;
+		auto cell_height = 0.2f;
+		auto tile_size = 48.f;
 
-		auto agnent_height = 1.8f;
-		auto agnet_radius = 0.3f;
-		auto agnet_max_climb = 0.9f;
+		auto agent_height = 1.8f;
+		auto agent_radius = 0.3f;
+		auto agent_max_climb = 0.9f;
 
-		rcConfig rc_cfg;
-		memset(&rc_cfg, 0, sizeof(rcConfig));
-		rc_cfg.cs = 0.3f;
-		rc_cfg.ch = 0.2f;
-		rc_cfg.walkableSlopeAngle = 45.f;
- 		rc_cfg.walkableHeight = (int)ceil(agnent_height / rc_cfg.ch);
-		rc_cfg.walkableClimb = (int)ceil(agnet_max_climb / rc_cfg.ch);
-		rc_cfg.walkableRadius = (int)ceil(agnet_radius / rc_cfg.cs);
-		rc_cfg.maxEdgeLen = (int)(/*edge max len*/12.f / rc_cfg.cs);
-		rc_cfg.maxSimplificationError = /*edge max error*/1.3f;
-		rc_cfg.minRegionArea = (int)square(/*region min size*/8.f);
-		rc_cfg.mergeRegionArea = (int)square(/*region merge size*/20.f);
-		rc_cfg.maxVertsPerPoly = /*verts per poly*/6;
-		rc_cfg.detailSampleDist = (int)/*detail sample dist*/6.f;
-		if (rc_cfg.detailSampleDist < 0.9f) rc_cfg.detailSampleDist *= rc_cfg.cs;
-		rc_cfg.detailSampleMaxError = rc_cfg.ch * /*detail sample max error*/1.f;
-		memcpy(&rc_cfg.bmin, &bounds.a, sizeof(vec3));
-		memcpy(&rc_cfg.bmax, &bounds.b, sizeof(vec3));
+		auto edge_max_error = 1.3f;
 
-		rcCalcGridSize(rc_cfg.bmin, rc_cfg.bmax, rc_cfg.cs, &rc_cfg.width, &rc_cfg.height);
+		int gw = 0, gh = 0;
+		rcCalcGridSize(&bounds.a[0], &bounds.b[0], cell_size, &gw, &gh);
+		const int ts = (int)tile_size;
+		const int tw = (gw + ts - 1) / ts;
+		const int th = (gh + ts - 1) / ts;
 
-		rc_height_field = rcAllocHeightfield();
-		if (!rcCreateHeightfield(&rc_ctx, *rc_height_field, rc_cfg.width, rc_cfg.height, rc_cfg.bmin, rc_cfg.bmax, rc_cfg.cs, rc_cfg.ch))
+		rcConfig cfg;
+		memset(&cfg, 0, sizeof(rcConfig));
+		cfg.cs = cell_size;
+		cfg.ch = cell_height;
+		cfg.walkableSlopeAngle = 45.f;
+ 		cfg.walkableHeight = (int)ceil(agent_height / cfg.ch);
+		cfg.walkableClimb = (int)ceil(agent_max_climb / cfg.ch);
+		cfg.walkableRadius = (int)ceil(agent_radius / cfg.cs);
+		cfg.maxEdgeLen = (int)(/*edge max len*/12.f / cfg.cs);
+		cfg.maxSimplificationError = edge_max_error;
+		cfg.minRegionArea = (int)square(/*region min size*/8.f);
+		cfg.mergeRegionArea = (int)square(/*region merge size*/20.f);
+		cfg.maxVertsPerPoly = /*verts per poly*/6;
+		cfg.tileSize = (int)tile_size;
+		cfg.borderSize = cfg.walkableRadius + 3;
+		cfg.width = cfg.tileSize + cfg.borderSize * 2;
+		cfg.height = cfg.tileSize + cfg.borderSize * 2;
+		cfg.detailSampleDist = /*detail sample dist*/6.f;
+		cfg.detailSampleDist = cfg.detailSampleDist < 0.9f ? 0 : cfg.detailSampleDist * cfg.cs;
+		cfg.detailSampleMaxError = cfg.ch * /*detail sample max error*/1.f;
+		memcpy(&cfg.bmin, &bounds.a, sizeof(vec3));
+		memcpy(&cfg.bmax, &bounds.b, sizeof(vec3));
+
+		dtFreeTileCache(dt_tile_cache);
+		dt_tile_cache = dtAllocTileCache();
+		dtTileCacheParams tcparams;
+		memset(&tcparams, 0, sizeof(dtTileCacheParams));
+		rcVcopy(tcparams.orig, &bounds.a[0]);
+		tcparams.cs = cell_size;
+		tcparams.ch = cell_height;
+		tcparams.width = (int)tile_size;
+		tcparams.height = (int)tile_size;
+		tcparams.walkableHeight = agent_height;
+		tcparams.walkableRadius = agent_radius;
+		tcparams.walkableClimb = agent_max_climb;
+		tcparams.maxSimplificationError = edge_max_error;
+		tcparams.maxTiles = tw * th * EXPECTED_LAYERS_PER_TILE;
+		tcparams.maxObstacles = 128;
+		if (dtStatusFailed(dt_tile_cache->init(&tcparams, my_title_cache_allocator, my_tile_cache_compressor, my_tile_cache_mesh_process)))
 		{
-			printf("generate navmesh: Could not create solid heightfield.\n");
+			printf("generate navmesh: Could not init tile cache.\n");
 			return;
 		}
 
-		std::vector<uchar> triareas(indices.size() / 3);
-		for (auto i = 0; i < triareas.size(); i++) triareas[i] = 0;
-		rcMarkWalkableTriangles(&rc_ctx, rc_cfg.walkableSlopeAngle, (float*)positions.data(), positions.size(), 
-			(int*)indices.data(), triareas.size(), triareas.data());
-		if (!rcRasterizeTriangles(&rc_ctx, (float*)positions.data(), positions.size(), (int*)indices.data(), triareas.data(), triareas.size(), *rc_height_field, rc_cfg.walkableClimb))
+		dtFreeNavMesh(dt_nav_mesh);
+		dt_nav_mesh = dtAllocNavMesh();
+		dtNavMeshParams params;
+		memset(&params, 0, sizeof(params));
+		rcVcopy(params.orig, &bounds.a[0]);
+		params.tileWidth = tile_size * cell_size;
+		params.tileHeight = tile_size * cell_size;
+		auto tile_bits = 8;
+		auto poly_bits = 22 - tile_bits;
+		params.maxTiles = 1 << tile_bits;
+		params.maxPolys = 1 << poly_bits;
+		if (dtStatusFailed(dt_nav_mesh->init(&params)))
 		{
-			printf("generate navmesh: Could not rasterize triangles.\n");
+			printf("generate navmesh: Could not init navmesh.\n");
 			return;
 		}
 
-		rcFilterLowHangingWalkableObstacles(&rc_ctx, rc_cfg.walkableClimb, *rc_height_field);
-		rcFilterLedgeSpans(&rc_ctx, rc_cfg.walkableHeight, rc_cfg.walkableClimb, *rc_height_field);
-		rcFilterWalkableLowHeightSpans(&rc_ctx, rc_cfg.walkableHeight, *rc_height_field);
+		if (!dt_nav_query)
+			dt_nav_query = dtAllocNavMeshQuery();
+		dt_nav_query->init(dt_nav_mesh, 2048);
 
-		rc_c_height_field = rcAllocCompactHeightfield();
-		if (!rcBuildCompactHeightfield(&rc_ctx, rc_cfg.walkableHeight, rc_cfg.walkableClimb, *rc_height_field, *rc_c_height_field))
-		{
-			printf("generate navmesh: Could not build compact data.\n");
-			return;
-		}
+		auto chunky_mesh = new ChunkyTriMesh;
+		create_chunky_tri_mesh((float*)positions.data(), (int*)indices.data(), indices.size() / 3, 256, chunky_mesh);
 
-		if (!rcErodeWalkableArea(&rc_ctx, rc_cfg.walkableRadius, *rc_c_height_field))
+		for (auto y = 0; y < th; y++)
 		{
-			printf("generate navmesh: Could not erode.\n");
-			return;
-		}
-
-		if (!rcBuildDistanceField(&rc_ctx, *rc_c_height_field))
-		{
-			printf("generate navmesh: Could not build distance field.\n");
-			return;
-		}
-
-		if (!rcBuildRegions(&rc_ctx, *rc_c_height_field, 0, rc_cfg.minRegionArea, rc_cfg.mergeRegionArea))
-		{
-			printf("generate navmesh: Could not build watershed regions.\n");
-			return;
-		}
-
-		rc_contour_set = rcAllocContourSet();
-		if (!rcBuildContours(&rc_ctx, *rc_c_height_field, rc_cfg.maxSimplificationError, rc_cfg.maxEdgeLen, *rc_contour_set))
-		{
-			printf("generate navmesh: Could not create contours.\n");
-			return;
-		}
-
-		rc_poly_mesh = rcAllocPolyMesh();
-		if (!rcBuildPolyMesh(&rc_ctx, *rc_contour_set, rc_cfg.maxVertsPerPoly, *rc_poly_mesh))
-		{
-			printf("generate navmesh: Could not triangulate contours.\n");
-			return;
-		}
-
-		rc_poly_mesh_d = rcAllocPolyMeshDetail();
-		if (!rcBuildPolyMeshDetail(&rc_ctx, *rc_poly_mesh, *rc_c_height_field, rc_cfg.detailSampleDist, rc_cfg.detailSampleMaxError, *rc_poly_mesh_d))
-		{
-			printf("generate navmesh: Could not build detail mesh.\n");
-			return;
-		}
-
-		if (rc_cfg.maxVertsPerPoly <= DT_VERTS_PER_POLYGON)
-		{
-			for (auto i = 0; i < rc_poly_mesh->npolys; ++i)
+			for (auto x = 0; x < tw; x++)
 			{
-				rc_poly_mesh->flags[i] = 1;
-			//	if (rc_poly_mesh->areas[i] == RC_WALKABLE_AREA)
-			//		rc_poly_mesh->areas[i] = POLYAREA_GROUND;
+				struct TileCacheData
+				{
+					uchar* data;
+					int size;
+				};
 
-			//	if (rc_poly_mesh->areas[i] == POLYAREA_GROUND ||
-			//		rc_poly_mesh->areas[i] == POLYAREA_GRASS ||
-			//		rc_poly_mesh->areas[i] == POLYAREA_ROAD)
-			//	{
-			//		rc_poly_mesh->flags[i] = POLYFLAGS_WALK;
-			//	}
-			//	else if (rc_poly_mesh->areas[i] == POLYAREA_WATER)
-			//	{
-			//		rc_poly_mesh->flags[i] = POLYFLAGS_SWIM;
-			//	}
-			//	else if (rc_poly_mesh->areas[i] == POLYAREA_DOOR)
-			//	{
-			//		rc_poly_mesh->flags[i] = POLYFLAGS_WALK | POLYFLAGS_DOOR;
-			//	}
+				TileCacheData tiles[MAX_LAYERS];
+				memset(tiles, 0, sizeof(tiles));
+
+				auto tcs = tile_size * cell_size;
+
+				rcConfig tcfg;
+				memcpy(&tcfg, &cfg, sizeof(tcfg));
+
+				tcfg.bmin[0] = cfg.bmin[0] + x * tcs;
+				tcfg.bmin[2] = cfg.bmin[2] + y * tcs;
+				tcfg.bmax[0] = cfg.bmin[0] + (x + 1) * tcs;
+				tcfg.bmax[1] = cfg.bmax[1];
+				tcfg.bmax[2] = cfg.bmin[2] + (y + 1) * tcs;
+				tcfg.bmin[0] -= tcfg.borderSize * tcfg.cs;
+				tcfg.bmin[2] -= tcfg.borderSize * tcfg.cs;
+				tcfg.bmax[0] += tcfg.borderSize * tcfg.cs;
+				tcfg.bmax[2] += tcfg.borderSize * tcfg.cs;
+
+				auto solid = rcAllocHeightfield();
+				if (!rcCreateHeightfield(&rc_ctx, *solid, tcfg.width, tcfg.height, tcfg.bmin, tcfg.bmax, tcfg.cs, tcfg.ch))
+				{
+					printf("generate navmesh: Could not create solid heightfield.\n");
+					return;
+				}
+
+				auto triareas = new uchar[chunky_mesh->max_tris_per_chunk];
+
+				float tbmin[2], tbmax[2];
+				tbmin[0] = tcfg.bmin[0];
+				tbmin[1] = tcfg.bmin[2];
+				tbmax[0] = tcfg.bmax[0];
+				tbmax[1] = tcfg.bmax[2];
+				int cid[512];
+				const int ncid = get_chunks_overlapping_rect(chunky_mesh, tbmin, tbmax, cid, 512);
+				if (ncid)
+				{
+					for (int i = 0; i < ncid; ++i)
+					{
+						auto& node = chunky_mesh->nodes[cid[i]];
+						auto tris = &chunky_mesh->tris[node.i * 3];
+						auto ntris = node.n;
+
+						memset(triareas, 0, ntris * sizeof(uchar));
+						rcMarkWalkableTriangles(&rc_ctx, tcfg.walkableSlopeAngle,
+							(float*)positions.data(), positions.size(), tris, ntris, triareas);
+
+						if (!rcRasterizeTriangles(&rc_ctx, (float*)positions.data(), positions.size(), tris, triareas, ntris, *solid, tcfg.walkableClimb))
+						{
+							printf("generate navmesh: Could not rasterize triangles.\n");
+							return;
+						}
+					}
+
+					rcFilterLowHangingWalkableObstacles(&rc_ctx, tcfg.walkableClimb, *solid);
+					rcFilterLedgeSpans(&rc_ctx, tcfg.walkableHeight, tcfg.walkableClimb, *solid);
+					rcFilterWalkableLowHeightSpans(&rc_ctx, tcfg.walkableHeight, *solid);
+
+					auto chf = rcAllocCompactHeightfield();
+					if (!rcBuildCompactHeightfield(&rc_ctx, tcfg.walkableHeight, tcfg.walkableClimb, *solid, *chf))
+					{
+						printf("generate navmesh: Could not build compact data.\n");
+						return;
+					}
+					if (!rcErodeWalkableArea(&rc_ctx, tcfg.walkableRadius, *chf))
+					{
+						printf("generate navmesh: Could not erode.\n");
+						return;
+					}
+
+					auto lset = rcAllocHeightfieldLayerSet();
+					if (!rcBuildHeightfieldLayers(&rc_ctx, *chf, tcfg.borderSize, tcfg.walkableHeight, *lset))
+					{
+						printf("generate navmesh: Could not build heighfield layers.\n");
+						return;
+					}
+
+					auto ntiles = 0;
+					for (int i = 0; i < min(lset->nlayers, MAX_LAYERS); i++)
+					{
+						auto tile = &tiles[ntiles++];
+						auto layer = &lset->layers[i];
+
+						dtTileCacheLayerHeader header;
+						header.magic = DT_TILECACHE_MAGIC;
+						header.version = DT_TILECACHE_VERSION;
+
+						header.tx = x;
+						header.ty = y;
+						header.tlayer = i;
+						memcpy(header.bmin, layer->bmin, sizeof(float) * 3);
+						memcpy(header.bmax, layer->bmax, sizeof(float) * 3);
+
+						header.width = (uchar)layer->width;
+						header.height = (uchar)layer->height;
+						header.minx = (uchar)layer->minx;
+						header.maxx = (uchar)layer->maxx;
+						header.miny = (uchar)layer->miny;
+						header.maxy = (uchar)layer->maxy;
+						header.hmin = (ushort)layer->hmin;
+						header.hmax = (ushort)layer->hmax;
+
+						if (dtStatusFailed(dtBuildTileCacheLayer(my_tile_cache_compressor, &header, layer->heights, layer->areas, layer->cons,
+							&tile->data, &tile->size)))
+						{
+							printf("generate navmesh: Could not build tile cache layer.\n");
+							return;
+						}
+					}
+
+					for (int i = 0; i < ntiles; i++)
+					{
+						auto tile = &tiles[i];
+						if (dtStatusFailed(dt_tile_cache->addTile(tile->data, tile->size, DT_COMPRESSEDTILE_FREE_DATA, 0)))
+						{
+							dtFree(tile->data);
+							tile->data = 0;
+							continue;
+						}
+					}
+				}
 			}
-
-			dtNavMeshCreateParams parms;
-			memset(&parms, 0, sizeof(parms));
-			parms.verts = rc_poly_mesh->verts;
-			parms.vertCount = rc_poly_mesh->nverts;
-			parms.polys = rc_poly_mesh->polys;
-			parms.polyAreas = rc_poly_mesh->areas;
-			parms.polyFlags = rc_poly_mesh->flags;
-			parms.polyCount = rc_poly_mesh->npolys;
-			parms.nvp = rc_poly_mesh->nvp;
-			parms.detailMeshes = rc_poly_mesh_d->meshes;
-			parms.detailVerts = rc_poly_mesh_d->verts;
-			parms.detailVertsCount = rc_poly_mesh_d->nverts;
-			parms.detailTris = rc_poly_mesh_d->tris;
-			parms.detailTriCount = rc_poly_mesh_d->ntris;
-			parms.walkableHeight = agnent_height;
-			parms.walkableRadius = agnet_radius;
-			parms.walkableClimb = agnet_max_climb;
-			memcpy(parms.bmin, rc_poly_mesh->bmin, sizeof(vec3));
-			memcpy(parms.bmax, rc_poly_mesh->bmax, sizeof(vec3));
-			parms.cs = rc_cfg.cs;
-			parms.ch = rc_cfg.ch;
-			parms.buildBvTree = true;
-
-			uchar* navData = nullptr;
-			auto navDataSize = 0;
-			if (!dtCreateNavMeshData(&parms, &navData, &navDataSize))
-			{
-				printf("generate navmesh: Could not build Detour navmesh data.\n");
-				return;
-			}
-
-			if (dt_nav_mesh)
-				dtFreeNavMesh(dt_nav_mesh);
-			dt_nav_mesh = dtAllocNavMesh();
-
-			dtStatus status;
-
-			status = dt_nav_mesh->init(navData, navDataSize, DT_TILE_FREE_DATA);
-			if (dtStatusFailed(status))
-			{
-				dtFree(navData);
-				printf("generate navmesh: Could not init Detour navmesh.\n");
-				return;
-			}
-
-			if (!dt_nav_query)
-				dt_nav_query = dtAllocNavMeshQuery();
-			status = dt_nav_query->init(dt_nav_mesh, 2048);
-			if (dtStatusFailed(status))
-			{
-				printf("generate navmesh: Could not init Detour navmesh query.\n");
-				return;
-			}
-
-			if (!dt_crowd)
-				dt_crowd = dtAllocCrowd();
-			dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
 		}
+
+		delete chunky_mesh;
+
+		for (int y = 0; y < th; y++)
+		{
+			for (int x = 0; x < tw; x++)
+				dt_tile_cache->buildNavMeshTilesAt(x, y, dt_nav_mesh);
+		}
+
+		if (!dt_crowd)
+			dt_crowd = dtAllocCrowd();
+		dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
 #endif
 	}
 

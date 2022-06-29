@@ -185,6 +185,7 @@ void App::init()
 						}, "navmesh_test"_h);
 					}
 				}
+				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}
