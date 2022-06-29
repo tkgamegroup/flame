@@ -67,7 +67,7 @@ namespace flame
 				appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 				appInfo.pEngineName = "Flame Engine";
 				appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-				appInfo.apiVersion = VK_API_VERSION_1_0;
+				appInfo.apiVersion = VK_HEADER_VERSION_COMPLETE;
 
 				std::vector<const char*> required_instance_extensions;
 				std::vector<const char*> required_instance_layers;

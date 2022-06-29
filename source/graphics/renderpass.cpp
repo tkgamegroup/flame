@@ -25,13 +25,14 @@ namespace flame
 				auto ret = new RenderpassPrivate;
 				*(RenderpassInfo*)ret = info;
 
-				std::vector<VkAttachmentDescription> atts(info.attachments.size());
+				std::vector<VkAttachmentDescription2> atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)
 				{
 					auto& src = info.attachments[i];
 					auto& dst = atts[i];
 
-					dst.flags = 0;
+					dst = {};
+					dst.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
 					dst.format = to_backend(src.format);
 					dst.samples = to_backend(src.sample_count);
 					dst.loadOp = to_backend(src.load_op);
@@ -44,12 +45,13 @@ namespace flame
 
 				struct vkSubpassInfo
 				{
-					std::vector<VkAttachmentReference> col_refs;
-					std::vector<VkAttachmentReference> res_refs;
-					VkAttachmentReference dep_ref;
+					std::vector<VkAttachmentReference2> col_refs;
+					std::vector<VkAttachmentReference2> col_res_refs;
+					VkAttachmentReference2 dep_ref;
+					VkAttachmentReference2 dep_res_ref;
 				};
 				std::vector<vkSubpassInfo> vk_sp_infos(info.subpasses.size());
-				std::vector<VkSubpassDescription> vk_sps(info.subpasses.size());
+				std::vector<VkSubpassDescription2> vk_sps(info.subpasses.size());
 				for (auto i = 0; i < info.subpasses.size(); i++)
 				{
 					auto& src = info.subpasses[i];
@@ -57,6 +59,7 @@ namespace flame
 					auto& sp = vk_sps[i];
 
 					sp = {};
+					sp.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
 					sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 					if (!src.color_attachments.empty())
@@ -65,39 +68,47 @@ namespace flame
 						for (auto j = 0; j < src.color_attachments.size(); j++)
 						{
 							auto& r = dst.col_refs[j];
+							r = {};
+							r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 							r.attachment = src.color_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
 						sp.colorAttachmentCount = src.color_attachments.size();
 						sp.pColorAttachments = dst.col_refs.data();
 					}
-					if (!src.resolve_attachments.empty())
+					if (!src.color_resolve_attachments.empty())
 					{
-						dst.res_refs.resize(src.resolve_attachments.size());
-						for (auto j = 0; j < src.resolve_attachments.size(); j++)
+						dst.col_res_refs.resize(src.color_resolve_attachments.size());
+						for (auto j = 0; j < src.color_resolve_attachments.size(); j++)
 						{
-							auto& r = dst.res_refs[j];
-							r.attachment = src.resolve_attachments[j];
+							auto& r = dst.col_res_refs[j];
+							r = {};
+							r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+							r.attachment = src.color_resolve_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 							atts[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
-						sp.pResolveAttachments = dst.res_refs.data();
+						sp.pResolveAttachments = dst.col_res_refs.data();
 					}
 					if (src.depth_attachment != -1)
 					{
 						auto& r = dst.dep_ref;
+						r = {};
+						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 						r.attachment = src.depth_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 						sp.pDepthStencilAttachment = &r;
 					}
 				}
 
-				std::vector<VkSubpassDependency> vk_deps(info.dependencies.size());
+				std::vector<VkSubpassDependency2> vk_deps(info.dependencies.size());
 				for (auto i = 0; i < info.dependencies.size(); i++)
 				{
 					auto& src = info.dependencies[i];
 					auto& dst = vk_deps[i];
 
+					dst = {};
+					dst.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
 					dst.srcSubpass = src[0];
 					dst.dstSubpass = src[1];
 					dst.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -107,10 +118,9 @@ namespace flame
 					dst.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 				}
 
-				VkRenderPassCreateInfo create_info;
-				create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-				create_info.flags = 0;
-				create_info.pNext = nullptr;
+				VkRenderPassCreateInfo2 create_info;
+				create_info = {};
+				create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
 				create_info.attachmentCount = atts.size();
 				create_info.pAttachments = atts.data();
 				create_info.subpassCount = vk_sps.size();
@@ -118,7 +128,7 @@ namespace flame
 				create_info.dependencyCount = vk_deps.size();
 				create_info.pDependencies = vk_deps.data();
 
-				chk_res(vkCreateRenderPass(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
+				chk_res(vkCreateRenderPass2(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
 				register_backend_object(ret->vk_renderpass, "Renderpass", ret);
 
 				return ret;
