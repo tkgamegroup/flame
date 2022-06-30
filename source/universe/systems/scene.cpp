@@ -7,6 +7,7 @@
 #include "../components/terrain_private.h"
 #include "../components/nav_agent_private.h"
 #include "../octree.h"
+#include "../draw_data.h"
 #include "scene_private.h"
 
 #ifdef USE_RECASTNAV
@@ -185,7 +186,7 @@ namespace flame
 				if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
 					polyAreas[i] = 0;
 
-				polyFlags[i] = 0;
+				polyFlags[i] = 1;
 			}
 		}
 	};
@@ -565,7 +566,7 @@ namespace flame
 		rcVcopy(params.orig, &bounds.a[0]);
 		params.tileWidth = tile_size * cell_size;
 		params.tileHeight = tile_size * cell_size;
-		auto tile_bits = 8;
+		auto tile_bits = 10;
 		auto poly_bits = 22 - tile_bits;
 		params.maxTiles = 1 << tile_bits;
 		params.maxPolys = 1 << poly_bits;
@@ -574,10 +575,6 @@ namespace flame
 			printf("generate navmesh: Could not init navmesh.\n");
 			return;
 		}
-
-		if (!dt_nav_query)
-			dt_nav_query = dtAllocNavMeshQuery();
-		dt_nav_query->init(dt_nav_mesh, 2048);
 
 		auto chunky_mesh = new ChunkyTriMesh;
 		create_chunky_tri_mesh((float*)positions.data(), (int*)indices.data(), indices.size() / 3, 256, chunky_mesh);
@@ -723,6 +720,10 @@ namespace flame
 				dt_tile_cache->buildNavMeshTilesAt(x, y, dt_nav_mesh);
 		}
 
+		if (!dt_nav_query)
+			dt_nav_query = dtAllocNavMeshQuery();
+		dt_nav_query->init(dt_nav_mesh, 2048);
+
 		if (!dt_crowd)
 			dt_crowd = dtAllocCrowd();
 		dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
@@ -861,7 +862,7 @@ namespace flame
 		return true;
 	}
 
-	std::vector<vec3> sScenePrivate::calc_nav_path(const vec3& start, const vec3& end)
+	std::vector<vec3> sScenePrivate::query_nav_path(const vec3& start, const vec3& end)
 	{
 		std::vector<vec3> ret;
 		if (!dt_nav_query)
@@ -969,6 +970,44 @@ namespace flame
 		}
 
 		return ret;
+	}
+
+	void sScenePrivate::get_debug_draw(DrawData& draw_data)
+	{
+		if (dt_nav_mesh)
+		{
+			std::vector<vec3> points;
+			auto& navmesh = (const dtNavMesh&)*dt_nav_mesh;
+			auto ntiles = navmesh.getMaxTiles();
+			for (auto i = 0; i < ntiles; i++)
+			{
+				auto tile = navmesh.getTile(i);
+				if (tile->header)
+				{
+					auto npolys = tile->header->polyCount;
+					for (auto n = 0; n < npolys; n++)
+					{
+						auto& p = tile->polys[n];
+						if (p.getType() != DT_POLYTYPE_OFFMESH_CONNECTION)
+						{
+							auto& pd = tile->detailMeshes[n];
+							for (auto j = 0; j < pd.triCount; j++)
+							{
+								auto t = &tile->detailTris[(pd.triBase + j) * 4];
+								for (int k = 0; k < 3; ++k)
+								{
+									if (t[k] < p.vertCount)
+										points.push_back(*(vec3*)&tile->verts[p.verts[t[k]] * 3]);
+									else
+										points.push_back(*(vec3*)&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
+								}
+							}
+						}
+					}
+				}
+			}
+			draw_data.draw_primitives.emplace_back("TriangleList"_h, std::move(points), cvec4(0, 0, 255, 255));
+		}
 	}
 
 	void sScenePrivate::update()

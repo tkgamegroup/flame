@@ -93,7 +93,7 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_lines;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_primitives;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
 
@@ -126,6 +126,7 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_mesh_arm_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
 
@@ -152,7 +153,7 @@ namespace flame
 	MeshBuckets mesh_buckets;
 	DirShadow dir_shadows[DirShadowMaxCount];
 
-	std::vector<LinesDraw> debug_lines;
+	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
 
 	graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0)
@@ -436,7 +437,9 @@ namespace flame
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
 		pl_line3d->dynamic_renderpass = true;
-		buf_lines.create(pl_line3d->vi_ui(), 1024 * 32);
+		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
+		pl_triangle3d->dynamic_renderpass = true;
+		buf_primitives.create(pl_line3d->vi_ui(), 1024 * 32);
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
@@ -1234,7 +1237,7 @@ namespace flame
 						}
 						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
 						if (csm_debug_sig)
-							debug_lines.emplace_back(Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
 						auto b = AABB(frustum_slice, inverse(s.rot));
 						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
@@ -1272,15 +1275,15 @@ namespace flame
 						if (csm_debug_sig)
 						{
 							auto frustum_points = Frustum::get_points(inverse(proj_view));
-							debug_lines.emplace_back(Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
 							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
 							vec3 pts[2];
 							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-							debug_lines.emplace_back(pts, 2, cvec4(255, 0, 0, 255));
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 255, 0, 255));
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-							debug_lines.emplace_back(pts, 2, cvec4(0, 0, 255, 255));
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
 						}
 
 					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
@@ -1530,31 +1533,41 @@ namespace flame
 			blend_pass();
 		}
 
-		draw_data.reset("lines"_h, 0);
+		draw_data.reset("primitive"_h, 0);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		if (!debug_lines.empty())
-			draw_data.draw_lines.insert(draw_data.draw_lines.end(), debug_lines.begin(), debug_lines.end());
-		for (auto& l : draw_data.draw_lines)
+		if (!debug_primitives.empty())
+			draw_data.draw_primitives.insert(draw_data.draw_primitives.end(), debug_primitives.begin(), debug_primitives.end());
+		for (auto& l : draw_data.draw_primitives)
 		{
 			for (auto& p : l.points)
 			{
-				buf_lines.set_var<"i_pos"_h>(p);
-				buf_lines.next_item();
+				buf_primitives.set_var<"i_pos"_h>(p);
+				buf_primitives.next_item();
 			}
 		}
-		buf_lines.upload(cb);
+		buf_primitives.upload(cb);
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-		cb->bind_vertex_buffer(buf_lines.buf.get(), 0);
-		cb->bind_pipeline(pl_line3d);
+		cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
+		cb->bind_pipeline_layout(prm_plain.pll);
 		prm_plain.set_pc_var<"mvp"_h>(camera->proj_view_mat);
-		auto line_off = 0;
-		for (auto& l : draw_data.draw_lines)
+		prm_plain.push_constant(cb);
+		auto primitive_vtx_off = 0;
+		for (auto& d : draw_data.draw_primitives)
 		{
-			prm_plain.set_pc_var<"col"_h>(vec4(l.color) / 255.f);
-			prm_plain.push_constant(cb);
-			cb->draw(l.points.size(), 1, line_off, 0);
-			line_off += l.points.size();
+			prm_plain.set_pc_var<"col"_h>(vec4(d.color) / 255.f);
+			prm_plain.push_constant(cb, prm_plain.vu_pc.var_off<"col"_h>());
+			switch (d.type)
+			{
+			case "LineList"_h:
+				cb->bind_pipeline(pl_line3d);
+				break;
+			case "TriangleList"_h:
+				cb->bind_pipeline(pl_triangle3d);
+				break;
+			}
+			cb->draw(d.points.size(), 1, primitive_vtx_off, 0);
+			primitive_vtx_off += d.points.size();
 		}
 		cb->end_renderpass();
 
@@ -1703,7 +1716,7 @@ namespace flame
 	void sRendererPrivate::send_debug_string(const std::string& str)
 	{
 		if (str == "clear_debug")
-			debug_lines.clear();
+			debug_primitives.clear();
 		else if (str == "sig_csm_debug")
 			csm_debug_sig = true;
 	}

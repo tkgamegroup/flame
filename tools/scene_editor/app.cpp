@@ -161,7 +161,7 @@ void App::init()
 					else
 					{
 						node->drawers.add([&](DrawData& draw_data) {
-							if (draw_data.pass == "lines"_h)
+							if (draw_data.pass == "primitive"_h)
 							{
 								{
 									std::vector<vec3> points;
@@ -169,7 +169,7 @@ void App::init()
 									points.push_back(navmesh_test.start + vec3(1, 0, 0));
 									points.push_back(navmesh_test.start - vec3(0, 0, 1));
 									points.push_back(navmesh_test.start + vec3(0, 0, 1));
-									draw_data.draw_lines.emplace_back(std::move(points), cvec4(0, 255, 0, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 255, 0, 255));
 								}
 								{
 									std::vector<vec3> points;
@@ -177,10 +177,10 @@ void App::init()
 									points.push_back(navmesh_test.end + vec3(1, 0, 0));
 									points.push_back(navmesh_test.end - vec3(0, 0, 1));
 									points.push_back(navmesh_test.end + vec3(0, 0, 1));
-									draw_data.draw_lines.emplace_back(std::move(points), cvec4(0, 0, 255, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 0, 255, 255));
 								}
 								if (!navmesh_test.points.empty())
-									draw_data.draw_lines.emplace_back(std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
 							}
 						}, "navmesh_test"_h);
 					}
@@ -362,7 +362,7 @@ void App::init()
 				else
 					navmesh_test.end = view_scene.hovering_pos;
 				if (distance(navmesh_test.start, navmesh_test.end) > 0.f)
-					navmesh_test.points = sScene::instance()->calc_nav_path(navmesh_test.start, navmesh_test.end);
+					navmesh_test.points = sScene::instance()->query_nav_path(navmesh_test.start, navmesh_test.end);
 			}
 			ImGui::End();
 			if (!navmesh_test.open)

@@ -38,16 +38,19 @@ namespace flame
 
 	struct PrimitiveDraw
 	{
+		uint type; // "LineList"_h or "TriangleList"_h
 		std::vector<vec3> points;
 		cvec4 color;
 
-		PrimitiveDraw(std::vector<vec3>&& points, const cvec4& color) :
+		PrimitiveDraw(uint type, std::vector<vec3>&& points, const cvec4& color) :
+			type(type),
 			points(points),
 			color(color)
 		{
 		}
 
-		PrimitiveDraw(const vec3* _points, uint count, const cvec4& color) :
+		PrimitiveDraw(uint type, const vec3* _points, uint count, const cvec4& color) :
+			type(type),
 			color(color)
 		{
 			points.resize(count);
@@ -84,8 +87,7 @@ namespace flame
 		std::vector<Light> lights;
 		std::vector<MeshDraw> draw_meshes;
 		std::vector<TerrainDraw> draw_terrains;
-		std::vector<PrimitiveDraw> draw_lines;
-		std::vector<PrimitiveDraw> draw_triangles;
+		std::vector<PrimitiveDraw> draw_primitives;
 
 		void reset(uint _pass, uint _category)
 		{
@@ -95,7 +97,7 @@ namespace flame
 			lights.clear();
 			draw_meshes.clear();
 			draw_terrains.clear();
-			draw_lines.clear();
+			draw_primitives.clear();
 		}
 	};
 }

@@ -29,7 +29,8 @@ namespace flame
 		void update_transform(EntityPtr e, bool mark_dirty);
 
 		void generate_nav_mesh() override;
-		std::vector<vec3> calc_nav_path(const vec3& start, const vec3& end) override;
+		std::vector<vec3> query_nav_path(const vec3& start, const vec3& end) override;
+		void get_debug_draw(DrawData& draw_data) override;
 
 		void update() override;
 	};

@@ -186,7 +186,7 @@ void View_Scene::on_draw()
 							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
 					}
 				}
-				else if (draw_data.pass == "lines"_h)
+				else if (draw_data.pass == "primitive"_h)
 				{
 					if (show_AABB)
 					{
@@ -199,7 +199,7 @@ void View_Scene::on_draw()
 								{
 									auto points = node->bounds.get_points();
 									auto line_pts = Frustum::points_to_lines(points.data());
-									draw_data.draw_lines.emplace_back(std::move(line_pts), cvec4(255, 127, 127, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(line_pts), cvec4(255, 127, 127, 255));
 								}
 							}
 							return true;
@@ -216,11 +216,11 @@ void View_Scene::on_draw()
 								{
 									vec3 line_pts[2];
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
-									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(255, 0, 0, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
-									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(0, 255, 0, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
-									draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(0, 0, 255, 255));
+									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
 								}
 							}
 						}
@@ -242,7 +242,7 @@ void View_Scene::on_draw()
 										if (nn)
 										{
 											line_pts[1] = nn->g_pos;
-											draw_data.draw_lines.emplace_back(line_pts, 2, cvec4(255));
+											draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255));
 											draw_node(nn);
 										}
 									}
@@ -282,30 +282,32 @@ void View_Scene::on_draw()
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								draw_data.draw_lines.emplace_back(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center.y += nav->height;
 								for (auto i = 0; i < n; i++)
 								{
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								draw_data.draw_lines.emplace_back(pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center = nav->node->g_pos;
 								pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, +1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, -1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_lines.emplace_back(pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 							}
 							return true;
 						});
+
+						sScene::instance()->get_debug_draw(draw_data);
 					}
 				}
 			}, "scene"_h);

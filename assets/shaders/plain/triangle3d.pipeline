@@ -12,3 +12,7 @@ renderpass
   {rp}
 primitive_topology
   {pt}
+polygon_mode
+  Line
+cull_mode
+  None
