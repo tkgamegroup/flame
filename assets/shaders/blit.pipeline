@@ -9,6 +9,8 @@ renderpass
   {rp}
 cull_mode
   None
+compare_op
+  Always
 
 @pll
 layout (set = SET, binding = 0) uniform sampler2D img_src;

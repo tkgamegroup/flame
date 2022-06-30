@@ -64,6 +64,7 @@ namespace flame
 	graphics::RenderpassPtr rp_fwd = nullptr;
 	graphics::RenderpassPtr rp_gbuf = nullptr;
 	graphics::RenderpassPtr rp_dep = nullptr;
+	graphics::RenderpassPtr rp_col_dep = nullptr;
 	std::unique_ptr<graphics::Framebuffer> fb_fwd;
 	std::unique_ptr<graphics::Framebuffer> fb_gbuf;
 	std::unique_ptr<graphics::Framebuffer> fb_pickup;
@@ -172,11 +173,16 @@ namespace flame
 			defines.push_back("pll=" + str(pll_fwd));
 			defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 		}
-		else if (true/*!forward*/)
+		else if (type != "grass_field"_h)
 		{
 			defines.push_back("rp=" + str(rp_gbuf));
 			defines.push_back("pll=" + str(pll_gbuf));
 			defines.push_back("all_shader:DEFERRED");
+		}
+		else
+		{
+			defines.push_back("rp=" + str(rp_fwd));
+			defines.push_back("pll=" + str(pll_fwd));
 		}
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
@@ -341,11 +347,15 @@ namespace flame
 
 		rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+			  "sample_count=" + TypeInfo::serialize_t(sample_count) });
 		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 		rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 
 		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
@@ -469,11 +479,11 @@ namespace flame
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
 
-		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", {});
+		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_mesh_plain->dynamic_renderpass = true;
-		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "vert:ARMATURE" });
+		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "vert:ARMATURE" });
 		pl_mesh_arm_plain->dynamic_renderpass = true;
-		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", {});
+		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_terrain_plain->dynamic_renderpass = true;
 
 		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
@@ -531,13 +541,14 @@ namespace flame
 		pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\fxaa.pipeline", {});
 		pl_fxaa->dynamic_renderpass = true;
 
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "frag:PICKUP" });
+		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_mesh_pickup->dynamic_renderpass = true;
 		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "vert:ARMATURE",
-			  "frag:PICKUP" });
+			  "frag:PICKUP",
+			  "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_mesh_arm_pickup->dynamic_renderpass = true;
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "frag:PICKUP" });
+		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
 		fence_pickup.reset(graphics::Fence::create(false));
 		
@@ -567,7 +578,7 @@ namespace flame
 		img_col_met.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_nor_rou.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst->get_view(), img_dep->get_view() }));
+		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
 		ds_deferred->set_image("img_col_met", 0, img_col_met->get_view(), nullptr);
 		ds_deferred->set_image("img_nor_rou", 0, img_nor_rou->get_view(), nullptr);
@@ -582,10 +593,7 @@ namespace flame
 
 		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		auto rp_pickup = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(img_pickup->format),
-			  "dep_fmt=" + TypeInfo::serialize_t(img_dep->format) });
-		fb_pickup.reset(graphics::Framebuffer::create(rp_pickup, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 
 		final_layout = _final_layout;
 
@@ -1171,7 +1179,8 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
 
-		// opaque
+		// deferred shading pass
+
 		cb->begin_renderpass(nullptr, fb_gbuf.get(),
 			{ vec4(0.f, 0.f, 0.f, 1.f),
 			vec4(0.f, 0.f, 0.f, 1.f),
@@ -1187,14 +1196,6 @@ namespace flame
 		for (auto& t : draw_data.draw_terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
-		}
-		draw_data.reset("draw"_h, "grass_field"_h);
-		for (auto n : camera_culled_nodes)
-			n->draw(draw_data);
-		for (auto& t : draw_data.draw_terrains)
-		{
-			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
 			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
 		}
 
@@ -1339,7 +1340,7 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
-		// transparent
+		// forward pass
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
@@ -1348,13 +1349,29 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
+		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dep_ms->get_shader_write_dst());
 		cb->bind_pipeline(pl_blit_dep_ms);
 		cb->bind_descriptor_set(0, img_dep->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
-		// post
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
+		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
+		cb->begin_renderpass(nullptr, fb_fwd.get());
+		draw_data.reset("draw"_h, "grass_field"_h);
+		for (auto n : camera_culled_nodes)
+			n->draw(draw_data);
+		prm_fwd.bind_dss(cb);
+		for (auto& t : draw_data.draw_terrains)
+		{
+			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
+			cb->draw(4, t.blocks, 0, (t.instance_id << 24) + (t.mat_id << 16));
+		}
+		cb->end_renderpass();
+
+		// post processing
+
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
 		prm_luma.bind_dss(cb);
 		const auto min_log_luma = -5.f;

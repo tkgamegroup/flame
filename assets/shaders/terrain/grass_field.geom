@@ -12,6 +12,7 @@ layout(location = 5) in vec3 i_coordw[];
 
 layout(location = 0) out vec3 o_normal;
 layout(location = 1) out vec3 o_color;
+layout(location = 2) out vec3 o_coordw;
 
 void main()
 {
@@ -38,17 +39,20 @@ void main()
 		
 		o_normal = oN;
 		o_color = vec3(0.49, 0.36, 0.26);
-		gl_Position = scene.proj_view * vec4(p - width * iT, 1.0);
+		o_coordw = p - width * iT;
+		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	
 		o_normal = oN;
 		o_color = vec3(0.49, 0.36, 0.26);
-		gl_Position = scene.proj_view * vec4(p + width * iT, 1.0);
+		o_coordw = p + width * iT;
+		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	
 		o_normal = oN;
 		o_color = vec3(0.49, 0.36, 0.26);
-		gl_Position = scene.proj_view * vec4(p + height * iN, 1.0);
+		o_coordw = p + height * iN;
+		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 
 		EndPrimitive();

@@ -1,22 +1,44 @@
 %col_fmt=R8G8B8A8_UNORM
 %dep_fmt=Depth16
-%sample_count=1
+%sample_count=4
 attachments
   format
     {col_fmt}
   load_op
-    Clear
+    Load
+  sample_count
+    {sample_count}
   initia_layout
-    Undefined
+    Attachment
  ---
   format
     {dep_fmt}
   load_op
-    Clear
+    Load
+  sample_count
+    {sample_count}
   initia_layout
-    Undefined
+    Attachment
+ ---
+  format
+    {col_fmt}
+  load_op
+    DontCare
+  initia_layout
+    Attachment
+ ---
+  format
+    {dep_fmt}
+  load_op
+    DontCare
+  initia_layout
+    Attachment
 subpasses
   color_attachments
     0
   depth_attachment
     1
+  color_resolve_attachments
+    2
+  depth_resolve_attachment
+    3

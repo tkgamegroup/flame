@@ -43,19 +43,20 @@ namespace flame
 					dst.finalLayout = to_backend(src.final_layout, src.format);
 				}
 
-				struct vkSubpassInfo
+				struct vkSubpassData
 				{
 					std::vector<VkAttachmentReference2> col_refs;
 					std::vector<VkAttachmentReference2> col_res_refs;
 					VkAttachmentReference2 dep_ref;
 					VkAttachmentReference2 dep_res_ref;
+					VkSubpassDescriptionDepthStencilResolve dep_res_state;
 				};
-				std::vector<vkSubpassInfo> vk_sp_infos(info.subpasses.size());
+				std::vector<vkSubpassData> vk_sp_datas(info.subpasses.size());
 				std::vector<VkSubpassDescription2> vk_sps(info.subpasses.size());
 				for (auto i = 0; i < info.subpasses.size(); i++)
 				{
 					auto& src = info.subpasses[i];
-					auto& dst = vk_sp_infos[i];
+					auto& dst = vk_sp_datas[i];
 					auto& sp = vk_sps[i];
 
 					sp = {};
@@ -73,6 +74,7 @@ namespace flame
 							r.attachment = src.color_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
+
 						sp.colorAttachmentCount = src.color_attachments.size();
 						sp.pColorAttachments = dst.col_refs.data();
 					}
@@ -88,6 +90,7 @@ namespace flame
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 							atts[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
+
 						sp.pResolveAttachments = dst.col_res_refs.data();
 					}
 					if (src.depth_attachment != -1)
@@ -97,7 +100,24 @@ namespace flame
 						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 						r.attachment = src.depth_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 						sp.pDepthStencilAttachment = &r;
+					}
+					if (src.depth_resolve_attachment != -1)
+					{
+						auto& r = dst.dep_res_ref;
+						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
+						r.attachment = src.depth_resolve_attachment;
+						r.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+						atts[src.depth_resolve_attachment].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+						auto& s = dst.dep_res_state;
+						s = {};
+						s.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE;
+						s.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+						s.pDepthStencilResolveAttachment = &r;
+
+						sp.pNext = &s;
 					}
 				}
 
