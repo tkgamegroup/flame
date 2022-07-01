@@ -1,0 +1,54 @@
+%rp=../forward.rp
+%pll=../forward.pll
+layout
+  {pll}
+renderpass
+  {rp}
+shaders
+  @vert
+ ---
+  @frag
+cull_mode
+  None
+
+@vert
+layout(location = 0) out vec3 o_view;
+
+void main()
+{
+	vec2 vs[] = {
+		vec2(-1.0, -1.0),
+		vec2(-1.0, +3.0),
+		vec2(+3.0, -1.0)
+	};
+	vec2 v = vs[gl_VertexIndex];
+	vec4 p = scene.proj_view_inv * vec4(v, 1, 1);
+	p /= p.w;
+	o_view = normalize(p.xyz);
+	gl_Position = vec4(v, 1.0, 1.0);
+}
+@
+
+@frag
+layout(location = 0) in vec3 i_view;
+
+const uint MaxSteps = 64;
+
+float sdf(vec3 p)
+{
+}
+
+float march(vec3 origin, vec3 dir)
+{
+	float depth = 0.0;
+	for (int n = 0; n < MaxSteps; n++)
+	{
+
+	}
+}
+
+void main()
+{
+	vec3 origin = scene.camera_coord;
+}
+@

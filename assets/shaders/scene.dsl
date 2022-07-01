@@ -1,11 +1,9 @@
 layout (set = SET, binding = 0) uniform Scene
 {
-	float sky_intensity;
-	float sky_rad_levels;
-	vec3 fog_color;
-
 	float zNear;
 	float zFar;
+	float fovy;
+	float tan_hf_fovy;
 
 	vec2 viewport;
 	

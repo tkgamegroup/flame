@@ -57,8 +57,8 @@ namespace flame
 
 			~DescriptorSetPrivate();
 
-			void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
-			void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
+			void set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) override;
+			void set_image_i(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) override;
 			void update() override;
 		};
 

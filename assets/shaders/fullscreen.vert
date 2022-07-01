@@ -1,4 +1,4 @@
-layout (location = 0) out vec2 o_uv;
+layout(location = 0) out vec2 o_uv;
 
 void main()
 {

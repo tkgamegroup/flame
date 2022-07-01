@@ -27,8 +27,6 @@ namespace flame
 		mat4 proj_view_mat_inv;
 		Frustum frustum;
 
-		virtual void update() = 0;
-
 		struct Create
 		{
 			virtual cCameraPtr operator()(EntityPtr e) = 0;

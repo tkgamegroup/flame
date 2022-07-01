@@ -26,8 +26,8 @@ layout(location = 1) out vec4 o_res_nor_rou;
 vec3 textureVariant(int map_id, vec2 uv)
 {
 	float k = 0;
-	if (material_misc.random_map_id != -1)
-		k = texture(material_maps[material_misc.random_map_id], 0.005 * uv).r;
+	if (material.random_map_id != -1)
+		k = texture(material_maps[material.random_map_id], 0.005 * uv).r;
 
     vec2 duvdx = dFdx(uv);
     vec2 duvdy = dFdy(uv);

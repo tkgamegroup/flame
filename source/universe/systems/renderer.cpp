@@ -83,12 +83,13 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx_arm;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false> buf_idx_arm;
 
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_misc;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material_info;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_light;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
@@ -361,84 +362,86 @@ namespace flame
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
 		auto dsl_scene = graphics::DescriptorSetLayout::get(L"flame\\shaders\\scene.dsl");
-		buf_scene.create(dsl_scene->get_buf_ui("Scene"));
+		buf_scene.create(dsl_scene->get_buf_ui("Scene"_h));
 		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
-		ds_scene->set_buffer("Scene", 0, buf_scene.buf.get());
+		ds_scene->set_buffer("Scene"_h, 0, buf_scene.buf.get());
 		ds_scene->update();
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
-		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"));
-		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"));
-		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"));
+		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"_h));
+		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"_h));
+		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"_h));
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
-		ds_instance->set_buffer("MeshInstances", 0, buf_mesh_ins.buf.get());
-		ds_instance->set_buffer("ArmatureInstances", 0, buf_armature_ins.buf.get());
-		ds_instance->set_buffer("TerrainInstances", 0, buf_terrain_ins.buf.get());
+		ds_instance->set_buffer("MeshInstances"_h, 0, buf_mesh_ins.buf.get());
+		ds_instance->set_buffer("ArmatureInstances"_h, 0, buf_armature_ins.buf.get());
+		ds_instance->set_buffer("TerrainInstances"_h, 0, buf_terrain_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 		{
-			ds_instance->set_image("terrain_height_maps", i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_normal_maps", i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_tangent_maps", i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_splash_maps", i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_normal_maps"_h, i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_tangent_maps"_h, i, img_black->get_view(), sp_trilinear);
+			ds_instance->set_image("terrain_splash_maps"_h, i, img_black->get_view(), sp_trilinear);
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
-		buf_material_misc.create(dsl_material->get_buf_ui("MaterialMisc"));
-		buf_material.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"));
-		mat_reses.resize(buf_material.array_capacity);
+		buf_material.create(dsl_material->get_buf_ui("Material"_h));
+		buf_material_info.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"_h));
+		mat_reses.resize(buf_material_info.array_capacity);
 		get_material_res(graphics::Material::get(L"default"), -1);
-		tex_reses.resize(dsl_material->find_binding("material_maps")->count);
+		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
-		ds_material->set_buffer("MaterialMisc", 0, buf_material_misc.buf.get());
-		ds_material->set_buffer("MaterialInfos", 0, buf_material.buf.get());
+		ds_material->set_buffer("Material"_h, 0, buf_material.buf.get());
+		ds_material->set_buffer("MaterialInfos"_h, 0, buf_material_info.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
-			ds_material->set_image("material_maps", i, img_black->get_view(), nullptr);
-		buf_material_misc.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
-		buf_material_misc.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
+			ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
+		buf_material.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
+		buf_material.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
 		{
 			auto img = graphics::Image::get(L"flame\\random.png");
-			buf_material_misc.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
+			buf_material.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
 				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
 		}
 		{
 			graphics::InstanceCommandBuffer cb;
-			buf_material_misc.upload(cb.get());
+			buf_material.upload(cb.get());
 			cb.excute();
 		}
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
-		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"));
-		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"));
-		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"));
-		buf_dir_shadow.create_with_array_type(dsl_light->get_buf_ui("DirShadows"));
-		buf_pt_shadow.create_with_array_type(dsl_light->get_buf_ui("PtShadows"));
-		imgs_dir_shadow.resize(dsl_light->find_binding("dir_shadow_maps")->count);
+		buf_light.create(dsl_light->get_buf_ui("Light"_h));
+		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"_h));
+		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"_h));
+		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"_h));
+		buf_dir_shadow.create_with_array_type(dsl_light->get_buf_ui("DirShadows"_h));
+		buf_pt_shadow.create_with_array_type(dsl_light->get_buf_ui("PtShadows"_h));
+		imgs_dir_shadow.resize(dsl_light->get_binding("dir_shadow_maps"_h).count);
 		for (auto& i : imgs_dir_shadow)
 		{
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		imgs_pt_shadow.resize(dsl_light->find_binding("pt_shadow_maps")->count);
+		imgs_pt_shadow.resize(dsl_light->get_binding("pt_shadow_maps"_h).count);
 		for (auto& i : imgs_pt_shadow)
 		{
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		ds_light->set_buffer("LightIndexs", 0, buf_light_index.buf.get());
-		ds_light->set_buffer("LightGrids", 0, buf_light_grid.buf.get());
-		ds_light->set_buffer("LightInfos", 0, buf_light_info.buf.get());
-		ds_light->set_buffer("DirShadows", 0, buf_dir_shadow.buf.get());
-		ds_light->set_buffer("PtShadows", 0, buf_pt_shadow.buf.get());
+		ds_light->set_buffer("Light"_h, 0, buf_light.buf.get());
+		ds_light->set_buffer("LightIndexs"_h, 0, buf_light_index.buf.get());
+		ds_light->set_buffer("LightGrids"_h, 0, buf_light_grid.buf.get());
+		ds_light->set_buffer("LightInfos"_h, 0, buf_light_info.buf.get());
+		ds_light->set_buffer("DirShadows"_h, 0, buf_dir_shadow.buf.get());
+		ds_light->set_buffer("PtShadows"_h, 0, buf_pt_shadow.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-			ds_light->set_image("dir_shadow_maps", i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
+			ds_light->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-			ds_light->set_image("pt_shadow_maps", i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
-		ds_light->set_image("sky_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_irr_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_rad_map", 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+			ds_light->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
+		ds_light->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		{
 			auto img = graphics::Image::get(L"flame\\brdf.dds");
-			ds_light->set_image("brdf_map", 0, img ? img->get_view() : img_black->get_view(), nullptr);
+			ds_light->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
 		}
 		ds_light->update();
 
@@ -518,15 +521,15 @@ namespace flame
 		pl_localmax_v->dynamic_renderpass = true;
 
 		auto dsl_luma_avg = graphics::DescriptorSetLayout::get(L"flame\\shaders\\post\\luma_avg.dsl");
-		buf_luma_avg.create(dsl_luma_avg->get_buf_ui("LumaAvg"));
+		buf_luma_avg.create(dsl_luma_avg->get_buf_ui("LumaAvg"_h));
 		ds_luma_avg.reset(graphics::DescriptorSet::create(nullptr, dsl_luma_avg));
-		ds_luma_avg->set_buffer("LumaAvg", 0, buf_luma_avg.buf.get());
+		ds_luma_avg->set_buffer("LumaAvg"_h, 0, buf_luma_avg.buf.get());
 		ds_luma_avg->update();
 		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
 		auto dsl_luma = prm_luma.pll->dsls.back();
-		buf_luma_hist.create(dsl_luma->get_buf_ui("LumaHist"));
+		buf_luma_hist.create(dsl_luma->get_buf_ui("LumaHist"_h));
 		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
-		ds_luma->set_buffer("LumaHist", 0, buf_luma_hist.buf.get());
+		ds_luma->set_buffer("LumaHist"_h, 0, buf_luma_hist.buf.get());
 		ds_luma->update();
 		prm_luma.set_ds("luma_avg"_h, ds_luma_avg.get());
 		prm_luma.set_ds(""_h, ds_luma.get());
@@ -580,12 +583,12 @@ namespace flame
 		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
-		ds_deferred->set_image("img_col_met", 0, img_col_met->get_view(), nullptr);
-		ds_deferred->set_image("img_nor_rou", 0, img_nor_rou->get_view(), nullptr);
-		ds_deferred->set_image("img_ao", 0, img_ao->get_view(), nullptr);
-		ds_deferred->set_image("img_dep", 0, img_dep->get_view(), nullptr);
+		ds_deferred->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
+		ds_deferred->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
+		ds_deferred->set_image("img_ao"_h, 0, img_ao->get_view(), nullptr);
+		ds_deferred->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
 		ds_deferred->update();
-		ds_luma->set_image("img_col", 0, img_dst->get_view(), nullptr);
+		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		ds_luma->update();
 
 		img_back0.reset(graphics::Image::create(col_fmt, tar_size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -617,9 +620,9 @@ namespace flame
 
 	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
 	{
-		ds_light->set_image("sky_map", 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_irr_map", 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_rad_map", 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_light->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->update();
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
@@ -661,7 +664,7 @@ namespace flame
 		res.sp = sp;
 		res.ref = 1;
 
-		ds_material->set_image("material_maps", id, iv, sp);
+		ds_material->set_image("material_maps"_h, id, iv, sp);
 		ds_material->update();
 
 		return id;
@@ -675,7 +678,7 @@ namespace flame
 		if (res.ref == 1)
 		{
 			graphics::Queue::get()->wait_idle();
-			ds_material->set_image("material_maps", id, img_black->get_view(), nullptr);
+			ds_material->set_image("material_maps"_h, id, img_black->get_view(), nullptr);
 			ds_material->update();
 			
 			res.iv = nullptr;
@@ -843,18 +846,18 @@ namespace flame
 		if (update_parameters || update_textures)
 		{
 			graphics::InstanceCommandBuffer cb;
-			buf_material.select_item(id);
-			buf_material.set_var<"opaque"_h>((int)res.mat->opaque);
-			buf_material.set_var<"color"_h>(res.mat->color);
-			buf_material.set_var<"metallic"_h>(res.mat->metallic);
-			buf_material.set_var<"roughness"_h>(res.mat->roughness);
-			buf_material.set_var<"alpha_test"_h>(res.mat->alpha_test);
-			buf_material.set_var<"f"_h>(res.mat->float_values);
-			buf_material.set_var<"i"_h>(res.mat->int_values);
-			auto ids = (int*)buf_material.var_addr<"map_indices"_h>();
+			buf_material_info.select_item(id);
+			buf_material_info.set_var<"opaque"_h>((int)res.mat->opaque);
+			buf_material_info.set_var<"color"_h>(res.mat->color);
+			buf_material_info.set_var<"metallic"_h>(res.mat->metallic);
+			buf_material_info.set_var<"roughness"_h>(res.mat->roughness);
+			buf_material_info.set_var<"alpha_test"_h>(res.mat->alpha_test);
+			buf_material_info.set_var<"f"_h>(res.mat->float_values);
+			buf_material_info.set_var<"i"_h>(res.mat->int_values);
+			auto ids = (int*)buf_material_info.var_addr<"map_indices"_h>();
 			for (auto i = 0; i < res.texs.size(); i++)
 				ids[i] = res.texs[i].first;
-			buf_material.upload(cb.get());
+			buf_material_info.upload(cb.get());
 			cb.excute();
 		}
 	}
@@ -988,9 +991,9 @@ namespace flame
 		else
 		{
 			buf_terrain_ins.release_item(id);
-			ds_instance->set_image("terrain_height_maps", id, img_black->get_view(), nullptr);
-			ds_instance->set_image("terrain_normal_maps", id, img_black->get_view(), nullptr);
-			ds_instance->set_image("terrain_tangent_maps", id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_height_maps"_h, id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_normal_maps"_h, id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_tangent_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;
@@ -1004,10 +1007,10 @@ namespace flame
 		buf_terrain_ins.set_var<"extent"_h>(extent);
 		buf_terrain_ins.set_var<"blocks"_h>(blocks);
 		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
-		ds_instance->set_image("terrain_height_maps", id, height_map, nullptr);
-		ds_instance->set_image("terrain_normal_maps", id, normal_map, nullptr);
-		ds_instance->set_image("terrain_tangent_maps", id, tangent_map, nullptr);
-		ds_instance->set_image("terrain_splash_maps", id, splash_map, nullptr);
+		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
+		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
+		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
+		ds_instance->set_image("terrain_splash_maps"_h, id, splash_map, nullptr);
 		ds_instance->update();
 	}
 
@@ -1071,16 +1074,12 @@ namespace flame
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 
-		buf_scene.set_var<"sky_intensity"_h>(1.f);
-		buf_scene.set_var<"sky_rad_levels"_h>(sky_rad_levels);
-		buf_scene.set_var<"fog_color"_h>(vec3(1.f));
-
 		buf_scene.set_var<"zNear"_h>(camera->zNear);
 		buf_scene.set_var<"zFar"_h>(camera->zFar);
-
+		buf_scene.set_var<"fovy"_h>(camera->fovy);
+		buf_scene.set_var<"tan_hf_fovy"_h>((float)tan(radians(camera->fovy * 0.5f)));
 		buf_scene.set_var<"camera_coord"_h>(camera->node->g_pos);
 		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
-
 		buf_scene.set_var<"view"_h>(camera->view_mat);
 		buf_scene.set_var<"view_inv"_h>(camera->view_mat_inv);
 		buf_scene.set_var<"proj"_h>(camera->proj_mat);
@@ -1088,8 +1087,12 @@ namespace flame
 		buf_scene.set_var<"proj_view"_h>(camera->proj_view_mat);
 		buf_scene.set_var<"proj_view_inv"_h>(camera->proj_view_mat_inv);
 		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
-		
 		buf_scene.upload(cb);
+
+		buf_light.set_var<"sky_intensity"_h>(1.f);
+		buf_light.set_var<"sky_rad_levels"_h>(sky_rad_levels);
+		buf_light.set_var<"fog_color"_h>(vec3(1.f));
+		buf_light.upload(cb);
 
 		auto n_lights = 0;
 		auto n_dir_lights = 0;

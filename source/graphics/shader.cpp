@@ -650,9 +650,11 @@ namespace flame
 
 					dst.binding = i;
 					dst.descriptorType = to_backend(src.type);
-					dst.descriptorCount = src.count;
+					dst.descriptorCount = max(1U, src.count);
 					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 					dst.pImmutableSamplers = nullptr;
+
+					ret->bindings_map[sh(src.name.c_str())] = i;
 				}
 
 				VkDescriptorSetLayoutCreateInfo info;
@@ -764,7 +766,7 @@ namespace flame
 			unregister_backend_object(vk_descriptor_set);
 		}
 
-		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPtr buf, uint offset, uint range)
+		void DescriptorSetPrivate::set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset, uint range)
 		{
 			if (binding >= reses.size() || index >= reses[binding].size())
 				return;
@@ -780,7 +782,7 @@ namespace flame
 			buf_updates.emplace_back(binding, index);
 		}
 
-		void DescriptorSetPrivate::set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp)
+		void DescriptorSetPrivate::set_image_i(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp)
 		{
 			if (binding >= reses.size() || index >= reses[binding].size())
 				return;

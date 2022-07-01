@@ -35,32 +35,32 @@ namespace flame
 		struct DescriptorSetLayout
 		{
 			std::vector<DescriptorBinding> bindings;
+			std::unordered_map<uint, uint> bindings_map;
 
 			std::filesystem::path filename;
 
 			virtual ~DescriptorSetLayout() {}
 
-			inline int find_binding_i(std::string_view name) const
+			inline int find_binding(uint hash) const
 			{
-				for (auto i = 0; i < bindings.size(); i++)
-				{
-					if (bindings[i].name == name)
-						return i;
-				}
+				auto it = bindings_map.find(hash);
+				if (it != bindings_map.end())
+					return it->second;
 				return -1;
 			}
 
-			inline const DescriptorBinding* find_binding(std::string_view name) const
+			inline const DescriptorBinding& get_binding(uint hash) const
 			{
-				auto idx = find_binding_i(name);
+				auto idx = find_binding(hash);
 				if (idx != -1)
-					return &bindings[idx];
-				return nullptr;
+					return bindings[idx];
+				static DescriptorBinding empty;
+				return empty;
 			}
 
-			UdtInfo* get_buf_ui(std::string_view name) const
+			UdtInfo* get_buf_ui(uint hash) const
 			{
-				auto idx = find_binding_i(name);
+				auto idx = find_binding(hash);
 				if (idx != -1)
 				{
 					auto& binding = bindings[idx];
@@ -97,37 +97,37 @@ namespace flame
 
 			virtual ~DescriptorSet() {}
 
-			virtual void set_buffer(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
-			inline void set_buffer(std::string_view name, uint index, BufferPtr buf, uint offset = 0, uint range = 0)
+			virtual void set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
+			inline void set_buffer(uint hash, uint index, BufferPtr buf, uint offset = 0, uint range = 0)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding_i(name);
+				auto idx = ((DescriptorSetLayout*)layout)->find_binding(hash);
 				if (idx == -1)
 				{
-					printf("descriptor set bind resource failed: cannot find %s\n", name.data());
+					printf("descriptor set bind resource failed: cannot find %d\n", hash);
 					return;
 				}
 				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
 				{
-					printf("descriptor set bind resource failed: type mismatch with %s\n", name.data());
+					printf("descriptor set bind resource failed: type mismatch with %d\n", hash);
 					return;
 				}
-				set_buffer(idx, index, buf, offset, range);
+				set_buffer_i(idx, index, buf, offset, range);
 			}
-			virtual void set_image(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
-			inline void set_image(std::string_view name, uint index, ImageViewPtr iv, SamplerPtr sp)
+			virtual void set_image_i(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
+			inline void set_image(uint hash, uint index, ImageViewPtr iv, SamplerPtr sp)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding_i(name);
+				auto idx = ((DescriptorSetLayout*)layout)->find_binding(hash);
 				if (idx == -1)
 				{
-					printf("descriptor set bind resource failed: cannot find %s\n", name.data());
+					printf("descriptor set bind resource failed: cannot find %d\n", hash);
 					return;
 				}
 				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorSampledImage, DescriptorStorageImage }))
 				{
-					printf("descriptor set bind resource failed: type mismatch with %s\n", name.data());
+					printf("descriptor set bind resource failed: type mismatch with %d\n", hash);
 					return;
 				}
-				set_image(idx, index, iv, sp);
+				set_image_i(idx, index, iv, sp);
 			}
 
 			virtual void update() = 0;
