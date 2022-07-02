@@ -176,7 +176,7 @@ namespace flame
 			}
 
 			auto ds = DescriptorSet::create(nullptr, simple_dsl);
-			ds->set_image(0, 0, get_view({ base_level, 1, base_layer, 1 }, swizzle), sp);
+			ds->set_image_i(0, 0, get_view({ base_level, 1, base_layer, 1 }, swizzle), sp);
 			ds->update();
 			read_dss.emplace(key, ds);
 			return ds;

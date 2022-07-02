@@ -100,15 +100,17 @@ namespace flame
 			virtual void set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset = 0, uint range = 0) = 0;
 			inline void set_buffer(uint hash, uint index, BufferPtr buf, uint offset = 0, uint range = 0)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding(hash);
+				auto dsl = (DescriptorSetLayout*)layout;
+				auto idx = dsl->find_binding(hash);
 				if (idx == -1)
 				{
-					printf("descriptor set bind resource failed: cannot find %d\n", hash);
+					printf("descriptor set bind buffer failed: cannot find %d\n", hash);
 					return;
 				}
-				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
+				auto& bd = dsl->bindings[idx];
+				if (!is_one_of(bd.type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
 				{
-					printf("descriptor set bind resource failed: type mismatch with %d\n", hash);
+					printf("descriptor set bind buffer failed: type mismatch with %s\n", bd.name.c_str());
 					return;
 				}
 				set_buffer_i(idx, index, buf, offset, range);
@@ -116,15 +118,17 @@ namespace flame
 			virtual void set_image_i(uint binding, uint index, ImageViewPtr iv, SamplerPtr sp) = 0;
 			inline void set_image(uint hash, uint index, ImageViewPtr iv, SamplerPtr sp)
 			{
-				auto idx = ((DescriptorSetLayout*)layout)->find_binding(hash);
+				auto dsl = (DescriptorSetLayout*)layout;
+				auto idx = dsl->find_binding(hash);
 				if (idx == -1)
 				{
-					printf("descriptor set bind resource failed: cannot find %d\n", hash);
+					printf("descriptor set bind image failed: cannot find %d\n", hash);
 					return;
 				}
-				if (!is_one_of(((DescriptorSetLayout*)layout)->bindings[idx].type, { DescriptorSampledImage, DescriptorStorageImage }))
+				auto& bd = dsl->bindings[idx];
+				if (!is_one_of(bd.type, { DescriptorSampledImage, DescriptorStorageImage }))
 				{
-					printf("descriptor set bind resource failed: type mismatch with %d\n", hash);
+					printf("descriptor set bind image failed: type mismatch with %s\n", bd.name.c_str());
 					return;
 				}
 				set_image_i(idx, index, iv, sp);

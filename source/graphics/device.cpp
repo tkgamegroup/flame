@@ -15,15 +15,37 @@ namespace flame
 		{
 			auto message = std::string(pMessage);
 			printf("\n%s\n", message.c_str());
-			static std::regex reg_obj(R"(Object \d+: handle = 0x(\w+), type = VK_OBJECT_TYPE_(\w+))");
+			static std::regex reg_id(R"(VUID-\w+-\w+-(\d+))");
+			static std::regex reg_obj(R"(Object \d+: handle = 0x(\w+))");
 			auto str = message;
 			std::smatch res;
-			std::vector<std::pair<void*, std::string>> backend_objects;
+			uint msgid = 0;
+			std::vector<void*> backend_objects;
+			if (std::regex_search(str, res, reg_id))
+				msgid = s2t<uint>(res[1].str());
 			while (std::regex_search(str, res, reg_obj))
 			{
-				backend_objects.emplace_back((void*)s2u_hex<uint64>(res[1].str()), res[2].str());
+				backend_objects.push_back((void*)s2u_hex<uint64>(res[1].str()));
 				str = res.suffix();
 			}
+
+			if (msgid == 2699)
+			{
+				static std::regex reg_msg(R"(Descriptor in binding \#(\d+) index)");
+				int binding = -1;
+				if (std::regex_search(str, res, reg_msg))
+					binding = s2u_hex<uint>(res[1].str());
+
+				auto ds = (DescriptorSetPtr)tracked_objects[backend_objects[0]].obj;
+				if (ds && binding != -1)
+				{
+					auto dsl = ds->layout;
+					wprintf(L"DSL filename: %s\n", dsl->filename.c_str());
+					if (binding < dsl->bindings.size())
+						printf("binding %d: %s\n", binding, dsl->bindings[binding].name.c_str());
+				}
+			}
+
 			/*
 			Validation Error: [ VUID-vkCmdDraw-None-02699 ] Object 0: handle = 0xcf1ef100000001fc, type = VK_OBJECT_TYPE_DESCRIPTOR_SET; | MessageID = 0x1608dec0 | Descriptor set VkDescriptorSet 0xcf1ef100000001fc[] encountered the following validation error at vkCmdDraw time: Descriptor in binding #0 index 0 is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call. The Vulkan spec states: Descriptors in each bound descriptor set, specified via vkCmdBindDescriptorSets, must be valid if they are statically used by the VkPipeline bound to the pipeline bind point used by this command (https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/1.3-extensions/vkspec.html#VUID-vkCmdDraw-None-02699)
 			*/

@@ -9,19 +9,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct TrackedObject
-		{
-			std::string type;
-			void* obj;
-			int die_frames = -1;
-		};
-
 		std::map<void*, TrackedObject> tracked_objects;
 
-		static void* ev_cleanup = nullptr;
-
-		void register_object(void* backend_obj, std::string_view type, void* obj)
+		void register_object(void* backend_obj, const std::string& type, void* obj)
 		{
+			static void* ev_cleanup = nullptr;
 			if (!ev_cleanup)
 			{
 				ev_cleanup = add_event([]() {
@@ -35,7 +27,7 @@ namespace flame
 					return true;
 				});
 			}
-			tracked_objects[backend_obj] = TrackedObject{ std::string(type), obj };
+			tracked_objects[backend_obj] = TrackedObject{ type, obj };
 		}
 
 		void unregister_object(void* backend_obj)

@@ -597,8 +597,15 @@ namespace flame
 			}
 		}
 
-		extern std::map<void*, std::pair<std::string, void*>> backend_objects;
-		void register_object(void* backend_obj, std::string_view type, void* obj);
+		struct TrackedObject
+		{
+			std::string type;
+			void* obj = nullptr;
+			int die_frames = -1;
+		};
+
+		extern std::map<void*, TrackedObject> tracked_objects;
+		void register_object(void* backend_obj, const std::string& type, void* obj);
 		void unregister_object(void* backend_obj);
 	}
 }
