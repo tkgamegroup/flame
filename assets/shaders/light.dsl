@@ -27,12 +27,12 @@ struct PtShadow
 	float far;
 };
 
-layout (set = SET, binding = 0) uniform Light
+layout (set = SET, binding = 0) uniform Lighting
 {
 	float sky_intensity;
 	float sky_rad_levels;
 	vec3 fog_color;
-}light;
+}lighting;
 
 layout (set = SET, binding = 1) buffer readonly LightIndexs
 {

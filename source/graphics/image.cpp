@@ -35,8 +35,8 @@ namespace flame
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
 			}
-			unregister_backend_object(vk_image);
-			unregister_backend_object(vk_memory);
+			unregister_object(vk_image);
+			unregister_object(vk_memory);
 		}
 
 		void ImagePrivate::initialize()
@@ -136,7 +136,7 @@ namespace flame
 			info.subresourceRange.layerCount = sub.layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
-			register_backend_object(iv->vk_image_view, "Image View", iv);
+			register_object(iv->vk_image_view, "Image View", iv);
 
 			views.emplace(key, iv);
 			return iv;
@@ -546,8 +546,8 @@ namespace flame
 
 				chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
 				chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
-				register_backend_object(ret->vk_image, "Image", ret);
-				register_backend_object(ret->vk_memory, "Image Memory", ret);
+				register_object(ret->vk_image, "Image", ret);
+				register_object(ret->vk_memory, "Image Memory", ret);
 
 				return ret;
 			}
@@ -755,7 +755,7 @@ namespace flame
 			ret->size = size;
 			ret->initialize();
 			ret->vk_image = native;
-			register_backend_object(ret->vk_image, "Image", ret);
+			register_object(ret->vk_image, "Image", ret);
 
 			return ret;
 		}
@@ -765,7 +765,7 @@ namespace flame
 			if (app_exiting) return;
 
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
-			unregister_backend_object(vk_image_view);
+			unregister_object(vk_image_view);
 		}
 
 		SamplerPrivate::~SamplerPrivate()
@@ -773,7 +773,7 @@ namespace flame
 			if (app_exiting) return;
 
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
-			unregister_backend_object(vk_sampler);
+			unregister_object(vk_sampler);
 		}
 
 		struct SamplerGet : Sampler::Get
@@ -804,7 +804,7 @@ namespace flame
 				info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
-				register_backend_object(ret->vk_sampler, "Sampler", ret);
+				register_object(ret->vk_sampler, "Sampler", ret);
 
 				samplers.emplace_back(ret);
 				return ret;

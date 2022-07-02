@@ -87,9 +87,9 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_system;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material_info;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_light;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_lighting;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
@@ -383,32 +383,32 @@ namespace flame
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
-		buf_material.create(dsl_material->get_buf_ui("Material"_h));
+		buf_material_system.create(dsl_material->get_buf_ui("MaterialSystem"_h));
 		buf_material_info.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"_h));
 		mat_reses.resize(buf_material_info.array_capacity);
 		get_material_res(graphics::Material::get(L"default"), -1);
 		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
-		ds_material->set_buffer("Material"_h, 0, buf_material.buf.get());
+		ds_material->set_buffer("MaterialSystem"_h, 0, buf_material_system.buf.get());
 		ds_material->set_buffer("MaterialInfos"_h, 0, buf_material_info.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
-		buf_material.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
-		buf_material.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
+		buf_material_system.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
+		buf_material_system.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
 		{
 			auto img = graphics::Image::get(L"flame\\random.png");
-			buf_material.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(), 
+			buf_material_system.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(),
 				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
 		}
 		{
 			graphics::InstanceCommandBuffer cb;
-			buf_material.upload(cb.get());
+			buf_material_system.upload(cb.get());
 			cb.excute();
 		}
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
-		buf_light.create(dsl_light->get_buf_ui("Light"_h));
+		buf_lighting.create(dsl_light->get_buf_ui("Lighting"_h));
 		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"_h));
 		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"_h));
 		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"_h));
@@ -426,7 +426,7 @@ namespace flame
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		ds_light->set_buffer("Light"_h, 0, buf_light.buf.get());
+		ds_light->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
 		ds_light->set_buffer("LightIndexs"_h, 0, buf_light_index.buf.get());
 		ds_light->set_buffer("LightGrids"_h, 0, buf_light_grid.buf.get());
 		ds_light->set_buffer("LightInfos"_h, 0, buf_light_info.buf.get());
@@ -1089,10 +1089,10 @@ namespace flame
 		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
 		buf_scene.upload(cb);
 
-		buf_light.set_var<"sky_intensity"_h>(1.f);
-		buf_light.set_var<"sky_rad_levels"_h>(sky_rad_levels);
-		buf_light.set_var<"fog_color"_h>(vec3(1.f));
-		buf_light.upload(cb);
+		buf_lighting.set_var<"sky_intensity"_h>(1.f);
+		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
+		buf_lighting.set_var<"fog_color"_h>(vec3(1.f));
+		buf_lighting.upload(cb);
 
 		auto n_lights = 0;
 		auto n_dir_lights = 0;

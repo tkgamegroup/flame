@@ -41,8 +41,8 @@ namespace flame
 
 			chk_res(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
 			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
-			register_backend_object(vk_buffer, "Buffer", this);
-			register_backend_object(vk_memory, "Buffer Memory", this);
+			register_object(vk_buffer, "Buffer", this);
+			register_object(vk_memory, "Buffer Memory", this);
 		}
 
 		void BufferPrivate::destroy()
@@ -52,8 +52,8 @@ namespace flame
 
 			vkFreeMemory(device->vk_device, vk_memory, nullptr);
 			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
-			unregister_backend_object(vk_buffer);
-			unregister_backend_object(vk_memory);
+			unregister_object(vk_buffer);
+			unregister_object(vk_memory);
 		}
 
 		void BufferPrivate::map(uint offset, uint _size)

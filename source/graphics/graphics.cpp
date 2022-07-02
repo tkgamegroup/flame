@@ -9,22 +9,42 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::map<void*, std::pair<std::string, void*>> backend_objects;
-
-		void register_backend_object(void* backend_obj, std::string_view type, void* obj)
+		struct TrackedObject
 		{
-			if ((uint64)backend_obj == 0x2894590000000072)
-				auto cut = 1;
-			backend_objects[backend_obj] = std::make_pair(std::string(type), obj);
+			std::string type;
+			void* obj;
+			int die_frames = -1;
+		};
+
+		std::map<void*, TrackedObject> tracked_objects;
+
+		static void* ev_cleanup = nullptr;
+
+		void register_object(void* backend_obj, std::string_view type, void* obj)
+		{
+			if (!ev_cleanup)
+			{
+				ev_cleanup = add_event([]() {
+					for (auto it = tracked_objects.begin(); it != tracked_objects.end();)
+					{
+						if (it->second.die_frames == 1)
+							it = tracked_objects.erase(it);
+						else
+							it++;
+					}
+					return true;
+				});
+			}
+			tracked_objects[backend_obj] = TrackedObject{ std::string(type), obj };
 		}
 
-		void unregister_backend_object(void* backend_obj)
+		void unregister_object(void* backend_obj)
 		{
 			if (app_exiting)
 				return;
-			auto it = backend_objects.find(backend_obj);
-			if (it != backend_objects.end())
-				backend_objects.erase(it);
+			auto it = tracked_objects.find(backend_obj);
+			if (it != tracked_objects.end())
+				it->second.die_frames = 3;
 		}
 	}
 }

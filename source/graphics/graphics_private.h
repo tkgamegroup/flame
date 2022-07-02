@@ -598,7 +598,7 @@ namespace flame
 		}
 
 		extern std::map<void*, std::pair<std::string, void*>> backend_objects;
-		void register_backend_object(void* backend_obj, std::string_view type, void* obj);
-		void unregister_backend_object(void* backend_obj);
+		void register_object(void* backend_obj, std::string_view type, void* obj);
+		void unregister_object(void* backend_obj);
 	}
 }

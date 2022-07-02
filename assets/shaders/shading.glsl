@@ -69,20 +69,20 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	uint dir_num = light_grids[0].count;
 	for (int i = 0; i < dir_num; i++)
 	{
-		LightInfo light = light_infos[light_indexs[i]];
-		vec3 L = light.pos;
+		LightInfo li = light_infos[light_indexs[i]];
+		vec3 L = li.pos;
 		
 		float f_shadow = 1.0;
-		if (light.shadow_index != -1)
+		if (li.shadow_index != -1)
 		{
 			for (uint lv = 0; lv < 4; lv++)
 			{
-				if (distv < dir_shadows[light.shadow_index].splits[lv])
+				if (distv < dir_shadows[li.shadow_index].splits[lv])
 				{
-					vec4 coordl = dir_shadows[light.shadow_index].mats[lv] * vec4(coordw, 1.0);
+					vec4 coordl = dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-					float ref = texture(dir_shadow_maps[light.shadow_index], vec3(coordl.xy, lv)).r;
-					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref) * dir_shadows[light.shadow_index].far), 0.0, 1.0);
+					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
+					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref) * dir_shadows[li.shadow_index].far), 0.0, 1.0);
 					break;
 				}
 			}
@@ -90,7 +90,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		
 		if (f_shadow > 0.0)
 		{
-			vec3 radiance = light.color * f_shadow;
+			vec3 radiance = li.color * f_shadow;
 			ret += brdf(N, V, L, radiance, metallic, albedo, f0, roughness);
 			#ifdef DOUBLE_SIDE
 				ret += brdf(-N, V, L, radiance, metallic, albedo, f0, roughness);
@@ -104,25 +104,25 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	pt_num = 0;
 	for (int i = 0; i < pt_num; i++)
 	{
-		LightInfo light = light_infos[light_indexs[idx_off + i]];
-		vec3 L = light.pos - coordw;
+		LightInfo li = light_infos[light_indexs[idx_off + i]];
+		vec3 L = li.pos - coordw;
 		float dist = length(L);
 		L = L / dist;
 
 		float f_shadow = 1.0;
-		if (light.shadow_index != -1)
+		if (li.shadow_index != -1)
 		{
-			if (dist < pt_shadows[light.shadow_index].far)
+			if (dist < pt_shadows[li.shadow_index].far)
 			{
-				float ref = texture(pt_shadow_maps[light.shadow_index], -L).r * 2.0 - 1.0;
-				ref = linear_depth(pt_shadows[light.shadow_index].near, pt_shadows[light.shadow_index].far, ref);
+				float ref = texture(pt_shadow_maps[li.shadow_index], -L).r * 2.0 - 1.0;
+				ref = linear_depth(pt_shadows[li.shadow_index].near, pt_shadows[li.shadow_index].far, ref);
 				f_shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 			}
 		}
 		
 		if (f_shadow > 0.0)
 		{
-			vec3 radiance = light.color / max(dist * dist, 1.0) * f_shadow;
+			vec3 radiance = li.color / max(dist * dist, 1.0) * f_shadow;
 			ret += brdf(N, V, L, radiance, metallic, albedo, f0, roughness);
 			#ifdef DOUBLE_SIDE
 				ret += brdf(-N, V, L, radiance, metallic, albedo, f0, roughness);
@@ -139,14 +139,14 @@ vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb / PI * albedo * (1.0 - metallic);
 
 	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
-	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * scene.sky_rad_levels).rgb * (f0 * envBRDF.x + envBRDF.y);
+	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (f0 * envBRDF.x + envBRDF.y);
 
-	return (diffuse + specular) * scene.sky_intensity;
+	return (diffuse + specular) * lighting.sky_intensity;
 }
 
 vec3 get_fog(vec3 color, float dist)
 {
-	return mix(color, scene.fog_color * scene.sky_intensity, dist / scene.zFar);
+	return mix(color, lighting.fog_color * lighting.sky_intensity, dist / scene.zFar);
 }
 
 vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)

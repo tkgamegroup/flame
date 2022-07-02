@@ -52,6 +52,6 @@ void main()
 		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness, ao), 1.0);
 	}
 	else
-		o_color = vec4(texture(sky_map, cube_coord(normalize(coordw.xyz))).rgb * scene.sky_intensity, 1.0);
+		o_color = vec4(texture(sky_map, cube_coord(normalize(coordw.xyz))).rgb * lighting.sky_intensity, 1.0);
 }
 @

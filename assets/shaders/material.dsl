@@ -12,12 +12,12 @@ struct MaterialInfo
 	int map_indices[8];
 };
 
-layout (set = SET, binding = 0) uniform Material
+layout (set = SET, binding = 0) uniform MaterialSystem
 {
 	int black_map_id;
 	int white_map_id;
 	int random_map_id;
-}material;
+}material_system;
 
 layout (set = SET, binding = 1) buffer readonly MaterialInfos
 {
