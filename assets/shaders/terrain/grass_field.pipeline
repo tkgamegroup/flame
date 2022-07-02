@@ -1,7 +1,6 @@
 %rp=../forward.rp
-%pll=../forward.pll
 layout
-  {pll}
+  ../forward.pll
 shaders
   terrain.vert
  ---

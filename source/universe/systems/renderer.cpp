@@ -87,6 +87,8 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_grassfield_ins;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_sdf_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_system;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material_info;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_lighting;
@@ -158,7 +160,7 @@ namespace flame
 	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
 
-	graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0)
+	static graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0)
 	{
 		auto key = type + modifier1 + modifier2;
 		auto it = mr.pls.find(key);
@@ -168,23 +170,30 @@ namespace flame
 		rotate(mat4(1.f), 90.f, vec3(1.f));
 
 		std::vector<std::string> defines;
-		if (modifier2 == "OCCLUDER_PASS"_h)
+		switch (type)
 		{
-			defines.push_back("rp=" + str(rp_dep));
-			defines.push_back("pll=" + str(pll_fwd));
-			defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
-		}
-		else if (type != "grass_field"_h)
-		{
-			defines.push_back("rp=" + str(rp_gbuf));
-			defines.push_back("pll=" + str(pll_gbuf));
-			defines.push_back("all_shader:DEFERRED");
-		}
-		else
-		{
+		case "mesh"_h:
+		case "terrain"_h:
+		case "sdf"_h:
+			if (modifier2 == "OCCLUDER_PASS"_h)
+			{
+				defines.push_back("rp=" + str(rp_dep));
+				defines.push_back("pll=" + str(pll_fwd));
+				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
+			}
+			else
+			{
+				defines.push_back("rp=" + str(rp_gbuf));
+				defines.push_back("pll=" + str(pll_gbuf));
+				defines.push_back("all_shader:GBUFFER_PASS");
+			}
+			break;
+		case "grass_field"_h:
 			defines.push_back("rp=" + str(rp_fwd));
 			defines.push_back("pll=" + str(pll_fwd));
+			break;
 		}
+
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
 		if (mr.mat->color_map != -1)
@@ -217,6 +226,9 @@ namespace flame
 			defines.push_back("tese:HAS_GEOM");
 			defines.push_back("all_shader:GRASS_FIELD");
 			break;
+		case "sdf"_h:
+			pipeline_name = L"flame\\shaders\\sdf\\sdf.pipeline";
+			break;
 		}
 		switch (modifier1)
 		{
@@ -243,11 +255,11 @@ namespace flame
 		return ret;
 	}
 
-	std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls_deferred;
-	graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0)
+	static graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0)
 	{
-		auto it = pls_deferred.find(modifier);
-		if (it != pls_deferred.end())
+		static std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
+		auto it = pls.find(modifier);
+		if (it != pls.end())
 			return it->second;
 
 		std::vector<std::string> defines;
@@ -278,7 +290,7 @@ namespace flame
 		if (ret)
 		{
 			ret->dynamic_renderpass = true;
-			pls_deferred[modifier] = ret;
+			pls[modifier] = ret;
 		}
 		return ret;
 	}
@@ -370,10 +382,14 @@ namespace flame
 		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"_h));
 		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"_h));
 		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"_h));
+		buf_grassfield_ins.create_with_array_type(dsl_instance->get_buf_ui("GrassFieldInstances"_h));
+		buf_sdf_ins.create_with_array_type(dsl_instance->get_buf_ui("SdfInstances"_h));
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
 		ds_instance->set_buffer("MeshInstances"_h, 0, buf_mesh_ins.buf.get());
 		ds_instance->set_buffer("ArmatureInstances"_h, 0, buf_armature_ins.buf.get());
 		ds_instance->set_buffer("TerrainInstances"_h, 0, buf_terrain_ins.buf.get());
+		ds_instance->set_buffer("GrassFieldInstances"_h, 0, buf_grassfield_ins.buf.get());
+		ds_instance->set_buffer("SdfInstances"_h, 0, buf_sdf_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 		{
 			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
@@ -1168,6 +1184,8 @@ namespace flame
 		buf_mesh_ins.upload(cb);
 		buf_armature_ins.upload(cb);
 		buf_terrain_ins.upload(cb);
+		buf_grassfield_ins.upload(cb);
+		buf_sdf_ins.upload(cb);
 		buf_light_index.upload(cb);
 		buf_light_grid.upload(cb);
 		buf_light_info.upload(cb);

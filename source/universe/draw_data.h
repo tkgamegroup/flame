@@ -59,34 +59,15 @@ namespace flame
 		}
 	};
 
-	struct Light
-	{
-		uint instance_id;
-		int type;
-		vec3 pos;
-		vec3 color;
-		float range;
-		bool cast_shadow;
-
-		Light(uint instance_id, int type, const vec3& pos, const vec3& color, float range, bool cast_shadow) :
-			instance_id(instance_id),
-			type(type),
-			pos(pos),
-			color(color),
-			range(range),
-			cast_shadow(cast_shadow)
-		{
-		}
-	};
-
 	struct DrawData
 	{
 		uint pass;
 		uint category;
 
-		std::vector<Light> lights;
+		std::vector<uint> lights;
 		std::vector<MeshDraw> draw_meshes;
 		std::vector<TerrainDraw> draw_terrains;
+		std::vector<uint> draw_sdfs;
 		std::vector<PrimitiveDraw> draw_primitives;
 
 		void reset(uint _pass, uint _category)
@@ -97,6 +78,7 @@ namespace flame
 			lights.clear();
 			draw_meshes.clear();
 			draw_terrains.clear();
+			draw_sdfs.clear();
 			draw_primitives.clear();
 		}
 	};

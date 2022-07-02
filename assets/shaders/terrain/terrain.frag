@@ -1,6 +1,6 @@
 #include "../math.glsl"
 
-#ifndef DEFERRED
+#ifndef GBUFFER_PASS
 #ifdef MAT_FILE
 #include "../shading.glsl"
 #endif
@@ -16,7 +16,7 @@ layout(location = 5) in		 vec3 i_coordw;
 #endif
 
 #ifndef OCCLUDER_PASS
-#ifndef DEFERRED
+#ifndef GBUFFER_PASS
 layout(location = 0) out vec4 o_color;
 #else
 layout(location = 0) out vec4 o_res_col_met;
@@ -73,7 +73,7 @@ void main()
 	#include MAT_FILE
 #else
 	#ifndef OCCLUDER_PASS
-		#ifndef DEFERRED
+		#ifndef GBUFFER_PASS
 			#ifdef PICKUP
 				o_color = pack_uint_to_v4(pc.i[0]);
 			#elifdef NORMAL_DATA

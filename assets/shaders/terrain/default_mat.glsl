@@ -46,7 +46,7 @@ vec4 color = vec4(0);
 float metallic = material.metallic;
 float roughness = material.roughness;
 	
-#ifndef DEFERRED
+#ifndef GBUFFER_PASS
 	vec3 albedo = (1.0 - metallic) * color.rgb;
 	vec3 f0 = mix(vec3(0.04), color.rgb, metallic);
 	o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0), color.a);

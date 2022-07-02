@@ -75,10 +75,6 @@ namespace flame
 		virtual void release_material_res(uint id) = 0;
 		virtual const MatRes& get_material_res_info(uint id) = 0;
 
-		// id == -1 to register or to unregister id
-		virtual int register_mesh_instance(int id) = 0;
-		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) = 0;
-
 		// id: res id
 		// type_hash: texture, mesh or material
 		// name_hash: name or genre, to decide which part to update, set to 0 means ALL, (see below)
@@ -91,6 +87,10 @@ namespace flame
 		virtual void update_res(uint id, uint type_hash, uint name_hash) = 0;
 
 		// id == -1 to register or to unregister id
+		virtual int register_mesh_instance(int id) = 0;
+		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) = 0;
+
+		// id == -1 to register or to unregister id
 		virtual int register_armature_instance(int id) = 0;
 		virtual mat4* set_armature_instance(uint id) = 0;
 
@@ -101,6 +101,7 @@ namespace flame
 
 		// id == -1 to register or to unregister id
 		virtual int register_light_instance(int id) = 0;
+		virtual void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) = 0;
 
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 
