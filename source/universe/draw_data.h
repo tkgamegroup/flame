@@ -4,15 +4,27 @@
 
 namespace flame
 {
+	struct LightDraw
+	{
+		uint ins_id;
+		bool cast_shadow;
+
+		LightDraw(uint ins_id, bool cast_shadow) :
+			ins_id(ins_id),
+			cast_shadow(cast_shadow)
+		{
+		}
+	};
+
 	struct MeshDraw
 	{
-		uint instance_id;
+		uint ins_id;
 		uint mesh_id;
 		uint mat_id;
 		cvec4 color;
 
-		MeshDraw(uint instance_id, uint mesh_id, uint mat_id, const cvec4& color = cvec4()) :
-			instance_id(instance_id),
+		MeshDraw(uint ins_id, uint mesh_id, uint mat_id, const cvec4& color = cvec4()) :
+			ins_id(ins_id),
 			mesh_id(mesh_id),
 			mat_id(mat_id),
 			color(color)
@@ -22,16 +34,28 @@ namespace flame
 
 	struct TerrainDraw
 	{
-		uint instance_id;
+		uint ins_id;
 		uint blocks;
 		uint mat_id;
 		cvec4 color;
 
-		TerrainDraw(uint instance_id, uint blocks, uint mat_id, const cvec4& color = cvec4()) :
-			instance_id(instance_id),
+		TerrainDraw(uint ins_id, uint blocks, uint mat_id, const cvec4& color = cvec4()) :
+			ins_id(ins_id),
 			blocks(blocks),
 			mat_id(mat_id),
 			color(color)
+		{
+		}
+	};
+
+	struct SdfDraw
+	{
+		uint ins_id;
+		uint mat_id;
+
+		SdfDraw(uint ins_id, uint mat_id) :
+			ins_id(ins_id),
+			mat_id(mat_id)
 		{
 		}
 	};
@@ -64,22 +88,24 @@ namespace flame
 		uint pass;
 		uint category;
 
-		std::vector<uint> lights;
-		std::vector<MeshDraw> draw_meshes;
-		std::vector<TerrainDraw> draw_terrains;
-		std::vector<uint> draw_sdfs;
-		std::vector<PrimitiveDraw> draw_primitives;
+		std::vector<LightDraw>		directional_lights;
+		std::vector<LightDraw>		point_lights;
+		std::vector<MeshDraw>		meshes;
+		std::vector<TerrainDraw>	terrains;
+		std::vector<SdfDraw>		sdfs;
+		std::vector<PrimitiveDraw>	primitives;
 
 		void reset(uint _pass, uint _category)
 		{
 			pass = _pass;
 			category = _category;
 
-			lights.clear();
-			draw_meshes.clear();
-			draw_terrains.clear();
-			draw_sdfs.clear();
-			draw_primitives.clear();
+			directional_lights.clear();
+			point_lights.clear();
+			meshes.clear();
+			terrains.clear();
+			sdfs.clear();
+			primitives.clear();
 		}
 	};
 }

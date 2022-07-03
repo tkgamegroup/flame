@@ -10,6 +10,8 @@ shaders
   @frag
 cull_mode
   None
+compare_op
+  Always
 
 @vert
 layout(location = 0) out vec3 o_view;
@@ -73,11 +75,12 @@ float march(vec3 origin, vec3 dir)
 	float depth = 0.0;
 	for (int n = 0; n < MaxSteps; n++)
 	{
-		float distance = sdf(origin + depth * dir);
+		float distance = scene_sdf(origin + depth * dir);
 		if (distance <= Tolerance)
 			return depth;
 		depth += distance;
 		if (depth > MaxDepth)
+			return MaxDepth;
 	}
 	return MaxDepth;
 }
@@ -88,9 +91,9 @@ vec3 normal(vec3 p)
     vec3 deltaY = vec3(0.0, Tolerance, 0.0);
     vec3 deltaZ = vec3(0.0, 0.0, Tolerance);
     
-    float x = scene_sdf(p + deltaX) - sceneSDF(p - deltaX);
-    float y = scene_sdf(p + deltaY) - sceneSDF(p - deltaY);
-    float z = scene_sdf(p + deltaZ) - sceneSDF(p - deltaZ);
+    float x = scene_sdf(p + deltaX) - scene_sdf(p - deltaX);
+    float y = scene_sdf(p + deltaY) - scene_sdf(p - deltaY);
+    float z = scene_sdf(p + deltaZ) - scene_sdf(p - deltaZ);
     
     return normalize(vec3(x, y, z));
 }
@@ -103,7 +106,7 @@ void main()
 	#ifndef OCCLUDER_PASS
 		if (depth >= MaxDepth)
 			discard;
-		vec3 n = normal(origin + depth * dir);
+		vec3 n = normal(origin + depth * i_view);
 		#ifndef GBUFFER_PASS
 			o_color = vec4(1.0, 1.0, 1.0, 1.0);
 		#else

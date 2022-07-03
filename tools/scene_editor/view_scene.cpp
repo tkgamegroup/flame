@@ -161,19 +161,19 @@ void View_Scene::on_draw()
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-							draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
+							draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
 						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
-							draw_data.draw_terrains.emplace_back(terrain->instance_id, product(terrain->blocks), 0, col);
+							draw_data.terrains.emplace_back(terrain->instance_id, product(terrain->blocks), 0, col);
 						if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
 						{
-							auto idx = (int)draw_data.draw_meshes.size();
+							auto idx = (int)draw_data.meshes.size();
 							for (auto& c : e->children)
 							{
 								if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-									draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, -1, col);
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, -1, col);
 							}
-							if (draw_data.draw_meshes.size() > idx)
-								draw_data.draw_meshes.back().mat_id = 0;
+							if (draw_data.meshes.size() > idx)
+								draw_data.meshes.back().mat_id = 0;
 						}
 					};
 					if (hovering_node && selection.selecting(hovering_node->entity))
@@ -199,7 +199,7 @@ void View_Scene::on_draw()
 								{
 									auto points = node->bounds.get_points();
 									auto line_pts = Frustum::points_to_lines(points.data());
-									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(line_pts), cvec4(255, 127, 127, 255));
+									draw_data.primitives.emplace_back("LineList"_h, std::move(line_pts), cvec4(255, 127, 127, 255));
 								}
 							}
 							return true;
@@ -216,11 +216,11 @@ void View_Scene::on_draw()
 								{
 									vec3 line_pts[2];
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
-									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
+									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
-									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
+									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
 									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
-									draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
+									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
 								}
 							}
 						}
@@ -242,7 +242,7 @@ void View_Scene::on_draw()
 										if (nn)
 										{
 											line_pts[1] = nn->g_pos;
-											draw_data.draw_primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255));
+											draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255));
 											draw_node(nn);
 										}
 									}
@@ -282,27 +282,27 @@ void View_Scene::on_draw()
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center.y += nav->height;
 								for (auto i = 0; i < n; i++)
 								{
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), pts.size(), cvec4(127, 0, 255, 255));
 								center = nav->node->g_pos;
 								pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, +1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, -1.f);
 								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
-								draw_data.draw_primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 							}
 							return true;
 						});
@@ -418,7 +418,7 @@ void View_Scene::on_draw()
 								for (auto& c : n->entity->children)
 								{
 									if (auto mesh = c->get_component_t<cMesh>(); mesh)
-										draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 								}
 							}
 							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
@@ -428,12 +428,12 @@ void View_Scene::on_draw()
 
 								}
 								else
-									draw_data.draw_meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 							}
 							break;
 						case "terrain"_h:
 							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-								draw_data.draw_terrains.emplace_back(terrain->instance_id, product(terrain->blocks), terrain->material_res_id);
+								draw_data.terrains.emplace_back(terrain->instance_id, product(terrain->blocks), terrain->material_res_id);
 							break;
 						}
 						});

@@ -16,10 +16,24 @@ namespace flame
 	void cLightPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (draw_data.pass == "light"_h)
+			if (instance_id == -1)
+				return;
+
+			switch (draw_data.pass)
 			{
-				draw_data.lights.emplace_back(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos,
-					color.rgb() * color.a, range, cast_shadow);
+			case "instance"_h:
+				sRenderer::instance()->set_light_instance(instance_id, type, type == LightDirectional ? node->g_rot[2] : node->g_pos, color.rgb() * color.a, range);
+				break;
+			case "light"_h:
+				switch (type)
+				{
+				case LightDirectional:
+					draw_data.directional_lights.emplace_back(instance_id, cast_shadow);
+					break;
+				case LightPoint:
+					draw_data.point_lights.emplace_back(instance_id, cast_shadow);
+					break;
+				}
 			}
 		}, "light"_h);
 

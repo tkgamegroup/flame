@@ -38,6 +38,9 @@ namespace flame
 
 		void update_res(uint id, uint type_hash, uint name_hash) override;
 
+		int register_light_instance(int id) override;
+		void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range) override;
+
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
 
@@ -48,7 +51,8 @@ namespace flame
 		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) override;
 
-		int register_light_instance(int id) override;
+		int register_sdf_instance(int id) override;
+		void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) override;
 
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 

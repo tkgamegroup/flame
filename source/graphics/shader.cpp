@@ -1229,8 +1229,8 @@ namespace flame
 
 			res.read_block("");
 
-			std::pair<std::string, std::filesystem::path>			layout_segment; // content or filename
-			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments; // content or filename
+			std::string												layout_segment;
+			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_segments;
 
 			std::vector<std::string>								renderpass_defines;
 			std::vector<std::pair<ShaderStageFlags, std::string>>	shader_defines;
@@ -1282,13 +1282,12 @@ namespace flame
 					return (void*)s2u_hex<uint64>(value.substr(2));
 				if (value.starts_with("@"))
 				{
-					layout_segment.first = value;
+					layout_segment = value;
 					return INVALID_POINTER;
 				}
 				std::filesystem::path fn = src.value();
 				if (Path::cat_if_exists(parent_path, fn))
 					fn = std::filesystem::canonical(fn);
-				layout_segment.second = fn;
 				return PipelineLayout::get(fn);
 			};
 			spec.delegates[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
@@ -1375,19 +1374,19 @@ namespace flame
 			std::sort(pipeline_defines.begin(), pipeline_defines.end());
 			unserialize_text(res, &info, spec, pipeline_defines);
 
-			if (!layout_segment.first.empty())
+			if (!layout_segment.empty())
 			{
-				res.read_block(layout_segment.first, "@");
-				layout_segment.first = res.to_string();
+				res.read_block(layout_segment, "@");
+				layout_segment = res.to_string();
 			}
 			for (auto& s : shader_segments)
 			{
 				res.read_block(s.second, "@");
 				s.second = res.to_string();
-				if (!layout_segment.first.empty())
-					s.second = layout_segment.first + "\n\n" + s.second;
-				else if (!layout_segment.second.empty())
-					s.second = "#include \"" + layout_segment.second.string() + "\"\n\n" + s.second;
+				if (!layout_segment.empty())
+					s.second = layout_segment + "\n\n" + s.second;
+				else if (info.layout)
+					s.second = "#include \"" + info.layout->filename.string() + "\"\n\n" + s.second;
 			}
 
 			file.close();
@@ -1396,9 +1395,9 @@ namespace flame
 			if (filename.empty())
 				create_id++;
 
-			if (!layout_segment.first.empty())
+			if (!layout_segment.empty())
 			{
-				info.layout = PipelineLayout::create(layout_segment.first,
+				info.layout = PipelineLayout::create(layout_segment,
 					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + wstr(create_id), filename);
 			}
 			for (auto& s : shader_segments)

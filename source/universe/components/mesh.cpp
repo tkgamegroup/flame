@@ -55,13 +55,13 @@ namespace flame
 				break;
 			case "draw"_h:
 				if (draw_data.category == "mesh"_h)
-					draw_data.draw_meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
+					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case "occulder"_h:
 				if (cast_shadow)
 				{
 					if (draw_data.category == "mesh"_h)
-						draw_data.draw_meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
+						draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				}
 				break;
 			}

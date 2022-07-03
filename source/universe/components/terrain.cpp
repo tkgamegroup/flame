@@ -37,7 +37,7 @@ namespace flame
 			case "draw"_h:
 				if (draw_data.category == "terrain"_h || 
 					draw_data.category == "grass_field"_h)
-					draw_data.draw_terrains.emplace_back(instance_id, product(blocks), material_res_id);
+					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
 			}
 		}, "terrain"_h);

@@ -87,6 +87,10 @@ namespace flame
 		virtual void update_res(uint id, uint type_hash, uint name_hash) = 0;
 
 		// id == -1 to register or to unregister id
+		virtual int register_light_instance(int id) = 0;
+		virtual void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range) = 0;
+
+		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;
 		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) = 0;
 
@@ -100,8 +104,8 @@ namespace flame
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) = 0;
 
 		// id == -1 to register or to unregister id
-		virtual int register_light_instance(int id) = 0;
-		virtual void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range, bool cast_shadow) = 0;
+		virtual int register_sdf_instance(int id) = 0;
+		virtual void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) = 0;
 
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 

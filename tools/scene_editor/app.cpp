@@ -169,7 +169,7 @@ void App::init()
 									points.push_back(navmesh_test.start + vec3(1, 0, 0));
 									points.push_back(navmesh_test.start - vec3(0, 0, 1));
 									points.push_back(navmesh_test.start + vec3(0, 0, 1));
-									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 255, 0, 255));
+									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 255, 0, 255));
 								}
 								{
 									std::vector<vec3> points;
@@ -177,10 +177,10 @@ void App::init()
 									points.push_back(navmesh_test.end + vec3(1, 0, 0));
 									points.push_back(navmesh_test.end - vec3(0, 0, 1));
 									points.push_back(navmesh_test.end + vec3(0, 0, 1));
-									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 0, 255, 255));
+									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 0, 255, 255));
 								}
 								if (!navmesh_test.points.empty())
-									draw_data.draw_primitives.emplace_back("LineList"_h, std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
+									draw_data.primitives.emplace_back("LineList"_h, std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
 							}
 						}, "navmesh_test"_h);
 					}

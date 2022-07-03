@@ -1006,7 +1006,7 @@ namespace flame
 					}
 				}
 			}
-			draw_data.draw_primitives.emplace_back("TriangleList"_h, std::move(points), cvec4(0, 0, 255, 255));
+			draw_data.primitives.emplace_back("TriangleList"_h, std::move(points), cvec4(0, 0, 255, 255));
 		}
 	}
 
