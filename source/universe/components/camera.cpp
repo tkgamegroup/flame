@@ -37,6 +37,7 @@ namespace flame
 
 		proj_mat = perspective(radians(fovy), aspect, zNear, zFar);
 		proj_mat[1][1] *= -1.f;
+
 		proj_mat_inv = inverse(proj_mat);
 
 		proj_view_mat = proj_mat * view_mat;

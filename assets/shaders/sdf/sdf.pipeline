@@ -62,12 +62,24 @@ float udRoundBox(vec3 p, vec3 b, float r)
     return length(max(abs(p) - b, 0.0)) - r;
 }
 
+float opSmoothUnion( float d1, float d2, float k )
+{
+    float h = max(k-abs(d1-d2),0.0);
+    return min(d1, d2) - h*h*0.25/k;
+}
+
+float opSmoothSubtraction( float d1, float d2, float k )
+{
+    float h = max(k-abs(-d1-d2),0.0);
+    return max(-d1, d2) + h*h*0.25/k;
+}
+
 float scene_sdf(vec3 p)
 {
-    float sphere = sdSphere(vec3(5, 0, 0), 2.0);
-    float box = udBox(vec3(0, 0, 0), vec3(1, 2, 3));
+    float sphere = sdSphere(p - vec3(2, 0.5, 2), 2.0);
+    float box = udRoundBox(p - vec3(0, 0, 0), vec3(1, 2, 3), 0.2);
     
-    return min(sphere, box);
+    return opSmoothSubtraction(sphere, box, 1);
 }
 
 float march(vec3 origin, vec3 dir)
@@ -80,9 +92,9 @@ float march(vec3 origin, vec3 dir)
 			return depth;
 		depth += distance;
 		if (depth > MaxDepth)
-			return MaxDepth;
+			return MaxDepth + 1.0;
 	}
-	return MaxDepth;
+	return MaxDepth + 1.0;
 }
 
 vec3 normal(vec3 p) 
@@ -98,15 +110,22 @@ vec3 normal(vec3 p)
     return normalize(vec3(x, y, z));
 }
 
+float projective_depth(float z, float n, float f)
+{
+	return ((f / (n - f)) * z - f * n / (f - n)) / -z;
+}
+
 void main()
 {
+	vec3 dir = normalize(i_view);
 	vec3 origin = scene.camera_coord;
-	float depth = march(origin, i_view);
+	float depth = march(origin, dir);
 	
 	#ifndef OCCLUDER_PASS
 		if (depth >= MaxDepth)
 			discard;
-		vec3 n = normal(origin + depth * i_view);
+		vec3 n = normal(origin + depth * dir);
+		gl_FragDepth = projective_depth(-dot(scene.camera_dir, depth * dir), scene.zNear, scene.zFar);
 		#ifndef GBUFFER_PASS
 			o_color = vec4(1.0, 1.0, 1.0, 1.0);
 		#else
