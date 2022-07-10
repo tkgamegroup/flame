@@ -25,6 +25,7 @@ struct TerrainInstance
 	vec3 extent;
 	uvec2 blocks;
 	uint tess_level;
+	int grass_field_id;
 };
 
 layout(set = SET, binding = 2) buffer readonly TerrainInstances
@@ -34,7 +35,7 @@ layout(set = SET, binding = 2) buffer readonly TerrainInstances
 
 struct GrassField
 {
-	uint terrain_id;
+	uint tess_level;
 };
 
 layout(set = SET, binding = 3) buffer readonly GrassFieldInstances

@@ -155,8 +155,6 @@ void View_Scene::on_draw()
 		if (!editor_node->drawers.exist("scene"_h))
 		{
 			editor_node->drawers.add([this](DrawData& draw_data) {
-				if (app.e_playing)
-					return;
 				if (draw_data.pass == "outline"_h)
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {

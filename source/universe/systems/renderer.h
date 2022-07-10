@@ -104,6 +104,10 @@ namespace flame
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) = 0;
 
 		// id == -1 to register or to unregister id
+		virtual int register_grass_field_instance(int id) = 0;
+		virtual void set_grass_field_instance(uint id, uint tess_level) = 0;
+
+		// id == -1 to register or to unregister id
 		virtual int register_sdf_instance(int id) = 0;
 		virtual void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) = 0;
 

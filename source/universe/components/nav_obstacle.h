@@ -10,6 +10,11 @@ namespace flame
 		/// Reflect requires
 		cNodePtr node = nullptr;
 
+		/// Reflect
+		float radius = 1.f;
+		/// Reflect
+		float height = 1.f;
+
 		struct Create
 		{
 			virtual cNavObstaclePtr operator()(EntityPtr e) = 0;

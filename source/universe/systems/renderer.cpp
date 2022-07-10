@@ -1056,6 +1056,29 @@ namespace flame
 		ds_instance->update();
 	}
 
+	int sRendererPrivate::register_grass_field_instance(int id)
+	{
+		if (id == -1)
+		{
+			id = buf_grassfield_ins.get_free_item();
+			if (id != -1)
+			{
+
+			}
+		}
+		else
+		{
+			buf_grassfield_ins.release_item(id);
+		}
+		return id;
+	}
+
+	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level)
+	{
+		buf_grassfield_ins.select_item(id);
+		buf_grassfield_ins.set_var<"tess_level"_h>(tess_level);
+	}
+
 	int sRendererPrivate::register_sdf_instance(int id)
 	{
 		if (id == -1)

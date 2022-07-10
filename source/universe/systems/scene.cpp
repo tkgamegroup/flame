@@ -6,6 +6,7 @@
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
 #include "../components/nav_agent_private.h"
+#include "../components/nav_obstacle_private.h"
 #include "../octree.h"
 #include "../draw_data.h"
 #include "scene_private.h"
@@ -1040,6 +1041,18 @@ namespace flame
 			}
 
 			dt_crowd->update(delta_time, nullptr);
+		}
+		if (dt_tile_cache)
+		{
+			for (auto i = (int)nav_obstacles.size() - 1; i >= 0; i--)
+			{
+				auto ob = nav_obstacles[i];
+				if (ob->dt_id != -1)
+					break;
+				dt_tile_cache->addObstacle(&ob->node->g_pos[0], ob->height, ob->radius, (uint*)&ob->dt_id);
+			}
+
+			dt_tile_cache->update(delta_time, dt_nav_mesh);
 		}
 #endif
 	}
