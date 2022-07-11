@@ -224,7 +224,7 @@ if op != 3:
 			
 	print("== library recastnavigation ==")
 	ok = True
-	address = "https://github.com/recastnavigation/recastnavigation.git"
+	address = "https://github.com/tkgamegroup/recastnavigation"
 	lib_dir = parent_directory / "recastnavigation"
 	if op == 2:
 		print("Download recastnavigation from %s into %s ? y/n" % (address, str(lib_dir)))

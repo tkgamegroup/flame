@@ -1031,8 +1031,10 @@ namespace flame
 				parms.maxSpeed = ag->speed;
 				parms.collisionQueryRange = parms.radius * 12.0f;
 				parms.pathOptimizationRange = parms.radius * 30.0f;
+				parms.separationGroup = ag->separation_group;
+				parms.separationWeight = 2.f;
 				parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
-					DT_CROWD_OBSTACLE_AVOIDANCE;
+					DT_CROWD_OBSTACLE_AVOIDANCE | DT_CROWD_SEPARATION;
 				parms.userData = ag;
 				ag->prev_pos = ag->node->g_pos;
 				ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);

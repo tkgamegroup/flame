@@ -18,6 +18,8 @@ namespace flame
 		float speed = 7.5f;
 		/// Reflect
 		float turn_speed = 900.f;
+		/// Reflect
+		uint separation_group = 1;
 
 		virtual void set_target(const vec3& pos, bool face_mode = false) = 0;
 		virtual void stop() = 0;

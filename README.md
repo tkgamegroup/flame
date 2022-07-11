@@ -31,6 +31,8 @@ An ECS 3D-Game-Engine.
 
 - recastnavigation https://github.com/recastnavigation/recastnavigation
 
+    (should use my forked version: https://github.com/tkgamegroup/recastnavigation)
+
 - Font-Awesome https://github.com/FortAwesome/Font-Awesome
 
 - imgui https://github.com/ocornut/imgui
