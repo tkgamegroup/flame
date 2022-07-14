@@ -40,6 +40,10 @@ namespace flame
 					data_soup.xml_append_v(m.uvs, n_mesh.append_child("uvs"));
 				if (!m.normals.empty())
 					data_soup.xml_append_v(m.normals, n_mesh.append_child("normals"));
+				if (!m.tangents.empty())
+					data_soup.xml_append_v(m.tangents, n_mesh.append_child("tangents"));
+				if (!m.colors.empty())
+					data_soup.xml_append_v(m.colors, n_mesh.append_child("colors"));
 				if (!m.bone_ids.empty())
 					data_soup.xml_append_v(m.bone_ids, n_mesh.append_child("bone_ids"));
 				if (!m.bone_weights.empty())
@@ -1041,6 +1045,10 @@ namespace flame
 						data_soup.xml_read_v(m.uvs, n_uvs);
 					if (auto n_normals = n_mesh.child("normals"); n_normals)
 						data_soup.xml_read_v(m.normals, n_normals);
+					if (auto n_tangents = n_mesh.child("tangents"); n_tangents)
+						data_soup.xml_read_v(m.tangents, n_tangents);
+					if (auto n_colors = n_mesh.child("colors"); n_colors)
+						data_soup.xml_read_v(m.colors, n_colors);
 					if (auto n_bids = n_mesh.child("bone_ids"); n_bids)
 						data_soup.xml_read_v(m.bone_ids, n_bids);
 					if (auto n_wgts = n_mesh.child("bone_weights"); n_wgts)

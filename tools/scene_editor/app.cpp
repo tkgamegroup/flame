@@ -124,8 +124,6 @@ void App::init()
 				if (e_prefab)
 					e_prefab->save(prefab_path);
 			}
-			if (ImGui::MenuItem("Close"))
-				;
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit"))
@@ -576,24 +574,37 @@ void App::open_project(const std::filesystem::path& path)
 {
 	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
 	{
+		if (e_playing)
+			return;
+
+		if (e_prefab)
+		{
+			e_prefab->remove_from_parent();
+			e_prefab = nullptr;
+		}
+
+		if (!project_path.empty())
+			directory_lock(project_path, false);
+		project_path = path;
+		directory_lock(project_path, true);
+
 		auto assets_path = path / L"assets";
 		if (std::filesystem::exists(assets_path))
 		{
-			if (!project_path.empty())
-				directory_lock(project_path, false);
-
 			Path::set_root(L"assets", assets_path);
-
-			selection.clear();
-			project_path = path;
-			directory_lock(project_path, true);
-
-			auto cpp_path = path / L"bin/debug/cpp.dll";
-			if (std::filesystem::exists(cpp_path))
-				tidb.load(cpp_path);
-
 			view_project.reset(assets_path);
 		}
+		else
+		{
+			Path::set_root(L"assets", project_path);
+			view_project.reset(project_path);
+		}
+
+		auto cpp_path = path / L"bin/debug/cpp.dll";
+		if (std::filesystem::exists(cpp_path))
+			tidb.load(cpp_path);
+
+		selection.clear();
 	}
 }
 
@@ -602,7 +613,7 @@ void App::open_prefab(const std::filesystem::path& path)
 	prefab_path = path;
 
 	if (e_prefab)
-		e_prefab->parent->remove_child(e_prefab);
+		e_prefab->remove_from_parent();
 	e_prefab = Entity::create();
 	e_prefab->load(path);
 	world->root->add_child(e_prefab);
@@ -658,7 +669,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	}
 	add_event([e]() {
-		e->parent->remove_child(e);
+		e->remove_from_parent();
 		return false;
 	});
 	selection.clear();
@@ -671,7 +682,7 @@ bool App::cmd_play()
 	{
 		add_event([this]() {
 			e_playing = e_prefab->copy();
-			e_prefab->parent->remove_child(e_prefab, false);
+			e_prefab->remove_from_parent(false);
 			world->root->add_child(e_playing);
 			world->update_components = true;
 			always_render = true;
@@ -706,7 +717,7 @@ bool App::cmd_stop()
 	if (!e_playing)
 		return false;
 	add_event([this]() {
-		e_playing->parent->remove_child(e_playing);
+		e_playing->remove_from_parent();
 		e_playing = nullptr;
 		world->root->add_child(e_prefab);
 		world->update_components = false;

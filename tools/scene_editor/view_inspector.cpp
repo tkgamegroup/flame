@@ -4,6 +4,7 @@
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
+#include <flame/foundation/bitmap.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/material.h>
@@ -346,24 +347,25 @@ void View_Inspector::on_draw()
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		selection.forward();
 
-	static uint last_sel_ref_frame = 0;
-	static uint last_sel_ref_type = 0;
-	static void* last_sel_ref_obj = nullptr;
-	if (selection.frame != last_sel_ref_frame)
+	static uint sel_ref_frame = 0;
+	static uint sel_ref_type = 0;
+	static void* sel_ref_obj = nullptr;
+	static auto sel_ref_info = new char[1024];
+	if (selection.frame != sel_ref_frame)
 	{
 		editing_vector.clear();
 
-		switch (last_sel_ref_type)
+		switch (sel_ref_type)
 		{
 		case th<graphics::Image>():
-			graphics::Image::release((graphics::ImagePtr)last_sel_ref_obj);
+			graphics::Image::release((graphics::ImagePtr)sel_ref_obj);
 			break;
 		case th<graphics::Material>():
-			graphics::Material::release((graphics::MaterialPtr)last_sel_ref_obj);
+			graphics::Material::release((graphics::MaterialPtr)sel_ref_obj);
 			break;
 		}
-		last_sel_ref_type = 0;
-		last_sel_ref_obj = nullptr;
+		sel_ref_type = 0;
+		sel_ref_obj = nullptr;
 	}
 
 	switch (selection.type)
@@ -1026,7 +1028,7 @@ void View_Inspector::on_draw()
 			ImGui::EndPopup();
 		}
 
-		last_sel_ref_frame = selection.frame;
+		sel_ref_frame = selection.frame;
 	}
 		break;
 	case Selection::tPath:
@@ -1047,22 +1049,39 @@ void View_Inspector::on_draw()
 		}
 		else if (is_image_file(ext))
 		{
-			if (selection.frame != last_sel_ref_frame)
+			struct ImageRefInfo
+			{
+				uint chs;
+				uint bpp;
+				bool srgb;
+			};
+			auto& info = *(ImageRefInfo*)sel_ref_info;
+
+			if (selection.frame != sel_ref_frame)
 			{
 				auto image = graphics::Image::get(path);
 				if (image)
 				{
-					last_sel_ref_type = th<graphics::Image>();
-					last_sel_ref_obj = image;
+					sel_ref_type = th<graphics::Image>();
+					sel_ref_obj = image;
+
+					auto bitmap = Bitmap::create(path);
+					info.chs = bitmap->chs;
+					info.bpp = bitmap->bpp;
+					info.srgb = bitmap->srgb;
+					delete bitmap;
 				}
 
-				last_sel_ref_frame = selection.frame;
+				sel_ref_frame = selection.frame;
 			}
 
-			if (last_sel_ref_obj)
+			if (sel_ref_obj)
 			{
-				auto image = (graphics::ImagePtr)last_sel_ref_obj;
-				ImGui::Text("format: %s", TypeInfo::serialize_t(image->format).c_str());
+				auto image = (graphics::ImagePtr)sel_ref_obj;
+				ImGui::Text("channels: %d", info.chs);
+				ImGui::Text("bits per pixel: %d", info.bpp);
+				ImGui::Text("srgb: %s", info.srgb ? "yes" : "no");
+				ImGui::Text("graphics format: %s", TypeInfo::serialize_t(image->format).c_str());
 				ImGui::Text("size: %s", str(image->size).c_str());
 				static int view_type = ImGui::ImageViewRGBA;
 				static const char* types[] = {
@@ -1073,7 +1092,7 @@ void View_Inspector::on_draw()
 				ImGui::Combo("view", &view_type, types, countof(types));
 				if (view_type != 0)
 					ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
-				ImGui::Image(last_sel_ref_obj, (vec2)image->size);
+				ImGui::Image(sel_ref_obj, (vec2)image->size);
 				if (view_type != 0)
 					ImGui::PopImageViewType();
 				if (ImGui::Button("Save"))
@@ -1087,21 +1106,21 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmat")
 		{
-			if (selection.frame != last_sel_ref_frame)
+			if (selection.frame != sel_ref_frame)
 			{
 				auto material = graphics::Material::get(path);
 				if (material)
 				{
-					last_sel_ref_type = th<graphics::Material>();
-					last_sel_ref_obj = material;
+					sel_ref_type = th<graphics::Material>();
+					sel_ref_obj = material;
 				}
 
-				last_sel_ref_frame = selection.frame;
+				sel_ref_frame = selection.frame;
 			}
 
-			if (last_sel_ref_obj)
+			if (sel_ref_obj)
 			{
-				auto material = (graphics::MaterialPtr)last_sel_ref_obj;
+				auto material = (graphics::MaterialPtr)sel_ref_obj;
 				if (!show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty())
 				{
 					auto id = app.renderer->get_material_res(material, -2);
@@ -1117,23 +1136,27 @@ void View_Inspector::on_draw()
 				}
 			}
 		}
+		else if (ext == L".fmod")
+		{
+
+ }
 		else if (ext == L".fani")
 		{
-			if (selection.frame != last_sel_ref_frame)
+			if (selection.frame != sel_ref_frame)
 			{
 				auto animation = graphics::Animation::get(path);
 				if (animation)
 				{
-					last_sel_ref_type = th<graphics::Animation>();
-					last_sel_ref_obj = animation;
+					sel_ref_type = th<graphics::Animation>();
+					sel_ref_obj = animation;
 				}
 
-				last_sel_ref_frame = selection.frame;
+				sel_ref_frame = selection.frame;
 			}
 
-			if (last_sel_ref_obj)
+			if (sel_ref_obj)
 			{
-				auto animation = (graphics::AnimationPtr)last_sel_ref_obj;
+				auto animation = (graphics::AnimationPtr)sel_ref_obj;
 				ImGui::Text("Duration: %f", animation->duration);
 				if (ImGui::TreeNode(std::format("Channels ({})", (int)animation->channels.size()).c_str()))
 				{

@@ -19,6 +19,8 @@ namespace flame
 			std::vector<vec3> positions;
 			std::vector<vec2> uvs;
 			std::vector<vec3> normals;
+			std::vector<vec3> tangents;
+			std::vector<cvec4> colors;
 			std::vector<ivec4> bone_ids;
 			std::vector<vec4> bone_weights;
 			std::vector<uint> indices;

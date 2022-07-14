@@ -151,10 +151,12 @@ namespace ImGui
 		{
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
-				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() - ImGui::GetStyle().ItemSpacing.y * 3));
-				explorer.selected_path = path;
+				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
 				explorer.draw();
 				ImGui::EndChild();
+				auto str = path.string();
+				if (ImGui::InputText("Path", &str))
+					path = str;
 				if (ImGui::Button("OK"))
 				{
 					if (callback)
@@ -218,7 +220,7 @@ namespace ImGui
 		auto dialog = new FileDialog;
 		dialog->title = title;
 		dialog->callback = callback;
-		dialog->explorer.reset(start_dir);
+		dialog->explorer.reset(!start_dir.empty() ? start_dir : L"This Computer");
 		dialog->explorer.peeding_open_node = { dialog->explorer.folder_tree.get(), false };
 		dialog->explorer.select_callback = [dialog](const std::filesystem::path& path) {
 			dialog->path = path;

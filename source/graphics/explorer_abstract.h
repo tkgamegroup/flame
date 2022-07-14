@@ -44,6 +44,19 @@ namespace flame
 							}
 						}
 					}
+					else
+					{
+						if (path == L"This Computer")
+						{
+							for (auto& d : get_drives())
+							{
+								auto c = new FolderTreeNode(d);
+								c->display_text = d.root_name().string();
+								c->parent = this;
+								children.emplace_back(c);
+							}
+						}
+					}
 					read = true;
 				}
 
@@ -358,7 +371,7 @@ namespace flame
 					ImGui::SetCursorPos(content_pos);
 					auto padding = style.FramePadding;
 					auto line_height = ImGui::GetTextLineHeight();
-					if (ImGui::BeginTable("contents", content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x), ImGuiTableFlags_ScrollY, content_size))
+					if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
 					{
 						auto just_selected = false;
 						if (!items.empty())
@@ -388,10 +401,9 @@ namespace flame
 
 								if (frames > open_folder_frame + 3 && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && hovered && ImGui::IsItemDeactivated())
 								{
+									selected_path = item->path;
 									if (select_callback)
-										select_callback(item->path);
-									else
-										selected_path = item->path;
+										select_callback(selected_path);
 									selected = true;
 								}
 								if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
@@ -432,10 +444,9 @@ namespace flame
 						}
 						if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !just_selected)
 						{
+							selected_path = L"";
 							if (select_callback)
-								select_callback(L"");
-							else
-								selected_path = L"";
+								select_callback(selected_path);
 						}
 						if (opened_folder && folder_context_menu_callback)
 						{

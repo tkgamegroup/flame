@@ -121,7 +121,7 @@ void View_Hierarchy::on_draw()
 		{
 			if (auto e_src = read_drop_entity(); e_src)
 			{
-				e_src->parent->remove_child(e_src, false);
+				e_src->remove_from_parent(false);
 				e->add_child(e_src);
 			}
 			if (auto e_src = read_drop_file(); e_src)
@@ -145,7 +145,7 @@ void View_Hierarchy::on_draw()
 					{
 						auto idx = i;
 						if (e_src->parent == e && e_src->index < i) idx--;
-						e_src->parent->remove_child(e_src, false);
+						e_src->remove_from_parent(false);
 						e->add_child(e_src, idx);
 					}
 					if (auto e_src = read_drop_file(); e_src)

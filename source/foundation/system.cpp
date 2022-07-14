@@ -57,6 +57,26 @@ namespace flame
 		return L"";
 	}
 
+	std::vector<std::filesystem::path> get_drives()
+	{
+		wchar_t buf[256];
+		int n = GetLogicalDriveStringsW(countof(buf), buf);
+		std::vector<std::filesystem::path> ret;
+		if (n > 0)
+		{
+			auto i = 0, j = 0;
+			for (; j < n; j++)
+			{
+				if (buf[j] == 0 && j - i > 0)
+				{
+					ret.push_back(std::wstring(buf + i, buf + j));
+					i = j + 1;
+				}
+			}
+		}
+		return ret;
+	}
+
 	static std::vector<std::pair<std::filesystem::path, HANDLE>> directory_locks;
 	void directory_lock(const std::filesystem::path& path, bool lock)
 	{
