@@ -105,6 +105,11 @@ namespace flame
 
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */ ) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
+		inline void remove_from_parent(bool destroy = true)
+		{
+			if (parent)
+				((Entity*)parent)->remove_child((EntityPtr)this, destroy);
+		}
 		virtual void remove_all_children(bool destroy = true) = 0;
 
 		inline EntityPtr find_child(std::string_view name) const

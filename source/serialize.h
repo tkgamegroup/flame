@@ -247,11 +247,18 @@ namespace flame
 	template<class CH>
 	struct StrUtils
 	{
-		static uint indent_length(const std::basic_string<CH>& s)
+		static void to_lower(std::basic_string<CH>& s)
 		{
-			return std::find_if(s.begin(), s.end(), [](char ch) {
-				return !std::isspace(ch);
-			}) - s.begin();
+			std::transform(s.begin(), s.end(), s.begin(), [](uchar c) { 
+				return std::tolower(c); 
+			});
+		}
+
+		static void to_upper(std::basic_string<CH>& s)
+		{
+			std::transform(s.begin(), s.end(), s.begin(), [](uchar c) {
+				return std::toupper(c);
+			});
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
@@ -377,6 +384,13 @@ namespace flame
 				ret.push_back(s);
 
 			return ret;
+		}
+
+		static uint indent_length(const std::basic_string<CH>& s)
+		{
+			return std::find_if(s.begin(), s.end(), [](char ch) {
+				return !std::isspace(ch);
+				}) - s.begin();
 		}
 	};
 

@@ -94,7 +94,8 @@ namespace flame
 			auto parent_path = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
 			auto model_name = filename.filename().stem().string();
-			auto ext = filename.extension();
+			auto ext = filename.extension().wstring();
+			SUW::to_lower(ext);
 			filename.replace_extension(L".fmod");
 
 			std::vector<std::unique_ptr<MaterialT>> materials;
@@ -195,12 +196,10 @@ namespace flame
 #ifdef USE_FBXSDK
 			if (ext == L".fbx")
 			{
-				using namespace fbxsdk;
-
-				auto get_matrix = [](FbxNode* pNode) {
-					const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
-					const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
-					const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+				auto get_matrix = [](fbxsdk::FbxNode* pNode) {
+					const FbxVector4 lT = pNode->GetGeometricTranslation(fbxsdk::FbxNode::eSourcePivot);
+					const FbxVector4 lR = pNode->GetGeometricRotation(fbxsdk::FbxNode::eSourcePivot);
+					const FbxVector4 lS = pNode->GetGeometricScaling(fbxsdk::FbxNode::eSourcePivot);
 
 					return FbxAMatrix(lT, lR, lS);
 				};
@@ -284,15 +283,15 @@ namespace flame
 				auto anim_count = anim_names.GetCount();
 				for (auto i = 0; i < anim_count; i++)
 				{
-					auto anim_stack = scene->FindMember<FbxAnimStack>(anim_names[i]->Buffer());
+					auto anim_stack = scene->FindMember<fbxsdk::FbxAnimStack>(anim_names[i]->Buffer());
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
 					scene->SetCurrentAnimationStack(anim_stack);
 
 					auto animation = new AnimationT;
 					animation->duration = 0.f;
 
-					std::function<void(FbxNode*)> get_node_curves;
-					get_node_curves = [&](FbxNode* node) {
+					std::function<void(fbxsdk::FbxNode*)> get_node_curves;
+					get_node_curves = [&](fbxsdk::FbxNode* node) {
 						FbxAnimCurve* curve = nullptr;
 						std::vector<std::pair<uint, vec3>> position_keys;
 						std::vector<std::pair<uint, vec3>> rotation_keys;
@@ -405,8 +404,8 @@ namespace flame
 
 				pugi::xml_document doc_prefab;
 
-				std::function<void(pugi::xml_node, FbxNode*)> process_node;
-				process_node = [&](pugi::xml_node dst, FbxNode* src) {
+				std::function<void(pugi::xml_node, fbxsdk::FbxNode*)> process_node;
+				process_node = [&](pugi::xml_node dst, fbxsdk::FbxNode* src) {
 					dst.append_attribute("name").set_value(src->GetName());
 
 					auto n_components = dst.append_child("components");
@@ -439,10 +438,10 @@ namespace flame
 							auto material = new MaterialT;
 							auto map_id = 0;
 							{
-								auto prop = fbx_mat->FindProperty(FbxSurfaceMaterial::sDiffuse);
+								auto prop = fbx_mat->FindProperty(fbxsdk::FbxSurfaceMaterial::sDiffuse);
 								if (prop.IsValid())
 								{
-									auto res = prop.Get<FbxDouble3>();
+									auto res = prop.Get<fbxsdk::FbxDouble3>();
 									material->color[0] = res[0];
 									material->color[1] = res[1];
 									material->color[2] = res[2];
@@ -468,7 +467,7 @@ namespace flame
 					if (auto node_attr = src->GetNodeAttribute(); node_attr)
 					{
 						auto node_type = node_attr->GetAttributeType();
-						if (node_type == FbxNodeAttribute::eMesh)
+						if (node_type == fbxsdk::FbxNodeAttribute::eMesh)
 						{
 							auto fbx_mesh = src->GetMesh();
 							if (!fbx_mesh->GetUserDataPtr())
@@ -476,34 +475,38 @@ namespace flame
 								auto base_mesh_idx = model->meshes.size();
 
 								auto polygon_count = fbx_mesh->GetPolygonCount();
-								auto element_mat = fbx_mesh->GetElementMaterial();
-								FbxLayerElementArrayTemplate<int>* mat_indices = NULL;
-								auto material_mapping_polygon = false;
-								if (element_mat)
-								{
-									mat_indices = &element_mat->GetIndexArray();
-									material_mapping_polygon = element_mat->GetMappingMode() == FbxGeometryElement::eByPolygon;
-								}
 
-								auto has_uv = fbx_mesh->GetElementUVCount() > 0;
-								auto has_normal = fbx_mesh->GetElementNormalCount() > 0;
-								auto uv_mapping_mode = FbxGeometryElement::eNone;
-								auto normal_mapping_mode = FbxGeometryElement::eNone;
-								if (has_uv)
-								{
-									uv_mapping_mode = fbx_mesh->GetElementUV(0)->GetMappingMode();
-									if (uv_mapping_mode == FbxGeometryElement::eNone)
-										has_uv = false;
-								}
-								if (has_normal)
-								{
-									normal_mapping_mode = fbx_mesh->GetElementNormal(0)->GetMappingMode();
-									if (normal_mapping_mode == FbxGeometryElement::eNone)
-										has_normal = false;
-								}
+								fbxsdk::FbxLayerElementArrayTemplate<int> empty_index_array(fbxsdk::eFbxUndefined);
+								fbxsdk::FbxLayerElementArrayTemplate<fbxsdk::FbxVector2> empty_vector2_array(fbxsdk::eFbxUndefined);
+								fbxsdk::FbxLayerElementArrayTemplate<fbxsdk::FbxVector4> empty_vector4_array(fbxsdk::eFbxUndefined);
+								fbxsdk::FbxLayerElementArrayTemplate<fbxsdk::FbxColor> empty_color_array(fbxsdk::eFbxUndefined);
+
+								auto element_mat = fbx_mesh->GetElementMaterialCount() > 0 ? fbx_mesh->GetElementMaterial() : nullptr;
+								auto element_uvs = fbx_mesh->GetElementUVCount() > 0 ? fbx_mesh->GetElementUV(0) : nullptr;
+								auto element_normals = fbx_mesh->GetElementNormalCount() > 0 ? fbx_mesh->GetElementNormal(0) : nullptr;
+								auto element_tangents = fbx_mesh->GetElementTangentCount() > 0 ? fbx_mesh->GetElementTangent(0) : nullptr;
+								auto element_colors = fbx_mesh->GetElementVertexColorCount() > 0 ? fbx_mesh->GetElementVertexColor(0) : nullptr;
+								auto mat_mapping_mode = element_mat ? element_mat->GetMappingMode() : FbxGeometryElement::eNone;
+								auto& mat_index_array = element_mat ? element_mat->GetIndexArray() : empty_index_array;
+								auto uv_mapping_mode = element_uvs ? element_uvs->GetMappingMode() : FbxGeometryElement::eNone;
+								auto uv_reference_mode = element_uvs ? element_uvs->GetReferenceMode() : FbxGeometryElement::eNone;
+								auto normal_mapping_mode = element_normals ? element_normals->GetMappingMode() : FbxGeometryElement::eNone;
+								auto normal_reference_mode = element_normals ? element_normals->GetReferenceMode() : FbxGeometryElement::eNone;
+								auto tangent_mapping_mode = element_tangents ? element_tangents->GetMappingMode() : FbxGeometryElement::eNone;
+								auto tangent_reference_mode = element_tangents ? element_tangents->GetReferenceMode() : FbxGeometryElement::eNone;
+								auto color_mapping_mode = element_colors ? element_colors->GetMappingMode() : FbxGeometryElement::eNone;
+								auto color_reference_mode = element_colors ? element_colors->GetReferenceMode() : FbxGeometryElement::eNone;
+								auto& uv_direct_array = element_uvs ? element_uvs->GetDirectArray() : empty_vector2_array;
+								auto& uv_index_array = element_uvs ? element_uvs->GetIndexArray() : empty_index_array;
+								auto& normal_direct_array = element_normals ? element_normals->GetDirectArray() : empty_vector4_array;
+								auto& normal_index_array = element_normals ? element_normals->GetIndexArray() : empty_index_array;
+								auto& tangent_direct_array = element_tangents ? element_tangents->GetDirectArray() : empty_vector4_array;
+								auto& tangent_index_array = element_tangents ? element_tangents->GetIndexArray() : empty_index_array;
+								auto& color_direct_array = element_colors ? element_colors->GetDirectArray() : empty_color_array;
+								auto& color_index_array = element_colors ? element_colors->GetIndexArray() : empty_index_array;
 
 								std::string uv_name;
-								if (has_uv)
+								if (element_uvs)
 								{
 									FbxStringList names;
 									fbx_mesh->GetUVSetNames(names);
@@ -570,8 +573,8 @@ namespace flame
 								for (auto i = 0; i < polygon_count; i++)
 								{
 									auto sub_mesh_idx = 0;
-									if (mat_indices && material_mapping_polygon)
-										sub_mesh_idx = mat_indices->GetAt(i);
+									if (element_mat && mat_mapping_mode == FbxGeometryElement::eByPolygon)
+										sub_mesh_idx = mat_index_array.GetAt(i);
 
 									if (base_mesh_idx + sub_mesh_idx + 1 > model->meshes.size())
 										model->meshes.resize(base_mesh_idx + sub_mesh_idx + 1);
@@ -582,28 +585,190 @@ namespace flame
 										auto control_point_idx = fbx_mesh->GetPolygonVertex(i, j);
 										if (control_point_idx >= 0)
 										{
-											m.indices.push_back(m.positions.size());
+											auto vertex_count = (int)m.positions.size();
 
 											auto vtx = control_points[control_point_idx];
 											m.positions.push_back(vec3(vtx[0], vtx[1], vtx[2]));
-											if (has_uv)
+
+											if (element_uvs)
 											{
-												FbxVector2 uv;
-												bool unmapped;
-												fbx_mesh->GetPolygonVertexUV(i, j, uv_name.c_str(), uv, unmapped);
-												m.uvs.push_back(vec2(uv[0], 1.f - uv[1]));
+												switch (uv_mapping_mode)
+												{
+												case FbxGeometryElement::eByControlPoint:
+													switch (uv_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = uv_direct_array.GetAt(control_point_idx);
+														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = uv_index_array.GetAt(control_point_idx);
+														auto src = uv_direct_array.GetAt(idx);
+														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
+													}
+														break;
+													}
+													break;
+												case FbxGeometryElement::eByPolygonVertex:
+													switch (uv_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = uv_direct_array.GetAt(vertex_count);
+														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = uv_index_array.GetAt(vertex_count);
+														auto src = uv_direct_array.GetAt(idx);
+														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
+													}
+														break;
+													}
+													break;
+												}
 											}
-											if (has_normal)
+
+											if (element_normals)
 											{
-												FbxVector4 nor;
-												fbx_mesh->GetPolygonVertexNormal(i, j, nor);
-												m.normals.push_back(vec3(nor[0], nor[1], nor[2]));
+												switch (normal_mapping_mode)
+												{
+												case FbxGeometryElement::eByControlPoint:
+													switch (normal_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = normal_direct_array.GetAt(control_point_idx);
+														m.normals.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = normal_index_array.GetAt(control_point_idx);
+														auto src = normal_direct_array.GetAt(idx);
+														m.normals.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													}
+													break;
+												case FbxGeometryElement::eByPolygonVertex:
+													switch (normal_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = normal_direct_array.GetAt(vertex_count);
+														m.normals.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = normal_index_array.GetAt(vertex_count);
+														auto src = normal_direct_array.GetAt(idx);
+														m.normals.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													}
+													break;
+												}
 											}
+
+											if (element_tangents)
+											{
+												switch (tangent_mapping_mode)
+												{
+												case FbxGeometryElement::eByControlPoint:
+													switch (tangent_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = tangent_direct_array.GetAt(control_point_idx);
+														m.tangents.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = tangent_index_array.GetAt(control_point_idx);
+														auto src = tangent_direct_array.GetAt(idx);
+														m.tangents.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													}
+													break;
+												case FbxGeometryElement::eByPolygonVertex:
+													switch (tangent_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = tangent_direct_array.GetAt(vertex_count);
+														m.tangents.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = tangent_index_array.GetAt(vertex_count);
+														auto src = tangent_direct_array.GetAt(idx);
+														m.tangents.push_back(vec3(src[0], src[1], src[2]));
+													}
+														break;
+													}
+													break;
+												}
+											}
+
+											if (element_colors)
+											{
+												switch (color_mapping_mode)
+												{
+												case FbxGeometryElement::eByControlPoint:
+													switch (color_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = color_direct_array.GetAt(control_point_idx);
+														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = color_index_array.GetAt(control_point_idx);
+														auto src = color_direct_array.GetAt(idx);
+														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
+													}
+														break;
+													}
+													break;
+												case FbxGeometryElement::eByPolygonVertex:
+													switch (color_reference_mode)
+													{
+													case FbxGeometryElement::eDirect:
+													{
+														auto src = color_direct_array.GetAt(vertex_count);
+														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
+													}
+														break;
+													case FbxGeometryElement::eIndexToDirect:
+													{
+														auto idx = color_index_array.GetAt(vertex_count);
+														auto src = color_direct_array.GetAt(idx);
+														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
+													}
+														break;
+													}
+													break;
+												}
+											}
+
 											if (skin_count)
 											{
 												m.bone_ids.push_back(control_point_bone_ids[control_point_idx]);
 												m.bone_weights.push_back(control_point_bone_weights[control_point_idx]);
 											}
+
+											m.indices.push_back(vertex_count);
 										}
 									}
 								}
@@ -812,6 +977,22 @@ namespace flame
 					{
 						mesh.normals.resize(vertex_count);
 						memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
+					}
+
+					if (ai_mesh->mTangents)
+					{
+						mesh.tangents.resize(vertex_count);
+						memcpy(mesh.tangents.data(), ai_mesh->mTangents, sizeof(vec3)* vertex_count);
+					}
+
+					if (ai_mesh->mColors[0])
+					{
+						mesh.colors.resize(vertex_count);
+						for (auto i = 0; i < vertex_count; i++)
+						{
+							auto& col = ai_mesh->mColors[0][i];
+							mesh.colors[i] = cvec4(col.r * 255.f, col.g * 255.f, col.b * 255.f, col.a * 255.f);
+						}
 					}
 
 					if (ai_mesh->mNumBones > 0)
