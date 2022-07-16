@@ -95,6 +95,8 @@ namespace flame
 		std::vector<SdfDraw>		sdfs;
 		std::vector<PrimitiveDraw>	primitives;
 
+		bool graphics_debug = false; // could use this to mark a capture
+
 		void reset(uint _pass, uint _category)
 		{
 			pass = _pass;
@@ -106,6 +108,8 @@ namespace flame
 			terrains.clear();
 			sdfs.clear();
 			primitives.clear();
+
+			graphics_debug = false;
 		}
 	};
 }

@@ -249,14 +249,14 @@ namespace flame
 	{
 		static void to_lower(std::basic_string<CH>& s)
 		{
-			std::transform(s.begin(), s.end(), s.begin(), [](uchar c) { 
+			std::transform(s.begin(), s.end(), s.begin(), [](uint c) { 
 				return std::tolower(c); 
 			});
 		}
 
 		static void to_upper(std::basic_string<CH>& s)
 		{
-			std::transform(s.begin(), s.end(), s.begin(), [](uchar c) {
+			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
 			});
 		}

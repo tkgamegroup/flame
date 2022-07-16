@@ -15,6 +15,7 @@
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/extension.h"
+#include "../../graphics/debug.h"
 
 namespace flame
 {
@@ -563,9 +564,9 @@ namespace flame
 		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_mesh_pickup->dynamic_renderpass = true;
 		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "vert:ARMATURE",
-			  "frag:PICKUP",
-			  "rp=" + str(rp_col_dep), "frag:PICKUP" });
+			{ "rp=" + str(rp_col_dep),
+			  "vert:ARMATURE",
+			  "frag:PICKUP" });
 		pl_mesh_arm_pickup->dynamic_renderpass = true;
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
@@ -1728,6 +1729,8 @@ namespace flame
 		auto off = 0;
 		auto n_draws = 0;
 		draw_data.reset("draw"_h, "mesh"_h);
+		std::vector<cNodePtr> camera_culled_nodes; // collect here (again), because there may have changes between render() and pick_up()
+		sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 		for (auto n : camera_culled_nodes)
 		{
 			if (draw_callback)
@@ -1787,7 +1790,11 @@ namespace flame
 		}
 
 		cb->end_renderpass();
+		if (draw_data.graphics_debug)
+			graphics::Debug::start_capture_frame();
 		cb.excute();
+		if (draw_data.graphics_debug)
+			graphics::Debug::end_capture_frame();
 
 		int index; ushort depth;
 		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
