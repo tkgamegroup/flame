@@ -8,13 +8,12 @@ namespace flame
 
 	void cNavAgentPrivate::set_target(const vec3& pos, bool _face_mode)
 	{
+		if (target_pos == pos && face_mode == _face_mode)
+			return;
+		if (face_mode != _face_mode && !face_mode)
+			stop();
 		target_pos = pos;
-		if (face_mode != _face_mode)
-		{
-			if (!face_mode)
-				stop();
-			face_mode = _face_mode;
-		}
+		face_mode = _face_mode;
 		if (!face_mode)
 		{
 #ifdef USE_RECASTNAV
