@@ -728,6 +728,13 @@ namespace flame
 		if (!dt_crowd)
 			dt_crowd = dtAllocCrowd();
 		dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
+		dtObstacleAvoidanceParams avoid_params;
+		memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
+		avoid_params.velBias = 0.5f;
+		avoid_params.adaptiveDivs = 7;
+		avoid_params.adaptiveRings = 2;
+		avoid_params.adaptiveDepth = 3;
+		dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
 #endif
 	}
 

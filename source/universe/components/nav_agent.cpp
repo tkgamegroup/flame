@@ -10,7 +10,7 @@ namespace flame
 	{
 		if (target_pos == pos && face_mode == _face_mode)
 			return;
-		if (face_mode != _face_mode && !face_mode)
+		if (!face_mode && _face_mode)
 			stop();
 		target_pos = pos;
 		face_mode = _face_mode;
