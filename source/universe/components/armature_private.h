@@ -50,6 +50,7 @@ namespace flame
 
 		void set_armature_name(const std::filesystem::path& name) override;
 		void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) override;
+		void set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions) override;
 
 		void play(uint name, float transition) override;
 		void stop() override;

@@ -295,6 +295,55 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			ImGui::TreePop();
 		}
 		break;
+	case TagVT:
+		if (ImGui::TreeNode(name.c_str()))
+		{
+			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
+			if (editing_vector.id == id)
+			{
+				if (ImGui::Button("Save"))
+				{
+					if (setter_idx == -1)
+						editing_vector.assign((char*)src + offset, nullptr);
+					else
+						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+					editing_vector.clear();
+				if (editing_vector.id)
+				{
+					int n = editing_vector.count();
+					if (ImGui::InputInt("size", &n, 1, 1))
+					{
+						n = clamp(n, 0, 16);
+						editing_vector.resize(nullptr, n);
+					}
+					for (auto i = 0; i < n; i++)
+					{
+						if (ImGui::TreeNode(str(i).c_str()))
+						{
+							auto p = editing_vector.v.data() + ti->size * i;
+							auto off = 0;  auto j = 0;
+							for (auto t : ti->tis)
+							{
+								show_variable(ui, t, "item_" + str(j), 0, -1, -1, p + off, id);
+								off += t->size;
+								j++;
+							}
+							ImGui::TreePop();
+						}
+					}
+				}
+			}
+			else
+			{
+				if (ImGui::Button("Edit"))
+					editing_vector.set(id, ti, (char*)src + offset);
+			}
+			ImGui::TreePop();
+		}
+		break;
 	}
 	ImGui::PopID();
 

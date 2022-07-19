@@ -97,8 +97,22 @@ namespace flame
 			if (auto ti = (TypeInfo_Pair*)type; ti)
 			{
 				dst = dst.append_child(name.c_str());
-				dst.append_attribute("first").set_value(ti->ti1->serialize(ti->first((char*)src + offset)).c_str());
-				dst.append_attribute("second").set_value(ti->ti2->serialize(ti->second((char*)src + offset)).c_str());
+				auto p = (char*)src + offset;
+				dst.append_attribute("first").set_value(ti->ti1->serialize(ti->first(p)).c_str());
+				dst.append_attribute("second").set_value(ti->ti2->serialize(ti->second(p)).c_str());
+			}
+			break;
+		case TagT:
+			if (auto ti = (TypeInfo_Tuple*)type; ti)
+			{
+				dst = dst.append_child(name.c_str());
+				auto off = 0; auto i = 0; auto p = (char*)src + offset;
+				for (auto t : ti->tis)
+				{
+					dst.append_attribute(("item_" + str(i)).c_str()).set_value(t->serialize(p + off).c_str());
+					off += t->size;
+					i++;
+				}
 			}
 			break;
 		case TagPU:
@@ -170,6 +184,20 @@ namespace flame
 			if (auto& vec = *(std::vector<char>*)((char*)src + offset); !vec.empty())
 			{
 				auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
+				auto n = dst.append_child(name.c_str());
+				auto p = (char*)vec.data();
+				auto len = (vec.end() - vec.begin()) / ti->size;
+				for (auto i = 0; i < len; i++)
+				{
+					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n);
+					p += ti->size;
+				}
+			}
+			break;
+		case TagVT:
+			if (auto& vec = *(std::vector<char>*)((char*)src + offset); !vec.empty())
+			{
+				auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
 				auto n = dst.append_child(name.c_str());
 				auto p = (char*)vec.data();
 				auto len = (vec.end() - vec.begin()) / ti->size;
@@ -401,6 +429,40 @@ namespace flame
 						ti->create(pd);
 						ti->ti1->unserialize(cc.attribute("first").value(), ti->first(pd));
 						ti->ti2->unserialize(cc.attribute("second").value(), ti->second(pd));
+					}
+					return len;
+				};
+				if (setter_idx == -1)
+					read(*(std::vector<char>*)((char*)dst + offset));
+				else
+				{
+					std::vector<char> vec;
+					auto len = read(vec);
+					type->call_setter(&ui.functions[setter_idx], dst, &vec);
+					for (auto i = 0; i < len; i++)
+						ti->destroy((char*)vec.data() + i * ti->size, false);
+				}
+			}
+			break;
+		case TagVT:
+			if (auto c = src.child(name.c_str()); c)
+			{
+				auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
+				auto read = [&](std::vector<char>& vec) {
+					auto len = 0;
+					for (auto cc : c.children())
+					{
+						len++;
+						vec.resize(len * ti->size);
+						auto pd = (char*)vec.data() + (len - 1) * ti->size;
+						ti->create(pd);
+						auto off = 0;  auto i = 0;
+						for (auto t : ti->tis)
+						{
+							t->unserialize(cc.attribute(("item_" + str(i)).c_str()).value(), pd + off);
+							off += t->size;
+							i++;
+						}
 					}
 					return len;
 				};

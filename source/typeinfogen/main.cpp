@@ -10,42 +10,64 @@ using namespace flame;
 
 TypeInfoDataBase db;
 
-std::string get_first_template_argument(const std::string& name)
+int get_first_template_argument(std::string_view name)
 {
 	auto p = 0, lv = 0;
 	while (p < name.size())
 	{
 		auto ch = name[p];
 		if (ch == ',' && lv == 0)
-			return name.substr(0, p);
+			return p;
+		else if (p == (int)name.size() - 1 && lv == 0)
+			return p + 1;
 		else if (ch == '<')
 			lv++;
 		else if (ch == '>')
 			lv--;
 		p++;
 	}
-	return "";
+	return -1;
 }
 
 TypeTag parse_vector(std::string& name)
 {
 	SUS::strip_head_if(name, "std::vector<");
-	name = get_first_template_argument(name);
+	name = name.substr(0, get_first_template_argument(name));
 
 	auto is_pointer = false;
 	auto is_pair = false;
+	auto is_tuple = false;
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
-		name = get_first_template_argument(name);
+		name = name.substr(0, get_first_template_argument(name));
 	}
 	else if (SUS::strip_head_if(name, "std::pair<"))
 	{
 		is_pair = true;
 		name.pop_back();
-		auto t1 = get_first_template_argument(name);
+		auto t1 = name.substr(0, get_first_template_argument(name));
 		auto t2 = name.substr(t1.size() + 1);
 		name = TypeInfo::format_name(t1) + ";" + TypeInfo::format_name(t2);
+	}
+	else if (SUS::strip_head_if(name, "std::tuple<"))
+	{
+		is_tuple = true;
+		name.pop_back();
+		std::vector<std::string> ts;
+		auto off = 0;
+		while (off < name.size())
+		{
+			auto n = get_first_template_argument({ name.begin() + off, name.end() });
+			if (n == -1)
+				break;
+			ts.push_back(name.substr(off, n));
+			off += n + 1;
+		}
+		name = "";
+		for (auto& t : ts)
+			name += t + ';';
+		name.pop_back();
 	}
 
 	auto is_enum = SUS::strip_head_if(name, "enum ");
@@ -59,6 +81,8 @@ TypeTag parse_vector(std::string& name)
 
 	if (is_pair)
 		return TagVR;
+	else if (is_tuple)
+		return TagVT;
 	else
 	{
 		if (TypeInfo::is_basic_type(name))

@@ -19,6 +19,10 @@ namespace flame
 		std::vector<std::pair<std::filesystem::path, std::string>> animation_names;
 		/// Reflect
 		virtual void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
+		/// Reflect
+		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
+		/// Reflect
+		virtual void set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions) = 0;
 
 		/// Reflect
 		bool loop = true;

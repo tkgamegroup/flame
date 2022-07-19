@@ -41,6 +41,9 @@ namespace flame
 		case TagR:
 			t = new TypeInfo_Pair(name, db);
 			break;
+		case TagT:
+			t = new TypeInfo_Tuple(name, db);
+			break;
 		case TagPE:
 			t = new TypeInfo_PointerOfEnum(name, db);
 			break;
@@ -62,6 +65,9 @@ namespace flame
 		case TagPVR:
 			t = new TypeInfo_PointerOfVectorOfPair(name, db);
 			break;
+		case TagPVT:
+			t = new TypeInfo_PointerOfVectorOfTuple(name, db);
+			break;
 		case TagAE:
 			t = new TypeInfo_ArrayOfEnum(name, db);
 			break;
@@ -82,6 +88,9 @@ namespace flame
 			break;
 		case TagVR:
 			t = new TypeInfo_VectorOfPair(name, db);
+			break;
+		case TagVT:
+			t = new TypeInfo_VectorOfTuple(name, db);
 			break;
 		case TagVPU:
 			t = new TypeInfo_VectorOfPointerOfUdt(name, db);

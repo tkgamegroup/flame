@@ -9,6 +9,8 @@ namespace flame
 	*	D - Data
 	*	F - Function
 	*	U - Udt
+	*	R - std::pair
+	*	T - std::tuple
 	*	A - Array
 	*	P - Pointer
 	*	V - Vector
@@ -19,14 +21,18 @@ namespace flame
 		TagD,
 		TagF,
 		TagU,
-		TagR, // the std::pair
+		TagR,
+		TagT,
 		TagPE,
 		TagPD,
 		TagPU,
+		TagPR,
+		TagPT,
 		TagPVE,
 		TagPVD,
 		TagPVU,
 		TagPVR,
+		TagPVT,
 		TagAE,
 		TagAD,
 		TagAU,
@@ -34,10 +40,11 @@ namespace flame
 		TagVD,
 		TagVU,
 		TagVR,
+		TagVT,
 		TagVPU,
 
 		TagP_Beg = TagPE,
-		TagP_End = TagPVR,
+		TagP_End = TagPVT,
 		TagA_Beg = TagAE,
 		TagA_End = TagAU,
 		TagV_Beg = TagVE,
@@ -53,7 +60,7 @@ namespace flame
 		DataChar,
 		DataInt,
 		DataShort,
-		DataLong, // long long in c++
+		DataLong, // long long
 		DataFloat,
 		DataString,
 		DataWString,
@@ -2228,6 +2235,57 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_Tuple : TypeInfo
+	{
+		std::vector<TypeInfo_Data*> tis;
+
+		TypeInfo_Tuple(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagT, base_name, 0)
+		{
+			auto sp = SUS::split(name, ';');
+			size = 0;
+			for (auto& n : sp)
+			{
+				auto ti = (TypeInfo_Data*)get(TagD, n, db);
+				size += ti->size;
+				tis.push_back(ti);
+			}
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			auto off = 0U;
+			for (auto ti : tis)
+			{
+				ti->create((char*)p + off);
+				off += ti->size;
+			}
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			auto off = 0U;
+			for (auto ti : tis)
+			{
+				ti->destroy((char*)p + off);
+				off += ti->size;
+			}
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			auto off = 0U;
+			for (auto ti : tis)
+			{
+				ti->copy((char*)dst + off, (char*)src + off);
+				off += ti->size;
+			}
+		}
+	};
+
 	struct TypeInfo_PointerOfEnum : TypeInfo
 	{
 		TypeInfo_Enum* ti = nullptr;
@@ -2329,6 +2387,23 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_VectorOfTuple : TypeInfo
+	{
+		TypeInfo_Tuple* ti = nullptr;
+
+		TypeInfo_VectorOfTuple(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVT, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Tuple*)get(TagT, name, db);
+		}
+
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVT);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
+	};
+
 	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
 	{
 		TypeInfo_PointerOfUdt* ti = nullptr;
@@ -2381,6 +2456,17 @@ namespace flame
 			TypeInfo(TagPVR, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_VectorOfPair*)get(TagVR, name, db);
+		}
+	};
+
+	struct TypeInfo_PointerOfVectorOfTuple : TypeInfo
+	{
+		TypeInfo_VectorOfTuple* ti = nullptr;
+
+		TypeInfo_PointerOfVectorOfTuple(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagPVT, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_VectorOfTuple*)get(TagVT, name, db);
 		}
 	};
 

@@ -170,6 +170,11 @@ namespace flame
 		}
 	}
 
+	void cArmaturePrivate::set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions)
+	{
+
+	}
+
 	void cArmaturePrivate::play(uint name, float transition)
 	{
 		if (playing_name == name)
