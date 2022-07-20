@@ -170,22 +170,23 @@ namespace flame
 		}
 	}
 
-	void cArmaturePrivate::set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions)
-	{
-
-	}
-
-	void cArmaturePrivate::play(uint name, float transition)
+	void cArmaturePrivate::play(uint name)
 	{
 		if (playing_name == name)
 			return;
+
 		stop();
-		playing_name = name;
-		if (transition > 0.f)
+
+		auto transition = 0.f;
+		auto it = animations.find(playing_name);
+		if (it != animations.end())
 		{
-			transition_time = 0.f;
-			transition_duration = transition;
+			auto _it = it->second.transitions.find(name);
+			if (_it != it->second.transitions.end())
+				transition = _it->second;
 		}
+
+		playing_name = name;
 	}
 
 	void cArmaturePrivate::stop()
@@ -299,6 +300,13 @@ namespace flame
 							}
 						}
 					}
+				}
+
+				for (auto& t : animation_transitions)
+				{
+					auto it = animations.find(sh(std::get<0>(t)));
+					if (it != animations.end())
+						it->second.transitions[sh(std::get<1>(t))] = std::get<2>(t);
 				}
 			}
 		}

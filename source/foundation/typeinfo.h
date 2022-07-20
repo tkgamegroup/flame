@@ -2237,18 +2237,30 @@ namespace flame
 
 	struct TypeInfo_Tuple : TypeInfo
 	{
-		std::vector<TypeInfo_Data*> tis;
+		std::vector<std::pair<TypeInfo_Data*, uint>> tis;
 
 		TypeInfo_Tuple(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagT, base_name, 0)
 		{
 			auto sp = SUS::split(name, ';');
-			size = 0;
+			auto align = 4U;
 			for (auto& n : sp)
 			{
 				auto ti = (TypeInfo_Data*)get(TagD, n, db);
-				size += ti->size;
-				tis.push_back(ti);
+				if (ti == TypeInfo::get<std::string>())
+					align = 8U;
+				else if (ti == TypeInfo::get<std::wstring>())
+					align = 8U;
+				else if (ti == TypeInfo::get<std::filesystem::path>())
+					align = 8U;
+				tis.push_back(std::make_pair(ti, 0));
+			}
+			size = 0;
+			for (auto i = (int)tis.size() - 1; i >= 0; i--)
+			{
+				auto& t = tis[i];
+				t.second = size;
+				size += max(t.first->size, align);
 			}
 		}
 
@@ -2256,33 +2268,21 @@ namespace flame
 		{
 			if (!p)
 				p = malloc(size);
-			auto off = 0U;
-			for (auto ti : tis)
-			{
-				ti->create((char*)p + off);
-				off += ti->size;
-			}
+			for (auto& t : tis)
+				t.first->create((char*)p + t.second);
 			return p;
 		}
 		void destroy(void* p, bool free_memory = true) const override
 		{
-			auto off = 0U;
-			for (auto ti : tis)
-			{
-				ti->destroy((char*)p + off);
-				off += ti->size;
-			}
+			for (auto& t : tis)
+				t.first->destroy((char*)p + t.second);
 			if (free_memory)
 				free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			auto off = 0U;
-			for (auto ti : tis)
-			{
-				ti->copy((char*)dst + off, (char*)src + off);
-				off += ti->size;
-			}
+			for (auto& t : tis)
+				t.first->copy((char*)dst + t.second, (char*)src + t.second);
 		}
 	};
 

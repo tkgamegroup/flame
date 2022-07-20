@@ -21,8 +21,6 @@ namespace flame
 		virtual void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
 		/// Reflect
 		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
-		/// Reflect
-		virtual void set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions) = 0;
 
 		/// Reflect
 		bool loop = true;
@@ -32,7 +30,7 @@ namespace flame
 		float playing_time = 0;
 		float playing_speed = 1.f;
 
-		virtual void play(uint name, float transition = 0.f) = 0;
+		virtual void play(uint name) = 0;
 		virtual void stop() = 0;
 
 		int instance_id = -1;

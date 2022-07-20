@@ -324,11 +324,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 						if (ImGui::TreeNode(str(i).c_str()))
 						{
 							auto p = editing_vector.v.data() + ti->size * i;
-							auto off = 0;  auto j = 0;
-							for (auto t : ti->tis)
+							auto j = 0;
+							for (auto& t : ti->tis)
 							{
-								show_variable(ui, t, "item_" + str(j), 0, -1, -1, p + off, id);
-								off += t->size;
+								show_variable(ui, t.first, "item_" + str(j), 0, -1, -1, p + t.second, id);
 								j++;
 							}
 							ImGui::TreePop();

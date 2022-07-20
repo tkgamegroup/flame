@@ -66,7 +66,7 @@ TypeTag parse_vector(std::string& name)
 		}
 		name = "";
 		for (auto& t : ts)
-			name += t + ';';
+			name += TypeInfo::format_name(t) + ';';
 		name.pop_back();
 	}
 
@@ -187,6 +187,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 					case TagVD: tag = TagPVD; break;
 					case TagVU: tag = TagPVU; break;
 					case TagVR: tag = TagPVR; break;
+					case TagVT: tag = TagPVT; break;
 					case TagVPU: tag = TagD; name.clear(); break;
 					}
 					ret = TypeInfo::get(tag, name, db);

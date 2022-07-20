@@ -38,6 +38,7 @@ namespace flame
 			graphics::AnimationPtr animation = nullptr;
 			float duration;
 			std::vector<Track> tracks;
+			std::unordered_map<uint, float> transitions;
 		};
 
 		std::vector<Bone> bones;
@@ -50,9 +51,8 @@ namespace flame
 
 		void set_armature_name(const std::filesystem::path& name) override;
 		void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) override;
-		void set_animation_transitions(const std::vector<std::tuple<std::string, std::string, float>>& transitions) override;
 
-		void play(uint name, float transition) override;
+		void play(uint name) override;
 		void stop() override;
 
 		void on_active() override;

@@ -106,11 +106,10 @@ namespace flame
 			if (auto ti = (TypeInfo_Tuple*)type; ti)
 			{
 				dst = dst.append_child(name.c_str());
-				auto off = 0; auto i = 0; auto p = (char*)src + offset;
-				for (auto t : ti->tis)
+				auto i = 0; auto p = (char*)src + offset;
+				for (auto& t : ti->tis)
 				{
-					dst.append_attribute(("item_" + str(i)).c_str()).set_value(t->serialize(p + off).c_str());
-					off += t->size;
+					dst.append_attribute(("item_" + str(i)).c_str()).set_value(t.first->serialize(p + t.second).c_str());
 					i++;
 				}
 			}
@@ -456,11 +455,10 @@ namespace flame
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						auto off = 0;  auto i = 0;
-						for (auto t : ti->tis)
+						auto i = 0;
+						for (auto& t : ti->tis)
 						{
-							t->unserialize(cc.attribute(("item_" + str(i)).c_str()).value(), pd + off);
-							off += t->size;
+							t.first->unserialize(cc.attribute(("item_" + str(i)).c_str()).value(), pd + t.second);
 							i++;
 						}
 					}

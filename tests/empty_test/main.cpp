@@ -1,25 +1,25 @@
-#include <flame/foundation/foundation.h>
+//#include <flame/foundation/foundation.h>
 
-using namespace flame;
+//using namespace flame;
 
+#include <string>
+#include <tuple>
 
+struct A
+{
+	double a;
+	float b;
+};
 
 int main(int argc, char** args) 
 {
-	auto f = 1000.f;
-	auto n = 0.1f;
-	auto z = -6.7f;
+	std::tuple<std::string, std::string, float> a;
+	std::get<0>(a) = "123";
+	std::get<1>(a) = "abc";
+	std::get<2>(a) = 0.5f;
 
-	mat4 Result(0.f);
-	Result[2][2] = f / (n - f);
-	Result[2][3] = -1;
-	Result[3][2] = -(f * n) / (f - n);
+	std::tuple<A, float> b;
 
-	auto wtf1 = Result * vec4(0, 0, z, 1);
-	wtf1 /= wtf1.w;
-
-	auto wtf = (f / (n - f)) * z - f * n / (f - n);
-	wtf = wtf / -z;
 
 	return 0;
 }
