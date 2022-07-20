@@ -347,14 +347,20 @@ namespace flame
 			if (auto c = src.child(name.c_str()); c)
 			{
 				auto ti = ((TypeInfo_VectorOfEnum*)type)->ti;
-				if (setter_idx == -1)
-				{
-					auto& vec = *(std::vector<int>*)((char*)dst + offset);
+				auto read = [&](std::vector<int>& vec) {
 					for (auto cc : c.children())
 					{
 						vec.resize(vec.size() + 1);
 						ti->unserialize(cc.attribute("v").value(), &vec[vec.size() - 1]);
 					}
+				};
+				if (setter_idx == -1)
+					read(*(std::vector<int>*)((char*)dst + offset));
+				else
+				{
+					std::vector<int> vec;
+					read(vec);
+					type->call_setter(&ui.functions[setter_idx], dst, &vec);
 				}
 			}
 			break;
@@ -363,6 +369,9 @@ namespace flame
 			{
 				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 				auto read = [&](std::vector<char>& vec) {
+					std::vector<pugi::xml_node> items;
+					for (auto cc : c.children())
+						items.push_back(cc);
 					auto len = 0;
 					for (auto cc : c.children())
 					{
