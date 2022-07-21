@@ -1042,7 +1042,7 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
+	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, int grass_field_id,
 		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
 	{
 		buf_terrain_ins.select_item(id);
@@ -1050,6 +1050,7 @@ namespace flame
 		buf_terrain_ins.set_var<"extent"_h>(extent);
 		buf_terrain_ins.set_var<"blocks"_h>(blocks);
 		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
+		buf_terrain_ins.set_var<"grass_field_id"_h>(grass_field_id);
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
@@ -1077,7 +1078,7 @@ namespace flame
 	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level)
 	{
 		buf_grassfield_ins.select_item(id);
-		buf_grassfield_ins.set_var<"tess_level"_h>(tess_level);
+		buf_grassfield_ins.set_var<"tess_level"_h>(min(tess_level, 64U));
 	}
 
 	int sRendererPrivate::register_sdf_instance(int id)

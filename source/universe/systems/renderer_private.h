@@ -48,7 +48,7 @@ namespace flame
 		mat4* set_armature_instance(uint id) override;
 
 		int register_terrain_instance(int id) override;
-		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, 
+		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, int grass_field_id,
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) override;
 
 		int register_grass_field_instance(int id) override;

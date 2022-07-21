@@ -33,7 +33,7 @@ namespace flame
 			case "instance"_h:
 				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-				if (use_grass_field)
+				if (grass_field_id != -1)
 					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level);
 				break;
 			case "draw"_h:
@@ -43,7 +43,7 @@ namespace flame
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 					break;
 				case "grass_field"_h:
-					if (use_grass_field)
+					if (grass_field_id != -1)
 						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 					break;
 				}
@@ -253,7 +253,7 @@ namespace flame
 	void cTerrainPrivate::on_inactive()
 	{
 		sRenderer::instance()->register_terrain_instance(instance_id);
-		if (use_grass_field)
+		if (grass_field_id != -1)
 			sRenderer::instance()->register_grass_field_instance(grass_field_id);
 		instance_id = -1;
 		grass_field_id = -1;

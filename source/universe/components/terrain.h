@@ -44,6 +44,8 @@ namespace flame
 		bool use_grass_field = false;
 		/// Reflect
 		uint grass_field_tess_level = 64;
+		/// Reflect
+		float grass_normal_limit = 0.9f;
 
 		graphics::ImagePtr height_map = nullptr;
 		graphics::ImagePtr normal_map = nullptr;
