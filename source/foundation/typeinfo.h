@@ -2329,12 +2329,34 @@ namespace flame
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
 
+		void copy(void* dst, const void* src) const override
+		{
+			auto& dst_vec = *(std::vector<int>*)dst;
+			auto& src_vec = *(std::vector<int>*)src;
+			dst_vec = src_vec;
+		}
+
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
 	};
+
+	inline void copy_npod_vector(void* dst, const void* src, TypeInfo* ti)
+	{
+		auto& dst_vec = *(std::vector<char>*)dst;
+		auto& src_vec = *(std::vector<char>*)src;
+		auto old_len = dst_vec.size() / ti->size;
+		auto new_len = src_vec.size() / ti->size;
+		for (auto i = new_len; i < old_len; i++)
+			ti->destroy((char*)dst_vec.data() + i * ti->size, false);
+		dst_vec.resize(new_len * ti->size);
+		for (auto i = old_len; i < new_len; i++)
+			ti->create((char*)dst_vec.data() + i * ti->size);
+		for (auto i = 0; i < new_len; i++)
+			ti->copy((char*)dst_vec.data() + i * ti->size, (char*)src_vec.data() + i * ti->size);
+	}
 
 	struct TypeInfo_VectorOfData : TypeInfo
 	{
@@ -2344,6 +2366,11 @@ namespace flame
 			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Data*)get(TagD, name, db);
+		}
+
+		void copy(void* dst, const void* src) const override
+		{
+			copy_npod_vector(dst, src, ti);
 		}
 
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
@@ -2363,6 +2390,11 @@ namespace flame
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
 
+		void copy(void* dst, const void* src) const override
+		{
+			copy_npod_vector(dst, src, ti);
+		}
+
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVU);
@@ -2380,6 +2412,11 @@ namespace flame
 			ti = (TypeInfo_Pair*)get(TagR, name, db);
 		}
 
+		void copy(void* dst, const void* src) const override
+		{
+			copy_npod_vector(dst, src, ti);
+		}
+
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVR);
@@ -2395,6 +2432,11 @@ namespace flame
 			TypeInfo(TagVT, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Tuple*)get(TagT, name, db);
+		}
+
+		void copy(void* dst, const void* src) const override
+		{
+			copy_npod_vector(dst, src, ti);
 		}
 
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override

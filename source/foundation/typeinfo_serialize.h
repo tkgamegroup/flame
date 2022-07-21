@@ -369,9 +369,6 @@ namespace flame
 			{
 				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 				auto read = [&](std::vector<char>& vec) {
-					std::vector<pugi::xml_node> items;
-					for (auto cc : c.children())
-						items.push_back(cc);
 					auto len = 0;
 					for (auto cc : c.children())
 					{

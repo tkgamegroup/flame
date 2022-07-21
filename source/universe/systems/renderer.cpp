@@ -579,6 +579,8 @@ namespace flame
 
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
+		iv_tars.assign(_targets.begin(), _targets.end());
+
 		if (_targets.empty())
 			return;
 
@@ -586,8 +588,6 @@ namespace flame
 
 		auto img0 = _targets.front()->image;
 		auto tar_size = img0->size;
-
-		iv_tars.assign(_targets.begin(), _targets.end());
 
 		auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
