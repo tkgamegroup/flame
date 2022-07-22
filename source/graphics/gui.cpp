@@ -450,15 +450,15 @@ namespace flame
 			native->mouse_listeners.add([](MouseButton btn, bool down) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseDown[btn] = down;
-				});
+			});
 			native->mousemove_listeners.add([](const ivec2& pos) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MousePos = ImVec2(pos.x, pos.y);
-				});
+			});
 			native->scroll_listeners.add([](int scroll) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseWheel = scroll;
-				});
+			});
 			native->key_listeners.add([](KeyboardKey key, bool down) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.KeysDown[key] = down;
@@ -472,10 +472,10 @@ namespace flame
 			native->char_listeners.add([](wchar_t ch) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.AddInputCharacter(ch);
-				});
+			});
 			native->resize_listeners.add([](const vec2&) {
 				gui_create_fbs();
-				});
+			});
 
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
 				{ "rp=" + str(imgui_rp) });

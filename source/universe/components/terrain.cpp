@@ -31,7 +31,7 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level,
+				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_id,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				if (grass_field_id != -1)
 					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level);
@@ -49,13 +49,13 @@ namespace flame
 				}
 				break;
 			}
-		}, "terrain"_h);
+			}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
-		}, "terrain"_h);
+			}, "terrain"_h);
 
 		node->mark_transform_dirty();
 	}
@@ -168,6 +168,30 @@ namespace flame
 
 		node->mark_drawing_dirty();
 		data_changed("material_name"_h);
+	}
+
+	void cTerrainPrivate::set_use_grass_field(bool v)
+	{
+		if (use_grass_field == v)
+			return;
+		use_grass_field = v;
+
+		if (use_grass_field)
+		{
+			if (grass_field_id == -1 && instance_id != -1)
+				grass_field_id = sRenderer::instance()->register_grass_field_instance(-1);
+		}
+		else
+		{
+			if (grass_field_id != -1)
+			{
+				sRenderer::instance()->register_grass_field_instance(grass_field_id);
+				grass_field_id = -1;
+			}
+		}
+
+		node->mark_drawing_dirty();
+		data_changed("use_grass_field"_h);
 	}
 
 	void cTerrainPrivate::update_normal_map()

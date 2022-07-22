@@ -16,20 +16,31 @@ layout(location = 2) out vec3 o_coordw;
 
 void main()
 {
-	vec3 bc;
-	bc.x = rand(p.zxy);
-	bc.y = rand(p.zyx) * (1.0 - bc.x);
-	bc.z = 1.0 - bc.x - bc.z;
-	vec3 p = gl_in[0].gl_Position.xyz * bc.x + gl_in[1].gl_Position.xyz * bc.y + gl_in[2].gl_Position.xyz * bc.z;
+	gl_Position = scene.proj_view * vec4(gl_in[0].gl_Position.xyz + vec3(0, 10, 0), 1.0);
+	EmitVertex();
+	gl_Position = scene.proj_view * vec4(gl_in[1].gl_Position.xyz + vec3(0, 10, 0), 1.0);
+	EmitVertex();
+	gl_Position = scene.proj_view * vec4(gl_in[2].gl_Position.xyz + vec3(0, 10, 0), 1.0);
+	EmitVertex();
 
-	vec3 iN = (i_normal[0] + i_normal[1] + i_normal[2]) / 3.0;
-	vec3 iT = (i_tangent[0] + i_tangent[1] + i_tangent[2]) / 3.0;
+	EndPrimitive();
+	return;
+
+	vec3 pp = (gl_in[0].gl_Position.xyz + gl_in[1].gl_Position.xyz + gl_in[2].gl_Position.xyz) / 3.0;
+	vec3 bc;
+	bc[0] = rand(pp.zxy);
+	bc[1] = rand(pp.zyx) * (1.0 - bc[0]);
+	bc[2] = 1.0 - bc[0] - bc[2];
+	vec3 p = gl_in[0].gl_Position.xyz * bc[0] + gl_in[1].gl_Position.xyz * bc[1] + gl_in[2].gl_Position.xyz * bc[2];
+
+	vec3 iN = i_normal[0] * bc[0] + i_normal[1] * bc[1] + i_normal[2] * bc[2];
+	vec3 iT = i_tangent[0] * bc[0] + i_tangent[1] * bc[1] + i_tangent[2] * bc[2];
 	vec3 iB = cross(iT, iN);
 
 	if (dot(iN, vec3(0, 1, 0)) > 0.9)
 	{
-		mat3 mat = rotation(iN, rand(p.xyz) * PI) *
-			rotation(iT, rand(p.xzy) * 0.25 * PI) * mat3(iT, iN, iB);
+		mat3 mat = rotation(iN, rand(pp.xyz) * PI) *
+			rotation(iT, rand(pp.xzy) * 0.25 * PI) * mat3(iT, iN, iB);
 
 		iT = mat[0];
 		iN = mat[1];
@@ -39,8 +50,8 @@ void main()
 		if (dot(oN, scene.camera_dir) > 0.0)
 			oN = -oN;
 
-		float width = (rand(p.yxz) * 2 - 1) * 0.02 + 0.05;
-		float height = (rand(p.yzx) * 2 - 1) * 0.3 + 0.5;
+		float width = (rand(pp.yxz) * 2 - 1) * 0.02 + 0.05;
+		float height = (rand(pp.yzx) * 2 - 1) * 0.3 + 0.5;
 		
 		o_normal = oN;
 		o_color = vec3(0.49, 0.36, 0.26);

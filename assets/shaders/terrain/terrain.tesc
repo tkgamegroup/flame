@@ -16,7 +16,6 @@ float tess_factor(vec4 p0, vec4 p1)
 	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
 	v = v * v;
 	v = 1.0 - v;
-#endif
 	return max(v * tess_level, 1.0);
 }
 
@@ -41,6 +40,7 @@ void main()
 	tess_level = terrain_instances[id].tess_level;
 #else
 	tess_level = grass_field_instances[terrain_instances[id].grass_field_id].tess_level;
+#endif
 
 	if (gl_InvocationID == 0)
 	{

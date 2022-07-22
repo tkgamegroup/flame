@@ -43,6 +43,8 @@ namespace flame
 		/// Reflect
 		bool use_grass_field = false;
 		/// Reflect
+		virtual void set_use_grass_field(bool v) = 0;
+		/// Reflect
 		uint grass_field_tess_level = 64;
 		/// Reflect
 		float grass_normal_limit = 0.9f;
