@@ -1,0 +1,5 @@
+file(GLOB_RECURSE source_files "*.h*" "*.c*")
+add_executable(html_server ${source_files})
+set_target_properties(html_server PROPERTIES FOLDER "tools")
+target_link_libraries(html_server flame_foundation)
+set_target_properties(html_server PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

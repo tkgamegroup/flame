@@ -12,99 +12,106 @@ namespace flame
 {
 	namespace network
 	{
-		static bool websocket_shakehand(SocketType type, int fd)
+		static bool websocket_shakehand(int fd)
 		{
-			if (type == SocketWeb)
-			{
 #ifdef USE_SHA1
-				int res;
+			int res;
 
-				fd_set rfds;
-				timeval timeout = { 1, 0 };
-				FD_ZERO(&rfds);
-				FD_SET(fd, &rfds);
-				res = select(-1, &rfds, nullptr, nullptr, &timeout);
+			fd_set rfds;
+			timeval timeout = { 1, 0 };
+			FD_ZERO(&rfds);
+			FD_SET(fd, &rfds);
+			res = select(-1, &rfds, nullptr, nullptr, &timeout);
 
-				if (res <= 0)
-				{
-					closesocket(fd);
-					return false;
-				}
-
-				uchar buf[1024 * 16];
-				auto ret = recv(fd, (char*)buf, _countof(buf), 0);
-
-				auto p = buf;
-
-				if (ret <= 0 || !(ret > 3 && p[0] == 'G' && p[1] == 'E' && p[2] == 'T'))
-				{
-					closesocket(fd);
-					return false;
-				}
-
-				p[ret] = 0;
-
-				std::regex reg_key(R"(Sec-WebSocket-Key: (.*))");
-
-				std::string req((char*)p);
-				auto lines = SUS::split(req, '\n');
-				for (auto& l : lines)
-				{
-					std::smatch res;
-					if (std::regex_search(l, res, reg_key))
-					{
-						std::string key = res[1];
-						SHA1 sha1;
-						sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-						auto str1 = sha1.final();
-						auto str2 = std::string();
-						str2.resize(sizeof(uint) * (str1.size() / 8));
-						{
-							auto dst = str2.data();
-							for (auto i = 0; i < str2.size(); i++)
-							{
-								uint v;
-								std::stringstream ss;
-								ss << std::hex << str2.substr(i * 8, 8);
-								ss >> v;
-								for (auto j = 0; j < 4; j++)
-									dst[j] = ((char*)(&v))[4 - j - 1];
-								dst += 4;
-							}
-						}
-						key = base64::encode(str2.data(), str2.size());
-
-						char reply[1024 * 16], time_str[128];
-						auto time = std::time(nullptr);
-						std::strftime(time_str, _countof(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
-						sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
-							"Content-Length: 0\r\n"
-							"Upgrade: websocket\r\n"
-							"Sec-Websocket-Accept: %s\r\n"
-							"Server: flame\r\n"
-							"Connection: Upgrade\r\n"
-							"Data: %s\r\n"
-							"\r\n", key.c_str(), time_str);
-						auto res = send(fd, reply, strlen(reply), 0);
-						assert(res > 0);
-					}
-				}
-
-				return true;
-#else
+			if (res <= 0)
+			{
+				closesocket(fd);
 				return false;
-#endif
 			}
-			else
-				return true;
+
+			char buf[2048];
+			auto ret = recv(fd, buf, countof(buf), 0);
+
+			auto p = buf;
+
+			if (ret <= 0 || !(ret > 3 && p[0] == 'G' && p[1] == 'E' && p[2] == 'T'))
+			{
+				closesocket(fd);
+				return false;
+			}
+
+			p[ret] = 0;
+
+			std::regex reg_key(R"(Sec-WebSocket-Key: (.*))");
+
+			std::string req((char*)p);
+			auto lines = SUS::split(req, '\n');
+			for (auto& l : lines)
+			{
+				std::smatch res;
+				if (std::regex_search(l, res, reg_key))
+				{
+					std::string key = res[1];
+					SHA1 sha1;
+					sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+					auto str1 = sha1.final();
+					auto str2 = std::string();
+					str2.resize(sizeof(uint) * (str1.size() / 8));
+					{
+						auto dst = str2.data();
+						for (auto i = 0; i < str2.size(); i++)
+						{
+							uint v;
+							std::stringstream ss;
+							ss << std::hex << str2.substr(i * 8, 8);
+							ss >> v;
+							for (auto j = 0; j < 4; j++)
+								dst[j] = ((char*)(&v))[4 - j - 1];
+							dst += 4;
+						}
+					}
+					key = base64::encode(str2.data(), str2.size());
+
+					char reply[1024 * 16], time_str[128];
+					auto time = std::time(nullptr);
+					std::strftime(time_str, _countof(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
+					sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
+						"Content-Length: 0\r\n"
+						"Upgrade: websocket\r\n"
+						"Sec-Websocket-Accept: %s\r\n"
+						"Server: flame\r\n"
+						"Connection: Upgrade\r\n"
+						"Data: %s\r\n"
+						"\r\n", key.c_str(), time_str);
+					auto res = send(fd, reply, strlen(reply), 0);
+					assert(res > 0);
+				}
+			}
+
+			return true;
+#else
+			return false;
+#endif
 		}
 
-		bool native_send(SocketType type, int fd, std::string_view msg)
+		bool socket_send(SocketType type, int fd, const std::string& msg)
 		{
 			auto size = (int)msg.size();
-			char buf[1024 * 64];
+			char buf[2048];
 
-			if (type == SocketWeb)
+			auto n_send = 0;
+
+			switch (type)
+			{
+			case SocketTcpRaw:
+				n_send = send(fd, msg.data(), size, 0);
+				break;
+			case SocketTcp:
+				memcpy(buf, &size, sizeof(uint));
+				memcpy(buf + sizeof(uint), msg.data(), size);
+				n_send = send(fd, buf, sizeof(uint) + size, 0);
+				break;
+			case SocketWeb:
 			{
 				auto p = buf;
 
@@ -135,152 +142,182 @@ namespace flame
 
 				memcpy(p, msg.data(), size);
 
-				return send(fd, (char*)buf, int(p - buf) + size, 0) > 0;
+				n_send = send(fd, buf, int(p - buf) + size, 0);
 			}
-			else
-			{
-				memcpy(buf, &size, sizeof(uint));
-				memcpy(buf + sizeof(uint), msg.data(), size);
-				return send(fd, buf, sizeof(uint) + size, 0) > 0;
+				break;
 			}
+
+			return n_send > 0;
 		}
 
-		bool native_recv(SocketType type, int fd, std::vector<std::string>& res)
+		bool socket_recv(SocketType type, int fd, std::vector<std::string>& res)
 		{
-			uchar buf[1024 * 64];
+			char buf[2048];
 
-			if (type == SocketWeb)
+			auto n_recv = 0;
+
+			switch (type)
 			{
-				auto n = recv(fd, (char*)buf, _countof(buf), 0);
+			case SocketTcpRaw:
+				n_recv = recv(fd, buf, countof(buf), 0);
+				res.emplace_back(buf, buf + n_recv);
+				break;
+			case SocketTcp:
+			{
+				auto n = recv(fd, buf, countof(buf), 0);
 				if (n <= 0)
-					return false;
-
-				auto p = buf;
-				while (n > 0)
+					n_recv = 0;
+				else
 				{
-					if (n < 2)
+					n_recv = n;
+
+					auto p = buf;
+					while (n > 0)
 					{
-						auto ret = recv(fd, (char*)p + n, 2 - n, 0);
-						if (ret <= 0)
-							return false;
-						n += ret;
-					}
-
-					uchar b1, b2;
-					b1 = *p++;
-					b2 = *p++;
-					n -= 2;
-
-					auto op = b1 & 0xf;
-					auto mask = (b2 & 128) != 0;
-					auto len = b2 & 127;
-
-					{
-						auto b = 0;
-						if (len == 126)
-							b = 2;
-						else if (len == 127)
-							b = 8;
-						if (mask)
-							b += 4;
-						if (n < b)
+						if (n < sizeof(uint))
 						{
-							auto ret = recv(fd, (char*)p + n, b - n, 0);
+							auto ret = recv(fd, (char*)p + n, sizeof(uint) - n, 0);
+							if (ret <= 0)
+							{
+								n_recv = 0;
+								break;
+							}
+							n += ret;
+						}
+
+						auto length = *(uint*)p;
+						p += 4;
+						n -= 4;
+
+						if (n < length)
+						{
+							auto ret = recv(fd, (char*)p + n, length - n, 0);
+							if (ret <= 0)
+							{
+								n_recv = 0;
+								break;
+							}
+							n += ret;
+						}
+
+						res.emplace_back(p, p + length);
+
+						p += length;
+						n -= length;
+					}
+				}
+			}
+				break;
+			case SocketWeb:
+			{
+				auto n = recv(fd, buf, countof(buf), 0);
+				if (n <= 0)
+					n_recv = 0;
+				else
+				{
+					n_recv = n;
+
+					auto p = buf;
+					while (n > 0)
+					{
+						if (n < 2)
+						{
+							auto ret = recv(fd, (char*)p + n, 2 - n, 0);
 							if (ret <= 0)
 								return false;
 							n += ret;
 						}
-					}
 
-					uint64 length = 0;
-
-					if (len <= 125)
-						length += len;
-					else if (len == 126)
-					{
-						length += (*p++) << 8;
-						length += *p++;
-
+						uchar b1, b2;
+						b1 = *p++;
+						b2 = *p++;
 						n -= 2;
+
+						auto op = b1 & 0xf;
+						auto mask = (b2 & 128) != 0;
+						auto len = b2 & 127;
+
+						{
+							auto b = 0;
+							if (len == 126)
+								b = 2;
+							else if (len == 127)
+								b = 8;
+							if (mask)
+								b += 4;
+							if (n < b)
+							{
+								auto ret = recv(fd, (char*)p + n, b - n, 0);
+								if (ret <= 0)
+								{
+									n_recv = 0;
+									break;
+								}
+								n += ret;
+							}
+						}
+
+						uint64 length = 0;
+
+						if (len <= 125)
+							length += len;
+						else if (len == 126)
+						{
+							length += (*p++) << 8;
+							length += *p++;
+
+							n -= 2;
+						}
+						else if (len == 127)
+						{
+							length += (*p++) << 56;
+							length += (*p++) << 48;
+							length += (*p++) << 40;
+							length += (*p++) << 32;
+
+							length += (*p++) << 24;
+							length += (*p++) << 16;
+							length += (*p++) << 8;
+							length += *p++;
+
+							n -= 8;
+						}
+
+						uint mask_key;
+						if (mask)
+						{
+							mask_key = *(uint*)p;
+
+							p += 4;
+							n -= 4;
+						}
+
+						if (n < length)
+						{
+							auto ret = recv(fd, (char*)p + n, length - n, 0);
+							if (ret <= 0)
+							{
+								n_recv = 0;
+								break;
+							}
+							n += ret;
+						}
+
+						for (auto i = 0; i < length; i++)
+							p[i] ^= ((char*)&mask_key)[i % 4];
+
+						if (op == 1)
+							res.emplace_back(p, p + length);
+
+						p += length;
+						n -= length;
 					}
-					else if (len == 127)
-					{
-						length += (*p++) << 56;
-						length += (*p++) << 48;
-						length += (*p++) << 40;
-						length += (*p++) << 32;
-
-						length += (*p++) << 24;
-						length += (*p++) << 16;
-						length += (*p++) << 8;
-						length += *p++;
-
-						n -= 8;
-					}
-
-					uint mask_key;
-					if (mask)
-					{
-						mask_key = *(uint*)p;
-
-						p += 4;
-						n -= 4;
-					}
-
-					if (n < length)
-					{
-						auto ret = recv(fd, (char*)p + n, length - n, 0);
-						if (ret <= 0)
-							return false;
-						n += ret;
-					}
-
-					for (auto i = 0; i < length; i++)
-						p[i] ^= ((char*)&mask_key)[i % 4];
-
-					if (op == 1)
-						res.push_back(std::string(p, p + length));
-
-					p += length;
-					n -= length;
 				}
-
-				return true;
 			}
-			else
-			{
-				auto n = recv(fd, (char*)buf, _countof(buf), 0);
-				if (n <= 0)
-					return false;
-				auto p = buf;
-				while (n > 0)
-				{
-					if (n < sizeof(uint))
-					{
-						auto ret = recv(fd, (char*)p + n, sizeof(uint) - n, 0);
-						if (ret <= 0)
-							return false;
-						n += ret;
-					}
-
-					auto length = *(uint*)p;
-					p += 4;
-					n -= 4;
-
-					if (n < length)
-					{
-						auto ret = recv(fd, (char*)p + n, length - n, 0);
-						if (ret <= 0)
-							return false;
-						n += ret;
-					}
-
-					res.push_back(std::string(p, p + length));
-
-					p += length;
-					n -= length;
-				}
+				break;
 			}
+
+			return n_recv > 0;
 		}
 
 		static bool initialized = false;
@@ -300,9 +337,9 @@ namespace flame
 			destroy_native_event(ev_ended);
 		}
 
-		void ClientPrivate::send(std::string_view msg)
+		void ClientPrivate::send(const std::string& msg)
 		{
-			native_send(type, fd, msg);
+			socket_send(type, fd, msg);
 		}
 
 		void ClientPrivate::stop(bool passive)
@@ -319,7 +356,7 @@ namespace flame
 
 		struct ClientCreate : Client::Create
 		{
-			ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override
+			ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(const std::string& msg)>& on_message, const std::function<void()>& on_close) override
 			{
 				initialize();
 
@@ -349,7 +386,7 @@ namespace flame
 					while (true)
 					{
 						std::vector<std::string> res;
-						if (!native_recv(type, c->fd, res))
+						if (!socket_recv(type, c->fd, res))
 						{
 							c->stop(true);
 							set_native_event(c->ev_ended);
@@ -417,17 +454,17 @@ namespace flame
 				c->stop(false);
 		}
 
-		void ServerPrivate::set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close)
+		void ServerPrivate::set_client(void* id, const std::function<void(const std::string& msg)>& on_message, const std::function<void()>& on_close)
 		{
 			auto client = (Client*)id;
 			client->on_message = on_message;
 			client->on_close = on_close;
 		}
 
-		void ServerPrivate::send(void* id, std::string_view msg, bool dgram)
+		void ServerPrivate::send(void* id, const std::string& msg, bool dgram)
 		{
 			if (!dgram)
-				native_send(type, ((Client*)id)->fd, msg);
+				socket_send(type, ((Client*)id)->fd, msg);
 			else
 			{
 				auto& da = *(DgramAddress*)id;
@@ -437,7 +474,7 @@ namespace flame
 
 		struct ServerCreate : Server::Create 
 		{
-			ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) override
+			ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, const std::string& msg)>& on_dgram, const std::function<void(void* id)>& on_connect) override
 			{
 				initialize();
 
@@ -533,7 +570,7 @@ namespace flame
 							while (true)
 							{
 								std::vector<std::string> res;
-								if (!native_recv(type, c->fd, res))
+								if (!socket_recv(type, c->fd, res))
 								{
 									c->stop(true);
 									set_native_event(c->ev_ended);
@@ -543,7 +580,7 @@ namespace flame
 								for (auto& r : res)
 									c->on_message(r);
 							}
-							}).detach();
+						}).detach();
 					}
 				}).detach();
 
@@ -559,9 +596,9 @@ namespace flame
 			destroy_native_event(ev_ended);
 		}
 
-		bool FrameSyncServerPrivate::send(uint idx, std::string_view msg)
+		bool FrameSyncServerPrivate::send(uint idx, const std::string& msg)
 		{
-			return native_send(type, fd_cs[idx], msg);
+			return socket_send(type, fd_cs[idx], msg);
 		}
 
 		void FrameSyncServerPrivate::stop()
@@ -602,7 +639,7 @@ namespace flame
 					if (fd == INVALID_SOCKET)
 						return nullptr;
 
-					if (!websocket_shakehand(type, fd))
+					if (type == SocketWeb && !websocket_shakehand(fd))
 						continue;
 
 					fd_cs.push_back(fd);
@@ -619,7 +656,7 @@ namespace flame
 					auto str = json.dump();
 					for (auto fd : fd_cs)
 					{
-						if (!native_send(type, fd, str))
+						if (!socket_send(type, fd, str))
 							return nullptr;
 					}
 				}
@@ -651,7 +688,7 @@ namespace flame
 							if (FD_ISSET(fd, &rfds))
 							{
 								std::vector<std::string> reqs;
-								if (!native_recv(type, fd, reqs))
+								if (!socket_recv(type, fd, reqs))
 								{
 									s->stop();
 									set_native_event(s->ev_ended);
@@ -692,7 +729,7 @@ namespace flame
 		}FrameSyncServer_create;
 		FrameSyncServer::Create& FrameSyncServer::create = FrameSyncServer_create;
 
-		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message)
+		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message)
 		{
 			int res;
 

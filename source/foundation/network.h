@@ -12,6 +12,7 @@ namespace flame
 
 		enum SocketType
 		{
+			SocketTcpRaw,
 			SocketTcp,
 			SocketWeb
 		};
@@ -20,11 +21,11 @@ namespace flame
 		{
 			virtual ~Client() {}
 
-			virtual void send(std::string_view msg) = 0;
+			virtual void send(const std::string& msg) = 0;
 
 			struct Create
 			{
-				virtual ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
+				virtual ClientPtr operator()(SocketType type, const char* ip, uint port, const std::function<void(const std::string& msg)>& on_message, const std::function<void()>& on_close) = 0;
 			};
 			FLAME_FOUNDATION_API static Create& create;
 		};
@@ -33,12 +34,12 @@ namespace flame
 		{
 			virtual ~Server() {}
 
-			virtual void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) = 0;
-			virtual void send(void* id, std::string_view msg, bool dgram = false) = 0;
+			virtual void set_client(void* id, const std::function<void(const std::string& msg)>& on_message, const std::function<void()>& on_close) = 0;
+			virtual void send(void* id, const std::string& msg, bool dgram = false) = 0;
 
 			struct Create
 			{
-				virtual ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, std::string_view msg)>& on_dgram, const std::function<void(void* id)>& on_connect) = 0;
+				virtual ServerPtr operator()(SocketType type, uint port, const std::function<void(void* id, const std::string& msg)>& on_dgram, const std::function<void(void* id)>& on_connect) = 0;
 			};
 			FLAME_FOUNDATION_API static Create& create;
 		};
@@ -47,7 +48,7 @@ namespace flame
 		{
 			virtual ~FrameSyncServer() {}
 
-			virtual bool send(uint idx, std::string_view msg) = 0;
+			virtual bool send(uint idx, const std::string& msg) = 0;
 
 			struct Create
 			{
@@ -57,6 +58,6 @@ namespace flame
 		};
 
 		// timeout: second
-		FLAME_FOUNDATION_API void board_cast(uint port, std::string_view msg, uint timeout, const std::function<void(const char* ip, std::string_view msg)>& on_message);
+		FLAME_FOUNDATION_API void board_cast(uint port, const std::string& msg, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message);
 	}
 }

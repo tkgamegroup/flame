@@ -13,7 +13,7 @@ namespace flame
 
 			int fd;
 
-			std::function<void(std::string_view msg)> on_message;
+			std::function<void(const std::string& msg)> on_message;
 			std::function<void()> on_close;
 
 			std::recursive_mutex mtx;
@@ -21,7 +21,7 @@ namespace flame
 
 			~ClientPrivate();
 
-			void send(std::string_view msg) override;
+			void send(const std::string& msg) override;
 			void stop(bool passive);
 		};
 
@@ -31,7 +31,7 @@ namespace flame
 			{
 				int fd;
 
-				std::function<void(std::string_view msg)> on_message;
+				std::function<void(const std::string& msg)> on_message;
 				std::function<void()> on_close;
 
 				std::recursive_mutex mtx;
@@ -49,7 +49,7 @@ namespace flame
 
 			std::vector<std::unique_ptr<Client>> cs;
 
-			std::function<void(void* id, std::string_view msg)> on_dgram;
+			std::function<void(void* id, const std::string& msg)> on_dgram;
 			std::function<void(void* id)> on_connect;
 
 			std::recursive_mutex mtx;
@@ -58,8 +58,8 @@ namespace flame
 
 			~ServerPrivate();
 
-			void set_client(void* id, const std::function<void(std::string_view msg)>& on_message, const std::function<void()>& on_close) override;
-			void send(void* id, std::string_view msg, bool dgram) override;
+			void set_client(void* id, const std::function<void(const std::string& msg)>& on_message, const std::function<void()>& on_close) override;
+			void send(void* id, const std::string& msg, bool dgram) override;
 			void stop();
 		};
 
@@ -78,7 +78,7 @@ namespace flame
 
 			~FrameSyncServerPrivate();
 
-			bool send(uint idx, std::string_view msg) override;
+			bool send(uint idx, const std::string& msg) override;
 			void stop();
 		};
 	}
