@@ -519,12 +519,12 @@ namespace flame
 					std::thread([=]() {
 						while (true)
 						{
-							char buf[1024 * 64];
+							char buf[2048];
 							sockaddr_in address;
 							int address_size = sizeof(address);
-							auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+							auto n_recv = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
 							std::lock_guard lock(s->mtx);
-							if (res <= 0)
+							if (n_recv <= 0)
 							{
 								if (s->fd_d)
 								{
@@ -537,7 +537,7 @@ namespace flame
 							DgramAddress da;
 							da.fd = s->fd_d;
 							da.paddr = (sockaddr*)&address;
-							s->on_dgram(&da, { buf, (size_t)res });
+							s->on_dgram(&da, { buf, (size_t)n_recv });
 						}
 						}).detach();
 				}
@@ -760,7 +760,7 @@ namespace flame
 						return;
 					}
 
-					char buf[1024 * 64];
+					char buf[2048];
 					sockaddr_in address;
 					int address_size = sizeof(address);
 					res = recvfrom(fd, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);

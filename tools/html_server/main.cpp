@@ -7,15 +7,18 @@ using namespace flame;
 using namespace flame::network;
 
 Server* http_server = nullptr;
-Server* rtp_server = nullptr;
+Server* rtp_stream_receiver = nullptr;
+Server* udp_stream_receiver = nullptr;
 
-void http_send_content(void* id, const std::string& content_type, const std::string& content)
+void http_send_content(void* id, const std::string& content_type, const std::string& content, const std::vector<std::pair<std::string, std::string>>& additional_header = {})
 {
 	std::string reply;
 	reply += "HTTP/1.1 200 OK\r\n";
 	reply += "Connection: Keep-Alive\r\n";
 	reply += std::format("Content-Type: {}\r\n", content_type);
 	reply += std::format("Content-Length: {}\r\n", (int)content.size());
+	for (auto& i : additional_header)
+		reply += std::format("X-{}: {}\r\n", i.first, i.second);
 	reply += "\r\n";
 	reply += content;
 	reply += "\r\n";
@@ -32,50 +35,87 @@ void http_send_file(void* id, const std::filesystem::path& path)
 	http_send_content(id, content_type, get_file_content(path));
 }
 
-struct StreamData
-{
-	uint n = 0;
-	std::string data[65536];
-	std::mutex mtx;
-};
+// streaming with ffmpeg:
+// ffmpeg -re -f dshow -i video="screen-capture-recorder":audio="virtual-audio-capturer" -c:v libx264 -c:a aac -movflags empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof -f mpegts udp://127.0.0.1:2345
 
-StreamData stream_data;
+const auto StreamPacketCount = 1000;
+uint stream_id = 1;
+std::vector<std::string> stream_datas;
+std::mutex stream_mtx;
+
+void append_stream_data(const std::string& data)
+{
+	stream_mtx.lock();
+	stream_datas.push_back(data);
+	if (stream_datas.size() % (StreamPacketCount * 2) == 0)
+	{
+		stream_datas.erase(stream_datas.begin(), stream_datas.begin() + StreamPacketCount);
+		stream_id++;
+
+		static auto first = true;
+		if (first)
+		{
+			first = false;
+			std::ofstream file(L"d:\\data\\test.mp4", std::ios::binary);
+			std::string send_data;
+			for (auto i = 0; i < stream_datas.size(); i++)
+				send_data += stream_datas[i];
+			file.write(send_data.data(), send_data.size());
+			file.close();
+		}
+	}
+	stream_mtx.unlock();
+}
 
 int main(int argc, char **args)
 {
-	Path::set_root(L"data", L"F:\\data");
+	Path::set_root(L"data", L"D:\\data");
 
 	http_server = Server::create(SocketTcpRaw, 80, nullptr, [](void* id) {
 		http_server->set_client(id, [id](const std::string& msg) {
 			auto lines = SUS::split(msg, '\n');
 			auto sp = SUS::split(lines[0], ' ');
-			auto req_str = s2w(sp[1]);
-			req_str.erase(req_str.begin());
-			if (req_str.empty())
-				req_str = L"index.html";
-			auto path = std::filesystem::current_path() / req_str; 
-			if (!std::filesystem::exists(path))
-				path = Path::get(req_str);
-			if (std::filesystem::exists(path))
-				http_send_file(id, path);
-			else if (req_str == L"stream")
+			if (sp[0] == "GET")
 			{
-				stream_data.mtx.lock();
-				if (stream_data.n == countof(stream_data.data))
+				auto sp2 = SUS::split(sp[1], '?');
+				auto req_str = s2w(sp2.front());
+				req_str.erase(req_str.begin());
+				if (req_str.empty())
+					req_str = L"index.html";
+				auto path = std::filesystem::current_path() / req_str;
+				if (!std::filesystem::exists(path))
+					path = Path::get(req_str);
+				if (std::filesystem::exists(path))
+					http_send_file(id, path);
+				else if (req_str == L"stream")
 				{
-					std::string data;
-					for (auto& d : stream_data.data)
-						data += d;
-					http_send_content(id, "video/mp4", data);
+					auto req_id = sp2.size() > 1 ? s2t<int>(sp2[1]) : -1;
+					if (req_id == -1 || req_id < stream_id)
+						req_id = stream_id;
+					auto ok = false;
+					while (!ok)
+					{
+						stream_mtx.lock();
+						if (stream_id * StreamPacketCount + stream_datas.size() > (req_id + 1) * StreamPacketCount)
+						{
+							std::string send_data;
+							auto base = (req_id - stream_id) * StreamPacketCount;
+							for (auto i = 0; i < StreamPacketCount; i++)
+								send_data += stream_datas[base + i];
+							http_send_content(id, "video/mp4", send_data, { {"stream_id", str(req_id + 1)} });
+							ok = true;
+						}
+						stream_mtx.unlock();
+						sleep(1);
+					}
 				}
-				stream_data.mtx.unlock();
 			}
 		}, []() {
 			int cut = 1; // disconnected
 		});
 	});
 
-	rtp_server = Server::create(SocketTcpRaw, 1234, [](void* id, const std::string& msg) {
+	rtp_stream_receiver = Server::create(SocketTcpRaw, 1234, [](void* id, const std::string& msg) {
 		auto data = msg.data();
 		auto data_end = msg.data() + msg.size();
 		struct RTPHeader
@@ -93,7 +133,7 @@ int main(int argc, char **args)
 		auto& header = *(RTPHeader*)data; 
 		data += sizeof(RTPHeader);
 		std::vector<uint> CSRCs(header.CSRC_count);
-		memcpy(CSRCs.data(), data, CSRCs.size() * sizeof(uint)); 
+		memcpy(CSRCs.data(), data, CSRCs.size() * sizeof(uint));
 		data += CSRCs.size() * sizeof(uint);
 		if (header.extension)
 		{
@@ -106,20 +146,14 @@ int main(int argc, char **args)
 			data += header.length * sizeof(uint);
 		}
 		//printf("timestamp: %d\n", header.timestamp);
-		printf("sequence number: %d, SSRC: %d, data-size: %d\n", header.sequence_number, header.SSRC, (int)(data_end - data));
+		//printf("sequence number: %d, SSRC: %d, data-size: %d\n", header.sequence_number, header.SSRC, (int)(data_end - data));
 
-		auto idx = header.sequence_number;
-		stream_data.mtx.lock();
-		if (stream_data.n < countof(stream_data.data))
-		{
-			if (stream_data.data[idx].empty())
-			{
-				stream_data.data[idx] = std::string(data, data_end);
-				stream_data.n++;
-				printf("data-number: %d\n", stream_data.n);
-			}
-		}
-		stream_data.mtx.unlock();
+		if (data_end > data)
+			append_stream_data(std::string(data, data_end));
+	}, nullptr);
+
+	udp_stream_receiver = Server::create(SocketTcpRaw, 2345, [](void* id, const std::string& msg) {
+		append_stream_data(msg);
 	}, nullptr);
 
 	while (true)

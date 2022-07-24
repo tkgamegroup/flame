@@ -26,7 +26,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 	std::vector<std::filesystem::path> cliff_models;
 
 	bool update_splash = true;
-	uint splash_layers = 0;
+	int splash_layers = 2;
 	float splash_bar1 = 45.f;
 	float splash_bar2 = 80.f;
 	float splash_bar3 = 90.f;
@@ -34,25 +34,10 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 
 	static void open(cTerrainPtr terrain)
 	{
-		auto material = terrain->material;
-		if (material)
-		{
-			auto dialog = new ProcedureTerrainDialog;
-			dialog->title = "Procedure Terrain";
-			dialog->terrain = terrain;
-			for (auto& d : material->shader_defines)
-			{
-				auto sp = SUS::split(d, '=');
-				auto _sp = SUS::split(sp.front(), ':');
-				if (_sp.back() == "LAYERS")
-				{
-					if (sp.size() > 1)
-						dialog->splash_layers = s2t<uint>(sp[1]);
-					break;
-				}
-			}
-			Dialog::open(dialog);
-		}
+		auto dialog = new ProcedureTerrainDialog;
+		dialog->title = "Procedure Terrain";
+		dialog->terrain = terrain;
+		Dialog::open(dialog);
 	}
 
 	void draw() override
@@ -73,6 +58,8 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			if (ImGui::CollapsingHeader("Splash"))
 			{
 				ImGui::Checkbox("Update##splash", &update_splash);
+				ImGui::InputInt("Layers", &splash_layers);
+				splash_layers = clamp(splash_layers, 1, 4);
 				switch (splash_layers)
 				{
 				case 2:

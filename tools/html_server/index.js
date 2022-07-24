@@ -6,29 +6,29 @@ video.addEventListener("play", on_video_play, false);
 video.addEventListener("pause", on_video_pause, false);
 
 var media_source;
+var source_buffer;
 
-function init_media_source()
-{
-	media_source = new window.MediaSource();
-	if (video.src)
-		window.URL.revokeObjectURL(video.src);
-	video.src = window.URL.createObjectURL(media_source);
-}
-
-init_media_source();
+media_source = new MediaSource();
+video.src = URL.createObjectURL(media_source);
+media_source.addEventListener('sourceopen', function () {
+	source_buffer = media_source.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+	//make_request("data/test.mp4", xhr_ready);
+}, false);
 
 var xhr;
 
 function on_video_play(e)
 {
-	make_request("stream", xhr_ready);
+	//make_request("stream?-1", xhr_ready);
 }
 
 function on_video_pause(e)
 {
-    xhr.removeEventListener("load", xhr_ready, false);
-    xhr.abort();
-    init_media_source();
+	//if (!xhr)
+	//	return;
+ //   xhr.removeEventListener("load", xhr_ready, false);
+ //   xhr.abort();
+ //   init_media_source();
 }
 
 function make_request(url, callback)
@@ -42,24 +42,15 @@ function make_request(url, callback)
 
 function xhr_ready(e)
 {
-	var src = e.targetp;
+	var src = e.target;
 	if (src.status != 200)
 		return;
 
-	var source_buffer;
-	if (media_source.sourceBuffers.length > 0)
-		source_buffer = media_source.sourceBuffers[0];
-	else
-	{
-		source_buffer = media_source.addSourceBuffer("video/mp4");
-		/*
-		source_buffer.addEventListener("updateend", function(){
-			if (video.currentTime === 0 && video.readyState > 0)
-				video.currentTime = source_buffer.bnffered.start(0);
-		}, false)
-		*/
-	}
+	source_buffer.addEventListener("updateend", function () {
+		media_source.endOfStream();
+		video.play();
+	}, false);
 	source_buffer.appendBuffer(src.response);
 
-	xhr = make_request("stream", xhr_ready);
+	//xhr = make_request("stream?" + src.getResponseHeader('X-stream_id'), xhr_ready);
 }
