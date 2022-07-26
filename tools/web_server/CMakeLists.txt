@@ -1,4 +1,4 @@
-file(GLOB_RECURSE source_files "*.h*" "*.c*")
+file(GLOB_RECURSE source_files "*.h" "*.hpp" "*.c" "*.cpp")
 add_executable(web_server ${source_files})
 set_target_properties(web_server PROPERTIES FOLDER "tools")
 target_link_libraries(web_server flame_foundation)

@@ -160,7 +160,10 @@ namespace flame
 			{
 			case SocketTcpRaw:
 				n_recv = recv(fd, buf, countof(buf), 0);
-				res.emplace_back(buf, buf + n_recv);
+				if (n_recv <= 0)
+					n_recv = 0;
+				else
+					res.emplace_back(buf, buf + n_recv);
 				break;
 			case SocketTcp:
 			{
