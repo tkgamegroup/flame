@@ -88,7 +88,7 @@ namespace flame
 			ImageUsageFlags additional_usage;
 		};
 
-		extern std::vector<ImagePtr> all_images;
+		extern std::vector<ImagePtr> images;
 		extern std::vector<LoadedImage> loaded_images;
 		extern std::vector<std::unique_ptr<SamplerT>> samplers;
 	}

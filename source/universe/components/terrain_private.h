@@ -18,6 +18,7 @@ namespace flame
 		void set_material_name(const std::filesystem::path& name) override;
 
 		void set_use_grass_field(bool v) override;
+		void set_grass_texture_name(const std::filesystem::path& name) override;
 
 		void update_normal_map() override;
 

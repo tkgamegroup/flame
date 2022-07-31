@@ -8,6 +8,7 @@
 #include <flame/graphics/extension.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
+#include <flame/graphics/debug.h>
 
 View_Project view_project;
 
@@ -20,12 +21,17 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 {
 	explorer.reset(assets_path);
 
-	if (ev_watcher)
+	if (flame_file_watcher)
 	{
-		set_native_event(ev_watcher);
-		ev_watcher = nullptr;
+		set_native_event(flame_file_watcher);
+		flame_file_watcher = nullptr;
 	}
-	ev_watcher = add_file_watcher(assets_path, [this](FileChangeFlags flags, const std::filesystem::path& path) {
+	if (assets_file_watcher)
+	{
+		set_native_event(assets_file_watcher);
+		assets_file_watcher = nullptr;
+	}
+	auto file_watcher = [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
 		auto it = changed_paths.find(path);
 		if (it == changed_paths.end())
@@ -33,7 +39,9 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 		else
 			it->second = (FileChangeFlags)(it->second | flags);
 		mtx_changed_paths.unlock();
-	}, true, false);
+	};
+	flame_file_watcher = add_file_watcher(Path::get(L"flame"), file_watcher, true, false);
+	assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
 }
 
 void View_Project::init()
@@ -307,18 +315,54 @@ void View_Project::on_draw()
 
 		explorer.open_folder(current_path.empty() ? nullptr : explorer.find_folder(current_path));
 
-		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>> changed_assets;
+		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>>	changed_assets;
+		std::pair<std::vector<graphics::ShaderPtr>, uint>						shaders;
+		std::pair<std::vector<graphics::GraphicsPipelinePtr>, uint>				graphics_pipelines;
+		std::vector<graphics::ShaderPtr>										changed_shaders;
+		std::vector<graphics::GraphicsPipelinePtr>								changed_pipelines;
+		auto get_shaders = [&]() {
+			if (shaders.second < frames)
+			{
+				shaders.first = graphics::Debug::get_shaders();
+				shaders.second = frames;
+			}
+		};
+		auto get_graphics_pipelines = [&]() {
+			if (graphics_pipelines.second < frames)
+			{
+				graphics_pipelines.first = graphics::Debug::get_graphics_pipelines();
+				graphics_pipelines.second = frames;
+			}
+		};
 		for (auto& p : changed_files)
 		{
 			if ((p.second & FileModified) || (p.second & FileRemoved) || (p.second & FileRenamed))
 			{
-				auto asset = AssetManagemant::find(p.first);
-				if (asset)
+				if (auto asset = AssetManagemant::find(p.first); asset)
 				{
 					if (asset->active)
 						changed_assets.emplace_back(asset, p.first);
 					else
 						asset->active = true;
+				}
+				auto ext = p.first.extension();
+				if (ext == L".glsl" || ext == L".vert" || ext == L".frag" || ext == L".tesc" || ext == L".tese" || ext == L".geom")
+				{
+					get_shaders();
+					for (auto sd : shaders.first)
+					{
+						if (sd->filename == p.first)
+							changed_shaders.push_back(sd);
+					}
+				}
+				else if (ext == L".pipeline")
+				{
+					get_graphics_pipelines();
+					for (auto pl : graphics_pipelines.first)
+					{
+						if (pl->filename == p.first)
+							changed_pipelines.push_back(pl);
+					}
 				}
 			}
 		}
@@ -354,6 +398,46 @@ void View_Project::on_draw()
 				for (auto& a : affected_attributes)
 					std::get<1>(a)->set_value(std::get<0>(a), &std::get<2>(a));
 			}
+		}
+		if (!changed_shaders.empty())
+		{
+			get_graphics_pipelines();
+			for (auto sd : changed_shaders)
+			{
+				for (auto pl : graphics_pipelines.first)
+				{
+					for (auto _sd : pl->shaders)
+					{
+						if (sd == _sd)
+						{
+							auto found = false;
+							for (auto _pl : changed_pipelines)
+							{
+								if (pl == _pl)
+								{
+									found = true;
+									break;
+								}
+							}
+							if (!found)
+								changed_pipelines.push_back(pl);
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (!changed_shaders.empty() || !changed_pipelines.empty())
+			graphics::Queue::get()->wait_idle();
+		if (!changed_shaders.empty())
+		{
+			for (auto sd : changed_shaders)
+				sd->recreate();
+		}
+		if (!changed_pipelines.empty())
+		{
+			for (auto pl : changed_pipelines)
+				pl->recreate();
 		}
 
 		changed_paths.clear();

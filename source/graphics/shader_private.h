@@ -81,7 +81,9 @@ namespace flame
 
 			uint ref = 0;
 
+			ShaderPrivate();
 			~ShaderPrivate();
+			void recreate() override;
 
 			static ShaderPtr load_from_res(const std::filesystem::path& filename);
 		};
@@ -96,8 +98,10 @@ namespace flame
 
 			uint ref = 0;
 
+			GraphicsPipelinePrivate();
 			~GraphicsPipelinePrivate();
 			VkPipeline get_dynamic_pipeline(RenderpassPtr rp, uint sp);
+			void recreate() override;
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline
@@ -112,7 +116,9 @@ namespace flame
 		extern std::unique_ptr<DescriptorPoolT>						descriptorset_pool;
 		extern std::vector<std::unique_ptr<DescriptorSetLayoutT>>	loaded_descriptorsetlayouts;
 		extern std::vector<std::unique_ptr<PipelineLayoutT>>		loaded_pipelinelayouts;
+		extern std::vector<ShaderPtr>								shaders;
 		extern std::vector<std::unique_ptr<ShaderT>>				loaded_shaders;
+		extern std::vector<GraphicsPipelinePtr>						graphics_pipelines;
 		extern std::vector<std::unique_ptr<GraphicsPipelineT>>		loaded_graphics_pipelines;
 		extern std::vector<std::unique_ptr<ComputePipelineT>>		loaded_compute_pipelines;
 	}

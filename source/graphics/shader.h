@@ -185,6 +185,8 @@ namespace flame
 
 			virtual ~Shader() {}
 
+			virtual void recreate() = 0;
+
 			struct Create
 			{
 				virtual ShaderPtr operator()(ShaderStageFlags type, const std::string& content, const std::vector<std::string>& defines, 
@@ -272,6 +274,8 @@ namespace flame
 			bool dynamic_renderpass = false;
 
 			virtual ~GraphicsPipeline() {}
+
+			virtual void recreate() = 0;
 
 			inline ShaderPtr vert() const
 			{

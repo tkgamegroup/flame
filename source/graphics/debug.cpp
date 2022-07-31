@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "image_private.h"
+#include "shader_private.h"
 
 #ifdef HAS_RENDERDOC
 #include RENDERDOC_HEADER
@@ -18,14 +19,32 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DebugGetAllImages : Debug::GetAllImages
+		struct DebugGetImages : Debug::GetImages
 		{
 			std::vector<ImagePtr> operator()() override
 			{
-				return all_images;
+				return images;
 			}
-		}Debug_get_all_images;
-		Debug::GetAllImages& Debug::get_all_images = Debug_get_all_images;
+		}Debug_get_images;
+		Debug::GetImages& Debug::get_images = Debug_get_images;
+
+		struct DebugGetShaders : Debug::GetShaders
+		{
+			std::vector<ShaderPtr> operator()() override
+			{
+				return shaders;
+			}
+		}Debug_get_shaders;
+		Debug::GetShaders& Debug::get_shaders = Debug_get_shaders;
+
+		struct DebugGetGraphicsPipelines : Debug::GetGraphicsPipelines
+		{
+			std::vector<GraphicsPipelinePtr> operator()() override
+			{
+				return graphics_pipelines;
+			}
+		}Debug_get_graphics_pipelines;
+		Debug::GetGraphicsPipelines& Debug::get_graphics_pipelines = Debug_get_graphics_pipelines;
 
 		void Debug::start_capture_frame()
 		{

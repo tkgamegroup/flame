@@ -1075,10 +1075,11 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level)
+	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level, int texture_id)
 	{
 		buf_grassfield_ins.select_item(id);
 		buf_grassfield_ins.set_var<"tess_level"_h>(min(tess_level, 64U));
+		buf_grassfield_ins.set_var<"texture_id"_h>(texture_id);
 	}
 
 	int sRendererPrivate::register_sdf_instance(int id)
@@ -1172,6 +1173,8 @@ namespace flame
 		buf_scene.set_var<"tan_hf_fovy"_h>((float)tan(radians(camera->fovy * 0.5f)));
 		buf_scene.set_var<"camera_coord"_h>(camera->node->g_pos);
 		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
+		buf_scene.set_var<"camera_right"_h>(camera->node->g_rot[0]);
+		buf_scene.set_var<"camera_up"_h>(camera->node->g_rot[1]);
 		buf_scene.set_var<"view"_h>(camera->view_mat);
 		buf_scene.set_var<"view_inv"_h>(camera->view_mat_inv);
 		buf_scene.set_var<"proj"_h>(camera->proj_mat);

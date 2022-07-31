@@ -16,6 +16,8 @@ namespace flame
 		graphics::Queue::get()->wait_idle();
 		if (height_map)
 			graphics::Image::release(height_map);
+		if (splash_map)
+			graphics::Image::release(splash_map);
 		if (normal_map)
 			delete normal_map;
 		if (tangent_map)
@@ -34,7 +36,7 @@ namespace flame
 				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_id,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				if (grass_field_id != -1)
-					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level);
+					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level, grass_texture_id);
 				break;
 			case "draw"_h:
 				switch (draw_data.category)
@@ -49,13 +51,13 @@ namespace flame
 				}
 				break;
 			}
-			}, "terrain"_h);
+		}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
-			}, "terrain"_h);
+		}, "terrain"_h);
 
 		node->mark_transform_dirty();
 	}
@@ -192,6 +194,29 @@ namespace flame
 
 		node->mark_drawing_dirty();
 		data_changed("use_grass_field"_h);
+	}
+
+	void cTerrainPrivate::set_grass_texture_name(const std::filesystem::path& name)
+	{
+		if (grass_texture_name == name)
+			return;
+		grass_texture_name = name;
+
+		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true) : nullptr;
+		if (grass_texture != _texture)
+		{
+			if (grass_texture_id != -1)
+				sRenderer::instance()->release_texture_res(grass_texture_id);
+			if (grass_texture)
+				graphics::Image::release(grass_texture);
+			grass_texture = _texture;
+			grass_texture_id = material ? sRenderer::instance()->get_texture_res(grass_texture->get_view(), nullptr, -1) : -1;
+		}
+		else if (_texture)
+			graphics::Image::release(_texture);
+
+		node->mark_drawing_dirty();
+		data_changed("grass_texture_name"_h);
 	}
 
 	void cTerrainPrivate::update_normal_map()

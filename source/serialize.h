@@ -503,6 +503,15 @@ namespace flame
 			return FileTypeModel;
 		return FileTypeUnknown;
 	}
+	
+	inline uint64 get_file_length(const std::filesystem::path& filename)
+	{
+		std::ifstream file(filename, std::ios::binary);
+		if (!file.good())
+			return 0;
+		file.seekg(0, std::ios::end);
+		return file.tellg();
+	}
 
 	inline std::string get_file_content(const std::filesystem::path& filename)
 	{

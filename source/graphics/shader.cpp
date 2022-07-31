@@ -18,7 +18,9 @@ namespace flame
 		std::unique_ptr<DescriptorPoolT>					descriptorset_pool;
 		std::vector<std::unique_ptr<DescriptorSetLayoutT>>	loaded_descriptorsetlayouts;
 		std::vector<std::unique_ptr<PipelineLayoutT>>		loaded_pipelinelayouts;
+		std::vector<ShaderPtr>								shaders;
 		std::vector<std::unique_ptr<ShaderT>>				loaded_shaders;
+		std::vector<GraphicsPipelinePtr>					graphics_pipelines;
 		std::vector<std::unique_ptr<GraphicsPipelineT>>		loaded_graphics_pipelines;
 		std::vector<std::unique_ptr<ComputePipelineT>>		loaded_compute_pipelines;
 
@@ -228,7 +230,8 @@ namespace flame
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
 			if (stage != ShaderStageComp)
 				temp_content += "#extension GL_ARB_separate_shader_objects : enable\n";
-			temp_content += "\n#define SET 0\n\n";
+			temp_content += "\n";
+
 			std::vector<std::pair<std::string, std::string>> defines;
 			for (auto& d : _defines)
 			{
@@ -248,6 +251,7 @@ namespace flame
 					temp_content += " " + d.second;
 				temp_content += "\n";
 			}
+			temp_content += "\n\n#define SET 0\n\n";
 
 			std::vector<std::filesystem::path> dependencies;
 
@@ -1078,12 +1082,50 @@ namespace flame
 		}PipelineLayout_release;
 		PipelineLayout::Release& PipelineLayout::release = PipelineLayout_release;
 
+		ShaderPrivate::ShaderPrivate()
+		{
+			shaders.push_back(this);
+		}
+
 		ShaderPrivate::~ShaderPrivate()
 		{
 			if (app_exiting) return;
 
-			vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
-			unregister_object(vk_module);
+			std::erase_if(shaders, [&](const auto& i) {
+				return i == this;
+			});
+
+			if (vk_module)
+			{
+				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+				unregister_object(vk_module);
+			}
+		}
+
+		void ShaderPrivate::recreate()
+		{
+			if (!filename.empty() && get_file_length(filename) > 0)
+			{
+				auto res_path = filename;
+				res_path += defines_to_hash_str(defines);
+				res_path += L".res";
+				if (compile_shader(type, filename, defines, res_path))
+				{
+					auto new_sd = ShaderPrivate::load_from_res(res_path);
+					if (new_sd)
+					{
+						db = std::move(new_sd->db);
+						in_ui = new_sd->in_ui;
+						out_ui = new_sd->out_ui;
+
+						vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+						unregister_object(vk_module);
+						vk_module = new_sd->vk_module;
+						new_sd->vk_module = 0;
+						delete new_sd;
+					}
+				}
+			}
 		}
 
 		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)
@@ -1473,9 +1515,18 @@ namespace flame
 			*ret = nullptr;
 		}
 
+		GraphicsPipelinePrivate::GraphicsPipelinePrivate()
+		{
+			graphics_pipelines.push_back(this);
+		}
+
 		GraphicsPipelinePrivate::~GraphicsPipelinePrivate()
 		{
 			if (app_exiting) return;
+
+			std::erase_if(graphics_pipelines, [&](const auto& i) {
+				return i == this;
+			});
 
 			if (!filename.empty())
 			{
@@ -1511,10 +1562,43 @@ namespace flame
 			info.renderpass = rp;
 			info.subpass_index = sp;
 			auto new_pl = create(info);
+			if (!new_pl)
+				return nullptr;
 			auto ret = new_pl->vk_pipeline;
 			new_pl->vk_pipeline = nullptr;
 			renderpass_variants.emplace(rp, ret);
 			return ret;
+		}
+
+		void GraphicsPipelinePrivate::recreate()
+		{
+			GraphicsPipelineInfo info = *this;
+			GraphicsPipelinePtr new_pl = nullptr;
+			if (!filename.empty() && get_file_length(filename) > 0)
+			{
+				load_pipeline(PipelineGraphics, filename, defines, (void**)&new_pl);
+				if (!new_pl)
+					return;
+			}
+			else
+			{
+				auto new_pl = create(info);
+				if (!new_pl)
+					return;
+			}
+
+			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
+			unregister_object(vk_pipeline);
+			vk_pipeline = new_pl->vk_pipeline;
+			new_pl->vk_pipeline = 0;
+			delete new_pl;
+
+			for (auto& v : renderpass_variants)
+			{
+				vkDestroyPipeline(device->vk_device, v.second, nullptr);
+				unregister_object(v.second);
+			}
+			renderpass_variants.clear();
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create

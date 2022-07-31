@@ -13,20 +13,20 @@ namespace flame
 {
 	namespace graphics
 	{
-		std::vector<ImagePtr> all_images;
+		std::vector<ImagePtr> images;
 		std::vector<LoadedImage> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> samplers;
 
 		ImagePrivate::ImagePrivate()
 		{
-			all_images.push_back(this);
+			images.push_back(this);
 		}
 
 		ImagePrivate::~ImagePrivate()
 		{
 			if (app_exiting) return;
 
-			std::erase_if(all_images, [&](const auto& i) {
+			std::erase_if(images, [&](const auto& i) {
 				return i == this;
 			});
 

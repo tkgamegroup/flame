@@ -9,6 +9,8 @@ layout (set = SET, binding = 0) uniform Scene
 	
 	vec3 camera_coord;
 	vec3 camera_dir;
+	vec3 camera_right;
+	vec3 camera_up;
 
 	mat4 view;
 	mat4 view_inv;

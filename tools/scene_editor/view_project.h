@@ -9,7 +9,8 @@ struct View_Project : View
 {
 	graphics::ExplorerAbstract explorer;
 
-	void* ev_watcher = nullptr;
+	void* flame_file_watcher = nullptr;
+	void* assets_file_watcher = nullptr;
 	std::mutex mtx_changed_paths;
 	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 

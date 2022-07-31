@@ -48,15 +48,21 @@ namespace flame
 		uint grass_field_tess_level = 64;
 		/// Reflect
 		float grass_normal_limit = 0.9f;
+		/// Reflect
+		std::filesystem::path grass_texture_name;
+		/// Reflect
+		virtual void set_grass_texture_name(const std::filesystem::path& name) = 0;
 
 		graphics::ImagePtr height_map = nullptr;
 		graphics::ImagePtr normal_map = nullptr;
 		graphics::ImagePtr tangent_map = nullptr;
 		graphics::ImagePtr splash_map = nullptr;
+		graphics::ImagePtr grass_texture = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
 		int instance_id = -1;
 		int grass_field_id = -1;
+		int grass_texture_id = -1;
 
 		virtual void update_normal_map() = 0;
 

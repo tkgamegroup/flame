@@ -634,9 +634,9 @@ namespace flame
 		}
 	}
 
-	void do_file_watch(void* event_end, bool all_changes, const std::filesystem::path& path, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback)
+	void do_file_watch(void* event_end, bool all_changes, const std::filesystem::path& dir, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback)
 	{
-		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+		auto dir_handle = CreateFileW(dir.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
@@ -701,7 +701,11 @@ namespace flame
 				}
 
 				if (all_changes || type == FileModified)
-					callback(type, path / (WCHAR*)p->FileName);
+				{
+					auto path = dir / (WCHAR*)p->FileName;
+					path.make_preferred();
+					callback(type, path);
+				}
 
 				if (p->NextEntryOffset <= 0)
 					break;

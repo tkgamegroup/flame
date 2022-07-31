@@ -46,10 +46,6 @@ namespace flame
 				}
 			}
 
-			/*
-			Validation Error: [ VUID-vkCmdDraw-None-02699 ] Object 0: handle = 0xcf1ef100000001fc, type = VK_OBJECT_TYPE_DESCRIPTOR_SET; | MessageID = 0x1608dec0 | Descriptor set VkDescriptorSet 0xcf1ef100000001fc[] encountered the following validation error at vkCmdDraw time: Descriptor in binding #0 index 0 is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call. The Vulkan spec states: Descriptors in each bound descriptor set, specified via vkCmdBindDescriptorSets, must be valid if they are statically used by the VkPipeline bound to the pipeline bind point used by this command (https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/1.3-extensions/vkspec.html#VUID-vkCmdDraw-None-02699)
-			*/
-
 			return VK_FALSE;
 		}
 
