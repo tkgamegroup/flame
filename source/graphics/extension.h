@@ -102,10 +102,10 @@ namespace flame
 				}
 			}
 
-			void create(UdtInfo* _ui, uint _array_capacity = 1)
+			void create(UdtInfo* _ui, uint _array_capacity = 1, uint _size = 0)
 			{
 				ui = _ui;
-				create(ui->size, _array_capacity);
+				create(_size > 0 ? _size : ui->size, _array_capacity);
 			}
 
 			void create_with_array_type(UdtInfo* _ui)
@@ -113,9 +113,9 @@ namespace flame
 				auto& vi = _ui->variables[0];
 				auto vui = vi.type->retrive_ui();
 				if (vui)
-					create(vi.type->retrive_ui(), vi.array_size);
+					create(vi.type->retrive_ui(), vi.array_size, vi.array_stride);
 				else
-					create(vi.type->size, vi.array_size);
+					create(vi.array_stride, vi.array_size);
 			}
 
 			inline uint item_offset()

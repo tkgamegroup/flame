@@ -17,6 +17,7 @@ using namespace flame;
 struct ProcedureTerrainDialog : ImGui::Dialog
 {
 	cTerrainPtr terrain;
+	std::vector<vec3> site_postions;
 	bool update_height = true;
 	int voronoi_sites_count = 20;
 	int voronoi_layer1_precentage = 50;
@@ -116,7 +117,6 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			};
 
 			std::vector<Vector2> site_postions_xz;
-			std::vector<vec3> site_postions;
 			for (int i = 0; i < voronoi_sites_count; ++i)
 				site_postions_xz.push_back(Vector2{ distribution(generator), distribution(generator) });
 
@@ -516,26 +516,73 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		}
 		if (update_splash)
 		{
-			graphics::InstanceCommandBuffer cb(nullptr);
-			auto fb = splash_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
-			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\auto_splash.pipeline",
-				{ "rp=" + str(fb->renderpass),
-				  "frag:LAYERS=" + str(splash_layers) });
-			graphics::PipelineResourceManager<FLAME_UID> prm;
-			prm.init(pl->layout);
+			{
+				graphics::InstanceCommandBuffer cb(nullptr);
+				auto fb = splash_map->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear);
+				auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_normal.pipeline",
+					{ "rp=" + str(fb->renderpass),
+					  "frag:LAYERS=" + str(splash_layers) });
+				graphics::PipelineResourceManager<FLAME_UID> prm;
+				prm.init(pl->layout);
 
-			cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
-			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
-			cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
-			cb->bind_pipeline(pl);
-			prm.set_pc_var<"bar"_h>(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
-			prm.set_pc_var<"transition"_h>(splash_transition);
-			prm.push_constant(cb.get());
-			cb->bind_descriptor_set(0, terrain->normal_map->get_shader_read_src());
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
-			cb.excute();
+				cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
+				cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
+				cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
+				cb->bind_pipeline(pl);
+				prm.set_pc_var<"bar"_h>(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
+				prm.set_pc_var<"transition"_h>(splash_transition);
+				prm.push_constant(cb.get());
+				cb->bind_descriptor_set(0, terrain->normal_map->get_shader_read_src());
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+				cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
+				cb.excute();
+			}
+
+			{
+				graphics::InstanceCommandBuffer cb(nullptr);
+				std::unique_ptr<graphics::Image> temp_splash(graphics::Image::create(splash_map->format, splash_map->size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+				auto fb = temp_splash->get_shader_write_dst(0, 0, graphics::AttachmentLoadDontCare);
+				auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_region.pipeline",
+					{ "rp=" + str(fb->renderpass) });
+				graphics::PipelineResourceManager<FLAME_UID> prm;
+				prm.init(pl->layout);
+
+				graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage> buf_sd_circles;
+				graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage> buf_sd_ori_rects;
+				auto dsl = prm.pll->dsls[0];
+				buf_sd_circles.create_with_array_type(dsl->get_buf_ui("SdCircles"_h));
+				buf_sd_ori_rects.create_with_array_type(dsl->get_buf_ui("SdOriRects"_h));
+				std::unique_ptr<graphics::DescriptorSet> ds(graphics::DescriptorSet::create(nullptr, dsl));
+				ds->set_buffer("SdCircles"_h, 0, buf_sd_circles.buf.get());
+				ds->set_buffer("SdOriRects"_h, 0, buf_sd_ori_rects.buf.get());
+				ds->set_image("img_src"_h, 0, splash_map->get_view(), nullptr);
+
+				for (auto& pos : site_postions)
+				{
+					buf_sd_circles.set_var<"coord"_h>(pos.xz());
+					buf_sd_circles.set_var<"radius"_h>(5.f);
+					buf_sd_circles.next_item();
+				}
+				buf_sd_circles.upload(cb.get());
+
+				cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
+				cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
+				cb->begin_renderpass(nullptr, fb);
+				cb->bind_pipeline(pl);
+				prm.set_pc_var<"screen_size"_h>(terrain->extent.xz());
+				prm.set_pc_var<"channel"_h>(2U);
+				prm.set_pc_var<"distance"_h>(1.f);
+				prm.set_pc_var<"merge_k"_h>(0.2f);
+				prm.set_pc_var<"sd_circles_count"_h>((uint)site_postions.size());
+				prm.set_pc_var<"sd_ori_rect_count"_h>((uint)0);
+				prm.push_constant(cb.get());
+				prm.set_ds(""_h, ds.get());
+				prm.bind_dss(cb.get());
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+				cb.excute();
+			}
 
 			splash_map->save(splash_map->filename);
 			auto asset = AssetManagemant::find(Path::get(splash_map->filename));

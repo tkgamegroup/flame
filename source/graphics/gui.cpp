@@ -685,6 +685,8 @@ namespace flame
 
 		void release_icon(const std::filesystem::path& _path)
 		{
+			graphics::Queue::get()->wait_idle();
+
 			auto path = parse_icon_path(_path);
 			if (path == _path)
 			{

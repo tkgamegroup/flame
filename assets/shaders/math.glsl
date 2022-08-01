@@ -39,6 +39,100 @@ float linear_depth(float near, float far, float d /* -1, +1 */)
 	return 2.0 * near * far / (far + near - d * (far - near));
 }
 
+struct SdCircle
+{
+	vec2 coord;
+	float radius;
+};
+
+struct SdOriRect
+{
+	vec2 point_a;
+	vec2 point_b;
+	float thickness;
+};
+
+struct SdSphere
+{
+	vec3 coord;
+	float radius;
+};
+
+struct SdfInstance
+{
+	uint boxes_count;
+	SdBox boxes[64];
+	uint spheres_count;
+	SdSphere spheres[64];
+};
+
+flaot sd_circle(vec2 p, float r)
+{
+	return length(p) - r;
+}
+
+float sd_ori_box(vec2 p, vec2 a, vec2 b, float th)
+{
+	float l = length(b - a);
+	vec2 d = (b - a) / l;
+	vec2 q = (p - (a + b) * 0.5);
+	q = mat2(d.x, -d.y, d.y, d.x) * q;
+	q = abs(q) - vec2(l, th) * 0.5;
+	return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
+}
+
+float sd_sphere(vec3 p, float s) 
+{
+    return length(p) - s;
+}
+
+float ud_box(vec3 p, vec3 b) 
+{
+    return length(max(abs(p) - b, 0.0));
+}
+
+float ud_round_box(vec3 p, vec3 b, float r) 
+{
+    return length(max(abs(p) - b, 0.0)) - r;
+}
+
+float op_smooth_union( float d1, float d2, float k )
+{
+    float h = max(k-abs(d1-d2),0.0);
+    return min(d1, d2) - h*h*0.25/k;
+}
+
+float op_smooth_subtraction( float d1, float d2, float k )
+{
+    float h = max(k-abs(-d1-d2),0.0);
+    return max(-d1, d2) + h*h*0.25/k;
+}
+
+float interpolate(float v, float a, float b, float t)
+{
+	float a0 = a - t * 0.5;
+	float a1 = a + t * 0.5;
+	float b0 = b - t * 0.5;
+	float b1 = b + t * 0.5;
+	if (v <= a0 || v >= b1)
+		return 0.f;
+	if (v >= a1 && v <= b0)
+		return 1.f;
+	if (v < a1)
+	{
+		if (a0 < 0)
+			return 1.f;
+		return 1.f - (a1 - v) / t;
+	}
+	else if (v > b0)
+	{
+		if (b1 > 1)
+			return 1.f;
+		return 1.f - (v - b0) / t;
+	}
+	return 0.f;
+}
+
 vec3 cube_coord(vec3 v)
 {
 	return vec3(v.x, v.y, v.z);

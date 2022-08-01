@@ -34,7 +34,6 @@ void http_send_file(void* id, const std::filesystem::path& path)
 }
 
 // streaming with ffmpeg:
-// ffmpeg -re -f dshow -i video="screen-capture-recorder":audio="virtual-audio-capturer" -c:v libx264 -c:a aac -movflags empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof -f mpegts udp://127.0.0.1:2345
 // ffmpeg -re -f dshow -i video="screen-capture-recorder":audio="virtual-audio-capturer" -c:v libx264 -c:a aac -keyint_min 150 -g 150 -f hls -hls_time 2 -hls_flags split_by_time -t 10 D:\data\out.m3u8
 
 int main(int argc, char **args)

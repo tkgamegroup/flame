@@ -50,20 +50,6 @@ struct SdBox
 	vec3 extent;
 };
 
-struct SdSphere
-{
-	vec3 coord;
-	float radius;
-};
-
-struct SdfInstance
-{
-	uint boxes_count;
-	SdBox boxes[64];
-	uint spheres_count;
-	SdSphere spheres[64];
-};
-
 layout(set = SET, binding = 4) buffer readonly SdfInstances
 {
 	SdfInstance sdf_instances[256];

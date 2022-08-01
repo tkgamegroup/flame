@@ -37,8 +37,12 @@ namespace flame
 			sRenderer::instance()->release_material_res(material_res_id);
 		if (auto model_and_index = parse_name(mesh_name); !model_and_index.first.empty())
 			AssetManagemant::release_asset(Path::get(model_and_index.first));
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
 		if (model)
 			graphics::Model::release(model);
+		if (material)
+			graphics::Material::release(material);
 	}
 
 	void cMeshPrivate::on_init()
@@ -126,7 +130,11 @@ namespace flame
 	{
 		if (material_name == name)
 			return;
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
 		material_name = name;
+		if (!material_name.empty())
+			AssetManagemant::get_asset(Path::get(material_name));
 
 		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)

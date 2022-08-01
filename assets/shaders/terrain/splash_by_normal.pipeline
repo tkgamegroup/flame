@@ -20,34 +20,11 @@ layout (set = SET, binding = 0) uniform sampler2D img_normal;
 @
 
 @frag
+#include "../math.glsl"
+
 layout (location = 0) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_color;
-
-float interpolate(float v, float a, float b, float t)
-{
-	float a0 = a - t * 0.5;
-	float a1 = a + t * 0.5;
-	float b0 = b - t * 0.5;
-	float b1 = b + t * 0.5;
-	if (v <= a0 || v >= b1)
-		return 0.f;
-	if (v >= a1 && v <= b0)
-		return 1.f;
-	if (v < a1)
-	{
-		if (a0 < 0)
-			return 1.f;
-		return 1.f - (a1 - v) / t;
-	}
-	else if (v > b0)
-	{
-		if (b1 > 1)
-			return 1.f;
-		return 1.f - (v - b0) / t;
-	}
-	return 0.f;
-}
 
 void main()
 {

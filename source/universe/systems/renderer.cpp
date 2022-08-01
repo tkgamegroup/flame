@@ -79,10 +79,10 @@ namespace flame
 	graphics::PipelineResourceManager<FLAME_UID> prm_luma;
 	graphics::PipelineResourceManager<FLAME_UID> prm_tone;
 
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false> buf_idx;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx_arm;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false> buf_idx_arm;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx_arm;
+	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx_arm;
 
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
@@ -1037,6 +1037,7 @@ namespace flame
 			ds_instance->set_image("terrain_height_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_normal_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_tangent_maps"_h, id, img_black->get_view(), nullptr);
+			ds_instance->set_image("terrain_splash_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;

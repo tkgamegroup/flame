@@ -14,10 +14,26 @@ namespace flame
 		node->measurers.remove("terrain"_h);
 
 		graphics::Queue::get()->wait_idle();
+		if (material_res_id != -1)
+			sRenderer::instance()->release_material_res(material_res_id);
+		if (grass_texture_id != -1)
+			sRenderer::instance()->release_texture_res(grass_texture_id);
+		if (!height_map_name.empty())
+			AssetManagemant::release_asset(Path::get(height_map_name));
+		if (!splash_map_name.empty())
+			AssetManagemant::release_asset(Path::get(splash_map_name));
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
+		if (!grass_texture_name.empty())
+			AssetManagemant::release_asset(Path::get(grass_texture_name));
 		if (height_map)
 			graphics::Image::release(height_map);
 		if (splash_map)
 			graphics::Image::release(splash_map);
+		if (grass_texture)
+			graphics::Image::release(grass_texture);
+		if (material)
+			graphics::Material::release(material);
 		if (normal_map)
 			delete normal_map;
 		if (tangent_map)
@@ -153,7 +169,11 @@ namespace flame
 	{
 		if (material_name == name)
 			return;
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
 		material_name = name;
+		if (!material_name.empty())
+			AssetManagemant::get_asset(Path::get(material_name));
 
 		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)
@@ -200,7 +220,11 @@ namespace flame
 	{
 		if (grass_texture_name == name)
 			return;
+		if (!grass_texture_name.empty())
+			AssetManagemant::release_asset(Path::get(grass_texture_name));
 		grass_texture_name = name;
+		if (!grass_texture_name.empty())
+			AssetManagemant::get_asset(Path::get(grass_texture_name));
 
 		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true) : nullptr;
 		if (grass_texture != _texture)
@@ -210,7 +234,7 @@ namespace flame
 			if (grass_texture)
 				graphics::Image::release(grass_texture);
 			grass_texture = _texture;
-			grass_texture_id = material ? sRenderer::instance()->get_texture_res(grass_texture->get_view(), nullptr, -1) : -1;
+			grass_texture_id = grass_texture ? sRenderer::instance()->get_texture_res(grass_texture->get_view(), nullptr, -1) : -1;
 		}
 		else if (_texture)
 			graphics::Image::release(_texture);
