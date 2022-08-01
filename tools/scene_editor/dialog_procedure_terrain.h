@@ -17,7 +17,7 @@ using namespace flame;
 struct ProcedureTerrainDialog : ImGui::Dialog
 {
 	cTerrainPtr terrain;
-	std::vector<vec3> site_postions;
+	std::vector<vec3> site_positions;
 	bool update_height = true;
 	int voronoi_sites_count = 20;
 	int voronoi_layer1_precentage = 50;
@@ -39,6 +39,20 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		dialog->title = "Procedure Terrain";
 		dialog->terrain = terrain;
 		Dialog::open(dialog);
+
+		if (terrain->height_map)
+		{
+			auto height_map_info_fn = terrain->height_map->filename;
+			height_map_info_fn += L".info";
+			std::ifstream height_map_info(Path::get(height_map_info_fn));
+			if (height_map_info.good())
+			{
+				LineReader info(height_map_info);
+				info.read_block("sites:");
+				unserialize_text(info, &dialog->site_positions);
+				height_map_info.close();
+			}
+		}
 	}
 
 	void draw() override
@@ -181,14 +195,14 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				diagram = get_diagram(site_postions_xz);
 			}
 
-			site_postions.resize(site_postions_xz.size());
-			for (auto i = 0; i < site_postions.size(); i++)
+			site_positions.resize(site_postions_xz.size());
+			for (auto i = 0; i < site_positions.size(); i++)
 			{
 				auto& p = site_postions_xz[i];
-				site_postions[i] = vec3(p.x, 0.f, p.y);
+				site_positions[i] = vec3(p.x, 0.f, p.y);
 			}
 
-			for (auto i = 0; i < site_postions.size(); i++)
+			for (auto i = 0; i < site_positions.size(); i++)
 			{
 				auto value = 0.f;
 				if (distribution(generator) * 100.f > voronoi_layer1_precentage)
@@ -201,23 +215,23 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 							value += 0.25f;
 					}
 				}
-				site_postions[i].y = value;
+				site_positions[i].y = value;
 			}
-			for (auto i = 0; i < site_postions.size(); i++)
+			for (auto i = 0; i < site_positions.size(); i++)
 			{
-				auto self_height = site_postions[i].y;
+				auto self_height = site_positions[i].y;
 				auto max_height = 0.f;
 				for (auto edge : get_site_edges(diagram.getSite(i)))
 				{
 					if (auto oth_edge = edge->twin; oth_edge)
 					{
 						auto oth_idx = oth_edge->incidentFace->site->index;
-						auto height = site_postions[oth_idx].y;
+						auto height = site_positions[oth_idx].y;
 						if (height < self_height)
 							max_height = max(max_height, height);
 					}
 				}
-				site_postions[i].y = min(site_postions[i].y + 0.25f, site_postions[i].y);
+				site_positions[i].y = min(site_positions[i].y + 0.25f, site_positions[i].y);
 			}
 
 			const auto MaxVertices = 10000;
@@ -251,7 +265,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			prm.push_constant(cb.get());
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 
-			for (auto i = 0; i < site_postions.size(); i++)
+			for (auto i = 0; i < site_positions.size(); i++)
 			{
 				auto vertices = get_site_vertices(diagram.getSite(i));
 				auto vtx_off = buf_vtx.item_offset();
@@ -261,7 +275,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 					{
 						buf_vtx.set_var<"i_pos"_h>(vertices[j] * 2.f - 1.f);
 						buf_vtx.set_var<"i_uv"_h>(vertices[j]);
-						buf_vtx.set_var<"i_val_base"_h>(site_postions[i].y);
+						buf_vtx.set_var<"i_val_base"_h>(site_positions[i].y);
 						buf_vtx.next_item();
 					}
 
@@ -274,7 +288,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				auto slope_width = 8.f / terrain->extent.x;
 				auto slope_length = 6.f / terrain->extent.x;
 
-				std::vector<bool> site_seen(site_postions.size(), false);
+				std::vector<bool> site_seen(site_positions.size(), false);
 				std::vector<std::vector<VoronoiDiagram::HalfEdge*>> regions;
 				std::function<void(int, int, float)> form_region;
 				form_region = [&](int site_idx, int region_idx, float height) {
@@ -287,7 +301,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 						if (auto oth_edge = edge->twin; oth_edge)
 						{
 							auto oth_idx = oth_edge->incidentFace->site->index;
-							auto oth_height = site_postions[oth_idx].y;
+							auto oth_height = site_positions[oth_idx].y;
 							if (oth_height < height && height - oth_height < 0.3f)
 								region.push_back(edge);
 							else if (oth_height == height)
@@ -295,12 +309,12 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 						}
 					}
 				};
-				for (auto i = 0; i < site_postions.size(); i++)
+				for (auto i = 0; i < site_positions.size(); i++)
 				{
 					if (!site_seen[i])
 					{
 						regions.emplace_back();
-						form_region(i, regions.size() - 1, site_postions[i].y);
+						form_region(i, regions.size() - 1, site_positions[i].y);
 					}
 				}
 				for (auto& r : regions)
@@ -327,8 +341,8 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 								auto pc = pb + perbi * slope_length;
 								auto pd = pa + perbi * slope_length;
 
-								auto hi_height = site_postions[edge->incidentFace->site->index].y;
-								auto lo_height = site_postions[edge->twin->incidentFace->site->index].y;
+								auto hi_height = site_positions[edge->incidentFace->site->index].y;
+								auto lo_height = site_positions[edge->twin->incidentFace->site->index].y;
 
 								auto vtx_off = buf_vtx.item_offset();
 								if (vtx_off + 4 <= MaxVertices)
@@ -379,7 +393,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			height_map_info_fn += L".info";
 			std::ofstream height_map_info(Path::get(height_map_info_fn));
 			height_map_info << "sites:" << std::endl;
-			serialize_text(&site_postions, height_map_info);
+			serialize_text(&site_positions, height_map_info);
 			height_map_info.close();
 
 			if (update_cliff)
@@ -418,9 +432,9 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				if (false) // TODO: find a good way to generate cliff
 				{
 					auto ext = terrain->extent;
-					for (auto i = 0; i < site_postions.size(); i++)
+					for (auto i = 0; i < site_positions.size(); i++)
 					{
-						auto self_height = site_postions[i].y;
+						auto self_height = site_positions[i].y;
 						if (self_height > 0.f)
 						{
 							auto site = diagram.getSite(i);
@@ -429,7 +443,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 							{
 								if (auto oth_edge = edge->twin; oth_edge)
 								{
-									auto oth_height = site_postions[oth_edge->incidentFace->site->index].y;
+									auto oth_height = site_positions[oth_edge->incidentFace->site->index].y;
 									if (self_height > oth_height + 0.0001f)
 									{
 										auto pa = to_glm(edge->origin->point);
@@ -540,8 +554,9 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			}
 
 			{
+				auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 				graphics::InstanceCommandBuffer cb(nullptr);
-				std::unique_ptr<graphics::Image> temp_splash(graphics::Image::create(splash_map->format, splash_map->size, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+				std::unique_ptr<graphics::Image> temp_splash(graphics::Image::create(splash_map->format, splash_map->size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 				auto fb = temp_splash->get_shader_write_dst(0, 0, graphics::AttachmentLoadDontCare);
 				auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_region.pipeline",
 					{ "rp=" + str(fb->renderpass) });
@@ -556,11 +571,13 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				std::unique_ptr<graphics::DescriptorSet> ds(graphics::DescriptorSet::create(nullptr, dsl));
 				ds->set_buffer("SdCircles"_h, 0, buf_sd_circles.buf.get());
 				ds->set_buffer("SdOriRects"_h, 0, buf_sd_ori_rects.buf.get());
-				ds->set_image("img_src"_h, 0, splash_map->get_view(), nullptr);
+				ds->set_image("img_src"_h, 0, splash_map->get_view(), sp_nearest);
+				ds->update();
 
-				for (auto& pos : site_postions)
+				auto ext_xz = terrain->extent.xz();
+				for (auto& pos : site_positions)
 				{
-					buf_sd_circles.set_var<"coord"_h>(pos.xz());
+					buf_sd_circles.set_var<"coord"_h>(pos.xz() * ext_xz);
 					buf_sd_circles.set_var<"radius"_h>(5.f);
 					buf_sd_circles.next_item();
 				}
@@ -570,18 +587,28 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
 				cb->begin_renderpass(nullptr, fb);
 				cb->bind_pipeline(pl);
-				prm.set_pc_var<"screen_size"_h>(terrain->extent.xz());
+				prm.set_pc_var<"screen_size"_h>(ext_xz);
 				prm.set_pc_var<"channel"_h>(2U);
 				prm.set_pc_var<"distance"_h>(1.f);
 				prm.set_pc_var<"merge_k"_h>(0.2f);
-				prm.set_pc_var<"sd_circles_count"_h>((uint)site_postions.size());
-				prm.set_pc_var<"sd_ori_rect_count"_h>((uint)0);
+				prm.set_pc_var<"sd_circles_count"_h>((uint)site_positions.size());
+				prm.set_pc_var<"sd_ori_rects_count"_h>((uint)0);
 				prm.push_constant(cb.get());
 				prm.set_ds(""_h, ds.get());
 				prm.bind_dss(cb.get());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
+				cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
+				cb->image_barrier(temp_splash.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, splash_map->get_shader_write_dst());
+				cb->bind_pipeline(graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(fb->renderpass) }));
+				cb->bind_descriptor_set(0, temp_splash->get_shader_read_src(0, 0, sp_nearest));
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+				cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
+				graphics::Debug::start_capture_frame();
 				cb.excute();
+				graphics::Debug::end_capture_frame();
 			}
 
 			splash_map->save(splash_map->filename);

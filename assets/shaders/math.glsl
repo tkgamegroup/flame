@@ -39,34 +39,7 @@ float linear_depth(float near, float far, float d /* -1, +1 */)
 	return 2.0 * near * far / (far + near - d * (far - near));
 }
 
-struct SdCircle
-{
-	vec2 coord;
-	float radius;
-};
-
-struct SdOriRect
-{
-	vec2 point_a;
-	vec2 point_b;
-	float thickness;
-};
-
-struct SdSphere
-{
-	vec3 coord;
-	float radius;
-};
-
-struct SdfInstance
-{
-	uint boxes_count;
-	SdBox boxes[64];
-	uint spheres_count;
-	SdSphere spheres[64];
-};
-
-flaot sd_circle(vec2 p, float r)
+float sd_circle(vec2 p, float r)
 {
 	return length(p) - r;
 }

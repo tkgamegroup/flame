@@ -14,11 +14,24 @@ layout (push_constant) uniform PushConstant
 {
 	vec2 screen_size;
 	uint channel;
-	flaot distance;
+	float distance;
 	float merge_k;
 	uint sd_circles_count;
-	uint sd_ori_rect_count;
+	uint sd_ori_rects_count;
 }pc;
+
+struct SdCircle
+{
+	vec2 coord;
+	float radius;
+};
+
+struct SdOriRect
+{
+	vec2 point_a;
+	vec2 point_b;
+	float thickness;
+};
 
 layout(set = SET, binding = 0) buffer readonly SdCircles
 {
@@ -59,7 +72,7 @@ float scene_sdf(vec2 p, float merge_k)
 void main()
 {
 	vec2 pos = i_uv * pc.screen_size;
-	flaot d = scene_sdf(pos);
+	float d = scene_sdf(pos, pc.merge_k);
 	float value = d < pc.distance ? (pc.distance - max(d, 0.0)) / pc.distance : 0.0;
 	vec4 color = texture(img_src, i_uv);
 	color *= 1.0 - value;

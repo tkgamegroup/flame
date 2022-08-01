@@ -44,10 +44,24 @@ layout(set = SET, binding = 3) buffer readonly GrassFieldInstances
 	GrassField grass_field_instances[8];
 };
 
+struct SdSphere
+{
+	vec3 coord;
+	float radius;
+};
+
 struct SdBox
 {
 	vec3 coord;
 	vec3 extent;
+};
+
+struct SdfInstance
+{
+	uint boxes_count;
+	SdBox boxes[64];
+	uint spheres_count;
+	SdSphere spheres[64];
 };
 
 layout(set = SET, binding = 4) buffer readonly SdfInstances
