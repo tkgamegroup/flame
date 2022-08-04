@@ -66,6 +66,12 @@ namespace flame
 					break;
 				}
 				break;
+			case "draw_opaque"_h:
+
+				break;
+			case "draw_transparent"_h:
+
+				break;
 			}
 		}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {

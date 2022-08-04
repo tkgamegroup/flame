@@ -142,7 +142,7 @@ namespace flame
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect> buf_idr;
 		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> draw_idxs;
 
-		void collect_idrs(graphics::CommandBufferPtr cb, uint mod2 = 0);
+		void collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
 		void draw(graphics::CommandBufferPtr cb);
 	};
 
@@ -155,7 +155,8 @@ namespace flame
 
 	std::vector<cNodePtr> camera_culled_nodes;
 	DrawData draw_data;
-	MeshBuckets mesh_buckets;
+	MeshBuckets opa_mesh_buckets;
+	MeshBuckets trs_mesh_buckets;
 	DirShadow dir_shadows[DirShadowMaxCount];
 
 	std::vector<PrimitiveDraw> debug_primitives;
@@ -167,8 +168,6 @@ namespace flame
 		auto it = mr.pls.find(key);
 		if (it != mr.pls.end())
 			return it->second;
-
-		rotate(mat4(1.f), 90.f, vec3(1.f));
 
 		std::vector<std::string> defines;
 		switch (type)
@@ -182,11 +181,16 @@ namespace flame
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
-			else
+			else if (mr.opa)
 			{
 				defines.push_back("rp=" + str(rp_gbuf));
 				defines.push_back("pll=" + str(pll_gbuf));
 				defines.push_back("all_shader:GBUFFER_PASS");
+			}
+			else
+			{
+				defines.push_back("rp=" + str(rp_fwd));
+				defines.push_back("pll=" + str(pll_fwd));
 			}
 			break;
 		case "grass_field"_h:
@@ -296,7 +300,7 @@ namespace flame
 		return ret;
 	}
 
-	void MeshBuckets::collect_idrs(graphics::CommandBufferPtr cb, uint mod2)
+	void MeshBuckets::collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
 	{
 		for (auto i = 0; i < draw_data.meshes.size(); i++)
 		{
@@ -510,7 +514,7 @@ namespace flame
 		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
-		mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
+		opa_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
@@ -864,11 +868,10 @@ namespace flame
 		{
 			graphics::InstanceCommandBuffer cb;
 			buf_material_info.select_item(id);
-			buf_material_info.set_var<"opaque"_h>((int)res.mat->opaque);
 			buf_material_info.set_var<"color"_h>(res.mat->color);
 			buf_material_info.set_var<"metallic"_h>(res.mat->metallic);
 			buf_material_info.set_var<"roughness"_h>(res.mat->roughness);
-			buf_material_info.set_var<"alpha_test"_h>(res.mat->alpha_test);
+			buf_material_info.set_var<"opaque"_h>((int)res.mat->opaque);
 			buf_material_info.set_var<"f"_h>(res.mat->float_values);
 			buf_material_info.set_var<"i"_h>(res.mat->int_values);
 			auto ids = (int*)buf_material_info.var_addr<"map_indices"_h>();
@@ -1267,12 +1270,12 @@ namespace flame
 		buf_light_grid.upload(cb);
 		buf_light_info.upload(cb);
 
-		for (auto& d : mesh_buckets.draw_idxs)
+		for (auto& d : opa_mesh_buckets.draw_idxs)
 			d.second.second.clear();
 		draw_data.reset("draw"_h, "mesh"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		mesh_buckets.collect_idrs(cb);
+		opa_mesh_buckets.collect_idrs(draw_data, cb);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
@@ -1286,7 +1289,7 @@ namespace flame
 
 		prm_gbuf.bind_dss(cb);
 
-		mesh_buckets.draw(cb);
+		opa_mesh_buckets.draw(cb);
 
 		draw_data.reset("draw"_h, "terrain"_h);
 		for (auto n : camera_culled_nodes)
@@ -1403,7 +1406,7 @@ namespace flame
 						debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
 					}
 
-					s.mesh_buckets[lv].collect_idrs(cb, "OCCLUDER_PASS"_h);
+					s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
 				}
 
 				buf_dir_shadow.set_var<"splits"_h>(splits);

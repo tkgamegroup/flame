@@ -26,6 +26,12 @@ namespace flame
 				if (draw_data.category == "sdf"_h)
 					draw_data.sdfs.emplace_back(instance_id, 0);
 				break;
+			case "draw_opaque"_h:
+
+				break;
+			case "draw_transparent"_h:
+
+				break;
 			}
 		}, "sdf"_h);
 		node->measurers.add([this](AABB* ret) {

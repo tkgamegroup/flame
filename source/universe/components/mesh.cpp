@@ -61,6 +61,12 @@ namespace flame
 				if (draw_data.category == "mesh"_h)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
+			case "draw_opaque"_h:
+
+				break;
+			case "draw_transparent"_h:
+
+				break;
 			case "occulder"_h:
 				if (cast_shadow)
 				{
