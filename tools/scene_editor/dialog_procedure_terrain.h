@@ -9,6 +9,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/terrain.h>
+#include <flame/universe/components/nav_obstacle.h>
 
 #include <FortuneAlgorithm/FortuneAlgorithm.h>
 
@@ -28,6 +29,8 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 	float splash_bar2 = 80.f;
 	float splash_bar3 = 90.f;
 	float splash_transition = 4.f;
+
+	std::string spawn_settings_file = "assets\\terrain\\spawn_settings.txt";
 
 	static void open(cTerrainPtr terrain)
 	{
@@ -93,6 +96,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 	{
 		graphics::Queue::get()->wait_idle();
 
+		auto extent = terrain->extent;
 		auto height_map = terrain->height_map;
 		auto splash_map = terrain->splash_map;
 
@@ -258,8 +262,8 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			}
 		}
 
-		auto slope_width = 8.f / terrain->extent.x;
-		auto slope_length = 6.f / terrain->extent.x;
+		auto slope_width = 8.f / extent.x;
+		auto slope_length = 6.f / extent.x;
 
 		std::vector<bool> site_seen(site_positions.size(), false);
 		std::vector<std::vector<VoronoiDiagram::HalfEdge*>> regions;
@@ -417,7 +421,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 
 			auto n_circles = 0U;
 			auto n_ori_rects = 0U;
-			auto ext_xz = terrain->extent.xz();
+			auto ext_xz = extent.xz();
 			for (auto& pos : site_positions)
 			{
 				buf_sd_circles.set_var<"coord"_h>(pos.xz() * ext_xz);
@@ -495,5 +499,71 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		splash_map->save(splash_map->filename);
 		if (auto asset = AssetManagemant::find(Path::get(splash_map->filename)); asset)
 			asset->active = false;
+
+		struct SpawnSetting
+		{
+			EntityPtr e;
+			cNavObstaclePtr o;
+			uint channel;
+			uint count;
+		};
+		std::vector<SpawnSetting> spawn_settings;
+		for (auto& setting : get_file_lines(Path::get(spawn_settings_file)))
+		{
+			if (setting.empty())
+				continue;
+			auto sp = SUS::split(setting);
+			if (sp.size() < 3)
+				continue;
+			auto e = Entity::create();
+			e->load(sp[0]);
+			auto nav_obstacle = e->get_component_t<cNavObstacle>();
+			if (nav_obstacle)
+				spawn_settings.push_back({ e, nav_obstacle, s2t<uint>(sp[1]), s2t<uint>(sp[2]) });
+			else
+				delete e;
+		}
+		auto e_dst = terrain->entity;
+		e_dst->remove_all_children();
+		std::vector<vec3> spawned_objects;
+		for (auto& setting : spawn_settings)
+		{
+			auto r = setting.o->radius;
+			auto r_uv = r / extent.x;
+			for (auto i = 0; i < setting.count; i++)
+			{
+				auto p = vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f));
+				if (splash_map->linear_sample(p)[setting.channel] < 0.5f)
+					continue;
+				if (splash_map->linear_sample(p + vec2(+r_uv, 0.f))[setting.channel] < 0.5f)
+					continue;
+				if (splash_map->linear_sample(p + vec2(-r_uv, 0.f))[setting.channel] < 0.5f)
+					continue;
+				if (splash_map->linear_sample(p + vec2(0.f, +r_uv))[setting.channel] < 0.5f)
+					continue;
+				if (splash_map->linear_sample(p + vec2(0.f, -r_uv))[setting.channel] < 0.5f)
+					continue;
+				auto ok = true;
+				for (auto obj : spawned_objects)
+				{
+					if (distance(obj.xy(), p) < obj.z + r_uv)
+					{
+						ok = false;
+						break;
+					}
+				}
+				if (ok)
+				{
+					auto e = setting.e->copy();
+					auto n = e->get_component_t<cNode>();
+					n->set_pos(vec3(p.x * extent.x, height_map->linear_sample(p).r * extent.y, p.y * extent.z));
+					n->set_eul(vec3(linearRand(0.f, 360.f), 0.f, 0.f));
+					e_dst->add_child(e);
+					spawned_objects.push_back(vec3(p, r_uv));
+				}
+			}
+		}
+		for (auto& c : spawn_settings)
+			delete c.e;
 	}
 };

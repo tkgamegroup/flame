@@ -435,8 +435,7 @@ namespace flame
 					auto g_pos = node->g_pos;
 					auto g_scl = node->g_scl;
 
-					auto height_map = terrain->height_map;
-					if (height_map)
+					if (auto height_map = terrain->height_map; height_map)
 					{
 						auto blocks = terrain->blocks;
 						auto tess_level = terrain->tess_level;

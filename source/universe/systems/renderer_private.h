@@ -52,7 +52,7 @@ namespace flame
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) override;
 
 		int register_grass_field_instance(int id) override;
-		void set_grass_field_instance(uint id, uint tess_level, int texture_id) override;
+		void set_grass_field_instance(uint id, uint tess_level, uint channel, int texture_id) override;
 
 		int register_sdf_instance(int id) override;
 		void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) override;

@@ -9,6 +9,7 @@
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/nav_agent.h>
+#include <flame/universe/components/nav_obstacle.h>
 
 View_Scene view_scene;
 
@@ -255,9 +256,7 @@ void View_Scene::on_draw()
 						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
 							if (!e->global_enable)
 								return false;
-							if (auto nav = e->get_component_t<cNavAgent>(); nav)
-							{
-								auto r = nav->radius;
+							auto draw_cylinder = [&](const vec3& p, float r, float h) {
 								auto c = pi<float>() * r * 2.f;
 								auto lod = 0;
 								if (c > 8.f)
@@ -274,34 +273,38 @@ void View_Scene::on_draw()
 								auto n = (int)circle.size();
 								circle.push_back(circle[0]);
 								std::vector<vec3> pts(n * 2);
-								auto center = nav->node->g_pos;
+								auto center = p;
 								for (auto i = 0; i < n; i++)
 								{
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
-								center.y += nav->height;
+								center.y += h;
 								for (auto i = 0; i < n; i++)
 								{
 									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
 									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
 								}
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
-								center = nav->node->g_pos;
+								center = p;
 								pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
-								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+								pts[1] = pts[0] + vec3(0.f, h, 0.f);
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
-								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+								pts[1] = pts[0] + vec3(0.f, h, 0.f);
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, +1.f);
-								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+								pts[1] = pts[0] + vec3(0.f, h, 0.f);
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 								pts[0] = center + r * vec3(0.f, 0.f, -1.f);
-								pts[1] = pts[0] + vec3(0.f, nav->height, 0.f);
+								pts[1] = pts[0] + vec3(0.f, h, 0.f);
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
-							}
+							};
+							if (auto agent = e->get_component_t<cNavAgent>(); agent)
+								draw_cylinder(agent->node->g_pos, agent->radius, agent->height);
+							if (auto obstacle = e->get_component_t<cNavObstacle>(); obstacle)
+								draw_cylinder(obstacle->node->g_pos, obstacle->radius, obstacle->height);
 							return true;
 						});
 

@@ -47,7 +47,7 @@ namespace flame
 		/// Reflect
 		uint grass_field_tess_level = 64;
 		/// Reflect
-		float grass_normal_limit = 0.9f;
+		uint grass_channel = 0U;
 		/// Reflect
 		std::filesystem::path grass_texture_name;
 		/// Reflect

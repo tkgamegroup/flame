@@ -244,7 +244,7 @@ void View_Project::init()
 		{
 			auto e_src = *(EntityPtr*)payload->Data;
 			if (e_src->prefab)
-				app.open_message_dialog("Error", "Entity is already an entity instance");
+				app.open_message_dialog("Error", "Entity is already a prefab instance");
 			else
 			{
 				auto fn = std::filesystem::path(e_src->name);

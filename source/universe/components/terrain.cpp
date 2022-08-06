@@ -52,7 +52,7 @@ namespace flame
 				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_id,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				if (grass_field_id != -1)
-					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level, grass_texture_id);
+					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level, grass_channel, grass_texture_id);
 				break;
 			case "draw"_h:
 				switch (draw_data.category)

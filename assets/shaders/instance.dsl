@@ -36,6 +36,7 @@ layout(set = SET, binding = 2) buffer readonly TerrainInstances
 struct GrassField
 {
 	uint tess_level;
+	uint channel;
 	int texture_id;
 };
 

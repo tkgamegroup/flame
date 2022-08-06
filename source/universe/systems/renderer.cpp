@@ -1079,10 +1079,11 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level, int texture_id)
+	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level, uint channel, int texture_id)
 	{
 		buf_grassfield_ins.select_item(id);
 		buf_grassfield_ins.set_var<"tess_level"_h>(min(tess_level, 64U));
+		buf_grassfield_ins.set_var<"channel"_h>(channel);
 		buf_grassfield_ins.set_var<"texture_id"_h>(texture_id);
 	}
 
