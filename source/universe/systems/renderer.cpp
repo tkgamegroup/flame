@@ -201,21 +201,8 @@ namespace flame
 
 		auto mat_file = Path::get(mr.mat->shader_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
-		if (mr.mat->color_map != -1)
-		{
-			auto found = false;
-			for (auto& d : mr.mat->shader_defines)
-			{
-				if (d.find(":COLOR_MAP") != std::string::npos)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				defines.push_back(std::format("frag:COLOR_MAP={}", mr.mat->color_map));
-		}
-		defines.insert(defines.end(), mr.mat->shader_defines.begin(), mr.mat->shader_defines.end());
+		for (auto& d : mr.mat->shader_defines)
+			defines.push_back("all_shader:" + d);
 
 		std::filesystem::path pipeline_name;
 		switch (type)
@@ -914,6 +901,36 @@ namespace flame
 		}
 
 		auto& res = mat_reses[id];
+		if (mat->color_map != -1)
+		{
+			auto found = false;
+			for (auto& d : mat->shader_defines)
+			{
+				if (d.starts_with("COLOR_MAP") != std::string::npos)
+				{
+					d = "COLOR_MAP=" + str(mat->color_map);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				mat->shader_defines.push_back("COLOR_MAP=" + str(mat->color_map));
+		}
+		if (mat->alpha_test > 0.f)
+		{
+			auto found = false;
+			for (auto& d : mat->shader_defines)
+			{
+				if (d.starts_with("ALPHA_TEST"))
+				{
+					d = "ALPHA_TEST=" + str(mat->alpha_test);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				mat->shader_defines.push_back("ALPHA_TEST=" + str(mat->alpha_test));
+		}
 		res.mat = mat;
 		res.ref = 1;
 		res.opa = mat->opaque;
@@ -1272,7 +1289,7 @@ namespace flame
 
 		for (auto& d : opa_mesh_buckets.draw_idxs)
 			d.second.second.clear();
-		draw_data.reset("draw"_h, "mesh"_h);
+		draw_data.reset("opaque"_h, "mesh"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		opa_mesh_buckets.collect_idrs(draw_data, cb);
@@ -1291,7 +1308,7 @@ namespace flame
 
 		opa_mesh_buckets.draw(cb);
 
-		draw_data.reset("draw"_h, "terrain"_h);
+		draw_data.reset("opaque"_h, "terrain"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		for (auto& t : draw_data.terrains)
@@ -1300,7 +1317,7 @@ namespace flame
 			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
-		draw_data.reset("draw"_h, "sdf"_h);
+		draw_data.reset("opaque"_h, "sdf"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		for (auto& s : draw_data.sdfs)
@@ -1478,7 +1495,7 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
 		cb->begin_renderpass(nullptr, fb_fwd.get());
-		draw_data.reset("draw"_h, "grass_field"_h);
+		draw_data.reset("transparent"_h, "grass_field"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		prm_fwd.bind_dss(cb);
@@ -1751,7 +1768,7 @@ namespace flame
 
 		auto off = 0;
 		auto n_draws = 0;
-		draw_data.reset("draw"_h, "mesh"_h);
+		draw_data.reset("pick_up"_h, "mesh"_h);
 		std::vector<cNodePtr> camera_culled_nodes; // collect here (again), because there may have changes between render() and pick_up()
 		sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 		for (auto n : camera_culled_nodes)
@@ -1791,7 +1808,7 @@ namespace flame
 
 		off = nodes.size();
 		n_draws = 0;
-		draw_data.reset("draw"_h, "terrain"_h);
+		draw_data.reset("pick_up"_h, "terrain"_h);
 		cb->bind_pipeline(pl_terrain_pickup);
 		for (auto n : camera_culled_nodes)
 		{
