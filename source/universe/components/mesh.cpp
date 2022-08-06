@@ -57,15 +57,13 @@ namespace flame
 				if (!parmature)
 					sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
 				break;
-			case "draw"_h:
-				if (draw_data.category == "mesh"_h)
+			case "opaque"_h:
+				if (draw_data.category == "mesh"_h && material->opaque)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
-			case "draw_opaque"_h:
-
-				break;
-			case "draw_transparent"_h:
-
+			case "transparent"_h:
+				if (draw_data.category == "mesh"_h && !material->opaque)
+					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case "occulder"_h:
 				if (cast_shadow)
@@ -73,6 +71,10 @@ namespace flame
 					if (draw_data.category == "mesh"_h)
 						draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				}
+				break;
+			case "pick_up"_h:
+				if (draw_data.category == "mesh"_h)
+					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			}
 		}, "mesh"_h);

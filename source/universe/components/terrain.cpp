@@ -54,23 +54,20 @@ namespace flame
 				if (grass_field_id != -1)
 					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level, grass_channel, grass_texture_id);
 				break;
-			case "draw"_h:
-				switch (draw_data.category)
-				{
-				case "terrain"_h:
+			case "opaque"_h:
+				if (draw_data.category == "terrain"_h)
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-					break;
-				case "grass_field"_h:
+				break;
+			case "transparent"_h:
+				if (draw_data.category == "grass_field"_h)
+				{
 					if (grass_field_id != -1)
 						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-					break;
 				}
 				break;
-			case "draw_opaque"_h:
-
-				break;
-			case "draw_transparent"_h:
-
+			case "pick_up"_h:
+				if (draw_data.category == "terrain"_h)
+					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
 			}
 		}, "terrain"_h);

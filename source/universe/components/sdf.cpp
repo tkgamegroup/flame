@@ -22,15 +22,9 @@ namespace flame
 			case "instance"_h:
 				sRenderer::instance()->set_sdf_instance(instance_id, 0, nullptr, 0, nullptr);
 				break;
-			case "draw"_h:
+			case "opaque"_h:
 				if (draw_data.category == "sdf"_h)
 					draw_data.sdfs.emplace_back(instance_id, 0);
-				break;
-			case "draw_opaque"_h:
-
-				break;
-			case "draw_transparent"_h:
-
 				break;
 			}
 		}, "sdf"_h);
