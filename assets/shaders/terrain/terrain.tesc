@@ -39,7 +39,7 @@ void main()
 #ifndef GRASS_FIELD
 	tess_level = terrain_instances[id].tess_level;
 #else
-	tess_level = grass_field_instances[terrain_instances[id].grass_field_id].tess_level;
+	tess_level = terrain_instances[id].grass_field_tess_level;
 #endif
 
 	if (gl_InvocationID == 0)

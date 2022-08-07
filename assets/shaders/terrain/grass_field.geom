@@ -31,22 +31,20 @@ void main()
 	vec3 iB = cross(iT, iN);
 
 	uint tid = i_id[0];
-	uint grass_channel = grass_field_instances[terrain_instances[tid].grass_field_id].channel;
-	if (texture(terrain_splash_maps[tid], i_uv[0])[grass_channel] > 0.5)
+	if (texture(terrain_splash_maps[tid], i_uv[0])[terrain_instances[tid].grass_channel] > 0.5)
 	{
 	#ifndef BILLBOARD
 		iT = scene.camera_right;
 		iN = scene.camera_up;
 		vec3 oN = -scene.camera_dir;
 		
-		float width = (rand(pp.yxz) * 2 - 1) * 0.2 + 0.15;
-		float height = (rand(pp.yzx) * 2 - 1) * 0.5 + 0.8;
+		float size = (rand(pp.yzx) * 2 - 1) * 0.25 + 0.9;
 		
 		o_id = tid;
 		o_uv = vec2(1.0, 1.0);
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
-		o_coordw = p + width * iT;
+		o_coordw = p + size * iT * 0.5;
 		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
@@ -54,7 +52,7 @@ void main()
 		o_uv = vec2(1.0, 0.0);
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
-		o_coordw = p + width * iT + height * iN;
+		o_coordw = p + size * iT * 0.5 + size * iN;
 		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
@@ -62,7 +60,7 @@ void main()
 		o_uv = vec2(0.0, 1.0);
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
-		o_coordw = p - width * iT;
+		o_coordw = p - size * iT * 0.5;
 		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
@@ -70,7 +68,7 @@ void main()
 		o_uv = vec2(0.0, 0.0);
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
-		o_coordw = p - width * iT + height * iN;
+		o_coordw = p - size * iT * 0.5 + size * iN;
 		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	#else

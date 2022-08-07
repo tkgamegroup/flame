@@ -41,9 +41,12 @@ namespace flame
 		virtual void set_material_name(const std::filesystem::path& name) = 0;
 
 		/// Reflect
-		bool use_grass_field = false;
+		bool cast_shadow = true;
 		/// Reflect
-		virtual void set_use_grass_field(bool v) = 0;
+		virtual void set_cast_shadow(bool v) = 0;
+
+		/// Reflect
+		bool use_grass_field = false;
 		/// Reflect
 		uint grass_field_tess_level = 64;
 		/// Reflect
@@ -61,7 +64,6 @@ namespace flame
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
 		int instance_id = -1;
-		int grass_field_id = -1;
 		int grass_texture_id = -1;
 
 		virtual void update_normal_map() = 0;

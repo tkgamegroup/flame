@@ -100,12 +100,8 @@ namespace flame
 
 		// id == -1 to register or to unregister id
 		virtual int register_terrain_instance(int id) = 0;
-		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, int grass_field_id,
+		virtual void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
 			graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map) = 0;
-
-		// id == -1 to register or to unregister id
-		virtual int register_grass_field_instance(int id) = 0;
-		virtual void set_grass_field_instance(uint id, uint tess_level, uint channel, int texture_id) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_sdf_instance(int id) = 0;

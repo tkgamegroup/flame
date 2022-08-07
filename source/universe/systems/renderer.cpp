@@ -59,8 +59,10 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_ao;		// ambient occlusion
 	std::unique_ptr<graphics::Image> img_pickup;
 	std::unique_ptr<graphics::Image> img_dep_pickup;
-	std::vector<std::unique_ptr<graphics::Image>> imgs_dir_shadow;
-	std::vector<std::unique_ptr<graphics::Image>> imgs_pt_shadow;
+	std::vector<std::unique_ptr<graphics::Image>>	imgs_dir_shadow;
+	std::vector<std::unique_ptr<graphics::Image>>	imgs_pt_shadow;
+	std::unique_ptr<graphics::Image>				img_dir_shadow_back;
+	std::unique_ptr<graphics::Image>				img_pt_shadow_back;
 
 	graphics::RenderpassPtr rp_fwd = nullptr;
 	graphics::RenderpassPtr rp_gbuf = nullptr;
@@ -88,7 +90,6 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_grassfield_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_sdf_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_system;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material_info;
@@ -374,13 +375,11 @@ namespace flame
 		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"_h));
 		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"_h));
 		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"_h));
-		buf_grassfield_ins.create_with_array_type(dsl_instance->get_buf_ui("GrassFieldInstances"_h));
 		buf_sdf_ins.create_with_array_type(dsl_instance->get_buf_ui("SdfInstances"_h));
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
 		ds_instance->set_buffer("MeshInstances"_h, 0, buf_mesh_ins.buf.get());
 		ds_instance->set_buffer("ArmatureInstances"_h, 0, buf_armature_ins.buf.get());
 		ds_instance->set_buffer("TerrainInstances"_h, 0, buf_terrain_ins.buf.get());
-		ds_instance->set_buffer("GrassFieldInstances"_h, 0, buf_grassfield_ins.buf.get());
 		ds_instance->set_buffer("SdfInstances"_h, 0, buf_sdf_ins.buf.get());
 		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
 		{
@@ -428,12 +427,14 @@ namespace flame
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
+		img_dir_shadow_back.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 		imgs_pt_shadow.resize(dsl_light->get_binding("pt_shadow_maps"_h).count);
 		for (auto& i : imgs_pt_shadow)
 		{
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
+		img_pt_shadow_back.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		ds_light->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
 		ds_light->set_buffer("LightIndexs"_h, 0, buf_light_index.buf.get());
 		ds_light->set_buffer("LightGrids"_h, 0, buf_light_grid.buf.get());
@@ -1063,7 +1064,7 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, int grass_field_id,
+	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
 		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
 	{
 		buf_terrain_ins.select_item(id);
@@ -1071,37 +1072,14 @@ namespace flame
 		buf_terrain_ins.set_var<"extent"_h>(extent);
 		buf_terrain_ins.set_var<"blocks"_h>(blocks);
 		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
-		buf_terrain_ins.set_var<"grass_field_id"_h>(grass_field_id);
+		buf_terrain_ins.set_var<"grass_field_tess_level"_h>(grass_field_tess_level);
+		buf_terrain_ins.set_var<"grass_channel"_h>(grass_channel);
+		buf_terrain_ins.set_var<"grass_texture_id"_h>(grass_texture_id);
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
 		ds_instance->set_image("terrain_splash_maps"_h, id, splash_map, nullptr);
 		ds_instance->update();
-	}
-
-	int sRendererPrivate::register_grass_field_instance(int id)
-	{
-		if (id == -1)
-		{
-			id = buf_grassfield_ins.get_free_item();
-			if (id != -1)
-			{
-
-			}
-		}
-		else
-		{
-			buf_grassfield_ins.release_item(id);
-		}
-		return id;
-	}
-
-	void sRendererPrivate::set_grass_field_instance(uint id, uint tess_level, uint channel, int texture_id)
-	{
-		buf_grassfield_ins.select_item(id);
-		buf_grassfield_ins.set_var<"tess_level"_h>(min(tess_level, 64U));
-		buf_grassfield_ins.set_var<"channel"_h>(channel);
-		buf_grassfield_ins.set_var<"texture_id"_h>(texture_id);
 	}
 
 	int sRendererPrivate::register_sdf_instance(int id)
@@ -1282,7 +1260,6 @@ namespace flame
 		buf_mesh_ins.upload(cb);
 		buf_armature_ins.upload(cb);
 		buf_terrain_ins.upload(cb);
-		buf_grassfield_ins.upload(cb);
 		buf_sdf_ins.upload(cb);
 		buf_light_index.upload(cb);
 		buf_light_grid.upload(cb);
@@ -1447,7 +1424,18 @@ namespace flame
 					prm_fwd.bind_dss(cb);
 					prm_fwd.set_pc_var<"i"_h>(ivec4(0, i, lv, 0));
 					prm_fwd.push_constant(cb);
+
 					s.mesh_buckets[lv].draw(cb);
+
+					draw_data.reset("occulder"_h, "terrain"_h);
+					for (auto n : s.culled_nodes)
+						n->draw(draw_data);
+					for (auto& t : draw_data.terrains)
+					{
+						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
+						cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
+					}
+
 					cb->end_renderpass();
 				}
 				cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);

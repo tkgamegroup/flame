@@ -49,10 +49,8 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_id,
+				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-				if (grass_field_id != -1)
-					sRenderer::instance()->set_grass_field_instance(grass_field_id, grass_field_tess_level, grass_channel, grass_texture_id);
 				break;
 			case "opaque"_h:
 				if (draw_data.category == "terrain"_h)
@@ -61,7 +59,14 @@ namespace flame
 			case "transparent"_h:
 				if (draw_data.category == "grass_field"_h)
 				{
-					if (grass_field_id != -1)
+					if (use_grass_field)
+						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+				}
+				break;
+			case "occulder"_h:
+				if (cast_shadow)
+				{
+					if (draw_data.category == "terrain"_h)
 						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				}
 				break;
@@ -195,28 +200,12 @@ namespace flame
 		data_changed("material_name"_h);
 	}
 
-	void cTerrainPrivate::set_use_grass_field(bool v)
+	void cTerrainPrivate::set_cast_shadow(bool v)
 	{
-		if (use_grass_field == v)
+		if (cast_shadow == v)
 			return;
-		use_grass_field = v;
-
-		if (use_grass_field)
-		{
-			if (grass_field_id == -1 && instance_id != -1)
-				grass_field_id = sRenderer::instance()->register_grass_field_instance(-1);
-		}
-		else
-		{
-			if (grass_field_id != -1)
-			{
-				sRenderer::instance()->register_grass_field_instance(grass_field_id);
-				grass_field_id = -1;
-			}
-		}
-
-		node->mark_drawing_dirty();
-		data_changed("use_grass_field"_h);
+		cast_shadow = v;
+		data_changed("cast_shadow"_h);
 	}
 
 	void cTerrainPrivate::set_grass_texture_name(const std::filesystem::path& name)
@@ -320,8 +309,6 @@ namespace flame
 	void cTerrainPrivate::on_active()
 	{
 		instance_id = sRenderer::instance()->register_terrain_instance(-1);
-		if (use_grass_field)
-			grass_field_id = sRenderer::instance()->register_grass_field_instance(-1);
 
 		node->mark_transform_dirty();
 	}
@@ -329,10 +316,7 @@ namespace flame
 	void cTerrainPrivate::on_inactive()
 	{
 		sRenderer::instance()->register_terrain_instance(instance_id);
-		if (grass_field_id != -1)
-			sRenderer::instance()->register_grass_field_instance(grass_field_id);
 		instance_id = -1;
-		grass_field_id = -1;
 
 		node->mark_transform_dirty();
 	}

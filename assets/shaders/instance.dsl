@@ -25,24 +25,14 @@ struct TerrainInstance
 	vec3 extent;
 	uvec2 blocks;
 	uint tess_level;
-	int grass_field_id;
+	uint grass_field_tess_level;
+	uint grass_channel;
+	int grass_texture_id;
 };
 
 layout(set = SET, binding = 2) buffer readonly TerrainInstances
 {
 	TerrainInstance terrain_instances[8];
-};
-
-struct GrassField
-{
-	uint tess_level;
-	uint channel;
-	int texture_id;
-};
-
-layout(set = SET, binding = 3) buffer readonly GrassFieldInstances
-{
-	GrassField grass_field_instances[8];
 };
 
 struct SdSphere
@@ -65,12 +55,12 @@ struct SdfInstance
 	SdSphere spheres[64];
 };
 
-layout(set = SET, binding = 4) buffer readonly SdfInstances
+layout(set = SET, binding = 3) buffer readonly SdfInstances
 {
 	SdfInstance sdf_instances[256];
 };
 
-layout (set = SET, binding = 5) uniform sampler2D terrain_height_maps[8];
-layout (set = SET, binding = 6) uniform sampler2D terrain_normal_maps[8];
-layout (set = SET, binding = 7) uniform sampler2D terrain_tangent_maps[8];
-layout (set = SET, binding = 8) uniform sampler2D terrain_splash_maps[8];
+layout (set = SET, binding = 4) uniform sampler2D terrain_height_maps[8];
+layout (set = SET, binding = 5) uniform sampler2D terrain_normal_maps[8];
+layout (set = SET, binding = 6) uniform sampler2D terrain_tangent_maps[8];
+layout (set = SET, binding = 7) uniform sampler2D terrain_splash_maps[8];

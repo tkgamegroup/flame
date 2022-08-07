@@ -19,3 +19,5 @@ primitive_topology
   PatchList
 patch_control_points
   4
+alpha_to_coverage
+  true

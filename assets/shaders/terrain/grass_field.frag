@@ -23,19 +23,18 @@ layout(location = 1) out vec4 o_res_nor_rou;
 
 void main()
 {
-	int grass_field_id = terrain_instances[i_id].grass_field_id;
 	vec3 albedo;
 #ifdef DONT_USE_TEXTURE
 	albedo = i_color;
 #else
-	vec4 color = texture(material_maps[grass_field_instances[grass_field_id].texture_id], i_uv);
+	vec4 color = texture(material_maps[terrain_instances[i_id].grass_texture_id], i_uv);
 	if (color.a < 0.5)
 		discard;
 	albedo = color.rgb;
 #endif
 #ifndef OCCLUDER_PASS
 	#ifndef GBUFFER_PASS
-		o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0), 1.0);
+		o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0), color.a);
 	#else
 		o_res_col_met = vec4(albedo, 0.0);
 		o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, 1.0);
