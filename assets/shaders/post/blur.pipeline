@@ -9,12 +9,16 @@ renderpass
   {rp}
 cull_mode
   None
+compare_op
+  Always
 
 @frag
 
 layout (location = 0) in vec2 i_uv;
 
+#ifndef DEPTH
 layout (location = 0) out vec4 o_color;
+#endif
 
 void main()
 {
@@ -23,18 +27,22 @@ void main()
 	for (int i = 0; i < pc.len; i++)
 	{
 	#ifdef HORIZONTAL
-		vec4 sam = texture(img_src, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0));
+		vec4 value = texture(img_src, i_uv + vec2((i + pc.off) * pc.pxsz.x, 0));
 	#elifdef VERTICAL
-		vec4 sam = texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.y));
+		vec4 value = texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.y));
 	#endif
 	#ifdef LOCAL_MAX
-		res = max(res, sam);
+		res = max(res, value);
 	#else
-		res += sam * pc.weights[i];
+		res += value * pc.weights[i];
 	#endif
 	}
-
+	
+#ifndef DEPTH
 	o_color = res;
+#else
+	gl_FragDepth = res.r;
+#endif
 }
 
 @

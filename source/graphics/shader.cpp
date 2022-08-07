@@ -1561,6 +1561,14 @@ namespace flame
 			GraphicsPipelineInfo info = *this;
 			info.renderpass = rp;
 			info.subpass_index = sp;
+			for (auto& att : info.renderpass->attachments)
+			{
+				if (att.sample_count != SampleCount_1)
+				{
+					info.sample_count = att.sample_count;
+					break;
+				}
+			}
 			auto new_pl = create(info);
 			if (!new_pl)
 				return nullptr;

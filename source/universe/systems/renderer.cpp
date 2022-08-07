@@ -35,7 +35,7 @@ namespace flame
 	vec3 fog_color = vec3(1.f);
 	float white_point = 4.f;
 	float gamma = 1.5f;
-	uint csm_levels = 3;
+	uint csm_levels = 2;
 	float shadow_distance = 0.1f; // (0-1) of camera's far
 	float ssao_radius = 0.5f;
 	float ssao_bias = 0.025f;
@@ -112,12 +112,13 @@ namespace flame
 	std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
 	graphics::GraphicsPipelinePtr pl_blit = nullptr;
-	graphics::GraphicsPipelinePtr pl_blit_ms = nullptr;
-	graphics::GraphicsPipelinePtr pl_blit_dep_ms = nullptr;
+	graphics::GraphicsPipelinePtr pl_blit_dep = nullptr;
 	graphics::GraphicsPipelinePtr pl_add = nullptr;
 	graphics::GraphicsPipelinePtr pl_blend = nullptr;
 	graphics::GraphicsPipelinePtr pl_blur_h = nullptr;
 	graphics::GraphicsPipelinePtr pl_blur_v = nullptr;
+	graphics::GraphicsPipelinePtr pl_blur_dep_h = nullptr;
+	graphics::GraphicsPipelinePtr pl_blur_dep_v = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_h = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_v = nullptr;
 	graphics::ComputePipelinePtr pl_luma_hist = nullptr;
@@ -152,6 +153,7 @@ namespace flame
 		mat3 rot;
 		std::vector<cNodePtr> culled_nodes;
 		MeshBuckets mesh_buckets[DirShadowMaxLevels];
+		std::vector<TerrainDraw> draw_terrains[DirShadowMaxLevels];
 	};
 
 	std::vector<cNodePtr> camera_culled_nodes;
@@ -192,6 +194,7 @@ namespace flame
 			{
 				defines.push_back("rp=" + str(rp_fwd));
 				defines.push_back("pll=" + str(pll_fwd));
+				defines.push_back("a2c=true");
 			}
 			break;
 		case "grass_field"_h:
@@ -461,20 +464,15 @@ namespace flame
 		pl_line3d->dynamic_renderpass = true;
 		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
 		pl_triangle3d->dynamic_renderpass = true;
-		buf_primitives.create(pl_line3d->vi_ui(), 1024 * 32);
+		buf_primitives.create(pl_line3d->vi_ui(), 1024 * 128);
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
 
-		auto rp_col_ms = graphics::Renderpass::get(L"flame\\shaders\\color.rp", { "sample_count=" + TypeInfo::serialize_t(sample_count) });
-		auto rp_dep_ms = graphics::Renderpass::get(L"flame\\shaders\\depth.rp", { "sample_count=" + TypeInfo::serialize_t(sample_count) });
-
 		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
 		pl_blit->dynamic_renderpass = true;
-		pl_blit_ms = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_col_ms) });
-		pl_blit_ms->dynamic_renderpass = true;
-		pl_blit_dep_ms = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep_ms), "frag:DEPTH"});
-		pl_blit_dep_ms->dynamic_renderpass = true;
+		pl_blit_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
+		pl_blit_dep->dynamic_renderpass = true;
 		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
 		pl_add->dynamic_renderpass = true;
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
@@ -503,6 +501,7 @@ namespace flame
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
 		opa_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
+		trs_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
@@ -520,6 +519,10 @@ namespace flame
 		pl_blur_h->dynamic_renderpass = true;
 		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:VERTICAL" });
 		pl_blur_v->dynamic_renderpass = true;
+		pl_blur_dep_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "rp=" + str(rp_dep), "frag:HORIZONTAL", "frag:DEPTH" });
+		pl_blur_dep_h->dynamic_renderpass = true;
+		pl_blur_dep_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "rp=" + str(rp_dep), "frag:VERTICAL", "frag:DEPTH" });
+		pl_blur_dep_v->dynamic_renderpass = true;
 		pl_localmax_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "frag:LOCAL_MAX",
 			  "frag:HORIZONTAL" });
@@ -1120,9 +1123,8 @@ namespace flame
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
-	static std::vector<float>& get_gauss_blur_weights(int radius)
+	static float* get_gauss_blur_weights(uint len)
 	{
-		radius = (radius - 1) / 2;
 		if (gauss_blur_weights.empty())
 		{
 			gauss_blur_weights.push_back({                     0.047790, 0.904419, 0.047790 });
@@ -1130,8 +1132,9 @@ namespace flame
 			gauss_blur_weights.push_back({ 0.005977, 0.060598, 0.241730, 0.382925, 0.241730, 0.060598, 0.005977 });
 		}
 
+		auto radius = (len - 1) / 2 - 1;
 		assert(radius < gauss_blur_weights.size());
-		return gauss_blur_weights[radius];
+		return gauss_blur_weights[radius].data();
 	}
 
 	void sRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
@@ -1267,7 +1270,7 @@ namespace flame
 
 		for (auto& d : opa_mesh_buckets.draw_idxs)
 			d.second.second.clear();
-		draw_data.reset("opaque"_h, "mesh"_h);
+		draw_data.reset("gbuffer"_h, "mesh"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		opa_mesh_buckets.collect_idrs(draw_data, cb);
@@ -1283,10 +1286,9 @@ namespace flame
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
 		prm_gbuf.bind_dss(cb);
-
 		opa_mesh_buckets.draw(cb);
 
-		draw_data.reset("opaque"_h, "terrain"_h);
+		draw_data.reset("gbuffer"_h, "terrain"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		for (auto& t : draw_data.terrains)
@@ -1295,7 +1297,7 @@ namespace flame
 			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
-		draw_data.reset("opaque"_h, "sdf"_h);
+		draw_data.reset("gbuffer"_h, "sdf"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		for (auto& s : draw_data.sdfs)
@@ -1311,7 +1313,6 @@ namespace flame
 			for (auto i = 0; i < DirShadowMaxCount; i++)
 			{
 				auto& s = dir_shadows[i];
-				s.culled_nodes.clear();
 				for (auto j = 0; j < DirShadowMaxLevels; j++)
 				{
 					for (auto& d : s.mesh_buckets[j].draw_idxs)
@@ -1355,6 +1356,7 @@ namespace flame
 					auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
 					auto proj_view = proj * view;
 
+					s.culled_nodes.clear();
 					sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 					draw_data.reset("instance"_h, 0);
 					for (auto n : s.culled_nodes)
@@ -1365,6 +1367,7 @@ namespace flame
 							n->instance_frame = frames;
 						}
 					}
+
 					auto z_min = -hf_zlen;
 					auto z_max = +hf_zlen;
 					draw_data.reset("occulder"_h, "mesh"_h);
@@ -1382,6 +1385,13 @@ namespace flame
 							n_draws = draw_data.meshes.size();
 						}
 					}
+					s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
+
+					draw_data.reset("occulder"_h, "terrain"_h);
+					for (auto n : s.culled_nodes)
+						n->draw(draw_data);
+					s.draw_terrains[lv] = draw_data.terrains;
+
 					proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
 					proj[1][1] *= -1.f;
 					view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
@@ -1400,8 +1410,6 @@ namespace flame
 						pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
 						debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
 					}
-
-					s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
 				}
 
 				buf_dir_shadow.set_var<"splits"_h>(splits);
@@ -1414,11 +1422,20 @@ namespace flame
 			buf_dir_shadow.upload(cb);
 			buf_pt_shadow.upload(cb);
 
+			auto set_blur_args = [cb](const vec2 img_size) {
+				cb->bind_pipeline_layout(prm_post.pll);
+				prm_post.set_pc_var<"off"_h>(-3);
+				prm_post.set_pc_var<"len"_h>(7);
+				prm_post.set_pc_var<"pxsz"_h>(1.f / img_size);
+				prm_post.set_pc_var<"weights"_h>(get_gauss_blur_weights(7), sizeof(float) * 7);
+				prm_post.push_constant(cb);
+			};
+
 			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize));
 			for (auto i = 0; i < n_dir_shadows; i++)
 			{
 				auto& s = dir_shadows[i];
-				for (auto lv = 0; lv < csm_levels; lv++)
+				for (auto lv = 0U; lv < csm_levels; lv++)
 				{
 					cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
 					prm_fwd.bind_dss(cb);
@@ -1427,10 +1444,7 @@ namespace flame
 
 					s.mesh_buckets[lv].draw(cb);
 
-					draw_data.reset("occulder"_h, "terrain"_h);
-					for (auto n : s.culled_nodes)
-						n->draw(draw_data);
-					for (auto& t : draw_data.terrains)
+					for (auto& t : s.draw_terrains[lv])
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
 						cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
@@ -1439,6 +1453,35 @@ namespace flame
 					cb->end_renderpass();
 				}
 				cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
+			}
+
+			set_blur_args(vec2(ShadowMapSize));
+			cb->bind_pipeline_layout(prm_post.pll);
+			for (auto i = 0; i < n_dir_shadows; i++)
+			{
+				for (auto lv = 0U; lv < csm_levels; lv++)
+				{
+					cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutAttachment);
+					cb->begin_renderpass(nullptr, img_dir_shadow_back->get_shader_write_dst(0, lv));
+					cb->bind_pipeline(pl_blur_dep_h);
+					cb->bind_descriptor_set(0, imgs_dir_shadow[i]->get_shader_read_src(0, lv));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+
+					cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutShaderReadOnly);
+					cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv));
+					cb->bind_pipeline(pl_blur_dep_v);
+					cb->bind_descriptor_set(0, img_dir_shadow_back->get_shader_read_src(0, lv));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+				cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
+			}
+
+			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize / 2U));
+			for (auto i = 0; i < n_pt_shadows; i++)
+			{
+
 			}
 		}
 
@@ -1469,30 +1512,41 @@ namespace flame
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
-		cb->bind_pipeline(pl_blit_ms);
+		cb->bind_pipeline(pl_blit);
 		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dep_ms->get_shader_write_dst());
-		cb->bind_pipeline(pl_blit_dep_ms);
+		cb->bind_pipeline(pl_blit_dep);
 		cb->bind_descriptor_set(0, img_dep->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
+		for (auto& d : trs_mesh_buckets.draw_idxs)
+			d.second.second.clear();
+		draw_data.reset("forward"_h, "mesh"_h);
+		for (auto n : camera_culled_nodes)
+			n->draw(draw_data);
+		trs_mesh_buckets.collect_idrs(draw_data, cb);
+
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
 		cb->begin_renderpass(nullptr, fb_fwd.get());
-		draw_data.reset("transparent"_h, "grass_field"_h);
+		prm_fwd.bind_dss(cb);
+
+		trs_mesh_buckets.draw(cb);
+
+		draw_data.reset("forward"_h, "grass_field"_h);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		prm_fwd.bind_dss(cb);
 		for (auto& t : draw_data.terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
 			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
+
 		cb->end_renderpass();
 
 		// post processing

@@ -12,14 +12,7 @@ layout(location = 4) in vec3 i_coordw;
 #include "../shading.glsl"
 #endif
 
-#ifndef OCCLUDER_PASS
-#ifndef GBUFFER_PASS
 layout(location = 0) out vec4 o_color;
-#else
-layout(location = 0) out vec4 o_res_col_met;
-layout(location = 1) out vec4 o_res_nor_rou;
-#endif
-#endif
 
 void main()
 {
@@ -32,12 +25,5 @@ void main()
 		discard;
 	albedo = color.rgb;
 #endif
-#ifndef OCCLUDER_PASS
-	#ifndef GBUFFER_PASS
-		o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0), color.a);
-	#else
-		o_res_col_met = vec4(albedo, 0.0);
-		o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, 1.0);
-	#endif
-#endif
+	o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0), color.a);
 }

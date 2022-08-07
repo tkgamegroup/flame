@@ -1,6 +1,7 @@
 %rp=../forward.rp
 %pll=../forward.pll
 %cull_mode=Back
+%a2c=false
 layout
   {pll}
 shaders
@@ -11,3 +12,5 @@ renderpass
   {rp}
 cull_mode
   {cull_mode}
+alpha_to_coverage
+  {a2c}

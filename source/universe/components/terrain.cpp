@@ -52,11 +52,11 @@ namespace flame
 				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
 					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
 				break;
-			case "opaque"_h:
+			case "gbuffer"_h:
 				if (draw_data.category == "terrain"_h)
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
-			case "transparent"_h:
+			case "forward"_h:
 				if (draw_data.category == "grass_field"_h)
 				{
 					if (use_grass_field)
@@ -218,7 +218,7 @@ namespace flame
 		if (!grass_texture_name.empty())
 			AssetManagemant::get_asset(Path::get(grass_texture_name));
 
-		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true) : nullptr;
+		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true, true, 0.5f) : nullptr;
 		if (grass_texture != _texture)
 		{
 			if (grass_texture_id != -1)
@@ -226,7 +226,7 @@ namespace flame
 			if (grass_texture)
 				graphics::Image::release(grass_texture);
 			grass_texture = _texture;
-			grass_texture_id = grass_texture ? sRenderer::instance()->get_texture_res(grass_texture->get_view(), nullptr, -1) : -1;
+			grass_texture_id = grass_texture ? sRenderer::instance()->get_texture_res(grass_texture->get_view({ 0, grass_texture->n_levels, 0, 1 }), nullptr, -1) : -1;
 		}
 		else if (_texture)
 			graphics::Image::release(_texture);

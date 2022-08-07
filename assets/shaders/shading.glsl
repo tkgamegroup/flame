@@ -146,7 +146,7 @@ vec3 get_ibl(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 
 vec3 get_fog(vec3 color, float dist)
 {
-	return mix(color, lighting.fog_color * lighting.sky_intensity, dist / scene.zFar);
+	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, scene.zFar, dist));
 }
 
 vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
@@ -172,7 +172,7 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
 	ret += get_ibl(N, V, metallic, albedo, f0, roughness) * /*ao*/1.0; // TODO: use ao when ssao is ok
-	//ret = get_fog(ret, distv);
+	ret = get_fog(ret, distv);
 	
 	return ret;
 }
