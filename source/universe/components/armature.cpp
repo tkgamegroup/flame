@@ -175,18 +175,20 @@ namespace flame
 		if (playing_name == name)
 			return;
 
-		stop();
-
-		auto transition = 0.f;
+		transition_time = -1.f;
 		auto it = animations.find(playing_name);
 		if (it != animations.end())
 		{
 			auto _it = it->second.transitions.find(name);
 			if (_it != it->second.transitions.end())
-				transition = _it->second;
+			{
+				transition_duration = _it->second;
+				transition_time = 0.f;
+			}
 		}
 
 		playing_name = name;
+		playing_time = 0;
 	}
 
 	void cArmaturePrivate::stop()
@@ -234,10 +236,10 @@ namespace flame
 				{
 					if (!n.first.empty() && !n.second.empty())
 					{
-						AssetManagemant::get_asset(Path::get(n.first));
-
 						auto& a = animations[sh(n.second.c_str())];
-						a.animation = graphics::Animation::get(n.first);
+						a.path = Path::get(n.first);
+						AssetManagemant::get_asset(a.path);
+						a.animation = graphics::Animation::get(a.path);
 						if (a.animation)
 						{
 							a.duration = a.animation->duration;
