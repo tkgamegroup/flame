@@ -1370,8 +1370,10 @@ namespace flame
 
 					auto z_min = -hf_zlen;
 					auto z_max = +hf_zlen;
+					int n_draws;
+
 					draw_data.reset("occulder"_h, "mesh"_h);
-					auto n_draws = 0;
+					n_draws = 0;
 					for (auto n : s.culled_nodes)
 					{
 						n->draw(draw_data);
@@ -1388,8 +1390,22 @@ namespace flame
 					s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
 
 					draw_data.reset("occulder"_h, "terrain"_h);
+					n_draws = 0;
 					for (auto n : s.culled_nodes)
+					{
 						n->draw(draw_data);
+						if (draw_data.terrains.size() > n_draws)
+						{
+							for (auto& p : n->bounds.get_points())
+							{
+								auto d = dot(p - c, s.rot[2]);
+								z_min = min(d, z_min);
+								z_max = max(d, z_max);
+							}
+
+							n_draws = draw_data.terrains.size();
+						}
+					}
 					s.draw_terrains[lv] = draw_data.terrains;
 
 					proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
