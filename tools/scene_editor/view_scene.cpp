@@ -419,17 +419,21 @@ void View_Scene::on_draw()
 								for (auto& c : n->entity->children)
 								{
 									if (auto mesh = c->get_component_t<cMesh>(); mesh)
-										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+									{
+										if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+											draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+									}
 								}
 							}
 							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
 							{
 								if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-								{
-
-								}
+									;
 								else
-									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+								{
+									if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+								}
 							}
 							break;
 						case "terrain"_h:
