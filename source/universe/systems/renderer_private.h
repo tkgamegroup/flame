@@ -22,6 +22,8 @@ namespace flame
 		void bind_window_targets() override;
 
 		void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
+		void set_sky_intensity(float v) override;
+		void set_fog_color(const vec3& color) override;
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;

@@ -632,12 +632,28 @@ namespace flame
 
 	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
 	{
+		dirty = true;
+
 		ds_light->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_light->update();
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
+	}
+
+	void sRendererPrivate::set_sky_intensity(float v)
+	{
+		dirty = true;
+
+		sky_intensity = v;
+	}
+
+	void sRendererPrivate::set_fog_color(const vec3& color)
+	{
+		dirty = true;
+
+		fog_color = color;
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -1187,9 +1203,9 @@ namespace flame
 		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
 		buf_scene.upload(cb);
 
-		buf_lighting.set_var<"sky_intensity"_h>(1.f);
+		buf_lighting.set_var<"sky_intensity"_h>(sky_intensity);
 		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
-		buf_lighting.set_var<"fog_color"_h>(vec3(1.f));
+		buf_lighting.set_var<"fog_color"_h>(fog_color);
 		buf_lighting.upload(cb);
 
 		auto n_dir_lights = 0;
@@ -1250,7 +1266,7 @@ namespace flame
 			buf_light_info.select_item(camera_light_id);
 			buf_light_info.set_var<"type"_h>(LightDirectional);
 			buf_light_info.set_var<"pos"_h>(camera->node->g_rot[2]);
-			buf_light_info.set_var<"color"_h>(vec3(3.14f));
+			buf_light_info.set_var<"color"_h>(vec3(1.f));
 			buf_light_info.set_var<"shadow_index"_h>(-1);
 
 			buf_light_index.push(1, &camera_light_id);

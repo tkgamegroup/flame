@@ -73,13 +73,13 @@ namespace flame
 			return nullptr;
 		}
 
-		template<typename T> 
-		inline T* get_component_t() const 
-		{ 
-			return (T*)get_component(th<T>()); 
+		template<typename T>
+		inline T* get_component_t() const
+		{
+			return (T*)get_component(th<T>());
 		}
 
-		template<typename T> 
+		template<typename T>
 		inline T* get_component_i(uint idx) const
 		{
 			if (idx >= components.size())
@@ -89,9 +89,9 @@ namespace flame
 		}
 
 		template<typename T>
-		inline T* get_parent_component_t() const 
-		{ 
-			return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr; 
+		inline T* get_parent_component_t() const
+		{
+			return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr;
 		}
 
 		template<typename T>
@@ -101,9 +101,19 @@ namespace flame
 		}
 
 		virtual Component* add_component(uint hash) = 0;
+		template<typename T>
+		inline T* add_component()
+		{
+			return (T*)add_component(th<T>());
+		}
 		virtual bool remove_component(uint hash) = 0;
+		template<typename T>
+		inline bool remove_component()
+		{
+			return remove_component(th<T>());
+		}
 
-		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */ ) = 0;
+		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
 		inline void remove_from_parent(bool destroy = true)
 		{

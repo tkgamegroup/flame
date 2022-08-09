@@ -45,6 +45,25 @@ namespace flame
 		/// Reflect
 		virtual void set_scl(const vec3& scl) = 0;
 
+		inline void set_transform(const vec3& pos, const vec3& scl)
+		{
+			set_pos(pos);
+			set_scl(scl);
+		}
+
+		inline void set_transform(const vec3& pos, const quat& qut)
+		{
+			set_pos(pos);
+			set_qut(qut);
+		}
+
+		inline void set_transform(const vec3& pos, const quat& qut, const vec3& scl)
+		{
+			set_pos(pos);
+			set_qut(qut);
+			set_scl(scl);
+		}
+
 		vec3 g_pos;
 		mat3 g_rot;
 		vec3 g_scl;

@@ -47,19 +47,37 @@ namespace flame
 		else if (_sky_rad_map)
 			graphics::Image::release(_sky_rad_map);
 
-		apply();
+		if (!environments.empty() && environments.front() == this)
+			update_sky();
+
 		data_changed("sky_map_name"_h);
 	}
 
-	void cEnvironmentPrivate::apply()
+	void cEnvironmentPrivate::set_sky_intensity(float v)
 	{
+		if (sky_intensity == v)
+			return;
+		sky_intensity = v;
+
 		if (!environments.empty() && environments.front() == this)
-		{
-			sRenderer::instance()->dirty = true;
-			sRenderer::instance()->set_sky(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr, 
-				sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
-				sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
-		}
+			sRenderer::instance()->set_sky_intensity(sky_intensity);
+	}
+
+	void cEnvironmentPrivate::set_fog_color(const vec3& color)
+	{
+		if (fog_color == color)
+			return;
+		fog_color = color;
+
+		if (!environments.empty() && environments.front() == this)
+			sRenderer::instance()->set_fog_color(fog_color);
+	}
+
+	void cEnvironmentPrivate::update_sky()
+	{
+		sRenderer::instance()->set_sky(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
+			sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
+			sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
 	}
 
 	void cEnvironmentPrivate::on_active()
@@ -77,7 +95,13 @@ namespace flame
 				}
 			}
 		}
-		apply();
+
+		if (!environments.empty() && environments.front() == this)
+		{
+			update_sky();
+			sRenderer::instance()->set_sky_intensity(sky_intensity);
+			sRenderer::instance()->set_fog_color(fog_color);
+		}
 	}
 
 	void cEnvironmentPrivate::on_inactive()

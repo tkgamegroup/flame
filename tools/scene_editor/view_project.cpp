@@ -6,6 +6,7 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/extension.h>
+#include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/debug.h>
@@ -42,6 +43,22 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 	};
 	flame_file_watcher = add_file_watcher(Path::get(L"flame"), file_watcher, true, false);
 	assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+}
+
+std::filesystem::path find_free_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
+{
+	auto i = 0;
+	auto p = prefix;
+	p += wstr(i);
+	p += ext;
+	while (std::filesystem::exists(p))
+	{
+		i++;
+		p = prefix;
+		p += wstr(i);
+		p += ext;
+	}
+	return p;
 }
 
 void View_Project::init()
@@ -97,16 +114,7 @@ void View_Project::init()
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
 		if (ImGui::MenuItem("New Folder"))
-		{
-			auto i = 0;
-			auto p = path / (L"new_foler_" + wstr(i));
-			while (std::filesystem::exists(p))
-			{
-				i++;
-				p = path / (L"new_foler_" + wstr(i));
-			}
-			std::filesystem::create_directory(p);
-		}
+			std::filesystem::create_directory(find_free_filename(path / L"new_foler_"));
 		if (ImGui::MenuItem("New Image"))
 		{
 			struct NewImageDialog : ImGui::Dialog
@@ -238,6 +246,13 @@ void View_Project::init()
 
 			NewImageDialog::open(path);
 		}
+		if (ImGui::MenuItem("New Material"))
+		{
+			auto material = graphics::Material::create();
+			material->save(find_free_filename(path / L"new_material_", L".fmat"));
+		}
+		if (ImGui::MenuItem("New Prefab"))
+			app.new_prefab(find_free_filename(path / L"new_prefab_", L".prefab"));
 	};
 	explorer.folder_drop_callback = [this](const std::filesystem::path& path) {
 		if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)

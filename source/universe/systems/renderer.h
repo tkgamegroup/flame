@@ -59,6 +59,8 @@ namespace flame
 		virtual void bind_window_targets() = 0;
 
 		virtual void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) = 0;
+		virtual void set_sky_intensity(float v) = 0;
+		virtual void set_fog_color(const vec3& color) = 0;
 
 		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;

@@ -54,6 +54,7 @@ struct App : UniverseApplication
 	void new_project(const std::filesystem::path& path);
 	void open_project(const std::filesystem::path& path);
 	void open_prefab(const std::filesystem::path& path);
+	void new_prefab(const std::filesystem::path& path);
 
 	bool cmd_create_entity(EntityPtr dst = nullptr/* entity or nullptr to use e_prefab */, uint type = "empty"_h);
 	bool cmd_delete_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);

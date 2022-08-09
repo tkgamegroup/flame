@@ -22,7 +22,7 @@ namespace flame
 		void set_eul(const vec3& eul) override;
 		quat get_qut() override;
 		void set_qut(const quat& qut) override;
-		void set_scl(const vec3 & scl) override;
+		void set_scl(const vec3& scl) override;
 
 		void look_at(const vec3& t) override;
 

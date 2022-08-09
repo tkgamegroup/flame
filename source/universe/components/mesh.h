@@ -20,6 +20,12 @@ namespace flame
 		/// Reflect
 		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
 
+		inline void set_mesh_and_material(const std::filesystem::path& mesh_name, const std::filesystem::path& material_name)
+		{
+			set_mesh_name(mesh_name);
+			set_material_name(material_name);
+		}
+
 		/// Reflect
 		bool cast_shadow = true;
 		/// Reflect
