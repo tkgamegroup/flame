@@ -570,6 +570,7 @@ namespace flame
 										}
 									}
 								}
+								auto vertex_count = 0;
 								for (auto i = 0; i < polygon_count; i++)
 								{
 									auto sub_mesh_idx = 0;
@@ -585,7 +586,7 @@ namespace flame
 										auto control_point_idx = fbx_mesh->GetPolygonVertex(i, j);
 										if (control_point_idx >= 0)
 										{
-											auto vertex_count = (int)m.positions.size();
+											m.indices.push_back(m.positions.size());
 
 											auto vtx = control_points[control_point_idx];
 											m.positions.push_back(vec3(vtx[0], vtx[1], vtx[2]));
@@ -768,7 +769,7 @@ namespace flame
 												m.bone_weights.push_back(control_point_bone_weights[control_point_idx]);
 											}
 
-											m.indices.push_back(vertex_count);
+											vertex_count++;
 										}
 									}
 								}
