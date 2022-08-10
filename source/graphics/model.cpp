@@ -107,7 +107,7 @@ namespace flame
 				if (ret.empty())
 					ret = str(i);
 				else
-					for (auto& ch : ret) if (ch == ' ' || ch == ':') ch = '_';
+					for (auto& ch : ret) if (ch == ' ' || ch == ':' || ch == '|') ch = '_';
 				ret = std::format("{}_{}.{}", model_name, ret, ext);
 				return ret;
 			};

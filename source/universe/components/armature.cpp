@@ -251,6 +251,9 @@ namespace flame
 									{
 										if (bones[i].name == name)
 											return i;
+										auto sp = SUS::split(bones[i].name, ':');
+										if (sp.size() == 2 && sp[1] == name)
+											return i;
 									}
 									return -1;
 								};
