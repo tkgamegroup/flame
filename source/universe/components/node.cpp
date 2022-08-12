@@ -22,12 +22,8 @@ namespace flame
 		return eul; 
 	}
 
-	void cNodePrivate::set_eul(const vec3& _e)
+	void cNodePrivate::set_eul(const vec3& e)
 	{
-		auto e = mod(_e, 360.f);
-		if (e.x < 0.f) e.x += 360.f;
-		if (e.y < 0.f) e.y += 360.f;
-		if (e.z < 0.f) e.z += 360.f;
 		if (eul == e)
 			return;
 		eul = e;
@@ -81,10 +77,7 @@ namespace flame
 		if (eul_dirty)
 		{
 			update_rot();
-			auto res = eulerAngles(qut);
-			eul.x = glm::degrees(res.y);
-			eul.y = glm::degrees(res.x);
-			eul.z = glm::degrees(res.z);
+			eul = degrees(eulerAngles(qut));
 			eul_dirty = false;
 		}
 	}
@@ -106,13 +99,9 @@ namespace flame
 			rot_dirty = false;
 
 			if (!qut_dirty)
-			{
-				if (entity->name == "mixamorig:LeftUpLeg")
-					int cut = 1;
 				rot = mat3(qut);
-			}
 			else if (!eul_dirty)
-				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+				rot = mat3(eulerAngleXYZ(radians(eul.x), radians(eul.y), radians(eul.z)));
 		}
 	}
 

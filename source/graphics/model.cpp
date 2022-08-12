@@ -196,7 +196,7 @@ namespace flame
 #ifdef USE_FBXSDK
 			if (ext == L".fbx")
 			{
-				auto get_matrix = [](fbxsdk::FbxNode* pNode) {
+				auto get_geometry = [](fbxsdk::FbxNode* pNode) {
 					const FbxVector4 lT = pNode->GetGeometricTranslation(fbxsdk::FbxNode::eSourcePivot);
 					const FbxVector4 lR = pNode->GetGeometricRotation(fbxsdk::FbxNode::eSourcePivot);
 					const FbxVector4 lS = pNode->GetGeometricScaling(fbxsdk::FbxNode::eSourcePivot);
@@ -287,96 +287,65 @@ namespace flame
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
 					scene->SetCurrentAnimationStack(anim_stack);
 
+					FbxTime start_time, stop_time;
+					if (auto take_info = scene->GetTakeInfo(*(anim_names[i])); take_info)
+					{
+						start_time = take_info->mLocalTimeSpan.GetStart();
+						stop_time = take_info->mLocalTimeSpan.GetStop();
+					}
+					else
+					{
+						FbxTimeSpan timeLine_timespan;
+						scene->GetGlobalSettings().GetTimelineDefaultTimeSpan(timeLine_timespan);
+
+						start_time = timeLine_timespan.GetStart();
+						stop_time = timeLine_timespan.GetStop();
+					}
+
 					auto animation = new AnimationT;
-					animation->duration = 0.f;
+					animation->duration = (stop_time.GetMilliSeconds() - start_time.GetMilliSeconds()) / 1000.f;
 
-					std::function<void(fbxsdk::FbxNode*)> get_node_curves;
-					get_node_curves = [&](fbxsdk::FbxNode* node) {
-						FbxAnimCurve* curve = nullptr;
-						std::vector<std::pair<uint, vec3>> position_keys;
-						std::vector<std::pair<uint, vec3>> rotation_keys;
-						auto set_key = [](std::vector<std::pair<uint, vec3>>& dst, uint t, int idx, float v) {
-							if (dst.empty() && v == 0.f)
-								return;
-							auto it = std::lower_bound(dst.begin(), dst.end(), t, [](const auto& i, auto v) {
-								return v < i.first;
-							});
-							if (it == dst.end() || it->first != t)
-								it = dst.emplace(it, std::make_pair(t, vec3(0.f)));
-							it->second[idx] = v;
-						};
-						auto read_curve = [&](int type, int idx) {
-							const char* names[] = {
-								FBXSDK_CURVENODE_COMPONENT_X,
-								FBXSDK_CURVENODE_COMPONENT_Y,
-								FBXSDK_CURVENODE_COMPONENT_Z
-							};
-							auto name = names[idx];
-							curve = type == 0 ? node->LclTranslation.GetCurve(layer, name) :
-								node->LclRotation.GetCurve(layer, name);
-							auto& dst = type == 0 ? position_keys : rotation_keys;
-							if (curve)
-							{
-								auto keys_count = curve->KeyGetCount();
-								for (auto i = 0; i < keys_count; i++)
-								{
-									auto t = (uint)curve->KeyGetTime(i).GetMilliSeconds();
-									auto v = (float)curve->KeyGetValue(i);
-									set_key(dst, t, idx, v);
-								}
-							}
-						};
-						read_curve(0, 0); read_curve(0, 1); read_curve(0, 2);
-						read_curve(1, 0); read_curve(1, 1); read_curve(1, 2);
+					std::vector<Channel*> channels;
+					std::function<void(fbxsdk::FbxNode*, float, mat4&)> get_bone_animation;
+					get_bone_animation = [&](fbxsdk::FbxNode* node, float time, mat4& parent_transform) {
+						FbxTime fbx_time;
+						fbx_time.SetMilliSeconds(time * 1000.f);
+						auto transform = to_glm(node->EvaluateGlobalTransform(fbx_time) * get_geometry(node));
 
-						if (!position_keys.empty() || !rotation_keys.empty())
+						if (auto node_attr = node->GetNodeAttribute(); node_attr && node_attr->GetAttributeType() == FbxNodeAttribute::eSkeleton)
 						{
-							std::reverse(position_keys.begin(), position_keys.end());
-							std::reverse(rotation_keys.begin(), rotation_keys.end());
-
-							auto& ch = animation->channels.emplace_back();
-							ch.node_name = node->GetName();
-							ch.position_keys.resize(position_keys.size());
-							for (auto i = 0; i < position_keys.size(); i++)
+							auto channel = (Channel*)node->GetUserDataPtr();
+							if (!channel)
 							{
-								FbxTime time;
-								time.SetMilliSeconds(position_keys[i].first);
-								auto mat = to_glm(node->EvaluateGlobalTransform(time));
-								if (auto parent = node->GetParent(); parent)
-									mat = inverse(to_glm(parent->EvaluateGlobalTransform(time))) * mat;
-								vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
-								decompose(mat, scl, qut, pos, skew, perspective);
-
-								ch.position_keys[i].t = (float)position_keys[i].first / 1000.f;
-								ch.position_keys[i].p = pos;
-							}
-							ch.rotation_keys.resize(rotation_keys.size());
-							for (auto i = 0; i < rotation_keys.size(); i++)
-							{
-								FbxTime time;
-								time.SetMilliSeconds(rotation_keys[i].first);
-								auto mat = to_glm(node->EvaluateGlobalTransform(time));
-								if (auto parent = node->GetParent(); parent)
-									mat = inverse(to_glm(parent->EvaluateGlobalTransform(time))) * mat;
-								vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
-								decompose(mat, scl, qut, pos, skew, perspective);
-
-								ch.rotation_keys[i].t = (float)rotation_keys[i].first / 1000.f;
-								ch.rotation_keys[i].q = qut;
+								channel = new Channel();
+								channel->node_name = node->GetName();
+								node->SetUserDataPtr(channel);
+								channels.emplace_back(channel);
 							}
 
-							if (!ch.position_keys.empty())
-								animation->duration = max(animation->duration, ch.position_keys.back().t);
-							if (!ch.rotation_keys.empty())
-								animation->duration = max(animation->duration, ch.rotation_keys.back().t);
+							auto local_transform = inverse(parent_transform) * transform;
+							vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
+							decompose(local_transform, scl, qut, pos, skew, perspective);
+							channel->position_keys.push_back({ time, pos });
+							channel->rotation_keys.push_back({ time, qut });
 						}
 
 						auto children_count = node->GetChildCount();
 						for (auto i = 0; i < children_count; i++)
-							get_node_curves(node->GetChild(i));
+							get_bone_animation(node->GetChild(i), time, transform);
 					};
 
-					get_node_curves(scene->GetRootNode());
+					for (auto i = 0.f; i < animation->duration; i += 1.f / 24.f)
+					{
+						mat4 mat(1.f);
+						get_bone_animation(scene->GetRootNode(), i, mat);
+					}
+
+					for (auto ch : channels)
+						animation->channels.push_back(*ch);
+
+					for (auto ch : channels)
+						delete ch;
 
 					auto fn = parent_path / format_res_name(anim_stack->GetName(), "fani", i);
 					animation->save(fn);
@@ -550,22 +519,22 @@ namespace flame
 											FbxAMatrix reference_init;
 											FbxAMatrix cluster_init;
 											cluster->GetTransformMatrix(reference_init);
-											reference_init *= get_matrix(src);
+											reference_init *= get_geometry(src);
 											cluster->GetTransformLinkMatrix(cluster_init);
 											bone.offset_matrix = to_glm(cluster_init.Inverse() * reference_init);
 
 											int vertex_idx_count = cluster->GetControlPointIndicesCount();
 											for (int k = 0; k < vertex_idx_count; k++)
 											{
-												auto vi = cluster->GetControlPointIndices()[k];
-												if (vi >= control_points_count)
+												auto control_idx = cluster->GetControlPointIndices()[k];
+												if (control_idx >= control_points_count)
 													continue;
 
 												auto weight = (float)cluster->GetControlPointWeights()[k];
 												if (weight <= 0.f)
 													continue;
 
-												add_bone_weight(control_point_bone_ids[vi], control_point_bone_weights[vi], bone_idx, weight);
+												add_bone_weight(control_point_bone_ids[control_idx], control_point_bone_weights[control_idx], bone_idx, weight);
 											}
 										}
 									}
