@@ -4,38 +4,6 @@
 
 namespace flame
 {
-	enum WindowStyleFlags
-	{
-		WindowFrame = 1 << 0,
-		WindowResizable = 1 << 1,
-		WindowFullscreen = 1 << 2,
-		WindowMaximized = 1 << 3,
-		WindowTopmost = 1 << 4
-	};
-
-	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }
-
-	enum CursorType
-	{
-		CursorNone = -1,
-		CursorAppStarting, // arrow and small hourglass
-		CursorArrow,
-		CursorCross, // unknown
-		CursorHand,
-		CursorHelp,
-		CursorIBeam,
-		CursorNo,
-		CursorSizeAll,
-		CursorSizeNESW,
-		CursorSizeNS,
-		CursorSizeNWSE,
-		CursorSizeWE,
-		CursorUpArrwo,
-		CursorWait,
-
-		Cursor_Count
-	};
-
 	struct NativeWindow
 	{
 		ivec2 pos;
