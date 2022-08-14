@@ -2,10 +2,23 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "camera_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
 	std::vector<cCameraPtr> cameras;
+
+	vec2 cCameraPrivate::world_to_screen(const vec3& pos)
+	{
+		auto p = proj_view_mat * vec4(pos, 1.f);
+		p /= p.w;
+		if (p.x < -1.f || p.x > 1.f || p.y < -1.f || p.y > 1.f || p.z < -1.f || p.z > 1.f)
+			return vec2(-1.f);
+		auto screen_size = sRenderer::instance()->target_size();
+		if (screen_size.x <= 0.f && screen_size.y <= 0.f)
+			return vec2(-1.f);
+		return (p.xy() * 0.5f + 0.5f) * screen_size;
+	}
 
 	void cCameraPrivate::on_active()
 	{

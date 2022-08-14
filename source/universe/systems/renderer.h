@@ -57,6 +57,7 @@ namespace flame
 
 		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
 		virtual void bind_window_targets() = 0;
+		virtual vec2 target_size() = 0;
 
 		virtual void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) = 0;
 		virtual void set_sky_intensity(float v) = 0;

@@ -27,6 +27,8 @@ namespace flame
 		mat4 proj_view_mat_inv;
 		Frustum frustum;
 
+		virtual vec2 world_to_screen(const vec3& pos) = 0;
+
 		struct Create
 		{
 			virtual cCameraPtr operator()(EntityPtr e) = 0;

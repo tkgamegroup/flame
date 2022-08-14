@@ -630,6 +630,13 @@ namespace flame
 		set_targets(views, graphics::ImageLayoutAttachment);
 	}
 
+	vec2 sRendererPrivate::target_size()
+	{
+		if (iv_tars.empty())
+			return vec2(0.f);
+		return iv_tars[0]->image->size;
+	}
+
 	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
 	{
 		dirty = true;

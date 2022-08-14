@@ -20,6 +20,7 @@ namespace flame
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
+		vec2 target_size() override;
 
 		void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
 		void set_sky_intensity(float v) override;
