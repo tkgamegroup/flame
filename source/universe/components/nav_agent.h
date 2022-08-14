@@ -11,11 +11,11 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		float radius = 0.3f;
+		float radius = 0.2f;
 		/// Reflect
-		float height = 1.8f;
+		float height = 2.f;
 		/// Reflect
-		float speed = 7.5f;
+		float speed = 5.f;
 		/// Reflect
 		float turn_speed = 900.f;
 		/// Reflect

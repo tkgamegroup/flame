@@ -306,11 +306,11 @@ namespace flame
 					animation->duration = (stop_time.GetMilliSeconds() - start_time.GetMilliSeconds()) / 1000.f;
 
 					std::vector<Channel*> channels;
-					std::function<void(fbxsdk::FbxNode*, float, mat4&)> get_bone_animation;
-					get_bone_animation = [&](fbxsdk::FbxNode* node, float time, mat4& parent_transform) {
+					std::function<void(fbxsdk::FbxNode*, float)> get_bone_animation;
+					get_bone_animation = [&](fbxsdk::FbxNode* node, float time) {
 						FbxTime fbx_time;
 						fbx_time.SetMilliSeconds(time * 1000.f);
-						auto transform = to_glm(node->EvaluateGlobalTransform(fbx_time) * get_geometry(node));
+						auto transform = to_glm(node->EvaluateLocalTransform(fbx_time) * get_geometry(node));
 
 						if (auto node_attr = node->GetNodeAttribute(); node_attr && node_attr->GetAttributeType() == FbxNodeAttribute::eSkeleton)
 						{
@@ -323,22 +323,21 @@ namespace flame
 								channels.emplace_back(channel);
 							}
 
-							auto local_transform = inverse(parent_transform) * transform;
 							vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
-							decompose(local_transform, scl, qut, pos, skew, perspective);
+							decompose(transform, scl, qut, pos, skew, perspective);
 							channel->position_keys.push_back({ time, pos });
 							channel->rotation_keys.push_back({ time, qut });
 						}
 
 						auto children_count = node->GetChildCount();
 						for (auto i = 0; i < children_count; i++)
-							get_bone_animation(node->GetChild(i), time, transform);
+							get_bone_animation(node->GetChild(i), time);
 					};
 
 					for (auto i = 0.f; i < animation->duration; i += 1.f / 24.f)
 					{
 						mat4 mat(1.f);
-						get_bone_animation(scene->GetRootNode(), i, mat);
+						get_bone_animation(scene->GetRootNode(), i);
 					}
 
 					for (auto ch : channels)

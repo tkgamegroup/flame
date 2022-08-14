@@ -76,7 +76,7 @@ namespace flame
 							{
 								auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
 									return i.first < v;
-									});
+								});
 								auto lit = rit;
 								if (lit != t.positions.begin())
 									lit--;
@@ -90,7 +90,7 @@ namespace flame
 							{
 								auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
 									return i.first < v;
-									});
+								});
 								auto lit = rit;
 								if (lit != t.rotations.begin())
 									lit--;

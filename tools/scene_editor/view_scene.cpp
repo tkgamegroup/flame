@@ -121,24 +121,23 @@ void View_Scene::on_draw()
 				{
 					if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
 						mat = inverse(pnode->transform) * mat;
-					vec3 p, r, s;
-					ImGuizmo::DecomposeMatrixToComponents(&mat[0][0], &p[0], &r[0], &s[0]);
-					r = vec3(r.y, r.x, r.z);
-					if (p != tar->pos)
+					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
+					decompose(mat, scl, qut, pos, skew, perspective);
+					if (pos != tar->pos)
 					{
-						tar->set_pos(p);
+						tar->set_pos(pos);
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id, "flame::cNode", "pos");
 					}
-					if (r != tar->eul)
+					if (qut != tar->qut)
 					{
-						tar->set_eul(r);
+						tar->set_qut(qut);
 						if (auto ins = get_prefab_instance(e); ins)
-							ins->mark_modifier(e->file_id, "flame::cNode", "eul");
+							ins->mark_modifier(e->file_id, "flame::cNode", "qut");
 					}
-					if (s != tar->scl)
+					if (scl != tar->scl)
 					{
-						tar->set_scl(s);
+						tar->set_scl(scl);
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id, "flame::cNode", "scl");
 					}

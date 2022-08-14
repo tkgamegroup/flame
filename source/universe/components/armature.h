@@ -14,7 +14,6 @@ namespace flame
 		std::filesystem::path armature_name;
 		/// Reflect
 		virtual void set_armature_name(const std::filesystem::path& name) = 0;
-
 		/// Reflect
 		std::vector<std::pair<std::filesystem::path, std::string>> animation_names;
 		/// Reflect

@@ -77,7 +77,10 @@ namespace flame
 		if (eul_dirty)
 		{
 			update_rot();
-			eul = degrees(eulerAngles(qut));
+			if (!qut_dirty)
+				eul = degrees(eulerAngles(qut)).yxz();
+			else
+				assert(0);
 			eul_dirty = false;
 		}
 	}
@@ -87,7 +90,10 @@ namespace flame
 		if (qut_dirty)
 		{
 			update_rot();
-			qut = quat(rot);
+			if (!rot_dirty)
+				qut = quat(rot);
+			else
+				assert(0);
 			qut_dirty = false;
 		}
 	}
@@ -101,7 +107,7 @@ namespace flame
 			if (!qut_dirty)
 				rot = mat3(qut);
 			else if (!eul_dirty)
-				rot = mat3(eulerAngleXYZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+				rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
 		}
 	}
 
