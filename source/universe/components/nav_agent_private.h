@@ -15,6 +15,9 @@ namespace flame
 		bool face_mode = false;
 		vec3 prev_pos;
 
+		void set_speed_scale(float v) override;
+		void set_turn_speed_scale(float v) override;
+
 		void set_target(const vec3& pos, bool face_mode) override;
 		void stop() override;
 		vec3 desire_velocity() override;

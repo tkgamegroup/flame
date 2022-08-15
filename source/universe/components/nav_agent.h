@@ -17,7 +17,15 @@ namespace flame
 		/// Reflect
 		float speed = 5.f;
 		/// Reflect
+		float speed_scale = 1.f;
+		/// Reflect
+		virtual void set_speed_scale(float v) = 0;
+		/// Reflect
 		float turn_speed = 900.f;
+		/// Reflect
+		float turn_speed_scale = 1.f;
+		/// Reflect
+		virtual void set_turn_speed_scale(float v) = 0;
 		/// Reflect
 		uint separation_group = 1;
 

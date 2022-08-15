@@ -6,6 +6,23 @@ namespace flame
 {
 	std::vector<cNavAgentPtr> nav_agents;
 
+	void cNavAgentPrivate::set_speed_scale(float v)
+	{
+		if (speed_scale == v)
+			return;
+		speed_scale = v;
+
+		auto agent = dt_crowd->getEditableAgent(dt_id);
+		agent->params.maxSpeed = speed * speed_scale;
+	}
+
+	void cNavAgentPrivate::set_turn_speed_scale(float v)
+	{
+		if (turn_speed_scale == v)
+			return;
+		turn_speed_scale = v;
+	}
+
 	void cNavAgentPrivate::set_target(const vec3& pos, bool _face_mode)
 	{
 		if (target_pos == pos && face_mode == _face_mode)
@@ -101,7 +118,7 @@ namespace flame
 			auto dir = target_pos - node->g_pos;
 			dir = normalize(dir);
 			auto diff = angle_diff(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
-			node->add_eul(vec3(sign_min(diff, turn_speed * delta_time), 0.f, 0.f));
+			node->add_eul(vec3(sign_min(diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 		}
 		else
 		{
@@ -115,7 +132,7 @@ namespace flame
 					if (length(dir) > 0.f)
 					{
 						auto diff = angle_diff(node->get_eul().x, degrees(atan2(dir.x, dir.z)));
-						node->add_eul(vec3(sign_min(diff, turn_speed * delta_time), 0.f, 0.f));
+						node->add_eul(vec3(sign_min(diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 						*(vec3*)agent->npos -= *(vec3*)agent->disp;
 						if (abs(diff) < 15.f)
 						{

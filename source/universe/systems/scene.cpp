@@ -1034,7 +1034,7 @@ namespace flame
 				parms.radius = ag->radius;
 				parms.height = ag->height;
 				parms.maxAcceleration = 600.f;
-				parms.maxSpeed = ag->speed;
+				parms.maxSpeed = ag->speed * ag->speed_scale;
 				parms.collisionQueryRange = parms.radius * 12.0f;
 				parms.pathOptimizationRange = parms.radius * 30.0f;
 				parms.separationGroup = ag->separation_group;
