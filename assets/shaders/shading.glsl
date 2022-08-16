@@ -42,7 +42,7 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	return diffuse + specular;
 }
 
-const float esm_c = 30.0;
+const float esm_c = 7.0;
 
 vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
