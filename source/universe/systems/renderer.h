@@ -59,9 +59,24 @@ namespace flame
 		virtual void bind_window_targets() = 0;
 		virtual vec2 target_size() = 0;
 
-		virtual void set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) = 0;
+		graphics::ImageViewPtr sky_map = nullptr;
+		graphics::ImageViewPtr sky_irr_map = nullptr;
+		graphics::ImageViewPtr sky_rad_map = nullptr;
+		virtual void set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) = 0;
+		float sky_intensity = 1.f;
 		virtual void set_sky_intensity(float v) = 0;
+		vec3 fog_color = vec3(1.f);
 		virtual void set_fog_color(const vec3& color) = 0;
+		float shadow_distance = 100.f;
+		virtual void set_shadow_distance(float d) = 0;
+		uint csm_levels = 2;
+		virtual void set_csm_levels(uint lv) = 0;
+		float esm_factor = 7.f;
+		virtual void set_esm_factor(float f) = 0;
+		float ssao_radius = 0.5f;
+		float ssao_bias = 0.025f;
+		float white_point = 4.f;
+		float gamma = 1.5f;
 
 		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;

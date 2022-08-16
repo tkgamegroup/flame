@@ -75,7 +75,7 @@ namespace flame
 
 	void cEnvironmentPrivate::update_sky()
 	{
-		sRenderer::instance()->set_sky(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
+		sRenderer::instance()->set_sky_maps(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
 			sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
 			sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
 	}
@@ -107,7 +107,7 @@ namespace flame
 	void cEnvironmentPrivate::on_inactive()
 	{
 		if (!environments.empty() && environments.front() == this)
-			sRenderer::instance()->set_sky(nullptr, nullptr, nullptr);
+			sRenderer::instance()->set_sky_maps(nullptr, nullptr, nullptr);
 		std::erase_if(environments, [&](auto c) {
 			return c == this;
 		});

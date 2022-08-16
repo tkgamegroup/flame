@@ -27,19 +27,6 @@ namespace flame
 	const auto DirShadowMaxLevels = 4U;
 	const auto PtShadowMaxCount = 4U;
 
-	int sky_map_res_id = -1;
-	int sky_irr_map_res_id = -1;
-	int sky_rad_map_res_id = -1;
-	float sky_rad_levels = 1.f;
-	float sky_intensity = 1.f;
-	vec3 fog_color = vec3(1.f);
-	float white_point = 4.f;
-	float gamma = 1.5f;
-	uint csm_levels = 2;
-	float shadow_distance = 0.1f; // (0-1) of camera's far
-	float ssao_radius = 0.5f;
-	float ssao_bias = 0.025f;
-
 	std::vector<sRenderer::MeshRes> mesh_reses;
 	std::vector<sRenderer::TexRes> tex_reses;
 	std::vector<sRenderer::MatRes> mat_reses;
@@ -637,7 +624,7 @@ namespace flame
 		return iv_tars[0]->image->size;
 	}
 
-	void sRendererPrivate::set_sky(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
+	void sRendererPrivate::set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
 	{
 		dirty = true;
 
@@ -661,6 +648,27 @@ namespace flame
 		dirty = true;
 
 		fog_color = color;
+	}
+
+	void sRendererPrivate::set_shadow_distance(float d)
+	{
+		dirty = true;
+
+		shadow_distance = d;
+	}
+
+	void sRendererPrivate::set_csm_levels(uint lv)
+	{
+		dirty = true;
+
+		csm_levels = lv;
+	}
+
+	void sRendererPrivate::set_esm_factor(float f)
+	{
+		dirty = true;
+
+		esm_factor = f;
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -1353,8 +1361,8 @@ namespace flame
 				{
 					auto n = lv / (float)csm_levels;
 					auto f = (lv + 1) / (float)csm_levels;
-					n = mix(zn, zf, n * n * shadow_distance);
-					f = mix(zn, zf, f * f * shadow_distance);
+					n = mix(zn, zf, n * n * shadow_distance / zf);
+					f = mix(zn, zf, f * f * shadow_distance / zf);
 					splits[lv] = f;
 
 					{
@@ -1452,7 +1460,7 @@ namespace flame
 				}
 
 				buf_dir_shadow.set_var<"splits"_h>(splits);
-				buf_dir_shadow.set_var<"far"_h>(shadow_distance * zf);
+				buf_dir_shadow.set_var<"far"_h>(shadow_distance);
 				buf_dir_shadow.next_item();
 			}
 
