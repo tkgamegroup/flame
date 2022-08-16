@@ -249,6 +249,8 @@ namespace flame
 				if (auto a = n_variable.attribute("metas"); a)
 					v.metas.from_string(a.value());
 			}
+			for (auto i = 0; i < u.variables.size(); i++)
+				u.variables_map.emplace(u.variables[i].name_hash, i);
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto& f = u.functions.emplace_back();

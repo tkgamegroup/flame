@@ -256,10 +256,11 @@ namespace flame
 			PipelineLayoutPtr pll = nullptr;
 			PipelineType plt = PipelineGraphics;
 			std::unordered_map<uint, int> dsl_map;
-			VirtualUdt<id> vu_pc;
 
 			DescriptorSetPtr temp_dss[8];
+			VirtualUdt<id> vu_pc;
 			char temp_pc[256];
+			VirtualStruct vs_pc;
 
 			void init(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
 			{
@@ -277,6 +278,8 @@ namespace flame
 					dsl_map.emplace(sh(name.c_str()), i);
 				}
 				vu_pc.ui = pll->pc_ui;
+
+				vs_pc.init(pll->pc_ui);
 
 				memset(temp_dss, 0, sizeof(temp_dss));
 				memset(temp_pc, 0, sizeof(temp_pc));
@@ -340,6 +343,12 @@ namespace flame
 			{
 				cb->bind_pipeline_layout(pll);
 				cb->push_constant(off, min(size, pll->pc_sz - off), temp_pc + off);
+			}
+
+			inline void push_constant2(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
+			{
+				cb->bind_pipeline_layout(pll);
+				cb->push_constant(off, min(size, pll->pc_sz - off), vs_pc.data.get() + off);
 			}
 		};
 	}

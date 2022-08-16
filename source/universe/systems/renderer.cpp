@@ -1879,8 +1879,8 @@ namespace flame
 					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 					cb->bind_pipeline(pl_mesh_pickup);
-					prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
-					prm_fwd.push_constant(cb.get());
+					prm_fwd.vs_pc.item("i"_h).set(ivec4(i + 1, 0, 0, 0));
+					prm_fwd.push_constant2(cb.get());
 					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
 				}
 				else

@@ -2609,6 +2609,20 @@ namespace flame
 		uint size;
 		UdtInfo* ui;
 
+		inline VirtualData item(uint hash, uint array_idx = 0)
+		{
+			assert(ui);
+			auto it = ui->variables_map.find(hash);
+			assert(it != ui->variables_map.end());
+			auto& vi = ui->variables[it->second];
+			assert(array_idx < vi.array_size);
+			VirtualData ret;
+			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
+			ret.size = vi.type->size;
+			ret.ui = vi.type->retrive_ui();
+			return ret;
+		}
+
 		template<typename T>
 		inline void set(const T& v)
 		{
@@ -2627,6 +2641,17 @@ namespace flame
 	{
 		std::unique_ptr<char> data;
 		std::vector<std::pair<uint, uint>> dirty_regions;
+
+		inline void init(UdtInfo* _ui)
+		{
+			ui = _ui;
+			if (!ui)
+				return;
+			size = ui->size;
+			data.reset(new char[size]);
+			pdata = data.get();
+			memset(pdata, 0, size);
+		}
 
 		inline void mark_dirty(const VirtualData& d)
 		{
