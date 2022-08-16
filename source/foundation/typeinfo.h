@@ -501,6 +501,7 @@ namespace flame
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;
 		std::vector<Attribute> attributes;
+		std::unordered_map<uint, uint> variables_map;
 		void* library = nullptr;
 
 		inline int find_variable_i(std::string_view name) const
@@ -2601,6 +2602,37 @@ namespace flame
 		}
 		return nullptr;
 	}
+
+	struct VirtualData
+	{
+		char* pdata;
+		uint size;
+		UdtInfo* ui;
+
+		template<typename T>
+		inline void set(const T& v)
+		{
+			assert(sizeof(T) == size);
+			memcpy(pdata, &v, sizeof(T));
+		}
+
+		inline void set(const char* src, uint len)
+		{
+			assert(len == size);
+			memcpy(pdata, src, len);
+		}
+	};
+
+	struct VirtualStruct : VirtualData
+	{
+		std::unique_ptr<char> data;
+		std::vector<std::pair<uint, uint>> dirty_regions;
+
+		inline void mark_dirty(const VirtualData& d)
+		{
+			dirty_regions.emplace_back(d.pdata - data.get(), d.size);
+		}
+	};
 
 	template<uint id>
 	struct VirtualUdt
