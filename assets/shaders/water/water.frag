@@ -9,7 +9,7 @@ layout(location = 0) out vec4 o_color;
 void main()
 {
 #ifdef MAT_FILE
-	MaterialInfo material = material_infos[water_infos[i_idx].material_id];
+	MaterialInfo material = material.infos[water_infos[i_idx].material_id];
 	
 	#inlcude MAT_FILE
 

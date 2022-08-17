@@ -383,6 +383,7 @@ namespace flame
 
 	struct EnumInfo
 	{
+		TypeInfoDataBase* db = nullptr;
 		std::string name;
 		uint name_hash;
 		std::vector<EnumItemInfo> items;
@@ -410,6 +411,7 @@ namespace flame
 
 	struct FunctionInfo
 	{
+		TypeInfoDataBase* db = nullptr;
 		UdtInfo* ui = nullptr;
 		std::string name;
 		uint name_hash;
@@ -493,6 +495,7 @@ namespace flame
 
 	struct UdtInfo
 	{
+		TypeInfoDataBase* db = nullptr;
 		std::string name;
 		uint name_hash;
 		uint size = 0;
@@ -698,6 +701,21 @@ namespace flame
 		std::map<uint, EnumInfo> enums;
 		std::map<uint, FunctionInfo> functions;
 		std::map<uint, UdtInfo> udts;
+
+		TypeInfoDataBase& operator=(TypeInfoDataBase&& oth)
+		{
+			typeinfos = std::move(oth.typeinfos);
+			enums = std::move(oth.enums);
+			for (auto& ei : enums)
+				ei.second.db = this;
+			functions = std::move(oth.functions);
+			for (auto& fi : functions)
+				fi.second.db = this;
+			udts = std::move(oth.udts);
+			for (auto& ui : udts)
+				ui.second.db = this;
+			return *this;
+		}
 
 		inline void add_ti(TypeInfo* ti)
 		{
@@ -2609,13 +2627,25 @@ namespace flame
 		uint size;
 		UdtInfo* ui;
 
+		inline const VariableInfo& item_info(uint hash) const
+		{
+			auto it = ui->variables_map.find(hash);
+			return ui->variables[it->second];
+		}
+
+		inline VirtualData item_i(uint idx, uint array_idx = 0)
+		{
+			auto& vi = ui->variables[idx];
+			VirtualData ret;
+			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
+			ret.size = vi.type->size;
+			ret.ui = vi.type->retrive_ui();
+			return ret;
+		}
+
 		inline VirtualData item(uint hash, uint array_idx = 0)
 		{
-			assert(ui);
-			auto it = ui->variables_map.find(hash);
-			assert(it != ui->variables_map.end());
-			auto& vi = ui->variables[it->second];
-			assert(array_idx < vi.array_size);
+			auto& vi = item_info(hash);
 			VirtualData ret;
 			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
 			ret.size = vi.type->size;
@@ -2626,13 +2656,11 @@ namespace flame
 		template<typename T>
 		inline void set(const T& v)
 		{
-			assert(sizeof(T) == size);
-			memcpy(pdata, &v, sizeof(T));
+			*(T*)pdata = v;
 		}
 
 		inline void set(const void* src, uint len)
 		{
-			assert(len == size);
 			memcpy(pdata, src, len);
 		}
 	};
@@ -2642,20 +2670,25 @@ namespace flame
 		std::unique_ptr<char> data;
 		std::vector<std::pair<uint, uint>> dirty_regions;
 
-		inline void init(UdtInfo* _ui)
+		inline void init(UdtInfo* _ui, void* _data = nullptr)
 		{
 			ui = _ui;
 			if (!ui)
 				return;
 			size = ui->size;
-			data.reset(new char[size]);
-			pdata = data.get();
-			memset(pdata, 0, size);
+			if (_data)
+				pdata = (char*)_data;
+			else
+			{
+				data.reset(new char[size]);
+				pdata = data.get();
+				memset(pdata, 0, size);
+			}
 		}
 
 		inline void mark_dirty(const VirtualData& d)
 		{
-			dirty_regions.emplace_back(uint(d.pdata - data.get()), d.size);
+			dirty_regions.emplace_back(uint(d.pdata - pdata), d.size);
 		}
 	};
 

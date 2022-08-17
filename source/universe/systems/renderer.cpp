@@ -68,18 +68,17 @@ namespace flame
 	graphics::PipelineResourceManager prm_luma;
 	graphics::PipelineResourceManager prm_tone;
 
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx_arm;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx_arm;
+	graphics::VertexBuffer													buf_vtx;
+	graphics::IndexBuffer													buf_idx;
+	graphics::VertexBuffer													buf_vtx_arm;
+	graphics::IndexBuffer													buf_idx_arm;
 
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_sdf_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_material_system;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_material_info;
+	graphics::StorageBuffer2														buf_material;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_lighting;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
@@ -380,28 +379,21 @@ namespace flame
 		}
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
-		buf_material_system.create(dsl_material->get_buf_ui("MaterialSystem"_h));
-		buf_material_info.create_with_array_type(dsl_material->get_buf_ui("MaterialInfos"_h));
-		mat_reses.resize(buf_material_info.array_capacity);
+		buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
+		buf_material.item("black_map_id"_h).set(get_texture_res(img_black->get_view(), nullptr, -1));
+		buf_material.item("white_map_id"_h).set(get_texture_res(img_white->get_view(), nullptr, -1));
+		{
+			auto img = graphics::Image::get(L"flame\\random.png");
+			buf_material.item("random_map_id"_h).set(img ? get_texture_res(img->get_view(),
+				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
+		}
+		mat_reses.resize(buf_material.item_info("infos"_h).array_size);
 		get_material_res(graphics::Material::get(L"default"), -1);
 		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
 		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
-		ds_material->set_buffer("MaterialSystem"_h, 0, buf_material_system.buf.get());
-		ds_material->set_buffer("MaterialInfos"_h, 0, buf_material_info.buf.get());
+		ds_material->set_buffer("Material"_h, 0, buf_material.buf.get());
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
-		buf_material_system.set_var<"black_map_id"_h>(get_texture_res(img_black->get_view(), nullptr, -1));
-		buf_material_system.set_var<"white_map_id"_h>(get_texture_res(img_white->get_view(), nullptr, -1));
-		{
-			auto img = graphics::Image::get(L"flame\\random.png");
-			buf_material_system.set_var<"random_map_id"_h>(img ? get_texture_res(img->get_view(),
-				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
-		}
-		{
-			graphics::InstanceCommandBuffer cb;
-			buf_material_system.upload(cb.get());
-			cb.excute();
-		}
 		ds_material->update();
 		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
 		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
@@ -484,9 +476,9 @@ namespace flame
 		pl_terrain_plain->dynamic_renderpass = true;
 
 		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
-		buf_idx.create(sizeof(uint), 1024 * 256 * 6);
+		buf_idx.create(1024 * 256 * 6);
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
-		buf_idx_arm.create(sizeof(uint), 1024 * 128 * 6);
+		buf_idx_arm.create(1024 * 128 * 6);
 		opa_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
 		trs_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
 		for (auto& s : dir_shadows)
@@ -771,55 +763,45 @@ namespace flame
 		res.mesh = mesh;
 		res.ref = 1;
 
-		graphics::InstanceCommandBuffer cb;
-
 		res.vtx_cnt = mesh->positions.size();
 		res.idx_cnt = mesh->indices.size();
 		res.arm = !mesh->bone_ids.empty();
 		if (!res.arm)
 		{
-			res.vtx_off = buf_vtx.item_offset();
+			res.vtx_off = buf_vtx.stag_top;
 			for (auto i = 0; i < res.vtx_cnt; i++)
 			{
-				buf_vtx.set_var<"i_pos"_h>(mesh->positions[i]);
+				auto pv = buf_vtx.add();
+				pv.item("i_pos"_h).set(mesh->positions[i]);
 				if (!mesh->normals.empty())
-					buf_vtx.set_var<"i_nor"_h>(mesh->normals[i]);
+					pv.item("i_nor"_h).set(mesh->normals[i]);
 				if (!mesh->uvs.empty())
-					buf_vtx.set_var<"i_uv"_h>(mesh->uvs[i]);
-				buf_vtx.next_item();
+					pv.item("i_uv"_h).set(mesh->uvs[i]);
 			}
 
-			res.idx_off = buf_idx.item_offset();
-			buf_idx.push(res.idx_cnt, mesh->indices.data());
-
-			buf_vtx.upload(cb.get());
-			buf_idx.upload(cb.get());
+			res.idx_off = buf_idx.stag_top;
+			buf_idx.add(mesh->indices.data(), res.idx_cnt);
 		}
 		else
 		{
-			res.vtx_off = buf_vtx_arm.item_offset();
+			res.vtx_off = buf_vtx_arm.stag_top;
 			for (auto i = 0; i < res.vtx_cnt; i++)
 			{
-				buf_vtx_arm.set_var<"i_pos"_h>(mesh->positions[i]);
+				auto pv = buf_vtx_arm.add();
+				pv.item("i_pos"_h).set(mesh->positions[i]);
 				if (!mesh->normals.empty())
-					buf_vtx_arm.set_var<"i_nor"_h>(mesh->normals[i]);
+					pv.item("i_nor"_h).set(mesh->normals[i]);
 				if (!mesh->uvs.empty())
-					buf_vtx_arm.set_var<"i_uv"_h>(mesh->uvs[i]);
+					pv.item("i_uv"_h).set(mesh->uvs[i]);
 				if (!mesh->bone_ids.empty())
-					buf_vtx_arm.set_var<"i_bids"_h>(mesh->bone_ids[i]);
+					pv.item("i_bids"_h).set(mesh->bone_ids[i]);
 				if (!mesh->bone_weights.empty())
-					buf_vtx_arm.set_var<"i_bwgts"_h>(mesh->bone_weights[i]);
-				buf_vtx_arm.next_item();
+					pv.item("i_bwgts"_h).set(mesh->bone_weights[i]);
 			}
 
-			res.idx_off = buf_idx_arm.item_offset();
-			buf_idx_arm.push(res.idx_cnt, mesh->indices.data());
-
-			buf_vtx_arm.upload(cb.get());
-			buf_idx_arm.upload(cb.get());
+			res.idx_off = buf_idx_arm.stag_top;
+			buf_idx_arm.add(mesh->indices.data(), res.idx_cnt);
 		}
-
-		cb.excute();
 
 		return id;
 	}
@@ -888,19 +870,17 @@ namespace flame
 		}
 		if (update_parameters || update_textures)
 		{
-			graphics::InstanceCommandBuffer cb;
-			buf_material_info.select_item(id);
-			buf_material_info.set_var<"color"_h>(res.mat->color);
-			buf_material_info.set_var<"metallic"_h>(res.mat->metallic);
-			buf_material_info.set_var<"roughness"_h>(res.mat->roughness);
-			buf_material_info.set_var<"opaque"_h>((int)res.mat->opaque);
-			buf_material_info.set_var<"f"_h>(res.mat->float_values);
-			buf_material_info.set_var<"i"_h>(res.mat->int_values);
-			auto ids = (int*)buf_material_info.var_addr<"map_indices"_h>();
+			auto p_info = buf_material.item("infos"_h, id);
+			buf_material.mark_dirty(p_info);
+			p_info.item("color"_h).set(res.mat->color);
+			p_info.item("metallic"_h).set(res.mat->metallic);
+			p_info.item("roughness"_h).set(res.mat->roughness);
+			p_info.item("opaque"_h).set(res.mat->opaque);
+			p_info.item("f"_h).set(res.mat->float_values);
+			p_info.item("i"_h).set(res.mat->int_values);
+			auto p_ids = (int*)p_info.item("map_indices"_h).pdata;
 			for (auto i = 0; i < res.texs.size(); i++)
-				ids[i] = res.texs[i].first;
-			buf_material_info.upload(cb.get());
-			cb.excute();
+				p_ids[i] = res.texs[i].first;
 		}
 	}
 
@@ -1201,6 +1181,11 @@ namespace flame
 			}
 		}
 
+		buf_vtx.upload(cb);
+		buf_idx.upload(cb);
+		buf_vtx_arm.upload(cb);
+		buf_idx_arm.upload(cb);
+
 		buf_scene.set_var<"zNear"_h>(camera->zNear);
 		buf_scene.set_var<"zFar"_h>(camera->zFar);
 		buf_scene.set_var<"fovy"_h>(camera->fovy);
@@ -1221,7 +1206,9 @@ namespace flame
 		buf_lighting.set_var<"sky_intensity"_h>(sky_intensity);
 		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
 		buf_lighting.set_var<"fog_color"_h>(fog_color);
-		buf_lighting.upload(cb);
+		buf_lighting.upload(cb); 
+		
+		buf_material.upload(cb);
 
 		auto n_dir_lights = 0;
 		auto n_dir_shadows = 0;

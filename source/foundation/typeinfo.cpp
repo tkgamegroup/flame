@@ -210,6 +210,7 @@ namespace flame
 		{
 			auto name = std::string(n_enum.attribute("name").value());
 			auto& e = enums.emplace(sh(name.c_str()), EnumInfo()).first->second;
+			e.db = this;
 			e.name = name;
 			e.name_hash = sh(name.c_str());
 			for (auto n_item : n_enum.child("items"))
@@ -225,6 +226,7 @@ namespace flame
 		{
 			auto name = std::string(n_udt.attribute("name").value());
 			auto& u = udts.emplace(sh(name.c_str()), UdtInfo()).first->second;
+			u.db = this;
 			u.name = name;
 			u.name_hash = sh(name.c_str());
 			u.size = n_udt.attribute("size").as_uint();
@@ -254,6 +256,7 @@ namespace flame
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto& f = u.functions.emplace_back();
+				f.db = this;
 				f.ui = &u;
 				f.name = n_function.attribute("name").value();
 				f.name_hash = sh(f.name.c_str());

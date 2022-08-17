@@ -43,39 +43,175 @@ namespace flame
 			}
 		};
 
+		struct SparseArray
+		{
+			std::deque<uint> free_slots;
+
+			void init(uint array_capacity)
+			{
+				free_slots.resize(array_capacity);
+				std::iota(free_slots.begin(), free_slots.end(), 0);
+			}
+
+			inline int get_free_item()
+			{
+				if (free_slots.empty())
+					return -1;
+				auto ret = free_slots.front();
+				free_slots.pop_front();
+				return ret;
+			}
+
+			inline void release_item(uint id)
+			{
+				free_slots.push_back(id);
+			}
+		};
+
+		constexpr inline AccessFlags u2a(BufferUsageFlags u)
+		{
+			switch (u)
+			{
+			case BufferUsageVertex:
+				return AccessVertexAttributeRead;
+			case BufferUsageIndex:
+				return AccessIndexRead;
+			case BufferUsageIndirect:
+				return AccessIndirectCommandRead;
+			}
+			return AccessNone;
+		}
+
+		constexpr inline PipelineStageFlags u2s(BufferUsageFlags u)
+		{
+			switch (u)
+			{
+			case BufferUsageVertex:
+			case BufferUsageIndex:
+				return PipelineStageVertexInput;
+			case BufferUsageIndirect:
+				return PipelineStageDrawIndirect;
+			}
+			return PipelineStageAllCommand;
+		}
+
+		struct StorageBuffer2 : VirtualStruct
+		{
+			BufferUsageFlags			usage;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+
+			void create(BufferUsageFlags _usage, UdtInfo* ui)
+			{
+				usage = _usage;
+				buf.reset(Buffer::create(ui->size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
+				init(ui, stag->mapped);
+			}
+
+			void upload(CommandBufferPtr cb)
+			{
+				if (dirty_regions.empty())
+					return;
+				std::vector<BufferCopy> copies;
+				for (auto& r : dirty_regions)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = r.first;
+					cpy.size = r.second;
+					copies.push_back(cpy);
+				}
+				cb->copy_buffer(stag.get(), buf.get(), copies);
+				copies.clear();
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
+			}
+		};
+
+		struct VertexBuffer : VirtualStruct
+		{
+			UdtInfo						array_type;
+			uint						capacity;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+			uint						buf_top;
+			uint						stag_top;
+
+			void create(UdtInfo* ui, uint _capacity)
+			{
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * ui->size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
+				auto& vi = array_type.variables.emplace_back();
+				vi.type = TypeInfo::get(TagU, ui->name, *ui->db);
+				vi.array_size = capacity;
+				vi.array_stride = ui->size;
+				array_type.size = ui->size;
+				init(&array_type, stag->mapped);
+			}
+
+			VirtualData add()
+			{
+				return item_i(0, stag_top++);
+			}
+
+			void upload(CommandBufferPtr cb)
+			{
+				if (buf_top < stag_top)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = buf_top;
+					cpy.size = (stag_top - buf_top) * ui->size;
+					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
+					buf_top = stag_top;
+				}
+			}
+		};
+
+		struct IndexBuffer
+		{
+			uint						capacity;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+			uint						buf_top;
+			uint						stag_top;
+
+			void create(uint _capacity)
+			{
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
+			}
+
+			void add(const uint* src, uint size)
+			{
+				memcpy((char*)stag->mapped + stag_top * sizeof(uint), src, size * sizeof(uint));
+				stag_top += size;
+			}
+
+			void upload(CommandBufferPtr cb)
+			{
+				if (buf_top < stag_top)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = buf_top;
+					cpy.size = (stag_top - buf_top) * sizeof(uint);
+					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
+					buf_top = stag_top;
+				}
+			}
+		};
+
 		template<uint id, BufferUsageFlags usage, bool rewind = true, bool sparse = false>
 		struct StorageBuffer : VirtualUdt<id>
 		{
 			using VirtualUdt<id>::ui;
 			using VirtualUdt<id>::var_off;
 			using VirtualUdt<id>::set_var;
-
-			constexpr inline AccessFlags u2a(BufferUsageFlags u)
-			{
-				switch (u)
-				{
-				case BufferUsageVertex:
-					return AccessVertexAttributeRead;
-				case BufferUsageIndex:
-					return AccessIndexRead;
-				case BufferUsageIndirect:
-					return AccessIndirectCommandRead;
-				}
-				return AccessNone;
-			}
-
-			constexpr inline PipelineStageFlags u2s(BufferUsageFlags u)
-			{
-				switch (u)
-				{
-				case BufferUsageVertex:
-				case BufferUsageIndex:
-					return PipelineStageVertexInput;
-				case BufferUsageIndirect:
-					return PipelineStageDrawIndirect;
-				}
-				return PipelineStageAllCommand;
-			}
 
 			uint size = 0;
 			uint array_capacity = 0;
