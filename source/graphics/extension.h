@@ -3,6 +3,7 @@
 #include "../foundation/typeinfo.h"
 #include "command.h"
 #include "buffer.h"
+#include "shader.h"
 
 namespace flame
 {
@@ -250,7 +251,6 @@ namespace flame
 			}
 		};
 
-		template<uint id>
 		struct PipelineResourceManager
 		{
 			PipelineLayoutPtr pll = nullptr;
@@ -258,9 +258,7 @@ namespace flame
 			std::unordered_map<uint, int> dsl_map;
 
 			DescriptorSetPtr temp_dss[8];
-			VirtualUdt<id> vu_pc;
-			char temp_pc[256];
-			VirtualStruct vs_pc;
+			VirtualStruct pc;
 
 			void init(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
 			{
@@ -277,12 +275,10 @@ namespace flame
 						name = "";
 					dsl_map.emplace(sh(name.c_str()), i);
 				}
-				vu_pc.ui = pll->pc_ui;
 
-				vs_pc.init(pll->pc_ui);
+				pc.init(pll->pc_ui);
 
 				memset(temp_dss, 0, sizeof(temp_dss));
-				memset(temp_pc, 0, sizeof(temp_pc));
 			}
 
 			inline int dsl_idx(uint nh)
@@ -327,28 +323,17 @@ namespace flame
 				}
 			}
 
-			template<uint nh, typename T>
-			inline void set_pc_var(const T& v)
-			{
-				vu_pc.set_var<nh>(temp_pc, v);
-			}
-
-			template<uint nh>
-			inline void set_pc_var(const void* d, uint size)
-			{
-				memcpy(temp_pc + vu_pc.var_off<nh>(), d, size);
-			}
-
-			inline void push_constant(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
+			inline void push_constant(CommandBufferPtr cb)
 			{
 				cb->bind_pipeline_layout(pll);
-				cb->push_constant(off, min(size, pll->pc_sz - off), temp_pc + off);
-			}
-
-			inline void push_constant2(CommandBufferPtr cb, uint off = 0, uint size = 0xffffffff)
-			{
-				cb->bind_pipeline_layout(pll);
-				cb->push_constant(off, min(size, pll->pc_sz - off), vs_pc.data.get() + off);
+				if (!pc.dirty_regions.empty())
+				{
+					for (auto& r : pc.dirty_regions)
+						cb->push_constant(r.first, r.second, pc.data.get() + r.first);
+					pc.dirty_regions.clear();
+				}
+				else
+					cb->push_constant(0, pll->pc_sz, pc.data.get());
 			}
 		};
 	}

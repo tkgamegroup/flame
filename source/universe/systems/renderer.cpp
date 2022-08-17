@@ -60,13 +60,13 @@ namespace flame
 	std::unique_ptr<graphics::Framebuffer> fb_pickup;
 	graphics::PipelineLayoutPtr pll_fwd = nullptr;
 	graphics::PipelineLayoutPtr pll_gbuf = nullptr;
-	graphics::PipelineResourceManager<FLAME_UID> prm_fwd;
-	graphics::PipelineResourceManager<FLAME_UID> prm_gbuf;
-	graphics::PipelineResourceManager<FLAME_UID> prm_deferred;
-	graphics::PipelineResourceManager<FLAME_UID> prm_plain;
-	graphics::PipelineResourceManager<FLAME_UID> prm_post;
-	graphics::PipelineResourceManager<FLAME_UID> prm_luma;
-	graphics::PipelineResourceManager<FLAME_UID> prm_tone;
+	graphics::PipelineResourceManager prm_fwd;
+	graphics::PipelineResourceManager prm_gbuf;
+	graphics::PipelineResourceManager prm_deferred;
+	graphics::PipelineResourceManager prm_plain;
+	graphics::PipelineResourceManager prm_post;
+	graphics::PipelineResourceManager prm_luma;
+	graphics::PipelineResourceManager prm_tone;
 
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false>	buf_vtx;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndex, false>	buf_idx;
@@ -1471,10 +1471,10 @@ namespace flame
 
 			auto set_blur_args = [cb](const vec2 img_size) {
 				cb->bind_pipeline_layout(prm_post.pll);
-				prm_post.set_pc_var<"off"_h>(-3);
-				prm_post.set_pc_var<"len"_h>(7);
-				prm_post.set_pc_var<"pxsz"_h>(1.f / img_size);
-				prm_post.set_pc_var<"weights"_h>(get_gauss_blur_weights(7), sizeof(float) * 7);
+				prm_post.pc.item("off"_h).set(-3);
+				prm_post.pc.item("len"_h).set(7);
+				prm_post.pc.item("pxsz"_h).set(1.f / img_size);
+				prm_post.pc.item("weights"_h).set(get_gauss_blur_weights(7), sizeof(float) * 7);
 				prm_post.push_constant(cb);
 			};
 
@@ -1486,7 +1486,7 @@ namespace flame
 				{
 					cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
 					prm_fwd.bind_dss(cb);
-					prm_fwd.set_pc_var<"i"_h>(ivec4(0, i, lv, 0));
+					prm_fwd.pc.item("i"_h).set(ivec4(0, i, lv, 0));
 					prm_fwd.push_constant(cb);
 
 					s.mesh_buckets[lv].draw(cb);
@@ -1602,10 +1602,10 @@ namespace flame
 		prm_luma.bind_dss(cb);
 		const auto min_log_luma = -5.f;
 		const auto max_log_luma = +5.f;
-		prm_luma.set_pc_var<"min_log_luma"_h>(min_log_luma);
-		prm_luma.set_pc_var<"log_luma_range"_h>(max_log_luma - min_log_luma);
-		prm_luma.set_pc_var<"time_coeff"_h>(1.0f);
-		prm_luma.set_pc_var<"num_pixels"_h>(int(sz.x * sz.y));
+		prm_luma.pc.item("min_log_luma"_h).set(min_log_luma);
+		prm_luma.pc.item("log_luma_range"_h).set(max_log_luma - min_log_luma);
+		prm_luma.pc.item("time_coeff"_h).set(1.0f);
+		prm_luma.pc.item("num_pixels"_h).set(int(sz.x * sz.y));
 		prm_luma.push_constant(cb);
 		cb->bind_pipeline(pl_luma_hist);
 		cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
@@ -1629,8 +1629,8 @@ namespace flame
 		cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
 		cb->bind_pipeline(pl_tone);
 		prm_tone.bind_dss(cb);
-		prm_tone.set_pc_var<"white_point"_h>(white_point);
-		prm_tone.set_pc_var<"one_over_gamma"_h>(1.f / gamma);
+		prm_tone.pc.item("white_point"_h).set(white_point);
+		prm_tone.pc.item("one_over_gamma"_h).set(1.f / gamma);
 		prm_tone.push_constant(cb);
 		cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
@@ -1639,7 +1639,7 @@ namespace flame
 		cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 		cb->bind_pipeline(pl_fxaa);
-		prm_post.set_pc_var<"pxsz"_h>(1.f / (vec2)img_dst->size);
+		prm_post.pc.item("pxsz"_h).set(1.f / (vec2)img_dst->size);
 		prm_post.push_constant(cb);
 		cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
@@ -1647,9 +1647,9 @@ namespace flame
 
 		auto blur_pass = [&]() {
 			cb->bind_pipeline_layout(prm_post.pll);
-			prm_post.set_pc_var<"off"_h>(-3);
-			prm_post.set_pc_var<"len"_h>(7);
-			prm_post.set_pc_var<"pxsz"_h>(1.f / (vec2)img_back0->size);
+			prm_post.pc.item("off"_h).set(-3);
+			prm_post.pc.item("len"_h).set(7);
+			prm_post.pc.item("pxsz"_h).set(1.f / (vec2)img_back0->size);
 			prm_post.push_constant(cb);
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -1697,7 +1697,7 @@ namespace flame
 				auto& mesh_r = mesh_reses[m.mesh_id];
 
 				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(m.color) / 255.f);
+				prm_fwd.pc.item("f"_h).set(vec4(m.color) / 255.f);
 				prm_fwd.push_constant(cb);
 
 				if (!mesh_r.arm)
@@ -1725,7 +1725,7 @@ namespace flame
 				auto& mesh_r = mesh_reses[m.mesh_id];
 
 				prm_fwd.bind_dss(cb);
-				prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+				prm_fwd.pc.item("f"_h).set(vec4(0.f));
 				prm_fwd.push_constant(cb);
 
 				if (!mesh_r.arm)
@@ -1757,7 +1757,7 @@ namespace flame
 		{
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			prm_fwd.bind_dss(cb);
-			prm_fwd.set_pc_var<"f"_h>(vec4(t.color) / 255.f);
+			prm_fwd.pc.item("f"_h).set(vec4(t.color) / 255.f);
 			prm_fwd.push_constant(cb);
 			cb->bind_pipeline(pl_terrain_plain);
 			cb->draw(4, t.blocks, 0, t.ins_id << 24);
@@ -1767,7 +1767,7 @@ namespace flame
 
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			prm_fwd.bind_dss(cb);
-			prm_fwd.set_pc_var<"f"_h>(vec4(0.f));
+			prm_fwd.pc.item("f"_h).set(vec4(0.f));
 			prm_fwd.push_constant(cb);
 			cb->bind_pipeline(pl_terrain_plain);
 			cb->draw(4, t.blocks, 0, t.ins_id << 24);
@@ -1793,13 +1793,15 @@ namespace flame
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 		cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
 		cb->bind_pipeline_layout(prm_plain.pll);
-		prm_plain.set_pc_var<"mvp"_h>(camera->proj_view_mat);
+		prm_plain.pc.item("mvp"_h).set(camera->proj_view_mat);
 		prm_plain.push_constant(cb);
 		auto primitive_vtx_off = 0;
 		for (auto& d : draw_data.primitives)
 		{
-			prm_plain.set_pc_var<"col"_h>(vec4(d.color) / 255.f);
-			prm_plain.push_constant(cb, prm_plain.vu_pc.var_off<"col"_h>());
+			auto col_item = prm_plain.pc.item("col"_h);
+			col_item.set(vec4(d.color) / 255.f);
+			prm_plain.pc.mark_dirty(col_item);
+			prm_plain.push_constant(cb);
 			switch (d.type)
 			{
 			case "LineList"_h:
@@ -1879,8 +1881,8 @@ namespace flame
 					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 					cb->bind_pipeline(pl_mesh_pickup);
-					prm_fwd.vs_pc.item("i"_h).set(ivec4(i + 1, 0, 0, 0));
-					prm_fwd.push_constant2(cb.get());
+					prm_fwd.pc.item("i"_h).set(ivec4(i + 1, 0, 0, 0));
+					prm_fwd.push_constant(cb.get());
 					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
 				}
 				else
@@ -1888,7 +1890,7 @@ namespace flame
 					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 					cb->bind_pipeline(pl_mesh_arm_pickup);
-					prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1, 0, 0, 0));
+					prm_fwd.pc.item("i"_h).set(ivec4(i + 1, 0, 0, 0));
 					prm_fwd.push_constant(cb.get());
 					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
 				}
@@ -1912,7 +1914,7 @@ namespace flame
 				nodes.push_back(n);
 
 				auto& t = draw_data.terrains[i];
-				prm_fwd.set_pc_var<"i"_h>(ivec4(i + 1 + off, 0, 0, 0));
+				prm_fwd.pc.item("i"_h).set(ivec4(i + 1 + off, 0, 0, 0));
 				prm_fwd.push_constant(cb.get());
 				cb->draw(4, t.blocks, 0, t.ins_id << 24);
 			}

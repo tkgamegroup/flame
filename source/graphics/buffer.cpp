@@ -1,6 +1,7 @@
 #include "device_private.h"
 #include "buffer_private.h"
 #include "command_private.h"
+#include "shader_private.h"
 #include "extension.h"
 
 namespace flame

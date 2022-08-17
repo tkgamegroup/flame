@@ -224,7 +224,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			  "rp=" + str(fb->renderpass),
 			  "pt=" + TypeInfo::serialize_t(pt) });
 
-		graphics::PipelineResourceManager<FLAME_UID> prm;
+		graphics::PipelineResourceManager prm;
 		prm.init(pl->layout);
 
 		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx;
@@ -235,12 +235,12 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
 		cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 		cb->bind_pipeline(pl);
-		prm.set_pc_var<"uv_off"_h>(vec2(19.7f, 43.3f));
-		prm.set_pc_var<"uv_scl"_h>(32.f);
-		prm.set_pc_var<"val_base"_h>(0.f);
-		prm.set_pc_var<"val_scl"_h>(0.125f);
-		prm.set_pc_var<"falloff"_h>(0.f);
-		prm.set_pc_var<"power"_h>(1.f);
+		prm.pc.item("uv_off"_h).set(vec2(19.7f, 43.3f));
+		prm.pc.item("uv_scl"_h).set(32.f);
+		prm.pc.item("val_base"_h).set(0.f);
+		prm.pc.item("val_scl"_h).set(0.125f);
+		prm.pc.item("falloff"_h).set(0.f);
+		prm.pc.item("power"_h).set(1.f);
 		prm.push_constant(cb.get());
 		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 
@@ -381,15 +381,15 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_normal.pipeline",
 				{ "rp=" + str(fb->renderpass),
 				  "frag:LAYERS=" + str(splash_layers) });
-			graphics::PipelineResourceManager<FLAME_UID> prm;
+			graphics::PipelineResourceManager prm;
 			prm.init(pl->layout);
 
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
 			cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 			cb->bind_pipeline(pl);
-			prm.set_pc_var<"bar"_h>(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
-			prm.set_pc_var<"transition"_h>(splash_transition);
+			prm.pc.item("bar"_h).set(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
+			prm.pc.item("transition"_h).set(splash_transition);
 			prm.push_constant(cb.get());
 			cb->bind_descriptor_set(0, terrain->normal_map->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
@@ -405,7 +405,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			auto fb = temp_splash->get_shader_write_dst(0, 0, graphics::AttachmentLoadDontCare);
 			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_region.pipeline",
 				{ "rp=" + str(fb->renderpass) });
-			graphics::PipelineResourceManager<FLAME_UID> prm;
+			graphics::PipelineResourceManager prm;
 			prm.init(pl->layout);
 
 			graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage> buf_sd_circles;
@@ -472,12 +472,12 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
 			cb->begin_renderpass(nullptr, fb);
 			cb->bind_pipeline(pl);
-			prm.set_pc_var<"screen_size"_h>(ext_xz);
-			prm.set_pc_var<"channel"_h>(2U);
-			prm.set_pc_var<"distance"_h>(1.f);
-			prm.set_pc_var<"merge_k"_h>(0.2f);
-			prm.set_pc_var<"sd_circles_count"_h>(n_circles);
-			prm.set_pc_var<"sd_ori_rects_count"_h>(n_ori_rects);
+			prm.pc.item("screen_size"_h).set(ext_xz);
+			prm.pc.item("channel"_h).set(2U);
+			prm.pc.item("distance"_h).set(1.f);
+			prm.pc.item("merge_k"_h).set(0.2f);
+			prm.pc.item("sd_circles_count"_h).set(n_circles);
+			prm.pc.item("sd_ori_rects_count"_h).set(n_ori_rects);
 			prm.push_constant(cb.get());
 			prm.set_ds(""_h, ds.get());
 			prm.bind_dss(cb.get());

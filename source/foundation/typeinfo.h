@@ -2630,7 +2630,7 @@ namespace flame
 			memcpy(pdata, &v, sizeof(T));
 		}
 
-		inline void set(const char* src, uint len)
+		inline void set(const void* src, uint len)
 		{
 			assert(len == size);
 			memcpy(pdata, src, len);
@@ -2655,7 +2655,7 @@ namespace flame
 
 		inline void mark_dirty(const VirtualData& d)
 		{
-			dirty_regions.emplace_back(d.pdata - data.get(), d.size);
+			dirty_regions.emplace_back(uint(d.pdata - data.get()), d.size);
 		}
 	};
 

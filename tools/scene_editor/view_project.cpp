@@ -171,17 +171,17 @@ void View_Project::init()
 						auto fb = ret->get_shader_write_dst();
 						auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
 							{ "rp=" + str(fb->renderpass) });
-						graphics::PipelineResourceManager<FLAME_UID> prm;
+						graphics::PipelineResourceManager prm;
 						prm.init(pl->layout);
 
 						cb->begin_renderpass(nullptr, fb);
 						cb->bind_pipeline(pl);
-						prm.set_pc_var<"uv_off"_h>(noise_offset);
-						prm.set_pc_var<"uv_scl"_h>(noise_scale);
-						prm.set_pc_var<"val_base"_h>(0.f);
-						prm.set_pc_var<"val_scl"_h>(1.f);
-						prm.set_pc_var<"falloff"_h>(1.f / clamp(noise_falloff, 2.f, 100.f));
-						prm.set_pc_var<"power"_h>(noise_power);
+						prm.pc.item("uv_off"_h).set(noise_offset);
+						prm.pc.item("uv_scl"_h).set(noise_scale);
+						prm.pc.item("val_base"_h).set(0.f);
+						prm.pc.item("val_scl"_h).set(1.f);
+						prm.pc.item("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
+						prm.pc.item("power"_h).set(noise_power);
 						prm.push_constant(cb.get());
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
