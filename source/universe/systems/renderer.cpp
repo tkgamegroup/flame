@@ -73,7 +73,7 @@ namespace flame
 	graphics::VertexBuffer													buf_vtx_arm;
 	graphics::IndexBuffer													buf_idx_arm;
 
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_scene;
+	graphics::StorageBuffer2														buf_camera;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
@@ -85,11 +85,11 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex>					buf_primitives;
+	graphics::VertexBuffer													buf_primitives;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
 
-	std::unique_ptr<graphics::DescriptorSet> ds_scene;
+	std::unique_ptr<graphics::DescriptorSet> ds_camera;
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
 	std::unique_ptr<graphics::DescriptorSet> ds_light;
@@ -355,11 +355,11 @@ namespace flame
 		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
-		auto dsl_scene = graphics::DescriptorSetLayout::get(L"flame\\shaders\\scene.dsl");
-		buf_scene.create(dsl_scene->get_buf_ui("Scene"_h));
-		ds_scene.reset(graphics::DescriptorSet::create(nullptr, dsl_scene));
-		ds_scene->set_buffer("Scene"_h, 0, buf_scene.buf.get());
-		ds_scene->update();
+		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
+		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
+		ds_camera.reset(graphics::DescriptorSet::create(nullptr, dsl_camera));
+		ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
+		ds_camera->update();
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"_h));
 		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"_h));
@@ -458,13 +458,13 @@ namespace flame
 		pl_blend->dynamic_renderpass = true;
 
 		prm_fwd.init(pll_fwd);
-		prm_fwd.set_ds("scene"_h, ds_scene.get());
+		prm_fwd.set_ds("camera"_h, ds_camera.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
 		prm_fwd.set_ds("light"_h, ds_light.get());
 
 		prm_gbuf.init(pll_gbuf);
-		prm_gbuf.set_ds("scene"_h, ds_scene.get());
+		prm_gbuf.set_ds("camera"_h, ds_camera.get());
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
 
@@ -488,7 +488,7 @@ namespace flame
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
-		prm_deferred.set_ds("scene"_h, ds_scene.get());
+		prm_deferred.set_ds("camera"_h, ds_camera.get());
 		prm_deferred.set_ds("light"_h, ds_light.get());
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
 		prm_deferred.set_ds(""_h, ds_deferred.get());
@@ -1186,22 +1186,23 @@ namespace flame
 		buf_vtx_arm.upload(cb);
 		buf_idx_arm.upload(cb);
 
-		buf_scene.set_var<"zNear"_h>(camera->zNear);
-		buf_scene.set_var<"zFar"_h>(camera->zFar);
-		buf_scene.set_var<"fovy"_h>(camera->fovy);
-		buf_scene.set_var<"tan_hf_fovy"_h>((float)tan(radians(camera->fovy * 0.5f)));
-		buf_scene.set_var<"camera_coord"_h>(camera->node->g_pos);
-		buf_scene.set_var<"camera_dir"_h>(-camera->node->g_rot[2]);
-		buf_scene.set_var<"camera_right"_h>(camera->node->g_rot[0]);
-		buf_scene.set_var<"camera_up"_h>(camera->node->g_rot[1]);
-		buf_scene.set_var<"view"_h>(camera->view_mat);
-		buf_scene.set_var<"view_inv"_h>(camera->view_mat_inv);
-		buf_scene.set_var<"proj"_h>(camera->proj_mat);
-		buf_scene.set_var<"proj_inv"_h>(camera->proj_mat_inv);
-		buf_scene.set_var<"proj_view"_h>(camera->proj_view_mat);
-		buf_scene.set_var<"proj_view_inv"_h>(camera->proj_view_mat_inv);
-		memcpy(buf_scene.var_addr<"frustum_planes"_h>(), camera->frustum.planes, sizeof(vec4) * 6);
-		buf_scene.upload(cb);
+		buf_camera.item("zNear"_h).set(camera->zNear);
+		buf_camera.item("zFar"_h).set(camera->zFar);
+		buf_camera.item("fovy"_h).set(camera->fovy);
+		buf_camera.item("tan_hf_fovy"_h).set((float)tan(radians(camera->fovy * 0.5f)));
+		buf_camera.item("coord"_h).set(camera->node->g_pos);
+		buf_camera.item("front"_h).set(-camera->node->g_rot[2]);
+		buf_camera.item("right"_h).set(camera->node->g_rot[0]);
+		buf_camera.item("up"_h).set(camera->node->g_rot[1]);
+		buf_camera.item("view"_h).set(camera->view_mat);
+		buf_camera.item("view_inv"_h).set(camera->view_mat_inv);
+		buf_camera.item("proj"_h).set(camera->proj_mat);
+		buf_camera.item("proj_inv"_h).set(camera->proj_mat_inv);
+		buf_camera.item("proj_view"_h).set(camera->proj_view_mat);
+		buf_camera.item("proj_view_inv"_h).set(camera->proj_view_mat_inv);
+		memcpy(buf_camera.item("frustum_planes"_h).pdata, camera->frustum.planes, sizeof(vec4) * 6);
+		buf_camera.mark_dirty(buf_camera);
+		buf_camera.upload(cb);
 
 		buf_lighting.set_var<"sky_intensity"_h>(sky_intensity);
 		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
@@ -1772,11 +1773,12 @@ namespace flame
 		{
 			for (auto& p : l.points)
 			{
-				buf_primitives.set_var<"i_pos"_h>(p);
-				buf_primitives.next_item();
+				auto pv = buf_primitives.add();
+				pv.item("i_pos"_h).set(p);
 			}
 		}
 		buf_primitives.upload(cb);
+		buf_primitives.buf_top = buf_primitives.stag_top = 0;
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 		cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
 		cb->bind_pipeline_layout(prm_plain.pll);

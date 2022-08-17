@@ -127,7 +127,7 @@ vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 
 vec3 get_fog(vec3 color, float dist)
 {
-	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, scene.zFar, dist));
+	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, camera.zFar, dist));
 }
 
 vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
@@ -147,8 +147,8 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 
 	vec3 ret = vec3(0.0);
 
-	vec3 V = scene.camera_coord - coordw;
-	float distv = dot(scene.camera_dir, -V);
+	vec3 V = camera.coord - coordw;
+	float distv = dot(camera.front, -V);
 	V = normalize(V);
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);

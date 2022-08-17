@@ -24,7 +24,7 @@ void main()
 		vec2(+3.0, -1.0)
 	};
 	vec2 v = vs[gl_VertexIndex];
-	vec4 p = scene.proj_view_inv * vec4(v, 1, 1);
+	vec4 p = camera.proj_view_inv * vec4(v, 1, 1);
 	p /= p.w;
 	o_view = normalize(p.xyz);
 	gl_Position = vec4(v, 1.0, 1.0);
@@ -93,14 +93,14 @@ float projective_depth(float z, float n, float f)
 void main()
 {
 	vec3 dir = normalize(i_view);
-	vec3 origin = scene.camera_coord;
+	vec3 origin = camera.coord;
 	float depth = march(origin, dir);
 	
 	#ifndef OCCLUDER_PASS
 		if (depth >= MaxDepth)
 			discard;
 		vec3 n = normal(origin + depth * dir);
-		gl_FragDepth = projective_depth(-dot(scene.camera_dir, depth * dir), scene.zNear, scene.zFar);
+		gl_FragDepth = projective_depth(-dot(camera.front, depth * dir), camera.zNear, camera.zFar);
 		#ifndef GBUFFER_PASS
 			o_color = vec4(1.0, 1.0, 1.0, 1.0);
 		#else

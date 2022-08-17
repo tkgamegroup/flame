@@ -44,7 +44,7 @@ void main()
 
 #ifndef OCCLUDER_PASS
 	o_coordw = coordw;
-	gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+	gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 #else
 	if (pc.i[0] == 0)
 		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);

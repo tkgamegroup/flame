@@ -13,7 +13,7 @@ uint tess_level;
 
 float tess_factor(vec4 p0, vec4 p1)
 {
-	float v = distance(scene.camera_coord, (p0.xyz + p1.xyz) * 0.5) / scene.zFar;
+	float v = distance(camera.coord, (p0.xyz + p1.xyz) * 0.5) / camera.zFar;
 	v = v * v;
 	v = 1.0 - v;
 	return max(v * tess_level, 1.0);
@@ -27,7 +27,7 @@ bool frustum_check()
 
 	for (int i = 0; i < 6; i++) 
 	{
-		if (dot(scene.frustum_planes[i], p) + r < 0.0)
+		if (dot(camera.frustum_planes[i], p) + r < 0.0)
 			return false;
 	}
 	return true;

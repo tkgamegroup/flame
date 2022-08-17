@@ -1,5 +1,5 @@
 #include "ssao.dsl"
-#include "../scene.dsl"
+#include "../camera.dsl"
 
 layout (push_constant) uniform PushConstant
 {

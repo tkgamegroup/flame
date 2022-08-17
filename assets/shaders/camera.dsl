@@ -1,4 +1,4 @@
-layout (set = SET, binding = 0) uniform Scene
+layout (set = SET, binding = 0) uniform Camera
 {
 	float zNear;
 	float zFar;
@@ -7,10 +7,10 @@ layout (set = SET, binding = 0) uniform Scene
 
 	vec2 viewport;
 	
-	vec3 camera_coord;
-	vec3 camera_dir;
-	vec3 camera_right;
-	vec3 camera_up;
+	vec3 coord;
+	vec3 front;
+	vec3 right;
+	vec3 up;
 
 	mat4 view;
 	mat4 view_inv;
@@ -22,4 +22,4 @@ layout (set = SET, binding = 0) uniform Scene
 	vec4 frustum_planes[6];
 
 	uint time;
-}scene;
+}camera;

@@ -11,7 +11,7 @@ cull_mode
   None
 
 @pll
-#include "scene.dsl"
+#include "camera.dsl"
 #include "light.dsl"
 
 layout (set = SET, binding = 0) uniform sampler2D img_col_met;
@@ -31,9 +31,9 @@ layout (location = 0) out vec4 o_color;
 void main()
 {
 	float dep = texture(img_dep, i_uv).r;
-	vec4 p = scene.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
+	vec4 p = camera.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
 	p /= p.w;
-	vec4 coordw = scene.view_inv * p;
+	vec4 coordw = camera.view_inv * p;
 
 	if (dep < 1.0)
 	{

@@ -34,9 +34,9 @@ void main()
 	if (texture(terrain_splash_maps[tid], i_uv[0])[terrain_instances[tid].grass_channel] > 0.5)
 	{
 	#ifndef BILLBOARD
-		iT = scene.camera_right;
-		iN = scene.camera_up;
-		vec3 oN = -scene.camera_dir;
+		iT = camera.right;
+		iN = camera.up;
+		vec3 oN = -camera.front;
 		
 		float size = (rand(pp.yzx) * 2 - 1) * 0.25 + 0.9;
 		
@@ -45,7 +45,7 @@ void main()
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p + size * iT * 0.5;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
 		o_id = tid;
@@ -53,7 +53,7 @@ void main()
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p + size * iT * 0.5 + size * iN;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
 		o_id = tid;
@@ -61,7 +61,7 @@ void main()
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p - size * iT * 0.5;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 		
 		o_id = tid;
@@ -69,7 +69,7 @@ void main()
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p - size * iT * 0.5 + size * iN;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	#else
 		mat3 mat = rotation(iN, rand(pp.xyz) * PI) *
@@ -80,7 +80,7 @@ void main()
 		iB = mat[2];
 
 		vec3 oN = iB;
-		if (dot(oN, scene.camera_dir) > 0.0)
+		if (dot(oN, camera.front) > 0.0)
 			oN = -oN;
 
 		float width = (rand(pp.yxz) * 2 - 1) * 0.02 + 0.05;
@@ -90,21 +90,21 @@ void main()
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p - width * iT;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	
 		o_id = tid;
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p + width * iT;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 	
 		o_id = tid;
 		o_normal = oN;
 		o_color = vec3(0.25, 0.54, 0.2);
 		o_coordw = p + height * iN;
-		gl_Position = scene.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
 
 		EndPrimitive();
