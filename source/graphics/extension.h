@@ -45,11 +45,13 @@ namespace flame
 
 		struct SparseArray
 		{
+			uint capacity;
 			std::deque<uint> free_slots;
 
-			void init(uint array_capacity)
+			void init(uint _capacity)
 			{
-				free_slots.resize(array_capacity);
+				capacity = _capacity;
+				free_slots.resize(capacity);
 				std::iota(free_slots.begin(), free_slots.end(), 0);
 			}
 

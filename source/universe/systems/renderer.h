@@ -114,7 +114,7 @@ namespace flame
 
 		// id == -1 to register or to unregister id
 		virtual int register_armature_instance(int id) = 0;
-		virtual mat4* set_armature_instance(uint id) = 0;
+		virtual void set_armature_instance(uint id, const mat4* mats, uint size) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_terrain_instance(int id) = 0;

@@ -68,24 +68,25 @@ namespace flame
 	graphics::PipelineResourceManager prm_luma;
 	graphics::PipelineResourceManager prm_tone;
 
-	graphics::VertexBuffer													buf_vtx;
-	graphics::IndexBuffer													buf_idx;
-	graphics::VertexBuffer													buf_vtx_arm;
-	graphics::IndexBuffer													buf_idx_arm;
+	graphics::VertexBuffer buf_vtx;
+	graphics::IndexBuffer buf_idx;
+	graphics::VertexBuffer buf_vtx_arm;
+	graphics::IndexBuffer buf_idx_arm;
 
-	graphics::StorageBuffer2														buf_camera;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_mesh_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_armature_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_terrain_ins;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_sdf_ins;
-	graphics::StorageBuffer2														buf_material;
+	graphics::StorageBuffer2 buf_camera;
+	graphics::SparseArray mesh_instances;
+	graphics::SparseArray armature_instances;
+	graphics::SparseArray terrain_instances;
+	graphics::SparseArray sdf_instances;
+	graphics::StorageBuffer2 buf_instance;
+	graphics::StorageBuffer2 buf_material;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_lighting;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
-	graphics::VertexBuffer													buf_primitives;
+	graphics::VertexBuffer buf_primitives;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
 
@@ -361,16 +362,14 @@ namespace flame
 		ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
 		ds_camera->update();
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
-		buf_mesh_ins.create_with_array_type(dsl_instance->get_buf_ui("MeshInstances"_h));
-		buf_armature_ins.create_with_array_type(dsl_instance->get_buf_ui("ArmatureInstances"_h));
-		buf_terrain_ins.create_with_array_type(dsl_instance->get_buf_ui("TerrainInstances"_h));
-		buf_sdf_ins.create_with_array_type(dsl_instance->get_buf_ui("SdfInstances"_h));
+		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
+		mesh_instances.init(buf_instance.item_info("meshes"_h).array_size);
+		armature_instances.init(buf_instance.item_info("armatures"_h).array_size);
+		terrain_instances.init(buf_instance.item_info("terrains"_h).array_size);
+		sdf_instances.init(buf_instance.item_info("sdfs"_h).array_size);
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
-		ds_instance->set_buffer("MeshInstances"_h, 0, buf_mesh_ins.buf.get());
-		ds_instance->set_buffer("ArmatureInstances"_h, 0, buf_armature_ins.buf.get());
-		ds_instance->set_buffer("TerrainInstances"_h, 0, buf_terrain_ins.buf.get());
-		ds_instance->set_buffer("SdfInstances"_h, 0, buf_sdf_ins.buf.get());
-		for (auto i = 0; i < buf_terrain_ins.array_capacity; i++)
+		ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
+		for (auto i = 0; i < terrain_instances.capacity; i++)
 		{
 			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
 			ds_instance->set_image("terrain_normal_maps"_h, i, img_black->get_view(), sp_trilinear);
@@ -479,12 +478,12 @@ namespace flame
 		buf_idx.create(1024 * 256 * 6);
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(1024 * 128 * 6);
-		opa_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
-		trs_mesh_buckets.buf_idr.create(0U, buf_mesh_ins.array_capacity);
+		opa_mesh_buckets.buf_idr.create(0U, mesh_instances.capacity);
+		trs_mesh_buckets.buf_idr.create(0U, mesh_instances.capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
-				s.mesh_buckets[i].buf_idr.create(0U, min(1024U, buf_mesh_ins.array_capacity));
+				s.mesh_buckets[i].buf_idr.create(0U, min(1024U, mesh_instances.capacity));
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
@@ -1016,51 +1015,53 @@ namespace flame
 	{
 		if (id == -1)
 		{
-			id = buf_mesh_ins.get_free_item();
+			id = mesh_instances.get_free_item();
 			if (id != -1)
 				set_mesh_instance(id, mat4(1.f), mat3(1.f));
 		}
 		else
-			buf_mesh_ins.release_item(id);
+			mesh_instances.release_item(id);
 		return id;
 	}
 
 	void sRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
 	{
-		buf_mesh_ins.select_item(id);
-		buf_mesh_ins.set_var<"mat"_h>(mat);
-		buf_mesh_ins.set_var<"nor"_h>(mat4(nor));
+		auto pi = buf_instance.item("meshes"_h, id);
+		pi.item("mat"_h).set(mat);
+		pi.item("nor"_h).set(nor);
+		buf_instance.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_armature_instance(int id)
 	{
 		if (id == -1)
 		{
-			id = buf_armature_ins.get_free_item();
+			id = armature_instances.get_free_item();
 			if (id != -1)
 			{
-				auto dst = set_armature_instance(id);
-				auto size = buf_armature_ins.ui->variables[0].array_size;
-				for (auto i = 0; i < size; i++)
-					dst[i] = mat4(1.f);
+				std::vector<mat4> mats(buf_instance.item_info("armatures"_h).array_size);
+				for (auto i = 0; i < mats.size(); i++)
+					mats[i] = mat4(1.f);
+				set_armature_instance(id, mats.data(), mats.size() * sizeof(mat4));
 			}
 		}
 		else
-			buf_armature_ins.release_item(id);
+			armature_instances.release_item(id);
 		return id;
 	}
 
-	mat4* sRendererPrivate::set_armature_instance(uint id)
+	void sRendererPrivate::set_armature_instance(uint id, const mat4* mats, uint size)
 	{
-		buf_armature_ins.select_item(id);
-		return (mat4*)buf_armature_ins.pend;
+		auto pi = buf_instance.item("armatures"_h, id);
+		pi.set(mats, size);
+		buf_instance.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_terrain_instance(int id)
 	{
 		if (id == -1)
 		{
-			id = buf_terrain_ins.get_free_item();
+			id = terrain_instances.get_free_item();
 			if (id != -1)
 			{
 
@@ -1068,7 +1069,7 @@ namespace flame
 		}
 		else
 		{
-			buf_terrain_ins.release_item(id);
+			terrain_instances.release_item(id);
 			ds_instance->set_image("terrain_height_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_normal_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_tangent_maps"_h, id, img_black->get_view(), nullptr);
@@ -1081,14 +1082,16 @@ namespace flame
 	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
 		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
 	{
-		buf_terrain_ins.select_item(id);
-		buf_terrain_ins.set_var<"mat"_h>(mat);
-		buf_terrain_ins.set_var<"extent"_h>(extent);
-		buf_terrain_ins.set_var<"blocks"_h>(blocks);
-		buf_terrain_ins.set_var<"tess_level"_h>(tess_level);
-		buf_terrain_ins.set_var<"grass_field_tess_level"_h>(grass_field_tess_level);
-		buf_terrain_ins.set_var<"grass_channel"_h>(grass_channel);
-		buf_terrain_ins.set_var<"grass_texture_id"_h>(grass_texture_id);
+		auto pi = buf_instance.item("terrains"_h, id);
+		pi.item("mat"_h).set(mat);
+		pi.item("extent"_h).set(extent);
+		pi.item("blocks"_h).set(blocks);
+		pi.item("tess_level"_h).set(tess_level);
+		pi.item("grass_field_tess_level"_h).set(grass_field_tess_level);
+		pi.item("grass_channel"_h).set(grass_channel);
+		pi.item("grass_channel"_h).set(grass_channel);
+		pi.item("grass_texture_id"_h).set(grass_texture_id);
+		buf_instance.mark_dirty(pi);
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
@@ -1100,7 +1103,7 @@ namespace flame
 	{
 		if (id == -1)
 		{
-			id = buf_sdf_ins.get_free_item();
+			id = sdf_instances.get_free_item();
 			if (id != -1)
 			{
 
@@ -1108,29 +1111,29 @@ namespace flame
 		}
 		else
 		{
-			buf_sdf_ins.release_item(id);
+			sdf_instances.release_item(id);
 		}
 		return id;
 	}
 
 	void sRendererPrivate::set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres)
 	{
-		buf_sdf_ins.select_item(id);
-		buf_sdf_ins.set_var<"boxes_count"_h>(boxes_count);
-		auto boxes_dst = buf_sdf_ins.var_addr<"boxes"_h>();
+		auto pi = buf_instance.item("sdfs"_h, id);
+		pi.item("boxes_count"_h).set(boxes_count);
 		for (auto i = 0; i < boxes_count; i++)
 		{
-			auto p = boxes_dst + i * sizeof(vec4) * 2;
-			*(vec4*)p = vec4(boxes[i].first, 0.f); p += sizeof(vec4);
-			*(vec4*)p = vec4(boxes[i].second, 0.f);
+			auto pb = pi.item("boxes"_h, i);
+			pb.item("coord"_h).set(boxes[i].first);
+			pb.item("extent"_h).set(boxes[i].second);
 		}
-		buf_sdf_ins.set_var<"spheres_count"_h>(spheres_count);
-		auto spheres_dst = buf_sdf_ins.var_addr<"spheres"_h>();
+		pi.item("spheres_count"_h).set(spheres_count);
 		for (auto i = 0; i < spheres_count; i++)
 		{
-			auto p = spheres_dst + i * sizeof(vec4);
-			*(vec4*)p = vec4(spheres[i].first, spheres[i].second);
+			auto ps = pi.item("spheres"_h, i);
+			ps.item("coord"_h).set(spheres[i].first);
+			ps.item("radius"_h).set(spheres[i].second);
 		}
+		buf_instance.mark_dirty(pi);
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -1204,12 +1207,13 @@ namespace flame
 		buf_camera.mark_dirty(buf_camera);
 		buf_camera.upload(cb);
 
+		buf_material.upload(cb);
+		buf_instance.upload(cb);
+
 		buf_lighting.set_var<"sky_intensity"_h>(sky_intensity);
 		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
 		buf_lighting.set_var<"fog_color"_h>(fog_color);
 		buf_lighting.upload(cb); 
-		
-		buf_material.upload(cb);
 
 		auto n_dir_lights = 0;
 		auto n_dir_shadows = 0;
@@ -1279,10 +1283,6 @@ namespace flame
 			buf_light_grid.next_item();
 		}
 
-		buf_mesh_ins.upload(cb);
-		buf_armature_ins.upload(cb);
-		buf_terrain_ins.upload(cb);
-		buf_sdf_ins.upload(cb);
 		buf_light_index.upload(cb);
 		buf_light_grid.upload(cb);
 		buf_light_info.upload(cb);

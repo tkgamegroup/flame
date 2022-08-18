@@ -4,19 +4,9 @@ struct MeshInstance
 	mat4 nor;
 };
 
-layout(set = SET, binding = 0) buffer readonly MeshInstances
-{
-	MeshInstance mesh_instances[65536];
-};
-
 struct ArmatureInstance
 {
 	mat4 bones[128];
-};
-
-layout(set = SET, binding = 1) buffer readonly ArmatureInstances
-{
-	ArmatureInstance armature_instances[256];
 };
 
 struct TerrainInstance
@@ -28,11 +18,6 @@ struct TerrainInstance
 	uint grass_field_tess_level;
 	uint grass_channel;
 	int grass_texture_id;
-};
-
-layout(set = SET, binding = 2) buffer readonly TerrainInstances
-{
-	TerrainInstance terrain_instances[8];
 };
 
 struct SdSphere
@@ -55,12 +40,15 @@ struct SdfInstance
 	SdSphere spheres[64];
 };
 
-layout(set = SET, binding = 3) buffer readonly SdfInstances
+layout(set = SET, binding = 0) buffer readonly Instance
 {
-	SdfInstance sdf_instances[256];
-};
+	MeshInstance meshes[65536];
+	ArmatureInstance armatures[256];
+	TerrainInstance terrains[8];
+	SdfInstance sdfs[256];
+}instance;
 
-layout (set = SET, binding = 4) uniform sampler2D terrain_height_maps[8];
-layout (set = SET, binding = 5) uniform sampler2D terrain_normal_maps[8];
-layout (set = SET, binding = 6) uniform sampler2D terrain_tangent_maps[8];
-layout (set = SET, binding = 7) uniform sampler2D terrain_splash_maps[8];
+layout (set = SET, binding = 1) uniform sampler2D terrain_height_maps[8];
+layout (set = SET, binding = 2) uniform sampler2D terrain_normal_maps[8];
+layout (set = SET, binding = 3) uniform sampler2D terrain_tangent_maps[8];
+layout (set = SET, binding = 4) uniform sampler2D terrain_splash_maps[8];

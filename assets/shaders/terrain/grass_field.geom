@@ -31,7 +31,7 @@ void main()
 	vec3 iB = cross(iT, iN);
 
 	uint tid = i_id[0];
-	if (texture(terrain_splash_maps[tid], i_uv[0])[terrain_instances[tid].grass_channel] > 0.5)
+	if (texture(terrain_splash_maps[tid], i_uv[0])[instance.terrains[tid].grass_channel] > 0.5)
 	{
 	#ifndef BILLBOARD
 		iT = camera.right;

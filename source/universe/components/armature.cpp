@@ -104,9 +104,10 @@ namespace flame
 					}
 				}
 
-				auto dst = sRenderer::instance()->set_armature_instance(instance_id);
+				std::vector<mat4> mats(bones.size());
 				for (auto i = 0; i < bones.size(); i++)
-					dst[i] = bones[i].calc_mat();
+					mats[i] = bones[i].calc_mat();
+				sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
 			}
 		}, "armature"_h);
 

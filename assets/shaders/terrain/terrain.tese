@@ -29,7 +29,7 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(terrain_height_maps[o_id], o_uv).r * terrain_instances[o_id].extent.y;
+	coordw.y += texture(terrain_height_maps[o_id], o_uv).r * instance.terrains[o_id].extent.y;
 	
 #ifndef OCCLUDER_PASS
 	o_coordw = coordw;

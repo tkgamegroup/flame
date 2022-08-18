@@ -21,7 +21,7 @@ float tess_factor(vec4 p0, vec4 p1)
 
 bool frustum_check()
 {
-	vec3 ext = terrain_instances[id].extent;
+	vec3 ext = instance.terrains[id].extent;
 	float r = max(max(ext.x, ext.z), ext.y);
 	vec4 p = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position + gl_in[3].gl_Position) * 0.25;
 
@@ -37,9 +37,9 @@ void main()
 {
 	id = i_ids[0];
 #ifndef GRASS_FIELD
-	tess_level = terrain_instances[id].tess_level;
+	tess_level = instance.terrains[id].tess_level;
 #else
-	tess_level = terrain_instances[id].grass_field_tess_level;
+	tess_level = instance.terrains[id].grass_field_tess_level;
 #endif
 
 	if (gl_InvocationID == 0)

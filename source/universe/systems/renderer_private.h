@@ -52,7 +52,7 @@ namespace flame
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
 
 		int register_armature_instance(int id) override;
-		mat4* set_armature_instance(uint id) override;
+		void set_armature_instance(uint id, const mat4* mats, uint size) override;
 
 		int register_terrain_instance(int id) override;
 		void set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
