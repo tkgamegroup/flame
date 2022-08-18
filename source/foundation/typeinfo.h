@@ -2686,9 +2686,14 @@ namespace flame
 			}
 		}
 
+		inline uint offset(const VirtualData& d)
+		{
+			return uint(d.pdata - pdata);
+		}
+
 		inline void mark_dirty(const VirtualData& d)
 		{
-			dirty_regions.emplace_back(uint(d.pdata - pdata), d.size);
+			dirty_regions.emplace_back(offset(d), d.size);
 		}
 	};
 

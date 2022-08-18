@@ -1,11 +1,10 @@
-#include "luma_avg.dsl"
-
 layout (set = SET, binding = 0, rgba8) uniform image2D img_col;
 
-layout (set = SET, binding = 1) buffer LumaHist
+layout (set = SET, binding = 1) buffer Luma
 {
-    uint data[256];
-}luma_hist;
+    uint hist[256];
+    float avg;
+}luma;
 
 layout (push_constant) uniform PushConstant
 {

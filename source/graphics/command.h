@@ -28,6 +28,25 @@ namespace flame
 			uint src_off = 0;
 			uint dst_off = 0;
 			uint size;
+
+			BufferCopy() 
+			{
+			}
+
+			BufferCopy(uint size) : 
+				size(size) 
+			{
+			}
+
+			BufferCopy(uint off, uint size) : 
+				src_off(off), dst_off(off), size(size) 
+			{
+			}
+
+			BufferCopy(uint src_off, uint dst_off, uint size) :
+				src_off(src_off), dst_off(dst_off), size(size)
+			{
+			}
 		};
 
 		struct ImageCopy

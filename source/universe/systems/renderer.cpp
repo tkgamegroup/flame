@@ -87,8 +87,7 @@ namespace flame
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
 	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
 	graphics::VertexBuffer buf_primitives;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_avg;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_luma_hist;
+	graphics::StorageBuffer2 buf_luminance;
 
 	std::unique_ptr<graphics::DescriptorSet> ds_camera;
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
@@ -510,18 +509,12 @@ namespace flame
 			  "frag:VERTICAL" });
 		pl_localmax_v->dynamic_renderpass = true;
 
-		auto dsl_luma_avg = graphics::DescriptorSetLayout::get(L"flame\\shaders\\post\\luma_avg.dsl");
-		buf_luma_avg.create(dsl_luma_avg->get_buf_ui("LumaAvg"_h));
-		ds_luma_avg.reset(graphics::DescriptorSet::create(nullptr, dsl_luma_avg));
-		ds_luma_avg->set_buffer("LumaAvg"_h, 0, buf_luma_avg.buf.get());
-		ds_luma_avg->update();
 		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
 		auto dsl_luma = prm_luma.pll->dsls.back();
-		buf_luma_hist.create(dsl_luma->get_buf_ui("LumaHist"_h));
+		buf_luminance.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
 		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
-		ds_luma->set_buffer("LumaHist"_h, 0, buf_luma_hist.buf.get());
+		ds_luma->set_buffer("Luma"_h, 0, buf_luminance.buf.get());
 		ds_luma->update();
-		prm_luma.set_ds("luma_avg"_h, ds_luma_avg.get());
 		prm_luma.set_ds(""_h, ds_luma.get());
 		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_hist.pipeline", {});
 		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_avg.pipeline", {});
@@ -529,7 +522,6 @@ namespace flame
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline", {});
 		pl_tone->dynamic_renderpass = true;
 		prm_tone.init(pl_tone->layout);
-		prm_tone.set_ds("luma_avg"_h, ds_luma_avg.get());
 
 		pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\fxaa.pipeline", {});
 		pl_fxaa->dynamic_renderpass = true;
@@ -1597,14 +1589,20 @@ namespace flame
 		prm_luma.push_constant(cb);
 		cb->bind_pipeline(pl_luma_hist);
 		cb->dispatch(uvec3(ceil(sz.x / 16), ceil(sz.y / 16), 1));
-		cb->buffer_barrier(buf_luma_hist.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
 			graphics::AccessShaderRead | graphics::AccessShaderWrite,
 			graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
 		cb->bind_pipeline(pl_luma_avg);
 		cb->dispatch(uvec3(256, 1, 1));
-		cb->buffer_barrier(buf_luma_avg.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
-			graphics::AccessShaderRead,
-			graphics::PipelineStageCompShader, graphics::PipelineStageAllGraphics);
+		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite, 
+			graphics::AccessHostRead,
+			graphics::PipelineStageCompShader, graphics::PipelineStageHost);
+
+		auto p_avg_luma = buf_luminance.item("avg"_h);
+		cb->copy_buffer(buf_luminance.buf.get(), buf_luminance.stag.get(), graphics::BufferCopy(buf_luminance.offset(p_avg_luma), p_avg_luma.size));
+		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessHostRead,
+			graphics::AccessShaderRead | graphics::AccessShaderWrite,
+			graphics::PipelineStageHost, graphics::PipelineStageCompShader);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
@@ -1617,10 +1615,11 @@ namespace flame
 		cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
 		cb->bind_pipeline(pl_tone);
 		prm_tone.bind_dss(cb);
+		prm_tone.pc.item("average_luminance"_h).set(*(float*)p_avg_luma.pdata);
 		prm_tone.pc.item("white_point"_h).set(white_point);
 		prm_tone.pc.item("one_over_gamma"_h).set(1.f / gamma);
 		prm_tone.push_constant(cb);
-		cb->bind_descriptor_set(1, img_back0->get_shader_read_src());
+		cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 

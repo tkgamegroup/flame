@@ -80,6 +80,10 @@ namespace flame
 				return AccessIndexRead;
 			case BufferUsageIndirect:
 				return AccessIndirectCommandRead;
+			case BufferUsageUniform:
+				return AccessShaderRead;
+			case BufferUsageStorage:
+				return AccessShaderRead | AccessShaderWrite;
 			}
 			return AccessNone;
 		}
@@ -103,11 +107,11 @@ namespace flame
 			std::unique_ptr<BufferT>	buf;
 			std::unique_ptr<BufferT>	stag;
 
-			void create(BufferUsageFlags _usage, UdtInfo* ui)
+			void create(BufferUsageFlags _usage, UdtInfo* ui, BufferUsageFlags _stag_usage = BufferUsageNone)
 			{
 				usage = _usage;
 				buf.reset(Buffer::create(ui->size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc | _stag_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
 				init(ui, stag->mapped);
 			}
@@ -124,8 +128,8 @@ namespace flame
 					cpy.size = r.second;
 					copies.push_back(cpy);
 				}
+				dirty_regions.clear();
 				cb->copy_buffer(stag.get(), buf.get(), copies);
-				copies.clear();
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
 		};

@@ -41,6 +41,6 @@ void main()
 
     barrier();
 
-    atomicAdd(luma_hist.data[gl_LocalInvocationIndex], histogram_local[gl_LocalInvocationIndex]);
+    atomicAdd(luma.hist[gl_LocalInvocationIndex], histogram_local[gl_LocalInvocationIndex]);
 }
 @

@@ -8,32 +8,32 @@ shaders
 
 layout (local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
-shared uint histogram_local[GROUP_SIZE];
+shared uint hist_local[GROUP_SIZE];
 
 void main() 
 {
-    uint count_for_this_bin = luma_hist.data[gl_LocalInvocationIndex];
-    histogram_local[gl_LocalInvocationIndex] = count_for_this_bin * gl_LocalInvocationIndex;
+    uint count_for_this_bin = luma.hist[gl_LocalInvocationIndex];
+    hist_local[gl_LocalInvocationIndex] = count_for_this_bin * gl_LocalInvocationIndex;
 
     barrier();
 
-    luma_hist.data[gl_LocalInvocationIndex] = 0;
+    luma.hist[gl_LocalInvocationIndex] = 0;
 
     for (uint cutoff = (GROUP_SIZE >> 1); cutoff > 0; cutoff >>= 1) 
     {
         if (uint(gl_LocalInvocationIndex) < cutoff)
-            histogram_local[gl_LocalInvocationIndex] += histogram_local[gl_LocalInvocationIndex + cutoff];
+            hist_local[gl_LocalInvocationIndex] += hist_local[gl_LocalInvocationIndex + cutoff];
 
         barrier();
     }
 
     if (gl_LocalInvocationIndex == 0) 
     {
-        float weighted_log_average = (histogram_local[0] / max(pc.num_pixels - float(count_for_this_bin), 1.0)) - 1.0;
+        float weighted_log_average = (hist_local[0] / max(pc.num_pixels - float(count_for_this_bin), 1.0)) - 1.0;
         float weighted_avg_lum = exp2(((weighted_log_average / 254.0) * pc.log_luma_range) + pc.min_log_luma);
 
-        float lum_last_frame = luma_avg.data;
-        luma_avg.data = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
+        float lum_last_frame = luma.avg;
+        luma.avg = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
     }
 }
 @
