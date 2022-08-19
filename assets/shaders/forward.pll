@@ -1,7 +1,7 @@
 #include "camera.dsl"
 #include "instance.dsl"
 #include "material.dsl"
-#include "light.dsl"
+#include "lighting.dsl"
 
 layout (push_constant) uniform PushConstant
 {

@@ -1,15 +1,14 @@
 #pragma once
 
-#include "light.h"
+#include "pt_light.h"
 
 namespace flame
 {
-	struct cLightPrivate : cLight
+	struct cPtLightPrivate : cPtLight
 	{
-		~cLightPrivate();
+		~cPtLightPrivate();
 		void on_init() override;
-
-		void set_type(LightType type) override;
+		
 		void set_color(const vec4& color) override;
 		void set_range(float range) override;
 		void set_cast_shadow(bool cast_shadow) override;

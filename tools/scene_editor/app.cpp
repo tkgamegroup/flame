@@ -135,8 +135,10 @@ void App::init()
 				cmd_create_entity(nullptr, "cube"_h);
 			if (ImGui::MenuItem("Create Sphere"))
 				cmd_create_entity(nullptr, "sphere"_h);
-			if (ImGui::MenuItem("Create Light"))
-				cmd_create_entity(nullptr, "light"_h);
+			if (ImGui::MenuItem("Create Directional Light"))
+				cmd_create_entity(nullptr, "dir_light"_h);
+			if (ImGui::MenuItem("Create Point Light"))
+				cmd_create_entity(nullptr, "pt_light"_h);
 			if (ImGui::MenuItem("Create Camera"))
 				cmd_create_entity(nullptr, "camera"_h);
 			if (ImGui::MenuItem("Delete"))
@@ -635,7 +637,7 @@ void App::new_prefab(const std::filesystem::path& path)
 	e->add_child(e_cube);
 	auto e_light = Entity::create();
 	e_light->add_component<cNode>()->set_eul(vec3(0.f, 45.f, 0.f));
-	e_light->add_component<cLight>();
+	e_light->add_component<cDirLight>();
 	e->add_child(e_light);
 	e->save(path);
 }
@@ -663,9 +665,13 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		e->add_component<cNode>();
 		e->add_component<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
 		break;
-	case "light"_h:
+	case "dir_light"_h:
 		e->add_component<cNode>();
-		e->add_component<cLight>();
+		e->add_component<cDirLight>();
+		break;
+	case "pt_light"_h:
+		e->add_component<cNode>();
+		e->add_component<cPtLight>();
 		break;
 	case "camera"_h:
 		e->add_component<cNode>();

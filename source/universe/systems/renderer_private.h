@@ -45,8 +45,9 @@ namespace flame
 
 		void update_res(uint id, uint type_hash, uint name_hash) override;
 
-		int register_light_instance(int id) override;
-		void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range) override;
+		int register_light_instance(LightType type, int id) override;
+		void set_dir_light_instance(uint id, const vec3& dir, const vec3& color) override;
+		void set_pt_light_instance(uint id, const vec3& pos, const vec3& color, float range) override;
 
 		int register_mesh_instance(int id) override;
 		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;

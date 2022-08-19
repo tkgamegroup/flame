@@ -48,23 +48,24 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 {
 	vec3 ret = vec3(0.0);
 
-	uint dir_num = light_grids[0].count;
+	uint dir_num = lighting.dir_lights_count;
 	for (int i = 0; i < dir_num; i++)
 	{
-		LightInfo li = light_infos[light_indexs[i]];
-		vec3 L = li.pos;
+		DirLight li = lighting.dir_lights[lighting.dir_lights_list[i]];
+		vec3 L = li.dir;
 		
 		float f_shadow = 1.0;
 		if (li.shadow_index != -1)
 		{
 			for (uint lv = 0; lv < 4; lv++)
 			{
-				if (distv < dir_shadows[li.shadow_index].splits[lv])
+				vec4 splits = lighting.dir_shadows[li.shadow_index].splits;
+				if (distv < splits[lv])
 				{
-					vec4 coordl = dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
+					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
-					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref) * dir_shadows[li.shadow_index].far), 0.0, 1.0);
+					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref) * lighting.dir_shadows[li.shadow_index].far), 0.0, 1.0);
 					break;
 				}
 			}
@@ -80,12 +81,10 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		}
 	}
 	
-	uint idx_off = light_grids[1].offset;
-	uint pt_num = light_grids[1].count;
-	pt_num = 0;
+	uint pt_num = lighting.pt_lights_count;
 	for (int i = 0; i < pt_num; i++)
 	{
-		LightInfo li = light_infos[light_indexs[idx_off + i]];
+		PtLight li = lighting.pt_lights[lighting.pt_lights_list[i]];
 		vec3 L = li.pos - coordw;
 		float dist = length(L);
 		L = L / dist;
@@ -93,10 +92,11 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 		float f_shadow = 1.0;
 		if (li.shadow_index != -1)
 		{
-			if (dist < pt_shadows[li.shadow_index].far)
+			float far = lighting.pt_shadows[li.shadow_index].far;
+			if (dist < far)
 			{
 				float ref = texture(pt_shadow_maps[li.shadow_index], -L).r * 2.0 - 1.0;
-				ref = linear_depth(pt_shadows[li.shadow_index].near, pt_shadows[li.shadow_index].far, ref);
+				ref = linear_depth(lighting.pt_shadows[li.shadow_index].near, far, ref);
 				f_shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
 			}
 		}

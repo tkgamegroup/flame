@@ -1,4 +1,4 @@
 #include "../camera.dsl"
 #include "../material.dsl"
-#include "../light.dsl"
+#include "../lighting.dsl"
 #include "water.dsl"

@@ -6,10 +6,12 @@ namespace flame
 {
 	struct LightDraw
 	{
+		LightType type;
 		uint ins_id;
 		bool cast_shadow;
 
-		LightDraw(uint ins_id, bool cast_shadow) :
+		LightDraw(LightType type, uint ins_id, bool cast_shadow) :
+			type(type),
 			ins_id(ins_id),
 			cast_shadow(cast_shadow)
 		{
@@ -88,8 +90,7 @@ namespace flame
 		uint pass;
 		uint category;
 
-		std::vector<LightDraw>		directional_lights;
-		std::vector<LightDraw>		point_lights;
+		std::vector<LightDraw>		lights;
 		std::vector<MeshDraw>		meshes;
 		std::vector<TerrainDraw>	terrains;
 		std::vector<SdfDraw>		sdfs;
@@ -102,8 +103,7 @@ namespace flame
 			pass = _pass;
 			category = _category;
 
-			directional_lights.clear();
-			point_lights.clear();
+			lights.clear();
 			meshes.clear();
 			terrains.clear();
 			sdfs.clear();

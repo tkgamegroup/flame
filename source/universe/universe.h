@@ -44,7 +44,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cCController);
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
-	FLAME_UNIVERSE_TYPE(cLight);
+	FLAME_UNIVERSE_TYPE(cDirLight);
+	FLAME_UNIVERSE_TYPE(cPtLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
 	FLAME_UNIVERSE_TYPE(cEnvironment);
 

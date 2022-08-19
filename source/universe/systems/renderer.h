@@ -105,8 +105,9 @@ namespace flame
 		virtual void update_res(uint id, uint type_hash, uint name_hash) = 0;
 
 		// id == -1 to register or to unregister id
-		virtual int register_light_instance(int id) = 0;
-		virtual void set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range) = 0;
+		virtual int register_light_instance(LightType type, int id) = 0;
+		virtual void set_dir_light_instance(uint id, const vec3& dir, const vec3& color) = 0;
+		virtual void set_pt_light_instance(uint id, const vec3& pos, const vec3& color, float range) = 0;
 
 		// id == -1 to register or to unregister id
 		virtual int register_mesh_instance(int id) = 0;

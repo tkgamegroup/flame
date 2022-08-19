@@ -47,8 +47,8 @@ void main()
 	gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 #else
 	if (pc.i[0] == 0)
-		gl_Position = dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 	else
-		gl_Position = pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+		gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 #endif
 }

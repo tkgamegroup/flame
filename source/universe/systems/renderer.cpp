@@ -80,19 +80,16 @@ namespace flame
 	graphics::SparseArray sdf_instances;
 	graphics::StorageBuffer2 buf_instance;
 	graphics::StorageBuffer2 buf_material;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageUniform, false>			buf_lighting;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_index;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_light_grid;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage, false, true>	buf_light_info;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_dir_shadow;
-	graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage>				buf_pt_shadow;
+	graphics::SparseArray dir_lights;
+	graphics::SparseArray pt_lights;
+	graphics::StorageBuffer2 buf_lighting;
 	graphics::VertexBuffer buf_primitives;
 	graphics::StorageBuffer2 buf_luminance;
 
 	std::unique_ptr<graphics::DescriptorSet> ds_camera;
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
-	std::unique_ptr<graphics::DescriptorSet> ds_light;
+	std::unique_ptr<graphics::DescriptorSet> ds_lighting;
 	std::unique_ptr<graphics::DescriptorSet> ds_deferred;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma_avg;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma;
@@ -393,46 +390,38 @@ namespace flame
 		for (auto i = 0; i < tex_reses.size(); i++)
 			ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
 		ds_material->update();
-		auto dsl_light = graphics::DescriptorSetLayout::get(L"flame\\shaders\\light.dsl");
-		ds_light.reset(graphics::DescriptorSet::create(nullptr, dsl_light));
-		buf_lighting.create(dsl_light->get_buf_ui("Lighting"_h));
-		buf_light_index.create_with_array_type(dsl_light->get_buf_ui("LightIndexs"_h));
-		buf_light_grid.create_with_array_type(dsl_light->get_buf_ui("LightGrids"_h));
-		buf_light_info.create_with_array_type(dsl_light->get_buf_ui("LightInfos"_h));
-		buf_dir_shadow.create_with_array_type(dsl_light->get_buf_ui("DirShadows"_h));
-		buf_pt_shadow.create_with_array_type(dsl_light->get_buf_ui("PtShadows"_h));
-		imgs_dir_shadow.resize(dsl_light->get_binding("dir_shadow_maps"_h).count);
+		auto dsl_lighting = graphics::DescriptorSetLayout::get(L"flame\\shaders\\lighting.dsl");
+		ds_lighting.reset(graphics::DescriptorSet::create(nullptr, dsl_lighting));
+		buf_lighting.create(graphics::BufferUsageStorage, dsl_lighting->get_buf_ui("Lighting"_h));
+		dir_lights.init(buf_lighting.item_info("dir_lights"_h).array_size);
+		pt_lights.init(buf_lighting.item_info("pt_lights"_h).array_size);
+		imgs_dir_shadow.resize(dsl_lighting->get_binding("dir_shadow_maps"_h).count);
 		for (auto& i : imgs_dir_shadow)
 		{
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		img_dir_shadow_back.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
-		imgs_pt_shadow.resize(dsl_light->get_binding("pt_shadow_maps"_h).count);
+		imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
 		for (auto& i : imgs_pt_shadow)
 		{
 			i.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
 		img_pt_shadow_back.reset(graphics::Image::create(dep_fmt, ShadowMapSize, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
-		ds_light->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
-		ds_light->set_buffer("LightIndexs"_h, 0, buf_light_index.buf.get());
-		ds_light->set_buffer("LightGrids"_h, 0, buf_light_grid.buf.get());
-		ds_light->set_buffer("LightInfos"_h, 0, buf_light_info.buf.get());
-		ds_light->set_buffer("DirShadows"_h, 0, buf_dir_shadow.buf.get());
-		ds_light->set_buffer("PtShadows"_h, 0, buf_pt_shadow.buf.get());
+		ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-			ds_light->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
+			ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-			ds_light->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
-		ds_light->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+			ds_lighting->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
+		ds_lighting->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		{
 			auto img = graphics::Image::get(L"flame\\brdf.dds");
-			ds_light->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
+			ds_lighting->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
 		}
-		ds_light->update();
+		ds_lighting->update();
 
 		mesh_reses.resize(1024);
 
@@ -459,7 +448,7 @@ namespace flame
 		prm_fwd.set_ds("camera"_h, ds_camera.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
-		prm_fwd.set_ds("light"_h, ds_light.get());
+		prm_fwd.set_ds("lighting"_h, ds_lighting.get());
 
 		prm_gbuf.init(pll_gbuf);
 		prm_gbuf.set_ds("camera"_h, ds_camera.get());
@@ -487,7 +476,7 @@ namespace flame
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
 		prm_deferred.set_ds("camera"_h, ds_camera.get());
-		prm_deferred.set_ds("light"_h, ds_light.get());
+		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
 		prm_deferred.set_ds(""_h, ds_deferred.get());
 
@@ -536,6 +525,8 @@ namespace flame
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
 		fence_pickup.reset(graphics::Fence::create(false));
+
+		camera_light_id = register_light_instance(LightDirectional, -1);
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -581,8 +572,6 @@ namespace flame
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 
 		final_layout = _final_layout;
-
-		camera_light_id = register_light_instance(-1);
 	}
 
 	void sRendererPrivate::bind_window_targets()
@@ -611,12 +600,15 @@ namespace flame
 	{
 		dirty = true;
 
-		ds_light->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_light->update();
+		ds_lighting->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->update();
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
+		auto pi = buf_lighting.item("sky_rad_levels"_h);
+		pi.set(sky_rad_levels);
+		buf_lighting.mark_dirty(pi);
 	}
 
 	void sRendererPrivate::set_sky_intensity(float v)
@@ -624,6 +616,9 @@ namespace flame
 		dirty = true;
 
 		sky_intensity = v;
+		auto pi = buf_lighting.item("sky_intensity"_h);
+		pi.set(sky_intensity);
+		buf_lighting.mark_dirty(pi);
 	}
 
 	void sRendererPrivate::set_fog_color(const vec3& color)
@@ -631,6 +626,9 @@ namespace flame
 		dirty = true;
 
 		fog_color = color;
+		auto pi = buf_lighting.item("fog_color"_h);
+		pi.set(fog_color);
+		buf_lighting.mark_dirty(pi);
 	}
 
 	void sRendererPrivate::set_shadow_distance(float d)
@@ -977,11 +975,12 @@ namespace flame
 		}
 	}
 
-	int sRendererPrivate::register_light_instance(int id)
+	int sRendererPrivate::register_light_instance(LightType type, int id)
 	{
+		auto& arr = type == LightDirectional ? dir_lights : pt_lights;
 		if (id == -1)
 		{
-			id = buf_light_info.get_free_item();
+			id = arr.get_free_item();
 			if (id != -1)
 			{
 
@@ -989,18 +988,26 @@ namespace flame
 		}
 		else
 		{
-			buf_light_info.release_item(id);
+			arr.release_item(id);
 
 		}
 		return id;
 	}
 
-	void sRendererPrivate::set_light_instance(uint id, LightType type, const vec3& pos, const vec3& color, float range)
+	void sRendererPrivate::set_dir_light_instance(uint id, const vec3& dir, const vec3& color)
 	{
-		buf_light_info.select_item(id);
-		buf_light_info.set_var<"type"_h>(type);
-		buf_light_info.set_var<"pos"_h>(pos);
-		buf_light_info.set_var<"color"_h>(color);
+		auto pi = buf_lighting.item("dir_lights"_h, id);
+		pi.item("dir"_h).set(dir);
+		pi.item("color"_h).set(color);
+		buf_lighting.mark_dirty(pi);
+	}
+
+	void sRendererPrivate::set_pt_light_instance(uint id, const vec3& pos, const vec3& color, float range)
+	{
+		auto pi = buf_lighting.item("pt_lights"_h, id);
+		pi.item("pos"_h).set(pos);
+		pi.item("color"_h).set(color);
+		buf_lighting.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)
@@ -1202,82 +1209,89 @@ namespace flame
 		buf_material.upload(cb);
 		buf_instance.upload(cb);
 
-		buf_lighting.set_var<"sky_intensity"_h>(sky_intensity);
-		buf_lighting.set_var<"sky_rad_levels"_h>(sky_rad_levels);
-		buf_lighting.set_var<"fog_color"_h>(fog_color);
-		buf_lighting.upload(cb); 
-
 		auto n_dir_lights = 0;
 		auto n_dir_shadows = 0;
 		auto n_pt_lights = 0;
 		auto n_pt_shadows = 0;
 		if (mode == Shaded)
 		{
+			auto p_dir_lights_list = buf_lighting.item("dir_lights_list"_h);
+			auto p_pt_lights_list = buf_lighting.item("pt_lights_list"_h);
+
 			draw_data.reset("light"_h, 0);
 			for (auto n : camera_culled_nodes)
 			{
 				n->draw(draw_data);
-				if (n_dir_lights < draw_data.directional_lights.size())
+				auto n_lights = n_dir_lights + n_pt_lights;
+				if (n_lights < draw_data.lights.size())
 				{
-					for (auto i = n_dir_lights; i < draw_data.directional_lights.size(); i++)
+					for (auto i = n_lights; i < draw_data.lights.size(); i++)
 					{
-						auto& l = draw_data.directional_lights[i];
-
-						if (l.cast_shadow)
+						auto& l = draw_data.lights[i];
+						switch (l.type)
 						{
-							if (n_dir_shadows < countof(dir_shadows))
+						case LightDirectional:
+							memcpy(p_dir_lights_list.pdata + n_dir_lights * sizeof(uint), &l.ins_id, sizeof(uint));
+							if (l.cast_shadow)
 							{
-								auto idx = n_dir_shadows;
-								buf_light_info.select_item(l.ins_id);
-								buf_light_info.set_var<"shadow_index"_h>(idx);
+								if (n_dir_shadows < countof(dir_shadows))
+								{
+									auto idx = n_dir_shadows;
+									auto pi = buf_lighting.item("dir_lights"_h, l.ins_id);
+									pi = pi.item("shadow_index"_h);
+									pi.set(idx);
+									buf_lighting.mark_dirty(pi);
 
-								auto& rot = dir_shadows[idx].rot;
-								rot = n->g_rot;
-								rot[2] *= -1.f;
+									auto& rot = dir_shadows[idx].rot;
+									rot = n->g_rot;
+									rot[2] *= -1.f;
 
-								n_dir_shadows++;
+									n_dir_shadows++;
+								}
 							}
+							n_dir_lights++;
+							break;
+						case LightPoint:
+							memcpy(p_pt_lights_list.pdata + n_pt_lights * sizeof(uint), &l.ins_id, sizeof(uint));
+							n_pt_shadows++;
+							break;
 						}
-
-						buf_light_index.push(1, &l.ins_id); // push dir light index here
 					}
-					n_dir_lights = draw_data.directional_lights.size();
 				}
 			}
 
-			// pack dir lights
-			buf_light_grid.set_var<"offset"_h>(0);
-			buf_light_grid.set_var<"count"_h>(n_dir_lights);
-			buf_light_grid.next_item();
-			// pack pt lights
-			auto cx = max(1U, uint(sz.x / 16.f));
-			auto cy = max(1U, uint(sz.y / 16.f));
-			for (auto y = 0; y < cy; y++)
-			{
-				for (auto x = 0; x < cx; x++)
-				{
+			auto p_dir_count = buf_lighting.item("dir_lights_count"_h);
+			p_dir_count.set(n_dir_lights);
+			buf_lighting.mark_dirty(p_dir_count);
+			buf_lighting.mark_dirty(p_dir_lights_list, n_dir_lights * sizeof(uint));
 
-				}
-			}
+			auto p_pt_count = buf_lighting.item("pt_lights_count"_h);
+			p_pt_count.set(n_pt_lights);
+			buf_lighting.mark_dirty(p_pt_count);
+			buf_lighting.mark_dirty(p_pt_lights_list, n_pt_lights * sizeof(uint));
 		}
 		else if (mode == CameraLight)
 		{
-			buf_light_info.select_item(camera_light_id);
-			buf_light_info.set_var<"type"_h>(LightDirectional);
-			buf_light_info.set_var<"pos"_h>(camera->node->g_rot[2]);
-			buf_light_info.set_var<"color"_h>(vec3(1.f));
-			buf_light_info.set_var<"shadow_index"_h>(-1);
+			auto pl = buf_lighting.item("dir_lights"_h, camera_light_id);
+			pl.item("dir"_h).set(camera->node->g_rot[2]);
+			pl.item("color"_h).set(vec3(1.f));
+			pl.item("shadow_index"_h).set(-1);
+			buf_lighting.mark_dirty(pl);
 
-			buf_light_index.push(1, &camera_light_id);
+			auto p_dir_lights_list = buf_lighting.item("dir_lights_list"_h);
+			memcpy(p_dir_lights_list.pdata, &camera_light_id, sizeof(uint));
 
-			buf_light_grid.set_var<"offset"_h>(0);
-			buf_light_grid.set_var<"count"_h>(1);
-			buf_light_grid.next_item();
+			auto p_dir_count = buf_lighting.item("dir_lights_count"_h);
+			p_dir_count.set(1);
+			buf_lighting.mark_dirty(p_dir_count);
+			buf_lighting.mark_dirty(p_dir_lights_list, sizeof(uint));
+
+			auto p_pt_count = buf_lighting.item("pt_lights_count"_h);
+			p_pt_count.set(0);
+			buf_lighting.mark_dirty(p_pt_count);
 		}
 
-		buf_light_index.upload(cb);
-		buf_light_grid.upload(cb);
-		buf_light_info.upload(cb);
+		buf_lighting.upload(cb);
 
 		for (auto& d : opa_mesh_buckets.draw_idxs)
 			d.second.second.clear();
@@ -1336,7 +1350,8 @@ namespace flame
 			{
 				auto& s = dir_shadows[i];
 				auto splits = vec4(zf);
-				auto mats = (mat4*)buf_dir_shadow.var_addr<"mats"_h>();
+				auto p_shadow = buf_lighting.item("dir_shadows"_h, i);
+				auto mats = (mat4*)p_shadow.item("mats"_h).pdata;
 				for (auto lv = 0; lv < csm_levels; lv++)
 				{
 					auto n = lv / (float)csm_levels;
@@ -1439,15 +1454,19 @@ namespace flame
 					}
 				}
 
-				buf_dir_shadow.set_var<"splits"_h>(splits);
-				buf_dir_shadow.set_var<"far"_h>(shadow_distance);
-				buf_dir_shadow.next_item();
+				p_shadow.item("splits"_h).set(splits);
+				p_shadow.item("far"_h).set(shadow_distance);
+				buf_lighting.mark_dirty(p_shadow);
 			}
 
-			csm_debug_sig = false;
+			for (auto i = 0; i < n_pt_shadows; i++)
+			{
 
-			buf_dir_shadow.upload(cb);
-			buf_pt_shadow.upload(cb);
+			}
+
+			buf_lighting.upload(cb);
+
+			csm_debug_sig = false;
 
 			auto set_blur_args = [cb](const vec2 img_size) {
 				cb->bind_pipeline_layout(prm_post.pll);
@@ -1506,10 +1525,6 @@ namespace flame
 			}
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize / 2U));
-			for (auto i = 0; i < n_pt_shadows; i++)
-			{
-
-			}
 		}
 
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
