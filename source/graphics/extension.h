@@ -101,7 +101,7 @@ namespace flame
 			return PipelineStageAllCommand;
 		}
 
-		struct StorageBuffer2 : VirtualStruct
+		struct StorageBuffer : VirtualStruct
 		{
 			BufferUsageFlags			usage;
 			std::unique_ptr<BufferT>	buf;
@@ -137,16 +137,18 @@ namespace flame
 		struct VertexBuffer : VirtualStruct
 		{
 			UdtInfo						array_type;
+			uint						item_size;
 			uint						capacity;
 			std::unique_ptr<BufferT>	buf;
 			std::unique_ptr<BufferT>	stag;
-			uint						buf_top;
-			uint						stag_top;
+			uint						buf_top = 0;
+			uint						stag_top = 0;
 
 			void create(UdtInfo* ui, uint _capacity)
 			{
+				item_size = ui->size;
 				capacity = _capacity;
-				buf.reset(Buffer::create(capacity * ui->size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
 				auto& vi = array_type.variables.emplace_back();
@@ -157,44 +159,24 @@ namespace flame
 				init(&array_type, stag->mapped);
 			}
 
-			VirtualData add()
+			void create(uint _item_size, uint _capacity)
 			{
-				return item_i(0, stag_top++);
-			}
-
-			void upload(CommandBufferPtr cb)
-			{
-				if (buf_top < stag_top)
-				{
-					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top;
-					cpy.size = (stag_top - buf_top) * ui->size;
-					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
-					buf_top = stag_top;
-				}
-			}
-		};
-
-		struct IndexBuffer
-		{
-			uint						capacity;
-			std::unique_ptr<BufferT>	buf;
-			std::unique_ptr<BufferT>	stag;
-			uint						buf_top;
-			uint						stag_top;
-
-			void create(uint _capacity)
-			{
+				item_size = _item_size;
 				capacity = _capacity;
-				buf.reset(Buffer::create(capacity * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
+				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
+				init(nullptr, stag->mapped);
 			}
 
-			void add(const uint* src, uint size)
+			VirtualData add()
 			{
-				memcpy((char*)stag->mapped + stag_top * sizeof(uint), src, size * sizeof(uint));
+				return item(0, stag_top++);
+			}
+
+			void add(const void* src, uint size)
+			{
+				memcpy((char*)stag->mapped + stag_top * item_size, src, size * item_size);
 				stag_top += size;
 			}
 
@@ -204,7 +186,44 @@ namespace flame
 				{
 					BufferCopy cpy;
 					cpy.src_off = cpy.dst_off = buf_top;
-					cpy.size = (stag_top - buf_top) * sizeof(uint);
+					cpy.size = (stag_top - buf_top) * item_size;
+					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
+					buf_top = stag_top;
+				}
+			}
+		};
+
+		template<typename T = uint>
+		struct IndexBuffer
+		{
+			uint						capacity;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+			uint						buf_top = 0;
+			uint						stag_top = 0;
+
+			void create(uint _capacity)
+			{
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * sizeof(T), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
+			}
+
+			void add(const T* src, uint size)
+			{
+				memcpy((char*)stag->mapped + stag_top * sizeof(T), src, size * sizeof(T));
+				stag_top += size;
+			}
+
+			void upload(CommandBufferPtr cb)
+			{
+				if (buf_top < stag_top)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = buf_top;
+					cpy.size = (stag_top - buf_top) * sizeof(T);
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
 					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
 					buf_top = stag_top;
@@ -212,184 +231,43 @@ namespace flame
 			}
 		};
 
-		template<uint id, BufferUsageFlags usage, bool rewind = true, bool sparse = false>
-		struct StorageBuffer : VirtualUdt<id>
+		struct IndirectBuffer
 		{
-			using VirtualUdt<id>::ui;
-			using VirtualUdt<id>::var_off;
-			using VirtualUdt<id>::set_var;
+			uint						capacity;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+			uint						top = 0;
 
-			uint size = 0;
-			uint array_capacity = 0;
-
-			std::unique_ptr<BufferT> buf;
-			std::unique_ptr<BufferT> stagbuf;
-			std::vector<BufferCopy> copies;
-			std::deque<uint> free_slots;
-			char* pbeg;
-			char* pend;
-
-			void create(uint _size, uint _array_capacity = 1)
+			void create(uint _capacity)
 			{
-				size = usage == BufferUsageIndirect ? sizeof(graphics::DrawIndexedIndirectCommand) : _size;
-				array_capacity = _array_capacity;
-				buf.reset(Buffer::create(array_capacity * size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-				stagbuf.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-				stagbuf->map();
-				pbeg = pend = (char*)stagbuf->mapped;
-
-				if (sparse)
-				{
-					free_slots.resize(_array_capacity);
-					std::iota(free_slots.begin(), free_slots.end(), 0);
-				}
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * sizeof(graphics::DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
 			}
 
-			void create(UdtInfo* _ui, uint _array_capacity = 1, uint _size = 0)
+			inline void add(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
 			{
-				ui = _ui;
-				create(_size > 0 ? _size : ui->size, _array_capacity);
-			}
-
-			void create_with_array_type(UdtInfo* _ui)
-			{
-				auto& vi = _ui->variables[0];
-				auto vui = vi.type->retrive_ui();
-				if (vui)
-					create(vi.type->retrive_ui(), vi.array_size, vi.array_stride);
-				else
-					create(vi.array_stride, vi.array_size);
-			}
-
-			inline uint item_offset()
-			{
-				assert(!sparse);
-				return (pend - (char*)stagbuf->mapped) / size;
-			}
-
-			inline void next_item()
-			{
-				assert(!sparse);
-				pend += size;
-			}
-
-			inline void push(uint n, void* d)
-			{
-				auto s = n * size;
-				memcpy(pend, d, s);
-				pend += s;
-			}
-
-			inline int get_free_item()
-			{
-				assert(sparse);
-				if (free_slots.empty())
-					return -1;
-				auto ret = free_slots.front();
-				free_slots.pop_front();
-				return ret;
-			}
-
-			inline void release_item(uint id)
-			{
-				assert(sparse);
-				free_slots.push_back(id);
-			}
-
-			inline void select_item(uint off, bool mark_dirty = true)
-			{
-				assert(sparse);
-				pend = (char*)stagbuf->mapped + off * size;
-				if (mark_dirty)
-				{
-					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = pend - (char*)stagbuf->mapped;
-					cpy.size = size;
-					copies.push_back(cpy);
-				}
-			}
-
-			template<typename T>
-			inline void set_item(const T& v)
-			{
-				*(T*)pend = v;
-			}
-
-			template<uint nh, typename T>
-			inline void set_var(const T& v)
-			{
-				VirtualUdt<id>::set_var<nh>(pend, v);
-			}
-
-			template<uint nh>
-			inline char* var_addr()
-			{
-				return pend + var_off<nh>();
-			}
-
-			inline void add_draw_indirect(uint vertex_count, uint first_vertex = 0, uint instance_count = 1, uint first_instance = 0)
-			{
-				assert(usage == BufferUsageIndirect);
-				DrawIndirectCommand c;
-				c.vertex_count = vertex_count;
-				c.instance_count = instance_count;
-				c.first_vertex = first_vertex;
-				c.first_instance = first_instance;
-				set_item(c);
-				next_item();
-			}
-
-			inline void add_draw_indexed_indirect(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
-			{
-				assert(usage == BufferUsageIndirect);
-				DrawIndexedIndirectCommand c;
+				auto& c = *(DrawIndexedIndirectCommand*)((char*)stag->mapped + top * sizeof(graphics::DrawIndexedIndirectCommand));
 				c.index_count = index_count;
 				c.instance_count = instance_count;
 				c.first_index = first_index;
 				c.vertex_offset = vertex_offset;
 				c.first_instance = first_instance;
-				set_item(c);
-				next_item();
+
+				top++;
 			}
 
 			void upload(CommandBufferPtr cb)
 			{
-				if (sparse)
-				{
-					if (copies.empty())
-						return;
-					cb->copy_buffer(stagbuf.get(), buf.get(), copies);
-					copies.clear();
-				}
-				else
+				if (top > 0)
 				{
 					BufferCopy cpy;
-					if (array_capacity > 1)
-					{
-						cpy.size = pend - pbeg;
-						if (rewind)
-							pend = pbeg;
-						else
-						{
-							cpy.src_off = cpy.dst_off = pbeg - (char*)stagbuf->mapped;
-							pbeg = pend;
-						}
-					}
-					else
-						cpy.size = size;
-					if (cpy.size == 0)
-						return;
-					cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
+					cpy.size = top * sizeof(graphics::DrawIndexedIndirectCommand);
+					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndirect), PipelineStageTransfer, u2s(BufferUsageIndirect));
+					top = 0;
 				}
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
-			}
-
-			void upload_whole(CommandBufferPtr cb)
-			{
-				BufferCopy cpy;
-				cpy.size = size * array_capacity;
-				cb->copy_buffer(stagbuf.get(), buf.get(), { &cpy, 1 });
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
 		};
 

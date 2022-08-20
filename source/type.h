@@ -17,8 +17,6 @@
 #include <random>
 #include <filesystem>
 
-#define FLAME_UID (flame::sh(__FILE__) + __LINE__)
-
 #define FLAME_TYPE(name) struct name; \
 	using name##T = name; \
 	using name##Ptr = name*;

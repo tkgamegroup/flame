@@ -525,12 +525,10 @@ namespace flame
 
 		inline const VariableInfo* find_variable(uint name_hash) const
 		{
-			for (auto& v : variables)
-			{
-				if (v.name_hash == name_hash)
-					return &v;
-			}
-			return nullptr;
+			auto it = variables_map.find(name_hash);
+			if (it == variables_map.end())
+				return nullptr;
+			return &variables[it->second];
 		}
 
 		inline int find_function_i(std::string_view name) const
@@ -2633,22 +2631,12 @@ namespace flame
 			return ui->variables[it->second];
 		}
 
-		inline VirtualData item_i(uint idx, uint array_idx = 0)
-		{
-			auto& vi = ui->variables[idx];
-			VirtualData ret;
-			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
-			ret.size = vi.type->size;
-			ret.ui = vi.type->retrive_ui();
-			return ret;
-		}
-
 		inline VirtualData item(uint hash, uint array_idx = 0)
 		{
-			auto& vi = item_info(hash);
+			auto& vi = hash == 0 ? ui->variables[0] : item_info(hash);
 			VirtualData ret;
 			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
-			ret.size = vi.type->size;
+			ret.size = vi.array_stride > 0 ? vi.array_stride : vi.type->size;
 			ret.ui = vi.type->retrive_ui();
 			return ret;
 		}
@@ -2686,45 +2674,31 @@ namespace flame
 			}
 		}
 
+		inline VirtualData item_d(uint hash, uint array_idx = 0)
+		{
+			auto ret = item(hash, array_idx);
+			mark_dirty(ret);
+			return ret;
+		}
+
 		inline uint offset(const VirtualData& d)
 		{
 			return uint(d.pdata - pdata);
 		}
 
-		inline void mark_dirty(const VirtualData& d, uint size = 0)
+		inline void mark_dirty(const VirtualData& d)
 		{
-			dirty_regions.emplace_back(offset(d), size > 0 ? size : d.size);
-		}
-	};
-
-	template<uint id>
-	struct VirtualUdt
-	{
-		UdtInfo* ui = nullptr;
-
-		template<uint nh>
-		inline int var_off()
-		{
-			auto get_offset = [&]()->int {
-				auto vi = ui->find_variable(nh);
-				if (!vi)
+			auto off = offset(d);
+			if (!dirty_regions.empty())
+			{
+				auto& last = dirty_regions.back();
+				if (last.first + last.second == off)
 				{
-					assert(0);
-					return -1;
+					last.second += d.size;
+					return;
 				}
-				return vi->offset;
-			};
-			static int offset = get_offset();
-			return offset;
-		}
-
-		template<uint nh, typename T>
-		inline void set_var(char* p, const T& v)
-		{
-			auto offset = var_off<nh>();
-			if (offset == -1)
-				return;
-			*(T*)(p + offset) = v;
+			}
+			dirty_regions.emplace_back(off, d.size);
 		}
 	};
 }

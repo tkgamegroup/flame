@@ -73,18 +73,18 @@ namespace flame
 	graphics::VertexBuffer buf_vtx_arm;
 	graphics::IndexBuffer buf_idx_arm;
 
-	graphics::StorageBuffer2 buf_camera;
+	graphics::StorageBuffer buf_camera;
 	graphics::SparseArray mesh_instances;
 	graphics::SparseArray armature_instances;
 	graphics::SparseArray terrain_instances;
 	graphics::SparseArray sdf_instances;
-	graphics::StorageBuffer2 buf_instance;
-	graphics::StorageBuffer2 buf_material;
+	graphics::StorageBuffer buf_instance;
+	graphics::StorageBuffer buf_material;
 	graphics::SparseArray dir_lights;
 	graphics::SparseArray pt_lights;
-	graphics::StorageBuffer2 buf_lighting;
+	graphics::StorageBuffer buf_lighting;
 	graphics::VertexBuffer buf_primitives;
-	graphics::StorageBuffer2 buf_luminance;
+	graphics::StorageBuffer buf_luminance;
 
 	std::unique_ptr<graphics::DescriptorSet> ds_camera;
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
@@ -124,7 +124,7 @@ namespace flame
 
 	struct MeshBuckets
 	{
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageIndirect> buf_idr;
+		graphics::IndirectBuffer buf_idr;
 		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> draw_idxs;
 
 		void collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
@@ -294,7 +294,7 @@ namespace flame
 			{
 				auto& m = draw_data.meshes[i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
-				buf_idr.add_draw_indexed_indirect(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.ins_id << 8) + m.mat_id);
+				buf_idr.add(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.ins_id << 8) + m.mat_id);
 			}
 		}
 		buf_idr.upload(cb);
@@ -466,12 +466,12 @@ namespace flame
 		buf_idx.create(1024 * 256 * 6);
 		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
 		buf_idx_arm.create(1024 * 128 * 6);
-		opa_mesh_buckets.buf_idr.create(0U, mesh_instances.capacity);
-		trs_mesh_buckets.buf_idr.create(0U, mesh_instances.capacity);
+		opa_mesh_buckets.buf_idr.create(mesh_instances.capacity);
+		trs_mesh_buckets.buf_idr.create(mesh_instances.capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
-				s.mesh_buckets[i].buf_idr.create(0U, min(1024U, mesh_instances.capacity));
+				s.mesh_buckets[i].buf_idr.create(min(1024U, mesh_instances.capacity));
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
@@ -606,9 +606,7 @@ namespace flame
 		ds_lighting->update();
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
-		auto pi = buf_lighting.item("sky_rad_levels"_h);
-		pi.set(sky_rad_levels);
-		buf_lighting.mark_dirty(pi);
+		buf_lighting.item_d("sky_rad_levels"_h).set(sky_rad_levels);
 	}
 
 	void sRendererPrivate::set_sky_intensity(float v)
@@ -616,9 +614,7 @@ namespace flame
 		dirty = true;
 
 		sky_intensity = v;
-		auto pi = buf_lighting.item("sky_intensity"_h);
-		pi.set(sky_intensity);
-		buf_lighting.mark_dirty(pi);
+		buf_lighting.item_d("sky_intensity"_h).set(sky_intensity);
 	}
 
 	void sRendererPrivate::set_fog_color(const vec3& color)
@@ -626,9 +622,7 @@ namespace flame
 		dirty = true;
 
 		fog_color = color;
-		auto pi = buf_lighting.item("fog_color"_h);
-		pi.set(fog_color);
-		buf_lighting.mark_dirty(pi);
+		buf_lighting.item_d("fog_color"_h).set(fog_color);
 	}
 
 	void sRendererPrivate::set_shadow_distance(float d)
@@ -859,8 +853,7 @@ namespace flame
 		}
 		if (update_parameters || update_textures)
 		{
-			auto p_info = buf_material.item("infos"_h, id);
-			buf_material.mark_dirty(p_info);
+			auto p_info = buf_material.item_d("infos"_h, id);
 			p_info.item("color"_h).set(res.mat->color);
 			p_info.item("metallic"_h).set(res.mat->metallic);
 			p_info.item("roughness"_h).set(res.mat->roughness);
@@ -996,18 +989,16 @@ namespace flame
 
 	void sRendererPrivate::set_dir_light_instance(uint id, const vec3& dir, const vec3& color)
 	{
-		auto pi = buf_lighting.item("dir_lights"_h, id);
+		auto pi = buf_lighting.item_d("dir_lights"_h, id);
 		pi.item("dir"_h).set(dir);
 		pi.item("color"_h).set(color);
-		buf_lighting.mark_dirty(pi);
 	}
 
 	void sRendererPrivate::set_pt_light_instance(uint id, const vec3& pos, const vec3& color, float range)
 	{
-		auto pi = buf_lighting.item("pt_lights"_h, id);
+		auto pi = buf_lighting.item_d("pt_lights"_h, id);
 		pi.item("pos"_h).set(pos);
 		pi.item("color"_h).set(color);
-		buf_lighting.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_mesh_instance(int id)
@@ -1025,10 +1016,9 @@ namespace flame
 
 	void sRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
 	{
-		auto pi = buf_instance.item("meshes"_h, id);
+		auto pi = buf_instance.item_d("meshes"_h, id);
 		pi.item("mat"_h).set(mat);
 		pi.item("nor"_h).set(nor);
-		buf_instance.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_armature_instance(int id)
@@ -1051,9 +1041,8 @@ namespace flame
 
 	void sRendererPrivate::set_armature_instance(uint id, const mat4* mats, uint size)
 	{
-		auto pi = buf_instance.item("armatures"_h, id);
+		auto pi = buf_instance.item_d("armatures"_h, id);
 		pi.set(mats, size);
-		buf_instance.mark_dirty(pi);
 	}
 
 	int sRendererPrivate::register_terrain_instance(int id)
@@ -1081,7 +1070,7 @@ namespace flame
 	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
 		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
 	{
-		auto pi = buf_instance.item("terrains"_h, id);
+		auto pi = buf_instance.item_d("terrains"_h, id);
 		pi.item("mat"_h).set(mat);
 		pi.item("extent"_h).set(extent);
 		pi.item("blocks"_h).set(blocks);
@@ -1090,7 +1079,7 @@ namespace flame
 		pi.item("grass_channel"_h).set(grass_channel);
 		pi.item("grass_channel"_h).set(grass_channel);
 		pi.item("grass_texture_id"_h).set(grass_texture_id);
-		buf_instance.mark_dirty(pi);
+
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
@@ -1117,7 +1106,7 @@ namespace flame
 
 	void sRendererPrivate::set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres)
 	{
-		auto pi = buf_instance.item("sdfs"_h, id);
+		auto pi = buf_instance.item_d("sdfs"_h, id);
 		pi.item("boxes_count"_h).set(boxes_count);
 		for (auto i = 0; i < boxes_count; i++)
 		{
@@ -1132,7 +1121,6 @@ namespace flame
 			ps.item("coord"_h).set(spheres[i].first);
 			ps.item("radius"_h).set(spheres[i].second);
 		}
-		buf_instance.mark_dirty(pi);
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -1215,9 +1203,6 @@ namespace flame
 		auto n_pt_shadows = 0;
 		if (mode == Shaded)
 		{
-			auto p_dir_lights_list = buf_lighting.item("dir_lights_list"_h);
-			auto p_pt_lights_list = buf_lighting.item("pt_lights_list"_h);
-
 			draw_data.reset("light"_h, 0);
 			for (auto n : camera_culled_nodes)
 			{
@@ -1231,7 +1216,7 @@ namespace flame
 						switch (l.type)
 						{
 						case LightDirectional:
-							memcpy(p_dir_lights_list.pdata + n_dir_lights * sizeof(uint), &l.ins_id, sizeof(uint));
+							buf_lighting.item_d("dir_lights_list"_h, n_dir_lights).set(l.ins_id);
 							if (l.cast_shadow)
 							{
 								if (n_dir_shadows < countof(dir_shadows))
@@ -1252,43 +1237,27 @@ namespace flame
 							n_dir_lights++;
 							break;
 						case LightPoint:
-							memcpy(p_pt_lights_list.pdata + n_pt_lights * sizeof(uint), &l.ins_id, sizeof(uint));
-							n_pt_shadows++;
+							buf_lighting.item_d("pt_lights_list"_h, n_dir_lights).set(l.ins_id);
+							n_pt_lights++;
 							break;
 						}
 					}
 				}
 			}
 
-			auto p_dir_count = buf_lighting.item("dir_lights_count"_h);
-			p_dir_count.set(n_dir_lights);
-			buf_lighting.mark_dirty(p_dir_count);
-			buf_lighting.mark_dirty(p_dir_lights_list, n_dir_lights * sizeof(uint));
-
-			auto p_pt_count = buf_lighting.item("pt_lights_count"_h);
-			p_pt_count.set(n_pt_lights);
-			buf_lighting.mark_dirty(p_pt_count);
-			buf_lighting.mark_dirty(p_pt_lights_list, n_pt_lights * sizeof(uint));
+			buf_lighting.item_d("dir_lights_count"_h).set(n_dir_lights);
+			buf_lighting.item_d("pt_lights_count"_h).set(n_pt_lights);
 		}
 		else if (mode == CameraLight)
 		{
-			auto pl = buf_lighting.item("dir_lights"_h, camera_light_id);
+			auto pl = buf_lighting.item_d("dir_lights"_h, camera_light_id);
 			pl.item("dir"_h).set(camera->node->g_rot[2]);
 			pl.item("color"_h).set(vec3(1.f));
 			pl.item("shadow_index"_h).set(-1);
-			buf_lighting.mark_dirty(pl);
 
-			auto p_dir_lights_list = buf_lighting.item("dir_lights_list"_h);
-			memcpy(p_dir_lights_list.pdata, &camera_light_id, sizeof(uint));
-
-			auto p_dir_count = buf_lighting.item("dir_lights_count"_h);
-			p_dir_count.set(1);
-			buf_lighting.mark_dirty(p_dir_count);
-			buf_lighting.mark_dirty(p_dir_lights_list, sizeof(uint));
-
-			auto p_pt_count = buf_lighting.item("pt_lights_count"_h);
-			p_pt_count.set(0);
-			buf_lighting.mark_dirty(p_pt_count);
+			buf_lighting.item_d("dir_lights_list"_h, 0).set(camera_light_id);
+			buf_lighting.item_d("dir_lights_count"_h).set(1);
+			buf_lighting.item_d("pt_lights_count"_h).set(0);
 		}
 
 		buf_lighting.upload(cb);
@@ -1350,7 +1319,7 @@ namespace flame
 			{
 				auto& s = dir_shadows[i];
 				auto splits = vec4(zf);
-				auto p_shadow = buf_lighting.item("dir_shadows"_h, i);
+				auto p_shadow = buf_lighting.item_d("dir_shadows"_h, i);
 				auto mats = (mat4*)p_shadow.item("mats"_h).pdata;
 				for (auto lv = 0; lv < csm_levels; lv++)
 				{
@@ -1456,7 +1425,6 @@ namespace flame
 
 				p_shadow.item("splits"_h).set(splits);
 				p_shadow.item("far"_h).set(shadow_distance);
-				buf_lighting.mark_dirty(p_shadow);
 			}
 
 			for (auto i = 0; i < n_pt_shadows; i++)

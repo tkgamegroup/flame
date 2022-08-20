@@ -16,8 +16,6 @@ layout (push_constant) uniform PushConstant
 	uint channel;
 	float distance;
 	float merge_k;
-	uint sd_circles_count;
-	uint sd_ori_rects_count;
 }pc;
 
 struct SdCircle
@@ -33,17 +31,15 @@ struct SdOriRect
 	float thickness;
 };
 
-layout(set = SET, binding = 0) buffer readonly SdCircles
+layout(set = SET, binding = 0) buffer readonly SDF
 {
-	SdCircle sd_circles[256];
-};
+	uint circles_count;
+	uint ori_rects_count;
+	SdCircle circles[256];
+	SdOriRect ori_rects[256];
+}sdf;
 
-layout(set = SET, binding = 1) buffer readonly SdOriRects
-{
-	SdOriRect sd_ori_rects[256];
-};
-
-layout (set = SET, binding = 2) uniform sampler2D img_src;
+layout (set = SET, binding = 1) uniform sampler2D img_src;
 @
 
 @frag
@@ -56,14 +52,14 @@ layout (location = 0) out vec4 o_color;
 float scene_sdf(vec2 p, float merge_k)
 {
 	float ret = 100000000.0;
-	for (int i = 0; i < pc.sd_circles_count; i++)
+	for (int i = 0; i < sdf.circles_count; i++)
 	{
-		SdCircle d = sd_circles[i];
+		SdCircle d = sdf.circles[i];
 		ret = op_smooth_union(ret, sd_circle(p - d.coord, d.radius), pc.merge_k);
 	}
-	for (int i = 0; i < pc.sd_ori_rects_count; i++)
+	for (int i = 0; i < sdf.ori_rects_count; i++)
 	{
-		SdOriRect d = sd_ori_rects[i];
+		SdOriRect d = sdf.ori_rects[i];
 		ret = op_smooth_union(ret, sd_ori_box(p, d.point_a, d.point_b, d.thickness), pc.merge_k);
 	}
 	return ret;

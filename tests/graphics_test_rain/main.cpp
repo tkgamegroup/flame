@@ -54,7 +54,7 @@ void main()
 GraphicsApplication app;
 
 GraphicsPipeline* pl;
-StorageBuffer<FLAME_UID, BufferUsageVertex> vtx_buf;
+VertexBuffer vtx_buf;
 
 PerspectiveProjector projector;
 

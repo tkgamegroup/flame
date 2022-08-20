@@ -243,8 +243,8 @@ namespace flame
 		static RenderpassPtr imgui_rp_load = nullptr;
 		static std::vector<std::unique_ptr<FramebufferT>> imgui_fbs;
 		static std::unique_ptr<ImageT> imgui_img_font;
-		static StorageBuffer<FLAME_UID, BufferUsageVertex> imgui_buf_vtx;
-		static StorageBuffer<FLAME_UID, BufferUsageIndex> imgui_buf_idx;
+		static VertexBuffer imgui_buf_vtx;
+		static IndexBuffer<ushort> imgui_buf_idx;
 		static std::unique_ptr<DescriptorSetT> imgui_ds;
 		static GraphicsPipelinePtr imgui_pl;
 
@@ -363,12 +363,14 @@ namespace flame
 					for (int i = 0; i < draw_data->CmdListsCount; i++)
 					{
 						auto cmd_list = draw_data->CmdLists[i];
-						imgui_buf_vtx.push(cmd_list->VtxBuffer.Size, cmd_list->VtxBuffer.Data);
-						imgui_buf_idx.push(cmd_list->IdxBuffer.Size, cmd_list->IdxBuffer.Data);
+						imgui_buf_vtx.add(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size);
+						imgui_buf_idx.add(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size);
 					}
 
 					imgui_buf_vtx.upload(cb);
+					imgui_buf_vtx.buf_top = imgui_buf_vtx.stag_top = 0;
 					imgui_buf_idx.upload(cb);
+					imgui_buf_idx.buf_top = imgui_buf_idx.stag_top = 0;
 				}
 
 				if (curr_img->levels[0].layers[0].layout != ImageLayoutAttachment)
@@ -485,7 +487,7 @@ namespace flame
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
 				{ "rp=" + str(imgui_rp) });
 			imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
-			imgui_buf_idx.create(sizeof(ImDrawIdx), 240000);
+			imgui_buf_idx.create(240000);
 			imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(), imgui_pl->layout->dsls[0]));
 
 			IMGUI_CHECKVERSION();

@@ -227,38 +227,26 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		graphics::PipelineResourceManager prm;
 		prm.init(pl->layout);
 
-		graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageVertex, false> buf_vtx;
+		graphics::VertexBuffer buf_vtx;
 		buf_vtx.create(pl->vi_ui(), MaxVertices);
-		buf_vtx.upload_whole(cb.get());
 
-		cb->image_barrier(height_map, {}, graphics::ImageLayoutAttachment);
-		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
-		cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
-		cb->bind_pipeline(pl);
-		prm.pc.item("uv_off"_h).set(vec2(19.7f, 43.3f));
-		prm.pc.item("uv_scl"_h).set(32.f);
-		prm.pc.item("val_base"_h).set(0.f);
-		prm.pc.item("val_scl"_h).set(0.125f);
-		prm.pc.item("falloff"_h).set(0.f);
-		prm.pc.item("power"_h).set(1.f);
-		prm.push_constant(cb.get());
-		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+		std::vector<std::pair<uint, uint>> height_draws;
 
 		for (auto i = 0; i < site_positions.size(); i++)
 		{
 			auto vertices = get_site_vertices(diagram.getSite(i));
-			auto vtx_off = buf_vtx.item_offset();
+			auto vtx_off = buf_vtx.stag_top;
 			if (!vertices.empty() && vtx_off + vertices.size() <= MaxVertices)
 			{
 				for (auto j = 0; j < vertices.size(); j++)
 				{
-					buf_vtx.set_var<"i_pos"_h>(vertices[j] * 2.f - 1.f);
-					buf_vtx.set_var<"i_uv"_h>(vertices[j]);
-					buf_vtx.set_var<"i_val_base"_h>(site_positions[i].y);
-					buf_vtx.next_item();
+					auto pv = buf_vtx.add();
+					pv.item("i_pos"_h).set(vertices[j] * 2.f - 1.f);
+					pv.item("i_uv"_h).set(vertices[j]);
+					pv.item("i_val_base"_h).set(site_positions[i].y);
 				}
 
-				cb->draw(vertices.size(), 1, vtx_off, 0);
+				height_draws.emplace_back(vertices.size(), vtx_off);
 			}
 		}
 
@@ -325,27 +313,30 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 						auto hi_height = site_positions[src_id].y;
 						auto lo_height = site_positions[dst_id].y;
 
-						auto vtx_off = buf_vtx.item_offset();
+						auto vtx_off = buf_vtx.stag_top;
 						if (vtx_off + 4 <= MaxVertices)
 						{
-							buf_vtx.set_var<"i_pos"_h>(pa * 2.f - 1.f);
-							buf_vtx.set_var<"i_uv"_h>(pa);
-							buf_vtx.set_var<"i_val_base"_h>(hi_height);
-							buf_vtx.next_item();
-							buf_vtx.set_var<"i_pos"_h>(pb * 2.f - 1.f);
-							buf_vtx.set_var<"i_uv"_h>(pb);
-							buf_vtx.set_var<"i_val_base"_h>(hi_height);
-							buf_vtx.next_item();
-							buf_vtx.set_var<"i_pos"_h>(pc * 2.f - 1.f);
-							buf_vtx.set_var<"i_uv"_h>(pc);
-							buf_vtx.set_var<"i_val_base"_h>(lo_height);
-							buf_vtx.next_item();
-							buf_vtx.set_var<"i_pos"_h>(pd * 2.f - 1.f);
-							buf_vtx.set_var<"i_uv"_h>(pd);
-							buf_vtx.set_var<"i_val_base"_h>(lo_height);
-							buf_vtx.next_item();
+							auto pv = buf_vtx.add();
+							pv.item("i_pos"_h).set(pa * 2.f - 1.f);
+							pv.item("i_uv"_h).set(pa);
+							pv.item("i_val_base"_h).set(hi_height);
 
-							cb->draw(4, 1, vtx_off, 0);
+							pv = buf_vtx.add();
+							pv.item("i_pos"_h).set(pb * 2.f - 1.f);
+							pv.item("i_uv"_h).set(pb);
+							pv.item("i_val_base"_h).set(hi_height);
+
+							pv = buf_vtx.add();
+							pv.item("i_pos"_h).set(pc * 2.f - 1.f);
+							pv.item("i_uv"_h).set(pc);
+							pv.item("i_val_base"_h).set(lo_height);
+
+							pv = buf_vtx.add();
+							pv.item("i_pos"_h).set(pd * 2.f - 1.f);
+							pv.item("i_uv"_h).set(pd);
+							pv.item("i_val_base"_h).set(lo_height);
+
+							height_draws.emplace_back(4, vtx_off);
 						}
 					}
 					r.erase(r.begin() + idx);
@@ -355,6 +346,22 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			}
 		}
 
+		buf_vtx.upload(cb.get());
+
+		cb->image_barrier(height_map, {}, graphics::ImageLayoutAttachment);
+		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
+		cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
+		cb->bind_pipeline(pl);
+		prm.pc.item("uv_off"_h).set(vec2(19.7f, 43.3f));
+		prm.pc.item("uv_scl"_h).set(32.f);
+		prm.pc.item("val_base"_h).set(0.f);
+		prm.pc.item("val_scl"_h).set(0.125f);
+		prm.pc.item("falloff"_h).set(0.f);
+		prm.pc.item("power"_h).set(1.f);
+		prm.push_constant(cb.get());
+		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+		for (auto& d : height_draws)
+			cb->draw(d.first, 1, d.second, 0);
 		cb->end_renderpass();
 		cb->image_barrier(height_map, {}, graphics::ImageLayoutShaderReadOnly);
 		graphics::Debug::start_capture_frame();
@@ -408,28 +415,23 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			graphics::PipelineResourceManager prm;
 			prm.init(pl->layout);
 
-			graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage> buf_sd_circles;
-			graphics::StorageBuffer<FLAME_UID, graphics::BufferUsageStorage> buf_sd_ori_rects;
+			graphics::StorageBuffer buf_sdf;
 			auto dsl = prm.pll->dsls[0];
-			buf_sd_circles.create_with_array_type(dsl->get_buf_ui("SdCircles"_h));
-			buf_sd_ori_rects.create_with_array_type(dsl->get_buf_ui("SdOriRects"_h));
+			buf_sdf.create(graphics::BufferUsageStorage, dsl->get_buf_ui("SDF"_h));
 			std::unique_ptr<graphics::DescriptorSet> ds(graphics::DescriptorSet::create(nullptr, dsl));
-			ds->set_buffer("SdCircles"_h, 0, buf_sd_circles.buf.get());
-			ds->set_buffer("SdOriRects"_h, 0, buf_sd_ori_rects.buf.get());
+			ds->set_buffer("SDF"_h, 0, buf_sdf.buf.get());
 			ds->set_image("img_src"_h, 0, splash_map->get_view(), sp_nearest);
 			ds->update();
 
-			auto n_circles = 0U;
-			auto n_ori_rects = 0U;
 			auto ext_xz = extent.xz();
-			for (auto& pos : site_positions)
+			for (auto i = 0; i < site_positions.size(); i++)
 			{
-				buf_sd_circles.set_var<"coord"_h>(pos.xz() * ext_xz);
-				buf_sd_circles.set_var<"radius"_h>(5.f);
-				buf_sd_circles.next_item();
-				n_circles++;
+				auto pi = buf_sdf.item_d("circles"_h, i);
+				pi.item("coord"_h).set(site_positions[i].xz()* ext_xz);
+				pi.item("radius"_h).set(5.f);
 			}
-			buf_sd_circles.upload(cb.get());
+			buf_sdf.item_d("circles_count"_h).set((int)site_positions.size());
+			auto n_ori_rects = 0;
 			for (auto i = 0; i < diagram.getNbSites(); i++)
 			{
 				auto self_height = site_positions[i].y;
@@ -457,16 +459,17 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 						}
 						if (ok)
 						{
-							buf_sd_ori_rects.set_var<"point_a"_h>(site_positions[i].xz() * ext_xz);
-							buf_sd_ori_rects.set_var<"point_b"_h>((to_glm(edge->origin->point) + to_glm(edge->destination->point)) * 0.5f * ext_xz);
-							buf_sd_ori_rects.set_var<"thickness"_h>(2.f);
-							buf_sd_ori_rects.next_item();
+							auto pi = buf_sdf.item_d("ori_rects"_h, n_ori_rects);
+							pi.item("point_a"_h).set(site_positions[i].xz() * ext_xz);
+							pi.item("point_b"_h).set((to_glm(edge->origin->point) + to_glm(edge->destination->point)) * 0.5f * ext_xz);
+							pi.item("thickness"_h).set(2.f);
 							n_ori_rects++;
 						}
 					}
 				}
 			}
-			buf_sd_ori_rects.upload(cb.get());
+			buf_sdf.item_d("ori_rects_count"_h).set(n_ori_rects);
+			buf_sdf.upload(cb.get());
 
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
@@ -476,8 +479,6 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			prm.pc.item("channel"_h).set(2U);
 			prm.pc.item("distance"_h).set(1.f);
 			prm.pc.item("merge_k"_h).set(0.2f);
-			prm.pc.item("sd_circles_count"_h).set(n_circles);
-			prm.pc.item("sd_ori_rects_count"_h).set(n_ori_rects);
 			prm.push_constant(cb.get());
 			prm.set_ds(""_h, ds.get());
 			prm.bind_dss(cb.get());
@@ -491,9 +492,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
-			graphics::Debug::start_capture_frame();
 			cb.excute();
-			graphics::Debug::end_capture_frame();
 		}
 
 		splash_map->save(splash_map->filename);
