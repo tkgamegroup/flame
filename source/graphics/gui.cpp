@@ -277,6 +277,9 @@ namespace flame
 			return nullptr;
 		}
 
+		static bool want_mouse = false;
+		static bool want_keyboard = false;
+
 		void gui_frame()
 		{
 #if USE_IMGUI
@@ -300,8 +303,8 @@ namespace flame
 			for (auto& d : ImGui::dialogs)
 				d->draw();
 
-			auto mouse_consumed = io.WantCaptureMouse;
-			auto keyboard_consumed = io.WantCaptureKeyboard;
+			want_mouse = io.WantCaptureMouse;
+			want_keyboard = io.WantCaptureKeyboard;
 
 			CursorType curosr = CursorNone;
 			switch (ImGui::GetMouseCursor())
@@ -343,6 +346,16 @@ namespace flame
 
 			ImGui::EndFrame();
 #endif
+		}
+
+		bool gui_want_mouse()
+		{
+			return want_mouse;
+		}
+
+		bool gui_want_keyboard()
+		{
+			return want_keyboard;
 		}
 
 		static void gui_render(uint img_idx, CommandBufferPtr cb)

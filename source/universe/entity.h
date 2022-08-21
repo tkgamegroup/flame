@@ -179,6 +179,15 @@ namespace flame
 			callback((EntityPtr)this);
 		}
 
+		inline std::vector<EntityPtr> get_all_children()
+		{
+			std::vector<EntityPtr> ret;
+			forward_traversal([&](EntityPtr e) {
+				ret.push_back(e);
+			});
+			return ret;
+		}
+
 		virtual EntityPtr copy() = 0;
 
 		virtual bool load(const std::filesystem::path& filename) = 0;

@@ -185,7 +185,7 @@ namespace flame
 				if (buf_top < stag_top)
 				{
 					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top;
+					cpy.src_off = cpy.dst_off = buf_top * item_size;
 					cpy.size = (stag_top - buf_top) * item_size;
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
 					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
@@ -222,7 +222,7 @@ namespace flame
 				if (buf_top < stag_top)
 				{
 					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top;
+					cpy.src_off = cpy.dst_off = buf_top * sizeof(T);
 					cpy.size = (stag_top - buf_top) * sizeof(T);
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
 					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
