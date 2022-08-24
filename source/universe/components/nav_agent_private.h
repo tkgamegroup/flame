@@ -12,16 +12,13 @@ namespace flame
 	{
 		int dt_id = -1;
 		vec3 target_pos;
-		bool face_mode = false;
 		vec3 prev_pos;
 
 		void set_speed_scale(float v) override;
 		void set_turn_speed_scale(float v) override;
 
-		void set_target(const vec3& pos, bool face_mode) override;
+		void set_target(const vec3& pos) override;
 		void stop() override;
-		vec3 desire_velocity() override;
-		vec3 current_velocity() override;
 
 		void on_active() override;
 		void on_inactive() override;

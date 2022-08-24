@@ -21,9 +21,43 @@ using namespace glm;
 
 namespace flame
 {
+	enum SideFlags
+	{
+		Outside = 0,
+		SideN = 1 << 0,
+		SideS = 1 << 1,
+		SideW = 1 << 2,
+		SideE = 1 << 3,
+		SideNW = 1 << 4,
+		SideNE = 1 << 5,
+		SideSW = 1 << 6,
+		SideSE = 1 << 7,
+		SideCenter = 1 << 8,
+		Inside
+	};
+
+	inline SideFlags operator| (SideFlags a, SideFlags b) { return (SideFlags)((int)a | (int)b); }
+
 	typedef vec<2, uchar> cvec2;
 	typedef vec<3, uchar> cvec3;
 	typedef vec<4, uchar> cvec4;
+
+	union LightCommonValue
+	{
+		cvec4 c;
+		int i;
+		uint u;
+		float f;
+	};
+
+	union CommonValue
+	{
+		cvec4 c;
+		ivec4 i;
+		uvec4 u;
+		vec4 f;
+		void* p;
+	};
 
 	template<uint N, typename T>
 	inline T sum(const vec<N, T>& v)
@@ -43,11 +77,6 @@ namespace flame
 		return ret;
 	}
 
-	inline float square(float v)
-	{
-		return v * v;
-	}
-
 	template<typename T, typename ...Args>
 	T minN(T a, T b, Args... args)
 	{
@@ -58,6 +87,16 @@ namespace flame
 	T maxN(T a, T b, Args... rest)
 	{
 		return maxN(max(a, b), rest...);
+	}
+
+	inline float square(float v)
+	{
+		return v * v;
+	}
+
+	inline float sign_min(float a, float b)
+	{
+		return sign(a) * min(abs(a), abs(b));
 	}
 
 	inline float cross2(const vec2& a, const vec2& b)
@@ -81,44 +120,13 @@ namespace flame
 		return diff2;
 	}
 
-	inline float sign_min(float a, float b)
+	inline void dist_ang_diff(const vec3& pos0, const vec3& pos1, float ang0, float& dist, float& ang_diff)
 	{
-		return sign(a) * min(abs(a), abs(b));
+		auto d = pos1 - pos0;
+		dist = length(d);
+		d = normalize(d);
+		ang_diff = angle_diff(ang0, degrees(atan2(d.x, d.z)));
 	}
-
-	enum SideFlags
-	{
-		Outside = 0,
-		SideN = 1 << 0,
-		SideS = 1 << 1,
-		SideW = 1 << 2,
-		SideE = 1 << 3,
-		SideNW = 1 << 4,
-		SideNE = 1 << 5,
-		SideSW = 1 << 6,
-		SideSE = 1 << 7,
-		SideCenter = 1 << 8,
-		Inside
-	};
-
-	inline SideFlags operator| (SideFlags a, SideFlags b) { return (SideFlags)((int)a | (int)b); }
-
-	union LightCommonValue
-	{
-		cvec4 c;
-		int i;
-		uint u;
-		float f;
-	};
-
-	union CommonValue
-	{
-		cvec4 c;
-		ivec4 i;
-		uvec4 u;
-		vec4 f;
-		void* p;
-	};
 
 	inline float triangle_area(const vec2& a, const vec2& b, const vec2& c)
 	{
