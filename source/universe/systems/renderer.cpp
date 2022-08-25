@@ -1018,7 +1018,7 @@ namespace flame
 	{
 		auto pi = buf_instance.item_d("meshes"_h, id);
 		pi.item("mat"_h).set(mat);
-		pi.item("nor"_h).set(nor);
+		pi.item("nor"_h).set(mat4(nor));
 	}
 
 	int sRendererPrivate::register_armature_instance(int id)

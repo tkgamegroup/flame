@@ -183,7 +183,7 @@ namespace flame
 			auto _it = it->second.transitions.find(name);
 			if (_it != it->second.transitions.end())
 			{
-				transition_duration = _it->second;
+				transition_duration = _it->second * playing_speed;
 				transition_time = 0.f;
 			}
 		}
