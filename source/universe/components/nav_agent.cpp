@@ -12,8 +12,13 @@ namespace flame
 			return;
 		speed_scale = v;
 
-		auto agent = dt_crowd->getEditableAgent(dt_id);
-		agent->params.maxSpeed = speed * speed_scale;
+#ifdef USE_RECASTNAV
+		if (dt_id != -1 && dt_crowd)
+		{
+			auto agent = dt_crowd->getEditableAgent(dt_id);
+			agent->params.maxSpeed = speed * speed_scale;
+		}
+#endif
 	}
 
 	void cNavAgentPrivate::set_turn_speed_scale(float v)
@@ -29,19 +34,15 @@ namespace flame
 			return;
 
 		target_pos = pos;
-		dist = distance(node->g_pos, pos);
+		dist = distance(node->pos, pos);
 #ifdef USE_RECASTNAV
-		if (dt_id != -1)
+		if (dt_id != -1 && dt_crowd)
 		{
-			auto scene = sScene::instance();
-			if (dt_crowd)
-			{
-				dtPolyRef poly_ref = dt_nearest_poly(pos);
-				dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
-				//printf("%s -> %s\n", str(node->g_pos).c_str(), str(pos).c_str());
-				auto agent = dt_crowd->getEditableAgent(dt_id);
-				*(vec3*)agent->dvel = node->rot[2];
-			}
+			dtPolyRef poly_ref = dt_nearest_poly(pos);
+			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
+			//printf("%s -> %s\n", str(node->pos).c_str(), str(pos).c_str());
+			auto agent = dt_crowd->getEditableAgent(dt_id);
+			*(vec3*)agent->dvel = node->rot[2];
 		}
 #endif
 	}
@@ -50,10 +51,19 @@ namespace flame
 	{
 		dist = -1.f;
 #ifdef USE_RECASTNAV
-		if (dt_id != -1)
+		if (dt_id != -1 && dt_crowd)
+			dt_crowd->resetMoveTarget(dt_id);
+#endif
+	}
+
+	void cNavAgentPrivate::update_pos()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_id != -1 && dt_crowd)
 		{
-			if (dt_crowd)
-				dt_crowd->resetMoveTarget(dt_id);
+			prev_pos = node->pos;
+			auto agent = dt_crowd->getEditableAgent(dt_id);
+			*(vec3*)agent->npos = node->pos;
 		}
 #endif
 	}
@@ -83,32 +93,29 @@ namespace flame
 		if (dist < 0.f)
 			return;
 
-		dist_ang_diff(node->g_pos, target_pos, node->get_eul().x, dist, ang_diff);
+		dist_ang_diff(node->pos, target_pos, node->get_eul().x, dist, ang_diff);
 		if (speed_scale == 0.f)
 			node->add_eul(vec3(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 		else
 		{
 #ifdef USE_RECASTNAV
-			if (dt_id != -1)
+			if (dt_id != -1 && dt_crowd)
 			{
-				if (dt_crowd)
+				auto agent = dt_crowd->getEditableAgent(dt_id);
+				auto path_dir = *(vec3*)agent->dvel;
+				if (length(path_dir) > 0.f)
 				{
-					auto agent = dt_crowd->getEditableAgent(dt_id);
-					auto path_dir = *(vec3*)agent->dvel;
-					if (length(path_dir) > 0.f)
+					auto path_ang_diff = angle_diff(node->get_eul().x, degrees(atan2(path_dir.x, path_dir.z)));
+					node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+					if (abs(path_ang_diff) < 15.f)
 					{
-						auto path_ang_diff = angle_diff(node->get_eul().x, degrees(atan2(path_dir.x, path_dir.z)));
-						node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
-						if (abs(path_ang_diff) < 15.f)
-						{
-							prev_pos = *(vec3*)agent->npos;
-							node->set_pos(prev_pos);
-						}
-						else
-						{
-							*(vec3*)agent->npos = prev_pos;
-							*(vec3*)agent->vel = vec3(0.f);
-						}
+						prev_pos = *(vec3*)agent->npos;
+						node->set_pos(prev_pos);
+					}
+					else
+					{
+						*(vec3*)agent->npos = prev_pos;
+						*(vec3*)agent->vel = vec3(0.f);
 					}
 				}
 			}

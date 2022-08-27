@@ -1042,8 +1042,9 @@ namespace flame
 				parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
 					DT_CROWD_OBSTACLE_AVOIDANCE | DT_CROWD_SEPARATION;
 				parms.userData = ag;
-				ag->prev_pos = ag->node->g_pos;
-				ag->dt_id = dt_crowd->addAgent(&ag->node->g_pos[0], &parms);
+				auto pos = ag->node->pos;
+				ag->prev_pos = pos;
+				ag->dt_id = dt_crowd->addAgent(&pos[0], &parms);
 				if (ag->dt_id == -1)
 					printf("dt crowd add agent failed: -1 is returned\n");
 			}
@@ -1057,7 +1058,7 @@ namespace flame
 				auto ob = nav_obstacles[i];
 				if (ob->dt_id != -1)
 					break;
-				dt_tile_cache->addObstacle(&ob->node->g_pos[0], ob->height, ob->radius, (uint*)&ob->dt_id);
+				dt_tile_cache->addObstacle(&ob->node->pos[0], ob->height, ob->radius, (uint*)&ob->dt_id);
 			}
 
 			dt_tile_cache->update(delta_time, dt_nav_mesh);
