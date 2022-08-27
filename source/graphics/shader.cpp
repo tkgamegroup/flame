@@ -1327,10 +1327,7 @@ namespace flame
 					layout_segment = value;
 					return INVALID_POINTER;
 				}
-				std::filesystem::path fn = src.value();
-				if (Path::cat_if_exists(parent_path, fn))
-					fn = std::filesystem::canonical(fn);
-				return PipelineLayout::get(fn);
+				return PipelineLayout::get(Path::combine(parent_path, src.value()));
 			};
 			spec.delegates[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
@@ -1355,9 +1352,7 @@ namespace flame
 							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
 					}
-					std::filesystem::path fn = value;
-					if (Path::cat_if_exists(parent_path, fn))
-						fn = std::filesystem::canonical(fn);
+					auto fn = Path::combine(parent_path, value);
 					auto stage = stage_from_ext(fn);
 					if (stage != ShaderStageNone)
 					{
@@ -1373,9 +1368,7 @@ namespace flame
 						return Shader::get(stage, fn, defines);
 					}
 				}
-				std::filesystem::path fn = src.value("filename");
-				if (Path::cat_if_exists(parent_path, fn))
-					fn = std::filesystem::canonical(fn);
+				auto fn = Path::combine(parent_path, src.value("filename"));
 				auto stage = stage_from_ext(fn);
 				if (stage != ShaderStageNone)
 				{
@@ -1400,18 +1393,12 @@ namespace flame
 				{
 					auto defines = renderpass_defines;
 					std::sort(defines.begin(), defines.end());
-					std::filesystem::path fn = value;
-					if (Path::cat_if_exists(parent_path, fn))
-						fn = std::filesystem::canonical(fn);
-					return Renderpass::get(fn, defines);
+					return Renderpass::get(Path::combine(parent_path, value), defines);
 				}
-				std::filesystem::path fn = src.value("filename");
-				if (Path::cat_if_exists(parent_path, fn))
-					fn = std::filesystem::canonical(fn);
 				auto defines = format_defines(src.value("defines"));
 				defines.insert(defines.end(), renderpass_defines.begin(), renderpass_defines.end());
 				std::sort(defines.begin(), defines.end());
-				return Renderpass::get(fn, defines);
+				return Renderpass::get(Path::combine(parent_path, src.value("filename")), defines);
 			};
 			std::sort(pipeline_defines.begin(), pipeline_defines.end());
 			unserialize_text(res, &info, spec, pipeline_defines);

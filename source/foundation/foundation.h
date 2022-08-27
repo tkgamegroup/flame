@@ -194,17 +194,34 @@ namespace flame
 			return path;
 		}
 
-		inline static bool cat_if_exists(const std::filesystem::path& dir, std::filesystem::path& t)
+		inline static std::filesystem::path combine(const std::filesystem::path& base, const std::filesystem::path& path)
 		{
-			if (t.is_absolute())
-				return false;
-			auto p = dir / t;
-			if (std::filesystem::exists(p))
+			auto ret = base / path;
+			if (std::filesystem::exists(Path::get(ret)))
+				return ret;
+			return path;
+		}
+
+		inline static std::filesystem::path rebase(const std::filesystem::path& base, const std::filesystem::path& path)
+		{
+			auto& str1 = base.native();
+			auto& str2 = path.native();
+			if (str1.size() >= str2.size())
+				return path;
+			for (auto i = 0; i < str1.size(); i++)
 			{
-				t = p;
-				return true;
+				auto ch1 = str1[i];
+				auto ch2 = str2[i];
+				if (ch1 == ch2)
+					continue;
+				if (ch1 == '\\' || ch1 == '/')
+				{
+					if (ch2 == '\\' || ch2 == '/')
+						continue;
+				}
+				return path;
 			}
-			return false;
+			return str2.substr(str1.size() + 1);
 		}
 	};
 

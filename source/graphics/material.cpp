@@ -19,10 +19,19 @@ namespace flame
 
 		void MaterialPrivate::save(const std::filesystem::path& filename)
 		{
+			auto base_path = Path::reverse(filename).parent_path();
+
 			pugi::xml_document doc;
 			auto doc_root = doc.append_child("material");
 
-			serialize_xml(this, doc_root);
+			SerializeXmlSpec spec;
+			spec.excludes.emplace_back(th<graphics::Material>(), "filename"_h);
+			spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
+				auto& path = *(std::filesystem::path*)src;
+				return Path::rebase(base_path, path).string();
+			};
+
+			serialize_xml(this, doc_root, spec);
 			doc.save_file(filename.c_str());
 		}
 
@@ -62,7 +71,13 @@ namespace flame
 				}
 
 				auto ret = new MaterialPrivate;
-				unserialize_xml(doc_root, ret);
+
+				auto base_path = Path::reverse(filename).parent_path();
+				UnserializeXmlSpec spec;
+				spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+					*(std::filesystem::path*)dst = Path::combine(base_path, str);
+				};
+				unserialize_xml(doc_root, ret, spec);
 
 				ret->filename = filename;
 				ret->ref = 1;

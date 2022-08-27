@@ -415,8 +415,13 @@ namespace flame
 			return false;
 		}
 
+		auto base_path = Path::reverse(filename).parent_path();
+
 		UnserializeXmlSpec spec;
-		spec.delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+			*(std::filesystem::path*)dst = Path::combine(base_path, str);
+		};
+		spec.obj_delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			std::string name = src.attribute("type_name").value();
 			auto hash = sh(name.c_str());
 			auto ui = find_udt(hash);
@@ -424,18 +429,18 @@ namespace flame
 			{
 				auto c = ((EntityPtr)dst_o)->add_component(hash);
 				if (c)
-					unserialize_xml(*ui, src, c, {});
+					unserialize_xml(*ui, src, c, spec);
 			}
 			else
 				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
-		spec.delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			auto e = new EntityPrivate();
 
 			if (auto a = src.attribute("filename"); a)
 			{
-				e->load(a.value());
+				e->load(Path::combine(base_path, a.value()));
 				new PrefabInstance(e, a.value());
 
 				auto n_mod = src.child("modifications");
@@ -480,21 +485,27 @@ namespace flame
 	{
 		pugi::xml_document file;
 
+		auto base_path = Path::reverse(filename).parent_path();
+
 		SerializeXmlSpec spec;
-		spec.delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
+			auto& path = *(std::filesystem::path*)src;
+			return Path::rebase(base_path, path).string();
+		};
+		spec.obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
 			{
 				dst.append_attribute("type_name").set_value(ui->name.c_str());
-				serialize_xml(*ui, comp, dst);
+				serialize_xml(*ui, comp, dst, spec);
 			}
 		};
-		spec.delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (EntityPtr)src;
 			if (e->prefab)
 			{
-				dst.append_attribute("filename").set_value(e->prefab->filename.string().c_str());
+				dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab->filename).string().c_str());
 				auto n_mod = dst.append_child("modifications");
 				for (auto& target : e->prefab->modifications)
 				{

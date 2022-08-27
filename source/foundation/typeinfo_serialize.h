@@ -57,12 +57,14 @@ namespace flame
 #ifndef FLAME_NO_XML
 	struct SerializeXmlSpec : ExcludeSpec
 	{
-		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> delegates;
+		std::map<TypeInfo*, std::function<std::string(void* src)>>				data_delegates;
+		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> obj_delegates;
 	};
 
 	struct UnserializeXmlSpec
 	{
-		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>> delegates;
+		std::map<TypeInfo*, std::function<void(const std::string& str, void* dst)>>	data_delegates;
+		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>>	obj_delegates;
 	};
 #endif
 
@@ -85,10 +87,18 @@ namespace flame
 		{
 		case TagE:
 		case TagD:
+		{
 			if (getter_idx != -1)
 				type->call_getter(&ui.functions[getter_idx], src, nullptr);
-			if (auto str = type->serialize(getter_idx == -1 ? (char*)src + offset : nullptr); str != default_value)
-				dst.append_attribute(name.c_str()).set_value(str.c_str());
+			std::string value;
+			auto p = getter_idx == -1 ? (char*)src + offset : type->get_v();
+			if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
+				value = it->second(p);
+			else
+				value = type->serialize(p);
+			if (value != default_value)
+				dst.append_attribute(name.c_str()).set_value(value.c_str());
+		}
 			break;
 		case TagU:
 			serialize_xml(*type->retrive_ui(), (char*)src + offset, dst.append_child(name.c_str()), spec);
@@ -115,20 +125,8 @@ namespace flame
 			}
 			break;
 		case TagPU:
-			if (auto it = spec.delegates.find(type); it != spec.delegates.end())
+			if (auto it = spec.obj_delegates.find(type); it != spec.obj_delegates.end())
 				it->second(*(void**)((char*)src + offset), dst.append_child(name.c_str()));
-			break;
-		case TagVE:
-			if (auto& vec = *(std::vector<int>*)((char*)src + offset); !vec.empty())
-			{
-				auto ti = ((TypeInfo_VectorOfEnum*)type)->ti;
-				auto n = dst.append_child(name.c_str());
-				for (auto i = 0; i < vec.size(); i++)
-				{
-					auto nn = n.append_child("item");
-					nn.append_attribute("v").set_value(ti->serialize(&vec[i]).c_str());
-				}
-			}
 			break;
 		case TagAU:
 			if (auto ati = (TypeInfo_ArrayOfUdt*)type; ati->extent > 0)
@@ -144,6 +142,18 @@ namespace flame
 						serialize_xml(*ui, p, n.append_child("item"), spec);
 						p += ti->size;
 					}
+				}
+			}
+			break;
+		case TagVE:
+			if (auto& vec = *(std::vector<int>*)((char*)src + offset); !vec.empty())
+			{
+				auto ti = ((TypeInfo_VectorOfEnum*)type)->ti;
+				auto n = dst.append_child(name.c_str());
+				for (auto i = 0; i < vec.size(); i++)
+				{
+					auto nn = n.append_child("item");
+					nn.append_attribute("v").set_value(ti->serialize(&vec[i]).c_str());
 				}
 			}
 			break;
@@ -213,7 +223,7 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;
 				if (ti)
 				{
-					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+					if (auto it = spec.obj_delegates.find(ti); it != spec.obj_delegates.end())
 					{
 						auto n = dst.append_child(name.c_str());
 						for (auto v : vec)
@@ -286,13 +296,13 @@ namespace flame
 		case TagD:
 			if (auto a = src.attribute(name.c_str()); a)
 			{
-				if (setter_idx != -1)
-				{
-					type->unserialize(a.value(), nullptr);
-					type->call_setter(&ui.functions[setter_idx], dst, nullptr);
-				}
+				auto p = setter_idx == -1 ? (char*)dst + offset : type->get_v();
+				if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
+					it->second(a.value(), p);
 				else
-					type->unserialize(a.value(), (char*)dst + offset);
+					type->unserialize(a.value(), p);
+				if (setter_idx != -1)
+					type->call_setter(&ui.functions[setter_idx], dst, nullptr);
 			}
 			break;
 		case TagU:
@@ -309,7 +319,7 @@ namespace flame
 			if (auto c = src.child(name.c_str()); c)
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)type;
-				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+				if (auto it = spec.obj_delegates.find(ti); it != spec.obj_delegates.end())
 				{
 					auto v = it->second(c, dst);
 					if (v != INVALID_POINTER)
@@ -486,7 +496,7 @@ namespace flame
 			if (auto c = src.child(name.c_str()); c)
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;
-				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+				if (auto it = spec.obj_delegates.find(ti); it != spec.obj_delegates.end())
 				{
 					auto& vec = *(std::vector<void*>*)((char*)dst + offset);
 					for (auto cc : c.children())
