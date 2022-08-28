@@ -678,7 +678,7 @@ namespace flame
 			{
 				auto fn = dst;
 				if (dst.empty())
-					fn = L"#temp.res";
+					fn = L"!temp.res";
 
 				std::filesystem::path temp_path = L"temp";
 				if (!src.empty())
@@ -695,12 +695,12 @@ namespace flame
 				auto ret = DescriptorSetLayoutPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
-				if (fn.c_str()[0] == L'#')
+				if (fn.c_str()[0] == L'!')
 					std::filesystem::remove(fn);
 				else
 				{
 					auto str = fn.wstring();
-					if (auto p = str.find('#'); p != std::wstring::npos)
+					if (auto p = str.find(L'!'); p != std::wstring::npos)
 						fn = str.substr(0, p);
 				}
 				ret->filename = fn;
@@ -946,7 +946,7 @@ namespace flame
 				auto dsl = DescriptorSetLayout::create(bindings);
 				auto str = filename.wstring();
 				SUW::strip_tail_if(str, L".res");
-				if (auto p = str.find('#'); p != std::wstring::npos)
+				if (auto p = str.find('!'); p != std::wstring::npos)
 					str = str.substr(0, p);
 				dsl->filename = str;
 				for (auto& binding : dsl->bindings)
@@ -1002,7 +1002,7 @@ namespace flame
 			{
 				auto fn = dst;
 				if (dst.empty())
-					fn = L"#temp.res";
+					fn = L"!temp.res";
 
 				std::filesystem::path temp_path = L"temp";
 				if (!src.empty())
@@ -1019,12 +1019,12 @@ namespace flame
 				auto ret = PipelineLayoutPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
-				if (fn.c_str()[0] == L'#')
+				if (fn.c_str()[0] == L'!')
 					std::filesystem::remove(fn);
 				else
 				{
 					auto str = fn.wstring();
-					if (auto p = str.find('#'); p != std::wstring::npos)
+					if (auto p = str.find('!'); p != std::wstring::npos)
 						fn = str.substr(0, p);
 				}
 				ret->filename = fn;
@@ -1167,7 +1167,7 @@ namespace flame
 			{
 				auto fn = dst;
 				if (fn.empty())
-					fn = L"#temp.res";
+					fn = L"!temp.res";
 
 				std::filesystem::path temp_path = L"temp";
 				if (!src.empty())
@@ -1184,12 +1184,12 @@ namespace flame
 				auto ret = ShaderPrivate::load_from_res(fn);
 				if (!ret)
 					return nullptr;
-				if (fn.c_str()[0] == L'#')
+				if (fn.c_str()[0] == L'!')
 					std::filesystem::remove(fn);
 				else
 				{
 					auto str = fn.wstring();
-					if (auto p = str.find('#'); p != std::wstring::npos)
+					if (auto p = str.find('!'); p != std::wstring::npos)
 						fn = str.substr(0, p);
 				}
 				ret->type = type;
@@ -1427,7 +1427,7 @@ namespace flame
 			if (!layout_segment.empty())
 			{
 				info.layout = PipelineLayout::create(layout_segment,
-					!filename.empty() ? filename.wstring() + L"#pll.res" : L"#" + wstr(create_id), filename);
+					!filename.empty() ? filename.wstring() + L"!pll.res" : L"!" + wstr(create_id), filename);
 			}
 			for (auto& s : shader_segments)
 			{
@@ -1439,7 +1439,7 @@ namespace flame
 				}
 				std::sort(defines.begin(), defines.end());
 				info.shaders.push_back(Shader::create(s.first, s.second, defines,
-					!filename.empty() ? filename.wstring() + (L"#" + get_stage_str(s.first) + defines_to_hash_str(defines) + L".res") : L"#" + wstr(create_id), filename));
+					!filename.empty() ? filename.wstring() + (L"!" + get_stage_str(s.first) + defines_to_hash_str(defines) + L".res") : L"!" + wstr(create_id), filename));
 			}
 
 			if (info.vertex_buffers.empty())
@@ -1821,7 +1821,7 @@ namespace flame
 
 			GraphicsPipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines) override
 			{
-				std::filesystem::path fn = L"#temp.pipeline";
+				std::filesystem::path fn = L"!temp.pipeline";
 
 				std::ofstream file(fn);
 				file << SUS::get_ltrimed(content);

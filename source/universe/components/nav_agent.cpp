@@ -49,11 +49,14 @@ namespace flame
 
 	void cNavAgentPrivate::stop()
 	{
-		dist = -1.f;
+		if (dist >= 0)
+		{
+			dist = -1.f;
 #ifdef USE_RECASTNAV
-		if (dt_id != -1 && dt_crowd)
-			dt_crowd->resetMoveTarget(dt_id);
+			if (dt_id != -1 && dt_crowd)
+				dt_crowd->resetMoveTarget(dt_id);
 #endif
+		}
 	}
 
 	void cNavAgentPrivate::update_pos()

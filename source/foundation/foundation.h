@@ -194,10 +194,17 @@ namespace flame
 			return path;
 		}
 
+		inline static bool exists(const std::filesystem::path& path)
+		{
+			if (auto pos = path.native().find('#'); pos != std::wstring::npos)
+				return std::filesystem::exists(path.native().substr(0, pos));
+			return std::filesystem::exists(path);
+		}
+
 		inline static std::filesystem::path combine(const std::filesystem::path& base, const std::filesystem::path& path)
 		{
 			auto ret = base / path;
-			if (std::filesystem::exists(Path::get(ret)))
+			if (exists(Path::get(ret)))
 				return ret;
 			return path;
 		}

@@ -83,22 +83,20 @@ namespace flame
 
 	inline void serialize_xml(const UdtInfo& ui, uint offset, TypeInfo* type, const std::string& name, const std::string& default_value, int getter_idx, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
+		auto data_serialize = [&](TypeInfo* ti, void* p) {
+			if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
+				return it->second(p);
+			return type->serialize(p);
+		};
+
 		switch (type->tag)
 		{
 		case TagE:
 		case TagD:
-		{
 			if (getter_idx != -1)
 				type->call_getter(&ui.functions[getter_idx], src, nullptr);
-			std::string value;
-			auto p = getter_idx == -1 ? (char*)src + offset : type->get_v();
-			if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
-				value = it->second(p);
-			else
-				value = type->serialize(p);
-			if (value != default_value)
+			if (auto value = data_serialize(type, getter_idx == -1 ? (char*)src + offset : type->get_v()); value != default_value)
 				dst.append_attribute(name.c_str()).set_value(value.c_str());
-		}
 			break;
 		case TagU:
 			serialize_xml(*type->retrive_ui(), (char*)src + offset, dst.append_child(name.c_str()), spec);
@@ -108,8 +106,8 @@ namespace flame
 			{
 				dst = dst.append_child(name.c_str());
 				auto p = (char*)src + offset;
-				dst.append_attribute("first").set_value(ti->ti1->serialize(ti->first(p)).c_str());
-				dst.append_attribute("second").set_value(ti->ti2->serialize(ti->second(p)).c_str());
+				dst.append_attribute("first").set_value(data_serialize(ti->ti1, ti->first(p)).c_str());
+				dst.append_attribute("second").set_value(data_serialize(ti->ti2, ti->second(p)).c_str());
 			}
 			break;
 		case TagT:
@@ -119,7 +117,7 @@ namespace flame
 				auto i = 0; auto p = (char*)src + offset;
 				for (auto& t : ti->tis)
 				{
-					dst.append_attribute(("item_" + str(i)).c_str()).set_value(t.first->serialize(p + t.second).c_str());
+					dst.append_attribute(("item_" + str(i)).c_str()).set_value(data_serialize(t.first, p + t.second).c_str());
 					i++;
 				}
 			}
@@ -290,17 +288,20 @@ namespace flame
 
 	inline void unserialize_xml(const UdtInfo& ui, uint offset, TypeInfo* type, const std::string& name, int setter_idx, pugi::xml_node src, void* dst, const UnserializeXmlSpec& spec = {})
 	{
+		auto data_unserialize = [&](TypeInfo* type, const std::string& value, void* p) {
+			if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
+				it->second(value, p);
+			else
+				type->unserialize(value, p);
+		};
+
 		switch (type->tag)
 		{
 		case TagE:
 		case TagD:
 			if (auto a = src.attribute(name.c_str()); a)
 			{
-				auto p = setter_idx == -1 ? (char*)dst + offset : type->get_v();
-				if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
-					it->second(a.value(), p);
-				else
-					type->unserialize(a.value(), p);
+				data_unserialize(type, a.value(), setter_idx == -1 ? (char*)dst + offset : type->get_v());
 				if (setter_idx != -1)
 					type->call_setter(&ui.functions[setter_idx], dst, nullptr);
 			}
@@ -442,8 +443,8 @@ namespace flame
 						vec.resize(len * ti->size);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
-						ti->ti1->unserialize(cc.attribute("first").value(), ti->first(pd));
-						ti->ti2->unserialize(cc.attribute("second").value(), ti->second(pd));
+						data_unserialize(ti->ti1, cc.attribute("first").value(), ti->first(pd));
+						data_unserialize(ti->ti2, cc.attribute("second").value(), ti->second(pd));
 					}
 					return len;
 				};
@@ -474,7 +475,7 @@ namespace flame
 						auto i = 0;
 						for (auto& t : ti->tis)
 						{
-							t.first->unserialize(cc.attribute(("item_" + str(i)).c_str()).value(), pd + t.second);
+							data_unserialize(t.first, cc.attribute(("item_" + str(i)).c_str()).value(), pd + t.second);
 							i++;
 						}
 					}
