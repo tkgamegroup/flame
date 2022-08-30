@@ -11,6 +11,7 @@ namespace flame
 	{
 		node->drawers.remove("light"_h);
 		node->measurers.remove("light"_h);
+		node->data_listeners.remove("light"_h);
 	}
 
 	void cDirLightPrivate::on_init()
@@ -22,7 +23,11 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_dir_light_instance(instance_id, node->g_rot[2], color.rgb() * color.a);
+				if (dirty)
+				{
+					sRenderer::instance()->set_dir_light_instance(instance_id, node->g_rot[2], color.rgb() * color.a);
+					dirty = false;
+				}
 				break;
 			case "light"_h:
 				draw_data.lights.emplace_back(LightDirectional, instance_id, cast_shadow);
@@ -32,6 +37,10 @@ namespace flame
 		node->measurers.add([this](AABB* ret) {
 			*ret = AABB(node->g_pos - 10000.f, node->g_pos + 10000.f);
 			return true;
+		}, "light"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+				dirty = true;
 		}, "light"_h);
 
 		node->mark_transform_dirty();
@@ -43,8 +52,8 @@ namespace flame
 			return;
 		color = _color;
 
+		dirty = true;
 		node->mark_drawing_dirty();
-
 		data_changed("color"_h);
 	}
 
@@ -54,8 +63,8 @@ namespace flame
 			return;
 		cast_shadow = _cast_shadow;
 
+		dirty = true;
 		node->mark_drawing_dirty();
-
 		data_changed("cast_shadow"_h);
 	}
 

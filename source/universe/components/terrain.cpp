@@ -12,6 +12,7 @@ namespace flame
 	{
 		node->drawers.remove("terrain"_h);
 		node->measurers.remove("terrain"_h);
+		node->data_listeners.remove("terrain"_h);
 
 		graphics::Queue::get()->wait_idle();
 		if (material_res_id != -1)
@@ -49,8 +50,12 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
-					height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+				if (dirty)
+				{
+					sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
+						height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+					dirty = false;
+				}
 				break;
 			case "gbuffer"_h:
 				if (draw_data.category == "terrain"_h)
@@ -75,12 +80,16 @@ namespace flame
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
 			}
-		}, "terrain"_h);
+			}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
+		}, "terrain"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+				dirty = true;
 		}, "terrain"_h);
 
 		node->mark_transform_dirty();
@@ -95,6 +104,7 @@ namespace flame
 
 		update_normal_map();
 
+		dirty = true;
 		node->mark_transform_dirty();
 		data_changed("extent"_h);
 	}
@@ -107,6 +117,7 @@ namespace flame
 
 		update_normal_map();
 
+		dirty = true;
 		node->mark_transform_dirty();
 		data_changed("blocks"_h);
 	}
@@ -119,6 +130,7 @@ namespace flame
 
 		update_normal_map();
 
+		dirty = true;
 		node->mark_transform_dirty();
 		data_changed("tess_level"_h);
 	}
@@ -144,6 +156,7 @@ namespace flame
 		else if (_height_map)
 			graphics::Image::release(_height_map);
 
+		dirty = true;
 		node->mark_transform_dirty();
 		data_changed("height_map_name"_h);
 	}
@@ -169,6 +182,7 @@ namespace flame
 		else if (_splash_map)
 			graphics::Image::release(_splash_map);
 
+		dirty = true;
 		node->mark_transform_dirty();
 		data_changed("splash_map_name"_h);
 	}
@@ -196,6 +210,7 @@ namespace flame
 		else if (_material)
 			graphics::Material::release(_material);
 
+		dirty = true;
 		node->mark_drawing_dirty();
 		data_changed("material_name"_h);
 	}
@@ -205,7 +220,39 @@ namespace flame
 		if (cast_shadow == v)
 			return;
 		cast_shadow = v;
+
+		dirty = true;
 		data_changed("cast_shadow"_h);
+	}
+
+	void cTerrainPrivate::set_use_grass_field(bool v)
+	{
+		if (use_grass_field == v)
+			return;
+		use_grass_field = v;
+
+		dirty = true;
+		data_changed("use_grass_field"_h);
+	}
+
+	void cTerrainPrivate::set_grass_field_tess_level(uint tess_level)
+	{
+		if (grass_field_tess_level == tess_level)
+			return;
+		grass_field_tess_level = tess_level;
+
+		dirty = true;
+		data_changed("grass_field_tess_level"_h);
+	}
+
+	void cTerrainPrivate::set_grass_channel(uint channel)
+	{
+		if (grass_channel == channel)
+			return;
+		grass_channel = channel;
+
+		dirty = true;
+		data_changed("grass_channel"_h);
 	}
 
 	void cTerrainPrivate::set_grass_texture_name(const std::filesystem::path& name)
@@ -231,6 +278,7 @@ namespace flame
 		else if (_texture)
 			graphics::Image::release(_texture);
 
+		dirty = true;
 		node->mark_drawing_dirty();
 		data_changed("grass_texture_name"_h);
 	}

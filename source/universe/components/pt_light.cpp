@@ -11,6 +11,7 @@ namespace flame
 	{
 		node->drawers.remove("light"_h);
 		node->measurers.remove("light"_h);
+		node->data_listeners.remove("light"_h);
 	}
 
 	void cPtLightPrivate::on_init()
@@ -22,7 +23,11 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_pt_light_instance(instance_id, node->g_pos, color.rgb() * color.a, range);
+				if (dirty)
+				{
+					sRenderer::instance()->set_pt_light_instance(instance_id, node->g_pos, color.rgb() * color.a, range);
+					dirty = false;
+				}
 				break;
 			case "light"_h:
 				draw_data.lights.emplace_back(LightPoint, instance_id, cast_shadow);
@@ -32,6 +37,10 @@ namespace flame
 		node->measurers.add([this](AABB* ret) {
 			*ret = AABB(node->g_pos - range, node->g_pos + range);
 			return true;
+		}, "light"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+				dirty = true;
 		}, "light"_h);
 
 		node->mark_transform_dirty();
@@ -43,8 +52,8 @@ namespace flame
 			return;
 		color = _color;
 
+		dirty = true;
 		node->mark_drawing_dirty();
-
 		data_changed("color"_h);
 	}
 
@@ -54,8 +63,8 @@ namespace flame
 			return;
 		range = _range;
 
+		dirty = true;
 		node->mark_transform_dirty();
-
 		data_changed("range"_h);
 	}
 
@@ -65,8 +74,8 @@ namespace flame
 			return;
 		cast_shadow = _cast_shadow;
 
+		dirty = true;
 		node->mark_drawing_dirty();
-
 		data_changed("cast_shadow"_h);
 	}
 

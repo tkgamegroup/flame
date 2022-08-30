@@ -104,10 +104,14 @@ namespace flame
 					}
 				}
 
-				std::vector<mat4> mats(bones.size());
-				for (auto i = 0; i < bones.size(); i++)
-					mats[i] = bones[i].calc_mat();
-				sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size() * sizeof(mat4));
+				if (dirty)
+				{
+					std::vector<mat4> mats(bones.size());
+					for (auto i = 0; i < bones.size(); i++)
+						mats[i] = bones[i].calc_mat();
+					sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size() * sizeof(mat4));
+					dirty = false;
+				}
 			}
 		}, "armature"_h);
 
@@ -215,7 +219,13 @@ namespace flame
 					dst.name = name;
 					dst.node = e->get_component_i<cNodeT>(0);
 					if (dst.node)
+					{
 						dst.offmat = src.offset_matrix;
+						dst.node->data_listeners.add([this](uint hash) {
+							if (hash == "transform"_h)
+								dirty = true;
+						}, "armature"_h);
+					}
 					else
 						dst.offmat = mat4(1.f);
 				}
@@ -225,14 +235,6 @@ namespace flame
 
 			if (!bones.empty())
 			{
-				for (auto& a : animations)
-				{
-					if (!a.second.path.empty())
-						AssetManagemant::release_asset(Path::get(a.second.path));
-					if (a.second.animation)
-						graphics::Animation::release(a.second.animation);
-				}
-				animations.clear();
 				for (auto& n : animation_names)
 				{
 					if (!n.first.empty() && !n.second.empty())
@@ -325,6 +327,21 @@ namespace flame
 	void cArmaturePrivate::on_inactive()
 	{
 		stop();
+
+		for (auto& b : bones)
+		{
+			if (b.node)
+				b.node->data_listeners.remove("armature"_h);
+		}
+		bones.clear();
+		for (auto& a : animations)
+		{
+			if (!a.second.path.empty())
+				AssetManagemant::release_asset(Path::get(a.second.path));
+			if (a.second.animation)
+				graphics::Animation::release(a.second.animation);
+		}
+		animations.clear();
 
 		sRenderer::instance()->register_armature_instance(instance_id);
 		instance_id = -1;

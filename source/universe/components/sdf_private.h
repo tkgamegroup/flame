@@ -6,6 +6,8 @@ namespace flame
 {
 	struct cSdfPrivate : cSdf
 	{
+		bool dirty = true;
+
 		~cSdfPrivate();
 		void on_init() override;
 

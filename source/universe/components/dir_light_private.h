@@ -6,6 +6,8 @@ namespace flame
 {
 	struct cDirLightPrivate : cDirLight
 	{
+		bool dirty = true;
+
 		~cDirLightPrivate();
 		void on_init() override;
 

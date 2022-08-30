@@ -30,6 +30,7 @@ namespace flame
 	{
 		node->drawers.remove("mesh"_h);
 		node->measurers.remove("mesh"_h);
+		node->data_listeners.remove("mesh"_h);
 
 		if (mesh_res_id != -1)
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
@@ -54,8 +55,11 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				if (!parmature)
+				if (!parmature && dirty)
+				{
 					sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
+					dirty = false;
+				}
 				break;
 			case "gbuffer"_h:
 				if (draw_data.category == "mesh"_h && material->opaque)
@@ -83,6 +87,10 @@ namespace flame
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
+		}, "mesh"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+				dirty = true;
 		}, "mesh"_h);
 
 		node->mark_transform_dirty();

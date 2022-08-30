@@ -7,6 +7,7 @@ namespace flame
 	struct cMeshPrivate : cMesh
 	{
 		cArmaturePtr parmature = nullptr;
+		bool dirty = true;
 
 		~cMeshPrivate();
 		void on_init() override;

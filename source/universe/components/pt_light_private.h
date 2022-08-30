@@ -6,6 +6,8 @@ namespace flame
 {
 	struct cPtLightPrivate : cPtLight
 	{
+		bool dirty = true;
+
 		~cPtLightPrivate();
 		void on_init() override;
 		

@@ -20,7 +20,11 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case "instance"_h:
-				sRenderer::instance()->set_sdf_instance(instance_id, 0, nullptr, 0, nullptr);
+				if (dirty)
+				{
+					sRenderer::instance()->set_sdf_instance(instance_id, 0, nullptr, 0, nullptr);
+					dirty = false;
+				}
 				break;
 			case "gbuffer"_h:
 				if (draw_data.category == "sdf"_h)

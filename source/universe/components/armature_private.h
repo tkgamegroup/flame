@@ -41,6 +41,7 @@ namespace flame
 			std::unordered_map<uint, float> transitions;
 		};
 
+		bool dirty = true;
 		std::vector<Bone> bones;
 		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;

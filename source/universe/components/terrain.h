@@ -48,9 +48,15 @@ namespace flame
 		/// Reflect
 		bool use_grass_field = false;
 		/// Reflect
+		virtual void set_use_grass_field(bool v) = 0;
+		/// Reflect
 		uint grass_field_tess_level = 64;
 		/// Reflect
+		virtual void set_grass_field_tess_level(uint tess_level) = 0;
+		/// Reflect
 		uint grass_channel = 0U;
+		/// Reflect
+		virtual void set_grass_channel(uint channel) = 0;
 		/// Reflect
 		std::filesystem::path grass_texture_name;
 		/// Reflect
