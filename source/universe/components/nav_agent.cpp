@@ -34,7 +34,7 @@ namespace flame
 			return;
 
 		target_pos = pos;
-		dist = distance(node->pos, pos);
+		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
 		{
@@ -96,9 +96,9 @@ namespace flame
 		if (dist < 0.f)
 			return;
 
-		dist_ang_diff(node->pos, target_pos, node->get_eul().x, dist, ang_diff);
+		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
 		if (speed_scale == 0.f)
-			node->add_eul(vec3(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+			node->add_eul(vec3(-sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 		else
 		{
 #ifdef USE_RECASTNAV
@@ -108,8 +108,8 @@ namespace flame
 				auto path_dir = *(vec3*)agent->dvel;
 				if (length(path_dir) > 0.f)
 				{
-					auto path_ang_diff = angle_diff(node->get_eul().x, degrees(atan2(path_dir.x, path_dir.z)));
-					node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+					auto path_ang_diff = angle_diff(90.f - node->get_eul().x, degrees(atan2(path_dir.z, path_dir.x)));
+					node->add_eul(vec3(-sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 					if (abs(path_ang_diff) < 15.f)
 					{
 						prev_pos = *(vec3*)agent->npos;

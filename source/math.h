@@ -124,8 +124,7 @@ namespace flame
 	{
 		auto d = pos1 - pos0;
 		dist = length(d);
-		d = normalize(d);
-		ang_diff = angle_diff(ang0, degrees(atan2(d.x, d.z)));
+		ang_diff = angle_diff(ang0, degrees(atan2(d.z, d.x)));
 	}
 
 	inline float triangle_area(const vec2& a, const vec2& b, const vec2& c)
