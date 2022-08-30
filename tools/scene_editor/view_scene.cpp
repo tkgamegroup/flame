@@ -256,34 +256,22 @@ void View_Scene::on_draw()
 							if (!e->global_enable)
 								return false;
 							auto draw_cylinder = [&](const vec3& p, float r, float h) {
-								auto c = pi<float>() * r * 2.f;
-								auto lod = 0;
-								if (c > 8.f)
-								{
-									lod++;
-									if (c > 16.f)
-									{
-										lod++;
-										if (c > 32.f)
-											lod++;
-									}
-								}
-								auto circle = graphics::get_circle_points(lod);
-								auto n = (int)circle.size();
-								circle.push_back(circle[0]);
+								auto circle_pts = graphics::get_circle_points(r > 8.f ? 3 : (r > 4.f ? 3 : (r > 2.f ? 2 : (r > 1.f ? 1 : 0))));
+								auto n = (int)circle_pts.size();
+								circle_pts.push_back(circle_pts[0]);
 								std::vector<vec3> pts(n * 2);
 								auto center = p;
 								for (auto i = 0; i < n; i++)
 								{
-									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
-									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
+									pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
+									pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
 								}
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
 								center.y += h;
 								for (auto i = 0; i < n; i++)
 								{
-									pts[i * 2 + 0] = center + vec3(r * circle[i + 0], 0.f).xzy();
-									pts[i * 2 + 1] = center + vec3(r * circle[i + 1], 0.f).xzy();
+									pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
+									pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
 								}
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
 								center = p;
