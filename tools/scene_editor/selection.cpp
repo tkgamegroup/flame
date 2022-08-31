@@ -5,14 +5,14 @@ bool Selection::History::select()
 	switch (type)
 	{
 	case Selection::tNothing:
-		selection.clear(true);
+		selection._clear();
 		return true;
 	case Selection::tPath:
 	{
 		auto& path = ((PathHistory*)this)->path;
 		if (std::filesystem::exists(path))
 		{
-			selection.select(path, true);
+			selection.select(path);
 			return true;
 		}
 		else
@@ -32,7 +32,7 @@ bool Selection::History::select()
 		}
 		if (e)
 		{
-			selection.select(e, true);
+			selection.select(e);
 			return true;
 		}
 		else
@@ -43,12 +43,10 @@ bool Selection::History::select()
 	return false;
 }
 
-void Selection::clear(bool from_histroy)
+void Selection::_clear(uint caller)
 {
 	if (type == tNothing)
 		return;
-
-	frame = frames;
 
 	switch (type)
 	{
@@ -63,23 +61,39 @@ void Selection::clear(bool from_histroy)
 	type = tNothing;
 	object = nullptr;
 
-	if (!from_histroy)
-		add_history(new EmptyHistory);
+	if (caller)
+	{
+		for (auto& cb : selection.callbacks.list)
+			cb.first(caller);
+	}
 }
 
-void Selection::select(const std::filesystem::path& path, bool from_histroy)
+void Selection::clear(uint caller)
+{
+	_clear(caller);
+	add_history(new EmptyHistory);
+}
+
+void Selection::_select(const std::filesystem::path& path, uint caller)
 {
 	if (selecting(path))
 		return;
-
-	frame = frames;
 
 	clear();
 	type = tPath;
 	object = new std::filesystem::path(path);
 
-	if (!from_histroy)
-		add_history(new PathHistory(path));
+	if (caller)
+	{
+		for (auto& cb : selection.callbacks.list)
+			cb.first(caller);
+	}
+}
+
+void Selection::select(const std::filesystem::path& path, uint caller)
+{
+	_select(path, caller);
+	add_history(new PathHistory(path));
 }
 
 bool Selection::selecting(const std::filesystem::path& _path)
@@ -87,12 +101,10 @@ bool Selection::selecting(const std::filesystem::path& _path)
 	return type == tPath && _path == *(std::filesystem::path*)object;
 }
 
-void Selection::select(EntityPtr e, bool from_histroy)
+void Selection::_select(EntityPtr e, uint caller)
 {
 	if (selecting(e))
 		return;
-
-	frame = frames;
 
 	clear();
 	type = tEntity;
@@ -104,13 +116,22 @@ void Selection::select(EntityPtr e, bool from_histroy)
 			if (selection.selecting(e))
 			{
 				selection.object = nullptr;
-				selection.clear(app_exiting);
+				selection._clear();
 			}
 		}
 	}, "editor_selection"_h);
 
-	if (!from_histroy)
-		add_history(new EntityHistory(e));
+	if (caller)
+	{
+		for (auto& cb : selection.callbacks.list)
+			cb.first(caller);
+	}
+}
+
+void Selection::select(EntityPtr e, uint caller)
+{
+	_select(e, caller);
+	add_history(new EntityHistory(e));
 }
 
 bool Selection::selecting(EntityPtr e)

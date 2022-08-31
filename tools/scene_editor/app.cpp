@@ -605,7 +605,7 @@ void App::open_project(const std::filesystem::path& path)
 		if (std::filesystem::exists(cpp_path))
 			tidb.load(cpp_path);
 
-		selection.clear();
+		selection.clear("app"_h);
 	}
 }
 
@@ -699,7 +699,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		e->remove_from_parent();
 		return false;
 	});
-	selection.clear();
+	selection.clear("app"_h);
 	return true;
 }
 

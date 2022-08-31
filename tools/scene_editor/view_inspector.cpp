@@ -18,13 +18,18 @@
 #include <flame/universe/components/terrain.h>
 
 View_Inspector view_inspector;
+static auto selection_changed = false;
 
 View_Inspector::View_Inspector() :
 	View("Inspector")
 {
+	selection.callbacks.add([](uint caller) {
+		if (caller != "inspector"_h)
+			selection_changed = true;
+	}, "inspector"_h);
 }
 
-struct EditingVector
+struct StagingVector
 {
 	const void* id;
 	std::vector<char> v;
@@ -64,7 +69,7 @@ struct EditingVector
 			_vec = &v;
 		auto& vec = *(std::vector<char>*)_vec;
 		auto old_size = vec.size() / item_size;
-		editing_vector.v.resize(size * item_size);
+		v.resize(size * item_size);
 		if (old_size < size)
 		{
 			for (auto i = old_size; i < size; i++)
@@ -94,7 +99,7 @@ struct EditingVector
 			type->copy(p, src.data() + i * item_size);
 		}
 	}
-}editing_vector;
+}staging_vector;
 
 std::string show_udt(const UdtInfo& ui, void* src);
 
@@ -161,7 +166,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
-				selection.select(Path::get(path));
+				selection.select(Path::get(path), "inspector"_h);
 		}
 			break;
 		}
@@ -173,29 +178,29 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
-			if (editing_vector.id == id)
+			if (staging_vector.id == id)
 			{
 				if (ImGui::Button("Save"))
 				{
 					if (setter_idx == -1)
-						editing_vector.assign((char*)src + offset, nullptr);
+						staging_vector.assign((char*)src + offset, nullptr);
 					else
-						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+						ui.set_value(type, src, offset, setter_idx, &staging_vector.v);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
-					editing_vector.clear();
-				if (editing_vector.id)
+					staging_vector.clear();
+				if (staging_vector.id)
 				{
-					int n = editing_vector.count();
+					int n = staging_vector.count();
 					if (ImGui::InputInt("size", &n, 1, 1))
 					{
 						n = clamp(n, 0, 16);
-						editing_vector.resize(nullptr, n);
+						staging_vector.resize(nullptr, n);
 					}
 					for (auto i = 0; i < n; i++)
 					{
-						if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, editing_vector.v.data(), id))
+						if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, staging_vector.v.data(), id))
 							changed = true;
 					}
 				}
@@ -203,7 +208,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			else
 			{
 				if (ImGui::Button("Edit"))
-					editing_vector.set(id, ti, (char*)src + offset);
+					staging_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -212,41 +217,38 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
-			if (editing_vector.id == id)
+			if (staging_vector.id == id)
 			{
 				if (ImGui::Button("Save"))
 				{
 					if (setter_idx == -1)
-						editing_vector.assign((char*)src + offset, nullptr);
+						staging_vector.assign((char*)src + offset, nullptr);
 					else
-						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+						ui.set_value(type, src, offset, setter_idx, &staging_vector.v);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
-					editing_vector.clear();
-				if (editing_vector.id)
+					staging_vector.clear();
+				if (staging_vector.id)
 				{
 					auto& ui = *ti->retrive_ui();
-					int n = editing_vector.count();
+					int n = staging_vector.count();
 					if (ImGui::InputInt("size", &n, 1, 1))
 					{
 						n = clamp(n, 0, 16);
-						editing_vector.resize(nullptr, n);
+						staging_vector.resize(nullptr, n);
 					}
 					for (auto i = 0; i < n; i++)
 					{
-						if (ImGui::TreeNode(str(i).c_str()))
-						{
-							show_udt(ui, editing_vector.v.data() + ui.size * i);
-							ImGui::TreePop();
-						}
+						if (i > 0) ImGui::Separator();
+						show_udt(ui, staging_vector.v.data() + ui.size * i);
 					}
 				}
 			}
 			else
 			{
 				if (ImGui::Button("Edit"))
-					editing_vector.set(id, ti, (char*)src + offset);
+					staging_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -255,42 +257,39 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
-			if (editing_vector.id == id)
+			if (staging_vector.id == id)
 			{
 				if (ImGui::Button("Save"))
 				{
 					if (setter_idx == -1)
-						editing_vector.assign((char*)src + offset, nullptr);
+						staging_vector.assign((char*)src + offset, nullptr);
 					else
-						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+						ui.set_value(type, src, offset, setter_idx, &staging_vector.v);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
-					editing_vector.clear();
-				if (editing_vector.id)
+					staging_vector.clear();
+				if (staging_vector.id)
 				{
-					int n = editing_vector.count();
+					int n = staging_vector.count();
 					if (ImGui::InputInt("size", &n, 1, 1))
 					{
 						n = clamp(n, 0, 16);
-						editing_vector.resize(nullptr, n);
+						staging_vector.resize(nullptr, n);
 					}
 					for (auto i = 0; i < n; i++)
 					{
-						if (ImGui::TreeNode(str(i).c_str()))
-						{
-							auto p = editing_vector.v.data() + ti->size * i;
-							show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
-							show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
-							ImGui::TreePop();
-						}
+						if (i > 0) ImGui::Separator();
+						auto p = staging_vector.v.data() + ti->size * i;
+						show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
+						show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
 					}
 				}
 			}
 			else
 			{
 				if (ImGui::Button("Edit"))
-					editing_vector.set(id, ti, (char*)src + offset);
+					staging_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -299,38 +298,35 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 		if (ImGui::TreeNode(name.c_str()))
 		{
 			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
-			if (editing_vector.id == id)
+			if (staging_vector.id == id)
 			{
 				if (ImGui::Button("Save"))
 				{
 					if (setter_idx == -1)
-						editing_vector.assign((char*)src + offset, nullptr);
+						staging_vector.assign((char*)src + offset, nullptr);
 					else
-						ui.set_value(type, src, offset, setter_idx, &editing_vector.v);
+						ui.set_value(type, src, offset, setter_idx, &staging_vector.v);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
-					editing_vector.clear();
-				if (editing_vector.id)
+					staging_vector.clear();
+				if (staging_vector.id)
 				{
-					int n = editing_vector.count();
+					int n = staging_vector.count();
 					if (ImGui::InputInt("size", &n, 1, 1))
 					{
 						n = clamp(n, 0, 16);
-						editing_vector.resize(nullptr, n);
+						staging_vector.resize(nullptr, n);
 					}
 					for (auto i = 0; i < n; i++)
 					{
-						if (ImGui::TreeNode(str(i).c_str()))
+						if (i > 0) ImGui::Separator();
+						auto p = staging_vector.v.data() + ti->size * i;
+						auto j = 0;
+						for (auto& t : ti->tis)
 						{
-							auto p = editing_vector.v.data() + ti->size * i;
-							auto j = 0;
-							for (auto& t : ti->tis)
-							{
-								show_variable(ui, t.first, "item_" + str(j), 0, -1, -1, p + t.second, id);
-								j++;
-							}
-							ImGui::TreePop();
+							show_variable(ui, t.first, "item_" + str(j), 0, -1, -1, p + t.second, id);
+							j++;
 						}
 					}
 				}
@@ -338,7 +334,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			else
 			{
 				if (ImGui::Button("Edit"))
-					editing_vector.set(id, ti, (char*)src + offset);
+					staging_vector.set(id, ti, (char*)src + offset);
 			}
 			ImGui::TreePop();
 		}
@@ -394,13 +390,12 @@ void View_Inspector::on_draw()
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		selection.forward();
 
-	static uint sel_ref_frame = 0;
 	static uint sel_ref_type = 0;
 	static void* sel_ref_obj = nullptr;
 	static auto sel_ref_info = new char[1024];
-	if (selection.frame != sel_ref_frame)
+	if (selection_changed)
 	{
-		editing_vector.clear();
+		staging_vector.clear();
 
 		switch (sel_ref_type)
 		{
@@ -435,7 +430,7 @@ void View_Inspector::on_draw()
 			ImGui::InputText("prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
-				selection.select(Path::get(path));
+				selection.select(Path::get(path), "inspector"_h);
 		}
 		auto changed_name = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		ImGui::PopID();
@@ -496,10 +491,7 @@ void View_Inspector::on_draw()
 				{
 					auto terrain = (cTerrainPtr)c.get();
 					if (ImGui::Button("Procedure Terrain"))
-					{
-
 						ProcedureTerrainDialog::open(terrain);
-					}
 				}
 			}
 			ImGui::PopID();
@@ -537,8 +529,6 @@ void View_Inspector::on_draw()
 			}
 			ImGui::EndPopup();
 		}
-
-		sel_ref_frame = selection.frame;
 	}
 		break;
 	case Selection::tPath:
@@ -568,7 +558,7 @@ void View_Inspector::on_draw()
 			};
 			auto& info = *(ImageRefInfo*)sel_ref_info;
 
-			if (selection.frame != sel_ref_frame)
+			if (selection_changed)
 			{
 				auto image = graphics::Image::get(path);
 				if (image)
@@ -582,8 +572,6 @@ void View_Inspector::on_draw()
 					info.srgb = bitmap->srgb;
 					delete bitmap;
 				}
-
-				sel_ref_frame = selection.frame;
 			}
 
 			if (sel_ref_obj)
@@ -617,7 +605,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmat")
 		{
-			if (selection.frame != sel_ref_frame)
+			if (selection_changed)
 			{
 				auto material = graphics::Material::get(path);
 				if (material)
@@ -625,8 +613,6 @@ void View_Inspector::on_draw()
 					sel_ref_type = th<graphics::Material>();
 					sel_ref_obj = material;
 				}
-
-				sel_ref_frame = selection.frame;
 			}
 
 			if (sel_ref_obj)
@@ -649,7 +635,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmod")
 		{
-			if (selection.frame != sel_ref_frame)
+			if (selection_changed)
 			{
 				auto model = graphics::Model::get(path);
 				if (model)
@@ -657,8 +643,6 @@ void View_Inspector::on_draw()
 					sel_ref_type = th<graphics::Model>();
 					sel_ref_obj = model;
 				}
-
-				sel_ref_frame = selection.frame;
 			}
 
 			if (sel_ref_obj)
@@ -684,7 +668,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fani")
 		{
-			if (selection.frame != sel_ref_frame)
+			if (selection_changed)
 			{
 				auto animation = graphics::Animation::get(path);
 				if (animation)
@@ -692,8 +676,6 @@ void View_Inspector::on_draw()
 					sel_ref_type = th<graphics::Animation>();
 					sel_ref_obj = animation;
 				}
-
-				sel_ref_frame = selection.frame;
 			}
 
 			if (sel_ref_obj)

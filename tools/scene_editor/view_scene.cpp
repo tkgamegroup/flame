@@ -432,9 +432,9 @@ void View_Scene::on_draw()
 					if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 					{
 						if (hovering_node)
-							selection.select(hovering_node->entity);
+							selection.select(hovering_node->entity, "scene"_h);
 						else
-							selection.clear();
+							selection.clear("scene"_h);
 					}
 					{
 						auto s = str(hovering_pos);

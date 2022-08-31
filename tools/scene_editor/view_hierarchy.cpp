@@ -3,24 +3,29 @@
 #include "view_scene.h"
 
 View_Hierarchy view_hierarchy;
+static auto selection_changed = false;
 
 View_Hierarchy::View_Hierarchy() :
 	View("Hierarchy")
 {
+	selection.callbacks.add([](uint caller) {
+		if (caller != "hierarchy"_h)
+			selection_changed = true;
+	}, "hierarchy"_h);
 }
 
 uint hierarchy_select_frame = 0;
 
 void View_Hierarchy::on_draw()
 {
-	auto just_select = selection.frame == (int)frames - 1 && selection.type == Selection::tEntity;
-	if (hierarchy_select_frame == selection.frame)
-		just_select = false;
+	auto no_select = true;
+
+	EntityPtr focus_entity = selection_changed ? selection.entity() : nullptr;
 
 	std::vector<EntityPtr> open_nodes;
-	if (just_select)
+	if (focus_entity)
 	{
-		auto e = selection.entity()->parent;
+		auto e = focus_entity;
 		while (e)
 		{
 			open_nodes.push_back(e);
@@ -58,7 +63,7 @@ void View_Hierarchy::on_draw()
 		if (in_prefab)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
 		auto opened = ImGui::TreeNodeEx(name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
-		if (just_select && selection.selecting(e))
+		if (e == focus_entity)
 			ImGui::SetScrollHereY();
 		if (in_prefab)
 			ImGui::PopStyleColor();
@@ -130,8 +135,9 @@ void View_Hierarchy::on_draw()
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
 		{
-			selection.select(e);
+			selection.select(e, "hierarchy"_h);
 			hierarchy_select_frame = frames;
+			no_select = false;
 		}
 		if (opened)
 		{
@@ -178,7 +184,7 @@ void View_Hierarchy::on_draw()
 	{
 		if (ImGui::IsKeyPressed(Keyboard_Del))
 			app.cmd_delete_entity();
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && selection.frame != frames)
-			selection.clear();
+		if (no_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+			selection.clear("hierarchy"_h);
 	}
 }

@@ -34,22 +34,25 @@ struct Selection
 
 	Type type = tNothing;
 	void* object = nullptr;
-	uint frame = 0;
 	std::vector<std::unique_ptr<History>> history;
 	int histroy_idx = -1;
+	Listeners<void(uint)> callbacks;
 
-	void clear(bool from_histroy = false);
-	void select(const std::filesystem::path& path, bool from_histroy = false);
+	void _clear(uint caller = 0);
+	void clear(uint caller = 0);
+	void _select(const std::filesystem::path& path, uint caller = 0);
+	void select(const std::filesystem::path& path, uint caller = 0);
 	bool selecting(const std::filesystem::path& path);
-	void select(EntityPtr e, bool from_histroy = false);
+	void _select(EntityPtr e, uint caller = 0);
+	void select(EntityPtr e, uint caller = 0);
 	bool selecting(EntityPtr e);
 
 	void add_history(History* his);
 	void forward();
 	void backward();
 
-	inline std::filesystem::path& path() { return *(std::filesystem::path*)object; }
-	inline EntityPtr entity() { return (EntityPtr)object; }
+	inline std::filesystem::path&	path() { return *(std::filesystem::path*)object; }
+	inline EntityPtr				entity() { return (EntityPtr)object; }
 };
 
 extern Selection selection;

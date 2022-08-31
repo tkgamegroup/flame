@@ -12,10 +12,15 @@
 #include <flame/graphics/debug.h>
 
 View_Project view_project;
+static auto selection_changed = false;
 
 View_Project::View_Project() :
 	View("Project")
 {
+	selection.callbacks.add([](uint caller) {
+		if (caller != "project"_h)
+			selection_changed = true;
+	}, "project"_h);
 }
 
 void View_Project::reset(const std::filesystem::path& assets_path)
@@ -65,9 +70,9 @@ void View_Project::init()
 {
 	explorer.select_callback = [this](const std::filesystem::path& path) {
 		if (path.empty())
-			selection.clear();
+			selection.clear("project"_h);
 		else
-			selection.select(path);
+			selection.select(path, "project"_h);
 	};
 	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
@@ -461,7 +466,7 @@ void View_Project::on_draw()
 
 	if (selection.type == Selection::tPath)
 	{
-		if (selection.frame == (int)frames - 1)
+		if (selection_changed)
 			explorer.ping(selection.path());
 		explorer.selected_path = selection.path();
 	}
