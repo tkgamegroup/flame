@@ -174,7 +174,12 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
-				selection.select(Path::get(path), "inspector"_h);
+			{
+				add_event([path]() {
+					selection.select(Path::get(path), "project"_h);
+					return false;
+				});
+			}
 		}
 			break;
 		}
@@ -578,7 +583,7 @@ void View_Inspector::on_draw()
 				ImGui::Image(sel_ref_obj, (vec2)image->size);
 				if (view_type != 0)
 					ImGui::PopImageViewType();
-				if (ImGui::Button("Set"))
+				if (ImGui::Button("Save"))
 				{
 					image->save(path);
 					auto asset = AssetManagemant::find(path);
@@ -608,7 +613,7 @@ void View_Inspector::on_draw()
 					if (id > 0)
 						app.renderer->update_res(id, "material"_h, "parameters"_h);
 				}
-				if (ImGui::Button("Set"))
+				if (ImGui::Button("Save"))
 				{
 					material->save(path);
 					auto asset = AssetManagemant::find(path);
