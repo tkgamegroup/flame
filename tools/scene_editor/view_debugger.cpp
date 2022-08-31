@@ -7,7 +7,7 @@
 View_Debugger view_debugger;
 
 View_Debugger::View_Debugger() :
-	View("Debugger")
+	GuiView("Debugger")
 {
 }
 

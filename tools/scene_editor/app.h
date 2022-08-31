@@ -22,21 +22,6 @@ enum ToolMode
 	ToolWorld
 };
 
-struct View
-{
-	std::string name;
-	bool opened = false;
-
-	View(std::string_view name);
-
-	void open();
-	void close();
-	void draw();
-
-	virtual void init() {}
-	virtual void on_draw() = 0;
-};
-
 struct App : UniverseApplication
 {
 	std::filesystem::path project_path;

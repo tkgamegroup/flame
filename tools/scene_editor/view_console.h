@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct View_Console : View
+struct View_Console : graphics::GuiView
 {
 	View_Console();
 

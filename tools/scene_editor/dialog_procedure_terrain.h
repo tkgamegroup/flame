@@ -307,8 +307,8 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 						auto pc = pb + perbi * slope_length;
 						auto pd = pa + perbi * slope_length;
 
-						auto src_id = edge->incidentFace->site->index;
-						auto dst_id = edge->twin->incidentFace->site->index;
+						auto src_id = (uint)edge->incidentFace->site->index;
+						auto dst_id = (uint)edge->twin->incidentFace->site->index;
 						slopes.emplace_back(src_id, dst_id);
 						auto hi_height = site_positions[src_id].y;
 						auto lo_height = site_positions[dst_id].y;

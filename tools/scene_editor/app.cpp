@@ -12,48 +12,6 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/systems/renderer.h>
 
-std::list<View*> views;
-
-View::View(std::string_view name) :
-	name(name)
-{
-	views.push_back(this);
-}
-
-void View::open()
-{
-	if (opened)
-		return;
-	opened = true;
-
-	graphics::gui_callbacks.add([this]() {
-		draw();
-	}, (uint)this);
-}
-
-void View::close()
-{
-	if (!opened)
-		return;
-	opened = false;
-
-	add_event([this]() {
-		graphics::gui_callbacks.remove((uint)this);
-		return false;
-	});
-}
-
-void View::draw()
-{
-	bool open = true;
-	ImGui::Begin(name.c_str(), &open);
-	on_draw();
-	ImGui::End();
-
-	if (!open)
-		close();
-}
-
 App app;
 
 struct NavMeshTest
@@ -80,7 +38,7 @@ void App::init()
 	e_editor->add_component<cCamera>();
 	root->add_child(e_editor);
 
-	for (auto& v : views)
+	for (auto& v : graphics::gui_views)
 		v->init();
 
 	graphics::gui_callbacks.add([this]() {
@@ -198,7 +156,7 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("View"))
 		{
-			for (auto w : views)
+			for (auto w : graphics::gui_views)
 			{
 				auto selected = (bool)w->opened;
 				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
@@ -804,7 +762,7 @@ int main(int argc, char** args)
 	auto preferences_i = parse_ini_file(preferences_path);
 	for (auto& e : preferences_i.get_section_entries("opened_windows"))
 	{
-		for (auto w : views)
+		for (auto w : graphics::gui_views)
 		{
 			if (w->name == e.value)
 			{
@@ -833,7 +791,7 @@ int main(int argc, char** args)
 
 	std::ofstream preferences_o(preferences_path);
 	preferences_o << "[opened_windows]\n";
-	for (auto w : views)
+	for (auto w : graphics::gui_views)
 	{
 		if (w->opened)
 			preferences_o << w->name << "\n";

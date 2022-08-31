@@ -15,7 +15,7 @@ View_Project view_project;
 static auto selection_changed = false;
 
 View_Project::View_Project() :
-	View("Project")
+	GuiView("Project")
 {
 	selection.callbacks.add([](uint caller) {
 		if (caller != "project"_h)
@@ -474,4 +474,6 @@ void View_Project::on_draw()
 		explorer.selected_path.clear();
 
 	explorer.draw();
+
+	selection_changed = false;
 }

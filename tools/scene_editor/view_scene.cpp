@@ -14,7 +14,7 @@
 View_Scene view_scene;
 
 View_Scene::View_Scene() :
-	View("Scene")
+	GuiView("Scene")
 {
 }
 

@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct View_Scene : View
+struct View_Scene : graphics::GuiView
 {
 	std::unique_ptr<graphics::Image> render_tar;
 	bool fixed_render_target_size = false;

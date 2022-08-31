@@ -5,7 +5,7 @@
 #include <flame/foundation/system.h>
 #include <flame/graphics/explorer_abstract.h>
 
-struct View_Project : View
+struct View_Project : graphics::GuiView
 {
 	graphics::ExplorerAbstract explorer;
 

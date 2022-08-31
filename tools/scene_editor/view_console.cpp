@@ -3,7 +3,7 @@
 View_Console view_console;
 
 View_Console::View_Console() :
-	View("Console")
+	GuiView("Console")
 {
 }
 

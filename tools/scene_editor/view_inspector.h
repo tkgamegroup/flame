@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct View_Inspector : View
+struct View_Inspector : graphics::GuiView
 {
 	View_Inspector();
 

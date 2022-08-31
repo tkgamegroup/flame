@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct View_Debugger : View
+struct View_Debugger : graphics::GuiView
 {
 	View_Debugger();
 

@@ -2292,7 +2292,7 @@ namespace flame
 		void destroy(void* p, bool free_memory = true) const override
 		{
 			for (auto& t : tis)
-				t.first->destroy((char*)p + t.second);
+				t.first->destroy((char*)p + t.second, false);
 			if (free_memory)
 				free(p);
 		}

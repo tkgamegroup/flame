@@ -21,7 +21,7 @@ View_Inspector view_inspector;
 static auto selection_changed = false;
 
 View_Inspector::View_Inspector() :
-	View("Inspector")
+	GuiView("Inspector")
 {
 	selection.callbacks.add([](uint caller) {
 		if (caller != "inspector"_h)
@@ -189,10 +189,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Refresh"))
+			if (ImGui::Button("Get"))
 				sv.assign(nullptr, pv);
 			ImGui::SameLine();
-			if (ImGui::Button("Save"))
+			if (ImGui::Button("Set"))
 			{
 				if (setter_idx == -1)
 					sv.assign((char*)src + offset, nullptr);
@@ -207,8 +207,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			}
 			for (auto i = 0; i < n; i++)
 			{
+				ImGui::PushID(i);
 				if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, sv.v.data(), id))
 					changed = true;
+				ImGui::PopID();
 			}
 			ImGui::TreePop();
 		}
@@ -220,10 +222,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Refresh"))
+			if (ImGui::Button("Get"))
 				sv.assign(nullptr, pv);
 			ImGui::SameLine();
-			if (ImGui::Button("Save"))
+			if (ImGui::Button("Set"))
 			{
 				if (setter_idx == -1)
 					sv.assign((char*)src + offset, nullptr);
@@ -240,7 +242,9 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
+				ImGui::PushID(i);
 				show_udt(ui, sv.v.data() + ui.size * i);
+				ImGui::PopID();
 			}
 			ImGui::TreePop();
 		}
@@ -252,10 +256,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Refresh"))
+			if (ImGui::Button("Get"))
 				sv.assign(nullptr, pv);
 			ImGui::SameLine();
-			if (ImGui::Button("Save"))
+			if (ImGui::Button("Set"))
 			{
 				if (setter_idx == -1)
 					sv.assign(pv, nullptr);
@@ -271,9 +275,11 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
+				ImGui::PushID(i);
 				auto p = sv.v.data() + ti->size * i;
 				show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
 				show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
+				ImGui::PopID();
 			}
 			ImGui::TreePop();
 		}
@@ -285,10 +291,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Refresh"))
+			if (ImGui::Button("Get"))
 				sv.assign(nullptr, pv);
 			ImGui::SameLine();
-			if (ImGui::Button("Save"))
+			if (ImGui::Button("Set"))
 			{
 				if (setter_idx == -1)
 					sv.assign((char*)src + offset, nullptr);
@@ -304,6 +310,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
+				ImGui::PushID(i);
 				auto p = sv.v.data() + ti->size * i;
 				auto j = 0;
 				for (auto& t : ti->tis)
@@ -311,6 +318,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 					show_variable(ui, t.first, "item_" + str(j), 0, -1, -1, p + t.second, id);
 					j++;
 				}
+				ImGui::PopID();
 			}
 			ImGui::TreePop();
 		}
@@ -570,7 +578,7 @@ void View_Inspector::on_draw()
 				ImGui::Image(sel_ref_obj, (vec2)image->size);
 				if (view_type != 0)
 					ImGui::PopImageViewType();
-				if (ImGui::Button("Save"))
+				if (ImGui::Button("Set"))
 				{
 					image->save(path);
 					auto asset = AssetManagemant::find(path);
@@ -600,7 +608,7 @@ void View_Inspector::on_draw()
 					if (id > 0)
 						app.renderer->update_res(id, "material"_h, "parameters"_h);
 				}
-				if (ImGui::Button("Save"))
+				if (ImGui::Button("Set"))
 				{
 					material->save(path);
 					auto asset = AssetManagemant::find(path);
@@ -682,4 +690,6 @@ void View_Inspector::on_draw()
 	}
 		break;
 	}
+
+	selection_changed = false;
 }

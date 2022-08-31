@@ -50,5 +50,70 @@ namespace flame
 
 		FLAME_GRAPHICS_API Image* get_icon(const std::filesystem::path& path, uint desired_size = 64);
 		FLAME_GRAPHICS_API void release_icon(const std::filesystem::path& path);
+
+		struct GuiView
+		{
+			std::string name;
+			bool opened = false;
+			bool auto_size = false;
+
+			inline GuiView(std::string_view name);
+			inline virtual ~GuiView();
+
+			inline void open()
+			{
+				if (opened)
+					return;
+				opened = true;
+
+				graphics::gui_callbacks.add([this]() {
+					draw();
+				}, (uint)this);
+			}
+
+			inline void close()
+			{
+				if (!opened)
+					return;
+				opened = false;
+
+				add_event([this]() {
+					graphics::gui_callbacks.remove((uint)this);
+					return false;
+				});
+			}
+
+			inline void draw()
+			{
+				bool open = true;
+				auto flags = 0;
+				if (auto_size)
+					flags |= ImGuiWindowFlags_AlwaysAutoResize;
+				ImGui::Begin(name.c_str(), &open, flags);
+				on_draw();
+				ImGui::End();
+
+				if (!open)
+					close();
+			}
+
+			virtual void init() {}
+			virtual void on_draw() = 0;
+		};
+
+		FLAME_GRAPHICS_API extern std::list<GuiView*> gui_views;
+
+		inline GuiView::GuiView(std::string_view name) :
+			name(name)
+		{
+			gui_views.push_back(this);
+		}
+
+		inline GuiView::~GuiView()
+		{
+			std::erase_if(gui_views, [&](const auto& i) {
+				return i == this;
+			});
+		}
 	}
 }

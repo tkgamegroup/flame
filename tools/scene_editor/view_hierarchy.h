@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-struct View_Hierarchy : View
+struct View_Hierarchy : graphics::GuiView
 {
 	View_Hierarchy();
 

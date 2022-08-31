@@ -6,7 +6,7 @@ View_Hierarchy view_hierarchy;
 static auto selection_changed = false;
 
 View_Hierarchy::View_Hierarchy() :
-	View("Hierarchy")
+	GuiView("Hierarchy")
 {
 	selection.callbacks.add([](uint caller) {
 		if (caller != "hierarchy"_h)
@@ -20,7 +20,7 @@ void View_Hierarchy::on_draw()
 {
 	auto no_select = true;
 
-	EntityPtr focus_entity = selection_changed ? selection.entity() : nullptr;
+	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.entity() : nullptr) : nullptr;
 
 	std::vector<EntityPtr> open_nodes;
 	if (focus_entity)
@@ -187,4 +187,6 @@ void View_Hierarchy::on_draw()
 		if (no_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 			selection.clear("hierarchy"_h);
 	}
+
+	selection_changed = false;
 }
