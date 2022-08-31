@@ -246,7 +246,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 					pv.item("i_val_base"_h).set(site_positions[i].y);
 				}
 
-				height_draws.emplace_back(vertices.size(), vtx_off);
+				height_draws.emplace_back((uint)vertices.size(), vtx_off);
 			}
 		}
 
