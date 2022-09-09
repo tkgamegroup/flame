@@ -21,6 +21,8 @@ namespace flame
 		/// Reflect
 		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
 
+		Listeners<void(uint, uint)> playing_callbacks;
+
 		/// Reflect
 		bool loop = true;
 

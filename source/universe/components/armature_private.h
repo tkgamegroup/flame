@@ -58,6 +58,5 @@ namespace flame
 
 		void on_active() override;
 		void on_inactive() override;
-		void update() override;
 	};
 }

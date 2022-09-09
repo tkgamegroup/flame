@@ -531,11 +531,16 @@ void View_Inspector::on_draw()
 			static vec3 rotation = vec3(0, 0, 0);
 			static vec3 scaling = vec3(0.01f, 0.01f, 0.01f);
 			static bool only_animation = false;
-			ImGui::DragFloat3("rotation", (float*)&rotation);
-			ImGui::DragFloat3("scaling", (float*)&scaling);
-			ImGui::Checkbox("only animation", &only_animation);
+			static bool copy_textures = false;
+			static std::string texture_fmt = "";
+			ImGui::DragFloat3("Rotation", (float*)&rotation);
+			ImGui::DragFloat3("Scaling", (float*)&scaling);
+			ImGui::Checkbox("Only Animation", &only_animation);
+			ImGui::Checkbox("Copy Textures", &copy_textures);
+			if (copy_textures)
+				ImGui::InputText("Texture Format", &texture_fmt);
 			if (ImGui::Button("Convert"))
-				graphics::Model::convert(path, rotation, scaling, only_animation);
+				graphics::Model::convert(path, rotation, scaling, only_animation, copy_textures, texture_fmt);
 		}
 		else if (is_image_file(ext))
 		{
@@ -678,12 +683,18 @@ void View_Inspector::on_draw()
 					{
 						if (ImGui::TreeNode(ch.node_name.c_str()))
 						{
-							ImGui::TextUnformatted("  pos:");
-							for (auto& k : ch.position_keys)
-								ImGui::Text("    %f: %s", k.t, str(k.p).c_str());
-							ImGui::TextUnformatted("  qut:");
-							for (auto& k : ch.rotation_keys)
-								ImGui::Text("    %f: %s", k.t, str((vec4&)k.q).c_str());
+							if (ImGui::TreeNode(std::format("  Position Keys({})", (int)ch.position_keys.size()).c_str()))
+							{
+								for (auto& k : ch.position_keys)
+									ImGui::Text("    %f: %s", k.t, str(k.p).c_str());
+								ImGui::TreePop();
+							}
+							if (ImGui::TreeNode(std::format("  Rotation Keys({})", (int)ch.rotation_keys.size()).c_str()))
+							{
+								for (auto& k : ch.rotation_keys)
+									ImGui::Text("    %f: %s", k.t, str((vec4&)k.q).c_str());
+								ImGui::TreePop();
+							}
 							ImGui::TreePop();
 						}
 					}

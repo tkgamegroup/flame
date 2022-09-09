@@ -1,5 +1,6 @@
 #include "../serialize_extension.h"
 #include "../foundation/typeinfo.h"
+#include "../foundation/bitmap.h"
 #include "material_private.h"
 #include "model_private.h"
 #include "model_ext.h"
@@ -89,11 +90,12 @@ namespace flame
 			return name;
 		}
 
-		void Model::convert(const std::filesystem::path& _filename, const vec3& rotation, const vec3& scaling, bool only_animation)
+		void Model::convert(const std::filesystem::path& _filename, const vec3& rotation, const vec3& scaling, bool only_animation, bool copy_textures, const std::filesystem::path& texture_format)
 		{
 			auto parent_path = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
-			auto model_name = filename.filename().stem().string();
+			auto model_name_no_ext = filename.filename().stem().string();
+			auto model_name = model_name_no_ext + ".fmod";
 			auto ext = filename.extension().wstring();
 			SUW::to_lower(ext);
 			filename.replace_extension(L".fmod");
@@ -108,7 +110,7 @@ namespace flame
 					ret = str(i);
 				else
 					for (auto& ch : ret) if (ch == ' ' || ch == ':' || ch == '|') ch = '_';
-				ret = std::format("{}_{}.{}", model_name, ret, ext);
+				ret = std::format("{}_{}.{}", model_name_no_ext, ret, ext);
 				return ret;
 			};
 
@@ -167,7 +169,7 @@ namespace flame
 				{
 					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("armature_name").set_value(filename.string().c_str());
+					n_armature.append_attribute("armature_name").set_value(model_name.c_str());
 					for (auto& m : model->meshes)
 					{
 						for (auto i = 0; i < m.bone_ids.size(); i++)
@@ -287,25 +289,30 @@ namespace flame
 					auto layer = anim_stack->GetMember<FbxAnimLayer>(0);
 					scene->SetCurrentAnimationStack(anim_stack);
 
-					FbxTime start_time, stop_time;
+					float start_time, stop_time;
 					if (auto take_info = scene->GetTakeInfo(*(anim_names[i])); take_info)
 					{
-						start_time = take_info->mLocalTimeSpan.GetStart();
-						stop_time = take_info->mLocalTimeSpan.GetStop();
+						FbxTime fbx_time;
+						fbx_time = take_info->mLocalTimeSpan.GetStart();
+						start_time = fbx_time.GetMilliSeconds() / 1000.f;
+						fbx_time = take_info->mLocalTimeSpan.GetStop();
+						stop_time = fbx_time.GetMilliSeconds() / 1000.f;
 					}
 					else
 					{
 						FbxTimeSpan timeLine_timespan;
 						scene->GetGlobalSettings().GetTimelineDefaultTimeSpan(timeLine_timespan);
-
-						start_time = timeLine_timespan.GetStart();
-						stop_time = timeLine_timespan.GetStop();
+						FbxTime fbx_time;
+						fbx_time = timeLine_timespan.GetStart();
+						start_time = fbx_time.GetMilliSeconds() / 1000.f;
+						fbx_time = timeLine_timespan.GetStop();
+						stop_time = fbx_time.GetMilliSeconds() / 1000.f;
 					}
 
 					auto animation = new AnimationT;
-					animation->duration = (stop_time.GetMilliSeconds() - start_time.GetMilliSeconds()) / 1000.f;
+					animation->duration = stop_time - start_time;
 
-					std::vector<Channel*> channels;
+					std::vector<std::pair<fbxsdk::FbxNode*, Channel*>> channels;
 					std::function<void(fbxsdk::FbxNode*, float)> get_bone_animation;
 					get_bone_animation = [&](fbxsdk::FbxNode* node, float time) {
 						FbxTime fbx_time;
@@ -320,7 +327,7 @@ namespace flame
 								channel = new Channel();
 								channel->node_name = node->GetName();
 								node->SetUserDataPtr(channel);
-								channels.emplace_back(channel);
+								channels.emplace_back(node, channel);
 							}
 
 							vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
@@ -334,17 +341,24 @@ namespace flame
 							get_bone_animation(node->GetChild(i), time);
 					};
 
-					for (auto i = 0.f; i < animation->duration; i += 1.f / 24.f)
+					for (auto t = start_time; t < stop_time; t += 1.f / 24.f)
+						get_bone_animation(scene->GetRootNode(), t);
+
+					for (auto& ch : channels)
+						animation->channels.push_back(*ch.second);
+					for (auto& ch : animation->channels)
 					{
-						mat4 mat(1.f);
-						get_bone_animation(scene->GetRootNode(), i);
+						for (auto& k : ch.position_keys)
+							k.t -= start_time;
+						for (auto& k : ch.rotation_keys)
+							k.t -= start_time;
 					}
 
-					for (auto ch : channels)
-						animation->channels.push_back(*ch);
-
-					for (auto ch : channels)
-						delete ch;
+					for (auto& ch : channels)
+					{
+						ch.first->SetUserDataPtr(nullptr);
+						delete ch.second;
+					}
 
 					auto fn = parent_path / format_res_name(anim_stack->GetName(), "fani", i);
 					animation->save(fn);
@@ -417,8 +431,31 @@ namespace flame
 									{
 										if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 										{
-											 material->textures[map_id].filename = Path::reverse(find_file(parent_path, tex->GetFileName()));
-											 material->color_map = map_id++;
+											auto fn = find_file(parent_path, tex->GetFileName());
+											if (copy_textures)
+											{
+												auto copied = false;
+												auto dst = parent_path / fn.filename();
+												if (!texture_format.empty())
+												{
+													auto ext = fn.extension();
+													if (ext != texture_format)
+													{
+														dst.replace_extension(texture_format);
+														auto bmp = Bitmap::create(fn);
+														bmp->save(dst);
+														delete bmp;
+														copied = true;
+													}
+												}
+												if (!copied && dst != fn)
+												{
+													std::filesystem::copy_file(fn, dst);
+													fn = dst;
+												}
+											}
+											material->textures[map_id].filename = Path::rebase(parent_path, fn);
+											material->color_map = map_id++;
 										}
 									}
 								}
@@ -764,13 +801,11 @@ namespace flame
 								{
 									auto n_mesh = n_components.append_child("item");
 									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-									n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(base_mesh_idx)).c_str());
-									auto fbx_mat = src->GetMaterial(0);
-									if (fbx_mat)
+									n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx)).c_str());
+									if (auto fbx_mat = src->GetMaterial(0); fbx_mat)
 									{
-										auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr();
-										if (mat)
-											n_mesh.append_attribute("material_name").set_value(mat->filename.string().c_str());
+										if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
+											n_mesh.append_attribute("material_name").set_value(mat->filename.filename().string().c_str());
 									}
 								}
 								else
@@ -786,8 +821,12 @@ namespace flame
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 										auto n_mesh = n_components.append_child("item");
 										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-										n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(base_mesh_idx + i)).c_str());
-										n_mesh.append_attribute("material_name").set_value(((MaterialPtr)src->GetMaterial(i)->GetUserDataPtr())->filename.string().c_str());
+										n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx + i)).c_str());
+										if (auto fbx_mat = src->GetMaterial(i); fbx_mat)
+										{
+											if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
+												n_mesh.append_attribute("material_name").set_value(mat->filename.filename().string().c_str());
+										}
 									}
 								}
 							}

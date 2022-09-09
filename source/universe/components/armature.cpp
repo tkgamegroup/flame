@@ -66,6 +66,13 @@ namespace flame
 								b.node->set_qut(b.pose.q);
 							}
 						}
+
+						transition_time += delta_time * playing_speed;
+						if (transition_time >= transition_duration)
+						{
+							playing_time = transition_time - transition_duration;
+							transition_time = -1.f;
+						}
 					}
 					else
 					{
@@ -101,6 +108,17 @@ namespace flame
 								b.node->set_qut(b.pose.q);
 							}
 						}
+
+						playing_time += delta_time * playing_speed;
+						if (playing_time >= a.duration && !loop)
+						{
+							auto name = playing_name;
+							stop();
+							for (auto& cb : playing_callbacks.list)
+								cb.first("end"_h, name);
+						}
+						else
+							playing_time = fmod(playing_time, a.duration);
 					}
 				}
 
@@ -345,28 +363,6 @@ namespace flame
 
 		sRenderer::instance()->register_armature_instance(instance_id);
 		instance_id = -1;
-	}
-
-	void cArmaturePrivate::update()
-	{
-		if (playing_name != 0)
-		{
-			auto& a = animations[playing_name];
-			if (transition_time >= 0.f)
-			{
-				transition_time += delta_time * playing_speed;
-				if (transition_time >= transition_duration)
-					transition_time = -1.f;
-			}
-			else
-			{
-				playing_time += delta_time * playing_speed;
-				if (playing_time >= a.duration && !loop)
-					stop();
-				else
-					playing_time = fmod(playing_time, a.duration);
-			}
-		}
 	}
 
 	struct cArmatureCreate : cArmature::Create

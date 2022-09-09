@@ -305,6 +305,21 @@ if op != 3:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+
+	ok = True
+	bud_dir = lib_dir / "build"
+	if op == 2:
+		print("Build FortuneAlgorithm into %s ? y/n" % str(bud_dir))
+		ok = input() == "y"
+	if ok:
+		if not bud_dir.exists():
+			bud_dir.mkdir()
+			os.system("cmake -S \"%s\" -B \"%s\"" % (lib_dir, bud_dir))
+			os.chdir("%s/MSBuild/Current/Bin" % str(vs_path));
+			os.system("msbuild \"%s\"" % glob.glob("%s/*.sln" % str(bud_dir))[0])
+			os.chdir(current_directory)
+		else:
+			print("%s exists, skip build" % str(buds_dir))
 	print("====\n")
 	
 print("\nSet environment variable of Flame Engine:")
