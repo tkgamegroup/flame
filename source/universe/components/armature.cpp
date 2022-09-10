@@ -235,7 +235,7 @@ namespace flame
 				if (e)
 				{
 					dst.name = name;
-					dst.node = e->get_component_i<cNodeT>(0);
+					dst.node = e->node();
 					if (dst.node)
 					{
 						dst.offmat = src.offset_matrix;

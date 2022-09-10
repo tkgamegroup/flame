@@ -27,7 +27,7 @@ void View_Scene::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		if (auto node = selection.entity()->get_component_i<cNodeT>(0); node)
+		if (auto node = selection.entity()->node(); node)
 		{
 			auto camera_node = curr_camera()->node;
 			camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);

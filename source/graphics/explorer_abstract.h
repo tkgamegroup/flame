@@ -272,7 +272,7 @@ namespace flame
 			{
 				if (!peeding_open_path.empty())
 				{
-					open_folder(find_folder(peeding_open_path, true));
+					open_folder(find_folder(peeding_open_path));
 					peeding_open_path.clear();
 				}
 				if (peeding_open_node.first)

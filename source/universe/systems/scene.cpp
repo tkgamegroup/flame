@@ -64,7 +64,7 @@ namespace flame
 			return;
 
 		auto is_static = false;
-		if (auto node = e->get_component_i<cNodeT>(0); node)
+		if (auto node = e->node(); node)
 		{
 			is_static = (int)node->is_static == 2;
 			if (!is_static)

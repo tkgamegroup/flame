@@ -88,6 +88,11 @@ namespace flame
 			return ret->type_hash == th<T>() ? (T*)ret : nullptr;
 		}
 
+		inline cNodePtr node() const
+		{
+			return (cNodePtr)get_component_i<cNode>(0);
+		}
+
 		template<typename T>
 		inline T* get_parent_component_t() const
 		{
