@@ -213,6 +213,8 @@ namespace flame
 		{
 			auto& str1 = base.native();
 			auto& str2 = path.native();
+			if (str1 == str2)
+				return L"";
 			if (str1.size() >= str2.size())
 				return path;
 			for (auto i = 0; i < str1.size(); i++)

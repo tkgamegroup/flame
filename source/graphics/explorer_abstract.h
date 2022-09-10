@@ -68,6 +68,19 @@ namespace flame
 						parent->mark_upstream_open();
 					}
 				}
+
+				inline FolderTreeNode* find_node(const std::vector<std::string>& stems, uint idx)
+				{
+					if (idx == stems.size())
+						return this;
+					read_children();
+					for (auto& c : children)
+					{
+						if (c->display_text == stems[idx])
+							return c->find_node(stems, idx + 1);
+					}
+					return nullptr;
+				}
 			};
 
 			struct Item
@@ -141,23 +154,18 @@ namespace flame
 				folder_tree.reset(new FolderTreeNode(path));
 			}
 
-			inline FolderTreeNode* find_folder(const std::filesystem::path& path, bool force_read = false)
+			inline FolderTreeNode* find_folder(const std::filesystem::path& _path)
 			{
-				std::function<FolderTreeNode* (FolderTreeNode*)> sub_find;
-				sub_find = [&](FolderTreeNode* n)->FolderTreeNode* {
-					if (n->path == path)
-						return n;
-					if (force_read)
-						n->read_children();
-					for (auto& c : n->children)
-					{
-						auto ret = sub_find(c.get());
-						if (ret)
-							return ret;
-					}
-					return nullptr;
-				};
-				return sub_find(folder_tree.get());
+				auto path = Path::rebase(folder_tree->path, _path);
+				std::vector<std::string> stems;
+				for (auto it : path)
+				{
+					auto stem = it.string();
+					if (stem == "\\" || stem == "//")
+						continue;
+					stems.push_back(stem);
+				}
+				return folder_tree->find_node(stems, 0);
 			}
 
 			inline void open_folder(FolderTreeNode* folder, bool from_histroy = false)
@@ -259,7 +267,7 @@ namespace flame
 					p = sp.front();
 				else
 					p = path.parent_path();
-				auto folder = find_folder(p, true);
+				auto folder = find_folder(p);
 				if (folder)
 				{
 					folder->mark_upstream_open();

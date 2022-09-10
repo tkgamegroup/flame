@@ -419,44 +419,45 @@ namespace flame
 						{
 							auto material = new MaterialT;
 							auto map_id = 0;
+							if (auto prop = fbx_mat->FindProperty(fbxsdk::FbxSurfaceMaterial::sDiffuse); prop.IsValid())
 							{
-								auto prop = fbx_mat->FindProperty(fbxsdk::FbxSurfaceMaterial::sDiffuse);
-								if (prop.IsValid())
+								auto res = prop.Get<fbxsdk::FbxDouble3>();
+								material->color[0] = res[0];
+								material->color[1] = res[1];
+								material->color[2] = res[2];
+								if (prop.GetSrcObjectCount<FbxFileTexture>())
 								{
-									auto res = prop.Get<fbxsdk::FbxDouble3>();
-									material->color[0] = res[0];
-									material->color[1] = res[1];
-									material->color[2] = res[2];
-									if (prop.GetSrcObjectCount<FbxFileTexture>()) 
+									if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 									{
-										if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
+										auto fn = find_file(parent_path, tex->GetFileName());
+										if (copy_textures)
 										{
-											auto fn = find_file(parent_path, tex->GetFileName());
-											if (copy_textures)
+											auto copied = false;
+											auto dst = parent_path / fn.filename();
+											if (!texture_format.empty())
 											{
-												auto copied = false;
-												auto dst = parent_path / fn.filename();
-												if (!texture_format.empty())
+												auto ext = fn.extension();
+												if (ext != texture_format)
 												{
-													auto ext = fn.extension();
-													if (ext != texture_format)
-													{
-														dst.replace_extension(texture_format);
-														auto bmp = Bitmap::create(fn);
-														bmp->save(dst);
-														delete bmp;
-														copied = true;
-													}
-												}
-												if (!copied && dst != fn)
-												{
-													std::filesystem::copy_file(fn, dst);
+													dst.replace_extension(texture_format);
+													auto bmp = Bitmap::create(fn);
+													bmp->save(dst);
+													delete bmp;
 													fn = dst;
+													copied = true;
 												}
 											}
-											material->textures[map_id].filename = Path::rebase(parent_path, fn);
-											material->color_map = map_id++;
+											if (!copied && dst != fn)
+											{
+												std::filesystem::copy_file(fn, dst);
+												fn = dst;
+											}
 										}
+										auto& texture = material->textures[map_id];
+										texture.filename = Path::rebase(parent_path, fn);
+										texture.srgb = true;
+										texture.auto_mipmap = true;
+										material->color_map = map_id++;
 									}
 								}
 							}
