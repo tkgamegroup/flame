@@ -85,19 +85,21 @@ namespace flame
 
 			inline void draw()
 			{
-				bool open = true;
-				auto flags = 0;
-				if (auto_size)
-					flags |= ImGuiWindowFlags_AlwaysAutoResize;
-				ImGui::Begin(name.c_str(), &open, flags);
+				auto closed = on_open();
 				on_draw();
 				ImGui::End();
 
-				if (!open)
+				if (closed)
 					close();
 			}
 
 			virtual void init() {}
+			virtual bool on_open() 
+			{
+				bool open = true;
+				ImGui::Begin(name.c_str(), &open);
+				return !open;
+			}
 			virtual void on_draw() = 0;
 		};
 
