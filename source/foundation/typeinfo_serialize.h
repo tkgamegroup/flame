@@ -84,9 +84,9 @@ namespace flame
 	inline void serialize_xml(const UdtInfo& ui, uint offset, TypeInfo* type, const std::string& name, const std::string& default_value, int getter_idx, void* src, pugi::xml_node dst, const SerializeXmlSpec& spec = {})
 	{
 		auto data_serialize = [&](TypeInfo* ti, void* p) {
-			if (auto it = spec.data_delegates.find(type); it != spec.data_delegates.end())
+			if (auto it = spec.data_delegates.find(ti); it != spec.data_delegates.end())
 				return it->second(p);
-			return type->serialize(p);
+			return ti->serialize(p);
 		};
 
 		switch (type->tag)
@@ -196,7 +196,7 @@ namespace flame
 				auto len = (vec.end() - vec.begin()) / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
-					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n);
+					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n, spec);
 					p += ti->size;
 				}
 			}
@@ -210,7 +210,7 @@ namespace flame
 				auto len = (vec.end() - vec.begin()) / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
-					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n);
+					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n, spec);
 					p += ti->size;
 				}
 			}

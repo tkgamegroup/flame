@@ -488,6 +488,7 @@ namespace flame
 		auto base_path = Path::reverse(filename).parent_path();
 
 		SerializeXmlSpec spec;
+		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
 		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
 			auto& path = *(std::filesystem::path*)src;
 			return Path::rebase(base_path, path).string();
