@@ -236,7 +236,7 @@ void View_Scene::on_draw()
 									line_pts[0] = n->g_pos;
 									for (auto& c : n->entity->children)
 									{
-										auto nn = c->get_component_t<cNode>();
+										auto nn = c->node();
 										if (nn)
 										{
 											line_pts[1] = nn->g_pos;

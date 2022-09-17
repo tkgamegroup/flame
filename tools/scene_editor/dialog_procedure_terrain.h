@@ -554,7 +554,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				if (ok)
 				{
 					auto e = setting.e->copy();
-					auto n = e->get_component_t<cNode>();
+					auto n = e->node();
 					n->set_pos(vec3(p.x * extent.x, height_map->linear_sample(p).r * extent.y, p.y * extent.z));
 					n->set_eul(vec3(linearRand(0.f, 360.f), 0.f, 0.f));
 					e_dst->add_child(e);
