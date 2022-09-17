@@ -45,6 +45,8 @@ An ECS 3D-Game-Engine.
 
 - OpenAL
 
+*Most of the requirements can be downloaded and built using the setup.py script*
+
 # Build:
 
 - run setup.py as administrator
