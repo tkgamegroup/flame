@@ -45,9 +45,11 @@ An ECS 3D-Game-Engine.
 
 - OpenAL
 
+*Most of the requirements can be downloaded and built using the setup.py script*
+
 # Build:
 
-- run setup.py as administrator
+- run setup.py as administrator or db-click run_setup_as_admin.bat (PS: you need py3 not py2 in the environment!)
 
 - cmake
 
