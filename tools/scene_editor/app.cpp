@@ -10,6 +10,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
+#include <flame/universe/components/dir_light.h>
 #include <flame/universe/systems/renderer.h>
 
 App app;
@@ -594,8 +595,8 @@ void App::new_prefab(const std::filesystem::path& path)
 	e_cube->add_component<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
 	e->add_child(e_cube);
 	auto e_light = Entity::create();
-	e_light->add_component<cNode>()->set_eul(vec3(0.f, 45.f, 0.f));
-	e_light->add_component<cDirLight>();
+	e_light->add_component<cNode>()->set_eul(vec3(0.f, -45.f, 0.f));
+	e_light->add_component<cDirLight>()->cast_shadow = true;
 	e->add_child(e_light);
 	e->save(path);
 }
