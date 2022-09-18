@@ -331,6 +331,11 @@ void App::init()
 
 void App::new_project(const std::filesystem::path& path)
 {
+	if (!std::filesystem::exists(path))
+	{
+		wprintf(L"cannot create project: %s not exists\n", path.c_str());
+		return;
+	}
 	if (!std::filesystem::is_empty(path))
 	{
 		wprintf(L"cannot create project: %s is not an empty directory\n", path.c_str());

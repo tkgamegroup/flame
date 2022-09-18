@@ -160,7 +160,7 @@ namespace ImGui
 				if (ImGui::Button("OK"))
 				{
 					if (callback)
-						callback(true, path);
+						callback(true, explorer.opened_folder ? explorer.opened_folder->path / path : path);
 					close();
 				}
 				ImGui::SameLine();
@@ -223,12 +223,7 @@ namespace ImGui
 		dialog->explorer.reset(!start_dir.empty() ? start_dir : L"This Computer");
 		dialog->explorer.peeding_open_node = { dialog->explorer.folder_tree.get(), false };
 		dialog->explorer.select_callback = [dialog](const std::filesystem::path& path) {
-			dialog->path = path;
-		};
-		dialog->explorer.dbclick_callback = [dialog](const std::filesystem::path& path) {
-			if (dialog->callback)
-				dialog->callback(true, path);
-			dialog->close();
+			dialog->path = path.filename();
 		};
 		Dialog::open(dialog);
 	}
