@@ -430,7 +430,7 @@ namespace flame
 									if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 									{
 										auto fn = find_file(parent_path, tex->GetFileName());
-										if (copy_textures)
+										if (copy_textures && std::filesystem::exists(fn))
 										{
 											auto copied = false;
 											auto dst = parent_path / fn.filename();
