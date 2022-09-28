@@ -300,6 +300,7 @@ namespace flame
 
 		normal_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
 		tangent_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
+		dirty = true;
 
 		std::vector<float> heights;
 		heights.resize(sz1.x * sz1.y);

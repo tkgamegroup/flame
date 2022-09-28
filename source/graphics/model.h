@@ -100,7 +100,12 @@ namespace flame
 
 			struct Get
 			{
-				// could be "standard_<name>" to get standard models ("cube", "sphere")
+				// could be "standard_<name>" to get standard models
+				// standard models:
+				//  Name		| Size
+				//   cube		|  hf-ext: 0.5
+				//   sphere		|  radius: 0.5
+				//   cylinder	|  radius: 0.5, height: 1.0
 				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;

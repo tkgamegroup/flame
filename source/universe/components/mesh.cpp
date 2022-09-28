@@ -57,33 +57,34 @@ namespace flame
 			case "instance"_h:
 				if (!parmature && dirty)
 				{
-					sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
+					if (enable)
+						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
 					dirty = false;
 				}
 				break;
 			case "gbuffer"_h:
-				if (draw_data.category == "mesh"_h && material->opaque)
+				if (draw_data.category == "mesh"_h && enable && material->opaque)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case "forward"_h:
-				if (draw_data.category == "mesh"_h && !material->opaque)
+				if (draw_data.category == "mesh"_h && enable && !material->opaque)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case "occulder"_h:
-				if (cast_shadow)
+				if (enable && cast_shadow)
 				{
 					if (draw_data.category == "mesh"_h)
 						draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				}
 				break;
 			case "pick_up"_h:
-				if (draw_data.category == "mesh"_h)
+				if (draw_data.category == "mesh"_h && enable)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			}
 		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
-			if (!mesh)
+			if (!mesh || !enable)
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;

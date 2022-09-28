@@ -61,7 +61,7 @@ namespace flame
 
 		Listeners<void(uint, void*, void*)> message_listeners;
 
-		std::unique_ptr<PrefabInstance> prefab;
+		std::unique_ptr<PrefabInstance> prefab_instance;
 
 		void* userdata = nullptr;
 
@@ -207,11 +207,11 @@ namespace flame
 	};
 
 	PrefabInstance::PrefabInstance(EntityPtr _e, const std::filesystem::path& filename) :
-		e(e),
+		e(_e),
 		filename(filename)
 	{
 		auto e = (Entity*)_e;
-		assert(!e->prefab);
-		e->prefab.reset(this);
+		assert(!e->prefab_instance);
+		e->prefab_instance.reset(this);
 	}
 }

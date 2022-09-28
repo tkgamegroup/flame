@@ -53,7 +53,7 @@ void View_Hierarchy::on_draw()
 		if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
 			ImGui::SetNextItemOpen(true);
 
-		if (e->prefab)
+		if (e->prefab_instance)
 			in_prefab = true;
 		auto name = e->name;
 		if (!in_prefab)
@@ -87,7 +87,7 @@ void View_Hierarchy::on_draw()
 				else
 				{
 					auto e_src = *(EntityPtr*)payload->Data;
-					if (!e_src->prefab && get_prefab_instance(e_src))
+					if (!e_src->prefab_instance && get_prefab_instance(e_src))
 					{
 						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 						return nullptr;

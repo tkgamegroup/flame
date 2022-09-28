@@ -80,7 +80,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				add_event([this]() {
 					generate();
 					return false;
-					});
+				});
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Close"))
@@ -516,15 +516,26 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				continue;
 			auto e = Entity::create();
 			e->load(sp[0]);
+			new PrefabInstance(e, sp[0]);
 			auto nav_obstacle = e->get_component_t<cNavObstacle>();
 			if (nav_obstacle)
 				spawn_settings.push_back({ e, nav_obstacle, s2t<uint>(sp[1]), s2t<uint>(sp[2]) });
 			else
 				delete e;
 		}
-		auto e_dst = terrain->entity;
+		auto e_dst_parent = terrain->entity->parent;
+		auto node_name = "terrain_auto_spawn";
+		auto e_dst = e_dst_parent->find_child(node_name);
+		if (!e_dst)
+		{
+			e_dst = Entity::create();
+			e_dst->name = node_name;
+			e_dst->add_component<cNode>();
+			e_dst_parent->add_child(e_dst);
+		}
 		e_dst->remove_all_children();
 		std::vector<vec3> spawned_objects;
+		auto spawn_offset = terrain->node->pos;
 		for (auto& setting : spawn_settings)
 		{
 			auto r = setting.o->radius;
@@ -554,9 +565,13 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 				if (ok)
 				{
 					auto e = setting.e->copy();
+					new PrefabInstance(e, setting.e->prefab_instance->filename);
+					e->file_id = setting.e->file_id;
 					auto n = e->node();
-					n->set_pos(vec3(p.x * extent.x, height_map->linear_sample(p).r * extent.y, p.y * extent.z));
+					n->set_pos(spawn_offset + vec3(p.x * extent.x, height_map->linear_sample(p).r * extent.y, p.y * extent.z));
 					n->set_eul(vec3(linearRand(0.f, 360.f), 0.f, 0.f));
+					e->prefab_instance->mark_modifier(setting.e->file_id, "flame::cNode", "pos");
+					e->prefab_instance->mark_modifier(setting.e->file_id, "flame::cNode", "eul");
 					e_dst->add_child(e);
 					spawned_objects.push_back(vec3(p, r_uv));
 				}

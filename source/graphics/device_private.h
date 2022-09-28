@@ -13,7 +13,8 @@ namespace flame
 		{
 			VkInstance vk_instance;
 			VkPhysicalDevice vk_physical_device;
-			VkPhysicalDeviceProperties vk_props;
+			VkPhysicalDeviceProperties2 vk_props;
+			VkPhysicalDeviceDepthStencilResolveProperties vk_resolve_props;
 			VkPhysicalDeviceFeatures vk_features; 
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;

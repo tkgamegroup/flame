@@ -5,6 +5,7 @@
 #include "../components/node_private.h"
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
+#include "../components/nav_mesh_private.h"
 #include "../components/nav_agent_private.h"
 #include "../components/nav_obstacle_private.h"
 #include "../octree.h"
@@ -411,7 +412,7 @@ namespace flame
 		return n;
 	}
 
-	void sScenePrivate::generate_nav_mesh()
+	void sScenePrivate::generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
 	{
 #ifdef USE_RECASTNAV
 		std::vector<vec3> positions;
@@ -423,67 +424,70 @@ namespace flame
 			if (!e->global_enable)
 				return;
 
-			if (auto node = e->get_component_i<cNode>(0); node)
+			if (auto node = e->node(); node)
 			{
-				if (auto mesh = e->get_component_t<cMesh>(); mesh)
+				if (auto navmesh = e->get_component_t<cNavMesh>(); navmesh)
 				{
-
-				}
-				if (auto terrain = e->get_component_t<cTerrain>(); terrain)
-				{
-					auto node = terrain->node;
-					auto g_pos = node->g_pos;
-					auto g_scl = node->g_scl;
-
-					if (auto height_map = terrain->height_map; height_map)
+					if (auto mesh = e->get_component_t<cMesh>(); mesh)
 					{
-						auto blocks = terrain->blocks;
-						auto tess_level = terrain->tess_level;
-						auto cx = blocks.x * tess_level;
-						auto cz = blocks.y * tess_level;
-						auto extent = terrain->extent;
-						extent.x /= cx;
-						extent.z /= cz;
 
-						auto n0 = positions.size();
-						positions.resize(n0 + (cx + 1) * (cz + 1));
-						for (auto z = 0; z < cz + 1; z++)
+					}
+					if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+					{
+						auto node = terrain->node;
+						auto pos = node->pos;
+						auto scl = node->scl;
+
+						if (auto height_map = terrain->height_map; height_map)
 						{
-							for (auto x = 0; x < cx + 1; x++)
+							auto blocks = terrain->blocks;
+							auto tess_level = terrain->tess_level;
+							auto cx = blocks.x * tess_level;
+							auto cz = blocks.y * tess_level;
+							auto extent = terrain->extent;
+							extent.x /= cx;
+							extent.z /= cz;
+
+							auto n0 = positions.size();
+							positions.resize(n0 + (cx + 1) * (cz + 1));
+							for (auto z = 0; z < cz + 1; z++)
 							{
-								positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x * g_scl.x,
-									height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * g_scl.y,
-									z * extent.z * g_scl.z) + g_pos;
-							}
-						}
-						auto n1 = indices.size();
-						indices.resize(n1 + cx * cz * 6);
-						for (auto z = 0; z < cz; z++)
-						{
-							for (auto x = 0; x < cx; x++)
-							{
-								auto s1 = x % tess_level < tess_level / 2 ? 1 : -1;
-								auto s2 = z % tess_level < tess_level / 2 ? 1 : -1;
-								auto dst = &indices[n1 + (z * cx + x) * 6];
-								if (s1 * s2 > 0)
+								for (auto x = 0; x < cx + 1; x++)
 								{
-									dst[0] = z * (cx + 1) + x;
-									dst[1] = (z + 1) * (cx + 1) + x;
-									dst[2] = (z + 1) * (cx + 1) + x + 1;
-
-									dst[3] = z * (cx + 1) + x;
-									dst[4] = (z + 1) * (cx + 1) + x + 1;
-									dst[5] = z * (cx + 1) + x + 1;
+									positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x * scl.x,
+										height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * scl.y,
+										z * extent.z * scl.z) + pos;
 								}
-								else
+							}
+							auto n1 = indices.size();
+							indices.resize(n1 + cx * cz * 6);
+							for (auto z = 0; z < cz; z++)
+							{
+								for (auto x = 0; x < cx; x++)
 								{
-									dst[0] = z * (cx + 1) + x;
-									dst[1] = (z + 1) * (cx + 1) + x;
-									dst[2] = z * (cx + 1) + x + 1;
+									auto s1 = x % tess_level < tess_level / 2 ? 1 : -1;
+									auto s2 = z % tess_level < tess_level / 2 ? 1 : -1;
+									auto dst = &indices[n1 + (z * cx + x) * 6];
+									if (s1 * s2 > 0)
+									{
+										dst[0] = z * (cx + 1) + x;
+										dst[1] = (z + 1) * (cx + 1) + x;
+										dst[2] = (z + 1) * (cx + 1) + x + 1;
 
-									dst[3] = z * (cx + 1) + x + 1;
-									dst[4] = (z + 1) * (cx + 1) + x;
-									dst[5] = (z + 1) * (cx + 1) + x + 1;
+										dst[3] = z * (cx + 1) + x;
+										dst[4] = (z + 1) * (cx + 1) + x + 1;
+										dst[5] = z * (cx + 1) + x + 1;
+									}
+									else
+									{
+										dst[0] = z * (cx + 1) + x;
+										dst[1] = (z + 1) * (cx + 1) + x;
+										dst[2] = z * (cx + 1) + x + 1;
+
+										dst[3] = z * (cx + 1) + x + 1;
+										dst[4] = (z + 1) * (cx + 1) + x;
+										dst[5] = (z + 1) * (cx + 1) + x + 1;
+									}
 								}
 							}
 						}
@@ -503,10 +507,6 @@ namespace flame
 		auto cell_height = 0.2f;
 		auto tile_size = 48.f;
 
-		auto agent_height = 1.8f;
-		auto agent_radius = 0.3f;
-		auto agent_max_climb = 0.9f;
-
 		auto edge_max_error = 1.3f;
 
 		int gw = 0, gh = 0;
@@ -519,9 +519,9 @@ namespace flame
 		memset(&cfg, 0, sizeof(rcConfig));
 		cfg.cs = cell_size;
 		cfg.ch = cell_height;
-		cfg.walkableSlopeAngle = 45.f;
+		cfg.walkableSlopeAngle = walkable_slope_angle;
  		cfg.walkableHeight = (int)ceil(agent_height / cfg.ch);
-		cfg.walkableClimb = (int)ceil(agent_max_climb / cfg.ch);
+		cfg.walkableClimb = (int)ceil(walkable_climb / cfg.ch);
 		cfg.walkableRadius = (int)ceil(agent_radius / cfg.cs);
 		cfg.maxEdgeLen = (int)(/*edge max len*/12.f / cfg.cs);
 		cfg.maxSimplificationError = edge_max_error;
@@ -549,7 +549,7 @@ namespace flame
 		tcparams.height = (int)tile_size;
 		tcparams.walkableHeight = agent_height;
 		tcparams.walkableRadius = agent_radius;
-		tcparams.walkableClimb = agent_max_climb;
+		tcparams.walkableClimb = walkable_climb;
 		tcparams.maxSimplificationError = edge_max_error;
 		tcparams.maxTiles = tw * th * EXPECTED_LAYERS_PER_TILE;
 		tcparams.maxObstacles = 128;
@@ -1053,12 +1053,28 @@ namespace flame
 		}
 		if (dt_tile_cache)
 		{
-			for (auto i = (int)nav_obstacles.size() - 1; i >= 0; i--)
+			int count = nav_obstacles.size();
+			for (auto i = count - 1; i >= 0; i--)
 			{
 				auto ob = nav_obstacles[i];
 				if (ob->dt_id != -1)
 					break;
-				dt_tile_cache->addObstacle(&ob->node->pos[0], ob->height, ob->radius, (uint*)&ob->dt_id);
+				if (dt_tile_cache->addObstacle(&ob->node->pos[0], ob->height, ob->radius, (uint*)&ob->dt_id) != DT_SUCCESS)
+				{
+					auto n = count - i - 1;
+					if (n > 0)
+					{
+						auto temp = nav_obstacles;
+						for (auto j = 0; j < count; j++)
+						{
+							if (j < n)
+								nav_obstacles[j] = temp[count - j - 1];
+							else
+								nav_obstacles[j] = temp[j - n];
+						}
+					}
+					break;
+				}
 			}
 
 			dt_tile_cache->update(delta_time, dt_nav_mesh);

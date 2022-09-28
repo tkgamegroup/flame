@@ -42,8 +42,10 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cRigid);
 	FLAME_UNIVERSE_TYPE(cShape);
 	FLAME_UNIVERSE_TYPE(cCController);
+	FLAME_UNIVERSE_TYPE(cNavMesh);
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
+	FLAME_UNIVERSE_TYPE(cNavScene);
 	FLAME_UNIVERSE_TYPE(cDirLight);
 	FLAME_UNIVERSE_TYPE(cPtLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
@@ -52,8 +54,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(sInput);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sRenderer);
-
-	struct OctNode;
 
 	enum StateFlags
 	{
@@ -65,42 +65,6 @@ namespace flame
 	};
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
-
-	enum Align
-	{
-		AlignNone,
-		AlignMin,
-		AlignMax,
-		AlignMiddle,
-		AlignMinMax
-	};
-
-	enum LayoutType
-	{
-		LayoutFree,
-		LayoutHorizontal,
-		LayoutVertical,
-		LayoutTile
-	};
-
-	enum ScrollType
-	{
-		ScrollHorizontal,
-		ScrollVertical,
-		ScrollBoth
-	};
-
-	enum SplitterType
-	{
-		SplitterHorizontal,
-		SplitterVertical
-	};
-
-	enum MenuType
-	{
-		MenuTop,
-		MenuSub
-	};
 
 	enum LightType
 	{
@@ -115,6 +79,8 @@ namespace flame
 		RenderShaded,
 		RenderNormalData
 	};
+
+	struct OctNode;
 
 	FLAME_UNIVERSE_API void* universe_info();
 }

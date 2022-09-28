@@ -53,12 +53,15 @@ void View_Scene::selected_to_focus()
 void View_Scene::on_draw()
 {
 	auto& camera_list = cCamera::list();
+	static bool outline = true;
 	{
 		static const char* names[8];
 		auto n = min(countof(names), camera_list.size());
 		for (auto i = 0; i < n; i++)
 			names[i] = camera_list[i]->entity->name.c_str();
 		ImGui::Combo("Camera", (int*)&camera_idx, names, n);
+		ImGui::SameLine();
+		ImGui::Checkbox("Outline", &outline);
 	}
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
@@ -155,7 +158,7 @@ void View_Scene::on_draw()
 		if (!editor_node->drawers.exist("scene"_h))
 		{
 			editor_node->drawers.add([this](DrawData& draw_data) {
-				if (draw_data.pass == "outline"_h)
+				if (draw_data.pass == "outline"_h && outline)
 				{
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
@@ -184,7 +187,7 @@ void View_Scene::on_draw()
 							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
 					}
 				}
-				else if (draw_data.pass == "primitive"_h)
+				if (draw_data.pass == "primitive"_h)
 				{
 					if (show_AABB)
 					{

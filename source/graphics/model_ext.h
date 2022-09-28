@@ -82,7 +82,7 @@ namespace flame
 
 			for (int level = 1; level < horiSubdiv; level++)
 			{
-				for (int i = 0; i < vertSubdiv; i++)
+				for (auto i = 0; i < vertSubdiv; i++)
 				{
 					auto radian = radians((level * 180.f / horiSubdiv - 90.f));
 					auto ring_radius = cos(radian) * radius;
@@ -113,7 +113,7 @@ namespace flame
 			{
 				if (level == 0)
 				{
-					for (int i = 0; i < vertSubdiv; i++)
+					for (auto i = 0; i < vertSubdiv; i++)
 					{
 						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
 
@@ -124,7 +124,7 @@ namespace flame
 				}
 				else if (level == horiSubdiv - 1)
 				{
-					for (int i = 0; i < vertSubdiv; i++)
+					for (auto i = 0; i < vertSubdiv; i++)
 					{
 						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
 
@@ -135,7 +135,7 @@ namespace flame
 				}
 				else
 				{
-					for (int i = 0; i < vertSubdiv; i++)
+					for (auto i = 0; i < vertSubdiv; i++)
 					{
 						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
 
@@ -148,6 +148,57 @@ namespace flame
 						mesh.indices.push_back(staging_indices[level + 1][ii]);
 					}
 				}
+			}
+		}
+
+		inline void mesh_add_cylinder(Mesh& mesh, float radius, float height, uint subdiv)
+		{
+			// top cap
+			auto top_center = vec3(0.f, +height, 0.f);
+			auto top_center_index = mesh.positions.size();
+			mesh.positions.push_back(top_center);
+			std::vector<uint> top_ring_indices(subdiv);
+			for (auto i = 0; i < subdiv; i++)
+			{
+				top_ring_indices[i] = mesh.positions.size();
+				auto rad = radians((float)i / subdiv * 360.f);
+				mesh.positions.push_back(vec3(cos(rad) * radius, +height, sin(rad) * radius));
+			}
+			for (auto i = 0; i < subdiv; i++)
+			{
+				mesh.indices.push_back(top_ring_indices[i]);
+				mesh.indices.push_back(top_center_index);
+				mesh.indices.push_back(top_ring_indices[i + 1 >= subdiv ? 0 : i + 1]);
+			}
+
+			// bottom cap
+			auto bottom_center = vec3(0.f, -height, 0.f);
+			auto bottom_center_index = mesh.positions.size();
+			mesh.positions.push_back(bottom_center);
+			std::vector<uint> bottom_ring_indices(subdiv);
+			for (auto i = 0; i < subdiv; i++)
+			{
+				bottom_ring_indices[i] = mesh.positions.size();
+				auto rad = radians((float)i / subdiv * 360.f);
+				mesh.positions.push_back(vec3(cos(rad) * radius, -height, sin(rad) * radius));
+			}
+			for (auto i = 0; i < subdiv; i++)
+			{
+				mesh.indices.push_back(bottom_ring_indices[i + 1 >= subdiv ? 0 : i + 1]);
+				mesh.indices.push_back(bottom_center_index);
+				mesh.indices.push_back(bottom_ring_indices[i]);
+			}
+
+			// body
+			for (auto i = 0; i < subdiv; i++)
+			{
+				mesh.indices.push_back(top_ring_indices[i]);
+				mesh.indices.push_back(top_ring_indices[i + 1 >= subdiv ? 0 : i + 1]);
+				mesh.indices.push_back(bottom_ring_indices[i]);
+
+				mesh.indices.push_back(top_ring_indices[i + 1 >= subdiv ? 0 : i + 1]);
+				mesh.indices.push_back(bottom_ring_indices[i + 1 >= subdiv ? 0 : i + 1]);
+				mesh.indices.push_back(bottom_ring_indices[i]);
 			}
 		}
 	}

@@ -114,7 +114,8 @@ namespace flame
 						auto& s = dst.dep_res_state;
 						s = {};
 						s.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE;
-						s.depthResolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+						s.depthResolveMode = (device->vk_resolve_props.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT)
+							!= 0 ? VK_RESOLVE_MODE_AVERAGE_BIT : VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
 						s.pDepthStencilResolveAttachment = &r;
 
 						sp.pNext = &s;

@@ -109,8 +109,8 @@ void App::init()
 			ImGui::Separator();
 			if (ImGui::BeginMenu("NavMesh"))
 			{
-				if (ImGui::MenuItem("Generate"))
-					sScene::instance()->generate_nav_mesh();
+				//if (ImGui::MenuItem("Generate"))
+				//	sScene::instance()->generate_nav_mesh();
 				if (ImGui::MenuItem("Test", nullptr, &navmesh_test.open))
 				{
 					auto node = e_editor->get_component_i<cNode>(0);
@@ -654,7 +654,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	if (e == e_prefab)
 		return false;
-	if (!e->prefab && get_prefab_instance(e))
+	if (!e->prefab_instance && get_prefab_instance(e))
 	{
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
@@ -746,8 +746,8 @@ PrefabInstance* get_prefab_instance(EntityPtr e)
 	PrefabInstance* ret = nullptr;
 	while (e)
 	{
-		if (e->prefab)
-			ret = e->prefab.get();
+		if (e->prefab_instance)
+			ret = e->prefab_instance.get();
 		e = e->parent;
 	}
 	return ret;

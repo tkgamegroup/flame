@@ -429,7 +429,11 @@ namespace flame
 			{
 				auto c = ((EntityPtr)dst_o)->add_component(hash);
 				if (c)
+				{
+					if (auto a = src.attribute("enable"); a)
+						c->enable = a.as_bool();
 					unserialize_xml(*ui, src, c, spec);
+				}
 			}
 			else
 				printf("cannot find component with name %s\n", name.c_str());
@@ -454,7 +458,7 @@ namespace flame
 						continue;
 
 					unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", attr->setter_idx, n, obj);
-					e->prefab->modifications.push_back(target);
+					e->prefab_instance->modifications.push_back(target);
 				}
 			}
 			else
@@ -499,16 +503,18 @@ namespace flame
 			if (ui)
 			{
 				dst.append_attribute("type_name").set_value(ui->name.c_str());
+				if (!comp->enable)
+					dst.append_attribute("enable").set_value("false");
 				serialize_xml(*ui, comp, dst, spec);
 			}
 		};
 		spec.obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (EntityPtr)src;
-			if (e->prefab)
+			if (e->prefab_instance)
 			{
-				dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab->filename).string().c_str());
+				dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab_instance->filename).string().c_str());
 				auto n_mod = dst.append_child("modifications");
-				for (auto& target : e->prefab->modifications)
+				for (auto& target : e->prefab_instance->modifications)
 				{
 					void* obj;
 					const Attribute* attr;

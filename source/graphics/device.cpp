@@ -146,9 +146,16 @@ namespace flame
 				for (auto& extension : device_extensions)
 					printf("  %s\n", extension.extensionName);
 
-				vkGetPhysicalDeviceProperties(physical_device, &ret->vk_props);
-				printf("gpu: %s\n", ret->vk_props.deviceName);
+				ret->vk_resolve_props = {};
+				ret->vk_resolve_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
+				ret->vk_props = {};
+				ret->vk_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+				ret->vk_props.pNext = &ret->vk_resolve_props;
+				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props); 
+				printf("gpu: %s\n", ret->vk_props.properties.deviceName);
+
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
+
 				uint queue_family_property_count = 0;
 				std::vector<VkQueueFamilyProperties> queue_family_properties;
 				vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_property_count, nullptr);

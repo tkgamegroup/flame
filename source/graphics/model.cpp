@@ -1147,6 +1147,7 @@ namespace flame
 
 		static ModelPtr standard_cube = nullptr;
 		static ModelPtr standard_sphere = nullptr;
+		static ModelPtr standard_cylinder = nullptr;
 
 		static std::vector<std::unique_ptr<ModelT>> models;
 
@@ -1186,6 +1187,21 @@ namespace flame
 							standard_sphere = m;
 						}
 						return standard_sphere;
+					}
+					else if (wstr == L"cylinder")
+					{
+						if (!standard_cylinder)
+						{
+							auto m = new ModelPrivate;
+							m->filename = L"standard_cylinder";
+							auto& mesh = m->meshes.emplace_back();
+							mesh.model = m;
+							mesh_add_cylinder(mesh, 0.5f, 1.f, 12);
+							mesh.calc_bounds();
+
+							standard_cylinder = m;
+						}
+						return standard_cylinder;
 					}
 					return nullptr;
 				}

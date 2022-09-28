@@ -156,6 +156,8 @@ namespace flame
 
 			inline FolderTreeNode* find_folder(const std::filesystem::path& _path)
 			{
+				if (!folder_tree)
+					return nullptr;
 				auto path = Path::rebase(folder_tree->path, _path);
 				std::vector<std::string> stems;
 				for (auto it : path)
@@ -456,11 +458,17 @@ namespace flame
 							if (select_callback)
 								select_callback(selected_path);
 						}
-						if (opened_folder && folder_context_menu_callback)
+						if (opened_folder)
 						{
 							if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
 							{
-								folder_context_menu_callback(opened_folder->path);
+								if (folder_context_menu_callback)
+									folder_context_menu_callback(opened_folder->path);
+								else
+								{
+									//if (ImGui::MenuItem("New Folder"))
+									//	std::filesystem::create_directory();
+								}
 								ImGui::EndPopup();
 							}
 						}

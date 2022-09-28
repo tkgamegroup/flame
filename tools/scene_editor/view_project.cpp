@@ -263,7 +263,7 @@ void View_Project::init()
 		if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 		{
 			auto e_src = *(EntityPtr*)payload->Data;
-			if (e_src->prefab)
+			if (e_src->prefab_instance)
 				app.open_message_dialog("Error", "Entity is already a prefab instance");
 			else
 			{

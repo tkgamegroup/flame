@@ -109,7 +109,7 @@ StagingVector& get_staging_vector(const void* id, TypeInfo* type, void* vec)
 	return ret;
 }
 
-std::string show_udt(const UdtInfo& ui, void* src);
+std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint, void*)>& cb = {});
 
 bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, int offset, int getter_idx, int setter_idx, void* src, const void* id) 
 {
@@ -334,7 +334,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 	return changed;
 }
 
-std::string show_udt(const UdtInfo& ui, void* src)
+std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint, void*)>& cb)
 {
 	std::string changed_name;
 
@@ -344,6 +344,8 @@ std::string show_udt(const UdtInfo& ui, void* src)
 		{
 			if (show_variable(ui, v.type, v.name, v.offset, -1, -1, src, &v))
 				changed_name = v.name;
+			if (cb)
+				cb(v.name_hash, src);
 		}
 	}
 	else
@@ -352,6 +354,8 @@ std::string show_udt(const UdtInfo& ui, void* src)
 		{
 			if (show_variable(ui, a.type, a.name, a.var_off(), a.getter_idx, a.setter_idx, src, &a))
 				changed_name = a.name;
+			if (cb)
+				cb(a.name_hash, src);
 		}
 	}
 
@@ -412,9 +416,9 @@ void View_Inspector::on_draw()
 		auto e = selection.entity();
 
 		ImGui::PushID(e);
-		if (e->prefab)
+		if (e->prefab_instance)
 		{
-			auto& path = e->prefab->filename;
+			auto& path = e->prefab_instance->filename;
 			auto str = path.string();
 			ImGui::InputText("prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
@@ -445,14 +449,52 @@ void View_Inspector::on_draw()
 			if (open)
 			{
 				ImGui::Checkbox("enable", &c->enable);
-				auto changed_name = show_udt(ui, c.get());
+				auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
+					if (ui.name_hash == "flame::cMesh"_h)
+					{
+						if (name == "mesh_name"_h)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("S"))
+							{
+								auto& ori_name = ((cMeshPtr)obj)->mesh_name;
+
+								static const wchar_t* names[] = {
+									L"standard_cube",
+									L"standard_sphere",
+									L"standard_cylinder"
+								};
+								auto idx = -1;
+								for (auto i = 0; i < countof(names); i++)
+								{
+									if (ori_name == names[i])
+									{
+										idx = i;
+										break;
+									}
+								}
+								if (idx == -1 || idx + 1 == countof(names))
+									idx = 0;
+								else
+									idx++;
+								((cMeshPtr)obj)->set_mesh_name(names[idx]);
+							}
+						}
+						else if (name == "material_name"_h)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("D"))
+								((cMeshPtr)obj)->set_material_name(L"default");
+						}
+					}
+				});
 				if (!changed_name.empty())
 				{
 					if (auto ins = get_prefab_instance(e); ins)
 						ins->mark_modifier(e->file_id, ui.name, changed_name);
 				}
 
-				if (ui.name == "flame::cNode")
+				if (ui.name_hash == "flame::cNode"_h)
 				{
 					auto node = (cNodePtr)c.get();
 					ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
@@ -462,21 +504,37 @@ void View_Inspector::on_draw()
 					ImGui::InputFloat3("g_rot.z", (float*)&node->g_rot[2], "%.3f", ImGuiInputTextFlags_ReadOnly);
 					ImGui::InputFloat3("g_scl", (float*)&node->g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
 				}
-				else if (ui.name == "flame::cArmature")
+				else if (ui.name_hash == "flame::cArmature"_h)
 				{
 					auto armature = (cArmaturePtr)c.get();
-					static char name[100];
-					ImGui::InputText("name", name, countof(name));
-					ImGui::SameLine();
-					if (ImGui::Button("Play"))
-						armature->play(sh(name));
-					ImGui::SameLine();
-					if (ImGui::Button("Stop"))
-						armature->stop();
-					ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					if (!armature->animation_names.empty())
+					{
+						static int idx = 0;
+						idx = clamp(idx, 0, (int)armature->animation_names.size());
+						if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
+						{
+							for (auto i = 0; i < armature->animation_names.size(); i++)
+							{
+								auto& name = armature->animation_names[i].second;
+								if (ImGui::Selectable(name.c_str()))
+								{
+									idx = i;
+									armature->play(sh(name.c_str()));
+								}
+							}
+							ImGui::EndCombo();
+						}
+					}
+					if (armature->playing_name != 0)
+					{
+						ImGui::SameLine();
+						if (ImGui::Button("Stop"))
+							armature->stop();
+						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					}
 					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
 				}
-				else if (ui.name == "flame::cTerrain")
+				else if (ui.name_hash == "flame::cTerrain"_h)
 				{
 					auto terrain = (cTerrainPtr)c.get();
 					if (ImGui::Button("Procedure Terrain"))
