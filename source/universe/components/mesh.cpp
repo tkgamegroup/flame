@@ -84,13 +84,17 @@ namespace flame
 			}
 		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
-			if (!mesh || !enable)
+			if (!mesh)
 				return false;
 			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
 			return true;
 		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)
+				dirty = true;
+		}, "mesh"_h);
+		data_listeners.add([this](uint hash) {
+			if (hash == "enable"_h)
 				dirty = true;
 		}, "mesh"_h);
 

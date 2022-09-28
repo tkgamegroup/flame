@@ -412,7 +412,22 @@ namespace flame
 		return n;
 	}
 
+	static bool sig_gen_nav_mesh = false;
+	static float nav_mesh_agent_radius;
+	static float nav_mesh_agent_height;
+	static float nav_mesh_walkable_climb;
+	static float nav_mesh_walkable_slope_angle;
+
 	void sScenePrivate::generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
+	{
+		sig_gen_nav_mesh = true;
+		nav_mesh_agent_radius = agent_radius;
+		nav_mesh_agent_height = agent_height;
+		nav_mesh_walkable_climb = walkable_climb;
+		nav_mesh_walkable_slope_angle = walkable_slope_angle;
+	}
+
+	void _generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, EntityPtr root)
 	{
 #ifdef USE_RECASTNAV
 		std::vector<vec3> positions;
@@ -426,18 +441,26 @@ namespace flame
 
 			if (auto node = e->node(); node)
 			{
+				auto pos = node->g_pos;
+				auto scl = node->g_scl;
+
 				if (auto navmesh = e->get_component_t<cNavMesh>(); navmesh)
 				{
-					if (auto mesh = e->get_component_t<cMesh>(); mesh)
+					if (auto cmesh = e->get_component_t<cMesh>(); cmesh)
 					{
+						auto mesh = cmesh->mesh;
 
+						auto pos_off = positions.size();
+						positions.resize(positions.size() + mesh->positions.size());
+						for (auto i = 0; i < mesh->positions.size(); i++)
+							positions[pos_off + i] = pos + mesh->positions[i] * scl;
+						auto idx_off = indices.size();
+						indices.resize(indices.size() + mesh->indices.size());
+						for (auto i = 0; i < mesh->indices.size(); i++)
+							indices[idx_off + i] = pos_off + mesh->indices[i];
 					}
 					if (auto terrain = e->get_component_t<cTerrain>(); terrain)
 					{
-						auto node = terrain->node;
-						auto pos = node->pos;
-						auto scl = node->scl;
-
 						if (auto height_map = terrain->height_map; height_map)
 						{
 							auto blocks = terrain->blocks;
@@ -448,45 +471,45 @@ namespace flame
 							extent.x /= cx;
 							extent.z /= cz;
 
-							auto n0 = positions.size();
-							positions.resize(n0 + (cx + 1) * (cz + 1));
+							auto pos_off = positions.size();
+							positions.resize(pos_off + (cx + 1) * (cz + 1));
 							for (auto z = 0; z < cz + 1; z++)
 							{
 								for (auto x = 0; x < cx + 1; x++)
 								{
-									positions[n0 + z * (cx + 1) + x] = vec3(x * extent.x * scl.x,
-										height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y * scl.y,
-										z * extent.z * scl.z) + pos;
+									positions[pos_off + z * (cx + 1) + x] = pos + vec3(x * extent.x,
+										height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y,
+										z * extent.z) * scl;
 								}
 							}
-							auto n1 = indices.size();
-							indices.resize(n1 + cx * cz * 6);
+							auto idx_off = indices.size();
+							indices.resize(idx_off + cx * cz * 6);
 							for (auto z = 0; z < cz; z++)
 							{
 								for (auto x = 0; x < cx; x++)
 								{
 									auto s1 = x % tess_level < tess_level / 2 ? 1 : -1;
 									auto s2 = z % tess_level < tess_level / 2 ? 1 : -1;
-									auto dst = &indices[n1 + (z * cx + x) * 6];
+									auto dst = &indices[idx_off + (z * cx + x) * 6];
 									if (s1 * s2 > 0)
 									{
-										dst[0] = z * (cx + 1) + x;
-										dst[1] = (z + 1) * (cx + 1) + x;
-										dst[2] = (z + 1) * (cx + 1) + x + 1;
+										dst[0] = pos_off + z * (cx + 1) + x;
+										dst[1] = pos_off + (z + 1) * (cx + 1) + x;
+										dst[2] = pos_off + (z + 1) * (cx + 1) + x + 1;
 
-										dst[3] = z * (cx + 1) + x;
-										dst[4] = (z + 1) * (cx + 1) + x + 1;
-										dst[5] = z * (cx + 1) + x + 1;
+										dst[3] = pos_off + z * (cx + 1) + x;
+										dst[4] = pos_off + (z + 1) * (cx + 1) + x + 1;
+										dst[5] = pos_off + z * (cx + 1) + x + 1;
 									}
 									else
 									{
-										dst[0] = z * (cx + 1) + x;
-										dst[1] = (z + 1) * (cx + 1) + x;
-										dst[2] = z * (cx + 1) + x + 1;
+										dst[0] = pos_off + z * (cx + 1) + x;
+										dst[1] = pos_off + (z + 1) * (cx + 1) + x;
+										dst[2] = pos_off + z * (cx + 1) + x + 1;
 
-										dst[3] = z * (cx + 1) + x + 1;
-										dst[4] = (z + 1) * (cx + 1) + x;
-										dst[5] = (z + 1) * (cx + 1) + x + 1;
+										dst[3] = pos_off + z * (cx + 1) + x + 1;
+										dst[4] = pos_off + (z + 1) * (cx + 1) + x;
+										dst[5] = pos_off + (z + 1) * (cx + 1) + x + 1;
 									}
 								}
 							}
@@ -499,7 +522,7 @@ namespace flame
 			}
 		};
 
-		form_mesh(world->root.get());
+		form_mesh(root);
 		for (auto& p : positions)
 			bounds.expand(p);
 
@@ -1020,6 +1043,12 @@ namespace flame
 	void sScenePrivate::update()
 	{
 		update_transform(world->root.get(), false);
+
+		if (sig_gen_nav_mesh)
+		{
+			_generate_nav_mesh(nav_mesh_agent_radius, nav_mesh_agent_height, nav_mesh_walkable_climb, nav_mesh_walkable_slope_angle, world->root.get());
+			sig_gen_nav_mesh = false;
+		}
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)

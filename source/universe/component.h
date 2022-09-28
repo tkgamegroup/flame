@@ -25,6 +25,14 @@ namespace flame
 				l.first(h);
 		}
 
+		inline void set_enable(bool v)
+		{
+			if (enable == v)
+				return;
+			enable = v;
+			data_changed("enable"_h);
+		}
+
 		virtual void on_init() {}
 		virtual void on_active() {}
 		virtual void on_inactive() {}

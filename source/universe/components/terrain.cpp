@@ -91,6 +91,10 @@ namespace flame
 			if (hash == "transform"_h)
 				dirty = true;
 		}, "terrain"_h);
+		data_listeners.add([this](uint hash) {
+			if (hash == "enable"_h)
+				dirty = true;
+		}, "terrain"_h);
 
 		node->mark_transform_dirty();
 	}

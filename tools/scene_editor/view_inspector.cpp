@@ -448,7 +448,10 @@ void View_Inspector::on_draw()
 			}
 			if (open)
 			{
-				ImGui::Checkbox("enable", &c->enable);
+				auto enable = c->enable;
+				ImGui::Checkbox("enable", &enable);
+				if (enable != c->enable)
+					c->set_enable(enable);
 				auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
 					if (ui.name_hash == "flame::cMesh"_h)
 					{

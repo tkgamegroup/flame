@@ -324,6 +324,7 @@ namespace flame
 		for (auto& c : components)
 		{
 			auto cc = ret->add_component(c->type_hash);
+			cc->enable = c->enable;
 			auto& ui = *find_udt(c->type_hash);
 			for (auto& a : ui.attributes)
 			{
@@ -551,6 +552,13 @@ namespace flame
 				ret->file_id = *file_id;
 			else
 				ret->file_id = ret->instance_id;
+			return ret;
+		}
+
+		EntityPtr operator()(const std::filesystem::path& filename) override
+		{
+			auto ret = new EntityPrivate();
+			ret->load(filename);
 			return ret;
 		}
 	}Entity_create;
