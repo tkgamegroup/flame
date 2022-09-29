@@ -80,8 +80,18 @@ void View_Project::init()
 			app.open_prefab(path);
 	};
 	explorer.item_context_menu_callback = [this](const std::filesystem::path& path) {
+		auto ext = path.extension();
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
+		if (is_text_file(ext))
+		{
+			if (ImGui::MenuItem("Open In VS"))
+			{
+				auto vs_path = get_special_path("Visual Studio Installation Location");
+				if (!vs_path.empty())
+					exec(vs_path / L"Common7\\IDE\\devenv.exe", std::format(L" /edit \"{}\"", path.wstring()));
+			}
+		}
 		if (ImGui::BeginMenu("Copy Path"))
 		{
 			if (ImGui::MenuItem("Name"))
@@ -102,7 +112,7 @@ void View_Project::init()
 					std::error_code ec;
 					std::filesystem::rename(path, new_name, ec);
 				}
-			});
+			}, path.filename().stem().string());
 		}
 		if (ImGui::MenuItem("Delete"))
 		{

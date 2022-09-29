@@ -48,6 +48,20 @@ namespace flame
 			csidl = CSIDL_DESKTOP;
 		else if (type == "My Document")
 			csidl = CSIDL_MYDOCUMENTS;
+		else if (type == "Visual Studio Installation Location")
+		{
+			auto p = getenv("FLAME_PATH");
+			if (!p)
+				return L"";
+			std::filesystem::path engine_path = p;
+			system(std::format("{} -latest -property installationPath > temp.txt", (engine_path / L"vswhere.exe").string()).c_str());
+			if (!std::filesystem::exists(L"temp.txt"))
+				return L"";
+			auto ret = SUS::split(get_file_content(L"temp.txt"), '\n')[0];
+			ret.pop_back();
+			std::filesystem::remove(L"temp.txt");
+			return ret;
+		}
 		if (csidl != -1)
 		{
 			wchar_t buf[256];

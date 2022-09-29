@@ -191,10 +191,11 @@ namespace ImGui
 		Dialog::open(dialog);
 	}
 
-	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback, bool archive)
+	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback, const std::string default_value, bool archive)
 	{
 		auto dialog = new InputDialog;
 		dialog->title = title;
+		dialog->text = default_value;
 		dialog->callback = callback;
 		dialog->archive = archive;
 		if (archive)

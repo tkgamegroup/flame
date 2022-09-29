@@ -176,7 +176,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			if (ImGui::Button("P"))
 			{
 				add_event([path]() {
-					selection.select(Path::get(path), "project"_h);
+					selection.select(Path::get(path), "app"_h);
 					return false;
 				});
 			}

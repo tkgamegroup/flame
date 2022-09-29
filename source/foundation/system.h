@@ -25,6 +25,7 @@ namespace flame
 	FLAME_FOUNDATION_API uint64 performance_frequency();
 	// "Desktop"
 	// "My Document" - typical: C:\Documents and Settings\User\My Documents
+	// "Visual Studio Installation Location"
 	FLAME_FOUNDATION_API std::filesystem::path get_special_path(std::string_view type);
 	FLAME_FOUNDATION_API std::vector<std::filesystem::path> get_drives();
 	FLAME_FOUNDATION_API void directory_lock(const std::filesystem::path& path, bool lock);

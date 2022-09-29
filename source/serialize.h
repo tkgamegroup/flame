@@ -471,9 +471,10 @@ namespace flame
 		if (ext == L".txt" ||
 			ext == L".h" || ext == L".c" || ext == L".cpp" || ext == L".hpp" || ext == L".cxx" || ext == L".inl" ||
 			ext == L".glsl" || ext == L".vert" || ext == L".tesc" || ext == L".tese" || ext == L".geom" || ext == L".frag" || ext == L".hlsl" ||
+			ext == L".rp" || ext == L".dsl" || ext == L".pll" || ext == L".pipeline" || ext == L".res" ||
 			ext == L".xml" || ext == L".json" || ext == L".ini" || ext == L".log" ||
-			ext == L".htm" || ext == L".html" || ext == L".css" ||
-			ext == L".sln" || ext == L".vcxproj")
+			ext == L".prefab" || ext == L".fmat" || ext == L".fmod" || ext == L".fani" ||
+			ext == L".htm" || ext == L".html" || ext == L".css")
 			return true;
 		return false;
 	}

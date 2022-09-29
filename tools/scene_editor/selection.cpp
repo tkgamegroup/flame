@@ -79,7 +79,7 @@ void Selection::_select(const std::filesystem::path& path, uint caller)
 	if (selecting(path))
 		return;
 
-	clear();
+	_clear();
 	type = tPath;
 	object = new std::filesystem::path(path);
 
@@ -106,7 +106,7 @@ void Selection::_select(EntityPtr e, uint caller)
 	if (selecting(e))
 		return;
 
-	clear();
+	_clear();
 	type = tEntity;
 	object = e;
 
