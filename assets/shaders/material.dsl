@@ -13,9 +13,6 @@ struct MaterialInfo
 
 layout (set = SET, binding = 0) buffer readonly Material
 {
-	int black_map_id;
-	int white_map_id;
-	int random_map_id;
 	MaterialInfo infos[128];
 }material;
 

@@ -1,7 +1,7 @@
 #include "../math.glsl"
 
 #ifndef GBUFFER_PASS
-#ifdef MAT_FILE
+#ifdef MAT_CODE
 #include "../shading.glsl"
 #endif
 #endif
@@ -24,9 +24,9 @@ layout(location = 1) out vec4 o_res_nor_rou;
 
 void main()
 {
-#ifdef MAT_FILE
+#ifdef MAT_CODE
 	MaterialInfo material = material.infos[i_matid];
-	#include MAT_FILE
+	#include MAT_CODE
 #else
 	#ifndef OCCLUDER_PASS
 		#ifndef GBUFFER_PASS

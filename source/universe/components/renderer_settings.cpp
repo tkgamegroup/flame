@@ -1,13 +1,13 @@
 #include "../../graphics/image.h"
 #include "../entity_private.h"
-#include "environment_private.h"
+#include "renderer_settings_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
-	std::vector<cEnvironmentPtr> environments;
+	std::vector<cRendererSettingsPtr> settings;
 
-	void cEnvironmentPrivate::set_sky_map_name(const std::filesystem::path& name)
+	void cRendererSettingsPrivate::set_sky_map_name(const std::filesystem::path& name)
 	{
 		if (sky_map_name == name)
 			return;
@@ -47,56 +47,86 @@ namespace flame
 		else if (_sky_rad_map)
 			graphics::Image::release(_sky_rad_map);
 
-		if (!environments.empty() && environments.front() == this)
+		if (!settings.empty() && settings.front() == this)
 			update_sky();
 
 		data_changed("sky_map_name"_h);
 	}
 
-	void cEnvironmentPrivate::set_sky_intensity(float v)
+	void cRendererSettingsPrivate::set_sky_intensity(float v)
 	{
 		if (sky_intensity == v)
 			return;
 		sky_intensity = v;
 
-		if (!environments.empty() && environments.front() == this)
+		if (!settings.empty() && settings.front() == this)
 			sRenderer::instance()->set_sky_intensity(sky_intensity);
 	}
 
-	void cEnvironmentPrivate::set_fog_color(const vec3& color)
+	void cRendererSettingsPrivate::set_fog_color(const vec3& color)
 	{
 		if (fog_color == color)
 			return;
 		fog_color = color;
 
-		if (!environments.empty() && environments.front() == this)
+		if (!settings.empty() && settings.front() == this)
 			sRenderer::instance()->set_fog_color(fog_color);
 	}
 
-	void cEnvironmentPrivate::update_sky()
+	void cRendererSettingsPrivate::set_shadow_distance(float d)
+	{
+		if (shadow_distance == d)
+			return;
+		shadow_distance = d;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_shadow_distance(shadow_distance);
+	}
+
+	void cRendererSettingsPrivate::set_csm_levels(uint lv)
+	{
+		if (csm_levels == lv)
+			return;
+		csm_levels = lv;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_csm_levels(csm_levels);
+	}
+
+	void cRendererSettingsPrivate::set_esm_factor(float f)
+	{
+		if (esm_factor == f)
+			return;
+		esm_factor = f;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_esm_factor(esm_factor);
+	}
+
+	void cRendererSettingsPrivate::update_sky()
 	{
 		sRenderer::instance()->set_sky_maps(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
 			sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
 			sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
 	}
 
-	void cEnvironmentPrivate::on_active()
+	void cRendererSettingsPrivate::on_active()
 	{
-		if (environments.empty())
-			environments.push_back(this);
+		if (settings.empty())
+			settings.push_back(this);
 		else
 		{
-			for (auto it = environments.begin(); it != environments.end(); it++)
+			for (auto it = settings.begin(); it != settings.end(); it++)
 			{
 				if (entity->compare_depth((*it)->entity))
 				{
-					environments.insert(it, this);
+					settings.insert(it, this);
 					return;
 				}
 			}
 		}
 
-		if (!environments.empty() && environments.front() == this)
+		if (!settings.empty() && settings.front() == this)
 		{
 			update_sky();
 			sRenderer::instance()->set_sky_intensity(sky_intensity);
@@ -104,21 +134,21 @@ namespace flame
 		}
 	}
 
-	void cEnvironmentPrivate::on_inactive()
+	void cRendererSettingsPrivate::on_inactive()
 	{
-		if (!environments.empty() && environments.front() == this)
+		if (!settings.empty() && settings.front() == this)
 			sRenderer::instance()->set_sky_maps(nullptr, nullptr, nullptr);
-		std::erase_if(environments, [&](auto c) {
+		std::erase_if(settings, [&](auto c) {
 			return c == this;
 		});
 	}
 
-	struct cEnvironmentCreate : cEnvironment::Create
+	struct cRendererSettingsCreate : cRendererSettings::Create
 	{
-		cEnvironmentPtr operator()(EntityPtr e) override
+		cRendererSettingsPtr operator()(EntityPtr e) override
 		{
-			return new cEnvironmentPrivate();
+			return new cRendererSettingsPrivate();
 		}
-	}cEnvironment_create;
-	cEnvironment::Create& cEnvironment::create = cEnvironment_create;
+	}cRendererSettings_create;
+	cRendererSettings::Create& cRendererSettings::create = cRendererSettings_create;
 }

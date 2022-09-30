@@ -49,7 +49,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cDirLight);
 	FLAME_UNIVERSE_TYPE(cPtLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
-	FLAME_UNIVERSE_TYPE(cEnvironment);
+	FLAME_UNIVERSE_TYPE(cRendererSettings);
 
 	FLAME_UNIVERSE_TYPE(sInput);
 	FLAME_UNIVERSE_TYPE(sScene);

@@ -8,10 +8,10 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
-#ifdef MAT_FILE
+#ifdef MAT_CODE
 	MaterialInfo material = material.infos[water_infos[i_idx].material_id];
 	
-	#inlcude MAT_FILE
+	#inlcude MAT_CODE
 
 	float d1 = texture(img_depth, gl_FragCoord.xy / camera.viewport).r;
 	d1 = d1 * 0.5 + 0.5;

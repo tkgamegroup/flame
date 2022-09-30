@@ -1,7 +1,7 @@
 #include "../math.glsl"
 
 #ifndef GBUFFER_PASS
-#ifdef MAT_FILE
+#ifdef MAT_CODE
 #include "../shading.glsl"
 #endif
 #endif
@@ -23,11 +23,12 @@ layout(location = 0) out vec4 o_res_col_met;
 layout(location = 1) out vec4 o_res_nor_rou;
 #endif
 
+#ifdef MAT_CODE
 vec3 textureVariant(int map_id, vec2 uv)
 {
 	float k = 0;
-	if (material.random_map_id != -1)
-		k = texture(material_maps[material.random_map_id], 0.005 * uv).r;
+	if (RAND_TEX_ID != -1)
+		k = texture(material_maps[RAND_TEX_ID], 0.005 * uv).r;
 
     vec2 duvdx = dFdx(uv);
     vec2 duvdy = dFdy(uv);
@@ -66,11 +67,13 @@ vec3 textureTerrain(int map_id, float tiling)
 }
 #endif
 
+#endif
+
 void main()
 {
-#ifdef MAT_FILE
+#ifdef MAT_CODE
 	MaterialInfo material = material.infos[i_matid];
-	#include MAT_FILE
+	#include MAT_CODE
 #else
 	#ifndef OCCLUDER_PASS
 		#ifndef GBUFFER_PASS

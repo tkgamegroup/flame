@@ -404,9 +404,21 @@ void View_Project::on_draw()
 				if (ext == L".glsl")
 				{
 					get_materials();
+					get_shaders();
 					get_graphics_pipelines();
 					for (auto mat : materials.first)
 					{
+						for (auto sd : shaders.first)
+						{
+							for (auto& d : sd->dependencies)
+							{
+								if (d.second == mat)
+								{
+									changed_shaders.push_back(sd);
+									break;
+								}
+							}
+						}
 						for (auto pl : graphics_pipelines.first)
 						{
 							for (auto& d : pl->dependencies)
@@ -414,7 +426,6 @@ void View_Project::on_draw()
 								if (d.second == mat)
 								{
 									changed_pipelines.push_back(pl);
-									changed_shaders.push_back(pl->frag());
 									break;
 								}
 							}

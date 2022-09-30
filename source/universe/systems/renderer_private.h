@@ -22,13 +22,18 @@ namespace flame
 		void bind_window_targets() override;
 		vec2 target_size() override;
 
-		void set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
+		graphics::ImageViewPtr sky_map = nullptr;
+		graphics::ImageViewPtr sky_irr_map = nullptr;
+		graphics::ImageViewPtr sky_rad_map = nullptr;
 		float sky_rad_levels = 1.f;
+		void set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
 		void set_sky_intensity(float v) override;
 		void set_fog_color(const vec3& color) override;
 		void set_shadow_distance(float d) override;
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
+
+		void set_post_lighting_code_file(const std::filesystem::path& path) override;
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;

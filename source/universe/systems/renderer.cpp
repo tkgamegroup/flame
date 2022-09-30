@@ -121,6 +121,9 @@ namespace flame
 	std::unique_ptr<graphics::Fence> fence_pickup;
 
 	int camera_light_id = -1;
+	int white_tex_id = -1;
+	int black_tex_id = -1;
+	int rand_tex_id = -1;
 
 	struct MeshBuckets
 	{
@@ -186,8 +189,14 @@ namespace flame
 			break;
 		}
 
-		auto mat_file = Path::get(res.mat->code_file).string();
-		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
+		defines.push_back(std::format("all_shader:WHITE_TEX_ID={}", white_tex_id));
+		defines.push_back(std::format("all_shader:BLACK_TEX_ID={}", black_tex_id));
+		defines.push_back(std::format("all_shader:RAND_TEX_ID={}", rand_tex_id));
+		if (!res.mat->code_file.empty())
+		{
+			auto mat_file = Path::get(res.mat->code_file).string();
+			defines.push_back(std::format("frag:MAT_CODE={}", mat_file));
+		}
 		for (auto& d : res.mat->shader_defines)
 			defines.push_back("all_shader:" + d);
 
@@ -230,6 +239,7 @@ namespace flame
 		{
 			ret->dynamic_renderpass = true;
 			res.pls[key] = ret;
+			ret->frag()->dependencies.emplace_back("flamme::Graphics::Material"_h, res.mat);
 			ret->dependencies.emplace_back("flamme::Graphics::Material"_h, res.mat);
 		}
 		return ret;
@@ -376,13 +386,6 @@ namespace flame
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
-		buf_material.item("black_map_id"_h).set(get_texture_res(img_black->get_view(), nullptr, -1));
-		buf_material.item("white_map_id"_h).set(get_texture_res(img_white->get_view(), nullptr, -1));
-		{
-			auto img = graphics::Image::get(L"flame\\random.png");
-			buf_material.item("random_map_id"_h).set(img ? get_texture_res(img->get_view(),
-				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1) : -1);
-		}
 		mat_reses.resize(buf_material.item_info("infos"_h).array_size);
 		get_material_res(graphics::Material::get(L"default"), -1);
 		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
@@ -528,6 +531,19 @@ namespace flame
 		fence_pickup.reset(graphics::Fence::create(false));
 
 		camera_light_id = register_light_instance(LightDirectional, -1);
+		white_tex_id = get_texture_res(img_white->get_view(), nullptr, -1);
+		black_tex_id = get_texture_res(img_black->get_view(), nullptr, -1);
+		if (auto img = graphics::Image::get(L"flame\\random.png"); img)
+		{
+			rand_tex_id = get_texture_res(img->get_view(),
+				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1);
+		}
+
+		set_sky_intensity(1.f);
+		set_fog_color(vec3(1.f));
+		set_shadow_distance(100.f);
+		set_csm_levels(2);
+		set_esm_factor(7.f);
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -597,10 +613,13 @@ namespace flame
 		return iv_tars[0]->image->size;
 	}
 
-	void sRendererPrivate::set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map)
+	void sRendererPrivate::set_sky_maps(graphics::ImageViewPtr _sky_map, graphics::ImageViewPtr _sky_irr_map, graphics::ImageViewPtr _sky_rad_map)
 	{
-		dirty = true;
-
+		if (sky_map == _sky_map && sky_irr_map == _sky_irr_map && sky_rad_map == _sky_rad_map)
+			return;
+		sky_map = _sky_map;
+		sky_irr_map = _sky_irr_map;
+		sky_rad_map = _sky_rad_map;
 		ds_lighting->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_lighting->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
@@ -608,43 +627,63 @@ namespace flame
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
 		buf_lighting.item_d("sky_rad_levels"_h).set(sky_rad_levels);
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::set_sky_intensity(float v)
 	{
-		dirty = true;
-
+		if (sky_intensity == v)
+			return;
 		sky_intensity = v;
 		buf_lighting.item_d("sky_intensity"_h).set(sky_intensity);
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::set_fog_color(const vec3& color)
 	{
-		dirty = true;
-
+		if (fog_color == color)
+			return;
 		fog_color = color;
 		buf_lighting.item_d("fog_color"_h).set(fog_color);
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::set_shadow_distance(float d)
 	{
-		dirty = true;
-
+		if (shadow_distance == d)
+			return;
 		shadow_distance = d;
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::set_csm_levels(uint lv)
 	{
-		dirty = true;
-
+		if (csm_levels == lv)
+			return;
 		csm_levels = lv;
+
+		dirty = true;
 	}
 
 	void sRendererPrivate::set_esm_factor(float f)
 	{
-		dirty = true;
-
+		if (esm_factor == f)
+			return;
 		esm_factor = f;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_post_lighting_code_file(const std::filesystem::path& path)
+	{
+		if (post_lighting_code_file == path)
+			return;
+
+		dirty = true;
 	}
 
 	int sRendererPrivate::get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id)
@@ -818,11 +857,15 @@ namespace flame
 				for (auto& tex : res.texs)
 				{
 					if (tex.first != -1)
+					{
 						release_texture_res(tex.first);
+						tex.first = -1;
+					}
 					if (tex.second)
+					{
 						graphics::Image::release(tex.second);
-					tex.first = -1;
-					tex.second = nullptr;
+						tex.second = nullptr;
+					}
 				}
 				res.texs.clear();
 			}
@@ -1316,122 +1359,125 @@ namespace flame
 				}
 			}
 
-			auto zn = camera->zNear; auto zf = camera->zFar;
-			for (auto i = 0; i < n_dir_shadows; i++)
+			if (shadow_distance > 0.f)
 			{
-				auto& s = dir_shadows[i];
-				auto splits = vec4(zf);
-				auto p_shadow = buf_lighting.item_d("dir_shadows"_h, i);
-				auto mats = (mat4*)p_shadow.item("mats"_h).pdata;
-				for (auto lv = 0; lv < csm_levels; lv++)
+				auto zn = camera->zNear; auto zf = camera->zFar;
+				for (auto i = 0; i < n_dir_shadows; i++)
 				{
-					auto n = lv / (float)csm_levels;
-					auto f = (lv + 1) / (float)csm_levels;
-					n = mix(zn, zf, n * n * shadow_distance / zf);
-					f = mix(zn, zf, f * f * shadow_distance / zf);
-					splits[lv] = f;
-
+					auto& s = dir_shadows[i];
+					auto splits = vec4(zf);
+					auto p_shadow = buf_lighting.item_d("dir_shadows"_h, i);
+					auto mats = (mat4*)p_shadow.item("mats"_h).pdata;
+					for (auto lv = 0; lv < csm_levels; lv++)
 					{
-						auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
-						n = p.z / p.w;
-					}
-					{
-						auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
-						f = p.z / p.w;
-					}
-					auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-					if (csm_debug_sig)
-						debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
-					auto b = AABB(frustum_slice, inverse(s.rot));
-					auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
-					auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
-					auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
-					auto c = s.rot * b.center();
+						auto n = lv / (float)csm_levels;
+						auto f = (lv + 1) / (float)csm_levels;
+						n = mix(zn, zf, n * n * shadow_distance / zf);
+						f = mix(zn, zf, f * f * shadow_distance / zf);
+						splits[lv] = f;
 
-					auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
-					proj[1][1] *= -1.f;
-					auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
-					auto proj_view = proj * view;
+						{
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
+							n = p.z / p.w;
+						}
+						{
+							auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
+							f = p.z / p.w;
+						}
+						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
+						if (csm_debug_sig)
+							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+						auto b = AABB(frustum_slice, inverse(s.rot));
+						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+						auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
+						auto c = s.rot * b.center();
 
-					s.culled_nodes.clear();
-					sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
-					draw_data.reset("instance"_h, 0);
-					for (auto n : s.culled_nodes)
-					{
-						if (n->instance_frame < frames)
+						auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
+						proj[1][1] *= -1.f;
+						auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
+						auto proj_view = proj * view;
+
+						s.culled_nodes.clear();
+						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
+						draw_data.reset("instance"_h, 0);
+						for (auto n : s.culled_nodes)
+						{
+							if (n->instance_frame < frames)
+							{
+								n->draw(draw_data);
+								n->instance_frame = frames;
+							}
+						}
+
+						auto z_min = -hf_zlen;
+						auto z_max = +hf_zlen;
+						int n_draws;
+
+						draw_data.reset("occulder"_h, "mesh"_h);
+						n_draws = 0;
+						for (auto n : s.culled_nodes)
 						{
 							n->draw(draw_data);
-							n->instance_frame = frames;
-						}
-					}
-
-					auto z_min = -hf_zlen;
-					auto z_max = +hf_zlen;
-					int n_draws;
-
-					draw_data.reset("occulder"_h, "mesh"_h);
-					n_draws = 0;
-					for (auto n : s.culled_nodes)
-					{
-						n->draw(draw_data);
-						if (draw_data.meshes.size() > n_draws)
-						{
-							auto r = n->bounds.radius();
-							auto d = dot(n->g_pos - c, s.rot[2]);
-							z_min = min(d - r, z_min);
-							z_max = max(d + r, z_max);
-
-							n_draws = draw_data.meshes.size();
-						}
-					}
-					s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
-
-					draw_data.reset("occulder"_h, "terrain"_h);
-					n_draws = 0;
-					for (auto n : s.culled_nodes)
-					{
-						n->draw(draw_data);
-						if (draw_data.terrains.size() > n_draws)
-						{
-							for (auto& p : n->bounds.get_points())
+							if (draw_data.meshes.size() > n_draws)
 							{
-								auto d = dot(p - c, s.rot[2]);
-								z_min = min(d, z_min);
-								z_max = max(d, z_max);
-							}
+								auto r = n->bounds.radius();
+								auto d = dot(n->g_pos - c, s.rot[2]);
+								z_min = min(d - r, z_min);
+								z_max = max(d + r, z_max);
 
-							n_draws = draw_data.terrains.size();
+								n_draws = draw_data.meshes.size();
+							}
+						}
+						s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
+
+						draw_data.reset("occulder"_h, "terrain"_h);
+						n_draws = 0;
+						for (auto n : s.culled_nodes)
+						{
+							n->draw(draw_data);
+							if (draw_data.terrains.size() > n_draws)
+							{
+								for (auto& p : n->bounds.get_points())
+								{
+									auto d = dot(p - c, s.rot[2]);
+									z_min = min(d, z_min);
+									z_max = max(d, z_max);
+								}
+
+								n_draws = draw_data.terrains.size();
+							}
+						}
+						s.draw_terrains[lv] = draw_data.terrains;
+
+						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
+						proj[1][1] *= -1.f;
+						view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
+						proj_view = proj * view;
+						mats[lv] = proj_view;
+						if (csm_debug_sig)
+						{
+							auto frustum_points = Frustum::get_points(inverse(proj_view));
+							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+							vec3 pts[2];
+							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
+							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
+							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
 						}
 					}
-					s.draw_terrains[lv] = draw_data.terrains;
 
-					proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
-					proj[1][1] *= -1.f;
-					view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
-					proj_view = proj * view;
-					mats[lv] = proj_view;
-					if (csm_debug_sig)
-					{
-						auto frustum_points = Frustum::get_points(inverse(proj_view));
-						debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
-						auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
-						vec3 pts[2];
-						pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-						debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
-						pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-						debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
-						pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-						debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
-					}
+					p_shadow.item("splits"_h).set(splits);
+					p_shadow.item("far"_h).set(shadow_distance);
 				}
 
-				p_shadow.item("splits"_h).set(splits);
-				p_shadow.item("far"_h).set(shadow_distance);
-			}
+				for (auto i = 0; i < n_pt_shadows; i++)
+				{
 
-			for (auto i = 0; i < n_pt_shadows; i++)
-			{
-
+				}
 			}
 
 			buf_lighting.upload(cb);
