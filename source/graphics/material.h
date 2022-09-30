@@ -34,7 +34,8 @@ namespace flame
 			vec4 float_values = vec4(0.f);
 			ivec4 int_values = ivec4(0);
 
-			std::filesystem::path shader_file = L"flame/shaders/default_mat.glsl";
+			// shader will insert this file to its content
+			std::filesystem::path code_file = L"flame/shaders/default_mat.glsl";
 			std::vector<std::string> shader_defines;
 
 			std::vector<Texture> textures;

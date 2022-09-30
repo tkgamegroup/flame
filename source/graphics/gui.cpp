@@ -42,7 +42,7 @@ namespace ImGui
 
 		void draw() override
 		{
-			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				ImGui::TextUnformatted(message.c_str());
 				if (ImGui::Button("OK"))
@@ -58,7 +58,7 @@ namespace ImGui
 
 		void draw() override
 		{
-			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				if (ImGui::Button("Yes"))
 				{
@@ -98,7 +98,7 @@ namespace ImGui
 
 		void draw() override
 		{
-			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				auto ok = false;
 				if (ImGui::InputText("##text", &text, ImGuiInputTextFlags_EnterReturnsTrue))

@@ -148,11 +148,11 @@ namespace flame
 	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
 
-	static graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& mr, uint type, uint modifier1 = 0, uint modifier2 = 0)
+	static graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& res, uint type, uint modifier1 = 0, uint modifier2 = 0)
 	{
 		auto key = type + modifier1 + modifier2;
-		auto it = mr.pls.find(key);
-		if (it != mr.pls.end())
+		auto it = res.pls.find(key);
+		if (it != res.pls.end())
 			return it->second;
 
 		std::vector<std::string> defines;
@@ -167,7 +167,7 @@ namespace flame
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
-			else if (mr.opa)
+			else if (res.opa)
 			{
 				defines.push_back("rp=" + str(rp_gbuf));
 				defines.push_back("pll=" + str(pll_gbuf));
@@ -186,9 +186,9 @@ namespace flame
 			break;
 		}
 
-		auto mat_file = Path::get(mr.mat->shader_file).string();
+		auto mat_file = Path::get(res.mat->code_file).string();
 		defines.push_back(std::format("frag:MAT_FILE={}", mat_file));
-		for (auto& d : mr.mat->shader_defines)
+		for (auto& d : res.mat->shader_defines)
 			defines.push_back("all_shader:" + d);
 
 		std::filesystem::path pipeline_name;
@@ -229,7 +229,8 @@ namespace flame
 		if (ret)
 		{
 			ret->dynamic_renderpass = true;
-			mr.pls[key] = ret;
+			res.pls[key] = ret;
+			ret->dependencies.emplace_back("flamme::Graphics::Material"_h, res.mat);
 		}
 		return ret;
 	}
@@ -840,6 +841,7 @@ namespace flame
 							res.texs[i].second = image;
 							res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
 								graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
+							image->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
 						}
 					}
 				}

@@ -41,8 +41,10 @@ namespace flame
 	FLAME_FOUNDATION_API bool wait_native_event(void* ev, int timeout);
 	FLAME_FOUNDATION_API void destroy_native_event(void* ev);
 	FLAME_FOUNDATION_API std::vector<std::filesystem::path> get_module_dependencies(const std::filesystem::path& path);
-	FLAME_FOUNDATION_API std::wstring get_clipboard();
+	FLAME_FOUNDATION_API std::wstring get_clipboard(bool peek = false); // if peek, return L"1" when has data
 	FLAME_FOUNDATION_API void set_clipboard(std::wstring_view str);
+	FLAME_FOUNDATION_API std::vector<std::filesystem::path> get_clipboard_files(bool peek = false); // if peek, return one L"1" when has data
+	FLAME_FOUNDATION_API void set_clipboard_files(const std::vector<std::filesystem::path>& paths);
 	FLAME_FOUNDATION_API std::pair<uvec2, std::unique_ptr<uchar>> get_thumbnail(uint width, const std::filesystem::path& path);
 	// if out_id!=nullptr icon id will be assigned, and no icon data will be returned
 	FLAME_FOUNDATION_API std::pair<uvec2, std::unique_ptr<uchar>> get_sys_icon(const std::filesystem::path& path, int* out_id);

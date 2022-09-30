@@ -386,11 +386,23 @@ namespace flame
 			return ret;
 		}
 
+		static std::vector<std::basic_string<CH>> split_dbnull(const CH* str)
+		{
+			std::vector<std::basic_string<CH>> ret; 
+			auto p = str;
+			while (*p) 
+			{
+				ret.push_back(std::basic_string<CH>(p));
+				p += ret.back().size() + 1;
+			}
+			return ret;
+		}
+
 		static uint indent_length(const std::basic_string<CH>& s)
 		{
 			return std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-				}) - s.begin();
+			}) - s.begin();
 		}
 	};
 

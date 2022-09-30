@@ -561,7 +561,7 @@ void App::open_project(const std::filesystem::path& path)
 		}
 		else
 		{
-			Path::set_root(L"assets", project_path);
+			Path::set_root(L"assets", L"");
 			view_project.reset(project_path);
 		}
 

@@ -25,7 +25,8 @@ View_Project::View_Project() :
 
 void View_Project::reset(const std::filesystem::path& assets_path)
 {
-	explorer.reset(assets_path);
+	auto flame_path = Path::get(L"flame");
+	explorer.reset_n({ std::filesystem::path(flame_path.native() + L"=flame"), assets_path});
 
 	if (flame_file_watcher)
 	{
@@ -46,7 +47,7 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 			it->second = (FileChangeFlags)(it->second | flags);
 		mtx_changed_paths.unlock();
 	};
-	flame_file_watcher = add_file_watcher(Path::get(L"flame"), file_watcher, true, false);
+	flame_file_watcher = add_file_watcher(flame_path, file_watcher, true, false);
 	assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
 }
 
@@ -102,6 +103,10 @@ void View_Project::init()
 				set_clipboard(path.wstring());
 			ImGui::EndMenu();
 		}
+		if (ImGui::MenuItem("Copy"))
+		{
+			set_clipboard_files({ path });
+		}
 		if (ImGui::MenuItem("Rename"))
 		{
 			ImGui::OpenInputDialog("New name", [path](bool ok, const std::string& text) {
@@ -112,7 +117,7 @@ void View_Project::init()
 					std::error_code ec;
 					std::filesystem::rename(path, new_name, ec);
 				}
-			}, path.filename().stem().string());
+			}, path.filename().string());
 		}
 		if (ImGui::MenuItem("Delete"))
 		{
@@ -128,6 +133,18 @@ void View_Project::init()
 	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
+		if (!get_clipboard_files(true).empty())
+		{
+			if (ImGui::MenuItem("Paste"))
+			{
+				for (auto& file : get_clipboard_files())
+				{
+					auto dst = path / file.filename();
+					std::error_code ec;
+					std::filesystem::copy_file(file, dst, ec);
+				}
+			}
+		}
 		if (ImGui::MenuItem("New Folder"))
 			std::filesystem::create_directory(find_free_filename(path / L"new_foler_"));
 		if (ImGui::MenuItem("New Image"))
@@ -346,10 +363,18 @@ void View_Project::on_draw()
 		explorer.open_folder(current_path.empty() ? nullptr : explorer.find_folder(current_path));
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>>	changed_assets;
+		std::pair<std::vector<graphics::MaterialPtr>, uint>						materials;
 		std::pair<std::vector<graphics::ShaderPtr>, uint>						shaders;
 		std::pair<std::vector<graphics::GraphicsPipelinePtr>, uint>				graphics_pipelines;
 		std::vector<graphics::ShaderPtr>										changed_shaders;
 		std::vector<graphics::GraphicsPipelinePtr>								changed_pipelines;
+		auto get_materials = [&]() {
+			if (materials.second < frames)
+			{
+				materials.first = graphics::Debug::get_materials();
+				materials.second = frames;
+			}
+		};
 		auto get_shaders = [&]() {
 			if (shaders.second < frames)
 			{
@@ -376,7 +401,27 @@ void View_Project::on_draw()
 						asset->active = true;
 				}
 				auto ext = p.first.extension();
-				if (ext == L".glsl" || ext == L".vert" || ext == L".frag" || ext == L".tesc" || ext == L".tese" || ext == L".geom")
+				if (ext == L".glsl")
+				{
+					get_materials();
+					get_graphics_pipelines();
+					for (auto mat : materials.first)
+					{
+						for (auto pl : graphics_pipelines.first)
+						{
+							for (auto& d : pl->dependencies)
+							{
+								if (d.second == mat)
+								{
+									changed_pipelines.push_back(pl);
+									changed_shaders.push_back(pl->frag());
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (ext == L".vert" || ext == L".frag" || ext == L".tesc" || ext == L".tese" || ext == L".geom")
 				{
 					get_shaders();
 					for (auto sd : shaders.first)

@@ -9,12 +9,25 @@ namespace flame
 	namespace graphics
 	{
 		MaterialPtr default_material = new MaterialPrivate;
-		static std::vector<std::unique_ptr<MaterialPrivate>> materials;
+		std::vector<MaterialPtr> materials;
+		std::vector<std::unique_ptr<MaterialT>> loaded_materials;
 
 		MaterialPrivate::MaterialPrivate()
 		{
 			// reference the Texture, or else the typeinfo will be lost
 			textures.resize(8);
+
+
+			materials.push_back(this);
+		}
+
+		MaterialPrivate::~MaterialPrivate()
+		{
+			if (app_exiting) return;
+
+			std::erase_if(materials, [&](const auto& i) {
+				return i == this;
+			});
 		}
 
 		void MaterialPrivate::save(const std::filesystem::path& filename)
@@ -53,7 +66,7 @@ namespace flame
 
 				auto filename = Path::get(_filename);
 
-				for (auto& m : materials)
+				for (auto& m : loaded_materials)
 				{
 					if (m->filename == filename)
 					{
@@ -81,7 +94,7 @@ namespace flame
 
 				ret->filename = filename;
 				ret->ref = 1;
-				materials.emplace_back(ret);
+				loaded_materials.emplace_back(ret);
 				return ret;
 			}
 		}Material_get;
@@ -95,7 +108,7 @@ namespace flame
 					return;
 				if (material->ref == 1)
 				{
-					std::erase_if(materials, [&](const auto& i) {
+					std::erase_if(loaded_materials, [&](const auto& i) {
 						return i.get() == material;
 					});
 				}

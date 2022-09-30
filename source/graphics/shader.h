@@ -183,6 +183,8 @@ namespace flame
 			UdtInfo* in_ui = nullptr;
 			UdtInfo* out_ui = nullptr;
 
+			std::vector<std::pair<uint, void*>> dependencies;
+
 			virtual ~Shader() {}
 
 			virtual void recreate() = 0;
@@ -273,6 +275,8 @@ namespace flame
 			std::vector<std::string> defines;
 			bool dynamic_renderpass = false;
 
+			std::vector<std::pair<uint, void*>> dependencies;
+
 			virtual ~GraphicsPipeline() {}
 
 			virtual void recreate() = 0;
@@ -330,6 +334,8 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
+
+			std::vector<std::pair<uint, void*>> dependencies;
 
 			virtual ~ComputePipeline() {}
 

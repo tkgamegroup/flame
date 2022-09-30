@@ -85,6 +85,8 @@ namespace flame
 
 			std::filesystem::path filename;
 
+			std::vector<std::pair<uint, void*>> dependencies;
+
 			virtual ~Image() {}
 
 			virtual ImageLayout get_layout(const ImageSub& sub = {}) = 0;

@@ -345,14 +345,25 @@ namespace flame
 		return ret;
 	}
 
-	std::wstring get_clipboard()
+	std::wstring get_clipboard(bool peek)
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
+		if (!hMemory)
+		{
+			CloseClipboard();
+			return L"";
+		}
+		if (peek)
+		{
+			CloseClipboard();
+			return L"1";
+		}
 		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
 		std::wstring ret;
 		ret.resize(size);
-		wcsncpy(ret.data(), (wchar_t*)GlobalLock(hMemory), size);
+		auto gdata = GlobalLock(hMemory);
+		wcsncpy(ret.data(), (wchar_t*)gdata, size);
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 		return ret;
@@ -360,12 +371,76 @@ namespace flame
 
 	void set_clipboard(std::wstring_view str)
 	{
-		auto hGlobalMemory = GlobalAlloc(GHND, str.size());
-		memcpy(GlobalLock(hGlobalMemory), str.data(), str.size());
-		GlobalUnlock(hGlobalMemory);
+		auto hMemory = GlobalAlloc(GHND, str.size());
+		auto gdata = GlobalLock(hMemory);
+		memcpy(gdata, str.data(), str.size());
+		GlobalUnlock(hMemory);
+
 		OpenClipboard(NULL);
 		EmptyClipboard();
-		SetClipboardData(CF_UNICODETEXT, hGlobalMemory);
+		SetClipboardData(CF_UNICODETEXT, hMemory);
+		CloseClipboard();
+	}
+
+	std::vector<std::filesystem::path> get_clipboard_files(bool peek)
+	{
+		OpenClipboard(NULL);
+		auto hMemory = GetClipboardData(CF_HDROP);
+		if (!hMemory)
+		{
+			CloseClipboard();
+			return {};
+		}
+		if (peek)
+		{
+			CloseClipboard();
+			return { L"1" };
+		}
+
+		std::vector<std::filesystem::path> ret;
+
+		auto size = GlobalSize(hMemory);
+		auto gdata = GlobalLock(hMemory);
+		auto& df = *(DROPFILES*)gdata;
+		if (df.fWide)
+		{
+			for (auto& str : SUW::split_dbnull((wchar_t*)((char*)gdata + df.pFiles)))
+				ret.push_back(str);
+		}
+		else
+		{
+			for (auto& str : SUS::split_dbnull((char*)gdata + df.pFiles))
+				ret.push_back(str);
+		}
+		GlobalUnlock(hMemory);
+
+		CloseClipboard();
+		return ret;
+	}
+
+	void set_clipboard_files(const std::vector<std::filesystem::path>& paths)
+	{
+		auto size = sizeof(DROPFILES);
+		for (auto& path : paths)
+			size += (path.native().size() + 1) * sizeof(wchar_t);
+		size += sizeof(wchar_t);
+		auto hMemory = GlobalAlloc(GHND, size);
+		auto gdata = GlobalLock(hMemory);
+		auto& df = *(DROPFILES*)gdata;
+		df.fWide = TRUE;
+		df.pFiles = sizeof(DROPFILES); // offset to the paths
+		auto p = (char*)gdata + sizeof(DROPFILES);
+		for (auto& path : paths)
+		{
+			auto s = path.native().size() * sizeof(wchar_t);
+			memcpy(p, path.c_str(), s);
+			p += s + sizeof(wchar_t);
+		}
+		GlobalUnlock(hMemory);
+
+		OpenClipboard(NULL);
+		EmptyClipboard();
+		SetClipboardData(CF_HDROP, hMemory);
 		CloseClipboard();
 	}
 

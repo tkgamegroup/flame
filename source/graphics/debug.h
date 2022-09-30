@@ -14,6 +14,12 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static GetImages& get_images;
 
+			struct GetMaterials
+			{
+				virtual std::vector<MaterialPtr> operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static GetMaterials& get_materials;
+
 			struct GetShaders
 			{
 				virtual std::vector<ShaderPtr> operator()() = 0;

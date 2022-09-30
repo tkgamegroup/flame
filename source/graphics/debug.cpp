@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "material_private.h"
 #include "image_private.h"
 #include "shader_private.h"
 
@@ -27,6 +28,15 @@ namespace flame
 			}
 		}Debug_get_images;
 		Debug::GetImages& Debug::get_images = Debug_get_images;
+
+		struct DebugGetMaterials : Debug::GetMaterials
+		{
+			std::vector<MaterialPtr> operator()() override
+			{
+				return materials;
+			}
+		}Debug_get_materials;
+		Debug::GetMaterials& Debug::get_materials = Debug_get_materials;
 
 		struct DebugGetShaders : Debug::GetShaders
 		{
