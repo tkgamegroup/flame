@@ -33,11 +33,13 @@ namespace flame
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
 
-		void set_post_lighting_code_file(const std::filesystem::path& path) override;
+		std::filesystem::path get_post_shading_code_file() override;
+		void set_post_shading_code_file(const std::filesystem::path& path) override;
 
 		int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp, int id) override;
 		void release_texture_res(uint id) override;
 		const TexRes& get_texture_res_info(uint id) override;
+		void set_texture_res_name(uint id, const std::string& name) override;
 
 		int get_mesh_res(graphics::MeshPtr mesh, int id) override;
 		void release_mesh_res(uint id) override;

@@ -74,6 +74,7 @@ namespace flame
 			AABB bounds;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			virtual ~Model() {}
 

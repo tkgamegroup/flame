@@ -366,8 +366,8 @@ void View_Project::on_draw()
 		std::pair<std::vector<graphics::MaterialPtr>, uint>						materials;
 		std::pair<std::vector<graphics::ShaderPtr>, uint>						shaders;
 		std::pair<std::vector<graphics::GraphicsPipelinePtr>, uint>				graphics_pipelines;
-		std::vector<graphics::ShaderPtr>										changed_shaders;
-		std::vector<graphics::GraphicsPipelinePtr>								changed_pipelines;
+		std::map<graphics::ShaderPtr, uint>										changed_shaders;
+		std::map<graphics::GraphicsPipelinePtr, uint>							changed_pipelines;
 		auto get_materials = [&]() {
 			if (materials.second < frames)
 			{
@@ -414,7 +414,7 @@ void View_Project::on_draw()
 							{
 								if (d.second == mat)
 								{
-									changed_shaders.push_back(sd);
+									changed_shaders[sd] = 0;
 									break;
 								}
 							}
@@ -425,7 +425,7 @@ void View_Project::on_draw()
 							{
 								if (d.second == mat)
 								{
-									changed_pipelines.push_back(pl);
+									changed_pipelines[pl] = 0;
 									break;
 								}
 							}
@@ -438,7 +438,7 @@ void View_Project::on_draw()
 					for (auto sd : shaders.first)
 					{
 						if (sd->filename == p.first)
-							changed_shaders.push_back(sd);
+							changed_shaders[sd] = 0;
 					}
 				}
 				else if (ext == L".pipeline")
@@ -447,7 +447,7 @@ void View_Project::on_draw()
 					for (auto pl : graphics_pipelines.first)
 					{
 						if (pl->filename == p.first)
-							changed_pipelines.push_back(pl);
+							changed_pipelines[pl] = 0;
 					}
 				}
 			}
@@ -488,25 +488,15 @@ void View_Project::on_draw()
 		if (!changed_shaders.empty())
 		{
 			get_graphics_pipelines();
-			for (auto sd : changed_shaders)
+			for (auto& sd : changed_shaders)
 			{
 				for (auto pl : graphics_pipelines.first)
 				{
 					for (auto _sd : pl->shaders)
 					{
-						if (sd == _sd)
+						if (sd.first == _sd)
 						{
-							auto found = false;
-							for (auto _pl : changed_pipelines)
-							{
-								if (pl == _pl)
-								{
-									found = true;
-									break;
-								}
-							}
-							if (!found)
-								changed_pipelines.push_back(pl);
+							changed_pipelines[pl] = 0;
 							break;
 						}
 					}
@@ -515,16 +505,10 @@ void View_Project::on_draw()
 		}
 		if (!changed_shaders.empty() || !changed_pipelines.empty())
 			graphics::Queue::get()->wait_idle();
-		if (!changed_shaders.empty())
-		{
-			for (auto sd : changed_shaders)
-				sd->recreate();
-		}
-		if (!changed_pipelines.empty())
-		{
-			for (auto pl : changed_pipelines)
-				pl->recreate();
-		}
+		for (auto& sd : changed_shaders)
+			sd.first->recreate();
+		for (auto& pl : changed_pipelines)
+			pl.first->recreate();
 
 		changed_paths.clear();
 	}

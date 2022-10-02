@@ -284,6 +284,8 @@ namespace flame
 			{
 				pll = _pll;
 				plt = _plt;
+				pll->ref++;
+
 				for (auto i = 0; i < pll->dsls.size(); i++)
 				{
 					auto dsl = pll->dsls[i];

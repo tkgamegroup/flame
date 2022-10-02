@@ -8,8 +8,6 @@ namespace flame
 	{
 		struct MaterialPrivate : Material
 		{
-			uint ref = 0;
-
 			MaterialPrivate();
 			~MaterialPrivate();
 			void save(const std::filesystem::path& filename) override;

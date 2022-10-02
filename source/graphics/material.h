@@ -41,6 +41,7 @@ namespace flame
 			std::vector<Texture> textures;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			virtual ~Material() {}
 

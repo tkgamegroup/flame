@@ -31,6 +31,7 @@ namespace flame
 			std::vector<Channel> channels;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			virtual ~Animation() {}
 

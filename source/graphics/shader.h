@@ -38,6 +38,7 @@ namespace flame
 			std::unordered_map<uint, uint> bindings_map;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			virtual ~DescriptorSetLayout() {}
 
@@ -151,6 +152,7 @@ namespace flame
 			uint pc_sz = 0;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			virtual ~PipelineLayout() {}
 
@@ -179,6 +181,7 @@ namespace flame
 			ShaderStageFlags type = ShaderStageNone;
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
+			uint ref = 0;
 
 			UdtInfo* in_ui = nullptr;
 			UdtInfo* out_ui = nullptr;
@@ -274,6 +277,7 @@ namespace flame
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
 			bool dynamic_renderpass = false;
+			uint ref = 0;
 
 			std::vector<std::pair<uint, void*>> dependencies;
 
@@ -334,6 +338,7 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
+			uint ref = 0;
 
 			std::vector<std::pair<uint, void*>> dependencies;
 

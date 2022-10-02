@@ -20,8 +20,6 @@ namespace flame
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
 			uint data_size;
 
-			uint ref = 0;
-
 			ImagePrivate();
 			~ImagePrivate();
 			void initialize();

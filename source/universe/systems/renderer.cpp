@@ -120,10 +120,15 @@ namespace flame
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
 
+	bool mark_clear_pipelines = false;
+
+	std::filesystem::path post_shading_code_file = L"";
+
 	int camera_light_id = -1;
 	int white_tex_id = -1;
 	int black_tex_id = -1;
 	int rand_tex_id = -1;
+	std::vector<uint> named_textures;
 
 	struct MeshBuckets
 	{
@@ -150,6 +155,20 @@ namespace flame
 
 	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
+
+	void add_common_defines(std::vector<std::string>& defines)
+	{
+		defines.push_back(std::format("frag:WHITE_TEX_ID={}", white_tex_id));
+		defines.push_back(std::format("frag:BLACK_TEX_ID={}", black_tex_id));
+		defines.push_back(std::format("frag:RAND_TEX_ID={}", rand_tex_id));
+		for (auto id : named_textures)
+			defines.push_back(std::format("frag:{}_TEX_ID={}", tex_reses[id].name, id));
+		if (!post_shading_code_file.empty())
+		{
+			if (auto path = Path::get(post_shading_code_file); !path.empty())
+				defines.push_back(std::format("frag:POST_SHADING_CODE={}", path.string()));
+		}
+	}
 
 	static graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& res, uint type, uint modifier1 = 0, uint modifier2 = 0)
 	{
@@ -189,14 +208,9 @@ namespace flame
 			break;
 		}
 
-		defines.push_back(std::format("all_shader:WHITE_TEX_ID={}", white_tex_id));
-		defines.push_back(std::format("all_shader:BLACK_TEX_ID={}", black_tex_id));
-		defines.push_back(std::format("all_shader:RAND_TEX_ID={}", rand_tex_id));
+		add_common_defines(defines);
 		if (!res.mat->code_file.empty())
-		{
-			auto mat_file = Path::get(res.mat->code_file).string();
-			defines.push_back(std::format("frag:MAT_CODE={}", mat_file));
-		}
+			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
 		for (auto& d : res.mat->shader_defines)
 			defines.push_back("all_shader:" + d);
 
@@ -245,11 +259,11 @@ namespace flame
 		return ret;
 	}
 
+	static std::unordered_map<uint, graphics::GraphicsPipelinePtr> def_pls;
 	static graphics::GraphicsPipelinePtr get_deferred_pipeline(uint modifier = 0)
 	{
-		static std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
-		auto it = pls.find(modifier);
-		if (it != pls.end())
+		auto it = def_pls.find(modifier);
+		if (it != def_pls.end())
 			return it->second;
 
 		std::vector<std::string> defines;
@@ -274,13 +288,14 @@ namespace flame
 			defines.push_back("frag:FOG_VALUE");
 			break;
 		}
+		add_common_defines(defines);
 		std::sort(defines.begin(), defines.end());
 
 		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
 		if (ret)
 		{
 			ret->dynamic_renderpass = true;
-			pls[modifier] = ret;
+			def_pls[modifier] = ret;
 		}
 		return ret;
 	}
@@ -678,11 +693,18 @@ namespace flame
 		dirty = true;
 	}
 
-	void sRendererPrivate::set_post_lighting_code_file(const std::filesystem::path& path)
+	std::filesystem::path sRendererPrivate::get_post_shading_code_file()
 	{
-		if (post_lighting_code_file == path)
-			return;
+		return post_shading_code_file;
+	}
 
+	void sRendererPrivate::set_post_shading_code_file(const std::filesystem::path& path)
+	{
+		if (post_shading_code_file == path)
+			return;
+		post_shading_code_file = path;
+
+		mark_clear_pipelines = true;
 		dirty = true;
 	}
 
@@ -741,6 +763,12 @@ namespace flame
 			
 			res.iv = nullptr;
 			res.ref = 0;
+			if (!res.name.empty())
+			{
+				std::erase_if(named_textures, [&](uint i) {
+					return tex_reses[i].name == res.name;
+				});
+			}
 		}
 		else
 			res.ref--;
@@ -749,6 +777,26 @@ namespace flame
 	const sRenderer::TexRes& sRendererPrivate::get_texture_res_info(uint id)
 	{ 
 		return tex_reses[id]; 
+	}
+
+	void sRendererPrivate::set_texture_res_name(uint id, const std::string& name)
+	{
+		auto& res = tex_reses[id];
+		if (!res.iv || res.name == name)
+			return;
+		if (name.empty())
+		{
+			std::erase_if(named_textures, [&](uint i) {
+				return tex_reses[i].name == res.name;
+			});
+		}
+		else if (res.name.empty())
+			named_textures.push_back(id);
+		res.name = name;
+
+		mark_clear_pipelines = true;
+
+		dirty = true;
 	}
 
 	int sRendererPrivate::get_mesh_res(graphics::MeshPtr mesh, int id)
@@ -1185,6 +1233,24 @@ namespace flame
 
 	void sRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
 	{
+		if (mark_clear_pipelines)
+		{
+			for (auto& res : mat_reses)
+			{
+				if (res.mat)
+				{
+					for (auto& pl : res.pls)
+						graphics::GraphicsPipeline::release(pl.second);
+					res.pls.clear();
+				}
+			}
+			for (auto& pl : def_pls)
+				graphics::GraphicsPipeline::release(pl.second);
+			def_pls.clear();
+
+			mark_clear_pipelines = false;
+		}
+
 		if (camera == INVALID_POINTER || iv_tars.empty())
 			return;
 		if (!camera)

@@ -84,6 +84,7 @@ namespace flame
 			std::vector<Level> levels;
 
 			std::filesystem::path filename;
+			uint ref = 0;
 
 			std::vector<std::pair<uint, void*>> dependencies;
 

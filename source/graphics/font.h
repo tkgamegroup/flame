@@ -10,6 +10,9 @@ namespace flame
 		{
 			ImageViewPtr view;
 
+			std::vector<std::filesystem::path> font_names;
+			uint ref = 0;
+
 			virtual ~FontAtlas() {}
 
 			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;

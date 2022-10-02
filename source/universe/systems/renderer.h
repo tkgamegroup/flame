@@ -25,6 +25,7 @@ namespace flame
 		{
 			graphics::ImageViewPtr iv;
 			graphics::SamplerPtr sp = nullptr;
+			std::string name;
 			uint ref = 0;
 		};
 
@@ -78,8 +79,8 @@ namespace flame
 		float white_point = 4.f;
 		float gamma = 1.5f;
 
-		std::filesystem::path post_lighting_code_file = L"";
-		virtual void set_post_lighting_code_file(const std::filesystem::path& path) = 0;
+		virtual std::filesystem::path get_post_shading_code_file() = 0;
+		virtual void set_post_shading_code_file(const std::filesystem::path& path) = 0;
 
 		// id: >=0: specify an id, -1: get an empty slot, -2: only find the res id (no need to release)
 		virtual int get_texture_res(graphics::ImageViewPtr iv, graphics::SamplerPtr sp = nullptr, int id = -1) = 0;

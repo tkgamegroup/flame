@@ -103,6 +103,16 @@ namespace flame
 			sRenderer::instance()->set_esm_factor(esm_factor);
 	}
 
+	void cRendererSettingsPrivate::set_post_shading_code_file(const std::filesystem::path& path)
+	{
+		if (post_shading_code_file == path)
+			return;
+		post_shading_code_file = path;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
+	}
+
 	void cRendererSettingsPrivate::update_sky()
 	{
 		sRenderer::instance()->set_sky_maps(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
@@ -131,6 +141,10 @@ namespace flame
 			update_sky();
 			sRenderer::instance()->set_sky_intensity(sky_intensity);
 			sRenderer::instance()->set_fog_color(fog_color);
+			sRenderer::instance()->set_shadow_distance(shadow_distance);
+			sRenderer::instance()->set_csm_levels(csm_levels);
+			sRenderer::instance()->set_esm_factor(esm_factor);
+			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
 		}
 	}
 

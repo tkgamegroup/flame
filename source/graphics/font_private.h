@@ -47,15 +47,12 @@ namespace flame
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			std::vector<std::filesystem::path> font_names;
 			std::vector<Font*> myfonts;
 
 			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
 			std::unique_ptr<ImagePrivate> image;
-
-			uint ref = 0;
 
 			~FontAtlasPrivate();
 			const Glyph& get_glyph(wchar_t code, uint size) override;

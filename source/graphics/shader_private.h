@@ -20,8 +20,6 @@ namespace flame
 			TypeInfoDataBase db;
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
-			uint ref = 0;
-
 			~DescriptorSetLayoutPrivate();
 
 			static DescriptorSetLayoutPtr load_from_res(const std::filesystem::path& filename);
@@ -67,8 +65,6 @@ namespace flame
 			TypeInfoDataBase db;
 			VkPipelineLayout vk_pipeline_layout;
 
-			uint ref = 0;
-
 			~PipelineLayoutPrivate();
 
 			static PipelineLayoutPtr load_from_res(const std::filesystem::path& filename);
@@ -78,8 +74,6 @@ namespace flame
 		{
 			TypeInfoDataBase db;
 			VkShaderModule vk_module = 0;
-
-			uint ref = 0;
 
 			ShaderPrivate();
 			~ShaderPrivate();
@@ -96,8 +90,6 @@ namespace flame
 
 			std::unordered_map<RenderpassPtr, VkPipeline> renderpass_variants;
 
-			uint ref = 0;
-
 			GraphicsPipelinePrivate();
 			~GraphicsPipelinePrivate();
 			VkPipeline get_dynamic_pipeline(RenderpassPtr rp, uint sp);
@@ -107,8 +99,6 @@ namespace flame
 		struct ComputePipelinePrivate : ComputePipeline
 		{
 			VkPipeline vk_pipeline;
-
-			uint ref = 0;
 
 			~ComputePipelinePrivate();
 		};

@@ -154,6 +154,9 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
 	ret += get_env(N, V, metallic, albedo, f0, roughness) * /*ao*/1.0; // TODO: use ao when ssao is ok
 	ret = get_fog(ret, distv);
+#ifdef POST_SHADING_CODE
+	#include POST_SHADING_CODE
+#endif
 	
 	return ret;
 }

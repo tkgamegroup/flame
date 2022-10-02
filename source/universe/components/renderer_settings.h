@@ -31,6 +31,10 @@ namespace flame
 		float esm_factor = 7.f;
 		/// Reflect
 		virtual void set_esm_factor(float f) = 0;
+		/// Reflect
+		std::filesystem::path post_shading_code_file;
+		/// Reflect
+		virtual void set_post_shading_code_file(const std::filesystem::path& path) = 0;
 
 		graphics::ImagePtr sky_map = nullptr;
 		graphics::ImagePtr sky_irr_map = nullptr;

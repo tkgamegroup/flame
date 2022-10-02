@@ -766,6 +766,8 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+			layout->ref--;
+
 			chk_res(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 			unregister_object(vk_descriptor_set);
 		}
@@ -885,6 +887,8 @@ namespace flame
 				ret->pool = pool;
 				ret->layout = layout;
 
+				layout->ref++;
+
 				ret->reses.resize(layout->bindings.size());
 				for (auto i = 0; i < ret->reses.size(); i++)
 					ret->reses[i].resize(max(1U, layout->bindings[i].count));
@@ -908,8 +912,11 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-			if (!dsls.empty() && dsls.back()->filename == filename)
-				delete dsls.back();
+			for (auto dsl : dsls)
+			{
+				if (dsl->ref == 0)
+					delete dsl;
+			}
 
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 			unregister_object(vk_pipeline_layout);
@@ -1042,7 +1049,10 @@ namespace flame
 				for (auto& p : loaded_pipelinelayouts)
 				{
 					if (p->filename == filename)
+					{
+						p->ref++;
 						return p.get();
+					}
 				}
 
 				if (!std::filesystem::exists(filename))
@@ -1059,6 +1069,7 @@ namespace flame
 				if (ret)
 				{
 					ret->filename = filename;
+					ret->ref = 1;
 					loaded_pipelinelayouts.emplace_back(ret);
 				}
 				return ret;
@@ -1208,7 +1219,10 @@ namespace flame
 				for (auto& s : loaded_shaders)
 				{
 					if (s->filename == filename && s->defines == defines)
+					{
+						s->ref++;
 						return s.get();
+					}
 				}
 
 				if (!std::filesystem::exists(filename))
@@ -1231,6 +1245,7 @@ namespace flame
 					ret->type = type;
 					ret->filename = filename;
 					ret->defines = defines;
+					ret->ref = 1;
 					loaded_shaders.emplace_back(ret);
 				}
 				return ret;
@@ -1515,17 +1530,12 @@ namespace flame
 				return i == this;
 			});
 
-			if (!filename.empty())
+			if (layout->ref == 0)
+				delete layout;
+			for (auto sd : shaders)
 			{
-				for (auto s : shaders)
-				{
-					if (s->filename == filename)
-						delete s;
-				}
-				if (layout->filename == filename)
-					delete layout;
-				if (renderpass->filename == filename)
-					delete renderpass;
+				if (sd->ref == 0)
+					delete sd;
 			}
 
 			if (vk_pipeline)
@@ -1844,7 +1854,10 @@ namespace flame
 				for (auto& pl : loaded_graphics_pipelines)
 				{
 					if (pl->filename == filename && pl->defines == defines)
+					{
+						pl->ref++;
 						return pl.get();
+					}
 				}
 
 				GraphicsPipelinePtr ret;
@@ -1853,6 +1866,7 @@ namespace flame
 				{
 					ret->filename = filename;
 					ret->defines = defines;
+					ret->ref = 1;
 					loaded_graphics_pipelines.emplace_back(ret);
 				}
 				return ret;
@@ -1930,7 +1944,10 @@ namespace flame
 				for (auto& pl : loaded_compute_pipelines)
 				{
 					if (pl->filename == filename && pl->defines == defines)
+					{
+						pl->ref++;
 						return pl.get();
+					}
 				}
 
 				ComputePipelinePtr ret;
@@ -1939,6 +1956,7 @@ namespace flame
 				{
 					ret->filename = filename;
 					ret->defines = defines;
+					ret->ref = 1;
 					loaded_compute_pipelines.emplace_back(ret);
 				}
 				return ret;
@@ -1952,6 +1970,10 @@ namespace flame
 			{
 				if (pl->ref == 1)
 				{
+					if (pl->layout->ref == 0)
+						delete pl->layout;
+					if (pl->shader->ref == 0)
+						delete pl->shader;
 					std::erase_if(loaded_compute_pipelines, [&](const auto& i) {
 						return i.get() == pl;
 					});
