@@ -28,7 +28,7 @@ vec3 textureVariant(int map_id, vec2 uv)
 {
 	float k = 0;
 	if (RAND_TEX_ID != -1)
-		k = texture(material_maps[RAND_TEX_ID], 0.005 * uv).r;
+		k = sample_map(RAND_TEX_ID, 0.005 * uv).r;
 
     vec2 duvdx = dFdx(uv);
     vec2 duvdy = dFdy(uv);

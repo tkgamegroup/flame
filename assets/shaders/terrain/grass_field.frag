@@ -20,7 +20,7 @@ void main()
 #ifdef DONT_USE_TEXTURE
 	albedo = i_color;
 #else
-	vec4 color = texture(material_maps[instance.terrains[i_id].grass_texture_id], i_uv);
+	vec4 color = sample_map(instance.terrains[i_id].grass_texture_id, i_uv);
 	if (color.a < 0.5)
 		discard;
 	albedo = color.rgb;

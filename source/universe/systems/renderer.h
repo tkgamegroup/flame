@@ -21,6 +21,12 @@ namespace flame
 			FogValue
 		};
 
+		struct MatVar
+		{
+			std::string name;
+			uint ref = 0;
+		};
+
 		struct TexRes
 		{
 			graphics::ImageViewPtr iv;
@@ -78,6 +84,11 @@ namespace flame
 		float ssao_bias = 0.025f;
 		float white_point = 4.f;
 		float gamma = 1.5f;
+
+		virtual int get_mat_var(int id, const std::string& name) = 0;
+		virtual void release_mat_var(uint id) = 0;
+		virtual const MatVar& get_mat_var_info(uint id) = 0;
+		virtual void set_mat_var(uint id, const vec4& v) = 0;
 
 		virtual std::filesystem::path get_post_shading_code_file() = 0;
 		virtual void set_post_shading_code_file(const std::filesystem::path& path) = 0;

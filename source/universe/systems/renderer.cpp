@@ -27,6 +27,7 @@ namespace flame
 	const auto DirShadowMaxLevels = 4U;
 	const auto PtShadowMaxCount = 4U;
 
+	std::vector<sRenderer::MatVar> mat_vars;
 	std::vector<sRenderer::MeshRes> mesh_reses;
 	std::vector<sRenderer::TexRes> tex_reses;
 	std::vector<sRenderer::MatRes> mat_reses;
@@ -128,7 +129,6 @@ namespace flame
 	int white_tex_id = -1;
 	int black_tex_id = -1;
 	int rand_tex_id = -1;
-	std::vector<uint> named_textures;
 
 	struct MeshBuckets
 	{
@@ -156,13 +156,16 @@ namespace flame
 	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
 
-	void add_common_defines(std::vector<std::string>& defines)
+	void add_global_defines(std::vector<std::string>& defines)
 	{
 		defines.push_back(std::format("frag:WHITE_TEX_ID={}", white_tex_id));
 		defines.push_back(std::format("frag:BLACK_TEX_ID={}", black_tex_id));
 		defines.push_back(std::format("frag:RAND_TEX_ID={}", rand_tex_id));
-		for (auto id : named_textures)
-			defines.push_back(std::format("frag:{}_TEX_ID={}", tex_reses[id].name, id));
+		for (auto i = 0; i < tex_reses.size(); i++)
+		{
+			if (!tex_reses[i].name.empty())
+				defines.push_back(std::format("frag:{}_MAP_ID={}", tex_reses[i].name, i));
+		}
 		if (!post_shading_code_file.empty())
 		{
 			if (auto path = Path::get(post_shading_code_file); !path.empty())
@@ -208,7 +211,7 @@ namespace flame
 			break;
 		}
 
-		add_common_defines(defines);
+		add_global_defines(defines);
 		if (!res.mat->code_file.empty())
 			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
 		for (auto& d : res.mat->shader_defines)
@@ -288,7 +291,7 @@ namespace flame
 			defines.push_back("frag:FOG_VALUE");
 			break;
 		}
-		add_common_defines(defines);
+		add_global_defines(defines);
 		std::sort(defines.begin(), defines.end());
 
 		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
@@ -401,6 +404,7 @@ namespace flame
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
+		mat_vars.resize(buf_material.item_info("vars"_h).array_size);
 		mat_reses.resize(buf_material.item_info("infos"_h).array_size);
 		get_material_res(graphics::Material::get(L"default"), -1);
 		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
@@ -496,6 +500,7 @@ namespace flame
 		prm_deferred.init(get_deferred_pipeline()->layout);
 		prm_deferred.set_ds("camera"_h, ds_camera.get());
 		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
+		prm_deferred.set_ds("material"_h, ds_material.get());
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
 		prm_deferred.set_ds(""_h, ds_deferred.get());
 
@@ -693,6 +698,67 @@ namespace flame
 		dirty = true;
 	}
 
+	int sRendererPrivate::get_mat_var(int id, const std::string& name)
+	{
+		if (id < 0)
+		{
+			for (auto i = 0; i < mat_vars.size(); i++)
+			{
+				auto& res = mat_vars[i];
+				if (res.name == name)
+				{
+					if (id != -2)
+						res.ref++;
+					return i;
+				}
+			}
+			if (id == -2)
+				return -1;
+			else
+			{
+				for (auto i = 0; i < mat_vars.size(); i++)
+				{
+					if (mat_vars[i].name.empty())
+					{
+						id = i;
+						break;
+					}
+				}
+			}
+			if (id < 0)
+				return -1;
+		}
+
+		auto& res = mat_vars[id];
+		res.name = name;
+		res.ref = 1;
+
+		mark_clear_pipelines = true;
+	}
+
+	void sRendererPrivate::release_mat_var(uint id)
+	{
+		auto& res = mat_vars[id];
+		if (res.ref == 1)
+		{
+			res.name.clear();
+			res.ref = 0;
+		}
+		else
+			res.ref--;
+	}
+
+	const sRenderer::MatVar& sRendererPrivate::get_mat_var_info(uint id)
+	{
+		return mat_vars[id];
+	}
+
+	void sRendererPrivate::set_mat_var(uint id, const vec4& v)
+	{
+		auto p_info = buf_material.item_d("vars"_h, id);
+		p_info.set(v);
+	}
+
 	std::filesystem::path sRendererPrivate::get_post_shading_code_file()
 	{
 		return post_shading_code_file;
@@ -763,12 +829,6 @@ namespace flame
 			
 			res.iv = nullptr;
 			res.ref = 0;
-			if (!res.name.empty())
-			{
-				std::erase_if(named_textures, [&](uint i) {
-					return tex_reses[i].name == res.name;
-				});
-			}
 		}
 		else
 			res.ref--;
@@ -784,14 +844,6 @@ namespace flame
 		auto& res = tex_reses[id];
 		if (!res.iv || res.name == name)
 			return;
-		if (name.empty())
-		{
-			std::erase_if(named_textures, [&](uint i) {
-				return tex_reses[i].name == res.name;
-			});
-		}
-		else if (res.name.empty())
-			named_textures.push_back(id);
 		res.name = name;
 
 		mark_clear_pipelines = true;

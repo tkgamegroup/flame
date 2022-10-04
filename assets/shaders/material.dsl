@@ -13,7 +13,18 @@ struct MaterialInfo
 
 layout (set = SET, binding = 0) buffer readonly Material
 {
+	vec4 vars[128];
 	MaterialInfo infos[128];
 }material;
 
 layout (set = SET, binding = 1) uniform sampler2D material_maps[128];
+
+vec4 mat_var(uint id)
+{
+	return material.vars[id];
+}
+
+vec4 sample_map(uint id, in vec2 uv)
+{
+	return texture(material_maps[id], uv);
+}

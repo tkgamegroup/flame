@@ -33,6 +33,11 @@ namespace flame
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
 
+		int get_mat_var(int id, const std::string& name) override;
+		void release_mat_var(uint id) override;
+		const MatVar& get_mat_var_info(uint id) override;
+		void set_mat_var(uint id, const vec4& v) override;
+
 		std::filesystem::path get_post_shading_code_file() override;
 		void set_post_shading_code_file(const std::filesystem::path& path) override;
 
