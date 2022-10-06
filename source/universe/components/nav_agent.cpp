@@ -93,7 +93,7 @@ namespace flame
 
 	void cNavAgentPrivate::update()
 	{
-		if (dist < 0.f)
+		if (!enable || dist < 0.f)
 			return;
 
 		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);

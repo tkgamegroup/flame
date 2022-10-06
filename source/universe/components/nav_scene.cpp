@@ -6,7 +6,8 @@ namespace flame
 {
 	void cNavScenePrivate::start()
 	{
-		sScene::instance()->generate_nav_mesh(agent_radius, agent_height, walkable_climb, walkable_slope_angle);
+		if (enable)
+			sScene::instance()->generate_nav_mesh(agent_radius, agent_height, walkable_climb, walkable_slope_angle);
 	}
 
 	struct cNavSceneCreate : cNavScene::Create
