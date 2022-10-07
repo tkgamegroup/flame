@@ -64,6 +64,15 @@ namespace flame
 			uvec2 img_off = uvec2(0);
 			uvec2 img_ext;
 			ImageSub img_sub;
+
+			BufferImageCopy()
+			{
+			}
+
+			BufferImageCopy(const uvec2& ext) :
+				img_ext(ext)
+			{
+			}
 		};
 
 		struct ImageBlit
