@@ -96,8 +96,7 @@ namespace flame
 
 		bool socket_send(SocketType type, int fd, const std::string& msg)
 		{
-			auto size = (int)msg.size();
-			char buf[2048];
+			auto size = (uint)msg.size();
 
 			auto n_send = 0;
 
@@ -107,14 +106,13 @@ namespace flame
 				n_send = send(fd, msg.data(), size, 0);
 				break;
 			case SocketTcp:
-				memcpy(buf, &size, sizeof(uint));
-				memcpy(buf + sizeof(uint), msg.data(), size);
-				n_send = send(fd, buf, sizeof(uint) + size, 0);
+				n_send += send(fd, (char*)&size, sizeof(uint), 0);
+				n_send += send(fd, msg.data(), size, 0);
 				break;
 			case SocketWeb:
 			{
+				char buf[16];
 				auto p = buf;
-
 				*p++ = 129;
 				if (size <= 125)
 					*p++ = size;
@@ -139,10 +137,8 @@ namespace flame
 					*p++ = (size >> 8) & 0xff;
 					*p++ = size & 0xff;
 				}
-
-				memcpy(p, msg.data(), size);
-
-				n_send = send(fd, buf, int(p - buf) + size, 0);
+				n_send += send(fd, buf, p - buf, 0);
+				n_send += send(fd, msg.data(), size, 0);
 			}
 				break;
 			}
@@ -238,13 +234,13 @@ namespace flame
 
 						auto op = b1 & 0xf;
 						auto mask = (b2 & 128) != 0;
-						auto len = b2 & 127;
+						auto l = b2 & 127;
 
 						{
 							auto b = 0;
-							if (len == 126)
+							if (l == 126)
 								b = 2;
-							else if (len == 127)
+							else if (l == 127)
 								b = 8;
 							if (mask)
 								b += 4;
@@ -262,16 +258,16 @@ namespace flame
 
 						uint64 length = 0;
 
-						if (len <= 125)
-							length += len;
-						else if (len == 126)
+						if (l <= 125)
+							length += l;
+						else if (l == 126)
 						{
 							length += (*p++) << 8;
 							length += *p++;
 
 							n -= 2;
 						}
-						else if (len == 127)
+						else if (l == 127)
 						{
 							length += (*p++) << 56;
 							length += (*p++) << 48;

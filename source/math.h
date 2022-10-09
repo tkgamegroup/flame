@@ -59,7 +59,7 @@ namespace flame
 		void* p;
 	};
 
-	int log2i(int v)
+	inline int log2i(int v)
 	{
 		int ret = 0;
 		while (v >>= 1) ++ret;
