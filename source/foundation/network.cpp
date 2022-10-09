@@ -342,6 +342,7 @@ namespace flame
 
 		void ClientPrivate::send(const std::string& msg)
 		{
+			std::lock_guard lock(mtx);
 			socket_send(type, fd, msg);
 		}
 
@@ -467,7 +468,11 @@ namespace flame
 		void ServerPrivate::send(void* id, const std::string& msg, bool dgram)
 		{
 			if (!dgram)
-				socket_send(type, ((Client*)id)->fd, msg);
+			{
+				auto client = (Client*)id;
+				std::lock_guard lock(client->mtx);
+				socket_send(type, client->fd, msg);
+			}
 			else
 			{
 				auto& da = *(DgramAddress*)id;

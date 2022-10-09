@@ -59,6 +59,13 @@ namespace flame
 		void* p;
 	};
 
+	int log2i(int v)
+	{
+		int ret = 0;
+		while (v >>= 1) ++ret;
+		return ret;
+	}
+
 	template<uint N, typename T>
 	inline T sum(const vec<N, T>& v)
 	{
