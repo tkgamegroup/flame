@@ -1287,6 +1287,13 @@ namespace flame
 	{
 		if (mark_clear_pipelines)
 		{
+			opa_mesh_buckets.draw_idxs.clear();
+			trs_mesh_buckets.draw_idxs.clear();
+			for (auto& s : dir_shadows)
+			{
+				for (auto& mb : s.mesh_buckets)
+					mb.draw_idxs.clear();
+			}
 			for (auto& res : mat_reses)
 			{
 				if (res.mat)

@@ -146,7 +146,7 @@ namespace flame
 			return n_send > 0;
 		}
 
-		bool socket_recv(SocketType type, int fd, std::vector<std::string>& res)
+		bool socket_recv(SocketType type, int fd, std::vector<std::string>& reses)
 		{
 			char buf[2048];
 
@@ -159,50 +159,29 @@ namespace flame
 				if (n_recv <= 0)
 					n_recv = 0;
 				else
-					res.emplace_back(buf, buf + n_recv);
+					reses.emplace_back(buf, buf + n_recv);
 				break;
 			case SocketTcp:
 			{
-				auto n = recv(fd, buf, countof(buf), 0);
+				uint length;
+				auto n = recv(fd, (char*)&length, sizeof(uint), 0);
 				if (n <= 0)
 					n_recv = 0;
 				else
 				{
 					n_recv = n;
 
-					auto p = buf;
-					while (n > 0)
+					std::string res;
+					res.resize(length);
+
+					n = recv(fd, res.data(), length, 0);
+					if (n <= 0)
+						n_recv = 0;
+					else
 					{
-						if (n < sizeof(uint))
-						{
-							auto ret = recv(fd, (char*)p + n, sizeof(uint) - n, 0);
-							if (ret <= 0)
-							{
-								n_recv = 0;
-								break;
-							}
-							n += ret;
-						}
+						n_recv += n;
 
-						auto length = *(uint*)p;
-						p += 4;
-						n -= 4;
-
-						if (n < length)
-						{
-							auto ret = recv(fd, (char*)p + n, length - n, 0);
-							if (ret <= 0)
-							{
-								n_recv = 0;
-								break;
-							}
-							n += ret;
-						}
-
-						res.emplace_back(p, p + length);
-
-						p += length;
-						n -= length;
+						reses.emplace_back(res);
 					}
 				}
 			}
@@ -306,7 +285,7 @@ namespace flame
 							p[i] ^= ((char*)&mask_key)[i % 4];
 
 						if (op == 1)
-							res.emplace_back(p, p + length);
+							reses.emplace_back(p, p + length);
 
 						p += length;
 						n -= length;
