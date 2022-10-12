@@ -253,6 +253,10 @@ namespace flame
 			}
 			for (auto i = 0; i < u.variables.size(); i++)
 				u.variables_map.emplace(u.variables[i].name_hash, i);
+			for (auto i = 0; i < u.functions.size(); i++)
+				u.functions_map.emplace(u.functions[i].name_hash, i);
+			for (auto i = 0; i < u.attributes.size(); i++)
+				u.attributes_map.emplace(u.attributes[i].name_hash, i);
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto& f = u.functions.emplace_back();

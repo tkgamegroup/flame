@@ -505,6 +505,8 @@ namespace flame
 		std::vector<FunctionInfo> functions;
 		std::vector<Attribute> attributes;
 		std::unordered_map<uint, uint> variables_map;
+		std::unordered_map<uint, uint> functions_map;
+		std::unordered_map<uint, uint> attributes_map;
 		void* library = nullptr;
 
 		inline int find_variable_i(std::string_view name) const
@@ -549,12 +551,10 @@ namespace flame
 
 		inline const FunctionInfo* find_function(uint name_hash) const
 		{
-			for (auto& f : functions)
-			{
-				if (f.name_hash == name_hash)
-					return &f;
-			}
-			return nullptr;
+			auto it = functions_map.find(name_hash);
+			if (it == functions_map.end())
+				return nullptr;
+			return &functions[it->second];
 		}
 
 		inline const Attribute* find_attribute(std::string_view name) const
@@ -569,19 +569,17 @@ namespace flame
 
 		inline const Attribute* find_attribute(uint name_hash) const
 		{
-			for (auto& a : attributes)
-			{
-				if (a.name_hash == name_hash)
-					return &a;
-			}
-			return nullptr;
+			auto it = attributes_map.find(name_hash);
+			if (it == attributes_map.end())
+				return nullptr;
+			return &attributes[it->second];
 		}
 
 		void* create_object(void* p = nullptr) const
 		{
 			if (!p)
 			{
-				if (auto fi = find_function("create"); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
+				if (auto fi = find_function("create"_h); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
 				{
 					if (fi->parameters.empty())
 						p = fi->call<void*>(nullptr);
@@ -591,7 +589,7 @@ namespace flame
 				}
 				p = malloc(size);
 			}
-			if (auto fi = find_function("dctor"); fi)
+			if (auto fi = find_function("dctor"_h); fi)
 				fi->call<void>(p);
 			else
 			{
@@ -608,7 +606,7 @@ namespace flame
 
 		void destroy_object(void* p, bool free_memory = true) const
 		{
-			if (auto fi = find_function("dtor"); fi)
+			if (auto fi = find_function("dtor"_h); fi)
 				fi->call<void>(p);
 			else
 			{
@@ -624,7 +622,7 @@ namespace flame
 
 		void copy_object(void* dst, const void* src) const
 		{
-			if (auto fi = find_function("operator="); fi)
+			if (auto fi = find_function("operator="_h); fi)
 				fi->call<void*>(dst, src);
 			else
 			{
