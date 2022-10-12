@@ -253,10 +253,6 @@ namespace flame
 			}
 			for (auto i = 0; i < u.variables.size(); i++)
 				u.variables_map.emplace(u.variables[i].name_hash, i);
-			for (auto i = 0; i < u.functions.size(); i++)
-				u.functions_map.emplace(u.functions[i].name_hash, i);
-			for (auto i = 0; i < u.attributes.size(); i++)
-				u.attributes_map.emplace(u.attributes[i].name_hash, i);
 			for (auto n_function : n_udt.child("functions"))
 			{
 				auto& f = u.functions.emplace_back();
@@ -275,6 +271,8 @@ namespace flame
 				for (auto n_parameter : n_function)
 					f.parameters.push_back(read_ti(n_parameter.attribute("v")));
 			}
+			for (auto i = 0; i < u.functions.size(); i++)
+				u.functions_map.emplace(u.functions[i].name_hash, i);
 			for (auto n_attribute : n_udt.child("attributes"))
 			{
 				auto& a = u.attributes.emplace_back();
@@ -291,6 +289,8 @@ namespace flame
 				if (auto att = n_attribute.attribute("default_value"); att)
 					a.default_value = att.value();
 			}
+			for (auto i = 0; i < u.attributes.size(); i++)
+				u.attributes_map.emplace(u.attributes[i].name_hash, i);
 		}
 
 		return true;
