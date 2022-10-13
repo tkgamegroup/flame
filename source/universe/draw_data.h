@@ -62,6 +62,22 @@ namespace flame
 		}
 	};
 
+	struct Particle
+	{
+		vec3 pos;
+		vec3 x_ext;
+		vec3 y_ext;
+		vec4 uv;
+		cvec4 col;
+	};
+
+	struct ParticleDraw
+	{
+		uint type; // "Billboard"_h
+		uint mat_id;
+		std::vector<Particle> pts;
+	};
+
 	struct PrimitiveDraw
 	{
 		uint type; // "LineList"_h or "TriangleList"_h
@@ -94,6 +110,7 @@ namespace flame
 		std::vector<MeshDraw>		meshes;
 		std::vector<TerrainDraw>	terrains;
 		std::vector<SdfDraw>		sdfs;
+		std::vector<ParticleDraw>	particles;
 		std::vector<PrimitiveDraw>	primitives;
 
 		bool graphics_debug = false; // could use this to mark a capture
@@ -107,6 +124,7 @@ namespace flame
 			meshes.clear();
 			terrains.clear();
 			sdfs.clear();
+			particles.clear();
 			primitives.clear();
 
 			graphics_debug = false;

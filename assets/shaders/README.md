@@ -1,0 +1,2 @@
+
+  You don't have to specify 'vertex buffer' in .pipeline. If you don't, pipeline will use its vertex shader's input as its vertex buffer struct (assuming all attributes are in one buffer), and vec4 type attributes which ends with '_col' or '_color' will consider as cvec4 type.

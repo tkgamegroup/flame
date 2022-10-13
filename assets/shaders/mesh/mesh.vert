@@ -1,12 +1,4 @@
-layout(location = 0) in vec3 i_pos;
-layout(location = 1) in vec2 i_uv;
-layout(location = 2) in vec3 i_nor;
-#ifdef ARMATURE
-layout(location = 3) in ivec4 i_bids;
-layout(location = 4) in vec4 i_bwgts;
-#endif
-//layout (location = 5) in vec3 i_tan;
-//layout (location = 6) in vec3 i_bit;
+#include "mesh.vi"
 
 layout(location = 0) out flat uint o_matid;
 layout(location = 1) out vec2 o_uv;

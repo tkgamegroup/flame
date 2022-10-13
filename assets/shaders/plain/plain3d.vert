@@ -1,7 +1,4 @@
-layout (location = 0) in vec3 i_pos;
-#ifdef USE_VERTEX_COLOR
-layout (location = 1) in vec4 i_col;
-#endif
+#include "plain3d.vi"
 
 #ifdef USE_VERTEX_COLOR
 layout (location = 0) out vec4 o_col;

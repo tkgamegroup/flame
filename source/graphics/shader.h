@@ -226,6 +226,8 @@ namespace flame
 			uint stride = 0;
 		};
 
+		FLAME_GRAPHICS_API UdtInfo* get_vertex_input_ui(const std::filesystem::path& filename, const std::vector<std::string>& defines);
+
 		/*
 			if (Enable)
 			{

@@ -1,3 +1,54 @@
+%rp=forward.rp
+%pll=forward.pll
+layout
+  {pll}
+shaders
+  @vert
+ ---
+  @geom
+ ---
+  @frag
+renderpass
+  {rp}
+cull_mode
+  None
+primitive_topology
+  PointList
+depth_write
+  false
+blend_options
+  enable
+    true
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    Zero
+
+@vert
+#include "particle.vi"
+
+layout(location = 0) out vec3 o_xext;
+layout(location = 1) out vec3 o_yext;
+layout(location = 2) out vec4 o_col;
+layout(location = 3) out vec4 o_uv;
+layout(location = 4) out flat uint o_id;
+
+void main()
+{
+	o_xext = i_xext;
+	o_yext = i_yext;
+	o_col = i_col;
+	o_uv = i_uv;
+	o_id = gl_InstanceIndex >> 16;
+	gl_Position = vec4(i_pos, 1.0);
+}
+@
+
+@geom
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
@@ -41,3 +92,18 @@ void main()
 
 	EndPrimitive();
 }
+@
+
+
+@frag
+layout(location = 0) in vec4 i_col;
+layout(location = 1) in vec2 i_uv;
+layout(location = 2) in flat uint i_id;
+
+layout(location = 0) out vec4 o_color;
+
+void main()
+{
+	o_color = i_col * texture(maps[i_id], i_uv);
+}
+@

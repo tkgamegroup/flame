@@ -357,8 +357,9 @@ namespace flame
 			ShaderStageGeom = 1 << 3,
 			ShaderStageFrag = 1 << 4,
 			ShaderStageComp = 1 << 5,
-			ShaderStageDsl  = 1 << 6,
-			ShaderStagePll  = 1 << 7,
+			ShaderVi		= 1 << 7,
+			ShaderDsl		= 1 << 8,
+			ShaderPll		= 1 << 9,
 			ShaderStageAll  = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag | ShaderStageComp,
 
 			ShaderStage_Max = 0xffffffff

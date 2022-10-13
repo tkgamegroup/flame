@@ -84,6 +84,7 @@ namespace flame
 	graphics::SparseArray dir_lights;
 	graphics::SparseArray pt_lights;
 	graphics::StorageBuffer buf_lighting;
+	graphics::VertexBuffer buf_particles;
 	graphics::VertexBuffer buf_primitives;
 	graphics::StorageBuffer buf_luminance;
 
@@ -206,6 +207,7 @@ namespace flame
 			}
 			break;
 		case "grass_field"_h:
+		case "particle"_h:
 			defines.push_back("rp=" + str(rp_fwd));
 			defines.push_back("pll=" + str(pll_fwd));
 			break;
@@ -232,7 +234,10 @@ namespace flame
 			defines.push_back("all_shader:GRASS_FIELD");
 			break;
 		case "sdf"_h:
-			pipeline_name = L"flame\\shaders\\sdf\\sdf.pipeline";
+			pipeline_name = L"flame\\shaders\\sdf.pipeline";
+			break;
+		case "particle"_h:
+			pipeline_name = L"flame\\shaders\\particle.pipeline";
 			break;
 		}
 		switch (modifier1)
@@ -256,8 +261,8 @@ namespace flame
 		{
 			ret->dynamic_renderpass = true;
 			res.pls[key] = ret;
-			ret->frag()->dependencies.emplace_back("flamme::Graphics::Material"_h, res.mat);
-			ret->dependencies.emplace_back("flamme::Graphics::Material"_h, res.mat);
+			ret->frag()->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
+			ret->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
 		}
 		return ret;
 	}
@@ -446,6 +451,13 @@ namespace flame
 		}
 		ds_lighting->update();
 
+		buf_vtx.create(graphics::get_vertex_input_ui(L"flame\\shaders\\mesh\\mesh.vi", {}), 1024 * 256 * 4);
+		buf_idx.create(1024 * 256 * 6);
+		buf_vtx_arm.create(graphics::get_vertex_input_ui(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }), 1024 * 128 * 4);
+		buf_idx_arm.create(1024 * 128 * 6);
+		buf_particles.create(graphics::get_vertex_input_ui(L"flame\\shaders\\particle.vi", {}), 1024 * 64);
+		buf_primitives.create(graphics::get_vertex_input_ui(L"flame\\shaders\\plain\\plain3d.vi", {}), 1024 * 128);
+
 		mesh_reses.resize(1024);
 
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
@@ -453,7 +465,6 @@ namespace flame
 		pl_line3d->dynamic_renderpass = true;
 		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
 		pl_triangle3d->dynamic_renderpass = true;
-		buf_primitives.create(pl_line3d->vi_ui(), 1024 * 128);
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
@@ -485,10 +496,6 @@ namespace flame
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_terrain_plain->dynamic_renderpass = true;
 
-		buf_vtx.create(pl_mesh_plain->vi_ui(), 1024 * 256 * 4);
-		buf_idx.create(1024 * 256 * 6);
-		buf_vtx_arm.create(pl_mesh_arm_plain->vi_ui(), 1024 * 128 * 4);
-		buf_idx_arm.create(1024 * 128 * 6);
 		opa_mesh_buckets.buf_idr.create(mesh_instances.capacity);
 		trs_mesh_buckets.buf_idr.create(mesh_instances.capacity);
 		for (auto& s : dir_shadows)
@@ -1730,6 +1737,34 @@ namespace flame
 			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
+		draw_data.reset("forward"_h, "particle"_h);
+		for (auto n : camera_culled_nodes)
+			n->draw(draw_data);
+		for (auto& p : draw_data.particles)
+		{
+			for (auto& v : p.pts)
+			{
+				auto pv = buf_particles.add();
+				pv.item("i_pos"_h).set(v.pos);
+				pv.item("i_xext"_h).set(v.x_ext);
+				pv.item("i_yext"_h).set(v.y_ext);
+				pv.item("i_uv"_h).set(v.uv);
+				pv.item("i_col"_h).set(v.col);
+			}
+		}
+		buf_particles.upload(cb);
+		buf_particles.buf_top = buf_particles.stag_top = 0;
+		{
+			cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
+			auto vtx_off = 0;
+			for (auto& p : draw_data.particles)
+			{
+				cb->bind_pipeline(get_material_pipeline(mat_reses[p.mat_id], "particle"_h, 0, 0));
+				cb->draw(p.pts.size(), 1, vtx_off, p.mat_id << 16);
+				vtx_off += p.pts.size();
+			}
+		}
+
 		cb->end_renderpass();
 
 		// post processing
@@ -1939,24 +1974,26 @@ namespace flame
 		cb->bind_pipeline_layout(prm_plain.pll);
 		prm_plain.pc.item("mvp"_h).set(camera->proj_view_mat);
 		prm_plain.push_constant(cb);
-		auto primitive_vtx_off = 0;
-		for (auto& d : draw_data.primitives)
 		{
-			auto col_item = prm_plain.pc.item("col"_h);
-			col_item.set(vec4(d.color) / 255.f);
-			prm_plain.pc.mark_dirty(col_item);
-			prm_plain.push_constant(cb);
-			switch (d.type)
+			auto vtx_off = 0;
+			for (auto& d : draw_data.primitives)
 			{
-			case "LineList"_h:
-				cb->bind_pipeline(pl_line3d);
-				break;
-			case "TriangleList"_h:
-				cb->bind_pipeline(pl_triangle3d);
-				break;
+				auto col_item = prm_plain.pc.item("col"_h);
+				col_item.set(vec4(d.color) / 255.f);
+				prm_plain.pc.mark_dirty(col_item);
+				prm_plain.push_constant(cb);
+				switch (d.type)
+				{
+				case "LineList"_h:
+					cb->bind_pipeline(pl_line3d);
+					break;
+				case "TriangleList"_h:
+					cb->bind_pipeline(pl_triangle3d);
+					break;
+				}
+				cb->draw(d.points.size(), 1, vtx_off, 0);
+				vtx_off += d.points.size();
 			}
-			cb->draw(d.points.size(), 1, primitive_vtx_off, 0);
-			primitive_vtx_off += d.points.size();
 		}
 		cb->end_renderpass();
 

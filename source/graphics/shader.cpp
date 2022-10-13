@@ -29,6 +29,7 @@ namespace flame
 			switch (stage)
 			{
 			case ShaderStageVert:
+			case ShaderVi:
 				return L"vert";
 			case ShaderStageTesc:
 				return L"tesc";
@@ -37,8 +38,8 @@ namespace flame
 			case ShaderStageGeom:
 				return L"geom";
 			case ShaderStageFrag:
-			case ShaderStageDsl:
-			case ShaderStagePll:
+			case ShaderDsl:
+			case ShaderPll:
 				return L"frag";
 			case ShaderStageComp:
 				return L"comp";
@@ -387,11 +388,11 @@ namespace flame
 								if (std::find(dependencies.begin(), dependencies.end(), header_path) == dependencies.end())
 									dependencies.push_back(header_path);
 								auto is_dsl = header_path.extension() == L".dsl";
-								if (!(is_dsl && stage == ShaderStagePll))
+								if (!(is_dsl && stage == ShaderPll))
 								{
 									ret += preprocess(header_path, {});
 									ret += "\n";
-									if (is_dsl && stage != ShaderStageDsl)
+									if (is_dsl && stage != ShaderDsl)
 									{
 										ret += "#undef SET\n";
 										dsl_id++;
@@ -413,7 +414,7 @@ namespace flame
 			};
 
 			temp_content += preprocess(src_path, additional_lines);
-			if (stage == ShaderStageDsl || stage == ShaderStagePll)
+			if (stage == ShaderVi || stage == ShaderDsl || stage == ShaderPll)
 				temp_content += "void main() {}\n";
 			std::ofstream dst(dst_path);
 			dst << "dependencies:" << std::endl;
@@ -470,7 +471,7 @@ namespace flame
 			auto spv_compiler = spirv_cross::CompilerGLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
 			auto spv_resources = spv_compiler.get_shader_resources();
 
-			if (stage == ShaderStageDsl || stage == ShaderStagePll)
+			if (stage == ShaderDsl || stage == ShaderPll)
 			{
 				std::vector<DescriptorBinding> bindings;
 
@@ -508,10 +509,13 @@ namespace flame
 			}
 			else
 			{
-				dst << "spv:" << std::endl;
-				spv.save(dst);
+				if (stage & ShaderStageAll)
+				{
+					dst << "spv:" << std::endl;
+					spv.save(dst);
+				}
 
-				if (stage == ShaderStageVert)
+				if (stage == ShaderStageVert || stage == ShaderVi)
 				{
 					UdtInfo ui;
 					ui.name = "Input";
@@ -689,7 +693,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(ShaderStageDsl, temp_path, {}, fn);
+				compile_shader(ShaderDsl, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = DescriptorSetLayoutPrivate::load_from_res(fn);
@@ -732,7 +736,7 @@ namespace flame
 
 				auto res_path = filename;
 				res_path += L".res";
-				compile_shader(ShaderStageDsl, filename, {}, res_path);
+				compile_shader(ShaderDsl, filename, {}, res_path);
 
 				auto ret = DescriptorSetLayoutPrivate::load_from_res(res_path);
 				if (ret)
@@ -1020,7 +1024,7 @@ namespace flame
 				if (!src.empty())
 					std::filesystem::last_write_time(temp_path, std::filesystem::last_write_time(src));
 
-				compile_shader(ShaderStagePll, temp_path, {}, fn);
+				compile_shader(ShaderPll, temp_path, {}, fn);
 				std::filesystem::remove(temp_path);
 
 				auto ret = PipelineLayoutPrivate::load_from_res(fn);
@@ -1063,7 +1067,7 @@ namespace flame
 
 				auto res_path = filename;
 				res_path += L".res";
-				compile_shader(ShaderStagePll, filename, {}, res_path);
+				compile_shader(ShaderPll, filename, {}, res_path);
 
 				auto ret = PipelineLayoutPrivate::load_from_res(res_path);
 				if (ret)
@@ -1268,6 +1272,57 @@ namespace flame
 			}
 		}Shader_release;
 		Shader::Release& Shader::release = Shader_release;
+
+		struct LoadedVertexinput
+		{
+			std::filesystem::path filename;
+			std::vector<std::string> defines;
+			TypeInfoDataBase db;
+			UdtInfo* ui;
+		};
+		static std::vector<std::unique_ptr<LoadedVertexinput>> loaded_vertex_inputs;
+		UdtInfo* get_vertex_input_ui(const std::filesystem::path& _filename, const std::vector<std::string>& defines)
+		{
+			auto filename = Path::get(_filename);
+
+			for (auto& vi : loaded_vertex_inputs)
+			{
+				if (vi->filename == filename && vi->defines == defines)
+					return vi->ui;
+			}
+
+			if (!std::filesystem::exists(filename))
+			{
+				wprintf(L"cannot find vertex input: %s\n", _filename.c_str());
+				return nullptr;
+			}
+
+			auto res_path = filename;
+			res_path += defines_to_hash_str(defines);
+			res_path += L".res";
+			compile_shader(ShaderVi, filename, defines, res_path);
+
+			if (std::ifstream file(res_path); file.good())
+			{
+				LineReader res(file);
+
+				TypeInfoDataBase db;
+
+				res.read_block("typeinfo:");
+				db.load_from_string(res.to_string());
+				file.close();
+
+				auto vi = new LoadedVertexinput;
+				vi->filename = filename;
+				vi->defines = defines;
+				vi->db = std::move(db);
+				vi->ui = find_udt("Input"_h, vi->db);
+				loaded_vertex_inputs.emplace_back(vi);
+				return vi->ui;
+			}
+
+			return nullptr;
+		}
 
 		void load_pipeline(PipelineType pipeline_type, const std::filesystem::path& filename, const std::vector<std::string>& _defines, void** ret)
 		{
