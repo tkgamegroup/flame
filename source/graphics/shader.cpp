@@ -519,21 +519,30 @@ namespace flame
 				{
 					UdtInfo ui;
 					ui.name = "Input";
+					std::vector<std::tuple<TypeInfo*, std::string, uint>> attributes;
 					for (auto& r : spv_resources.stage_inputs)
 					{
 						auto location = spv_compiler.get_decoration(r.id, spv::DecorationLocation);
-						auto& vi = ui.variables.emplace_back();
-						vi.type = get_shader_type(spv_compiler, r.base_type_id, db);
-						vi.name = r.name;
-						if (vi.type == TypeInfo::get<vec4>())
+						auto ti = get_shader_type(spv_compiler, r.base_type_id, db);
+						if (ti == TypeInfo::get<vec4>())
 						{
-							if (vi.name.ends_with("_col") || vi.name.ends_with("_color"))
-								vi.type = TypeInfo::get<cvec4>();
+							if (r.name.ends_with("_col") || r.name.ends_with("_color"))
+								ti = TypeInfo::get<cvec4>();
 						}
+						attributes.emplace_back(ti, r.name, location);
+					}
+					std::sort(attributes.begin(), attributes.end(), [](const auto& a, const auto& b) {
+						return std::get<2>(a) < std::get<2>(b);
+					});
+					for (auto& a : attributes)
+					{
+						auto& vi = ui.variables.emplace_back();
+						vi.type = std::get<0>(a);
+						vi.name = std::get<1>(a);
 						vi.offset = ui.size;
 						{
 							auto& i = *vi.metas.add_item("Location_i");
-							i.value.i = location;
+							i.value.i = std::get<2>(a);
 						}
 						ui.size += vi.type->size;
 					}
