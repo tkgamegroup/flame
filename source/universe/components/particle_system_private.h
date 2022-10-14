@@ -16,6 +16,7 @@ namespace flame
 
 		bool dirty = true;
 
+		float acc_num = 0.f;
 		std::list<Particle> particles;
 
 		~cParticleSystemPrivate();

@@ -104,6 +104,6 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
-	o_color = i_col * texture(maps[i_id], i_uv);
+	o_color = sample_map(i_id, i_uv) * i_col;
 }
 @

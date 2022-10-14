@@ -1,6 +1,7 @@
 #include "../../graphics/material.h"
 #include "particle_system_private.h"
 #include "node_private.h"
+#include "camera_private.h"
 #include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
@@ -26,28 +27,73 @@ namespace flame
 
 			switch (draw_data.pass)
 			{
-			case "forward"_h:
-				if (draw_data.category == "particle"_h && enable)
+			case PassForward:
+				if ((draw_data.categories & CateParticle) && enable)
 				{
+					acc_num += emitt_num * delta_time;
+					auto n = int(acc_num);
+					acc_num -= n;
+
+					for (auto i = 0; i < n; i++)
+					{
+						auto& pt = particles.emplace_back();
+						pt.pos = vec3(0.f);
+						pt.ext = particle_ext;
+						if (emitt_angle < 0.f)
+							pt.vel = sphericalRand(1.f) * particle_speed;
+						pt.time = particle_life_time;
+					}
+
+					for (auto& pt : particles)
+					{
+						pt.pos += pt.vel * delta_time;
+						pt.time -= delta_time;
+					}
+
 					auto& d = draw_data.particles.emplace_back();
 					d.mat_id = material_res_id;
+					d.pts.resize(particles.size());
+					auto& mat = node->transform;
+					auto& camera_rot = sRenderer::instance()->camera->node->g_rot;
+					auto i = 0;
+					for (auto& src : particles)
+					{
+						auto& dst = d.pts[i];
+						dst.pos = mat * vec4(src.pos, 1.f);
+						dst.x_ext = +camera_rot[0] * src.ext.x;
+						dst.y_ext = -camera_rot[1] * src.ext.y;
+						dst.uv = vec4(vec2(0.f), vec2(1.f));
+						dst.col = cvec4(255);
+						i++;
+					}
 
+					for (auto it = particles.begin(); it != particles.end(); )
+					{
+						if (it->time <= 0.f)
+							it = particles.erase(it);
+						else
+							it++;
+					}
 				}
 				break;
 			}
-			}, "mesh"_h);
+		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
 			*ret = AABB(AABB(vec3(0.f), 10.f).get_points(node->transform));
 			return true;
-			}, "mesh"_h);
+		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)
 				dirty = true;
-			}, "mesh"_h);
+		}, "mesh"_h);
 		data_listeners.add([this](uint hash) {
 			if (hash == "enable"_h)
+			{
+				if (!enable)
+					particles.clear();
 				dirty = true;
-			}, "mesh"_h);
+			}
+		}, "mesh"_h);
 
 		node->mark_transform_dirty();
 	}

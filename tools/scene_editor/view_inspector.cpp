@@ -453,41 +453,42 @@ void View_Inspector::on_draw()
 				if (enable != c->enable)
 					c->set_enable(enable);
 				auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
-					if (ui.name_hash == "flame::cMesh"_h)
+					if (name == "mesh_name"_h)
 					{
-						if (name == "mesh_name"_h)
+						ImGui::SameLine();
+						if (ImGui::Button("S"))
 						{
-							ImGui::SameLine();
-							if (ImGui::Button("S"))
-							{
-								auto& ori_name = ((cMeshPtr)obj)->mesh_name;
+							auto& ori_name = *(std::filesystem::path*)ui.find_attribute("mesh_name"_h)->get_value(obj);
 
-								static const wchar_t* names[] = {
-									L"standard_cube",
-									L"standard_sphere",
-									L"standard_cylinder"
-								};
-								auto idx = -1;
-								for (auto i = 0; i < countof(names); i++)
+							static const wchar_t* names[] = {
+								L"standard_cube",
+								L"standard_sphere",
+								L"standard_cylinder"
+							};
+							auto idx = -1;
+							for (auto i = 0; i < countof(names); i++)
+							{
+								if (ori_name == names[i])
 								{
-									if (ori_name == names[i])
-									{
-										idx = i;
-										break;
-									}
+									idx = i;
+									break;
 								}
-								if (idx == -1 || idx + 1 == countof(names))
-									idx = 0;
-								else
-									idx++;
-								((cMeshPtr)obj)->set_mesh_name(names[idx]);
 							}
+							if (idx == -1 || idx + 1 == countof(names))
+								idx = 0;
+							else
+								idx++;
+							auto path = std::filesystem::path(names[idx]);
+							ui.find_function("set_mesh_name"_h)->call<void, void*>(obj, &path);
 						}
-						else if (name == "material_name"_h)
+					}
+					else if (name == "material_name"_h)
+					{
+						ImGui::SameLine();
+						if (ImGui::Button("D"))
 						{
-							ImGui::SameLine();
-							if (ImGui::Button("D"))
-								((cMeshPtr)obj)->set_material_name(L"default");
+							auto path = std::filesystem::path(L"default");
+							ui.find_function("set_material_name"_h)->call<void, void*>(obj, &path);
 						}
 					}
 				});

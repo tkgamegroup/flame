@@ -177,6 +177,8 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(GraphicsPipelinePtr pl)
 		{
+			if (curr_gpl == pl)
+				return;
 			curr_plt = PipelineGraphics;
 			curr_pll = pl->layout;
 			curr_gpl = pl;
@@ -190,6 +192,8 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(ComputePipelinePtr pl)
 		{
+			if (curr_cpl == pl)
+				return;
 			curr_plt = PipelineCompute;
 			curr_pll = pl->layout;
 			curr_gpl = nullptr;

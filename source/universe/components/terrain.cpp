@@ -49,7 +49,7 @@ namespace flame
 
 			switch (draw_data.pass)
 			{
-			case "instance"_h:
+			case PassInstance:
 				if (dirty)
 				{
 					sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
@@ -57,30 +57,30 @@ namespace flame
 					dirty = false;
 				}
 				break;
-			case "gbuffer"_h:
-				if (draw_data.category == "terrain"_h)
+			case PassGBuffer:
+				if (draw_data.categories & CateTerrain)
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
-			case "forward"_h:
-				if (draw_data.category == "grass_field"_h)
+			case PassForward:
+				if (draw_data.categories & CateGrassField)
 				{
 					if (use_grass_field)
 						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				}
 				break;
-			case "occulder"_h:
+			case PassOcculder:
 				if (cast_shadow)
 				{
-					if (draw_data.category == "terrain"_h)
+					if (draw_data.categories & CateTerrain)
 						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				}
 				break;
-			case "pick_up"_h:
-				if (draw_data.category == "terrain"_h)
+			case PassPickUp:
+				if (draw_data.categories & CateTerrain)
 					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
 				break;
 			}
-			}, "terrain"_h);
+		}, "terrain"_h);
 		node->measurers.add([this](AABB* ret) {
 			if (!height_map)
 				return false;

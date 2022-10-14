@@ -54,7 +54,7 @@ namespace flame
 
 			switch (draw_data.pass)
 			{
-			case "instance"_h:
+			case PassInstance:
 				if (!parmature && dirty)
 				{
 					if (enable)
@@ -62,23 +62,23 @@ namespace flame
 					dirty = false;
 				}
 				break;
-			case "gbuffer"_h:
-				if (draw_data.category == "mesh"_h && enable && material->opaque)
+			case PassGBuffer:
+				if ((draw_data.categories & CateMesh) && enable && material->opaque)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
-			case "forward"_h:
-				if (draw_data.category == "mesh"_h && enable && !material->opaque)
+			case PassForward:
+				if ((draw_data.categories & CateMesh) && enable && !material->opaque)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
-			case "occulder"_h:
+			case PassOcculder:
 				if (enable && cast_shadow)
 				{
-					if (draw_data.category == "mesh"_h)
+					if ((draw_data.categories & CateMesh))
 						draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				}
 				break;
-			case "pick_up"_h:
-				if (draw_data.category == "mesh"_h && enable)
+			case PassPickUp:
+				if ((draw_data.categories & CateMesh) && enable)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			}

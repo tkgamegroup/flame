@@ -101,24 +101,47 @@ namespace flame
 		}
 	};
 
+	enum DrawPass
+	{
+		PassInstance,
+		PassLight,
+		PassGBuffer,
+		PassForward,
+		PassOcculder,
+		PassOutline,
+		PassPrimitive,
+		PassPickUp
+	};
+
+	enum DrawCategory
+	{
+		CateLight = 1 << 0,
+		CateMesh = 1 << 1,
+		CateTerrain = 1 << 2,
+		CateGrassField = 1 << 3,
+		CateSDF = 1 << 4,
+		CateParticle = 1 << 5,
+		CatePrimitive = 1 << 6
+	};
+
 	struct DrawData
 	{
-		uint pass;
-		uint category;
+		DrawPass pass;
+		uint categories;
 
 		std::vector<LightDraw>		lights;
 		std::vector<MeshDraw>		meshes;
-		std::vector<TerrainDraw>	terrains;
+		std::vector<TerrainDraw>	terrains; // or grass fields
 		std::vector<SdfDraw>		sdfs;
 		std::vector<ParticleDraw>	particles;
 		std::vector<PrimitiveDraw>	primitives;
 
 		bool graphics_debug = false; // could use this to mark a capture
 
-		void reset(uint _pass, uint _category)
+		void reset(DrawPass _pass, uint _categories)
 		{
 			pass = _pass;
-			category = _category;
+			categories = _categories;
 
 			lights.clear();
 			meshes.clear();
