@@ -540,10 +540,7 @@ namespace flame
 						vi.type = std::get<0>(a);
 						vi.name = std::get<1>(a);
 						vi.offset = ui.size;
-						{
-							auto& i = *vi.metas.add_item("Location_i");
-							i.value.i = std::get<2>(a);
-						}
+						vi.metas.items.emplace("Location"_h, str(std::get<2>(a)));
 						ui.size += vi.type->size;
 					}
 					db.udts.emplace(sh(ui.name.c_str()), ui);
@@ -1533,9 +1530,9 @@ namespace flame
 							for (auto& vi : s->in_ui->variables)
 							{
 								auto& va = vb.attributes.emplace_back();
-								LightCommonValue cv;
-								vi.metas.get("Location_i"_h, &cv);
-								va.location = cv.i;
+								std::string meta;
+								vi.metas.get("Location"_h, &meta);
+								va.location = s2t<uint>(meta);
 								if (vi.type == TypeInfo::get<float>())
 									va.format = Format_R32_SFLOAT;
 								else if (vi.type == TypeInfo::get<vec2>())

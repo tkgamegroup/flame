@@ -210,6 +210,7 @@ namespace flame
 		case "particle"_h:
 			defines.push_back("rp=" + str(rp_fwd));
 			defines.push_back("pll=" + str(pll_fwd));
+			defines.push_back("frag:UNLIT");
 			break;
 		}
 
@@ -1368,6 +1369,7 @@ namespace flame
 		buf_camera.item("proj_view"_h).set(camera->proj_view_mat);
 		buf_camera.item("proj_view_inv"_h).set(camera->proj_view_mat_inv);
 		memcpy(buf_camera.item("frustum_planes"_h).pdata, camera->frustum.planes, sizeof(vec4) * 6);
+		buf_camera.item("time"_h).set(total_time);
 		buf_camera.mark_dirty(buf_camera);
 		buf_camera.upload(cb);
 

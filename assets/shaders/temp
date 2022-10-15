@@ -1,0 +1,17 @@
+#include "D:\flame\assets\shaders\forward.pll"
+
+layout(location = 0) in vec4 i_col;
+layout(location = 1) in vec2 i_uv;
+layout(location = 2) in flat uint i_matid;
+
+layout(location = 0) out vec4 o_color;
+
+void main()
+{
+#ifdef MAT_CODE
+	MaterialInfo material = material.infos[i_matid];
+	#include MAT_CODE
+#else
+	o_color = i_col;
+#endif
+}

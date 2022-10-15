@@ -452,6 +452,9 @@ void View_Inspector::on_draw()
 				ImGui::Checkbox("enable", &enable);
 				if (enable != c->enable)
 					c->set_enable(enable);
+				static std::vector<std::string> hash_candidates;
+				static const Attribute* op_attr;
+				static void* op_obj;
 				auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
 					if (name == "mesh_name"_h)
 					{
@@ -491,7 +494,38 @@ void View_Inspector::on_draw()
 							ui.find_function("set_material_name"_h)->call<void, void*>(obj, &path);
 						}
 					}
+					else
+					{
+						auto& a = *ui.find_attribute(name);
+						std::string meta;
+						if (a.var_idx != -1)
+						{
+							if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
+							{
+								ImGui::SameLine();
+								if (ImGui::Button("S"))
+								{
+									ImGui::OpenPopup("select_hash");
+									hash_candidates = SUS::split(meta, '|');
+									op_attr = &a;
+									op_obj = obj;
+								}
+							}
+						}
+					}
 				});
+				if (ImGui::BeginPopup("select_hash"))
+				{
+					for (auto& c : hash_candidates)
+					{
+						if (ImGui::Selectable(c.c_str()))
+						{
+							uint v = sh(c.c_str());
+							op_attr->set_value(op_obj, &v);
+						}
+					}
+					ImGui::EndPopup();
+				}
 				if (!changed_name.empty())
 				{
 					if (auto ins = get_prefab_instance(e); ins)

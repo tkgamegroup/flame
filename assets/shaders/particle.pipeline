@@ -35,7 +35,7 @@ layout(location = 0) out vec3 o_xext;
 layout(location = 1) out vec3 o_yext;
 layout(location = 2) out vec4 o_col;
 layout(location = 3) out vec4 o_uv;
-layout(location = 4) out flat uint o_id;
+layout(location = 4) out flat uint o_matid;
 
 void main()
 {
@@ -43,7 +43,7 @@ void main()
 	o_yext = i_yext;
 	o_col = i_col;
 	o_uv = i_uv;
-	o_id = gl_InstanceIndex >> 16;
+	o_matid = gl_InstanceIndex >> 16;
 	gl_Position = vec4(i_pos, 1.0);
 }
 @
@@ -56,11 +56,11 @@ layout(location = 0) in vec3 i_xext[];
 layout(location = 1) in vec3 i_yext[];
 layout(location = 2) in vec4 i_col[];
 layout(location = 3) in vec4 i_uv[];
-layout(location = 4) in flat uint i_id[];
+layout(location = 4) in flat uint i_matid[];
 
 layout(location = 0) out vec4 o_col;
 layout(location = 1) out vec2 o_uv;
-layout(location = 2) out flat uint o_id;
+layout(location = 2) out flat uint o_matid;
 
 void main()
 {
@@ -68,25 +68,25 @@ void main()
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].xw;
-	o_id = i_id[0];
+	o_matid = i_matid[0];
 	gl_Position = camera.proj_view * vec4(pos - i_xext[0] - i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zw;
-	o_id = i_id[0];
+	o_matid = i_matid[0];
 	gl_Position = camera.proj_view * vec4(pos + i_xext[0] - i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].xy;
-	o_id = i_id[0];
+	o_matid = i_matid[0];
 	gl_Position = camera.proj_view * vec4(pos - i_xext[0] + i_yext[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zy;
-	o_id = i_id[0];
+	o_matid = i_matid[0];
 	gl_Position = camera.proj_view * vec4(pos + i_xext[0] + i_yext[0], 1.0);
 	EmitVertex();
 
@@ -98,12 +98,17 @@ void main()
 @frag
 layout(location = 0) in vec4 i_col;
 layout(location = 1) in vec2 i_uv;
-layout(location = 2) in flat uint i_id;
+layout(location = 2) in flat uint i_matid;
 
 layout(location = 0) out vec4 o_color;
 
 void main()
 {
-	o_color = sample_map(i_id, i_uv) * i_col;
+#ifdef MAT_CODE
+	MaterialInfo material = material.infos[i_matid];
+	#include MAT_CODE
+#else
+	o_color = i_col;
+#endif
 }
 @

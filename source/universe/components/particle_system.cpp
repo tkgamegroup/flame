@@ -30,17 +30,29 @@ namespace flame
 			case PassForward:
 				if ((draw_data.categories & CateParticle) && enable)
 				{
+					auto& mat = node->transform;
+					auto rot = mat3(eulerAngleYXZ(radians(emitt_rotation.x), radians(emitt_rotation.y), radians(emitt_rotation.z)));
+
 					acc_num += emitt_num * delta_time;
 					auto n = int(acc_num);
 					acc_num -= n;
-
 					for (auto i = 0; i < n; i++)
 					{
 						auto& pt = particles.emplace_back();
 						pt.pos = vec3(0.f);
 						pt.ext = particle_ext;
-						if (emitt_angle < 0.f)
-							pt.vel = sphericalRand(1.f) * particle_speed;
+						switch (emitt_type)
+						{
+						case "sphere"_h:
+							pt.vel = sphericalRand(particle_speed);
+							break;
+						case "pie"_h:
+						{
+							auto rad = radians(linearRand(-emitt_angle, +emitt_angle));
+							pt.vel = rot * vec3(cos(rad), 0.f, sin(rad)) * particle_speed;
+						}
+							break;
+						}
 						pt.time = particle_life_time;
 					}
 
@@ -53,7 +65,6 @@ namespace flame
 					auto& d = draw_data.particles.emplace_back();
 					d.mat_id = material_res_id;
 					d.pts.resize(particles.size());
-					auto& mat = node->transform;
 					auto& camera_rot = sRenderer::instance()->camera->node->g_rot;
 					auto i = 0;
 					for (auto& src : particles)
@@ -79,7 +90,7 @@ namespace flame
 			}
 		}, "mesh"_h);
 		node->measurers.add([this](AABB* ret) {
-			*ret = AABB(AABB(vec3(0.f), 10.f).get_points(node->transform));
+			*ret = AABB(AABB(vec3(0.f), particle_speed * particle_life_time + max(particle_ext.x, particle_ext.y)).get_points(node->transform));
 			return true;
 		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {

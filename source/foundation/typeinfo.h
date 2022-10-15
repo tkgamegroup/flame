@@ -304,37 +304,19 @@ namespace flame
 
 	struct Metas
 	{
-		struct Item
-		{
-			std::string name;
-			uint name_hash;
-			LightCommonValue value;
-		};
-
-		std::vector<Item> items;
-
-		Item* add_item(const std::string& name)
-		{
-			auto& i = items.emplace_back();
-			i.name = name;
-			i.name_hash = sh(name.c_str());
-			return &i;
-		}
+		std::unordered_map<uint, std::string> items;
 
 		void from_string(const std::string& str)
 		{
 			for (auto& t : SUS::split(SUS::get_trimed(str)))
 			{
 				auto sp = SUS::split(t, '=');
-				auto& i = *add_item(sp[0]);
-				if (i.name.ends_with("_i"))
-					i.value.i = s2t<int>(sp[1]);
-				else if (i.name.ends_with("_u"))
-					i.value.u = s2t<uint>(sp[1]);
-				else if (i.name.ends_with("_f"))
-					i.value.f = s2t<float>(sp[1]);
-				else if (i.name.ends_with("_c"))
-					i.value.c = s2t<4, uchar>(sp[1]);
+				uint key;
+				if (isdigit(sp[0][0]))
+					key = s2t<uint>(sp[0]);
+				else
+					key = sh(sp[0].c_str());
+				items.emplace(key, sp.size() > 1 ? sp[1] : "");
 			}
 		}
 
@@ -345,31 +327,21 @@ namespace flame
 			{
 				if (!ret.empty())
 					ret += ' ';
-				ret += i.name;
-				if (i.name.ends_with("_i"))
-					ret += "=" + str(i.value.i);
-				else if (i.name.ends_with("_u"))
-					ret += "=" + str(i.value.u);
-				else if (i.name.ends_with("_f"))
-					ret += "=" + str(i.value.f);
-				else if (i.name.ends_with("_c"))
-					ret += "=" + str(i.value.c);
+				ret += str(i.first);
+				if (!i.second.empty())
+					ret += "=" + i.second;
 			}
 			return ret;
 		}
 
-		inline bool get(uint h, LightCommonValue* v = nullptr) const
+		inline bool get(uint h, std::string* value = nullptr) const
 		{
-			for (auto& i : items)
-			{
-				if (i.name_hash == h)
-				{
-					if (v)
-						*v = i.value;
-					return true;
-				}
-			}
-			return false;
+			auto it = items.find(h);
+			if (it == items.end())
+				return false;
+			if (value)
+				*value = it->second;
+			return true;
 		}
 	};
 
