@@ -11,6 +11,7 @@ namespace flame
 			vec3 pos;
 			vec2 ext;
 			vec3 vel;
+			uvec4 col;
 			float time;
 		};
 

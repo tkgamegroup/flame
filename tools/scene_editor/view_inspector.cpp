@@ -695,7 +695,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmat")
 		{
-			if (selection_changed)
+			if (selection_changed || !sel_ref_obj)
 			{
 				auto material = graphics::Material::get(path);
 				if (material)
@@ -725,7 +725,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fmod")
 		{
-			if (selection_changed)
+			if (selection_changed || !sel_ref_obj)
 			{
 				auto model = graphics::Model::get(path);
 				if (model)
@@ -758,7 +758,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".fani")
 		{
-			if (selection_changed)
+			if (selection_changed || !sel_ref_obj)
 			{
 				auto animation = graphics::Animation::get(path);
 				if (animation)

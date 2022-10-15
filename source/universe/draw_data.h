@@ -69,6 +69,7 @@ namespace flame
 		vec3 y_ext;
 		vec4 uv;
 		cvec4 col;
+		float time;
 	};
 
 	struct ParticleDraw

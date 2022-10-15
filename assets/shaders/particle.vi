@@ -3,3 +3,4 @@ layout(location = 1) in vec3 i_xext;
 layout(location = 2) in vec3 i_yext;
 layout(location = 3) in vec4 i_uv;
 layout(location = 4) in vec4 i_col;
+layout(location = 5) in float i_time;

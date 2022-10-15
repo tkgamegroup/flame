@@ -1720,6 +1720,7 @@ namespace flame
 				pv.item("i_yext"_h).set(v.y_ext);
 				pv.item("i_uv"_h).set(v.uv);
 				pv.item("i_col"_h).set(v.col);
+				pv.item("i_time"_h).set(v.time);
 			}
 		}
 		buf_particles.upload(cb);

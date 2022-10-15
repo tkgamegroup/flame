@@ -16,6 +16,8 @@ namespace flame
 		float particle_speed = 5.f;
 		/// Reflect
 		vec2 particle_ext = vec2(1.f);
+		/// Reflect
+		cvec4 particle_col = cvec4(255);
 		/// Reflect hash=sphere|pie|cone
 		uint emitt_type = "sphere"_h;
 		/// Reflect
