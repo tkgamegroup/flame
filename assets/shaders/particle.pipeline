@@ -22,7 +22,7 @@ blend_options
   src_color
     SrcAlpha
   dst_color
-    OneMinusSrcAlpha
+    One
   src_alpha
     Zero
   dst_alpha
