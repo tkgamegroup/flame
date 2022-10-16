@@ -45,7 +45,7 @@ namespace flame
 			if (instance_id == -1)
 				return;
 
-			if (draw_data.pass == "instance"_h)
+			if (draw_data.pass == PassInstance)
 			{
 				if (playing_name != 0)
 				{

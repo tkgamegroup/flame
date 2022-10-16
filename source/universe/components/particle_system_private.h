@@ -13,6 +13,7 @@ namespace flame
 			vec3 vel;
 			uvec4 col;
 			float time;
+			float rnd;
 		};
 
 		bool dirty = true;

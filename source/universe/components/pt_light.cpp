@@ -22,14 +22,14 @@ namespace flame
 
 			switch (draw_data.pass)
 			{
-			case "instance"_h:
+			case PassInstance:
 				if (dirty)
 				{
 					sRenderer::instance()->set_pt_light_instance(instance_id, node->g_pos, color.rgb() * color.a, range);
 					dirty = false;
 				}
 				break;
-			case "light"_h:
+			case PassLight:
 				draw_data.lights.emplace_back(LightPoint, instance_id, cast_shadow);
 			}
 		}, "light"_h);

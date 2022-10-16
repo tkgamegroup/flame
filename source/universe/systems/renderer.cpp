@@ -1004,6 +1004,44 @@ namespace flame
 		{
 			for (auto& pl : res.pls)
 				graphics::GraphicsPipeline::release(pl.second);
+
+			auto has_pl = [&](graphics::GraphicsPipelinePtr pl) {
+				for (auto& pair : res.pls)
+				{
+					if (pair.second == pl)
+						return true;
+				}
+				return false;
+			};
+			for (auto it = opa_mesh_buckets.draw_idxs.begin(); it != opa_mesh_buckets.draw_idxs.end();)
+			{
+				if (has_pl(it->first))
+					it = opa_mesh_buckets.draw_idxs.erase(it);
+				else
+					it++;
+			}
+			for (auto it = trs_mesh_buckets.draw_idxs.begin(); it != trs_mesh_buckets.draw_idxs.end();)
+			{
+				if (has_pl(it->first))
+					it = trs_mesh_buckets.draw_idxs.erase(it);
+				else
+					it++;
+			}
+
+			for (auto& s : dir_shadows)
+			{
+				for (auto& mb : s.mesh_buckets)
+				{
+					for (auto it = mb.draw_idxs.begin(); it != mb.draw_idxs.end();)
+					{
+						if (has_pl(it->first))
+							it = mb.draw_idxs.erase(it);
+						else
+							it++;
+					}
+				}
+			}
+
 			res.pls.clear();
 		}
 		if (update_parameters || update_textures)

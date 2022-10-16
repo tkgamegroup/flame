@@ -153,6 +153,19 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 				break;
 			}
 			break;
+		case DataChar:
+			switch (ti->vec_size)
+			{
+			case 4:
+			{
+				vec4 color = *(cvec4*)data;
+				color /= 255.f;
+				if (ImGui::ColorEdit4(name.c_str(), &color[0]))
+					*(cvec4*)data = color * 255.f;
+			}
+				break;
+			}
+			break;
 		case DataString:
 			changed = ImGui::InputText(name.c_str(), (std::string*)data);
 			break;

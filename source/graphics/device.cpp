@@ -16,17 +16,29 @@ namespace flame
 			auto message = std::string(pMessage);
 			printf("\n%s\n", message.c_str());
 			static std::regex reg_id(R"(VUID-\w+-\w+-(\d+))");
-			static std::regex reg_obj(R"(Object \d+: handle = 0x(\w+))");
+			static std::regex reg_obj1(R"(Object \d+: handle = 0x(\w+), type \= VK_OBJECT_TYPE_(\w+))");
+			static std::regex reg_obj2(R"(Vk(\w+) 0x(\w+)\[\] )");
 			auto str = message;
 			std::smatch res;
 			uint msgid = 0;
-			std::vector<void*> backend_objects;
+			std::vector<std::pair<void*, std::string>> backend_objects;
 			if (std::regex_search(str, res, reg_id))
 				msgid = s2t<uint>(res[1].str());
-			while (std::regex_search(str, res, reg_obj))
+			while (std::regex_search(str, res, reg_obj1))
 			{
-				backend_objects.push_back((void*)s2u_hex<uint64>(res[1].str()));
+				backend_objects.emplace_back((void*)s2u_hex<uint64>(res[1].str()), res[2].str());
 				str = res.suffix();
+			}
+			while (std::regex_search(str, res, reg_obj2))
+			{
+				backend_objects.emplace_back((void*)s2u_hex<uint64>(res[2].str()), res[1].str());
+				str = res.suffix();
+			}
+
+			for (auto& vkobj : backend_objects)
+			{
+				auto obj = tracked_objects[vkobj.first].obj;
+				int cut = 1;
 			}
 
 			if (msgid == 2699)
@@ -36,7 +48,7 @@ namespace flame
 				if (std::regex_search(str, res, reg_msg))
 					binding = s2u_hex<uint>(res[1].str());
 
-				auto ds = (DescriptorSetPtr)tracked_objects[backend_objects[0]].obj;
+				auto ds = (DescriptorSetPtr)tracked_objects[backend_objects[0].first].obj;
 				if (ds && binding != -1)
 				{
 					auto dsl = ds->layout;
