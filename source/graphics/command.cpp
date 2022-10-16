@@ -71,6 +71,14 @@ namespace flame
 
 		void CommandBufferPrivate::begin(bool once)
 		{
+			curr_plt = PipelineNone;
+			curr_pll = nullptr;
+			curr_gpl = nullptr;
+			curr_cpl = nullptr;
+			curr_fb = nullptr;
+			curr_rp = nullptr;
+			curr_sp = -1;
+
 			VkCommandBufferBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			info.pNext = nullptr;

@@ -340,6 +340,8 @@ namespace flame
 		auto off = 0;
 		for (auto& d : draw_idxs)
 		{
+			if (d.second.second.empty())
+				continue;
 			if (!d.second.first)
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);

@@ -18,7 +18,7 @@ namespace flame
 		{
 			CommandPoolPrivate* pool;
 
-			PipelineType curr_plt = PipelineGraphics;
+			PipelineType curr_plt = PipelineNone;
 			PipelineLayoutPtr curr_pll = nullptr;
 			GraphicsPipelinePtr curr_gpl = nullptr;
 			ComputePipelinePtr curr_cpl = nullptr;
