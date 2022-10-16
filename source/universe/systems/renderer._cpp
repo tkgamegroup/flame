@@ -25,32 +25,18 @@ namespace flame
 
 	struct NodeRenderData
 	{
-		std::vector<std::pair<uint, mat3>>				dir_shadows;
-		std::vector<std::pair<uint, vec3>>				pt_shadows;
 		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
-		std::vector<std::pair<uint, uint>>				particles;
 
 		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
 		std::unique_ptr<DescriptorSet>										ds_water;
 
-		std::unique_ptr<Image> img_ao_back;
-		std::unique_ptr<Image> img_col_ms;
-		std::unique_ptr<Image> img_dep_ms;
-		std::unique_ptr<Image> img_dst_back;
-		std::unique_ptr<Image> img_dep_back;
-
-		std::unique_ptr<Framebuffer> fb_fwd_ms4;
-
-		std::vector<MaterialPipeline> pl_mats[MaterialUsageCount];
+		std::unique_ptr<Image> img_ao_back;=
 
 		StorageBuffer<DSL_ssao::SampleLocations>	buf_ssao_loc;
 		StorageBuffer<DSL_ssao::SampleNoises>		buf_ssao_noi;
 		Pipeline*									pl_ssao;
 		Pipeline*									pl_ssao_blur;
 		std::unique_ptr<DescriptorSet>				ds_ssao;
-
-		SequentialBuffer<ParticleVertex>	buf_ptc_vtx;
-		Pipeline* pl_ptc;
 
 		Pipeline* pl_bright;
 	};
@@ -135,36 +121,9 @@ namespace flame
 	void sRendererPrivate::set_targets(const std::vector<ImageView*>& views)
 	{
 		nd.img_ao.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_col_ms.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 1, 1,
-			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dep_ms.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
-			MsaaSampleCount, ImageUsageAttachment));
-		nd.img_dst_back.reset(Image::create(nullptr, Format_R16G16B16A16_SFLOAT, tar_sz, 0, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-		nd.img_dep_back.reset(Image::create(nullptr, Format_Depth16, tar_sz, 1, 1,
-			SampleCount_1, ImageUsageSampled | ImageUsageAttachment | ImageUsageTransferDst));
-		nd.img_dep_back->change_layout(ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+			SampleCount_1, ImageUsageSampled | Image
 		nd.img_ao_back.reset(Image::create(nullptr, Format_R8_UNORM, hf_tar_sz, 1, 1,
 			SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-
-		{
-			ImageView* vs[] = {
-				nd.img_col_met->get_view(),
-				nd.img_nor_rou->get_view(),
-				nd.img_dep->get_view()
-			};
-			nd.fb_gbuf.reset(Framebuffer::create(Renderpass::get(nullptr, L"gbuffer.rp"), countof(vs), vs));
-		}
-
-		{
-			ImageView* vs[] = {
-				nd.img_col_ms->get_view(),
-				nd.img_dep_ms->get_view(),
-				img_dst->get_view()
-			};
-			nd.fb_fwd_ms4.reset(Framebuffer::create(Renderpass::get(nullptr, L"forward_ms4.rp"), countof(vs), vs));
-		}
 
 		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
 		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
@@ -172,53 +131,6 @@ namespace flame
 
 		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
 		nd.ds_water->update();
-
-		nd.ds_lum->set_image(DSL_luminance::img_col_binding, 0, img_dst->get_view(), nullptr);
-		nd.ds_lum->update();
-
-		nd.ds_tone->set_image(DSL_tone::image_binding, 0, img_dst->get_view(), sp_nearest);
-		nd.ds_tone->update();
-	}
-
-	int sRendererPrivate::set_element_res(int idx, ImageView* iv, Sampler* sp)
-	{
-		auto iv_white = img_white->get_view();
-		auto& ed = *_ed;
-
-		if (!iv)
-			iv = iv_white;
-
-		if (idx == -1)
-		{
-			for (auto i = 1; i < ed.reses.size(); i++)
-			{
-				if (ed.reses[i] == iv_white)
-				{
-					idx = i;
-					break;
-				}
-			}
-		}
-		if (idx == -1)
-			return -1;
-
-		ed.reses[idx] = iv;
-		ed.ds_element->set_image(DescriptorSetLayout::get(nullptr, L"element/element.dsl")
-			->find_binding("images"), idx, iv, sp ? sp : sp_linear);
-		ed.ds_element->update();
-
-		return idx;
-	}
-
-	int sRendererPrivate::find_element_res(ImageView* iv) const
-	{
-		auto& ed = *_ed;
-		for (auto i = 0; i < ed.reses.size(); i++)
-		{
-			if (ed.reses[i] == iv)
-				return i;
-		}
-		return -1;
 	}
 
 	void sRendererPrivate::fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color)
@@ -418,49 +330,6 @@ namespace flame
 		info.indices[5] = 2;
 	}
 
-	uint sRendererPrivate::add_light(const mat4& mat, LightType type, const vec3& color, bool cast_shadow)
-	{
-		{
-			switch (type)
-			{
-			case LightPoint:
-			{
-				auto pos = vec3(mat[3]);
-				if (cast_shadow)
-				{
-					if (nd.pt_shadows.size() < 4)
-					{
-						data.shadow_index = nd.pt_shadows.size();
-						nd.pt_shadows.emplace_back(idx, pos);
-					}
-				}
-			}
-			break;
-			}
-		}
-
-		return idx;
-	}
-
-	mat4 sRendererPrivate::get_shaodw_mat(uint id, uint idx) const
-	{
-		auto& nd = *_nd;
-
-		auto& info = nd.buf_light_infos.pstag->light_infos[id];
-		if (info.shadow_index == -1)
-			return mat4(1.f);
-
-		switch (info.type)
-		{
-		case LightDirectional:
-			return nd.buf_dir_shadows.pstag->dir_shadows[info.shadow_index].mats[idx];
-		case LightPoint:
-			return nd.buf_pt_shadows.pstag->pt_shadows[info.shadow_index].mats[idx];
-		}
-
-		return mat4(1.f);
-	}
-
 	void sRendererPrivate::draw_water(const vec3& coord, const vec2& extent,
 		uint material_id, ShadingFlags flags)
 	{
@@ -482,23 +351,6 @@ namespace flame
 			nd.waters[MaterialOutline].emplace_back(0, material_id);
 		if (render_type == RenderNormalData)
 			nd.waters[MaterialNormalData].emplace_back(0, material_id);
-	}
-
-	void sRendererPrivate::draw_particles(uint count, Particle* partcles, uint res_id)
-	{
-		auto& nd = *_nd;
-
-		if (nd.particles.back().first != res_id)
-			nd.particles.emplace_back(res_id, 0);
-
-		auto pvtx = nd.buf_ptc_vtx.stag(count);
-		for (auto i = 0; i < count; i++)
-		{
-			auto& p = partcles[i];
-			pvtx[i] = { p.pos, p.xext, p.yext, p.uvs, p.col };
-		}
-
-		nd.particles.back().second += count;
 	}
 
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
@@ -587,7 +439,6 @@ namespace flame
 			}
 
 			nd.buf_water.upload(cb);
-			nd.buf_ptc_vtx.upload(cb);
 
 			if (render_type == RenderShaded)
 			{
@@ -619,9 +470,6 @@ namespace flame
 				}
 			}
 
-			nd.dir_shadows.clear();
-			nd.pt_shadows.clear();
-
 			auto fb_tar = fb_tars[tar_idx].get();
 			auto vp = Rect(vec2(0.f), tar_sz);
 			cb->set_viewport(vp);
@@ -629,10 +477,6 @@ namespace flame
 
 			if (render_type == RenderShaded)
 			{
-				bind_terrain_def_res();
-				draw_terrains();
-				cb->end_renderpass();
-
 				cb->set_viewport(vec4(vp) * 0.5f);
 				cb->begin_renderpass(nullptr, nd.img_ao_back->get_shader_write_dst());
 				cb->bind_pipeline(nd.pl_ssao);
@@ -687,28 +531,6 @@ namespace flame
 				{
 					bind_water_res();
 					draw_waters();
-				}
-				if (nd.particles.size() > 1)
-				{
-					cb->bind_vertex_buffer(nd.buf_ptc_vtx.buf.get(), 0);
-					cb->bind_pipeline(nd.pl_ptc);
-					{
-						DescriptorSet* sets[PLL_particle::Binding_Max];
-						sets[PLL_particle::Binding_render_data] = nd.ds_render_data.get();
-						sets[PLL_particle::Binding_material] = nd.ds_material.get();
-						cb->bind_descriptor_sets(0, countof(sets), sets);
-					}
-					auto cnt = 0;
-					for (auto& vec : nd.particles)
-					{
-						if (vec.second == 0)
-							continue;
-						cb->draw(vec.second, 1, cnt, vec.first);
-						cnt += vec.second;
-					}
-
-					nd.particles.clear();
-					nd.particles.emplace_back(0xffff, 0);
 				}
 				cb->end_renderpass();
 

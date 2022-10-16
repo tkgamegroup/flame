@@ -12,6 +12,7 @@ namespace flame
 			vec2 ext;
 			vec3 vel;
 			uvec4 col;
+			float time_max;
 			float time;
 			float rnd;
 		};

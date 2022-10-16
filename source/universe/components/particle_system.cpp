@@ -54,7 +54,8 @@ namespace flame
 							break;
 						}
 						pt.col = particle_col;
-						pt.time = particle_life_time;
+						pt.time_max = particle_life_time;
+						pt.time = pt.time_max;
 						pt.rnd = linearRand(0.f, 1.f);
 					}
 
@@ -77,7 +78,7 @@ namespace flame
 						dst.y_ext = -camera_rot[1] * src.ext.y;
 						dst.uv = vec4(vec2(0.f), vec2(1.f));
 						dst.col = src.col;
-						dst.time = src.rnd + src.time;
+						dst.time = src.time_max - src.time;
 						i++;
 					}
 

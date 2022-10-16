@@ -1,5 +1,7 @@
 %rp=forward.rp
 %pll=forward.pll
+%bsc=SrcAlpha
+%bdc=OneMinusSrcAlpha
 layout
   {pll}
 shaders
@@ -20,9 +22,9 @@ blend_options
   enable
     true
   src_color
-    SrcAlpha
+    {bsc}
   dst_color
-    One
+    {bdc}
   src_alpha
     Zero
   dst_alpha

@@ -1,0 +1,15 @@
+if(USE_OPENAL)
+	set(USE_AUDIO_MODULE on)
+	file(GLOB source_files "*.h*" "*.c*")
+	add_library(flame_audio SHARED ${source_files})
+	set_target_properties(flame_audio PROPERTIES FOLDER "flame")
+	target_compile_definitions(flame_audio PRIVATE FLAME_AUDIO_MODULE)
+
+	generate_typeinfo(flame_audio "enum starts_with flame::audio::")
+
+	file(GLOB headers "*.h*")
+	list(FILTER headers EXCLUDE REGEX ".*_private[.]h$")
+	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/audio")
+	add_custom_command(TARGET flame_audio PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/flame/audio")
+	add_custom_command(TARGET flame_audio PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${headers} "${CMAKE_SOURCE_DIR}/include/flame/audio")
+endif()

@@ -25,4 +25,5 @@ endif()
 target_link_libraries(imgui flame_foundation)
 
 add_subdirectory(graphics)
+add_subdirectory(audio)
 add_subdirectory(universe)

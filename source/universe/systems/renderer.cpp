@@ -218,7 +218,7 @@ namespace flame
 		if (!res.mat->code_file.empty())
 			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
 		for (auto& d : res.mat->shader_defines)
-			defines.push_back("all_shader:" + d);
+			defines.push_back(d);
 
 		std::filesystem::path pipeline_name;
 		switch (type)
@@ -1096,30 +1096,30 @@ namespace flame
 			auto found = false;
 			for (auto& d : mat->shader_defines)
 			{
-				if (d.starts_with("COLOR_MAP") != std::string::npos)
+				if (d.starts_with("frag:COLOR_MAP") != std::string::npos)
 				{
-					d = "COLOR_MAP=" + str(mat->color_map);
+					d = "frag:COLOR_MAP=" + str(mat->color_map);
 					found = true;
 					break;
 				}
 			}
 			if (!found)
-				mat->shader_defines.push_back("COLOR_MAP=" + str(mat->color_map));
+				mat->shader_defines.push_back("frag:COLOR_MAP=" + str(mat->color_map));
 		}
 		if (mat->alpha_test > 0.f)
 		{
 			auto found = false;
 			for (auto& d : mat->shader_defines)
 			{
-				if (d.starts_with("ALPHA_TEST"))
+				if (d.starts_with("frag:ALPHA_TEST"))
 				{
-					d = "ALPHA_TEST=" + str(mat->alpha_test);
+					d = "frag:ALPHA_TEST=" + str(mat->alpha_test);
 					found = true;
 					break;
 				}
 			}
 			if (!found)
-				mat->shader_defines.push_back("ALPHA_TEST=" + str(mat->alpha_test));
+				mat->shader_defines.push_back("frag:ALPHA_TEST=" + str(mat->alpha_test));
 		}
 		res.mat = mat;
 		res.ref = 1;

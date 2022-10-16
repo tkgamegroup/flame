@@ -2,8 +2,8 @@
 
 #include "../foundation/foundation.h"
 #include "../graphics/graphics.h"
-#ifdef USE_SOUND_MODULE
-#include "../sound/sound.h"
+#ifdef USE_AUDIO_MODULE
+#include "../audio/audio.h"
 #endif
 #ifdef USE_PHYSICS_MODULE
 #include "../physics/physics.h"
@@ -47,6 +47,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
 	FLAME_UNIVERSE_TYPE(cNavScene);
+	FLAME_UNIVERSE_TYPE(cAudioSource);
+	FLAME_UNIVERSE_TYPE(cAudioListener);
 	FLAME_UNIVERSE_TYPE(cDirLight);
 	FLAME_UNIVERSE_TYPE(cPtLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
@@ -55,6 +57,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(sInput);
 	FLAME_UNIVERSE_TYPE(sScene);
 	FLAME_UNIVERSE_TYPE(sRenderer);
+	FLAME_UNIVERSE_TYPE(sAudio);
 
 	enum StateFlags
 	{
