@@ -1,5 +1,8 @@
 #include "device_private.h"
 
+ALCdevice* al_device = nullptr;
+ALCcontext* al_content = nullptr;
+
 namespace flame
 {
 	namespace audio
@@ -8,7 +11,11 @@ namespace flame
 		{
 			DevicePtr operator()() override
 			{
-
+				auto ret = new DevicePrivate;
+				al_device = alcOpenDevice(nullptr);
+				al_content = alcCreateContext(al_device, nullptr);
+				alcMakeContextCurrent(al_content);
+				auto al_err = alGetError();
 			}
 		}Device_create;
 		Device::Create& Device::create = Device_create;

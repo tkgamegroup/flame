@@ -9,7 +9,6 @@ namespace flame
 	{
 		struct DevicePrivate : Device
 		{
-			
 		};
 	}
 }
