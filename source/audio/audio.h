@@ -16,12 +16,13 @@
 
 #endif
 
-
 namespace flame
 {
 	namespace audio
 	{
+		FLAME_AUDIO_TYPE(Device);
 		FLAME_AUDIO_TYPE(Buffer);
 		FLAME_AUDIO_TYPE(Source);
+		FLAME_AUDIO_TYPE(Listener);
 	}
 }

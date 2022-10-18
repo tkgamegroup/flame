@@ -20,7 +20,7 @@ namespace flame
 
 			struct Current
 			{
-				virtual DevicePtr& operator()() = 0;
+				virtual DevicePtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Current& current;
 		};

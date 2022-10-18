@@ -238,7 +238,7 @@ namespace flame
 
 		struct DeviceCurrent : Device::Current
 		{
-			DevicePtr& operator()() override
+			DevicePtr operator()() override
 			{
 				return device;
 			}

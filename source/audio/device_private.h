@@ -1,15 +1,15 @@
 #pragma once
 
-#include "buffer.h"
+#include "device.h"
 #include "audio_private.h"
 
 namespace flame
 {
 	namespace audio
 	{
-		struct BufferPrivate : Buffer
+		struct DevicePrivate : Device
 		{
-
+			
 		};
 	}
 }
