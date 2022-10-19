@@ -7,9 +7,6 @@ namespace flame
 	/// Reflect
 	struct sAudio : System
 	{
-		virtual int get_buffer_res(const std::filesystem::path& filename, int id = -1) = 0;
-		virtual void release_buffer_res(uint id) = 0;
-
 		struct Instance
 		{
 			virtual sAudioPtr operator()() = 0;

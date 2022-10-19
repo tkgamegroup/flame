@@ -9,7 +9,7 @@ namespace flame
 	{
 		struct BufferPrivate : Buffer
 		{
-
+			ALuint al_buf = 0;
 		};
 	}
 }

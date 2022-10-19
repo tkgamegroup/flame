@@ -1,13 +1,18 @@
 #include "audio_private.h"
+#if USE_AUDIO_MODULE
+#include "../../audio/device.h"
+#endif
 
 namespace flame
 {
-	int sAudioPrivate::get_buffer_res(const std::filesystem::path& filename, int id)
+	sAudioPrivate::sAudioPrivate()
 	{
-		return -1;
+#if USE_AUDIO_MODULE
+		audio::Device::create();
+#endif
 	}
 
-	void sAudioPrivate::release_buffer_res(uint id)
+	sAudioPrivate::~sAudioPrivate()
 	{
 
 	}

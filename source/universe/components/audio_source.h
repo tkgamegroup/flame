@@ -15,7 +15,7 @@ namespace flame
 		/// Reflect
 		virtual void set_buffer_name(const std::filesystem::path& buffer_name) = 0;
 
-		int source_res_id = -1;
+		audio::BufferPtr buffer = nullptr;
 
 		struct Create
 		{

@@ -8,6 +8,7 @@
 #include "systems/input.h"
 #include "systems/scene.h"
 #include "systems/renderer.h"
+#include "systems/audio.h"
 
 struct UniverseApplication : GraphicsApplication
 {
@@ -15,6 +16,7 @@ struct UniverseApplication : GraphicsApplication
 	sInputPtr		input;
 	sScenePtr		scene;
 	sRendererPtr	renderer;
+	sAudioPtr		audio;
 
 	void create(bool graphics_debug, std::string_view title, const uvec2& size = uvec2(1280, 720), 
 		WindowStyleFlags styles = WindowFrame | WindowResizable)
@@ -22,9 +24,10 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(graphics_debug, title, size, styles);
 
 		world.reset(World::create());
-		input	 = (sInputPtr)world->add_system(th<sInput>());
-		scene	 = (sScenePtr)world->add_system(th<sScene>());
-		renderer = (sRendererPtr)world->add_system(th<sRenderer>());
+		input	 = (sInputPtr)world->get_system_t<sInput>();
+		scene	 = (sScenePtr)world->get_system_t<sScene>();
+		renderer = (sRendererPtr)world->get_system_t<sRenderer>();
+		audio	 = (sAudioPtr)world->get_system_t<sAudio>();
 	}
 
 	void on_render() override

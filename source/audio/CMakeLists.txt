@@ -1,11 +1,12 @@
 if(USE_OPENAL)
-	set(USE_AUDIO_MODULE on)
+	set(USE_AUDIO_MODULE on PARENT_SCOPE)
 	file(GLOB source_files "*.h*" "*.c*")
 	add_library(flame_audio SHARED ${source_files})
 	set_target_properties(flame_audio PROPERTIES FOLDER "flame")
 	target_compile_definitions(flame_audio PRIVATE FLAME_AUDIO_MODULE)
 	target_include_directories(flame_audio PRIVATE "${OPENAL_INCLUDE_DIR}")
-	target_link_libraries(flame_audio PRIVATE "${OPENAL_LIB_PATH}")
+	target_link_libraries(flame_audio "${OPENAL_LIB_PATH}")
+	target_link_libraries(flame_audio flame_foundation)
 
 	generate_typeinfo(flame_audio "enum starts_with flame::audio::")
 

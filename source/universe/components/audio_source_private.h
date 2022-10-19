@@ -7,5 +7,7 @@ namespace flame
 	struct cAudioSourcePrivate : cAudioSource
 	{
 		void set_buffer_name(const std::filesystem::path& buffer_name) override;
+
+		void update() override;
 	};
 }
