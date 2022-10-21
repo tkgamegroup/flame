@@ -131,10 +131,10 @@ namespace flame
 	int black_tex_id = -1;
 	int rand_tex_id = -1;
 
-	struct MeshBuckets
+	struct MeshBatcher
 	{
 		graphics::IndirectBuffer buf_idr;
-		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> draw_idxs;
+		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> batches;
 
 		void collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
 		void draw(graphics::CommandBufferPtr cb);
@@ -144,14 +144,14 @@ namespace flame
 	{
 		mat3 rot;
 		std::vector<cNodePtr> culled_nodes;
-		MeshBuckets mesh_buckets[DirShadowMaxLevels];
+		MeshBatcher batcher[DirShadowMaxLevels];
 		std::vector<TerrainDraw> draw_terrains[DirShadowMaxLevels];
 	};
 
 	std::vector<cNodePtr> camera_culled_nodes;
 	DrawData draw_data;
-	MeshBuckets opa_mesh_buckets;
-	MeshBuckets trs_mesh_buckets;
+	MeshBatcher opa_batcher;
+	MeshBatcher trs_batcher;
 	DirShadow dir_shadows[DirShadowMaxCount];
 
 	std::vector<PrimitiveDraw> debug_primitives;
@@ -309,7 +309,7 @@ namespace flame
 		return ret;
 	}
 
-	void MeshBuckets::collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
+	void MeshBatcher::collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
 	{
 		for (auto i = 0; i < draw_data.meshes.size(); i++)
 		{
@@ -317,15 +317,15 @@ namespace flame
 			auto& mesh_r = mesh_reses[m.mesh_id];
 			auto& mat_r = mat_reses[m.mat_id];
 			auto pl = get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, mod2);
-			auto it = draw_idxs.find(pl);
-			if (it == draw_idxs.end())
-				it = draw_idxs.emplace(pl, std::make_pair(mesh_r.arm, std::vector<uint>())).first;
+			auto it = batches.find(pl);
+			if (it == batches.end())
+				it = batches.emplace(pl, std::make_pair(mesh_r.arm, std::vector<uint>())).first;
 			it->second.second.push_back(i);
 		}
 
-		for (auto& d : draw_idxs)
+		for (auto& b : batches)
 		{
-			for (auto i : d.second.second)
+			for (auto i : b.second.second)
 			{
 				auto& m = draw_data.meshes[i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
@@ -335,14 +335,14 @@ namespace flame
 		buf_idr.upload(cb);
 	}
 
-	void MeshBuckets::draw(graphics::CommandBufferPtr cb)
+	void MeshBatcher::draw(graphics::CommandBufferPtr cb)
 	{
 		auto off = 0;
-		for (auto& d : draw_idxs)
+		for (auto& b : batches)
 		{
-			if (d.second.second.empty())
+			if (b.second.second.empty())
 				continue;
-			if (!d.second.first)
+			if (!b.second.first)
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
@@ -352,9 +352,9 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 			}
-			cb->bind_pipeline(d.first);
-			cb->draw_indexed_indirect(buf_idr.buf.get(), off, d.second.second.size());
-			off += d.second.second.size();
+			cb->bind_pipeline(b.first);
+			cb->draw_indexed_indirect(buf_idr.buf.get(), off, b.second.second.size());
+			off += b.second.second.size();
 		}
 	}
 
@@ -499,12 +499,12 @@ namespace flame
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_terrain_plain->dynamic_renderpass = true;
 
-		opa_mesh_buckets.buf_idr.create(mesh_instances.capacity);
-		trs_mesh_buckets.buf_idr.create(mesh_instances.capacity);
+		opa_batcher.buf_idr.create(mesh_instances.capacity);
+		trs_batcher.buf_idr.create(mesh_instances.capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
-				s.mesh_buckets[i].buf_idr.create(min(1024U, mesh_instances.capacity));
+				s.batcher[i].buf_idr.create(min(1024U, mesh_instances.capacity));
 		}
 
 		prm_deferred.init(get_deferred_pipeline()->layout);
@@ -1013,29 +1013,29 @@ namespace flame
 				}
 				return false;
 			};
-			for (auto it = opa_mesh_buckets.draw_idxs.begin(); it != opa_mesh_buckets.draw_idxs.end();)
+			for (auto it = opa_batcher.batches.begin(); it != opa_batcher.batches.end();)
 			{
 				if (has_pl(it->first))
-					it = opa_mesh_buckets.draw_idxs.erase(it);
+					it = opa_batcher.batches.erase(it);
 				else
 					it++;
 			}
-			for (auto it = trs_mesh_buckets.draw_idxs.begin(); it != trs_mesh_buckets.draw_idxs.end();)
+			for (auto it = trs_batcher.batches.begin(); it != trs_batcher.batches.end();)
 			{
 				if (has_pl(it->first))
-					it = trs_mesh_buckets.draw_idxs.erase(it);
+					it = trs_batcher.batches.erase(it);
 				else
 					it++;
 			}
 
 			for (auto& s : dir_shadows)
 			{
-				for (auto& mb : s.mesh_buckets)
+				for (auto& mb : s.batcher)
 				{
-					for (auto it = mb.draw_idxs.begin(); it != mb.draw_idxs.end();)
+					for (auto it = mb.batches.begin(); it != mb.batches.end();)
 					{
 						if (has_pl(it->first))
-							it = mb.draw_idxs.erase(it);
+							it = mb.batches.erase(it);
 						else
 							it++;
 					}
@@ -1335,12 +1335,12 @@ namespace flame
 	{
 		if (mark_clear_pipelines)
 		{
-			opa_mesh_buckets.draw_idxs.clear();
-			trs_mesh_buckets.draw_idxs.clear();
+			opa_batcher.batches.clear();
+			trs_batcher.batches.clear();
 			for (auto& s : dir_shadows)
 			{
-				for (auto& mb : s.mesh_buckets)
-					mb.draw_idxs.clear();
+				for (auto& mb : s.batcher)
+					mb.batches.clear();
 			}
 			for (auto& res : mat_reses)
 			{
@@ -1483,12 +1483,12 @@ namespace flame
 
 		// deferred shading pass
 
-		for (auto& d : opa_mesh_buckets.draw_idxs)
-			d.second.second.clear();
+		for (auto& b : opa_batcher.batches)
+			b.second.second.clear();
 		draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		opa_mesh_buckets.collect_idrs(draw_data, cb);
+		opa_batcher.collect_idrs(draw_data, cb);
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), sz));
@@ -1499,7 +1499,7 @@ namespace flame
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
 		prm_gbuf.bind_dss(cb);
-		opa_mesh_buckets.draw(cb);
+		opa_batcher.draw(cb);
 
 		for (auto& t : draw_data.terrains)
 		{
@@ -1522,8 +1522,8 @@ namespace flame
 				auto& s = dir_shadows[i];
 				for (auto j = 0; j < DirShadowMaxLevels; j++)
 				{
-					for (auto& d : s.mesh_buckets[j].draw_idxs)
-						d.second.second.clear();
+					for (auto& b : s.batcher[j].batches)
+						b.second.second.clear();
 				}
 			}
 
@@ -1608,7 +1608,7 @@ namespace flame
 								n_terrain_draws = draw_data.terrains.size();
 							}
 						}
-						s.mesh_buckets[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
+						s.batcher[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
 						s.draw_terrains[lv] = draw_data.terrains;
 
 						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
@@ -1665,7 +1665,7 @@ namespace flame
 					prm_fwd.pc.item("i"_h).set(ivec4(0, i, lv, 0));
 					prm_fwd.push_constant(cb);
 
-					s.mesh_buckets[lv].draw(cb);
+					s.batcher[lv].draw(cb);
 
 					for (auto& t : s.draw_terrains[lv])
 					{
@@ -1743,12 +1743,12 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
-		for (auto& d : trs_mesh_buckets.draw_idxs)
-			d.second.second.clear();
+		for (auto& b : trs_batcher.batches)
+			b.second.second.clear();
 		draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
-		trs_mesh_buckets.collect_idrs(draw_data, cb);
+		trs_batcher.collect_idrs(draw_data, cb);
 
 		for (auto& p : draw_data.particles)
 		{
@@ -1771,7 +1771,7 @@ namespace flame
 		cb->begin_renderpass(nullptr, fb_fwd.get());
 		prm_fwd.bind_dss(cb);
 
-		trs_mesh_buckets.draw(cb);
+		trs_batcher.draw(cb);
 
 		for (auto& t : draw_data.terrains)
 		{
