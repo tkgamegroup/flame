@@ -21,6 +21,7 @@ namespace flame
 					listener = new ListenerPrivate;
 				return listener;
 			}
-		};
+		}Listener_get;
+		Listener::Get& Listener::get = Listener_get;
 	}
 }

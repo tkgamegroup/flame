@@ -21,7 +21,7 @@ namespace flame
 
 			struct Release
 			{
-				virtual void operator()(BufferPtr image) = 0;
+				virtual void operator()(BufferPtr buffer) = 0;
 			};
 			FLAME_AUDIO_API static Release& release;
 		};

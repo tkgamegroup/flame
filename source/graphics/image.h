@@ -148,44 +148,5 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};
-
-		struct ImageAtlas
-		{
-			struct Tile
-			{
-				uint index;
-				std::string name;
-				ivec2 pos;
-				ivec2 size;
-				vec4 uv;
-			};
-
-			ImagePtr image;
-			std::vector<Tile> tiles;
-
-			virtual ~ImageAtlas() {}
-
-			inline int find_tile(std::string_view name) const
-			{
-				for (auto id = 0; id < tiles.size(); id++)
-				{
-					if (tiles[id].name == name)
-						return id;
-				}
-				return -1;
-			}
-
-			struct Get
-			{
-				virtual ImageAtlasPtr operator()(const std::filesystem::path& filename) = 0;
-			};
-			FLAME_GRAPHICS_API static Get& get;
-
-			struct Release
-			{
-				virtual void operator()(ImageAtlasPtr atlas) = 0;
-			};
-			FLAME_GRAPHICS_API static Release& release;
-		};
 	}
 }

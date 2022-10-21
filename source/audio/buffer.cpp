@@ -6,6 +6,11 @@ namespace flame
 	{
 		std::vector<std::unique_ptr<BufferT>> loaded_buffers;
 
+		BufferPrivate::~BufferPrivate()
+		{
+			alDeleteBuffers(1, &al_buf);
+		}
+
 		struct BufferGet : Buffer::Get
 		{
 			BufferPtr operator()(const std::filesystem::path& _filename) override
@@ -166,6 +171,23 @@ namespace flame
 
 				return nullptr;
 			}
-		};
+		}Buffer_get;
+		Buffer::Get& Buffer::get = Buffer_get;
+
+		struct BufferRelease : Buffer::Release
+		{
+			void operator()(BufferPtr buffer) override
+			{
+				if (buffer->ref == 1)
+				{
+					std::erase_if(loaded_buffers, [&](const auto& b) {
+						return b.get() == buffer;
+					});
+				}
+				else
+					buffer->ref--;
+			}
+		}Buffer_release;
+		Buffer::Release& Buffer::release = Buffer_release;
 	}
 }

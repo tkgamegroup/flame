@@ -811,58 +811,6 @@ namespace flame
 			}
 		}Sampler_get;
 		Sampler::Get& Sampler::get = Sampler_get;
-
-		ImageAtlasPrivate::~ImageAtlasPrivate()
-		{
-			Image::release(image);
-		}
-
-		static std::vector<std::pair<std::filesystem::path, std::unique_ptr<ImageAtlasPrivate>>> loaded_atlas;
-
-		struct ImageAtlasGet : ImageAtlas::Get
-		{
-			ImageAtlasPtr operator()(const std::filesystem::path& filename) override
-			{
-				for (auto& a : loaded_atlas)
-				{
-					if (a.first == filename)
-						return a.second.get();
-				}
-
-				if (!std::filesystem::exists(filename))
-				{
-					wprintf(L"cannot find atlas: %s\n", filename);
-					return nullptr;
-				}
-
-				auto ret = new ImageAtlasPrivate;
-
-				auto png_filename = filename;
-				png_filename.replace_extension(L".png");
-				ret->image = Image::get(png_filename, false);
-
-				auto size = (vec2)ret->image->size;
-
-				for (auto& e : parse_ini_file(filename).get_section_entries(""))
-				{
-					auto& tile = ret->tiles.emplace_back();
-					tile.index = ret->tiles.size();
-					auto sp = SUS::split(e.value);
-					tile.name = sp[0];
-					auto v = s2t<4, uint>(sp[1]);
-					tile.pos = ivec2(v.x, v.y);
-					tile.size = ivec2(v.z, v.w);
-					tile.uv.x = tile.pos.x / size.x;
-					tile.uv.y = tile.pos.y / size.y;
-					tile.uv.z = (tile.pos.x + tile.size.x) / size.x;
-					tile.uv.w = (tile.pos.y + tile.size.y) / size.y;
-				}
-
-				loaded_atlas.emplace_back(filename, ret);
-				return ret;
-			}
-		}ImageAtlas_get;
-		ImageAtlas::Get& ImageAtlas::get = ImageAtlas_get;
 	}
 }
 

@@ -11,11 +11,11 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		/// Reflect
-		std::filesystem::path buffer_name;
+		std::vector<std::pair<std::filesystem::path, std::string>> buffer_names;
 		/// Reflect
-		virtual void set_buffer_name(const std::filesystem::path& buffer_name) = 0;
+		virtual void set_buffer_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
 
-		audio::BufferPtr buffer = nullptr;
+		virtual void play(uint name, float volumn = 1.f) = 0;
 
 		struct Create
 		{

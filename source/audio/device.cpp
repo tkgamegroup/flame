@@ -7,6 +7,8 @@ namespace flame
 {
 	namespace audio
 	{
+		DevicePtr device = nullptr;
+
 		struct DeviceCreate : Device::Create
 		{
 			DevicePtr operator()() override
@@ -16,6 +18,9 @@ namespace flame
 				al_content = alcCreateContext(al_device, nullptr);
 				alcMakeContextCurrent(al_content);
 				auto al_err = alGetError();
+
+				device = ret;
+				return ret;
 			}
 		}Device_create;
 		Device::Create& Device::create = Device_create;
@@ -24,7 +29,7 @@ namespace flame
 		{
 			DevicePtr& operator()() override
 			{
-
+				return device;
 			}
 		}Device_current;
 		Device::Current& Device::current = Device_current;

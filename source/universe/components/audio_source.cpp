@@ -2,37 +2,92 @@
 #include "node_private.h"
 #if USE_AUDIO_MODULE
 #include "../../audio/buffer.h"
+#include "../../audio/source.h"
 #endif
 
 namespace flame
 {
-	void cAudioSourcePrivate::set_buffer_name(const std::filesystem::path& name)
+	void cAudioSourcePrivate::set_buffer_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names)
 	{
 #if USE_AUDIO_MODULE
-		if (buffer_name == name)
+		if (buffer_names == names)
 			return;
 
-		buffer_name = name;
-
-		if (!buffer_name.empty())
-			AssetManagemant::release_asset(Path::get(buffer_name));
-		if (!name.empty())
-			AssetManagemant::get_asset(Path::get(name));
-
-		audio::BufferPtr _buffer = nullptr;
-		if (!name.empty())
-			_buffer = audio::Buffer::get(name);
-		if (buffer != _buffer)
+		for (auto& n : buffer_names)
 		{
-			if (buffer)
-				audio::Buffer::release(buffer);
-			buffer = _buffer;
+			if (!n.first.empty())
+				AssetManagemant::release_asset(Path::get(n.first));
 		}
-		else if (_buffer)
-			audio::Buffer::release(_buffer);
+		for (auto& src : sources)
+		{
+			audio::Buffer::release(src.second.buf);
+			delete src.second.src;
+		}
+		sources.clear();
+		buffer_names = names;
+		for (auto& n : buffer_names)
+		{
+			if (!n.first.empty())
+				AssetManagemant::get_asset(Path::get(n.first));
+		}
+
+		for (auto& n : buffer_names)
+		{
+			if (!n.first.empty())
+			{
+				auto buf = audio::Buffer::get(n.first);
+				if (buf)
+				{
+					auto& src = sources[sh(n.second.c_str())];
+					src.buf = buf;
+					src.src = audio::Source::create();
+					src.src->add_buffer(buf);
+				}
+			}
+		}
 
 		node->mark_transform_dirty();
-		data_changed("buffer_name"_h);
+		data_changed("buffer_names"_h);
 #endif
 	}
+
+	cAudioSourcePrivate::~cAudioSourcePrivate()
+	{
+#if USE_AUDIO_MODULE
+		for (auto& src : sources)
+		{
+			audio::Buffer::release(src.second.buf);
+			delete src.second.src;
+		}
+#endif
+	}
+
+	void cAudioSourcePrivate::play(uint name, float volumn)
+	{
+#if USE_AUDIO_MODULE
+		auto it = sources.find(name);
+		if (it != sources.end())
+		{
+			it->second.src->set_volumn(volumn);
+			it->second.src->play();
+		}
+#endif
+	}
+
+	void cAudioSourcePrivate::update()
+	{
+#if USE_AUDIO_MODULE
+		for (auto& src : sources)
+			src.second.src->set_pos(node->g_pos);
+#endif
+	}
+
+	struct cAudioSourceCreate : cAudioSource::Create
+	{
+		cAudioSourcePtr operator()(EntityPtr e) override
+		{
+			return new cAudioSourcePrivate();
+		}
+	}cAudioSource_create;
+	cAudioSource::Create& cAudioSource::create = cAudioSource_create;
 }

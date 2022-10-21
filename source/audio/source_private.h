@@ -13,8 +13,13 @@ namespace flame
 
 			void set_pos(const vec3& pos) override;
 
+			~SourcePrivate();
+
+			void add_buffer(BufferPtr buffer) override;
+			void remove_buffer(BufferPtr buffer) override;
 			void play() override;
 			void stop() override;
+			void set_volumn(float v) override;
 		};
 	}
 }

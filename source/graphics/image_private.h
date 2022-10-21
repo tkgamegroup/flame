@@ -72,11 +72,6 @@ namespace flame
 			~SamplerPrivate();
 		};
 
-		struct ImageAtlasPrivate : ImageAtlas
-		{
-			~ImageAtlasPrivate();
-		};
-
 		struct LoadedImage
 		{
 			std::unique_ptr<ImageT> v;

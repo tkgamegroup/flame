@@ -13,6 +13,21 @@ namespace flame
 			alSourcefv(al_src, AL_POSITION, &pos[0]);
 		}
 
+		SourcePrivate::~SourcePrivate()
+		{
+			alDeleteSources(1, &al_src);
+		}
+
+		void SourcePrivate::add_buffer(BufferPtr buffer)
+		{
+			alSourceQueueBuffers(al_src, 1, &buffer->al_buf);
+		}
+
+		void SourcePrivate::remove_buffer(BufferPtr buffer)
+		{
+			alSourceUnqueueBuffers(al_src, 1, &buffer->al_buf);
+		}
+
 		void SourcePrivate::play()
 		{
 			alSourcePlay(al_src);
@@ -23,15 +38,20 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
-		struct SourceGet : Source::Create
+		void SourcePrivate::set_volumn(float v)
 		{
-			SourcePtr operator()(BufferPtr buffer) override
+			alSourcef(al_src, AL_GAIN, v);
+		}
+
+		struct SourceCreate : Source::Create
+		{
+			SourcePtr operator()() override
 			{
 				auto ret = new SourcePrivate;
 				alGenSources(1, &ret->al_src);
-				alSourceQueueBuffers(ret->al_src, 1, &buffer->al_buf);
 				return ret;
 			}
-		};
+		}Source_create;
+		Source::Create& Source::create = Source_create;
 	}
 }
