@@ -81,11 +81,11 @@ namespace flame
 
 					auto file = _wfopen(filename.c_str(), L"rb");
 					fread(&header, 1, sizeof(WAV_HEADER), file);
-					if (std::string(header.szRIFF) == "RIFF" && std::string(header.szWAVE) == "WAVE")
+					if (std::string(header.szRIFF, header.szRIFF + 4) == "RIFF" && std::string(header.szWAVE, header.szWAVE + 4) == "WAVE")
 					{
 						while (fread(&riff_chunk, 1, sizeof(RIFF_CHUNK), file) == sizeof(RIFF_CHUNK))
 						{
-							auto chunk_name = std::string(riff_chunk.szChunkName);
+							auto chunk_name = std::string(riff_chunk.szChunkName, riff_chunk.szChunkName + 4);
 							if (chunk_name == "fmt ")
 							{
 								if (riff_chunk.ulChunkSize <= sizeof(WAV_FMT))

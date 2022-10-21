@@ -24,10 +24,10 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(graphics_debug, title, size, styles);
 
 		world.reset(World::create());
-		input	 = (sInputPtr)world->get_system_t<sInput>();
-		scene	 = (sScenePtr)world->get_system_t<sScene>();
-		renderer = (sRendererPtr)world->get_system_t<sRenderer>();
-		audio	 = (sAudioPtr)world->get_system_t<sAudio>();
+		input	 = (sInputPtr)world->add_system<sInput>();
+		scene	 = (sScenePtr)world->add_system<sScene>();
+		renderer = (sRendererPtr)world->add_system<sRenderer>();
+		audio	 = (sAudioPtr)world->add_system<sAudio>();
 	}
 
 	void on_render() override

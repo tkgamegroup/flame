@@ -31,6 +31,11 @@ namespace flame
 		}
 
 		virtual System* add_system(uint hash) = 0;
+		template<typename T>
+		inline T* add_system()
+		{
+			return (T*)add_system(th<T>());
+		}
 		virtual void remove_system(uint hash, bool destroy = true) = 0;
 
 		virtual void update() = 0;
