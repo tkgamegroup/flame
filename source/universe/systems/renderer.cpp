@@ -454,12 +454,12 @@ namespace flame
 		}
 		ds_lighting->update();
 
-		buf_vtx.create(graphics::get_vertex_input_ui(L"flame\\shaders\\mesh\\mesh.vi", {}), 1024 * 256 * 4);
+		buf_vtx.create(L"flame\\shaders\\mesh\\mesh.vi", {}, 1024 * 256 * 4);
 		buf_idx.create(1024 * 256 * 6);
-		buf_vtx_arm.create(graphics::get_vertex_input_ui(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }), 1024 * 128 * 4);
+		buf_vtx_arm.create(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }, 1024 * 128 * 4);
 		buf_idx_arm.create(1024 * 128 * 6);
-		buf_particles.create(graphics::get_vertex_input_ui(L"flame\\shaders\\particle.vi", {}), 1024 * 64);
-		buf_primitives.create(graphics::get_vertex_input_ui(L"flame\\shaders\\plain\\plain3d.vi", {}), 1024 * 128);
+		buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 64);
+		buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 128);
 
 		mesh_reses.resize(1024);
 

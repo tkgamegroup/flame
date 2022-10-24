@@ -159,6 +159,11 @@ namespace flame
 				init(&array_type, stag->mapped);
 			}
 
+			void create(const std::filesystem::path& vi_filename, const std::vector<std::string>& vi_defines, uint capacity)
+			{
+				create(get_vertex_input_ui(vi_filename, vi_defines), capacity);
+			}
+
 			void create(uint _item_size, uint _capacity)
 			{
 				item_size = _item_size;

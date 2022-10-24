@@ -161,7 +161,7 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 				auto n = dst.append_child(name.c_str());
 				auto p = (char*)vec.data();
-				auto len = (vec.end() - vec.begin()) / ti->size;
+				auto len = vec.size() / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
 					n.append_child("item").append_attribute("v").set_value(ti->serialize(p).c_str());
@@ -172,17 +172,15 @@ namespace flame
 		case TagVU:
 			if (auto& vec = *(std::vector<char>*)((char*)src + offset); !vec.empty())
 			{
-				auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
-				auto ui = ti->ui;
-				if (ui)
+				if (auto ui = type->retrive_ui(); ui)
 				{
 					auto n = dst.append_child(name.c_str());
 					auto p = (char*)vec.data();
-					auto len = (vec.end() - vec.begin()) / ti->size;
+					auto len = vec.size() / ui->size;
 					for (auto i = 0; i < len; i++)
 					{
 						serialize_xml(*ui, p, n.append_child("item"), spec);
-						p += ti->size;
+						p += ui->size;
 					}
 				}
 			}
@@ -193,7 +191,7 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
 				auto n = dst.append_child(name.c_str());
 				auto p = (char*)vec.data();
-				auto len = (vec.end() - vec.begin()) / ti->size;
+				auto len = vec.size() / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
 					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n, spec);
@@ -207,7 +205,7 @@ namespace flame
 				auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
 				auto n = dst.append_child(name.c_str());
 				auto p = (char*)vec.data();
-				auto len = (vec.end() - vec.begin()) / ti->size;
+				auto len = vec.size() / ti->size;
 				for (auto i = 0; i < len; i++)
 				{
 					serialize_xml(*(UdtInfo*)0, 0, ti, "item", "", -1, p, n, spec);
@@ -602,8 +600,7 @@ namespace flame
 				break;
 			case TagU:
 			{
-				auto ui = vi.type->retrive_ui();
-				if (ui)
+				if (auto ui = vi.type->retrive_ui(); ui)
 				{
 					print_name();
 					serialize_text(*ui, p, dst, indent2, spec);
@@ -622,10 +619,9 @@ namespace flame
 				break;
 			case TagVE:
 			{
-				auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
-				auto& vec = *(std::vector<int>*)p;
-				if (!vec.empty())
+				if (auto& vec = *(std::vector<int>*)p; !vec.empty())
 				{
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					print_name();
 					for (auto i = 0; i < vec.size(); i++)
 						dst << indent2 << ti->serialize(&vec[i]) << std::endl;
@@ -634,12 +630,11 @@ namespace flame
 				break;
 			case TagVD:
 			{
-				auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
-				auto& vec = *(std::vector<char>*)p;
-				if (!vec.empty())
+				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
 				{
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					print_name();
-					auto len = (vec.end() - vec.begin()) / ti->size;
+					auto len = vec.size() / ti->size;
 					p = (char*)vec.data();
 					for (auto i = 0; i < len; i++)
 					{
@@ -651,23 +646,20 @@ namespace flame
 				break;
 			case TagVU:
 			{
-				auto ti = ((TypeInfo_VectorOfUdt*)vi.type)->ti;
-				auto ui = ti->ui;
-				if (ui)
+				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
 				{
-					auto& vec = *(std::vector<char>*)p;
-					if (!vec.empty())
+					if (auto ui = vi.type->retrive_ui(); ui)
 					{
 						print_name();
 						auto print_bar = ui->variables.size() > 1;
-						auto len = (vec.end() - vec.begin()) / ti->size;
+						auto len = vec.size() / ui->size;
 						p = (char*)vec.data();
 						for (auto i = 0; i < len; i++)
 						{
 							if (i > 0 && print_bar)
 								dst << indent << " ---" << std::endl;
 							serialize_text(*ui, p, dst, indent2, spec);
-							p += ti->size;
+							p += ui->size;
 						}
 					}
 				}
@@ -675,11 +667,10 @@ namespace flame
 				break;
 			case TagVPU:
 			{
-				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
-				if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
+				if (auto& vec = *(std::vector<void*>*)p; !vec.empty())
 				{
-					auto& vec = *(std::vector<void*>*)p;
-					if (!vec.empty())
+					auto ti = ((TypeInfo_VectorOfPointerOfUdt*)vi.type)->ti;
+					if (auto it = spec.delegates.find(ti); it != spec.delegates.end())
 					{
 						print_name();
 						auto print_bar = false;
@@ -767,8 +758,7 @@ namespace flame
 				break;
 			case TagU:
 			{
-				auto ui = vi.type->retrive_ui();
-				if (ui)
+				if (auto ui = vi.type->retrive_ui(); ui)
 					unserialize_text(*ui, src, indent2, p, spec);
 			}
 				break;
@@ -985,6 +975,236 @@ namespace flame
 			}
 			else
 				assert(0);
+		}
+	}
+
+	inline void serialize_binary(const UdtInfo& ui, void* src, std::ostream& dst)
+	{
+		uint zero_len = 0;
+
+		auto write_string = [&](void* src) {
+			auto& str = *(std::string*)src;
+			uint len = str.size();
+			dst.write((char*)&len, sizeof(uint));
+			dst.write((char*)str.data(), len * sizeof(char));
+		};
+		auto write_wstring = [&](void* src) {
+			auto& str = *(std::wstring*)src;
+			uint len = str.size();
+			dst.write((char*)&len, sizeof(uint));
+			dst.write((char*)str.data(), len * sizeof(wchar_t));
+		};
+		auto write_path = [&](void* src) {
+			auto& str = ((std::filesystem::path*)src)->native();
+			uint len = str.size();
+			dst.write((char*)&len, sizeof(uint));
+			dst.write((char*)str.data(), len * sizeof(wchar_t));
+		};
+
+		for (auto& vi : ui.variables)
+		{
+			auto p = (char*)src + vi.offset;
+			switch (vi.type->tag)
+			{
+			case TagE:
+				dst.write(p, vi.type->size);
+				break;
+			case TagD:
+				if (auto ti = (TypeInfo_Data*)vi.type; ti)
+				{
+					switch (ti->data_type)
+					{
+					case DataString:
+						write_string(p);
+						break;
+					case DataWString:
+						write_wstring(p);
+						break;
+					case DataPath:
+						write_path(p);
+						break;
+					default:
+						dst.write(p, vi.type->size);
+					}
+				}
+				break;
+			case TagU:
+				if (auto ui = vi.type->retrive_ui(); ui)
+					serialize_binary(*ui, p, dst);
+				break;
+			case TagVE:
+				if (auto& vec = *(std::vector<int>*)p; !vec.empty())
+				{
+					uint len = vec.size();
+					dst.write((char*)&len, sizeof(uint));
+					dst.write((char*)vec.data(), sizeof(uint) * len);
+				}
+				else
+					dst.write((char*)&zero_len, sizeof(uint));
+				break;
+			case TagVD:
+				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
+				{
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+					auto len = vec.size() / ti->size;
+					dst.write((char*)&len, sizeof(uint));
+					p = (char*)vec.data();
+					switch (ti->data_type)
+					{
+					case DataString:
+						for (auto i = 0; i < len; i++)
+						{
+							write_string(p);
+							p += ti->size;
+						}
+						break;
+					case DataWString:
+						for (auto i = 0; i < len; i++)
+						{
+							write_wstring(p);
+							p += ti->size;
+						}
+						break;
+					case DataPath:
+						for (auto i = 0; i < len; i++)
+						{
+							write_path(p);
+							p += ti->size;
+						}
+						break;
+					default:
+						dst.write((char*)vec.data(), vec.size());
+					}
+				}
+				else
+					dst.write((char*)&zero_len, sizeof(uint));
+				break;
+			case TagVU:
+				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
+				{
+
+				}
+				else
+					dst.write((char*)&zero_len, sizeof(uint));
+				break;
+			}
+		}
+	}
+
+	inline void unserialize_binary(const UdtInfo& ui, std::ifstream& src, void* dst)
+	{
+		uint len = 0;
+
+		auto read_string = [&](void* dst) {
+			auto& str = *(std::string*)dst;
+			src.read((char*)&len, sizeof(uint));
+			str.resize(len);
+			if (len > 0)
+				src.read((char*)str.data(), len * sizeof(char));
+		};
+		auto read_wstring = [&](void* dst) {
+			auto& str = *(std::wstring*)dst;
+			src.read((char*)&len, sizeof(uint));
+			str.resize(len);
+			if (len > 0)
+				src.read((char*)str.data(), len * sizeof(wchar_t));
+		};
+		auto read_path = [&](void* dst) {
+			auto& path = *(std::filesystem::path*)dst;
+			std::wstring str;
+			src.read((char*)&len, sizeof(uint));
+			str.resize(len);
+			if (len > 0)
+				src.read((char*)str.data(), len * sizeof(wchar_t));
+			path = str;
+		};
+
+		for (auto& vi : ui.variables)
+		{
+			auto p = (char*)dst + vi.offset;
+			switch (vi.type->tag)
+			{
+			case TagE:
+				src.read(p, vi.type->size);
+				break;
+			case TagD:
+				if (auto ti = (TypeInfo_Data*)vi.type; ti)
+				{
+					switch (ti->data_type)
+					{
+					case DataString:
+						read_string(p);
+						break;
+					case DataWString:
+						read_wstring(p);
+						break;
+					case DataPath:
+						read_path(p);
+						break;
+					default:
+						src.read(p, vi.type->size);
+					}
+				}
+				break;
+			case TagU:
+				if (auto ui = vi.type->retrive_ui(); ui)
+					unserialize_binary(*ui, src, p);
+				break;
+			case TagVE:
+				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				{
+					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
+					auto& vec = *(std::vector<int>*)p;
+					vec.resize(len);
+					src.read((char*)vec.data(), sizeof(uint) * len);
+
+				}
+				break;
+			case TagVD:
+				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				{
+					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
+					auto& vec = *(std::vector<char>*)p;
+					vec.resize(len * ti->size);
+					p = (char*)vec.data();
+					switch (ti->data_type)
+					{
+					case DataString:
+						for (auto i = 0; i < len; i++)
+						{
+							ti->create(p);
+							read_string(p);
+							p += ti->size;
+						}
+						break;
+					case DataWString:
+						for (auto i = 0; i < len; i++)
+						{
+							ti->create(p);
+							read_wstring(p);
+							p += ti->size;
+						}
+						break;
+					case DataPath:
+						for (auto i = 0; i < len; i++)
+						{
+							ti->create(p);
+							read_path(p);
+							p += ti->size;
+						}
+						break;
+					default:
+						src.read((char*)vec.data(), vec.size());
+					}
+				}
+				break;
+			case TagVU:
+				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				{
+
+				}
+				break;
+			}
 		}
 	}
 }
