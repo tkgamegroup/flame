@@ -292,6 +292,14 @@ namespace flame
 			for (auto i = 0; i < u.attributes.size(); i++)
 				u.attributes_map.emplace(u.attributes[i].name_hash, i);
 		}
+		for (auto& pair : typeinfos)
+		{
+			if (pair.second->tag == TagU)
+			{
+				if (auto ti = (TypeInfo_Udt*)pair.second.get(); ti->ui == nullptr)
+					ti->ui = find_udt(sh(ti->name.c_str()), *this);
+			}
+		}
 
 		return true;
 	}

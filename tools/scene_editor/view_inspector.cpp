@@ -651,6 +651,21 @@ void View_Inspector::on_draw()
 			if (ImGui::Button("Convert"))
 				graphics::Model::convert(path, rotation, scaling, only_animation, copy_textures, texture_fmt);
 		}
+		else if (ext == L".fmod")
+		{
+			if (ImGui::Button("To Text"))
+			{
+				auto model = graphics::Model::get(path);
+				model->save(path, false);
+				graphics::Model::release(model);
+			}
+			if (ImGui::Button("To Binary"))
+			{
+				auto model = graphics::Model::get(path);
+				model->save(path, true);
+				graphics::Model::release(model);
+			}
+		}
 		else if (is_image_file(ext))
 		{
 			struct ImageRefInfo

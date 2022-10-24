@@ -1,6 +1,7 @@
 #include "../serialize_extension.h"
-#include "../foundation/typeinfo.h"
 #include "../foundation/bitmap.h"
+#include "../foundation/typeinfo.h"
+#include "../foundation/typeinfo_serialize.h"
 #include "material_private.h"
 #include "model_private.h"
 #include "model_ext.h"
@@ -20,54 +21,69 @@ namespace flame
 {
 	namespace graphics
 	{
-		void ModelPrivate::save(const std::filesystem::path& filename)
+		void ModelPrivate::save(const std::filesystem::path& filename, bool binary)
 		{
-			std::ofstream dst(filename);
-			dst << "model:" << std::endl;
-
-			pugi::xml_document doc;
-			auto n_model = doc.append_child("model");
-
-			DataSoup data_soup;
-
-			auto n_meshes = n_model.append_child("meshes");
-			for (auto& m : meshes)
+			if (binary)
 			{
-				auto n_mesh = n_meshes.append_child("mesh");
+				std::ofstream dst(filename, std::ios::binary);
+				dst.write("fmodb", 5);
 
-				if (!m.positions.empty())
-					data_soup.xml_append_v(m.positions, n_mesh.append_child("positions"));
-				if (!m.uvs.empty())
-					data_soup.xml_append_v(m.uvs, n_mesh.append_child("uvs"));
-				if (!m.normals.empty())
-					data_soup.xml_append_v(m.normals, n_mesh.append_child("normals"));
-				if (!m.tangents.empty())
-					data_soup.xml_append_v(m.tangents, n_mesh.append_child("tangents"));
-				if (!m.colors.empty())
-					data_soup.xml_append_v(m.colors, n_mesh.append_child("colors"));
-				if (!m.bone_ids.empty())
-					data_soup.xml_append_v(m.bone_ids, n_mesh.append_child("bone_ids"));
-				if (!m.bone_weights.empty())
-					data_soup.xml_append_v(m.bone_weights, n_mesh.append_child("bone_weights"));
-				if (!m.indices.empty())
-					data_soup.xml_append_v(m.indices, n_mesh.append_child("indices"));
+				SerializeBinarySpec spec;
+				spec.excludes.emplace_back(th<graphics::Model>(), "filename"_h);
+				spec.excludes.emplace_back(th<graphics::Model>(), "ref"_h);
 
-				n_mesh.append_attribute("bounds").set_value(str((mat2x3&)m.bounds).c_str());
+				serialize_binary(this, dst, spec);
+				dst.close();
 			}
-
-			auto n_bones = n_model.append_child("bones");
-			for (auto& b : bones)
+			else
 			{
-				auto n_bone = n_bones.append_child("bone");
-				n_bone.append_attribute("name").set_value(b.name.c_str());
-				data_soup.xml_append((uint*)&b.offset_matrix, sizeof(b.offset_matrix), n_bone.append_child("offset_matrix"));
+				std::ofstream dst(filename);
+				dst << "model:" << std::endl;
+
+				pugi::xml_document doc;
+				auto n_model = doc.append_child("model");
+
+				DataSoup data_soup;
+
+				auto n_meshes = n_model.append_child("meshes");
+				for (auto& m : meshes)
+				{
+					auto n_mesh = n_meshes.append_child("mesh");
+
+					if (!m.positions.empty())
+						data_soup.xml_append_v(m.positions, n_mesh.append_child("positions"));
+					if (!m.uvs.empty())
+						data_soup.xml_append_v(m.uvs, n_mesh.append_child("uvs"));
+					if (!m.normals.empty())
+						data_soup.xml_append_v(m.normals, n_mesh.append_child("normals"));
+					if (!m.tangents.empty())
+						data_soup.xml_append_v(m.tangents, n_mesh.append_child("tangents"));
+					if (!m.colors.empty())
+						data_soup.xml_append_v(m.colors, n_mesh.append_child("colors"));
+					if (!m.bone_ids.empty())
+						data_soup.xml_append_v(m.bone_ids, n_mesh.append_child("bone_ids"));
+					if (!m.bone_weights.empty())
+						data_soup.xml_append_v(m.bone_weights, n_mesh.append_child("bone_weights"));
+					if (!m.indices.empty())
+						data_soup.xml_append_v(m.indices, n_mesh.append_child("indices"));
+
+					n_mesh.append_attribute("bounds").set_value(str((mat2x3&)m.bounds).c_str());
+				}
+
+				auto n_bones = n_model.append_child("bones");
+				for (auto& b : bones)
+				{
+					auto n_bone = n_bones.append_child("bone");
+					n_bone.append_attribute("name").set_value(b.name.c_str());
+					data_soup.xml_append((uint*)&b.offset_matrix, sizeof(b.offset_matrix), n_bone.append_child("offset_matrix"));
+				}
+
+				doc.save(dst);
+				dst << std::endl;
+
+				dst << "data:" << std::endl;
+				data_soup.save(dst);
 			}
-
-			doc.save(dst);
-			dst << std::endl;
-
-			dst << "data:" << std::endl;
-			data_soup.save(dst);
 		}
 
 		std::filesystem::path find_file(const std::filesystem::path& dir, const std::filesystem::path& name)
@@ -857,7 +873,7 @@ namespace flame
 				};
 				process_node(preprocess(doc_prefab.append_child("prefab")), scene->GetRootNode());
 				postprocess(doc_prefab.first_child());
-				model->save(replace_ext(_filename, L".fmod"));
+				model->save(replace_ext(_filename, L".fmod"), false);
 				doc_prefab.save_file(replace_ext(_filename, L".prefab").c_str());
 
 				scene->Destroy(true);
@@ -1130,7 +1146,7 @@ namespace flame
 				};
 				process_node(preprocess(doc_prefab.append_child("prefab")), scene->mRootNode);
 				postprocess(doc_prefab.first_child());
-				model->save(replace_ext(_filename, L".fmod"));
+				model->save(replace_ext(_filename, L".fmod"), false);
 				doc_prefab.save_file(replace_ext(_filename, L".prefab").c_str());
 #endif
 			}
@@ -1217,62 +1233,78 @@ namespace flame
 					}
 				}
 
-				std::ifstream file(filename);
+				std::ifstream file(filename, std::ios::binary);
 				if (!file.good())
 				{
 					wprintf(L"cannot find model: %s\n", _filename.c_str());
 					return nullptr;
 				}
-				LineReader src(file);
-				src.read_block("model:");
-
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
-				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
-				{
-					printf("model format is incorrect: %s\n", filename.string().c_str());
-					return nullptr;
-				}
-
-				DataSoup data_soup;
-				src.read_block("data:");
-				data_soup.load(src);
 
 				auto ret = new ModelPrivate();
 				ret->filename = filename;
 
-				for (auto n_mesh : doc_root.child("meshes"))
+				if (char buf[5]; file.read(buf, 5).good() && strncmp(buf, "fmodb", 5) == 0)
 				{
-					auto& m = ret->meshes.emplace_back();
-					m.model = ret;
+					UnserializeBinarySpec spec;
+					spec.excludes.emplace_back(th<graphics::Model>(), "filename"_h);
+					spec.excludes.emplace_back(th<graphics::Model>(), "ref"_h);
 
-					data_soup.xml_read_v(m.positions, n_mesh.child("positions"));
-					if (auto n_uvs = n_mesh.child("uvs"); n_uvs)
-						data_soup.xml_read_v(m.uvs, n_uvs);
-					if (auto n_normals = n_mesh.child("normals"); n_normals)
-						data_soup.xml_read_v(m.normals, n_normals);
-					if (auto n_tangents = n_mesh.child("tangents"); n_tangents)
-						data_soup.xml_read_v(m.tangents, n_tangents);
-					if (auto n_colors = n_mesh.child("colors"); n_colors)
-						data_soup.xml_read_v(m.colors, n_colors);
-					if (auto n_bids = n_mesh.child("bone_ids"); n_bids)
-						data_soup.xml_read_v(m.bone_ids, n_bids);
-					if (auto n_wgts = n_mesh.child("bone_weights"); n_wgts)
-						data_soup.xml_read_v(m.bone_weights, n_wgts);
-					data_soup.xml_read_v(m.indices, n_mesh.child("indices"));
-
-					m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
+					unserialize_binary(file, ret, spec);
 				}
-
-				for (auto n_bone : doc_root.child("bones"))
+				else
 				{
-					auto& b = ret->bones.emplace_back();
-					b.name = n_bone.attribute("name").value();
-					data_soup.xml_read(&b.offset_matrix, n_bone.child("offset_matrix"));
-				}
+					file.close();
+					file.open(filename); // reopen with text mode
 
-				for (auto& m : ret->meshes)
-					ret->bounds.expand(m.bounds);
+					LineReader src(file);
+					src.read_block("model:");
+
+					pugi::xml_document doc;
+					pugi::xml_node doc_root;
+					if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
+					{
+						printf("model format is incorrect: %s\n", filename.string().c_str());
+						delete ret;
+						return nullptr;
+					}
+
+					DataSoup data_soup;
+					src.read_block("data:");
+					data_soup.load(src);
+
+					for (auto n_mesh : doc_root.child("meshes"))
+					{
+						auto& m = ret->meshes.emplace_back();
+						m.model = ret;
+
+						data_soup.xml_read_v(m.positions, n_mesh.child("positions"));
+						if (auto n_uvs = n_mesh.child("uvs"); n_uvs)
+							data_soup.xml_read_v(m.uvs, n_uvs);
+						if (auto n_normals = n_mesh.child("normals"); n_normals)
+							data_soup.xml_read_v(m.normals, n_normals);
+						if (auto n_tangents = n_mesh.child("tangents"); n_tangents)
+							data_soup.xml_read_v(m.tangents, n_tangents);
+						if (auto n_colors = n_mesh.child("colors"); n_colors)
+							data_soup.xml_read_v(m.colors, n_colors);
+						if (auto n_bids = n_mesh.child("bone_ids"); n_bids)
+							data_soup.xml_read_v(m.bone_ids, n_bids);
+						if (auto n_wgts = n_mesh.child("bone_weights"); n_wgts)
+							data_soup.xml_read_v(m.bone_weights, n_wgts);
+						data_soup.xml_read_v(m.indices, n_mesh.child("indices"));
+
+						m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
+					}
+
+					for (auto n_bone : doc_root.child("bones"))
+					{
+						auto& b = ret->bones.emplace_back();
+						b.name = n_bone.attribute("name").value();
+						data_soup.xml_read(&b.offset_matrix, n_bone.child("offset_matrix"));
+					}
+
+					for (auto& m : ret->meshes)
+						ret->bounds.expand(m.bounds);
+				}
 
 				ret->ref = 1;
 				models.emplace_back(ret);

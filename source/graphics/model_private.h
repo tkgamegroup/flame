@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct ModelPrivate : Model
 		{
-			void save(const std::filesystem::path& filename) override;
+			void save(const std::filesystem::path& filename, bool binary) override;
 		};
 	}
 }

@@ -14,9 +14,7 @@ namespace flame
 
 		MaterialPrivate::MaterialPrivate()
 		{
-			// reference the Texture, or else the typeinfo will be lost
 			textures.resize(8);
-
 
 			materials.push_back(this);
 		}
@@ -39,6 +37,7 @@ namespace flame
 
 			SerializeXmlSpec spec;
 			spec.excludes.emplace_back(th<graphics::Material>(), "filename"_h);
+			spec.excludes.emplace_back(th<graphics::Material>(), "ref"_h);
 			spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
 				auto& path = *(std::filesystem::path*)src;
 				return Path::rebase(base_path, path).string();

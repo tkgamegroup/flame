@@ -88,7 +88,7 @@ namespace flame
 				return -1;
 			};
 
-			virtual void save(const std::filesystem::path& filename) = 0;
+			virtual void save(const std::filesystem::path& filename, bool binary = false) = 0;
 
 			FLAME_GRAPHICS_API static void convert(const std::filesystem::path& filename, const vec3& rotation = vec3(0.f), const vec3& scaling = vec3(1.f), 
 				bool only_animation = false, bool copy_textures = false, const std::filesystem::path& texture_format = L"");

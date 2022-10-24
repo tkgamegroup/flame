@@ -6,6 +6,35 @@
 
 namespace flame
 {
+	struct ExcludeSpec
+	{
+		std::vector<std::pair<uint, uint>> excludes;
+
+		inline bool skip(uint nh1, uint nh2) const
+		{
+			for (auto& e : excludes)
+			{
+				if (e.first == nh1 && e.second == nh2)
+					return true;
+			}
+			return false;
+		}
+	};
+
+#ifndef FLAME_NO_XML
+	struct SerializeXmlSpec : ExcludeSpec
+	{
+		std::map<TypeInfo*, std::function<std::string(void* src)>>				data_delegates;
+		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> obj_delegates;
+	};
+
+	struct UnserializeXmlSpec
+	{
+		std::map<TypeInfo*, std::function<void(const std::string& src, void* dst)>>	data_delegates;
+		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>>	obj_delegates;
+	};
+#endif
+
 	struct TextSerializeNode
 	{
 		std::string name;
@@ -39,35 +68,6 @@ namespace flame
 		}
 	};
 
-	struct ExcludeSpec
-	{
-		std::vector<std::pair<uint, uint>> excludes;
-
-		inline bool skip(uint nh1, uint nh2) const
-		{
-			for (auto& e : excludes)
-			{
-				if (e.first == nh1 && e.second == nh2)
-					return true;
-			}
-			return false;
-		}
-	};
-
-#ifndef FLAME_NO_XML
-	struct SerializeXmlSpec : ExcludeSpec
-	{
-		std::map<TypeInfo*, std::function<std::string(void* src)>>				data_delegates;
-		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>> obj_delegates;
-	};
-
-	struct UnserializeXmlSpec
-	{
-		std::map<TypeInfo*, std::function<void(const std::string& str, void* dst)>>	data_delegates;
-		std::map<TypeInfo*, std::function<void* (pugi::xml_node src, void* dst_o)>>	obj_delegates;
-	};
-#endif
-
 	struct SerializeTextSpec : ExcludeSpec
 	{
 		std::map<TypeInfo*, std::function<TextSerializeNode(void* src)>> delegates;
@@ -76,6 +76,16 @@ namespace flame
 	struct UnserializeTextSpec
 	{
 		std::map<TypeInfo*, std::function<void* (const TextSerializeNode& src)>> delegates;
+	};
+
+	struct SerializeBinarySpec : ExcludeSpec
+	{
+		std::map<TypeInfo*, std::function<void(void* src, std::ofstream& dst)>> delegates;
+	};
+
+	struct UnserializeBinarySpec : ExcludeSpec
+	{
+		std::map<TypeInfo*, std::function<void(std::ofstream& src, void* dst)>> delegates;
 	};
 
 #ifndef FLAME_NO_XML
@@ -978,7 +988,7 @@ namespace flame
 		}
 	}
 
-	inline void serialize_binary(const UdtInfo& ui, void* src, std::ostream& dst)
+	inline void serialize_binary(const UdtInfo& ui, void* src, std::ostream& dst, const SerializeBinarySpec& spec = {})
 	{
 		uint zero_len = 0;
 
@@ -1003,6 +1013,9 @@ namespace flame
 
 		for (auto& vi : ui.variables)
 		{
+			if (spec.skip(ui.name_hash, vi.name_hash))
+				continue;
+
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -1030,7 +1043,7 @@ namespace flame
 				break;
 			case TagU:
 				if (auto ui = vi.type->retrive_ui(); ui)
-					serialize_binary(*ui, p, dst);
+					serialize_binary(*ui, p, dst, spec);
 				break;
 			case TagVE:
 				if (auto& vec = *(std::vector<int>*)p; !vec.empty())
@@ -1082,7 +1095,22 @@ namespace flame
 			case TagVU:
 				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
 				{
-
+					if (auto ui = vi.type->retrive_ui(); ui)
+					{
+						auto len = vec.size() / ui->size;
+						dst.write((char*)&len, sizeof(uint));
+						p = (char*)vec.data();
+						if (ui->is_pod)
+							dst.write((char*)vec.data(), vec.size());
+						else
+						{
+							for (auto i = 0; i < len; i++)
+							{
+								serialize_binary(*ui, p, dst, spec);
+								p += ui->size;
+							}
+						}
+					}
 				}
 				else
 					dst.write((char*)&zero_len, sizeof(uint));
@@ -1091,7 +1119,13 @@ namespace flame
 		}
 	}
 
-	inline void unserialize_binary(const UdtInfo& ui, std::ifstream& src, void* dst)
+	template<typename T>
+	inline void serialize_binary(T* src, std::ostream& dst, const SerializeBinarySpec& spec = {})
+	{
+		serialize_binary(*TypeInfo::get<T>()->retrive_ui(), src, dst, spec);
+	}
+
+	inline void unserialize_binary(const UdtInfo& ui, std::ifstream& src, void* dst, const UnserializeBinarySpec& spec = {})
 	{
 		uint len = 0;
 
@@ -1121,6 +1155,9 @@ namespace flame
 
 		for (auto& vi : ui.variables)
 		{
+			if (spec.skip(ui.name_hash, vi.name_hash))
+				continue;
+
 			auto p = (char*)dst + vi.offset;
 			switch (vi.type->tag)
 			{
@@ -1148,7 +1185,7 @@ namespace flame
 				break;
 			case TagU:
 				if (auto ui = vi.type->retrive_ui(); ui)
-					unserialize_binary(*ui, src, p);
+					unserialize_binary(*ui, src, p, spec);
 				break;
 			case TagVE:
 				if (src.read((char*)&len, sizeof(uint)); len > 0)
@@ -1201,10 +1238,32 @@ namespace flame
 			case TagVU:
 				if (src.read((char*)&len, sizeof(uint)); len > 0)
 				{
-
+					if (auto ui = vi.type->retrive_ui(); ui)
+					{
+						auto& vec = *(std::vector<char>*)p;
+						vec.resize(len * ui->size);
+						if (ui->is_pod)
+							src.read((char*)vec.data(), vec.size());
+						else
+						{
+							p = vec.data();
+							for (auto i = 0; i < len; i++)
+							{
+								ui->create_object(p);
+								unserialize_binary(*ui, src, p, spec);
+								p += ui->size;
+							}
+						}
+					}
 				}
 				break;
 			}
 		}
+	}
+
+	template<typename T>
+	inline void unserialize_binary(std::ifstream& src, T* dst, const UnserializeBinarySpec& spec = {})
+	{
+		unserialize_binary(*TypeInfo::get<T>()->retrive_ui(), src, dst, spec);
 	}
 }
