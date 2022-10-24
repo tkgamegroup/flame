@@ -54,8 +54,38 @@ namespace flame
 					return VK_FORMAT_R32G32B32A32_SFLOAT;
 				case Format_R32G32B32A32_INT:
 					return VK_FORMAT_R32G32B32A32_SINT;
-				case Format_RGBA_BC3:
+				case Format_BC1_RGB_UNORM:
+					return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+				case Format_BC1_RGB_SRGB:
+					return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+				case Format_BC1_RGBA_UNORM:
+					return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+				case Format_BC1_RGBA_SRGB:
+					return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+				case Format_BC2_UNORM:
+					return VK_FORMAT_BC2_UNORM_BLOCK;
+				case Format_BC2_SRGB:
+					return VK_FORMAT_BC2_SRGB_BLOCK;
+				case Format_BC3_UNORM:
 					return VK_FORMAT_BC3_UNORM_BLOCK;
+				case Format_BC3_SRGB:
+					return VK_FORMAT_BC3_SRGB_BLOCK;
+				case Format_BC4_UNORM:
+					return VK_FORMAT_BC4_UNORM_BLOCK;
+				case Format_BC4_SNORM:
+					return VK_FORMAT_BC4_SNORM_BLOCK;
+				case Format_BC5_UNORM:
+					return VK_FORMAT_BC5_UNORM_BLOCK;
+				case Format_BC5_SNORM:
+					return VK_FORMAT_BC5_SNORM_BLOCK;
+				case Format_BC6H_UFLOAT:
+					return VK_FORMAT_BC6H_UFLOAT_BLOCK;
+				case Format_BC6H_SFLOAT:
+					return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+				case Format_BC7_UNORM:
+					return VK_FORMAT_BC7_UNORM_BLOCK;
+				case Format_BC7_SRGB:
+					return VK_FORMAT_BC7_SRGB_BLOCK;
 				case Format_RGBA_ETC2:
 					return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
 				case Format_Depth16:

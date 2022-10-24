@@ -629,6 +629,9 @@ namespace flame
 					case gli::FORMAT_RGBA32_SFLOAT_PACK32:
 						format = Format_R32G32B32A32_SFLOAT;
 						break;
+					case gli::FORMAT_RGBA_BP_UNORM_BLOCK16:
+						format = Format_BC7_UNORM;
+						break;
 					}
 					assert(format != Format_Undefined);
 
