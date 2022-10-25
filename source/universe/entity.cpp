@@ -92,7 +92,19 @@ namespace flame
 		std::vector<std::pair<Component*, uint>> require_comps;
 		for (auto& vi : ui->variables)
 		{
-			if (vi.metas.get("requires"_h))
+			if (vi.metas.get("auto_requires"_h))
+			{
+				if (vi.type->tag == TagPU)
+				{
+					auto hash = sh(vi.type->name.c_str());
+					auto comp = get_component(hash);
+					if (!comp)
+						comp = add_component(hash);
+					if (comp)
+						require_comps.emplace_back(comp, vi.offset);
+				}
+			}
+			else if (vi.metas.get("requires"_h))
 			{
 				auto ok = false;
 				if (vi.type->tag == TagPU)
