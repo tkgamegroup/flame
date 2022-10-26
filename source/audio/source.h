@@ -17,6 +17,8 @@ namespace flame
 			virtual void remove_buffer(BufferPtr buffer) = 0;
 			virtual void play() = 0;
 			virtual void stop() = 0;
+			virtual void pause() = 0;
+			virtual void rewind() = 0;
 			virtual void set_volumn(float v) = 0;
 
 			struct Create

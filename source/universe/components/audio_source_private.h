@@ -19,6 +19,9 @@ namespace flame
 		~cAudioSourcePrivate();
 
 		void play(uint name, float volumn) override;
+		void stop(uint name) override;
+		void pause(uint name) override;
+		void rewind(uint name) override;
 
 		void update() override;
 	};

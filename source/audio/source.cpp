@@ -38,6 +38,16 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
+		void SourcePrivate::pause()
+		{
+			alSourcePause(al_src);
+		}
+
+		void SourcePrivate::rewind()
+		{
+			alSourceRewind(al_src);
+		}
+
 		void SourcePrivate::set_volumn(float v)
 		{
 			alSourcef(al_src, AL_GAIN, v);

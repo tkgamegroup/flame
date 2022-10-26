@@ -74,6 +74,33 @@ namespace flame
 #endif
 	}
 
+	void cAudioSourcePrivate::stop(uint name)
+	{
+#if USE_AUDIO_MODULE
+		auto it = sources.find(name);
+		if (it != sources.end())
+			it->second.src->stop();
+#endif
+	}
+
+	void cAudioSourcePrivate::pause(uint name)
+	{
+#if USE_AUDIO_MODULE
+		auto it = sources.find(name);
+		if (it != sources.end())
+			it->second.src->pause();
+#endif
+	}
+
+	void cAudioSourcePrivate::rewind(uint name)
+	{
+#if USE_AUDIO_MODULE
+		auto it = sources.find(name);
+		if (it != sources.end())
+			it->second.src->rewind();
+#endif
+	}
+
 	void cAudioSourcePrivate::update()
 	{
 #if USE_AUDIO_MODULE

@@ -19,6 +19,8 @@ namespace flame
 			void remove_buffer(BufferPtr buffer) override;
 			void play() override;
 			void stop() override;
+			void pause() override;
+			void rewind() override;
 			void set_volumn(float v) override;
 		};
 	}
