@@ -11,6 +11,7 @@
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/dir_light.h>
+#include <flame/universe/components//nav_scene.h>
 #include <flame/universe/systems/renderer.h>
 
 App app;
@@ -109,8 +110,17 @@ void App::init()
 			ImGui::Separator();
 			if (ImGui::BeginMenu("NavMesh"))
 			{
-				//if (ImGui::MenuItem("Generate"))
-				//	sScene::instance()->generate_nav_mesh();
+				if (ImGui::MenuItem("Generate Using cNavScene's values"))
+				{
+					if (e_prefab)
+					{
+						if (auto comp = e_prefab->find_component(th<cNavScene>()); comp)
+						{
+							auto nav_scene = (cNavScenePtr)comp;
+							sScene::instance()->generate_nav_mesh(nav_scene->agent_radius, nav_scene->agent_height, nav_scene->walkable_climb, nav_scene->walkable_slope_angle);
+						}
+					}
+				}
 				if (ImGui::MenuItem("Test", nullptr, &navmesh_test.open))
 				{
 					auto node = e_editor->get_component_i<cNode>(0);

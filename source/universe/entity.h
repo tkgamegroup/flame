@@ -141,6 +141,23 @@ namespace flame
 			return nullptr;
 		}
 
+		inline Component* find_component(uint hash) const
+		{
+			for (auto& comp : components)
+			{
+				if (comp->type_hash == hash)
+					return comp.get();
+			}
+			for (auto& cc : children)
+			{
+				auto c = (Entity*)cc.get();
+				auto res = c->find_component(hash);
+				if (res)
+					return res;
+			}
+			return nullptr;
+		}
+
 		inline EntityPtr find_child_with_instance_id(std::string_view instance_id) const
 		{
 			for (auto& cc : children)

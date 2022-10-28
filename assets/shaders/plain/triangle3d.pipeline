@@ -12,7 +12,16 @@ renderpass
   {rp}
 primitive_topology
   {pt}
-polygon_mode
-  Line
 cull_mode
   None
+blend_options
+  enable
+    true
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    One
