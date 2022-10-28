@@ -1,0 +1,16 @@
+%rp=../forward.rp
+%pll=../forward.pll
+layout
+  {pll}
+shaders
+  volume.vert
+ ---
+  volume.geom
+ ---
+  volume.frag
+renderpass
+  {rp}
+primitive_topology
+  PatchList
+patch_control_points
+  1

@@ -40,15 +40,25 @@ struct SdfInstance
 	SdSphere spheres[64];
 };
 
+struct VolumeInstance
+{
+	mat4 mat;
+	vec3 extent;
+	uvec3 blocks;
+};
+
 layout(set = SET, binding = 0) buffer readonly Instance
 {
 	MeshInstance meshes[65536];
 	ArmatureInstance armatures[256];
 	TerrainInstance terrains[8];
 	SdfInstance sdfs[256];
+	VolumeInstance volumes[16];
 }instance;
 
 layout (set = SET, binding = 1) uniform sampler2D terrain_height_maps[8];
 layout (set = SET, binding = 2) uniform sampler2D terrain_normal_maps[8];
 layout (set = SET, binding = 3) uniform sampler2D terrain_tangent_maps[8];
 layout (set = SET, binding = 4) uniform sampler2D terrain_splash_maps[8];
+
+layout (set = SET, binding = 5) uniform sampler3D volume_datas[8];
