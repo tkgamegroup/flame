@@ -28,20 +28,20 @@ namespace flame
 		}
 	};
 
-	/// Reflect ctor
+	// Reflect ctor
 	struct Entity
 	{
 		virtual ~Entity() {}
 
-		/// Reflect
+		// Reflect
 		std::string name;
-		/// Reflect
+		// Reflect
 		uint tag = 1;
 
-		/// Reflect
+		// Reflect
 		bool enable = true;
 		bool global_enable = false;
-		/// Reflect
+		// Reflect
 		virtual void set_enable(bool v) = 0;
 
 		WorldPtr world = nullptr;
@@ -53,10 +53,10 @@ namespace flame
 		std::string instance_id;
 		std::string file_id;
 
-		/// Reflect
+		// Reflect
 		std::vector<std::unique_ptr<Component>> components;
 		std::unordered_map<uint, Component*> component_map;
-		/// Reflect
+		// Reflect
 		std::vector<std::unique_ptr<EntityT>> children;
 
 		Listeners<void(uint, void*, void*)> message_listeners;
@@ -220,7 +220,7 @@ namespace flame
 			virtual EntityPtr operator()(std::string* file_id = nullptr) = 0;
 			virtual EntityPtr operator()(const std::filesystem::path& filename) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 

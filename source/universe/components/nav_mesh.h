@@ -4,17 +4,17 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cNavMesh : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
 		struct Create
 		{
 			virtual cNavMeshPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

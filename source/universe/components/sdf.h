@@ -4,10 +4,10 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cSdf : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
 		int instance_id = -1;
@@ -16,7 +16,7 @@ namespace flame
 		{
 			virtual cSdfPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

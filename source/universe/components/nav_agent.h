@@ -4,29 +4,29 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cNavAgent : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		float radius = 0.2f;
-		/// Reflect
+		// Reflect
 		float height = 2.f;
-		/// Reflect
+		// Reflect
 		float speed = 5.f;
-		/// Reflect
+		// Reflect
 		float speed_scale = 1.f;
-		/// Reflect
+		// Reflect
 		virtual void set_speed_scale(float v) = 0;
-		/// Reflect
+		// Reflect
 		float turn_speed = 900.f;
-		/// Reflect
+		// Reflect
 		float turn_speed_scale = 1.f;
-		/// Reflect
+		// Reflect
 		virtual void set_turn_speed_scale(float v) = 0;
-		/// Reflect
+		// Reflect
 		uint separation_group = 1;
 
 		float dist = -1; // the distance between agent and target. <0 means no target
@@ -40,7 +40,7 @@ namespace flame
 		{
 			virtual cNavAgentPtr operator()(EntityPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

@@ -4,62 +4,62 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cTerrain : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		vec3 extent = vec3(256.f, 128.f, 256.f);
-		/// Reflect
+		// Reflect
 		virtual void set_extent(const vec3& extent) = 0;
 
-		/// Reflect
+		// Reflect
 		uvec2 blocks = uvec2(32);
-		/// Reflect
+		// Reflect
 		virtual void set_blocks(const uvec2& blocks) = 0;
 
-		/// Reflect
+		// Reflect
 		uint tess_level = 8.f;
-		/// Reflect
+		// Reflect
 		virtual void set_tess_level(uint tess_level) = 0;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path height_map_name;
-		/// Reflect
+		// Reflect
 		virtual void set_height_map_name(const std::filesystem::path& name) = 0;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path splash_map_name;
-		/// Reflect
+		// Reflect
 		virtual void set_splash_map_name(const std::filesystem::path& name) = 0;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path material_name;
-		/// Reflect
+		// Reflect
 		virtual void set_material_name(const std::filesystem::path& name) = 0;
 
-		/// Reflect
+		// Reflect
 		bool cast_shadow = true;
-		/// Reflect
+		// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
-		/// Reflect
+		// Reflect
 		bool use_grass_field = false;
-		/// Reflect
+		// Reflect
 		virtual void set_use_grass_field(bool v) = 0;
-		/// Reflect
+		// Reflect
 		uint grass_field_tess_level = 64;
-		/// Reflect
+		// Reflect
 		virtual void set_grass_field_tess_level(uint tess_level) = 0;
-		/// Reflect
+		// Reflect
 		uint grass_channel = 0U;
-		/// Reflect
+		// Reflect
 		virtual void set_grass_channel(uint channel) = 0;
-		/// Reflect
+		// Reflect
 		std::filesystem::path grass_texture_name;
-		/// Reflect
+		// Reflect
 		virtual void set_grass_texture_name(const std::filesystem::path& name) = 0;
 
 		graphics::ImagePtr height_map = nullptr;
@@ -78,7 +78,7 @@ namespace flame
 		{
 			virtual cTerrainPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

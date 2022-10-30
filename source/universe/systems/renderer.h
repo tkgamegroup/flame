@@ -6,7 +6,7 @@ namespace flame
 {
 	struct DrawData;
 
-	/// Reflect
+	// Reflect
 	struct sRenderer : System
 	{
 		enum Mode
@@ -159,7 +159,7 @@ namespace flame
 		{
 			virtual sRendererPtr operator()(WorldPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

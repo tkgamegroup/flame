@@ -4,17 +4,17 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cCamera : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		float fovy = 45.f;
-		/// Reflect
+		// Reflect
 		float zNear = 1.f;
-		/// Reflect
+		// Reflect
 		float zFar = 1000.f;
 
 		float aspect = 1.f;
@@ -33,7 +33,7 @@ namespace flame
 		{
 			virtual cCameraPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 
 		struct List

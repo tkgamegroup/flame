@@ -6,15 +6,15 @@ namespace flame
 {
 	struct DrawData;
 
-	/// Reflect ctor
+	// Reflect ctor
 	struct cNode : Component
 	{
-		/// Reflect
+		// Reflect
 		bool is_static = false;
 
-		/// Reflect
+		// Reflect
 		vec3 pos = vec3(0.f);
-		/// Reflect
+		// Reflect
 		virtual void set_pos(const vec3& pos) = 0;
 		inline void add_pos(const vec3& p)
 		{
@@ -23,9 +23,9 @@ namespace flame
 
 		// yaw, pitch, roll, in angle
 		vec3 eul = vec3(0.f);
-		/// Reflect
+		// Reflect
 		virtual vec3 get_eul() = 0;
-		/// Reflect
+		// Reflect
 		virtual void set_eul(const vec3& eul) = 0;
 		inline void add_eul(const vec3& e)
 		{
@@ -33,16 +33,16 @@ namespace flame
 		}
 
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
-		/// Reflect
+		// Reflect
 		virtual quat get_qut() = 0;
-		/// Reflect
+		// Reflect
 		virtual void set_qut(const quat& qut) = 0;
 
 		mat3 rot = mat3(1.f);
 
-		/// Reflect
+		// Reflect
 		vec3 scl = vec3(1.f);
-		/// Reflect
+		// Reflect
 		virtual void set_scl(const vec3& scl) = 0;
 
 		inline void set_transform(const vec3& pos, const vec3& scl)
@@ -89,7 +89,7 @@ namespace flame
 		{
 			virtual cNodePtr operator()(EntityPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

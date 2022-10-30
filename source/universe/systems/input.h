@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	/// Reflect
+	// Reflect
 	struct sInput : System
 	{
 		vec2 offset = vec2(0.f);
@@ -35,7 +35,7 @@ namespace flame
 		{
 			virtual sInputPtr operator()(WorldPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

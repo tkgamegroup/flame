@@ -4,26 +4,26 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cArmature : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path armature_name;
-		/// Reflect
+		// Reflect
 		virtual void set_armature_name(const std::filesystem::path& name) = 0;
-		/// Reflect
+		// Reflect
 		std::vector<std::pair<std::filesystem::path, std::string>> animation_names;
-		/// Reflect
+		// Reflect
 		virtual void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
-		/// Reflect
+		// Reflect
 		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
 
 		Listeners<void(uint, uint)> playing_callbacks;
 
-		/// Reflect
+		// Reflect
 		bool loop = true;
 
 		graphics::ModelPtr model = nullptr;
@@ -40,7 +40,7 @@ namespace flame
 		{
 			virtual cArmaturePtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

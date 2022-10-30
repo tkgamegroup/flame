@@ -375,6 +375,15 @@ process:
 				}
 				break;
 			case Any:
+				for (auto& s : children)
+				{
+					if (s.first == str)
+					{
+						if (metas)
+							*metas = s.second;
+						break;
+					}
+				}
 				return true;
 			case Excepts:
 				for (auto& s : children)
@@ -409,10 +418,20 @@ process:
 		return need(udt_rules, name, out_r);
 	};
 	auto add_enum_rule = [&](const std::string& n) {
+		for (auto& r : enum_rules)
+		{
+			if (r.name == n)
+				return;
+		}
 		auto& r = enum_rules.emplace_back();
 		r.name = n;
 	};
 	auto add_udt_rule = [&](const std::string& n) {
+		for (auto& r : udt_rules)
+		{
+			if (r.name == n)
+				return;
+		}
 		auto& r = udt_rules.emplace_back();
 		r.name = n;
 	};
@@ -465,57 +484,81 @@ process:
 				if ((it.path().extension() == L".h") &&
 					!it.path().filename().wstring().ends_with(L"_private"))
 				{
-					Rule* pr = nullptr;
+					std::deque<std::pair<std::string, uint>> name_spaces;
+					auto get_name = [&](const std::string& name) {
+						std::string ret;
+						uint count = name_spaces.size();
+						for (auto i = 0; i < count; i++)
+						{
+							if (i == count - 1 && name == name_spaces[i].first)
+								continue;
+							ret += name_spaces[i].first + "::";
+						}
+						ret += name;
+						return ret;
+					};
+					auto brackets_level = 0;
+					auto reflect_mark = false;
+					std::string reflect_metas;
+					Rule* curr_rule = nullptr;
 					std::ifstream file(it.path());
 					while (!file.eof())
 					{
 						std::getline(file, line);
 						SUS::ltrim(line);
-						if (line.starts_with("///"))
+
+						if (line.starts_with("//"))
 						{
-							line = line.substr(3);
+							line = line.substr(2);
 							SUS::ltrim(line);
 							if (SUS::strip_head_if(line, "Reflect"))
 							{
-								auto metas = line;
-
-								auto need_ctor = false;
-
-								auto sp = SUS::split(line);
-								for (auto& t : sp)
-								{
-									if (t == "ctor")
-										need_ctor = true;
-								}
-
-								std::getline(file, line);
-								SUS::ltrim(line);
-								if (SUS::strip_head_if(line, "enum "))
+								reflect_mark = true;
+								reflect_metas = line;
+							}
+						}
+						else
+						{
+							if (SUS::strip_head_if(line, "namespace "))
+								name_spaces.emplace_back(line, brackets_level);
+							else if (SUS::strip_head_if(line, "enum "))
+							{
+								if (reflect_mark)
 								{
 									auto& r = enum_rules.emplace_back();
-									r.type = Rule::EndsWith;
-									r.name = line;
-									pr = &r;
+									r.type = Rule::Equal;
+									r.name = get_name(line);
+									curr_rule = &r;
 								}
-								else if (SUS::strip_head_if(line, "struct "))
+							}
+							else if (SUS::strip_head_if(line, "struct ") || SUS::strip_head_if(line, "class "))
+							{
+								if (auto pos = line.find_last_of(':'); pos != std::string::npos)
 								{
-									if (auto pos = line.find_last_of(':'); pos != std::string::npos)
-									{
-										line.erase(line.begin() + pos, line.end());
-										SUS::rtrim(line);
-									}
-									auto& r = udt_rules.emplace_back();
-									r.type = Rule::EndsWith;
-									r.name = line;
-									r.children_type = Rule::Equal;
-									if (need_ctor)
-									{
-										auto& c = r.children.emplace_back();
-										c.first = "ctor";
-									}
-									pr = &r;
+									line.erase(line.begin() + pos, line.end());
+									SUS::rtrim(line);
 								}
-								else if (pr)
+								name_spaces.emplace_back(line, brackets_level);
+
+								if (reflect_mark)
+								{
+									auto& r = udt_rules.emplace_back();
+									r.type = Rule::Equal;
+									r.name = get_name(line);
+									r.children_type = Rule::Equal;
+									for (auto& t : SUS::split(reflect_metas))
+									{
+										if (t == "ctor")
+											r.children.emplace_back().first = "ctor";
+										else if (t == "any")
+											r.children_type = Rule::Any;
+									}
+									curr_rule = &r;
+								}
+							}
+							else
+							{
+								if (reflect_mark)
 								{
 									static std::regex reg_var("[\\w*&>]\\s+(\\w+)\\s*(=.*)?;");
 									static std::regex reg_fun("\\s+(\\w+)\\s*\\(");
@@ -526,10 +569,50 @@ process:
 										name = res[1].str();
 									if (!name.empty())
 									{
-										auto& c = pr->children.emplace_back();
-										c.first = res[1].str();
-										c.second.from_string(metas);
+										if (!curr_rule)
+										{
+											if (!name_spaces.empty())
+											{
+												auto rule_name = name_spaces.back().first;
+												for (auto& r : udt_rules)
+												{
+													if (r.name == rule_name)
+													{
+														curr_rule = &r;
+														break;
+													}
+												}
+												if (!curr_rule)
+												{
+													auto& r = udt_rules.emplace_back();
+													r.type = Rule::Equal;
+													r.name = get_name(rule_name);
+													r.children_type = Rule::Any;
+													curr_rule = &r;
+												}
+											}
+										}
+										if (curr_rule)
+										{
+											auto& c = curr_rule->children.emplace_back();
+											c.first = res[1].str();
+											c.second.from_string(reflect_metas);
+										}
 									}
+								}
+							}
+
+							reflect_mark = false;
+							reflect_metas.clear();
+
+							brackets_level += std::count(line.begin(), line.end(), '{');
+							if (auto n = std::count(line.begin(), line.end(), '}'); n > 0)
+							{
+								brackets_level -= n;
+								if (!name_spaces.empty() && brackets_level == name_spaces.back().second)
+								{
+									name_spaces.pop_back();
+									curr_rule = nullptr;
 								}
 							}
 						}
@@ -635,10 +718,7 @@ process:
 			{
 				auto name = res[1].str();
 				if (SUS::strip_head_if(name, "enum "))
-				{
-					auto& r = enum_rules.emplace_back();
-					r.name = "^" + name + "$";
-				}
+					add_enum_rule(name);
 				else
 				{
 					name = TypeInfo::format_name(name);

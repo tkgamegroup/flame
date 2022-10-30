@@ -4,15 +4,15 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cAudioSource : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		std::vector<std::pair<std::filesystem::path, std::string>> buffer_names;
-		/// Reflect
+		// Reflect
 		virtual void set_buffer_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
 
 		virtual void play(uint name, float volumn = 1.f) = 0;
@@ -24,7 +24,7 @@ namespace flame
 		{
 			virtual cAudioSourcePtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

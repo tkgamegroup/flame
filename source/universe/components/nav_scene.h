@@ -4,26 +4,26 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cNavScene : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		float agent_radius = 0.6f;
-		/// Reflect
+		// Reflect
 		float agent_height = 1.8f;
-		/// Reflect
+		// Reflect
 		float walkable_climb = 0.5f;
-		/// Reflect
+		// Reflect
 		float walkable_slope_angle = 45.f;
 
 		struct Create
 		{
 			virtual cNavScenePtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

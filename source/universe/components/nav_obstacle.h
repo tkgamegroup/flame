@@ -4,22 +4,22 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cNavObstacle : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		float radius = 1.f;
-		/// Reflect
+		// Reflect
 		float height = 1.f;
 
 		struct Create
 		{
 			virtual cNavObstaclePtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

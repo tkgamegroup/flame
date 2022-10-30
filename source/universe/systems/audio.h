@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	/// Reflect
+	// Reflect
 	struct sAudio : System
 	{
 		struct Instance
@@ -17,7 +17,7 @@ namespace flame
 		{
 			virtual sAudioPtr operator()(WorldPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

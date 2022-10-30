@@ -4,20 +4,20 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cMesh : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path mesh_name;
-		/// Reflect
+		// Reflect
 		virtual void set_mesh_name(const std::filesystem::path& mesh_name) = 0;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path material_name;
-		/// Reflect
+		// Reflect
 		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
 
 		inline void set_mesh_and_material(const std::filesystem::path& mesh_name, const std::filesystem::path& material_name)
@@ -26,9 +26,9 @@ namespace flame
 			set_material_name(material_name);
 		}
 
-		/// Reflect
+		// Reflect
 		bool cast_shadow = true;
-		/// Reflect
+		// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
 		graphics::ModelPtr model = nullptr;
@@ -42,7 +42,7 @@ namespace flame
 		{
 			virtual cMeshPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

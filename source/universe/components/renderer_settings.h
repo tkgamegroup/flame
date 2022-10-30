@@ -4,36 +4,36 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cRendererSettings : Component
 	{
-		/// Reflect
+		// Reflect
 		std::filesystem::path sky_map_name; // will also load belonging _irr and _rad map
-		/// Reflect
+		// Reflect
 		virtual void set_sky_map_name(const std::filesystem::path& name) = 0;
-		/// Reflect
+		// Reflect
 		float sky_intensity = 1.f;
-		/// Reflect
+		// Reflect
 		virtual void set_sky_intensity(float v) = 0;
-		/// Reflect
+		// Reflect
 		vec3 fog_color = vec3(1.f);
-		/// Reflect
+		// Reflect
 		virtual void set_fog_color(const vec3& color) = 0;
-		/// Reflect
+		// Reflect
 		float shadow_distance = 100.f;
-		/// Reflect
+		// Reflect
 		virtual void set_shadow_distance(float d) = 0;
-		/// Reflect
+		// Reflect
 		uint csm_levels = 2;
-		/// Reflect
+		// Reflect
 		virtual void set_csm_levels(uint lv) = 0;
-		/// Reflect
+		// Reflect
 		float esm_factor = 7.f;
-		/// Reflect
+		// Reflect
 		virtual void set_esm_factor(float f) = 0;
-		/// Reflect
+		// Reflect
 		std::filesystem::path post_shading_code_file;
-		/// Reflect
+		// Reflect
 		virtual void set_post_shading_code_file(const std::filesystem::path& path) = 0;
 
 		graphics::ImagePtr sky_map = nullptr;
@@ -44,7 +44,7 @@ namespace flame
 		{
 			virtual cRendererSettingsPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

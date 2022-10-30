@@ -4,32 +4,32 @@
 
 namespace flame
 {
-	/// Reflect ctor
+	// Reflect ctor
 	struct cParticleSystem : Component
 	{
-		/// Reflect requires
+		// Reflect requires
 		cNodePtr node = nullptr;
 
-		/// Reflect
+		// Reflect
 		float particle_life_time = 5.f;
-		/// Reflect
+		// Reflect
 		float particle_speed = 5.f;
-		/// Reflect
+		// Reflect
 		vec2 particle_ext = vec2(1.f);
-		/// Reflect
+		// Reflect
 		cvec4 particle_col = cvec4(255);
-		/// Reflect hash=sphere|pie|cone
+		// Reflect hash=sphere|pie|cone
 		uint emitt_type = "sphere"_h;
-		/// Reflect
+		// Reflect
 		uint emitt_num = 10; // per second
-		/// Reflect
+		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
-		/// Reflect
+		// Reflect
 		float emitt_angle = 45.f;
 
-		/// Reflect
+		// Reflect
 		std::filesystem::path material_name;
-		/// Reflect
+		// Reflect
 		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
 
 		graphics::MaterialPtr material = nullptr;
@@ -39,7 +39,7 @@ namespace flame
 		{
 			virtual cParticleSystemPtr operator()(EntityPtr e) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

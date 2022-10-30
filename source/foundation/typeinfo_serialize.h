@@ -992,22 +992,22 @@ namespace flame
 	{
 		uint zero_len = 0;
 
-		auto write_string = [&](void* src) {
+		auto write_string = [&](void* src, uint length_bytes) {
 			auto& str = *(std::string*)src;
 			uint len = str.size();
-			writter(&len, sizeof(uint));
+			writter(&len, length_bytes);
 			writter(str.data(), len * sizeof(char));
 		};
-		auto write_wstring = [&](void* src) {
+		auto write_wstring = [&](void* src, uint length_bytes) {
 			auto& str = *(std::wstring*)src;
 			uint len = str.size();
-			writter(&len, sizeof(uint));
+			writter(&len, length_bytes);
 			writter(str.data(), len * sizeof(wchar_t));
 		};
-		auto write_path = [&](void* src) {
+		auto write_path = [&](void* src, uint length_bytes) {
 			auto& str = ((std::filesystem::path*)src)->native();
 			uint len = str.size();
-			writter(&len, sizeof(uint));
+			writter(&len, length_bytes);
 			writter(str.data(), len * sizeof(wchar_t));
 		};
 
@@ -1015,6 +1015,10 @@ namespace flame
 		{
 			if (spec.skip(ui.name_hash, vi.name_hash))
 				continue;
+
+			auto length_bytes = sizeof(uint);
+			if (std::string str; vi.metas.get("length_bytes"_h, &str))
+				length_bytes = s2t<uint>(str);
 
 			auto p = (char*)src + vi.offset;
 			switch (vi.type->tag)
@@ -1028,13 +1032,13 @@ namespace flame
 					switch (ti->data_type)
 					{
 					case DataString:
-						write_string(p);
+						write_string(p, length_bytes);
 						break;
 					case DataWString:
-						write_wstring(p);
+						write_wstring(p, length_bytes);
 						break;
 					case DataPath:
-						write_path(p);
+						write_path(p, length_bytes);
 						break;
 					default:
 						writter(p, vi.type->size);
@@ -1049,39 +1053,39 @@ namespace flame
 				if (auto& vec = *(std::vector<int>*)p; !vec.empty())
 				{
 					uint len = vec.size();
-					writter(&len, sizeof(uint));
+					writter(&len, length_bytes);
 					writter(vec.data(), sizeof(uint) * len);
 				}
 				else
-					writter(&zero_len, sizeof(uint));
+					writter(&zero_len, length_bytes);
 				break;
 			case TagVD:
 				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
 				{
 					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto len = vec.size() / ti->size;
-					writter(&len, sizeof(uint));
+					writter(&len, length_bytes);
 					p = (char*)vec.data();
 					switch (ti->data_type)
 					{
 					case DataString:
 						for (auto i = 0; i < len; i++)
 						{
-							write_string(p);
+							write_string(p, length_bytes);
 							p += ti->size;
 						}
 						break;
 					case DataWString:
 						for (auto i = 0; i < len; i++)
 						{
-							write_wstring(p);
+							write_wstring(p, length_bytes);
 							p += ti->size;
 						}
 						break;
 					case DataPath:
 						for (auto i = 0; i < len; i++)
 						{
-							write_path(p);
+							write_path(p, length_bytes);
 							p += ti->size;
 						}
 						break;
@@ -1090,7 +1094,7 @@ namespace flame
 					}
 				}
 				else
-					writter(&zero_len, sizeof(uint));
+					writter(&zero_len, length_bytes);
 				break;
 			case TagVU:
 				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
@@ -1098,7 +1102,7 @@ namespace flame
 					if (auto ui = vi.type->retrive_ui(); ui)
 					{
 						auto len = vec.size() / ui->size;
-						writter(&len, sizeof(uint));
+						writter(&len, length_bytes);
 						p = (char*)vec.data();
 						if (ui->is_pod)
 							writter(vec.data(), vec.size());
@@ -1113,7 +1117,7 @@ namespace flame
 					}
 				}
 				else
-					writter(&zero_len, sizeof(uint));
+					writter(&zero_len, length_bytes);
 				break;
 			}
 		}
@@ -1142,24 +1146,24 @@ namespace flame
 	{
 		uint len = 0;
 
-		auto read_string = [&](void* dst) {
+		auto read_string = [&](void* dst, uint length_bytes) {
 			auto& str = *(std::string*)dst;
-			reader(&len, sizeof(uint));
+			reader(&len, length_bytes);
 			str.resize(len);
 			if (len > 0)
 				reader(str.data(), len * sizeof(char));
 		};
-		auto read_wstring = [&](void* dst) {
+		auto read_wstring = [&](void* dst, uint length_bytes) {
 			auto& str = *(std::wstring*)dst;
-			reader(&len, sizeof(uint));
+			reader(&len, length_bytes);
 			str.resize(len);
 			if (len > 0)
 				reader(str.data(), len * sizeof(wchar_t));
 		};
-		auto read_path = [&](void* dst) {
+		auto read_path = [&](void* dst, uint length_bytes) {
 			auto& path = *(std::filesystem::path*)dst;
 			std::wstring str;
-			reader(&len, sizeof(uint));
+			reader(&len, length_bytes);
 			str.resize(len);
 			if (len > 0)
 				reader(str.data(), len * sizeof(wchar_t));
@@ -1170,6 +1174,10 @@ namespace flame
 		{
 			if (spec.skip(ui.name_hash, vi.name_hash))
 				continue;
+
+			auto length_bytes = sizeof(uint);
+			if (std::string str; vi.metas.get("length_bytes"_h, &str))
+				length_bytes = s2t<uint>(str);
 
 			auto p = (char*)dst + vi.offset;
 			switch (vi.type->tag)
@@ -1183,13 +1191,13 @@ namespace flame
 					switch (ti->data_type)
 					{
 					case DataString:
-						read_string(p);
+						read_string(p, length_bytes);
 						break;
 					case DataWString:
-						read_wstring(p);
+						read_wstring(p, length_bytes);
 						break;
 					case DataPath:
-						read_path(p);
+						read_path(p, length_bytes);
 						break;
 					default:
 						reader(p, vi.type->size);
@@ -1201,7 +1209,7 @@ namespace flame
 					unserialize_binary(*ui, reader, p, spec);
 				break;
 			case TagVE:
-				if (reader(&len, sizeof(uint)); len > 0)
+				if (reader(&len, length_bytes); len > 0)
 				{
 					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					auto& vec = *(std::vector<int>*)p;
@@ -1211,7 +1219,7 @@ namespace flame
 				}
 				break;
 			case TagVD:
-				if (reader(&len, sizeof(uint)); len > 0)
+				if (reader(&len, length_bytes); len > 0)
 				{
 					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto& vec = *(std::vector<char>*)p;
@@ -1223,7 +1231,7 @@ namespace flame
 						for (auto i = 0; i < len; i++)
 						{
 							ti->create(p);
-							read_string(p);
+							read_string(p, length_bytes);
 							p += ti->size;
 						}
 						break;
@@ -1231,7 +1239,7 @@ namespace flame
 						for (auto i = 0; i < len; i++)
 						{
 							ti->create(p);
-							read_wstring(p);
+							read_wstring(p, length_bytes);
 							p += ti->size;
 						}
 						break;
@@ -1239,7 +1247,7 @@ namespace flame
 						for (auto i = 0; i < len; i++)
 						{
 							ti->create(p);
-							read_path(p);
+							read_path(p, length_bytes);
 							p += ti->size;
 						}
 						break;
@@ -1249,7 +1257,7 @@ namespace flame
 				}
 				break;
 			case TagVU:
-				if (reader(&len, sizeof(uint)); len > 0)
+				if (reader(&len, length_bytes); len > 0)
 				{
 					if (auto ui = vi.type->retrive_ui(); ui)
 					{

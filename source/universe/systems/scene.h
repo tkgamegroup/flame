@@ -6,7 +6,7 @@ namespace flame
 {
 	struct DrawData;
 
-	/// Reflect
+	// Reflect
 	struct sScene : System
 	{
 		OctNode* octree = nullptr;
@@ -25,7 +25,7 @@ namespace flame
 		{
 			virtual sScenePtr operator()(WorldPtr) = 0;
 		};
-		/// Reflect static
+		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;
 	};
 }

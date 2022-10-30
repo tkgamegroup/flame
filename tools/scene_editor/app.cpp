@@ -397,7 +397,7 @@ using namespace flame;
 
 FLAME_TYPE(cMain)
 
-/// Reflect ctor
+// Reflect ctor
 struct cMain : Component
 {{
 	void start() override;
@@ -406,7 +406,7 @@ struct cMain : Component
 	{{
 		virtual cMainPtr operator()(EntityPtr) = 0;
 	}};
-	/// Reflect static
+	// Reflect static
 	EXPORT static Create& create;
 }};
 
