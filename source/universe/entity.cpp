@@ -187,7 +187,7 @@ namespace flame
 			auto ui = find_udt(hash);
 			for (auto& vi : ui->variables)
 			{
-				if (vi.metas.get("requires"_h))
+				if (vi.metas.get("requires"_h) || vi.metas.get("auto_requires"_h))
 				{
 					auto comp = get_component(sh(vi.type->name.c_str()));
 					if (comp)
@@ -342,7 +342,7 @@ namespace flame
 			{
 				if (a.var_idx != -1)
 				{
-					if (a.var()->metas.get("requires"_h))
+					if (a.var()->metas.get("requires"_h) || a.var()->metas.get("auto_requires"_h))
 						continue;
 				}
 				auto v = a.get_value(c.get());

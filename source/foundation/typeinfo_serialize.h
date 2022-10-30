@@ -988,27 +988,27 @@ namespace flame
 		}
 	}
 
-	inline void serialize_binary(const UdtInfo& ui, void* src, std::ostream& dst, const SerializeBinarySpec& spec = {})
+	inline void serialize_binary(const UdtInfo& ui, void* src, const std::function<void(const void*, uint)>& writter, const SerializeBinarySpec& spec = {})
 	{
 		uint zero_len = 0;
 
 		auto write_string = [&](void* src) {
 			auto& str = *(std::string*)src;
 			uint len = str.size();
-			dst.write((char*)&len, sizeof(uint));
-			dst.write((char*)str.data(), len * sizeof(char));
+			writter(&len, sizeof(uint));
+			writter(str.data(), len * sizeof(char));
 		};
 		auto write_wstring = [&](void* src) {
 			auto& str = *(std::wstring*)src;
 			uint len = str.size();
-			dst.write((char*)&len, sizeof(uint));
-			dst.write((char*)str.data(), len * sizeof(wchar_t));
+			writter(&len, sizeof(uint));
+			writter(str.data(), len * sizeof(wchar_t));
 		};
 		auto write_path = [&](void* src) {
 			auto& str = ((std::filesystem::path*)src)->native();
 			uint len = str.size();
-			dst.write((char*)&len, sizeof(uint));
-			dst.write((char*)str.data(), len * sizeof(wchar_t));
+			writter(&len, sizeof(uint));
+			writter(str.data(), len * sizeof(wchar_t));
 		};
 
 		for (auto& vi : ui.variables)
@@ -1020,7 +1020,7 @@ namespace flame
 			switch (vi.type->tag)
 			{
 			case TagE:
-				dst.write(p, vi.type->size);
+				writter(p, vi.type->size);
 				break;
 			case TagD:
 				if (auto ti = (TypeInfo_Data*)vi.type; ti)
@@ -1037,30 +1037,30 @@ namespace flame
 						write_path(p);
 						break;
 					default:
-						dst.write(p, vi.type->size);
+						writter(p, vi.type->size);
 					}
 				}
 				break;
 			case TagU:
 				if (auto ui = vi.type->retrive_ui(); ui)
-					serialize_binary(*ui, p, dst, spec);
+					serialize_binary(*ui, p, writter, spec);
 				break;
 			case TagVE:
 				if (auto& vec = *(std::vector<int>*)p; !vec.empty())
 				{
 					uint len = vec.size();
-					dst.write((char*)&len, sizeof(uint));
-					dst.write((char*)vec.data(), sizeof(uint) * len);
+					writter(&len, sizeof(uint));
+					writter(vec.data(), sizeof(uint) * len);
 				}
 				else
-					dst.write((char*)&zero_len, sizeof(uint));
+					writter(&zero_len, sizeof(uint));
 				break;
 			case TagVD:
 				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
 				{
 					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto len = vec.size() / ti->size;
-					dst.write((char*)&len, sizeof(uint));
+					writter(&len, sizeof(uint));
 					p = (char*)vec.data();
 					switch (ti->data_type)
 					{
@@ -1086,11 +1086,11 @@ namespace flame
 						}
 						break;
 					default:
-						dst.write((char*)vec.data(), vec.size());
+						writter(vec.data(), vec.size());
 					}
 				}
 				else
-					dst.write((char*)&zero_len, sizeof(uint));
+					writter(&zero_len, sizeof(uint));
 				break;
 			case TagVU:
 				if (auto& vec = *(std::vector<char>*)p; !vec.empty())
@@ -1098,25 +1098,38 @@ namespace flame
 					if (auto ui = vi.type->retrive_ui(); ui)
 					{
 						auto len = vec.size() / ui->size;
-						dst.write((char*)&len, sizeof(uint));
+						writter(&len, sizeof(uint));
 						p = (char*)vec.data();
 						if (ui->is_pod)
-							dst.write((char*)vec.data(), vec.size());
+							writter(vec.data(), vec.size());
 						else
 						{
 							for (auto i = 0; i < len; i++)
 							{
-								serialize_binary(*ui, p, dst, spec);
+								serialize_binary(*ui, p, writter, spec);
 								p += ui->size;
 							}
 						}
 					}
 				}
 				else
-					dst.write((char*)&zero_len, sizeof(uint));
+					writter(&zero_len, sizeof(uint));
 				break;
 			}
 		}
+	}
+
+	template<typename T>
+	inline void serialize_binary(T* src, const std::function<void(const void*, uint)>& writter, const SerializeBinarySpec& spec = {})
+	{
+		serialize_binary(*TypeInfo::get<T>()->retrive_ui(), src, writter, spec);
+	}
+
+	inline void serialize_binary(const UdtInfo& ui, void* src, std::ostream& dst, const SerializeBinarySpec& spec = {})
+	{
+		serialize_binary(ui, src, [&](const void* data, uint size) {
+			dst.write((char*)data, size);
+		}, spec);
 	}
 
 	template<typename T>
@@ -1125,31 +1138,31 @@ namespace flame
 		serialize_binary(*TypeInfo::get<T>()->retrive_ui(), src, dst, spec);
 	}
 
-	inline void unserialize_binary(const UdtInfo& ui, std::ifstream& src, void* dst, const UnserializeBinarySpec& spec = {})
+	inline void unserialize_binary(const UdtInfo& ui, const std::function<void(void*, uint)>& reader, void* dst, const UnserializeBinarySpec& spec = {})
 	{
 		uint len = 0;
 
 		auto read_string = [&](void* dst) {
 			auto& str = *(std::string*)dst;
-			src.read((char*)&len, sizeof(uint));
+			reader(&len, sizeof(uint));
 			str.resize(len);
 			if (len > 0)
-				src.read((char*)str.data(), len * sizeof(char));
+				reader(str.data(), len * sizeof(char));
 		};
 		auto read_wstring = [&](void* dst) {
 			auto& str = *(std::wstring*)dst;
-			src.read((char*)&len, sizeof(uint));
+			reader(&len, sizeof(uint));
 			str.resize(len);
 			if (len > 0)
-				src.read((char*)str.data(), len * sizeof(wchar_t));
+				reader(str.data(), len * sizeof(wchar_t));
 		};
 		auto read_path = [&](void* dst) {
 			auto& path = *(std::filesystem::path*)dst;
 			std::wstring str;
-			src.read((char*)&len, sizeof(uint));
+			reader(&len, sizeof(uint));
 			str.resize(len);
 			if (len > 0)
-				src.read((char*)str.data(), len * sizeof(wchar_t));
+				reader(str.data(), len * sizeof(wchar_t));
 			path = str;
 		};
 
@@ -1162,7 +1175,7 @@ namespace flame
 			switch (vi.type->tag)
 			{
 			case TagE:
-				src.read(p, vi.type->size);
+				reader(p, vi.type->size);
 				break;
 			case TagD:
 				if (auto ti = (TypeInfo_Data*)vi.type; ti)
@@ -1179,26 +1192,26 @@ namespace flame
 						read_path(p);
 						break;
 					default:
-						src.read(p, vi.type->size);
+						reader(p, vi.type->size);
 					}
 				}
 				break;
 			case TagU:
 				if (auto ui = vi.type->retrive_ui(); ui)
-					unserialize_binary(*ui, src, p, spec);
+					unserialize_binary(*ui, reader, p, spec);
 				break;
 			case TagVE:
-				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				if (reader(&len, sizeof(uint)); len > 0)
 				{
 					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					auto& vec = *(std::vector<int>*)p;
 					vec.resize(len);
-					src.read((char*)vec.data(), sizeof(uint) * len);
+					reader(vec.data(), sizeof(uint) * len);
 
 				}
 				break;
 			case TagVD:
-				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				if (reader(&len, sizeof(uint)); len > 0)
 				{
 					auto ti = ((TypeInfo_VectorOfData*)vi.type)->ti;
 					auto& vec = *(std::vector<char>*)p;
@@ -1231,26 +1244,26 @@ namespace flame
 						}
 						break;
 					default:
-						src.read((char*)vec.data(), vec.size());
+						reader(vec.data(), vec.size());
 					}
 				}
 				break;
 			case TagVU:
-				if (src.read((char*)&len, sizeof(uint)); len > 0)
+				if (reader(&len, sizeof(uint)); len > 0)
 				{
 					if (auto ui = vi.type->retrive_ui(); ui)
 					{
 						auto& vec = *(std::vector<char>*)p;
 						vec.resize(len * ui->size);
 						if (ui->is_pod)
-							src.read((char*)vec.data(), vec.size());
+							reader(vec.data(), vec.size());
 						else
 						{
 							p = vec.data();
 							for (auto i = 0; i < len; i++)
 							{
 								ui->create_object(p);
-								unserialize_binary(*ui, src, p, spec);
+								unserialize_binary(*ui, reader, p, spec);
 								p += ui->size;
 							}
 						}
@@ -1259,6 +1272,19 @@ namespace flame
 				break;
 			}
 		}
+	}
+
+	template<typename T>
+	inline void unserialize_binary(const std::function<void(void*, uint)>& reader, T* dst, const UnserializeBinarySpec& spec = {})
+	{
+		unserialize_binary(*TypeInfo::get<T>()->retrive_ui(), reader, dst, spec);
+	}
+
+	inline void unserialize_binary(const UdtInfo& ui, std::ifstream& src, void* dst, const UnserializeBinarySpec& spec = {})
+	{
+		unserialize_binary(ui, [&](void* data, uint size) {
+			src.read((char*)data, size);
+		}, dst, spec);
 	}
 
 	template<typename T>
