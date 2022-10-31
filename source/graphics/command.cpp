@@ -134,9 +134,9 @@ namespace flame
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
 			auto first_view = curr_fb->views[0];
-			auto size = first_view->image->levels[first_view->sub.base_level].size;
-			info.renderArea.extent.width = size.x;
-			info.renderArea.extent.height = size.y;
+			auto ext = first_view->image->levels[first_view->sub.base_level].extent;
+			info.renderArea.extent.width = ext.x;
+			info.renderArea.extent.height = ext.y;
 			info.clearValueCount = cvs ? curr_fb->views.size() : 0;
 			info.pClearValues = (VkClearValue*)cvs;
 
@@ -470,7 +470,7 @@ namespace flame
 			ret.srcSubresource.layerCount = src.src_sub.layer_count;
 			ret.srcOffset.x = src.src_off.x;
 			ret.srcOffset.y = src.src_off.y;
-			ret.srcOffset.z = 0;
+			ret.srcOffset.z = src.src_off.z;
 			ret.dstSubresource.aspectMask = aspect;
 			ret.dstSubresource.mipLevel = src.dst_sub.base_level;
 			ret.dstSubresource.baseArrayLayer = src.dst_sub.base_layer;
@@ -478,9 +478,9 @@ namespace flame
 			ret.dstOffset.x = src.dst_off.x;
 			ret.dstOffset.y = src.dst_off.y;
 			ret.dstOffset.z = 0;
-			ret.extent.width = src.size.x;
-			ret.extent.height = src.size.y;
-			ret.extent.depth = 1;
+			ret.extent.width = src.ext.x;
+			ret.extent.height = src.ext.y;
+			ret.extent.depth = src.ext.z;
 			return ret;
 		}
 
@@ -490,9 +490,10 @@ namespace flame
 			ret.bufferOffset = src.buf_off;
 			ret.imageOffset.x = src.img_off.x;
 			ret.imageOffset.y = src.img_off.y;
+			ret.imageOffset.z = src.img_off.z;
 			ret.imageExtent.width = src.img_ext.x;
 			ret.imageExtent.height = src.img_ext.y;
-			ret.imageExtent.depth = 1;
+			ret.imageExtent.depth = src.img_ext.z;
 			ret.imageSubresource.aspectMask = aspect;
 			ret.imageSubresource.mipLevel = src.img_sub.base_level;
 			ret.imageSubresource.baseArrayLayer = src.img_sub.base_layer;

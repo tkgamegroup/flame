@@ -221,9 +221,9 @@ namespace flame
 				create_info.flags = 0;
 				create_info.pNext = nullptr;
 				auto first_view = views[0];
-				auto size = first_view->image->levels[first_view->sub.base_level].size;
-				create_info.width = size.x;
-				create_info.height = size.y;
+				auto ext = first_view->image->levels[first_view->sub.base_level].extent;
+				create_info.width = ext.x;
+				create_info.height = ext.y;
 				create_info.layers = 1;
 				create_info.renderPass = renderpass->vk_renderpass;
 				create_info.attachmentCount = vk_views.size();

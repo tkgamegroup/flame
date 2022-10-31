@@ -349,7 +349,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		buf_vtx.upload(cb.get());
 
 		cb->image_barrier(height_map, {}, graphics::ImageLayoutAttachment);
-		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->size)));
+		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->extent)));
 		cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 		cb->bind_pipeline(pl);
 		prm.pc.item("uv_off"_h).set(vec2(19.7f, 43.3f));
@@ -392,7 +392,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			prm.init(pl->layout);
 
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
-			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
+			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->extent)));
 			cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 			cb->bind_pipeline(pl);
 			prm.pc.item("bar"_h).set(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
@@ -408,7 +408,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 		{
 			auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 			graphics::InstanceCommandBuffer cb(nullptr);
-			std::unique_ptr<graphics::Image> temp_splash(graphics::Image::create(splash_map->format, splash_map->size, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			std::unique_ptr<graphics::Image> temp_splash(graphics::Image::create(splash_map->format, splash_map->extent, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 			auto fb = temp_splash->get_shader_write_dst(0, 0, graphics::AttachmentLoadDontCare);
 			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_region.pipeline",
 				{ "rp=" + str(fb->renderpass) });
@@ -472,7 +472,7 @@ struct ProcedureTerrainDialog : ImGui::Dialog
 			buf_sdf.upload(cb.get());
 
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
-			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->size)));
+			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->extent)));
 			cb->begin_renderpass(nullptr, fb);
 			cb->bind_pipeline(pl);
 			prm.pc.item("screen_size"_h).set(ext_xz);

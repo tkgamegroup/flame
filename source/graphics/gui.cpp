@@ -576,10 +576,10 @@ namespace flame
 				StagingBuffer stag(image_pitch(img_w) * img_h, img_data);
 
 				InstanceCommandBuffer cb;
-				imgui_img_font.reset(Image::create(Format_R8_UNORM, uvec2(img_w, img_h), ImageUsageSampled | ImageUsageTransferDst));
+				imgui_img_font.reset(Image::create(Format_R8_UNORM, uvec3(img_w, img_h, 1), ImageUsageSampled | ImageUsageTransferDst));
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
-				cpy.img_ext = uvec2(img_w, img_h);
+				cpy.img_ext = uvec3(img_w, img_h, 1);
 				cb->copy_buffer_to_image(stag.get(), imgui_img_font.get(), { &cpy, 1 });
 				cb->image_barrier(imgui_img_font.get(), {}, ImageLayoutShaderReadOnly);
 				cb.excute();
@@ -680,7 +680,7 @@ namespace flame
 				auto d = get_thumbnail(desired_size, path);
 				if (d.second)
 				{
-					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, uvec3(d.first, 1), d.second.get());
 					icons.emplace(path, std::make_pair(1, image));
 					return image;
 				}
@@ -690,7 +690,7 @@ namespace flame
 				auto d = get_sys_icon(_path.c_str(), nullptr);
 				if (d.second)
 				{
-					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, d.first, d.second.get());
+					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, uvec3(d.first, 1), d.second.get());
 					icons.emplace(path, std::make_pair(-1, image));
 					return image;
 				}

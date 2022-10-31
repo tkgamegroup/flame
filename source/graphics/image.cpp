@@ -44,29 +44,40 @@ namespace flame
 			pixel_size = get_pixel_size(format);
 
 			if (n_levels == 0)
-				n_levels = 16;
+			{
+				if (extent.z == 1)
+					n_levels = 16;
+				else
+					n_levels = 1;
+			}
 
-			data_size = 0;
-			auto s = size;
+			auto ext = extent;
 			for (auto i = 0; i < n_levels; i++)
 			{
 				auto& l = levels.emplace_back();
-				l.size = s;
-				l.pitch = image_pitch(pixel_size * s.x);
-				l.data_size = s.y * l.pitch;
-				data_size += l.data_size * n_layers;
+				l.extent = ext;
+				l.pitch = image_pitch(pixel_size * ext.x);
+				l.data_size = ext.y * l.pitch;
 				l.layers.resize(n_layers);
 
-				s.x /= 2;
-				s.y /= 2;
-				if (s.x == 0 && s.y == 0)
+				ext.x /= 2;
+				ext.y /= 2;
+				if (ext.x == 0 && ext.y == 0)
 				{
 					n_levels = i + 1;
 					break;
 				}
-				if (s.x == 0) s.x = 1;
-				if (s.y == 0) s.y = 1;
+				if (ext.x == 0) ext.x = 1;
+				if (ext.y == 0) ext.y = 1;
 			}
+			if (extent.z == 1)
+			{
+				data_size = 0;
+				for (auto& l : levels)
+					data_size += l.data_size * n_layers;
+			}
+			else
+				data_size = pixel_size * product(extent);
 		}
 
 		ImageLayout ImagePrivate::get_layout(const ImageSub& sub)
@@ -126,6 +137,8 @@ namespace flame
 				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 			else if (sub.layer_count > 1)
 				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			else if (extent.z > 1)
+				info.viewType = VK_IMAGE_VIEW_TYPE_3D;
 			else
 				info.viewType = VK_IMAGE_VIEW_TYPE_2D;
 			info.format = to_backend(format);
@@ -256,7 +269,7 @@ namespace flame
 				StagingBuffer sb(lv.data_size);
 				InstanceCommandBuffer cb;
 				BufferImageCopy cpy;
-				cpy.img_ext = lv.size;
+				cpy.img_ext = uvec3(lv.extent, 1);
 				cpy.img_sub = { level, 1, layer, 1 };
 				cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
 				cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
@@ -274,8 +287,8 @@ namespace flame
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
 
-			x = clamp(x, 0, (int)lv.size.x - 1);
-			y = clamp(y, 0, (int)lv.size.y - 1);
+			x = clamp(x, 0, (int)lv.extent.x - 1);
+			y = clamp(y, 0, (int)lv.extent.y - 1);
 
 			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
 			switch (format)
@@ -297,8 +310,8 @@ namespace flame
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
 
-			x = clamp(x, 0, (int)lv.size.x - 1);
-			y = clamp(y, 0, (int)lv.size.y - 1);
+			x = clamp(x, 0, (int)lv.extent.x - 1);
+			y = clamp(y, 0, (int)lv.extent.y - 1);
 
 			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
 			switch (format)
@@ -332,7 +345,7 @@ namespace flame
 
 		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
 		{
-			auto coord = uv * vec2(levels[level].size) - 0.5f;
+			auto coord = uv * vec2(levels[level].extent) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);
 
@@ -352,6 +365,9 @@ namespace flame
 				auto gli_fmt = gli::FORMAT_UNDEFINED;
 				switch (format)
 				{
+				case Format_R8_UNORM:
+					gli_fmt = gli::FORMAT_R8_UNORM_PACK8;
+					break;
 				case Format_R8G8B8A8_UNORM:
 					gli_fmt = gli::FORMAT_RGBA8_UNORM_PACK8;
 					break;
@@ -361,7 +377,14 @@ namespace flame
 				}
 				assert(gli_fmt != gli::FORMAT_UNDEFINED);
 
-				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(size, 1), n_layers, 1, n_levels);
+				auto gli_target = gli::TARGET_2D;
+				if (is_cube)
+					gli_target = gli::TARGET_CUBE;
+				else if (n_layers > 1)
+					gli_target = gli::TARGET_2D_ARRAY;
+				else if (extent.z > 1)
+					gli_target = gli::TARGET_3D;
+				auto gli_texture = gli::texture(gli_target, gli_fmt, ivec3(extent), n_layers, 1, n_levels);
 
 				StagingBuffer sb(data_size, nullptr);
 				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
@@ -379,8 +402,7 @@ namespace flame
 
 						BufferImageCopy cpy;
 						cpy.buf_off = offset;
-						auto ext = gli_texture.extent(j);
-						cpy.img_ext = uvec2(ext.x, ext.y);
+						cpy.img_ext = gli_texture.extent(j);
 						cpy.img_sub.base_level = j;
 						cpy.img_sub.base_layer = i;
 						cpies.push_back(cpy);
@@ -402,8 +424,8 @@ namespace flame
 				StagingBuffer sb(data_size, nullptr);
 				InstanceCommandBuffer cb;
 				cb->image_barrier(this, {}, graphics::ImageLayoutTransferSrc);
-				graphics::BufferImageCopy cpy;
-				cpy.img_ext = size;
+				BufferImageCopy cpy;
+				cpy.img_ext = extent;
 				cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
 				cb->image_barrier(this, {}, graphics::ImageLayoutShaderReadOnly);
 				cb.excute();
@@ -415,7 +437,7 @@ namespace flame
 				case Format_R8G8B8A8_UNORM: chs = 4; break;
 				}
 
-				auto bmp = Bitmap::create(size, chs);
+				auto bmp = Bitmap::create(extent, chs);
 				memcpy(bmp->data, sb->mapped, sb->size);
 				bmp->save(replace_ext(filename, L".png"));
 				delete bmp;
@@ -430,7 +452,7 @@ namespace flame
 			img->get_staging_data(level, 0);
 
 			auto coverage = 0.f;
-			auto size = img->levels[level].size;
+			auto size = img->levels[level].extent;
 			for (auto y = 0; y < size.y; y++)
 			{
 				for (auto x = 0; x < size.x; x++)
@@ -478,9 +500,9 @@ namespace flame
 			auto& lv = img->levels[level];
 			auto& ly = lv.layers[0];
 			img->get_staging_data(level, 0);
-			for (auto y = 0; y < lv.size.y; y++)
+			for (auto y = 0; y < lv.extent.y; y++)
 			{
-				for (auto x = 0; x < lv.size.x; x++)
+				for (auto x = 0; x < lv.extent.x; x++)
 				{
 					auto pos = ivec2(x, y);
 					auto v = img->get_pixel(x, y, level, 0);
@@ -492,7 +514,7 @@ namespace flame
 			StagingBuffer sb(lv.data_size, ly.data.get());
 			InstanceCommandBuffer cb;
 			BufferImageCopy cpy;
-			cpy.img_ext = lv.size;
+			cpy.img_ext = uvec3(lv.extent, 1);
 			cpy.img_sub.base_level = level;
 			cb->image_barrier(img, cpy.img_sub, ImageLayoutTransferDst);
 			cb->copy_buffer_to_image(sb.get(), img, { &cpy, 1 });
@@ -502,7 +524,7 @@ namespace flame
 
 		struct ImageCreate : Image::Create
 		{
-			ImagePtr operator()(Format format, const uvec2& size, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
+			ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
 			{
 				auto ret = new ImagePrivate;
 				ret->format = format;
@@ -511,18 +533,22 @@ namespace flame
 				ret->sample_count = sample_count;
 				ret->usage = usage;
 				ret->is_cube = is_cube;
-				ret->size = size;
+				ret->extent = extent;
 				ret->initialize();
+
+				auto image_type = VK_IMAGE_TYPE_2D;
+				if (extent.z > 1)
+					image_type = VK_IMAGE_TYPE_3D;
 
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 				imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 				imageInfo.pNext = nullptr;
-				imageInfo.imageType = VK_IMAGE_TYPE_2D;
+				imageInfo.imageType = image_type;
 				imageInfo.format = to_backend(format);
-				imageInfo.extent.width = size.x;
-				imageInfo.extent.height = size.y;
-				imageInfo.extent.depth = 1;
+				imageInfo.extent.width = extent.x;
+				imageInfo.extent.height = extent.y;
+				imageInfo.extent.depth = extent.z;
 				imageInfo.mipLevels = ret->n_levels;
 				imageInfo.arrayLayers = ret->n_layers;
 				imageInfo.samples = to_backend(sample_count);
@@ -552,15 +578,15 @@ namespace flame
 				return ret;
 			}
 
-			ImagePtr operator()(Format format, const uvec2& size, void* data) override
+			ImagePtr operator()(Format format, const uvec3& extent, void* data) override
 			{
-				auto ret = Image::create(format, size, ImageUsageSampled | ImageUsageTransferDst);
+				auto ret = Image::create(format, extent, ImageUsageSampled | ImageUsageTransferDst);
 
-				StagingBuffer stag(image_pitch(get_pixel_size(format) * size.x) * size.y, data);
+				StagingBuffer stag(ret->data_size, data);
 				InstanceCommandBuffer cb;
 				cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
-				cpy.img_ext = size;
+				cpy.img_ext = extent;
 				cb->copy_buffer_to_image(stag.get(), ret, { &cpy, 1 });
 				cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 				cb.excute();
@@ -620,6 +646,9 @@ namespace flame
 					Format format = Format_Undefined;
 					switch (gli_texture.format())
 					{
+					case gli::FORMAT_R8_UNORM_PACK8:
+						format = Format_R8_UNORM;
+						break;
 					case gli::FORMAT_RGBA8_UNORM_PACK8:
 						format = Format_R8G8B8A8_UNORM;
 						break;
@@ -683,14 +712,14 @@ namespace flame
 					if (srgb)			bmp->srgb_to_linear();
 					if (bmp->chs == 3)	bmp->change_format(4);
 
-					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), bmp->size,
+					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), uvec3(bmp->extent, 1),
 						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, auto_mipmapping ? 0 : 1);
 
 					{
 						StagingBuffer sb(bmp->data_size, bmp->data);
 						InstanceCommandBuffer cb;
 						BufferImageCopy cpy;
-						cpy.img_ext = ret->size;
+						cpy.img_ext = ret->extent;
 						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
 						for (auto i = 1U; i < ret->n_levels; i++)
@@ -701,9 +730,9 @@ namespace flame
 								cb->image_barrier(ret, { i, 1, 0, 1 }, ImageLayoutTransferDst);
 								ImageBlit blit;
 								blit.src_sub.base_level = i - 1;
-								blit.src_range = ivec4(0, 0, ret->levels[i - 1].size);
+								blit.src_range = ivec4(0, 0, ret->levels[i - 1].extent);
 								blit.dst_sub.base_level = i;
-								blit.dst_range = ivec4(0, 0, ret->levels[i].size);
+								blit.dst_range = ivec4(0, 0, ret->levels[i].extent);
 								cb->blit_image(ret, ret, { &blit, 1 }, FilterLinear);
 								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 							}
@@ -750,12 +779,12 @@ namespace flame
 		}Image_release;
 		Image::Release& Image::release = Image_release;
 
-		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec2& size, VkImage native)
+		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec3& extent, VkImage native)
 		{
 			auto ret = new ImagePrivate;
 
 			ret->format = format;
-			ret->size = size;
+			ret->extent = extent;
 			ret->initialize();
 			ret->vk_image = native;
 			register_object(ret->vk_image, "Image", ret);

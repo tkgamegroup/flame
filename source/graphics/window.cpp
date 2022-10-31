@@ -132,7 +132,7 @@ namespace flame
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
-					images[i].reset(ImagePrivate::create(device, format, size, native_images[i]));
+					images[i].reset(ImagePrivate::create(device, format, uvec3(size, 1), native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
 				}
 				cb.excute();

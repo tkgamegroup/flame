@@ -8,98 +8,6 @@
 
 namespace flame
 {
-	cTerrainPrivate::~cTerrainPrivate()
-	{
-		node->drawers.remove("terrain"_h);
-		node->measurers.remove("terrain"_h);
-		node->data_listeners.remove("terrain"_h);
-
-		graphics::Queue::get()->wait_idle();
-		if (material_res_id != -1)
-			sRenderer::instance()->release_material_res(material_res_id);
-		if (grass_texture_id != -1)
-			sRenderer::instance()->release_texture_res(grass_texture_id);
-		if (!height_map_name.empty())
-			AssetManagemant::release_asset(Path::get(height_map_name));
-		if (!splash_map_name.empty())
-			AssetManagemant::release_asset(Path::get(splash_map_name));
-		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
-		if (!grass_texture_name.empty())
-			AssetManagemant::release_asset(Path::get(grass_texture_name));
-		if (height_map)
-			graphics::Image::release(height_map);
-		if (splash_map)
-			graphics::Image::release(splash_map);
-		if (grass_texture)
-			graphics::Image::release(grass_texture);
-		if (material)
-			graphics::Material::release(material);
-		if (normal_map)
-			delete normal_map;
-		if (tangent_map)
-			delete tangent_map;
-	}
-
-	void cTerrainPrivate::on_init()
-	{
-		node->drawers.add([this](DrawData& draw_data) {
-			if (instance_id == -1 || !height_map)
-				return;
-
-			switch (draw_data.pass)
-			{
-			case PassInstance:
-				if (dirty)
-				{
-					sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
-						height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
-					dirty = false;
-				}
-				break;
-			case PassGBuffer:
-				if (draw_data.categories & CateTerrain)
-					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-				break;
-			case PassForward:
-				if (draw_data.categories & CateGrassField)
-				{
-					if (use_grass_field)
-						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-				}
-				break;
-			case PassOcculder:
-				if (cast_shadow)
-				{
-					if (draw_data.categories & CateTerrain)
-						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-				}
-				break;
-			case PassPickUp:
-				if (draw_data.categories & CateTerrain)
-					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
-				break;
-			}
-		}, "terrain"_h);
-		node->measurers.add([this](AABB* ret) {
-			if (!height_map)
-				return false;
-			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
-			return true;
-		}, "terrain"_h);
-		node->data_listeners.add([this](uint hash) {
-			if (hash == "transform"_h)
-				dirty = true;
-		}, "terrain"_h);
-		data_listeners.add([this](uint hash) {
-			if (hash == "enable"_h)
-				dirty = true;
-		}, "terrain"_h);
-
-		node->mark_transform_dirty();
-	}
-
-
 	void cTerrainPrivate::set_extent(const vec3& _extent)
 	{
 		if (extent == _extent)
@@ -287,6 +195,97 @@ namespace flame
 		data_changed("grass_texture_name"_h);
 	}
 
+	cTerrainPrivate::~cTerrainPrivate()
+	{
+		node->drawers.remove("terrain"_h);
+		node->measurers.remove("terrain"_h);
+		node->data_listeners.remove("terrain"_h);
+
+		graphics::Queue::get()->wait_idle();
+		if (material_res_id != -1)
+			sRenderer::instance()->release_material_res(material_res_id);
+		if (grass_texture_id != -1)
+			sRenderer::instance()->release_texture_res(grass_texture_id);
+		if (!height_map_name.empty())
+			AssetManagemant::release_asset(Path::get(height_map_name));
+		if (!splash_map_name.empty())
+			AssetManagemant::release_asset(Path::get(splash_map_name));
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
+		if (!grass_texture_name.empty())
+			AssetManagemant::release_asset(Path::get(grass_texture_name));
+		if (height_map)
+			graphics::Image::release(height_map);
+		if (splash_map)
+			graphics::Image::release(splash_map);
+		if (grass_texture)
+			graphics::Image::release(grass_texture);
+		if (material)
+			graphics::Material::release(material);
+		if (normal_map)
+			delete normal_map;
+		if (tangent_map)
+			delete tangent_map;
+	}
+
+	void cTerrainPrivate::on_init()
+	{
+		node->drawers.add([this](DrawData& draw_data) {
+			if (instance_id == -1 || !height_map)
+				return;
+
+			switch (draw_data.pass)
+			{
+			case PassInstance:
+				if (dirty)
+				{
+					sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
+						height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+					dirty = false;
+				}
+				break;
+			case PassGBuffer:
+				if (draw_data.categories & CateTerrain)
+					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+				break;
+			case PassForward:
+				if (draw_data.categories & CateGrassField)
+				{
+					if (use_grass_field)
+						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+				}
+				break;
+			case PassOcculder:
+				if (cast_shadow)
+				{
+					if (draw_data.categories & CateTerrain)
+						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+				}
+				break;
+			case PassPickUp:
+				if (draw_data.categories & CateTerrain)
+					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+				break;
+			}
+			}, "terrain"_h);
+		node->measurers.add([this](AABB* ret) {
+			if (!height_map)
+				return false;
+			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
+			return true;
+			}, "terrain"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+				dirty = true;
+			}, "terrain"_h);
+		data_listeners.add([this](uint hash) {
+			if (hash == "enable"_h)
+				dirty = true;
+			}, "terrain"_h);
+
+		node->mark_transform_dirty();
+	}
+
 	void cTerrainPrivate::update_normal_map()
 	{
 		if (!height_map)
@@ -302,8 +301,8 @@ namespace flame
 		auto sz0 = (ivec2)(blocks * tess_level);
 		auto sz1 = sz0 + 1;
 
-		normal_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
-		tangent_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, sz0, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
+		normal_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(sz0, 1), graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
+		tangent_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(sz0, 1), graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
 		dirty = true;
 
 		std::vector<float> heights;
@@ -349,7 +348,7 @@ namespace flame
 
 		graphics::InstanceCommandBuffer cb(nullptr);
 		graphics::BufferImageCopy cpy;
-		cpy.img_ext = sz0;
+		cpy.img_ext = uvec3(sz0, 1);
 		cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutTransferDst);
 		cb->copy_buffer_to_image(nor_stag.get(), normal_map, { &cpy, 1 });
 		cb->image_barrier(normal_map, cpy.img_sub, graphics::ImageLayoutShaderReadOnly);

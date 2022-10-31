@@ -9,9 +9,6 @@ namespace flame
 	{
 		bool dirty = true;
 
-		~cTerrainPrivate();
-		void on_init() override;
-
 		void set_extent(const vec3& extent) override;
 		void set_blocks(const uvec2& blocks) override;
 		void set_tess_level(uint tess_level) override;
@@ -23,6 +20,9 @@ namespace flame
 		void set_grass_field_tess_level(uint tess_level) override;
 		void set_grass_channel(uint channel) override;
 		void set_grass_texture_name(const std::filesystem::path& name) override;
+
+		~cTerrainPrivate();
+		void on_init() override;
 
 		void update_normal_map() override;
 

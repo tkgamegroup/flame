@@ -6,13 +6,16 @@ namespace flame
 {
 	struct DrawData;
 
-	// Reflect
+	// Reflect ctor
 	struct sScene : System
 	{
 		OctNode* octree = nullptr;
 
+		// Reflect
 		virtual void generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) = 0;
+		// Reflect
 		virtual std::vector<vec3> query_nav_path(const vec3& start, const vec3& end) = 0;
+		// Reflect
 		virtual void get_debug_draw(DrawData& draw_data) = 0;
 
 		struct Instance

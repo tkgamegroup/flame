@@ -9,16 +9,11 @@ namespace flame
 	{
 		struct ImagePrivate : Image
 		{
-			ImageUsageFlags usage;
-			bool is_cube = false;
-			bool srgb = false;
-
 			VkImage vk_image = 0;
 			VkDeviceMemory vk_memory = 0;
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
-			uint data_size;
 
 			ImagePrivate();
 			~ImagePrivate();
@@ -41,7 +36,7 @@ namespace flame
 
 			void save(const std::filesystem::path& filename) override;
 
-			static ImagePtr create(DevicePtr device, Format format, const uvec2& size, VkImage native);
+			static ImagePtr create(DevicePtr device, Format format, const uvec3& extent, VkImage native);
 		};
 
 		struct ImageViewPrivate : ImageView

@@ -72,16 +72,16 @@ void View_Scene::on_draw()
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
 
-	auto scene_size = vec2(ImGui::GetContentRegionAvail());
+	auto scene_extent = vec2(ImGui::GetContentRegionAvail());
 	if (fixed_render_target_size)
-		scene_size = vec2(1280, 720);
-	if (!render_tar || vec2(render_tar->size) != scene_size)
+		scene_extent = vec2(1280, 720);
+	if (!render_tar || vec2(render_tar->extent) != scene_extent)
 	{
-		add_event([this, scene_size]() {
+		add_event([this, scene_extent]() {
 			graphics::Queue::get()->wait_idle();
-			if (scene_size.x > 1 && scene_size.y > 1)
+			if (scene_extent.x > 1 && scene_extent.y > 1)
 			{
-				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec2(scene_size),
+				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(scene_extent, 1),
 					graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 				render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
 				auto iv = render_tar->get_view();
@@ -100,7 +100,7 @@ void View_Scene::on_draw()
 
 	if (render_tar)
 	{
-		ImGui::Image(render_tar.get(), scene_size);
+		ImGui::Image(render_tar.get(), scene_extent);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
 		app.input->offset = p0;
@@ -323,7 +323,7 @@ void View_Scene::on_draw()
 
 				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 				{
-					disp /= vec2(render_tar->size);
+					disp /= vec2(render_tar->extent);
 					if (!io.KeyAlt)
 					{
 						if (io.MouseDown[ImGuiMouseButton_Middle])

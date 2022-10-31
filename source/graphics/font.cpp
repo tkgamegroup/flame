@@ -155,8 +155,8 @@ namespace flame
 							auto old_layout = image->get_layout();
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
-							cpy.img_off = atlas_pos;
-							cpy.img_ext = g.size;
+							cpy.img_off = uvec3(atlas_pos, 0);
+							cpy.img_ext = uvec3(g.size, 1);
 							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, old_layout);
 							cb.excute();
@@ -247,7 +247,7 @@ namespace flame
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				ret->image.reset(Image::create(Format_R8_UNORM, font_atlas_size, ImageUsageSampled | ImageUsageTransferDst));
+				ret->image.reset(Image::create(Format_R8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferDst));
 				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
 				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 

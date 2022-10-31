@@ -685,10 +685,19 @@ void View_Inspector::on_draw()
 					sel_ref_obj = image;
 
 					auto bitmap = Bitmap::create(path);
-					info.chs = bitmap->chs;
-					info.bpp = bitmap->bpp;
-					info.srgb = bitmap->srgb;
-					delete bitmap;
+					if (bitmap)
+					{
+						info.chs = bitmap->chs;
+						info.bpp = bitmap->bpp;
+						info.srgb = bitmap->srgb;
+						delete bitmap;
+					}
+					else
+					{
+						info.chs = 0;
+						info.bpp = 0;
+						info.srgb = false;
+					}
 				}
 			}
 
@@ -699,7 +708,7 @@ void View_Inspector::on_draw()
 				ImGui::Text("bits per pixel: %d", info.bpp);
 				ImGui::Text("srgb: %s", info.srgb ? "yes" : "no");
 				ImGui::Text("graphics format: %s", TypeInfo::serialize_t(image->format).c_str());
-				ImGui::Text("size: %s", str(image->size).c_str());
+				ImGui::Text("extent: %s", str(image->extent).c_str());
 				static int view_type = ImGui::ImageViewRGBA;
 				static const char* types[] = {
 					"RGBA",
@@ -709,7 +718,8 @@ void View_Inspector::on_draw()
 				ImGui::Combo("view", &view_type, types, countof(types));
 				if (view_type != 0)
 					ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
-				ImGui::Image(sel_ref_obj, (vec2)image->size);
+				if (image->extent.z == 1)
+					ImGui::Image(sel_ref_obj, (vec2)image->extent);
 				if (view_type != 0)
 					ImGui::PopImageViewType();
 				if (ImGui::Button("Save"))

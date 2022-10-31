@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	// Reflect
+	// Reflect ctor
 	struct sInput : System
 	{
 		vec2 offset = vec2(0.f);

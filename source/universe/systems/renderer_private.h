@@ -20,7 +20,7 @@ namespace flame
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
-		vec2 target_size() override;
+		vec2 target_extent() override;
 
 		graphics::ImageViewPtr sky_map = nullptr;
 		graphics::ImageViewPtr sky_irr_map = nullptr;
@@ -73,6 +73,9 @@ namespace flame
 
 		int register_sdf_instance(int id) override;
 		void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) override;
+
+		int register_volume_instance(int id) override;
+		void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) override;
 
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 

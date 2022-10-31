@@ -500,6 +500,7 @@ process:
 					auto brackets_level = 0;
 					auto reflect_mark = false;
 					std::string reflect_metas;
+					std::pair<std::string, uint> name_space_mark = std::make_pair("", 0U);
 					Rule* curr_rule = nullptr;
 					std::ifstream file(it.path());
 					while (!file.eof())
@@ -520,7 +521,10 @@ process:
 						else
 						{
 							if (SUS::strip_head_if(line, "namespace "))
-								name_spaces.emplace_back(line, brackets_level);
+							{
+								name_space_mark = std::make_pair(line, brackets_level);
+								curr_rule = nullptr;
+							}
 							else if (SUS::strip_head_if(line, "enum "))
 							{
 								if (reflect_mark)
@@ -538,7 +542,7 @@ process:
 									line.erase(line.begin() + pos, line.end());
 									SUS::rtrim(line);
 								}
-								name_spaces.emplace_back(line, brackets_level);
+								name_space_mark = std::make_pair(line, brackets_level);
 
 								if (reflect_mark)
 								{
@@ -573,7 +577,7 @@ process:
 										{
 											if (!name_spaces.empty())
 											{
-												auto rule_name = name_spaces.back().first;
+												auto rule_name = get_name(name_spaces.back().first);
 												for (auto& r : udt_rules)
 												{
 													if (r.name == rule_name)
@@ -605,7 +609,15 @@ process:
 							reflect_mark = false;
 							reflect_metas.clear();
 
-							brackets_level += std::count(line.begin(), line.end(), '{');
+							if (auto n = std::count(line.begin(), line.end(), '{'); n > 0)
+							{
+								brackets_level += n;
+								if (!name_space_mark.first.empty())
+								{
+									name_spaces.push_back(name_space_mark);
+									name_space_mark = std::make_pair("", 0U);
+								}
+							}
 							if (auto n = std::count(line.begin(), line.end(), '}'); n > 0)
 							{
 								brackets_level -= n;
@@ -902,10 +914,12 @@ process:
 					{
 						auto& fi = u.functions.emplace_back();
 						fi.name = name;
+						fi.name_hash = sh(fi.name.c_str());
 						fi.rva = rva;
 						fi.voff = voff;
 						fi.metas = metas;
 						fi.library = library;
+						fi.metas = metas;
 
 						IDiaSymbol6* s6_function = (IDiaSymbol6*)s_function;
 						fi.is_static = false;
@@ -988,11 +1002,13 @@ process:
 							{
 								auto& fi = u.functions.emplace_back();
 								fi.name = name;
+								fi.name_hash = sh(fi.name.c_str());
 								fi.rva = rva;
 								fi.voff = voff;
 								fi.return_type = return_type;
 								fi.parameters = parameters;
 								fi.library = library;
+								fi.metas = metas;
 							}
 
 							continue;
@@ -1007,6 +1023,7 @@ process:
 							vi.type = type;
 							reference_type(vi.type);
 							vi.name = name;
+							vi.name_hash = sh(vi.name.c_str());
 							vi.offset = offset;
 							vi.metas = metas;
 						}
@@ -1019,7 +1036,13 @@ process:
 				{
 					if (fi.name == "ctor" && fi.parameters.empty() && fi.rva)
 						fi.name = "dctor";
+					if (fi.voff > 0)
+						u.is_pod = false;
+					if (fi.name_hash == "create"_h && fi.metas.get("static"_h))
+						u.is_pod = false;
 				}
+				for (auto i = 0; i < u.functions.size(); i++)
+					u.functions_map.emplace(u.functions[i].name_hash, i);
 
 				for (auto& v : u.variables)
 				{
@@ -1036,11 +1059,13 @@ process:
 						break;
 					}
 				}
+				for (auto i = 0; i < u.variables.size(); i++)
+					u.variables_map.emplace(u.variables[i].name_hash, i);
 
 				void* obj = nullptr;
 				if (library)
 				{
-					if (auto fi = u.find_function("create"); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
+					if (auto fi = u.find_function("create"_h); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
 					{
 						if (fi->parameters.empty())
 							obj = fi->call<void*>(nullptr);
@@ -1050,7 +1075,7 @@ process:
 					else
 					{
 						obj = malloc(u.size);
-						if (auto fi = u.find_function("dctor"); fi)
+						if (auto fi = u.find_function("dctor"_h); fi)
 							fi->call<void>(obj);
 						else
 							memset(obj, 0, u.size);
@@ -1074,6 +1099,7 @@ process:
 									auto& a = u.attributes.emplace_back();
 									a.ui = &u;
 									a.name = name;
+									a.name_hash = sh(a.name.c_str());
 									a.type = u.functions[getter_idx].return_type;
 									a.getter_idx = getter_idx;
 									a.setter_idx = setter_idx;
@@ -1088,6 +1114,7 @@ process:
 								auto& a = u.attributes.emplace_back();
 								a.ui = &u;
 								a.name = c.first;
+								a.name_hash = sh(a.name.c_str());
 								a.type = u.variables[var_idx].type;
 								a.var_idx = var_idx;
 								a.getter_idx = u.find_function_i("get_" + c.first);
@@ -1095,6 +1122,8 @@ process:
 							}
 						}
 					}
+					for (auto i = 0; i < u.attributes.size(); i++)
+						u.attributes_map.emplace(u.attributes[i].name_hash, i);
 				}
 
 				if (obj)
@@ -1104,7 +1133,7 @@ process:
 					for (auto& a : u.attributes)
 						a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
 
-					if (auto fi = u.find_function("dtor"); fi)
+					if (auto fi = u.find_function("dtor"_h); fi)
 						fi->call<void>(obj);
 					free(obj);
 				}

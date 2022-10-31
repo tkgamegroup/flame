@@ -14,20 +14,20 @@ namespace flame
 
 	void BitmapPrivate::change_format(uint _chs)
 	{
-		data = stbi__convert_format(data, chs, _chs, size.x, size.y);
+		data = stbi__convert_format(data, chs, _chs, extent.x, extent.y);
 		chs = _chs;
 		bpp = _chs * 8;
-		pitch = image_pitch(size.x * (bpp / 8));
-		data_size = pitch * size.y;
+		pitch = image_pitch(extent.x * (bpp / 8));
+		data_size = pitch * extent.y;
 	}
 
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
 		assert(bpp == 32 && ch1 < chs && ch2 < chs);
-		for (auto j = 0; j < size.y; j++)
+		for (auto j = 0; j < extent.y; j++)
 		{
 			auto line = data + j * pitch;
-			for (auto i = 0; i < size.x; i++)
+			for (auto i = 0; i < extent.x; i++)
 			{
 				auto p = line + i * chs;
 				std::swap(p[ch1], p[ch2]);
@@ -39,8 +39,8 @@ namespace flame
 	{
 		auto b1 = border ? 1 : 0;
 		assert(bpp == 32 && chs == dst->chs && bpp == dst->bpp &&
-			all(lessThanEqual(src_off + ivec2(s), ivec2(size))) && 
-			all(lessThanEqual(_dst_off + ivec2(s) + b1 * 2, ivec2(dst->size))));
+			all(lessThanEqual(src_off + ivec2(s), ivec2(extent))) &&
+			all(lessThanEqual(_dst_off + ivec2(s) + b1 * 2, ivec2(dst->extent))));
 
 		auto dst_off = _dst_off + b1;
 		auto dst_data = dst->data;
@@ -71,10 +71,10 @@ namespace flame
 	void BitmapPrivate::srgb_to_linear()
 	{
 		assert(chs >= 3);
-		for (auto j = 0; j < size.y; j++)
+		for (auto j = 0; j < extent.y; j++)
 		{
 			auto line = data + j * pitch;
-			for (auto i = 0; i < size.x; i++)
+			for (auto i = 0; i < extent.x; i++)
 			{
 				auto p = line + i * chs;
 				{
@@ -98,23 +98,23 @@ namespace flame
 		auto ext = std::filesystem::path(filename).extension();
 
 		if (ext == L".png")
-			stbi_write_png(filename.string().c_str(), size.x, size.y, chs, data, pitch);
+			stbi_write_png(filename.string().c_str(), extent.x, extent.y, chs, data, pitch);
 		else if (ext == L".bmp")
-			stbi_write_bmp(filename.string().c_str(), size.x, size.y, chs, data);
+			stbi_write_bmp(filename.string().c_str(), extent.x, extent.y, chs, data);
 		else if (ext == L".jpg" || ext == L".jpeg")
-			stbi_write_jpg(filename.string().c_str(), size.x, size.y, chs, data, 0);
+			stbi_write_jpg(filename.string().c_str(), extent.x, extent.y, chs, data, 0);
 	}
 
 	struct BitmapCreate : Bitmap::Create
 	{
-		BitmapPtr operator()(const uvec2& size, uint chs, uint bits_per_ch, uchar* data) override
+		BitmapPtr operator()(const uvec2& extent, uint chs, uint bits_per_ch, uchar* data) override
 		{
 			auto ret = new BitmapPrivate;
-			ret->size = size;
+			ret->extent = extent;
 			ret->chs = chs;
 			ret->bpp = bits_per_ch * chs;
-			ret->pitch = image_pitch(size.x * (ret->bpp / 8));
-			ret->data_size = ret->pitch * size.y;
+			ret->pitch = image_pitch(extent.x * (ret->bpp / 8));
+			ret->data_size = ret->pitch * extent.y;
 			ret->data = new uchar[ret->data_size];
 			if (!data)
 				memset(ret->data, 0, ret->data_size);

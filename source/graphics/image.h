@@ -72,19 +72,23 @@ namespace flame
 
 			struct Level
 			{
-				uvec2 size = uvec2(0);
+				uvec2 extent = uvec2(0);
 				uint pitch = 0;
 				uint data_size = 0;
 				std::vector<Layer> layers;
 			};
 
 			Format format = Format_R8G8B8A8_UNORM;
-			uvec2 size = uvec2(0);
+			ImageUsageFlags usage;
+			uvec3 extent = uvec3(0);
+			bool is_cube = false;
+			bool srgb = false;
 			uint pixel_size = 0;
 			uint n_levels = 1;
 			uint n_layers = 1;
 			SampleCount sample_count = SampleCount_1;
 			std::vector<Level> levels;
+			uint data_size;
 
 			std::filesystem::path filename;
 			uint ref = 0;
@@ -110,8 +114,8 @@ namespace flame
 
 			struct Create
 			{
-				virtual ImagePtr operator()(Format format, const uvec2& size, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
-				virtual ImagePtr operator()(Format format, const uvec2& size, void* data) = 0;
+				virtual ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
+				virtual ImagePtr operator()(Format format, const uvec3& extent, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 

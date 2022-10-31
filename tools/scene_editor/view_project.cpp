@@ -154,7 +154,7 @@ void View_Project::init()
 				std::filesystem::path dir;
 				std::string name = "new_image";
 				int format = 0;
-				ivec2 size = ivec2(256);
+				ivec3 extent = ivec3(256, 256, 1);
 				int type = 0;
 				vec2 noise_offset = vec2(3.8f, 7.5f);
 				float noise_scale = 4.f;
@@ -173,7 +173,7 @@ void View_Project::init()
 
 				graphics::ImagePtr generate_image()
 				{
-					if (size.x <= 0 || size.y <= 0)
+					if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0)
 						return nullptr;
 
 					graphics::Format fmt;
@@ -183,45 +183,74 @@ void View_Project::init()
 					case 1: fmt = graphics::Format_R8_UNORM; break;
 					}
 
-					auto ret = graphics::Image::create(fmt, (uvec2)size, graphics::ImageUsageTransferSrc | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
+					auto ret = graphics::Image::create(fmt, extent, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
 
-					graphics::InstanceCommandBuffer cb;
-					cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
-					cb->set_viewport_and_scissor(Rect(vec2(0), vec2(size)));
 					switch (type)
 					{
 					case 0:
-						cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-						cb->end_renderpass();
+						ret->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 						break;
 					case 1:
-						cb->begin_renderpass(nullptr, ret->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f) });
-						cb->end_renderpass();
+						ret->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 						break;
 					case 2:
-					{
-						auto fb = ret->get_shader_write_dst();
-						auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
-							{ "rp=" + str(fb->renderpass) });
-						graphics::PipelineResourceManager prm;
-						prm.init(pl->layout);
+						if (extent.z == 1)
+						{
+							graphics::InstanceCommandBuffer cb;
+							cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
+							cb->set_viewport_and_scissor(Rect(vec2(0), vec2(extent)));
 
-						cb->begin_renderpass(nullptr, fb);
-						cb->bind_pipeline(pl);
-						prm.pc.item("uv_off"_h).set(noise_offset);
-						prm.pc.item("uv_scl"_h).set(noise_scale);
-						prm.pc.item("val_base"_h).set(0.f);
-						prm.pc.item("val_scl"_h).set(1.f);
-						prm.pc.item("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
-						prm.pc.item("power"_h).set(noise_power);
-						prm.push_constant(cb.get());
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
+							auto fb = ret->get_shader_write_dst();
+							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+								{ "rp=" + str(fb->renderpass) });
+							graphics::PipelineResourceManager prm;
+							prm.init(pl->layout);
+
+							cb->begin_renderpass(nullptr, fb);
+							cb->bind_pipeline(pl);
+							prm.pc.item("uv_off"_h).set(noise_offset);
+							prm.pc.item("uv_scl"_h).set(noise_scale);
+							prm.pc.item("val_base"_h).set(0.f);
+							prm.pc.item("val_scl"_h).set(1.f);
+							prm.pc.item("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
+							prm.pc.item("power"_h).set(noise_power);
+							prm.push_constant(cb.get());
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+							cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+							cb.excute();
+						}
+						break;
+					case 3:
+						if (extent.z > 1)
+						{
+							graphics::StagingBuffer sb(ret->data_size, nullptr);
+							graphics::InstanceCommandBuffer cb;
+							auto dst = (char*)sb->mapped;
+							for (auto z = 0; z < extent.z; z++)
+							{
+								auto zoff = z * extent.x * extent.y;
+								auto fz = ((float)z / extent.z) * 2.f - 1.f;
+								for (auto y = 0; y < extent.y; y++)
+								{
+									auto yoff = y * extent.x;
+									auto fy = ((float)y / extent.y) * 2.f - 1.f;
+									for (auto x = 0; x < extent.x; x++)
+									{
+										auto fx = ((float)x / extent.x) * 2.f - 1.f;
+										dst[x + yoff + zoff] = sqrt(fx * fx + fy * fy + fz * fz) < 1.f ? 255 : 0;
+									}
+								}
+							}
+							cb->image_barrier(ret, {}, graphics::ImageLayoutTransferDst);
+							graphics::BufferImageCopy cpy;
+							cpy.img_ext = extent;
+							cb->copy_buffer_to_image(sb.get(), ret, cpy);
+							cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+							cb.excute();
+						}
+						break;
 					}
-					break;
-					}
-					cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
-					cb.excute();
 
 					return ret;
 				}
@@ -237,11 +266,12 @@ void View_Project::init()
 							"R8"
 						};
 						ImGui::Combo("format", &format, formats, countof(formats));
-						ImGui::InputInt2("size", &size[0]);
+						ImGui::InputInt3("size", &extent[0]);
 						static const char* types[] = {
 							"Black",
 							"White",
-							"Fbm"
+							"Perlin Noise",
+							"Sphere"
 						};
 						ImGui::Combo("type", &type, types, countof(types));
 						switch (type)
@@ -258,8 +288,8 @@ void View_Project::init()
 							graphics::Queue::get()->wait_idle();
 							image.reset(generate_image());
 						}
-						if (image)
-							ImGui::Image(image.get(), (vec2)size);
+						if (image && extent.z == 1)
+							ImGui::Image(image.get(), (vec2)extent);
 						if (ImGui::Button("Save"))
 						{
 							if (image && !name.empty())

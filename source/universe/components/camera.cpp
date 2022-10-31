@@ -14,10 +14,10 @@ namespace flame
 		p /= p.w;
 		if (p.x < -1.f || p.x > 1.f || p.y < -1.f || p.y > 1.f || p.z < -1.f || p.z > 1.f)
 			return vec2(-1.f);
-		auto screen_size = sRenderer::instance()->target_size();
-		if (screen_size.x <= 0.f && screen_size.y <= 0.f)
+		auto screen_ext = sRenderer::instance()->target_extent();
+		if (screen_ext.x <= 0.f && screen_ext.y <= 0.f)
 			return vec2(-1.f);
-		return (p.xy() * 0.5f + 0.5f) * screen_size;
+		return (p.xy() * 0.5f + 0.5f) * screen_ext;
 	}
 
 	void cCameraPrivate::on_active()
