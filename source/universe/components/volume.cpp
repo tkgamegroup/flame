@@ -27,6 +27,17 @@ namespace flame
 		data_changed("blocks"_h);
 	}
 
+	void cVolumePrivate::set_cells(uint _cells)
+	{
+		if (cells == _cells)
+			return;
+		cells = _cells;
+
+		dirty = true;
+		node->mark_transform_dirty();
+		data_changed("cells"_h);
+	}
+
 	void cVolumePrivate::set_data_map_name(const std::filesystem::path& name)
 	{
 		if (data_map_name == name)
@@ -61,7 +72,7 @@ namespace flame
 	void cVolumePrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (instance_id == -1)
+			if (instance_id == -1 || !data_map)
 				return;
 
 			switch (draw_data.pass)
@@ -74,8 +85,16 @@ namespace flame
 				}
 				break;
 			case PassGBuffer:
-				if (draw_data.categories & CateVolume)
-					draw_data.volumes.emplace_back(instance_id, 0);
+				if (marching_cubes)
+				{
+					if (draw_data.categories & CateMarchingCubes)
+						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, cells * cells * cells, 0);
+				}
+				else
+				{
+					if (draw_data.categories & CateVolume)
+						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, cells * cells * cells, 0);
+				}
 				break;
 			}
 		}, "volume"_h);

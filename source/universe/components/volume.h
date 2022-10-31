@@ -21,9 +21,17 @@ namespace flame
 		virtual void set_blocks(const uvec3& blocks) = 0;
 
 		// Reflect
+		uint cells = 32;
+		// Reflect
+		virtual void set_cells(uint cells) = 0;
+
+		// Reflect
 		std::filesystem::path data_map_name;
 		// Reflect
 		virtual void set_data_map_name(const std::filesystem::path& name) = 0;
+
+		// Reflect
+		bool marching_cubes = true;
 
 		graphics::ImagePtr data_map = nullptr;
 		int instance_id = -1;

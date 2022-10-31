@@ -65,10 +65,14 @@ namespace flame
 	struct VolumeDraw
 	{
 		uint ins_id;
+		uint blocks;
+		uint cells;
 		uint mat_id;
 
-		VolumeDraw(uint ins_id, uint mat_id) :
+		VolumeDraw(uint ins_id, uint blocks, uint cells, uint mat_id) :
 			ins_id(ins_id),
+			blocks(blocks),
+			cells(cells),
 			mat_id(mat_id)
 		{
 		}
@@ -134,8 +138,9 @@ namespace flame
 		CateGrassField = 1 << 3,
 		CateSDF = 1 << 4,
 		CateVolume = 1 << 5,
-		CateParticle = 1 << 6,
-		CatePrimitive = 1 << 7
+		CateMarchingCubes = 1 << 6,
+		CateParticle = 1 << 7,
+		CatePrimitive = 1 << 8
 	};
 
 	struct DrawData
@@ -147,7 +152,7 @@ namespace flame
 		std::vector<MeshDraw>		meshes;
 		std::vector<TerrainDraw>	terrains; // or grass fields
 		std::vector<SdfDraw>		sdfs;
-		std::vector<VolumeDraw>		volumes;
+		std::vector<VolumeDraw>		volumes; // or marching cubes
 		std::vector<ParticleDraw>	particles;
 		std::vector<PrimitiveDraw>	primitives;
 

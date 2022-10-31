@@ -3,14 +3,12 @@
 layout
   {pll}
 shaders
-  volume.vert
+  marching_cubes.vert
  ---
-  volume.geom
+  marching_cubes.geom
  ---
-  volume.frag
+  marching_cubes.frag
 renderpass
   {rp}
 primitive_topology
-  PatchList
-patch_control_points
-  1
+  PointList

@@ -190,6 +190,7 @@ namespace flame
 		case "mesh"_h:
 		case "terrain"_h:
 		case "sdf"_h:
+		case "marching_cubes"_h:
 			if (modifier2 == "OCCLUDER_PASS"_h)
 			{
 				defines.push_back("rp=" + str(rp_dep));
@@ -239,6 +240,9 @@ namespace flame
 			break;
 		case "sdf"_h:
 			pipeline_name = L"flame\\shaders\\sdf.pipeline";
+			break;
+		case "marching_cubes"_h:
+			pipeline_name = L"flame\\shaders\\volume\\marching_cubes.pipeline";
 			break;
 		case "particle"_h:
 			pipeline_name = L"flame\\shaders\\particle.pipeline";
@@ -1517,7 +1521,7 @@ namespace flame
 
 		for (auto& b : opa_batcher.batches)
 			b.second.second.clear();
-		draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF);
+		draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
 		opa_batcher.collect_idrs(draw_data, cb);
@@ -1538,11 +1542,15 @@ namespace flame
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
 			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
-
 		for (auto& s : draw_data.sdfs)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
 			cb->draw(3, 1, 0, (s.ins_id << 16) + s.mat_id);
+		}
+		for (auto& v : draw_data.volumes)
+		{
+			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
+			cb->draw(v.cells, v.blocks, 0, (v.ins_id << 24) + (v.mat_id << 16));
 		}
 
 		cb->end_renderpass();
