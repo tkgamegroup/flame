@@ -2267,7 +2267,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 		void copy(void* dst, const void* src) const override
@@ -2312,7 +2312,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 		void copy(void* dst, const void* src) const override
@@ -2340,7 +2340,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 		void copy(void* dst, const void* src) const override
@@ -2368,7 +2368,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 		void copy(void* dst, const void* src) const override
@@ -2396,7 +2396,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 		void copy(void* dst, const void* src) const override
@@ -2424,7 +2424,7 @@ namespace flame
 		{
 			if (!p)
 				return new std::vector<int>();
-			new(p) std::vector<int>();
+			new(p) std::vector<char>();
 			return p;
 		}
 	};

@@ -18,4 +18,14 @@ const int case_to_numpolys[256] = {
 
 void main()
 {
+	gl_Position = camera.proj_view * vec4(vec3(i_cidx[0]) + vec3(i_bidx[0]) * 64, 1.0);
+	EmitVertex();
+
+	gl_Position = camera.proj_view * vec4(vec3(i_cidx[0]) + vec3(0.0, 0.0, 0.2) + vec3(i_bidx[0]) * 64, 1.0);
+	EmitVertex();
+
+	gl_Position = camera.proj_view * vec4(vec3(i_cidx[0]) + vec3(0.2, 0.0, 0.0) + vec3(i_bidx[0]) * 64, 1.0);
+	EmitVertex();
+
+	EndPrimitive();
 }

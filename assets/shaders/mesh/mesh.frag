@@ -33,7 +33,7 @@ void main()
 			#ifdef PICKUP
 				o_color = pack_uint_to_v4(pc.i[0]);
 			#elifdef NORMAL_DATA
-				o_color = vec4(i_normal * 0.5 + vec3(0.5), 1.0);
+				o_color = vec4(i_normal * 0.5 + 0.5, 1.0);
 			#else
 				o_color = pc.f;
 			#endif

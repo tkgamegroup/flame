@@ -71,6 +71,8 @@ void main()
 		o_coordw = p - size * iT * 0.5 + size * iN;
 		gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
 		EmitVertex();
+
+		EndPrimitive();
 	#else
 		mat3 mat = rotation(iN, rand(pp.xyz) * PI) *
 			rotation(iT, rand(pp.xzy) * 0.25 * PI) * mat3(iT, iN, iB);

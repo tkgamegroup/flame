@@ -797,6 +797,13 @@ namespace flame
 						vec.resize(vec.size() + 1);
 						ti->unserialize(src.line().substr(ilen), &vec[vec.size() - 1]);
 					}
+					else if (ilen > indent)
+						;
+					else
+					{
+						src.anchor--;
+						break;
+					}
 				}
 			}
 				break;

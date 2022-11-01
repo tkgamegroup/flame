@@ -134,6 +134,15 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			case 1:
 				changed = ImGui::DragInt(name.c_str(), (int*)data);
 				break;
+			case 2:
+				changed = ImGui::DragInt2(name.c_str(), (int*)data);
+				break;
+			case 3:
+				changed = ImGui::DragInt3(name.c_str(), (int*)data);
+				break;
+			case 4:
+				changed = ImGui::DragInt4(name.c_str(), (int*)data);
+				break;
 			}
 			break;
 		case DataFloat:
@@ -853,25 +862,32 @@ void View_Inspector::on_draw()
 		else if (ext == L".pipeline")
 		{
 			static auto ti = TypeInfo::get<graphics::GraphicsPipelineInfo>();
-			static UdtInfo* ui = ti->retrive_ui()->transform_to_serializable();
+			static UdtInfo* ui = ti->retrive_ui();
+			static UdtInfo* ser_ui = ui->transform_to_serializable();
 
 			if (selection_changed || !sel_ref_obj)
 			{
-				sel_ref_obj = ui->create_object();
+				sel_ref_obj = ser_ui->create_object();
 				sel_ref_deletor = [](void* obj) {
-					ui->destroy_object(obj);
+					ser_ui->destroy_object(obj);
 				};
 
 				std::ifstream file(path);
 				LineReader res(file);
 				res.read_block("");
-				unserialize_text(*ui, res, 0, sel_ref_obj);
+				unserialize_text(*ser_ui, res, 0, sel_ref_obj);
 				file.close();
 			}
 
 			if (sel_ref_obj)
 			{
-				show_udt(*ui, sel_ref_obj);
+				show_udt(*ser_ui, sel_ref_obj);
+				if (ImGui::Button("Test Compile"))
+				{
+					auto pl = graphics::GraphicsPipeline::get(path, {});
+					if (pl)
+						graphics::GraphicsPipeline::release(pl);
+				}
 				if (ImGui::Button("Save"))
 					;
 			}
