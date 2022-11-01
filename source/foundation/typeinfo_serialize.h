@@ -818,6 +818,8 @@ namespace flame
 						ti->create(pd);
 						ti->unserialize(src.line().substr(ilen), pd);
 					}
+					else if (ilen > indent)
+						;
 					else
 					{
 						src.anchor--;
