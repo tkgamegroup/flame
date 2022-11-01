@@ -202,9 +202,9 @@ namespace flame
 					std::vector<std::filesystem::path> dependencies;
 
 					std::ifstream file(dst_path);
-					LineReader dst(file);
-					dst.read_block("dependencies:");
-					unserialize_text(dst, &dependencies);
+					LineReader res(file);
+					res.read_block("dependencies:");
+					unserialize_text(res, &dependencies);
 					file.close();
 
 					auto up_to_date = true;

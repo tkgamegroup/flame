@@ -1088,14 +1088,16 @@ process:
 					{
 						if (c.first.starts_with("get_"))
 						{
-							auto getter_idx = u.find_function_i(c.first);
-							if (getter_idx != -1)
+							if (auto getter_idx = u.find_function_i(c.first); getter_idx != -1)
 							{
 								auto name = c.first;
 								SUS::strip_head_if(name, "get_");
-								auto setter_idx = u.find_function_i("set_" + name);
-								if (setter_idx != -1)
+								if (auto setter_idx = u.find_function_i("set_" + name); setter_idx != -1)
 								{
+									if (!u.functions[getter_idx].parameters.empty())
+										continue;
+									if (u.functions[setter_idx].parameters.size() != 1)
+										continue;
 									auto& a = u.attributes.emplace_back();
 									a.ui = &u;
 									a.name = name;
@@ -1108,8 +1110,7 @@ process:
 						}
 						else if (!c.first.starts_with("set_"))
 						{
-							auto var_idx = u.find_variable_i(c.first);
-							if (var_idx != -1)
+							if (auto var_idx = u.find_variable_i(c.first); var_idx != -1)
 							{
 								auto& a = u.attributes.emplace_back();
 								a.ui = &u;
@@ -1118,7 +1119,11 @@ process:
 								a.type = u.variables[var_idx].type;
 								a.var_idx = var_idx;
 								a.getter_idx = u.find_function_i("get_" + c.first);
+								if (a.getter_idx != -1 && !u.functions[a.getter_idx].parameters.empty())
+									a.getter_idx = -1;
 								a.setter_idx = u.find_function_i("set_" + c.first);
+								if (a.setter_idx != -1 && u.functions[a.setter_idx].parameters.size() != 1)
+									a.setter_idx = -1;
 							}
 						}
 					}

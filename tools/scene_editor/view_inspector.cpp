@@ -375,19 +375,37 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	return changed_name;
 }
 
-static std::unordered_map<uint, UdtInfo*> com_udts;
+static std::unordered_map<uint, UdtInfo*> com_udts_map;
+static std::vector<UdtInfo*> com_udts_list;
 void get_com_udts()
 {
 	for (auto& ui : tidb.udts)
 	{
 		if (ui.second.base_class_name == "flame::Component")
-			com_udts.emplace(ui.first, &ui.second);
+			com_udts_map.emplace(ui.first, &ui.second);
 	}
+	std::vector<UdtInfo*> temp1;
+	std::vector<UdtInfo*> temp2;
+	for (auto& pair : com_udts_map)
+	{
+		if (pair.second->name.starts_with("flame::"))
+			temp1.push_back(pair.second);
+		else
+			temp2.push_back(pair.second);
+	}
+	std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
+		return a->name < b->name;
+	});
+	std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
+		return a->name < b->name;
+	});
+	com_udts_list.insert(com_udts_list.end(), temp1.begin(), temp1.end());
+	com_udts_list.insert(com_udts_list.end(), temp2.begin(), temp2.end());
 }
 
 void View_Inspector::on_draw()
 {
-	if (com_udts.empty())
+	if (com_udts_map.empty())
 		get_com_udts();
 
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
@@ -396,29 +414,16 @@ void View_Inspector::on_draw()
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
 		selection.forward();
 
-	static uint sel_ref_type = 0;
 	static void* sel_ref_obj = nullptr;
+	static void(*sel_ref_deletor)(void*) = nullptr;
 	static auto sel_ref_info = new char[1024];
 	if (selection_changed)
 	{
 		staging_vectors.clear();
 
-		switch (sel_ref_type)
-		{
-		case th<graphics::Image>():
-			graphics::Image::release((graphics::ImagePtr)sel_ref_obj);
-			break;
-		case th<graphics::Material>():
-			graphics::Material::release((graphics::MaterialPtr)sel_ref_obj);
-			break;
-		case th<graphics::Model>():
-			graphics::Model::release((graphics::ModelPtr)sel_ref_obj);
-			break;
-		case th<graphics::Animation>():
-			graphics::Animation::release((graphics::AnimationPtr)sel_ref_obj);
-			break;
-		}
-		sel_ref_type = 0;
+		if (sel_ref_deletor && sel_ref_obj)
+			sel_ref_deletor(sel_ref_obj);
+		sel_ref_deletor = nullptr;
 		sel_ref_obj = nullptr;
 	}
 
@@ -451,7 +456,7 @@ void View_Inspector::on_draw()
 		for (auto& c : e->components)
 		{
 			ImGui::PushID(c.get());
-			auto& ui = *com_udts[c->type_hash];
+			auto& ui = *com_udts_map[c->type_hash];
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
 			if (ImGui::Button("..."))
@@ -620,10 +625,10 @@ void View_Inspector::on_draw()
 		}
 		if (ImGui::BeginPopup("add_component"))
 		{
-			for (auto ui : com_udts)
+			for (auto ui : com_udts_list)
 			{
-				if (ImGui::Selectable(ui.second->name.c_str()))
-					e->add_component(ui.first);
+				if (ImGui::Selectable(ui->name.c_str()))
+					e->add_component(ui->name_hash);
 			}
 			ImGui::EndPopup();
 		}
@@ -681,8 +686,10 @@ void View_Inspector::on_draw()
 				auto image = graphics::Image::get(path);
 				if (image)
 				{
-					sel_ref_type = th<graphics::Image>();
 					sel_ref_obj = image;
+					sel_ref_deletor = [](void* obj) {
+						graphics::Image::release((graphics::ImagePtr)obj);
+					};
 
 					auto bitmap = Bitmap::create(path);
 					if (bitmap)
@@ -738,8 +745,10 @@ void View_Inspector::on_draw()
 				auto material = graphics::Material::get(path);
 				if (material)
 				{
-					sel_ref_type = th<graphics::Material>();
 					sel_ref_obj = material;
+					sel_ref_deletor = [](void* obj) {
+						graphics::Material::release((graphics::MaterialPtr)obj);
+					};
 				}
 			}
 
@@ -768,8 +777,10 @@ void View_Inspector::on_draw()
 				auto model = graphics::Model::get(path);
 				if (model)
 				{
-					sel_ref_type = th<graphics::Model>();
 					sel_ref_obj = model;
+					sel_ref_deletor = [](void* obj) {
+						graphics::Model::release((graphics::ModelPtr)obj);
+					};
 				}
 			}
 
@@ -801,8 +812,10 @@ void View_Inspector::on_draw()
 				auto animation = graphics::Animation::get(path);
 				if (animation)
 				{
-					sel_ref_type = th<graphics::Animation>();
 					sel_ref_obj = animation;
+					sel_ref_deletor = [](void* obj) {
+						graphics::Animation::release((graphics::AnimationPtr)obj);
+					};
 				}
 			}
 
@@ -837,9 +850,45 @@ void View_Inspector::on_draw()
 				}
 			}
 		}
+		else if (ext == L".pipeline")
+		{
+			static auto ti = TypeInfo::get<graphics::GraphicsPipelineInfo>();
+			static UdtInfo* ui = ti->retrive_ui()->transform_to_serializable();
+
+			if (selection_changed || !sel_ref_obj)
+			{
+				sel_ref_obj = ui->create_object();
+				sel_ref_deletor = [](void* obj) {
+					ui->destroy_object(obj);
+				};
+
+				std::ifstream file(path);
+				LineReader res(file);
+				res.read_block("");
+				unserialize_text(*ui, res, 0, sel_ref_obj);
+				file.close();
+			}
+
+			if (sel_ref_obj)
+			{
+				show_udt(*ui, sel_ref_obj);
+				if (ImGui::Button("Save"))
+					;
+			}
+		}
 	}
 		break;
 	}
 
 	selection_changed = false;
+
+	// floating widgets
+	{
+		auto wnd = ImGui::GetCurrentWindow();
+		auto rect = wnd->TitleBarRect();
+		ImGui::PushClipRect(rect.Min, rect.Max, false);
+		ImGui::SetCursorPos(ImVec2(180.f, 0.f));
+		ImGui::Button("hello");
+		ImGui::PopClipRect();
+	}
 }

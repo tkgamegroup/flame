@@ -80,7 +80,7 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
+					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, cells, data_map->get_view());
 					dirty = false;
 				}
 				break;

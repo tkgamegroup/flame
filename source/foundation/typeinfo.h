@@ -547,67 +547,6 @@ namespace flame
 			return &attributes[it->second];
 		}
 
-		void* create_object(void* p = nullptr) const
-		{
-			if (!p)
-			{
-				if (auto fi = find_function("create"_h); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
-				{
-					if (fi->parameters.empty())
-						p = fi->call<void*>(nullptr);
-					else if (fi->parameters.size() == 1 && is_in(fi->parameters[0]->tag, TagP_Beg, TagP_End))
-						p = fi->call<void*>(nullptr, nullptr);
-					return p;
-				}
-				p = malloc(size);
-			}
-			if (auto fi = find_function("dctor"_h); fi)
-				fi->call<void>(p);
-			else
-			{
-				if (is_pod)
-					memset(p, 0, size);
-				else
-				{
-					for (auto& v : variables)
-						v.type->create((char*)p + v.offset);
-				}
-			}
-			return p;
-		}
-
-		void destroy_object(void* p, bool free_memory = true) const
-		{
-			if (auto fi = find_function("dtor"_h); fi)
-				fi->call<void>(p);
-			else
-			{
-				if (!is_pod)
-				{
-					for (auto& v : variables)
-						v.type->destroy((char*)p + v.offset, false);
-				}
-			}
-			if (free_memory)
-				free(p);
-		}
-
-		void copy_object(void* dst, const void* src) const
-		{
-			if (auto fi = find_function("operator="_h); fi)
-				fi->call<void*>(dst, src);
-			else
-			{
-				if (!is_pod)
-				{
-					for (auto& v : variables)
-						v.type->copy((char*)dst + v.offset, (char*)src + v.offset);
-				}
-				else
-					memcpy(dst, src, size);
-			}
-		}
-
 		void* get_value(TypeInfo* type, void* obj, int offset, int getter_idx, bool use_copy = false) const
 		{
 			if (getter_idx != -1)
@@ -632,6 +571,14 @@ namespace flame
 			else
 				type->copy((char*)obj + offset, src);
 		}
+
+		FLAME_FOUNDATION_API void* create_object(void* p = nullptr) const;
+		FLAME_FOUNDATION_API void destroy_object(void* p, bool free_memory = true) const;
+		FLAME_FOUNDATION_API void copy_object(void* dst, const void* src) const;
+
+		// create a new type, and turn all pointer types(including vector of pointer ect.) into std::sting, so that you can use this type
+		// to read/edit from file. The new type will NOT add to database, when you don't need it anymore, just delete it.
+		FLAME_FOUNDATION_API UdtInfo* transform_to_serializable() const;
 	};
 
 	VariableInfo* Attribute::var() const
@@ -2316,13 +2263,19 @@ namespace flame
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			auto& dst_vec = *(std::vector<int>*)dst;
 			auto& src_vec = *(std::vector<int>*)src;
 			dst_vec = src_vec;
 		}
-
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
@@ -2355,11 +2308,17 @@ namespace flame
 			ti = (TypeInfo_Data*)get(TagD, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_npod_vector(dst, src, ti);
 		}
-
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVD);
@@ -2377,11 +2336,17 @@ namespace flame
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_npod_vector(dst, src, ti);
 		}
-
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVU);
@@ -2399,11 +2364,17 @@ namespace flame
 			ti = (TypeInfo_Pair*)get(TagR, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_npod_vector(dst, src, ti);
 		}
-
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVR);
@@ -2421,11 +2392,17 @@ namespace flame
 			ti = (TypeInfo_Tuple*)get(TagT, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_npod_vector(dst, src, ti);
 		}
-
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVT);
@@ -2441,6 +2418,14 @@ namespace flame
 			TypeInfo(TagVPU, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<int>();
+			return p;
 		}
 	};
 

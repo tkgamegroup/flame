@@ -45,6 +45,7 @@ struct VolumeInstance
 	mat4 mat;
 	vec3 extent;
 	uvec3 blocks;
+	uint cells;
 };
 
 layout(set = SET, binding = 0) buffer readonly Instance

@@ -1,9 +1,9 @@
 layout (points) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-layout(location = 0) in flat uint i_id;
-layout(location = 1) in flat uvec3 i_bidx; // block index (in x, y, z)
-layout(location = 2) in flat uvec3 i_cidx; // cell index (in x, y, z)
+layout(location = 0) in flat uint i_id[];
+layout(location = 1) in flat uvec3 i_bidx[]; // block index (in x, y, z)
+layout(location = 2) in flat uvec3 i_cidx[]; // cell index (in x, y, z)
 
 const int case_to_numpolys[256] = {
 	0, 1, 1, 2, 1, 2, 2, 3,  1, 2, 2, 3, 2, 3, 3, 2,  1, 2, 2, 3, 2, 3, 3, 4,  2, 3, 3, 4, 3, 4, 4, 3,  

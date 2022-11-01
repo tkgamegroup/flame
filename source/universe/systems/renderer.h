@@ -196,7 +196,7 @@ namespace flame
 		// Reflect
 		virtual int register_volume_instance(int id) = 0;
 		// Reflect
-		virtual void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) = 0;
+		virtual void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, uint cells, graphics::ImageViewPtr data_map) = 0;
 
 		// Reflect
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;

@@ -4,6 +4,7 @@
 
 #if USE_IMGUI
 #include <imgui.h>
+#include <imgui_internal.h>
 #include "../imgui_extension.h"
 #include <misc/cpp/imgui_stdlib.h>
 	#if USE_IM_GUIZMO
@@ -60,7 +61,7 @@ namespace flame
 			inline GuiView(std::string_view name);
 			inline virtual ~GuiView();
 
-			inline void open()
+			void open()
 			{
 				if (opened)
 					return;
@@ -71,7 +72,7 @@ namespace flame
 				}, (uint)this);
 			}
 
-			inline void close()
+			void close()
 			{
 				if (!opened)
 					return;
@@ -83,22 +84,26 @@ namespace flame
 				});
 			}
 
-			inline void draw()
+			void draw()
 			{
-				auto closed = on_open();
+				auto closed = on_begin();
 				on_draw();
-				ImGui::End();
-
-				if (closed)
-					close();
+				on_end(closed);
 			}
 
 			virtual void init() {}
-			virtual bool on_open() 
+			virtual bool on_begin() 
 			{
 				bool open = true;
 				ImGui::Begin(name.c_str(), &open);
 				return !open;
+			}
+			virtual void on_end(bool closed)
+			{
+				ImGui::End();
+
+				if (closed)
+					close();
 			}
 			virtual void on_draw() = 0;
 		};

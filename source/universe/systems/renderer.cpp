@@ -1347,9 +1347,16 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map)
+	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, uint cells, graphics::ImageViewPtr data_map)
 	{
+		auto pi = buf_instance.item_d("volumes"_h, id);
+		pi.item("mat"_h).set(mat);
+		pi.item("extent"_h).set(extent);
+		pi.item("blocks"_h).set(blocks);
+		pi.item("cells"_h).set(cells);
 
+		ds_instance->set_image("volume_datas"_h, id, data_map, nullptr);
+		ds_instance->update();
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;

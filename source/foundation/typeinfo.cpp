@@ -102,6 +102,110 @@ namespace flame
 		return t;
 	}
 
+	void* UdtInfo::create_object(void* p) const
+	{
+		if (!p)
+		{
+			if (auto fi = find_function("create"_h); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
+			{
+				if (fi->parameters.empty())
+					p = fi->call<void*>(nullptr);
+				else if (fi->parameters.size() == 1 && is_in(fi->parameters[0]->tag, TagP_Beg, TagP_End))
+					p = fi->call<void*>(nullptr, nullptr);
+				return p;
+			}
+			p = malloc(size);
+		}
+		if (auto fi = find_function("dctor"_h); fi)
+			fi->call<void>(p);
+		else
+		{
+			memset(p, 0, size);
+			if (!is_pod)
+			{
+				for (auto& v : variables)
+					v.type->create((char*)p + v.offset);
+			}
+			for (auto& v : variables)
+			{
+				if (!v.default_value.empty())
+					v.type->unserialize(v.default_value, (char*)p + v.offset);
+			}
+		}
+		return p;
+	}
+
+	void UdtInfo::destroy_object(void* p, bool free_memory) const
+	{
+		if (auto fi = find_function("dtor"_h); fi)
+			fi->call<void>(p);
+		else
+		{
+			if (!is_pod)
+			{
+				for (auto& v : variables)
+					v.type->destroy((char*)p + v.offset, false);
+			}
+		}
+		if (free_memory)
+			free(p);
+	}
+
+	void UdtInfo::copy_object(void* dst, const void* src) const
+	{
+		if (auto fi = find_function("operator="_h); fi)
+			fi->call<void*>(dst, src);
+		else
+		{
+			if (!is_pod)
+			{
+				for (auto& v : variables)
+					v.type->copy((char*)dst + v.offset, (char*)src + v.offset);
+			}
+			else
+				memcpy(dst, src, size);
+		}
+	}
+
+	UdtInfo* UdtInfo::transform_to_serializable() const
+	{
+		auto ret = new UdtInfo;
+		ret->is_pod = is_pod;
+		for (auto& svi : variables)
+		{
+			auto& dvi = ret->variables.emplace_back();
+			dvi.ui = ret;
+			dvi.name = svi.name;
+			dvi.name_hash = svi.name_hash;
+			dvi.type = svi.type;
+			switch (dvi.type->tag)
+			{
+			case TagPE:
+			case TagPD:
+			case TagPU:
+			case TagPR:
+			case TagPT:
+				dvi.type = TypeInfo::get(TagD, "std::string");
+				ret->is_pod = false;
+				break;
+			case TagVPU:
+				dvi.type = TypeInfo::get(TagVD, "std::string");
+				ret->is_pod = false;
+				break;
+			}
+			dvi.offset = ret->size;
+			dvi.array_size = svi.array_size;
+			dvi.array_stride = 0; // unknown stride
+			dvi.default_value = svi.default_value;
+			dvi.metas = svi.metas;
+
+			ret->size += dvi.type->size;
+		}
+		for (auto i = 0; i < ret->variables.size(); i++)
+			ret->variables_map[ret->variables[i].name_hash] = i;
+		return ret;
+	}
+
 	thread_local int TypeInfo_Enum::v;
 	thread_local bool TypeInfo_bool::v;
 	thread_local char TypeInfo_char::v;

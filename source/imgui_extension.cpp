@@ -1,7 +1,5 @@
 #include "imgui_extension.h"
 
-#include <stack>
-
 namespace ImGui
 {
 	static int vtx_beg;
