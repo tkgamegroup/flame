@@ -183,6 +183,10 @@ namespace flame
 				return VK_SHADER_STAGE_FRAGMENT_BIT;
 			case ShaderStageComp:
 				return VK_SHADER_STAGE_COMPUTE_BIT;
+			case ShaderStageTask:
+				return VK_SHADER_STAGE_TASK_BIT_EXT;
+			case ShaderStageMesh:
+				return VK_SHADER_STAGE_MESH_BIT_EXT;
 			}
 		}
 
@@ -202,6 +206,10 @@ namespace flame
 				ret |= VK_SHADER_STAGE_FRAGMENT_BIT;
 			if (t & ShaderStageComp)
 				ret |= VK_SHADER_STAGE_COMPUTE_BIT;
+			if (t & ShaderStageTask)
+				ret |= VK_SHADER_STAGE_TASK_BIT_EXT;
+			if (t & ShaderStageMesh)
+				ret |= VK_SHADER_STAGE_MESH_BIT_EXT;
 			return ret;
 		}
 

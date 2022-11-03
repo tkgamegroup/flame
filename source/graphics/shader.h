@@ -248,7 +248,7 @@ namespace flame
 			BlendFactor dst_alpha = BlendFactorZero;
 		};
 
-		struct GraphicsPipelineInfo
+		struct PipelineInfo
 		{
 			PipelineLayoutPtr layout = nullptr;
 			std::vector<ShaderPtr> shaders;
@@ -268,13 +268,7 @@ namespace flame
 			std::vector<DynamicState> dynamic_states;
 		};
 
-		struct ComputePipelineInfo
-		{
-			ShaderPtr shader;
-			PipelineLayoutPtr layout;
-		};
-
-		struct GraphicsPipeline : GraphicsPipelineInfo
+		struct GraphicsPipeline : PipelineInfo
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
@@ -318,7 +312,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual GraphicsPipelinePtr operator()(const GraphicsPipelineInfo& info) = 0;
+				virtual GraphicsPipelinePtr operator()(const PipelineInfo& info) = 0;
 				virtual GraphicsPipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
@@ -336,7 +330,7 @@ namespace flame
 			FLAME_GRAPHICS_API static Release& release;
 		};
 
-		struct ComputePipeline : ComputePipelineInfo
+		struct ComputePipeline : PipelineInfo
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
@@ -348,7 +342,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual ComputePipelinePtr operator()(const ComputePipelineInfo& info) = 0;
+				virtual ComputePipelinePtr operator()(const PipelineInfo& info) = 0;
 				virtual ComputePipelinePtr operator()(const std::string& content, const std::vector<std::string>& defines, const std::string& key = "") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;

@@ -3,9 +3,9 @@
 layout
   {pll}
 shaders
-  marching_cubes.vert
+  marching_cubes.task
  ---
-  marching_cubes.geom
+  marching_cubes.mesh
  ---
   marching_cubes.frag
 renderpass

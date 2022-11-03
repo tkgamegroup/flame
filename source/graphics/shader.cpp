@@ -43,6 +43,10 @@ namespace flame
 				return L"frag";
 			case ShaderStageComp:
 				return L"comp";
+			case ShaderStageTask:
+				return L"task";
+			case ShaderStageMesh:
+				return L"mesh";
 			}
 			return L"";
 		};
@@ -1343,7 +1347,7 @@ namespace flame
 			}
 			LineReader res(file);
 
-			GraphicsPipelineInfo info;
+			PipelineInfo info;
 
 			res.read_block("");
 
@@ -1387,6 +1391,10 @@ namespace flame
 							shader_defines.emplace_back(ShaderStageFrag, form_define());
 						else if (s == "comp")
 							shader_defines.emplace_back(ShaderStageComp, form_define());
+						else if (s == "task")
+							shader_defines.emplace_back(ShaderStageTask, form_define());
+						else if (s == "mesh")
+							shader_defines.emplace_back(ShaderStageMesh, form_define());
 						else if (s == "all_shader")
 							shader_defines.emplace_back(ShaderStageAll, form_define());
 					}
@@ -1424,6 +1432,10 @@ namespace flame
 							type = ShaderStageFrag;
 						else if (value.starts_with("@comp"))
 							type = ShaderStageComp;
+						else if (value.starts_with("@task"))
+							type = ShaderStageTask;
+						else if (value.starts_with("@mesh"))
+							type = ShaderStageMesh;
 						if (type != ShaderStageNone)
 							shader_segments.emplace_back(type, value);
 						return INVALID_POINTER;
@@ -1569,10 +1581,7 @@ namespace flame
 			}
 			else if (!info.shaders.empty())
 			{
-				ComputePipelineInfo compute_info;
-				compute_info.layout = info.layout;
-				compute_info.shader = info.shaders[0];
-				*ret = ComputePipeline::create(compute_info);
+				*ret = ComputePipeline::create(info);
 				return;
 			}
 			*ret = nullptr;
@@ -1616,7 +1625,7 @@ namespace flame
 			auto it = renderpass_variants.find(rp);
 			if (it != renderpass_variants.end())
 				return it->second;
-			GraphicsPipelineInfo info = *this;
+			PipelineInfo info = *this;
 			info.renderpass = rp;
 			info.subpass_index = sp;
 			for (auto& att : info.renderpass->attachments)
@@ -1638,7 +1647,7 @@ namespace flame
 
 		void GraphicsPipelinePrivate::recreate()
 		{
-			GraphicsPipelineInfo info = *this;
+			PipelineInfo info = *this;
 			GraphicsPipelinePtr new_pl = nullptr;
 			if (!filename.empty() && get_file_length(filename) > 0)
 			{
@@ -1669,10 +1678,10 @@ namespace flame
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create
 		{
-			GraphicsPipelinePtr operator()(const GraphicsPipelineInfo& info) override
+			GraphicsPipelinePtr operator()(const PipelineInfo& info) override
 			{
 				auto ret = new GraphicsPipelinePrivate;
-				*(GraphicsPipelineInfo*)ret = info;
+				*(PipelineInfo*)ret = info;
 
 				std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 				std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
@@ -1961,10 +1970,10 @@ namespace flame
 
 		struct ComputePipelineCreate : ComputePipeline::Create
 		{
-			ComputePipelinePtr operator()(const ComputePipelineInfo& info) override
+			ComputePipelinePtr operator()(const PipelineInfo& info) override
 			{
 				auto ret = new ComputePipelinePrivate;
-				*(ComputePipelineInfo*)ret = info;
+				*(PipelineInfo*)ret = info;
 
 				VkComputePipelineCreateInfo pipeline_info;
 				pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -1977,7 +1986,7 @@ namespace flame
 				pipeline_info.stage.pSpecializationInfo = nullptr;
 				pipeline_info.stage.pName = "main";
 				pipeline_info.stage.stage = to_backend(ShaderStageComp);
-				pipeline_info.stage.module = info.shader->vk_module;
+				pipeline_info.stage.module = info.shaders[0]->vk_module;
 
 				pipeline_info.basePipelineHandle = 0;
 				pipeline_info.basePipelineIndex = 0;
@@ -2033,8 +2042,11 @@ namespace flame
 				{
 					if (pl->layout->ref == 0)
 						delete pl->layout;
-					if (pl->shader->ref == 0)
-						delete pl->shader;
+					for (auto sd : shaders)
+					{
+						if (sd->ref == 0)
+							delete sd;
+					}
 					std::erase_if(loaded_compute_pipelines, [&](const auto& i) {
 						return i.get() == pl;
 					});
