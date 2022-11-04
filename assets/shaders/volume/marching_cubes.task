@@ -8,7 +8,6 @@ layout(local_size_x = 1) in;
 void main()
 {
 	const uint lane_id = gl_LocalInvocationID.x;
-	/*
 	const uint wg_id = gl_WorkGroupID.x;
 
 	// process a 4x4x4 volume
@@ -26,7 +25,6 @@ void main()
 		// output all cells for testing
 		OUT.meshlets[lane_id] = ((((mi_z + z) << SHIFT) + mi_y + y) << SHIFT) + mi_x + x;
 	}
-	*/
 
-	EmitMeshTasksEXT(1, 1, 1);
+	EmitMeshTasksEXT(64, 1, 1);
 }
