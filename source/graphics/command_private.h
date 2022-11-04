@@ -49,6 +49,7 @@ namespace flame
 			void draw_indirect(BufferPtr buf, uint offset, uint count) override;
 			void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) override;
 			void dispatch(const uvec3& v) override;
+			void draw_mesh_tasks(const uvec3& v) override;
 			void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage) override;
 			void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout new_layout,
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone,

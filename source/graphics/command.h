@@ -139,6 +139,7 @@ namespace flame
 			virtual void draw_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void draw_indexed_indirect(BufferPtr buf, uint offset, uint count) = 0;
 			virtual void dispatch(const uvec3& v) = 0;
+			virtual void draw_mesh_tasks(const uvec3& v) = 0;
 			virtual void buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, 
 				PipelineStageFlags src_stage = PipelineStageAllCommand, PipelineStageFlags dst_stage = PipelineStageAllCommand) = 0;
 			virtual void image_barrier(ImagePtr img, const ImageSub& sub, ImageLayout new_layout, 

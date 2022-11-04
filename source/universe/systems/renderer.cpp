@@ -1347,13 +1347,12 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, uint cells, graphics::ImageViewPtr data_map)
+	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map)
 	{
 		auto pi = buf_instance.item_d("volumes"_h, id);
 		pi.item("mat"_h).set(mat);
 		pi.item("extent"_h).set(extent);
 		pi.item("blocks"_h).set(blocks);
-		pi.item("cells"_h).set(cells);
 
 		ds_instance->set_image("volume_datas"_h, id, data_map, nullptr);
 		ds_instance->update();
@@ -1557,7 +1556,8 @@ namespace flame
 		for (auto& v : draw_data.volumes)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-			cb->draw(v.cells, v.blocks, 0, (v.ins_id << 24) + (v.mat_id << 16));
+			cb->draw_mesh_tasks(uvec3(1)); // testing
+			//cb->draw(v.cells, v.blocks, 0, (v.ins_id << 24) + (v.mat_id << 16));
 		}
 
 		cb->end_renderpass();

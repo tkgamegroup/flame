@@ -1,0 +1,58 @@
+#extension GL_KHR_shader_subgroup_ballot : require
+#extension GL_KHR_shader_subgroup_shuffle_relative : require
+
+#include "declares.glsl"
+
+#ifndef OCCLUDER_PASS
+layout(location = 0) out vec3 o_normal[];
+#endif
+
+taskPayloadSharedEXT Task IN;
+
+layout(local_size_x = 32) in;
+layout(triangles, max_vertices = 12, max_primitives = 5) out;
+void main()
+{
+	const uint lane_id = gl_LocalInvocationID.x;
+	const uint meshlet_id = IN.meshlets[gl_WorkGroupID.x];
+	
+	uint mi_x = (meshlet_id >> (0*SHIFT)) & (GRID_SIZE - 1);
+	uint mi_y = (meshlet_id >> (1*SHIFT)) & (GRID_SIZE - 1);
+	uint mi_z = (meshlet_id >> (2*SHIFT));
+	
+	/*
+	// output all cells for testing
+	SetMeshOutputsEXT(64 * 3, 64);
+	for (uint i = lane_id; i < 64; i += 32)
+	{
+		vec3 pos = vec3(mi_x, mi_y, mi_z);
+		gl_MeshVerticesEXT[i * 3 + 0].gl_Position = camera.proj_view * vec4(pos, 1.0);
+		gl_MeshVerticesEXT[i * 3 + 2].gl_Position = camera.proj_view * vec4(pos + vec3(0, 0, 1), 1.0);
+		gl_MeshVerticesEXT[i * 3 + 1].gl_Position = camera.proj_view * vec4(pos + vec3(1, 0, 0), 1.0);
+
+		#ifndef OCCLUDER_PASS
+			o_normal[i * 3 + 0] = vec3(0, 1, 0);
+			o_normal[i * 3 + 1] = vec3(0, 1, 0);
+			o_normal[i * 3 + 2] = vec3(0, 1, 0);
+		#endif
+
+		gl_PrimitiveTriangleIndicesEXT[i] = uvec3(i * 3 + 0, i * 3 + 1, i * 3 + 2);
+	}
+	*/
+	
+	SetMeshOutputsEXT(3, 1);
+
+	vec3 pos = vec3(0, 0, 0);
+
+	gl_MeshVerticesEXT[0].gl_Position = camera.proj_view * vec4(pos, 1.0);
+	gl_MeshVerticesEXT[2].gl_Position = camera.proj_view * vec4(pos + vec3(0, 0, 1), 1.0);
+	gl_MeshVerticesEXT[1].gl_Position = camera.proj_view * vec4(pos + vec3(1, 0, 0), 1.0);
+
+	#ifndef OCCLUDER_PASS
+		o_normal[0] = vec3(0, 1, 0);
+		o_normal[1] = vec3(0, 1, 0);
+		o_normal[2] = vec3(0, 1, 0);
+	#endif
+
+	gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+}

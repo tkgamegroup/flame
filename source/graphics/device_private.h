@@ -15,13 +15,12 @@ namespace flame
 			VkPhysicalDevice vk_physical_device;
 			VkPhysicalDeviceProperties2 vk_props;
 			VkPhysicalDeviceDepthStencilResolveProperties vk_resolve_props;
+			VkPhysicalDeviceMeshShaderPropertiesEXT vk_meshshader_props;
 			VkPhysicalDeviceFeatures vk_features; 
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
-
-			bool has_feature(Feature feature) const override;
 		};
 	}
 }

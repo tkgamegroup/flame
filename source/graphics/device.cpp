@@ -61,22 +61,6 @@ namespace flame
 			return VK_FALSE;
 		}
 
-		bool DevicePrivate::has_feature(Feature feature) const
-		{
-			switch (feature)
-			{
-			case FeatureTextureCompressionBC:
-				return vk_features.textureCompressionBC;
-			case FeatureTextureCompressionASTC_LDR:
-				return vk_features.textureCompressionASTC_LDR;
-			case FeatureTextureCompressionETC2:
-				return vk_features.textureCompressionETC2;
-			default:
-				break;
-			}
-			return false;
-		}
-
 		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
 		{
 			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
@@ -109,7 +93,7 @@ namespace flame
 				appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 				appInfo.pEngineName = "Flame Engine";
 				appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-				appInfo.apiVersion = VK_HEADER_VERSION_COMPLETE;
+				appInfo.apiVersion = VK_API_VERSION_1_3;
 
 				std::vector<const char*> required_instance_extensions;
 				std::vector<const char*> required_instance_layers;
@@ -158,15 +142,25 @@ namespace flame
 				for (auto& extension : device_extensions)
 					printf("  %s\n", extension.extensionName);
 
-				ret->vk_resolve_props = {};
-				ret->vk_resolve_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
 				ret->vk_props = {};
 				ret->vk_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-				ret->vk_props.pNext = &ret->vk_resolve_props;
-				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props); 
-				printf("gpu: %s\n", ret->vk_props.properties.deviceName);
+				auto next_prop = &ret->vk_props.pNext;
+
+				ret->vk_resolve_props = {};
+				ret->vk_resolve_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES;
+				*next_prop = &ret->vk_resolve_props;
+				next_prop = &ret->vk_resolve_props.pNext;
+
+				ret->vk_meshshader_props = {};
+				ret->vk_meshshader_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+				*next_prop = &ret->vk_meshshader_props;
+				next_prop = &ret->vk_meshshader_props.pNext;
 
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
+				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
+				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props); 
+				
+				printf("gpu: %s\n", ret->vk_props.properties.deviceName);
 
 				uint queue_family_property_count = 0;
 				std::vector<VkQueueFamilyProperties> queue_family_properties;
@@ -211,16 +205,43 @@ namespace flame
 				//	}
 				//}
 
-				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
+				VkPhysicalDeviceFeatures2 enabled_features = {};
+				enabled_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+				enabled_features.features = ret->vk_features;
+				auto next_feature = &enabled_features.pNext;
 
-				std::vector<const char*> required_device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+				VkPhysicalDeviceMeshShaderFeaturesEXT feature_mesh_shader = {};
+				feature_mesh_shader.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+				feature_mesh_shader.taskShader = true;
+				feature_mesh_shader.meshShader = true;
+				*next_feature = &feature_mesh_shader;
+				next_feature = &feature_mesh_shader.pNext;
+
+				VkPhysicalDevice8BitStorageFeaturesKHR feature_8bit_storage = {};
+				feature_8bit_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR;
+				feature_8bit_storage.storageBuffer8BitAccess = true;
+				*next_feature = &feature_8bit_storage;
+				next_feature = &feature_8bit_storage.pNext;
+
+				VkPhysicalDeviceMaintenance4Features feature_maintenance4 = {};
+				feature_maintenance4.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES;
+				feature_maintenance4.maintenance4 = true;
+				*next_feature = &feature_maintenance4;
+				next_feature = &feature_maintenance4.pNext;
+
+				std::vector<const char*> required_device_extensions;
+				required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
 				VkDeviceCreateInfo device_info = {};
 				device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+				device_info.pNext = &enabled_features;
 				device_info.pQueueCreateInfos = queue_infos.data();
 				device_info.queueCreateInfoCount = queue_infos.size();
 				device_info.enabledExtensionCount = required_device_extensions.size();
 				device_info.ppEnabledExtensionNames = required_device_extensions.data();
-				device_info.pEnabledFeatures = &ret->vk_features;
 				chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 

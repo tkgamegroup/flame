@@ -52,15 +52,6 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(Channel);
 		FLAME_GRAPHICS_TYPE(Animation);
 
-		enum Feature
-		{
-			FeatureTextureCompressionBC,
-			FeatureTextureCompressionASTC_LDR,
-			FeatureTextureCompressionETC2,
-
-			FeatureCount
-		};
-
 		enum Format
 		{
 			Format_Undefined,

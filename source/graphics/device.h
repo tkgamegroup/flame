@@ -10,8 +10,6 @@ namespace flame
 		{
 			virtual ~Device() {}
 
-			virtual bool has_feature(Feature feature) const = 0;
-
 			struct Create
 			{
 				virtual DevicePtr operator()(bool debug) = 0;

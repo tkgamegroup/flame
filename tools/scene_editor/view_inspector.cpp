@@ -861,7 +861,7 @@ void View_Inspector::on_draw()
 		}
 		else if (ext == L".pipeline")
 		{
-			static auto ti = TypeInfo::get<graphics::GraphicsPipelineInfo>();
+			static auto ti = TypeInfo::get<graphics::PipelineInfo>();
 			static UdtInfo* ui = ti->retrive_ui();
 			static UdtInfo* ser_ui = ui->transform_to_serializable();
 

@@ -27,17 +27,6 @@ namespace flame
 		data_changed("blocks"_h);
 	}
 
-	void cVolumePrivate::set_cells(uint _cells)
-	{
-		if (cells == _cells)
-			return;
-		cells = _cells;
-
-		dirty = true;
-		node->mark_transform_dirty();
-		data_changed("cells"_h);
-	}
-
 	void cVolumePrivate::set_data_map_name(const std::filesystem::path& name)
 	{
 		if (data_map_name == name)
@@ -80,7 +69,7 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, cells, data_map->get_view());
+					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
 					dirty = false;
 				}
 				break;
@@ -88,12 +77,12 @@ namespace flame
 				if (marching_cubes)
 				{
 					if (draw_data.categories & CateMarchingCubes)
-						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, cells * cells * cells, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, 0);
 				}
 				else
 				{
 					if (draw_data.categories & CateVolume)
-						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, cells * cells * cells, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, 0);
 				}
 				break;
 			}

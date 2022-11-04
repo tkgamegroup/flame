@@ -66,6 +66,10 @@ namespace flame
 				return ShaderStageFrag;
 			else if (ext == L".comp")
 				return ShaderStageComp;
+			else if (ext == L".task")
+				return ShaderStageTask;
+			else if (ext == L".mesh")
+				return ShaderStageMesh;
 			return ShaderStageNone;
 		}
 
@@ -231,10 +235,10 @@ namespace flame
 
 			std::string temp_content;
 			std::vector<std::string> additional_lines;
-			temp_content += "#version 450 core\n";
+			temp_content += "#version 460\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
-			if (stage != ShaderStageComp)
-				temp_content += "#extension GL_ARB_separate_shader_objects : enable\n";
+			if (stage == ShaderStageTask || stage == ShaderStageMesh)
+				temp_content += "#extension GL_EXT_mesh_shader : require\n";
 			temp_content += "\n";
 
 			std::vector<std::pair<std::string, std::string>> defines;
@@ -454,7 +458,7 @@ namespace flame
 			std::filesystem::remove(L"temp.spv");
 
 			std::string errors;
-			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" -fshader-stage={} -I \"{}\" {} -o temp.spv", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
+			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" --target-env=vulkan1.3 -fshader-stage={} -I \"{}\" {} -o temp.spv", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
 				printf("%s\n", errors.c_str());

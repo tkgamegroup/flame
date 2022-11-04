@@ -66,13 +66,11 @@ namespace flame
 	{
 		uint ins_id;
 		uint blocks;
-		uint cells;
 		uint mat_id;
 
-		VolumeDraw(uint ins_id, uint blocks, uint cells, uint mat_id) :
+		VolumeDraw(uint ins_id, uint blocks, uint mat_id) :
 			ins_id(ins_id),
 			blocks(blocks),
-			cells(cells),
 			mat_id(mat_id)
 		{
 		}
