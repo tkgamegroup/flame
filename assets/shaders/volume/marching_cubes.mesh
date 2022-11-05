@@ -1,58 +1,118 @@
-#extension GL_KHR_shader_subgroup_ballot : require
-#extension GL_KHR_shader_subgroup_shuffle_relative : require
+/* * * * * * * * * * * * * Author's note * * * * * * * * * * * *\
+*   _       _   _       _   _       _   _       _     _ _ _ _   *
+*  |_|     |_| |_|     |_| |_|_   _|_| |_|     |_|  _|_|_|_|_|  *
+*  |_|_ _ _|_| |_|     |_| |_|_|_|_|_| |_|     |_| |_|_ _ _     *
+*  |_|_|_|_|_| |_|     |_| |_| |_| |_| |_|     |_|   |_|_|_|_   *
+*  |_|     |_| |_|_ _ _|_| |_|     |_| |_|_ _ _|_|  _ _ _ _|_|  *
+*  |_|     |_|   |_|_|_|   |_|     |_|   |_|_|_|   |_|_|_|_|    *
+*                                                               *
+*                     http://www.humus.name                     *
+*                                                                *
+* This file is a part of the work done by Humus. You are free to   *
+* use the code in any way you like, modified, unmodified or copied   *
+* into your own work. However, I expect you to respect these points:  *
+*  - If you use this file and its contents unmodified, or use a major *
+*    part of this file, please credit the author and leave this note. *
+*  - For use in anything commercial, please request my approval.     *
+*  - Share your work and ideas too as much as you can.             *
+*                                                                *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "declares.glsl"
 
-#ifndef OCCLUDER_PASS
-layout(location = 0) out vec3 o_normal[];
-#endif
+taskPayloadSharedEXT Task payload;
 
-taskPayloadSharedEXT Task IN;
+layout (location = 0) out vec3 o_normal[];
+layout (location = 1) out vec3 o_coordw[];
+
+// 8 intermediate corner values and normals in LDS
+struct Corner
+{
+	vec3 normal;
+	float value;
+};
+shared Corner corners[8];
 
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices = 12, max_primitives = 5) out;
 void main()
 {
-	const uint lane_id = gl_LocalInvocationID.x;
-	const uint meshlet_id = IN.meshlets[gl_WorkGroupID.x];
-	
+	const uint thread_id  = gl_LocalInvocationID.x;
+	const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
+
+	// Convert linear meshlet_id into x, y and z coordinates
 	uint mi_x = (meshlet_id >> (0*SHIFT)) & (GRID_SIZE - 1);
 	uint mi_y = (meshlet_id >> (1*SHIFT)) & (GRID_SIZE - 1);
 	uint mi_z = (meshlet_id >> (2*SHIFT));
-	
-	// output all cells for testing
-	SetMeshOutputsEXT(64 * 3, 64);
-	for (uint i = lane_id; i < 64; i += 32)
+
+	// Corner positions of the cube
+	vec3 corner_pos0 = vec3(mi_x, mi_y, mi_z) * STEP_SIZE;
+	vec3 corner_pos1 = corner_pos0 + STEP_SIZE;
+
+	// First 8 lanes evaluate the field for each corner, the other 24 evaluate at offsetted positions in x, y and z so we can compute a normal at each corner from the field gradient
+	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
+
+	const float epsilon = (1.0f / 16.0f) * STEP_SIZE;
+	uint off = thread_id / 8;
+	pos.x += (off == 1)? epsilon : 0.0f;
+	pos.y += (off == 2)? epsilon : 0.0f;
+	pos.z += (off == 3)? epsilon : 0.0f;
+
+	// Evaluate the field function for all 32 lanes
+	float value = field(pos);
+
+	// Grab data from other lanes so we can compute the normal by computing the difference in value in x, y and z directions.
+	vec3 normal;
+	normal.x = subgroupShuffleDown(value, 8);
+	normal.y = subgroupShuffleDown(value, 16);
+	normal.z = subgroupShuffleDown(value, 24);
+
+	// Save intermediates to LDS. Corner positions can be computed directly from indices, so no need to put in LDS.
+	if (thread_id < 8)
 	{
-		vec3 pos = vec3(mi_x, mi_y, mi_z);
-		gl_MeshVerticesEXT[i * 3 + 0].gl_Position = camera.proj_view * vec4(pos, 1.0);
-		gl_MeshVerticesEXT[i * 3 + 1].gl_Position = camera.proj_view * vec4(pos + vec3(0, 0, 1), 1.0);
-		gl_MeshVerticesEXT[i * 3 + 2].gl_Position = camera.proj_view * vec4(pos + vec3(1, 0, 0), 1.0);
-
-		#ifndef OCCLUDER_PASS
-			o_normal[i * 3 + 0] = vec3(0, 1, 0);
-			o_normal[i * 3 + 1] = vec3(0, 1, 0);
-			o_normal[i * 3 + 2] = vec3(0, 1, 0);
-		#endif
-
-		gl_PrimitiveTriangleIndicesEXT[i] = uvec3(i * 3 + 0, i * 3 + 1, i * 3 + 2);
+		Corner corner;
+		corner.normal = normalize(value - normal);
+		corner.value = value;
+		corners[thread_id] = corner;
 	}
-	
-	/*
-	SetMeshOutputsEXT(3, 1);
 
-	vec3 pos = vec3(0, 0, 0);
+	// Look up the Marching Cubes index from the signs of corner nodes. Only the lowest 8 lanes are relevant here, hence the 0xFF mask.
+	uvec4 ballot = subgroupBallot(value >= 0.0f);
+	uint index = (ballot.x & 0xFF);
 
-	gl_MeshVerticesEXT[0].gl_Position = camera.proj_view * vec4(pos, 1.0);
-	gl_MeshVerticesEXT[1].gl_Position = camera.proj_view * vec4(pos + vec3(0, 0, 1), 1.0);
-	gl_MeshVerticesEXT[2].gl_Position = camera.proj_view * vec4(pos + vec3(1, 0, 0), 1.0);
+	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
+	const uint vertex_count = uint(marching_cubes_loopup.items[index].VertexCount);
+	if (thread_id == 0)
+		SetMeshOutputsEXT(vertex_count, triangle_count);
 
-	#ifndef OCCLUDER_PASS
-		o_normal[0] = vec3(0, 1, 0);
-		o_normal[1] = vec3(0, 1, 0);
-		o_normal[2] = vec3(0, 1, 0);
-	#endif
+	// Output up to 12 vertices, one lane per vertex
+	if (thread_id < vertex_count)
+	{
+		// Look up the corner indices for this edge
+		uint edge = uint(marching_cubes_loopup.items[index].Vertices[thread_id]);
+		uint i0 = edge & 0x7;
+		uint i1 = edge >> 3;
 
-	gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
-	*/
+		// Corner positions
+		vec3 pos0 = vec3((i0 & 1) != 0? corner_pos1.x : corner_pos0.x, (i0 & 2) != 0? corner_pos1.y : corner_pos0.y, (i0 & 4) != 0? corner_pos1.z : corner_pos0.z);
+		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
+
+		// Interpolate position and normal
+		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
+		vec3 pos    = mix(pos0, pos1, mix_f);
+		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
+
+		// Output final vertex
+		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
+		o_normal[thread_id] = normal;
+		o_coordw[thread_id] = pos;
+	}
+
+	// Output up to 15 indices. Using packed 8bit indices, so at most only 4 lanes get used here.
+	const uint index_count = triangle_count * 3;
+	if (thread_id * 4 < index_count)
+	{
+		uint packed_indices = marching_cubes_loopup.items[index].Indices[thread_id];
+		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 4, (packed_indices >> 2) & 0xff, packed_indices & 0xff);
+	}
 }

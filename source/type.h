@@ -98,6 +98,12 @@ namespace flame
 	template<typename T>
 	concept vector_type = is_specialization<T, std::vector>;
 
+	template<typename T>
+	concept pair_type = is_specialization<T, std::pair>;
+
+	template<typename T>
+	concept tuple_type = is_specialization<T, std::tuple>;
+
 	constexpr uint sh(char const* str)
 	{
 		auto ret = std::_FNV_offset_basis;

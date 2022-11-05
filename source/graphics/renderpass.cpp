@@ -185,7 +185,13 @@ namespace flame
 				res.read_block("");
 
 				RenderpassInfo info;
-				unserialize_text(res, &info, {}, defines);
+				std::vector<std::pair<std::string, std::string>> splited_defines;
+				for (auto& d : defines)
+				{
+					auto sp = SUS::split(d, '=');
+					splited_defines.emplace_back(sp[0], sp[1]);
+				}
+				unserialize_text(res, &info, {}, splited_defines);
 				file.close();
 
 				auto ret = Renderpass::create(info);

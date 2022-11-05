@@ -95,12 +95,55 @@ namespace flame
 	concept vector_of_data_type = vector_type<T> && basic_type<typename T::value_type>;
 
 	template<typename T>
-	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type>;
+	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type> && !pair_type<typename T::value_type> && !tuple_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_pair_type = vector_type<T> && pair_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_tuple_type = vector_type<T> && tuple_type<typename T::value_type>;
 
 	template<typename T>
 	concept vector_of_pointer_of_udt_type = vector_type<T> && pointer_of_udt_type<typename T::value_type>;
 
 	FLAME_FOUNDATION_API extern TypeInfoDataBase& tidb;
+
+	inline int first_template_argument_pos(std::string_view name)
+	{
+		auto p = 0, lv = 0;
+		while (p < name.size())
+		{
+			auto ch = name[p];
+			if (ch == ',' && lv == 0)
+				return p;
+			else if (p == (int)name.size() - 1 && lv == 0)
+				return p + 1;
+			else if (ch == '<')
+				lv++;
+			else if (ch == '>')
+				lv--;
+			p++;
+		}
+		return -1;
+	}
+
+	inline std::vector<std::string_view> parse_template_arguments(std::string_view name)
+	{
+		std::vector<std::string_view> ret;
+		auto off = 0;
+		while (off < name.size())
+		{
+			auto n = first_template_argument_pos({ name.begin() + off, name.end() });
+			if (n == -1)
+			{
+				ret.push_back(name.substr(off));
+				break;
+			}
+			ret.push_back(name.substr(off, n));
+			off += n + 1;
+		}
+		return ret;
+	}
 
 	struct TypeInfo
 	{
@@ -156,6 +199,16 @@ namespace flame
 				ret = "std::string" + ret;
 			else if (SUS::strip_head_if(ret, "std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>"))
 				ret = "std::wstring" + ret;
+			else if (SUS::strip_head_if(ret, "std::pair<") || SUS::strip_head_if(ret, "std::tuple<"))
+			{
+				ret.pop_back();
+				auto args = parse_template_arguments(ret);
+				std::string temp;
+				for (auto& a : args)
+					temp += TypeInfo::format_name(a) + ';';
+				ret = temp;
+				ret.pop_back();
+			}
 
 			return ret;
 		}
@@ -181,6 +234,31 @@ namespace flame
 		virtual void* get_v() const { return nullptr; };
 		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
 		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};
+
+		inline void* get_value(void* obj, int offset, const FunctionInfo* getter, bool use_copy = false) const
+		{
+			if (getter)
+			{
+				call_getter(getter, obj, nullptr);
+				return get_v();
+			}
+			auto p = (char*)obj + offset;
+			if (use_copy)
+			{
+				auto v = get_v();
+				copy(v, p);
+				return v;
+			}
+			return p;
+		}
+
+		inline void set_value(void* obj, int offset, const FunctionInfo* setter, void* src) const
+		{
+			if (setter)
+				call_setter(setter, obj, src);
+			else
+				copy((char*)obj + offset, src);
+		}
 
 		inline static uint get_hash(TypeTag tag, std::string_view name)
 		{
@@ -276,6 +354,20 @@ namespace flame
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
 			static auto ret = get(TagVU, format_name(typeid(typename T::value_type).name()), db);
+			return ret;
+		}
+
+		template<vector_of_pair_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVR, format_name(typeid(typename T::value_type).name()), db);
+			return ret;
+		}
+
+		template<vector_of_tuple_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVT, format_name(typeid(typename T::value_type).name()), db);
 			return ret;
 		}
 
@@ -547,31 +639,6 @@ namespace flame
 			return &attributes[it->second];
 		}
 
-		void* get_value(TypeInfo* type, void* obj, int offset, int getter_idx, bool use_copy = false) const
-		{
-			if (getter_idx != -1)
-			{
-				type->call_getter(&functions[getter_idx], obj, nullptr);
-				return type->get_v();
-			}
-			auto p = (char*)obj + offset;
-			if (use_copy)
-			{
-				auto v = type->get_v();
-				type->copy(v, p);
-				return v;
-			}
-			return p;
-		}
-
-		void set_value(TypeInfo* type, void* obj, int offset, int setter_idx, void* src) const
-		{
-			if (setter_idx != -1)
-				type->call_setter(&functions[setter_idx], obj, src);
-			else
-				type->copy((char*)obj + offset, src);
-		}
-
 		FLAME_FOUNDATION_API void* create_object(void* p = nullptr) const;
 		FLAME_FOUNDATION_API void destroy_object(void* p, bool free_memory = true) const;
 		FLAME_FOUNDATION_API void copy_object(void* dst, const void* src) const;
@@ -594,12 +661,12 @@ namespace flame
 
 	void* Attribute::get_value(void* obj, bool use_copy) const
 	{
-		return ui->get_value(type, obj, var_off(), getter_idx, use_copy);
+		return type->get_value(obj, var_off(), getter_idx != -1 ? &ui->functions[getter_idx] : nullptr, use_copy);
 	}
 
 	void Attribute::set_value(void* obj, void* src) const
 	{
-		ui->set_value(type, obj, var_off(), setter_idx, src);
+		type->set_value(obj, var_off(), setter_idx != -1 ? &ui->functions[setter_idx] : nullptr, src);
 	}
 
 	std::string Attribute::serialize(void* obj) const

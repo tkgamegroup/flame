@@ -61,4 +61,17 @@ layout (set = SET, binding = 2) uniform sampler2D terrain_normal_maps[8];
 layout (set = SET, binding = 3) uniform sampler2D terrain_tangent_maps[8];
 layout (set = SET, binding = 4) uniform sampler2D terrain_splash_maps[8];
 
-layout (set = SET, binding = 5) uniform sampler3D volume_datas[8];
+layout (set = SET, binding = 5, r8ui) uniform uimage3D volume_datas[8];
+
+struct MarchingCubesLookupItem
+{
+	uint    Indices[4];
+	uint8_t Vertices[12];
+	uint8_t TriangleCount;
+	uint8_t VertexCount;
+};
+
+layout(set = SET, binding = 6) buffer readonly MarchingCubesLookup
+{
+	MarchingCubesLookupItem items[256];
+}marching_cubes_loopup;

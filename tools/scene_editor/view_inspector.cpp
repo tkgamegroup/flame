@@ -111,17 +111,17 @@ StagingVector& get_staging_vector(const void* id, TypeInfo* type, void* vec)
 
 std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint, void*)>& cb = {});
 
-bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, int offset, int getter_idx, int setter_idx, void* src, const void* id) 
+bool show_variable(TypeInfo* type, const std::string& name, int offset, const FunctionInfo* getter, const FunctionInfo* setter, void* src, const void* id)
 {
 	auto changed = false;
-	auto direct_io = getter_idx == -1 && setter_idx == -1;
+	auto direct_io = !getter && !setter;
 
 	ImGui::PushID(id);
 	switch (type->tag)
 	{
 	case TagD:
 	{
-		auto data = ui.get_value(type, src, offset, getter_idx, !direct_io);
+		auto data = type->get_value(src, offset, getter, !direct_io);
 		auto ti = (TypeInfo_Data*)type;
 		switch (ti->data_type)
 		{
@@ -206,13 +206,13 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			break;
 		}
 		if (changed && !direct_io)
-			ui.set_value(type, src, offset, setter_idx, nullptr);
+			type->set_value(src, offset, setter, nullptr);
 	}
 		break;
 	case TagVD:
 		if (ImGui::TreeNode(name.c_str()))
 		{
-			assert(getter_idx == -1);
+			assert(!getter);
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
@@ -221,10 +221,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			ImGui::SameLine();
 			if (ImGui::Button("Set"))
 			{
-				if (setter_idx == -1)
+				if (!setter)
 					sv.assign((char*)src + offset, nullptr);
 				else
-					ui.set_value(type, src, offset, setter_idx, &sv.v);
+					type->set_value(src, offset, setter, &sv.v);
 			}
 			int n = sv.count();
 			if (ImGui::InputInt("size", &n, 1, 1))
@@ -235,7 +235,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			for (auto i = 0; i < n; i++)
 			{
 				ImGui::PushID(i);
-				if (show_variable(ui, ti, str(i), i * ti->size, -1, -1, sv.v.data(), id))
+				if (show_variable(ti, str(i), i * ti->size, nullptr, nullptr, sv.v.data(), id))
 					changed = true;
 				ImGui::PopID();
 			}
@@ -245,7 +245,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 	case TagVU:
 		if (ImGui::TreeNode(name.c_str()))
 		{
-			assert(getter_idx == -1);
+			assert(!getter);
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
@@ -254,10 +254,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			ImGui::SameLine();
 			if (ImGui::Button("Set"))
 			{
-				if (setter_idx == -1)
+				if (!setter)
 					sv.assign((char*)src + offset, nullptr);
 				else
-					ui.set_value(type, src, offset, setter_idx, &sv.v);
+					type->set_value(src, offset, setter, &sv.v);
 			}
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
@@ -279,7 +279,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 	case TagVR:
 		if (ImGui::TreeNode(name.c_str()))
 		{
-			assert(getter_idx == -1);
+			assert(!getter);
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
@@ -288,10 +288,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			ImGui::SameLine();
 			if (ImGui::Button("Set"))
 			{
-				if (setter_idx == -1)
+				if (!setter)
 					sv.assign(pv, nullptr);
 				else
-					ui.set_value(type, src, offset, setter_idx, &sv.v);
+					type->set_value(src, offset, setter, &sv.v);
 			}
 			int n = sv.count();
 			if (ImGui::InputInt("size", &n, 1, 1))
@@ -304,8 +304,8 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 				if (i > 0) ImGui::Separator();
 				ImGui::PushID(i);
 				auto p = sv.v.data() + ti->size * i;
-				show_variable(ui, ti->ti1, "first", 0, -1, -1, ti->first(p), id);
-				show_variable(ui, ti->ti2, "second", 0, -1, -1, ti->second(p), id);
+				show_variable(ti->ti1, "first", 0, nullptr, nullptr, ti->first(p), id);
+				show_variable(ti->ti2, "second", 0, nullptr, nullptr, ti->second(p), id);
 				ImGui::PopID();
 			}
 			ImGui::TreePop();
@@ -314,7 +314,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 	case TagVT:
 		if (ImGui::TreeNode(name.c_str()))
 		{
-			assert(getter_idx == -1);
+			assert(!getter);
 			auto pv = (char*)src + offset;
 			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
@@ -323,10 +323,10 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 			ImGui::SameLine();
 			if (ImGui::Button("Set"))
 			{
-				if (setter_idx == -1)
+				if (!setter)
 					sv.assign((char*)src + offset, nullptr);
 				else
-					ui.set_value(type, src, offset, setter_idx, &sv.v);
+					type->set_value(src, offset, setter, &sv.v);
 			}
 			int n = sv.count();
 			if (ImGui::InputInt("size", &n, 1, 1))
@@ -342,7 +342,7 @@ bool show_variable(const UdtInfo& ui, TypeInfo* type, const std::string& name, i
 				auto j = 0;
 				for (auto& t : ti->tis)
 				{
-					show_variable(ui, t.first, "item_" + str(j), 0, -1, -1, p + t.second, id);
+					show_variable(t.first, "item_" + str(j), 0, nullptr, nullptr, p + t.second, id);
 					j++;
 				}
 				ImGui::PopID();
@@ -364,7 +364,7 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& v : ui.variables)
 		{
-			if (show_variable(ui, v.type, v.name, v.offset, -1, -1, src, &v))
+			if (show_variable(v.type, v.name, v.offset, nullptr, nullptr, src, &v))
 				changed_name = v.name;
 			if (cb)
 				cb(v.name_hash, src);
@@ -374,7 +374,10 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& a : ui.attributes)
 		{
-			if (show_variable(ui, a.type, a.name, a.var_off(), a.getter_idx, a.setter_idx, src, &a))
+			if (show_variable(a.type, a.name, a.var_off(), 
+				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr, 
+				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr, 
+				src, &a))
 				changed_name = a.name;
 			if (cb)
 				cb(a.name_hash, src);
@@ -864,23 +867,28 @@ void View_Inspector::on_draw()
 			static auto ti = TypeInfo::get<graphics::PipelineInfo>();
 			static UdtInfo* ui = ti->retrive_ui();
 			static UdtInfo* ser_ui = ui->transform_to_serializable();
+			static std::vector<std::pair<std::string, std::string>> default_defines;
 
 			if (selection_changed || !sel_ref_obj)
 			{
 				sel_ref_obj = ser_ui->create_object();
 				sel_ref_deletor = [](void* obj) {
 					ser_ui->destroy_object(obj);
+					default_defines.clear();
 				};
 
 				std::ifstream file(path);
 				LineReader res(file);
 				res.read_block("");
-				unserialize_text(*ser_ui, res, 0, sel_ref_obj);
+				UnserializeTextSpec spec;
+				spec.out_default_defines = &default_defines;
+				unserialize_text(*ser_ui, res, 0, sel_ref_obj, spec);
 				file.close();
 			}
 
 			if (sel_ref_obj)
 			{
+				show_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, nullptr, nullptr, &default_defines, nullptr);
 				show_udt(*ser_ui, sel_ref_obj);
 				if (ImGui::Button("Test Compile"))
 				{
@@ -889,7 +897,19 @@ void View_Inspector::on_draw()
 						graphics::GraphicsPipeline::release(pl);
 				}
 				if (ImGui::Button("Save"))
-					;
+				{
+					std::ofstream file(path);
+					for (auto& d : default_defines)
+						file << '%' << d.first << '=' << d.second << std::endl;
+					SerializeTextSpec spec;
+					spec.force_print_bar = true;
+					serialize_text(*ser_ui, sel_ref_obj, file, "", spec);
+					file.close();
+				}
+				if (ImGui::Button("Create Sandbox"))
+				{
+
+				}
 			}
 		}
 	}

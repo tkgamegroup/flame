@@ -462,7 +462,8 @@ void View_Project::on_draw()
 						}
 					}
 				}
-				if (ext == L".vert" || ext == L".frag" || ext == L".tesc" || ext == L".tese" || ext == L".geom")
+				if (ext == L".vert" || ext == L".frag" || ext == L".tesc" || ext == L".tese" || ext == L".geom" ||
+					ext == L".comp" || ext == L".task" || ext == L".mesh")
 				{
 					get_shaders();
 					for (auto sd : shaders.first)

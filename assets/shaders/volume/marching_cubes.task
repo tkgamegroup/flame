@@ -1,30 +1,92 @@
-#extension GL_KHR_shader_subgroup_ballot : require
+/* * * * * * * * * * * * * Author's note * * * * * * * * * * * *\
+*   _       _   _       _   _       _   _       _     _ _ _ _   *
+*  |_|     |_| |_|     |_| |_|_   _|_| |_|     |_|  _|_|_|_|_|  *
+*  |_|_ _ _|_| |_|     |_| |_|_|_|_|_| |_|     |_| |_|_ _ _     *
+*  |_|_|_|_|_| |_|     |_| |_| |_| |_| |_|     |_|   |_|_|_|_   *
+*  |_|     |_| |_|_ _ _|_| |_|     |_| |_|_ _ _|_|  _ _ _ _|_|  *
+*  |_|     |_|   |_|_|_|   |_|     |_|   |_|_|_|   |_|_|_|_|    *
+*                                                               *
+*                     http://www.humus.name                     *
+*                                                                *
+* This file is a part of the work done by Humus. You are free to   *
+* use the code in any way you like, modified, unmodified or copied   *
+* into your own work. However, I expect you to respect these points:  *
+*  - If you use this file and its contents unmodified, or use a major *
+*    part of this file, please credit the author and leave this note. *
+*  - For use in anything commercial, please request my approval.     *
+*  - Share your work and ideas too as much as you can.             *
+*                                                                *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "declares.glsl"
 
-taskPayloadSharedEXT Task OUT;
+taskPayloadSharedEXT Task payload;
 
-layout(local_size_x = 1) in;
+shared uint values[5][5][5]; // 125 intermediate values for the 5x5x5 corners of 4x4x4 cubes
+shared uint fetch_values[3][3][3]; // 3x3x3 samples, fetching 6x6x6 values of which we use 5x5x5
+
+layout(local_size_x = 32) in;
 void main()
 {
-	const uint lane_id = gl_LocalInvocationID.x;
-	const uint wg_id = gl_WorkGroupID.x;
+	uint thread_id = gl_LocalInvocationID.x;
+	uint workgroup_id = gl_WorkGroupID.x;
 
-	// process a 4x4x4 volume
-	uint mi_x = 4 * ((wg_id >> (0*(SHIFT-2))) & (GRID_SIZE/4 - 1));
-	uint mi_y = 4 * ((wg_id >> (1*(SHIFT-2))) & (GRID_SIZE/4 - 1));
-	uint mi_z = 4 * ((wg_id >> (2*(SHIFT-2))));
-	
+	// Convert linear meshlet_id into x, y and z coordinates. We process a 4x4x4 volume of cubes per task shader invocation. For that we need to evaluate 5x5x5 field function values.
+	uint mi_x = 4 * ((workgroup_id >> (0*(SHIFT-2))) & (GRID_SIZE/4 - 1));
+	uint mi_y = 4 * ((workgroup_id >> (1*(SHIFT-2))) & (GRID_SIZE/4 - 1));
+	uint mi_z = 4 * ((workgroup_id >> (2*(SHIFT-2))));
+
+
+	// 125 values are needed, so this loops 4 times, 3 lanes get wasted on last iteration
+	for (uint i = thread_id; i < 5 * 5 * 5; i += 32)
+	{
+		uint t = (205 * i) >> 10; // Fast i / 5, works for values < 1024. (205/1024 = 0.2001953125 ~ 1/5)
+		uint x = i - 5 * t;       // Fast i % 5
+		uint z = (205 * t) >> 10;
+		uint y = t - 5 * z;
+
+		vec3 pos = vec3(mi_x + x, mi_y + y, mi_z + z) * STEP_SIZE;
+		values[z][y][x] = (field(pos) >= 0.0f)? 1 : 0;
+	}
+
 	// Two loops, all lanes used
-	for (uint i = lane_id; i < 64; i += 32)
+	uint count = 0;
+	for (uint i = thread_id; i < 64; i += 32)
 	{
 		uint x = i & 0x3;
 		uint y = (i >> 2) & 0x3;
 		uint z = i >> 4;
 
-		// output all cells for testing
-		OUT.meshlets[lane_id] = ((((mi_z + z) << SHIFT) + mi_y + y) << SHIFT) + mi_x + x;
+		// Collect the sign bits for the cube corners. If all are zeros or all ones we're either fully inside or outside
+		// the surface, so no triangles will be generated. In all other cases, the isosurface cuts through the cube somewhere.
+		uint cube_index;
+		cube_index  = (values[z + 0][y + 0][x + 0] << 0);
+		cube_index |= (values[z + 0][y + 0][x + 1] << 1);
+		cube_index |= (values[z + 0][y + 1][x + 0] << 2);
+		cube_index |= (values[z + 0][y + 1][x + 1] << 3);
+		cube_index |= (values[z + 1][y + 0][x + 0] << 4);
+		cube_index |= (values[z + 1][y + 0][x + 1] << 5);
+		cube_index |= (values[z + 1][y + 1][x + 0] << 6);
+		cube_index |= (values[z + 1][y + 1][x + 1] << 7);
+
+		// See if our cube intersects the isosurface
+		bool accept = (cube_index != 0 && cube_index != 0xFF);
+
+		// Gather which lanes have an intersected cube and get the index where to put ours (if we have a valid one)
+		uvec4 ballot = subgroupBallot(accept);
+
+		if (accept)
+		{
+			uint index = bitCount(ballot.x & ((1 << thread_id) - 1));
+
+			// Output a linear meshlet ID for the mesh shader
+			uint meshlet_id = ((((mi_z + z) << SHIFT) + mi_y + y) << SHIFT) + mi_x + x;
+			payload.meshlets[count + index] = meshlet_id;
+		}
+
+		count += bitCount(ballot.x);
 	}
 
-	EmitMeshTasksEXT(64, 1, 1);
+	if (thread_id == 0)
+		EmitMeshTasksEXT(count, 1, 1);
 }

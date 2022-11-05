@@ -37,7 +37,7 @@ namespace flame
 		if (!data_map_name.empty())
 			AssetManagemant::get_asset(Path::get(data_map_name));
 
-		auto _data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
+		auto _data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name, false, false, 0.f, graphics::ImageUsageAttachment | graphics::ImageUsageStorage) : nullptr;
 		if (data_map != _data_map)
 		{
 			if (data_map)

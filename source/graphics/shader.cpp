@@ -193,6 +193,23 @@ namespace flame
 						assert(0);
 					}
 					break;
+				case spirv_cross::SPIRType::UByte:
+					switch (src.columns)
+					{
+					case 1:
+						switch (src.vecsize)
+						{
+						case 1: ret = TypeInfo::get<uchar>();	break;
+						case 2: ret = TypeInfo::get<uvec2>();	break;
+						case 3: ret = TypeInfo::get<uvec3>();	break;
+						case 4: ret = TypeInfo::get<uvec4>();	break;
+						default: assert(0);
+						}
+						break;
+					default:
+						assert(0);
+					}
+					break;
 				}
 			}
 
@@ -237,8 +254,15 @@ namespace flame
 			std::vector<std::string> additional_lines;
 			temp_content += "#version 460\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
+			temp_content += "#extension GL_EXT_shader_8bit_storage: require\n";
+			temp_content += "#extension GL_EXT_shader_explicit_arithmetic_types: require\n";
+			temp_content += "#extension GL_EXT_shader_explicit_arithmetic_types_int8: require\n";
 			if (stage == ShaderStageTask || stage == ShaderStageMesh)
+			{
 				temp_content += "#extension GL_EXT_mesh_shader : require\n";
+				temp_content += "#extension GL_KHR_shader_subgroup_ballot : require\n";
+				temp_content += "#extension GL_KHR_shader_subgroup_shuffle_relative : require\n";
+			}
 			temp_content += "\n";
 
 			std::vector<std::pair<std::string, std::string>> defines;
@@ -1493,7 +1517,13 @@ namespace flame
 				return Renderpass::get(Path::combine(parent_path, src.value("filename")), defines);
 			};
 			std::sort(pipeline_defines.begin(), pipeline_defines.end());
-			unserialize_text(res, &info, spec, pipeline_defines);
+			std::vector<std::pair<std::string, std::string>> splited_pipeline_defines;
+			for (auto& d : pipeline_defines)
+			{
+				auto sp = SUS::split(d, '=');
+				splited_pipeline_defines.emplace_back(sp[0], sp[1]);
+			}
+			unserialize_text(res, &info, spec, splited_pipeline_defines);
 
 			if (!layout_segment.empty())
 			{

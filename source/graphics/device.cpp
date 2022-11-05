@@ -235,6 +235,7 @@ namespace flame
 				required_device_extensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+
 				VkDeviceCreateInfo device_info = {};
 				device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 				device_info.pNext = &enabled_features;

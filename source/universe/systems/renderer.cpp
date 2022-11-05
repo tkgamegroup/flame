@@ -83,6 +83,7 @@ namespace flame
 	graphics::SparseArray sdf_instances;
 	graphics::SparseArray volume_instances;
 	graphics::StorageBuffer buf_instance;
+	graphics::StorageBuffer buf_marching_cubes_loopup;
 	graphics::StorageBuffer buf_material;
 	graphics::SparseArray dir_lights;
 	graphics::SparseArray pt_lights;
@@ -369,9 +370,13 @@ namespace flame
 	{
 	}
 
+#include "marching_cubes_lookup.h"
+
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
+		graphics::InstanceCommandBuffer cb;
+
 		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
@@ -412,8 +417,23 @@ namespace flame
 		terrain_instances.init(buf_instance.item_info("terrains"_h).array_size);
 		sdf_instances.init(buf_instance.item_info("sdfs"_h).array_size);
 		volume_instances.init(buf_instance.item_info("volumes"_h).array_size);
+		buf_marching_cubes_loopup.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("MarchingCubesLookup"_h));
+		{
+			auto pi = buf_marching_cubes_loopup.item("items"_h, 0);
+			auto pdata = pi.pdata;
+			assert(sizeof(MarchingCubesLookupItem) == pi.size);
+			for (auto i = 0; i < 256; i++)
+			{
+				memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
+				pdata += sizeof(MarchingCubesLookupItem);
+			}
+			buf_marching_cubes_loopup.dirty_regions.emplace_back(0, sizeof(MarchingCubesLookupItem) * 256);
+			buf_marching_cubes_loopup.upload(cb.get());
+		}
+		sizeof(MarchingCubesLookupItem);
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
 		ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
+		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
 		for (auto i = 0; i < terrain_instances.capacity; i++)
 		{
 			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
@@ -586,6 +606,8 @@ namespace flame
 		set_shadow_distance(100.f);
 		set_csm_levels(2);
 		set_esm_factor(7.f);
+
+		cb.excute();
 		
 		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
@@ -1555,9 +1577,11 @@ namespace flame
 		}
 		for (auto& v : draw_data.volumes)
 		{
+			prm_gbuf.pc.item("i"_h).set(ivec4(v.ins_id, v.mat_id, 0, 0));
+			prm_gbuf.push_constant(cb);
+
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-			cb->draw_mesh_tasks(uvec3(1)); // testing
-			//cb->draw(v.cells, v.blocks, 0, (v.ins_id << 24) + (v.mat_id << 16));
+			cb->draw_mesh_tasks(uvec3(1));
 		}
 
 		cb->end_renderpass();

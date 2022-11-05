@@ -71,11 +71,13 @@ namespace flame
 	struct SerializeTextSpec : ExcludeSpec
 	{
 		std::map<TypeInfo*, std::function<TextSerializeNode(void* src)>> delegates;
+		bool force_print_bar = false;
 	};
 
 	struct UnserializeTextSpec
 	{
 		std::map<TypeInfo*, std::function<void* (const TextSerializeNode& src)>> delegates;
+		std::vector<std::pair<std::string, std::string>>* out_default_defines = nullptr;
 	};
 
 	struct SerializeBinarySpec : ExcludeSpec
@@ -634,7 +636,11 @@ namespace flame
 					auto ti = ((TypeInfo_VectorOfEnum*)vi.type)->ti;
 					print_name();
 					for (auto i = 0; i < vec.size(); i++)
+					{
+						if (i > 0 && spec.force_print_bar)
+							dst << indent << " ---" << std::endl;
 						dst << indent2 << ti->serialize(&vec[i]) << std::endl;
+					}
 				}
 			}
 				break;
@@ -648,6 +654,8 @@ namespace flame
 					p = (char*)vec.data();
 					for (auto i = 0; i < len; i++)
 					{
+						if (i > 0 && spec.force_print_bar)
+							dst << indent << " ---" << std::endl;
 						dst << indent2 << ti->serialize(p) << std::endl;
 						p += ti->size;
 					}
@@ -723,8 +731,52 @@ namespace flame
 		}
 	}
 
-	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeTextSpec& spec = {})
+	inline void unserialize_text(const UdtInfo& ui, LineReader& src, uint indent, void* dst, const UnserializeTextSpec& spec = {}, const std::vector<std::pair<std::string, std::string>>& _defines = {})
 	{
+		auto defines = _defines;
+		while (true)
+		{
+			if (!src.next_line())
+				return;
+			auto ilen = SUS::indent_length(src.line());
+			if (ilen == 0 && src.line()[0] == '%')
+			{
+				auto sp = SUS::split(src.line().substr(1), '=');
+				if (sp.size() == 2)
+				{
+					auto found = false;
+					for (auto& d : defines)
+					{
+						if (d.first == sp[0])
+						{
+							found = true;
+							break;
+						}
+					}
+					if (!found)
+						defines.emplace_back(sp[0], sp[1]);
+
+					if (spec.out_default_defines)
+						spec.out_default_defines->emplace_back(sp[0], sp[1]);
+				}
+			}
+			else
+			{
+				src.anchor--;
+				break;
+			}
+		}
+		if (!defines.empty() && !spec.out_default_defines)
+		{
+			for (auto& d : defines)
+				d.first = "{" + d.first + "}";
+			for (auto& d : defines)
+			{
+				for (auto& l : src.lines)
+					SUS::replace_all(l, d.first, d.second);
+			}
+		}
+
 		auto indent2 = indent + 2;
 
 		auto read_var = [&](const VariableInfo& vi) {
@@ -927,61 +979,13 @@ namespace flame
 	}
 
 	template<typename T>
-	inline void unserialize_text(LineReader& src, T* dst, const UnserializeTextSpec& spec = {}, const std::vector<std::string>& _defines = {})
+	inline void unserialize_text(LineReader& src, T* dst, const UnserializeTextSpec& spec = {}, const std::vector<std::pair<std::string, std::string>>& _defines = {})
 	{
-		std::vector<std::pair<std::string, std::string>> defines;
-		while (true)
-		{
-			if (!src.next_line())
-				return;
-			auto ilen = SUS::indent_length(src.line());
-			if (ilen == 0 && src.line()[0] == '%')
-			{
-				auto sp = SUS::split(src.line().substr(1), '=');
-				if (sp.size() == 2)
-					defines.emplace_back(sp[0], sp[1]);
-			}
-			else
-			{
-				src.anchor--;
-				break;
-			}
-		}
-		for (auto& d : _defines)
-		{
-			auto sp = SUS::split(d, '=');
-			if (sp.size() == 2)
-			{
-				auto found = false;
-				for (auto& dd : defines)
-				{
-					if (dd.first == sp[0])
-					{
-						dd.second = sp[1];
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					defines.emplace_back(sp[0], sp[1]);
-			}
-		}
-		if (!defines.empty())
-		{
-			for (auto& d : defines)
-				d.first = "{" + d.first + "}";
-			for (auto& d : defines)
-			{
-				for (auto& l : src.lines)
-					SUS::replace_all(l, d.first, d.second);
-			}
-		}
-
 		auto ti = TypeInfo::get<T>();
 		switch (ti->tag)
 		{
 		case TagU:
-			unserialize_text(*ti->retrive_ui(), src, 0, dst, spec);
+			unserialize_text(*ti->retrive_ui(), src, 0, dst, spec, _defines);
 			break;
 		default:
 			if (ti->tag >= TagV_Beg && ti->tag <= TagV_End)
@@ -990,7 +994,7 @@ namespace flame
 				auto& vi = ui.variables.emplace_back();
 				vi.type = ti;
 				vi.offset = 0;
-				unserialize_text(ui, src, 0, dst, spec);
+				unserialize_text(ui, src, 0, dst, spec, _defines);
 			}
 			else
 				assert(0);

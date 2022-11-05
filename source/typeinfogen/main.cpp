@@ -10,29 +10,10 @@ using namespace flame;
 
 TypeInfoDataBase db;
 
-int get_first_template_argument(std::string_view name)
-{
-	auto p = 0, lv = 0;
-	while (p < name.size())
-	{
-		auto ch = name[p];
-		if (ch == ',' && lv == 0)
-			return p;
-		else if (p == (int)name.size() - 1 && lv == 0)
-			return p + 1;
-		else if (ch == '<')
-			lv++;
-		else if (ch == '>')
-			lv--;
-		p++;
-	}
-	return -1;
-}
-
 TypeTag parse_vector(std::string& name)
 {
 	SUS::strip_head_if(name, "std::vector<");
-	name = name.substr(0, get_first_template_argument(name));
+	name = name.substr(0, first_template_argument_pos(name));
 
 	auto is_pointer = false;
 	auto is_pair = false;
@@ -40,33 +21,24 @@ TypeTag parse_vector(std::string& name)
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
-		name = name.substr(0, get_first_template_argument(name));
+		name = name.substr(0, first_template_argument_pos(name));
 	}
 	else if (SUS::strip_head_if(name, "std::pair<"))
 	{
 		is_pair = true;
 		name.pop_back();
-		auto t1 = name.substr(0, get_first_template_argument(name));
-		auto t2 = name.substr(t1.size() + 1);
-		name = TypeInfo::format_name(t1) + ";" + TypeInfo::format_name(t2);
+		auto args = parse_template_arguments(name);
+		name = TypeInfo::format_name(args[0]) + ";" + TypeInfo::format_name(args[1]);
 	}
 	else if (SUS::strip_head_if(name, "std::tuple<"))
 	{
 		is_tuple = true;
 		name.pop_back();
-		std::vector<std::string> ts;
-		auto off = 0;
-		while (off < name.size())
-		{
-			auto n = get_first_template_argument({ name.begin() + off, name.end() });
-			if (n == -1)
-				break;
-			ts.push_back(name.substr(off, n));
-			off += n + 1;
-		}
-		name = "";
-		for (auto& t : ts)
-			name += TypeInfo::format_name(t) + ';';
+		auto args = parse_template_arguments(name);
+		std::string temp;
+		for (auto& a : args)
+			temp += TypeInfo::format_name(a) + ';';
+		name = temp;
 		name.pop_back();
 	}
 

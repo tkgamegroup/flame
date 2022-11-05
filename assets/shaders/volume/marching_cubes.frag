@@ -1,5 +1,6 @@
 #ifndef OCCLUDER_PASS
 layout(location = 0) in vec3 i_normal;
+layout(location = 1) in vec3 i_coordw;
 #endif
 
 #ifndef OCCLUDER_PASS
