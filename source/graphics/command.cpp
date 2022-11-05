@@ -291,11 +291,7 @@ namespace flame
 
 		void CommandBufferPrivate::draw_mesh_tasks(const uvec3& v)
 		{
-			typedef void(VKAPI_PTR* PFN_vkCmdDrawMeshTasksEXT)(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-			static PFN_vkCmdDrawMeshTasksEXT proc = nullptr;
-			if (!proc)
-				proc = (PFN_vkCmdDrawMeshTasksEXT)vkGetDeviceProcAddr(device->vk_device, "vkCmdDrawMeshTasksEXT");
-			proc(vk_command_buffer, v.x, v.y, v.z);
+			vkCmdDrawMeshTasks(vk_command_buffer, v.x, v.y, v.z);
 		}
 
 		void CommandBufferPrivate::buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage)

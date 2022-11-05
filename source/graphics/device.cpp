@@ -246,6 +246,8 @@ namespace flame
 				chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 
+				vkCmdDrawMeshTasks = (PFN_vkCmdDrawMeshTasksEXT)vkGetDeviceProcAddr(ret->vk_device, "vkCmdDrawMeshTasksEXT");
+
 				device = ret;
 				descriptorset_pool.reset(DescriptorPool::create());
 				graphics_command_pool.reset(graphics_queue_index != -1 ? CommandPool::create(graphics_queue_index) : nullptr);

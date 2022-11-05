@@ -113,6 +113,6 @@ void main()
 	if (thread_id * 4 < index_count)
 	{
 		uint packed_indices = marching_cubes_loopup.items[index].Indices[thread_id];
-		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 4, (packed_indices >> 2) & 0xff, packed_indices & 0xff);
+		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 24, (packed_indices >> 16) & 0xff, packed_indices & 0xff);
 	}
 }

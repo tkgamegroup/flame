@@ -6,6 +6,10 @@
 #include <vulkan/vulkan.h>
 #undef INFINITE
 
+typedef void(VKAPI_PTR* PFN_vkCmdDrawMeshTasksEXT)(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+
+extern PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks;
+
 namespace flame
 {
 	namespace graphics

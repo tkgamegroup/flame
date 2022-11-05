@@ -6,6 +6,8 @@
 #include "application.h"
 #include "gui.h"
 
+PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks = nullptr;
+
 namespace flame
 {
 	namespace graphics
