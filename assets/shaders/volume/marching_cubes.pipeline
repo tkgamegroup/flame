@@ -3,8 +3,6 @@
 layout
   {pll}
 shaders
-  marching_cubes.task
- ---
   marching_cubes.mesh
  ---
   marching_cubes.frag

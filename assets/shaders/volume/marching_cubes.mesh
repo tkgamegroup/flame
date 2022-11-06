@@ -20,7 +20,7 @@
 
 #include "declares.glsl"
 
-taskPayloadSharedEXT Task payload;
+//taskPayloadSharedEXT Task payload;
 
 layout (location = 0) out vec3 o_normal[];
 layout (location = 1) out vec3 o_coordw[];
@@ -33,12 +33,13 @@ struct Corner
 };
 shared Corner corners[8];
 
-layout(local_size_x = 32) in;
-layout(triangles, max_vertices = 12, max_primitives = 5) out;
+layout(local_size_x = 1) in;
+layout(triangles, max_vertices = 15, max_primitives = 5) out;
 void main()
 {
 	const uint thread_id  = gl_LocalInvocationID.x;
-	const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
+	//const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
+	const uint meshlet_id = 0;
 
 	// Convert linear meshlet_id into x, y and z coordinates
 	uint mi_x = (meshlet_id >> (0*SHIFT)) & (GRID_SIZE - 1);
@@ -49,6 +50,9 @@ void main()
 	vec3 corner_pos0 = vec3(mi_x, mi_y, mi_z) * STEP_SIZE;
 	vec3 corner_pos1 = corner_pos0 + STEP_SIZE;
 
+
+
+	/*
 	// First 8 lanes evaluate the field for each corner, the other 24 evaluate at offsetted positions in x, y and z so we can compute a normal at each corner from the field gradient
 	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
 
@@ -79,6 +83,7 @@ void main()
 	// Look up the Marching Cubes index from the signs of corner nodes. Only the lowest 8 lanes are relevant here, hence the 0xFF mask.
 	uvec4 ballot = subgroupBallot(value >= 0.0f);
 	uint index = (ballot.x & 0xFF);
+	index = 2;
 
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
 	const uint vertex_count = uint(marching_cubes_loopup.items[index].VertexCount);
@@ -98,11 +103,20 @@ void main()
 		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
 
 		// Interpolate position and normal
-		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
+		//float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
+		float mix_f = 0.5;
 		vec3 pos    = mix(pos0, pos1, mix_f);
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 
 		// Output final vertex
+		/*
+		if (thread_id == 0)
+			pos = corner_pos1;
+		if (thread_id == 1) 
+			pos = vec3(2, 0, 0);
+		if (thread_id == 2)
+			pos = vec3(0, 0, 2);
+		*/
 		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;
@@ -113,6 +127,7 @@ void main()
 	if (thread_id * 4 < index_count)
 	{
 		uint packed_indices = marching_cubes_loopup.items[index].Indices[thread_id];
-		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 24, (packed_indices >> 16) & 0xff, packed_indices & 0xff);
+		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 16, (packed_indices >> 8) & 0xff, packed_indices & 0xff);
 	}
+	*/
 }

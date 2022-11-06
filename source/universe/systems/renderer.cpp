@@ -419,18 +419,17 @@ namespace flame
 		volume_instances.init(buf_instance.item_info("volumes"_h).array_size);
 		buf_marching_cubes_loopup.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("MarchingCubesLookup"_h));
 		{
-			auto pi = buf_marching_cubes_loopup.item("items"_h, 0);
-			auto pdata = pi.pdata;
-			assert(sizeof(MarchingCubesLookupItem) == pi.size);
-			for (auto i = 0; i < 256; i++)
-			{
-				memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
-				pdata += sizeof(MarchingCubesLookupItem);
-			}
-			buf_marching_cubes_loopup.dirty_regions.emplace_back(0, sizeof(MarchingCubesLookupItem) * 256);
-			buf_marching_cubes_loopup.upload(cb.get());
+			//auto pi = buf_marching_cubes_loopup.item("items"_h, 0);
+			//auto pdata = pi.pdata;
+			//assert(sizeof(MarchingCubesLookupItem) == pi.size);
+			//for (auto i = 0; i < 256; i++)
+			//{
+			//	memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
+			//	pdata += sizeof(MarchingCubesLookupItem);
+			//}
+			//buf_marching_cubes_loopup.dirty_regions.emplace_back(0, sizeof(MarchingCubesLookupItem) * 256);
+			//buf_marching_cubes_loopup.upload(cb.get());
 		}
-		sizeof(MarchingCubesLookupItem);
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
 		ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
 		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());

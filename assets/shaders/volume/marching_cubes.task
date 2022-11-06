@@ -31,6 +31,12 @@ void main()
 	uint thread_id = gl_LocalInvocationID.x;
 	uint workgroup_id = gl_WorkGroupID.x;
 
+	if (thread_id == 0)
+	{
+		EmitMeshTasksEXT(64, 1, 1);
+		return;
+	}
+
 	// Convert linear meshlet_id into x, y and z coordinates. We process a 4x4x4 volume of cubes per task shader invocation. For that we need to evaluate 5x5x5 field function values.
 	uint mi_x = 4 * ((workgroup_id >> (0*(SHIFT-2))) & (GRID_SIZE/4 - 1));
 	uint mi_y = 4 * ((workgroup_id >> (1*(SHIFT-2))) & (GRID_SIZE/4 - 1));
