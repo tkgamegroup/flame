@@ -357,6 +357,9 @@ void App::new_project(const std::filesystem::path& path)
 	auto assets_path = path / L"assets";
 	std::filesystem::create_directories(assets_path);
 
+	auto temp_path = path / L"temp";
+	std::filesystem::create_directories(temp_path);
+
 	pugi::xml_document main_prefab;
 	{
 		auto n_prefab = main_prefab.append_child("prefab");
