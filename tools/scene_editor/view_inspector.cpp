@@ -947,6 +947,9 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 )^^^";
 						cmake_lists << std::format(cmake_content, path.filename().stem().string());
 						cmake_lists.close();
+
+						auto shaders = ser_ui->var_addr<std::vector<std::string>>(sel_ref_obj, "shaders"_h);
+
 					}
 				}
 			}

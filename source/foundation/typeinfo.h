@@ -597,6 +597,12 @@ namespace flame
 			return &variables[it->second];
 		}
 
+		template <class T>
+		T& var_addr(void* obj, uint name_hash) const
+		{
+			return *(T*)((char*)obj + find_variable(name_hash)->offset);
+		}
+
 		inline int find_function_i(std::string_view name) const
 		{
 			for (auto i = 0; i < functions.size(); i++)

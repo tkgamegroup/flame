@@ -427,7 +427,7 @@ namespace flame
 				memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
 				pdata += sizeof(MarchingCubesLookupItem);
 			}
-			buf_marching_cubes_loopup.dirty_regions.emplace_back(0, sizeof(MarchingCubesLookupItem) * 256);
+			buf_marching_cubes_loopup.dirty_regions.emplace_back(0, (uint)sizeof(MarchingCubesLookupItem) * 256);
 			buf_marching_cubes_loopup.upload(cb.get());
 		}
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
