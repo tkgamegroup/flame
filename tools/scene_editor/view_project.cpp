@@ -230,14 +230,14 @@ void View_Project::init()
 							for (auto z = 0; z < extent.z; z++)
 							{
 								auto zoff = z * extent.x * extent.y;
-								auto fz = ((float)z / extent.z) * 2.f - 1.f;
+								auto fz = ((float)(z + 1) / extent.z) * 2.f - 1.f;
 								for (auto y = 0; y < extent.y; y++)
 								{
 									auto yoff = y * extent.x;
-									auto fy = ((float)y / extent.y) * 2.f - 1.f;
+									auto fy = ((float)(y + 1) / extent.y) * 2.f - 1.f;
 									for (auto x = 0; x < extent.x; x++)
 									{
-										auto fx = ((float)x / extent.x) * 2.f - 1.f;
+										auto fx = ((float)(x + 1) / extent.x) * 2.f - 1.f;
 										dst[x + yoff + zoff] = sqrt(fx * fx + fy * fy + fz * fz) < 1.f ? 255 : 0;
 									}
 								}

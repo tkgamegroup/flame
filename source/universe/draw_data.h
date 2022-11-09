@@ -165,6 +165,7 @@ namespace flame
 			meshes.clear();
 			terrains.clear();
 			sdfs.clear();
+			volumes.clear();
 			particles.clear();
 			primitives.clear();
 

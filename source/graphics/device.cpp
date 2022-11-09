@@ -4,6 +4,8 @@
 #include "shader_private.h"
 #include "command_private.h"
 
+#define USE_MESH_SHADER 1
+
 namespace flame
 {
 	namespace graphics
@@ -151,10 +153,12 @@ namespace flame
 				*next_prop = &ret->vk_resolve_props;
 				next_prop = &ret->vk_resolve_props.pNext;
 
+#if USE_MESH_SHADER
 				ret->vk_meshshader_props = {};
 				ret->vk_meshshader_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
 				*next_prop = &ret->vk_meshshader_props;
 				next_prop = &ret->vk_meshshader_props.pNext;
+#endif
 
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
 				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
@@ -210,12 +214,14 @@ namespace flame
 				enabled_features.features = ret->vk_features;
 				auto next_feature = &enabled_features.pNext;
 
+#if USE_MESH_SHADER
 				VkPhysicalDeviceMeshShaderFeaturesEXT feature_mesh_shader = {};
 				feature_mesh_shader.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
 				feature_mesh_shader.taskShader = true;
 				feature_mesh_shader.meshShader = true;
 				*next_feature = &feature_mesh_shader;
 				next_feature = &feature_mesh_shader.pNext;
+#endif
 
 				VkPhysicalDevice8BitStorageFeaturesKHR feature_8bit_storage = {};
 				feature_8bit_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR;
@@ -231,10 +237,12 @@ namespace flame
 
 				std::vector<const char*> required_device_extensions;
 				required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-				required_device_extensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-				required_device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+#if USE_MESH_SHADER
+				required_device_extensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+#endif
 
 				VkDeviceCreateInfo device_info = {};
 				device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -246,7 +254,9 @@ namespace flame
 				chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 
+#if USE_MESH_SHADER
 				vkCmdDrawMeshTasks = (PFN_vkCmdDrawMeshTasksEXT)vkGetDeviceProcAddr(ret->vk_device, "vkCmdDrawMeshTasksEXT");
+#endif
 
 				device = ret;
 				descriptorset_pool.reset(DescriptorPool::create());

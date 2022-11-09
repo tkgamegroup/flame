@@ -1580,7 +1580,7 @@ namespace flame
 			prm_gbuf.push_constant(cb);
 
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-			cb->draw_mesh_tasks(uvec3(32, 1, 1));
+			cb->draw_mesh_tasks(uvec3(v.blocks, 1, 1));
 		}
 
 		cb->end_renderpass();

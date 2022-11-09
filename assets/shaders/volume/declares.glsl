@@ -1,7 +1,7 @@
-// 128x128x128 cubes by default. (1 << 7) == 128
-#define SHIFT 7
+// 32x32x32 cubes by default. (1 << 5) == 32
+#define SHIFT 5
 #define GRID_SIZE (1 << SHIFT)
-#define STEP_SIZE (100.0f / float(GRID_SIZE))
+#define STEP_SIZE (1.0f / float(GRID_SIZE))
 
 struct Task
 {

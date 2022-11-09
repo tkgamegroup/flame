@@ -256,7 +256,7 @@ namespace flame
 			ret->pos = ivec2(screen_size - final_size) / 2;
 			ret->hWnd = CreateWindowExA(win32_ex_style, "flame_wnd", title.data(), win32_style,
 				ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
-			assert(IsWindowUnicode(ret->hWnd));
+			//assert(IsWindowUnicode(ret->hWnd));
 			{
 				RECT rect;
 				GetClientRect(ret->hWnd, &rect);

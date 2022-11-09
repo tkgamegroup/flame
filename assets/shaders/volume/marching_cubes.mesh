@@ -33,13 +33,13 @@ struct Corner
 };
 shared Corner corners[8];
 
-layout(local_size_x = 5) in;
+layout(local_size_x = 8) in;
 layout(triangles, max_vertices = 15, max_primitives = 5) out;
 void main()
 {
 	const uint thread_id  = gl_LocalInvocationID.x;
 	//const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
-	const uint meshlet_id = 0;
+	const uint meshlet_id = gl_WorkGroupID.x;
 
 	// Convert linear meshlet_id into x, y and z coordinates
 	uint mi_x = (meshlet_id >> (0*SHIFT)) & (GRID_SIZE - 1);
@@ -50,7 +50,13 @@ void main()
 	vec3 corner_pos0 = vec3(mi_x, mi_y, mi_z) * STEP_SIZE;
 	vec3 corner_pos1 = corner_pos0 + STEP_SIZE;
 
-	uint index = 7;
+	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
+	float value = field(pos);
+	
+	uvec4 ballot = subgroupBallot(value >= 0.1f);
+	uint index = (ballot.x & 0xFF);
+	//uint index = texture(volume_datas[0], vec3(0.5)).b >= 0.1f ? 2 : 0;
+	//uint index = meshlet_id & 0xFF;
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
 	const uint vertex_count = triangle_count * 3;
 	if (thread_id == 0)
@@ -110,7 +116,6 @@ void main()
 	// Look up the Marching Cubes index from the signs of corner nodes. Only the lowest 8 lanes are relevant here, hence the 0xFF mask.
 	uvec4 ballot = subgroupBallot(value >= 0.0f);
 	uint index = (ballot.x & 0xFF);
-	index = 2;
 
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
 	const uint vertex_count = uint(marching_cubes_loopup.items[index].VertexCount);
