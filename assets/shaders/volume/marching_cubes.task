@@ -52,7 +52,7 @@ void main()
 		uint y = t - 5 * z;
 
 		vec3 pos = vec3(mi_x + x, mi_y + y, mi_z + z) * STEP_SIZE;
-		values[z][y][x] = (field(pos) >= 0.0f)? 1 : 0;
+		values[z][y][x] = (field(pos) >= 0.5f)? 1 : 0;
 	}
 
 	// Two loops, all lanes used

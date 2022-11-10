@@ -10,5 +10,3 @@ renderpass
   {rp}
 primitive_topology
   TriangleList
-cull_mode
-  None

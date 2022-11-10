@@ -33,7 +33,7 @@ struct Corner
 };
 shared Corner corners[8];
 
-layout(local_size_x = 8) in;
+layout(local_size_x = 32) in;
 layout(triangles, max_vertices = 15, max_primitives = 5) out;
 void main()
 {
@@ -49,54 +49,18 @@ void main()
 	// Corner positions of the cube
 	vec3 corner_pos0 = vec3(mi_x, mi_y, mi_z) * STEP_SIZE;
 	vec3 corner_pos1 = corner_pos0 + STEP_SIZE;
-
-	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
-	float value = field(pos);
 	
-	uvec4 ballot = subgroupBallot(value >= 0.1f);
-	uint index = (ballot.x & 0xFF);
-	//uint index = texture(volume_datas[0], vec3(0.5)).b >= 0.1f ? 2 : 0;
-	//uint index = meshlet_id & 0xFF;
-	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
-	const uint vertex_count = triangle_count * 3;
-	if (thread_id == 0)
-		SetMeshOutputsEXT(vertex_count, triangle_count);
-	if (thread_id < triangle_count)
-	{
-		vec3 poses[3];
-		for (int i = 0; i < 3; i++)
-		{
-			uint edge = uint(marching_cubes_loopup.items[index].Vertices[thread_id * 3 + i]);
-			uint i0 = edge & 0x7;
-			uint i1 = edge >> 3;
-			vec3 pos0 = vec3((i0 & 1) != 0? corner_pos1.x : corner_pos0.x, (i0 & 2) != 0? corner_pos1.y : corner_pos0.y, (i0 & 4) != 0? corner_pos1.z : corner_pos0.z);
-			vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
-			vec3 pos    = mix(pos0, pos1, 0.5);
-
-			poses[i] = pos;
-		}
-		vec3 normal = normalize(cross(poses[1] - poses[0], poses[2] - poses[0]));
-		for (int i = 0; i < 3; i++)
-		{
-			gl_MeshVerticesEXT[thread_id * 3 + i].gl_Position = camera.proj_view * vec4(poses[i], 1.0);
-			o_normal[thread_id * 3 + i] = normal;
-			o_coordw[thread_id * 3 + i] = poses[i];
-		}
-		gl_PrimitiveTriangleIndicesEXT[thread_id] = uvec3(thread_id * 3 + 0, thread_id * 3 + 1, thread_id * 3 + 2);
-	}
-
-	/*
 	// First 8 lanes evaluate the field for each corner, the other 24 evaluate at offsetted positions in x, y and z so we can compute a normal at each corner from the field gradient
 	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
-
-	const float epsilon = (1.0f / 16.0f) * STEP_SIZE;
+	
+	const float epsilon = (1.0f / 2.0f) * STEP_SIZE;
 	uint off = thread_id / 8;
 	pos.x += (off == 1)? epsilon : 0.0f;
 	pos.y += (off == 2)? epsilon : 0.0f;
 	pos.z += (off == 3)? epsilon : 0.0f;
 
 	// Evaluate the field function for all 32 lanes
-	float value = field(pos);
+	float value = field(pos + STEP_SIZE * 0.25);
 
 	// Grab data from other lanes so we can compute the normal by computing the difference in value in x, y and z directions.
 	vec3 normal;
@@ -109,20 +73,16 @@ void main()
 	{
 		Corner corner;
 		corner.normal = normalize(value - normal);
-		corner.value = value;
+		corner.value = value * 2.0f - 1.0f;
 		corners[thread_id] = corner;
 	}
-
-	// Look up the Marching Cubes index from the signs of corner nodes. Only the lowest 8 lanes are relevant here, hence the 0xFF mask.
-	uvec4 ballot = subgroupBallot(value >= 0.0f);
+	
+	uvec4 ballot = subgroupBallot(value >= 0.5f);
 	uint index = (ballot.x & 0xFF);
-
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
-	const uint vertex_count = uint(marching_cubes_loopup.items[index].VertexCount);
+	const uint vertex_count = triangle_count * 3;
 	if (thread_id == 0)
 		SetMeshOutputsEXT(vertex_count, triangle_count);
-
-	// Output up to 12 vertices, one lane per vertex
 	if (thread_id < vertex_count)
 	{
 		// Look up the corner indices for this edge
@@ -135,18 +95,39 @@ void main()
 		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
 
 		// Interpolate position and normal
-		//float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
-		float mix_f = 0.5;
+		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
+
+		vec3 pos    = mix(pos0, pos1, mix_f);
+		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
+		
+		// Output final vertex
+		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
+		o_normal[thread_id] = normal;
+		o_coordw[thread_id] = pos;
+	}
+
+	if (thread_id < triangle_count)
+	{
+		gl_PrimitiveTriangleIndicesEXT[thread_id] = uvec3(thread_id * 3 + 0, thread_id * 3 + 1, thread_id * 3 + 2);
+	}
+
+	/*
+	// Output up to 12 vertices, one lane per vertex
+	if (thread_id < vertex_count)
+	{
+		// Look up the corner indices for this edge
+		uint edge = uint(marching_cubes_loopup.items[index].Vertices[thread_id]);
+		uint i0 = edge & 0x7;
+		uint i1 = edge >> 3;
+
+		vec3 pos0 = vec3((i0 & 1) != 0? corner_pos1.x : corner_pos0.x, (i0 & 2) != 0? corner_pos1.y : corner_pos0.y, (i0 & 4) != 0? corner_pos1.z : corner_pos0.z);
+		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
+
+		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
+		//float mix_f = 0.5;
 		vec3 pos    = mix(pos0, pos1, mix_f);
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 
-		// Output final vertex
-		if (thread_id == 0)
-			pos = corner_pos1;
-		if (thread_id == 1) 
-			pos = vec3(2, 0, 0);
-		if (thread_id == 2)
-			pos = vec3(0, 0, 2);
 		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;
