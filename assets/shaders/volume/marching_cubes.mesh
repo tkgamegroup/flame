@@ -20,7 +20,7 @@
 
 #include "declares.glsl"
 
-//taskPayloadSharedEXT Task payload;
+taskPayloadSharedEXT Task payload;
 
 layout (location = 0) out vec3 o_normal[];
 layout (location = 1) out vec3 o_coordw[];
@@ -38,8 +38,7 @@ layout(triangles, max_vertices = 15, max_primitives = 5) out;
 void main()
 {
 	const uint thread_id  = gl_LocalInvocationID.x;
-	//const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
-	const uint meshlet_id = gl_WorkGroupID.x;
+	const uint meshlet_id = payload.meshlets[gl_WorkGroupID.x];
 
 	// Convert linear meshlet_id into x, y and z coordinates
 	uint mi_x = (meshlet_id >> (0*SHIFT)) & (GRID_SIZE - 1);
@@ -60,7 +59,7 @@ void main()
 	pos.z += (off == 3)? epsilon : 0.0f;
 
 	// Evaluate the field function for all 32 lanes
-	float value = field(pos + STEP_SIZE * 0.25);
+	float value = field(pos);
 
 	// Grab data from other lanes so we can compute the normal by computing the difference in value in x, y and z directions.
 	vec3 normal;
@@ -73,11 +72,11 @@ void main()
 	{
 		Corner corner;
 		corner.normal = normalize(value - normal);
-		corner.value = value * 2.0f - 1.0f;
+		corner.value = value;
 		corners[thread_id] = corner;
 	}
 	
-	uvec4 ballot = subgroupBallot(value >= 0.5f);
+	uvec4 ballot = subgroupBallot(value >= 0.0f);
 	uint index = (ballot.x & 0xFF);
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
 	const uint vertex_count = triangle_count * 3;
@@ -124,7 +123,6 @@ void main()
 		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
 
 		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
-		//float mix_f = 0.5;
 		vec3 pos    = mix(pos0, pos1, mix_f);
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 

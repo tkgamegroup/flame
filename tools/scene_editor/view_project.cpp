@@ -238,7 +238,7 @@ void View_Project::init()
 									for (auto x = 0; x < extent.x; x++)
 									{
 										auto fx = (((float)x + 0.5f) / extent.x) * 2.f - 1.f;
-										dst[x + yoff + zoff] = sqrt(fx * fx + fy * fy + fz * fz) < 0.9f ? 255 : 0;
+										dst[x + yoff + zoff] = min(1.f, sqrt(fx * fx + fy * fy + fz * fz)) * 255.f;
 									}
 								}
 							}

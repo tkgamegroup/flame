@@ -810,11 +810,11 @@ namespace flame
 
 		struct SamplerGet : Sampler::Get
 		{
-			SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) override
+			SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color) override
 			{
 				for (auto& s : samplers)
 				{
-					if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
+					if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode && s->border_color == border_color)
 						return s.get();
 				}
 
@@ -823,6 +823,7 @@ namespace flame
 				ret->min_filter = min_filter;
 				ret->linear_mipmap = linear_mipmap;
 				ret->address_mode = address_mode;
+				ret->border_color = border_color;
 
 				VkSamplerCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -833,7 +834,7 @@ namespace flame
 				info.maxAnisotropy = 1.f;
 				info.maxLod = VK_LOD_CLAMP_NONE;
 				info.compareOp = VK_COMPARE_OP_ALWAYS;
-				info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+				info.borderColor = to_backend(border_color);
 
 				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
 				register_object(ret->vk_sampler, "Sampler", ret);

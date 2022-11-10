@@ -1375,7 +1375,7 @@ namespace flame
 		pi.item("extent"_h).set(extent);
 		pi.item("blocks"_h).set(blocks);
 
-		ds_instance->set_image("volume_datas"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge));
+		ds_instance->set_image("volume_datas"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, graphics::BorderColorBlack));
 		ds_instance->update();
 	}
 
@@ -1580,7 +1580,8 @@ namespace flame
 			prm_gbuf.push_constant(cb);
 
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-			cb->draw_mesh_tasks(uvec3(v.blocks, 1, 1));
+			auto blocks_div4 = v.blocks / 4;
+			cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
 		}
 
 		cb->end_renderpass();

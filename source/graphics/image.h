@@ -146,12 +146,13 @@ namespace flame
 			Filter min_filter;
 			bool linear_mipmap;
 			AddressMode address_mode;
+			BorderColor border_color;
 
 			virtual ~Sampler() {}
 
 			struct Get
 			{
-				virtual SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) = 0;
+				virtual SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color = BorderColorWhite) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};

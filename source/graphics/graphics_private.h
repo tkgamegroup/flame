@@ -350,6 +350,17 @@ namespace flame
 			}
 		}
 
+		inline VkFilter to_backend(Filter f)
+		{
+			switch (f)
+			{
+			case FilterNearest:
+				return VK_FILTER_NEAREST;
+			case FilterLinear:
+				return VK_FILTER_LINEAR;
+			}
+		}
+
 		inline VkSamplerAddressMode to_backend(AddressMode m)
 		{
 			switch (m)
@@ -363,14 +374,18 @@ namespace flame
 			}
 		}
 
-		inline VkFilter to_backend(Filter f)
+		inline VkBorderColor to_backend(BorderColor c)
 		{
-			switch (f)
+			switch (c)
 			{
-				case FilterNearest:
-					return VK_FILTER_NEAREST;
-				case FilterLinear:
-					return VK_FILTER_LINEAR;
+			case BorderColorBlack:
+				return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+			case BorderColorWhite:
+				return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+			case BorderColorTransparentBlack:
+				return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+			case BorderColorTransparentWhite:
+				return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 			}
 		}
 

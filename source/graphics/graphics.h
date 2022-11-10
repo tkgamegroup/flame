@@ -206,6 +206,12 @@ namespace flame
 			Swizzle a = SwizzleIdentity;
 		};
 
+		enum Filter
+		{
+			FilterNearest,
+			FilterLinear
+		};
+
 		enum AddressMode
 		{
 			AddressClampToEdge,
@@ -213,10 +219,12 @@ namespace flame
 			AddressRepeat
 		};
 
-		enum Filter
+		enum BorderColor
 		{
-			FilterNearest,
-			FilterLinear
+			BorderColorBlack,
+			BorderColorWhite,
+			BorderColorTransparentBlack,
+			BorderColorTransparentWhite
 		};
 
 		enum AccessFlags

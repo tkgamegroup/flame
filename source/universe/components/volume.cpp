@@ -77,12 +77,12 @@ namespace flame
 				if (marching_cubes)
 				{
 					if (draw_data.categories & CateMarchingCubes)
-						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks.x, 0);
 				}
 				else
 				{
 					if (draw_data.categories & CateVolume)
-						draw_data.volumes.emplace_back(instance_id, blocks.x * blocks.y * blocks.z, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks.x, 0);
 				}
 				break;
 			}

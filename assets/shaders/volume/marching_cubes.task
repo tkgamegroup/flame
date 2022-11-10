@@ -31,17 +31,10 @@ void main()
 	uint thread_id = gl_LocalInvocationID.x;
 	uint workgroup_id = gl_WorkGroupID.x;
 
-	if (thread_id == 0)
-	{
-		EmitMeshTasksEXT(64, 1, 1);
-		return;
-	}
-
 	// Convert linear meshlet_id into x, y and z coordinates. We process a 4x4x4 volume of cubes per task shader invocation. For that we need to evaluate 5x5x5 field function values.
 	uint mi_x = 4 * ((workgroup_id >> (0*(SHIFT-2))) & (GRID_SIZE/4 - 1));
 	uint mi_y = 4 * ((workgroup_id >> (1*(SHIFT-2))) & (GRID_SIZE/4 - 1));
 	uint mi_z = 4 * ((workgroup_id >> (2*(SHIFT-2))));
-
 
 	// 125 values are needed, so this loops 4 times, 3 lanes get wasted on last iteration
 	for (uint i = thread_id; i < 5 * 5 * 5; i += 32)
@@ -52,7 +45,7 @@ void main()
 		uint y = t - 5 * z;
 
 		vec3 pos = vec3(mi_x + x, mi_y + y, mi_z + z) * STEP_SIZE;
-		values[z][y][x] = (field(pos) >= 0.5f)? 1 : 0;
+		values[z][y][x] = (field(pos) >= 0.0f)? 1 : 0;
 	}
 
 	// Two loops, all lanes used
