@@ -959,14 +959,4 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 	}
 
 	selection_changed = false;
-
-	// floating widgets
-	{
-		auto wnd = ImGui::GetCurrentWindow();
-		auto rect = wnd->TitleBarRect();
-		ImGui::PushClipRect(rect.Min, rect.Max, false);
-		ImGui::SetCursorPos(ImVec2(180.f, 0.f));
-		ImGui::Button("hello");
-		ImGui::PopClipRect();
-	}
 }
