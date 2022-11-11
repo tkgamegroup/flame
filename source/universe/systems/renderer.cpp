@@ -1375,7 +1375,7 @@ namespace flame
 		pi.item("extent"_h).set(extent);
 		pi.item("blocks"_h).set(blocks);
 
-		ds_instance->set_image("volume_datas"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, graphics::BorderColorBlack));
+		ds_instance->set_image("volume_datas"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 		ds_instance->update();
 	}
 
