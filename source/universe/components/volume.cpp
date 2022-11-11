@@ -88,7 +88,9 @@ namespace flame
 			}
 		}, "volume"_h);
 		node->measurers.add([this](AABB* ret) {
-			*ret = AABB(AABB(vec3(0.f), 10.f).get_points(node->transform));
+			if (!data_map)
+				return false;
+			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
 		}, "volume"_h);
 

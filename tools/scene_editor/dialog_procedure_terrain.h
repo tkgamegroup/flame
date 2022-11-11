@@ -5,6 +5,7 @@
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
+#include <flame/graphics/gui.h>
 #include <flame/graphics/debug.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/mesh.h>

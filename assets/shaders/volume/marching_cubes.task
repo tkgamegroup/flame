@@ -25,7 +25,7 @@ taskPayloadSharedEXT Task payload;
 shared uint values[5][5][5]; // 125 intermediate values for the 5x5x5 corners of 4x4x4 cubes
 shared uint fetch_values[3][3][3]; // 3x3x3 samples, fetching 6x6x6 values of which we use 5x5x5
 
-layout(local_size_x = 32) in;
+layout (local_size_x = 32) in;
 void main()
 {
 	uint thread_id = gl_LocalInvocationID.x;

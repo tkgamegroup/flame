@@ -16,17 +16,18 @@
 
 App app;
 
-struct NavMeshTest
-{
-	bool open = false;
-
-	vec3 start = vec3(0.f);
-	vec3 end = vec3(0.f);
-	std::vector<vec3> points;
-}navmesh_test;
-
 void App::init()
 {
+	struct NavMeshTest
+	{
+		bool open = false;
+
+		vec3 start = vec3(0.f);
+		vec3 end = vec3(0.f);
+		std::vector<vec3> points;
+	};
+	static NavMeshTest navmesh_test;
+
 	create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	world->update_components = false;
 	always_render = false;

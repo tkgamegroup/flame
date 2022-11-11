@@ -1,7 +1,10 @@
 #include "app.h"
 #include "selection.h"
 #include "view_inspector.h"
+#ifdef USE_FORTUNE_ALGORITHM
 #include "dialog_procedure_terrain.h"
+#endif
+#include "dialog_procedure_volume.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
@@ -16,6 +19,7 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
+#include <flame/universe/components/volume.h>
 
 View_Inspector view_inspector;
 static auto selection_changed = false;
@@ -605,8 +609,16 @@ void View_Inspector::on_draw()
 				else if (ui.name_hash == "flame::cTerrain"_h)
 				{
 					auto terrain = (cTerrainPtr)c.get();
+#ifdef USE_FORTUNE_ALGORITHM
 					if (ImGui::Button("Procedure Terrain"))
 						ProcedureTerrainDialog::open(terrain);
+#endif
+				}
+				else if (ui.name_hash == "flame::cVolume"_h)
+				{
+					auto volume = (cVolumePtr)c.get();
+					if (ImGui::Button("Procedure Volume"))
+						ProcedureVolumeDialog::open(volume);
 				}
 			}
 			ImGui::PopID();

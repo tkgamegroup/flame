@@ -52,18 +52,27 @@ namespace flame
 		struct ImageCopy
 		{
 			uvec3 src_off = uvec3(0);
-			ImageSub src_sub;
+			ImageSub src_sub = {};
 			uvec3 dst_off = uvec3(0);
-			ImageSub dst_sub;
-			uvec3 ext;
+			ImageSub dst_sub = {};
+			uvec3 ext = uvec3(0);
+
+			ImageCopy()
+			{
+			}
+
+			ImageCopy(const uvec3& ext) :
+				ext(ext)
+			{
+			}
 		};
 
 		struct BufferImageCopy
 		{
 			uint buf_off = 0;
 			uvec3 img_off = uvec3(0);
-			uvec3 img_ext;
-			ImageSub img_sub;
+			uvec3 img_ext = uvec3(0);
+			ImageSub img_sub = {};
 
 			BufferImageCopy()
 			{

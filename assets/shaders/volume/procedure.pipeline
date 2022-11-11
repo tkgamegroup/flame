@@ -1,0 +1,38 @@
+layout
+  @pll
+shaders
+  @comp
+
+@pll
+layout (set = SET, binding = 0) uniform sampler3D noise;
+layout (set = SET, binding = 1, r8) uniform writeonly image3D dst;
+
+layout (push_constant) uniform PushConstant
+{
+	vec3 extent;
+	uvec3 cells;
+	uint octaves;
+	float height;
+	float amplitude_scale;
+	float base_strength;
+	float amplitudes[16];
+}pc;
+@
+
+@comp
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+void main()
+{
+	uvec3 dst_coord = gl_WorkGroupID * 4 + gl_LocalInvocationID;
+	vec3 pos = vec3(dst_coord) / pc.cells * pc.extent;
+	float density = pc.height - pos.y;
+	for (int i = 0; i < pc.octaves; i++)
+	{
+		float amplitude = pc.amplitudes[i] * pc.amplitude_scale;
+		float strength = pc.base_strength;
+		strength *= float(1 << i);
+		density += texture(noise, pos * amplitude).r * strength;
+	}
+	imageStore(dst, ivec3(dst_coord), vec4(density, 0, 0, 0));
+}
+@

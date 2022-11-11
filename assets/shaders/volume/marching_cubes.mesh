@@ -33,8 +33,8 @@ struct Corner
 };
 shared Corner corners[8];
 
-layout(local_size_x = 32) in;
-layout(triangles, max_vertices = 15, max_primitives = 5) out;
+layout (local_size_x = 32) in;
+layout (triangles, max_vertices = 15, max_primitives = 5) out;
 void main()
 {
 	const uint thread_id  = gl_LocalInvocationID.x;
@@ -52,7 +52,7 @@ void main()
 	// First 8 lanes evaluate the field for each corner, the other 24 evaluate at offsetted positions in x, y and z so we can compute a normal at each corner from the field gradient
 	vec3 pos = vec3((thread_id & 1) != 0? corner_pos1.x : corner_pos0.x, (thread_id & 2) != 0? corner_pos1.y : corner_pos0.y, (thread_id & 4) != 0? corner_pos1.z : corner_pos0.z);
 	
-	const float epsilon = (1.0f / 2.0f) * STEP_SIZE;
+	const float epsilon = (1.0f / 16.0f) * STEP_SIZE;
 	uint off = thread_id / 8;
 	pos.x += (off == 1)? epsilon : 0.0f;
 	pos.y += (off == 2)? epsilon : 0.0f;
@@ -96,7 +96,7 @@ void main()
 		// Interpolate position and normal
 		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
 
-		vec3 pos    = mix(pos0, pos1, mix_f);
+		vec3 pos    = vec3(instance.volumes[pc.i[0]].mat * vec4(mix(pos0, pos1, mix_f) * instance.volumes[pc.i[0]].extent, 1.0));
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 		
 		// Output final vertex
