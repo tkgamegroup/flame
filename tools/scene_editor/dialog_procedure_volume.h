@@ -11,11 +11,12 @@ struct ProcedureVolumeDialog : ImGui::Dialog
 
 	struct Parms
 	{
-		int octaves = 12;
-		float height = -32.f;
+		int structure_octaves = 1;
+		int detail_octaves = 0;
+		float height = 5.f;
 		float amplitude_scale = 0.05f;
-		float base_strength = 0.25f;
-		float amplitudes[16] = { 31.78f, 16.09f, 7.99f, 4.03f, 1.96f, 1.01f, 0.53f, 0.24f, 0.13f, 0.07f, 0.035f, 0.018f, 0.f, 0.f, 0.f, 0.f };
+		float structure_amplitudes[16] = { 1.01f, 0.47f, 0.247f, 0.123f, 0.063f, 0.031f, 0.017f, 0.009f };
+		float detail_amplitudes[16] = { 1.98f, 4.03f, 7.97f, 8.07f };
 	}parms;
 
 	static void open(cVolumePtr volume)
@@ -31,13 +32,21 @@ struct ProcedureVolumeDialog : ImGui::Dialog
 		auto open = true;
 		if (ImGui::Begin(title.c_str(), &open))
 		{
-			ImGui::InputInt("Octaves", &parms.octaves);
+			ImGui::InputInt("Structure Octaves", &parms.structure_octaves);
+			ImGui::InputInt("Detail Octaves", &parms.detail_octaves);
 			ImGui::InputFloat("Height", &parms.height);
 			ImGui::InputFloat("Amplitude Scale", &parms.amplitude_scale);
-			ImGui::InputFloat("Base Strength", &parms.base_strength);
-			for (auto i = 0; i < parms.octaves; i++)
+			ImGui::TextUnformatted("Structure:");
+			for (auto i = 0; i < parms.structure_octaves; i++)
 			{
-				ImGui::InputFloat(std::format("Octave {} amplitude", i).c_str(), &parms.amplitudes[i]);
+				auto strength = float(1 << i);
+				ImGui::InputFloat(std::format("Octave {}(stength {}) amplitude", i, strength).c_str(), &parms.structure_amplitudes[i]);
+			}
+			ImGui::TextUnformatted("Detail:");
+			for (auto i = 1; i <= parms.detail_octaves; i++)
+			{
+				auto strength = 1.f / float(1 << i);
+				ImGui::InputFloat(std::format("Octave {}(stength {}) amplitude", i, strength).c_str(), &parms.detail_amplitudes[i]);
 			}
 			if (ImGui::Button("Generate"))
 			{
@@ -97,11 +106,12 @@ struct ProcedureVolumeDialog : ImGui::Dialog
 		auto cells = volume->data_map->extent;
 		prm.pc.item("extent"_h).set(volume->extent);
 		prm.pc.item("cells"_h).set(cells);
-		prm.pc.item("octaves"_h).set(parms.octaves);
+		prm.pc.item("structure_octaves"_h).set(parms.structure_octaves);
+		prm.pc.item("detail_octaves"_h).set(parms.detail_octaves);
 		prm.pc.item("height"_h).set(parms.height);
 		prm.pc.item("amplitude_scale"_h).set(parms.amplitude_scale);
-		prm.pc.item("base_strength"_h).set(parms.base_strength);
-		prm.pc.item("amplitudes"_h).set(parms.amplitudes, sizeof(float) * countof(parms.amplitudes));
+		prm.pc.item("structure_amplitudes"_h).set(parms.structure_amplitudes, sizeof(float) * countof(parms.structure_amplitudes));
+		prm.pc.item("detail_amplitudes"_h).set(parms.detail_amplitudes, sizeof(float) * countof(parms.detail_amplitudes));
 		prm.push_constant(cb.get());
 		cb->dispatch(cells / 4U);
 		cb->image_barrier(volume->data_map, {}, graphics::ImageLayoutShaderReadOnly);

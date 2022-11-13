@@ -170,7 +170,7 @@ void View_Scene::on_draw()
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
 						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
-							draw_data.terrains.emplace_back(terrain->instance_id, product(terrain->blocks), 0, col);
+							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, 0, col);
 						if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
 						{
 							auto idx = (int)draw_data.meshes.size();
@@ -434,7 +434,7 @@ void View_Scene::on_draw()
 						if (draw_data.categories & CateTerrain)
 						{
 							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-								draw_data.terrains.emplace_back(terrain->instance_id, product(terrain->blocks), terrain->material_res_id);
+								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
 						}
 					});
 					if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)

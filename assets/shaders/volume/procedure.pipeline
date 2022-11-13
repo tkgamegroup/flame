@@ -11,27 +11,39 @@ layout (push_constant) uniform PushConstant
 {
 	vec3 extent;
 	uvec3 cells;
-	uint octaves;
+	uint structure_octaves;
+	uint detail_octaves;
 	float height;
 	float amplitude_scale;
-	float base_strength;
-	float amplitudes[16];
+	float structure_amplitudes[16];
+	float detail_amplitudes[16];
 }pc;
 @
 
 @comp
+
+float get_noise(vec3 pos)
+{
+	return texture(noise, pos).r * 2.0 - 1.0;
+}
+
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 void main()
 {
 	uvec3 dst_coord = gl_WorkGroupID * 4 + gl_LocalInvocationID;
 	vec3 pos = vec3(dst_coord) / pc.cells * pc.extent;
 	float density = pc.height - pos.y;
-	for (int i = 0; i < pc.octaves; i++)
+	for (int i = 0; i < pc.structure_octaves; i++)
 	{
-		float amplitude = pc.amplitudes[i] * pc.amplitude_scale;
-		float strength = pc.base_strength;
-		strength *= float(1 << i);
-		density += texture(noise, pos * amplitude).r * strength;
+		float amplitude = pc.structure_amplitudes[i] * pc.amplitude_scale;
+		float strength = float(1 << i);
+		density += get_noise(pos * amplitude).r * strength;
+	}
+	for (int i = 1; i <= pc.detail_octaves; i++)
+	{
+		float amplitude = pc.detail_amplitudes[i] * pc.amplitude_scale;
+		float strength = 1.0 / float(1 << i);
+		density += get_noise(pos * amplitude).r * strength;
 	}
 	imageStore(dst, ivec3(dst_coord), vec4(density, 0, 0, 0));
 }

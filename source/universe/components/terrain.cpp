@@ -246,25 +246,25 @@ namespace flame
 				break;
 			case PassGBuffer:
 				if (draw_data.categories & CateTerrain)
-					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			case PassForward:
 				if (draw_data.categories & CateGrassField)
 				{
 					if (use_grass_field)
-						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+						draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassOcculder:
 				if (cast_shadow)
 				{
 					if (draw_data.categories & CateTerrain)
-						draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+						draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassPickUp:
 				if (draw_data.categories & CateTerrain)
-					draw_data.terrains.emplace_back(instance_id, product(blocks), material_res_id);
+					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			}
 			}, "terrain"_h);
@@ -273,15 +273,15 @@ namespace flame
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
-			}, "terrain"_h);
+		}, "terrain"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)
 				dirty = true;
-			}, "terrain"_h);
+		}, "terrain"_h);
 		data_listeners.add([this](uint hash) {
 			if (hash == "enable"_h)
 				dirty = true;
-			}, "terrain"_h);
+		}, "terrain"_h);
 
 		node->mark_transform_dirty();
 	}

@@ -69,7 +69,7 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view({}, { graphics::SwizzleR, graphics::SwizzleR, graphics::SwizzleR, graphics::SwizzleR }));
+					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
 					dirty = false;
 				}
 				break;
@@ -77,12 +77,12 @@ namespace flame
 				if (marching_cubes)
 				{
 					if (draw_data.categories & CateMarchingCubes)
-						draw_data.volumes.emplace_back(instance_id, blocks.x, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks, 0);
 				}
 				else
 				{
 					if (draw_data.categories & CateVolume)
-						draw_data.volumes.emplace_back(instance_id, blocks.x, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks, 0);
 				}
 				break;
 			}
@@ -92,6 +92,14 @@ namespace flame
 				return false;
 			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
 			return true;
+		}, "volume"_h);
+		node->data_listeners.add([this](uint hash) {
+			if (hash == "transform"_h)
+			dirty = true;
+		}, "volume"_h);
+		data_listeners.add([this](uint hash) {
+			if (hash == "enable"_h)
+			dirty = true;
 		}, "volume"_h);
 
 		node->mark_transform_dirty();

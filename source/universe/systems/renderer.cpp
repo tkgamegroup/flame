@@ -1567,7 +1567,7 @@ namespace flame
 		for (auto& t : draw_data.terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
+			cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 		for (auto& s : draw_data.sdfs)
 		{
@@ -1577,11 +1577,20 @@ namespace flame
 		for (auto& v : draw_data.volumes)
 		{
 			prm_gbuf.pc.item("i"_h).set(ivec4(v.ins_id, v.mat_id, 0, 0));
-			prm_gbuf.push_constant(cb);
 
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-			auto blocks_div4 = v.blocks / 4;
-			cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+			for (auto z = 0; z < v.blocks.z; z++)
+			{
+				for (auto y = 0; y < v.blocks.y; y++)
+				{
+					for (auto x = 0; x < v.blocks.x; x++)
+					{
+						prm_gbuf.pc.item("f"_h).set(vec4(vec3(x, y, z), 0));
+						prm_gbuf.push_constant(cb);
+						cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+					}
+				}
+			}
 		}
 
 		cb->end_renderpass();
@@ -1741,7 +1750,7 @@ namespace flame
 					for (auto& t : s.draw_terrains[lv])
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
-						cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
+						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 					}
 
 					cb->end_renderpass();
@@ -1847,7 +1856,7 @@ namespace flame
 		for (auto& t : draw_data.terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
-			cb->draw(4, t.blocks, 0, (t.ins_id << 24) + (t.mat_id << 16));
+			cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
 		{
@@ -2034,7 +2043,7 @@ namespace flame
 			prm_fwd.pc.item("f"_h).set(vec4(t.color) / 255.f);
 			prm_fwd.push_constant(cb);
 			cb->bind_pipeline(pl_terrain_plain);
-			cb->draw(4, t.blocks, 0, t.ins_id << 24);
+			cb->draw(4, t.blocks.x* t.blocks.y, 0, t.ins_id << 24);
 			cb->end_renderpass();
 
 			blur_pass();
@@ -2044,7 +2053,7 @@ namespace flame
 			prm_fwd.pc.item("f"_h).set(vec4(0.f));
 			prm_fwd.push_constant(cb);
 			cb->bind_pipeline(pl_terrain_plain);
-			cb->draw(4, t.blocks, 0, t.ins_id << 24);
+			cb->draw(4, t.blocks.x* t.blocks.y, 0, t.ins_id << 24);
 			cb->end_renderpass();
 
 			blend_pass();
@@ -2180,7 +2189,7 @@ namespace flame
 				auto& t = draw_data.terrains[i];
 				prm_fwd.pc.item("i"_h).set(ivec4((int)nodes.size() + 1, 0, 0, 0));
 				prm_fwd.push_constant(cb.get());
-				cb->draw(4, t.blocks, 0, t.ins_id << 24);
+				cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
 
 				nodes.push_back(n);
 			}
