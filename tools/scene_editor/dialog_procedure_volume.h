@@ -16,7 +16,7 @@ struct ProcedureVolumeDialog : ImGui::Dialog
 		float height = 5.f;
 		float amplitude_scale = 0.05f;
 		float structure_amplitudes[16] = { 1.01f, 0.47f, 0.247f, 0.123f, 0.063f, 0.031f, 0.017f, 0.009f };
-		float detail_amplitudes[16] = { 1.98f, 4.03f, 7.97f, 8.07f };
+		float detail_amplitudes[16] = { 1.98f, 4.03f, 7.97f, 8.07f, 16.07f, 31.99f, 64.11f };
 	}parms;
 
 	static void open(cVolumePtr volume)
