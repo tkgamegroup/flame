@@ -34,7 +34,6 @@ void main()
 	float dep = texture(img_dep, i_uv).r;
 	vec4 p = camera.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
 	p /= p.w;
-	vec4 coordw = camera.view_inv * p;
 
 	if (dep < 1.0)
 	{
@@ -48,11 +47,12 @@ void main()
 		float roughness = nor_rou.a;
 		vec3 albedo = (1.0 - metallic) * color;
 		vec3 spec = mix(vec3(0.04), color.rgb, metallic);
-
+		
+		vec4 coordw = camera.view_inv * p;
 		normal = normalize(nor_rou.xyz * 2.0 - 1.0);
 		o_color = vec4(shading(coordw.xyz, normal, metallic, albedo, spec, roughness, ao), 1.0);
 	}
 	else
-		o_color = vec4(texture(sky_map, cube_coord(normalize(coordw.xyz))).rgb * lighting.sky_intensity, 1.0);
+		o_color = vec4(texture(sky_map, cube_coord(normalize(mat3(camera.view_inv) * vec3(p)))).rgb * lighting.sky_intensity, 1.0);
 }
 @

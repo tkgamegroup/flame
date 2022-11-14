@@ -71,7 +71,7 @@ void main()
 	if (thread_id < 8)
 	{
 		Corner corner;
-		corner.normal = normalize(value - normal);
+		corner.normal = vec3(value) == normal ? vec3(1.0) : normalize(value - normal);
 		corner.value = value;
 		corners[thread_id] = corner;
 	}
