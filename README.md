@@ -21,6 +21,8 @@ An ECS 3D-Game-Engine.
 
     (should use my forked version: https://github.com/tkgamegroup/gli)
 
+- NVTT https://developer.nvidia.com/gpu-accelerated-texture-compression
+
 - SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
 
 - Assimp https://github.com/assimp/assimp

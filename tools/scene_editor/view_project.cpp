@@ -290,10 +290,12 @@ void View_Project::init()
 						}
 						if (image && extent.z == 1)
 							ImGui::Image(image.get(), (vec2)extent);
+						static bool compress = false;
+						ImGui::Checkbox("Compress", &compress);
 						if (ImGui::Button("Save"))
 						{
 							if (image && !name.empty())
-								image->save(dir / name);
+								image->save(dir / name, compress);
 						}
 						ImGui::SameLine();
 						if (ImGui::Button("Close"))

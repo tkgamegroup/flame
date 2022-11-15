@@ -42,15 +42,14 @@ namespace flame
 			switch (format)
 			{
 			case Format_R8_UNORM:
+			case Format_BC4_UNORM: case Format_BC4_SNORM:
 				return 1;
 			case Format_R16_UNORM:
 				return 2;
 			case Format_R32_SFLOAT:
 				return 4;
 			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
-			case Format_BC1_RGBA_UNORM: case Format_BC2_UNORM:
-			case Format_BC3_UNORM: case Format_BC4_UNORM:
-			case Format_BC5_UNORM: case Format_BC7_UNORM:
+			case Format_BC7_UNORM:
 				return 4;
 			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
 				return 8;
@@ -58,6 +57,25 @@ namespace flame
 				return 16;
 			case Format_Depth16:
 				return 2;
+			}
+			return 0;
+		}
+
+		inline uint get_num_channels(Format format)
+		{
+			switch (format)
+			{
+			case Format_R8_UNORM:
+			case Format_R16_UNORM:
+			case Format_R32_SFLOAT:
+			case Format_Depth16:
+			case Format_BC4_UNORM: case Format_BC4_SNORM:
+				return 1;
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
+			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+			case Format_R32G32B32A32_SFLOAT:
+			case Format_BC7_UNORM:
+				return 4;
 			}
 			return 0;
 		}
@@ -83,6 +101,7 @@ namespace flame
 			uvec3 extent = uvec3(0);
 			bool is_cube = false;
 			bool srgb = false;
+			uint n_channels = 0;
 			uint pixel_size = 0;
 			uint n_levels = 1;
 			uint n_layers = 1;
@@ -110,7 +129,7 @@ namespace flame
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 			virtual void clear_staging_data() = 0;
 
-			virtual void save(const std::filesystem::path& filename) = 0;
+			virtual void save(const std::filesystem::path& filename, bool compress = false) = 0;
 
 			struct Create
 			{
