@@ -206,6 +206,12 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 					return false;
 				});
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("X"))
+			{
+				path = L"";
+				changed = true;
+			}
 		}
 			break;
 		}

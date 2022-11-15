@@ -54,9 +54,9 @@ void main()
 	
 	const float epsilon = (1.0f / 16.0f) * STEP_SIZE;
 	uint off = thread_id / 8;
-	pos.x += (off == 1)? epsilon : 0.0f;
-	pos.y += (off == 2)? epsilon : 0.0f;
-	pos.z += (off == 3)? epsilon : 0.0f;
+	pos.x += (off == 1)? epsilon * blocks.x : 0.0f;
+	pos.y += (off == 2)? epsilon * blocks.y : 0.0f;
+	pos.z += (off == 3)? epsilon * blocks.z : 0.0f;
 
 	// Evaluate the field function for all 32 lanes
 	float value = field(pos);
@@ -71,7 +71,7 @@ void main()
 	if (thread_id < 8)
 	{
 		Corner corner;
-		corner.normal = normalize(value - normal);
+		corner.normal = vec3(value) == normal ? vec3(1.0) : normalize(value - normal);
 		corner.value = value;
 		corners[thread_id] = corner;
 	}
@@ -96,7 +96,7 @@ void main()
 		// Interpolate position and normal
 		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
 
-		vec3 pos    = vec3(instance.volumes[pc.i[0]].mat * vec4(mix(pos0, pos1, mix_f) * instance.volumes[pc.i[0]].extent, 1.0));
+		vec3 pos    = vec3(instance.volumes[vol_id].mat * vec4((mix(pos0, pos1, mix_f) * block_sz + block_off) * instance.volumes[vol_id].extent, 1.0));
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 		
 		// Output final vertex

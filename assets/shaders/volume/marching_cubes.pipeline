@@ -10,5 +10,5 @@ shaders
   marching_cubes.frag
 renderpass
   {rp}
-primitive_topology
-  TriangleList
+polygon_mode
+  Fill

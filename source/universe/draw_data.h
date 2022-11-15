@@ -37,11 +37,11 @@ namespace flame
 	struct TerrainDraw
 	{
 		uint ins_id;
-		uint blocks;
+		uvec2 blocks;
 		uint mat_id;
 		cvec4 color;
 
-		TerrainDraw(uint ins_id, uint blocks, uint mat_id, const cvec4& color = cvec4()) :
+		TerrainDraw(uint ins_id, const uvec2& blocks, uint mat_id, const cvec4& color = cvec4()) :
 			ins_id(ins_id),
 			blocks(blocks),
 			mat_id(mat_id),
@@ -65,10 +65,10 @@ namespace flame
 	struct VolumeDraw
 	{
 		uint ins_id;
-		uint blocks;
+		uvec3 blocks;
 		uint mat_id;
 
-		VolumeDraw(uint ins_id, uint blocks, uint mat_id) :
+		VolumeDraw(uint ins_id, const uvec3& blocks, uint mat_id) :
 			ins_id(ins_id),
 			blocks(blocks),
 			mat_id(mat_id)

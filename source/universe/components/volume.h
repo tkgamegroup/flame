@@ -16,7 +16,7 @@ namespace flame
 		virtual void set_extent(const vec3& extent) = 0;
 
 		// Reflect
-		uvec3 blocks = uvec3(32);
+		uvec3 blocks = uvec3(8, 1, 8);
 		// Reflect
 		virtual void set_blocks(const uvec3& blocks) = 0;
 
