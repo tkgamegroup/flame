@@ -103,40 +103,15 @@ void main()
 		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;
+
+#ifdef TRANSFORM_FEEDBACK
+		uint vertex_index = atomicAdd(transform_feedback.vertex_count, 1);
+		transform_feedback.vertices[vertex_index] = pos;
+#endif
 	}
 
 	if (thread_id < triangle_count)
 	{
 		gl_PrimitiveTriangleIndicesEXT[thread_id] = uvec3(thread_id * 3 + 0, thread_id * 3 + 1, thread_id * 3 + 2);
 	}
-
-	/*
-	// Output up to 12 vertices, one lane per vertex
-	if (thread_id < vertex_count)
-	{
-		// Look up the corner indices for this edge
-		uint edge = uint(marching_cubes_loopup.items[index].Vertices[thread_id]);
-		uint i0 = edge & 0x7;
-		uint i1 = edge >> 3;
-
-		vec3 pos0 = vec3((i0 & 1) != 0? corner_pos1.x : corner_pos0.x, (i0 & 2) != 0? corner_pos1.y : corner_pos0.y, (i0 & 4) != 0? corner_pos1.z : corner_pos0.z);
-		vec3 pos1 = vec3((i1 & 1) != 0? corner_pos1.x : corner_pos0.x, (i1 & 2) != 0? corner_pos1.y : corner_pos0.y, (i1 & 4) != 0? corner_pos1.z : corner_pos0.z);
-
-		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
-		vec3 pos    = mix(pos0, pos1, mix_f);
-		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
-
-		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
-		o_normal[thread_id] = normal;
-		o_coordw[thread_id] = pos;
-	}
-
-	// Output up to 15 indices. Using packed 8bit indices, so at most only 4 lanes get used here.
-	const uint index_count = triangle_count * 3;
-	if (thread_id * 4 < index_count)
-	{
-		uint packed_indices = marching_cubes_loopup.items[index].Indices[thread_id];
-		gl_PrimitiveTriangleIndicesEXT[thread_id * 4] = uvec3(packed_indices >> 16, (packed_indices >> 8) & 0xff, packed_indices & 0xff);
-	}
-	*/
 }

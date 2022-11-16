@@ -203,6 +203,8 @@ namespace flame
 
 		// Reflect
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;
+		// Reflect
+		virtual graphics::BufferPtr transform_feedback(cNodePtr node) = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

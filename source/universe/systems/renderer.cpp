@@ -121,6 +121,7 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_mesh_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_arm_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_marching_cubes_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
 
@@ -2237,6 +2238,11 @@ namespace flame
 		if (index == -1)
 			return nullptr;
 		return nodes[index];
+	}
+
+	graphics::BufferPtr sRendererPrivate::transform_feedback(cNodePtr node)
+	{
+
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

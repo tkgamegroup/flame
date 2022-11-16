@@ -73,3 +73,9 @@ layout(set = SET, binding = 6) buffer readonly MarchingCubesLookup
 {
 	MarchingCubesLookupItem items[256];
 }marching_cubes_loopup;
+
+layout(set = SET, binding = 7) buffer writeonly TransformFeedback
+{
+	uint vertex_count;
+	vec3 vertices[65536];
+}transform_feedback;
