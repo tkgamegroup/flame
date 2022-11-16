@@ -27,14 +27,14 @@ namespace flame
 			void change_layout(ImageLayout dst_layout) override;
 			void clear(const vec4& color, ImageLayout dst_layout) override;
 
-			void get_staging_data(uint level, uint layer);
+			void stage_surface_data(uint level, uint layer);
 			vec4 get_pixel(int x, int y, uint level, uint layer) override;
 			void set_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
 			void clear_staging_data() override;
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
 
-			void save(const std::filesystem::path& filename) override;
+			void save(const std::filesystem::path& filename, bool compress) override;
 
 			static ImagePtr create(DevicePtr device, Format format, const uvec3& extent, VkImage native);
 		};

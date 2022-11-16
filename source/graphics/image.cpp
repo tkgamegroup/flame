@@ -8,6 +8,10 @@
 #include "extension.h"
 
 #include <gli/gli.hpp>
+#ifdef USE_NVTT
+#include <nvtt/nvtt.h>
+#include <nvtt/nvtt_lowlevel.h>
+#endif
 
 namespace flame
 {
@@ -41,6 +45,7 @@ namespace flame
 
 		void ImagePrivate::initialize()
 		{
+			n_channels = get_num_channels(format);
 			pixel_size = get_pixel_size(format);
 
 			if (n_levels == 0)
@@ -57,7 +62,7 @@ namespace flame
 				auto& l = levels.emplace_back();
 				l.extent = ext;
 				l.pitch = image_pitch(pixel_size * ext.x);
-				l.data_size = ext.y * l.pitch;
+				l.data_size = ext.z * ext.y * l.pitch;
 				l.layers.resize(n_layers);
 
 				ext.x /= 2;
@@ -70,14 +75,10 @@ namespace flame
 				if (ext.x == 0) ext.x = 1;
 				if (ext.y == 0) ext.y = 1;
 			}
-			if (extent.z == 1)
-			{
-				data_size = 0;
-				for (auto& l : levels)
-					data_size += l.data_size * n_layers;
-			}
-			else
-				data_size = pixel_size * product(extent);
+
+			data_size = 0;
+			for (auto& l : levels)
+				data_size += l.data_size * n_layers;
 		}
 
 		ImageLayout ImagePrivate::get_layout(const ImageSub& sub)
@@ -260,7 +261,7 @@ namespace flame
 			cb.excute();
 		}
 
-		void ImagePrivate::get_staging_data(uint level, uint layer)
+		void ImagePrivate::stage_surface_data(uint level, uint layer)
 		{
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
@@ -282,7 +283,7 @@ namespace flame
 
 		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
 		{
-			get_staging_data(level, layer);
+			stage_surface_data(level, layer);
 
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
@@ -355,13 +356,60 @@ namespace flame
 				coordf.y);
 		}
 
-		void ImagePrivate::save(const std::filesystem::path& filename)
+		void ImagePrivate::save(const std::filesystem::path& filename, bool compress)
 		{
 			assert(usage & ImageUsageTransferSrc);
 
 			auto ext = filename.extension();
-			if (ext == L".dds" || ext == L".ktx")
+			if (ext == L".dds")
 			{
+				auto gli_target = gli::TARGET_2D;
+				if (is_cube)
+					gli_target = gli::TARGET_CUBE;
+				else if (n_layers > 1)
+					gli_target = gli::TARGET_2D_ARRAY;
+				else if (extent.z > 1)
+					gli_target = gli::TARGET_3D;
+
+
+				if (compress)
+				{
+#ifdef USE_NVTT
+					assert(n_levels == 1); assert(n_layers == 1);
+					assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM);
+					nvtt::RefImage img_in;
+					img_in.width = extent.x;
+					img_in.height = extent.y;
+					img_in.depth = extent.z;
+					img_in.num_channels = n_channels;
+					stage_surface_data(0, 0); auto& ly = levels[0].layers[0];
+					img_in.data = ly.data.get();
+					nvtt::CPUInputBuffer input_buf(&img_in, nvtt::UINT8);
+					ly.data.reset(nullptr);
+					if (n_channels == 1) // bc4
+					{
+						auto data_size = input_buf.NumTiles() * 8;
+						void* outbuf = malloc(data_size);
+						nvtt_encode_bc4(input_buf, false, outbuf, true, false);
+						auto gli_texture = gli::texture(gli_target, gli::FORMAT_R_ATI1N_UNORM_BLOCK8, ivec3(extent), n_layers, 1, n_levels);
+						memcpy(gli_texture.data(0, 0, 0), outbuf, data_size);
+						gli::save(gli_texture, filename.string());
+						free(outbuf);
+					}
+					else // bc7
+					{
+						auto data_size = input_buf.NumTiles() * 16;
+						void* outbuf = malloc(data_size);
+						nvtt_encode_bc7(input_buf, false, true, outbuf, true, false);
+						auto gli_texture = gli::texture(gli_target, gli::FORMAT_RGBA_BP_UNORM_BLOCK16, ivec3(extent), n_layers, 1, n_levels);
+						memcpy(gli_texture.data(0, 0, 0), outbuf, data_size);
+						gli::save(gli_texture, filename.string());
+						free(outbuf);
+					}
+					return;
+#endif
+				}
+
 				auto gli_fmt = gli::FORMAT_UNDEFINED;
 				switch (format)
 				{
@@ -377,46 +425,17 @@ namespace flame
 				}
 				assert(gli_fmt != gli::FORMAT_UNDEFINED);
 
-				auto gli_target = gli::TARGET_2D;
-				if (is_cube)
-					gli_target = gli::TARGET_CUBE;
-				else if (n_layers > 1)
-					gli_target = gli::TARGET_2D_ARRAY;
-				else if (extent.z > 1)
-					gli_target = gli::TARGET_3D;
 				auto gli_texture = gli::texture(gli_target, gli_fmt, ivec3(extent), n_layers, 1, n_levels);
 
-				StagingBuffer sb(data_size, nullptr);
-				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
-				InstanceCommandBuffer cb;
-				std::vector<BufferImageCopy> cpies;
-				auto dst = (char*)sb->mapped;
-				auto offset = 0;
-				for (auto i = 0; i < n_layers; i++)
+				for (auto i = 0; i < n_levels; i++)
 				{
-					for (auto j = 0; j < n_levels; j++)
+					auto size = (uint)gli_texture.size(i);
+					for (auto j = 0; j < n_layers; j++)
 					{
-						auto size = (uint)gli_texture.size(j);
-
-						gli_cpies.emplace_back(gli_texture.data(i, 0, j), dst + offset, size);
-
-						BufferImageCopy cpy;
-						cpy.buf_off = offset;
-						cpy.img_ext = gli_texture.extent(j);
-						cpy.img_sub.base_level = j;
-						cpy.img_sub.base_layer = i;
-						cpies.push_back(cpy);
-
-						offset += size;
+						stage_surface_data(i, j);
+						memcpy(gli_texture.data(j, 0, i), levels[i].layers[j].data.get(), size);
 					}
 				}
-				cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferSrc);
-				cb->copy_image_to_buffer(this, sb.get(), cpies);
-				cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutShaderReadOnly);
-				cb.excute();
-				for (auto& c : gli_cpies)
-					memcpy(std::get<0>(c), std::get<1>(c), std::get<2>(c));
-
 				gli::save(gli_texture, filename.string());
 			}
 			else
@@ -449,7 +468,7 @@ namespace flame
 			assert(img->format == Format_R8G8B8A8_UNORM || img->format == Format_R8_UNORM);
 			auto ch = img->format == Format_R8G8B8A8_UNORM ? 3 : 0;
 
-			img->get_staging_data(level, 0);
+			img->stage_surface_data(level, 0);
 
 			auto coverage = 0.f;
 			auto size = img->levels[level].extent;
@@ -499,7 +518,7 @@ namespace flame
 
 			auto& lv = img->levels[level];
 			auto& ly = lv.layers[0];
-			img->get_staging_data(level, 0);
+			img->stage_surface_data(level, 0);
 			for (auto y = 0; y < lv.extent.y; y++)
 			{
 				for (auto x = 0; x < lv.extent.x; x++)
@@ -643,8 +662,9 @@ namespace flame
 					if (layers == 6)
 						is_cube = true;
 
+					auto gli_format = gli_texture.format();
 					Format format = Format_Undefined;
-					switch (gli_texture.format())
+					switch (gli_format)
 					{
 					case gli::FORMAT_R8_UNORM_PACK8:
 						format = Format_R8_UNORM;
@@ -657,6 +677,9 @@ namespace flame
 						break;
 					case gli::FORMAT_RGBA32_SFLOAT_PACK32:
 						format = Format_R32G32B32A32_SFLOAT;
+						break;
+					case gli::FORMAT_R_ATI1N_UNORM_BLOCK8:
+						format = Format_BC4_UNORM;
 						break;
 					case gli::FORMAT_RGBA_BP_UNORM_BLOCK16:
 						format = Format_BC7_UNORM;
@@ -672,24 +695,24 @@ namespace flame
 					std::vector<BufferImageCopy> cpies;
 					auto dst = (char*)sb->mapped;
 					auto offset = 0;
-					for (auto i = 0; i < layers; i++)
+					for (auto i = 0; i < levels; i++)
 					{
-						for (auto j = 0; j < levels; j++)
+						auto size = gli_texture.size(i);
+						auto ext = gli_texture.extent(i);
+						for (auto j = 0; j < layers; j++)
 						{
-							auto size = gli_texture.size(j);
-							auto ext = gli_texture.extent(j);
 							void* data;
 							if (faces > 1)
-								data = gli_texture.data(0, i, j);
+								data = gli_texture.data(0, j, i);
 							else
-								data = gli_texture.data(i, 0, j);
+								data = gli_texture.data(j, 0, i);
 							memcpy(dst + offset, data, size);
 
 							BufferImageCopy cpy;
 							cpy.buf_off = offset;
 							cpy.img_ext = ext;
-							cpy.img_sub.base_level = j;
-							cpy.img_sub.base_layer = i;
+							cpy.img_sub.base_level = i;
+							cpy.img_sub.base_layer = j;
 							cpies.push_back(cpy);
 
 							offset += size;
