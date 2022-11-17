@@ -31,24 +31,35 @@ namespace flame
 	{
 		if (data_map_name == name)
 			return;
+
+		auto old_one = data_map;
 		if (!data_map_name.empty())
-			AssetManagemant::release_asset(Path::get(data_map_name));
+		{
+			if (!data_map_name.native().starts_with(L"0x"))
+				AssetManagemant::release_asset(Path::get(data_map_name));
+			else
+				old_one = nullptr;
+		}
 		data_map_name = name;
 		if (!data_map_name.empty())
-			AssetManagemant::get_asset(Path::get(data_map_name));
-
-		auto _data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name, false, false, 0.f, graphics::ImageUsageAttachment | graphics::ImageUsageStorage) : nullptr;
-		if (data_map != _data_map)
 		{
-			if (data_map)
-				graphics::Image::release(data_map);
-			data_map = _data_map;
+			if (!data_map_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get_asset(Path::get(data_map_name));
+				data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name, false, false, 0.f, graphics::ImageUsageAttachment | graphics::ImageUsageStorage) : nullptr;
+			}
+			else
+				data_map = (graphics::ImagePtr)s2u_hex<uint64>(data_map_name.string());
 		}
-		else if (_data_map)
-			graphics::Image::release(_data_map);
 
-		dirty = true;
-		node->mark_transform_dirty();
+		if (data_map != old_one)
+		{
+			dirty = true;
+			node->mark_transform_dirty();
+		}
+
+		if (old_one)
+			graphics::Image::release(old_one);
 		data_changed("data_map_name"_h);
 	}
 

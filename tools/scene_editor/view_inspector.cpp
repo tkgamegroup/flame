@@ -4,7 +4,6 @@
 #ifdef USE_FORTUNE_ALGORITHM
 #include "dialog_procedure_terrain.h"
 #endif
-#include "dialog_procedure_volume.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
@@ -619,12 +618,6 @@ void View_Inspector::on_draw()
 					if (ImGui::Button("Procedure Terrain"))
 						ProcedureTerrainDialog::open(terrain);
 #endif
-				}
-				else if (ui.name_hash == "flame::cVolume"_h)
-				{
-					auto volume = (cVolumePtr)c.get();
-					if (ImGui::Button("Procedure Volume"))
-						ProcedureVolumeDialog::open(volume);
 				}
 			}
 			ImGui::PopID();

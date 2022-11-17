@@ -13,7 +13,7 @@ layout (push_constant) uniform PushConstant
 	uvec3 cells;
 	uint structure_octaves;
 	uint detail_octaves;
-	float height;
+	float offset;
 	float amplitude_scale;
 	float structure_amplitudes[16];
 	float detail_amplitudes[16];
@@ -32,7 +32,7 @@ void main()
 {
 	uvec3 dst_coord = gl_WorkGroupID * 4 + gl_LocalInvocationID;
 	vec3 pos = vec3(dst_coord) / pc.cells * pc.extent;
-	float density = pc.height - pos.y;
+	float density = pc.offset - pos.y;
 	for (int i = 0; i < pc.structure_octaves; i++)
 	{
 		float amplitude = pc.structure_amplitudes[i] * pc.amplitude_scale;
