@@ -1,5 +1,6 @@
 %rp=../forward.rp
 %pll=../forward.pll
+%rasterizer_discard=false
 layout
   {pll}
 shaders
@@ -10,5 +11,7 @@ shaders
   marching_cubes.frag
 renderpass
   {rp}
+rasterizer_discard
+  {rasterizer_discard}
 polygon_mode
   Fill

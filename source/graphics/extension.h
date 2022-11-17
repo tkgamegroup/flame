@@ -132,6 +132,23 @@ namespace flame
 				cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
+
+			void download(CommandBufferPtr cb)
+			{
+				if (dirty_regions.empty())
+					return;
+				std::vector<BufferCopy> copies;
+				for (auto& r : dirty_regions)
+				{
+					BufferCopy cpy;
+					cpy.src_off = cpy.dst_off = r.first;
+					cpy.size = r.second;
+					copies.push_back(cpy);
+				}
+				dirty_regions.clear();
+				cb->buffer_barrier(buf.get(), u2a(usage), AccessTransferWrite, u2s(usage), PipelineStageTransfer);
+				cb->copy_buffer(buf.get(), stag.get(), copies);
+			}
 		};
 
 		struct VertexBuffer : VirtualStruct

@@ -257,6 +257,7 @@ namespace flame
 			std::vector<VertexBufferInfo> vertex_buffers;
 			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
 			uint patch_control_points = 0;
+			bool rasterizer_discard = false;
 			PolygonMode polygon_mode = PolygonModeFill;
 			CullMode cull_mode = CullModeBack;
 			SampleCount sample_count = SampleCount_1;

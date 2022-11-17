@@ -84,6 +84,7 @@ namespace flame
 	graphics::SparseArray volume_instances;
 	graphics::StorageBuffer buf_instance;
 	graphics::StorageBuffer buf_marching_cubes_loopup;
+	graphics::StorageBuffer buf_transform_feedback;
 	graphics::StorageBuffer buf_material;
 	graphics::SparseArray dir_lights;
 	graphics::SparseArray pt_lights;
@@ -431,9 +432,11 @@ namespace flame
 			buf_marching_cubes_loopup.dirty_regions.emplace_back(0, (uint)sizeof(MarchingCubesLookupItem) * 256);
 			buf_marching_cubes_loopup.upload(cb.get());
 		}
+		buf_transform_feedback.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_instance->get_buf_ui("TransformFeedback"_h), graphics::BufferUsageTransferDst);
+		buf_transform_feedback.item_d("vertex_count"_h).set(0);
+		buf_transform_feedback.upload(cb.get());
 		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
 		ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
-		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
 		for (auto i = 0; i < terrain_instances.capacity; i++)
 		{
 			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
@@ -441,6 +444,8 @@ namespace flame
 			ds_instance->set_image("terrain_tangent_maps"_h, i, img_black->get_view(), sp_trilinear);
 			ds_instance->set_image("terrain_splash_maps"_h, i, img_black->get_view(), sp_trilinear);
 		}
+		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
+		ds_instance->set_buffer("TransformFeedback"_h, 0, buf_transform_feedback.buf.get());
 		ds_instance->update();
 		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
 		buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
@@ -590,6 +595,8 @@ namespace flame
 		pl_mesh_arm_pickup->dynamic_renderpass = true;
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
+		pl_marching_cubes_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rasterizer_discard=true", "rp=" + str(rp_col_dep), "frag:TRANSFORM_FEEDBACK" });
+
 		fence_pickup.reset(graphics::Fence::create(false));
 
 		camera_light_id = register_light_instance(LightDirectional, -1);
@@ -2240,9 +2247,10 @@ namespace flame
 		return nodes[index];
 	}
 
-	graphics::BufferPtr sRendererPrivate::transform_feedback(cNodePtr node)
+	std::vector<vec3> sRendererPrivate::transform_feedback(cNodePtr node)
 	{
-
+		std::vector<vec3> ret;
+		return ret;
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

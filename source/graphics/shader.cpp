@@ -1812,7 +1812,7 @@ namespace flame
 				raster_state.pNext = nullptr;
 				raster_state.flags = 0;
 				raster_state.depthClampEnable = VK_FALSE;
-				raster_state.rasterizerDiscardEnable = VK_FALSE;
+				raster_state.rasterizerDiscardEnable = info.rasterizer_discard;
 				raster_state.polygonMode = to_backend(info.polygon_mode);
 				raster_state.cullMode = to_backend(info.cull_mode);
 				raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
