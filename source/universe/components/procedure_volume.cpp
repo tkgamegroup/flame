@@ -88,8 +88,8 @@ namespace flame
 		{
 			delete data_map;
 
-			data_map = graphics::Image::create(graphics::Format_R8_UNORM, extent, graphics::ImageUsageSampled, graphics::ImageUsageTransferDst);
-			volume->set_data_map_name(wstr_hex((uint64)data_map));
+			data_map = graphics::Image::create(graphics::Format_R8_UNORM, extent, graphics::ImageUsageSampled | graphics::ImageUsageStorage, graphics::ImageUsageTransferDst);
+			volume->set_data_map_name(L"0x" + wstr_hex((uint64)data_map));
 		}
 
 		const auto noise_ext = 16;
@@ -127,9 +127,8 @@ namespace flame
 		cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderStorage);
 		cb->bind_pipeline(pl);
 		prm.bind_dss(cb.get());
-		auto cells = data_map->extent;
 		prm.pc.item("extent"_h).set(volume->extent);
-		prm.pc.item("cells"_h).set(cells);
+		prm.pc.item("cells"_h).set(extent);
 		prm.pc.item("structure_octaves"_h).set((uint)structure_octaves.size());
 		prm.pc.item("detail_octaves"_h).set((uint)detail_octaves.size());
 		prm.pc.item("offset"_h).set(offset);
@@ -137,7 +136,7 @@ namespace flame
 		prm.pc.item("structure_amplitudes"_h).set(structure_octaves.data(), sizeof(float) * structure_octaves.size());
 		prm.pc.item("detail_amplitudes"_h).set(detail_octaves.data(), sizeof(float) * detail_octaves.size());
 		prm.push_constant(cb.get());
-		cb->dispatch(cells / 4U);
+		cb->dispatch(extent / 4U);
 		cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
 
 		cb.excute();
@@ -146,6 +145,11 @@ namespace flame
 	void cProcedureVolumePrivate::on_init()
 	{
 		build_volume();
+
+		volume->data_listeners.add([this](uint hash) {
+			if (hash == "extent"_h || hash == "blocks"_h)
+				build_volume();
+		}, "procedure_volume"_h);
 	}
 
 	struct cProcedureVolumeCreate : cProcedureVolume::Create
