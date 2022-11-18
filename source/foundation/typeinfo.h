@@ -2655,8 +2655,7 @@ namespace flame
 
 		inline const VariableInfo& item_info(uint hash) const
 		{
-			auto it = ui->variables_map.find(hash);
-			return ui->variables[it->second];
+			return *ui->find_variable(hash);
 		}
 
 		inline VirtualData item(uint hash, uint array_idx = 0)
@@ -2667,6 +2666,12 @@ namespace flame
 			ret.size = vi.array_stride > 0 ? vi.array_stride : vi.type->size;
 			ret.ui = vi.type->retrive_ui();
 			return ret;
+		}
+
+		template<typename T>
+		inline T get() const
+		{
+			return *(T*)pdata;
 		}
 
 		template<typename T>
