@@ -34,11 +34,11 @@ void App::init()
 	renderer->mode = sRenderer::CameraLight;
 
 	auto root = world->root.get();
-	root->add_component<cNode>();
+	root->add_component_t<cNode>();
 	e_editor = Entity::create();
 	e_editor->name = "[Editor]";
-	e_editor->add_component<cNode>();
-	e_editor->add_component<cCamera>();
+	e_editor->add_component_t<cNode>();
+	e_editor->add_component_t<cCamera>();
 	root->add_child(e_editor);
 
 	for (auto& v : graphics::gui_views)
@@ -604,18 +604,18 @@ void App::open_prefab(const std::filesystem::path& path)
 void App::new_prefab(const std::filesystem::path& path)
 {
 	auto e = Entity::create();
-	e->add_component<cNode>();
+	e->add_component_t<cNode>();
 	auto e_plane = Entity::create();
-	e_plane->add_component<cNode>()->set_transform(vec3(0.f, -0.5f, 0.f), vec3(10.f, 0.1f, 10.f));
-	e_plane->add_component<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
+	e_plane->add_component_t<cNode>()->set_transform(vec3(0.f, -0.5f, 0.f), vec3(10.f, 0.1f, 10.f));
+	e_plane->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
 	e->add_child(e_plane);
 	auto e_cube = Entity::create();
-	e_cube->add_component<cNode>();
-	e_cube->add_component<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
+	e_cube->add_component_t<cNode>();
+	e_cube->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
 	e->add_child(e_cube);
 	auto e_light = Entity::create();
-	e_light->add_component<cNode>()->set_eul(vec3(0.f, -45.f, 0.f));
-	e_light->add_component<cDirLight>()->cast_shadow = true;
+	e_light->add_component_t<cNode>()->set_eul(vec3(0.f, -45.f, 0.f));
+	e_light->add_component_t<cDirLight>()->cast_shadow = true;
 	e->add_child(e_light);
 	e->save(path);
 }
@@ -633,27 +633,27 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	{
 	case "empty"_h: break;
 	case "node"_h:
-		e->add_component<cNode>();
+		e->add_component_t<cNode>();
 		break;
 	case "cube"_h:
-		e->add_component<cNode>();
-		e->add_component<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
+		e->add_component_t<cNode>();
+		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
 		break;
 	case "sphere"_h:
-		e->add_component<cNode>();
-		e->add_component<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
+		e->add_component_t<cNode>();
+		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
 		break;
 	case "dir_light"_h:
-		e->add_component<cNode>();
-		e->add_component<cDirLight>();
+		e->add_component_t<cNode>();
+		e->add_component_t<cDirLight>();
 		break;
 	case "pt_light"_h:
-		e->add_component<cNode>();
-		e->add_component<cPtLight>();
+		e->add_component_t<cNode>();
+		e->add_component_t<cPtLight>();
 		break;
 	case "camera"_h:
-		e->add_component<cNode>();
-		e->add_component<cCamera>();
+		e->add_component_t<cNode>();
+		e->add_component_t<cCamera>();
 		break;
 	}
 	dst->add_child(e);

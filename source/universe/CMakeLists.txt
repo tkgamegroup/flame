@@ -27,6 +27,12 @@ if(USE_RECASTNAV)
 	target_link_libraries(flame_universe debug		"${RECAST_DEBUG_LIB_PATH}")
 	target_link_libraries(flame_universe optimized	"${RECAST_RELEASE_LIB_PATH}")
 endif()
+if(USE_FORTUNE_ALGORITHM)
+	target_compile_definitions(flame_universe PUBLIC USE_FORTUNE_ALGORITHM)
+	target_include_directories(flame_universe PRIVATE "${FORTUNE_ALGORITHM_DIR}/src")
+	target_link_libraries(flame_universe "${FORTUNE_ALGORITHM_DIR}/build/Debug/Fortune.lib")
+endif()
+
 
 generate_typeinfo(flame_universe "enum starts_with flame::")
 

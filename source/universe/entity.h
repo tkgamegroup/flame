@@ -107,7 +107,7 @@ namespace flame
 
 		virtual Component* add_component(uint hash) = 0;
 		template<typename T>
-		inline T* add_component()
+		inline T* add_component_t()
 		{
 			return (T*)add_component(th<T>());
 		}

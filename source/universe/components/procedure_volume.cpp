@@ -19,7 +19,7 @@ namespace flame
 			return;
 		size_per_block = size;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("size_per_block"_h);
 	}
@@ -30,7 +30,7 @@ namespace flame
 			return;
 		offset = off;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("offset"_h);
 	}
@@ -41,7 +41,7 @@ namespace flame
 			return;
 		amplitude_scale = scale;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("amplitude_scale"_h);
 	}
@@ -52,7 +52,7 @@ namespace flame
 			return;
 		seed = _seed;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("seed"_h);
 	}
@@ -63,7 +63,7 @@ namespace flame
 			return;
 		structure_octaves = octaves;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("structure_octaves"_h);
 	}
@@ -74,13 +74,15 @@ namespace flame
 			return;
 		detail_octaves = octaves;
 
-		build_data_map();
+		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("detail_octaves"_h);
 	}
 
-	void cProcedureVolumePrivate::build_data_map()
+	void cProcedureVolumePrivate::build_volume()
 	{
+		graphics::Queue::get()->wait_idle();
+
 		auto extent = volume->blocks * size_per_block;
 		if (!data_map || data_map->extent != extent)
 		{
@@ -89,8 +91,6 @@ namespace flame
 			data_map = graphics::Image::create(graphics::Format_R8_UNORM, extent, graphics::ImageUsageSampled, graphics::ImageUsageTransferDst);
 			volume->set_data_map_name(wstr_hex((uint64)data_map));
 		}
-
-		graphics::Queue::get()->wait_idle();
 
 		const auto noise_ext = 16;
 		auto noise_texture = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(noise_ext), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled);
@@ -145,7 +145,7 @@ namespace flame
 
 	void cProcedureVolumePrivate::on_init()
 	{
-
+		build_volume();
 	}
 
 	struct cProcedureVolumeCreate : cProcedureVolume::Create

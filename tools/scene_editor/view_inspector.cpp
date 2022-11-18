@@ -1,9 +1,6 @@
 #include "app.h"
 #include "selection.h"
 #include "view_inspector.h"
-#ifdef USE_FORTUNE_ALGORITHM
-#include "dialog_procedure_terrain.h"
-#endif
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
@@ -610,14 +607,6 @@ void View_Inspector::on_draw()
 						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
 					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
-				}
-				else if (ui.name_hash == "flame::cTerrain"_h)
-				{
-					auto terrain = (cTerrainPtr)c.get();
-#ifdef USE_FORTUNE_ALGORITHM
-					if (ImGui::Button("Procedure Terrain"))
-						ProcedureTerrainDialog::open(terrain);
-#endif
 				}
 			}
 			ImGui::PopID();

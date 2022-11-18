@@ -17,7 +17,7 @@ namespace flame
 		void set_structure_octaves(const std::vector<float>& octaves) override;
 		void set_detail_octaves(const std::vector<float>& octaves) override;
 
-		void build_data_map();
+		void build_volume();
 
 		void on_init() override;
 	};
