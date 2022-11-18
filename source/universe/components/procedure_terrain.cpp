@@ -13,6 +13,11 @@
 
 namespace flame
 {
+	cProcedureTerrainPrivate::~cProcedureTerrainPrivate()
+	{
+		terrain->data_listeners.remove("procedure_terrain"_h);
+	}
+
 	void cProcedureTerrainPrivate::set_voronoi_sites_count(uint count)
 	{
 
@@ -543,6 +548,11 @@ namespace flame
 	void cProcedureTerrainPrivate::on_init()
 	{
 		build_terrain();
+
+		terrain->data_listeners.add([this](uint hash) {
+			if (hash == "extent"_h || hash == "blocks"_h)
+			build_terrain();
+		}, "procedure_terrain"_h);
 	}
 
 	struct cProcedureTerrainCreate : cProcedureTerrain::Create

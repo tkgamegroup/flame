@@ -7,6 +7,7 @@ namespace flame
 	struct cProcedureVolumePrivate : cProcedureVolume
 	{
 		cProcedureVolumePrivate();
+		~cProcedureVolumePrivate();
 
 		graphics::ImagePtr data_map = nullptr;
 

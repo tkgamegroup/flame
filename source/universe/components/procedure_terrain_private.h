@@ -6,6 +6,8 @@ namespace flame
 {
 	struct cProcedureTerrainPrivate : cProcedureTerrain
 	{
+		~cProcedureTerrainPrivate();
+
 		void set_voronoi_sites_count(uint count) override;
 		void set_voronoi_layer1_precentage(uint precentage) override;
 		void set_voronoi_layer2_precentage(uint precentage) override;

@@ -13,6 +13,11 @@ namespace flame
 		detail_octaves = { 1.98f, 4.03f, 7.97f, 8.07f, 16.07f, 31.99f, 64.11f };
 	}
 
+	cProcedureVolumePrivate::~cProcedureVolumePrivate()
+	{
+		volume->data_listeners.remove("procedure_volume"_h);
+	}
+
 	void cProcedureVolumePrivate::set_size_per_block(uint size)
 	{
 		if (size_per_block == size)

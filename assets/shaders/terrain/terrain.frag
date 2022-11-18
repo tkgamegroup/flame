@@ -1,5 +1,5 @@
 #include "../math.glsl"
-
+#include "../texture_sampling.glsl"
 #ifndef GBUFFER_PASS
 #ifdef MAT_CODE
 #include "../shading.glsl"
@@ -29,6 +29,8 @@ void main()
 {
 #ifdef MAT_CODE
 	MaterialInfo material = material.infos[i_matid];
+	float tiling = float(material.f[0]);
+	vec4 weights = texture(terrain_splash_maps[i_id], i_uv);
 	#include MAT_CODE
 #else
 	#ifndef OCCLUDER_PASS

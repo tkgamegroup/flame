@@ -1,3 +1,11 @@
+#include "../math.glsl"
+#include "../texture_sampling.glsl"
+#ifndef GBUFFER_PASS
+#ifdef MAT_CODE
+#include "../shading.glsl"
+#endif
+#endif
+
 #ifndef OCCLUDER_PASS
 layout(location = 0) in vec3 i_normal;
 layout(location = 1) in vec3 i_coordw;
@@ -13,6 +21,20 @@ layout(location = 1) out vec4 o_res_nor_rou;
 
 void main()
 {
+#ifdef MAT_CODE
+	MaterialInfo material = material.infos[pc.i[1]];
+	float tiling = float(material.f[0]);
+	
+	float radians = asin(i_normal.y) / 3.14159;
+	vec3 w;
+	w[0] = mix(1, 0, radians + 0.5);
+	w[1] = mix(0, 1, radians + 0.5);
+	w[2] = 0;
+	w /= w[0] + w[1] + w[2];
+	vec4 weights = vec4(w, 0);
+
+	#include MAT_CODE
+#else
 	#ifndef OCCLUDER_PASS
 		#ifndef GBUFFER_PASS
 			#ifdef PICKUP
@@ -27,4 +49,5 @@ void main()
 			o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, 1.0);
 		#endif
 	#endif
+#endif
 }

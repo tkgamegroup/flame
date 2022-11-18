@@ -26,10 +26,22 @@ namespace flame
 		virtual void set_data_map_name(const std::filesystem::path& name) = 0;
 
 		// Reflect
+		std::filesystem::path material_name;
+		// Reflect
+		virtual void set_material_name(const std::filesystem::path& name) = 0;
+
+		// Reflect
+		bool cast_shadow = true;
+		// Reflect
+		virtual void set_cast_shadow(bool v) = 0;
+
+		// Reflect
 		bool marching_cubes = true;
 
 		graphics::ImagePtr data_map = nullptr;
+		graphics::MaterialPtr material = nullptr;
 		int instance_id = -1;
+		int material_res_id = -1;
 
 		struct Create
 		{

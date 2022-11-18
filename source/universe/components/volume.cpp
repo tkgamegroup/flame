@@ -1,3 +1,4 @@
+#include "../../graphics/material.h"
 #include "node_private.h"
 #include "volume_private.h"
 #include "../draw_data.h"
@@ -63,10 +64,56 @@ namespace flame
 		data_changed("data_map_name"_h);
 	}
 
+	void cVolumePrivate::set_material_name(const std::filesystem::path& name)
+	{
+		if (material_name == name)
+			return;
+		if (!material_name.empty())
+			AssetManagemant::release_asset(Path::get(material_name));
+		material_name = name;
+		if (!material_name.empty())
+			AssetManagemant::get_asset(Path::get(material_name));
+
+		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
+		if (material != _material)
+		{
+			if (material_res_id != -1)
+				sRenderer::instance()->release_material_res(material_res_id);
+			if (material)
+				graphics::Material::release(material);
+			material = _material;
+			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
+		}
+		else if (_material)
+			graphics::Material::release(_material);
+
+		dirty = true;
+		node->mark_drawing_dirty();
+		data_changed("material_name"_h);
+	}
+
+	void cVolumePrivate::set_cast_shadow(bool v)
+	{
+		if (cast_shadow == v)
+			return;
+		cast_shadow = v;
+
+		dirty = true;
+		data_changed("cast_shadow"_h);
+	}
+
 	cVolumePrivate::~cVolumePrivate()
 	{
 		node->drawers.remove("volume"_h);
 		node->measurers.remove("volume"_h);
+
+		graphics::Queue::get()->wait_idle();
+		if (material_res_id != -1)
+			sRenderer::instance()->release_material_res(material_res_id);
+		if (data_map && !data_map_name.native().starts_with(L"0x"))
+			graphics::Image::release(data_map);
+		if (material)
+			graphics::Material::release(material);
 	}
 
 	void cVolumePrivate::on_init()
@@ -88,12 +135,12 @@ namespace flame
 				if (marching_cubes)
 				{
 					if (draw_data.categories & CateMarchingCubes)
-						draw_data.volumes.emplace_back(instance_id, blocks, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				else
 				{
 					if (draw_data.categories & CateVolume)
-						draw_data.volumes.emplace_back(instance_id, blocks, 0);
+						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			}
