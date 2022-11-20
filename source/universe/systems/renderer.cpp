@@ -119,15 +119,19 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_mesh_plain = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_arm_plain = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_plain = nullptr;
+	graphics::GraphicsPipelinePtr pl_sdf_plain = nullptr;
+	graphics::GraphicsPipelinePtr pl_MC_plain = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_mesh_arm_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_pickup = nullptr;
-	graphics::GraphicsPipelinePtr pl_marching_cubes_transform_feedback = nullptr;
+	graphics::GraphicsPipelinePtr pl_sdf_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_MC_pickup = nullptr;
+	graphics::GraphicsPipelinePtr pl_terrain_transform_feedback = nullptr;
+	graphics::GraphicsPipelinePtr pl_MC_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
-	std::unique_ptr<graphics::Fence> fence_transform_feedback;
 
 	bool mark_clear_pipelines = false;
 
@@ -596,10 +600,12 @@ namespace flame
 		pl_mesh_arm_pickup->dynamic_renderpass = true;
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
-		pl_marching_cubes_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rasterizer_discard=true", "rp=" + str(rp_col_dep), "frag:TRANSFORM_FEEDBACK" });
+		pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
+		pl_MC_pickup->dynamic_renderpass = true;
+		pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "mesh:TRANSFORM_FEEDBACK" });
+		pl_MC_transform_feedback->dynamic_renderpass = true;
 
 		fence_pickup.reset(graphics::Fence::create(false));
-		fence_transform_feedback.reset(graphics::Fence::create(false));
 
 		camera_light_id = register_light_instance(LightDirectional, -1);
 		white_tex_id = get_texture_res(img_white->get_view(), nullptr, -1);
@@ -1344,16 +1350,18 @@ namespace flame
 	{
 		auto pi = buf_instance.item_d("sdfs"_h, id);
 		pi.item("boxes_count"_h).set(boxes_count);
+		auto pbs = pi.itemv("boxes"_h, boxes_count);
 		for (auto i = 0; i < boxes_count; i++)
 		{
-			auto pb = pi.item("boxes"_h, i);
+			auto pb = pbs.at(i);
 			pb.item("coord"_h).set(boxes[i].first);
 			pb.item("extent"_h).set(boxes[i].second);
 		}
 		pi.item("spheres_count"_h).set(spheres_count);
+		auto pss = pi.itemv("spheres"_h, spheres_count);
 		for (auto i = 0; i < spheres_count; i++)
 		{
-			auto ps = pi.item("spheres"_h, i);
+			auto ps = pss.at(i);
 			ps.item("coord"_h).set(spheres[i].first);
 			ps.item("radius"_h).set(spheres[i].second);
 		}
@@ -1586,7 +1594,7 @@ namespace flame
 		}
 		for (auto& v : draw_data.volumes)
 		{
-			prm_gbuf.pc.item("i"_h).set(ivec4(v.ins_id, v.mat_id, 0, 0));
+			prm_gbuf.pc.item("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
 
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
 			for (auto z = 0; z < v.blocks.z; z++)
@@ -1595,7 +1603,7 @@ namespace flame
 				{
 					for (auto x = 0; x < v.blocks.x; x++)
 					{
-						prm_gbuf.pc.item("f"_h).set(vec4(vec3(x, y, z), 0));
+						prm_gbuf.pc.item("offset"_h).set(vec3(x, y, z));
 						prm_gbuf.push_constant(cb);
 						// 128 / 4 = 32
 						cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
@@ -2129,6 +2137,8 @@ namespace flame
 
 	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)
 	{
+		return nullptr;
+
 		if (camera == INVALID_POINTER)
 			return nullptr;
 		if (!camera)
@@ -2154,7 +2164,8 @@ namespace flame
 
 		auto n_mesh_draws = 0;
 		auto n_terrain_draws = 0;
-		draw_data.reset(PassPickUp, CateMesh | CateTerrain | CateSDF | CateVolume | CateMarchingCubes);
+		auto n_MC_draws = 0;
+		draw_data.reset(PassPickUp, CateMesh | CateTerrain | CateMarchingCubes);
 		std::vector<cNodePtr> camera_culled_nodes; // collect here (again), because there may have changes between render() and pick_up()
 		sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 		for (auto n : camera_culled_nodes)
@@ -2196,12 +2207,37 @@ namespace flame
 				cb->bind_pipeline(pl_terrain_pickup);
 				auto& t = draw_data.terrains[i];
 				prm_fwd.pc.item("i"_h).set(ivec4((int)nodes.size() + 1, 0, 0, 0));
+
 				prm_fwd.push_constant(cb.get());
 				cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
 
 				nodes.push_back(n);
 			}
 			n_terrain_draws = draw_data.terrains.size();
+
+			for (auto i = n_MC_draws; i < draw_data.volumes.size(); i++)
+			{
+				cb->bind_pipeline(pl_MC_pickup);
+				auto& v = draw_data.volumes[i];
+				prm_fwd.pc.item("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
+				prm_fwd.pc.item("i"_h).set(ivec4((int)nodes.size() + 1, 0, 0, 0));
+				for (auto z = 0; z < v.blocks.z; z++)
+				{
+					for (auto y = 0; y < v.blocks.y; y++)
+					{
+						for (auto x = 0; x < v.blocks.x; x++)
+						{
+							prm_fwd.pc.item("offset"_h).set(vec3(x, y, z));
+							prm_fwd.push_constant(cb.get());
+							// 128 / 4 = 32
+							cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+						}
+					}
+				}
+
+				nodes.push_back(n);
+			}
+			n_MC_draws = draw_data.volumes.size();
 		}
 
 		cb->end_renderpass();
@@ -2219,15 +2255,16 @@ namespace flame
 			cpy.img_off = uvec3(screen_pos, 0);
 			cpy.img_ext = uvec3(1U);
 			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
-			cb->copy_image_to_buffer(img_pickup.get(), sb.get(), { &cpy, 1 });
+			cb->copy_image_to_buffer(img_pickup.get(), sb.get(), cpy);
 			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
 			if (out_pos)
 			{
 				cpy.buf_off = sizeof(uint);
 				cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
-				cb->copy_image_to_buffer(img_dep_pickup.get(), sb.get(), { &cpy, 1 });
+				cb->copy_image_to_buffer(img_dep_pickup.get(), sb.get(), cpy);
 				cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
 			}
+
 			cb.excute();
 		}
 		memcpy(&index, sb->mapped, sizeof(index));
@@ -2251,27 +2288,29 @@ namespace flame
 	{
 		std::vector<vec3> ret;
 
-		graphics::InstanceCommandBuffer cb(fence_pickup.get());
+		graphics::InstanceCommandBuffer cb;
+
+		buf_transform_feedback.item_d("vertex_count"_h).set(123U);
+		buf_transform_feedback.upload(cb.get());
 
 		cb->set_viewport_and_scissor(Rect(vec2(0), vec2(1)));
 		cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f), vec4(1.f, 0.f, 0.f, 0.f) });
 		prm_fwd.bind_dss(cb.get());
 
-		draw_data.reset(PassPickUp, CateMesh | CateTerrain | CateSDF | CateVolume | CateMarchingCubes);
+		draw_data.reset(PassTransformFeedback, CateMesh | CateTerrain | CateMarchingCubes);
 		node->draw(draw_data);
 		for (auto& v : draw_data.volumes)
 		{
-			prm_gbuf.pc.item("i"_h).set(ivec4(v.ins_id, v.mat_id, 0, 0));
-
-			cb->bind_pipeline(pl_marching_cubes_transform_feedback);
+			cb->bind_pipeline(pl_MC_transform_feedback);
+			prm_fwd.pc.item("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
 			for (auto z = 0; z < v.blocks.z; z++)
 			{
 				for (auto y = 0; y < v.blocks.y; y++)
 				{
 					for (auto x = 0; x < v.blocks.x; x++)
 					{
-						prm_gbuf.pc.item("f"_h).set(vec4(vec3(x, y, z), 0));
-						prm_gbuf.push_constant(cb.get());
+						prm_fwd.pc.item("offset"_h).set(vec3(x, y, z));
+						prm_fwd.push_constant(cb.get());
 						// 128 / 4 = 32
 						cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
 					}
@@ -2281,17 +2320,12 @@ namespace flame
 
 		cb->end_renderpass();
 
-		buf_transform_feedback.mark_dirty(buf_transform_feedback);
+		buf_transform_feedback.mark_dirty(0, 4);
 		buf_transform_feedback.download(cb.get());
 
 		cb.excute();
 
-		ret.resize(buf_transform_feedback.item("vertex_count"_h).get<uint>());
-
-		for (auto i = 0; i < ret.size(); i++)
-		{
-
-		}
+		int cut = 1;
 
 		return ret;
 	}

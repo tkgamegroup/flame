@@ -18,16 +18,6 @@ App app;
 
 void App::init()
 {
-	struct NavMeshTest
-	{
-		bool open = false;
-
-		vec3 start = vec3(0.f);
-		vec3 end = vec3(0.f);
-		std::vector<vec3> points;
-	};
-	static NavMeshTest navmesh_test;
-
 	create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
 	world->update_components = false;
 	always_render = false;
@@ -43,6 +33,8 @@ void App::init()
 
 	for (auto& v : graphics::gui_views)
 		v->init();
+
+	static std::vector<std::function<bool()>> dialogs;
 
 	graphics::gui_callbacks.add([this]() {
 		ImGui::BeginMainMenuBar();
@@ -111,6 +103,48 @@ void App::init()
 			ImGui::Separator();
 			if (ImGui::BeginMenu("NavMesh"))
 			{
+				struct GenerateDialog
+				{
+					bool open = false;
+
+					float agent_radius = 0.6f;
+					float agent_height = 1.8f;
+					float walkable_climb = 0.5f;
+					float walkable_slope_angle = 45.f;
+				};
+				static GenerateDialog generate_dialog;
+				if (ImGui::MenuItem("Generate"))
+				{
+					if (e_prefab)
+					{
+						dialogs.push_back([&]() {
+							if (!generate_dialog.open)
+							{
+								generate_dialog.open = true;
+								ImGui::OpenPopup("NavMesh Generate");
+							}
+
+							if (ImGui::BeginPopupModal("NavMesh Generate"))
+							{
+								ImGui::InputFloat("Agent Radius", &generate_dialog.agent_radius);
+								ImGui::InputFloat("Agent Height", &generate_dialog.agent_height);
+								ImGui::InputFloat("Walkable Climb", &generate_dialog.walkable_climb);
+								ImGui::InputFloat("Walkable Slope Angle", &generate_dialog.walkable_slope_angle);
+								if (ImGui::Button("Generate"))
+								{
+									sScene::instance()->generate_nav_mesh(generate_dialog.agent_radius, generate_dialog.agent_height, generate_dialog.walkable_climb, generate_dialog.walkable_slope_angle);
+									generate_dialog.open = false;
+								}
+								ImGui::SameLine();
+								if (ImGui::Button("Cancel"))
+									generate_dialog.open = false;
+								ImGui::End();
+							}
+							return generate_dialog.open;
+						});
+					}
+				}
+
 				if (ImGui::MenuItem("Generate Using cNavScene's values"))
 				{
 					if (e_prefab)
@@ -122,10 +156,20 @@ void App::init()
 						}
 					}
 				}
-				if (ImGui::MenuItem("Test", nullptr, &navmesh_test.open))
+
+				struct TestDialog
+				{
+					bool open = false;
+
+					vec3 start = vec3(0.f);
+					vec3 end = vec3(0.f);
+					std::vector<vec3> points;
+				};
+				static TestDialog test_dialog;
+				if (ImGui::MenuItem("Test", nullptr, &test_dialog.open))
 				{
 					auto node = e_editor->get_component_i<cNode>(0);
-					if (!navmesh_test.open)
+					if (!test_dialog.open)
 						node->drawers.remove("navmesh_test"_h);
 					else
 					{
@@ -134,24 +178,49 @@ void App::init()
 							{
 								{
 									std::vector<vec3> points;
-									points.push_back(navmesh_test.start - vec3(1, 0, 0));
-									points.push_back(navmesh_test.start + vec3(1, 0, 0));
-									points.push_back(navmesh_test.start - vec3(0, 0, 1));
-									points.push_back(navmesh_test.start + vec3(0, 0, 1));
+									points.push_back(test_dialog.start - vec3(1, 0, 0));
+									points.push_back(test_dialog.start + vec3(1, 0, 0));
+									points.push_back(test_dialog.start - vec3(0, 0, 1));
+									points.push_back(test_dialog.start + vec3(0, 0, 1));
 									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 255, 0, 255));
 								}
 								{
 									std::vector<vec3> points;
-									points.push_back(navmesh_test.end - vec3(1, 0, 0));
-									points.push_back(navmesh_test.end + vec3(1, 0, 0));
-									points.push_back(navmesh_test.end - vec3(0, 0, 1));
-									points.push_back(navmesh_test.end + vec3(0, 0, 1));
+									points.push_back(test_dialog.end - vec3(1, 0, 0));
+									points.push_back(test_dialog.end + vec3(1, 0, 0));
+									points.push_back(test_dialog.end - vec3(0, 0, 1));
+									points.push_back(test_dialog.end + vec3(0, 0, 1));
 									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 0, 255, 255));
 								}
-								if (!navmesh_test.points.empty())
-									draw_data.primitives.emplace_back("LineList"_h, std::move(navmesh_test.points), cvec4(255, 0, 0, 255));
+								if (!test_dialog.points.empty())
+									draw_data.primitives.emplace_back("LineList"_h, std::move(test_dialog.points), cvec4(255, 0, 0, 255));
 							}
 						}, "navmesh_test"_h);
+						dialogs.push_back([&]() {
+							if (test_dialog.open)
+							{
+								ImGui::Begin("NavMesh Test", &test_dialog.open);
+								static int v = 0;
+								ImGui::TextUnformatted("use ctrl+click to set start/end");
+								ImGui::RadioButton("Start", &v, 0);
+								ImGui::TextUnformatted(("    " + str(test_dialog.start)).c_str());
+								ImGui::RadioButton("End", &v, 1);
+								ImGui::TextUnformatted(("    " + str(test_dialog.end)).c_str());
+								if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
+								{
+									if (v == 0)
+										test_dialog.start = view_scene.hovering_pos;
+									else
+										test_dialog.end = view_scene.hovering_pos;
+									if (distance(test_dialog.start, test_dialog.end) > 0.f)
+										test_dialog.points = sScene::instance()->query_nav_path(test_dialog.start, test_dialog.end);
+								}
+								ImGui::End();
+								if (!test_dialog.open)
+									e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
+							}
+							return test_dialog.open;
+						});
 					}
 				}
 				ImGui::EndMenu();
@@ -315,27 +384,12 @@ void App::init()
 				cmd_stop();
 		}
 
-		if (navmesh_test.open)
+		for (auto it = dialogs.begin(); it != dialogs.end();)
 		{
-			ImGui::Begin("NavMesh Test", &navmesh_test.open);
-			static int v = 0;
-			ImGui::TextUnformatted("use ctrl+click to set start/end");
-			ImGui::RadioButton("Start", &v, 0);
-			ImGui::TextUnformatted(("    " + str(navmesh_test.start)).c_str());
-			ImGui::RadioButton("End", &v, 1);
-			ImGui::TextUnformatted(("    " + str(navmesh_test.end)).c_str());
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
-			{
-				if (v == 0)
-					navmesh_test.start = view_scene.hovering_pos;
-				else
-					navmesh_test.end = view_scene.hovering_pos;
-				if (distance(navmesh_test.start, navmesh_test.end) > 0.f)
-					navmesh_test.points = sScene::instance()->query_nav_path(navmesh_test.start, navmesh_test.end);
-			}
-			ImGui::End();
-			if (!navmesh_test.open)
-				e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
+			if (!(*it)())
+				it = dialogs.erase(it);
+			else
+				it++;
 		}
 	});
 }

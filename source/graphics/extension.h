@@ -72,32 +72,27 @@ namespace flame
 
 		constexpr inline AccessFlags u2a(BufferUsageFlags u)
 		{
-			switch (u)
-			{
-			case BufferUsageVertex:
+			if (u & BufferUsageVertex)
 				return AccessVertexAttributeRead;
-			case BufferUsageIndex:
+			if (u & BufferUsageIndex)
 				return AccessIndexRead;
-			case BufferUsageIndirect:
+			if (u & BufferUsageIndirect)
 				return AccessIndirectCommandRead;
-			case BufferUsageUniform:
+			if (u & BufferUsageUniform)
 				return AccessShaderRead;
-			case BufferUsageStorage:
+			if (u & BufferUsageStorage)
 				return AccessShaderRead | AccessShaderWrite;
-			}
 			return AccessNone;
 		}
 
 		constexpr inline PipelineStageFlags u2s(BufferUsageFlags u)
 		{
-			switch (u)
-			{
-			case BufferUsageVertex:
-			case BufferUsageIndex:
+			if (u & BufferUsageVertex)
 				return PipelineStageVertexInput;
-			case BufferUsageIndirect:
+			if (u & BufferUsageIndex)
+				return PipelineStageVertexInput;
+			if (u & BufferUsageIndirect)
 				return PipelineStageDrawIndirect;
-			}
 			return PipelineStageAllCommand;
 		}
 

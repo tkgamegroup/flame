@@ -22,7 +22,7 @@ layout(location = 1) out vec4 o_res_nor_rou;
 void main()
 {
 #ifdef MAT_CODE
-	MaterialInfo material = material.infos[pc.i[1]];
+	MaterialInfo material = material.infos[pc.index & 0xffff];
 	float tiling = float(material.f[0]);
 	
 	float radians = asin(i_normal.y) / 3.14159;

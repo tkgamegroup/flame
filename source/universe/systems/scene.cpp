@@ -5,12 +5,14 @@
 #include "../components/node_private.h"
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
+#include "../components/volume_private.h"
 #include "../components/nav_mesh_private.h"
 #include "../components/nav_agent_private.h"
 #include "../components/nav_obstacle_private.h"
 #include "../octree.h"
 #include "../draw_data.h"
 #include "scene_private.h"
+#include "renderer_private.h"
 
 #ifdef USE_RECASTNAV
 
@@ -514,6 +516,11 @@ namespace flame
 								}
 							}
 						}
+					}
+					if (auto volume = e->get_component_t<cVolume>(); volume && volume->marching_cubes)
+					{
+						auto vertices = sRenderer::instance()->transform_feedback(e->node());
+						auto cut = 1;
 					}
 				}
 

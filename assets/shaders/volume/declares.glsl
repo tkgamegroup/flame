@@ -8,10 +8,10 @@ struct Task
 	uint meshlets[64];
 };
 
-int vol_id = pc.i[0];
+uint vol_id = pc.index >> 16;
 vec3 blocks = vec3(instance.volumes[vol_id].blocks);
 vec3 block_sz = vec3(1.0) / blocks;
-vec3 block_off = block_sz * vec3(pc.f);
+vec3 block_off = block_sz * pc.offset;
 
 float field(vec3 pos)
 {

@@ -6,4 +6,6 @@ layout (push_constant) uniform PushConstant
 {
 	vec4 f;
 	ivec4 i;
+	uint index;
+	vec3 offset;
 }pc;

@@ -125,7 +125,8 @@ namespace flame
 		PassOcculder,
 		PassOutline,
 		PassPrimitive,
-		PassPickUp
+		PassPickUp,
+		PassTransformFeedback
 	};
 
 	enum DrawCategory

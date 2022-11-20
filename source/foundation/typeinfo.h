@@ -2647,6 +2647,8 @@ namespace flame
 		return nullptr;
 	}
 
+	struct VirtualArray;
+
 	struct VirtualData
 	{
 		char* pdata;
@@ -2668,6 +2670,8 @@ namespace flame
 			return ret;
 		}
 
+		inline VirtualArray itemv(uint hash, uint range);
+
 		template<typename T>
 		inline T get() const
 		{
@@ -2685,6 +2689,34 @@ namespace flame
 			memcpy(pdata, src, len);
 		}
 	};
+
+	struct VirtualArray
+	{
+		char* pdata;
+		uint stride;
+		uint size;
+		UdtInfo* item_ui;
+
+		inline VirtualData at(uint idx)
+		{
+			VirtualData ret;
+			ret.pdata = pdata + idx * stride;
+			ret.size = stride;
+			ret.ui = item_ui;
+			return ret;
+		}
+	};
+
+	inline VirtualArray VirtualData::itemv(uint hash, uint range)
+	{
+		auto& vi = hash == 0 ? ui->variables[0] : item_info(hash);
+		VirtualArray ret;
+		ret.pdata = pdata + vi.offset;
+		ret.stride = vi.array_stride > 0 ? vi.array_stride : vi.type->size;
+		ret.size = ret.stride * range;
+		ret.item_ui = vi.type->retrive_ui();
+		return ret;
+	}
 
 	struct VirtualStruct : VirtualData
 	{
@@ -2714,24 +2746,37 @@ namespace flame
 			return ret;
 		}
 
-		inline uint offset(const VirtualData& d)
+		inline VirtualArray itemv_d(uint hash, uint range)
+		{
+			auto ret = itemv(hash, range);
+			mark_dirty(ret);
+			return ret;
+		}
+
+		template <class T>
+		inline uint offset(const T& d)
 		{
 			return uint(d.pdata - pdata);
 		}
 
-		inline void mark_dirty(const VirtualData& d)
+		inline void mark_dirty(uint off, uint sz)
 		{
-			auto off = offset(d);
 			if (!dirty_regions.empty())
 			{
 				auto& last = dirty_regions.back();
 				if (last.first + last.second == off)
 				{
-					last.second += d.size;
+					last.second += sz;
 					return;
 				}
 			}
-			dirty_regions.emplace_back(off, d.size);
+			dirty_regions.emplace_back(off, sz);
+		}
+
+		template <class T>
+		inline void mark_dirty(const T& d)
+		{
+			mark_dirty(offset(d), d.size);
 		}
 	};
 }

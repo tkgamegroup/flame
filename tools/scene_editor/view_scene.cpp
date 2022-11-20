@@ -8,6 +8,7 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
+#include <flame/universe/components/volume.h>
 #include <flame/universe/components/nav_agent.h>
 #include <flame/universe/components/nav_obstacle.h>
 
@@ -435,6 +436,11 @@ void View_Scene::on_draw()
 						{
 							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
 								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
+						}
+						if (draw_data.categories & CateMarchingCubes)
+						{
+							if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
+								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
 						}
 					});
 					if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
