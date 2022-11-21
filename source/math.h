@@ -570,6 +570,18 @@ namespace flame
 		return true;
 	}
 
+	struct Curve
+	{
+		uint tess = 8;
+		std::vector<vec3> ctrl_points;
+		std::vector<vec3> vertices;
+
+		inline void update()
+		{
+
+		}
+	};
+
 	struct PerspectiveProjector
 	{
 		vec2 screen_sz;

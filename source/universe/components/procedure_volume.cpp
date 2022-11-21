@@ -40,6 +40,28 @@ namespace flame
 		data_changed("offset"_h);
 	}
 
+	void cProcedureVolumePrivate::set_plane0(const vec4& plane)
+	{
+		if (plane0 == plane)
+			return;
+		plane0 = plane;
+
+		build_volume();
+		volume->node->mark_transform_dirty();
+		data_changed("plane0"_h);
+	}
+
+	void cProcedureVolumePrivate::set_plane1(const vec4& plane)
+	{
+		if (plane1 == plane)
+			return;
+		plane1 = plane;
+
+		build_volume();
+		volume->node->mark_transform_dirty();
+		data_changed("plane1"_h);
+	}
+
 	void cProcedureVolumePrivate::set_amplitude_scale(float scale)
 	{
 		if (amplitude_scale == scale)
@@ -134,10 +156,12 @@ namespace flame
 		prm.bind_dss(cb.get());
 		prm.pc.item("extent"_h).set(volume->extent);
 		prm.pc.item("cells"_h).set(extent);
+		prm.pc.item("offset"_h).set(offset);
+		prm.pc.item("plane0"_h).set(plane0);
+		prm.pc.item("plane1"_h).set(plane1);
+		prm.pc.item("amplitude_scale"_h).set(amplitude_scale);
 		prm.pc.item("structure_octaves"_h).set((uint)structure_octaves.size());
 		prm.pc.item("detail_octaves"_h).set((uint)detail_octaves.size());
-		prm.pc.item("offset"_h).set(offset);
-		prm.pc.item("amplitude_scale"_h).set(amplitude_scale);
 		prm.pc.item("structure_amplitudes"_h).set(structure_octaves.data(), sizeof(float) * structure_octaves.size());
 		prm.pc.item("detail_amplitudes"_h).set(detail_octaves.data(), sizeof(float) * detail_octaves.size());
 		prm.push_constant(cb.get());
