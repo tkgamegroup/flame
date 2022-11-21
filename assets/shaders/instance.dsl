@@ -77,5 +77,7 @@ layout(set = SET, binding = 6) buffer readonly MarchingCubesLookup
 layout(set = SET, binding = 7) buffer TransformFeedback
 {
 	uint vertex_count;
-	vec3 vertices[65536];
+	float vertex_x[524288];
+	float vertex_y[524288];
+	float vertex_z[524288];
 }transform_feedback;

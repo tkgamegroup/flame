@@ -519,8 +519,15 @@ namespace flame
 					}
 					if (auto volume = e->get_component_t<cVolume>(); volume && volume->marching_cubes)
 					{
-						auto vertices = sRenderer::instance()->transform_feedback(e->node());
-						auto cut = 1;
+						auto volume_vretices = sRenderer::instance()->transform_feedback(e->node());
+						auto pos_off = positions.size();
+						positions.resize(positions.size() + volume_vretices.size());
+						for (auto i = 0; i < volume_vretices.size(); i++)
+							positions[pos_off + i] = pos + volume_vretices[i];
+						auto idx_off = indices.size();
+						indices.resize(indices.size() + volume_vretices.size());
+						for (auto i = 0; i < volume_vretices.size(); i++)
+							indices[idx_off + i] = pos_off + i;
 					}
 				}
 

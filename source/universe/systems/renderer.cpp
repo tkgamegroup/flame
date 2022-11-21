@@ -2137,8 +2137,6 @@ namespace flame
 
 	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)
 	{
-		return nullptr;
-
 		if (camera == INVALID_POINTER)
 			return nullptr;
 		if (!camera)
@@ -2290,7 +2288,7 @@ namespace flame
 
 		graphics::InstanceCommandBuffer cb;
 
-		buf_transform_feedback.item_d("vertex_count"_h).set(123U);
+		buf_transform_feedback.item_d("vertex_count"_h).set(0U);
 		buf_transform_feedback.upload(cb.get());
 
 		cb->set_viewport_and_scissor(Rect(vec2(0), vec2(1)));
@@ -2320,12 +2318,22 @@ namespace flame
 
 		cb->end_renderpass();
 
-		buf_transform_feedback.mark_dirty(0, 4);
+		buf_transform_feedback.mark_dirty(buf_transform_feedback);
 		buf_transform_feedback.download(cb.get());
 
 		cb.excute();
 
-		int cut = 1;
+		auto num = buf_transform_feedback.item("vertex_count"_h).get<uint>();
+		ret.resize(num);
+		auto vertex_x = buf_transform_feedback.itemv("vertex_x"_h, num);
+		auto vertex_y = buf_transform_feedback.itemv("vertex_y"_h, num);
+		auto vertex_z = buf_transform_feedback.itemv("vertex_z"_h, num);
+		for (auto i = 0; i < num; i++)
+		{
+			ret[i].x = vertex_x.at(i).get<float>();
+			ret[i].y = vertex_y.at(i).get<float>();
+			ret[i].z = vertex_z.at(i).get<float>();
+		}
 
 		return ret;
 	}

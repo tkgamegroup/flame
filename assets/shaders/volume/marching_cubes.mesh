@@ -106,7 +106,9 @@ void main()
 
 #ifdef TRANSFORM_FEEDBACK
 		uint vertex_index = atomicAdd(transform_feedback.vertex_count, 1);
-		//transform_feedback.vertices[vertex_index] = pos;
+		transform_feedback.vertex_x[vertex_index] = pos.x;
+		transform_feedback.vertex_y[vertex_index] = pos.y;
+		transform_feedback.vertex_z[vertex_index] = pos.z;
 #endif
 	}
 
