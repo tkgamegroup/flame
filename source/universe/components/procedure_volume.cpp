@@ -3,6 +3,7 @@
 #include "volume_private.h"
 #include "../../graphics/image.h"
 #include "../../graphics/command.h"
+#include "../../graphics/renderpass.h"
 #include "../../graphics/extension.h"
 
 namespace flame
@@ -173,39 +174,49 @@ namespace flame
 			cb.excute();
 		}
 
+		//{
+		//	graphics::InstanceCommandBuffer cb;
+		//	cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
+		//	cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
+		//	cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
+
+
+		//	graphics::StorageBuffer buf_path;
+
+		//	auto pl = graphics::ComputePipeline::get(L"flame\\shaders\\volume\\build_path.pipeline", {});
+		//	graphics::PipelineResourceManager prm;
+		//	prm.init(pl->layout, graphics::PipelineCompute);
+		//	auto dsl = prm.get_dsl(""_h);
+		//	buf_path.create(graphics::BufferUsageUniform, dsl->get_buf_ui("Path"_h));
+		//	buf_path.item_d("n"_h).set(2U);
+		//	auto pp = buf_path.itemv_d("p"_h, 2);
+		//	pp.at(0).set(vec3(64, 50, 0));
+		//	pp.at(1).set(vec3(64, 50, 128));
+		//	buf_path.upload(cb.get());
+		//	std::unique_ptr<graphics::DescriptorSet> ds(graphics::DescriptorSet::create(nullptr, dsl));
+		//	ds->set_buffer("Path"_h, 0, buf_path.buf.get());
+		//	ds->set_image("dst"_h, 0, data_map->get_view(), nullptr);
+		//	ds->update();
+		//	prm.set_ds(""_h, ds.get());
+
+		//	cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderStorage);
+		//	cb->bind_pipeline(pl);
+		//	prm.bind_dss(cb.get());
+		//	prm.pc.item("extent"_h).set(volume->extent);
+		//	prm.pc.item("cells"_h).set(extent);
+		//	prm.push_constant(cb.get());
+		//	cb->dispatch(extent / 4U);
+		//	cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
+
+		//	cb.excute();
+		//}
+
 		{
 			graphics::InstanceCommandBuffer cb;
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
 
-
-			graphics::StorageBuffer buf_path;
-
-			auto pl = graphics::ComputePipeline::get(L"flame\\shaders\\volume\\build_path.pipeline", {});
-			graphics::PipelineResourceManager prm;
-			prm.init(pl->layout, graphics::PipelineCompute);
-			auto dsl = prm.get_dsl(""_h);
-			buf_path.create(graphics::BufferUsageUniform, dsl->get_buf_ui("Path"_h));
-			buf_path.item_d("n"_h).set(2U);
-			auto pp = buf_path.itemv_d("p"_h, 2);
-			pp.at(0).set(vec3(64, 50, 0));
-			pp.at(1).set(vec3(64, 50, 128));
-			buf_path.upload(cb.get());
-			std::unique_ptr<graphics::DescriptorSet> ds(graphics::DescriptorSet::create(nullptr, dsl));
-			ds->set_buffer("Path"_h, 0, buf_path.buf.get());
-			ds->set_image("dst"_h, 0, data_map->get_view(), nullptr);
-			ds->update();
-			prm.set_ds(""_h, ds.get());
-
-			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderStorage);
-			cb->bind_pipeline(pl);
-			prm.bind_dss(cb.get());
-			prm.pc.item("extent"_h).set(volume->extent);
-			prm.pc.item("cells"_h).set(extent);
-			prm.push_constant(cb.get());
-			cb->dispatch(extent / 4U);
-			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
+			std::unique_ptr<graphics::Image> img_col;
+			std::unique_ptr<graphics::Image> img_dep;
+			std::unique_ptr<graphics::Framebuffer> fb;
 
 			cb.excute();
 		}

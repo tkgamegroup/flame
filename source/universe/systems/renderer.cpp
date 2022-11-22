@@ -545,6 +545,8 @@ namespace flame
 		pl_mesh_arm_plain->dynamic_renderpass = true;
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_terrain_plain->dynamic_renderpass = true;
+		pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
+		pl_MC_plain->dynamic_renderpass = true;
 
 		opa_batcher.buf_idr.create(mesh_instances.capacity);
 		trs_batcher.buf_idr.create(mesh_instances.capacity);
@@ -607,7 +609,7 @@ namespace flame
 		pl_terrain_pickup->dynamic_renderpass = true;
 		pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_MC_pickup->dynamic_renderpass = true;
-		pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "mesh:TRANSFORM_FEEDBACK" });
+		pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
 		pl_MC_transform_feedback->dynamic_renderpass = true;
 
 		fence_pickup.reset(graphics::Fence::create(false));
@@ -2087,10 +2089,6 @@ namespace flame
 			blend_pass();
 
 			outline_idx += n;
-		}
-		for (auto& m : draw_data.meshes)
-		{
-			auto& mesh_r = mesh_reses[m.mesh_id];
 		}
 		for (auto& t : draw_data.terrains)
 		{
