@@ -102,6 +102,15 @@ namespace flame
 			std::unique_ptr<BufferT>	buf;
 			std::unique_ptr<BufferT>	stag;
 
+			StorageBuffer()
+			{
+			}
+
+			StorageBuffer(BufferUsageFlags _usage, UdtInfo* ui, BufferUsageFlags _stag_usage = BufferUsageNone)
+			{
+				create(_usage, ui, _stag_usage);
+			}
+
 			void create(BufferUsageFlags _usage, UdtInfo* ui, BufferUsageFlags _stag_usage = BufferUsageNone)
 			{
 				usage = _usage;
@@ -296,6 +305,15 @@ namespace flame
 
 			DescriptorSetPtr temp_dss[8];
 			VirtualStruct pc;
+
+			PipelineResourceManager()
+			{
+			}
+
+			PipelineResourceManager(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
+			{
+				init(_pll, _plt);
+			}
 
 			void init(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
 			{
