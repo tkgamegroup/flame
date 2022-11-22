@@ -42,7 +42,7 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	return diffuse + specular;
 }
 
-const float esm_c = 7.0;
+const float esm_c = 100.0;
 
 vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
@@ -65,7 +65,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
-					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref) * lighting.dir_shadows[li.shadow_index].far), 0.0, 1.0);
+					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref)), 0.0, 1.0);
 					break;
 				}
 			}

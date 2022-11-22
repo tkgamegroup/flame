@@ -239,31 +239,31 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
-						height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+					if (enable)
+					{
+						sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
+							height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+					}
 					dirty = false;
 				}
 				break;
 			case PassGBuffer:
-				if (draw_data.categories & CateTerrain)
+				if ((draw_data.categories & CateTerrain) && enable)
 					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			case PassForward:
-				if (draw_data.categories & CateGrassField)
+				if (use_grass_field)
 				{
-					if (use_grass_field)
+					if ((draw_data.categories & CateGrassField) && enable)
 						draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassOcculder:
-				if (cast_shadow)
-				{
-					if (draw_data.categories & CateTerrain)
-						draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
-				}
+				if ((draw_data.categories & CateTerrain) && enable && cast_shadow)
+					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			case PassPickUp:
-				if (draw_data.categories & CateTerrain)
+				if ((draw_data.categories & CateTerrain) && enable)
 					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			}

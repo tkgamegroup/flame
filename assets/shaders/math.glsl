@@ -6,6 +6,11 @@ float sum(vec3 v)
 	return v.x + v.y + v.z;
 }
 
+float length_squared(vec3 v)
+{
+	return v.x * v.x + v.y * v.y + v.z * v.z;
+}
+
 float rand(vec2 co)
 {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);

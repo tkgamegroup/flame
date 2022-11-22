@@ -138,9 +138,11 @@ namespace flame
 					if ((draw_data.categories & CateMarchingCubes) && enable)
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
-				else
+				break;
+			case PassOcculder:
+				if (marching_cubes)
 				{
-					if ((draw_data.categories & CateVolume) && enable)
+					if ((draw_data.categories & CateMarchingCubes) && enable && cast_shadow)
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;

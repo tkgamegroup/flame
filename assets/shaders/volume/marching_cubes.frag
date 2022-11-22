@@ -18,6 +18,7 @@ layout(location = 0) out vec4 o_color;
 layout(location = 0) out vec4 o_res_col_met;
 layout(location = 1) out vec4 o_res_nor_rou;
 #endif
+#endif
 
 void main()
 {
@@ -25,13 +26,17 @@ void main()
 	MaterialInfo material = material.infos[pc.index & 0xffff];
 	float tiling = float(material.f[0]);
 	
-	float radians = asin(i_normal.y) / 3.14159;
-	vec3 w;
-	w[0] = mix(1, 0, radians + 0.5);
-	w[1] = mix(0, 1, radians + 0.5);
-	w[2] = 0;
-	w /= w[0] + w[1] + w[2];
-	vec4 weights = vec4(w, 0);
+	#ifndef OCCLUDER_PASS
+		float radians = asin(i_normal.y) / 3.14159;
+		vec3 w;
+		w[0] = mix(1, 0, radians + 0.5);
+		w[1] = mix(0, 1, radians + 0.5);
+		w[2] = 0;
+		w /= w[0] + w[1] + w[2];
+		vec4 weights = vec4(w, 0);
+	#else
+		vec4 weights = vec4(0);
+	#endif
 
 	#include MAT_CODE
 #else

@@ -95,7 +95,7 @@ namespace flame
 
 	struct PrimitiveDraw
 	{
-		uint type; // "LineList"_h or "TriangleList"_h
+		uint type; // "LineList"_h, "LineStrip"_h, "TriangleList"_h
 		std::vector<vec3> points;
 		cvec4 color;
 

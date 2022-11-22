@@ -23,7 +23,6 @@ layout (push_constant) uniform PushConstant
 @
 
 @comp
-
 float get_noise(vec3 pos)
 {
 	return texture(noise, pos).r * 2.0 - 1.0;

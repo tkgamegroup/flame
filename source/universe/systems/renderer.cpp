@@ -21,6 +21,7 @@ namespace flame
 {
 	const auto col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
 	const auto dep_fmt = graphics::Format::Format_Depth16;
+	const auto esm_fmt = graphics::Format::Format_Depth32;
 	const auto sample_count = graphics::SampleCount_4;
 	const auto ShadowMapSize = uvec2(2048);
 	const auto DirShadowMaxCount = 4U;
@@ -129,6 +130,7 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_terrain_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_MC_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_line_strip3d = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
@@ -157,6 +159,7 @@ namespace flame
 		std::vector<cNodePtr> culled_nodes;
 		MeshBatcher batcher[DirShadowMaxLevels];
 		std::vector<TerrainDraw> draw_terrains[DirShadowMaxLevels];
+		std::vector<VolumeDraw> draw_MCs[DirShadowMaxLevels];
 	};
 
 	std::vector<cNodePtr> camera_culled_nodes;
@@ -471,17 +474,17 @@ namespace flame
 		imgs_dir_shadow.resize(dsl_lighting->get_binding("dir_shadow_maps"_h).count);
 		for (auto& i : imgs_dir_shadow)
 		{
-			i.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
+			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		img_dir_shadow_back.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
+		img_dir_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 		imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
 		for (auto& i : imgs_pt_shadow)
 		{
-			i.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		img_pt_shadow_back.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
 			ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
@@ -508,6 +511,8 @@ namespace flame
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
 		pl_line3d->dynamic_renderpass = true;
+		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip" });
+		pl_line_strip3d->dynamic_renderpass = true;
 		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
 		pl_triangle3d->dynamic_renderpass = true;
 
@@ -1681,8 +1686,9 @@ namespace flame
 						auto z_max = +hf_zlen;
 						auto n_mesh_draws = 0;
 						auto n_terrain_draws = 0;
+						auto n_MC_draws = 0;
 
-						draw_data.reset(PassOcculder, CateMesh | CateTerrain);
+						draw_data.reset(PassOcculder, CateMesh | CateTerrain | CateMarchingCubes);
 						for (auto n : s.culled_nodes)
 						{
 							n->draw(draw_data);
@@ -1706,9 +1712,21 @@ namespace flame
 
 								n_terrain_draws = draw_data.terrains.size();
 							}
+							if (draw_data.volumes.size() > n_MC_draws)
+							{
+								for (auto& p : n->bounds.get_points())
+								{
+									auto d = dot(p - c, s.rot[2]);
+									z_min = min(d, z_min);
+									z_max = max(d, z_max);
+								}
+
+								n_MC_draws = draw_data.volumes.size();
+							}
 						}
 						s.batcher[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
 						s.draw_terrains[lv] = draw_data.terrains;
+						s.draw_MCs[lv] = draw_data.volumes;
 
 						proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
 						proj[1][1] *= -1.f;
@@ -1770,6 +1788,25 @@ namespace flame
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
+					}
+					for (auto& v : s.draw_MCs[lv])
+					{
+						prm_fwd.pc.item("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
+
+						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "OCCLUDER_PASS"_h));
+						for (auto z = 0; z < v.blocks.z; z++)
+						{
+							for (auto y = 0; y < v.blocks.y; y++)
+							{
+								for (auto x = 0; x < v.blocks.x; x++)
+								{
+									prm_fwd.pc.item("offset"_h).set(vec3(x, y, z));
+									prm_fwd.push_constant(cb);
+									// 128 / 4 = 32
+									cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+								}
+							}
+						}
 					}
 
 					cb->end_renderpass();
@@ -2110,6 +2147,9 @@ namespace flame
 				{
 				case "LineList"_h:
 					cb->bind_pipeline(pl_line3d);
+					break;
+				case "LineStrip"_h:
+					cb->bind_pipeline(pl_line_strip3d);
 					break;
 				case "TriangleList"_h:
 					cb->bind_pipeline(pl_triangle3d);

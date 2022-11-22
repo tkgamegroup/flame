@@ -71,11 +71,8 @@ namespace flame
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassOcculder:
-				if (enable && cast_shadow)
-				{
-					if ((draw_data.categories & CateMesh))
-						draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
-				}
+				if ((draw_data.categories & CateMesh) && enable && cast_shadow)
+					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassPickUp:
 				if ((draw_data.categories & CateMesh) && enable)

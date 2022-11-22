@@ -573,10 +573,11 @@ namespace flame
 	struct Curve
 	{
 		uint tess = 8;
+		float t = 0.2f;
 		std::vector<vec3> ctrl_points;
 		std::vector<vec3> vertices;
 
-		inline void update(float t = 0.2f)
+		inline void update()
 		{
 			vertices.clear();
 			if (ctrl_points.size() < 2)
@@ -598,7 +599,7 @@ namespace flame
 				auto c2 = 2.f * t * pi_2 + (t - 3.f) * pi_1 + (3.f - 2.f * t) * pi + -t * pi1;
 				auto c3 = -t * pi_2 + (2.f - t) * pi_1 + (t - 2.f) * pi + t * pi1;
 
-				auto num = tess + (i == _ctrl_points.size() - 2) ? 1 : 0;
+				auto num = tess + (i == _ctrl_points.size() - 2 ? 1 : 0);
 				for (auto j = 0; j < num; j++)
 				{
 					auto u = (float)j / (float)tess;
