@@ -43,9 +43,10 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cVolume);
 	FLAME_UNIVERSE_TYPE(cProcedureVolume);
 	FLAME_UNIVERSE_TYPE(cParticleSystem);
-	FLAME_UNIVERSE_TYPE(cRigid);
-	FLAME_UNIVERSE_TYPE(cShape);
-	FLAME_UNIVERSE_TYPE(cCController);
+	FLAME_UNIVERSE_TYPE(cCurve);
+	FLAME_UNIVERSE_TYPE(cPhysicsRigid);
+	FLAME_UNIVERSE_TYPE(cPhysicsShape);
+	FLAME_UNIVERSE_TYPE(cPhysicsCController);
 	FLAME_UNIVERSE_TYPE(cNavMesh);
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);

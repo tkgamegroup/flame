@@ -13,6 +13,7 @@ layout (push_constant) uniform PushConstant
 	uvec3 cells;
 	float offset;
 	vec4 plane0;
+	vec4 plane1;
 	float amplitude_scale;
 	uint structure_octaves;
 	uint detail_octaves;
@@ -48,6 +49,7 @@ void main()
 	}
 
 	density += clamp((pc.plane0.x - pos.y * pc.plane0.y) * pc.plane0.z, 0, 1) * pc.plane0.w;
+	density += clamp((pc.plane1.x - pos.y * pc.plane1.y) * pc.plane1.z, 0, 1) * pc.plane1.w;
 
 	imageStore(dst, ivec3(dst_coord), vec4(density, 0, 0, 0));
 }

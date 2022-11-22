@@ -576,9 +576,35 @@ namespace flame
 		std::vector<vec3> ctrl_points;
 		std::vector<vec3> vertices;
 
-		inline void update()
+		inline void update(float t = 0.2f)
 		{
+			vertices.clear();
+			if (ctrl_points.size() < 2)
+				return;
 
+			std::vector<vec3> _ctrl_points;
+			_ctrl_points.push_back(2.f * ctrl_points[0] - ctrl_points[1]);
+			_ctrl_points.insert(_ctrl_points.end(), ctrl_points.begin(), ctrl_points.end());
+			_ctrl_points.push_back(2.f * ctrl_points.rbegin()[0] - ctrl_points.rbegin()[1]);
+			for (auto i = 2; i < _ctrl_points.size() - 1; i++)
+			{
+				auto pi_2 = _ctrl_points[i - 2];
+				auto pi_1 = _ctrl_points[i - 1];
+				auto pi = _ctrl_points[i];
+				auto pi1 = _ctrl_points[i + 1];
+
+				auto c0 = pi_1;
+				auto c1 = -t * pi_2 + t * pi;
+				auto c2 = 2.f * t * pi_2 + (t - 3.f) * pi_1 + (3.f - 2.f * t) * pi + -t * pi1;
+				auto c3 = -t * pi_2 + (2.f - t) * pi_1 + (t - 2.f) * pi + t * pi1;
+
+				auto num = tess + (i == _ctrl_points.size() - 2) ? 1 : 0;
+				for (auto j = 0; j < num; j++)
+				{
+					auto u = (float)j / (float)tess;
+					vertices.push_back(c0 + c1 * u + c2 * u * u + c3 * u * u * u);
+				}
+			}
 		}
 	};
 
