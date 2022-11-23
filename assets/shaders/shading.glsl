@@ -42,8 +42,6 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	return diffuse + specular;
 }
 
-const float esm_c = 100.0;
-
 vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 ret = vec3(0.0);
@@ -65,7 +63,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
-					f_shadow *= clamp(exp(-esm_c * (coordl.z - ref)), 0.0, 1.0);
+					f_shadow *= clamp(exp(-lighting.esm_factor * (coordl.z - ref)), 0.0, 1.0);
 					break;
 				}
 			}
@@ -97,7 +95,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 			{
 				float ref = texture(pt_shadow_maps[li.shadow_index], -L).r * 2.0 - 1.0;
 				ref = linear_depth(lighting.pt_shadows[li.shadow_index].near, far, ref);
-				f_shadow = clamp(exp(-esm_c * (dist - ref)), 0.0, 1.0);
+				f_shadow = clamp(exp(-lighting.esm_factor * (dist - ref)), 0.0, 1.0);
 			}
 		}
 		
@@ -114,6 +112,33 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	return ret;
 }
 
+vec3 get_ssr(vec3 coordw, vec3 N, vec3 V, float roughness)
+{
+	const float maxDistance = 4;
+	const int   steps = 64;
+
+	vec3 color = vec3(0.0);
+
+	vec3 pivot = reflect(-V, N);
+	vec3 pos = coordw;
+	for (int i = 0; i < steps; i++)
+	{
+		pos += pivot * maxDistance / steps;
+		vec4 t = camera.proj_view_last * vec4(pos, 1.0);
+		t /= t.w;
+		if (t.x < -1 || t.x > +1 || t.y < -1 || t.y > +1 || t.z < 0 || t.z > +1)
+			break;
+		t.xy = t.xy * 0.5 + 0.5;
+		if (texture(img_dep_last, t.xy).r < t.z)
+		{
+			color = texture(img_dst_last, t.xy).rgb;
+			break;
+		} 
+	}
+
+	return mix(color, vec3(0.0), roughness);
+}
+
 vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotV = max(dot(N, V), 0.0);
@@ -122,7 +147,7 @@ vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughne
 	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
 	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (f0 * envBRDF.x + envBRDF.y);
 
-	return (diffuse + specular) * lighting.sky_intensity;
+	return (diffuse + specular) * lighting.sky_intensity * 1.0; // TODO: replace 1.0 to ao when SSAO is ready
 }
 
 vec3 get_fog(vec3 color, float dist)
@@ -152,7 +177,8 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 	V = normalize(V);
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
-	ret += get_env(N, V, metallic, albedo, f0, roughness) * /*ao*/1.0; // TODO: use ao when ssao is ok
+	//ret += get_ssr(coordw, N, V, roughness);
+	ret += get_env(N, V, metallic, albedo, f0, roughness);
 	ret = get_fog(ret, distv);
 #ifdef POST_SHADING_CODE
 	#include POST_SHADING_CODE

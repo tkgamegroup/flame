@@ -28,7 +28,7 @@ namespace flame
 		// Reflect
 		virtual void set_csm_levels(uint lv) = 0;
 		// Reflect
-		float esm_factor = 7.f;
+		float esm_factor = 100.f;
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect

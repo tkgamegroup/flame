@@ -25,11 +25,11 @@ namespace flame
 				auto ret = new RenderpassPrivate;
 				*(RenderpassInfo*)ret = info;
 
-				std::vector<VkAttachmentDescription2> atts(info.attachments.size());
+				std::vector<VkAttachmentDescription2> vk_atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)
 				{
 					auto& src = info.attachments[i];
-					auto& dst = atts[i];
+					auto& dst = vk_atts[i];
 
 					dst = {};
 					dst.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
@@ -88,7 +88,8 @@ namespace flame
 							r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 							r.attachment = src.color_resolve_attachments[j];
 							r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-							atts[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+							ret->attachments[j].final_layout = ImageLayoutAttachment;
+							vk_atts[j].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 						}
 
 						sp.pResolveAttachments = dst.col_res_refs.data();
@@ -109,7 +110,8 @@ namespace flame
 						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 						r.attachment = src.depth_resolve_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-						atts[src.depth_resolve_attachment].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+						ret->attachments[src.depth_resolve_attachment].final_layout = ImageLayoutGeneral;
+						vk_atts[src.depth_resolve_attachment].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 						auto& s = dst.dep_res_state;
 						s = {};
@@ -142,8 +144,8 @@ namespace flame
 				VkRenderPassCreateInfo2 create_info;
 				create_info = {};
 				create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
-				create_info.attachmentCount = atts.size();
-				create_info.pAttachments = atts.data();
+				create_info.attachmentCount = vk_atts.size();
+				create_info.pAttachments = vk_atts.data();
 				create_info.subpassCount = vk_sps.size();
 				create_info.pSubpasses = vk_sps.data();
 				create_info.dependencyCount = vk_deps.size();
