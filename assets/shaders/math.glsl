@@ -6,6 +6,11 @@ float sum(vec3 v)
 	return v.x + v.y + v.z;
 }
 
+float length_squared(vec2 v)
+{
+	return v.x * v.x + v.y * v.y;
+}
+
 float length_squared(vec3 v)
 {
 	return v.x * v.x + v.y * v.y + v.z * v.z;

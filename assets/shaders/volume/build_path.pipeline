@@ -7,7 +7,7 @@ shaders
 layout (set = SET, binding = 0) uniform Path
 {
 	uint n;
-	vec3 p[1023];
+	vec2 p[1023];
 }path;
 
 layout (set = SET, binding = 1, r8) uniform writeonly image3D dst;
@@ -29,16 +29,16 @@ void main()
 
 	for (int i = 1; i < path.n; i++)
 	{
-		vec3 v = path.p[i - 1];
-		vec3 w = path.p[i];
-		vec3 vw = w - v;
+		vec2 v = path.p[i - 1];
+		vec2 w = path.p[i];
+		vec2 vw = w - v;
 		float l2 = length_squared(vw);
 		if (l2 == 0.0)
 			continue;
-		float t = dot(pos - v, vw) / l2;
+		float t = dot(pos.xz - v, vw) / l2;
 		if (t > 0.0 && t < 1.0)
 		{
-			float d = distance(pos, mix(v, w, t));
+			float d = distance(pos.xz, mix(v, w, t));
 			if (d < 5.0)
 			{
 				float v = 0.0;
