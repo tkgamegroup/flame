@@ -30,6 +30,7 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 {
 	float sky_intensity;
 	float sky_rad_levels;
+	float esm_factor;
 	vec3 fog_color;
 	
 	DirLight dir_lights[4];
@@ -43,10 +44,16 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 	PtShadow pt_shadows[4];
 }lighting;
 
-layout (set = SET, binding = 1) uniform sampler2DArray	dir_shadow_maps[4];
-layout (set = SET, binding = 2) uniform samplerCube		pt_shadow_maps[4];
+layout(set = SET, binding = 1) uniform sampler2D img_dst;
+layout(set = SET, binding = 2) uniform sampler2D img_dep;
+layout(set = SET, binding = 3) uniform sampler2D img_ao;
+layout(set = SET, binding = 4) uniform sampler2D img_dst_last;
+layout(set = SET, binding = 5) uniform sampler2D img_dep_last;
 
-layout(set = SET, binding = 3) uniform samplerCube sky_map;
-layout(set = SET, binding = 4) uniform samplerCube sky_irr_map;
-layout(set = SET, binding = 5) uniform samplerCube sky_rad_map;
-layout(set = SET, binding = 6) uniform sampler2D brdf_map;
+layout (set = SET, binding = 6) uniform sampler2DArray	dir_shadow_maps[4];
+layout (set = SET, binding = 7) uniform samplerCube		pt_shadow_maps[4];
+
+layout(set = SET, binding = 8) uniform samplerCube sky_map;
+layout(set = SET, binding = 9) uniform samplerCube sky_irr_map;
+layout(set = SET, binding = 10) uniform samplerCube sky_rad_map;
+layout(set = SET, binding = 11) uniform sampler2D brdf_map;

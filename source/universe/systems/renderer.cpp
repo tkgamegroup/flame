@@ -42,7 +42,9 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_back0;
 	std::unique_ptr<graphics::Image> img_back1;
 	std::unique_ptr<graphics::Image> img_dst;
+	std::unique_ptr<graphics::Image> img_dst_last;
 	std::unique_ptr<graphics::Image> img_dep;
+	std::unique_ptr<graphics::Image> img_dep_last;
 	std::unique_ptr<graphics::Image> img_dst_ms;
 	std::unique_ptr<graphics::Image> img_dep_ms;
 	std::unique_ptr<graphics::Image> img_col_met;	// color, metallic
@@ -66,7 +68,7 @@ namespace flame
 	graphics::PipelineLayoutPtr pll_gbuf = nullptr;
 	graphics::PipelineResourceManager prm_fwd;
 	graphics::PipelineResourceManager prm_gbuf;
-	graphics::PipelineResourceManager prm_deferred;
+	graphics::PipelineResourceManager prm_defe;
 	graphics::PipelineResourceManager prm_plain;
 	graphics::PipelineResourceManager prm_post;
 	graphics::PipelineResourceManager prm_luma;
@@ -98,7 +100,7 @@ namespace flame
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
 	std::unique_ptr<graphics::DescriptorSet> ds_lighting;
-	std::unique_ptr<graphics::DescriptorSet> ds_deferred;
+	std::unique_ptr<graphics::DescriptorSet> ds_defe;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma_avg;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
@@ -412,8 +414,8 @@ namespace flame
 			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 
-		auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
-		auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
+		static auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
 		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
 		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
@@ -556,12 +558,12 @@ namespace flame
 				s.batcher[i].buf_idr.create(min(1024U, mesh_instances.capacity));
 		}
 
-		prm_deferred.init(get_deferred_pipeline()->layout);
-		prm_deferred.set_ds("camera"_h, ds_camera.get());
-		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
-		prm_deferred.set_ds("material"_h, ds_material.get());
-		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, prm_deferred.pll->dsls.back()));
-		prm_deferred.set_ds(""_h, ds_deferred.get());
+		prm_defe.init(get_deferred_pipeline()->layout);
+		prm_defe.set_ds("camera"_h, ds_camera.get());
+		prm_defe.set_ds("lighting"_h, ds_lighting.get());
+		prm_defe.set_ds("material"_h, ds_material.get());
+		ds_defe.reset(graphics::DescriptorSet::create(nullptr, prm_defe.get_dsl(""_h)));
+		prm_defe.set_ds(""_h, ds_defe.get());
 
 		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"));
 		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:HORIZONTAL" });
@@ -627,7 +629,7 @@ namespace flame
 		set_fog_color(vec3(1.f));
 		set_shadow_distance(100.f);
 		set_csm_levels(2);
-		set_esm_factor(7.f);
+		set_esm_factor(100.f);
 
 		cb.excute();
 		
@@ -648,10 +650,12 @@ namespace flame
 		auto img0 = _targets.front()->image;
 		auto tar_ext = img0->extent;
 
-		auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+		img_dst_last.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dep_last.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_col_met.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -659,11 +663,15 @@ namespace flame
 		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
-		ds_deferred->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
-		ds_deferred->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
-		ds_deferred->set_image("img_ao"_h, 0, img_ao->get_view(), nullptr);
-		ds_deferred->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		ds_deferred->update();
+		ds_lighting->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
+		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
+		ds_lighting->set_image("img_ao"_h, 0, img_ao->get_view(), nullptr);
+		ds_lighting->set_image("img_dst_last"_h, 0, img_dst_last->get_view(), nullptr);
+		ds_lighting->set_image("img_dep_last"_h, 0, img_dep_last->get_view(), nullptr);
+		ds_lighting->update();
+		ds_defe->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
+		ds_defe->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
+		ds_defe->update();
 		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		ds_luma->update();
 
@@ -760,6 +768,7 @@ namespace flame
 		if (esm_factor == f)
 			return;
 		esm_factor = f;
+		buf_lighting.item_d("esm_factor"_h).set(esm_factor);
 
 		dirty = true;
 	}
@@ -1477,6 +1486,8 @@ namespace flame
 			}
 		}
 
+		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+
 		buf_vtx.upload(cb);
 		buf_idx.upload(cb);
 		buf_vtx_arm.upload(cb);
@@ -1494,6 +1505,8 @@ namespace flame
 		buf_camera.item("view_inv"_h).set(camera->view_mat_inv);
 		buf_camera.item("proj"_h).set(camera->proj_mat);
 		buf_camera.item("proj_inv"_h).set(camera->proj_mat_inv);
+		buf_camera.item("proj_view_last"_h).set(buf_camera.item("proj_view"_h).get<mat4>());
+		buf_camera.item("proj_view_inv_last"_h).set(buf_camera.item("proj_view_inv"_h).get<mat4>());
 		buf_camera.item("proj_view"_h).set(camera->proj_view_mat);
 		buf_camera.item("proj_view_inv"_h).set(camera->proj_view_mat_inv);
 		memcpy(buf_camera.item("frustum_planes"_h).pdata, camera->frustum.planes, sizeof(vec4) * 6);
@@ -1860,7 +1873,7 @@ namespace flame
 		cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-		prm_deferred.bind_dss(cb);
+		prm_defe.bind_dss(cb);
 		cb->bind_pipeline(get_deferred_pipeline(pl_mod));
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
@@ -1870,14 +1883,14 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
 		cb->bind_pipeline(pl_blit);
-		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dep_ms->get_shader_write_dst());
 		cb->bind_pipeline(pl_blit_dep);
-		cb->bind_descriptor_set(0, img_dep->get_shader_read_src());
+		cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
@@ -1930,6 +1943,22 @@ namespace flame
 
 		cb->end_renderpass();
 
+		// saves the current frame
+
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img_dst_last->get_shader_write_dst());
+		cb->bind_pipeline(pl_blit);
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
+		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->begin_renderpass(nullptr, img_dep_last->get_shader_write_dst());
+		cb->bind_pipeline(pl_blit_dep);
+		cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
 		// post processing
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
@@ -1961,7 +1990,7 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
 		cb->bind_pipeline(pl_blit);
-		cb->bind_descriptor_set(0, img_dst->get_shader_read_src());
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
@@ -1973,7 +2002,7 @@ namespace flame
 		prm_tone.pc.item("white_point"_h).set(white_point);
 		prm_tone.pc.item("one_over_gamma"_h).set(1.f / gamma);
 		prm_tone.push_constant(cb);
-		cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+		cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0, 0, sp_nearest));
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
