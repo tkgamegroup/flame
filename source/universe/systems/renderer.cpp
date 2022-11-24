@@ -2411,6 +2411,10 @@ namespace flame
 	{
 		switch (hash)
 		{
+		case "buf_vtx"_h:
+			return buf_vtx.buf.get();
+		case "buf_idx"_h:
+			return buf_idx.buf.get();
 		case "prm_fwd"_h:
 			return &prm_fwd;
 		case "prm_gbuf"_h:

@@ -422,6 +422,9 @@ namespace flame
 				case Format_R16G16B16A16_SFLOAT:
 					gli_fmt = gli::FORMAT_RGBA16_SFLOAT_PACK16;
 					break;
+				case Format_Depth16:
+					gli_fmt = gli::FORMAT_R16_UNORM_PACK16;
+					break;
 				}
 				assert(gli_fmt != gli::FORMAT_UNDEFINED);
 

@@ -29,6 +29,11 @@ void main()
 	uvec3 dst_coord = gl_WorkGroupID * 4 + gl_LocalInvocationID;
 	vec3 uv = vec3(dst_coord + 0.5) / pc.cells;
 	vec3 pos = uv * pc.extent;
+	
+	float top_height = (texture(dep, uv.xz).r) * pc.extent.y;
+	float v = pos.y > top_height ? 1 : 0;
+	imageStore(dst, ivec3(dst_coord), vec4(v, 0, 0, 0));
+	return;
 
 	for (int i = 1; i < path.n; i++)
 	{
@@ -44,7 +49,7 @@ void main()
 			float d = distance(pos.xz, mix(v, w, t));
 			if (d < 5.0)
 			{
-				float top_height = (1.0 - texture(dep, uv.xz).r) * pc.extent.y;
+				float top_height = (texture(dep, uv.xz).r) * pc.extent.y;
 				if (top_height - 5 < pos.y)
 				{
 					float v = 0.0;

@@ -34,13 +34,15 @@ void main()
 	#endif
 #endif
 
-#ifndef OCCLUDER_PASS
-	o_coordw = coordw;
-	gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
-#else
+#ifdef PUSH_TRANSFORM
+	gl_Position = pc.transform * vec4(coordw, 1.0);
+#elifdef OCCLUDER_PASS
 	if (pc.i[0] == 0)
 		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 	else
 		gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+#else
+	gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
+	o_coordw = coordw;
 #endif
 }

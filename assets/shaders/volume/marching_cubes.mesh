@@ -22,8 +22,10 @@
 
 taskPayloadSharedEXT Task payload;
 
+#ifndef OCCLUDER_PASS
 layout (location = 0) out vec3 o_normal[];
 layout (location = 1) out vec3 o_coordw[];
+#endif
 
 // 8 intermediate corner values and normals in LDS
 struct Corner
@@ -109,9 +111,9 @@ void main()
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
 	#else
 		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
-	#endif
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;
+	#endif
 
 #ifdef TRANSFORM_FEEDBACK
 		uint vertex_index = atomicAdd(transform_feedback.vertex_count, 1);
