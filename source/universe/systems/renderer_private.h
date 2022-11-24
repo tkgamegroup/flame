@@ -84,6 +84,8 @@ namespace flame
 		cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 
+		void* get_object(uint hash) override;
+
 		void send_debug_string(const std::string& str) override;
 	};
 }

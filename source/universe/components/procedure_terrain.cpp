@@ -18,6 +18,18 @@ namespace flame
 		terrain->data_listeners.remove("procedure_terrain"_h);
 	}
 
+
+	void cProcedureTerrainPrivate::set_image_size(const uvec2& size)
+	{
+		if (image_size == size)
+			return;
+		image_size = size;
+
+		build_terrain();
+		terrain->node->mark_transform_dirty();
+		data_changed("image_size"_h);
+	}
+
 	void cProcedureTerrainPrivate::set_voronoi_sites_count(uint count)
 	{
 
@@ -73,9 +85,22 @@ namespace flame
 #ifdef USE_FORTUNE_ALGORITHM
 		graphics::Queue::get()->wait_idle();
 
+		if (!height_map || height_map->extent != uvec3(image_size, 1))
+		{
+			delete height_map;
+
+			height_map = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
+			terrain->set_height_map_name(L"0x" + wstr_hex((uint64)height_map));
+		}
+		if (!splash_map || splash_map->extent != uvec3(image_size, 1))
+		{
+			delete splash_map;
+
+			splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
+			terrain->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
+		}
+
 		auto extent = terrain->extent;
-		auto height_map = terrain->height_map;
-		auto splash_map = terrain->splash_map;
 
 		auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 		std::default_random_engine generator(seed);
@@ -329,12 +354,12 @@ namespace flame
 		cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(height_map->extent)));
 		cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 		cb->bind_pipeline(pl);
-		prm.pc.item("uv_off"_h).set(vec2(19.7f, 43.3f));
-		prm.pc.item("uv_scl"_h).set(32.f);
-		prm.pc.item("val_base"_h).set(0.f);
-		prm.pc.item("val_scl"_h).set(0.125f);
-		prm.pc.item("falloff"_h).set(0.f);
-		prm.pc.item("power"_h).set(1.f);
+		prm.pc.item_d("uv_off"_h).set(vec2(19.7f, 43.3f));
+		prm.pc.item_d("uv_scl"_h).set(32.f);
+		prm.pc.item_d("val_base"_h).set(0.f);
+		prm.pc.item_d("val_scl"_h).set(0.125f);
+		prm.pc.item_d("falloff"_h).set(0.f);
+		prm.pc.item_d("power"_h).set(1.f);
 		prm.push_constant(cb.get());
 		cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 		for (auto& d : height_draws)
@@ -370,8 +395,8 @@ namespace flame
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->extent)));
 			cb->begin_renderpass(nullptr, fb, { vec4(0.f) });
 			cb->bind_pipeline(pl);
-			prm.pc.item("bar"_h).set(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
-			prm.pc.item("transition"_h).set(splash_transition);
+			prm.pc.item_d("bar"_h).set(vec4(splash_bar1, splash_bar2, splash_bar3, 0.f));
+			prm.pc.item_d("transition"_h).set(splash_transition);
 			prm.push_constant(cb.get());
 			cb->bind_descriptor_set(0, terrain->normal_map->get_shader_read_src());
 			cb->draw(3, 1, 0, 0);
@@ -450,10 +475,10 @@ namespace flame
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->extent)));
 			cb->begin_renderpass(nullptr, fb);
 			cb->bind_pipeline(pl);
-			prm.pc.item("screen_size"_h).set(ext_xz);
-			prm.pc.item("channel"_h).set(2U);
-			prm.pc.item("distance"_h).set(1.f);
-			prm.pc.item("merge_k"_h).set(0.2f);
+			prm.pc.item_d("screen_size"_h).set(ext_xz);
+			prm.pc.item_d("channel"_h).set(2U);
+			prm.pc.item_d("distance"_h).set(1.f);
+			prm.pc.item_d("merge_k"_h).set(0.2f);
 			prm.push_constant(cb.get());
 			prm.set_ds(""_h, ds.get());
 			prm.bind_dss(cb.get());

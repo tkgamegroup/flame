@@ -11,7 +11,7 @@ namespace flame
 
 		graphics::ImagePtr data_map = nullptr;
 
-		void set_size_per_block(uint size) override;
+		void set_image_size_per_block(uint size) override;
 		void set_offset(float off) override;
 		void set_plane0(const vec4& plane) override;
 		void set_plane1(const vec4& plane) override;

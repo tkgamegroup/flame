@@ -207,6 +207,9 @@ namespace flame
 		virtual std::vector<vec3> transform_feedback(cNodePtr node) = 0;
 
 		// Reflect
+		virtual void* get_object(uint hash) = 0;
+
+		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;
 
 		struct Instance

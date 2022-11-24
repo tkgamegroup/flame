@@ -162,9 +162,10 @@ namespace flame
 
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
 				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
-				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props); 
+				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props);
 				
 				printf("gpu: %s\n", ret->vk_props.properties.deviceName);
+				printf("max pushconst size: %d\n", (int)ret->vk_props.properties.limits.maxPushConstantsSize);
 
 				uint queue_family_property_count = 0;
 				std::vector<VkQueueFamilyProperties> queue_family_properties;

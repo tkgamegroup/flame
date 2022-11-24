@@ -18,6 +18,11 @@ namespace flame
 		cTerrainPtr terrain = nullptr;
 
 		// Reflect
+		uvec2 image_size = uvec2(512);
+		// Reflect
+		virtual void set_image_size(const uvec2& size) = 0;
+
+		// Reflect
 		int voronoi_sites_count = 20;
 		// Reflect
 		virtual void set_voronoi_sites_count(uint count) = 0;

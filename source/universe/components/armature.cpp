@@ -127,7 +127,7 @@ namespace flame
 					std::vector<mat4> mats(bones.size());
 					for (auto i = 0; i < bones.size(); i++)
 						mats[i] = bones[i].calc_mat();
-					sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size() * sizeof(mat4));
+					sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
 					dirty = false;
 				}
 			}

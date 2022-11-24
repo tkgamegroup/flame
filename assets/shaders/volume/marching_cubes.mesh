@@ -100,13 +100,15 @@ void main()
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 		
 		// Output final vertex
-	#ifndef OCCLUDER_PASS
-		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
-	#else
+	#ifdef PUSH_TRANSFORM
+		gl_MeshVerticesEXT[thread_id].gl_Position = pc.transform * vec4(pos, 1.0);
+	#elifdef OCCLUDER_PASS
 		if (pc.i[0] == 0)
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
 		else
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
+	#else
+		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
 	#endif
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;

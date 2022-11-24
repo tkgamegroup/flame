@@ -11,9 +11,9 @@ namespace flame
 		cVolumePtr volume = nullptr;
 
 		// Reflect
-		uint size_per_block = 128;
+		uint image_size_per_block = 128;
 		// Reflect
-		virtual void set_size_per_block(uint size) = 0;
+		virtual void set_image_size_per_block(uint size) = 0;
 
 		// Reflect
 		float offset = 5.f;

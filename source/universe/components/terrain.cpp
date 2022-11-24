@@ -51,25 +51,42 @@ namespace flame
 	{
 		if (height_map_name == name)
 			return;
+
+		auto old_one = height_map;
+		if (!height_map_name.empty())
+		{
+			if (!height_map_name.native().starts_with(L"0x"))
+				AssetManagemant::release_asset(Path::get(height_map_name));
+			else
+				old_one = nullptr;
+		}
+		height_map_name = name;
+		if (!height_map_name.empty())
+		{
+			if (!height_map_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get_asset(Path::get(height_map_name));
+				height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
+			}
+			else
+				height_map = (graphics::ImagePtr)s2u_hex<uint64>(height_map_name.string());
+		}
+
 		if (!height_map_name.empty())
 			AssetManagemant::release_asset(Path::get(height_map_name));
 		height_map_name = name;
 		if (!height_map_name.empty())
 			AssetManagemant::get_asset(Path::get(height_map_name));
 
-		auto _height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
-		if (height_map != _height_map)
+		if (height_map != old_one)
 		{
-			if (height_map)
-				graphics::Image::release(height_map);
-			height_map = _height_map;
+			dirty = true;
 			update_normal_map();
+			node->mark_transform_dirty();
 		}
-		else if (_height_map)
-			graphics::Image::release(_height_map);
 
-		dirty = true;
-		node->mark_transform_dirty();
+		if (old_one)
+			graphics::Image::release(old_one);
 		data_changed("height_map_name"_h);
 	}
 
@@ -77,25 +94,41 @@ namespace flame
 	{
 		if (splash_map_name == name)
 			return;
+
+		auto old_one = splash_map;
+		if (!splash_map_name.empty())
+		{
+			if (!splash_map_name.native().starts_with(L"0x"))
+				AssetManagemant::release_asset(Path::get(splash_map_name));
+			else
+				old_one = nullptr;
+		}
+		splash_map_name = name;
+		if (!splash_map_name.empty())
+		{
+			if (!splash_map_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get_asset(Path::get(splash_map_name));
+				splash_map = !splash_map_name.empty() ? graphics::Image::get(splash_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
+			}
+			else
+				splash_map = (graphics::ImagePtr)s2u_hex<uint64>(splash_map_name.string());
+		}
+
 		if (!splash_map_name.empty())
 			AssetManagemant::release_asset(Path::get(splash_map_name));
 		splash_map_name = name;
 		if (!splash_map_name.empty())
 			AssetManagemant::get_asset(Path::get(splash_map_name));
 
-		auto _splash_map = !splash_map_name.empty() ? graphics::Image::get(splash_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
-		if (splash_map != _splash_map)
+		if (splash_map != old_one)
 		{
-			if (splash_map)
-				graphics::Image::release(splash_map);
-			splash_map = _splash_map;
-			update_normal_map();
+			dirty = true;
+			node->mark_transform_dirty();
 		}
-		else if (_splash_map)
-			graphics::Image::release(_splash_map);
 
-		dirty = true;
-		node->mark_transform_dirty();
+		if (old_one)
+			graphics::Image::release(old_one);
 		data_changed("splash_map_name"_h);
 	}
 

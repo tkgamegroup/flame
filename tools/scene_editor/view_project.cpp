@@ -208,12 +208,12 @@ void View_Project::init()
 
 							cb->begin_renderpass(nullptr, fb);
 							cb->bind_pipeline(pl);
-							prm.pc.item("uv_off"_h).set(noise_offset);
-							prm.pc.item("uv_scl"_h).set(noise_scale);
-							prm.pc.item("val_base"_h).set(0.f);
-							prm.pc.item("val_scl"_h).set(1.f);
-							prm.pc.item("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
-							prm.pc.item("power"_h).set(noise_power);
+							prm.pc.item_d("uv_off"_h).set(noise_offset);
+							prm.pc.item_d("uv_scl"_h).set(noise_scale);
+							prm.pc.item_d("val_base"_h).set(0.f);
+							prm.pc.item_d("val_scl"_h).set(1.f);
+							prm.pc.item_d("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
+							prm.pc.item_d("power"_h).set(noise_power);
 							prm.push_constant(cb.get());
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();

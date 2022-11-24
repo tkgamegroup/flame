@@ -2683,11 +2683,6 @@ namespace flame
 		{
 			*(T*)pdata = v;
 		}
-
-		inline void set(const void* src, uint len)
-		{
-			memcpy(pdata, src, len);
-		}
 	};
 
 	struct VirtualArray
@@ -2704,6 +2699,11 @@ namespace flame
 			ret.size = stride;
 			ret.ui = item_ui;
 			return ret;
+		}
+
+		inline void set(const void* src, uint num = 0, uint off = 0)
+		{
+			memcpy(pdata + off * stride, src, num ? num * stride : size);
 		}
 	};
 

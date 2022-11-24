@@ -8,6 +8,11 @@ namespace flame
 	{
 		~cProcedureTerrainPrivate();
 
+		graphics::ImagePtr height_map = nullptr;
+		graphics::ImagePtr splash_map = nullptr;
+
+		void set_image_size(const uvec2& size) override;
+
 		void set_voronoi_sites_count(uint count) override;
 		void set_voronoi_layer1_precentage(uint precentage) override;
 		void set_voronoi_layer2_precentage(uint precentage) override;
