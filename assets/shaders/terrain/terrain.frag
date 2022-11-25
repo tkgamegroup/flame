@@ -6,13 +6,11 @@
 #endif
 #endif
 
-layout(location = 0) in flat uint i_id;
-layout(location = 1) in flat uint i_matid;
-layout(location = 2) in		 vec2 i_uv;
+layout(location = 0) in vec2 i_uv;
 #ifndef OCCLUDER_PASS
-layout(location = 3) in		 vec3 i_normal;
-layout(location = 4) in		 vec3 i_tangent;
-layout(location = 5) in		 vec3 i_coordw;
+layout(location = 1) in vec3 i_normal;
+layout(location = 2) in vec3 i_tangent;
+layout(location = 3) in vec3 i_coordw;
 #endif
 
 #ifndef OCCLUDER_PASS
@@ -28,9 +26,9 @@ layout(location = 1) out vec4 o_res_nor_rou;
 void main()
 {
 #ifdef MAT_CODE
-	MaterialInfo material = material.infos[i_matid];
+	MaterialInfo material = material.infos[pc.index & 0xffff];
 	float tiling = float(material.f[0]);
-	vec4 weights = texture(terrain_splash_maps[i_id], i_uv);
+	vec4 weights = texture(terrain_splash_maps[pc.index >> 16], i_uv);
 	#include MAT_CODE
 #else
 	#ifndef OCCLUDER_PASS

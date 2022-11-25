@@ -1,9 +1,8 @@
 #ifndef OCCLUDER_PASS
-layout(location = 0) in flat uint i_id;
-layout(location = 1) in vec2 i_uv;
-layout(location = 2) in vec3 i_normal;
-layout(location = 3) in vec3 i_color;
-layout(location = 4) in vec3 i_coordw;
+layout(location = 0) in vec2 i_uv;
+layout(location = 1) in vec3 i_normal;
+layout(location = 2) in vec3 i_color;
+layout(location = 3) in vec3 i_coordw;
 #endif
 
 #include "../math.glsl"
@@ -20,7 +19,7 @@ void main()
 #ifdef DONT_USE_TEXTURE
 	albedo = i_color;
 #else
-	vec4 color = sample_map(instance.terrains[i_id].grass_texture_id, i_uv);
+	vec4 color = sample_map(instance.terrains[pc.index >> 16].grass_texture_id, i_uv);
 	if (color.a < 0.5)
 		discard;
 	albedo = color.rgb;

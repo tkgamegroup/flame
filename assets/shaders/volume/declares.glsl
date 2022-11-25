@@ -8,12 +8,12 @@ struct Task
 	uint meshlets[64];
 };
 
-uint vol_id = pc.index >> 16;
-vec3 blocks = vec3(instance.volumes[vol_id].blocks);
+uint volume_id = pc.index >> 16;
+vec3 blocks = vec3(instance.volumes[volume_id].blocks);
 vec3 block_sz = vec3(1.0) / blocks;
 vec3 block_off = block_sz * pc.offset;
 
 float field(vec3 pos)
 {
-	return texture(volume_datas[vol_id], pos * block_sz + block_off).r * 2.0 - 1.0;
+	return texture(volume_datas[volume_id], pos * block_sz + block_off).r * 2.0 - 1.0;
 }

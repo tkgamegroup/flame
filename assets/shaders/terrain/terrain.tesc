@@ -1,15 +1,15 @@
 layout (vertices = 4) out;
  
-layout (location = 0) in flat uint i_ids[];
-layout (location = 1) in flat uint i_matids[];
-layout (location = 2) in	  vec2 i_uvs[];
+layout (location = 0) in vec2 i_uvs[];
  
-layout (location = 0) out flat	uint o_ids[4];
-layout (location = 1) out flat	uint o_matids[4];
-layout (location = 2) out		vec2 o_uvs[4];
+layout (location = 0) out vec2 o_uvs[4];
 
-uint id;
-uint tess_level;
+uint terrain_id = pc.index >> 16;
+#ifndef GRASS_FIELD
+	uint tess_level = instance.terrains[terrain_id].tess_level;
+#else
+	uint tess_level = instance.terrains[terrain_id].grass_field_tess_level;
+#endif
 
 float tess_factor(vec4 p0, vec4 p1)
 {
@@ -21,7 +21,7 @@ float tess_factor(vec4 p0, vec4 p1)
 
 bool frustum_check()
 {
-	vec3 ext = instance.terrains[id].extent;
+	vec3 ext = instance.terrains[terrain_id].extent;
 	float r = max(max(ext.x, ext.z), ext.y);
 	vec4 p = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position + gl_in[3].gl_Position) * 0.25;
 
@@ -35,12 +35,6 @@ bool frustum_check()
 
 void main()
 {
-	id = i_ids[0];
-#ifndef GRASS_FIELD
-	tess_level = instance.terrains[id].tess_level;
-#else
-	tess_level = instance.terrains[id].grass_field_tess_level;
-#endif
 
 	if (gl_InvocationID == 0)
 	{

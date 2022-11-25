@@ -1722,8 +1722,6 @@ namespace flame
 				}
 			}
 
-			buf_lighting.upload(cb);
-
 			csm_debug_sig = false;
 
 			auto set_blur_args = [cb](const vec2 img_size) {
@@ -1752,13 +1750,13 @@ namespace flame
 					for (auto& t : s.draw_terrains[lv])
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
+						prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 					}
 					for (auto& v : s.draw_MCs[lv])
 					{
-						prm_fwd.pc.item_d("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
-
 						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "OCCLUDER_PASS"_h));
+						prm_fwd.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 						for (auto z = 0; z < v.blocks.z; z++)
 						{
 							for (auto y = 0; y < v.blocks.y; y++)
@@ -1830,18 +1828,19 @@ namespace flame
 		for (auto& t : draw_data.terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-			cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
+			prm_gbuf.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
+			cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 		}
 		for (auto& s : draw_data.sdfs)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
-			cb->draw(3, 1, 0, (s.ins_id << 16) + s.mat_id);
+			prm_gbuf.pc.item_d("index"_h).set((s.ins_id << 16) + s.mat_id);
+			cb->draw(3, 1, 0, 0);
 		}
 		for (auto& v : draw_data.volumes)
 		{
-			prm_gbuf.pc.item_d("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
-
 			cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
+			prm_gbuf.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 			for (auto z = 0; z < v.blocks.z; z++)
 			{
 				for (auto y = 0; y < v.blocks.y; y++)
@@ -1929,6 +1928,7 @@ namespace flame
 		for (auto& t : draw_data.terrains)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
+			prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
 			cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
@@ -2125,6 +2125,7 @@ namespace flame
 		{
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			prm_fwd.bind_dss(cb);
+			prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
 			prm_fwd.pc.item_d("f"_h).set(vec4(t.color) / 255.f);
 			prm_fwd.push_constant(cb);
 			cb->bind_pipeline(pl_terrain_plain);
@@ -2273,8 +2274,8 @@ namespace flame
 			{
 				cb->bind_pipeline(pl_terrain_pickup);
 				auto& t = draw_data.terrains[i];
+				prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
 				prm_fwd.pc.item_d("i"_h).set(ivec4((int)nodes.size() + 1, 0, 0, 0));
-
 				prm_fwd.push_constant(cb.get());
 				cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
 
@@ -2286,7 +2287,7 @@ namespace flame
 			{
 				cb->bind_pipeline(pl_MC_pickup);
 				auto& v = draw_data.volumes[i];
-				prm_fwd.pc.item_d("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
+				prm_fwd.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 				prm_fwd.pc.item_d("i"_h).set(ivec4((int)nodes.size() + 1, 0, 0, 0));
 				for (auto z = 0; z < v.blocks.z; z++)
 				{
@@ -2369,7 +2370,7 @@ namespace flame
 		for (auto& v : draw_data.volumes)
 		{
 			cb->bind_pipeline(pl_MC_transform_feedback);
-			prm_fwd.pc.item_d("index"_h).set(ivec4((v.ins_id << 16) + v.mat_id, 0, 0, 0));
+			prm_fwd.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 			for (auto z = 0; z < v.blocks.z; z++)
 			{
 				for (auto y = 0; y < v.blocks.y; y++)
@@ -2405,22 +2406,6 @@ namespace flame
 		}
 
 		return ret;
-	}
-
-	void* sRendererPrivate::get_object(uint hash)
-	{
-		switch (hash)
-		{
-		case "buf_vtx"_h:
-			return buf_vtx.buf.get();
-		case "buf_idx"_h:
-			return buf_idx.buf.get();
-		case "prm_fwd"_h:
-			return &prm_fwd;
-		case "prm_gbuf"_h:
-			return &prm_gbuf;
-		}
-		return nullptr;
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)
