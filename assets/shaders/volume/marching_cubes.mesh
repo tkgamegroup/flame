@@ -20,6 +20,14 @@
 
 #include "declares.glsl"
 
+#ifndef CUSTOM_INPUT
+mat4 transform = instance.volumes[volume_id].mat;
+mat4 proj_view = camera.proj_view;
+#else
+mat4 transform = _transform;
+mat4 proj_view = _proj_view;
+#endif
+
 taskPayloadSharedEXT Task payload;
 
 #ifndef OCCLUDER_PASS
@@ -77,7 +85,7 @@ void main()
 		corner.value = value;
 		corners[thread_id] = corner;
 	}
-	
+
 	uvec4 ballot = subgroupBallot(value >= 0.0f);
 	uint index = (ballot.x & 0xFF);
 	const uint triangle_count = uint(marching_cubes_loopup.items[index].TriangleCount);
@@ -98,19 +106,17 @@ void main()
 		// Interpolate position and normal
 		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
 
-		vec3 pos    = vec3(instance.volumes[volume_id].mat * vec4((mix(pos0, pos1, mix_f) * block_sz + block_off) * instance.volumes[volume_id].extent, 1.0));
+		vec3 pos    = vec3(transform * vec4((mix(pos0, pos1, mix_f) * block_sz + block_off) * extent, 1.0));
 		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
 		
 		// Output final vertex
-	#ifdef PUSH_TRANSFORM
-		gl_MeshVerticesEXT[thread_id].gl_Position = pc.transform * vec4(pos, 1.0);
-	#elifdef OCCLUDER_PASS
+	#ifdef OCCLUDER_PASS
 		if (pc.i[0] == 0)
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
 		else
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
 	#else
-		gl_MeshVerticesEXT[thread_id].gl_Position = camera.proj_view * vec4(pos, 1.0);
+		gl_MeshVerticesEXT[thread_id].gl_Position = proj_view * vec4(pos, 1.0);
 		o_normal[thread_id] = normal;
 		o_coordw[thread_id] = pos;
 	#endif

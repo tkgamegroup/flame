@@ -34,9 +34,7 @@ void main()
 	#endif
 #endif
 
-#ifdef PUSH_TRANSFORM
-	gl_Position = pc.transform * vec4(coordw, 1.0);
-#elifdef OCCLUDER_PASS
+#ifdef OCCLUDER_PASS
 	if (pc.i[0] == 0)
 		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 	else

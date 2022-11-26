@@ -1,0 +1,54 @@
+layout
+  @pll
+shaders
+  marching_cubes.task
+ ---
+  marching_cubes.mesh
+ ---
+  @frag
+renderpass
+  ../depth.rp
+cull_mode
+  None
+
+@pll
+struct MarchingCubesLookupItem
+{
+	uint8_t Vertices[15];
+	uint8_t TriangleCount;
+};
+
+layout(set = SET, binding = 0) buffer readonly MarchingCubesLookup
+{
+	MarchingCubesLookupItem items[256];
+}marching_cubes_loopup;
+
+layout (set = SET, binding = 1) uniform sampler3D volume_data;
+
+layout(push_constant) uniform PushConstant
+{
+	mat4 transform;
+	mat4 proj_view;
+	vec3 extent;
+	uvec3 blocks;
+	vec3 offset;
+}pc;
+@
+
+@vert
+void main()
+{
+	vec3 vs[] = {
+		vec3(64.0, 64.0, 64.0),
+		vec3(128.0, 64.0, 64.0),
+		vec3(64.0, 64.0, 128.0)
+	};
+	gl_Position = pc.proj_view * vec4(vs[gl_VertexIndex], 1.0);
+}
+@
+
+@frag
+void main()
+{
+}
+@

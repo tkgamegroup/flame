@@ -75,7 +75,6 @@ namespace flame
 			struct Create
 			{
 				virtual DescriptorSetLayoutPtr operator()(std::span<DescriptorBinding> bindings) = 0;
-				virtual DescriptorSetLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
@@ -159,7 +158,6 @@ namespace flame
 			struct Create
 			{
 				virtual PipelineLayoutPtr operator()(std::span<DescriptorSetLayoutPtr> dsls, uint push_constant_size) = 0;
-				virtual PipelineLayoutPtr operator()(const std::string& content, const std::filesystem::path& dst = L"", const std::filesystem::path& src = L"") = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 

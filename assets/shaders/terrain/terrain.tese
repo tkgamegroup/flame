@@ -11,6 +11,8 @@ layout(location = 3) out vec3 o_coordw;
 
 void main()
 {
+	uint terrain_id = pc.index >> 16;
+
 	o_uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x),
 		mix(i_uvs[3], i_uvs[2], gl_TessCoord.x),
@@ -22,12 +24,12 @@ void main()
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(terrain_height_maps[o_id], o_uv).r * instance.terrains[o_id].extent.y;
+	coordw.y += texture(terrain_height_maps[terrain_id], o_uv).r * instance.terrains[terrain_id].extent.y;
 	
 #ifndef OCCLUDER_PASS
 	o_coordw = coordw;
-	o_normal = normalize(texture(terrain_normal_maps[o_id], o_uv).xyz * 2.0 - 1.0);
-	o_tangent = normalize(texture(terrain_tangent_maps[o_id], o_uv).xyz * 2.0 - 1.0);
+	o_normal = normalize(texture(terrain_normal_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
+	o_tangent = normalize(texture(terrain_tangent_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
 #endif
 #ifndef HAS_GEOM
 	#ifndef OCCLUDER_PASS
