@@ -29,8 +29,8 @@ void main()
 	#ifndef OCCLUDER_PASS
 		float radians = asin(i_normal.y) / 3.14159;
 		vec3 w;
-		w[0] = mix(1, 0, radians + 0.5);
-		w[1] = mix(0, 1, radians + 0.5);
+		w[0] = mix(1, 0, radians);
+		w[1] = 1 - w[0];
 		w[2] = 0;
 		w /= w[0] + w[1] + w[2];
 		vec4 weights = vec4(w, 0);

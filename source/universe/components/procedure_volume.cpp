@@ -204,6 +204,7 @@ namespace flame
 			}
 			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, dsl));
 			ds->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
+			ds->set_image("volume_data"_h, 0, volume->data_map->get_view(), graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 			ds->update();
 			prm.set_ds(""_h, ds.get());
 			prm.bind_dss(cb.get());
@@ -236,11 +237,8 @@ namespace flame
 			cb->end_renderpass();
 			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 
-			graphics::Debug::start_capture_frame();
 			cb.excute();
-			graphics::Debug::end_capture_frame();
 		}
-		img_dep->save(L"D:\\1.dds");
 
 		{
 			graphics::InstanceCommandBuffer cb;
