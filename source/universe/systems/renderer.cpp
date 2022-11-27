@@ -158,6 +158,7 @@ namespace flame
 	struct DirShadow
 	{
 		mat3 rot;
+		Frustum frustum;
 		std::vector<cNodePtr> culled_nodes;
 		MeshBatcher batcher[DirShadowMaxLevels];
 		std::vector<TerrainDraw> draw_terrains[DirShadowMaxLevels];
@@ -1697,6 +1698,7 @@ namespace flame
 						view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
 						proj_view = proj * view;
 						mats[lv] = proj_view;
+						s.frustum = Frustum(inverse(proj_view));
 						if (csm_debug_sig)
 						{
 							auto frustum_points = Frustum::get_points(inverse(proj_view));
@@ -1751,6 +1753,7 @@ namespace flame
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
 						prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
+						prm_fwd.push_constant(cb);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 					}
 					for (auto& v : s.draw_MCs[lv])
@@ -1829,12 +1832,14 @@ namespace flame
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
 			prm_gbuf.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
+			prm_fwd.push_constant(cb);
 			cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 		}
 		for (auto& s : draw_data.sdfs)
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
 			prm_gbuf.pc.item_d("index"_h).set((s.ins_id << 16) + s.mat_id);
+			prm_fwd.push_constant(cb);
 			cb->draw(3, 1, 0, 0);
 		}
 		for (auto& v : draw_data.volumes)
@@ -1929,6 +1934,7 @@ namespace flame
 		{
 			cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
 			prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
+			prm_fwd.push_constant(cb);
 			cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 		}
 
@@ -2367,9 +2373,9 @@ namespace flame
 
 		draw_data.reset(PassTransformFeedback, CateMesh | CateTerrain | CateMarchingCubes);
 		node->draw(draw_data);
+		cb->bind_pipeline(pl_MC_transform_feedback);
 		for (auto& v : draw_data.volumes)
 		{
-			cb->bind_pipeline(pl_MC_transform_feedback);
 			prm_fwd.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 			for (auto z = 0; z < v.blocks.z; z++)
 			{

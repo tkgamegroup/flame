@@ -570,12 +570,13 @@ namespace flame
 		return true;
 	}
 
+	template<class T>
 	struct Curve
 	{
 		uint tess = 8;
 		float t = 0.2f;
-		std::vector<vec3> ctrl_points;
-		std::vector<vec3> vertices;
+		std::vector<T> ctrl_points;
+		std::vector<T> vertices;
 
 		inline void update()
 		{
@@ -583,7 +584,7 @@ namespace flame
 			if (ctrl_points.size() < 2)
 				return;
 
-			std::vector<vec3> _ctrl_points;
+			std::vector<T> _ctrl_points;
 			_ctrl_points.push_back(2.f * ctrl_points[0] - ctrl_points[1]);
 			_ctrl_points.insert(_ctrl_points.end(), ctrl_points.begin(), ctrl_points.end());
 			_ctrl_points.push_back(2.f * ctrl_points.rbegin()[0] - ctrl_points.rbegin()[1]);

@@ -43,28 +43,6 @@ namespace flame
 		data_changed("offset"_h);
 	}
 
-	void cProcedureVolumePrivate::set_plane0(const vec4& plane)
-	{
-		if (plane0 == plane)
-			return;
-		plane0 = plane;
-
-		build_volume();
-		volume->node->mark_transform_dirty();
-		data_changed("plane0"_h);
-	}
-
-	void cProcedureVolumePrivate::set_plane1(const vec4& plane)
-	{
-		if (plane1 == plane)
-			return;
-		plane1 = plane;
-
-		build_volume();
-		volume->node->mark_transform_dirty();
-		data_changed("plane1"_h);
-	}
-
 	void cProcedureVolumePrivate::set_amplitude_scale(float scale)
 	{
 		if (amplitude_scale == scale)
@@ -89,8 +67,6 @@ namespace flame
 
 	void cProcedureVolumePrivate::set_structure_octaves(const std::vector<float>& octaves)
 	{
-		if (structure_octaves == octaves)
-			return;
 		structure_octaves = octaves;
 
 		build_volume();
@@ -100,13 +76,20 @@ namespace flame
 
 	void cProcedureVolumePrivate::set_detail_octaves(const std::vector<float>& octaves)
 	{
-		if (detail_octaves == octaves)
-			return;
 		detail_octaves = octaves;
 
 		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("detail_octaves"_h);
+	}
+
+	void cProcedureVolumePrivate::set_planes(const std::vector<vec4>& _planes)
+	{
+		planes = _planes;
+
+		build_volume();
+		volume->node->mark_transform_dirty();
+		data_changed("planes"_h);
 	}
 
 #include "../systems/marching_cubes_lookup.h"
@@ -162,13 +145,13 @@ namespace flame
 			prm.pc.item_d("extent"_h).set(volume->extent);
 			prm.pc.item_d("cells"_h).set(image_size);
 			prm.pc.item_d("offset"_h).set(offset);
-			prm.pc.item_d("plane0"_h).set(plane0);
-			prm.pc.item_d("plane1"_h).set(plane1);
 			prm.pc.item_d("amplitude_scale"_h).set(amplitude_scale);
 			prm.pc.item_d("structure_octaves"_h).set((uint)structure_octaves.size());
 			prm.pc.item_d("detail_octaves"_h).set((uint)detail_octaves.size());
+			prm.pc.item_d("planes_count"_h).set((uint)planes.size());
 			prm.pc.itemv_d("structure_amplitudes"_h, structure_octaves.size()).set(structure_octaves.data());
 			prm.pc.itemv_d("detail_amplitudes"_h, detail_octaves.size()).set(detail_octaves.data());
+			prm.pc.itemv_d("planes"_h, planes.size()).set(planes.data());
 			prm.push_constant(cb.get());
 			cb->dispatch(image_size / 4U);
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
@@ -207,12 +190,12 @@ namespace flame
 			ds->set_image("volume_data"_h, 0, volume->data_map->get_view(), graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 			ds->update();
 			prm.set_ds(""_h, ds.get());
-			prm.bind_dss(cb.get());
 
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(img_dep->extent.xy())));
 			cb->begin_renderpass(nullptr, img_dep->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
 
 			cb->bind_pipeline(pl);
+			prm.bind_dss(cb.get());
 			prm.pc.item_d("transform"_h).set(mat4(1.f));
 			auto proj = orthoRH(-volume->extent.x * 0.5f, +volume->extent.x * 0.5f, -volume->extent.z * 0.5f, +volume->extent.z * 0.5f, 0.f, volume->extent.y);
 			proj[1][1] *= -1.f;
@@ -241,19 +224,27 @@ namespace flame
 		}
 
 		{
+			auto extent = volume->extent;
+			Curve<vec2> curve;
+			for (auto i = 0; i < 2; i++)
+			{
+				curve.ctrl_points.push_back(vec2(linearRand(0.f, extent.x), linearRand(0.f, extent.z)));
+			}
+			curve.tess = 8;
+			curve.update();
+
 			graphics::InstanceCommandBuffer cb;
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
 
 			auto pl = graphics::ComputePipeline::get(L"flame\\shaders\\volume\\build_path.pipeline", {});
 			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineCompute);
 			auto dsl = prm.get_dsl(""_h);
 			auto buf_path = graphics::StorageBuffer(graphics::BufferUsageUniform, dsl->get_buf_ui("Path"_h));
 			buf_path.item_d("n"_h).set(2U);
-			auto pp = buf_path.itemv_d("p"_h, 2);
-			pp.at(0).set(vec2(64, 0));
-			pp.at(1).set(vec2(64, 128));
+			auto pp = buf_path.itemv_d("p"_h, curve.vertices.size());
+			for (auto i = 0; i < curve.vertices.size(); i++)
+			{
+				pp.at(i).set(curve.vertices[i]);
+			}
 			buf_path.upload(cb.get());
 			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
 			ds->set_buffer("Path"_h, 0, buf_path.buf.get());
@@ -261,6 +252,10 @@ namespace flame
 			ds->set_image("dst"_h, 0, data_map->get_view(), nullptr);
 			ds->update();
 			prm.set_ds(""_h, ds.get());
+
+			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
+			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
 
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderStorage);
 			cb->bind_pipeline(pl);

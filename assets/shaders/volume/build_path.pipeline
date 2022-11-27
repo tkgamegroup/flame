@@ -42,14 +42,14 @@ void main()
 		if (t > 0.0 && t < 1.0)
 		{
 			float d = distance(pos.xz, mix(v, w, t));
-			if (d < 5.0)
+			if (d < 1.0)
 			{
 				float top_height = (1 - texture(dep, uv.xz).r) * pc.extent.y;
-				if (pos.y + 5 > top_height)
+				//if (pos.y + 5 > top_height)
 				{
 					float v = 0.0;
-					if (d > 4.5)
-						v = 1 - (5 - d) / 0.5;
+					if (d > 0.5)
+						v = 1 - (0.5 - d) / 0.5;
 					imageStore(dst, ivec3(dst_coord), vec4(v, 0, 0, 0));
 				}
 			}

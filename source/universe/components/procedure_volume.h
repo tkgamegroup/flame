@@ -21,16 +21,6 @@ namespace flame
 		virtual void set_offset(float off) = 0;
 
 		// Reflect
-		vec4 plane0 = vec4(15.f, 0.3f, 3.f, 40.f);
-		// Reflect
-		virtual void set_plane0(const vec4& plane) = 0;
-
-		// Reflect
-		vec4 plane1 = vec4(5.f, 0.3f, 3.f, 40.f);
-		// Reflect
-		virtual void set_plane1(const vec4& plane) = 0;
-
-		// Reflect
 		float amplitude_scale = 0.05f;
 		// Reflect
 		virtual void set_amplitude_scale(float scale) = 0;
@@ -49,6 +39,11 @@ namespace flame
 		std::vector<float> detail_octaves;
 		// Reflect
 		virtual void set_detail_octaves(const std::vector<float>& octaves) = 0;
+
+		// Reflect
+		std::vector<vec4> planes;
+		// Reflect
+		virtual void set_planes(const std::vector<vec4>& planes) = 0;
 
 		struct Create
 		{
