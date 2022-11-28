@@ -45,6 +45,11 @@ namespace flame
 		// Reflect
 		virtual void set_planes(const std::vector<vec4>& planes) = 0;
 
+		// Reflect
+		uint paths_count = 0;
+		// Reflect
+		virtual void set_paths_count(uint count) = 0;
+
 		struct Create
 		{
 			virtual cProcedureVolumePtr operator()(EntityPtr e) = 0;

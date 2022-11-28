@@ -19,6 +19,8 @@ namespace flame
 	cProcedureVolumePrivate::~cProcedureVolumePrivate()
 	{
 		volume->data_listeners.remove("procedure_volume"_h);
+
+		delete data_map;
 	}
 
 	void cProcedureVolumePrivate::set_image_size_per_block(uint size)
@@ -90,6 +92,17 @@ namespace flame
 		build_volume();
 		volume->node->mark_transform_dirty();
 		data_changed("planes"_h);
+	}
+
+	void cProcedureVolumePrivate::set_paths_count(uint count)
+	{
+		if (paths_count == count)
+			return;
+		paths_count = count;
+
+		build_volume();
+		volume->node->mark_transform_dirty();
+		data_changed("paths_count"_h);
 	}
 
 #include "../systems/marching_cubes_lookup.h"
@@ -223,6 +236,7 @@ namespace flame
 			cb.excute();
 		}
 
+		for (auto t = 0; t < paths_count; t++)
 		{
 			auto extent = volume->extent;
 			Curve<vec2> curve;
@@ -231,7 +245,27 @@ namespace flame
 				curve.ctrl_points.push_back(vec2(linearRand(0.f, extent.x), linearRand(0.f, extent.z)));
 			}
 			curve.tess = 8;
+			curve.t = 0.5f;
 			curve.update();
+			
+			std::vector<float> heights(curve.vertices.size());
+			for (auto i = 0; i < heights.size(); i++)
+			{
+				heights[i] = (1.f - img_dep->linear_sample(curve.vertices[i] / extent.xz).r) * extent.y;
+			}
+			float avg_height = 0.f;
+			for (auto i = 0; i < heights.size(); i++)
+			{
+				avg_height += heights[i];
+			}
+			avg_height /= heights.size();
+			float max_slope = 1.f;
+			for (auto i = 1; i < heights.size() - 1; i++)
+			{
+				auto diff_h = abs(heights[i + 1] - heights[i - 1]);
+				auto diff_xz = distance(curve.vertices[i - 1], curve.vertices[i + 1]);
+				max_slope = max(max_slope, diff_h / diff_xz);
+			}
 
 			graphics::InstanceCommandBuffer cb;
 
@@ -239,7 +273,7 @@ namespace flame
 			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineCompute);
 			auto dsl = prm.get_dsl(""_h);
 			auto buf_path = graphics::StorageBuffer(graphics::BufferUsageUniform, dsl->get_buf_ui("Path"_h));
-			buf_path.item_d("n"_h).set(2U);
+			buf_path.item_d("n"_h).set((uint)curve.vertices.size());
 			auto pp = buf_path.itemv_d("p"_h, curve.vertices.size());
 			for (auto i = 0; i < curve.vertices.size(); i++)
 			{
@@ -262,6 +296,8 @@ namespace flame
 			prm.bind_dss(cb.get());
 			prm.pc.item_d("extent"_h).set(volume->extent);
 			prm.pc.item_d("cells"_h).set(image_size);
+			prm.pc.item_d("avg_height"_h).set(avg_height);
+			prm.pc.item_d("max_slope"_h).set(max_slope);
 			prm.push_constant(cb.get());
 			cb->dispatch(image_size / 4U);
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);

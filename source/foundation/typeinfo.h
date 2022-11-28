@@ -2761,6 +2761,8 @@ namespace flame
 
 		inline void mark_dirty(uint off, uint sz)
 		{
+			if (sz == 0)
+				return;
 			if (!dirty_regions.empty())
 			{
 				auto& last = dirty_regions.back();

@@ -16,6 +16,9 @@ namespace flame
 	cProcedureTerrainPrivate::~cProcedureTerrainPrivate()
 	{
 		terrain->data_listeners.remove("procedure_terrain"_h);
+
+		delete height_map;
+		delete splash_map;
 	}
 
 

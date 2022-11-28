@@ -18,6 +18,7 @@ namespace flame
 		void set_structure_octaves(const std::vector<float>& octaves) override;
 		void set_detail_octaves(const std::vector<float>& octaves) override;
 		void set_planes(const std::vector<vec4>& planes) override;
+		void set_paths_count(uint count) override;
 
 		void build_volume();
 

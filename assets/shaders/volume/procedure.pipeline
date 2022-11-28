@@ -18,7 +18,7 @@ layout (push_constant) uniform PushConstant
 	uint planes_count;
 	float structure_amplitudes[16];
 	float detail_amplitudes[16];
-	vec4 planes[8];
+	vec4 planes[4];
 }pc;
 @
 

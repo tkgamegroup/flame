@@ -301,6 +301,8 @@ namespace flame
 			case Format_R16G16B16A16_SFLOAT:
 				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
 					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
+			case Format_Depth16:
+				return vec4(unpackUnorm1x16(((ushort*)pixel)[0]), 0.f, 0.f, 0.f);
 			default:
 				assert(0);
 			}

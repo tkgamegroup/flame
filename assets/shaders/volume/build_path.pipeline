@@ -18,6 +18,8 @@ layout(push_constant) uniform PushConstant
 {
 	vec3 extent;
 	uvec3 cells;
+	float avg_height;
+	float max_slope;
 }pc;
 @
 
@@ -42,15 +44,15 @@ void main()
 		if (t > 0.0 && t < 1.0)
 		{
 			float d = distance(pos.xz, mix(v, w, t));
-			if (d < 1.0)
+			if (d < 5)
 			{
-				float top_height = (1 - texture(dep, uv.xz).r) * pc.extent.y;
-				//if (pos.y + 5 > top_height)
+				float h = (1 - texture(dep, uv.xz).r) * pc.extent.y;
+				h = pc.avg_height + (h - pc.avg_height) / pc.max_slope;
+				if (pos.y > h - 3 && pos.y < h + 3)
 				{
 					float v = 0.0;
-					if (d > 0.5)
-						v = 1 - (0.5 - d) / 0.5;
 					imageStore(dst, ivec3(dst_coord), vec4(v, 0, 0, 0));
+					return;
 				}
 			}
 		}
