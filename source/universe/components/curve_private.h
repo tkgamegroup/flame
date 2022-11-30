@@ -6,15 +6,15 @@ namespace flame
 {
 	struct cCurvePrivate : cCurve
 	{
-		Curve<vec3> curve;
+		Curve curve;
 		AABB bounds;
 
 		~cCurvePrivate();
 		void on_init() override;
 
 		void update_curve();
-		void set_tess(uint tess) override;
-		void set_curveness(float curveness) override;
+		void set_segment_length(float length) override;
+		void set_curvedness(float curvedness) override;
 		void set_ctrl_points(const std::vector<vec3>& points) override;
 	};
 }

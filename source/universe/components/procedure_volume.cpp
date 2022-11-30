@@ -239,19 +239,18 @@ namespace flame
 		for (auto t = 0; t < paths_count; t++)
 		{
 			auto extent = volume->extent;
-			Curve<vec2> curve;
+			Curve curve;
 			for (auto i = 0; i < 2; i++)
 			{
-				curve.ctrl_points.push_back(vec2(linearRand(0.f, extent.x), linearRand(0.f, extent.z)));
+				curve.ctrl_points.push_back(vec3(linearRand(0.f, extent.x), 0.f, linearRand(0.f, extent.z)));
 			}
-			curve.tess = 8;
-			curve.t = 0.5f;
+			curve.segment_length = 1000.f;
 			curve.update();
 			
 			std::vector<float> heights(curve.vertices.size());
 			for (auto i = 0; i < heights.size(); i++)
 			{
-				heights[i] = (1.f - img_dep->linear_sample(curve.vertices[i] / extent.xz).r) * extent.y;
+				heights[i] = (1.f - img_dep->linear_sample(curve.vertices[i].xz / extent.xz).r) * extent.y;
 			}
 			float avg_height = 0.f;
 			for (auto i = 0; i < heights.size(); i++)
@@ -265,6 +264,10 @@ namespace flame
 				auto diff_h = abs(heights[i + 1] - heights[i - 1]);
 				auto diff_xz = distance(curve.vertices[i - 1], curve.vertices[i + 1]);
 				max_slope = max(max_slope, diff_h / diff_xz);
+			}
+			for (auto i = 0; i < heights.size(); i++)
+			{
+				curve.vertices[i].y = avg_height + (heights[i] - avg_height) / max_slope;
 			}
 
 			graphics::InstanceCommandBuffer cb;

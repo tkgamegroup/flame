@@ -11,14 +11,14 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		// Reflect
-		uint tess = 8;
+		float segment_length = 1.f;
 		// Reflect
-		virtual void set_tess(uint tess) = 0;
+		virtual void set_segment_length(float length) = 0;
 
 		// Reflect
-		float curveness = 0.2f;
+		float curvedness = 0.5f;
 		// Reflect
-		virtual void set_curveness(float curveness) = 0;
+		virtual void set_curvedness(float curvedness) = 0;
 
 		// Reflect
 		std::vector<vec3> ctrl_points;

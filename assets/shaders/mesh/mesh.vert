@@ -40,7 +40,7 @@ void main()
 	else
 		gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
 #else
-	gl_Position = camera.proj_view * vec4(o_coordw, 1.0);
+	gl_Position = camera.proj_view * vec4(coordw, 1.0);
 	o_coordw = coordw;
 #endif
 }

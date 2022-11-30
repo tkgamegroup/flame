@@ -1289,7 +1289,7 @@ namespace flame
 				std::vector<mat4> mats(buf_instance.item_info("armatures"_h).array_size);
 				for (auto i = 0; i < mats.size(); i++)
 					mats[i] = mat4(1.f);
-				set_armature_instance(id, mats.data(), mats.size() * sizeof(mat4));
+				set_armature_instance(id, mats.data(), mats.size());
 			}
 		}
 		else

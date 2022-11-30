@@ -45,30 +45,30 @@ namespace flame
 			bounds.expand(v);
 	}
 
-	void cCurvePrivate::set_tess(uint _tess)
+	void cCurvePrivate::set_segment_length(float length)
 	{
-		if (tess == _tess)
+		if (segment_length == length)
 			return;
-		tess = clamp(_tess, 1U, 64U);
+		segment_length = max(0.01f, length);
 
-		curve.tess = tess;
+		curve.segment_length = segment_length;
 		update_curve();
 
 		node->mark_transform_dirty();
-		data_changed("tess"_h);
+		data_changed("segment_length"_h);
 	}
 
-	void cCurvePrivate::set_curveness(float _curveness)
+	void cCurvePrivate::set_curvedness(float _curvedness)
 	{
-		if (curveness == _curveness)
+		if (curvedness == _curvedness)
 			return;
-		curveness = clamp(_curveness, 0.f, 1.f);
+		curvedness = clamp(_curvedness, 0.f, 1.f);
 
-		curve.t = curveness;
+		curve.curvedness = curvedness;
 		update_curve();
 
 		node->mark_transform_dirty();
-		data_changed("curveness"_h);
+		data_changed("curvedness"_h);
 	}
 
 	void cCurvePrivate::set_ctrl_points(const std::vector<vec3>& points)
