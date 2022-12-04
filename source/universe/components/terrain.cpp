@@ -247,9 +247,9 @@ namespace flame
 			AssetManagemant::release_asset(Path::get(material_name));
 		if (!grass_texture_name.empty())
 			AssetManagemant::release_asset(Path::get(grass_texture_name));
-		if (height_map)
+		if (height_map && !height_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(height_map);
-		if (splash_map)
+		if (splash_map && !splash_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(splash_map);
 		if (grass_texture)
 			graphics::Image::release(grass_texture);

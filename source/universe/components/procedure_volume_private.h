@@ -10,6 +10,7 @@ namespace flame
 		~cProcedureVolumePrivate();
 
 		graphics::ImagePtr data_map = nullptr;
+		graphics::ImagePtr splash_map = nullptr;
 
 		void set_image_size_per_block(uint size) override;
 		void set_offset(float off) override;

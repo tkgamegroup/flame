@@ -12,7 +12,7 @@ struct Task
 uint volume_id = pc.index >> 16;
 vec3 extent = instance.volumes[volume_id].extent;
 vec3 blocks = vec3(instance.volumes[volume_id].blocks);
-#define DATA_MAP volume_datas[volume_id]
+#define DATA_MAP volume_data_maps[volume_id]
 #else
 vec3 extent = _extent;
 vec3 blocks = _blocks;

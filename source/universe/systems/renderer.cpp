@@ -1396,20 +1396,22 @@ namespace flame
 		else
 		{
 			volume_instances.release_item(id);
-			ds_instance->set_image("volume_datas"_h, id, img_black3D->get_view(), nullptr);
+			ds_instance->set_image("volume_data_maps"_h, id, img_black3D->get_view(), nullptr);
+			ds_instance->set_image("volume_splash_maps"_h, id, img_black3D->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;
 	}
 
-	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map)
+	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map, graphics::ImageViewPtr splash_map)
 	{
 		auto pi = buf_instance.item_d("volumes"_h, id);
 		pi.item("mat"_h).set(mat);
 		pi.item("extent"_h).set(extent);
 		pi.item("blocks"_h).set(blocks);
 
-		ds_instance->set_image("volume_datas"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
+		ds_instance->set_image("volume_data_maps"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
+		ds_instance->set_image("volume_splash_maps"_h, id, splash_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 		ds_instance->update();
 	}
 
@@ -1968,60 +1970,62 @@ namespace flame
 		cb->end_renderpass();
 
 		// post processing
+		if (mode == Shaded || mode == CameraLight)
+		{
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
+			prm_luma.bind_dss(cb);
+			const auto min_log_luma = -5.f;
+			const auto max_log_luma = +5.f;
+			prm_luma.pc.item_d("min_log_luma"_h).set(min_log_luma);
+			prm_luma.pc.item_d("log_luma_range"_h).set(max_log_luma - min_log_luma);
+			prm_luma.pc.item_d("time_coeff"_h).set(1.0f);
+			prm_luma.pc.item_d("num_pixels"_h).set(int(ext.x * ext.y));
+			prm_luma.push_constant(cb);
+			cb->bind_pipeline(pl_luma_hist);
+			cb->dispatch(uvec3(ceil(ext.x / 16), ceil(ext.y / 16), 1));
+			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
+			cb->bind_pipeline(pl_luma_avg);
+			cb->dispatch(uvec3(256, 1, 1));
+			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::AccessHostRead,
+				graphics::PipelineStageCompShader, graphics::PipelineStageHost);
 
-		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
-		prm_luma.bind_dss(cb);
-		const auto min_log_luma = -5.f;
-		const auto max_log_luma = +5.f;
-		prm_luma.pc.item_d("min_log_luma"_h).set(min_log_luma);
-		prm_luma.pc.item_d("log_luma_range"_h).set(max_log_luma - min_log_luma);
-		prm_luma.pc.item_d("time_coeff"_h).set(1.0f);
-		prm_luma.pc.item_d("num_pixels"_h).set(int(ext.x * ext.y));
-		prm_luma.push_constant(cb);
-		cb->bind_pipeline(pl_luma_hist);
-		cb->dispatch(uvec3(ceil(ext.x / 16), ceil(ext.y / 16), 1));
-		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
-			graphics::AccessShaderRead | graphics::AccessShaderWrite,
-			graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
-		cb->bind_pipeline(pl_luma_avg);
-		cb->dispatch(uvec3(256, 1, 1));
-		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite, 
-			graphics::AccessHostRead,
-			graphics::PipelineStageCompShader, graphics::PipelineStageHost);
+			auto p_avg_luma = buf_luminance.item("avg"_h);
+			cb->copy_buffer(buf_luminance.buf.get(), buf_luminance.stag.get(), graphics::BufferCopy(buf_luminance.offset(p_avg_luma), p_avg_luma.size));
+			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessHostRead,
+				graphics::AccessShaderRead | graphics::AccessShaderWrite,
+				graphics::PipelineStageHost, graphics::PipelineStageCompShader);
 
-		auto p_avg_luma = buf_luminance.item("avg"_h);
-		cb->copy_buffer(buf_luminance.buf.get(), buf_luminance.stag.get(), graphics::BufferCopy(buf_luminance.offset(p_avg_luma), p_avg_luma.size));
-		cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessHostRead,
-			graphics::AccessShaderRead | graphics::AccessShaderWrite,
-			graphics::PipelineStageHost, graphics::PipelineStageCompShader);
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+			cb->bind_pipeline(pl_blit);
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
 
-		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-		cb->bind_pipeline(pl_blit);
-		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-		cb->draw(3, 1, 0, 0);
-		cb->end_renderpass();
+			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
+			cb->bind_pipeline(pl_tone);
+			prm_tone.bind_dss(cb);
+			prm_tone.pc.item_d("average_luminance"_h).set(*(float*)p_avg_luma.pdata);
+			prm_tone.pc.item_d("white_point"_h).set(white_point);
+			prm_tone.pc.item_d("one_over_gamma"_h).set(1.f / gamma);
+			prm_tone.push_constant(cb);
+			cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0, 0, sp_nearest));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
 
-		cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-		cb->bind_pipeline(pl_tone);
-		prm_tone.bind_dss(cb);
-		prm_tone.pc.item_d("average_luminance"_h).set(*(float*)p_avg_luma.pdata);
-		prm_tone.pc.item_d("white_point"_h).set(white_point);
-		prm_tone.pc.item_d("one_over_gamma"_h).set(1.f / gamma);
-		prm_tone.push_constant(cb);
-		cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0, 0, sp_nearest));
-		cb->draw(3, 1, 0, 0);
-		cb->end_renderpass();
-
-		cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-		cb->bind_pipeline(pl_fxaa);
-		prm_post.pc.item_d("pxsz"_h).set(1.f / (vec2)img_dst->extent);
-		prm_post.push_constant(cb);
-		cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
-		cb->draw(3, 1, 0, 0);
-		cb->end_renderpass();
+			cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+			cb->bind_pipeline(pl_fxaa);
+			prm_post.pc.item_d("pxsz"_h).set(1.f / (vec2)img_dst->extent);
+			prm_post.push_constant(cb);
+			cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
+		}
 
 		auto blur_pass = [&]() {
 			cb->bind_pipeline_layout(prm_post.pll);

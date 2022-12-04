@@ -119,6 +119,13 @@ namespace flame
 			data_map = graphics::Image::create(graphics::Format_R8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
 			volume->set_data_map_name(L"0x" + wstr_hex((uint64)data_map));
 		}
+		if (!splash_map || splash_map->extent != image_size)
+		{
+			delete splash_map;
+
+			splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
+			volume->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
+		}
 
 		const auto noise_ext = 16;
 		auto noise_texture = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(noise_ext), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
@@ -240,11 +247,11 @@ namespace flame
 		{
 			auto extent = volume->extent;
 			Curve curve;
-			for (auto i = 0; i < 2; i++)
+			for (auto i = 0; i < 8; i++)
 			{
 				curve.ctrl_points.push_back(vec3(linearRand(0.f, extent.x), 0.f, linearRand(0.f, extent.z)));
 			}
-			curve.segment_length = 1000.f;
+			curve.segment_length = 4.f;
 			curve.update();
 			
 			std::vector<float> heights(curve.vertices.size());
@@ -286,15 +293,13 @@ namespace flame
 			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
 			ds->set_buffer("Path"_h, 0, buf_path.buf.get());
 			ds->set_image("dep"_h, 0, img_dep->get_view(), nullptr);
-			ds->set_image("dst"_h, 0, data_map->get_view(), nullptr);
+			ds->set_image("data_map"_h, 0, data_map->get_view(), nullptr);
+			ds->set_image("splash_map"_h, 0, splash_map->get_view(), nullptr);
 			ds->update();
 			prm.set_ds(""_h, ds.get());
 
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
-
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderStorage);
+			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderStorage);
 			cb->bind_pipeline(pl);
 			prm.bind_dss(cb.get());
 			prm.pc.item_d("extent"_h).set(volume->extent);
@@ -304,6 +309,7 @@ namespace flame
 			prm.push_constant(cb.get());
 			cb->dispatch(image_size / 4U);
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
 
 			cb.excute();
 		}

@@ -64,6 +64,42 @@ namespace flame
 		data_changed("data_map_name"_h);
 	}
 
+	void cVolumePrivate::set_splash_map_name(const std::filesystem::path& name)
+	{
+		if (splash_map_name == name)
+			return;
+
+		auto old_one = splash_map;
+		if (!splash_map_name.empty())
+		{
+			if (!splash_map_name.native().starts_with(L"0x"))
+				AssetManagemant::release_asset(Path::get(splash_map_name));
+			else
+				old_one = nullptr;
+		}
+		splash_map_name = name;
+		if (!splash_map_name.empty())
+		{
+			if (!splash_map_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get_asset(Path::get(splash_map_name));
+				splash_map = !splash_map_name.empty() ? graphics::Image::get(splash_map_name, false, false, 0.f, graphics::ImageUsageAttachment | graphics::ImageUsageStorage) : nullptr;
+			}
+			else
+				splash_map = (graphics::ImagePtr)s2u_hex<uint64>(splash_map_name.string());
+		}
+
+		if (splash_map != old_one)
+		{
+			dirty = true;
+			node->mark_transform_dirty();
+		}
+
+		if (old_one)
+			graphics::Image::release(old_one);
+		data_changed("splash_map_name"_h);
+	}
+
 	void cVolumePrivate::set_material_name(const std::filesystem::path& name)
 	{
 		if (material_name == name)
@@ -110,8 +146,16 @@ namespace flame
 		graphics::Queue::get()->wait_idle();
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
+		if (!data_map_name.empty())
+			AssetManagemant::release_asset(Path::get(data_map_name));
+		if (!splash_map_name.empty())
+			AssetManagemant::release_asset(Path::get(splash_map_name));
+		if (material_res_id != -1)
+			sRenderer::instance()->release_material_res(material_res_id);
 		if (data_map && !data_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(data_map);
+		if (splash_map && !splash_map_name.native().starts_with(L"0x"))
+			graphics::Image::release(splash_map);
 		if (material)
 			graphics::Material::release(material);
 	}
@@ -128,7 +172,7 @@ namespace flame
 				if (dirty)
 				{
 					if (enable)
-						sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
+						sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view(), splash_map->get_view());
 					dirty = false;
 				}
 				break;
