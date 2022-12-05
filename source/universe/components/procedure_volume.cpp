@@ -130,7 +130,7 @@ namespace flame
 		const auto noise_ext = 16;
 		std::unique_ptr<graphics::Image> noise_textures[3];
 		for (auto i = 0; i < countof(noise_textures); i++)
-			noise_textures[i].reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(noise_ext), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst));
+			noise_textures[i].reset(graphics::Image::create(graphics::Format_R16G16B16A16_UNORM, uvec3(noise_ext), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst));
 		srand(seed ? seed : time(0));
 		auto noise_texture_size = noise_textures[0]->data_size;
 		graphics::StagingBuffer noise_data(noise_texture_size * countof(noise_textures));
@@ -145,7 +145,9 @@ namespace flame
 					auto yoff = y * noise_ext;
 					for (auto x = 0; x < noise_ext; x++)
 					{
-						noise_pdata[zoff + yoff + x] = linearRand(0.f, 255.f);
+						auto data = (uint*)(noise_pdata + (zoff + yoff + x) * sizeof(ushort) * 4);
+						data[0] = packSnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
+						data[1] = packSnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
 					}
 				}
 			}

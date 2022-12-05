@@ -140,8 +140,8 @@ namespace flame
 
 			struct Get
 			{
-				// alpha_coverage: when above 0, then the coverage of alpha test will be reserved in auto mipmaping
-				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, bool auto_mipmapping = false, float alpha_coverage = 0.f, ImageUsageFlags additional_usage = ImageUsageNone) = 0;
+				// alpha_test: when above 0, then the coverage of alpha test will be reserved in auto mipmaping
+				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, bool auto_mipmapping = false, float alpha_test = 0.f, ImageUsageFlags additional_usage = ImageUsageNone) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

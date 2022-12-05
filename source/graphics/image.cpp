@@ -622,13 +622,13 @@ namespace flame
 
 		struct ImageGet : Image::Get
 		{
-			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, bool auto_mipmapping, float alpha_coverage, ImageUsageFlags additional_usage) override
+			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, bool auto_mipmapping, float alpha_test, ImageUsageFlags additional_usage) override
 			{
 				auto filename = Path::get(_filename);
 
 				for (auto& i : loaded_images)
 				{
-					if (i.v->filename == filename && i.srgb == srgb && i.auto_mipmapping == auto_mipmapping && i.alpha_coverage == alpha_coverage && i.additional_usage == additional_usage)
+					if (i.v->filename == filename && i.srgb == srgb && i.auto_mipmapping == auto_mipmapping && i.alpha_test == alpha_test && i.additional_usage == additional_usage)
 					{
 						i.v->ref++;
 						return i.v.get();
@@ -743,35 +743,32 @@ namespace flame
 					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), uvec3(bmp->extent, 1),
 						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, auto_mipmapping ? 0 : 1);
 
+					StagingBuffer sb(bmp->data_size, bmp->data);
+					InstanceCommandBuffer cb;
+					BufferImageCopy cpy;
+					cpy.img_ext = ret->extent;
+					cb->image_barrier(ret, {}, ImageLayoutTransferDst);
+					cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
+					if (auto_mipmapping)
 					{
-						StagingBuffer sb(bmp->data_size, bmp->data);
-						InstanceCommandBuffer cb;
-						BufferImageCopy cpy;
-						cpy.img_ext = ret->extent;
-						cb->image_barrier(ret, {}, ImageLayoutTransferDst);
-						cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
 						for (auto i = 1U; i < ret->n_levels; i++)
 						{
-							if (auto_mipmapping)
-							{
-								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
-								cb->image_barrier(ret, { i, 1, 0, 1 }, ImageLayoutTransferDst);
-								ImageBlit blit;
-								blit.src_sub.base_level = i - 1;
-								blit.src_range = ivec4(0, 0, ret->levels[i - 1].extent);
-								blit.dst_sub.base_level = i;
-								blit.dst_range = ivec4(0, 0, ret->levels[i].extent);
-								cb->blit_image(ret, ret, { &blit, 1 }, FilterLinear);
-								cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
-							}
+							cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
+							cb->image_barrier(ret, { i, 1, 0, 1 }, ImageLayoutTransferDst);
+							ImageBlit blit;
+							blit.src_sub.base_level = i - 1;
+							blit.src_range = ivec4(0, 0, ret->levels[i - 1].extent);
+							blit.dst_sub.base_level = i;
+							blit.dst_range = ivec4(0, 0, ret->levels[i].extent);
+							cb->blit_image(ret, ret, { &blit, 1 }, FilterLinear);
+							cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 						}
 						cb->image_barrier(ret, { ret->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
-						cb.excute();
 					}
+					cb.excute();
 
-					if (auto_mipmapping && alpha_coverage > 0.f)
+					if (auto_mipmapping && alpha_test > 0.f)
 					{
-						auto alpha_test = alpha_coverage;
 						auto coverage = get_image_alphatest_coverage(ret, 0, alpha_test, 1.f);
 						for (auto i = 1; i < ret->n_levels; i++)
 							scale_image_alphatest_coverage(ret, i, coverage, alpha_test);

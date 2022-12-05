@@ -72,7 +72,7 @@ namespace flame
 			std::unique_ptr<ImageT> v;
 			bool srgb;
 			bool auto_mipmapping;
-			float alpha_coverage;
+			float alpha_test;
 			ImageUsageFlags additional_usage;
 		};
 
