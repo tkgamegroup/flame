@@ -16,7 +16,7 @@ namespace flame
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
 			auto message = std::string(pMessage);
-			printf("\n%s\n", message.c_str());
+
 			static std::regex reg_id(R"(VUID-\w+-\w+-(\d+))");
 			static std::regex reg_obj1(R"(Object \d+: handle = 0x(\w+), type \= VK_OBJECT_TYPE_(\w+))");
 			static std::regex reg_obj2(R"(Vk(\w+) 0x(\w+)\[\] )");
@@ -45,6 +45,8 @@ namespace flame
 
 			if (msgid == 2699)
 			{
+				printf("\n%s\n", message.c_str());
+
 				static std::regex reg_msg(R"(Descriptor in binding \#(\d+) index)");
 				int binding = -1;
 				if (std::regex_search(str, res, reg_msg))
@@ -58,6 +60,14 @@ namespace flame
 					if (binding < dsl->bindings.size())
 						printf("binding %d: %s\n", binding, dsl->bindings[binding].name.c_str());
 				}
+			}
+			else if (msgid == 727)
+			{
+				// ignore this
+			}
+			else
+			{
+				printf("\n%s\n", message.c_str());
 			}
 
 			return VK_FALSE;

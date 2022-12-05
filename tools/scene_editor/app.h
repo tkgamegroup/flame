@@ -24,6 +24,9 @@ enum ToolMode
 
 struct App : UniverseApplication
 {
+	bool graphics_debug = true;
+	std::vector<std::pair<uint, uint>> graphics_configs;
+
 	std::filesystem::path project_path;
 	std::filesystem::path prefab_path;
 	EntityPtr e_editor = nullptr;

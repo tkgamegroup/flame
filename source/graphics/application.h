@@ -14,14 +14,14 @@ struct GraphicsApplication : Application
 	int render_frames = 0;
 	bool always_render = true;
 
-	void create(bool graphics_debug, std::string_view title, 
+	void create(std::string_view title, 
 		const uvec2& size = uvec2(1280, 720), 
 		WindowStyleFlags styles = WindowFrame | WindowResizable,
-		bool = false)
+		bool graphics_debug = false, const std::vector<std::pair<uint, uint>>& graphics_configs = {})
 	{
 		Application::create(title, size, styles);
 
-		graphics::Device::create(graphics_debug);
+		graphics::Device::create(graphics_debug, graphics_configs);
 		main_window = graphics::Window::create(Application::main_window);
 
 		graphics::gui_initialize();

@@ -128,33 +128,46 @@ namespace flame
 		}
 
 		const auto noise_ext = 16;
-		auto noise_texture = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(noise_ext), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
-		graphics::StagingBuffer noise_data(noise_texture->data_size);
-		auto noise_pdata = (char*)noise_data->mapped;
+		std::unique_ptr<graphics::Image> noise_textures[3];
+		for (auto i = 0; i < countof(noise_textures); i++)
+			noise_textures[i].reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(noise_ext), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst));
 		srand(seed ? seed : time(0));
-		for (auto z = 0; z < noise_ext; z++)
+		auto noise_texture_size = noise_textures[0]->data_size;
+		graphics::StagingBuffer noise_data(noise_texture_size * countof(noise_textures));
+		for (auto i = 0; i < countof(noise_textures); i++)
 		{
-			auto zoff = z * noise_ext * noise_ext;
-			for (auto y = 0; y < noise_ext; y++)
+			auto noise_pdata = (char*)noise_data->mapped + i * noise_texture_size;
+			for (auto z = 0; z < noise_ext; z++)
 			{
-				auto yoff = y * noise_ext;
-				for (auto x = 0; x < noise_ext; x++)
+				auto zoff = z * noise_ext * noise_ext;
+				for (auto y = 0; y < noise_ext; y++)
 				{
-					noise_pdata[zoff + yoff + x] = linearRand(0.f, 1.f) * 255.f;
+					auto yoff = y * noise_ext;
+					for (auto x = 0; x < noise_ext; x++)
+					{
+						noise_pdata[zoff + yoff + x] = linearRand(0.f, 255.f);
+					}
 				}
 			}
 		}
 
 		{
 			graphics::InstanceCommandBuffer cb;
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(noise_data.get(), noise_texture, graphics::BufferImageCopy(uvec3(noise_ext)));
-			cb->image_barrier(noise_texture, {}, graphics::ImageLayoutShaderReadOnly);
+
+			for (auto i = 0; i < countof(noise_textures); i++)
+			{
+				cb->image_barrier(noise_textures[i].get(), {}, graphics::ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(noise_data.get(), noise_textures[i].get(), graphics::BufferImageCopy(uvec3(noise_ext), i * noise_texture_size));
+				cb->image_barrier(noise_textures[i].get(), {}, graphics::ImageLayoutShaderReadOnly);
+			}
 
 			auto pl = graphics::ComputePipeline::get(L"flame\\shaders\\volume\\procedure.pipeline", {});
 			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineCompute);
 			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
-			ds->set_image("noise"_h, 0, noise_texture->get_view(), graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat));
+			for (auto i = 0; i < countof(noise_textures); i++)
+			{
+				ds->set_image("noise_textures"_h, i, noise_textures[i]->get_view(), graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat));
+			}
 			ds->set_image("dst"_h, 0, data_map->get_view(), nullptr);
 			ds->update();
 			prm.set_ds(""_h, ds.get());
@@ -176,7 +189,9 @@ namespace flame
 			cb->dispatch(image_size / 4U);
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
 
+			graphics::Debug::start_capture_frame();
 			cb.excute();
+			graphics::Debug::end_capture_frame();
 		}
 
 		auto img_dep = std::unique_ptr<graphics::Image>(graphics::Image::create(graphics::Format_Depth16, uvec3(512, 512, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageTransferSrc));

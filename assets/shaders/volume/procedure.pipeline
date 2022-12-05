@@ -4,7 +4,7 @@ shaders
   @comp
 
 @pll
-layout (set = SET, binding = 0) uniform sampler3D noise;
+layout (set = SET, binding = 0) uniform sampler3D noise_textures[3];
 layout (set = SET, binding = 1, r8) uniform writeonly image3D dst;
 
 layout (push_constant) uniform PushConstant
@@ -23,34 +23,103 @@ layout (push_constant) uniform PushConstant
 @
 
 @comp
-float get_noise(vec3 pos)
+
+#define NOISE_LATTICE_SIZE 16
+
+float get_noise_lu(in sampler3D noise_tex, vec3 uvw)
 {
-	return texture(noise, pos).r * 2.0 - 1.0;
+	return texture(noise_tex, uvw).r;
+}
+
+float get_noise_ls(in sampler3D noise_tex, vec3 uvw)
+{
+	return get_noise_lu(noise_tex, uvw) * 2.0 - 1.0;
+}
+
+float get_noise_mu(in sampler3D noise_tex, vec3 uvw)
+{
+  // smooth the input coord
+  vec3 t = fract(uvw * NOISE_LATTICE_SIZE + 0.5);
+  vec3 t2 = (3 - 2*t)*t*t;
+  vec3 uvw2 = uvw + (t2-t)/float(NOISE_LATTICE_SIZE);
+  // fetch
+  return get_noise_lu(noise_tex, uvw2);
+}
+
+float get_noise_ms(in sampler3D noise_tex, vec3 uvw)
+{
+  return get_noise_mu(noise_tex, uvw) * 2.0 - 1.0;
+}
+
+float smooth_snap(float t, float m)
+{
+  // optimized:
+  float c = (t > 0.5) ? 1 : 0;
+  float s = 1-c*2;
+  return c + s*pow((c+s*t)*2, m)*0.5;  
 }
 
 layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 void main()
 {
 	uvec3 dst_coord = gl_WorkGroupID * 4 + gl_LocalInvocationID;
-	vec3 pos = vec3(dst_coord) / pc.cells * pc.extent;
-	float density = pc.offset - pos.y;
+	vec3 ws = vec3(dst_coord) / pc.cells * pc.extent;
+	vec3 ws_orig = ws;
+
+	float density = pc.offset - ws.y;
+
+	float uulf_rand  = clamp(get_noise_mu(noise_textures[0], ws * 0.000718) * 2.0 - 0.5, 0, 1);
+	float uulf_rand2 = get_noise_mu(noise_textures[1], ws * 0.000632);
+	float uulf_rand3 = get_noise_mu(noise_textures[2], ws * 0.000695);
+
+	// PRE-WARP the world-space coordinate.
+	const float prewarp_str = 25;   // recommended range: 5..25
+	vec3 ulf_rand = vec3(0);
+	
+	for (int i = 0; i < pc.planes_count; i++)
+	{
+		density += clamp((pc.planes[i].x - ws_orig.y * pc.planes[i].y) * pc.planes[i].z, 0, 1) * pc.planes[i].w;
+	}
+
 	for (int i = 0; i < pc.structure_octaves; i++)
 	{
 		float amplitude = pc.structure_amplitudes[i] * pc.amplitude_scale;
 		float strength = float(1 << i);
-		density += get_noise(pos * amplitude).r * strength;
+		density += get_noise_ls(noise_textures[i % 3], ws * amplitude) * strength;
 	}
 	for (int i = 1; i <= pc.detail_octaves; i++)
 	{
 		float amplitude = pc.detail_amplitudes[i] * pc.amplitude_scale;
 		float strength = 1.0 / float(1 << i);
-		density += get_noise(pos * amplitude).r * strength;
-	}
-	for (int i = 0; i < pc.planes_count; i++)
-	{
-		density += clamp((pc.planes[i].x - pos.y * pc.planes[i].y) * pc.planes[i].z, 0, 1) * pc.planes[i].w;
+		density += get_noise_ms(noise_textures[i % 3], ws * amplitude) * strength;
 	}
 
+    // CRUSTY SHELF
+    // often creates smooth tops (~grass) and crumbly, eroded underneath parts.
+    #if 1
+      float shelf_thickness_y = 2.5;//2.5;
+      float shelf_pos_y = -1;//-2;
+      float shelf_strength = 9.5;   // 1-4 is good
+      density = mix(density, shelf_strength, 0.83 * clamp(shelf_thickness_y - abs(ws.y - shelf_pos_y), 0, 1) * clamp(uulf_rand * 1.5 - 0.5, 0, 1));
+    #endif
+
+    // FLAT TERRACES
+    #if 1
+    {
+		  const float terraces_can_warp = 0.5 * uulf_rand2;
+		  const float terrace_freq_y = 0.13;
+		  const float terrace_str  = 3*clamp(uulf_rand*2-1, 0, 1);  // careful - high str here diminishes strength of noise, etc.
+		  const float overhang_str = 1*clamp(uulf_rand*2-1, 0, 1);  // careful - too much here and LODs interfere (most visible @ silhouettes because zbias can't fix those).
+		  float fy = -mix(ws_orig.y, ws.y, terraces_can_warp)*terrace_freq_y;
+		  float orig_t = fract(fy);
+		  float t = orig_t;
+		  t = smooth_snap(t, 16);  // faster than using 't = t*t*(3-2*t)' four times
+		  fy = floor(fy) + t;
+		  density += fy*terrace_str;
+		  density += (t - orig_t) * overhang_str;
+    }
+    #endif
+	
 	imageStore(dst, ivec3(dst_coord), vec4(density, 0, 0, 0));
 }
 @

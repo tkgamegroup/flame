@@ -316,6 +316,11 @@ namespace flame
 						if (op == "==")
 							return get_value(res[1].str()) == get_value(res[3].str());
 					}
+					else
+					{
+						if (s2t<uint>(line) != 0)
+							return true;
+					}
 					return false;
 				};
 

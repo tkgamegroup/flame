@@ -78,8 +78,9 @@ namespace flame
 			{
 			}
 
-			BufferImageCopy(const uvec3& ext) :
-				img_ext(ext)
+			BufferImageCopy(const uvec3& img_ext, uint buf_off = 0) :
+				img_ext(img_ext),
+				buf_off(buf_off)
 			{
 			}
 		};

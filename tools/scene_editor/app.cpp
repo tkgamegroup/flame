@@ -18,7 +18,7 @@ App app;
 
 void App::init()
 {
-	create(true, "Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, graphics_debug, graphics_configs);
 	world->update_components = false;
 	always_render = false;
 	renderer->mode = sRenderer::CameraLight;
@@ -828,6 +828,8 @@ int main(int argc, char** args)
 	auto ap = parse_args(argc, args);
 	if (ap.has("-fixed_render_target_size"))
 		view_scene.fixed_render_target_size = true;
+	if (ap.has("-dont_use_mesh_shader"))
+		app.graphics_configs.emplace_back("mesh_shader"_h, 0);
 
 	app.init();
 
