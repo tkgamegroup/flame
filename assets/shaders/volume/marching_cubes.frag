@@ -6,9 +6,10 @@
 #endif
 #endif
 
+layout(location = 0) in vec3 i_uv;
 #ifndef OCCLUDER_PASS
-layout(location = 0) in vec3 i_normal;
-layout(location = 1) in vec3 i_coordw;
+layout(location = 1) in vec3 i_normal;
+layout(location = 2) in vec3 i_coordw;
 #endif
 
 #ifndef OCCLUDER_PASS
@@ -25,18 +26,7 @@ void main()
 #ifdef MAT_CODE
 	MaterialInfo material = material.infos[pc.index & 0xffff];
 	float tiling = float(material.f[0]);
-	
-	#ifndef OCCLUDER_PASS
-		float radians = asin(i_normal.y) / 3.14159;
-		vec3 w;
-		w[0] = mix(1, 0, radians);
-		w[1] = 1 - w[0];
-		w[2] = 0;
-		w /= w[0] + w[1] + w[2];
-		vec4 weights = vec4(w, 0);
-	#else
-		vec4 weights = vec4(0);
-	#endif
+	vec4 weights = texture(volume_splash_maps[pc.index >> 16], i_uv);
 
 	#include MAT_CODE
 #else
@@ -50,7 +40,7 @@ void main()
 				o_color = pc.f;
 			#endif
 		#else
-			o_res_col_met = vec4(1.0, 1.0, 1.0, 0.0);
+			o_res_col_met = vec4(0.0, 0.0, 0.0, 0.0);
 			o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, 1.0);
 		#endif
 	#endif

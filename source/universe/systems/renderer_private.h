@@ -75,7 +75,7 @@ namespace flame
 		void set_sdf_instance(uint id, uint boxes_count, std::pair<vec3, vec3>* boxes, uint spheres_count, std::pair<vec3, float>* spheres) override;
 
 		int register_volume_instance(int id) override;
-		void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) override;
+		void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map, graphics::ImageViewPtr splash_map) override;
 
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 

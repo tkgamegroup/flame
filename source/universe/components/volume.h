@@ -26,6 +26,11 @@ namespace flame
 		virtual void set_data_map_name(const std::filesystem::path& name) = 0;
 
 		// Reflect
+		std::filesystem::path splash_map_name;
+		// Reflect
+		virtual void set_splash_map_name(const std::filesystem::path& name) = 0;
+
+		// Reflect
 		std::filesystem::path material_name;
 		// Reflect
 		virtual void set_material_name(const std::filesystem::path& name) = 0;
@@ -39,6 +44,7 @@ namespace flame
 		bool marching_cubes = true;
 
 		graphics::ImagePtr data_map = nullptr;
+		graphics::ImagePtr splash_map = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int instance_id = -1;
 		int material_res_id = -1;

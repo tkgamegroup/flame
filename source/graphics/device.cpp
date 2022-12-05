@@ -4,6 +4,8 @@
 #include "shader_private.h"
 #include "command_private.h"
 
+#define USE_MESH_SHADER 0
+
 namespace flame
 {
 	namespace graphics

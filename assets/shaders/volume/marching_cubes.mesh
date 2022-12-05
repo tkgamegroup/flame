@@ -30,9 +30,10 @@ mat4 proj_view = _proj_view;
 
 taskPayloadSharedEXT Task payload;
 
+layout (location = 0) out vec3 o_uv[];
 #ifndef OCCLUDER_PASS
-layout (location = 0) out vec3 o_normal[];
-layout (location = 1) out vec3 o_coordw[];
+layout (location = 1) out vec3 o_normal[];
+layout (location = 2) out vec3 o_coordw[];
 #endif
 
 // 8 intermediate corner values and normals in LDS
@@ -72,16 +73,16 @@ void main()
 	float value = field(pos);
 
 	// Grab data from other lanes so we can compute the normal by computing the difference in value in x, y and z directions.
-	vec3 normal;
-	normal.x = subgroupShuffleDown(value, 8);
-	normal.y = subgroupShuffleDown(value, 16);
-	normal.z = subgroupShuffleDown(value, 24);
+	vec3 normal0;
+	normal0.x = subgroupShuffleDown(value, 8);
+	normal0.y = subgroupShuffleDown(value, 16);
+	normal0.z = subgroupShuffleDown(value, 24);
 
 	// Save intermediates to LDS. Corner positions can be computed directly from indices, so no need to put in LDS.
 	if (thread_id < 8)
 	{
 		Corner corner;
-		corner.normal = vec3(value) == normal ? vec3(1.0) : normalize(value - normal);
+		corner.normal = vec3(value) - normal0;
 		corner.value = value;
 		corners[thread_id] = corner;
 	}
@@ -106,10 +107,12 @@ void main()
 		// Interpolate position and normal
 		float mix_f = corners[i0].value / (corners[i0].value - corners[i1].value);
 
-		vec3 pos    = vec3(transform * vec4((mix(pos0, pos1, mix_f) * block_sz + block_off) * extent, 1.0));
-		vec3 normal = mix(corners[i0].normal, corners[i1].normal, mix_f);
+		vec3 uv		= mix(pos0, pos1, mix_f) * block_sz + block_off;
+		vec3 pos    = vec3(transform * vec4(uv * extent, 1.0));
+		vec3 normal = normalize(mix(corners[i0].normal, corners[i1].normal, mix_f));
 		
 		// Output final vertex
+		o_uv[thread_id] = uv;
 	#ifdef OCCLUDER_PASS
 		if (pc.i[0] == 0)
 			gl_MeshVerticesEXT[thread_id].gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(pos, 1.0);
