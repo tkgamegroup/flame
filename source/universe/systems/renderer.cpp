@@ -510,7 +510,7 @@ namespace flame
 
 		mesh_reses.resize(1024);
 
-		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"));
+		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
 		pl_line3d->dynamic_renderpass = true;
 		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip" });
@@ -530,13 +530,13 @@ namespace flame
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
 		pl_blend->dynamic_renderpass = true;
 
-		prm_fwd.init(pll_fwd);
+		prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
 		prm_fwd.set_ds("camera"_h, ds_camera.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
 		prm_fwd.set_ds("lighting"_h, ds_lighting.get());
 
-		prm_gbuf.init(pll_gbuf);
+		prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
 		prm_gbuf.set_ds("camera"_h, ds_camera.get());
 		prm_gbuf.set_ds("instance"_h, ds_instance.get());
 		prm_gbuf.set_ds("material"_h, ds_material.get());
@@ -558,14 +558,14 @@ namespace flame
 				s.batcher[i].buf_idr.create(min(1024U, mesh_instances.capacity));
 		}
 
-		prm_defe.init(get_deferred_pipeline()->layout);
+		prm_defe.init(get_deferred_pipeline()->layout, graphics::PipelineGraphics);
 		prm_defe.set_ds("camera"_h, ds_camera.get());
 		prm_defe.set_ds("lighting"_h, ds_lighting.get());
 		prm_defe.set_ds("material"_h, ds_material.get());
 		ds_defe.reset(graphics::DescriptorSet::create(nullptr, prm_defe.get_dsl(""_h)));
 		prm_defe.set_ds(""_h, ds_defe.get());
 
-		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"));
+		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"), graphics::PipelineGraphics);
 		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:HORIZONTAL" });
 		pl_blur_h->dynamic_renderpass = true;
 		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:VERTICAL" });
@@ -595,7 +595,7 @@ namespace flame
 
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline", {});
 		pl_tone->dynamic_renderpass = true;
-		prm_tone.init(pl_tone->layout);
+		prm_tone.init(pl_tone->layout, graphics::PipelineGraphics);
 
 		pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\fxaa.pipeline", {});
 		pl_fxaa->dynamic_renderpass = true;

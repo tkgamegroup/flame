@@ -115,7 +115,7 @@ void main()
 		  float t = orig_t;
 		  t = smooth_snap(t, 16);  // faster than using 't = t*t*(3-2*t)' four times
 		  fy = floor(fy) + t;
-		  density += fy*terrace_str;
+		  density += fy * terrace_str;
 		  density += (t - orig_t) * overhang_str;
     }
     #endif

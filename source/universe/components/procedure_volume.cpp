@@ -146,8 +146,9 @@ namespace flame
 					for (auto x = 0; x < noise_ext; x++)
 					{
 						auto data = (uint*)(noise_pdata + (zoff + yoff + x) * sizeof(ushort) * 4);
-						data[0] = packSnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
-						data[1] = packSnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
+						data[0] = packUnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
+						data[1] = packUnorm2x16(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
+						//noise_pdata[zoff + yoff + x] = linearRand(0.f, 1.f);
 					}
 				}
 			}
@@ -208,7 +209,7 @@ namespace flame
 				"all_shader:_blocks=pc.blocks",
 				"all_shader:DATA_MAP=volume_data",
 			});
-			auto prm = graphics::PipelineResourceManager(pl->layout);
+			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineGraphics);
 			auto dsl = prm.get_dsl(""_h);
 			graphics::StorageBuffer buf_marching_cubes_loopup(graphics::BufferUsageStorage, dsl->get_buf_ui("MarchingCubesLookup"_h));
 			{
@@ -326,6 +327,30 @@ namespace flame
 			prm.push_constant(cb.get());
 			cb->dispatch(image_size / 4U);
 			cb->image_barrier(data_map, {}, graphics::ImageLayoutShaderReadOnly);
+			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
+
+			cb.excute();
+		}
+
+		{
+			graphics::InstanceCommandBuffer cb;
+
+			auto pl = graphics::ComputePipeline::get(L"flame\\shaders\\volume\\auto_splash.pipeline", {});
+			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineCompute);
+			auto dsl = prm.get_dsl(""_h);
+			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
+			ds->set_image("data_map"_h, 0, data_map->get_view(), nullptr);
+			ds->set_image("splash_map"_h, 0, splash_map->get_view(), nullptr);
+			ds->update();
+			prm.set_ds(""_h, ds.get());
+
+			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderStorage);
+			cb->bind_pipeline(pl);
+			prm.bind_dss(cb.get());
+			prm.pc.item_d("extent"_h).set(volume->extent);
+			prm.pc.item_d("cells"_h).set(image_size);
+			prm.push_constant(cb.get());
+			cb->dispatch(image_size / 4U);
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutShaderReadOnly);
 
 			cb.excute();

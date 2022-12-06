@@ -310,12 +310,12 @@ namespace flame
 			{
 			}
 
-			PipelineResourceManager(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
+			PipelineResourceManager(PipelineLayoutPtr _pll, PipelineType _plt)
 			{
 				init(_pll, _plt);
 			}
 
-			void init(PipelineLayoutPtr _pll, PipelineType _plt = PipelineGraphics)
+			void init(PipelineLayoutPtr _pll, PipelineType _plt)
 			{
 				pll = _pll;
 				plt = _plt;

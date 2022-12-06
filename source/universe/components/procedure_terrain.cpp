@@ -230,7 +230,7 @@ namespace flame
 			  "pt=" + TypeInfo::serialize_t(pt) });
 
 		graphics::PipelineResourceManager prm;
-		prm.init(pl->layout);
+		prm.init(pl->layout, graphics::PipelineGraphics);
 
 		graphics::VertexBuffer buf_vtx;
 		buf_vtx.create(pl->vi_ui(), MaxVertices);
@@ -392,7 +392,7 @@ namespace flame
 				{ "rp=" + str(fb->renderpass),
 				  "frag:LAYERS=" + str(splash_layers) });
 			graphics::PipelineResourceManager prm;
-			prm.init(pl->layout);
+			prm.init(pl->layout, graphics::PipelineGraphics);
 
 			cb->image_barrier(splash_map, {}, graphics::ImageLayoutAttachment);
 			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(splash_map->extent)));
@@ -416,7 +416,7 @@ namespace flame
 			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\splash_by_region.pipeline",
 				{ "rp=" + str(fb->renderpass) });
 			graphics::PipelineResourceManager prm;
-			prm.init(pl->layout);
+			prm.init(pl->layout, graphics::PipelineGraphics);
 
 			graphics::StorageBuffer buf_sdf;
 			auto dsl = prm.pll->dsls[0];

@@ -204,7 +204,7 @@ void View_Project::init()
 							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
 								{ "rp=" + str(fb->renderpass) });
 							graphics::PipelineResourceManager prm;
-							prm.init(pl->layout);
+							prm.init(pl->layout, graphics::PipelineGraphics);
 
 							cb->begin_renderpass(nullptr, fb);
 							cb->bind_pipeline(pl);
