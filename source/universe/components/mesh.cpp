@@ -83,7 +83,16 @@ namespace flame
 		node->measurers.add([this](AABB* ret) {
 			if (!mesh)
 				return false;
-			*ret = AABB(mesh->bounds.get_points(parmature ? parmature->node->transform : node->transform));
+			if (!parmature)
+				*ret = AABB(mesh->bounds.get_points(node->transform));
+			else
+			{
+				auto pb = parmature->bone_node_map[node];
+				if (!pb)
+					*ret = AABB(mesh->bounds.get_points(parmature->node->transform));
+				else
+					*ret = AABB(mesh->bounds.get_points(pb->pose.m));
+			}
 			return true;
 		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {

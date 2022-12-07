@@ -8,11 +8,11 @@
 
 namespace flame
 {
-	mat4 cArmaturePrivate::Bone::calc_mat()
+	void cArmaturePrivate::Bone::calc_mat()
 	{
 		if (!node)
-			return mat4(1.f);
-		return node->transform * offmat;
+			pose.m = mat4(1.f);
+		pose.m = node->transform * offmat;
 	}
 
 	std::filesystem::path parse_name(const std::filesystem::path& src)
@@ -124,9 +124,17 @@ namespace flame
 
 				if (dirty)
 				{
+					for (auto& c : entity->children)
+					{
+						c->node()->mark_transform_dirty();
+					}
+
 					std::vector<mat4> mats(bones.size());
 					for (auto i = 0; i < bones.size(); i++)
-						mats[i] = bones[i].calc_mat();
+					{
+						bones[i].calc_mat();
+						mats[i] = bones[i].pose.m;
+					}
 					sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
 					dirty = false;
 				}
@@ -230,11 +238,10 @@ namespace flame
 			{
 				auto& src = model->bones[i];
 				auto& dst = bones[i];
-				auto name = src.name;
-				auto e = entity->find_child(name);
+				auto e = entity->find_child(src.name);
 				if (e)
 				{
-					dst.name = name;
+					dst.name = src.name;
 					dst.node = e->node();
 					if (dst.node)
 					{
@@ -248,7 +255,26 @@ namespace flame
 						dst.offmat = mat4(1.f);
 				}
 				else
-					printf("cArmature: cannot find node of bone's name: %s\n", name.c_str());
+					printf("cArmature: cannot find node of bone's name: %s\n", src.name.c_str());
+			}
+
+			bone_node_map.clear();
+			for (auto& c : entity->children)
+			{
+				Bone* pb = nullptr;
+				if (!bones.empty())
+					pb = &bones[0];
+				for (auto& b : bones)
+				{
+					if (!b.node)
+						continue;
+					if (c->name.find(b.name) != std::string::npos)
+					{
+						pb = &b;
+						break;
+					}
+				}
+				bone_node_map[c->node()] = pb;
 			}
 
 			if (!bones.empty())

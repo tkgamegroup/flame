@@ -13,6 +13,7 @@ namespace flame
 		{
 			vec3 p = vec3(0);
 			quat q = quat(1, 0, 0, 0);
+			mat4 m;
 		};
 
 		struct Bone
@@ -22,7 +23,7 @@ namespace flame
 			mat4 offmat;
 			Pose pose;
 
-			inline mat4 calc_mat();
+			inline void calc_mat();
 		};
 
 		struct Track
@@ -43,6 +44,7 @@ namespace flame
 
 		bool dirty = true;
 		std::vector<Bone> bones;
+		std::unordered_map<cNodePtr, Bone*> bone_node_map;
 		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;
 		float transition_duration = 0.f;

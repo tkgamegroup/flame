@@ -150,8 +150,6 @@ namespace flame
 			AssetManagemant::release_asset(Path::get(data_map_name));
 		if (!splash_map_name.empty())
 			AssetManagemant::release_asset(Path::get(splash_map_name));
-		if (material_res_id != -1)
-			sRenderer::instance()->release_material_res(material_res_id);
 		if (data_map && !data_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(data_map);
 		if (splash_map && !splash_map_name.native().starts_with(L"0x"))

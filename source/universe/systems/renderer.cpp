@@ -901,6 +901,12 @@ namespace flame
 			graphics::Queue::get()->wait_idle();
 			ds_material->set_image("material_maps"_h, id, img_black->get_view(), nullptr);
 			ds_material->update();
+
+			if (!res.name.empty())
+			{
+				res.name.clear();
+				mark_clear_pipelines = true;
+			}
 			
 			res.iv = nullptr;
 			res.ref = 0;

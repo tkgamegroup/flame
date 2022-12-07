@@ -765,6 +765,8 @@ namespace flame
 						}
 						cb->image_barrier(ret, { ret->n_levels - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly);
 					}
+					else
+						cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 					cb.excute();
 
 					if (auto_mipmapping && alpha_test > 0.f)

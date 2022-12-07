@@ -39,7 +39,7 @@ namespace flame
 
 			for (auto& vkobj : backend_objects)
 			{
-				auto obj = tracked_objects[vkobj.first].obj;
+				auto& obj = tracked_objects[vkobj.first];
 				int cut = 1;
 			}
 
