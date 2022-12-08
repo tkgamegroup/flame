@@ -16,6 +16,8 @@
 
 App app;
 
+static Entity* editor_selecting_entity = nullptr;
+
 void App::init()
 {
 	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, graphics_debug, graphics_configs);
@@ -37,6 +39,8 @@ void App::init()
 	static std::vector<std::function<bool()>> dialogs;
 
 	graphics::gui_callbacks.add([this]() {
+		editor_selecting_entity = selection.type == Selection::tEntity ? selection.entity() : nullptr;
+
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
 		{
@@ -635,7 +639,15 @@ void App::open_project(const std::filesystem::path& path)
 
 		auto cpp_path = path / L"bin/debug/cpp.dll";
 		if (std::filesystem::exists(cpp_path))
-			tidb.load(cpp_path);
+		{
+			if (auto library = tidb.load(cpp_path); library)
+			{
+				if (auto set_editor_info = (void(*)(Entity**))get_library_function(library, "set_editor_info"); set_editor_info)
+				{
+					set_editor_info(&editor_selecting_entity);
+				}
+			}
+		}
 
 		selection.clear("app"_h);
 	}

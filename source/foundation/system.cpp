@@ -245,6 +245,11 @@ namespace flame
 		FreeLibrary((HMODULE)library);
 	}
 
+	void* get_library_function(void* library, const std::string& name)
+	{
+		return GetProcAddress((HMODULE)library, name.c_str());
+	}
+
 	void* create_native_event(bool signaled, bool manual)
 	{
 		return CreateEvent(NULL, manual, signaled, NULL);

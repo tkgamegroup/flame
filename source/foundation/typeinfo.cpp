@@ -408,7 +408,7 @@ namespace flame
 		return true;
 	}
 
-	void TypeInfoDataBase::load(const std::filesystem::path& filename)
+	void* TypeInfoDataBase::load(const std::filesystem::path& filename)
 	{
 		std::filesystem::path path(filename);
 		if (!path.is_absolute())
@@ -426,13 +426,16 @@ namespace flame
 		{
 			wprintf(L"typeinfo do not exist: %s\n", path.c_str());
 			assert(0);
-			return;
+			return library;
 		}
 		if (!load_from_string(content, library))
 		{
 			wprintf(L"typeinfo wrong format: %s\n", path.c_str());
 			assert(0);
+			return library;
 		}
+
+		return library;
 	}
 
 	std::string TypeInfoDataBase::save_to_string()
