@@ -13,7 +13,7 @@ extern dtNavMeshQuery* dt_nav_query;
 extern dtQueryFilter dt_filter;
 extern dtCrowd* dt_crowd;
 
-dtPolyRef dt_nearest_poly(const vec3& pos);
+dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext);
 #endif
 
 namespace flame
@@ -28,8 +28,9 @@ namespace flame
 
 		void update_transform(EntityPtr e, bool mark_dirty);
 
-		void generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
-		std::vector<vec3> query_nav_path(const vec3& start, const vec3& end) override;
+		void generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
+		std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end) override;
+		bool raycast_navmesh(const vec3& start, const vec3& end, vec3& res) override;
 		void get_debug_draw(DrawData& draw_data) override;
 
 		void update() override;

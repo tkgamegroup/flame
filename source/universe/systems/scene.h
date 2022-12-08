@@ -12,9 +12,11 @@ namespace flame
 		OctNode* octree = nullptr;
 
 		// Reflect
-		virtual void generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) = 0;
+		virtual void generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) = 0;
 		// Reflect
-		virtual std::vector<vec3> query_nav_path(const vec3& start, const vec3& end) = 0;
+		virtual std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end) = 0;
+		// Reflect
+		virtual bool raycast_navmesh(const vec3& start, const vec3& end, vec3& res) = 0;
 		// Reflect
 		virtual void get_debug_draw(DrawData& draw_data) = 0;
 
