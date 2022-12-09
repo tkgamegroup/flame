@@ -428,12 +428,11 @@ namespace flame
 		nav_mesh_walkable_slope_angle = walkable_slope_angle;
 	}
 
-	void _generate_nav_mesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, EntityPtr root)
+	void _generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, EntityPtr root)
 	{
 #ifdef USE_RECASTNAV
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
-		AABB bounds;
 
 		std::function<void(EntityPtr e)> form_mesh;
 		form_mesh = [&](EntityPtr e) {
@@ -536,6 +535,13 @@ namespace flame
 		};
 
 		form_mesh(root);
+		if (positions.empty())
+		{
+			printf("generate navmesh: no vertices.\n");
+			return;
+		}
+
+		AABB bounds;
 		for (auto& p : positions)
 			bounds.expand(p);
 
@@ -589,7 +595,7 @@ namespace flame
 		tcparams.maxSimplificationError = edge_max_error;
 		tcparams.maxTiles = tw * th * EXPECTED_LAYERS_PER_TILE;
 		tcparams.maxObstacles = 128;
-		if (dtStatusFailed(dt_tile_cache->init(&tcparams, my_title_cache_allocator, my_tile_cache_compressor, my_tile_cache_mesh_process)))
+		if (auto status = dt_tile_cache->init(&tcparams, my_title_cache_allocator, my_tile_cache_compressor, my_tile_cache_mesh_process); dtStatusFailed(status))
 		{
 			printf("generate navmesh: Could not init tile cache.\n");
 			return;
@@ -1062,7 +1068,7 @@ namespace flame
 		dtRaycastHit hit;
 		if (dtStatusSucceed(dt_nav_query->raycast(start_ref, &start[0], &end[0], &dt_filter, 0, &hit)))
 		{
-			hit.t;
+			mix(start, end, hit.t);
 		}
 
 		return false;
@@ -1074,7 +1080,7 @@ namespace flame
 
 		if (sig_gen_navmesh)
 		{
-			_generate_nav_mesh(nav_mesh_agent_radius, nav_mesh_agent_height, nav_mesh_walkable_climb, nav_mesh_walkable_slope_angle, world->root.get());
+			_generate_navmesh(nav_mesh_agent_radius, nav_mesh_agent_height, nav_mesh_walkable_climb, nav_mesh_walkable_slope_angle, world->root.get());
 			sig_gen_navmesh = false;
 		}
 

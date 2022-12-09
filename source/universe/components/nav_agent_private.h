@@ -18,6 +18,7 @@ namespace flame
 		void set_turn_speed_scale(float v) override;
 
 		void set_target(const vec3& pos) override;
+		vec3 get_path_last_pos() override;
 		void stop() override;
 		void update_pos() override;
 

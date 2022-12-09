@@ -136,7 +136,7 @@ void App::init()
 								ImGui::InputFloat("Walkable Slope Angle", &generate_dialog.walkable_slope_angle);
 								if (ImGui::Button("Generate"))
 								{
-									sScene::instance()->generate_nav_mesh(generate_dialog.agent_radius, generate_dialog.agent_height, generate_dialog.walkable_climb, generate_dialog.walkable_slope_angle);
+									sScene::instance()->generate_navmesh(generate_dialog.agent_radius, generate_dialog.agent_height, generate_dialog.walkable_climb, generate_dialog.walkable_slope_angle);
 									generate_dialog.open = false;
 								}
 								ImGui::SameLine();
@@ -156,7 +156,7 @@ void App::init()
 						if (auto comp = e_prefab->find_component(th<cNavScene>()); comp)
 						{
 							auto nav_scene = (cNavScenePtr)comp;
-							sScene::instance()->generate_nav_mesh(nav_scene->agent_radius, nav_scene->agent_height, nav_scene->walkable_climb, nav_scene->walkable_slope_angle);
+							sScene::instance()->generate_navmesh(nav_scene->agent_radius, nav_scene->agent_height, nav_scene->walkable_climb, nav_scene->walkable_slope_angle);
 						}
 					}
 				}
@@ -217,7 +217,7 @@ void App::init()
 									else
 										test_dialog.end = view_scene.hovering_pos;
 									if (distance(test_dialog.start, test_dialog.end) > 0.f)
-										test_dialog.points = sScene::instance()->query_nav_path(test_dialog.start, test_dialog.end);
+										test_dialog.points = sScene::instance()->query_navmesh_path(test_dialog.start, test_dialog.end);
 								}
 								ImGui::End();
 								if (!test_dialog.open)

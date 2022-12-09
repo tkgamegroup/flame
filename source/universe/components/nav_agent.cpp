@@ -38,13 +38,25 @@ namespace flame
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
 		{
-			dtPolyRef poly_ref = dt_nearest_poly(pos);
+			dtPolyRef poly_ref = dt_nearest_poly(pos, vec3(2.f, 4.f, 2.f));
 			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
 			//printf("%s -> %s\n", str(node->pos).c_str(), str(pos).c_str());
 			auto agent = dt_crowd->getEditableAgent(dt_id);
 			*(vec3*)agent->dvel = node->rot[2];
 		}
 #endif
+	}
+
+	vec3 cNavAgentPrivate::get_path_last_pos()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_id != -1 && dt_crowd)
+		{
+			auto agent = dt_crowd->getAgent(dt_id);
+			*(vec3*)(agent->corridor.getTarget());
+		}
+#endif
+		return target_pos;
 	}
 
 	void cNavAgentPrivate::stop()
