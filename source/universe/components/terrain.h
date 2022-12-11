@@ -72,8 +72,6 @@ namespace flame
 		int instance_id = -1;
 		int grass_texture_id = -1;
 
-		virtual void update_normal_map() = 0;
-
 		struct Create
 		{
 			virtual cTerrainPtr operator()(EntityPtr e) = 0;

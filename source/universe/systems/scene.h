@@ -16,7 +16,7 @@ namespace flame
 		// Reflect
 		virtual std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end) = 0;
 		// Reflect
-		virtual bool raycast_navmesh(const vec3& start, const vec3& end, vec3& res) = 0;
+		virtual bool navmesh_nearest_point(const vec3& check, const vec3& ext, vec3& res) = 0;
 		// Reflect
 		virtual void get_debug_draw(DrawData& draw_data) = 0;
 

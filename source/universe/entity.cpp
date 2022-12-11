@@ -506,8 +506,10 @@ namespace flame
 
 		SerializeXmlSpec spec;
 		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
-		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
+		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src)->std::string {
 			auto& path = *(std::filesystem::path*)src;
+			if (path.native().starts_with(L"0x"))
+				return "";
 			return Path::rebase(base_path, path).string();
 		};
 		spec.obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {

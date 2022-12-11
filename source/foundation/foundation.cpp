@@ -56,7 +56,7 @@ namespace flame
 	struct Event
 	{
 		float interval;
-		float rest;
+		float timer;
 		std::function<bool()> callback;
 	};
 
@@ -119,15 +119,15 @@ namespace flame
 				std::lock_guard<std::recursive_mutex> lock(event_mtx);
 				for (auto it = events.begin(); it != events.end();)
 				{
-					it->rest -= delta_time;
-					if (it->rest <= 0)
+					it->timer -= delta_time;
+					if (it->timer <= 0)
 					{
 						if (!it->callback())
 						{
 							it = events.erase(it);
 							continue;
 						}
-						it->rest = it->interval;
+						it->timer = it->interval;
 					}
 					it++;
 				}
@@ -167,7 +167,7 @@ namespace flame
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		auto& e = events.emplace_back();
 		e.interval = time;
-		e.rest = time;
+		e.timer = time;
 		e.callback = callback;
 		return &e;
 	}
@@ -176,7 +176,7 @@ namespace flame
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		auto ev = (Event*)_ev;
-		ev->rest = ev->interval;
+		ev->timer = ev->interval;
 	}
 
 	void remove_event(void* ev)

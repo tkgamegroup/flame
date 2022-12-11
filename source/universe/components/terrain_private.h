@@ -22,10 +22,8 @@ namespace flame
 		void set_grass_texture_name(const std::filesystem::path& name) override;
 
 		~cTerrainPrivate();
+		void update_normal_map();
 		void on_init() override;
-
-		void update_normal_map() override;
-
 		void on_active() override;
 		void on_inactive() override;
 	};

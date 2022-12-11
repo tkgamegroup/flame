@@ -55,7 +55,6 @@ void View_Scene::on_draw()
 {
 	auto& camera_list = cCamera::list();
 	static bool outline = true;
-	static bool control = false;
 	{
 		static const char* names[8];
 		auto n = min(countof(names), camera_list.size());
@@ -67,7 +66,7 @@ void View_Scene::on_draw()
 		if (app.e_playing)
 		{
 			ImGui::SameLine();
-			ImGui::Checkbox("Control", &control);
+			ImGui::Checkbox("Control", &app.control);
 		}
 	}
 	auto camera = camera_list[camera_idx];
@@ -312,7 +311,7 @@ void View_Scene::on_draw()
 			editor_node->mark_transform_dirty();
 		}
 
-		if (!app.e_playing || control)
+		if (!app.e_playing || app.control)
 		{
 			if (ImGui::IsItemHovered())
 			{

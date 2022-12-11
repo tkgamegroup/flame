@@ -642,9 +642,9 @@ void App::open_project(const std::filesystem::path& path)
 		{
 			if (auto library = tidb.load(cpp_path); library)
 			{
-				if (auto set_editor_info = (void(*)(Entity**))get_library_function(library, "set_editor_info"); set_editor_info)
+				if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(library, "set_editor_info"); set_editor_info)
 				{
-					set_editor_info(&editor_selecting_entity);
+					set_editor_info(&editor_selecting_entity, &control);
 				}
 			}
 		}

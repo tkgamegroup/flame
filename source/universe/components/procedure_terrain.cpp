@@ -88,20 +88,11 @@ namespace flame
 #ifdef USE_FORTUNE_ALGORITHM
 		graphics::Queue::get()->wait_idle();
 
-		if (!height_map || height_map->extent != uvec3(image_size, 1))
-		{
-			delete height_map;
+		delete height_map;
+		delete splash_map;
 
-			height_map = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
-			terrain->set_height_map_name(L"0x" + wstr_hex((uint64)height_map));
-		}
-		if (!splash_map || splash_map->extent != uvec3(image_size, 1))
-		{
-			delete splash_map;
-
-			splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
-			terrain->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
-		}
+		height_map = graphics::Image::create(graphics::Format_R8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
+		splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(image_size, 1), graphics::ImageUsageSampled | graphics::ImageUsageTransferDst);
 
 		auto extent = terrain->extent;
 
@@ -374,10 +365,6 @@ namespace flame
 		height_map->clear_staging_data();
 		terrain->update_normal_map();
 
-		height_map->save(height_map->filename);
-		if (auto asset = AssetManagemant::find(Path::get(height_map->filename)); asset)
-			asset->active = false;
-
 		auto height_map_info_fn = height_map->filename;
 		height_map_info_fn += L".info";
 		std::ofstream height_map_info(Path::get(height_map_info_fn));
@@ -498,9 +485,8 @@ namespace flame
 			cb.excute();
 		}
 
-		splash_map->save(splash_map->filename);
-		if (auto asset = AssetManagemant::find(Path::get(splash_map->filename)); asset)
-			asset->active = false;
+		terrain->set_height_map_name(L"0x" + wstr_hex((uint64)height_map));
+		terrain->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
 
 		std::vector<std::pair<EntityPtr, cNavObstaclePtr>> spawn_prefabs;
 		for (auto& setting : spawn_settings)

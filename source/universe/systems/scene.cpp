@@ -413,22 +413,7 @@ namespace flame
 		return n;
 	}
 
-	static bool sig_gen_navmesh = false;
-	static float nav_mesh_agent_radius;
-	static float nav_mesh_agent_height;
-	static float nav_mesh_walkable_climb;
-	static float nav_mesh_walkable_slope_angle;
-
 	void sScenePrivate::generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
-	{
-		sig_gen_navmesh = true;
-		nav_mesh_agent_radius = agent_radius;
-		nav_mesh_agent_height = agent_height;
-		nav_mesh_walkable_climb = walkable_climb;
-		nav_mesh_walkable_slope_angle = walkable_slope_angle;
-	}
-
-	void _generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, EntityPtr root)
 	{
 #ifdef USE_RECASTNAV
 		std::vector<vec3> positions;
@@ -517,6 +502,8 @@ namespace flame
 					}
 					if (auto volume = e->get_component_t<cVolume>(); volume && volume->marching_cubes)
 					{
+						graphics::Queue::get()->wait_idle();
+
 						auto volume_vretices = sRenderer::instance()->transform_feedback(e->node());
 						auto pos_off = positions.size();
 						positions.resize(positions.size() + volume_vretices.size());
@@ -534,7 +521,7 @@ namespace flame
 			}
 		};
 
-		form_mesh(root);
+		form_mesh(world->root.get());
 		if (positions.empty())
 		{
 			printf("generate navmesh: no vertices.\n");
@@ -562,7 +549,7 @@ namespace flame
 		cfg.cs = cell_size;
 		cfg.ch = cell_height;
 		cfg.walkableSlopeAngle = walkable_slope_angle;
- 		cfg.walkableHeight = (int)ceil(agent_height / cfg.ch);
+		cfg.walkableHeight = (int)ceil(agent_height / cfg.ch);
 		cfg.walkableClimb = (int)ceil(walkable_climb / cfg.ch);
 		cfg.walkableRadius = (int)ceil(agent_radius / cfg.cs);
 		cfg.maxEdgeLen = (int)(/*edge max len*/12.f / cfg.cs);
@@ -1059,30 +1046,25 @@ namespace flame
 		}
 	}
 
-	bool sScenePrivate::raycast_navmesh(const vec3& start, const vec3& end, vec3& res)
+	bool sScenePrivate::navmesh_nearest_point(const vec3& check, const vec3& ext, vec3& res)
 	{
 		if (!dt_nav_query)
-			return false; 
+			return false;
 
-		auto start_ref = dt_nearest_poly(start, vec3(0.01f, 10000.f, 0.01f));
-		dtRaycastHit hit;
-		if (dtStatusSucceed(dt_nav_query->raycast(start_ref, &start[0], &end[0], &dt_filter, 0, &hit)))
+		dtPolyRef poly = 0;
+		if (auto status = dt_nav_query->findNearestPoly(&check[0], &ext[0], &dt_filter, &poly, &res[0]); dtStatusFailed(status))
 		{
-			mix(start, end, hit.t);
+			printf("navmesh nearest point: failed\n");
+			return false;
 		}
-
-		return false;
+		if (!poly)
+			return false;
+		return true;
 	}
 
 	void sScenePrivate::update()
 	{
 		update_transform(world->root.get(), false);
-
-		if (sig_gen_navmesh)
-		{
-			_generate_navmesh(nav_mesh_agent_radius, nav_mesh_agent_height, nav_mesh_walkable_climb, nav_mesh_walkable_slope_angle, world->root.get());
-			sig_gen_navmesh = false;
-		}
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)

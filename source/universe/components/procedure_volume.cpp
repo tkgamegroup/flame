@@ -105,27 +105,17 @@ namespace flame
 		data_changed("paths_count"_h);
 	}
 
-#include "../systems/marching_cubes_lookup.h"
-
 	void cProcedureVolumePrivate::build_volume()
 	{
 		graphics::Queue::get()->wait_idle();
 
 		auto image_size = volume->blocks * image_size_per_block;
-		if (!data_map || data_map->extent != image_size)
-		{
-			delete data_map;
 
-			data_map = graphics::Image::create(graphics::Format_R8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
-			volume->set_data_map_name(L"0x" + wstr_hex((uint64)data_map));
-		}
-		if (!splash_map || splash_map->extent != image_size)
-		{
-			delete splash_map;
+		delete data_map;
+		delete splash_map;
 
-			splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
-			volume->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
-		}
+		data_map = graphics::Image::create(graphics::Format_R8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
+		splash_map = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, image_size, graphics::ImageUsageSampled | graphics::ImageUsageStorage | graphics::ImageUsageTransferDst);
 
 		const auto noise_ext = 16;
 		std::unique_ptr<graphics::Image> noise_textures[3];
@@ -197,70 +187,7 @@ namespace flame
 			graphics::Debug::end_capture_frame();
 		}
 
-		auto img_dep = std::unique_ptr<graphics::Image>(graphics::Image::create(graphics::Format_Depth16, uvec3(512, 512, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageTransferSrc));
-		{
-			graphics::InstanceCommandBuffer cb;
-
-			auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\get_height.pipeline", { "rp:dep_fmt=" + TypeInfo::serialize_t(img_dep->format),
-				"all_shader:CUSTOM_INPUT",
-				"all_shader:_transform=pc.transform",
-				"all_shader:_proj_view=pc.proj_view",
-				"all_shader:_extent=pc.extent",
-				"all_shader:_blocks=pc.blocks",
-				"all_shader:DATA_MAP=volume_data",
-			});
-			auto prm = graphics::PipelineResourceManager(pl->layout, graphics::PipelineGraphics);
-			auto dsl = prm.get_dsl(""_h);
-			graphics::StorageBuffer buf_marching_cubes_loopup(graphics::BufferUsageStorage, dsl->get_buf_ui("MarchingCubesLookup"_h));
-			{
-				auto pi = buf_marching_cubes_loopup.itemv_d("items"_h, 256);
-				auto pdata = pi.pdata;
-				assert(sizeof(MarchingCubesLookup) == pi.size);
-				for (auto i = 0; i < 256; i++)
-				{
-					memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
-					pdata += sizeof(MarchingCubesLookupItem);
-				}
-				buf_marching_cubes_loopup.upload(cb.get());
-			}
-			auto ds = std::unique_ptr<graphics::DescriptorSet>(graphics::DescriptorSet::create(nullptr, dsl));
-			ds->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
-			ds->set_image("volume_data"_h, 0, volume->data_map->get_view(), graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
-			ds->update();
-			prm.set_ds(""_h, ds.get());
-
-			cb->set_viewport_and_scissor(Rect(vec2(0.f), vec2(img_dep->extent.xy())));
-			cb->begin_renderpass(nullptr, img_dep->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
-
-			cb->bind_pipeline(pl);
-			prm.bind_dss(cb.get());
-			prm.pc.item_d("transform"_h).set(mat4(1.f));
-			auto proj = orthoRH(-volume->extent.x * 0.5f, +volume->extent.x * 0.5f, -volume->extent.z * 0.5f, +volume->extent.z * 0.5f, 0.f, volume->extent.y);
-			proj[1][1] *= -1.f;
-			auto view = lookAt(volume->extent * vec3(0.5f, 1.f, 0.5f), volume->extent * vec3(0.5f, 0.f, 0.5f), vec3(0.f, 0.f, -1.f));
-			prm.pc.item_d("proj_view"_h).set(proj * view);
-			prm.pc.item_d("extent"_h).set(volume->extent);
-			prm.pc.item_d("blocks"_h).set(volume->blocks);
-			for (auto z = 0; z < volume->blocks.z; z++)
-			{
-				for (auto y = 0; y < volume->blocks.y; y++)
-				{
-					for (auto x = 0; x < volume->blocks.x; x++)
-					{
-						prm.pc.item_d("offset"_h).set(vec3(x, y, z));
-						prm.push_constant(cb.get());
-						// 128 / 4 = 32
-						cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
-					}
-				}
-			}
-
-			cb->end_renderpass();
-			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-
-			cb.excute();
-		}
-
+		auto img_dep = volume->height_map;
 		for (auto t = 0; t < paths_count; t++)
 		{
 			auto extent = volume->extent;
@@ -355,6 +282,9 @@ namespace flame
 
 			cb.excute();
 		}
+
+		volume->set_data_map_name(L"0x" + wstr_hex((uint64)data_map));
+		volume->set_splash_map_name(L"0x" + wstr_hex((uint64)splash_map));
 	}
 
 	void cProcedureVolumePrivate::on_init()

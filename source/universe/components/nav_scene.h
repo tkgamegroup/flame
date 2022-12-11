@@ -19,6 +19,11 @@ namespace flame
 		// Reflect
 		float walkable_slope_angle = 45.f;
 
+		// Reflect
+		uint generate_frame = 0;
+
+		Listeners<void()> finished_callback;
+
 		struct Create
 		{
 			virtual cNavScenePtr operator()(EntityPtr e) = 0;

@@ -45,6 +45,9 @@ namespace flame
 
 		graphics::ImagePtr data_map = nullptr;
 		graphics::ImagePtr splash_map = nullptr;
+		graphics::ImagePtr height_map = nullptr;
+		graphics::ImagePtr normal_map = nullptr;
+		graphics::ImagePtr tangent_map = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int instance_id = -1;
 		int material_res_id = -1;

@@ -33,6 +33,7 @@ struct App : UniverseApplication
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
 	bool paused = false;
+	bool control = true;
 
 	Tool tool = ToolSelect;
 	ToolMode tool_mode = ToolLocal;

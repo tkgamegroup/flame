@@ -16,8 +16,8 @@ namespace flame
 		void set_cast_shadow(bool v) override;
 
 		~cVolumePrivate();
+		void update_height_and_normal_map();
 		void on_init() override;
-
 		void on_active() override;
 		void on_inactive() override;
 	};

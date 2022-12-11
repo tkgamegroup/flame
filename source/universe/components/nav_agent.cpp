@@ -53,7 +53,7 @@ namespace flame
 		if (dt_id != -1 && dt_crowd)
 		{
 			auto agent = dt_crowd->getAgent(dt_id);
-			*(vec3*)(agent->corridor.getTarget());
+			return *(vec3*)(agent->corridor.getTarget());
 		}
 #endif
 		return target_pos;

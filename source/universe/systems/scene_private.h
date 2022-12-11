@@ -30,7 +30,7 @@ namespace flame
 
 		void generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
 		std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end) override;
-		bool raycast_navmesh(const vec3& start, const vec3& end, vec3& res) override;
+		bool navmesh_nearest_point(const vec3& check, const vec3& ext, vec3& res) override;
 		void get_debug_draw(DrawData& draw_data) override;
 
 		void update() override;
