@@ -104,7 +104,7 @@ namespace flame
 			}
 		}
 
-		inline Format get_format(VkFormat f)
+		inline Format from_backend(VkFormat f)
 		{
 			switch (f)
 			{
@@ -266,7 +266,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
+		inline VkImageUsageFlags from_backend_flags(ImageUsageFlags u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
 		{
 			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)

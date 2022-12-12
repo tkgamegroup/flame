@@ -9,7 +9,7 @@ namespace flame
 	{
 		struct CommandPoolPrivate : CommandPool
 		{
-			VkCommandPool vk_command_buffer_pool;
+			VkCommandPool vk_command_pool;
 
 			~CommandPoolPrivate();
 		};
