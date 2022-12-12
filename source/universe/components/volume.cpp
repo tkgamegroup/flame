@@ -238,8 +238,6 @@ namespace flame
 
 			cb.excute();
 		}
-		
-		height_map->save(L"D:\\1.dds");
 	}
 
 	void cVolumePrivate::on_init()
