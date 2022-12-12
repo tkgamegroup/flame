@@ -633,21 +633,21 @@ namespace flame
 			{
 				auto ret = new DescriptorPoolPrivate;
 
-				VkDescriptorPoolSize descriptorPoolSizes[] = {
+				VkDescriptorPoolSize descriptor_pool_sizes[] = {
 					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
 					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
 					{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512 },
 					{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8 },
 				};
 
-				VkDescriptorPoolCreateInfo descriptorPoolInfo;
-				descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-				descriptorPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-				descriptorPoolInfo.pNext = nullptr;
-				descriptorPoolInfo.poolSizeCount = _countof(descriptorPoolSizes);
-				descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-				descriptorPoolInfo.maxSets = 128;
-				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &ret->vk_descriptor_pool));
+				VkDescriptorPoolCreateInfo descriptor_pool_info;
+				descriptor_pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+				descriptor_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+				descriptor_pool_info.pNext = nullptr;
+				descriptor_pool_info.poolSizeCount = _countof(descriptor_pool_sizes);
+				descriptor_pool_info.pPoolSizes = descriptor_pool_sizes;
+				descriptor_pool_info.maxSets = 128;
+				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptor_pool_info, nullptr, &ret->vk_descriptor_pool));
 				register_object(ret->vk_descriptor_pool, "Descriptor Pool", ret);
 
 				return ret;

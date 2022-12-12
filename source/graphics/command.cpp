@@ -20,8 +20,8 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
-			unregister_object(vk_command_buffer_pool);
+			vkDestroyCommandPool(device->vk_device, vk_command_pool, nullptr);
+			unregister_object(vk_command_pool);
 		}
 
 		struct CommandPoolGet : CommandPool::Get
@@ -52,8 +52,8 @@ namespace flame
 				info.pNext = nullptr;
 				info.queueFamilyIndex = queue_family_idx;
 
-				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_buffer_pool));
-				register_object(ret->vk_command_buffer_pool, "Command Buffer Pool", ret);
+				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_pool));
+				register_object(ret->vk_command_pool, "Command Buffer Pool", ret);
 
 				return ret;
 			}
@@ -64,7 +64,7 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-			vkFreeCommandBuffers(device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
+			vkFreeCommandBuffers(device->vk_device, pool->vk_command_pool, 1, &vk_command_buffer);
 			vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
 			unregister_object(vk_command_buffer);
 		}
@@ -635,7 +635,7 @@ namespace flame
 				info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 				info.pNext = nullptr;
 				info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-				info.commandPool = pool->vk_command_buffer_pool;
+				info.commandPool = pool->vk_command_pool;
 				info.commandBufferCount = 1;
 
 				chk_res(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));

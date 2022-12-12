@@ -110,14 +110,13 @@ namespace flame
 				for (auto& extension : instance_extensions)
 					printf("  %s\n", extension.extensionName);
 
-				VkApplicationInfo appInfo;
-				appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-				appInfo.pNext = nullptr;
-				appInfo.pApplicationName = "";
-				appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-				appInfo.pEngineName = "Flame Engine";
-				appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-				appInfo.apiVersion = VK_API_VERSION_1_3;
+				VkApplicationInfo app_info = {};
+				app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+				app_info.pApplicationName = "";
+				app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+				app_info.pEngineName = "Flame Engine";
+				app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+				app_info.apiVersion = VK_API_VERSION_1_3;
 
 				std::vector<const char*> required_instance_extensions;
 				std::vector<const char*> required_instance_layers;
@@ -128,14 +127,14 @@ namespace flame
 					required_instance_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 					required_instance_layers.push_back("VK_LAYER_KHRONOS_validation");
 				}
-				VkInstanceCreateInfo instInfo = {};
-				instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-				instInfo.pApplicationInfo = &appInfo;
-				instInfo.enabledExtensionCount = required_instance_extensions.size();
-				instInfo.ppEnabledExtensionNames = required_instance_extensions.empty() ? nullptr : required_instance_extensions.data();
-				instInfo.enabledLayerCount = required_instance_layers.size();
-				instInfo.ppEnabledLayerNames = required_instance_layers.empty() ? nullptr : required_instance_layers.data();
-				chk_res(vkCreateInstance(&instInfo, nullptr, &ret->vk_instance));
+				VkInstanceCreateInfo instance_info = {};
+				instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+				instance_info.pApplicationInfo = &app_info;
+				instance_info.enabledExtensionCount = required_instance_extensions.size();
+				instance_info.ppEnabledExtensionNames = required_instance_extensions.empty() ? nullptr : required_instance_extensions.data();
+				instance_info.enabledLayerCount = required_instance_layers.size();
+				instance_info.ppEnabledLayerNames = required_instance_layers.empty() ? nullptr : required_instance_layers.data();
+				chk_res(vkCreateInstance(&instance_info, nullptr, &ret->vk_instance));
 
 				if (debug)
 				{

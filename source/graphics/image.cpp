@@ -577,7 +577,7 @@ namespace flame
 				imageInfo.arrayLayers = ret->n_layers;
 				imageInfo.samples = to_backend(sample_count);
 				imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-				imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
+				imageInfo.usage = from_backend_flags(usage, format, sample_count);
 				imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 				imageInfo.queueFamilyIndexCount = 0;
 				imageInfo.pQueueFamilyIndices = nullptr;

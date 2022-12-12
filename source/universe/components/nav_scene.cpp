@@ -6,7 +6,7 @@ namespace flame
 {
 	void cNavScenePrivate::start()
 	{
-		_frame = generate_frame;
+		_frame = generate_delay_frame;
 	}
 
 	void cNavScenePrivate::update()
