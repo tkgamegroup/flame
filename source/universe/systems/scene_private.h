@@ -13,7 +13,7 @@ extern dtNavMeshQuery* dt_nav_query;
 extern dtQueryFilter dt_filter;
 extern dtCrowd* dt_crowd;
 
-dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext);
+dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext, vec3* pt = nullptr);
 #endif
 
 namespace flame

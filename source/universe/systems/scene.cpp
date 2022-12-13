@@ -32,10 +32,10 @@ dtCrowd* dt_crowd = nullptr;
 #define EXPECTED_LAYERS_PER_TILE 4
 #define MAX_LAYERS 32
 
-dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext)
+dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext, vec3* pt)
 {
 	dtPolyRef ret = 0;
-	dt_nav_query->findNearestPoly(&pos[0], &ext[0], &dt_filter, &ret, nullptr);
+	dt_nav_query->findNearestPoly(&pos[0], &ext[0], &dt_filter, &ret, &pt->x);
 	return ret;
 }
 
@@ -1088,7 +1088,7 @@ namespace flame
 					DT_CROWD_OBSTACLE_AVOIDANCE | DT_CROWD_SEPARATION;
 				parms.userData = ag;
 				auto pos = ag->node->pos;
-				ag->prev_pos = pos;
+				ag->npos = pos;
 				ag->dt_id = dt_crowd->addAgent(&pos[0], &parms);
 				if (ag->dt_id == -1)
 					printf("dt crowd add agent failed: -1 is returned\n");

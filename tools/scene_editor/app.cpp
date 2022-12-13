@@ -346,6 +346,14 @@ void App::init()
 
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(50.f, 20.f));
+		ImGui::SameLine();
+		if (ImGui::Button("Build"))
+		{
+			if (!project_path.empty())
+			{
+
+			}
+		}
 		if (!e_playing)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));

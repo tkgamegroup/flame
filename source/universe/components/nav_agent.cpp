@@ -47,20 +47,6 @@ namespace flame
 #endif
 	}
 
-	vec3 cNavAgentPrivate::get_path_last_pos()
-	{
-#ifdef USE_RECASTNAV
-		if (dt_id != -1 && dt_crowd)
-		{
-			auto agent = dt_crowd->getAgent(dt_id);
-			if (agent->targetState != DT_CROWDAGENT_TARGET_VALID)
-				return *(vec3*)agent->targetPos;
-			return *(vec3*)(agent->corridor.getTarget());
-		}
-#endif
-		return target_pos;
-	}
-
 	void cNavAgentPrivate::stop()
 	{
 		if (dist >= 0)
@@ -78,7 +64,7 @@ namespace flame
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
 		{
-			prev_pos = node->pos;
+			npos = node->pos;
 			auto agent = dt_crowd->getEditableAgent(dt_id);
 			*(vec3*)agent->npos = node->pos;
 		}
@@ -112,27 +98,37 @@ namespace flame
 
 		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
 		if (speed_scale == 0.f)
+		{
 			node->add_eul(vec3(-sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+		}
 		else
 		{
 #ifdef USE_RECASTNAV
 			if (dt_id != -1 && dt_crowd)
 			{
 				auto agent = dt_crowd->getEditableAgent(dt_id);
-				auto path_dir = *(vec3*)agent->dvel;
-				if (length(path_dir) > 0.f)
+				auto dvel = *(vec3*)agent->dvel;
+				auto dmag = dot(dvel, dvel);
+				if (dmag > 0.1f)
 				{
-					auto path_ang_diff = angle_diff(90.f - node->get_eul().x, degrees(atan2(path_dir.z, path_dir.x)));
+					auto path_ang_diff = angle_diff(90.f - node->get_eul().x, degrees(atan2(dvel.z, dvel.x)));
 					node->add_eul(vec3(-sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 					if (abs(path_ang_diff) < 15.f)
 					{
-						prev_pos = *(vec3*)agent->npos;
-						node->set_pos(prev_pos);
+						npos = *(vec3*)agent->npos;
+						node->set_pos(npos);
 					}
 					else
 					{
-						*(vec3*)agent->npos = prev_pos;
+						*(vec3*)agent->npos = npos;
 						*(vec3*)agent->vel = vec3(0.f);
+					}
+				}
+				else
+				{
+					if (agent->targetState == DT_CROWDAGENT_TARGET_VALID)
+					{
+						reached_pos = target_pos;
 					}
 				}
 			}

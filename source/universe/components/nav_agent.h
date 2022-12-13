@@ -31,9 +31,9 @@ namespace flame
 
 		float dist = -1; // the distance between agent and target. <0 means no target
 		float ang_diff = 0.f; // the angle different between agent and target
+		vec3 reached_pos = vec3(10000.f);
 
 		virtual void set_target(const vec3& pos) = 0;
-		virtual vec3 get_path_last_pos() = 0;
 		virtual void stop() = 0;
 		virtual void update_pos() = 0;
 
