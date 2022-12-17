@@ -233,6 +233,7 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Show"))
 		{
+			ImGui::MenuItem("Outline", nullptr, &view_scene.show_outline);
 			ImGui::MenuItem("AABB", nullptr, &view_scene.show_AABB);
 			ImGui::MenuItem("Axis", nullptr, &view_scene.show_axis);
 			ImGui::MenuItem("Bones", nullptr, &view_scene.show_bones);
@@ -271,6 +272,29 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Debug"))
 		{
+			struct UIStatusDialog
+			{
+				bool open = false;
+
+			};
+			static UIStatusDialog ui_status_dialog;
+
+			if (ImGui::MenuItem("UI Status", nullptr, &ui_status_dialog.open))
+			{
+				if (ui_status_dialog.open)
+				{
+					dialogs.push_back([&]() {
+						if (ui_status_dialog.open)
+						{
+							ImGui::Begin("UI Status", &ui_status_dialog.open);
+							ImGui::Text("Want Capture Mouse: %d", (int)graphics::gui_want_mouse());
+							ImGui::Text("Want Capture Keyboard: %d", (int)graphics::gui_want_keyboard());
+							ImGui::End();
+						}
+						return ui_status_dialog.open;
+					});
+				}
+			}
 			if (ImGui::MenuItem("Send Debug Cmd"))
 			{
 				ImGui::OpenInputDialog("Debug Cmd", [](bool ok, const std::string& str) {
@@ -347,13 +371,6 @@ void App::init()
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(50.f, 20.f));
 		ImGui::SameLine();
-		if (ImGui::Button("Build"))
-		{
-			if (!project_path.empty())
-			{
-
-			}
-		}
 		if (!e_playing)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
@@ -377,15 +394,17 @@ void App::init()
 					cmd_play();
 				ImGui::PopStyleColor();
 			}
-			ImGui::SameLine();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 			if (add_tool_button(ToolNone, "stop"_h))
 				cmd_stop();
 			ImGui::PopStyleColor();
 		}
+		ImGui::SameLine();
+		ImGui::Checkbox("Control", &app.control);
+
 		// toolbar end
 
-		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 		ImGui::End();
 
 		if (ImGui::IsKeyPressed(Keyboard_F5))

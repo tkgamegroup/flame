@@ -27,8 +27,11 @@ namespace flame
 		// Reflect
 		virtual void set_turn_speed_scale(float v) = 0;
 		// Reflect
+		float stop_distance = 0.3f;
+		// Reflect
 		uint separation_group = 1;
 
+		vec3 target_pos;
 		float dist = -1; // the distance between agent and target. <0 means no target
 		float ang_diff = 0.f; // the angle different between agent and target
 		vec3 reached_pos = vec3(10000.f);

@@ -7,6 +7,7 @@ struct View_Scene : graphics::GuiView
 	std::unique_ptr<graphics::Image> render_tar;
 	bool fixed_render_target_size = false;
 
+	bool show_outline = true;
 	bool show_AABB = false;
 	bool show_axis = true;
 	bool show_bones = false;
@@ -23,6 +24,7 @@ struct View_Scene : graphics::GuiView
 	void focus_to_selected();
 	void selected_to_focus();
 	void on_draw() override;
+	bool on_begin() override;
 };
 
 extern View_Scene view_scene;

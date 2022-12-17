@@ -109,7 +109,7 @@ namespace flame
 				auto agent = dt_crowd->getEditableAgent(dt_id);
 				auto dvel = *(vec3*)agent->dvel;
 				auto dmag = dot(dvel, dvel);
-				if (dmag > 0.1f)
+				if (dmag > 0.1f && dist > stop_distance)
 				{
 					auto path_ang_diff = angle_diff(90.f - node->get_eul().x, degrees(atan2(dvel.z, dvel.x)));
 					node->add_eul(vec3(-sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));

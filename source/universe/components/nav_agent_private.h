@@ -11,7 +11,6 @@ namespace flame
 	struct cNavAgentPrivate : cNavAgent
 	{
 		int dt_id = -1;
-		vec3 target_pos;
 		vec3 npos;
 
 		void set_speed_scale(float v) override;
