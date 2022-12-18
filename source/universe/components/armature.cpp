@@ -110,15 +110,17 @@ namespace flame
 						}
 
 						playing_time += delta_time * playing_speed;
-						if (playing_time >= a.duration && !loop)
+						if (playing_time >= a.duration)
 						{
-							auto name = playing_name;
-							stop();
-							for (auto& cb : playing_callbacks.list)
-								cb.first("end"_h, name);
+							if (!loop)
+							{
+								for (auto& cb : playing_callbacks.list)
+									cb.first("end"_h, playing_name);
+								stop();
+							}
+							else
+								playing_time = fmod(playing_time, a.duration);
 						}
-						else
-							playing_time = fmod(playing_time, a.duration);
 					}
 				}
 

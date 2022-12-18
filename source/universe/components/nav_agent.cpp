@@ -34,6 +34,7 @@ namespace flame
 			return;
 
 		target_pos = pos;
+		reached_pos = vec3(10000.f);
 		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
