@@ -898,7 +898,7 @@ namespace flame
 		return true;
 	}
 
-	std::vector<vec3> sScenePrivate::query_navmesh_path(const vec3& start, const vec3& end)
+	std::vector<vec3> sScenePrivate::query_navmesh_path(const vec3& start, const vec3& end, uint max_smooth)
 	{
 		std::vector<vec3> ret;
 		if (!dt_nav_query)
@@ -925,9 +925,13 @@ namespace flame
 		const auto Slop = 0.01f;
 
 		ret.push_back(iter_pos);
+		if (max_smooth <= 2)
+		{
+			ret.push_back(target_pos);
+			return ret;
+		}
 
-		const auto MaxSmooth = 2048;
-		while (n_polys && ret.size() < MaxSmooth)
+		while (n_polys && ret.size() < max_smooth)
 		{
 			vec3 steer_pos;
 			uchar steer_pos_flag;
@@ -965,7 +969,7 @@ namespace flame
 			if (end_of_path && in_range(iter_pos, steer_pos, Slop, 1.0f))
 			{
 				iter_pos = target_pos;
-				if (ret.size() < MaxSmooth)
+				if (ret.size() < max_smooth)
 					ret.push_back(iter_pos);
 				break;
 			}
@@ -988,7 +992,7 @@ namespace flame
 				auto status = dt_nav_mesh->getOffMeshConnectionPolyEndPoints(prevRef, polyRef, &startPos[0], &endPos[0]);
 				if (dtStatusSucceed(status))
 				{
-					if (ret.size() < MaxSmooth)
+					if (ret.size() < max_smooth)
 					{
 						ret.push_back(startPos);
 						if (ret.size() % 2 == 1)
@@ -1001,7 +1005,7 @@ namespace flame
 				}
 			}
 
-			if (ret.size() < MaxSmooth)
+			if (ret.size() < max_smooth)
 				ret.push_back(iter_pos);
 		}
 

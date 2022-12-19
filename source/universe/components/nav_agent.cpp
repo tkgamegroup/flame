@@ -33,12 +33,13 @@ namespace flame
 		if (target_pos == pos)
 			return;
 
-		target_pos = pos;
-		reached_pos = vec3(10000.f);
-		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
 		{
+			target_pos = pos;
+			reached_pos = vec3(10000.f);
+			dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
+
 			dtPolyRef poly_ref = dt_nearest_poly(pos, vec3(2.f, 4.f, 2.f));
 			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
 			//printf("%s -> %s\n", str(node->pos).c_str(), str(pos).c_str());
