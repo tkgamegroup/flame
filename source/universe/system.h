@@ -8,6 +8,7 @@ namespace flame
 	{
 		uint type_hash = 0;
 		WorldPtr world = nullptr;
+		bool enable = true;
 
 		uint n_strong_ref = 0;
 		uint update_times = 0;

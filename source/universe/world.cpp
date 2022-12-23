@@ -111,6 +111,8 @@ namespace flame
 		{
 			for (auto& s : systems)
 			{
+				if (!s->enable)
+					continue;
 				if (s->update_times == 0)
 					s->start();
 				s->update();
