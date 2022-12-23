@@ -1,0 +1,27 @@
+%rp=color.rp
+layout
+  @pll
+shaders
+  fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+cull_mode
+  None
+
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_src;
+@
+
+@frag
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_color;
+
+void main()
+{
+	vec4 col = texture(img_src, i_uv);
+	o_color = vec4(vec3(col.r + col.g + col.b) / 3.0, col.a);
+}
+@

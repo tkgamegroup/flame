@@ -30,7 +30,10 @@ namespace flame
 
 		void SourcePrivate::play()
 		{
-			alSourcePlay(al_src);
+			ALenum state;
+			alGetSourcei(al_src, AL_SOURCE_STATE, &state);
+			if (state != AL_PLAYING)
+				alSourcePlay(al_src);
 		}
 
 		void SourcePrivate::stop()
