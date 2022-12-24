@@ -38,7 +38,7 @@ namespace flame
 		{
 			target_pos = pos;
 			reached_pos = vec3(10000.f);
-			dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
+			dist_ang_diff(node->pos, target_pos, node->get_eul().x - 90.f, dist, ang_diff);
 
 			dtPolyRef poly_ref = dt_nearest_poly(pos, vec3(2.f, 4.f, 2.f));
 			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
@@ -98,10 +98,10 @@ namespace flame
 		if (!enable || dist < 0.f)
 			return;
 
-		dist_ang_diff(node->pos, target_pos, 90.f - node->get_eul().x, dist, ang_diff);
+		dist_ang_diff(node->pos, target_pos, node->get_eul().x - 90.f, dist, ang_diff);
 		if (speed_scale == 0.f)
 		{
-			node->add_eul(vec3(-sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+			node->add_eul(vec3(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 		}
 		else
 		{
@@ -113,8 +113,8 @@ namespace flame
 				auto dmag = dot(dvel, dvel);
 				if (dmag > 0.1f && dist > stop_distance)
 				{
-					auto path_ang_diff = angle_diff(90.f - node->get_eul().x, degrees(atan2(dvel.z, dvel.x)));
-					node->add_eul(vec3(-sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+					auto path_ang_diff = angle_diff(node->get_eul().x - 90.f, -degrees(atan2(dvel.z, dvel.x)));
+					node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 					if (abs(path_ang_diff) < 15.f)
 					{
 						npos = *(vec3*)agent->npos;
