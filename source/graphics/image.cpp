@@ -777,6 +777,17 @@ namespace flame
 					}
 				}
 
+				auto ini_path = filename;
+				ini_path += L".ini";
+				if (std::filesystem::exists(ini_path))
+				{
+					for (auto& e : parse_ini_file(Path::get(L"assets\\monster_spawnnings.ini")).get_section_entries(""))
+					{
+						if (e.key == "tile_size")
+							ret->tile_size = s2t<2, uint>(e.value);
+					}
+				}
+
 				ret->filename = filename;
 				ret->srgb = srgb;
 				ret->ref = 1;
