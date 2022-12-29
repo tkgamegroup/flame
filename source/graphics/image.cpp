@@ -781,7 +781,8 @@ namespace flame
 				ini_path += L".ini";
 				if (std::filesystem::exists(ini_path))
 				{
-					for (auto& e : parse_ini_file(ini_path).get_section_entries(""))
+					auto ini_file = parse_ini_file(ini_path);
+					for (auto& e : ini_file.get_section_entries(""))
 					{
 						if (e.key == "tile_size")
 							ret->tile_size = s2t<2, uint>(e.value);
@@ -794,6 +795,9 @@ namespace flame
 				LoadedImage i;
 				i.v.reset(ret);
 				i.srgb = srgb;
+				i.auto_mipmapping = auto_mipmapping;
+				i.alpha_test = alpha_test;
+				i.additional_usage = additional_usage;
 				loaded_images.push_back(std::move(i));
 				return ret;
 			}
