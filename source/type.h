@@ -137,8 +137,9 @@ namespace flame
 	{
 		constexpr auto name = std::string_view{ __FUNCSIG__ };
 		constexpr auto prefix1 = std::string_view{ " flame::tn<" };
-		constexpr auto prefix2 = std::string_view{ "class " };
-		constexpr auto prefix3 = std::string_view{ "struct " };
+		constexpr auto prefix2 = std::string_view{ "enum " };
+		constexpr auto prefix3 = std::string_view{ "class " };
+		constexpr auto prefix4 = std::string_view{ "struct " };
 		constexpr auto suffix1 = std::string_view{ ">(void)" };
 		constexpr auto suffix2 = std::string_view{ "Private" };
 
@@ -147,6 +148,8 @@ namespace flame
 			start += prefix2.size();
 		else if (name.compare(start, prefix3.size(), prefix3) == 0)
 			start += prefix3.size();
+		else if (name.compare(start, prefix4.size(), prefix4) == 0)
+			start += prefix4.size();
 		auto end = name.rfind(suffix1);
 		if (name.compare(end - suffix2.size(), suffix2.size(), suffix2) == 0)
 			end -= suffix2.size();
