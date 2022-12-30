@@ -388,13 +388,41 @@ namespace flame
 
 		static std::vector<std::basic_string<CH>> split_dbnull(const CH* str)
 		{
-			std::vector<std::basic_string<CH>> ret; 
+			std::vector<std::basic_string<CH>> ret;
 			auto p = str;
 			while (*p) 
 			{
 				ret.push_back(std::basic_string<CH>(p));
 				p += ret.back().size() + 1;
 			}
+			return ret;
+		}
+
+		static std::vector<std::basic_string<CH>> split_quot(const std::basic_string<CH>& str)
+		{
+			std::basic_ostringstream<CH> oss;
+			std::vector<std::basic_string<CH>> ret;
+			auto in_quot = false;
+
+			for (auto i = 0; i < str.size(); i++)
+			{
+				auto ch = str[i];
+				if (in_quot && ch == ' ')
+				{
+					oss << '\\';
+					oss << 's';
+				}
+				else
+				{
+					oss << ch;
+					if (ch == '\"')
+						in_quot = !in_quot;
+				}
+
+			}
+			ret = split(oss.str());
+			for (auto& t : ret)
+				replace_all(t, "\\s", " ");
 			return ret;
 		}
 
