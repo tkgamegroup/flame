@@ -398,31 +398,29 @@ namespace flame
 			return ret;
 		}
 
-		static std::vector<std::basic_string<CH>> split_quot(const std::basic_string<CH>& str)
+		static std::vector<std::basic_string<CH>> split_quot(const std::basic_string<CH>& _str)
 		{
-			std::basic_ostringstream<CH> oss;
 			std::vector<std::basic_string<CH>> ret;
 			auto in_quot = false;
 
-			for (auto i = 0; i < str.size(); i++)
+			auto str = _str;
+			for (auto& ch : str)
 			{
-				auto ch = str[i];
 				if (in_quot && ch == ' ')
-				{
-					oss << '\\';
-					oss << 's';
-				}
-				else
-				{
-					oss << ch;
-					if (ch == '\"')
-						in_quot = !in_quot;
-				}
+					ch = '?';
+				else if (ch == '\"')
+					in_quot = !in_quot;
 
 			}
-			ret = split(oss.str());
+			ret = split(str);
 			for (auto& t : ret)
-				replace_all(t, "\\s", " ");
+			{
+				for (auto& ch : t)
+				{
+					if (ch == '?')
+						ch = ' ';
+				}
+			}
 			return ret;
 		}
 
@@ -741,7 +739,7 @@ namespace flame
 	struct INI_Entry
 	{
 		std::string key;
-		std::string value;
+		std::vector<std::string> values;
 	};
 
 	struct INI_Section
@@ -793,20 +791,21 @@ namespace flame
 						ret.sections.push_back(section);
 					}
 
-					static std::regex reg_pair(R"(^([\*\w]+)\s*=(.*))");
-					static std::regex reg_quot(R"(^\"(.*)\"$)");
+					static std::regex reg(R"(^([\*\w]+)\s*=(.*))");
 					std::smatch res;
 					INI_Entry entry;
-					if (std::regex_search(line, res, reg_pair))
+					if (std::regex_search(line, res, reg))
 					{
 						entry.key = res[1].str();
-						entry.value = res[2].str();
+						line = res[2].str();
 					}
-					else
-						entry.value = line;
-					SUS::trim(entry.value);
-					if (std::regex_search(entry.value, res, reg_quot))
-						entry.value = res[1].str();
+					SUS::trim(line);
+					entry.values = SUS::split_quot(line);
+					for (auto& t : entry.values)
+					{
+						if (t.size() > 2 && t.front() == '\"' && t.back() == '\"')
+							t = std::string(t.begin() + 1, t.end() - 1);
+					}
 
 					ret.sections.back().entries.push_back(entry);
 				}

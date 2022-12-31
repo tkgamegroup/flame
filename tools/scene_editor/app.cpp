@@ -879,7 +879,7 @@ int main(int argc, char** args)
 	{
 		for (auto w : graphics::gui_views)
 		{
-			if (w->name == e.value)
+			if (w->name == e.values[0])
 			{
 				w->open();
 				break;
@@ -888,17 +888,17 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("project_path"))
 	{
-		app.open_project(e.value);
+		app.open_project(e.values[0]);
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{
-		view_project.explorer.peeding_open_path = e.value;
+		view_project.explorer.peeding_open_path = e.values[0];
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
 	{
-		app.open_prefab(e.value);
+		app.open_prefab(e.values[0]);
 		break;
 	}
 

@@ -785,7 +785,7 @@ namespace flame
 					for (auto& e : ini_file.get_section_entries(""))
 					{
 						if (e.key == "tile_size")
-							ret->tile_size = s2t<2, uint>(e.value);
+							ret->tile_size = s2t<2, uint>(e.values[0]);
 					}
 				}
 
