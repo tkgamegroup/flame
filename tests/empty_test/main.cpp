@@ -5,8 +5,7 @@ using namespace flame;
 
 int main(int argc, char** args) 
 {
-	static std::vector<std::pair<std::string, std::string>> default_defines;
-	TypeInfo::get<decltype(default_defines)>();
+	auto wtf = std::stoi("123i");
 
 	return 0;
 }

@@ -327,7 +327,7 @@ namespace flame
 			return str.substr(str.size() - len - off, len);
 		}
 
-		static bool match_head_tail(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		static bool match_head_tail(const std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
 		{
 			return str.starts_with(head) && str.ends_with(tail);
 		}
