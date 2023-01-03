@@ -113,7 +113,7 @@ namespace flame
 				auto dmag = dot(dvel, dvel);
 				if (dmag > 0.1f && dist > stop_distance)
 				{
-					auto path_ang_diff = angle_diff(node->get_eul().x - 90.f, -degrees(atan2(dvel.z, dvel.x)));
+					auto path_ang_diff = angle_diff(node->get_eul().x - 90.f, angle_xz(dvel));
 					node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
 					if (abs(path_ang_diff) < 15.f)
 					{

@@ -42,7 +42,8 @@ namespace flame
 	typedef vec<3, uchar> cvec3;
 	typedef vec<4, uchar> cvec4;
 
-	union LightCommonValue
+	// short variant
+	union sVariant
 	{
 		cvec4 c;
 		int i;
@@ -50,7 +51,8 @@ namespace flame
 		float f;
 	};
 
-	union CommonValue
+	// long variant
+	union lVariant
 	{
 		cvec4 c;
 		ivec4 i;
@@ -111,6 +113,16 @@ namespace flame
 		return a.x * b.y - a.y * b.x;
 	}
 
+	inline float angle_xz(const vec3& d)
+	{
+		return -degrees(atan2(d.z, d.x));
+	}
+
+	inline float angle_xz(const vec3& p0, const vec3& p1)
+	{
+		return angle_xz(p1 - p0);
+	}
+
 	inline uint image_pitch(uint b)
 	{
 		return (uint)ceil((b / 4.f)) * 4U;
@@ -131,7 +143,7 @@ namespace flame
 	{
 		auto d = pos1 - pos0;
 		dist = length(d);
-		ang_diff = angle_diff(ang0, -degrees(atan2(d.z, d.x)));
+		ang_diff = angle_diff(ang0, angle_xz(d));
 	}
 
 	inline float triangle_area(const vec2& a, const vec2& b, const vec2& c)
