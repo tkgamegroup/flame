@@ -138,6 +138,6 @@ int main()
     vec4 viewport = { 0, 0, (float)buffer.w, (float)buffer.h };
     draw_triangle(buffer, viewport, verts);
 
-    auto bmp = Bitmap::create(uvec2(512), 4, 1, (uchar*)buffer.data);
+    auto bmp = Bitmap::create(uvec2(512), 4, 8, (uchar*)buffer.data);
     bmp->save(L"D:/out.png");
 }
