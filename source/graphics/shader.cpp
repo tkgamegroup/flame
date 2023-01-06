@@ -1509,6 +1509,7 @@ namespace flame
 					file << layout_source.segment;
 					file.close();
 				}
+				layout_source.path = std::filesystem::canonical(layout_source.path);
 				info.layout = PipelineLayout::get(layout_source.path);
 			}
 			for (auto& s : shader_sources)

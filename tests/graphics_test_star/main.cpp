@@ -91,34 +91,46 @@ struct Star
 		float rad;
 
 		rad = radians(a + 0.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 
 		rad = radians(a + 240.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 
 		rad = radians(a + 120.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 
 		rad = radians(a + 60.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 
 		rad = radians(a + 300.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 
 		rad = radians(a + 180.f);
-		vtx_buf.set_var<"i_pos"_h>(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-		vtx_buf.set_var<"i_col"_h>(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
-		vtx_buf.next_item();
+		{
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
+			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+		}
 	}
 };
 
@@ -126,7 +138,7 @@ std::vector<Star> stars;
 
 int entry(int argc, char** args)
 {
-	app.create(true, "Graphics Test", uvec2(500, 500));
+	app.create("Graphics Test", uvec2(500, 500), WindowFrame | WindowResizable, true);
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});
@@ -138,10 +150,11 @@ int entry(int argc, char** args)
 		}
 
 		vtx_buf.upload(cb);
+		vtx_buf.buf_top = vtx_buf.stag_top = 0;
 		auto vp = Rect(vec2(0), app.main_window->native->size);
 		cb->set_viewport_and_scissor(vp);
 		auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-		cb->begin_renderpass(nullptr, app.main_window->framebuffers[idx].get(), &cv);
+		cb->begin_renderpass(nullptr, app.main_window->swapchain->images[idx]->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
 		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		cb->bind_pipeline(pl);
 		cb->push_constant_t(vec4(2.f / vec2(app.main_window->native->size), vec2(-1)));
@@ -157,7 +170,7 @@ int entry(int argc, char** args)
 	for (auto& s : stars)
 		s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", {})) });
+	pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=" + TypeInfo::serialize_t(graphics::Swapchain::format) })) });
 	vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();
