@@ -610,7 +610,7 @@ namespace flame
 				ret.resize(divides);
 				auto step = radians(360.f / divides);
 				for (auto i = 0; i < divides; i++)
-					ret[i] = vec2(cos(step * i), sin(step * i));
+					ret[i] = vec2(cos(step * i), -sin(step * i));
 				return ret;
 			};
 			switch (lod)
