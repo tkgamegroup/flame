@@ -1,5 +1,0 @@
-file(GLOB_RECURSE source_files "*.c*")
-add_executable(sector_circle_intersect ${source_files})
-set_target_properties(sector_circle_intersect PROPERTIES FOLDER "tests")
-target_link_options(sector_circle_intersect PRIVATE /FIXED:NO)
-target_link_libraries(sector_circle_intersect flame_graphics)
