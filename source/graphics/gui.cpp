@@ -273,6 +273,15 @@ namespace flame
 			return nullptr;
 		}
 
+		static bool clear_fb = false;
+		static vec4 clear_col = vec4(0.f);
+
+		void gui_set_clear(bool clear, const vec4& color)
+		{
+			clear_fb = clear;
+			clear_col = color;
+		}
+
 		static bool want_mouse = false;
 		static bool want_keyboard = false;
 
@@ -382,11 +391,8 @@ namespace flame
 					imgui_buf_idx.buf_top = imgui_buf_idx.stag_top = 0;
 				}
 
-				if (curr_img->levels[0].layers[0].layout != ImageLayoutAttachment)
-				{
-					auto cv = vec4(0.4f, 0.3f, 0.7f, 1);
-					cb->begin_renderpass(imgui_rp, curr_fb, &cv);
-				}
+				if (clear_fb)
+					cb->begin_renderpass(imgui_rp, curr_fb, &clear_col);
 				else
 					cb->begin_renderpass(imgui_rp_load, curr_fb);
 				cb->set_viewport(Rect(0, 0, fb_width, fb_height));

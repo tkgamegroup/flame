@@ -21,6 +21,7 @@ static Entity* editor_selecting_entity = nullptr;
 void App::init()
 {
 	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, graphics_debug, graphics_configs);
+	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
 	always_render = false;
 	renderer->mode = sRenderer::CameraLight;

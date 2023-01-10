@@ -151,7 +151,7 @@ int entry(int argc, char** args)
 		cb->push_constant_t(vec4(2.f / vec2(app.main_window->native->size), vec2(-1)));
 		cb->draw(drops.size() * 6, 1, 0, 0);
 		cb->end_renderpass();
-	});
+	}, 0, 0);
 	graphics::gui_callbacks.add([]() {
 		ImGui::Button("Hello");
 	});

@@ -37,6 +37,7 @@ namespace flame
 		FLAME_GRAPHICS_API extern Listeners<void()> gui_callbacks;
 		FLAME_GRAPHICS_API void gui_initialize();
 		FLAME_GRAPHICS_API void* gui_native_handle();
+		FLAME_GRAPHICS_API void gui_set_clear(bool clear, const vec4& color);
 		FLAME_GRAPHICS_API extern Listeners<CursorType(CursorType cursor)> gui_cursor_callbacks;
 		FLAME_GRAPHICS_API void gui_frame();
 		FLAME_GRAPHICS_API bool gui_want_mouse();

@@ -56,19 +56,38 @@ GraphicsApplication app;
 GraphicsPipeline* pl;
 VertexBuffer vtx_buf;
 
-auto circle_pos = vec2(0.f);
+auto circle_pos = vec2(50.f);
 auto circle_radius = 20.f;
 auto sector_pos = vec2(200.f);
-auto sector_radius = 100.f;
+auto sector_radius_start = 20.f;
+auto sector_radius_end = 100.f;
 auto sector_angle = 30.f;
 auto sector_dir = 0.f;
+
+bool lineseg_circle_intersect(const vec2& p, const vec2& q, const vec2& o, float r)
+{
+	auto pq = q - p;
+}
 
 int entry(int argc, char** args)
 {
 	app.create("Graphics Test", uvec2(640, 360), WindowFrame | WindowResizable, true);
 	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
+		auto intersected = false;
+		if (distance(circle_pos, sector_pos) < circle_radius + sector_radius_end)
+		{
+
+		}
+		else
+			intersected = false;
+
 		static auto circle_pts = get_circle_points(3);
 		auto n_circle_pts = (int)circle_pts.size();
+		auto get_pts_idx = [&](int i) {
+			i = i % n_circle_pts;
+			if (i < 0) i += n_circle_pts;
+			return i;
+		};
 		for (auto i = 0; i < n_circle_pts; i++)
 		{
 			{
@@ -78,31 +97,53 @@ int entry(int argc, char** args)
 			}
 			{
 				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(circle_pos + circle_pts[i] * circle_radius);
+				pv.item("i_pos"_h).set(circle_pos + circle_pts[get_pts_idx(i)] * circle_radius);
 				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
 			}
 			{
 				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(circle_pos + circle_pts[i == n_circle_pts - 1 ? 0 : i + 1] * circle_radius);
+				pv.item("i_pos"_h).set(circle_pos + circle_pts[get_pts_idx(i + 1)] * circle_radius);
 				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
 			}
 		}
-		for (auto i = 0; i < n_circle_pts; i++)
 		{
+			auto ang0 = sector_dir - sector_angle;
+			auto i_beg = int((ang0 / 360.f) * n_circle_pts);
+			auto ang1 = sector_dir + sector_angle;
+			auto i_end = int((ang1 / 360.f) * n_circle_pts);
+
+			for (auto i = i_beg; i < i_end; i++)
 			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(sector_pos);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(sector_pos + circle_pts[i] * sector_radius);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(sector_pos + circle_pts[i == n_circle_pts - 1 ? 0 : i + 1] * sector_radius);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i)] * sector_radius_start);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i)] * sector_radius_end);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i + 1)] * sector_radius_end);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i)] * sector_radius_start);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i + 1)] * sector_radius_end);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
+				{
+					auto pv = vtx_buf.add();
+					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_pts_idx(i + 1)] * sector_radius_start);
+					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
+				}
 			}
 		}
 
@@ -119,15 +160,19 @@ int entry(int argc, char** args)
 		cb->push_constant_t(vec4(2.f / vec2(app.main_window->native->size), vec2(-1)));
 		cb->draw(n_vtx, 1, 0, 0);
 		cb->end_renderpass();
-	});
+	}, 0, 0);
 	graphics::gui_callbacks.add([]() {
-		ImGui::Begin("ABC");
 		ImGui::DragFloat2("Circle Pos", &circle_pos[0]);
-		ImGui::End();
+		ImGui::DragFloat("Circle Radius", &circle_radius);
+		ImGui::DragFloat2("Sector Pos", &sector_pos[0]);
+		ImGui::DragFloat("Sector Radius Start", &sector_radius_start);
+		ImGui::DragFloat("Sector Radius End", &sector_radius_end);
+		ImGui::DragFloat("Sector Angle", &sector_angle);
+		ImGui::DragFloat("Sector Dir", &sector_dir);
 	});
 
 	pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=" + TypeInfo::serialize_t(graphics::Swapchain::format) })) });
-	vtx_buf.create(pl->vi_ui(), 1000);
+	vtx_buf.create(pl->vi_ui(), 10000);
 
 	app.run();
 
