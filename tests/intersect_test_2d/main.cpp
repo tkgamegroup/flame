@@ -71,7 +71,7 @@ bool line_segment_circle_check(const vec2& p, const vec2& q, const vec2& o, floa
 	auto min_dist = std::numeric_limits<float>::max();
 	auto pq = q - p; auto op = p - o; auto oq = q - o;
 	if (dot(op, pq) < 0.f && dot(oq, pq) > 0.f)
-		min_dist = length(cross(vec3(pq, 0.f), vec3(op, 0.f))) / length(pq);
+		min_dist = cross(vec3(pq, 0.f), vec3(op, 0.f)).z / length(pq);
 	else
 		min_dist = sqrt(min(dot(op, op), dot(oq, oq)));
 	return min_dist < r;
