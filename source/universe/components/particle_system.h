@@ -26,6 +26,8 @@ namespace flame
 		vec3 emitt_rotation = vec3(0.f);
 		// Reflect
 		float emitt_angle = 45.f;
+		// Reflect
+		float emitt_start = 0.f;
 
 		// Reflect
 		std::filesystem::path material_name;

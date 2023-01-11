@@ -48,8 +48,10 @@ namespace flame
 							break;
 						case "pie"_h:
 						{
-							auto rad = radians(linearRand(-emitt_angle, +emitt_angle));
-							pt.vel = rot * vec3(cos(rad), 0.f, sin(rad)) * particle_speed;
+							auto dir = rot * dir_xz(linearRand(-emitt_angle, +emitt_angle));
+							pt.vel = dir * particle_speed;
+							if (emitt_start > 0.f)
+								pt.pos = dir * emitt_start;
 						}
 							break;
 						}

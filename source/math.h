@@ -113,9 +113,14 @@ namespace flame
 		return a.x * b.y - a.y * b.x;
 	}
 
+	inline float angle(const vec2& d)
+	{
+		return -degrees(atan2(d.y, d.x));
+	}
+
 	inline float angle_xz(const vec3& d)
 	{
-		return -degrees(atan2(d.z, d.x));
+		return angle(d.xz());
 	}
 
 	inline float angle_xz(const vec3& p0, const vec3& p1)
@@ -123,9 +128,16 @@ namespace flame
 		return angle_xz(p1 - p0);
 	}
 
-	inline uint image_pitch(uint b)
+	inline vec2 dir(float ang)
 	{
-		return (uint)ceil((b / 4.f)) * 4U;
+		auto rad = radians(ang);
+		return vec2(cos(rad), sin(rad));
+	}
+
+	inline vec3 dir_xz(float ang)
+	{
+		vec3 ret = vec3(dir(ang), 0.f);
+		return ret.xzy();
 	}
 
 	inline float angle_diff(float ang0, float ang1)
@@ -193,6 +205,31 @@ namespace flame
 		auto dc = c - d;
 		return cross2(ab, c - a) * cross2(ab, d - a) <= 0.f &&
 			cross2(dc, a - d) * cross2(dc, b - d) <= 0.f;
+	}
+
+	// line segment start, line segment end, circle center, circle rarius
+	inline bool segment_circle_intersect(const vec2& p, const vec2& q, const vec2& o, float r)
+	{
+		auto pq = q - p; auto op = p - o; auto oq = q - o;
+		if (dot(op, pq) < 0.f && dot(oq, pq) > 0.f)
+			return abs(cross(vec3(pq, 0.f), vec3(op, 0.f)).z) / length(pq) < r;
+		return sqrt(min(dot(op, op), dot(oq, oq))) < r;
+	}
+
+	// circle center, circle rarius, sector center, sector radius start, sector radius end, sector half central angle, sector direction angle
+	inline bool circle_sector_intersect(const vec2& co, float cr, const vec2& so, float sr0, float sr1, float sa, float sd)
+	{
+		auto vec_two_circles = co - so;
+		auto dist_two_circles = length(vec_two_circles);
+		if (dist_two_circles > cr + sr1 || dist_two_circles < sr0 - cr)
+			return false;
+		if (abs(angle_diff(angle(vec_two_circles), sd)) < sa)
+			return true;
+		auto dir0 = dir(-sd + sa); auto dir1 = dir(-sd - sa);
+		if (segment_circle_intersect(so + dir0 * sr0, so + dir0 * sr1, co, cr) ||
+			segment_circle_intersect(so + dir1 * sr0, so + dir1 * sr1, co, cr))
+			return true;
+		return false;
 	}
 
 	inline vec3 smooth_damp(const vec3& current, const vec3& _target, vec3& current_velocity, float smooth_time, float max_speed, float delta_time)
@@ -659,5 +696,10 @@ namespace flame
 
 	template<typename T>
 	concept basic_math_type = is_one_of_t<T>(basic_math_types());
+
+	inline uint image_pitch(uint b)
+	{
+		return (uint)ceil((b / 4.f)) * 4U;
+	}
 }
 

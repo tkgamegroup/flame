@@ -56,8 +56,8 @@ GraphicsApplication app;
 GraphicsPipeline* pl;
 VertexBuffer vtx_buf;
 
-auto line_segment_start = vec2(70.f);
-auto line_segment_end = vec2(170.f, 250.f);
+auto segment_start = vec2(70.f);
+auto segment_end = vec2(170.f, 250.f);
 auto circle_pos = vec2(50.f);
 auto circle_radius = 20.f;
 auto sector_pos = vec2(200.f);
@@ -66,27 +66,27 @@ auto sector_radius_end = 100.f;
 auto sector_angle = 30.f;
 auto sector_dir = 0.f;
 
-bool line_segment_circle_check(const vec2& p, const vec2& q, const vec2& o, float r)
-{
-	auto min_dist = std::numeric_limits<float>::max();
-	auto pq = q - p; auto op = p - o; auto oq = q - o;
-	if (dot(op, pq) < 0.f && dot(oq, pq) > 0.f)
-		min_dist = cross(vec3(pq, 0.f), vec3(op, 0.f)).z / length(pq);
-	else
-		min_dist = sqrt(min(dot(op, op), dot(oq, oq)));
-	return min_dist < r;
-}
-
-bool circle_sector_check(const vec2& o, float r)
-{
-	return false;
-}
-
 int entry(int argc, char** args)
 {
 	app.create("Graphics Test", uvec2(640, 360), WindowFrame | WindowResizable, true);
 	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
-		auto line_segment_circle_intersected = line_segment_circle_check(line_segment_start, line_segment_end, circle_pos, circle_radius);
+		auto segment_circle_intersected = segment_circle_intersect(segment_start, segment_end, circle_pos, circle_radius);
+		auto circle_sector_intersected = circle_sector_intersect(circle_pos, circle_radius, sector_pos, sector_radius_start, sector_radius_end, sector_angle, sector_dir);
+
+		auto add_vtx = [](const vec2& vtx, const cvec4& col) {
+			auto pv = vtx_buf.add();
+			pv.item("i_pos"_h).set(vtx);
+			pv.item("i_col"_h).set(col);
+		};
+		auto add_rect = [&](const vec2& vtx0, const vec2& vtx1, const vec2& vtx2, const vec2& vtx3, const cvec4& col) {
+			add_vtx(vtx0, col);
+			add_vtx(vtx1, col);
+			add_vtx(vtx3, col);
+
+			add_vtx(vtx3, col);
+			add_vtx(vtx1, col);
+			add_vtx(vtx2, col);
+		};
 
 		static auto circle_pts = get_circle_points(3);
 		auto n_circle_pts = (int)circle_pts.size();
@@ -95,97 +95,37 @@ int entry(int argc, char** args)
 			if (i < 0) i += n_circle_pts;
 			return i;
 		};
-		for (auto i = 0; i < n_circle_pts; i++)
+
 		{
+			auto color = (segment_circle_intersected || circle_sector_intersected) ? cvec4(255, 255, 0, 255) : cvec4(128, 64, 100, 255);
+			for (auto i = 0; i < n_circle_pts; i++)
 			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(circle_pos);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(circle_pos + circle_pts[get_circle_pts_idx(i)] * circle_radius);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(circle_pos + circle_pts[get_circle_pts_idx(i + 1)] * circle_radius);
-				pv.item("i_col"_h).set(cvec4(128, 64, 100, 255));
+				add_vtx(circle_pos, color);
+				add_vtx(circle_pos + circle_pts[get_circle_pts_idx(i)] * circle_radius, color);
+				add_vtx(circle_pos + circle_pts[get_circle_pts_idx(i + 1)] * circle_radius, color);
 			}
 		}
 		{
-			auto ang0 = sector_dir - sector_angle;
-			auto i_beg = int((ang0 / 360.f) * n_circle_pts);
-			auto ang1 = sector_dir + sector_angle;
-			auto i_end = int((ang1 / 360.f) * n_circle_pts);
+			auto color = (circle_sector_intersected) ? cvec4(255, 255, 0, 255) : cvec4(64, 128, 100, 255);
+			int i_beg = (sector_dir - sector_angle) / 360.f * n_circle_pts;
+			int i_end = (sector_dir + sector_angle) / 360.f * n_circle_pts;
 
 			for (auto i = i_beg; i < i_end; i++)
 			{
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_start);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_end);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_end);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_start);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_end);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
-				{
-					auto pv = vtx_buf.add();
-					pv.item("i_pos"_h).set(sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_start);
-					pv.item("i_col"_h).set(cvec4(64, 128, 100, 255));
-				}
+				add_rect(sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_start, 
+					sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_start, 
+					sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_end,
+					sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_end, color);
 			}
 		}
 
 		{
-			auto n = vec2(normalize(cross(vec3(line_segment_end - line_segment_start, 0.f).xzy(), vec3(0.f, 1.f, 0.f))).xzy());
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_start);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_start + n * 1.f);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_end);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_start + n * 1.f);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_end + n * 1.f);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
-			{
-				auto pv = vtx_buf.add();
-				pv.item("i_pos"_h).set(line_segment_end);
-				pv.item("i_col"_h).set(line_segment_circle_intersected ? cvec4(255, 255, 255, 255) : cvec4(0, 0, 0, 255));
-			}
+			auto color = (segment_circle_intersected) ? cvec4(255, 255, 0, 255) : cvec4(0, 0, 0, 255);
+			auto n = vec2(normalize(cross(vec3(segment_end - segment_start, 0.f).xzy(), vec3(0.f, 1.f, 0.f))).xzy());
+			add_rect(segment_start,
+				segment_start + n * 1.f,
+				segment_end + n * 1.f,
+				segment_end, color);
 		}
 
 		auto n_vtx = vtx_buf.stag_top;
@@ -203,8 +143,8 @@ int entry(int argc, char** args)
 		cb->end_renderpass();
 	}, 0, 0);
 	graphics::gui_callbacks.add([]() {
-		ImGui::DragFloat2("line_segment Start", &line_segment_start[0]);
-		ImGui::DragFloat2("line_segment End", &line_segment_end[0]);
+		ImGui::DragFloat2("segment Start", &segment_start[0]);
+		ImGui::DragFloat2("segment End", &segment_end[0]);
 		ImGui::DragFloat2("Circle Pos", &circle_pos[0]);
 		ImGui::DragFloat("Circle Radius", &circle_radius);
 		ImGui::DragFloat2("Sector Pos", &sector_pos[0]);
