@@ -39,6 +39,8 @@ namespace flame
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
 
+		virtual void reset() = 0;
+
 		struct Create
 		{
 			virtual cParticleSystemPtr operator()(EntityPtr e) = 0;

@@ -184,6 +184,12 @@ namespace flame
 		data_changed("material_name"_h);
 	}
 
+	void cParticleSystemPrivate::reset()
+	{
+		particles.clear();
+		emitt_timer = 0.f;
+	}
+
 	struct cParticleSystemCreate : cParticleSystem::Create
 	{
 		cParticleSystemPtr operator()(EntityPtr e) override

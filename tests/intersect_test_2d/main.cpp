@@ -88,34 +88,30 @@ int entry(int argc, char** args)
 			add_vtx(vtx2, col);
 		};
 
-		static auto circle_pts = get_circle_points(3);
-		auto n_circle_pts = (int)circle_pts.size();
-		auto get_circle_pts_idx = [&](int i) {
-			i = i % n_circle_pts;
-			if (i < 0) i += n_circle_pts;
-			return i;
-		};
+		graphics::GuiCircleDrawer circle_draw(3);
 
 		{
-			auto color = (segment_circle_intersected || circle_sector_intersected) ? cvec4(255, 255, 0, 255) : cvec4(128, 64, 100, 255);
-			for (auto i = 0; i < n_circle_pts; i++)
-			{
-				add_vtx(circle_pos, color);
-				add_vtx(circle_pos + circle_pts[get_circle_pts_idx(i)] * circle_radius, color);
-				add_vtx(circle_pos + circle_pts[get_circle_pts_idx(i + 1)] * circle_radius, color);
-			}
-		}
-		{
-			auto color = (circle_sector_intersected) ? cvec4(255, 255, 0, 255) : cvec4(64, 128, 100, 255);
-			int i_beg = (sector_dir - sector_angle) / 360.f * n_circle_pts;
-			int i_end = (sector_dir + sector_angle) / 360.f * n_circle_pts;
+			auto color = (circle_sector_intersected) && false ? cvec4(255, 255, 0, 255) : cvec4(64, 128, 100, 255);
+			int i_beg = circle_draw.get_idx(sector_dir - sector_angle);
+			int i_end = circle_draw.get_idx(sector_dir + sector_angle);
 
 			for (auto i = i_beg; i < i_end; i++)
 			{
-				add_rect(sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_start, 
-					sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_start, 
-					sector_pos + circle_pts[get_circle_pts_idx(i)] * sector_radius_end,
-					sector_pos + circle_pts[get_circle_pts_idx(i + 1)] * sector_radius_end, color);
+				auto circle_pt0 = circle_draw.get_pt(i);
+				auto circle_pt1 = circle_draw.get_pt(i + 1);
+				add_rect(sector_pos + circle_pt1 * sector_radius_start,
+					sector_pos + circle_pt0 * sector_radius_start,
+					sector_pos + circle_pt0 * sector_radius_end,
+					sector_pos + circle_pt1 * sector_radius_end, color);
+			}
+		}
+		{
+			auto color = (segment_circle_intersected || circle_sector_intersected) && false ? cvec4(255, 255, 0, 255) : cvec4(128, 64, 100, 255);
+			for (auto i = 0; i < circle_draw.pts.size(); i++)
+			{
+				add_vtx(circle_pos, color);
+				add_vtx(circle_pos + circle_draw.get_pt(i) * circle_radius, color);
+				add_vtx(circle_pos + circle_draw.get_pt(i + 1) * circle_radius, color);
 			}
 		}
 

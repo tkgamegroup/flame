@@ -16,6 +16,7 @@
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
+#include <flame/universe/components/particle_system.h>
 
 View_Inspector view_inspector;
 static auto selection_changed = false;
@@ -607,6 +608,13 @@ void View_Inspector::on_draw()
 						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
 					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
+				}
+				else if (ui.name_hash == "flame::cParticleSystem"_h)
+				{
+					auto particle_system = (cParticleSystemPtr)c.get();
+					particle_system->update();
+					if (ImGui::Button("Reset"))
+						particle_system->reset();
 				}
 			}
 			ImGui::PopID();

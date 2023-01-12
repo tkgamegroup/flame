@@ -30,5 +30,7 @@ namespace flame
 		void update() override;
 
 		void set_material_name(const std::filesystem::path& material_name) override;
+
+		void reset() override;
 	};
 }

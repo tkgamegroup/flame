@@ -131,7 +131,7 @@ namespace flame
 	inline vec2 dir(float ang)
 	{
 		auto rad = radians(ang);
-		return vec2(cos(rad), sin(rad));
+		return vec2(cos(rad), -sin(rad));
 	}
 
 	inline vec3 dir_xz(float ang)

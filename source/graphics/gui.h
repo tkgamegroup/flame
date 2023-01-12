@@ -61,11 +61,9 @@ namespace flame
 				return pts[idx];
 			}
 
-			std::span<const vec2> range(float ang0, float ang1)
+			int get_idx(float ang)
 			{
-				int i_beg = ang0 / 360.f * pts.size();
-				int i_end = ang1 / 360.f * pts.size();
-				return { pts.data(), i_end - i_beg };
+				return ang / 360.f * pts.size();
 			}
 		};
 
