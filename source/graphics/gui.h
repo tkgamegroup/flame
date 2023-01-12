@@ -43,7 +43,31 @@ namespace flame
 		FLAME_GRAPHICS_API bool gui_want_mouse();
 		FLAME_GRAPHICS_API bool gui_want_keyboard();
 		// lod: 0 - 16 pts, 1 - 32 pts, 2 - 64 pts, 3 - 128 pts
-		FLAME_GRAPHICS_API std::vector<vec2> get_circle_points(uint lod);
+		FLAME_GRAPHICS_API const std::vector<vec2>& get_circle_points(uint lod);
+
+		struct GuiCircleDrawer
+		{
+			const std::vector<vec2>& pts;
+
+			GuiCircleDrawer(uint lod) :
+				pts(get_circle_points(lod))
+			{
+			}
+
+			vec2 get_pt(int idx)
+			{
+				idx = idx % pts.size();
+				if (idx < 0) idx += pts.size();
+				return pts[idx];
+			}
+
+			std::span<const vec2> range(float ang0, float ang1)
+			{
+				int i_beg = ang0 / 360.f * pts.size();
+				int i_end = ang1 / 360.f * pts.size();
+				return { pts.data(), i_end - i_beg };
+			}
+		};
 
 		inline void gui_set_current()
 		{

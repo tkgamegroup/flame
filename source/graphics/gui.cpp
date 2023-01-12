@@ -609,7 +609,7 @@ namespace flame
 		static std::vector<vec2> circle_pts1;
 		static std::vector<vec2> circle_pts2;
 		static std::vector<vec2> circle_pts3;
-		std::vector<vec2> get_circle_points(uint lod)
+		const std::vector<vec2>& get_circle_points(uint lod)
 		{
 			auto get_points = [](uint divides) {
 				std::vector<vec2> ret;
@@ -633,12 +633,12 @@ namespace flame
 				if (circle_pts2.empty())
 					circle_pts2 = get_points(64);
 				return circle_pts2;
+			default:
 			case 3:
 				if (circle_pts3.empty())
 					circle_pts3 = get_points(128);
 				return circle_pts3;
 			}
-			return std::vector<vec2>();
 		}
 
 		std::filesystem::path parse_icon_path(const std::filesystem::path& path)

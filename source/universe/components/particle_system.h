@@ -13,21 +13,23 @@ namespace flame
 		// Reflect
 		float particle_life_time = 5.f;
 		// Reflect
+		float particle_life_time_start = 0.f;
+		// Reflect
 		float particle_speed = 5.f;
 		// Reflect
-		vec2 particle_ext = vec2(1.f);
+		vec2 particle_size = vec2(1.f);
 		// Reflect
 		cvec4 particle_col = cvec4(255);
 		// Reflect hash=sphere|pie|cone
 		uint emitt_type = "sphere"_h;
+		// Reflect
+		float emitt_time = 0.f;
 		// Reflect
 		uint emitt_num = 10; // per second
 		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
 		// Reflect
 		float emitt_angle = 45.f;
-		// Reflect
-		float emitt_start = 0.f;
 
 		// Reflect
 		std::filesystem::path material_name;

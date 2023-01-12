@@ -784,8 +784,8 @@ namespace flame
 					auto ini_file = parse_ini_file(ini_path);
 					for (auto& e : ini_file.get_section_entries(""))
 					{
-						if (e.key == "tile_size")
-							ret->tile_size = s2t<2, uint>(e.values[0]);
+						if (e.key == "tiles")
+							ret->tiles = s2t<2, uint>(e.values[0]);
 					}
 				}
 

@@ -78,12 +78,12 @@ namespace flame
 
 	struct Particle
 	{
+		float time;
 		vec3 pos;
 		vec3 x_ext;
 		vec3 y_ext;
 		vec4 uv;
 		cvec4 col;
-		float time;
 	};
 
 	struct ParticleDraw
