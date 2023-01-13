@@ -424,8 +424,11 @@ void App::init()
 				cmd_restart_preview();
 			ImGui::PopStyleColor();
 
-			ImGui::SameLine();
-			ImGui::Text("[%s]", e_preview->name.c_str());
+			if (e_preview)
+			{
+				ImGui::SameLine();
+				ImGui::Text("[%s]", e_preview->name.c_str());
+			}
 		}
 
 		// toolbar end
