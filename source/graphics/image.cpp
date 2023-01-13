@@ -784,7 +784,7 @@ namespace flame
 					auto ini_file = parse_ini_file(ini_path);
 					for (auto& e : ini_file.get_section_entries(""))
 					{
-						if (e.key == "tiles")
+						if (e.key_hash == "tiles"_h)
 							ret->tiles = s2t<2, uint>(e.values[0]);
 					}
 				}

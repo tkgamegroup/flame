@@ -25,6 +25,8 @@ namespace flame
 
 		// Reflect
 		bool loop = true;
+		// Reflect
+		bool auto_play = true;
 
 		graphics::ModelPtr model = nullptr;
 		uint playing_name = 0;

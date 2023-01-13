@@ -738,6 +738,7 @@ namespace flame
 
 	struct INI_Entry
 	{
+		uint key_hash;
 		std::string key;
 		std::vector<std::string> values;
 	};
@@ -797,6 +798,7 @@ namespace flame
 					if (std::regex_search(line, res, reg))
 					{
 						entry.key = res[1].str();
+						entry.key_hash = sh(entry.key.c_str());
 						line = res[2].str();
 					}
 					SUS::trim(line);

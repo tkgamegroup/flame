@@ -7,16 +7,26 @@
 
 namespace flame
 {
-	static std::map<std::string, std::filesystem::path> name_to_prefab_path;
-
-	struct _Initializer
+	void Component::set_enable(bool v)
 	{
-		_Initializer()
-		{
+		if (enable == v)
+			return;
 
+		if (!enable)
+		{
+			if (entity->global_enable)
+				on_active();
 		}
-	};
-	static _Initializer _initializer;
+		else
+		{
+			if (entity->global_enable)
+				on_inactive();
+		}
+
+		enable = v;
+
+		data_changed("enable"_h);
+	}
 
 	EntityPrivate::EntityPrivate()
 	{
@@ -56,7 +66,7 @@ namespace flame
 			if (world)
 			{
 				for (auto& c : components)
-					global_enable ? c->on_active() : c->on_inactive();
+					global_enable && c->enable ? c->on_active() : c->on_inactive();
 				for (auto& l : message_listeners.list)
 					l.first(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
 			}
@@ -161,7 +171,7 @@ namespace flame
 		component_map.emplace(c->type_hash, c);
 		components.emplace_back(c);
 
-		if (world)
+		if (global_enable && c->enable)
 			c->on_active();
 
 		return c;
@@ -213,8 +223,8 @@ namespace flame
 		for (auto& _c : components)
 			_c->on_component_removed(c);
 
-		if (world)
-			c->on_active();
+		if (global_enable)
+			c->on_inactive();
 
 		delete c;
 
@@ -254,7 +264,10 @@ namespace flame
 					for (auto& l : e->message_listeners.list)
 						l.first("active"_h, nullptr, nullptr);
 					for (auto& c : e->components)
-						c->on_active();
+					{
+						if (c->enable)
+							c->on_active();
+					}
 				}
 			});
 		}
@@ -281,7 +294,10 @@ namespace flame
 				if (e->global_enable)
 				{
 					for (auto& c : e->components)
-						c->on_inactive();
+					{
+						if (c->enable)
+							c->on_inactive();
+					}
 					for (auto& l : e->message_listeners.list)
 						l.first("inactive"_h, nullptr, nullptr);
 					e->global_enable = false;

@@ -50,15 +50,19 @@ namespace flame
 		float transition_duration = 0.f;
 
 		~cArmaturePrivate();
+
+		void attach();
+		void detach();
+
 		void on_init() override;
+		void on_active() override;
+		void on_inactive() override;
+		void update() override;
 
 		void set_armature_name(const std::filesystem::path& name) override;
 		void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) override;
 
 		void play(uint name) override;
 		void stop() override;
-
-		void on_active() override;
-		void on_inactive() override;
 	};
 }

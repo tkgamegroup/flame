@@ -89,13 +89,19 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
+	void cParticleSystemPrivate::on_inactive()
+	{
+		particles.clear();
+		emitt_timer = 0.f;
+	}
+
 	void cParticleSystemPrivate::update()
 	{
 		auto emitt_rot = mat3(eulerAngleYXZ(radians(emitt_rotation.x), radians(emitt_rotation.y), radians(emitt_rotation.z)));
 
-		if (emitt_time > 0.f)
+		if (emitt_duration > 0.f)
 			emitt_timer += delta_time;
-		if (emitt_time == 0.f || emitt_timer < emitt_time)
+		if (emitt_duration == 0.f || emitt_timer < emitt_duration)
 		{
 			accumulated_num += emitt_num * delta_time;
 			auto n = int(accumulated_num);
@@ -182,12 +188,6 @@ namespace flame
 
 		node->mark_drawing_dirty();
 		data_changed("material_name"_h);
-	}
-
-	void cParticleSystemPrivate::reset()
-	{
-		particles.clear();
-		emitt_timer = 0.f;
 	}
 
 	struct cParticleSystemCreate : cParticleSystem::Create

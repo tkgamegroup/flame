@@ -403,6 +403,31 @@ void App::init()
 		ImGui::SameLine();
 		ImGui::Checkbox("Control", &app.control);
 
+		ImGui::SameLine();
+		ImGui::Dummy(vec2(50.f, 20.f));
+		ImGui::SameLine();
+		if (!e_preview)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+			if (add_tool_button(ToolNone, "circle-play"_h))
+				cmd_start_preview();
+			ImGui::PopStyleColor();
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+			if (add_tool_button(ToolNone, "circle-stop"_h))
+				cmd_stop_preview();
+			ImGui::PopStyleColor();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
+			if (add_tool_button(ToolNone, "rotate"_h))
+				cmd_restart_preview();
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine();
+			ImGui::Text("[%s]", e_preview->name.c_str());
+		}
+
 		// toolbar end
 
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
@@ -414,6 +439,32 @@ void App::init()
 				cmd_play();
 			else
 				cmd_stop();
+		}
+		if (ImGui::IsKeyPressed(Keyboard_F6))
+		{
+			if (!e_preview)
+				cmd_start_preview();
+			else
+				cmd_stop_preview();
+		}
+		if (ImGui::IsKeyPressed(Keyboard_F7))
+		{
+			if (e_preview)
+				cmd_restart_preview();
+		}
+
+		if (e_preview)
+		{
+			e_preview->forward_traversal([](EntityPtr e) {
+				if (!e->global_enable)
+					return;
+				for (auto& c : e->components)
+				{
+					if (c->enable)
+						c->update();
+				}
+			});
+			render_frames++;
 		}
 
 		for (auto it = dialogs.begin(); it != dialogs.end();)
@@ -646,6 +697,7 @@ void App::open_project(const std::filesystem::path& path)
 		{
 			e_prefab->remove_from_parent();
 			e_prefab = nullptr;
+			e_preview = nullptr;
 		}
 
 		if (!project_path.empty())
@@ -691,6 +743,7 @@ void App::open_prefab(const std::filesystem::path& path)
 		e_prefab = Entity::create();
 		e_prefab->load(path);
 		world->root->add_child(e_prefab);
+		e_preview = nullptr;
 		return false;
 	});
 }
@@ -834,6 +887,59 @@ bool App::cmd_stop()
 		}
 		return false;
 	});
+
+	return true;
+}
+
+bool App::cmd_start_preview()
+{
+	if (e_preview)
+		cmd_stop_preview();
+
+	e_preview = selection.type == Selection::tEntity ? selection.entity() : e_prefab;
+
+	if (e_preview->enable)
+	{
+		e_preview->set_enable(false);
+		e_preview->set_enable(true);
+	}
+	e_preview->forward_traversal([](EntityPtr e) {
+		if (!e->global_enable)
+			return;
+		for (auto& c : e->components)
+		{
+			if (c->enable)
+				c->start();
+		}
+	});
+
+	return true;
+}
+
+bool App::cmd_stop_preview()
+{
+	if (!e_preview)
+		return false;
+
+	if (e_preview->enable)
+	{
+		e_preview->set_enable(false);
+		e_preview->set_enable(true);
+	}
+
+	e_preview = nullptr;
+
+	return true;
+}
+
+bool App::cmd_restart_preview()
+{
+	if (!e_preview)
+		return false;
+
+	cmd_stop_preview();
+	cmd_start_preview();
+
 	return true;
 }
 

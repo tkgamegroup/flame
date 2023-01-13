@@ -609,13 +609,6 @@ void View_Inspector::on_draw()
 					}
 					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
 				}
-				else if (ui.name_hash == "flame::cParticleSystem"_h)
-				{
-					auto particle_system = (cParticleSystemPtr)c.get();
-					particle_system->update();
-					if (ImGui::Button("Reset"))
-						particle_system->reset();
-				}
 			}
 			ImGui::PopID();
 		}

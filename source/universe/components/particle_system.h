@@ -23,7 +23,7 @@ namespace flame
 		// Reflect hash=sphere|pie|cone
 		uint emitt_type = "sphere"_h;
 		// Reflect
-		float emitt_time = 0.f;
+		float emitt_duration = 0.f;
 		// Reflect
 		uint emitt_num = 10; // per second
 		// Reflect
@@ -38,8 +38,6 @@ namespace flame
 
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
-
-		virtual void reset() = 0;
 
 		struct Create
 		{

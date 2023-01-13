@@ -32,6 +32,7 @@ struct App : UniverseApplication
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
+	EntityPtr e_preview = nullptr;
 	bool paused = false;
 	bool control = true;
 
@@ -50,6 +51,9 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_pause();
 	bool cmd_stop();
+	bool cmd_start_preview();
+	bool cmd_stop_preview();
+	bool cmd_restart_preview();
 
 	void open_message_dialog(const std::string& title, const std::string& message);
 };

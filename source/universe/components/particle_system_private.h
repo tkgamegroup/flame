@@ -27,10 +27,9 @@ namespace flame
 
 		~cParticleSystemPrivate();
 		void on_init() override;
+		void on_inactive() override;
 		void update() override;
 
 		void set_material_name(const std::filesystem::path& material_name) override;
-
-		void reset() override;
 	};
 }
