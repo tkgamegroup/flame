@@ -208,7 +208,7 @@ namespace flame
 	}
 
 	// line segment start, line segment end, circle center, circle rarius
-	inline bool segment_circle_intersect(const vec2& p, const vec2& q, const vec2& o, float r)
+	inline bool segment_circle_overlap(const vec2& p, const vec2& q, const vec2& o, float r)
 	{
 		auto pq = q - p; auto op = p - o; auto oq = q - o;
 		if (dot(op, pq) < 0.f && dot(oq, pq) > 0.f)
@@ -226,8 +226,8 @@ namespace flame
 		if (abs(angle_diff(angle(vec_two_circles), sd)) < sa)
 			return true;
 		auto dir0 = dir(-sd + sa); auto dir1 = dir(-sd - sa);
-		if (segment_circle_intersect(so + dir0 * sr0, so + dir0 * sr1, co, cr) ||
-			segment_circle_intersect(so + dir1 * sr0, so + dir1 * sr1, co, cr))
+		if (segment_circle_overlap(so + dir0 * sr0, so + dir0 * sr1, co, cr) ||
+			segment_circle_overlap(so + dir1 * sr0, so + dir1 * sr1, co, cr))
 			return true;
 		return false;
 	}

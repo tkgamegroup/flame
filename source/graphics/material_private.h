@@ -10,6 +10,7 @@ namespace flame
 		{
 			MaterialPrivate();
 			~MaterialPrivate();
+
 			void save(const std::filesystem::path& filename) override;
 		};
 
