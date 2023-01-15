@@ -4,6 +4,18 @@
 
 namespace flame
 {
+	struct Particle
+	{
+		vec3 pos;
+		vec2 size;
+		vec3 vel;
+		float rot;
+		uvec4 col;
+		float time_max;
+		float time;
+		float rnd;
+	};
+
 	// Reflect ctor
 	struct cParticleSystem : Component
 	{
@@ -20,16 +32,22 @@ namespace flame
 		vec2 particle_size = vec2(1.f);
 		// Reflect
 		cvec4 particle_col = cvec4(255);
-		// Reflect hash=sphere|pie|cone
-		uint emitt_type = "sphere"_h;
+		// Reflect hash=Sphere|Pie|Cone
+		uint emitt_type = "Sphere"_h;
 		// Reflect
-		float emitt_duration = 0.f;
+		float emitt_duration = 0.f; // <0 to disable emittion
 		// Reflect
 		uint emitt_num = 10; // per second
 		// Reflect
+		uint emitt_start_num = 0;
+		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
 		// Reflect
+		virtual void set_emitt_rotation(const vec3& r) = 0;
+		// Reflect
 		float emitt_angle = 45.f;
+		// Reflect hash=Billboard|HorizontalBillboard|VerticalBillboard
+		uint render_type = "Billboard"_h;
 
 		// Reflect
 		std::filesystem::path material_name;
@@ -38,6 +56,9 @@ namespace flame
 
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
+
+		virtual std::vector<Particle> get_particles() = 0;
+		virtual void set_particles(const std::vector<Particle>& pts) = 0;
 
 		struct Create
 		{

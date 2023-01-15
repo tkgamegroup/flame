@@ -76,21 +76,21 @@ namespace flame
 		}
 	};
 
-	struct Particle
-	{
-		float time;
-		vec3 pos;
-		vec3 x_ext;
-		vec3 y_ext;
-		vec4 uv;
-		cvec4 col;
-	};
-
 	struct ParticleDraw
 	{
+		struct Ptc
+		{
+			float time;
+			vec3 pos;
+			vec3 x_ext;
+			vec3 y_ext;
+			vec4 uv;
+			cvec4 col;
+		};
+
 		uint type; // "Billboard"_h
 		uint mat_id;
-		std::vector<Particle> pts;
+		std::vector<Ptc> ptcs;
 	};
 
 	struct PrimitiveDraw

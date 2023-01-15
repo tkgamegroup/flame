@@ -489,10 +489,12 @@ void View_Inspector::on_draw()
 				ImGui::Checkbox("enable", &enable);
 				if (enable != c->enable)
 					c->set_enable(enable);
+				static bool open_select_hash = false;
 				static std::vector<std::string> hash_candidates;
 				static const Attribute* op_attr;
 				static void* op_obj;
 				auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
+					ImGui::PushID(name);
 					if (name == "mesh_name"_h)
 					{
 						ImGui::SameLine();
@@ -542,7 +544,7 @@ void View_Inspector::on_draw()
 								ImGui::SameLine();
 								if (ImGui::Button("S"))
 								{
-									ImGui::OpenPopup("select_hash");
+									open_select_hash = true;
 									hash_candidates = SUS::split(meta, '|');
 									op_attr = &a;
 									op_obj = obj;
@@ -550,7 +552,13 @@ void View_Inspector::on_draw()
 							}
 						}
 					}
+					ImGui::PopID();
 				});
+				if (open_select_hash)
+				{
+					ImGui::OpenPopup("select_hash");
+					open_select_hash = false;
+				}
 				if (ImGui::BeginPopup("select_hash"))
 				{
 					for (auto& c : hash_candidates)

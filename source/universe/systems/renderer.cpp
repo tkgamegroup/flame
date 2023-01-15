@@ -1917,15 +1917,15 @@ namespace flame
 
 		for (auto& p : draw_data.particles)
 		{
-			for (auto& v : p.pts)
+			for (auto& ptc : p.ptcs)
 			{
 				auto pv = buf_particles.add();
-				pv.item("i_pos"_h).set(v.pos);
-				pv.item("i_xext"_h).set(v.x_ext);
-				pv.item("i_yext"_h).set(v.y_ext);
-				pv.item("i_uv"_h).set(v.uv);
-				pv.item("i_col"_h).set(v.col);
-				pv.item("i_time"_h).set(v.time);
+				pv.item("i_pos"_h).set(ptc.pos);
+				pv.item("i_xext"_h).set(ptc.x_ext);
+				pv.item("i_yext"_h).set(ptc.y_ext);
+				pv.item("i_uv"_h).set(ptc.uv);
+				pv.item("i_col"_h).set(ptc.col);
+				pv.item("i_time"_h).set(ptc.time);
 			}
 		}
 		buf_particles.upload(cb);
@@ -1952,8 +1952,8 @@ namespace flame
 			for (auto& p : draw_data.particles)
 			{
 				cb->bind_pipeline(get_material_pipeline(mat_reses[p.mat_id], "particle"_h, 0, 0));
-				cb->draw(p.pts.size(), 1, vtx_off, p.mat_id << 16);
-				vtx_off += p.pts.size();
+				cb->draw(p.ptcs.size(), 1, vtx_off, p.mat_id << 16);
+				vtx_off += p.ptcs.size();
 			}
 		}
 
