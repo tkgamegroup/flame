@@ -189,7 +189,7 @@ namespace flame
 		auto c = it->second;
 		if (c->n_strong_ref != 0)
 		{
-			printf("cannot remove component: component is strongly referenced by other compoent(s)\n", hash);
+			printf("cannot remove component: component is strongly referenced by other compoent(s)\n");
 			return false;
 		}
 
@@ -223,7 +223,7 @@ namespace flame
 		for (auto& _c : components)
 			_c->on_component_removed(c);
 
-		if (global_enable)
+		if (global_enable && c->enable)
 			c->on_inactive();
 
 		delete c;
