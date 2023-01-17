@@ -39,5 +39,6 @@ namespace flame
 
 		virtual void start() {}
 		virtual void update() {}
+		virtual void send_message(uint hash, void* data, uint size) {}
 	};
 }
