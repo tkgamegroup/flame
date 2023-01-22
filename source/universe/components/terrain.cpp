@@ -264,7 +264,7 @@ namespace flame
 	void cTerrainPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (instance_id == -1 || !height_map)
+			if (instance_id == -1 || material_res_id == -1 ||  !height_map || !splash_map)
 				return;
 
 			switch (draw_data.pass)

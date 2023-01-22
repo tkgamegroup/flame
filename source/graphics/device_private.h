@@ -11,6 +11,8 @@ namespace flame
 
 		struct DevicePrivate : Device
 		{
+			std::map<uint, uint> configs;
+
 			VkInstance vk_instance;
 			VkPhysicalDevice vk_physical_device;
 			VkPhysicalDeviceProperties2 vk_props;
@@ -20,6 +22,7 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
+			uint get_config(uint hash) override;
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 		};
 	}

@@ -250,9 +250,14 @@ namespace flame
 			if (!dst_ppath.empty() && !std::filesystem::exists(dst_ppath))
 				std::filesystem::create_directories(dst_ppath);
 
+			auto use_mesh_shader = device->get_config("mesh_shader"_h) != 0;
+
 			std::string temp_content;
 			std::vector<std::string> additional_lines;
-			temp_content += "#version 460\n";
+			if (use_mesh_shader)
+				temp_content += "#version 460\n";
+			else
+				temp_content += "#version 450\n";
 			temp_content += "#extension GL_ARB_shading_language_420pack : enable\n";
 			temp_content += "#extension GL_EXT_shader_8bit_storage: require\n";
 			temp_content += "#extension GL_EXT_shader_explicit_arithmetic_types: require\n";
@@ -490,7 +495,8 @@ namespace flame
 			std::filesystem::remove(L"temp.spv");
 
 			std::string errors;
-			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" --target-env=vulkan1.3 -fshader-stage={} -I \"{}\" {} -o temp.spv", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
+			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" --target-env=vulkan{} -fshader-stage={} -I \"{}\" {} -o temp.spv", 
+				use_mesh_shader ? L"1.3" : L"1.2", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{
 				printf("%s\n", errors.c_str());

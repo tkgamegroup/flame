@@ -9,6 +9,7 @@
 #include "../../foundation/typeinfo.h"
 #include "../../foundation/typeinfo_serialize.h"
 #include "../../foundation/window.h"
+#include "../../graphics/device.h"
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
@@ -415,8 +416,11 @@ namespace flame
 			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 
+		auto graphics_device = graphics::Device::current();
 		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		static auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+
+		auto use_mesh_shader = graphics_device->get_config("mesh_shader"_h) != 0;
 
 		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
 		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
@@ -547,8 +551,12 @@ namespace flame
 		pl_mesh_arm_plain->dynamic_renderpass = true;
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
 		pl_terrain_plain->dynamic_renderpass = true;
-		pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
-		pl_MC_plain->dynamic_renderpass = true;
+
+		if (use_mesh_shader)
+		{
+			pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
+			pl_MC_plain->dynamic_renderpass = true;
+		}
 
 		opa_batcher.buf_idr.create(mesh_instances.capacity);
 		trs_batcher.buf_idr.create(mesh_instances.capacity);
@@ -609,10 +617,13 @@ namespace flame
 		pl_mesh_arm_pickup->dynamic_renderpass = true;
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
 		pl_terrain_pickup->dynamic_renderpass = true;
-		pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-		pl_MC_pickup->dynamic_renderpass = true;
-		pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
-		pl_MC_transform_feedback->dynamic_renderpass = true;
+		if (use_mesh_shader)
+		{
+			pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
+			pl_MC_pickup->dynamic_renderpass = true;
+			pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
+			pl_MC_transform_feedback->dynamic_renderpass = true;
+		}
 
 		fence_pickup.reset(graphics::Fence::create(false));
 

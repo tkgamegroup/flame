@@ -6,8 +6,10 @@ namespace flame
 {
 	struct BoundSource
 	{
+#if USE_AUDIO_MODULE
 		audio::BufferPtr buf;
 		audio::SourcePtr src;
+#endif
 	};
 
 	struct cAudioSourcePrivate : cAudioSource

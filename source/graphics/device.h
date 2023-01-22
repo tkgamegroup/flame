@@ -10,6 +10,8 @@ namespace flame
 		{
 			virtual ~Device() {}
 
+			virtual uint get_config(uint hash) = 0;
+
 			struct Create
 			{
 				// configs:

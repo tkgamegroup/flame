@@ -817,5 +817,20 @@ namespace flame
 
 		return ret;
 	}
+
+	inline std::string get_display_name(const std::string& name)
+	{
+		auto ret = name;
+		ret[0] = toupper(ret[0]);
+		for (auto i = 0; i < ret.size() - 1; i++)
+		{
+			if (ret[i] == '_')
+			{
+				ret[i] = ' ';
+				ret[i + 1] = toupper(ret[i + 1]);
+			}
+		}
+		return ret;
+	}
 }
 

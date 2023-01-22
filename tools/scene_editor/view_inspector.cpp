@@ -311,8 +311,8 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 				if (i > 0) ImGui::Separator();
 				ImGui::PushID(i);
 				auto p = sv.v.data() + ti->size * i;
-				show_variable(ti->ti1, "first", 0, nullptr, nullptr, ti->first(p), id);
-				show_variable(ti->ti2, "second", 0, nullptr, nullptr, ti->second(p), id);
+				show_variable(ti->ti1, "First", 0, nullptr, nullptr, ti->first(p), id);
+				show_variable(ti->ti2, "Second", 0, nullptr, nullptr, ti->second(p), id);
 				ImGui::PopID();
 			}
 			ImGui::TreePop();
@@ -349,7 +349,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 				auto j = 0;
 				for (auto& t : ti->tis)
 				{
-					show_variable(t.first, "item_" + str(j), 0, nullptr, nullptr, p + t.second, id);
+					show_variable(t.first, "Item " + str(j), 0, nullptr, nullptr, p + t.second, id);
 					j++;
 				}
 				ImGui::PopID();
@@ -371,7 +371,7 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& v : ui.variables)
 		{
-			if (show_variable(v.type, v.name, v.offset, nullptr, nullptr, src, &v))
+			if (show_variable(v.type, get_display_name(v.name), v.offset, nullptr, nullptr, src, &v))
 				changed_name = v.name;
 			if (cb)
 				cb(v.name_hash, src);
@@ -381,7 +381,7 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& a : ui.attributes)
 		{
-			if (show_variable(a.type, a.name, a.var_off(), 
+			if (show_variable(a.type, get_display_name(a.name), a.var_off(),
 				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr, 
 				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr, 
 				src, &a))
@@ -486,7 +486,7 @@ void View_Inspector::on_draw()
 			if (open)
 			{
 				auto enable = c->enable;
-				ImGui::Checkbox("enable", &enable);
+				ImGui::Checkbox("Enable", &enable);
 				if (enable != c->enable)
 					c->set_enable(enable);
 				static bool open_select_hash = false;
@@ -732,18 +732,18 @@ void View_Inspector::on_draw()
 			if (sel_ref_obj)
 			{
 				auto image = (graphics::ImagePtr)sel_ref_obj;
-				ImGui::Text("channels: %d", info.chs);
-				ImGui::Text("bits per pixel: %d", info.bpp);
-				ImGui::Text("srgb: %s", info.srgb ? "yes" : "no");
-				ImGui::Text("graphics format: %s", TypeInfo::serialize_t(image->format).c_str());
-				ImGui::Text("extent: %s", str(image->extent).c_str());
+				ImGui::Text("Channels: %d", info.chs);
+				ImGui::Text("Bits Per Pixel: %d", info.bpp);
+				ImGui::Text("SRGB: %s", info.srgb ? "yes" : "no");
+				ImGui::Text("Graphics Format: %s", TypeInfo::serialize_t(image->format).c_str());
+				ImGui::Text("Extent: %s", str(image->extent).c_str());
 				static int view_type = ImGui::ImageViewRGBA;
 				static const char* types[] = {
 					"RGBA",
 					"R", "G", "B", "A",
 					"RGB",
 				};
-				ImGui::Combo("view", &view_type, types, countof(types));
+				ImGui::Combo("View", &view_type, types, countof(types));
 				if (view_type != 0)
 					ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
 				if (image->extent.z == 1)
@@ -812,8 +812,8 @@ void View_Inspector::on_draw()
 				for (auto& mesh : model->meshes)
 				{
 					ImGui::Text("Mesh %d:", i);
-					ImGui::Text("vertex count: %d", mesh.positions.size());
-					ImGui::Text("index count: %d", mesh.indices.size());
+					ImGui::Text("Vertex Count: %d", mesh.positions.size());
+					ImGui::Text("Index Count: %d", mesh.indices.size());
 					std::string attr_str = "";
 					if (!mesh.uvs.empty()) attr_str += " uv";
 					if (!mesh.normals.empty()) attr_str += " normal";
@@ -821,7 +821,7 @@ void View_Inspector::on_draw()
 					if (!mesh.colors.empty()) attr_str += " color";
 					if (!mesh.bone_ids.empty()) attr_str += " bone_ids";
 					if (!mesh.bone_weights.empty()) attr_str += " bone_weights";
-					ImGui::Text("attributes: %s", attr_str.data());
+					ImGui::Text("Attributes: %s", attr_str.data());
 					i++;
 				}
 			}

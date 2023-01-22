@@ -4,8 +4,6 @@
 #include "shader_private.h"
 #include "command_private.h"
 
-#define USE_MESH_SHADER 0
-
 namespace flame
 {
 	namespace graphics
@@ -73,6 +71,11 @@ namespace flame
 			return VK_FALSE;
 		}
 
+		uint DevicePrivate::get_config(uint hash)
+		{
+			return configs[hash];
+		}
+
 		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
 		{
 			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
@@ -84,23 +87,19 @@ namespace flame
 			return -1;
 		}
 
-		bool use_mesh_shader = true;
-
 		struct DeviceCreate : Device::Create
 		{
 			DevicePtr operator()(bool debug, const std::vector<std::pair<uint, uint>>& configs) override
 			{
 				auto ret = new DevicePrivate;
 
+				ret->configs.emplace("mesh_shader"_h, 1);
 				for (auto& c : configs)
 				{
-					switch (c.first)
-					{
-					case "mesh_shader"_h:
-						use_mesh_shader = c.second == 0 ? false : true;
-						break;
-					}
+					if (auto it = ret->configs.find(c.first); it != ret->configs.end())
+						it->second = c.second;
 				}
+				auto use_mesh_shader = ret->get_config("mesh_shader"_h) != 0;
 
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
@@ -253,11 +252,14 @@ namespace flame
 				*next_feature = &feature_8bit_storage;
 				next_feature = &feature_8bit_storage.pNext;
 
-				VkPhysicalDeviceMaintenance4Features feature_maintenance4 = {};
-				feature_maintenance4.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES;
-				feature_maintenance4.maintenance4 = true;
-				*next_feature = &feature_maintenance4;
-				next_feature = &feature_maintenance4.pNext;
+				if (use_mesh_shader)
+				{
+					VkPhysicalDeviceMaintenance4Features feature_maintenance4 = {};
+					feature_maintenance4.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES;
+					feature_maintenance4.maintenance4 = true;
+					*next_feature = &feature_maintenance4;
+					next_feature = &feature_maintenance4.pNext;
+				}
 
 				std::vector<const char*> required_device_extensions;
 				required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
