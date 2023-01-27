@@ -249,23 +249,23 @@ namespace flame
 	{
 		static void to_lower(std::basic_string<CH>& s)
 		{
-			std::transform(s.begin(), s.end(), s.begin(), [](uint c) { 
-				return std::tolower(c); 
-			});
+			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
+				return std::tolower(c);
+				});
 		}
 
 		static void to_upper(std::basic_string<CH>& s)
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
-			});
+				});
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-			}));
+				}));
 		}
 
 		static std::string get_ltrimed(const std::basic_string<CH>& s)
@@ -279,7 +279,7 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
-			}).base(), s.end());
+				}).base(), s.end());
 		}
 
 		static std::string get_rtrimed(const std::basic_string<CH>& s)
@@ -301,7 +301,7 @@ namespace flame
 			trim(ret);
 			return ret;
 		}
-		
+
 		static void replace_char(std::basic_string<CH>& str, CH from, CH to)
 		{
 			for (auto& ch : str)
@@ -390,7 +390,7 @@ namespace flame
 		{
 			std::vector<std::basic_string<CH>> ret;
 			auto p = str;
-			while (*p) 
+			while (*p)
 			{
 				ret.push_back(std::basic_string<CH>(p));
 				p += ret.back().size() + 1;
@@ -400,10 +400,11 @@ namespace flame
 
 		static std::vector<std::basic_string<CH>> split_quot(const std::basic_string<CH>& _str)
 		{
+			auto str = _str;
+			std::basic_istringstream<CH> iss(str);
 			std::vector<std::basic_string<CH>> ret;
 			auto in_quot = false;
 
-			auto str = _str;
 			for (auto& ch : str)
 			{
 				if (in_quot && ch == ' ')
@@ -412,7 +413,19 @@ namespace flame
 					in_quot = !in_quot;
 
 			}
-			ret = split(str);
+
+			{    
+				std::size_t prev = 0, pos;
+				while ((pos = str.find_first_of(" \t", prev)) != std::string::npos)
+				{
+					if (pos > prev)
+						ret.push_back(str.substr(prev, pos - prev));
+					prev = pos + 1;
+				}
+				if (prev < str.length())
+					ret.push_back(str.substr(prev, std::string::npos));
+			}
+
 			for (auto& t : ret)
 			{
 				for (auto& ch : t)
@@ -428,7 +441,7 @@ namespace flame
 		{
 			return std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-			}) - s.begin();
+				}) - s.begin();
 		}
 	};
 
@@ -542,7 +555,7 @@ namespace flame
 			return FileTypeModel;
 		return FileTypeUnknown;
 	}
-	
+
 	inline uint64 get_file_length(const std::filesystem::path& filename)
 	{
 		std::ifstream file(filename, std::ios::binary);
@@ -800,6 +813,13 @@ namespace flame
 						entry.key = res[1].str();
 						entry.key_hash = sh(entry.key.c_str());
 						line = res[2].str();
+					}
+					while (line.ends_with('\\'))
+					{
+						line.pop_back();
+						std::string line2;
+						std::getline(file, line2);
+						line += line2;
 					}
 					SUS::trim(line);
 					entry.values = SUS::split_quot(line);
