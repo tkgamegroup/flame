@@ -15,27 +15,21 @@ namespace flame
 			{
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
-			{
-				auto v = vk_code_to_key(wParam);
-				if (v != KeyboardKey_Count)
+				if (auto v = vk_code_to_key(wParam); v != KeyboardKey_Count)
 				{
 					w->has_input = true;
 					for (auto& l : w->key_listeners.list)
 						l.first(v, true);
 				}
-			}
 				return true;
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
-			{
-				auto v = vk_code_to_key(wParam);
-				if (v != KeyboardKey_Count)
+				if (auto v = vk_code_to_key(wParam); v != KeyboardKey_Count)
 				{
 					w->has_input = true;
 					for (auto& l : w->key_listeners.list)
 						l.first(v, false);
 				}
-			}
 				return true;
 			case WM_CHAR:
 				w->has_input = true;
@@ -43,70 +37,54 @@ namespace flame
 					l.first(wParam);
 				return true;
 			case WM_LBUTTONDOWN:
-			{
 				SetCapture(hWnd);
 				w->has_input = true;
 				w->mpos = ivec2((int)GET_X_LPARAM(lParam), (int)HIWORD(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Left, true);
-			}
 				return true;
 			case WM_LBUTTONUP:
-			{
 				ReleaseCapture();
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Left, false);
-			}
 				return true;
 			case WM_RBUTTONDOWN:
-			{
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Right, true);
-			}
 				return true;
 			case WM_RBUTTONUP:
-			{
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Right, false);
-			}
 				return true;
 			case WM_MBUTTONDOWN:
-			{
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Middle, true);
-			}
 				return true;
 			case WM_MBUTTONUP:
-			{
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mouse_listeners.list)
 					l.first(Mouse_Middle, false);
-			}
 				return true;
 			case WM_MOUSEMOVE:
-			{
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				for (auto& l : w->mousemove_listeners.list)
 					l.first(w->mpos);
-			}
 				return true;
 			case WM_MOUSEWHEEL:
-			{
 				w->has_input = true;
 				auto v = GET_Y_LPARAM(wParam) > 0 ? 1 : -1;
 				for (auto& l : w->scroll_listeners.list)
 					l.first(v);
-			}
 				return true;
 			case WM_DESTROY:
 				w->has_input = true;
@@ -159,8 +137,10 @@ namespace flame
 		SetWindowPos(hWnd, HWND_TOP, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void NativeWindowPrivate::set_size(const uvec2& size)
+	void NativeWindowPrivate::set_size(const uvec2& _size)
 	{
+		size = _size;
+		SetWindowPos(hWnd, HWND_TOP, 0, 0, size.x, size.y, SWP_NOMOVE | SWP_NOZORDER);
 	}
 
 	ivec2 NativeWindowPrivate::global_to_local(const ivec2& p)

@@ -251,21 +251,21 @@ namespace flame
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::tolower(c);
-				});
+			});
 		}
 
 		static void to_upper(std::basic_string<CH>& s)
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
-				});
+			});
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-				}));
+			}));
 		}
 
 		static std::string get_ltrimed(const std::basic_string<CH>& s)
@@ -279,7 +279,7 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
-				}).base(), s.end());
+			}).base(), s.end());
 		}
 
 		static std::string get_rtrimed(const std::basic_string<CH>& s)
@@ -447,26 +447,6 @@ namespace flame
 
 	using SUS = StrUtils<char>;
 	using SUW = StrUtils<wchar_t>;
-
-	inline std::string sfmt(const char* fmt, ...)
-	{
-		char buf[1024];
-		va_list ap;
-		va_start(ap, &fmt);
-		vsprintf(buf, fmt, ap);
-		va_end(ap);
-		return buf;
-	}
-
-	inline std::wstring wfmt(const wchar_t* fmt, ...)
-	{
-		wchar_t buf[1024];
-		va_list ap;
-		va_start(ap, &fmt);
-		vswprintf(buf, fmt, ap);
-		va_end(ap);
-		return buf;
-	}
 
 	inline std::wstring a2w(const std::string& str)
 	{
