@@ -596,7 +596,6 @@ namespace flame
 		pl_ssr->dynamic_renderpass = true;
 		prm_ssr.init(pl_ssr->layout, graphics::PipelineGraphics);
 		prm_ssr.set_ds("camera"_h, ds_camera.get());
-		prm_ssr.set_ds("lighting"_h, ds_lighting.get());
 		ds_ssr.reset(graphics::DescriptorSet::create(nullptr, prm_ssr.get_dsl(""_h)));
 		prm_ssr.set_ds(""_h, ds_ssr.get());
 
@@ -679,6 +678,7 @@ namespace flame
 		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1->filename = L"##img_back1";
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dep->filename = L"##img_dep";
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_col_met.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -692,7 +692,8 @@ namespace flame
 		ds_defe->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
 		ds_defe->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
 		ds_defe->update();
-		ds_ssr->set_image("img_dst"_h, 0, img_back0->get_view(), nullptr);
+		ds_ssr->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
+		ds_ssr->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
 		ds_ssr->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
 		ds_ssr->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
 		ds_ssr->update();
@@ -1983,19 +1984,20 @@ namespace flame
 		// post processing
 		if (mode == Shaded || mode == CameraLight)
 		{
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_blit);
-			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
-
 			if (ssr_enable)
 			{
-				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
 				cb->bind_pipeline(pl_ssr);
 				prm_ssr.bind_dss(cb);
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+
+				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->bind_pipeline(pl_add);
+				cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0, 0, sp_nearest));
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
@@ -2009,7 +2011,7 @@ namespace flame
 			prm_luma.pc.item_d("time_coeff"_h).set(1.0f);
 			prm_luma.pc.item_d("num_pixels"_h).set(int(ext.x * ext.y));
 			prm_luma.push_constant(cb);
-			cb->bind_pipeline(pl_luma_hist);
+			cb->bind_pipeline(pl_luma_hist); 
 			cb->dispatch(uvec3(ceil(ext.x / 16), ceil(ext.y / 16), 1));
 			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
 				graphics::AccessShaderRead | graphics::AccessShaderWrite,
@@ -2025,6 +2027,13 @@ namespace flame
 			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessHostRead,
 				graphics::AccessShaderRead | graphics::AccessShaderWrite,
 				graphics::PipelineStageHost, graphics::PipelineStageCompShader);
+
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+			cb->bind_pipeline(pl_blit);
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
