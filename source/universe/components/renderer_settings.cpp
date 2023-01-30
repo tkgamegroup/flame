@@ -103,6 +103,16 @@ namespace flame
 			sRenderer::instance()->set_esm_factor(esm_factor);
 	}
 
+	void cRendererSettingsPrivate::set_ssr_enable(bool v)
+	{
+		if (ssr_enable == v)
+			return;
+		ssr_enable = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->ssr_enable = ssr_enable;
+	}
+
 	void cRendererSettingsPrivate::set_post_shading_code_file(const std::filesystem::path& path)
 	{
 		if (post_shading_code_file == path)
@@ -144,6 +154,7 @@ namespace flame
 			sRenderer::instance()->set_shadow_distance(shadow_distance);
 			sRenderer::instance()->set_csm_levels(csm_levels);
 			sRenderer::instance()->set_esm_factor(esm_factor);
+			sRenderer::instance()->ssr_enable = ssr_enable;
 			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
 		}
 	}

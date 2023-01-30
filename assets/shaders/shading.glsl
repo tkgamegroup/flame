@@ -112,33 +112,6 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	return ret;
 }
 
-vec3 get_ssr(vec3 coordw, vec3 N, vec3 V, float roughness)
-{
-	const float maxDistance = 4;
-	const int   steps = 64;
-
-	vec3 color = vec3(0.0);
-
-	vec3 pivot = reflect(-V, N);
-	vec3 pos = coordw;
-	for (int i = 0; i < steps; i++)
-	{
-		pos += pivot * maxDistance / steps;
-		vec4 t = camera.proj_view_last * vec4(pos, 1.0);
-		t /= t.w;
-		if (t.x < -1 || t.x > +1 || t.y < -1 || t.y > +1 || t.z < 0 || t.z > +1)
-			break;
-		t.xy = t.xy * 0.5 + 0.5;
-		if (texture(img_dep_last, t.xy).r < t.z)
-		{
-			color = texture(img_dst_last, t.xy).rgb;
-			break;
-		} 
-	}
-
-	return mix(color, vec3(0.0), roughness);
-}
-
 vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotV = max(dot(N, V), 0.0);
@@ -177,7 +150,6 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 	V = normalize(V);
 
 	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
-	//ret += get_ssr(coordw, N, V, roughness);
 	ret += get_env(N, V, metallic, albedo, f0, roughness);
 	ret = get_fog(ret, distv);
 #ifdef POST_SHADING_CODE

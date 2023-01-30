@@ -1,0 +1,77 @@
+%rp=../color.rp
+layout
+  @pll
+shaders
+  ../fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+blend_options
+  enable
+    true
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    Zero
+
+@pll
+#include "../camera.dsl"
+#include "../lighting.dsl"
+
+layout(set = SET, binding = 0) uniform sampler2D img_dst;
+layout(set = SET, binding = 1) uniform sampler2D img_col_met;
+layout(set = SET, binding = 2) uniform sampler2D img_nor_rou;
+@
+
+@frag
+
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_color;
+
+/*
+vec3 get_ssr(vec3 coordw, vec3 N, vec3 V, float roughness)
+{
+	const float maxDistance = 4;
+	const int   steps = 64;
+
+	vec3 color = vec3(0.0);
+
+	vec3 pivot = reflect(-V, N);
+	vec3 pos = coordw;
+	for (int i = 0; i < steps; i++)
+	{
+		pos += pivot * maxDistance / steps;
+		vec4 t = camera.proj_view_last * vec4(pos, 1.0);
+		t /= t.w;
+		if (t.x < -1 || t.x > +1 || t.y < -1 || t.y > +1 || t.z < 0 || t.z > +1)
+			break;
+		t.xy = t.xy * 0.5 + 0.5;
+		if (texture(img_dep_last, t.xy).r < t.z)
+		{
+			color = texture(img_dst_last, t.xy).rgb;
+			break;
+		} 
+	}
+
+	return mix(color, vec3(0.0), roughness);
+}
+*/
+
+void main()
+{
+	float dep = texture(img_dep, i_uv).r;
+	vec4 p = camera.proj_inv * vec4(i_uv * 2.0 - 1.0, dep, 1.0);
+	p /= p.w;
+
+	if (dep == 1.0)
+		discard;
+	
+	o_color = vec4(0, 0, 0, 1);
+}
+@

@@ -32,6 +32,10 @@ namespace flame
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
+		bool ssr_enable = false;
+		// Reflect
+		virtual void set_ssr_enable(bool v) = 0;
+		// Reflect
 		std::filesystem::path post_shading_code_file;
 		// Reflect
 		virtual void set_post_shading_code_file(const std::filesystem::path& path) = 0;

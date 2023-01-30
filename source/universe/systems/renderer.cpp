@@ -43,9 +43,7 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_back0;
 	std::unique_ptr<graphics::Image> img_back1;
 	std::unique_ptr<graphics::Image> img_dst;
-	std::unique_ptr<graphics::Image> img_dst_last;
 	std::unique_ptr<graphics::Image> img_dep;
-	std::unique_ptr<graphics::Image> img_dep_last;
 	std::unique_ptr<graphics::Image> img_dst_ms;
 	std::unique_ptr<graphics::Image> img_dep_ms;
 	std::unique_ptr<graphics::Image> img_col_met;	// color, metallic
@@ -72,6 +70,7 @@ namespace flame
 	graphics::PipelineResourceManager prm_defe;
 	graphics::PipelineResourceManager prm_plain;
 	graphics::PipelineResourceManager prm_post;
+	graphics::PipelineResourceManager prm_ssr;
 	graphics::PipelineResourceManager prm_luma;
 	graphics::PipelineResourceManager prm_tone;
 
@@ -102,6 +101,7 @@ namespace flame
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
 	std::unique_ptr<graphics::DescriptorSet> ds_lighting;
 	std::unique_ptr<graphics::DescriptorSet> ds_defe;
+	std::unique_ptr<graphics::DescriptorSet> ds_ssr;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma_avg;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
@@ -115,6 +115,7 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_blur_dep_v = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_h = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_v = nullptr;
+	graphics::GraphicsPipelinePtr pl_ssr = nullptr;
 	graphics::ComputePipelinePtr pl_luma_hist = nullptr;
 	graphics::ComputePipelinePtr pl_luma_avg = nullptr;
 	graphics::GraphicsPipelinePtr pl_tone = nullptr;
@@ -591,6 +592,14 @@ namespace flame
 			  "frag:VERTICAL" });
 		pl_localmax_v->dynamic_renderpass = true;
 
+		pl_ssr = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\ssr.pipeline", {});
+		pl_ssr->dynamic_renderpass = true;
+		prm_ssr.init(pl_ssr->layout, graphics::PipelineGraphics);
+		prm_ssr.set_ds("camera"_h, ds_camera.get());
+		prm_ssr.set_ds("lighting"_h, ds_lighting.get());
+		ds_ssr.reset(graphics::DescriptorSet::create(nullptr, prm_ssr.get_dsl(""_h)));
+		prm_ssr.set_ds(""_h, ds_ssr.get());
+
 		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
 		auto dsl_luma = prm_luma.pll->dsls.back();
 		buf_luminance.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
@@ -664,9 +673,12 @@ namespace flame
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
-		img_dst_last.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+		img_dst->filename = L"##img_dst";
+		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back0->filename = L"##img_back0";
+		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back1->filename = L"##img_back1";
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_dep_last.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_col_met.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -674,20 +686,18 @@ namespace flame
 		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
-		ds_lighting->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
 		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
 		ds_lighting->set_image("img_ao"_h, 0, img_ao->get_view(), nullptr);
-		ds_lighting->set_image("img_dst_last"_h, 0, img_dst_last->get_view(), nullptr);
-		ds_lighting->set_image("img_dep_last"_h, 0, img_dep_last->get_view(), nullptr);
 		ds_lighting->update();
 		ds_defe->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
 		ds_defe->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
 		ds_defe->update();
+		ds_ssr->set_image("img_dst"_h, 0, img_back0->get_view(), nullptr);
+		ds_ssr->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
+		ds_ssr->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
+		ds_ssr->update();
 		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		ds_luma->update();
-
-		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 
 		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
@@ -1970,27 +1980,28 @@ namespace flame
 
 		cb->end_renderpass();
 
-		// saves the current frame
-
-		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->begin_renderpass(nullptr, img_dst_last->get_shader_write_dst());
-		cb->bind_pipeline(pl_blit);
-		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-		cb->draw(3, 1, 0, 0);
-		cb->end_renderpass();
-
-		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->begin_renderpass(nullptr, img_dep_last->get_shader_write_dst());
-		cb->bind_pipeline(pl_blit_dep);
-		cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
-		cb->draw(3, 1, 0, 0);
-		cb->end_renderpass();
-
 		// post processing
 		if (mode == Shaded || mode == CameraLight)
 		{
+			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+			cb->bind_pipeline(pl_blit);
+			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+			cb->draw(3, 1, 0, 0);
+			cb->end_renderpass();
+
+			if (ssr_enable)
+			{
+				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->bind_pipeline(pl_ssr);
+				prm_ssr.bind_dss(cb);
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			}
+
 			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
-			prm_luma.bind_dss(cb);
+			prm_luma.bind_dss(cb);    
 			const auto min_log_luma = -5.f;
 			const auto max_log_luma = +5.f;
 			prm_luma.pc.item_d("min_log_luma"_h).set(min_log_luma);
@@ -2014,13 +2025,6 @@ namespace flame
 			cb->buffer_barrier(buf_luminance.buf.get(), graphics::AccessHostRead,
 				graphics::AccessShaderRead | graphics::AccessShaderWrite,
 				graphics::PipelineStageHost, graphics::PipelineStageCompShader);
-
-			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-			cb->bind_pipeline(pl_blit);
-			cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-			cb->draw(3, 1, 0, 0);
-			cb->end_renderpass();
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());

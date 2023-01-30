@@ -82,9 +82,8 @@ namespace flame
 				return true;
 			case WM_MOUSEWHEEL:
 				w->has_input = true;
-				auto v = GET_Y_LPARAM(wParam) > 0 ? 1 : -1;
 				for (auto& l : w->scroll_listeners.list)
-					l.first(v);
+					l.first(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
 				return true;
 			case WM_DESTROY:
 				w->has_input = true;

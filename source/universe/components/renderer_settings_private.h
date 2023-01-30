@@ -12,6 +12,7 @@ namespace flame
 		void set_shadow_distance(float d) override;
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
+		void set_ssr_enable(bool v) override;
 		void set_post_shading_code_file(const std::filesystem::path& path) override;
 
 		void update_sky();
