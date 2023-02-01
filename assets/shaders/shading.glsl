@@ -1,19 +1,21 @@
-float distribution_term(vec3 N, vec3 H, float roughnessL)
+// Reference:
+// https://www.shadertoy.com/view/ld3SRr
+
+float distribution_term(vec3 N, vec3 H, float roughness)
 {
-	float NdotH  = max(dot(N, H), 0.0);
-	float r2 = roughnessL * roughnessL;
-	float d = (NdotH * r2 - NdotH) * NdotH + 1.0;
-	return r2 / (d * d * PI + 1e-7f);
+	float NdotH = dot(N, H);
+	float alpha2 = roughness * roughness;
+	float NoH2 = NdotH * NdotH;
+	float den = NoH2 * (alpha2 - 1.0) + 1.0;
+	return (NdotH > 0.) ? alpha2 / (PI * den * den) : 0.0;
 }
 
-float geometry_term(vec3 N, vec3 V, vec3 L, float roughnessL)
+float geometry_term(float NdotV, float NdotL, float roughness)
 {
-	float r2 = roughnessL * roughnessL;
-	float NdotV = max(dot(N, V), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
-	float gv = NdotL * sqrt(NdotV * (NdotV - NdotV * r2) + r2);
-	float gl = NdotV * sqrt(NdotL * (NdotL - NdotL * r2) + r2);
-	return 0.5 / max(gv + gl, 0.00001);
+	float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+	float gv = max(NdotV, 0.0) / (NdotV * (1.0 - k) + k);
+	float gl = max(NdotL, 0.0) / (NdotL * (1.0 - k) + k);
+	return gv * gl;
 }
 
 vec3 fresnel_term(float cos_theta, vec3 f0)
@@ -28,16 +30,16 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 		return vec3(0.0);
 
 	vec3 H = normalize(V + L);
-	float NdotV = max(dot(N, V), 0.0);
+	float NdotV = dot(N, V);
 	vec3 radiance = light_color * NdotL;
 	
-	float roughnessL = max(0.01, roughness * roughness);
-	float D = distribution_term(N, H, roughnessL);        
-	float G = geometry_term(N, V, L, roughnessL);      
-	vec3  F = fresnel_term(max(dot(H, V), 0.0), f0); 
+	float D = distribution_term(N, H, roughness);
+	vec3  F = fresnel_term(dot(V, H), f0);
+	float G = geometry_term(NdotV, NdotL, roughness);
 		
 	vec3 diffuse = albedo * radiance;
-	vec3 specular = D * G * F * PI * radiance;
+	const float softtr = 0.1;
+	vec3 specular = D * F * G / (4.0 * NdotV * NdotL * (1.0 - softtr) + softtr) * radiance;
 				   
 	return diffuse + specular;
 }

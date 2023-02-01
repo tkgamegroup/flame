@@ -794,7 +794,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
 		break;
 	case "dir_light"_h:
-		e->add_component_t<cNode>();
+		e->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
 		e->add_component_t<cDirLight>();
 		break;
 	case "pt_light"_h:
