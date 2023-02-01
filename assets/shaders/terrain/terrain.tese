@@ -19,28 +19,28 @@ void main()
 		gl_TessCoord.y
 	);
 
-	vec3 coordw = vec3(mix(
+	vec3 world_pos = vec3(mix(
 		mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x),
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x),
 		gl_TessCoord.y
 	));
-	coordw.y += texture(terrain_height_maps[terrain_id], o_uv).r * instance.terrains[terrain_id].extent.y;
+	world_pos.y += texture(terrain_height_maps[terrain_id], o_uv).r * instance.terrains[terrain_id].extent.y;
 	
 #ifndef OCCLUDER_PASS
-	o_coordw = coordw;
+	o_coordw = world_pos;
 	o_normal = normalize(texture(terrain_normal_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
 	o_tangent = normalize(texture(terrain_tangent_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
 #endif
 #ifndef HAS_GEOM
 	#ifndef OCCLUDER_PASS
-		gl_Position = camera.proj_view * vec4(coordw, 1.0);
+		gl_Position = camera.proj_view * vec4(world_pos, 1.0);
 	#else
 		if (pc.i[0] == 0)
-			gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+			gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(world_pos, 1.0);
 		else
-			gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+			gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(world_pos, 1.0);
 	#endif
 #else
-	gl_Position = vec4(coordw, 1.0);
+	gl_Position = vec4(world_pos, 1.0);
 #endif
 }

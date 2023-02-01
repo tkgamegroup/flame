@@ -103,6 +103,26 @@ namespace flame
 			sRenderer::instance()->set_esm_factor(esm_factor);
 	}
 
+	void cRendererSettingsPrivate::set_post_processing_enable(bool v)
+	{
+		if (post_processing_enable == v)
+			return;
+		post_processing_enable = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->post_processing_enable = post_processing_enable;
+	}
+
+	void cRendererSettingsPrivate::set_tone_mapping_enable(bool v)
+	{
+		if (tone_mapping_enable == v)
+			return;
+		tone_mapping_enable = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->tone_mapping_enable = tone_mapping_enable;
+	}
+
 	void cRendererSettingsPrivate::set_ssr_enable(bool v)
 	{
 		if (ssr_enable == v)
@@ -154,6 +174,8 @@ namespace flame
 			sRenderer::instance()->set_shadow_distance(shadow_distance);
 			sRenderer::instance()->set_csm_levels(csm_levels);
 			sRenderer::instance()->set_esm_factor(esm_factor);
+			sRenderer::instance()->post_processing_enable = post_processing_enable;
+			sRenderer::instance()->tone_mapping_enable = tone_mapping_enable;
 			sRenderer::instance()->ssr_enable = ssr_enable;
 			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
 		}

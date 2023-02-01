@@ -98,6 +98,10 @@ namespace flame
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
+		bool post_processing_enable = true;
+		// Reflect
+		bool tone_mapping_enable = false;
+		// Reflect
 		bool ssr_enable = false;
 		// Reflect
 		float ssao_radius = 0.5f;

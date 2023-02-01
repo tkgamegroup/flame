@@ -44,7 +44,7 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	return diffuse + specular;
 }
 
-vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
+vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 ret = vec3(0.0);
 
@@ -62,7 +62,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 				vec4 splits = lighting.dir_shadows[li.shadow_index].splits;
 				if (distv < splits[lv])
 				{
-					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(coordw, 1.0);
+					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(world_pos, 1.0);
 					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
 					f_shadow *= clamp(exp(-lighting.esm_factor * (coordl.z - ref)), 0.0, 1.0);
@@ -85,7 +85,7 @@ vec3 get_lighting(vec3 coordw, float distv, vec3 N, vec3 V, float metallic, vec3
 	for (int i = 0; i < pt_num; i++)
 	{
 		PtLight li = lighting.pt_lights[lighting.pt_lights_list[i]];
-		vec3 L = li.pos - coordw;
+		vec3 L = li.pos - world_pos;
 		float dist = length(L);
 		L = L / dist;
 
@@ -130,7 +130,7 @@ vec3 get_fog(vec3 color, float dist)
 	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, camera.zFar, dist));
 }
 
-vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
+vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
 {
 #ifdef ALBEDO_DATA
 	return albedo;
@@ -147,11 +147,11 @@ vec3 shading(vec3 coordw, vec3 N, float metallic, vec3 albedo, vec3 f0, float ro
 
 	vec3 ret = vec3(0.0);
 
-	vec3 V = camera.coord - coordw;
+	vec3 V = camera.coord - world_pos;
 	float distv = dot(camera.front, -V);
 	V = normalize(V);
 
-	ret += get_lighting(coordw, distv, N, V, metallic, albedo, f0, roughness);
+	ret += get_lighting(world_pos, distv, N, V, metallic, albedo, f0, roughness);
 	ret += get_env(N, V, metallic, albedo, f0, roughness);
 	ret = get_fog(ret, distv);
 #ifdef POST_SHADING_CODE

@@ -32,6 +32,14 @@ namespace flame
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
+		bool post_processing_enable = true;
+		// Reflect
+		virtual void set_post_processing_enable(bool v) = 0;
+		// Reflect
+		bool tone_mapping_enable = true;
+		// Reflect
+		virtual void set_tone_mapping_enable(bool v) = 0;
+		// Reflect
 		bool ssr_enable = false;
 		// Reflect
 		virtual void set_ssr_enable(bool v) = 0;

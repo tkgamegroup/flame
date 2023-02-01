@@ -23,12 +23,12 @@ void main()
 		deform += instance.armatures[id].bones[bid] * i_bwgts[i];
 	}
 
-	vec3 coordw = vec3(deform * vec4(i_pos, 1.0));
+	vec3 world_pos = vec3(deform * vec4(i_pos, 1.0));
 	#ifndef OCCLUDER_PASS
 	o_normal = normalize(transpose(inverse(mat3(deform))) * i_nor);
 	#endif
 #else
-	vec3 coordw = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
+	vec3 world_pos = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
 	#ifndef OCCLUDER_PASS
 	o_normal = normalize(mat3(instance.meshes[id].nor) * i_nor);
 	#endif
@@ -36,11 +36,11 @@ void main()
 
 #ifdef OCCLUDER_PASS
 	if (pc.i[0] == 0)
-		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(world_pos, 1.0);
 	else
-		gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(coordw, 1.0);
+		gl_Position = lighting.pt_shadows[pc.i[1]].mats[pc.i[2]] * vec4(world_pos, 1.0);
 #else
-	gl_Position = camera.proj_view * vec4(coordw, 1.0);
-	o_coordw = coordw;
+	gl_Position = camera.proj_view * vec4(world_pos, 1.0);
+	o_coordw = world_pos;
 #endif
 }
