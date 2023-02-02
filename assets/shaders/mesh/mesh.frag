@@ -8,12 +8,12 @@
 
 layout(location = 0) in flat uint i_matid;
 layout(location = 1) in	     vec2 i_uv;
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 layout(location = 2) in      vec3 i_normal;
 layout(location = 3) in      vec3 i_coordw;
 #endif
 
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 #ifndef GBUFFER_PASS
 layout(location = 0) out vec4 o_color;
 #else
@@ -28,7 +28,7 @@ void main()
 	MaterialInfo material = material.infos[i_matid];
 	#include MAT_CODE
 #else
-	#ifndef OCCLUDER_PASS
+	#ifndef DEPTH_ONLY
 		#ifndef GBUFFER_PASS
 			#ifdef PICKUP
 				o_color = pack_uint_to_v4(pc.i[0]);

@@ -207,7 +207,7 @@ namespace flame
 		case "terrain"_h:
 		case "sdf"_h:
 		case "marching_cubes"_h:
-			if (modifier2 == "OCCLUDER_PASS"_h)
+			if (modifier2 == "DEPTH_ONLY"_h)
 			{
 				defines.push_back("rp=" + str(rp_dep));
 				defines.push_back("pll=" + str(pll_fwd));
@@ -272,8 +272,8 @@ namespace flame
 		}
 		switch (modifier2)
 		{
-		case "OCCLUDER_PASS"_h:
-			defines.push_back("all_shader:OCCLUDER_PASS");
+		case "DEPTH_ONLY"_h:
+			defines.push_back("all_shader:DEPTH_ONLY");
 			break;
 		}
 		std::sort(defines.begin(), defines.end());
@@ -1719,7 +1719,7 @@ namespace flame
 								n_MC_draws = draw_data.volumes.size();
 							}
 						}
-						s.batcher[lv].collect_idrs(draw_data, cb, "OCCLUDER_PASS"_h);
+						s.batcher[lv].collect_idrs(draw_data, cb, "DEPTH_ONLY"_h);
 						s.draw_terrains[lv] = draw_data.terrains;
 						s.draw_MCs[lv] = draw_data.volumes;
 
@@ -1781,14 +1781,14 @@ namespace flame
 
 					for (auto& t : s.draw_terrains[lv])
 					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "OCCLUDER_PASS"_h));
+						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
 						prm_fwd.pc.item_d("index"_h).set((t.ins_id << 16) + t.mat_id);
 						prm_fwd.push_constant(cb);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
 					}
 					for (auto& v : s.draw_MCs[lv])
 					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "OCCLUDER_PASS"_h));
+						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
 						prm_fwd.pc.item_d("index"_h).set((v.ins_id << 16) + v.mat_id);
 						for (auto z = 0; z < v.blocks.z; z++)
 						{

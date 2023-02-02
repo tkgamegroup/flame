@@ -3,7 +3,7 @@ layout(quads, equal_spacing, ccw) in;
 layout(location = 0) in vec2 i_uvs[];
 
 layout(location = 0) out vec2 o_uv;
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 layout(location = 1) out vec3 o_normal;
 layout(location = 2) out vec3 o_tangent;
 layout(location = 3) out vec3 o_coordw;
@@ -26,13 +26,13 @@ void main()
 	));
 	world_pos.y += texture(terrain_height_maps[terrain_id], o_uv).r * instance.terrains[terrain_id].extent.y;
 	
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 	o_coordw = world_pos;
 	o_normal = normalize(texture(terrain_normal_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
 	o_tangent = normalize(texture(terrain_tangent_maps[terrain_id], o_uv).xyz * 2.0 - 1.0);
 #endif
 #ifndef HAS_GEOM
-	#ifndef OCCLUDER_PASS
+	#ifndef DEPTH_ONLY
 		gl_Position = camera.proj_view * vec4(world_pos, 1.0);
 	#else
 		if (pc.i[0] == 0)

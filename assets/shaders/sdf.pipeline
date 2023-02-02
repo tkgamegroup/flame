@@ -36,7 +36,7 @@ void main()
 
 layout(location = 0) in vec3 i_view;
 
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 #ifndef GBUFFER_PASS
 layout(location = 0) out vec4 o_color;
 #else
@@ -96,7 +96,7 @@ void main()
 	vec3 origin = camera.coord;
 	float depth = march(origin, dir);
 	
-	#ifndef OCCLUDER_PASS
+	#ifndef DEPTH_ONLY
 		if (depth >= MaxDepth)
 			discard;
 		vec3 n = normal(origin + depth * dir);

@@ -1,4 +1,4 @@
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 
 vec4 color = vec4(0);
 #if LAYERS == 1
@@ -43,4 +43,4 @@ float roughness = material.roughness;
 	o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, roughness);
 #endif
 
-#endif // OCCLUDER_PASS
+#endif // DEPTH_ONLY

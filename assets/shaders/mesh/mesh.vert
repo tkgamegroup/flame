@@ -2,7 +2,7 @@
 
 layout(location = 0) out flat uint o_matid;
 layout(location = 1) out vec2 o_uv;
-#ifndef OCCLUDER_PASS
+#ifndef DEPTH_ONLY
 layout(location = 2) out vec3 o_normal; 
 layout(location = 3) out vec3 o_coordw;
 #endif
@@ -24,17 +24,17 @@ void main()
 	}
 
 	vec3 world_pos = vec3(deform * vec4(i_pos, 1.0));
-	#ifndef OCCLUDER_PASS
+	#ifndef DEPTH_ONLY
 	o_normal = normalize(transpose(inverse(mat3(deform))) * i_nor);
 	#endif
 #else
 	vec3 world_pos = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
-	#ifndef OCCLUDER_PASS
+	#ifndef DEPTH_ONLY
 	o_normal = normalize(mat3(instance.meshes[id].nor) * i_nor);
 	#endif
 #endif
 
-#ifdef OCCLUDER_PASS
+#ifdef DEPTH_ONLY
 	if (pc.i[0] == 0)
 		gl_Position = lighting.dir_shadows[pc.i[1]].mats[pc.i[2]] * vec4(world_pos, 1.0);
 	else
