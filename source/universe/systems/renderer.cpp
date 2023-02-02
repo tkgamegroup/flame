@@ -46,9 +46,10 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_dep;
 	std::unique_ptr<graphics::Image> img_dst_ms;
 	std::unique_ptr<graphics::Image> img_dep_ms;
-	std::unique_ptr<graphics::Image> img_col_met;	// color, metallic
-	std::unique_ptr<graphics::Image> img_nor_rou;	// normal, roughness
-	std::unique_ptr<graphics::Image> img_ao;		// ambient occlusion
+	std::unique_ptr<graphics::Image> img_gbufferA;	// color
+	std::unique_ptr<graphics::Image> img_gbufferB;	// normal
+	std::unique_ptr<graphics::Image> img_gbufferC;	// metallic, roughness, ao, flags
+	std::unique_ptr<graphics::Image> img_gbufferD;	// emissive
 	std::unique_ptr<graphics::Image> img_pickup;
 	std::unique_ptr<graphics::Image> img_dep_pickup;
 	std::vector<std::unique_ptr<graphics::Image>>	imgs_dir_shadow;
@@ -237,7 +238,7 @@ namespace flame
 		add_global_defines(defines);
 		if (!res.mat->code_file.empty())
 			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
-		for (auto& d : res.mat->shader_defines)
+		for (auto& d : res.mat->code_defines)
 			defines.push_back(d);
 
 		std::filesystem::path pipeline_name;
@@ -681,21 +682,24 @@ namespace flame
 		img_dep->filename = L"##img_dep";
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
-		img_col_met.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_nor_rou.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_ao.reset(graphics::Image::create(graphics::Format_R16_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
-		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_col_met->get_view(), img_nor_rou->get_view(), img_dep->get_view()}));
+		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view()}));
 		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		ds_lighting->set_image("img_ao"_h, 0, img_ao->get_view(), nullptr);
 		ds_lighting->update();
-		ds_defe->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
-		ds_defe->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
+		ds_defe->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+		ds_defe->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+		ds_defe->set_image("img_gbufferC"_h, 0, img_gbufferB->get_view(), nullptr);
+		ds_defe->set_image("img_gbufferD"_h, 0, img_gbufferB->get_view(), nullptr);
 		ds_defe->update();
 		ds_ssr->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
 		ds_ssr->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		ds_ssr->set_image("img_col_met"_h, 0, img_col_met->get_view(), nullptr);
-		ds_ssr->set_image("img_nor_rou"_h, 0, img_nor_rou->get_view(), nullptr);
+		ds_ssr->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+		ds_ssr->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+		ds_ssr->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
 		ds_ssr->update();
 		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		ds_luma->update();
@@ -1187,7 +1191,7 @@ namespace flame
 		if (mat->color_map != -1)
 		{
 			auto found = false;
-			for (auto& d : mat->shader_defines)
+			for (auto& d : mat->code_defines)
 			{
 				if (d.starts_with("frag:COLOR_MAP") != std::string::npos)
 				{
@@ -1197,12 +1201,12 @@ namespace flame
 				}
 			}
 			if (!found)
-				mat->shader_defines.push_back("frag:COLOR_MAP=" + str(mat->color_map));
+				mat->code_defines.push_back("frag:COLOR_MAP=" + str(mat->color_map));
 		}
 		if (mat->alpha_test > 0.f)
 		{
 			auto found = false;
-			for (auto& d : mat->shader_defines)
+			for (auto& d : mat->code_defines)
 			{
 				if (d.starts_with("frag:ALPHA_TEST"))
 				{
@@ -1212,7 +1216,7 @@ namespace flame
 				}
 			}
 			if (!found)
-				mat->shader_defines.push_back("frag:ALPHA_TEST=" + str(mat->alpha_test));
+				mat->code_defines.push_back("frag:ALPHA_TEST=" + str(mat->alpha_test));
 		}
 		res.mat = mat;
 		res.ref = 1;
@@ -1851,8 +1855,10 @@ namespace flame
 		cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
 		cb->begin_renderpass(nullptr, fb_gbuf.get(),
-			{ vec4(0.f, 0.f, 0.f, 1.f),
-			vec4(0.f, 0.f, 0.f, 1.f),
+			{ vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f),
+			vec4(0.f, 0.f, 0.f, 0.f),
 			vec4(1.f, 0.f, 0.f, 0.f) });
 
 		prm_gbuf.bind_dss(cb);
@@ -1904,9 +1910,10 @@ namespace flame
 		case FogValue: pl_mod = "FOG_VALUE"_h; break;
 		}
 
-		cb->image_barrier(img_col_met.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->image_barrier(img_nor_rou.get(), {}, graphics::ImageLayoutShaderReadOnly);
-		cb->image_barrier(img_ao.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_gbufferB.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_gbufferC.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_gbufferD.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 		prm_defe.bind_dss(cb);

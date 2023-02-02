@@ -50,6 +50,10 @@ namespace flame
 					return VK_FORMAT_B8G8R8A8_UNORM;
 				case Format_B8G8R8A8_SRGB:
 					return VK_FORMAT_B8G8R8A8_SRGB;
+				case Format_A2R10G10B10_UNORM:
+					return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+				case Format_A2R10G10B10_SNORM:
+					return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
 				case Format_R16G16B16A16_UNORM:
 					return VK_FORMAT_R16G16B16A16_UNORM;
 				case Format_R16G16B16A16_SFLOAT:
@@ -58,6 +62,8 @@ namespace flame
 					return VK_FORMAT_R32G32B32A32_SFLOAT;
 				case Format_R32G32B32A32_INT:
 					return VK_FORMAT_R32G32B32A32_SINT;
+				case Format_B10G11R11_UFLOAT:
+					return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
 				case Format_BC1_RGB_UNORM:
 					return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
 				case Format_BC1_RGB_SRGB:

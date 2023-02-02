@@ -45,12 +45,11 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 }lighting;
 
 layout(set = SET, binding = 1) uniform sampler2D img_dep;
-layout(set = SET, binding = 2) uniform sampler2D img_ao;
 
-layout (set = SET, binding = 3) uniform sampler2DArray	dir_shadow_maps[4];
-layout (set = SET, binding = 4) uniform samplerCube		pt_shadow_maps[4];
+layout (set = SET, binding = 2) uniform sampler2DArray	dir_shadow_maps[4];
+layout (set = SET, binding = 3) uniform samplerCube		pt_shadow_maps[4];
 
-layout(set = SET, binding = 5) uniform samplerCube sky_map;
-layout(set = SET, binding = 6) uniform samplerCube sky_irr_map;
-layout(set = SET, binding = 7) uniform samplerCube sky_rad_map;
-layout(set = SET, binding = 8) uniform sampler2D brdf_map;
+layout(set = SET, binding = 4) uniform samplerCube sky_map;
+layout(set = SET, binding = 5) uniform samplerCube sky_irr_map;
+layout(set = SET, binding = 6) uniform samplerCube sky_rad_map;
+layout(set = SET, binding = 7) uniform sampler2D brdf_map;

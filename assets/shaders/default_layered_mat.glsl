@@ -39,8 +39,10 @@ float roughness = material.roughness;
 	vec3 f0 = mix(vec3(0.04), color.rgb, metallic);
 	o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0), color.a);
 #else
-	o_res_col_met = vec4(color.rgb, metallic);
-	o_res_nor_rou = vec4(i_normal * 0.5 + 0.5, roughness);
+	o_gbufferA = vec4(color.rgb, 0.0);
+	o_gbufferB = vec4(i_normal * 0.5 + 0.5, 0.0);
+	o_gbufferC = vec4(metallic, roughness, 0.0, 0.0);
+	o_gbufferD = vec4(0.0, 0.0, 0.0, 0.0);
 #endif
 
 #endif // DEPTH_ONLY

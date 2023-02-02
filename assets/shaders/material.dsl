@@ -3,7 +3,8 @@ struct MaterialInfo
 	vec4 color;
 	float metallic;
 	float roughness;
-	int opaque;
+	vec4 emissive;
+	uint flags;
 
 	vec4 f;
 	ivec4 i;

@@ -22,12 +22,15 @@ namespace flame
 			vec4 color = vec4(1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;
+			vec4 emissive = vec4(0.f);
 			bool opaque = true;
 			bool sort = false;
+			bool receive_ssr = false;
 			int color_map = -1;
 			int normal_map = -1;
 			int metallic_map = -1;
 			int roughness_map = -1;
+			int emissive_map = -1;
 			int alpha_map = -1;
 			float alpha_test = 0.f;
 
@@ -36,7 +39,7 @@ namespace flame
 
 			// shader will insert this file to its content
 			std::filesystem::path code_file = L"flame/shaders/default_mat.glsl";
-			std::vector<std::string> shader_defines;
+			std::vector<std::string> code_defines;
 
 			std::vector<Texture> textures;
 
