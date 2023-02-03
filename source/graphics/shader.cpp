@@ -7,6 +7,7 @@
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
+#include "material_private.h"
 #include "shader_private.h"
 
 #include <spirv_glsl.hpp>
@@ -219,6 +220,21 @@ namespace flame
 
 		bool compile_shader(ShaderStageFlags stage, const std::filesystem::path& src_path, const std::vector<std::string>& _defines, const std::filesystem::path& dst_path)
 		{
+			static bool first = true;
+			if (first)
+			{
+				first = false;
+
+				if (auto ei = find_enum(th<MaterialFlags>()); ei)
+				{
+					std::ofstream file(Path::get(L"flame/shaders/defines.glsl"));
+					file << "//THIS FILE IS AUTO GENERATED\n";
+					for (auto& i : ei->items)
+						file << std::format("const uint MaterialFlag{}={};\n", i.name, i.value);
+					file.close();
+				}
+			}
+
 			if (std::filesystem::exists(dst_path))
 			{
 				auto dst_date = std::filesystem::last_write_time(dst_path);
@@ -1628,6 +1644,8 @@ namespace flame
 
 		VkPipeline GraphicsPipelinePrivate::get_dynamic_pipeline(RenderpassPtr rp, uint sp)
 		{
+			if (vk_pipeline && rp == renderpass)
+				return vk_pipeline;
 			auto it = renderpass_variants.find(rp);
 			if (it != renderpass_variants.end())
 				return it->second;

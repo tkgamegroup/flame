@@ -6,6 +6,15 @@ namespace flame
 {
 	namespace graphics
 	{
+		// Reflect
+		enum MaterialFlags
+		{
+			MaterialFlagNone = 0,
+			MaterialFlagOpaque = 1 << 0,
+			MaterialFlagSort = 1 << 1,
+			MaterialFlagReceiveSSR = 1 << 2
+		};
+
 		struct Texture
 		{
 			std::filesystem::path filename;
@@ -47,6 +56,15 @@ namespace flame
 			uint ref = 0;
 
 			virtual ~Material() {}
+
+			MaterialFlags get_flags() const
+			{
+				uint flags = 0;
+				if (opaque) flags |= MaterialFlagOpaque;
+				if (sort) flags |= MaterialFlagSort;
+				if (receive_ssr) flags |= MaterialFlagReceiveSSR;
+				return (MaterialFlags)flags;
+			}
 
 			virtual void save(const std::filesystem::path& filename) = 0;
 

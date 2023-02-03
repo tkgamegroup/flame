@@ -1,9 +1,0 @@
-layout (set = SET, binding = 0) uniform sampler2D img_src;
-
-layout (push_constant) uniform PushConstant
-{
-	int off;
-	int len;
-	float weights[14];
-	vec2 pxsz;
-}pc;

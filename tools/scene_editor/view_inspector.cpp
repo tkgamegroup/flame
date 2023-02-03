@@ -532,6 +532,26 @@ void View_Inspector::on_draw()
 							auto path = std::filesystem::path(L"default");
 							ui.find_function("set_material_name"_h)->call<void, void*>(obj, &path);
 						}
+
+						auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(obj);
+						if (!name.empty() && name != L"default")
+						{
+							if (ImGui::TreeNode("##embed"))
+							{
+								// the material is loaded and registered to renderer
+								if (auto material = graphics::Material::get(name); material)
+								{
+									if (!show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty())
+									{
+										auto id = app.renderer->get_material_res(material, -2);
+										if (id > 0)
+											app.renderer->update_res(id, "material"_h, "parameters"_h);
+									}
+									graphics::Material::release(material);
+								}
+								ImGui::TreePop();
+							}
+						}
 					}
 					else
 					{

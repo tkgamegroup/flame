@@ -271,7 +271,7 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::vector<std::string> defines;
-			bool dynamic_renderpass = false;
+			bool dynamic_renderpass = true;
 			uint ref = 0;
 
 			std::vector<std::pair<uint, void*>> dependencies;

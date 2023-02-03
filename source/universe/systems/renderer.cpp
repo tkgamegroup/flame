@@ -21,13 +21,44 @@
 namespace flame
 {
 	const auto col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
-	const auto dep_fmt = graphics::Format::Format_Depth16;
+	const auto dep_fmt = graphics::Format::Format_Depth32;
 	const auto esm_fmt = graphics::Format::Format_Depth32;
 	const auto sample_count = graphics::SampleCount_4;
 	const auto ShadowMapSize = uvec2(2048);
 	const auto DirShadowMaxCount = 4U;
 	const auto DirShadowMaxLevels = 4U;
 	const auto PtShadowMaxCount = 4U;
+
+	namespace graphics
+	{
+		template<typename T>
+		struct PrivateResourcePipelineManager
+		{
+			std::filesystem::path path;
+			PipelineResourceManager prm;
+			std::unique_ptr<graphics::DescriptorSet> ds;
+			std::unordered_map<uint, T*> pls;
+
+			void init(const std::filesystem::path& _path, bool create_default_pl = true)
+			{
+				path = _path;
+				if (create_default_pl)
+				{
+					auto pl = T::get(path, {});
+					pls.emplace(std::make_pair(0U, pl);
+					prm.init(pl->layout, std::is_same_v<T, GraphicsPipeline> ? PipelineGraphics : PipelineCompute);
+				}
+			}
+
+			void add_pl(uint hash, const std::vector<std::string>& defines)
+			{
+				auto pl = T::get(path, defines);
+				pls.emplace(std::make_pair(hash, pl);
+				if (!prm.pll)
+					prm.init(pl->layout, std::is_same_v<T, GraphicsPipeline> ? PipelineGraphics : PipelineCompute);
+			}
+		};
+	}
 
 	std::vector<sRenderer::MatVar> mat_vars;
 	std::vector<sRenderer::MeshRes> mesh_reses;
@@ -70,10 +101,12 @@ namespace flame
 	graphics::PipelineResourceManager prm_gbuf;
 	graphics::PipelineResourceManager prm_defe;
 	graphics::PipelineResourceManager prm_plain;
-	graphics::PipelineResourceManager prm_post;
-	graphics::PipelineResourceManager prm_ssr;
+	graphics::PipelineResourceManager prm_blur;
+	graphics::PipelineResourceManager prm_forward_ssr;
+	graphics::PipelineResourceManager prm_post_ssr;
 	graphics::PipelineResourceManager prm_luma;
 	graphics::PipelineResourceManager prm_tone;
+	graphics::PipelineResourceManager prm_fxaa;
 
 	graphics::VertexBuffer buf_vtx;
 	graphics::IndexBuffer buf_idx;
@@ -102,7 +135,8 @@ namespace flame
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
 	std::unique_ptr<graphics::DescriptorSet> ds_lighting;
 	std::unique_ptr<graphics::DescriptorSet> ds_defe;
-	std::unique_ptr<graphics::DescriptorSet> ds_ssr;
+	std::unique_ptr<graphics::DescriptorSet> ds_forward_ssr;
+	std::unique_ptr<graphics::DescriptorSet> ds_post_ssr;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma_avg;
 	std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
@@ -116,7 +150,8 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_blur_dep_v = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_h = nullptr;
 	graphics::GraphicsPipelinePtr pl_localmax_v = nullptr;
-	graphics::GraphicsPipelinePtr pl_ssr = nullptr;
+	graphics::GraphicsPipelinePtr pl_forward_ssr = nullptr;
+	graphics::GraphicsPipelinePtr pl_post_ssr = nullptr;
 	graphics::ComputePipelinePtr pl_luma_hist = nullptr;
 	graphics::ComputePipelinePtr pl_luma_avg = nullptr;
 	graphics::GraphicsPipelinePtr pl_tone = nullptr;
@@ -214,7 +249,7 @@ namespace flame
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
-			else if (res.opa)
+			else if (res.mat->opaque)
 			{
 				defines.push_back("rp=" + str(rp_gbuf));
 				defines.push_back("pll=" + str(pll_gbuf));
@@ -284,7 +319,6 @@ namespace flame
 			ret = graphics::GraphicsPipeline::get(pipeline_name, defines);
 		if (ret)
 		{
-			ret->dynamic_renderpass = true;
 			res.pls[key] = ret;
 			ret->frag()->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
 			ret->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
@@ -326,10 +360,7 @@ namespace flame
 
 		auto ret = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", defines);
 		if (ret)
-		{
-			ret->dynamic_renderpass = true;
 			def_pls[modifier] = ret;
-		}
 		return ret;
 	}
 
@@ -518,23 +549,16 @@ namespace flame
 
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
-		pl_line3d->dynamic_renderpass = true;
 		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip" });
-		pl_line_strip3d->dynamic_renderpass = true;
 		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
-		pl_triangle3d->dynamic_renderpass = true;
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
 
 		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
-		pl_blit->dynamic_renderpass = true;
 		pl_blit_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
-		pl_blit_dep->dynamic_renderpass = true;
 		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
-		pl_add->dynamic_renderpass = true;
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
-		pl_blend->dynamic_renderpass = true;
 
 		prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
 		prm_fwd.set_ds("camera"_h, ds_camera.get());
@@ -548,17 +572,11 @@ namespace flame
 		prm_gbuf.set_ds("material"_h, ds_material.get());
 
 		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep) });
-		pl_mesh_plain->dynamic_renderpass = true;
 		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "vert:ARMATURE" });
-		pl_mesh_arm_plain->dynamic_renderpass = true;
 		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
-		pl_terrain_plain->dynamic_renderpass = true;
 
 		if (use_mesh_shader)
-		{
 			pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
-			pl_MC_plain->dynamic_renderpass = true;
-		}
 
 		opa_batcher.buf_idr.create(mesh_instances.capacity);
 		trs_batcher.buf_idr.create(mesh_instances.capacity);
@@ -575,30 +593,23 @@ namespace flame
 		ds_defe.reset(graphics::DescriptorSet::create(nullptr, prm_defe.get_dsl(""_h)));
 		prm_defe.set_ds(""_h, ds_defe.get());
 
-		prm_post.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\post.pll"), graphics::PipelineGraphics);
 		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:HORIZONTAL" });
-		pl_blur_h->dynamic_renderpass = true;
 		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "frag:VERTICAL" });
-		pl_blur_v->dynamic_renderpass = true;
 		pl_blur_dep_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "rp=" + str(rp_dep), "frag:HORIZONTAL", "frag:DEPTH" });
-		pl_blur_dep_h->dynamic_renderpass = true;
 		pl_blur_dep_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline", { "rp=" + str(rp_dep), "frag:VERTICAL", "frag:DEPTH" });
-		pl_blur_dep_v->dynamic_renderpass = true;
 		pl_localmax_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "frag:LOCAL_MAX",
 			  "frag:HORIZONTAL" });
-		pl_localmax_h->dynamic_renderpass = true;
 		pl_localmax_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\blur.pipeline",
 			{ "frag:LOCAL_MAX",
 			  "frag:VERTICAL" });
-		pl_localmax_v->dynamic_renderpass = true;
+		prm_blur.init(pl_blur_h->layout, graphics::PipelineGraphics);
 
-		pl_ssr = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\ssr.pipeline", {});
-		pl_ssr->dynamic_renderpass = true;
-		prm_ssr.init(pl_ssr->layout, graphics::PipelineGraphics);
-		prm_ssr.set_ds("camera"_h, ds_camera.get());
-		ds_ssr.reset(graphics::DescriptorSet::create(nullptr, prm_ssr.get_dsl(""_h)));
-		prm_ssr.set_ds(""_h, ds_ssr.get());
+		pl_post_ssr = graphics::GraphicsPipeline::get(L"flame\\shaders\\ssr\\post_ssr.pipeline", {});
+		prm_post_ssr.init(pl_post_ssr->layout, graphics::PipelineGraphics);
+		prm_post_ssr.set_ds("camera"_h, ds_camera.get());
+		ds_post_ssr.reset(graphics::DescriptorSet::create(nullptr, prm_post_ssr.get_dsl(""_h)));
+		prm_post_ssr.set_ds(""_h, ds_post_ssr.get());
 
 		prm_luma.init(graphics::PipelineLayout::get(L"flame\\shaders\\post\\luma.pll"), graphics::PipelineCompute);
 		auto dsl_luma = prm_luma.pll->dsls.back();
@@ -611,27 +622,21 @@ namespace flame
 		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\post\\luma_avg.pipeline", {});
 
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\tone.pipeline", {});
-		pl_tone->dynamic_renderpass = true;
 		prm_tone.init(pl_tone->layout, graphics::PipelineGraphics);
 
 		pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\post\\fxaa.pipeline", {});
-		pl_fxaa->dynamic_renderpass = true;
+		prm_fxaa.init(pl_fxaa->layout, graphics::PipelineGraphics);
 
 		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-		pl_mesh_pickup->dynamic_renderpass = true;
 		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
 			{ "rp=" + str(rp_col_dep),
 			  "vert:ARMATURE",
 			  "frag:PICKUP" });
-		pl_mesh_arm_pickup->dynamic_renderpass = true;
 		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-		pl_terrain_pickup->dynamic_renderpass = true;
 		if (use_mesh_shader)
 		{
 			pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-			pl_MC_pickup->dynamic_renderpass = true;
 			pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
-			pl_MC_transform_feedback->dynamic_renderpass = true;
 		}
 
 		fence_pickup.reset(graphics::Fence::create(false));
@@ -695,12 +700,12 @@ namespace flame
 		ds_defe->set_image("img_gbufferC"_h, 0, img_gbufferB->get_view(), nullptr);
 		ds_defe->set_image("img_gbufferD"_h, 0, img_gbufferB->get_view(), nullptr);
 		ds_defe->update();
-		ds_ssr->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
-		ds_ssr->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		ds_ssr->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
-		ds_ssr->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
-		ds_ssr->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
-		ds_ssr->update();
+		ds_post_ssr->set_image("img_dst"_h, 0, img_dst->get_view(), nullptr);
+		ds_post_ssr->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
+		ds_post_ssr->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+		ds_post_ssr->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+		ds_post_ssr->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
+		ds_post_ssr->update();
 		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		ds_luma->update();
 
@@ -1147,7 +1152,8 @@ namespace flame
 			p_info.item("color"_h).set(res.mat->color);
 			p_info.item("metallic"_h).set(res.mat->metallic);
 			p_info.item("roughness"_h).set(res.mat->roughness);
-			p_info.item("opaque"_h).set(res.mat->opaque);
+			p_info.item("emissive"_h).set(res.mat->emissive);
+			p_info.item("flags"_h).set(res.mat->get_flags());
 			p_info.item("f"_h).set(res.mat->float_values);
 			p_info.item("i"_h).set(res.mat->int_values);
 			auto p_ids = (int*)p_info.item("map_indices"_h).pdata;
@@ -1220,7 +1226,6 @@ namespace flame
 		}
 		res.mat = mat;
 		res.ref = 1;
-		res.opa = mat->opaque;
 		update_mat_res(id, false);
 		return id;
 	}
@@ -1761,13 +1766,13 @@ namespace flame
 			csm_debug_sig = false;
 
 			auto set_blur_args = [cb](const vec2 img_size) {
-				cb->bind_pipeline_layout(prm_post.pll);
-				prm_post.pc.item_d("off"_h).set(-3);
-				prm_post.pc.item_d("len"_h).set(7);
-				prm_post.pc.item_d("pxsz"_h).set(1.f / img_size);
+				cb->bind_pipeline_layout(prm_blur.pll);
+				prm_blur.pc.item_d("off"_h).set(-3);
+				prm_blur.pc.item_d("len"_h).set(7);
+				prm_blur.pc.item_d("pxsz"_h).set(1.f / img_size);
 				const auto len = 7;
-				prm_post.pc.itemv_d("weights"_h, len).set(get_gauss_blur_weights(len));
-				prm_post.push_constant(cb);
+				prm_blur.pc.itemv_d("weights"_h, len).set(get_gauss_blur_weights(len));
+				prm_blur.push_constant(cb);
 			};
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize));
@@ -1815,7 +1820,7 @@ namespace flame
 			}
 
 			set_blur_args(vec2(ShadowMapSize));
-			cb->bind_pipeline_layout(prm_post.pll);
+			cb->bind_pipeline_layout(prm_blur.pll);
 			for (auto i = 0; i < n_dir_shadows; i++)
 			{
 				for (auto lv = 0U; lv < csm_levels; lv++)
@@ -1996,8 +2001,8 @@ namespace flame
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-				cb->bind_pipeline(pl_ssr);
-				prm_ssr.bind_dss(cb);
+				cb->bind_pipeline(pl_post_ssr);
+				prm_post_ssr.bind_dss(cb);
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 
@@ -2059,8 +2064,8 @@ namespace flame
 				cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(pl_fxaa);
-				prm_post.pc.item_d("pxsz"_h).set(1.f / (vec2)img_dst->extent);
-				prm_post.push_constant(cb);
+				prm_fxaa.pc.item_d("pxsz"_h).set(1.f / (vec2)img_dst->extent);
+				prm_fxaa.push_constant(cb);
 				cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
@@ -2068,11 +2073,11 @@ namespace flame
 		}
 
 		auto blur_pass = [&]() {
-			cb->bind_pipeline_layout(prm_post.pll);
-			prm_post.pc.item_d("off"_h).set(-3);
-			prm_post.pc.item_d("len"_h).set(7);
-			prm_post.pc.item_d("pxsz"_h).set(1.f / (vec2)img_back0->extent);
-			prm_post.push_constant(cb);
+			cb->bind_pipeline_layout(prm_blur.pll);
+			prm_blur.pc.item_d("off"_h).set(-3);
+			prm_blur.pc.item_d("len"_h).set(7);
+			prm_blur.pc.item_d("pxsz"_h).set(1.f / (vec2)img_back0->extent);
+			prm_blur.push_constant(cb);
 
 			cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 			cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
@@ -2365,7 +2370,7 @@ namespace flame
 		if (draw_data.graphics_debug)
 			graphics::Debug::end_capture_frame();
 
-		int index; ushort depth;
+		int index; uint depth;
 		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
 		{
 			graphics::InstanceCommandBuffer cb(nullptr);
@@ -2389,7 +2394,11 @@ namespace flame
 		if (out_pos)
 		{
 			memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
-			auto depth_f = depth / 65535.f;
+			float depth_f;
+			if (dep_fmt == graphics::Format::Format_Depth16)
+				depth_f = depth / 65535.f;
+			else
+				depth_f = *(float*)&depth;
 			auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
 			p = camera->proj_mat_inv * p;
 			p /= p.w;

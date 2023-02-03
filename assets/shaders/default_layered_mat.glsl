@@ -41,7 +41,7 @@ float roughness = material.roughness;
 #else
 	o_gbufferA = vec4(color.rgb, 0.0);
 	o_gbufferB = vec4(i_normal * 0.5 + 0.5, 0.0);
-	o_gbufferC = vec4(metallic, roughness, 0.0, 0.0);
+	o_gbufferC = vec4(metallic, roughness, 0.0, material.flags / 255.0);
 	o_gbufferD = vec4(0.0, 0.0, 0.0, 0.0);
 #endif
 

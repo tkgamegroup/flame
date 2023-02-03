@@ -1,6 +1,6 @@
 %rp=../color.rp
 layout
-  post.pll
+  @pll
 shaders
   ../fullscreen.vert
  ---
@@ -9,6 +9,15 @@ renderpass
   {rp}
 cull_mode
   None
+
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_src;
+
+layout (push_constant) uniform PushConstant
+{
+	vec2 pxsz;
+}pc;
+@
 
 @frag
 // https://github.com/kosua20/

@@ -1,4 +1,4 @@
-// Reference:
+// PBR Reference:
 // https://www.shadertoy.com/view/ld3SRr
 
 float distribution_term(vec3 N, vec3 H, float roughness)
