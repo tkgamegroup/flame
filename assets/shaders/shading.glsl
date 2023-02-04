@@ -23,6 +23,11 @@ vec3 fresnel_term(float cos_theta, vec3 f0)
 	return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);
 }   
 
+vec3 fresnel_term_roughness(float cos_theta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cos_theta, 5.0);
+}   
+
 vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotL = dot(N, L);
@@ -37,9 +42,8 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	vec3  F = fresnel_term(dot(V, H), f0);
 	float G = geometry_term(NdotV, NdotL, roughness);
 		
-	vec3 diffuse = albedo * radiance;
-	const float softtr = 0.1;
-	vec3 specular = D * F * G / (4.0 * NdotV * NdotL * (1.0 - softtr) + softtr) * radiance;
+	vec3 diffuse = albedo * radiance / PI * (1.0 - F) * (1.0 - metallic);
+	vec3 specular = D * F * G / (4.0 * NdotV * NdotL + 0.0001) * radiance;
 				   
 	return diffuse + specular;
 }
@@ -117,10 +121,10 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	float NdotV = max(dot(N, V), 0.0);
-	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb / PI * albedo * (1.0 - metallic);
-
+	vec3 F = fresnel_term_roughness(NdotV, f0, roughness);
+	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo * (1.0 - F) * (1.0 - metallic);
 	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
-	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (f0 * envBRDF.x + envBRDF.y);
+	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
 	return (diffuse + specular) * lighting.sky_intensity * 1.0; // TODO: replace 1.0 to ao when SSAO is ready
 }

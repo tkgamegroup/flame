@@ -82,6 +82,8 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_back1;
 	std::unique_ptr<graphics::Image> img_dst;
 	std::unique_ptr<graphics::Image> img_dep;
+	std::unique_ptr<graphics::Image> img_last_dst;
+	std::unique_ptr<graphics::Image> img_last_dep;
 	std::unique_ptr<graphics::Image> img_dst_ms;
 	std::unique_ptr<graphics::Image> img_dep_ms;
 	std::unique_ptr<graphics::Image> img_gbufferA;	// color
@@ -669,8 +671,8 @@ namespace flame
 		ds_lighting->update();
 		pl_deferred.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
 		pl_deferred.self_ds->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
-		pl_deferred.self_ds->set_image("img_gbufferC"_h, 0, img_gbufferB->get_view(), nullptr);
-		pl_deferred.self_ds->set_image("img_gbufferD"_h, 0, img_gbufferB->get_view(), nullptr);
+		pl_deferred.self_ds->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
+		pl_deferred.self_ds->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
 		pl_deferred.self_ds->update();
 		pl_post_ssr.self_ds->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
 		pl_post_ssr.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
@@ -721,7 +723,7 @@ namespace flame
 		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_lighting->update();
 
-		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.layer_count : 1.f;
+		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.level_count : 1.f;
 		buf_lighting.item_d("sky_rad_levels"_h).set(sky_rad_levels);
 
 		dirty = true;
