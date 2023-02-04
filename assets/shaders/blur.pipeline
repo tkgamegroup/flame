@@ -1,8 +1,8 @@
-%rp=../color.rp
+%rp=color.rp
 layout
   @pll
 shaders
-  ../fullscreen.vert
+  fullscreen.vert
  ---
   @frag
 renderpass

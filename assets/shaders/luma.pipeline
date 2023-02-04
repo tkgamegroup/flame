@@ -1,0 +1,97 @@
+layout
+  @pll
+shaders
+  @comp
+
+@pll
+layout (set = SET, binding = 0, rgba8) uniform image2D img_col;
+
+layout (set = SET, binding = 1) buffer Luma
+{
+    uint hist[256];
+    float avg;
+}luma;
+
+layout (push_constant) uniform PushConstant
+{
+	float min_log_luma;
+	float log_luma_range;
+	float time_coeff;
+	int num_pixels;
+}pc;
+@
+
+@comp
+#define GROUP_SIZE 256
+#ifdef HISTOGRAM_PASS
+    #define THREADS_X 16
+    #define THREADS_Y 16
+
+    #define EPSILON 0.005
+    #define RGB_TO_LUM vec3(0.2125, 0.7154, 0.0721)
+
+    layout (local_size_x = THREADS_X, local_size_y = THREADS_Y, local_size_z = 1) in;
+
+    shared uint histogram_local[GROUP_SIZE];
+
+    uint color_to_bin(vec3 hdr_color, float min_log_luma, float one_over_log_lum_range) 
+    {
+        float lum = dot(hdr_color, RGB_TO_LUM);
+
+        if (lum < EPSILON)
+            return 0;
+
+        float log_lum = clamp((log2(lum) - min_log_luma) * one_over_log_lum_range, 0.0, 1.0);
+        return uint(log_lum * 254.0 + 1.0);
+    }
+
+    void main() 
+    {
+        histogram_local[gl_LocalInvocationIndex] = 0;
+        barrier();
+
+        ivec2 dim = imageSize(img_col).xy;
+        if (gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y) 
+        {
+            vec3 hdr_color = imageLoad(img_col, ivec2(gl_GlobalInvocationID.xy)).rgb;
+            uint binIndex = color_to_bin(hdr_color, pc.min_log_luma, pc.log_luma_range);
+            atomicAdd(histogram_local[binIndex], 1);
+        }
+
+        barrier();
+
+        atomicAdd(luma.hist[gl_LocalInvocationIndex], histogram_local[gl_LocalInvocationIndex]);
+    }
+#elifdef AVERAGE_PASS
+    layout (local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+    shared uint histogram_local[GROUP_SIZE];
+
+    void main() 
+    {
+        uint count_for_this_bin = luma.hist[gl_LocalInvocationIndex];
+        histogram_local[gl_LocalInvocationIndex] = count_for_this_bin * gl_LocalInvocationIndex;
+
+        barrier();
+
+        luma.hist[gl_LocalInvocationIndex] = 0;
+
+        for (uint cutoff = (GROUP_SIZE >> 1); cutoff > 0; cutoff >>= 1) 
+        {
+            if (uint(gl_LocalInvocationIndex) < cutoff)
+                histogram_local[gl_LocalInvocationIndex] += histogram_local[gl_LocalInvocationIndex + cutoff];
+
+            barrier();
+        }
+
+        if (gl_LocalInvocationIndex == 0) 
+        {
+            float weighted_log_average = (histogram_local[0] / max(pc.num_pixels - float(count_for_this_bin), 1.0)) - 1.0;
+            float weighted_avg_lum = exp2(((weighted_log_average / 254.0) * pc.log_luma_range) + pc.min_log_luma);
+
+            float lum_last_frame = luma.avg;
+            luma.avg = lum_last_frame + (weighted_avg_lum - lum_last_frame) * pc.time_coeff;
+        }
+    }
+#endif
+@

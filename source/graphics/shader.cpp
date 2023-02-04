@@ -225,13 +225,18 @@ namespace flame
 			{
 				first = false;
 
-				if (auto ei = find_enum(th<MaterialFlags>()); ei)
+				auto material_header_path = std::filesystem::path(getenv("FLAME_PATH")) / L"source/graphics/material.h";
+				auto defines_glsl_path = Path::get(L"flame/shaders/defines.glsl");
+				if (!std::filesystem::exists(defines_glsl_path) || std::filesystem::last_write_time(defines_glsl_path) < std::filesystem::last_write_time(material_header_path))
 				{
-					std::ofstream file(Path::get(L"flame/shaders/defines.glsl"));
-					file << "//THIS FILE IS AUTO GENERATED\n";
-					for (auto& i : ei->items)
-						file << std::format("const uint MaterialFlag{}={};\n", i.name, i.value);
-					file.close();
+					if (auto ei = find_enum(th<MaterialFlags>()); ei)
+					{
+						std::ofstream file(defines_glsl_path);
+						file << "//THIS FILE IS AUTO GENERATED\n";
+						for (auto& i : ei->items)
+							file << std::format("const uint MaterialFlag{}={};\n", i.name, i.value);
+						file.close();
+					}
 				}
 			}
 
