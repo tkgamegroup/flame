@@ -14,12 +14,11 @@ layout (set = SET, binding = 0) uniform Camera
 
 	mat4 view;
 	mat4 view_inv;
+	mat4 last_view;
 	mat4 proj;
 	mat4 proj_inv;
 	mat4 proj_view;
 	mat4 proj_view_inv;
-	mat4 proj_view_last;
-	mat4 proj_view_inv_last;
 	
 	vec4 frustum_planes[6];
 

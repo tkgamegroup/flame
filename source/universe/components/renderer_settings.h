@@ -40,9 +40,25 @@ namespace flame
 		// Reflect
 		virtual void set_tone_mapping_enable(bool v) = 0;
 		// Reflect
-		bool ssr_enable = false;
+		bool ssr_enable = true;
 		// Reflect
 		virtual void set_ssr_enable(bool v) = 0;
+		// Reflect
+		float ssr_thickness = 0.5f;
+		// Reflect
+		virtual void set_ssr_thickness(float v) = 0;
+		// Reflect
+		float ssr_step = 0.2f;
+		// Reflect
+		virtual void set_ssr_step(float v) = 0;
+		// Reflect
+		uint ssr_max_steps = 16;
+		// Reflect
+		virtual void set_ssr_max_steps(uint v) = 0;
+		// Reflect
+		uint ssr_binary_search_steps = 5;
+		// Reflect
+		virtual void set_ssr_binary_search_steps(uint v) = 0;
 		// Reflect
 		std::filesystem::path post_shading_code_file;
 		// Reflect

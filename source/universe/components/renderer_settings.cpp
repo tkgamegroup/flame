@@ -110,7 +110,7 @@ namespace flame
 		post_processing_enable = v;
 
 		if (!settings.empty() && settings.front() == this)
-			sRenderer::instance()->post_processing_enable = post_processing_enable;
+			sRenderer::instance()->set_post_processing_enable(post_processing_enable);
 	}
 
 	void cRendererSettingsPrivate::set_tone_mapping_enable(bool v)
@@ -120,7 +120,7 @@ namespace flame
 		tone_mapping_enable = v;
 
 		if (!settings.empty() && settings.front() == this)
-			sRenderer::instance()->tone_mapping_enable = tone_mapping_enable;
+			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
 	}
 
 	void cRendererSettingsPrivate::set_ssr_enable(bool v)
@@ -130,7 +130,47 @@ namespace flame
 		ssr_enable = v;
 
 		if (!settings.empty() && settings.front() == this)
-			sRenderer::instance()->ssr_enable = ssr_enable;
+			sRenderer::instance()->set_ssr_enable(ssr_enable);
+	}
+
+	void cRendererSettingsPrivate::set_ssr_thickness(float v)
+	{
+		if (ssr_thickness == v)
+			return;
+		ssr_thickness = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssr_thickness(ssr_thickness);
+	}
+
+	void cRendererSettingsPrivate::set_ssr_step(float v)
+	{
+		if (ssr_step == v)
+			return;
+		ssr_step = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssr_step(ssr_step);
+	}
+
+	void cRendererSettingsPrivate::set_ssr_max_steps(uint v)
+	{
+		if (ssr_max_steps == v)
+			return;
+		ssr_max_steps = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssr_max_steps(ssr_max_steps);
+	}
+
+	void cRendererSettingsPrivate::set_ssr_binary_search_steps(uint v)
+	{
+		if (ssr_binary_search_steps == v)
+			return;
+		ssr_binary_search_steps = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssr_binary_search_steps(ssr_binary_search_steps);
 	}
 
 	void cRendererSettingsPrivate::set_post_shading_code_file(const std::filesystem::path& path)
@@ -174,9 +214,13 @@ namespace flame
 			sRenderer::instance()->set_shadow_distance(shadow_distance);
 			sRenderer::instance()->set_csm_levels(csm_levels);
 			sRenderer::instance()->set_esm_factor(esm_factor);
-			sRenderer::instance()->post_processing_enable = post_processing_enable;
-			sRenderer::instance()->tone_mapping_enable = tone_mapping_enable;
-			sRenderer::instance()->ssr_enable = ssr_enable;
+			sRenderer::instance()->set_post_processing_enable(post_processing_enable);
+			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
+			sRenderer::instance()->set_ssr_enable(ssr_enable);
+			sRenderer::instance()->set_ssr_thickness(ssr_thickness);
+			sRenderer::instance()->set_ssr_step(ssr_step);
+			sRenderer::instance()->set_ssr_max_steps(ssr_max_steps);
+			sRenderer::instance()->set_ssr_binary_search_steps(ssr_binary_search_steps);
 			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
 		}
 	}

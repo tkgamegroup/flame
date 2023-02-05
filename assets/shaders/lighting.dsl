@@ -32,6 +32,11 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 	float sky_rad_levels;
 	float esm_factor;
 	vec3 fog_color;
+	uint ssr_enable;
+	float ssr_thickness;
+	float ssr_step;
+	int ssr_max_steps;
+	int ssr_binary_search_steps;
 	
 	DirLight dir_lights[4];
 	uint dir_lights_count;
@@ -45,11 +50,13 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 }lighting;
 
 layout(set = SET, binding = 1) uniform sampler2D img_dep;
+layout(set = SET, binding = 2) uniform sampler2D img_last_dst;
+layout(set = SET, binding = 3) uniform sampler2D img_last_dep;
 
-layout (set = SET, binding = 2) uniform sampler2DArray	dir_shadow_maps[4];
-layout (set = SET, binding = 3) uniform samplerCube		pt_shadow_maps[4];
+layout (set = SET, binding = 4) uniform sampler2DArray	dir_shadow_maps[4];
+layout (set = SET, binding = 5) uniform samplerCube		pt_shadow_maps[4];
 
-layout(set = SET, binding = 4) uniform samplerCube sky_map;
-layout(set = SET, binding = 5) uniform samplerCube sky_irr_map;
-layout(set = SET, binding = 6) uniform samplerCube sky_rad_map;
-layout(set = SET, binding = 7) uniform sampler2D brdf_map;
+layout(set = SET, binding = 6) uniform samplerCube sky_map;
+layout(set = SET, binding = 7) uniform samplerCube sky_irr_map;
+layout(set = SET, binding = 8) uniform samplerCube sky_rad_map;
+layout(set = SET, binding = 9) uniform sampler2D brdf_map;

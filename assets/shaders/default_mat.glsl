@@ -49,7 +49,11 @@
 		#else
 			vec3 albedo = (1.0 - metallic) * color.rgb;
 			vec3 f0 = mix(vec3(0.04), color.rgb, metallic);
-			o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0), color.a);
+			bool receive_ssr = false;
+			#ifdef RECEIVE_SSR
+				receive_ssr = true;
+			#endif
+			o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0, receive_ssr), color.a);
 		#endif
 	#else
 		o_gbufferA = vec4(color.rgb, 0.0);

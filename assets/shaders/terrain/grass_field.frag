@@ -24,5 +24,5 @@ void main()
 		discard;
 	albedo = color.rgb;
 #endif
-	o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0), color.a);
+	o_color = vec4(shading(i_coordw, i_normal, 0.0, albedo, vec3(0.04), 0.8/*roughness*/, 1.0, false), color.a);
 }

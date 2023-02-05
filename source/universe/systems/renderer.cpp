@@ -82,10 +82,10 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_back1;
 	std::unique_ptr<graphics::Image> img_dst;
 	std::unique_ptr<graphics::Image> img_dep;
-	std::unique_ptr<graphics::Image> img_last_dst;
-	std::unique_ptr<graphics::Image> img_last_dep;
 	std::unique_ptr<graphics::Image> img_dst_ms;
 	std::unique_ptr<graphics::Image> img_dep_ms;
+	std::unique_ptr<graphics::Image> img_last_dst;
+	std::unique_ptr<graphics::Image> img_last_dep;
 	std::unique_ptr<graphics::Image> img_gbufferA;	// color
 	std::unique_ptr<graphics::Image> img_gbufferB;	// normal
 	std::unique_ptr<graphics::Image> img_gbufferC;	// metallic, roughness, ao, flags
@@ -111,7 +111,6 @@ namespace flame
 	graphics::PipelineResourceManager prm_plain;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_deferred;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_blur;
-	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_post_ssr;
 	graphics::PrivateResourcePipelineManager<graphics::ComputePipeline> pl_luma;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_tone;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_fxaa;
@@ -251,6 +250,8 @@ namespace flame
 				defines.push_back("rp=" + str(rp_fwd));
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("a2c=true");
+				if (res.mat->receive_ssr)
+					defines.push_back("frag:RECEIVE_SSR");
 			}
 			break;
 		case "grass_field"_h:
@@ -587,9 +588,6 @@ namespace flame
 		pl_blur.add_pl("LOCAL_MAX_H"_h, { "frag:HORIZONTAL", "frag:LOCAL_MAX" });
 		pl_blur.add_pl("LOCAL_MAX_V"_h, { "frag:VERTICAL", "frag:LOCAL_MAX" });
 
-		pl_post_ssr.init(L"flame\\shaders\\ssr\\post.pipeline");
-		pl_post_ssr.create_self_ds();
-
 		pl_luma.init(L"flame\\shaders\\luma.pipeline", false);
 		pl_luma.add_pl("hist"_h, { "comp:HISTOGRAM_PASS" });
 		pl_luma.add_pl("avg"_h, { "comp:AVERAGE_PASS" });
@@ -629,6 +627,13 @@ namespace flame
 		set_shadow_distance(100.f);
 		set_csm_levels(2);
 		set_esm_factor(100.f);
+		set_post_processing_enable(true);
+		set_tone_mapping_enable(true);
+		set_ssr_enable(true);
+		set_ssr_thickness(0.4f);
+		set_ssr_step(0.1f);
+		set_ssr_max_steps(32);
+		set_ssr_binary_search_steps(5);
 
 		cb.excute();
 		
@@ -661,6 +666,8 @@ namespace flame
 		img_dep->filename = L"##img_dep";
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
+		img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+		img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -668,17 +675,14 @@ namespace flame
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view()}));
 		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
+		ds_lighting->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), nullptr);
+		ds_lighting->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), nullptr);
 		ds_lighting->update();
 		pl_deferred.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
 		pl_deferred.self_ds->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
 		pl_deferred.self_ds->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
 		pl_deferred.self_ds->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
 		pl_deferred.self_ds->update();
-		pl_post_ssr.self_ds->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		pl_post_ssr.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
-		pl_post_ssr.self_ds->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
-		pl_post_ssr.self_ds->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
-		pl_post_ssr.self_ds->update();
 		pl_luma.self_ds->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
 		pl_luma.self_ds->update();
 
@@ -773,6 +777,74 @@ namespace flame
 			return;
 		esm_factor = f;
 		buf_lighting.item_d("esm_factor"_h).set(esm_factor);
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_post_processing_enable(bool v)
+	{
+		if (post_processing_enable == v)
+			return;
+		post_processing_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_tone_mapping_enable(bool v)
+	{
+		if (tone_mapping_enable == v)
+			return;
+		tone_mapping_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssr_enable(bool v)
+	{
+		if (ssr_enable == v)
+			return;
+		ssr_enable = v;
+		buf_lighting.item_d("ssr_enable"_h).set(v ? 1U : 0U);
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssr_thickness(float v)
+	{
+		if (ssr_thickness == v)
+			return;
+		ssr_thickness = v;
+		buf_lighting.item_d("ssr_thickness"_h).set(v);
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssr_step(float v)
+	{
+		if (ssr_step == v)
+			return;
+		ssr_step = v;
+		buf_lighting.item_d("ssr_step"_h).set(v);
+		 
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssr_max_steps(uint v)
+	{
+		if (ssr_max_steps == v)
+			return;
+		ssr_max_steps = v;
+		buf_lighting.item_d("ssr_max_steps"_h).set(v);
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssr_binary_search_steps(uint v)
+	{
+		if (ssr_binary_search_steps == v)
+			return;
+		ssr_binary_search_steps = v;
+		buf_lighting.item_d("ssr_binary_search_steps"_h).set(v);
 
 		dirty = true;
 	}
@@ -1513,12 +1585,11 @@ namespace flame
 		buf_camera.item("front"_h).set(-camera->node->g_rot[2]);
 		buf_camera.item("right"_h).set(camera->node->g_rot[0]);
 		buf_camera.item("up"_h).set(camera->node->g_rot[1]);
+		buf_camera.item("last_view"_h).set(buf_camera.item("view"_h).get<mat4>());
 		buf_camera.item("view"_h).set(camera->view_mat);
 		buf_camera.item("view_inv"_h).set(camera->view_mat_inv);
 		buf_camera.item("proj"_h).set(camera->proj_mat);
 		buf_camera.item("proj_inv"_h).set(camera->proj_mat_inv);
-		buf_camera.item("proj_view_last"_h).set(buf_camera.item("proj_view"_h).get<mat4>());
-		buf_camera.item("proj_view_inv_last"_h).set(buf_camera.item("proj_view_inv"_h).get<mat4>());
 		buf_camera.item("proj_view"_h).set(camera->proj_view_mat);
 		buf_camera.item("proj_view_inv"_h).set(camera->proj_view_mat_inv);
 		memcpy(buf_camera.item("frustum_planes"_h).pdata, camera->frustum.planes, sizeof(vec4) * 6);
@@ -1875,6 +1946,9 @@ namespace flame
 
 		cb->end_renderpass();
 
+		cb->image_barrier(img_last_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_last_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+
 		auto pl_mod = 0;
 		switch (mode)
 		{
@@ -1964,27 +2038,24 @@ namespace flame
 
 		cb->end_renderpass();
 
+		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+
+		cb->begin_renderpass(nullptr, img_last_dst->get_shader_write_dst());
+		cb->bind_pipeline(pl_blit);
+		cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
+		cb->begin_renderpass(nullptr, img_last_dep->get_shader_write_dst());
+		cb->bind_pipeline(pl_blit_dep);
+		cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
+		cb->draw(3, 1, 0, 0);
+		cb->end_renderpass();
+
 		// post processing
 		if (mode == Shaded || mode == CameraLight && post_processing_enable)
 		{
-			if (ssr_enable)
-			{
-				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-				cb->bind_pipeline(pl_post_ssr.pls[0]);
-				pl_post_ssr.prm.bind_dss(cb);
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-				cb->bind_pipeline(pl_add);
-				cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-			}
-
 			if (tone_mapping_enable)
 			{
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);

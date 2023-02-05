@@ -32,6 +32,13 @@ namespace flame
 		void set_shadow_distance(float d) override;
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
+		void set_post_processing_enable(bool v) override;
+		void set_tone_mapping_enable(bool v) override;
+		void set_ssr_enable(bool v) override;
+		void set_ssr_thickness(float v) override;
+		void set_ssr_step(float v) override;
+		void set_ssr_max_steps(uint v) override;
+		void set_ssr_binary_search_steps(uint v) override;
 
 		int get_mat_var(int id, const std::string& name) override;
 		void release_mat_var(uint id) override;

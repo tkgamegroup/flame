@@ -15,6 +15,10 @@ namespace flame
 		void set_tone_mapping_enable(bool v) override;
 		void set_post_processing_enable(bool v) override;
 		void set_ssr_enable(bool v) override;
+		void set_ssr_thickness(float v) override;
+		void set_ssr_step(float v) override;
+		void set_ssr_max_steps(uint v) override;
+		void set_ssr_binary_search_steps(uint v) override;
 		void set_post_shading_code_file(const std::filesystem::path& path) override;
 
 		void update_sky();

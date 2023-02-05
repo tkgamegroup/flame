@@ -67,7 +67,7 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 				if (distv < splits[lv])
 				{
 					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(world_pos, 1.0);
-					coordl.xy = coordl.xy * 0.5 + vec2(0.5);
+					coordl.xy = coordl.xy * 0.5 + 0.5;
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
 					f_shadow *= clamp(exp(-lighting.esm_factor * (coordl.z - ref)), 0.0, 1.0);
 					break;
@@ -118,12 +118,65 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 	return ret;
 }
 
-vec3 get_env(vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
+vec3 get_env(vec3 N, vec3 V, vec3 world_pos, float metallic, vec3 albedo, vec3 f0, float roughness, bool receive_ssr)
 {
 	float NdotV = max(dot(N, V), 0.0);
 	vec3 F = fresnel_term_roughness(NdotV, f0, roughness);
-	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo * (1.0 - F) * (1.0 - metallic);
 	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
+
+	if (receive_ssr && lighting.ssr_enable == 1)
+	{
+		mat4 proj_mat = camera.proj;
+		mat4 view_mat = camera.last_view;
+		mat3 view_mat3 = mat3(view_mat);
+		float zNear = camera.zNear;
+		float zFar = camera.zFar;
+		vec3 view_N = view_mat3 * N;
+		vec3 view_V = view_mat3 * V;
+		vec3 view_R = reflect(-view_V, view_N);
+		vec3 view_pos = (view_mat * vec4(world_pos, 1.0)).xyz;
+		vec3 hit_pos = view_pos;
+
+		float thickness = lighting.ssr_thickness;
+		float ray_step = lighting.ssr_step;
+		int max_steps = lighting.ssr_max_steps;
+		int num_binary_search_steps = lighting.ssr_binary_search_steps;
+
+		vec3 dir = view_R * ray_step;
+		for (int i = 0; i < max_steps; i++)
+		{
+			hit_pos += dir;
+			vec4 p = proj_mat * vec4(hit_pos, 1.0);
+			p /= p.w;
+			if (p.x < -1 || p.x > +1 || p.y < -1 || p.y > +1) 
+				break;
+
+			p.xy = p.xy * 0.5 + 0.5;
+			float d = texture(img_last_dep, p.xy).r;
+			d = linear_depth(zNear, zFar, d * 2.0 - 1.0);
+			p.z = linear_depth(zNear, zFar, p.z * 2.0 - 1.0);
+			if (d < p.z && d > p.z - thickness)
+			{
+				hit_pos -= dir * 0.5;
+				for (int j = 0; j < num_binary_search_steps; j++)
+				{
+					p = proj_mat * vec4(hit_pos, 1.0);
+					p /= p.w;
+					p.xy = p.xy * 0.5 + 0.5;
+					d = texture(img_last_dep, p.xy).r;
+					d = linear_depth(zNear, zFar, d * 2.0 - 1.0);
+					dir *= 0.5;
+					if (d < p.z)
+						hit_pos -= dir;
+					else
+						hit_pos += dir;
+				}
+				return texture(img_last_dst, p.xy).rgb * (F * envBRDF.x + envBRDF.y);
+			}
+		}
+	}
+
+	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo * (1.0 - F) * (1.0 - metallic);
 	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
 
 	return (diffuse + specular) * lighting.sky_intensity * 1.0; // TODO: replace 1.0 to ao when SSAO is ready
@@ -134,7 +187,7 @@ vec3 get_fog(vec3 color, float dist)
 	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, camera.zFar, dist));
 }
 
-vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao)
+vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, bool receive_ssr)
 {
 #ifdef ALBEDO_DATA
 	return albedo;
@@ -156,7 +209,7 @@ vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float
 	V = normalize(V);
 
 	ret += get_lighting(world_pos, distv, N, V, metallic, albedo, f0, roughness);
-	ret += get_env(N, V, metallic, albedo, f0, roughness);
+	ret += get_env(N, V, world_pos, metallic, albedo, f0, roughness, receive_ssr);
 	ret = get_fog(ret, distv);
 #ifdef POST_SHADING_CODE
 	#include POST_SHADING_CODE

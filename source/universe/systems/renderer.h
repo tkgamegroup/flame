@@ -97,11 +97,33 @@ namespace flame
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
-		bool post_processing_enable = true;
+		bool post_processing_enable = false;
+		// Reflect
+		virtual void set_post_processing_enable(bool v) = 0;
 		// Reflect
 		bool tone_mapping_enable = false;
 		// Reflect
+		virtual void set_tone_mapping_enable(bool v) = 0;
+		// Reflect
 		bool ssr_enable = false;
+		// Reflect
+		virtual void set_ssr_enable(bool v) = 0;
+		// Reflect
+		float ssr_thickness = 0.f;
+		// Reflect
+		virtual void set_ssr_thickness(float v) = 0;
+		// Reflect
+		float ssr_step = 0.f;
+		// Reflect
+		virtual void set_ssr_step(float v) = 0;
+		// Reflect
+		uint ssr_max_steps = 0;
+		// Reflect
+		virtual void set_ssr_max_steps(uint v) = 0;
+		// Reflect
+		uint ssr_binary_search_steps = 0;
+		// Reflect
+		virtual void set_ssr_binary_search_steps(uint v) = 0;
 		// Reflect
 		float ssao_radius = 0.5f;
 		// Reflect
