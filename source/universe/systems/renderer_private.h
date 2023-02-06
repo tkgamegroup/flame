@@ -36,7 +36,7 @@ namespace flame
 		void set_tone_mapping_enable(bool v) override;
 		void set_ssr_enable(bool v) override;
 		void set_ssr_thickness(float v) override;
-		void set_ssr_step(float v) override;
+		void set_ssr_max_distance(float v) override;
 		void set_ssr_max_steps(uint v) override;
 		void set_ssr_binary_search_steps(uint v) override;
 

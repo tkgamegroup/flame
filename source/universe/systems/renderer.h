@@ -113,9 +113,9 @@ namespace flame
 		// Reflect
 		virtual void set_ssr_thickness(float v) = 0;
 		// Reflect
-		float ssr_step = 0.f;
+		float ssr_max_distance = 0.f;
 		// Reflect
-		virtual void set_ssr_step(float v) = 0;
+		virtual void set_ssr_max_distance(float v) = 0;
 		// Reflect
 		uint ssr_max_steps = 0;
 		// Reflect

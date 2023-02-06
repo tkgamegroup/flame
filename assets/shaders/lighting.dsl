@@ -34,7 +34,7 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 	vec3 fog_color;
 	uint ssr_enable;
 	float ssr_thickness;
-	float ssr_step;
+	float ssr_max_distance;
 	int ssr_max_steps;
 	int ssr_binary_search_steps;
 	

@@ -143,14 +143,14 @@ namespace flame
 			sRenderer::instance()->set_ssr_thickness(ssr_thickness);
 	}
 
-	void cRendererSettingsPrivate::set_ssr_step(float v)
+	void cRendererSettingsPrivate::set_ssr_max_distance(float v)
 	{
-		if (ssr_step == v)
+		if (ssr_max_distance == v)
 			return;
-		ssr_step = v;
+		ssr_max_distance = v;
 
 		if (!settings.empty() && settings.front() == this)
-			sRenderer::instance()->set_ssr_step(ssr_step);
+			sRenderer::instance()->set_ssr_max_distance(ssr_max_distance);
 	}
 
 	void cRendererSettingsPrivate::set_ssr_max_steps(uint v)
@@ -218,7 +218,7 @@ namespace flame
 			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
 			sRenderer::instance()->set_ssr_enable(ssr_enable);
 			sRenderer::instance()->set_ssr_thickness(ssr_thickness);
-			sRenderer::instance()->set_ssr_step(ssr_step);
+			sRenderer::instance()->set_ssr_max_distance(ssr_max_distance);
 			sRenderer::instance()->set_ssr_max_steps(ssr_max_steps);
 			sRenderer::instance()->set_ssr_binary_search_steps(ssr_binary_search_steps);
 			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);

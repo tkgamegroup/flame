@@ -123,6 +123,9 @@ vec3 get_env(vec3 N, vec3 V, vec3 world_pos, float metallic, vec3 albedo, vec3 f
 	float NdotV = max(dot(N, V), 0.0);
 	vec3 F = fresnel_term_roughness(NdotV, f0, roughness);
 	vec2 envBRDF = texture(brdf_map, vec2(NdotV, 1.0 - roughness)).rg;
+	vec3 diffuse = vec3(0.0);
+	vec3 specular = vec3(0.0);
+	float ssr_visibility = 0.0;
 
 	if (receive_ssr && lighting.ssr_enable == 1)
 	{
@@ -135,51 +138,105 @@ vec3 get_env(vec3 N, vec3 V, vec3 world_pos, float metallic, vec3 albedo, vec3 f
 		vec3 view_V = view_mat3 * V;
 		vec3 view_R = reflect(-view_V, view_N);
 		vec3 view_pos = (view_mat * vec4(world_pos, 1.0)).xyz;
-		vec3 hit_pos = view_pos;
 
 		float thickness = lighting.ssr_thickness;
-		float ray_step = lighting.ssr_step;
+		float max_distance = lighting.ssr_max_distance;
 		int max_steps = lighting.ssr_max_steps;
 		int num_binary_search_steps = lighting.ssr_binary_search_steps;
+		vec2 tex_size = camera.viewport;
 
-		vec3 dir = view_R * ray_step;
-		for (int i = 0; i < max_steps; i++)
+		vec3 start_pos = view_pos;
+		vec3 end_pos = view_pos + view_R * max_distance;
+
+		vec4 start_frag = proj_mat * vec4(start_pos, 1.0);
+		start_frag /= start_frag.w;
+		start_frag.xy = start_frag.xy * 0.5 + 0.5;
+		start_frag.xy *= tex_size;
+
+		vec4 end_frag = proj_mat * vec4(end_pos, 1.0);
+		end_frag /= end_frag.w;
+		end_frag.xy = end_frag.xy * 0.5 + 0.5;
+		end_frag.xy *= tex_size;
+
+		vec2 frag = start_frag.xy;
+		vec2 uv = frag / tex_size;
+
+		float deltaX = end_frag.x - start_frag.x;
+		float deltaY = end_frag.y - start_frag.y;
+		float useX = abs(deltaX) >= abs(deltaY) ? 1.0 : 0.0;
+		int delta = min(max_steps, int(mix(abs(deltaY), abs(deltaX), useX) * 0.3));
+		vec2 increment = vec2(deltaX, deltaY) / max(delta, 0.001);
+
+		float search0 = 0;
+		float search1 = 0;
+
+		int hit0 = 0;
+		int hit1 = 0;
+
+		float diff = 0;
+
+		for (int i = 0; i < delta; i++)
 		{
-			hit_pos += dir;
-			vec4 p = proj_mat * vec4(hit_pos, 1.0);
-			p /= p.w;
-			if (p.x < -1 || p.x > +1 || p.y < -1 || p.y > +1) 
-				break;
+			frag += increment;
+			uv = frag / tex_size;
+			float sampled_depth = texture(img_last_dep, uv).r;
+			sampled_depth = linear_depth(zNear, zFar, sampled_depth * 2.0 - 1.0);
 
-			p.xy = p.xy * 0.5 + 0.5;
-			float d = texture(img_last_dep, p.xy).r;
-			d = linear_depth(zNear, zFar, d * 2.0 - 1.0);
-			p.z = linear_depth(zNear, zFar, p.z * 2.0 - 1.0);
-			if (d < p.z && d > p.z - thickness)
+			search1 = clamp(mix((frag.y - start_frag.y) / deltaY, (frag.x - start_frag.x) / deltaX, useX), 0.0, 1.0);
+			float depth = (start_pos.z * end_pos.z) / -mix(end_pos.z, start_pos.z, search1);
+			diff = depth - sampled_depth;
+			if (diff > 0 && diff < thickness)
 			{
-				hit_pos -= dir * 0.5;
-				for (int j = 0; j < num_binary_search_steps; j++)
-				{
-					p = proj_mat * vec4(hit_pos, 1.0);
-					p /= p.w;
-					p.xy = p.xy * 0.5 + 0.5;
-					d = texture(img_last_dep, p.xy).r;
-					d = linear_depth(zNear, zFar, d * 2.0 - 1.0);
-					dir *= 0.5;
-					if (d < p.z)
-						hit_pos -= dir;
-					else
-						hit_pos += dir;
-				}
-				return texture(img_last_dst, p.xy).rgb * (F * envBRDF.x + envBRDF.y);
+				hit0 = 1;
+				break;
+			}
+			else
+				search0 = search1;
+		}
+
+		/*
+		search1 = search0 + ((search1 - search0) / 2.0);
+		num_binary_search_steps *= hit0;
+
+		for (int i = 0; i < num_binary_search_steps; i++)
+		{
+			frag = mix(start_frag.xy, end_frag.xy, search1);
+			uv = frag / tex_size;
+			float sampled_depth = texture(img_last_dep, uv).r;
+			sampled_depth = linear_depth(zNear, zFar, sampled_depth * 2.0 - 1.0);
+
+			float depth = (start_pos.z * end_pos.z) / -mix(end_pos.z, start_pos.z, search1);
+			diff = depth - sampled_depth;
+
+			if (diff > 0 && diff < thickness)
+			{
+				hit1 = 1;
+				search1 = search0 + ((search1 - search0) / 2);
+			}
+			else 
+			{
+				float temp = search1;
+				search1 = search1 + ((search1 - search0) / 2);
+				search0 = temp;
 			}
 		}
+		*/
+
+		ssr_visibility = hit0
+			* (uv.x < 0 || uv.x > 1 ? 0 : 1)
+			* (uv.y < 0 || uv.y > 1 ? 0 : 1);
+
+		ssr_visibility = clamp(ssr_visibility, 0, 1);
+
+		specular += texture(img_last_dst, uv).rgb * (F * envBRDF.x + envBRDF.y);
 	}
 
-	vec3 diffuse = texture(sky_irr_map, cube_coord(N)).rgb * albedo * (1.0 - F) * (1.0 - metallic);
-	vec3 specular = textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+	float ao = 1.0; // replace 1.0 to ao when SSAO is ready
+	float sky_intensity = lighting.sky_intensity * ao;
+	diffuse += texture(sky_irr_map, cube_coord(N)).rgb * albedo * (1.0 - F) * (1.0 - metallic) * sky_intensity;
+	specular = mix(textureLod(sky_rad_map, cube_coord(reflect(-V, N)), roughness * lighting.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y) * sky_intensity, specular, ssr_visibility);
 
-	return (diffuse + specular) * lighting.sky_intensity * 1.0; // TODO: replace 1.0 to ao when SSAO is ready
+	return diffuse + specular;
 }
 
 vec3 get_fog(vec3 color, float dist)

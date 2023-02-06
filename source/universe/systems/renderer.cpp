@@ -631,8 +631,8 @@ namespace flame
 		set_tone_mapping_enable(true);
 		set_ssr_enable(true);
 		set_ssr_thickness(0.4f);
-		set_ssr_step(0.1f);
-		set_ssr_max_steps(32);
+		set_ssr_max_distance(8.f);
+		set_ssr_max_steps(64);
 		set_ssr_binary_search_steps(5);
 
 		cb.excute();
@@ -655,6 +655,7 @@ namespace flame
 		auto tar_ext = img0->extent;
 
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+		static auto sp_nearest_dep = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToBorder);
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"##img_dst";
@@ -674,9 +675,9 @@ namespace flame
 		img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view()}));
-		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-		ds_lighting->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), nullptr);
-		ds_lighting->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), nullptr);
+		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
+		ds_lighting->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest_dep);
+		ds_lighting->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest);
 		ds_lighting->update();
 		pl_deferred.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
 		pl_deferred.self_ds->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
@@ -819,12 +820,12 @@ namespace flame
 		dirty = true;
 	}
 
-	void sRendererPrivate::set_ssr_step(float v)
+	void sRendererPrivate::set_ssr_max_distance(float v)
 	{
-		if (ssr_step == v)
+		if (ssr_max_distance == v)
 			return;
-		ssr_step = v;
-		buf_lighting.item_d("ssr_step"_h).set(v);
+		ssr_max_distance = v;
+		buf_lighting.item_d("ssr_max_distance"_h).set(v);
 		 
 		dirty = true;
 	}
@@ -1581,6 +1582,7 @@ namespace flame
 		buf_camera.item("zFar"_h).set(camera->zFar);
 		buf_camera.item("fovy"_h).set(camera->fovy);
 		buf_camera.item("tan_hf_fovy"_h).set((float)tan(radians(camera->fovy * 0.5f)));
+		buf_camera.item("viewport"_h).set(ext);
 		buf_camera.item("coord"_h).set(camera->node->g_pos);
 		buf_camera.item("front"_h).set(-camera->node->g_rot[2]);
 		buf_camera.item("right"_h).set(camera->node->g_rot[0]);
