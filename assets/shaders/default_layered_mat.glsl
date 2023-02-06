@@ -33,6 +33,7 @@ vec4 color = vec4(0);
 
 float metallic = material.metallic;
 float roughness = material.roughness;
+vec3 emissive = material.emissive.rgb;
 	
 #ifndef GBUFFER_PASS
 	vec3 albedo = (1.0 - metallic) * color.rgb;
@@ -41,12 +42,12 @@ float roughness = material.roughness;
 	#ifdef RECEIVE_SSR
 		receive_ssr = true;
 	#endif
-	o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0, receive_ssr), color.a);
+	o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0, emissive, receive_ssr), color.a);
 #else
 	o_gbufferA = vec4(color.rgb, 0.0);
 	o_gbufferB = vec4(i_normal * 0.5 + 0.5, 0.0);
 	o_gbufferC = vec4(metallic, roughness, 0.0, material.flags / 255.0);
-	o_gbufferD = vec4(0.0, 0.0, 0.0, 0.0);
+	o_gbufferD = vec4(emissive, 0.0);
 #endif
 
 #endif // DEPTH_ONLY

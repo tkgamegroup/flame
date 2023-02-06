@@ -244,7 +244,7 @@ vec3 get_fog(vec3 color, float dist)
 	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, camera.zFar, dist));
 }
 
-vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, bool receive_ssr)
+vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, vec3 emissive, bool receive_ssr)
 {
 #ifdef ALBEDO_DATA
 	return albedo;
@@ -259,7 +259,7 @@ vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float
 	return vec3(roughness);
 #endif
 
-	vec3 ret = vec3(0.0);
+	vec3 ret = emissive;
 
 	vec3 V = camera.coord - world_pos;
 	float distv = dot(camera.front, -V);

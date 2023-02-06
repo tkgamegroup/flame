@@ -23,7 +23,7 @@ void main()
 	reduction = clamp(reduction * reduction, 0.0, 0.99);
 
 	float foam = d2 + 0.2 > d1 ? 1.0 - (d1 - d2) / 0.2 : 0.0;
-	o_color = vec4(shading(i_coordw, N, 0.0, mix(vec3(0.01, 0.08, 0.11), vec3(1.0), foam), vec3(0.04), 0.05, 1.0, true), reduction);
+	o_color = vec4(shading(i_coordw, N, 0.0, mix(vec3(0.01, 0.08, 0.11), vec3(1.0), foam), vec3(0.04), 0.05, 1.0, vec3(0), true), reduction);
 #else
 
 #endif
