@@ -101,9 +101,25 @@ namespace flame
 		// Reflect
 		virtual void set_post_processing_enable(bool v) = 0;
 		// Reflect
-		bool tone_mapping_enable = false;
+		bool ssao_enable = false;
 		// Reflect
-		virtual void set_tone_mapping_enable(bool v) = 0;
+		virtual void set_ssao_enable(bool v) = 0;
+		// Reflect
+		float ssao_radius = 0.f;
+		// Reflect
+		virtual void set_ssao_radius(float v) = 0;
+		// Reflect
+		float ssao_bias = 0.f;
+		// Reflect
+		virtual void set_ssao_bias(float v) = 0;
+		// Reflect
+		float white_point = 0.f;
+		// Reflect
+		virtual void set_white_point(float v) = 0;
+		// Reflect
+		bool bloom_enable = false;
+		// Reflect
+		virtual void set_bloom_enable(bool v) = 0;
 		// Reflect
 		bool ssr_enable = false;
 		// Reflect
@@ -125,13 +141,13 @@ namespace flame
 		// Reflect
 		virtual void set_ssr_binary_search_steps(uint v) = 0;
 		// Reflect
-		float ssao_radius = 0.5f;
+		bool tone_mapping_enable = false;
 		// Reflect
-		float ssao_bias = 0.025f;
+		virtual void set_tone_mapping_enable(bool v) = 0;
 		// Reflect
-		float white_point = 4.f;
+		float gamma = 0.f;
 		// Reflect
-		float gamma = 1.5f;
+		virtual void set_gamma(float v) = 0;
 
 		// Reflect
 		virtual int get_mat_var(int id, const std::string& name) = 0;

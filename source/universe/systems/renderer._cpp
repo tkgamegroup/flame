@@ -342,15 +342,6 @@ namespace flame
 		data.coord = coord;
 		data.extent = extent;
 		data.material_id = material_id;
-
-		if (flags & ShadingMaterial)
-			nd.waters[MaterialCustom].emplace_back(0, material_id);
-		if (render_type == RenderWireframe || (flags & ShadingWireframe))
-			nd.waters[MaterialWireframe].emplace_back(0, material_id);
-		if (flags & ShadingOutline)
-			nd.waters[MaterialOutline].emplace_back(0, material_id);
-		if (render_type == RenderNormalData)
-			nd.waters[MaterialNormalData].emplace_back(0, material_id);
 	}
 
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
@@ -364,26 +355,6 @@ namespace flame
 		}
 
 		{
-			auto bind_water_res = [&]() {
-				cb->bind_pipeline_layout(nd.pll_water);
-				DescriptorSet* sets[water::PLL_water::Binding_Max];
-				sets[water::PLL_water::Binding_render_data] = nd.ds_render_data.get();
-				sets[water::PLL_water::Binding_material] = nd.ds_material.get();
-				sets[water::PLL_water::Binding_light] = nd.ds_light.get();
-				sets[water::PLL_water::Binding_water] = nd.ds_water.get();
-				cb->bind_descriptor_sets(0, countof(sets), sets);
-			};
-
-			auto draw_waters = [&]() {
-				auto& vec = nd.waters[MaterialCustom];
-				for (auto i = 0; i < vec.size(); i++)
-				{
-					cb->bind_pipeline(nd.mat_reses[vec[i].second].get_pl(this, MaterialForWater));
-					cb->draw(6, 1, 0, i << 16);
-				}
-				vec.clear();
-			};
-
 			if (render_type == RenderShaded)
 			{
 				for (auto& s : nd.pt_shadows)
@@ -499,25 +470,6 @@ namespace flame
 				cb->end_renderpass();
 				cb->image_barrier(nd.img_ao.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
 
-				cb->begin_renderpass(nullptr, nd.img_dep_back->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_blit_d16);
-				cb->bind_descriptor_set(0, nd.img_dep->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-				cb->image_barrier(nd.img_dep_back.get(), {}, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-
-				cb->begin_renderpass(nullptr, nd.img_col_ms->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_blit_rgba16ms4);
-				cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				cb->begin_renderpass(nullptr, nd.img_dep_ms->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_blit_d16ms4);
-				cb->bind_descriptor_set(0, nd.img_dep->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
 				cb->image_barrier(img_dst.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
 				cb->begin_renderpass(nullptr, nd.fb_fwd_ms4.get());
 				bind_mesh_fwd_res();
@@ -532,48 +484,6 @@ namespace flame
 					bind_water_res();
 					draw_waters();
 				}
-				cb->end_renderpass();
-
-				cb->image_barrier(img_dst.get(), {}, ImageLayoutGeneral, ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst());
-				cb->bind_pipeline(nd.pl_bright);
-				cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-				cb->push_constant_t(PLL_post::PushConstant{ .f = vec4(nd.white_point, 0.f, 0.f, 0.f) });
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				auto lvs = nd.img_dst_back->get_levels();
-				for (auto i = 0; i < lvs - 1; i++)
-				{
-					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i + 1)));
-					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i + 1));
-					cb->bind_pipeline(nd.pl_downsample);
-					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-				}
-				for (auto i = lvs - 1; i > 1; i--)
-				{
-					cb->image_barrier(nd.img_dst_back.get(), { (uint)i }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-					cb->set_viewport(Rect(vec2(0.f), nd.img_dst_back->get_size(i - 1)));
-					cb->image_barrier(nd.img_dst_back.get(), { (uint)i - 1 }, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
-					cb->begin_renderpass(nullptr, nd.img_dst_back->get_shader_write_dst(i - 1, 0, AttachmentLoadLoad));
-					cb->bind_pipeline(nd.pl_upsample);
-					cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(i, 0, sp_linear));
-					cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(i)));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-				}
-				cb->image_barrier(nd.img_dst_back.get(), { 1U }, ImageLayoutAttachment, ImageLayoutShaderReadOnly);
-				cb->set_viewport(vp);
-				cb->image_barrier(img_dst.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutAttachment);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, AttachmentLoadLoad));
-				cb->bind_pipeline(nd.pl_upsample);
-				cb->bind_descriptor_set(0, nd.img_dst_back->get_shader_read_src(1, 0, sp_linear));
-				cb->push_constant_t(1.f / vec2(nd.img_dst_back->get_size(1)));
-				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
 		}
@@ -703,15 +613,5 @@ namespace flame
 			nd.buf_ssao_noi.cpy_whole();
 			nd.buf_ssao_noi.upload(cb.get());
 		}
-		nd.pl_ssao = Pipeline::get(nullptr, L"deferred/ssao.pipeline");
-		nd.pl_ssao_blur = Pipeline::get(nullptr, L"deferred/ssao_blur.pipeline");
-		nd.ds_ssao.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"deferred/ssao.dsl")));
-		nd.ds_ssao->set_buffer(DSL_ssao::SampleLocations_binding, 0, nd.buf_ssao_loc.buf.get());
-		nd.ds_ssao->set_buffer(DSL_ssao::SampleNoises_binding, 0, nd.buf_ssao_noi.buf.get());
-		nd.ds_ssao->update();
-
-		nd.pl_ptc = Pipeline::get(nullptr, L"particle/particle.pipeline");
-
-		nd.pl_bright = Pipeline::get(nullptr, L"post/bright.pipeline");
 	}
 }

@@ -36,9 +36,25 @@ namespace flame
 		// Reflect
 		virtual void set_post_processing_enable(bool v) = 0;
 		// Reflect
-		bool tone_mapping_enable = true;
+		bool ssao_enable = true;
 		// Reflect
-		virtual void set_tone_mapping_enable(bool v) = 0;
+		virtual void set_ssao_enable(bool v) = 0;
+		// Reflect
+		float ssao_radius = 0.5f;
+		// Reflect
+		virtual void set_ssao_radius(float v) = 0;
+		// Reflect
+		float ssao_bias = 0.025f;
+		// Reflect
+		virtual void set_ssao_bias(float v) = 0;
+		// Reflect
+		float white_point = 4.f;
+		// Reflect
+		virtual void set_white_point(float v) = 0;
+		// Reflect
+		bool bloom_enable = true;
+		// Reflect
+		virtual void set_bloom_enable(bool v) = 0;
 		// Reflect
 		bool ssr_enable = true;
 		// Reflect
@@ -59,6 +75,14 @@ namespace flame
 		uint ssr_binary_search_steps = 5;
 		// Reflect
 		virtual void set_ssr_binary_search_steps(uint v) = 0;
+		// Reflect
+		bool tone_mapping_enable = true;
+		// Reflect
+		virtual void set_tone_mapping_enable(bool v) = 0;
+		// Reflect
+		float gamma = 1.5f;
+		// Reflect
+		virtual void set_gamma(float v) = 0;
 		// Reflect
 		std::filesystem::path post_shading_code_file;
 		// Reflect

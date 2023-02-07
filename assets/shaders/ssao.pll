@@ -1,8 +1,0 @@
-#include "ssao.dsl"
-#include "../camera.dsl"
-
-layout (push_constant) uniform PushConstant
-{
-	float radius;
-	float bias;
-}pc;

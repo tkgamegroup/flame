@@ -33,12 +33,18 @@ namespace flame
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
 		void set_post_processing_enable(bool v) override;
-		void set_tone_mapping_enable(bool v) override;
+		void set_ssao_enable(bool v) override;
+		void set_ssao_radius(float v) override;
+		void set_ssao_bias(float v) override;
+		void set_white_point(float v) override;
+		void set_bloom_enable(bool v) override;
 		void set_ssr_enable(bool v) override;
 		void set_ssr_thickness(float v) override;
 		void set_ssr_max_distance(float v) override;
 		void set_ssr_max_steps(uint v) override;
 		void set_ssr_binary_search_steps(uint v) override;
+		void set_tone_mapping_enable(bool v) override;
+		void set_gamma(float v) override;
 
 		int get_mat_var(int id, const std::string& name) override;
 		void release_mat_var(uint id) override;

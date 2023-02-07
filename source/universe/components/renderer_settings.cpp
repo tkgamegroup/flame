@@ -113,14 +113,54 @@ namespace flame
 			sRenderer::instance()->set_post_processing_enable(post_processing_enable);
 	}
 
-	void cRendererSettingsPrivate::set_tone_mapping_enable(bool v)
+	void cRendererSettingsPrivate::set_ssao_enable(bool v)
 	{
-		if (tone_mapping_enable == v)
+		if (ssao_enable == v)
 			return;
-		tone_mapping_enable = v;
+		ssao_enable = v;
 
 		if (!settings.empty() && settings.front() == this)
-			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
+			sRenderer::instance()->set_ssao_enable(ssao_enable);
+	}
+
+	void cRendererSettingsPrivate::set_ssao_radius(float v)
+	{
+		if (ssao_radius == v)
+			return;
+		ssao_radius = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssao_radius(ssao_radius);
+	}
+
+	void cRendererSettingsPrivate::set_ssao_bias(float v)
+	{
+		if (ssao_bias == v)
+			return;
+		ssao_bias = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_ssao_bias(ssao_bias);
+	}
+
+	void cRendererSettingsPrivate::set_white_point(float v)
+	{
+		if (white_point == v)
+			return;
+		white_point = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_white_point(white_point);
+	}
+
+	void cRendererSettingsPrivate::set_bloom_enable(bool v)
+	{
+		if (bloom_enable == v)
+			return;
+		bloom_enable = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_bloom_enable(bloom_enable);
 	}
 
 	void cRendererSettingsPrivate::set_ssr_enable(bool v)
@@ -173,6 +213,26 @@ namespace flame
 			sRenderer::instance()->set_ssr_binary_search_steps(ssr_binary_search_steps);
 	}
 
+	void cRendererSettingsPrivate::set_tone_mapping_enable(bool v)
+	{
+		if (tone_mapping_enable == v)
+			return;
+		tone_mapping_enable = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
+	}
+
+	void cRendererSettingsPrivate::set_gamma(float v)
+	{
+		if (gamma == v)
+			return;
+		gamma = v;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_gamma(gamma);
+	}
+
 	void cRendererSettingsPrivate::set_post_shading_code_file(const std::filesystem::path& path)
 	{
 		if (post_shading_code_file == path)
@@ -215,12 +275,12 @@ namespace flame
 			sRenderer::instance()->set_csm_levels(csm_levels);
 			sRenderer::instance()->set_esm_factor(esm_factor);
 			sRenderer::instance()->set_post_processing_enable(post_processing_enable);
-			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
 			sRenderer::instance()->set_ssr_enable(ssr_enable);
 			sRenderer::instance()->set_ssr_thickness(ssr_thickness);
 			sRenderer::instance()->set_ssr_max_distance(ssr_max_distance);
 			sRenderer::instance()->set_ssr_max_steps(ssr_max_steps);
 			sRenderer::instance()->set_ssr_binary_search_steps(ssr_binary_search_steps);
+			sRenderer::instance()->set_tone_mapping_enable(tone_mapping_enable);
 			sRenderer::instance()->set_post_shading_code_file(post_shading_code_file);
 		}
 	}

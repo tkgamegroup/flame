@@ -110,6 +110,7 @@ namespace flame
 	graphics::PipelineResourceManager prm_gbuf;
 	graphics::PipelineResourceManager prm_plain;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_deferred;
+	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_bloom;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_blur;
 	graphics::PrivateResourcePipelineManager<graphics::ComputePipeline> pl_luma;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_tone;
@@ -193,11 +194,17 @@ namespace flame
 		std::vector<VolumeDraw> draw_MCs[DirShadowMaxLevels];
 	};
 
+	struct PointShadow
+	{
+
+	};
+
 	std::vector<cNodePtr> camera_culled_nodes;
 	DrawData draw_data;
 	MeshBatcher opa_batcher;
 	MeshBatcher trs_batcher;
 	DirShadow dir_shadows[DirShadowMaxCount];
+	PointShadow pt_shadows[PtShadowMaxCount];
 
 	std::vector<PrimitiveDraw> debug_primitives;
 	bool csm_debug_sig = false;
@@ -580,6 +587,11 @@ namespace flame
 		pl_deferred.prm.set_ds("lighting"_h, ds_lighting.get());
 		pl_deferred.prm.set_ds("material"_h, ds_material.get());
 
+		pl_bloom.init(L"flame\\shaders\\bloom.pipeline", false);
+		pl_bloom.add_pl("BRIGHT"_h, { "frag:BRIGHT_PASS" });
+		pl_bloom.add_pl("DOWNSAMPLE"_h, { "frag:BOX_PASS" });
+		pl_bloom.add_pl("UPSAMPLE"_h, { "be=true", "bc=One", "frag:BOX_PASS" });
+
 		pl_blur.init(L"flame\\shaders\\blur.pipeline", false);
 		pl_blur.add_pl("H"_h, { "frag:HORIZONTAL" });
 		pl_blur.add_pl("V"_h, { "frag:VERTICAL" });
@@ -628,12 +640,18 @@ namespace flame
 		set_csm_levels(2);
 		set_esm_factor(100.f);
 		set_post_processing_enable(true);
-		set_tone_mapping_enable(true);
+		set_ssao_enable(true);
+		set_ssao_radius(0.5f);
+		set_ssao_bias(0.025f);
+		set_white_point(4.f);
+		set_bloom_enable(true);
 		set_ssr_enable(true);
 		set_ssr_thickness(0.4f);
 		set_ssr_max_distance(8.f);
 		set_ssr_max_steps(64);
 		set_ssr_binary_search_steps(5);
+		set_tone_mapping_enable(true);
+		set_gamma(1.5f);
 
 		cb.excute();
 		
@@ -659,7 +677,7 @@ namespace flame
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"##img_dst";
-		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
 		img_back0->filename = L"##img_back0";
 		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1->filename = L"##img_back1";
@@ -791,11 +809,47 @@ namespace flame
 		dirty = true;
 	}
 
-	void sRendererPrivate::set_tone_mapping_enable(bool v)
+	void sRendererPrivate::set_ssao_enable(bool v)
 	{
-		if (tone_mapping_enable == v)
+		if (ssao_enable == v)
 			return;
-		tone_mapping_enable = v;
+		ssao_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssao_radius(float v)
+	{
+		if (ssao_radius == v)
+			return;
+		ssao_radius = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_ssao_bias(float v)
+	{
+		if (ssao_bias == v)
+			return;
+		ssao_bias = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_white_point(float v)
+	{
+		if (white_point == v)
+			return;
+		white_point = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_bloom_enable(bool v)
+	{
+		if (bloom_enable == v)
+			return;
+		bloom_enable = v;
 
 		dirty = true;
 	}
@@ -846,6 +900,24 @@ namespace flame
 			return;
 		ssr_binary_search_steps = v;
 		buf_lighting.item_d("ssr_binary_search_steps"_h).set(v);
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_tone_mapping_enable(bool v)
+	{
+		if (tone_mapping_enable == v)
+			return;
+		tone_mapping_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_gamma(float v)
+	{
+		if (gamma == v)
+			return;
+		gamma = v;
 
 		dirty = true;
 	}
@@ -1643,6 +1715,13 @@ namespace flame
 							break;
 						case LightPoint:
 							buf_lighting.item_d("pt_lights_list"_h, n_dir_lights).set(l.ins_id);
+							if (l.cast_shadow)
+							{
+								if (n_pt_shadows < countof(pt_shadows))
+								{
+
+								}
+							}
 							n_pt_lights++;
 							break;
 						}
@@ -2058,6 +2137,51 @@ namespace flame
 		// post processing
 		if (mode == Shaded || mode == CameraLight && post_processing_enable)
 		{
+			if (bloom_enable)
+			{
+				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+				cb->bind_pipeline(pl_bloom.pls["BRIGHT"_h]);
+				cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+				pl_bloom.prm.pc.item_d("white_point"_h).set(white_point);
+				pl_bloom.prm.push_constant(cb);
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+
+				for (auto i = 1; i < img_back0->n_levels; i++)
+				{
+					cb->image_barrier(img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+					cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i].extent)));
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i));
+					cb->bind_pipeline(pl_bloom.pls["DOWNSAMPLE"_h]);
+					cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i - 1));
+					pl_bloom.prm.pc.item_d("pxsz"_h).set(1.f / vec2(img_back0->levels[i - 1].extent));
+					pl_bloom.prm.push_constant(cb);
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+				for (auto i = (int)img_back0->n_levels - 1; i > 1; i--)
+				{
+					cb->image_barrier(img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+					cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i - 1].extent)));
+					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i - 1));
+					cb->bind_pipeline(pl_bloom.pls["UPSAMPLE"_h]);
+					cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i));
+					pl_bloom.prm.pc.item_d("pxsz"_h).set(1.f / vec2(img_back0->levels[i].extent));
+					pl_bloom.prm.push_constant(cb);
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+
+				cb->set_viewport(Rect(vec2(0), ext));
+				cb->image_barrier(img_back0.get(), { 1U }, graphics::ImageLayoutShaderReadOnly);
+				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+				cb->bind_pipeline(pl_bloom.pls["UPSAMPLE"_h]);
+				cb->bind_descriptor_set(0, img_back0->get_shader_read_src(1));
+				cb->draw(3, 1, 0, 0);
+				cb->end_renderpass();
+			}
+
 			if (tone_mapping_enable)
 			{
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);

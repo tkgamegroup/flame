@@ -1,0 +1,54 @@
+%rp=color.rp
+%be=false
+%bc=Zero
+layout
+  @pll
+shaders
+  fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+blend_options
+  enable
+    {be}
+  src_color
+    {bc}
+  dst_color
+    {bc}
+  src_alpha
+    Zero
+  dst_alpha
+    Zero
+  
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_src;
+
+layout(push_constant) uniform PushConstant
+{
+	float white_point;
+	vec2 pxsz;
+}pc;
+@
+
+@frag
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_color;
+
+void main()
+{
+#ifdef BRIGHT_PASS
+	vec3 color = texture(img_src, i_uv).rgb;
+	float brightness = max(color.r, max(color.g, color.b));
+	float contribution = max(0.0, brightness - pc.white_point);
+	contribution /= max(brightness, 0.00001);
+	o_color = vec4(color * contribution, 1.0);
+#elifdef BOX_PASS
+	o_color = texture(img_src, i_uv + vec2(-pc.pxsz.x, -pc.pxsz.y)) * 0.25 +
+		texture(img_src, i_uv + vec2(+pc.pxsz.x, -pc.pxsz.y)) * 0.25 +
+		texture(img_src, i_uv + vec2(+pc.pxsz.x, +pc.pxsz.y)) * 0.25 +
+		texture(img_src, i_uv + vec2(-pc.pxsz.x, +pc.pxsz.y)) * 0.25;
+#endif
+}
+@
