@@ -4,7 +4,8 @@ layout(location = 0) out flat uint o_matid;
 layout(location = 1) out vec2 o_uv;
 #ifndef DEPTH_ONLY
 layout(location = 2) out vec3 o_normal; 
-layout(location = 3) out vec3 o_coordw;
+layout(location = 3) out vec3 o_tangent; 
+layout(location = 4) out vec3 o_coordw;
 #endif
 
 void main()
@@ -25,12 +26,16 @@ void main()
 
 	vec3 world_pos = vec3(deform * vec4(i_pos, 1.0));
 	#ifndef DEPTH_ONLY
-	o_normal = normalize(transpose(inverse(mat3(deform))) * i_nor);
+		mat3 normal_mat = transpose(inverse(mat3(deform)));
+		o_normal = normalize(normal_mat * i_nor);
+		o_tangent = normalize(normal_mat * i_tan);
 	#endif
 #else
 	vec3 world_pos = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
 	#ifndef DEPTH_ONLY
-	o_normal = normalize(mat3(instance.meshes[id].nor) * i_nor);
+		mat3 normal_mat = mat3(instance.meshes[id].nor);
+		o_normal = normalize(normal_mat * i_nor);
+		o_tangent = normalize(normal_mat * i_tan);
 	#endif
 #endif
 

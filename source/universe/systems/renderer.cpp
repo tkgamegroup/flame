@@ -1126,10 +1126,12 @@ namespace flame
 			{
 				auto pv = buf_vtx.add();
 				pv.item("i_pos"_h).set(mesh->positions[i]);
-				if (!mesh->normals.empty())
-					pv.item("i_nor"_h).set(mesh->normals[i]);
 				if (!mesh->uvs.empty())
 					pv.item("i_uv"_h).set(mesh->uvs[i]);
+				if (!mesh->normals.empty())
+					pv.item("i_nor"_h).set(mesh->normals[i]);
+				if (!mesh->tangents.empty())
+					pv.item("i_tan"_h).set(mesh->tangents[i]);
 			}
 
 			res.idx_off = buf_idx.stag_top;
@@ -1142,10 +1144,12 @@ namespace flame
 			{
 				auto pv = buf_vtx_arm.add();
 				pv.item("i_pos"_h).set(mesh->positions[i]);
-				if (!mesh->normals.empty())
-					pv.item("i_nor"_h).set(mesh->normals[i]);
 				if (!mesh->uvs.empty())
 					pv.item("i_uv"_h).set(mesh->uvs[i]);
+				if (!mesh->normals.empty())
+					pv.item("i_nor"_h).set(mesh->normals[i]);
+				if (!mesh->tangents.empty())
+					pv.item("i_tan"_h).set(mesh->tangents[i]);
 				if (!mesh->bone_ids.empty())
 					pv.item("i_bids"_h).set(mesh->bone_ids[i]);
 				if (!mesh->bone_weights.empty())
@@ -1245,6 +1249,84 @@ namespace flame
 				for (auto it = defines.begin(); it != defines.end(); )
 				{
 					if (it->starts_with("frag:COLOR_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+			if (res.mat->normal_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:NORMAL_MAP"))
+					{
+						d = "frag:NORMAL_MAP=" + str(res.mat->normal_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:NORMAL_MAP=" + str(res.mat->normal_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:NORMAL_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+			if (res.mat->metallic_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:METALLIC_MAP"))
+					{
+						d = "frag:METALLIC_MAP=" + str(res.mat->metallic_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:METALLIC_MAP=" + str(res.mat->metallic_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:METALLIC_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+			if (res.mat->roughness_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:ROUGHNESS_MAP"))
+					{
+						d = "frag:ROUGHNESS_MAP=" + str(res.mat->roughness_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:ROUGHNESS_MAP=" + str(res.mat->roughness_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:ROUGHNESS_MAP"))
 						it = defines.erase(it);
 					else
 						it++;
@@ -1354,6 +1436,8 @@ namespace flame
 			p_info.item("metallic"_h).set(res.mat->metallic);
 			p_info.item("roughness"_h).set(res.mat->roughness);
 			p_info.item("emissive"_h).set(res.mat->emissive);
+			p_info.item("normal_map_strength"_h).set(res.mat->normal_map_strength);
+			p_info.item("emissive_map_strength"_h).set(res.mat->emissive_map_strength);
 			p_info.item("flags"_h).set(res.mat->get_flags());
 			p_info.item("f"_h).set(res.mat->float_values);
 			p_info.item("i"_h).set(res.mat->int_values);

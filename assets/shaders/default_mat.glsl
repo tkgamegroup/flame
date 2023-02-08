@@ -40,9 +40,35 @@
 #endif
 
 #ifndef DEPTH_ONLY
-	float metallic = material.metallic;
-	float roughness = material.roughness;
-	vec3 emissive = material.emissive.rgb;
+
+	float metallic;
+	#ifdef METALLIC_MAP
+		metallic = sample_map(material.map_indices[METALLIC_MAP], i_uv).r;
+	#else
+		metallic = material.metallic;
+	#endif
+
+	float roughness;
+	#ifdef ROUGHNESS_MAP
+		roughness = sample_map(material.map_indices[ROUGHNESS_MAP], i_uv).r;
+	#else
+		roughness = material.roughness;
+	#endif
+
+	vec3 N = i_normal;
+	#ifdef NORMAL_MAP
+		vec3 sampled_normal = sample_map(material.map_indices[NORMAL_MAP], i_uv).xyz * 2.0 - 1.0;
+		vec3 bitangent = normalize(cross(i_tangent, i_normal));
+		N = mat3(i_tangent, i_normal, bitangent) * sampled_normal;
+	#endif
+
+	vec3 emissive;
+	#ifdef EMISSIVE_MAP
+		emissive = sample_map(material.map_indices[EMISSIVE_MAP], i_uv).rgb;
+		emissive *= material.emissive_map_strength;
+	#else
+		emissive = material.emissive.rgb;
+	#endif
 		
 	#ifndef GBUFFER_PASS
 		#ifdef UNLIT
@@ -54,11 +80,11 @@
 			#ifdef RECEIVE_SSR
 				receive_ssr = true;
 			#endif
-			o_color = vec4(shading(i_coordw, i_normal, metallic, albedo, f0, roughness, 1.0, emissive, receive_ssr), color.a);
+			o_color = vec4(shading(i_coordw, N, metallic, albedo, f0, roughness, 1.0, emissive, receive_ssr), color.a);
 		#endif
 	#else
 		o_gbufferA = vec4(color.rgb, 0.0);
-		o_gbufferB = vec4(i_normal * 0.5 + 0.5, 0.0);
+		o_gbufferB = vec4(N * 0.5 + 0.5, 0.0);
 		o_gbufferC = vec4(metallic, roughness, 0.0, material.flags / 255.0);
 		o_gbufferD = vec4(emissive, 0.0);
 	#endif

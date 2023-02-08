@@ -4,6 +4,8 @@ struct MaterialInfo
 	float metallic;
 	float roughness;
 	vec4 emissive;
+	float normal_map_strength;
+	float emissive_map_strength;
 	uint flags;
 
 	vec4 f;

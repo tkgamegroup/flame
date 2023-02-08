@@ -10,7 +10,8 @@ layout(location = 0) in flat uint i_matid;
 layout(location = 1) in	     vec2 i_uv;
 #ifndef DEPTH_ONLY
 layout(location = 2) in      vec3 i_normal;
-layout(location = 3) in      vec3 i_coordw;
+layout(location = 3) in      vec3 i_tangent;
+layout(location = 4) in      vec3 i_coordw;
 #endif
 
 #ifndef DEPTH_ONLY
