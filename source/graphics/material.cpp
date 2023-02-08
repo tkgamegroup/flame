@@ -28,6 +28,67 @@ namespace flame
 			});
 		}
 
+		void MaterialPrivate::set_color_map(int i)
+		{
+			if (color_map == i)
+				return;
+			color_map = i;
+
+			data_changed("color_map"_h);
+		}
+
+		void MaterialPrivate::set_normal_map(int i)
+		{
+			if (normal_map == i)
+				return;
+			normal_map = i;
+
+			data_changed("normal_map"_h);
+		}
+
+		void MaterialPrivate::set_metallic_map(int i)
+		{
+			if (metallic_map == i)
+				return;
+			metallic_map = i;
+
+			data_changed("metallic_map"_h);
+		}
+
+		void MaterialPrivate::set_roughness_map(int i)
+		{
+			if (roughness_map == i)
+				return;
+			roughness_map = i;
+
+			data_changed("roughness_map"_h);
+		}
+
+		void MaterialPrivate::set_emissive_map(int i)
+		{
+			if (emissive_map == i)
+				return;
+			emissive_map = i;
+
+			data_changed("emissive_map"_h);
+		}
+
+		void MaterialPrivate::set_alpha_map(int i)
+		{
+			if (alpha_map == i)
+				return;
+			alpha_map = i;
+
+			data_changed("alpha_map"_h);
+		}
+
+		void MaterialPrivate::set_textures(const std::vector<Texture>& _textures)
+		{
+			textures = _textures;
+
+			data_changed("textures"_h);
+		}
+
 		void MaterialPrivate::save(const std::filesystem::path& filename)
 		{
 			auto base_path = Path::reverse(filename).parent_path();
@@ -36,8 +97,6 @@ namespace flame
 			auto doc_root = doc.append_child("material");
 
 			SerializeXmlSpec spec;
-			spec.excludes.emplace_back(th<graphics::Material>(), "filename"_h);
-			spec.excludes.emplace_back(th<graphics::Material>(), "ref"_h);
 			spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
 				auto& path = *(std::filesystem::path*)src;
 				return Path::rebase(base_path, path).string();

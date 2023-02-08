@@ -26,36 +26,82 @@ namespace flame
 			bool auto_mipmap = false;
 		};
 
+		// Reflect
 		struct Material
 		{
+			// Reflect
 			vec4 color = vec4(1.f);
+			// Reflect
 			float metallic = 0.f;
+			// Reflect
 			float roughness = 1.f;
+			// Reflect
 			vec4 emissive = vec4(0.f);
+			// Reflect
 			bool opaque = true;
+			// Reflect
 			bool sort = false;
+			// Reflect
 			bool receive_ssr = false;
+			// Reflect
 			int color_map = -1;
+			// Reflect
+			virtual void set_color_map(int i) = 0;
+			// Reflect
 			int normal_map = -1;
+			// Reflect
+			virtual void set_normal_map(int i) = 0;
+			// Reflect
+			float normal_map_strength = 1.f;
+			// Reflect
 			int metallic_map = -1;
+			// Reflect
+			virtual void set_metallic_map(int i) = 0;
+			// Reflect
 			int roughness_map = -1;
+			// Reflect
+			virtual void set_roughness_map(int i) = 0;
+			// Reflect
 			int emissive_map = -1;
+			// Reflect
+			virtual void set_emissive_map(int i) = 0;
+			// Reflect
+			float emissive_map_strength = 1.f;
+			// Reflect
 			int alpha_map = -1;
+			// Reflect
+			virtual void set_alpha_map(int i) = 0;
+			// Reflect
 			float alpha_test = 0.f;
 
+			// Reflect
 			vec4 float_values = vec4(0.f);
+			// Reflect
 			ivec4 int_values = ivec4(0);
 
 			// shader will insert this file to its content
+			// Reflect
 			std::filesystem::path code_file = L"flame/shaders/default_mat.glsl";
+			// Reflect
 			std::vector<std::string> code_defines;
 
+			// Reflect
 			std::vector<Texture> textures;
+			// Reflect
+			virtual void set_textures(const std::vector<Texture>& textures) = 0;
+
+			Listeners<void(uint)> data_listeners;
 
 			std::filesystem::path filename;
 			uint ref = 0;
 
 			virtual ~Material() {}
+
+			inline void data_changed(uint h)
+			{
+				for (auto& l : data_listeners.list)
+					l.first(h);
+			}
 
 			MaterialFlags get_flags() const
 			{

@@ -1184,6 +1184,8 @@ namespace flame
 		{
 			if (dying)
 			{
+				res.mat->data_listeners.remove("renderer"_h);
+
 				for (auto& tex : res.texs)
 				{
 					if (tex.first != -1)
@@ -1222,6 +1224,87 @@ namespace flame
 		}
 		if (update_pipelines)
 		{
+			if (res.mat->color_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:COLOR_MAP"))
+					{
+						d = "frag:COLOR_MAP=" + str(res.mat->color_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:COLOR_MAP=" + str(res.mat->color_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:COLOR_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+			if (res.mat->emissive_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:EMISSIVE_MAP"))
+					{
+						d = "frag:EMISSIVE_MAP=" + str(res.mat->emissive_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:EMISSIVE_MAP=" + str(res.mat->emissive_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:EMISSIVE_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+			if (res.mat->alpha_test > 0.f)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:ALPHA_TEST"))
+					{
+						d = "frag:ALPHA_TEST=" + str(res.mat->alpha_test);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:ALPHA_TEST=" + str(res.mat->alpha_test));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:ALPHA_TEST"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
+
+			graphics::Queue::get()->wait_idle();
+
 			for (auto& pl : res.pls)
 				graphics::GraphicsPipeline::release(pl.second);
 
@@ -1311,37 +1394,19 @@ namespace flame
 				return -1;
 		}
 
+		mat->data_listeners.add([this, id](uint hash) {
+			switch (hash)
+			{
+			case "color_map"_h:
+				update_mat_res(id, false, false, false, true);
+				break;
+			case "textures"_h:
+				update_mat_res(id, false, false, true, false);
+				break;
+			}
+		}, "renderer"_h);
+
 		auto& res = mat_reses[id];
-		if (mat->color_map != -1)
-		{
-			auto found = false;
-			for (auto& d : mat->code_defines)
-			{
-				if (d.starts_with("frag:COLOR_MAP") != std::string::npos)
-				{
-					d = "frag:COLOR_MAP=" + str(mat->color_map);
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				mat->code_defines.push_back("frag:COLOR_MAP=" + str(mat->color_map));
-		}
-		if (mat->alpha_test > 0.f)
-		{
-			auto found = false;
-			for (auto& d : mat->code_defines)
-			{
-				if (d.starts_with("frag:ALPHA_TEST"))
-				{
-					d = "frag:ALPHA_TEST=" + str(mat->alpha_test);
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				mat->code_defines.push_back("frag:ALPHA_TEST=" + str(mat->alpha_test));
-		}
 		res.mat = mat;
 		res.ref = 1;
 		update_mat_res(id, false);
@@ -2137,6 +2202,10 @@ namespace flame
 		// post processing
 		if (mode == Shaded || mode == CameraLight && post_processing_enable)
 		{
+			if (ssao_enable)
+			{
+			}
+
 			if (bloom_enable)
 			{
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);

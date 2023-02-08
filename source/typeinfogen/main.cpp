@@ -873,7 +873,7 @@ process:
 					else if (s_function->get_virtualBaseOffset(&dw) == S_OK)
 						voff = dw;
 
-					if (!rva && (voff == -1 || voff == 0))
+					if (!rva && voff == -1)
 						continue;
 
 					IDiaSymbol* s_function_type;

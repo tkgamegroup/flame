@@ -116,7 +116,7 @@ namespace flame
 			}
 			p = malloc(size);
 		}
-		if (auto fi = find_function("dctor"_h); fi)
+		if (auto fi = find_function("dctor"_h); fi && fi->rva)
 			fi->call<void>(p);
 		else
 		{
@@ -137,7 +137,7 @@ namespace flame
 
 	void UdtInfo::destroy_object(void* p, bool free_memory) const
 	{
-		if (auto fi = find_function("dtor"_h); fi)
+		if (auto fi = find_function("dtor"_h); fi && fi->rva)
 			fi->call<void>(p);
 		else
 		{
@@ -153,7 +153,7 @@ namespace flame
 
 	void UdtInfo::copy_object(void* dst, const void* src) const
 	{
-		if (auto fi = find_function("operator="_h); fi)
+		if (auto fi = find_function("operator="_h); fi && fi->rva)
 			fi->call<void*>(dst, src);
 		else
 		{
