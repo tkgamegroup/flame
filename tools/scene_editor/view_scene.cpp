@@ -97,7 +97,7 @@ void View_Scene::on_draw()
 		auto p1 = ImGui::GetItemRectMax();
 		app.input->offset = p0;
 
-		bool using_gizmo = false;
+		bool gizmo_using = false;
 #if USE_IM_GUIZMO
 		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
@@ -105,7 +105,6 @@ void View_Scene::on_draw()
 			auto tar = e->get_component_i<cNode>(0);
 			if (tar)
 			{
-
 				ImGuizmo::BeginFrame();
 				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
 				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
@@ -118,33 +117,49 @@ void View_Scene::on_draw()
 				case ToolRotate: op = ImGuizmo::ROTATE; break;
 				case ToolScale: op = ImGuizmo::SCALE; break;
 				}
-				if (ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0]))
+				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0]);
+				static bool last_gizmo_using = false;
+				static vec3 before_editing_pos;
+				static quat before_editing_qut;
+				static vec3 before_editing_scl;
+				gizmo_using = ImGuizmo::IsUsing();
+				if (!last_gizmo_using && gizmo_using)
+					before_editing_pos = tar->pos;
+				if (changed)
 				{
 					if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
 						mat = inverse(pnode->transform) * mat;
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 					decompose(mat, scl, qut, pos, skew, perspective);
-					if (pos != tar->pos)
+					if (app.tool == ToolMove && pos != tar->pos)
 					{
 						tar->set_pos(pos);
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id, "flame::cNode", "pos");
 					}
-					if (qut != tar->qut)
+					if (app.tool == ToolRotate && qut != tar->qut)
 					{
 						tar->set_qut(qut);
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id, "flame::cNode", "qut");
 					}
-					if (scl != tar->scl)
+					if (app.tool == ToolScale && scl != tar->scl)
 					{
 						tar->set_scl(scl);
 						if (auto ins = get_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id, "flame::cNode", "scl");
 					}
 				}
-
-				using_gizmo = ImGuizmo::IsUsing();
+				if (last_gizmo_using && !gizmo_using)
+				{
+					if (app.tool == ToolMove && before_editing_pos != tar->pos)
+						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "pos"_h, str(before_editing_pos), str(tar->pos)));
+					if (app.tool == ToolRotate && before_editing_qut != tar->qut)
+						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "qut"_h, str(*(vec4*)&before_editing_qut), str(*(vec4*)&tar->qut)));
+					if (app.tool == ToolScale && before_editing_scl != tar->scl)
+						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "qut"_h, str(before_editing_scl), str(tar->scl)));
+				}
+				last_gizmo_using = gizmo_using;
 			}
 		}
 #endif
@@ -434,7 +449,7 @@ void View_Scene::on_draw()
 								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
 						}
 					});
-					if (!using_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+					if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 					{
 						if (hovering_node)
 							selection.select(hovering_node->entity, "scene"_h);

@@ -190,18 +190,6 @@ namespace flame
 		// Reflect
 		virtual const MatRes& get_material_res_info(uint id) = 0;
 
-		// id: res id
-		// type_hash: texture, mesh or material
-		// name_hash: name or genre, to decide which part to update, set to 0 means ALL, (see below)
-		// Type      | Name                     | Description
-		//  texture  |  *currently not support  |  -
-		//  mesh     |  *currently not support  |  -
-		//  material |  parameters              |  all data except textures and pipelines
-		//  material |  textures                |  the textures
-		//  material |  pipelines               |  the pipelines
-		// Reflect
-		virtual void update_res(uint id, uint type_hash, uint name_hash) = 0;
-
 		// id == -1 to register or to unregister id
 		// Reflect
 		virtual int register_light_instance(LightType type, int id) = 0;

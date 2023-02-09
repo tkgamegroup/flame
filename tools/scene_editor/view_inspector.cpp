@@ -112,8 +112,36 @@ StagingVector& get_staging_vector(const void* id, TypeInfo* type, void* vec)
 
 std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint, void*)>& cb = {});
 
-bool show_variable(TypeInfo* type, const std::string& name, int offset, const FunctionInfo* getter, const FunctionInfo* setter, void* src, const void* id)
+std::string before_editing_value;
+
+void add_modify_history(uint attr_hash, const std::string& new_value)
 {
+	auto eo = editing_objects.top().get();
+	switch (eo->type())
+	{
+	case 0:
+	{
+		auto ea = (EditingAsset*)eo;
+	}
+		break;
+	case 1:
+	{
+		auto ee = (EditingEntity*)eo;
+		add_history(new EntityModifyHistory(ee->guid, 0, attr_hash, before_editing_value, new_value));
+	}
+		break;
+	case 2:
+	{
+		auto ec = (EditingComponent*)eo;
+		add_history(new EntityModifyHistory(ec->guid, ec->comp_hash, attr_hash, before_editing_value, new_value));
+	}
+		break;
+	}
+}
+
+bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, void* src, const void* id)
+{
+	auto display_name = get_display_name(name);
 	auto changed = false;
 	auto direct_io = !getter && !setter;
 
@@ -127,22 +155,30 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 		switch (ti->data_type)
 		{
 		case DataBool:
-			changed = ImGui::Checkbox(name.c_str(), (bool*)data);
+			changed = ImGui::Checkbox(display_name.c_str(), (bool*)data);
 			break;
 		case DataInt:
 			switch (ti->vec_size)
 			{
 			case 1:
-				changed = ImGui::DragInt(name.c_str(), (int*)data);
+				if (ImGui::IsItemActivated() && !editing_objects.empty())
+					before_editing_value = str(*(int*)data);
+				changed = ImGui::InputInt(display_name.c_str(), (int*)data);
+				changed = ImGui::IsItemDeactivatedAfterEdit();
+				if (changed)
+					add_modify_history(name_hash, str(*(int*)data));
 				break;
 			case 2:
-				changed = ImGui::DragInt2(name.c_str(), (int*)data);
+				changed = ImGui::InputInt2(display_name.c_str(), (int*)data);
+				changed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			case 3:
-				changed = ImGui::DragInt3(name.c_str(), (int*)data);
+				changed = ImGui::InputInt3(display_name.c_str(), (int*)data);
+				changed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			case 4:
-				changed = ImGui::DragInt4(name.c_str(), (int*)data);
+				changed = ImGui::InputInt4(display_name.c_str(), (int*)data);
+				changed = ImGui::IsItemDeactivatedAfterEdit();
 				break;
 			}
 			break;
@@ -150,16 +186,20 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 			switch (ti->vec_size)
 			{
 			case 1:
-				changed = ImGui::DragFloat(name.c_str(), (float*)data, 0.01f);
+				if (ImGui::IsItemActivated() && !editing_objects.empty())
+					before_editing_value = str(*(float*)data);
+				changed = ImGui::DragFloat(display_name.c_str(), (float*)data, 0.01f);
+				if (changed && ImGui::IsItemDeactivatedAfterEdit())
+					add_modify_history(name_hash, str(*(float*)data));
 				break;
 			case 2:
-				changed = ImGui::DragFloat2(name.c_str(), (float*)data, 0.01f);
+				changed = ImGui::DragFloat2(display_name.c_str(), (float*)data, 0.01f);
 				break;
 			case 3:
-				changed = ImGui::DragFloat3(name.c_str(), (float*)data, 0.01f);
+				changed = ImGui::DragFloat3(display_name.c_str(), (float*)data, 0.01f);
 				break;
 			case 4:
-				changed = ImGui::DragFloat4(name.c_str(), (float*)data, 0.01f);
+				changed = ImGui::DragFloat4(display_name.c_str(), (float*)data, 0.01f);
 				break;
 			}
 			break;
@@ -170,14 +210,20 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 			{
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
-				if (ImGui::ColorEdit4(name.c_str(), &color[0]))
+				changed = ImGui::ColorEdit4(display_name.c_str(), &color[0]);
+				if (changed)
 					*(cvec4*)data = color * 255.f;
 			}
 				break;
 			}
 			break;
 		case DataString:
-			changed = ImGui::InputText(name.c_str(), (std::string*)data);
+			changed = ImGui::InputText(display_name.c_str(), (std::string*)data);
+			if (ImGui::IsItemActivated() && !editing_objects.empty())
+				before_editing_value = *(std::string*)data;
+			changed = ImGui::IsItemDeactivatedAfterEdit();
+			if (changed && !editing_objects.empty())
+				add_modify_history(name_hash, *(std::string*)data);
 			break;
 		case DataWString:
 			break;
@@ -185,7 +231,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 		{
 			auto& path = *(std::filesystem::path*)data;
 			auto s = path.string();
-			ImGui::InputText(name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
@@ -217,7 +263,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 	}
 		break;
 	case TagVD:
-		if (ImGui::TreeNode(name.c_str()))
+		if (ImGui::TreeNode(display_name.c_str()))
 		{
 			assert(!getter);
 			auto pv = (char*)src + offset;
@@ -242,7 +288,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 			for (auto i = 0; i < n; i++)
 			{
 				ImGui::PushID(i);
-				if (show_variable(ti, str(i), i * ti->size, nullptr, nullptr, sv.v.data(), id))
+				if (show_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, sv.v.data(), id))
 					changed = true;
 				ImGui::PopID();
 			}
@@ -250,7 +296,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 		}
 		break;
 	case TagVU:
-		if (ImGui::TreeNode(name.c_str()))
+		if (ImGui::TreeNode(display_name.c_str()))
 		{
 			assert(!getter);
 			auto pv = (char*)src + offset;
@@ -284,7 +330,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 		}
 		break;
 	case TagVR:
-		if (ImGui::TreeNode(name.c_str()))
+		if (ImGui::TreeNode(display_name.c_str()))
 		{
 			assert(!getter);
 			auto pv = (char*)src + offset;
@@ -311,15 +357,15 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 				if (i > 0) ImGui::Separator();
 				ImGui::PushID(i);
 				auto p = sv.v.data() + ti->size * i;
-				show_variable(ti->ti1, "First", 0, nullptr, nullptr, ti->first(p), id);
-				show_variable(ti->ti2, "Second", 0, nullptr, nullptr, ti->second(p), id);
+				show_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, ti->first(p), id);
+				show_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, ti->second(p), id);
 				ImGui::PopID();
 			}
 			ImGui::TreePop();
 		}
 		break;
 	case TagVT:
-		if (ImGui::TreeNode(name.c_str()))
+		if (ImGui::TreeNode(display_name.c_str()))
 		{
 			assert(!getter);
 			auto pv = (char*)src + offset;
@@ -349,7 +395,7 @@ bool show_variable(TypeInfo* type, const std::string& name, int offset, const Fu
 				auto j = 0;
 				for (auto& t : ti->tis)
 				{
-					show_variable(t.first, "Item " + str(j), 0, nullptr, nullptr, p + t.second, id);
+					show_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, p + t.second, id);
 					j++;
 				}
 				ImGui::PopID();
@@ -371,7 +417,7 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& v : ui.variables)
 		{
-			if (show_variable(v.type, get_display_name(v.name), v.offset, nullptr, nullptr, src, &v))
+			if (show_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, src, &v))
 				changed_name = v.name;
 			if (cb)
 				cb(v.name_hash, src);
@@ -381,7 +427,7 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	{
 		for (auto& a : ui.attributes)
 		{
-			if (show_variable(a.type, get_display_name(a.name), a.var_off(),
+			if (show_variable(a.type, a.name, a.name_hash, a.var_off(),
 				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr, 
 				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr, 
 				src, &a))
@@ -452,6 +498,7 @@ void View_Inspector::on_draw()
 	{
 		auto e = selection.entity();
 
+		editing_objects.emplace(new EditingEntity(e->instance_id));
 		ImGui::PushID(e);
 		if (e->prefab_instance)
 		{
@@ -464,6 +511,7 @@ void View_Inspector::on_draw()
 		}
 		auto changed_name = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), e);
 		ImGui::PopID();
+		editing_objects.pop();
 		if (!changed_name.empty())
 		{
 			if (auto ins = get_prefab_instance(e); ins)
@@ -474,6 +522,7 @@ void View_Inspector::on_draw()
 		auto open_component_menu = false;
 		for (auto& c : e->components)
 		{
+			editing_objects.emplace(new EditingComponent(e->instance_id, c->type_hash));
 			ImGui::PushID(c.get());
 			auto& ui = *com_udts_map[c->type_hash];
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
@@ -541,12 +590,7 @@ void View_Inspector::on_draw()
 								// the material is loaded and registered to renderer
 								if (auto material = graphics::Material::get(name); material)
 								{
-									if (!show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty())
-									{
-										auto id = app.renderer->get_material_res(material, -2);
-										if (id > 0)
-											app.renderer->update_res(id, "material"_h, "parameters"_h);
-									}
+									show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty();
 									graphics::Material::release(material);
 								}
 								ImGui::TreePop();
@@ -639,6 +683,7 @@ void View_Inspector::on_draw()
 				}
 			}
 			ImGui::PopID();
+			editing_objects.pop();
 		}
 
 		ImGui::Dummy(vec2(0.f, 10.f));
@@ -796,12 +841,9 @@ void View_Inspector::on_draw()
 			if (sel_ref_obj)
 			{
 				auto material = (graphics::MaterialPtr)sel_ref_obj;
-				if (!show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty())
-				{
-					auto id = app.renderer->get_material_res(material, -2);
-					if (id > 0)
-						app.renderer->update_res(id, "material"_h, "parameters"_h);
-				}
+				editing_objects.emplace(new EditingAsset(path));
+				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty();
+				editing_objects.pop();
 				if (ImGui::Button("Save"))
 				{
 					material->save(path);
@@ -917,7 +959,7 @@ void View_Inspector::on_draw()
 
 			if (sel_ref_obj)
 			{
-				show_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, nullptr, nullptr, &default_defines, nullptr);
+				show_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, &default_defines, nullptr);
 				show_udt(*ser_ui, sel_ref_obj);
 				if (ImGui::Button("Test Compile"))
 				{

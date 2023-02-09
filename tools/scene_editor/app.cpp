@@ -14,6 +14,98 @@
 #include <flame/universe/components//nav_scene.h>
 #include <flame/universe/systems/renderer.h>
 
+AssetModifyHistory::AssetModifyHistory(const std::filesystem::path& path, uint attr_hash,
+	const std::string& old_value, const std::string& new_value) :
+	path(path),
+	attr_hash(attr_hash),
+	old_value(old_value),
+	new_value(new_value)
+{
+}
+
+void AssetModifyHistory::set_value(const std::string& value)
+{
+
+}
+
+void AssetModifyHistory::undo()
+{
+
+}
+
+void AssetModifyHistory::redo()
+{
+
+}
+
+EntityModifyHistory::EntityModifyHistory(const std::string& guid, uint comp_hash, uint attr_hash,
+	const std::string& old_value, const std::string& new_value) :
+	guid(guid),
+	comp_hash(comp_hash),
+	attr_hash(attr_hash),
+	old_value(old_value),
+	new_value(new_value)
+{
+}
+
+void EntityModifyHistory::set_value(const std::string& value)
+{
+	if (app.e_prefab)
+	{
+		if (auto e = app.e_prefab->find_child_with_instance_id(guid); e)
+		{
+			UdtInfo* ui = nullptr;
+			void* obj = nullptr;
+			if (comp_hash == 0)
+			{
+				ui = TypeInfo::get<Entity>()->retrive_ui();
+				obj = e;
+			}
+			else
+			{
+				ui = find_udt(comp_hash);
+				obj = e->find_component(comp_hash);
+			}
+			if (auto a = ui->find_attribute(attr_hash); a)
+			{
+				a->type->unserialize(value, nullptr);
+				a->set_value(obj, nullptr);
+			}
+		}
+	}
+}
+
+void EntityModifyHistory::undo()
+{
+	set_value(old_value);
+}
+
+void EntityModifyHistory::redo()
+{
+	set_value(new_value);
+}
+
+EditingAsset::EditingAsset(const std::filesystem::path& path) :
+	path(path)
+{
+}
+
+EditingEntity::EditingEntity(const std::string& guid) :
+	guid(guid)
+{
+}
+
+EditingComponent::EditingComponent(const std::string& guid, uint comp_hash) :
+	guid(guid),
+	comp_hash(comp_hash)
+{
+}
+
+int history_idx = -1;
+std::vector<std::unique_ptr<History>> histories;
+
+std::stack<std::unique_ptr<EditingObject>> editing_objects;
+
 App app;
 
 static Entity* editor_selecting_entity = nullptr;
@@ -85,6 +177,16 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Edit"))
 		{
+			if (ImGui::MenuItem("Undo"))
+				cmd_undo();
+			if (ImGui::MenuItem("Redo"))
+				cmd_redo();
+			if (ImGui::MenuItem(std::format("Clear Histories ({})", (int)histories.size()).c_str()))
+			{
+				history_idx = -1;
+				histories.clear();
+			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Create Empty"))
 				cmd_create_entity();
 			if (ImGui::MenuItem("Create Node"))
@@ -455,6 +557,14 @@ void App::init()
 			if (e_preview)
 				cmd_restart_preview();
 		}
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
+		{
+			cmd_undo();
+		}
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
+		{
+			cmd_redo();
+		}
 
 		if (e_preview)
 		{
@@ -768,6 +878,21 @@ void App::new_prefab(const std::filesystem::path& path)
 	e_light->add_component_t<cDirLight>()->cast_shadow = true;
 	e->add_child(e_light);
 	e->save(path);
+}
+
+bool App::cmd_undo()
+{
+	if (history_idx >= 0)
+	{
+		histories[history_idx]->undo();
+		history_idx--;
+	}
+	return true;
+}
+
+bool App::cmd_redo()
+{
+	return true;
 }
 
 bool App::cmd_create_entity(EntityPtr dst, uint type)

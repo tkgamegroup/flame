@@ -1180,48 +1180,40 @@ namespace flame
 		return mesh_reses[id]; 
 	}
 
-	void sRendererPrivate::update_mat_res(uint id, bool dying, bool update_parameters, bool update_textures, bool update_pipelines)
+	void sRendererPrivate::update_mat_res(uint id, bool update_parameters, bool update_textures, bool update_pipelines)
 	{
 		auto& res = mat_reses[id];
 
 		if (update_textures)
 		{
-			if (dying)
+			for (auto& tex : res.texs)
 			{
-				res.mat->data_listeners.remove("renderer"_h);
-
-				for (auto& tex : res.texs)
+				if (tex.first != -1)
 				{
-					if (tex.first != -1)
-					{
-						release_texture_res(tex.first);
-						tex.first = -1;
-					}
-					if (tex.second)
-					{
-						graphics::Image::release(tex.second);
-						tex.second = nullptr;
-					}
+					release_texture_res(tex.first);
+					tex.first = -1;
 				}
-				res.texs.clear();
-			}
-			else
-			{
-				res.texs.resize(res.mat->textures.size());
-				for (auto i = 0; i < res.texs.size(); i++)
+				if (tex.second)
 				{
-					res.texs[i].first = -1;
-					res.texs[i].second = nullptr;
-					auto& src = res.mat->textures[i];
-					if (!src.filename.empty())
+					graphics::Image::release(tex.second);
+					tex.second = nullptr;
+				}
+			}
+
+			res.texs.resize(res.mat->textures.size());
+			for (auto i = 0; i < res.texs.size(); i++)
+			{
+				res.texs[i].first = -1;
+				res.texs[i].second = nullptr;
+				auto& src = res.mat->textures[i];
+				if (!src.filename.empty())
+				{
+					if (auto image = graphics::Image::get(src.filename, src.srgb, src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f); image)
 					{
-						if (auto image = graphics::Image::get(src.filename, src.srgb, src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f); image)
-						{
-							res.texs[i].second = image;
-							res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
-								graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
-							image->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
-						}
+						res.texs[i].second = image;
+						res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
+							graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
+						image->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
 					}
 				}
 			}
@@ -1482,18 +1474,25 @@ namespace flame
 			switch (hash)
 			{
 			case "color_map"_h:
-				update_mat_res(id, false, false, false, true);
+			case "normal_map"_h:
+			case "metallic_map"_h:
+			case "roughness_map"_h:
+			case "emissive_map"_h:
+			case "alpha_map"_h:
+				update_mat_res(id, false, false, true);
 				break;
 			case "textures"_h:
-				update_mat_res(id, false, false, true, false);
+				update_mat_res(id, false, true, false);
 				break;
+			default:
+				update_mat_res(id, true, false, false);
 			}
 		}, "renderer"_h);
 
 		auto& res = mat_reses[id];
 		res.mat = mat;
 		res.ref = 1;
-		update_mat_res(id, false);
+		update_mat_res(id);
 		return id;
 	}
 
@@ -1502,7 +1501,9 @@ namespace flame
 		auto& res = mat_reses[id];
 		if (res.ref == 1)
 		{
-			update_mat_res(id, true);
+			res.mat->data_listeners.remove("renderer"_h);
+
+			update_mat_res(id);
 			res.mat = nullptr;
 		}
 		else
@@ -1512,22 +1513,6 @@ namespace flame
 	const sRenderer::MatRes& sRendererPrivate::get_material_res_info(uint id)
 	{ 
 		return mat_reses[id]; 
-	}
-
-	void sRendererPrivate::update_res(uint id, uint type_hash, uint name_hash)
-	{
-		switch (type_hash)
-		{
-		case "material"_h:
-			if (auto& res = mat_reses[id]; res.mat)
-			{
-				update_mat_res(id, false, 
-					name_hash == "parameters"_h || name_hash == 0,
-					name_hash == "textures"_h || name_hash == 0, 
-					name_hash == "pipelines"_h || name_hash == 0);
-			}
-			break;
-		}
 	}
 
 	int sRendererPrivate::register_light_instance(LightType type, int id)

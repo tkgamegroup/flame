@@ -32,17 +32,31 @@ namespace flame
 			// Reflect
 			vec4 color = vec4(1.f);
 			// Reflect
+			virtual void set_color(const vec4& v) = 0;
+			// Reflect
 			float metallic = 0.f;
+			// Reflect
+			virtual void set_metallic(float v) = 0;
 			// Reflect
 			float roughness = 1.f;
 			// Reflect
+			virtual void set_roughness(float v) = 0;
+			// Reflect
 			vec4 emissive = vec4(0.f);
+			// Reflect
+			virtual void set_emissive(const vec4& v) = 0;
 			// Reflect
 			bool opaque = true;
 			// Reflect
+			virtual void set_opaque(bool v) = 0;
+			// Reflect
 			bool sort = false;
 			// Reflect
+			virtual void set_sort(bool v) = 0;
+			// Reflect
 			bool receive_ssr = false;
+			// Reflect
+			virtual void set_receive_ssr(bool v) = 0;
 			// Reflect
 			int color_map = -1;
 			// Reflect
@@ -53,6 +67,8 @@ namespace flame
 			virtual void set_normal_map(int i) = 0;
 			// Reflect
 			float normal_map_strength = 1.f;
+			// Reflect
+			virtual void set_normal_map_strength(float v) = 0;
 			// Reflect
 			int metallic_map = -1;
 			// Reflect
@@ -68,11 +84,15 @@ namespace flame
 			// Reflect
 			float emissive_map_strength = 1.f;
 			// Reflect
+			virtual void set_emissive_map_strength(float v) = 0;
+			// Reflect
 			int alpha_map = -1;
 			// Reflect
 			virtual void set_alpha_map(int i) = 0;
 			// Reflect
 			float alpha_test = 0.f;
+			// Reflect
+			virtual void set_alpha_test(float v) = 0;
 
 			// Reflect
 			vec4 float_values = vec4(0.f);

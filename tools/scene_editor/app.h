@@ -22,6 +22,92 @@ enum ToolMode
 	ToolWorld
 };
 
+struct History
+{
+	virtual ~History() {}
+
+	virtual void undo() = 0;
+	virtual void redo() = 0;
+};
+
+struct AssetModifyHistory : History
+{
+	std::filesystem::path path;
+	uint attr_hash;
+	std::string old_value;
+	std::string new_value;
+	FunctionInfo* ref_getter;
+	FunctionInfo* ref_releaser;
+
+	AssetModifyHistory(const std::filesystem::path& path, uint attr_hash,
+		const std::string& old_value, const std::string& new_value);
+	void set_value(const std::string& value);
+	void undo() override;
+	void redo() override;
+};
+
+struct EntityModifyHistory : History
+{
+	std::string guid;
+	uint comp_hash;
+	uint attr_hash;
+	std::string old_value;
+	std::string new_value;
+
+	EntityModifyHistory(const std::string& guid, uint comp_hash, uint attr_hash, 
+		const std::string& old_value, const std::string& new_value);
+	void set_value(const std::string& value);
+	void undo() override;
+	void redo() override;
+};
+
+extern int history_idx;
+extern std::vector<std::unique_ptr<History>> histories;
+inline void add_history(History* h)
+{
+	if (history_idx + 1 < histories.size())
+		histories.erase(histories.begin() + history_idx + 1, histories.end());
+	histories.emplace_back(h);
+	history_idx++;
+}
+
+struct EditingObject
+{
+	virtual ~EditingObject() {}
+
+	virtual int type() = 0;
+};
+
+struct EditingAsset : EditingObject
+{
+	std::filesystem::path path;
+
+	EditingAsset(const std::filesystem::path& guid);
+	
+	int type() override { return 0; }
+};
+
+struct EditingEntity : EditingObject
+{
+	EditingEntity(const std::string& guid);
+
+	std::string guid;
+
+	int type() override { return 1; }
+};
+
+struct EditingComponent : EditingObject
+{
+	EditingComponent(const std::string& guid, uint comp_hash);
+
+	std::string guid;
+	uint comp_hash;
+
+	int type() override { return 2; }
+};
+
+extern std::stack<std::unique_ptr<EditingObject>> editing_objects;
+
 struct App : UniverseApplication
 {
 	bool graphics_debug = true;
@@ -46,6 +132,8 @@ struct App : UniverseApplication
 	void open_prefab(const std::filesystem::path& path);
 	void new_prefab(const std::filesystem::path& path);
 
+	bool cmd_undo();
+	bool cmd_redo();
 	bool cmd_create_entity(EntityPtr dst = nullptr/* entity or nullptr to use e_prefab */, uint type = "empty"_h);
 	bool cmd_delete_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);
 	bool cmd_play();

@@ -57,9 +57,9 @@
 
 	vec3 N = i_normal;
 	#ifdef NORMAL_MAP
-		vec3 sampled_normal = sample_map(material.map_indices[NORMAL_MAP], i_uv).xyz * 2.0 - 1.0;
+		vec3 sampled_normal = normalize(sample_map(material.map_indices[NORMAL_MAP], i_uv).xyz * 2.0 - 1.0);
 		vec3 bitangent = normalize(cross(i_tangent, i_normal));
-		N = mat3(i_tangent, i_normal, bitangent) * sampled_normal;
+		N = normalize(mat3(i_tangent, bitangent, i_normal) * sampled_normal * vec3(1.0, 1.0, material.normal_map_strength));
 	#endif
 
 	vec3 emissive;
