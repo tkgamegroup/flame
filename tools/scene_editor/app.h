@@ -33,13 +33,12 @@ struct History
 struct AssetModifyHistory : History
 {
 	std::filesystem::path path;
+	uint asset_hash;
 	uint attr_hash;
 	std::string old_value;
 	std::string new_value;
-	FunctionInfo* ref_getter;
-	FunctionInfo* ref_releaser;
 
-	AssetModifyHistory(const std::filesystem::path& path, uint attr_hash,
+	AssetModifyHistory(const std::filesystem::path& path, uint asset_hash, uint attr_hash,
 		const std::string& old_value, const std::string& new_value);
 	void set_value(const std::string& value);
 	void undo() override;
@@ -80,9 +79,10 @@ struct EditingObject
 
 struct EditingAsset : EditingObject
 {
-	std::filesystem::path path;
+	std::filesystem::path path; 
+	uint asset_hash;
 
-	EditingAsset(const std::filesystem::path& guid);
+	EditingAsset(const std::filesystem::path& path, uint asset_hash);
 	
 	int type() override { return 0; }
 };

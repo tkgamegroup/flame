@@ -122,6 +122,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	case 0:
 	{
 		auto ea = (EditingAsset*)eo;
+		add_history(new AssetModifyHistory(ea->path, ea->asset_hash, attr_hash, before_editing_value, new_value));
 	}
 		break;
 	case 1:
@@ -143,6 +144,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 {
 	auto display_name = get_display_name(name);
 	auto changed = false;
+	static const void* last_changed = nullptr;
 	auto direct_io = !getter && !setter;
 
 	ImGui::PushID(id);
@@ -162,10 +164,12 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 			{
 			case 1:
 				if (ImGui::IsItemActivated() && !editing_objects.empty())
+				{
 					before_editing_value = str(*(int*)data);
+					last_changed = nullptr;
+				}
 				changed = ImGui::InputInt(display_name.c_str(), (int*)data);
-				changed = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
+				if (last_changed == src && ImGui::IsItemDeactivatedAfterEdit() && !editing_objects.empty())
 					add_modify_history(name_hash, str(*(int*)data));
 				break;
 			case 2:
@@ -187,9 +191,12 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 			{
 			case 1:
 				if (ImGui::IsItemActivated() && !editing_objects.empty())
+				{
 					before_editing_value = str(*(float*)data);
+					last_changed = nullptr;
+				}
 				changed = ImGui::DragFloat(display_name.c_str(), (float*)data, 0.01f);
-				if (changed && ImGui::IsItemDeactivatedAfterEdit())
+				if (last_changed == src && ImGui::IsItemDeactivatedAfterEdit() && !editing_objects.empty())
 					add_modify_history(name_hash, str(*(float*)data));
 				break;
 			case 2:
@@ -218,11 +225,14 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 			}
 			break;
 		case DataString:
-			changed = ImGui::InputText(display_name.c_str(), (std::string*)data);
 			if (ImGui::IsItemActivated() && !editing_objects.empty())
+			{
 				before_editing_value = *(std::string*)data;
-			changed = ImGui::IsItemDeactivatedAfterEdit();
-			if (changed && !editing_objects.empty())
+				last_changed = nullptr;
+			}
+			changed = ImGui::InputText(display_name.c_str(), (std::string*)data);
+			changed = changed && ImGui::IsItemDeactivatedAfterEdit();
+			if (last_changed == src && !editing_objects.empty())
 				add_modify_history(name_hash, *(std::string*)data);
 			break;
 		case DataWString:
@@ -406,6 +416,8 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 	}
 	ImGui::PopID();
 
+	if (changed)
+		last_changed = src;
 	return changed;
 }
 
@@ -841,7 +853,7 @@ void View_Inspector::on_draw()
 			if (sel_ref_obj)
 			{
 				auto material = (graphics::MaterialPtr)sel_ref_obj;
-				editing_objects.emplace(new EditingAsset(path));
+				editing_objects.emplace(new EditingAsset(path, th<graphics::Material>()));
 				show_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), material).empty();
 				editing_objects.pop();
 				if (ImGui::Button("Save"))

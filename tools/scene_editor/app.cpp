@@ -14,9 +14,10 @@
 #include <flame/universe/components//nav_scene.h>
 #include <flame/universe/systems/renderer.h>
 
-AssetModifyHistory::AssetModifyHistory(const std::filesystem::path& path, uint attr_hash,
+AssetModifyHistory::AssetModifyHistory(const std::filesystem::path& path, uint asset_hash, uint attr_hash,
 	const std::string& old_value, const std::string& new_value) :
 	path(path),
+	asset_hash(asset_hash),
 	attr_hash(attr_hash),
 	old_value(old_value),
 	new_value(new_value)
@@ -25,17 +26,29 @@ AssetModifyHistory::AssetModifyHistory(const std::filesystem::path& path, uint a
 
 void AssetModifyHistory::set_value(const std::string& value)
 {
+	auto ui = find_udt(asset_hash);
 
+	auto ref_getter = ui->find_function("get"_h);
+	auto ref_releaser = ui->find_function("release"_h);
+
+	auto obj = ref_getter->call<void*, const std::filesystem::path&>(nullptr, path);
+	if (auto a = ui->find_attribute(attr_hash); a)
+	{
+		a->type->unserialize(value, nullptr);
+		a->set_value(obj, nullptr);
+	}
+
+	ref_releaser->call<void*, void*>(nullptr, obj);
 }
 
 void AssetModifyHistory::undo()
 {
-
+	set_value(old_value);
 }
 
 void AssetModifyHistory::redo()
 {
-
+	set_value(new_value);
 }
 
 EntityModifyHistory::EntityModifyHistory(const std::string& guid, uint comp_hash, uint attr_hash,
@@ -85,8 +98,9 @@ void EntityModifyHistory::redo()
 	set_value(new_value);
 }
 
-EditingAsset::EditingAsset(const std::filesystem::path& path) :
-	path(path)
+EditingAsset::EditingAsset(const std::filesystem::path& path, uint asset_hash) :
+	path(path),
+	asset_hash(asset_hash)
 {
 }
 
@@ -882,16 +896,19 @@ void App::new_prefab(const std::filesystem::path& path)
 
 bool App::cmd_undo()
 {
-	if (history_idx >= 0)
-	{
-		histories[history_idx]->undo();
-		history_idx--;
-	}
+	if (history_idx < 0)
+		return false;
+	histories[history_idx]->undo();
+	history_idx--;
 	return true;
 }
 
 bool App::cmd_redo()
 {
+	if (history_idx + 1 >= histories.size())
+		return false;
+	history_idx++;
+	histories[history_idx]->redo();
 	return true;
 }
 
