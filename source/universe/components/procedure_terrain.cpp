@@ -96,19 +96,22 @@ namespace flame
 
 		auto extent = terrain->extent;
 
-		auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::default_random_engine generator(seed);
-		std::uniform_real_distribution<float> distribution(0.0, 1.0);
-
 		auto to_glm = [](const Vector2& v) {
 			return vec2(v.x, v.y);
 		};
+		auto to_fa = [](const vec2& v) {
+			return Vector2(v.x, v.y);
+		};
 
-		std::vector<Vector2> site_postions_xz;
-		for (int i = 0; i < voronoi_sites_count; ++i)
-			site_postions_xz.push_back(Vector2{ distribution(generator), distribution(generator) });
+		std::vector<vec2> site_postions_xz;
+		for (int i = 0; i < voronoi_sites_count; i++)
+			site_postions_xz.push_back(vec2(linearRand(0.f, 1.f), linearRand(0.f, 1.f)));
 
-		auto get_diagram = [](const std::vector<Vector2>& points) {
+		auto get_diagram = [&](const std::vector<vec2>& _points) {
+			std::vector<Vector2> points;
+			points.resize(_points.size());
+			for (auto i = 0; i < points.size(); i++)
+				points[i] = to_fa(_points[i]);
 			FortuneAlgorithm fortune_algorithm(points);
 			fortune_algorithm.construct();
 			fortune_algorithm.bound(Box{ -0.05, -0.05, 1.05, 1.05 });
@@ -117,7 +120,7 @@ namespace flame
 			return diagram;
 		};
 
-		auto get_site_edges = [](VoronoiDiagram::Site* site) {
+		auto get_site_half_edges = [](VoronoiDiagram::Site* site) {
 			std::vector<VoronoiDiagram::HalfEdge*> ret;
 			auto face = site->face;
 			auto half_edge = face->outerComponent;
@@ -144,7 +147,7 @@ namespace flame
 
 		auto get_site_vertices = [&](VoronoiDiagram::Site* site) {
 			std::vector<vec2> ret;
-			auto edges = get_site_edges(site);
+			auto edges = get_site_half_edges(site);
 			for (auto edge : edges)
 			{
 				if (edge->origin != nullptr && edge->destination != nullptr)
@@ -158,55 +161,75 @@ namespace flame
 		};
 
 		auto diagram = get_diagram(site_postions_xz);
+		// loop t times to get a more average diagram
 		for (auto t = 0; t < 3; t++)
 		{
 			for (auto i = 0; i < diagram.getNbSites(); i++)
 			{
 				auto vertices = get_site_vertices(diagram.getSite(i));
-				auto centroid = convex_centroid(vertices);
-				site_postions_xz[i] = Vector2(centroid.x, centroid.y);
+				site_postions_xz[i] = convex_centroid(vertices);
 			}
 			diagram = get_diagram(site_postions_xz);
 		}
 
-		std::vector<vec3> site_positions;
-		site_positions.resize(site_postions_xz.size());
-		for (auto i = 0; i < site_positions.size(); i++)
-		{
-			auto& p = site_postions_xz[i];
-			site_positions[i] = vec3(p.x, 0.f, p.y);
-		}
+		struct Vertex;
+		struct Edge;
+		struct Area;
 
-		for (auto i = 0; i < site_positions.size(); i++)
+		struct Vertex
 		{
+			Edge* edge;
+			vec2 p;
+		};
+
+		struct Edge
+		{
+			Area* area0;
+			Area* area1;
+			std::vector<Vertex*> vertices;
+		};
+
+		struct Area
+		{
+			vec2 c;
+			float h;
+			std::vector<Edge*> edges;
+		};
+
+		std::vector<std::unique_ptr<Vertex>> vertices;
+		std::vector<std::unique_ptr<Edge>> edges;
+		std::vector<std::unique_ptr<Area>> areas;
+
+		for (auto i = 0; i < diagram.getNbSites(); i++)
+		{
+			auto site = diagram.getSite(i);
+			auto area = new Area;
+			area->c = to_glm(site->point);
 			auto value = 0.f;
-			if (distribution(generator) * 100.f > voronoi_layer1_precentage)
+			if (linearRand(0.f, 100.f) > voronoi_layer1_precentage)
 			{
 				value += 0.25f;
-				if (distribution(generator) * 100.f > voronoi_layer2_precentage)
+				if (linearRand(0.f, 100.f) > voronoi_layer2_precentage)
 				{
 					value += 0.25f;
-					if (distribution(generator) * 100.f > voronoi_layer3_precentage)
+					if (linearRand(0.f, 100.f) > voronoi_layer3_precentage)
 						value += 0.25f;
 				}
 			}
-			site_positions[i].y = value;
-		}
-		for (auto i = 0; i < site_positions.size(); i++)
-		{
-			auto self_height = site_positions[i].y;
-			auto max_height = 0.f;
-			for (auto edge : get_site_edges(diagram.getSite(i)))
+			area->h = value;
+			for (auto& half_edge : get_site_half_edges(site))
 			{
-				if (auto oth_edge = edge->twin; oth_edge)
+				auto found = false;
+				for (auto& edge : edges)
 				{
-					auto oth_idx = oth_edge->incidentFace->site->index;
-					auto oth_height = site_positions[oth_idx].y;
-					if (oth_height < self_height)
-						max_height = max(max_height, oth_height);
+					if (edge->area0 == area || edge->area1 == area)
+					{
+						found = true;
+						break;
+					}
 				}
 			}
-			site_positions[i].y = min(site_positions[i].y + 0.25f, site_positions[i].y);
+			areas.emplace_back(area);
 		}
 
 		const auto MaxVertices = 10000;
@@ -257,7 +280,7 @@ namespace flame
 				return;
 			site_seen[site_idx] = true;
 			auto& region = regions[region_idx];
-			for (auto edge : get_site_edges(diagram.getSite(site_idx)))
+			for (auto edge : get_site_half_edges(diagram.getSite(site_idx)))
 			{
 				if (auto oth_edge = edge->twin; oth_edge)
 				{
@@ -425,7 +448,7 @@ namespace flame
 			for (auto i = 0; i < diagram.getNbSites(); i++)
 			{
 				auto self_height = site_positions[i].y;
-				auto edges = get_site_edges(diagram.getSite(i));
+				auto edges = get_site_half_edges(diagram.getSite(i));
 				for (auto edge : edges)
 				{
 					if (auto oth_edge = edge->twin; oth_edge)
