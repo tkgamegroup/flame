@@ -1161,9 +1161,11 @@ namespace flame
 		}Model_create;
 		Model::Create& Model::create = Model_create;
 
+		static ModelPtr standard_plane = nullptr;
 		static ModelPtr standard_cube = nullptr;
 		static ModelPtr standard_sphere = nullptr;
 		static ModelPtr standard_cylinder = nullptr;
+		static ModelPtr standard_tri_prism = nullptr;
 
 		static std::vector<std::unique_ptr<ModelT>> models;
 
@@ -1174,7 +1176,38 @@ namespace flame
 				auto wstr = _filename.wstring();
 				if (SUW::strip_head_if(wstr, L"standard_"))
 				{
-					if (wstr == L"cube")
+					if (wstr == L"plane")
+					{
+						if (!standard_plane)
+						{
+							auto m = new ModelPrivate;
+							m->filename = L"standard_plane";
+							auto& mesh = m->meshes.emplace_back();
+							mesh.model = m;
+							{
+								mesh.positions.push_back(vec3(0.f));
+								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
+								mesh.positions.push_back(vec3(10.f, 0.f, 0.f));
+								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
+								mesh.positions.push_back(vec3(10.f, 0.f, 10.f));
+								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
+								mesh.positions.push_back(vec3(0.f, 0.f, 10.f));
+								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
+
+								mesh.indices.push_back(0);
+								mesh.indices.push_back(3);
+								mesh.indices.push_back(1);
+								mesh.indices.push_back(1);
+								mesh.indices.push_back(3);
+								mesh.indices.push_back(2);
+							}
+							mesh.calc_bounds();
+
+							standard_plane = m;
+						}
+						return standard_plane;
+					}
+					else if (wstr == L"cube")
 					{
 						if (!standard_cube)
 						{
@@ -1182,7 +1215,7 @@ namespace flame
 							m->filename = L"standard_cube";
 							auto& mesh = m->meshes.emplace_back();
 							mesh.model = m;
-							mesh_add_cube(mesh, vec3(1.f), vec3(0.f), mat3(1.f));
+							mesh_add_cube(mesh, vec3(1.f), vec3(0.f, 0.5f, 0.f), mat3(1.f));
 							mesh.calc_bounds();
 
 							standard_cube = m;
@@ -1197,7 +1230,7 @@ namespace flame
 							m->filename = L"standard_sphere";
 							auto& mesh = m->meshes.emplace_back();
 							mesh.model = m;
-							mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f), mat3(1.f));
+							mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f, 0.5f, 0.f), mat3(1.f));
 							mesh.calc_bounds();
 
 							standard_sphere = m;
@@ -1212,12 +1245,107 @@ namespace flame
 							m->filename = L"standard_cylinder";
 							auto& mesh = m->meshes.emplace_back();
 							mesh.model = m;
-							mesh_add_cylinder(mesh, 0.5f, 1.f, 12);
+							mesh_add_cylinder(mesh, 0.5f, 1.f, 12, vec3(0.f, 0.5f, 0.f));
 							mesh.calc_bounds();
 
 							standard_cylinder = m;
 						}
 						return standard_cylinder;
+					}
+					else if (wstr == L"tri_prism")
+					{
+						if (!standard_tri_prism)
+						{
+							auto m = new ModelPrivate;
+							m->filename = L"standard_tri_prism";
+							auto& mesh = m->meshes.emplace_back();
+							mesh.model = m;
+							{
+								auto lt_0 = vec3(0.f, 0.f, -0.5f);
+								auto lt_1 = vec3(0.f, 1.f, -0.5f);
+								auto lt_2 = vec3(1.f, 0.f, -0.5f);
+								auto rt_0 = vec3(0.f, 0.f, +0.5f);
+								auto rt_1 = vec3(0.f, 1.f, +0.5f);
+								auto rt_2 = vec3(1.f, 0.f, +0.5f);
+
+								mesh.positions.push_back(lt_0);
+								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
+								mesh.positions.push_back(lt_1);
+								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
+								mesh.positions.push_back(lt_2);
+								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
+								
+								mesh.indices.push_back(0);
+								mesh.indices.push_back(1);
+								mesh.indices.push_back(2);
+
+								mesh.positions.push_back(rt_0);
+								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
+								mesh.positions.push_back(rt_1);
+								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
+								mesh.positions.push_back(rt_2);
+								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
+
+								mesh.indices.push_back(3);
+								mesh.indices.push_back(5);
+								mesh.indices.push_back(4);
+
+								mesh.positions.push_back(lt_0);
+								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
+								mesh.positions.push_back(lt_1);
+								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
+								mesh.positions.push_back(rt_0);
+								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
+								mesh.positions.push_back(rt_1);
+								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
+
+								mesh.indices.push_back(6);
+								mesh.indices.push_back(9);
+								mesh.indices.push_back(7);
+								mesh.indices.push_back(6);
+								mesh.indices.push_back(8);
+								mesh.indices.push_back(9);
+
+								auto n = normalize(cross(normalize(lt_2 - lt_1), vec3(0.f, 0.f, -1.f)));
+								mesh.positions.push_back(lt_1);
+								mesh.normals.push_back(n);
+								mesh.positions.push_back(lt_2);
+								mesh.normals.push_back(n);
+								mesh.positions.push_back(rt_1);
+								mesh.normals.push_back(n);
+								mesh.positions.push_back(rt_2);
+								mesh.normals.push_back(n);
+
+								mesh.indices.push_back(10);
+								mesh.indices.push_back(13);
+								mesh.indices.push_back(11);
+								mesh.indices.push_back(10);
+								mesh.indices.push_back(12);
+								mesh.indices.push_back(13);
+
+								mesh.positions.push_back(lt_2);
+								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
+								mesh.positions.push_back(lt_0);
+								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
+								mesh.positions.push_back(rt_2);
+								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
+								mesh.positions.push_back(rt_0);
+								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
+
+								mesh.indices.push_back(14);
+								mesh.indices.push_back(17);
+								mesh.indices.push_back(15);
+								mesh.indices.push_back(14);
+								mesh.indices.push_back(16);
+								mesh.indices.push_back(17);
+
+
+							}
+							mesh.calc_bounds();
+
+							standard_tri_prism = m;
+						}
+						return standard_tri_prism;
 					}
 					return nullptr;
 				}

@@ -29,8 +29,6 @@ void main()
 {
 #ifdef MAT_CODE
 	MaterialInfo material = material.infos[pc.index & 0xffff];
-	float tiling = float(material.f[0]);
-	vec4 weights = texture(terrain_splash_maps[pc.index >> 16], i_uv);
 	#include MAT_CODE
 #else
 	#ifndef DEPTH_ONLY

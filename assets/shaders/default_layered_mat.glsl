@@ -1,39 +1,73 @@
 #ifndef DEPTH_ONLY
 
-vec4 color = vec4(0);
-#if LAYERS == 1
-	if (weights[0] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[0], i_normal, i_coordw, tiling) * weights[0];
-#elif LAYERS == 2
-	if (weights[0] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[0], i_normal, i_coordw, tiling) * weights[0];
-	if (weights[1] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[1], i_normal, i_coordw, tiling) * weights[1];
-#elif LAYERS == 3
-	if (weights[0] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[0], i_normal, i_coordw, tiling) * weights[0];
-	if (weights[1] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[1], i_normal, i_coordw, tiling) * weights[1];
-	if (weights[2] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[2], i_normal, i_coordw, tiling) * weights[2];
-#elif LAYERS == 4
-	if (weights[0] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[0], i_normal, i_coordw, tiling) * weights[0];
-	if (weights[1] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[1], i_normal, i_coordw, tiling) * weights[1];
-	if (weights[2] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[2], i_normal, i_coordw, tiling) * weights[2];
-	if (weights[3] > 0.0)
-		color.rgb += textureTriPlanar(material.map_indices[3], i_normal, i_coordw, tiling) * weights[3];
+float tiling = material.tiling;
+vec4 weights = sample_map(material.map_indices[SPLASH_MAP], i_uv * tiling);
+
+vec4 color;
+#ifdef COLOR_MAP
+	color = material.color;
+#else
+	color = vec4(0);
 #endif
+
+float metallic;
+#ifdef METALLIC_MAP
+	metallic = 0;
+#else
+	metallic = material.metallic;
+#endif
+
+float roughness;
+#ifdef ROUGHNESS_MAP
+	roughness = 0;
+#else
+	roughness = material.roughness;
+#endif
+
+vec3 emissive;
+#ifdef EMISSIVE_MAP
+	emissive = vec3(0);
+#else
+	emissive = material.emissive.rgb;
+#endif
+
+for (int i = 0; i < LAYERS; i++)
+{
+	if (weights[i] > 0.0)
+	{
+		#ifdef TRI_PLANAR
+			#ifdef COLOR_MAP
+				color.rgb += textureTriPlanar(material.map_indices[COLOR_MAP + i], i_normal, i_coordw, tiling) * weights[i];
+			#endif
+			#ifdef METALLIC_MAP
+				metallic += textureTriPlanar(material.map_indices[METALLIC_MAP + i], i_normal, i_coordw, tiling).r * weights[i];
+			#endif
+			#ifdef ROUGHNESS_MAP
+				roughness += textureTriPlanar(material.map_indices[ROUGHNESS_MAP + i], i_normal, i_coordw, tiling).r * weights[i];
+			#endif
+			#ifdef EMISSIVE_MAP
+				emissive.rgb += textureTriPlanar(material.map_indices[EMISSIVE_MAP + i], i_normal, i_coordw, tiling) * weights[i];
+			#endif
+		#else
+			#ifdef COLOR_MAP
+				color.rgb += sample_map(material.map_indices[COLOR_MAP + i], i_uv * tiling).rgb * weights[i];
+			#endif
+			#ifdef METALLIC_MAP
+				metallic += sample_map(material.map_indices[METALLIC_MAP + i], i_uv * tiling).r * weights[i];
+			#endif
+			#ifdef ROUGHNESS_MAP
+				roughness += sample_map(material.map_indices[ROUGHNESS_MAP + i], i_uv * tiling).r * weights[i];
+			#endif
+			#ifdef EMISSIVE_MAP
+				emissive.rgb += sample_map(material.map_indices[EMISSIVE_MAP + i], i_uv * tiling).rgb * weights[i];
+			#endif
+		#endif
+	}
+}
 
 #ifdef TINT_COLOR
 	color *= material.color;
 #endif
-
-float metallic = material.metallic;
-float roughness = material.roughness;
-vec3 emissive = material.emissive.rgb;
 	
 #ifndef GBUFFER_PASS
 	vec3 albedo = (1.0 - metallic) * color.rgb;

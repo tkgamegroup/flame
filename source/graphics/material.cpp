@@ -64,6 +64,15 @@ namespace flame
 			data_changed("emissive"_h);
 		}
 
+		void MaterialPrivate::set_tiling(float v)
+		{
+			if (tiling == v)
+				return;
+			tiling = v;
+
+			data_changed("tiling"_h);
+		}
+
 		void MaterialPrivate::set_opaque(bool v)
 		{
 			if (opaque == v)
@@ -176,6 +185,16 @@ namespace flame
 			alpha_test = v;
 
 			data_changed("alpha_test"_h);
+		}
+
+		void MaterialPrivate::set_splash_map(int i)
+		{
+			i = clamp(i, -1, (int)textures.size() - 1);
+			if (splash_map == i)
+				return;
+			splash_map = i;
+
+			data_changed("splash_map"_h);
 		}
 
 		void MaterialPrivate::set_textures(const std::vector<Texture>& _textures)

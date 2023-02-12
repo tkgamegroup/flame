@@ -90,48 +90,6 @@ namespace flame
 		data_changed("height_map_name"_h);
 	}
 
-	void cTerrainPrivate::set_splash_map_name(const std::filesystem::path& name)
-	{
-		if (splash_map_name == name)
-			return;
-
-		auto old_one = splash_map;
-		if (!splash_map_name.empty())
-		{
-			if (!splash_map_name.native().starts_with(L"0x"))
-				AssetManagemant::release_asset(Path::get(splash_map_name));
-			else
-				old_one = nullptr;
-		}
-		splash_map_name = name;
-		if (!splash_map_name.empty())
-		{
-			if (!splash_map_name.native().starts_with(L"0x"))
-			{
-				AssetManagemant::get_asset(Path::get(splash_map_name));
-				splash_map = !splash_map_name.empty() ? graphics::Image::get(splash_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
-			}
-			else
-				splash_map = (graphics::ImagePtr)s2u_hex<uint64>(splash_map_name.string());
-		}
-
-		if (!splash_map_name.empty())
-			AssetManagemant::release_asset(Path::get(splash_map_name));
-		splash_map_name = name;
-		if (!splash_map_name.empty())
-			AssetManagemant::get_asset(Path::get(splash_map_name));
-
-		if (splash_map != old_one)
-		{
-			dirty = true;
-			node->mark_transform_dirty();
-		}
-
-		if (old_one)
-			graphics::Image::release(old_one);
-		data_changed("splash_map_name"_h);
-	}
-
 	void cTerrainPrivate::set_material_name(const std::filesystem::path& name)
 	{
 		if (material_name == name)
@@ -241,16 +199,12 @@ namespace flame
 			sRenderer::instance()->release_texture_res(grass_texture_id);
 		if (!height_map_name.empty())
 			AssetManagemant::release_asset(Path::get(height_map_name));
-		if (!splash_map_name.empty())
-			AssetManagemant::release_asset(Path::get(splash_map_name));
 		if (!material_name.empty())
 			AssetManagemant::release_asset(Path::get(material_name));
 		if (!grass_texture_name.empty())
 			AssetManagemant::release_asset(Path::get(grass_texture_name));
 		if (height_map && !height_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(height_map);
-		if (splash_map && !splash_map_name.native().starts_with(L"0x"))
-			graphics::Image::release(splash_map);
 		if (grass_texture)
 			graphics::Image::release(grass_texture);
 		if (material)
@@ -264,7 +218,7 @@ namespace flame
 	void cTerrainPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (instance_id == -1 || material_res_id == -1 ||  !height_map || !splash_map)
+			if (instance_id == -1 || material_res_id == -1 ||  !height_map)
 				return;
 
 			switch (draw_data.pass)
@@ -275,7 +229,7 @@ namespace flame
 					if (enable)
 					{
 						sRenderer::instance()->set_terrain_instance(instance_id, node->transform, extent, blocks, tess_level, grass_field_tess_level, grass_channel, grass_texture_id,
-							height_map->get_view(), normal_map->get_view(), tangent_map->get_view(), splash_map->get_view());
+							height_map->get_view(), normal_map->get_view(), tangent_map->get_view());
 					}
 					dirty = false;
 				}

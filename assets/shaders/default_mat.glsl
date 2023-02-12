@@ -1,45 +1,33 @@
+
+
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
-		vec4 color;
-		color.a = sample_map(material.map_indices[ALPHA_MAP], i_uv).r;
-		if (color.a < ALPHA_TEST)
+		float alpha = sample_map(material.map_indices[ALPHA_MAP], i_uv).r;
+		#ifdef TINT_COLOR
+			alpha *= material.color.a;
+		#endif
+		if (alpha < ALPHA_TEST)
 			discard;
-		#ifndef DEPTH_ONLY
-			#ifdef COLOR_MAP
-				color.rgb = sample_map(material.map_indices[COLOR_MAP], i_uv).rgb;
-				#ifdef TINT_COLOR
-					color *= material.color;
-				#endif
-			#else
-				vec4 color = material.color;
-			#endif
-		#endif
-	#else
-		#ifdef COLOR_MAP
-			vec4 color = sample_map(material.map_indices[COLOR_MAP], i_uv);
-			#ifdef TINT_COLOR
-				color *= material.color;
-			#endif
-		#else
-			vec4 color = material.color;
-		#endif
-		if (color.a < ALPHA_TEST)
-			discard;
-	#endif
-#else
-	#ifdef COLOR_MAP
-		#ifndef DEPTH_ONLY
-			vec4 color = sample_map(material.map_indices[COLOR_MAP], i_uv);
-			#ifdef TINT_COLOR
-				color *= material.color;
-			#endif
-		#endif
-	#else
-		vec4 color = material.color;
 	#endif
 #endif
 
 #ifndef DEPTH_ONLY
+	vec4 color;
+	#ifdef COLOR_MAP
+		color = sample_map(material.map_indices[COLOR_MAP], i_uv);
+		#ifdef TINT_COLOR
+			color *= material.color;
+		#endif
+		#ifndef ALPHA_MAP
+			#ifdef ALPHA_TEST
+				if (color.a < ALPHA_TEST)
+					discard;
+			#endif
+		#else
+			color.a = alpha;
+		#endif
+	#else
+		color = material.color;
 
 	float metallic;
 	#ifdef METALLIC_MAP

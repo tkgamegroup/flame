@@ -182,7 +182,7 @@ void App::init()
 						open_prefab(path);
 				});
 			}
-			if (ImGui::MenuItem("Save Prefab"))
+			if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
 			{
 				if (e_prefab)
 					e_prefab->save(prefab_path);
@@ -191,32 +191,47 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Edit"))
 		{
-			if (ImGui::MenuItem("Undo"))
+			if (ImGui::MenuItem("Undo (Ctrl+Z)"))
 				cmd_undo();
-			if (ImGui::MenuItem("Redo"))
+			if (ImGui::MenuItem("Redo (Ctrl+Y)"))
 				cmd_redo();
 			if (ImGui::MenuItem(std::format("Clear Histories ({})", (int)histories.size()).c_str()))
 			{
 				history_idx = -1;
 				histories.clear();
 			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Create Empty"))
-				cmd_create_entity();
-			if (ImGui::MenuItem("Create Node"))
-				cmd_create_entity(nullptr, "node"_h);
-			if (ImGui::MenuItem("Create Cube"))
-				cmd_create_entity(nullptr, "cube"_h);
-			if (ImGui::MenuItem("Create Sphere"))
-				cmd_create_entity(nullptr, "sphere"_h);
-			if (ImGui::MenuItem("Create Directional Light"))
-				cmd_create_entity(nullptr, "dir_light"_h);
-			if (ImGui::MenuItem("Create Point Light"))
-				cmd_create_entity(nullptr, "pt_light"_h);
-			if (ImGui::MenuItem("Create Camera"))
-				cmd_create_entity(nullptr, "camera"_h);
-			if (ImGui::MenuItem("Delete"))
+			if (ImGui::MenuItem("Duplicate (Ctrl+D)"))
+				;
+			if (ImGui::MenuItem("Delete (Del)"))
 				cmd_delete_entity();
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Entity"))
+		{
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Empty"))
+					cmd_create_entity();
+				if (ImGui::MenuItem("Node"))
+					cmd_create_entity(nullptr, "node"_h);
+				if (ImGui::MenuItem("Plane"))
+					cmd_create_entity(nullptr, "plane"_h);
+				if (ImGui::MenuItem("Cube"))
+					cmd_create_entity(nullptr, "cube"_h);
+				if (ImGui::MenuItem("Sphere"))
+					cmd_create_entity(nullptr, "sphere"_h);
+				if (ImGui::MenuItem("Cylinder"))
+					cmd_create_entity(nullptr, "cylinder"_h);
+				if (ImGui::MenuItem("Triangular Prism"))
+					cmd_create_entity(nullptr, "tri_prism"_h);
+				if (ImGui::MenuItem("Directional Light"))
+					cmd_create_entity(nullptr, "dir_light"_h);
+				if (ImGui::MenuItem("Point Light"))
+					cmd_create_entity(nullptr, "pt_light"_h);
+				if (ImGui::MenuItem("Camera"))
+					cmd_create_entity(nullptr, "camera"_h);
+				ImGui::EndMenu();
+			}
 			if (ImGui::MenuItem("Focus To Selected (F)"))
 				view_scene.focus_to_selected();
 			if (ImGui::MenuItem("Selected To Focus (G)"))
@@ -316,7 +331,7 @@ void App::init()
 								if (!test_dialog.points.empty())
 									draw_data.primitives.emplace_back("LineList"_h, std::move(test_dialog.points), cvec4(255, 0, 0, 255));
 							}
-						}, "navmesh_test"_h);
+							}, "navmesh_test"_h);
 						dialogs.push_back([&]() {
 							if (test_dialog.open)
 							{
@@ -340,8 +355,8 @@ void App::init()
 								if (!test_dialog.open)
 									e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
 							}
-							return test_dialog.open;
-						});
+						return test_dialog.open;
+							});
 					}
 				}
 				ImGui::EndMenu();
@@ -923,9 +938,14 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	e->name = "Entity " + str(id++);
 	switch (type)
 	{
-	case "empty"_h: break;
+	case "empty"_h: 
+		break;
 	case "node"_h:
 		e->add_component_t<cNode>();
+		break;
+	case "plane"_h:
+		e->add_component_t<cNode>();
+		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
 		break;
 	case "cube"_h:
 		e->add_component_t<cNode>();
@@ -934,6 +954,14 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	case "sphere"_h:
 		e->add_component_t<cNode>();
 		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
+		break;
+	case "cylinder"_h:
+		e->add_component_t<cNode>();
+		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cylinder", L"default");
+		break;
+	case "tri_prism"_h:
+		e->add_component_t<cNode>();
+		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_tri_prism", L"default");
 		break;
 	case "dir_light"_h:
 		e->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
@@ -947,6 +975,12 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		e->add_component_t<cNode>();
 		e->add_component_t<cCamera>();
 		break;
+	}
+	if (auto node = e->node(); node)
+	{
+		auto camera = view_scene.curr_camera();
+		auto camera_node = camera->node;
+		node->set_pos(camera_node->g_pos - camera_node->g_rot[2] * view_scene.camera_zoom);
 	}
 	dst->add_child(e);
 	return true;

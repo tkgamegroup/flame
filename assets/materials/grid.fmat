@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<material color="1,1,1,1" roughness="1" opaque="true" color_map="-1" normal_map="-1" metallic_map="-1" roughness_map="-1" emissive_map="-1" alpha_map="-1" code_file="flame/shaders/default_mat.glsl">
+<material>
 	<textures>
 		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
 		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />

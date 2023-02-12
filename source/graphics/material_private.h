@@ -15,6 +15,7 @@ namespace flame
 			void set_metallic(float v) override;
 			void set_roughness(float v) override;
 			void set_emissive(const vec4& v) override;
+			void set_tiling(float v) override;
 			void set_opaque(bool v) override;
 			void set_sort(bool v) override;
 			void set_receive_ssr(bool v) override;
@@ -27,6 +28,7 @@ namespace flame
 			void set_emissive_map_strength(float v) override;
 			void set_alpha_map(int i) override;
 			void set_alpha_test(float v) override;
+			void set_splash_map(int i)override;
 
 			void set_textures(const std::vector<Texture>& textures) override;
 

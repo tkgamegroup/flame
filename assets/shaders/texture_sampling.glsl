@@ -26,16 +26,41 @@ vec3 textureVariant(int map_id, vec2 uv)
 vec3 textureTriPlanar(int map_id, vec3 normal, vec3 world_pos, float tiling)
 {
 	vec3 ret = vec3(0.0);
-#ifdef TRI_PLANAR
 	vec3 blending = abs(normal);
 	blending = normalize(max(blending, 0.00001));
 	blending /= blending.x + blending.y + blending.z;
 	if (blending.x > 0)
-		ret += textureVariant(map_id, world_pos.yz * tiling) * blending.x;
+	{
+		vec2 uv = world_pos.yz * tiling;
+		vec3 col;
+		#ifdef TEXTURE_VARIANT
+			col = textureVariant(map_id, uv);
+		#else
+			col = sample_map(map_id, uv).rgb;
+		#endif
+		ret += col * blending.x;
+	}
 	if (blending.y > 0)
-		ret += textureVariant(map_id, world_pos.xz * tiling) * blending.y;
+	{
+		vec2 uv = world_pos.xz * tiling;
+		vec3 col;
+		#ifdef TEXTURE_VARIANT
+			col = textureVariant(map_id, uv);
+		#else
+			col = sample_map(map_id, uv).rgb;
+		#endif
+		ret += col * blending.y;
+	}
 	if (blending.z > 0)
-		ret += textureVariant(map_id, world_pos.xy * tiling) * blending.z;
-#endif
+	{
+		vec2 uv = world_pos.xy * tiling;
+		vec3 col;
+		#ifdef TEXTURE_VARIANT
+			col = textureVariant(map_id, uv);
+		#else
+			col = sample_map(map_id, uv).rgb;
+		#endif
+		ret += col * blending.z;
+	}
 	return ret;
 }

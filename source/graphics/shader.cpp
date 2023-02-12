@@ -357,6 +357,7 @@ namespace flame
 					for (auto& s : states)
 						ok = ok && s.first;
 				};
+				auto in_loop = false;
 
 				std::string ret;
 				auto lines = get_file_lines(path);
@@ -386,7 +387,7 @@ namespace flame
 						s.second = s.first;
 						eval_state();
 					}
-					else if (tl.starts_with("#else"))
+					else if (tl == "#else")
 					{
 						auto& s = states.back();
 						if (!s.second)
@@ -420,7 +421,7 @@ namespace flame
 							s.first = false;
 						eval_state();
 					}
-					else if (tl.starts_with("#endif"))
+					else if (tl == "#endif")
 					{
 						states.pop_back();
 						eval_state();

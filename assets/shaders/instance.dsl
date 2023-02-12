@@ -59,10 +59,8 @@ layout(set = SET, binding = 0) buffer readonly Instance
 layout (set = SET, binding = 1) uniform sampler2D terrain_height_maps[8];
 layout (set = SET, binding = 2) uniform sampler2D terrain_normal_maps[8];
 layout (set = SET, binding = 3) uniform sampler2D terrain_tangent_maps[8];
-layout (set = SET, binding = 4) uniform sampler2D terrain_splash_maps[8];
 
-layout (set = SET, binding = 5) uniform sampler3D volume_data_maps[8];
-layout (set = SET, binding = 6) uniform sampler3D volume_splash_maps[8];
+layout (set = SET, binding = 4) uniform sampler3D volume_data_maps[8];
 
 struct MarchingCubesLookupItem
 {
@@ -70,12 +68,12 @@ struct MarchingCubesLookupItem
 	uint8_t TriangleCount;
 };
 
-layout(set = SET, binding = 7) buffer readonly MarchingCubesLookup
+layout(set = SET, binding = 5) buffer readonly MarchingCubesLookup
 {
 	MarchingCubesLookupItem items[256];
 }marching_cubes_loopup;
 
-layout(set = SET, binding = 8) buffer TransformFeedback
+layout(set = SET, binding = 6) buffer TransformFeedback
 {
 	uint vertex_count;
 	float vertex_x[524288];

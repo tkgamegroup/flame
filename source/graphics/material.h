@@ -46,6 +46,10 @@ namespace flame
 			// Reflect
 			virtual void set_emissive(const vec4& v) = 0;
 			// Reflect
+			float tiling = 1.f;
+			// Reflect
+			virtual void set_tiling(float v) = 0;
+			// Reflect
 			bool opaque = true;
 			// Reflect
 			virtual void set_opaque(bool v) = 0;
@@ -93,6 +97,10 @@ namespace flame
 			float alpha_test = 0.f;
 			// Reflect
 			virtual void set_alpha_test(float v) = 0;
+			// Reflect
+			int splash_map = -1;
+			// Reflect
+			virtual void set_splash_map(int i) = 0;
 
 			// Reflect
 			vec4 float_values = vec4(0.f);

@@ -1376,6 +1376,32 @@ namespace flame
 						it++;
 				}
 			}
+			if (res.mat->splash_map != -1)
+			{
+				auto found = false;
+				for (auto& d : res.mat->code_defines)
+				{
+					if (d.starts_with("frag:SPLASH_MAP"))
+					{
+						d = "frag:SPLASH_MAP=" + str(res.mat->splash_map);
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					res.mat->code_defines.push_back("frag:SPLASH_MAP=" + str(res.mat->splash_map));
+			}
+			else
+			{
+				auto& defines = res.mat->code_defines;
+				for (auto it = defines.begin(); it != defines.end(); )
+				{
+					if (it->starts_with("frag:SPLASH_MAP"))
+						it = defines.erase(it);
+					else
+						it++;
+				}
+			}
 
 			graphics::Queue::get()->wait_idle();
 
@@ -1479,6 +1505,7 @@ namespace flame
 			case "roughness_map"_h:
 			case "emissive_map"_h:
 			case "alpha_map"_h:
+			case "splash_map"_h:
 				update_mat_res(id, false, false, true);
 				break;
 			case "textures"_h:
@@ -1615,7 +1642,7 @@ namespace flame
 	}
 
 	void sRendererPrivate::set_terrain_instance(uint id, const mat4& mat, const vec3& extent, const uvec2& blocks, uint tess_level, uint grass_field_tess_level, uint grass_channel, int grass_texture_id,
-		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map, graphics::ImageViewPtr splash_map)
+		graphics::ImageViewPtr height_map, graphics::ImageViewPtr normal_map, graphics::ImageViewPtr tangent_map)
 	{
 		auto pi = buf_instance.item_d("terrains"_h, id);
 		pi.item("mat"_h).set(mat);
@@ -1630,7 +1657,6 @@ namespace flame
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
-		ds_instance->set_image("terrain_splash_maps"_h, id, splash_map, nullptr);
 		ds_instance->update();
 	}
 
@@ -1692,7 +1718,7 @@ namespace flame
 		return id;
 	}
 
-	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map, graphics::ImageViewPtr splash_map)
+	void sRendererPrivate::set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map)
 	{
 		auto pi = buf_instance.item_d("volumes"_h, id);
 		pi.item("mat"_h).set(mat);
@@ -1700,7 +1726,6 @@ namespace flame
 		pi.item("blocks"_h).set(blocks);
 
 		ds_instance->set_image("volume_data_maps"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
-		ds_instance->set_image("volume_splash_maps"_h, id, splash_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 		ds_instance->update();
 	}
 
