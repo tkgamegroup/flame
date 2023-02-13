@@ -197,6 +197,22 @@ namespace flame
 			data_changed("splash_map"_h);
 		}
 
+		void MaterialPrivate::set_code_file(const std::filesystem::path& path)
+		{
+			if (code_file == path)
+				return;
+			code_file = path;
+
+			data_changed("code_file"_h);
+		}
+
+		void MaterialPrivate::set_code_defines(const std::vector<std::string>& defines)
+		{
+			code_defines = defines;
+
+			data_changed("code_defines"_h);
+		}
+
 		void MaterialPrivate::set_textures(const std::vector<Texture>& _textures)
 		{
 			textures = _textures;

@@ -1,8 +1,13 @@
-
+#ifndef TRI_PLANAR
+	#define SAMPLE_MAP(ID) sample_map(material.map_indices[ID], i_uv)
+#else
+	float tiling = material.tiling;
+	#define SAMPLE_MAP(ID) textureTriPlanar(material.map_indices[ID], i_normal, i_coordw, tiling)
+#endif
 
 #ifdef ALPHA_TEST
 	#ifdef ALPHA_MAP
-		float alpha = sample_map(material.map_indices[ALPHA_MAP], i_uv).r;
+		float alpha = SAMPLE_MAP(ALPHA_MAP).r;
 		#ifdef TINT_COLOR
 			alpha *= material.color.a;
 		#endif
@@ -14,7 +19,7 @@
 #ifndef DEPTH_ONLY
 	vec4 color;
 	#ifdef COLOR_MAP
-		color = sample_map(material.map_indices[COLOR_MAP], i_uv);
+		color = SAMPLE_MAP(COLOR_MAP);
 		#ifdef TINT_COLOR
 			color *= material.color;
 		#endif
@@ -28,31 +33,34 @@
 		#endif
 	#else
 		color = material.color;
+	#endif
 
 	float metallic;
 	#ifdef METALLIC_MAP
-		metallic = sample_map(material.map_indices[METALLIC_MAP], i_uv).r;
+		metallic = SAMPLE_MAP(METALLIC_MAP).r;
 	#else
 		metallic = material.metallic;
 	#endif
-
+	  
 	float roughness;
 	#ifdef ROUGHNESS_MAP
-		roughness = sample_map(material.map_indices[ROUGHNESS_MAP], i_uv).r;
+		roughness = SAMPLE_MAP(ROUGHNESS_MAP).r;
 	#else
 		roughness = material.roughness;
 	#endif
 
-	vec3 N = i_normal;
+	vec3 N;
 	#ifdef NORMAL_MAP
-		vec3 sampled_normal = normalize(sample_map(material.map_indices[NORMAL_MAP], i_uv).xyz * 2.0 - 1.0);
+		vec3 sampled_normal = normalize(SAMPLE_MAP(NORMAL_MAP).xyz * 2.0 - 1.0);
 		vec3 bitangent = normalize(cross(i_tangent, i_normal));
 		N = normalize(mat3(i_tangent, bitangent, i_normal) * sampled_normal * vec3(1.0, 1.0, material.normal_map_strength));
+	#else
+		N = i_normal;
 	#endif
 
 	vec3 emissive;
 	#ifdef EMISSIVE_MAP
-		emissive = sample_map(material.map_indices[EMISSIVE_MAP], i_uv).rgb;
+		emissive = SAMPLE_MAP(EMISSIVE_MAP).rgb;
 		emissive *= material.emissive_map_strength;
 	#else
 		emissive = material.emissive.rgb;

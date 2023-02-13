@@ -488,7 +488,15 @@ void App::init()
 			"World"
 		};
 		ImGui::SetNextItemWidth(100.f);
-		ImGui::Combo("Mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
+		ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
+		ImGui::SameLine();
+		ImGui::Checkbox("Snap", &snap);
+		if (snap)
+		{
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(80.f);
+			ImGui::InputFloat("##snap_value", &snap_value);
+		}
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
 
@@ -980,7 +988,14 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	{
 		auto camera = view_scene.curr_camera();
 		auto camera_node = camera->node;
-		node->set_pos(camera_node->g_pos - camera_node->g_rot[2] * view_scene.camera_zoom);
+		auto pos = camera_node->g_pos - camera_node->g_rot[2] * view_scene.camera_zoom;
+		if (snap)
+		{
+			pos /= snap_value;
+			pos -= fract(pos);
+			pos *= snap_value;
+		}
+		node->set_pos(pos);
 	}
 	dst->add_child(e);
 	return true;

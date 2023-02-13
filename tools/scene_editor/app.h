@@ -124,6 +124,8 @@ struct App : UniverseApplication
 
 	Tool tool = ToolSelect;
 	ToolMode tool_mode = ToolLocal;
+	bool snap = false;
+	float snap_value = 0.5f;
 
 	void init();
 

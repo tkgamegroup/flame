@@ -1,5 +1,5 @@
 #include "../math.glsl"
-
+#include "../texture_sampling.glsl"
 #ifndef GBUFFER_PASS
 #ifdef MAT_CODE
 #include "../shading.glsl"

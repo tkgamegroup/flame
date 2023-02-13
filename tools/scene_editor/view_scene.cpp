@@ -111,13 +111,22 @@ void View_Scene::on_draw()
 				auto mat = tar->transform;
 				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 				auto op = ImGuizmo::TRANSLATE;
+				vec3 snap_value;
 				switch (app.tool)
 				{
-				case ToolMove: op = ImGuizmo::TRANSLATE; break;
-				case ToolRotate: op = ImGuizmo::ROTATE; break;
-				case ToolScale: op = ImGuizmo::SCALE; break;
+				case ToolMove: 
+					op = ImGuizmo::TRANSLATE;
+					snap_value = vec3(app.snap_value);
+					break;
+				case ToolRotate: 
+					op = ImGuizmo::ROTATE; 
+					break;
+				case ToolScale: 
+					op = ImGuizmo::SCALE; 
+					break;
 				}
-				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0]);
+				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0],
+					nullptr, app.tool == ToolMove && app.snap ? &snap_value[0] : nullptr);
 				static bool last_gizmo_using = false;
 				static vec3 before_editing_pos;
 				static quat before_editing_qut;

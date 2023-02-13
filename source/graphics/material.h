@@ -111,7 +111,11 @@ namespace flame
 			// Reflect
 			std::filesystem::path code_file = L"flame/shaders/default_mat.glsl";
 			// Reflect
+			virtual void set_code_file(const std::filesystem::path& path) = 0;
+			// Reflect
 			std::vector<std::string> code_defines;
+			// Reflect
+			virtual void set_code_defines(const std::vector<std::string>& defines) = 0;
 
 			// Reflect
 			std::vector<Texture> textures;

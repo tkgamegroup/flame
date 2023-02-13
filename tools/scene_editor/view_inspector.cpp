@@ -151,6 +151,22 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 	ImGui::PushID(id);
 	switch (type->tag)
 	{
+	case TagE:
+	{
+		auto data = (int*)type->get_value(src, offset, getter, !direct_io);
+		auto ti = (TypeInfo_Enum*)type;
+		auto ei = ti->ei;
+		if (ImGui::BeginCombo(display_name.c_str(), ei->items[*data].name.c_str()))
+		{
+			for (auto& i : ei->items)
+			{
+				if (ImGui::Selectable(i.name.c_str()))
+					*data = i.value;
+			}
+			ImGui::EndCombo();
+		}
+	}
+		break;
 	case TagD:
 	{
 		auto data = type->get_value(src, offset, getter, !direct_io);

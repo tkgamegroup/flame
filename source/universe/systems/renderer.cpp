@@ -484,7 +484,6 @@ namespace flame
 			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
 			ds_instance->set_image("terrain_normal_maps"_h, i, img_black->get_view(), sp_trilinear);
 			ds_instance->set_image("terrain_tangent_maps"_h, i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_splash_maps"_h, i, img_black->get_view(), sp_trilinear);
 		}
 		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
 		ds_instance->set_buffer("TransformFeedback"_h, 0, buf_transform_feedback.buf.get());
@@ -1454,6 +1453,7 @@ namespace flame
 			p_info.item("metallic"_h).set(res.mat->metallic);
 			p_info.item("roughness"_h).set(res.mat->roughness);
 			p_info.item("emissive"_h).set(res.mat->emissive);
+			p_info.item("tiling"_h).set(res.mat->tiling);
 			p_info.item("normal_map_strength"_h).set(res.mat->normal_map_strength);
 			p_info.item("emissive_map_strength"_h).set(res.mat->emissive_map_strength);
 			p_info.item("flags"_h).set(res.mat->get_flags());
@@ -1506,6 +1506,8 @@ namespace flame
 			case "emissive_map"_h:
 			case "alpha_map"_h:
 			case "splash_map"_h:
+			case "code_file"_h:
+			case "code_defines"_h:
 				update_mat_res(id, false, false, true);
 				break;
 			case "textures"_h:
@@ -1635,7 +1637,6 @@ namespace flame
 			ds_instance->set_image("terrain_height_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_normal_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_tangent_maps"_h, id, img_black->get_view(), nullptr);
-			ds_instance->set_image("terrain_splash_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;
@@ -1712,7 +1713,6 @@ namespace flame
 		{
 			volume_instances.release_item(id);
 			ds_instance->set_image("volume_data_maps"_h, id, img_black3D->get_view(), nullptr);
-			ds_instance->set_image("volume_splash_maps"_h, id, img_black3D->get_view(), nullptr);
 			ds_instance->update();
 		}
 		return id;

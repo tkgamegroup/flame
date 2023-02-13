@@ -30,6 +30,9 @@ namespace flame
 			void set_alpha_test(float v) override;
 			void set_splash_map(int i)override;
 
+			void set_code_file(const std::filesystem::path& path) override;
+			void set_code_defines(const std::vector<std::string>& defines) override;
+
 			void set_textures(const std::vector<Texture>& textures) override;
 
 			void save(const std::filesystem::path& filename) override;
