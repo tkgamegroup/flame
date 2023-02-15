@@ -155,7 +155,9 @@ namespace flame
 		std::vector<ParticleDraw>	particles;
 		std::vector<PrimitiveDraw>	primitives;
 
-		bool graphics_debug = false; // could use this to mark a capture
+		float line_width;
+
+		bool graphics_debug; // could use this to mark a capture
 
 		void reset(DrawPass _pass, uint _categories)
 		{
@@ -169,6 +171,8 @@ namespace flame
 			volumes.clear();
 			particles.clear();
 			primitives.clear();
+
+			line_width = 1.f;
 
 			graphics_debug = false;
 		}

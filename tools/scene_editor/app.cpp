@@ -2,6 +2,7 @@
 #include "selection.h"
 #include "view_scene.h"
 #include "view_project.h"
+#include "view_inspector.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -122,6 +123,18 @@ std::stack<std::unique_ptr<EditingObject>> editing_objects;
 
 App app;
 
+vec3 App::get_snap_pos(const vec3& _pos)
+{
+	auto pos = _pos;
+	if (move_snap)
+	{
+		pos /= move_snap_value;
+		pos -= fract(pos);
+		pos *= move_snap_value;
+	}
+	return pos;
+}
+
 static Entity* editor_selecting_entity = nullptr;
 
 void App::init()
@@ -165,6 +178,9 @@ void App::init()
 						open_project(path);
 				});
 			}
+			if (ImGui::MenuItem("Close Project"))
+				close_project();
+			ImGui::Separator();
 			if (ImGui::MenuItem("New Prefab"))
 			{
 				ImGui::OpenFileDialog("New Prefab", [this](bool ok, const std::filesystem::path& path) {
@@ -183,10 +199,9 @@ void App::init()
 				});
 			}
 			if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
-			{
-				if (e_prefab)
-					e_prefab->save(prefab_path);
-			}
+				save_prefab();
+			if (ImGui::MenuItem("Close Prefab"))
+				close_prefab();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit"))
@@ -201,9 +216,15 @@ void App::init()
 				histories.clear();
 			}
 			if (ImGui::MenuItem("Duplicate (Ctrl+D)"))
-				;
+				cmd_duplicate_entity();
 			if (ImGui::MenuItem("Delete (Del)"))
 				cmd_delete_entity();
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Project"))
+		{
+			if (ImGui::MenuItem("Build (Ctrl+B)"))
+				build_project();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Entity"))
@@ -489,13 +510,33 @@ void App::init()
 		};
 		ImGui::SetNextItemWidth(100.f);
 		ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
-		ImGui::SameLine();
-		ImGui::Checkbox("Snap", &snap);
-		if (snap)
+		bool* p_snap = nullptr;
+		float* p_snap_value = nullptr;
+		switch (tool)
 		{
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(80.f);
-			ImGui::InputFloat("##snap_value", &snap_value);
+		case ToolMove:
+			p_snap = &move_snap;
+			p_snap_value = &move_snap_value;
+			break;
+		case ToolRotate:
+			p_snap = &rotate_snap;
+			p_snap_value = &rotate_snap_value;
+			break;
+		case ToolScale:
+			p_snap = &scale_snap;
+			p_snap_value = &scale_snap_value;
+			break;
+		}
+		ImGui::SameLine();
+		if (p_snap)
+		{
+			ImGui::Checkbox("Snap", p_snap);
+			if (*p_snap)
+			{
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(80.f);
+				ImGui::InputFloat("##snap_value", p_snap_value);
+			}
 		}
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
@@ -575,6 +616,7 @@ void App::init()
 		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 		ImGui::End();
 
+		auto& io = ImGui::GetIO();
 		if (ImGui::IsKeyPressed(Keyboard_F5))
 		{
 			if (!e_playing)
@@ -594,14 +636,14 @@ void App::init()
 			if (e_preview)
 				cmd_restart_preview();
 		}
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+			save_prefab();
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
+			build_project();
 		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
-		{
 			cmd_undo();
-		}
 		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
-		{
 			cmd_redo();
-		}
 
 		if (e_preview)
 		{
@@ -679,7 +721,7 @@ void App::new_project(const std::filesystem::path& path)
 
 	std::ofstream main_h(cpp_path / L"main.h");
 	const auto main_h_content =
-R"^^^(
+		R"^^^(
 #pragma once
 
 #include <flame/universe/component.h>
@@ -707,7 +749,7 @@ struct cMain : Component
 
 	std::ofstream main_cpp(cpp_path / L"main.cpp");
 	const auto main_cpp_content =
-R"^^^(
+		R"^^^(
 #include <flame/universe/entity.h>
 
 #include "main.h"
@@ -741,7 +783,7 @@ EXPORT void* cpp_info()
 
 	std::ofstream app_cpp(path / L"app.cpp");
 	const auto app_cpp_content =
-R"^^^(
+		R"^^^(
 #include <flame/universe/application.h>
 
 using namespace flame;
@@ -768,7 +810,7 @@ int main()
 	auto cmake_path = path / L"CMakeLists.txt";
 	std::ofstream cmake_lists(cmake_path);
 	const auto cmake_content =
-R"^^^(
+		R"^^^(
 cmake_minimum_required(VERSION 3.16.4)
 set(flame_path "$ENV{{FLAME_PATH}}")
 include("${{flame_path}}/utils.cmake")
@@ -838,62 +880,80 @@ endforeach()
 
 void App::open_project(const std::filesystem::path& path)
 {
-	if (std::filesystem::exists(path) && std::filesystem::is_directory(path))
+	if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
+		return;
+	if (e_playing)
+		return;
+
+	close_project();
+
+	project_path = path;
+	directory_lock(project_path, true);
+
+	auto assets_path = project_path / L"assets";
+	if (std::filesystem::exists(assets_path))
 	{
-		if (e_playing)
-			return;
+		Path::set_root(L"assets", assets_path);
+		view_project.reset(assets_path);
+	}
+	else
+	{
+		Path::set_root(L"assets", L"");
+		view_project.reset(project_path);
+	}
 
-		if (e_prefab)
-		{
-			e_prefab->remove_from_parent();
-			e_prefab = nullptr;
-			e_preview = nullptr;
-		}
-
-		if (!project_path.empty())
-			directory_lock(project_path, false);
-		project_path = path;
-		directory_lock(project_path, true);
-
-		auto assets_path = path / L"assets";
-		if (std::filesystem::exists(assets_path))
-		{
-			Path::set_root(L"assets", assets_path);
-			view_project.reset(assets_path);
-		}
-		else
-		{
-			Path::set_root(L"assets", L"");
-			view_project.reset(project_path);
-		}
-
-		auto cpp_path = path / L"bin/debug/cpp.dll";
+	add_event([this]() {
+		auto cpp_path = project_path / L"bin/debug/cpp.dll";
 		if (std::filesystem::exists(cpp_path))
 		{
-			if (auto library = tidb.load(cpp_path); library)
+			if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
 			{
-				if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(library, "set_editor_info"); set_editor_info)
-				{
+				if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
 					set_editor_info(&editor_selecting_entity, &control);
-				}
 			}
 		}
-
-		selection.clear("app"_h);
-	}
+		return false;
+	});
 }
 
-void App::open_prefab(const std::filesystem::path& path)
+void App::build_project()
 {
-	prefab_path = path;
+	auto _project_path = project_path;
+	auto _prefab_path = prefab_path;
+	close_project();
 
-	add_event([this, path]() {
-		if (e_prefab)
-			e_prefab->remove_from_parent();
-		e_prefab = Entity::create();
-		e_prefab->load(path);
-		world->root->add_child(e_prefab);
-		e_preview = nullptr;
+	auto cpp_project_path = _project_path / L"build\\cpp.vcxproj";
+	auto vs_path = get_special_path("Visual Studio Installation Location");
+	auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
+	auto cwd = std::filesystem::current_path();
+	std::filesystem::current_path(cpp_project_path.parent_path());
+	printf("\n");
+	auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
+	_wsystem(cl.c_str());
+	std::filesystem::current_path(cwd);
+
+	open_project(_project_path);
+	open_prefab(_prefab_path);
+}
+
+void App::close_project()
+{
+	if (e_playing)
+		return;
+
+	close_prefab();
+
+	if (!project_path.empty())
+		directory_lock(project_path, false);
+	project_path = L"";
+
+	Path::set_root(L"assets", L"");
+	view_project.reset(L"");
+	view_inspector.reset();
+
+	add_event([this]() {
+		if (project_cpp_library)
+			tidb.unload(project_cpp_library);
 		return false;
 	});
 }
@@ -915,6 +975,51 @@ void App::new_prefab(const std::filesystem::path& path)
 	e_light->add_component_t<cDirLight>()->cast_shadow = true;
 	e->add_child(e_light);
 	e->save(path);
+}
+
+void App::open_prefab(const std::filesystem::path& path)
+{
+	if (e_playing)
+		return;
+	close_prefab();
+	prefab_path = path;
+
+	add_event([this]() {
+		e_prefab = Entity::create();
+		e_prefab->load(prefab_path);
+		world->root->add_child(e_prefab);
+		return false;
+	});
+}
+
+bool App::save_prefab()
+{
+	if (e_prefab)
+		e_prefab->save(prefab_path);
+	return true;
+}
+
+void App::close_prefab()
+{
+	if (e_playing)
+		return;
+	e_preview = nullptr;
+	prefab_path = L"";
+	selection.clear("app"_h);
+
+	add_event([this]() {
+		if (e_prefab)
+			e_prefab->remove_from_parent();
+		e_prefab = nullptr;
+		return false;
+	});
+}
+
+void App::open_file_in_vs(const std::filesystem::path& path)
+{
+	auto vs_path = get_special_path("Visual Studio Installation Location");
+	if (!vs_path.empty())
+		exec(vs_path / L"Common7\\IDE\\devenv.exe", std::format(L" /edit \"{}\"", path.wstring()));
 }
 
 bool App::cmd_undo()
@@ -985,18 +1090,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		break;
 	}
 	if (auto node = e->node(); node)
-	{
-		auto camera = view_scene.curr_camera();
-		auto camera_node = camera->node;
-		auto pos = camera_node->g_pos - camera_node->g_rot[2] * view_scene.camera_zoom;
-		if (snap)
-		{
-			pos /= snap_value;
-			pos -= fract(pos);
-			pos *= snap_value;
-		}
-		node->set_pos(pos);
-	}
+		node->set_pos(get_snap_pos(view_scene.camera_target_pos()));
 	dst->add_child(e);
 	return true;
 }
@@ -1019,6 +1113,11 @@ bool App::cmd_delete_entity(EntityPtr e)
 		return false;
 	});
 	selection.clear("app"_h);
+	return true;
+}
+
+bool App::cmd_duplicate_entity(EntityPtr e)
+{
 	return true;
 }
 

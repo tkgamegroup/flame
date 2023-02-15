@@ -21,6 +21,7 @@ struct View_Scene : graphics::GuiView
 	View_Scene();
 
 	cCameraPtr curr_camera();
+	vec3 camera_target_pos();
 	void focus_to_selected();
 	void selected_to_focus();
 	void on_draw() override;

@@ -104,9 +104,11 @@ namespace flame
 				// could be "standard_<name>" to get standard models
 				// standard models:
 				//  Name		| Size
+				//   plane		|  ext: 10
 				//   cube		|  hf-ext: 0.5
 				//   sphere		|  radius: 0.5
 				//   cylinder	|  radius: 0.5, height: 1.0
+				//   tri_prism	|  width: 1.0, height: 1.0, depth: 1.0
 				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;

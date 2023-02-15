@@ -451,6 +451,8 @@ namespace flame
 		std::string name;
 		uint name_hash;
 		std::vector<EnumItemInfo> items;
+		void* library = nullptr;
+		std::filesystem::path source_file;
 
 		inline const EnumItemInfo* find_item(std::string_view name) const
 		{
@@ -487,6 +489,7 @@ namespace flame
 		std::string code;
 		Metas metas;
 		void* library = nullptr;
+		std::filesystem::path source_file;
 
 		inline bool check(TypeInfo* ret, const std::initializer_list<TypeInfo*>& parms) const
 		{
@@ -572,6 +575,7 @@ namespace flame
 		std::unordered_map<uint, uint> functions_map;
 		std::unordered_map<uint, uint> attributes_map;
 		void* library = nullptr;
+		std::filesystem::path source_file;
 
 		inline int find_variable_i(std::string_view name) const
 		{
@@ -705,14 +709,10 @@ namespace flame
 			return *this;
 		}
 
-		inline void add_ti(TypeInfo* ti)
-		{
-			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
-		}
-
 		FLAME_FOUNDATION_API void init_basic_types();
 		FLAME_FOUNDATION_API bool load_from_string(const std::string& content, void* library = nullptr);
 		FLAME_FOUNDATION_API void* load(const std::filesystem::path& filename); // return the loaded library
+		FLAME_FOUNDATION_API void unload(void* library);
 		FLAME_FOUNDATION_API std::string save_to_string();
 		FLAME_FOUNDATION_API void save(const std::filesystem::path& filename);
 	};

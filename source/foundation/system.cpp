@@ -818,6 +818,9 @@ namespace flame
 
 	void* add_file_watcher(const std::filesystem::path& path, const std::function<void(FileChangeFlags flags, const std::filesystem::path& path)>& callback, bool all_changes, bool sync)
 	{
+		if (!std::filesystem::exists(path))
+			return nullptr;
+
 		if (!sync)
 		{
 			auto ev = create_native_event(false);

@@ -314,6 +314,7 @@ process:
 		std::string name;
 		Type children_type = Any;
 		std::vector<std::pair<std::string, Metas>> children;
+		std::filesystem::path source_file;
 
 		bool pass(const std::string& str)
 		{
@@ -412,12 +413,12 @@ process:
 	desc_path.replace_extension(L".typedesc");
 	if (std::filesystem::exists(desc_path))
 	{
-		std::filesystem::path source_path;
+		std::filesystem::path sources_path;
 
 		std::ifstream desc(desc_path);
 		std::string line;
 		std::getline(desc, line);
-		source_path = line;
+		sources_path = line;
 		while (!desc.eof())
 		{
 			std::getline(desc, line);
@@ -447,14 +448,16 @@ process:
 		}
 		desc.close();
 
-		if (std::filesystem::exists(source_path))
+		if (std::filesystem::exists(sources_path))
 		{
 			std::string line;
 			std::smatch res;
-			for (auto& it : std::filesystem::recursive_directory_iterator(source_path))
+			for (auto& it : std::filesystem::recursive_directory_iterator(sources_path))
 			{
-				if ((it.path().extension() == L".h") &&
-					!it.path().filename().wstring().ends_with(L"_private"))
+				auto path = it.path();
+				path.make_preferred();
+				if ((path.extension() == L".h") &&
+					!path.filename().wstring().ends_with(L"_private"))
 				{
 					std::deque<std::pair<std::string, uint>> name_spaces;
 					auto get_name = [&](const std::string& name) {
@@ -474,7 +477,7 @@ process:
 					std::string reflect_metas;
 					std::pair<std::string, uint> name_space_mark = std::make_pair("", 0U);
 					Rule* curr_rule = nullptr;
-					std::ifstream file(it.path());
+					std::ifstream file(path);
 					while (!file.eof())
 					{
 						std::getline(file, line);
@@ -504,6 +507,7 @@ process:
 									auto& r = enum_rules.emplace_back();
 									r.type = Rule::Equal;
 									r.name = get_name(line);
+									r.source_file = path;
 									curr_rule = &r;
 								}
 							}
@@ -529,6 +533,7 @@ process:
 										else if (t == "any")
 											r.children_type = Rule::Any;
 									}
+									r.source_file = path;
 									curr_rule = &r;
 								}
 							}
@@ -741,10 +746,12 @@ process:
 
 		for (auto& s_enum : dia_enums)
 		{
-			if (!find_enum(sh(s_enum.first.c_str()), db) && need_enum(s_enum.first))
+			Rule* er;
+			if (!find_enum(sh(s_enum.first.c_str()), db) && need_enum(s_enum.first, &er))
 			{
 				EnumInfo e;
 				e.name = s_enum.first;
+				e.source_file = er->source_file;
 				std::vector<std::pair<std::string, int>> items;
 
 				IDiaEnumSymbols* symbols;
@@ -807,6 +814,7 @@ process:
 			{
 				UdtInfo u;
 				u.name = s_udt.first;
+				u.source_file = ur->source_file;
 
 				s_udt.second->get_length(&ull);
 				u.size = ull;
@@ -1151,6 +1159,7 @@ process:
 	}
 
 	db.save(typeinfo_path);
+	free_library(library);
 
 	printf("typeinfogen: %s generated\n", typeinfo_path.string().c_str());
 

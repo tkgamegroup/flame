@@ -24,6 +24,12 @@ cCameraPtr View_Scene::curr_camera()
 	return cCamera::list()[camera_idx];
 }
 
+vec3 View_Scene::camera_target_pos()
+{
+	auto camera_node = curr_camera()->node;
+	return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+}
+
 void View_Scene::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
@@ -43,8 +49,7 @@ void View_Scene::selected_to_focus()
 		auto e = selection.entity();
 		if (auto node = e->get_component_i<cNode>(0); node)
 		{
-			auto camera_node = curr_camera()->node;
-			node->set_pos(camera_node->g_pos - camera_node->g_rot[2] * camera_zoom);
+			node->set_pos(camera_target_pos());
 			if (auto ins = get_prefab_instance(e); ins)
 				ins->mark_modifier(e->file_id, "flame::cNode", "pos");
 		}
@@ -111,22 +116,35 @@ void View_Scene::on_draw()
 				auto mat = tar->transform;
 				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 				auto op = ImGuizmo::TRANSLATE;
-				vec3 snap_value;
+				vec3 snap_value; float* p_snap_value = nullptr;
 				switch (app.tool)
 				{
 				case ToolMove: 
 					op = ImGuizmo::TRANSLATE;
-					snap_value = vec3(app.snap_value);
+					if (app.move_snap)
+					{
+						snap_value = vec3(app.move_snap_value);
+						p_snap_value = &snap_value[0];
+					}
 					break;
 				case ToolRotate: 
-					op = ImGuizmo::ROTATE; 
+					op = ImGuizmo::ROTATE;
+					if (app.rotate_snap)
+					{
+						snap_value = vec3(app.rotate_snap_value);
+						p_snap_value = &snap_value[0];
+					}
 					break;
 				case ToolScale: 
-					op = ImGuizmo::SCALE; 
+					op = ImGuizmo::SCALE;
+					if (app.scale_snap)
+					{
+						snap_value = vec3(app.scale_snap_value);
+						p_snap_value = &snap_value[0];
+					}
 					break;
 				}
-				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0],
-					nullptr, app.tool == ToolMove && app.snap ? &snap_value[0] : nullptr);
+				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0], nullptr, p_snap_value);
 				static bool last_gizmo_using = false;
 				static vec3 before_editing_pos;
 				static quat before_editing_qut;
@@ -384,40 +402,43 @@ void View_Scene::on_draw()
 				}
 				if (!io.WantCaptureKeyboard)
 				{
-					if (io.KeysDown[Keyboard_W])
+					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
 					{
-						camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
-						app.render_frames += 30;
+						if (io.KeysDown[Keyboard_W])
+						{
+							camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_S])
+						{
+							camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_A])
+						{
+							camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_D])
+						{
+							camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_F])
+							focus_to_selected();
+						if (io.KeysDown[Keyboard_G])
+							selected_to_focus();
+						if (ImGui::IsKeyPressed(Keyboard_Del))
+							app.cmd_delete_entity();
+						if (ImGui::IsKeyPressed(Keyboard_1))
+							app.tool = ToolSelect;
+						if (ImGui::IsKeyPressed(Keyboard_2))
+							app.tool = ToolMove;
+						if (ImGui::IsKeyPressed(Keyboard_3))
+							app.tool = ToolRotate;
+						if (ImGui::IsKeyPressed(Keyboard_4))
+							app.tool = ToolScale;
 					}
-					if (io.KeysDown[Keyboard_S])
-					{
-						camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_A])
-					{
-						camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_D])
-					{
-						camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
-						app.render_frames += 30;
-					}
-					if (io.KeysDown[Keyboard_F])
-						focus_to_selected();
-					if (io.KeysDown[Keyboard_G])
-						selected_to_focus();
-					if (ImGui::IsKeyPressed(Keyboard_Del))
-						app.cmd_delete_entity();
-					if (ImGui::IsKeyPressed(Keyboard_1))
-						app.tool = ToolSelect;
-					if (ImGui::IsKeyPressed(Keyboard_2))
-						app.tool = ToolMove;
-					if (ImGui::IsKeyPressed(Keyboard_3))
-						app.tool = ToolRotate;
-					if (ImGui::IsKeyPressed(Keyboard_4))
-						app.tool = ToolScale;
 				}
 
 				if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
@@ -482,20 +503,39 @@ void View_Scene::on_draw()
 					{
 						auto str = std::wstring((wchar_t*)payload->Data);
 						auto path = Path::reverse(str);
-						if (path.extension() == L".prefab")
+						auto ext = path.extension();
+						if (ext == L".prefab")
 						{
 							add_event([this, path]() {
 								auto e = Entity::create();
 								e->load(path);
 								new PrefabInstance(e, path);
 								if (auto node = e->get_component_i<cNode>(0); node)
-									node->set_pos(hovering_pos);
+								{
+									auto pos = hovering_pos;
+									if (!hovering_node)
+									{
+										auto camera_node = view_scene.curr_camera()->node;
+										auto camera_pos = camera_node->g_pos;
+										auto v = normalize(pos - camera_pos);
+										pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->g_rot[2]));
+									}
+									node->set_pos(app.get_snap_pos(pos));
+								}
 								if (app.e_playing)
 									app.e_playing->add_child(e);
 								else
 									app.e_prefab->add_child(e);
 								return false;
 							});
+						}
+						else if (ext == L".fmat")
+						{
+							if (hovering_node)
+							{
+								if (auto mesh = hovering_node->entity->get_component_t<cMesh>(); mesh)
+									mesh->set_material_name(path);
+							}
 						}
 					}
 				}

@@ -2403,9 +2403,9 @@ namespace flame
 			}
 		}
 
-		auto blur_pass = [&]() {
-			pl_blur.prm.pc.item_d("off"_h).set(-3);
-			pl_blur.prm.pc.item_d("len"_h).set(7);
+		auto blur_pass = [&](int w = 3) {
+			pl_blur.prm.pc.item_d("off"_h).set(-w);
+			pl_blur.prm.pc.item_d("len"_h).set(w * 2 + 1);
 			pl_blur.prm.pc.item_d("pxsz"_h).set(1.f / (vec2)img_back0->extent);
 			pl_blur.prm.push_constant(cb);
 
@@ -2474,7 +2474,8 @@ namespace flame
 			}
 			cb->end_renderpass();
 
-			blur_pass();
+			blur_pass(draw_data.line_width);
+
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			for (auto i = 0; i < n; i++)
 			{
@@ -2502,6 +2503,7 @@ namespace flame
 				}
 			}
 			cb->end_renderpass();
+
 			blend_pass();
 
 			outline_idx += n;
@@ -2517,7 +2519,7 @@ namespace flame
 			cb->draw(4, t.blocks.x* t.blocks.y, 0, t.ins_id << 24);
 			cb->end_renderpass();
 
-			blur_pass();
+			blur_pass(draw_data.line_width);
 
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			prm_fwd.bind_dss(cb);

@@ -256,44 +256,49 @@ namespace flame
 				_tidb.load(path);
 		}
 	}
+
+	inline void add_ti(TypeInfo* ti)
+	{
+		_tidb.typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
+	}
 	
 	void TypeInfoDataBase::init_basic_types()
 	{
 		TypeInfo::void_type = new TypeInfo_void;
-		_tidb.add_ti(TypeInfo::void_type);
-		_tidb.add_ti(new TypeInfo_bool);
-		_tidb.add_ti(new TypeInfo_char);
-		_tidb.add_ti(new TypeInfo_uchar);
-		_tidb.add_ti(new TypeInfo_short);
-		_tidb.add_ti(new TypeInfo_ushort);
-		_tidb.add_ti(new TypeInfo_int);
-		_tidb.add_ti(new TypeInfo_uint);
-		_tidb.add_ti(new TypeInfo_int64);
-		_tidb.add_ti(new TypeInfo_uint64);
-		_tidb.add_ti(new TypeInfo_float);
-		_tidb.add_ti(new TypeInfo_cvec2);
-		_tidb.add_ti(new TypeInfo_cvec3);
-		_tidb.add_ti(new TypeInfo_cvec4);
-		_tidb.add_ti(new TypeInfo_ivec2);
-		_tidb.add_ti(new TypeInfo_ivec3);
-		_tidb.add_ti(new TypeInfo_ivec4);
-		_tidb.add_ti(new TypeInfo_uvec2);
-		_tidb.add_ti(new TypeInfo_uvec3);
-		_tidb.add_ti(new TypeInfo_uvec4);
-		_tidb.add_ti(new TypeInfo_vec2);
-		_tidb.add_ti(new TypeInfo_vec3);
-		_tidb.add_ti(new TypeInfo_vec4);
-		_tidb.add_ti(new TypeInfo_mat2);
-		_tidb.add_ti(new TypeInfo_mat3);
-		_tidb.add_ti(new TypeInfo_mat4);
-		_tidb.add_ti(new TypeInfo_quat);
-		_tidb.add_ti(new TypeInfo_string);
-		_tidb.add_ti(new TypeInfo_wstring);
-		_tidb.add_ti(new TypeInfo_path);
-		_tidb.add_ti(new TypeInfo_Rect);
-		_tidb.add_ti(new TypeInfo_AABB);
-		_tidb.add_ti(new TypeInfo_Plane);
-		_tidb.add_ti(new TypeInfo_Frustum);
+		add_ti(TypeInfo::void_type);
+		add_ti(new TypeInfo_bool);
+		add_ti(new TypeInfo_char);
+		add_ti(new TypeInfo_uchar);
+		add_ti(new TypeInfo_short);
+		add_ti(new TypeInfo_ushort);
+		add_ti(new TypeInfo_int);
+		add_ti(new TypeInfo_uint);
+		add_ti(new TypeInfo_int64);
+		add_ti(new TypeInfo_uint64);
+		add_ti(new TypeInfo_float);
+		add_ti(new TypeInfo_cvec2);
+		add_ti(new TypeInfo_cvec3);
+		add_ti(new TypeInfo_cvec4);
+		add_ti(new TypeInfo_ivec2);
+		add_ti(new TypeInfo_ivec3);
+		add_ti(new TypeInfo_ivec4);
+		add_ti(new TypeInfo_uvec2);
+		add_ti(new TypeInfo_uvec3);
+		add_ti(new TypeInfo_uvec4);
+		add_ti(new TypeInfo_vec2);
+		add_ti(new TypeInfo_vec3);
+		add_ti(new TypeInfo_vec4);
+		add_ti(new TypeInfo_mat2);
+		add_ti(new TypeInfo_mat3);
+		add_ti(new TypeInfo_mat4);
+		add_ti(new TypeInfo_quat);
+		add_ti(new TypeInfo_string);
+		add_ti(new TypeInfo_wstring);
+		add_ti(new TypeInfo_path);
+		add_ti(new TypeInfo_Rect);
+		add_ti(new TypeInfo_AABB);
+		add_ti(new TypeInfo_Plane);
+		add_ti(new TypeInfo_Frustum);
 	}
 
 	bool TypeInfoDataBase::load_from_string(const std::string& content, void* library)
@@ -325,6 +330,9 @@ namespace flame
 				i.name_hash = sh(i.name.c_str());
 				i.value = n_item.attribute("value").as_int();
 			}
+			e.library = library;
+			if (auto a = n_enum.attribute("source_file"); a)
+				e.source_file = a.value();
 		}
 		for (auto n_udt : doc_root.child("udts"))
 		{
@@ -337,7 +345,6 @@ namespace flame
 			if (auto a = n_udt.attribute("base_class_name"); a)
 				u.base_class_name = a.value();
 			u.is_pod = n_udt.attribute("is_pod").as_bool();
-
 			for (auto n_variable : n_udt.child("variables"))
 			{
 				auto& v = u.variables.emplace_back();
@@ -395,6 +402,9 @@ namespace flame
 			}
 			for (auto i = 0; i < u.attributes.size(); i++)
 				u.attributes_map.emplace(u.attributes[i].name_hash, i);
+			u.library = library;
+			if (auto a = n_udt.attribute("source_file"); a)
+				u.source_file = a.value();
 		}
 		for (auto& pair : typeinfos)
 		{
@@ -438,6 +448,42 @@ namespace flame
 		return library;
 	}
 
+	void TypeInfoDataBase::unload(void* library)
+	{
+		std::vector<uint> invalid_tis;
+		for (auto it = typeinfos.begin(); it != typeinfos.end(); it++)
+		{
+			if (auto ei = it->second->retrive_ei(); ei)
+			{
+				if (ei->library == library)
+					invalid_tis.push_back(it->first);
+			}
+			if (auto ui = it->second->retrive_ui(); ui)
+			{
+				if (ui->library == library)
+					invalid_tis.push_back(it->first);
+			}
+		}
+		for (auto hash : invalid_tis)
+			typeinfos.erase(hash);
+		for (auto it = enums.begin(); it != enums.end();)
+		{
+			if (it->second.library == library)
+				it = enums.erase(it);
+			else
+				it++;
+		}
+		for (auto it = udts.begin(); it != udts.end();)
+		{
+			if (it->second.library == library)
+				it = udts.erase(it);
+			else
+				it++;
+		}
+
+		free_library(library);
+	}
+
 	std::string TypeInfoDataBase::save_to_string()
 	{
 		pugi::xml_document doc;
@@ -472,6 +518,7 @@ namespace flame
 					n_item.append_attribute("name").set_value(i.name.c_str());
 					n_item.append_attribute("value").set_value(i.value);
 				}
+				n_enum.append_attribute("source_file").set_value(ei->source_file.string().c_str());
 			}
 		}
 
@@ -593,6 +640,8 @@ namespace flame
 							n_attribute.append_attribute("default_value").set_value(a.default_value.c_str());
 					}
 				}
+				if (!ui.second->source_file.empty())
+					n_udt.append_attribute("source_file").set_value(ui.second->source_file.string().c_str());
 			}
 		}
 

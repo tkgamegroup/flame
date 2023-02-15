@@ -21,6 +21,9 @@
 View_Inspector view_inspector;
 static auto selection_changed = false;
 
+static std::unordered_map<uint, UdtInfo*> com_udts_map;
+static std::vector<UdtInfo*> com_udts_list;
+
 View_Inspector::View_Inspector() :
 	GuiView("Inspector")
 {
@@ -28,6 +31,12 @@ View_Inspector::View_Inspector() :
 		if (caller != "inspector"_h)
 			selection_changed = true;
 	}, "inspector"_h);
+}
+
+void View_Inspector::reset()
+{
+	com_udts_map.clear();
+	com_udts_list.clear();
 }
 
 struct StagingVector
@@ -535,8 +544,6 @@ std::string show_udt(const UdtInfo& ui, void* src, const std::function<void(uint
 	return changed_name;
 }
 
-static std::unordered_map<uint, UdtInfo*> com_udts_map;
-static std::vector<UdtInfo*> com_udts_list;
 void get_com_udts()
 {
 	for (auto& ui : tidb.udts)
@@ -804,6 +811,12 @@ void View_Inspector::on_draw()
 		{
 			if (ImGui::Selectable("Remove"))
 				e->remove_component(target_component->type_hash);
+			if (ImGui::Selectable("Code File"))
+			{
+				auto& ui = *com_udts_map[target_component->type_hash];
+				if (!ui.source_file.empty())
+					app.open_file_in_vs(ui.source_file);
+			}
 			ImGui::EndPopup();
 		}
 		if (ImGui::BeginPopup("add_component"))

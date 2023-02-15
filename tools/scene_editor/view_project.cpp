@@ -87,11 +87,7 @@ void View_Project::init()
 		if (is_text_file(ext))
 		{
 			if (ImGui::MenuItem("Open In VS"))
-			{
-				auto vs_path = get_special_path("Visual Studio Installation Location");
-				if (!vs_path.empty())
-					exec(vs_path / L"Common7\\IDE\\devenv.exe", std::format(L" /edit \"{}\"", path.wstring()));
-			}
+				app.open_file_in_vs(path);
 		}
 		if (ImGui::BeginMenu("Copy Path"))
 		{
