@@ -902,38 +902,42 @@ void App::open_project(const std::filesystem::path& path)
 		view_project.reset(project_path);
 	}
 
-	add_event([this]() {
-		auto cpp_path = project_path / L"bin/debug/cpp.dll";
-		if (std::filesystem::exists(cpp_path))
+	auto cpp_path = project_path / L"bin/debug/cpp.dll";
+	if (std::filesystem::exists(cpp_path))
+	{
+		if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
 		{
-			if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
-			{
-				if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
-					set_editor_info(&editor_selecting_entity, &control);
-			}
+			if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
+				set_editor_info(&editor_selecting_entity, &control);
 		}
-		return false;
-	});
+	}
 }
 
 void App::build_project()
 {
+	if (project_path.empty())
+		return;
+
 	auto _project_path = project_path;
 	auto _prefab_path = prefab_path;
 	close_project();
 
-	auto cpp_project_path = _project_path / L"build\\cpp.vcxproj";
-	auto vs_path = get_special_path("Visual Studio Installation Location");
-	auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
-	auto cwd = std::filesystem::current_path();
-	std::filesystem::current_path(cpp_project_path.parent_path());
-	printf("\n");
-	auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
-	_wsystem(cl.c_str());
-	std::filesystem::current_path(cwd);
+	add_event([this, _project_path, _prefab_path]() {
+		auto cpp_project_path = _project_path / L"build\\cpp.vcxproj";
+		auto vs_path = get_special_path("Visual Studio Installation Location");
+		auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
+		auto cwd = std::filesystem::current_path();
+		std::filesystem::current_path(cpp_project_path.parent_path());
+		printf("\n");
+		auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
+		_wsystem(cl.c_str());
+		std::filesystem::current_path(cwd);
 
-	open_project(_project_path);
-	open_prefab(_prefab_path);
+		open_project(_project_path);
+		open_prefab(_prefab_path);
+
+		return false;
+	});
 }
 
 void App::close_project()
@@ -951,11 +955,15 @@ void App::close_project()
 	view_project.reset(L"");
 	view_inspector.reset();
 
-	add_event([this]() {
-		if (project_cpp_library)
-			tidb.unload(project_cpp_library);
-		return false;
-	});
+	if (project_cpp_library)
+	{
+		add_event([this]() {
+			if (project_cpp_library)
+				tidb.unload(project_cpp_library);
+			project_cpp_library = nullptr;
+			return false;
+		});
+	}
 }
 
 void App::new_prefab(const std::filesystem::path& path)
@@ -984,12 +992,9 @@ void App::open_prefab(const std::filesystem::path& path)
 	close_prefab();
 	prefab_path = path;
 
-	add_event([this]() {
-		e_prefab = Entity::create();
-		e_prefab->load(prefab_path);
-		world->root->add_child(e_prefab);
-		return false;
-	});
+	e_prefab = Entity::create();
+	e_prefab->load(prefab_path);
+	world->root->add_child(e_prefab);
 }
 
 bool App::save_prefab()
@@ -1007,12 +1012,15 @@ void App::close_prefab()
 	prefab_path = L"";
 	selection.clear("app"_h);
 
-	add_event([this]() {
-		if (e_prefab)
-			e_prefab->remove_from_parent();
-		e_prefab = nullptr;
-		return false;
-	});
+	if (e_prefab)
+	{
+		add_event([this]() {
+			if (e_prefab)
+				e_prefab->remove_from_parent();
+			e_prefab = nullptr;
+			return false;
+		});
+	}
 }
 
 void App::open_file_in_vs(const std::filesystem::path& path)
