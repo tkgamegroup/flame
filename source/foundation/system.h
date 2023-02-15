@@ -57,6 +57,7 @@ namespace flame
 	// if output==nullptr then the output will be redirect to std output
 	FLAME_FOUNDATION_API void exec(const std::filesystem::path& filename, const std::wstring& parameters, std::string* output = nullptr);
 	FLAME_FOUNDATION_API void debug_break();
+	FLAME_FOUNDATION_API void automate_vs();
 
 	FLAME_FOUNDATION_API std::vector<void*> get_call_frames();
 	FLAME_FOUNDATION_API std::vector<StackFrameInfo> get_call_frames_infos(std::span<void*> frames);
