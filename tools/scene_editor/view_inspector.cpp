@@ -628,7 +628,13 @@ void View_Inspector::on_draw()
 			ImGui::PushID(c.get());
 			auto& ui = *com_udts_map[c->type_hash];
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
-			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
+			if (ImGui::Button("E"))
+			{
+				if (!ui.source_file.empty())
+					app.open_file_in_vs(ui.source_file);
+			}
+			ImGui::SameLine();
 			if (ImGui::Button("..."))
 			{
 				target_component = c.get();
@@ -811,12 +817,6 @@ void View_Inspector::on_draw()
 		{
 			if (ImGui::Selectable("Remove"))
 				e->remove_component(target_component->type_hash);
-			if (ImGui::Selectable("Code File"))
-			{
-				auto& ui = *com_udts_map[target_component->type_hash];
-				if (!ui.source_file.empty())
-					app.open_file_in_vs(ui.source_file);
-			}
 			ImGui::EndPopup();
 		}
 		if (ImGui::BeginPopup("add_component"))

@@ -353,6 +353,20 @@ namespace flame
 #endif
 		}
 
+		void gui_clear_inputs()
+		{
+			auto& io = ImGui::GetIO();
+			for (auto& btn : io.MouseDown)
+				btn = false;
+			io.MousePos = ImVec2(0, 0);
+			io.MouseWheel = 0;
+			io.KeyCtrl = false;
+			io.KeyShift = false;
+			io.KeyAlt = false;
+			for (auto& key : io.KeysDown)
+				key = false;
+		}
+
 		bool gui_want_mouse()
 		{
 			return want_mouse;
@@ -497,6 +511,10 @@ namespace flame
 			});
 			native->resize_listeners.add([](const vec2&) {
 				gui_create_fbs();
+			});
+			native->focus_listeners.add([](bool v) {
+				if (!v)
+					gui_clear_inputs();
 			});
 
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",

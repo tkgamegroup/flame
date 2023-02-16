@@ -3,6 +3,7 @@
 #include "view_scene.h"
 #include "view_project.h"
 #include "view_inspector.h"
+#include "vs_automation.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -921,6 +922,8 @@ void App::build_project()
 	auto _project_path = project_path;
 	auto _prefab_path = prefab_path;
 	close_project();
+	focus_window(get_console_window());
+	vs_automate("detach_debugger");
 
 	add_event([this, _project_path, _prefab_path]() {
 		auto cpp_project_path = _project_path / L"build\\cpp.vcxproj";
@@ -935,6 +938,7 @@ void App::build_project()
 
 		open_project(_project_path);
 		open_prefab(_prefab_path);
+		vs_automate("attach_debugger");
 
 		return false;
 	});

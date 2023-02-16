@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.16.4)
+cmake_minimum_required(VERSION 3.25.0)
+project(flame LANGUAGES CXX CSharp)
+
 include("utils.cmake")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_definitions(-W0 -std:c++latest)
-
-project(flame)
 
 set_output_dir("${CMAKE_SOURCE_DIR}/bin")
 
@@ -180,15 +180,6 @@ if(NOT EXISTS "${IMGUI_DIR}")
 	set(USE_IMGUI off)
 else()
 	set(USE_IMGUI on)
-endif()
-
-check_path("${parent_dir}/ImFileDialog" p)
-set(IM_FILE_DIALOG_DIR "${p}" CACHE PATH "ImFileDialog directory")
-if(NOT EXISTS "${IM_FILE_DIALOG_DIR}")
-	message(STATUS "optional ImFileDialog is invalid, turn off USE_IM_FILE_DIALOG")
-	set(USE_IM_FILE_DIALOG off)
-else()
-	set(USE_IM_FILE_DIALOG on)
 endif()
 
 check_path("${parent_dir}/ImGuizmo" p)

@@ -1,5 +1,6 @@
 add_subdirectory(foundation)
 add_subdirectory(typeinfogen)
+add_subdirectory(vs_automation)
 
 # build imgui by ourselves because we need imgui to include glm and we need to add some extensions imgui
 if(USE_IMGUI)

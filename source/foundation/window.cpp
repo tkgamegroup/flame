@@ -95,6 +95,14 @@ namespace flame
 				for (auto& l : w->resize_listeners.list)
 					l.first(w->size);
 				return true;
+			case WM_SETFOCUS:
+				for (auto& l : w->focus_listeners.list)
+					l.first(true);
+				return true;
+			case WM_KILLFOCUS:
+				for (auto& l : w->focus_listeners.list)
+					l.first(false);
+				return true;
 			case WM_MOVE:
 				w->has_input = true;
 				w->pos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));

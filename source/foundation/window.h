@@ -19,6 +19,7 @@ namespace flame
 		Listeners<void(KeyboardKey key, bool down)> key_listeners;
 		Listeners<void(wchar_t)>					char_listeners;
 		Listeners<void(const uvec2&)>				resize_listeners;
+		Listeners<void(bool)>						focus_listeners;
 		Listeners<void()>							destroy_listeners;
 		
 		bool has_input = false;

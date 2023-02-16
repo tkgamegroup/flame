@@ -40,6 +40,7 @@ namespace flame
 		FLAME_GRAPHICS_API void gui_set_clear(bool clear, const vec4& color);
 		FLAME_GRAPHICS_API extern Listeners<CursorType(CursorType cursor)> gui_cursor_callbacks;
 		FLAME_GRAPHICS_API void gui_frame();
+		FLAME_GRAPHICS_API void gui_clear_inputs();
 		FLAME_GRAPHICS_API bool gui_want_mouse();
 		FLAME_GRAPHICS_API bool gui_want_keyboard();
 		// lod: 0 - 16 pts, 1 - 32 pts, 2 - 64 pts, 3 - 128 pts
