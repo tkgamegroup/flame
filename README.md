@@ -57,4 +57,6 @@ An ECS 3D-Game-Engine.
 
 - build
 
-(if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed)
+*if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed*
+
+*set scene_editor's debugger type into mixed, or else you will get your native code undebugged after executed 'build project' menu*
