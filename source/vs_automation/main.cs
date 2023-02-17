@@ -7,18 +7,13 @@ using EnvDTE;
 
 namespace vs_automation
 {
-    public enum OpType
-    {
-        AttachDebugger,
-        DetachDebugger
-    }
-
     public static class Automator
     {
         [DllImport("ole32.dll")]
         private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
 
-        private static DTE dte = null;
+        private static DTE dte_eg = null;
+        private static DTE dte_pj = null;
 
         private static DTE GetDTE(int processId)
         {
@@ -85,48 +80,54 @@ namespace vs_automation
             return (DTE)runningObject;
         }
 
-        public static void Execute(int pid, OpType op)
+        public static void Main(string[] args)
         {
-			if (dte == null)
+            if (args.Length == 2)
             {
-                foreach (var devenv in System.Diagnostics.Process.GetProcessesByName("devenv"))
-				{
-                    dte = GetDTE(devenv.Id);
-                    if (dte != null)
-                        break;
-                }
-            }
-            if (dte != null)
-            {
-                try
+                int pid = int.Parse(args[0]);
+                string cmd = args[1];
+
+                if (dte_eg == null)
                 {
-                    switch (op)
+                    foreach (var devenv in System.Diagnostics.Process.GetProcessesByName("devenv"))
                     {
-                        case OpType.AttachDebugger:
-                            foreach (var p in dte.Debugger.LocalProcesses.OfType<EnvDTE.Process>())
-                            {
-                                if (p.ProcessID == pid)
-                                {
-                                    p.Attach();
-                                    break;
-                                }
-                            }
-                            break;
-                        case OpType.DetachDebugger:
-                            foreach (var p in dte.Debugger.DebuggedProcesses.OfType<EnvDTE.Process>())
-                            {
-                                if (p.ProcessID == pid)
-                                {
-                                    p.Detach(false);
-                                    break;
-                                }
-                            }
+                        dte_eg = GetDTE(devenv.Id);
+                        if (dte_eg != null)
                             break;
                     }
                 }
-                catch (Exception ex)
+                if (dte_eg != null)
                 {
-                    Console.WriteLine(ex.ToString());
+                    try
+                    {
+                        switch (cmd)
+                        {
+                            case "attach_debugger":
+                                foreach (var p in dte_eg.Debugger.LocalProcesses.OfType<EnvDTE.Process>())
+                                {
+                                    if (p.ProcessID == pid)
+                                    {
+                                        p.Attach();
+                                        break;
+                                    }
+                                }
+                                break;
+                            case "detach_debugger":
+                                foreach (var p in dte_eg.Debugger.DebuggedProcesses.OfType<EnvDTE.Process>())
+                                {
+                                    if (p.ProcessID == pid)
+                                    {
+                                        p.Detach(false);
+                                        break;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
                 }
             }
         }

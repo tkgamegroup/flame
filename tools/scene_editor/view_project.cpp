@@ -51,7 +51,7 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 	assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
 }
 
-std::filesystem::path find_free_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
+std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
 {
 	auto i = 0;
 	auto p = prefix;
@@ -79,6 +79,8 @@ void View_Project::init()
 		auto ext = path.extension();
 		if (ext == L".prefab")
 			app.open_prefab(path);
+		else if (ext == L".h" || ext == L".cpp")
+			app.open_file_in_vs(path);
 	};
 	explorer.item_context_menu_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
@@ -142,7 +144,7 @@ void View_Project::init()
 			}
 		}
 		if (ImGui::MenuItem("New Folder"))
-			std::filesystem::create_directory(find_free_filename(path / L"new_foler_"));
+			std::filesystem::create_directory(get_unique_filename(path / L"new_foler_"));
 		if (ImGui::MenuItem("New Image"))
 		{
 			struct NewImageDialog : ImGui::Dialog
@@ -308,11 +310,104 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("New Material"))
 		{
-			auto material = graphics::Material::create();
-			material->save(find_free_filename(path / L"new_material_", L".fmat"));
+			ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+				if (ok && !str.empty())
+				{
+					auto fn = path / str;
+					fn.replace_extension(L".fmat");
+					if (!std::filesystem::exists(fn))
+					{
+						auto material = graphics::Material::create();
+						material->save(fn);
+						delete material;
+					}
+				}
+			});
 		}
 		if (ImGui::MenuItem("New Prefab"))
-			app.new_prefab(find_free_filename(path / L"new_prefab_", L".prefab"));
+		{
+			ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+				if (ok && !str.empty())
+				{
+					auto fn = path / str;
+					fn.replace_extension(L".prefab");
+					if (!std::filesystem::exists(fn))
+						app.new_prefab(fn);
+				}
+			});
+		}
+		if (ImGui::BeginMenu("New Code"))
+		{
+			if (ImGui::MenuItem("Header"))
+			{
+				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".h");
+						if (!std::filesystem::exists(fn))
+						{
+							std::ofstream file(fn);
+							file << "#pragma once" << std::endl;
+							file.close();
+						}
+					}
+				});
+			}
+			if (ImGui::MenuItem("Class"))
+			{
+				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto h_fn = path / str;
+						h_fn.replace_extension(L".h");
+						auto cpp_fn = path / str;
+						cpp_fn.replace_extension(L".cpp");
+						if (!std::filesystem::exists(h_fn) && !std::filesystem::exists(cpp_fn))
+						{
+							std::ofstream h_file(h_fn);
+							h_file << "#pragma once" << std::endl;
+							h_file.close();
+
+							std::ofstream cpp_file(cpp_fn);
+							cpp_file << std::format("#include \"{}\".h", str) << std::endl;
+							cpp_file.close();
+						}
+					}
+				});
+			}
+			if (ImGui::MenuItem("Component"))
+			{
+				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto h_fn = path / str;
+						h_fn.replace_extension(L".h");
+						auto cpp_fn = path / str;
+						cpp_fn.replace_extension(L".cpp");
+						if (!std::filesystem::exists(h_fn) && !std::filesystem::exists(cpp_fn))
+						{
+							std::ofstream h_file(h_fn);
+							h_file << "#pragma once" << std::endl;
+							h_file << std::endl;
+							h_file << "#include <flame/universe/component.h>" << std::endl;
+							h_file << std::endl;
+							h_file << "using namespace flame;" << std::endl;
+							h_file << std::endl;
+							h_file << std::format("struct c{} : Component", str) << std::endl;
+							h_file << "{" << std::endl;
+							h_file << "};" << std::endl;
+							h_file.close();
+
+							std::ofstream cpp_file(cpp_fn);
+							cpp_file << std::format("#include \"{}\".h", str) << std::endl;
+							cpp_file.close();
+						}
+					}
+				});
+			}
+			ImGui::EndMenu();
+		}
 	};
 	explorer.folder_drop_callback = [this](const std::filesystem::path& path) {
 		if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)

@@ -223,6 +223,8 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Project"))
 		{
+			if (ImGui::MenuItem("Open .sln"))
+				;
 			if (ImGui::MenuItem("Attach Debugger"))
 				vs_automate("attach_debugger");
 			if (ImGui::MenuItem("Detach Debugger"))
@@ -990,6 +992,7 @@ void App::new_prefab(const std::filesystem::path& path)
 	e_light->add_component_t<cDirLight>()->cast_shadow = true;
 	e->add_child(e_light);
 	e->save(path);
+	delete e;
 }
 
 void App::open_prefab(const std::filesystem::path& path)
