@@ -18,7 +18,6 @@ namespace vs_automation
         [DllImport("ole32.dll")]
         private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
 
-        private static int pid = 0;
         private static DTE dte = null;
 
         private static DTE GetDTE(int processId)
@@ -86,12 +85,10 @@ namespace vs_automation
             return (DTE)runningObject;
         }
 
-        public static void Execute(OpType op)
+        public static void Execute(int pid, OpType op)
         {
 			if (dte == null)
             {
-                pid = System.Diagnostics.Process.GetCurrentProcess().Id;
-
                 foreach (var devenv in System.Diagnostics.Process.GetProcessesByName("devenv"))
 				{
                     dte = GetDTE(devenv.Id);

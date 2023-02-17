@@ -144,6 +144,7 @@ struct App : UniverseApplication
 	bool save_prefab();
 	void close_prefab();
 	void open_file_in_vs(const std::filesystem::path& path);
+	void vs_automate(const std::string& cmd);
 
 	bool cmd_undo();
 	bool cmd_redo();

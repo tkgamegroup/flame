@@ -3,7 +3,6 @@
 #include "view_scene.h"
 #include "view_project.h"
 #include "view_inspector.h"
-#include "vs_automation.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -224,6 +223,10 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Project"))
 		{
+			if (ImGui::MenuItem("Attach Debugger"))
+				vs_automate("attach_debugger");
+			if (ImGui::MenuItem("Detach Debugger"))
+				vs_automate("detach_debugger");
 			if (ImGui::MenuItem("Build (Ctrl+B)"))
 				build_project();
 			ImGui::EndMenu();
@@ -1032,6 +1035,13 @@ void App::open_file_in_vs(const std::filesystem::path& path)
 	auto vs_path = get_special_path("Visual Studio Installation Location");
 	if (!vs_path.empty())
 		exec(vs_path / L"Common7\\IDE\\devenv.exe", std::format(L" /edit \"{}\"", path.wstring()));
+}
+
+void App::vs_automate(const std::string& cmd)
+{
+	std::filesystem::path automation_path = getenv("FLAME_PATH");
+	automation_path /= L"bin/debug/vs_automation.exe";
+	shell_exec(automation_path, wstr(getpid()) + L" " + s2w(cmd), true);
 }
 
 bool App::cmd_undo()
