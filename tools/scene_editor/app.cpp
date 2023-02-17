@@ -229,6 +229,16 @@ void App::init()
 				vs_automate("detach_debugger");
 			if (ImGui::MenuItem("Build (Ctrl+B)"))
 				build_project();
+			if (ImGui::MenuItem("Clean"))
+			{
+				if (!project_path.empty())
+				{
+					auto cpp_path = project_path / L"bin/debug/cpp.dll";
+					cpp_path.replace_extension(L".pdb");
+					if (std::filesystem::exists(cpp_path))
+						std::filesystem::remove(cpp_path);
+				}
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Entity"))
@@ -906,15 +916,7 @@ void App::open_project(const std::filesystem::path& path)
 		view_project.reset(project_path);
 	}
 
-	auto cpp_path = project_path / L"bin/debug/cpp.dll";
-	if (std::filesystem::exists(cpp_path))
-	{
-		if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
-		{
-			if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
-				set_editor_info(&editor_selecting_entity, &control);
-		}
-	}
+	load_project_cpp();
 }
 
 void App::build_project()
@@ -922,14 +924,18 @@ void App::build_project()
 	if (project_path.empty())
 		return;
 
-	auto _project_path = project_path;
-	auto _prefab_path = prefab_path;
-	close_project();
-	focus_window(get_console_window());
-	vs_automate("detach_debugger");
+	add_event([this]() {
+		if (e_prefab)
+			e_prefab->remove_from_parent(false);
 
-	add_event([this, _project_path, _prefab_path]() {
-		auto cpp_project_path = _project_path / L"build\\cpp.vcxproj";
+		// remove saved udts, inspector will try to get new ones
+		view_inspector.reset();
+		unload_project_cpp();
+
+		focus_window(get_console_window());
+
+		vs_automate("detach_debugger");
+		auto cpp_project_path = project_path / L"build\\cpp.vcxproj";
 		auto vs_path = get_special_path("Visual Studio Installation Location");
 		auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
 		auto cwd = std::filesystem::current_path();
@@ -938,10 +944,12 @@ void App::build_project()
 		auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
 		_wsystem(cl.c_str());
 		std::filesystem::current_path(cwd);
-
-		open_project(_project_path);
-		open_prefab(_prefab_path);
 		vs_automate("attach_debugger");
+
+		load_project_cpp();
+
+		if (e_prefab)
+			world->root->add_child(e_prefab);
 
 		return false;
 	});
@@ -960,17 +968,9 @@ void App::close_project()
 
 	Path::set_root(L"assets", L"");
 	view_project.reset(L"");
+	// remove saved udts, inspector will try to get new ones
 	view_inspector.reset();
-
-	if (project_cpp_library)
-	{
-		add_event([this]() {
-			if (project_cpp_library)
-				tidb.unload(project_cpp_library);
-			project_cpp_library = nullptr;
-			return false;
-		});
-	}
+	unload_project_cpp();
 }
 
 void App::new_prefab(const std::filesystem::path& path)
@@ -1027,6 +1027,28 @@ void App::close_prefab()
 			e_prefab = nullptr;
 			return false;
 		});
+	}
+}
+
+void App::load_project_cpp()
+{
+	auto cpp_path = project_path / L"bin/debug/cpp.dll";
+	if (std::filesystem::exists(cpp_path))
+	{
+		if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
+		{
+			if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
+				set_editor_info(&editor_selecting_entity, &control);
+		}
+	}
+}
+
+void App::unload_project_cpp()
+{
+	if (project_cpp_library)
+	{
+		tidb.unload(project_cpp_library);
+		project_cpp_library = nullptr;
 	}
 }
 
