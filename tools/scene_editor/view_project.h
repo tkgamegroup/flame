@@ -11,12 +11,13 @@ struct View_Project : graphics::GuiView
 
 	void* flame_file_watcher = nullptr;
 	void* assets_file_watcher = nullptr;
+	void* cpp_file_watcher = nullptr;
 	std::mutex mtx_changed_paths;
 	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 
 	View_Project();
 	void init() override;
-	void reset(const std::filesystem::path& assets_path);
+	void reset();
 
 	void on_draw() override;
 };

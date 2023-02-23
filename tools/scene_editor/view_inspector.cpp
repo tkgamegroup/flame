@@ -815,6 +815,10 @@ void View_Inspector::on_draw()
 		}
 		if (ImGui::BeginPopup("component_menu"))
 		{
+			if (ImGui::Selectable("Move Up"))
+				;
+			if (ImGui::Selectable("Move Down"))
+				;
 			if (ImGui::Selectable("Remove"))
 				e->remove_component(target_component->type_hash);
 			ImGui::EndPopup();

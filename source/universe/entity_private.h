@@ -21,6 +21,7 @@ namespace flame
 
 		Component* add_component(uint hash) override;
 		bool remove_component(uint hash) override;
+		bool reposition_component(Component* comp) override;
 
 		void add_child(EntityPtr e, int position = -1) override;
 		void on_child_removed(EntityPrivate* e) const;

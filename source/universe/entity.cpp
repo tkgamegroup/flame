@@ -231,6 +231,11 @@ namespace flame
 		return true;
 	}
 
+	bool EntityPrivate::reposition_component(Component* comp)
+	{
+		return true;
+	}
+
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
 		assert(e && e != this && !e->parent);

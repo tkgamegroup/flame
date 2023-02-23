@@ -20,10 +20,10 @@ if os.system("cmake --version") != 0:
 	print("Cannot find CMake, abort")
 	exit(0)
 
-print("Download or build required libraries?\n 1 - Automaticly\n 2 - Manually\n 3 - Skip")
+print("Download or build libraries?\n 1 - All\n 2 - Manually\n 3 - All Required\n 4 - Skip")
 op = int(input())
 
-if op != 3:
+if op != 4:
 	print("== library glm ==")
 	ok = True
 	address = "https://github.com/g-truc/glm.git"
@@ -180,10 +180,12 @@ if op != 3:
 		
 	print("== library assimp ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/assimp/assimp.git"
 	lib_dir = parent_directory / "assimp"
 	if op == 2:
-		print("Download Assimp from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download Assimp from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -192,6 +194,8 @@ if op != 3:
 			print("%s exists, skip download" % str(lib_dir))
 
 	ok = True
+	if op == 3:
+		ok = False
 	bud_dir = lib_dir / "build"
 	if op == 2:
 		print("Build Assimp into %s ? y/n" % str(bud_dir))
@@ -210,10 +214,12 @@ if op != 3:
 			
 	print("== library PhysX ==")
 	ok = False
+	if op == 3:
+		ok = False
 	address = "https://github.com/NVIDIAGameWorks/PhysX.git"
 	lib_dir = parent_directory / "PhysX"
 	if op == 2:
-		print("Download PhysX from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download PhysX from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():

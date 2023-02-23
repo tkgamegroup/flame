@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,8 +13,7 @@ namespace vs_automation
         [DllImport("ole32.dll")]
         private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
 
-        private static DTE dte_eg = null;
-        private static DTE dte_pj = null;
+        private static DTE dte = null;
 
         private static DTE GetDTE(int processId)
         {
@@ -62,48 +62,62 @@ namespace vs_automation
             finally
             {
                 if (enumMonikers != null)
-                {
                     Marshal.ReleaseComObject(enumMonikers);
-                }
-
                 if (rot != null)
-                {
                     Marshal.ReleaseComObject(rot);
-                }
-
                 if (bindCtx != null)
-                {
                     Marshal.ReleaseComObject(bindCtx);
-                }
             }
 
             return (DTE)runningObject;
         }
+        private static DTE FindDTE(string title)
+        {
+            foreach (var devenv in System.Diagnostics.Process.GetProcessesByName("devenv"))
+            {
+                if (devenv.MainWindowTitle.StartsWith(title))
+                    return GetDTE(devenv.Id);
+            }
+            return null;
+        }
 
         public static void Main(string[] args)
         {
-            if (args.Length == 2)
+            string ide_title = "";
+            string cmd = "";
+            int cmd_parms_i = -1;
+            for (int i = 0; i < args.Length; i++)
             {
-                int pid = int.Parse(args[0]);
-                string cmd = args[1];
-
-                if (dte_eg == null)
+                if (args[i] == "-p")
                 {
-                    foreach (var devenv in System.Diagnostics.Process.GetProcessesByName("devenv"))
-                    {
-                        dte_eg = GetDTE(devenv.Id);
-                        if (dte_eg != null)
-                            break;
-                    }
+                    ide_title = args[i + 1];
+                    i++;
                 }
-                if (dte_eg != null)
+                else if (args[i] == "-c")
                 {
-                    try
+                    cmd = args[i + 1];
+                    i++;
+                    cmd_parms_i = i;
+                    break;
+                }
+            }
+
+            if (args.Length >= 2)
+            {
+                if (ide_title.Length == 0)
+                    ide_title = "flame";
+                dte = FindDTE(ide_title);
+                if (dte == null)
+                    return;
+
+                try
+                {
+                    switch (cmd)
                     {
-                        switch (cmd)
-                        {
-                            case "attach_debugger":
-                                foreach (var p in dte_eg.Debugger.LocalProcesses.OfType<EnvDTE.Process>())
+                        case "attach_debugger":
+                            {
+                                int pid = cmd_parms_i != -1 ? int.Parse(args[cmd_parms_i]) : 0;
+                                foreach (var p in dte.Debugger.LocalProcesses.OfType<EnvDTE.Process>())
                                 {
                                     if (p.ProcessID == pid)
                                     {
@@ -111,9 +125,12 @@ namespace vs_automation
                                         break;
                                     }
                                 }
-                                break;
-                            case "detach_debugger":
-                                foreach (var p in dte_eg.Debugger.DebuggedProcesses.OfType<EnvDTE.Process>())
+                            }
+                            break;
+                        case "detach_debugger":
+                            {
+                                int pid = cmd_parms_i != -1 ? int.Parse(args[cmd_parms_i]) : 0;
+                                foreach (var p in dte.Debugger.DebuggedProcesses.OfType<EnvDTE.Process>())
                                 {
                                     if (p.ProcessID == pid)
                                     {
@@ -121,13 +138,20 @@ namespace vs_automation
                                         break;
                                     }
                                 }
-                                break;
-                        }
+                            }
+                            break;
+                        case "open_file":
+                            {
+                                string path = cmd_parms_i != -1 ? args[cmd_parms_i] : "";
+                                if (path.Length > 0 && File.Exists(path))
+                                    dte.Documents.Open(path);
+                            }
+                            break;
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             }
         }

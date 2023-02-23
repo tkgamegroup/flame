@@ -226,9 +226,11 @@ void App::init()
 			if (ImGui::MenuItem("Open .sln"))
 				;
 			if (ImGui::MenuItem("Attach Debugger"))
-				vs_automate("attach_debugger");
+				vs_automate({ L"attach_debugger" });
 			if (ImGui::MenuItem("Detach Debugger"))
-				vs_automate("detach_debugger");
+				vs_automate({ L"detach_debugger" });
+			if (ImGui::MenuItem("CMake it"))
+				cmake_project();
 			if (ImGui::MenuItem("Build (Ctrl+B)"))
 				build_project();
 			if (ImGui::MenuItem("Clean"))
@@ -910,15 +912,19 @@ void App::open_project(const std::filesystem::path& path)
 	if (std::filesystem::exists(assets_path))
 	{
 		Path::set_root(L"assets", assets_path);
-		view_project.reset(assets_path);
+		view_project.reset();
 	}
 	else
-	{
-		Path::set_root(L"assets", L"");
-		view_project.reset(project_path);
-	}
+		assert(0);
 
 	load_project_cpp();
+}
+
+void App::cmake_project()
+{
+	auto build_path = project_path;
+	build_path /= L"build";
+	shell_exec(L"cmake", std::format(L"-S \"{}\" -B \"{}\"", project_path.wstring(), build_path.wstring()), true);
 }
 
 void App::build_project()
@@ -936,7 +942,9 @@ void App::build_project()
 
 		focus_window(get_console_window());
 
-		vs_automate("detach_debugger");
+		cmake_project();
+
+		vs_automate({ L"detach_debugger" });
 		auto cpp_project_path = project_path / L"build\\cpp.vcxproj";
 		auto vs_path = get_special_path("Visual Studio Installation Location");
 		auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
@@ -946,8 +954,8 @@ void App::build_project()
 		auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
 		_wsystem(cl.c_str());
 		std::filesystem::current_path(cwd);
-		vs_automate("attach_debugger");
-
+		vs_automate({ L"attach_debugger" });
+		 
 		load_project_cpp();
 
 		if (e_prefab)
@@ -969,7 +977,7 @@ void App::close_project()
 	project_path = L"";
 
 	Path::set_root(L"assets", L"");
-	view_project.reset(L"");
+	view_project.reset();
 	// remove saved udts, inspector will try to get new ones
 	view_inspector.reset();
 	unload_project_cpp();
@@ -1057,16 +1065,25 @@ void App::unload_project_cpp()
 
 void App::open_file_in_vs(const std::filesystem::path& path)
 {
-	auto vs_path = get_special_path("Visual Studio Installation Location");
-	if (!vs_path.empty())
-		exec(vs_path / L"Common7\\IDE\\devenv.exe", std::format(L" /edit \"{}\"", path.wstring()));
+	vs_automate({ L"open_file", path.wstring() });
 }
 
-void App::vs_automate(const std::string& cmd)
+void App::vs_automate(const std::vector<std::wstring>& cl)
 {
 	std::filesystem::path automation_path = getenv("FLAME_PATH");
 	automation_path /= L"bin/debug/vs_automation.exe";
-	shell_exec(automation_path, wstr(getpid()) + L" " + s2w(cmd), true);
+	std::wstring cl_str;
+	if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
+	{
+		cl_str = L"-c " + cl[0];
+		cl_str += L" " + wstr(getpid());
+	}
+	else if (cl[0] == L"open_file")
+	{
+		cl_str = L"-p " + project_path.filename().wstring();
+		cl_str += L" -c open_file " + cl[1];
+	}
+	shell_exec(automation_path, cl_str, true);
 }
 
 bool App::cmd_undo()

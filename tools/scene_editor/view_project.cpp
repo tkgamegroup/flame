@@ -23,10 +23,25 @@ View_Project::View_Project() :
 	}, "project"_h);
 }
 
-void View_Project::reset(const std::filesystem::path& assets_path)
+void View_Project::reset()
 {
 	auto flame_path = Path::get(L"flame");
-	explorer.reset_n({ std::filesystem::path(flame_path.native() + L"=flame"), assets_path});
+	auto assets_path = app.project_path;
+	auto cpp_path = app.project_path;
+	
+	std::vector<std::filesystem::path> paths;
+	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
+
+	if (!app.project_path.empty())
+	{
+		assets_path /= L"assets";
+		paths.push_back(assets_path);
+
+		cpp_path /= L"cpp";
+		paths.push_back(cpp_path);
+	}
+
+	explorer.reset_n(paths);
 
 	if (flame_file_watcher)
 	{
@@ -38,6 +53,11 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 		set_native_event(assets_file_watcher);
 		assets_file_watcher = nullptr;
 	}
+	if (cpp_file_watcher)
+	{
+		set_native_event(cpp_file_watcher);
+		cpp_file_watcher = nullptr;
+	}
 	auto file_watcher = [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
 		auto it = changed_paths.find(path);
@@ -48,7 +68,11 @@ void View_Project::reset(const std::filesystem::path& assets_path)
 		mtx_changed_paths.unlock();
 	};
 	flame_file_watcher = add_file_watcher(flame_path, file_watcher, true, false);
-	assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+	if (!app.project_path.empty())
+	{
+		assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+		cpp_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+	}
 }
 
 std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
@@ -129,216 +153,235 @@ void View_Project::init()
 		}
 	};
 	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
-		if (ImGui::MenuItem("Show In Explorer"))
-			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
-		if (!get_clipboard_files(true).empty())
+		auto in_assets = false;
+		auto in_cpp = false;
+		for (auto it = path.begin(); it != path.end(); it++)
 		{
-			if (ImGui::MenuItem("Paste"))
+			if (*it == L"assets")
 			{
-				for (auto& file : get_clipboard_files())
-				{
-					auto dst = path / file.filename();
-					std::error_code ec;
-					std::filesystem::copy_file(file, dst, ec);
-				}
+				in_assets = true;
+				break;
+			}
+			if (*it == L"cpp")
+			{
+				in_cpp = true;
+				break;
 			}
 		}
+
+		if (ImGui::MenuItem("Show In Explorer"))
+			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
+		//if (!get_clipboard_files(true).empty())
+		//{
+		//	if (ImGui::MenuItem("Paste"))
+		//	{
+		//		for (auto& file : get_clipboard_files())
+		//		{
+		//			auto dst = path / file.filename();
+		//			std::error_code ec;
+		//			std::filesystem::copy_file(file, dst, ec);
+		//		}
+		//	}
+		//}
 		if (ImGui::MenuItem("New Folder"))
 			std::filesystem::create_directory(get_unique_filename(path / L"new_foler_"));
-		if (ImGui::MenuItem("New Image"))
+		if (in_assets)
 		{
-			struct NewImageDialog : ImGui::Dialog
+			if (ImGui::MenuItem("New Image"))
 			{
-				std::filesystem::path dir;
-				std::string name = "new_image";
-				int format = 0;
-				ivec3 extent = ivec3(256, 256, 1);
-				int type = 0;
-				vec2 noise_offset = vec2(3.8f, 7.5f);
-				float noise_scale = 4.f;
-				float noise_falloff = 10.f;
-				float noise_power = 3.f;
-
-				std::unique_ptr<graphics::Image> image;
-
-				static void open(const std::filesystem::path& dir)
+				struct NewImageDialog : ImGui::Dialog
 				{
-					auto dialog = new NewImageDialog;
-					dialog->title = "New Image";
-					dialog->dir = dir;
-					Dialog::open(dialog);
-				}
+					std::filesystem::path dir;
+					std::string name = "new_image";
+					int format = 0;
+					ivec3 extent = ivec3(256, 256, 1);
+					int type = 0;
+					vec2 noise_offset = vec2(3.8f, 7.5f);
+					float noise_scale = 4.f;
+					float noise_falloff = 10.f;
+					float noise_power = 3.f;
 
-				graphics::ImagePtr generate_image()
-				{
-					if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0)
-						return nullptr;
+					std::unique_ptr<graphics::Image> image;
 
-					graphics::Format fmt;
-					switch (format)
+					static void open(const std::filesystem::path& dir)
 					{
-					case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
-					case 1: fmt = graphics::Format_R8_UNORM; break;
+						auto dialog = new NewImageDialog;
+						dialog->title = "New Image";
+						dialog->dir = dir;
+						Dialog::open(dialog);
 					}
 
-					auto ret = graphics::Image::create(fmt, extent, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
-
-					switch (type)
+					graphics::ImagePtr generate_image()
 					{
-					case 0:
-						ret->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
-						break;
-					case 1:
-						ret->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
-						break;
-					case 2:
-						if (extent.z == 1)
+						if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0)
+							return nullptr;
+
+						graphics::Format fmt;
+						switch (format)
 						{
-							graphics::InstanceCommandBuffer cb;
-							cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
-							cb->set_viewport_and_scissor(Rect(vec2(0), vec2(extent)));
-
-							auto fb = ret->get_shader_write_dst();
-							auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
-								{ "rp=" + str(fb->renderpass) });
-							graphics::PipelineResourceManager prm;
-							prm.init(pl->layout, graphics::PipelineGraphics);
-
-							cb->begin_renderpass(nullptr, fb);
-							cb->bind_pipeline(pl);
-							prm.pc.item_d("uv_off"_h).set(noise_offset);
-							prm.pc.item_d("uv_scl"_h).set(noise_scale);
-							prm.pc.item_d("val_base"_h).set(0.f);
-							prm.pc.item_d("val_scl"_h).set(1.f);
-							prm.pc.item_d("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
-							prm.pc.item_d("power"_h).set(noise_power);
-							prm.push_constant(cb.get());
-							cb->draw(3, 1, 0, 0);
-							cb->end_renderpass();
-							cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
-							cb.excute();
+						case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
+						case 1: fmt = graphics::Format_R8_UNORM; break;
 						}
-						break;
-					case 3:
-						if (extent.z > 1)
-						{
-							graphics::StagingBuffer sb(ret->data_size, nullptr);
-							graphics::InstanceCommandBuffer cb;
-							auto dst = (char*)sb->mapped;
-							for (auto z = 0; z < extent.z; z++)
-							{
-								auto zoff = z * extent.x * extent.y;
-								auto fz = (((float)z + 0.5f) / extent.z) * 2.f - 1.f;
-								for (auto y = 0; y < extent.y; y++)
-								{
-									auto yoff = y * extent.x;
-									auto fy = (((float)y + 0.5f) / extent.y) * 2.f - 1.f;
-									for (auto x = 0; x < extent.x; x++)
-									{
-										auto fx = (((float)x + 0.5f) / extent.x) * 2.f - 1.f;
-										dst[x + yoff + zoff] = (1.f - min(1.f, sqrt(fx * fx + fy * fy + fz * fz))) * 255.f;
-									}
-								}
-							}
-							cb->image_barrier(ret, {}, graphics::ImageLayoutTransferDst);
-							graphics::BufferImageCopy cpy;
-							cpy.img_ext = extent;
-							cb->copy_buffer_to_image(sb.get(), ret, cpy);
-							cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
-							cb.excute();
-						}
-						break;
-					}
 
-					return ret;
-				}
+						auto ret = graphics::Image::create(fmt, extent, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
 
-				void draw() override
-				{
-					bool open = true;
-					if (ImGui::Begin(title.c_str(), &open))
-					{
-						ImGui::InputText("name", &name);
-						static const char* formats[] = {
-							"RGBA8",
-							"R8"
-						};
-						ImGui::Combo("format", &format, formats, countof(formats));
-						ImGui::InputInt3("size", &extent[0]);
-						static const char* types[] = {
-							"Black",
-							"White",
-							"Perlin Noise",
-							"Sphere"
-						};
-						ImGui::Combo("type", &type, types, countof(types));
 						switch (type)
 						{
+						case 0:
+							ret->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+							break;
+						case 1:
+							ret->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+							break;
 						case 2:
-							ImGui::DragFloat2("offset", (float*)&noise_offset, 0.1f, 0.f, 100.f);
-							ImGui::DragFloat("scale", &noise_scale, 0.1f, 0.f, 10.f);
-							ImGui::DragFloat("falloff", &noise_falloff, 1.f, 2.f, 100.f);
-							ImGui::DragFloat("power", &noise_power, 0.01f, 1.f, 10.f);
+							if (extent.z == 1)
+							{
+								graphics::InstanceCommandBuffer cb;
+								cb->image_barrier(ret, {}, graphics::ImageLayoutAttachment);
+								cb->set_viewport_and_scissor(Rect(vec2(0), vec2(extent)));
+
+								auto fb = ret->get_shader_write_dst();
+								auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+									{ "rp=" + str(fb->renderpass) });
+								graphics::PipelineResourceManager prm;
+								prm.init(pl->layout, graphics::PipelineGraphics);
+
+								cb->begin_renderpass(nullptr, fb);
+								cb->bind_pipeline(pl);
+								prm.pc.item_d("uv_off"_h).set(noise_offset);
+								prm.pc.item_d("uv_scl"_h).set(noise_scale);
+								prm.pc.item_d("val_base"_h).set(0.f);
+								prm.pc.item_d("val_scl"_h).set(1.f);
+								prm.pc.item_d("falloff"_h).set(1.f / clamp(noise_falloff, 2.f, 100.f));
+								prm.pc.item_d("power"_h).set(noise_power);
+								prm.push_constant(cb.get());
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+								cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+								cb.excute();
+							}
+							break;
+						case 3:
+							if (extent.z > 1)
+							{
+								graphics::StagingBuffer sb(ret->data_size, nullptr);
+								graphics::InstanceCommandBuffer cb;
+								auto dst = (char*)sb->mapped;
+								for (auto z = 0; z < extent.z; z++)
+								{
+									auto zoff = z * extent.x * extent.y;
+									auto fz = (((float)z + 0.5f) / extent.z) * 2.f - 1.f;
+									for (auto y = 0; y < extent.y; y++)
+									{
+										auto yoff = y * extent.x;
+										auto fy = (((float)y + 0.5f) / extent.y) * 2.f - 1.f;
+										for (auto x = 0; x < extent.x; x++)
+										{
+											auto fx = (((float)x + 0.5f) / extent.x) * 2.f - 1.f;
+											dst[x + yoff + zoff] = (1.f - min(1.f, sqrt(fx * fx + fy * fy + fz * fz))) * 255.f;
+										}
+									}
+								}
+								cb->image_barrier(ret, {}, graphics::ImageLayoutTransferDst);
+								graphics::BufferImageCopy cpy;
+								cpy.img_ext = extent;
+								cb->copy_buffer_to_image(sb.get(), ret, cpy);
+								cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+								cb.excute();
+							}
 							break;
 						}
-						if (ImGui::Button("Generate"))
-						{
-							graphics::Queue::get()->wait_idle();
-							image.reset(generate_image());
-						}
-						if (image && extent.z == 1)
-							ImGui::Image(image.get(), (vec2)extent);
-						static bool compress = false;
-						ImGui::Checkbox("Compress", &compress);
-						if (ImGui::Button("Save"))
-						{
-							if (image && !name.empty())
-								image->save(dir / name, compress);
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Close"))
-							close();
 
-						ImGui::End();
+						return ret;
 					}
-					if (!open)
-						close();
-				}
-			};
 
-			NewImageDialog::open(path);
-		}
-		if (ImGui::MenuItem("New Material"))
-		{
-			ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
-				if (ok && !str.empty())
-				{
-					auto fn = path / str;
-					fn.replace_extension(L".fmat");
-					if (!std::filesystem::exists(fn))
+					void draw() override
 					{
-						auto material = graphics::Material::create();
-						material->save(fn);
-						delete material;
+						bool open = true;
+						if (ImGui::Begin(title.c_str(), &open))
+						{
+							ImGui::InputText("name", &name);
+							static const char* formats[] = {
+								"RGBA8",
+								"R8"
+							};
+							ImGui::Combo("format", &format, formats, countof(formats));
+							ImGui::InputInt3("size", &extent[0]);
+							static const char* types[] = {
+								"Black",
+								"White",
+								"Perlin Noise",
+								"Sphere"
+							};
+							ImGui::Combo("type", &type, types, countof(types));
+							switch (type)
+							{
+							case 2:
+								ImGui::DragFloat2("offset", (float*)&noise_offset, 0.1f, 0.f, 100.f);
+								ImGui::DragFloat("scale", &noise_scale, 0.1f, 0.f, 10.f);
+								ImGui::DragFloat("falloff", &noise_falloff, 1.f, 2.f, 100.f);
+								ImGui::DragFloat("power", &noise_power, 0.01f, 1.f, 10.f);
+								break;
+							}
+							if (ImGui::Button("Generate"))
+							{
+								graphics::Queue::get()->wait_idle();
+								image.reset(generate_image());
+							}
+							if (image && extent.z == 1)
+								ImGui::Image(image.get(), (vec2)extent);
+							static bool compress = false;
+							ImGui::Checkbox("Compress", &compress);
+							if (ImGui::Button("Save"))
+							{
+								if (image && !name.empty())
+									image->save(dir / name, compress);
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("Close"))
+								close();
+
+							ImGui::End();
+						}
+						if (!open)
+							close();
 					}
-				}
-			});
+				};
+
+				NewImageDialog::open(path);
+			}
+			if (ImGui::MenuItem("New Material"))
+			{
+				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".fmat");
+						if (!std::filesystem::exists(fn))
+						{
+							auto material = graphics::Material::create();
+							material->save(fn);
+							delete material;
+						}
+					}
+				});
+			}
+			if (ImGui::MenuItem("New Prefab"))
+			{
+				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".prefab");
+						if (!std::filesystem::exists(fn))
+							app.new_prefab(fn);
+					}
+				});
+			}
 		}
-		if (ImGui::MenuItem("New Prefab"))
+		if (in_cpp)
 		{
-			ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
-				if (ok && !str.empty())
-				{
-					auto fn = path / str;
-					fn.replace_extension(L".prefab");
-					if (!std::filesystem::exists(fn))
-						app.new_prefab(fn);
-				}
-			});
-		}
-		if (ImGui::BeginMenu("New Code"))
-		{
-			if (ImGui::MenuItem("Header"))
+			if (ImGui::MenuItem("New Header File"))
 			{
 				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
@@ -354,7 +397,7 @@ void View_Project::init()
 					}
 				});
 			}
-			if (ImGui::MenuItem("Class"))
+			if (ImGui::MenuItem("New Class"))
 			{
 				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
@@ -376,7 +419,7 @@ void View_Project::init()
 					}
 				});
 			}
-			if (ImGui::MenuItem("Component"))
+			if (ImGui::MenuItem("New Component"))
 			{
 				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
@@ -394,19 +437,38 @@ void View_Project::init()
 							h_file << std::endl;
 							h_file << "using namespace flame;" << std::endl;
 							h_file << std::endl;
-							h_file << std::format("struct c{} : Component", str) << std::endl;
+							auto name = str;
+							name[0] = std::toupper(name[0]);
+							name = 'c' + name;
+							h_file << std::format("struct {} : Component", name) << std::endl;
 							h_file << "{" << std::endl;
+							h_file << "\tstruct Create" << std::endl;
+							h_file << "\t{" << std::endl;
+							h_file << std::format("\t\tvirtual {}* operator()(EntityPtr) = 0", name) << std::endl;
+							h_file << "\t};" << std::endl;
+							h_file << "\t// Reflect static" << std::endl;
+							h_file << "\tEXPORT static Create& create;" << std::endl;
 							h_file << "};" << std::endl;
 							h_file.close();
 
 							std::ofstream cpp_file(cpp_fn);
 							cpp_file << std::format("#include \"{}\".h", str) << std::endl;
+							cpp_file << std::format("struct {0}Create : {0}::Create", name) << std::endl;
+							cpp_file << "{" << std::endl;
+							cpp_file << std::format("\t{}* operator()(EntityPtr e) override", name) << std::endl;
+							cpp_file << "\t{" << std::endl;
+							cpp_file << "\t\tif (e == INVALID_POINTER)" << std::endl;
+							cpp_file << "\t\t\treturn nullptr;" << std::endl;
+							cpp_file << std::format("\t\treturn new {};", name) << std::endl;
+							cpp_file << "\t}" << std::endl;
+							cpp_file << std::format("}}{}_create;", name) << std::endl;
 							cpp_file.close();
 						}
 					}
+					else
+						ImGui::OpenMessageDialog("Failed", "Already have this component");
 				});
 			}
-			ImGui::EndMenu();
 		}
 	};
 	explorer.folder_drop_callback = [this](const std::filesystem::path& path) {

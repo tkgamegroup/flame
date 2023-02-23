@@ -118,6 +118,8 @@ namespace flame
 			return remove_component(th<T>());
 		}
 
+		virtual bool reposition_component(Component* comp) = 0;
+
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
 		inline void remove_from_parent(bool destroy = true)

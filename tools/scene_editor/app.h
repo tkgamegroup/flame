@@ -137,6 +137,7 @@ struct App : UniverseApplication
 
 	void new_project(const std::filesystem::path& path);
 	void open_project(const std::filesystem::path& path);
+	void cmake_project();
 	void build_project();
 	void close_project();
 	void new_prefab(const std::filesystem::path& path);
@@ -146,7 +147,7 @@ struct App : UniverseApplication
 	void load_project_cpp();
 	void unload_project_cpp();
 	void open_file_in_vs(const std::filesystem::path& path);
-	void vs_automate(const std::string& cmd);
+	void vs_automate(const std::vector<std::wstring>& cl);
 
 	bool cmd_undo();
 	bool cmd_redo();
