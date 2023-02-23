@@ -21,9 +21,9 @@ if(USE_IMGUI)
 	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame")
 	add_custom_command(TARGET imgui PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/flame")
 	add_custom_command(TARGET imgui PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui_extension.h" "${CMAKE_SOURCE_DIR}/include/flame")
-endif()
 
-target_link_libraries(imgui flame_foundation)
+	target_link_libraries(imgui flame_foundation)
+endif()
 
 add_subdirectory(graphics)
 add_subdirectory(audio)

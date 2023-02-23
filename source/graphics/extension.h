@@ -200,6 +200,14 @@ namespace flame
 				return item(0, stag_top++);
 			}
 
+			template<class T>
+			T& add_t()
+			{
+				auto& t = *(T*)((char*)stag->mapped + stag_top * item_size);
+				stag_top++;
+				return t;
+			}
+
 			void add(const void* src, uint size)
 			{
 				memcpy((char*)stag->mapped + stag_top * item_size, src, size * item_size);
@@ -235,6 +243,12 @@ namespace flame
 				buf.reset(Buffer::create(capacity * sizeof(T), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
+			}
+
+			void add(T v)
+			{
+				memcpy((char*)stag->mapped + stag_top * sizeof(T), &v, sizeof(T));
+				stag_top++;
 			}
 
 			void add(const T* src, uint size)

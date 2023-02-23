@@ -103,7 +103,7 @@ namespace flame
 					path(path)
 				{
 					text = !_text.empty() ? _text : path.filename().string();
-
+#if USE_IMGUI
 					auto font = ImGui::GetFont();
 					auto font_size = ImGui::GetFontSize();
 					const char* clipped_end;
@@ -122,6 +122,7 @@ namespace flame
 						text = str + "...";
 						text_width = w;
 					}
+#endif
 
 					image = (ImagePtr)get_icon(path);
 
@@ -329,6 +330,7 @@ namespace flame
 					peeding_open_node = { nullptr, false };
 				}
 
+#if USE_IMGUI
 				if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 				{
 					auto& style = ImGui::GetStyle();
@@ -521,6 +523,7 @@ namespace flame
 
 					ImGui::EndTable();
 				}
+#endif
 			}
 		};
 	}

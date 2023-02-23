@@ -1,0 +1,5 @@
+file(GLOB_RECURSE source_files "*.c*")
+add_executable(graphics_test_canvas ${source_files})
+set_target_properties(graphics_test_canvas PROPERTIES FOLDER "tests")
+target_link_options(graphics_test_canvas PRIVATE /FIXED:NO)
+target_link_libraries(graphics_test_canvas flame_graphics)

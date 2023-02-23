@@ -230,10 +230,12 @@ if op != 4:
 			
 	print("== library recastnavigation ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/tkgamegroup/recastnavigation"
 	lib_dir = parent_directory / "recastnavigation"
 	if op == 2:
-		print("Download recastnavigation from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download recastnavigation from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -242,6 +244,8 @@ if op != 4:
 			print("%s exists, skip download" % str(lib_dir))
 
 	ok = True
+	if op == 3:
+		ok = False
 	bud_dir = lib_dir / "build"
 	if op == 2:
 		print("Build recastnavigation into %s ? y/n" % str(bud_dir))
@@ -259,10 +263,12 @@ if op != 4:
 
 	print("== library Font-Awesome ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/FortAwesome/Font-Awesome"
 	lib_dir = parent_directory / "Font-Awesome"
 	if op == 2:
-		print("Download Font-Awesome from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download Font-Awesome from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -273,10 +279,12 @@ if op != 4:
 			
 	print("== library imgui ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/ocornut/imgui.git"
 	lib_dir = parent_directory / "imgui"
 	if op == 2:
-		print("Download imgui from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download imgui from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -287,10 +295,12 @@ if op != 4:
 			
 	print("== library ImGuizmo ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/CedricGuillemet/ImGuizmo.git"
 	lib_dir = parent_directory / "ImGuizmo"
 	if op == 2:
-		print("Download ImGuizmo from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download ImGuizmo from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -301,10 +311,12 @@ if op != 4:
 			
 	print("== library FortuneAlgorithm ==")
 	ok = True
+	if op == 3:
+		ok = False
 	address = "https://github.com/tkgamegroup/FortuneAlgorithm.git"
 	lib_dir = parent_directory / "FortuneAlgorithm"
 	if op == 2:
-		print("Download FortuneAlgorithm from %s into %s ? y/n" % (address, str(lib_dir)))
+		print("(Optional) Download FortuneAlgorithm from %s into %s ? y/n" % (address, str(lib_dir)))
 		ok = input() == "y"
 	if ok:
 		if not lib_dir.exists():
@@ -313,6 +325,8 @@ if op != 4:
 			print("%s exists, skip download" % str(lib_dir))
 
 	ok = True
+	if op == 3:
+		ok = False
 	bud_dir = lib_dir / "build"
 	if op == 2:
 		print("Build FortuneAlgorithm into %s ? y/n" % str(bud_dir))

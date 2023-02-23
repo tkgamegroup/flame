@@ -127,6 +127,7 @@ namespace flame
 
 			virtual vec4 get_pixel(int x, int y, uint level, uint layer) = 0;
 			virtual void set_pixel(int x, int y, uint level, uint layer, const vec4& v) = 0;
+			virtual void upload_pixels(int x, int y, int w, int h, uint level, uint layer) = 0;
 			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
 			virtual void clear_staging_data() = 0;
 

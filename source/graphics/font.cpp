@@ -189,10 +189,10 @@ namespace flame
 				for (auto& _fn : _font_names)
 				{
 					auto fn = Path::get(_fn);
-					if (std::filesystem::exists(_fn))
+					if (std::filesystem::exists(fn))
 						font_names.push_back(fn);
 					else
-						wprintf(L"cannot find font: %s\n", fn.c_str());
+						wprintf(L"cannot find font: %s\n", _fn.c_str());
 				}
 				std::sort(font_names.begin(), font_names.end());
 
@@ -222,19 +222,20 @@ namespace flame
 
 					if (!font)
 					{
-						auto stbtt_info = new stbtt_fontinfo;
-						auto content = get_file_content(fn);
-						if (stbtt_InitFont(stbtt_info, (uchar*)content.data(), stbtt_GetFontOffsetForIndex((uchar*)content.data(), 0)))
+						font = new Font;
+						font->filename = fn;
+						font->content = get_file_content(fn);
+						font->stbtt_info = new stbtt_fontinfo;
+						if (stbtt_InitFont(font->stbtt_info, (uchar*)font->content.data(), stbtt_GetFontOffsetForIndex((uchar*)font->content.data(), 0)))
 						{
-							font = new Font;
-							font->filename = fn;
-							font->content = content;
-
 							font->ref = 1;
 							fonts.emplace_back(font);
 						}
 						else
+						{
+							delete font;
 							wprintf(L"cannot load font: %s\n", fn.c_str());
+						}
 					}
 
 					if (font)
@@ -247,7 +248,7 @@ namespace flame
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				ret->image.reset(Image::create(Format_R8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferDst));
+				ret->image.reset(Image::create(Format_R8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferSrc | ImageUsageTransferDst));
 				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
 				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
 

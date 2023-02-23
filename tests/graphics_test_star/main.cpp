@@ -157,13 +157,10 @@ int entry(int argc, char** args)
 		cb->begin_renderpass(nullptr, app.main_window->swapchain->images[idx]->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
 		cb->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		cb->bind_pipeline(pl);
-		cb->push_constant_t(vec4(2.f / vec2(app.main_window->native->size), vec2(-1)));
+		cb->push_constant_t(vec4(2.f / vp.b, vec2(-1)));
 		cb->draw(stars.size() * 6, 1, 0, 0);
 		cb->end_renderpass();
 	}, 0, 0);
-	graphics::gui_callbacks.add([]() {
-		ImGui::Button("Hello");
-	});
 
 	stars.resize(1000);
 	projector.set(app.main_window->native->size, 45.f, 1.f, 4.f);

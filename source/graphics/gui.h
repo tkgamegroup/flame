@@ -7,9 +7,9 @@
 #include <imgui_internal.h>
 #include "../imgui_extension.h"
 #include <misc/cpp/imgui_stdlib.h>
-	#if USE_IM_GUIZMO
-	#include <ImGuizmo.h>
-	#endif
+#if USE_IM_GUIZMO
+#include <ImGuizmo.h>
+#endif
 #endif
 
 namespace ImGui
@@ -70,7 +70,9 @@ namespace flame
 
 		inline void gui_set_current()
 		{
+#if USE_IMGUI
 			ImGui::SetCurrentContext((ImGuiContext*)gui_native_handle());
+#endif
 		}
 
 		FLAME_GRAPHICS_API Image* get_icon(const std::filesystem::path& path, uint desired_size = 64);
@@ -93,7 +95,7 @@ namespace flame
 
 				graphics::gui_callbacks.add([this]() {
 					draw();
-				}, (uint)this);
+					}, (uint)this);
 			}
 
 			void close()
@@ -104,8 +106,8 @@ namespace flame
 
 				add_event([this]() {
 					graphics::gui_callbacks.remove((uint)this);
-					return false;
-				});
+				return false;
+					});
 			}
 
 			void draw()
@@ -116,15 +118,19 @@ namespace flame
 			}
 
 			virtual void init() {}
-			virtual bool on_begin() 
+			virtual bool on_begin()
 			{
 				bool open = true;
+#if USE_IMGUI
 				ImGui::Begin(name.c_str(), &open);
+#endif
 				return !open;
 			}
 			virtual void on_end(bool closed)
 			{
+#if USE_IMGUI
 				ImGui::End();
+#endif
 
 				if (closed)
 					close();
@@ -144,7 +150,7 @@ namespace flame
 		{
 			std::erase_if(gui_views, [&](const auto& i) {
 				return i == this;
-			});
+				});
 		}
 	}
 }

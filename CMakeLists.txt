@@ -232,6 +232,8 @@ else()
 	set(HAS_RENDERDOC on)
 endif()
 
+set(USE_UNIVERSE_MODULE on CACHE BOOL "Use Flame Universe Module")
+
 add_subdirectory(source)
 add_subdirectory(tests)
 add_subdirectory(tools)

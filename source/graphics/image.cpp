@@ -310,6 +310,8 @@ namespace flame
 
 		void ImagePrivate::set_pixel(int x, int y, uint level, uint layer, const vec4& v)
 		{
+			stage_surface_data(level, layer);
+
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
 
@@ -330,6 +332,36 @@ namespace flame
 				break;
 			default:
 				assert(0);
+			}
+		}
+
+		void ImagePrivate::upload_pixels(int x, int y, int w, int h, uint level, uint layer)
+		{
+			auto& lv = levels[level];
+			auto& ly = lv.layers[layer];
+			if (ly.data)
+			{
+				auto img_line_size = image_pitch(lv.extent.x * pixel_size);
+				auto copy_line_size = image_pitch(w * pixel_size);
+				StagingBuffer sb(copy_line_size * h);
+				auto src = ly.data.get() + y * img_line_size + x * pixel_size;
+				auto dst = (uchar*)sb->mapped;
+				for (auto i = 0; i < h; i++)
+				{
+					memcpy(dst, src, copy_line_size);
+					src += img_line_size;
+					dst += copy_line_size;
+				}
+
+				InstanceCommandBuffer cb;
+				BufferImageCopy cpy;
+				cpy.img_off = uvec3(x, y, 0);
+				cpy.img_ext = uvec3(w, h, 1);
+				cpy.img_sub = { level, 1, layer, 1 };
+				cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(sb.get(), this, { &cpy, 1 });
+				cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
+				cb.excute();
 			}
 		}
 

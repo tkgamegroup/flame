@@ -26,7 +26,9 @@ namespace ImGui
 	void Dialog::close()
 	{
 		assert(!dialogs.empty());
+#if USE_IMGUI
 		ImGui::CloseCurrentPopup();
+#endif
 		add_event([this]() {
 			graphics::Queue::get()->wait_idle();
 			std::erase_if(dialogs, [&](const auto& i) {
@@ -42,6 +44,7 @@ namespace ImGui
 
 		void draw() override
 		{
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				ImGui::TextUnformatted(message.c_str());
@@ -49,6 +52,7 @@ namespace ImGui
 					close();
 				ImGui::EndPopup();
 			}
+#endif
 		}
 	};
 
@@ -58,6 +62,7 @@ namespace ImGui
 
 		void draw() override
 		{
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				if (ImGui::Button("Yes"))
@@ -75,6 +80,7 @@ namespace ImGui
 				}
 				ImGui::EndPopup();
 			}
+#endif
 		}
 	};
 
@@ -98,6 +104,7 @@ namespace ImGui
 
 		void draw() override
 		{
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				auto ok = false;
@@ -138,6 +145,7 @@ namespace ImGui
 				}
 				ImGui::EndPopup();
 			}
+#endif
 		}
 	};
 
@@ -149,6 +157,7 @@ namespace ImGui
 
 		void draw() override
 		{
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
@@ -172,6 +181,7 @@ namespace ImGui
 				}
 				ImGui::EndPopup();
 			}
+#endif
 		}
 	};
 
@@ -355,6 +365,7 @@ namespace flame
 
 		void gui_clear_inputs()
 		{
+#if USE_IMGUI
 			auto& io = ImGui::GetIO();
 			for (auto& btn : io.MouseDown)
 				btn = false;
@@ -365,6 +376,7 @@ namespace flame
 			io.KeyAlt = false;
 			for (auto& key : io.KeysDown)
 				key = false;
+#endif
 		}
 
 		bool gui_want_mouse()
@@ -517,11 +529,10 @@ namespace flame
 					gui_clear_inputs();
 			});
 
-			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline",
-				{ "rp=" + str(imgui_rp) });
+			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline", { "rp=" + str(imgui_rp) });
 			imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
 			imgui_buf_idx.create(240000);
-			imgui_ds.reset(DescriptorSet::create(DescriptorPool::current(), imgui_pl->layout->dsls[0]));
+			imgui_ds.reset(DescriptorSet::create(nullptr, imgui_pl->layout->dsls[0]));
 
 			IMGUI_CHECKVERSION();
 

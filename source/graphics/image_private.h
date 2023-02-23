@@ -30,6 +30,7 @@ namespace flame
 			void stage_surface_data(uint level, uint layer);
 			vec4 get_pixel(int x, int y, uint level, uint layer) override;
 			void set_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
+			void upload_pixels(int x, int y, int w, int h, uint level, uint layer) override;
 			void clear_staging_data() override;
 
 			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
