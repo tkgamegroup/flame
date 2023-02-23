@@ -76,6 +76,89 @@ namespace flame
 			cmd.idx_cnt = 0;
 			cmd.tex = main_img;
 		}
+		
+		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+		{
+			thickness *= 0.5f;
+
+			auto& cmd = draw_cmds.back();
+
+			std::vector<vec2> pts;
+			pts.push_back(a);
+			pts.push_back(vec2(a.x, b.y));
+			pts.push_back(b);
+			pts.push_back(vec2(b.x, a.y));
+			pts.push_back(a);
+			int pt_cnt = pts.size();
+
+			auto get_normal = [](const vec2& p1, const vec2& p2) {
+				auto d = normalize(p2 - p1);
+				return vec2(d.y, -d.x);
+			};
+
+			vec2 first_normal;
+			vec2 last_normal;
+
+			first_normal = last_normal = get_normal(pts[0], pts[1]);
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = pts[0] + first_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = pts[0] - first_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+
+			{
+				for (auto i = 1; i < pt_cnt - 1; i++)
+				{
+					auto _n = get_normal(pts[i], pts[i + 1]);
+					auto n = normalize(last_normal + _n);
+					last_normal = _n;
+
+					auto vtx_off = buf_vtx.stag_top;
+					{
+						auto& v = buf_vtx.add_t<DrawVert>();
+						v.pos = pts[i] + n * thickness + 0.5f;
+						v.uv = vec2(0.f);
+						v.col = col;
+					}
+					{
+						auto& v = buf_vtx.add_t<DrawVert>();
+						v.pos = pts[i] - n * thickness + 0.5f;
+						v.uv = vec2(0.f);
+						v.col = col;
+					}
+
+					buf_idx.add(vtx_off - 2);
+					buf_idx.add(vtx_off - 1);
+					buf_idx.add(vtx_off + 1);
+					buf_idx.add(vtx_off - 2);
+					buf_idx.add(vtx_off + 1);
+					buf_idx.add(vtx_off + 0);
+					cmd.idx_cnt += 6;
+				}
+			}
+
+			//{
+			//	auto _n = get_normal(pts[pt_cnt - 2], pts[0]);
+			//	auto n = normalize(_n + first_normal);
+
+			//	auto vtx_off = buf_vtx.stag_top;
+
+			//	buf_idx.add(vtx_off - 2);
+			//	buf_idx.add(vtx_off - 1);
+			//	buf_idx.add(1);
+			//	buf_idx.add(vtx_off - 2);
+			//	buf_idx.add(1);
+			//	buf_idx.add(0);
+			//	cmd.idx_cnt += 6;
+			//}
+		}
 
 		void CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
 		{
