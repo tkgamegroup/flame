@@ -10,6 +10,7 @@ struct MyApp : GraphicsApplication
 {
 	void on_render() override
 	{
+		GraphicsApplication::on_render();
 		canvas->add_rect_filled(vec2(0.f), vec2(100.f), cvec4(255, 127, 60, 255));
 		canvas->add_text(vec2(0.f), L"Hello World", cvec4(0, 0, 0, 255));
 		canvas->add_rect(vec2(100.f), vec2(200.f), 1.f, cvec4(0, 0, 0, 255));

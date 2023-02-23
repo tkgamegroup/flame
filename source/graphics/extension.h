@@ -195,6 +195,14 @@ namespace flame
 				init(nullptr, stag->mapped);
 			}
 
+			template<class T>
+			T& get_t(int idx)
+			{
+				if (idx < 0)
+					idx = stag_top + idx;
+				return *(T*)((char*)stag->mapped + idx * item_size);
+			}
+
 			VirtualData add()
 			{
 				return item(0, stag_top++);

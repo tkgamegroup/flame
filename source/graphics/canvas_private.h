@@ -35,10 +35,15 @@ namespace flame
 			std::unique_ptr<DescriptorSetT> main_ds;
 
 			std::vector<DrawCmd> draw_cmds;
+			std::vector<vec2> path;
 
 			CanvasPrivate(WindowPtr window);
 			~CanvasPrivate();
 			void reset();
+
+			void path_rect(const vec2& a, const vec2& b);
+			void stroke(float thickness, const cvec4& col);
+			void fill(const cvec4& col);
 
 			void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;

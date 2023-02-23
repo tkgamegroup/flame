@@ -433,12 +433,6 @@ namespace flame
 			int advance = 0;
 		};
 
-		struct GlyphDraw
-		{
-			vec2 points[4];
-			vec4 uvs;
-		};
-
 		struct Point
 		{
 			vec3 pos;

@@ -76,73 +76,73 @@ namespace flame
 			cmd.idx_cnt = 0;
 			cmd.tex = main_img;
 		}
-		
-		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+
+		void CanvasPrivate::path_rect(const vec2& a, const vec2& b)
 		{
-			thickness *= 0.5f;
+			path.push_back(a);
+			path.push_back(vec2(a.x, b.y));
+			path.push_back(b);
+			path.push_back(vec2(b.x, a.y));
+		}
 
-			auto& cmd = draw_cmds.back();
+		void CanvasPrivate::stroke(float thickness, const cvec4& col)
+		{
+			//thickness *= 0.5f;
 
-			std::vector<vec2> pts;
-			pts.push_back(a);
-			pts.push_back(vec2(a.x, b.y));
-			pts.push_back(b);
-			pts.push_back(vec2(b.x, a.y));
-			pts.push_back(a);
-			int pt_cnt = pts.size();
+			//auto& cmd = draw_cmds.back();
 
-			auto get_normal = [](const vec2& p1, const vec2& p2) {
-				auto d = normalize(p2 - p1);
-				return vec2(d.y, -d.x);
-			};
+			//auto get_normal = [](const vec2& p1, const vec2& p2) {
+			//	auto d = normalize(p2 - p1);
+			//	return vec2(d.y, -d.x);
+			//};
 
-			vec2 first_normal;
-			vec2 last_normal;
+			//vec2 first_normal;
+			//vec2 last_normal;
 
-			first_normal = last_normal = get_normal(pts[0], pts[1]);
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = pts[0] + first_normal * thickness + 0.5f;
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = pts[0] - first_normal * thickness + 0.5f;
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
+			//first_normal = last_normal = get_normal(pts[0], pts[1]);
+			//{
+			//	auto& v = buf_vtx.add_t<DrawVert>();
+			//	v.pos = pts[0] + first_normal * thickness + 0.5f;
+			//	v.uv = vec2(0.f);
+			//	v.col = col;
+			//}
+			//{
+			//	auto& v = buf_vtx.add_t<DrawVert>();
+			//	v.pos = pts[0] - first_normal * thickness + 0.5f;
+			//	v.uv = vec2(0.f);
+			//	v.col = col;
+			//}
 
-			{
-				for (auto i = 1; i < pt_cnt - 1; i++)
-				{
-					auto _n = get_normal(pts[i], pts[i + 1]);
-					auto n = normalize(last_normal + _n);
-					last_normal = _n;
+			//{
+			//	for (auto i = 1; i < pt_cnt - 1; i++)
+			//	{
+			//		auto _n = get_normal(pts[i], pts[i + 1]);
+			//		auto n = normalize(last_normal + _n);
+			//		last_normal = _n;
 
-					auto vtx_off = buf_vtx.stag_top;
-					{
-						auto& v = buf_vtx.add_t<DrawVert>();
-						v.pos = pts[i] + n * thickness + 0.5f;
-						v.uv = vec2(0.f);
-						v.col = col;
-					}
-					{
-						auto& v = buf_vtx.add_t<DrawVert>();
-						v.pos = pts[i] - n * thickness + 0.5f;
-						v.uv = vec2(0.f);
-						v.col = col;
-					}
+			//		auto vtx_off = buf_vtx.stag_top;
+			//		{
+			//			auto& v = buf_vtx.add_t<DrawVert>();
+			//			v.pos = pts[i] + n * thickness + 0.5f;
+			//			v.uv = vec2(0.f);
+			//			v.col = col;
+			//		}
+			//		{
+			//			auto& v = buf_vtx.add_t<DrawVert>();
+			//			v.pos = pts[i] - n * thickness + 0.5f;
+			//			v.uv = vec2(0.f);
+			//			v.col = col;
+			//		}
 
-					buf_idx.add(vtx_off - 2);
-					buf_idx.add(vtx_off - 1);
-					buf_idx.add(vtx_off + 1);
-					buf_idx.add(vtx_off - 2);
-					buf_idx.add(vtx_off + 1);
-					buf_idx.add(vtx_off + 0);
-					cmd.idx_cnt += 6;
-				}
-			}
+			//		buf_idx.add(vtx_off - 2);
+			//		buf_idx.add(vtx_off - 1);
+			//		buf_idx.add(vtx_off + 1);
+			//		buf_idx.add(vtx_off - 2);
+			//		buf_idx.add(vtx_off + 1);
+			//		buf_idx.add(vtx_off + 0);
+			//		cmd.idx_cnt += 6;
+			//	}
+			//}
 
 			//{
 			//	auto _n = get_normal(pts[pt_cnt - 2], pts[0]);
@@ -158,80 +158,67 @@ namespace flame
 			//	buf_idx.add(0);
 			//	cmd.idx_cnt += 6;
 			//}
+
+			path.clear();
+		}
+
+		void CanvasPrivate::fill(const cvec4& col)
+		{
+			auto& cmd = draw_cmds.back();
+
+			int n_pts = path.size();
+			auto vtx0_off = buf_vtx.stag_top;
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = path[0];
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = path[1];
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			for (auto i = 0; i < n_pts - 2; i++)
+			{
+				auto vtx_off = buf_vtx.stag_top;
+				{
+					auto& v = buf_vtx.add_t<DrawVert>();
+					v.pos = path[i + 2];
+					v.uv = vec2(0.f);
+					v.col = col;
+				}
+
+				buf_idx.add(vtx0_off); buf_idx.add(vtx_off - 1); buf_idx.add(vtx_off);
+				cmd.idx_cnt += 3;
+			}
+
+			path.clear();
+		}
+		
+		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+		{
 		}
 
 		void CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
 		{
-			auto& cmd = draw_cmds.back();
-
-			auto vtx_off = buf_vtx.stag_top;
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = a;
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = vec2(a.x, b.y);
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = b;
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
-			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = vec2(b.x, a.y);
-				v.uv = vec2(0.f);
-				v.col = col;
-			}
-
-			buf_idx.add(vtx_off + 0); buf_idx.add(vtx_off + 1); buf_idx.add(vtx_off + 2);
-			buf_idx.add(vtx_off + 0); buf_idx.add(vtx_off + 2); buf_idx.add(vtx_off + 3);
-
-			cmd.idx_cnt += 6;
+			path_rect(a, b);
+			fill(col);
 		}
 
 		void CanvasPrivate::add_text(const vec2& pos, std::wstring_view str, const cvec4& col)
 		{
 			auto& cmd = draw_cmds.back();
 
-			for (auto& g : font_atlas->get_draw_glyphs(14, str, pos))
+			auto p = pos;
+			for (auto ch : str)
 			{
-				auto vtx_off = buf_vtx.stag_top;
-				{
-					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = g.points[0];
-					v.uv = g.uvs.xy;
-					v.col = col;
-				}
-				{
-					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = g.points[1];
-					v.uv = g.uvs.xw;
-					v.col = col;
-				}
-				{
-					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = g.points[2];
-					v.uv = g.uvs.zw;
-					v.col = col;
-				}
-				{
-					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = g.points[3];
-					v.uv = g.uvs.zy;
-					v.col = col;
-				}
+				auto& g = font_atlas->get_glyph(ch, 14);
+				auto o = p + vec2(g.off);
+				auto s = vec2(g.size);
 
-				buf_idx.add(vtx_off + 0); buf_idx.add(vtx_off + 1); buf_idx.add(vtx_off + 2);
-				buf_idx.add(vtx_off + 0); buf_idx.add(vtx_off + 2); buf_idx.add(vtx_off + 3);
-
-				cmd.idx_cnt += 6;
+				p.x += g.advance;
 			}
 		}
 

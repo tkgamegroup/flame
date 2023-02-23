@@ -100,45 +100,6 @@ namespace flame
 				return ret;
 			}
 
-			inline std::vector<GlyphDraw> get_draw_glyphs(uint size, std::wstring_view str, const vec2& pos = vec2(0.f), const mat2& axes = mat2(1.f))
-			{
-				std::vector<GlyphDraw> ret;
-				ret.resize(str.size());
-
-				auto i = 0;
-				auto p = vec2(0.f);
-				for (i = 0; i < str.size(); i++)
-				{
-					auto sh = str[i];
-					if (sh == '\n')
-					{
-						p.y += size;
-						p.x = 0.f;
-					}
-					else if (sh != '\r')
-					{
-						if (sh == '\t')
-							sh = ' ';
-
-						auto& g = get_glyph(sh, size);
-						auto o = p + vec2(g.off);
-						auto s = vec2(g.size);
-
-						auto& dst = ret[i];
-						dst.uvs = g.uv;
-						dst.points[0] = pos + o * axes;
-						dst.points[1] = pos + o.x * axes[0] + (o.y - s.y) * axes[1];
-						dst.points[2] = pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1];
-						dst.points[3] = pos + (o.x + s.x) * axes[0] + o.y * axes[1];
-
-						p.x += g.advance;
-					}
-				}
-
-				ret.resize(i);
-				return ret;
-			}
-
 			FLAME_GRAPHICS_API static ivec2 icons_range();
 			FLAME_GRAPHICS_API static wchar_t icon(uint hash);
 			static inline std::string icon_s(uint hash)
