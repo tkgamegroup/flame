@@ -12,6 +12,7 @@ namespace flame
 		CanvasPrivate::CanvasPrivate(WindowPtr _window)
 		{
 			window = _window;
+			auto gui_idx = window->renderers.find("Gui"_h);
 			window->renderers.add([this](uint idx, CommandBufferPtr cb) {
 				buf_vtx.upload(cb);
 				buf_vtx.buf_top = buf_vtx.stag_top = 0;
@@ -33,7 +34,7 @@ namespace flame
 				cb->end_renderpass();
 
 				reset();
-			}, "Canvas"_h);
+			}, "Canvas"_h, gui_idx != -1 ? gui_idx : -1);
 
 			{
 				std::vector<std::string> defines;

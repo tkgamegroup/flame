@@ -15,6 +15,8 @@ An ECS 3D-Game-Engine.
 
 - stb https://github.com/nothings/stb
 
+- msdfgen https://github.com/Chlumsky/msdfgen
+
 - SHA1 https://github.com/vog/sha1
 
 - GLI https://github.com/g-truc/gli
@@ -37,7 +39,7 @@ An ECS 3D-Game-Engine.
 
 - Font-Awesome https://github.com/FortAwesome/Font-Awesome
 
-- imgui https://github.com/ocornut/imgui
+- ImGui https://github.com/ocornut/imgui
 
 - ImGuizmo https://github.com/CedricGuillemet/ImGuizmo
 

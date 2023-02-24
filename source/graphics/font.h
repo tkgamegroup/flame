@@ -8,6 +8,7 @@ namespace flame
 	{
 		struct FontAtlas
 		{
+			FontAtlasType type;
 			ImageViewPtr view;
 
 			std::vector<std::filesystem::path> font_names;
@@ -109,7 +110,7 @@ namespace flame
 
 			struct Get
 			{
-				virtual FontAtlasPtr operator()(const std::vector<std::filesystem::path>& font_names) = 0;
+				virtual FontAtlasPtr operator()(const std::vector<std::filesystem::path>& font_names, FontAtlasType type = FontAtlasBitmap) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

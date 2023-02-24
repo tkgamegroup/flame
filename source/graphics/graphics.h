@@ -424,6 +424,12 @@ namespace flame
 			DynamicStateStencilReference
 		};
 
+		enum FontAtlasType
+		{
+			FontAtlasBitmap,
+			FontAtlasSDF
+		};
+
 		struct Glyph
 		{
 			ushort code = 0;

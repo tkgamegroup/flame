@@ -195,7 +195,7 @@ void View_Scene::on_draw()
 		auto& style = ImGui::GetStyle();
 
 		auto editor_node = app.e_editor->get_component_i<cNode>(0);
-		if (!editor_node->drawers.exist("scene"_h))
+		if (editor_node->drawers.find("scene"_h) != -1)
 		{
 			editor_node->drawers.add([this](DrawData& draw_data) {
 				if (draw_data.pass == PassOutline && show_outline)

@@ -319,11 +319,14 @@ namespace flame
 			});
 		}
 
-		bool exist(uint h)
+		int find(uint h)
 		{
-			return std::find_if(list.begin(), list.end(), [&](const auto& i) {
+			auto it = std::find_if(list.begin(), list.end(), [&](const auto& i) {
 				return i.second == h;
-			}) != list.end();
+			});
+			if (it == list.end())
+				return -1;
+			return it - list.begin();
 		}
 	};
 

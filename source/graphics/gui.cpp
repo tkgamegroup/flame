@@ -623,7 +623,7 @@ namespace flame
 			imgui_ds->set_image_i(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			imgui_ds->update();
 
-			main_window->renderers.add(gui_render);
+			main_window->renderers.add(gui_render, "Gui"_h);
 #endif
 
 			if (auto image = Image::get(L"flame/icon_model.png"); image)

@@ -11,6 +11,11 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 
+#ifdef USE_MSDFGEN
+#define MSDFGEN_PUBLIC
+#include <msdfgen.h>
+#endif
+
 namespace flame
 {
 	namespace graphics
@@ -134,7 +139,6 @@ namespace flame
 
 					auto scale = stbtt_ScaleForPixelHeight(info, size);
 					auto x = 0, y = 0, w = 0, h = 0, ascent = 0, adv = 0;
-					auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y);
 					stbtt_GetFontVMetrics(info, &ascent, 0, 0);
 					ascent *= scale;
 					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
@@ -142,31 +146,45 @@ namespace flame
 					g.size = uvec2(w, h);
 					g.off = uvec2(x, ascent + h + y);
 					g.advance = adv;
-					if (bitmap)
+					switch (type)
 					{
-						auto n = bin_pack_root->find(g.size);
-						if (n)
+					case FontAtlasBitmap:
+						if (auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y); bitmap)
 						{
-							auto& atlas_pos = n->pos;
+							auto n = bin_pack_root->find(g.size);
+							if (n)
+							{
+								auto& atlas_pos = n->pos;
 
-							StagingBuffer stag(image_pitch(g.size.x) * g.size.y, bitmap);
+								StagingBuffer stag(image_pitch(g.size.x) * g.size.y, bitmap);
 
-							InstanceCommandBuffer cb;
-							auto old_layout = image->get_layout();
-							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
-							BufferImageCopy cpy;
-							cpy.img_off = uvec3(atlas_pos, 0);
-							cpy.img_ext = uvec3(g.size, 1);
-							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
-							cb->image_barrier(image.get(), {}, old_layout);
-							cb.excute();
+								InstanceCommandBuffer cb;
+								auto old_layout = image->get_layout();
+								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
+								BufferImageCopy cpy;
+								cpy.img_off = uvec3(atlas_pos, 0);
+								cpy.img_ext = uvec3(g.size, 1);
+								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
+								cb->image_barrier(image.get(), {}, old_layout);
+								cb.excute();
 
-							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
-								(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+								g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
+									(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+							}
+							else
+								printf("font atlas is full\n");
+							delete[]bitmap;
 						}
 						else
-							printf("font atlas is full\n");
-						delete[]bitmap;
+							assert(0);
+						break;
+					case FontAtlasSDF:
+					{
+						stbtt_vertex* stbtt_verts = nullptr;
+						auto n = stbtt_GetGlyphShape(info, index, &stbtt_verts);
+						delete[]stbtt_verts;
+					}
+						break;
 					}
 
 					break;
@@ -183,7 +201,7 @@ namespace flame
 
 		struct FontAtlasGet : FontAtlas::Get
 		{
-			FontAtlasPtr operator()(const std::vector<std::filesystem::path>& _font_names) override
+			FontAtlasPtr operator()(const std::vector<std::filesystem::path>& _font_names, FontAtlasType type) override
 			{
 				std::vector<std::filesystem::path> font_names;
 				for (auto& _fn : _font_names)
@@ -198,7 +216,7 @@ namespace flame
 
 				for (auto& a : atlases)
 				{
-					if (a->font_names == font_names)
+					if (a->font_names == font_names && a->type == type)
 					{
 						a->ref++;
 						return a.get();
@@ -243,6 +261,7 @@ namespace flame
 				}
 
 				auto ret = new FontAtlasPrivate;
+				ret->type = type;
 				ret->font_names = font_names;
 				ret->myfonts = myfonts;
 
