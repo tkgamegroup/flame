@@ -36,6 +36,7 @@ namespace flame
 
 			std::vector<DrawCmd> draw_cmds;
 			std::vector<vec2> path;
+			std::stack<FontAtlasPtr> fonts;
 
 			CanvasPrivate(WindowPtr window);
 			~CanvasPrivate();
@@ -47,6 +48,8 @@ namespace flame
 
 			void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
+			void push_font(FontAtlasPtr font) override;
+			void pop_font() override;
 			void add_text(const vec2& pos, std::wstring_view str, const cvec4& col) override;
 		};
 	}

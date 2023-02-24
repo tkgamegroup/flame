@@ -136,7 +136,7 @@ if op != 4:
 				ok = input() == "y"
 			if ok:
 				bud_dir.mkdir()
-				os.system("cmake -S \"%s\" -B \"%s\" -DBUILD_SHARED_LIBS:BOOL=ON -DMSDFGEN_CORE_ONLY:BOOL=ON -DMSDFGEN_DYNAMIC_RUNTIME:BOOL=ON -DMSDFGEN_BUILD_STANDALONE:BOOL=OFF -DMSDFGEN_USE_SKIA:BOOL=OFF -DMSDFGEN_USE_VCPKG:BOOL=OFF" % (lib_dir, bud_dir))
+				os.system("cmake -S \"%s\" -B \"%s\" -DMSDFGEN_CORE_ONLY:BOOL=ON -DMSDFGEN_DYNAMIC_RUNTIME:BOOL=ON -DMSDFGEN_BUILD_STANDALONE:BOOL=OFF -DMSDFGEN_USE_SKIA:BOOL=OFF -DMSDFGEN_USE_VCPKG:BOOL=OFF" % (lib_dir, bud_dir))
 				os.chdir("%s/MSBuild/Current/Bin" % str(vs_path));
 				files = glob.glob("%s/*.sln" % str(bud_dir))
 				if len(files) > 0:

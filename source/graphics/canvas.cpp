@@ -208,6 +208,20 @@ namespace flame
 			fill(col);
 		}
 
+		void CanvasPrivate::push_font(FontAtlasPtr font)
+		{
+
+		}
+
+		void CanvasPrivate::pop_font()
+		{
+			if (fonts.size() <= 1)
+			{
+				printf("graphics canvas: cannot pop the default font\n");
+				return;
+			}
+		}
+
 		void CanvasPrivate::add_text(const vec2& pos, std::wstring_view str, const cvec4& col)
 		{
 			auto& cmd = draw_cmds.back();

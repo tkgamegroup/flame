@@ -1,10 +1,12 @@
 ﻿#include <flame/graphics/application.h>
+#include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
 using namespace flame;
 using namespace graphics;
 
 CanvasPtr canvas;
+FontAtlasPtr sdf_font;
 
 struct MyApp : GraphicsApplication
 {
@@ -22,6 +24,7 @@ int main(int argc, char** args)
 {
 	app.create("Graphics Test", uvec2(800, 600), WindowFrame | WindowResizable, true, { { "mesh_shader"_h, 0 } });
 	canvas = Canvas::create(app.main_window);
+	sdf_font = FontAtlas::get({}, FontAtlasSDF);
 	app.run();
 
 	return 0;
