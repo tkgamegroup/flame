@@ -22,7 +22,7 @@ namespace flame
 			struct DrawCmd
 			{
 				uint idx_cnt;
-				ImagePtr tex;
+				DescriptorSetPtr ds;
 			};
 
 			GraphicsPipelinePtr pl = nullptr;
@@ -30,7 +30,7 @@ namespace flame
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
 			IndexBuffer<> buf_idx;
-			FontAtlasPtr font_atlas = nullptr;
+			FontAtlasPtr main_font = nullptr;
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
@@ -41,9 +41,10 @@ namespace flame
 			CanvasPrivate(WindowPtr window);
 			~CanvasPrivate();
 			void reset();
+			DrawCmd& get_cmd(DescriptorSetPtr ds);
 
 			void path_rect(const vec2& a, const vec2& b);
-			void stroke(float thickness, const cvec4& col);
+			void stroke(float thickness, const cvec4& col, bool closed);
 			void fill(const cvec4& col);
 
 			void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;

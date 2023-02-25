@@ -26,11 +26,13 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 				cb->bind_pipeline(pl);
-				cb->bind_descriptor_set(0, main_ds.get());
 				auto scale = 2.f / vp.b;
 				cb->push_constant_t(vec4(scale, -1.f, -1.f));
 				for (auto& cmd : draw_cmds)
+				{
+					cb->bind_descriptor_set(0, cmd.ds);
 					cb->draw_indexed(cmd.idx_cnt, 0, 0, 1, 0);
+				}
 				cb->end_renderpass();
 
 				reset();
@@ -48,11 +50,10 @@ namespace flame
 			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
-			font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
-			font_atlas->get_glyph(0, 14); // get empty slot at first place to allow embed a white pixel in it
-			for (auto ch = 0x0020; ch <= 0x00FF; ch++)
-				font_atlas->get_glyph(ch, 14);
-			main_img = font_atlas->image.get();
+			main_font = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
+			main_font->get_glyph(0); // get empty slot at first place to allow embed a white pixel in it
+			main_font->init_latin_glyphs();
+			main_img = main_font->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
 			main_ds.reset(DescriptorSet::create(nullptr, pl->layout->dsls[0]));
@@ -60,6 +61,7 @@ namespace flame
 			main_ds->update();
 
 			reset();
+			push_font(main_font);
 		}
 
 		CanvasPrivate::~CanvasPrivate()
@@ -67,7 +69,7 @@ namespace flame
 			window->renderers.remove("Canvas"_h);
 			
 			GraphicsPipeline::release(pl);
-			FontAtlas::release(font_atlas);
+			FontAtlas::release(main_font);
 		}
 
 		void CanvasPrivate::reset()
@@ -75,7 +77,18 @@ namespace flame
 			draw_cmds.resize(1);
 			auto& cmd = draw_cmds[0];
 			cmd.idx_cnt = 0;
-			cmd.tex = main_img;
+			cmd.ds = main_ds.get();
+		}
+
+		CanvasPrivate::DrawCmd& CanvasPrivate::get_cmd(DescriptorSetPtr ds)
+		{
+			auto& ret = draw_cmds.back();
+			if (ret.ds == ds)
+				return ret;
+			ret = draw_cmds.emplace_back();
+			ret.idx_cnt = 0;
+			ret.ds = ds;
+			return ret;
 		}
 
 		void CanvasPrivate::path_rect(const vec2& a, const vec2& b)
@@ -86,79 +99,108 @@ namespace flame
 			path.push_back(vec2(b.x, a.y));
 		}
 
-		void CanvasPrivate::stroke(float thickness, const cvec4& col)
+		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
 		{
-			//thickness *= 0.5f;
+			thickness *= 0.5f;
 
-			//auto& cmd = draw_cmds.back();
+			auto& cmd = draw_cmds.back();
 
-			//auto get_normal = [](const vec2& p1, const vec2& p2) {
-			//	auto d = normalize(p2 - p1);
-			//	return vec2(d.y, -d.x);
-			//};
+			auto get_normal = [](const vec2& p1, const vec2& p2) {
+				auto d = normalize(p2 - p1);
+				return vec2(d.y, -d.x);
+			};
 
-			//vec2 first_normal;
-			//vec2 last_normal;
+			auto first_normal = get_normal(path[0], path[1]);
+			vec2 last_normal = first_normal;
 
-			//first_normal = last_normal = get_normal(pts[0], pts[1]);
-			//{
-			//	auto& v = buf_vtx.add_t<DrawVert>();
-			//	v.pos = pts[0] + first_normal * thickness + 0.5f;
-			//	v.uv = vec2(0.f);
-			//	v.col = col;
-			//}
-			//{
-			//	auto& v = buf_vtx.add_t<DrawVert>();
-			//	v.pos = pts[0] - first_normal * thickness + 0.5f;
-			//	v.uv = vec2(0.f);
-			//	v.col = col;
-			//}
+			int n_pts = path.size();
+			auto vtx0_off = buf_vtx.stag_top;
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
 
-			//{
-			//	for (auto i = 1; i < pt_cnt - 1; i++)
-			//	{
-			//		auto _n = get_normal(pts[i], pts[i + 1]);
-			//		auto n = normalize(last_normal + _n);
-			//		last_normal = _n;
+				v.pos = path[0] + first_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = path[0] - first_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
 
-			//		auto vtx_off = buf_vtx.stag_top;
-			//		{
-			//			auto& v = buf_vtx.add_t<DrawVert>();
-			//			v.pos = pts[i] + n * thickness + 0.5f;
-			//			v.uv = vec2(0.f);
-			//			v.col = col;
-			//		}
-			//		{
-			//			auto& v = buf_vtx.add_t<DrawVert>();
-			//			v.pos = pts[i] - n * thickness + 0.5f;
-			//			v.uv = vec2(0.f);
-			//			v.col = col;
-			//		}
+			int vtx_off;
+			for (auto i = 1; i < n_pts - 1; i++)
+			{
+				auto n = last_normal;
+				last_normal = get_normal(path[i], path[i + 1]);
+				n = normalize(n + last_normal);
 
-			//		buf_idx.add(vtx_off - 2);
-			//		buf_idx.add(vtx_off - 1);
-			//		buf_idx.add(vtx_off + 1);
-			//		buf_idx.add(vtx_off - 2);
-			//		buf_idx.add(vtx_off + 1);
-			//		buf_idx.add(vtx_off + 0);
-			//		cmd.idx_cnt += 6;
-			//	}
-			//}
+				vtx_off = buf_vtx.stag_top;
+				{
+					auto& v = buf_vtx.add_t<DrawVert>();
+					v.pos = path[i] + n * thickness + 0.5f;
+					v.uv = vec2(0.f);
+					v.col = col;
+				}
+				{
+					auto& v = buf_vtx.add_t<DrawVert>();
+					v.pos = path[i] - n * thickness + 0.5f;
+					v.uv = vec2(0.f);
+					v.col = col;
+				}
 
-			//{
-			//	auto _n = get_normal(pts[pt_cnt - 2], pts[0]);
-			//	auto n = normalize(_n + first_normal);
+				buf_idx.add(vtx_off - 2);
+				buf_idx.add(vtx_off - 1);
+				buf_idx.add(vtx_off + 1);
+				buf_idx.add(vtx_off - 2);
+				buf_idx.add(vtx_off + 1);
+				buf_idx.add(vtx_off + 0);
+				cmd.idx_cnt += 6;
+			}
 
-			//	auto vtx_off = buf_vtx.stag_top;
+			vtx_off = buf_vtx.stag_top;
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
 
-			//	buf_idx.add(vtx_off - 2);
-			//	buf_idx.add(vtx_off - 1);
-			//	buf_idx.add(1);
-			//	buf_idx.add(vtx_off - 2);
-			//	buf_idx.add(1);
-			//	buf_idx.add(0);
-			//	cmd.idx_cnt += 6;
-			//}
+				v.pos = path[n_pts - 1] + last_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			{
+				auto& v = buf_vtx.add_t<DrawVert>();
+				v.pos = path[n_pts - 1] - last_normal * thickness + 0.5f;
+				v.uv = vec2(0.f);
+				v.col = col;
+			}
+			buf_idx.add(vtx_off - 2);
+			buf_idx.add(vtx_off - 1);
+			buf_idx.add(vtx_off + 1);
+			buf_idx.add(vtx_off - 2);
+			buf_idx.add(vtx_off + 1);
+			buf_idx.add(vtx_off + 0);
+			cmd.idx_cnt += 6;
+
+			if (closed)
+			{
+				auto n = get_normal(path[n_pts - 1], path[0]);
+
+				auto n1 = normalize(n + last_normal);
+				buf_vtx.get_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * thickness + 0.5f;
+				buf_vtx.get_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * thickness + 0.5f;
+
+				auto n2 = normalize(n + first_normal);
+				buf_vtx.get_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * thickness + 0.5f;
+				buf_vtx.get_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * thickness + 0.5f;
+
+				buf_idx.add(vtx_off + 0);
+				buf_idx.add(vtx_off + 1);
+				buf_idx.add(vtx0_off + 1);
+				buf_idx.add(vtx_off + 0);
+				buf_idx.add(vtx0_off + 1);
+				buf_idx.add(vtx0_off + 0);
+				cmd.idx_cnt += 6;
+			}
 
 			path.clear();
 		}
@@ -200,6 +242,8 @@ namespace flame
 		
 		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
 		{
+			path_rect(a, b);
+			stroke(thickness, col, true);
 		}
 
 		void CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
@@ -210,7 +254,7 @@ namespace flame
 
 		void CanvasPrivate::push_font(FontAtlasPtr font)
 		{
-
+			fonts.push(font);
 		}
 
 		void CanvasPrivate::pop_font()
@@ -220,6 +264,8 @@ namespace flame
 				printf("graphics canvas: cannot pop the default font\n");
 				return;
 			}
+
+			fonts.pop();
 		}
 
 		void CanvasPrivate::add_text(const vec2& pos, std::wstring_view str, const cvec4& col)
@@ -229,9 +275,17 @@ namespace flame
 			auto p = pos;
 			for (auto ch : str)
 			{
-				auto& g = font_atlas->get_glyph(ch, 14);
+				auto& g = fonts.top()->get_glyph(ch);
 				auto o = p + vec2(g.off);
 				auto s = vec2(g.size);
+				s.y *= -1.f;
+
+				path_rect(o, o + s);
+				fill(col);
+				buf_vtx.get_t<DrawVert>(-4).uv = g.uv.xy;
+				buf_vtx.get_t<DrawVert>(-3).uv = g.uv.xw;
+				buf_vtx.get_t<DrawVert>(-2).uv = g.uv.zw;
+				buf_vtx.get_t<DrawVert>(-1).uv = g.uv.zy;
 
 				p.x += g.advance;
 			}

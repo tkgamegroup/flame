@@ -115,14 +115,14 @@ namespace flame
 
 		const auto font_atlas_size = uvec2(1024);
 
-		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)
+		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code)
 		{
 			static Glyph empty_glyph;
 
-			if (size == 0)
+			if (font_size == 0)
 				return empty_glyph;
 
-			auto key = GlyphKey(code, size);
+			auto key = GlyphKey(code, font_size);
 
 			auto it = map.find(key);
 			if (it == map.end())
@@ -137,46 +137,42 @@ namespace flame
 					if (index == 0)
 						continue;
 
-					auto scale = stbtt_ScaleForPixelHeight(info, size);
-					auto x = 0, y = 0, w = 0, h = 0, ascent = 0, adv = 0;
+					auto x = 0, y = 0, w = 0, h = 0;
+					auto scale = stbtt_ScaleForPixelHeight(info, font_size);
+					auto ascent = 0, adv = 0;
 					stbtt_GetFontVMetrics(info, &ascent, 0, 0);
 					ascent *= scale;
 					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
 					adv *= scale;
-					g.size = uvec2(w, h);
-					g.off = uvec2(x, ascent + h + y);
-					g.advance = adv;
 					switch (type)
 					{
 					case FontAtlasBitmap:
 						if (auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y); bitmap)
 						{
-							auto n = bin_pack_root->find(g.size);
+							auto n = bin_pack_root->find(uvec2(w, h));
 							if (n)
 							{
 								auto& atlas_pos = n->pos;
 
-								StagingBuffer stag(image_pitch(g.size.x) * g.size.y, bitmap);
+								StagingBuffer stag(image_pitch(w) * h, bitmap);
 
 								InstanceCommandBuffer cb;
 								auto old_layout = image->get_layout();
 								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 								BufferImageCopy cpy;
 								cpy.img_off = uvec3(atlas_pos, 0);
-								cpy.img_ext = uvec3(g.size, 1);
+								cpy.img_ext = uvec3(w, h, 1);
 								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
-									(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+								g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + h) / (float)font_atlas_size.y,
+									(atlas_pos.x + w) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
 							}
 							else
 								printf("font atlas is full\n");
 							delete[]bitmap;
 						}
-						else
-							assert(0);
 						break;
 					case FontAtlasSDF:
 					{
@@ -186,6 +182,10 @@ namespace flame
 					}
 						break;
 					}
+
+					g.size = uvec2(w, h);
+					g.off = uvec2(x, ascent + h + y);
+					g.advance = adv;
 
 					break;
 				}
