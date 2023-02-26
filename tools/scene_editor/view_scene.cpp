@@ -184,7 +184,7 @@ void View_Scene::on_draw()
 					if (app.tool == ToolRotate && before_editing_qut != tar->qut)
 						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "qut"_h, str(*(vec4*)&before_editing_qut), str(*(vec4*)&tar->qut)));
 					if (app.tool == ToolScale && before_editing_scl != tar->scl)
-						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "qut"_h, str(before_editing_scl), str(tar->scl)));
+						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "scl"_h, str(before_editing_scl), str(tar->scl)));
 				}
 				last_gizmo_using = gizmo_using;
 			}
@@ -195,7 +195,7 @@ void View_Scene::on_draw()
 		auto& style = ImGui::GetStyle();
 
 		auto editor_node = app.e_editor->get_component_i<cNode>(0);
-		if (editor_node->drawers.find("scene"_h) != -1)
+		if (editor_node->drawers.find("scene"_h) == -1)
 		{
 			editor_node->drawers.add([this](DrawData& draw_data) {
 				if (draw_data.pass == PassOutline && show_outline)

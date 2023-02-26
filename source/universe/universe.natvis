@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="flame::EntityPrivate">
+	  <Expand>
+		  <ExpandedItem>(flame::Entity*)this,nd</ExpandedItem>
+		  <ArrayItems>
+			  <Size>components.size()</Size>
+			  <ValuePointer>components._Mypair._Myval2._Myfirst</ValuePointer>
+		  </ArrayItems>
+	  </Expand>
+  </Type>
+</AutoVisualizer>

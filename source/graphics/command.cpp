@@ -11,6 +11,9 @@ namespace flame
 {
 	namespace graphics
 	{
+		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
+		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
+
 		std::unique_ptr<CommandPoolT> graphics_command_pool;
 		std::unique_ptr<CommandPoolT> transfer_command_pool;
 		std::unique_ptr<QueueT> graphics_queue;
@@ -601,6 +604,19 @@ namespace flame
 			range.baseArrayLayer = sub.base_layer;
 			range.layerCount = sub.layer_count;
 			vkCmdClearDepthStencilImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+		}
+
+		void CommandBufferPrivate::begin_debug_label(const std::string& str)
+		{
+			VkDebugUtilsLabelEXT info = {};
+			info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+			info.pLabelName = str.c_str();
+			vkCmdBeginDebugUtilsLabel(vk_command_buffer, &info);
+		}
+
+		void CommandBufferPrivate::end_debug_label()
+		{
+			vkCmdEndDebugUtilsLabel(vk_command_buffer);
 		}
 
 		void CommandBufferPrivate::end()

@@ -1,6 +1,6 @@
 if(USE_UNIVERSE_MODULE)
 	file(GLOB_RECURSE source_files "*.h*" "*.c*")
-	add_library(flame_universe SHARED ${source_files})
+	add_library(flame_universe SHARED ${source_files} universe.natvis)
 	assign_source_group("${CMAKE_CURRENT_SOURCE_DIR}" "" ${source_files})
 	set_target_properties(flame_universe PROPERTIES FOLDER "flame")
 	target_compile_definitions(flame_universe PRIVATE FLAME_UNIVERSE_MODULE)

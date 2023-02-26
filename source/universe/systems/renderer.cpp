@@ -417,10 +417,13 @@ namespace flame
 	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
 		window(w)
 	{
+		auto device = graphics::Device::current();
 		graphics::InstanceCommandBuffer cb;
 
 		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		device->set_object_debug_name(img_black.get(), "Black");
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+		device->set_object_debug_name(img_white.get(), "White");
 		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
 		img_black3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
@@ -671,17 +674,22 @@ namespace flame
 		auto img0 = _targets.front()->image;
 		auto tar_ext = img0->extent;
 
+		auto device = graphics::Device::current();
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 		static auto sp_nearest_dep = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToBorder);
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"##img_dst";
+		device->set_object_debug_name(img_dst.get(), "Dst");
 		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
 		img_back0->filename = L"##img_back0";
+		device->set_object_debug_name(img_back0.get(), "Back0");
 		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_back1->filename = L"##img_back1";
+		device->set_object_debug_name(img_back1.get(), "Back1");
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dep->filename = L"##img_dep";
+		device->set_object_debug_name(img_dep.get(), "Dep");
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
@@ -1804,6 +1812,8 @@ namespace flame
 
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
+		cb->begin_debug_label("Upload Buffers");
+
 		buf_vtx.upload(cb);
 		buf_idx.upload(cb);
 		buf_vtx_arm.upload(cb);
@@ -1905,8 +1915,10 @@ namespace flame
 
 		buf_lighting.upload(cb);
 
-		// occulder pass
+		cb->end_debug_label();
 
+		// occulder pass
+		cb->begin_debug_label("Occulder Pass");
 		if (mode == Shaded)
 		{
 			for (auto i = 0; i < DirShadowMaxCount; i++)
@@ -2126,10 +2138,12 @@ namespace flame
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize / 2U));
 		}
+		cb->end_debug_label();
 
 		cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
 		// deferred shading pass
+		cb->begin_debug_label("Deferred Shading");
 
 		for (auto& b : opa_batcher.batches)
 			b.second.second.clear();
@@ -2141,6 +2155,7 @@ namespace flame
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 		cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
+		cb->begin_debug_label("GBuffer Pass");
 		cb->begin_renderpass(nullptr, fb_gbuf.get(),
 			{ vec4(0.f, 0.f, 0.f, 0.f),
 			vec4(0.f, 0.f, 0.f, 0.f),
@@ -2185,6 +2200,7 @@ namespace flame
 		}
 
 		cb->end_renderpass();
+		cb->end_debug_label();
 
 		cb->image_barrier(img_last_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->image_barrier(img_last_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -2211,7 +2227,10 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
+		cb->end_debug_label();
+
 		// forward pass
+		cb->begin_debug_label("Forward Shading");
 
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
@@ -2278,6 +2297,10 @@ namespace flame
 
 		cb->end_renderpass();
 
+		cb->end_debug_label();
+
+		cb->begin_debug_label("Store Last Frame");
+
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
 
@@ -2293,13 +2316,17 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 
+		cb->end_debug_label();
+
 		// post processing
+		cb->begin_debug_label("Post Processing");
 		if (mode == Shaded || mode == CameraLight && post_processing_enable)
 		{
 			if (ssao_enable)
 			{
 			}
 
+			cb->begin_debug_label("Bloom");
 			if (bloom_enable)
 			{
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -2344,7 +2371,9 @@ namespace flame
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
+			cb->end_debug_label();
 
+			cb->begin_debug_label("Tone Mapping");
 			if (tone_mapping_enable)
 			{
 				cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutGeneral);
@@ -2401,7 +2430,9 @@ namespace flame
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
+			cb->end_debug_label();
 		}
+		cb->end_debug_label();
 
 		auto blur_pass = [&](int w = 3) {
 			pl_blur.prm.pc.item_d("off"_h).set(-w);
@@ -2432,6 +2463,8 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 		};
+
+		cb->begin_debug_label("Outline");
 
 		draw_data.reset(PassOutline, 0);
 		for (auto n : camera_culled_nodes)
@@ -2532,6 +2565,10 @@ namespace flame
 			blend_pass();
 		}
 
+		cb->end_debug_label();
+
+		cb->begin_debug_label("Primitives");
+
 		draw_data.reset(PassPrimitive, 0);
 		for (auto n : camera_culled_nodes)
 			n->draw(draw_data);
@@ -2578,6 +2615,8 @@ namespace flame
 		}
 		cb->end_renderpass();
 
+		cb->end_debug_label();
+
 		cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);
 		cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 		cb->begin_renderpass(nullptr, img->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
@@ -2610,6 +2649,7 @@ namespace flame
 
 		graphics::InstanceCommandBuffer cb(fence_pickup.get());
 
+		cb->begin_debug_label("Pick Up");
 		cb->set_viewport(Rect(vec2(0), sz));
 		cb->set_scissor(Rect(vec2(screen_pos), vec2(screen_pos + 1U)));
 		cb->begin_renderpass(nullptr, fb_pickup.get(), { vec4(0.f), vec4(1.f, 0.f, 0.f, 0.f) });
@@ -2696,6 +2736,7 @@ namespace flame
 		}
 
 		cb->end_renderpass();
+		cb->end_debug_label();
 		if (draw_data.graphics_debug)
 			graphics::Debug::start_capture_frame();
 		cb.excute();
@@ -2706,6 +2747,7 @@ namespace flame
 		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
 		{
 			graphics::InstanceCommandBuffer cb(nullptr);
+			cb->begin_debug_label("Get Pick Up Result");
 			graphics::BufferImageCopy cpy;
 			cpy.img_off = uvec3(screen_pos, 0);
 			cpy.img_ext = uvec3(1U);
@@ -2720,6 +2762,7 @@ namespace flame
 				cb->image_barrier(img_dep_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
 			}
 
+			cb->end_debug_label();
 			cb.excute();
 		}
 		memcpy(&index, sb->mapped, sizeof(index));

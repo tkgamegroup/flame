@@ -7,6 +7,9 @@ namespace flame
 {
 	namespace graphics
 	{
+		extern PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel;
+		extern PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel;
+
 		struct CommandPoolPrivate : CommandPool
 		{
 			VkCommandPool vk_command_pool;
@@ -61,6 +64,8 @@ namespace flame
 			void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) override;
 			void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) override;
 			void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) override;
+			void begin_debug_label(const std::string& str) override;
+			void end_debug_label() override;
 			void end() override;
 
 			void calc_executed_time() override;

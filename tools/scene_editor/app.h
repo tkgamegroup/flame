@@ -65,7 +65,7 @@ extern std::vector<std::unique_ptr<History>> histories;
 inline void add_history(History* h)
 {
 	if (history_idx + 1 < histories.size())
-		histories.erase(histories.begin() + history_idx + 1, histories.end());
+		histories.erase(histories.begin() + (history_idx + 1), histories.end());
 	histories.emplace_back(h);
 	history_idx++;
 }

@@ -370,7 +370,7 @@ void App::init()
 								if (!test_dialog.points.empty())
 									draw_data.primitives.emplace_back("LineList"_h, std::move(test_dialog.points), cvec4(255, 0, 0, 255));
 							}
-							}, "navmesh_test"_h);
+						}, "navmesh_test"_h);
 						dialogs.push_back([&]() {
 							if (test_dialog.open)
 							{
@@ -394,8 +394,8 @@ void App::init()
 								if (!test_dialog.open)
 									e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
 							}
-						return test_dialog.open;
-							});
+							return test_dialog.open;
+						});
 					}
 				}
 				ImGui::EndMenu();
@@ -662,6 +662,8 @@ void App::init()
 			cmd_undo();
 		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
 			cmd_redo();
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_D))
+			cmd_duplicate_entity();
 
 		if (e_preview)
 		{
@@ -1182,6 +1184,20 @@ bool App::cmd_delete_entity(EntityPtr e)
 
 bool App::cmd_duplicate_entity(EntityPtr e)
 {
+	if (!e && selection.type == Selection::tEntity)
+		e = selection.entity();
+	if (!e)
+		return false;
+	if (e == e_prefab)
+		return false;
+	if (!e->prefab_instance && get_prefab_instance(e))
+	{
+		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+		return false;
+	}
+	auto new_e = e->copy();
+	e_prefab->add_child(new_e);
+	selection.select(new_e, "app"_h);
 	return true;
 }
 

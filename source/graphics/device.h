@@ -11,6 +11,8 @@ namespace flame
 			virtual ~Device() {}
 
 			virtual uint get_config(uint hash) = 0;
+			virtual void set_object_debug_name(BufferPtr obj, const std::string& name) = 0;
+			virtual void set_object_debug_name(ImagePtr obj, const std::string& name) = 0;
 
 			struct Create
 			{

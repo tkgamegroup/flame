@@ -1,5 +1,6 @@
 #include "device_private.h"
 #include "renderpass_private.h"
+#include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
 #include "command_private.h"
@@ -8,6 +9,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
+
 		DevicePtr device = nullptr;
 
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
@@ -76,6 +79,26 @@ namespace flame
 			return configs[hash];
 		}
 
+		static void _set_object_debug_name(VkDevice vk_device, void* backend_obj, VkObjectType type, const std::string& name)
+		{
+			VkDebugUtilsObjectNameInfoEXT info = {};
+			info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+			info.objectType = type;
+			info.objectHandle = (uint64)backend_obj;
+			info.pObjectName = name.c_str();
+			vkSetDebugUtilsObjectName(vk_device, &info);
+		}
+
+		void DevicePrivate::set_object_debug_name(BufferPtr obj, const std::string& name)
+		{
+			_set_object_debug_name(vk_device, obj->vk_buffer, VK_OBJECT_TYPE_BUFFER, name);
+		}
+
+		void DevicePrivate::set_object_debug_name(ImagePtr obj, const std::string& name)
+		{
+			_set_object_debug_name(vk_device, obj->vk_image, VK_OBJECT_TYPE_IMAGE, name);
+		}
+
 		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
 		{
 			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
@@ -121,6 +144,7 @@ namespace flame
 				std::vector<const char*> required_instance_layers;
 				required_instance_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 				required_instance_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+				required_instance_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 				if (debug)
 				{
 					required_instance_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -134,6 +158,10 @@ namespace flame
 				instance_info.enabledLayerCount = required_instance_layers.size();
 				instance_info.ppEnabledLayerNames = required_instance_layers.empty() ? nullptr : required_instance_layers.data();
 				chk_res(vkCreateInstance(&instance_info, nullptr, &ret->vk_instance));
+
+				vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCmdBeginDebugUtilsLabelEXT");
+				vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCmdEndDebugUtilsLabelEXT");
+				vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkSetDebugUtilsObjectNameEXT");
 
 				if (debug)
 				{
