@@ -2,7 +2,7 @@
 
 #include "font.h"
 
-#if USE_IMGUI
+#ifdef USE_IMGUI
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../imgui_extension.h"
@@ -70,7 +70,7 @@ namespace flame
 
 		inline void gui_set_current()
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			ImGui::SetCurrentContext((ImGuiContext*)gui_native_handle());
 #endif
 		}
@@ -121,14 +121,14 @@ namespace flame
 			virtual bool on_begin()
 			{
 				bool open = true;
-#if USE_IMGUI
+#ifdef USE_IMGUI
 				ImGui::Begin(name.c_str(), &open);
 #endif
 				return !open;
 			}
 			virtual void on_end(bool closed)
 			{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 				ImGui::End();
 #endif
 

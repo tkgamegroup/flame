@@ -26,7 +26,7 @@ namespace ImGui
 	void Dialog::close()
 	{
 		assert(!dialogs.empty());
-#if USE_IMGUI
+#ifdef USE_IMGUI
 		ImGui::CloseCurrentPopup();
 #endif
 		add_event([this]() {
@@ -44,7 +44,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				ImGui::TextUnformatted(message.c_str());
@@ -62,7 +62,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				if (ImGui::Button("Yes"))
@@ -104,7 +104,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				auto ok = false;
@@ -157,7 +157,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
 				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
@@ -277,7 +277,7 @@ namespace flame
 
 		void* gui_native_handle()
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			return ImGui::GetCurrentContext();
 #endif
 			return nullptr;
@@ -297,7 +297,7 @@ namespace flame
 
 		void gui_frame()
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			auto nw = main_window->native;
 
 			auto& io = ImGui::GetIO();
@@ -365,7 +365,7 @@ namespace flame
 
 		void gui_clear_inputs()
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			auto& io = ImGui::GetIO();
 			for (auto& btn : io.MouseDown)
 				btn = false;
@@ -391,7 +391,7 @@ namespace flame
 
 		static void gui_render(uint img_idx, CommandBufferPtr cb)
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			auto curr_img = main_window->swapchain->images[img_idx].get();
 			auto curr_fb = imgui_fbs[img_idx].get();
 
@@ -488,7 +488,7 @@ namespace flame
 
 		void gui_initialize()
 		{
-#if USE_IMGUI
+#ifdef USE_IMGUI
 			assert(!windows.empty());
 			main_window = windows.front();
 
