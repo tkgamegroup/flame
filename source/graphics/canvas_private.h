@@ -37,6 +37,7 @@ namespace flame
 			std::vector<DrawCmd> draw_cmds;
 			std::vector<vec2> path;
 			std::stack<FontAtlasPtr> fonts;
+			uint font_size = 14;
 
 			CanvasPrivate(WindowPtr window);
 			~CanvasPrivate();

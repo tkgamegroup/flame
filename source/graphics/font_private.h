@@ -55,7 +55,7 @@ namespace flame
 			std::unique_ptr<ImagePrivate> image;
 
 			~FontAtlasPrivate();
-			const Glyph& get_glyph(wchar_t code) override;
+			const Glyph& get_glyph(wchar_t code, uint font_size) override;
 		};
 	}
 }

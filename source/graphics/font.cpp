@@ -115,7 +115,7 @@ namespace flame
 
 		const auto font_atlas_size = uvec2(1024);
 
-		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code)
+		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint font_size)
 		{
 			static Glyph empty_glyph;
 

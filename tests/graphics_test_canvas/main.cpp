@@ -28,7 +28,6 @@ int main(int argc, char** args)
 	app.create("Graphics Test", uvec2(800, 600), WindowFrame | WindowResizable, true, { { "mesh_shader"_h, 0 } });
 	canvas = Canvas::create(app.main_window);
 	sdf_font = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" }, FontAtlasSDF);
-	sdf_font->font_size = 16;
 	sdf_font->init_latin_glyphs();
 	app.run();
 

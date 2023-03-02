@@ -51,7 +51,7 @@ namespace flame
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
 			main_font = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
-			main_font->get_glyph(0); // get empty slot at first place to allow embed a white pixel in it
+			main_font->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
 			main_font->init_latin_glyphs();
 			main_img = main_font->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
@@ -275,7 +275,7 @@ namespace flame
 			auto p = pos;
 			for (auto ch : str)
 			{
-				auto& g = fonts.top()->get_glyph(ch);
+				auto& g = fonts.top()->get_glyph(ch, font_size);
 				auto o = p + vec2(g.off);
 				auto s = vec2(g.size);
 				s.y *= -1.f;

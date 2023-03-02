@@ -9,7 +9,6 @@ namespace flame
 		struct FontAtlas
 		{
 			FontAtlasType type;
-			uint font_size = 14;
 			ImageViewPtr view;
 
 			std::vector<std::filesystem::path> font_names;
@@ -17,7 +16,7 @@ namespace flame
 
 			virtual ~FontAtlas() {}
 
-			virtual const Glyph& get_glyph(wchar_t unicode) = 0;
+			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
 			inline void init_latin_glyphs()
 			{
 				for (auto ch = 0x0020; ch <= 0x00FF; ch++)
