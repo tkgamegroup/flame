@@ -15,75 +15,61 @@
 #include <flame/universe/components//nav_scene.h>
 #include <flame/universe/systems/renderer.h>
 
-AssetModifyHistory::AssetModifyHistory(const std::filesystem::path& path, uint asset_hash, uint attr_hash,
-	const std::string& old_value, const std::string& new_value) :
-	path(path),
-	asset_hash(asset_hash),
-	attr_hash(attr_hash),
-	old_value(old_value),
-	new_value(new_value)
+void AssetModifyHistory::set_value(const std::vector<std::string>& values)
 {
-}
-
-void AssetModifyHistory::set_value(const std::string& value)
-{
-	auto ui = find_udt(asset_hash);
+	auto ui = find_udt(asset_type);
 
 	auto ref_getter = ui->find_function("get"_h);
 	auto ref_releaser = ui->find_function("release"_h);
 
-	auto obj = ref_getter->call<void*, const std::filesystem::path&>(nullptr, path);
-	if (auto a = ui->find_attribute(attr_hash); a)
+	for (auto i = 0; i < values.size(); i++)
 	{
-		a->type->unserialize(value, nullptr);
-		a->set_value(obj, nullptr);
+		auto obj = ref_getter->call<void*, const std::filesystem::path&>(nullptr, paths[i]);
+		if (auto a = ui->find_attribute(attr_hash); a)
+		{
+			a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
+			a->set_value(obj, nullptr);
+		}
+		ref_releaser->call<void*, void*>(nullptr, obj);
 	}
-
-	ref_releaser->call<void*, void*>(nullptr, obj);
 }
 
 void AssetModifyHistory::undo()
 {
-	set_value(old_value);
+	set_value(old_values);
 }
 
 void AssetModifyHistory::redo()
 {
-	set_value(new_value);
+	set_value({ new_value });
 }
 
-EntityModifyHistory::EntityModifyHistory(const std::string& guid, uint comp_hash, uint attr_hash,
-	const std::string& old_value, const std::string& new_value) :
-	guid(guid),
-	comp_hash(comp_hash),
-	attr_hash(attr_hash),
-	old_value(old_value),
-	new_value(new_value)
-{
-}
-
-void EntityModifyHistory::set_value(const std::string& value)
+void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 {
 	if (app.e_prefab)
 	{
-		if (auto e = app.e_prefab->find_child_with_instance_id(guid); e)
+		for (auto i = 0; i < values.size(); i++)
 		{
-			UdtInfo* ui = nullptr;
-			void* obj = nullptr;
-			if (comp_hash == 0)
+			if (auto e = app.e_prefab->instance_id == ids[i] ? app.e_prefab :
+				app.e_prefab->find_child_with_instance_id(ids[i]))
 			{
-				ui = TypeInfo::get<Entity>()->retrive_ui();
-				obj = e;
-			}
-			else
-			{
-				ui = find_udt(comp_hash);
-				obj = e->find_component(comp_hash);
-			}
-			if (auto a = ui->find_attribute(attr_hash); a)
-			{
-				a->type->unserialize(value, nullptr);
-				a->set_value(obj, nullptr);
+				UdtInfo* ui = nullptr;
+				void* obj = nullptr;
+				if (comp_type == 0)
+				{
+					ui = TypeInfo::get<Entity>()->retrive_ui();
+					obj = e;
+				}
+				else
+				{
+					ui = find_udt(comp_type);
+					obj = e->find_component(comp_type);
+				}
+				if (auto a = ui->find_attribute(attr_hash); a)
+				{
+					a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
+					a->set_value(obj, nullptr);
+				}
 			}
 		}
 	}
@@ -91,35 +77,18 @@ void EntityModifyHistory::set_value(const std::string& value)
 
 void EntityModifyHistory::undo()
 {
-	set_value(old_value);
+	set_value(old_values);
 }
 
 void EntityModifyHistory::redo()
 {
-	set_value(new_value);
-}
-
-EditingAsset::EditingAsset(const std::filesystem::path& path, uint asset_hash) :
-	path(path),
-	asset_hash(asset_hash)
-{
-}
-
-EditingEntity::EditingEntity(const std::string& guid) :
-	guid(guid)
-{
-}
-
-EditingComponent::EditingComponent(const std::string& guid, uint comp_hash) :
-	guid(guid),
-	comp_hash(comp_hash)
-{
+	set_value({ new_value });
 }
 
 int history_idx = -1;
 std::vector<std::unique_ptr<History>> histories;
 
-std::stack<std::unique_ptr<EditingObject>> editing_objects;
+std::stack<std::unique_ptr<EditingObjects>> editing_objects_list;
 
 App app;
 
@@ -159,7 +128,7 @@ void App::init()
 	static std::vector<std::function<bool()>> dialogs;
 
 	graphics::gui_callbacks.add([this]() {
-		editor_selecting_entity = selection.type == Selection::tEntity ? selection.entity() : nullptr;
+		editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
 
 		ImGui::BeginMainMenuBar();
 		if (ImGui::BeginMenu("File"))
@@ -1164,7 +1133,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 bool App::cmd_delete_entity(EntityPtr e)
 {
 	if (!e && selection.type == Selection::tEntity)
-		e = selection.entity();
+		e = selection.as_entity();
 	if (!e)
 		return false;
 	if (e == e_prefab)
@@ -1185,7 +1154,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 bool App::cmd_duplicate_entity(EntityPtr e)
 {
 	if (!e && selection.type == Selection::tEntity)
-		e = selection.entity();
+		e = selection.as_entity();
 	if (!e)
 		return false;
 	if (e == e_prefab)
@@ -1269,7 +1238,7 @@ bool App::cmd_start_preview()
 	if (e_preview)
 		cmd_stop_preview();
 
-	e_preview = selection.type == Selection::tEntity ? selection.entity() : e_prefab;
+	e_preview = selection.type == Selection::tEntity ? selection.as_entity() : e_prefab;
 
 	if (e_preview->enable)
 	{

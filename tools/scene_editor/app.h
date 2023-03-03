@@ -32,30 +32,46 @@ struct History
 
 struct AssetModifyHistory : History
 {
-	std::filesystem::path path;
-	uint asset_hash;
+	std::vector<std::filesystem::path> paths;
+	uint asset_type;
 	uint attr_hash;
-	std::string old_value;
+	std::vector<std::string> old_values;
 	std::string new_value;
 
-	AssetModifyHistory(const std::filesystem::path& path, uint asset_hash, uint attr_hash,
-		const std::string& old_value, const std::string& new_value);
-	void set_value(const std::string& value);
+	AssetModifyHistory(const std::vector<std::filesystem::path>& paths, uint asset_type, uint attr_hash,
+		const std::vector<std::string>& old_values, const std::string& new_value) :
+		paths(paths),
+		asset_type(asset_type),
+		attr_hash(attr_hash),
+		old_values(old_values),
+		new_value(new_value)
+	{
+	}
+
+	void set_value(const std::vector<std::string>& values);
 	void undo() override;
 	void redo() override;
 };
 
 struct EntityModifyHistory : History
 {
-	std::string guid;
-	uint comp_hash;
+	std::vector<std::string> ids;
+	uint comp_type;
 	uint attr_hash;
-	std::string old_value;
+	std::vector<std::string> old_values;
 	std::string new_value;
 
-	EntityModifyHistory(const std::string& guid, uint comp_hash, uint attr_hash, 
-		const std::string& old_value, const std::string& new_value);
-	void set_value(const std::string& value);
+	EntityModifyHistory(const std::vector<std::string>& ids, uint comp_type, uint attr_hash,
+		const std::vector<std::string>& old_values, const std::string& new_value) :
+		ids(ids),
+		comp_type(comp_type),
+		attr_hash(attr_hash),
+		old_values(old_values),
+		new_value(new_value)
+	{
+	}
+
+	void set_value(const std::vector<std::string>& values);
 	void undo() override;
 	void redo() override;
 };
@@ -70,43 +86,60 @@ inline void add_history(History* h)
 	history_idx++;
 }
 
-struct EditingObject
+struct EditingObjects
 {
-	virtual ~EditingObject() {}
+	virtual ~EditingObjects() {}
 
 	virtual int type() = 0;
+	virtual int number_objects() = 0;
 };
 
-struct EditingAsset : EditingObject
+struct EditingAssets : EditingObjects
 {
-	std::filesystem::path path; 
-	uint asset_hash;
+	std::vector<std::filesystem::path> paths;
+	uint asset_type;
 
-	EditingAsset(const std::filesystem::path& path, uint asset_hash);
+	EditingAssets(const std::vector<std::filesystem::path>& paths, uint asset_type) :
+		paths(paths),
+		asset_type(asset_type)
+	{
+	}
 	
 	int type() override { return 0; }
+	int number_objects() override { return paths.size(); }
 };
 
-struct EditingEntity : EditingObject
+struct EditingEntities : EditingObjects
 {
-	EditingEntity(const std::string& guid);
+	std::vector<std::string> ids;
 
-	std::string guid;
+	EditingEntities(const std::vector<EntityPtr>& entities)
+	{
+		ids.resize(entities.size());
+		for (auto i = 0; i < entities.size(); i++)
+			ids[i] = entities[i]->instance_id;
+	}
 
 	int type() override { return 1; }
+	int number_objects() override { return ids.size(); }
 };
 
-struct EditingComponent : EditingObject
+struct EditingComponents : EditingObjects
 {
-	EditingComponent(const std::string& guid, uint comp_hash);
+	std::vector<std::string> ids;
+	uint comp_type;
 
-	std::string guid;
-	uint comp_hash;
+	EditingComponents(const std::vector<std::string>& ids, uint comp_type) :
+		ids(ids),
+		comp_type(comp_type)
+	{
+	}
 
 	int type() override { return 2; }
+	int number_objects() override { return ids.size(); }
 };
 
-extern std::stack<std::unique_ptr<EditingObject>> editing_objects;
+extern std::stack<std::unique_ptr<EditingObjects>> editing_objects_list;
 
 struct App : UniverseApplication
 {

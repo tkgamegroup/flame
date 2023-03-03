@@ -1,166 +1,187 @@
 #include "selection.h"
 
-bool Selection::History::select()
+void selection_clear_no_history(uint caller = 0)
 {
-	switch (type)
-	{
-	case Selection::tNothing:
-		selection._clear();
-		return true;
-	case Selection::tPath:
-	{
-		auto& path = ((PathHistory*)this)->path;
-		if (std::filesystem::exists(path))
-		{
-			selection.select(path);
-			return true;
-		}
-		else
-			path.clear();
-	}
-		break;
-	case Selection::tEntity:
-	{
-		auto& his = (EntityHistory&)*this;
-		EntityPtr e = nullptr;
-		if (app.e_prefab)
-		{
-			if (app.e_prefab->instance_id == his.ins_id)
-				e = app.e_prefab;
-			else
-				e = app.e_prefab->find_child_with_instance_id(his.ins_id);
-		}
-		if (e)
-		{
-			selection.select(e);
-			return true;
-		}
-		else
-			his.ins_id.clear();
-	}
-		break;
-	}
-	return false;
-}
-
-void Selection::_clear(uint caller)
-{
-	if (type == tNothing)
+	if (selection.type == Selection::tNothing)
 		return;
 
-	switch (type)
+	switch (selection.type)
 	{
-	case tPath:
-		delete (std::filesystem::path*)object;
+	case Selection::tPath:
+		for (auto o : selection.objects)
+			delete (std::filesystem::path*)o;
 		break;
-	case tEntity:
-		if (object)
-			((EntityPtr)object)->message_listeners.remove("editor_selection"_h);
+	case Selection::tEntity:
+		for (auto o : selection.objects)
+			((EntityPtr)o)->message_listeners.remove("editor_selection"_h);
 		break;
 	}
-	type = tNothing;
-	object = nullptr;
+	selection.type = Selection::tNothing;
+	selection.objects.clear();
 
 	if (caller)
 	{
 		for (auto& cb : selection.callbacks.list)
 			cb.first(caller);
+	}
+}
+
+void selection_select_no_history(const std::vector<std::filesystem::path>& paths, uint caller = 0)
+{
+	if (selection.selecting(paths))
+		return;
+
+	selection_clear_no_history();
+	selection.type = Selection::tPath;
+	selection.objects.resize(paths.size());
+	for (auto i = 0; i < paths.size(); i++)
+		selection.objects[i] = new std::filesystem::path(paths[i]);
+
+	if (caller)
+	{
+		for (auto& cb : selection.callbacks.list)
+			cb.first(caller);
+	}
+}
+
+void selection_select_no_history(const std::vector<EntityPtr>& entities, uint caller = 0)
+{
+	if (selection.selecting(entities))
+		return;
+
+	selection_clear_no_history();
+	selection.type = Selection::tEntity;
+	selection.objects.resize(entities.size());
+	for (auto i = 0; i < entities.size(); i++)
+		selection.objects[i] = entities[i];
+
+	for (auto e : entities)
+	{
+		e->message_listeners.add([e](uint hash, void*, void*) {
+			if (hash == "destroyed"_h)
+			{
+				if (selection.type == Selection::tEntity)
+				{
+					for (auto it = selection.objects.begin(); it != selection.objects.end();)
+					{
+						if (*it == e)
+							selection.objects.erase(it);
+						else
+							it++;
+					}
+					if (selection.objects.empty())
+						selection.type = Selection::tNothing;
+				}
+			}
+		}, "editor_selection"_h);
+	}
+
+	if (caller)
+	{
+		for (auto& cb : selection.callbacks.list)
+			cb.first(caller);
+	}
+}
+
+void Selection::History::redo()
+{
+	switch (type)
+	{
+	case Selection::tNothing:
+		selection_clear_no_history();
+	case Selection::tPath:
+	{
+		auto& h = *(PathHistory*)this;
+		std::vector<std::filesystem::path> paths;
+		for (auto& p : h.paths)
+		{
+			if (std::filesystem::exists(p))
+				paths.push_back(p);
+		}
+		selection_select_no_history(paths);
+	}
+		break;
+	case Selection::tEntity:
+	{
+		auto& h = (EntityHistory&)*this;
+		std::vector<EntityPtr> entities;
+		if (app.e_prefab)
+		{
+			for (auto& id : h.ids)
+			{
+				if (auto e = app.e_prefab->instance_id == id ? app.e_prefab :
+					app.e_prefab->find_child_with_instance_id(id))
+					entities.push_back(e);
+			}
+		}
+		selection_select_no_history(entities);
+	}
+		break;
 	}
 }
 
 void Selection::clear(uint caller)
 {
-	_clear(caller);
+	selection_clear_no_history(caller);
 	add_history(new EmptyHistory);
 }
 
-void Selection::_select(const std::filesystem::path& path, uint caller)
+void Selection::select(const std::vector<std::filesystem::path>& paths, uint caller)
 {
-	if (selecting(path))
-		return;
+	selection_select_no_history(paths, caller);
+	add_history(new PathHistory(paths));
+}
 
-	_clear();
-	type = tPath;
-	object = new std::filesystem::path(path);
-
-	if (caller)
+bool Selection::selecting(const std::vector<std::filesystem::path>& paths)
+{
+	if (type != tPath)
+		return false;
+	for (auto i = 0; i < paths.size(); i++)
 	{
-		for (auto& cb : selection.callbacks.list)
-			cb.first(caller);
+		if (*(std::filesystem::path*)objects[i] != paths[i])
+			return false;
 	}
+	return true;
 }
 
-void Selection::select(const std::filesystem::path& path, uint caller)
+void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
 {
-	_select(path, caller);
-	add_history(new PathHistory(path));
+	selection_select_no_history(entities, caller);
+	add_history(new EntityHistory(entities));
 }
 
-bool Selection::selecting(const std::filesystem::path& _path)
+bool Selection::selecting(const std::vector<EntityPtr>& entities)
 {
-	return type == tPath && _path == *(std::filesystem::path*)object;
-}
-
-void Selection::_select(EntityPtr e, uint caller)
-{
-	if (selecting(e))
-		return;
-
-	_clear();
-	type = tEntity;
-	object = e;
-
-	e->message_listeners.add([e](uint hash, void*, void*) {
-		if (hash == "destroyed"_h)
-		{
-			if (selection.selecting(e))
-			{
-				selection.object = nullptr;
-				selection._clear();
-			}
-		}
-	}, "editor_selection"_h);
-
-	if (caller)
+	if (type != tEntity)
+		return false;
+	for (auto i = 0; i < entities.size(); i++)
 	{
-		for (auto& cb : selection.callbacks.list)
-			cb.first(caller);
+		if (objects[i] != entities[i])
+			return false;
 	}
-}
-
-void Selection::select(EntityPtr e, uint caller)
-{
-	_select(e, caller);
-	add_history(new EntityHistory(e));
-}
-
-bool Selection::selecting(EntityPtr e)
-{
-	return type == tEntity && object == e;
+	return true;
 }
 
 void Selection::add_history(History* his)
 {
-	auto it = history.begin() + (histroy_idx + 1);
-	it = history.erase(it, history.end());
-	history.emplace(it, his);
-	if (history.size() > 20)
-		history.erase(history.begin());
+	auto it = histories.begin() + (histroy_idx + 1);
+	it = histories.erase(it, histories.end());
+	histories.emplace(it, his);
+	if (histories.size() > 20)
+		histories.erase(histories.begin());
 	else
 		histroy_idx++;
 }
 
 void Selection::forward()
 {
-	if (histroy_idx + 1 < history.size())
+	if (histroy_idx + 1 < histories.size())
 	{
 		histroy_idx++;
-		if (!history[histroy_idx]->select())
-		{
-			history.erase(history.begin() + histroy_idx);
-			histroy_idx--;
-			forward();
-		}
+		histories[histroy_idx]->redo();
+		histories.erase(histories.begin() + histroy_idx);
+		histroy_idx--;
+		forward();
 	}
 }
 
@@ -169,11 +190,9 @@ void Selection::backward()
 	if (histroy_idx > 0)
 	{
 		histroy_idx--;
-		if (!history[histroy_idx]->select())
-		{
-			history.erase(history.begin() + histroy_idx);
-			backward();
-		}
+		histories[histroy_idx]->redo();
+		histories.erase(histories.begin() + histroy_idx);
+		backward();
 	}
 }
 

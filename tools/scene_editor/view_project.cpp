@@ -702,9 +702,9 @@ void View_Project::on_draw()
 
 	if (selection.type == Selection::tPath)
 	{
+		explorer.selected_path = selection.as_path();
 		if (selection_changed)
-			explorer.ping(selection.path());
-		explorer.selected_path = selection.path();
+			explorer.ping(explorer.selected_path);
 	}
 	else
 		explorer.selected_path.clear();

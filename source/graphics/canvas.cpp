@@ -52,7 +52,7 @@ namespace flame
 			buf_idx.create(240000);
 			main_font = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
 			main_font->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
-			main_font->init_latin_glyphs();
+			main_font->init_latin_glyphs(font_size);
 			main_img = main_font->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);

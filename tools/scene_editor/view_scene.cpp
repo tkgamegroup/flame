@@ -34,7 +34,7 @@ void View_Scene::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		if (auto node = selection.entity()->node(); node)
+		if (auto node = selection.as_entity()->node(); node)
 		{
 			auto camera_node = curr_camera()->node;
 			camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
@@ -46,7 +46,7 @@ void View_Scene::selected_to_focus()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		auto e = selection.entity();
+		auto e = selection.as_entity();
 		if (auto node = e->get_component_i<cNode>(0); node)
 		{
 			node->set_pos(camera_target_pos());
@@ -106,7 +106,7 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
-			auto e = selection.entity();
+			auto e = selection.as_entity();
 			auto tar = e->get_component_i<cNode>(0);
 			if (tar)
 			{
@@ -180,11 +180,11 @@ void View_Scene::on_draw()
 				if (last_gizmo_using && !gizmo_using)
 				{
 					if (app.tool == ToolMove && before_editing_pos != tar->pos)
-						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "pos"_h, str(before_editing_pos), str(tar->pos)));
+						add_history(new EntityModifyHistory({ e->instance_id }, "flame::cNode"_h, "pos"_h, { str(before_editing_pos) }, str(tar->pos)));
 					if (app.tool == ToolRotate && before_editing_qut != tar->qut)
-						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "qut"_h, str(*(vec4*)&before_editing_qut), str(*(vec4*)&tar->qut)));
+						add_history(new EntityModifyHistory({ e->instance_id }, "flame::cNode"_h, "qut"_h, { str(*(vec4*)&before_editing_qut) }, str(*(vec4*)&tar->qut)));
 					if (app.tool == ToolScale && before_editing_scl != tar->scl)
-						add_history(new EntityModifyHistory(e->instance_id, "flame::cNode"_h, "scl"_h, str(before_editing_scl), str(tar->scl)));
+						add_history(new EntityModifyHistory({ e->instance_id }, "flame::cNode"_h, "scl"_h, { str(before_editing_scl) }, str(tar->scl)));
 				}
 				last_gizmo_using = gizmo_using;
 			}
@@ -224,7 +224,7 @@ void View_Scene::on_draw()
 						if (hovering_node)
 							outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
 						if (selection.type == Selection::tEntity)
-							outline_node(selection.entity(), cvec4(255, 255, 128, 255));
+							outline_node(selection.as_entity(), cvec4(255, 255, 128, 255));
 					}
 				}
 				if (draw_data.pass == PassPrimitive)
@@ -250,7 +250,7 @@ void View_Scene::on_draw()
 					{
 						if (selection.type == Selection::tEntity)
 						{
-							auto e = selection.entity();
+							auto e = selection.as_entity();
 							if (e->global_enable)
 							{
 								if (auto node = e->get_component_i<cNode>(0); node)

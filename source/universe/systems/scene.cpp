@@ -6,7 +6,6 @@
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
 #include "../components/volume_private.h"
-#include "../components/nav_mesh_private.h"
 #include "../components/nav_agent_private.h"
 #include "../components/nav_obstacle_private.h"
 #include "../octree.h"
@@ -429,7 +428,7 @@ namespace flame
 				auto pos = node->g_pos;
 				auto scl = node->g_scl;
 
-				if (auto navmesh = e->get_component_t<cNavMesh>(); navmesh)
+				if (e->tag & TagMarkNavMesh)
 				{
 					if (auto cmesh = e->get_component_t<cMesh>(); cmesh)
 					{

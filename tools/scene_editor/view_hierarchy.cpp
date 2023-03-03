@@ -20,7 +20,7 @@ void View_Hierarchy::on_draw()
 {
 	auto no_select = true;
 
-	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.entity() : nullptr) : nullptr;
+	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity() : nullptr) : nullptr;
 
 	std::vector<EntityPtr> open_nodes;
 	if (focus_entity)

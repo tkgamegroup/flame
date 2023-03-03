@@ -15,7 +15,7 @@ struct Selection
 	{
 		Type type;
 		virtual ~History() {}
-		bool select();
+		void redo();
 	};
 	struct EmptyHistory : History
 	{
@@ -23,36 +23,77 @@ struct Selection
 	};
 	struct PathHistory : History
 	{
-		std::filesystem::path path;
-		PathHistory(const std::filesystem::path& path) : path(path) { type = tPath; }
+		std::vector<std::filesystem::path> paths;
+		PathHistory(const std::vector<std::filesystem::path>& paths) : paths(paths) { type = tPath; }
 	};
 	struct EntityHistory : History
 	{
-		std::string ins_id;
-		EntityHistory(EntityPtr e) : ins_id(e->instance_id) { type = tEntity; }
+		std::vector<std::string> ids;
+		EntityHistory(const std::vector<EntityPtr>& entities) 
+		{ 
+			type = tEntity;
+			ids.resize(entities.size());
+			for (auto i = 0; i < entities.size(); i++)
+				ids[i] = entities[i]->instance_id;
+		}
 	};
 
 	Type type = tNothing;
-	void* object = nullptr;
-	std::vector<std::unique_ptr<History>> history;
+	std::vector<void*> objects;
+	std::vector<std::unique_ptr<History>> histories;
 	int histroy_idx = -1;
 	Listeners<void(uint)> callbacks;
 
-	void _clear(uint caller = 0);
 	void clear(uint caller = 0);
-	void _select(const std::filesystem::path& path, uint caller = 0);
-	void select(const std::filesystem::path& path, uint caller = 0);
-	bool selecting(const std::filesystem::path& path);
-	void _select(EntityPtr e, uint caller = 0);
-	void select(EntityPtr e, uint caller = 0);
-	bool selecting(EntityPtr e);
+	void select(const std::vector<std::filesystem::path>& paths, uint caller = 0);
+	inline void select(const std::filesystem::path& path, uint caller = 0)
+	{
+		std::vector<std::filesystem::path> paths;
+		paths.push_back(path);
+		select(paths, caller);
+	}
+	bool selecting(const std::vector<std::filesystem::path>& paths);
+	inline bool selecting(const std::filesystem::path& path)
+	{
+		std::vector<std::filesystem::path> paths;
+		paths.push_back(path);
+		return selecting(paths);
+	}
+	void select(const std::vector<EntityPtr>& entities, uint caller = 0);
+	inline void select(EntityPtr entity, uint caller = 0)
+	{
+		std::vector<EntityPtr> entities;
+		entities.push_back(entity);
+		select(entities, caller);
+	}
+	bool selecting(const std::vector<EntityPtr>& entities);
+	inline bool selecting(EntityPtr entity)
+	{
+		std::vector<EntityPtr> entities;
+		entities.push_back(entity);
+		return selecting(entities);
+	}
 
 	void add_history(History* his);
 	void forward();
 	void backward();
 
-	inline std::filesystem::path&	path() { return *(std::filesystem::path*)object; }
-	inline EntityPtr				entity() { return (EntityPtr)object; }
+	inline std::filesystem::path	as_path() { return *(std::filesystem::path*)objects[0]; }
+	inline std::vector<std::filesystem::path> get_paths()
+	{
+		std::vector<std::filesystem::path> ret;
+		for (auto i = 0; i < objects.size(); i++)
+			ret[i] = *(std::filesystem::path*)objects[i];
+		return ret;
+	}
+	inline EntityPtr				as_entity() { return (EntityPtr)objects[0]; }
+	inline std::vector<EntityPtr> get_entities()
+	{
+		std::vector<EntityPtr> ret;
+		for (auto i = 0; i < objects.size(); i++)
+			ret[i] = (EntityPtr)objects[i];
+		return ret;
+	}
 };
 
 extern Selection selection;

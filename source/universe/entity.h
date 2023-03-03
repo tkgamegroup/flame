@@ -28,6 +28,13 @@ namespace flame
 		}
 	};
 
+	enum TagFlags
+	{
+		TagNone = 0,
+		TagMarkNavMesh = 1 << 0,
+		TagUser = 1 << 1
+	};
+
 	// Reflect ctor
 	struct Entity
 	{
@@ -36,7 +43,7 @@ namespace flame
 		// Reflect
 		std::string name;
 		// Reflect
-		uint tag = 1;
+		TagFlags tag = TagNone;
 
 		// Reflect
 		bool enable = true;

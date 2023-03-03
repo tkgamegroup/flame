@@ -20,7 +20,7 @@ namespace flame
 		float walkable_slope_angle = 45.f;
 
 		// Reflect
-		uint generate_delay_frame = 0;
+		uint generate_delay_frames = 0;
 
 		Listeners<void()> finished_callback;
 

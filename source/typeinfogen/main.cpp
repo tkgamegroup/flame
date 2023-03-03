@@ -1055,7 +1055,7 @@ process:
 					else
 					{
 						obj = malloc(u.size);
-						if (auto fi = u.find_function("dctor"_h); fi)
+						if (auto fi = u.find_function("dctor"_h); fi && fi->rva)
 							fi->call<void>(obj);
 						else
 							memset(obj, 0, u.size);
@@ -1118,7 +1118,7 @@ process:
 					for (auto& a : u.attributes)
 						a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
 
-					if (auto fi = u.find_function("dtor"_h); fi)
+					if (auto fi = u.find_function("dtor"_h); fi && fi->rva)
 						fi->call<void>(obj);
 					free(obj);
 				}

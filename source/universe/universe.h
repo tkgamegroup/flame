@@ -47,7 +47,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cPhysicsRigid);
 	FLAME_UNIVERSE_TYPE(cPhysicsShape);
 	FLAME_UNIVERSE_TYPE(cPhysicsCController);
-	FLAME_UNIVERSE_TYPE(cNavMesh);
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
 	FLAME_UNIVERSE_TYPE(cNavScene);
