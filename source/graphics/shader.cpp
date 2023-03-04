@@ -271,7 +271,8 @@ namespace flame
 			if (!dst_ppath.empty() && !std::filesystem::exists(dst_ppath))
 				std::filesystem::create_directories(dst_ppath);
 
-			auto use_mesh_shader = device->get_config("mesh_shader"_h) != 0;
+			uint u;
+			auto use_mesh_shader = device->get_config("mesh_shader"_h, u) ? u == 1 : true;
 
 			std::string temp_content;
 			std::vector<std::string> additional_lines;

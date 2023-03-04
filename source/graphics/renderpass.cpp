@@ -25,6 +25,9 @@ namespace flame
 				auto ret = new RenderpassPrivate;
 				*(RenderpassInfo*)ret = info;
 
+				uint u;
+				auto replace_dont_care_to_load = device->get_config("replace_renderpass_attachment_dont_care_to_load"_h, u) ? u == 1 : false;
+
 				std::vector<VkAttachmentDescription2> vk_atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)
 				{
@@ -41,6 +44,13 @@ namespace flame
 					dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 					dst.initialLayout = to_backend(src.initia_layout, src.format);
 					dst.finalLayout = to_backend(src.final_layout, src.format);
+
+					if (src.load_op == AttachmentLoadDontCare && replace_dont_care_to_load)
+					{
+						dst.loadOp = to_backend(AttachmentLoadLoad);
+						dst.initialLayout = to_backend(ImageLayoutAttachment, src.format);
+						dst.finalLayout = to_backend(ImageLayoutAttachment, src.format);
+					}
 				}
 
 				struct vkSubpassData

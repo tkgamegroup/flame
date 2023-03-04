@@ -74,9 +74,14 @@ namespace flame
 			return VK_FALSE;
 		}
 
-		uint DevicePrivate::get_config(uint hash)
+		bool DevicePrivate::get_config(uint hash, uint & value)
 		{
-			return configs[hash];
+			if (auto it = configs.find(hash); it != configs.end())
+			{
+				value = it->second;
+				return true;
+			}
+			return false;
 		}
 
 		static void _set_object_debug_name(VkDevice vk_device, void* backend_obj, VkObjectType type, const std::string& name)
@@ -116,13 +121,11 @@ namespace flame
 			{
 				auto ret = new DevicePrivate;
 
-				ret->configs.emplace("mesh_shader"_h, 1);
 				for (auto& c : configs)
-				{
-					if (auto it = ret->configs.find(c.first); it != ret->configs.end())
-						it->second = c.second;
-				}
-				auto use_mesh_shader = ret->get_config("mesh_shader"_h) != 0;
+					ret->configs[c.first] = c.second;
+
+				uint u;
+				auto use_mesh_shader = ret->get_config("mesh_shader"_h, u) ? u == 1 : true;
 
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);

@@ -24,7 +24,7 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
-			uint get_config(uint hash) override;
+			bool get_config(uint hash, uint& value) override;
 			void set_object_debug_name(BufferPtr obj, const std::string& name) override;
 			void set_object_debug_name(ImagePtr obj, const std::string& name) override;
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);

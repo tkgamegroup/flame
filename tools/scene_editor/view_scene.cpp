@@ -481,10 +481,36 @@ void View_Scene::on_draw()
 					});
 					if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 					{
-						if (hovering_node)
-							selection.select(hovering_node->entity, "scene"_h);
+						if (ImGui::IsKeyDown(Keyboard_Ctrl))
+						{
+							if (hovering_node)
+							{
+								auto e = hovering_node->entity;
+								auto entities = selection.get_entities();
+								auto found = false;
+								for (auto it = entities.begin(); it != entities.end();)
+								{
+									if (*it == e)
+									{
+										found = true;
+										it = entities.erase(it);
+										break;
+									}
+									else
+										it++;
+								}
+								if (!found)
+									entities.push_back(e);
+								selection.select(entities, "scene"_h);
+							}
+						}
 						else
-							selection.clear("scene"_h);
+						{
+							if (hovering_node)
+								selection.select(hovering_node->entity, "scene"_h);
+							else
+								selection.clear("scene"_h);
+						}
 					}
 					{
 						auto s = str(hovering_pos);

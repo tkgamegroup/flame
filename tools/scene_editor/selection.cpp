@@ -32,6 +32,9 @@ void selection_select_no_history(const std::vector<std::filesystem::path>& paths
 		return;
 
 	selection_clear_no_history();
+	if (paths.empty())
+		return;
+
 	selection.type = Selection::tPath;
 	selection.objects.resize(paths.size());
 	for (auto i = 0; i < paths.size(); i++)
@@ -50,6 +53,9 @@ void selection_select_no_history(const std::vector<EntityPtr>& entities, uint ca
 		return;
 
 	selection_clear_no_history();
+	if (entities.empty())
+		return;
+
 	selection.type = Selection::tEntity;
 	selection.objects.resize(entities.size());
 	for (auto i = 0; i < entities.size(); i++)

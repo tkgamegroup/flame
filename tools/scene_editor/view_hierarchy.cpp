@@ -139,13 +139,16 @@ void View_Hierarchy::on_draw()
 			{
 				auto entities = selection.get_entities();
 				auto found = false;
-				for (auto _e : entities)
+				for (auto it = entities.begin(); it != entities.end();)
 				{
-					if (_e == e)
+					if (*it == e)
 					{
 						found = true;
+						it = entities.erase(it);
 						break;
 					}
+					else
+						it++;
 				}
 				if (!found)
 					entities.push_back(e);

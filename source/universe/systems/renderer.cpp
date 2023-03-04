@@ -451,7 +451,8 @@ namespace flame
 		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		static auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
 
-		auto use_mesh_shader = graphics_device->get_config("mesh_shader"_h) != 0;
+		uint u;
+		auto use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
 
 		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
 		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
@@ -2483,7 +2484,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 			for (auto i = 0; i < n; i++)
 			{
-				auto& m = draw_data.meshes[i];
+				auto& m = draw_data.meshes[outline_idx + i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
 
 				prm_fwd.bind_dss(cb);
@@ -2512,7 +2513,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 			for (auto i = 0; i < n; i++)
 			{
-				auto& m = draw_data.meshes[i];
+				auto& m = draw_data.meshes[outline_idx + i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
 
 				prm_fwd.bind_dss(cb);

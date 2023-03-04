@@ -1318,6 +1318,8 @@ int main(int argc, char** args)
 		view_scene.fixed_render_target_size = true;
 	if (ap.has("-dont_use_mesh_shader"))
 		app.graphics_configs.emplace_back("mesh_shader"_h, 0);
+	if (ap.has("-replace_renderpass_attachment_dont_care_to_load"))
+		app.graphics_configs.emplace_back("replace_renderpass_attachment_dont_care_to_load"_h, 1);
 
 	app.init();
 
