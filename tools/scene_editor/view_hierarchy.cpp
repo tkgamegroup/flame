@@ -135,7 +135,24 @@ void View_Hierarchy::on_draw()
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
 		{
-			selection.select(e, "hierarchy"_h);
+			if (ImGui::IsKeyDown(Keyboard_Ctrl))
+			{
+				auto entities = selection.get_entities();
+				auto found = false;
+				for (auto _e : entities)
+				{
+					if (_e == e)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					entities.push_back(e);
+				selection.select(entities, "hierarchy"_h);
+			}
+			else
+				selection.select(e, "hierarchy"_h);
 			hierarchy_select_frame = frames;
 			no_select = false;
 		}

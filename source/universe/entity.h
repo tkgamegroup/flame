@@ -31,8 +31,9 @@ namespace flame
 	enum TagFlags
 	{
 		TagNone = 0,
-		TagMarkNavMesh = 1 << 0,
-		TagUser = 1 << 1
+		TagGeneral = 1 << 0,
+		TagMarkNavMesh = 1 << 1,
+		TagUser = 1 << 2
 	};
 
 	// Reflect ctor
@@ -43,7 +44,7 @@ namespace flame
 		// Reflect
 		std::string name;
 		// Reflect
-		TagFlags tag = TagNone;
+		TagFlags tag = TagGeneral;
 
 		// Reflect
 		bool enable = true;

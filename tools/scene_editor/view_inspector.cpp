@@ -119,7 +119,7 @@ StagingVector& get_staging_vector(const void* id, TypeInfo* type, void* vec)
 	return ret;
 }
 
-std::string show_udt(const UdtInfo& ui, const std::vector<void*>& objs, const std::function<void(uint)>& cb = {});
+uint show_udt(const UdtInfo& ui, const std::vector<void*>& objs, const std::function<void(uint)>& cb = {});
 
 std::vector<std::string> before_editing_values;
 
@@ -164,32 +164,66 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 	{
 		auto ti = (TypeInfo_Enum*)type;
 		auto ei = ti->ei;
-		//auto data = (int*)type->get_value(src, offset, getter, !direct_io);
-		//if (ImGui::BeginCombo(display_name.c_str(), ei->items[*data].name.c_str()))
-		//{
-		//	for (auto& i : ei->items)
-		//	{
-		//		if (ImGui::Selectable(i.name.c_str()))
-		//		{
-		//			if (*data != i.value)
-		//			{
-		//				*data = i.value;
-		//				changed = true;
-		//			}
-		//		}
-		//	}
-		//	ImGui::EndCombo();
-		//}
+		if (objs.size() == 1)
+		{
+			//auto data = (int*)type->get_value(objs[0], offset, getter, !direct_io);
+			//auto origianl_value = *(int*)data;
+			//if (ImGui::BeginCombo(display_name.c_str(), ei->items[*data].name.c_str()))
+			//{
+			//	for (auto& i : ei->items)
+			//	{
+			//		if (ImGui::Selectable(i.name.c_str()))
+			//		{
+			//			if (*data != i.value)
+			//			{
+			//				*data = i.value;
+			//				changed = true;
+			//			}
+			//		}
+			//	}
+			//	ImGui::EndCombo();
+			//}
+		}
 	}
 		break;
 	case TagD:
 	{
-		//auto data = type->get_value(src, offset, getter, !direct_io);
 		auto ti = (TypeInfo_Data*)type;
 		switch (ti->data_type)
 		{
 		case DataBool:
-			changed = ImGui::Checkbox(display_name.c_str(), (bool*)data);
+			{
+				std::vector<uint> old_values(objs.size());
+				for (auto i = 0; i < objs.size(); i++)
+					old_values[i] = *(bool*)type->get_value(objs[i], offset, getter);
+				auto same = true;
+				for (auto i = 1; i < objs.size(); i++)
+				{
+					if (old_values[i] != old_values[0])
+					{
+						same = false;
+						break;
+					}
+				}
+				if (!same)
+					ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
+				bool value = same ? old_values[0] : true;
+				changed = ImGui::Checkbox(display_name.c_str(), &value);
+				if (!same)
+					ImGui::PopItemFlag();
+				if (changed)
+				{
+					for (auto i = 0; i < objs.size(); i++)
+						type->set_value(objs[i], offset, setter, &value);
+					if (!editing_objects_list.empty())
+					{
+						before_editing_values.resize(objs.size());
+						for (auto i = 0; i < objs.size(); i++)
+							before_editing_values[i] = str(old_values[i]);
+						add_modify_history(name_hash, str(value));
+					}
+				}
+			}
 			break;
 		//case DataInt:
 		//	switch (ti->vec_size)
@@ -198,7 +232,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::InputInt(display_name.c_str(), (int*)data);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(int*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -211,7 +245,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::InputInt2(display_name.c_str(), (int*)data);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(ivec2*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -224,7 +258,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::InputInt3(display_name.c_str(), (int*)data);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(ivec3*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -237,7 +271,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::InputInt4(display_name.c_str(), (int*)data);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(ivec4*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -255,7 +289,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::DragFloat(display_name.c_str(), (float*)data, 0.01f);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(float*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -267,7 +301,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::DragFloat2(display_name.c_str(), (float*)data, 0.01f);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(vec2*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -279,7 +313,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::DragFloat3(display_name.c_str(), (float*)data, 0.01f);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(vec3*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -291,7 +325,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		changed = ImGui::DragFloat4(display_name.c_str(), (float*)data, 0.01f);
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(vec4*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -313,7 +347,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//			*(cvec4*)data = color * 255.f;
 		//		if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = str(*(cvec4*)data);
 		//			last_changed = nullptr;
 		//		}
@@ -328,7 +362,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//	changed = ImGui::InputText(display_name.c_str(), (std::string*)data);
 		//	if (ImGui::IsItemActivated() && !editing_objects_list.empty())
 		//	{
-		//		before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//		before_editing_values.resize(objs.size());
 		//		before_editing_values[0] = *(std::string*)data;
 		//		last_changed = nullptr;
 		//	}
@@ -350,7 +384,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//		{
 		//			if (!editing_objects_list.empty())
 		//			{
-		//				before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//				before_editing_values.resize(objs.size());
 		//				before_editing_values[0] = path.string();
 		//			}
 		//			path = Path::reverse(std::wstring((wchar_t*)payload->Data));
@@ -372,7 +406,7 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 		//	{
 		//		if (!editing_objects_list.empty())
 		//		{
-		//			before_editing_values.resize(editing_objects_list.top()->number_objects());
+		//			before_editing_values.resize(objs.size());
 		//			before_editing_values[0] = path.string();
 		//		}
 		//		path = L"";
@@ -539,16 +573,16 @@ bool show_variable(TypeInfo* type, const std::string& name, uint name_hash, int 
 	return changed;
 }
 
-std::string show_udt(const UdtInfo& ui, const std::vector<void*>& objs, const std::function<void(uint)>& cb)
+uint show_udt(const UdtInfo& ui, const std::vector<void*>& objs, const std::function<void(uint)>& cb)
 {
-	std::string changed_name;
+	uint changed_name = 0;
 
 	if (ui.attributes.empty())
 	{
 		for (auto& v : ui.variables)
 		{
 			if (show_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, &v))
-				changed_name = v.name;
+				changed_name = v.name_hash;
 			if (cb)
 				cb(v.name_hash);
 		}
@@ -561,7 +595,7 @@ std::string show_udt(const UdtInfo& ui, const std::vector<void*>& objs, const st
 				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr, 
 				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr, 
 				objs, &a))
-				changed_name = a.name;
+				changed_name = a.name_hash;
 			if (cb)
 				cb(a.name_hash);
 		}
@@ -624,8 +658,9 @@ void View_Inspector::on_draw()
 	{
 	case Selection::tEntity:
 	{
-		std::string changed_name;
+		uint changed_name = 0;
 		auto entities = selection.get_entities();
+		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
 
 		editing_objects_list.emplace(new EditingEntities(entities));
 
@@ -639,16 +674,17 @@ void View_Inspector::on_draw()
 			if (ImGui::Button("P"))
 				selection.select(Path::get(path), "inspector"_h);
 		}
-		changed_name = show_udt(*TypeInfo::get<Entity>()->retrive_ui(), (std::vector<void*>&)entities);
+		changed_name = show_udt(ui_entity, (std::vector<void*>&)entities);
 		ImGui::PopID();
 
 		editing_objects_list.pop();
-		if (!changed_name.empty())
+		if (changed_name != 0)
 		{
+			auto& str = ui_entity.find_attribute(changed_name)->name;
 			for (auto e : entities)
 			{
 				if (auto ins = get_prefab_instance(e); ins)
-					ins->mark_modifier(e->file_id, "", changed_name);
+					ins->mark_modifier(e->file_id, "", str);
 			}
 		}
 
@@ -682,7 +718,7 @@ void View_Inspector::on_draw()
 		//		static std::vector<std::string> hash_candidates;
 		//		static const Attribute* op_attr;
 		//		static void* op_obj;
-		//		auto changed_name = show_udt(ui, c.get(), [&ui](uint name, void* obj) {
+		//		auto changed_name = show_udt(ui, c.get(), [&ui](uint name) {
 		//			ImGui::PushID(name);
 		//			if (name == "mesh_name"_h)
 		//			{
@@ -1177,3 +1213,4 @@ void View_Inspector::on_draw()
 
 	selection_changed = false;
 }
+                                

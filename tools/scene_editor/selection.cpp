@@ -136,12 +136,26 @@ bool Selection::selecting(const std::vector<std::filesystem::path>& paths)
 {
 	if (type != tPath)
 		return false;
+	if (objects.size() != paths.size())
+		return false;
 	for (auto i = 0; i < paths.size(); i++)
 	{
 		if (*(std::filesystem::path*)objects[i] != paths[i])
 			return false;
 	}
 	return true;
+}
+
+bool Selection::selecting(const std::filesystem::path& path)
+{
+	if (type != tPath)
+		return false;
+	for (auto i = 0; i < objects.size(); i++)
+	{
+		if (*(std::filesystem::path*)objects[i] == path)
+			return true;
+	}
+	return false;
 }
 
 void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
@@ -154,12 +168,26 @@ bool Selection::selecting(const std::vector<EntityPtr>& entities)
 {
 	if (type != tEntity)
 		return false;
+	if (objects.size() != entities.size())
+		return false;
 	for (auto i = 0; i < entities.size(); i++)
 	{
 		if (objects[i] != entities[i])
 			return false;
 	}
 	return true;
+}
+
+bool Selection::selecting(EntityPtr entity)
+{
+	if (type != tEntity)
+		return false;
+	for (auto i = 0; i < objects.size(); i++)
+	{
+		if (objects[i] == entity)
+			return true;
+	}
+	return false;
 }
 
 void Selection::add_history(History* his)

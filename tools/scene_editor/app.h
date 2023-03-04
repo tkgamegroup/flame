@@ -91,7 +91,6 @@ struct EditingObjects
 	virtual ~EditingObjects() {}
 
 	virtual int type() = 0;
-	virtual int number_objects() = 0;
 };
 
 struct EditingAssets : EditingObjects
@@ -106,7 +105,6 @@ struct EditingAssets : EditingObjects
 	}
 	
 	int type() override { return 0; }
-	int number_objects() override { return paths.size(); }
 };
 
 struct EditingEntities : EditingObjects
@@ -121,7 +119,6 @@ struct EditingEntities : EditingObjects
 	}
 
 	int type() override { return 1; }
-	int number_objects() override { return ids.size(); }
 };
 
 struct EditingComponents : EditingObjects
@@ -136,7 +133,6 @@ struct EditingComponents : EditingObjects
 	}
 
 	int type() override { return 2; }
-	int number_objects() override { return ids.size(); }
 };
 
 extern std::stack<std::unique_ptr<EditingObjects>> editing_objects_list;

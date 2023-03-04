@@ -45,6 +45,7 @@ struct Selection
 	Listeners<void(uint)> callbacks;
 
 	void clear(uint caller = 0);
+
 	void select(const std::vector<std::filesystem::path>& paths, uint caller = 0);
 	inline void select(const std::filesystem::path& path, uint caller = 0)
 	{
@@ -53,12 +54,8 @@ struct Selection
 		select(paths, caller);
 	}
 	bool selecting(const std::vector<std::filesystem::path>& paths);
-	inline bool selecting(const std::filesystem::path& path)
-	{
-		std::vector<std::filesystem::path> paths;
-		paths.push_back(path);
-		return selecting(paths);
-	}
+	bool selecting(const std::filesystem::path& path);
+
 	void select(const std::vector<EntityPtr>& entities, uint caller = 0);
 	inline void select(EntityPtr entity, uint caller = 0)
 	{
@@ -67,12 +64,7 @@ struct Selection
 		select(entities, caller);
 	}
 	bool selecting(const std::vector<EntityPtr>& entities);
-	inline bool selecting(EntityPtr entity)
-	{
-		std::vector<EntityPtr> entities;
-		entities.push_back(entity);
-		return selecting(entities);
-	}
+	bool selecting(EntityPtr entity);
 
 	void add_history(History* his);
 	void forward();
@@ -82,6 +74,7 @@ struct Selection
 	inline std::vector<std::filesystem::path> get_paths()
 	{
 		std::vector<std::filesystem::path> ret;
+		ret.resize(objects.size());
 		for (auto i = 0; i < objects.size(); i++)
 			ret[i] = *(std::filesystem::path*)objects[i];
 		return ret;
@@ -90,6 +83,7 @@ struct Selection
 	inline std::vector<EntityPtr> get_entities()
 	{
 		std::vector<EntityPtr> ret;
+		ret.resize(objects.size());
 		for (auto i = 0; i < objects.size(); i++)
 			ret[i] = (EntityPtr)objects[i];
 		return ret;

@@ -217,15 +217,15 @@ void View_Scene::on_draw()
 								draw_data.meshes.back().mat_id = 0;
 						}
 					};
-					if (hovering_node && selection.selecting(hovering_node->entity))
-						outline_node(hovering_node->entity, cvec4(178, 178, 96, 255));
-					else
+					bool outline_hovering = hovering_node;
+					for (auto e : selection.get_entities())
 					{
-						if (hovering_node)
-							outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
-						if (selection.type == Selection::tEntity)
-							outline_node(selection.as_entity(), cvec4(255, 255, 128, 255));
+						if (hovering_node && e == hovering_node->entity)
+							outline_hovering = false;
+						outline_node(e, cvec4(200, 200, 100, 255));
 					}
+					if (outline_hovering)
+						outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
 				}
 				if (draw_data.pass == PassPrimitive)
 				{
