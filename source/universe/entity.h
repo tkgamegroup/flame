@@ -28,14 +28,6 @@ namespace flame
 		}
 	};
 
-	enum TagFlags
-	{
-		TagNone = 0,
-		TagGeneral = 1 << 0,
-		TagMarkNavMesh = 1 << 1,
-		TagUser = 1 << 2
-	};
-
 	// Reflect ctor
 	struct Entity
 	{

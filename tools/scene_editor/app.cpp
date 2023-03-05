@@ -88,7 +88,7 @@ void EntityModifyHistory::redo()
 int history_idx = -1;
 std::vector<std::unique_ptr<History>> histories;
 
-std::stack<std::unique_ptr<EditingObjects>> editing_objects_list;
+std::stack<EditingObjects> editing_objects_list;
 
 App app;
 

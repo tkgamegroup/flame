@@ -62,6 +62,14 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sAudio);
 
+	enum TagFlags
+	{
+		TagNone = 0,
+		TagGeneral = 1 << 0,
+		TagMarkNavMesh = 1 << 1,
+		TagUser = 1 << 2
+	};
+
 	enum StateFlags
 	{
 		StateNone = 0,

@@ -450,6 +450,7 @@ namespace flame
 		TypeInfoDataBase* db = nullptr;
 		std::string name;
 		uint name_hash;
+		bool is_flags;
 		std::vector<EnumItemInfo> items;
 		void* library = nullptr;
 		std::filesystem::path source_file;

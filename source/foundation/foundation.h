@@ -307,6 +307,11 @@ namespace flame
 
 		void add(const std::function<F>& callback, uint h = 0, int pos = -1)
 		{
+			if (h != 0)
+			{
+				if (find(h) != -1)
+					return;
+			}
 			if (pos == -1)
 				pos = list.size();
 			list.emplace(list.begin() + pos, std::make_pair(callback, h));

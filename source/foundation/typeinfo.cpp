@@ -322,6 +322,7 @@ namespace flame
 			e.db = this;
 			e.name = name;
 			e.name_hash = sh(name.c_str());
+			e.is_flags = name.ends_with("Flags");
 			for (auto n_item : n_enum.child("items"))
 			{
 				auto& i = e.items.emplace_back();

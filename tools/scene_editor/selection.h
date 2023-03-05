@@ -11,6 +11,24 @@ struct Selection
 		tEntity
 	};
 
+	struct PathsRange
+	{
+		std::filesystem::path* p0;
+		std::filesystem::path* p1;
+
+		std::filesystem::path* begin() { return p0; }
+		std::filesystem::path* end() { return p1;  }
+	};
+
+	struct EntitiesRange
+	{
+		EntityPtr* p0;
+		EntityPtr* p1;
+
+		EntityPtr* begin() { return p0; }
+		EntityPtr* end() { return p1; }
+	};
+
 	struct History
 	{
 		Type type;
@@ -71,21 +89,29 @@ struct Selection
 	void backward();
 
 	inline std::filesystem::path	as_path() { return *(std::filesystem::path*)objects[0]; }
-	inline std::vector<std::filesystem::path> get_paths()
+	inline PathsRange paths()
 	{
-		std::vector<std::filesystem::path> ret;
-		ret.resize(objects.size());
-		for (auto i = 0; i < objects.size(); i++)
-			ret[i] = *(std::filesystem::path*)objects[i];
+		PathsRange ret;
+		if (type != tPath)
+			ret.p0 = ret.p1 = nullptr;
+		else
+		{
+			ret.p0 = (std::filesystem::path*)objects.data();
+			ret.p1 = (std::filesystem::path*)objects.data() + objects.size();
+		}
 		return ret;
 	}
 	inline EntityPtr				as_entity() { return (EntityPtr)objects[0]; }
-	inline std::vector<EntityPtr> get_entities()
+	inline EntitiesRange entities()
 	{
-		std::vector<EntityPtr> ret;
-		ret.resize(objects.size());
-		for (auto i = 0; i < objects.size(); i++)
-			ret[i] = (EntityPtr)objects[i];
+		EntitiesRange ret;
+		if (type != tPath)
+			ret.p0 = ret.p1 = nullptr;
+		else
+		{
+			ret.p0 = (EntityPtr*)objects.data();
+			ret.p1 = (EntityPtr*)objects.data() + objects.size();
+		}
 		return ret;
 	}
 };

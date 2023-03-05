@@ -204,7 +204,7 @@ void View_Hierarchy::on_draw()
 	{
 		if (ImGui::IsKeyPressed(Keyboard_Del))
 			app.cmd_delete_entity();
-		if (no_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		if (no_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsKeyDown(Keyboard_Ctrl))
 			selection.clear("hierarchy"_h);
 	}
 

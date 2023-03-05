@@ -218,7 +218,7 @@ void View_Scene::on_draw()
 						}
 					};
 					bool outline_hovering = hovering_node;
-					for (auto e : selection.get_entities())
+					for (auto e : selection.entities())
 					{
 						if (hovering_node && e == hovering_node->entity)
 							outline_hovering = false;

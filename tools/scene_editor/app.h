@@ -88,54 +88,21 @@ inline void add_history(History* h)
 
 struct EditingObjects
 {
-	virtual ~EditingObjects() {}
+	int type;
+	uint type2;
+	void* objs;
+	int num;
 
-	virtual int type() = 0;
-};
-
-struct EditingAssets : EditingObjects
-{
-	std::vector<std::filesystem::path> paths;
-	uint asset_type;
-
-	EditingAssets(const std::vector<std::filesystem::path>& paths, uint asset_type) :
-		paths(paths),
-		asset_type(asset_type)
+	EditingObjects(int type, uint type2, void* objs, int num) :
+		type(type),
+		type2(type2),
+		objs(objs),
+		num(num)
 	{
 	}
-	
-	int type() override { return 0; }
 };
 
-struct EditingEntities : EditingObjects
-{
-	std::vector<std::string> ids;
-
-	EditingEntities(const std::vector<EntityPtr>& entities)
-	{
-		ids.resize(entities.size());
-		for (auto i = 0; i < entities.size(); i++)
-			ids[i] = entities[i]->instance_id;
-	}
-
-	int type() override { return 1; }
-};
-
-struct EditingComponents : EditingObjects
-{
-	std::vector<std::string> ids;
-	uint comp_type;
-
-	EditingComponents(const std::vector<std::string>& ids, uint comp_type) :
-		ids(ids),
-		comp_type(comp_type)
-	{
-	}
-
-	int type() override { return 2; }
-};
-
-extern std::stack<std::unique_ptr<EditingObjects>> editing_objects_list;
+extern std::stack<EditingObjects> editing_objects_list;
 
 struct App : UniverseApplication
 {
