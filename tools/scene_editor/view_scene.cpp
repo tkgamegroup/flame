@@ -149,6 +149,7 @@ void View_Scene::on_draw()
 				gizmo_using = ImGuizmo::IsUsing();
 				if (!last_gizmo_using && gizmo_using)
 				{
+					before_editing_values.clear();
 					switch (app.tool)
 					{
 					case ToolMove:
@@ -206,7 +207,16 @@ void View_Scene::on_draw()
 					{
 						if (selection.objects.size() > 1)
 						{
-
+							auto diff = degrees(eulerAngles(qut)).yxz() - tar->get_eul();
+							for (auto e : selection.entities())
+							{
+								if (auto node = e->node(); node)
+								{
+									node->add_eul(diff);
+									if (auto ins = get_prefab_instance(e); ins)
+										ins->mark_modifier(e->file_id, "flame::cNode", "eul");
+								}
+							}
 						}
 						else
 						{
@@ -240,7 +250,7 @@ void View_Scene::on_draw()
 					if (app.tool == ToolMove)
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, before_editing_values, str(tar->pos)));
 					if (app.tool == ToolRotate)
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, before_editing_values, str(*(vec4*)&tar->qut)));
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, ids.size() == 1 ? "qut"_h : "eul"_h, before_editing_values, str(*(vec4*)&tar->qut)));
 					if (app.tool == ToolScale)
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, before_editing_values, str(tar->scl)));
 				}

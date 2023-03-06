@@ -1135,13 +1135,30 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 
 bool App::cmd_delete_entity(EntityPtr e)
 {
-	if (!e && selection.type == Selection::tEntity)
-		e = selection.as_entity();
 	if (!e)
-		return false;
-	if (e == e_prefab)
-		return false;
-	if (!e->prefab_instance && get_prefab_instance(e))
+	{
+		auto entities = selection.get_entities();
+		if (entities.empty())
+			return false;
+		for (auto e : entities)
+		{
+			if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+			{
+				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				return false;
+			}
+		}
+		for (auto e : entities)
+		{
+			add_event([e]() {
+				e->remove_from_parent();
+				return false;
+			});
+		}
+		selection.clear("app"_h);
+		return true;
+	}
+	if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
 	{
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
@@ -1150,26 +1167,40 @@ bool App::cmd_delete_entity(EntityPtr e)
 		e->remove_from_parent();
 		return false;
 	});
-	selection.clear("app"_h);
 	return true;
 }
 
 bool App::cmd_duplicate_entity(EntityPtr e)
 {
-	if (!e && selection.type == Selection::tEntity)
-		e = selection.as_entity();
 	if (!e)
-		return false;
-	if (e == e_prefab)
-		return false;
-	if (!e->prefab_instance && get_prefab_instance(e))
+	{
+		auto entities = selection.get_entities();
+		if (entities.empty())
+			return false;
+		for (auto e : entities)
+		{
+			if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+			{
+				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				return false;
+			}
+		}
+		std::vector<EntityPtr> new_entities;
+		for (auto e : entities)
+		{
+			auto new_one = e->copy();
+			new_entities.push_back(new_one);
+			e_prefab->add_child(new_one);
+		}
+		selection.select(new_entities, "app"_h);
+		return true;
+	}
+	if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
 	{
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
 	}
-	auto new_e = e->copy();
-	e_prefab->add_child(new_e);
-	selection.select(new_e, "app"_h);
+	e_prefab->add_child(e->copy());
 	return true;
 }
 
