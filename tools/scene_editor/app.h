@@ -86,24 +86,6 @@ inline void add_history(History* h)
 	history_idx++;
 }
 
-struct EditingObjects
-{
-	int type;
-	uint type2;
-	void* objs;
-	int num;
-
-	EditingObjects(int type, uint type2, void* objs, int num) :
-		type(type),
-		type2(type2),
-		objs(objs),
-		num(num)
-	{
-	}
-};
-
-extern std::stack<EditingObjects> editing_objects_list;
-
 struct App : UniverseApplication
 {
 	bool graphics_debug = true;

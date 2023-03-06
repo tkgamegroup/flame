@@ -97,7 +97,7 @@ void Selection::History::redo()
 		selection_clear_no_history();
 	case Selection::tPath:
 	{
-		auto& h = *(PathHistory*)this;
+		auto& h = (PathHistory&)*this;
 		std::vector<std::filesystem::path> paths;
 		for (auto& p : h.paths)
 		{

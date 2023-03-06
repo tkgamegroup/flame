@@ -72,6 +72,11 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 				}
 			}
 		}
+		if (selection.type == Selection::tEntity)
+		{
+			for (auto& cb : selection.callbacks.list)
+				cb.first("app"_h);
+		}
 	}
 }
 
@@ -87,8 +92,6 @@ void EntityModifyHistory::redo()
 
 int history_idx = -1;
 std::vector<std::unique_ptr<History>> histories;
-
-std::stack<EditingObjects> editing_objects_list;
 
 App app;
 

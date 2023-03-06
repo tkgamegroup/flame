@@ -89,7 +89,7 @@ struct Selection
 	void backward();
 
 	inline std::filesystem::path	as_path() { return *(std::filesystem::path*)objects[0]; }
-	inline PathsRange paths()
+	inline PathsRange				paths()
 	{
 		PathsRange ret;
 		if (type != tPath)
@@ -101,17 +101,33 @@ struct Selection
 		}
 		return ret;
 	}
-	inline EntityPtr				as_entity() { return (EntityPtr)objects[0]; }
-	inline EntitiesRange entities()
+	inline std::vector<std::filesystem::path> get_paths()
+	{
+		std::vector<std::filesystem::path> ret;
+		ret.resize(objects.size());
+		for (auto i = 0; i < objects.size(); i++)
+			ret[i] = *(std::filesystem::path*)objects[i];
+		return ret;
+	}
+	inline EntityPtr		as_entity() { return (EntityPtr)objects[0]; }
+	inline EntitiesRange	entities()
 	{
 		EntitiesRange ret;
-		if (type != tPath)
+		if (type != tEntity)
 			ret.p0 = ret.p1 = nullptr;
 		else
 		{
 			ret.p0 = (EntityPtr*)objects.data();
 			ret.p1 = (EntityPtr*)objects.data() + objects.size();
 		}
+		return ret;
+	}
+	inline std::vector<EntityPtr> get_entities()
+	{
+		std::vector<EntityPtr> ret;
+		ret.resize(objects.size());
+		for (auto i = 0; i < objects.size(); i++)
+			ret[i] = (EntityPtr)objects[i];
 		return ret;
 	}
 };

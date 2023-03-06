@@ -4,10 +4,12 @@
 
 namespace flame
 {
+	// Reflect
 	struct Component
 	{
 		uint type_hash = 0;
 		EntityPtr entity = nullptr;
+		// Reflect
 		bool enable = true;
 		Listeners<void(uint)> data_listeners;
 
@@ -25,6 +27,7 @@ namespace flame
 				l.first(h);
 		}
 
+		// Reflect
 		FLAME_UNIVERSE_API void set_enable(bool v);
 
 		virtual void on_init() {}
