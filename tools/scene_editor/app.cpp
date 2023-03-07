@@ -494,10 +494,17 @@ void App::init()
 		if (add_tool_button(ToolScale, "down-left-and-up-right-to-center"_h))
 			tool = ToolScale;
 		ImGui::SameLine();
+		const char* tool_pivot_names[] = {
+			"Individual",
+			"Center"
+		};
 		const char* tool_mode_names[] = {
 			"Local",
 			"World"
 		};
+		ImGui::SetNextItemWidth(100.f);
+		ImGui::Combo("##pivot", (int*)&tool_pivot, tool_pivot_names, countof(tool_pivot_names));
+		ImGui::SameLine();
 		ImGui::SetNextItemWidth(100.f);
 		ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
 		bool* p_snap = nullptr;

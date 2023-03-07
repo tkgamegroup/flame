@@ -16,6 +16,12 @@ enum Tool
 	ToolTerrainPaint
 };
 
+enum ToolPivot
+{
+	ToolIndividual,
+	ToolCenter
+};
+
 enum ToolMode
 {
 	ToolLocal,
@@ -102,6 +108,7 @@ struct App : UniverseApplication
 	bool control = true;
 
 	Tool tool = ToolSelect;
+	ToolPivot tool_pivot = ToolIndividual;
 	ToolMode tool_mode = ToolLocal;
 	bool move_snap = false;
 	float move_snap_value = 0.5f;

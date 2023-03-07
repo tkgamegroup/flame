@@ -302,7 +302,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
 {
 	auto display_name = get_display_name(name);
-	auto changed = false;
+	auto changed = 0;
 	bool just_exit_editing;
 	auto direct_io = !getter && !setter;
 	auto& eos = editing_objects.top();
@@ -346,7 +346,7 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 	};
 
 	auto input_float_n = [](const char* name, uint n, float* data, char* same) {
-		auto ret = false;
+		auto ret = 0;
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
@@ -357,10 +357,14 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			ImGui::PushID(i);
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
-			auto changed = ImGui::InputScalar("", ImGuiDataType_Float, &data[i], nullptr, nullptr, same[i] ? "%.3f" : "-", 0);
+			auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &data[i], 0.1f, nullptr, nullptr, same[i] ? "%.3f" : "-", 0);
 			if (changed)
+			{
 				same[i] = 0;
-			ret |= changed;
+				ret = 1;
+				if (!ImGui::TempInputIsActive(ImGui::GetItemID()))
+					ret = 2;
+			}
 			ImGui::PopID();
 			ImGui::PopItemWidth();
 		}
@@ -591,9 +595,9 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
-					if (just_exit_editing && !direct_io)
+					if ((changed > 1 || just_exit_editing) && !direct_io)
 						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
+					if (direct_io || (changed > 1 || just_exit_editing))
 					{
 						for (auto i = 1; i < num; i++)
 							type->set_value(objs[i], offset, setter, data);
@@ -616,9 +620,9 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
-					if (just_exit_editing && !direct_io)
+					if ((changed > 1 || just_exit_editing) && !direct_io)
 						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
+					if (direct_io || (changed > 1 || just_exit_editing))
 					{
 						for (auto i = 1; i < num; i++)
 							type->set_value(objs[i], offset, setter, data);
@@ -639,9 +643,9 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
-					if (just_exit_editing && !direct_io)
+					if ((changed > 1 || just_exit_editing) && !direct_io)
 						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
+					if (direct_io || (changed > 1 || just_exit_editing))
 					{
 						for (auto i = 1; i < num; i++)
 							type->set_value(objs[i], offset, setter, data);
@@ -662,9 +666,9 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
-					if (just_exit_editing && !direct_io)
+					if ((changed > 1 || just_exit_editing) && !direct_io)
 						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
+					if (direct_io || (changed > 1 || just_exit_editing))
 					{
 						for (auto i = 1; i < num; i++)
 							type->set_value(objs[i], offset, setter, data);
@@ -949,7 +953,7 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 	}
 	ImGui::PopID();
 
-	return changed;
+	return changed > 0;
 }
 
 uint manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)

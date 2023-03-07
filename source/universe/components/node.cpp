@@ -132,8 +132,8 @@ namespace flame
 			m = mat4(1.f);
 		}
 		m = translate(m, pos);
-		m = scale(m, scl);
 		m = m * mat4(rot);
+		m = scale(m, scl);
 		transform = m;
 		g_pos = m[3];
 

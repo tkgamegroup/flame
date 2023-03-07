@@ -112,13 +112,34 @@ void View_Scene::on_draw()
 				ImGuizmo::BeginFrame();
 				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
 				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
-				auto mat = tar->transform;
+				mat4 mat;
+				static bool last_gizmo_using = false;
+				static std::vector<vec3> before_editing_poses;
+				static std::vector<quat> before_editing_quts;
+				static std::vector<vec3> before_editing_scls;
+				static vec3 center;
+				if (selection.objects.size() > 1)
+				{
+					if (!last_gizmo_using)
+					{
+						center = vec3(0.f);
+						for (auto e : selection.entities())
+						{
+							if (auto node = e->node(); node)
+								center += node->g_pos;
+						}
+						center /= (float)selection.objects.size();
+					}
+					mat = translate(mat4(1.f), center);
+				}
+				else
+					mat = tar->transform;
 				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 				auto op = ImGuizmo::TRANSLATE;
 				vec3 snap_value; float* p_snap_value = nullptr;
 				switch (app.tool)
 				{
-				case ToolMove: 
+				case ToolMove:
 					op = ImGuizmo::TRANSLATE;
 					if (app.move_snap)
 					{
@@ -126,7 +147,7 @@ void View_Scene::on_draw()
 						p_snap_value = &snap_value[0];
 					}
 					break;
-				case ToolRotate: 
+				case ToolRotate:
 					op = ImGuizmo::ROTATE;
 					if (app.rotate_snap)
 					{
@@ -134,7 +155,7 @@ void View_Scene::on_draw()
 						p_snap_value = &snap_value[0];
 					}
 					break;
-				case ToolScale: 
+				case ToolScale:
 					op = ImGuizmo::SCALE;
 					if (app.scale_snap)
 					{
@@ -144,44 +165,55 @@ void View_Scene::on_draw()
 					break;
 				}
 				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0], nullptr, p_snap_value);
-				static bool last_gizmo_using = false;
-				static std::vector<std::string> before_editing_values;
 				gizmo_using = ImGuizmo::IsUsing();
 				if (!last_gizmo_using && gizmo_using)
 				{
-					before_editing_values.clear();
+					before_editing_poses.clear();
+					before_editing_quts.clear();
+					before_editing_scls.clear();
 					switch (app.tool)
 					{
 					case ToolMove:
 						for (auto e : selection.entities())
 						{
 							if (auto node = e->node(); node)
-								before_editing_values.push_back(str(node->pos));
+								before_editing_poses.push_back(node->pos);
 						}
 						break;
 					case ToolRotate:
 						for (auto e : selection.entities())
 						{
 							if (auto node = e->node(); node)
-								before_editing_values.push_back(str((vec4&)node->qut));
+								before_editing_quts.push_back(node->qut);
+						}
+						if (selection.objects.size() > 1 && app.tool_pivot == ToolCenter)
+						{
+							for (auto e : selection.entities())
+							{
+								if (auto node = e->node(); node)
+									before_editing_poses.push_back(node->pos);
+							}
 						}
 						break;
 					case ToolScale:
 						for (auto e : selection.entities())
 						{
 							if (auto node = e->node(); node)
-								before_editing_values.push_back(str(node->scl));
+								before_editing_scls.push_back(node->scl);
 						}
 						break;
 					}
 				}
 				if (changed)
 				{
-					if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
-						mat = inverse(pnode->transform) * mat;
+					if (selection.objects.size() == 1)
+					{
+						if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
+							mat = inverse(pnode->transform) * mat;
+					}
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 					decompose(mat, scl, qut, pos, skew, perspective);
-					if (app.tool == ToolMove && pos != tar->pos)
+					if (app.tool == ToolMove)
 					{
 						if (selection.objects.size() > 1)
 						{
@@ -203,18 +235,23 @@ void View_Scene::on_draw()
 								ins->mark_modifier(e->file_id, "flame::cNode", "pos");
 						}
 					}
-					if (app.tool == ToolRotate && qut != tar->qut)
+					if (app.tool == ToolRotate)
 					{
 						if (selection.objects.size() > 1)
 						{
-							auto diff = degrees(eulerAngles(qut)).yxz() - tar->get_eul();
 							for (auto e : selection.entities())
 							{
 								if (auto node = e->node(); node)
 								{
-									node->add_eul(diff);
+									node->mul_qut(qut);
 									if (auto ins = get_prefab_instance(e); ins)
-										ins->mark_modifier(e->file_id, "flame::cNode", "eul");
+										ins->mark_modifier(e->file_id, "flame::cNode", "qut");
+									if (app.tool_pivot == ToolCenter)
+									{
+										node->set_pos(center + qut * (node->g_pos - center));
+										if (auto ins = get_prefab_instance(e); ins)
+											ins->mark_modifier(e->file_id, "flame::cNode", "pos");
+									}
 								}
 							}
 						}
@@ -225,7 +262,7 @@ void View_Scene::on_draw()
 								ins->mark_modifier(e->file_id, "flame::cNode", "qut");
 						}
 					}
-					if (app.tool == ToolScale && scl != tar->scl)
+					if (app.tool == ToolScale)
 					{
 						if (selection.objects.size() > 1)
 						{
@@ -248,11 +285,33 @@ void View_Scene::on_draw()
 							ids.push_back(e->instance_id);
 					}
 					if (app.tool == ToolMove)
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, before_editing_values, str(tar->pos)));
+					{
+						std::vector<std::string> strs(before_editing_poses.size());
+						for (auto i = 0; i < strs.size(); i++)
+							strs[i] = str(before_editing_poses[i]);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, strs, str(tar->pos)));
+					}
 					if (app.tool == ToolRotate)
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, ids.size() == 1 ? "qut"_h : "eul"_h, before_editing_values, str(*(vec4*)&tar->qut)));
+					{
+						std::vector<std::string> strs(before_editing_quts.size());
+						for (auto i = 0; i < strs.size(); i++)
+							strs[i] = str((vec4&)before_editing_quts[i]);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, strs, str((vec4&)tar->qut)));
+						if (selection.objects.size() > 1 && app.tool_pivot == ToolCenter)
+						{
+							std::vector<std::string> strs(before_editing_poses.size());
+							for (auto i = 0; i < strs.size(); i++)
+								strs[i] = str(before_editing_poses[i]);
+							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, strs, str(tar->pos)));
+						}
+					}
 					if (app.tool == ToolScale)
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, before_editing_values, str(tar->scl)));
+					{
+						std::vector<std::string> strs(before_editing_scls.size());
+						for (auto i = 0; i < strs.size(); i++)
+							strs[i] = str(before_editing_scls[i]);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, strs, str(tar->scl)));
+					}
 				}
 				last_gizmo_using = gizmo_using;
 			}
