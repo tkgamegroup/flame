@@ -701,6 +701,6 @@ void View_Scene::on_draw()
 bool View_Scene::on_begin()
 {
 	bool open = true;
-	ImGui::Begin(name.c_str(), &open, app.control ? 0 : (ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoDocking));
+	ImGui::Begin(name.c_str(), &open);
 	return !open;
 }

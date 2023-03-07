@@ -97,7 +97,7 @@ namespace vs_automation
                 {
                     cmd = args[i + 1];
                     i++;
-                    cmd_parms_i = i;
+                    cmd_parms_i = i + 1;
                     break;
                 }
             }
@@ -130,12 +130,30 @@ namespace vs_automation
                         case "detach_debugger":
                             {
                                 int pid = cmd_parms_i != -1 ? int.Parse(args[cmd_parms_i]) : 0;
+                                bool ok = false;
                                 foreach (var p in dte.Debugger.DebuggedProcesses.OfType<EnvDTE.Process>())
                                 {
                                     if (p.ProcessID == pid)
                                     {
                                         p.Detach(false);
+                                        ok = true;
                                         break;
+                                    }
+                                }
+                                if (!ok)
+                                {
+                                    if (ide_title.Length > 0)
+                                        dte = FindDTE("flame");
+                                    if (dte != null)
+                                    {
+                                        foreach (var p in dte.Debugger.LocalProcesses.OfType<EnvDTE.Process>())
+                                        {
+                                            if (p.ProcessID == pid)
+                                            {
+                                                p.Detach(false);
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                             }

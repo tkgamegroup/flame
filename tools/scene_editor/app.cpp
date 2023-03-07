@@ -1056,7 +1056,8 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 	std::wstring cl_str;
 	if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
 	{
-		cl_str = L"-c " + cl[0];
+		cl_str = L"-p " + project_path.filename().wstring();
+		cl_str += L" -c " + cl[0];
 		cl_str += L" " + wstr(getpid());
 	}
 	else if (cl[0] == L"open_file")
@@ -1064,6 +1065,7 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 		cl_str = L"-p " + project_path.filename().wstring();
 		cl_str += L" -c open_file " + cl[1];
 	}
+	wprintf(L"vs automate: %s\n", cl_str.c_str());
 	shell_exec(automation_path, cl_str, true);
 }
 
