@@ -579,7 +579,7 @@ namespace flame
 			{
 				std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
 				if (std::filesystem::exists(font_path))
-					io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
+					io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 14.f, nullptr, io.Fonts->GetGlyphRangesDefault());
 #ifdef USE_FONT_AWESOME
 				const wchar_t* font_awesome_fonts[] = {
 					L"otfs/Font Awesome 6 Brands-Regular-400.otf",
@@ -599,7 +599,7 @@ namespace flame
 						};
 						ImFontConfig config;
 						config.MergeMode = true;
-						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 16.f, &config, &ranges[0]);
+						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 14.f, &config, &ranges[0]);
 					}
 				}
 #endif

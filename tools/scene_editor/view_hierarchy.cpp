@@ -154,6 +154,10 @@ void View_Hierarchy::on_draw()
 					entities.push_back(e);
 				selection.select(entities, "hierarchy"_h);
 			}
+			else if (ImGui::IsKeyDown(Keyboard_Shift))
+			{
+
+			}
 			else
 				selection.select(e, "hierarchy"_h);
 			hierarchy_select_frame = frames;

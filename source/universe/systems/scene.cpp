@@ -425,8 +425,7 @@ namespace flame
 
 			if (auto node = e->node(); node)
 			{
-				auto pos = node->g_pos;
-				auto scl = node->g_scl;
+				auto& mat = node->transform;
 
 				if (e->tag & TagMarkNavMesh)
 				{
@@ -437,7 +436,7 @@ namespace flame
 						auto pos_off = positions.size();
 						positions.resize(positions.size() + mesh->positions.size());
 						for (auto i = 0; i < mesh->positions.size(); i++)
-							positions[pos_off + i] = pos + mesh->positions[i] * scl;
+							positions[pos_off + i] = mat * vec4(mesh->positions[i], 1.f);
 						auto idx_off = indices.size();
 						indices.resize(indices.size() + mesh->indices.size());
 						for (auto i = 0; i < mesh->indices.size(); i++)
@@ -461,9 +460,9 @@ namespace flame
 							{
 								for (auto x = 0; x < cx + 1; x++)
 								{
-									positions[pos_off + z * (cx + 1) + x] = pos + vec3(x * extent.x,
+									positions[pos_off + z * (cx + 1) + x] = mat * vec4(x * extent.x,
 										height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y,
-										z * extent.z) * scl;
+										z * extent.z, 1.f);
 								}
 							}
 							auto idx_off = indices.size();
@@ -507,7 +506,7 @@ namespace flame
 						auto pos_off = positions.size();
 						positions.resize(positions.size() + volume_vretices.size());
 						for (auto i = 0; i < volume_vretices.size(); i++)
-							positions[pos_off + i] = pos + volume_vretices[i];
+							positions[pos_off + i] = mat * vec4(volume_vretices[i], 1.f);
 						auto idx_off = indices.size();
 						indices.resize(indices.size() + volume_vretices.size());
 						for (auto i = 0; i < volume_vretices.size(); i++)
