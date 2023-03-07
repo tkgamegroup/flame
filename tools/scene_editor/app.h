@@ -82,6 +82,16 @@ struct EntityModifyHistory : History
 	void redo() override;
 };
 
+struct EntityHistory : History
+{
+	bool is_remove = true;
+	std::vector<std::string> ids;
+	std::vector<std::string> contents;
+
+	void undo() override;
+	void redo() override;
+};
+
 extern int history_idx;
 extern std::vector<std::unique_ptr<History>> histories;
 inline void add_history(History* h)
