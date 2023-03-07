@@ -70,6 +70,8 @@ namespace flame
 		TagUser = 1 << 2
 	};
 
+	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }
+
 	enum StateFlags
 	{
 		StateNone = 0,
