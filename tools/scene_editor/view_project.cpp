@@ -131,7 +131,7 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Rename"))
 		{
-			ImGui::OpenInputDialog("New name", [path](bool ok, const std::string& text) {
+			ImGui::OpenInputDialog("Rename", "New Name", [path](bool ok, const std::string& text) {
 				if (ok)
 				{
 					auto new_name = path;
@@ -143,7 +143,7 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Delete"))
 		{
-			ImGui::OpenYesNoDialog(std::format("Are you sure to delete \"{}\" ?", path.string()), [path](bool yes) {
+			ImGui::OpenYesNoDialog("Delete asset?", path.string(), [path](bool yes) {
 				if (yes)
 				{
 					std::error_code ec;
@@ -352,7 +352,7 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("New Material"))
 			{
-				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New Material", "File Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto fn = path / str;
@@ -368,7 +368,7 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("New Prefab"))
 			{
-				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New Prefab", "File Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto fn = path / str;
@@ -383,7 +383,7 @@ void View_Project::init()
 		{
 			if (ImGui::MenuItem("New Header File"))
 			{
-				ImGui::OpenInputDialog("File Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New Header File", "File Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto fn = path / str;
@@ -399,7 +399,7 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("New Class"))
 			{
-				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New Class", "Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto h_fn = path / str;
@@ -421,7 +421,7 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("New Component"))
 			{
-				ImGui::OpenInputDialog("Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New Component", "Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto h_fn = path / str;

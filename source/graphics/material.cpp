@@ -234,6 +234,7 @@ namespace flame
 			};
 
 			serialize_xml(this, doc_root, spec);
+
 			doc.save_file(filename.c_str());
 		}
 

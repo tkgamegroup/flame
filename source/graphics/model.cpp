@@ -445,35 +445,39 @@ namespace flame
 								{
 									if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 									{
-										auto fn = find_file(parent_path, tex->GetFileName());
-										if (copy_textures && std::filesystem::exists(fn))
+										std::string tex_name = tex->GetFileName();
+										if (!tex_name.empty())
 										{
-											auto copied = false;
-											auto dst = parent_path / fn.filename();
-											if (!texture_format.empty())
+											auto fn = find_file(parent_path, tex_name);
+											if (copy_textures && std::filesystem::exists(fn))
 											{
-												auto ext = fn.extension();
-												if (ext != texture_format)
+												auto copied = false;
+												auto dst = parent_path / fn.filename();
+												if (!texture_format.empty())
 												{
-													dst.replace_extension(texture_format);
-													auto bmp = Bitmap::create(fn);
-													bmp->save(dst);
-													delete bmp;
+													auto ext = fn.extension();
+													if (ext != texture_format)
+													{
+														dst.replace_extension(texture_format);
+														auto bmp = Bitmap::create(fn);
+														bmp->save(dst);
+														delete bmp;
+														fn = dst;
+														copied = true;
+													}
+												}
+												if (!copied && dst != fn)
+												{
+													std::filesystem::copy_file(fn, dst);
 													fn = dst;
-													copied = true;
 												}
 											}
-											if (!copied && dst != fn)
-											{
-												std::filesystem::copy_file(fn, dst);
-												fn = dst;
-											}
+											auto& texture = material->textures[map_id];
+											texture.filename = Path::rebase(parent_path, fn);
+											texture.srgb = true;
+											texture.auto_mipmap = true;
+											material->color_map = map_id++;
 										}
-										auto& texture = material->textures[map_id];
-										texture.filename = Path::rebase(parent_path, fn);
-										texture.srgb = true;
-										texture.auto_mipmap = true;
-										material->color_map = map_id++;
 									}
 								}
 							}

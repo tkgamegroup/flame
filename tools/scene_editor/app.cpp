@@ -440,7 +440,7 @@ void App::init()
 			}
 			if (ImGui::MenuItem("Send Debug Cmd"))
 			{
-				ImGui::OpenInputDialog("Debug Cmd", [](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("Send Debug Cmd", "Cmd", [](bool ok, const std::string& str) {
 					if (ok)
 						sRenderer::instance()->send_debug_string(str);
 				}, "", true);
@@ -991,9 +991,12 @@ void App::open_prefab(const std::filesystem::path& path)
 	close_prefab();
 	prefab_path = path;
 
-	e_prefab = Entity::create();
-	e_prefab->load(prefab_path);
-	world->root->add_child(e_prefab);
+	add_event([this]() {
+		e_prefab = Entity::create();
+		e_prefab->load(prefab_path);
+		world->root->add_child(e_prefab);
+		return false;
+	});
 }
 
 bool App::save_prefab()

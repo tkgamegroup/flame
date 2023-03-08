@@ -104,9 +104,12 @@ struct Selection
 	inline std::vector<std::filesystem::path> get_paths()
 	{
 		std::vector<std::filesystem::path> ret;
-		ret.resize(objects.size());
-		for (auto i = 0; i < objects.size(); i++)
-			ret[i] = *(std::filesystem::path*)objects[i];
+		if (type == tPath)
+		{
+			ret.resize(objects.size());
+			for (auto i = 0; i < objects.size(); i++)
+				ret[i] = *(std::filesystem::path*)objects[i];
+		}
 		return ret;
 	}
 	inline EntityPtr		as_entity() { return (EntityPtr)objects[0]; }
@@ -125,9 +128,12 @@ struct Selection
 	inline std::vector<EntityPtr> get_entities()
 	{
 		std::vector<EntityPtr> ret;
-		ret.resize(objects.size());
-		for (auto i = 0; i < objects.size(); i++)
-			ret[i] = (EntityPtr)objects[i];
+		if (type == tEntity)
+		{
+			ret.resize(objects.size());
+			for (auto i = 0; i < objects.size(); i++)
+				ret[i] = (EntityPtr)objects[i];
+		}
 		return ret;
 	}
 };

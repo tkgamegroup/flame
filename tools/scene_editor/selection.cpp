@@ -71,7 +71,7 @@ void selection_select_no_history(const std::vector<EntityPtr>& entities, uint ca
 					for (auto it = selection.objects.begin(); it != selection.objects.end();)
 					{
 						if (*it == e)
-							selection.objects.erase(it);
+							it = selection.objects.erase(it);
 						else
 							it++;
 					}

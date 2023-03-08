@@ -58,6 +58,7 @@ namespace ImGui
 
 	struct YesNoDialog : Dialog
 	{
+		std::string prompt;
 		std::function<void(bool)> callback;
 
 		void draw() override
@@ -65,6 +66,7 @@ namespace ImGui
 #ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
+				ImGui::TextUnformatted(prompt.c_str());
 				if (ImGui::Button("Yes"))
 				{
 					if (callback)
@@ -86,6 +88,7 @@ namespace ImGui
 
 	struct InputDialog : Dialog
 	{
+		std::string prompt;
 		std::string text;
 		std::function<void(bool, const std::string&)> callback;
 		std::vector<std::string> history;
@@ -107,6 +110,7 @@ namespace ImGui
 #ifdef USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str()))
 			{
+				ImGui::TextUnformatted(prompt.c_str());
 				auto ok = false;
 				if (ImGui::InputText("##text", &text, ImGuiInputTextFlags_EnterReturnsTrue))
 					ok = true;
@@ -193,18 +197,20 @@ namespace ImGui
 		Dialog::open(dialog);
 	}
 
-	void OpenYesNoDialog(const std::string title, const std::function<void(bool)>& callback)
+	void OpenYesNoDialog(const std::string title, const std::string& prompt, const std::function<void(bool)>& callback)
 	{
 		auto dialog = new YesNoDialog;
 		dialog->title = title;
+		dialog->prompt = prompt;
 		dialog->callback = callback;
 		Dialog::open(dialog);
 	}
 
-	void OpenInputDialog(const std::string title, const std::function<void(bool, const std::string&)>& callback, const std::string default_value, bool archive)
+	void OpenInputDialog(const std::string title, const std::string& prompt, const std::function<void(bool, const std::string&)>& callback, const std::string default_value, bool archive)
 	{
 		auto dialog = new InputDialog;
 		dialog->title = title;
+		dialog->prompt = prompt;
 		dialog->text = default_value;
 		dialog->callback = callback;
 		dialog->archive = archive;

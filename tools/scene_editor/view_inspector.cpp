@@ -1133,32 +1133,32 @@ void View_Inspector::on_draw()
 				//			ui.find_function("set_mesh_name"_h)->call<void, void*>(obj, &path);
 						}
 					}
-				//	else if (name == "material_name"_h)
-				//	{
-				//		ImGui::SameLine();
-				//		if (ImGui::Button("D"))
-				//		{
-				//			auto path = std::filesystem::path(L"default");
-				//			ui.find_function("set_material_name"_h)->call<void, void*>(obj, &path);
-				//		}
+					else if (name == "material_name"_h)
+					{
+						ImGui::SameLine();
+						if (ImGui::Button("D"))
+						{
+							auto path = std::filesystem::path(L"default");
+							ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
+						}
 
-				//		auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(obj);
-				//		if (!name.empty() && name != L"default")
-				//		{
-				//			if (ImGui::TreeNode("##embed"))
-				//			{
-				//				// the material is loaded and registered to renderer
-				//				if (auto material = graphics::Material::get(name); material)
-				//				{
-				//					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
-				//					manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).empty();
-				//					editing_objects.pop();
-				//					graphics::Material::release(material);
-				//				}
-				//				ImGui::TreePop();
-				//			}
-				//		}
-				//	}
+						auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
+						if (!name.empty() && name != L"default")
+						{
+							if (ImGui::TreeNode("##embed"))
+							{
+								// the material is loaded and registered to renderer
+								if (auto material = graphics::Material::get(name); material)
+								{
+									editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
+									manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
+									editing_objects.pop();
+									graphics::Material::release(material);
+								}
+								ImGui::TreePop();
+							}
+						}
+					}
 				//	else
 				//	{
 				//		auto& a = *ui.find_attribute(name);

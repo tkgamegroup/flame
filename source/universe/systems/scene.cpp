@@ -753,6 +753,10 @@ namespace flame
 
 		if (!dt_crowd)
 			dt_crowd = dtAllocCrowd();
+		for (auto ag : nav_agents)
+			ag->dt_id = -1;
+		for (auto ob : nav_obstacles)
+			ob->dt_id = -1;
 		dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
 		dtObstacleAvoidanceParams avoid_params;
 		memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
