@@ -1,5 +1,6 @@
 #include "view_scene.h"
 #include "selection.h"
+#include "history.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/draw_data.h>
@@ -106,8 +107,26 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
-			auto e = selection.as_entity();
-			if (auto tar = e->node(); tar)
+			std::vector<cNodePtr> targets;
+			for (auto e : selection.entities())
+			{
+				if (auto target = e->node(); target)
+				{
+					auto ok = true;
+					for (auto t : targets)
+					{
+						if (is_ancestor(t->entity, e))
+						{
+							ok = false;
+							break;
+						}
+					}
+					if (ok)
+						targets.push_back(target);
+				}
+			}
+
+			if (!targets.empty())
 			{
 				ImGuizmo::BeginFrame();
 				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
@@ -118,22 +137,19 @@ void View_Scene::on_draw()
 				static std::vector<quat> before_editing_quts;
 				static std::vector<vec3> before_editing_scls;
 				static vec3 center;
-				if (selection.objects.size() > 1)
+				if (targets.size() > 1)
 				{
 					if (!last_gizmo_using)
 					{
 						center = vec3(0.f);
-						for (auto e : selection.entities())
-						{
-							if (auto node = e->node(); node)
-								center += node->g_pos;
-						}
-						center /= (float)selection.objects.size();
+						for (auto t : targets)
+							center += t->g_pos;
+						center /= (float)targets.size();
 					}
 					mat = translate(mat4(1.f), center);
 				}
 				else
-					mat = tar->transform;
+					mat = targets[0]->transform;
 				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 				auto op = ImGuizmo::TRANSLATE;
 				vec3 snap_value; float* p_snap_value = nullptr;
@@ -174,143 +190,134 @@ void View_Scene::on_draw()
 					switch (app.tool)
 					{
 					case ToolMove:
-						for (auto e : selection.entities())
-						{
-							if (auto node = e->node(); node)
-								before_editing_poses.push_back(node->pos);
-						}
+						for (auto t : targets)
+							before_editing_poses.push_back(t->pos);
 						break;
 					case ToolRotate:
-						for (auto e : selection.entities())
+						for (auto t : targets)
+							before_editing_quts.push_back(t->qut);
+						if (targets.size() > 1 && app.tool_pivot == ToolCenter)
 						{
-							if (auto node = e->node(); node)
-								before_editing_quts.push_back(node->qut);
-						}
-						if (selection.objects.size() > 1 && app.tool_pivot == ToolCenter)
-						{
-							for (auto e : selection.entities())
-							{
-								if (auto node = e->node(); node)
-									before_editing_poses.push_back(node->pos);
-							}
+							for (auto t : targets)
+								before_editing_poses.push_back(t->pos);
 						}
 						break;
 					case ToolScale:
-						for (auto e : selection.entities())
-						{
-							if (auto node = e->node(); node)
-								before_editing_scls.push_back(node->scl);
-						}
+						for (auto t : targets)
+							before_editing_scls.push_back(t->scl);
 						break;
 					}
 				}
 				if (changed)
 				{
-					if (selection.objects.size() == 1)
+					if (targets.size() == 1)
 					{
-						if (auto pnode = e->get_parent_component_i<cNodeT>(0); pnode)
+						if (auto pnode = targets[0]->entity->get_parent_component_i<cNodeT>(0); pnode)
 							mat = inverse(pnode->transform) * mat;
 					}
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 					decompose(mat, scl, qut, pos, skew, perspective);
 					if (app.tool == ToolMove)
 					{
-						if (selection.objects.size() > 1)
+						if (targets.size() > 1)
 						{
-							auto diff = pos - tar->pos;
-							for (auto e : selection.entities())
+							auto diff = pos - targets[0]->pos;
+							for (auto t : targets)
 							{
-								if (auto node = e->node(); node)
-								{
-									node->add_pos(diff);
-									if (auto ins = get_prefab_instance(e); ins)
-										ins->mark_modifier(e->file_id, "flame::cNode", "pos");
-								}
+								t->add_pos(diff);
+								if (auto ins = get_prefab_instance(t->entity); ins)
+									ins->mark_modifier(targets[0]->entity->file_id, "flame::cNode", "pos");
 							}
 						}
 						else
 						{
-							tar->set_pos(pos);
-							if (auto ins = get_prefab_instance(e); ins)
-								ins->mark_modifier(e->file_id, "flame::cNode", "pos");
+							targets[0]->set_pos(pos);
+							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
+								ins->mark_modifier(targets[0]->entity->file_id, "flame::cNode", "pos");
 						}
 					}
 					if (app.tool == ToolRotate)
 					{
-						if (selection.objects.size() > 1)
+						if (targets.size() > 1)
 						{
-							for (auto e : selection.entities())
+							for (auto t : targets)
 							{
-								if (auto node = e->node(); node)
+								t->mul_qut(qut);
+								if (auto ins = get_prefab_instance(t->entity); ins)
+									ins->mark_modifier(t->entity->file_id, "flame::cNode", "qut");
+								if (app.tool_pivot == ToolCenter)
 								{
-									node->mul_qut(qut);
-									if (auto ins = get_prefab_instance(e); ins)
-										ins->mark_modifier(e->file_id, "flame::cNode", "qut");
-									if (app.tool_pivot == ToolCenter)
-									{
-										node->set_pos(center + qut * (node->g_pos - center));
-										if (auto ins = get_prefab_instance(e); ins)
-											ins->mark_modifier(e->file_id, "flame::cNode", "pos");
-									}
+									t->set_pos(center + qut * (t->g_pos - center));
+									if (auto ins = get_prefab_instance(t->entity); ins)
+										ins->mark_modifier(t->entity->file_id, "flame::cNode", "pos");
 								}
 							}
 						}
 						else
 						{
-							tar->set_qut(qut);
-							if (auto ins = get_prefab_instance(e); ins)
-								ins->mark_modifier(e->file_id, "flame::cNode", "qut");
+							targets[0]->set_qut(qut);
+							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
+								ins->mark_modifier(targets[0]->entity->file_id, "flame::cNode", "qut");
 						}
 					}
 					if (app.tool == ToolScale)
 					{
-						if (selection.objects.size() > 1)
+						if (targets.size() > 1)
 						{
 
 						}
 						else
 						{
-							tar->set_scl(scl);
-							if (auto ins = get_prefab_instance(e); ins)
-								ins->mark_modifier(e->file_id, "flame::cNode", "scl");
+							targets[0]->set_scl(scl);
+							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
+								ins->mark_modifier(targets[0]->entity->file_id, "flame::cNode", "scl");
 						}
 					}
 				}
 				if (last_gizmo_using && !gizmo_using)
 				{
 					std::vector<std::string> ids;
-					for (auto e : selection.entities())
-					{
-						if (auto node = e->node(); node)
-							ids.push_back(e->instance_id);
-					}
+					for (auto t : targets)
+						ids.push_back(t->entity->instance_id);
 					if (app.tool == ToolMove)
 					{
-						std::vector<std::string> strs(before_editing_poses.size());
-						for (auto i = 0; i < strs.size(); i++)
-							strs[i] = str(before_editing_poses[i]);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, strs, str(tar->pos)));
+						std::vector<std::string> old_values(ids.size());
+						std::vector<std::string> new_values(ids.size());
+						for (auto i = 0; i < ids.size(); i++)
+							old_values[i] = str(before_editing_poses[i]);
+						for (auto i = 0; i < ids.size(); i++)
+							new_values[i] = str(targets[i]->pos);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 					}
 					if (app.tool == ToolRotate)
 					{
-						std::vector<std::string> strs(before_editing_quts.size());
-						for (auto i = 0; i < strs.size(); i++)
-							strs[i] = str((vec4&)before_editing_quts[i]);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, strs, str((vec4&)tar->qut)));
-						if (selection.objects.size() > 1 && app.tool_pivot == ToolCenter)
+						std::vector<std::string> old_values(ids.size());
+						std::vector<std::string> new_values(ids.size());
+						for (auto i = 0; i < old_values.size(); i++)
+							old_values[i] = str((vec4&)before_editing_quts[i]);
+						for (auto i = 0; i < ids.size(); i++)
+							new_values[i] = str((vec4&)targets[i]->qut);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, old_values, new_values));
+						if (targets.size() > 1 && app.tool_pivot == ToolCenter)
 						{
-							std::vector<std::string> strs(before_editing_poses.size());
-							for (auto i = 0; i < strs.size(); i++)
-								strs[i] = str(before_editing_poses[i]);
-							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, strs, str(tar->pos)));
+							std::vector<std::string> old_values(ids.size());
+							std::vector<std::string> new_values(ids.size());
+							for (auto i = 0; i < ids.size(); i++)
+								old_values[i] = str(before_editing_poses[i]);
+							for (auto i = 0; i < ids.size(); i++)
+								new_values[i] = str(targets[i]->pos);
+							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 						}
 					}
 					if (app.tool == ToolScale)
 					{
-						std::vector<std::string> strs(before_editing_scls.size());
-						for (auto i = 0; i < strs.size(); i++)
-							strs[i] = str(before_editing_scls[i]);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, strs, str(tar->scl)));
+						std::vector<std::string> old_values(ids.size());
+						std::vector<std::string> new_values(ids.size());
+						for (auto i = 0; i < ids.size(); i++)
+							old_values[i] = str(before_editing_scls[i]);
+						for (auto i = 0; i < ids.size(); i++)
+							new_values[i] = str(targets[i]->scl);
+						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, old_values, new_values));
 					}
 				}
 				last_gizmo_using = gizmo_using;

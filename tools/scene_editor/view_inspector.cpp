@@ -1,5 +1,6 @@
 #include "app.h"
 #include "selection.h"
+#include "history.h"
 #include "view_inspector.h"
 
 #include <flame/foundation/typeinfo.h>
@@ -277,7 +278,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	{
 		std::vector<std::filesystem::path> paths;
 		paths.assign((std::filesystem::path*)eos.objs, (std::filesystem::path*)eos.objs + eos.num);
-		add_history(new AssetModifyHistory(paths, eos.type2, attr_hash, before_editing_values, new_value));
+		add_history(new AssetModifyHistory(paths, eos.type2, attr_hash, before_editing_values, { new_value }));
 	}
 		break;
 	case 1:
@@ -285,7 +286,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 		std::vector<std::string> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		add_history(new EntityModifyHistory(ids, 0, attr_hash, before_editing_values, new_value));
+		add_history(new EntityModifyHistory(ids, 0, attr_hash, before_editing_values, { new_value }));
 	}
 		break;
 	case 2:
@@ -293,7 +294,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 		std::vector<std::string> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, new_value));
+		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value }));
 	}  
 		break;
 	}

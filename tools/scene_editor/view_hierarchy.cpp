@@ -35,15 +35,6 @@ void View_Hierarchy::on_draw()
 
 	std::function<void(EntityPtr, bool)> draw_entity;
 	draw_entity = [&](EntityPtr e, bool in_prefab) {
-		std::function<bool(EntityPtr, EntityPtr)> is_ancestor;
-		is_ancestor = [&](EntityPtr t, EntityPtr e) {
-			if (!e->parent)
-				return false;
-			if (e->parent == t)
-				return true;
-			return false;
-		};
-
 		auto flags = selection.selecting(e) ? ImGuiTreeNodeFlags_Selected : 0;
 		if (e->children.empty())
 			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -76,7 +67,7 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropSource();
 		}
 
-		auto read_drop_entity = [&]()->EntityPtr {
+		auto read_drop_entity = [e]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
 				if (get_prefab_instance(e))
@@ -98,7 +89,7 @@ void View_Hierarchy::on_draw()
 			}
 			return nullptr;
 		};
-		auto read_drop_file = [&]()->EntityPtr {
+		auto read_drop_file = [e]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
 				if (get_prefab_instance(e))
@@ -167,7 +158,7 @@ void View_Hierarchy::on_draw()
 		{
 			auto gap_item = [&](int i) {
 				ImGui::PushID(e); ImGui::PushID(i);
-				ImGui::InvisibleButton("gap", ImVec2(-1, 4));
+				ImGui::InvisibleButton("gap", ImVec2(-1, 2));
 				ImGui::PopID(); ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{

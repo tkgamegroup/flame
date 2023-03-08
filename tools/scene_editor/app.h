@@ -28,79 +28,17 @@ enum ToolMode
 	ToolWorld
 };
 
-struct History
+struct DropPaths
 {
-	virtual ~History() {}
-
-	virtual void undo() = 0;
-	virtual void redo() = 0;
+	std::filesystem::path* paths;
+	int count;
 };
 
-struct AssetModifyHistory : History
+struct DropEnitities
 {
-	std::vector<std::filesystem::path> paths;
-	uint asset_type;
-	uint attr_hash;
-	std::vector<std::string> old_values;
-	std::string new_value;
-
-	AssetModifyHistory(const std::vector<std::filesystem::path>& paths, uint asset_type, uint attr_hash,
-		const std::vector<std::string>& old_values, const std::string& new_value) :
-		paths(paths),
-		asset_type(asset_type),
-		attr_hash(attr_hash),
-		old_values(old_values),
-		new_value(new_value)
-	{
-	}
-
-	void set_value(const std::vector<std::string>& values);
-	void undo() override;
-	void redo() override;
+	EntityPtr* entities;
+	int count;
 };
-
-struct EntityModifyHistory : History
-{
-	std::vector<std::string> ids;
-	uint comp_type;
-	uint attr_hash;
-	std::vector<std::string> old_values;
-	std::string new_value;
-
-	EntityModifyHistory(const std::vector<std::string>& ids, uint comp_type, uint attr_hash,
-		const std::vector<std::string>& old_values, const std::string& new_value) :
-		ids(ids),
-		comp_type(comp_type),
-		attr_hash(attr_hash),
-		old_values(old_values),
-		new_value(new_value)
-	{
-	}
-
-	void set_value(const std::vector<std::string>& values);
-	void undo() override;
-	void redo() override;
-};
-
-struct EntityHistory : History
-{
-	bool is_remove = true;
-	std::vector<std::string> ids;
-	std::vector<std::string> contents;
-
-	void undo() override;
-	void redo() override;
-};
-
-extern int history_idx;
-extern std::vector<std::unique_ptr<History>> histories;
-inline void add_history(History* h)
-{
-	if (history_idx + 1 < histories.size())
-		histories.erase(histories.begin() + (history_idx + 1), histories.end());
-	histories.emplace_back(h);
-	history_idx++;
-}
 
 struct App : UniverseApplication
 {
@@ -161,4 +99,23 @@ struct App : UniverseApplication
 
 extern App app;
 
-PrefabInstance* get_prefab_instance(EntityPtr e);
+inline PrefabInstance* get_prefab_instance(EntityPtr e)
+{
+	PrefabInstance* ret = nullptr;
+	while (e)
+	{
+		if (e->prefab_instance)
+			ret = e->prefab_instance.get();
+		e = e->parent;
+	}
+	return ret;
+}
+
+inline bool is_ancestor(EntityPtr t, EntityPtr e)
+{
+	if (!e->parent)
+		return false;
+	if (e->parent == t)
+		return true;
+	return is_ancestor(t, e->parent);
+};

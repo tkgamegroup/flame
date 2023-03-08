@@ -455,7 +455,8 @@ namespace flame
 									draw_list->AddImage(item->image, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p1.x - padding.x, p1.y - line_height - padding.y * 2));
 								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->text_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->text.c_str(), item->text.c_str() + item->text.size());
 
-								if (frames > open_folder_frame + 3 && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && hovered && ImGui::IsItemDeactivated())
+								if (frames > open_folder_frame + 3 && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+									&& hovered && ImGui::IsItemDeactivated())
 								{
 									selected_path = item->path;
 									if (select_callback)

@@ -97,7 +97,29 @@ void View_Project::init()
 		if (path.empty())
 			selection.clear("project"_h);
 		else
-			selection.select(path, "project"_h);
+		{
+			if (ImGui::IsKeyDown(Keyboard_Ctrl))
+			{
+				auto paths = selection.get_paths();
+				auto found = false;
+				for (auto it = paths.begin(); it != paths.end();)
+				{
+					if (*it == path)
+					{
+						found = true;
+						it = paths.erase(it);
+						break;
+					}
+					else
+						it++;
+				}
+				if (!found)
+					paths.push_back(path);
+				selection.select(paths);
+			}
+			else
+				selection.select(path, "project"_h);
+		}
 	};
 	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
@@ -107,15 +129,32 @@ void View_Project::init()
 			app.open_file_in_vs(path);
 	};
 	explorer.item_context_menu_callback = [this](const std::filesystem::path& path) {
-		auto ext = path.extension();
+		auto paths = selection.get_paths();
+		auto found = false;
+		for (auto& p : paths)
+		{
+			if (p == path)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			paths.push_back(path);
+			selection.select(paths, "project"_h);
+		}
 		if (ImGui::MenuItem("Show In Explorer"))
-			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
-		if (is_text_file(ext))
+		{
+			for (auto& p : paths)
+				exec(L"", std::format(L"explorer /select,\"{}\"", p.wstring()));
+		}
+		if (paths.size() == 1 && is_text_file(path.extension()))
 		{
 			if (ImGui::MenuItem("Open In VS"))
 				app.open_file_in_vs(path);
 		}
-		if (ImGui::BeginMenu("Copy Path"))
+		if (paths.size() == 1 && ImGui::BeginMenu("Copy Path"))
 		{
 			if (ImGui::MenuItem("Name"))
 				set_clipboard(path.filename().wstring());
@@ -127,9 +166,9 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Copy"))
 		{
-			set_clipboard_files({ path });
+			set_clipboard_files(paths);
 		}
-		if (ImGui::MenuItem("Rename"))
+		if (paths.size() == 1 && ImGui::MenuItem("Rename"))
 		{
 			ImGui::OpenInputDialog("Rename", "New Name", [path](bool ok, const std::string& text) {
 				if (ok)
@@ -143,11 +182,17 @@ void View_Project::init()
 		}
 		if (ImGui::MenuItem("Delete"))
 		{
-			ImGui::OpenYesNoDialog("Delete asset?", path.string(), [path](bool yes) {
+			std::string names;
+			for (auto& p : paths)
+				names += p.string() + "\n";
+			ImGui::OpenYesNoDialog("Delete asset(s)?", names, [paths](bool yes) {
 				if (yes)
 				{
-					std::error_code ec;
-					std::filesystem::remove(path, ec);
+					for (auto& p : paths)
+					{
+						std::error_code ec;
+						std::filesystem::remove(p, ec);
+					}
 				}
 			});
 		}
@@ -171,18 +216,27 @@ void View_Project::init()
 
 		if (ImGui::MenuItem("Show In Explorer"))
 			exec(L"", std::format(L"explorer /select,\"{}\"", path.wstring()));
-		//if (!get_clipboard_files(true).empty())
-		//{
-		//	if (ImGui::MenuItem("Paste"))
-		//	{
-		//		for (auto& file : get_clipboard_files())
-		//		{
-		//			auto dst = path / file.filename();
-		//			std::error_code ec;
-		//			std::filesystem::copy_file(file, dst, ec);
-		//		}
-		//	}
-		//}
+		if (!get_clipboard_files(true).empty())
+		{
+			if (ImGui::MenuItem("Paste"))
+			{
+				for (auto& file : get_clipboard_files())
+				{
+					auto stem = file.filename().stem();
+					auto ext = file.extension();
+					auto dst = path / file.filename();
+					auto n = 2;
+					while (std::filesystem::exists(dst))
+					{
+						dst = path / stem;
+						dst += wstr(n++);
+						dst += ext;
+					}
+					std::error_code ec;
+					std::filesystem::copy_file(file, dst, ec);
+				}
+			}
+		}
 		if (ImGui::MenuItem("New Folder"))
 			std::filesystem::create_directory(get_unique_filename(path / L"new_foler_"));
 		if (in_assets)
