@@ -4,6 +4,8 @@
 
 struct View_Scene : graphics::GuiView
 {
+	bool unsaved = false;
+
 	std::unique_ptr<graphics::Image> render_tar;
 	bool fixed_render_target_size = false;
 

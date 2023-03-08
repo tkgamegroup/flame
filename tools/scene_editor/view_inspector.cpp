@@ -34,12 +34,6 @@ View_Inspector::View_Inspector() :
 	}, "inspector"_h);
 }
 
-void View_Inspector::reset()
-{
-	com_udts_map.clear();
-	com_udts_list.clear();
-}
-
 struct StagingVector
 {
 	std::vector<char> v;
@@ -1637,4 +1631,9 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 
 	selection_changed = false;
 }
-                                
+
+void View_Inspector::clear_typeinfos()
+{
+	com_udts_map.clear();
+	com_udts_list.clear();
+}

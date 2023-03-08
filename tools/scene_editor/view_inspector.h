@@ -5,9 +5,10 @@
 struct View_Inspector : graphics::GuiView
 {
 	View_Inspector();
-	void reset();
 
 	void on_draw() override;
+
+	static void clear_typeinfos();
 };
 
 extern View_Inspector view_inspector;

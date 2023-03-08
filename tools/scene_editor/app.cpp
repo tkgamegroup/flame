@@ -841,7 +841,7 @@ void App::build_project()
 			e_prefab->remove_from_parent(false);
 
 		// remove saved udts, inspector will try to get new ones
-		view_inspector.reset();
+		view_inspector.clear_typeinfos();
 		unload_project_cpp();
 
 		focus_window(get_console_window());
@@ -883,7 +883,7 @@ void App::close_project()
 	Path::set_root(L"assets", L"");
 	view_project.reset();
 	// remove saved udts, inspector will try to get new ones
-	view_inspector.reset();
+	view_inspector.clear_typeinfos();
 	unload_project_cpp();
 }
 

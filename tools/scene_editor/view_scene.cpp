@@ -538,25 +538,39 @@ void View_Scene::on_draw()
 				{
 					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
 					{
-						if (io.KeysDown[Keyboard_W])
+						if (io.MouseDown[ImGuiMouseButton_Right])
 						{
-							camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
-							app.render_frames += 30;
+							if (io.KeysDown[Keyboard_W])
+							{
+								camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_S])
+							{
+								camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_A])
+							{
+								camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_D])
+							{
+								camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
+								app.render_frames += 30;
+							}
 						}
-						if (io.KeysDown[Keyboard_S])
+						else
 						{
-							camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
-							app.render_frames += 30;
-						}
-						if (io.KeysDown[Keyboard_A])
-						{
-							camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
-							app.render_frames += 30;
-						}
-						if (io.KeysDown[Keyboard_D])
-						{
-							camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
-							app.render_frames += 30;
+							if (ImGui::IsKeyPressed(Keyboard_Q))
+								app.tool = ToolSelect;
+							if (ImGui::IsKeyPressed(Keyboard_W))
+								app.tool = ToolMove;
+							if (ImGui::IsKeyPressed(Keyboard_E))
+								app.tool = ToolRotate;
+							if (ImGui::IsKeyPressed(Keyboard_R))
+								app.tool = ToolScale;
 						}
 						if (io.KeysDown[Keyboard_F])
 							focus_to_selected();
@@ -564,14 +578,6 @@ void View_Scene::on_draw()
 							selected_to_focus();
 						if (ImGui::IsKeyPressed(Keyboard_Del))
 							app.cmd_delete_entity();
-						if (ImGui::IsKeyPressed(Keyboard_1))
-							app.tool = ToolSelect;
-						if (ImGui::IsKeyPressed(Keyboard_2))
-							app.tool = ToolMove;
-						if (ImGui::IsKeyPressed(Keyboard_3))
-							app.tool = ToolRotate;
-						if (ImGui::IsKeyPressed(Keyboard_4))
-							app.tool = ToolScale;
 					}
 				}
 
