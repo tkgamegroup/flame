@@ -629,15 +629,8 @@ namespace flame
 			imgui_ds->set_image_i(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			imgui_ds->update();
 
-			main_window->renderers.add(gui_render, "Gui"_h);
+			main_window->renderers.add(gui_render, "gui"_h);
 #endif
-
-			if (auto image = Image::get(L"flame/icon_model.png"); image)
-				icons.emplace(L"model", std::make_pair(-1, image));
-			if (auto image = Image::get(L"flame/icon_armature.png"); image)
-				icons.emplace(L"armature", std::make_pair(-1, image));
-			if (auto image = Image::get(L"flame/icon_mesh.png"); image)
-				icons.emplace(L"mesh", std::make_pair(-1, image));
 		}
 
 		static std::vector<vec2> circle_pts0;
@@ -676,38 +669,8 @@ namespace flame
 			}
 		}
 
-		std::filesystem::path parse_icon_path(const std::filesystem::path& path)
+		Image* _get_icon(const std::filesystem::path& path, uint desired_size)
 		{
-			auto ext = path.extension();
-			if (is_image_file(ext))
-				return path;
-			else
-			{
-				auto sp = SUW::split(path, '#');
-				if (sp.size() < 2)
-				{
-					if (ext == L".fmod")
-						return L"model";
-				}
-				else
-				{
-					if (sp[1].starts_with(L"armature"))
-						return L"armature";
-					else if (sp[1].starts_with(L"mesh"))
-						return L"mesh";
-				}
-
-				int id;
-				get_sys_icon(path, &id);
-				return wstr(id);
-			}
-			return L"";
-		}
-
-		Image* get_icon(const std::filesystem::path& _path, uint desired_size)
-		{
-			auto path = parse_icon_path(_path);
-
 			auto it = icons.find(path);
 			if (it != icons.end())
 			{
@@ -716,7 +679,8 @@ namespace flame
 				return it->second.second;
 			}
 
-			if (path == _path)
+			auto ext = path.extension();
+			if (is_image_file(ext))
 			{
 				auto d = get_thumbnail(desired_size, path);
 				if (d.second)
@@ -728,7 +692,7 @@ namespace flame
 			}
 			else
 			{
-				auto d = get_sys_icon(_path.c_str(), nullptr);
+				auto d = get_sys_icon(path.c_str(), nullptr);
 				if (d.second)
 				{
 					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, uvec3(d.first, 1), d.second.get());
@@ -738,29 +702,6 @@ namespace flame
 			}
 
 			return nullptr;
-		}
-
-		void release_icon(const std::filesystem::path& _path)
-		{
-			graphics::Queue::get()->wait_idle();
-
-			auto path = parse_icon_path(_path);
-			if (path == _path)
-			{
-				auto it = icons.find(path);
-				if (it != icons.end())
-				{
-					if (it->second.first >= 0)
-					{
-						it->second.first--;
-						if (it->second.first == 0)
-						{
-							delete it->second.second;
-							icons.erase(it);
-						}
-					}
-				}
-			}
 		}
 
 		std::list<GuiView*> gui_views;

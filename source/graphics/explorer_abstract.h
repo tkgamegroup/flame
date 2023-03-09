@@ -93,24 +93,24 @@ namespace flame
 				inline static auto size = 64.f;
 
 				std::filesystem::path path;
-				std::string text;
-				float text_width;
-				graphics::ImagePtr image = nullptr;
+				std::string label;
+				float label_width;
+				graphics::ImagePtr icon = nullptr;
 
 				bool has_children = false;
 
 				inline Item(const std::filesystem::path& path, const std::string& _text = "") :
 					path(path)
 				{
-					text = !_text.empty() ? _text : path.filename().string();
+					label = !_text.empty() ? _text : path.filename().string();
 #ifdef USE_IMGUI
 					auto font = ImGui::GetFont();
 					auto font_size = ImGui::GetFontSize();
 					const char* clipped_end;
-					text_width = font->CalcTextSizeA(font_size, size, 0.f, &*text.begin(), text.c_str() + text.size(), &clipped_end).x;
-					if (clipped_end != text.c_str() + text.size())
+					label_width = font->CalcTextSizeA(font_size, size, 0.f, &*label.begin(), label.c_str() + label.size(), &clipped_end).x;
+					if (clipped_end != label.c_str() + label.size())
 					{
-						auto str = text.substr(0, clipped_end - text.c_str());
+						auto str = label.substr(0, clipped_end - label.c_str());
 						float w;
 						do
 						{
@@ -119,18 +119,17 @@ namespace flame
 							str.pop_back();
 							w = font->CalcTextSizeA(font_size, 9999.f, 0.f, (str + "...").c_str()).x;
 						} while (w > size);
-						text = str + "...";
-						text_width = w;
+						label = str + "...";
+						label_width = w;
 					}
 #endif
 
-					image = (ImagePtr)get_icon(path);
-
+					icon = (ImagePtr)get_icon(path);
 				}
 
 				inline ~Item()
 				{
-					if (image)
+					if (icon)
 						release_icon(path);
 				}
 			};
@@ -243,7 +242,11 @@ namespace flame
 						if (special_folder_provider(folder->path, &new_items))
 						{
 							for (auto i : new_items)
+							{
+								if (special_folder_provider(i->path, nullptr))
+									i->has_children = true;
 								items.emplace_back(i);
+							}
 							processed = true;
 						}
 					}
@@ -434,9 +437,9 @@ namespace flame
 								else												col = ImColor(0, 0, 0, 0);
 								auto draw_list = ImGui::GetWindowDrawList();
 								draw_list->AddRectFilled(p0, p1, col);
-								if (item->image)
-									draw_list->AddImage(item->image, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p1.x - padding.x, p1.y - line_height - padding.y * 2));
-								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->text_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->text.c_str(), item->text.c_str() + item->text.size());
+								if (item->icon)
+									draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p1.x - padding.x, p1.y - line_height - padding.y * 2));
+								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->label.c_str(), item->label.c_str() + item->label.size());
 
 								if (frames > open_folder_frame + 3 && (io.MouseReleased[ImGuiMouseButton_Left] || io.MouseReleased[ImGuiMouseButton_Right])
 									&& hovered && ImGui::IsItemDeactivated())

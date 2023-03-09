@@ -31,6 +31,7 @@ void View_Project::reset()
 	
 	std::vector<std::filesystem::path> paths;
 	paths.push_back(std::filesystem::path(L"favorites"));
+	paths.push_back(std::filesystem::path(L"recents"));
 	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
 
 	if (!app.project_path.empty())

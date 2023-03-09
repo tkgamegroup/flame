@@ -489,10 +489,10 @@ namespace flame
 		return std::make_pair(uvec2(w, h), std::move(data));
 	}
 
-	std::pair<uvec2, std::unique_ptr<uchar>> get_sys_icon(const std::filesystem::path& path, int* out_id)
+	std::pair<uvec2, std::unique_ptr<uchar>> get_sys_icon(const std::filesystem::path& ext, int* out_id)
 	{
 		SHFILEINFOW file_info = {};
-		SHGetFileInfoW(path.c_str(), 0, &file_info, sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_LARGEICON);
+		SHGetFileInfoW(ext.c_str(), 0, &file_info, sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_LARGEICON);
 
 		if (file_info.hIcon == nullptr)
 			return std::make_pair(uvec2(0), std::unique_ptr<uchar>());
