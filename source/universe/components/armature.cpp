@@ -27,13 +27,13 @@ namespace flame
 		node->measurers.remove("armature"_h);
 
 		if (auto name = parse_name(armature_name); !name.empty())
-			AssetManagemant::release_asset(Path::get(name));
+			AssetManagemant::release(Path::get(name));
 		if (model)
 			graphics::Model::release(model);
 		for (auto& a : animations)
 		{
 			if (!a.second.path.empty())
-				AssetManagemant::release_asset(Path::get(a.second.path));
+				AssetManagemant::release(Path::get(a.second.path));
 			if (a.second.animation)
 				graphics::Animation::release(a.second.animation);
 		}
@@ -95,7 +95,7 @@ namespace flame
 					{
 						auto& a = animations[sh(n.second.c_str())];
 						a.path = Path::get(n.first);
-						AssetManagemant::get_asset(a.path);
+						AssetManagemant::get(a.path);
 						a.animation = graphics::Animation::get(a.path);
 						if (a.animation)
 						{
@@ -185,7 +185,7 @@ namespace flame
 		for (auto& a : animations)
 		{
 			if (!a.second.path.empty())
-				AssetManagemant::release_asset(Path::get(a.second.path));
+				AssetManagemant::release(Path::get(a.second.path));
 			if (a.second.animation)
 				graphics::Animation::release(a.second.animation);
 		}
@@ -344,9 +344,9 @@ namespace flame
 		if (name != _name)
 		{
 			if (!name.empty())
-				AssetManagemant::release_asset(Path::get(name));
+				AssetManagemant::release(Path::get(name));
 			if (!_name.empty())
-				AssetManagemant::get_asset(Path::get(_name));
+				AssetManagemant::get(Path::get(_name));
 		}
 
 		graphics::ModelPtr _model = nullptr;

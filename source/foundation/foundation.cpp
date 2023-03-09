@@ -22,23 +22,24 @@ namespace flame
 	};
 	static _Initializer _initializer;
 
-	AssetManagemant::Asset& AssetManagemant::get_asset(const std::filesystem::path& path)
+	AssetManagemant::Asset& AssetManagemant::get(const std::filesystem::path& path)
 	{
 		auto it = assets.find(path);
 		if (it == assets.end())
-			it = assets.emplace(std::make_pair(path, Asset())).first;
+			it = assets.emplace(std::make_pair(path, Asset())).first; 
+		it->second.lwt = std::filesystem::exists(path) ? std::filesystem::last_write_time(path) : std::filesystem::file_time_type::min();
 		it->second.ref++;
 		return it->second;
 	}
 
-	void AssetManagemant::release_asset(const std::filesystem::path& path)
+	void AssetManagemant::release(const std::filesystem::path& path) 
 	{
 		auto it = assets.find(path);
 		if (it != assets.end())
 		{
 			if (it->second.ref == 1)
 				assets.erase(it);
-			else
+			else  
 				it->second.ref--;
 		}
 	}

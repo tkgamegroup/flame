@@ -2,16 +2,8 @@
 <material color_map="0">
 	<code_defines>
 		<item v="frag:TRI_PLANAR" />
-		<item v="frag:COLOR_MAP=0" />
 	</code_defines>
 	<textures>
 		<item filename="check.bmp" mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
 	</textures>
 </material>

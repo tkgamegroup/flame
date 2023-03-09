@@ -43,6 +43,32 @@ namespace flame
 		return "0x" + str_hex((uint64)v);
 	}
 
+	template<typename T>
+	std::string str(uint N, T* v)
+	{
+		std::string ret;
+		ret += str(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += ",";
+			ret += str(v[i]);
+		}
+		return ret;
+	}
+
+	template<uint N, typename T>
+	std::string str(T* v)
+	{
+		std::string ret;
+		ret += str(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += ",";
+			ret += str(v[i]);
+		}
+		return ret;
+	}
+
 	template<uint N, typename T>
 	std::string str(const vec<N, T>& v)
 	{
@@ -251,21 +277,21 @@ namespace flame
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::tolower(c);
-			});
+				});
 		}
 
 		static void to_upper(std::basic_string<CH>& s)
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
-			});
+				});
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-			}));
+				}));
 		}
 
 		static std::string get_ltrimed(const std::basic_string<CH>& s)
@@ -279,7 +305,7 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
-			}).base(), s.end());
+				}).base(), s.end());
 		}
 
 		static std::string get_rtrimed(const std::basic_string<CH>& s)
@@ -414,7 +440,7 @@ namespace flame
 
 			}
 
-			{    
+			{
 				std::size_t prev = 0, pos;
 				while ((pos = str.find_first_of(" \t", prev)) != std::string::npos)
 				{

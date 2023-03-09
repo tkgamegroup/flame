@@ -273,7 +273,10 @@ namespace flame
 		if (!res.mat->code_file.empty())
 			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
 		for (auto& d : res.mat->code_defines)
-			defines.push_back(d);
+		{
+			if (!d.empty())
+				defines.push_back(d);
+		}
 
 		std::filesystem::path pipeline_name;
 		switch (type)

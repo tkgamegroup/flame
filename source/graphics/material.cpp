@@ -14,8 +14,6 @@ namespace flame
 
 		MaterialPrivate::MaterialPrivate()
 		{
-			textures.resize(8);
-
 			materials.push_back(this);
 		}
 
@@ -228,10 +226,18 @@ namespace flame
 			auto doc_root = doc.append_child("material");
 
 			SerializeXmlSpec spec;
-			spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
+			spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src) {
 				auto& path = *(std::filesystem::path*)src;
 				return Path::rebase(base_path, path).string();
 			};
+
+			for (auto it = code_defines.begin(); it != code_defines.end();)
+			{
+				if (it->empty() || (it->starts_with("frag:") && it->contains("_MAP=")))
+					it = code_defines.erase(it);
+				else
+					it++;
+			}
 
 			serialize_xml(this, doc_root, spec);
 
@@ -277,8 +283,16 @@ namespace flame
 
 				auto base_path = Path::reverse(filename).parent_path();
 				UnserializeXmlSpec spec;
-				spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+				spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
 					*(std::filesystem::path*)dst = Path::combine(base_path, str);
+				};
+				spec.general_delegate = [](const std::string& name, uint name_hash, TypeInfo* type, const std::string& src, void* dst) {
+					if (name.ends_with("_map"))
+					{
+						*(int*)dst = s2t<int>(src);
+						return true;
+					}
+					return false;
 				};
 				unserialize_xml(doc_root, ret, spec);
 

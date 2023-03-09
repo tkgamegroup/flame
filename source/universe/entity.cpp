@@ -457,10 +457,10 @@ namespace flame
 		auto base_path = Path::reverse(filename).parent_path();
 
 		UnserializeXmlSpec spec;
-		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
 			*(std::filesystem::path*)dst = Path::combine(base_path, str);
 		};
-		spec.obj_delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			std::string name = src.attribute("type_name").value();
 			auto hash = sh(name.c_str());
 			auto ui = find_udt(hash);
@@ -478,7 +478,7 @@ namespace flame
 				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
-		spec.obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			auto e = new EntityPrivate();
 
 			if (auto a = src.attribute("filename"); a)
@@ -496,7 +496,7 @@ namespace flame
 					if (!get_modification_target(target, e, obj, attr))
 						continue;
 
-					unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", attr->setter_idx, n, obj);
+					unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj);
 					e->prefab_instance->modifications.push_back(target);
 				}
 			}
@@ -532,13 +532,13 @@ namespace flame
 
 		SerializeXmlSpec spec;
 		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
-		spec.data_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src)->std::string {
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src)->std::string {
 			auto& path = *(std::filesystem::path*)src;
 			if (path.native().starts_with(L"0x"))
 				return "";
 			return Path::rebase(base_path, path).string();
 		};
-		spec.obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
@@ -549,7 +549,7 @@ namespace flame
 				serialize_xml(*ui, comp, dst, spec);
 			}
 		};
-		spec.obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 			auto e = (EntityPtr)src;
 			if (e->prefab_instance)
 			{
@@ -564,7 +564,7 @@ namespace flame
 
 					auto n = n_mod.append_child("item");
 					n.append_attribute("target").set_value(target.c_str());
-					serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", "", attr->getter_idx, obj, n);
+					serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n);
 				}
 			}
 			else

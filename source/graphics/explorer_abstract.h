@@ -333,6 +333,7 @@ namespace flame
 #ifdef USE_IMGUI
 				if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 				{
+					auto& io = ImGui::GetIO();
 					auto& style = ImGui::GetStyle();
 
 					ImGui::TableNextRow();
@@ -455,7 +456,7 @@ namespace flame
 									draw_list->AddImage(item->image, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p1.x - padding.x, p1.y - line_height - padding.y * 2));
 								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->text_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->text.c_str(), item->text.c_str() + item->text.size());
 
-								if (frames > open_folder_frame + 3 && (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+								if (frames > open_folder_frame + 3 && (io.MouseReleased[ImGuiMouseButton_Left] || io.MouseReleased[ImGuiMouseButton_Right])
 									&& hovered && ImGui::IsItemDeactivated())
 								{
 									selected_path = item->path;
@@ -463,7 +464,7 @@ namespace flame
 										select_callback(selected_path);
 									selected = true;
 								}
-								if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && active)
+								if (io.MouseDoubleClicked[ImGuiMouseButton_Left] && active)
 								{
 									if (item->has_children)
 										peeding_open_path = item->path;
@@ -499,7 +500,8 @@ namespace flame
 								}
 							}
 						}
-						if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsWindowHovered() && !just_selected)
+						auto disp = (vec2)io.MouseClickedPos[ImGuiMouseButton_Left] - (vec2)io.MousePos;
+						if (disp == vec2(0.f) && io.MouseReleased[ImGuiMouseButton_Left] && ImGui::IsWindowHovered() && !just_selected)
 						{
 							selected_path = L"";
 							if (select_callback)

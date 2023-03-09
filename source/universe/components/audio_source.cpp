@@ -16,7 +16,7 @@ namespace flame
 		for (auto& n : buffer_names)
 		{
 			if (!n.first.empty())
-				AssetManagemant::release_asset(Path::get(n.first));
+				AssetManagemant::release(Path::get(n.first));
 		}
 		for (auto& src : sources)
 		{
@@ -28,7 +28,7 @@ namespace flame
 		for (auto& n : buffer_names)
 		{
 			if (!n.first.empty())
-				AssetManagemant::get_asset(Path::get(n.first));
+				AssetManagemant::get(Path::get(n.first));
 		}
 
 		for (auto& n : buffer_names)

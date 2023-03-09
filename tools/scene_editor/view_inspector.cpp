@@ -122,6 +122,12 @@ struct EditingObjects
 	int num;
 	std::unordered_map<const void*, uint>* sync_states;
 
+	EditingObjects()
+	{
+		type = -1;
+		num = 0;
+	}
+
 	EditingObjects(int type, uint type2, void* objs, int num, 
 		std::unordered_map<const void*, uint>* sync_states = nullptr) :
 		type(type),
@@ -266,6 +272,8 @@ std::vector<std::string> before_editing_values;
 void add_modify_history(uint attr_hash, const std::string& new_value)
 {
 	auto& eos = editing_objects.top();
+	if (eos.num == 0)
+		return;
 	switch (eos.type)
 	{
 	case 0:
@@ -294,7 +302,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	}
 }
 
-bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
+int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
 {
 	auto display_name = get_display_name(name);
 	auto changed = 0;
@@ -444,6 +452,8 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			add_modify_history(name_hash, str(value));
 			if (num > 1)
 				eos.sync_states->at(id) = 1;
+
+			changed = 2;
 		}
 	}
 		break;
@@ -474,205 +484,61 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 					eos.sync_states->at(id) = 1;
 			}
 			data = nullptr;
+			if (changed)
+				changed = 2;
 		}
 			break;
 		case DataInt:
-			switch (ti->vec_size)
+			changed = input_int_n(display_name.c_str(), ti->vec_size, (int*)data, same);
+			if (ImGui::IsItemActivated())
 			{
-			case 1:
-				changed = ImGui::InputInt(display_name.c_str(), (int*)data);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(int*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(int*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if (just_exit_editing && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-					if (num > 1)
-						eos.sync_states->at(id) = 1;
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(int*)data));
-				break;
-			case 2:
-				changed = input_int_n(display_name.c_str(), 2, (int*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(ivec2*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(ivec2*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if (just_exit_editing && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(ivec2*)data));
-				break;
-			case 3:
-				changed = input_int_n(display_name.c_str(), 3, (int*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(ivec3*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(ivec3*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if (just_exit_editing && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(ivec3*)data));
-				break;
-			case 4:
-				changed = input_int_n(display_name.c_str(), 4, (int*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(ivec4*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(ivec4*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if (just_exit_editing && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(ivec4*)data));
-				break;
+				before_editing_values.resize(num);
+				before_editing_values[0] = str(*(int*)data);
+				for (auto i = 1; i < num; i++)
+					before_editing_values[i] = str(ti->vec_size, (int*)type->get_value(objs[i], offset, getter));
 			}
+			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			if (changed)
+			{
+				if (just_exit_editing && !direct_io)
+					type->set_value(objs[0], offset, setter, data);
+				if (direct_io || just_exit_editing)
+				{
+					for (auto i = 1; i < num; i++)
+						type->set_value(objs[i], offset, setter, data);
+				}
+				if (num > 1)
+					eos.sync_states->at(id) = 1;
+			}
+			if (just_exit_editing)
+				add_modify_history(name_hash, str(ti->vec_size, (int*)data));
+			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataFloat:
-			switch (ti->vec_size)
+			changed = input_float_n(display_name.c_str(), ti->vec_size, (float*)data, same);
+			if (ImGui::IsItemActivated())
 			{
-			case 1:
-				changed = ImGui::DragFloat(display_name.c_str(), (float*)data, 0.01f);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(float*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(float*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if ((changed > 1 || just_exit_editing) && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || (changed > 1 || just_exit_editing))
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-					if (num > 1)
-						eos.sync_states->at(id) = 1;
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(float*)data));
-				break;
-			case 2:
-				changed = input_float_n(display_name.c_str(), 2, (float*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(vec2*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(vec2*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if ((changed > 1 || just_exit_editing) && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || (changed > 1 || just_exit_editing))
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(vec2*)data));
-				break;
-			case 3:
-				changed = input_float_n(display_name.c_str(), 3, (float*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(vec3*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(vec3*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if ((changed > 1 || just_exit_editing) && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || (changed > 1 || just_exit_editing))
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(vec3*)data));
-				break;
-			case 4:
-				changed = input_float_n(display_name.c_str(), 4, (float*)data, same);
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(vec4*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(vec4*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				if (changed)
-				{
-					if ((changed > 1 || just_exit_editing) && !direct_io)
-						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || (changed > 1 || just_exit_editing))
-					{
-						for (auto i = 1; i < num; i++)
-							type->set_value(objs[i], offset, setter, data);
-					}
-				}
-				if (just_exit_editing)
-					add_modify_history(name_hash, str(*(vec4*)data));
-				break;
+				before_editing_values.resize(num);
+				before_editing_values[0] = str(*(float*)data);
+				for (auto i = 1; i < num; i++)
+					before_editing_values[i] = str(ti->vec_size, (float*)type->get_value(objs[i], offset, getter));
 			}
+			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			if (changed)
+			{
+				if ((changed > 1 || just_exit_editing) && !direct_io)
+					type->set_value(objs[0], offset, setter, data);
+				if (direct_io || (changed > 1 || just_exit_editing))
+				{
+					for (auto i = 1; i < num; i++)
+						type->set_value(objs[i], offset, setter, data);
+				}
+				if (num > 1)
+					eos.sync_states->at(id) = 1;
+			}
+			if (just_exit_editing)
+				add_modify_history(name_hash, str(ti->vec_size, (float*)data));
+			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataChar:
 			switch (ti->vec_size)
@@ -706,6 +572,8 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				}
 				if (just_exit_editing)
 					add_modify_history(name_hash, str(*(cvec4*)data));
+				if (changed)
+					changed = 2;
 			}
 				break;
 			}
@@ -743,6 +611,7 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			}
 			if (just_exit_editing)
 				add_modify_history(name_hash, *(std::string*)data);
+			changed = just_exit_editing ? 2 : changed > 0;
 		}
 			break;
 		case DataWString:
@@ -793,6 +662,8 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 					type->set_value(objs[i], offset, setter, data);
 				if (num > 1)
 					eos.sync_states->at(id) = 1;
+
+				changed = 2;
 			}
 		}
 			break;
@@ -806,29 +677,38 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Get"))
-				sv.assign(nullptr, pv);
-			ImGui::SameLine();
-			if (ImGui::Button("Set"))
-			{
+			auto set_sv = [&]() {
 				if (!setter)
-					sv.assign((char*)objs[0] + offset, nullptr);
+					sv.assign(pv, nullptr);
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
-			}
+			};
+			if (ImGui::IsItemDeactivated())
+				sv.assign(nullptr, pv);
 			int n = sv.count();
-			if (ImGui::InputInt("size", &n, 1, 1))
+			ImGui::InputInt("size", &n, 1, 1);
+			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				n = clamp(n, 0, 16);
 				sv.resize(nullptr, n);
+				set_sv();
+
+				changed = 2;
 			}
+			editing_objects.push(EditingObjects());
 			for (auto i = 0; i < n; i++)
 			{
 				ImGui::PushID(i);
 				auto ptr = sv.v.data();
-				if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id))
+				if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
 					changed = true;
 				ImGui::PopID();
+			}
+			editing_objects.pop();
+			if (changed)
+			{
+				set_sv();
+
+				changed = 2;
 			}
 			ImGui::TreePop();
 		}
@@ -840,30 +720,40 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Get"))
-				sv.assign(nullptr, pv);
-			ImGui::SameLine();
-			if (ImGui::Button("Set"))
-			{
+			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
-			}
+			};
+			if (ImGui::IsItemDeactivated())
+				sv.assign(nullptr, pv);
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
-			if (ImGui::InputInt("size", &n, 1, 1))
+			ImGui::InputInt("size", &n, 1, 1);
+			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				n = clamp(n, 0, 16);
 				sv.resize(nullptr, n);
+				set_sv();
+
+				changed = 2;
 			}
+			editing_objects.push(EditingObjects());
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
 				ImGui::PushID(i);
 				voidptr obj = sv.v.data() + ui.size * i;
-				manipulate_udt(ui, &obj);
+				if (manipulate_udt(ui, &obj) > 1)
+					changed = true;
 				ImGui::PopID();
+			}
+			editing_objects.pop();
+			if (changed)
+			{
+				set_sv();
+
+				changed = 2;
 			}
 			ImGui::TreePop();
 		}
@@ -875,22 +765,24 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Get"))
-				sv.assign(nullptr, pv);
-			ImGui::SameLine();
-			if (ImGui::Button("Set"))
-			{
+			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
-			}
+			};
+			if (ImGui::IsItemDeactivated())
+				sv.assign(nullptr, pv);
 			int n = sv.count();
-			if (ImGui::InputInt("size", &n, 1, 1))
+			ImGui::InputInt("size", &n, 1, 1);
+			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				n = clamp(n, 0, 16);
 				sv.resize(nullptr, n);
+				set_sv();
+
+				changed = 2;
 			}
+			editing_objects.push(EditingObjects());
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
@@ -898,9 +790,18 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				auto p = sv.v.data() + ti->size * i;
 				auto ptr0 = ti->first(p);
 				auto ptr1 = ti->second(p);
-				manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id);
-				manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id);
+				if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id) > 1)
+					changed = true;
+				if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id) > 1)
+					changed = true;
 				ImGui::PopID();
+			}
+			editing_objects.pop();
+			if (changed)
+			{
+				set_sv();
+
+				changed = 2;
 			}
 			ImGui::TreePop();
 		}
@@ -912,22 +813,24 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
 			auto& sv = get_staging_vector(id, ti, pv);
-			if (ImGui::Button("Get"))
-				sv.assign(nullptr, pv);
-			ImGui::SameLine();
-			if (ImGui::Button("Set"))
-			{
+			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
-			}
+			};
+			if (ImGui::IsItemDeactivated())
+				sv.assign(nullptr, pv);
 			int n = sv.count();
-			if (ImGui::InputInt("size", &n, 1, 1))
+			ImGui::InputInt("size", &n, 1, 1);
+			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
-				n = clamp(n, 0, 16);
 				sv.resize(nullptr, n);
+				set_sv();
+
+				changed = 2;
 			}
+			editing_objects.push(EditingObjects());
 			for (auto i = 0; i < n; i++)
 			{
 				if (i > 0) ImGui::Separator();
@@ -937,10 +840,18 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 				for (auto& t : ti->tis)
 				{
 					auto ptr = p + t.second;
-					manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id);
+					if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
+						changed = true;
 					j++;
 				}
 				ImGui::PopID();
+			}
+			editing_objects.pop();
+			if (changed)
+			{
+				set_sv();
+
+				changed = 2;
 			}
 			ImGui::TreePop();
 		}
@@ -948,7 +859,7 @@ bool manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash
 	}
 	ImGui::PopID();
 
-	return changed > 0;
+	return changed;
 }
 
 uint manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)
@@ -1044,16 +955,21 @@ void View_Inspector::on_draw()
 		editing_objects.emplace(EditingObjects(1, 0, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
 
 		ImGui::PushID("flame::Entity"_h);
+		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size());
 		if (editing_entities.entities.size() == 1 && entity->prefab_instance)
 		{
 			auto& path = entity->prefab_instance->filename;
 			auto str = path.string();
-			ImGui::InputText("prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
 				selection.select(Path::get(path), "inspector"_h);
+			if (ImGui::Button("Apply Changes"))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button("Discard Changes"))
+				;
 		}
-		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size());
 		ImGui::PopID();
 
 		editing_objects.pop();
@@ -1146,9 +1062,17 @@ void View_Inspector::on_draw()
 								if (auto material = graphics::Material::get(name); material)
 								{
 									editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
-									manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
+									auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
 									editing_objects.pop();
 									graphics::Material::release(material);
+									if (changed)
+									{
+										auto path = Path::get(name);
+										material->save(path);
+										auto asset = AssetManagemant::find(path);
+										if (asset)
+											asset->lwt = std::filesystem::last_write_time(path);
+									}
 								}
 								ImGui::TreePop();
 							}
@@ -1412,13 +1336,6 @@ void View_Inspector::on_draw()
 						ImGui::Image(sel_ref_obj, (vec2)image->extent);
 					if (view_type != 0)
 						ImGui::PopImageViewType();
-					if (ImGui::Button("Save"))
-					{
-						image->save(path);
-						auto asset = AssetManagemant::find(path);
-						if (asset)
-							asset->active = false;
-					}
 				}
 			}
 			else if (ext == L".fmat")
@@ -1439,14 +1356,14 @@ void View_Inspector::on_draw()
 				{
 					auto material = (graphics::MaterialPtr)sel_ref_obj;
 					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &path, 1));
-					manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
+					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
 					editing_objects.pop();
-					if (ImGui::Button("Save"))
+					if (changed)
 					{
 						material->save(path);
 						auto asset = AssetManagemant::find(path);
 						if (asset)
-							asset->active = false;
+							asset->lwt = std::filesystem::last_write_time(path);
 					}
 				}
 			}

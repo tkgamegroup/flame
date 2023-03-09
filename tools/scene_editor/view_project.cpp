@@ -222,18 +222,8 @@ void View_Project::init()
 			{
 				for (auto& file : get_clipboard_files())
 				{
-					auto stem = file.filename().stem();
-					auto ext = file.extension();
-					auto dst = path / file.filename();
-					auto n = 2;
-					while (std::filesystem::exists(dst))
-					{
-						dst = path / stem;
-						dst += wstr(n++);
-						dst += ext;
-					}
 					std::error_code ec;
-					std::filesystem::copy_file(file, dst, ec);
+					std::filesystem::copy_file(file, get_unique_filename(path / file.filename().stem(), file.extension()), ec);
 				}
 			}
 		}
@@ -634,10 +624,16 @@ void View_Project::on_draw()
 			{
 				if (auto asset = AssetManagemant::find(p.first); asset)
 				{
-					if (asset->active)
-						changed_assets.emplace_back(asset, p.first);
+					if (p.second & FileModified)
+					{
+						if (auto lwt = std::filesystem::last_write_time(p.first); lwt > asset->lwt)
+						{
+							changed_assets.emplace_back(asset, p.first);
+							asset->lwt = lwt;
+						}
+					}
 					else
-						asset->active = true;
+						changed_assets.emplace_back(asset, p.first);
 				}
 				auto ext = p.first.extension();
 				if (ext == L".glsl")

@@ -37,9 +37,9 @@ namespace flame
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
 		if (auto model_and_index = parse_name(mesh_name); !model_and_index.first.empty())
-			AssetManagemant::release_asset(Path::get(model_and_index.first));
+			AssetManagemant::release(Path::get(model_and_index.first));
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 		if (model)
 			graphics::Model::release(model);
 		if (material)
@@ -119,9 +119,9 @@ namespace flame
 		if (model_and_index.first != _model_and_index.first)
 		{
 			if (!model_and_index.first.empty())
-				AssetManagemant::release_asset(Path::get(model_and_index.first));
+				AssetManagemant::release(Path::get(model_and_index.first));
 			if (!_model_and_index.first.empty())
-				AssetManagemant::get_asset(Path::get(_model_and_index.first));
+				AssetManagemant::get(Path::get(_model_and_index.first));
 		}
 
 		graphics::ModelPtr _model = nullptr;
@@ -158,10 +158,10 @@ namespace flame
 		if (material_name == name)
 			return;
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 		material_name = name;
 		if (!material_name.empty())
-			AssetManagemant::get_asset(Path::get(material_name));
+			AssetManagemant::get(Path::get(material_name));
 
 		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)

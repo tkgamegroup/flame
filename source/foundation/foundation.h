@@ -342,7 +342,7 @@ namespace flame
 			uint type;
 			void* obj;
 
-			bool active = true;
+			std::filesystem::file_time_type lwt;
 
 			uint ref = 0;
 		};
@@ -357,8 +357,8 @@ namespace flame
 			return &it->second;
 		}
 
-		FLAME_FOUNDATION_API static Asset& get_asset(const std::filesystem::path& path);
-		FLAME_FOUNDATION_API static void release_asset(const std::filesystem::path& path);
+		FLAME_FOUNDATION_API static Asset& get(const std::filesystem::path& path);
+		FLAME_FOUNDATION_API static void release(const std::filesystem::path& path);
 	};
 
 	FLAME_FOUNDATION_API extern uint frames;

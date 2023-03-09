@@ -12,10 +12,10 @@ namespace flame
 		if (sky_map_name == name)
 			return;
 		if (!sky_map_name.empty())
-			AssetManagemant::release_asset(Path::get(sky_map_name));
+			AssetManagemant::release(Path::get(sky_map_name));
 		sky_map_name = name;
 		if (!sky_map_name.empty())
-			AssetManagemant::get_asset(Path::get(sky_map_name));
+			AssetManagemant::get(Path::get(sky_map_name));
 
 		auto _sky_map = !sky_map_name.empty() ? graphics::Image::get(sky_map_name) : nullptr;
 		if (sky_map != _sky_map)

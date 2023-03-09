@@ -472,6 +472,8 @@ namespace flame
 													fn = dst;
 												}
 											}
+											if (material->textures.size() <= map_id)
+												material->textures.resize(map_id + 1);
 											auto& texture = material->textures[map_id];
 											texture.filename = Path::rebase(parent_path, fn);
 											texture.srgb = true;
@@ -955,6 +957,8 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
+							if (material->textures.size() <= map_id)
+								material->textures.resize(map_id + 1);
 							material->textures[map_id].filename = Path::reverse(find_file(parent_path, name));
 							material->color_map = map_id++;
 						}
@@ -966,6 +970,8 @@ namespace flame
 						auto name = std::string(ai_name.C_Str());
 						if (!name.empty())
 						{
+							if (material->textures.size() <= map_id)
+								material->textures.resize(map_id + 1);
 							material->textures[map_id].filename = Path::reverse(find_file(parent_path, name));
 							material->alpha_map = map_id++;
 						}

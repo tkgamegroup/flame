@@ -17,7 +17,7 @@ namespace flame
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 	}
 
 	void cParticleSystemPrivate::set_emitt_rotation(const vec3& r)
@@ -35,10 +35,10 @@ namespace flame
 		if (material_name == name)
 			return;
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 		material_name = name;
 		if (!material_name.empty())
-			AssetManagemant::get_asset(Path::get(material_name));
+			AssetManagemant::get(Path::get(material_name));
 
 		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)

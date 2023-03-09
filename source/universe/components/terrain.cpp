@@ -56,7 +56,7 @@ namespace flame
 		if (!height_map_name.empty())
 		{
 			if (!height_map_name.native().starts_with(L"0x"))
-				AssetManagemant::release_asset(Path::get(height_map_name));
+				AssetManagemant::release(Path::get(height_map_name));
 			else
 				old_one = nullptr;
 		}
@@ -65,7 +65,7 @@ namespace flame
 		{
 			if (!height_map_name.native().starts_with(L"0x"))
 			{
-				AssetManagemant::get_asset(Path::get(height_map_name));
+				AssetManagemant::get(Path::get(height_map_name));
 				height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
 			}
 			else
@@ -73,10 +73,10 @@ namespace flame
 		}
 
 		if (!height_map_name.empty())
-			AssetManagemant::release_asset(Path::get(height_map_name));
+			AssetManagemant::release(Path::get(height_map_name));
 		height_map_name = name;
 		if (!height_map_name.empty())
-			AssetManagemant::get_asset(Path::get(height_map_name));
+			AssetManagemant::get(Path::get(height_map_name));
 
 		if (height_map != old_one)
 		{
@@ -95,10 +95,10 @@ namespace flame
 		if (material_name == name)
 			return;
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 		material_name = name;
 		if (!material_name.empty())
-			AssetManagemant::get_asset(Path::get(material_name));
+			AssetManagemant::get(Path::get(material_name));
 
 		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
 		if (material != _material)
@@ -163,10 +163,10 @@ namespace flame
 		if (grass_texture_name == name)
 			return;
 		if (!grass_texture_name.empty())
-			AssetManagemant::release_asset(Path::get(grass_texture_name));
+			AssetManagemant::release(Path::get(grass_texture_name));
 		grass_texture_name = name;
 		if (!grass_texture_name.empty())
-			AssetManagemant::get_asset(Path::get(grass_texture_name));
+			AssetManagemant::get(Path::get(grass_texture_name));
 
 		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true, true, 0.5f) : nullptr;
 		if (grass_texture != _texture)
@@ -198,11 +198,11 @@ namespace flame
 		if (grass_texture_id != -1)
 			sRenderer::instance()->release_texture_res(grass_texture_id);
 		if (!height_map_name.empty())
-			AssetManagemant::release_asset(Path::get(height_map_name));
+			AssetManagemant::release(Path::get(height_map_name));
 		if (!material_name.empty())
-			AssetManagemant::release_asset(Path::get(material_name));
+			AssetManagemant::release(Path::get(material_name));
 		if (!grass_texture_name.empty())
-			AssetManagemant::release_asset(Path::get(grass_texture_name));
+			AssetManagemant::release(Path::get(grass_texture_name));
 		if (height_map && !height_map_name.native().starts_with(L"0x"))
 			graphics::Image::release(height_map);
 		if (grass_texture)

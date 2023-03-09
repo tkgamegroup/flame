@@ -1414,7 +1414,7 @@ namespace flame
 			}
 
 			UnserializeTextSpec spec;
-			spec.delegates[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.typed_delegates[TypeInfo::get<PipelineLayout*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 				{
@@ -1431,7 +1431,7 @@ namespace flame
 				layout_source.path = layout->filename;
 				return layout;
 			};
-			spec.delegates[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.typed_delegates[TypeInfo::get<Shader*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (!value.empty())
 				{
@@ -1480,7 +1480,7 @@ namespace flame
 				}
 				return INVALID_POINTER;
 			};
-			spec.delegates[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
+			spec.typed_delegates[TypeInfo::get<Renderpass*>()] = [&](const TextSerializeNode& src)->void* {
 				auto value = src.value();
 				if (value.starts_with("0x"))
 					return (void*)s2u_hex<uint64>(value.substr(2));
@@ -1504,7 +1504,8 @@ namespace flame
 			for (auto& d : pipeline_defines)
 			{
 				auto sp = SUS::split(d, '=');
-				splited_pipeline_defines.emplace_back(sp[0], sp[1]);
+				if (sp.size() == 2)
+					splited_pipeline_defines.emplace_back(sp[0], sp[1]);
 			}
 			unserialize_text(res, &info, spec, splited_pipeline_defines);
 

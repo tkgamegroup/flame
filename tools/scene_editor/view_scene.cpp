@@ -621,11 +621,19 @@ void View_Scene::on_draw()
 					});
 					if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 					{
+						auto get_top_entity = [](EntityPtr e) {
+							if (auto ins = get_prefab_instance(e); ins)
+							{
+								if (!selection.selecting(ins->e))
+									return ins->e;
+							}
+							return e;
+						};
 						if (ImGui::IsKeyDown(Keyboard_Ctrl))
 						{
 							if (hovering_node)
 							{
-								auto e = hovering_node->entity;
+								auto e = get_top_entity(hovering_node->entity);
 								auto entities = selection.get_entities();
 								auto found = false;
 								for (auto it = entities.begin(); it != entities.end();)
@@ -647,7 +655,7 @@ void View_Scene::on_draw()
 						else
 						{
 							if (hovering_node)
-								selection.select(hovering_node->entity, "scene"_h);
+								selection.select(get_top_entity(hovering_node->entity), "scene"_h);
 							else
 								selection.clear("scene"_h);
 						}
