@@ -124,7 +124,15 @@ void App::init()
 				vs_automate({ L"attach_debugger" });
 			if (ImGui::MenuItem("Detach Debugger"))
 				vs_automate({ L"detach_debugger" });
-			if (ImGui::MenuItem("CMake it"))
+			if (ImGui::MenuItem("Open In VS"))
+			{
+				auto vs_path = get_special_path("Visual Studio Installation Location");
+				auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
+				auto sln_path = project_path / L"build";
+				sln_path = glob_files(sln_path, L".sln")[0];
+				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
+			}
+			if (ImGui::MenuItem("Do CMake"))
 				cmake_project();
 			if (ImGui::MenuItem("Build (Ctrl+B)"))
 				build_project();

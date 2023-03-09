@@ -605,6 +605,17 @@ namespace flame
 		return ret;
 	}
 
+	inline std::vector<std::filesystem::path> glob_files(const std::filesystem::path& dir, const std::filesystem::path& ext)
+	{
+		std::vector<std::filesystem::path> ret;
+		for (auto& it : std::filesystem::directory_iterator(dir))
+		{
+			if (it.path().extension() == ext)
+				ret.push_back(it.path());
+		}
+		return ret;
+	}
+
 	inline bool read_b(std::ifstream& f)
 	{
 		char ch;

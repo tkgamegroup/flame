@@ -147,11 +147,12 @@ namespace flame
 			std::vector<std::unique_ptr<Item>> items;
 			std::filesystem::path selected_path;
 
-			std::function<void(const std::filesystem::path&)> select_callback;
-			std::function<void(const std::filesystem::path&)> dbclick_callback;
-			std::function<void(const std::filesystem::path&)> item_context_menu_callback;
-			std::function<void(const std::filesystem::path&)> folder_context_menu_callback;
-			std::function<void(const std::filesystem::path&)> folder_drop_callback;
+			std::function<void(const std::filesystem::path&)>						select_callback;
+			std::function<void(const std::filesystem::path&)>						dbclick_callback;
+			std::function<void(const std::filesystem::path&)>						item_context_menu_callback;
+			std::function<void(const std::filesystem::path&)>						folder_context_menu_callback;
+			std::function<void(const std::filesystem::path&)>						folder_drop_callback;
+			std::function<bool(const std::filesystem::path&, std::vector<Item*>*)>	special_folder_provider;
 
 			inline void reset_n(const std::vector<std::filesystem::path>& paths)
 			{
@@ -235,65 +236,46 @@ namespace flame
 					folder->mark_upstream_open();
 					folder->read_children();
 
-					if (std::filesystem::is_directory(folder->path))
+					auto processed = false;
+					if (special_folder_provider)
 					{
-						std::vector<Item*> dirs;
-						std::vector<Item*> files;
-						for (auto& it : std::filesystem::directory_iterator(folder->path))
+						std::vector<Item*> new_items;
+						if (special_folder_provider(folder->path, &new_items))
 						{
-							if (std::filesystem::is_directory(it.status()))
-								dirs.push_back(new Item(it.path()));
-							else
-								files.push_back(new Item(it.path()));
-						}
-						std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
-							return a->path < b->path;
-							});
-						std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
-							return a->path < b->path;
-							});
-						for (auto i : dirs)
-						{
-							i->has_children = true;
-							items.emplace_back(i);
-						}
-						for (auto i : files)
-						{
-							if (i->path.extension() == L".fmod")
-								i->has_children = true;
-							items.emplace_back(i);
+							for (auto i : new_items)
+								items.emplace_back(i);
+							processed = true;
 						}
 					}
-					else
+					if (!processed)
 					{
-						auto ext = folder->path.extension();
-						if (ext == L".fmod")
+						if (std::filesystem::is_directory(folder->path))
 						{
-							std::ifstream file(folder->path);
-							if (file.good())
+							std::vector<Item*> dirs;
+							std::vector<Item*> files;
+							for (auto& it : std::filesystem::directory_iterator(folder->path))
 							{
-								LineReader src(file);
-								src.read_block("model:");
-								pugi::xml_document doc;
-								pugi::xml_node doc_root;
-								if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
-								{
-									for (auto n_bone : doc_root.child("bones"))
-									{
-										auto path = folder->path;
-										path += L"#armature";
-										items.emplace_back(new Item(path, "armature"));
-										break;
-									}
-									auto idx = 0;
-									for (auto n_mesh : doc_root.child("meshes"))
-									{
-										auto path = folder->path;
-										path += L"#mesh" + wstr(idx);
-										items.emplace_back(new Item(path, "mesh " + str(idx)));
-										idx++;
-									}
-								}
+								if (std::filesystem::is_directory(it.status()))
+									dirs.push_back(new Item(it.path()));
+								else
+									files.push_back(new Item(it.path()));
+							}
+							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
+								return a->path < b->path;
+								});
+							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
+								return a->path < b->path;
+								});
+							for (auto i : dirs)
+							{
+								i->has_children = true;
+								items.emplace_back(i);
+							}
+							for (auto i : files)
+							{
+								if (special_folder_provider && special_folder_provider(i->path, nullptr))
+									i->has_children = true;
+								items.emplace_back(i);
 							}
 						}
 					}
@@ -513,11 +495,6 @@ namespace flame
 							{
 								if (folder_context_menu_callback)
 									folder_context_menu_callback(opened_folder->path);
-								else
-								{
-									//if (ImGui::MenuItem("New Folder"))
-									//	std::filesystem::create_directory();
-								}
 								ImGui::EndPopup();
 							}
 						}

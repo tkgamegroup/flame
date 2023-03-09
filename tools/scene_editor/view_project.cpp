@@ -30,6 +30,7 @@ void View_Project::reset()
 	auto cpp_path = app.project_path;
 	
 	std::vector<std::filesystem::path> paths;
+	paths.push_back(std::filesystem::path(L"favorites"));
 	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
 
 	if (!app.project_path.empty())
@@ -539,6 +540,52 @@ void View_Project::init()
 			}
 		}
 	};
+	using ExplorerItem = graphics::ExplorerAbstract::Item;
+	explorer.special_folder_provider = [](const std::filesystem::path& path, std::vector<ExplorerItem*>* out_items) {
+		if (path == L"favorites")
+		{
+			if (out_items)
+			{
+
+			}
+			return true;
+		}
+		auto ext = path.extension();
+		if (ext == L".fmod")
+		{
+			if (out_items)
+			{
+				std::ifstream file(path);
+				if (file.good())
+				{
+					LineReader src(file);
+					src.read_block("model:");
+					pugi::xml_document doc;
+					pugi::xml_node doc_root;
+					if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
+					{
+						for (auto n_bone : doc_root.child("bones"))
+						{
+							auto p = path;
+							p += L"#armature";
+							out_items->push_back(new ExplorerItem(p, "armature"));
+							break;
+						}
+						auto idx = 0;
+						for (auto n_mesh : doc_root.child("meshes"))
+						{
+							auto p = path;
+							p += L"#mesh" + wstr(idx);
+							out_items->push_back(new ExplorerItem(p, "mesh " + str(idx)));
+							idx++;
+						}
+					}
+				}
+			}
+			return true;
+		}
+		return false;
+	};
 }
 
 void View_Project::on_draw()
@@ -597,6 +644,7 @@ void View_Project::on_draw()
 		std::pair<std::vector<graphics::GraphicsPipelinePtr>, uint>				graphics_pipelines;
 		std::map<graphics::ShaderPtr, uint>										changed_shaders;
 		std::map<graphics::GraphicsPipelinePtr, uint>							changed_pipelines;
+		bool																	project_changed = false;
 		auto get_materials = [&]() {
 			if (materials.second < frames)
 			{
@@ -687,6 +735,15 @@ void View_Project::on_draw()
 					}
 				}
 			}
+
+			for (auto it = p.first.begin(); it != p.first.end(); it++)
+			{
+				if (*it == L"cpp")
+				{
+					project_changed = true;
+					break;
+				}
+			}
 		}
 		if (!changed_assets.empty())
 		{
@@ -745,6 +802,8 @@ void View_Project::on_draw()
 			sd.first->recreate();
 		for (auto& pl : changed_pipelines)
 			pl.first->recreate();
+		if (project_changed)
+			app.cmake_project();
 
 		changed_paths.clear();
 	}
