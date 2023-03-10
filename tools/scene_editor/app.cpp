@@ -8,6 +8,7 @@
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
+#include <flame/foundation/typeinfo_serialize.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
@@ -830,6 +831,10 @@ void App::open_project(const std::filesystem::path& path)
 		assert(0);
 
 	load_project_cpp();
+
+	project_settings.load(project_path / L"project_settings.xml");
+	for (auto& p : project_settings.favorites)
+		p = Path::get(p);
 }
 
 void App::cmake_project()
@@ -1319,6 +1324,10 @@ int main(int argc, char** args)
 	}
 
 	app.run();
+
+	for (auto& p : app.project_settings.favorites)
+		p = Path::reverse(p);
+	app.project_settings.save();
 
 	std::ofstream preferences_o(preferences_path);
 	preferences_o << "[opened_windows]\n";

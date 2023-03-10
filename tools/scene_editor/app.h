@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/universe/application.h>
+#include <flame/universe/project/project_settings.h>
 
 using namespace flame;
 
@@ -54,6 +55,8 @@ struct App : UniverseApplication
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
 	bool control = true;
+
+	ProjectSettings project_settings;
 
 	Tool tool = ToolSelect;
 	ToolPivot tool_pivot = ToolIndividual;

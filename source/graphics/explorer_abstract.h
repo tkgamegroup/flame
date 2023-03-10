@@ -129,6 +129,8 @@ namespace flame
 				{
 					if (!icon)
 						icon = (ImagePtr)get_icon(path);
+					if (std::filesystem::is_directory(path))
+						has_children = true;
 				}
 
 				~Item()
@@ -139,14 +141,14 @@ namespace flame
 			};
 
 			std::unique_ptr<FolderTreeNode>		folder_tree;
-			FolderTreeNode*						opened_folder = nullptr;
+			FolderTreeNode* opened_folder = nullptr;
 			uint								open_folder_frame = 0;
 			std::filesystem::path				peeding_open_path;
 			std::pair<FolderTreeNode*, bool>	peeding_open_node;
-			FolderTreeNode*						peeding_scroll_here_folder = nullptr;
+			FolderTreeNode* peeding_scroll_here_folder = nullptr;
 			std::vector<FolderTreeNode*>		folder_history;
 			int									folder_history_idx = -1;
-			 
+
 			std::vector<std::unique_ptr<Item>>	items;
 			std::filesystem::path				selected_path;
 
@@ -271,13 +273,12 @@ namespace flame
 							}
 							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-								});
+							});
 							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-								});
+							});
 							for (auto i : dirs)
 							{
-								i->has_children = true;
 								if (item_created_callback)
 									item_created_callback(i);
 								i->on_added();
@@ -463,11 +464,8 @@ namespace flame
 								{
 									if (item->has_children)
 										peeding_open_path = item->path;
-									else
-									{
-										if (dbclick_callback)
-											dbclick_callback(item->path);
-									}
+									if (dbclick_callback)
+										dbclick_callback(item->path);
 								}
 
 								if (ImGui::BeginDragDropSource())

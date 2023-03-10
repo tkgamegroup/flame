@@ -95,7 +95,7 @@ namespace flame
 
 				graphics::gui_callbacks.add([this]() {
 					draw();
-					}, (uint)this);
+				}, (uint)this);
 			}
 
 			void close()
@@ -106,8 +106,8 @@ namespace flame
 
 				add_event([this]() {
 					graphics::gui_callbacks.remove((uint)this);
-				return false;
-					});
+					return false;
+				});
 			}
 
 			void draw()
@@ -131,7 +131,6 @@ namespace flame
 #ifdef USE_IMGUI
 				ImGui::End();
 #endif
-
 				if (closed)
 					close();
 			}

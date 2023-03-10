@@ -20,6 +20,24 @@ static graphics::ImagePtr icon_model;
 static graphics::ImagePtr icon_mesh;
 static graphics::ImagePtr icon_armature;
 
+static std::vector<std::filesystem::path> recent_paths;
+
+static std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
+{
+	auto i = 0;
+	auto p = prefix;
+	p += wstr(i);
+	p += ext;
+	while (std::filesystem::exists(p))
+	{
+		i++;
+		p = prefix;
+		p += wstr(i);
+		p += ext;
+	}
+	return p;
+}
+
 View_Project::View_Project() :
 	GuiView("Project")
 {
@@ -36,8 +54,8 @@ void View_Project::reset()
 	auto cpp_path = app.project_path;
 	
 	std::vector<std::filesystem::path> paths;
-	paths.push_back(std::filesystem::path(L"favorites"));
-	paths.push_back(std::filesystem::path(L"recents"));
+	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
+	paths.push_back(std::filesystem::path(L"Recents"));
 	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
 
 	if (!app.project_path.empty())
@@ -83,22 +101,6 @@ void View_Project::reset()
 	}
 }
 
-std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
-{
-	auto i = 0;
-	auto p = prefix;
-	p += wstr(i);
-	p += ext;
-	while (std::filesystem::exists(p))
-	{
-		i++;
-		p = prefix;
-		p += wstr(i);
-		p += ext;
-	}
-	return p;
-}
-
 void View_Project::init()
 {
 	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
@@ -141,23 +143,27 @@ void View_Project::init()
 			app.open_prefab(path);
 		else if (ext == L".h" || ext == L".cpp")
 			app.open_file_in_vs(path);
+		
+		auto it = std::find(recent_paths.begin(), recent_paths.end(), path);
+		if (it == recent_paths.end())
+			recent_paths.push_back(path);
+		else
+			std::rotate(recent_paths.begin(), it, recent_paths.end());
 	};
 	explorer.item_context_menu_callback = [this](const std::filesystem::path& path) {
+		// right click will also select the file
 		auto paths = selection.get_paths();
-		auto found = false;
-		for (auto& p : paths)
+		if (std::find(paths.begin(), paths.end(), path) == paths.end())
 		{
-			if (p == path)
+			if (ImGui::IsKeyDown(Keyboard_Shift))
 			{
-				found = true;
-				break;
+				paths.push_back(path);
+				selection.select(paths, "project"_h);
 			}
+			else
+				selection.select(path, "project"_h);
 		}
-		if (!found)
-		{
-			paths.push_back(path);
-			selection.select(paths, "project"_h);
-		}
+
 		if (ImGui::MenuItem("Show In Explorer"))
 		{
 			for (auto& p : paths)
@@ -177,6 +183,20 @@ void View_Project::init()
 			if (ImGui::MenuItem("Absolute Path"))
 				set_clipboard(path.wstring());
 			ImGui::EndMenu();
+		}
+		{
+			auto& favorites = app.project_settings.favorites;
+			auto it_favorites = std::find(favorites.begin(), favorites.end(), path);
+			if (it_favorites == favorites.end())
+			{
+				if (ImGui::MenuItem("Add to Favorites (Shift+F4)"))
+					favorites.push_back(path);
+			}
+			else
+			{
+				if (ImGui::MenuItem("Remove from Favorites (Shift+F4)"))
+					favorites.erase(it_favorites);
+			}
 		}
 		if (ImGui::MenuItem("Copy"))
 		{
@@ -567,40 +587,61 @@ void View_Project::init()
 		}
 	};
 	explorer.special_folder_provider = [](const std::filesystem::path& path, std::vector<ExplorerItem*>& out_items) {
-		auto ext = path.extension();
-		if (ext == L".fmod")
+		if (path == L"Favorites")
 		{
-			std::ifstream file(path);
-			if (file.good())
+			for (auto& p : app.project_settings.favorites)
 			{
-				LineReader src(file);
-				src.read_block("model:");
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
-				if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
-				{
-					for (auto n_bone : doc_root.child("bones"))
-					{
-						auto p = path;
-						p += L"#armature";
-						auto i = new ExplorerItem(p, "armature");
-						i->icon = icon_armature;
-						out_items.push_back(i);
-						break;
-					}
-					auto idx = 0;
-					for (auto n_mesh : doc_root.child("meshes"))
-					{
-						auto p = path;
-						p += L"#mesh" + wstr(idx);
-						auto i = new ExplorerItem(p, "mesh " + str(idx));
-						i->icon = icon_mesh;
-						out_items.push_back(i);
-						idx++;
-					}
-				}
+				auto i = new ExplorerItem(p);
+				out_items.push_back(i);
 			}
 			return true;
+		}
+		else if (path == L"Recents")
+		{
+			for (auto& p : recent_paths)
+			{
+				auto i = new ExplorerItem(p);
+				out_items.push_back(i);
+			}
+			return true;
+		}
+		else
+		{
+			auto ext = path.extension();
+			if (ext == L".fmod")
+			{
+				std::ifstream file(path);
+				if (file.good())
+				{
+					LineReader src(file);
+					src.read_block("model:");
+					pugi::xml_document doc;
+					pugi::xml_node doc_root;
+					if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
+					{
+						for (auto n_bone : doc_root.child("bones"))
+						{
+							auto p = path;
+							p += L"#armature";
+							auto i = new ExplorerItem(p, "armature");
+							i->icon = icon_armature;
+							out_items.push_back(i);
+							break;
+						}
+						auto idx = 0;
+						for (auto n_mesh : doc_root.child("meshes"))
+						{
+							auto p = path;
+							p += L"#mesh" + wstr(idx);
+							auto i = new ExplorerItem(p, "mesh " + str(idx));
+							i->icon = icon_mesh;
+							out_items.push_back(i);
+							idx++;
+						}
+					}
+				}
+				return true;
+			}
 		}
 		return false;
 	};
