@@ -14,6 +14,12 @@
 View_Project view_project;
 static auto selection_changed = false;
 
+static graphics::ImagePtr icon_prefab;
+static graphics::ImagePtr icon_material;
+static graphics::ImagePtr icon_model;
+static graphics::ImagePtr icon_mesh;
+static graphics::ImagePtr icon_armature;
+
 View_Project::View_Project() :
 	GuiView("Project")
 {
@@ -95,6 +101,12 @@ std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, c
 
 void View_Project::init()
 {
+	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
+	icon_material = graphics::Image::get(L"flame\\icon_material.png");
+	icon_model = graphics::Image::get(L"flame\\icon_model.png");
+	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
+	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
+
 	explorer.select_callback = [this](const std::filesystem::path& path) {
 		if (path.empty())
 			selection.clear("project"_h);
@@ -542,44 +554,49 @@ void View_Project::init()
 		}
 	};
 	using ExplorerItem = graphics::ExplorerAbstract::Item;
-	explorer.special_folder_provider = [](const std::filesystem::path& path, std::vector<ExplorerItem*>* out_items) {
-		if (path == L"favorites")
+	explorer.item_created_callback = [](ExplorerItem* item) {
+		auto ext = item->path.extension();
+		if (ext == L".prefab")
+			item->icon = icon_prefab;
+		else if (ext == L".fmat")
+			item->icon = icon_material;
+		else if (ext == L".fmod")
 		{
-			if (out_items)
-			{
-
-			}
-			return true;
+			item->icon = icon_model;
+			item->has_children = true;
 		}
+	};
+	explorer.special_folder_provider = [](const std::filesystem::path& path, std::vector<ExplorerItem*>& out_items) {
 		auto ext = path.extension();
 		if (ext == L".fmod")
 		{
-			if (out_items)
+			std::ifstream file(path);
+			if (file.good())
 			{
-				std::ifstream file(path);
-				if (file.good())
+				LineReader src(file);
+				src.read_block("model:");
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
 				{
-					LineReader src(file);
-					src.read_block("model:");
-					pugi::xml_document doc;
-					pugi::xml_node doc_root;
-					if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
+					for (auto n_bone : doc_root.child("bones"))
 					{
-						for (auto n_bone : doc_root.child("bones"))
-						{
-							auto p = path;
-							p += L"#armature";
-							out_items->push_back(new ExplorerItem(p, "armature"));
-							break;
-						}
-						auto idx = 0;
-						for (auto n_mesh : doc_root.child("meshes"))
-						{
-							auto p = path;
-							p += L"#mesh" + wstr(idx);
-							out_items->push_back(new ExplorerItem(p, "mesh " + str(idx)));
-							idx++;
-						}
+						auto p = path;
+						p += L"#armature";
+						auto i = new ExplorerItem(p, "armature");
+						i->icon = icon_armature;
+						out_items.push_back(i);
+						break;
+					}
+					auto idx = 0;
+					for (auto n_mesh : doc_root.child("meshes"))
+					{
+						auto p = path;
+						p += L"#mesh" + wstr(idx);
+						auto i = new ExplorerItem(p, "mesh " + str(idx));
+						i->icon = icon_mesh;
+						out_items.push_back(i);
+						idx++;
 					}
 				}
 			}

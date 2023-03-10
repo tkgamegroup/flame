@@ -75,8 +75,8 @@ namespace flame
 #endif
 		}
 
-		FLAME_GRAPHICS_API Image* get_icon(const std::filesystem::path& path, uint desired_size = 64);
-		FLAME_GRAPHICS_API void release_icon(const std::filesystem::path& path);
+		FLAME_GRAPHICS_API Image* get_icon(const std::filesystem::path& path /*image file or .ext*/, uint desired_size = 64);
+		FLAME_GRAPHICS_API void release_icon(Image* image);
 
 		struct GuiView
 		{
@@ -150,7 +150,7 @@ namespace flame
 		{
 			std::erase_if(gui_views, [&](const auto& i) {
 				return i == this;
-				});
+			});
 		}
 	}
 }

@@ -669,9 +669,17 @@ namespace flame
 			}
 		}
 
-		Image* _get_icon(const std::filesystem::path& path, uint desired_size)
+		Image* get_icon(const std::filesystem::path& path, uint desired_size)
 		{
-			auto it = icons.find(path);
+			std::filesystem::path p;
+			auto ext = path.extension();
+			auto is_image = is_image_file(ext);
+			if (is_image)
+				p = path;
+			else
+				p = ext;
+
+			auto it = icons.find(p);
 			if (it != icons.end())
 			{
 				if (it->second.first >= 0)
@@ -679,8 +687,7 @@ namespace flame
 				return it->second.second;
 			}
 
-			auto ext = path.extension();
-			if (is_image_file(ext))
+			if (is_image)
 			{
 				auto d = get_thumbnail(desired_size, path);
 				if (d.second)
@@ -692,16 +699,39 @@ namespace flame
 			}
 			else
 			{
-				auto d = get_sys_icon(path.c_str(), nullptr);
+				auto d = get_sys_icon(path, nullptr);
 				if (d.second)
 				{
 					auto image = graphics::Image::create(graphics::Format_B8G8R8A8_UNORM, uvec3(d.first, 1), d.second.get());
-					icons.emplace(path, std::make_pair(-1, image));
+					icons.emplace(ext, std::make_pair(-1, image));
 					return image;
 				}
 			}
 
 			return nullptr;
+		}
+
+		void release_icon(Image* image)
+		{
+			for (auto it = icons.begin(); it != icons.end(); it++)
+			{
+				if (it->second.second == image)
+				{
+					if (it->second.first > 0)
+					{
+						it->second.first--;
+						if (it->second.first == 0)
+						{
+							add_event([image]() {
+								delete image;
+								return false;
+							});
+							icons.erase(it);
+						}
+					}
+					break;
+				}
+			}
 		}
 
 		std::list<GuiView*> gui_views;

@@ -20,18 +20,18 @@ namespace flame
 
 				bool peeding_open = false;
 
-				inline FolderTreeNode(const std::filesystem::path& path) :
+				FolderTreeNode(const std::filesystem::path& path) :
 					FolderTreeNode(path.filename().string(), path)
 				{
 				}
 
-				inline FolderTreeNode(const std::string& name, const std::filesystem::path& path) :
+				FolderTreeNode(const std::string& name, const std::filesystem::path& path) :
 					name(name),
 					path(path)
 				{
 				}
 
-				inline void read_children()
+				void read_children()
 				{
 					if (read)
 						return;
@@ -65,7 +65,7 @@ namespace flame
 					read = true;
 				}
 
-				inline void mark_upstream_open()
+				void mark_upstream_open()
 				{
 					if (parent)
 					{
@@ -74,7 +74,7 @@ namespace flame
 					}
 				}
 
-				inline FolderTreeNode* find_node(const std::vector<std::string>& stems, uint idx)
+				FolderTreeNode* find_node(const std::vector<std::string>& stems, uint idx)
 				{
 					if (idx == stems.size())
 						return this;
@@ -92,14 +92,14 @@ namespace flame
 			{
 				inline static auto size = 64.f;
 
-				std::filesystem::path path;
-				std::string label;
-				float label_width;
-				graphics::ImagePtr icon = nullptr;
+				std::filesystem::path	path;
+				std::string				label;
+				float					label_width;
+				graphics::ImagePtr		icon = nullptr;
 
 				bool has_children = false;
 
-				inline Item(const std::filesystem::path& path, const std::string& _text = "") :
+				Item(const std::filesystem::path& path, const std::string& _text = "") :
 					path(path)
 				{
 					label = !_text.empty() ? _text : path.filename().string();
@@ -123,37 +123,42 @@ namespace flame
 						label_width = w;
 					}
 #endif
-
-					icon = (ImagePtr)get_icon(path);
 				}
 
-				inline ~Item()
+				void on_added()
+				{
+					if (!icon)
+						icon = (ImagePtr)get_icon(path);
+				}
+
+				~Item()
 				{
 					if (icon)
-						release_icon(path);
+						release_icon((Image*)icon);
 				}
 			};
 
-			std::unique_ptr<FolderTreeNode> folder_tree;
-			FolderTreeNode* opened_folder = nullptr;
-			uint open_folder_frame = 0;
-			std::filesystem::path peeding_open_path;
-			std::pair<FolderTreeNode*, bool> peeding_open_node;
-			FolderTreeNode* peeding_scroll_here_folder = nullptr;
-			std::vector<FolderTreeNode*> folder_history;
-			int folder_history_idx = -1;
-
-			std::vector<std::unique_ptr<Item>> items;
-			std::filesystem::path selected_path;
+			std::unique_ptr<FolderTreeNode>		folder_tree;
+			FolderTreeNode*						opened_folder = nullptr;
+			uint								open_folder_frame = 0;
+			std::filesystem::path				peeding_open_path;
+			std::pair<FolderTreeNode*, bool>	peeding_open_node;
+			FolderTreeNode*						peeding_scroll_here_folder = nullptr;
+			std::vector<FolderTreeNode*>		folder_history;
+			int									folder_history_idx = -1;
+			 
+			std::vector<std::unique_ptr<Item>>	items;
+			std::filesystem::path				selected_path;
 
 			std::function<void(const std::filesystem::path&)>						select_callback;
 			std::function<void(const std::filesystem::path&)>						dbclick_callback;
 			std::function<void(const std::filesystem::path&)>						item_context_menu_callback;
 			std::function<void(const std::filesystem::path&)>						folder_context_menu_callback;
 			std::function<void(const std::filesystem::path&)>						folder_drop_callback;
-			std::function<bool(const std::filesystem::path&, std::vector<Item*>*)>	special_folder_provider;
+			std::function<void(Item*)>												item_created_callback;
+			std::function<bool(const std::filesystem::path&, std::vector<Item*>&)>	special_folder_provider;
 
-			inline void reset_n(const std::vector<std::filesystem::path>& paths)
+			void reset_n(const std::vector<std::filesystem::path>& paths)
 			{
 				items.clear();
 				opened_folder = nullptr;
@@ -175,12 +180,12 @@ namespace flame
 				}
 			}
 
-			inline void reset(const std::filesystem::path& path)
+			void reset(const std::filesystem::path& path)
 			{
 				reset_n({ path });
 			}
 
-			inline FolderTreeNode* find_folder(const std::filesystem::path& _path)
+			FolderTreeNode* find_folder(const std::filesystem::path& _path)
 			{
 				if (!folder_tree)
 					return nullptr;
@@ -209,7 +214,7 @@ namespace flame
 				return sub_find(folder_tree.get());
 			}
 
-			inline void open_folder(FolderTreeNode* folder, bool from_histroy = false)
+			void open_folder(FolderTreeNode* folder, bool from_histroy = false)
 			{
 				if (!folder)
 					folder = folder_tree.get();
@@ -239,12 +244,13 @@ namespace flame
 					if (special_folder_provider)
 					{
 						std::vector<Item*> new_items;
-						if (special_folder_provider(folder->path, &new_items))
+						if (special_folder_provider(folder->path, new_items))
 						{
 							for (auto i : new_items)
 							{
-								if (special_folder_provider(i->path, nullptr))
-									i->has_children = true;
+								if (item_created_callback)
+									item_created_callback(i);
+								i->on_added();
 								items.emplace_back(i);
 							}
 							processed = true;
@@ -272,12 +278,16 @@ namespace flame
 							for (auto i : dirs)
 							{
 								i->has_children = true;
+								if (item_created_callback)
+									item_created_callback(i);
+								i->on_added();
 								items.emplace_back(i);
 							}
 							for (auto i : files)
 							{
-								if (special_folder_provider && special_folder_provider(i->path, nullptr))
-									i->has_children = true;
+								if (item_created_callback)
+									item_created_callback(i);
+								i->on_added();
 								items.emplace_back(i);
 							}
 						}
@@ -285,7 +295,7 @@ namespace flame
 				}
 			}
 
-			inline void ping(const std::filesystem::path& path)
+			void ping(const std::filesystem::path& path)
 			{
 				std::filesystem::path p;
 				auto sp = SUW::split(path.wstring(), '#');
@@ -302,7 +312,7 @@ namespace flame
 				}
 			}
 
-			inline void draw()
+			void draw()
 			{
 				if (!peeding_open_path.empty())
 				{
