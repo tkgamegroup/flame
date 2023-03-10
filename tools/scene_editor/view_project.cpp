@@ -20,7 +20,7 @@ static graphics::ImagePtr icon_model;
 static graphics::ImagePtr icon_mesh;
 static graphics::ImagePtr icon_armature;
 
-static std::vector<std::filesystem::path> recent_paths;
+static std::deque<std::filesystem::path> recent_paths;
 
 static std::filesystem::path get_unique_filename(const std::filesystem::path& prefix, const std::filesystem::path& ext = L"")
 {
@@ -146,7 +146,11 @@ void View_Project::init()
 		
 		auto it = std::find(recent_paths.begin(), recent_paths.end(), path);
 		if (it == recent_paths.end())
-			recent_paths.push_back(path);
+		{
+			recent_paths.push_front(path);
+			if (recent_paths.size() > 20)
+				recent_paths.pop_back();
+		}
 		else
 			std::rotate(recent_paths.begin(), it, recent_paths.end());
 	};

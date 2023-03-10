@@ -48,6 +48,7 @@ struct App : UniverseApplication
 
 	std::filesystem::path project_path;
 	std::filesystem::path prefab_path;
+	bool prefab_unsaved = false;
 	void* project_cpp_library = nullptr;
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;

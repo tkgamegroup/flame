@@ -288,6 +288,7 @@ void View_Scene::on_draw()
 						for (auto i = 0; i < ids.size(); i++)
 							new_values[i] = str(targets[i]->pos);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
+						app.prefab_unsaved = true;
 					}
 					if (app.tool == ToolRotate)
 					{
@@ -308,6 +309,7 @@ void View_Scene::on_draw()
 								new_values[i] = str(targets[i]->pos);
 							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 						}
+						app.prefab_unsaved = true;
 					}
 					if (app.tool == ToolScale)
 					{
@@ -318,6 +320,7 @@ void View_Scene::on_draw()
 						for (auto i = 0; i < ids.size(); i++)
 							new_values[i] = str(targets[i]->scl);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, old_values, new_values));
+						app.prefab_unsaved = true;
 					}
 				}
 				last_gizmo_using = gizmo_using;
@@ -722,6 +725,9 @@ void View_Scene::on_draw()
 bool View_Scene::on_begin()
 {
 	bool open = true;
-	ImGui::Begin(name.c_str(), &open);
+	ImGui::Begin(app.prefab_unsaved ? "Scene *###scene" : "Scene###scene", &open);
+	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
+	//  ImGuizmo not work properly
+	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
 	return !open;
 }

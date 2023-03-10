@@ -943,8 +943,11 @@ void App::open_prefab(const std::filesystem::path& path)
 
 bool App::save_prefab()
 {
-	if (e_prefab)
+	if (e_prefab && prefab_unsaved)
+	{
 		e_prefab->save(prefab_path);
+		prefab_unsaved = false;
+	}
 	return true;
 }
 

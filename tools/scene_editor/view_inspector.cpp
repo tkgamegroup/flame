@@ -300,6 +300,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	}  
 		break;
 	}
+	app.prefab_unsaved = true;
 }
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
@@ -992,10 +993,10 @@ void View_Inspector::on_draw()
 			auto& ui = *com_udts_map[cc.type_hash];
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
-			if (ImGui::Button("E"))
+			if (ImGui::Button("P"))
 			{
 				if (!ui.source_file.empty())
-					app.open_file_in_vs(ui.source_file);
+					selection.select(ui.source_file, "inspector"_h);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("..."))
