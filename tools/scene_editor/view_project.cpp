@@ -97,7 +97,7 @@ void View_Project::reset()
 	if (!app.project_path.empty())
 	{
 		assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
-		cpp_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+		cpp_file_watcher = add_file_watcher(cpp_path, file_watcher, true, false);
 	}
 }
 
@@ -164,6 +164,8 @@ void View_Project::init()
 				selection.select(path, "project"_h);
 		}
 
+		auto ext = path.extension();
+
 		if (ImGui::MenuItem("Show In Explorer"))
 		{
 			for (auto& p : paths)
@@ -229,6 +231,17 @@ void View_Project::init()
 					}
 				}
 			});
+		}
+		if (ext == L".h" || ext == L".cpp")
+		{
+			ImGui::Separator();
+			if (ImGui::MenuItem("Edit Interfaces"))
+			{
+				struct EditInterfacesDialog : ImGui::Dialog
+				{
+
+				};
+			}
 		}
 	};
 	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
@@ -522,7 +535,7 @@ void View_Project::init()
 							h_file << "{" << std::endl;
 							h_file << "\tstruct Create" << std::endl;
 							h_file << "\t{" << std::endl;
-							h_file << std::format("\t\tvirtual {}* operator()(EntityPtr) = 0", name) << std::endl;
+							h_file << std::format("\t\tvirtual {}* operator()(EntityPtr) = 0;", name) << std::endl;
 							h_file << "\t};" << std::endl;
 							h_file << "\t// Reflect static" << std::endl;
 							h_file << "\tEXPORT static Create& create;" << std::endl;
@@ -530,7 +543,8 @@ void View_Project::init()
 							h_file.close();
 
 							std::ofstream cpp_file(cpp_fn);
-							cpp_file << std::format("#include \"{}\".h", str) << std::endl;
+							cpp_file << std::format("#include \"{}.h\"", str) << std::endl;
+							cpp_file << std::endl;
 							cpp_file << std::format("struct {0}Create : {0}::Create", name) << std::endl;
 							cpp_file << "{" << std::endl;
 							cpp_file << std::format("\t{}* operator()(EntityPtr e) override", name) << std::endl;

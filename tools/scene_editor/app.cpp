@@ -392,9 +392,11 @@ void App::init()
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
 
-		auto add_tool_button = [](Tool tool, uint icon, const std::string& id = "", float rotate = 0.f) {
+		auto add_tool_button = [](Tool tool, uint icon, const std::string& text = "", const std::string& id = "", float rotate = 0.f) {
 			ImGui::SameLine();
 			auto name = graphics::FontAtlas::icon_s(icon);
+			if (!text.empty())
+				name += text;
 			if (!id.empty())
 				name += "##" + id;
 			if (tool == app.tool)
@@ -473,7 +475,7 @@ void App::init()
 		static cTerrainPtr terrain_tool_target = nullptr;
 		if (add_tool_button(ToolTerrainUp, "mound"_h, "up"))
 			tool = ToolTerrainUp;
-		if (add_tool_button(ToolTerrainDown, "mound"_h, "down", 180.f))
+		if (add_tool_button(ToolTerrainDown, "mound"_h, "down", "", 180.f))
 			tool = ToolTerrainDown;
 		if (add_tool_button(ToolTerrainPaint, "paintbrush"_h))
 			tool = ToolTerrainPaint;
@@ -484,6 +486,10 @@ void App::init()
 		if (!e_playing)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+			if (add_tool_button(ToolNone, "play"_h, " Build And Play"))
+			{
+
+			}
 			if (add_tool_button(ToolNone, "play"_h))
 				cmd_play();
 			ImGui::PopStyleColor();
