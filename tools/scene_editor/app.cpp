@@ -515,8 +515,6 @@ void App::init()
 				cmd_stop();
 			ImGui::PopStyleColor();
 		}
-		ImGui::SameLine();
-		ImGui::Checkbox("Control", &app.control);
 
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(50.f, 20.f));
@@ -974,13 +972,7 @@ void App::load_project_cpp()
 {
 	auto cpp_path = project_path / L"bin/debug/cpp.dll";
 	if (std::filesystem::exists(cpp_path))
-	{
-		if (project_cpp_library = tidb.load(cpp_path); project_cpp_library)
-		{
-			if (auto set_editor_info = (void(*)(Entity**, bool*))get_library_function(project_cpp_library, "set_editor_info"); set_editor_info)
-				set_editor_info(&editor_selecting_entity, &control);
-		}
-	}
+		project_cpp_library = tidb.load(cpp_path);
 }
 
 void App::unload_project_cpp()

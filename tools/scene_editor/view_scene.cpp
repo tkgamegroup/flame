@@ -482,7 +482,7 @@ void View_Scene::on_draw()
 			editor_node->mark_transform_dirty();
 		}
 
-		if (!app.e_playing || app.control)
+		if (!app.e_playing)
 		{
 			if (ImGui::IsItemHovered())
 			{
@@ -725,7 +725,8 @@ void View_Scene::on_draw()
 bool View_Scene::on_begin()
 {
 	bool open = true;
-	ImGui::Begin(app.prefab_unsaved ? "Scene *###scene" : "Scene###scene", &open);
+	auto name = std::format("Scene{}{}###scene", app.e_prefab ? " - " +app.prefab_path.filename().stem().string() : "", app.prefab_unsaved ? " *" : "");
+	ImGui::Begin(name.c_str(), &open);
 	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
 	//  ImGuizmo not work properly
 	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;

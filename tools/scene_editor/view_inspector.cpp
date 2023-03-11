@@ -1027,22 +1027,22 @@ void View_Inspector::on_draw()
 								L"standard_tri_prism"
 							};
 
-				//			auto& ori_name = *(std::filesystem::path*)ui.find_attribute("mesh_name"_h)->get_value(obj);
-				//			auto idx = -1;
-				//			for (auto i = 0; i < countof(names); i++)
-				//			{
-				//				if (ori_name == names[i])
-				//				{
-				//					idx = i;
-				//					break;
-				//				}
-				//			}
-				//			if (idx == -1 || idx + 1 == countof(names))
-				//				idx = 0;
-				//			else
-				//				idx++;
-				//			auto path = std::filesystem::path(names[idx]);
-				//			ui.find_function("set_mesh_name"_h)->call<void, void*>(obj, &path);
+							auto& ori_name = *(std::filesystem::path*)ui.find_attribute("mesh_name"_h)->get_value(cc.components[0]);
+							auto idx = -1;
+							for (auto i = 0; i < countof(names); i++)
+							{
+								if (ori_name == names[i])
+								{
+									idx = i;
+									break;
+								}
+							}
+							if (idx == -1 || idx + 1 == countof(names))
+								idx = 0;
+							else
+								idx++;
+							auto path = std::filesystem::path(names[idx]);
+							ui.find_function("set_mesh_name"_h)->call<void, void*>(cc.components[0], &path);
 						}
 					}
 					else if (name == "material_name"_h)

@@ -4,8 +4,6 @@
 
 namespace flame
 {
-	struct DrawData;
-
 	// Reflect ctor
 	struct cNode : Component
 	{

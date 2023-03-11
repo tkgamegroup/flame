@@ -243,7 +243,73 @@ void View_Project::init()
 			{
 				struct EditInterfacesDialog : ImGui::Dialog
 				{
+					std::filesystem::path header_path;
+					std::filesystem::path source_path;
+					bool invalid = false;
 
+					std::vector<std::pair<std::string, bool>> overrides;
+					std::vector<std::string> attributes;
+					std::vector<std::string> functions;
+
+					static void open(const std::filesystem::path& path)
+					{
+						auto dialog = new EditInterfacesDialog;
+						dialog->title = "Edit Interfaces";
+						dialog->init(path);
+						Dialog::open(dialog);
+					}
+
+					void init(const std::filesystem::path& path)
+					{
+						header_path = path;
+						header_path.replace_extension(L".h");
+						source_path = path;
+						source_path.replace_extension(L".cpp");
+
+						if (!std::filesystem::exists(header_path) || !std::filesystem::exists(source_path))
+						{
+							invalid = true;
+							return;
+						}
+
+						static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
+						for (auto& fi : ui_component.functions)
+						{
+							overrides.emplace_back(fi.name, false);
+						}
+					}
+
+					void draw() override
+					{
+						bool open = true;
+						if (ImGui::Begin(title.c_str(), &open))
+						{
+							if (!invalid)
+							{
+								ImGui::TextUnformatted("Overrides");
+								for (auto& o : overrides)
+									ImGui::Checkbox(o.first.c_str(), &o.second);
+								ImGui::Separator();
+								ImGui::TextUnformatted("Attributes");
+								ImGui::Button("Add##2");
+								ImGui::Separator();
+								ImGui::TextUnformatted("Functions");
+								ImGui::Button("Add##3");
+								ImGui::Separator();
+
+								if (ImGui::Button("Confirm"))
+									;
+							}
+							else
+							{
+								ImGui::TextUnformatted("Code file are invalid");
+								if (ImGui::Button("Refresh"))
+									;
+							}
+						}
+						if (!open)
+							close();
+					}
 				};
 			}
 		}
@@ -813,12 +879,15 @@ void View_Project::on_draw()
 				}
 			}
 
-			for (auto it = p.first.begin(); it != p.first.end(); it++)
+			if ((p.second & FileAdded) || (p.second & FileRemoved) || (p.second & FileRenamed))
 			{
-				if (*it == L"cpp")
+				for (auto it = p.first.begin(); it != p.first.end(); it++)
 				{
-					project_changed = true;
-					break;
+					if (*it == L"cpp")
+					{
+						project_changed = true;
+						break;
+					}
 				}
 			}
 		}

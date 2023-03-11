@@ -25,6 +25,8 @@
 
 namespace flame
 {
+	struct DrawData;
+
 	FLAME_UNIVERSE_TYPE(Entity);
 	FLAME_UNIVERSE_TYPE(Component);
 	FLAME_UNIVERSE_TYPE(System);

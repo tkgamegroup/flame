@@ -55,7 +55,6 @@ struct App : UniverseApplication
 	EntityPtr e_playing = nullptr;
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
-	bool control = true;
 
 	ProjectSettings project_settings;
 
