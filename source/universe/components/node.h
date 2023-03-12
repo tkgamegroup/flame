@@ -78,7 +78,7 @@ namespace flame
 		virtual void mark_drawing_dirty() = 0;
 
 		Listeners<void(DrawData&)> drawers;
-		Listeners<bool(AABB*)> measurers;
+		Listeners<void(AABB&)> measurers;
 
 		virtual void look_at(const vec3& t) = 0;
 

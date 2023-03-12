@@ -32,9 +32,8 @@ namespace flame
 				break;
 			}
 		}, "sdf"_h);
-		node->measurers.add([this](AABB* ret) {
-			*ret = AABB(AABB(vec3(0.f), 10.f).get_points(node->transform));
-			return true;
+		node->measurers.add([this](AABB& b) {
+			b.expand(AABB(AABB(vec3(0.f), 10.f).get_points(node->transform)));
 		}, "sdf"_h);
 
 		node->mark_transform_dirty();

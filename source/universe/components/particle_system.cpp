@@ -148,9 +148,8 @@ namespace flame
 				break;
 			}
 		}, "mesh"_h);
-		node->measurers.add([this](AABB* ret) {
-			*ret = AABB(AABB(vec3(0.f), particle_speed * particle_life_time + max(particle_size.x, particle_size.y)).get_points(node->transform));
-			return true;
+		node->measurers.add([this](AABB& b) {
+			b.expand(AABB(AABB(vec3(0.f), particle_speed * particle_life_time + max(particle_size.x, particle_size.y)).get_points(node->transform)));
 		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

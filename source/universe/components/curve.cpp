@@ -29,11 +29,9 @@ namespace flame
 				break;
 			}
 		}, "mesh"_h);
-		node->measurers.add([this](AABB* ret) {
-			if (curve.vertices.empty())
-				return false;
-			*ret = AABB(bounds.get_points(node->transform));
-			return true;
+		node->measurers.add([this](AABB& b) {
+			if (!curve.vertices.empty())
+				b.expand(AABB(bounds.get_points(node->transform)));
 		}, "curve"_h);
 	}
 

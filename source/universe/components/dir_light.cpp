@@ -34,9 +34,8 @@ namespace flame
 			}
 		}, "light"_h);
 
-		node->measurers.add([this](AABB* ret) {
-			*ret = AABB(node->g_pos - 10000.f, node->g_pos + 10000.f);
-			return true;
+		node->measurers.add([this](AABB& b) {
+			b.expand(AABB(node->g_pos - 10000.f, node->g_pos + 10000.f));
 		}, "light"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

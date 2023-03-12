@@ -80,20 +80,20 @@ namespace flame
 				break;
 			}
 		}, "mesh"_h);
-		node->measurers.add([this](AABB* ret) {
-			if (!mesh)
-				return false;
-			if (!parmature)
-				*ret = AABB(mesh->bounds.get_points(node->transform));
-			else
+		node->measurers.add([this](AABB& b) {
+			if (mesh)
 			{
-				auto pb = parmature->bone_node_map[node];
-				if (!pb)
-					*ret = AABB(mesh->bounds.get_points(parmature->node->transform));
+				if (!parmature)
+					b.expand(AABB(mesh->bounds.get_points(node->transform)));
 				else
-					*ret = AABB(mesh->bounds.get_points(pb->pose.m));
+				{
+					auto pb = parmature->bone_node_map[node];
+					if (!pb)
+						b.expand(AABB(mesh->bounds.get_points(parmature->node->transform)));
+					else
+							b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));
+				}
 			}
-			return true;
 		}, "mesh"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

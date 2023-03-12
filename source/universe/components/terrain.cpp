@@ -255,11 +255,9 @@ namespace flame
 				break;
 			}
 			}, "terrain"_h);
-		node->measurers.add([this](AABB* ret) {
-			if (!height_map)
-				return false;
-			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
-			return true;
+		node->measurers.add([this](AABB& b) {
+			if (height_map)
+				b.expand(AABB(node->g_pos, node->g_pos + extent * node->g_scl));
 		}, "terrain"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

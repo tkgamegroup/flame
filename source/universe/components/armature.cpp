@@ -217,11 +217,9 @@ namespace flame
 			}
 		}, "armature"_h);
 
-		node->measurers.add([this](AABB* ret) {
-			if (!model)
-				return false;
-			*ret = AABB(model->bounds.get_points(node->transform));
-			return true;
+		node->measurers.add([this](AABB& b) {
+			if (model)
+				b.expand(AABB(model->bounds.get_points(node->transform)));
 		}, "armature"_h);
 
 		node->mark_transform_dirty();

@@ -80,11 +80,7 @@ namespace flame
 					{
 						node->bounds.reset();
 						for (auto m : node->measurers.list)
-						{
-							AABB b;
-							if (m.first(&b))
-								node->bounds.expand(b);
-						}
+							m.first(node->bounds);
 					}
 					else if (!node->drawers.list.empty())
 						node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));

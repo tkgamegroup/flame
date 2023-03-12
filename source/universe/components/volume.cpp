@@ -246,10 +246,9 @@ namespace flame
 				break;
 			}
 		}, "volume"_h);
-		node->measurers.add([this](AABB* ret) {
-			if (!data_map)
-				return false;
-			*ret = AABB(node->g_pos, node->g_pos + extent * node->g_scl);
+		node->measurers.add([this](AABB& b) {
+			if (data_map)
+				b.expand(AABB(node->g_pos, node->g_pos + extent * node->g_scl));
 			return true;
 		}, "volume"_h);
 		node->data_listeners.add([this](uint hash) {
