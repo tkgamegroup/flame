@@ -51,7 +51,7 @@ void View_Project::reset()
 {
 	auto flame_path = Path::get(L"flame");
 	auto assets_path = app.project_path;
-	auto cpp_path = app.project_path;
+	auto code_path = app.project_path;
 	
 	std::vector<std::filesystem::path> paths;
 	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
@@ -63,8 +63,8 @@ void View_Project::reset()
 		assets_path /= L"assets";
 		paths.push_back(assets_path);
 
-		cpp_path /= L"cpp";
-		paths.push_back(cpp_path);
+		code_path /= L"code";
+		paths.push_back(code_path);
 	}
 
 	explorer.reset_n(paths);
@@ -79,10 +79,10 @@ void View_Project::reset()
 		set_native_event(assets_file_watcher);
 		assets_file_watcher = nullptr;
 	}
-	if (cpp_file_watcher)
+	if (code_file_watcher)
 	{
-		set_native_event(cpp_file_watcher);
-		cpp_file_watcher = nullptr;
+		set_native_event(code_file_watcher);
+		code_file_watcher = nullptr;
 	}
 	auto file_watcher = [this](FileChangeFlags flags, const std::filesystem::path& path) {
 		mtx_changed_paths.lock();
@@ -97,7 +97,7 @@ void View_Project::reset()
 	if (!app.project_path.empty())
 	{
 		assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
-		cpp_file_watcher = add_file_watcher(cpp_path, file_watcher, true, false);
+		code_file_watcher = add_file_watcher(code_path, file_watcher, true, false);
 	}
 }
 
