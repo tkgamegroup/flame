@@ -624,6 +624,7 @@ void View_Project::init()
 							cpp_file << std::format("\t\treturn new {};", name) << std::endl;
 							cpp_file << "\t}" << std::endl;
 							cpp_file << std::format("}}{}_create;", name) << std::endl;
+							cpp_file << std::format("{0}::Create& {0}::create = {0}_create", name) << std::endl;
 							cpp_file.close();
 						}
 					}

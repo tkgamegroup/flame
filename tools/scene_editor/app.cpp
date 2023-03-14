@@ -119,12 +119,6 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Project"))
 		{
-			if (ImGui::MenuItem("Open .sln"))
-				;
-			if (ImGui::MenuItem("Attach Debugger"))
-				vs_automate({ L"attach_debugger" });
-			if (ImGui::MenuItem("Detach Debugger"))
-				vs_automate({ L"detach_debugger" });
 			if (ImGui::MenuItem("Open In VS"))
 			{
 				auto vs_path = get_special_path("Visual Studio Installation Location");
@@ -133,6 +127,10 @@ void App::init()
 				sln_path = glob_files(sln_path, L".sln")[0];
 				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
 			}
+			if (ImGui::MenuItem("Attach Debugger"))
+				vs_automate({ L"attach_debugger" });
+			if (ImGui::MenuItem("Detach Debugger"))
+				vs_automate({ L"detach_debugger" });
 			if (ImGui::MenuItem("Do CMake"))
 				cmake_project();
 			if (ImGui::MenuItem("Build (Ctrl+B)"))
@@ -488,7 +486,8 @@ void App::init()
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 			if (add_tool_button(ToolNone, "play"_h, " Build And Play"))
 			{
-
+				build_project();
+				cmd_play();
 			}
 			if (add_tool_button(ToolNone, "play"_h))
 				cmd_play();

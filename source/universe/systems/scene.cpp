@@ -764,6 +764,22 @@ namespace flame
 #endif
 	}
 
+	bool sScenePrivate::navmesh_nearest_point(const vec3& center, const vec3& ext, vec3& res)
+	{
+		if (!dt_nav_query)
+			return false;
+
+		dtPolyRef poly = 0;
+		if (auto status = dt_nav_query->findNearestPoly(&center[0], &ext[0], &dt_filter, &poly, &res[0]); dtStatusFailed(status))
+		{
+			printf("navmesh nearest point: failed\n");
+			return false;
+		}
+		if (!poly)
+			return false;
+		return true;
+	}
+
 	inline bool in_range(const vec3& v1, const vec3& v2, const float r, const float h)
 	{
 		auto d = v2 - v1;
@@ -1010,6 +1026,21 @@ namespace flame
 		return ret;
 	}
 
+	bool sScenePrivate::navmesh_check_agents_and_obstacles(const vec3& pos, float radius)
+	{
+		for (auto ag : nav_agents)
+		{
+			if (distance(ag->node->pos.xz(), pos.xz()) < ag->radius + radius)
+				return false;
+		}
+		for (auto ob : nav_obstacles)
+		{
+			if (distance(ob->node->pos.xz(), pos.xz()) < ob->radius + radius)
+				return false;
+		}
+		return true;
+	}
+
 	void sScenePrivate::get_debug_draw(DrawData& draw_data)
 	{
 		if (dt_nav_mesh)
@@ -1046,22 +1077,6 @@ namespace flame
 			}
 			draw_data.primitives.emplace_back("TriangleList"_h, std::move(points), cvec4(0, 127, 255, 127));
 		}
-	}
-
-	bool sScenePrivate::navmesh_nearest_point(const vec3& check, const vec3& ext, vec3& res)
-	{
-		if (!dt_nav_query)
-			return false;
-
-		dtPolyRef poly = 0;
-		if (auto status = dt_nav_query->findNearestPoly(&check[0], &ext[0], &dt_filter, &poly, &res[0]); dtStatusFailed(status))
-		{
-			printf("navmesh nearest point: failed\n");
-			return false;
-		}
-		if (!poly)
-			return false;
-		return true;
 	}
 
 	void sScenePrivate::update()
