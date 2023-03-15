@@ -44,14 +44,13 @@ namespace flame
 		// Reflect
 		virtual void set_enable(bool v) = 0;
 
-		WorldPtr world = nullptr;
 		EntityPtr parent = nullptr;
 
-		uint depth = 0;
-		uint index = 0;
+		ushort depth = (ushort)-1;
+		ushort index = 0;
 
-		std::string instance_id;
-		std::string file_id;
+		GUID instance_id;
+		GUID file_id;
 
 		// Reflect
 		std::vector<std::unique_ptr<Component>> components;
@@ -62,8 +61,6 @@ namespace flame
 		Listeners<void(uint, void*, void*)> message_listeners;
 
 		std::unique_ptr<PrefabInstance> prefab_instance;
-
-		void* userdata = nullptr;
 
 		inline Component* get_component(uint type_hash) const
 		{
@@ -160,14 +157,13 @@ namespace flame
 			return nullptr;
 		}
 
-		inline EntityPtr find_child_with_instance_id(std::string_view instance_id) const
+		inline EntityPtr find_with_instance_id(const GUID& guid) const
 		{
-			for (auto& cc : children)
+			if (instance_id == guid)
+				return (EntityPtr)this;
+			for (auto& c : children)
 			{
-				auto c = (Entity*)cc.get();
-				if (c->instance_id == instance_id)
-					return (EntityPtr)c;
-				auto res = c->find_child_with_instance_id(instance_id);
+				auto res = ((Entity*)c.get())->find_with_instance_id(instance_id);
 				if (res)
 					return res;
 			}

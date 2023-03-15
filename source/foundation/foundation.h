@@ -121,6 +121,30 @@ namespace flame
 		BeenDropped
 	};
 
+	struct GUID
+	{
+		char d[16];
+
+		inline std::string to_string()
+		{
+			std::string ret;
+			ret += str_hex(*(uint64*)(d));
+			ret += str_hex(*(uint64*)(d + sizeof(uint64)));
+			return ret;
+		}
+
+		inline void from_string(const std::string& str)
+		{
+			*(uint64*)d = s2u_hex<uint64>(str.substr(0, sizeof(uint64) * 2));
+			*(uint64*)(d + sizeof(uint64)) = s2u_hex<uint64>(str.substr(sizeof(uint64) * 2, sizeof(uint64) * 2));
+		}
+	};
+
+	inline bool operator==(const GUID& a, const GUID& b)
+	{
+		return *(uint64*)a.d == *(uint64*)b.d && *(uint64*)(a.d + sizeof(uint64)) == *(uint64*)(b.d + sizeof(uint64));
+	}
+
 	inline uint64 current_time()
 	{
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(

@@ -32,9 +32,11 @@ namespace flame
 	{
 		instance_id = generate_guid();
 
+#ifdef FLAME_UNIVERSE_DEBUG
 		static auto id = 0;
 		created_frame = frames;
 		created_id = id++;
+#endif
 	}
 
 	EntityPrivate::~EntityPrivate()
@@ -56,14 +58,14 @@ namespace flame
 			global_enable = enable && parent->global_enable;
 		else
 		{
-			if (!world)
+			if (depth == (ushort)-1)
 				global_enable = true;
 			else
 				global_enable = false;
 		}
 		if (global_enable != prev_enable)
 		{
-			if (world)
+			if (depth != (ushort)-1)
 			{
 				for (auto& c : components)
 					global_enable && c->enable ? c->on_active() : c->on_inactive();
@@ -159,7 +161,7 @@ namespace flame
 
 		for (auto _c : require_comps)
 		{
-			_c.first->n_strong_ref++;
+			_c.first->ref++;
 			*(void**)((char*)c + _c.second) = _c.first;
 		}
 
@@ -187,7 +189,7 @@ namespace flame
 		}
 
 		auto c = it->second;
-		if (c->n_strong_ref != 0)
+		if (c->ref != 0)
 		{
 			printf("cannot remove component: component is strongly referenced by other compoent(s)\n");
 			return false;
@@ -201,7 +203,7 @@ namespace flame
 				{
 					auto comp = get_component(sh(vi.type->name.c_str()));
 					if (comp)
-						comp->n_strong_ref--;
+						comp->ref--;
 					else
 						assert(0);
 				}
@@ -246,12 +248,9 @@ namespace flame
 		else
 			pos = position;
 
+		e->parent = this;
 		children.emplace(children.begin() + pos, e);
 
-		e->parent = this;
-		e->backward_traversal([this](EntityPrivate* e) {
-			e->depth = e->parent->depth + 1;
-		});
 		e->index = pos;
 		e->update_enable();
 
@@ -260,10 +259,10 @@ namespace flame
 		for (auto& c : e->components)
 			c->on_entity_added();
 
-		if (world)
+		if (depth != (ushort)-1)
 		{
 			e->forward_traversal([this](EntityPrivate* e) {
-				e->world = world;
+				e->depth = e->parent->depth + 1;
 				if (e->global_enable)
 				{
 					for (auto& l : e->message_listeners.list)
@@ -292,10 +291,10 @@ namespace flame
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
-		if (world)
+		if (depth != (ushort)-1)
 		{
 			e->backward_traversal([](EntityPrivate* e) {
-				e->world = nullptr;
+				e->depth = (ushort)-1;
 				if (e->global_enable)
 				{
 					for (auto& c : e->components)
@@ -375,13 +374,13 @@ namespace flame
 		return ret;
 	}
 
-	static EntityPtr find_with_file_id(EntityPtr e, const std::string& id)
+	static EntityPtr find_with_file_id(EntityPtr e, const GUID& guid)
 	{
-		if (e->file_id == id)
+		if (e->file_id == guid)
 			return e;
 		for (auto& c : e->children)
 		{
-			auto ret = find_with_file_id(c.get(), id);
+			auto ret = find_with_file_id(c.get(), guid);
 			if (ret)
 				return ret;
 		}

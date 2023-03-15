@@ -151,7 +151,7 @@ namespace flame
 
 	void cNodePrivate::mark_drawing_dirty()
 	{
-		if (entity->world)
+		if (entity->depth != (ushort)-1)
 			sRenderer::instance()->dirty = true;
 	}
 

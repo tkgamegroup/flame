@@ -13,8 +13,8 @@ namespace flame
 		bool enable = true;
 		Listeners<void(uint)> data_listeners;
 
-		uint n_strong_ref = 0;
-		uint update_times = 0;
+		ushort ref = 0;
+		ushort update_times = 0;
 
 		virtual ~Component() 
 		{

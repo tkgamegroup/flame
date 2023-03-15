@@ -6,12 +6,12 @@ namespace flame
 {
 	struct EntityPrivate : Entity
 	{
+#ifdef FLAME_UNIVERSE_DEBUG
 		int created_frame;
 		int created_id;
-#ifdef FLAME_UNIVERSE_DEBUG
 		std::vector<StackFrameInfo> created_stack;
-#endif
 		uint created_location;
+#endif
 
 		EntityPrivate();
 		~EntityPrivate();
