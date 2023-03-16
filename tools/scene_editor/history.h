@@ -35,13 +35,13 @@ struct AssetModifyHistory : History
 
 struct EntityModifyHistory : History
 {
-	std::vector<std::string> ids;
+	std::vector<GUID> ids;
 	uint comp_type;
 	uint attr_hash;
 	std::vector<std::string> old_values;
 	std::vector<std::string> new_values;
 
-	EntityModifyHistory(const std::vector<std::string>& ids, uint comp_type, uint attr_hash,
+	EntityModifyHistory(const std::vector<GUID>& ids, uint comp_type, uint attr_hash,
 		const std::vector<std::string>& old_values, const std::vector<std::string>& new_values) :
 		ids(ids),
 		comp_type(comp_type),

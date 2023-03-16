@@ -115,8 +115,7 @@ void Selection::History::redo()
 		{
 			for (auto& id : h.ids)
 			{
-				if (auto e = app.e_prefab->instance_id == id ? app.e_prefab :
-					app.e_prefab->find_child_with_instance_id(id))
+				if (auto e = app.e_prefab->find_with_instance_id(id))
 					entities.push_back(e);
 			}
 		}

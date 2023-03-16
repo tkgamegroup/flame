@@ -390,8 +390,9 @@ namespace flame
 	bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)
 	{
 		auto sp = SUS::split(target, '|');
-
-		auto te = find_with_file_id(e, sp.front());
+		GUID guid;
+		guid.from_string(sp.front());
+		auto te = find_with_file_id(e, guid);
 		if (!te)
 		{
 			printf("prefab modification: cannot find target: %s\n", sp.front().c_str());
@@ -502,7 +503,7 @@ namespace flame
 			else
 			{
 				if (auto a = src.attribute("file_id"); a)
-					e->file_id = a.value();
+					e->file_id.from_string(a.value());
 				else
 					e->file_id = e->instance_id;
 				unserialize_xml(src, e, spec);
@@ -514,7 +515,7 @@ namespace flame
 		};
 
 		if (auto a = doc_root.attribute("file_id"); a)
-			file_id = a.value();
+			file_id.from_string(a.value());
 		else
 			file_id = instance_id;
 
@@ -568,13 +569,13 @@ namespace flame
 			}
 			else
 			{
-				dst.append_attribute("file_id").set_value(e->file_id.c_str());
+				dst.append_attribute("file_id").set_value(e->file_id.to_string().c_str());
 				serialize_xml(e, dst, spec);
 			}
 		};
 
 		auto doc_root = file.append_child("prefab");
-		doc_root.append_attribute("file_id").set_value(file_id.c_str());
+		doc_root.append_attribute("file_id").set_value(file_id.to_string().c_str());
 		serialize_xml(this, doc_root, spec);
 
 		file.save_file(filename.c_str());
@@ -584,7 +585,7 @@ namespace flame
 
 	struct EntityCreate : Entity::Create
 	{
-		EntityPtr operator()(std::string* file_id) override
+		EntityPtr operator()(GUID* file_id) override
 		{
 			auto ret = new EntityPrivate();
 			if (file_id)

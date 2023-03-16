@@ -215,7 +215,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual EntityPtr operator()(std::string* file_id = nullptr) = 0;
+			virtual EntityPtr operator()(GUID* file_id = nullptr) = 0;
 			virtual EntityPtr operator()(const std::filesystem::path& filename) = 0;
 		};
 		// Reflect static

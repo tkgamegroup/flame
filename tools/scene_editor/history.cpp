@@ -38,8 +38,7 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 	{
 		for (auto i = 0; i < ids.size(); i++)
 		{
-			if (auto e = app.e_prefab->instance_id == ids[i] ? app.e_prefab :
-				app.e_prefab->find_child_with_instance_id(ids[i]))
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]))
 			{
 				UdtInfo* ui = nullptr;
 				void* obj = nullptr;

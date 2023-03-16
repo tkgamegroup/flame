@@ -627,7 +627,7 @@ void App::new_project(const std::filesystem::path& path)
 	pugi::xml_document main_prefab;
 	{
 		auto n_prefab = main_prefab.append_child("prefab");
-		n_prefab.append_attribute("file_id").set_value(generate_guid().c_str());
+		n_prefab.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 		n_prefab.append_attribute("name").set_value("Main");
 		{
 			auto n_components = n_prefab.append_child("components");
@@ -638,7 +638,7 @@ void App::new_project(const std::filesystem::path& path)
 			auto n_children = n_prefab.append_child("children");
 			{
 				auto n_item = n_children.append_child("item");
-				n_item.append_attribute("file_id").set_value(generate_guid().c_str());
+				n_item.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 				n_item.append_attribute("name").set_value("Camera");
 				{
 					auto n_components = n_item.append_child("components");

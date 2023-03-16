@@ -285,7 +285,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 		break;
 	case 1:
 	{
-		std::vector<std::string> ids(eos.num);
+		std::vector<GUID> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
 		add_history(new EntityModifyHistory(ids, 0, attr_hash, before_editing_values, { new_value }));
@@ -293,7 +293,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 		break;
 	case 2:
 	{
-		std::vector<std::string> ids(eos.num);
+		std::vector<GUID> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
 		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value }));
@@ -980,7 +980,7 @@ void View_Inspector::on_draw()
 			for (auto e : editing_entities.entities)
 			{
 				if (auto ins = get_prefab_instance(e); ins)
-					ins->mark_modifier(e->file_id, "", str);
+					ins->mark_modifier(e->file_id.to_string(), "", str);
 			}
 		}
 

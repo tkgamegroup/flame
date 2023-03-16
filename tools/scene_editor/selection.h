@@ -46,7 +46,7 @@ struct Selection
 	};
 	struct EntityHistory : History
 	{
-		std::vector<std::string> ids;
+		std::vector<GUID> ids;
 		EntityHistory(const std::vector<EntityPtr>& entities) 
 		{ 
 			type = tEntity;
