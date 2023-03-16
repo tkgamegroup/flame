@@ -482,242 +482,239 @@ void View_Scene::on_draw()
 			editor_node->mark_transform_dirty();
 		}
 
-		if (!app.e_playing)
+		if (ImGui::IsItemHovered())
 		{
-			if (ImGui::IsItemHovered())
+			auto camera_node = camera->node;
+
+			auto get_tar = [&]() {
+				return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+			};
+
+			if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 			{
-				auto camera_node = camera->node;
-
-				auto get_tar = [&]() {
-					return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
-				};
-
-				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+				disp /= vec2(render_tar->extent);
+				if (!io.KeyAlt)
 				{
-					disp /= vec2(render_tar->extent);
-					if (!io.KeyAlt)
+					if (io.MouseDown[ImGuiMouseButton_Middle])
 					{
-						if (io.MouseDown[ImGuiMouseButton_Middle])
+						camera_node->add_pos((-camera_node->g_rot[0] * disp.x +
+							camera_node->g_rot[1] * disp.y) * camera_zoom);
+					}
+					else if (io.MouseDown[ImGuiMouseButton_Right])
+					{
+						disp *= -180.f;
+						camera_node->add_eul(vec3(disp, 0.f));
+					}
+				}
+				else
+				{
+					if (io.MouseDown[ImGuiMouseButton_Left])
+					{
+						disp *= -180.f;
+						auto tar = get_tar();
+						camera_node->add_eul(vec3(disp, 0.f));
+						auto eul = camera_node->eul;
+						auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
+						camera_node->set_pos(tar + rot[2] * camera_zoom);
+					}
+				}
+			}
+			{
+				static vec2 last_mpos = vec2(0.f);
+				if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+					last_mpos = io.MousePos;
+				if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
+					camera_node->set_pos(hovering_pos + camera_node->g_rot[2] * camera_zoom);
+			}
+			if (auto scroll = io.MouseWheel; scroll != 0.f)
+			{
+				auto tar = get_tar();
+				if (scroll < 0.f)
+					camera_zoom = camera_zoom * 1.1f + 0.5f;
+				else
+					camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+				camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
+			}
+			if (!io.WantCaptureKeyboard)
+			{
+				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
+				{
+					if (io.MouseDown[ImGuiMouseButton_Right])
+					{
+						if (io.KeysDown[Keyboard_W])
 						{
-							camera_node->add_pos((-camera_node->g_rot[0] * disp.x +
-								camera_node->g_rot[1] * disp.y) * camera_zoom);
+							camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
 						}
-						else if (io.MouseDown[ImGuiMouseButton_Right])
+						if (io.KeysDown[Keyboard_S])
 						{
-							disp *= -180.f;
-							camera_node->add_eul(vec3(disp, 0.f));
+							camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_A])
+						{
+							camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
+						}
+						if (io.KeysDown[Keyboard_D])
+						{
+							camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
+							app.render_frames += 30;
 						}
 					}
 					else
 					{
-						if (io.MouseDown[ImGuiMouseButton_Left])
-						{
-							disp *= -180.f;
-							auto tar = get_tar();
-							camera_node->add_eul(vec3(disp, 0.f));
-							auto eul = camera_node->eul;
-							auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
-							camera_node->set_pos(tar + rot[2] * camera_zoom);
-						}
+						if (ImGui::IsKeyPressed(Keyboard_Q))
+							app.tool = ToolSelect;
+						if (ImGui::IsKeyPressed(Keyboard_W))
+							app.tool = ToolMove;
+						if (ImGui::IsKeyPressed(Keyboard_E))
+							app.tool = ToolRotate;
+						if (ImGui::IsKeyPressed(Keyboard_R))
+							app.tool = ToolScale;
 					}
+					if (io.KeysDown[Keyboard_F])
+						focus_to_selected();
+					if (io.KeysDown[Keyboard_G])
+						selected_to_focus();
+					if (ImGui::IsKeyPressed(Keyboard_Del))
+						app.cmd_delete_entity();
 				}
-				{
-					static vec2 last_mpos = vec2(0.f);
-					if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-						last_mpos = io.MousePos;
-					if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
-						camera_node->set_pos(hovering_pos + camera_node->g_rot[2] * camera_zoom);
-				}
-				if (auto scroll = io.MouseWheel; scroll != 0.f)
-				{
-					auto tar = get_tar();
-					if (scroll < 0.f)
-						camera_zoom = camera_zoom * 1.1f + 0.5f;
-					else
-						camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
-					camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
-				}
-				if (!io.WantCaptureKeyboard)
-				{
-					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
-					{
-						if (io.MouseDown[ImGuiMouseButton_Right])
-						{
-							if (io.KeysDown[Keyboard_W])
-							{
-								camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
-								app.render_frames += 30;
-							}
-							if (io.KeysDown[Keyboard_S])
-							{
-								camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
-								app.render_frames += 30;
-							}
-							if (io.KeysDown[Keyboard_A])
-							{
-								camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
-								app.render_frames += 30;
-							}
-							if (io.KeysDown[Keyboard_D])
-							{
-								camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
-								app.render_frames += 30;
-							}
-						}
-						else
-						{
-							if (ImGui::IsKeyPressed(Keyboard_Q))
-								app.tool = ToolSelect;
-							if (ImGui::IsKeyPressed(Keyboard_W))
-								app.tool = ToolMove;
-							if (ImGui::IsKeyPressed(Keyboard_E))
-								app.tool = ToolRotate;
-							if (ImGui::IsKeyPressed(Keyboard_R))
-								app.tool = ToolScale;
-						}
-						if (io.KeysDown[Keyboard_F])
-							focus_to_selected();
-						if (io.KeysDown[Keyboard_G])
-							selected_to_focus();
-						if (ImGui::IsKeyPressed(Keyboard_Del))
-							app.cmd_delete_entity();
-					}
-				}
+			}
 
-				if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
-				{
-					hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
-						if (draw_data.categories & CateMesh)
+			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+			{
+				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+					if (draw_data.categories & CateMesh)
+					{
+						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
 						{
-							if (auto armature = n->entity->get_component_t<cArmature>(); armature)
+							for (auto& c : n->entity->children)
 							{
-								for (auto& c : n->entity->children)
-								{
-									if (auto mesh = c->get_component_t<cMesh>(); mesh)
-									{
-										if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-											draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-									}
-								}
-							}
-							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
-							{
-								if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-									;
-								else
+								if (auto mesh = c->get_component_t<cMesh>(); mesh)
 								{
 									if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
 										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 								}
 							}
 						}
-						if (draw_data.categories & CateTerrain)
+						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
 						{
-							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
-						}
-						if (draw_data.categories & CateMarchingCubes)
-						{
-							if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
-								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
-						}
-					});
-					if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
-					{
-						auto get_top_entity = [](EntityPtr e) {
-							if (auto ins = get_prefab_instance(e); ins)
-							{
-								if (!selection.selecting(ins->e))
-									return ins->e;
-							}
-							return e;
-						};
-						if (ImGui::IsKeyDown(Keyboard_Ctrl))
-						{
-							if (hovering_node)
-							{
-								auto e = get_top_entity(hovering_node->entity);
-								auto entities = selection.get_entities();
-								auto found = false;
-								for (auto it = entities.begin(); it != entities.end();)
-								{
-									if (*it == e)
-									{
-										found = true;
-										it = entities.erase(it);
-										break;
-									}
-									else
-										it++;
-								}
-								if (!found)
-									entities.push_back(e);
-								selection.select(entities, "scene"_h);
-							}
-						}
-						else
-						{
-							if (hovering_node)
-								selection.select(get_top_entity(hovering_node->entity), "scene"_h);
+							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
+								;
 							else
-								selection.clear("scene"_h);
-						}
-					}
-					{
-						auto s = str(hovering_pos);
-						auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
-						ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
-						ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
-					}
-				}
-			}
-
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-				{
-					if (app.e_prefab)
-					{
-						auto str = std::wstring((wchar_t*)payload->Data);
-						auto path = Path::reverse(str);
-						auto ext = path.extension();
-						if (ext == L".prefab")
-						{
-							add_event([this, path]() {
-								auto e = Entity::create();
-								e->load(path);
-								new PrefabInstance(e, path);
-								if (auto node = e->get_component_i<cNode>(0); node)
-								{
-									auto pos = hovering_pos;
-									if (!hovering_node)
-									{
-										auto camera_node = view_scene.curr_camera()->node;
-										auto camera_pos = camera_node->g_pos;
-										auto v = normalize(pos - camera_pos);
-										pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->g_rot[2]));
-									}
-									node->set_pos(app.get_snap_pos(pos));
-								}
-								if (app.e_playing)
-									app.e_playing->add_child(e);
-								else
-									app.e_prefab->add_child(e);
-								return false;
-							});
-						}
-						else if (ext == L".fmat")
-						{
-							if (hovering_node)
 							{
-								if (auto mesh = hovering_node->entity->get_component_t<cMesh>(); mesh)
-									mesh->set_material_name(path);
+								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 							}
 						}
 					}
+					if (draw_data.categories & CateTerrain)
+					{
+						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
+					}
+					if (draw_data.categories & CateMarchingCubes)
+					{
+						if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
+							draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
+					}
+					});
+				if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+				{
+					auto get_top_entity = [](EntityPtr e) {
+						if (auto ins = get_prefab_instance(e); ins)
+						{
+							if (!selection.selecting(ins->e))
+								return ins->e;
+						}
+						return e;
+					};
+					if (ImGui::IsKeyDown(Keyboard_Ctrl))
+					{
+						if (hovering_node)
+						{
+							auto e = get_top_entity(hovering_node->entity);
+							auto entities = selection.get_entities();
+							auto found = false;
+							for (auto it = entities.begin(); it != entities.end();)
+							{
+								if (*it == e)
+								{
+									found = true;
+									it = entities.erase(it);
+									break;
+								}
+								else
+									it++;
+							}
+							if (!found)
+								entities.push_back(e);
+							selection.select(entities, "scene"_h);
+						}
+					}
+					else
+					{
+						if (hovering_node)
+							selection.select(get_top_entity(hovering_node->entity), "scene"_h);
+						else
+							selection.clear("scene"_h);
+					}
 				}
-				ImGui::EndDragDropTarget();
+				{
+					auto s = str(hovering_pos);
+					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+				}
 			}
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+			{
+				if (app.e_prefab)
+				{
+					auto str = std::wstring((wchar_t*)payload->Data);
+					auto path = Path::reverse(str);
+					auto ext = path.extension();
+					if (ext == L".prefab")
+					{
+						add_event([this, path]() {
+							auto e = Entity::create();
+							e->load(path);
+							new PrefabInstance(e, path);
+							if (auto node = e->get_component_i<cNode>(0); node)
+							{
+								auto pos = hovering_pos;
+								if (!hovering_node)
+								{
+									auto camera_node = view_scene.curr_camera()->node;
+									auto camera_pos = camera_node->g_pos;
+									auto v = normalize(pos - camera_pos);
+									pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->g_rot[2]));
+								}
+								node->set_pos(app.get_snap_pos(pos));
+							}
+							if (app.e_playing)
+								app.e_playing->add_child(e);
+							else
+								app.e_prefab->add_child(e);
+							return false;
+							});
+					}
+					else if (ext == L".fmat")
+					{
+						if (hovering_node)
+						{
+							if (auto mesh = hovering_node->entity->get_component_t<cMesh>(); mesh)
+								mesh->set_material_name(path);
+						}
+					}
+				}
+			}
+			ImGui::EndDragDropTarget();
 		}
 	}
 }

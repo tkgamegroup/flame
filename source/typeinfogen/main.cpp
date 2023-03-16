@@ -238,17 +238,23 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 
 int main(int argc, char **args)
 {
-	if (argc != 2)
+	if (argc < 2)
 		goto show_usage;
 
 	goto process;
 
 show_usage:
-	printf("usage: typeinfogen <target>\n");
+	printf("usage: typeinfogen <target> [-just_print_all_symbols]\n");
 	return 0;
 
 process:
 	std::filesystem::path input_path = args[1];
+	bool just_print_all_symbols = false;
+
+	if (argc > 2)
+	{
+		just_print_all_symbols = std::string(args[2]) == "-just_print_all_symbols";
+	}
 
 	printf("typeinfogen: %s\n", input_path.string().c_str());
 	if (!std::filesystem::exists(input_path))
@@ -268,15 +274,18 @@ process:
 	auto typeinfo_path = input_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 
-	if (std::filesystem::exists(typeinfo_path))
+	if (!just_print_all_symbols)
 	{
-		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-		if (lwt > std::filesystem::last_write_time(pdb_path))
+		if (std::filesystem::exists(typeinfo_path))
 		{
-			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
-			return 0;
+			auto lwt = std::filesystem::last_write_time(typeinfo_path);
+			if (lwt > std::filesystem::last_write_time(pdb_path))
+			{
+				printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
+				return 0;
+			}
+			std::filesystem::remove(typeinfo_path);
 		}
-		std::filesystem::remove(typeinfo_path);
 	}
 
 	if (input_path.filename() == L"flame_foundation.dll")
@@ -662,40 +671,67 @@ process:
 	IDiaEnumSymbols* symbols;
 	IDiaSymbol* s_obj;
 
+	auto skip_name = [](const std::string& name) {
+		return name.starts_with("std::") || name.starts_with("__") || name.starts_with("`")
+			|| name.contains("<lambda_")
+			|| name.starts_with("glm::") || name.starts_with("ImGui::");
+	};
+
+	if (just_print_all_symbols)
+		printf("Enums:\n");
 	dia_global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
 	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
-		if (!name.starts_with("std::") && !name.starts_with("__"))
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
 			dia_enums[name] = s_obj;
+		}
 		else
 			s_obj->Release();
 	}
 	symbols->Release();
 
+	if (just_print_all_symbols)
+		printf("UDTs:\n");
 	dia_global->findChildren(SymTagUDT, NULL, nsNone, &symbols);
 	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
-		if (!name.starts_with("std::") && !name.starts_with("__"))
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
 			dia_udts[name] = s_obj;
+		}
 		else
 			s_obj->Release();
 	}
 	symbols->Release();
 
+	if (just_print_all_symbols)
+		printf("Functions:\n");
 	dia_global->findChildren(SymTagFunction, NULL, nsNone, &symbols);
 	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
 	{
 		s_obj->get_name(&pwname);
 		auto name = w2s(pwname);
-		if (!name.starts_with("std::") && !name.starts_with("__"))
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
 			dia_funcs[name] = s_obj;
+		}
 		else
 			s_obj->Release();
 	}
+
+	if (just_print_all_symbols)
+		return 0;
 
 	for (auto& s_func : dia_funcs)
 	{

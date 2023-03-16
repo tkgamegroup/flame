@@ -471,9 +471,9 @@ void App::init()
 		ImGui::Dummy(vec2(0.f, 20.f));
 
 		static cTerrainPtr terrain_tool_target = nullptr;
-		if (add_tool_button(ToolTerrainUp, "mound"_h, "up"))
+		if (add_tool_button(ToolTerrainUp, "mound"_h, "", "up"))
 			tool = ToolTerrainUp;
-		if (add_tool_button(ToolTerrainDown, "mound"_h, "down", "", 180.f))
+		if (add_tool_button(ToolTerrainDown, "mound"_h, "", "down", 180.f))
 			tool = ToolTerrainDown;
 		if (add_tool_button(ToolTerrainPaint, "paintbrush"_h))
 			tool = ToolTerrainPaint;
