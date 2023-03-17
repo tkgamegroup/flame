@@ -44,7 +44,7 @@ namespace flame
 			dt_crowd->requestMoveTarget(dt_id, poly_ref, &pos[0]);
 			//printf("%s -> %s\n", str(node->pos).c_str(), str(pos).c_str());
 			auto agent = dt_crowd->getEditableAgent(dt_id);
-			*(vec3*)agent->dvel = node->rot[2];
+			*(vec3*)agent->dvel = node->z_axis();
 		}
 #endif
 	}

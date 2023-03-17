@@ -44,8 +44,8 @@ namespace flame
 	{
 		auto node = entity->node();
 
-		view_mat_inv = mat4(node->g_rot);
-		view_mat_inv[3] = vec4(node->g_pos, 1.f);
+		view_mat_inv = mat3(node->g_qut);
+		view_mat_inv[3] = vec4(node->global_pos(), 1.f);
 		view_mat = inverse(view_mat_inv);
 
 		proj_mat = perspective(radians(fovy), aspect, zNear, zFar);

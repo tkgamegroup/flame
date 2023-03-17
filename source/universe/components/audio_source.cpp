@@ -105,7 +105,7 @@ namespace flame
 	{
 #if USE_AUDIO_MODULE
 		for (auto& src : sources)
-			src.second.src->set_pos(node->g_pos);
+			src.second.src->set_pos(node->global_pos());
 #endif
 	}
 

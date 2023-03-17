@@ -1129,11 +1129,12 @@ void View_Inspector::on_draw()
 					{
 						auto node = (cNodePtr)cc.components[0];
 						ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("g_pos", (float*)&node->g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("g_rot.x", (float*)&node->g_rot[0], "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("g_rot.y", (float*)&node->g_rot[1], "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("g_rot.z", (float*)&node->g_rot[2], "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("g_scl", (float*)&node->g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
+						auto g_pos = node->global_pos();
+						auto g_qut = node->global_qut();
+						auto g_scl = node->global_scl();
+						ImGui::InputFloat3("global pos", (float*)&g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
+						ImGui::InputFloat4("global qut", (float*)&g_qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
+						ImGui::InputFloat3("global scl", (float*)&g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
 				}
 				//else if (ui.name_hash == "flame::cArmature"_h)

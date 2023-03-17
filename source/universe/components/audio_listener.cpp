@@ -31,7 +31,7 @@ namespace flame
 	{
 #if USE_AUDIO_MODULE
 		if (listeners.front() == this)
-			audio::Listener::get()->set_pos(node->g_pos);
+			audio::Listener::get()->set_pos(node->global_pos());
 #endif
 	}
 

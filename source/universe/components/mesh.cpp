@@ -58,7 +58,7 @@ namespace flame
 				if (!parmature && dirty)
 				{
 					if (enable)
-						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, node->g_rot);
+						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, mat3(node->g_qut));
 					dirty = false;
 				}
 				break;

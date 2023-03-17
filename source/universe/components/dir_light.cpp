@@ -25,7 +25,7 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					sRenderer::instance()->set_dir_light_instance(instance_id, node->g_rot[2], color.rgb() * color.a);
+					sRenderer::instance()->set_dir_light_instance(instance_id, node->z_axis(), color.rgb() * color.a);
 					dirty = false;
 				}
 				break;
@@ -35,7 +35,7 @@ namespace flame
 		}, "light"_h);
 
 		node->measurers.add([this](AABB& b) {
-			b.expand(AABB(node->g_pos - 10000.f, node->g_pos + 10000.f));
+			b.expand(AABB(node->global_pos(), 10000.f));
 		}, "light"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

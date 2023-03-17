@@ -257,7 +257,10 @@ namespace flame
 			}, "terrain"_h);
 		node->measurers.add([this](AABB& b) {
 			if (height_map)
-				b.expand(AABB(node->g_pos, node->g_pos + extent * node->g_scl));
+			{
+				auto pos = node->global_pos();
+				b.expand(AABB(pos, pos + extent * node->global_scl()));
+			}
 		}, "terrain"_h);
 		node->data_listeners.add([this](uint hash) {
 			if (hash == "transform"_h)

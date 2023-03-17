@@ -83,7 +83,7 @@ namespace flame
 					auto& d = draw_data.particles.emplace_back();
 					d.mat_id = material_res_id;
 					d.ptcs.resize(particles.size());
-					auto& camera_rot = sRenderer::instance()->camera->node->g_rot;
+					auto camera_rot = mat3(sRenderer::instance()->camera->view_mat_inv);
 					auto i = 0;
 					for (auto& src : particles)
 					{

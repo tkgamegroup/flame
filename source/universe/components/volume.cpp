@@ -248,7 +248,10 @@ namespace flame
 		}, "volume"_h);
 		node->measurers.add([this](AABB& b) {
 			if (data_map)
-				b.expand(AABB(node->g_pos, node->g_pos + extent * node->g_scl));
+			{
+				auto pos = node->global_pos();
+				b.expand(AABB(pos, pos + extent * node->global_scl()));
+			}
 			return true;
 		}, "volume"_h);
 		node->data_listeners.add([this](uint hash) {

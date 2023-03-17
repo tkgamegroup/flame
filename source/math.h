@@ -392,9 +392,8 @@ namespace flame
 
 		AABB(const vec3& center, float size)
 		{
-			auto hf_size = size * 0.5f;
-			a = center - hf_size;
-			b = center + hf_size;
+			a = center - size;
+			b = center + size;
 		}
 
 		AABB(uint count, const vec3* points, const mat3& mat = mat3(1.f))

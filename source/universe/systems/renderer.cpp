@@ -1828,10 +1828,10 @@ namespace flame
 		buf_camera.item("fovy"_h).set(camera->fovy);
 		buf_camera.item("tan_hf_fovy"_h).set((float)tan(radians(camera->fovy * 0.5f)));
 		buf_camera.item("viewport"_h).set(ext);
-		buf_camera.item("coord"_h).set(camera->node->g_pos);
-		buf_camera.item("front"_h).set(-camera->node->g_rot[2]);
-		buf_camera.item("right"_h).set(camera->node->g_rot[0]);
-		buf_camera.item("up"_h).set(camera->node->g_rot[1]);
+		buf_camera.item("coord"_h).set(camera->node->global_pos());
+		buf_camera.item("front"_h).set(-camera->view_mat_inv[2]);
+		buf_camera.item("right"_h).set(camera->view_mat_inv[0]);
+		buf_camera.item("up"_h).set(camera->view_mat_inv[1]);
 		buf_camera.item("last_view"_h).set(buf_camera.item("view"_h).get<mat4>());
 		buf_camera.item("view"_h).set(camera->view_mat);
 		buf_camera.item("view_inv"_h).set(camera->view_mat_inv);
@@ -1878,7 +1878,7 @@ namespace flame
 									buf_lighting.mark_dirty(pi);
 
 									auto& rot = dir_shadows[idx].rot;
-									rot = n->g_rot;
+									rot = mat3(n->g_qut);
 									rot[2] *= -1.f;
 
 									n_dir_shadows++;
@@ -1908,7 +1908,7 @@ namespace flame
 		else if (mode == CameraLight)
 		{
 			auto pl = buf_lighting.item_d("dir_lights"_h, camera_light_id);
-			pl.item("dir"_h).set(camera->node->g_rot[2]);
+			pl.item("dir"_h).set(camera->view_mat_inv[2]);
 			pl.item("color"_h).set(vec3(1.f));
 			pl.item("shadow_index"_h).set(-1);
 
@@ -1999,7 +1999,7 @@ namespace flame
 							if (draw_data.meshes.size() > n_mesh_draws)
 							{
 								auto r = n->bounds.radius();
-								auto d = dot(n->g_pos - c, s.rot[2]);
+								auto d = dot(n->global_pos() - c, s.rot[2]);
 								z_min = min(d - r, z_min);
 								z_max = max(d + r, z_max);
 

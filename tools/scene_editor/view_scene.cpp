@@ -28,7 +28,7 @@ cCameraPtr View_Scene::curr_camera()
 vec3 View_Scene::camera_target_pos()
 {
 	auto camera_node = curr_camera()->node;
-	return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+	return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
 }
 
 void View_Scene::focus_to_selected()
@@ -38,7 +38,7 @@ void View_Scene::focus_to_selected()
 		if (auto node = selection.as_entity()->node(); node)
 		{
 			auto camera_node = curr_camera()->node;
-			camera_node->set_pos(node->g_pos + camera_node->g_rot[2] * camera_zoom);
+			camera_node->set_pos(node->global_pos() + camera_node->z_axis() * camera_zoom);
 		}
 	}
 }
@@ -143,7 +143,7 @@ void View_Scene::on_draw()
 					{
 						center = vec3(0.f);
 						for (auto t : targets)
-							center += t->g_pos;
+							center += t->global_pos();
 						center /= (float)targets.size();
 					}
 					mat = translate(mat4(1.f), center);
@@ -247,7 +247,7 @@ void View_Scene::on_draw()
 									ins->mark_modifier(t->entity->file_id.to_string(), "flame::cNode", "qut");
 								if (app.tool_pivot == ToolCenter)
 								{
-									t->set_pos(center + qut * (t->g_pos - center));
+									t->set_pos(center + qut * (t->global_pos() - center));
 									if (auto ins = get_prefab_instance(t->entity); ins)
 										ins->mark_modifier(t->entity->file_id.to_string(), "flame::cNode", "pos");
 								}
@@ -393,11 +393,11 @@ void View_Scene::on_draw()
 								if (auto node = e->get_component_i<cNode>(0); node)
 								{
 									vec3 line_pts[2];
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[0];
+									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
 									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[1];
+									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->y_axis();
 									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
-									line_pts[0] = node->g_pos; line_pts[1] = node->g_pos + node->g_rot[2];
+									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->z_axis();
 									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
 								}
 							}
@@ -413,13 +413,13 @@ void View_Scene::on_draw()
 								std::function<void(cNodePtr)> draw_node;
 								draw_node = [&](cNodePtr n) {
 									vec3 line_pts[2];
-									line_pts[0] = n->g_pos;
+									line_pts[0] = n->global_pos();
 									for (auto& c : n->entity->children)
 									{
 										auto nn = c->node();
 										if (nn)
 										{
-											line_pts[1] = nn->g_pos;
+											line_pts[1] = nn->global_pos();
 											draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255));
 											draw_node(nn);
 										}
@@ -469,9 +469,9 @@ void View_Scene::on_draw()
 								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 							};
 							if (auto agent = e->get_component_t<cNavAgent>(); agent)
-								draw_cylinder(agent->node->g_pos, agent->radius, agent->height);
+								draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);
 							if (auto obstacle = e->get_component_t<cNavObstacle>(); obstacle)
-								draw_cylinder(obstacle->node->g_pos, obstacle->radius, obstacle->height);
+								draw_cylinder(obstacle->node->global_pos(), obstacle->radius, obstacle->height);
 							return true;
 						});
 
@@ -487,7 +487,7 @@ void View_Scene::on_draw()
 			auto camera_node = camera->node;
 
 			auto get_tar = [&]() {
-				return camera_node->g_pos - camera_node->g_rot[2] * camera_zoom;
+				return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
 			};
 
 			if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
@@ -497,13 +497,15 @@ void View_Scene::on_draw()
 				{
 					if (io.MouseDown[ImGuiMouseButton_Middle])
 					{
-						camera_node->add_pos((-camera_node->g_rot[0] * disp.x +
-							camera_node->g_rot[1] * disp.y) * camera_zoom);
+						camera_node->add_pos((-camera_node->x_axis() * disp.x +
+							camera_node->y_axis() * disp.y) * camera_zoom);
 					}
 					else if (io.MouseDown[ImGuiMouseButton_Right])
 					{
 						disp *= -180.f;
-						camera_node->add_eul(vec3(disp, 0.f));
+						disp = radians(disp);
+						camera_node->mul_qut(angleAxis(disp.x, camera_node->qut * vec3(0.f, 1.f, 0.f)));
+						camera_node->mul_qut(angleAxis(disp.y, camera_node->qut * vec3(1.f, 0.f, 0.f)));
 					}
 				}
 				else
@@ -513,7 +515,7 @@ void View_Scene::on_draw()
 						disp *= -180.f;
 						auto tar = get_tar();
 						camera_node->add_eul(vec3(disp, 0.f));
-						auto eul = camera_node->eul;
+						auto eul = camera_node->get_eul();
 						auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
 						camera_node->set_pos(tar + rot[2] * camera_zoom);
 					}
@@ -524,7 +526,7 @@ void View_Scene::on_draw()
 				if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
 					last_mpos = io.MousePos;
 				if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
-					camera_node->set_pos(hovering_pos + camera_node->g_rot[2] * camera_zoom);
+					camera_node->set_pos(hovering_pos + camera_node->z_axis() * camera_zoom);
 			}
 			if (auto scroll = io.MouseWheel; scroll != 0.f)
 			{
@@ -533,7 +535,7 @@ void View_Scene::on_draw()
 					camera_zoom = camera_zoom * 1.1f + 0.5f;
 				else
 					camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
-				camera_node->set_pos(tar + camera_node->g_rot[2] * camera_zoom);
+				camera_node->set_pos(tar + camera_node->z_axis() * camera_zoom);
 			}
 			if (!io.WantCaptureKeyboard)
 			{
@@ -543,22 +545,22 @@ void View_Scene::on_draw()
 					{
 						if (io.KeysDown[Keyboard_W])
 						{
-							camera_node->add_pos(-camera_node->g_rot[2] * 0.2f);
+							camera_node->add_pos(-camera_node->z_axis() * 0.2f);
 							app.render_frames += 30;
 						}
 						if (io.KeysDown[Keyboard_S])
 						{
-							camera_node->add_pos(+camera_node->g_rot[2] * 0.2f);
+							camera_node->add_pos(+camera_node->z_axis() * 0.2f);
 							app.render_frames += 30;
 						}
 						if (io.KeysDown[Keyboard_A])
 						{
-							camera_node->add_pos(-camera_node->g_rot[0] * 0.2f);
+							camera_node->add_pos(-camera_node->x_axis() * 0.2f);
 							app.render_frames += 30;
 						}
 						if (io.KeysDown[Keyboard_D])
 						{
-							camera_node->add_pos(+camera_node->g_rot[0] * 0.2f);
+							camera_node->add_pos(+camera_node->x_axis() * 0.2f);
 							app.render_frames += 30;
 						}
 					}
@@ -691,9 +693,9 @@ void View_Scene::on_draw()
 								if (!hovering_node)
 								{
 									auto camera_node = view_scene.curr_camera()->node;
-									auto camera_pos = camera_node->g_pos;
+									auto camera_pos = camera_node->global_pos();
 									auto v = normalize(pos - camera_pos);
-									pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->g_rot[2]));
+									pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->z_axis()));
 								}
 								node->set_pos(app.get_snap_pos(pos));
 							}

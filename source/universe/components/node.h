@@ -20,7 +20,6 @@ namespace flame
 		}
 
 		// yaw, pitch, roll, in angle
-		vec3 eul = vec3(0.f);
 		// Reflect
 		virtual vec3 get_eul() = 0;
 		// Reflect
@@ -31,16 +30,12 @@ namespace flame
 		}
 
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
-		// Reflect
-		virtual quat get_qut() = 0;
-		// Reflect
+		quat g_qut;
 		virtual void set_qut(const quat& qut) = 0;
-		inline void mul_qut(const quat& qut)
+		inline void mul_qut(const quat& oth)
 		{
-			set_qut(get_qut() * qut);
+			set_qut(qut * oth);
 		}
-
-		mat3 rot = mat3(1.f);
 
 		// Reflect
 		vec3 scl = vec3(1.f);
@@ -66,10 +61,13 @@ namespace flame
 			set_scl(scl);
 		}
 
-		vec3 g_pos;
-		mat3 g_rot;
-		vec3 g_scl;
 		mat4 transform;
+		vec3 global_pos() { return transform[3]; }
+		quat global_qut() { return g_qut; }
+		vec3 x_axis() { return g_qut * vec3(1.f, 0.f, 0.f); }
+		vec3 y_axis() { return g_qut * vec3(0.f, 1.f, 0.f); }
+		vec3 z_axis() { return g_qut * vec3(0.f, 0.f, 1.f); }
+		virtual vec3 global_scl() = 0;
 		AABB bounds;
 
 		OctNode* octnode = nullptr;
@@ -82,9 +80,6 @@ namespace flame
 
 		virtual void look_at(const vec3& t) = 0;
 
-		virtual void update_eul() = 0;
-		virtual void update_qut() = 0;
-		virtual void update_rot() = 0;
 		virtual bool update_transform() = 0;
 
 		struct Create
