@@ -504,7 +504,7 @@ void View_Scene::on_draw()
 					{
 						disp *= -180.f;
 						disp = radians(disp);
-						camera_node->mul_qut(angleAxis(disp.x, camera_node->qut * vec3(0.f, 1.f, 0.f)));
+						camera_node->mul_qut(angleAxis(disp.x, vec3(0.f, 1.f, 0.f)));
 						camera_node->mul_qut(angleAxis(disp.y, camera_node->qut * vec3(1.f, 0.f, 0.f)));
 					}
 				}
@@ -513,11 +513,10 @@ void View_Scene::on_draw()
 					if (io.MouseDown[ImGuiMouseButton_Left])
 					{
 						disp *= -180.f;
-						auto tar = get_tar();
-						camera_node->add_eul(vec3(disp, 0.f));
-						auto eul = camera_node->get_eul();
-						auto rot = mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z)));
-						camera_node->set_pos(tar + rot[2] * camera_zoom);
+						disp = radians(disp);
+						camera_node->mul_qut(angleAxis(disp.x, vec3(0.f, 1.f, 0.f)));
+						camera_node->mul_qut(angleAxis(disp.y, camera_node->qut* vec3(1.f, 0.f, 0.f)));
+						camera_node->set_pos(get_tar() + camera_node->z_axis() * camera_zoom);
 					}
 				}
 			}

@@ -29,12 +29,14 @@ namespace flame
 			set_eul(get_eul() + e);
 		}
 
+		// Reflect
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
 		quat g_qut;
+		// Reflect
 		virtual void set_qut(const quat& qut) = 0;
 		inline void mul_qut(const quat& oth)
 		{
-			set_qut(qut * oth);
+			set_qut(oth * qut);
 		}
 
 		// Reflect

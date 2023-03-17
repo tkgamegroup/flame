@@ -59,7 +59,7 @@ namespace flame
 
 		if (auto pnode = entity->get_parent_component_i<cNodeT>(0); pnode)
 		{
-			g_qut = pnode->g_qut * qut;
+			g_qut = qut * pnode->g_qut;
 			transform = pnode->transform;
 		}
 		else

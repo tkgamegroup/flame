@@ -91,7 +91,7 @@ namespace flame
 					if (!pb)
 						b.expand(AABB(mesh->bounds.get_points(parmature->node->transform)));
 					else
-							b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));
+						b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));
 				}
 			}
 		}, "mesh"_h);
