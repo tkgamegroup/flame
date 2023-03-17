@@ -157,8 +157,7 @@ namespace flame
 
 	void cNodePrivate::draw(DrawData& draw_data)
 	{
-		for (auto& d : drawers.list)
-			d.first(draw_data);
+		drawers.call<DrawData&>(draw_data);
 	}
 
 	void cNodePrivate::on_active()

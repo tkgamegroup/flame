@@ -319,8 +319,7 @@ namespace flame
 				{
 					if (!loop)
 					{
-						for (auto& cb : playing_callbacks.list)
-							cb.first("end"_h, playing_name);
+						playing_callbacks.call("end"_h, playing_name);
 						stop();
 					}
 					else

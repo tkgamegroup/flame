@@ -41,8 +41,7 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
-		for (auto& l : message_listeners.list)
-			l.first("destroyed"_h, nullptr, nullptr);
+		message_listeners.call("destroyed"_h, nullptr, nullptr);
 
 		for (auto it = components.rbegin(); it != components.rend(); it++)
 		{
@@ -69,8 +68,7 @@ namespace flame
 			{
 				for (auto& c : components)
 					global_enable && c->enable ? c->on_active() : c->on_inactive();
-				for (auto& l : message_listeners.list)
-					l.first(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
+				message_listeners.call(global_enable ? "active"_h : "inactive"_h, nullptr, nullptr);
 			}
 
 			for (auto& e : children)
@@ -95,7 +93,7 @@ namespace flame
 			return nullptr;
 		}
 
-		if (component_map.find(hash) != component_map.end())
+		if (find_component(hash))
 		{
 			printf("cannot add component: %s already existed\n", ui->name.c_str());
 			return nullptr;
@@ -170,7 +168,6 @@ namespace flame
 		for (auto& _c : components)
 			_c->on_component_added(c);
 
-		component_map.emplace(c->type_hash, c);
 		components.emplace_back(c);
 
 		if (global_enable && c->enable)
@@ -181,14 +178,13 @@ namespace flame
 
 	bool EntityPrivate::remove_component(uint hash)
 	{
-		auto it = component_map.find(hash);
-		if (it == component_map.end())
+		auto c = find_component(hash);
+		if (!c)
 		{
 			printf("cannot remove component: component with hash %u does not exist\n", hash);
 			return false;
 		}
 
-		auto c = it->second;
 		if (c->ref != 0)
 		{
 			printf("cannot remove component: component is strongly referenced by other compoent(s)\n");
@@ -209,8 +205,6 @@ namespace flame
 				}
 			}
 		}
-
-		component_map.erase(it);
 
 		for (auto it = components.begin(); it != components.end(); it++)
 		{
@@ -254,8 +248,7 @@ namespace flame
 		e->index = pos;
 		e->update_enable();
 
-		for (auto& l : e->message_listeners.list)
-			l.first("entity_added"_h, nullptr, nullptr);
+		e->message_listeners.call("entity_added"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_added();
 
@@ -265,8 +258,7 @@ namespace flame
 				e->depth = e->parent->depth + 1;
 				if (e->global_enable)
 				{
-					for (auto& l : e->message_listeners.list)
-						l.first("active"_h, nullptr, nullptr);
+					e->message_listeners.call("active"_h, nullptr, nullptr);
 					for (auto& c : e->components)
 					{
 						if (c->enable)
@@ -276,8 +268,7 @@ namespace flame
 			});
 		}
 
-		for (auto& l : message_listeners.list)
-			l.first("child_added"_h, e, nullptr);
+		message_listeners.call("child_added"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_added(e);
 	}
@@ -286,8 +277,7 @@ namespace flame
 	{
 		e->parent = nullptr;
 
-		for (auto& l : e->message_listeners.list)
-			l.first("entity_removed"_h, nullptr, nullptr);
+		e->message_listeners.call("entity_removed"_h, nullptr, nullptr);
 		for (auto& c : e->components)
 			c->on_entity_removed();
 
@@ -302,15 +292,13 @@ namespace flame
 						if (c->enable)
 							c->on_inactive();
 					}
-					for (auto& l : e->message_listeners.list)
-						l.first("inactive"_h, nullptr, nullptr);
+					e->message_listeners.call("inactive"_h, nullptr, nullptr);
 					e->global_enable = false;
 				}
 			});
 		}
 
-		for (auto& l : message_listeners.list)
-			l.first("child_removed"_h, e, nullptr);
+		message_listeners.call("child_removed"_h, e, nullptr);
 		for (auto& c : components)
 			c->on_child_removed(e);
 	}

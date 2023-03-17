@@ -849,13 +849,10 @@ void App::cmake_project()
 
 void App::build_project()
 {
-	if (project_path.empty())
+	if (project_path.empty() || e_playing)
 		return;
 
 	add_event([this]() {
-		if (e_prefab)
-			e_prefab->remove_from_parent(false);
-
 		// remove saved udts, inspector will try to get new ones
 		view_inspector.clear_typeinfos();
 		unload_project_cpp();
@@ -878,8 +875,8 @@ void App::build_project()
 		 
 		load_project_cpp();
 
-		if (e_prefab)
-			world->root->add_child(e_prefab);
+		if (!prefab_path.empty())
+			open_prefab(prefab_path);
 
 		return false;
 	});

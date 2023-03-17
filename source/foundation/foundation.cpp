@@ -56,12 +56,13 @@ namespace flame
 
 	struct Event
 	{
+		bool dead = false;
 		float interval;
 		float timer;
 		std::function<bool()> callback;
 	};
 
-	static std::vector<Event> events;
+	static std::vector<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
 	static const uint64 counter_freq = performance_frequency();
@@ -117,20 +118,28 @@ namespace flame
 			}
 
 			{
+				static std::vector<Event*> _events;
 				std::lock_guard<std::recursive_mutex> lock(event_mtx);
+				_events.resize(events.size());
+				for (auto i = 0; i < events.size(); i++)
+					_events[i] = events[i].get();
+				for (auto e : _events)
+				{
+					e->timer -= delta_time;
+					if (e->timer <= 0)
+					{
+						if (!e->callback())
+							e->dead = true;
+						else
+							e->timer = e->interval;
+					}
+				}
 				for (auto it = events.begin(); it != events.end();)
 				{
-					it->timer -= delta_time;
-					if (it->timer <= 0)
-					{
-						if (!it->callback())
-						{
-							it = events.erase(it);
-							continue;
-						}
-						it->timer = it->interval;
-					}
-					it++;
+					if ((*it)->dead)
+						it = events.erase(it);
+					else
+						it++;
 				}
 			}
 
@@ -166,11 +175,12 @@ namespace flame
 	void* add_event(const std::function<bool()>& callback, float time)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
-		auto& e = events.emplace_back();
-		e.interval = time;
-		e.timer = time;
-		e.callback = callback;
-		return &e;
+		auto e = new Event;
+		e->interval = time;
+		e->timer = time;
+		e->callback = callback;
+		events.emplace_back(e);
+		return e;
 	}
 
 	void reset_event(void* _ev)
@@ -185,7 +195,7 @@ namespace flame
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
-			if (&*it == ev)
+			if (it->get() == ev)
 			{
 				events.erase(it);
 				break;

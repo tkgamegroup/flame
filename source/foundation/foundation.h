@@ -327,35 +327,55 @@ namespace flame
 	template<typename F>
 	struct Listeners
 	{
-		std::vector<std::pair<std::function<F>, uint>> list;
+		std::unique_ptr<std::vector<std::pair<std::function<F>, uint>>> list;
+
+		operator bool()
+		{
+			return list && !list->empty();
+		}
 
 		void add(const std::function<F>& callback, uint h = 0, int pos = -1)
 		{
+			if (!list)
+				list.reset(new std::vector<std::pair<std::function<F>, uint>>);
 			if (h != 0)
 			{
 				if (find(h) != -1)
 					return;
 			}
 			if (pos == -1)
-				pos = list.size();
-			list.emplace(list.begin() + pos, std::make_pair(callback, h));
+				pos = list->size();
+			list->emplace(list->begin() + pos, std::make_pair(callback, h));
 		}
 
 		void remove(uint h)
 		{
-			std::erase_if(list, [&](const auto& i) {
+			if (!list)
+				return;
+			std::erase_if(*list, [&](const auto& i) {
 				return i.second == h;
 			});
 		}
 
 		int find(uint h)
 		{
-			auto it = std::find_if(list.begin(), list.end(), [&](const auto& i) {
-				return i.second == h;
-			});
-			if (it == list.end())
+			if (!list)
 				return -1;
-			return it - list.begin();
+			for (auto i = 0; i < list->size(); i++)
+			{
+				if (list->at(i).second == h)
+					return i;
+			}
+			return -1;
+		}
+
+		template<typename... Args>
+		void call(Args ...args) const
+		{
+			if (!list)
+				return;
+			for (auto& l : *list)
+				l.first(args...);
 		}
 	};
 

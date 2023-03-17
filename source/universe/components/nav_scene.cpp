@@ -19,8 +19,7 @@ namespace flame
 			{
 				sScene::instance()->generate_navmesh(agent_radius, agent_height, walkable_climb, walkable_slope_angle);
 				add_event([this]() {
-					for (auto cb : finished_callback.list)
-						cb.first();
+					finished_callback.call();
 					return false;
 				});
 				_frame = -1;

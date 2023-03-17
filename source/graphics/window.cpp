@@ -195,8 +195,7 @@ namespace flame
 
 			commandbuffer->begin();
 
-			for (auto& l : renderers.list)
-				l.first(img_idx, commandbuffer.get());
+			renderers.call(img_idx, commandbuffer.get());
 
 			commandbuffer->image_barrier(curr_img, {}, ImageLayoutPresent);
 			commandbuffer->end();

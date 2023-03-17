@@ -54,7 +54,6 @@ namespace flame
 
 		// Reflect
 		std::vector<std::unique_ptr<Component>> components;
-		std::unordered_map<uint, Component*> component_map;
 		// Reflect
 		std::vector<std::unique_ptr<EntityT>> children;
 
@@ -64,9 +63,11 @@ namespace flame
 
 		inline Component* get_component(uint type_hash) const
 		{
-			auto it = component_map.find(type_hash);
-			if (it != component_map.end())
-				return it->second;
+			for (auto& c : components)
+			{
+				if (c->type_hash == type_hash)
+					return c.get();
+			}
 			return nullptr;
 		}
 

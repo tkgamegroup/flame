@@ -20,10 +20,7 @@ void selection_clear_no_history(uint caller = 0)
 	selection.objects.clear();
 
 	if (caller)
-	{
-		for (auto& cb : selection.callbacks.list)
-			cb.first(caller);
-	}
+		selection.callbacks.call(caller);
 }
 
 void selection_select_no_history(const std::vector<std::filesystem::path>& paths, uint caller = 0)
@@ -41,10 +38,7 @@ void selection_select_no_history(const std::vector<std::filesystem::path>& paths
 		selection.objects[i] = new std::filesystem::path(paths[i]);
 
 	if (caller)
-	{
-		for (auto& cb : selection.callbacks.list)
-			cb.first(caller);
-	}
+		selection.callbacks.call(caller);
 }
 
 void selection_select_no_history(const std::vector<EntityPtr>& entities, uint caller = 0)
@@ -83,10 +77,7 @@ void selection_select_no_history(const std::vector<EntityPtr>& entities, uint ca
 	}
 
 	if (caller)
-	{
-		for (auto& cb : selection.callbacks.list)
-			cb.first(caller);
-	}
+		selection.callbacks.call(caller);
 }
 
 void Selection::History::redo()

@@ -261,7 +261,7 @@ namespace flame
 		static GraphicsPipelinePtr imgui_pl;
 
 		Listeners<void()> gui_callbacks;
-		Listeners<CursorType(CursorType cursor)> gui_cursor_callbacks;
+		Listeners<void(CursorType &cursor)> gui_cursor_callbacks;
 
 		static std::map<std::filesystem::path, std::pair<int, ImagePtr>> icons;
 
@@ -312,8 +312,7 @@ namespace flame
 
 			ImGui::NewFrame();
 
-			for (auto& l : gui_callbacks.list)
-				l.first();
+			gui_callbacks.call();
 
 			if (!ImGui::peeding_dialogs.empty())
 			{
@@ -327,43 +326,42 @@ namespace flame
 			want_mouse = io.WantCaptureMouse;
 			want_keyboard = io.WantCaptureKeyboard;
 
-			CursorType curosr = CursorNone;
+			CursorType cursor = CursorNone;
 			switch (ImGui::GetMouseCursor())
 			{
 			case ImGuiMouseCursor_None:
-				curosr = CursorNone;
+				cursor = CursorNone;
 				break;
 			case ImGuiMouseCursor_Arrow:
-				curosr = CursorArrow;
+				cursor = CursorArrow;
 				break;
 			case ImGuiMouseCursor_TextInput:
-				curosr = CursorIBeam;
+				cursor = CursorIBeam;
 				break;
 			case ImGuiMouseCursor_ResizeAll:
-				curosr = CursorSizeAll;
+				cursor = CursorSizeAll;
 				break;
 			case ImGuiMouseCursor_ResizeNS:
-				curosr = CursorSizeNS;
+				cursor = CursorSizeNS;
 				break;
 			case ImGuiMouseCursor_ResizeEW:
-				curosr = CursorSizeWE;
+				cursor = CursorSizeWE;
 				break;
 			case ImGuiMouseCursor_ResizeNESW:
-				curosr = CursorSizeNESW;
+				cursor = CursorSizeNESW;
 				break;
 			case ImGuiMouseCursor_ResizeNWSE:
-				curosr = CursorSizeNWSE;
+				cursor = CursorSizeNWSE;
 				break;
 			case ImGuiMouseCursor_Hand:
-				curosr = CursorHand;
+				cursor = CursorHand;
 				break;
 			case ImGuiMouseCursor_NotAllowed:
-				curosr = CursorNo;
+				cursor = CursorNo;
 				break;
 			}
-			for (auto& l : gui_cursor_callbacks.list)
-				curosr = l.first(curosr);
-			nw->set_cursor(curosr);
+			gui_cursor_callbacks.call<CursorType&>(cursor);
+			nw->set_cursor(cursor);
 
 			ImGui::EndFrame();
 #endif

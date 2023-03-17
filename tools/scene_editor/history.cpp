@@ -60,10 +60,7 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 			}
 		}
 		if (selection.type == Selection::tEntity)
-		{
-			for (auto& cb : selection.callbacks.list)
-				cb.first("app"_h);
-		}
+			selection.callbacks.call("app"_h);
 	}
 }
 

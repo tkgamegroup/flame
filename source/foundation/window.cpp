@@ -18,8 +18,7 @@ namespace flame
 				if (auto v = vk_code_to_key(wParam); v != KeyboardKey_Count)
 				{
 					w->has_input = true;
-					for (auto& l : w->key_listeners.list)
-						l.first(v, true);
+					w->key_listeners.call(v, true);
 				}
 				return true;
 			case WM_KEYUP:
@@ -27,63 +26,53 @@ namespace flame
 				if (auto v = vk_code_to_key(wParam); v != KeyboardKey_Count)
 				{
 					w->has_input = true;
-					for (auto& l : w->key_listeners.list)
-						l.first(v, false);
+					w->key_listeners.call(v, false);
 				}
 				return true;
 			case WM_CHAR:
 				w->has_input = true;
-				for (auto& l : w->char_listeners.list)
-					l.first(wParam);
+				w->char_listeners.call(wParam);
 				return true;
 			case WM_LBUTTONDOWN:
 				SetCapture(hWnd);
 				w->has_input = true;
 				w->mpos = ivec2((int)GET_X_LPARAM(lParam), (int)HIWORD(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Left, true);
+				w->mouse_listeners.call(Mouse_Left, true);
 				return true;
 			case WM_LBUTTONUP:
 				ReleaseCapture();
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Left, false);
+				w->mouse_listeners.call(Mouse_Left, false);
 				return true;
 			case WM_RBUTTONDOWN:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Right, true);
+				w->mouse_listeners.call(Mouse_Right, true);
 				return true;
 			case WM_RBUTTONUP:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Right, false);
+				w->mouse_listeners.call(Mouse_Right, false);
 				return true;
 			case WM_MBUTTONDOWN:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Middle, true);
+				w->mouse_listeners.call(Mouse_Middle, true);
 				return true;
 			case WM_MBUTTONUP:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mouse_listeners.list)
-					l.first(Mouse_Middle, false);
+				w->mouse_listeners.call(Mouse_Middle, false);
 				return true;
 			case WM_MOUSEMOVE:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->mousemove_listeners.list)
-					l.first(w->mpos);
+				w->mousemove_listeners.call(w->mpos);
 				return true;
 			case WM_MOUSEWHEEL:
 				w->has_input = true;
-				for (auto& l : w->scroll_listeners.list)
-					l.first(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
+				w->scroll_listeners.call(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
 				return true;
 			case WM_DESTROY:
 				w->has_input = true;
@@ -92,16 +81,13 @@ namespace flame
 			case WM_SIZE:
 				w->has_input = true;
 				w->size = uvec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				for (auto& l : w->resize_listeners.list)
-					l.first(w->size);
+				w->resize_listeners.call(w->size);
 				return true;
 			case WM_SETFOCUS:
-				for (auto& l : w->focus_listeners.list)
-					l.first(true);
+				w->focus_listeners.call(true);
 				return true;
 			case WM_KILLFOCUS:
-				for (auto& l : w->focus_listeners.list)
-					l.first(false);
+				w->focus_listeners.call(false);
 				return true;
 			case WM_MOVE:
 				w->has_input = true;
@@ -125,8 +111,7 @@ namespace flame
 
 	NativeWindowPrivate::~NativeWindowPrivate()
 	{
-		for (auto& l : destroy_listeners.list)
-			l.first();
+		destroy_listeners.call();
 		std::erase_if(windows, [&](auto w) {
 			return w == this;
 		});

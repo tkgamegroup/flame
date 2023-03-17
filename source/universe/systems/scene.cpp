@@ -76,13 +76,12 @@ namespace flame
 					node->mark_transform_dirty();
 				if (node->update_transform())
 				{
-					if (!node->measurers.list.empty())
+					if (node->measurers)
 					{
 						node->bounds.reset();
-						for (auto m : node->measurers.list)
-							m.first(node->bounds);
+						node->measurers.call<AABB&>(node->bounds);
 					}
-					else if (!node->drawers.list.empty())
+					else if (node->drawers)
 						node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));
 					if (node->octnode)
 						node->octnode->remove(node);
