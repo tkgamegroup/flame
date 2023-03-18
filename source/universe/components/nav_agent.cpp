@@ -98,10 +98,11 @@ namespace flame
 		if (!enable || dist < 0.f)
 			return;
 
-		dist_ang_diff(node->pos, target_pos, node->get_eul().x - 90.f, dist, ang_diff);
+		dist_ang_diff(node->pos, target_pos, angle_xz(node->z_axis()), dist, ang_diff);
 		if (speed_scale == 0.f)
 		{
-			node->add_eul(vec3(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+			auto turn_angle = radians(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time));
+			node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
 		}
 		else
 		{
@@ -113,8 +114,9 @@ namespace flame
 				auto dmag = dot(dvel, dvel);
 				if (dmag > 0.1f && dist > stop_distance)
 				{
-					auto path_ang_diff = angle_diff(node->get_eul().x - 90.f, angle_xz(dvel));
-					node->add_eul(vec3(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time), 0.f, 0.f));
+					auto path_ang_diff = angle_diff(angle_xz(node->z_axis()), angle_xz(dvel));
+					auto turn_angle = radians(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time));
+					node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
 					if (abs(path_ang_diff) < 15.f)
 					{
 						npos = *(vec3*)agent->npos;

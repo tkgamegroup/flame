@@ -487,7 +487,10 @@ void App::init()
 			if (add_tool_button(ToolNone, "play"_h, " Build And Play"))
 			{
 				build_project();
-				cmd_play();
+				add_event([this]() {
+					cmd_play();
+					return false;
+				}, 0.f, 3);
 			}
 			if (add_tool_button(ToolNone, "play"_h))
 				cmd_play();
@@ -876,7 +879,10 @@ void App::build_project()
 		load_project_cpp();
 
 		if (!prefab_path.empty())
-			open_prefab(prefab_path);
+		{
+			auto path = prefab_path;
+			open_prefab(path);
+		}
 
 		return false;
 	});
@@ -955,12 +961,12 @@ void App::close_prefab()
 
 	if (e_prefab)
 	{
-		add_event([this]() {
-			if (e_prefab)
-				e_prefab->remove_from_parent();
-			e_prefab = nullptr;
+		auto e = e_prefab;
+		add_event([this, e]() {
+			e->remove_from_parent();
 			return false;
 		});
+		e_prefab = nullptr;
 	}
 }
 
@@ -992,7 +998,7 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 	std::wstring cl_str;
 	if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
 	{
-		cl_str = L"-p " + project_path.filename().wstring();
+		//cl_str = L"-p " + project_path.filename().wstring();
 		cl_str += L" -c " + cl[0];
 		cl_str += L" " + wstr(getpid());
 	}
@@ -1075,6 +1081,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	if (auto node = e->node(); node)
 		node->set_pos(get_snap_pos(view_scene.camera_target_pos()));
 	dst->add_child(e);
+	prefab_unsaved = true;
 	return true;
 }
 
@@ -1112,6 +1119,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		e->remove_from_parent();
 		return false;
 	});
+	prefab_unsaved = true;
 	return true;
 }
 
@@ -1146,6 +1154,7 @@ bool App::cmd_duplicate_entity(EntityPtr e)
 		return false;
 	}
 	e_prefab->add_child(e->copy());
+	prefab_unsaved = true;
 	return true;
 }
 

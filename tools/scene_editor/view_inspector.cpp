@@ -2,6 +2,7 @@
 #include "selection.h"
 #include "history.h"
 #include "view_inspector.h"
+#include "view_scene.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
@@ -745,7 +746,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				if (i > 0) ImGui::Separator();
 				ImGui::PushID(i);
 				voidptr obj = sv.v.data() + ui.size * i;
-				if (manipulate_udt(ui, &obj) > 1)
+				if (manipulate_udt(ui, &obj))
 					changed = true;
 				ImGui::PopID();
 			}
@@ -1008,10 +1009,10 @@ void View_Inspector::on_draw()
 			{
 				manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
 
+				static bool open_select_standard_model = false;
 				static bool open_select_hash = false;
 				static std::vector<std::string> hash_candidates;
 				static const Attribute* op_attr;
-				static std::pair<voidptr*, uint> op_objs;
 				auto changed_name = manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
 					ImGui::PushID(name);
 					if (name == "mesh_name"_h)
@@ -1019,30 +1020,8 @@ void View_Inspector::on_draw()
 						ImGui::SameLine();
 						if (ImGui::Button("S"))
 						{
-							static const wchar_t* names[] = {
-								L"standard_plane",
-								L"standard_cube",
-								L"standard_sphere",
-								L"standard_cylinder",
-								L"standard_tri_prism"
-							};
-
-							auto& ori_name = *(std::filesystem::path*)ui.find_attribute("mesh_name"_h)->get_value(cc.components[0]);
-							auto idx = -1;
-							for (auto i = 0; i < countof(names); i++)
-							{
-								if (ori_name == names[i])
-								{
-									idx = i;
-									break;
-								}
-							}
-							if (idx == -1 || idx + 1 == countof(names))
-								idx = 0;
-							else
-								idx++;
-							auto path = std::filesystem::path(names[idx]);
-							ui.find_function("set_mesh_name"_h)->call<void, void*>(cc.components[0], &path);
+							open_select_hash = true;
+							op_attr = ui.find_attribute(name);
 						}
 					}
 					else if (name == "material_name"_h)
@@ -1079,49 +1058,83 @@ void View_Inspector::on_draw()
 							}
 						}
 					}
-				//	else
-				//	{
-				//		auto& a = *ui.find_attribute(name);
-				//		std::string meta;
-				//		if (a.var_idx != -1)
-				//		{
-				//			if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
-				//			{
-				//				ImGui::SameLine();
-				//				if (ImGui::Button("S"))
-				//				{
-				//					open_select_hash = true;
-				//					hash_candidates = SUS::split(meta, '|');
-				//					op_attr = &a;
-				//					op_obj = obj;
-				//				}
-				//			}
-				//		}
-				//	}
+					else
+					{
+						auto& a = *ui.find_attribute(name);
+						if (a.var_idx != -1)
+						{
+							std::string meta;
+							if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
+							{
+								ImGui::SameLine();
+								if (ImGui::Button("S"))
+								{
+									open_select_hash = true;
+									hash_candidates = SUS::split(meta, '|');
+									op_attr = &a;
+								}
+							}
+						}
+					}
 					ImGui::PopID();
 				});
+				if (open_select_standard_model)
+				{
+					ImGui::OpenPopup("select_standard_model");
+					open_select_standard_model = false;
+				}
 				if (open_select_hash)
 				{
 					ImGui::OpenPopup("select_hash");
 					open_select_hash = false;
 				}
-				//if (ImGui::BeginPopup("select_hash"))
-				//{
-				//	for (auto& c : hash_candidates)
-				//	{
-				//		if (ImGui::Selectable(c.c_str()))
-				//		{
-				//			uint v = sh(c.c_str());
-				//			op_attr->set_value(op_obj, &v);
-				//		}
-				//	}
-				//	ImGui::EndPopup();
-				//}
-				//if (!changed_name.empty())
-				//{
-				//	if (auto ins = get_prefab_instance(e); ins)
-				//		ins->mark_modifier(e->file_id, ui.name, changed_name);
-				//}
+				if (ImGui::BeginPopup("select_standard_model"))
+				{
+					static const char* names[] = {
+						"standard_plane",
+						"standard_cube",
+						"standard_sphere",
+						"standard_cylinder",
+						"standard_tri_prism"
+					};
+					for (auto n : names)
+					{
+						if (ImGui::Selectable(n))
+						{
+							std::filesystem::path v(n);
+							for (auto c : cc.components)
+								op_attr->set_value(c, &v);
+						}
+					}
+
+					ImGui::EndPopup();
+				}
+				if (ImGui::BeginPopup("select_hash"))
+				{
+					for (auto& c : hash_candidates)
+					{
+						if (ImGui::Selectable(c.c_str()))
+						{
+							uint v = sh(c.c_str());
+							for (auto c : cc.components)
+								op_attr->set_value(c, &v);
+						}
+					}
+					ImGui::EndPopup();
+				}
+				if (changed_name != 0)
+				{
+					auto& str = ui.find_attribute(changed_name)->name;
+					for (auto e : editing_entities.entities)
+					{
+						if (auto ins = get_prefab_instance(e); ins)
+							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
+					}
+
+					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
+						(changed_name == "radius"_h || changed_name == "height"_h))
+						view_scene.show_navigation_frames = 3;
+				}
 
 				if (ui.name_hash == "flame::cNode"_h)
 				{
@@ -1137,36 +1150,39 @@ void View_Inspector::on_draw()
 						ImGui::InputFloat3("global scl", (float*)&g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
 				}
-				//else if (ui.name_hash == "flame::cArmature"_h)
-				//{
-				//	auto armature = (cArmaturePtr)c.get();
-				//	if (!armature->animation_names.empty())
-				//	{
-				//		static int idx = 0;
-				//		idx = clamp(idx, 0, (int)armature->animation_names.size());
-				//		if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
-				//		{
-				//			for (auto i = 0; i < armature->animation_names.size(); i++)
-				//			{
-				//				auto& name = armature->animation_names[i].second;
-				//				if (ImGui::Selectable(name.c_str()))
-				//				{
-				//					idx = i;
-				//					armature->play(sh(name.c_str()));
-				//				}
-				//			}
-				//			ImGui::EndCombo();
-				//		}
-				//	}
-				//	if (armature->playing_name != 0)
-				//	{
-				//		ImGui::SameLine();
-				//		if (ImGui::Button("Stop"))
-				//			armature->stop();
-				//		ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
-				//	}
-				//	ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
-				//}
+				else if (ui.name_hash == "flame::cArmature"_h)
+				{
+					if (cc.components.size() == 1)
+					{
+						auto armature = (cArmaturePtr)cc.components[0];
+						if (!armature->animation_names.empty())
+						{
+							static int idx = 0;
+							idx = clamp(idx, 0, (int)armature->animation_names.size());
+							if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
+							{
+								for (auto i = 0; i < armature->animation_names.size(); i++)
+								{
+									auto& name = armature->animation_names[i].second;
+									if (ImGui::Selectable(name.c_str()))
+									{
+										idx = i;
+										armature->play(sh(name.c_str()));
+									}
+								}
+								ImGui::EndCombo();
+							}
+						}
+						if (armature->playing_name != 0)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Stop"))
+								armature->stop();
+							ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+						}
+						ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
+					}
+				}
 			}
 			ImGui::PopID();
 			editing_objects.pop();
@@ -1187,9 +1203,69 @@ void View_Inspector::on_draw()
 		if (ImGui::BeginPopup("component_menu"))
 		{
 			if (ImGui::Selectable("Move Up"))
-				;
+			{
+				auto ok = true;
+				for (auto e : editing_entities.entities)
+				{
+					if (get_prefab_instance(e))
+					{
+						ok = false;
+						break;
+					}
+				}
+				if (ok)
+				{
+					auto e0 = editing_entities.entities[0];
+					for (auto i = 0; i < e0->components.size(); i++)
+					{
+						if (e0->components[i]->type_hash == target_component)
+						{
+							if (i > 0)
+							{
+								for (auto e : editing_entities.entities)
+									std::swap(e->components[i], e->components[i - 1]);
+							}
+							editing_entities.refresh();
+							app.prefab_unsaved = true;
+							break;
+						}
+					}
+				}
+				else
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			}
 			if (ImGui::Selectable("Move Down"))
-				;
+			{
+				auto ok = true;
+				for (auto e : editing_entities.entities)
+				{
+					if (get_prefab_instance(e))
+					{
+						ok = false;
+						break;
+					}
+				}
+				if (ok)
+				{
+					auto e0 = editing_entities.entities[0];
+					for (auto i = 0; i < e0->components.size(); i++)
+					{
+						if (e0->components[i]->type_hash == target_component)
+						{
+							if (i < e0->components.size() - 1)
+							{
+								for (auto e : editing_entities.entities)
+									std::swap(e->components[i], e->components[i + 1]);
+							}
+							editing_entities.refresh();
+							app.prefab_unsaved = true;
+							break;
+						}
+					}
+				}
+				else
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			}
 			if (ImGui::Selectable("Remove"))
 			{
 				auto ok = true;
@@ -1206,6 +1282,7 @@ void View_Inspector::on_draw()
 					for (auto e : editing_entities.entities)
 						e->remove_component(target_component);
 					editing_entities.refresh();
+					app.prefab_unsaved = true;
 				}
 				else
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
@@ -1232,6 +1309,7 @@ void View_Inspector::on_draw()
 						for (auto e : editing_entities.entities)
 							e->add_component(ui->name_hash);
 						editing_entities.refresh();
+						app.prefab_unsaved = true;
 					}
 					else
 						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");

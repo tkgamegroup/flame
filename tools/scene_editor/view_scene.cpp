@@ -430,7 +430,7 @@ void View_Scene::on_draw()
 							return true;
 						});
 					}
-					if (show_navigation)
+					if (show_navigation || show_navigation_frames)
 					{
 						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
 							if (!e->global_enable)
@@ -476,6 +476,9 @@ void View_Scene::on_draw()
 						});
 
 						sScene::instance()->get_debug_draw(draw_data);
+
+						if (show_navigation_frames > 0)
+							show_navigation_frames--;
 					}
 				}
 			}, "scene"_h);

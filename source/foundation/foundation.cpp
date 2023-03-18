@@ -57,8 +57,10 @@ namespace flame
 	struct Event
 	{
 		bool dead = false;
-		float interval;
-		float timer;
+		float time_interval;
+		float time_counter;
+		uint frames_interval;
+		int frames_counter;
 		std::function<bool()> callback;
 	};
 
@@ -125,13 +127,17 @@ namespace flame
 					_events[i] = events[i].get();
 				for (auto e : _events)
 				{
-					e->timer -= delta_time;
-					if (e->timer <= 0)
+					e->time_counter -= delta_time;
+					e->frames_counter -= 1;
+					if (e->time_counter <= 0 && e->frames_counter <= 0)
 					{
 						if (!e->callback())
 							e->dead = true;
 						else
-							e->timer = e->interval;
+						{
+							e->time_counter = e->time_interval;
+							e->frames_counter = e->frames_interval;
+						}
 					}
 				}
 				for (auto it = events.begin(); it != events.end();)
@@ -172,12 +178,14 @@ namespace flame
 		}
 	}
 
-	void* add_event(const std::function<bool()>& callback, float time)
+	void* add_event(const std::function<bool()>& callback, float time, uint frames)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		auto e = new Event;
-		e->interval = time;
-		e->timer = time;
+		e->time_interval = time;
+		e->time_counter = time;
+		e->frames_interval = frames;
+		e->frames_counter = frames;
 		e->callback = callback;
 		events.emplace_back(e);
 		return e;
@@ -187,7 +195,8 @@ namespace flame
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		auto ev = (Event*)_ev;
-		ev->timer = ev->interval;
+		ev->time_counter = ev->time_interval;
+		ev->frames_counter = ev->frames_interval;
 	}
 
 	void remove_event(void* ev)

@@ -413,7 +413,7 @@ namespace flame
 
 	FLAME_FOUNDATION_API int run(const std::function<bool()>& callback);
 
-	FLAME_FOUNDATION_API void* add_event(const std::function<bool()>& callback, float time = 0.f);
+	FLAME_FOUNDATION_API void* add_event(const std::function<bool /* return false to end the event*/()>& callback, float time = 0.f, uint frames = 0);
 	FLAME_FOUNDATION_API void reset_event(void* ev);
 	FLAME_FOUNDATION_API void remove_event(void* ev);
 	FLAME_FOUNDATION_API void clear_events();

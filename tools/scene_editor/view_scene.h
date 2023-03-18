@@ -12,6 +12,7 @@ struct View_Scene : graphics::GuiView
 	bool show_axis = true;
 	bool show_bones = false;
 	bool show_navigation = false;
+	uint show_navigation_frames = 0;
 
 	uint camera_idx = 0;
 	float camera_zoom = 5.f;
