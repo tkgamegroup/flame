@@ -88,7 +88,12 @@ struct Selection
 	void forward();
 	void backward();
 
-	inline std::filesystem::path	as_path() { return *(std::filesystem::path*)objects[0]; }
+	inline std::filesystem::path	as_path(int idx = 0) 
+	{ 
+		if (idx < 0)
+			idx += objects.size();
+		return *(std::filesystem::path*)objects[idx]; 
+	}
 	inline PathsRange				paths()
 	{
 		PathsRange ret;
@@ -112,7 +117,12 @@ struct Selection
 		}
 		return ret;
 	}
-	inline EntityPtr		as_entity() { return (EntityPtr)objects[0]; }
+	inline EntityPtr		as_entity(int idx = 0) 
+	{ 
+		if (idx < 0)
+			idx += objects.size();
+		return (EntityPtr)objects[idx]; 
+	}
 	inline EntitiesRange	entities()
 	{
 		EntitiesRange ret;

@@ -55,18 +55,19 @@ struct App : UniverseApplication
 	EntityPtr e_playing = nullptr;
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
+	void* ev_open_prefab = nullptr;
 
 	ProjectSettings project_settings;
 
 	Tool tool = ToolSelect;
 	ToolPivot tool_pivot = ToolIndividual;
 	ToolMode tool_mode = ToolLocal;
-	bool move_snap = false;
+	bool move_snap = true;
 	float move_snap_value = 0.5f;
 	vec3 get_snap_pos(const vec3& _pos);
-	bool rotate_snap = false;
+	bool rotate_snap = true;
 	float rotate_snap_value = 5.f;
-	bool scale_snap = false;
+	bool scale_snap = true;
 	float scale_snap_value = 0.1f;
 
 	void init();

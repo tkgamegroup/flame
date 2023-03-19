@@ -507,8 +507,9 @@ void View_Scene::on_draw()
 					{
 						disp *= -180.f;
 						disp = radians(disp);
-						camera_node->mul_qut(angleAxis(disp.x, vec3(0.f, 1.f, 0.f)));
-						camera_node->mul_qut(angleAxis(disp.y, camera_node->qut * vec3(1.f, 0.f, 0.f)));
+						auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+						qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+						camera_node->set_qut(qut);
 					}
 				}
 				else
@@ -517,9 +518,10 @@ void View_Scene::on_draw()
 					{
 						disp *= -180.f;
 						disp = radians(disp);
-						camera_node->mul_qut(angleAxis(disp.x, vec3(0.f, 1.f, 0.f)));
-						camera_node->mul_qut(angleAxis(disp.y, camera_node->qut* vec3(1.f, 0.f, 0.f)));
-						camera_node->set_pos(get_tar() + camera_node->z_axis() * camera_zoom);
+						auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+						qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+						camera_node->set_qut(qut);
+						camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom);
 					}
 				}
 			}

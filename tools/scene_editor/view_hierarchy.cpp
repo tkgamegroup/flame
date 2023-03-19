@@ -20,7 +20,7 @@ void View_Hierarchy::on_draw()
 {
 	auto no_select = true;
 
-	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity() : nullptr) : nullptr;
+	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity(-1) : nullptr) : nullptr;
 
 	std::vector<EntityPtr> open_nodes;
 	if (focus_entity)
@@ -41,8 +41,11 @@ void View_Hierarchy::on_draw()
 		else
 			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 		ImGui::PushID(e);
-		if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
-			ImGui::SetNextItemOpen(true);
+		if (!open_nodes.empty())
+		{
+			if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
+				ImGui::SetNextItemOpen(true);
+		}
 
 		if (e->prefab_instance)
 			in_prefab = true;

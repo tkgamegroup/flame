@@ -816,7 +816,7 @@ namespace flame
 			{
 				if ((vv & 1) == 1)
 				{
-					if (i > 0)
+					if (!ret.empty())
 						ret += '|';
 					ret += ei->find_item(1 << i)->name;
 				}

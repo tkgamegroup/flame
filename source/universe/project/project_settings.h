@@ -8,6 +8,8 @@ namespace flame
 	struct ProjectSettings
 	{
 		// Reflect
+		bool build_after_open = true;
+		// Reflect
 		std::vector<std::filesystem::path> favorites;
 
 		std::filesystem::path filename;

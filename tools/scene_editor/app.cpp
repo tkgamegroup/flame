@@ -836,11 +836,14 @@ void App::open_project(const std::filesystem::path& path)
 	else
 		assert(0);
 
-	load_project_cpp();
-
 	project_settings.load(project_path / L"project_settings.xml");
 	for (auto& p : project_settings.favorites)
 		p = Path::get(p);
+
+	if (!project_settings.build_after_open)
+		load_project_cpp();
+	else
+		build_project();
 }
 
 void App::cmake_project()
@@ -928,15 +931,16 @@ void App::new_prefab(const std::filesystem::path& path)
 
 void App::open_prefab(const std::filesystem::path& path)
 {
-	if (e_playing)
+	if (e_playing || ev_open_prefab)
 		return;
 	close_prefab();
 	prefab_path = path;
 
-	add_event([this]() {
+	ev_open_prefab = add_event([this]() {
 		e_prefab = Entity::create();
 		e_prefab->load(prefab_path);
 		world->root->add_child(e_prefab);
+		ev_open_prefab = nullptr;
 		return false;
 	});
 }
