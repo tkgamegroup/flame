@@ -417,9 +417,10 @@ namespace flame
 
 #include "marching_cubes_lookup.h"
 
-	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w) :
-		window(w)
+	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w)
 	{
+		window = w;
+
 		auto device = graphics::Device::current();
 		graphics::InstanceCommandBuffer cb;
 
@@ -725,17 +726,18 @@ namespace flame
 
 	void sRendererPrivate::bind_window_targets()
 	{
+		use_window_targets = true;
 		window->native->resize_listeners.add([this](const uvec2& sz) {
 			graphics::Queue::get()->wait_idle();
-			std::vector<graphics::ImageViewPtr> views;
+			std::vector<graphics::ImageViewPtr> ivs;
 			for (auto& i : window->swapchain->images)
-				views.push_back(i->get_view());
-			set_targets(views, graphics::ImageLayoutAttachment);
+				ivs.push_back(i->get_view());
+			set_targets(ivs, graphics::ImageLayoutAttachment);
 		});
-		std::vector<graphics::ImageViewPtr> views;
+		std::vector<graphics::ImageViewPtr> ivs;
 		for (auto& i : window->swapchain->images) 
-			views.push_back(i->get_view());
-		set_targets(views, graphics::ImageLayoutAttachment);
+			ivs.push_back(i->get_view());
+		set_targets(ivs, graphics::ImageLayoutAttachment);
 	}
 
 	vec2 sRendererPrivate::target_extent()

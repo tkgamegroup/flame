@@ -9,6 +9,9 @@ namespace flame
 		struct Canvas
 		{
 			WindowPtr window;
+			std::vector<ImageViewPtr> iv_tars;
+			std::vector<FramebufferPtr> fb_tars;
+			bool clear_framebuffer = true;
 
 			virtual ~Canvas() {}
 
@@ -21,6 +24,7 @@ namespace flame
 			struct Create
 			{
 				virtual CanvasPtr operator()(WindowPtr window) = 0;
+				virtual CanvasPtr operator()(WindowPtr window, std::span<ImageViewPtr> targets) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

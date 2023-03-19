@@ -39,8 +39,9 @@ namespace flame
 			std::stack<FontAtlasPtr> fonts;
 			uint font_size = 14;
 
-			CanvasPrivate(WindowPtr window);
+			CanvasPrivate(WindowPtr window, bool use_window_targets = true, std::span<ImageViewPtr> targets = {});
 			~CanvasPrivate();
+			void set_targets(std::span<ImageViewPtr> targets);
 			void reset();
 			DrawCmd& get_cmd(DescriptorSetPtr ds);
 

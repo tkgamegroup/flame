@@ -9,9 +9,10 @@ namespace flame
 {
 	namespace graphics
 	{
-		CanvasPrivate::CanvasPrivate(WindowPtr _window)
+		CanvasPrivate::CanvasPrivate(WindowPtr _window, bool use_window_targets, std::span<ImageViewPtr> targets)
 		{
 			window = _window;
+
 			auto gui_idx = window->renderers.find("Gui"_h);
 			window->renderers.add([this](uint idx, CommandBufferPtr cb) {
 				buf_vtx.upload(cb);
@@ -22,7 +23,7 @@ namespace flame
 				auto vp = Rect(vec2(0), window->native->size);
 				cb->set_viewport_and_scissor(vp);
 				auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-				cb->begin_renderpass(nullptr, window->swapchain->images[idx]->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
+				cb->begin_renderpass(clear_framebuffer ? rp : rp_load, fb_tars[fb_tars.size() > 1 ? idx : 0], &cv);
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 				cb->bind_pipeline(pl);
@@ -47,6 +48,24 @@ namespace flame
 				rp_load = Renderpass::get(L"flame\\shaders\\color.rp", defines);
 			}
 
+			if (use_window_targets)
+			{
+				window->native->resize_listeners.add([this](const uvec2& sz) {
+					graphics::Queue::get()->wait_idle();
+					iv_tars.clear();
+					std::vector<graphics::ImageViewPtr> ivs;
+					for (auto& i : window->swapchain->images)
+						ivs.push_back(i->get_view());
+					set_targets(ivs);
+				});
+				std::vector<graphics::ImageViewPtr> ivs;
+				for (auto& i : window->swapchain->images)
+					ivs.push_back(i->get_view());
+				set_targets(ivs);
+			}
+			else
+				set_targets(targets);
+
 			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
@@ -70,6 +89,15 @@ namespace flame
 			
 			GraphicsPipeline::release(pl);
 			FontAtlas::release(main_font);
+		}
+
+		void CanvasPrivate::set_targets(std::span<ImageViewPtr> targets)
+		{
+			iv_tars.assign(targets.begin(), targets.end());
+			for (auto fb : fb_tars)
+				delete fb;
+			for (auto iv : iv_tars)
+				fb_tars.push_back(Framebuffer::create(rp, iv));
 		}
 
 		void CanvasPrivate::reset()
@@ -296,6 +324,11 @@ namespace flame
 			CanvasPtr operator()(WindowPtr window) override
 			{
 				return new CanvasPrivate(window);
+			}
+
+			CanvasPtr operator()(WindowPtr window, std::span<ImageViewPtr> targets) override
+			{
+				return new CanvasPrivate(window, false, targets);
 			}
 		}Canvas_create;
 		Canvas::Create& Canvas::create = Canvas_create;
