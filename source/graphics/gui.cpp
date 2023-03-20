@@ -401,6 +401,7 @@ namespace flame
 
 			ImGui::Render();
 
+			cb->begin_debug_label("Gui");
 			auto draw_data = ImGui::GetDrawData();
 			int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
 			int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
@@ -487,6 +488,7 @@ namespace flame
 
 				cb->end_renderpass();
 			}
+			cb->end_debug_label();
 #endif
 		}
 

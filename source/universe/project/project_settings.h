@@ -8,7 +8,7 @@ namespace flame
 	struct ProjectSettings
 	{
 		// Reflect
-		bool build_after_open = true;
+		int build_after_open = 1; // 0 - no, 1 - yes, 2 - ask
 		// Reflect
 		std::vector<std::filesystem::path> favorites;
 

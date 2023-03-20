@@ -153,8 +153,9 @@ namespace flame
 
 		inline void mesh_add_cylinder(Mesh& mesh, float radius, float height, uint subdiv, const vec3& center)
 		{
+			auto hf_height = height * 0.5f;
 			// top cap
-			auto top_center = vec3(0.f, +height, 0.f);
+			auto top_center = vec3(0.f, +hf_height, 0.f);
 			auto top_center_index = mesh.positions.size();
 			mesh.positions.push_back(top_center + center);
 			std::vector<uint> top_ring_indices(subdiv);
@@ -162,7 +163,7 @@ namespace flame
 			{
 				top_ring_indices[i] = mesh.positions.size();
 				auto rad = radians((float)i / subdiv * 360.f);
-				mesh.positions.push_back(vec3(cos(rad) * radius, +height, sin(rad) * radius) + center);
+				mesh.positions.push_back(vec3(cos(rad) * radius, +hf_height, sin(rad) * radius) + center);
 			}
 			for (auto i = 0; i < subdiv; i++)
 			{
@@ -172,7 +173,7 @@ namespace flame
 			}
 
 			// bottom cap
-			auto bottom_center = vec3(0.f, -height, 0.f);
+			auto bottom_center = vec3(0.f, -hf_height, 0.f);
 			auto bottom_center_index = mesh.positions.size();
 			mesh.positions.push_back(bottom_center + center);
 			std::vector<uint> bottom_ring_indices(subdiv);
@@ -180,7 +181,7 @@ namespace flame
 			{
 				bottom_ring_indices[i] = mesh.positions.size();
 				auto rad = radians((float)i / subdiv * 360.f);
-				mesh.positions.push_back(vec3(cos(rad) * radius, -height, sin(rad) * radius) + center);
+				mesh.positions.push_back(vec3(cos(rad) * radius, -hf_height, sin(rad) * radius) + center);
 			}
 			for (auto i = 0; i < subdiv; i++)
 			{

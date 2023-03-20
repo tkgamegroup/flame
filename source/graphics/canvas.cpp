@@ -20,6 +20,7 @@ namespace flame
 				buf_idx.upload(cb);
 				buf_idx.buf_top = buf_idx.stag_top = 0;
 
+				cb->begin_debug_label("Canvas");
 				idx = fb_tars.size() > 1 ? idx : 0;
 				auto vp = Rect(vec2(0), window->native->size);
 				cb->set_viewport_and_scissor(vp);
@@ -44,6 +45,7 @@ namespace flame
 					cb->draw_indexed(cmd.idx_cnt, 0, 0, 1, 0);
 				}
 				cb->end_renderpass();
+				cb->end_debug_label();
 
 				reset();
 			}, "Canvas"_h, gui_idx != -1 ? gui_idx : -1);
