@@ -33,6 +33,13 @@ vec3 App::get_snap_pos(const vec3& _pos)
 
 static Entity* editor_selecting_entity = nullptr;
 
+struct Preferences
+{
+	bool use_flame_debugger = false; // use flame visual studio project debugger or use opened project one
+
+};
+static Preferences preferences;
+
 void App::init()
 {
 	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, graphics_debug, graphics_configs);
@@ -115,6 +122,29 @@ void App::init()
 				cmd_duplicate_entity();
 			if (ImGui::MenuItem("Delete (Del)"))
 				cmd_delete_entity();
+			ImGui::Separator();
+			if (ImGui::MenuItem("Preferences"))
+			{
+				struct PreferencesDialog
+				{
+					bool open = false;
+				};
+				static PreferencesDialog preferences_dialog;
+				dialogs.push_back([&]() {
+					if (!preferences_dialog.open)
+					{
+						preferences_dialog.open = true;
+						ImGui::OpenPopup("preferences");
+
+						if (ImGui::BeginPopupModal("preferences"))
+						{
+							ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+							ImGui::End();
+						}
+					}
+					return preferences_dialog.open;
+				});
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Project"))
@@ -1002,7 +1032,8 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 	std::wstring cl_str;
 	if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
 	{
-		cl_str = L"-p " + project_path.filename().wstring();
+		if (!preferences.use_flame_debugger)
+			cl_str = L"-p " + project_path.filename().wstring();
 		cl_str += L" -c " + cl[0];
 		cl_str += L" " + wstr(getpid());
 	}
@@ -1306,6 +1337,11 @@ int main(int argc, char** args)
 	std::filesystem::path preferences_path = L"preferences.ini";
 
 	auto preferences_i = parse_ini_file(preferences_path);
+	for (auto& e : preferences_i.get_section_entries(""))
+	{
+		if (e.key == "use_flame_debugger")
+			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
+	}
 	for (auto& e : preferences_i.get_section_entries("opened_windows"))
 	{
 		for (auto w : graphics::gui_views)
@@ -1340,6 +1376,7 @@ int main(int argc, char** args)
 	app.project_settings.save();
 
 	std::ofstream preferences_o(preferences_path);
+	preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
 	preferences_o << "[opened_windows]\n";
 	for (auto w : graphics::gui_views)
 	{

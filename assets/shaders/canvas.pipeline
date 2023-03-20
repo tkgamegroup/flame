@@ -34,7 +34,7 @@ blend_options
   src_alpha
     Zero
   dst_alpha
-    Zero
+    One
 
 @pll
 layout (set = SET, binding = 0) uniform sampler2D image;

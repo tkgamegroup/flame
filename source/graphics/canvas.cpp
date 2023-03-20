@@ -13,17 +13,26 @@ namespace flame
 		{
 			window = _window;
 
-			auto gui_idx = window->renderers.find("Gui"_h);
+			auto gui_idx = window->renderers.find("gui"_h);
 			window->renderers.add([this](uint idx, CommandBufferPtr cb) {
 				buf_vtx.upload(cb);
 				buf_vtx.buf_top = buf_vtx.stag_top = 0;
 				buf_idx.upload(cb);
 				buf_idx.buf_top = buf_idx.stag_top = 0;
 
+				idx = fb_tars.size() > 1 ? idx : 0;
 				auto vp = Rect(vec2(0), window->native->size);
 				cb->set_viewport_and_scissor(vp);
-				auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-				cb->begin_renderpass(clear_framebuffer ? rp : rp_load, fb_tars[fb_tars.size() > 1 ? idx : 0], &cv);
+				if (clear_framebuffer)
+				{
+					auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
+					cb->begin_renderpass(rp, fb_tars[idx], &cv);
+				}
+				else
+				{
+					cb->image_barrier(iv_tars[idx]->image, {}, ImageLayoutAttachment);
+					cb->begin_renderpass(rp_load, fb_tars[idx]);
+				}
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 				cb->bind_pipeline(pl);
@@ -41,7 +50,8 @@ namespace flame
 
 			{
 				std::vector<std::string> defines;
-				defines.push_back("col_fmt=" + TypeInfo::serialize_t(Swapchain::format));
+				defines.push_back("col_fmt=" + TypeInfo::serialize_t(use_window_targets ? Swapchain::format : Format_R8G8B8A8_UNORM));
+				defines.push_back("final_layout=ShaderReadOnly");
 				rp = Renderpass::get(L"flame\\shaders\\color.rp", defines);
 				defines.push_back("load_op=Load");
 				defines.push_back("initia_layout=Attachment");
@@ -75,6 +85,7 @@ namespace flame
 			main_img = main_font->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
+			main_img->change_layout(ImageLayoutShaderReadOnly);
 			main_ds.reset(DescriptorSet::create(nullptr, pl->layout->dsls[0]));
 			main_ds->set_image_i(0, 0, main_img->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			main_ds->update();
