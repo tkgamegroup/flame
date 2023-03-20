@@ -40,6 +40,8 @@ struct Preferences
 };
 static Preferences preferences;
 
+static std::vector<std::function<bool()>> dialogs;
+
 void App::init()
 {
 	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, graphics_debug, graphics_configs);
@@ -58,8 +60,6 @@ void App::init()
 
 	for (auto& v : graphics::gui_views)
 		v->init();
-
-	static std::vector<std::function<bool()>> dialogs;
 
 	graphics::gui_callbacks.add([this]() {
 		editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
@@ -134,13 +134,18 @@ void App::init()
 					if (!preferences_dialog.open)
 					{
 						preferences_dialog.open = true;
-						ImGui::OpenPopup("preferences");
+						ImGui::OpenPopup("Preferences");
+					}
 
-						if (ImGui::BeginPopupModal("preferences"))
+					if (ImGui::BeginPopupModal("Preferences"))
+					{
+						ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+						if (ImGui::Button("Close"))
 						{
-							ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
-							ImGui::End();
+							preferences_dialog.open = false;
+							ImGui::CloseCurrentPopup();
 						}
+						ImGui::End();
 					}
 					return preferences_dialog.open;
 				});
@@ -240,11 +245,15 @@ void App::init()
 								if (ImGui::Button("Generate"))
 								{
 									sScene::instance()->generate_navmesh(generate_dialog.agent_radius, generate_dialog.agent_height, generate_dialog.walkable_climb, generate_dialog.walkable_slope_angle);
+									ImGui::CloseCurrentPopup();
 									generate_dialog.open = false;
 								}
 								ImGui::SameLine();
 								if (ImGui::Button("Cancel"))
+								{
+									ImGui::CloseCurrentPopup();
 									generate_dialog.open = false;
+								}
 								ImGui::End();
 							}
 							return generate_dialog.open;
@@ -870,10 +879,57 @@ void App::open_project(const std::filesystem::path& path)
 	for (auto& p : project_settings.favorites)
 		p = Path::get(p);
 
-	if (!project_settings.build_after_open)
+	switch (project_settings.build_after_open)
+	{
+	case 0:
 		load_project_cpp();
-	else
+		break;
+	case 1:
 		build_project();
+		break;
+	case 2:
+	{
+		load_project_cpp();
+
+		struct BuildProjectDialog
+		{
+			bool open = false;
+		};
+		static BuildProjectDialog build_project_dialog;
+		add_event([]() {
+			dialogs.push_back([&]() {
+				if (!build_project_dialog.open)
+				{
+					build_project_dialog.open = true;
+					ImGui::OpenPopup("Build Project");
+				}
+
+				if (ImGui::BeginPopupModal("Build Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+					if (ImGui::Button("OK"))
+					{
+						app.build_project();
+
+						ImGui::CloseCurrentPopup();
+						build_project_dialog.open = false;
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel"))
+					{
+						ImGui::CloseCurrentPopup();
+						build_project_dialog.open = false;
+					}
+					ImGui::End();
+				}
+
+				return build_project_dialog.open;
+			});
+			return false;
+		}, 0.f, 2);
+	}
+		break;
+	}
 }
 
 void App::cmake_project()
