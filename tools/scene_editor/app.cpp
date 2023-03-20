@@ -352,7 +352,7 @@ void App::init()
 			ImGui::MenuItem("Navigation", nullptr, &view_scene.show_navigation);
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("View"))
+		if (ImGui::BeginMenu("Window"))
 		{
 			for (auto w : graphics::gui_views)
 			{
