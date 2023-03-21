@@ -944,7 +944,11 @@ void App::build_project()
 	if (project_path.empty() || e_playing)
 		return;
 
-	add_event([this]() {
+	auto old_prefab_path = prefab_path;
+	if (!old_prefab_path.empty())
+		close_prefab();
+
+	add_event([this, old_prefab_path]() {
 		// remove saved udts, inspector will try to get new ones
 		view_inspector.clear_typeinfos();
 		unload_project_cpp();
@@ -967,11 +971,8 @@ void App::build_project()
 		 
 		load_project_cpp();
 
-		if (!prefab_path.empty())
-		{
-			auto path = prefab_path;
-			open_prefab(path);
-		}
+		if (!old_prefab_path.empty())
+			open_prefab(old_prefab_path);
 
 		return false;
 	});
