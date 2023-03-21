@@ -944,6 +944,13 @@ process:
 
 						fi.return_type = return_type;
 						fi.parameters = parameters;
+
+						if (!rva && voff <= 0 && ur->children_type == Rule::Equal && (name != "ctor" && name != "dtor"))
+						{
+							auto str = std::format("Fatal Error: Cannot find implementation of required function '{}' of UDT '{}'\n", name.c_str(), u.name.c_str());
+							printf(str.c_str());
+							_wassert(s2w(str).c_str(), _CRT_WIDE(__FILE__), (unsigned)(__LINE__));
+						}
 					}
 
 					s_function_type->Release();
