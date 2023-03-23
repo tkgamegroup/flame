@@ -2643,7 +2643,7 @@ namespace flame
 		case TagVU:
 			return ((TypeInfo_VectorOfUdt*)this)->ti->ui;
 		case TagVPU:
-			return ((TypeInfo_VectorOfPointerOfUdt*)this)->ti->retrive_ui();
+			return ((TypeInfo_VectorOfPointerOfUdt*)this)->ti->ti->ui;
 		}
 		return nullptr;
 	}
@@ -2781,5 +2781,12 @@ namespace flame
 		{
 			mark_dirty(offset(d), d.size);
 		}
+	};
+
+	struct VirtualObject
+	{
+		TypeInfo*	type;
+		char*		data;
+
 	};
 }
