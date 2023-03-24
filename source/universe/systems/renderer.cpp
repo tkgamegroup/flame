@@ -465,7 +465,7 @@ namespace flame
 		ds_camera->update();
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
-		mesh_instances.init(buf_instance.item_info("meshes"_h).array_size);
+		mesh_instances.init(((TypeInfo_Array*)buf_instance.child_type("meshes"_h))->extent);
 		armature_instances.init(buf_instance.item_info("armatures"_h).array_size);
 		terrain_instances.init(buf_instance.item_info("terrains"_h).array_size);
 		sdf_instances.init(buf_instance.item_info("sdfs"_h).array_size);

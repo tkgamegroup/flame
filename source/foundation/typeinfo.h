@@ -215,9 +215,9 @@ namespace flame
 
 		inline static bool is_basic_type(std::string_view name);
 
-		TypeInfo(TypeTag tag, std::string_view _name, uint size) :
+		TypeInfo(TypeTag tag, std::string_view name, uint size) :
 			tag(tag),
-			name(_name),
+			name(name),
 			size(size)
 		{
 		}
@@ -232,6 +232,7 @@ namespace flame
 		virtual void unserialize(const std::string& str, void* p) const {}
 
 		virtual void* get_v() const { return nullptr; };
+		virtual TypeInfo* get_wrapped() const { return nullptr; }
 		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
 		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};
 
@@ -537,8 +538,6 @@ namespace flame
 		uint name_hash;
 		TypeInfo* type = nullptr;
 		uint offset = 0;
-		uint array_size = 0;
-		uint array_stride = 0;
 		std::string default_value;
 		Metas metas;
 	};
@@ -845,6 +844,14 @@ namespace flame
 		TypeInfo_Data(std::string_view name, uint size) :
 			TypeInfo(TagD, name, size)
 		{
+			static std::regex reg(R"(Dummy_(\d+)$)");
+			std::smatch res;
+			auto str = std::string(name);
+			std::regex_search(str, res, reg);
+			if (res.size() > 1)
+			{
+				size = stoi(res[1].str());
+			}
 		}
 	};
 
@@ -2303,6 +2310,11 @@ namespace flame
 		{
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_PointerOfData : TypeInfo
@@ -2314,6 +2326,11 @@ namespace flame
 		{
 			ti = (TypeInfo_Data*)get(TagD, name, db);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_PointerOfUdt : TypeInfo
@@ -2324,6 +2341,11 @@ namespace flame
 			TypeInfo(TagPU, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2354,6 +2376,11 @@ namespace flame
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2398,6 +2425,11 @@ namespace flame
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVD);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_VectorOfUdt : TypeInfo
@@ -2425,6 +2457,11 @@ namespace flame
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVU);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2454,6 +2491,11 @@ namespace flame
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVR);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_VectorOfTuple : TypeInfo
@@ -2482,6 +2524,11 @@ namespace flame
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVT);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_VectorOfPointerOfUdt : TypeInfo
@@ -2501,6 +2548,11 @@ namespace flame
 			new(p) std::vector<char>();
 			return p;
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_PointerOfVectorOfEnum : TypeInfo
@@ -2511,6 +2563,11 @@ namespace flame
 			TypeInfo(TagPVE, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_VectorOfEnum*)get(TagVE, name, db);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2523,6 +2580,11 @@ namespace flame
 		{
 			ti = (TypeInfo_VectorOfData*)get(TagVD, name, db);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_PointerOfVectorOfUdt : TypeInfo
@@ -2533,6 +2595,11 @@ namespace flame
 			TypeInfo(TagPVU, base_name, sizeof(void*))
 		{
 			ti = (TypeInfo_VectorOfUdt*)get(TagVU, name, db);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2545,6 +2612,11 @@ namespace flame
 		{
 			ti = (TypeInfo_VectorOfPair*)get(TagVR, name, db);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_PointerOfVectorOfTuple : TypeInfo
@@ -2556,16 +2628,22 @@ namespace flame
 		{
 			ti = (TypeInfo_VectorOfTuple*)get(TagVT, name, db);
 		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
 	};
 
 	struct TypeInfo_Array : TypeInfo
 	{
 		uint extent = 0;
+		uint stride = 0;
 
 		TypeInfo_Array(TypeTag tag, std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(tag, "", 0)
 		{
-			static std::regex reg(R"((.*)\[(\d+)\]$)");
+			static std::regex reg(R"((.*)\[(\d+)\](:\d+)?$)");
 			std::smatch res;
 			auto str = std::string(base_name);
 			std::regex_search(str, res, reg);
@@ -2573,6 +2651,8 @@ namespace flame
 			{
 				name = res[1].str();
 				extent = stoi(res[2].str());
+				if (res[3].matched)
+					stride = stoi(res[3].str());
 			}
 		}
 	};
@@ -2586,7 +2666,14 @@ namespace flame
 		{
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 			name = base_name;
-			size = ti->size * extent;
+			if (stride == 0)
+				stride = ti->size;
+			size = stride * extent;
+		}
+
+		TypeInfo* get_wrapped() const override
+		{ 
+			return ti;
 		}
 	};
 
@@ -2599,7 +2686,14 @@ namespace flame
 		{
 			ti = (TypeInfo_Data*)get(TagD, name, db);
 			name = base_name;
-			size = ti->size * extent;
+			if (stride == 0)
+				stride = ti->size;
+			size = stride * extent;
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2612,7 +2706,14 @@ namespace flame
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 			name = base_name;
-			size = ti->size * extent;
+			if (stride == 0)
+				stride = ti->size;
+			size = stride * extent;
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
 		}
 	};
 
@@ -2648,145 +2749,97 @@ namespace flame
 		return nullptr;
 	}
 
-	struct VirtualArray;
+	//struct VirtualStruct : VirtualData
+	//{
+	//	inline VirtualData item_d(uint hash, uint array_idx = 0)
+	//	{
+	//		auto ret = item(hash, array_idx);
+	//		mark_dirty(ret);
+	//		return ret;
+	//	}
 
-	struct VirtualData
-	{
-		char* pdata;
-		uint size;
-		UdtInfo* ui;
+	//	inline VirtualArray itemv_d(uint hash, uint range)
+	//	{
+	//		auto ret = itemv(hash, range);
+	//		mark_dirty(ret);
+	//		return ret;
+	//	}
 
-		inline const VariableInfo& item_info(uint hash) const
-		{
-			return *ui->find_variable(hash);
-		}
+	//	inline void mark_dirty(uint off, uint sz)
+	//	{
+	//		if (sz == 0)
+	//			return;
+	//		if (!dirty_regions.empty())
+	//		{
+	//			auto& last = dirty_regions.back();
+	//			if (last.first + last.second == off)
+	//			{
+	//				last.second += sz;
+	//				return;
+	//			}
+	//		}
+	//		dirty_regions.emplace_back(off, sz);
+	//	}
 
-		inline VirtualData item(uint hash, uint array_idx = 0)
-		{
-			auto& vi = hash == 0 ? ui->variables[0] : item_info(hash);
-			VirtualData ret;
-			ret.pdata = pdata + vi.offset + array_idx * vi.array_stride;
-			ret.size = vi.array_stride > 0 ? vi.array_stride : vi.type->size;
-			ret.ui = vi.type->retrive_ui();
-			return ret;
-		}
-
-		inline VirtualArray itemv(uint hash, uint range);
-
-		template<typename T>
-		inline T get() const
-		{
-			return *(T*)pdata;
-		}
-
-		template<typename T>
-		inline void set(const T& v)
-		{
-			*(T*)pdata = v;
-		}
-	};
-
-	struct VirtualArray
-	{
-		char* pdata;
-		uint stride;
-		uint size;
-		UdtInfo* item_ui;
-
-		inline VirtualData at(uint idx)
-		{
-			VirtualData ret;
-			ret.pdata = pdata + idx * stride;
-			ret.size = stride;
-			ret.ui = item_ui;
-			return ret;
-		}
-
-		inline void set(const void* src, uint num = 0, uint off = 0)
-		{
-			memcpy(pdata + off * stride, src, num ? num * stride : size);
-		}
-	};
-
-	inline VirtualArray VirtualData::itemv(uint hash, uint range)
-	{
-		auto& vi = hash == 0 ? ui->variables[0] : item_info(hash);
-		VirtualArray ret;
-		ret.pdata = pdata + vi.offset;
-		ret.stride = vi.array_stride > 0 ? vi.array_stride : vi.type->size;
-		ret.size = ret.stride * range;
-		ret.item_ui = vi.type->retrive_ui();
-		return ret;
-	}
-
-	struct VirtualStruct : VirtualData
-	{
-		std::unique_ptr<char> data;
-		std::vector<std::pair<uint, uint>> dirty_regions;
-
-		inline void init(UdtInfo* _ui, void* _data = nullptr)
-		{
-			ui = _ui;
-			if (!ui)
-				return;
-			size = ui->size;
-			if (_data)
-				pdata = (char*)_data;
-			else
-			{
-				data.reset(new char[size]);
-				pdata = data.get();
-				memset(pdata, 0, size);
-			}
-		}
-
-		inline VirtualData item_d(uint hash, uint array_idx = 0)
-		{
-			auto ret = item(hash, array_idx);
-			mark_dirty(ret);
-			return ret;
-		}
-
-		inline VirtualArray itemv_d(uint hash, uint range)
-		{
-			auto ret = itemv(hash, range);
-			mark_dirty(ret);
-			return ret;
-		}
-
-		template <class T>
-		inline uint offset(const T& d)
-		{
-			return uint(d.pdata - pdata);
-		}
-
-		inline void mark_dirty(uint off, uint sz)
-		{
-			if (sz == 0)
-				return;
-			if (!dirty_regions.empty())
-			{
-				auto& last = dirty_regions.back();
-				if (last.first + last.second == off)
-				{
-					last.second += sz;
-					return;
-				}
-			}
-			dirty_regions.emplace_back(off, sz);
-		}
-
-		template <class T>
-		inline void mark_dirty(const T& d)
-		{
-			mark_dirty(offset(d), d.size);
-		}
-	};
+	//	template <class T>
+	//	inline void mark_dirty(const T& d)
+	//	{
+	//		mark_dirty(offset(d), d.size);
+	//	}
+	//};
 
 	struct VirtualObject
 	{
-		TypeInfo*	type;
-		char*		data;
+		TypeInfo*	type = nullptr;
+		char*		data = nullptr;
 
+		VirtualObject child(uint hash)
+		{
+			assert(type->tag == TagU);
+			auto ti = (TypeInfo_Udt*)type;
+			auto vi = ti->ui->find_variable(hash);
+			assert(vi);
+			VirtualObject ret;
+			ret.type = vi->type;
+			ret.data = data + vi->offset;
+			return ret;
+		}
+
+		TypeInfo* child_type(uint hash)
+		{
+			assert(type->tag == TagU);
+			auto ti = (TypeInfo_Udt*)type;
+			auto vi = ti->ui->find_variable(hash);
+			assert(vi);
+			return vi->type;
+		}
+
+		VirtualObject item(uint idx)
+		{
+			assert(is_in(type->tag, TagA_Beg, TagA_End));
+			auto ti = (TypeInfo_Array*)type;
+			assert(idx < ti->extent);
+			VirtualObject ret;
+			ret.type = ti->get_wrapped();
+			ret.data = data + idx * ti->stride;
+			return ret;
+		}
+
+		uint offset(const VirtualObject& oth)
+		{
+			return uint(oth.data - data);
+		}
+
+		void create(void* p = nullptr)
+		{
+			assert(!data && type);
+			data = (char*)type->create(p);
+		}
+
+		void destroy()
+		{
+			assert(data && type);
+			type->destroy(data);
+		}
 	};
 }

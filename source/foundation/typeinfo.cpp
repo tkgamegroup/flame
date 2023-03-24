@@ -35,6 +35,9 @@ namespace flame
 			else
 				t = new TypeInfo_EnumSingle(name, db);
 			break;
+		case TagD:
+			t = new TypeInfo_Data(name, 0);
+			break;
 		case TagU:
 			t = new TypeInfo_Udt(name, db);
 			break;
@@ -194,8 +197,6 @@ namespace flame
 				break;
 			}
 			dvi.offset = ret->size;
-			dvi.array_size = svi.array_size;
-			dvi.array_stride = 0; // unknown stride
 			dvi.default_value = svi.default_value;
 			dvi.metas = svi.metas;
 
@@ -354,10 +355,6 @@ namespace flame
 				v.name = n_variable.attribute("name").value();
 				v.name_hash = sh(v.name.c_str());
 				v.offset = n_variable.attribute("offset").as_uint();
-				if (auto a = n_variable.attribute("array_size"); a)
-					v.array_size = a.as_uint();
-				if (auto a = n_variable.attribute("array_stride"); a)
-					v.array_stride = a.as_uint();
 				if (auto a = n_variable.attribute("default_value"); a)
 					v.default_value = a.value();
 				if (auto a = n_variable.attribute("metas"); a)
@@ -592,10 +589,6 @@ namespace flame
 						n_variable.append_attribute("name").set_value(vi.name.c_str());
 						if (vi.offset != 0)
 							n_variable.append_attribute("offset").set_value(vi.offset);
-						if (vi.array_size != 0)
-							n_variable.append_attribute("array_size").set_value(vi.array_size);
-						if (vi.array_stride != 0)
-							n_variable.append_attribute("array_stride").set_value(vi.array_stride);
 						if (!vi.default_value.empty())
 							n_variable.append_attribute("default_value").set_value(vi.default_value.c_str());
 						if (auto str = vi.metas.to_string(); !str.empty())

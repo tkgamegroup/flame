@@ -96,11 +96,12 @@ namespace flame
 			return PipelineStageAllCommand;
 		}
 
-		struct StorageBuffer : VirtualStruct
+		struct StorageBuffer : VirtualObject
 		{
-			BufferUsageFlags			usage;
-			std::unique_ptr<BufferT>	buf;
-			std::unique_ptr<BufferT>	stag;
+			BufferUsageFlags					usage;
+			std::unique_ptr<BufferT>			buf;
+			std::unique_ptr<BufferT>			stag;
+			std::vector<std::pair<uint, uint>>	dirty_regions;
 
 			StorageBuffer()
 			{
@@ -117,7 +118,9 @@ namespace flame
 				buf.reset(Buffer::create(ui->size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc | _stag_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
-				init(ui, stag->mapped);
+
+				VirtualObject::type = TypeInfo::get(TagU, ui->name);
+				VirtualObject::create(stag->mapped);
 			}
 
 			void upload(CommandBufferPtr cb)
@@ -155,29 +158,21 @@ namespace flame
 			}
 		};
 
-		struct VertexBuffer : VirtualStruct
+		struct VertexBuffer : VirtualObject
 		{
-			UdtInfo						array_type;
-			uint						item_size;
-			uint						capacity;
-			std::unique_ptr<BufferT>	buf;
-			std::unique_ptr<BufferT>	stag;
-			uint						buf_top = 0;
-			uint						stag_top = 0;
+			std::unique_ptr<BufferT>			buf;
+			std::unique_ptr<BufferT>			stag;
+			uint								buf_top = 0;
+			uint								stag_top = 0;
 
-			void create(UdtInfo* ui, uint _capacity)
+			void create(UdtInfo* ui, uint capacity)
 			{
-				item_size = ui->size;
-				capacity = _capacity;
-				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+				buf.reset(Buffer::create(capacity * ui->size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
-				auto& vi = array_type.variables.emplace_back();
-				vi.type = TypeInfo::get(TagU, ui->name, *ui->db);
-				vi.array_size = capacity;
-				vi.array_stride = ui->size;
-				array_type.size = ui->size;
-				init(&array_type, stag->mapped);
+
+				VirtualObject::type = TypeInfo::get(TagAU, std::format("{}[{}]", ui->name, capacity));
+				VirtualObject::create(stag->mapped);
 			}
 
 			void create(const std::filesystem::path& vi_filename, const std::vector<std::string>& vi_defines, uint capacity)
@@ -185,14 +180,14 @@ namespace flame
 				create(get_vertex_input_ui(vi_filename, vi_defines), capacity);
 			}
 
-			void create(uint _item_size, uint _capacity)
+			void create(uint item_size, uint capacity)
 			{
-				item_size = _item_size;
-				capacity = _capacity;
 				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
-				init(nullptr, stag->mapped);
+
+				VirtualObject::type = TypeInfo::get(TagAD, std::format("Dummy_{}[{}]", item_size, capacity));
+				VirtualObject::create(stag->mapped);
 			}
 
 			template<class T>
@@ -200,25 +195,25 @@ namespace flame
 			{
 				if (idx < 0)
 					idx = stag_top + idx;
-				return *(T*)((char*)stag->mapped + idx * item_size);
+				return *(T*)(data + idx * type->size);
 			}
 
-			VirtualData add()
+			VirtualObject add()
 			{
-				return item(0, stag_top++);
+				return item(stag_top++);
 			}
 
 			template<class T>
 			T& add_t()
 			{
-				auto& t = *(T*)((char*)stag->mapped + stag_top * item_size);
+				auto& t = *(T*)(data + stag_top * type->size);
 				stag_top++;
 				return t;
 			}
 
 			void add(const void* src, uint size)
 			{
-				memcpy((char*)stag->mapped + stag_top * item_size, src, size * item_size);
+				memcpy(data + stag_top * type->size, src, size * type->size);
 				stag_top += size;
 			}
 
@@ -227,8 +222,8 @@ namespace flame
 				if (buf_top < stag_top)
 				{
 					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top * item_size;
-					cpy.size = (stag_top - buf_top) * item_size;
+					cpy.src_off = cpy.dst_off = buf_top * type->size;
+					cpy.size = (stag_top - buf_top) * type->size;
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
 					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
 					buf_top = stag_top;
@@ -321,12 +316,13 @@ namespace flame
 
 		struct PipelineResourceManager
 		{
-			PipelineLayoutPtr pll = nullptr;
-			PipelineType plt = PipelineGraphics;
-			std::unordered_map<uint, int> dsl_map;
+			PipelineLayoutPtr					pll = nullptr;
+			PipelineType						plt = PipelineGraphics;
+			std::unordered_map<uint, int>		dsl_map;
 
-			DescriptorSetPtr dss[8];
-			VirtualStruct pc;
+			DescriptorSetPtr					dss[8];
+			VirtualObject						pc;
+			std::vector<std::pair<uint, uint>>	pc_dirty_regions;
 
 			PipelineResourceManager()
 			{
@@ -335,6 +331,11 @@ namespace flame
 			PipelineResourceManager(PipelineLayoutPtr _pll, PipelineType _plt)
 			{
 				init(_pll, _plt);
+			}
+
+			~PipelineResourceManager()
+			{
+				pc.destroy();
 			}
 
 			void init(PipelineLayoutPtr _pll, PipelineType _plt)
@@ -355,7 +356,8 @@ namespace flame
 					dsl_map.emplace(sh(name.c_str()), i);
 				}
 
-				pc.init(pll->pc_ui);
+				pc.type = TypeInfo::get(TagU, pll->pc_ui->name);
+				pc.create();
 
 				memset(dss, 0, sizeof(dss));
 			}
@@ -405,14 +407,14 @@ namespace flame
 			inline void push_constant(CommandBufferPtr cb)
 			{
 				cb->bind_pipeline_layout(pll);
-				if (!pc.dirty_regions.empty())
+				if (!pc_dirty_regions.empty())
 				{
-					for (auto& r : pc.dirty_regions)
-						cb->push_constant(r.first, r.second, pc.data.get() + r.first);
-					pc.dirty_regions.clear();
+					for (auto& r : pc_dirty_regions)
+						cb->push_constant(r.first, r.second, pc.data + r.first);
+					pc_dirty_regions.clear();
 				}
 				else
-					cb->push_constant(0, pll->pc_sz, pc.data.get());
+					cb->push_constant(0, pll->pc_sz, pc.data);
 			}
 		};
 	}

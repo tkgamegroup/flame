@@ -100,16 +100,24 @@ namespace flame
 					auto type = get_shader_type(compiler, id, db);
 					auto name = compiler.get_member_name(src.self, i);
 					auto offset = compiler.type_struct_member_offset(src, i);
-					auto arr_size = compiler.get_type(id).array[0];
-					auto arr_stride = compiler.get_decoration(id, spv::DecorationArrayStride);
-					if (arr_stride == 0)
-						arr_size = 1;
+					auto array_size = compiler.get_type(id).array[0];
+					auto array_stride = compiler.get_decoration(id, spv::DecorationArrayStride);
+					if (array_stride == 0)
+						array_size = 1;
+					if (array_size > 1)
+					{
+						std::string name = std::format("{}[{}]", type->name, array_size);
+						if (array_stride != type->size)
+							name += std::format(":{}", array_stride);
+						if (type->tag == TagU)
+							type = TypeInfo::get(TagAU, name);
+						else
+							type = TypeInfo::get(TagAD, name);
+					}
 					auto& vi = ui.variables.emplace_back();
 					vi.type = type;
 					vi.name = name;
 					vi.offset = offset;
-					vi.array_size = arr_size;
-					vi.array_stride = arr_stride;
 				}
 
 				db.udts.emplace(sh(name.c_str()), ui);
