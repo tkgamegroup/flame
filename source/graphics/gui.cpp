@@ -425,7 +425,10 @@ namespace flame
 				if (clear_fb)
 					cb->begin_renderpass(imgui_rp, curr_fb, &clear_col);
 				else
+				{
+					cb->image_barrier(curr_img, {}, ImageLayoutAttachment);
 					cb->begin_renderpass(imgui_rp_load, curr_fb);
+				}
 				cb->set_viewport(Rect(0, 0, fb_width, fb_height));
 
 				cb->bind_pipeline(imgui_pl);

@@ -914,7 +914,7 @@ process:
 					auto voff = -1;
 					if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
 						rva = dw;
-					else if (s_function->get_virtualBaseOffset(&dw) == S_OK)
+					else if (!rva && s_function->get_virtualBaseOffset(&dw) == S_OK)
 						voff = dw;
 
 					if (!rva && voff == -1)
@@ -945,7 +945,7 @@ process:
 						fi.return_type = return_type;
 						fi.parameters = parameters;
 
-						if (!rva && voff <= 0 && ur->children_type == Rule::Equal && (name != "ctor" && name != "dtor"))
+						if (!rva && voff < 0 && ur->children_type == Rule::Equal && (name != "ctor" && name != "dtor"))
 						{
 							auto str = std::format("Fatal Error: Cannot find implementation of required function '{}' of UDT '{}'\n", name.c_str(), u.name.c_str());
 							printf(str.c_str());

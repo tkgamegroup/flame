@@ -151,13 +151,13 @@ namespace flame
 			auto dsl = prm.get_dsl(""_h);
 			graphics::StorageBuffer buf_marching_cubes_loopup(graphics::BufferUsageStorage, dsl->get_buf_ui("MarchingCubesLookup"_h));
 			{
-				auto pi = buf_marching_cubes_loopup.itemv_d("items"_h, 256);
-				auto pdata = pi.pdata;
-				assert(sizeof(MarchingCubesLookup) == pi.size);
+				auto item = buf_marching_cubes_loopup.mark_dirty_c("items"_h);
+				auto p = item.data;
+				assert(sizeof(MarchingCubesLookup) == item.type->size);
 				for (auto i = 0; i < 256; i++)
 				{
-					memcpy(pdata, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
-					pdata += sizeof(MarchingCubesLookupItem);
+					memcpy(p, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
+					p += sizeof(MarchingCubesLookupItem);
 				}
 				buf_marching_cubes_loopup.upload(cb.get());
 			}
@@ -172,20 +172,20 @@ namespace flame
 
 			cb->bind_pipeline(pl);
 			prm.bind_dss(cb.get());
-			prm.pc.item_d("transform"_h).set(mat4(1.f));
+			prm.pc.mark_dirty_c("transform"_h).as<mat4>() = mat4(1.f);
 			auto proj = orthoRH(-extent.x * 0.5f, +extent.x * 0.5f, -extent.z * 0.5f, +extent.z * 0.5f, 0.f, extent.y);
 			proj[1][1] *= -1.f;
 			auto view = lookAt(extent * vec3(0.5f, 1.f, 0.5f), extent * vec3(0.5f, 0.f, 0.5f), vec3(0.f, 0.f, -1.f));
-			prm.pc.item_d("proj_view"_h).set(proj * view);
-			prm.pc.item_d("extent"_h).set(extent);
-			prm.pc.item_d("blocks"_h).set(blocks);
+			prm.pc.mark_dirty_c("proj_view"_h).as<mat4>() = proj * view;
+			prm.pc.mark_dirty_c("extent"_h).as<vec3>() = extent;
+			prm.pc.mark_dirty_c("blocks"_h).as<uvec3>() = blocks;
 			for (auto z = 0; z < blocks.z; z++)
 			{
 				for (auto y = 0; y < blocks.y; y++)
 				{
 					for (auto x = 0; x < blocks.x; x++)
 					{
-						prm.pc.item_d("offset"_h).set(vec3(x, y, z));
+						prm.pc.mark_dirty_c("offset"_h).as<vec3>() = vec3(x, y, z);
 						prm.push_constant(cb.get());
 						// 128 / 4 = 32
 						cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));

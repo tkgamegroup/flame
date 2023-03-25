@@ -841,8 +841,8 @@ namespace flame
 		uint vec_size = 1;
 		uint col_size = 1;
 
-		TypeInfo_Data(std::string_view name, uint size) :
-			TypeInfo(TagD, name, size)
+		TypeInfo_Data(std::string_view name, uint _size) :
+			TypeInfo(TagD, name, _size)
 		{
 			static std::regex reg(R"(Dummy_(\d+)$)");
 			std::smatch res;
@@ -2749,55 +2749,27 @@ namespace flame
 		return nullptr;
 	}
 
-	//struct VirtualStruct : VirtualData
-	//{
-	//	inline VirtualData item_d(uint hash, uint array_idx = 0)
-	//	{
-	//		auto ret = item(hash, array_idx);
-	//		mark_dirty(ret);
-	//		return ret;
-	//	}
-
-	//	inline VirtualArray itemv_d(uint hash, uint range)
-	//	{
-	//		auto ret = itemv(hash, range);
-	//		mark_dirty(ret);
-	//		return ret;
-	//	}
-
-	//	inline void mark_dirty(uint off, uint sz)
-	//	{
-	//		if (sz == 0)
-	//			return;
-	//		if (!dirty_regions.empty())
-	//		{
-	//			auto& last = dirty_regions.back();
-	//			if (last.first + last.second == off)
-	//			{
-	//				last.second += sz;
-	//				return;
-	//			}
-	//		}
-	//		dirty_regions.emplace_back(off, sz);
-	//	}
-
-	//	template <class T>
-	//	inline void mark_dirty(const T& d)
-	//	{
-	//		mark_dirty(offset(d), d.size);
-	//	}
-	//};
+	using TI_E = TypeInfo_Enum;
+	using TI_D = TypeInfo_Data;
+	using TI_A = TypeInfo_Array;
 
 	struct VirtualObject
 	{
 		TypeInfo*	type = nullptr;
 		char*		data = nullptr;
 
+		template<class T>
+		T& as()
+		{
+			assert(type->tag == TagD || type->tag == TagE);
+			return *(T*)data;
+		}
+
 		VirtualObject child(uint hash)
 		{
 			assert(type->tag == TagU);
 			auto ti = (TypeInfo_Udt*)type;
-			auto vi = ti->ui->find_variable(hash);
+			auto vi = hash ? ti->ui->find_variable(hash) : &ti->ui->variables[0];
 			assert(vi);
 			VirtualObject ret;
 			ret.type = vi->type;
@@ -2805,13 +2777,14 @@ namespace flame
 			return ret;
 		}
 
-		TypeInfo* child_type(uint hash)
+		template<class T = TypeInfo>
+		T* child_type(uint hash)
 		{
 			assert(type->tag == TagU);
 			auto ti = (TypeInfo_Udt*)type;
 			auto vi = ti->ui->find_variable(hash);
 			assert(vi);
-			return vi->type;
+			return (T*)vi->type;
 		}
 
 		VirtualObject item(uint idx)

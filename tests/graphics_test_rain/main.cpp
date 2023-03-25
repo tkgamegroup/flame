@@ -94,34 +94,34 @@ struct Drop
 		auto w = 2.f / p.z;
 
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c1 - vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c1 - vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c2 - vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c2 - vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c1 + vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c1 + vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c1 + vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c1 + vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c2 - vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c2 - vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(c2 + vec2(w, 0));
-			pv.item("i_col"_h).set(cvec4(159, 183, 227, 255));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = c2 + vec2(w, 0);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(159, 183, 227, 255);
 		}
 	}
 };
