@@ -465,8 +465,8 @@ process:
 			{
 				auto path = it.path();
 				path.make_preferred();
-				if ((path.extension() == L".h") &&
-					!path.filename().wstring().ends_with(L"_private"))
+				if (auto ext = path.extension(); (ext == L".h" || ext == L".cpp") &&
+					!path.filename().stem().wstring().ends_with(L"_private"))
 				{
 					std::deque<std::pair<std::string, uint>> name_spaces;
 					auto get_name = [&](const std::string& name) {
@@ -522,6 +522,7 @@ process:
 							}
 							else if (SUS::strip_head_if(line, "struct ") || SUS::strip_head_if(line, "class "))
 							{
+								SUS::strip_head_if(line, "EXPORT ");
 								if (auto pos = line.find_last_of(':'); pos != std::string::npos)
 								{
 									line.erase(line.begin() + pos, line.end());
@@ -910,12 +911,18 @@ process:
 					if (name == "__local_vftable_ctor_closure" || name == "__vecDelDtor")
 						continue;
 
-					auto rva = 0;
-					auto voff = -1;
-					if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
-						rva = dw;
-					else if (!rva && s_function->get_virtualBaseOffset(&dw) == S_OK)
-						voff = dw;
+					auto rva = 0; auto voff = -1;
+					s_function->get_virtual(&b);
+					if (!b)
+					{
+						if (s_function->get_relativeVirtualAddress(&dw) == S_OK)
+							rva = dw;
+					}
+					else
+					{
+						if (s_function->get_virtualBaseOffset(&dw) == S_OK)
+							voff = dw;
+					}
 
 					if (!rva && voff == -1)
 						continue;
@@ -947,7 +954,7 @@ process:
 
 						if (!rva && voff < 0 && ur->children_type == Rule::Equal && (name != "ctor" && name != "dtor"))
 						{
-							auto str = std::format("Fatal Error: Cannot find implementation of required function '{}' of UDT '{}'\n", name.c_str(), u.name.c_str());
+							auto str = std::format("Fatal Error: Cannot find implementation of required function '{}' of udt '{}'\n", name.c_str(), u.name.c_str());
 							printf(str.c_str());
 							_wassert(s2w(str).c_str(), _CRT_WIDE(__FILE__), (unsigned)(__LINE__));
 						}

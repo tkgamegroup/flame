@@ -119,7 +119,19 @@ namespace flame
 				dst.append_attribute(name.c_str()).set_value(value.c_str());
 			break;
 		case TagU:
-			serialize_xml(*type->retrive_ui(), (char*)src + offset, dst.append_child(name.c_str()), spec);
+			if (auto ui = type->retrive_ui(); ui)
+			{
+				if (ui->name.starts_with("flame::VirtualUdt"))
+				{
+					auto& vo = *(VirtualUdt<int>*)((char*)src + offset);
+					auto n = dst.append_child(name.c_str());
+					n.append_attribute("type").set_value(vo.type ? vo.type->name.c_str() : "");
+					if (vo.data)
+						serialize_xml(*vo.type->retrive_ui(), vo.data, n, spec);
+				}
+				else
+					serialize_xml(*ui, (char*)src + offset, dst.append_child(name.c_str()), spec);
+			}
 			break;
 		case TagR:
 			if (auto ti = (TypeInfo_Pair*)type; ti)
@@ -343,7 +355,22 @@ namespace flame
 				if (auto ui = type->retrive_ui(); ui)
 				{
 					if (setter_idx == -1)
-						unserialize_xml(*ui, c, (char*)dst + offset, spec);
+					{
+						if (ui->name.starts_with("flame::VirtualUdt"))
+						{
+							auto& vo = *(VirtualUdt<int>*)((char*)dst + offset);
+							if (auto a = c.attribute("type"); a)
+							{
+								if (auto ui = find_udt(sh(a.value())); ui)
+								{
+									vo.create(ui);
+									unserialize_xml(*ui, c, vo.data, spec);
+								}
+							}
+						}
+						else
+							unserialize_xml(*ui, c, (char*)dst + offset, spec);
+					}
 				}
 			}
 			break;

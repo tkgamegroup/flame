@@ -672,6 +672,72 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 	}
 		break;
+	case TagU:
+		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		{
+			auto ti = (TypeInfo_Udt*)type;
+			auto ui = ti->ui;
+			editing_objects.push(EditingObjects());
+			if (ui->name.starts_with("flame::VirtualUdt"))
+			{
+				auto& vo = *(VirtualUdt<int>*)((char*)objs[0] + offset);
+				static std::vector<UdtInfo*> available_types;
+				ImGui::Text("[%s]", vo.type ? vo.type->name.c_str() : "");
+				ImGui::SameLine();
+				if (ImGui::Button("T"))
+				{
+					ImGui::OpenPopup("select_type");
+					available_types.clear();
+					static std::regex reg(R"(\<(\w+)\>$)");
+					std::smatch res;
+					std::regex_search(ui->name, res, reg);
+					if (res.size() > 1)
+					{
+						auto base_name = res[1].str();
+						for (auto& [_, ui] : tidb.udts)
+						{
+							if (ui.base_class_name == base_name)
+								available_types.push_back(&ui);
+						}
+					}
+				}
+				if (ImGui::BeginPopup("select_type"))
+				{
+					for (auto ui : available_types)
+					{
+						if (ImGui::Selectable(ui->name.c_str()))
+						{
+							if (vo.data)
+								vo.destroy();
+							vo.create(ui);
+							app.prefab_unsaved = true;
+						}
+					}
+					ImGui::EndPopup();
+				}
+				if (vo.data)
+				{
+					voidptr ptr = vo.data;
+					if (manipulate_udt(*vo.type->retrive_ui(), &ptr))
+					{
+						changed = true;
+						app.prefab_unsaved = true;
+					}
+				}
+			}
+			else
+			{
+				voidptr ptr = (char*)objs[0] + offset;
+				if (manipulate_udt(*ui, &ptr))
+				{
+					changed = true;
+					app.prefab_unsaved = true;
+				}
+			}
+			editing_objects.pop();
+			ImGui::TreePop();
+		}
+		break;
 	case TagVD:
 		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
 		{
@@ -695,22 +761,30 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
+				app.prefab_unsaved = true;
 			}
-			editing_objects.push(EditingObjects());
-			for (auto i = 0; i < n; i++)
+			if (!changed)
 			{
-				ImGui::PushID(i);
-				auto ptr = sv.v.data();
-				if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
-					changed = true;
-				ImGui::PopID();
-			}
-			editing_objects.pop();
-			if (changed)
-			{
-				set_sv();
+				editing_objects.push(EditingObjects());
+				for (auto i = 0; i < n; i++)
+				{
+					ImGui::PushID(i);
+					auto ptr = sv.v.data();
+					if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
+					{
+						changed = true;
+						app.prefab_unsaved = true;
+					}
+					ImGui::PopID();
+				}
+				editing_objects.pop();
+				if (changed)
+				{
+					set_sv();
 
-				changed = 2;
+					changed = 2;
+					app.prefab_unsaved = true;
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -739,23 +813,31 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
+				app.prefab_unsaved = true;
 			}
-			editing_objects.push(EditingObjects());
-			for (auto i = 0; i < n; i++)
+			if (!changed)
 			{
-				if (i > 0) ImGui::Separator();
-				ImGui::PushID(i);
-				voidptr obj = sv.v.data() + ui.size * i;
-				if (manipulate_udt(ui, &obj))
-					changed = true;
-				ImGui::PopID();
-			}
-			editing_objects.pop();
-			if (changed)
-			{
-				set_sv();
+				editing_objects.push(EditingObjects());
+				for (auto i = 0; i < n; i++)
+				{
+					if (i > 0) ImGui::Separator();
+					ImGui::PushID(i);
+					voidptr obj = sv.v.data() + ui.size * i;
+					if (manipulate_udt(ui, &obj))
+					{
+						changed = true;
+						app.prefab_unsaved = true;
+					}
+					ImGui::PopID();
+				}
+				editing_objects.pop();
+				if (changed)
+				{
+					set_sv();
 
-				changed = 2;
+					changed = 2;
+					app.prefab_unsaved = true;
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -783,27 +865,38 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
+				app.prefab_unsaved = true;
 			}
-			editing_objects.push(EditingObjects());
-			for (auto i = 0; i < n; i++)
+			if (!changed)
 			{
-				if (i > 0) ImGui::Separator();
-				ImGui::PushID(i);
-				auto p = sv.v.data() + ti->size * i;
-				auto ptr0 = ti->first(p);
-				auto ptr1 = ti->second(p);
-				if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id) > 1)
-					changed = true;
-				if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id) > 1)
-					changed = true;
-				ImGui::PopID();
-			}
-			editing_objects.pop();
-			if (changed)
-			{
-				set_sv();
+				editing_objects.push(EditingObjects());
+				for (auto i = 0; i < n; i++)
+				{
+					if (i > 0) ImGui::Separator();
+					ImGui::PushID(i);
+					auto p = sv.v.data() + ti->size * i;
+					auto ptr0 = ti->first(p);
+					auto ptr1 = ti->second(p);
+					if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id) > 1)
+					{
+						changed = true;
+						app.prefab_unsaved = true;
+					}
+					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id) > 1)
+					{
+						changed = true;
+						app.prefab_unsaved = true;
+					}
+					ImGui::PopID();
+				}
+				editing_objects.pop();
+				if (changed)
+				{
+					set_sv();
 
-				changed = 2;
+					changed = 2;
+					app.prefab_unsaved = true;
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -831,29 +924,37 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
+				app.prefab_unsaved = true;
 			}
-			editing_objects.push(EditingObjects());
-			for (auto i = 0; i < n; i++)
+			if (!changed)
 			{
-				if (i > 0) ImGui::Separator();
-				ImGui::PushID(i);
-				auto p = sv.v.data() + ti->size * i;
-				auto j = 0;
-				for (auto& t : ti->tis)
+				editing_objects.push(EditingObjects());
+				for (auto i = 0; i < n; i++)
 				{
-					auto ptr = p + t.second;
-					if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
-						changed = true;
-					j++;
+					if (i > 0) ImGui::Separator();
+					ImGui::PushID(i);
+					auto p = sv.v.data() + ti->size * i;
+					auto j = 0;
+					for (auto& t : ti->tis)
+					{
+						auto ptr = p + t.second;
+						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
+						{
+							changed = true;
+							app.prefab_unsaved = true;
+						}
+						j++;
+					}
+					ImGui::PopID();
 				}
-				ImGui::PopID();
-			}
-			editing_objects.pop();
-			if (changed)
-			{
-				set_sv();
+				editing_objects.pop();
+				if (changed)
+				{
+					set_sv();
 
-				changed = 2;
+					changed = 2;
+					app.prefab_unsaved = true;
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -985,8 +1086,6 @@ void View_Inspector::on_draw()
 			}
 		}
 
-		static uint target_component = 0;
-		auto open_component_menu = false;
 		for (auto& cc : editing_entities.common_components)
 		{
 			editing_objects.emplace(EditingObjects(2, cc.type_hash, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
@@ -1001,9 +1100,95 @@ void View_Inspector::on_draw()
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("..."))
+				ImGui::OpenPopup("component_menu");
+			if (ImGui::BeginPopup("component_menu"))
 			{
-				target_component = cc.type_hash;
-				open_component_menu = true;
+				if (ImGui::Selectable("Move Up"))
+				{
+					auto ok = true;
+					for (auto e : editing_entities.entities)
+					{
+						if (get_prefab_instance(e))
+						{
+							ok = false;
+							break;
+						}
+					}
+					if (ok)
+					{
+						auto e0 = editing_entities.entities[0];
+						for (auto i = 0; i < e0->components.size(); i++)
+						{
+							if (e0->components[i]->type_hash == cc.type_hash)
+							{
+								if (i > 0)
+								{
+									for (auto e : editing_entities.entities)
+										std::swap(e->components[i], e->components[i - 1]);
+								}
+								editing_entities.refresh();
+								app.prefab_unsaved = true;
+								break;
+							}
+						}
+					}
+					else
+						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				}
+				if (ImGui::Selectable("Move Down"))
+				{
+					auto ok = true;
+					for (auto e : editing_entities.entities)
+					{
+						if (get_prefab_instance(e))
+						{
+							ok = false;
+							break;
+						}
+					}
+					if (ok)
+					{
+						auto e0 = editing_entities.entities[0];
+						for (auto i = 0; i < e0->components.size(); i++)
+						{
+							if (e0->components[i]->type_hash == cc.type_hash)
+							{
+								if (i < e0->components.size() - 1)
+								{
+									for (auto e : editing_entities.entities)
+										std::swap(e->components[i], e->components[i + 1]);
+								}
+								editing_entities.refresh();
+								app.prefab_unsaved = true;
+								break;
+							}
+						}
+					}
+					else
+						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				}
+				if (ImGui::Selectable("Remove"))
+				{
+					auto ok = true;
+					for (auto e : editing_entities.entities)
+					{
+						if (get_prefab_instance(e))
+						{
+							ok = false;
+							break;
+						}
+					}
+					if (ok)
+					{
+						for (auto e : editing_entities.entities)
+							e->remove_component(cc.type_hash);
+						editing_entities.refresh();
+						app.prefab_unsaved = true;
+					}
+					else
+						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				}
+				ImGui::EndPopup();
 			}
 			if (open)
 			{
@@ -1194,101 +1379,6 @@ void View_Inspector::on_draw()
 		ImGui::SetNextItemWidth(ButtonWidth);
 		if (ImGui::Button("Add Component"))
 			ImGui::OpenPopup("add_component");
-
-		if (open_component_menu)
-		{
-			ImGui::OpenPopup("component_menu");
-			open_component_menu = false;
-		}
-		if (ImGui::BeginPopup("component_menu"))
-		{
-			if (ImGui::Selectable("Move Up"))
-			{
-				auto ok = true;
-				for (auto e : editing_entities.entities)
-				{
-					if (get_prefab_instance(e))
-					{
-						ok = false;
-						break;
-					}
-				}
-				if (ok)
-				{
-					auto e0 = editing_entities.entities[0];
-					for (auto i = 0; i < e0->components.size(); i++)
-					{
-						if (e0->components[i]->type_hash == target_component)
-						{
-							if (i > 0)
-							{
-								for (auto e : editing_entities.entities)
-									std::swap(e->components[i], e->components[i - 1]);
-							}
-							editing_entities.refresh();
-							app.prefab_unsaved = true;
-							break;
-						}
-					}
-				}
-				else
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-			}
-			if (ImGui::Selectable("Move Down"))
-			{
-				auto ok = true;
-				for (auto e : editing_entities.entities)
-				{
-					if (get_prefab_instance(e))
-					{
-						ok = false;
-						break;
-					}
-				}
-				if (ok)
-				{
-					auto e0 = editing_entities.entities[0];
-					for (auto i = 0; i < e0->components.size(); i++)
-					{
-						if (e0->components[i]->type_hash == target_component)
-						{
-							if (i < e0->components.size() - 1)
-							{
-								for (auto e : editing_entities.entities)
-									std::swap(e->components[i], e->components[i + 1]);
-							}
-							editing_entities.refresh();
-							app.prefab_unsaved = true;
-							break;
-						}
-					}
-				}
-				else
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-			}
-			if (ImGui::Selectable("Remove"))
-			{
-				auto ok = true;
-				for (auto e : editing_entities.entities)
-				{
-					if (get_prefab_instance(e))
-					{
-						ok = false;
-						break;
-					}
-				}
-				if (ok)
-				{
-					for (auto e : editing_entities.entities)
-						e->remove_component(target_component);
-					editing_entities.refresh();
-					app.prefab_unsaved = true;
-				}
-				else
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-			}
-			ImGui::EndPopup();
-		}
 		if (ImGui::BeginPopup("add_component"))
 		{
 			for (auto ui : com_udts_list)

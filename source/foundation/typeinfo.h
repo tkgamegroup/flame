@@ -269,6 +269,7 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_API static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
+		inline static				TypeInfo* get(const std::string& name, TypeInfoDataBase& db = tidb);
 		FLAME_FOUNDATION_API static TypeInfo* void_type;
 
 		template<enum_type T>
@@ -748,6 +749,16 @@ namespace flame
 	inline bool TypeInfo::is_basic_type(std::string_view name)
 	{
 		return tidb.typeinfos.find(get_hash(TagD, name)) != tidb.typeinfos.end();
+	}
+
+	inline TypeInfo* TypeInfo::get(const std::string& name, TypeInfoDataBase& db)
+	{
+		auto name_hash = sh(name.c_str());
+		if (auto ei = find_enum(name_hash); ei)
+			return TypeInfo::get(TagE, name, db);
+		if (auto ui = find_udt(name_hash); ui)
+			return TypeInfo::get(TagU, name, db);
+		return TypeInfo::get(TagD, name, db);
 	}
 
 	struct TypeInfo_Enum : TypeInfo
@@ -2206,16 +2217,16 @@ namespace flame
 
 	struct TypeInfo_Pair : TypeInfo
 	{
-		TypeInfo_Data* ti1 = nullptr;
-		TypeInfo_Data* ti2 = nullptr;
+		TypeInfo* ti1 = nullptr;
+		TypeInfo* ti2 = nullptr;
 
 		TypeInfo_Pair(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagR, base_name, 0)
 		{
 			auto sp = SUS::split(name, ';');
 			assert(sp.size() == 2);
-			ti1 = (TypeInfo_Data*)get(TagD, sp[0], db);
-			ti2 = (TypeInfo_Data*)get(TagD, sp[1], db);
+			ti1 = get(sp[0], db);
+			ti2 = get(sp[1], db);
 			size = ti1->size + ti2->size;
 		}
 
@@ -2252,16 +2263,16 @@ namespace flame
 
 	struct TypeInfo_Tuple : TypeInfo
 	{
-		std::vector<std::pair<TypeInfo_Data*, uint>> tis;
+		std::vector<std::pair<TypeInfo*, uint>> tis;
 
 		TypeInfo_Tuple(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagT, base_name, 0)
 		{
 			auto sp = SUS::split(name, ';');
 			auto align = 4U;
-			for (auto& n : sp)
+			for (auto& t : sp)
 			{
-				auto ti = (TypeInfo_Data*)get(TagD, n, db);
+				auto ti = get(t, db);
 				if (ti == TypeInfo::get<std::string>())
 					align = 8U;
 				else if (ti == TypeInfo::get<std::wstring>())
@@ -2813,6 +2824,29 @@ namespace flame
 		{
 			assert(data && type);
 			type->destroy(data);
+			data = nullptr;
+		}
+	};
+
+	template<class BaseType>
+	struct VirtualUdt : VirtualObject
+	{
+		~VirtualUdt()
+		{
+			if (data)
+				destroy();
+		}
+
+		BaseType& value()
+		{
+			return *(BaseType*)data;
+		}
+
+		void create(UdtInfo* ui)
+		{
+			assert(!data);
+			type = TypeInfo::get(TagU, ui->name, *ui->db);
+			data = (char*)ui->create_object();
 		}
 	};
 }
