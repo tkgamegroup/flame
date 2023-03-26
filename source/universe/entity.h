@@ -115,6 +115,7 @@ namespace flame
 		{
 			return remove_component(th<T>());
 		}
+		virtual void remove_all_components() = 0;
 
 		virtual bool reposition_component(Component* comp) = 0;
 
@@ -127,14 +128,33 @@ namespace flame
 		}
 		virtual void remove_all_children(bool destroy = true) = 0;
 
+		inline int find_child_i(std::string_view name) const
+		{
+			for (auto i = 0; i < children.size(); i++)
+			{
+				auto c = (Entity*)children[i].get();
+				if (c->name == name)
+					return i;
+			}
+			return -1;
+		}
+
 		inline EntityPtr find_child(std::string_view name) const
+		{
+			auto idx = find_child_i(name);
+			if (idx != -1)
+				return (EntityPtr)children[idx].get();
+			return nullptr;
+		}
+
+		inline EntityPtr find_child_recursively(std::string_view name) const
 		{
 			for (auto& cc : children)
 			{
 				auto c = (Entity*)cc.get();
 				if (c->name == name)
 					return (EntityPtr)c;
-				auto res = c->find_child(name);
+				auto res = c->find_child_recursively(name);
 				if (res)
 					return res;
 			}

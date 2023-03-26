@@ -227,6 +227,18 @@ namespace flame
 		return true;
 	}
 
+	void EntityPrivate::remove_all_components()
+	{
+		for (auto i = (int)components.size() - 1; i >= 0; i--)
+		{
+			auto c = components[i].release();
+			if (global_enable && c->enable)
+				c->on_inactive();
+			delete c;
+		}
+		components.clear();
+	}
+
 	bool EntityPrivate::reposition_component(Component* comp)
 	{
 		return true;

@@ -1068,10 +1068,23 @@ void View_Inspector::on_draw()
 			if (ImGui::Button("P"))
 				selection.select(Path::get(path), "inspector"_h);
 			if (ImGui::Button("Apply Changes"))
-				;
+			{
+				auto ins = entity->prefab_instance.get();
+				entity->save(ins->filename);
+				ins->modifications.clear();
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Discard Changes"))
-				;
+			{
+				auto ins = entity->prefab_instance.get();
+				add_event([ins, entity]() {
+					entity->remove_all_children();
+					entity->remove_all_components();
+					entity->load(ins->filename);
+					return false;
+				});
+				ins->modifications.clear();
+			}
 		}
 		ImGui::PopID();
 
