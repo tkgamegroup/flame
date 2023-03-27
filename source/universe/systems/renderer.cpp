@@ -14,6 +14,7 @@
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
+#include "../../graphics/canvas.h"
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/extension.h"
@@ -721,6 +722,11 @@ namespace flame
 		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+
+		if (canvas)
+			delete canvas;
+		canvas = graphics::Canvas::create(window, _targets);
+		canvas->clear_framebuffer = false;
 
 		final_layout = _final_layout;
 	}
@@ -2631,14 +2637,12 @@ namespace flame
 		{
 			if (auto first_element = sScene::instance()->first_element; first_element)
 			{
-				draw_data.reset(PassElement, 0);
-
 				first_element->traversal_bfs([this](EntityPtr e) {
 					if (!e->global_enable)
 						return false;
 
 					if (auto element = e->element(); element)
-						element->drawers.call<DrawData&>(draw_data);
+						element->drawers.call(canvas);
 
 					return true;
 				});

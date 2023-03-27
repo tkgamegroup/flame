@@ -1,9 +1,20 @@
+#include "../../graphics/canvas.h"
 #include "../entity_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
+	void cElementPrivate::on_init()
+	{
+		drawers.add([this](graphics::CanvasPtr canvas) {
+			if (background_col.a > 0)
+				canvas->add_rect_filled(global_pos0(), global_pos1(), background_col);
+			if (frame_col.a > 0)
+				canvas->add_rect(global_pos0(), global_pos1(), frame_thickness, frame_col);
+		});
+	}
+
 	void cElementPrivate::set_pos(const vec2& p)
 	{
 		if (pos == p)
@@ -31,6 +42,42 @@ namespace flame
 		data_changed("scl"_h);
 	}
 
+	void cElementPrivate::set_background_col(const cvec4& col)
+	{
+		if (background_col == col)
+			return;
+		background_col = col;
+		mark_drawing_dirty();
+		data_changed("background_col"_h);
+	}
+
+	void cElementPrivate::set_frame_col(const cvec4& col)
+	{
+		if (frame_col == col)
+			return;
+		frame_col = col;
+		mark_drawing_dirty();
+		data_changed("frame_col"_h);
+	}
+
+	void cElementPrivate::set_frame_thickness(float thickness)
+	{
+		if (frame_thickness == thickness)
+			return;
+		frame_thickness = thickness;
+		mark_drawing_dirty();
+		data_changed("frame_thickness"_h);
+	}
+
+	void cElementPrivate::set_scissor(bool v)
+	{
+		if (scissor == v)
+			return;
+		scissor = v;
+		mark_drawing_dirty();
+		data_changed("scissor"_h);
+	}
+
 	void cElementPrivate::mark_transform_dirty()
 	{
 		transform_dirty = true;
@@ -49,9 +96,9 @@ namespace flame
 			return false;
 
 		mat3 m;
-		if (auto pnode = entity->get_parent_component_i<cElementT>(0); pnode)
+		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
 		{
-			m = pnode->transform;
+			m = pelement->transform;
 		}
 		else
 		{

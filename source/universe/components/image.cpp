@@ -1,7 +1,57 @@
-#include "text_private.h"
+#include "../../graphics/image.h"
+#include "../../graphics/canvas.h"
+#include "element_private.h"
+#include "image_private.h"
 
 namespace flame
 {
+	void cImagePrivate::on_init()
+	{
+		element->drawers.add([this](graphics::CanvasPtr canvas) {
+			if (image)
+				canvas->add_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f));
+		});
+	}
+
+	void cImagePrivate::set_image_name(const std::filesystem::path& name)
+	{
+		if (image_name == name)
+			return;
+
+		auto old_one = image;
+		if (!image_name.empty())
+		{
+			if (!image_name.native().starts_with(L"0x"))
+				AssetManagemant::release(Path::get(image_name));
+			else
+				old_one = nullptr;
+		}
+		image_name = name;
+		if (!image_name.empty())
+		{
+			if (!image_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get(Path::get(image_name));
+				image = !image_name.empty() ? graphics::Image::get(image_name, true) : nullptr;
+			}
+			else
+				image = (graphics::ImagePtr)s2u_hex<uint64>(image_name.string());
+		}
+
+		if (!image_name.empty())
+			AssetManagemant::release(Path::get(image_name));
+		image_name = name;
+		if (!image_name.empty())
+			AssetManagemant::get(Path::get(image_name));
+
+		if (image != old_one)
+			element->mark_transform_dirty();
+
+		if (old_one)
+			graphics::Image::release(old_one);
+		data_changed("image_name"_h);
+	}
+
 	struct cImageCreate : cImage::Create
 	{
 		cImagePtr operator()(EntityPtr) override

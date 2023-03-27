@@ -20,6 +20,7 @@ namespace flame
 			virtual void push_font(FontAtlasPtr font) = 0;
 			virtual void pop_font() = 0;
 			virtual void add_text(const vec2& pos, std::wstring_view str, const cvec4& col) = 0;
+			virtual void add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs) = 0;
 
 			struct Create
 			{

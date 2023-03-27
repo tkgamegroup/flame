@@ -38,9 +38,28 @@ namespace flame
 		}
 
 		// Reflect
+		cvec4 background_col = cvec4(0);
+		// Reflect
+		virtual void set_background_col(const cvec4& col) = 0;
+
+		// Reflect
+		cvec4 frame_col = cvec4(0);
+		// Reflect
+		virtual void set_frame_col(const cvec4& col) = 0;
+
+		// Reflect
+		float frame_thickness = 1.f;
+		// Reflect
+		virtual void set_frame_thickness(float thickness) = 0;
+
+		// Reflect
 		bool scissor = false;
+		// Reflect
+		virtual void set_scissor(bool v) = 0;
 
 		mat3x2 transform;
+		vec2 global_pos0() { return transform[2]; }
+		vec2 global_pos1() { return transform * vec3(ext, 1.f); }
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

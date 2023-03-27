@@ -126,8 +126,7 @@ namespace flame
 		PassOutline,
 		PassPrimitive,
 		PassPickUp,
-		PassTransformFeedback,
-		PassElement
+		PassTransformFeedback
 	};
 
 	enum DrawCategory
@@ -140,8 +139,7 @@ namespace flame
 		CateVolume = 1 << 5,
 		CateMarchingCubes = 1 << 6,
 		CateParticle = 1 << 7,
-		CatePrimitive = 1 << 8,
-		CateElement = 1 << 9
+		CatePrimitive = 1 << 8
 	};
 
 	struct DrawData

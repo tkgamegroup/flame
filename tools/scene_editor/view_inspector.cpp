@@ -562,9 +562,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
-					if (just_exit_editing && !direct_io)
+					if (!direct_io)
 						type->set_value(objs[0], offset, setter, data);
-					if (direct_io || just_exit_editing)
+					if (direct_io)
 					{
 						for (auto i = 1; i < num; i++)
 							type->set_value(objs[i], offset, setter, data);

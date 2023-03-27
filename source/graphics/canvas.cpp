@@ -41,8 +41,11 @@ namespace flame
 				cb->push_constant_t(vec4(scale, -1.f, -1.f));
 				for (auto& cmd : draw_cmds)
 				{
-					cb->bind_descriptor_set(0, cmd.ds);
-					cb->draw_indexed(cmd.idx_cnt, 0, 0, 1, 0);
+					if (cmd.idx_cnt > 0)
+					{
+						cb->bind_descriptor_set(0, cmd.ds);
+						cb->draw_indexed(cmd.idx_cnt, 0, 0, 1, 0);
+					}
 				}
 				cb->end_renderpass();
 				cb->end_debug_label();
@@ -140,12 +143,8 @@ namespace flame
 			path.push_back(vec2(b.x, a.y));
 		}
 
-		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
+		void CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed)
 		{
-			thickness *= 0.5f;
-
-			auto& cmd = draw_cmds.back();
-
 			auto get_normal = [](const vec2& p1, const vec2& p2) {
 				auto d = normalize(p2 - p1);
 				return vec2(d.y, -d.x);
@@ -153,6 +152,7 @@ namespace flame
 
 			auto first_normal = get_normal(path[0], path[1]);
 			vec2 last_normal = first_normal;
+			thickness *= 0.5f;
 
 			int n_pts = path.size();
 			auto vtx0_off = buf_vtx.stag_top;
@@ -227,12 +227,12 @@ namespace flame
 				auto n = get_normal(path[n_pts - 1], path[0]);
 
 				auto n1 = normalize(n + last_normal);
-				buf_vtx.get_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * thickness + 0.5f;
-				buf_vtx.get_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * thickness + 0.5f;
+				buf_vtx.item_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * thickness + 0.5f;
+				buf_vtx.item_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * thickness + 0.5f;
 
 				auto n2 = normalize(n + first_normal);
-				buf_vtx.get_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * thickness + 0.5f;
-				buf_vtx.get_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * thickness + 0.5f;
+				buf_vtx.item_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * thickness + 0.5f;
+				buf_vtx.item_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * thickness + 0.5f;
 
 				buf_idx.add(vtx_off + 0);
 				buf_idx.add(vtx_off + 1);
@@ -242,14 +242,10 @@ namespace flame
 				buf_idx.add(vtx0_off + 0);
 				cmd.idx_cnt += 6;
 			}
-
-			path.clear();
 		}
 
-		void CanvasPrivate::fill(const cvec4& col)
+		void CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& col)
 		{
-			auto& cmd = draw_cmds.back();
-
 			int n_pts = path.size();
 			auto vtx0_off = buf_vtx.stag_top;
 			{
@@ -277,7 +273,19 @@ namespace flame
 				buf_idx.add(vtx0_off); buf_idx.add(vtx_off - 1); buf_idx.add(vtx_off);
 				cmd.idx_cnt += 3;
 			}
+		}
 
+		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
+		{
+			auto& cmd = get_cmd(main_ds.get());
+			stroke_path(cmd, thickness, col, closed);
+			path.clear();
+		}
+
+		void CanvasPrivate::fill(const cvec4& col)
+		{
+			auto& cmd = get_cmd(main_ds.get());
+			fill_path(cmd, col);
 			path.clear();
 		}
 		
@@ -311,7 +319,7 @@ namespace flame
 
 		void CanvasPrivate::add_text(const vec2& pos, std::wstring_view str, const cvec4& col)
 		{
-			auto& cmd = draw_cmds.back();
+			auto& cmd = get_cmd(main_ds.get());
 
 			auto p = pos;
 			for (auto ch : str)
@@ -322,14 +330,28 @@ namespace flame
 				s.y *= -1.f;
 
 				path_rect(o, o + s);
-				fill(col);
-				buf_vtx.get_t<DrawVert>(-4).uv = g.uv.xy;
-				buf_vtx.get_t<DrawVert>(-3).uv = g.uv.xw;
-				buf_vtx.get_t<DrawVert>(-2).uv = g.uv.zw;
-				buf_vtx.get_t<DrawVert>(-1).uv = g.uv.zy;
+				fill_path(cmd, col);
+				path.clear();
+				buf_vtx.item_t<DrawVert>(-4).uv = g.uv.xy;
+				buf_vtx.item_t<DrawVert>(-3).uv = g.uv.xw;
+				buf_vtx.item_t<DrawVert>(-2).uv = g.uv.zw;
+				buf_vtx.item_t<DrawVert>(-1).uv = g.uv.zy;
 
 				p.x += g.advance;
 			}
+		}
+
+		void CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs)
+		{
+			auto& cmd = get_cmd(view->get_shader_read_src(nullptr));
+
+			path_rect(a, b);
+			fill_path(cmd, cvec4(255));
+			path.clear();
+			buf_vtx.item_t<DrawVert>(-4).uv = uvs.xy;
+			buf_vtx.item_t<DrawVert>(-3).uv = uvs.xw;
+			buf_vtx.item_t<DrawVert>(-2).uv = uvs.zw;
+			buf_vtx.item_t<DrawVert>(-1).uv = uvs.zy;
 		}
 
 		struct CanvasCreate : Canvas::Create

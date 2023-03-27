@@ -240,7 +240,7 @@ namespace flame
 			}
 
 			template<class T>
-			T& get_t(int idx)
+			T& item_t(int idx)
 			{
 				if (idx < 0)
 					idx = stag_top + idx;

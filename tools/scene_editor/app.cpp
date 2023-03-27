@@ -184,10 +184,10 @@ void App::init()
 		}
 		if (ImGui::BeginMenu("Entity"))
 		{
-			if (ImGui::BeginMenu("Create"))
+			if (ImGui::MenuItem("Create Empty"))
+				cmd_create_entity();
+			if (ImGui::BeginMenu("Create 3D"))
 			{
-				if (ImGui::MenuItem("Empty"))
-					cmd_create_entity();
 				if (ImGui::MenuItem("Node"))
 					cmd_create_entity(nullptr, "node"_h);
 				if (ImGui::MenuItem("Plane"))
@@ -206,6 +206,16 @@ void App::init()
 					cmd_create_entity(nullptr, "pt_light"_h);
 				if (ImGui::MenuItem("Camera"))
 					cmd_create_entity(nullptr, "camera"_h);
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Create 2D"))
+			{
+				if (ImGui::MenuItem("Element"))
+					cmd_create_entity(nullptr, "element"_h);
+				if (ImGui::MenuItem("Image"))
+					cmd_create_entity(nullptr, "image"_h);
+				if (ImGui::MenuItem("Text"))
+					cmd_create_entity(nullptr, "text"_h);
 				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Focus To Selected (F)"))
@@ -1168,6 +1178,17 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 	case "camera"_h:
 		e->add_component_t<cNode>();
 		e->add_component_t<cCamera>();
+		break;
+	case "element"_h:
+		e->add_component_t<cElement>();
+		break;
+	case "image"_h:
+		e->add_component_t<cElement>();
+		e->add_component_t<cImage>();
+		break;
+	case "text"_h:
+		e->add_component_t<cElement>();
+		e->add_component_t<cText>();
 		break;
 	}
 	if (auto node = e->node(); node)

@@ -1132,6 +1132,8 @@ namespace flame
 
 		if (first_node)
 			update_node_transform(first_node, false);
+		if (first_element)
+			update_element_transform(first_node, false);
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)
