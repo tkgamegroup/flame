@@ -30,14 +30,12 @@ namespace flame
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
 			IndexBuffer<> buf_idx;
-			FontAtlasPtr main_font = nullptr;
+			FontAtlasPtr main_font_atlas = nullptr;
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
 			std::vector<DrawCmd> draw_cmds;
 			std::vector<vec2> path;
-			std::stack<FontAtlasPtr> fonts;
-			uint font_size = 14;
 
 			CanvasPrivate(WindowPtr window, bool use_window_targets = true, std::span<ImageViewPtr> targets = {});
 			~CanvasPrivate();
@@ -53,9 +51,7 @@ namespace flame
 
 			void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
-			void push_font(FontAtlasPtr font) override;
-			void pop_font() override;
-			void add_text(const vec2& pos, std::wstring_view str, const cvec4& col) override;
+			void add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col) override;
 			void add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs) override;
 		};
 	}

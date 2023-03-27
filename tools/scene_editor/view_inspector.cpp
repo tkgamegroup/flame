@@ -617,6 +617,45 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 			break;
 		case DataWString:
+		{
+			if (same[0])
+			{
+				auto s = w2s(*(std::wstring*)data);
+				changed = ImGui::InputText(display_name.c_str(), &s);
+				if (changed)
+					*(std::wstring*)data = s2w(s);
+			}
+			else
+			{
+				std::string s = "-";
+				changed = ImGui::InputText(display_name.c_str(), &s);
+				if (changed)
+					*(std::wstring*)data = s2w(s);
+			}
+			if (ImGui::IsItemActivated())
+			{
+				before_editing_values.resize(num);
+				before_editing_values[0] = w2s(*(std::wstring*)data);
+				for (auto i = 1; i < num; i++)
+					before_editing_values[i] = w2s(*(std::wstring*)type->get_value(objs[i], offset, getter));
+			}
+			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			if (changed)
+			{
+				if (just_exit_editing && !direct_io)
+					type->set_value(objs[0], offset, setter, data);
+				if (direct_io || just_exit_editing)
+				{
+					for (auto i = 1; i < num; i++)
+						type->set_value(objs[i], offset, setter, data);
+				}
+				if (num > 1)
+					eos.sync_states->at(id) = 1;
+			}
+			if (just_exit_editing)
+				add_modify_history(name_hash, w2s(*(std::wstring*)data));
+			changed = just_exit_editing ? 2 : changed > 0;
+		}
 			break;
 		case DataPath:
 		{

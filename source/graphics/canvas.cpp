@@ -84,10 +84,11 @@ namespace flame
 			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
-			main_font = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
-			main_font->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
-			main_font->init_latin_glyphs(font_size);
-			main_img = main_font->image.get();
+			const auto font_size = 14;
+			main_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
+			main_font_atlas->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
+			main_font_atlas->init_latin_glyphs(font_size);
+			main_img = main_font_atlas->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
 			main_img->change_layout(ImageLayoutShaderReadOnly);
@@ -96,7 +97,6 @@ namespace flame
 			main_ds->update();
 
 			reset();
-			push_font(main_font);
 		}
 
 		CanvasPrivate::~CanvasPrivate()
@@ -104,7 +104,7 @@ namespace flame
 			window->renderers.remove("Canvas"_h);
 			
 			GraphicsPipeline::release(pl);
-			FontAtlas::release(main_font);
+			FontAtlas::release(main_font_atlas);
 		}
 
 		void CanvasPrivate::set_targets(std::span<ImageViewPtr> targets)
@@ -301,30 +301,15 @@ namespace flame
 			fill(col);
 		}
 
-		void CanvasPrivate::push_font(FontAtlasPtr font)
-		{
-			fonts.push(font);
-		}
-
-		void CanvasPrivate::pop_font()
-		{
-			if (fonts.size() <= 1)
-			{
-				printf("graphics canvas: cannot pop the default font\n");
-				return;
-			}
-
-			fonts.pop();
-		}
-
-		void CanvasPrivate::add_text(const vec2& pos, std::wstring_view str, const cvec4& col)
+		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col)
 		{
 			auto& cmd = get_cmd(main_ds.get());
+			font_atlas = font_atlas ? font_atlas : main_font_atlas;
 
 			auto p = pos;
 			for (auto ch : str)
 			{
-				auto& g = fonts.top()->get_glyph(ch, font_size);
+				auto& g = font_atlas->get_glyph(ch, font_size);
 				auto o = p + vec2(g.off);
 				auto s = vec2(g.size);
 				s.y *= -1.f;

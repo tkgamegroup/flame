@@ -45,7 +45,7 @@ namespace flame
 			AssetManagemant::get(Path::get(image_name));
 
 		if (image != old_one)
-			element->mark_transform_dirty();
+			element->mark_drawing_dirty();
 
 		if (old_one)
 			graphics::Image::release(old_one);

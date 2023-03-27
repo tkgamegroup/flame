@@ -7,13 +7,35 @@ namespace flame
 	// Reflect ctor
 	struct cText : Component
 	{
+		// Reflect requires
+		cElementPtr element = nullptr;
+
 		// Reflect
 		std::wstring text;
-
-		graphics::FontAtlas* font;
+		// Reflect
+		virtual void set_text(const std::wstring& str) = 0;
 
 		// Reflect
-		cvec4 color = cvec4(255);
+		cvec4 col = cvec4(255);
+		// Reflect
+		virtual void set_col(const cvec4& col) = 0;
+
+		// Reflect
+		uint font_size = 14;
+		// Reflect
+		virtual void set_font_size(uint size) = 0;
+
+		// Reflect
+		std::vector<std::wstring> font_names;
+		// Reflect
+		virtual void set_font_names(const std::vector<std::wstring>& names) = 0;
+
+		// Reflect
+		bool sdf = true;
+		// Reflect
+		virtual void set_sdf(bool v) = 0;
+
+		graphics::FontAtlas* font_atlas = nullptr;
 
 		struct Create
 		{
