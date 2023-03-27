@@ -91,6 +91,11 @@ namespace flame
 			return (cNodePtr)get_component_i<cNode>(0);
 		}
 
+		inline cElementPtr element() const
+		{
+			return (cElementPtr)get_component_i<cElement>(0);
+		}
+
 		template<typename T>
 		inline T* get_parent_component_t() const
 		{
@@ -218,6 +223,26 @@ namespace flame
 				c->backward_traversal(callback);
 			}
 			callback((EntityPtr)this);
+		}
+
+		inline void traversal_bfs(const std::function<bool(EntityPtr)>& callback)
+		{
+			std::deque<Entity*> queue;
+			queue.push_back((Entity*)this);
+			if (!callback((EntityPtr)this))
+				return;
+			while (!queue.empty())
+			{
+				auto e = queue.front();
+				queue.pop_front();
+				for (auto& cc : e->children)
+				{
+					auto c = (Entity*)cc.get();
+					queue.push_back(c);
+					if (!callback((EntityPtr)c))
+						return;
+				}
+			}
 		}
 
 		inline std::vector<EntityPtr> get_all_children()

@@ -9,6 +9,8 @@ namespace flame
 	// Reflect ctor
 	struct sScene : System
 	{
+		EntityPtr first_node = nullptr;
+		EntityPtr first_element = nullptr;
 		OctNode* octree = nullptr;
 
 		// Reflect

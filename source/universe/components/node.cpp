@@ -101,11 +101,6 @@ namespace flame
 			sRenderer::instance()->dirty = true;
 	}
 
-	void cNodePrivate::draw(DrawData& draw_data)
-	{
-		drawers.call<DrawData&>(draw_data);
-	}
-
 	void cNodePrivate::on_active()
 	{
 		mark_transform_dirty();

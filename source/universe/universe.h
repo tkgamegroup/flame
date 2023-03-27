@@ -64,6 +64,13 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sAudio);
 
+	enum StaticState
+	{
+		NotStatic,
+		StaticButDirty,
+		Static
+	};
+
 	enum TagFlags
 	{
 		TagNone = 0,
@@ -74,16 +81,16 @@ namespace flame
 
 	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }
 
-	enum StateFlags
+	enum ElementStateFlags
 	{
-		StateNone = 0,
-		StateHovering = 1 << 0,
-		StateFocusing = 1 << 1,
-		StateActive = 1 << 2,
-		StateSelected = 1 << 3
+		ElementStateNone = 0,
+		ElementStateHovering = 1 << 0,
+		ElementStateFocusing = 1 << 1,
+		ElementStateActive = 1 << 2,
+		ElementStateSelected = 1 << 3
 	};
 
-	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
+	inline ElementStateFlags operator| (ElementStateFlags a, ElementStateFlags b) { return (ElementStateFlags)((int)a | (int)b); }
 
 	enum LightType
 	{

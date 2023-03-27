@@ -103,8 +103,7 @@ namespace flame
 		{
 			uint64 key;
 			{
-				uint hi;
-				uint lo;
+				uint hi; uint lo;
 				hi = (sub.base_level & 0xff) << 24;
 				hi |= (sub.level_count & 0xff) << 16;
 				hi |= (sub.base_layer & 0xff) << 8;
@@ -156,7 +155,7 @@ namespace flame
 			return iv;
 		}
 
-		static DescriptorSetLayoutPrivate* simple_dsl = nullptr;
+		static DescriptorSetLayoutPrivate* dummy_dsl = nullptr;
 
 		DescriptorSetPtr ImagePrivate::get_shader_read_src(uint base_level, uint base_layer, SamplerPtr sp, const ImageSwizzle& swizzle)
 		{
@@ -166,7 +165,6 @@ namespace flame
 			uint64 key;
 			{
 				uint hi;
-				uint lo;
 				hi = (base_level & 0xff) << 24;
 				hi |= (base_layer & 0xff) << 16;
 				hi |= swizzle.r << 12;
@@ -174,7 +172,7 @@ namespace flame
 				hi |= swizzle.b << 4;
 				hi |= swizzle.a;
 
-				lo = (uint)sp;
+				uint lo = (uint)sp;
 				key = (((uint64)hi) << 32) | ((uint64)lo);
 			}
 
@@ -182,21 +180,21 @@ namespace flame
 			if (it != read_dss.end())
 				return it->second.get();
 
-			if (!simple_dsl)
+			if (!dummy_dsl)
 			{
 				DescriptorBinding b;
 				b.type = DescriptorSampledImage;
-				simple_dsl = DescriptorSetLayout::create({ &b, 1 });
+				dummy_dsl = DescriptorSetLayout::create({ &b, 1 });
 			}
 
-			auto ds = DescriptorSet::create(nullptr, simple_dsl);
+			auto ds = DescriptorSet::create(nullptr, dummy_dsl);
 			ds->set_image_i(0, 0, get_view({ base_level, 1, base_layer, 1 }, swizzle), sp);
 			ds->update();
 			read_dss.emplace(key, ds);
 			return ds;
 		}
 
-		static std::vector<RenderpassPrivate*> simple_rps;
+		static std::vector<RenderpassPrivate*> dummy_rps;
 
 		FramebufferPtr ImagePrivate::get_shader_write_dst(uint base_level, uint base_layer, AttachmentLoadOp load_op)
 		{
@@ -209,7 +207,7 @@ namespace flame
 				return it->second.get();
 
 			RenderpassPrivate* rp = nullptr;
-			for (auto& r : simple_rps)
+			for (auto& r : dummy_rps)
 			{
 				auto& att = r->attachments[0];
 				if (att.format == format && att.load_op == load_op && att.sample_count == sample_count)
@@ -237,7 +235,7 @@ namespace flame
 				else
 					sp.depth_attachment = 0;
 				rp = Renderpass::create(info);
-				simple_rps.push_back(rp);
+				dummy_rps.push_back(rp);
 			}
 
 			auto fb = Framebuffer::create(rp, get_view({ base_level, 1, base_layer, 1 }));
@@ -872,6 +870,43 @@ namespace flame
 
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 			unregister_object(vk_image_view);
+		}
+
+		DescriptorSetPtr ImageViewPrivate::get_shader_read_src(SamplerPtr sp)
+		{
+			if (!sp)
+				sp = SamplerPrivate::get(FilterLinear, FilterLinear, false, AddressClampToEdge);
+
+			uint64 key;
+			{
+				uint hi;
+				hi = (sub.base_level & 0xff) << 24;
+				hi |= (sub.base_layer & 0xff) << 16;
+				hi |= swizzle.r << 12;
+				hi |= swizzle.g << 8;
+				hi |= swizzle.b << 4;
+				hi |= swizzle.a;
+
+				uint lo = (uint)sp;
+				key = (((uint64)hi) << 32) | ((uint64)lo);
+			}
+
+			auto it = image->read_dss.find(key);
+			if (it != image->read_dss.end())
+				return it->second.get();
+
+			if (!dummy_dsl)
+			{
+				DescriptorBinding b;
+				b.type = DescriptorSampledImage;
+				dummy_dsl = DescriptorSetLayout::create({ &b, 1 });
+			}
+
+			auto ds = DescriptorSet::create(nullptr, dummy_dsl);
+			ds->set_image_i(0, 0, this, sp);
+			ds->update();
+			image->read_dss.emplace(key, ds);
+			return ds;
 		}
 
 		SamplerPrivate::~SamplerPrivate()

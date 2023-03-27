@@ -8,7 +8,7 @@ namespace flame
 	struct cNode : Component
 	{
 		// Reflect
-		bool is_static = false;
+		StaticState static_state = NotStatic;
 
 		// Reflect
 		vec3 pos = vec3(0.f);

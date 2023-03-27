@@ -28,8 +28,6 @@ namespace flame
 
 		bool update_transform() override;
 
-		void draw(DrawData& draw_data);
-
 		void on_active() override;
 		void on_inactive() override;
 	};

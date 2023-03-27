@@ -159,6 +159,8 @@ namespace flame
 			ImagePtr image;
 			ImageSub sub;
 			ImageSwizzle swizzle;
+
+			virtual DescriptorSetPtr get_shader_read_src(SamplerPtr sp = nullptr) = 0;
 		};
 
 		struct Sampler

@@ -3,6 +3,7 @@
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "../components/node_private.h"
+#include "../components/element_private.h"
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
 #include "../components/volume_private.h"
@@ -59,7 +60,7 @@ namespace flame
 #endif
 	}
 
-	void sScenePrivate::update_transform(EntityPtr e, bool mark_dirty)
+	void sScenePrivate::update_node_transform(EntityPtr e, bool mark_dirty)
 	{
 		if (!e->global_enable)
 			return;
@@ -67,11 +68,11 @@ namespace flame
 		auto is_static = false;
 		if (auto node = e->node(); node)
 		{
-			is_static = (int)node->is_static == 2;
+			is_static = node->static_state == Static;
 			if (!is_static)
 			{
-				if (node->is_static)
-					node->is_static = 2;
+				if (node->static_state == StaticButDirty)
+					node->static_state = Static;
 				if (mark_dirty)
 					node->mark_transform_dirty();
 				if (node->update_transform())
@@ -96,315 +97,345 @@ namespace flame
 		if (!is_static)
 		{
 			for (auto& c : e->children)
-				update_transform(c.get(), mark_dirty);
+				update_node_transform(c.get(), mark_dirty);
 		}
 	}
 
-	struct MyTileCacheAllocator : dtTileCacheAlloc
+	void sScenePrivate::update_element_transform(EntityPtr e, bool mark_dirty)
 	{
-		uchar* buffer = nullptr;
-		size_t capacity = 0;
-		size_t top = 0;
-		size_t high = 0;
+		if (!e->global_enable)
+			return;
 
-		MyTileCacheAllocator(uint cap)
+		auto is_static = false;
+		if (auto element = e->element(); element)
 		{
-			resize(cap);
-		}
-
-		~MyTileCacheAllocator()
-		{
-			dtFree(buffer);
-		}
-
-		void resize(uint cap)
-		{
-			if (buffer) dtFree(buffer);
-			buffer = (uchar*)dtAlloc(cap, DT_ALLOC_PERM);
-			capacity = cap;
-		}
-
-		void reset() override
-		{
-			high = max(high, top);
-			top = 0;
-		}
-
-		void* alloc(const size_t size) override
-		{
-			if (!buffer)
-				return nullptr;
-			if (top + size > capacity)
-				return nullptr;
-			uchar* mem = &buffer[top];
-			top += size;
-			return mem;
-		}
-
-		void free(void*) override
-		{
-		}
-	};
-
-	auto my_title_cache_allocator = new MyTileCacheAllocator(32000);
-
-	struct MyTileCacheCompressor : public dtTileCacheCompressor
-	{
-		int maxCompressedSize(const int bufferSize) override
-		{
-			return bufferSize;
-		}
-
-		dtStatus compress(const uchar* buffer, const int bufferSize,
-			uchar* compressed, const int /*maxCompressedSize*/, int* compressedSize) override
-		{
-			memcpy(compressed, buffer, bufferSize);
-			*compressedSize = bufferSize;
-			return DT_SUCCESS;
-		}
-
-		dtStatus decompress(const uchar* compressed, const int compressedSize,
-			uchar* buffer, const int maxBufferSize, int* bufferSize) override
-		{
-			memcpy(buffer, compressed, compressedSize);
-			*bufferSize = compressedSize;
-			return DT_SUCCESS;
-		}
-	};
-
-	auto my_tile_cache_compressor = new MyTileCacheCompressor;
-
-	struct MyTileCacheMeshProcess : public dtTileCacheMeshProcess
-	{
-		void process(struct dtNavMeshCreateParams* params, uchar* polyAreas, ushort* polyFlags) override
-		{
-			for (int i = 0; i < params->polyCount; ++i)
+			is_static = element->static_state == Static;
+			if (!is_static)
 			{
-				if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
-					polyAreas[i] = 0;
-
-				polyFlags[i] = 1;
+				if (element->static_state == StaticButDirty)
+					element->static_state = Static;
+				if (mark_dirty)
+					element->mark_transform_dirty();
+				if (element->update_transform())
+					mark_dirty = true;
 			}
 		}
-	};
 
-	auto my_tile_cache_mesh_process = new MyTileCacheMeshProcess;
-
-	struct ChunkyTriMeshNode
-	{
-		float bmin[2];
-		float bmax[2];
-		int i;
-		int n;
-	};
-
-	struct ChunkyTriMesh
-	{
-		ChunkyTriMeshNode* nodes = nullptr;
-		int nnodes = 0;
-		int* tris = nullptr;
-		int ntris = 0;
-		int max_tris_per_chunk = 0;
-
-		~ChunkyTriMesh()
+		if (!is_static)
 		{
-			delete[] nodes;
-			delete[] tris;
+			for (auto& c : e->children)
+				update_element_transform(c.get(), mark_dirty);
 		}
-	};
+	}
 
-	bool create_chunky_tri_mesh(const float* verts, const int* tris, int ntris, int tris_per_chunk, ChunkyTriMesh* cm)
+	namespace navmesh_gen_detail
 	{
-		struct BoundsItem
+		struct MyTileCacheAllocator : dtTileCacheAlloc
+		{
+			uchar* buffer = nullptr;
+			size_t capacity = 0;
+			size_t top = 0;
+			size_t high = 0;
+
+			MyTileCacheAllocator(uint cap)
+			{
+				resize(cap);
+			}
+
+			~MyTileCacheAllocator()
+			{
+				dtFree(buffer);
+			}
+
+			void resize(uint cap)
+			{
+				if (buffer) dtFree(buffer);
+				buffer = (uchar*)dtAlloc(cap, DT_ALLOC_PERM);
+				capacity = cap;
+			}
+
+			void reset() override
+			{
+				high = max(high, top);
+				top = 0;
+			}
+
+			void* alloc(const size_t size) override
+			{
+				if (!buffer)
+					return nullptr;
+				if (top + size > capacity)
+					return nullptr;
+				uchar* mem = &buffer[top];
+				top += size;
+				return mem;
+			}
+
+			void free(void*) override
+			{
+			}
+		};
+
+		auto my_title_cache_allocator = new MyTileCacheAllocator(32000);
+
+		struct MyTileCacheCompressor : public dtTileCacheCompressor
+		{
+			int maxCompressedSize(const int bufferSize) override
+			{
+				return bufferSize;
+			}
+
+			dtStatus compress(const uchar* buffer, const int bufferSize,
+				uchar* compressed, const int /*maxCompressedSize*/, int* compressedSize) override
+			{
+				memcpy(compressed, buffer, bufferSize);
+				*compressedSize = bufferSize;
+				return DT_SUCCESS;
+			}
+
+			dtStatus decompress(const uchar* compressed, const int compressedSize,
+				uchar* buffer, const int maxBufferSize, int* bufferSize) override
+			{
+				memcpy(buffer, compressed, compressedSize);
+				*bufferSize = compressedSize;
+				return DT_SUCCESS;
+			}
+		};
+
+		auto my_tile_cache_compressor = new MyTileCacheCompressor;
+
+		struct MyTileCacheMeshProcess : public dtTileCacheMeshProcess
+		{
+			void process(struct dtNavMeshCreateParams* params, uchar* polyAreas, ushort* polyFlags) override
+			{
+				for (int i = 0; i < params->polyCount; ++i)
+				{
+					if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
+						polyAreas[i] = 0;
+
+					polyFlags[i] = 1;
+				}
+			}
+		};
+
+		auto my_tile_cache_mesh_process = new MyTileCacheMeshProcess;
+
+		struct ChunkyTriMeshNode
 		{
 			float bmin[2];
 			float bmax[2];
 			int i;
+			int n;
 		};
 
-		auto compareItemX = [](const void* va, const void* vb) {
-			const BoundsItem* a = (const BoundsItem*)va;
-			const BoundsItem* b = (const BoundsItem*)vb;
-			if (a->bmin[0] < b->bmin[0])
-				return -1;
-			if (a->bmin[0] > b->bmin[0])
-				return 1;
-			return 0;
-		};
-
-		auto compareItemY = [](const void* va, const void* vb) {
-			const BoundsItem* a = (const BoundsItem*)va;
-			const BoundsItem* b = (const BoundsItem*)vb;
-			if (a->bmin[1] < b->bmin[1])
-				return -1;
-			if (a->bmin[1] > b->bmin[1])
-				return 1;
-			return 0;
-		};
-
-		auto calcExtends = [](const BoundsItem* items, const int, const int imin, const int imax, float* bmin, float* bmax) {
-			bmin[0] = items[imin].bmin[0];
-			bmin[1] = items[imin].bmin[1];
-
-			bmax[0] = items[imin].bmax[0];
-			bmax[1] = items[imin].bmax[1];
-
-			for (int i = imin + 1; i < imax; ++i)
-			{
-				const BoundsItem& it = items[i];
-				if (it.bmin[0] < bmin[0]) bmin[0] = it.bmin[0];
-				if (it.bmin[1] < bmin[1]) bmin[1] = it.bmin[1];
-
-				if (it.bmax[0] > bmax[0]) bmax[0] = it.bmax[0];
-				if (it.bmax[1] > bmax[1]) bmax[1] = it.bmax[1];
-			}
-		};
-
-		auto longestAxis = [](float x, float y) {
-			return y > x ? 1 : 0;
-		};
-
-		std::function<void(BoundsItem*, int, int, int, int, int&, ChunkyTriMeshNode*, const int, int&, int*, const int*)> subdivide;
-		subdivide = [&](BoundsItem* items, int nitems, int imin, int imax, int trisPerChunk,
-			int& curNode, ChunkyTriMeshNode* nodes, const int maxNodes, int& curTri, int* outTris, const int* inTris) {
-			int inum = imax - imin;
-			int icur = curNode;
-
-			if (curNode >= maxNodes)
-				return;
-
-			ChunkyTriMeshNode& node = nodes[curNode++];
-
-			if (inum <= trisPerChunk)
-			{
-				calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
-
-				node.i = curTri;
-				node.n = inum;
-
-				for (int i = imin; i < imax; ++i)
-				{
-					const int* src = &inTris[items[i].i * 3];
-					int* dst = &outTris[curTri * 3];
-					curTri++;
-					dst[0] = src[0];
-					dst[1] = src[1];
-					dst[2] = src[2];
-				}
-			}
-			else
-			{
-				calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
-
-				int	axis = longestAxis(node.bmax[0] - node.bmin[0],
-					node.bmax[1] - node.bmin[1]);
-
-				if (axis == 0)
-					qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemX);
-				else if (axis == 1)
-					qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemY);
-
-				int isplit = imin + inum / 2;
-
-				subdivide(items, nitems, imin, isplit, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
-				subdivide(items, nitems, isplit, imax, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
-
-				int iescape = curNode - icur;
-				node.i = -iescape;
-			}
-		};
-
-		int nchunks = (ntris + tris_per_chunk - 1) / tris_per_chunk;
-
-		cm->nodes = new ChunkyTriMeshNode[nchunks * 4];
-		if (!cm->nodes)
-			return false;
-
-		cm->tris = new int[ntris * 3];
-		if (!cm->tris)
-			return false;
-
-		cm->ntris = ntris;
-
-		auto items = new BoundsItem[ntris];
-		if (!items)
-			return false;
-
-		for (int i = 0; i < ntris; i++)
+		struct ChunkyTriMesh
 		{
-			const int* t = &tris[i * 3];
-			BoundsItem& it = items[i];
-			it.i = i;
-			it.bmin[0] = it.bmax[0] = verts[t[0] * 3 + 0];
-			it.bmin[1] = it.bmax[1] = verts[t[0] * 3 + 2];
-			for (int j = 1; j < 3; ++j)
+			ChunkyTriMeshNode* nodes = nullptr;
+			int nnodes = 0;
+			int* tris = nullptr;
+			int ntris = 0;
+			int max_tris_per_chunk = 0;
+
+			~ChunkyTriMesh()
 			{
-				const float* v = &verts[t[j] * 3];
-				if (v[0] < it.bmin[0]) it.bmin[0] = v[0];
-				if (v[2] < it.bmin[1]) it.bmin[1] = v[2];
-
-				if (v[0] > it.bmax[0]) it.bmax[0] = v[0];
-				if (v[2] > it.bmax[1]) it.bmax[1] = v[2];
+				delete[] nodes;
+				delete[] tris;
 			}
-		}
+		};
 
-		int curTri = 0;
-		int curNode = 0;
-		subdivide(items, ntris, 0, ntris, tris_per_chunk, curNode, cm->nodes, nchunks * 4, curTri, cm->tris, tris);
-
-		delete[] items;
-
-		cm->nnodes = curNode;
-
-		cm->max_tris_per_chunk = 0;
-		for (int i = 0; i < cm->nnodes; ++i)
+		bool create_chunky_tri_mesh(const float* verts, const int* tris, int ntris, int tris_per_chunk, ChunkyTriMesh* cm)
 		{
-			ChunkyTriMeshNode& node = cm->nodes[i];
-			const bool isLeaf = node.i >= 0;
-			if (!isLeaf) continue;
-			if (node.n > cm->max_tris_per_chunk)
-				cm->max_tris_per_chunk = node.n;
-		}
-
-		return true;
-	}
-
-	int get_chunks_overlapping_rect(const ChunkyTriMesh* cm, float bmin[2], float bmax[2], int* ids, const int max_ids)
-	{
-		int i = 0;
-		int n = 0;
-		while (i < cm->nnodes)
-		{
-			auto check_overlap_rect = [](const float amin[2], const float amax[2], const float bmin[2], const float bmax[2]) {
-				bool overlap = true;
-				overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
-				overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
-				return overlap;
+			struct BoundsItem
+			{
+				float bmin[2];
+				float bmax[2];
+				int i;
 			};
 
-			auto node = &cm->nodes[i];
-			auto overlap = check_overlap_rect(bmin, bmax, node->bmin, node->bmax);
-			auto is_leaf = node->i >= 0;
+			auto compareItemX = [](const void* va, const void* vb) {
+				const BoundsItem* a = (const BoundsItem*)va;
+				const BoundsItem* b = (const BoundsItem*)vb;
+				if (a->bmin[0] < b->bmin[0])
+					return -1;
+				if (a->bmin[0] > b->bmin[0])
+					return 1;
+				return 0;
+			};
 
-			if (is_leaf && overlap)
-			{
-				if (n < max_ids)
+			auto compareItemY = [](const void* va, const void* vb) {
+				const BoundsItem* a = (const BoundsItem*)va;
+				const BoundsItem* b = (const BoundsItem*)vb;
+				if (a->bmin[1] < b->bmin[1])
+					return -1;
+				if (a->bmin[1] > b->bmin[1])
+					return 1;
+				return 0;
+			};
+
+			auto calcExtends = [](const BoundsItem* items, const int, const int imin, const int imax, float* bmin, float* bmax) {
+				bmin[0] = items[imin].bmin[0];
+				bmin[1] = items[imin].bmin[1];
+
+				bmax[0] = items[imin].bmax[0];
+				bmax[1] = items[imin].bmax[1];
+
+				for (int i = imin + 1; i < imax; ++i)
 				{
-					ids[n] = i;
-					n++;
+					const BoundsItem& it = items[i];
+					if (it.bmin[0] < bmin[0]) bmin[0] = it.bmin[0];
+					if (it.bmin[1] < bmin[1]) bmin[1] = it.bmin[1];
+
+					if (it.bmax[0] > bmax[0]) bmax[0] = it.bmax[0];
+					if (it.bmax[1] > bmax[1]) bmax[1] = it.bmax[1];
+				}
+			};
+
+			auto longestAxis = [](float x, float y) {
+				return y > x ? 1 : 0;
+			};
+
+			std::function<void(BoundsItem*, int, int, int, int, int&, ChunkyTriMeshNode*, const int, int&, int*, const int*)> subdivide;
+			subdivide = [&](BoundsItem* items, int nitems, int imin, int imax, int trisPerChunk,
+				int& curNode, ChunkyTriMeshNode* nodes, const int maxNodes, int& curTri, int* outTris, const int* inTris) {
+					int inum = imax - imin;
+					int icur = curNode;
+
+					if (curNode >= maxNodes)
+						return;
+
+					ChunkyTriMeshNode& node = nodes[curNode++];
+
+					if (inum <= trisPerChunk)
+					{
+						calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
+
+						node.i = curTri;
+						node.n = inum;
+
+						for (int i = imin; i < imax; ++i)
+						{
+							const int* src = &inTris[items[i].i * 3];
+							int* dst = &outTris[curTri * 3];
+							curTri++;
+							dst[0] = src[0];
+							dst[1] = src[1];
+							dst[2] = src[2];
+						}
+					}
+					else
+					{
+						calcExtends(items, nitems, imin, imax, node.bmin, node.bmax);
+
+						int	axis = longestAxis(node.bmax[0] - node.bmin[0],
+							node.bmax[1] - node.bmin[1]);
+
+						if (axis == 0)
+							qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemX);
+						else if (axis == 1)
+							qsort(items + imin, static_cast<size_t>(inum), sizeof(BoundsItem), compareItemY);
+
+						int isplit = imin + inum / 2;
+
+						subdivide(items, nitems, imin, isplit, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
+						subdivide(items, nitems, isplit, imax, trisPerChunk, curNode, nodes, maxNodes, curTri, outTris, inTris);
+
+						int iescape = curNode - icur;
+						node.i = -iescape;
+					}
+			};
+
+			int nchunks = (ntris + tris_per_chunk - 1) / tris_per_chunk;
+
+			cm->nodes = new ChunkyTriMeshNode[nchunks * 4];
+			if (!cm->nodes)
+				return false;
+
+			cm->tris = new int[ntris * 3];
+			if (!cm->tris)
+				return false;
+
+			cm->ntris = ntris;
+
+			auto items = new BoundsItem[ntris];
+			if (!items)
+				return false;
+
+			for (int i = 0; i < ntris; i++)
+			{
+				const int* t = &tris[i * 3];
+				BoundsItem& it = items[i];
+				it.i = i;
+				it.bmin[0] = it.bmax[0] = verts[t[0] * 3 + 0];
+				it.bmin[1] = it.bmax[1] = verts[t[0] * 3 + 2];
+				for (int j = 1; j < 3; ++j)
+				{
+					const float* v = &verts[t[j] * 3];
+					if (v[0] < it.bmin[0]) it.bmin[0] = v[0];
+					if (v[2] < it.bmin[1]) it.bmin[1] = v[2];
+
+					if (v[0] > it.bmax[0]) it.bmax[0] = v[0];
+					if (v[2] > it.bmax[1]) it.bmax[1] = v[2];
 				}
 			}
 
-			if (overlap || is_leaf)
-				i++;
-			else
+			int curTri = 0;
+			int curNode = 0;
+			subdivide(items, ntris, 0, ntris, tris_per_chunk, curNode, cm->nodes, nchunks * 4, curTri, cm->tris, tris);
+
+			delete[] items;
+
+			cm->nnodes = curNode;
+
+			cm->max_tris_per_chunk = 0;
+			for (int i = 0; i < cm->nnodes; ++i)
 			{
-				const int escapeIndex = -node->i;
-				i += escapeIndex;
+				ChunkyTriMeshNode& node = cm->nodes[i];
+				const bool isLeaf = node.i >= 0;
+				if (!isLeaf) continue;
+				if (node.n > cm->max_tris_per_chunk)
+					cm->max_tris_per_chunk = node.n;
 			}
+
+			return true;
 		}
 
-		return n;
+		int get_chunks_overlapping_rect(const ChunkyTriMesh* cm, float bmin[2], float bmax[2], int* ids, const int max_ids)
+		{
+			int i = 0;
+			int n = 0;
+			while (i < cm->nnodes)
+			{
+				auto check_overlap_rect = [](const float amin[2], const float amax[2], const float bmin[2], const float bmax[2]) {
+					bool overlap = true;
+					overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
+					overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
+					return overlap;
+				};
+
+				auto node = &cm->nodes[i];
+				auto overlap = check_overlap_rect(bmin, bmax, node->bmin, node->bmax);
+				auto is_leaf = node->i >= 0;
+
+				if (is_leaf && overlap)
+				{
+					if (n < max_ids)
+					{
+						ids[n] = i;
+						n++;
+					}
+				}
+
+				if (overlap || is_leaf)
+					i++;
+				else
+				{
+					const int escapeIndex = -node->i;
+					i += escapeIndex;
+				}
+			}
+
+			return n;
+		}
 	}
 
 	void sScenePrivate::generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
@@ -575,7 +606,9 @@ namespace flame
 		tcparams.maxSimplificationError = edge_max_error;
 		tcparams.maxTiles = tw * th * EXPECTED_LAYERS_PER_TILE;
 		tcparams.maxObstacles = 128;
-		if (auto status = dt_tile_cache->init(&tcparams, my_title_cache_allocator, my_tile_cache_compressor, my_tile_cache_mesh_process); dtStatusFailed(status))
+		if (auto status = dt_tile_cache->init(&tcparams, 
+			navmesh_gen_detail::my_title_cache_allocator, navmesh_gen_detail::my_tile_cache_compressor, navmesh_gen_detail::my_tile_cache_mesh_process); 
+			dtStatusFailed(status))
 		{
 			printf("generate navmesh: Could not init tile cache.\n");
 			return;
@@ -598,8 +631,8 @@ namespace flame
 			return;
 		}
 
-		auto chunky_mesh = new ChunkyTriMesh;
-		create_chunky_tri_mesh((float*)positions.data(), (int*)indices.data(), indices.size() / 3, 256, chunky_mesh);
+		auto chunky_mesh = new navmesh_gen_detail::ChunkyTriMesh;
+		navmesh_gen_detail::create_chunky_tri_mesh((float*)positions.data(), (int*)indices.data(), indices.size() / 3, 256, chunky_mesh);
 
 		for (auto y = 0; y < th; y++)
 		{
@@ -712,7 +745,8 @@ namespace flame
 						header.hmin = (ushort)layer->hmin;
 						header.hmax = (ushort)layer->hmax;
 
-						if (dtStatusFailed(dtBuildTileCacheLayer(my_tile_cache_compressor, &header, layer->heights, layer->areas, layer->cons,
+						if (dtStatusFailed(dtBuildTileCacheLayer(navmesh_gen_detail::my_tile_cache_compressor, 
+							&header, layer->heights, layer->areas, layer->cons,
 							&tile->data, &tile->size)))
 						{
 							printf("generate navmesh: Could not build tile cache layer.\n");
@@ -1030,7 +1064,7 @@ namespace flame
 		for (auto ag : nav_agents)
 		{
 			if (distance(ag->node->pos.xz(), pos.xz()) < ag->radius + radius)
-				return false;
+				return false;	
 		}
 		for (auto ob : nav_obstacles)
 		{
@@ -1080,7 +1114,24 @@ namespace flame
 
 	void sScenePrivate::update()
 	{
-		update_transform(world->root.get(), false);
+		world->root->traversal_bfs([&](EntityPtr e) {
+			if (!first_node)
+			{
+				if (auto node = e->node(); node)
+					first_node = e;
+			}
+			if (!first_element)
+			{
+				if (auto element = e->element(); element)
+					first_element = e;
+			}
+			if (first_node && first_element)
+				return false;
+			return true;
+		});
+
+		if (first_node)
+			update_node_transform(first_node, false);
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)

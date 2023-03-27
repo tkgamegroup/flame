@@ -26,7 +26,8 @@ namespace flame
 		sScenePrivate();
 		~sScenePrivate();
 
-		void update_transform(EntityPtr e, bool mark_dirty);
+		void update_node_transform(EntityPtr e, bool mark_dirty);
+		void update_element_transform(EntityPtr e, bool mark_dirty);
 
 		void generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
 		bool navmesh_nearest_point(const vec3& center, const vec3& ext, vec3& res) override;

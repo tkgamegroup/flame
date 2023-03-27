@@ -126,7 +126,8 @@ namespace flame
 		PassOutline,
 		PassPrimitive,
 		PassPickUp,
-		PassTransformFeedback
+		PassTransformFeedback,
+		PassElement
 	};
 
 	enum DrawCategory
@@ -139,7 +140,8 @@ namespace flame
 		CateVolume = 1 << 5,
 		CateMarchingCubes = 1 << 6,
 		CateParticle = 1 << 7,
-		CatePrimitive = 1 << 8
+		CatePrimitive = 1 << 8,
+		CateElement = 1 << 9
 	};
 
 	struct DrawData
@@ -157,7 +159,7 @@ namespace flame
 
 		float line_width;
 
-		bool graphics_debug; // could use this to mark a capture
+		bool graphics_debug; // could use this to request a capture
 
 		void reset(DrawPass _pass, uint _categories)
 		{

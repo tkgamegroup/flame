@@ -45,6 +45,8 @@ namespace flame
 			VkImageView vk_image_view;
 
 			~ImageViewPrivate();
+
+			DescriptorSetPtr get_shader_read_src(SamplerPtr sp) override;
 		};
 
 		inline ImageAspectFlags aspect_from_format(Format fmt)
